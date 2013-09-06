@@ -13,7 +13,7 @@ def parseMSBuildOutput(out):
     linkerWarnings = list(filter(lambda l:  search('warning LNK[0-9]*', l), lines))
     warnings = int(search('([0-9]*) Warning\(s\)', out).groups()[0]);
     errors = int(search('([0-9]*) Error\(s\)', out).groups()[0]);
-    return (buildSucceeded, warnings, errors, linkerWarnings, linkerErrs)
+    return (buildSucceeded, errors, warnings, linkerErrs, linkerWarnings)
 
 def buildSucceeded(out):
     result=parseMSBuildOutput(out);

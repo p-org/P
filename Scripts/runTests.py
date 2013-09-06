@@ -66,6 +66,8 @@ def elaborateFiles(files):
         map(lambda f:   find_files(f, "*.p") if isdir(f) else [f], files),\
         []);
 
+nonDeterministicallyFailing = [ "BangaloreToRedmond" ]
+
 for f in elaborateFiles(args.files):
     name = os.path.splitext(os.path.basename(f))[0]
     print(f)
@@ -143,6 +145,6 @@ for f in elaborateFiles(args.files):
     if (ret != 0 and not args.fail):
         die("Binary failed")
 
-    if (ret == 0 and args.fail):
+    if (ret == 0 and args.fail and name not in nonDeterministicallyFailing):
         die("Binary didn't fail when we expected it");
     os.system("echo Done.")

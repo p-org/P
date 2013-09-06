@@ -9,6 +9,7 @@ import shutil;
 import re;
 import argparse;
 import generate_project;
+from common import *
 
 parser = argparse.ArgumentParser(description='Execute the specified P Tests');
 parser.add_argument("out", type=str, nargs=1, help="output dir");
@@ -39,7 +40,9 @@ try:
     shutil.rmtree(out);
 except OSError: pass;
 
-os.mkdir(out);
+try:
+    os.mkdir(out);
+except OSError: pass;
 
 def fmt(s):
     return s.format(**globals());
@@ -129,9 +132,7 @@ for f in elaborateFiles(args.files):
 
     compilerOut = cat(ccOut)
 
-    if (ret != 0 or \
-        not re.search("0 Warning\(s\)", compilerOut) or \
-        not re.search("0 Error\(s\)", compilerOut)):
+    if (ret != 0 or not buildSucceeded(compilerOut)):
         die("Failed Building the C code:\n" + compilerOut)
 
     ret = os.system(binary)

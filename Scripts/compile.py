@@ -11,6 +11,7 @@ import argparse
 import generate_project
 from subprocess import *
 from errno import *
+from common import *
 
 def die(s):
     print(s)
@@ -87,9 +88,9 @@ try:
         print("Building Generated C...")
         outp = check_output([cc, proj]);
 
-        if (not re.search("0 Warning\(s\)", outp) or \
-            not re.search("0 Error\(s\)", outp)):
+        if (buildSucceeded(outp)):
             die("Failed Building the C code:\n" + outp)
-except CalledProcessError, err:
-    print "Failed Compiling: \n"
-    print err.output
+    
+except CalledProcessError as err:
+    print("Failed Compiling: \n")
+    print(err.output)

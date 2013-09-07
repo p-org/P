@@ -148,4 +148,6 @@ for f in elaborateFiles(args.files):
 
     if (ret == 0 and args.fail and name not in nonDeterministicallyFailing):
         die("Binary didn't fail when we expected it");
-    os.system("echo Done.")
+    print("echo Done.")
+
+print("ALL TESTS RAN SUCCESSFULLY");

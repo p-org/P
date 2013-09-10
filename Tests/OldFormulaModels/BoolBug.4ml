@@ -1,0 +1,31 @@
+[
+    parsers.DSL = '"Parser at ..\Tools\PCompiler\DSLParser.dll"',
+    parse_ActiveParser = '"DSL"',
+    modules.PData = '"PData at ..\Libraries\Formula\PData.4ml"'
+]
+
+model BoolBug of PData
+{
+
+    mMach is MachineDecl("Mach", FALSE, NIL).
+
+        VarDecl("Var", mMach, BOOL, FALSE).
+
+        FunDecl("Function", mMach,
+            Params("Boolean", BOOL, NIL),
+            NIL, TRUE, `{
+        }`).
+
+        smSubmachine_Mach is StateSetDecl("Submachine", mMach).
+
+            sState_Submachine_Mach is StateDecl("State_Submachine_Mach", mMach, `{
+                Var = false;
+                Function(Var);
+            }`, NIL).
+
+            InStateSet(smSubmachine_Mach, sState_Submachine_Mach).
+
+        MachStart(mMach, sState_Submachine_Mach).
+
+    MainDecl(New(MachType("Mach"), NIL)).
+}

@@ -1,0 +1,98 @@
+[
+	parsers.DSL = '"Parser at ..\Tools\PCompiler\DSLParser.dll"',
+	modules.PData = '"PData at ..\Libraries\Formula\PData.4ml"',
+	parse_ActiveParser = "DSL"
+]
+
+model PingPong of PData
+{
+   ///////////////////////////////////////////////
+   ///////        Foreign Functions       ////////
+   ///////////////////////////////////////////////
+
+   ///////////////////////////////////////////////
+   ///////        Event Alphabet          ////////
+   ///////////////////////////////////////////////
+
+   ePing is EventDecl("Ping", AssertMaxInstances(1), ID).
+   ePong is EventDecl("Pong", AssertMaxInstances(1), NIL).
+   eSuccess is EventDecl("Success", AssertMaxInstances(1), NIL).   
+      
+   ///////////////////////////////////////////////
+   ///////    Declartions of Machines     ////////
+   ///////////////////////////////////////////////
+     
+   mPing is MachineDecl("PING", FALSE, NIL).
+   MachStart(mPing, sPing_Init).
+
+   mPong is MachineDecl("PONG", FALSE, NIL).
+   MachStart(mPong, sPong_WaitPing).
+
+    ///////////////////////////////////////////////
+   ///////         Var Declarations        ////////
+   ///////////////////////////////////////////////
+ 
+   VarDecl("pongId", mPing, ID, FALSE).      
+   VarDecl("x", mPing, BOOL, FALSE).
+
+   ///////////////////////////////////////////////
+   ///////  Ping States and Transitions   ////////
+   ///////////////////////////////////////////////
+     
+   sPing_Init is StateDecl(     
+       "Ping_Init",
+       mPing,
+       `{
+	       pongId = new PONG();
+		   raise (Events.Success);   	   
+       }`,
+       NIL).                   
+	   
+   sPing_SendPing is StateDecl(
+       "Ping_SendPing",
+	   mPing,
+	   `{
+	      x = SendPing();
+	      assert (x);
+	      raise (Events.Success);
+	   }`,
+	   NIL).
+   FunDecl("SendPing", mPing, NIL, BOOL, TRUE, `{ send (pongId, Events.Ping, THIS); return(true); }`).
+
+  sPing_WaitPong is StateDecl(
+      "Ping_WaitPong",
+	  mPing,
+	  `{
+	  }`,
+	  NIL). 
+
+   TransDecl(sPing_Init, eSuccess, sPing_SendPing, FALSE).
+   TransDecl(sPing_SendPing, eSuccess, sPing_WaitPong, FALSE).
+   TransDecl(sPing_WaitPong, ePong, sPing_SendPing, FALSE).
+                    
+   ///////////////////////////////////////////////
+   ///////  Pong States and Transitions   ////////
+   ///////////////////////////////////////////////
+     
+   sPong_WaitPing is StateDecl(
+       "Pong_WaitPing",
+	   mPong,
+	   `{
+	   }`,
+	   NIL).
+
+  sPong_SendPong is StateDecl(
+      "Pong_SendPong",
+	  mPong,
+	  `{
+	     SendPong(Arg.ID);
+		 raise (Events.Success);		 	  
+	  }`,
+	  NIL). 
+   FunDecl("SendPong", mPong, Params("to", ID, NIL), NIL, TRUE, `{ send (to, Events.Pong); }`).
+
+   TransDecl(sPong_WaitPing, ePing, sPong_SendPong, FALSE).
+   TransDecl(sPong_SendPong, eSuccess, sPong_WaitPing, FALSE).
+   
+   MainDecl(New(MachType("PING"), NIL)).
+}

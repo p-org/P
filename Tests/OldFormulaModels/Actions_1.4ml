@@ -1,0 +1,115 @@
+[
+	parsers.DSL = '"Parser at ..\Tools\PCompiler\DSLParser.dll"',
+	modules.PData = '"PData at ..\Libraries\Formula\PData.4ml"',
+	parse_ActiveParser = "DSL"
+]
+
+////
+///// Test actions with exit functions
+////
+  
+model Actions_1 of PData
+{
+   ///////////////////////////////////////////////
+   ///////        Foreign Functions       ////////
+   ///////////////////////////////////////////////
+
+   ///////////////////////////////////////////////
+   ///////        Event Alphabet          ////////
+   ///////////////////////////////////////////////
+eE1 is EventDecl("E1", AssertMaxInstances(1), NIL).
+eE2 is EventDecl("E2", AssertMaxInstances(1), NIL).
+eE3 is EventDecl("E3", AssertMaxInstances(1), NIL).
+eE4 is EventDecl("E4", AssertMaxInstances(1), NIL).
+eUnit is EventDecl("unit", AssertMaxInstances(1), NIL).
+
+   ///////////////////////////////////////////////
+   ///////    Declartions of Machines     ////////
+   ///////////////////////////////////////////////
+     
+   mReal is MachineDecl("Real", FALSE, NIL).
+   MachStart(mReal, sReal_Init).
+
+   mGhost is MachineDecl("Ghost", TRUE, NIL).
+   MachStart(mGhost, sGhost_Init).
+
+    ///////////////////////////////////////////////
+   ///////         Var Declarations        ////////
+   ///////////////////////////////////////////////
+ 
+   VarDecl("ghost", mReal, ID, TRUE).  
+   VarDecl("test", mReal, BOOL, FALSE).  
+   VarDecl("real", mGhost, ID, FALSE). 
+
+   ///////////////////////////////////////////////
+   ///////  Real States and Transitions   ////////
+   ///////////////////////////////////////////////
+     
+   sReal_Init is StateDecl(     
+       "Real_Init",
+       mReal,
+       `{
+	       ghost = new Ghost(real = this);  
+           send(ghost, Events.E1);	   
+       }`,
+       NIL).                   
+
+   mReal_Action is ActionDecl("Action_1", mReal, `{send(ghost, Events.E3);}`). //// Send inside an action
+
+   Install(sReal_Init, eE4, mReal_Action). 
+
+   ExitFun(sReal_Init, `{test = true;}`).  // A state has both Action and Exit function together
+
+   sReal_S1 is StateDecl(
+       "Real_S1",
+	   mReal,
+	   `{
+          assert(test == true);
+	      raise (Events.unit);
+	   }`,
+	   NIL).
+
+
+  sReal_S2 is StateDecl(
+       "Real_S2",
+	   mReal,
+	   `{
+            assert(false);
+	   }`,
+	   NIL). 
+
+   TransDecl(sReal_Init, eE2, sReal_S1, FALSE).
+   TransDecl(sReal_S1, eUnit, sReal_S2, FALSE).
+                    
+   ///////////////////////////////////////////////
+   ///////  ghost States and Transitions   ////////
+   ///////////////////////////////////////////////
+     
+   sGhost_Init is StateDecl(
+       "Ghost_Init",
+	   mGhost,
+	   `{
+	   }`,
+	   NIL).
+
+  sGhost_S1 is StateDecl(
+      "Ghost_S1",
+	  mGhost,
+	  `{
+         send (real, Events.E4);
+		 send (real, Events.E2);		 	  
+	  }`,
+	  NIL). 
+
+  sGhost_S2 is StateDecl(
+      "Ghost_S2",
+	  mGhost,
+	  `{
+		 		 	  
+	  }`,
+	  NIL). 
+   TransDecl(sGhost_Init, eE1, sGhost_S1, FALSE).
+   TransDecl(sGhost_S1, eE3, sGhost_S2, FALSE).
+   
+   MainDecl(New(MachType("Real"), NIL)).
+}

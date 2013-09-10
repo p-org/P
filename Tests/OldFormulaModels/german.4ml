@@ -1,0 +1,365 @@
+[
+	parsers.DSL = '"Parser at ..\Tools\PCompiler\DSLParser.dll"',
+	modules.PData = '"PData at ..\Libraries\Formula\PData.4ml"',
+	parse_ActiveParser = "DSL"
+]
+
+model GermanProtocol of PData {
+    /* Event declarations */
+    unit is EventDecl("unit", AssertMaxInstances(1), NIL).
+    req_share is EventDecl("req_share", AssertMaxInstances(3), ID).
+    req_excl is EventDecl("req_excl", AssertMaxInstances(3), ID).
+    need_invalidate is EventDecl("need_invalidate", AssertMaxInstances(1), NIL).
+    invalidate_ack is EventDecl("invalidate_ack", AssertMaxInstances(3), NIL).
+    grant is EventDecl("grant", AssertMaxInstances(1), NIL).
+
+    ask_share is EventDecl("ask_share", AssumeMaxInstances(1), NIL).
+    ask_excl is EventDecl("ask_excl", AssumeMaxInstances(1), NIL).
+    invalidate is EventDecl("invalidate", AssertMaxInstances(1), NIL).
+    grant_excl is EventDecl("grant_excl", AssertMaxInstances(1), NIL).
+    grant_share is EventDecl("grant_share", AssertMaxInstances(1), NIL).
+    normal is EventDecl("normal", AssertMaxInstances(1), NIL).
+    wait is EventDecl("wait", AssertMaxInstances(1), NIL).
+
+    invalidate_sharers is EventDecl("invalidate_sharers", AssertMaxInstances(1), INT).
+    sharer_id is EventDecl("sharer_id", AssertMaxInstances(3), ID).
+
+    /* Host machine */    
+    Host is MachineDecl("Host", FALSE, NIL).
+    num_clients is VarDecl("num_clients", Host, INT, FALSE).
+    ex_granted is VarDecl("ex_granted", Host, BOOL, FALSE).
+    cur_cli is VarDecl("cur_cli", Host, ID, FALSE).
+    cur_cli1 is VarDecl("cur_cli1", Host, ID, FALSE).
+    cur_cli2 is VarDecl("cur_cli2", Host, ID, FALSE).
+    cur_cli3 is VarDecl("cur_cli3", Host, ID, FALSE).
+    cur_cpu is VarDecl("cur_cpu", Host, ID, TRUE).
+    is_cur_req_exc is VarDecl("is_cur_req_exc", Host, BOOL, FALSE).
+    sharer_list is VarDecl("sharer_list", Host, ID, FALSE).
+    sharer_list_size is VarDecl("sharer_list_size", Host, INT, FALSE).
+    
+    es1_host is EventSetDecl("es1_Host", Host).
+    InEventSet(es1_host, req_share).
+    InEventSet(es1_host, req_excl).
+    es2_host is EventSetDecl("es2_Host", Host).
+    InEventSet(es2_host, invalidate_ack).
+
+    MachStart(Host, initHost).
+
+    initHost is StateDecl(
+    	 "init",
+	 Host,
+	 `{
+	     
+		cur_cli1 = new Client(host = THIS, pending = false);
+        cur_cli2 = new Client(host = THIS, pending = false);
+        cur_cli3 = new Client(host = THIS, pending = false);
+		cur_cpu = new CPU(cache1 = cur_cli1, cache2 = cur_cli2, cache3 = cur_cli3);
+	    sharer_list = new SharerList();
+	    sharer_list_size = 0;
+	    raise (Events.unit);
+	 }`,
+	 NIL).
+    TransDecl(initHost, unit, receive, FALSE).
+
+    receive is StateDecl(
+    	 "receive",
+	 Host,
+	 `{}`,
+	 es2_host).
+    TransDecl(receive, req_share, req_sh, FALSE).
+    TransDecl(receive, req_excl, req_ex, FALSE).
+
+    req_sh is StateDecl(
+        "req_sh",
+	Host,
+	`{
+      	    cur_cli = Arg.ID;
+      	    is_cur_req_exc = false;
+	    raise (Events.unit);
+	 }`,
+	 NIL).
+    TransDecl(req_sh, unit, process, FALSE).
+
+    req_ex is StateDecl(
+        "req_ex",
+	Host,
+	`{
+	    cur_cli = Arg.ID;
+	    is_cur_req_exc = true;
+	    raise (Events.unit);
+	 }`,
+	 NIL).
+    TransDecl(req_ex, unit, process, FALSE).
+
+    process is StateDecl(
+        "process",
+	Host,
+	`{
+      	     if (is_cur_req_exc || ex_granted)
+                 raise (Events.need_invalidate);
+      	     else
+                 raise (Events.grant);
+	}`,
+	NIL).
+    TransDecl(process, need_invalidate, inv, FALSE).
+    TransDecl(process, grant, grantAccess, FALSE).
+
+    inv is StateDecl(
+    	"inv", 
+	Host,
+	`{
+	    send(sharer_list, Events.invalidate_sharers, sharer_list_size);
+	}`,
+	es1_host).
+    TransDecl(inv, invalidate_ack, inv_ack, FALSE).
+
+    inv_ack is StateDecl(
+    	"inv_ack", 
+	Host,
+	`{
+      	      sharer_list_size = sharer_list_size - 1;
+      	      ex_granted = false;
+      	      if (sharer_list_size == 0)
+                  raise (Events.grant);
+         }`,
+	 es1_host).
+    TransDecl(inv_ack, invalidate_ack, inv_ack, FALSE).
+    TransDecl(inv_ack, grant, grantAccess, FALSE).
+
+    grantAccess is StateDecl(
+        "grant",
+	Host,
+	`{
+      	    if (is_cur_req_exc) {
+                ex_granted = true;
+        	send(cur_cli, Events.grant_excl);
+      	    } else {
+                send(cur_cli, Events.grant_share);
+      	    }
+	    sharer_list_size = sharer_list_size + 1;
+      	    send(sharer_list, Events.sharer_id, cur_cli);
+	    raise (Events.unit);
+	  }`,
+	  NIL
+    ).
+    TransDecl(grantAccess, unit, receive, FALSE).
+
+    /* SharerList machine */
+    SharerList is MachineDecl("SharerList", FALSE, NIL).
+    counter is VarDecl("counter", SharerList, INT, FALSE).
+    es_sharerlist is EventSetDecl("es_SharerList", SharerList).
+    InEventSet(es_sharerlist, sharer_id).
+
+    MachStart(SharerList, initSharerList).
+
+    initSharerList is StateDecl(
+        "init",
+	SharerList,
+        `{
+        }`,
+	es_sharerlist
+    ).
+    TransDecl(initSharerList, invalidate_sharers, start, FALSE).
+    start is StateDecl(
+        "start",
+	SharerList,
+	`{
+	    counter = Arg.INT;
+	}`,
+	NIL
+    ).
+    TransDecl(start, sharer_id, iterate, FALSE).
+    iterate is StateDecl(
+        "iterate",
+	SharerList,
+	`{
+	    send(Arg.ID, Events.invalidate);
+	    counter = counter - 1;
+	    if (counter == 0)
+	       raise (Events.unit);
+	}`,
+	NIL
+    ).
+    TransDecl(iterate, unit, initSharerList, FALSE).
+    TransDecl(iterate, sharer_id, iterate, FALSE).
+
+    /* Client machine */
+    Client is MachineDecl("Client", FALSE, NIL).
+    host is VarDecl("host", Client, ID, FALSE).
+    pending is VarDecl("pending", Client, BOOL, FALSE).
+
+    es_client is EventSetDecl("ES_Client", Client).
+    InEventSet(es_client, ask_share).
+    InEventSet(es_client, ask_excl).
+
+    es_client2 is EventSetDecl("ES_Client2", Client).
+    InEventSet(es_client2, ask_excl).
+
+    MachStart(Client, invalid).
+
+    invalid is StateDecl(
+        "invalid",
+	Client,
+	`{	      
+	}`,
+	NIL
+    ).
+
+    TransDecl(invalid, ask_share, asked_sh_state, FALSE).
+    TransDecl(invalid, ask_excl, asked_ex_state, FALSE).
+    TransDecl(invalid, invalidate, invalidating, FALSE).
+    TransDecl(invalid, grant_excl, exclusive, FALSE).
+    TransDecl(invalid, grant_share, sharing, FALSE).
+
+    asked_sh_state is StateDecl(
+        "asked_sh",
+        Client,
+	`{
+	    send(host, Events.req_share, THIS);
+	    pending = true;
+	    raise (Events.unit);
+	 }`,
+	NIL
+    ).
+
+    TransDecl(asked_sh_state, unit, invalid_wait, FALSE).
+
+    asked_ex_state is StateDecl(
+        "asked_ex",
+	Client,
+	`{
+	    send(host, Events.req_excl, THIS);
+	    pending = true;
+	    raise (Events.unit);
+	 }`,
+	NIL
+    ).
+
+    TransDecl(asked_ex_state, unit, invalid_wait, FALSE).
+
+    invalid_wait is StateDecl(
+        "invalid_wait",
+        Client,
+	`{
+	}`,
+	es_client
+    ).
+
+    TransDecl(invalid_wait, invalidate, invalidating, FALSE).
+    TransDecl(invalid_wait, grant_excl, exclusive, FALSE).
+    TransDecl(invalid_wait, grant_share, sharing, FALSE).
+
+    asked_ex2 is StateDecl(
+        "asked_ex2",
+	Client,
+	`{
+	    send(host, Events.req_excl, THIS);
+	    pending = true;
+	    raise (Events.unit);
+	 }`,
+	NIL
+    ).
+
+    TransDecl(asked_ex2, unit, sharing_wait, FALSE).
+
+    sharing is StateDecl(
+        "sharing",
+	Client,
+	`{
+	    pending = false;
+	 }`,
+	NIL
+    ).
+
+    TransDecl(sharing, invalidate, invalidating, FALSE).
+    TransDecl(sharing, grant_share, sharing, FALSE).
+    TransDecl(sharing, grant_excl, exclusive, FALSE).
+    TransDecl(sharing, ask_share, sharing, FALSE).
+    TransDecl(sharing, ask_excl, asked_ex2, FALSE).
+
+    sharing_wait is StateDecl(
+        "sharing_wait",
+	Client,
+	`{
+	}`,
+	es_client
+    ).
+
+    TransDecl(sharing_wait, invalidate, invalidating, FALSE).
+    TransDecl(sharing_wait, grant_share, sharing_wait, FALSE).
+    TransDecl(sharing_wait, grant_excl, exclusive, FALSE).
+
+    exclusive is StateDecl(
+        "exclusive",
+	Client,
+	`{
+	    pending = false;
+	 }`,
+	NIL
+    ).
+
+    TransDecl(exclusive, invalidate, invalidating, FALSE).
+    TransDecl(exclusive, grant_share, sharing, FALSE).
+    TransDecl(exclusive, grant_excl, exclusive, FALSE).
+    TransDecl(exclusive, ask_share, exclusive, FALSE).
+    TransDecl(exclusive, ask_excl, exclusive, FALSE).
+
+    invalidating is StateDecl(
+        "invalidating",
+	Client,
+	`{
+      	    send(host, Events.invalidate_ack);
+      	    if (pending) {
+                raise (Events.wait);
+      	    } else {
+                raise (Events.normal);
+      	    }
+	}`,
+	NIL
+    ).
+
+    TransDecl(invalidating, wait, invalid_wait, FALSE).
+    TransDecl(invalidating, normal, invalid, FALSE).
+
+    /* CPU machine */
+    CPU is MachineDecl("CPU", TRUE, NIL).
+    cache1 is VarDecl("cache1", CPU, ID, FALSE).
+    cache2 is VarDecl("cache2", CPU, ID, FALSE).
+    cache3 is VarDecl("cache3", CPU, ID, FALSE).
+    MachStart(CPU, make_req).
+
+    make_req is StateDecl(
+        "make_req",
+	CPU,
+	`{
+        if (NONDET)
+        {
+	        if (NONDET) {
+	            send(cache1, Events.ask_share);
+	        } else {
+	            send(cache1, Events.ask_excl);
+	        }
+        } else if(NONDET) {
+            if (NONDET) {
+	            send(cache2, Events.ask_share);
+	        } else {
+	            send(cache2, Events.ask_excl);
+	        }
+        } else {
+            if (NONDET) {
+	            send(cache3, Events.ask_share);
+	        } else {
+	            send(cache3, Events.ask_excl);
+	        }
+        }    
+    
+	    raise (Events.unit);
+	}`,
+	NIL
+    ).
+
+    TransDecl(make_req, unit, make_req, FALSE).
+
+    /* Main machine */
+    MainDecl(New(MachType("Host"), NamedExprs("num_clients", 3, NIL))).
+}

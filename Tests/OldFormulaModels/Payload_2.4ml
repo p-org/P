@@ -1,0 +1,147 @@
+[
+	parsers.DSL = '"Parser at ..\Tools\PCompiler\DSLParser.dll"',
+	modules.PData = '"PData at ..\Libraries\Formula\PData.4ml"',
+	parse_ActiveParser = "DSL"
+]
+
+
+//////
+// Description : Payload_2
+// two machines ghost and real.
+// Payload with Raise and Payload with actions
+// raise leads to a pop
+// payload of type ID
+/////  
+model Payload_2 of PData
+{
+   ///////////////////////////////////////////////
+   ///////        Foreign Functions       ////////
+   ///////////////////////////////////////////////
+
+   ///////////////////////////////////////////////
+   ///////        Event Alphabet          ////////
+   ///////////////////////////////////////////////
+eE1 is EventDecl("E1", AssertMaxInstances(1), INT).
+eE2 is EventDecl("E2", AssertMaxInstances(1), BOOL).
+eE3 is EventDecl("E3", AssertMaxInstances(1), NIL).
+eE4 is EventDecl("E4", AssertMaxInstances(1), ID).
+eUnit is EventDecl("unit", AssertMaxInstances(1), NIL).
+
+   ///////////////////////////////////////////////
+   ///////    Declartions of Machines     ////////
+   ///////////////////////////////////////////////
+     
+   mReal is MachineDecl("Real", FALSE, NIL).
+   MachStart(mReal, sReal_Init).
+
+   mGhost is MachineDecl("Ghost", TRUE, NIL).
+   MachStart(mGhost, sGhost_Init).
+
+   mTest is MachineDecl("Test", FALSE, NIL).
+   MachStart(mTest, sTest_Init).
+
+    ///////////////////////////////////////////////
+   ///////         Var Declarations        ////////
+   ///////////////////////////////////////////////
+ 
+   VarDecl("ghost", mReal, ID, TRUE). 
+   VarDecl("testMachine", mReal, ID, FALSE).  
+   VarDecl("test", mReal, BOOL, TRUE).  
+   VarDecl("real", mGhost, ID, FALSE). 
+
+   ///////////////////////////////////////////////
+   ///////  Real States and Transitions   ////////
+   ///////////////////////////////////////////////
+     
+   sReal_Init is StateDecl(     
+       "Real_Init",
+       mReal,
+       `{
+	       ghost = new Ghost(real = this);  
+           call(States.Real_S1);	   /// Call statement in entry function
+           
+       }`,
+       NIL).                   
+
+   mReal_Action is ActionDecl("Action_2", mReal, `{ assert(Arg.BOOL == false); send(ghost, Events.E3);}`). //// Send inside an action
+
+   Install(sReal_Init, eE2, mReal_Action). 
+
+   ExitFun(sReal_Init, `{test = true;}`).  
+
+   sReal_S1 is StateDecl(
+       "Real_S1",
+	   mReal,
+	   `{
+          send(ghost, Events.E1, 101); 
+	      
+	   }`,
+	   NIL).
+
+
+  sReal_S2 is StateDecl(
+       "Real_S2",
+	   mReal,
+	   `{
+           testMachine = Arg.ID;
+           send(testMachine, Events.E3);
+		 //  assert(false);
+	   }`,
+	   NIL). 
+
+   TransDecl(sReal_S1, eE4, sReal_S2, FALSE).             
+   ///////////////////////////////////////////////
+   ///////  ghost States and Transitions   ////////
+   ///////////////////////////////////////////////
+   VarDecl("test", mGhost, ID, FALSE).
+   sGhost_Init is StateDecl(
+       "Ghost_Init",
+	   mGhost,
+	   `{
+	   }`,
+	   NIL).
+
+  sGhost_S1 is StateDecl(
+      "Ghost_S1",
+	  mGhost,
+	  `{
+         assert(Arg.INT == 101);
+		 send (real, Events.E2, false);		 	  
+	  }`,
+	  NIL). 
+
+  sGhost_S2 is StateDecl(
+      "Ghost_S2",
+	  mGhost,
+	  `{
+         test = new Test();
+		 send (real, Events.E4, test);	 	  
+	  }`,
+	  NIL). 
+   TransDecl(sGhost_Init, eE1, sGhost_S1, FALSE).
+   TransDecl(sGhost_S1, eE3, sGhost_S2, FALSE).
+   
+    ///////////////////////////////////////////////
+   ///////  test Machine States and Transitions   ////////
+   ///////////////////////////////////////////////
+  
+  sTest_Init is StateDecl(
+       "Test_Init",
+	   mTest,
+	   `{
+	   }`,
+	   NIL).
+
+  sTest_S1 is StateDecl(
+      "Test_S1",
+	  mTest,
+	  `{
+         assert(false);
+		 	 	  
+	  }`,
+	  NIL). 
+
+   TransDecl(sTest_Init, eE3, sTest_S1, FALSE).
+
+   MainDecl(New(MachType("Real"), NIL)).
+}

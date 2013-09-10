@@ -1,0 +1,168 @@
+[
+	parsers.DSL = '"Parser at ..\Tools\PCompiler\DSLParser.dll"',
+	modules.PData = '"PData at ..\Libraries\Formula\PData.4ml"',
+	parse_ActiveParser = "DSL"
+]
+
+model PingPong of PData
+{
+   ///////////////////////////////////////////////
+   ///////        Foreign Functions       ////////
+   ///////////////////////////////////////////////
+
+   ///////////////////////////////////////////////
+   ///////        Event Alphabet          ////////
+   ///////////////////////////////////////////////
+ePing is EventDecl("Ping", AssertMaxInstances(1), ID).
+ePing1 is EventDecl("Ping1", AssertMaxInstances(1), ID).
+ePing2 is EventDecl("Ping2", AssertMaxInstances(1), ID).
+ePing3 is EventDecl("Ping3", AssertMaxInstances(1), ID).
+ePing4 is EventDecl("Ping4", AssertMaxInstances(1), ID).
+ePing5 is EventDecl("Ping5", AssertMaxInstances(1), ID).
+ePing6 is EventDecl("Ping6", AssertMaxInstances(1), ID).
+ePing7 is EventDecl("Ping7", AssertMaxInstances(1), ID).
+ePing8 is EventDecl("Ping8", AssertMaxInstances(1), ID).
+ePing9 is EventDecl("Ping9", AssertMaxInstances(1), ID).
+ePing10 is EventDecl("Ping10", AssertMaxInstances(1), ID).
+ePing11 is EventDecl("Ping11", AssertMaxInstances(1), ID).
+ePing12 is EventDecl("Ping12", AssertMaxInstances(1), ID).
+ePing13 is EventDecl("Ping13", AssertMaxInstances(1), ID).
+ePing14 is EventDecl("Ping14", AssertMaxInstances(1), ID).
+ePing15 is EventDecl("Ping15", AssertMaxInstances(1), ID).
+ePing16 is EventDecl("Ping16", AssertMaxInstances(1), ID).
+ePing17 is EventDecl("Ping17", AssertMaxInstances(1), ID).
+ePing18 is EventDecl("Ping18", AssertMaxInstances(1), ID).
+ePing19 is EventDecl("Ping19", AssertMaxInstances(1), ID).
+ePing20 is EventDecl("Ping20", AssertMaxInstances(1), ID).
+ePing21 is EventDecl("Ping21", AssertMaxInstances(1), ID).
+ePing22 is EventDecl("Ping22", AssertMaxInstances(1), ID).
+ePing23 is EventDecl("Ping23", AssertMaxInstances(1), ID).
+ePing24 is EventDecl("Ping24", AssertMaxInstances(1), ID).
+ePing25 is EventDecl("Ping25", AssertMaxInstances(1), ID).
+ePing26 is EventDecl("Ping26", AssertMaxInstances(1), ID).
+ePing27 is EventDecl("Ping27", AssertMaxInstances(1), ID).
+ePing28 is EventDecl("Ping28", AssertMaxInstances(1), ID).
+ePing29 is EventDecl("Ping29", AssertMaxInstances(1), ID).
+ePing30 is EventDecl("Ping30", AssertMaxInstances(1), ID).
+ePing31 is EventDecl("Ping31", AssertMaxInstances(1), ID).
+ePing32 is EventDecl("Ping32", AssertMaxInstances(1), ID).
+ePing33 is EventDecl("Ping33", AssertMaxInstances(1), ID).
+ePing34 is EventDecl("Ping34", AssertMaxInstances(1), ID).
+ePing35 is EventDecl("Ping35", AssertMaxInstances(1), ID).
+ePing36 is EventDecl("Ping36", AssertMaxInstances(1), ID).
+
+   ePong is EventDecl("Pong", AssertMaxInstances(1), NIL).
+   eSuccess is EventDecl("Success", AssertMaxInstances(1), NIL).   
+      
+es1 is EventSetDecl("E1", mPing).
+InEventSet(es1, ePing1).
+InEventSet(es1, ePing2).
+InEventSet(es1, ePing3).
+InEventSet(es1, ePing4).
+InEventSet(es1, ePing5).
+InEventSet(es1, ePing6).
+InEventSet(es1, ePing7).
+InEventSet(es1, ePing8).
+InEventSet(es1, ePing9).
+InEventSet(es1, ePing10).
+InEventSet(es1, ePing11).
+InEventSet(es1, ePing12).
+InEventSet(es1, ePing13).
+InEventSet(es1, ePing14).
+InEventSet(es1, ePing15).
+InEventSet(es1, ePing16).
+InEventSet(es1, ePing17).
+InEventSet(es1, ePing18).
+InEventSet(es1, ePing19).
+InEventSet(es1, ePing20).
+InEventSet(es1, ePing21).
+InEventSet(es1, ePing22).
+InEventSet(es1, ePing23).
+InEventSet(es1, ePing24).
+InEventSet(es1, ePing25).
+InEventSet(es1, ePing26).
+InEventSet(es1, ePing27).
+InEventSet(es1, ePing28).
+InEventSet(es1, ePing29).
+InEventSet(es1, ePing30).
+InEventSet(es1, ePing31).
+InEventSet(es1, ePing32).
+InEventSet(es1, ePing33).
+InEventSet(es1, ePing34).
+
+
+   ///////////////////////////////////////////////
+   ///////    Declartions of Machines     ////////
+   ///////////////////////////////////////////////
+     
+   mPing is MachineDecl("PING", FALSE, NIL).
+   MachStart(mPing, sPing_Init).
+
+   mPong is MachineDecl("PONG", FALSE, NIL).
+   MachStart(mPong, sPong_WaitPing).
+
+    ///////////////////////////////////////////////
+   ///////         Var Declarations        ////////
+   ///////////////////////////////////////////////
+ 
+   VarDecl("pongId", mPing, ID, FALSE).      
+   
+   ///////////////////////////////////////////////
+   ///////  Ping States and Transitions   ////////
+   ///////////////////////////////////////////////
+     
+   sPing_Init is StateDecl(     
+       "Ping_Init",
+       mPing,
+       `{
+	       pongId = new PONG();
+		   raise (Events.Success);   	   
+       }`,
+       NIL).                   
+	   
+   sPing_SendPing is StateDecl(
+       "Ping_SendPing",
+	   mPing,
+	   `{
+	      send (pongId, Events.Ping, THIS);
+	      raise (Events.Success);
+	   }`,
+	   NIL).
+
+  sPing_WaitPong is StateDecl(
+      "Ping_WaitPong",
+	  mPing,
+	  `{
+	  }`,
+	  es1). 
+
+   TransDecl(sPing_Init, eSuccess, sPing_SendPing, FALSE).
+   TransDecl(sPing_SendPing, eSuccess, sPing_WaitPong, FALSE).
+   TransDecl(sPing_WaitPong, ePong, sPing_SendPing, FALSE).
+                    
+   ///////////////////////////////////////////////
+   ///////  Pong States and Transitions   ////////
+   ///////////////////////////////////////////////
+     
+   sPong_WaitPing is StateDecl(
+       "Pong_WaitPing",
+	   mPong,
+	   `{
+	   }`,
+	   NIL).
+
+  sPong_SendPong is StateDecl(
+      "Pong_SendPong",
+	  mPong,
+	  `{
+		 send (Arg.ID, Events.Ping1, THIS);
+		 send (Arg.ID, Events.Pong);
+		 raise (Events.Success);		 	  
+	  }`,
+	  NIL). 
+
+   TransDecl(sPong_WaitPing, ePing, sPong_SendPong, FALSE).
+   TransDecl(sPong_SendPong, eSuccess, sPong_WaitPing, FALSE).
+   
+   MainDecl(New(MachType("PING"), NIL)).
+}

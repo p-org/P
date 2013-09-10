@@ -10,6 +10,7 @@ import re;
 import argparse;
 import generate_project;
 from common import *
+from subprocess import *
 
 parser = argparse.ArgumentParser(description='Execute the specified P Tests');
 parser.add_argument("out", type=str, nargs=1, help="output dir");
@@ -30,7 +31,7 @@ pc=join(baseDir, "Src", "Compilers", "PCompiler", "bin", "Debug", "PCompiler");
 zingRT=join(baseDir, "Runtime", "Zing", "SMRuntime.zing");
 cInclude=join(baseDir, "Runtime", "Include");
 cLib=join(baseDir, "Runtime", "Libraries");
-pData=join(baseDir, "Src", "Formula", "Domains", "PData.4ml");
+pData=relpath(join(baseDir, "Src", "Formula", "Domains", "PData.4ml"), out);
 
 stateCoverage=join(baseDir, "Ext", "Tools", "Zinger", "StateCoveragePlugin.dll");
 sched=join(baseDir, "Ext", "Tools", "Zinger", "RandomDelayingScheduler.Dll")
@@ -76,8 +77,8 @@ for f in elaborateFiles(args.files):
     print(f)
     pFile = join(out, name + ".p")
     fmlFile = join(out, name + ".4ml")
-    zingFile = join(out, "output.zing")
-    zingDll = join(out, name + ".dll")
+    zingFile = "output.zing"
+    zingDll = name + ".dll"
     zcOut = join(out, "zc.out")
     trace = join(out, "trace.txt")
     zingerOut = join(out, "zinger.out")
@@ -105,14 +106,21 @@ for f in elaborateFiles(args.files):
         die("PCompiler failed.")
 
     print("Running zc");
-    ret = os.system(fmt("{zc} {zingFile} {zingRT} /out:{zingDll} > {zcOut}"));
+    shutil.copy(zingRT, join(out, "SMRuntime.zing"));
+    ret = check_call([zc, zingFile, "SMRuntime.zing", '/out:' + zingDll], \
+        cwd=out);
+    os.remove(join(out, "SMRuntime.zing"));
+
 
     if ret != 0:
         die("Compiling of Zing model failed:\n" + cat(zcOut))
 
     print("Running Zinger")
-    ret = os.system(fmt("{zinger} -s -eo -p -delayc:100 -et:{trace} " +\
-       "-plugin:{stateCoverage} -sched:{sched} {zingDll} > {zingerOut}"))
+    shutil.copy(sched, join(out, 'sched.dll'));
+    shutil.copy(stateCoverage, join(out, 'stateCov.dll'));
+    ret = check_call([zinger, '-s', '-eo', '-p', '-delayc:100', \
+        '-et:trace.txt', '-plugin:stateCov.dll', '-sched:sched.dll', zingDll], \
+        cwd=out);
 
     if ret != 0 and not args.fail:
     	die("Zingering of Zing model failed:\n" + cat(zingerOut))

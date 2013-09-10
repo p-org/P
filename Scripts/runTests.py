@@ -111,7 +111,7 @@ for f in elaborateFiles(args.files):
         die("Compiling of Zing model failed:\n" + cat(zcOut))
 
     print("Running Zinger")
-    ret = os.system(fmt("{zinger} -s -eo -p:16 -delayc:100 -et:{trace} " +\
+    ret = os.system(fmt("{zinger} -s -eo -p -delayc:100 -et:{trace} " +\
        "-plugin:{stateCoverage} -sched:{sched} {zingDll} > {zingerOut}"))
 
     if ret != 0 and not args.fail:

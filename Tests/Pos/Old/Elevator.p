@@ -128,12 +128,10 @@ machine Elevator {
 
 main ghost machine User {
     var ElevatorV : mid;
-    ghost var counter : int;
 
     start state Init {
         entry {
             ElevatorV = new Elevator();
-            counter = 0;
             raise(eUnit); 
         }
 
@@ -147,10 +145,7 @@ main ghost machine User {
             } else if (*) {
                send(ElevatorV,eCloseDoor);
             }
-            if (counter < 3) {
-                counter = counter + 1;
-                raise(eUnit);
-            }
+            raise(eUnit);
         }
 
         on eUnit goto Loop;

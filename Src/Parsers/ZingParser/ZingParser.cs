@@ -13,6 +13,8 @@
     using Microsoft.Formula.API.Plugins;
     using Microsoft.Formula.Compiler;
 
+    using DemoCompiler;
+
     public class Parser : IQuoteParser
     {
         public string UnquotePrefix
@@ -80,7 +82,10 @@
                     enumerator.MoveNext();
                     FuncTerm decl = (FuncTerm)enumerator.Current;
                     Id declId = (Id)decl.Function;
-                    if (declId.Name == "EnumDecl")
+                    if (declId.Name == ZingData.Con_ArrayDecl.Node.Name)
+                    {
+                        RenderArrayDecl(decl, writer);
+                    } else if (declId.Name == "EnumDecl")
                     {
                         RenderEnumDecl(decl, writer);
                     }
@@ -96,6 +101,22 @@
                     node = enumerator.Current;
                 }
             }
+        }
+
+        void RenderArrayDecl(FuncTerm term, TextWriter writer)
+        {
+            string arrName = null;
+            Node innerT = null;
+            using (var it = term.Args.GetEnumerator())
+            {
+                it.MoveNext();
+                arrName = ((Cnst)it.Current).GetStringValue();
+                it.MoveNext();
+                innerT = it.Current;
+                Debug.Assert(!it.MoveNext());
+            }
+
+            writer.Write("array " + arrName + "[] " + TypeName(innerT) + ";\n\n");
         }
 
         void RenderEnumDecl(FuncTerm term, TextWriter writer)

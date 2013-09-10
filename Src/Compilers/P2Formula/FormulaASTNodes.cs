@@ -55,6 +55,10 @@ namespace PParser
         public static AST<Id> Return_Iden = Factory.Instance.MkId("Return");
         public static AST<Id> LEAVE_Iden = Factory.Instance.MkId("LEAVE");
         public static AST<Id> DELETE_Iden = Factory.Instance.MkId("DELETE");
+        public static AST<Id> DataOp_Iden = Factory.Instance.MkId("DataOp");
+
+        public static AST<Id> Insert_Iden = Factory.Instance.MkId("INSERT");
+        public static AST<Id> Remove_Iden = Factory.Instance.MkId("REMOVE");
 
         //Types
         #region Types
@@ -67,6 +71,7 @@ namespace PParser
         public static AST<Id> TypeField = Factory.Instance.MkId("TypeField");
         public static AST<Id> TypeNamedTuple = Factory.Instance.MkId("TypeNamedTuple");
         public static AST<Id> TypeTuple = Factory.Instance.MkId("TypeTuple");
+        public static AST<Id> TypeSeq = Factory.Instance.MkId("TypeSeq");
         #endregion
 
         // Expressions

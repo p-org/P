@@ -63,6 +63,19 @@ namespace DemoCompiler
         public static readonly PEventType Event;
         public static readonly PStateType State;
 
+        protected static readonly int NilHash = 2;
+        protected static readonly int IntHash = 3;
+        protected static readonly int BoolHash = 5;
+        protected static readonly int IdHash = 7;
+        protected static readonly int EventHash = 11;
+        protected static readonly int StateHash = 13;
+
+        protected static readonly int AnyHash = 17;
+
+        protected static readonly int TupleHash = 19;
+        protected static readonly int NamedTupleHash = 23;
+        protected static readonly int SeqHash = 29;
+
         public static PType computeLUB(IEnumerable<PType> ts)
         {
             if (ts.Count() == 0)
@@ -101,17 +114,17 @@ namespace DemoCompiler
         public override int GetHashCode()
         {
             if (this is PNilType)
-                return 2;
+                return PType.NilHash;
             if (this is PIntType)
-                return 3;
+                return PType.IntHash;
             if (this is PBoolType)
-                return 5;
+                return PType.BoolHash;
             if (this is PIdType)
-                return 7;
+                return PType.IdHash;
             if (this is PEventType)
-                return 11;
+                return PType.EventHash;
             if (this is PStateType)
-                return 13;
+                return PType.StateHash;
 
             throw new NotImplementedException("Unknown Primitive Type " + this);
         }
@@ -222,7 +235,7 @@ namespace DemoCompiler
 
         public override int GetHashCode()
         {
-            return els.Aggregate(1, (c, e) => c * e.GetHashCode());
+            return PType.TupleHash * els.Aggregate(1, (c, e) => c * e.GetHashCode());
         }
 
         public IEnumerable<PType> elements { get { return els; } }
@@ -291,7 +304,7 @@ namespace DemoCompiler
 
         public override int GetHashCode()
         {
-            return els.Aggregate(1, (c, e) => c * e.Item1.GetHashCode() * e.Item2.GetHashCode()); // TODO: Is this hashing good?
+            return PType.NamedTupleHash * els.Aggregate(1, (c, e) => c * e.Item1.GetHashCode() * e.Item2.GetHashCode()); // TODO: Is this hashing good?
         }
 
         public IEnumerable<Tuple<string, PType>> elements { get { return els; } }
@@ -347,7 +360,7 @@ namespace DemoCompiler
 
         public override int GetHashCode()
         {
-            return 17;
+            return PType.AnyHash;
         }
 
         public override string ToString()
@@ -364,5 +377,58 @@ namespace DemoCompiler
         {
             return PType.Any;
         }       
+    }
+
+    class PSeqType : PCompoundType
+    {
+        PType innerT;
+        public PSeqType(PType inner)
+        {
+            this.innerT = inner;
+        }
+
+        public override bool Equals(object obj)
+        {
+            PSeqType other = obj as PSeqType;
+            if (((object)other) == null)
+                return false;
+
+            return this.innerT.Equals(other.innerT);
+        }
+
+        public override int GetHashCode()
+        {
+            return PType.SeqHash * innerT.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return "seq[" + innerT.ToString() + "]";
+        }
+
+        public override bool isSubtypeOf(PType t)
+        {
+            if (t is PAnyType || this.Equals(t))
+                return true;
+
+            if (!(t is PSeqType))
+                return false;
+
+            return this.innerT.isSubtypeOf((t as PSeqType).innerT);
+        }
+
+        public override PType LUB(PType other)
+        {
+            if (!(other is PSeqType))
+            {
+                return PType.Any;
+            }
+            else
+            {
+                return new PSeqType(this.innerT.LUB((other as PSeqType).innerT));
+            }
+        }
+
+        public PType T { get { return innerT; } }
     }
 }

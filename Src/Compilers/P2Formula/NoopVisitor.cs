@@ -22,6 +22,7 @@ namespace PParser
         public override T visit(TypeField s) { return default(T); }
         public override T visit(TypeNamedTuple s){ return default(T); }
         public override T visit(TypeTuple s) { return default(T); }
+        public override T visit(TypeSeq s) { return default(T); }
         public override T visit(TypeAny s) { return default(T); }
         // P Declarations
         public override T visit(Program s){ return default(T); }
@@ -56,6 +57,7 @@ namespace PParser
         public override T visit(DSLLeave s){ return default(T); }
         public override T visit(DSLSkip s){ return default(T); }
         public override T visit(DSLDelete s) { return default(T); }
+        public override T visit(DSLMutation s) { return default(T); }
         // DSL Expressions
         public override T visit(DSLId e){ return default(T); }
         public override T visit(DSLMember e) { return default(T); }
@@ -71,6 +73,7 @@ namespace PParser
         public override T visit(DSLKWArgs e){ return default(T); }
         public override T visit(DSLNew e){ return default(T); }
         public override T visit(DSLAttribute e) { return default(T); }
+        public override T visit(DSLSizeof e) { return default(T); }
 
         // Type Declarations
         public override T visit_pre(TypeInt s) { return default(T); }
@@ -80,6 +83,7 @@ namespace PParser
         public override T visit_pre(TypeField s) { return default(T); }
         public override T visit_pre(TypeNamedTuple s) { return default(T); }
         public override T visit_pre(TypeTuple s) { return default(T); }
+        public override T visit_pre(TypeSeq s) { return default(T); }
         public override T visit_pre(TypeAny s) { return default(T); }
         // P Declarations
         public override T visit_pre(Program s) { return default(T); }
@@ -115,6 +119,7 @@ namespace PParser
         public override T visit_pre(DSLLeave s) { return default(T); }
         public override T visit_pre(DSLSkip s) { return default(T); }
         public override T visit_pre(DSLDelete s) { return default(T); }
+        public override T visit_pre(DSLMutation s) { return default(T); }
         // DSL Expressions
         public override T visit_pre(DSLId e) { return default(T); }
         public override T visit_pre(DSLMember e) { return default(T); }
@@ -130,5 +135,6 @@ namespace PParser
         public override T visit_pre(DSLKWArgs e) { return default(T); }
         public override T visit_pre(DSLNew e) { return default(T); }
         public override T visit_pre(DSLAttribute e) { return default(T); }
+        public override T visit_pre(DSLSizeof e) { return default(T); }
     }
 }

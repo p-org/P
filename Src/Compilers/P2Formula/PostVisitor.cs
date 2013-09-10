@@ -20,6 +20,7 @@ namespace PParser
         public override T visit_pre(TypeEventID s) { return default(T); }
         public override T visit_pre(TypeField s) { return default(T); }
         public override T visit_pre(TypeTuple s) { return default(T); }
+        public override T visit_pre(TypeSeq s) { return default(T); }
         public override T visit_pre(TypeNamedTuple s) { return default(T); }
         public override T visit_pre(TypeAny s) { return default(T); }
         // P Declarations
@@ -55,6 +56,7 @@ namespace PParser
         public override T visit_pre(DSLLeave s) { return default(T); }
         public override T visit_pre(DSLSkip s) { return default(T); }
         public override T visit_pre(DSLDelete s) { return default(T); }
+        public override T visit_pre(DSLMutation s) { return default(T); }
         // DSL Expressions
         public override T visit_pre(DSLId e) { return default(T); }
         public override T visit_pre(DSLMember e) { return default(T); }
@@ -70,6 +72,7 @@ namespace PParser
         public override T visit_pre(DSLKWArgs e) { return default(T); }
         public override T visit_pre(DSLNew e) { return default(T); }
         public override T visit_pre(DSLAttribute e) { return default(T); }
+        public override T visit_pre(DSLSizeof e) { return default(T); }
 
         public override void walk(INode n)
         {

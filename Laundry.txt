@@ -1,0 +1,16 @@
+- dual mode Ctxt's
+- move convenience fMkCnst, fMkFuncTerm ... terms into Domains, and rename
+    all the Factory.Instane.Mk... calls to use those.
+- TODOs throught the code base
+- clean up old code in Compliler.cs that uses some flavour of AddArgs(...) to newly created convenience functions. E.g.
+    - MkZingReturn()
+    - MkZingIf()
+    - MkIf()
+    - MkBinApp()
+    - MkNeq
+    - MkCastToULONGPTR
+    - MkCastFromULONGPTR
+    
+
+- Try to convert as many instances as possible of MkZingAssign(Ast<Node>, Ast<node>) to MkZingAssignOrCast(Ast<Node>, Ptype, Ast<node>, PType)
+

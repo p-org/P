@@ -21,6 +21,7 @@ Environment:
 #include "SmfPublic.h"
 #include "SmfProtectedTypes.h"
 #include "SmfLogger.h"
+#include "SmfArrayList.h"
 
 /*********************************************************************************
 

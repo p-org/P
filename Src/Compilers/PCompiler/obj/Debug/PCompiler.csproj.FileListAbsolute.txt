@@ -1,0 +1,14 @@
+C:\Users\t-dimibo\CodePlex\plang\Src\Compilers\PCompiler\bin\Debug\PCompiler.exe.config
+C:\Users\t-dimibo\CodePlex\plang\Src\Compilers\PCompiler\bin\Debug\PCompiler.exe
+C:\Users\t-dimibo\CodePlex\plang\Src\Compilers\PCompiler\bin\Debug\PCompiler.pdb
+C:\Users\t-dimibo\CodePlex\plang\Src\Compilers\PCompiler\bin\Debug\Core.dll
+C:\Users\t-dimibo\CodePlex\plang\Src\Compilers\PCompiler\bin\Debug\CParser.dll
+C:\Users\t-dimibo\CodePlex\plang\Src\Compilers\PCompiler\bin\Debug\Domains.dll
+C:\Users\t-dimibo\CodePlex\plang\Src\Compilers\PCompiler\bin\Debug\Microsoft.Z3.dll
+C:\Users\t-dimibo\CodePlex\plang\Src\Compilers\PCompiler\bin\Debug\ZingParser.dll
+C:\Users\t-dimibo\CodePlex\plang\Src\Compilers\PCompiler\bin\Debug\Domains.pdb
+C:\Users\t-dimibo\CodePlex\plang\Src\Compilers\PCompiler\bin\Debug\CParser.pdb
+C:\Users\t-dimibo\CodePlex\plang\Src\Compilers\PCompiler\bin\Debug\ZingParser.pdb
+C:\Users\t-dimibo\CodePlex\plang\Src\Compilers\PCompiler\obj\Debug\PCompiler.csprojResolveAssemblyReference.cache
+C:\Users\t-dimibo\CodePlex\plang\Src\Compilers\PCompiler\obj\Debug\PCompiler.exe
+C:\Users\t-dimibo\CodePlex\plang\Src\Compilers\PCompiler\obj\Debug\PCompiler.pdb

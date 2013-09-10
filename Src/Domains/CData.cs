@@ -102,6 +102,7 @@
         public static AST<Id> Con_FunApp(Span span = default(Span)) { return Factory.Instance.MkId("FunApp", span); }
 
         public static AST<Id> Con_Loop(Span span = default(Span)) { return Factory.Instance.MkId("Loop", span); }
+        public static AST<Id> Con_For(Span span = default(Span)) { return Factory.Instance.MkId("For", span); }
         public static AST<Id> Con_ITE(Span span = default(Span)) { return Factory.Instance.MkId("ITE", span); }
         public static AST<Id> Con_Seq(Span span = default(Span)) { return Factory.Instance.MkId("Seq", span); }
         public static AST<Id> Con_Return(Span span = default(Span)) { return Factory.Instance.MkId("Return", span); }
@@ -150,6 +151,7 @@
         public static AST<FuncTerm> App_Sizeof(Span span = default(Span)) { return Factory.Instance.MkFuncTerm(Con_Sizeof(span), span); }
 
         public static AST<FuncTerm> App_Loop(Span span = default(Span)) { return Factory.Instance.MkFuncTerm(Con_Loop(span), span); }
+        public static AST<FuncTerm> App_For(Span span = default(Span)) { return Factory.Instance.MkFuncTerm(Con_For(span), span); }
         public static AST<FuncTerm> App_ITE(Span span = default(Span)) { return Factory.Instance.MkFuncTerm(Con_ITE(span), span); }
         public static AST<FuncTerm> App_Return(Span span = default(Span)) { return Factory.Instance.MkFuncTerm(Con_Return(span), span); }
         public static AST<FuncTerm> App_Seq(Span span = default(Span)) { return Factory.Instance.MkFuncTerm(Con_Seq(span), span); }

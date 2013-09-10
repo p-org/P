@@ -26,6 +26,7 @@ namespace PParser
         public abstract T visit(TypeNamedTuple s);
         public abstract T visit(TypeField s);
         public abstract T visit(TypeTuple s);
+        public abstract T visit(TypeSeq s);
         public abstract T visit(TypeAny s);
         // P Declarations
         public abstract T visit(Program s);
@@ -60,6 +61,7 @@ namespace PParser
         public abstract T visit(DSLLeave s) ;
         public abstract T visit(DSLDelete s);
         public abstract T visit(DSLSkip s) ;
+        public abstract T visit(DSLMutation s);
         // DSL Expressions
         public abstract T visit(DSLId e) ;
         public abstract T visit(DSLMember e);
@@ -75,6 +77,7 @@ namespace PParser
         public abstract T visit(DSLKWArgs e) ;
         public abstract T visit(DSLNew e) ;
         public abstract T visit(DSLAttribute e);
+        public abstract T visit(DSLSizeof e);
 
         // Type Declarations
         public abstract T visit_pre(TypeInt s);
@@ -84,6 +87,7 @@ namespace PParser
         public abstract T visit_pre(TypeField s);
         public abstract T visit_pre(TypeNamedTuple s);
         public abstract T visit_pre(TypeTuple s);
+        public abstract T visit_pre(TypeSeq s);
         public abstract T visit_pre(TypeAny s);
         // P Declarations
         public abstract T visit_pre(Program s);
@@ -118,6 +122,7 @@ namespace PParser
         public abstract T visit_pre(DSLLeave s);
         public abstract T visit_pre(DSLDelete s);
         public abstract T visit_pre(DSLSkip s);
+        public abstract T visit_pre(DSLMutation s);
         // DSL Expressions
         public abstract T visit_pre(DSLId e);
         public abstract T visit_pre(DSLMember e);
@@ -133,6 +138,7 @@ namespace PParser
         public abstract T visit_pre(DSLKWArgs e);
         public abstract T visit_pre(DSLNew e);
         public abstract T visit_pre(DSLAttribute e);
+        public abstract T visit_pre(DSLSizeof e);
 
         public T visit(INode n)
         {
@@ -143,6 +149,7 @@ namespace PParser
             if (n is TypeNamedTuple) { return this.visit(n as TypeNamedTuple); }
             if (n is TypeField) { return this.visit(n as TypeField); }
             if (n is TypeTuple) { return this.visit(n as TypeTuple); }
+            if (n is TypeSeq) { return this.visit(n as TypeSeq); }
             if (n is TypeAny) { return this.visit(n as TypeAny); }
 
             if (n is Program) { return this.visit(n as Program); }
@@ -177,6 +184,7 @@ namespace PParser
             if (n is DSLLeave) { return this.visit(n as DSLLeave); }
             if (n is DSLDelete) { return this.visit(n as DSLDelete); }
             if (n is DSLSkip) { return this.visit(n as DSLSkip); }
+            if (n is DSLMutation) { return this.visit(n as DSLMutation); }
 
             if (n is DSLId) { return this.visit(n as DSLId); }
             if (n is DSLMember) { return this.visit(n as DSLMember); }
@@ -192,6 +200,7 @@ namespace PParser
             if (n is DSLKWArgs) { return this.visit(n as DSLKWArgs); }
             if (n is DSLNew) { return this.visit(n as DSLNew); }
             if (n is DSLAttribute) { return this.visit(n as DSLAttribute); }
+            if (n is DSLSizeof) { return this.visit(n as DSLSizeof); }
 
             throw new NotImplementedException("Unknown node type " + n.GetType().FullName);
         }
@@ -205,6 +214,7 @@ namespace PParser
             if (n is TypeNamedTuple) { return this.visit_pre(n as TypeNamedTuple); }
             if (n is TypeField) { return this.visit_pre(n as TypeField); }
             if (n is TypeTuple) { return this.visit_pre(n as TypeTuple); }
+            if (n is TypeSeq) { return this.visit_pre(n as TypeSeq); }
             if (n is TypeAny) { return this.visit_pre(n as TypeAny); }
 
             if (n is Program) { return this.visit_pre(n as Program); }
@@ -239,6 +249,7 @@ namespace PParser
             if (n is DSLLeave) { return this.visit_pre(n as DSLLeave); }
             if (n is DSLDelete) { return this.visit_pre(n as DSLDelete); }
             if (n is DSLSkip) { return this.visit_pre(n as DSLSkip); }
+            if (n is DSLMutation) { return this.visit_pre(n as DSLMutation); }
 
             if (n is DSLId) { return this.visit_pre(n as DSLId); }
             if (n is DSLMember) { return this.visit_pre(n as DSLMember); }
@@ -254,6 +265,7 @@ namespace PParser
             if (n is DSLKWArgs) { return this.visit_pre(n as DSLKWArgs); }
             if (n is DSLNew) { return this.visit_pre(n as DSLNew); }
             if (n is DSLAttribute) { return this.visit_pre(n as DSLAttribute); }
+            if (n is DSLSizeof) { return this.visit_pre(n as DSLSizeof); }
 
             throw new NotImplementedException("Unknown node type " + n.GetType().FullName);
         }
@@ -450,6 +462,17 @@ namespace PParser
         public void prepend(TypeNode t)
         {
             _prepend(t);
+        }
+    }
+
+    public class TypeSeq : TypeNode
+    {
+        public TypeNode innerT;
+
+        public TypeSeq(TypeNode innerT) :
+            base(innerT)
+        {
+            this.innerT = innerT;
         }
     }
 
@@ -921,5 +944,36 @@ namespace PParser
         {
             this.name = name;
         }
+    }
+
+    public sealed class DSLSizeof : BaseNode, IDSLExp
+    {
+        public IDSLExp of;
+
+        public DSLSizeof(IDSLExp of)
+            : base(of)
+        {
+            this.of = of;
+        }
+    }
+
+    public sealed class DSLMutation : BaseNode, IDSLStmt
+    {
+        public IDSLExp baseE;
+        public string op;
+        public DSLTuple args;
+
+        public DSLMutation(IDSLExp baseE, string op, DSLTuple args)
+            : base(baseE, args)
+        {
+            this.baseE = baseE;
+            this.op = op;
+            this.args = args;
+        }
+    }
+
+    public sealed class DSLSeq : BaseListNode<IDSLExp>, IDSLExp
+    {
+        public DSLSeq(IEnumerable<IDSLExp> els) : base(els) { }
     }
 }

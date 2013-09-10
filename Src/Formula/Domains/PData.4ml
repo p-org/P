@@ -13,7 +13,7 @@ domain FuncData
     TypeSet         ::= new (x: any AllTypes).
     TypeSeq         ::= new (x: any AllTypes).
     TypeDict        ::= new (k: any AllTypes, v: any AllTypes).
-    AllTypes        ::= TypePrimitive + TypeTuple + TypeNamedTuple + TypeSet + TypeDict + { ANY }.
+    AllTypes        ::= TypePrimitive + TypeTuple + TypeNamedTuple + TypeSeq + TypeSet + TypeDict + { ANY }.
     
     /*************************************************************/
     /****************    Entry Functions Language     ************/

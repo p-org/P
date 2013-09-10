@@ -1,0 +1,6 @@
+C:\Users\t-dimibo\CodePlex\plang\Src\Domains\bin\Debug\Domains.dll
+C:\Users\t-dimibo\CodePlex\plang\Src\Domains\bin\Debug\Domains.pdb
+C:\Users\t-dimibo\CodePlex\plang\Src\Domains\bin\Debug\Core.dll
+C:\Users\t-dimibo\CodePlex\plang\Src\Domains\obj\Debug\Domains.csprojResolveAssemblyReference.cache
+C:\Users\t-dimibo\CodePlex\plang\Src\Domains\obj\Debug\Domains.dll
+C:\Users\t-dimibo\CodePlex\plang\Src\Domains\obj\Debug\Domains.pdb

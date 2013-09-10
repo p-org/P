@@ -225,7 +225,7 @@ PDeviceObj --
 	Pointer to Device Object for the current device.
 
 *********************************************************************************/
-typedef struct _SMF_MACHINE_ATTRIBUTES
+struct _SMF_MACHINE_ATTRIBUTES
 {
 	PSMF_DRIVERDECL Driver;
 	SMF_MACHINEDECL_INDEX InstanceOf;
@@ -259,7 +259,7 @@ PExMem --
 	passed as parameter to foreign functions 
 
 *********************************************************************************/
-typedef struct _SMF_EXCONTEXT
+struct _SMF_EXCONTEXT
 {
 	BOOLEAN FreeThis;
 	PVOID PExMem;

@@ -68,6 +68,7 @@ NonSMCntrChars  [^\'\"\n\r]*
 "leave"									   { return (int)PTokens.LEAVE;  }
 "true"									   { return (int)PTokens.TRUE;  }
 "false"									   { return (int)PTokens.FALSE;  }
+"sizeof"								   { return (int)PTokens.SIZEOF; }
 
 "assert"								   { return (int)PTokens.ASSERT;  }
 "send"									   { return (int)PTokens.SEND;  }
@@ -80,6 +81,7 @@ NonSMCntrChars  [^\'\"\n\r]*
 "any"									   { return (int)PTokens.T_ANY;  }
 "eid"							           { return (int)PTokens.T_EVENTID;  }
 "mid"									   { return (int)PTokens.T_MACHINEID;  }
+"seq"									   { return (int)PTokens.T_SEQ;  }
 
 "main"									   { return (int)PTokens.MAIN;  }
 "event"									   { return (int)PTokens.EVENT;  }

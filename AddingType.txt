@@ -1,0 +1,106 @@
+    Extending P Language and grammar with a new type
+
+
+====================== P2 Formula/PData.4ml Changes ============================
+
+1. Extend Type Grammar
+
+    0. Add neccessary code to Src/Formula/Domains/PData.4ml
+
+    0.5: Add the corresponding identifiers for the new terms in PData.4ml in
+         PData.cs in Domains project, and FormulaAstNodes.cs in P2Formula.
+            TODO: Burn FormulaAstNodes.cs to the ground and just use PData.cs 
+
+    1. Add neccessary code to lexer.lex for new tokens
+
+    2. Add new tokens at the top of parser.y and any neccessary parser rules
+        for them.
+
+    3. Add new neccessary AST nodes in PAst.cs
+        - be mindfull if the new node is an expression statement. We use the
+          IDSLExp and IDSLStmt interfaces for example, as a poor man's
+            typeclasses.
+        - If this node has any children nodes that should be walkable, don't
+          forget to add them as parameters to the parent constructor.
+
+    4. Add neccessary visitors to BasePVisitor in PAst.cs, and NoopVisitor and
+        PostVisitor.cs
+
+    5. Add neccessary visitors to at least SemanticPass and PFormulaBuilder.
+        Further add them to any other affected passes.
+
+2. Extend Expression/Statement grammar
+    ----- Same Steps as Above ----
+
+===================== PCompiler Changes =======================================
+
+6. First add appropriate type in PTypes.cs.
+    6.1 Be careful when deciding if this is a Primitive type or not. Primitive
+        types in general fit in ULONG_PTR, and don't require any extra
+        allocation/cleanup work. Cloning for them is simple assignment.
+        (i.e. their corresponding C/Zing types are implicitly pass by value).
+
+    6.2 Add Equals and GetHash. Both "==" and ".Equals" for PTypes is
+        overloaded to comparison for equality by value, not reference. So in a
+        sense, any subclass of PType is a singleton type.
+
+    6.3 Set up subtyping relations for the new type by implementing its
+        isSubtypeOf and LUB methods (and potentially modifying other method's
+        isSubTypeOf/LUB methods).
+
+7. Update GetType
+    7.1 If this is a compound type/will require some special type emitted, don't forget to register it here by calling registerType.
+
+
+8. Update registerType() if this is a compound type.
+
+===================== Zing Code Gen ==========================================
+9. Update pTypeToZingType()
+
+10. Update getZingDefault()
+
+11. Update pTypeToZingName(). This is used for naming the different members of SM_ARG_UNION, different Discriminator elements, and the Zing UpCast/DownCast/Equals methods.
+
+
+12. Update MkZingClasses() if new classes must be emitted for this type. If we're creating a class T then implement:
+    12.1 static T BuildDefault()
+    12.2 T Clone()
+    12.3 Bool Equals(T)
+
+    12.4 Bool Equals_<SubT>(SubT) for all SubT <: T
+    12.5 static T UpCastFrom_<SubT>(SubT) for all SubT <: T
+    12.6 SubT DownCastTo_<SubT>() for all SubT <: T
+    12.7 Bool CanDownCastTo_<SubT>() for all SubT <: T
+        12.7.1 Update MkZingCanDownCastTo()
+
+13. For any newly created PData DSL nodes, update ZingEntryFun_Fold_Impl (and potentiall ZingEntryFun_UnFold_Impl).
+
+
+===================== C Code Gen =============================================
+
+14. Extend pTypeToCEnum
+
+15. Extend MkTypeDecl. This is responsible for emitting the SMF_TYPEDECL struct which is C's RTTI.
+    15.1 Update typeNeedsDestroy. In general, any type that internally
+         allocates pointers to the heap needs cleanup. Other cases my arise.
+    15.2 Update typeNeedsClone. Currently all non-primitive types need a clone
+    15.3 Update typeNeedsBuildDefault. Same rules as typeNeedsClone.
+    15.4 Update GetCTypeSize()
+
+16. pTypeToCType()
+
+17. Update GenerateC(). This may involve:
+    17.1 emitting any new C data types needed (e.g. structs to represent
+         Tuples/NamedTuples)
+    17.2 emitting a BuildDefault() method if one is required.
+    17.3 Update MkUpCastMethods
+    17.4 Update MkDownCastMethods
+    17.4 Update MkCanDownCastMethods
+    17.5 Currently, don't need to update MkCanCast() methods. We should revisit
+         if its better to just clumb MkCanDownCast and MkCanCast into a single
+         method.
+    17.6 Update MkEqualsMethods
+    17.7 Update MkCloneMethods
+    17.7 Update MkDestroyMethods
+
+18. Update MkVar

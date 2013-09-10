@@ -36,6 +36,7 @@ domain ZingData
     ClassDecl ::= fun (name: String -> fields: any VarDecls + { NIL }, methods: any MethodDecls + { NIL }).
     EnumDecl ::= fun (name: String -> any EnumElems + { NIL }).
     EnumElems ::= new (name: String, tail: any EnumElems + { NIL }).
-    Decls ::= new (decl: EnumDecl + ClassDecl, tail: any Decls + { NIL }).
+    ArrayDecl ::= new (name: String, innerType: any Type).
+    Decls ::= new (decl: EnumDecl + ClassDecl + ArrayDecl, tail: any Decls + { NIL }).
     File ::= new (name: String, decls: any Decls + { NIL }).
 }

@@ -81,6 +81,7 @@
         public static readonly AST<Id> Con_VarDecls = Factory.Instance.MkId("VarDecls");
         public static readonly AST<Id> Con_MethodDecl = Factory.Instance.MkId("MethodDecl");
         public static readonly AST<Id> Con_MethodDecls = Factory.Instance.MkId("MethodDecls");
+        public static readonly AST<Id> Con_ArrayDecl = Factory.Instance.MkId("ArrayDecl");
         public static readonly AST<Id> Con_EnumDecl = Factory.Instance.MkId("EnumDecl");
         public static readonly AST<Id> Con_EnumElems = Factory.Instance.MkId("EnumElems");
         public static readonly AST<Id> Con_Decls = Factory.Instance.MkId("Decls");
@@ -112,6 +113,7 @@
         public static readonly AST<FuncTerm> App_LabelStmt = Factory.Instance.MkFuncTerm(Con_LabelStmt);
         public static readonly AST<FuncTerm> App_Blocks = Factory.Instance.MkFuncTerm(Con_Blocks);
 
+        public static readonly AST<FuncTerm> App_ArrayDecl = Factory.Instance.MkFuncTerm(Con_ArrayDecl);
         public static readonly AST<FuncTerm> App_EnumDecl = Factory.Instance.MkFuncTerm(Con_EnumDecl);
         public static readonly AST<FuncTerm> App_EnumElems = Factory.Instance.MkFuncTerm(Con_EnumElems);
         public static readonly AST<FuncTerm> App_VarDecl = Factory.Instance.MkFuncTerm(Con_VarDecl);

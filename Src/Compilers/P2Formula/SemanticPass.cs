@@ -404,7 +404,6 @@ namespace PParser
             return current;
         }
 
-
         public override BaseScope visit_pre(FunDeclaration n)
         {
             if (!errorDefined(n.name, SYM_FUN, n.loc))
@@ -552,6 +551,15 @@ namespace PParser
                     errors.Add(new SemanticError(n.loc, "Tuple contains duplicate fields named " + f.Item1));
                 else
                     fieldNames.Add(f.Item1);
+            }
+            return current;
+        }
+
+        public override BaseScope visit_pre(DSLMutation n)
+        {
+            if (n.op != "insert" && n.op != "remove")
+            {
+                errors.Add(new SemanticError(n.loc, "Unknown mutation operation on data structure: " + n.op));
             }
             return current;
         }

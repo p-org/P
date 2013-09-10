@@ -24,7 +24,7 @@
 %YYSTYPE LexValue
 %partial
 
-%token T_INT T_BOOL T_EVENTID T_MACHINEID T_ANY
+%token T_INT T_BOOL T_EVENTID T_MACHINEID T_ANY T_SEQ
 %token MAIN EVENT MACHINE ASSUME GHOST
 
 %token VAR START FOREIGN STATE FUN ACTION MAXQUEUE SUBMACHINE
@@ -32,7 +32,7 @@
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH
 
 %token IF WHILE THIS TRIGGER PAYLOAD ARG NEW RETURN ID LEAVE ASSERT SCALL RAISE SEND DEFAULT DELETE NULL
-%token LPAREN RPAREN LCBRACE RCBRACE LBRACKET RBRACKET
+%token LPAREN RPAREN LCBRACE RCBRACE LBRACKET RBRACKET SIZEOF
 
 %token TRUE FALSE
 
@@ -111,6 +111,7 @@ Type
 	| T_ANY										{ $$.type = new TypeAny(); setLoc($$.type, @1);}
 	| NamedTupleType
 	| TupleType
+	| SeqType
 	;
 
 NamedTupleType
@@ -130,6 +131,10 @@ TupleType
 TypeList
 	: Type									{ var t = new TypeTuple(); t.append($1.type); $$.type = t; }
 	| Type COMMA TypeList					{ var t = (TypeTuple) $3.type; t.prepend($1.type); $$.type = t; }
+	;
+
+SeqType
+	: T_SEQ LBRACKET Type RBRACKET			{ $$.type = new TypeSeq($3.type); setLoc($$.type, @1, @4); }
 	;
 
 // ------------------   Event Declarations  -------------------------
@@ -287,6 +292,14 @@ Stmt
 	| LEAVE SEMICOLON						%prec PREC_EVERYTHING_ELSE          { $$.stmt = new DSLLeave(); setLoc($$.stmt, @1, @2); }
 	| SEMICOLON								%prec PREC_EVERYTHING_ELSE			{ $$.stmt = new DSLSkip(); setLoc($$.stmt, @1); } // Allow empty statements
 	| DELETE SEMICOLON						%prec PREC_EVERYTHING_ELSE			{ $$.stmt = new DSLDelete(); setLoc($$.stmt, @1, @2); }
+	| Exp Args SEMICOLON				    %prec PREC_EVERYTHING_ELSE			{ if (!($1.exp is DSLMember)) {
+																					Scanner.yyerror(string.Format("Invalid Expression: '{0}'. Expected function name or variable size container mutation", $1.s));
+																				  } else {
+																					var op = ($1.exp as DSLMember).member;
+																					var baseE = ($1.exp as DSLMember).baseExp;
+																					$$.stmt = new DSLMutation(baseE, op, (DSLTuple)$2.exp); setLoc($$.stmt, @1, @3);
+																				  }
+																				}
 	;
 
 OptionalLastArg
@@ -398,6 +411,7 @@ Exp_0 // Primary Expresions
 	| NewExp
 	| Arg
 	| FFCall
+	| SIZEOF LPAREN Exp RPAREN			{ $$.exp = new DSLSizeof($3.exp); setLoc($$.exp, @1, @4); }
 	;
 
 Arg
@@ -444,7 +458,6 @@ Bool
 FFCall
 	: ID Args							{$$.exp = new DSLFFCall($1.s, (DSLTuple)$2.exp); setLoc($$.exp, @1, @2); } // function call with positional arguments
 	;
-
 
 KWArgList
 	: ID ASSIGN Exp						{ var t = new DSLKWArgs(); t.set($1.s, $3.exp); $$.exp = t; setLoc($$.exp, @1, @3);  }

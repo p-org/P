@@ -1,0 +1,8 @@
+C:\Users\t-dimibo\CodePlex\plang\Src\Parsers\ZingParser\bin\Debug\ZingParser.dll
+C:\Users\t-dimibo\CodePlex\plang\Src\Parsers\ZingParser\bin\Debug\ZingParser.pdb
+C:\Users\t-dimibo\CodePlex\plang\Src\Parsers\ZingParser\bin\Debug\Core.dll
+C:\Users\t-dimibo\CodePlex\plang\Src\Parsers\ZingParser\obj\Debug\ZingParser.csprojResolveAssemblyReference.cache
+C:\Users\t-dimibo\CodePlex\plang\Src\Parsers\ZingParser\obj\Debug\ZingParser.dll
+C:\Users\t-dimibo\CodePlex\plang\Src\Parsers\ZingParser\obj\Debug\ZingParser.pdb
+C:\Users\t-dimibo\CodePlex\plang\Src\Parsers\ZingParser\bin\Debug\Domains.dll
+C:\Users\t-dimibo\CodePlex\plang\Src\Parsers\ZingParser\bin\Debug\Domains.pdb

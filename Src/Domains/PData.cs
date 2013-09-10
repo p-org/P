@@ -48,12 +48,16 @@
 
         public static readonly AST<Id> Cnst_Idx = Factory.Instance.MkId("IDX");
         public static readonly AST<Id> Cnst_Fld = Factory.Instance.MkId("FLD");
+        public static readonly AST<Id> Cnst_Sizeof = Factory.Instance.MkId("SIZEOF");
 
         public static readonly AST<Id> Cnst_Nil = Factory.Instance.MkId("NIL");
         public static readonly AST<Id> Cnst_Bool = Factory.Instance.MkId("BOOL");
         public static readonly AST<Id> Cnst_Int = Factory.Instance.MkId("INT");
         public static readonly AST<Id> Cnst_Id = Factory.Instance.MkId("ID");
         public static readonly AST<Id> Cnst_Any = Factory.Instance.MkId("ANY");
+
+        public static readonly AST<Id> Cnst_Insert = Factory.Instance.MkId("INSERT");
+        public static readonly AST<Id> Cnst_Remove = Factory.Instance.MkId("REMOVE");
 
         /// <summary>
         /// Constructor names
@@ -71,6 +75,7 @@
         public static readonly AST<Id> Con_TypeTuple = Factory.Instance.MkId("TypeTuple");
         public static readonly AST<Id> Con_TypeField = Factory.Instance.MkId("TypeField");
         public static readonly AST<Id> Con_TypeNamedTuple = Factory.Instance.MkId("TypeNamedTuple");
+        public static readonly AST<Id> Con_TypeSeq = Factory.Instance.MkId("TypeSeq");
         //// Statements
         public static readonly AST<Id> Con_MachType = Factory.Instance.MkId("MachType");
         public static readonly AST<Id> Con_Assert = Factory.Instance.MkId("Assert");
@@ -82,6 +87,7 @@
         public static readonly AST<Id> Con_Tuple = Factory.Instance.MkId("Tuple");
         public static readonly AST<Id> Con_NamedTuple = Factory.Instance.MkId("NamedTuple");
         public static readonly AST<Id> Con_ITE = Factory.Instance.MkId("ITE");
+        public static readonly AST<Id> Con_DataOp = Factory.Instance.MkId("DataOp");
         public static readonly AST<Id> Con_While = Factory.Instance.MkId("While");
         public static readonly AST<Id> Con_Seq = Factory.Instance.MkId("Seq");
         public static readonly AST<Id> Con_MachineDecl = Factory.Instance.MkId("MachineDecl");
@@ -171,6 +177,7 @@
             pOpToC.Add(Cnst_Ge.Node.Name, new Tuple<AST<Id>, int>(CData.Cnst_Ge(), 2));
             pOpToC.Add(Cnst_Idx.Node.Name, new Tuple<AST<Id>, int>(CData.Cnst_AAc(), 2));
             pOpToC.Add(Cnst_Fld.Node.Name, new Tuple<AST<Id>, int>(CData.Cnst_Fld(), 2));
+            pOpToC.Add(Cnst_Sizeof.Node.Name, new Tuple<AST<Id>, int>(null, 1));
 
             pOpToZing.Add(Cnst_Not.Node.Name, new Tuple<AST<Id>, int>(ZingData.Cnst_Not, 1));
             pOpToZing.Add(Cnst_Neg.Node.Name, new Tuple<AST<Id>, int>(ZingData.Cnst_Neg, 1));
@@ -188,6 +195,7 @@
             pOpToZing.Add(Cnst_Ge.Node.Name, new Tuple<AST<Id>, int>(ZingData.Cnst_Ge, 2));
             pOpToZing.Add(Cnst_Idx.Node.Name, new Tuple<AST<Id>, int>(ZingData.Cnst_Index, 2));
             pOpToZing.Add(Cnst_Fld.Node.Name, new Tuple<AST<Id>, int>(ZingData.Cnst_Dot, 2));
+            pOpToZing.Add(Cnst_Sizeof.Node.Name, new Tuple<AST<Id>, int>(null, 1));
         }
 
         public static AST<Id> POpToCOp(Id pOp, out int arity)

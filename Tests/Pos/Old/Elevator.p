@@ -80,7 +80,7 @@ machine Elevator {
         defer eCloseDoor;
 
         entry {
-            send(DoorV,eSendCommandToResetDoor);
+            send(DoorV,eSendCommandToCloseDoor);
         }
 
         on eOpenDoor goto StoppingDoor;

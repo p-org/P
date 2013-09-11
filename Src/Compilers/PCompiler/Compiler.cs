@@ -5209,7 +5209,6 @@ Environment:
             locals.Add(MkZingVarDecl("savedDeferredSet", ZingData.Cnst_SmEventSet));
             locals.Add(MkZingVarDecl("savedActionSet", ZingData.Cnst_SmEventSet));
             locals.Add(MkZingVarDecl("actionFun", Factory.Instance.MkCnst("ActionFun")));
-            locals.Add(MkZingVarDecl("payload", ZingData.Cnst_SmUnion));
             locals.Add(MkZingVarDecl("nondet", ZingData.Cnst_Bool));
             locals.Add(MkZingVarDecl("savedCurrentEvent", ZingData.Cnst_SmEvent));
             locals.Add(MkZingVarDecl("savedCurrentArg", ZingData.Cnst_SmUnion));
@@ -7905,7 +7904,24 @@ Environment:
                     return type;
                 }
 
-                // TODO: Bug: Forgot to generate a class for explicit Con_NamedTypeTuple!!!
+                if (fname == PData.Con_TypeNamedTuple.Node.Name)
+                {
+                    var fieldTypes = new List<Tuple<string, PType>>();
+
+                    while (n is FuncTerm)
+                    {
+                        var nf = (FuncTerm)n;
+                        var fName = ((Cnst)GetArgByIndex((FuncTerm)GetArgByIndex(nf, 0), 0)).GetStringValue();
+                        var fType = GetPType(GetArgByIndex((FuncTerm)GetArgByIndex(nf, 0), 1));
+                        fieldTypes.Add(new Tuple<string, PType>(fName, fType));
+                        n = nf.Args.ElementAt(1);
+                    }
+
+                    var type = new PNamedTupleType(fieldTypes);
+                    registerType(type);
+                    return type;
+
+                }
 
                 if (fname == PData.Con_TypeSeq.Node.Name)
                 {

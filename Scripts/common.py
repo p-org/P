@@ -1,4 +1,5 @@
 from re import *;
+from os.path import *;
 
 def parseMSBuildOutput(out):
 
@@ -27,3 +28,6 @@ def buildSucceeded(out):
     result=parseMSBuildOutput(out);
     signCmpWarnings = len(list(filter(lambda p:  p[0] == 4018, result[6])))
     return result[0] and result[1] == 0 and result[2] == (len(result[4]) + signCmpWarnings)
+
+def getMyDir():
+    return dirname(realpath(__file__));

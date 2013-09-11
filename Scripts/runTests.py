@@ -6,7 +6,7 @@ from os.path import *;
 import ntpath;
 import sys;
 import shutil;
-import re;
+from re import *;
 import argparse;
 import generate_project;
 from common import *
@@ -20,7 +20,7 @@ parser.add_argument("files", type=str, nargs="+", help="the P files to test, or 
 args = parser.parse_args();
 out=args.out[0]
 
-scriptDir = dirname(realpath(__file__));
+scriptDir = getMyDir(); 
 baseDir = realpath(join(scriptDir, ".."));
 
 zc=join(baseDir, "Ext", "Tools", "ZingCompiler", "zc");
@@ -39,7 +39,8 @@ cc="MSBuild.exe"
 
 try:
     shutil.rmtree(out);
-except OSError: pass;
+except OSError as err:
+    print("Failed removing " + out + ": " + err)
 
 try:
     os.mkdir(out);
@@ -72,9 +73,11 @@ def elaborateFiles(files):
 
 nonDeterministicallyFailing = [ "BangaloreToRedmond" ]
 
+infiniteComputations = [ "Elevator", "OSR", "PingPong" ]
+
 for f in elaborateFiles(args.files):
     name = os.path.splitext(os.path.basename(f))[0]
-    print(f)
+    print("================= TEST: " + f + "=================");
     pFile = join(out, name + ".p")
     fmlFile = join(out, name + ".4ml")
     zingFile = "output.zing"
@@ -126,7 +129,7 @@ for f in elaborateFiles(args.files):
     	die("Zingering of Zing model failed:\n" + cat(zingerOut))
 
 
-    mainM = re.search("MainDecl\(New\(MachType\(\"([^\"]*)\"", \
+    mainM = search("MainDecl\(New\(MachType\(\"([^\"]*)\"", \
         open(fmlFile).read()).groups()[0]
 
     print(fmt("Main machine is {mainM}"))
@@ -143,19 +146,33 @@ for f in elaborateFiles(args.files):
     if (ret != 0 or not buildSucceeded(compilerOut)):
         die("Failed Building the C code:\n" + compilerOut)
 
-    ret = os.system(binary)
+    try:
+        check_output([binary])
+    except CalledProcessError as err:
+        ret = err.returncode;
 
-    if (ret == 139):
-        die("C Binary Segfaulted");
+        if (ret == 139):
+            die("C Binary Segfaulted");
 
-    if (ret == 5):  # TIMEOUT
-        continue;
+        if (ret == 5):  # TIMEOUT
+            if (args.fail):
+                die("Expected binary to fail, but it timed out!");
 
-    if (ret != 0 and not args.fail):
+            continue;
+
+
+        if (not args.fail):
+            if (name in infiniteComputations):
+                continue;
+        
+        if (args.fail):
+            continue;
+    
+        print(ret, " ", err.returncode);
+        #print(err.output);
         die("Binary failed")
 
-    if (ret == 0 and args.fail and name not in nonDeterministicallyFailing):
+    if (args.fail and name not in nonDeterministicallyFailing):
         die("Binary didn't fail when we expected it");
-    print("echo Done.")
 
 print("ALL TESTS RAN SUCCESSFULLY");

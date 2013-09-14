@@ -283,3 +283,9 @@ class SM_MONITORS {
     }
 };
 
+enum ContinuationReason { Nondet, Exit, Return, ReturnVoid, Raise, Call, Send, Delete, Leave };
+
+class StackFrame {
+    int pc;
+    StackFrame next;
+};

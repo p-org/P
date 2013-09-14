@@ -60,6 +60,10 @@ zingDll = name + ".dll"
 proj = join(out, name + ".vcxproj")
 binary = join(out, "Debug", name+ ".exe")
 
+def dumpOutput(s):
+    for l in str(s).split("\\r\\n"):
+        print(l)
+
 try:
     print("Running P2Formula")
     check_output([p2f, pFile, fmlFile, pData, '/modelName:' + name]);
@@ -87,10 +91,11 @@ try:
     if (args.cc):
         print("Building Generated C...")
         outp = check_output([cc, proj]);
+        outp = '\n'.join(str(outp).split("\\r\\n"))
 
-        if (buildSucceeded(outp)):
+        if (not buildSucceeded(outp)):
             die("Failed Building the C code:\n" + outp)
     
 except CalledProcessError as err:
     print("Failed Compiling: \n")
-    print(err.output)
+    dumpOutput(err.output)

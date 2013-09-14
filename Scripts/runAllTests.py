@@ -39,8 +39,7 @@ cc="MSBuild.exe"
 
 try:
     shutil.rmtree(out);
-except OSError as err:
-    print("Failed removing " + str(out) + ": " + err.strerror)
+except OSError: pass;
 
 try:
     os.mkdir(out);
@@ -71,9 +70,9 @@ def elaborateFiles(files):
         map(lambda f:   find_files(f, "*.p") if isdir(f) else [f], files),\
         []);
 
-nonDeterministicallyFailing = [ "BangaloreToRedmond", "WhileNondet", "WhileNondet2" ]
+nonDeterministicallyFailing = [ "BangaloreToRedmond" ]
 
-infiniteComputations = [ "Elevator", "OSR", "PingPong" ]
+okToExceedMaxQueue = [ "Elevator" ]
 
 for f in elaborateFiles(args.files):
     name = os.path.splitext(os.path.basename(f))[0]
@@ -121,18 +120,12 @@ for f in elaborateFiles(args.files):
     print("Running Zinger")
     shutil.copy(sched, join(out, 'sched.dll'));
     shutil.copy(stateCoverage, join(out, 'stateCov.dll'));
-    output = get_output([zinger, '-s', '-eo', '-p', '-delayc:100', \
+    ret = check_call([zinger, '-s', '-eo', '-p', '-delayc:100', \
         '-et:trace.txt', '-plugin:stateCov.dll', '-sched:sched.dll', zingDll], \
         cwd=out);
 
-    print(output);
-    failed = search("Check passed", output) == None
-
-    if (failed != args.fail):
-        if (args.fail):
-        	die("Zingering of Zing model didn't fail:\n" + output) 
-        else:
-        	die("Zingering of Zing model failed:\n" + output)
+    if ret != 0 and not args.fail:
+    	die("Zingering of Zing model failed:\n" + cat(zingerOut))
 
 
     mainM = search("MainDecl\(New\(MachType\(\"([^\"]*)\"", \
@@ -153,7 +146,7 @@ for f in elaborateFiles(args.files):
         die("Failed Building the C code:\n" + compilerOut)
 
     try:
-        output = get_output([binary])
+        check_output([binary])
     except CalledProcessError as err:
         ret = err.returncode;
 
@@ -168,19 +161,14 @@ for f in elaborateFiles(args.files):
 
 
         if (not args.fail):
-            if (name in infiniteComputations):
+            if (search("<EXCEPTION> Queue Size Exceeded Max Limits", \
+                str(err.output)) \
+                and name in okToExceedMaxQueue):
                 continue;
         
-        if (args.fail):
-            continue;
-    
-        print(ret, " ", err.returncode);
-        #print(err.output);
         die("Binary failed")
 
-    if (args.fail and not (name in nonDeterministicallyFailing)):
+    if (args.fail and name not in nonDeterministicallyFailing):
         die("Binary didn't fail when we expected it");
-
-    print(output)
 
 print("ALL TESTS RAN SUCCESSFULLY");

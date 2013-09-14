@@ -469,6 +469,12 @@
                     return string.Format("goto {0};", ((Cnst)enumerator.Current).GetStringValue());
                 }
             }
+            else if (functionName == "LabelStmt")
+            {
+                StringWriter wr = new StringWriter();
+                RenderLabelStmt(ft, wr);
+                return wr.ToString();
+            }
             else
             {
                 throw new NotImplementedException();

@@ -1,5 +1,9 @@
 from re import *;
 from os.path import *;
+from subprocess import *
+import platform
+
+ignoredCompWarnings = [ 4244, 4018 ]
 
 def parseMSBuildOutput(out):
 
@@ -26,8 +30,15 @@ def parseMSBuildOutput(out):
 
 def buildSucceeded(out):
     result=parseMSBuildOutput(out);
-    signCmpWarnings = len(list(filter(lambda p:  p[0] == 4018, result[6])))
+    signCmpWarnings = len(list(filter(lambda p:  p[0] in ignoredCompWarnings, result[6])))
     return result[0] and result[1] == 0 and result[2] == (len(result[4]) + signCmpWarnings)
 
 def getMyDir():
     return dirname(realpath(__file__));
+
+def get_output(*args, **kwargs):
+    outp = str(check_output(*args, **kwargs))
+    if (platform.system() == 'Linux'):
+        return outp;
+    else:
+        return '\n'.join(outp.split('\\r\\n'))

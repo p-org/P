@@ -24,8 +24,8 @@ domain ZingData
     While  ::= new (cond: any Expr, body: any Stmt).
     Seq    ::= new (s1: any Stmt, s2: any Stmt).
     Goto   ::= new (label: String).
-    Stmt   ::= Assert + Assume + Assign + ITE + While + Seq + Goto + CallStmt + Return +  { YIELD, NIL }.     
-    LabelStmt  ::= new (label: String, stmt: Stmt).
+    Stmt   ::= Assert + Assume + Assign + ITE + While + Seq + Goto + CallStmt + Return + LabelStmt + { YIELD, NIL }.     
+    LabelStmt  ::= new (label: String, stmt: any Stmt).
     Blocks    ::= new (block: LabelStmt, tail: any Blocks + { NIL }).
 
     //// Top-level declarations

@@ -7,8 +7,8 @@ main machine Entry {
 
     state s1 {
         entry {
-            //assert(payload == null);
-            //assert(trigger == null);
+            assert(payload == null);
+            assert(trigger == null);
             return;
         }
     }

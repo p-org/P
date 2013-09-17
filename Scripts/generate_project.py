@@ -12,9 +12,9 @@ def write(text, path):
     f.write(text);
     f.close();
 
-def generateVSProject(tdir, name, sm_headers, sm_libs, entryM, generateStubs, Timeout=60):
+def generateVSProject(tdir, name, sm_headers, sm_libs, entryM, generateStubs, Timeout=10):
     machines = [];
-    machRe = re.compile("MachineType_([a-zA-Z0-9]*)");
+    machRe = re.compile("MachineType_([a-zA-Z0-9_]*)");
 
     for l in open(tdir + "/PublicEnumTypes.h"):
         m = machRe.search(l);
@@ -223,7 +223,7 @@ DWORD WINAPI WatchDog(__in LPVOID ignored) {{
     LONG timeout = {Timeout} * 1000;
     Sleep(timeout);
     printf("I got bored and killed your program after %f seconds.", ((float)timeout)/1000.0);
-    exit(-5);
+    exit(5);
 }}
 
 void SegfaultWatcher(int sig) {{

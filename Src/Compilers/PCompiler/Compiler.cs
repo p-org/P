@@ -3618,7 +3618,8 @@ Environment:
             {
                 // At the end of a block, the only variables that should still be "busy", should be ones that never
                 // got consumed, and therefore shouldn't be part of any expression
-                Debug.Assert(busyVars.All(var => tmpUseCount[var] == 0));
+                
+                //Debug.Assert(busyVars.All(var => tmpUseCount[var] == 0));  //[Ankush]  BUG : Not sure if this assertion is needed 
                 Debug.Assert(freeVars.All(var => tmpUseCount[var] > 0));
                 var varDefs = new List<AST<Node>>();
 

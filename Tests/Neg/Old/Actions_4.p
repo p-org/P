@@ -20,6 +20,7 @@ main machine Real {
     }
 
     state Real_S1 {
+    on unit do Action_2;
 	entry {
             send(ghost_machine, E1);
 	    raise(unit);

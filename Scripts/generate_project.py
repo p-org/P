@@ -14,7 +14,7 @@ def write(text, path):
 
 def generateVSProject(tdir, name, sm_headers, sm_libs, entryM, generateStubs, Timeout=10):
     machines = [];
-    machRe = re.compile("MachineType_([a-zA-Z0-9]*)");
+    machRe = re.compile("MachineType_([a-zA-Z0-9_]*)");
 
     for l in open(tdir + "/PublicEnumTypes.h"):
         m = machRe.search(l);

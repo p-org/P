@@ -5240,7 +5240,7 @@ Environment:
                 MkZingCall(MkZingIdentifier(name), cont))));
             body.Add(MkZingIf(MkZingEq(cont, MkZingIdentifier("null")),
                 MkZingSeq(
-                type == TranslationContext.Action ? AddArgs(ZingData.App_Goto, MkCnst("exit")) : AddArgs(ZingData.App_Goto, MkCnst("wait_" + entityName)))));
+                type == TranslationContext.Action ? AddArgs(ZingData.App_Goto, MkCnst("exit")) : type == TranslationContext.Exit ? AddArgs(ZingData.App_Goto, MkCnst("end_transition_" + entityName)) : AddArgs(ZingData.App_Goto, MkCnst("wait_" + entityName)))));
             body.Add(MkZingIf(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Return")),
                 MkZingSeq(
                     MkZingAssignOrCast(currentEvent, PType.Event, MkZingIdentifier("null"), PType.Nil),
@@ -5347,6 +5347,7 @@ Environment:
                 AST<Cnst> executeLabel = Factory.Instance.MkCnst("execute_" + stateName);
                 AST<Cnst> waitLabel = Factory.Instance.MkCnst("wait_" + stateName);
                 AST<Cnst> transitionLabel = Factory.Instance.MkCnst("transition_" + stateName);
+                AST<Cnst> end_transitionLabel = Factory.Instance.MkCnst("end_transition_" + stateName);
                 string traceString = string.Format("\"<StateLog> Machine {0}-{{0}} entered State {1}\"", machineName, stateName);
                 var executeStmt = MkZingSeq(
                                     MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"))),
@@ -5427,6 +5428,7 @@ Environment:
                     var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingEvent(eventName));
                     ordinaryTransitionStmt = AddArgs(ZingData.App_ITE, condExpr, Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + targetStateName)), ordinaryTransitionStmt);
                 }
+                ordinaryTransitionStmt = AddArgs(ZingData.App_LabelStmt, end_transitionLabel, ordinaryTransitionStmt);
                 blocks.Add(AddArgs(ZingData.App_LabelStmt, transitionLabel, MkZingSeq(actionStmt, callTransitionStmt, exitFunction, ordinaryTransitionStmt)));
             }
             AST<Node> body = ConstructList(ZingData.App_Blocks, blocks);

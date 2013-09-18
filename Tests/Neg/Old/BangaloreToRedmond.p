@@ -91,7 +91,7 @@ main machine Employee {
     }
 
     state ReachedRedmond {
-        entry { }
+        entry { assert(false); }
     }
 
     foreign fun AmILucky():bool { 

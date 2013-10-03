@@ -436,7 +436,15 @@
                     var thenStmt = RenderStmt(enumerator.Current);
                     enumerator.MoveNext();
                     var elseStmt = RenderStmt(enumerator.Current);
-                    return string.Format("if ({0}) {{\n{1}\n}} else {{\n{2}\n}}\n", condExpr, thenStmt, elseStmt);
+                    if (elseStmt != string.Empty)
+                    {
+                        return string.Format("if ({0}) {{\n{1}\n}} else {{\n{2}\n}}\n", condExpr, thenStmt, elseStmt);
+                    }
+                    else
+                    {
+                        return string.Format("if ({0}) {{\n{1}\n}}\n", condExpr, thenStmt);       
+                    }
+
                 }
             }
             else if (functionName == "While")

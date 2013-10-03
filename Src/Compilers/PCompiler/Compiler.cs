@@ -5238,19 +5238,14 @@ Environment:
             body.Add(MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), MkCnst(0))));
             body.Add(AddArgs(ZingData.App_LabelStmt, MkCnst("reentry_" + name), MkZingAssign(cont,
                 MkZingCall(MkZingIdentifier(name), cont))));
-            body.Add(MkZingIf(MkZingEq(cont, MkZingIdentifier("null")),
+            body.Add(MkZingIf(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Leave")),
                 MkZingSeq(
-                type == TranslationContext.Action ? AddArgs(ZingData.App_Goto, MkCnst("exit")) : type == TranslationContext.Exit ? AddArgs(ZingData.App_Goto, MkCnst("end_transition_" + entityName)) : AddArgs(ZingData.App_Goto, MkCnst("wait_" + entityName)))));
+                type == TranslationContext.Action ? AddArgs(ZingData.App_Goto, MkCnst("exit")) : type == TranslationContext.Exit ? (AST<Node>) ZingData.Cnst_Nil : AddArgs(ZingData.App_Goto, MkCnst("wait_" + entityName)))));
             body.Add(MkZingIf(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Return")),
                 MkZingSeq(
                     MkZingAssignOrCast(currentEvent, PType.Event, MkZingIdentifier("null"), PType.Nil),
                     MkZingAssignOrCast(currentArg, PType.Any, MkZingIdentifier("null"), PType.Nil),
-                    type == TranslationContext.Action ? AddArgs(ZingData.App_Return, ZingData.Cnst_True): AddArgs(ZingData.App_Goto, MkCnst("transition_" + entityName)))));
-            body.Add(MkZingIf(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Leave")),
-                MkZingSeq(
-                    type == TranslationContext.Action ? AddArgs(ZingData.App_Goto, MkCnst("exit")) : 
-                        (type == TranslationContext.Entry ?
-                        AddArgs(ZingData.App_Goto, MkCnst("wait_" + entityName)) : MkZingReturn(ZingData.Cnst_Nil)))));
+                    type == TranslationContext.Action ? AddArgs(ZingData.App_Return, ZingData.Cnst_True) : AddArgs(ZingData.App_Return, ZingData.Cnst_Nil))));
             body.Add(MkZingIf(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Delete")),
                 MkZingSeq(
                     MkZingAssignOrCast(currentEvent, PType.Event, MkZingEvent("delete"), PType.Event),
@@ -5347,7 +5342,6 @@ Environment:
                 AST<Cnst> executeLabel = Factory.Instance.MkCnst("execute_" + stateName);
                 AST<Cnst> waitLabel = Factory.Instance.MkCnst("wait_" + stateName);
                 AST<Cnst> transitionLabel = Factory.Instance.MkCnst("transition_" + stateName);
-                AST<Cnst> end_transitionLabel = Factory.Instance.MkCnst("end_transition_" + stateName);
                 string traceString = string.Format("\"<StateLog> Machine {0}-{{0}} entered State {1}\"", machineName, stateName);
                 var executeStmt = MkZingSeq(
                                     MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"))),
@@ -5428,7 +5422,7 @@ Environment:
                     var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingEvent(eventName));
                     ordinaryTransitionStmt = AddArgs(ZingData.App_ITE, condExpr, Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + targetStateName)), ordinaryTransitionStmt);
                 }
-                ordinaryTransitionStmt = AddArgs(ZingData.App_LabelStmt, end_transitionLabel, ordinaryTransitionStmt);
+                
                 blocks.Add(AddArgs(ZingData.App_LabelStmt, transitionLabel, MkZingSeq(actionStmt, callTransitionStmt, exitFunction, ordinaryTransitionStmt)));
             }
             AST<Node> body = ConstructList(ZingData.App_Blocks, blocks);
@@ -7103,7 +7097,8 @@ Environment:
             body = MkZingSeq(
                 ctxt.emitLabelPrelude(),
                 MkZingLabeledStmt("start", body),
-                MkZingReturn(MkZingIdentifier("null")));
+                MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Leave"))),
+                MkZingReturn(MkZingIdentifier("entryCtxt")));
 
             return MkZingMethodDecl(name, MkZingVarDecls(MkZingVarDecl("entryCtxt", MkCnst(getZingContinuationCtxtType(machine)))), MkCnst(getZingContinuationCtxtType(machine)),
                 ctxt.emitLocals(), MkZingBlock("dummy", body));
@@ -7807,7 +7802,7 @@ Environment:
                     body.Add(MkZingAssign(MkZingDot(tmpVar, "ev"), MkZingIdentifier("null")));
                     body.Add(MkZingAssign(MkZingDot(tmpVar, "state"), MkZingDot(getZingStateEnumType(mName), "_" + allMachines[mName].stateNameToStateInfo.Keys.First())));
                     body.Add(MkZingAssign(MkZingDot(tmpVar, "target"), MkZingIdentifier("null")));
-                    body.Add(MkZingAssign(MkZingDot(tmpVar, "reason"), MkZingDot("ContinuationReason", "Exit")));
+                    body.Add(MkZingAssign(MkZingDot(tmpVar, "reason"), MkZingDot("ContinuationReason", "Leave")));
                     body.Add(MkZingReturn(tmpVar));
                     methods.Add(MkZingMethodDecl("Construct_Default", MkZingVarDecls(),
                         conT, ctxt.emitLocals(), MkZingBlock("dummy", MkZingSeq(body)), ZingData.Cnst_Static));

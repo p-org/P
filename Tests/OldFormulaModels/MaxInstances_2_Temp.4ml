@@ -1,0 +1,44 @@
+[
+	parsers.DSL = '"Parser at ..\Tools\PCompiler\DSLParser.dll"',
+	modules.PData = '"PData at ..\Libraries\Formula\PData.4ml"',
+	parse_ActiveParser = "DSL"
+]
+model MaxInstances_2_Temp of PData 
+{
+  E1 is EventDecl("E1", AssertMaxInstances(1), NIL),
+  E2 is EventDecl("E2", AssertMaxInstances(1), INT),
+  E3 is EventDecl("E3", AssumeMaxInstances(1), NIL),
+  E4 is EventDecl("E4", NIL, NIL),
+  unit is EventDecl("unit", AssertMaxInstances(1), NIL),
+  MainDecl(New(MachType("Real"), NIL)),
+  Real is MachineDecl("Real", FALSE, NIL),
+  VarDecl("machine_Real_ghost_machine", Real, ID, TRUE),
+  VarDecl("machine_Real_test", Real, BOOL, FALSE),
+  MachStart(Real, machine_Real_Real_Init),
+  machine_Real_Real_Init is StateDecl("machine_Real_Real_Init", Real, Seq(Assign(Use("machine_Real_ghost_machine", VAR), New(MachType("Ghost"), Inits("machine_Ghost_real_machine", THIS, NIL))), Seq(Raise(Use("unit", EVENT), NIL), NIL)), NIL),
+  Install(machine_Real_Real_Init, E2, machine_Real_Action1),
+  ExitFun(machine_Real_Real_Init, Assign(Use("machine_Real_test", VAR), TRUE)),
+  TransDecl(machine_Real_Real_Init, unit, machine_Real_Real_S1, FALSE),
+  TransDecl(machine_Real_Real_Init, E4, machine_Real_Real_S2, FALSE),
+  machine_Real_Real_S1 is StateDecl("machine_Real_Real_S1", Real, Send(Use("machine_Real_ghost_machine", VAR), Use("E1", EVENT), NIL), NIL),
+  Install(machine_Real_Real_S1, E2, machine_Real_Action1),
+  TransDecl(machine_Real_Real_S1, E4, machine_Real_Real_S2, FALSE),
+  machine_Real_Real_S2 is StateDecl("machine_Real_Real_S2", Real, Raise(Use("unit", EVENT), NIL), NIL),
+  TransDecl(machine_Real_Real_S2, unit, machine_Real_Real_S3, FALSE),
+  machine_Real_Real_S3 is StateDecl("machine_Real_Real_S3", Real, NIL, NIL),
+  TransDecl(machine_Real_Real_S3, E4, machine_Real_Real_S3, FALSE),
+  machine_Real_Action1 is ActionDecl("machine_Real_Action1", Real, Seq(Assert(Apply(EQ, Args(Arg(NIL), Args(100, NIL)))), Seq(Send(Use("machine_Real_ghost_machine", VAR), Use("E3", EVENT), NIL), Seq(Send(Use("machine_Real_ghost_machine", VAR), Use("E3", EVENT), NIL), NIL)))),
+  machine_Real_ignore is ActionDecl("machine_Real_ignore", Real, NIL),
+  Ghost is MachineDecl("Ghost", TRUE, NIL),
+  VarDecl("machine_Ghost_real_machine", Ghost, ID, FALSE),
+  MachStart(Ghost, machine_Ghost_Ghost_Init),
+  machine_Ghost_Ghost_Init is StateDecl("machine_Ghost_Ghost_Init", Ghost, NIL, NIL),
+  TransDecl(machine_Ghost_Ghost_Init, E1, machine_Ghost_Ghost_S1, FALSE),
+  machine_Ghost_Ghost_S1 is StateDecl("machine_Ghost_Ghost_S1", Ghost, Send(Use("machine_Ghost_real_machine", VAR), Use("E2", EVENT), 100), NIL),
+  Install(machine_Ghost_Ghost_S1, E1, machine_Ghost_ignore),
+  TransDecl(machine_Ghost_Ghost_S1, E3, machine_Ghost_Ghost_S2, FALSE),
+  machine_Ghost_Ghost_S2 is StateDecl("machine_Ghost_Ghost_S2", Ghost, Seq(Send(Use("machine_Ghost_real_machine", VAR), Use("E4", EVENT), NIL), Seq(Send(Use("machine_Ghost_real_machine", VAR), Use("E4", EVENT), NIL), Seq(Send(Use("machine_Ghost_real_machine", VAR), Use("E4", EVENT), NIL), NIL))), NIL),
+  TransDecl(machine_Ghost_Ghost_S2, E3, machine_Ghost_Ghost_Init, FALSE),
+  machine_Ghost_ignore is ActionDecl("machine_Ghost_ignore", Ghost, NIL).
+}
+

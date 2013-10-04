@@ -57,7 +57,7 @@ ghost machine Ghost {
     state Ghost_S1 {
 		ignore E1;
         entry {
-			send(real_machine, E2, 100);
+			send(real_machine, E2, 100);	
         }
         on E3 goto Ghost_S2;
     }

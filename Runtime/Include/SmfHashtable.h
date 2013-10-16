@@ -40,10 +40,10 @@ SMF_TYPEDECL_INDEX DomainType,
 SMF_TYPEDECL_INDEX RangeType);
 
 //
-// Insert (Key, Val) into the hashtable
+// Update the mapping Key -> Val in the hashtable
 //
 VOID
-SmfHashtableInsert(
+SmfHashtableUpdate(
 PSMF_DRIVERDECL Driver,
 PSMF_HASHTABLE Dst,
 ULONG_PTR Key,

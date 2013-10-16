@@ -24,7 +24,7 @@
 %YYSTYPE LexValue
 %partial
 
-%token T_INT T_BOOL T_EVENTID T_MACHINEID T_ANY T_SEQ
+%token T_INT T_BOOL T_EVENTID T_MACHINEID T_ANY T_SEQ T_MAP
 %token MAIN EVENT MACHINE ASSUME GHOST
 
 %token VAR START FOREIGN STATE FUN ACTION MAXQUEUE SUBMACHINE
@@ -32,12 +32,12 @@
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH
 
 %token IF WHILE THIS TRIGGER PAYLOAD ARG NEW RETURN ID LEAVE ASSERT SCALL RAISE SEND DEFAULT DELETE NULL
-%token LPAREN RPAREN LCBRACE RCBRACE LBRACKET RBRACKET SIZEOF
+%token LPAREN RPAREN LCBRACE RCBRACE LBRACKET RBRACKET SIZEOF KEYS
 
 %token TRUE FALSE
 
 %token ASSIGN
-%token EQ NE LT GT LE GE
+%token EQ NE LT GT LE GE IN
 %left LAND LNOT LOR
 
 %token DOT COLON COMMA
@@ -112,6 +112,7 @@ Type
 	| NamedTupleType
 	| TupleType
 	| SeqType
+	| MapType
 	;
 
 NamedTupleType
@@ -135,6 +136,10 @@ TypeList
 
 SeqType
 	: T_SEQ LBRACKET Type RBRACKET			{ $$.type = new TypeSeq($3.type); setLoc($$.type, @1, @4); }
+	;
+
+MapType
+    : T_MAP LBRACKET Type COMMA Type RBRACKET			{ $$.type = new TypeMap($3.type, $5.type); setLoc($$.type, @1, @6); }
 	;
 
 // ------------------   Event Declarations  -------------------------
@@ -346,6 +351,7 @@ Relational
 	| GT	{ $$.bop = Ops.B_GT; }
 	| LE	{ $$.bop = Ops.B_LE; }
 	| GE	{ $$.bop = Ops.B_GE; }
+	| IN	{ $$.bop = Ops.B_IN; }
 	;
 
 Equality
@@ -412,6 +418,7 @@ Exp_0 // Primary Expresions
 	| Arg
 	| FFCall
 	| SIZEOF LPAREN Exp RPAREN			{ $$.exp = new DSLSizeof($3.exp); setLoc($$.exp, @1, @4); }
+	| KEYS LPAREN Exp RPAREN			{ $$.exp = new DSLKeys($3.exp); setLoc($$.exp, @1, @4); }
 	;
 
 Arg

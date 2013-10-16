@@ -2,54 +2,61 @@
   modules.PData = "PData at C:\\Users\\qadeer\\Work\\codeplex\\plang\\Src\\Formula\\Domains\\PData.4ml"
 ]
 
-transform ArrayToUpdate (in:: PData) returns (out:: PData)
+transform ArrayToUpdate (in::PData) returns (out::PData)
 {
-   //// Find the statements in the input program
-   InStmt ::= (in.Stmt).
-   InStmt(s) :- 
-          d is in.Data, s = d.body, s : in.Stmt;   
-          d is in.Data, s = d.entryFun, s : in.Stmt;   
-          d is in.Data, s = d.exitFun, s : in.Stmt;
-          InStmt(s'), s = s'.body;
-          InStmt(s'), s = s'.s1;
-          InStmt(s'), s = s'.s2;
-          InStmt(s'), s = s'.true;          
-          InStmt(s'), s = s'.false.
+           //// Find the statements in the input program
+           InStmt ::= (in.Stmt).
+           InStmt(s) :- 
+                  d is in.Data, s = d.body, s : in.Stmt;   
+                  d is in.Data, s = d.entryFun, s : in.Stmt;   
+                  d is in.Data, s = d.exitFun, s : in.Stmt;
+                  InStmt(s'), s = s'.body;
+                  InStmt(s'), s = s'.s1;
+                  InStmt(s'), s = s'.s2;
+                  InStmt(s'), s = s'.true;          
+                  InStmt(s'), s = s'.false.
           
-   //// This type maps input statements to rewritten output statements       
-   In2OutStmt ::= (in.Stmt, out.Stmt).
+           //// This type maps input statements to rewritten output statements       
+           In2OutStmt ::= (in.Stmt, out.Stmt).
    
-   //// These statements translate directly from input to output
-   UnchangedStmts ::= in.DataOp + in.Assert + in.Return + 
-                      in.Send + in.Raise + in.Scall + in.Call + { NIL, LEAVE, DELETE } .
+           //// These statements translate directly from input to output
+           UnchangedStmts ::= in.DataOp + in.Assert + in.Return + 
+                              in.Send + in.Raise + in.Scall + in.Call + { NIL, LEAVE, DELETE } .
                       
-   In2OutStmt(s, s) :- InStmt(s), s : UnchangedStmts.
+           In2OutStmt(s, s) :- InStmt(s), s : UnchangedStmts.
           
-   //// These statements can only be translated when their substatements are translated       
-   In2OutStmt(in.While(c, b), out.While(c, b')) :- InStmt(in.While(c, b)), In2OutStmt(b, b').
-   In2OutStmt(in.ITE(c, t, f), out.ITE(c, t', f')) :- InStmt(in.ITE(c, t, f)), In2OutStmt(t, t'), In2OutStmt(f, f').
-   In2OutStmt(in.Seq(s1, s2), out.Seq(s1', s2')) :- InStmt(in.Seq(s1, s2)), In2OutStmt(s1, s1'), In2OutStmt(s2, s2').
+           //// These statements can only be translated when their substatements are translated       
+           In2OutStmt(in.While(c, b), out.While(c, b')) :- InStmt(in.While(c, b)), In2OutStmt(b, b').
+           In2OutStmt(in.ITE(c, t, f), out.ITE(c, t', f')) :- InStmt(in.ITE(c, t, f)), In2OutStmt(t, t'), In2OutStmt(f, f').
+           In2OutStmt(in.Seq(s1, s2), out.Seq(s1', s2')) :- InStmt(in.Seq(s1, s2)), In2OutStmt(s1, s1'), In2OutStmt(s2, s2').
    
-   //// a[e] = f --> UPDATE(a, e, f)
-   Rewrote ::= (in.Stmt).   
-   Rewrote(s),
-   In2OutStmt(s, out.DataOp(UPDATE, Exprs(a, Exprs(e, Exprs(f, NIL))))) :-     
-                  InStmt(s), s = in.Assign(Apply(IDX, Exprs(a, Exprs(e, NIL))), f).
+           //// a[e] = f --> UPDATE(a, e, f)
+           Rewrote ::= (in.Stmt).   
+           Rewrote(s),
+           In2OutStmt(s, out.DataOp(UPDATE, Exprs(a, Exprs(e, Exprs(f, NIL))))) :-     
+                          InStmt(s), s = in.Assign(Apply(IDX, Exprs(a, Exprs(e, NIL))), f).
    
-   //// All other assignments are translated normally.
-   In2OutStmt(s, s) :- InStmt(s), s : in.Assign, no Rewrote(s).
+           //// All other assignments are translated normally.
+           In2OutStmt(s, s) :- InStmt(s), s : in.Assign, no Rewrote(s).
            
-   //// These declarations are unchanged by the transformation
-   UnchangedDecls ::=     
-    in.MachineDecl + in.EventDecl + in.Install + in.VarDecl +
-    in.TransDecl + in.StateSetDecl + in.InStateSet + in.EventSetDecl + 
-    in.InEventSet + in.MainDecl + in.MachStart + in.Flags + in.Label. 
+           //// These declarations are unchanged by the transformation
+           UnchangedDecls ::=     
+            in.MachineDecl + in.EventDecl + in.VarDecl +
+            in.StateSetDecl + in.EventSetDecl + 
+            in.InEventSet + in.MainDecl + in.Label. 
     
-   out._(d) :- d is UnchangedDecls.
+           out._(d) :- d is UnchangedDecls.
    
-   //// These declarations may have had their function bodies rewritten
-   out.ExitFun(sd, s') :- in.ExitFun(sd, s), In2OutStmt(s, s').                          
-   out.ActionDecl(n, m, s') :- in.ActionDecl(n, m, s), In2OutStmt(s, s').
-   out.StateDecl(n, m, s', d) :- in.StateDecl(n, m, s, d), In2OutStmt(s, s').                       
-   out.FunDecl(n, m, p, r, f, s') :- in.FunDecl(n, m, p, r, f, s), In2OutStmt(s, s').                  
+           //// These declarations may have had their function bodies rewritten
+           out.ExitFun(sd, s') :- in.ExitFun(sd, s), In2OutStmt(s, s').                          
+           out.ActionDecl(n, m, s') :- in.ActionDecl(n, m, s), In2OutStmt(s, s').
+           out.Install(StateDecl(sn, m, ss', d), e, ActionDecl(an, m, as')) :- 
+            in.Install(StateDecl(sn, m, ss, d), e, ActionDecl(an, m, as)), In2OutStmt(ss, ss'), In2OutStmt(as, as'). 
+           out.StateDecl(n, m, s', d) :- in.StateDecl(n, m, s, d), In2OutStmt(s, s').        
+           out.MachStart(m, StateDecl(n, m, s', d)) :- in.MachStart(m, StateDecl(n, m, s, d)), In2OutStmt(s, s').
+           out.TransDecl(StateDecl(n1, m, s1', d1), trig, StateDecl(n2, m, s2', d2), isPush) :-
+            in.TransDecl(StateDecl(n1, m, s1, d1), trig, StateDecl(n2, m, s2, d2), isPush), In2OutStmt(s1, s1'), In2OutStmt(s2, s2').
+           out.FunDecl(n, m, p, r, f, s') :- in.FunDecl(n, m, p, r, f, s), In2OutStmt(s, s').
+           out.Flags(FunDecl(n, m, p, r, f, s'), flag) :- in.Flags(FunDecl(n, m, p, r, f, s), flag), In2OutStmt(s, s').
+           out.InStateSet(set, StateDecl(n, m, s', d)) :- in.InStateSet(set, StateDecl(n, m, s, d)), In2OutStmt(s, s').
 }

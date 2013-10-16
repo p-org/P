@@ -73,6 +73,7 @@ namespace PParser
         public override T visit_pre(DSLNew e) { return default(T); }
         public override T visit_pre(DSLAttribute e) { return default(T); }
         public override T visit_pre(DSLSizeof e) { return default(T); }
+        public override T visit_pre(DSLKeys e) { return default(T); }
 
         public override void walk(INode n)
         {

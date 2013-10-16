@@ -142,7 +142,7 @@ namespace P2Formula
                 Environment.Exit(-1);
 
             }
-
+            
             try {
                 StreamWriter sw = new StreamWriter(outputFile);
                 r.Print(sw);

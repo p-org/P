@@ -69,6 +69,7 @@ NonSMCntrChars  [^\'\"\n\r]*
 "true"									   { return (int)PTokens.TRUE;  }
 "false"									   { return (int)PTokens.FALSE;  }
 "sizeof"								   { return (int)PTokens.SIZEOF; }
+"keys"									   { return (int)PTokens.KEYS; }
 
 "assert"								   { return (int)PTokens.ASSERT;  }
 "send"									   { return (int)PTokens.SEND;  }
@@ -82,6 +83,7 @@ NonSMCntrChars  [^\'\"\n\r]*
 "eid"							           { return (int)PTokens.T_EVENTID;  }
 "mid"									   { return (int)PTokens.T_MACHINEID;  }
 "seq"									   { return (int)PTokens.T_SEQ;  }
+"map"									   { return (int)PTokens.T_MAP; }
 
 "main"									   { return (int)PTokens.MAIN;  }
 "event"									   { return (int)PTokens.EVENT;  }
@@ -117,6 +119,8 @@ NonSMCntrChars  [^\'\"\n\r]*
 
 [,]                                        { return (int)PTokens.COMMA;     }
 [;]                                        { return (int)PTokens.SEMICOLON; }
+
+"in"									   { return (int)PTokens.IN; }
 
 "=="                                       { return (int)PTokens.EQ; }
 "="                                        { return (int)PTokens.ASSIGN; }

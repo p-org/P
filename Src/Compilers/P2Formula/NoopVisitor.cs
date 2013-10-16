@@ -23,6 +23,7 @@ namespace PParser
         public override T visit(TypeNamedTuple s){ return default(T); }
         public override T visit(TypeTuple s) { return default(T); }
         public override T visit(TypeSeq s) { return default(T); }
+        public override T visit(TypeMap s) { return default(T); }
         public override T visit(TypeAny s) { return default(T); }
         // P Declarations
         public override T visit(Program s){ return default(T); }
@@ -74,6 +75,7 @@ namespace PParser
         public override T visit(DSLNew e){ return default(T); }
         public override T visit(DSLAttribute e) { return default(T); }
         public override T visit(DSLSizeof e) { return default(T); }
+        public override T visit(DSLKeys e) { return default(T); }
 
         // Type Declarations
         public override T visit_pre(TypeInt s) { return default(T); }
@@ -84,6 +86,7 @@ namespace PParser
         public override T visit_pre(TypeNamedTuple s) { return default(T); }
         public override T visit_pre(TypeTuple s) { return default(T); }
         public override T visit_pre(TypeSeq s) { return default(T); }
+        public override T visit_pre(TypeMap s) { return default(T); }
         public override T visit_pre(TypeAny s) { return default(T); }
         // P Declarations
         public override T visit_pre(Program s) { return default(T); }
@@ -136,5 +139,6 @@ namespace PParser
         public override T visit_pre(DSLNew e) { return default(T); }
         public override T visit_pre(DSLAttribute e) { return default(T); }
         public override T visit_pre(DSLSizeof e) { return default(T); }
+        public override T visit_pre(DSLKeys e) { return default(T); }
     }
 }

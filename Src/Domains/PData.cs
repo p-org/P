@@ -45,10 +45,12 @@
         public static readonly AST<Id> Cnst_Le = Factory.Instance.MkId("LE");
         public static readonly AST<Id> Cnst_Gt = Factory.Instance.MkId("GT");
         public static readonly AST<Id> Cnst_Ge = Factory.Instance.MkId("GE");
+        public static readonly AST<Id> Cnst_In = Factory.Instance.MkId("IN");
 
         public static readonly AST<Id> Cnst_Idx = Factory.Instance.MkId("IDX");
         public static readonly AST<Id> Cnst_Fld = Factory.Instance.MkId("FLD");
         public static readonly AST<Id> Cnst_Sizeof = Factory.Instance.MkId("SIZEOF");
+        public static readonly AST<Id> Cnst_Keys = Factory.Instance.MkId("KEYS");
 
         public static readonly AST<Id> Cnst_Nil = Factory.Instance.MkId("NIL");
         public static readonly AST<Id> Cnst_Bool = Factory.Instance.MkId("BOOL");
@@ -58,6 +60,7 @@
 
         public static readonly AST<Id> Cnst_Insert = Factory.Instance.MkId("INSERT");
         public static readonly AST<Id> Cnst_Remove = Factory.Instance.MkId("REMOVE");
+        public static readonly AST<Id> Cnst_Update = Factory.Instance.MkId("UPDATE");
 
         /// <summary>
         /// Constructor names
@@ -76,6 +79,8 @@
         public static readonly AST<Id> Con_TypeField = Factory.Instance.MkId("TypeField");
         public static readonly AST<Id> Con_TypeNamedTuple = Factory.Instance.MkId("TypeNamedTuple");
         public static readonly AST<Id> Con_TypeSeq = Factory.Instance.MkId("TypeSeq");
+        public static readonly AST<Id> Con_TypeMap = Factory.Instance.MkId("TypeMap");
+
         //// Statements
         public static readonly AST<Id> Con_MachType = Factory.Instance.MkId("MachType");
         public static readonly AST<Id> Con_Assert = Factory.Instance.MkId("Assert");

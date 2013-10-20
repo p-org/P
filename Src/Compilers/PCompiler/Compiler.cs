@@ -551,7 +551,7 @@
                 return false;
             }
             outModel = Add(outModel, MkZingFile("output.zing", elements));
-            //// outModel.Print(Console.Out);
+            //outModel.Print(Console.Out);
             return PrintFile(outModel, env);
         }
 
@@ -4134,7 +4134,6 @@ Environment:
 
             var ft = (FuncTerm)n;
             var funName = ((Id)ft.Function).Name;
-            AST<FuncTerm> outTerm = null;
             if (funName == PData.Con_Assert.Node.Name)
             {
                 if (shouldErase(n))
@@ -4273,7 +4272,7 @@ Environment:
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
-                    outTerm = Factory.Instance.AddArg(CData.App_Seq(n.Span), ctxt.emitCSideEffects(it.Current));
+                    var outTerm = Factory.Instance.AddArg(CData.App_Seq(n.Span), ctxt.emitCSideEffects(it.Current));
                     it.MoveNext();
                     return Factory.Instance.AddArg(outTerm, it.Current);
                 }
@@ -4503,8 +4502,12 @@ Environment:
 
                         var arg1Type = getComputedType(GetArgByIndex((FuncTerm)GetArgByIndex(ft, 1), 0));
                         var arg2Type = getComputedType(GetArgByIndex((FuncTerm)GetArgByIndex((FuncTerm)GetArgByIndex(ft, 1), 1), 0));
-                        
-                        if (pOp == PData.Cnst_Idx.Node.Name)
+
+                        if (pOp == PData.Cnst_In.Node.Name)
+                        {
+                            return MkFunApp("SmfHashtableContains", n.Span, ctxt.driver, MkAddrOf(arg2), arg1);
+                        }
+                        else if (pOp == PData.Cnst_Idx.Node.Name)
                         {
                             var baseType = getComputedType(cnodeToPNode[arg1.Node]);
                             if (baseType is PTupleType)
@@ -4820,10 +4823,12 @@ Environment:
             var prog = Factory.Instance.MkProgram(progName);
             prog = Factory.Instance.AddModule(prog, m);
 
+            /*
             System.IO.StreamWriter sw = new System.IO.StreamWriter("output.4ml");
             prog.Print(sw);
             sw.Flush(); 
             sw.Close();
+            */
 
             InstallResult result;
             var success = env.Install(prog, out result);
@@ -6182,7 +6187,6 @@ Environment:
             var ft = (FuncTerm)n;
             var funName = ((Id)ft.Function).Name;
 
-            Tuple<AST<Node>, TypeCheckInfo> outTerm = null;
             if (funName == PData.Con_Assert.Node.Name)
             {
                 using (var it = children.GetEnumerator())
@@ -6441,7 +6445,7 @@ Environment:
                     }
                     else
                     {
-                        outTerm = new Tuple<AST<Node>, TypeCheckInfo>(MkZingSeq(
+                        return new Tuple<AST<Node>, TypeCheckInfo>(MkZingSeq(
                             zingWrapExprToStmts(first.Item1),
                             ctxt.emitZingSideEffects(zingWrapExprToStmts(second.Item1))), new TypeCheckInfo(new PNilType()));
                     }
@@ -6482,7 +6486,7 @@ Environment:
                             return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
                         }
 
-                        outTerm = new Tuple<AST<Node>, TypeCheckInfo>(MkZingAssignOrCast(lhs.Item1, lhsInfo.type, rhs.Item1, rhsInfo.type), new TypeCheckInfo(new PNilType(), lhsInfo.isGhost));
+                        return new Tuple<AST<Node>, TypeCheckInfo>(MkZingAssignOrCast(lhs.Item1, lhsInfo.type, rhs.Item1, rhsInfo.type), new TypeCheckInfo(new PNilType(), lhsInfo.isGhost));
                     }
                 }
             }
@@ -6729,11 +6733,11 @@ Environment:
                     {
                         if (pOp.Name == PData.Cnst_Not.Node.Name && arg1.Item2.type == PType.Bool)
                         {   // TODO: In some places we return, in others we use outTerm. I think this is legacy could. Should refactor to always return
-                            outTerm = new Tuple<AST<Node>, TypeCheckInfo>(MkZingApply(zingOp, arg1.Item1), new TypeCheckInfo(new PBoolType(), isGhost));
+                            return new Tuple<AST<Node>, TypeCheckInfo>(MkZingApply(zingOp, arg1.Item1), new TypeCheckInfo(new PBoolType(), isGhost));
                         }
                         else if (pOp.Name == PData.Cnst_Neg.Node.Name && arg1.Item2.type == PType.Int)
                         {
-                            outTerm = new Tuple<AST<Node>, TypeCheckInfo>(MkZingApply(zingOp, arg1.Item1), new TypeCheckInfo(new PIntType(), isGhost));
+                            return new Tuple<AST<Node>, TypeCheckInfo>(MkZingApply(zingOp, arg1.Item1), new TypeCheckInfo(new PIntType(), isGhost));
                         }
                         else if (pOp.Name == PData.Cnst_Sizeof.Node.Name)
                         {
@@ -6772,7 +6776,7 @@ Environment:
                                 return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
                             }
                             var tmpVar = ctxt.getTmpVar(PType.Bool, "tmpVal");
-                            ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCallStmt(MkZingCall(MkZingDot(arg2.Item1, "Contains"), arg1.Item1))));
+                            ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(arg2.Item1, "Contains"), arg1.Item1)));
                             return new Tuple<AST<Node>, TypeCheckInfo>(tmpVar, new TypeCheckInfo(PType.Bool, arg1.Item2.isGhost || arg2.Item2.isGhost));
                         }
                         else if (pOp.Name == PData.Cnst_Idx.Node.Name)
@@ -6890,7 +6894,7 @@ Environment:
                             var outNode = pOp.Name == PData.Cnst_Eq.Node.Name ?
                                 MkZingEq(ctxt, arg1.Item1, arg1.Item2.type, arg2.Item1, arg2.Item2.type) :
                                 MkZingNeq(ctxt, arg1.Item1, arg1.Item2.type, arg2.Item1, arg2.Item2.type);
-                            outTerm = new Tuple<AST<Node>, TypeCheckInfo>(outNode, new TypeCheckInfo(new PBoolType(), isGhost));
+                            return new Tuple<AST<Node>, TypeCheckInfo>(outNode, new TypeCheckInfo(new PBoolType(), isGhost));
                         }
                         else if (arg1.Item2.type == arg2.Item2.type)
                         {
@@ -6898,7 +6902,7 @@ Environment:
                             {
                                 if (arg1.Item2.type == PType.Bool)
                                 {
-                                    outTerm = new Tuple<AST<Node>, TypeCheckInfo>(MkZingApply(zingOp, arg1.Item1, arg2.Item1), new TypeCheckInfo(new PBoolType(), isGhost));
+                                    return new Tuple<AST<Node>, TypeCheckInfo>(MkZingApply(zingOp, arg1.Item1, arg2.Item1), new TypeCheckInfo(new PBoolType(), isGhost));
                                 }
                                 else
                                 {
@@ -6910,11 +6914,11 @@ Environment:
                             {
                                 if (pOp.Name == PData.Cnst_Add.Node.Name || pOp.Name == PData.Cnst_Sub.Node.Name || pOp.Name == PData.Cnst_Mul.Node.Name || pOp.Name == PData.Cnst_IntDiv.Node.Name)
                                 {
-                                    outTerm = new Tuple<AST<Node>, TypeCheckInfo>(MkZingApply(zingOp, arg1.Item1, arg2.Item1), new TypeCheckInfo(new PIntType(), isGhost));
+                                    return new Tuple<AST<Node>, TypeCheckInfo>(MkZingApply(zingOp, arg1.Item1, arg2.Item1), new TypeCheckInfo(new PIntType(), isGhost));
                                 }
                                 else
                                 {
-                                    outTerm = new Tuple<AST<Node>, TypeCheckInfo>(MkZingApply(zingOp, arg1.Item1, arg2.Item1), new TypeCheckInfo(new PBoolType(), isGhost));
+                                    return new Tuple<AST<Node>, TypeCheckInfo>(MkZingApply(zingOp, arg1.Item1, arg2.Item1), new TypeCheckInfo(new PBoolType(), isGhost));
                                 }
                             }
                             else
@@ -7320,7 +7324,7 @@ Environment:
                         AddArgs(ZingData.App_Goto, MkCnst(loopStart)),
                         MkZingLabeledStmt(loopEnd, ZingData.Cnst_Nil)));
                         
-                    outTerm = new Tuple<AST<Node>, TypeCheckInfo>(res, new TypeCheckInfo(new PNilType(), condExpr.Item2.isGhost));
+                    return new Tuple<AST<Node>, TypeCheckInfo>(res, new TypeCheckInfo(new PNilType(), condExpr.Item2.isGhost));
                 }
             }
             else if (funName == PData.Con_MachType.Node.Name)
@@ -7329,19 +7333,18 @@ Environment:
             }
             else if (funName == PData.Con_TypeTuple.Node.Name || funName == PData.Con_TypeNamedTuple.Node.Name)
             {
-                outTerm = new Tuple<AST<Node>, TypeCheckInfo>(null, new TypeCheckInfo(new PNilType())); // Ignore
+                return new Tuple<AST<Node>, TypeCheckInfo>(null, new TypeCheckInfo(new PNilType())); // Ignore
             }
             else if (funName == PData.Con_TypeField.Node.Name)
             {
-                outTerm = new Tuple<AST<Node>, TypeCheckInfo>(null, new TypeCheckInfo(new PNilType())); // Ignore
+                return new Tuple<AST<Node>, TypeCheckInfo>(null, new TypeCheckInfo(new PNilType())); // Ignore
             }
             else
             {
                 Console.WriteLine("Unknown term name: " + funName);
                 throw new NotImplementedException();
             }
-
-            return outTerm;
+            return null;
         }
 
         AST<FuncTerm> MkZingCreateMachineCall(ZingEntryFun_FoldContext ctxt, string typeName, Node initializers)

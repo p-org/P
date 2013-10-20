@@ -110,6 +110,8 @@ NonSMCntrChars  [^\'\"\n\r]*
 "on"									   { return (int)PTokens.ON;  }
 "do"									   { return (int)PTokens.DO;  }
 
+"in"									   { return (int)PTokens.IN; }
+
 [A-Za-z_][A-Za-z_0-9]*  			       { return (int)PTokens.ID;   }
 [0-9]+									   { return (int)PTokens.INT;  }
 [0-9]+[\.][0-9]+						   { return (int)PTokens.REAL; }
@@ -119,8 +121,6 @@ NonSMCntrChars  [^\'\"\n\r]*
 
 [,]                                        { return (int)PTokens.COMMA;     }
 [;]                                        { return (int)PTokens.SEMICOLON; }
-
-"in"									   { return (int)PTokens.IN; }
 
 "=="                                       { return (int)PTokens.EQ; }
 "="                                        { return (int)PTokens.ASSIGN; }

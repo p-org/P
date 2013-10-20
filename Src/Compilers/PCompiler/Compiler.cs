@@ -5284,12 +5284,13 @@ Environment:
                 MkZingSeq(
                     MkZingAssign(MkZingDot(cont, "nondet"), MkZingCall(MkCnst("choose"), MkCnst("bool"))),
                     AddArgs(ZingData.App_Goto, MkCnst("reentry_" + name)))));
+            body.Add(MkZingIf(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "NewM")),
+                MkZingSeq(
+                    ZingData.Cnst_Yield,
+                    AddArgs(ZingData.App_Goto, MkCnst("reentry_" + name)))));
             body.Add(MkZingIf(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Send")),
                 MkZingSeq(
-                    MkZingCallStmt(MkZingCall(MkZingDot("cont", "target", "EnqueueEvent"), MkZingDot("cont", "ev"), MkZingDot("cont", "payload"), MkCnst("myHandle"))),
-                    MkZingAssign(MkZingDot("cont", "target"), MkZingIdentifier("null")),
-                    MkZingAssign(MkZingDot("cont", "ev"), MkZingIdentifier("null")),
-                    MkZingAssign(MkZingDot("cont", "payload"), MkZingIdentifier("null")),
+                    ZingData.Cnst_Yield,
                     AddArgs(ZingData.App_Goto, MkCnst("reentry_" + name)))));
 
             return MkZingSeq(body);
@@ -6688,8 +6689,17 @@ Environment:
                             inits = AddArgs(ZingData.App_Args, lhs.Item1, AddArgs(ZingData.App_Args, tmpCastVar, inits));
                         }
                     }
+                    if (ctxt.entityName != null) // indicates its not the Main/God machine
+                    {
+                        var afterLabel = ctxt.getFreshLabel();
+                        ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewM"), MkCnst(ctxt.labelToId(afterLabel)))));
+                        return new Tuple<AST<Node>, TypeCheckInfo>(MkZingCreateMachineCall(ctxt, typeName, inits.Node), new TypeCheckInfo(new PIdType(), allMachines[typeName].isGhost)); 
+                    }
+                    else
+                    {
+                        return new Tuple<AST<Node>, TypeCheckInfo>(MkZingCreateMachineCall(ctxt, typeName, inits.Node), new TypeCheckInfo(new PIdType(), allMachines[typeName].isGhost));
 
-                    return new Tuple<AST<Node>, TypeCheckInfo>(MkZingCreateMachineCall(ctxt, typeName, inits.Node), new TypeCheckInfo(new PIdType(), allMachines[typeName].isGhost));
+                    }
                 }
             }
             else if (funName == PData.Con_Raise.Node.Name)
@@ -6862,36 +6872,17 @@ Environment:
                 }
 
 
-                string functioncall_entry = "reentry_" + getUnique(calleeName);
                 AST<Node> callStmt = MkZingSeq(
                     MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), MkCnst(0))),
-                    MkZingLabeledStmt(beforeLabel, ZingData.Cnst_Nil),
-                    MkZingLabeledStmt(functioncall_entry, ctxt.emitZingSideEffects(MkZingAssign(MkZingIdentifier("entryCtxt"), callExpr))),
-                    //handle return val
-                    MkZingIf(MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "ReturnVal")),
-                        processOutput),
-                    //handle send
-                    MkZingIf(MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "Send")),
-                    MkZingSeq(
-                    MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "target", "EnqueueEvent"), MkZingDot("entryCtxt", "ev"), MkZingDot("entryCtxt", "payload"), MkCnst("myHandle"))),
-                    MkZingAssign(MkZingDot("entryCtxt", "target"), MkZingIdentifier("null")),
-                    MkZingAssign(MkZingDot("entryCtxt", "ev"), MkZingIdentifier("null")),
-                    MkZingAssign(MkZingDot("entryCtxt", "payload"), MkZingIdentifier("null")),
-                    AddArgs(ZingData.App_Goto, MkCnst(functioncall_entry)))),
-
-                    //handle non-det
-                    MkZingIf(MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "Nondet")),
-                MkZingSeq(
-                    MkZingAssign(MkZingDot("entryCtxt", "nondet"), MkZingCall(MkCnst("choose"), MkCnst("bool"))),
-                    AddArgs(ZingData.App_Goto, MkCnst(functioncall_entry)))),
-
-                    //handle return void
-                    MkZingIf(MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "Return")), ZingData.Cnst_Nil)
-                    );
-                    
-                    
+                    MkZingLabeledStmt(beforeLabel, ctxt.emitZingSideEffects(MkZingAssign(MkZingIdentifier("entryCtxt"), callExpr))),
+                    AddArgs(ZingData.App_ITE, MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "ReturnVal")),
+                        processOutput,
+                        MkZingIf(MkZingNeq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "Return")),
+                            MkZingSeq(
+                                MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), MkCnst(ctxt.labelToId(beforeLabel)))),
+                                MkZingReturn(MkZingIdentifier("entryCtxt"))))));
                 ctxt.addSideEffect(callStmt);
-
+                    
                 return new Tuple<AST<Node>, TypeCheckInfo>(outExp, new TypeCheckInfo(calleeInfo.returnType, isGhost));
             }
             else if (funName == PData.Con_Send.Node.Name)
@@ -6957,7 +6948,8 @@ Environment:
                     ctxt.addSideEffect(MkZingAssignOrCast(tmpEq, PType.Bool, MkZingCall(MkZingDot(tmpVar, "CanCastTo"), tmpEvPayload), PType.Bool));
                     ctxt.addSideEffect(MkZingAssert(tmpEq));
                     var afterLabel = ctxt.getFreshLabel();
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Send"), targetExpr, eventExpr, tmpVar, MkCnst(ctxt.labelToId(afterLabel)))));
+                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingApply(ZingData.Cnst_Dot, targetExpr, MkZingIdentifier("EnqueueEvent")), eventExpr, tmpVar, MkCnst("myHandle"))));
+                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Send"),MkCnst(ctxt.labelToId(afterLabel)))));
                     // Actual Send statement
                     return new Tuple<AST<Node>, TypeCheckInfo>(MkZingSeq(MkZingReturn(MkZingIdentifier("entryCtxt")),
                         MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil)), new TypeCheckInfo(new PNilType(), targetIsGhost || argIsGhost));
@@ -7033,7 +7025,7 @@ Environment:
             return outTerm;
         }
 
-        AST<FuncTerm> MkZingCreateMachineCall(ZingEntryFun_FoldContext ctxt, string typeName, Node initializers)
+        AST<Node> MkZingCreateMachineCall(ZingEntryFun_FoldContext ctxt, string typeName, Node initializers)
         {
             Dictionary<string, Node> localVarToInitializer = new Dictionary<string, Node>();
             while (true)
@@ -7075,10 +7067,11 @@ Environment:
                         var tmpId = ctxt.getTmpVar(varType, "tmpInitializer");
                         ctxt.addSideEffect(MkZingAssign(tmpId, argNode));
                         argNode = tmpId;
-                }
+                    }
                     args.Add(argNode);
+                }
             }
-            }
+            
             return MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), args);
         }
 
@@ -7886,14 +7879,26 @@ Environment:
                     body.Add(MkZingAssign(MkZingDot("this", "returnTo"), MkZingIdentifier("null")));
                     body.Add(MkZingAssign(MkZingDot("this", "state"), MkZingDot(getZingStateEnumType(mName), "_" + allMachines[mName].stateNameToStateInfo.Keys.First())));
                     body.Add(MkZingAssign(MkZingDot("this", "reason"), MkZingDot("ContinuationReason", "Send")));
-                    body.Add(MkZingAssign(MkZingDot("this", "target"), MkZingIdentifier("target")));
-                    body.Add(MkZingAssign(MkZingDot("this", "ev"), MkZingIdentifier("ev")));
-                    body.Add(MkZingAssign(MkZingDot("this", "payload"), MkZingIdentifier("payload")));
+                    body.Add(MkZingAssign(MkZingDot("this", "target"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "ev"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "payload"), MkZingIdentifier("null")));
                     body.Add(MkZingCallStmt(MkZingCall(MkZingDot("this", "PushReturnTo"), MkZingIdentifier("ret"))));
-                    methods.Add(MkZingMethodDecl("Send", MkZingVarDecls(MkZingVarDecl("target", MkCnst("SM_HANDLE")), MkZingVarDecl("ev", MkCnst("SM_EVENT")), MkZingVarDecl("payload", MkCnst(SM_ARG_UNION)), MkZingVarDecl("ret", PType.Int)),
+                    methods.Add(MkZingMethodDecl("Send", MkZingVarDecls(MkZingVarDecl("ret", PType.Int)),
                         ZingData.Cnst_Void, ctxt.emitLocals(), MkZingBlock("dummy", MkZingSeq(body))));
                 }
-
+                { // Add the New method
+                    var ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "NewM", this);
+                    var body = new List<AST<Node>>();
+                    body.Add(MkZingAssign(MkZingDot("this", "returnTo"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "state"), MkZingDot(getZingStateEnumType(mName), "_" + allMachines[mName].stateNameToStateInfo.Keys.First())));
+                    body.Add(MkZingAssign(MkZingDot("this", "reason"), MkZingDot("ContinuationReason", "NewM")));
+                    body.Add(MkZingAssign(MkZingDot("this", "target"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "ev"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "payload"), MkZingIdentifier("null")));
+                    body.Add(MkZingCallStmt(MkZingCall(MkZingDot("this", "PushReturnTo"), MkZingIdentifier("ret"))));
+                    methods.Add(MkZingMethodDecl("NewM", MkZingVarDecls(MkZingVarDecl("ret", PType.Int)),
+                        ZingData.Cnst_Void, ctxt.emitLocals(), MkZingBlock("dummy", MkZingSeq(body))));
+                }
                 { // Add the Call method
                     var ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Call", this);
                     var body = new List<AST<Node>>();
@@ -8167,7 +8172,6 @@ Environment:
                 MkZingAssign(MkZingDot(objectName, "myHandle", "machineId"), MkZingCall(MkZingDot("MachineId", "GetNextId"))),
                 MkZingCallStmt(MkZingCall(MkZingDot(objectName, "run")), ZingData.Cnst_Async),
                 MkZingCallStmt(MkZingCall(MkZingIdentifier("invokescheduler"), Factory.Instance.MkCnst("\"map\""), MkZingDot(objectName, "myHandle", "machineId"))),
-                ZingData.Cnst_Yield,
                 Factory.Instance.AddArg(ZingData.App_Return, MkZingDot(objectName, "myHandle"))
                 );
             body = AddArgs(ZingData.App_LabelStmt, Factory.Instance.MkCnst("dummy"), body);

@@ -6861,15 +6861,35 @@ Environment:
                     outExp = retVar;
                 }
 
+
+                string functioncall_entry = "reentry_" + getUnique(calleeName);
                 AST<Node> callStmt = MkZingSeq(
                     MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), MkCnst(0))),
-                    MkZingLabeledStmt(beforeLabel, ctxt.emitZingSideEffects(MkZingAssign(MkZingIdentifier("entryCtxt"), callExpr))),
-                    AddArgs(ZingData.App_ITE, MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "Return")),
-                        processOutput,
-                        MkZingIf(MkZingNeq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "ReturnVoid")),
-                            MkZingSeq(
-                                MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), MkCnst(ctxt.labelToId(beforeLabel)))),
-                                MkZingReturn(MkZingIdentifier("entryCtxt"))))));
+                    MkZingLabeledStmt(beforeLabel, ZingData.Cnst_Nil),
+                    MkZingLabeledStmt(functioncall_entry, ctxt.emitZingSideEffects(MkZingAssign(MkZingIdentifier("entryCtxt"), callExpr))),
+                    //handle return val
+                    MkZingIf(MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "ReturnVal")),
+                        processOutput),
+                    //handle send
+                    MkZingIf(MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "Send")),
+                    MkZingSeq(
+                    MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "target", "EnqueueEvent"), MkZingDot("entryCtxt", "ev"), MkZingDot("entryCtxt", "payload"), MkCnst("myHandle"))),
+                    MkZingAssign(MkZingDot("entryCtxt", "target"), MkZingIdentifier("null")),
+                    MkZingAssign(MkZingDot("entryCtxt", "ev"), MkZingIdentifier("null")),
+                    MkZingAssign(MkZingDot("entryCtxt", "payload"), MkZingIdentifier("null")),
+                    AddArgs(ZingData.App_Goto, MkCnst(functioncall_entry)))),
+
+                    //handle non-det
+                    MkZingIf(MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "Nondet")),
+                MkZingSeq(
+                    MkZingAssign(MkZingDot("entryCtxt", "nondet"), MkZingCall(MkCnst("choose"), MkCnst("bool"))),
+                    AddArgs(ZingData.App_Goto, MkCnst(functioncall_entry)))),
+
+                    //handle return void
+                    MkZingIf(MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "Return")), ZingData.Cnst_Nil)
+                    );
+                    
+                    
                 ctxt.addSideEffect(callStmt);
 
                 return new Tuple<AST<Node>, TypeCheckInfo>(outExp, new TypeCheckInfo(calleeInfo.returnType, isGhost));
@@ -7129,7 +7149,7 @@ Environment:
             funBody = MkZingSeq(
                 ctxt.emitLabelPrelude(),
                 MkZingLabeledStmt("start", funBody),
-                MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "ReturnVoid"))),
+                MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Return"))),
                 MkZingReturn(MkZingIdentifier("entryCtxt")));
 
             var retType = MkCnst(getZingContinuationCtxtType(machineName));
@@ -7811,24 +7831,24 @@ Environment:
                 { // Add the Return method
                     var ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Return", this);
                     var body = new List<AST<Node>>();
-
+                    body.Add(MkZingAssign(MkZingDot("this", "returnTo"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "payload"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "ev"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "state"), MkZingDot(getZingStateEnumType(mName), "_" + allMachines[mName].stateNameToStateInfo.Keys.First())));
+                    body.Add(MkZingAssign(MkZingDot("this", "target"), MkZingIdentifier("null")));
                     body.Add(MkZingAssign(MkZingDot("this", "reason"), MkZingDot("ContinuationReason", "Return")));
                     methods.Add(MkZingMethodDecl("Return", MkZingVarDecls(), ZingData.Cnst_Void, ctxt.emitLocals(), MkZingBlock("dummy", MkZingSeq(body))));
                 }
 
-                { // Add the ReturnVoid method
-                    var ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "ReturnVoid", this);
-                    var body = new List<AST<Node>>();
-
-                    body.Add(MkZingAssign(MkZingDot("this", "reason"), MkZingDot("ContinuationReason", "ReturnVoid")));
-                    methods.Add(MkZingMethodDecl("ReturnVoid", MkZingVarDecls(), ZingData.Cnst_Void, ctxt.emitLocals(), MkZingBlock("dummy", MkZingSeq(body))));
-                }
 
                 { // Add the ReturnVal method
                     var ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "ReturnVal", this);
                     var body = new List<AST<Node>>();
-
-                    body.Add(MkZingAssign(MkZingDot("this", "reason"), MkZingDot("ContinuationReason", "Return")));
+                    body.Add(MkZingAssign(MkZingDot("this", "returnTo"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "ev"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "state"), MkZingDot(getZingStateEnumType(mName), "_" + allMachines[mName].stateNameToStateInfo.Keys.First())));
+                    body.Add(MkZingAssign(MkZingDot("this", "target"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "reason"), MkZingDot("ContinuationReason", "ReturnVal")));
                     body.Add(MkZingAssign(MkZingDot("this", "payload"), MkZingIdentifier("val")));
                     methods.Add(MkZingMethodDecl("ReturnVal", MkZingVarDecls(MkZingVarDecl("val", MkCnst(SM_ARG_UNION))),
                         ZingData.Cnst_Void, ctxt.emitLocals(), MkZingBlock("dummy", MkZingSeq(body))));
@@ -7837,7 +7857,11 @@ Environment:
                 { // Add the Leave method
                     var ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Leave", this);
                     var body = new List<AST<Node>>();
-
+                    body.Add(MkZingAssign(MkZingDot("this", "returnTo"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "payload"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "ev"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "state"), MkZingDot(getZingStateEnumType(mName), "_" + allMachines[mName].stateNameToStateInfo.Keys.First())));
+                    body.Add(MkZingAssign(MkZingDot("this", "target"), MkZingIdentifier("null")));
                     body.Add(MkZingAssign(MkZingDot("this", "reason"), MkZingDot("ContinuationReason", "Leave")));
                     methods.Add(MkZingMethodDecl("Leave", MkZingVarDecls(),
                         ZingData.Cnst_Void, ctxt.emitLocals(), MkZingBlock("dummy", MkZingSeq(body))));
@@ -7846,7 +7870,9 @@ Environment:
                 { // Add the Raise method
                     var ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Raise", this);
                     var body = new List<AST<Node>>();
-
+                    body.Add(MkZingAssign(MkZingDot("this", "returnTo"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "state"), MkZingDot(getZingStateEnumType(mName), "_" + allMachines[mName].stateNameToStateInfo.Keys.First())));
+                    body.Add(MkZingAssign(MkZingDot("this", "target"), MkZingIdentifier("null")));
                     body.Add(MkZingAssign(MkZingDot("this", "reason"), MkZingDot("ContinuationReason", "Raise")));
                     body.Add(MkZingAssign(MkZingDot("this", "ev"), MkZingIdentifier("ev")));
                     body.Add(MkZingAssign(MkZingDot("this", "payload"), MkZingIdentifier("payload")));
@@ -7857,7 +7883,8 @@ Environment:
                 { // Add the Send method
                     var ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Send", this);
                     var body = new List<AST<Node>>();
-
+                    body.Add(MkZingAssign(MkZingDot("this", "returnTo"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "state"), MkZingDot(getZingStateEnumType(mName), "_" + allMachines[mName].stateNameToStateInfo.Keys.First())));
                     body.Add(MkZingAssign(MkZingDot("this", "reason"), MkZingDot("ContinuationReason", "Send")));
                     body.Add(MkZingAssign(MkZingDot("this", "target"), MkZingIdentifier("target")));
                     body.Add(MkZingAssign(MkZingDot("this", "ev"), MkZingIdentifier("ev")));
@@ -7870,7 +7897,10 @@ Environment:
                 { // Add the Call method
                     var ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Call", this);
                     var body = new List<AST<Node>>();
-
+                    body.Add(MkZingAssign(MkZingDot("this", "returnTo"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "payload"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "ev"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "target"), MkZingIdentifier("null")));
                     body.Add(MkZingAssign(MkZingDot("this", "reason"), MkZingDot("ContinuationReason", "Call")));
                     body.Add(MkZingAssign(MkZingDot("this", "state"), MkZingIdentifier("state")));
                     body.Add(MkZingCallStmt(MkZingCall(MkZingDot("this", "PushReturnTo"), MkZingIdentifier("ret"))));
@@ -7881,7 +7911,12 @@ Environment:
                 { // Add the Nondet method
                     var ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Nondet", this);
                     var body = new List<AST<Node>>();
-
+                    
+                    body.Add(MkZingAssign(MkZingDot("this", "returnTo"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "payload"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "ev"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "state"), MkZingDot(getZingStateEnumType(mName), "_" + allMachines[mName].stateNameToStateInfo.Keys.First())));
+                    body.Add(MkZingAssign(MkZingDot("this", "target"), MkZingIdentifier("null")));
                     body.Add(MkZingAssign(MkZingDot("this", "reason"), MkZingDot("ContinuationReason", "Nondet")));
                     body.Add(MkZingCallStmt(MkZingCall(MkZingDot("this", "PushReturnTo"), MkZingIdentifier("ret"))));
                     methods.Add(MkZingMethodDecl("Nondet", MkZingVarDecls(MkZingVarDecl("ret", PType.Int)),
@@ -7891,7 +7926,12 @@ Environment:
                 { // Add the Delete method
                     var ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Delete", this);
                     var body = new List<AST<Node>>();
-
+                    
+                    body.Add(MkZingAssign(MkZingDot("this", "returnTo"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "payload"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "ev"), MkZingIdentifier("null")));
+                    body.Add(MkZingAssign(MkZingDot("this", "state"), MkZingDot(getZingStateEnumType(mName), "_" + allMachines[mName].stateNameToStateInfo.Keys.First())));
+                    body.Add(MkZingAssign(MkZingDot("this", "target"), MkZingIdentifier("null")));
                     body.Add(MkZingAssign(MkZingDot("this", "reason"), MkZingDot("ContinuationReason", "Delete")));
                     methods.Add(MkZingMethodDecl("Delete", MkZingVarDecls(),
                     ZingData.Cnst_Void, ctxt.emitLocals(), MkZingBlock("dummy", MkZingSeq(body))));

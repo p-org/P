@@ -76,7 +76,6 @@ class SM_HANDLE {
 		buffer.EnqueueEvent(e, arg);
 		SM_MONITORS.ProcessEnqueue(e, source, this);
 		invokescheduler("push", machineId);
-		yield;
     }
 	
     void DequeueEvent(bool hasDefault, SM_EVENT_SET deferredSet) {
@@ -283,7 +282,7 @@ class SM_MONITORS {
     }
 };
 
-enum ContinuationReason { Nondet, Leave, Return, ReturnVoid, Raise, Call, Send, Delete};
+enum ContinuationReason { Nondet, Leave, Return, ReturnVal, Raise, Call, Send, Delete, NewM};
 
 class StackFrame {
     int pc;

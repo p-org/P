@@ -22,7 +22,7 @@ model MaxInstances_2 of PData
    ///////////////////////////////////////////////
 	eE1 is EventDecl("E1", AssertMaxInstances(1), NIL).
 	eE2 is EventDecl("E2", AssertMaxInstances(1), INT).
-	eE3 is EventDecl("E3", AssumeMaxInstances(2), NIL).
+	eE3 is EventDecl("E3", AssumeMaxInstances(1), NIL).
 	eE4 is EventDecl("E4", NIL, NIL).
 	eUnit is EventDecl("unit", AssertMaxInstances(1), NIL).
 

@@ -6,6 +6,7 @@ main machine Entry {
         entry {
 	      l.update(0, 1);
 	      assert (0 in l);
+	      i = keys(l)[0];
             assert(l[0] == 1);
 	      l.update(0, 2);
             assert(l[0] == 2);

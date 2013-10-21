@@ -1,6 +1,7 @@
 #pragma once
 #include "SmfDepends.h"
 #include "SmfPublicTypes.h"
+#include "SmfArrayList.h"
 
 typedef struct _SMF_BUCKET_ENTRY SMF_BUCKET_ENTRY, * PSMF_BUCKET_ENTRY;
 
@@ -101,3 +102,11 @@ VOID
 SmfHashtableDestroy(
 PSMF_DRIVERDECL Driver,
 PSMF_HASHTABLE Obj);
+
+//
+// Clone the Hashtable to an ArrayList
+//
+PSMF_ARRAYLIST
+SmfHashtableConvertToArrayList(
+PSMF_DRIVERDECL Driver,
+PSMF_HASHTABLE Dst);

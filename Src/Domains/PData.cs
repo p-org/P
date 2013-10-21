@@ -184,6 +184,7 @@
             pOpToC.Add(Cnst_Fld.Node.Name, new Tuple<AST<Id>, int>(CData.Cnst_Fld(), 2));
             pOpToC.Add(Cnst_Sizeof.Node.Name, new Tuple<AST<Id>, int>(null, 1));
             pOpToC.Add(Cnst_In.Node.Name, new Tuple<AST<Id>, int>(null, 2));
+            pOpToC.Add(Cnst_Keys.Node.Name, new Tuple<AST<Id>, int>(null, 1));
 
             pOpToZing.Add(Cnst_Not.Node.Name, new Tuple<AST<Id>, int>(ZingData.Cnst_Not, 1));
             pOpToZing.Add(Cnst_Neg.Node.Name, new Tuple<AST<Id>, int>(ZingData.Cnst_Neg, 1));
@@ -203,6 +204,7 @@
             pOpToZing.Add(Cnst_Fld.Node.Name, new Tuple<AST<Id>, int>(ZingData.Cnst_Dot, 2));
             pOpToZing.Add(Cnst_Sizeof.Node.Name, new Tuple<AST<Id>, int>(null, 1));
             pOpToZing.Add(Cnst_In.Node.Name, new Tuple<AST<Id>, int>(null, 2));
+            pOpToZing.Add(Cnst_Keys.Node.Name, new Tuple<AST<Id>, int>(null, 1));
         }
 
         public static AST<Id> POpToCOp(Id pOp, out int arity)

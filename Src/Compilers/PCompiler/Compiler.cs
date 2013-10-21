@@ -67,10 +67,18 @@
     internal class CTranslationInfo
     {
         public AST<Node> node;
+        public bool isKeys;
 
         public CTranslationInfo(AST<Node> n)
         {
             this.node = n;
+            this.isKeys = false;
+        }
+
+        public CTranslationInfo(AST<Node> n, bool isKeys)
+        {
+            this.node = n;
+            this.isKeys = isKeys;
         }
     }
 
@@ -2903,12 +2911,12 @@ Environment:
                 return;
 
             var ctxt = new PToCFoldContext(ownerName, true, this, MkArrow("Context", "Driver"), funName);
-            var outTerm = Factory.Instance.ToAST(GetArgByIndex(fun.Node, 5)).Compute<AST<Node>>(
+            var outTerm = Factory.Instance.ToAST(GetArgByIndex(fun.Node, 5)).Compute<CTranslationInfo>(
                 x => EntryFun_UnFold(ctxt, x),
                 (x, ch) => EntryFun_Fold(ctxt, x, ch));
 
             // Add temporary local variables, accumulated as a result of side effects
-            funBody = AddArgs(CData.App_Block(), ctxt.emitCLocals(), ctxt.emitCSideEffects(outTerm));
+            funBody = AddArgs(CData.App_Block(), ctxt.emitCLocals(), ctxt.emitCSideEffects(outTerm.node));
             Debug.Assert(ctxt.sideEffectsStack.Count == 0);
            
             funBody = AddArgs(CData.App_Seq(), MkFunApp("DUMMYREFERENCE", default(Span), MkId("Context")), funBody);
@@ -3107,11 +3115,11 @@ Environment:
             }
 
             var ctxt = new PToCFoldContext(ownerName, false, this, MkArrow("Context", "Driver"));
-            var outTerm = entryFun.Compute<AST<Node>>(
+            var outTerm = entryFun.Compute<CTranslationInfo>(
                 x => EntryFun_UnFold(ctxt, x),
                 (x, ch) => EntryFun_Fold(ctxt, x, ch));
 
-            AST<Node> rawBody = ctxt.emitCSideEffects(outTerm);
+            AST<Node> rawBody = ctxt.emitCSideEffects(outTerm.node);
             Debug.Assert(ctxt.sideEffectsStack.Count == 0);
 
             if (trampoline != CData.Cnst_Nil())
@@ -4081,19 +4089,19 @@ Environment:
             return res;
         }
 
-        private AST<Node> EntryFun_Fold(PToCFoldContext ctxt, Node n, IEnumerable<AST<Node>> children)
+        private CTranslationInfo EntryFun_Fold(PToCFoldContext ctxt, Node n, IEnumerable<CTranslationInfo> children)
         {
             var ret = EntryFun_Fold_Impl(ctxt, n, children);
 
             if (n != null && ret != null)
-                cnodeToPNode[ret.Node] = n;
+                cnodeToPNode[ret.node.Node] = n;
 
             return ret;
         }
 
         private bool shouldErase(Node pNode) { return erase && computedType[pNode].isGhost; }
 
-        private AST<Node> EntryFun_Fold_Impl(PToCFoldContext ctxt, Node n, IEnumerable<AST<Node>> children)
+        private CTranslationInfo EntryFun_Fold_Impl(PToCFoldContext ctxt, Node n, IEnumerable<CTranslationInfo> children)
         {
             string ownerName = ctxt.ownerName;
             if (n.NodeKind != NodeKind.FuncTerm)
@@ -4103,11 +4111,11 @@ Environment:
                     var cnst = (Cnst)n;
                     if (cnst.CnstKind == CnstKind.Numeric)
                     {
-                        return MkIntLiteral((int)cnst.GetNumericValue().Numerator, n.Span);
+                        return new CTranslationInfo(MkIntLiteral((int)cnst.GetNumericValue().Numerator, n.Span));
                     }
                     else
                     {
-                        return Factory.Instance.ToAST(n);
+                        return new CTranslationInfo(Factory.Instance.ToAST(n));
                     }
                 }
                 else if (n.NodeKind == NodeKind.Id)
@@ -4115,43 +4123,43 @@ Environment:
                     var id = (Id)n;
                     if (id.Name == PData.Cnst_This.Node.Name)
                     {
-                        return CData.Trm_This(n.Span);
+                        return new CTranslationInfo(CData.Trm_This(n.Span));
                     }
                     else if (id.Name == PData.Cnst_Trigger.Node.Name)
                     {
-                        return CData.Trm_Trigger(n.Span);
+                        return new CTranslationInfo(CData.Trm_Trigger(n.Span));
                     }
                     else if (id.Name == PData.Cnst_Nondet.Node.Name)
                     {
                         if (shouldErase(n))
-                            return CData.Cnst_Nil(n.Span);
+                            return new CTranslationInfo((CData.Cnst_Nil(n.Span)));
 
-                        return MkFunApp("NONDET", n.Span);
+                        return new CTranslationInfo(MkFunApp("NONDET", n.Span));
                     }
                     else if (id.Name == PData.Cnst_Nil.Node.Name)
                     {
-                        return CData.Cnst_Nil(n.Span);
+                        return new CTranslationInfo(CData.Cnst_Nil(n.Span));
                     }
                     else if (id.Name == PData.Cnst_True.Node.Name)
                     {
-                        return MkId("TRUE", n.Span);
+                        return new CTranslationInfo(MkId("TRUE", n.Span));
                     }
                     else if (id.Name == PData.Cnst_False.Node.Name)
                     {
-                        return MkId("FALSE", n.Span);
+                        return new CTranslationInfo(MkId("FALSE", n.Span));
                     }
                     else if (id.Name == PData.Cnst_Leave.Node.Name)
                     {
-                        return Factory.Instance.AddArg(CData.App_Return(n.Span), CData.Cnst_Nil(n.Span));
+                        return new CTranslationInfo(Factory.Instance.AddArg(CData.App_Return(n.Span), CData.Cnst_Nil(n.Span)));
                     }
                     else if (id.Name == PData.Cnst_Delete.Node.Name)
                     {
-                        return AddArgs(CData.App_Seq(n.Span), MkFunApp("SmfDelete", n.Span, MkId("Context")),
-                            ctxt.emitAllCleanup(AddArgs(CData.App_Return(n.Span), CData.Cnst_Nil(n.Span))));
+                        return new CTranslationInfo(AddArgs(CData.App_Seq(n.Span), MkFunApp("SmfDelete", n.Span, MkId("Context")),
+                            ctxt.emitAllCleanup(AddArgs(CData.App_Return(n.Span), CData.Cnst_Nil(n.Span)))));
                     }
                     else if (id.Name == PData.Cnst_Null.Node.Name)
                     {
-                        return MkIntLiteral(0);
+                        return new CTranslationInfo(MkIntLiteral(0));
                     }
                     else
                     {
@@ -4167,18 +4175,18 @@ Environment:
             if (funName == PData.Con_Assert.Node.Name)
             {
                 if (shouldErase(n))
-                    return CData.Cnst_Nil(n.Span);
+                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
 
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
-                    return MkAssert(ctxt.consumeExp(it.Current), n.Span);
+                    return new CTranslationInfo(MkAssert(ctxt.consumeExp(it.Current.node), n.Span));
                 }
             }
             else if (funName == PData.Con_Return.Node.Name)
             {
                 if (shouldErase(n))
-                    return CData.Cnst_Nil(n.Span);
+                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
 
                 if (ctxt.isFunction)
                 {
@@ -4186,74 +4194,74 @@ Environment:
                     {
                         it.MoveNext();
                         var formalRetType = allMachines[ownerName].funNameToFunInfo[ctxt.funName].returnType;
-                        var actualRetType = getComputedType(cnodeToPNode[it.Current.Node]);
+                        var actualRetType = getComputedType(cnodeToPNode[it.Current.node.Node]);
 
                         if (formalRetType is PNilType)
                         {
                             Debug.Assert(actualRetType is PNilType);
-                            return ctxt.emitAllCleanup(AddArgs(CData.App_Return(n.Span), CData.Cnst_Nil(n.Span)));
+                            return new CTranslationInfo(ctxt.emitAllCleanup(AddArgs(CData.App_Return(n.Span), CData.Cnst_Nil(n.Span))));
                         } else if (formalRetType is PPrimitiveType)
                         {   // For primitive types, just return the expected value
                             if (formalRetType != actualRetType)
                             {   // Need an implicit up cast from the actual return value to the formal return type.
                                 var tmpVar = ctxt.getTmpVar(formalRetType, false);
-                                ctxt.addSideEffect(MkAssignOrCast(ctxt, n.Span, tmpVar, formalRetType, ctxt.consumeExp(it.Current), actualRetType));
-                                return ctxt.emitAllCleanup(AddArgs(CData.App_Return(n.Span), tmpVar));
+                                ctxt.addSideEffect(MkAssignOrCast(ctxt, n.Span, tmpVar, formalRetType, ctxt.consumeExp(it.Current.node), actualRetType));
+                                return new CTranslationInfo(ctxt.emitAllCleanup(AddArgs(CData.App_Return(n.Span), tmpVar)));
                             }
                             else
                             {
-                                return ctxt.emitAllCleanup(AddArgs(CData.App_Return(n.Span), ctxt.consumeExp(it.Current)));
+                                return new CTranslationInfo(ctxt.emitAllCleanup(AddArgs(CData.App_Return(n.Span), ctxt.consumeExp(it.Current.node))));
                             }
                         }
                         else
                         {   // For compound return types, assign them to the "dst" parameter and return void.
                             Debug.Assert(formalRetType is PAnyType || formalRetType is PCompoundType); // Just a reminder to revisit this when adding new types.
-                            return MkSeq(MkAssignOrCast(ctxt, n.Span, MkDrf(MkId("dst")), formalRetType, ctxt.consumeExp(it.Current), actualRetType),
-                                ctxt.emitAllCleanup(AddArgs(CData.App_Return(n.Span), CData.Cnst_Nil(n.Span))));
+                            return new CTranslationInfo(MkSeq(MkAssignOrCast(ctxt, n.Span, MkDrf(MkId("dst")), formalRetType, ctxt.consumeExp(it.Current.node), actualRetType),
+                                ctxt.emitAllCleanup(AddArgs(CData.App_Return(n.Span), CData.Cnst_Nil(n.Span)))));
                         }
                     }
                 }
                 else
                 {
-                    return AddArgs(CData.App_Seq(n.Span), MkFunApp("SmfPop", n.Span, MkId("Context")),
-                        ctxt.emitAllCleanup(AddArgs(CData.App_Return(n.Span), CData.Cnst_Nil(n.Span))));
+                    return new CTranslationInfo(AddArgs(CData.App_Seq(n.Span), MkFunApp("SmfPop", n.Span, MkId("Context")),
+                        ctxt.emitAllCleanup(AddArgs(CData.App_Return(n.Span), CData.Cnst_Nil(n.Span)))));
                 }
             }
             else if (funName == PData.Con_DataOp.Node.Name)
             {
                 if (shouldErase(n))
-                    return CData.Cnst_Nil(n.Span);
+                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
                 var op = ((Id)GetArgByIndex(ft, 0)).Name;
                 
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
-                    var mutatedVar = it.Current;
+                    var mutatedVar = it.Current.node;
                     var mutatedVarT = getComputedType(cnodeToPNode[mutatedVar.Node]);
                     if (mutatedVarT is PSeqType)
                     {
                         var innerT = (mutatedVarT as PSeqType).T;
                         it.MoveNext();
-                        var ind = it.Current;
+                        var ind = it.Current.node;
 
                         if (op == PData.Cnst_Remove.Node.Name)
                         {
-                            return MkFunApp("SmfArrayListRemove", n.Span, ctxt.driver, MkAddrOf(mutatedVar), ind);
+                            return new CTranslationInfo(MkFunApp("SmfArrayListRemove", n.Span, ctxt.driver, MkAddrOf(mutatedVar), ind));
                         }
 
                         it.MoveNext();
-                        var val = it.Current;
+                        var val = it.Current.node;
                         var valT = getComputedType(cnodeToPNode[val.Node]);
 
                         var tmpUp = ctxt.getTmpVar(innerT, false);
                         ctxt.addSideEffect(MkAssignOrCast(ctxt, n.Span, ctxt.consumeExp(tmpUp), innerT, val, valT));
                         if (op == PData.Cnst_Insert.Node.Name)
                         {
-                            return MkFunApp("SmfArrayListInsert", n.Span, ctxt.driver, MkAddrOf(mutatedVar), ind, MkCastToULONGPTR(tmpUp, innerT));
+                            return new CTranslationInfo(MkFunApp("SmfArrayListInsert", n.Span, ctxt.driver, MkAddrOf(mutatedVar), ind, MkCastToULONGPTR(tmpUp, innerT)));
                         }
                         else
                         {
-                            return MkAssignment(MkIdx(MkArrow(MkAddrOf(mutatedVar), "Values"), ind), MkCastToULONGPTR(tmpUp, innerT));
+                            return new CTranslationInfo(MkAssignment(MkIdx(MkArrow(MkAddrOf(mutatedVar), "Values"), ind), MkCastToULONGPTR(tmpUp, innerT)));
                         }
                     }
                     else
@@ -4262,23 +4270,23 @@ Environment:
                         var mutatedVarKeyT = (mutatedVarT as PMapType).KeyT;
                         var mutatedVarValT = (mutatedVarT as PMapType).ValT;
                         it.MoveNext();
-                        var key = it.Current;
+                        var key = it.Current.node;
                         var keyT = getComputedType(cnodeToPNode[key.Node]);
 
                         var tmpKey = ctxt.getTmpVar(mutatedVarKeyT, false);
                         ctxt.addSideEffect(MkAssignOrCast(ctxt, n.Span, tmpKey, mutatedVarKeyT, key, keyT));
                         if (op == PData.Cnst_Remove.Node.Name)
                         {
-                            return MkFunApp("SmfHashtableRemove", n.Span, ctxt.driver, MkAddrOf(mutatedVar), MkCastToULONGPTR(ctxt.consumeExp(tmpKey), keyT));
+                            return new CTranslationInfo(MkFunApp("SmfHashtableRemove", n.Span, ctxt.driver, MkAddrOf(mutatedVar), MkCastToULONGPTR(ctxt.consumeExp(tmpKey), keyT)));
                         }
 
                         it.MoveNext();
-                        var val = it.Current;
+                        var val = it.Current.node;
                         var valT = getComputedType(cnodeToPNode[val.Node]);
 
                         var tmpVal = ctxt.getTmpVar(mutatedVarValT, false);
                         ctxt.addSideEffect(MkAssignOrCast(ctxt, n.Span, tmpVal, mutatedVarValT, val, valT));
-                        return MkFunApp("SmfHashtableUpdate", n.Span, ctxt.driver, MkAddrOf(mutatedVar), MkCastToULONGPTR(ctxt.consumeExp(tmpKey), keyT), MkCastToULONGPTR(ctxt.consumeExp(tmpVal), mutatedVarValT));
+                        return new CTranslationInfo(MkFunApp("SmfHashtableUpdate", n.Span, ctxt.driver, MkAddrOf(mutatedVar), MkCastToULONGPTR(ctxt.consumeExp(tmpKey), keyT), MkCastToULONGPTR(ctxt.consumeExp(tmpVal), mutatedVarValT)));
                     }
                 }
             }
@@ -4291,10 +4299,10 @@ Environment:
                     it.MoveNext();
                     AST<Node> result = CData.Cnst_Nil(n.Span);
                     result = AddArgs(CData.App_Seq(n.Span), result, AddArgs(CData.App_BinApp(n.Span), CData.Cnst_Asn(n.Span), AddArgs(CData.App_BinApp(n.Span), CData.Cnst_PFld(n.Span), MkId("Context"), MkId("ReturnTo")), MkIntLiteral(callLabel)));
-                    result = AddArgs(CData.App_Seq(n.Span), result, MkFunApp("SmfCall", n.Span, MkId("Context"), ctxt.consumeExp(it.Current)));
+                    result = AddArgs(CData.App_Seq(n.Span), result, MkFunApp("SmfCall", n.Span, MkId("Context"), ctxt.consumeExp(it.Current.node)));
                     result = AddArgs(CData.App_Seq(n.Span), result, ctxt.emitAllCleanup(Factory.Instance.AddArg(CData.App_Return(n.Span), CData.Cnst_Nil(n.Span))));
                     result = AddArgs(CData.App_Seq(n.Span), result, AddArgs(CData.App_Lbl(n.Span), Factory.Instance.MkCnst(string.Format("L{0}", callLabel)), CData.Cnst_Nil(n.Span)));
-                    return result;
+                    return new CTranslationInfo(result);
                 }
             }
             else if (funName == PData.Con_Seq.Node.Name)
@@ -4302,15 +4310,15 @@ Environment:
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
-                    var outTerm = Factory.Instance.AddArg(CData.App_Seq(n.Span), ctxt.emitCSideEffects(it.Current));
+                    var outTerm = Factory.Instance.AddArg(CData.App_Seq(n.Span), ctxt.emitCSideEffects(it.Current.node));
                     it.MoveNext();
-                    return Factory.Instance.AddArg(outTerm, it.Current);
+                    return new CTranslationInfo(Factory.Instance.AddArg(outTerm, it.Current.node));
                 }
             }
             else if (funName == PData.Con_Assign.Node.Name)
             {
                 if (shouldErase(n))
-                    return CData.Cnst_Nil(n.Span);
+                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
 
                 var lhsType = getComputedType(GetArgByIndex(ft, 0));
                 var rhsType = getComputedType(GetArgByIndex(ft, 1));
@@ -4318,31 +4326,39 @@ Environment:
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
-                    var lhs = it.Current;
+                    var lhs = it.Current.node;
                     it.MoveNext();
-                    var rhs = it.Current;
+                    var rhs = it.Current.node;
+                    var rhsIsKeys = it.Current.isKeys;
 
-                    return MkAssignOrCast(ctxt, n.Span, lhs, lhsType, rhs, rhsType);
+                    if (rhsIsKeys)
+                    {
+                        return new CTranslationInfo(MkAssignOrCast(ctxt, n.Span, lhs, lhsType, MkFunApp("SmfHashtableConvertToArrayList", n.Span, ctxt.driver, MkAddrOf(rhs)), rhsType));
+                    }
+                    else
+                    {
+                        return new CTranslationInfo(MkAssignOrCast(ctxt, n.Span, lhs, lhsType, rhs, rhsType));
+                    }
                 }
             }
             else if (funName == PData.Con_ITE.Node.Name)
             {
                 if (shouldErase(n))
-                    return CData.Cnst_Nil(n.Span);
+                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
 
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
-                    var cond = ctxt.consumeExp(it.Current);
+                    var cond = ctxt.consumeExp(it.Current.node);
                     it.MoveNext();
-                    var thenBody = it.Current;
+                    var thenBody = it.Current.node;
                     it.MoveNext();
-                    var elseBody = it.Current;
+                    var elseBody = it.Current.node;
 
                     var elseStmt = ctxt.emitCSideEffects(elseBody);
                     var thenStmt = ctxt.emitCSideEffects(thenBody);
 
-                    return AddArgs(CData.App_ITE(n.Span), cond, thenStmt, elseStmt);
+                    return new CTranslationInfo(AddArgs(CData.App_ITE(n.Span), cond, thenStmt, elseStmt));
                 }
             }
             else if (funName == PData.Con_Payload.Node.Name)
@@ -4351,13 +4367,13 @@ Environment:
 
                 if (argT is PAnyType)
                 {
-                    return CData.Trm_Arg(n.Span);
+                    return new CTranslationInfo(CData.Trm_Arg(n.Span));
                 }
                 else
                 {   // Downcast
                     var tmpVar = ctxt.getTmpVar(argT, false);
                     ctxt.addSideEffect(MkAssignOrCast(ctxt, n.Span, tmpVar, argT, CData.Trm_Arg(n.Span), PType.Any));
-                    return tmpVar;
+                    return new CTranslationInfo(tmpVar);
                 }
             }
             else if (funName == PData.Con_Use.Node.Name)
@@ -4370,7 +4386,7 @@ Environment:
                         shouldErase(n));
 
                     if (shouldErase(n))
-                        return CData.Cnst_Nil(n.Span);
+                        return new CTranslationInfo(CData.Cnst_Nil(n.Span));
                     PType type;
                     AST<Node> varExp;
 
@@ -4386,23 +4402,23 @@ Environment:
                         varExp = MkVar(varName, ownerName, type);
                     }
 
-                    return varExp;
+                    return new CTranslationInfo(varExp);
                 }
                 else if (kind.Name == PData.Cnst_Event.Node.Name)
                 {
                     var eventName = GetName(ft, 0);
                     if (eventName == PData.Cnst_Default.Node.Name)
-                        return MkId("SmfDefaultEvent", n.Span);
-                    return MkId(string.Format("Event_{0}", eventName), n.Span);
+                        return new CTranslationInfo(MkId("SmfDefaultEvent", n.Span));
+                    return new CTranslationInfo(MkId(string.Format("Event_{0}", eventName), n.Span));
                 }
                 else if (kind.Name == PData.Cnst_State.Node.Name)
                 {
-                    return MkId(string.Format("State_{0}_{1}", ownerName, GetName(ft, 0)), n.Span);
+                    return new CTranslationInfo(MkId(string.Format("State_{0}_{1}", ownerName, GetName(ft, 0)), n.Span));
                 }
                 else if (kind.Name == PData.Cnst_Field.Node.Name)
                 {
                     var field = GetName(ft, 0);
-                    return Factory.Instance.MkCnst(field);
+                    return new CTranslationInfo(Factory.Instance.MkCnst(field));
                 }
                 else
                 {
@@ -4412,7 +4428,7 @@ Environment:
             else if (funName == PData.Con_Call.Node.Name)
             {
                 if (shouldErase(n))
-                    return CData.Cnst_Nil(n.Span);
+                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
 
                 var calleeName = GetName(ft, 0);
                 FunInfo funInfo = allMachines[ctxt.ownerName].funNameToFunInfo[calleeName];
@@ -4441,7 +4457,7 @@ Environment:
                     var paramIndex = 0;
                     while (it.MoveNext())
                     {
-                        var actual = it.Current;
+                        var actual = it.Current.node;
 
                         if (actual.Node.NodeKind == NodeKind.Id && ((Id)actual.Node).Name == "NIL")
                             break;
@@ -4485,17 +4501,17 @@ Environment:
                 }
 
                 if (funInfo.returnType is PPrimitiveType)
-                    return MkFunApp(calleeName, n.Span, argList.ToArray());
+                    return new CTranslationInfo(MkFunApp(calleeName, n.Span, argList.ToArray()));
                 else
                 {
                     ctxt.addSideEffect(MkFunApp(calleeName, n.Span, argList.ToArray()));
-                    return ctxt.consumeExp(tmpRetVar);
+                    return new CTranslationInfo(ctxt.consumeExp(tmpRetVar));
                 }
             }
             else if (funName == PData.Con_Apply.Node.Name)
             {
                 if (shouldErase(n))
-                    return CData.Cnst_Nil(n.Span);
+                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
 
                 using (var it = children.GetEnumerator())
                 {
@@ -4506,7 +4522,8 @@ Environment:
                     it.MoveNext();
                     it.MoveNext();
                     
-                    var arg1 = ctxt.consumeExp(it.Current);
+                    var arg1 = ctxt.consumeExp(it.Current.node);
+                    var arg1IsKeys = it.Current.isKeys;
 
                     if (arg1 == null)
                         return null;
@@ -4515,17 +4532,21 @@ Environment:
                     {
                         if (pOp == PData.Cnst_Sizeof.Node.Name)
                         {
-                            return MkDot(arg1, "Size");
+                            return new CTranslationInfo(MkDot(arg1, "Size"));
+                        }
+                        else if (pOp == PData.Cnst_Keys.Node.Name)
+                        {
+                            return new CTranslationInfo(arg1, true);
                         }
                         else
                         {
-                            return AddArgs(CData.App_UnApp(n.Span), cOp, arg1);
+                            return new CTranslationInfo(AddArgs(CData.App_UnApp(n.Span), cOp, arg1));
                         }
                     }
                     else if (arity == 2)
                     {
                         it.MoveNext();
-                        var arg2 = ctxt.consumeExp(it.Current);
+                        var arg2 = ctxt.consumeExp(it.Current.node);
 
                         if (arg2 == null)
                             return null;
@@ -4535,34 +4556,41 @@ Environment:
 
                         if (pOp == PData.Cnst_In.Node.Name)
                         {
-                            return MkFunApp("SmfHashtableContains", n.Span, ctxt.driver, MkAddrOf(arg2), arg1);
+                            return new CTranslationInfo(MkFunApp("SmfHashtableContains", n.Span, ctxt.driver, MkAddrOf(arg2), arg1));
                         }
                         else if (pOp == PData.Cnst_Idx.Node.Name)
                         {
                             var baseType = getComputedType(cnodeToPNode[arg1.Node]);
                             if (baseType is PTupleType)
                             {
-                                return MkDot(arg1, getTupleField(getCIntConst((FuncTerm)arg2.Node)));
+                                return new CTranslationInfo(MkDot(arg1, getTupleField(getCIntConst((FuncTerm)arg2.Node))));
                             }
                             else if (baseType is PSeqType)
                             {
-                                return MkCastFromULONGPTR(MkIdx(MkDot(arg1, "Values"), arg2), (baseType as PSeqType).T);
+                                if (arg1IsKeys)
+                                {
+                                    return new CTranslationInfo(MkCastFromULONGPTR(MkFunApp("SmfHashtableLookupKeyAtIndex", n.Span, ctxt.driver, MkAddrOf(arg1), arg2), (baseType as PSeqType).T));
+                                }
+                                else
+                                {
+                                    return new CTranslationInfo(MkCastFromULONGPTR(MkIdx(MkDot(arg1, "Values"), arg2), (baseType as PSeqType).T));
+                                }
                             }
                             else
                             {
                                 Debug.Assert(baseType is PMapType);
-                                return MkCastFromULONGPTR(MkFunApp("SmfHashtableLookup", n.Span, ctxt.driver, MkAddrOf(arg1), arg2), (baseType as PMapType).ValT);
+                                return new CTranslationInfo(MkCastFromULONGPTR(MkFunApp("SmfHashtableLookup", n.Span, ctxt.driver, MkAddrOf(arg1), arg2), (baseType as PMapType).ValT));
                             }
                         }
                         else if (pOp == PData.Cnst_Fld.Node.Name)
                         {
-                            return MkDot(arg1, ((Cnst)arg2.Node).GetStringValue());
+                            return new CTranslationInfo(MkDot(arg1, ((Cnst)arg2.Node).GetStringValue()));
                         }
                         else if (cOp.Node.Name == CData.Cnst_Eq().Node.Name || cOp.Node.Name == CData.Cnst_NEq().Node.Name)
                         {
                             var app = MkEq(ctxt.driver, arg1, arg1Type, arg2, arg2Type);
-                            return cOp.Node.Name == CData.Cnst_Eq().Node.Name ?
-                                app : AddArgs(CData.App_UnApp(n.Span), CData.Cnst_LNot(n.Span), app);
+                            return new CTranslationInfo(cOp.Node.Name == CData.Cnst_Eq().Node.Name ?
+                                app : AddArgs(CData.App_UnApp(n.Span), CData.Cnst_LNot(n.Span), app));
                         }
                         else
                         {
@@ -4573,7 +4601,7 @@ Environment:
                                 arg2 = arg2Type is PPrimitiveType ? MkCast(arg1Type, arg2) : arg2;
                             }
 
-                            return AddArgs(CData.App_BinApp(n.Span), cOp, arg1, arg2);
+                            return new CTranslationInfo(AddArgs(CData.App_BinApp(n.Span), cOp, arg1, arg2));
                         }
                     }
                     throw new NotImplementedException();
@@ -4583,7 +4611,7 @@ Environment:
             else if (funName == Con_LabeledExpr)
             {
                 if (shouldErase(GetArgByIndex(ft, 1)))
-                    return CData.Cnst_Nil(n.Span);
+                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
 
                 using (var it = children.GetEnumerator())
                 {
@@ -4591,14 +4619,14 @@ Environment:
                     if (it.Current == null)
                         return null;
 
-                    return AddArgs(App_LabeledExpr, Factory.Instance.MkCnst(((Cnst)GetArgByIndex(ft, 0)).GetStringValue()),
-                        it.Current);
+                    return new CTranslationInfo(AddArgs(App_LabeledExpr, Factory.Instance.MkCnst(((Cnst)GetArgByIndex(ft, 0)).GetStringValue()),
+                        it.Current.node));
                 }
             }
             else if (funName == PData.Con_New.Node.Name)
             {
                 if (shouldErase(n))
-                    return CData.Cnst_Nil(n.Span);
+                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
 
                 var machTypeName = GetOwnerName(ft, 0, 0);
                 List<AST<Node>> argList = new List<AST<Node>>();
@@ -4611,8 +4639,8 @@ Environment:
 
                 IEnumerable<Tuple<string, Node>> inits =
                     children.Select(child => new Tuple<string, Node>(
-                        ((Cnst)GetArgByIndex((FuncTerm)child.Node, 0)).GetStringValue(),
-                        GetArgByIndex((FuncTerm)child.Node, 1)));
+                        ((Cnst)GetArgByIndex((FuncTerm)child.node.Node, 0)).GetStringValue(),
+                        GetArgByIndex((FuncTerm)child.node.Node, 1)));
 
                 // Remove ghosts if neccessary
                 inits = inits.Where(init =>
@@ -4662,7 +4690,7 @@ Environment:
                 var argCount = (argList.Count - 3) / 2;
                 argList.Insert(3, MkIntLiteral(argCount, n.Span));
 
-                return MkFunApp("SmfNew", n.Span, argList.ToArray());
+                return new CTranslationInfo(MkFunApp("SmfNew", n.Span, argList.ToArray()));
             }
             else if (funName == PData.Con_Raise.Node.Name)
             {
@@ -4672,10 +4700,10 @@ Environment:
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
-                    args[1] = ctxt.consumeExp(it.Current);
+                    args[1] = ctxt.consumeExp(it.Current.node);
                     it.MoveNext();
-                    if (it.Current.Node.NodeKind == NodeKind.Id &&
-                        ((Id)it.Current.Node).Name == PData.Cnst_Nil.Node.Name)
+                    if (it.Current.node.Node.NodeKind == NodeKind.Id &&
+                        ((Id)it.Current.node.Node).Name == PData.Cnst_Nil.Node.Name)
                     {
                         args[2] = AddArgs(CData.App_Cast(n.Span), MkNmdType("PSMF_PACKED_VALUE"), MkAddrOf(MkId("g_SmfNullPayload", n.Span)));
                     }
@@ -4684,34 +4712,34 @@ Environment:
                         var argType = getComputedType(GetArgByIndex(ft, 1));
                         var tmpVar = ctxt.getTmpVar(PType.Any, false, false);
 
-                        ctxt.addSideEffect(MkAssignOrCast(ctxt, n.Span, tmpVar, PType.Any, ctxt.consumeExp(it.Current), argType));
+                        ctxt.addSideEffect(MkAssignOrCast(ctxt, n.Span, tmpVar, PType.Any, ctxt.consumeExp(it.Current.node), argType));
                         args[2] = MkAddrOf(ctxt.consumeExp(tmpVar));
                     }
                     // Emit an assert that the payload can be cast to the event's expected type.
                     var eventPayloadType = MkDot(MkIdx(MkArrow(ctxt.driver, "Events"), args[1]), "Type");
                     ctxt.addSideEffect(MkAssert(MkFunApp(getCCanCastName(PType.Any), default(Span), ctxt.driver, args[2], eventPayloadType),
                         n.Span, "Payload not Cast-able to expected event payload on Send"));
-                    return AddArgs(CData.App_Seq(), MkFunApp("SmfRaise", n.Span, args),
-                        ctxt.emitAllCleanup(Factory.Instance.AddArg(CData.App_Return(n.Span), CData.Cnst_Nil(n.Span))));
+                    return new CTranslationInfo(AddArgs(CData.App_Seq(), MkFunApp("SmfRaise", n.Span, args),
+                        ctxt.emitAllCleanup(Factory.Instance.AddArg(CData.App_Return(n.Span), CData.Cnst_Nil(n.Span)))));
                 }
             }
             else if (funName == PData.Con_Send.Node.Name)
             {
                 if (shouldErase(n))
-                    return CData.Cnst_Nil(n.Span);
+                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
 
                 var args = new AST<Node>[4];
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
-                    args[0] = ctxt.consumeExp(it.Current); // Target ID
-                    if (it.Current.Node.NodeKind == NodeKind.Id && ((Id)it.Current.Node).Name == CData.Cnst_Nil().Node.Name)
-                        return CData.Cnst_Nil(n.Span);
+                    args[0] = ctxt.consumeExp(it.Current.node); // Target ID
+                    if (it.Current.node.Node.NodeKind == NodeKind.Id && ((Id)it.Current.node.Node).Name == CData.Cnst_Nil().Node.Name)
+                        return new CTranslationInfo(CData.Cnst_Nil(n.Span));
                     it.MoveNext();
-                    args[1] = ctxt.consumeExp(it.Current); // Event ID
+                    args[1] = ctxt.consumeExp(it.Current.node); // Event ID
                     it.MoveNext();
-                    if (it.Current.Node.NodeKind == NodeKind.Id &&
-                        ((Id)it.Current.Node).Name == PData.Cnst_Nil.Node.Name)
+                    if (it.Current.node.Node.NodeKind == NodeKind.Id &&
+                        ((Id)it.Current.node.Node).Name == PData.Cnst_Nil.Node.Name)
                     {   // No Payload Case
                         args[2] = AddArgs(CData.App_Cast(n.Span), MkNmdType("PSMF_PACKED_VALUE"), MkAddrOf(MkId("g_SmfNullPayload", n.Span)));
                     }
@@ -4719,7 +4747,7 @@ Environment:
                     {   // We have a payload - upcast it to Any. We always send Any values. (SMF_PACKED_VALUE in C).
                         var argType = getComputedType(GetArgByIndex(ft, 2));
                         var tmpVar = ctxt.getTmpVar(PType.Any, false, false);
-                        ctxt.addSideEffect(MkAssignOrCast(ctxt, n.Span, tmpVar, PType.Any, ctxt.consumeExp(it.Current), argType));
+                        ctxt.addSideEffect(MkAssignOrCast(ctxt, n.Span, tmpVar, PType.Any, ctxt.consumeExp(it.Current.node), argType));
                         args[2] = MkAddrOf(ctxt.consumeExp(tmpVar));
                     }
                     args[3] = MkId("FALSE");
@@ -4728,20 +4756,20 @@ Environment:
                     var eventPayloadType = MkDot(MkIdx(MkArrow(ctxt.driver, "Events"), args[1]), "Type");
                     ctxt.addSideEffect(MkAssert(MkFunApp(getCCanCastName(PType.Any), default(Span), ctxt.driver, args[2], eventPayloadType), n.Span, "Payload not Cast-able to expected event payload on Send"));
 
-                    return MkFunApp("SmfEnqueueEvent", n.Span, args);
+                    return new CTranslationInfo(MkFunApp("SmfEnqueueEvent", n.Span, args));
                 }
             }
             else if (funName == PData.Con_While.Node.Name)
             {
                 if (shouldErase(n))
-                    return CData.Cnst_Nil(n.Span);
+                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
 
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
-                    var cond = it.Current;
+                    var cond = it.Current.node;
                     it.MoveNext();
-                    var body = it.Current;
+                    var body = it.Current.node;
 
                     body = ctxt.emitCSideEffects(body);
 
@@ -4754,17 +4782,17 @@ Environment:
                             AddArgs(CData.App_Goto(n.Span), MkCnst(loop_start)),
                             AddArgs(CData.App_Lbl(n.Span), MkCnst(loop_end), CData.Cnst_Nil(n.Span)));
 
-                    return loop;
+                    return new CTranslationInfo(loop);
                 }
             }
             else if (funName == PData.Con_MachType.Node.Name)
             {
-                return Factory.Instance.ToAST(n);
+                return new CTranslationInfo(Factory.Instance.ToAST(n));
             }
             else if (funName == PData.Con_Tuple.Node.Name)
             {
                 if (shouldErase(n))
-                    return CData.Cnst_Nil(n.Span);
+                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
 
                 var type = (PTupleType)getComputedType(ft);
                 
@@ -4772,34 +4800,34 @@ Environment:
                 var fieldDesc = getFieldDesc(type);
 
                 var sideEffects = fieldDesc.Zip(children, (field, val) => MkAssignOrCast(ctxt, n.Span, MkDot(tmpVar, field.Item3), field.Item1,
-                    val, getComputedType(cnodeToPNode[val.Node])));
+                    val.node, getComputedType(cnodeToPNode[val.node.Node])));
 
                 foreach (var sideEff in sideEffects) ctxt.addSideEffect(sideEff);
-                return tmpVar;
+                return new CTranslationInfo(tmpVar);
             }
             else if (funName == PData.Con_NamedTuple.Node.Name)
             {
                 if (shouldErase(n))
-                    return CData.Cnst_Nil(n.Span);
+                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
 
                 var type = (PNamedTupleType) getComputedType(ft);
                 var tmpVar = ctxt.getTmpVar(type, false);
                 var fieldDesc = getFieldDesc(type);
 
-                var sortedRawArgs = children.OrderBy(labeledExp => ((Cnst)GetArgByIndex((FuncTerm)labeledExp.Node, 0)).GetStringValue()).Select(
-                    labeledExp => Factory.Instance.ToAST(GetArgByIndex((FuncTerm)labeledExp.Node, 1)));
+                var sortedRawArgs = children.OrderBy(labeledExp => ((Cnst)GetArgByIndex((FuncTerm)labeledExp.node.Node, 0)).GetStringValue()).Select(
+                    labeledExp => Factory.Instance.ToAST(GetArgByIndex((FuncTerm)labeledExp.node.Node, 1)));
 
                 var sideEffects = fieldDesc.Zip(sortedRawArgs, (field, val) => MkAssignOrCast(ctxt, n.Span, MkDot(tmpVar, field.Item3), field.Item1,
                     val, getComputedType(cnodeToPNode[val.Node])));
 
                 foreach (var sideEff in sideEffects) ctxt.addSideEffect(sideEff);
-                return tmpVar;
+                return new CTranslationInfo(tmpVar);
             }
             else if (funName == PData.Con_TypeTuple.Node.Name ||
                 funName == PData.Con_TypeNamedTuple.Node.Name ||
                 funName == PData.Con_TypeField.Node.Name)
             {
-                return CData.Cnst_Nil(n.Span);
+                return new CTranslationInfo(CData.Cnst_Nil(n.Span));
             }
             else
             {
@@ -4853,12 +4881,10 @@ Environment:
             var prog = Factory.Instance.MkProgram(progName);
             prog = Factory.Instance.AddModule(prog, m);
 
-            /*
             System.IO.StreamWriter sw = new System.IO.StreamWriter("output.4ml");
             prog.Print(sw);
             sw.Flush(); 
             sw.Close();
-            */
 
             InstallResult result;
             var success = env.Install(prog, out result);
@@ -6748,7 +6774,7 @@ Environment:
                 var pOp = (Id)GetArgByIndex(ft, 0);
                 int arity;
                 var zingOp = PData.POpToZingOp(pOp, out arity);
-                if ((arity == 1) != (pOp.Name == PData.Cnst_Neg.Node.Name || pOp.Name == PData.Cnst_Not.Node.Name || pOp.Name == PData.Cnst_Sizeof.Node.Name))
+                if ((arity == 1) != (pOp.Name == PData.Cnst_Neg.Node.Name || pOp.Name == PData.Cnst_Not.Node.Name || pOp.Name == PData.Cnst_Sizeof.Node.Name || pOp.Name == PData.Cnst_Keys.Node.Name))
                 {
                     errors.Add(new Flag(SeverityKind.Error, n, string.Format("Mismatched arity in expression."), 0, CompilingProgram));
                     return null;
@@ -7802,6 +7828,32 @@ Environment:
                 pTypeToZingType(t.ValT), ctxt.emitLocals(), MkZingBlock("dummy", lookupBody));
         }
 
+        private AST<FuncTerm> MkZingMapLookupKeyAtIndex(PMapType t)
+        {
+            ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "LookupKeyAtIndex", this);
+            var iter = ctxt.getTmpVar(MkCnst(pTypeToZingClassName(t) + "_Entry"), "iter");
+            var i = ctxt.getTmpVar(PType.Int, "i");
+            var lookupBody = MkZingSeq(
+                MkZingAssert(MkZingApply(ZingData.Cnst_Le, MkCnst(0), MkZingIdentifier("index"))),
+                MkZingAssert(MkZingApply(ZingData.Cnst_Lt, MkZingIdentifier("index"), MkZingIdentifier("size"))),
+                MkZingAssign(iter, MkZingDot("head", "next")),
+                MkZingAssign(i, MkCnst(0)),
+                MkZingIf(MkZingApply(ZingData.Cnst_Le, MkZingIdentifier("iterCacheIndex"), MkZingIdentifier("index")),
+                         MkZingSeq(MkZingAssign(iter, MkZingIdentifier("iterCache")), MkZingAssign(i, MkZingIdentifier("iterCacheIndex")))),
+                AddArgs(ZingData.App_While,
+                        MkZingApply(ZingData.Cnst_Lt, i, MkZingIdentifier("index")),
+                        MkZingSeq(MkZingAssign(iter, MkZingDot(iter, "next")),
+                        MkZingAssignOrCast(i, PType.Int, MkZingPlus(i, 1), PType.Int))),
+                MkZingAssert(MkZingApply(ZingData.Cnst_NEq, iter, MkZingIdentifier("head"))),
+                MkZingAssign(MkZingIdentifier("iterCache"), iter),
+                MkZingAssign(MkZingIdentifier("iterCacheIndex"), MkZingIdentifier("index")),
+                MkZingReturn(MkZingDot(iter, "key")));
+            ctxt.pushSideEffectStack();
+
+            return MkZingMethodDecl("LookupKeyAtIndex", MkZingVarDecls(MkZingVarDecl("index", PType.Int)),
+                pTypeToZingType(t.KeyT), ctxt.emitLocals(), MkZingBlock("dummy", lookupBody));
+        }
+
         private AST<FuncTerm> MkZingMapUpdate(PMapType t)
         {
             ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Update", this);
@@ -7928,10 +7980,11 @@ Environment:
                 methods.Add(MkZingMapCanDownCast(t, (PMapType)subT));
             }
 
-            // 
             methods.Add(MkZingMapContains(t));
 
             methods.Add(MkZingMapLookup(t));
+
+            methods.Add(MkZingMapLookupKeyAtIndex(t));
 
             methods.Add(MkZingMapUpdate(t));
 
@@ -8838,7 +8891,7 @@ Environment:
                 ti.cType = ti.zingType = getUnique("Seq");
             else if (t is PMapType)
             {
-                registerType((t as PMapType).KeyT);
+                registerType(new PSeqType((t as PMapType).KeyT));
                 ti.cType = ti.zingType = getUnique("Map");
             }
             else if (t is PAnyType)

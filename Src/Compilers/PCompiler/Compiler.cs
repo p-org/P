@@ -66,9 +66,11 @@
 
     internal class TypeCheckInfo
     {
+        public AST<Node> node;
         public PType type;
         public bool isGhost;
         public string stateName;
+        public bool isKeys;
 
         private PType primitiveTypeFromStr(string s)
         {
@@ -85,23 +87,40 @@
             }
         }
 
-        public TypeCheckInfo(PType t)
+        public TypeCheckInfo(AST<Node> n, PType t)
         {
+            this.node = n;
             this.type = t;
             this.isGhost = false;
+            this.stateName = null;
+            this.isKeys = false;
         }
 
-        public TypeCheckInfo(PType t, bool isGhost)
+        public TypeCheckInfo(AST<Node> n, PType t, bool isGhost)
         {
+            this.node = n;
             this.type = t;
             this.isGhost = isGhost;
+            this.stateName = null;
+            this.isKeys = false;
         }
 
-        public TypeCheckInfo(PType t, bool isGhost, string stateName)
+        public TypeCheckInfo(AST<Node> n, PType t, bool isGhost, string stateName)
         {
+            this.node = n;
             this.type = t;
             this.isGhost = isGhost;
             this.stateName = stateName;
+            this.isKeys = false;
+        }
+
+        public TypeCheckInfo(AST<Node> n, PType t, bool isGhost, string stateName, bool isKeys)
+        {
+            this.node = n;
+            this.type = t;
+            this.isGhost = isGhost;
+            this.stateName = stateName;
+            this.isKeys = isKeys;
         }
     }
 
@@ -6066,16 +6085,16 @@ Environment:
             return AddArgs(ZingData.App_Assign, lhs, rhsNode);
         }
 
-        private Tuple<AST<Node>, TypeCheckInfo> ZingEntryFun_Fold(ZingEntryFun_FoldContext ctxt, Node n, IEnumerable<Tuple<AST<Node>, TypeCheckInfo>> children)
+        private TypeCheckInfo ZingEntryFun_Fold(ZingEntryFun_FoldContext ctxt, Node n, IEnumerable<TypeCheckInfo> children)
         {
             var res = ZingEntryFun_Fold_Impl(ctxt, n, children);
             if (res != null)
-                computedType[n] = res.Item2;
+                computedType[n] = res;
 
             return res;
         }
 
-        private Tuple<AST<Node>, TypeCheckInfo> ZingEntryFun_Fold_Impl(ZingEntryFun_FoldContext ctxt, Node n, IEnumerable<Tuple<AST<Node>, TypeCheckInfo>> children)
+        private TypeCheckInfo ZingEntryFun_Fold_Impl(ZingEntryFun_FoldContext ctxt, Node n, IEnumerable<TypeCheckInfo> children)
         {
             string machineName = ctxt.machineName;
             string entityName = ctxt.entityName;
@@ -6085,37 +6104,37 @@ Environment:
                 {
                     Cnst cnst = (Cnst)n;
                     if (cnst.CnstKind == CnstKind.String)
-                        return new Tuple<AST<Node>, TypeCheckInfo>(Factory.Instance.ToAST(n), new TypeCheckInfo(new PNilType()));
+                        return new TypeCheckInfo(Factory.Instance.ToAST(n), new PNilType());
                     else
-                        return new Tuple<AST<Node>, TypeCheckInfo>(Factory.Instance.ToAST(n), new TypeCheckInfo(new PIntType()));
+                        return new TypeCheckInfo(Factory.Instance.ToAST(n), new PIntType());
                 }
                 else if (n.NodeKind == NodeKind.Id)
                 {
                     var id = (Id)n; 
                     if (id.Name == PData.Cnst_This.Node.Name)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(MkZingIdentifier("myHandle"), new TypeCheckInfo(new PIdType(), allMachines[machineName].isGhost));
+                        return new TypeCheckInfo(MkZingIdentifier("myHandle"), new PIdType(), allMachines[machineName].isGhost);
                     }
                     else if (id.Name == PData.Cnst_Trigger.Node.Name)
                     {
                         if (ctxt.translationContext == TranslationContext.Function)
                         {
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("TRIGGER disallowed in body of function {0}.", entityName), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
-                        return new Tuple<AST<Node>, TypeCheckInfo>(MkZingDot("myHandle", "currentEvent"), new TypeCheckInfo(new PEventType(null)));
+                        return new TypeCheckInfo(MkZingDot("myHandle", "currentEvent"), new PEventType(null));
                     }
                     else if (id.Name == PData.Cnst_Nil.Node.Name)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(ZingData.Cnst_Nil, new TypeCheckInfo(new PNilType()));
+                        return new TypeCheckInfo(ZingData.Cnst_Nil, new PNilType());
                     }
                     else if (id.Name == PData.Cnst_True.Node.Name)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(ZingData.Cnst_True, new TypeCheckInfo(new PBoolType()));
+                        return new TypeCheckInfo(ZingData.Cnst_True, new PBoolType());
                     }
                     else if (id.Name == PData.Cnst_False.Node.Name)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(ZingData.Cnst_False, new TypeCheckInfo(new PBoolType()));
+                        return new TypeCheckInfo(ZingData.Cnst_False, new PBoolType());
                     }
                     else if (id.Name == PData.Cnst_Nondet.Node.Name)
                     {
@@ -6125,52 +6144,52 @@ Environment:
                         ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
                         ctxt.addSideEffect(MkZingLabeledStmt(afterLabel, MkZingAssign(bvar, MkZingDot("entryCtxt", "nondet"))));
                         ctxt.addSideEffect(MkZingAssign(MkZingDot("entryCtxt", "nondet"), ZingData.Cnst_False));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(bvar, new TypeCheckInfo(new PBoolType()));
+                        return new TypeCheckInfo(bvar, new PBoolType());
                     }
                     else if (id.Name == PData.Cnst_Leave.Node.Name)
                     {
                         if (ctxt.translationContext == TranslationContext.Function)
                         {
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("Leave statement disallowed in body of function {0}.", entityName), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
                         var res = MkZingSeq(
                             MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Leave"))),
                             MkZingReturn(MkZingIdentifier("entryCtxt")));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(res, new TypeCheckInfo(new PNilType()));
+                        return new TypeCheckInfo(res, new PNilType());
                     }
                     else if (id.Name == PData.Cnst_Delete.Node.Name)
                     {
                         if (ctxt.translationContext != TranslationContext.Entry)
                         {
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("Delete statement allowed only in entry functions.", entityName), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
                         var res = MkZingSeq(
                             MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Delete"))),
                             MkZingReturn(MkZingIdentifier("entryCtxt")));
                         
-                        return new Tuple<AST<Node>, TypeCheckInfo>(res, new TypeCheckInfo(new PNilType()));
+                        return new TypeCheckInfo(res, new PNilType());
                     }
                     else if (id.Name == PData.Cnst_Bool.Node.Name)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(PData.Cnst_Bool, new TypeCheckInfo(new PNilType()));
+                        return new TypeCheckInfo(PData.Cnst_Bool, new PNilType());
                     }
                     else if (id.Name == PData.Cnst_Int.Node.Name)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(PData.Cnst_Int, new TypeCheckInfo(new PNilType()));
+                        return new TypeCheckInfo(PData.Cnst_Int, new PNilType());
                     }
                     else if (id.Name == PData.Cnst_Id.Node.Name)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(PData.Cnst_Id, new TypeCheckInfo(new PNilType()));
+                        return new TypeCheckInfo(PData.Cnst_Id, new PNilType());
                     }
                     else if (id.Name == PData.Cnst_Event.Node.Name)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(PData.Cnst_Event, new TypeCheckInfo(new PNilType()));
+                        return new TypeCheckInfo(PData.Cnst_Event, new PNilType());
                     }
                     else if (id.Name == PData.Cnst_Null.Node.Name)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(MkZingIdentifier("null"), new TypeCheckInfo(new PNilType()));
+                        return new TypeCheckInfo(MkZingIdentifier("null"), new PNilType());
                     }
                     else
                     {
@@ -6192,15 +6211,15 @@ Environment:
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
-                    if (it.Current.Item2 == null)
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
-                    if (it.Current.Item2.type != PType.Bool)
+                    if (it.Current == null)
+                        return null;
+                    if (it.Current.type != PType.Bool)
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("Assert expression must be of Boolean type."), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
 
-                    return new Tuple<AST<Node>, TypeCheckInfo>(AddArgs(ZingData.App_Assert, it.Current.Item1), new TypeCheckInfo(new PNilType(), it.Current.Item2.isGhost));
+                    return new TypeCheckInfo(AddArgs(ZingData.App_Assert, it.Current.node), new PNilType(), it.Current.isGhost);
                 }
             }
             else if (funName == PData.Con_DataOp.Node.Name)
@@ -6209,9 +6228,9 @@ Environment:
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
-                    var mutatedVar = it.Current.Item1;
-                    var mutatedVarT = it.Current.Item2.type;
-                    bool isGhost = it.Current.Item2.isGhost;
+                    var mutatedVar = it.Current.node;
+                    var mutatedVarT = it.Current.type;
+                    bool isGhost = it.Current.isGhost;
 
                     if (op == PData.Cnst_Insert.Node.Name || op == PData.Cnst_Remove.Node.Name || op == PData.Cnst_Update.Node.Name)
                     {
@@ -6220,7 +6239,7 @@ Environment:
                     else 
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("Unknown operation {0}.", op), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
                     if (mutatedVarT is PSeqType || (mutatedVarT is PMapType && op != PData.Cnst_Insert.Node.Name))
                     {
@@ -6229,22 +6248,22 @@ Environment:
                     else 
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot perform {0} on variable of type {1}.", op, mutatedVarT), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
 
                     PSeqType mutatedVarTAsSeqType = mutatedVarT as PSeqType;
                     PMapType mutatedVarTAsMapType = mutatedVarT as PMapType;
 
                     it.MoveNext();
-                    var ind = it.Current.Item1;
-                    var indT = it.Current.Item2.type;
+                    var ind = it.Current.node;
+                    var indT = it.Current.type;
 
                     if (mutatedVarT is PSeqType)
                     {
                         if (!(indT is PIntType))
                         {
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("Expected the index to be of type {0}, not {1}.", PType.Int, indT), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
                     }
                     else
@@ -6252,15 +6271,15 @@ Environment:
                         if (!indT.isSubtypeOf(mutatedVarTAsMapType.KeyT))
                         {
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("Expected the index to be subtype of type {0}, not {1}.", mutatedVarTAsMapType, indT), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
                     }
 
                     // Cannot index into a real variable with a ghost expr. I believe this gives the equivalent power of doing control flow on ghost conditionals.
-                    if (!isGhost && it.Current.Item2.isGhost)
+                    if (!isGhost && it.Current.isGhost)
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot index a real sequence or map with a ghost expressions."), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
 
                     if (op == PData.Cnst_Remove.Node.Name)
@@ -6268,37 +6287,35 @@ Environment:
                         if (it.MoveNext())
                         {
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("Unnecessary arguments to remove(.)."), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
 
                         if (mutatedVarTAsMapType == null)
                         {
-                            return new Tuple<AST<Node>, TypeCheckInfo>(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Remove"), ind)),
-                                new TypeCheckInfo(new PNilType(), isGhost));
+                            return new TypeCheckInfo(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Remove"), ind)), new PNilType(), isGhost);
                         }
                         else
                         {
                             var tmpKey = ctxt.getTmpVar(mutatedVarTAsMapType.KeyT, "tmpVal");
                             ctxt.addSideEffect(MkZingAssignOrCast(tmpKey, mutatedVarTAsMapType.KeyT, ind, indT));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Remove"), tmpKey)), 
-                                new TypeCheckInfo(new PNilType(), isGhost));
+                            return new TypeCheckInfo(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Remove"), tmpKey)), new PNilType(), isGhost);
                         }
                     }
 
                     it.MoveNext();
-                    var val = it.Current.Item1;
-                    var valT = it.Current.Item2.type;
+                    var val = it.Current.node;
+                    var valT = it.Current.type;
 
-                    if (!isGhost && it.Current.Item2.isGhost)
+                    if (!isGhost && it.Current.isGhost)
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot insert a ghost expression into a real sequence or map."), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
 
                     if (it.MoveNext())
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("Unnecessary arguments to insert(.,.)."), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
 
                     var innerT = mutatedVarTAsMapType == null ? mutatedVarTAsSeqType.T : mutatedVarTAsMapType.ValT;
@@ -6312,7 +6329,7 @@ Environment:
                         {
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot insert a value of type {0} into a map with value type {1}.", valT, innerT), 0, CompilingProgram));
                         }
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
 
                     if (mutatedVarTAsMapType == null)
@@ -6321,11 +6338,11 @@ Environment:
                         ctxt.addSideEffect(MkZingAssignOrCast(tmpVal, innerT, val, valT));
                         if (op == PData.Cnst_Insert.Node.Name)
                         {
-                            return new Tuple<AST<Node>, TypeCheckInfo>(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Insert"), ind, tmpVal)), new TypeCheckInfo(new PNilType(), isGhost));
+                            return new TypeCheckInfo(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Insert"), ind, tmpVal)), new PNilType(), isGhost);
                         }
                         else
                         {
-                            return new Tuple<AST<Node>, TypeCheckInfo>(MkZingAssign(MkZingIndex(MkZingDot(mutatedVar, "arr"), ind), tmpVal), new TypeCheckInfo(new PNilType(), isGhost));
+                            return new TypeCheckInfo(MkZingAssign(MkZingIndex(MkZingDot(mutatedVar, "arr"), ind), tmpVal), new PNilType(), isGhost);
                         }
                     }
                     else
@@ -6335,7 +6352,7 @@ Environment:
                         ctxt.addSideEffect(MkZingAssignOrCast(tmpKey, mutatedVarTAsMapType.KeyT, ind, indT));
                         var tmpVal = ctxt.getTmpVar(innerT, "tmpVal");
                         ctxt.addSideEffect(MkZingAssignOrCast(tmpVal, innerT, val, valT));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Update"), tmpKey, tmpVal)), new TypeCheckInfo(new PNilType(), isGhost));
+                        return new TypeCheckInfo(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Update"), tmpKey, tmpVal)), new PNilType(), isGhost);
                     }
                 }
             }
@@ -6344,7 +6361,7 @@ Environment:
                 if (ctxt.translationContext == TranslationContext.Exit)
                 {
                     errors.Add(new Flag(SeverityKind.Error, n, string.Format("Return statement not allowed in exit functions.", entityName), 0, CompilingProgram));
-                    return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                    return null;
                 }
 
                 if (ctxt.translationContext == TranslationContext.Entry || ctxt.translationContext == TranslationContext.Action)
@@ -6352,19 +6369,19 @@ Environment:
                     using (var it = children.GetEnumerator())
                     {
                         it.MoveNext();
-                        if (it.Current.Item2 == null)
+                        if (it.Current == null)
                         {
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
-                        else if (it.Current.Item2.type != PType.Nil)
+                        else if (it.Current.type != PType.Nil)
                         {
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("Return statement should not have an argument.", entityName), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
                         else
                         {
                             ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Return"))));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(MkZingReturn(MkZingIdentifier("entryCtxt")), new TypeCheckInfo(new PNilType()));
+                            return new TypeCheckInfo(MkZingReturn(MkZingIdentifier("entryCtxt")), new PNilType());
                         }
                     }
                 }
@@ -6373,31 +6390,31 @@ Environment:
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
-                    if (it.Current.Item2 == null)
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                    if (it.Current == null)
+                        return null;
 
-                    if (it.Current.Item2.type.isSubtypeOf(returnType))
+                    if (it.Current.type.isSubtypeOf(returnType))
                     {
                         if (returnType is PNilType)
                         {
                             ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Return"))));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(MkZingReturn(MkZingIdentifier("entryCtxt")), new TypeCheckInfo(new PNilType(), it.Current.Item2.isGhost));
+                            return new TypeCheckInfo(MkZingReturn(MkZingIdentifier("entryCtxt")), new PNilType(), it.Current.isGhost);
                         }
                         else
                         {
                             var tmpRet = ctxt.getTmpVar(PType.Any, "retVar");
                             var res = MkZingSeq(
-                                MkZingAssignOrCast(tmpRet, PType.Any, it.Current.Item1, it.Current.Item2.type),
+                                MkZingAssignOrCast(tmpRet, PType.Any, it.Current.node, it.Current.type),
                                 MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "ReturnVal"), tmpRet)),
                                 MkZingReturn(MkZingIdentifier("entryCtxt")));
 
-                            return new Tuple<AST<Node>, TypeCheckInfo>(res, new TypeCheckInfo(new PNilType(), it.Current.Item2.isGhost));
+                            return new TypeCheckInfo(res, new PNilType(), it.Current.isGhost);
                         }
                     }
                     else
                     {
-                        errors.Add(new Flag(SeverityKind.Error, n, string.Format("Type mismatch in return expression of function {0}. Expected {1}, got {2}", entityName, returnType, it.Current.Item2.type), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        errors.Add(new Flag(SeverityKind.Error, n, string.Format("Type mismatch in return expression of function {0}. Expected {1}, got {2}", entityName, returnType, it.Current.type), 0, CompilingProgram));
+                        return null;
                     }
                 }
             }
@@ -6406,29 +6423,29 @@ Environment:
                 if (ctxt.translationContext == TranslationContext.Function)
                 {
                     errors.Add(new Flag(SeverityKind.Error, n, string.Format("Call statement not allowed in function."), 0, CompilingProgram));
-                    return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                    return null;
                 }
 
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
-                    if (it.Current.Item2 == null || it.Current.Item2.type != PType.State)
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                    if (it.Current == null || it.Current.type != PType.State)
+                        return null;
 
-                    var stateName = it.Current.Item2.stateName;
+                    var stateName = it.Current.stateName;
 
                     if (allMachines[machineName].stateNameToStateInfo[stateName].nIncommingTransitions > 0)
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("Have both transitions and calls into state {0}", stateName), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
 
                     var afterLabel = ctxt.getFreshLabel();
                     var res = MkZingSeq(
-                        MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Call"), it.Current.Item1, MkCnst(ctxt.labelToId(afterLabel)))),
+                        MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Call"), it.Current.node, MkCnst(ctxt.labelToId(afterLabel)))),
                         MkZingReturn(MkZingIdentifier("entryCtxt")),
                         MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil));
-                    return new Tuple<AST<Node>, TypeCheckInfo>(res, new TypeCheckInfo(new PNilType()));
+                    return new TypeCheckInfo(res, new PNilType());
                 }
             }
             else if (funName == PData.Con_Seq.Node.Name)
@@ -6439,15 +6456,13 @@ Environment:
                     var first = it.Current;
                     it.MoveNext();
                     var second = it.Current;
-                    if (first.Item2 == null || second.Item2 == null)
+                    if (first == null || second == null)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
                     else
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(MkZingSeq(
-                            zingWrapExprToStmts(first.Item1),
-                            ctxt.emitZingSideEffects(zingWrapExprToStmts(second.Item1))), new TypeCheckInfo(new PNilType()));
+                        return new TypeCheckInfo(MkZingSeq(zingWrapExprToStmts(first.node), ctxt.emitZingSideEffects(zingWrapExprToStmts(second.node))), new PNilType());
                     }
                 }
             }
@@ -6459,34 +6474,41 @@ Environment:
                     var lhs = it.Current;
                     it.MoveNext();
                     var rhs = it.Current;
-                    if (lhs.Item2 == null || rhs.Item2 == null)
+                    if (lhs == null || rhs == null)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
                     else
                     {
                         // type(lhs) == type(rhs)
                         // if lhs is real or lhs is Id, isGhost(rhs) == isGhost(lhs)
-                        var lhsInfo = lhs.Item2;
-                        var rhsInfo = rhs.Item2;
+                        var lhsInfo = lhs;
+                        var rhsInfo = rhs;
                         if (!rhsInfo.type.isSubtypeOf(lhsInfo.type))
                         {
                             errors.Add(new Flag(SeverityKind.Error, n,
                                 string.Format("Type of left-hand side ({0}) does not match type of right-hand side ({1}) in assignment.", lhsInfo.type, rhsInfo.type), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
                         if (!lhsInfo.isGhost && rhsInfo.isGhost)
                         {
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot assign ghost expression to real variable."), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
                         if (lhsInfo.type == PType.Id && lhsInfo.isGhost != rhsInfo.isGhost)
                         {
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot assign real expression to a ghost variable of type id."), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
 
-                        return new Tuple<AST<Node>, TypeCheckInfo>(MkZingAssignOrCast(lhs.Item1, lhsInfo.type, rhs.Item1, rhsInfo.type), new TypeCheckInfo(new PNilType(), lhsInfo.isGhost));
+                        if (rhs.isKeys)
+                        {
+                            return new TypeCheckInfo(MkZingAssignOrCast(lhs.node, lhsInfo.type, MkZingCall(MkZingDot(rhs.node, "ToSeq")), rhsInfo.type), new PNilType(), lhsInfo.isGhost);
+                        }
+                        else
+                        {
+                            return new TypeCheckInfo(MkZingAssignOrCast(lhs.node, lhsInfo.type, rhs.node, rhsInfo.type), new PNilType(), lhsInfo.isGhost);
+                        }
                     }
                 }
             }
@@ -6501,14 +6523,14 @@ Environment:
                     it.MoveNext();
                     var elseStmt = it.Current;
 
-                    if (condExpr.Item2 == null || thenStmt.Item2 == null || elseStmt.Item2 == null)
+                    if (condExpr == null || thenStmt == null || elseStmt == null)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
-                    if (condExpr.Item1 != null && condExpr.Item2.type != PType.Bool)
+                    if (condExpr.type != PType.Bool)
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("Conditional expression must be Boolean."), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
                     var inGhostContext =
                         (ctxt.translationContext == TranslationContext.Function) ?
@@ -6516,15 +6538,15 @@ Environment:
                         allMachines[machineName].isGhost;
                     if (!inGhostContext)
                     {
-                        if (condExpr.Item1 == null)
+                        if (condExpr.node == null)
                         {
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("Use of nondet in a real machine is not allowed."), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
-                        if (condExpr.Item2.isGhost && !allMachines[machineName].isGhost)
+                        if (condExpr.isGhost && !allMachines[machineName].isGhost)
                         {
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("Use of ghost expression in a conditional in a real machine is not allowed."), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
                     }
 
@@ -6532,15 +6554,15 @@ Environment:
                     var ifName = getUnique(entityName + "_if");
                     var elseLabel = ifName + "_else";
                     var afterLabel = ifName + "_end";
-                    var cookedElse = MkZingLabeledStmt(elseLabel, ctxt.emitZingSideEffects(zingWrapExprToStmts(elseStmt.Item1)));
-                    var cookedThen = ctxt.emitZingSideEffects(zingWrapExprToStmts(thenStmt.Item1));
-                    var res = MkZingSeq(MkZingIf(MkZingApply(ZingData.Cnst_Not, condExpr.Item1), AddArgs(ZingData.App_Goto, MkCnst(elseLabel))),
+                    var cookedElse = MkZingLabeledStmt(elseLabel, ctxt.emitZingSideEffects(zingWrapExprToStmts(elseStmt.node)));
+                    var cookedThen = ctxt.emitZingSideEffects(zingWrapExprToStmts(thenStmt.node));
+                    var res = MkZingSeq(MkZingIf(MkZingApply(ZingData.Cnst_Not, condExpr.node), AddArgs(ZingData.App_Goto, MkCnst(elseLabel))),
                         cookedThen,
                         AddArgs(ZingData.App_Goto, MkCnst(afterLabel)),
                         cookedElse,
                         MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil));
                         
-                    return new Tuple<AST<Node>, TypeCheckInfo>(res, new TypeCheckInfo(new PNilType(), condExpr.Item2.isGhost));
+                    return new TypeCheckInfo(res, new PNilType(), condExpr.isGhost);
                 }
             }
             else if (funName == PData.Con_Payload.Node.Name)
@@ -6548,7 +6570,7 @@ Environment:
                 if (ctxt.translationContext == TranslationContext.Function)
                 {
                     errors.Add(new Flag(SeverityKind.Error, n, string.Format("ARG disallowed in body of function {0}.", entityName), 0, CompilingProgram));
-                    return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                    return null;
                 }
                 using (var it = children.GetEnumerator())
                 {
@@ -6582,7 +6604,7 @@ Environment:
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot cast to {0} from any of the possible payload types in {1}: {2}", castType, ctxt.prettyName(),
                             possiblePayloads.Aggregate("", (str, t) => str + ", " + t)), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
 
                     // Emit a check that the payload is castable to whatever we are trying to cast it to
@@ -6606,7 +6628,7 @@ Environment:
                         outNode = MkZingDot("myHandle", "currentArg");
                     }
 
-                    return new Tuple<AST<Node>, TypeCheckInfo>(outNode, new TypeCheckInfo(castType));
+                    return new TypeCheckInfo(outNode, castType);
                 }
             }
             else if (funName == PData.Con_Use.Node.Name)
@@ -6627,9 +6649,9 @@ Environment:
                     else
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("Use of undeclared local variable {0}.", varName), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
-                    return new Tuple<AST<Node>, TypeCheckInfo>(MkZingIdentifier(varName), new TypeCheckInfo(varInfo.type, varInfo.isGhost));
+                    return new TypeCheckInfo(MkZingIdentifier(varName), varInfo.type, varInfo.isGhost);
                 }
                 else if (kind.Name == PData.Cnst_Event.Node.Name)
                 {
@@ -6640,9 +6662,9 @@ Environment:
                     if (!allEvents.ContainsKey(eventName))
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("Use of undeclared event {0}.", eventName), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
-                    return new Tuple<AST<Node>, TypeCheckInfo>(MkZingEvent(eventName), new TypeCheckInfo(new PEventType(eventName), false));
+                    return new TypeCheckInfo(MkZingEvent(eventName), new PEventType(eventName), false);
                 }
                 else if (kind.Name == PData.Cnst_State.Node.Name)
                 {
@@ -6650,15 +6672,15 @@ Environment:
                     if (!allMachines[machineName].stateNameToStateInfo.ContainsKey(stateName))
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("Use of undeclared state {0}.", stateName), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
-                    return new Tuple<AST<Node>, TypeCheckInfo>(MkZingDot(string.Format("{0}_State", machineName), string.Format("_{0}", stateName)), new TypeCheckInfo(new PStateType(), false, stateName));
+                    return new TypeCheckInfo(MkZingDot(string.Format("{0}_State", machineName), string.Format("_{0}", stateName)), new PStateType(), false, stateName);
                 }
                 else if (kind.Name == PData.Cnst_Field.Node.Name)
                 {
                     var field = GetName(ft, 0);
                     // Fields by themselves really don't have a type
-                    return new Tuple<AST<Node>, TypeCheckInfo>(Factory.Instance.MkCnst(field), new TypeCheckInfo(new PNilType(), false));
+                    return new TypeCheckInfo(Factory.Instance.MkCnst(field), new PNilType(), false);
                 }
                 else
                 {
@@ -6670,47 +6692,46 @@ Environment:
                 if (ctxt.machineName == null) // We are in the main context. Shouldn't have tuples here!
                 {
                     errors.Add(new Flag(SeverityKind.Error, n, string.Format("Unexpected tuple in MainDecl statement!"), 0, CompilingProgram));
-                    return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                    return null;
                 }
 
-                if (children.Any(child => child.Item1 == null))
-                    return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                if (children.Any(child => child == null))
+                    return null;
 
-                var tupType = new PTupleType(children.Select(child => child.Item2.type));
+                var tupType = new PTupleType(children.Select(child => child.type));
                 registerType(tupType);
 
-                var node = MkZingCall(MkZingDot(pTypeToZingType(tupType), "Build"), children.Select(child => child.Item1));
+                var node = MkZingCall(MkZingDot(pTypeToZingType(tupType), "Build"), children.Select(child => child.node));
                 var tmpVar = ctxt.getTmpVar(tupType, "tmpTuple");
                 ctxt.addSideEffect(MkZingAssign(tmpVar, node));
 
-                return new Tuple<AST<Node>, TypeCheckInfo>(tmpVar, new TypeCheckInfo(tupType, children.Any(child => child.Item2.isGhost)));
+                return new TypeCheckInfo(tmpVar, tupType, children.Any(child => child.isGhost));
             }
             else if (funName == PData.Con_NamedTuple.Node.Name)
             {
                 if (ctxt.machineName == null) // We are in the main context. Shouldn't have tuples here!
                 {
                     errors.Add(new Flag(SeverityKind.Error, n, string.Format("Unexpected named tuple in MainDecl statement!"), 0, CompilingProgram));
-                    return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                    return null;
                 }
 
-                if (children.Any(child => child.Item1 == null))
-                    return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                if (children.Any(child => child == null))
+                    return null;
 
                 var type = new PNamedTupleType(children.Select(child => new Tuple<string, PType>(
-                    ((Cnst)GetArgByIndex((FuncTerm)child.Item1.Node, 0)).GetStringValue(), child.Item2.type)));
-                var isGhost = children.Any(child => child.Item2.isGhost);
+                    ((Cnst)GetArgByIndex((FuncTerm)child.node.Node, 0)).GetStringValue(), child.type)));
+                var isGhost = children.Any(child => child.isGhost);
                 registerType(type);
 
                 var buildArgs = ConstructList(ZingData.App_Args,
-                    children.OrderBy(child => ((Cnst)GetArgByIndex((FuncTerm)child.Item1.Node, 0)).GetStringValue()).Select(
-                        child => Factory.Instance.ToAST(GetArgByIndex((FuncTerm)child.Item1.Node, 1))
+                    children.OrderBy(child => ((Cnst)GetArgByIndex((FuncTerm)child.node.Node, 0)).GetStringValue()).Select(
+                        child => Factory.Instance.ToAST(GetArgByIndex((FuncTerm)child.node.Node, 1))
                     ));
 
                 var node = AddArgs(ZingData.App_Call, AddArgs(ZingData.App_Args, MkZingDot(pTypeToZingType(type), "Build"), buildArgs));
                 var tmpVar = ctxt.getTmpVar(type, "tmpNamedTuple");
                 ctxt.addSideEffect(MkZingAssign(tmpVar, node));
-
-                return new Tuple<AST<Node>, TypeCheckInfo>(tmpVar, new TypeCheckInfo(type, isGhost));
+                return new TypeCheckInfo(tmpVar, type, isGhost);
             }
             else if (funName == PData.Con_Apply.Node.Name)
             {
@@ -6720,84 +6741,93 @@ Environment:
                 if ((arity == 1) != (pOp.Name == PData.Cnst_Neg.Node.Name || pOp.Name == PData.Cnst_Not.Node.Name || pOp.Name == PData.Cnst_Sizeof.Node.Name))
                 {
                     errors.Add(new Flag(SeverityKind.Error, n, string.Format("Mismatched arity in expression."), 0, CompilingProgram));
-                    return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                    return null;
                 }
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
                     var arg1 = it.Current;
-                    if (arg1.Item2 == null)
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
-                    var isGhost = arg1.Item2.isGhost;
+                    if (arg1 == null)
+                        return null;
+                    var isGhost = arg1.isGhost;
                     if (arity == 1)
                     {
-                        if (pOp.Name == PData.Cnst_Not.Node.Name && arg1.Item2.type == PType.Bool)
+                        if (pOp.Name == PData.Cnst_Not.Node.Name && arg1.type == PType.Bool)
                         {   // TODO: In some places we return, in others we use outTerm. I think this is legacy could. Should refactor to always return
-                            return new Tuple<AST<Node>, TypeCheckInfo>(MkZingApply(zingOp, arg1.Item1), new TypeCheckInfo(new PBoolType(), isGhost));
+                            return new TypeCheckInfo(MkZingApply(zingOp, arg1.node), new PBoolType(), isGhost);
                         }
-                        else if (pOp.Name == PData.Cnst_Neg.Node.Name && arg1.Item2.type == PType.Int)
+                        else if (pOp.Name == PData.Cnst_Neg.Node.Name && arg1.type == PType.Int)
                         {
-                            return new Tuple<AST<Node>, TypeCheckInfo>(MkZingApply(zingOp, arg1.Item1), new TypeCheckInfo(new PIntType(), isGhost));
+                            return new TypeCheckInfo(MkZingApply(zingOp, arg1.node), new PIntType(), isGhost);
                         }
                         else if (pOp.Name == PData.Cnst_Sizeof.Node.Name)
                         {
-                            if (!(arg1.Item2.type is PSeqType || arg1.Item2.type is PMapType))
+                            if (!(arg1.type is PSeqType || arg1.type is PMapType))
                             {
-                                errors.Add(new Flag(SeverityKind.Error, n, string.Format("sizeof() exression expects a sequence or map."), 0, CompilingProgram));
-                                return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                                errors.Add(new Flag(SeverityKind.Error, n, string.Format("sizeof() expects a sequence or map."), 0, CompilingProgram));
+                                return null;
                             }
-                            return new Tuple<AST<Node>, TypeCheckInfo>(MkZingDot(arg1.Item1, "size"), new TypeCheckInfo(new PIntType(), isGhost));
+                            return new TypeCheckInfo(MkZingDot(arg1.node, "size"), new PIntType(), isGhost);
+                        }
+                        else if (pOp.Name == PData.Cnst_Keys.Node.Name)
+                        {
+                            if (!(arg1.type is PMapType))
+                            {
+                                errors.Add(new Flag(SeverityKind.Error, n, string.Format("keys() expects a map."), 0, CompilingProgram));
+                                return null;
+                            }
+                            return new TypeCheckInfo(arg1.node, new PSeqType((arg1.type as PMapType).KeyT), isGhost, null, true);
                         }
                         else
                         {
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("Mismatched types in expression."), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
                     }
                     else if (arity == 2)
                     {
                         it.MoveNext();
                         var arg2 = it.Current;
-                        if (arg2.Item2 == null)
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
-                        isGhost = isGhost || arg2.Item2.isGhost;
+                        if (arg2 == null)
+                            return null;
+                        isGhost = isGhost || arg2.isGhost;
                         if (pOp.Name == PData.Cnst_In.Node.Name)
                         {
-                            PMapType mapType = arg2.Item2.type as PMapType;
+                            PMapType mapType = arg2.type as PMapType;
                             if (mapType == null)
                             {
                                 errors.Add(new Flag(SeverityKind.Error, n, string.Format("Expected a map with the in operator"), 0, CompilingProgram));
-                                return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                                return null;
                             }
-                            PType keyType = arg1.Item2.type;
+                            PType keyType = arg1.type;
                             if (!(keyType.isSubtypeOf(mapType.KeyT))) 
                             {
                                 errors.Add(new Flag(SeverityKind.Error, n, string.Format("Expected a subtype of {0} for the key when applying in operator to a map of type {1}", keyType, mapType), 0, CompilingProgram));
-                                return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                                return null;
                             }
                             var tmpVar = ctxt.getTmpVar(PType.Bool, "tmpVal");
-                            ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(arg2.Item1, "Contains"), arg1.Item1)));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(tmpVar, new TypeCheckInfo(PType.Bool, arg1.Item2.isGhost || arg2.Item2.isGhost));
+                            ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(arg2.node, "Contains"), arg1.node)));
+                            return new TypeCheckInfo(tmpVar, PType.Bool, arg1.isGhost || arg2.isGhost);
                         }
                         else if (pOp.Name == PData.Cnst_Idx.Node.Name)
                         {
-                            var indType = arg2.Item2.type;
+                            var indType = arg2.type;
 
-                            if (arg1.Item2.type is PTupleType)
+                            if (arg1.type is PTupleType)
                             {
-                                var baseType = arg1.Item2.type as PTupleType;
-                                var indN = arg2.Item1.Node;
+                                var baseType = arg1.type as PTupleType;
+                                var indN = arg2.node.Node;
 
                                 if (indType != PType.Int)
                                 {
                                     errors.Add(new Flag(SeverityKind.Error, n, string.Format("Expected an int when indexing a tuple"), 0, CompilingProgram));
-                                    return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                                    return null;
                                 }
 
                                 if (!(indN is Cnst))
                                 {
                                     errors.Add(new Flag(SeverityKind.Error, n, string.Format("Can only index a tuple with a constant"), 0, CompilingProgram));
-                                    return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                                    return null;
                                 }
 
                                 var elInd = (int)((Cnst)indN).GetNumericValue().Numerator;
@@ -6805,52 +6835,60 @@ Environment:
                                 if (elInd < 0 || elInd > baseType.elements.Count())
                                 {
                                     errors.Add(new Flag(SeverityKind.Error, n, string.Format("Invalid index {0} into tuple of length {1}", elInd, baseType.elements.Count()), 0, CompilingProgram));
-                                    return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                                    return null;
                                 }
 
-                                var ti = new TypeCheckInfo(baseType.elements.ElementAt(elInd), arg1.Item2.isGhost);
-                                return new Tuple<AST<Node>, TypeCheckInfo>(MkZingDot(arg1.Item1, getTupleField(elInd)), ti);
+                                return new TypeCheckInfo(MkZingDot(arg1.node, getTupleField(elInd)), baseType.elements.ElementAt(elInd), arg1.isGhost);
                             }
-                            else if (arg1.Item2.type is PSeqType)
+                            else if (arg1.type is PSeqType)
                             {
-                                var baseType = arg1.Item2.type as PSeqType;
+                                var baseType = arg1.type as PSeqType;
 
                                 if (indType != PType.Int)
                                 {
                                     errors.Add(new Flag(SeverityKind.Error, n, string.Format("Expected an int when indexing a sequence"), 0, CompilingProgram));
-                                    return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                                    return null;
                                 }
-                                return new Tuple<AST<Node>, TypeCheckInfo>(MkZingIndex(MkZingDot(arg1.Item1, "arr"), arg2.Item1), new TypeCheckInfo(baseType.T, arg1.Item2.isGhost || arg2.Item2.isGhost));
+                                if (arg1.isKeys)
+                                {
+                                    var tmpVar = ctxt.getTmpVar(baseType.T, "tmpVal");
+                                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(arg1.node, "LookupKeyAtIndex"), arg2.node)));
+                                    return new TypeCheckInfo(tmpVar, baseType.T, arg1.isGhost || arg2.isGhost);
+                                }
+                                else
+                                {
+                                    return new TypeCheckInfo(MkZingIndex(MkZingDot(arg1.node, "arr"), arg2.node), baseType.T, arg1.isGhost || arg2.isGhost);
+                                }
                             }
-                            else if (arg1.Item2.type is PMapType)
+                            else if (arg1.type is PMapType)
                             {
-                                var baseType = arg1.Item2.type as PMapType;
+                                var baseType = arg1.type as PMapType;
 
                                 if (!indType.isSubtypeOf(baseType.KeyT))
                                 {
                                     errors.Add(new Flag(SeverityKind.Error, n, string.Format("Expected subtype of type {0} when indexing a map of type {1}", baseType.KeyT, baseType), 0, CompilingProgram));
-                                    return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                                    return null;
                                 }
                                 var tmpVar = ctxt.getTmpVar(baseType.ValT, "tmpVal");
-                                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(arg1.Item1, "Lookup"), arg2.Item1)));
-                                return new Tuple<AST<Node>, TypeCheckInfo>(tmpVar, new TypeCheckInfo(baseType.KeyT, arg1.Item2.isGhost || arg2.Item2.isGhost));
+                                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(arg1.node, "Lookup"), arg2.node)));
+                                return new TypeCheckInfo(tmpVar, baseType.KeyT, arg1.isGhost || arg2.isGhost);
                             }
                             else
                             {
-                                errors.Add(new Flag(SeverityKind.Error, n, string.Format("Unexpected expression of type {0} on the left side of indexing", arg1.Item2.type), 0, CompilingProgram));
-                                return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                                errors.Add(new Flag(SeverityKind.Error, n, string.Format("Unexpected expression of type {0} on the left side of indexing", arg1.type), 0, CompilingProgram));
+                                return null;
                             }
                         }
                         else if (pOp.Name == PData.Cnst_Fld.Node.Name)
                         {
-                            var baseType = arg1.Item2.type;
-                            var indType = arg2.Item2.type;
+                            var baseType = arg1.type;
+                            var indType = arg2.type;
                             var tupType = baseType as PNamedTupleType;
 
                             if (tupType == null)
                             {
                                 errors.Add(new Flag(SeverityKind.Error, n, string.Format("Unexpected expression of type {0} on the left side of field lookup", baseType), 0, CompilingProgram));
-                                return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                                return null;
                             }
 
                             // Verify that the second P Node is indeed a Use("f", FIELD) node
@@ -6859,10 +6897,10 @@ Environment:
                                 !(GetArgByIndex(useNode, 1) is Id) || ((Id)GetArgByIndex(useNode, 1)).Name != PData.Cnst_Field.Node.Name)
                             {
                                 errors.Add(new Flag(SeverityKind.Error, n, string.Format("Invalid Field expression in field lookup", baseType), 0, CompilingProgram));
-                                return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                                return null;
                             }
 
-                            var memberName = (arg2.Item1.Node as Cnst).GetStringValue();
+                            var memberName = (arg2.node.Node as Cnst).GetStringValue();
                             PType memberType = null;
 
                             foreach (var el in tupType.elements)
@@ -6877,60 +6915,59 @@ Environment:
                             if (memberType == null)
                             {
                                 errors.Add(new Flag(SeverityKind.Error, n, string.Format("Named Tuple {0} doesn't conatin a field {1}.", tupType, memberName), 0, CompilingProgram));
-                                return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                                return null;
                             }
 
-                            var ti = new TypeCheckInfo(memberType, arg1.Item2.isGhost);
-                            return new Tuple<AST<Node>, TypeCheckInfo>(MkZingDot(arg1.Item1, memberName), ti);
+                            return new TypeCheckInfo(MkZingDot(arg1.node, memberName), memberType, arg1.isGhost);
                         } if (pOp.Name == PData.Cnst_Eq.Node.Name || pOp.Name == PData.Cnst_NEq.Node.Name)
                         {
 
-                            if (!arg1.Item2.type.isSubtypeOf(arg2.Item2.type) && !arg2.Item2.type.isSubtypeOf(arg1.Item2.type))
+                            if (!arg1.type.isSubtypeOf(arg2.type) && !arg2.type.isSubtypeOf(arg1.type))
                             {
-                                errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot compare for equality items of types {0} and {1}", arg1.Item2.type, arg2.Item2.type), 0, CompilingProgram));
-                                return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                                errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot compare for equality items of types {0} and {1}", arg1.type, arg2.type), 0, CompilingProgram));
+                                return null;
                             }
 
                             var outNode = pOp.Name == PData.Cnst_Eq.Node.Name ?
-                                MkZingEq(ctxt, arg1.Item1, arg1.Item2.type, arg2.Item1, arg2.Item2.type) :
-                                MkZingNeq(ctxt, arg1.Item1, arg1.Item2.type, arg2.Item1, arg2.Item2.type);
-                            return new Tuple<AST<Node>, TypeCheckInfo>(outNode, new TypeCheckInfo(new PBoolType(), isGhost));
+                                MkZingEq(ctxt, arg1.node, arg1.type, arg2.node, arg2.type) :
+                                MkZingNeq(ctxt, arg1.node, arg1.type, arg2.node, arg2.type);
+                            return new TypeCheckInfo(outNode, new PBoolType(), isGhost);
                         }
-                        else if (arg1.Item2.type == arg2.Item2.type)
+                        else if (arg1.type == arg2.type)
                         {
                             if (pOp.Name == PData.Cnst_And.Node.Name || pOp.Name == PData.Cnst_Or.Node.Name)
                             {
-                                if (arg1.Item2.type == PType.Bool)
+                                if (arg1.type == PType.Bool)
                                 {
-                                    return new Tuple<AST<Node>, TypeCheckInfo>(MkZingApply(zingOp, arg1.Item1, arg2.Item1), new TypeCheckInfo(new PBoolType(), isGhost));
+                                    return new TypeCheckInfo(MkZingApply(zingOp, arg1.node, arg2.node), new PBoolType(), isGhost);
                                 }
                                 else
                                 {
                                     errors.Add(new Flag(SeverityKind.Error, n, string.Format("Mismatched types in expression."), 0, CompilingProgram));
-                                    return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                                    return null;
                                 }
                             }
-                            else if (arg1.Item2.type == PType.Int)
+                            else if (arg1.type == PType.Int)
                             {
                                 if (pOp.Name == PData.Cnst_Add.Node.Name || pOp.Name == PData.Cnst_Sub.Node.Name || pOp.Name == PData.Cnst_Mul.Node.Name || pOp.Name == PData.Cnst_IntDiv.Node.Name)
                                 {
-                                    return new Tuple<AST<Node>, TypeCheckInfo>(MkZingApply(zingOp, arg1.Item1, arg2.Item1), new TypeCheckInfo(new PIntType(), isGhost));
+                                    return new TypeCheckInfo(MkZingApply(zingOp, arg1.node, arg2.node), new PIntType(), isGhost);
                                 }
                                 else
                                 {
-                                    return new Tuple<AST<Node>, TypeCheckInfo>(MkZingApply(zingOp, arg1.Item1, arg2.Item1), new TypeCheckInfo(new PBoolType(), isGhost));
+                                    return new TypeCheckInfo(MkZingApply(zingOp, arg1.node, arg2.node), new PBoolType(), isGhost);
                                 }
                             }
                             else
                             {
                                 errors.Add(new Flag(SeverityKind.Error, n, string.Format("Mismatched types in expression."), 0, CompilingProgram));
-                                return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                                return null;
                             }
                         }
                         else
                         {
-                            errors.Add(new Flag(SeverityKind.Error, n, string.Format("Mismatched types in expression. Arguments have different types - {0} and {1}", arg1.Item2.type, arg2.Item2.type), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            errors.Add(new Flag(SeverityKind.Error, n, string.Format("Mismatched types in expression. Arguments have different types - {0} and {1}", arg1.type, arg2.type), 0, CompilingProgram));
+                            return null;
                         }
                     }
                     else
@@ -6944,10 +6981,10 @@ Environment:
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
-                    if (it.Current.Item1 == null)
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                    if (it.Current == null)
+                        return null;
 
-                    return new Tuple<AST<Node>, TypeCheckInfo>(AddArgs(App_LabeledExpr, Factory.Instance.ToAST(GetArgByIndex(ft, 0)), it.Current.Item1), it.Current.Item2);
+                    return new TypeCheckInfo(AddArgs(App_LabeledExpr, Factory.Instance.ToAST(GetArgByIndex(ft, 0)), it.Current.node), it.Current.type, it.Current.isGhost, it.Current.stateName, it.Current.isKeys);
                 }
             }
             else if (funName == PData.Con_New.Node.Name)
@@ -6956,30 +6993,30 @@ Environment:
                 {
                     it.MoveNext();
 
-                    var typeName = ((Cnst)GetArgByIndex((FuncTerm)it.Current.Item1.Node, 0)).GetStringValue();
+                    var typeName = ((Cnst)GetArgByIndex((FuncTerm)it.Current.node.Node, 0)).GetStringValue();
                     if (!allMachines.ContainsKey(typeName))
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("Machine type {0} has not been declared.", typeName), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
 
                     AST<Node> inits = ZingData.Cnst_Nil;
 
                     while (it.MoveNext())
                     {
-                        if (it.Current.Item1 == null)
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        if (it.Current == null)
+                            return null;
 
-                        if (it.Current.Item1.Node is Id)
+                        if (it.Current.node.Node is Id)
                             break;
 
-                        var argFt = (FuncTerm)it.Current.Item1.Node;
+                        var argFt = (FuncTerm)it.Current.node.Node;
 
                         Debug.Assert(getFtName(argFt) == Con_LabeledExpr &&
                             GetArgByIndex(argFt, 0) is Cnst);
                         var varName = ((Cnst)GetArgByIndex(argFt, 0)).GetStringValue();
                         var rhs = GetArgByIndex(argFt, 1);
-                        var rhsInfo = it.Current.Item2;
+                        var rhsInfo = it.Current;
 
                         VariableInfo varInfo;
                         if (allMachines[typeName].localVariableToVarInfo.ContainsKey(varName))
@@ -6989,10 +7026,10 @@ Environment:
                         else
                         {
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("Local variable {0} not declared in machine {1}.", varName, typeName), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
 
-                        var lhs = new Tuple<AST<Node>, TypeCheckInfo>(MkZingIdentifier(varName), new TypeCheckInfo(varInfo.type, varInfo.isGhost));
+                        var lhs = new Tuple<AST<Node>, TypeCheckInfo>(null, new TypeCheckInfo(MkZingIdentifier(varName), varInfo.type, varInfo.isGhost));
                         var lhsInfo = lhs.Item2;
 
                         // type(lhs) == type(rhs)
@@ -7001,17 +7038,17 @@ Environment:
                         {
                             errors.Add(new Flag(SeverityKind.Error, n,
                                 string.Format("Type of left-hand side ({0}) does not match type of right-hand ({1}) side in assignment.", lhsInfo.type, rhsInfo.type), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
                         if (!lhsInfo.isGhost && rhsInfo.isGhost)
                         {
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot assign ghost expression to real variable."), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
                         if (lhsInfo.type == PType.Id && lhsInfo.isGhost != rhsInfo.isGhost)
                         {
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot assign real expression to a ghost variable of type id."), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
 
                         if (lhsInfo.type == rhsInfo.type)
@@ -7024,7 +7061,7 @@ Environment:
                         }
                     }
 
-                    return new Tuple<AST<Node>, TypeCheckInfo>(MkZingCreateMachineCall(ctxt, typeName, inits.Node), new TypeCheckInfo(new PIdType(), allMachines[typeName].isGhost));
+                    return new TypeCheckInfo(MkZingCreateMachineCall(ctxt, typeName, inits.Node), new PIdType(), allMachines[typeName].isGhost);
                 }
             }
             else if (funName == PData.Con_Raise.Node.Name)
@@ -7032,62 +7069,62 @@ Environment:
                 if (ctxt.translationContext != TranslationContext.Entry && ctxt.translationContext != TranslationContext.Action)
                 {
                     errors.Add(new Flag(SeverityKind.Error, n, string.Format("Raise statement allowed only in entry functions or actions.", entityName), 0, CompilingProgram));
-                    return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                    return null;
                 }
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
                     var eventExpr = it.Current;
 
-                    if (eventExpr.Item2 == null)
+                    if (eventExpr == null)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
 
-                    PEventType evtType = it.Current.Item2.type as PEventType;
+                    PEventType evtType = it.Current.type as PEventType;
 
                     if (evtType == null)
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("The argument to raise must be an event."), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
 
                     it.MoveNext();
 
                     var payloadExpr = it.Current;
-                    if (payloadExpr.Item2 == null)
+                    if (payloadExpr == null)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
-                    if (payloadExpr.Item2.isGhost)
+                    if (payloadExpr.isGhost)
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("The payload of a raise must be real."), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
-                    AST<Node> payload = payloadExpr.Item1 != ZingData.Cnst_Nil ? payloadExpr.Item1 : MkZingIdentifier("null");
-                    PType payloadType = payloadExpr.Item2.type;
+                    AST<Node> payload = payloadExpr.node != ZingData.Cnst_Nil ? payloadExpr.node : MkZingIdentifier("null");
+                    PType payloadType = payloadExpr.type;
 
 
-                    var assertStmt = MkZingSeq(Factory.Instance.AddArg(ZingData.App_Assert, MkZingApply(ZingData.Cnst_NEq, eventExpr.Item1, MkZingIdentifier("null"))),
-                                               Factory.Instance.AddArg(ZingData.App_Assert, MkZingApply(ZingData.Cnst_NEq, eventExpr.Item1, MkZingEvent("default"))));
+                    var assertStmt = MkZingSeq(Factory.Instance.AddArg(ZingData.App_Assert, MkZingApply(ZingData.Cnst_NEq, eventExpr.node, MkZingIdentifier("null"))),
+                                               Factory.Instance.AddArg(ZingData.App_Assert, MkZingApply(ZingData.Cnst_NEq, eventExpr.node, MkZingEvent("default"))));
                     string traceString = string.Format("\"<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\"", machineName);
-                    var traceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"), MkZingApply(ZingData.Cnst_Dot, eventExpr.Item1, Factory.Instance.MkCnst("name"))));
+                    var traceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"), MkZingApply(ZingData.Cnst_Dot, eventExpr.node, Factory.Instance.MkCnst("name"))));
                     var tmpArg = ctxt.getTmpVar(PType.Any, "arg");
                     var tmpEv = ctxt.getTmpVar(PType.Event, "ev");
-                    var eventPayloadCasts = MkZingSeq(MkZingAssignOrCast(tmpEv, PType.Event, eventExpr.Item1, PType.Event),
+                    var eventPayloadCasts = MkZingSeq(MkZingAssignOrCast(tmpEv, PType.Event, eventExpr.node, PType.Event),
                                                MkZingAssignOrCast(tmpArg, PType.Any, payload, payloadType));
                     // Emit a check that the payload can be casted to the expected Event Payload
                     var tmpEvPayload = ctxt.getTmpVar(Factory.Instance.MkCnst("Discriminator"), "tmpEvPayloadType");
                     var tmpEq = ctxt.getTmpVar(PType.Bool, "tmpEq");
                     var payloadEventMatchAssert = MkZingSeq(
-                        MkZingAssign(tmpEvPayload, MkZingCall(MkZingDot("Main", "PayloadOf"), eventExpr.Item1)),
+                        MkZingAssign(tmpEvPayload, MkZingCall(MkZingDot("Main", "PayloadOf"), eventExpr.node)),
                         MkZingAssignOrCast(tmpEq, PType.Bool, MkZingCall(MkZingDot(tmpArg, "CanCastTo"), tmpEvPayload), PType.Bool),
                         MkZingAssert(tmpEq));
                     var createRetCtxt = MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Raise"), tmpEv, tmpArg));
 
                     var outNode = MkZingSeq(assertStmt, traceStmt, eventPayloadCasts, payloadEventMatchAssert, createRetCtxt, 
                         MkZingReturn(MkZingIdentifier("entryCtxt")));
-                    return new Tuple<AST<Node>, TypeCheckInfo>(outNode, new TypeCheckInfo(new PNilType()));
+                    return new TypeCheckInfo(outNode, new PNilType());
                 }
             }
             else if (funName == PData.Con_Call.Node.Name)
@@ -7096,7 +7133,7 @@ Environment:
                 if (!allMachines[machineName].funNameToFunInfo.ContainsKey(calleeName))
                 {
                     errors.Add(new Flag(SeverityKind.Error, n, string.Format("Function {0} has not been declared.", calleeName), 0, CompilingProgram));
-                    return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                    return null;
                 }
                 var calleeInfo = allMachines[machineName].funNameToFunInfo[calleeName];
                 if (ctxt.translationContext == TranslationContext.Action)
@@ -7123,31 +7160,31 @@ Environment:
                 int count = 0;
                 foreach (var child in children)
                 {
-                    if (child.Item2 == null)
+                    if (child == null)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
                     if (count == calleeInfo.parameterNames.Count)
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("Fewer parameters than arguments."), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
                     var lhsInfo = calleeInfo.parameterNameToInfo[calleeInfo.parameterNames[count]];
-                    var rhsInfo = child.Item2;
+                    var rhsInfo = child;
                     if (!rhsInfo.type.isSubtypeOf(lhsInfo.type))
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("Mismatch in type of argument {0}.", count), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
                     if (!lhsInfo.isGhost && rhsInfo.isGhost)
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot pass ghost expression to real parameter."), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
                     if (lhsInfo.type == PType.Id && lhsInfo.isGhost != rhsInfo.isGhost)
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot assign real expression to a ghost parameter of type id."), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
 
                     Debug.Assert(!(lhsInfo.type is PNilType)); // Can't declare formal parameters of type null.
@@ -7156,29 +7193,29 @@ Environment:
                     {
                         if (rhsInfo.type is PPrimitiveType)
                         {
-                            argActual = child.Item1;
+                            argActual = child.node;
                         }
                         else
                         {
                             var tmpVar = ctxt.getTmpVar(rhsInfo.type, "argCloneVar");
-                            ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(child.Item1, "Clone"))));
+                            ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(child.node, "Clone"))));
                             argActual = tmpVar;
                         }
                     }
                     else
                     {
                         var tmpVar = ctxt.getTmpVar(lhsInfo.type, "argCastVar");
-                        ctxt.addSideEffect(MkZingAssignOrCast(tmpVar, lhsInfo.type, child.Item1, rhsInfo.type));
+                        ctxt.addSideEffect(MkZingAssignOrCast(tmpVar, lhsInfo.type, child.node, rhsInfo.type));
                         argActual = tmpVar;
                     }
                     count++;
-                    isGhost = isGhost || child.Item2.isGhost;
+                    isGhost = isGhost || child.isGhost;
                     args.Add(argActual);
                 }
                 if (count < calleeInfo.parameterNames.Count)
                 {
                     errors.Add(new Flag(SeverityKind.Error, n, string.Format("Fewer arguments than parameters."), 0, CompilingProgram));
-                    return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                    return null;
                 }
 
 
@@ -7207,58 +7244,58 @@ Environment:
                                 MkZingReturn(MkZingIdentifier("entryCtxt"))))));
                 ctxt.addSideEffect(callStmt);
 
-                return new Tuple<AST<Node>, TypeCheckInfo>(outExp, new TypeCheckInfo(calleeInfo.returnType, isGhost));
+                return new TypeCheckInfo(outExp, calleeInfo.returnType, isGhost);
             }
             else if (funName == PData.Con_Send.Node.Name)
             {
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
-                    if (it.Current.Item2 == null)
+                    if (it.Current == null)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
-                    if (it.Current.Item2.type != PType.Id)
+                    if (it.Current.type != PType.Id)
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("The target of a send must be of machine type."), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
-                    var targetIsGhost = it.Current.Item2.isGhost;
-                    var targetExpr = it.Current.Item1;
+                    var targetIsGhost = it.Current.isGhost;
+                    var targetExpr = it.Current.node;
                     it.MoveNext();
-                    if (it.Current.Item2 == null)
+                    if (it.Current == null)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
-                    if (it.Current.Item2.type != PType.Event)
+                    if (it.Current.type != PType.Event)
                     {
                         errors.Add(new Flag(SeverityKind.Error, n, string.Format("The argument to send must be an event."), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
-                    var eventExpr = it.Current.Item1;
-                    var evtType = it.Current.Item2.type as PEventType;
+                    var eventExpr = it.Current.node;
+                    var evtType = it.Current.type as PEventType;
                     it.MoveNext();
-                    if (it.Current.Item2 == null)
+                    if (it.Current == null)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
-                    PType payloadType = it.Current.Item1 != ZingData.Cnst_Nil ? it.Current.Item2.type : PType.Nil;
-                    AST<Node> payload = it.Current.Item1 != ZingData.Cnst_Nil ? it.Current.Item1 : MkZingIdentifier("null");
+                    PType payloadType = it.Current.node != ZingData.Cnst_Nil ? it.Current.type : PType.Nil;
+                    AST<Node> payload = it.Current.node != ZingData.Cnst_Nil ? it.Current.node : MkZingIdentifier("null");
 
-                    var argIsGhost = it.Current.Item2.isGhost;
-                    if (it.Current.Item1 != ZingData.Cnst_Nil)
+                    var argIsGhost = it.Current.isGhost;
+                    if (it.Current.node != ZingData.Cnst_Nil)
                     {
-                        if (it.Current.Item2.isGhost)
+                        if (it.Current.isGhost)
                         {
                             if (!targetIsGhost)
                             {
                                 errors.Add(new Flag(SeverityKind.Error, n, string.Format("The payload of a send to a real machine must also be real."), 0, CompilingProgram));
-                                return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                                return null;
                             }
                             if (payloadType == PType.Id)
                             {
                                 errors.Add(new Flag(SeverityKind.Error, n, string.Format("Ghost payload of type machine id is not allowed."), 0, CompilingProgram));
-                                return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                                return null;
                             }
                         }
                     }
@@ -7274,8 +7311,8 @@ Environment:
                     var afterLabel = ctxt.getFreshLabel();
                     ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Send"), targetExpr, eventExpr, tmpVar, MkCnst(ctxt.labelToId(afterLabel)))));
                     // Actual Send statement
-                    return new Tuple<AST<Node>, TypeCheckInfo>(MkZingSeq(MkZingReturn(MkZingIdentifier("entryCtxt")),
-                        MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil)), new TypeCheckInfo(new PNilType(), targetIsGhost || argIsGhost));
+                    return new TypeCheckInfo(MkZingSeq(MkZingReturn(MkZingIdentifier("entryCtxt")),
+                        MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil)), new PNilType(), targetIsGhost || argIsGhost);
                 }
             }
             else if (funName == PData.Con_While.Node.Name)
@@ -7285,31 +7322,30 @@ Environment:
                     it.MoveNext();
                     var condExpr = it.Current;
                     it.MoveNext();
-                    var body = it.Current.Item1;
+                    var body = it.Current.node;
 
-                    if (condExpr.Item2 == null || it.Current.Item2 == null)
+                    if (condExpr == null || it.Current == null)
                     {
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        return null;
                     }
 
-
-                    if (condExpr.Item1 != null && condExpr.Item2.type != PType.Bool)
+                    if (condExpr.node != null && condExpr.type != PType.Bool)
                     {
-                        errors.Add(new Flag(SeverityKind.Error, n, string.Format("Conditional expression must be Boolean not {0}", condExpr.Item2.type), 0, CompilingProgram));
-                        return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                        errors.Add(new Flag(SeverityKind.Error, n, string.Format("Conditional expression must be Boolean not {0}", condExpr.type), 0, CompilingProgram));
+                        return null;
                     }
 
                     if (!allMachines[machineName].isGhost)
                     {
-                        if (condExpr.Item1 == null)
+                        if (condExpr == null)
                         {
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("Use of nondet in a real machine is not allowed."), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
-                        if (condExpr.Item2.isGhost && !allMachines[machineName].isGhost)
+                        if (condExpr.isGhost && !allMachines[machineName].isGhost)
                         {
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("Use of ghost expression in a conditional in a real machine is not allowed."), 0, CompilingProgram));
-                            return new Tuple<AST<Node>, TypeCheckInfo>(null, null);
+                            return null;
                         }
                     }
 
@@ -7319,32 +7355,31 @@ Environment:
                     body = ctxt.emitZingSideEffects(zingWrapExprToStmts(body));
 
                     var res = MkZingLabeledStmt(loopStart, MkZingSeq(
-                        ctxt.emitZingSideEffects(MkZingIf(MkZingApply(ZingData.Cnst_Not, condExpr.Item1), AddArgs(ZingData.App_Goto, MkCnst(loopEnd)))),
+                        ctxt.emitZingSideEffects(MkZingIf(MkZingApply(ZingData.Cnst_Not, condExpr.node), AddArgs(ZingData.App_Goto, MkCnst(loopEnd)))),
                         body,
                         AddArgs(ZingData.App_Goto, MkCnst(loopStart)),
                         MkZingLabeledStmt(loopEnd, ZingData.Cnst_Nil)));
                         
-                    return new Tuple<AST<Node>, TypeCheckInfo>(res, new TypeCheckInfo(new PNilType(), condExpr.Item2.isGhost));
+                    return new TypeCheckInfo(res, new PNilType(), condExpr.isGhost);
                 }
             }
             else if (funName == PData.Con_MachType.Node.Name)
             {
-                return new Tuple<AST<Node>, TypeCheckInfo>(Factory.Instance.ToAST(n), new TypeCheckInfo(new PNilType()));
+                return new TypeCheckInfo(Factory.Instance.ToAST(n), new PNilType());
             }
             else if (funName == PData.Con_TypeTuple.Node.Name || funName == PData.Con_TypeNamedTuple.Node.Name)
             {
-                return new Tuple<AST<Node>, TypeCheckInfo>(null, new TypeCheckInfo(new PNilType())); // Ignore
+                return new TypeCheckInfo(null, new PNilType()); // Ignore
             }
             else if (funName == PData.Con_TypeField.Node.Name)
             {
-                return new Tuple<AST<Node>, TypeCheckInfo>(null, new TypeCheckInfo(new PNilType())); // Ignore
+                return new TypeCheckInfo(null, new PNilType()); // Ignore
             }
             else
             {
                 Console.WriteLine("Unknown term name: " + funName);
                 throw new NotImplementedException();
             }
-            return null;
         }
 
         AST<FuncTerm> MkZingCreateMachineCall(ZingEntryFun_FoldContext ctxt, string typeName, Node initializers)
@@ -7416,16 +7451,16 @@ Environment:
             AST<Node> body;
 
             var ctxt = new ZingEntryFun_FoldContext(machine, ctxType, entity, this);
-            var tuple = Factory.Instance.ToAST(n).Compute<Tuple<AST<Node>, TypeCheckInfo>>(
+            var tuple = Factory.Instance.ToAST(n).Compute<TypeCheckInfo>(
                 x => ZingEntryFun_UnFold(ctxt, x),
                 (x, ch) => ZingEntryFun_Fold(ctxt, x, ch));
 
-            if (tuple.Item1 == null)
+            if (tuple == null)
                 body = ZingData.Cnst_Nil;
             else
             {
                 Debug.Assert(ctxt.sideEffectsStack.Count == 1);
-                body = ctxt.emitZingSideEffects(zingWrapExprToStmts(tuple.Item1));
+                body = ctxt.emitZingSideEffects(zingWrapExprToStmts(tuple.node));
             }
 
             body = MkZingSeq(
@@ -7447,15 +7482,15 @@ Environment:
             AST<Node> entry = Factory.Instance.ToAST(GetArgByIndex(funInfo.funDecl, 5));
 
             var ctxt = new ZingEntryFun_FoldContext(machineName, TranslationContext.Function, funName, this);
-            var tuple = Factory.Instance.ToAST(entry.Node).Compute<Tuple<AST<Node>, TypeCheckInfo>>(
+            var tuple = Factory.Instance.ToAST(entry.Node).Compute<TypeCheckInfo>(
                 x => ZingEntryFun_UnFold(ctxt, x),
                 (x, ch) => ZingEntryFun_Fold(ctxt, x, ch));
 
-            if (tuple.Item1 == null) {
+            if (tuple == null) {
                 funBody = ZingData.Cnst_Nil;
             } else {
                 Debug.Assert(ctxt.sideEffectsStack.Count == 1);
-                funBody = ctxt.emitZingSideEffects(zingWrapExprToStmts(tuple.Item1));
+                funBody = ctxt.emitZingSideEffects(zingWrapExprToStmts(tuple.node));
                 ctxt.pushSideEffectStack();
             }
 
@@ -7797,6 +7832,31 @@ Environment:
                 ZingData.Cnst_Void, ctxt.emitLocals(), MkZingBlock("dummy", removeBody));
         }
 
+        private AST<FuncTerm> MkZingMapToSeq(PMapType fromT)
+        {
+            PSeqType toT = new PSeqType(fromT.KeyT);
+            var name = "ToSeq";
+            ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, name, this);
+            var res = ctxt.getTmpVar(toT, "res");
+            var iter = ctxt.getTmpVar(MkCnst(pTypeToZingClassName(fromT) + "_Entry"), "iter");
+            var isUpcast = fromT.isSubtypeOf(toT) && toT != fromT;
+            var from = isUpcast ? "obj" : "this"; // Only Upcasts are static
+
+            var body = MkZingSeq(
+                MkZingAssign(res, MkZingCall(MkZingDot(pTypeToZingClassName(toT), "BuildDefault"))),
+                MkZingListIter(iter, MkZingDot("head", "next"), MkZingIdentifier("head"),
+                               MkZingCallStmt(MkZingCall(MkZingDot(res, "Insert"), MkZingDot(iter, "key"), MkZingDot(iter, "val")))),
+                MkZingReturn(res));
+
+            if (isUpcast)
+                return MkZingMethodDecl(name, MkZingVarDecls(MkZingVarDecl(from, fromT)), pTypeToZingType(toT), ctxt.emitLocals(),
+                    MkZingBlock("dummy", ctxt.emitZingSideEffects(body)), ZingData.Cnst_Static);
+            else
+                return MkZingMethodDecl(name, ZingData.Cnst_Nil, pTypeToZingType(toT), ctxt.emitLocals(),
+                    MkZingBlock("dummy", ctxt.emitZingSideEffects(body)));
+        }
+
+
         private void MkZingMapClassDefinition(PMapType t, out AST<FuncTerm> mapClass, out AST<FuncTerm> mapEntryClass)
         {
             var zType = pTypeToZingType(t);
@@ -7857,6 +7917,8 @@ Environment:
             methods.Add(MkZingMapUpdate(t));
 
             methods.Add(MkZingMapRemove(t));
+
+            methods.Add(MkZingMapToSeq(t));
 
             mapClass = AddArgs(ZingData.App_ClassDecl, Factory.Instance.MkCnst(pTypeToZingName(t)), fields, ConstructList(ZingData.App_MethodDecls, methods));
         }
@@ -8157,16 +8219,16 @@ Environment:
                 foreach (var term in terms)
                 {
                     var ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, null, this);
-                    var mainConstructor = Factory.Instance.ToAST(GetArgByIndex(term.Node, 0)).Compute<Tuple<AST<Node>, TypeCheckInfo>>(
+                    var mainConstructor = Factory.Instance.ToAST(GetArgByIndex(term.Node, 0)).Compute<TypeCheckInfo>(
                         x => ZingEntryFun_UnFold(ctxt, x),
                         (x, ch) => ZingEntryFun_Fold(ctxt, x, ch));
 
-                    if (mainConstructor.Item2 != null)
+                    if (mainConstructor != null)
                     {
                         locals.AddRange(ctxt.emitLocalsList());
                         Debug.Assert(ctxt.sideEffectsStack.Count == 1);
 
-                        runBody = MkZingSeq(runBody, ctxt.emitZingSideEffects(MkZingCallStmt(mainConstructor.Item1)));
+                        runBody = MkZingSeq(runBody, ctxt.emitZingSideEffects(MkZingCallStmt(mainConstructor.node)));
                     }
                 }
                 runBody = AddArgs(ZingData.App_LabelStmt, Factory.Instance.MkCnst("dummy"), runBody);
@@ -8725,11 +8787,16 @@ Environment:
             else if (t is PSeqType)
                 ti.cType = ti.zingType = getUnique("Seq");
             else if (t is PMapType)
+            {
+                registerType((t as PMapType).KeyT);
                 ti.cType = ti.zingType = getUnique("Map");
-            else if (t is PAnyType) { // TODO: We shouldn't register Any and just always emit code for it.
+            }
+            else if (t is PAnyType)
+            { // TODO: We shouldn't register Any and just always emit code for it.
                 ti.cType = SMF_PACKED_VALUE;
                 ti.zingType = SM_ARG_UNION;
-            } else
+            }
+            else
                 throw new NotImplementedException("Can't register unknown complex type " + t);
                 
             declaredTypes[t] = ti;

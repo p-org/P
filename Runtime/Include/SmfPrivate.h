@@ -90,6 +90,8 @@ __in PSMF_SMCONTEXT		Context
 #define CLONE(Driver, RefType)	((PSMF_CLONEFUN)(Driver)->Types[(RefType)].Clone)
 #define BUILD_DEFAULT(Driver, RefType)	((PSMF_BUILDDEFFUN)(Driver)->Types[(RefType)].BuildDefault)
 #define DESTROY(Driver, RefType)	((PSMF_DESTROYFUN)(Driver)->Types[(RefType)].Destroy)
+#define EQUALS(Driver, RefType)	((PSMF_EQUALSFUN)(Driver)->Types[(RefType)].Equals)
+#define HASHCODE(Driver, RefType)	((PSMF_HASHCODEFUN)(Driver)->Types[(RefType)].HashCode)
 #define PRIMITIVE(Driver, RefType)	((BOOLEAN)(Driver)->Types[(RefType)].Primitive)
 
 //

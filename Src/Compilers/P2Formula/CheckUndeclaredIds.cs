@@ -80,6 +80,12 @@ namespace PParser
             return 0;
         }
 
+        public override int visit(DSLFFCall e)
+        {
+            checkDefined(e, e.fname, SemanticPass.SYM_FUN);
+            return 0;
+        }
+
         public override int visit_pre(DSLSCall n)
         {
             if (n.target is DSLMember)

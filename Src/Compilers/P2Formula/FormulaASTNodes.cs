@@ -59,6 +59,7 @@ namespace PParser
 
         public static AST<Id> Insert_Iden = Factory.Instance.MkId("INSERT");
         public static AST<Id> Remove_Iden = Factory.Instance.MkId("REMOVE");
+        public static AST<Id> Update_Iden = Factory.Instance.MkId("UPDATE");
 
         //Types
         #region Types
@@ -72,6 +73,7 @@ namespace PParser
         public static AST<Id> TypeNamedTuple = Factory.Instance.MkId("TypeNamedTuple");
         public static AST<Id> TypeTuple = Factory.Instance.MkId("TypeTuple");
         public static AST<Id> TypeSeq = Factory.Instance.MkId("TypeSeq");
+        public static AST<Id> TypeMap = Factory.Instance.MkId("TypeMap");
         #endregion
 
         // Expressions
@@ -122,6 +124,7 @@ namespace PParser
         public static AST<Id> Enumerator_Iden = Factory.Instance.MkId("ENUM");
         public static AST<Id> S_Enumerator_Iden = Factory.Instance.MkId("SENUM");
         public static AST<Id> Sizeof_Iden = Factory.Instance.MkId("SIZEOF");
+        public static AST<Id> Keys_Iden = Factory.Instance.MkId("KEYS");
         public static AST<Id> Fld_Iden = Factory.Instance.MkId("FLD");
         public static AST<Id> Idx_Iden = Factory.Instance.MkId("IDX");
         #endregion
@@ -156,7 +159,7 @@ namespace PParser
             OperatorToId[Ops.B_GE] = GtEq_Iden;
             OperatorToId[Ops.B_LT] = Lt_Iden;
             OperatorToId[Ops.B_LE] = LtEq_Iden;
-            
+            OperatorToId[Ops.B_IN] = In_Iden;
         }
     }
 }

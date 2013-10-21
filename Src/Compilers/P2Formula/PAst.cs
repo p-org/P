@@ -27,6 +27,7 @@ namespace PParser
         public abstract T visit(TypeField s);
         public abstract T visit(TypeTuple s);
         public abstract T visit(TypeSeq s);
+        public abstract T visit(TypeMap s);
         public abstract T visit(TypeAny s);
         // P Declarations
         public abstract T visit(Program s);
@@ -78,6 +79,7 @@ namespace PParser
         public abstract T visit(DSLNew e) ;
         public abstract T visit(DSLAttribute e);
         public abstract T visit(DSLSizeof e);
+        public abstract T visit(DSLKeys e);
 
         // Type Declarations
         public abstract T visit_pre(TypeInt s);
@@ -88,6 +90,7 @@ namespace PParser
         public abstract T visit_pre(TypeNamedTuple s);
         public abstract T visit_pre(TypeTuple s);
         public abstract T visit_pre(TypeSeq s);
+        public abstract T visit_pre(TypeMap s);
         public abstract T visit_pre(TypeAny s);
         // P Declarations
         public abstract T visit_pre(Program s);
@@ -139,6 +142,7 @@ namespace PParser
         public abstract T visit_pre(DSLNew e);
         public abstract T visit_pre(DSLAttribute e);
         public abstract T visit_pre(DSLSizeof e);
+        public abstract T visit_pre(DSLKeys e);
 
         public T visit(INode n)
         {
@@ -150,6 +154,7 @@ namespace PParser
             if (n is TypeField) { return this.visit(n as TypeField); }
             if (n is TypeTuple) { return this.visit(n as TypeTuple); }
             if (n is TypeSeq) { return this.visit(n as TypeSeq); }
+            if (n is TypeMap) { return this.visit(n as TypeMap); }
             if (n is TypeAny) { return this.visit(n as TypeAny); }
 
             if (n is Program) { return this.visit(n as Program); }
@@ -201,6 +206,7 @@ namespace PParser
             if (n is DSLNew) { return this.visit(n as DSLNew); }
             if (n is DSLAttribute) { return this.visit(n as DSLAttribute); }
             if (n is DSLSizeof) { return this.visit(n as DSLSizeof); }
+            if (n is DSLKeys) { return this.visit(n as DSLKeys); }
 
             throw new NotImplementedException("Unknown node type " + n.GetType().FullName);
         }
@@ -215,6 +221,7 @@ namespace PParser
             if (n is TypeField) { return this.visit_pre(n as TypeField); }
             if (n is TypeTuple) { return this.visit_pre(n as TypeTuple); }
             if (n is TypeSeq) { return this.visit_pre(n as TypeSeq); }
+            if (n is TypeMap) { return this.visit_pre(n as TypeMap); }
             if (n is TypeAny) { return this.visit_pre(n as TypeAny); }
 
             if (n is Program) { return this.visit_pre(n as Program); }
@@ -266,6 +273,7 @@ namespace PParser
             if (n is DSLNew) { return this.visit_pre(n as DSLNew); }
             if (n is DSLAttribute) { return this.visit_pre(n as DSLAttribute); }
             if (n is DSLSizeof) { return this.visit_pre(n as DSLSizeof); }
+            if (n is DSLKeys) { return this.visit_pre(n as DSLKeys); }
 
             throw new NotImplementedException("Unknown node type " + n.GetType().FullName);
         }
@@ -473,6 +481,19 @@ namespace PParser
             base(innerT)
         {
             this.innerT = innerT;
+        }
+    }
+
+    public class TypeMap : TypeNode
+    {
+        public TypeNode domain;
+        public TypeNode range;
+
+        public TypeMap(TypeNode domain, TypeNode range) :
+            base(domain, range)
+        {
+            this.domain = domain;
+            this.range = range;
         }
     }
 
@@ -784,7 +805,7 @@ namespace PParser
 
         B_MUL, B_DIV,
         B_PLUS, B_MINUS,
-        B_LT, B_GT, B_LE, B_GE,
+        B_LT, B_GT, B_LE, B_GE, B_IN,
         B_EQ, B_NE,
         B_LAND,
         B_LOR
@@ -951,6 +972,17 @@ namespace PParser
         public IDSLExp of;
 
         public DSLSizeof(IDSLExp of)
+            : base(of)
+        {
+            this.of = of;
+        }
+    }
+
+    public sealed class DSLKeys : BaseNode, IDSLExp
+    {
+        public IDSLExp of;
+
+        public DSLKeys(IDSLExp of)
             : base(of)
         {
             this.of = of;

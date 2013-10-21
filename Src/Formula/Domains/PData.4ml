@@ -12,8 +12,8 @@ domain FuncData
     TypeNamedTuple  ::= new (hd: any TypeField, tl: any TypeNamedTuple + { NIL }).
     TypeSet         ::= new (x: any AllTypes).
     TypeSeq         ::= new (x: any AllTypes).
-    TypeDict        ::= new (k: any AllTypes, v: any AllTypes).
-    AllTypes        ::= TypePrimitive + TypeTuple + TypeNamedTuple + TypeSeq + TypeSet + TypeDict + { ANY }.
+    TypeMap         ::= new (k: any AllTypes, v: any AllTypes).
+    AllTypes        ::= TypePrimitive + TypeTuple + TypeNamedTuple + TypeSeq + TypeSet + TypeMap + { ANY }.
     
     /*************************************************************/
     /****************    Entry Functions Language     ************/
@@ -21,7 +21,7 @@ domain FuncData
                                
     //// Expressions
     Use    ::= new (name: String, kind: { STATE, EVENT, VAR, FIELD }).
-    Apply  ::= new (op: { NOT, NEG, ADD, SUB, MUL, INTDIV, AND, OR, EQ, NEQ, LT, LE, GT, GE, IDX, FLD, IN, CHOOSE, ENUM, SIZEOF }, args: any Exprs).
+    Apply  ::= new (op: { NOT, NEG, ADD, SUB, MUL, INTDIV, AND, OR, EQ, NEQ, LT, LE, GT, GE, IDX, FLD, IN, CHOOSE, KEYS, SIZEOF }, args: any Exprs).
     Call   ::= new (name: String, args: any Exprs + { NIL }).
     Exprs  ::= new (head: any Expr, tail: any Exprs + { NIL }).              
     New    ::= new (type: any MachType, inits: any NamedExprs + { NIL }).
@@ -36,7 +36,7 @@ domain FuncData
     Expr   ::= Use + Tuple + NamedTuple + Set + Map + Sequence + New + Call + Apply + Payload + Integer + Boolean + { THIS, TRIGGER, NONDET, NULL }.
     
     //// Statements
-    DataOp ::= new (op: { INSERT, REMOVE }, args: any Exprs).
+    DataOp ::= new (op: { UPDATE, INSERT, REMOVE }, args: any Exprs).
     Assert ::= new (expr: any Expr).
     Return ::= new (expr: any Expr + { NIL }).
     Assign ::= new (lhs: any Expr, rhs: any Expr).

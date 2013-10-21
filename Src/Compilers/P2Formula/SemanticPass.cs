@@ -557,7 +557,7 @@ namespace PParser
 
         public override BaseScope visit_pre(DSLMutation n)
         {
-            if (n.op != "insert" && n.op != "remove")
+            if (n.op != "insert" && n.op != "remove" && n.op != "update")
             {
                 errors.Add(new SemanticError(n.loc, "Unknown mutation operation on data structure: " + n.op));
             }

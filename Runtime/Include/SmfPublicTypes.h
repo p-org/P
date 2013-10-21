@@ -175,6 +175,8 @@ typedef VOID (*PSMF_OPAQUE_CONST_FUN)(PVOID, PVOID);
 typedef VOID (*PSMF_OPAQUE_BUILDDEF_FUN)(PVOID, PVOID);
 typedef VOID (*PSMF_OPAQUE_CLONE_FUN)(PVOID, PVOID, PVOID);
 typedef VOID (*PSMF_OPAQUE_DESTROY_FUN)(PVOID, PVOID);
+typedef BOOLEAN (*PSMF_OPAQUE_EQUALS_FUN)(PVOID, PVOID, PVOID);
+typedef ULONG (*PSMF_OPAQUE_HASHCODE_FUN)(PVOID, PVOID);
 
 /*********************************************************************************
 
@@ -445,6 +447,8 @@ struct _SMF_TYPEDECL
 	PSMF_OPAQUE_CLONE_FUN Clone;
 	PSMF_OPAQUE_BUILDDEF_FUN BuildDefault;
 	PSMF_OPAQUE_DESTROY_FUN Destroy;
+    PSMF_OPAQUE_EQUALS_FUN Equals;
+    PSMF_OPAQUE_HASHCODE_FUN HashCode;
 };
 
 /*********************************************************************************

@@ -2,9 +2,6 @@
 #include "SmfDepends.h"
 #include "SmfPublicTypes.h"
 
-//
-// Event Decl (All events in the Program are of this type)
-//
 typedef struct _SMF_ARRAYLIST SMF_ARRAYLIST, * PSMF_ARRAYLIST;
 
 struct _SMF_ARRAYLIST

@@ -230,6 +230,11 @@ namespace PParser
             return wrap(fMkFuncTerm(P_FormulaNodes.TypeSeq, getOne(s.innerT)));
         }
 
+        public override IEnumerable<AST<Node>> visit(TypeMap s)
+        {
+            return wrap(fMkFuncTerm(P_FormulaNodes.TypeMap, getOne(s.domain), getOne(s.range)));
+        }
+
         // P Declarations
         public override IEnumerable<AST<Node>> visit(Program s)
         {
@@ -485,7 +490,7 @@ namespace PParser
 
         public override IEnumerable<AST<Node>> visit(DSLMutation s)
         {
-            AST<Node> op = s.op == "insert" ? P_FormulaNodes.Insert_Iden : P_FormulaNodes.Remove_Iden;
+            AST<Node> op = s.op == "insert" ? P_FormulaNodes.Insert_Iden : s.op == "remove" ? P_FormulaNodes.Remove_Iden : P_FormulaNodes.Update_Iden;
 
             return wrap(fMkFuncTerm(P_FormulaNodes.DataOp_Iden, op,
                 fMkFuncTerm(P_FormulaNodes.Exprs_Iden, getOne(s.baseE), Factory.Instance.ToAST(((FuncTerm)getOne(s.args).Node).Args.ElementAt(0)))));
@@ -555,8 +560,6 @@ namespace PParser
 
             return wrap(fMkFuncTerm(P_FormulaNodes.Use_Iden, fMkCnst(name), kind));
         }
-
-
 
         public override IEnumerable<AST<Node>> visit(DSLMember e)
         {
@@ -653,6 +656,11 @@ namespace PParser
             return wrap(fMkFuncTerm(P_FormulaNodes.Apply_Iden, P_FormulaNodes.Sizeof_Iden, sequence(P_FormulaNodes.Exprs_Iden, getOne(e.of))));
         }
 
+        public override IEnumerable<AST<Node>> visit(DSLKeys e)
+        {
+            return wrap(fMkFuncTerm(P_FormulaNodes.Apply_Iden, P_FormulaNodes.Keys_Iden, sequence(P_FormulaNodes.Exprs_Iden, getOne(e.of))));
+        }
+        
         // Preorder Visitors. Currently only used to set up Context information such as current Machine/State
         public override IEnumerable<AST<Node>> visit_pre(MachineDeclaration s)
         {
@@ -684,6 +692,7 @@ namespace PParser
         public override IEnumerable<AST<Node>> visit_pre(TypeNamedTuple s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(TypeTuple s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(TypeSeq s) { return default(IEnumerable<AST<Node>>); }
+        public override IEnumerable<AST<Node>> visit_pre(TypeMap s) { return default(IEnumerable<AST<Node>>); }
         // P Declarations
         public override IEnumerable<AST<Node>> visit_pre(Program s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(EventDeclaration s) { return default(IEnumerable<AST<Node>>); }
@@ -731,5 +740,6 @@ namespace PParser
         public override IEnumerable<AST<Node>> visit_pre(DSLNew e) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(DSLAttribute e) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(DSLSizeof e) { return default(IEnumerable<AST<Node>>); }
+        public override IEnumerable<AST<Node>> visit_pre(DSLKeys e) { return default(IEnumerable<AST<Node>>); }
     }
 }

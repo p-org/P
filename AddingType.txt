@@ -16,15 +16,15 @@
     2. Add new tokens at the top of parser.y and any neccessary parser rules
         for them.
 
-    3. Add new neccessary AST nodes in PAst.cs
-        - be mindfull if the new node is an expression statement. We use the
+    3. Add new necessary AST nodes in PAst.cs
+        - be mindful if the new node is an expression statement. We use the
           IDSLExp and IDSLStmt interfaces for example, as a poor man's
             typeclasses.
         - If this node has any children nodes that should be walkable, don't
           forget to add them as parameters to the parent constructor.
 
-    4. Add neccessary visitors to BasePVisitor in PAst.cs, and NoopVisitor and
-        PostVisitor.cs
+    4. Add neccessary visitors to BasePVisitor in PAst.cs, and NoopVisitor in
+        NoopVisitor.cs
 
     5. Add neccessary visitors to at least SemanticPass and PFormulaBuilder.
         Further add them to any other affected passes.
@@ -48,7 +48,7 @@
         isSubtypeOf and LUB methods (and potentially modifying other method's
         isSubTypeOf/LUB methods).
 
-7. Update GetType
+7. Update GetPType
     7.1 If this is a compound type/will require some special type emitted, don't forget to register it here by calling registerType.
 
 
@@ -73,7 +73,7 @@
     12.7 Bool CanDownCastTo_<SubT>() for all SubT <: T
         12.7.1 Update MkZingCanDownCastTo()
 
-13. For any newly created PData DSL nodes, update ZingEntryFun_Fold_Impl (and potentiall ZingEntryFun_UnFold_Impl).
+13. For any newly created PData DSL nodes, update ZingEntryFun_Fold_Impl (and potentially ZingEntryFun_UnFold_Impl).
 
 
 ===================== C Code Gen =============================================

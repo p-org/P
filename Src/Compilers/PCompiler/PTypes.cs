@@ -8,6 +8,7 @@ namespace DemoCompiler
 {
     abstract class PType
     {
+        public abstract bool Hashable { get; }
         public abstract override bool Equals(object obj); // Compares types for structural equality
         public static bool operator ==(PType a, PType b)
         {
@@ -75,6 +76,7 @@ namespace DemoCompiler
         protected static readonly int TupleHash = 19;
         protected static readonly int NamedTupleHash = 23;
         protected static readonly int SeqHash = 29;
+        protected static readonly int MapHash = 31;
 
         public static PType computeLUB(IEnumerable<PType> ts)
         {
@@ -155,6 +157,11 @@ namespace DemoCompiler
     {
         public PNilType() : base(PData.Cnst_Nil.Node.Name) { }
 
+        public override bool Hashable
+        {
+            get { return true; }
+        }
+
         public override bool isSubtypeOf(PType t)
         {
             return this.Equals(t) || (t is PAnyType) ||
@@ -173,28 +180,56 @@ namespace DemoCompiler
     class PIntType : PPrimitiveType
     {
         public PIntType() : base(PData.Cnst_Int.Node.Name) { }
+
+        public override bool Hashable
+        {
+            get { return true; }
+        }
     }
     class PBoolType : PPrimitiveType
     {
         public PBoolType() : base(PData.Cnst_Bool.Node.Name) { }
+
+        public override bool Hashable
+        {
+            get { return true; }
+        }
     }
     class PIdType : PPrimitiveType
     {
         public PIdType() : base(PData.Cnst_Id.Node.Name) { }
+
+        public override bool Hashable
+        {
+            get { return true; }
+        }
     }
 
     class PEventType : PPrimitiveType
     {
         public string evtName { private set; get; }
 
-        public PEventType(string eName) : base(PData.Cnst_Event.Node.Name) {
+        public PEventType(string eName)
+            : base(PData.Cnst_Event.Node.Name)
+        {
             evtName = eName;
+        }
+
+        public override bool Hashable
+        {
+            get { return true; }
         }
     }
 
     class PStateType : PPrimitiveType
     {
         public PStateType() : base(PData.Cnst_State.Node.Name) { }
+
+        public override bool Hashable
+        {
+            get { return true; }
+        }
+
         public override bool isSubtypeOf(PType t)
         {
             return this.Equals(t); // Don't allow states to creep into variables of type Any.
@@ -216,6 +251,18 @@ namespace DemoCompiler
         public PTupleType(IEnumerable<PType> els)
         {
             this.els = new List<PType>(els);
+        }
+
+        public override bool Hashable
+        {
+            get {
+                foreach (PType el in els)
+                {
+                    if (!el.Hashable)
+                        return false;
+                }
+                return true; 
+            }
         }
 
         public override bool Equals(object obj)
@@ -285,6 +332,19 @@ namespace DemoCompiler
             // Sorting the fields lexicographically by name allows us to disregard the order in which they are
             // specified in the named tuple type definition
             this.els.Sort(new Comparison<Tuple<string,PType>>((t1,t2) => Comparer<string>.Default.Compare(t1.Item1, t2.Item1)));
+        }
+
+        public override bool Hashable
+        {
+            get
+            {
+                foreach (var el in els)
+                {
+                    if (!el.Item2.Hashable)
+                        return false;
+                }
+                return true;
+            }
         }
 
         public override bool Equals(object obj)
@@ -358,6 +418,14 @@ namespace DemoCompiler
             return (obj != null && obj is PAnyType);
         }
 
+        public override bool Hashable
+        {
+            get
+            {
+                return false;
+            }
+        }
+
         public override int GetHashCode()
         {
             return PType.AnyHash;
@@ -396,6 +464,14 @@ namespace DemoCompiler
             return this.innerT.Equals(other.innerT);
         }
 
+        public override bool Hashable
+        {
+            get
+            {
+                return innerT.Hashable;
+            }
+        }
+
         public override int GetHashCode()
         {
             return PType.SeqHash * innerT.GetHashCode();
@@ -430,5 +506,71 @@ namespace DemoCompiler
         }
 
         public PType T { get { return innerT; } }
+    }
+
+    class PMapType : PCompoundType
+    {
+        PType domain;
+        PType range;
+        public PMapType(PType domain, PType range)
+        {
+            this.domain = domain;
+            this.range = range;
+        }
+
+        public override bool Equals(object obj)
+        {
+            PMapType other = obj as PMapType;
+            if (((object)other) == null)
+                return false;
+
+            return this.domain.Equals(other.domain) && this.range.Equals(other.range);
+        }
+
+        public override bool Hashable
+        {
+            get
+            {
+                return false;
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            return PType.MapHash * domain.GetHashCode() * range.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return "map[" + domain.ToString() + ", " + range.ToString() + "]";
+        }
+
+        public override bool isSubtypeOf(PType t)
+        {
+            if (t is PAnyType || this.Equals(t))
+                return true;
+
+            if (!(t is PMapType))
+                return false;
+
+            PMapType x = t as PMapType;
+            return this.domain.isSubtypeOf(x.domain) && this.range.isSubtypeOf(x.range);
+        }
+
+        public override PType LUB(PType other)
+        {
+            if (!(other is PMapType))
+            {
+                return PType.Any;
+            }
+            else
+            {
+                PMapType x = other as PMapType;
+                return new PMapType(this.domain.LUB(x.domain), this.range.LUB(x.range));
+            }
+        }
+
+        public PType KeyT { get { return domain; } }
+        public PType ValT { get { return range; } }
     }
 }

@@ -88,6 +88,7 @@
         public PType type;
         public bool isGhost;
         public string stateName;
+        public bool isMapIndex;
         public bool isKeys;
 
         private PType primitiveTypeFromStr(string s)
@@ -132,12 +133,23 @@
             this.isKeys = false;
         }
 
-        public ZingTranslationInfo(AST<Node> n, PType t, bool isGhost, string stateName, bool isKeys)
+        public ZingTranslationInfo(AST<Node> n, PType t, bool isGhost, string stateName, bool isMapIndex)
         {
             this.node = n;
             this.type = t;
             this.isGhost = isGhost;
             this.stateName = stateName;
+            this.isMapIndex = isMapIndex;
+            this.isKeys = false;
+        }
+
+        public ZingTranslationInfo(AST<Node> n, PType t, bool isGhost, string stateName, bool isMapIndex, bool isKeys)
+        {
+            this.node = n;
+            this.type = t;
+            this.isGhost = isGhost;
+            this.stateName = stateName;
+            this.isMapIndex = isMapIndex;
             this.isKeys = isKeys;
         }
     }
@@ -6536,6 +6548,11 @@ Environment:
                             errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot assign real expression to a ghost variable of type id."), 0, CompilingProgram));
                             return null;
                         }
+                        if (lhs.isMapIndex)
+                        {
+                            errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot assign to map via an index."), 0, CompilingProgram));
+                            return null;
+                        }
 
                         if (rhs.isKeys)
                         {
@@ -6812,7 +6829,7 @@ Environment:
                                 errors.Add(new Flag(SeverityKind.Error, n, string.Format("keys() expects a map."), 0, CompilingProgram));
                                 return null;
                             }
-                            return new ZingTranslationInfo(arg1.node, new PSeqType((arg1.type as PMapType).KeyT), isGhost, null, true);
+                            return new ZingTranslationInfo(arg1.node, new PSeqType((arg1.type as PMapType).KeyT), isGhost, null, false, true);
                         }
                         else
                         {
@@ -6907,7 +6924,7 @@ Environment:
                                 }
                                 var tmpVar = ctxt.getTmpVar(baseType.ValT, "tmpVal");
                                 ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(arg1.node, "Lookup"), arg2.node)));
-                                return new ZingTranslationInfo(tmpVar, baseType.KeyT, arg1.isGhost || arg2.isGhost);
+                                return new ZingTranslationInfo(tmpVar, baseType.KeyT, arg1.isGhost || arg2.isGhost, null, true);
                             }
                             else
                             {
@@ -7020,7 +7037,7 @@ Environment:
                     if (it.Current == null)
                         return null;
 
-                    return new ZingTranslationInfo(AddArgs(App_LabeledExpr, Factory.Instance.ToAST(GetArgByIndex(ft, 0)), it.Current.node), it.Current.type, it.Current.isGhost, it.Current.stateName, it.Current.isKeys);
+                    return new ZingTranslationInfo(AddArgs(App_LabeledExpr, Factory.Instance.ToAST(GetArgByIndex(ft, 0)), it.Current.node), it.Current.type, it.Current.isGhost, it.Current.stateName, it.Current.isMapIndex, it.Current.isKeys);
                 }
             }
             else if (funName == PData.Con_New.Node.Name)

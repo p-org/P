@@ -81,6 +81,8 @@
         public bool isGhost;
         public string stateName;
         public bool isKeys;
+        public bool isNew;
+        public string newAfterLabel;
 
         private PType primitiveTypeFromStr(string s)
         {
@@ -104,6 +106,8 @@
             this.isGhost = false;
             this.stateName = null;
             this.isKeys = false;
+            this.isNew = false;
+            this.newAfterLabel = null;
         }
 
         public ZingTranslationInfo(AST<Node> n, PType t, bool isGhost)
@@ -113,6 +117,8 @@
             this.isGhost = isGhost;
             this.stateName = null;
             this.isKeys = false;
+            this.isNew = false;
+            this.newAfterLabel = null;
         }
 
         public ZingTranslationInfo(AST<Node> n, PType t, bool isGhost, string stateName)
@@ -122,6 +128,19 @@
             this.isGhost = isGhost;
             this.stateName = stateName;
             this.isKeys = false;
+            this.isNew = false;
+            this.newAfterLabel = null;
+        }
+
+        public ZingTranslationInfo(AST<Node> n, PType t, bool isGhost, bool isNew, string afterlabel)
+        {
+            this.node = n;
+            this.type = t;
+            this.isGhost = isGhost;
+            this.stateName = null;
+            this.isKeys = false;
+            this.isNew = isNew;
+            this.newAfterLabel = afterlabel;
         }
 
         public ZingTranslationInfo(AST<Node> n, PType t, bool isGhost, string stateName, bool isKeys)
@@ -131,6 +150,8 @@
             this.isGhost = isGhost;
             this.stateName = stateName;
             this.isKeys = isKeys;
+            this.isNew = false;
+            this.newAfterLabel = null;
         }
     }
 
@@ -6515,6 +6536,15 @@ Environment:
                         {
                             return new ZingTranslationInfo(MkZingAssignOrCast(lhs.node, lhs.type, MkZingCall(MkZingDot(rhs.node, "ToSeq")), rhs.type), new PNilType(), lhs.isGhost);
                         }
+                        else if(rhs.isNew)
+                        {
+                            var zingSeq = MkZingSeq(
+                                MkZingAssignOrCast(lhs.node, lhs.type, rhs.node, rhs.type),
+                                MkZingReturn(MkZingIdentifier("entryCtxt")),
+                                MkZingLabeledStmt(rhs.newAfterLabel, ZingData.Cnst_Nil)
+                                );
+                            return new ZingTranslationInfo(zingSeq, new PNilType(), lhs.isGhost);
+                        }
                         else
                         {
                             return new ZingTranslationInfo(MkZingAssignOrCast(lhs.node, lhs.type, rhs.node, rhs.type), new PNilType(), lhs.isGhost);
@@ -7069,16 +7099,14 @@ Environment:
                             inits = AddArgs(ZingData.App_Args, lhs.node, AddArgs(ZingData.App_Args, tmpCastVar, inits));
                         }
                     }
+                    string afterLabel = null;
                     if (ctxt.entityName != null) // indicates its not the Main/God machine
                     {
-                        var afterLabel = ctxt.getFreshLabel();
+                        afterLabel = ctxt.getFreshLabel();
                         ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewM"), MkCnst(ctxt.labelToId(afterLabel)))));
-                        return new ZingTranslationInfo(MkZingCreateMachineCall(ctxt, typeName, inits.Node), new PIdType(), allMachines[typeName].isGhost);
                     }
-                    else
-                    {
-                        return new ZingTranslationInfo(MkZingCreateMachineCall(ctxt, typeName, inits.Node), new PIdType(), allMachines[typeName].isGhost);
-                    }
+                    return new ZingTranslationInfo(MkZingCreateMachineCall(ctxt, typeName, inits.Node), new PIdType(), allMachines[typeName].isGhost, true, afterLabel);
+                    
                 }
             }
             else if (funName == PData.Con_Raise.Node.Name)

@@ -74,7 +74,7 @@ okToExceedMaxInstance = [ "Elevator", "OSR" ]
 
 okToStackOverflow = [ "PingPongWithCall" ]
 
-okToTimeout = [ "TokenRing" ]
+okToTimeout = [ "TokenRing", "BangaloreToRedmond_Liveness", "PingPong", "PingPongDingDong" ]
 
 for f in elaborateFiles(args.files):
     name = os.path.splitext(os.path.basename(f))[0]

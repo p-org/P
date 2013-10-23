@@ -68,9 +68,13 @@ def elaborateFiles(files):
         map(lambda f:   find_files(f, "*.p") if isdir(f) else [f], files),\
         []);
 
-nonDeterministicallyFailing = [ "BangaloreToRedmond" ]
+nondeterministicallyFailing = [ "BangaloreToRedmond", "WhileNondet", "WhileNondet2" ]
 
-okToExceedMaxQueue = [ "Elevator" ]
+okToExceedMaxInstance = [ "Elevator", "OSR" ]
+
+okToStackOverflow = [ "PingPongWithCall" ]
+
+okToTimeout = [ "TokenRing" ]
 
 for f in elaborateFiles(args.files):
     name = os.path.splitext(os.path.basename(f))[0]
@@ -119,11 +123,11 @@ for f in elaborateFiles(args.files):
     shutil.copy(sched, join(out, 'sched.dll'));
     shutil.copy(stateCoverage, join(out, 'stateCov.dll'));
     ret = check_call([zinger, '-s', '-eo', '-p', '-delayc:100', \
-        '-et:trace.txt', '-plugin:stateCov.dll', '-sched:sched.dll', zingDll], \
-        cwd=out);
+       '-et:trace.txt', '-plugin:stateCov.dll', '-sched:sched.dll', zingDll], \
+       cwd=out);
 
     if ret != 0 and not args.fail:
-    	die("Zingering of Zing model failed:\n" + cat(zingerOut))
+        die("Zingering of Zing model failed:\n" + cat(zingerOut))
 
 
     mainM = search("MainDecl\(New\(MachType\(\"([^\"]*)\"", \
@@ -152,21 +156,28 @@ for f in elaborateFiles(args.files):
             die("C Binary Segfaulted");
 
         if (ret == 5):  # TIMEOUT
-            if (args.fail):
-                die("Expected binary to fail, but it timed out!");
+            if (name in okToTimeout):
+                continue;
+            die("Binary timed out!");
 
+        if (search("MaxInstance of Event Exceeded Exception", str(err.output)) \
+            and name in okToExceedMaxInstance):
             continue;
 
-
-        if (not args.fail):
-            if (search("<EXCEPTION> Queue Size Exceeded Max Limits", \
-                str(err.output)) \
-                and name in okToExceedMaxQueue):
-                continue;
+        if (search("Call Stack Overflow", str(err.output)) \
+            and name in okToStackOverflow):
+            continue;
         
-        die("Binary failed")
+        if (args.fail):
+            if (search("Failed an assertion", str(err.output))):
+                continue;
+            if (search("Unhandled Event Exception", str(err.output))):
+                continue;
 
-    if (args.fail and name not in nonDeterministicallyFailing):
+        print(str(err.output))
+        die("Binary failed unexpectedly!")
+
+    if (args.fail and name not in nondeterministicallyFailing):
         die("Binary didn't fail when we expected it");
 
 print("ALL TESTS RAN SUCCESSFULLY");

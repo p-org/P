@@ -1055,7 +1055,7 @@ Environment:
         {
             if (msg == null)
             {
-                return MkFunApp("SMF_ASSERT", s, cond);
+                return MkFunApp("SMF_ASSERTMSG", s, MkStringLiteral(""), cond);
             }
             else
             {

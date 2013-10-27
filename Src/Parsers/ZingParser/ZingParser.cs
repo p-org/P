@@ -13,7 +13,7 @@
     using Microsoft.Formula.API.Plugins;
     using Microsoft.Formula.Compiler;
 
-    using DemoCompiler;
+    using PCompiler;
 
     public class Parser : IQuoteParser
     {

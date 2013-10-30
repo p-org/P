@@ -3238,7 +3238,7 @@ namespace PCompiler
                     it.MoveNext();
                     var condExpr = it.Current;
                     it.MoveNext();
-                    var body = it.Current.node;
+                    
 
                     if (condExpr == null || it.Current == null)
                     {
@@ -3267,7 +3267,7 @@ namespace PCompiler
 
                     var loopStart = compiler.getUnique(entityName + "_loop_start");
                     var loopEnd = compiler.getUnique(entityName + "_loop_end");
-
+                    var body = it.Current.node;
                     body = ctxt.emitZingSideEffects(zingWrapExprToStmts(body));
 
                     var res = MkZingLabeledStmt(loopStart, MkZingSeq(

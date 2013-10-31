@@ -173,6 +173,8 @@ for f in elaborateFiles(args.files):
                 continue;
             if (search("Unhandled Event Exception", str(err.output))):
                 continue;
+            if (search("Call Statement terminated with an unhandled event", str(err.output))):
+                continue;
 
         print(str(err.output))
         die("Binary failed unexpectedly!")

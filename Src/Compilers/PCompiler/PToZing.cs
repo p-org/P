@@ -202,7 +202,6 @@ namespace PCompiler
         public HashSet<string> exitFunCallees;
         public bool exitFunAtPassive;
         public HashSet<PType> argTypes;
-        public int nIncomingTransitions;
         public string submachineName;
         public bool isStable;
 
@@ -216,7 +215,6 @@ namespace PCompiler
             this.argTypes = new HashSet<PType>();
             this.entryFunCallees = new HashSet<string>();
             this.exitFunCallees = new HashSet<string>();
-            this.nIncomingTransitions = 0;
             this.isStable = false;
         }
     }
@@ -2069,7 +2067,7 @@ namespace PCompiler
                     var id = (Id)n;
                     if (id.Name == PData.Cnst_This.Node.Name)
                     {
-                        return new ZingTranslationInfo(MkZingIdentifier("myHandle"), new PIdType(), compiler.allMachines[machineName].isGhost);
+                        return new ZingTranslationInfo(MkZingIdentifier("myHandle"), new PIdType(), compiler.allMachines[ctxt.machineName].isGhost);
                     }
                     else if (id.Name == PData.Cnst_Trigger.Node.Name)
                     {
@@ -2100,7 +2098,7 @@ namespace PCompiler
                         ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
                         ctxt.addSideEffect(MkZingLabeledStmt(afterLabel, MkZingAssign(bvar, MkZingDot("entryCtxt", "nondet"))));
                         ctxt.addSideEffect(MkZingAssign(MkZingDot("entryCtxt", "nondet"), ZingData.Cnst_False));
-                        return new ZingTranslationInfo(bvar, new PBoolType());
+                        return new ZingTranslationInfo(bvar, new PBoolType(), true);
                     }
                     else if (id.Name == PData.Cnst_Leave.Node.Name)
                     {
@@ -2390,12 +2388,6 @@ namespace PCompiler
 
                     var stateName = it.Current.stateName;
 
-                    if (compiler.allMachines[machineName].stateNameToStateInfo[stateName].nIncomingTransitions > 0)
-                    {
-                        compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Have both transitions and calls into state {0}", stateName), 0, compiler.CompilingProgram));
-                        return null;
-                    }
-
                     var afterLabel = ctxt.getFreshLabel();
                     var res = MkZingSeq(
                         MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Call"), it.Current.node, Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)))),
@@ -2451,7 +2443,7 @@ namespace PCompiler
                         }
                         if (lhs.type == PType.Id && lhs.isGhost != rhs.isGhost)
                         {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot assign real expression to a ghost variable of type id."), 0, compiler.CompilingProgram));
+                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot assign real expression to a ghost variable of type machine id."), 0, compiler.CompilingProgram));
                             return null;
                         }
                         if (lhs.isMapIndex)
@@ -3014,7 +3006,7 @@ namespace PCompiler
                         }
                         if (lhs.type == PType.Id && lhs.isGhost != rhsInfo.isGhost)
                         {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot assign real expression to a ghost variable of type id."), 0, compiler.CompilingProgram));
+                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot assign real expression to a ghost variable of type machine id."), 0, compiler.CompilingProgram));
                             return null;
                         }
 
@@ -3156,7 +3148,7 @@ namespace PCompiler
                     }
                     if (lhsInfo.type == PType.Id && lhsInfo.isGhost != rhsInfo.isGhost)
                     {
-                        compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot assign real expression to a ghost parameter of type id."), 0, compiler.CompilingProgram));
+                        compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot assign real expression to a ghost parameter of type machine id."), 0, compiler.CompilingProgram));
                         return null;
                     }
 

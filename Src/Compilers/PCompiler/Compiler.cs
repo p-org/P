@@ -565,7 +565,6 @@ namespace PCompiler
                                 {
                                     stateTable.hasDefaultTransition = true;
                                 }
-                                targetStateInfo.nIncomingTransitions++;
                             }
                         }
                         else

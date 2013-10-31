@@ -411,6 +411,9 @@ namespace PParser
 
             var fs = new FunctionScope(n.name);
 
+            if (!errorDefined(VAR_THIS, SYM_BUILTIN_VAR, n.loc))
+                fs.define(VAR_THIS, SYM_BUILTIN_VAR, n.loc, n);
+
             if (n.name.StartsWith("__"))
             {
                 errors.Add(new SemanticError(n.loc, "Function names cannot begin with __"));

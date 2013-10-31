@@ -37,7 +37,6 @@ class SM_HANDLE {
 	SM_EVENT currentEvent;
     SM_ARG_UNION currentArg;
     bool blocked;
-    bool stable;
 
     static SM_HANDLE Construct(Machine mName, int inst, int maxBSize) {
     	SM_HANDLE handle;
@@ -49,7 +48,6 @@ class SM_HANDLE {
 		handle.currentArg = SM_ARG_UNION.BuildDefault();
 		handle.maxBufferSize = maxBSize;
 		handle.blocked = false;
-		handle.stable = false;
 		trace("<CreateLog> Created Machine {0}-{1}", handle.machineName, handle.instance);
 		return handle;
     }
@@ -83,7 +81,7 @@ class SM_HANDLE {
 		invokescheduler("push", machineId);
     }
 	
-    void DequeueEvent(bool hasDefault, SM_EVENT_SET deferredSet) {
+    void DequeueEvent(bool hasDefault, SM_EVENT_SET deferredSet, bool stable) {
 		currentEvent = null;
 		currentArg = null;
 		while (currentEvent == null) {
@@ -118,7 +116,7 @@ class SM_HANDLE {
 			{
   				invokescheduler("pop");
 				assume (!blocked);
-				blocked = true;
+				if (stable) { blocked = true; }
 				FairScheduler.AtYieldStatic(this);
 				FairTransition.AtYieldOrChooseStatic();
 				yield;
@@ -295,7 +293,7 @@ class FairScheduler {
 
     void AtYield(SM_HANDLE running) {
 		assume (!noYieldFromNowOn);
-		if (running == handle || (handle.blocked && handle.stable)) {
+		if (running == handle || handle.blocked) {
 			FairScheduler.Accept(this);
 		}
 	}

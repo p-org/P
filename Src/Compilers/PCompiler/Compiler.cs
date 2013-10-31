@@ -44,7 +44,7 @@ namespace PCompiler
         public bool kernelMode;
         public bool emitHeaderComment;
         public bool emitDebugC;
-        public bool liveness;
+        public bool eraseFairnessConstraints;
         public AST<Model> model = null;
         private string domainPath = null;
 
@@ -93,7 +93,7 @@ namespace PCompiler
             return prefix + '_' + ret;
         }
 
-        public Compiler(string target, string outputPath, bool erase, bool kernelMode, bool emitHeaderComment, bool emitDebugC, bool liveness)
+        public Compiler(string target, string outputPath, bool erase, bool kernelMode, bool emitHeaderComment, bool emitDebugC, bool eraseFairnessConstraints)
         {
             this.target = target;
             this.outputPath = outputPath;
@@ -101,7 +101,7 @@ namespace PCompiler
             this.kernelMode = kernelMode;
             this.emitHeaderComment = emitHeaderComment;
             this.emitDebugC = emitDebugC;
-            this.liveness = liveness;
+            this.eraseFairnessConstraints = eraseFairnessConstraints;
 
             this.modelAliases = new MyDictionary<string, AST<FuncTerm>>();
             this.factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
@@ -816,48 +816,51 @@ namespace PCompiler
                 }
             }
 
-            terms = GetBin("Stable");
-            foreach (var term in terms)
+            if (!eraseFairnessConstraints)
             {
-                using (var it = term.Node.Args.GetEnumerator())
+                terms = GetBin("Stable");
+                foreach (var term in terms)
                 {
-                    it.MoveNext();
-                    var stateDecl = GetFuncTerm(it.Current);
-                    var stateName = GetName(stateDecl, 0);
-                    var ownerMachineName = GetOwnerName(stateDecl, 1, 0);
-                    allMachines[ownerMachineName].stateNameToStateInfo[stateName].isStable = true;
-                }
-            }
-
-            terms = GetBin("Fair");
-            foreach (var term in terms)
-            {
-                FuncTerm decl;
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    decl = GetFuncTerm(it.Current);
-                }
-                if ((decl.Function as Id).Name == "TransDecl")
-                {
-                    using (var it = decl.Args.GetEnumerator())
+                    using (var it = term.Node.Args.GetEnumerator())
                     {
                         it.MoveNext();
                         var stateDecl = GetFuncTerm(it.Current);
                         var stateName = GetName(stateDecl, 0);
-                        var stateOwnerMachineName = GetMachineName(stateDecl, 1);
-                        var stateTable = allMachines[stateOwnerMachineName].stateNameToStateInfo[stateName];
-                        it.MoveNext();
-                        string eventName;
-                        PType eventArgTypeName;
-                        GetEventInfo(it.Current, out eventName, out eventArgTypeName);
-                        stateTable.transitions[eventName].isFair = true;
+                        var ownerMachineName = GetOwnerName(stateDecl, 1, 0);
+                        allMachines[ownerMachineName].stateNameToStateInfo[stateName].isStable = true;
                     }
                 }
-                else
+
+                terms = GetBin("Fair");
+                foreach (var term in terms)
                 {
-                    var machineName = GetName(decl, 0);
-                    allMachines[machineName].isFair = true;
+                    FuncTerm decl;
+                    using (var it = term.Node.Args.GetEnumerator())
+                    {
+                        it.MoveNext();
+                        decl = GetFuncTerm(it.Current);
+                    }
+                    if ((decl.Function as Id).Name == "TransDecl")
+                    {
+                        using (var it = decl.Args.GetEnumerator())
+                        {
+                            it.MoveNext();
+                            var stateDecl = GetFuncTerm(it.Current);
+                            var stateName = GetName(stateDecl, 0);
+                            var stateOwnerMachineName = GetMachineName(stateDecl, 1);
+                            var stateTable = allMachines[stateOwnerMachineName].stateNameToStateInfo[stateName];
+                            it.MoveNext();
+                            string eventName;
+                            PType eventArgTypeName;
+                            GetEventInfo(it.Current, out eventName, out eventArgTypeName);
+                            stateTable.transitions[eventName].isFair = true;
+                        }
+                    }
+                    else
+                    {
+                        var machineName = GetName(decl, 0);
+                        allMachines[machineName].isFair = true;
+                    }
                 }
             }
 

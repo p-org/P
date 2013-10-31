@@ -573,6 +573,7 @@ namespace PCompiler
             {
                 AST<Node> fields = LocalVariablesToVarDecls(compiler.allMachines[machineName].localVariableToVarInfo.Keys, compiler.allMachines[machineName].localVariableToVarInfo);
                 fields = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl("myHandle", ZingData.Cnst_SmHandle), fields);
+                fields = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl("stackStable", ZingData.Cnst_Bool), fields);
                 fields = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl("stackDeferredSet", ZingData.Cnst_SmEventSet), fields);
                 fields = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl("stackActionSet", ZingData.Cnst_SmEventSet), fields);
                 fields = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl("localActions", Factory.Instance.MkCnst("LocalActions")), fields);
@@ -1352,7 +1353,7 @@ namespace PCompiler
             var iteStmt = Compiler.AddArgs(ZingData.App_ITE,
                                     MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingEvent("delete")),
                                     MkZingSeq(MkZingAssign(currentDeferredSet, Compiler.AddArgs(ZingData.App_New, smEventSetType, ZingData.Cnst_Nil)),
-                                              MkZingCallStmt(MkZingCall(MkZingDot("myHandle", "DequeueEvent"), ZingData.Cnst_False, currentDeferredSet))),
+                                              MkZingCallStmt(MkZingCall(MkZingDot("myHandle", "DequeueEvent"), ZingData.Cnst_False, currentDeferredSet, ZingData.Cnst_False))),
                                     ZingData.Cnst_Nil);
 
 
@@ -1371,17 +1372,18 @@ namespace PCompiler
         {
             AST<Node> parameters = Compiler.ConstructList(ZingData.App_VarDecls,
                                                  MkZingVarDecl("actionFun", Factory.Instance.MkCnst("ActionFun")),
-                                                 MkZingVarDecl("currentActionSet", ZingData.Cnst_SmEventSet)
+                                                 MkZingVarDecl("currentActionSet", ZingData.Cnst_SmEventSet),
+                                                 MkZingVarDecl("currentStable", ZingData.Cnst_Bool)
                                                  );
 
             List<AST<Node>> locals = new List<AST<Node>>();
 
+            locals.Add(MkZingVarDecl("savedStable", ZingData.Cnst_Bool));
             locals.Add(MkZingVarDecl("savedDeferredSet", ZingData.Cnst_SmEventSet));
             locals.Add(MkZingVarDecl("savedActionSet", ZingData.Cnst_SmEventSet));
             locals.Add(MkZingVarDecl("savedCurrentEvent", ZingData.Cnst_SmEvent));
             locals.Add(MkZingVarDecl("savedCurrentArg", ZingData.Cnst_SmUnion));
             locals.Add(MkZingVarDecl("cont", Factory.Instance.MkCnst(getZingContinuationCtxtType(machineName))));
-            locals.Add(MkZingVarDecl("savedStable", ZingData.Cnst_Bool));
 
             AST<Node> initStmt = Factory.Instance.AddArg(ZingData.App_Assert, ZingData.Cnst_False);
             foreach (var actionFunName in compiler.allMachines[machineName].actionFunNameToActionFun.Keys)
@@ -1429,8 +1431,9 @@ namespace PCompiler
             var savedCurrentEvent = MkZingIdentifier("savedCurrentEvent");
             var savedCurrentArg = MkZingIdentifier("savedCurrentArg");
             var cont = MkZingIdentifier("cont");
-            var inStableState = MkZingDot("myHandle", "stable");
-            var savedInStableState = MkZingIdentifier("savedStable");
+            var currentStable = MkZingIdentifier("currentStable");
+            var savedStable = MkZingIdentifier("savedStable");
+            var stackStable = MkZingIdentifier("stackStable");
 
             string traceString = type == TranslationContext.Action
                                     ? string.Format("\"<ReEntryLog> Machine {0}-{{0}} reentered Action {1}\"", machineName, entityName)
@@ -1473,7 +1476,8 @@ namespace PCompiler
                     MkZingAssign(savedActionSet, stackActionSet),
                     MkZingAssign(savedCurrentEvent, currentEvent),
                     MkZingAssign(savedCurrentArg, currentArg),
-                    MkZingAssign(savedInStableState, inStableState),
+                    MkZingAssign(savedStable, stackStable),
+                    MkZingAssign(stackStable, currentStable),
                     MkZingAssign(stackActionSet, currentActionSet),
                     MkZingAssign(stackDeferredSet, MkZingCall(MkZingDot("Main", "CalculateComplementOfEventSet"), currentActionSet)),
                     MkZingAssignOrCast(currentEvent, PType.Event, MkZingIdentifier("null"), PType.Nil),
@@ -1482,8 +1486,9 @@ namespace PCompiler
                     MkZingCallStmt(MkZingCall(MkZingIdentifier("runHelper"), MkZingDot("cont", "state"))),
                     MkZingAssign(MkZingIdentifier("localActions"), MkZingDot("localActions", "next")),
                     MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"))),
-                    MkZingSeq(MkZingAssign(stackDeferredSet, savedDeferredSet), MkZingAssign(stackActionSet, savedActionSet)),
-                    MkZingAssign(inStableState, savedInStableState),
+                    MkZingAssign(stackDeferredSet, savedDeferredSet), 
+                    MkZingAssign(stackActionSet, savedActionSet),
+                    MkZingAssign(stackStable, savedStable),
                     MkZingAssign(MkZingDot("cont", "state"), MkZingDot(machineName + "_State", "_" + compiler.allMachines[machineName].stateNameToStateInfo.Keys.First())),
                     Compiler.AddArgs(ZingData.App_ITE,
                                     MkZingApply(ZingData.Cnst_Eq, currentEvent, MkZingIdentifier("null")),
@@ -1530,6 +1535,7 @@ namespace PCompiler
             locals.Add(MkZingVarDecl("savedCurrentEvent", ZingData.Cnst_SmEvent));
             locals.Add(MkZingVarDecl("savedCurrentArg", ZingData.Cnst_SmUnion));
             locals.Add(MkZingVarDecl("didActionPop", ZingData.Cnst_Bool));
+            locals.Add(MkZingVarDecl("currentStable", ZingData.Cnst_Bool));
             locals.Add(MkZingVarDecl("savedStable", ZingData.Cnst_Bool));
 
             // Initial block
@@ -1550,8 +1556,9 @@ namespace PCompiler
             var savedActionSet = MkZingIdentifier("savedActionSet");
             var stackDeferredSet = MkZingIdentifier("stackDeferredSet");
             var stackActionSet = MkZingIdentifier("stackActionSet");
-            var inStableState = MkZingDot("myHandle", "stable");
-            var savedInStableState = MkZingIdentifier("savedStable");
+            var currentStable = MkZingIdentifier("currentStable");
+            var stackStable = MkZingIdentifier("stackStable");
+            var savedStable = MkZingIdentifier("savedStable");
 
             // State blocks
             List<AST<Node>> blocks = new List<AST<Node>>();
@@ -1575,7 +1582,7 @@ namespace PCompiler
                 var executeStmt = MkZingSeq(
                                     MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"))),
                                     MkZingCallStmt(MkZingCall(MkZingIdentifier("invokeplugin"), Factory.Instance.MkCnst("\"StateCoveragePlugin.dll\""), Factory.Instance.MkCnst(string.Format("\"{0}\"", machineName)), Factory.Instance.MkCnst(string.Format("\"{0}\"", stateName)))),
-                                    MkZingAssign(MkZingDot("myHandle", "stable"), MkZingApply(ZingData.Cnst_Or, MkZingDot("myHandle", "stable"), stateInfo.isStable ? ZingData.Cnst_True : ZingData.Cnst_False)),
+                                    MkZingAssign(currentStable, MkZingApply(ZingData.Cnst_Or, stackStable, stateInfo.isStable ? ZingData.Cnst_True : ZingData.Cnst_False)),
                                     livenessStmt,
                                     MkZingAssign(currentDeferredSet, Compiler.AddArgs(ZingData.App_New, smEventSetType, ZingData.Cnst_Nil)),
                                     MkZingAssign(currentActionSet, Compiler.AddArgs(ZingData.App_New, smEventSetType, ZingData.Cnst_Nil)),
@@ -1586,7 +1593,7 @@ namespace PCompiler
                 executeStmt = Compiler.AddArgs(ZingData.App_LabelStmt, executeLabel, executeStmt);
                 blocks.Add(executeStmt);
                 var waitStmt = MkZingSeq(
-                    MkZingCallStmt(MkZingCall(MkZingDot("myHandle", "DequeueEvent"), compiler.allMachines[machineName].stateNameToStateInfo[stateName].hasDefaultTransition ? ZingData.Cnst_True : ZingData.Cnst_False, currentDeferredSet)),
+                    MkZingCallStmt(MkZingCall(MkZingDot("myHandle", "DequeueEvent"), compiler.allMachines[machineName].stateNameToStateInfo[stateName].hasDefaultTransition ? ZingData.Cnst_True : ZingData.Cnst_False, currentDeferredSet, currentStable)),
                                     Factory.Instance.AddArg(ZingData.App_Goto, transitionLabel));
                 waitStmt = Compiler.AddArgs(ZingData.App_LabelStmt, waitLabel, waitStmt);
                 blocks.Add(waitStmt);
@@ -1608,9 +1615,9 @@ namespace PCompiler
 
                 var actionStmt =
                     Compiler.AddArgs(ZingData.App_ITE,
-                            MkZingApply(ZingData.Cnst_In, MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("currentActionSet")),
+                            MkZingApply(ZingData.Cnst_In, MkZingDot("myHandle", "currentEvent"), currentActionSet),
                             MkZingSeq(MkZingAssign(MkZingIdentifier("actionFun"), MkZingCall(MkZingDot("localActions", "Find"), MkZingDot("myHandle", "currentEvent"))),
-                                      MkZingAssign(MkZingIdentifier("didActionPop"), MkZingCall(MkZingIdentifier("actionHelper"), MkZingIdentifier("actionFun"), MkZingIdentifier("currentActionSet"))),
+                                      MkZingAssign(MkZingIdentifier("didActionPop"), MkZingCall(MkZingIdentifier("actionHelper"), MkZingIdentifier("actionFun"), currentActionSet, currentStable)),
                                       Compiler.AddArgs(ZingData.App_ITE, MkZingIdentifier("didActionPop"), Factory.Instance.AddArg(ZingData.App_Return, ZingData.Cnst_Nil), ZingData.Cnst_Nil),
                                       Compiler.AddArgs(ZingData.App_ITE,
                                               MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
@@ -1623,15 +1630,15 @@ namespace PCompiler
                 {
                     var targetStateName = callTransitions[eventName].target;
                     var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingEvent(eventName));
-                    var save = MkZingSeq(MkZingAssign(savedDeferredSet, stackDeferredSet), MkZingAssign(savedActionSet, stackActionSet), MkZingAssign(savedInStableState, inStableState));
-                    var update = MkZingSeq(MkZingAssign(stackDeferredSet, currentDeferredSet), MkZingAssign(stackActionSet, currentActionSet));
+                    var save = MkZingSeq(MkZingAssign(savedDeferredSet, stackDeferredSet), MkZingAssign(savedActionSet, stackActionSet), MkZingAssign(savedStable, stackStable));
+                    var update = MkZingSeq(MkZingAssign(stackDeferredSet, currentDeferredSet), MkZingAssign(stackActionSet, currentActionSet), MkZingAssign(stackStable, currentStable));
                     var push = MkZingAssign(MkZingIdentifier("localActions"), MkZingCall(MkZingDot("LocalActions", "Construct"), MkZingIdentifier("localActions")));
                     var callStmt = MkZingCallStmt(
                         MkZingCall(MkZingIdentifier("runHelper"),
                                    MkZingDot(machineStateTypeName, string.Format("_{0}", targetStateName))
                                    ));
                     var pop = MkZingAssign(MkZingIdentifier("localActions"), MkZingDot("localActions", "next"));
-                    var restore = MkZingSeq(MkZingAssign(stackDeferredSet, savedDeferredSet), MkZingAssign(stackActionSet, savedActionSet), MkZingAssign(inStableState, savedInStableState));
+                    var restore = MkZingSeq(MkZingAssign(stackDeferredSet, savedDeferredSet), MkZingAssign(stackActionSet, savedActionSet), MkZingAssign(stackStable, savedStable));
                     var ite = Compiler.AddArgs(
                         ZingData.App_ITE,
                         MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),

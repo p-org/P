@@ -16,7 +16,7 @@
             bool kernelMode = false;
             bool emitHeaderComment = false;
             bool emitDebugC = false;
-            bool liveness = false;
+            bool eraseFairnessConstraints = false;
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -56,8 +56,8 @@
                                 goto error;
                             emitHeaderComment = true;
                             break;
-                        case "/liveness":
-                            liveness = true;
+                        case "/eraseFairnessConstraints":
+                            eraseFairnessConstraints = true;
                             break;
                         default:
                             goto error;
@@ -73,7 +73,7 @@
             if (model == null)
                 goto error;
 
-            var comp = new Compiler(model, outputPath != null ? outputPath : Environment.CurrentDirectory, erase, kernelMode, emitHeaderComment, emitDebugC, liveness);
+            var comp = new Compiler(model, outputPath != null ? outputPath : Environment.CurrentDirectory, erase, kernelMode, emitHeaderComment, emitDebugC, eraseFairnessConstraints);
             var result = comp.Compile();
             if (!result)
             {

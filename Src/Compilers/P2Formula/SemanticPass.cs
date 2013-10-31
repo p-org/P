@@ -161,7 +161,7 @@ namespace PParser
         private const string SYM_EVENT_USE = "event_use";
         private const string VAR_MAXQSIZE = "";
         private const string SYM_MAXQSIZE = "maxqueue";
-
+        private const string SYM_STABLE = "stable";
 
         internal class GlobalScope : BaseScope
         {
@@ -410,6 +410,11 @@ namespace PParser
                 current.define(n.name, SYM_FUN, n.loc, n);
 
             var fs = new FunctionScope(n.name);
+
+            if (n.name.StartsWith("__"))
+            {
+                errors.Add(new SemanticError(n.loc, "Function names cannot begin with __"));
+            }
 
             if (n.passiveAttr != null)
             {

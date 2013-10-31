@@ -16,12 +16,13 @@ class SM_EVENT {
     Event name;
     int maxInstances;
 	bool doAssume;
+
     static SM_EVENT Construct(Event name, int mInstances, bool doAssume) {
-      SM_EVENT smEvent = new SM_EVENT;
-      smEvent.name = name;
-      smEvent.maxInstances = mInstances;
-	  smEvent.doAssume = doAssume;
-      return smEvent;
+		SM_EVENT smEvent = new SM_EVENT;
+		smEvent.name = name;
+		smEvent.maxInstances = mInstances;
+		smEvent.doAssume = doAssume;
+		return smEvent;
     }
 };
 
@@ -35,6 +36,9 @@ class SM_HANDLE {
 	int instance;
 	SM_EVENT currentEvent;
     SM_ARG_UNION currentArg;
+    bool blocked;
+    bool stable;
+
     static SM_HANDLE Construct(Machine mName, int inst, int maxBSize) {
     	SM_HANDLE handle;
 		handle = new SM_HANDLE;
@@ -44,6 +48,8 @@ class SM_HANDLE {
 		handle.currentEvent = null;
 		handle.currentArg = SM_ARG_UNION.BuildDefault();
 		handle.maxBufferSize = maxBSize;
+		handle.blocked = false;
+		handle.stable = false;
 		trace("<CreateLog> Created Machine {0}-{1}", handle.machineName, handle.instance);
 		return handle;
     }
@@ -52,29 +58,28 @@ class SM_HANDLE {
     	assert (e != null);
 		assert (e != Main.default_SM_EVENT);
 
-		if(maxBufferSize != -1 && buffer.eventBufferSize >= maxBufferSize)
+		if (maxBufferSize != -1 && buffer.eventBufferSize >= maxBufferSize)
 		{
 			trace("<EXCEPTION> Event Buffer Size Exceeded {0} in Machine {1}-{2}", maxBufferSize, machineName, instance);
 			assert(buffer.eventBufferSize < maxBufferSize);
 		}
-		if(arg != null)
+		if (arg != null)
 		{
-		if(arg.d == Discriminator.Bool)
-		trace("<EnqueueLog> Enqueued Event < {0}, bool: {1} > in Machine {2}-{3} by {4}-{5}", e.name, arg.m_Bool, machineName, instance, source.machineName, source.instance);
-		else if(arg.d == Discriminator.Int)
-		trace("<EnqueueLog> Enqueued Event < {0}, Int: {1} > in Machine {2}-{3} by {4}-{5}", e.name, arg.m_Int, machineName, instance, source.machineName, source.instance);
-		else if (arg.d == Discriminator.Mid)
-		trace("<EnqueueLog> Enqueued Event < {0}, Handle: {1}-{2} > in Machine {3}-{4} by {5}-{6}", e.name, arg.m_Mid.machineName, arg.m_Mid.instance, machineName, instance, source.machineName, source.instance);
-		else
-		trace("<EnqueueLog> Enqueued Event < {0}, Other: > in Machine {1}-{2} by {3}-{4}", e.name, machineName, instance, source.machineName, source.instance);
+			if (arg.d == Discriminator.Bool)
+				trace("<EnqueueLog> Enqueued Event < {0}, bool: {1} > in Machine {2}-{3} by {4}-{5}", e.name, arg.m_Bool, machineName, instance, source.machineName, source.instance);
+			else if(arg.d == Discriminator.Int)
+				trace("<EnqueueLog> Enqueued Event < {0}, Int: {1} > in Machine {2}-{3} by {4}-{5}", e.name, arg.m_Int, machineName, instance, source.machineName, source.instance);
+			else if (arg.d == Discriminator.Mid)
+				trace("<EnqueueLog> Enqueued Event < {0}, Handle: {1}-{2} > in Machine {3}-{4} by {5}-{6}", e.name, arg.m_Mid.machineName, arg.m_Mid.instance, machineName, instance, source.machineName, source.instance);
+			else
+				trace("<EnqueueLog> Enqueued Event < {0}, Other: > in Machine {1}-{2} by {3}-{4}", e.name, machineName, instance, source.machineName, source.instance);
 		}
 		else
 		{
-		trace("<EnqueueLog> Enqueued Event < {0} > in Machine {1}-{2} by {3}-{4}", e.name, machineName, instance, source.machineName, source.instance);
+			trace("<EnqueueLog> Enqueued Event < {0} > in Machine {1}-{2} by {3}-{4}", e.name, machineName, instance, source.machineName, source.instance);
 		}
 
 		buffer.EnqueueEvent(e, arg);
-		SM_MONITORS.ProcessEnqueue(e, source, this);
 		invokescheduler("push", machineId);
     }
 	
@@ -82,31 +87,42 @@ class SM_HANDLE {
 		currentEvent = null;
 		currentArg = null;
 		while (currentEvent == null) {
-	    buffer.DequeueEvent(deferredSet, this);
-			if (currentEvent != null) {
+			buffer.DequeueEvent(deferredSet, this);
+			if (currentEvent != null) 
+			{
 				assert(currentArg != null);
-		if(currentArg.d == Discriminator.Bool)
-		trace("<DequeueLog> Dequeued Event < {0}, Bool: {1} > at Machine {2}-{3}", currentEvent.name, currentArg.m_Bool, machineName, instance);
-		else if(currentArg.d == Discriminator.Int)
-		trace("<DequeueLog> Dequeued Event < {0}, Int: {1} > at Machine {2}-{3}", currentEvent.name, currentArg.m_Int, machineName, instance);
-		else if (currentArg.d == Discriminator.Mid)
-		trace("<DequeueLog> Dequeued Event < {0}, Handle: {1}-{2} > at Machine {3}-{4}", currentEvent.name, currentArg.m_Mid.machineName, currentArg.m_Mid.instance, machineName, instance);
-		else if (currentArg.d == Discriminator.Eid)
-		trace("<DequeueLog> Dequeued Event < {0}, Event: {1} > at Machine {2}-{3}", currentEvent.name, currentArg.m_Eid, machineName, instance);
-		else if (currentArg.d == Discriminator.Null)
-		trace("<DequeueLog> Dequeued Event < {0}, Null Payload > at Machine {1}-{2}", currentEvent.name, machineName, instance);
-		else
-		trace("<DequeueLog> Dequeued Event < {0}, Other: > at Machine {1}-{2}", currentEvent.name, machineName, instance);
-		SM_MONITORS.ProcessDequeue(currentEvent, this);
-	    } else {
-		if (hasDefault) {
-		    trace("<DefaultTransLog> Default transition taken by Machine {0}-{1}", machineName, instance);
+				if (currentArg.d == Discriminator.Bool)
+					trace("<DequeueLog> Dequeued Event < {0}, Bool: {1} > at Machine {2}-{3}", currentEvent.name, currentArg.m_Bool, machineName, instance);
+				else if (currentArg.d == Discriminator.Int)
+					trace("<DequeueLog> Dequeued Event < {0}, Int: {1} > at Machine {2}-{3}", currentEvent.name, currentArg.m_Int, machineName, instance);
+				else if (currentArg.d == Discriminator.Mid)
+					trace("<DequeueLog> Dequeued Event < {0}, Handle: {1}-{2} > at Machine {3}-{4}", currentEvent.name, currentArg.m_Mid.machineName, currentArg.m_Mid.instance, machineName, instance);
+				else if (currentArg.d == Discriminator.Eid)
+					trace("<DequeueLog> Dequeued Event < {0}, Event: {1} > at Machine {2}-{3}", currentEvent.name, currentArg.m_Eid, machineName, instance);
+				else if (currentArg.d == Discriminator.Null)
+					trace("<DequeueLog> Dequeued Event < {0}, Null Payload > at Machine {1}-{2}", currentEvent.name, machineName, instance);
+				else
+					trace("<DequeueLog> Dequeued Event < {0}, Other: > at Machine {1}-{2}", currentEvent.name, machineName, instance);
+				blocked = false;
+			} 
+			else if (hasDefault) 
+			{
+				trace("<DefaultTransLog> Default transition taken by Machine {0}-{1}", machineName, instance);
 	            currentEvent = Main.default_SM_EVENT;
-		} else {
-  		    invokescheduler("pop");
-		}
-		yield;
-	    }
+				blocked = false;
+				FairScheduler.AtYieldStatic(this);
+				FairTransition.AtYieldOrChooseStatic();
+				yield;
+			} 
+			else 
+			{
+  				invokescheduler("pop");
+				assume (!blocked);
+				blocked = true;
+				FairScheduler.AtYieldStatic(this);
+				FairTransition.AtYieldOrChooseStatic();
+				yield;
+			}
         }
     }
 };
@@ -136,52 +152,52 @@ class EVENT_BUFFER {
 
     int CalculateInstances(SM_EVENT e) {
         EVENT_NODE elem;
-	int currInstances;
-	currInstances = 0;
+		int currInstances;
+		currInstances = 0;
         elem = head.next;
         while (elem != head) {
             if (elem.e.name == e.name) {
-		currInstances = currInstances + 1;
-	    }
-	    elem = elem.next;
+				currInstances = currInstances + 1;
+			}
+			elem = elem.next;
         }
-	assert (currInstances <= e.maxInstances);
-	return currInstances;
+		assert (currInstances <= e.maxInstances);
+		return currInstances;
     }
 	
 
     void EnqueueEvent(SM_EVENT e, SM_ARG_UNION arg) {
         EVENT_NODE elem;
-	int currInstances;
+		int currInstances;
 	
-	if(e.maxInstances == -1)
-	{
-		elem = new EVENT_NODE;
-		elem.e = e;
-		elem.arg = arg;
-		elem.prev = head.prev;
-		elem.next = head;
-		elem.prev.next = elem;    
-		elem.next.prev = elem;
-		eventBufferSize = eventBufferSize + 1;
-	}
-	else
-	{
-		currInstances = CalculateInstances(e);
-		if (currInstances == e.maxInstances)
+		if (e.maxInstances == -1)
 		{
-				if (e.doAssume)
-				{
-				assume(false);
-			}
-			else
-			{
-				trace("<Exception> Attempting to enqueue event {0} more than max instance of {1}", e.name, e.maxInstances);
-				assert(false);
-			}
+			elem = new EVENT_NODE;
+			elem.e = e;
+			elem.arg = arg;
+			elem.prev = head.prev;
+			elem.next = head;
+			elem.prev.next = elem;    
+			elem.next.prev = elem;
+			eventBufferSize = eventBufferSize + 1;
 		}
 		else
 		{
+			currInstances = CalculateInstances(e);
+			if (currInstances == e.maxInstances)
+			{
+				if (e.doAssume)
+				{
+					assume(false);
+				}
+				else
+				{
+					trace("<Exception> Attempting to enqueue event {0} more than max instance of {1}", e.name, e.maxInstances);
+					assert(false);
+				}
+			}
+			else
+			{
     			elem = new EVENT_NODE;
     			elem.e = e;
 				elem.arg = arg;
@@ -190,8 +206,8 @@ class EVENT_BUFFER {
     			elem.prev.next = elem;    
     			elem.next.prev = elem;
 				eventBufferSize = eventBufferSize + 1;
+			}
 		}
-	}
 	}
 
     void DequeueEvent(SM_EVENT_SET deferredSet, SM_HANDLE owner) {
@@ -203,18 +219,18 @@ class EVENT_BUFFER {
 			{
 				iter = iter.next;
 			}
-			else {
+			else 
+			{
 				iter.next.prev = iter.prev;
 				iter.prev.next = iter.next;
 				owner.currentEvent = iter.e;
 				owner.currentArg = iter.arg;
 				eventBufferSize = eventBufferSize - 1;
-	            		return;
+				return;
 			} 
         }
-	return;
+		return;
     }
-
 };
 
 array SM_EVENT_array[] SM_EVENT;
@@ -228,57 +244,22 @@ class LocalActions {
     ActionFun Find(SM_EVENT f) {
         ActionFun af;
         int i = 0;
-	while (i < sizeof(es)) {
-	    if (es[i] == f) {
-	        return as[i];
-	    } else {
-	        i = i + 1;
-	    }
-	}
-	af = next.Find(f);
-	return af;
+		while (i < sizeof(es)) {
+			if (es[i] == f) {
+				return as[i];
+			} else {
+				i = i + 1;
+			}
+		}
+		af = next.Find(f);
+		return af;
     }
 
     static LocalActions Construct(LocalActions nextElem) {
         LocalActions localActions;
-	localActions = new LocalActions;
-	localActions.next = nextElem;
-	return localActions;
-    }
-};
-
-interface SM_MONITOR {
-    bool IsInterestingEnqueue(SM_EVENT e, SM_HANDLE source, SM_HANDLE target);
-    bool IsInterestingDequeue(SM_EVENT e, SM_HANDLE __self);
-    void ProcessEnqueue(SM_EVENT e, SM_HANDLE source, SM_HANDLE target);
-    void ProcessDequeue(SM_EVENT e, SM_HANDLE __self);
-};
-
-set SM_MONITOR_SET SM_MONITOR;
-
-class SM_MONITORS {
-    static SM_MONITOR_SET monitors = new SM_MONITOR_SET;
-
-    static void Add(SM_MONITOR m) {
-        monitors = monitors + m;
-    }
-
-    static void ProcessEnqueue(SM_EVENT e, SM_HANDLE source, SM_HANDLE target) {
-        bool cond;
-        foreach (SM_MONITOR m in monitors) {
-	    cond = m.IsInterestingEnqueue(e, source, target);
-	    if (cond) 
-	        m.ProcessEnqueue(e, source, target);
-	}
-    }
-
-    static void ProcessDequeue(SM_EVENT e, SM_HANDLE __self) {
-        bool cond;
-        foreach (SM_MONITOR m in monitors) {
-	    cond = m.IsInterestingDequeue(e, __self);
-	    if (cond) 
-	        m.ProcessDequeue(e, __self);
-	}
+		localActions = new LocalActions;
+		localActions.next = nextElem;
+		return localActions;
     }
 };
 
@@ -287,4 +268,122 @@ enum ContinuationReason { Nondet, Leave, Return, ReturnVal, Raise, Call, Send, D
 class StackFrame {
     int pc;
     StackFrame next;
+};
+
+
+// Add an instance of FairScheduler per running P machine.
+// Add an instance of FairTransition per running P machine and fair state in that machine.
+// Invoke FairScheduler.AtYield and FairTransition.AtYieldOrChoose at each yield.
+// Invoke FairScheduler.AtChoose and FairTransition.AtYieldOrChoose at each choose.
+// Inovke FairTransitionObject.EnterFairState on entering fair state.
+// Invoke FairTransitionObject.ExitFairTransition on exiting via fair transition.
+set FairSchedulers FairScheduler;
+class FairScheduler {      
+	SM_HANDLE handle;
+    bool noYieldFromNowOn;
+
+    static void Init(FairScheduler fs, SM_HANDLE h) {
+		fs.handle = h;
+		fs.noYieldFromNowOn = false;
+    }
+
+	void Proceed() {
+	    if (!noYieldFromNowOn) {
+			noYieldFromNowOn = choose(bool);
+		}
+	}
+
+    void AtYield(SM_HANDLE running) {
+		assume (!noYieldFromNowOn);
+		if (running == handle || (handle.blocked && handle.stable)) {
+			FairScheduler.Accept(this);
+		}
+	}
+
+    void AtChoose() {
+		Proceed();
+		if (noYieldFromNowOn) {
+      		FairScheduler.Accept(this);
+		}
+    }
+
+    static FairSchedulers all = new FairSchedulers;
+    static FairSchedulers accepted = new FairSchedulers;
+
+    static void Add(FairScheduler m) {
+		all = all + m;
+    }
+
+    static void Accept(FairScheduler m) {
+		FairScheduler.accepted = FairScheduler.accepted + m;
+		if (sizeof(FairTransition.accepted) == sizeof(FairTransition.all) && 
+			sizeof(FairScheduler.accepted) == sizeof(FairScheduler.all)) 
+		{
+			accept(true);
+      	    FairTransition.accepted = new FairTransitions;
+			FairScheduler.accepted = new FairSchedulers;
+		}	
+    }
+
+    static void AtYieldStatic(SM_HANDLE running) {
+		foreach (FairScheduler m in all) {
+			m.AtYield(running);
+		}
+    }
+
+    static void AtChooseStatic() {
+		foreach (FairScheduler m in all) {
+			m.AtChoose();
+		}
+    }
+};
+
+set FairTransitions FairTransition;
+class FairTransition {
+	bool noFairStateFromNowOn;
+
+    static void Init(FairTransition fs) {
+		fs.noFairStateFromNowOn = false;
+    }
+
+    void AtYieldOrChoose() {
+		if (!noFairStateFromNowOn) {
+      		noFairStateFromNowOn = choose(bool);
+		}
+      	if (noFairStateFromNowOn) {
+      		FairTransition.Accept(this);
+		}
+    }
+
+    void EnterFairState() {
+		assume (!noFairStateFromNowOn);
+    }
+
+    void ExitFairTransition() {
+		FairTransition.Accept(this);
+    }
+
+    static FairTransitions all = new FairTransitions;
+    static FairTransitions accepted = new FairTransitions;
+
+    static void Add(FairTransition m) {
+		all = all + m;
+    }
+
+    static void Accept(FairTransition m) {
+		FairTransition.accepted = FairTransition.accepted + m;
+		if (sizeof(FairTransition.accepted) == sizeof(FairTransition.all) && 
+			sizeof(FairScheduler.accepted) == sizeof(FairScheduler.all)) 
+		{
+			accept(true);
+      	    FairTransition.accepted = new FairTransitions;
+			FairScheduler.accepted = new FairSchedulers;
+		}
+    }
+
+    static void AtYieldOrChooseStatic() {
+		foreach (FairTransition m in all) {
+			m.AtYieldOrChoose();
+		}
+    }
 };

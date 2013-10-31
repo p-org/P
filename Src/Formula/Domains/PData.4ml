@@ -5,15 +5,14 @@ domain FuncData
     /*************************************************************/    
        
     //// The basic type id accepts any machine.
-	MachType        ::= new (name: String).
+    MachType        ::= new (name: String).
     TypePrimitive   ::= { BOOL, INT, EVENT, ID }.
     TypeTuple       ::= new (hd: any AllTypes, tl: any TypeTuple + { NIL }).
     TypeField       ::= new (name: any String, type: any AllTypes).
     TypeNamedTuple  ::= new (hd: any TypeField, tl: any TypeNamedTuple + { NIL }).
-    TypeSet         ::= new (x: any AllTypes).
     TypeSeq         ::= new (x: any AllTypes).
     TypeMap         ::= new (k: any AllTypes, v: any AllTypes).
-    AllTypes        ::= TypePrimitive + TypeTuple + TypeNamedTuple + TypeSeq + TypeSet + TypeMap + { ANY }.
+    AllTypes        ::= TypePrimitive + TypeTuple + TypeNamedTuple + TypeSeq + TypeMap + { ANY }.
     
     /*************************************************************/
     /****************    Entry Functions Language     ************/
@@ -21,7 +20,7 @@ domain FuncData
                                
     //// Expressions
     Use    ::= new (name: String, kind: { STATE, EVENT, VAR, FIELD }).
-    Apply  ::= new (op: { NOT, NEG, ADD, SUB, MUL, INTDIV, AND, OR, EQ, NEQ, LT, LE, GT, GE, IDX, FLD, IN, CHOOSE, KEYS, SIZEOF }, args: any Exprs).
+    Apply  ::= new (op: { NOT, NEG, ADD, SUB, MUL, INTDIV, AND, OR, EQ, NEQ, LT, LE, GT, GE, IDX, FLD, IN, KEYS, SIZEOF }, args: any Exprs).
     Call   ::= new (name: String, args: any Exprs + { NIL }).
     Exprs  ::= new (head: any Expr, tail: any Exprs + { NIL }).              
     New    ::= new (type: any MachType, inits: any NamedExprs + { NIL }).
@@ -29,11 +28,9 @@ domain FuncData
     Payload    ::= new (kind: AllTypes + { NIL }).
     Tuple  ::= new (body: any Exprs).
     NamedTuple ::= new (body: any NamedExprs).
-    Rep    ::= new (kind: AllTypes, cnt: Natural).
-    Sequence ::= new (body: any Exprs + Rep).
-    Set    ::= new (body: any Exprs).
+    Sequence ::= new (body: any Exprs).
     Map    ::= new (body: any Exprs).
-    Expr   ::= Use + Tuple + NamedTuple + Set + Map + Sequence + New + Call + Apply + Payload + Integer + Boolean + { THIS, TRIGGER, NONDET, NULL }.
+    Expr   ::= Use + Tuple + NamedTuple + Map + Sequence + New + Call + Apply + Payload + Integer + Boolean + { THIS, TRIGGER, NONDET, NULL }.
     
     //// Statements
     DataOp ::= new (op: { UPDATE, INSERT, REMOVE }, args: any Exprs).
@@ -43,10 +40,12 @@ domain FuncData
     Send   ::= new (target: any Expr, event: any Expr, payload: any Expr + { NIL }).
     Raise  ::= new (ev: any Expr, payload: any Expr + { NIL }).
     Scall  ::= new (state: any Expr).
+    Strings ::= new (str: any String, tail: any Strings + { NIL }).
+    Ecall  ::= new (names: any Strings, args: any Exprs).
     ITE    ::= new (cond: any Expr, true: any Stmt, false: any Stmt).
     While  ::= new (cond: any Expr, body: any Stmt).
     Seq    ::= new (s1: any Stmt, s2: any Stmt).
-    Stmt   ::= DataOp + Assert + Return + Assign + Send + Raise + Scall + ITE + Call + While + Seq + { NIL, LEAVE, DELETE }.                 
+    Stmt   ::= DataOp + Assert + Return + Assign + Send + Raise + Scall + ITE + Call + While + Seq + { NIL, LEAVE, DELETE }.
 }
 
 domain PData extends FuncData
@@ -68,6 +67,8 @@ domain PData extends FuncData
                        entryFun: any Stmt, 
                        defers: EventSetDecl + { NIL }).
 
+    Stable  ::= new (state: StateDecl).
+
     ExitFun ::= fun (state: StateDecl -> exitFun: any Stmt).
     
     Install ::= fun (state: StateDecl, event: EventDecl -> action: ActionDecl).
@@ -75,6 +76,8 @@ domain PData extends FuncData
     VarDecl ::= fun (name: String, owner: MachineDecl -> type: any AllTypes, isGhost: Boolean).
     
     TransDecl ::= fun (src: StateDecl, trig: EventDecl + { DEFAULT } -> dst: StateDecl, isPush: Boolean).
+
+    Fair    ::= new (MachineDecl + TransDecl).
     
     FunDecl ::= fun (name: String,
                      owner: MachineDecl ->

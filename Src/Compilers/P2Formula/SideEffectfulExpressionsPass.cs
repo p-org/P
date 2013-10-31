@@ -34,6 +34,10 @@ namespace PParser
         {
             INode p = getParent();
 
+            if (n.isExternalCall && (p is DSLAssign && n == ((DSLAssign)p).rhs))
+            {
+                errs.Add(new SemanticError(n.loc, "External calls cannot appear on the right hand side of an assignment"));
+            }
             if (!(p is DSLFFCallStmt || (p is DSLAssign && n == ((DSLAssign)p).rhs)))
             {
                 errs.Add(new SemanticError(n.loc, "Foreign function calls can only appear on the right hand side of assignment or as statements."));

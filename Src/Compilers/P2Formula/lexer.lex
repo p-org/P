@@ -70,6 +70,7 @@ NonSMCntrChars  [^\'\"\n\r]*
 "false"									   { return (int)PTokens.FALSE;  }
 "sizeof"								   { return (int)PTokens.SIZEOF; }
 "keys"									   { return (int)PTokens.KEYS; }
+"fair"									   { return (int)PTokens.FAIR; }
 
 "assert"								   { return (int)PTokens.ASSERT;  }
 "send"									   { return (int)PTokens.SEND;  }
@@ -94,6 +95,7 @@ NonSMCntrChars  [^\'\"\n\r]*
 
 "var"									   { return (int)PTokens.VAR;  }
 "start"									   { return (int)PTokens.START;  }
+"stable"								   { return (int)PTokens.STABLE;  }
 "foreign"								   { return (int)PTokens.FOREIGN;  }
 "fun"									   { return (int)PTokens.FUN;  }
 "action"								   { return (int)PTokens.ACTION;  }

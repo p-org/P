@@ -10,6 +10,10 @@ namespace PCompiler
     {
         public abstract bool Hashable { get; }
         public abstract override bool Equals(object obj); // Compares types for structural equality
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
         public static bool operator ==(PType a, PType b)
         {
             if ((((object)a) == null) && (((object)b) == null))

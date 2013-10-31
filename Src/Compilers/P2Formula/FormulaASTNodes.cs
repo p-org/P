@@ -32,6 +32,7 @@ namespace PParser
         public static AST<Id> Flags_Iden = Factory.Instance.MkId("Flags");
         public static AST<Id> StateDecl_Iden = Factory.Instance.MkId("StateDecl");
         public static AST<Id> MachStart_Iden = Factory.Instance.MkId("MachStart");
+        public static AST<Id> Stable_Iden = Factory.Instance.MkId("Stable");
         public static AST<Id> Passive_Iden = Factory.Instance.MkId("PASSIVE");
         public static AST<Id> StateSetDecl_Iden = Factory.Instance.MkId("StateSetDecl");
         public static AST<Id> InStateSet_Iden = Factory.Instance.MkId("InStateSet");
@@ -50,12 +51,14 @@ namespace PParser
         public static AST<Id> Send_Iden = Factory.Instance.MkId("Send");
         public static AST<Id> Raise_Iden = Factory.Instance.MkId("Raise");
         public static AST<Id> Scall_Iden = Factory.Instance.MkId("Scall");
+        public static AST<Id> Ecall_Iden = Factory.Instance.MkId("Ecall");
         public static AST<Id> Seq_Iden = Factory.Instance.MkId("Seq");
         public static AST<Id> Assert_Iden = Factory.Instance.MkId("Assert");
         public static AST<Id> Return_Iden = Factory.Instance.MkId("Return");
         public static AST<Id> LEAVE_Iden = Factory.Instance.MkId("LEAVE");
         public static AST<Id> DELETE_Iden = Factory.Instance.MkId("DELETE");
         public static AST<Id> DataOp_Iden = Factory.Instance.MkId("DataOp");
+        public static AST<Id> Fair_Iden = Factory.Instance.MkId("Fair");
 
         public static AST<Id> Insert_Iden = Factory.Instance.MkId("INSERT");
         public static AST<Id> Remove_Iden = Factory.Instance.MkId("REMOVE");
@@ -82,6 +85,7 @@ namespace PParser
         public static AST<Id> Index_Iden = Factory.Instance.MkId("Index");
         public static AST<Id> Apply_Iden = Factory.Instance.MkId("Apply");
         public static AST<Id> Exprs_Iden = Factory.Instance.MkId("Exprs");
+        public static AST<Id> Strings_Iden = Factory.Instance.MkId("Strings");
         public static AST<Id> Call_Iden = Factory.Instance.MkId("Call");
         public static AST<Id> NamedTuple_Iden = Factory.Instance.MkId("NamedTuple");
         public static AST<Id> Tuple_Iden = Factory.Instance.MkId("Tuple");

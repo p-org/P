@@ -116,6 +116,8 @@
 
         public static readonly AST<Id> Con_Flags = Factory.Instance.MkId("Flags");
         public static readonly AST<Id> Con_File = Factory.Instance.MkId("File");
+        public static readonly AST<Id> Con_Fair = Factory.Instance.MkId("Fair");
+        public static readonly AST<Id> Con_Stable = Factory.Instance.MkId("Stable");
 
         /// <summary>
         /// Empty applications

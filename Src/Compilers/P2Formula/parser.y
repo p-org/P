@@ -27,11 +27,11 @@
 %token T_INT T_BOOL T_EVENTID T_MACHINEID T_ANY T_SEQ T_MAP
 %token MAIN EVENT MACHINE ASSUME GHOST
 
-%token VAR START FOREIGN STATE FUN ACTION MAXQUEUE SUBMACHINE
+%token VAR START STABLE FOREIGN STATE FUN ACTION MAXQUEUE SUBMACHINE
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH
 
-%token IF WHILE THIS TRIGGER PAYLOAD ARG NEW RETURN ID LEAVE ASSERT SCALL RAISE SEND DEFAULT DELETE NULL
+%token IF WHILE THIS TRIGGER PAYLOAD ARG NEW RETURN FAIR ID LEAVE ASSERT SCALL RAISE SEND DEFAULT DELETE NULL
 %token LPAREN RPAREN LCBRACE RCBRACE LBRACKET RBRACKET SIZEOF KEYS
 
 %token TRUE FALSE
@@ -165,7 +165,7 @@ TypeOrNull
 
 // --------------------  Machine Declarations --------------------
 MachineDecl
-	: IsMain IsGhost MACHINE ID LCBRACE MachineBody RCBRACE	{ $$.node = new MachineDeclaration($4.s, $2.b, $1.b, Cast<INode, IMachineBodyItem>.list($6.lst)); setLoc($$.node, @1, @7);}
+	: IsMain IsFair IsGhost MACHINE ID LCBRACE MachineBody RCBRACE	{ $$.node = new MachineDeclaration($5.s, $1.b, $2.b, $3.b, Cast<INode, IMachineBodyItem>.list($7.lst)); setLoc($$.node, @1, @8);}
 	;
 
 IsGhost
@@ -242,13 +242,19 @@ ActionDecl
 
 // ------------------    State Declarations     ----------------------
 StateDecl
-	: StartOrNull STATE ID LCBRACE StateBody RCBRACE			{ $$.node = new StateDeclaration($3.s, Cast<INode, IStateBodyItem>.list($5.lst), $1.b); setLoc($$.node, @1, @6);}
+	: IsStart IsStable STATE ID LCBRACE StateBody RCBRACE			{ $$.node = new StateDeclaration($4.s, Cast<INode, IStateBodyItem>.list($6.lst), $1.b, $2.b); setLoc($$.node, @1, @7);}
 	;
 
-StartOrNull
+IsStart
 	: START														{ $$.b = true; }
 	|															{ $$.b = false; }
 	;
+
+IsStable
+	: STABLE													{ $$.b = true; }
+	|															{ $$.b = false; }
+	;
+
 StateBody
 	: 												{ $$.lst = new List<INode>(); }
 	| StateBodyItem StateBody						{ $$.lst = prepend($1.node, $2.lst); }
@@ -269,13 +275,18 @@ EventID
 	| DEFAULT
 	;
 
+IsFair
+	: FAIR														{ $$.b = true; }
+	|															{ $$.b = false; }
+	;
+
 StateBodyItem
 	: ENTRY StmtBlock								{ $$.node = new EntryFunction((DSLBlock)$2.stmt); setLoc($$.node, @1, @2);}
 	| EXIT StmtBlock								{ $$.node = new ExitFunction((DSLBlock)$2.stmt); setLoc($$.node, @1, @2);}
-	| DEFER NonDefaultEventList  SEMICOLON					{ $$.node = new Defer($2.slst); setLoc($$.node, @1, @3);}
-	| IGNORE NonDefaultEventList  SEMICOLON					{ $$.node = new Ignore($2.slst); setLoc($$.node, @1, @3);}
-	| ON EventList GOTO ID  SEMICOLON				{ $$.node = new Transition($2.slst, $4.s); setLoc($$.node, @1, @5);}
-	| ON EventList PUSH ID  SEMICOLON				{ $$.node = new CallTransition($2.slst, $4.s); setLoc($$.node, @1, @5);}
+	| DEFER NonDefaultEventList SEMICOLON			{ $$.node = new Defer($2.slst); setLoc($$.node, @1, @3);}
+	| IGNORE NonDefaultEventList SEMICOLON			{ $$.node = new Ignore($2.slst); setLoc($$.node, @1, @3);}
+	| ON EventList IsFair GOTO ID SEMICOLON		{ $$.node = new Transition($2.slst, $5.s, $3.b); setLoc($$.node, @1, @6);}
+	| ON EventList PUSH ID SEMICOLON				{ $$.node = new CallTransition($2.slst, $4.s); setLoc($$.node, @1, @5);}
 	| ON EventList DO ID SEMICOLON					{ $$.node = new Action($2.slst, $4.s); setLoc($$.node, @1, @5);}
 	;
 
@@ -463,7 +474,7 @@ Bool
 	;
 
 FFCall
-	: ID Args							{$$.exp = new DSLFFCall($1.s, (DSLTuple)$2.exp); setLoc($$.exp, @1, @2); } // function call with positional arguments
+	: ID Args							{ $$.exp = new DSLFFCall($1.s, (DSLTuple)$2.exp); setLoc($$.exp, @1, @2); } // function call with positional arguments
 	;
 
 KWArgList

@@ -528,14 +528,18 @@ namespace PParser
     public sealed class MachineDeclaration : BaseListNode<IMachineBodyItem>, IPDeclaration
     {
         public string id;
-        public bool isGhost;
         public bool isMain;
+        public bool isFair;
+        public bool isGhost;
         public IEnumerable<IMachineBodyItem> body;
 
-        public MachineDeclaration(string id, bool ghost, bool main, IEnumerable<IMachineBodyItem> body) : base(body) {
+        public MachineDeclaration(string id, bool main, bool fair, bool ghost, IEnumerable<IMachineBodyItem> body)
+            : base(body)
+        {
             this.id = id;
-            this.isGhost = ghost;
             this.isMain = main;
+            this.isFair = fair;
+            this.isGhost = ghost;
             this.body = body;
         }
     }
@@ -591,9 +595,11 @@ namespace PParser
     {
         public string id;
         public bool isStart;
-        public StateDeclaration(string sid, IEnumerable<IStateBodyItem> body, bool start) : base(body) {
+        public bool isStable;
+        public StateDeclaration(string sid, IEnumerable<IStateBodyItem> body, bool start, bool stable) : base(body) {
             id = sid;
             isStart = start;
+            isStable = stable;
         }
     }
 
@@ -669,7 +675,11 @@ namespace PParser
     }
 
     public sealed class Transition : BaseTransition {
-        public Transition(List<string> on, string target) : base(on, target) { }
+        public bool isFair;
+        public Transition(List<string> on, string target, bool isFair) : base(on, target) 
+        { 
+            this.isFair = isFair;
+        }
     }
 
     public sealed class CallTransition : BaseTransition {
@@ -866,14 +876,16 @@ namespace PParser
     {        
         public string fname;
         public DSLTuple args;
+        public bool isExternalCall;
 
         public DSLFFCall(string fname, DSLTuple args) : base(args)
         {
-            this.fname = fname; this.args = args;
+            this.fname = fname; 
+            this.args = args;
+            this.isExternalCall = fname.StartsWith("__");
         }
-
     }
-
+    
     public sealed class DSLUnop : BaseNode, IDSLExp
     {
         public Ops op;

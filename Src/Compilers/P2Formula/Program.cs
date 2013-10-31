@@ -90,7 +90,7 @@ namespace P2Formula
                 parser = new PParser.PParser(scanner);
                 res = parser.Parse(canceller.Token);
             } 
-            catch (System.IO.FileNotFoundException e)
+            catch (System.IO.FileNotFoundException)
             {
                 Console.WriteLine("Couldn't find file: " + inpFile);
                 Environment.Exit(-1);
@@ -148,7 +148,7 @@ namespace P2Formula
                 r.Print(sw);
                 sw.Close();
             }
-            catch (System.IO.DirectoryNotFoundException e)
+            catch (System.IO.DirectoryNotFoundException)
             {
                 Console.WriteLine("Couldn't find output directory: " +  Path.GetDirectoryName(outputFile));
                 Environment.Exit(-1);

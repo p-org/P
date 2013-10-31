@@ -44,6 +44,7 @@ namespace PCompiler
         public bool kernelMode;
         public bool emitHeaderComment;
         public bool emitDebugC;
+        public bool liveness;
         public AST<Model> model = null;
         private string domainPath = null;
 
@@ -92,7 +93,7 @@ namespace PCompiler
             return prefix + '_' + ret;
         }
 
-        public Compiler(string target, string outputPath, bool erase, bool kernelMode, bool emitHeaderComment, bool emitDebugC)
+        public Compiler(string target, string outputPath, bool erase, bool kernelMode, bool emitHeaderComment, bool emitDebugC, bool liveness)
         {
             this.target = target;
             this.outputPath = outputPath;
@@ -100,6 +101,7 @@ namespace PCompiler
             this.kernelMode = kernelMode;
             this.emitHeaderComment = emitHeaderComment;
             this.emitDebugC = emitDebugC;
+            this.liveness = liveness;
 
             this.modelAliases = new MyDictionary<string, AST<FuncTerm>>();
             this.factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
@@ -563,7 +565,7 @@ namespace PCompiler
                                 {
                                     stateTable.hasDefaultTransition = true;
                                 }
-                                targetStateInfo.nIncommingTransitions++;
+                                targetStateInfo.nIncomingTransitions++;
                             }
                         }
                         else
@@ -814,6 +816,51 @@ namespace PCompiler
                 }
             }
 
+            terms = GetBin("Stable");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var stateDecl = GetFuncTerm(it.Current);
+                    var stateName = GetName(stateDecl, 0);
+                    var ownerMachineName = GetOwnerName(stateDecl, 1, 0);
+                    allMachines[ownerMachineName].stateNameToStateInfo[stateName].isStable = true;
+                }
+            }
+
+            terms = GetBin("Fair");
+            foreach (var term in terms)
+            {
+                FuncTerm decl;
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    decl = GetFuncTerm(it.Current);
+                }
+                if ((decl.Function as Id).Name == "TransDecl")
+                {
+                    using (var it = decl.Args.GetEnumerator())
+                    {
+                        it.MoveNext();
+                        var stateDecl = GetFuncTerm(it.Current);
+                        var stateName = GetName(stateDecl, 0);
+                        var stateOwnerMachineName = GetMachineName(stateDecl, 1);
+                        var stateTable = allMachines[stateOwnerMachineName].stateNameToStateInfo[stateName];
+                        it.MoveNext();
+                        string eventName;
+                        PType eventArgTypeName;
+                        GetEventInfo(it.Current, out eventName, out eventArgTypeName);
+                        stateTable.transitions[eventName].isFair = true;
+                    }
+                }
+                else
+                {
+                    var machineName = GetName(decl, 0);
+                    allMachines[machineName].isFair = true;
+                }
+            }
+
             // Compute the possible incomming payloads for States/Actions
             GenericCtxt ctxt = new GenericCtxt();
             model.Compute<int>(
@@ -906,7 +953,15 @@ namespace PCompiler
 
                 bool unsetMachine = false, unsetState = false;
 
-                if (Compiler.isInstanceOf(inner, PData.Con_ActionDecl))
+                if (Compiler.isInstanceOf(inner, PData.Con_Fair))
+                {
+                    yield return null;
+                }
+                else if (Compiler.isInstanceOf(inner, PData.Con_Stable))
+                {
+                    yield return null;
+                }
+                else if (Compiler.isInstanceOf(inner, PData.Con_ActionDecl))
                 {
                     ctxt.curMachine = LookupOwnerName(Compiler.GetArgByIndex((FuncTerm)inner, 1));
                     unsetMachine = true;

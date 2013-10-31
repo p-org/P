@@ -16,6 +16,7 @@
             bool kernelMode = false;
             bool emitHeaderComment = false;
             bool emitDebugC = false;
+            bool liveness = false;
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -55,6 +56,9 @@
                                 goto error;
                             emitHeaderComment = true;
                             break;
+                        case "/liveness":
+                            liveness = true;
+                            break;
                         default:
                             goto error;
                     }
@@ -69,7 +73,7 @@
             if (model == null)
                 goto error;
 
-            var comp = new Compiler(model, outputPath != null ? outputPath : Environment.CurrentDirectory, erase, kernelMode, emitHeaderComment, emitDebugC);
+            var comp = new Compiler(model, outputPath != null ? outputPath : Environment.CurrentDirectory, erase, kernelMode, emitHeaderComment, emitDebugC, liveness);
             var result = comp.Compile();
             if (!result)
             {

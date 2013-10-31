@@ -61,7 +61,7 @@ namespace PParser
                 walk(p);
                 return getPostResult(p).First();
             }
-            catch (AbortException e)
+            catch (AbortException)
             {
                 return null;
             }
@@ -272,13 +272,19 @@ namespace PParser
             AST<Node> maxQSize = curMachMaxQSize == -1 ? (AST<Node>)P_FormulaNodes.Nil_Iden : (AST<Node>)fMkCnst(curMachMaxQSize);
             var machineName = sem.resolve(s, s.id);
 
-            var machineDecl = fMkModelFact(fMkFuncTerm(P_FormulaNodes.MachineDecl_Iden, fMkCnst(machineName), fMkCnst(s.isGhost), maxQSize), machineName); // TODO: Support for max queue size
+            var machineDecl = fMkModelFact(fMkFuncTerm(P_FormulaNodes.MachineDecl_Iden, fMkCnst(machineName), fMkCnst(s.isGhost), maxQSize), machineName);
             mTerms.Insert(0, machineDecl);
             if (s.isMain)
+            {
                 mTerms.Insert(0, fMkModelFact(fMkFuncTerm(P_FormulaNodes.MainDecl_Iden,
                                                             fMkFuncTerm(P_FormulaNodes.New_Iden,
                                                                 fMkFuncTerm(P_FormulaNodes.MachType_Iden, fMkCnst(s.id)),
                                                                 P_FormulaNodes.Nil_Iden))));
+            }
+            if (s.isFair)
+            {
+                mTerms.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.Fair_Iden, fMkId(machineName))));
+            }
 
             // Generate Machine Ignore Statement. It would be nice to do this optionally if the machine has any ignores.
             var machScope = sem.getScope(s);
@@ -379,6 +385,10 @@ namespace PParser
             if (s.isStart)
                 retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MachStart_Iden, curMachine, fMkId(stateName))));
 
+            // If this is a stable state, add the Stable term.
+            if (s.isStable)
+                retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.Stable_Iden, fMkId(stateName))));
+
             // add the StateDecl node itself
             retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.StateDecl_Iden, fMkCnst(stateName), curMachine, entry, (hasDefered ? fMkId(deferSetName) : P_FormulaNodes.Nil_Iden)), stateName));
 
@@ -410,7 +420,18 @@ namespace PParser
 
         public override IEnumerable<AST<Node>> visit(Transition s)
         {
-            return s.on.Select(ev => fMkModelFact(fMkFuncTerm(P_FormulaNodes.TransDecl_Iden, curState, translateEvt(ev), fMkId(sem.resolve(s, s.targetState)), fMkCnst(false))));
+            List<AST<Node>> ret = new List<AST<Node>>();
+            foreach (var ev in s.on)
+            {
+                var ft = fMkFuncTerm(P_FormulaNodes.TransDecl_Iden, curState, translateEvt(ev), fMkId(sem.resolve(s, s.targetState)), fMkCnst(false));
+                ret.Add(fMkModelFact(ft));
+                if (s.isFair)
+                {
+                    ret.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.Fair_Iden, ft)));
+                }
+            }
+            return ret;
+            //return s.on.Select(ev => fMkModelFact(fMkFuncTerm(P_FormulaNodes.TransDecl_Iden, curState, translateEvt(ev), fMkId(sem.resolve(s, s.targetState)), fMkCnst(false))));
         }
         public override IEnumerable<AST<Node>> visit(CallTransition s)
         {
@@ -596,7 +617,20 @@ namespace PParser
             var argsTuple = getOne(e.args);
             var argsExprs = ((FuncTerm)argsTuple.Node).Args.ElementAt(0);
 
-            return wrap(fMkFuncTerm(P_FormulaNodes.Call_Iden, fMkCnst(sem.resolve(e, e.fname)), Factory.Instance.ToAST(argsExprs)));
+            if (e.isExternalCall)
+            {
+                string[] names = e.fname.Split(new string[] { "__" }, StringSplitOptions.None);
+                AST<Node> nameList = P_FormulaNodes.Nil_Iden;
+                for (int i = names.Length - 1; i >= 0; i--)
+                {
+                    nameList = fMkFuncTerm(P_FormulaNodes.Strings_Iden, fMkCnst(names[i]), nameList);
+                }
+                return wrap(fMkFuncTerm(P_FormulaNodes.Ecall_Iden, nameList, Factory.Instance.ToAST(argsExprs)));
+            }
+            else
+            {
+                return wrap(fMkFuncTerm(P_FormulaNodes.Call_Iden, fMkCnst(sem.resolve(e, e.fname)), Factory.Instance.ToAST(argsExprs)));
+            }
         }
         public override IEnumerable<AST<Node>> visit(DSLUnop e)
         {

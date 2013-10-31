@@ -82,6 +82,8 @@ namespace PParser
 
         public override int visit(DSLFFCall e)
         {
+            if (e.isExternalCall)
+                return 0;
             checkDefined(e, e.fname, SemanticPass.SYM_FUN);
             return 0;
         }

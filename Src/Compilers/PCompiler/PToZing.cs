@@ -162,10 +162,12 @@ namespace PCompiler
     {
         public string target;
         public bool isPush;
+        public bool isFair;
         public TransitionInfo(string target, bool isPush)
         {
             this.target = target;
             this.isPush = isPush;
+            this.isFair = false;
         }
         public override bool Equals(object obj)
         {
@@ -182,6 +184,10 @@ namespace PCompiler
 
             return (target == p.target) && (isPush == p.isPush);
         }
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
     }
 
     internal class StateInfo
@@ -196,8 +202,9 @@ namespace PCompiler
         public HashSet<string> exitFunCallees;
         public bool exitFunAtPassive;
         public HashSet<PType> argTypes;
-        public int nIncommingTransitions;
+        public int nIncomingTransitions;
         public string submachineName;
+        public bool isStable;
 
         public StateInfo(FuncTerm stateDecl)
         {
@@ -209,7 +216,8 @@ namespace PCompiler
             this.argTypes = new HashSet<PType>();
             this.entryFunCallees = new HashSet<string>();
             this.exitFunCallees = new HashSet<string>();
-            this.nIncommingTransitions = 0;
+            this.nIncomingTransitions = 0;
+            this.isStable = false;
         }
     }
 
@@ -263,6 +271,7 @@ namespace PCompiler
     {
         public bool isGhost;
         public int maxQueueSize;
+        public bool isFair;
         public FuncTerm initStateDecl;
         public Dictionary<string, StateInfo> stateNameToStateInfo;
         public Dictionary<string, VariableInfo> localVariableToVarInfo;
@@ -274,6 +283,7 @@ namespace PCompiler
         {
             isGhost = false;
             maxQueueSize = -1;
+            isFair = false;
             initStateDecl = null;
             stateNameToStateInfo = new Dictionary<string, StateInfo>();
             localVariableToVarInfo = new Dictionary<string, VariableInfo>();
@@ -552,6 +562,11 @@ namespace PCompiler
             elements.Add(Compiler.AddArgs(ZingData.App_EnumDecl, Factory.Instance.MkCnst("ActionFun"), actionFunList));
         }
 
+        private string GetFairTransitionMonitorName(string stateName, string eventName)
+        {
+            return string.Format("{0}_fairness_monitor", stateName);
+        }
+
         private void MkZingClasses(List<AST<Node>> elements)
         {
             foreach (string machineName in compiler.allMachines.Keys)
@@ -561,6 +576,16 @@ namespace PCompiler
                 fields = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl("stackDeferredSet", ZingData.Cnst_SmEventSet), fields);
                 fields = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl("stackActionSet", ZingData.Cnst_SmEventSet), fields);
                 fields = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl("localActions", Factory.Instance.MkCnst("LocalActions")), fields);
+
+                foreach (string stateName in compiler.allMachines[machineName].stateNameToStateInfo.Keys)
+                {
+                    StateInfo stateInfo = compiler.allMachines[machineName].stateNameToStateInfo[stateName];
+                    foreach (var eventName in stateInfo.transitions.Keys)
+                    {
+                        if (!stateInfo.transitions[eventName].isFair) continue;
+                        fields = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl(GetFairTransitionMonitorName(stateName, eventName), Factory.Instance.MkCnst("FairTransition")), fields);
+                    }
+                }
 
                 AST<Node> methods = ZingData.Cnst_Nil;
                 foreach (var stateDecl in compiler.allMachines[machineName].stateNameToStateInfo.Values.Select(x => x.stateDecl))
@@ -1356,6 +1381,7 @@ namespace PCompiler
             locals.Add(MkZingVarDecl("savedCurrentEvent", ZingData.Cnst_SmEvent));
             locals.Add(MkZingVarDecl("savedCurrentArg", ZingData.Cnst_SmUnion));
             locals.Add(MkZingVarDecl("cont", Factory.Instance.MkCnst(getZingContinuationCtxtType(machineName))));
+            locals.Add(MkZingVarDecl("savedStable", ZingData.Cnst_Bool));
 
             AST<Node> initStmt = Factory.Instance.AddArg(ZingData.App_Assert, ZingData.Cnst_False);
             foreach (var actionFunName in compiler.allMachines[machineName].actionFunNameToActionFun.Keys)
@@ -1403,6 +1429,8 @@ namespace PCompiler
             var savedCurrentEvent = MkZingIdentifier("savedCurrentEvent");
             var savedCurrentArg = MkZingIdentifier("savedCurrentArg");
             var cont = MkZingIdentifier("cont");
+            var inStableState = MkZingDot("myHandle", "stable");
+            var savedInStableState = MkZingIdentifier("savedStable");
 
             string traceString = type == TranslationContext.Action
                                     ? string.Format("\"<ActionLog> Machine {0}-{{0}} reentered Action {1}\"", machineName, entityName)
@@ -1445,6 +1473,7 @@ namespace PCompiler
                     MkZingAssign(savedActionSet, stackActionSet),
                     MkZingAssign(savedCurrentEvent, currentEvent),
                     MkZingAssign(savedCurrentArg, currentArg),
+                    MkZingAssign(savedInStableState, inStableState),
                     MkZingAssign(stackActionSet, currentActionSet),
                     MkZingAssign(stackDeferredSet, MkZingCall(MkZingDot("Main", "CalculateComplementOfEventSet"), currentActionSet)),
                     MkZingAssignOrCast(currentEvent, PType.Event, MkZingIdentifier("null"), PType.Nil),
@@ -1454,6 +1483,7 @@ namespace PCompiler
                     MkZingAssign(MkZingIdentifier("localActions"), MkZingDot("localActions", "next")),
                     MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"))),
                     MkZingSeq(MkZingAssign(stackDeferredSet, savedDeferredSet), MkZingAssign(stackActionSet, savedActionSet)),
+                    MkZingAssign(inStableState, savedInStableState),
                     MkZingAssign(MkZingDot("cont", "state"), MkZingDot(machineName + "_State", "_" + compiler.allMachines[machineName].stateNameToStateInfo.Keys.First())),
                     Compiler.AddArgs(ZingData.App_ITE,
                                     MkZingApply(ZingData.Cnst_Eq, currentEvent, MkZingIdentifier("null")),
@@ -1463,14 +1493,20 @@ namespace PCompiler
                     Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst("reentry_" + name)))));
             body.Add(MkZingIf(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Nondet")),
                 MkZingSeq(
+                    MkZingCallStmt(MkZingCall(MkZingDot("FairScheduler", "AtChooseStatic"))),
+                    MkZingCallStmt(MkZingCall(MkZingDot("FairTransition", "AtYieldOrChooseStatic"))),
                     MkZingAssign(MkZingDot(cont, "nondet"), MkZingCall(Factory.Instance.MkCnst("choose"), Factory.Instance.MkCnst("bool"))),
                     Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst("reentry_" + name)))));
             body.Add(MkZingIf(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "NewM")),
                 MkZingSeq(
+                    MkZingCallStmt(MkZingCall(MkZingDot("FairScheduler", "AtYieldStatic"), MkZingIdentifier("myHandle"))),
+				    MkZingCallStmt(MkZingCall(MkZingDot("FairTransition", "AtYieldOrChooseStatic"))),
                     ZingData.Cnst_Yield,
                     Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst("reentry_" + name)))));
             body.Add(MkZingIf(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Send")),
                 MkZingSeq(
+                    MkZingCallStmt(MkZingCall(MkZingDot("FairScheduler", "AtYieldStatic"), MkZingIdentifier("myHandle"))),
+                    MkZingCallStmt(MkZingCall(MkZingDot("FairTransition", "AtYieldOrChooseStatic"))),
                     ZingData.Cnst_Yield,
                     Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst("reentry_" + name)))));
 
@@ -1494,6 +1530,7 @@ namespace PCompiler
             locals.Add(MkZingVarDecl("savedCurrentEvent", ZingData.Cnst_SmEvent));
             locals.Add(MkZingVarDecl("savedCurrentArg", ZingData.Cnst_SmUnion));
             locals.Add(MkZingVarDecl("didActionPop", ZingData.Cnst_Bool));
+            locals.Add(MkZingVarDecl("savedStable", ZingData.Cnst_Bool));
 
             // Initial block
             AST<Node> initStmt = Factory.Instance.AddArg(ZingData.App_Assert, ZingData.Cnst_False);
@@ -1513,14 +1550,24 @@ namespace PCompiler
             var savedActionSet = MkZingIdentifier("savedActionSet");
             var stackDeferredSet = MkZingIdentifier("stackDeferredSet");
             var stackActionSet = MkZingIdentifier("stackActionSet");
+            var inStableState = MkZingDot("myHandle", "stable");
+            var savedInStableState = MkZingIdentifier("savedStable");
 
             // State blocks
             List<AST<Node>> blocks = new List<AST<Node>>();
             blocks.Add(initStmt);
             var smEventSetType = Factory.Instance.MkCnst("SM_EVENT_SET");
-            foreach (var stateDecl in compiler.allMachines[machineName].stateNameToStateInfo.Values.Select(x => x.stateDecl))
+            foreach (var stateName in compiler.allMachines[machineName].stateNameToStateInfo.Keys)
             {
-                string stateName = compiler.GetName(stateDecl, 0);
+                StateInfo stateInfo = compiler.allMachines[machineName].stateNameToStateInfo[stateName];
+                AST<Node> livenessStmt = ZingData.Cnst_Nil;
+                foreach (var eventName in stateInfo.transitions.Keys)
+                {
+                    if (!stateInfo.transitions[eventName].isFair) continue;
+                    livenessStmt = MkZingSeq(
+                        MkZingCallStmt(MkZingCall(MkZingDot(GetFairTransitionMonitorName(stateName, eventName), "EnterFairState"))), 
+                        livenessStmt);
+                }
                 AST<Cnst> executeLabel = Factory.Instance.MkCnst("execute_" + stateName);
                 AST<Cnst> waitLabel = Factory.Instance.MkCnst("wait_" + stateName);
                 AST<Cnst> transitionLabel = Factory.Instance.MkCnst("transition_" + stateName);
@@ -1528,6 +1575,8 @@ namespace PCompiler
                 var executeStmt = MkZingSeq(
                                     MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"))),
                                     MkZingCallStmt(MkZingCall(MkZingIdentifier("invokeplugin"), Factory.Instance.MkCnst("\"StateCoveragePlugin.dll\""), Factory.Instance.MkCnst(string.Format("\"{0}\"", machineName)), Factory.Instance.MkCnst(string.Format("\"{0}\"", stateName)))),
+                                    MkZingAssign(MkZingDot("myHandle", "stable"), MkZingApply(ZingData.Cnst_Or, MkZingDot("myHandle", "stable"), stateInfo.isStable ? ZingData.Cnst_True : ZingData.Cnst_False)),
+                                    livenessStmt,
                                     MkZingAssign(currentDeferredSet, Compiler.AddArgs(ZingData.App_New, smEventSetType, ZingData.Cnst_Nil)),
                                     MkZingAssign(currentActionSet, Compiler.AddArgs(ZingData.App_New, smEventSetType, ZingData.Cnst_Nil)),
                                     MkZingCallStmt(MkZingCall(MkZingIdentifier(string.Format("{0}_CalculateDeferredAndActionSet", stateName)), currentDeferredSet, currentActionSet)),
@@ -1574,7 +1623,7 @@ namespace PCompiler
                 {
                     var targetStateName = callTransitions[eventName].target;
                     var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingEvent(eventName));
-                    var save = MkZingSeq(MkZingAssign(savedDeferredSet, stackDeferredSet), MkZingAssign(savedActionSet, stackActionSet));
+                    var save = MkZingSeq(MkZingAssign(savedDeferredSet, stackDeferredSet), MkZingAssign(savedActionSet, stackActionSet), MkZingAssign(savedInStableState, inStableState));
                     var update = MkZingSeq(MkZingAssign(stackDeferredSet, currentDeferredSet), MkZingAssign(stackActionSet, currentActionSet));
                     var push = MkZingAssign(MkZingIdentifier("localActions"), MkZingCall(MkZingDot("LocalActions", "Construct"), MkZingIdentifier("localActions")));
                     var callStmt = MkZingCallStmt(
@@ -1582,7 +1631,7 @@ namespace PCompiler
                                    MkZingDot(machineStateTypeName, string.Format("_{0}", targetStateName))
                                    ));
                     var pop = MkZingAssign(MkZingIdentifier("localActions"), MkZingDot("localActions", "next"));
-                    var restore = MkZingSeq(MkZingAssign(stackDeferredSet, savedDeferredSet), MkZingAssign(stackActionSet, savedActionSet));
+                    var restore = MkZingSeq(MkZingAssign(stackDeferredSet, savedDeferredSet), MkZingAssign(stackActionSet, savedActionSet), MkZingAssign(inStableState, savedInStableState));
                     var ite = Compiler.AddArgs(
                         ZingData.App_ITE,
                         MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
@@ -1602,7 +1651,12 @@ namespace PCompiler
                 {
                     var targetStateName = ordinaryTransitions[eventName].target;
                     var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingEvent(eventName));
-                    ordinaryTransitionStmt = Compiler.AddArgs(ZingData.App_ITE, condExpr, Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + targetStateName)), ordinaryTransitionStmt);
+                    AST<Node> jumpStmt = ZingData.Cnst_Nil;
+                    if (ordinaryTransitions[eventName].isFair) {
+                        jumpStmt = MkZingCallStmt(MkZingCall(MkZingDot(GetFairTransitionMonitorName(stateName, eventName), "ExitFairTransition")));
+                    }
+                    jumpStmt = MkZingSeq(jumpStmt, Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + targetStateName)));
+                    ordinaryTransitionStmt = Compiler.AddArgs(ZingData.App_ITE, condExpr, jumpStmt, ordinaryTransitionStmt);
                 }
 
                 blocks.Add(Compiler.AddArgs(ZingData.App_LabelStmt, transitionLabel, MkZingSeq(actionStmt, callTransitionStmt, exitFunction, ordinaryTransitionStmt)));
@@ -2329,7 +2383,7 @@ namespace PCompiler
 
                     var stateName = it.Current.stateName;
 
-                    if (compiler.allMachines[machineName].stateNameToStateInfo[stateName].nIncommingTransitions > 0)
+                    if (compiler.allMachines[machineName].stateNameToStateInfo[stateName].nIncomingTransitions > 0)
                     {
                         compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Have both transitions and calls into state {0}", stateName), 0, compiler.CompilingProgram));
                         return null;
@@ -3238,7 +3292,6 @@ namespace PCompiler
                     it.MoveNext();
                     var condExpr = it.Current;
                     it.MoveNext();
-                    var body = it.Current.node;
 
                     if (condExpr == null || it.Current == null)
                     {
@@ -3268,6 +3321,7 @@ namespace PCompiler
                     var loopStart = compiler.getUnique(entityName + "_loop_start");
                     var loopEnd = compiler.getUnique(entityName + "_loop_end");
 
+                    var body = it.Current.node;
                     body = ctxt.emitZingSideEffects(zingWrapExprToStmts(body));
 
                     var res = MkZingLabeledStmt(loopStart, MkZingSeq(
@@ -4054,6 +4108,9 @@ namespace PCompiler
             var objectName = string.Format("o_{0}", machineName);
             var parameters = LocalVariablesToVarDecls(compiler.allMachines[machineName].localVariableToVarInfo.Keys, compiler.allMachines[machineName].localVariableToVarInfo);
             var localVars = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl(objectName, Factory.Instance.MkCnst(machineName)), ZingData.Cnst_Nil);
+            localVars = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl("fairScheduler", Factory.Instance.MkCnst("FairScheduler")), localVars);
+            localVars = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl("fairTransition", Factory.Instance.MkCnst("FairTransition")), localVars);
+
             var machineInstance = MkZingIdentifier(string.Format("{0}_instance", machineName));
             var body = MkZingSeq(
                     MkZingAssign(MkZingIdentifier(objectName), Compiler.AddArgs(ZingData.App_New, Factory.Instance.MkCnst(machineName), ZingData.Cnst_Nil)),
@@ -4064,6 +4121,27 @@ namespace PCompiler
                     MkZingAssign(MkZingDot(objectName, "stackActionSet"), Compiler.AddArgs(ZingData.App_New, Factory.Instance.MkCnst("SM_EVENT_SET"), ZingData.Cnst_Nil)),
                     MkZingAssign(MkZingDot(objectName, "localActions"), MkZingCall(MkZingDot("LocalActions", "Construct"), MkZingIdentifier("null")))
                     );
+            if (compiler.allMachines[machineName].isFair)
+            {
+                body = MkZingSeq(body,
+                                 MkZingAssign(MkZingIdentifier("fairScheduler"), Compiler.AddArgs(ZingData.App_New, Factory.Instance.MkCnst("FairScheduler"), ZingData.Cnst_Nil)),
+                                 MkZingCallStmt(MkZingCall(MkZingDot("FairScheduler", "Init"), MkZingIdentifier("fairScheduler"), MkZingDot(objectName, "myHandle"))),
+                                 MkZingCallStmt(MkZingCall(MkZingDot("FairScheduler", "Add"), MkZingIdentifier("fairScheduler"))));
+            }
+            foreach (var stateName in compiler.allMachines[machineName].stateNameToStateInfo.Keys)
+            {
+                var stateInfo = compiler.allMachines[machineName].stateNameToStateInfo[stateName];
+                foreach (var eventName in stateInfo.transitions.Keys)
+                {
+                    if (!stateInfo.transitions[eventName].isFair) continue;
+                    body = MkZingSeq(body,
+                                     MkZingAssign(MkZingIdentifier("fairTransition"), Compiler.AddArgs(ZingData.App_New, Factory.Instance.MkCnst("FairTransition"), ZingData.Cnst_Nil)),
+                                     MkZingCallStmt(MkZingCall(MkZingDot("FairTransition", "Init"), MkZingIdentifier("fairTransition"))),
+                                     MkZingCallStmt(MkZingCall(MkZingDot("FairTransition", "Add"), MkZingIdentifier("fairTransition"))),
+                                     MkZingAssign(MkZingDot(objectName, GetFairTransitionMonitorName(stateName, eventName)), MkZingIdentifier("fairTransition")));
+                }
+            }
+
             foreach (var v in compiler.allMachines[machineName].localVariableToVarInfo.Keys)
             {
                 body = MkZingSeq(body, MkZingAssign(MkZingDot(objectName, v), MkZingIdentifier(v)));

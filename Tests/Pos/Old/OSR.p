@@ -263,7 +263,7 @@ machine OSRDriver {
 	
 	state sUpdatingBarGraphStateDriver {
 		ignore eD0Entry;
-		defer eD0Exit, eSwitchStatusChange, eTimerFired, eTimerStopped;
+		defer eD0Exit, eSwitchStatusChange;
 		entry {
 			UpdateBarGraphStateUsingControlTransfer();
 		}
@@ -274,7 +274,7 @@ machine OSRDriver {
 	}
 	
 	state sUpdatingLedStateToUnstableDriver {
-		defer eD0Exit, eSwitchStatusChange, eTimerFired, eTimerStopped;
+		defer eD0Exit, eSwitchStatusChange;
 		ignore eD0Entry;
 		
 		entry {
@@ -298,7 +298,7 @@ machine OSRDriver {
 		
 	state sUpdatingLedStateToStableDriver {
 		ignore eD0Entry;
-		defer eD0Exit, eSwitchStatusChange, eTimerFired, eTimerStopped;
+		defer eD0Exit, eSwitchStatusChange;
 		
 		entry {
 			SetLedStateToStableUsingControlTransfer();
@@ -309,7 +309,7 @@ machine OSRDriver {
 	
 	state sStoppingTimerOnStatusChangeDriver {
 		ignore eD0Entry;
-		defer eD0Exit, eSwitchStatusChange, eTransferSuccess, eTransferFailure;
+		defer eD0Exit, eSwitchStatusChange;
 		
 		entry {
 			raise(eUnit);
@@ -319,7 +319,7 @@ machine OSRDriver {
 	}
 	
 	state sStoppingTimerOnD0ExitDriver {
-		defer eD0Exit, eSwitchStatusChange, eTransferSuccess, eTransferFailure;
+		defer eD0Exit, eSwitchStatusChange;
 		ignore eD0Entry;
 		
 		entry {
@@ -343,7 +343,7 @@ machine OSRDriver {
 	}
 	
 	state sWaitingForTimerToFlushDriver {
-		defer eD0Exit, eSwitchStatusChange, eTransferSuccess, eTransferFailure;
+		defer eD0Exit, eSwitchStatusChange;
 		ignore eD0Entry;
 		
 		entry {}

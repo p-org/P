@@ -1433,8 +1433,8 @@ namespace PCompiler
             var savedInStableState = MkZingIdentifier("savedStable");
 
             string traceString = type == TranslationContext.Action
-                                    ? string.Format("\"<ActionLog> Machine {0}-{{0}} reentered Action {1}\"", machineName, entityName)
-                                    : string.Format("\"<StateLog> Machine {0}-{{0}} reentered State {1}\"", machineName, entityName);
+                                    ? string.Format("\"<ReEntryLog> Machine {0}-{{0}} reentered Action {1}\"", machineName, entityName)
+                                    : string.Format("\"<ReEntryLog> Machine {0}-{{0}} reentered State {1}\"", machineName, entityName);
 
             var restoreCurrentEvent = MkZingAssign(currentEvent, savedCurrentEvent);
             var restoreCurrentArg = MkZingAssign(currentArg, savedCurrentArg);

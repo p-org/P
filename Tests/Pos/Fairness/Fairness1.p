@@ -70,6 +70,6 @@ fair machine Receiver {
 		entry {
 			send(sender, B);
 		}
-		on A fair goto Respond;
+		on A goto Respond;
 	}
 }

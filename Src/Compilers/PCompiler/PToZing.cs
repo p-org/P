@@ -4116,6 +4116,7 @@ namespace PCompiler
                     MkZingAssign(MkZingDot(objectName, "myHandle"),
                                  MkZingCall(MkZingDot("SM_HANDLE", "Construct"), MkZingDot("Machine", string.Format("_{0}", machineName)), machineInstance, Factory.Instance.MkCnst(compiler.allMachines[machineName].maxQueueSize))),
                     MkZingAssign(machineInstance, MkZingApply(ZingData.Cnst_Add, machineInstance, Factory.Instance.MkCnst(1))),
+                    MkZingAssign(MkZingDot(objectName, "stackStable"), ZingData.Cnst_False),
                     MkZingAssign(MkZingDot(objectName, "stackDeferredSet"), Compiler.AddArgs(ZingData.App_New, Factory.Instance.MkCnst("SM_EVENT_SET"), ZingData.Cnst_Nil)),
                     MkZingAssign(MkZingDot(objectName, "stackActionSet"), Compiler.AddArgs(ZingData.App_New, Factory.Instance.MkCnst("SM_EVENT_SET"), ZingData.Cnst_Nil)),
                     MkZingAssign(MkZingDot(objectName, "localActions"), MkZingCall(MkZingDot("LocalActions", "Construct"), MkZingIdentifier("null")))

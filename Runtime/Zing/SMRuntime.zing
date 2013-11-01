@@ -56,11 +56,6 @@ class SM_HANDLE {
     	assert (e != null);
 		assert (e != Main.default_SM_EVENT);
 
-		if (maxBufferSize != -1 && buffer.eventBufferSize >= maxBufferSize)
-		{
-			trace("<EXCEPTION> Event Buffer Size Exceeded {0} in Machine {1}-{2}", maxBufferSize, machineName, instance);
-			assert(buffer.eventBufferSize < maxBufferSize);
-		}
 		if (arg != null)
 		{
 			if (arg.d == Discriminator.Bool)
@@ -78,6 +73,12 @@ class SM_HANDLE {
 		}
 
 		buffer.EnqueueEvent(e, arg);
+		if (maxBufferSize != -1 && buffer.eventBufferSize > maxBufferSize)
+		{
+			trace("<EXCEPTION> Event Buffer Size Exceeded {0} in Machine {1}-{2}", maxBufferSize, machineName, instance);
+			assert(false);
+		}
+		blocked = false;
 		invokescheduler("push", machineId);
     }
 	
@@ -317,6 +318,7 @@ class FairScheduler {
 		if (sizeof(FairTransition.accepted) == sizeof(FairTransition.all) && 
 			sizeof(FairScheduler.accepted) == sizeof(FairScheduler.all)) 
 		{
+			trace("Accepting transition");
 			accept(true);
       	    FairTransition.accepted = new FairTransitions;
 			FairScheduler.accepted = new FairSchedulers;
@@ -373,6 +375,7 @@ class FairTransition {
 		if (sizeof(FairTransition.accepted) == sizeof(FairTransition.all) && 
 			sizeof(FairScheduler.accepted) == sizeof(FairScheduler.all)) 
 		{
+			trace("Accepting transition");
 			accept(true);
       	    FairTransition.accepted = new FairTransitions;
 			FairScheduler.accepted = new FairSchedulers;

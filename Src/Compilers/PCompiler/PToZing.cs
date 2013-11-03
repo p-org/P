@@ -2396,6 +2396,10 @@ namespace PCompiler
                     return new ZingTranslationInfo(res, new PNilType());
                 }
             }
+            else if (funName == PData.Con_Ecall.Node.Name)
+            {
+                return null;
+            }
             else if (funName == PData.Con_Seq.Node.Name)
             {
                 using (var it = children.GetEnumerator())

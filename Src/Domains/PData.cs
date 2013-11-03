@@ -89,6 +89,7 @@
         public static readonly AST<Id> Con_Send = Factory.Instance.MkId("Send");
         public static readonly AST<Id> Con_Raise = Factory.Instance.MkId("Raise");
         public static readonly AST<Id> Con_Scall = Factory.Instance.MkId("Scall");
+        public static readonly AST<Id> Con_Ecall = Factory.Instance.MkId("Ecall");
         public static readonly AST<Id> Con_Tuple = Factory.Instance.MkId("Tuple");
         public static readonly AST<Id> Con_NamedTuple = Factory.Instance.MkId("NamedTuple");
         public static readonly AST<Id> Con_ITE = Factory.Instance.MkId("ITE");

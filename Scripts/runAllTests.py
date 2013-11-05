@@ -111,7 +111,7 @@ for f in elaborateFiles(args.files):
 
     print("Running zc");
     shutil.copy(zingRT, join(out, "SMRuntime.zing"));
-    ret = check_call([zc, zingFile, "SMRuntime.zing", '/out:' + zingDll], \
+    ret = check_call([zc, zingFile, "-nowarning:292", "SMRuntime.zing", '/out:' + zingDll], \
         cwd=out);
     os.remove(join(out, "SMRuntime.zing"));
 

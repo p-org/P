@@ -280,12 +280,17 @@ IsFair
 	|															{ $$.b = false; }
 	;
 
+StmtBlockOrNull
+	: StmtBlock																	{ $$.stmt = $1.stmt; }
+	|																			{ $$.stmt = null; }
+	;
+
 StateBodyItem
 	: ENTRY StmtBlock								{ $$.node = new EntryFunction((DSLBlock)$2.stmt); setLoc($$.node, @1, @2);}
 	| EXIT StmtBlock								{ $$.node = new ExitFunction((DSLBlock)$2.stmt); setLoc($$.node, @1, @2);}
 	| DEFER NonDefaultEventList SEMICOLON			{ $$.node = new Defer($2.slst); setLoc($$.node, @1, @3);}
 	| IGNORE NonDefaultEventList SEMICOLON			{ $$.node = new Ignore($2.slst); setLoc($$.node, @1, @3);}
-	| ON EventList IsFair GOTO ID SEMICOLON		{ $$.node = new Transition($2.slst, $5.s, $3.b); setLoc($$.node, @1, @6);}
+	| ON EventList IsFair GOTO ID StmtBlockOrNull SEMICOLON			{ $$.node = new Transition($2.slst, $5.s, $3.b, (DSLBlock)$6.stmt); setLoc($$.node, @1, @7);}
 	| ON EventList PUSH ID SEMICOLON				{ $$.node = new CallTransition($2.slst, $4.s); setLoc($$.node, @1, @5);}
 	| ON EventList DO ID SEMICOLON					{ $$.node = new Action($2.slst, $4.s); setLoc($$.node, @1, @5);}
 	;

@@ -666,8 +666,8 @@ namespace PParser
         public List<string> on;
         public string targetState;
 
-        public BaseTransition(List<string> on, string target)
-            : base()
+        public BaseTransition(List<string> on, string target, DSLBlock block)
+            : base(block)
         {
             this.on = on;
             this.targetState = target;
@@ -676,14 +676,16 @@ namespace PParser
 
     public sealed class Transition : BaseTransition {
         public bool isFair;
-        public Transition(List<string> on, string target, bool isFair) : base(on, target) 
+        public DSLBlock block;
+        public Transition(List<string> on, string target, bool isFair, DSLBlock block) : base(on, target, block) 
         { 
             this.isFair = isFair;
+            this.block = block;
         }
     }
 
     public sealed class CallTransition : BaseTransition {
-        public CallTransition(List<string> on, string target) : base(on, target) { }
+        public CallTransition(List<string> on, string target) : base(on, target, null) { }
     }
 
     public sealed class Action : BaseNode, IStateBodyItem

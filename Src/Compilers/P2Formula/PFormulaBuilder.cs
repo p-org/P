@@ -350,35 +350,55 @@ namespace PParser
         public override IEnumerable<AST<Node>> visit(StateDeclaration s)
         {
             AST<Node> entry = null;
+            AST<Node> exit = null;
             List<AST<Node>> retFacts = new List<AST<Node>>();
             var stateName = sem.resolve(s, s.id);
             var deferSetName = stateName + "_Defer";
             
-
             // Find entry function and get its body
             foreach(INode child in s.children) {
                 if (child is EntryFunction)
                     entry = getOne((child as EntryFunction).body);
             }
-
             entry = (entry == null) ? P_FormulaNodes.Nil_Iden : entry;
 
-            bool hasDefered = false;
+            // Find exit function and get its body
+            foreach (INode child in s.children)
+            {
+                if (child is ExitFunction)
+                    exit = getOne((child as ExitFunction).body);
+            }
+            exit = (exit == null) ? P_FormulaNodes.Nil_Iden : exit;
+            foreach (INode child in s.children)
+            {
+                Transition trans = child as Transition;
+                if (trans == null || trans.block == null) continue;
+                var transBlock = getOne(trans.block);
+                AST<Node> condExpr = fMkCnst(false);
+                foreach (var e in trans.on)
+                {
+                    var useExpr = fMkFuncTerm(P_FormulaNodes.Use_Iden, fMkCnst(e), P_FormulaNodes.EventKind_Iden);
+                    var eqExpr = fMkFuncTerm(P_FormulaNodes.Apply_Iden, P_FormulaNodes.EqEq_Iden, fMkExprs(P_FormulaNodes.Trigger_Iden, useExpr));
+                    condExpr = fMkFuncTerm(P_FormulaNodes.Apply_Iden, P_FormulaNodes.Or_Iden, fMkExprs(eqExpr, condExpr));
+                }
+                exit = fMkFuncTerm(P_FormulaNodes.ITE_Iden, condExpr, transBlock, exit);
+            }
+
+            bool hasDeferred = false;
             // Find the Defer child
             foreach (INode child in s.children)
             {
                 if (child is Defer)
                 {   // For each event in its event list add an InEventSet fact
                     foreach(string evt in (child as Defer).events) {
-                        hasDefered = true;
+                        hasDeferred = true;
                         retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.InEventSet_Iden, fMkId(deferSetName), fMkId(evt))));
                     }
                 }
-
             }
             
             // If we have a non-empty defered set, then add the StateSetDecl for it.
-            if (hasDefered)
+            if (hasDeferred)
                 retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.EventSetDecl_Iden, fMkCnst(deferSetName), curMachine), deferSetName));
 
             // If this is a start state, add the MachStart term.
@@ -389,8 +409,11 @@ namespace PParser
             if (s.isStable)
                 retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.Stable_Iden, fMkId(stateName))));
 
+            // add the exit function
+            retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.ExitFun_Iden, fMkId(stateName), exit)));
+
             // add the StateDecl node itself
-            retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.StateDecl_Iden, fMkCnst(stateName), curMachine, entry, (hasDefered ? fMkId(deferSetName) : P_FormulaNodes.Nil_Iden)), stateName));
+            retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.StateDecl_Iden, fMkCnst(stateName), curMachine, entry, (hasDeferred ? fMkId(deferSetName) : P_FormulaNodes.Nil_Iden)), stateName));
 
             // Finally add all the node created by the children
             retFacts.AddRange(allChildTerms(s));
@@ -398,10 +421,7 @@ namespace PParser
         }
         // State Declarations
         public override IEnumerable<AST<Node>> visit(EntryFunction s) { return default(IEnumerable<AST<Node>>); } // This one is folded in the StateDecl visitor
-        public override IEnumerable<AST<Node>> visit(ExitFunction s)
-        {
-            return wrap(fMkModelFact(fMkFuncTerm(P_FormulaNodes.ExitFun_Iden, curState, getOne(s.body))));
-        }
+        public override IEnumerable<AST<Node>> visit(ExitFunction s) { return default(IEnumerable<AST<Node>>); } // This one is folded in the StateDecl visitor
 
         public override IEnumerable<AST<Node>> visit(Defer s) { return default(IEnumerable<AST<Node>>); }   // This is folded in StateDecl visitor
         public override IEnumerable<AST<Node>> visit(Ignore s) {

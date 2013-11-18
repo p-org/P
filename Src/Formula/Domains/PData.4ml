@@ -45,7 +45,7 @@ domain FuncData
     ITE    ::= new (cond: any Expr, true: any Stmt, false: any Stmt).
     While  ::= new (cond: any Expr, body: any Stmt).
     Seq    ::= new (s1: any Stmt, s2: any Stmt).
-    Stmt   ::= DataOp + Assert + Return + Assign + Send + Raise + Scall + ITE + Call + While + Seq + { NIL, LEAVE, DELETE }.
+    Stmt   ::= DataOp + Assert + Return + Assign + Send + Raise + Scall + ITE + Call + While + Seq + Ecall + { NIL, LEAVE, DELETE }.
 }
 
 domain PData extends FuncData

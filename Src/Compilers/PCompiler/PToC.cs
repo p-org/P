@@ -3415,6 +3415,10 @@ Environment:
             {
                 return new CTranslationInfo(CData.Cnst_Nil(n.Span));
             }
+            else if (funName == PData.Con_Strings.Node.Name)
+            {
+                return new CTranslationInfo(CData.Cnst_Nil(n.Span));
+            }
             else if (funName == PData.Con_Seq.Node.Name)
             {
                 using (var it = children.GetEnumerator())

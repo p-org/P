@@ -71,6 +71,7 @@
         public static readonly AST<Id> Con_Use = Factory.Instance.MkId("Use");
         public static readonly AST<Id> Con_Apply = Factory.Instance.MkId("Apply");
         public static readonly AST<Id> Con_Exprs = Factory.Instance.MkId("Exprs");
+        public static readonly AST<Id> Con_Strings = Factory.Instance.MkId("Strings");
         public static readonly AST<Id> Con_NamedExprs = Factory.Instance.MkId("NamedExprs");
         public static readonly AST<Id> Con_New = Factory.Instance.MkId("New");
         public static readonly AST<Id> Con_Call = Factory.Instance.MkId("Call");
@@ -128,6 +129,7 @@
         public static readonly AST<FuncTerm> App_Payload = Factory.Instance.MkFuncTerm(Con_Payload);
         public static readonly AST<FuncTerm> App_Use = Factory.Instance.MkFuncTerm(Con_Use);
         public static readonly AST<FuncTerm> App_Apply = Factory.Instance.MkFuncTerm(Con_Apply);
+        public static readonly AST<FuncTerm> App_Strings = Factory.Instance.MkFuncTerm(Con_Strings);
         public static readonly AST<FuncTerm> App_Exprs = Factory.Instance.MkFuncTerm(Con_Exprs);
         public static readonly AST<FuncTerm> App_Inits = Factory.Instance.MkFuncTerm(Con_NamedExprs);
         public static readonly AST<FuncTerm> App_New = Factory.Instance.MkFuncTerm(Con_New);

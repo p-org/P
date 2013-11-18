@@ -645,7 +645,7 @@ namespace PParser
             {
                 string[] names = e.fname.Split(new string[] { "__" }, StringSplitOptions.None);
                 AST<Node> nameList = P_FormulaNodes.Nil_Iden;
-                for (int i = names.Length - 1; i >= 0; i--)
+                for (int i = names.Length - 1; i > 0; i--)
                 {
                     nameList = fMkFuncTerm(P_FormulaNodes.Strings_Iden, fMkCnst(names[i]), nameList);
                 }

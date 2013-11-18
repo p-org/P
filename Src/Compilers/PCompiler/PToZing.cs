@@ -2381,6 +2381,10 @@ namespace PCompiler
             {
                 return null;
             }
+            else if (funName == PData.Con_Strings.Node.Name)
+            {
+                return null;
+            }
             else if (funName == PData.Con_Seq.Node.Name)
             {
                 using (var it = children.GetEnumerator())
@@ -2568,7 +2572,7 @@ namespace PCompiler
                         compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Use of undeclared variable {0}.", varName), 0, compiler.CompilingProgram));
                         return null;
                     }
-                    
+
                     return new ZingTranslationInfo(MkZingIdentifier(varName), varInfo.type);
                 }
                 else if (kind.Name == PData.Cnst_Event.Node.Name)
@@ -2899,7 +2903,7 @@ namespace PCompiler
                     if (it.Current == null)
                         return null;
 
-                    ZingTranslationInfo info = (ZingTranslationInfo) it.Current.Clone();
+                    ZingTranslationInfo info = (ZingTranslationInfo)it.Current.Clone();
                     info.node = Compiler.AddArgs(Compiler.App_LabeledExpr, Factory.Instance.ToAST(Compiler.GetArgByIndex(ft, 0)), info.node);
                     return info;
                 }
@@ -2972,9 +2976,9 @@ namespace PCompiler
                         ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewM"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)))));
                     }
                     return new ZingTranslationInfo(
-                        MkZingCreateMachineCall(ctxt, typeName, inits.Node), 
-                        compiler.allMachines[typeName].isModel ? (PType) new PMidType() : (PType) new PIdType(), 
-                        true, 
+                        MkZingCreateMachineCall(ctxt, typeName, inits.Node),
+                        compiler.allMachines[typeName].isModel ? (PType)new PMidType() : (PType)new PIdType(),
+                        true,
                         afterLabel);
 
                 }

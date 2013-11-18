@@ -31,7 +31,7 @@ start state init {
 
 main machine Ghost {
     var local:int;
-	var real : mid;
+	var real : id;
 	foreign fun createMachine()
 	{	
 		real = new Real(setme = 1);

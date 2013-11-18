@@ -23,7 +23,7 @@ start state init {
 
 main ghost machine Ghost {
     var local:int;
-	var real : mid;
+	var real : id;
 	foreign fun createMachine()
 	{	
 		real = new Real(setme = 1);

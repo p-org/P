@@ -6,7 +6,7 @@ domain FuncData
        
     //// The basic type id accepts any machine.
     MachType        ::= new (name: String).
-    TypePrimitive   ::= { BOOL, INT, EVENT, ID }.
+    TypePrimitive   ::= { BOOL, INT, EVENT, ID, MID }.
     TypeTuple       ::= new (hd: any AllTypes, tl: any TypeTuple + { NIL }).
     TypeField       ::= new (name: any String, type: any AllTypes).
     TypeNamedTuple  ::= new (hd: any TypeField, tl: any TypeNamedTuple + { NIL }).

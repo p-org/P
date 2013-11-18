@@ -82,7 +82,8 @@ NonSMCntrChars  [^\'\"\n\r]*
 "bool"									   { return (int)PTokens.T_BOOL;  }
 "any"									   { return (int)PTokens.T_ANY;  }
 "eid"							           { return (int)PTokens.T_EVENTID;  }
-"mid"									   { return (int)PTokens.T_MACHINEID;  }
+"id"									   { return (int)PTokens.T_MACHINEID;  }
+"mid"									   { return (int)PTokens.T_MODELMACHINEID;  }
 "seq"									   { return (int)PTokens.T_SEQ;  }
 "map"									   { return (int)PTokens.T_MAP; }
 

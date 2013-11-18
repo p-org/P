@@ -74,7 +74,7 @@ try:
     if (args.zc):
         print("Running zc")
         shutil.copy(zingRT, join(out, "SMRuntime.zing"));
-        check_output([zc, zingFile, "SMRuntime.zing", '/out:' + zingDll], \
+        check_output([zc, "-nowarning:292", zingFile, "SMRuntime.zing", '/out:' + zingDll], \
             cwd=out)
         os.remove(join(out, "SMRuntime.zing"));
 

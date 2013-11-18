@@ -3,7 +3,7 @@
 
 event nondeteventT:bool;
 event nondeteventF:bool;
-event done;
+event done:bool;
 event unit:bool;
 
 machine Real {
@@ -32,7 +32,7 @@ start state init {
 
 main machine Ghost {
     var local:int;
-	var real : mid;
+	var real : id;
 	var choiceval:bool;
 	foreign fun createMachine()
 	{	
@@ -58,7 +58,7 @@ main machine Ghost {
 		entry {
 			createMachine();
 			nondetsend();
-			raise(done, choiceval);
+			raise(unit, choiceval);
         }
 		on done goto endstate;
     }

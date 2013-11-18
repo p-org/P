@@ -12,7 +12,7 @@ start state init {
 
 main ghost machine Ghost {
     var local:int;
-	var real : mid;
+	var real : id;
 	foreign fun createMachine(): int
 	{	
 		real = new Real(ghostm = this, setme = 1);

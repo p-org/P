@@ -593,6 +593,7 @@ namespace PParser
         public override BaseScope visit_pre(TypeField n) { return current; }
         public override BaseScope visit_pre(TypeNamedTuple n) { return current;  }
         public override BaseScope visit_pre(TypeMachineID n) { return current; }
+        public override BaseScope visit_pre(TypeModelMachineID n) { return current; }
         public override BaseScope visit_pre(TypeInt n) { return current; }
         public override BaseScope visit_pre(TypeEventID n) { return current; }
         public override BaseScope visit_pre(TypeBool n) { return current; }

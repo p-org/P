@@ -107,7 +107,7 @@ main machine Employee {
 }
 
 ghost machine TravelAgent {
-    var EmployeeId: mid;
+    var EmployeeId: id;
     start state Init { 
         on BookFlight goto SBookFlight;
     }
@@ -122,7 +122,7 @@ ghost machine TravelAgent {
 }
 
 ghost machine CityCab {
-    var EmployeeId: mid;
+    var EmployeeId: id;
 
     start state Init { 
 		ignore Thanks;

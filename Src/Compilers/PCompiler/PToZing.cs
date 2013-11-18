@@ -65,17 +65,32 @@ namespace PCompiler
     }
 
 
-    internal class ZingTranslationInfo
+    internal class ZingTranslationInfo : ICloneable
     {
-        public AST<Node> node;
-        public PType type;
-        public bool isGhost;
-        public string stateName;
-        public bool isMapIndex;
-        public bool isKeys;
-        public bool isNew;
-        public string newAfterLabel;
+        public AST<Node> node = null;
+        public PType type = null;
+        public string stateName = null;
+        public bool isMapIndex = false;
+        public bool isKeys = false;
+        public bool isNew = false;
+        public string newAfterLabel = null;
+        public bool isForeign = false;
 
+        private ZingTranslationInfo() { }
+        public object Clone()
+        {
+            ZingTranslationInfo info = new ZingTranslationInfo();
+            info.node = node;
+            info.type = type;
+            info.stateName = stateName;
+            info.isMapIndex = isMapIndex;
+            info.isKeys = isKeys;
+            info.isNew = isNew;
+            info.newAfterLabel = newAfterLabel;
+            info.isForeign = isForeign;
+            return info;
+        }
+          
         private PType primitiveTypeFromStr(string s)
         {
             switch (s)
@@ -84,6 +99,7 @@ namespace PCompiler
                 case "BOOL": return new PBoolType();
                 case "INT": return new PIntType();
                 case "ID": return new PIdType();
+                case "MID": return new PMidType();
                 case "EVENT": return new PEventType(null);
                 case "STATE": return new PStateType();
                 default:
@@ -95,66 +111,29 @@ namespace PCompiler
         {
             this.node = n;
             this.type = t;
-            this.isGhost = false;
-            this.stateName = null;
-            this.isKeys = false;
-            this.isNew = false;
-            this.newAfterLabel = null;
         }
 
-        public ZingTranslationInfo(AST<Node> n, PType t, bool isGhost)
+        public ZingTranslationInfo(AST<Node> n, PType t, string stateName)
         {
             this.node = n;
             this.type = t;
-            this.isGhost = isGhost;
-            this.stateName = null;
-            this.isKeys = false;
-            this.isNew = false;
-            this.newAfterLabel = null;
-        }
-
-        public ZingTranslationInfo(AST<Node> n, PType t, bool isGhost, string stateName)
-        {
-            this.node = n;
-            this.type = t;
-            this.isGhost = isGhost;
             this.stateName = stateName;
-            this.isKeys = false;
-            this.isNew = false;
-            this.newAfterLabel = null;
         }
 
-        public ZingTranslationInfo(AST<Node> n, PType t, bool isGhost, bool isNew, string afterlabel)
+        public ZingTranslationInfo(AST<Node> n, PType t, bool isNew, string afterlabel)
         {
             this.node = n;
             this.type = t;
-            this.isGhost = isGhost;
-            this.stateName = null;
-            this.isKeys = false;
             this.isNew = isNew;
             this.newAfterLabel = afterlabel;
         }
 
-        public ZingTranslationInfo(AST<Node> n, PType t, bool isGhost, string stateName, bool isMapIndex)
+        public ZingTranslationInfo(AST<Node> n, PType t, bool isMapIndex, bool isKeys)
         {
             this.node = n;
             this.type = t;
-            this.isGhost = isGhost;
-            this.stateName = stateName;
-            this.isMapIndex = isMapIndex;
-            this.isKeys = false;
-        }
-
-        public ZingTranslationInfo(AST<Node> n, PType t, bool isGhost, string stateName, bool isMapIndex, bool isKeys)
-        {
-            this.node = n;
-            this.type = t;
-            this.isGhost = isGhost;
-            this.stateName = stateName;
             this.isMapIndex = isMapIndex;
             this.isKeys = isKeys;
-            this.isNew = false;
-            this.newAfterLabel = null;
         }
     }
 
@@ -221,13 +200,11 @@ namespace PCompiler
 
     internal class VariableInfo
     {
-        public bool isGhost;
         public PType type;
 
-        public VariableInfo(PType type, bool isGhost)
+        public VariableInfo(PType type)
         {
             this.type = type;
-            this.isGhost = isGhost;
         }
     }
 
@@ -728,6 +705,7 @@ namespace PCompiler
                                 (t2 is PTupleType && t1 is PTupleType) ||
                                 (t2 is PNamedTupleType && t1 is PNamedTupleType) ||
                                 (t2 is PIdType && t1 is PNilType) ||
+                                (t2 is PMidType && t1 is PNilType) ||
                                 (t2 is PEventType && t1 is PNilType) ||
                                 (t2 is PSeqType && t1 is PSeqType));
                         }
@@ -1228,6 +1206,10 @@ namespace PCompiler
                 {
                     return MkZingEq(super, getZingDefault(ctxt, PType.Id));
                 }
+                if (supT is PMidType && subT is PNilType)
+                {
+                    return MkZingEq(super, getZingDefault(ctxt, PType.Mid));
+                }
                 else if (supT is PEventType && subT is PNilType)
                 {
                     return MkZingEq(super, getZingDefault(ctxt, PType.Event));
@@ -1252,7 +1234,7 @@ namespace PCompiler
             }
             else
             {
-                Debug.Assert(fromT is PIdType || fromT is PEventType);
+                Debug.Assert(fromT is PIdType || fromT is PMidType || fromT is PEventType);
                 return MkZingEq(from, MkZingIdentifier("null"));
             }
         }
@@ -2012,7 +1994,7 @@ namespace PCompiler
                 {
                     rhsNode = MkZingCall(MkZingDot(pTypeToZingClassName(lhsType), getZingUpCastName(rhsType)), rhs);
                 }
-                else if (lhsType is PIdType || lhsType is PEventType)
+                else if (lhsType is PIdType || lhsType is PMidType || lhsType is PEventType)
                 {
                     Debug.Assert(rhsType is PNilType);
                     rhsNode = MkZingIdentifier("null");
@@ -2067,7 +2049,7 @@ namespace PCompiler
                     var id = (Id)n;
                     if (id.Name == PData.Cnst_This.Node.Name)
                     {
-                        return new ZingTranslationInfo(MkZingIdentifier("myHandle"), new PIdType(), compiler.allMachines[ctxt.machineName].isGhost);
+                        return new ZingTranslationInfo(MkZingIdentifier("myHandle"), compiler.allMachines[ctxt.machineName].isGhost ? (PType) new PMidType() : (PType) new PIdType());
                     }
                     else if (id.Name == PData.Cnst_Trigger.Node.Name)
                     {
@@ -2092,13 +2074,22 @@ namespace PCompiler
                     }
                     else if (id.Name == PData.Cnst_Nondet.Node.Name)
                     {
-                        var afterLabel = ctxt.getFreshLabel();
-                        var bvar = ctxt.getTmpVar(PType.Bool, "nondet");
-                        ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Nondet"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)))));
-                        ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
-                        ctxt.addSideEffect(MkZingLabeledStmt(afterLabel, MkZingAssign(bvar, MkZingDot("entryCtxt", "nondet"))));
-                        ctxt.addSideEffect(MkZingAssign(MkZingDot("entryCtxt", "nondet"), ZingData.Cnst_False));
-                        return new ZingTranslationInfo(bvar, new PBoolType(), true);
+                        if (compiler.allMachines[ctxt.machineName].isGhost ||
+                            (ctxt.translationContext == TranslationContext.Function && compiler.allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].isForeign))
+                        {
+                            var afterLabel = ctxt.getFreshLabel();
+                            var bvar = ctxt.getTmpVar(PType.Bool, "nondet");
+                            ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Nondet"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)))));
+                            ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
+                            ctxt.addSideEffect(MkZingLabeledStmt(afterLabel, MkZingAssign(bvar, MkZingDot("entryCtxt", "nondet"))));
+                            ctxt.addSideEffect(MkZingAssign(MkZingDot("entryCtxt", "nondet"), ZingData.Cnst_False));
+                            return new ZingTranslationInfo(bvar, new PBoolType());
+                        }
+                        else
+                        {
+                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Nondeterministic choice allowed only in model machines or model functions.", entityName), 0, compiler.CompilingProgram));
+                            return null;
+                        }
                     }
                     else if (id.Name == PData.Cnst_Leave.Node.Name)
                     {
@@ -2173,7 +2164,7 @@ namespace PCompiler
                         return null;
                     }
 
-                    return new ZingTranslationInfo(Compiler.AddArgs(ZingData.App_Assert, it.Current.node), new PNilType(), it.Current.isGhost);
+                    return new ZingTranslationInfo(Compiler.AddArgs(ZingData.App_Assert, it.Current.node), new PNilType());
                 }
             }
             else if (funName == PData.Con_DataOp.Node.Name)
@@ -2182,9 +2173,10 @@ namespace PCompiler
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
+                    if (it.Current == null)
+                        return null;
                     var mutatedVar = it.Current.node;
                     var mutatedVarT = it.Current.type;
-                    bool isGhost = it.Current.isGhost;
 
                     if (op == PData.Cnst_Insert.Node.Name || op == PData.Cnst_Remove.Node.Name || op == PData.Cnst_Update.Node.Name)
                     {
@@ -2209,6 +2201,8 @@ namespace PCompiler
                     PMapType mutatedVarTAsMapType = mutatedVarT as PMapType;
 
                     it.MoveNext();
+                    if (it.Current == null)
+                        return null;
                     var ind = it.Current.node;
                     var indT = it.Current.type;
 
@@ -2229,13 +2223,6 @@ namespace PCompiler
                         }
                     }
 
-                    // Cannot index into a real variable with a ghost expr. I believe this gives the equivalent power of doing control flow on ghost conditionals.
-                    if (!isGhost && it.Current.isGhost)
-                    {
-                        compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot index a real sequence or map with a ghost expressions."), 0, compiler.CompilingProgram));
-                        return null;
-                    }
-
                     if (op == PData.Cnst_Remove.Node.Name)
                     {
                         if (it.MoveNext())
@@ -2246,25 +2233,21 @@ namespace PCompiler
 
                         if (mutatedVarTAsMapType == null)
                         {
-                            return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Remove"), ind)), new PNilType(), isGhost);
+                            return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Remove"), ind)), new PNilType());
                         }
                         else
                         {
                             var tmpKey = ctxt.getTmpVar(mutatedVarTAsMapType.KeyT, "tmpVal");
                             ctxt.addSideEffect(MkZingAssignOrCast(tmpKey, mutatedVarTAsMapType.KeyT, ind, indT));
-                            return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Remove"), tmpKey)), new PNilType(), isGhost);
+                            return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Remove"), tmpKey)), new PNilType());
                         }
                     }
 
                     it.MoveNext();
+                    if (it.Current == null)
+                        return null;
                     var val = it.Current.node;
                     var valT = it.Current.type;
-
-                    if (!isGhost && it.Current.isGhost)
-                    {
-                        compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot insert a ghost expression into a real sequence or map."), 0, compiler.CompilingProgram));
-                        return null;
-                    }
 
                     if (it.MoveNext())
                     {
@@ -2292,11 +2275,11 @@ namespace PCompiler
                         ctxt.addSideEffect(MkZingAssignOrCast(tmpVal, innerT, val, valT));
                         if (op == PData.Cnst_Insert.Node.Name)
                         {
-                            return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Insert"), ind, tmpVal)), new PNilType(), isGhost);
+                            return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Insert"), ind, tmpVal)), new PNilType());
                         }
                         else
                         {
-                            return new ZingTranslationInfo(MkZingAssign(MkZingIndex(MkZingDot(mutatedVar, "arr"), ind), tmpVal), new PNilType(), isGhost);
+                            return new ZingTranslationInfo(MkZingAssign(MkZingIndex(MkZingDot(mutatedVar, "arr"), ind), tmpVal), new PNilType());
                         }
                     }
                     else
@@ -2306,7 +2289,7 @@ namespace PCompiler
                         ctxt.addSideEffect(MkZingAssignOrCast(tmpKey, mutatedVarTAsMapType.KeyT, ind, indT));
                         var tmpVal = ctxt.getTmpVar(innerT, "tmpVal");
                         ctxt.addSideEffect(MkZingAssignOrCast(tmpVal, innerT, val, valT));
-                        return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Update"), tmpKey, tmpVal)), new PNilType(), isGhost);
+                        return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Update"), tmpKey, tmpVal)), new PNilType());
                     }
                 }
             }
@@ -2352,7 +2335,7 @@ namespace PCompiler
                         if (returnType is PNilType)
                         {
                             ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Return"))));
-                            return new ZingTranslationInfo(MkZingReturn(MkZingIdentifier("entryCtxt")), new PNilType(), it.Current.isGhost);
+                            return new ZingTranslationInfo(MkZingReturn(MkZingIdentifier("entryCtxt")), new PNilType());
                         }
                         else
                         {
@@ -2362,7 +2345,7 @@ namespace PCompiler
                                 MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "ReturnVal"), tmpRet)),
                                 MkZingReturn(MkZingIdentifier("entryCtxt")));
 
-                            return new ZingTranslationInfo(res, new PNilType(), it.Current.isGhost);
+                            return new ZingTranslationInfo(res, new PNilType());
                         }
                     }
                     else
@@ -2433,21 +2416,10 @@ namespace PCompiler
                     else
                     {
                         // type(lhs) == type(rhs)
-                        // if lhs is real or lhs is Id, isGhost(rhs) == isGhost(lhs)
                         if (!rhs.type.isSubtypeOf(lhs.type))
                         {
                             compiler.errors.Add(new Flag(SeverityKind.Error, n,
                                 string.Format("Type of left-hand side ({0}) does not match type of right-hand side ({1}) in assignment.", lhs.type, rhs.type), 0, compiler.CompilingProgram));
-                            return null;
-                        }
-                        if (!lhs.isGhost && rhs.isGhost)
-                        {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot assign ghost expression to real variable."), 0, compiler.CompilingProgram));
-                            return null;
-                        }
-                        if (lhs.type == PType.Id && lhs.isGhost != rhs.isGhost)
-                        {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot assign real expression to a ghost variable of type machine id."), 0, compiler.CompilingProgram));
                             return null;
                         }
                         if (lhs.isMapIndex)
@@ -2458,7 +2430,7 @@ namespace PCompiler
 
                         if (rhs.isKeys)
                         {
-                            return new ZingTranslationInfo(MkZingAssignOrCast(lhs.node, lhs.type, MkZingCall(MkZingDot(rhs.node, "ToSeq")), rhs.type), new PNilType(), lhs.isGhost);
+                            return new ZingTranslationInfo(MkZingAssignOrCast(lhs.node, lhs.type, MkZingCall(MkZingDot(rhs.node, "ToSeq")), rhs.type), new PNilType());
                         }
                         else if (rhs.isNew)
                         {
@@ -2467,11 +2439,11 @@ namespace PCompiler
                                 MkZingReturn(MkZingIdentifier("entryCtxt")),
                                 MkZingLabeledStmt(rhs.newAfterLabel, ZingData.Cnst_Nil)
                                 );
-                            return new ZingTranslationInfo(zingSeq, new PNilType(), lhs.isGhost);
+                            return new ZingTranslationInfo(zingSeq, new PNilType());
                         }
                         else
                         {
-                            return new ZingTranslationInfo(MkZingAssignOrCast(lhs.node, lhs.type, rhs.node, rhs.type), new PNilType(), lhs.isGhost);
+                            return new ZingTranslationInfo(MkZingAssignOrCast(lhs.node, lhs.type, rhs.node, rhs.type), new PNilType());
                         }
                     }
                 }
@@ -2500,19 +2472,6 @@ namespace PCompiler
                         (ctxt.translationContext == TranslationContext.Function) ?
                         compiler.allMachines[machineName].funNameToFunInfo[entityName].isForeign :
                         compiler.allMachines[machineName].isGhost;
-                    if (!inGhostContext)
-                    {
-                        if (condExpr.node == null)
-                        {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Use of nondet in a real machine is not allowed."), 0, compiler.CompilingProgram));
-                            return null;
-                        }
-                        if (condExpr.isGhost && !compiler.allMachines[machineName].isGhost)
-                        {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Use of ghost expression in a conditional in a real machine is not allowed."), 0, compiler.CompilingProgram));
-                            return null;
-                        }
-                    }
 
                     // Order in which we emit side effets (else,then) is the reverse of the order in which the side effect stacks were pushed(then, else).
                     var ifName = compiler.getUnique(entityName + "_if");
@@ -2526,7 +2485,7 @@ namespace PCompiler
                         cookedElse,
                         MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil));
 
-                    return new ZingTranslationInfo(res, new PNilType(), condExpr.isGhost);
+                    return new ZingTranslationInfo(res, new PNilType());
                 }
             }
             else if (funName == PData.Con_Payload.Node.Name)
@@ -2612,10 +2571,11 @@ namespace PCompiler
                     }
                     else
                     {
-                        compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Use of undeclared local variable {0}.", varName), 0, compiler.CompilingProgram));
+                        compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Use of undeclared variable {0}.", varName), 0, compiler.CompilingProgram));
                         return null;
                     }
-                    return new ZingTranslationInfo(MkZingIdentifier(varName), varInfo.type, varInfo.isGhost);
+                    
+                    return new ZingTranslationInfo(MkZingIdentifier(varName), varInfo.type);
                 }
                 else if (kind.Name == PData.Cnst_Event.Node.Name)
                 {
@@ -2628,7 +2588,7 @@ namespace PCompiler
                         compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Use of undeclared event {0}.", eventName), 0, compiler.CompilingProgram));
                         return null;
                     }
-                    return new ZingTranslationInfo(MkZingEvent(eventName), new PEventType(eventName), false);
+                    return new ZingTranslationInfo(MkZingEvent(eventName), new PEventType(eventName));
                 }
                 else if (kind.Name == PData.Cnst_State.Node.Name)
                 {
@@ -2638,13 +2598,13 @@ namespace PCompiler
                         compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Use of undeclared state {0}.", stateName), 0, compiler.CompilingProgram));
                         return null;
                     }
-                    return new ZingTranslationInfo(MkZingDot(string.Format("{0}_State", machineName), string.Format("_{0}", stateName)), new PStateType(), false, stateName);
+                    return new ZingTranslationInfo(MkZingDot(string.Format("{0}_State", machineName), string.Format("_{0}", stateName)), new PStateType(), stateName);
                 }
                 else if (kind.Name == PData.Cnst_Field.Node.Name)
                 {
                     var field = compiler.GetName(ft, 0);
                     // Fields by themselves really don't have a type
-                    return new ZingTranslationInfo(Factory.Instance.MkCnst(field), new PNilType(), false);
+                    return new ZingTranslationInfo(Factory.Instance.MkCnst(field), new PNilType());
                 }
                 else
                 {
@@ -2669,7 +2629,7 @@ namespace PCompiler
                 var tmpVar = ctxt.getTmpVar(tupType, "tmpTuple");
                 ctxt.addSideEffect(MkZingAssign(tmpVar, node));
 
-                return new ZingTranslationInfo(tmpVar, tupType, children.Any(child => child.isGhost));
+                return new ZingTranslationInfo(tmpVar, tupType);
             }
             else if (funName == PData.Con_NamedTuple.Node.Name)
             {
@@ -2684,7 +2644,6 @@ namespace PCompiler
 
                 var type = new PNamedTupleType(children.Select(child => new Tuple<string, PType>(
                     ((Cnst)Compiler.GetArgByIndex((FuncTerm)child.node.Node, 0)).GetStringValue(), child.type)));
-                var isGhost = children.Any(child => child.isGhost);
                 compiler.registerType(type);
 
                 var buildArgs = Compiler.ConstructList(ZingData.App_Args,
@@ -2695,7 +2654,7 @@ namespace PCompiler
                 var node = Compiler.AddArgs(ZingData.App_Call, Compiler.AddArgs(ZingData.App_Args, MkZingDot(pTypeToZingType(type), "Build"), buildArgs));
                 var tmpVar = ctxt.getTmpVar(type, "tmpNamedTuple");
                 ctxt.addSideEffect(MkZingAssign(tmpVar, node));
-                return new ZingTranslationInfo(tmpVar, type, isGhost);
+                return new ZingTranslationInfo(tmpVar, type);
             }
             else if (funName == PData.Con_Apply.Node.Name)
             {
@@ -2713,16 +2672,15 @@ namespace PCompiler
                     var arg1 = it.Current;
                     if (arg1 == null)
                         return null;
-                    var isGhost = arg1.isGhost;
                     if (arity == 1)
                     {
                         if (pOp.Name == PData.Cnst_Not.Node.Name && arg1.type == PType.Bool)
                         {   // TODO: In some places we return, in others we use outTerm. I think this is legacy could. Should refactor to always return
-                            return new ZingTranslationInfo(MkZingApply(zingOp, arg1.node), new PBoolType(), isGhost);
+                            return new ZingTranslationInfo(MkZingApply(zingOp, arg1.node), new PBoolType());
                         }
                         else if (pOp.Name == PData.Cnst_Neg.Node.Name && arg1.type == PType.Int)
                         {
-                            return new ZingTranslationInfo(MkZingApply(zingOp, arg1.node), new PIntType(), isGhost);
+                            return new ZingTranslationInfo(MkZingApply(zingOp, arg1.node), new PIntType());
                         }
                         else if (pOp.Name == PData.Cnst_Sizeof.Node.Name)
                         {
@@ -2731,7 +2689,7 @@ namespace PCompiler
                                 compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("sizeof() expects a sequence or map."), 0, compiler.CompilingProgram));
                                 return null;
                             }
-                            return new ZingTranslationInfo(MkZingDot(arg1.node, "size"), new PIntType(), isGhost);
+                            return new ZingTranslationInfo(MkZingDot(arg1.node, "size"), new PIntType());
                         }
                         else if (pOp.Name == PData.Cnst_Keys.Node.Name)
                         {
@@ -2740,7 +2698,7 @@ namespace PCompiler
                                 compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("keys() expects a map."), 0, compiler.CompilingProgram));
                                 return null;
                             }
-                            return new ZingTranslationInfo(arg1.node, new PSeqType((arg1.type as PMapType).KeyT), isGhost, null, false, true);
+                            return new ZingTranslationInfo(arg1.node, new PSeqType((arg1.type as PMapType).KeyT), false, true);
                         }
                         else
                         {
@@ -2754,7 +2712,6 @@ namespace PCompiler
                         var arg2 = it.Current;
                         if (arg2 == null)
                             return null;
-                        isGhost = isGhost || arg2.isGhost;
                         if (pOp.Name == PData.Cnst_In.Node.Name)
                         {
                             PMapType mapType = arg2.type as PMapType;
@@ -2771,7 +2728,7 @@ namespace PCompiler
                             }
                             var tmpVar = ctxt.getTmpVar(PType.Bool, "tmpVal");
                             ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(arg2.node, "Contains"), arg1.node)));
-                            return new ZingTranslationInfo(tmpVar, PType.Bool, arg1.isGhost || arg2.isGhost);
+                            return new ZingTranslationInfo(tmpVar, PType.Bool);
                         }
                         else if (pOp.Name == PData.Cnst_Idx.Node.Name)
                         {
@@ -2802,7 +2759,7 @@ namespace PCompiler
                                     return null;
                                 }
 
-                                return new ZingTranslationInfo(MkZingDot(arg1.node, Compiler.getTupleField(elInd)), baseType.elements.ElementAt(elInd), arg1.isGhost);
+                                return new ZingTranslationInfo(MkZingDot(arg1.node, Compiler.getTupleField(elInd)), baseType.elements.ElementAt(elInd));
                             }
                             else if (arg1.type is PSeqType)
                             {
@@ -2817,11 +2774,11 @@ namespace PCompiler
                                 {
                                     var tmpVar = ctxt.getTmpVar(baseType.T, "tmpVal");
                                     ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(arg1.node, "LookupKeyAtIndex"), arg2.node)));
-                                    return new ZingTranslationInfo(tmpVar, baseType.T, arg1.isGhost || arg2.isGhost);
+                                    return new ZingTranslationInfo(tmpVar, baseType.T);
                                 }
                                 else
                                 {
-                                    return new ZingTranslationInfo(MkZingIndex(MkZingDot(arg1.node, "arr"), arg2.node), baseType.T, arg1.isGhost || arg2.isGhost);
+                                    return new ZingTranslationInfo(MkZingIndex(MkZingDot(arg1.node, "arr"), arg2.node), baseType.T);
                                 }
                             }
                             else if (arg1.type is PMapType)
@@ -2835,7 +2792,7 @@ namespace PCompiler
                                 }
                                 var tmpVar = ctxt.getTmpVar(baseType.ValT, "tmpVal");
                                 ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(arg1.node, "Lookup"), arg2.node)));
-                                return new ZingTranslationInfo(tmpVar, baseType.KeyT, arg1.isGhost || arg2.isGhost, null, true);
+                                return new ZingTranslationInfo(tmpVar, baseType.KeyT, true, false);
                             }
                             else
                             {
@@ -2882,7 +2839,7 @@ namespace PCompiler
                                 return null;
                             }
 
-                            return new ZingTranslationInfo(MkZingDot(arg1.node, memberName), memberType, arg1.isGhost);
+                            return new ZingTranslationInfo(MkZingDot(arg1.node, memberName), memberType);
                         } if (pOp.Name == PData.Cnst_Eq.Node.Name || pOp.Name == PData.Cnst_NEq.Node.Name)
                         {
 
@@ -2895,7 +2852,7 @@ namespace PCompiler
                             var outNode = pOp.Name == PData.Cnst_Eq.Node.Name ?
                                 MkZingEq(ctxt, arg1.node, arg1.type, arg2.node, arg2.type) :
                                 MkZingNeq(ctxt, arg1.node, arg1.type, arg2.node, arg2.type);
-                            return new ZingTranslationInfo(outNode, new PBoolType(), isGhost);
+                            return new ZingTranslationInfo(outNode, new PBoolType());
                         }
                         else if (arg1.type == arg2.type)
                         {
@@ -2903,7 +2860,7 @@ namespace PCompiler
                             {
                                 if (arg1.type == PType.Bool)
                                 {
-                                    return new ZingTranslationInfo(MkZingApply(zingOp, arg1.node, arg2.node), new PBoolType(), isGhost);
+                                    return new ZingTranslationInfo(MkZingApply(zingOp, arg1.node, arg2.node), new PBoolType());
                                 }
                                 else
                                 {
@@ -2915,11 +2872,11 @@ namespace PCompiler
                             {
                                 if (pOp.Name == PData.Cnst_Add.Node.Name || pOp.Name == PData.Cnst_Sub.Node.Name || pOp.Name == PData.Cnst_Mul.Node.Name || pOp.Name == PData.Cnst_IntDiv.Node.Name)
                                 {
-                                    return new ZingTranslationInfo(MkZingApply(zingOp, arg1.node, arg2.node), new PIntType(), isGhost);
+                                    return new ZingTranslationInfo(MkZingApply(zingOp, arg1.node, arg2.node), new PIntType());
                                 }
                                 else
                                 {
-                                    return new ZingTranslationInfo(MkZingApply(zingOp, arg1.node, arg2.node), new PBoolType(), isGhost);
+                                    return new ZingTranslationInfo(MkZingApply(zingOp, arg1.node, arg2.node), new PBoolType());
                                 }
                             }
                             else
@@ -2948,7 +2905,9 @@ namespace PCompiler
                     if (it.Current == null)
                         return null;
 
-                    return new ZingTranslationInfo(Compiler.AddArgs(Compiler.App_LabeledExpr, Factory.Instance.ToAST(Compiler.GetArgByIndex(ft, 0)), it.Current.node), it.Current.type, it.Current.isGhost, it.Current.stateName, it.Current.isMapIndex, it.Current.isKeys);
+                    ZingTranslationInfo info = (ZingTranslationInfo) it.Current.Clone();
+                    info.node = Compiler.AddArgs(Compiler.App_LabeledExpr, Factory.Instance.ToAST(Compiler.GetArgByIndex(ft, 0)), info.node);
+                    return info;
                 }
             }
             else if (funName == PData.Con_New.Node.Name)
@@ -2993,24 +2952,13 @@ namespace PCompiler
                             return null;
                         }
 
-                        var lhs = new ZingTranslationInfo(MkZingIdentifier(varName), varInfo.type, varInfo.isGhost);
+                        var lhs = new ZingTranslationInfo(MkZingIdentifier(varName), varInfo.type);
 
                         // type(lhs) == type(rhs)
-                        // if lhs is real or lhs is Id, isGhost(rhs) == isGhost(lhs)
                         if (!rhsInfo.type.isSubtypeOf(lhs.type))
                         {
                             compiler.errors.Add(new Flag(SeverityKind.Error, n,
                                 string.Format("Type of left-hand side ({0}) does not match type of right-hand ({1}) side in assignment.", lhs.type, rhsInfo.type), 0, compiler.CompilingProgram));
-                            return null;
-                        }
-                        if (!lhs.isGhost && rhsInfo.isGhost)
-                        {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot assign ghost expression to real variable."), 0, compiler.CompilingProgram));
-                            return null;
-                        }
-                        if (lhs.type == PType.Id && lhs.isGhost != rhsInfo.isGhost)
-                        {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot assign real expression to a ghost variable of type machine id."), 0, compiler.CompilingProgram));
                             return null;
                         }
 
@@ -3029,7 +2977,11 @@ namespace PCompiler
                         afterLabel = ctxt.getFreshLabel();
                         ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewM"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)))));
                     }
-                    return new ZingTranslationInfo(MkZingCreateMachineCall(ctxt, typeName, inits.Node), new PIdType(), compiler.allMachines[typeName].isGhost, true, afterLabel);
+                    return new ZingTranslationInfo(
+                        MkZingCreateMachineCall(ctxt, typeName, inits.Node), 
+                        compiler.allMachines[typeName].isGhost ? (PType) new PMidType() : (PType) new PIdType(), 
+                        true, 
+                        afterLabel);
 
                 }
             }
@@ -3063,11 +3015,6 @@ namespace PCompiler
                     var payloadExpr = it.Current;
                     if (payloadExpr == null)
                     {
-                        return null;
-                    }
-                    if (payloadExpr.isGhost)
-                    {
-                        compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("The payload of a raise must be real."), 0, compiler.CompilingProgram));
                         return null;
                     }
                     AST<Node> payload = payloadExpr.node != ZingData.Cnst_Nil ? payloadExpr.node : MkZingIdentifier("null");
@@ -3121,7 +3068,7 @@ namespace PCompiler
                 {
                     compiler.allMachines[machineName].stateNameToStateInfo[ctxt.entityName].exitFunCallees.Add(calleeName);
                 }
-                var isGhost = false;
+
                 List<AST<Node>> args = new List<AST<Node>>();
                 // Prepend the default entryCtxt argument.
                 args.Add(MkZingIdentifier("entryCtxt"));
@@ -3143,16 +3090,6 @@ namespace PCompiler
                     if (!rhsInfo.type.isSubtypeOf(lhsInfo.type))
                     {
                         compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Mismatch in type of argument {0}.", count), 0, compiler.CompilingProgram));
-                        return null;
-                    }
-                    if (!lhsInfo.isGhost && rhsInfo.isGhost)
-                    {
-                        compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot pass ghost expression to real parameter."), 0, compiler.CompilingProgram));
-                        return null;
-                    }
-                    if (lhsInfo.type == PType.Id && lhsInfo.isGhost != rhsInfo.isGhost)
-                    {
-                        compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot assign real expression to a ghost parameter of type machine id."), 0, compiler.CompilingProgram));
                         return null;
                     }
 
@@ -3178,7 +3115,6 @@ namespace PCompiler
                         argActual = tmpVar;
                     }
                     count++;
-                    isGhost = isGhost || child.isGhost;
                     args.Add(argActual);
                 }
                 if (count < calleeInfo.parameterNames.Count)
@@ -3216,7 +3152,7 @@ namespace PCompiler
                                 MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(ctxt.labelToId(beforeLabel)))),
                                 MkZingReturn(MkZingIdentifier("entryCtxt"))))));
                 ctxt.addSideEffect(callStmt);
-                return new ZingTranslationInfo(outExp, calleeInfo.returnType, isGhost);
+                return new ZingTranslationInfo(outExp, calleeInfo.returnType);
             }
             else if (funName == PData.Con_Send.Node.Name)
             {
@@ -3227,12 +3163,11 @@ namespace PCompiler
                     {
                         return null;
                     }
-                    if (it.Current.type != PType.Id)
+                    if (it.Current.type != PType.Id && it.Current.type != PType.Mid)
                     {
                         compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("The target of a send must be of machine type."), 0, compiler.CompilingProgram));
                         return null;
                     }
-                    var targetIsGhost = it.Current.isGhost;
                     var targetExpr = it.Current.node;
                     it.MoveNext();
                     if (it.Current == null)
@@ -3254,23 +3189,6 @@ namespace PCompiler
                     PType payloadType = it.Current.node != ZingData.Cnst_Nil ? it.Current.type : PType.Nil;
                     AST<Node> payload = it.Current.node != ZingData.Cnst_Nil ? it.Current.node : MkZingIdentifier("null");
 
-                    var argIsGhost = it.Current.isGhost;
-                    if (it.Current.node != ZingData.Cnst_Nil)
-                    {
-                        if (it.Current.isGhost)
-                        {
-                            if (!targetIsGhost)
-                            {
-                                compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("The payload of a send to a real machine must also be real."), 0, compiler.CompilingProgram));
-                                return null;
-                            }
-                            if (payloadType == PType.Id)
-                            {
-                                compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Ghost payload of type machine id is not allowed."), 0, compiler.CompilingProgram));
-                                return null;
-                            }
-                        }
-                    }
                     // Emit a Cast/Clone from the actual payload to Any
                     var tmpVar = ctxt.getTmpVar(PType.Any, "tmpSendPayload");
                     ctxt.addSideEffect(MkZingAssignOrCast(tmpVar, PType.Any, payload, payloadType));
@@ -3285,7 +3203,7 @@ namespace PCompiler
                     ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Send"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)))));
                     // Actual Send statement
                     return new ZingTranslationInfo(MkZingSeq(MkZingReturn(MkZingIdentifier("entryCtxt")),
-                        MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil)), new PNilType(), targetIsGhost || argIsGhost);
+                        MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil)), new PNilType());
                 }
             }
             else if (funName == PData.Con_While.Node.Name)
@@ -3307,19 +3225,10 @@ namespace PCompiler
                         return null;
                     }
 
-                    if (!compiler.allMachines[machineName].isGhost)
-                    {
-                        if (condExpr == null)
-                        {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Use of nondet in a real machine is not allowed."), 0, compiler.CompilingProgram));
-                            return null;
-                        }
-                        if (condExpr.isGhost && !compiler.allMachines[machineName].isGhost)
-                        {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Use of ghost expression in a conditional in a real machine is not allowed."), 0, compiler.CompilingProgram));
-                            return null;
-                        }
-                    }
+                    var inGhostContext =
+                        (ctxt.translationContext == TranslationContext.Function) ?
+                        compiler.allMachines[machineName].funNameToFunInfo[entityName].isForeign :
+                        compiler.allMachines[machineName].isGhost;
 
                     var loopStart = compiler.getUnique(entityName + "_loop_start");
                     var loopEnd = compiler.getUnique(entityName + "_loop_end");
@@ -3333,7 +3242,7 @@ namespace PCompiler
                         Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(loopStart)),
                         MkZingLabeledStmt(loopEnd, ZingData.Cnst_Nil)));
 
-                    return new ZingTranslationInfo(res, new PNilType(), condExpr.isGhost);
+                    return new ZingTranslationInfo(res, new PNilType());
                 }
             }
             else if (funName == PData.Con_MachType.Node.Name)
@@ -4014,7 +3923,7 @@ namespace PCompiler
                     }
                     else
                     {
-                        Debug.Assert(supF.Item1 is PAnyType || supF.Item1 is PEventType || supF.Item1 is PIdType);
+                        Debug.Assert(supF.Item1 is PAnyType || supF.Item1 is PEventType || supF.Item1 is PIdType || supF.Item1 is PMidType);
                         buildArgs.Add(getZingDefault(ctxt, supF.Item1));
                     }
                 }
@@ -4211,6 +4120,10 @@ namespace PCompiler
             }
             else if (t is PIdType)
             {
+                return "Id";
+            }
+            else if (t is PMidType)
+            {
                 return "Mid";
             }
             else if (t is PEventType)
@@ -4283,6 +4196,10 @@ namespace PCompiler
                 return MkZingIdentifier("false");
             }
             else if (t is PIdType)
+            {
+                return MkZingIdentifier("null");
+            }
+            else if (t is PMidType)
             {
                 return MkZingIdentifier("null");
             }

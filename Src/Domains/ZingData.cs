@@ -141,6 +141,8 @@
                 return Factory.Instance.MkCnst("SM_EVENT");
             if (pType == "ID")
                 return Factory.Instance.MkCnst("SM_HANDLE");
+            if (pType == "MID")
+                return Factory.Instance.MkCnst("SM_HANDLE");
             throw new InvalidOperationException();
         }
     }

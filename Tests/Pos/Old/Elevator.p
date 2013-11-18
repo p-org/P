@@ -127,7 +127,7 @@ machine Elevator {
 }
 
 main ghost machine User {
-    var ElevatorV : mid;
+    var ElevatorV : id;
 
     start state Init {
         entry {
@@ -153,7 +153,7 @@ main ghost machine User {
 }
 
 ghost machine Door {
-    var ElevatorV : mid;
+    var ElevatorV : id;
 
     start state Init {
         ignore eSendCommandToStopDoor, eSendCommandToResetDoor, eResetDoor;
@@ -221,7 +221,7 @@ ghost machine Door {
 }
 
 ghost machine Timer {
-    var ElevatorV : mid;
+    var ElevatorV : id;
 
     start state Init {
         ignore eStopDoorCloseTimer;

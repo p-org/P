@@ -1,9 +1,9 @@
-event Ping:mid assert 1;
+event Ping:id assert 1;
 event Pong assert 1;
 event Success assert 1;
 
 main machine PING {
-    var pongId: mid;
+    var pongId: id;
 
     start state Ping_Init {
         entry {
@@ -35,7 +35,7 @@ machine PONG {
 
     state Pong_SendPong {
 	entry {
-	     send ((mid) payload, Pong);
+	     send ((id) payload, Pong);
 	     raise (Success);		 	  
 	}
         on Success goto Pong_WaitPing;

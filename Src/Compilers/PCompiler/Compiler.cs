@@ -110,6 +110,7 @@ namespace PCompiler
             this.allTypes = new HashSet<PType>();
             this.allTypes.Add(PType.Nil);
             this.allTypes.Add(PType.Id);
+            this.allTypes.Add(PType.Mid);
             this.allTypes.Add(PType.Int);
             this.allTypes.Add(PType.Bool);
             this.allTypes.Add(PType.Event);
@@ -516,9 +517,7 @@ namespace PCompiler
                         {
                             it.MoveNext();
                             var type = GetPType(it.Current);
-                            it.MoveNext();
-                            var isGhost = ((Id)it.Current).Name == "TRUE";
-                            varTable[varName] = new VariableInfo(type, isGhost);
+                            varTable[varName] = new VariableInfo(type);
                         }
                     }
                 }
@@ -759,40 +758,33 @@ namespace PCompiler
                             var returnTypeName = GetPType(it.Current);
                             it.MoveNext();
                             var isForeign = ((Id)it.Current).Name == "TRUE";
-                            if (isForeign)
+                            var funInfo = new FunInfo(isForeign, returnTypeName, term.Node);
+                            Dictionary<string, VariableInfo> parameters = funInfo.parameterNameToInfo;
+                            while (true)
                             {
-                                var funInfo = new FunInfo(isForeign, returnTypeName, term.Node);
-                                Dictionary<string, VariableInfo> parameters = funInfo.parameterNameToInfo;
-                                while (true)
+                                if (iter.NodeKind == NodeKind.Id)
+                                    break;
+                                FuncTerm ft = (FuncTerm)iter;
+                                using (var enumerator = ft.Args.GetEnumerator())
                                 {
-                                    if (iter.NodeKind == NodeKind.Id)
-                                        break;
-                                    FuncTerm ft = (FuncTerm)iter;
-                                    using (var enumerator = ft.Args.GetEnumerator())
+                                    enumerator.MoveNext();
+                                    var varName = ((Cnst)enumerator.Current).GetStringValue();
+                                    if (parameters.ContainsKey(varName))
+                                    {
+                                        errors.Add(new Flag(SeverityKind.Error, term.Node, string.Format("Parameter {0} for function {1} has been declared before.", varName, funName), 0, CompilingProgram));
+                                    }
+                                    else
                                     {
                                         enumerator.MoveNext();
-                                        var varName = ((Cnst)enumerator.Current).GetStringValue();
-                                        if (parameters.ContainsKey(varName))
-                                        {
-                                            errors.Add(new Flag(SeverityKind.Error, term.Node, string.Format("Parameter {0} for function {1} has been declared before.", varName, funName), 0, CompilingProgram));
-                                        }
-                                        else
-                                        {
-                                            enumerator.MoveNext();
-                                            var typeName = GetPType(enumerator.Current);
-                                            parameters[varName] = new VariableInfo(typeName, false);
-                                            funInfo.parameterNames.Add(varName);
-                                            enumerator.MoveNext();
-                                            iter = enumerator.Current;
-                                        }
+                                        var typeName = GetPType(enumerator.Current);
+                                        parameters[varName] = new VariableInfo(typeName);
+                                        funInfo.parameterNames.Add(varName);
+                                        enumerator.MoveNext();
+                                        iter = enumerator.Current;
                                     }
                                 }
-                                machineInfo.funNameToFunInfo[funName] = funInfo;
                             }
-                            else
-                            {
-                                errors.Add(new Flag(SeverityKind.Error, term.Node, string.Format("Function {0} for machine {1} is not foreign.", funName, machineName), 0, CompilingProgram));
-                            }
+                            machineInfo.funNameToFunInfo[funName] = funInfo;
                         }
                     }
                 }
@@ -1152,18 +1144,6 @@ namespace PCompiler
                 }
                 factBins[s] = newDecls;
             }
-
-            bin = GetBin("VarDecl");
-            newDecls = new LinkedList<AST<FuncTerm>>();
-            foreach (var e in bin)
-            {
-                var varName = GetName(e.Node, 0);
-                var ownerName = GetOwnerName(e.Node, 1, 0);
-                if (allMachines[ownerName].localVariableToVarInfo[varName].isGhost)
-                    continue;
-                newDecls.AddLast(e);
-            }
-            factBins["VarDecl"] = newDecls;
 
             string[] declNames2 = {"TransDecl", "ExitFun"};
             foreach (string s in declNames2)

@@ -17,6 +17,7 @@ namespace PParser
         public override T visit_pre(TypeInt s) { return default(T); }
         public override T visit_pre(TypeBool s) { return default(T); }
         public override T visit_pre(TypeMachineID s) { return default(T); }
+        public override T visit_pre(TypeModelMachineID s) { return default(T); }
         public override T visit_pre(TypeEventID s) { return default(T); }
         public override T visit_pre(TypeField s) { return default(T); }
         public override T visit_pre(TypeTuple s) { return default(T); }

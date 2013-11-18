@@ -76,6 +76,8 @@ okToStackOverflow = [ "PingPongWithCall" ]
 
 okToTimeout = [ "TokenRing", "BangaloreToRedmond_Liveness", "PingPong", "PingPongDingDong" ]
 
+okToFail = [ "AlonBug" ]
+
 for f in elaborateFiles(args.files):
     name = os.path.splitext(os.path.basename(f))[0]
     print("================= TEST: " + f + "=================");
@@ -111,7 +113,7 @@ for f in elaborateFiles(args.files):
 
     print("Running zc");
     shutil.copy(zingRT, join(out, "SMRuntime.zing"));
-    ret = check_call([zc, zingFile, "-nowarning:292", "SMRuntime.zing", '/out:' + zingDll], \
+    ret = check_call([zc, "-nowarning:292", zingFile, "SMRuntime.zing", '/out:' + zingDll], \
         cwd=out);
     os.remove(join(out, "SMRuntime.zing"));
 
@@ -151,6 +153,9 @@ for f in elaborateFiles(args.files):
         check_output([binary])
     except CalledProcessError as err:
         ret = err.returncode;
+
+        if (name in okToFail):
+            continue;
 
         if (ret == 139):
             die("C Binary Segfaulted");

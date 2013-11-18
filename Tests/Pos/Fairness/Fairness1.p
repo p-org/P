@@ -17,7 +17,7 @@ main fair machine Program {
 	}
 }
 
-fair machine Sender {
+fair ghost machine Sender {
 	var receiver: mid;
 	var done: bool;
 
@@ -53,7 +53,7 @@ fair machine Sender {
 	}
 }
 
-fair machine Receiver {
+fair ghost machine Receiver {
 	var sender: mid;
 	start state Init {
 		on SenderId goto Ready;

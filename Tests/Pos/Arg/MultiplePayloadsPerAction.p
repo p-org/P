@@ -22,7 +22,7 @@ main machine Entry {
 
     state S1 {
         entry {
-            assert( (mid) payload == null );
+            assert( (id) payload == null );
             raise(Bar, 1);
         }
 

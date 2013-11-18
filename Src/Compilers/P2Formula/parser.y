@@ -24,7 +24,7 @@
 %YYSTYPE LexValue
 %partial
 
-%token T_INT T_BOOL T_EVENTID T_MACHINEID T_ANY T_SEQ T_MAP
+%token T_INT T_BOOL T_EVENTID T_MACHINEID T_MODELMACHINEID T_ANY T_SEQ T_MAP
 %token MAIN EVENT MACHINE ASSUME GHOST
 
 %token VAR START STABLE FOREIGN STATE FUN ACTION MAXQUEUE SUBMACHINE
@@ -108,6 +108,7 @@ Type
 	| T_BOOL									{ $$.type = new TypeBool(); setLoc($$.type, @1);}
 	| T_EVENTID									{ $$.type = new TypeEventID(); setLoc($$.type, @1);}
 	| T_MACHINEID								{ $$.type = new TypeMachineID(); setLoc($$.type, @1);}
+	| T_MODELMACHINEID							{ $$.type = new TypeModelMachineID(); setLoc($$.type, @1);}
 	| T_ANY										{ $$.type = new TypeAny(); setLoc($$.type, @1);}
 	| NamedTupleType
 	| TupleType

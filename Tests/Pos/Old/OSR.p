@@ -21,7 +21,7 @@ event eUnit assert 1;
 
 
 main ghost machine User {
-    var Driver: mid;
+    var Driver: id;
     
 	start state User_Init {
 		entry{
@@ -50,7 +50,7 @@ main ghost machine User {
 }
 
 ghost machine Switch {
-	var Driver: mid;
+	var Driver: id;
     start state Switch_Init {
         entry { raise(eUnit);}
         on eUnit goto ChangeSwitchStatus;
@@ -68,7 +68,7 @@ ghost machine Switch {
 }
 
 ghost machine LED {
-	var Driver: mid;
+	var Driver: id;
 	
 	start state LED_Init {
 		entry { }
@@ -113,7 +113,7 @@ ghost machine LED {
 }
 
 ghost machine Timer {
-	var Driver : mid;
+	var Driver : id;
 	
 	start state Timer_Init {
 		ignore eStopTimer;

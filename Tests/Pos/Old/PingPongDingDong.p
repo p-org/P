@@ -1,4 +1,4 @@
-event Ping:mid assert 1;
+event Ping:id assert 1;
 event Pong assert 1;
 event Success assert 1;
 event Ding assert 1;
@@ -6,7 +6,7 @@ event Dong assert 1;
 
 
 main machine PING {
-    var pongId: mid;
+    var pongId: id;
 
     start state Ping_start {
         entry {
@@ -41,7 +41,7 @@ main machine PING {
 }
 
 machine PONG {
-	var pingid: mid;
+	var pingid: id;
     start state Pong_start {
         entry { }
         on Ping push Pong_dong1;

@@ -200,6 +200,10 @@ namespace PParser
         {
             return wrap(P_FormulaNodes.TypeID);
         }
+        public override IEnumerable<AST<Node>> visit(TypeModelMachineID s)
+        {
+            return wrap(P_FormulaNodes.TypeMID);
+        }
         public override IEnumerable<AST<Node>> visit(TypeEventID s)
         {
             return wrap(P_FormulaNodes.TypeEVENT);
@@ -740,6 +744,7 @@ namespace PParser
         public override IEnumerable<AST<Node>> visit_pre(TypeInt s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(TypeBool s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(TypeMachineID s) { return default(IEnumerable<AST<Node>>); }
+        public override IEnumerable<AST<Node>> visit_pre(TypeModelMachineID s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(TypeEventID s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(TypeAny s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(TypeField s) { return default(IEnumerable<AST<Node>>); }

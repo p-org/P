@@ -2,7 +2,7 @@ event Foo:(any,any);
 
 main machine Entry {
     var a:(any, any);
-    var m:mid;
+    var m:id;
 
     start state dummy {
         entry {

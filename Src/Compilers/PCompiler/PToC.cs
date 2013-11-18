@@ -834,7 +834,6 @@ namespace PCompiler
                 {
                     return Compiler.AddArgs(CData.App_BinApp(), CData.Cnst_Eq(), e1, e2);
                 }
-
                 else
                 {
                     return MkFunApp(getCEqualsName(t1, t2), default(Span), driver, MkAddrOf(e1), MkAddrOf(e2));
@@ -856,6 +855,10 @@ namespace PCompiler
                     throw new Exception(string.Format("Cannot compare types {0} and {1}", t1, t2));
 
                 if (supT is PIdType && subT is PNilType)
+                {
+                    return MkEq(supE, MkId("SmfNull"));
+                }
+                else if (supT is PMidType && subT is PNilType)
                 {
                     return MkEq(supE, MkId("SmfNull"));
                 }
@@ -980,7 +983,7 @@ namespace PCompiler
             {
                 foreach (var subT in compiler.subtypes[t])
                 {
-                    if ((t is PEventType || t is PIdType || t is PAnyType) && subT is PNilType)
+                    if ((t is PEventType || t is PIdType || t is PMidType || t is PAnyType) && subT is PNilType)
                     {
                         // We should never need to call such an upcast. This case is handled in MkAssignOrCast, where it is
                         // compiled down to a simple assignment
@@ -1134,8 +1137,8 @@ namespace PCompiler
                     }
                     else
                     {
-                        // We must be in the eid->nil or mid->nil down cast case.
-                        if (t is PEventType || t is PIdType)
+                        // We must be in the eid->nil or id/mid->nil down cast case.
+                        if (t is PEventType || t is PIdType || t is PMidType)
                         {
                             body.Add(MkAssert(MkEq(MkId("src"), MkCast(t, MkIntLiteral(0))), default(Span), errMsg));
                             body.Add(MkAssignment(MkDrf(MkId("dst")), MkIntLiteral(0)));
@@ -1162,6 +1165,10 @@ namespace PCompiler
                 {
                     return MkEq(driver, from, fromT, null, toT); // Its safe to pass null here since the expression is ignore when comparing with Null
                 }
+                else if (fromT is PMidType && toT is PNilType) // Optimization
+                {
+                    return MkEq(driver, from, fromT, null, toT); // Its safe to pass null here since the expression is ignore when comparing with Null
+                }
                 else if (fromT is PEventType && toT is PNilType) // Optimization
                 {
                     return MkEq(driver, from, fromT, null, toT); // Its safe to pass null here since the expression is ignore when comparing with Null
@@ -1181,7 +1188,7 @@ namespace PCompiler
         {
             foreach (var t in compiler.allTypes)
             {
-                if (t is PEventType || t is PIdType)
+                if (t is PEventType || t is PIdType || t is PMidType)
                 {
                     Debug.Assert(compiler.subtypes[t].Count == 1 && compiler.subtypes[t][0] == PType.Nil);
                     continue; // These cases are handled in MkCanCast
@@ -2310,6 +2317,8 @@ namespace PCompiler
             else if (pType == PType.Event)
                 return "Eid";
             else if (pType == PType.Id)
+                return "Id";
+            else if (pType == PType.Mid)
                 return "Mid";
             else if (pType == PType.Int)
                 return "Int";
@@ -2332,6 +2341,8 @@ namespace PCompiler
                 else if (pType == PType.Event)
                     return MkNmdType("SMF_EVENTDECL_INDEX");
                 else if (pType == PType.Id)
+                    return MkNmdType("SMF_MACHINE_HANDLE");
+                else if (pType == PType.Mid)
                     return MkNmdType("SMF_MACHINE_HANDLE");
                 else if (pType == PType.Int)
                     return MkNmdType("LONG");
@@ -2366,6 +2377,8 @@ namespace PCompiler
             else if (t == PType.Int)
                 return MkIntLiteral(0);
             else if (t == PType.Id)
+                return MkId("SmfNull");
+            else if (t == PType.Mid)
                 return MkId("SmfNull");
             else if (t == PType.Event)
                 return MkId("SmfNull");
@@ -2456,15 +2469,14 @@ namespace PCompiler
         {
             var funName = compiler.GetName(fun.Node, 0);
             var ownerName = compiler.GetOwnerName(fun.Node, 1, 0);
-            var qualifiedFunName = compiler.allMachines[ownerName].funNameToFunInfo[funName].isForeign ? funName : string.Format("{0}_{1}", ownerName, funName);
+            bool eraseBody = compiler.erase && compiler.allMachines[ownerName].funNameToFunInfo[funName].isModel;
             var parameters = Compiler.GetArgByIndex(fun.Node, 2);
             var pReturnType = compiler.GetPType(Compiler.GetArgByIndex(fun.Node, 3));
             AST<FuncTerm> cReturnType;
             var cParameterNames = new List<string>();
             var cParameterTypes = new List<AST<Node>>();
-            if (compiler.erase)
+            if (eraseBody)
             {
-                // all functions are foreign
                 cParameterNames.Add("ExtContext");
                 cParameterTypes.Add(MkNmdType("PVOID"));
             }
@@ -2512,10 +2524,10 @@ namespace PCompiler
             }
 
             funHeader = MkFunDef(MkFunType(cReturnType, cParameterTypes.ToArray()),
-                                 qualifiedFunName,
+                                 funName,
                                  MkFunParams(false, cParameterNames.ToArray()));
             funBody = null;
-            if (compiler.erase)
+            if (eraseBody)
                 return;
 
             var ctxt = new PToCFoldContext(ownerName, true, this, MkArrow("Context", "Driver"), funName);
@@ -2529,7 +2541,7 @@ namespace PCompiler
 
             funBody = Compiler.AddArgs(CData.App_Seq(), MkFunApp("DUMMYREFERENCE", default(Span), MkId("Context")), funBody);
             funBody = MkFunDef(MkFunType(cReturnType, cParameterTypes.ToArray()),
-                                 qualifiedFunName,
+                                 funName,
                                  MkFunParams(false, cParameterNames.ToArray()),
                                  funBody);
         }
@@ -2848,6 +2860,10 @@ namespace PCompiler
                 return MkAssignment(lhs, MkId("SmfNull"));
             }
             else if (lhsType is PIdType && rhsType is PNilType)
+            {
+                return MkAssignment(lhs, MkId("SmfNull"));
+            }
+            else if (lhsType is PMidType && rhsType is PNilType)
             {
                 return MkAssignment(lhs, MkId("SmfNull"));
             }
@@ -3199,8 +3215,6 @@ Environment:
             return ret;
         }
 
-        private bool shouldErase(Node pNode) { return compiler.erase && compiler.computedType[pNode].isGhost; }
-
         private CTranslationInfo EntryFun_Fold_Impl(PToCFoldContext ctxt, Node n, IEnumerable<CTranslationInfo> children)
         {
             string ownerName = ctxt.ownerName;
@@ -3231,10 +3245,10 @@ Environment:
                     }
                     else if (id.Name == PData.Cnst_Nondet.Node.Name)
                     {
-                        if (shouldErase(n))
+                        if (compiler.erase)
                             return new CTranslationInfo((CData.Cnst_Nil(n.Span)));
-
-                        return new CTranslationInfo(MkFunApp("NONDET", n.Span));
+                        else
+                            return new CTranslationInfo(MkFunApp("NONDET", n.Span));
                     }
                     else if (id.Name == PData.Cnst_Nil.Node.Name)
                     {
@@ -3274,9 +3288,6 @@ Environment:
             var funName = ((Id)ft.Function).Name;
             if (funName == PData.Con_Assert.Node.Name)
             {
-                if (shouldErase(n))
-                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
-
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
@@ -3285,9 +3296,6 @@ Environment:
             }
             else if (funName == PData.Con_Return.Node.Name)
             {
-                if (shouldErase(n))
-                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
-
                 if (ctxt.isFunction)
                 {
                     using (var it = children.GetEnumerator())
@@ -3330,8 +3338,6 @@ Environment:
             }
             else if (funName == PData.Con_DataOp.Node.Name)
             {
-                if (shouldErase(n))
-                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
                 var op = ((Id)Compiler.GetArgByIndex(ft, 0)).Name;
 
                 using (var it = children.GetEnumerator())
@@ -3393,7 +3399,6 @@ Environment:
             }
             else if (funName == PData.Con_Scall.Node.Name)
             {
-                // Allways non-ghost since there are no arguments, and states are always non-erasible.
                 var callLabel = ++ctxt.callStatementCounter;
                 using (var it = children.GetEnumerator())
                 {
@@ -3410,6 +3415,10 @@ Environment:
             {
                 return new CTranslationInfo(CData.Cnst_Nil(n.Span));
             }
+            else if (funName == PData.Con_Strings.Node.Name)
+            {
+                return new CTranslationInfo(CData.Cnst_Nil(n.Span));
+            }
             else if (funName == PData.Con_Seq.Node.Name)
             {
                 using (var it = children.GetEnumerator())
@@ -3422,9 +3431,6 @@ Environment:
             }
             else if (funName == PData.Con_Assign.Node.Name)
             {
-                if (shouldErase(n))
-                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
-
                 var lhsType = getComputedType(Compiler.GetArgByIndex(ft, 0));
                 var rhsType = getComputedType(Compiler.GetArgByIndex(ft, 1));
 
@@ -3448,9 +3454,6 @@ Environment:
             }
             else if (funName == PData.Con_ITE.Node.Name)
             {
-                if (shouldErase(n))
-                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
-
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
@@ -3487,11 +3490,6 @@ Environment:
                 if (kind.Name == PData.Cnst_Var.Node.Name)
                 {
                     var varName = compiler.GetName(ft, 0);
-                    Debug.Assert((compiler.erase && compiler.allMachines[ownerName].localVariableToVarInfo.ContainsKey(varName) && compiler.allMachines[ownerName].localVariableToVarInfo[varName].isGhost) ==
-                        shouldErase(n));
-
-                    if (shouldErase(n))
-                        return new CTranslationInfo(CData.Cnst_Nil(n.Span));
                     PType type;
                     AST<Node> varExp;
 
@@ -3532,9 +3530,6 @@ Environment:
             }
             else if (funName == PData.Con_Call.Node.Name)
             {
-                if (shouldErase(n))
-                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
-
                 var calleeName = compiler.GetName(ft, 0);
                 FunInfo funInfo = compiler.allMachines[ctxt.ownerName].funNameToFunInfo[calleeName];
                 var argList = new List<AST<Node>>();
@@ -3615,9 +3610,6 @@ Environment:
             }
             else if (funName == PData.Con_Apply.Node.Name)
             {
-                if (shouldErase(n))
-                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
-
                 using (var it = children.GetEnumerator())
                 {
 
@@ -3715,9 +3707,6 @@ Environment:
             }
             else if (funName == Compiler.Con_LabeledExpr)
             {
-                if (shouldErase(Compiler.GetArgByIndex(ft, 1)))
-                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
-
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
@@ -3730,9 +3719,6 @@ Environment:
             }
             else if (funName == PData.Con_New.Node.Name)
             {
-                if (shouldErase(n))
-                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
-
                 var machTypeName = compiler.GetOwnerName(ft, 0, 0);
                 List<AST<Node>> argList = new List<AST<Node>>();
                 argList.Add(Compiler.AddArgs(CData.App_UnApp(n.Span), CData.Cnst_Addr(n.Span), MkId(compiler.DriverDeclName())));
@@ -3746,11 +3732,6 @@ Environment:
                     children.Select(child => new Tuple<string, Node>(
                         ((Cnst)Compiler.GetArgByIndex((FuncTerm)child.node.Node, 0)).GetStringValue(),
                         Compiler.GetArgByIndex((FuncTerm)child.node.Node, 1)));
-
-                // Remove ghosts if neccessary
-                inits = inits.Where(init =>
-                    !(compiler.erase && compiler.allMachines[machTypeName].localVariableToVarInfo.ContainsKey(init.Item1) &&
-                    compiler.allMachines[machTypeName].localVariableToVarInfo[init.Item1].isGhost));
 
                 foreach (var init in inits)
                 {
@@ -3830,9 +3811,6 @@ Environment:
             }
             else if (funName == PData.Con_Send.Node.Name)
             {
-                if (shouldErase(n))
-                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
-
                 var args = new AST<Node>[4];
                 using (var it = children.GetEnumerator())
                 {
@@ -3866,9 +3844,6 @@ Environment:
             }
             else if (funName == PData.Con_While.Node.Name)
             {
-                if (shouldErase(n))
-                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
-
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
@@ -3896,9 +3871,6 @@ Environment:
             }
             else if (funName == PData.Con_Tuple.Node.Name)
             {
-                if (shouldErase(n))
-                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
-
                 var type = (PTupleType)getComputedType(ft);
 
                 var tmpVar = ctxt.getTmpVar(type, false);
@@ -3912,9 +3884,6 @@ Environment:
             }
             else if (funName == PData.Con_NamedTuple.Node.Name)
             {
-                if (shouldErase(n))
-                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
-
                 var type = (PNamedTupleType)getComputedType(ft);
                 var tmpVar = ctxt.getTmpVar(type, false);
                 var fieldDesc = getFieldDesc(type);

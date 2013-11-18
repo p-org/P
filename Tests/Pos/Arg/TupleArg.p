@@ -2,7 +2,7 @@ event EFoo:(int, int);
 event EBar:(payload1: int, payload2: int);
 
 main machine Entry {
-    var mFoo: mid;
+    var mFoo: id;
 
     start state Init {
         entry {

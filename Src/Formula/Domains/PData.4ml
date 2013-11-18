@@ -6,7 +6,7 @@ domain FuncData
        
     //// The basic type id accepts any machine.
     MachType        ::= new (name: String).
-    TypePrimitive   ::= { BOOL, INT, EVENT, ID }.
+    TypePrimitive   ::= { BOOL, INT, EVENT, ID, MID }.
     TypeTuple       ::= new (hd: any AllTypes, tl: any TypeTuple + { NIL }).
     TypeField       ::= new (name: any String, type: any AllTypes).
     TypeNamedTuple  ::= new (hd: any TypeField, tl: any TypeNamedTuple + { NIL }).
@@ -41,11 +41,11 @@ domain FuncData
     Raise  ::= new (ev: any Expr, payload: any Expr + { NIL }).
     Scall  ::= new (state: any Expr).
     Strings ::= new (str: any String, tail: any Strings + { NIL }).
-    Ecall  ::= new (names: any Strings, args: any Exprs).
+    Ecall  ::= new (names: any Strings, args: any Exprs + { NIL }).
     ITE    ::= new (cond: any Expr, true: any Stmt, false: any Stmt).
     While  ::= new (cond: any Expr, body: any Stmt).
     Seq    ::= new (s1: any Stmt, s2: any Stmt).
-    Stmt   ::= DataOp + Assert + Return + Assign + Send + Raise + Scall + ITE + Call + While + Seq + { NIL, LEAVE, DELETE }.
+    Stmt   ::= DataOp + Assert + Return + Assign + Send + Raise + Scall + ITE + Call + While + Seq + Ecall + { NIL, LEAVE, DELETE }.
 }
 
 domain PData extends FuncData
@@ -54,7 +54,7 @@ domain PData extends FuncData
     /****************       Core Entities            *************/
     /*************************************************************/
 
-    MachineDecl ::= fun (name: String -> isGhost: Boolean, maxQueueSize: Integer + { NIL }).
+    MachineDecl ::= fun (name: String -> isModel: Boolean, maxQueueSize: Integer + { NIL }).
     
     EventDecl ::= fun (name: String -> any AssumeMaxInstances + AssertMaxInstances + { NIL }, payloadType: AllTypes + { NIL }).    
     AssumeMaxInstances ::= new (bound: Integer).
@@ -83,7 +83,7 @@ domain PData extends FuncData
                      owner: MachineDecl ->
                      params: any Params + { NIL }, 
                      return: any AllTypes + { NIL },
-                     isForgn: Boolean,
+                     isModel: Boolean,
                      body: any Stmt).
     Params  ::= new (name: String, type: AllTypes, tail: any Params + { NIL }).    
     

@@ -1,4 +1,4 @@
-//Foreign function with New operation in it
+//Model function with New operation in it
 
 event dummy;
 
@@ -10,10 +10,10 @@ start state init {
 	}
 }
 
-main ghost machine Ghost {
+main model machine Ghost {
     var local:int;
-	var real : mid;
-	foreign fun createMachine(): int
+	var real : id;
+	model fun createMachine(): int
 	{	
 		real = new Real(ghostm = this, setme = 1);
 		return 1;

@@ -2,7 +2,7 @@ main machine Entry {
     var a:int;
     var b:int;
 
-    foreign fun bar(a:int, b:int) {
+    model fun bar(a:int, b:int) {
         assert(a+b == -5);
         assert(a*b == 6);
         assert(a * -b == -6);

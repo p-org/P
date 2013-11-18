@@ -19,7 +19,7 @@ event eStopTimerReturned assert 1;
 event eObjectEncountered assert 1;
 
 machine Elevator {
-    ghost var TimerV, DoorV: mid;
+    var TimerV, DoorV: mid;
 
     start state Init {
         entry {
@@ -126,8 +126,8 @@ machine Elevator {
     }
 }
 
-main ghost machine User {
-    var ElevatorV : mid;
+main model machine User {
+    var ElevatorV : id;
 
     start state Init {
         entry {
@@ -152,8 +152,8 @@ main ghost machine User {
     }
 }
 
-ghost machine Door {
-    var ElevatorV : mid;
+model machine Door {
+    var ElevatorV : id;
 
     start state Init {
         ignore eSendCommandToStopDoor, eSendCommandToResetDoor, eResetDoor;
@@ -220,8 +220,8 @@ ghost machine Door {
     }
 }
 
-ghost machine Timer {
-    var ElevatorV : mid;
+model machine Timer {
+    var ElevatorV : id;
 
     start state Init {
         ignore eStopDoorCloseTimer;

@@ -2,7 +2,7 @@ event EFoo:((int, bool), int);
 event EBar:((int, bool), int);
 
 main machine Entry {
-    var m:mid;
+    var m:id;
     var e1,e2:eid;
 
     start state init {

@@ -1,5 +1,5 @@
 main machine Entry {
-    var m:mid;
+    var m:id;
 
     start state init {
         entry {
@@ -20,13 +20,13 @@ machine Foo {
         }
     }
 
-    foreign fun add(a:(int,int), b:int):(int,int) {
+    model fun add(a:(int,int), b:int):(int,int) {
         a[0] = a[0] + b;
         a[1] = a[1] + b;
         return a;
     }
 
-    foreign fun dot(a:(int,int), b:(int, int)):int {
+    model fun dot(a:(int,int), b:(int, int)):int {
         return a[0] * b[0] + a[1] * b[1];
     }
 }

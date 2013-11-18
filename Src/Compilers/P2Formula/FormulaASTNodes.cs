@@ -72,6 +72,7 @@ namespace PParser
         public static AST<Id> TypeEVENT = Factory.Instance.MkId("EVENT");
         public static AST<Id> TypeAny = Factory.Instance.MkId("ANY");
         public static AST<Id> TypeID = Factory.Instance.MkId("ID");
+        public static AST<Id> TypeMID = Factory.Instance.MkId("MID");
         public static AST<Id> TypeField = Factory.Instance.MkId("TypeField");
         public static AST<Id> TypeNamedTuple = Factory.Instance.MkId("TypeNamedTuple");
         public static AST<Id> TypeTuple = Factory.Instance.MkId("TypeTuple");

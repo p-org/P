@@ -1,5 +1,5 @@
 main machine Entry {
-    var m:mid;
+    var m:id;
 
     start state init {
         entry {
@@ -21,7 +21,7 @@ machine Foo {
         }
     }
 
-    foreign fun addScalar(a:(int,int), b:int):(int,int) {
+    model fun addScalar(a:(int,int), b:int):(int,int) {
         return (a[0] + b, a[1] + b);
     }
 }

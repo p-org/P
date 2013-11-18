@@ -500,7 +500,23 @@ namespace PParser
         public override BaseScope visit_pre(Transition n)
         {
             checkEventOverlapping(n.on, n);
-            return current;
+            var newS = new FunctionScope("exit");
+
+            // Define the implicit variables arg and msg for the action
+            if (!errorDefined(VAR_PAYLOAD, SYM_BUILTIN_VAR, n.loc))
+                newS.define(VAR_PAYLOAD, SYM_BUILTIN_VAR, n.loc, n);
+
+            if (!errorDefined(VAR_TRIGGER, SYM_BUILTIN_VAR, n.loc))
+                newS.define(VAR_TRIGGER, SYM_BUILTIN_VAR, n.loc, n);
+
+            if (!errorDefined(VAR_THIS, SYM_BUILTIN_VAR, n.loc))
+                newS.define(VAR_THIS, SYM_BUILTIN_VAR, n.loc, n);
+
+            return pushScope(newS, n);
+        }
+        public override BaseScope visit(Transition n)
+        {
+            return popScope();
         }
 
         public override BaseScope visit_pre(CallTransition n)
@@ -577,6 +593,7 @@ namespace PParser
         public override BaseScope visit_pre(TypeField n) { return current; }
         public override BaseScope visit_pre(TypeNamedTuple n) { return current;  }
         public override BaseScope visit_pre(TypeMachineID n) { return current; }
+        public override BaseScope visit_pre(TypeModelMachineID n) { return current; }
         public override BaseScope visit_pre(TypeInt n) { return current; }
         public override BaseScope visit_pre(TypeEventID n) { return current; }
         public override BaseScope visit_pre(TypeBool n) { return current; }

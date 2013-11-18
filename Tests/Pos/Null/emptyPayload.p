@@ -1,7 +1,7 @@
 event Foo;
 
 main machine Entry {
-    var m : mid;
+    var m : id;
     start state init {
         entry {
             m = new M2();

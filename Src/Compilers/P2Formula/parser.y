@@ -24,10 +24,10 @@
 %YYSTYPE LexValue
 %partial
 
-%token T_INT T_BOOL T_EVENTID T_MACHINEID T_ANY T_SEQ T_MAP
+%token T_INT T_BOOL T_EVENTID T_MACHINEID T_MODELMACHINEID T_ANY T_SEQ T_MAP
 %token MAIN EVENT MACHINE ASSUME GHOST
 
-%token VAR START STABLE FOREIGN STATE FUN ACTION MAXQUEUE SUBMACHINE
+%token VAR START STABLE MODEL STATE FUN ACTION MAXQUEUE SUBMACHINE
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH
 
@@ -108,6 +108,7 @@ Type
 	| T_BOOL									{ $$.type = new TypeBool(); setLoc($$.type, @1);}
 	| T_EVENTID									{ $$.type = new TypeEventID(); setLoc($$.type, @1);}
 	| T_MACHINEID								{ $$.type = new TypeMachineID(); setLoc($$.type, @1);}
+	| T_MODELMACHINEID							{ $$.type = new TypeModelMachineID(); setLoc($$.type, @1);}
 	| T_ANY										{ $$.type = new TypeAny(); setLoc($$.type, @1);}
 	| NamedTupleType
 	| TupleType
@@ -165,7 +166,7 @@ TypeOrNull
 
 // --------------------  Machine Declarations --------------------
 MachineDecl
-	: IsMain IsFair IsGhost MACHINE ID LCBRACE MachineBody RCBRACE	{ $$.node = new MachineDeclaration($5.s, $1.b, $2.b, $3.b, Cast<INode, IMachineBodyItem>.list($7.lst)); setLoc($$.node, @1, @8);}
+	: IsMain IsFair IsModel MACHINE ID LCBRACE MachineBody RCBRACE	{ $$.node = new MachineDeclaration($5.s, $1.b, $2.b, $3.b, Cast<INode, IMachineBodyItem>.list($7.lst)); setLoc($$.node, @1, @8);}
 	;
 
 IsGhost
@@ -222,7 +223,7 @@ VarDecl
 
 // -------------------   Function Declarations    -------------------
 FunDecl
-	: IsForeign FUN AttributeOrNull ID Params TypeOrNull StmtBlock	{ $$.node = new FunDeclaration($4.s, $1.b, (TypeNamedTuple) $5.type, $6.type, (DSLBlock)$7.stmt, (DSLAttribute)$3.node); setLoc($$.node, @1, @7); }
+	: IsModel FUN AttributeOrNull ID Params TypeOrNull StmtBlock	{ $$.node = new FunDeclaration($4.s, $1.b, (TypeNamedTuple) $5.type, $6.type, (DSLBlock)$7.stmt, (DSLAttribute)$3.node); setLoc($$.node, @1, @7); }
 	;
 
 Params
@@ -230,8 +231,8 @@ Params
 	| NamedTupleType
 	;
 
-IsForeign
-	: FOREIGN										{ $$.b = true; }
+IsModel
+	: MODEL											{ $$.b = true; }
 	|												{ $$.b = false; }
 	;
 
@@ -280,12 +281,17 @@ IsFair
 	|															{ $$.b = false; }
 	;
 
+StmtBlockOrNull
+	: StmtBlock																	{ $$.stmt = $1.stmt; }
+	|																			{ $$.stmt = null; }
+	;
+
 StateBodyItem
 	: ENTRY StmtBlock								{ $$.node = new EntryFunction((DSLBlock)$2.stmt); setLoc($$.node, @1, @2);}
 	| EXIT StmtBlock								{ $$.node = new ExitFunction((DSLBlock)$2.stmt); setLoc($$.node, @1, @2);}
 	| DEFER NonDefaultEventList SEMICOLON			{ $$.node = new Defer($2.slst); setLoc($$.node, @1, @3);}
 	| IGNORE NonDefaultEventList SEMICOLON			{ $$.node = new Ignore($2.slst); setLoc($$.node, @1, @3);}
-	| ON EventList IsFair GOTO ID SEMICOLON		{ $$.node = new Transition($2.slst, $5.s, $3.b); setLoc($$.node, @1, @6);}
+	| ON EventList IsFair GOTO ID StmtBlockOrNull SEMICOLON			{ $$.node = new Transition($2.slst, $5.s, $3.b, (DSLBlock)$6.stmt); setLoc($$.node, @1, @7);}
 	| ON EventList PUSH ID SEMICOLON				{ $$.node = new CallTransition($2.slst, $4.s); setLoc($$.node, @1, @5);}
 	| ON EventList DO ID SEMICOLON					{ $$.node = new Action($2.slst, $4.s); setLoc($$.node, @1, @5);}
 	;

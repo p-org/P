@@ -1,5 +1,5 @@
 main machine Entry {
-    foreign fun foo () { }
+    model fun foo () { }
     start state bar {
         entry {
             foo();

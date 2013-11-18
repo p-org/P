@@ -1,11 +1,11 @@
-event Ping:mid assert 1;
+event Ping:id assert 1;
 event Pong assert 1;
-event Forward:(to: mid, ev: eid, val: any) assert 1;
+event Forward:(to: id, ev: eid, val: any) assert 1;
 event Success;
 event Bye;
 
 main machine PING {
-    var pongId: mid;
+    var pongId: id;
     var ctr: int;
     var networkId: mid;
     start state Ping_Init {
@@ -45,21 +45,21 @@ machine PONG {
 
     state Pong_SendPong {
 	entry {
-	      send (networkId, Forward, (to=(mid) payload, ev=Pong, val=null));
+	      send (networkId, Forward, (to=(id) payload, ev=Pong, val=null));
 	     raise (Success);		 	  
 	}
         on Success goto Pong_WaitPing;
     }
 }
 
-machine Network {
-    var x:(to: mid, ev: eid, val: any);
+model machine Network {
+    var x:(to: id, ev: eid, val: any);
     start state Wait {
         on Forward goto Send;
     }
     state Send {
         entry {
-	      x = ((to: mid, ev: eid, val: any)) payload;
+	      x = ((to: id, ev: eid, val: any)) payload;
 	      send(x.to, x.ev, x.val);
 	      raise (Success);
         }

@@ -7,7 +7,7 @@ main machine Entry {
     start state init {
         entry {
             // On init the only possible type for payload is nil. Hack up an equality check.
-            assert( (mid) payload == null );
+            assert( (id) payload == null );
         }
         on E1 goto exact;
         on E2 goto exact;

@@ -1,7 +1,7 @@
 main machine Entry {
     var a:(int,int);
 
-    foreign fun foo():(int,int) {
+    model fun foo():(int,int) {
         return (1,2);
     }
 

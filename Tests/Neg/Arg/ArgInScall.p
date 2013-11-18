@@ -1,4 +1,4 @@
-main ghost machine Foo {
+main model machine Foo {
     var a:int;
 
     start state S1 {

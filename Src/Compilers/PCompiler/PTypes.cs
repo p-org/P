@@ -37,6 +37,7 @@ namespace PCompiler
             nameToPrimType[PData.Cnst_Bool.Node.Name] = new PBoolType();
             nameToPrimType[PData.Cnst_Int.Node.Name] = new PIntType();
             nameToPrimType[PData.Cnst_Id.Node.Name] = new PIdType();
+            nameToPrimType[PData.Cnst_Mid.Node.Name] = new PMidType();
             nameToPrimType[PData.Cnst_Event.Node.Name] = new PEventType(null);
             nameToPrimType[PData.Cnst_State.Node.Name] = new PStateType();
 
@@ -45,6 +46,7 @@ namespace PCompiler
             Int = new PIntType();
             Bool = new PBoolType();
             Id = new PIdType();
+            Mid = new PMidType();
             Event = new PEventType(null);
             State = new PStateType();
         }
@@ -65,6 +67,7 @@ namespace PCompiler
         public static readonly PBoolType Bool;
         public static readonly PIntType Int;
         public static readonly PIdType Id;
+        public static readonly PMidType Mid;
         public static readonly PEventType Event;
         public static readonly PStateType State;
 
@@ -72,15 +75,16 @@ namespace PCompiler
         protected static readonly int IntHash = 3;
         protected static readonly int BoolHash = 5;
         protected static readonly int IdHash = 7;
-        protected static readonly int EventHash = 11;
-        protected static readonly int StateHash = 13;
+        protected static readonly int MidHash = 11;
+        protected static readonly int EventHash = 13;
+        protected static readonly int StateHash = 17;
 
-        protected static readonly int AnyHash = 17;
+        protected static readonly int AnyHash = 19;
 
-        protected static readonly int TupleHash = 19;
-        protected static readonly int NamedTupleHash = 23;
-        protected static readonly int SeqHash = 29;
-        protected static readonly int MapHash = 31;
+        protected static readonly int TupleHash = 23;
+        protected static readonly int NamedTupleHash = 29;
+        protected static readonly int SeqHash = 31;
+        protected static readonly int MapHash = 37;
 
         public static PType computeLUB(IEnumerable<PType> ts)
         {
@@ -100,7 +104,7 @@ namespace PCompiler
         }
     }
 
-    // Primitive built in types - int,bool, eid, mid, state
+    // Primitive built in types - int, bool, eid, id, mid, state
     // Even though we cannot declare variables of type state, we still
     // have an explicit type in the hierarchy. This may be more useful
     // in the future if we decide to allow state variables.
@@ -127,6 +131,8 @@ namespace PCompiler
                 return PType.BoolHash;
             if (this is PIdType)
                 return PType.IdHash;
+            if (this is PMidType)
+                return PType.MidHash;
             if (this is PEventType)
                 return PType.EventHash;
             if (this is PStateType)
@@ -169,12 +175,12 @@ namespace PCompiler
         public override bool isSubtypeOf(PType t)
         {
             return this.Equals(t) || (t is PAnyType) ||
-                (t is PIdType) || (t is PEventType);
+                (t is PIdType) || (t is PMidType) || (t is PEventType);
         }
 
         public override PType LUB(PType other)
         {
-            if (other is PNilType || other is PIdType || other is PEventType)
+            if (other is PNilType || other is PIdType || other is PMidType || other is PEventType)
                 return other;
             else
                 return PType.Any;
@@ -190,6 +196,7 @@ namespace PCompiler
             get { return true; }
         }
     }
+    
     class PBoolType : PPrimitiveType
     {
         public PBoolType() : base(PData.Cnst_Bool.Node.Name) { }
@@ -199,9 +206,20 @@ namespace PCompiler
             get { return true; }
         }
     }
+    
     class PIdType : PPrimitiveType
     {
         public PIdType() : base(PData.Cnst_Id.Node.Name) { }
+
+        public override bool Hashable
+        {
+            get { return true; }
+        }
+    }
+
+    class PMidType : PPrimitiveType
+    {
+        public PMidType() : base(PData.Cnst_Mid.Node.Name) { }
 
         public override bool Hashable
         {

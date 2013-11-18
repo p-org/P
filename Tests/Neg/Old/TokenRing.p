@@ -11,7 +11,7 @@ machine Node {
 
   var IsSending: bool;
   var NextMachine: mid;
-  ghost var MyRing: mid;
+  var MyRing: mid;
 
   submachine Main {
     start state Init_Main_Node {
@@ -80,7 +80,7 @@ machine Node {
   }
 }
 
-main ghost machine Ring4 {
+main model machine Ring4 {
 		    maxqueue 100;
 
 		    var N1:mid;

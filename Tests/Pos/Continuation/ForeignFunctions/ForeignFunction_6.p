@@ -1,5 +1,5 @@
-//Foreign function with multiple sends + new + nondet operation in it
-//Foriegn functions are in real machine
+//Model function with multiple sends + new + nondet operation in it
+//Model functions are in real machine
 
 event nondeteventT:bool;
 event nondeteventF:bool;
@@ -31,13 +31,13 @@ start state init {
 
 main machine Ghost {
     var local:int;
-	var real : mid;
-	foreign fun createMachine()
+	var real : id;
+	model fun createMachine()
 	{	
 		real = new Real(setme = 1);
 	}
 	
-	foreign fun nondetsend() 
+	model fun nondetsend() 
 	{
 		if(*)
 		{

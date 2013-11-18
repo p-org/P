@@ -4,7 +4,7 @@ main machine Entry {
     var a:(int, int);
     var b:(any, any);
 
-    foreign fun switch(a:(any,any)):(any,any) {
+    model fun switch(a:(any,any)):(any,any) {
         return (a[1], a[0]);
     }
 

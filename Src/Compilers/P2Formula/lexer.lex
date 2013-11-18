@@ -82,7 +82,8 @@ NonSMCntrChars  [^\'\"\n\r]*
 "bool"									   { return (int)PTokens.T_BOOL;  }
 "any"									   { return (int)PTokens.T_ANY;  }
 "eid"							           { return (int)PTokens.T_EVENTID;  }
-"mid"									   { return (int)PTokens.T_MACHINEID;  }
+"id"									   { return (int)PTokens.T_MACHINEID;  }
+"mid"									   { return (int)PTokens.T_MODELMACHINEID;  }
 "seq"									   { return (int)PTokens.T_SEQ;  }
 "map"									   { return (int)PTokens.T_MAP; }
 
@@ -96,7 +97,7 @@ NonSMCntrChars  [^\'\"\n\r]*
 "var"									   { return (int)PTokens.VAR;  }
 "start"									   { return (int)PTokens.START;  }
 "stable"								   { return (int)PTokens.STABLE;  }
-"foreign"								   { return (int)PTokens.FOREIGN;  }
+"model"									   { return (int)PTokens.MODEL;  }
 "fun"									   { return (int)PTokens.FUN;  }
 "action"								   { return (int)PTokens.ACTION;  }
 "state"									   { return (int)PTokens.STATE;  }

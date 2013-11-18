@@ -20,8 +20,8 @@ event eUnit assert 1;
 
 
 
-main ghost machine User {
-    var Driver: mid;
+main model machine User {
+    var Driver: id;
     
 	start state User_Init {
 		entry{
@@ -49,8 +49,8 @@ main ghost machine User {
   
 }
 
-ghost machine Switch {
-	var Driver: mid;
+model machine Switch {
+	var Driver: id;
     start state Switch_Init {
         entry { raise(eUnit);}
         on eUnit goto ChangeSwitchStatus;
@@ -67,8 +67,8 @@ ghost machine Switch {
     }
 }
 
-ghost machine LED {
-	var Driver: mid;
+model machine LED {
+	var Driver: id;
 	
 	start state LED_Init {
 		entry { }
@@ -112,8 +112,8 @@ ghost machine LED {
 	}
 }
 
-ghost machine Timer {
-	var Driver : mid;
+model machine Timer {
+	var Driver : id;
 	
 	start state Timer_Init {
 		ignore eStopTimer;
@@ -165,9 +165,9 @@ ghost machine Timer {
 		
 machine OSRDriver {
 	
-	ghost var TimerV: mid;
-	ghost var LEDV: mid;
-	ghost var SwitchV: mid;
+	var TimerV: mid;
+	var LEDV: mid;
+	var SwitchV: mid;
 	var check: bool;
 	
 	start state Driver_Init {
@@ -201,7 +201,7 @@ machine OSRDriver {
 		on eOperationSuccess goto sWaitingForSwitchStatusChangeDriver;
 	}
 	
-	foreign fun CompleteDStateTransition() { }
+	model fun CompleteDStateTransition() { }
 	
 	state sWaitingForSwitchStatusChangeDriver {
 		ignore eD0Entry;
@@ -221,28 +221,28 @@ machine OSRDriver {
 		on eOperationSuccess goto sDxDriver;
 	}
 	
-	foreign fun StoreSwitchAndEnableSwitchStatusChange() { }
+	model fun StoreSwitchAndEnableSwitchStatusChange() { }
 	
-	foreign fun CheckIfSwitchStatusChanged() : bool {
+	model fun CheckIfSwitchStatusChanged() : bool {
 		if(*)
 			return true;
 		else
 			return false;
 	}
 	
-	foreign fun {passive} UpdateBarGraphStateUsingControlTransfer () {
+	model fun {passive} UpdateBarGraphStateUsingControlTransfer () {
 		send(LEDV, eUpdateBarGraphStateUsingControlTransfer);
 	}
 	
-	foreign fun {passive} SetLedStateToStableUsingControlTransfer() {
+	model fun {passive} SetLedStateToStableUsingControlTransfer() {
 		send(LEDV, eSetLedStateToStableUsingControlTransfer);
 	}
 	
-	foreign fun {passive} SetLedStateToUnstableUsingControlTransfer() {
+	model fun {passive} SetLedStateToUnstableUsingControlTransfer() {
 		send(LEDV, eSetLedStateToUnstableUsingControlTransfer);
 	}
 	
-	foreign fun StartDebounceTimer() {
+	model fun StartDebounceTimer() {
 		send(TimerV, eStartDebounceTimer);
 	}
 	

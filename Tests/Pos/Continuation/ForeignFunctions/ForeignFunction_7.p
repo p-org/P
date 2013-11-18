@@ -27,6 +27,7 @@ start state init {
 		entry {
 			assert(trigger == nondeteventT && payload == false || trigger == nondeteventF && payload == true);
 		}
+		
 	}
 }
 
@@ -41,16 +42,7 @@ main machine Ghost {
 	
 	model fun nondetsend() 
 	{
-		if(*)
-		{
-			send(real, nondeteventT, true);
-			send(real, nondeteventT, false);
-		}
-		else
-		{
-			send(real, nondeteventF, false);
-			send(real, nondeteventF, true);
-		}
+		choiceval = *;
 	}
 	
     start state Ghost_Init {
@@ -58,7 +50,7 @@ main machine Ghost {
 		entry {
 			createMachine();
 			nondetsend();
-			raise(unit, choiceval);
+			raise(done, choiceval);
         }
 		on done goto endstate;
     }

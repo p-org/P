@@ -51,10 +51,10 @@ machine Process {
 	var other2:mid;
 	
 	start state inits {
-		ignore myCount;
 		entry {
 			count = 0;
 		}
+		on myCount goto inits;
 		on init do initaction;
 		on Resp goto SendCount;
 	}

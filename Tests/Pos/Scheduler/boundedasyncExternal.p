@@ -39,7 +39,7 @@ machine Process {
 	action initaction {
 		other1 = (((mid, mid))payload)[0];
 		other2 = (((mid,mid))payload)[1];
-		send(this, unit);
+		raise(unit);
 	}
 	action ConfirmThatInSync {
 		assert(count <= (payload) && count >= (payload - 1));

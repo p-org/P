@@ -17,11 +17,11 @@ main fair machine Program {
 	}
 }
 
-fair ghost machine Sender {
+fair model machine Sender {
 	var receiver: mid;
 	var done: bool;
 
-	foreign fun AmIDone(): bool 
+	model fun AmIDone(): bool 
 	{
 		if (*)
 			return true;
@@ -53,7 +53,7 @@ fair ghost machine Sender {
 	}
 }
 
-fair ghost machine Receiver {
+fair model machine Receiver {
 	var sender: mid;
 	start state Init {
 		on SenderId goto Ready;

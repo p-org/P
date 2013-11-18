@@ -74,7 +74,6 @@ namespace PCompiler
         public bool isKeys = false;
         public bool isNew = false;
         public string newAfterLabel = null;
-        public bool isForeign = false;
 
         private ZingTranslationInfo() { }
         public object Clone()
@@ -87,7 +86,6 @@ namespace PCompiler
             info.isKeys = isKeys;
             info.isNew = isNew;
             info.newAfterLabel = newAfterLabel;
-            info.isForeign = isForeign;
             return info;
         }
           
@@ -210,18 +208,18 @@ namespace PCompiler
 
     internal class FunInfo
     {
-        public bool isForeign;
+        public bool isModel;
         public Dictionary<string, VariableInfo> parameterNameToInfo;
         public List<string> parameterNames;
         public PType returnType;
         public FuncTerm funDecl;
         public HashSet<string> callers;
         public bool atPassive;
-        public FunInfo(bool isForeign, PType returnType, FuncTerm funDecl)
+        public FunInfo(bool isModel, PType returnType, FuncTerm funDecl)
         {
-            this.isForeign = isForeign;
-            parameterNameToInfo = new Dictionary<string, VariableInfo>();
-            parameterNames = new List<string>();
+            this.isModel = isModel;
+            this.parameterNameToInfo = new Dictionary<string, VariableInfo>();
+            this.parameterNames = new List<string>();
             this.returnType = returnType;
             this.funDecl = funDecl;
             this.callers = new HashSet<string>();
@@ -244,7 +242,7 @@ namespace PCompiler
 
     internal class MachineInfo
     {
-        public bool isGhost;
+        public bool isModel;
         public int maxQueueSize;
         public bool isFair;
         public FuncTerm initStateDecl;
@@ -256,7 +254,7 @@ namespace PCompiler
 
         public MachineInfo()
         {
-            isGhost = false;
+            isModel = false;
             maxQueueSize = -1;
             isFair = false;
             initStateDecl = null;
@@ -2049,7 +2047,7 @@ namespace PCompiler
                     var id = (Id)n;
                     if (id.Name == PData.Cnst_This.Node.Name)
                     {
-                        return new ZingTranslationInfo(MkZingIdentifier("myHandle"), compiler.allMachines[ctxt.machineName].isGhost ? (PType) new PMidType() : (PType) new PIdType());
+                        return new ZingTranslationInfo(MkZingIdentifier("myHandle"), compiler.allMachines[ctxt.machineName].isModel ? (PType) new PMidType() : (PType) new PIdType());
                     }
                     else if (id.Name == PData.Cnst_Trigger.Node.Name)
                     {
@@ -2074,8 +2072,8 @@ namespace PCompiler
                     }
                     else if (id.Name == PData.Cnst_Nondet.Node.Name)
                     {
-                        if (compiler.allMachines[ctxt.machineName].isGhost ||
-                            (ctxt.translationContext == TranslationContext.Function && compiler.allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].isForeign))
+                        if (compiler.allMachines[ctxt.machineName].isModel ||
+                            (ctxt.translationContext == TranslationContext.Function && compiler.allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].isModel))
                         {
                             var afterLabel = ctxt.getFreshLabel();
                             var bvar = ctxt.getTmpVar(PType.Bool, "nondet");
@@ -2468,10 +2466,6 @@ namespace PCompiler
                         compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Conditional expression must be Boolean."), 0, compiler.CompilingProgram));
                         return null;
                     }
-                    var inGhostContext =
-                        (ctxt.translationContext == TranslationContext.Function) ?
-                        compiler.allMachines[machineName].funNameToFunInfo[entityName].isForeign :
-                        compiler.allMachines[machineName].isGhost;
 
                     // Order in which we emit side effets (else,then) is the reverse of the order in which the side effect stacks were pushed(then, else).
                     var ifName = compiler.getUnique(entityName + "_if");
@@ -2979,7 +2973,7 @@ namespace PCompiler
                     }
                     return new ZingTranslationInfo(
                         MkZingCreateMachineCall(ctxt, typeName, inits.Node), 
-                        compiler.allMachines[typeName].isGhost ? (PType) new PMidType() : (PType) new PIdType(), 
+                        compiler.allMachines[typeName].isModel ? (PType) new PMidType() : (PType) new PIdType(), 
                         true, 
                         afterLabel);
 
@@ -3224,11 +3218,6 @@ namespace PCompiler
                         compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Conditional expression must be Boolean not {0}", condExpr.type), 0, compiler.CompilingProgram));
                         return null;
                     }
-
-                    var inGhostContext =
-                        (ctxt.translationContext == TranslationContext.Function) ?
-                        compiler.allMachines[machineName].funNameToFunInfo[entityName].isForeign :
-                        compiler.allMachines[machineName].isGhost;
 
                     var loopStart = compiler.getUnique(entityName + "_loop_start");
                     var loopEnd = compiler.getUnique(entityName + "_loop_end");

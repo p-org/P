@@ -3,7 +3,7 @@ main machine Entry {
     var i, t, s:int;
     var swapped, b:bool;
 
-    foreign fun reverse(l:seq[int]):seq[int] {
+    model fun reverse(l:seq[int]):seq[int] {
         i = 0;
         s = sizeof(l);
         while (i < s) {
@@ -16,7 +16,7 @@ main machine Entry {
         return l;
     }
 
-    foreign fun BubbleSort(l:seq[int]):seq[int] {
+    model fun BubbleSort(l:seq[int]):seq[int] {
         swapped = true;
         while (swapped) {
             i = 0;
@@ -35,7 +35,7 @@ main machine Entry {
         return l;
     }
 
-    foreign fun IsSorted(l:seq[int]):bool {
+    model fun IsSorted(l:seq[int]):bool {
         i = 0;
         while (i < sizeof(l) - 1) {
             if (l[i] > l[i+1])

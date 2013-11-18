@@ -535,16 +535,16 @@ namespace PParser
         public string id;
         public bool isMain;
         public bool isFair;
-        public bool isGhost;
+        public bool isModel;
         public IEnumerable<IMachineBodyItem> body;
 
-        public MachineDeclaration(string id, bool main, bool fair, bool ghost, IEnumerable<IMachineBodyItem> body)
+        public MachineDeclaration(string id, bool main, bool fair, bool model, IEnumerable<IMachineBodyItem> body)
             : base(body)
         {
             this.id = id;
             this.isMain = main;
             this.isFair = fair;
-            this.isGhost = ghost;
+            this.isModel = model;
             this.body = body;
         }
     }
@@ -578,17 +578,17 @@ namespace PParser
     public sealed class FunDeclaration : BaseNode, IMachineBodyItem
     {
         public string name;
-        public bool isForeign;
+        public bool isModel;
         public TypeNamedTuple paramTypes;
         public TypeNode returnType;
         public DSLBlock body;
         public DSLAttribute passiveAttr;
 
-        public FunDeclaration(string name, bool isForeign, TypeNamedTuple paramTypes, TypeNode retType, DSLBlock body, DSLAttribute attribute)
+        public FunDeclaration(string name, bool isModel, TypeNamedTuple paramTypes, TypeNode retType, DSLBlock body, DSLAttribute attribute)
             : base(paramTypes, retType, body, attribute)
         {
             this.name = name;
-            this.isForeign = isForeign;
+            this.isModel = isModel;
             this.paramTypes = paramTypes;
             this.returnType = retType;
             this.body = body;

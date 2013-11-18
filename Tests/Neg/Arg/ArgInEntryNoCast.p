@@ -1,7 +1,7 @@
 event EFoo:int;
 event EBar:bool;
 
-main ghost machine Foo {
+main model machine Foo {
     var a:int; 
     var b:bool;
 

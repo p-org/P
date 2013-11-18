@@ -6,9 +6,9 @@ event Unit assert 1;
 
      
 main machine Real {
-		  ghost var ghostVar:mid;
+		  var ghostVar:mid;
 		  var test: bool;
-		  ghost var counter: int;
+		  var counter: int;
 
    start state Real_Init {
  entry {
@@ -35,7 +35,7 @@ on E4 goto Real_S2;
 	   }
 }
 
-foreign fun {passive} PassiveFunctionIncrement() { counter = counter + 1; }
+model fun {passive} PassiveFunctionIncrement() { counter = counter + 1; }
 
        state Real_S2 {
 	   entry {
@@ -47,7 +47,7 @@ foreign fun {passive} PassiveFunctionIncrement() { counter = counter + 1; }
 
 }
 
-ghost machine Ghost {
+model machine Ghost {
  
 		    var real:mid;
      

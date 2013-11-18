@@ -2469,7 +2469,7 @@ namespace PCompiler
         {
             var funName = compiler.GetName(fun.Node, 0);
             var ownerName = compiler.GetOwnerName(fun.Node, 1, 0);
-            bool eraseBody = compiler.erase && compiler.allMachines[ownerName].funNameToFunInfo[funName].isForeign;
+            bool eraseBody = compiler.erase && compiler.allMachines[ownerName].funNameToFunInfo[funName].isModel;
             var parameters = Compiler.GetArgByIndex(fun.Node, 2);
             var pReturnType = compiler.GetPType(Compiler.GetArgByIndex(fun.Node, 3));
             AST<FuncTerm> cReturnType;
@@ -3399,7 +3399,6 @@ Environment:
             }
             else if (funName == PData.Con_Scall.Node.Name)
             {
-                // Allways non-ghost since there are no arguments, and states are always non-erasible.
                 var callLabel = ++ctxt.callStatementCounter;
                 using (var it = children.GetEnumerator())
                 {

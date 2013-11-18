@@ -1,5 +1,5 @@
 main machine Entry {
-    foreign fun bar(dst:int) {
+    model fun bar(dst:int) {
     }
     start state foo {
         entry { }

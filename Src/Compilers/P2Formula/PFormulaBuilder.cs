@@ -276,7 +276,7 @@ namespace PParser
             AST<Node> maxQSize = curMachMaxQSize == -1 ? (AST<Node>)P_FormulaNodes.Nil_Iden : (AST<Node>)fMkCnst(curMachMaxQSize);
             var machineName = sem.resolve(s, s.id);
 
-            var machineDecl = fMkModelFact(fMkFuncTerm(P_FormulaNodes.MachineDecl_Iden, fMkCnst(machineName), fMkCnst(s.isGhost), maxQSize), machineName);
+            var machineDecl = fMkModelFact(fMkFuncTerm(P_FormulaNodes.MachineDecl_Iden, fMkCnst(machineName), fMkCnst(s.isModel), maxQSize), machineName);
             mTerms.Insert(0, machineDecl);
             if (s.isMain)
             {
@@ -323,7 +323,7 @@ namespace PParser
                 }
             }
 
-            res.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.FunDecl_Iden, fMkCnst(funName), curMachine, paramsN, getOneOrNil(s.returnType), fMkCnst(s.isForeign), getOne(s.body)), funName));
+            res.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.FunDecl_Iden, fMkCnst(funName), curMachine, paramsN, getOneOrNil(s.returnType), fMkCnst(s.isModel), getOne(s.body)), funName));
 
             if (s.passiveAttr != null && s.passiveAttr.name == "passive")
             {

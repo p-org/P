@@ -1,4 +1,4 @@
 main machine Entry {
     start state init { }
-    foreign fun {passive} foo () { }
+    model fun {passive} foo () { }
 }

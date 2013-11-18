@@ -3,7 +3,7 @@ event EFoz:mid;
 event EBar:bool;
 event EBaz:eid;
 
-main ghost machine Foo {
+main model machine Foo {
     var a:int; 
     var b:bool;
 

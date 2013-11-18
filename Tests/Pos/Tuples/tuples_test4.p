@@ -19,11 +19,11 @@ machine Foo {
         }
     }
 
-    foreign fun anull(a:(int,int)):(int,int) {
+    model fun anull(a:(int,int)):(int,int) {
         a[0] = 0;
         a[1] = 0;
         return a;
     }
 
-    foreign fun sup():int { return 0; }
+    model fun sup():int { return 0; }
 }

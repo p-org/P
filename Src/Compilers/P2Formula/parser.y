@@ -27,7 +27,7 @@
 %token T_INT T_BOOL T_EVENTID T_MACHINEID T_MODELMACHINEID T_ANY T_SEQ T_MAP
 %token MAIN EVENT MACHINE ASSUME GHOST
 
-%token VAR START STABLE FOREIGN STATE FUN ACTION MAXQUEUE SUBMACHINE
+%token VAR START STABLE MODEL STATE FUN ACTION MAXQUEUE SUBMACHINE
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH
 
@@ -166,7 +166,7 @@ TypeOrNull
 
 // --------------------  Machine Declarations --------------------
 MachineDecl
-	: IsMain IsFair IsGhost MACHINE ID LCBRACE MachineBody RCBRACE	{ $$.node = new MachineDeclaration($5.s, $1.b, $2.b, $3.b, Cast<INode, IMachineBodyItem>.list($7.lst)); setLoc($$.node, @1, @8);}
+	: IsMain IsFair IsModel MACHINE ID LCBRACE MachineBody RCBRACE	{ $$.node = new MachineDeclaration($5.s, $1.b, $2.b, $3.b, Cast<INode, IMachineBodyItem>.list($7.lst)); setLoc($$.node, @1, @8);}
 	;
 
 IsGhost
@@ -223,7 +223,7 @@ VarDecl
 
 // -------------------   Function Declarations    -------------------
 FunDecl
-	: IsForeign FUN AttributeOrNull ID Params TypeOrNull StmtBlock	{ $$.node = new FunDeclaration($4.s, $1.b, (TypeNamedTuple) $5.type, $6.type, (DSLBlock)$7.stmt, (DSLAttribute)$3.node); setLoc($$.node, @1, @7); }
+	: IsModel FUN AttributeOrNull ID Params TypeOrNull StmtBlock	{ $$.node = new FunDeclaration($4.s, $1.b, (TypeNamedTuple) $5.type, $6.type, (DSLBlock)$7.stmt, (DSLAttribute)$3.node); setLoc($$.node, @1, @7); }
 	;
 
 Params
@@ -231,8 +231,8 @@ Params
 	| NamedTupleType
 	;
 
-IsForeign
-	: FOREIGN										{ $$.b = true; }
+IsModel
+	: MODEL											{ $$.b = true; }
 	|												{ $$.b = false; }
 	;
 

@@ -76,7 +76,7 @@ okToStackOverflow = [ "PingPongWithCall" ]
 
 okToTimeout = [ "TokenRing", "BangaloreToRedmond_Liveness", "PingPong", "PingPongDingDong" ]
 
-okToFail = [ "AlonBug" ]
+okToFail = [ "AlonBug", "ForeignFunction_7" ]
 
 for f in elaborateFiles(args.files):
     name = os.path.splitext(os.path.basename(f))[0]

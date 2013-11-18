@@ -10,8 +10,8 @@ event TookFlight assert 2;
 event Unit assert 2;
 
 main machine Employee {
-    ghost var TravelAgentId: mid;
-    ghost var CityCabId: mid;
+    var TravelAgentId: mid;
+    var CityCabId: mid;
     var Check: bool;
     var RemoteCheckIn: bool;
 
@@ -102,7 +102,7 @@ main machine Employee {
         entry { assert(false); }
     }
 
-    foreign fun AmILucky():bool { 
+    model fun AmILucky():bool { 
         if (*) 
             return true;
         else
@@ -110,7 +110,7 @@ main machine Employee {
     }
 }
 
-ghost machine TravelAgent {
+model machine TravelAgent {
     var EmployeeId: mid;
     start state Init { 
         on BookFlight goto SBookFlight;
@@ -125,7 +125,7 @@ ghost machine TravelAgent {
     }
 }
 
-ghost machine CityCab {
+model machine CityCab {
     var EmployeeId: mid;
 
     start state Init { 

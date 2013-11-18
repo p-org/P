@@ -97,7 +97,7 @@ NonSMCntrChars  [^\'\"\n\r]*
 "var"									   { return (int)PTokens.VAR;  }
 "start"									   { return (int)PTokens.START;  }
 "stable"								   { return (int)PTokens.STABLE;  }
-"foreign"								   { return (int)PTokens.FOREIGN;  }
+"model"									   { return (int)PTokens.MODEL;  }
 "fun"									   { return (int)PTokens.FUN;  }
 "action"								   { return (int)PTokens.ACTION;  }
 "state"									   { return (int)PTokens.STATE;  }

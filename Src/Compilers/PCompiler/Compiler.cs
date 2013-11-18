@@ -428,7 +428,7 @@ namespace PCompiler
                     {
                         allMachines[name] = new MachineInfo();
                         it.MoveNext();
-                        allMachines[name].isGhost = ((Id)it.Current).Name == "TRUE";
+                        allMachines[name].isModel = ((Id)it.Current).Name == "TRUE";
                         it.MoveNext();
                         if (it.Current.NodeKind != NodeKind.Id)
                         {
@@ -517,7 +517,16 @@ namespace PCompiler
                         {
                             it.MoveNext();
                             var type = GetPType(it.Current);
-                            varTable[varName] = new VariableInfo(type);
+                            it.MoveNext();
+                            var isGhost = ((Id)it.Current).Name == "TRUE";
+                            if (isGhost)
+                            {
+                                errors.Add(new Flag(SeverityKind.Error, term.Node, string.Format("Ghost variable {0} for machine {1} is not supported.", varName, machineName), 0, CompilingProgram));
+                            }
+                            else
+                            {
+                                varTable[varName] = new VariableInfo(type);
+                            }
                         }
                     }
                 }
@@ -757,8 +766,8 @@ namespace PCompiler
                             it.MoveNext();
                             var returnTypeName = GetPType(it.Current);
                             it.MoveNext();
-                            var isForeign = ((Id)it.Current).Name == "TRUE";
-                            var funInfo = new FunInfo(isForeign, returnTypeName, term.Node);
+                            var isModel = ((Id)it.Current).Name == "TRUE";
+                            var funInfo = new FunInfo(isModel, returnTypeName, term.Node);
                             Dictionary<string, VariableInfo> parameters = funInfo.parameterNameToInfo;
                             while (true)
                             {
@@ -1124,7 +1133,7 @@ namespace PCompiler
             newDecls = new LinkedList<AST<FuncTerm>>();
             foreach (var e in bin)
             {
-                if (allMachines[GetName(e.Node, 0)].isGhost)
+                if (allMachines[GetName(e.Node, 0)].isModel)
                     continue;
                 newDecls.AddLast(e);
             }
@@ -1138,7 +1147,7 @@ namespace PCompiler
                 foreach (var e in bin)
                 {
                     var ownerName = GetOwnerName(e.Node, 1, 0);
-                    if (allMachines[ownerName].isGhost)
+                    if (allMachines[ownerName].isModel)
                         continue;
                     newDecls.AddLast(e);
                 }
@@ -1154,7 +1163,7 @@ namespace PCompiler
                 {
                     var stateDecl = GetFuncTerm(GetArgByIndex(e.Node, 0));
                     var ownerName = GetOwnerName(stateDecl, 1, 0);
-                    if (allMachines[ownerName].isGhost)
+                    if (allMachines[ownerName].isModel)
                         continue;
                     newDecls.AddLast(e);
                 }
@@ -1166,7 +1175,7 @@ namespace PCompiler
             foreach (var e in bin)
             {
                 var ownerName = GetOwnerName(e.Node, 0, 0);
-                if (allMachines[ownerName].isGhost)
+                if (allMachines[ownerName].isModel)
                     continue;
                 newDecls.AddLast(e);
             }

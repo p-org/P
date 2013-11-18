@@ -5,7 +5,7 @@ event E4 assert 1;
 event unit assert 1;
 
 main machine Real {
-    ghost var ghost_machine: mid;
+    var ghost_machine: mid;
     var test: bool;
     start state Real_Init {
         entry {
@@ -40,7 +40,7 @@ main machine Real {
  
 }
 
-ghost machine Ghost {
+model machine Ghost {
     var real_machine: mid;
     start state Ghost_Init {
         entry {

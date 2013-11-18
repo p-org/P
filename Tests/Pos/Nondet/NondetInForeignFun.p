@@ -1,7 +1,7 @@
 main machine Entry {
     var pw, i, res, a:int;
 
-    foreign fun RandomNum(nBits:int):int {
+    model fun RandomNum(nBits:int):int {
         i = 0;
         pw = 1;
         res = 0;

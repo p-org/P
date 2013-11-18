@@ -21,7 +21,7 @@ machine Foo {
         }
     }
 
-    foreign fun addScalar(a:(int,int), b:int):(int,int) {
+    model fun addScalar(a:(int,int), b:int):(int,int) {
         return (a[0] + b, a[1] + b);
     }
 }

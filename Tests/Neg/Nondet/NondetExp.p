@@ -1,5 +1,5 @@
 main machine Entry {
-    ghost var a:bool;
+    var a:bool;
     var b:bool;
 
     start state init {

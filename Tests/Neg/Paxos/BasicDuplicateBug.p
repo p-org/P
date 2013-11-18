@@ -33,7 +33,7 @@ machine Proposer {
 
     start state init { }
 
-    foreign fun NetSend(t:mid, e:eid, p:any) {
+    model fun NetSend(t:mid, e:eid, p:any) {
         send(network, Packet, (to=t, ev=e, pl=p));
     }
 
@@ -87,6 +87,6 @@ machine Learner {
     start state init { }
 }
 
-main ghost machine Env {
+main model machine Env {
     start state init { }
 }

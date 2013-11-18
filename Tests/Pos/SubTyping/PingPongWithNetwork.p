@@ -52,7 +52,7 @@ machine PONG {
     }
 }
 
-ghost machine Network {
+model machine Network {
     var x:(to: id, ev: eid, val: any);
     start state Wait {
         on Forward goto Send;

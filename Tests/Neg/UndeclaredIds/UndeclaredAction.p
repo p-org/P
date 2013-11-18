@@ -1,6 +1,6 @@
 event EFoo;
 
-main ghost machine Foo {
+main model machine Foo {
     start state S1 {
         entry {
         }

@@ -1,5 +1,5 @@
 main machine Entry {
-    foreign fun foo(a:eid) {
+    model fun foo(a:eid) {
     }
 
     start state init {

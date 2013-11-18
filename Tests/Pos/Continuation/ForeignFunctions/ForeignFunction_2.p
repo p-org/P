@@ -1,17 +1,17 @@
-//Foreign function with Non-Det operation in it
+//Model function with Non-Det operation in it
 //Non-det with recursive calls inside function
 
-main ghost machine Ghost {
+main model machine Ghost {
     var local:int;
 	var nondetval : bool;
-	foreign fun inc(a:int): int
+	model fun inc(a:int): int
 	{	
 		if(a >= 102)
 			return a;
 		a = inc(a + 1);
 		return a;
 	}
-	foreign fun nondetinc (a:int) : int {
+	model fun nondetinc (a:int) : int {
 		if(*)
 		{
 			a = inc(a);

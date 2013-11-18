@@ -1,4 +1,4 @@
-//Foreign function with send + new + nondet operation in it
+//Model function with send + new + nondet operation in it
 
 event nondeteventT:bool;
 event nondeteventF:bool;
@@ -21,15 +21,15 @@ start state init {
 	}
 }
 
-main ghost machine Ghost {
+main model machine Ghost {
     var local:int;
 	var real : id;
-	foreign fun createMachine()
+	model fun createMachine()
 	{	
 		real = new Real(setme = 1);
 	}
 	
-	foreign fun nondetsend() 
+	model fun nondetsend() 
 	{
 		if(*)
 		{

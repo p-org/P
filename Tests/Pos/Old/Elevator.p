@@ -19,7 +19,7 @@ event eStopTimerReturned assert 1;
 event eObjectEncountered assert 1;
 
 machine Elevator {
-    ghost var TimerV, DoorV: mid;
+    var TimerV, DoorV: mid;
 
     start state Init {
         entry {
@@ -126,7 +126,7 @@ machine Elevator {
     }
 }
 
-main ghost machine User {
+main model machine User {
     var ElevatorV : id;
 
     start state Init {
@@ -152,7 +152,7 @@ main ghost machine User {
     }
 }
 
-ghost machine Door {
+model machine Door {
     var ElevatorV : id;
 
     start state Init {
@@ -220,7 +220,7 @@ ghost machine Door {
     }
 }
 
-ghost machine Timer {
+model machine Timer {
     var ElevatorV : id;
 
     start state Init {

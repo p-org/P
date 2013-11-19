@@ -537,7 +537,7 @@ namespace PCompiler
 
         private string GetFairTransitionMonitorName(string stateName, string eventName)
         {
-            return string.Format("{0}_fairness_monitor", stateName);
+            return string.Format("{0}_{1}_fairness_monitor", stateName, eventName);
         }
 
         private void MkZingClasses(List<AST<Node>> elements)

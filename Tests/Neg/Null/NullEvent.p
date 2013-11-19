@@ -1,5 +1,5 @@
 main machine Entry {
-    var m:mid;
+    var m:id;
     var e:eid;
 
     start state init {

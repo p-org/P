@@ -49,7 +49,7 @@ model fun {passive} PassiveFunctionIncrement() { counter = counter + 1; }
 
 model machine Ghost {
  
-		    var real:mid;
+		    var real:id;
      
    start state Ghost_Init {
 			  on E1 goto Ghost_S1;

@@ -1,13 +1,23 @@
 event E;
 
 main machine Program {
+		     var i: int;
 	start state Init {
-		entry { raise (E); }
+			 entry { i = 0; raise (E); }
 		exit { assert (false); }
 		on E push Call;
 	}
 
 	state Call {
-		entry { raise (E); }
+		   entry { 
+			 if (i == 3) {
+				     return; 
+			 }
+                         else
+			    {
+			    i = i + 1;
+			    }
+			 raise (E); 
+			 }
 	}
 }

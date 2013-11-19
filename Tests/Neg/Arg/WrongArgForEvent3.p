@@ -1,7 +1,7 @@
 event E;
 
 main machine Entry {
-    var m:mid;
+    var m:id;
     var a:eid;
 
     start state foo {

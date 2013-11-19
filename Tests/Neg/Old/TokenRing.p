@@ -1,16 +1,16 @@
 event Empty assert 1;
-event Sending:mid assert 1;
-event Done: mid assert 1;
+event Sending:id assert 1;
+event Done: id assert 1;
 event Unit assert 0;
-event Next:mid assert 1;
-event Send: mid;
+event Next:id assert 1;
+event Send: id;
 event Ready;
 
 machine Node {
   maxqueue 100;
 
   var IsSending: bool;
-  var NextMachine: mid;
+  var NextMachine: id;
   var MyRing: mid;
 
   submachine Main {
@@ -42,7 +42,7 @@ machine Node {
       }
 
       on Unit goto Wait_Main_Node;
-    }
+}
 
     state StartSending_Main_Node {
       entry {
@@ -83,16 +83,15 @@ machine Node {
 main model machine Ring4 {
 		    maxqueue 100;
 
-		    var N1:mid;
-		    var N2:mid;
-		    var N3:mid;
-		    var N4:mid;
-		    var N5:mid;
+		    var N1:id;
+		    var N2:id;
+		    var N3:id;
+		    var N4:id;
 		    var ReadyCount:int;
 		    var Rand1:bool;
 		    var Rand2:bool;
-		    var RandSrc:mid;
-		    var RandDst:mid;
+		    var RandSrc:id;
+		    var RandDst:id;
 
   submachine Main {
     start state Boot_Main_Ring4 {

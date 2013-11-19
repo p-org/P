@@ -54,8 +54,8 @@ main machine Real {
  
 }
 
-machine Ghost {
-    var real_machine: mid;
+model machine Ghost {
+    var real_machine: id;
     start state Ghost_Init {
         entry {
         }

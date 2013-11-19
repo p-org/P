@@ -103,7 +103,7 @@ main machine Employee {
 }
 
 model machine TravelAgent {
-    var EmployeeId: mid;
+    var EmployeeId: id;
     start state Init { 
         on BookFlight goto SBookFlight;
     }
@@ -118,7 +118,7 @@ model machine TravelAgent {
 }
 
 model machine CityCab {
-    var EmployeeId: mid;
+    var EmployeeId: id;
 
     start state Init { 
         on BookCab goto SBookCab;

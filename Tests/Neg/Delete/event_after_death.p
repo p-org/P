@@ -1,7 +1,7 @@
 event Shot;
 
 main machine Gun {
-    var target:mid;
+    var target:id;
 
     start state init {
         entry {

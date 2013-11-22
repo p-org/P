@@ -34,11 +34,11 @@
   <ItemGroup>
     <Reference Include="Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=19c3ad36eba97133, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Ext\Libraries\Formula\Core.dll</HintPath>
+      <HintPath>..\..\..\Ext\Formula\Core.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Z3, Version=2.0.50327.1, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=x86">
+    <Reference Include="Microsoft.Z3, Version=4.3.2.0, Culture=neutral, PublicKeyToken=19c3ad36eba97133, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Ext\Libraries\Z3\Microsoft.Z3.dll</HintPath>
+      <HintPath>..\..\..\Ext\Formula\Microsoft.Z3.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

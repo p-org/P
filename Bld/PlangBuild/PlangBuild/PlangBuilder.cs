@@ -26,8 +26,8 @@ namespace PlangBuild
         /// </summary>
         private static readonly Tuple<bool, string, string>[] Projects = new Tuple<bool, string, string>[]
         {
-            new Tuple<bool, string, string>(false, "..\\..\\..\\..\\..\\Src\\Compilers\\P2Formula\\P2Formula.csproj", PlatformX86),
-            new Tuple<bool, string, string>(false, "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\PCompiler.csproj", PlatformX86),
+            new Tuple<bool, string, string>(false, "..\\..\\..\\..\\..\\Src\\Compilers\\P2Formula\\P2Formula.csproj", PlatformAny),
+            new Tuple<bool, string, string>(false, "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\PCompiler.csproj", PlatformAny),
         };
 
         private static readonly Tuple<string, string>[] MoveMap = new Tuple<string, string>[]
@@ -112,20 +112,20 @@ namespace PlangBuild
         private static readonly Tuple<string, string>[] DebugMoveMap = new Tuple<string, string>[]
         {
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Compilers\\P2Formula\\bin\\x86\\Debug\\P2Formula.exe", 
+                "..\\..\\..\\..\\..\\Src\\Compilers\\P2Formula\\bin\\Debug\\P2Formula.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\P2Formula.exe"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\x86\\Debug\\PCompiler.exe", 
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Debug\\PCompiler.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\PCompiler.exe"),
         };
 
         private static readonly Tuple<string, string>[] ReleaseMoveMap = new Tuple<string, string>[]
         {
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Compilers\\P2Formula\\bin\\x86\\Release\\P2Formula.exe", 
+                "..\\..\\..\\..\\..\\Src\\Compilers\\P2Formula\\bin\\Release\\P2Formula.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\P2Formula.exe"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\x86\\Release\\PCompiler.exe", 
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Release\\PCompiler.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\PCompiler.exe"),
         };
 

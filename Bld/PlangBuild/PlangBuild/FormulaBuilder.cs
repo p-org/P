@@ -38,7 +38,7 @@
                 "Ext\\GPLEX\\gplex45.exe",
                 "..\\gplex45.exe"),
             new Tuple<string, string>(
-                "Ext\\GPPG\\gppg.exe",
+                "Ext\\GPPG\\gppg45.exe",
                 "..\\gppg45.exe"),
             new Tuple<string, string>(
                 "Bld\\Drops\\Formula_Release_x86\\Formula.exe",

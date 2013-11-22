@@ -23,6 +23,8 @@
 
         private static readonly string[] outputs = new string[]
         {
+            "..\\..\\..\\..\\..\\Ext\\Formula\\gplex45.exe",
+            "..\\..\\..\\..\\..\\Ext\\Formula\\gppg45.exe",
             "..\\..\\..\\..\\..\\Ext\\Formula\\Formula.exe",
             "..\\..\\..\\..\\..\\Ext\\Formula\\Formula.exe.config",
             "..\\..\\..\\..\\..\\Ext\\Formula\\Core.dll",
@@ -32,6 +34,12 @@
 
         private static readonly Tuple<string, string>[] ReleaseMoveMap = new Tuple<string, string>[]
         {
+            new Tuple<string, string>(
+                "Ext\\GPLEX\\gplex45.exe",
+                "..\\gplex45.exe"),
+            new Tuple<string, string>(
+                "Ext\\GPPG\\gppg.exe",
+                "..\\gppg45.exe"),
             new Tuple<string, string>(
                 "Bld\\Drops\\Formula_Release_x86\\Formula.exe",
                 "..\\Formula.exe"),
@@ -46,7 +54,8 @@
                 "..\\Microsoft.Z3.dll"),
             new Tuple<string, string>(
                 "Bld\\Drops\\Formula_Release_x86\\libz3.dll",
-                "..\\libz3.dll")
+                "..\\libz3.dll"),
+
         };
 
         private static bool Verify(string[] outputs)

@@ -140,14 +140,14 @@
             }
         }
 
-        public static bool GetCsc(out FileInfo csc)
-        {
-            return GetFrameworkFile(CscName, out csc);
-        }
-
         public static bool GetMsbuild(out FileInfo msbuild, bool force32Bit = false)
         {
             return GetFrameworkFile(MSbuildName, out msbuild, force32Bit);
+        }
+
+        public static bool GetCsc(out FileInfo csc)
+        {
+            return GetFrameworkFile(CscName, out csc);
         }
 
         public static bool Download(DependencyKind dep, out DirectoryInfo outputDir)

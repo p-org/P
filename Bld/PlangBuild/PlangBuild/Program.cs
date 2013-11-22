@@ -34,7 +34,7 @@
             if (args.Length == 1 && args[0].Trim() == LayoutFlag)
             {
                 SourceDownloader.PrintSourceURLs();
-                //FormulaBuilder.PrintOutputs();
+                FormulaBuilder.PrintOutputs();
                 ZingBuilder.PrintOutputs();
                 return;
             }
@@ -62,7 +62,7 @@
 
             WriteInfo("Building in {0} configuration", isDebug ? "debug" : "release");
 
-            var result = FormulaBuilder.Build(isDebug) && ZingBuilder.Build(isForced);
+            var result = FormulaBuilder.Build(isForced) && ZingBuilder.Build(isForced) && PlangBuilder.Build(isDebug);
 
             if (!result)
             {

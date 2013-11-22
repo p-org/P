@@ -141,31 +141,40 @@
 
         public static bool Build(bool isBldDebug)
         {
-            return true;
             var result = true;
-            FileInfo msbuild, msbuild32 = null;
-            result = SourceDownloader.GetMsbuild(out msbuild) && 
-                     SourceDownloader.GetMsbuild(out msbuild32, true) &&
-                     result;
+            DirectoryInfo formulaSrcDir;
+            result = SourceDownloader.Download(SourceDownloader.DependencyKind.FORMULA, out formulaSrcDir);
             if (!result)
             {
-                Program.WriteError("Could not build Formula, unable to find msbuild");
+                Program.WriteError("Could not download Formula");
                 return false;
             }
 
-            var config = isBldDebug ? ConfigDebug : ConfigRelease;
-            foreach (var proj in Projects)
-            {
-                Program.WriteInfo("Building {0}: Config = {1}, Platform = {2}", proj.Item2, config, proj.Item3);
-                result = BuildCSProj(proj.Item1 ? msbuild32 : msbuild, proj.Item2, config, proj.Item3) && result;
-            }
+            var psi = new ProcessStartInfo();
+            psi.UseShellExecute = false;
+            psi.RedirectStandardError = true;
+            psi.RedirectStandardOutput = true;
+            psi.WorkingDirectory = formulaSrcDir.FullName;
+            psi.FileName = "build.bat";
+            psi.Arguments = "";
+            psi.CreateNoWindow = true;
 
+            var process = new Process();
+            process.StartInfo = psi;
+            process.OutputDataReceived += OutputReceived;
+            process.Start();
+            process.BeginErrorReadLine();
+            process.BeginOutputReadLine();
+            process.WaitForExit();
+
+            Program.WriteInfo("EXIT: {0}", process.ExitCode);
+            result = process.ExitCode == 0;
             if (!result)
             {
                 return false;
             }
 
-            result = DoMove(isBldDebug ? DebugMoveMap : ReleaseMoveMap) && result;
+            //result = DoMove(isBldDebug ? DebugMoveMap : ReleaseMoveMap) && result;
             return result;
         }
 

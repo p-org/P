@@ -166,15 +166,9 @@ namespace PlangBuild
             }
             foreach (var subInDir in inDir.GetDirectories())
             {
-                string path = Path.Combine(runningLoc.Directory.FullName, "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime", subInDir.Name);
-                var subOutDir = new DirectoryInfo(path);
-                if (!subOutDir.Exists)
-                {
-                    subOutDir.Create();
-                }
                 foreach (var inFile in subInDir.GetFiles())
                 {
-                    var outFile = new FileInfo(Path.Combine(path, inFile.Name));
+                    var outFile = new FileInfo(Path.Combine(runningLoc.Directory.FullName, "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime", inFile.Name));
                     inFile.CopyTo(outFile.FullName, true);
                 }
             }

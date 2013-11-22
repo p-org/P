@@ -10,13 +10,13 @@ if exist "%WinDir%\Microsoft.NET\Framework64\v4.0.30319\msbuild.exe" (
   exit /B 1)
 
 echo Bootstrapping the build utility...
-%bldexe%  .\PlangBuild\PlangBuild\PlangBuild.csproj /t:Clean /p:Configuration=Debug /verbosity:quiet /nologo
+%bldexe%  .\PlangBuild\PlangBuild\PlangBuild.csproj /t:Clean /p:Configuration=Debug /p:Platform=AnyCPU /verbosity:quiet /nologo
 if %ERRORLEVEL% neq 0 (
   echo Could not clean build utility.
   exit /B 1
 )
 
-%bldexe%  .\PlangBuild\PlangBuild\PlangBuild.csproj /t:Build /p:Configuration=Debug /verbosity:quiet /nologo
+%bldexe%  .\PlangBuild\PlangBuild\PlangBuild.csproj /t:Build /p:Configuration=Debug /p:Platform=AnyCPU /verbosity:quiet /nologo
 if %ERRORLEVEL% neq 0 (
   echo Could not compile build utility.
   exit /B 1

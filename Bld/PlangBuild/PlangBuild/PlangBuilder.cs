@@ -34,99 +34,99 @@ namespace PlangBuild
         {
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Formula\\Core.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Core.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Core.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Formula\\Microsoft.Z3.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Microosft.Z3.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Microosft.Z3.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Formula\\libz3.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\libz3.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\libz3.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\zc.exe", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\zc.exe"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\zc.exe"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\Microsoft.Comega.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Microsoft.Comega.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Microsoft.Comega.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\Microsoft.Comega.Runtime.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Microsoft.Comega.Runtime.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Microsoft.Comega.Runtime.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\Microsoft.Zing.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Microsoft.Zing.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Microsoft.Zing.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\Microsoft.Zing.Runtime.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Microsoft.Zing.Runtime.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Microsoft.Zing.Runtime.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\System.Compiler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\System.Compiler.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\System.Compiler.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\System.Compiler.Framework.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\System.Compiler.Framework.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\System.Compiler.Framework.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\System.Compiler.Runtime.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\System.Compiler.Runtime.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\System.Compiler.Runtime.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\ZingDelayingScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\ZingDelayingScheduler.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingDelayingScheduler.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\ZingOptions.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\ZingOptions.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingOptions.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\ZingPlugin.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\ZingPlugin.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingPlugin.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\Zinger.exe", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Zinger.exe"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Zinger.exe"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\FrontierTree.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\FrontierTree.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\FrontierTree.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\ParallelExplorer.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\ParallelExplorer.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ParallelExplorer.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\ZingDelayingScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\ZingDelayingScheduler.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingDelayingScheduler.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\ZingStateSpaceTraversal.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\ZingStateSpaceTraversal.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingStateSpaceTraversal.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\RandomDelayingScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\RandomDelayingScheduler.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\RandomDelayingScheduler.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\RoundRobinScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\RoundRobinScheduler.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\RoundRobinScheduler.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\RunToCompletionDBSched.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\RunToCompletionDBSched.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\RunToCompletionDBSched.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Formula\\Domains\\PData.4ml", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\PData.4ml"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\PData.4ml"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Formula\\Domains\\ZingData.4ml", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\ZingData.4ml"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingData.4ml"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Formula\\Domains\\CData.4ml", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\CData.4ml")
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\CData.4ml")
         };
 
         private static readonly Tuple<string, string>[] DebugMoveMap = new Tuple<string, string>[]
         {
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Compilers\\P2Formula\\bin\\Debug\\P2Formula.exe", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\P2Formula.exe"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\P2Formula.exe"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Debug\\PCompiler.exe", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\PCompiler.exe"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\PCompiler.exe"),
         };
 
         private static readonly Tuple<string, string>[] ReleaseMoveMap = new Tuple<string, string>[]
         {
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Compilers\\P2Formula\\bin\\Release\\P2Formula.exe", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\P2Formula.exe"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\P2Formula.exe"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Release\\PCompiler.exe", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\PCompiler.exe"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\PCompiler.exe"),
         };
 
         public static bool Build(bool isBldDebug)
@@ -156,6 +156,28 @@ namespace PlangBuild
 
             result = DoMove(MoveMap) && result;
             result = DoMove(isBldDebug ? DebugMoveMap : ReleaseMoveMap) && result;
+
+            var runningLoc = new FileInfo(Assembly.GetExecutingAssembly().Location);
+            var inDir = new DirectoryInfo(Path.Combine(runningLoc.Directory.FullName, "..\\..\\..\\..\\..\\Runtime"));
+            var outDir = new DirectoryInfo(Path.Combine(runningLoc.Directory.FullName, "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime"));
+            if (!outDir.Exists)
+            {
+                outDir.Create();
+            }
+            foreach (var subInDir in inDir.GetDirectories())
+            {
+                string path = Path.Combine(runningLoc.Directory.FullName, "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime", subInDir.Name);
+                var subOutDir = new DirectoryInfo(path);
+                if (!subOutDir.Exists)
+                {
+                    subOutDir.Create();
+                }
+                foreach (var inFile in subInDir.GetFiles())
+                {
+                    var outFile = new FileInfo(Path.Combine(path, inFile.Name));
+                    inFile.CopyTo(outFile.FullName, true);
+                }
+            }
             return result;
         }
 

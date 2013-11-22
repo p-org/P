@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Reflection;
 
 using Microsoft.Formula.API.ASTQueries;
 using Microsoft.Formula.API.Nodes;
@@ -74,6 +75,12 @@ namespace P2Formula
 
             if (pos_args < 2)
                 usage();
+
+            if (domPath == null)
+            {
+                var runningLoc = new FileInfo(Assembly.GetExecutingAssembly().Location);
+                domPath = runningLoc.Directory.FullName + "\\PData.4ml";
+            }
 
             if (modelName == null)
                 modelName = inpFile.EndsWith(".p") ? inpFile.Substring(0, inpFile.Length - 2) : inpFile;

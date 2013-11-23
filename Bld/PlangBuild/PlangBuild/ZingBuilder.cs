@@ -110,7 +110,8 @@ namespace PlangBuild
                 return false;
             }
 
-            result = UpgradeAndCompile(zingSrc, zingSln, msbuild, "v4.5") &&
+            result = UpgradeAll(zingSrc, "v4.0") && 
+                     Compile(zingSrc, zingSln, msbuild) &&
                      DoMove(zingSrc, ZingMoveMap) &&
                      result;
             if (!result)
@@ -149,7 +150,50 @@ namespace PlangBuild
             }
         }
 
-        private static bool UpgradeAndCompile(DirectoryInfo srcRoot, string projFile, FileInfo msbuild, string frameworkVersion)
+        /// <summary>
+        /// Upgrades all csproj files to the target framework.
+        /// </summary>
+        private static bool UpgradeAll(DirectoryInfo srcRoot, string frameworkVersion)
+        {
+            try
+            {
+                foreach (var inProj in srcRoot.EnumerateFiles("*.csproj", SearchOption.AllDirectories))
+                {
+                    var outProj = new FileInfo(inProj.FullName + ".tmp");
+                    Program.WriteInfo("Upgrading {0} to framework version {1}", inProj.FullName, frameworkVersion);
+                    using (var sr = new StreamReader(inProj.FullName))
+                    {
+                        using (var sw = new StreamWriter(outProj.FullName))
+                        {
+                            while (!sr.EndOfStream)
+                            {
+                                var line = sr.ReadLine();
+                                if (line.Trim().StartsWith("<TargetFrameworkVersion>", StringComparison.InvariantCultureIgnoreCase))
+                                {
+                                    sw.WriteLine("<TargetFrameworkVersion>{0}</TargetFrameworkVersion>", frameworkVersion);
+                                }
+                                else
+                                {
+                                    sw.WriteLine(line);
+                                }
+                            }
+                        }
+                    }
+
+                    inProj.Delete();
+                    outProj.MoveTo(inProj.FullName);
+                }
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                Program.WriteError("Could not complile Zing - {0}", e.Message);
+                return false;
+            }
+        }
+
+        private static bool Compile(DirectoryInfo srcRoot, string projFile, FileInfo msbuild)
         {
             try
             {
@@ -160,31 +204,6 @@ namespace PlangBuild
                     Program.WriteError("Cannot find file {0}", inProj.FullName);
                     return false;
                 }
-
-                var outProj = new FileInfo(Path.Combine(srcRoot.FullName, projFile + ".tmp"));
-                Console.WriteLine(outProj.FullName);
-                using (var sr = new StreamReader(inProj.FullName))
-                {
-                    using (var sw = new StreamWriter(outProj.FullName))
-                    {
-                        while (!sr.EndOfStream)
-                        {
-                            var line = sr.ReadLine();
-                            if (line.Trim().StartsWith("<TargetFrameworkVersion>", StringComparison.InvariantCultureIgnoreCase))
-                            {
-                                sw.WriteLine("<TargetFrameworkVersion>{0}</TargetFrameworkVersion>", frameworkVersion);
-                            }
-                            else if (!line.Contains("app.config"))
-                            {
-                                //// Filter out app.config, because some project appear to be broken w.r.t. this file.
-                                sw.WriteLine(line);
-                            }
-                        }
-                    }
-                }
-
-                inProj.Delete();
-                outProj.MoveTo(inProj.FullName);
 
                 var psi = new ProcessStartInfo();
                 psi.UseShellExecute = false;
@@ -208,7 +227,7 @@ namespace PlangBuild
             }
             catch (Exception e)
             {
-                Program.WriteError("Could not complile Gardens Point dependencies - {0}", e.Message);
+                Program.WriteError("Could not complile Zing - {0}", e.Message);
                 return false;
             }
         }

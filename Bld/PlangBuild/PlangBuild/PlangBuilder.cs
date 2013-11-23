@@ -117,6 +117,15 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Debug\\PCompiler.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\PCompiler.exe"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Debug\\CParser.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\CParser.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Debug\\ZingParser.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingParser.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Debug\\Domains.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Domains.dll")
         };
 
         private static readonly Tuple<string, string>[] ReleaseMoveMap = new Tuple<string, string>[]
@@ -127,6 +136,15 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Release\\PCompiler.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\PCompiler.exe"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Release\\CParser.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\CParser.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Release\\ZingParser.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingParser.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Release\\Domains.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Domains.dll")
         };
 
         public static bool Build(bool isBldDebug)

@@ -110,7 +110,7 @@ namespace PlangBuild
                 return false;
             }
 
-            result = UpgradeAll(zingSrc, "v4.0") && 
+            result = UpgradeAll(zingSrc, "v4.5") && 
                      Compile(zingSrc, zingSln, msbuild) &&
                      DoMove(zingSrc, ZingMoveMap) &&
                      result;

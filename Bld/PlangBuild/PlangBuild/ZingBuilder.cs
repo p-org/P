@@ -42,7 +42,9 @@ namespace PlangBuild
             "..\\..\\..\\..\\..\\Ext\\Zing\\ZingStateSpaceTraversal.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\RandomDelayingScheduler.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\RoundRobinScheduler.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\RunToCompletionDBSched.dll"
+            "..\\..\\..\\..\\..\\Ext\\Zing\\RunToCompletionDBSched.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\StateCoveragePlugin.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\StateVisitCount.dll"
         };
 
         private static void OutputReceived(object sender, DataReceivedEventArgs e)
@@ -71,6 +73,8 @@ namespace PlangBuild
             new Tuple<string, string>("Schedulers\\RandomDelayingScheduler\\bin\\Release\\RandomDelayingScheduler.dll", "..\\RandomDelayingScheduler.dll"),
             new Tuple<string, string>("Schedulers\\RoundRobinScheduler\\bin\\Release\\RoundRobinScheduler.dll", "..\\RoundRobinScheduler.dll"),
             new Tuple<string, string>("Schedulers\\RunToCompletionDBSched\\bin\\Release\\RunToCompletionDBSched.dll", "..\\RunToCompletionDBSched.dll"),
+            new Tuple<string, string>("Plugins\\StateCoveragePlugin\\bin\\Release\\StateCoveragePlugin.dll", "..\\StateCoveragePlugin.dll"),
+            new Tuple<string, string>("Plugins\\StateVisitCount\\bin\\Release\\StateVisitCount.dll", "..\\StateVisitCount.dll")
         };
 
         public static bool Build(bool isRebuildForced)

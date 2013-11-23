@@ -99,6 +99,12 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Ext\\Zing\\RunToCompletionDBSched.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\RunToCompletionDBSched.dll"),
             new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\Zing\\StateCoveragePlugin.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\StateCoveragePlugin.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\Zing\\StateVisitCount.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\StateVisitCount.dll"),
+            new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Formula\\Domains\\PData.4ml", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\PData.4ml"),
             new Tuple<string, string>(

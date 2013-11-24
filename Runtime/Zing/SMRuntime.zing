@@ -279,18 +279,11 @@ class StackFrame {
 set FairSchedulers FairScheduler;
 class FairScheduler {      
 	SM_HANDLE handle;
-    bool noYieldFromNowOn;
+    static bool noYieldFromNowOn = false;
 
     static void Init(FairScheduler fs, SM_HANDLE h) {
 		fs.handle = h;
-		fs.noYieldFromNowOn = false;
     }
-
-	void Proceed() {
-	    if (!noYieldFromNowOn) {
-			noYieldFromNowOn = choose(bool);
-		}
-	}
 
     void AtYield(SM_HANDLE running) {
 		assume (!noYieldFromNowOn);
@@ -300,7 +293,9 @@ class FairScheduler {
 	}
 
     void AtChoose() {
-		Proceed();
+	    if (!noYieldFromNowOn) {
+			noYieldFromNowOn = choose(bool);
+		}
 		if (noYieldFromNowOn) {
       		FairScheduler.Accept(this);
 		}

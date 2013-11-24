@@ -37,7 +37,7 @@ namespace PlangBuild
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Core.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Formula\\Microsoft.Z3.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Microosft.Z3.dll"),
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Microsoft.Z3.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Formula\\libz3.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\libz3.dll"),

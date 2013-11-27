@@ -3719,64 +3719,29 @@ Environment:
             }
             else if (funName == PData.Con_New.Node.Name)
             {
-                var machTypeName = compiler.GetOwnerName(ft, 0, 0);
-                List<AST<Node>> argList = new List<AST<Node>>();
-                argList.Add(Compiler.AddArgs(CData.App_UnApp(n.Span), CData.Cnst_Addr(n.Span), MkId(compiler.DriverDeclName())));
-                argList.Add(MkId("Context"));
-                argList.Add(MkId(string.Format("MachineType_{0}", machTypeName)));
-
-                if (children.Any(child => child == null))
-                    return null;
-
-                IEnumerable<Tuple<string, Node>> inits =
-                    children.Select(child => new Tuple<string, Node>(
-                        ((Cnst)Compiler.GetArgByIndex((FuncTerm)child.node.Node, 0)).GetStringValue(),
-                        Compiler.GetArgByIndex((FuncTerm)child.node.Node, 1)));
-
-                foreach (var init in inits)
+                using (var it = children.GetEnumerator())
                 {
-                    var varName = init.Item1;
-                    argList.Add(MkId(string.Format("Var_{0}_{1}", machTypeName, varName)));
-                    var actualType = getComputedType(cnodeToPNode[init.Item2]);
-                    var varInfo = compiler.allMachines[machTypeName].localVariableToVarInfo[varName];
-                    var formalType = varInfo.type;
-                    AST<Node> arg;
-                    Debug.Assert(!(formalType is PNilType)); // Can't declare Null variables
-
-                    // Add A Cast if Neccessary.
-                    if (formalType != actualType)
-                    {
-                        var tmpCastVar = ctxt.getTmpVar(formalType, false);
-                        ctxt.addSideEffect(MkAssignOrCast(ctxt, n.Span, tmpCastVar, formalType, Factory.Instance.ToAST(init.Item2), actualType));
-                        arg = tmpCastVar;
+                    List<AST<Node>> argList = new List<AST<Node>>();
+                    argList.Add(Compiler.AddArgs(CData.App_UnApp(n.Span), CData.Cnst_Addr(n.Span), MkId(compiler.DriverDeclName())));
+                    argList.Add(MkId("Context"));
+                    it.MoveNext();
+                    var machTypeName = ((Cnst)Compiler.GetArgByIndex((FuncTerm)it.Current.node.Node, 0)).GetStringValue();
+                    argList.Add(MkId(string.Format("MachineType_{0}", machTypeName)));
+                    it.MoveNext();
+                    if (it.Current.node.Node.NodeKind == NodeKind.Id &&
+                        ((Id)it.Current.node.Node).Name == PData.Cnst_Nil.Node.Name)
+                    {   // No Payload Case
+                        argList.Add(Compiler.AddArgs(CData.App_Cast(n.Span), MkNmdType("PSMF_PACKED_VALUE"), MkAddrOf(MkId("g_SmfNullPayload", n.Span))));
                     }
                     else
-                        arg = Factory.Instance.ToAST(init.Item2);
-
-
-                    if (formalType is PPrimitiveType)
-                        argList.Add(arg);
-                    else
-                    {
-                        if (ctxt.isTmpVar(init.Item2))
-                        {
-                            argList.Add(MkAddrOf(ctxt.consumeExp(arg)));
-                        }
-                        else
-                        {
-                            var tmpVar = ctxt.getTmpVar(formalType, false);
-                            ctxt.addSideEffect(MkAssignOrCast(ctxt, n.Span, tmpVar, formalType, arg, formalType));
-                            argList.Add(MkAddrOf(ctxt.consumeExp(tmpVar)));
-                        }
+                    {   // We have a payload - upcast it to Any. We always send Any values. (SMF_PACKED_VALUE in C).
+                        var argType = getComputedType(Compiler.GetArgByIndex(ft, 1));
+                        var tmpVar = ctxt.getTmpVar(PType.Any, false, false);
+                        ctxt.addSideEffect(MkAssignOrCast(ctxt, n.Span, tmpVar, PType.Any, ctxt.consumeExp(it.Current.node), argType));
+                        argList.Add(MkAddrOf(ctxt.consumeExp(tmpVar)));
                     }
-
+                    return new CTranslationInfo(MkFunApp("SmfNew", n.Span, argList));
                 }
-
-                Debug.Assert((argList.Count - 3) % 2 == 0);
-                var argCount = (argList.Count - 3) / 2;
-                argList.Insert(3, MkIntLiteral(argCount, n.Span));
-
-                return new CTranslationInfo(MkFunApp("SmfNew", n.Span, argList.ToArray()));
             }
             else if (funName == PData.Con_Raise.Node.Name)
             {
@@ -3996,13 +3961,6 @@ Environment:
                     it.MoveNext();
                     ctxt.pushSideEffectStack();
                     yield return it.Current;
-                }
-            }
-            else if (funName == PData.Con_New.Node.Name)
-            {
-                foreach (var a in EntryFun_UnFold(ctxt, Compiler.GetArgByIndex(ft, 1)))
-                {
-                    yield return a;
                 }
             }
             else

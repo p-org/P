@@ -6,7 +6,7 @@ machine Real {
 var ghostm :mid;
 var setme : int;
 start state init {
-	entry { assert(setme == 1);}
+	entry { ghostm = (((mid,int))payload)[0]; setme = (((mid,int))payload)[1]; assert(setme == 1);}
 	}
 }
 
@@ -15,7 +15,7 @@ main model machine Ghost {
 	var real : id;
 	model fun createMachine(): int
 	{	
-		real = new Real(ghostm = this, setme = 1);
+		real = new Real((this, 1));
 		return 1;
 	}
 	

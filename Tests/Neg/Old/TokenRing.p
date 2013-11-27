@@ -15,6 +15,7 @@ machine Node {
 
   submachine Main {
     start state Init_Main_Node {
+			       entry { MyRing = (mid) payload; }
       on Next goto SetNext_Main_Node;
     }
 
@@ -96,10 +97,10 @@ main model machine Ring4 {
   submachine Main {
     start state Boot_Main_Ring4 {
       entry {
-        N1 = new Node(MyRing = this);
-        N2 = new Node(MyRing = this);
-        N3 = new Node(MyRing = this);
-        N4 = new Node(MyRing = this);
+        N1 = new Node(this);
+        N2 = new Node(this);
+        N3 = new Node(this);
+        N4 = new Node(this);
         send(N1, Next, N2);
         send(N2, Next, N3);
         send(N3, Next, N4);

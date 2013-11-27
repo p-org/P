@@ -746,7 +746,7 @@ namespace PCompiler
 
                 // NULL Event
                 payloadOfBody.Add(MkZingIf(MkZingEq(MkZingIdentifier("e"), MkZingIdentifier("null")),
-                    MkZingReturn(pTypeToZingDiscriminator(PType.Nil))));
+                    MkZingReturn(pTypeToZingDiscriminator(PType.Any))));
 
                 foreach (var evt in compiler.allEvents.Keys.Where(x => x != Compiler.NullEvent))
                 {
@@ -1909,14 +1909,6 @@ namespace PCompiler
                     yield return it.Current;
                 }
             }
-            else if (funName == PData.Con_New.Node.Name)
-            {
-                yield return Compiler.GetArgByIndex(ft, 0);
-                foreach (var a in ZingEntryFun_UnFold(ctxt, Compiler.GetArgByIndex(ft, 1)))
-                {
-                    yield return a;
-                }
-            }
             else
             {
                 foreach (var t in ft.Args)
@@ -2030,8 +2022,6 @@ namespace PCompiler
 
         private ZingTranslationInfo ZingEntryFun_Fold_Impl(ZingEntryFun_FoldContext ctxt, Node n, IEnumerable<ZingTranslationInfo> children)
         {
-            string machineName = ctxt.machineName;
-            string entityName = ctxt.entityName;
             if (n.NodeKind != NodeKind.FuncTerm)
             {
                 if (n.NodeKind == NodeKind.Cnst)
@@ -2053,7 +2043,7 @@ namespace PCompiler
                     {
                         if (ctxt.translationContext == TranslationContext.Function)
                         {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("TRIGGER disallowed in body of function {0}.", entityName), 0, compiler.CompilingProgram));
+                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("TRIGGER disallowed in body of function {0}.", ctxt.entityName), 0, compiler.CompilingProgram));
                             return null;
                         }
                         return new ZingTranslationInfo(MkZingDot("myHandle", "currentEvent"), new PEventType(null));
@@ -2085,7 +2075,7 @@ namespace PCompiler
                         }
                         else
                         {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Nondeterministic choice allowed only in model machines or model functions.", entityName), 0, compiler.CompilingProgram));
+                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Nondeterministic choice allowed only in model machines or model functions.", ctxt.entityName), 0, compiler.CompilingProgram));
                             return null;
                         }
                     }
@@ -2093,7 +2083,7 @@ namespace PCompiler
                     {
                         if (ctxt.translationContext == TranslationContext.Function)
                         {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Leave statement disallowed in body of function {0}.", entityName), 0, compiler.CompilingProgram));
+                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Leave statement disallowed in body of function {0}.", ctxt.entityName), 0, compiler.CompilingProgram));
                             return null;
                         }
                         var res = MkZingSeq(
@@ -2105,7 +2095,7 @@ namespace PCompiler
                     {
                         if (ctxt.translationContext != TranslationContext.Entry)
                         {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Delete statement allowed only in entry functions.", entityName), 0, compiler.CompilingProgram));
+                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Delete statement allowed only in entry functions.", ctxt.entityName), 0, compiler.CompilingProgram));
                             return null;
                         }
                         var res = MkZingSeq(
@@ -2295,7 +2285,7 @@ namespace PCompiler
             {
                 if (ctxt.translationContext == TranslationContext.Exit)
                 {
-                    compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Return statement not allowed in exit functions.", entityName), 0, compiler.CompilingProgram));
+                    compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Return statement not allowed in exit functions.", ctxt.entityName), 0, compiler.CompilingProgram));
                     return null;
                 }
 
@@ -2310,7 +2300,7 @@ namespace PCompiler
                         }
                         else if (it.Current.type != PType.Nil)
                         {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Return statement should not have an argument.", entityName), 0, compiler.CompilingProgram));
+                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Return statement should not have an argument.", ctxt.entityName), 0, compiler.CompilingProgram));
                             return null;
                         }
                         else
@@ -2321,7 +2311,7 @@ namespace PCompiler
                     }
                 }
 
-                var returnType = compiler.allMachines[machineName].funNameToFunInfo[entityName].returnType;
+                var returnType = compiler.allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].returnType;
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
@@ -2348,7 +2338,7 @@ namespace PCompiler
                     }
                     else
                     {
-                        compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Type mismatch in return expression of function {0}. Expected {1}, got {2}", entityName, returnType, it.Current.type), 0, compiler.CompilingProgram));
+                        compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Type mismatch in return expression of function {0}. Expected {1}, got {2}", ctxt.entityName, returnType, it.Current.type), 0, compiler.CompilingProgram));
                         return null;
                     }
                 }
@@ -2472,7 +2462,7 @@ namespace PCompiler
                     }
 
                     // Order in which we emit side effets (else,then) is the reverse of the order in which the side effect stacks were pushed(then, else).
-                    var ifName = compiler.getUnique(entityName + "_if");
+                    var ifName = compiler.getUnique(ctxt.entityName + "_if");
                     var elseLabel = ifName + "_else";
                     var afterLabel = ifName + "_end";
                     var cookedElse = MkZingLabeledStmt(elseLabel, ctxt.emitZingSideEffects(zingWrapExprToStmts(elseStmt.node)));
@@ -2490,7 +2480,7 @@ namespace PCompiler
             {
                 if (ctxt.translationContext == TranslationContext.Function)
                 {
-                    compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("ARG disallowed in body of function {0}.", entityName), 0, compiler.CompilingProgram));
+                    compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("ARG disallowed in body of function {0}.", ctxt.entityName), 0, compiler.CompilingProgram));
                     return null;
                 }
                 using (var it = children.GetEnumerator())
@@ -2505,11 +2495,14 @@ namespace PCompiler
 
                     if (ctxt.translationContext == TranslationContext.Action)
                     {
-                        possiblePayloads = compiler.allMachines[machineName].actionFunNameToActionFun[ctxt.entityName].argTypes;
+                        possiblePayloads = compiler.allMachines[ctxt.machineName].actionFunNameToActionFun[ctxt.entityName].argTypes;
                     }
                     else if (ctxt.translationContext == TranslationContext.Entry)
                     {
-                        possiblePayloads = compiler.allMachines[machineName].stateNameToStateInfo[ctxt.entityName].argTypes;
+                        if (compiler.GetName(compiler.allMachines[ctxt.machineName].initStateDecl, 0) == ctxt.entityName)
+                            possiblePayloads = Enumerable.Repeat<PType>(PType.Any, 1);
+                        else
+                            possiblePayloads = compiler.allMachines[ctxt.machineName].stateNameToStateInfo[ctxt.entityName].argTypes;
                     }
                     else
                     {
@@ -2559,13 +2552,13 @@ namespace PCompiler
                 {
                     var varName = compiler.GetName(ft, 0);
                     VariableInfo varInfo;
-                    if (compiler.allMachines[machineName].localVariableToVarInfo.ContainsKey(varName))
+                    if (compiler.allMachines[ctxt.machineName].localVariableToVarInfo.ContainsKey(varName))
                     {
-                        varInfo = compiler.allMachines[machineName].localVariableToVarInfo[varName];
+                        varInfo = compiler.allMachines[ctxt.machineName].localVariableToVarInfo[varName];
                     }
-                    else if (ctxt.translationContext == TranslationContext.Function && compiler.allMachines[machineName].funNameToFunInfo[entityName].parameterNameToInfo.ContainsKey(varName))
+                    else if (ctxt.translationContext == TranslationContext.Function && compiler.allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].parameterNameToInfo.ContainsKey(varName))
                     {
-                        varInfo = compiler.allMachines[machineName].funNameToFunInfo[entityName].parameterNameToInfo[varName];
+                        varInfo = compiler.allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].parameterNameToInfo[varName];
                     }
                     else
                     {
@@ -2591,12 +2584,12 @@ namespace PCompiler
                 else if (kind.Name == PData.Cnst_State.Node.Name)
                 {
                     var stateName = compiler.GetName(ft, 0);
-                    if (!compiler.allMachines[machineName].stateNameToStateInfo.ContainsKey(stateName))
+                    if (!compiler.allMachines[ctxt.machineName].stateNameToStateInfo.ContainsKey(stateName))
                     {
                         compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Use of undeclared state {0}.", stateName), 0, compiler.CompilingProgram));
                         return null;
                     }
-                    return new ZingTranslationInfo(MkZingDot(string.Format("{0}_State", machineName), string.Format("_{0}", stateName)), new PStateType(), stateName);
+                    return new ZingTranslationInfo(MkZingDot(string.Format("{0}_State", ctxt.machineName), string.Format("_{0}", stateName)), new PStateType(), stateName);
                 }
                 else if (kind.Name == PData.Cnst_Field.Node.Name)
                 {
@@ -2913,62 +2906,19 @@ namespace PCompiler
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
-
                     var typeName = ((Cnst)Compiler.GetArgByIndex((FuncTerm)it.Current.node.Node, 0)).GetStringValue();
                     if (!compiler.allMachines.ContainsKey(typeName))
                     {
                         compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Machine type {0} has not been declared.", typeName), 0, compiler.CompilingProgram));
                         return null;
                     }
-
-                    AST<Node> inits = ZingData.Cnst_Nil;
-
-                    while (it.MoveNext())
-                    {
-                        if (it.Current == null)
-                            return null;
-
-                        if (it.Current.node.Node is Id)
-                            break;
-
-                        var argFt = (FuncTerm)it.Current.node.Node;
-
-                        Debug.Assert(Compiler.getFtName(argFt) == Compiler.Con_LabeledExpr &&
-                            Compiler.GetArgByIndex(argFt, 0) is Cnst);
-                        var varName = ((Cnst)Compiler.GetArgByIndex(argFt, 0)).GetStringValue();
-                        var rhs = Compiler.GetArgByIndex(argFt, 1);
-                        var rhsInfo = it.Current;
-
-                        VariableInfo varInfo;
-                        if (compiler.allMachines[typeName].localVariableToVarInfo.ContainsKey(varName))
-                        {
-                            varInfo = compiler.allMachines[typeName].localVariableToVarInfo[varName];
-                        }
-                        else
-                        {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Local variable {0} not declared in machine {1}.", varName, typeName), 0, compiler.CompilingProgram));
-                            return null;
-                        }
-
-                        var lhs = new ZingTranslationInfo(MkZingIdentifier(varName), varInfo.type);
-
-                        // type(lhs) == type(rhs)
-                        if (!rhsInfo.type.isSubtypeOf(lhs.type))
-                        {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n,
-                                string.Format("Type of left-hand side ({0}) does not match type of right-hand ({1}) side in assignment.", lhs.type, rhsInfo.type), 0, compiler.CompilingProgram));
-                            return null;
-                        }
-
-                        if (lhs.type == rhsInfo.type)
-                            inits = Compiler.AddArgs(ZingData.App_Args, lhs.node, Compiler.AddArgs(ZingData.App_Args, Factory.Instance.ToAST(rhs), inits));
-                        else
-                        {
-                            var tmpCastVar = ctxt.getTmpVar(lhs.type, "tmpCastVar");
-                            ctxt.addSideEffect(MkZingAssignOrCast(tmpCastVar, lhs.type, Factory.Instance.ToAST(rhs), rhsInfo.type));
-                            inits = Compiler.AddArgs(ZingData.App_Args, lhs.node, Compiler.AddArgs(ZingData.App_Args, tmpCastVar, inits));
-                        }
-                    }
+                    it.MoveNext();
+                    if (it.Current == null)
+                        return null;
+                    PType argType = it.Current.node != ZingData.Cnst_Nil ? it.Current.type : PType.Nil;
+                    AST<Node> arg = it.Current.node != ZingData.Cnst_Nil ? it.Current.node : MkZingIdentifier("null");
+                    var tmpVar = ctxt.getTmpVar(PType.Any, "tmpSendPayload");
+                    ctxt.addSideEffect(MkZingAssignOrCast(tmpVar, PType.Any, arg, argType));
                     string afterLabel = null;
                     if (ctxt.entityName != null) // indicates its not the Main/God machine
                     {
@@ -2976,18 +2926,17 @@ namespace PCompiler
                         ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewM"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)))));
                     }
                     return new ZingTranslationInfo(
-                        MkZingCreateMachineCall(ctxt, typeName, inits.Node),
+                        MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar),
                         compiler.allMachines[typeName].isModel ? (PType)new PMidType() : (PType)new PIdType(),
                         true,
                         afterLabel);
-
                 }
             }
             else if (funName == PData.Con_Raise.Node.Name)
             {
                 if (ctxt.translationContext != TranslationContext.Entry && ctxt.translationContext != TranslationContext.Action)
                 {
-                    compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Raise statement allowed only in entry functions or actions.", entityName), 0, compiler.CompilingProgram));
+                    compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Raise statement allowed only in entry functions or actions.", ctxt.entityName), 0, compiler.CompilingProgram));
                     return null;
                 }
                 using (var it = children.GetEnumerator())
@@ -3021,7 +2970,7 @@ namespace PCompiler
 
                     var assertStmt = MkZingSeq(Factory.Instance.AddArg(ZingData.App_Assert, MkZingApply(ZingData.Cnst_NEq, eventExpr.node, MkZingIdentifier("null"))),
                                                Factory.Instance.AddArg(ZingData.App_Assert, MkZingApply(ZingData.Cnst_NEq, eventExpr.node, MkZingEvent("default"))));
-                    string traceString = string.Format("\"<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\"", machineName);
+                    string traceString = string.Format("\"<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\"", ctxt.machineName);
                     var traceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"), MkZingApply(ZingData.Cnst_Dot, eventExpr.node, Factory.Instance.MkCnst("name"))));
                     var tmpArg = ctxt.getTmpVar(PType.Any, "arg");
                     var tmpEv = ctxt.getTmpVar(PType.Event, "ev");
@@ -3044,27 +2993,27 @@ namespace PCompiler
             else if (funName == PData.Con_Call.Node.Name)
             {
                 var calleeName = compiler.GetName(ft, 0);
-                if (!compiler.allMachines[machineName].funNameToFunInfo.ContainsKey(calleeName))
+                if (!compiler.allMachines[ctxt.machineName].funNameToFunInfo.ContainsKey(calleeName))
                 {
                     compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Function {0} has not been declared.", calleeName), 0, compiler.CompilingProgram));
                     return null;
                 }
-                var calleeInfo = compiler.allMachines[machineName].funNameToFunInfo[calleeName];
+                var calleeInfo = compiler.allMachines[ctxt.machineName].funNameToFunInfo[calleeName];
                 if (ctxt.translationContext == TranslationContext.Action)
                 {
-                    compiler.allMachines[machineName].actionFunNameToActionFun[ctxt.entityName].callees.Add(calleeName);
+                    compiler.allMachines[ctxt.machineName].actionFunNameToActionFun[ctxt.entityName].callees.Add(calleeName);
                 }
                 else if (ctxt.translationContext == TranslationContext.Function)
                 {
-                    compiler.allMachines[machineName].funNameToFunInfo[calleeName].callers.Add(ctxt.entityName);
+                    compiler.allMachines[ctxt.machineName].funNameToFunInfo[calleeName].callers.Add(ctxt.entityName);
                 }
                 else if (ctxt.translationContext == TranslationContext.Entry)
                 {
-                    compiler.allMachines[machineName].stateNameToStateInfo[ctxt.entityName].entryFunCallees.Add(calleeName);
+                    compiler.allMachines[ctxt.machineName].stateNameToStateInfo[ctxt.entityName].entryFunCallees.Add(calleeName);
                 }
                 else
                 {
-                    compiler.allMachines[machineName].stateNameToStateInfo[ctxt.entityName].exitFunCallees.Add(calleeName);
+                    compiler.allMachines[ctxt.machineName].stateNameToStateInfo[ctxt.entityName].exitFunCallees.Add(calleeName);
                 }
 
                 List<AST<Node>> args = new List<AST<Node>>();
@@ -3223,8 +3172,8 @@ namespace PCompiler
                         return null;
                     }
 
-                    var loopStart = compiler.getUnique(entityName + "_loop_start");
-                    var loopEnd = compiler.getUnique(entityName + "_loop_end");
+                    var loopStart = compiler.getUnique(ctxt.entityName + "_loop_start");
+                    var loopEnd = compiler.getUnique(ctxt.entityName + "_loop_end");
 
                     var body = it.Current.node;
                     body = ctxt.emitZingSideEffects(zingWrapExprToStmts(body));
@@ -3257,56 +3206,6 @@ namespace PCompiler
             }
         }
 
-        private AST<Node> MkZingCreateMachineCall(ZingEntryFun_FoldContext ctxt, string typeName, Node initializers)
-        {
-            Dictionary<string, Node> localVarToInitializer = new Dictionary<string, Node>();
-            while (true)
-            {
-                if (initializers.NodeKind == NodeKind.Id)
-                    break;
-                using (var localIter1 = ((FuncTerm)initializers).Args.GetEnumerator())
-                {
-                    localIter1.MoveNext();
-                    var index = compiler.GetName((FuncTerm)localIter1.Current, 0);
-                    localIter1.MoveNext();
-                    initializers = localIter1.Current;
-                    using (var localIter2 = ((FuncTerm)initializers).Args.GetEnumerator())
-                    {
-                        localIter2.MoveNext();
-                        var value = localIter2.Current;
-                        localVarToInitializer[index] = value;
-                        localIter2.MoveNext();
-                        initializers = localIter2.Current;
-                    }
-                }
-            }
-            List<AST<Node>> args = new List<AST<Node>>();
-            foreach (var x in compiler.allMachines[typeName].localVariableToVarInfo)
-            {
-                var varName = x.Key;
-                var varType = x.Value.type;
-                if (localVarToInitializer.ContainsKey(varName))
-                {
-                    args.Add(Factory.Instance.ToAST(localVarToInitializer[varName]));
-                }
-                else
-                {
-                    // getDefault() should be a single call with no argument, so only 1 side
-                    // effect generated here.
-                    var argNode = getZingDefault(ctxt, varType);
-                    if (varType is PCompoundType || varType is PAnyType)
-                    {
-                        var tmpId = ctxt.getTmpVar(varType, "tmpInitializer");
-                        ctxt.addSideEffect(MkZingAssign(tmpId, argNode));
-                        argNode = tmpId;
-                    }
-                    args.Add(argNode);
-                }
-            }
-
-            return MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), args);
-        }
-
         private string getZingWrapperFunName(string entity, TranslationContext ctxType)
         {
             if (ctxType == TranslationContext.Entry)
@@ -3318,7 +3217,6 @@ namespace PCompiler
                 Debug.Assert(TranslationContext.Action == ctxType);
                 return "action_" + entity;
             }
-
         }
 
         private AST<Node> MkZingWrapperFn(Node n, string machine, TranslationContext ctxType, string entity)
@@ -4011,7 +3909,7 @@ namespace PCompiler
         private AST<Node> MkCreateMachineMethod(string machineName)
         {
             var objectName = string.Format("o_{0}", machineName);
-            var parameters = LocalVariablesToVarDecls(compiler.allMachines[machineName].localVariableToVarInfo.Keys, compiler.allMachines[machineName].localVariableToVarInfo);
+            var parameters = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl("arg", Factory.Instance.MkCnst("SM_ARG_UNION")), ZingData.Cnst_Nil);
             var localVars = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl(objectName, Factory.Instance.MkCnst(machineName)), ZingData.Cnst_Nil);
             localVars = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl("fairScheduler", Factory.Instance.MkCnst("FairScheduler")), localVars);
             localVars = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl("fairTransition", Factory.Instance.MkCnst("FairTransition")), localVars);
@@ -4021,6 +3919,7 @@ namespace PCompiler
                     MkZingAssign(MkZingIdentifier(objectName), Compiler.AddArgs(ZingData.App_New, Factory.Instance.MkCnst(machineName), ZingData.Cnst_Nil)),
                     MkZingAssign(MkZingDot(objectName, "myHandle"),
                                  MkZingCall(MkZingDot("SM_HANDLE", "Construct"), MkZingDot("Machine", string.Format("_{0}", machineName)), machineInstance, Factory.Instance.MkCnst(compiler.allMachines[machineName].maxQueueSize))),
+                    MkZingAssign(MkZingDot(objectName, "myHandle", "currentArg"), MkZingIdentifier("arg")),
                     MkZingAssign(machineInstance, MkZingApply(ZingData.Cnst_Add, machineInstance, Factory.Instance.MkCnst(1))),
                     MkZingAssign(MkZingDot(objectName, "stackStable"), ZingData.Cnst_False),
                     MkZingAssign(MkZingDot(objectName, "stackDeferredSet"), Compiler.AddArgs(ZingData.App_New, Factory.Instance.MkCnst("SM_EVENT_SET"), ZingData.Cnst_Nil)),
@@ -4048,10 +3947,6 @@ namespace PCompiler
                 }
             }
 
-            foreach (var v in compiler.allMachines[machineName].localVariableToVarInfo.Keys)
-            {
-                body = MkZingSeq(body, MkZingAssign(MkZingDot(objectName, v), MkZingIdentifier(v)));
-            }
             body = MkZingSeq(
                 body,
                 MkZingAssign(MkZingDot(objectName, "myHandle", "machineId"), MkZingCall(MkZingDot("MachineId", "GetNextId"))),

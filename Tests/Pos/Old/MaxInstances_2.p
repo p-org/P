@@ -10,7 +10,7 @@ main machine Real {
     start state Real_Init {
 		on E2 do Action1;
         entry {
-			ghost_machine = new Ghost(real_machine = this);  
+			ghost_machine = new Ghost(this);  
         	raise(unit);   
         }
         
@@ -48,7 +48,12 @@ main machine Real {
 
 model machine Ghost {
     var real_machine: id;
-    start state Ghost_Init {
+    start state _Init {
+	entry { real_machine = (id)payload; raise(unit); }
+        on unit goto Ghost_Init;
+    }
+
+    state Ghost_Init {
         entry {
         }
         on E1 goto Ghost_S1;

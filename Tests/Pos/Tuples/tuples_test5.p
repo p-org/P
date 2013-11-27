@@ -3,7 +3,7 @@ main machine Entry {
 
     start state init {
         entry {
-            m = new Foo(a=(1,2), b=(3,4));
+            m = new Foo();
         }
     }
 }

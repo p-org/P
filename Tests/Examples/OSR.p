@@ -51,7 +51,12 @@ main model machine User {
 
 model machine Switch {
 	var Driver: id;
-    start state Switch_Init {
+    start state _Init {
+	entry { Driver = (id) payload; raise(eUnit); }
+        on eUnit goto Switch_Init;
+    }
+
+    state Switch_Init {
         entry { raise(eUnit);}
         on eUnit goto ChangeSwitchStatus;
     }
@@ -70,7 +75,12 @@ model machine Switch {
 model machine LED {
 	var Driver: id;
 	
-	start state LED_Init {
+    start state _Init {
+	entry { Driver = (id) payload; raise(eUnit); }
+        on eUnit goto LED_Init;
+    }
+
+	state LED_Init {
 		entry { }
 		
 		on eUpdateBarGraphStateUsingControlTransfer goto ProcessUpdateLED;
@@ -115,7 +125,12 @@ model machine LED {
 model machine Timer {
 	var Driver : id;
 	
-	start state Timer_Init {
+    start state _Init {
+	entry { Driver = (id) payload; raise(eUnit); }
+        on eUnit goto Timer_Init;
+    }
+
+	state Timer_Init {
 		ignore eStopTimer;
 		entry { }
 		on eStartDebounceTimer goto TimerStarted;
@@ -173,9 +188,9 @@ machine OSRDriver {
 	start state Driver_Init {
 		defer eSwitchStatusChange;
 		entry {
-			TimerV = new Timer(Driver = this);
-			LEDV = new LED(Driver = this);
-			SwitchV = new Switch(Driver = this);
+			TimerV = new Timer(this);
+			LEDV = new LED(this);
+			SwitchV = new Switch(this);
 			raise(eUnit);
 		}
 		

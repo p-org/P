@@ -472,8 +472,10 @@ ExpOrNull
 	;
 
 NewExp
-	: NEW ID KWArgs						{ $$.exp = new DSLNew($2.s, (DSLKWArgs) $3.exp); setLoc($$.exp, @1, @3); }// new instances
+	: NEW ID LPAREN Exp RPAREN			{ $$.exp = new DSLNew($2.s, $4.exp); setLoc($$.exp, @1, @5); }
+	| NEW ID LPAREN RPAREN				{ $$.exp = new DSLNew($2.s, null); setLoc($$.exp, @1, @4); }
 	;
+
 Bool
 	: TRUE								{ $$.exp = new DSLBool(true); setLoc($$.exp, @1); }
 	| FALSE								{ $$.exp = new DSLBool(false); setLoc($$.exp, @1); }

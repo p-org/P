@@ -18,8 +18,8 @@ main machine Employee {
     start state Init {
 		defer CabBooked;
         entry {
-            TravelAgentId = new TravelAgent(EmployeeId=this); 
-            CityCabId = new CityCab(EmployeeId=this);
+            TravelAgentId = new TravelAgent(this); 
+            CityCabId = new CityCab(this);
             RemoteCheckIn = false;
             raise(Unit);
         }
@@ -108,7 +108,15 @@ main machine Employee {
 
 model machine TravelAgent {
     var EmployeeId: id;
-    start state Init { 
+    start state Init {
+        entry {
+	      EmployeeId = (id) payload;
+	      raise(Unit);
+        }
+        on Unit goto WaitToBook;
+    }
+
+    state WaitToBook { 
         on BookFlight goto SBookFlight;
     }
 
@@ -116,15 +124,23 @@ model machine TravelAgent {
         entry { 
             if (*) { send(EmployeeId, TryAgain); raise(Unit); } else { send(EmployeeId, FlightBooked); } 
         }
-        on Unit goto Init;
-        on Thanks goto Init;
+        on Unit goto WaitToBook;
+        on Thanks goto WaitToBook;
     }
 }
 
 model machine CityCab {
     var EmployeeId: id;
 
-    start state Init { 
+    start state Init {
+	entry {
+			   EmployeeId = (id) payload;
+			   raise(Unit);
+	}
+        on Unit goto WaitToBook;
+    }
+
+    state WaitToBook { 
 		ignore Thanks;
         on BookCab goto SBookCab;
     }
@@ -133,8 +149,8 @@ model machine CityCab {
         entry { 
             if (*) { raise(Unit);} else { send(EmployeeId, CabBooked); }
         } 
-        on Unit goto Init;
-        on Thanks goto Init;
+        on Unit goto WaitToBook;
+        on Thanks goto WaitToBook;
 		on BookCab goto SBookCab;
     }
 }

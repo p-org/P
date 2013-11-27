@@ -696,15 +696,11 @@ namespace PParser
         {
             // In the P Ast we represent New args as a named tuple. Convert it to an Inits list for backward comp.
             // All the field labels in the Inits list have to be treated as variables names in the target machine scope, and thus be properly renamed.
-            AST<Node> inits = P_FormulaNodes.Nil_Iden;
             INode machineDecl = sem.lookup(e, e.machineName).n;
             var machineScope = sem.getScope(machineDecl);
 
-            foreach (KeyValuePair<string, IDSLExp> c in e.args.els) {
-                inits = fMkFuncTerm(P_FormulaNodes.NamedExprs_Iden, fMkCnst(machineScope.lookup(c.Key).resolvedName()), getOne(c.Value), inits);
-            }
-
-            return wrap(fMkFuncTerm(P_FormulaNodes.New_Iden, fMkFuncTerm(P_FormulaNodes.MachType_Iden, fMkCnst(e.machineName)), inits));
+            return wrap(fMkFuncTerm(P_FormulaNodes.New_Iden, fMkFuncTerm(P_FormulaNodes.MachType_Iden, fMkCnst(e.machineName)), 
+                                    e.arg == null ? P_FormulaNodes.Nil_Iden : getOne(e.arg)));
         }
 
         public override IEnumerable<AST<Node>> visit(DSLAttribute e) { return default(IEnumerable<AST<Node>>); }

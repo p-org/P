@@ -23,8 +23,8 @@ machine Elevator {
 
     start state Init {
         entry {
-            TimerV = new Timer(ElevatorV = this);
-            DoorV = new Door(ElevatorV = this);
+            TimerV = new Timer(this);
+            DoorV = new Door(this);
             raise(eUnit);
         }
 
@@ -155,7 +155,12 @@ main model machine User {
 model machine Door {
     var ElevatorV : id;
 
-    start state Init {
+    start state _Init {
+	entry { ElevatorV = (id) payload; raise(eUnit); }
+        on eUnit goto Init;
+    }
+
+    state Init {
         ignore eSendCommandToStopDoor, eSendCommandToResetDoor, eResetDoor;
         entry {}
 
@@ -223,10 +228,14 @@ model machine Door {
 model machine Timer {
     var ElevatorV : id;
 
-    start state Init {
+    start state _Init {
+	entry { ElevatorV = (id) payload; raise(eUnit); }
+        on eUnit goto Init;
+    }
+
+    state Init {
         ignore eStopDoorCloseTimer;
         entry {}
-
         on eStartDoorCloseTimer goto TimerStarted;
     }
 

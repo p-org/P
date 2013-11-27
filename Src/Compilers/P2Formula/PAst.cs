@@ -968,11 +968,11 @@ namespace PParser
     public sealed class DSLNew : BaseNode, IDSLExp
     {
         public string machineName;
-        public DSLKWArgs args;
+        public IDSLExp arg;
 
-        public DSLNew(string name, DSLKWArgs args) : base(args)
+        public DSLNew(string name, IDSLExp arg) : base(arg)
         {
-            this.machineName = name; this.args = args;
+            this.machineName = name; this.arg = arg;
         }
     }
 

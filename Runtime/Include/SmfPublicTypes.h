@@ -201,7 +201,28 @@ typedef enum _SMF_RUNTIMEFLAG SMF_RUNTIMEFLAG;
 
 
 
+/*********************************************************************************
 
+Type Name : SMF_PACKED_VALUE
+
+Description : 
+	Structure for Representing Values Packed with a Type Tag
+
+Fields :
+
+Type --
+	Type of the local variable
+
+Value --
+	The actual value stored inside
+
+*********************************************************************************/
+
+struct _SMF_PACKED_VALUE
+{
+	SMF_TYPEDECL_INDEX Type;
+	ULONG_PTR Value;
+};
 
 
 /*********************************************************************************
@@ -231,7 +252,7 @@ struct _SMF_MACHINE_ATTRIBUTES
 {
 	PSMF_DRIVERDECL Driver;
 	SMF_MACHINEDECL_INDEX InstanceOf;
-	SMF_VARVALUE_TABLE InitValues;
+	SMF_PACKED_VALUE Arg;
 	PVOID ConstructorParam;
 #ifdef KERNEL_MODE
 	PDEVICE_OBJECT PDeviceObj;
@@ -680,29 +701,6 @@ struct _SMF_STATEDECL
 
 	const BOOLEAN HasDefaultTransition;
 
-};
-
-/*********************************************************************************
-
-Type Name : SMF_PACKED_VALUE
-
-Description : 
-	Structure for Representing Values Packed with a Type Tag
-
-Fields :
-
-Type --
-	Type of the local variable
-
-Value --
-	The actual value stored inside
-
-*********************************************************************************/
-
-struct _SMF_PACKED_VALUE
-{
-	SMF_TYPEDECL_INDEX Type;
-	ULONG_PTR Value;
 };
 
 

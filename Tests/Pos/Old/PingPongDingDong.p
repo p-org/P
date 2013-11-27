@@ -10,7 +10,7 @@ main machine PING {
 
     start state Ping_start {
         entry {
-  	    pongId = new PONG(pingid = this);
+  	    pongId = new PONG(this);
 	    raise (Success);   	   
         }
         on Success goto Ping_ping1;
@@ -42,7 +42,13 @@ main machine PING {
 
 machine PONG {
 	var pingid: id;
-    start state Pong_start {
+
+    start state _Init {
+	entry { pingid = (id) payload; raise(Success); }
+        on Success goto Pong_start;
+    }
+
+    state Pong_start {
         entry { }
         on Ping push Pong_dong1;
 		on Success goto Pong_pong1;

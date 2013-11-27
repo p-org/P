@@ -12,7 +12,7 @@ main machine Real {
 
    start state Real_Init {
  entry {
-	       ghostVar = new Ghost(real = this); 
+	       ghostVar = new Ghost(this); 
 		   PassiveFunctionIncrement();
 		   raise(Unit);	   
        }
@@ -52,6 +52,7 @@ model machine Ghost {
 		    var real:id;
      
    start state Ghost_Init {
+			  entry { real = (id) payload; }
 			  on E1 goto Ghost_S1;
 }
 

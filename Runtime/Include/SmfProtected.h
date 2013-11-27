@@ -95,8 +95,7 @@ SmfNew(
 __in PSMF_DRIVERDECL			PDriverDecl, 
 __inout PSMF_SMCONTEXT			Context, 
 __in SMF_MACHINEDECL_INDEX		InstanceOf, 
-__in INT						NumInitializers, 
-...
+__in PSMF_PACKED_VALUE			Arg 
 );
 
 //

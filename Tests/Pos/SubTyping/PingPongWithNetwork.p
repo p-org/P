@@ -12,7 +12,7 @@ main machine PING {
         entry {
             ctr = 0;
             networkId = new Network();
-  	    pongId = new PONG(networkId = networkId);
+  	    pongId = new PONG(networkId);
 	    raise (Success);   	   
         }
         on Success goto Ping_SendPing;
@@ -38,7 +38,13 @@ main machine PING {
 
 machine PONG {
     var networkId: mid;
-    start state Pong_WaitPing {
+
+    start state _init {
+	entry { networkId = (mid)payload; raise (Success); }
+        on Success goto Pong_WaitPing;
+    }
+
+    state Pong_WaitPing {
         entry { }
         on Ping goto Pong_SendPong;
     }

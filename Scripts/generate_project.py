@@ -236,6 +236,9 @@ int main(int argc, char ** argv)
     //create state-machine
     PSMF_MACHINE_ATTRIBUTES mAttributes;
     SMF_MACHINE_HANDLE smHandle;
+    SMF_PACKED_VALUE val;
+    val.Type = SmfNullType;
+    val.Value = SmfNull;
 
     signal(SIGSEGV, SegfaultWatcher);
 
@@ -246,8 +249,8 @@ int main(int argc, char ** argv)
     CreateThread(NULL, 0, WatchDog, 0, 0, &wdId); 
 
     //CreateEmployee machine
-    mAttributes = SmfCreateAttributes(&DriverDecl_{name}, MachineType_{MainMachine});
-    SmfInitAttributes(mAttributes, &DriverDecl_{name}, MachineType_{MainMachine}, NULL);
+    mAttributes = (PSMF_MACHINE_ATTRIBUTES)malloc(sizeof(SMF_MACHINE_ATTRIBUTES));
+    SmfInitAttributes(mAttributes, &DriverDecl_{name}, MachineType_{MainMachine}, &val, NULL);
     SmfCreate(mAttributes, &smHandle);
 
     return 0;

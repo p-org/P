@@ -11,7 +11,6 @@ event MsgInformCustomerMachine:mid;
 
 main fair model machine CoffeeShop
 {
-        
         var _customer, _server, _coffeemachine:mid;
         start state init
         {
@@ -19,8 +18,8 @@ main fair model machine CoffeeShop
                 entry
                 {
                         _server = new Server();
-                        _customer = new Customer(_server = _server);
-                        _coffeemachine = new CoffeeMachine(_server = _server);
+                        _customer = new Customer(_server);
+                        _coffeemachine = new CoffeeMachine(_server);
                         send(_server, MsgInformCustomerMachine, _customer);
                         send(_server, MsgInformCoffeeMachine, _coffeemachine);
                         send(_customer, MsgCustomerPlacesOrder);
@@ -40,7 +39,12 @@ fair model machine Customer
 {
         var _server:mid;
 
-        start stable state OrderNotPlaced
+        start state _Init {
+	    entry { _server = (mid) payload; raise(Unit); }
+            on Unit goto OrderNotPlaced;
+        }
+
+        stable state OrderNotPlaced
         {
 			on MsgCustomerPlacesOrder goto PlacingOrder
             {
@@ -160,7 +164,12 @@ fair model machine CoffeeMachine
 {
         var _server:mid;
 
-        start stable state WaitingOrder
+        start state _Init {
+		entry { _server = (mid) payload; raise(Unit); }
+                on Unit goto WaitingOrder;
+        }
+
+        stable state WaitingOrder
         {
                 on MsgNewOrder goto OrderDone
                 {

@@ -17,8 +17,8 @@ main machine Employee {
 
     start state Init {
         entry {
-            TravelAgentId = new TravelAgent(EmployeeId=this); 
-            CityCabId = new CityCab(EmployeeId=this);
+            TravelAgentId = new TravelAgent(this); 
+            CityCabId = new CityCab(this);
             RemoteCheckIn = false;
             raise(Unit);
         }
@@ -112,7 +112,16 @@ main machine Employee {
 
 model machine TravelAgent {
     var EmployeeId: id;
-    start state Init { 
+
+    start state _Init {
+      entry {
+	    EmployeeId = (id) payload;
+	    raise(Unit);
+      }
+      on Unit goto Init;
+    }
+
+    state Init { 
         on BookFlight goto SBookFlight;
     }
 
@@ -128,7 +137,15 @@ model machine TravelAgent {
 model machine CityCab {
     var EmployeeId: id;
 
-    start state Init { 
+    start state _Init {
+      entry {
+	    EmployeeId = (id) payload;
+	    raise(Unit);
+      }
+      on Unit goto Init;
+    }
+
+    state Init { 
         on BookCab goto SBookCab;
     }
 

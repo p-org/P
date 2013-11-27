@@ -4,65 +4,49 @@ event myCount:int;
 event Req;
 event Resp;
 
-main machine Scheduler {
+main model machine Scheduler {
 	var p1:mid;
 	var p2:mid;
 	var p3:mid;
-	var count:int;
     start state inits {
         
 		entry {
-			p1 = new Process(parent = this);
-			p2 = new Process(parent = this);
-            p3 = new Process(parent = this);
-			send(p1, init, (p3, p2));
+			p1 = new Process(this);
+			p2 = new Process(this);
+            p3 = new Process(this);
+			send(p1, init, (p2, p3));
 			send(p2, init, (p3, p1));
 			send(p3, init, (p1, p2));
-			count = 0;
-			raise(unit);
 			
         }
-		on unit goto Sync;
-    }
-	action CountReq {
-		count = count + 1;
-		if(count == 3)
-		{
-			count = 0;
-			raise(Resp);
-		}
-	}
-    state Sync {
-		on Req do CountReq;
-		exit
-		{
-			send(p1, Resp);
-			send(p2, Resp);
-			send(p3, Resp);
-		}
-		on Resp goto Sync;
     }
 }
 
-machine Process {
+model machine Process {
 	var count:int;
 	var parent:mid;
 	var other1:mid;
 	var other2:mid;
+
+        start state _init {
+		entry { 
+		      parent = (mid)payload; raise(unit);
+		}
+                on unit goto inits;
+        }
 	
-	start state inits {
+	state inits {
+		ignore myCount, Resp;
 		entry {
 			count = 0;
 		}
-		on myCount goto inits;
 		on init do initaction;
-		on Resp goto SendCount;
+		on unit goto SendCount;
 	}
 	action initaction {
 		other1 = (((mid, mid))payload)[0];
 		other2 = (((mid,mid))payload)[1];
-		send(parent, Req);
-		
+		raise(unit);
 	}
 	action ConfirmThatInSync {
 		assert(count <= (payload) && count >= (payload - 1));
@@ -72,14 +56,15 @@ machine Process {
 			count = count + 1;
 			send(other1, myCount, count);
 			send(other2, myCount, count);
-			send(parent, Req);
+			//thats one step execute barrier and wait for other threads
+			
 			if(count > 10)
 			{
 				raise(unit);
 			}
 		}
 		on unit goto done;
-		on Resp goto SendCount;
+		on default goto SendCount;
 		on myCount do ConfirmThatInSync;
 	}
 	state done {

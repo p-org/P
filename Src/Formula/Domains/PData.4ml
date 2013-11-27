@@ -23,7 +23,7 @@ domain FuncData
     Apply  ::= new (op: { NOT, NEG, ADD, SUB, MUL, INTDIV, AND, OR, EQ, NEQ, LT, LE, GT, GE, IDX, FLD, IN, KEYS, SIZEOF }, args: any Exprs).
     Call   ::= new (name: String, args: any Exprs + { NIL }).
     Exprs  ::= new (head: any Expr, tail: any Exprs + { NIL }).              
-    New    ::= new (type: any MachType, inits: any NamedExprs + { NIL }).
+    New    ::= new (type: any MachType, arg: any Expr + { NIL }).
     NamedExprs  ::= new (var: String, exp: any Expr, tail: any NamedExprs + { NIL }).
     Payload    ::= new (kind: AllTypes + { NIL }).
     Tuple  ::= new (body: any Exprs).

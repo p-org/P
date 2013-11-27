@@ -10,7 +10,7 @@ machine Real {
 var ghostm :mid;
 var setme : int;
 start state init {
-		entry { assert(setme == 1);
+		 entry { setme = (int)payload; assert(setme == 1);
 		}
 		on nondeteventT goto nextstate;
 		on nondeteventF goto nextstate;
@@ -37,7 +37,7 @@ main machine Ghost {
 	var choiceval:bool;
 	model fun createMachine()
 	{	
-		real = new Real(setme = 1);
+		real = new Real(1);
 	}
 	
 	model fun nondetsend() 

@@ -41,16 +41,6 @@ Environment:
 		Functions - Machine Creation
 
 *********************************************************************************/
-//
-// Create the attributes object, returns pointer to the allocated attribute structure
-// Attribute structure created by the driver should be freed by the driver itself
-//
-PSMF_MACHINE_ATTRIBUTES 
-SmfCreateAttributes( 
-__in PSMF_DRIVERDECL			Driver,
-__in SMF_MACHINEDECL_INDEX		InstanceOf
-);
-
 #ifdef KERNEL_MODE
 //
 // Initializes StateMachine attributes used for creating a machine of type InstanceOf
@@ -61,6 +51,7 @@ __inout PSMF_MACHINE_ATTRIBUTES Attributes,
 __in PDEVICE_OBJECT				PDeviceObj, 
 __in PSMF_DRIVERDECL			Driver,
 __in SMF_MACHINEDECL_INDEX		InstanceOf,
+__in PSMF_PACKED_VALUE			Arg,
 __in PVOID						PFrgnMem
 );
 #else
@@ -69,6 +60,7 @@ SmfInitAttributes(
 __inout PSMF_MACHINE_ATTRIBUTES Attributes, 
 __in PSMF_DRIVERDECL			Driver,
 __in SMF_MACHINEDECL_INDEX		InstanceOf,
+__in PSMF_PACKED_VALUE			Arg,
 __in PVOID						PFrgnMem
 );
 #endif
@@ -80,18 +72,6 @@ SmfCreate(
 __in PSMF_MACHINE_ATTRIBUTES	InitAttributes, 
 __out PSMF_MACHINE_HANDLE		PSmHandle
 );
-
-//
-// To initialize the local variables of statemachines, done by initializing Machine_Attributes which is 
-// used while creating the statemachine
-//
-VOID SmfInitVar(
-__in PSMF_DRIVERDECL			Driver,
-__inout PSMF_MACHINE_ATTRIBUTES	InitAttributes, 
-__in SMF_VARDECL_INDEX			VarIndex, 
-__in ULONG_PTR					Value
-);
-
 
 /*********************************************************************************
 

@@ -39,11 +39,6 @@ enum _SMF_RESERVED_EVENT
 };
 
 //
-// SmfNull is the representation for the null value in P, used both as a machine and an event.
-//
-#define SmfNull	0
-
-//
 //Reserved States
 //
 enum _SMF_RESERVED_STATE

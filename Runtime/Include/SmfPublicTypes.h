@@ -763,3 +763,8 @@ enum _SMF_BUILTINTYPES
 //
 	SmfNullType = 0,
 };
+
+//
+// SmfNull is the representation for the null value in P, used both as a machine and an event.
+//
+#define SmfNull	0

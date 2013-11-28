@@ -175,3 +175,22 @@ Destroy_PackedValue(
 __in PSMF_DRIVERDECL			Driver,
 __in PSMF_PACKED_VALUE			Dst
 );
+
+//
+// Function prototypes for communicating with model machines
+//
+VOID 
+EnqueueEvent(
+__in SMF_MACHINE_HANDLE			Machine, 
+__in SMF_EVENTDECL_INDEX		EventIndex, 
+__in PSMF_PACKED_VALUE			Arg,
+__in BOOLEAN					UseWorkItem
+); 
+
+SMF_MACHINE_HANDLE 
+New(
+__in PSMF_DRIVERDECL			PDriverDecl, 
+__inout PSMF_SMCONTEXT			Context, 
+__in SMF_MACHINEDECL_INDEX		InstanceOf, 
+__in PSMF_PACKED_VALUE			Arg 
+);

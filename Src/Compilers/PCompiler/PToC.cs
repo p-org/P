@@ -2475,16 +2475,8 @@ namespace PCompiler
             AST<FuncTerm> cReturnType;
             var cParameterNames = new List<string>();
             var cParameterTypes = new List<AST<Node>>();
-            if (eraseBody)
-            {
-                cParameterNames.Add("ExtContext");
-                cParameterTypes.Add(MkNmdType("PVOID"));
-            }
-            else
-            {
-                cParameterNames.Add("Context");
-                cParameterTypes.Add(MkNmdType("PSMF_SMCONTEXT"));
-            }
+            cParameterNames.Add("Context");
+            cParameterTypes.Add(MkNmdType("PSMF_SMCONTEXT"));
 
             if (pReturnType is PNilType)
             {
@@ -3535,14 +3527,7 @@ Environment:
                 var argList = new List<AST<Node>>();
                 AST<Node> tmpRetVar = null;
 
-                if (compiler.erase)
-                {
-                    argList.Add(Compiler.AddArgs(CData.App_BinApp(n.Span), CData.Cnst_PFld(n.Span), MkId("Context"), MkId("ExtContext")));
-                }
-                else
-                {
-                    argList.Add(MkId("Context", n.Span));
-                }
+                argList.Add(MkId("Context", n.Span));
 
                 // Functions with compound return values have an implicit return parameter(dst) as their second parameter.
                 if (funInfo.returnType is PCompoundType)
@@ -3740,7 +3725,9 @@ Environment:
                         ctxt.addSideEffect(MkAssignOrCast(ctxt, n.Span, tmpVar, PType.Any, ctxt.consumeExp(it.Current.node), argType));
                         argList.Add(MkAddrOf(ctxt.consumeExp(tmpVar)));
                     }
-                    return new CTranslationInfo(MkFunApp("SmfNew", n.Span, argList));
+                    return (compiler.erase && compiler.allMachines[machTypeName].isModel) 
+                           ? new CTranslationInfo(MkFunApp("New", n.Span, argList)) 
+                           : new CTranslationInfo(MkFunApp("SmfNew", n.Span, argList));
                 }
             }
             else if (funName == PData.Con_Raise.Node.Name)
@@ -3804,7 +3791,9 @@ Environment:
                     var eventPayloadType = MkDot(MkIdx(MkArrow(ctxt.driver, "Events"), args[1]), "Type");
                     ctxt.addSideEffect(MkAssert(MkFunApp(getCCanCastName(PType.Any), default(Span), ctxt.driver, args[2], eventPayloadType), n.Span, "Payload not Cast-able to expected event payload on Send"));
 
-                    return new CTranslationInfo(MkFunApp("SmfEnqueueEvent", n.Span, args));
+                    return (compiler.erase && getComputedType(Compiler.GetArgByIndex(ft, 0)) == PType.Mid)
+                           ? new CTranslationInfo(MkFunApp("EnqueueEvent", n.Span, args))
+                           : new CTranslationInfo(MkFunApp("SmfEnqueueEvent", n.Span, args));
                 }
             }
             else if (funName == PData.Con_While.Node.Name)

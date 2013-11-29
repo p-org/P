@@ -1,0 +1,575 @@
+[
+    modules.PData = '"PData at ..\Domains\PData.4ml"',
+    modules.GraphLayout = '"GraphLayout at ..\Domains\GraphLayout.4ml"'
+]
+
+transform PVisualize (in:: PData) returns (out:: GraphLayout)
+{
+   //// Output elements
+   out._(g) :- Mach2Graph(_, g).
+   out._(n) :- State2Node(_, n).
+   out._(e) :- Trans2Edge(_, e).
+   
+   //// Make global definitions   
+   GlobalSec ::= (Section).
+   out.Graph("*globals", "<<Events and main>>", secs) :- 
+      secs = toList(#Sections, NIL, { s | GlobalSec(s) }).
+     
+   GlobalSec(Section("*globals--main", title, body, TRUE)) :-
+       MainDecl(e), Expr2Text(e, t'),
+       title = FontSize(1, Run("Main declaration")),
+       body = FontFamily(MONO, Concat(Indent(1), Concat(t', Concat(BREAK, NIL)))).
+       
+   GlobalSec(Section("*globals--events", title, body, TRUE)) :-
+       title = FontSize(1, Run("Event declarations")),
+       body = toList(#Concat, NIL, { t | Event2Text(_, t'), t = FontFamily(MONO, t') }), body : Text.
+          
+   Event2Text ::= (EventDecl, Text).
+   Event2Text(e, t) :- 
+        e is EventDecl(n, NIL, NIL), Colors(KYWORD, ck), Colors(ID, ci),
+           t = Concat(Indent(1), Concat(Foreground(ck, Run("event ")), Concat(Foreground(ci, Run(n)), Concat(Run(";"), Concat(BREAK, NIL)))));            
+        e is EventDecl(n, AssumeMaxInstances(k), NIL), Colors(KYWORD, ck), Colors(ID, ci),
+           t = Concat(Indent(1), Concat(Foreground(ck, Run("event ")), Concat(Foreground(ci, Run(n)), 
+                  Concat(Foreground(ck, Run(" assume ")), Concat(Run(toString(k)), Concat(Run(";"), Concat(BREAK, NIL)))))));        
+        e is EventDecl(n, AssertMaxInstances(k), NIL), Colors(KYWORD, ck), Colors(ID, ci),
+           t = Concat(Indent(1), Concat(Foreground(ck, Run("event ")), Concat(Foreground(ci, Run(n)), 
+                  Concat(Foreground(ck, Run(" assert ")), Concat(Run(toString(k)), Concat(Run(";"), Concat(BREAK, NIL)))))));                      
+        e is EventDecl(n, NIL, e'), e' != NIL, Expr2Text(e', t'), Colors(KYWORD, ck), Colors(ID, ci), Colors(TYPE, ct),
+           t = Concat(Indent(1), Concat(Foreground(ck, Run("event ")), Concat(Foreground(ci, Run(n)), 
+                  Concat(Run(" : "), Concat(Foreground(ct, t'), Concat(Run(";"), Concat(BREAK, NIL)))))));
+        e is EventDecl(n, AssumeMaxInstances(k), e'), e' != NIL, Expr2Text(e', t'), Colors(KYWORD, ck), Colors(ID, ci), Colors(TYPE, ct),
+           t = Concat(Indent(1), Concat(Foreground(ck, Run("event ")), Concat(Foreground(ci, Run(n)), 
+                  Concat(Run(" : "), Concat(Foreground(ct, t'), Concat(Foreground(ck, Run(" assume ")), Concat(Run(toString(k)), Concat(Run(";"), Concat(BREAK, NIL)))))))));
+        e is EventDecl(n, AssertMaxInstances(k), e'), e' != NIL, Expr2Text(e', t'), Colors(KYWORD, ck), Colors(ID, ci), Colors(TYPE, ct),
+           t = Concat(Indent(1), Concat(Foreground(ck, Run("event ")), Concat(Foreground(ci, Run(n)), 
+                  Concat(Run(" : "), Concat(Foreground(ct, t'), Concat(Foreground(ck, Run(" assert ")), Concat(Run(toString(k)), Concat(Run(";"), Concat(BREAK, NIL))))))))).                  
+   
+   //// Make graphs
+   MachineSec ::= (MachineDecl, Section).   
+   Mach2Name ::= (MachineDecl, String).
+   Mach2Name' ::= (MachineDecl, String).
+   
+   Mach2Name(m, n) :- Mach2Name'(m, n'), no { md | md is MainDecl(New(mt, _)), mt.name = m.name }, no Fair(m), n = n';
+                      Mach2Name'(m, n'), no { md | md is MainDecl(New(mt, _)), mt.name = m.name }, Fair(m), n = strJoin("fair ", n');
+                      Mach2Name'(m, n'), md is MainDecl(New(mt, _)), mt.name = m.name, no Fair(m), n = strJoin("main ", n');
+                      Mach2Name'(m, n'), md is MainDecl(New(mt, _)), mt.name = m.name, Fair(m), n = strJoin("main fair ", n').
+                                            
+   Mach2Name'(m, n) :- m is MachineDecl(n', REAL, NIL), n = n';
+                       m is MachineDecl(n', MODEL, NIL), n = strJoin("model ", n');
+                       m is MachineDecl(n', SPEC, NIL), n = strJoin("spec ", n');
+                       m is MachineDecl(n', REAL, k), k : Integer, n = strJoin(n', strJoin(" max ", toString(k)));
+                       m is MachineDecl(n', MODEL, k), k : Integer, n = strJoin("model ", strJoin(n', strJoin(" max ", toString(k))));
+                       m is MachineDecl(n', SPEC, k), k : Integer, n = strJoin("spec ", strJoin(n', strJoin(" max ", toString(k)))).                       
+                      
+   Mach2Graph ::= (MachineDecl, Graph).
+   Mach2Graph(m, g) :- m is MachineDecl, Mach2Name(m, n), g = Graph(m.name, n, secs), secs = toList(#Sections, NIL, { s | MachineSec(m, s) }).
+  
+   //// Make states
+   StateStyle ::= (isStart: Boolean, isStable: Boolean, ContainerStyle).
+   StateStyle(FALSE, FALSE, style) :-
+        style : ContainerStyle,
+        style.shape = DEFAULT,
+        style.fill = DEFAULT,                       
+        style.border = DEFAULT,
+        style.stroke = DEFAULT,
+        style.strokeWidth = DEFAULT,
+        style.minWidth = DEFAULT,
+        style.minHeight = DEFAULT,                            
+        style.maxWidth = DEFAULT,
+        style.maxHeight = DEFAULT.
+        
+   StateStyle(FALSE, TRUE, style) :-
+        style : ContainerStyle,
+        style.shape = DEFAULT,
+        style.fill = RGBA(235, 180, 185, 255),                       
+        style.border = DEFAULT,
+        style.stroke = DEFAULT,
+        style.strokeWidth = DEFAULT,
+        style.minWidth = DEFAULT,
+        style.minHeight = DEFAULT,                            
+        style.maxWidth = DEFAULT,
+        style.maxHeight = DEFAULT.
+        
+   StateStyle(TRUE, FALSE, style) :-
+        style : ContainerStyle,
+        style.shape = DEFAULT,
+        style.fill = RGBA(179, 236, 186, 255),                       
+        style.border = DEFAULT,
+        style.stroke = DEFAULT,
+        style.strokeWidth = DEFAULT,
+        style.minWidth = DEFAULT,
+        style.minHeight = DEFAULT,                            
+        style.maxWidth = DEFAULT,
+        style.maxHeight = DEFAULT.
+        
+   StateStyle(TRUE, TRUE, style) :-
+        style : ContainerStyle,
+        style.shape = DEFAULT,
+        style.fill = RGBA(177, 193, 237, 255),                       
+        style.border = DEFAULT,
+        style.stroke = DEFAULT,
+        style.strokeWidth = DEFAULT,
+        style.minWidth = DEFAULT,
+        style.minHeight = DEFAULT,                            
+        style.maxWidth = DEFAULT,
+        style.maxHeight = DEFAULT.
+        
+         
+   State2Node ::= (StateDecl, Node).
+   
+   State2Node(s, n) :- 
+      s is StateDecl, no MachStart(s.owner, s), no Stable(s),
+      Mach2Graph(s.owner, graph), n = Node(id, graph, label, secs, DEFAULT, DEFAULT, style),
+      id = strJoin(s.owner.name, strJoin("--state--", s.name)),
+      label = FontSize(1, Run(s.name)),
+      secs = toList(#Sections, NIL, { sec | StateSec(s, sec) }),
+      StateStyle(FALSE, FALSE, style).
+ 
+   State2Node(s, n) :- 
+      s is StateDecl, no MachStart(s.owner, s), Stable(s),
+      Mach2Graph(s.owner, graph), n = Node(id, graph, label, secs, DEFAULT, DEFAULT, style),
+      id = strJoin(s.owner.name, strJoin("--state--", s.name)),
+      label = FontSize(1, Concat(Foreground(ck, Run("stable ")), Concat(Run(s.name), NIL))), Colors(KYWORD, ck), 
+      secs = toList(#Sections, NIL, { sec | StateSec(s, sec) }),
+      StateStyle(FALSE, TRUE, style).
+
+   State2Node(s, n) :- 
+      s is StateDecl, MachStart(s.owner, s), no Stable(s),
+      Mach2Graph(s.owner, graph), n = Node(id, graph, label, secs, DEFAULT, DEFAULT, style),
+      id = strJoin(s.owner.name, strJoin("--state--", s.name)),
+      label = FontSize(1, Concat(Foreground(ck, Run("start ")), Concat(Run(s.name), NIL))), Colors(KYWORD, ck), 
+      secs = toList(#Sections, NIL, { sec | StateSec(s, sec) }),
+      StateStyle(TRUE, FALSE, style).
+
+   State2Node(s, n) :- 
+      s is StateDecl, MachStart(s.owner, s), Stable(s),
+      Mach2Graph(s.owner, graph), n = Node(id, graph, label, secs, DEFAULT, DEFAULT, style),
+      id = strJoin(s.owner.name, strJoin("--state--", s.name)),
+      label = FontSize(1, Concat(Foreground(ck, Run("start stable ")), Concat(Run(s.name), NIL))), Colors(KYWORD, ck), 
+      secs = toList(#Sections, NIL, { sec | StateSec(s, sec) }),
+      StateStyle(TRUE, TRUE, style).
+                                          
+   //// Make state sections
+   StateSec ::= (StateDecl, Section).
+   StateSec(st, s) :-
+      st is StateDecl, st.entryFun != NIL, Stmt2Text(st.entryFun, 1, body), s = Section(id, title, FontFamily(MONO, body), TRUE),
+         id = strJoin(st.owner.name, strJoin("--state--", strJoin(st.name, "--entry"))),
+         title = FontSize(1, Run("entry")).
+         
+   StateSec(st, s) :-
+      st is StateDecl, ExitFun(st, exit), exit != NIL, Stmt2Text(exit, 1, body), s = Section(id, title, FontFamily(MONO, body), TRUE),
+         id = strJoin(st.owner.name, strJoin("--state--", strJoin(st.name, "--exit"))),
+         title = FontSize(1, Run("exit")).
+                       
+   //// Make transitions
+   Trans2Edge ::= (TransDecl, Edge).
+   Trans2Edge(tr, ed) :- 
+       tr is TransDecl, State2Node(tr.src, src), State2Node(tr.dst, dst), trig = tr.trig, trig : EventDecl, no Fair(tr),
+          ed = Edge(id, src, dst, Run(tr.trig.name), NIL, DEFAULT),
+          id = strJoin(src.id, strJoin("--", strJoin(tr.trig.name, strJoin("-->", dst.id))));
+       tr is TransDecl, State2Node(tr.src, src), State2Node(tr.dst, dst), tr.trig = DEFAULT, no Fair(tr),
+          ed = Edge(id, src, dst, Run("*"), NIL, DEFAULT),
+          id = strJoin(src.id, strJoin("--*-->", dst.id));
+       tr is TransDecl, State2Node(tr.src, src), State2Node(tr.dst, dst), trig = tr.trig, trig : EventDecl, Fair(tr), Colors(KYWORD, cw),
+          ed = Edge(id, src, dst, Concat(Foreground(cw, Run("fair ")), Concat(Run(tr.trig.name), NIL)), NIL, DEFAULT),
+          id = strJoin(src.id, strJoin("--", strJoin(tr.trig.name, strJoin("-->", dst.id))));
+       tr is TransDecl, State2Node(tr.src, src), State2Node(tr.dst, dst), tr.trig = DEFAULT, Fair(tr), Colors(KYWORD, cw),
+          ed = Edge(id, src, dst, Concat(Foreground(cw, Run("fair ")), Concat(Run("*"), NIL)), NIL, DEFAULT),
+          id = strJoin(src.id, strJoin("--*-->", dst.id)).
+          
+               
+   //// Make action decls
+   MachineSec(m, s) :- 
+      m is MachineDecl, ActionDecl(n, m, st), Stmt2Text(st, 1, body), Colors(KYWORD, ck), Colors(ID, ci), s = Section(lbl, title, FontFamily(MONO, body), TRUE),
+         lbl = strJoin(m.name, strJoin("--action--", n)),
+         title = FontSize(1, Concat(Foreground(ck, Run("action ")), Concat(Foreground(ci, Run(n)), NIL))).      
+
+   //// Make fun decls   
+   MachineSec(m, s) :- 
+      m is MachineDecl, f is FunDecl, Fun2Sig(f, title), Stmt2Text(f.body, 1, body), s = Section(lbl, FontSize(1, title), FontFamily(MONO, body), TRUE),
+         lbl = strJoin(m.name, strJoin("--fun--", f.name)).
+      
+   Fun2Sig ::= (FunDecl, Text).
+   Fun2Sig(f, t) :-
+      f is FunDecl, f.isModel = FALSE, f.return = NIL, Fun2NamePart(f, t'), Colors(KYWORD, ck), 
+         t = Concat(Foreground(ck, Run("fun ")), Concat(t', NIL));
+      f is FunDecl, f.isModel = TRUE, f.return = NIL, Fun2NamePart(f, t'), Colors(KYWORD, ck), 
+         t = Concat(Foreground(ck, Run("model fun ")), Concat(t', NIL));
+      f is FunDecl, f.isModel = FALSE, e'' = f.return, e'' : AllTypes, Fun2NamePart(f, t'), Expr2Text(e'', t''), Colors(KYWORD, ck), Colors(TYPE, ct), 
+         t = Concat(Foreground(ck, Run("fun ")), Concat(t', Concat(Run(" : "), Concat(Foreground(ct, t''), NIL))));
+      f is FunDecl, f.isModel = TRUE, e'' = f.return, e'' : AllTypes, Fun2NamePart(f, t'), Expr2Text(e'', t''), Colors(KYWORD, ck), Colors(TYPE, ct), 
+         t = Concat(Foreground(ck, Run("model fun ")), Concat(t', Concat(Run(" : "), Concat(Foreground(ct, t''), NIL)))).
+                                     
+   Fun2NamePart ::= (FunDecl, Text).
+   Fun2NamePart(f, t) :- 
+      f is FunDecl, f.params = NIL, no Flags(f, PASSIVE), Colors(ID, ci),
+        t = Concat(Foreground(ci, Run(f.name)), Concat(Run(" ()"), NIL));
+      f is FunDecl, e' = f.params, e' : Params, Expr2Text(e', t'), no Flags(f, PASSIVE), Colors(ID, ci),
+        t = Concat(Foreground(ci, Run(f.name)), Concat(Run(" ("), Concat(t', Concat(Run(")"), NIL))));
+      f is FunDecl, f.params = NIL, Flags(f, PASSIVE), Colors(ID, ci), Colors(KYWORD, cw),
+        t = Concat(Run("{"), Concat(Foreground(cw, Run("passive")), Concat(Run("} "), Concat(Foreground(ci, Run(f.name)), Concat(Run(" ()"), NIL)))));
+      f is FunDecl, e' = f.params, e' : Params, Expr2Text(e', t'), Flags(f, PASSIVE), Colors(ID, ci), Colors(KYWORD, cw),
+        t = Concat(Run("{"), Concat(Foreground(cw, Run("passive")), Concat(Run("} "), Concat(Foreground(ci, Run(f.name)), Concat(Run(" ("), Concat(t', Concat(Run(")"), NIL))))))).
+                              
+   //// Make var decls
+   VarDecl2Text ::= (VarDecl, Text).  
+   
+   MachineSec(m, s) :- 
+      m is MachineDecl, s = Section(lbl, title, body, TRUE), 
+         lbl = strJoin("*", strJoin(m.name, "--vardecl")), title = FontSize(1, Run("Variable Declarations")),
+            body =  toList(#Concat, NIL, { t | VarDecl2Text(v, t'), v.owner = m, t = FontFamily(MONO, Concat(Indent(1), Concat(t', NIL))) }).
+                     
+   VarDecl2Text(v, t)
+     :- v is VarDecl(n, _, e', FALSE), Expr2Text(e', t'), Colors(KYWORD, ck), Colors(TYPE, ct), Colors(ID, ci),
+           t = Concat(Foreground(ck, Run("var ")), Concat(Foreground(ci, Run(n)), Concat(Run(": "), Concat(Foreground(ct, t'), Concat(Run(";"), Concat(BREAK, NIL)))))); 
+        v is VarDecl(n, _, e', TRUE), Expr2Text(e', t'), Colors(KYWORD, ck), Colors(TYPE, ct), Colors(ID, ci),
+           t = Concat(Foreground(ck, Run("ghost var ")), Concat(Foreground(ci, Run(n)), Concat(Run(": "), Concat(Foreground(ct, t'), Concat(Run(";"), Concat(BREAK, NIL)))))).
+                                                                 
+   //// Find the statements in the input program and record their indentation depth
+   SubStmt ::= (stmt: Stmt, indent: Natural).
+   SubStmt(s, i) :- 
+          d is in.Data, s = d.body, s : in.Stmt, i = 1;   
+          d is in.Data, s = d.entryFun, s : in.Stmt, i = 1;   
+          d is in.Data, s = d.exitFun, s : in.Stmt, i = 1;
+          SubStmt(s', i'), s = s'.body, i = i' + 1;
+          SubStmt(s', i'), s = s'.s1, i = i';
+          SubStmt(s', i'), s = s'.s2, i = i';
+          SubStmt(s', i'), s = s'.true, i = i' + 1;          
+          SubStmt(s', i'), s = s'.false, toSymbol(s) = #ITE, i = i';
+          SubStmt(s', i'), s = s'.false, toSymbol(s) != #ITE, i = i' + 1.
+
+   //// Convert statements to text
+   Stmt2Text ::= (Stmt, Natural, Text).
+   
+   Stmt2Text(s, i, t) :-
+      SubStmt(s, i), s = NIL, t = Run("");
+      SubStmt(s, i), s = LEAVE, Colors(KYWORD, c), t = Concat(Indent(i), Concat(Foreground(c, Run("leave")), Concat(Run(";"), Concat(BREAK, NIL))));
+      SubStmt(s, i), s = DELETE, Colors(KYWORD, c), t = Concat(Indent(i), Concat(Foreground(c, Run("delete")), Concat(Run(";"), Concat(BREAK, NIL)))).
+      
+   Stmt2Text(s, i, t) :-
+      SubStmt(s, i), s = While(e', s''), Expr2Text(e', t'), Stmt2Text(s'', i + 1, t''), Colors(KYWORD, c),
+         t = Concat(Indent(i), Concat(Foreground(c, Run("while")), Concat(Run("("), Concat(t', Concat(Run(")"), 
+                      Concat(BREAK, Concat(Indent(i), Concat(Run("{"), Concat(BREAK, Concat(t'', Concat(Indent(i), Concat(Run("}"), Concat(BREAK, NIL))))))))))))).
+                      
+   Stmt2Text(s, i, t) :-
+      SubStmt(s, i), s = ITE(e', s'', NIL), Expr2Text(e', t'), Stmt2Text(s'', i + 1, t''), Colors(KYWORD, c),
+         t = Concat(Indent(i), Concat(Foreground(c, Run("if")), Concat(Run("("), Concat(t', Concat(Run(")"), 
+                      Concat(BREAK, Concat(Indent(i), Concat(Run("{"), Concat(BREAK, Concat(t'', Concat(Indent(i), Concat(Run("}"), Concat(BREAK, NIL))))))))))))).
+
+   Stmt2Text(s, i, t) :-
+      SubStmt(s, i), s = ITE(e', s'', s'''), s''' != NIL, Expr2Text(e', t'), Stmt2Text(s'', i + 1, t''), Stmt2Text(s''', i + 1, t'''), Colors(KYWORD, c),
+         tif = Concat(Indent(i), Concat(Foreground(c, Run("if ")), Concat(Run("("), Concat(t', Concat(Run(")"), 
+                      Concat(BREAK, Concat(Indent(i), Concat(Run("{"), Concat(BREAK, Concat(t'', Concat(Indent(i), Concat(Run("}"), Concat(BREAK, NIL))))))))))))),
+         telse = Concat(Indent(i), Concat(Foreground(c, Run("else")), 
+                      Concat(BREAK, Concat(Indent(i), Concat(Run("{"), Concat(BREAK, Concat(t''', Concat(Indent(i), Concat(Run("}"), Concat(BREAK, NIL)))))))))),
+         t = Concat(tif, telse).
+                                                                           
+   Stmt2Text(s, i, t) :-
+      SubStmt(s, i), s = Assert(e), Expr2Text(e, t'), Colors(KYWORD, c),
+         t = Concat(Indent(i), Concat(Foreground(c, Run("assert")), Concat(Run("("), Concat(t', Concat(Run(");"), Concat(BREAK, NIL)))))).
+         
+   Stmt2Text(s, i, t) :-
+      SubStmt(s, i), s = Return(NIL), Colors(KYWORD, c),
+         t = Concat(Indent(i), Concat(Foreground(c, Run("return")), Concat(Run(";"), Concat(BREAK, NIL))));
+      SubStmt(s, i), s = Return(e), e != NIL, Expr2Text(e, t'), Colors(KYWORD, c),
+         t = Concat(Indent(i), Concat(Foreground(c, Run("return ")), Concat(t', Concat(Run(";"), Concat(BREAK, NIL))))).
+
+   Stmt2Text(s, i, t) :-
+      SubStmt(s, i), s = Assign(e', e''), Expr2Text(e', t'), Expr2Text(e'', t''), 
+         t = Concat(Indent(i), Concat(t', Concat(Run(" = "), Concat(t'', Concat(Run(";"), Concat(BREAK, NIL)))))).
+
+   Stmt2Text(s, i, t) :-
+      SubStmt(s, i), s = Seq(s', s''), Stmt2Text(s', i, t'), Stmt2Text(s'', i, t''), 
+         t = Concat(t', Concat(t'', NIL)).
+         
+   Stmt2Text(s, i, t) :-
+      SubStmt(s, i), s = Send(e', e'', NIL), Expr2Text(e', t'), Expr2Text(e'', t''), Colors(KYWORD, c),
+         t = Concat(Indent(i), Concat(Foreground(c, Run("send")), Concat(Run("("), Concat(t', Concat(Run(", "), Concat(t'', Concat(Run(");"), Concat(BREAK, NIL))))))));
+      SubStmt(s, i), s = Send(e', e'', e'''), e''' != NIL, Expr2Text(e', t'), Expr2Text(e'', t''), Expr2Text(e''', t'''), Colors(KYWORD, c),
+         t = Concat(Indent(i), Concat(Foreground(c, Run("send")), Concat(Run("("), Concat(t', Concat(Run(", "), Concat(t'', Concat(Run(", "), Concat(t''', Concat(Run(");"), Concat(BREAK, NIL)))))))))).
+         
+   Stmt2Text(s, i, t) :-
+      SubStmt(s, i), s = Raise(e', NIL), Expr2Text(e', t'), Colors(KYWORD, c),
+         t = Concat(Indent(i), Concat(Foreground(c, Run("raise")), Concat(Run("("), Concat(t', Concat(Run(");"), Concat(BREAK, NIL))))));
+      SubStmt(s, i), s = Raise(e', e''), Expr2Text(e', t'), Expr2Text(e'', t''), Colors(KYWORD, c),
+         t = Concat(Indent(i), Concat(Foreground(c, Run("raise")), Concat(Run("("), Concat(t', Concat(Run(", "), Concat(t'', Concat(Run(");"), Concat(BREAK, NIL)))))))).
+         
+   Stmt2Text(s, i, t) :-
+      SubStmt(s, i), s = Scall(e'), Expr2Text(e', t'), Colors(KYWORD, c),
+         t = Concat(Indent(i), Concat(Foreground(c, Run("call")), Concat(Run("("), Concat(t', Concat(Run(");"), Concat(BREAK, NIL)))))).
+         
+   Stmt2Text(s, i, t) :-
+       SubStmt(s, i), s = Call(n, NIL), Colors(ID, c),
+          t = Concat(Indent(i), Concat(Foreground(c, Run(n)), Concat(Run("();"), Concat(BREAK, NIL))));
+       SubStmt(s, i), s = Call(n, e'), e' : Exprs, Expr2Text(e', t'), Colors(ID, c),
+          t = Concat(Indent(i), Concat(Foreground(c, Run(n)), Concat(Run("("), Concat(t', Concat(Run(");"), Concat(BREAK, NIL)))))).             
+                        
+   //// Find the expressions in the input program 
+   GeneralExpr ::= Expr + Exprs + AllTypes + NamedExprs + MachType + Params + TypeField + { NIL }.
+   SubExpr ::= (GeneralExpr).
+
+   SubExpr(e1) :- 
+          EventDecl(_, _, e1);
+          VarDecl(_, _, e1, _);
+          MainDecl(e1);
+          
+          SubStmt(DataOp(_, e1), _);
+          SubStmt(Assert(e1), _);
+          SubStmt(Return(e1), _);
+          SubStmt(Scall(e1), _);
+          SubStmt(Ecall(_, e1), _);
+          SubStmt(ITE(e1, _, _), _);
+          SubStmt(While(e1, _), _);
+          
+          SubExpr(Apply(_, e1));
+          SubExpr(Call(_, e1));
+          SubExpr(Payload(e1));
+          SubExpr(Tuple(e1));
+          SubExpr(NamedTuple(e1));
+          SubExpr(Sequence(e1));
+          SubExpr(Map(e1));
+          SubExpr(TypeField(_, e1));
+          SubExpr(TypeSeq(e1)).
+          
+   SubExpr(e1), SubExpr(e2) :- 
+          x is FunDecl, e1 = x.params, e2 = x.return;
+          
+          SubStmt(Assign(e1, e2), _);
+          SubStmt(Raise(e1, e2), _);
+
+          SubExpr(New(e1, e2));          
+          SubExpr(Exprs(e1, e2));
+          SubExpr(NamedExprs(_, e1, e2));
+          SubExpr(TypeTuple(e1, e2));
+          SubExpr(TypeNamedTuple(e1, e2));
+          SubExpr(TypeMap(e1, e2));
+          SubExpr(Params(_, e1, e2)).
+          
+  SubExpr(e1), SubExpr(e2), SubExpr(e3) :-
+          SubStmt(Send(e1, e2, e3), _).
+          
+  //// Color map
+  Colors ::= ({ KYWORD, CNST, ID, TYPE, OTHER }, RGBA).  
+  Colors(KYWORD, RGBA(0,   0,   255, 255)).
+  Colors(CNST,   RGBA(255, 0,   0,   255)).
+  Colors(ID,     RGBA(0,   128, 0,   255)).
+  Colors(TYPE,   RGBA(0,   128, 128, 255)).
+  Colors(OTHER,  RGBA(0,   0,   0,   255)).
+     
+  //// Formatted Expressions
+  Expr2Text ::= (GeneralExpr, Text).  
+  PrecLevel ::= (
+     Integer + Expr +
+     { 
+       NOT,       NEG,         ADD,      SUB, 
+       MUL,       INTDIV,      AND,      OR, 
+       EQ,        NEQ,         LT,       LE, 
+       GT,        GE,          IDX,      FLD, 
+       IN,        CHOOSE,      KEYS,     SIZEOF,
+       THIS,      TRIGGER,     NONDET,   NULL,
+       TRUE,      FALSE,       #Call,    #New,    
+       #Payload,  #Tuple,      #Use,     #NamedTuple 
+     },
+     { 0..8 }). 
+     
+  PrecLevel(THIS,        0).     
+  PrecLevel(TRIGGER,     0).     
+  PrecLevel(NULL,        0).     
+  PrecLevel(TRUE,        0).     
+  PrecLevel(FALSE,       0).     
+  PrecLevel(IDX,         0).     
+  PrecLevel(FLD,         0).     
+  PrecLevel(SIZEOF,      0).     
+  PrecLevel(KEYS,        0).     
+  PrecLevel(CHOOSE,      0).     
+  PrecLevel(#Tuple,      0).     
+  PrecLevel(#NamedTuple, 0).     
+  PrecLevel(#New,        0).     
+  PrecLevel(#Payload,    0).       
+  PrecLevel(#Call,       0).       
+  PrecLevel(#Use,        0).       
+  PrecLevel(n,           0) :- SubExpr(n), n : Integer.  
+  PrecLevel(NOT,         1).     
+  PrecLevel(NEG,         1).  
+  PrecLevel(MUL,         2).     
+  PrecLevel(INTDIV,      2).       
+  PrecLevel(ADD,         3).     
+  PrecLevel(SUB,         3).       
+  PrecLevel(LT,          4).     
+  PrecLevel(LE,          4).       
+  PrecLevel(GT,          4).     
+  PrecLevel(GE,          4).       
+  PrecLevel(IN,          4).       
+  PrecLevel(EQ,          5).     
+  PrecLevel(NEQ,         5).       
+  PrecLevel(NONDET,      6).       
+  PrecLevel(AND,         7).       
+  PrecLevel(OR,          8).     
+  PrecLevel(e,           n) :- SubExpr(e), e = Apply(op, _), PrecLevel(op, n).
+  PrecLevel(e,           n) :- SubExpr(e), PrecLevel(toSymbol(e), n).
+  
+  //// Formatting of Exprs, NamedExprs, Params
+  Expr2Text(e, t) :-   
+        SubExpr(e), e = Exprs(e', NIL), Expr2Text(e', t);
+        SubExpr(e), e = Exprs(e', e''), e'' : Exprs, Expr2Text(e', t'), Expr2Text(e'', t''),
+          t = Concat(t', Concat(Run(", "), Concat(t'', NIL))).
+
+  Expr2Text(e, t) :-   
+        SubExpr(e), e = NamedExprs(n, e', NIL), Expr2Text(e', t'),
+          Colors(ID, c), t = Concat(Foreground(c, Run(n)), Concat(Run(" = "), Concat(t', NIL)));
+        SubExpr(e), e = NamedExprs(n, e', e''), e'' : NamedExprs, Expr2Text(e', t'), Expr2Text(e'', t''),
+          Colors(ID, c), t = Concat(Foreground(c, Run(n)), Concat(Run(" = "), Concat(t', Concat(Run(", "), Concat(t'', NIL))))).
+                    
+  Expr2Text(e, t) :-   
+        SubExpr(e), e = Params(n, e', NIL), Expr2Text(e', t'), Colors(ID, ci), Colors(TYPE, ct), 
+          t = Concat(Foreground(ci, Run(n)), Concat(Run(" : "), Concat(Foreground(ct, t'), NIL)));
+        SubExpr(e), e = Params(n, e', e''), e'' : Params, Expr2Text(e', t'), Expr2Text(e'', t''), Colors(ID, ci), Colors(TYPE, ct), 
+          t = Concat(Foreground(ci, Run(n)), Concat(Run(" : "), Concat(Foreground(ct, t'), Concat(Run(", "), Concat(t'', NIL))))).
+
+  //// Formatting of type expressions
+  //// Types for which parens must be added around
+  AddParens ::= TypeTuple + TypeNamedTuple.
+  NoParens ::= TypePrimitive + TypeSeq + TypeMap + { ANY }.
+  
+  Expr2Text(e, t) :- 
+       e = BOOL, t = Foreground(c, Run("bool")), Colors(KYWORD, c);   
+       e = INT, t = Foreground(c, Run("int")), Colors(KYWORD, c);   
+       e = EVENT, t = Foreground(c, Run("eid")), Colors(KYWORD, c);   
+       e = ID, t = Foreground(c, Run("id")), Colors(KYWORD, c);   
+       e = SID, t = Foreground(c, Run("sid")), Colors(KYWORD, c);   
+       e = MID, t = Foreground(c, Run("mid")), Colors(KYWORD, c);   
+       e = ANY, t = Foreground(c, Run("any")), Colors(KYWORD, c).
+       
+  Expr2Text(e, t) :- SubExpr(e), e = MachType(n), t = Run(n).
+         
+  Expr2Text(e, t) :-   
+        SubExpr(e), e = TypeTuple(e', NIL), Expr2Text(e', t);
+        SubExpr(e), e = TypeTuple(e', e''), e'' : TypeTuple, Expr2Text(e', t'), Expr2Text(e'', t''),
+          t = Concat(t', Concat(Run(", "), Concat(t'', NIL))).
+          
+  Expr2Text(e, t) :-   
+        SubExpr(e), e = TypeNamedTuple(TypeField(n, e'), NIL), Expr2Text(e', t'),
+          Colors(ID, c), t = Concat(Foreground(c, Run(n)), Concat(Run(" : "), Concat(t', NIL)));
+        SubExpr(e), e = TypeNamedTuple(TypeField(n, e'), e''), e'' : TypeNamedTuple, Expr2Text(e', t'), Expr2Text(e'', t''),
+          Colors(ID, c), t = Concat(Foreground(c, Run(n)), Concat(Run(" : "), Concat(t', Concat(Run(", "), Concat(t'', NIL))))).
+          
+  Expr2Text(e, t) :-   
+        SubExpr(e), e = TypeSeq(e'), Expr2Text(e', t'), e' : AddParens, Colors(KYWORD, c),
+           t = Concat(Foreground(c, Run("seq ")), Concat(Run("[ ("), Concat(t', Concat(Run(") ]"), NIL))));
+        SubExpr(e), e = TypeSeq(e'), Expr2Text(e', t'), e' : NoParens, Colors(KYWORD, c),
+           t = Concat(Foreground(c, Run("seq ")), Concat(Run("["), Concat(t', Concat(Run("]"), NIL)))).
+          
+  Expr2Text(e, t) :-   
+        SubExpr(e), e = TypeMap(e', e''), Expr2Text(e', t'), e' : AddParens, Expr2Text(e'', t''), e'' : AddParens, Colors(KYWORD, c),
+           t = Concat(Foreground(c, Run("map ")), Concat(Run("[ ("), Concat(t', Concat(Run("), ("), Concat(t'', Concat(Run(") ]"), NIL))))));
+        SubExpr(e), e = TypeMap(e', e''), Expr2Text(e', t'), e' : NoParens, Expr2Text(e'', t''), e'' : AddParens, Colors(KYWORD, c),
+           t = Concat(Foreground(c, Run("map ")), Concat(Run("["), Concat(t', Concat(Run(", ("), Concat(t'', Concat(Run(") ]"), NIL))))));
+        SubExpr(e), e = TypeMap(e', e''), Expr2Text(e', t'), e' : AddParens, Expr2Text(e'', t''), e'' : NoParens, Colors(KYWORD, c),
+           t = Concat(Foreground(c, Run("map ")), Concat(Run("[ ("), Concat(t', Concat(Run("), "), Concat(t'', Concat(Run("]"), NIL))))));
+        SubExpr(e), e = TypeMap(e', e''), Expr2Text(e', t'), e' : NoParens, Expr2Text(e'', t''), e'' : NoParens, Colors(KYWORD, c),
+           t = Concat(Foreground(c, Run("map ")), Concat(Run("["), Concat(t', Concat(Run(", "), Concat(t'', Concat(Run("]"), NIL)))))).
+
+  //// Formatting of nullary and Level 0 expressions
+  Expr2Text(e, t) :- 
+       e = THIS, t = Foreground(c, Run("this")), Colors(KYWORD, c);   
+       e = TRIGGER, t = Foreground(c, Run("trigger")), Colors(KYWORD, c);   
+       e = NULL, t = Foreground(c, Run("null")), Colors(KYWORD, c);   
+       e = TRUE, t = Foreground(c, Run("true")), Colors(KYWORD, c);   
+       e = FALSE, t = Foreground(c, Run("false")), Colors(KYWORD, c);
+       e = NONDET, t = Foreground(c, Run("*")), Colors(KYWORD, c).
+       
+  Expr2Text(e, t) :-
+       SubExpr(e), e : Integer, t = Foreground(c, Run(toString(e))), Colors(CNST, c).    
+
+  Expr2Text(e, t) :-   
+        SubExpr(e), e = Use(n, _), t = Foreground(c, Run(n)), Colors(ID, c).  
+          
+  Expr2Text(e, t) :-
+       SubExpr(e), e = Apply(FLD, Exprs(e', Exprs(e'', NIL))), Expr2Text(e', t'), Expr2Text(e'', t''),
+          t = Concat(t', Concat(Run("."), Concat(t'', NIL))). 
+
+  Expr2Text(e, t) :-
+       SubExpr(e), e = Tuple(e'), e' = Exprs(_, NIL), Expr2Text(e', t'),
+          t = Concat(Run("("), Concat(t', Concat(Run(",)"), NIL)));
+       SubExpr(e), e = Tuple(e'), e' = Exprs(_, Exprs(_, _)), Expr2Text(e', t'),
+          t = Concat(Run("("), Concat(t', Concat(Run(")"), NIL))). 
+
+  Expr2Text(e, t) :-
+       SubExpr(e), e = NamedTuple(e'), Expr2Text(e', t'),
+          t = Concat(Run("("), Concat(t', Concat(Run(")"), NIL))). 
+          
+  Expr2Text(e, t) :-
+       SubExpr(e), e = Apply(IDX, Exprs(e', Exprs(e'', NIL))), Expr2Text(e', t'), Expr2Text(e'', t''),
+          t = Concat(t', Concat(Run("["), Concat(t'', Concat(Run("]"), NIL)))). 
+
+  Expr2Text(e, t) :-
+       SubExpr(e), e = Apply(SIZEOF, e'), Expr2Text(e', t'), Colors(KYWORD, c),
+          t = Concat(Foreground(c, Run("sizeof")), Concat(Run("("), Concat(t', Concat(Run(")"), NIL)))). 
+
+  Expr2Text(e, t) :-
+       SubExpr(e), e = Apply(KEYS, e'), Expr2Text(e', t'), Colors(KYWORD, c),
+          t = Concat(Foreground(c, Run("keys")), Concat(Run("("), Concat(t', Concat(Run(")"), NIL)))). 
+
+  Expr2Text(e, t) :-
+       SubExpr(e), e = Payload(NIL), Colors(KYWORD, c),
+          t = Foreground(c, Run("payload"));
+       SubExpr(e), e = Payload(e'), e' : NoParens, Expr2Text(e', t'), Colors(KYWORD, ck), Colors(TYPE, ct),
+          t = Concat(Run("("), Concat(Foreground(ct, t'), Concat(Run(")"), Concat(Foreground(ck, Run("payload")), NIL))));
+       SubExpr(e), e = Payload(e'), e' : AddParens, Expr2Text(e', t'), Colors(KYWORD, ck), Colors(TYPE, ct),
+          t = Concat(Run("("), Concat(Foreground(ct, Concat(Run("("), Concat(t', Concat(Run(")"), NIL)))), Concat(Run(")"), Concat(Foreground(ck, Run("payload")), NIL)))).
+          
+  Expr2Text(e, t) :-
+       SubExpr(e), e = New(MachType(n), NIL), Colors(KYWORD, ck), Colors(ID, ci),
+          t = Concat(Foreground(ck, Run("new ")), Concat(Foreground(ci, Run(n)), Concat(Run("()"), NIL)));
+       SubExpr(e), e = New(MachType(n), e'), e' : Expr, Expr2Text(e', t'), Colors(KYWORD, ck), Colors(ID, ci),
+          t = Concat(Foreground(ck, Run("new ")), Concat(Foreground(ci, Run(n)), Concat(Run("("), Concat(t', Concat(Run(")"), NIL))))).
+          
+  Expr2Text(e, t) :-
+       SubExpr(e), e = Call(n, NIL), Colors(ID, c),
+          t = Concat(Foreground(c, Run(n)), Concat(Run("()"), NIL));
+       SubExpr(e), e = Call(n, e'), e' : Exprs, Expr2Text(e', t'), Colors(ID, c),
+          t = Concat(Foreground(c, Run(n)), Concat(Run("("), Concat(t', Concat(Run(")"), NIL)))).          
+          
+  //// Formatting of Level > 0 unary expressions
+  UnOp2Str ::= ({ NOT, NEG }, String).
+  UnOp2Str(NOT, "!").
+  UnOp2Str(NEG, "-").
+  
+  Expr2Text(e, t) :-
+       SubExpr(e), e = Apply(op, Exprs(e', NIL)), Expr2Text(e', t'), 
+          UnOp2Str(op, opStr), PrecLevel(e, n), PrecLevel(e', n'), n' <= n,
+          t = Concat(Run(opStr), Concat(t', NIL));  
+       SubExpr(e), e = Apply(op, Exprs(e', NIL)), Expr2Text(e', t'), 
+          UnOp2Str(op, opStr), PrecLevel(e, n), PrecLevel(e', n'), n' > n,
+          t = Concat(Run(opStr), Concat(Run("("), Concat(t', Concat(Run(")"), NIL)))).  
+
+  //// Formatting of Level > 0 binary expressions
+  BinOp2Str ::= ({ MUL, INTDIV, ADD, SUB, LT, LE, GT, GE, IN, EQ, NEQ, AND, OR }, String).
+  BinOp2Str (MUL,    " * ").
+  BinOp2Str (INTDIV, " / ").
+  BinOp2Str (ADD,    " + ").
+  BinOp2Str (SUB,    " - ").
+  BinOp2Str (LT,     " < ").
+  BinOp2Str (LE,     " <= ").
+  BinOp2Str (GT,     " > ").
+  BinOp2Str (GE,     " >= ").
+  BinOp2Str (IN,     " in ").
+  BinOp2Str (EQ,     " == ").
+  BinOp2Str (NEQ,    " != ").
+  BinOp2Str (AND,    " && ").
+  BinOp2Str (OR,     " || ").
+  
+  Expr2Text(e, t) :-
+       SubExpr(e), e = Apply(op, Exprs(e', Exprs(e'', NIL))), Expr2Text(e', t'), Expr2Text(e'', t''), 
+          BinOp2Str(op, opStr), PrecLevel(e, n), PrecLevel(e', n'), PrecLevel(e'', n''), n' <= n, n'' <= n,
+          t = Concat(t', Concat(Run(opStr), Concat(t'', NIL)));  
+       SubExpr(e), e = Apply(op, Exprs(e', Exprs(e'', NIL))), Expr2Text(e', t'), Expr2Text(e'', t''), 
+          BinOp2Str(op, opStr), PrecLevel(e, n), PrecLevel(e', n'), PrecLevel(e'', n''), n' > n, n'' <= n,
+          t = Concat(Run("("), Concat(t', Concat(Run(")"), Concat(Run(opStr), Concat(t'', NIL)))));
+       SubExpr(e), e = Apply(op, Exprs(e', Exprs(e'', NIL))), Expr2Text(e', t'), Expr2Text(e'', t''), 
+          BinOp2Str(op, opStr), PrecLevel(e, n), PrecLevel(e', n'), PrecLevel(e'', n''), n' <= n, n'' > n,
+          t = Concat(t', Concat(Run(opStr), Concat(Run("("), Concat(t'', Concat(Run(")"), NIL)))));
+       SubExpr(e), e = Apply(op, Exprs(e', Exprs(e'', NIL))), Expr2Text(e', t'), Expr2Text(e'', t''), 
+          BinOp2Str(op, opStr), PrecLevel(e, n), PrecLevel(e', n'), PrecLevel(e'', n''), n' > n, n'' > n,
+          t = Concat(Run("("), Concat(t', Concat(Run(")"), Concat(Run(opStr), Concat(Run("("), Concat(t'', Concat(Run(")"), NIL))))))).                    
+}

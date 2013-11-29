@@ -13,7 +13,6 @@ machine Node {
   var NextMachine: id;
   var MyRing: mid;
 
-  submachine Main {
     start state Init_Main_Node {
 			       entry { MyRing = (mid) payload; }
       on Next goto SetNext_Main_Node;
@@ -43,7 +42,7 @@ machine Node {
       }
 
       on Unit goto Wait_Main_Node;
-}
+    }
 
     state StartSending_Main_Node {
       entry {
@@ -78,7 +77,6 @@ machine Node {
 
       on Unit goto Wait_Main_Node;
     }
-  }
 }
 
 main model machine Ring4 {
@@ -94,7 +92,6 @@ main model machine Ring4 {
 		    var RandSrc:id;
 		    var RandDst:id;
 
-  submachine Main {
     start state Boot_Main_Ring4 {
       entry {
         N1 = new Node(this);
@@ -137,9 +134,9 @@ main model machine Ring4 {
                                   
                 if (!Rand1 && !Rand2)
                    RandSrc = N1;
-                else if (!Rand1 && Rand2)
+                if (!Rand1 && Rand2)
                    RandSrc = N2;
-                else if (Rand1 && !Rand2)
+                if (Rand1 && !Rand2)
                    RandSrc = N3;
                 else
                    RandSrc = N4;
@@ -153,9 +150,9 @@ main model machine Ring4 {
                   Rand2 = false;
                 if (!Rand1 && !Rand2)
                    RandDst = N1;
-                else if (!Rand1 && Rand2)
+                if (!Rand1 && Rand2)
                    RandDst = N2;
-                else if (Rand1 && !Rand2)
+                if (Rand1 && !Rand2)
                    RandDst = N3;
                 else
                    RandDst = N4;
@@ -165,5 +162,4 @@ main model machine Ring4 {
 
       on Unit goto RandomComm_Main_Ring4;
     }
-  }
 }

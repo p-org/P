@@ -250,7 +250,12 @@ namespace PCompiler
             {
                 return false;
             }
+
             PrintResult(result);
+            if (!result.Succeeded)
+            {
+                return false;
+            }
 
             ProgramName inputName;
             try
@@ -319,6 +324,7 @@ namespace PCompiler
                 return false;
             }
 
+            //// Reduced is the compiled AST eliminating quotations (among other things)
             AST<Node> reduced;
             if (!Microsoft.Formula.Compiler.Compiler.TryGetReducedForm(model, out reduced))
             {

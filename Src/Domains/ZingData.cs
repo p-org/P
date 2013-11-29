@@ -143,6 +143,8 @@
                 return Factory.Instance.MkCnst("SM_HANDLE");
             if (pType == "MID")
                 return Factory.Instance.MkCnst("SM_HANDLE");
+            if (pType == "SID")
+                return Factory.Instance.MkCnst("SM_HANDLE");
             throw new InvalidOperationException();
         }
     }

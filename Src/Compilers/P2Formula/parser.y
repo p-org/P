@@ -24,10 +24,10 @@
 %YYSTYPE LexValue
 %partial
 
-%token T_INT T_BOOL T_EVENTID T_MACHINEID T_MODELMACHINEID T_ANY T_SEQ T_MAP
+%token T_INT T_BOOL T_EVENTID T_MACHINEID T_MODELMACHINEID T_SPECMACHINEID T_ANY T_SEQ T_MAP
 %token MAIN EVENT MACHINE ASSUME GHOST
 
-%token VAR START STABLE MODEL STATE FUN ACTION MAXQUEUE SUBMACHINE
+%token VAR START STABLE MODEL SPEC STATE FUN ACTION MAXQUEUE SUBMACHINE
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH
 
@@ -109,6 +109,7 @@ Type
 	| T_EVENTID									{ $$.type = new TypeEventID(); setLoc($$.type, @1);}
 	| T_MACHINEID								{ $$.type = new TypeMachineID(); setLoc($$.type, @1);}
 	| T_MODELMACHINEID							{ $$.type = new TypeModelMachineID(); setLoc($$.type, @1);}
+	| T_SPECMACHINEID							{ $$.type = new TypeSpecMachineID(); setLoc($$.type, @1);}
 	| T_ANY										{ $$.type = new TypeAny(); setLoc($$.type, @1);}
 	| NamedTupleType
 	| TupleType
@@ -166,7 +167,7 @@ TypeOrNull
 
 // --------------------  Machine Declarations --------------------
 MachineDecl
-	: IsMain IsFair IsModel MACHINE ID LCBRACE MachineBody RCBRACE	{ $$.node = new MachineDeclaration($5.s, $1.b, $2.b, $3.b, Cast<INode, IMachineBodyItem>.list($7.lst)); setLoc($$.node, @1, @8);}
+	: IsMain IsFair IsModelOrSpec MACHINE ID LCBRACE MachineBody RCBRACE	{ $$.node = new MachineDeclaration($5.s, $1.b, $2.b, $3.s, Cast<INode, IMachineBodyItem>.list($7.lst)); setLoc($$.node, @1, @8);}
 	;
 
 IsGhost
@@ -234,6 +235,12 @@ Params
 IsModel
 	: MODEL											{ $$.b = true; }
 	|												{ $$.b = false; }
+	;
+
+IsModelOrSpec
+	: MODEL											{ $$.s = "MODEL"; }
+	| SPEC											{ $$.s = "SPEC"; }
+	|												{ $$.s = "REAL"; }
 	;
 
 // ------------------    Action Declaration		----------------------

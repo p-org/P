@@ -8,7 +8,10 @@ namespace PCompiler
 {
     abstract class PType
     {
-        public abstract bool Hashable { get; }
+        public virtual bool IsMachineId { get { return false; } }
+        public virtual bool IsGhost { get { return false; } }
+        public virtual bool Erasable { get { return false; } }
+        public virtual bool Hashable { get { return !IsGhost; } }
         public abstract override bool Equals(object obj); // Compares types for structural equality
         public override int GetHashCode()
         {
@@ -38,6 +41,7 @@ namespace PCompiler
             nameToPrimType[PData.Cnst_Int.Node.Name] = new PIntType();
             nameToPrimType[PData.Cnst_Id.Node.Name] = new PIdType();
             nameToPrimType[PData.Cnst_Mid.Node.Name] = new PMidType();
+            nameToPrimType[PData.Cnst_Sid.Node.Name] = new PSidType();
             nameToPrimType[PData.Cnst_Event.Node.Name] = new PEventType(null);
             nameToPrimType[PData.Cnst_State.Node.Name] = new PStateType();
 
@@ -47,6 +51,7 @@ namespace PCompiler
             Bool = new PBoolType();
             Id = new PIdType();
             Mid = new PMidType();
+            Sid = new PSidType();
             Event = new PEventType(null);
             State = new PStateType();
         }
@@ -68,6 +73,7 @@ namespace PCompiler
         public static readonly PIntType Int;
         public static readonly PIdType Id;
         public static readonly PMidType Mid;
+        public static readonly PSidType Sid;
         public static readonly PEventType Event;
         public static readonly PStateType State;
 
@@ -76,15 +82,16 @@ namespace PCompiler
         protected static readonly int BoolHash = 5;
         protected static readonly int IdHash = 7;
         protected static readonly int MidHash = 11;
-        protected static readonly int EventHash = 13;
-        protected static readonly int StateHash = 17;
+        protected static readonly int SidHash = 13;
+        protected static readonly int EventHash = 17;
+        protected static readonly int StateHash = 19;
 
-        protected static readonly int AnyHash = 19;
+        protected static readonly int AnyHash = 23;
 
-        protected static readonly int TupleHash = 23;
-        protected static readonly int NamedTupleHash = 29;
-        protected static readonly int SeqHash = 31;
-        protected static readonly int MapHash = 37;
+        protected static readonly int TupleHash = 29;
+        protected static readonly int NamedTupleHash = 31;
+        protected static readonly int SeqHash = 37;
+        protected static readonly int MapHash = 41;
 
         public static PType computeLUB(IEnumerable<PType> ts)
         {
@@ -98,7 +105,7 @@ namespace PCompiler
                 return ts.Aggregate(ts.First(), (acc, el) => acc.LUB(el));
         }
 
-        public bool realtive(PType other)
+        public bool relative(PType other)
         {
             return this == other || this.isSubtypeOf(other) || other.isSubtypeOf(this);
         }
@@ -133,6 +140,8 @@ namespace PCompiler
                 return PType.IdHash;
             if (this is PMidType)
                 return PType.MidHash;
+            if (this is PSidType)
+                return PType.SidHash;
             if (this is PEventType)
                 return PType.EventHash;
             if (this is PStateType)
@@ -167,20 +176,14 @@ namespace PCompiler
     {
         public PNilType() : base(PData.Cnst_Nil.Node.Name) { }
 
-        public override bool Hashable
-        {
-            get { return true; }
-        }
-
         public override bool isSubtypeOf(PType t)
         {
-            return this.Equals(t) || (t is PAnyType) ||
-                (t is PIdType) || (t is PMidType) || (t is PEventType);
+            return this.Equals(t) || (t is PAnyType) || t.IsMachineId || (t is PEventType);
         }
 
         public override PType LUB(PType other)
         {
-            if (other is PNilType || other is PIdType || other is PMidType || other is PEventType)
+            if (other is PNilType || other.IsMachineId || other is PEventType)
                 return other;
             else
                 return PType.Any;
@@ -190,28 +193,18 @@ namespace PCompiler
     class PIntType : PPrimitiveType
     {
         public PIntType() : base(PData.Cnst_Int.Node.Name) { }
-
-        public override bool Hashable
-        {
-            get { return true; }
-        }
     }
     
     class PBoolType : PPrimitiveType
     {
         public PBoolType() : base(PData.Cnst_Bool.Node.Name) { }
-
-        public override bool Hashable
-        {
-            get { return true; }
-        }
     }
     
     class PIdType : PPrimitiveType
     {
         public PIdType() : base(PData.Cnst_Id.Node.Name) { }
 
-        public override bool Hashable
+        public override bool IsMachineId
         {
             get { return true; }
         }
@@ -221,9 +214,41 @@ namespace PCompiler
     {
         public PMidType() : base(PData.Cnst_Mid.Node.Name) { }
 
-        public override bool Hashable
+        public override bool IsMachineId
         {
             get { return true; }
+        }
+    }
+
+    class PSidType : PPrimitiveType
+    {
+        public PSidType() : base(PData.Cnst_Sid.Node.Name) { }
+
+        public override bool IsGhost
+        {
+            get { return true; }
+        }
+
+        public override bool Erasable
+        {
+            get { return true; }
+        }
+
+        public override bool IsMachineId
+        {
+            get { return true; }
+        }
+
+        public override bool isSubtypeOf(PType t)
+        {
+            return this.Equals(t); // Don't allow sids to creep into variables of type Any.
+        }
+
+        public override PType LUB(PType other)
+        {
+            // Sid is not a subtype of Any and consequently breaks the upper bound in our type system. 
+            // Therefore we guard against it sneaking into LUB computations.
+            throw new Exception("Sid type snuck into the LUB computation!");
         }
     }
 
@@ -236,21 +261,11 @@ namespace PCompiler
         {
             evtName = eName;
         }
-
-        public override bool Hashable
-        {
-            get { return true; }
-        }
     }
 
     class PStateType : PPrimitiveType
     {
         public PStateType() : base(PData.Cnst_State.Node.Name) { }
-
-        public override bool Hashable
-        {
-            get { return true; }
-        }
 
         public override bool isSubtypeOf(PType t)
         {
@@ -259,9 +274,8 @@ namespace PCompiler
 
         public override PType LUB(PType other)
         {
-            // State Type is special since its not a subtype of any. Therefore if it breaks the
-            // upper bound in our type system. Therefore we have to carefully guard it from sneaking
-            // into LUB computations.
+            // Sid is not a subtype of Any and consequently breaks the upper bound in our type system. 
+            // Therefore we guard against it sneaking into LUB computations.
             throw new Exception("State type snuck into the LUB computation!");
         }
     }
@@ -275,16 +289,19 @@ namespace PCompiler
             this.els = new List<PType>(els);
         }
 
+        public override bool IsGhost
+        {
+            get { return els.Any(x => x.IsGhost); }
+        }
+
+        public override bool Erasable
+        {
+            get { return els.All(x => x.Erasable); }
+        }
+
         public override bool Hashable
         {
-            get {
-                foreach (PType el in els)
-                {
-                    if (!el.Hashable)
-                        return false;
-                }
-                return true; 
-            }
+            get { return els.All(x => x.Hashable); }
         }
 
         public override bool Equals(object obj)
@@ -356,17 +373,19 @@ namespace PCompiler
             this.els.Sort(new Comparison<Tuple<string,PType>>((t1,t2) => Comparer<string>.Default.Compare(t1.Item1, t2.Item1)));
         }
 
+        public override bool IsGhost
+        {
+            get { return els.Any(x => x.Item2.IsGhost); }
+        }
+
+        public override bool Erasable
+        {
+            get { return els.All(x => x.Item2.Erasable); }
+        }
+
         public override bool Hashable
         {
-            get
-            {
-                foreach (var el in els)
-                {
-                    if (!el.Item2.Hashable)
-                        return false;
-                }
-                return true;
-            }
+            get { return els.All(x => x.Item2.Hashable); }
         }
 
         public override bool Equals(object obj)
@@ -442,10 +461,7 @@ namespace PCompiler
 
         public override bool Hashable
         {
-            get
-            {
-                return false;
-            }
+            get { return false; }
         }
 
         public override int GetHashCode()
@@ -486,12 +502,19 @@ namespace PCompiler
             return this.innerT.Equals(other.innerT);
         }
 
+        public override bool IsGhost
+        {
+            get { return innerT.IsGhost; }
+        }
+
+        public override bool Erasable
+        {
+            get { return innerT.Erasable; }
+        }
+
         public override bool Hashable
         {
-            get
-            {
-                return innerT.Hashable;
-            }
+            get { return innerT.Hashable; }
         }
 
         public override int GetHashCode()
@@ -549,12 +572,19 @@ namespace PCompiler
             return this.domain.Equals(other.domain) && this.range.Equals(other.range);
         }
 
+        public override bool IsGhost
+        {
+            get { return range.IsGhost; }
+        }
+
+        public override bool Erasable
+        {
+            get { return range.Erasable; }
+        }
+
         public override bool Hashable
         {
-            get
-            {
-                return false;
-            }
+            get { return false; }
         }
 
         public override int GetHashCode()

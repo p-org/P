@@ -57,6 +57,7 @@
         public static readonly AST<Id> Cnst_Int = Factory.Instance.MkId("INT");
         public static readonly AST<Id> Cnst_Id = Factory.Instance.MkId("ID");
         public static readonly AST<Id> Cnst_Mid = Factory.Instance.MkId("MID");
+        public static readonly AST<Id> Cnst_Sid = Factory.Instance.MkId("SID");
         public static readonly AST<Id> Cnst_Any = Factory.Instance.MkId("ANY");
 
         public static readonly AST<Id> Cnst_Insert = Factory.Instance.MkId("INSERT");

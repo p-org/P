@@ -84,6 +84,7 @@ NonSMCntrChars  [^\'\"\n\r]*
 "eid"							           { return (int)PTokens.T_EVENTID;  }
 "id"									   { return (int)PTokens.T_MACHINEID;  }
 "mid"									   { return (int)PTokens.T_MODELMACHINEID;  }
+"sid"									   { return (int)PTokens.T_SPECMACHINEID;  }
 "seq"									   { return (int)PTokens.T_SEQ;  }
 "map"									   { return (int)PTokens.T_MAP; }
 
@@ -98,6 +99,7 @@ NonSMCntrChars  [^\'\"\n\r]*
 "start"									   { return (int)PTokens.START;  }
 "stable"								   { return (int)PTokens.STABLE;  }
 "model"									   { return (int)PTokens.MODEL;  }
+"spec"									   { return (int)PTokens.SPEC; }
 "fun"									   { return (int)PTokens.FUN;  }
 "action"								   { return (int)PTokens.ACTION;  }
 "state"									   { return (int)PTokens.STATE;  }

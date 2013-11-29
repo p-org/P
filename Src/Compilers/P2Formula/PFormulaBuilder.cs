@@ -204,6 +204,10 @@ namespace PParser
         {
             return wrap(P_FormulaNodes.TypeMID);
         }
+        public override IEnumerable<AST<Node>> visit(TypeSpecMachineID s)
+        {
+            return wrap(P_FormulaNodes.TypeSID);
+        }
         public override IEnumerable<AST<Node>> visit(TypeEventID s)
         {
             return wrap(P_FormulaNodes.TypeEVENT);
@@ -276,7 +280,7 @@ namespace PParser
             AST<Node> maxQSize = curMachMaxQSize == -1 ? (AST<Node>)P_FormulaNodes.Nil_Iden : (AST<Node>)fMkCnst(curMachMaxQSize);
             var machineName = sem.resolve(s, s.id);
 
-            var machineDecl = fMkModelFact(fMkFuncTerm(P_FormulaNodes.MachineDecl_Iden, fMkCnst(machineName), fMkCnst(s.isModel), maxQSize), machineName);
+            var machineDecl = fMkModelFact(fMkFuncTerm(P_FormulaNodes.MachineDecl_Iden, fMkCnst(machineName), fMkId(s.type), maxQSize), machineName);
             mTerms.Insert(0, machineDecl);
             if (s.isMain)
             {
@@ -741,6 +745,7 @@ namespace PParser
         public override IEnumerable<AST<Node>> visit_pre(TypeBool s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(TypeMachineID s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(TypeModelMachineID s) { return default(IEnumerable<AST<Node>>); }
+        public override IEnumerable<AST<Node>> visit_pre(TypeSpecMachineID s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(TypeEventID s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(TypeAny s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(TypeField s) { return default(IEnumerable<AST<Node>>); }

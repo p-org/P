@@ -111,6 +111,7 @@ namespace PCompiler
             this.allTypes.Add(PType.Nil);
             this.allTypes.Add(PType.Id);
             this.allTypes.Add(PType.Mid);
+            this.allTypes.Add(PType.Sid);
             this.allTypes.Add(PType.Int);
             this.allTypes.Add(PType.Bool);
             this.allTypes.Add(PType.Event);
@@ -428,7 +429,7 @@ namespace PCompiler
                     {
                         allMachines[name] = new MachineInfo();
                         it.MoveNext();
-                        allMachines[name].isModel = ((Id)it.Current).Name == "TRUE";
+                        allMachines[name].type = ((Id)it.Current).Name;
                         it.MoveNext();
                         if (it.Current.NodeKind != NodeKind.Id)
                         {
@@ -519,9 +520,17 @@ namespace PCompiler
                             var type = GetPType(it.Current);
                             it.MoveNext();
                             var isGhost = ((Id)it.Current).Name == "TRUE";
-                            if (isGhost)
+                            if (type is PMapType && !(type as PMapType).KeyT.Hashable)
                             {
-                                errors.Add(new Flag(SeverityKind.Error, term.Node, string.Format("Ghost variable {0} for machine {1} is not supported.", varName, machineName), 0, CompilingProgram));
+                                errors.Add(new Flag(SeverityKind.Error, term.Node, string.Format("The key type in the type of variable {0} in machine {1} is not hashable.", varName, machineName), 0, CompilingProgram));
+                            }
+                            else if (type.IsGhost && !type.Erasable)
+                            {
+                                errors.Add(new Flag(SeverityKind.Error, term.Node, string.Format("Type of variable {0} in machine {1} is ghost but not erasable.", varName, machineName), 0, CompilingProgram));
+                            }
+                            else if (isGhost)
+                            {
+                                errors.Add(new Flag(SeverityKind.Error, term.Node, string.Format("Ghost variable {0} in machine {1} is not supported.", varName, machineName), 0, CompilingProgram));
                             }
                             else
                             {
@@ -1133,13 +1142,23 @@ namespace PCompiler
             newDecls = new LinkedList<AST<FuncTerm>>();
             foreach (var e in bin)
             {
-                if (allMachines[GetName(e.Node, 0)].isModel)
-                    continue;
-                newDecls.AddLast(e);
+                if (allMachines[GetName(e.Node, 0)].IsReal)
+                    newDecls.AddLast(e);
             }
             factBins["MachineDecl"] = newDecls;
 
-            string[] declNames1 = {"VarDecl", "StateDecl", "EventSetDecl", "StateSetDecl", "FunDecl", "ActionDecl"};
+            bin = GetBin("VarDecl");
+            newDecls = new LinkedList<AST<FuncTerm>>();
+            foreach (var e in bin)
+            {
+                var varName = GetName(e.Node, 0);
+                var ownerName = GetOwnerName(e.Node, 1, 0);
+                if (allMachines[ownerName].IsReal && !allMachines[ownerName].localVariableToVarInfo[varName].type.Erasable)
+                    newDecls.AddLast(e);
+            }
+            factBins["VarDecl"] = newDecls;
+
+            string[] declNames1 = { "StateDecl", "EventSetDecl", "StateSetDecl", "FunDecl", "ActionDecl" };
             foreach (string s in declNames1)
             {
                 bin = GetBin(s);
@@ -1147,14 +1166,13 @@ namespace PCompiler
                 foreach (var e in bin)
                 {
                     var ownerName = GetOwnerName(e.Node, 1, 0);
-                    if (allMachines[ownerName].isModel)
-                        continue;
-                    newDecls.AddLast(e);
+                    if (allMachines[ownerName].IsReal)
+                        newDecls.AddLast(e);
                 }
                 factBins[s] = newDecls;
             }
 
-            string[] declNames2 = {"TransDecl", "ExitFun"};
+            string[] declNames2 = { "TransDecl", "ExitFun" };
             foreach (string s in declNames2)
             {
                 bin = GetBin(s);
@@ -1163,9 +1181,8 @@ namespace PCompiler
                 {
                     var stateDecl = GetFuncTerm(GetArgByIndex(e.Node, 0));
                     var ownerName = GetOwnerName(stateDecl, 1, 0);
-                    if (allMachines[ownerName].isModel)
-                        continue;
-                    newDecls.AddLast(e);
+                    if (allMachines[ownerName].IsReal)
+                        newDecls.AddLast(e);
                 }
                 factBins[s] = newDecls;
             }
@@ -1175,9 +1192,8 @@ namespace PCompiler
             foreach (var e in bin)
             {
                 var ownerName = GetOwnerName(e.Node, 0, 0);
-                if (allMachines[ownerName].isModel)
-                    continue;
-                newDecls.AddLast(e);
+                if (allMachines[ownerName].IsReal)
+                    newDecls.AddLast(e);
             }
             factBins["MachStart"] = newDecls;
         }

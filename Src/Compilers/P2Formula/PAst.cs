@@ -23,6 +23,7 @@ namespace PParser
         public abstract T visit(TypeBool s);
         public abstract T visit(TypeMachineID s);
         public abstract T visit(TypeModelMachineID s);
+        public abstract T visit(TypeSpecMachineID s);
         public abstract T visit(TypeEventID s);
         public abstract T visit(TypeNamedTuple s);
         public abstract T visit(TypeField s);
@@ -87,6 +88,7 @@ namespace PParser
         public abstract T visit_pre(TypeBool s);
         public abstract T visit_pre(TypeMachineID s);
         public abstract T visit_pre(TypeModelMachineID s);
+        public abstract T visit_pre(TypeSpecMachineID s);
         public abstract T visit_pre(TypeEventID s);
         public abstract T visit_pre(TypeField s);
         public abstract T visit_pre(TypeNamedTuple s);
@@ -152,6 +154,7 @@ namespace PParser
             if (n is TypeBool) { return this.visit(n as TypeBool); }
             if (n is TypeMachineID) { return this.visit(n as TypeMachineID); }
             if (n is TypeModelMachineID) { return this.visit(n as TypeModelMachineID); }
+            if (n is TypeSpecMachineID) { return this.visit(n as TypeSpecMachineID); }
             if (n is TypeEventID) { return this.visit(n as TypeEventID); }
             if (n is TypeNamedTuple) { return this.visit(n as TypeNamedTuple); }
             if (n is TypeField) { return this.visit(n as TypeField); }
@@ -220,6 +223,7 @@ namespace PParser
             if (n is TypeBool) { return this.visit_pre(n as TypeBool); }
             if (n is TypeMachineID) { return this.visit_pre(n as TypeMachineID); }
             if (n is TypeModelMachineID) { return this.visit_pre(n as TypeModelMachineID); }
+            if (n is TypeSpecMachineID) { return this.visit_pre(n as TypeSpecMachineID); }
             if (n is TypeEventID) { return this.visit_pre(n as TypeEventID); }
             if (n is TypeNamedTuple) { return this.visit_pre(n as TypeNamedTuple); }
             if (n is TypeField) { return this.visit_pre(n as TypeField); }
@@ -436,6 +440,7 @@ namespace PParser
     public class TypeBool : TypeNode { }
     public class TypeMachineID : TypeNode { }
     public class TypeModelMachineID : TypeNode { }
+    public class TypeSpecMachineID : TypeNode { }
     public class TypeEventID : TypeNode { }
     public class TypeAny : TypeNode { }
 
@@ -535,16 +540,16 @@ namespace PParser
         public string id;
         public bool isMain;
         public bool isFair;
-        public bool isModel;
+        public string type;
         public IEnumerable<IMachineBodyItem> body;
 
-        public MachineDeclaration(string id, bool main, bool fair, bool model, IEnumerable<IMachineBodyItem> body)
+        public MachineDeclaration(string id, bool main, bool fair, string type, IEnumerable<IMachineBodyItem> body)
             : base(body)
         {
             this.id = id;
             this.isMain = main;
             this.isFair = fair;
-            this.isModel = model;
+            this.type = type;
             this.body = body;
         }
     }

@@ -98,6 +98,7 @@ namespace PCompiler
                 case "INT": return new PIntType();
                 case "ID": return new PIdType();
                 case "MID": return new PMidType();
+                case "SID": return new PSidType();
                 case "EVENT": return new PEventType(null);
                 case "STATE": return new PStateType();
                 default:
@@ -242,7 +243,11 @@ namespace PCompiler
 
     internal class MachineInfo
     {
-        public bool isModel;
+        public bool IsReal { get { return type == "REAL"; } }
+        public bool IsModel { get { return type == "MODEL"; } }
+        public bool IsSpec { get { return type == "SPEC"; } }
+
+        public string type;
         public int maxQueueSize;
         public bool isFair;
         public FuncTerm initStateDecl;
@@ -254,7 +259,7 @@ namespace PCompiler
 
         public MachineInfo()
         {
-            isModel = false;
+            type = "REAL";
             maxQueueSize = -1;
             isFair = false;
             initStateDecl = null;
@@ -702,8 +707,7 @@ namespace PCompiler
                                 t2 is PAnyType ||
                                 (t2 is PTupleType && t1 is PTupleType) ||
                                 (t2 is PNamedTupleType && t1 is PNamedTupleType) ||
-                                (t2 is PIdType && t1 is PNilType) ||
-                                (t2 is PMidType && t1 is PNilType) ||
+                                (t2.IsMachineId && t1 is PNilType) ||
                                 (t2 is PEventType && t1 is PNilType) ||
                                 (t2 is PSeqType && t1 is PSeqType));
                         }
@@ -1204,9 +1208,13 @@ namespace PCompiler
                 {
                     return MkZingEq(super, getZingDefault(ctxt, PType.Id));
                 }
-                if (supT is PMidType && subT is PNilType)
+                else if (supT is PMidType && subT is PNilType)
                 {
                     return MkZingEq(super, getZingDefault(ctxt, PType.Mid));
+                }
+                else if (supT is PSidType && subT is PNilType)
+                {
+                    return MkZingEq(super, getZingDefault(ctxt, PType.Sid));
                 }
                 else if (supT is PEventType && subT is PNilType)
                 {
@@ -1232,7 +1240,7 @@ namespace PCompiler
             }
             else
             {
-                Debug.Assert(fromT is PIdType || fromT is PMidType || fromT is PEventType);
+                Debug.Assert(fromT.IsMachineId || fromT is PEventType);
                 return MkZingEq(from, MkZingIdentifier("null"));
             }
         }
@@ -1984,7 +1992,7 @@ namespace PCompiler
                 {
                     rhsNode = MkZingCall(MkZingDot(pTypeToZingClassName(lhsType), getZingUpCastName(rhsType)), rhs);
                 }
-                else if (lhsType is PIdType || lhsType is PMidType || lhsType is PEventType)
+                else if (lhsType.IsMachineId || lhsType is PEventType)
                 {
                     Debug.Assert(rhsType is PNilType);
                     rhsNode = MkZingIdentifier("null");
@@ -2002,11 +2010,9 @@ namespace PCompiler
                 {
                     rhsNode = MkZingIdentifier("null");
                 }
-
             }
             else
                 throw new Exception(string.Format("Cannot assign from type {0} to type {1}", rhsType, lhsType));
-
 
             return Compiler.AddArgs(ZingData.App_Assign, lhs, rhsNode);
         }
@@ -2037,7 +2043,8 @@ namespace PCompiler
                     var id = (Id)n;
                     if (id.Name == PData.Cnst_This.Node.Name)
                     {
-                        return new ZingTranslationInfo(MkZingIdentifier("myHandle"), compiler.allMachines[ctxt.machineName].isModel ? (PType) new PMidType() : (PType) new PIdType());
+                        MachineInfo machineInfo = compiler.allMachines[ctxt.machineName];
+                        return new ZingTranslationInfo(MkZingIdentifier("myHandle"), machineInfo.IsModel ? (PType) new PMidType() : (machineInfo.IsReal ? (PType) new PIdType() : (PType) new PSidType()));
                     }
                     else if (id.Name == PData.Cnst_Trigger.Node.Name)
                     {
@@ -2062,7 +2069,7 @@ namespace PCompiler
                     }
                     else if (id.Name == PData.Cnst_Nondet.Node.Name)
                     {
-                        if (compiler.allMachines[ctxt.machineName].isModel ||
+                        if (!compiler.allMachines[ctxt.machineName].IsReal ||
                             (ctxt.translationContext == TranslationContext.Function && compiler.allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].isModel))
                         {
                             var afterLabel = ctxt.getFreshLabel();
@@ -2514,7 +2521,7 @@ namespace PCompiler
                         PType.computeLUB(possiblePayloads) : compiler.GetPType(typeArg);
 
                     // Statically check that our cast can be a relative of at least one of the possible payloads.
-                    if (!possiblePayloads.Any(t => t.realtive(castType)))
+                    if (!possiblePayloads.Any(t => t.relative(castType)))
                     {
                         compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot cast to {0} from any of the possible payload types in {1}: {2}", castType, ctxt.prettyName(),
                             possiblePayloads.Aggregate("", (str, t) => str + ", " + t)), 0, compiler.CompilingProgram));
@@ -2833,7 +2840,11 @@ namespace PCompiler
                             return new ZingTranslationInfo(MkZingDot(arg1.node, memberName), memberType);
                         } if (pOp.Name == PData.Cnst_Eq.Node.Name || pOp.Name == PData.Cnst_NEq.Node.Name)
                         {
-
+                            if (arg1.type.IsGhost || arg2.type.IsGhost)
+                            {
+                                compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot compare for equality items of types {0} and {1}", arg1.type, arg2.type), 0, compiler.CompilingProgram));
+                                return null;
+                            }
                             if (!arg1.type.isSubtypeOf(arg2.type) && !arg2.type.isSubtypeOf(arg1.type))
                             {
                                 compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Cannot compare for equality items of types {0} and {1}", arg1.type, arg2.type), 0, compiler.CompilingProgram));
@@ -2925,9 +2936,10 @@ namespace PCompiler
                         afterLabel = ctxt.getFreshLabel();
                         ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewM"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)))));
                     }
+                    MachineInfo machineInfo = compiler.allMachines[typeName];
                     return new ZingTranslationInfo(
                         MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar),
-                        compiler.allMachines[typeName].isModel ? (PType)new PMidType() : (PType)new PIdType(),
+                        machineInfo.IsModel ? (PType)new PMidType() : (machineInfo.IsReal ? (PType)new PIdType() : (PType)new PSidType()),
                         true,
                         afterLabel);
                 }
@@ -3110,9 +3122,14 @@ namespace PCompiler
                     {
                         return null;
                     }
-                    if (it.Current.type != PType.Id && it.Current.type != PType.Mid)
+                    if (!it.Current.type.IsMachineId)
                     {
                         compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("The target of a send must be of machine type."), 0, compiler.CompilingProgram));
+                        return null;
+                    }
+                    if (compiler.allMachines[ctxt.machineName].IsSpec && it.Current.type != PType.Sid)
+                    {
+                        compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("The target of a send in a spec machine must also be a spec machine."), 0, compiler.CompilingProgram));
                         return null;
                     }
                     var targetExpr = it.Current.node;
@@ -3814,7 +3831,7 @@ namespace PCompiler
                     }
                     else
                     {
-                        Debug.Assert(supF.Item1 is PAnyType || supF.Item1 is PEventType || supF.Item1 is PIdType || supF.Item1 is PMidType);
+                        Debug.Assert(supF.Item1 is PAnyType || supF.Item1 is PEventType || supF.Item1.IsMachineId);
                         buildArgs.Add(getZingDefault(ctxt, supF.Item1));
                     }
                 }
@@ -4014,6 +4031,10 @@ namespace PCompiler
             {
                 return "Mid";
             }
+            else if (t is PSidType)
+            {
+                return "Sid";
+            }
             else if (t is PEventType)
             {
                 return "Eid";
@@ -4083,11 +4104,7 @@ namespace PCompiler
             {
                 return MkZingIdentifier("false");
             }
-            else if (t is PIdType)
-            {
-                return MkZingIdentifier("null");
-            }
-            else if (t is PMidType)
+            else if (t.IsMachineId)
             {
                 return MkZingIdentifier("null");
             }

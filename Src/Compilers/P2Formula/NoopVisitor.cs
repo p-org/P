@@ -19,6 +19,7 @@ namespace PParser
         public override T visit(TypeBool s){ return default(T); }
         public override T visit(TypeMachineID s){ return default(T); }
         public override T visit(TypeModelMachineID s) { return default(T); }
+        public override T visit(TypeSpecMachineID s) { return default(T); }
         public override T visit(TypeEventID s){ return default(T); }
         public override T visit(TypeField s) { return default(T); }
         public override T visit(TypeNamedTuple s){ return default(T); }
@@ -83,6 +84,7 @@ namespace PParser
         public override T visit_pre(TypeBool s) { return default(T); }
         public override T visit_pre(TypeMachineID s) { return default(T); }
         public override T visit_pre(TypeModelMachineID s) { return default(T); }
+        public override T visit_pre(TypeSpecMachineID s) { return default(T); }
         public override T visit_pre(TypeEventID s) { return default(T); }
         public override T visit_pre(TypeField s) { return default(T); }
         public override T visit_pre(TypeNamedTuple s) { return default(T); }

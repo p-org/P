@@ -6,7 +6,7 @@ domain FuncData
        
     //// The basic type id accepts any machine.
     MachType        ::= new (name: String).
-    TypePrimitive   ::= { BOOL, INT, EVENT, ID, MID }.
+    TypePrimitive   ::= { BOOL, INT, EVENT, ID, MID, SID }.
     TypeTuple       ::= new (hd: any AllTypes, tl: any TypeTuple + { NIL }).
     TypeField       ::= new (name: any String, type: any AllTypes).
     TypeNamedTuple  ::= new (hd: any TypeField, tl: any TypeNamedTuple + { NIL }).
@@ -54,8 +54,8 @@ domain PData extends FuncData
     /****************       Core Entities            *************/
     /*************************************************************/
 
-    MachineDecl ::= fun (name: String -> isModel: Boolean, maxQueueSize: Integer + { NIL }).
-    
+    MachineDecl ::= fun (name: String -> type: { REAL, MODEL, SPEC }, maxQueueSize: Integer + { NIL }).
+
     EventDecl ::= fun (name: String -> any AssumeMaxInstances + AssertMaxInstances + { NIL }, payloadType: AllTypes + { NIL }).    
     AssumeMaxInstances ::= new (bound: Integer).
     AssertMaxInstances ::= new (bound: Integer).

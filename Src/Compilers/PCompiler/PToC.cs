@@ -476,6 +476,8 @@ namespace PCompiler
 
             foreach (PType t in compiler.allTypes)
             {
+                if (compiler.erase && t.Erasable) continue;
+
                 // Create the TYPEDECL. It contains all the neccessary metadata/function pointers
                 // for the runtime to handle values of a given type.
 
@@ -854,11 +856,7 @@ namespace PCompiler
                 else
                     throw new Exception(string.Format("Cannot compare types {0} and {1}", t1, t2));
 
-                if (supT is PIdType && subT is PNilType)
-                {
-                    return MkEq(supE, MkId("SmfNull"));
-                }
-                else if (supT is PMidType && subT is PNilType)
+                if (supT.IsMachineId && subT is PNilType)
                 {
                     return MkEq(supE, MkId("SmfNull"));
                 }
@@ -983,7 +981,7 @@ namespace PCompiler
             {
                 foreach (var subT in compiler.subtypes[t])
                 {
-                    if ((t is PEventType || t is PIdType || t is PMidType || t is PAnyType) && subT is PNilType)
+                    if ((t is PEventType || t.IsMachineId || t is PAnyType) && subT is PNilType)
                     {
                         // We should never need to call such an upcast. This case is handled in MkAssignOrCast, where it is
                         // compiled down to a simple assignment
@@ -1137,8 +1135,8 @@ namespace PCompiler
                     }
                     else
                     {
-                        // We must be in the eid->nil or id/mid->nil down cast case.
-                        if (t is PEventType || t is PIdType || t is PMidType)
+                        // We must be in the eid->nil or id/mid/sid->nil down cast case.
+                        if (t is PEventType || t.IsMachineId)
                         {
                             body.Add(MkAssert(MkEq(MkId("src"), MkCast(t, MkIntLiteral(0))), default(Span), errMsg));
                             body.Add(MkAssignment(MkDrf(MkId("dst")), MkIntLiteral(0)));
@@ -1161,21 +1159,13 @@ namespace PCompiler
             }
             else if (toT.isSubtypeOf(fromT))    // toT <: FromT
             {
-                if (fromT is PIdType && toT is PNilType) // Optimization
-                {
+                if ((fromT is PEventType || fromT.IsMachineId) && toT is PNilType)
+                {   
                     return MkEq(driver, from, fromT, null, toT); // Its safe to pass null here since the expression is ignore when comparing with Null
                 }
-                else if (fromT is PMidType && toT is PNilType) // Optimization
+                else
                 {
-                    return MkEq(driver, from, fromT, null, toT); // Its safe to pass null here since the expression is ignore when comparing with Null
-                }
-                else if (fromT is PEventType && toT is PNilType) // Optimization
-                {
-                    return MkEq(driver, from, fromT, null, toT); // Its safe to pass null here since the expression is ignore when comparing with Null
-                }
-                {
-                    return MkFunApp(getCCanDownCastName(fromT), default(Span),
-                        (fromT is PPrimitiveType ? from : MkAddrOf(from)), MkId(pTypeToCEnum(toT)));
+                    return MkFunApp(getCCanDownCastName(fromT), default(Span), (fromT is PPrimitiveType ? from : MkAddrOf(from)), MkId(pTypeToCEnum(toT)));
                 }
             }
             else    // Unrelated types
@@ -1188,7 +1178,7 @@ namespace PCompiler
         {
             foreach (var t in compiler.allTypes)
             {
-                if (t is PEventType || t is PIdType || t is PMidType)
+                if (t is PEventType || t.IsMachineId)
                 {
                     Debug.Assert(compiler.subtypes[t].Count == 1 && compiler.subtypes[t][0] == PType.Nil);
                     continue; // These cases are handled in MkCanCast
@@ -2320,6 +2310,8 @@ namespace PCompiler
                 return "Id";
             else if (pType == PType.Mid)
                 return "Mid";
+            else if (pType == PType.Sid)
+                return "Sid";
             else if (pType == PType.Int)
                 return "Int";
             else if (pType == PType.Any)
@@ -2340,9 +2332,7 @@ namespace PCompiler
                     return MkNmdType("BOOLEAN");
                 else if (pType == PType.Event)
                     return MkNmdType("SMF_EVENTDECL_INDEX");
-                else if (pType == PType.Id)
-                    return MkNmdType("SMF_MACHINE_HANDLE");
-                else if (pType == PType.Mid)
+                else if (pType.IsMachineId)
                     return MkNmdType("SMF_MACHINE_HANDLE");
                 else if (pType == PType.Int)
                     return MkNmdType("LONG");
@@ -2376,9 +2366,7 @@ namespace PCompiler
                 return MkId("FALSE");
             else if (t == PType.Int)
                 return MkIntLiteral(0);
-            else if (t == PType.Id)
-                return MkId("SmfNull");
-            else if (t == PType.Mid)
+            else if (t.IsMachineId)
                 return MkId("SmfNull");
             else if (t == PType.Event)
                 return MkId("SmfNull");
@@ -2851,11 +2839,7 @@ namespace PCompiler
             {
                 return MkAssignment(lhs, MkId("SmfNull"));
             }
-            else if (lhsType is PIdType && rhsType is PNilType)
-            {
-                return MkAssignment(lhs, MkId("SmfNull"));
-            }
-            else if (lhsType is PMidType && rhsType is PNilType)
+            else if (lhsType.IsMachineId && rhsType is PNilType)
             {
                 return MkAssignment(lhs, MkId("SmfNull"));
             }
@@ -2963,7 +2947,7 @@ namespace PCompiler
                     if (v.Item2)
                         throw new NotImplementedException("Haven't implemented cleanup for heap temporary vars yet!");
 
-                    if (!(v.Item1 is PTupleType) && !(v.Item1 is PNamedTupleType) && !(v.Item1 is PAnyType) && !(v.Item1 is PSeqType))
+                    if (!(v.Item1 is PTupleType) && !(v.Item1 is PNamedTupleType) && !(v.Item1 is PAnyType) && !(v.Item1 is PSeqType) && !(v.Item1 is PMapType))
                         throw new NotImplementedException("Revisit cleanup for new type " + v.Item1);
 
                     if (!typeNeedsDestroy(v.Item1))
@@ -2973,7 +2957,6 @@ namespace PCompiler
                         continue;
 
                     res.Add(MkFunApp(pToC.getCDestroyName(v.Item1), default(Span), driver, MkAddrOf(MkId(v.Item3))));
-
                 }
 
                 if (res.Count > 1)
@@ -3425,6 +3408,10 @@ Environment:
             {
                 var lhsType = getComputedType(Compiler.GetArgByIndex(ft, 0));
                 var rhsType = getComputedType(Compiler.GetArgByIndex(ft, 1));
+                if (compiler.erase && lhsType.Erasable)
+                {
+                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
+                }
 
                 using (var it = children.GetEnumerator())
                 {
@@ -3725,9 +3712,19 @@ Environment:
                         ctxt.addSideEffect(MkAssignOrCast(ctxt, n.Span, tmpVar, PType.Any, ctxt.consumeExp(it.Current.node), argType));
                         argList.Add(MkAddrOf(ctxt.consumeExp(tmpVar)));
                     }
-                    return (compiler.erase && compiler.allMachines[machTypeName].isModel) 
-                           ? new CTranslationInfo(MkFunApp("New", n.Span, argList)) 
-                           : new CTranslationInfo(MkFunApp("SmfNew", n.Span, argList));
+                    MachineInfo machineInfo = compiler.allMachines[machTypeName];
+                    if (!compiler.erase || machineInfo.IsReal)
+                    {
+                        return new CTranslationInfo(MkFunApp("SmfNew", n.Span, argList));
+                    }
+                    else if (machineInfo.IsModel)
+                    {
+                        return new CTranslationInfo(MkFunApp("New", n.Span, argList));
+                    }
+                    else
+                    {
+                        return new CTranslationInfo(CData.Cnst_Nil(n.Span));
+                    }
                 }
             }
             else if (funName == PData.Con_Raise.Node.Name)
@@ -3791,9 +3788,19 @@ Environment:
                     var eventPayloadType = MkDot(MkIdx(MkArrow(ctxt.driver, "Events"), args[1]), "Type");
                     ctxt.addSideEffect(MkAssert(MkFunApp(getCCanCastName(PType.Any), default(Span), ctxt.driver, args[2], eventPayloadType), n.Span, "Payload not Cast-able to expected event payload on Send"));
 
-                    return (compiler.erase && getComputedType(Compiler.GetArgByIndex(ft, 0)) == PType.Mid)
-                           ? new CTranslationInfo(MkFunApp("EnqueueEvent", n.Span, args))
-                           : new CTranslationInfo(MkFunApp("SmfEnqueueEvent", n.Span, args));
+                    PType computedType = getComputedType(Compiler.GetArgByIndex(ft, 0));
+                    if (!compiler.erase || computedType == PType.Id)
+                    {
+                        return new CTranslationInfo(MkFunApp("SmfEnqueueEvent", n.Span, args));
+                    }
+                    else if (computedType == PType.Mid)
+                    {
+                        return new CTranslationInfo(MkFunApp("EnqueueEvent", n.Span, args));
+                    }
+                    else
+                    {
+                        return new CTranslationInfo(CData.Cnst_Nil(n.Span));
+                    }
                 }
             }
             else if (funName == PData.Con_While.Node.Name)

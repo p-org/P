@@ -62,8 +62,12 @@ class SM_HANDLE {
 				trace("<EnqueueLog> Enqueued Event < {0}, bool: {1} > in Machine {2}-{3} by {4}-{5}", e.name, arg.m_Bool, machineName, instance, source.machineName, source.instance);
 			else if(arg.d == Discriminator.Int)
 				trace("<EnqueueLog> Enqueued Event < {0}, Int: {1} > in Machine {2}-{3} by {4}-{5}", e.name, arg.m_Int, machineName, instance, source.machineName, source.instance);
+			else if (arg.d == Discriminator.Id)
+				trace("<EnqueueLog> Enqueued Event < {0}, Handle: {1}-{2} > in Machine {3}-{4} by {5}-{6}", e.name, arg.m_Id.machineName, arg.m_Mid.instance, machineName, instance, source.machineName, source.instance);
 			else if (arg.d == Discriminator.Mid)
 				trace("<EnqueueLog> Enqueued Event < {0}, Handle: {1}-{2} > in Machine {3}-{4} by {5}-{6}", e.name, arg.m_Mid.machineName, arg.m_Mid.instance, machineName, instance, source.machineName, source.instance);
+			else if (arg.d == Discriminator.Sid)
+				trace("<EnqueueLog> Enqueued Event < {0}, Handle: {1}-{2} > in Machine {3}-{4} by {5}-{6}", e.name, arg.m_Sid.machineName, arg.m_Mid.instance, machineName, instance, source.machineName, source.instance);
 			else
 				trace("<EnqueueLog> Enqueued Event < {0}, Other: > in Machine {1}-{2} by {3}-{4}", e.name, machineName, instance, source.machineName, source.instance);
 		}

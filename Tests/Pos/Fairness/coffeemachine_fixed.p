@@ -97,18 +97,11 @@ fair model machine Server
 
         stable state WaitingOrder
         {
-                on MsgNewOrder goto ReceivedOrder
+                on MsgNewOrder goto MakingOrder
                 {
 					send (_customer, MsgOrderReceived);
+					send(_coffeeMachine, MsgNewOrder);
                 };
-        }
-
-        state ReceivedOrder
-        {
-            on MsgNewOrder goto MakingOrder
-            {
-				send(_coffeeMachine, MsgNewOrder);
-            };
         }
 
         model fun bar()

@@ -2376,11 +2376,41 @@ namespace PCompiler
             }
             else if (funName == PData.Con_Ecall.Node.Name)
             {
-                return null;
+                using (var it = children.GetEnumerator())
+                {
+                    it.MoveNext();
+                    if (it.Current == null)
+                        return null;
+                    
+                    //Implement Scheduler seal operation
+                    var command = ((Cnst)it.Current.node.Node).GetStringValue();
+                    if (command == "seal" || command == "unseal")
+                    {
+                        it.MoveNext();
+
+                        var res = MkZingSeq(
+                            MkZingCallStmt(MkZingCall(MkZingIdentifier("invokescheduler"), Factory.Instance.MkCnst("\"" + command + "\""))));
+                        return new ZingTranslationInfo(res, new PNilType());
+                    }
+                    else
+                    {
+                        compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("only __seal() and __unseal() are allowed scheduler operations"), 0, compiler.CompilingProgram));
+                        return null;
+                    }
+
+                }
+                
+                
             }
             else if (funName == PData.Con_Strings.Node.Name)
             {
-                return null;
+                
+                using (var it = children.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var str = ((Cnst)it.Current.node.Node).GetStringValue();
+                    return new ZingTranslationInfo(Factory.Instance.MkCnst(str), new PNilType());
+                }
             }
             else if (funName == PData.Con_Seq.Node.Name)
             {

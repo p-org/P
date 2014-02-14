@@ -366,6 +366,13 @@ namespace PCompiler
             return Factory.Instance.AddArg(ZingData.App_Call, Compiler.ConstructList(ZingData.App_Args, argList));
         }
 
+        private static AST<FuncTerm> MkZingStrings(IEnumerable<AST<Node>> args)
+        {
+            List<AST<Node>> argList = new List<AST<Node>>();
+            foreach (var arg in args)
+                argList.Add(arg);
+            return Compiler.AddArgs(ZingData.App_Apply,args);
+        }
         private static AST<FuncTerm> MkZingCall(AST<Node> methodExpr, IEnumerable<AST<Node>> args)
         {
             List<AST<Node>> argList = new List<AST<Node>>();
@@ -1917,6 +1924,15 @@ namespace PCompiler
                     yield return it.Current;
                 }
             }
+            else if (funName == PData.Con_Strings.Node.Name)
+            {
+                do
+                {
+                    yield return ft.Args.First<Node>();
+                    ft = Compiler.GetArgByIndex(ft, 1) as FuncTerm;
+                }
+                while (ft != null);
+            }
             else
             {
                 foreach (var t in ft.Args)
@@ -2383,20 +2399,29 @@ namespace PCompiler
                         return null;
                     
                     //Implement Scheduler seal operation
-                    var command = ((Cnst)it.Current.node.Node).GetStringValue();
-                    if (command == "seal" || command == "unseal")
+                    var arglist = (it.Current.node.Node as FuncTerm).Args;
+                    var listnodes = new List<AST<Node>>();
+                    foreach(var command in arglist)
                     {
-                        it.MoveNext();
-
-                        var res = MkZingSeq(
-                            MkZingCallStmt(MkZingCall(MkZingIdentifier("invokescheduler"), Factory.Instance.MkCnst("\"" + command + "\""))));
-                        return new ZingTranslationInfo(res, new PNilType());
+                        var c = (command as Cnst).GetStringValue() ;
+                        if(c == "seal" || c == "unseal" || c == "rtc" || c=="rr")
+                        {
+                            listnodes.Add(Factory.Instance.MkCnst("\"" + c + "\""));
+                        }
+                        else
+                        {
+                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("only __seal() __unseal() are allowed scheduler operations"), 0, compiler.CompilingProgram));
+                            return null;
+                        }
                     }
-                    else
-                    {
-                        compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("only __seal() and __unseal() are allowed scheduler operations"), 0, compiler.CompilingProgram));
-                        return null;
-                    }
+                    
+                    it.MoveNext();
+                        
+                    var res = MkZingSeq(
+                        MkZingCallStmt(MkZingCall(MkZingIdentifier("invokescheduler"), listnodes)));
+                    return new ZingTranslationInfo(res, new PNilType());
+                
+                    
 
                 }
                 
@@ -2404,12 +2429,14 @@ namespace PCompiler
             }
             else if (funName == PData.Con_Strings.Node.Name)
             {
-                
+                List<AST<Node>> ll = new List<AST<Node>>();
                 using (var it = children.GetEnumerator())
                 {
-                    it.MoveNext();
-                    var str = ((Cnst)it.Current.node.Node).GetStringValue();
-                    return new ZingTranslationInfo(Factory.Instance.MkCnst(str), new PNilType());
+                    while (it.MoveNext())
+                    {
+                        ll.Add(it.Current.node);
+                    }
+                    return new ZingTranslationInfo(MkZingStrings(ll), new PNilType());
                 }
             }
             else if (funName == PData.Con_Seq.Node.Name)

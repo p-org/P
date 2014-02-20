@@ -137,6 +137,7 @@
         public static readonly AST<FuncTerm> App_Call = Factory.Instance.MkFuncTerm(Con_Call);
 
         //// Statements
+        public static readonly AST<FuncTerm> App_Ecall = Factory.Instance.MkFuncTerm(Con_Ecall);
         public static readonly AST<FuncTerm> App_Assert = Factory.Instance.MkFuncTerm(Con_Assert);
         public static readonly AST<FuncTerm> App_Return = Factory.Instance.MkFuncTerm(Con_Return);
         public static readonly AST<FuncTerm> App_Assign = Factory.Instance.MkFuncTerm(Con_Assign);

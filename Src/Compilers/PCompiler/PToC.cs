@@ -476,8 +476,6 @@ namespace PCompiler
 
             foreach (PType t in compiler.allTypes)
             {
-                if (compiler.erase && t.Erasable) continue;
-
                 // Create the TYPEDECL. It contains all the neccessary metadata/function pointers
                 // for the runtime to handle values of a given type.
 
@@ -2310,8 +2308,6 @@ namespace PCompiler
                 return "Id";
             else if (pType == PType.Mid)
                 return "Mid";
-            else if (pType == PType.Sid)
-                return "Sid";
             else if (pType == PType.Int)
                 return "Int";
             else if (pType == PType.Any)
@@ -3408,11 +3404,6 @@ Environment:
             {
                 var lhsType = getComputedType(Compiler.GetArgByIndex(ft, 0));
                 var rhsType = getComputedType(Compiler.GetArgByIndex(ft, 1));
-                if (compiler.erase && lhsType.Erasable)
-                {
-                    return new CTranslationInfo(CData.Cnst_Nil(n.Span));
-                }
-
                 using (var it = children.GetEnumerator())
                 {
                     it.MoveNext();
@@ -3697,7 +3688,7 @@ Environment:
                     argList.Add(Compiler.AddArgs(CData.App_UnApp(n.Span), CData.Cnst_Addr(n.Span), MkId(compiler.DriverDeclName())));
                     argList.Add(MkId("Context"));
                     it.MoveNext();
-                    var machTypeName = ((Cnst)Compiler.GetArgByIndex((FuncTerm)it.Current.node.Node, 0)).GetStringValue();
+                    var machTypeName = ((Cnst)it.Current.node.Node).GetStringValue();
                     argList.Add(MkId(string.Format("MachineType_{0}", machTypeName)));
                     it.MoveNext();
                     if (it.Current.node.Node.NodeKind == NodeKind.Id &&
@@ -3713,7 +3704,11 @@ Environment:
                         argList.Add(MkAddrOf(ctxt.consumeExp(tmpVar)));
                     }
                     MachineInfo machineInfo = compiler.allMachines[machTypeName];
-                    if (!compiler.erase || machineInfo.IsReal)
+                    if (machineInfo.IsSpec)
+                    {
+                        return new CTranslationInfo(CData.Cnst_Nil(n.Span));
+                    }
+                    else if (!compiler.erase || machineInfo.IsReal)
                     {
                         return new CTranslationInfo(MkFunApp("SmfNew", n.Span, argList));
                     }
@@ -3726,6 +3721,10 @@ Environment:
                         return new CTranslationInfo(CData.Cnst_Nil(n.Span));
                     }
                 }
+            }
+            else if (funName == PData.Con_Mcall.Node.Name)
+            {
+                return new CTranslationInfo(CData.Cnst_Nil(n.Span));
             }
             else if (funName == PData.Con_Raise.Node.Name)
             {
@@ -3825,10 +3824,6 @@ Environment:
 
                     return new CTranslationInfo(loop);
                 }
-            }
-            else if (funName == PData.Con_MachType.Node.Name)
-            {
-                return new CTranslationInfo(Factory.Instance.ToAST(n));
             }
             else if (funName == PData.Con_Tuple.Node.Name)
             {

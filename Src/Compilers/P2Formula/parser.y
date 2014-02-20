@@ -24,14 +24,14 @@
 %YYSTYPE LexValue
 %partial
 
-%token T_INT T_BOOL T_EVENTID T_MACHINEID T_MODELMACHINEID T_SPECMACHINEID T_ANY T_SEQ T_MAP
-%token MAIN EVENT MACHINE ASSUME GHOST
+%token T_INT T_BOOL T_EVENTID T_MACHINEID T_MODELMACHINEID T_ANY T_SEQ T_MAP
+%token MAIN EVENT MACHINE MONITOR ASSUME GHOST
 
-%token VAR START STABLE MODEL SPEC STATE FUN ACTION MAXQUEUE SUBMACHINE
+%token VAR START STABLE MODEL STATE FUN ACTION MAXQUEUE SUBMACHINE
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH
 
-%token IF WHILE THIS TRIGGER PAYLOAD ARG NEW RETURN FAIR ID LEAVE ASSERT SCALL RAISE SEND DEFAULT DELETE NULL
+%token IF WHILE THIS TRIGGER PAYLOAD ARG NEW RETURN FAIR ID LEAVE ASSERT SCALL INVOKE RAISE SEND DEFAULT DELETE NULL
 %token LPAREN RPAREN LCBRACE RCBRACE LBRACKET RBRACKET SIZEOF KEYS
 
 %token TRUE FALSE
@@ -100,6 +100,7 @@ Program
 PDeclaration
 	: EventDecl
 	| MachineDecl
+	| MonitorDecl
 	;
 
 // ------------------   Types  ------------------------------------
@@ -109,7 +110,6 @@ Type
 	| T_EVENTID									{ $$.type = new TypeEventID(); setLoc($$.type, @1);}
 	| T_MACHINEID								{ $$.type = new TypeMachineID(); setLoc($$.type, @1);}
 	| T_MODELMACHINEID							{ $$.type = new TypeModelMachineID(); setLoc($$.type, @1);}
-	| T_SPECMACHINEID							{ $$.type = new TypeSpecMachineID(); setLoc($$.type, @1);}
 	| T_ANY										{ $$.type = new TypeAny(); setLoc($$.type, @1);}
 	| NamedTupleType
 	| TupleType
@@ -167,7 +167,11 @@ TypeOrNull
 
 // --------------------  Machine Declarations --------------------
 MachineDecl
-	: IsMain IsFair IsModelOrSpec MACHINE ID LCBRACE MachineBody RCBRACE	{ $$.node = new MachineDeclaration($5.s, $1.b, $2.b, $3.s, Cast<INode, IMachineBodyItem>.list($7.lst)); setLoc($$.node, @1, @8);}
+	: IsMain IsFair ModelOrReal MACHINE ID LCBRACE MachineBody RCBRACE	{ $$.node = new MachineDeclaration($5.s, $1.b, $2.b, $3.s, Cast<INode, IMachineBodyItem>.list($7.lst)); setLoc($$.node, @1, @8);}
+	;
+
+MonitorDecl
+	: MONITOR ID LCBRACE MonitorBody RCBRACE	{ $$.node = new MonitorDeclaration($2.s, Cast<INode, IMachineBodyItem>.list($4.lst)); setLoc($$.node, @1, @5);}
 	;
 
 IsGhost
@@ -193,6 +197,17 @@ MachineBodyItem
 	| FunDecl
 	| MaxQueueSizeDecl
 	| SubmachineDecl
+	;
+
+MonitorBody
+	:												{ $$.lst = new List<INode>(); }
+	| MonitorBodyItem MonitorBody					{ $$.lst = prependF($1, $2.lst); }
+	;
+
+MonitorBodyItem
+	: VarDecl
+	| StateDecl
+	| ActionDecl
 	;
 
 SubmachineDecl
@@ -237,9 +252,8 @@ IsModel
 	|												{ $$.b = false; }
 	;
 
-IsModelOrSpec
+ModelOrReal
 	: MODEL											{ $$.s = "MODEL"; }
-	| SPEC											{ $$.s = "SPEC"; }
 	|												{ $$.s = "REAL"; }
 	;
 
@@ -315,6 +329,7 @@ Stmt
 	| ASSERT LPAREN Exp RPAREN SEMICOLON							%prec PREC_EVERYTHING_ELSE			{ $$.stmt = new DSLAssert($3.exp); setLoc($$.stmt, @1, @5); }
 	| SEND LPAREN Exp COMMA Exp OptionalLastArg RPAREN SEMICOLON	%prec PREC_EVERYTHING_ELSE			{ $$.stmt = new DSLSend($3.exp, $5.exp, $6.exp); setLoc($$.stmt, @1, @8); }
 	| SCALL LPAREN Exp RPAREN SEMICOLON	%prec PREC_EVERYTHING_ELSE			{ $$.stmt = new DSLSCall($3.exp); setLoc($$.stmt, @1, @5); }
+	| INVOKE ID LPAREN Exp OptionalLastArg RPAREN                           { $$.stmt = new DSLMCall($2.s, $4.exp, $5.exp); setLoc($$.stmt, @1, @6); }
 	| RAISE LPAREN Exp OptionalLastArg RPAREN SEMICOLON				%prec PREC_EVERYTHING_ELSE			{ $$.stmt = new DSLRaise($3.exp, $4.exp); setLoc($$.stmt, @1, @6); }
 	| FFCall SEMICOLON						%prec PREC_EVERYTHING_ELSE			{ $$.stmt = new DSLFFCallStmt((DSLFFCall)$1.exp); setLoc($$.stmt, @1, @2); }
 	| RETURN ExpOrNull SEMICOLON			%prec PREC_EVERYTHING_ELSE          { $$.stmt = new DSLReturn($2.exp); setLoc($$.stmt, @1, @3); }
@@ -329,6 +344,7 @@ Stmt
 																					$$.stmt = new DSLMutation(baseE, op, (DSLTuple)$2.exp); setLoc($$.stmt, @1, @3);
 																				  }
 																				}
+	| NewExp																	{ $$.stmt = new DSLNewStmt($1.exp); }
 	;
 
 OptionalLastArg
@@ -497,7 +513,7 @@ KWArgList
 	| ID ASSIGN Exp COMMA KWArgList		{ var t = (DSLKWArgs)$5.exp; t.set($1.s, $3.exp); $$.exp = t; setLoc($$.exp, @1, @5);  }
 	;
 
-KWArgs // Function/Construtor invocation arguments
+KWArgs // Function/Constructor invocation arguments
 	: LPAREN KWArgList RPAREN			{ $$.exp = $2.exp; setLoc($$.exp, @1, @3); }
 	| LPAREN RPAREN						{ $$.exp = new DSLKWArgs(); setLoc($$.exp, @1, @2); }
 	;

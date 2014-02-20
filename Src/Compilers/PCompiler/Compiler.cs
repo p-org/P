@@ -111,7 +111,6 @@ namespace PCompiler
             this.allTypes.Add(PType.Nil);
             this.allTypes.Add(PType.Id);
             this.allTypes.Add(PType.Mid);
-            this.allTypes.Add(PType.Sid);
             this.allTypes.Add(PType.Int);
             this.allTypes.Add(PType.Bool);
             this.allTypes.Add(PType.Event);
@@ -465,6 +464,12 @@ namespace PCompiler
                         it.MoveNext();
                         var machineDecl = GetFuncTerm(it.Current);
                         var machineName = GetName(machineDecl, 0);
+                        it.MoveNext();
+                        it.MoveNext();
+                        if (allMachines[machineName].IsSpec && it.Current.NodeKind == NodeKind.Id && ((Id)it.Current).Name != "NIL")
+                        {
+                            errors.Add(new Flag(SeverityKind.Error, term.Node, string.Format("A spec machine cannot defer events."), 0, CompilingProgram));
+                        }
                         var stateTable = allMachines[machineName].stateNameToStateInfo;
                         if (stateTable.ContainsKey(stateName))
                         {
@@ -530,10 +535,6 @@ namespace PCompiler
                             {
                                 errors.Add(new Flag(SeverityKind.Error, term.Node, string.Format("The key type in the type of variable {0} in machine {1} is not hashable.", varName, machineName), 0, CompilingProgram));
                             }
-                            else if (type.IsGhost && !type.Erasable)
-                            {
-                                errors.Add(new Flag(SeverityKind.Error, term.Node, string.Format("Type of variable {0} in machine {1} is ghost but not erasable.", varName, machineName), 0, CompilingProgram));
-                            }
                             else if (isGhost)
                             {
                                 errors.Add(new Flag(SeverityKind.Error, term.Node, string.Format("Ghost variable {0} in machine {1} is not supported.", varName, machineName), 0, CompilingProgram));
@@ -580,6 +581,14 @@ namespace PCompiler
                             if (stateTable.transitions.ContainsKey(eventName) && !stateTable.transitions[eventName].Equals(tinfo))
                             {
                                 errors.Add(new Flag(SeverityKind.Error, term.Node, string.Format("A conflicting transition on event {0} out of state {1} has been declared before.", eventName, stateName), 0, CompilingProgram));
+                            }
+                            else if (isPush && allMachines[stateOwnerMachineName].IsSpec)
+                            {
+                                errors.Add(new Flag(SeverityKind.Error, term.Node, string.Format("A spec machine cannot have call transitions."), 0, CompilingProgram));
+                            }
+                            else if (eventName == DefaultEvent && allMachines[stateOwnerMachineName].IsSpec)
+                            {
+                                errors.Add(new Flag(SeverityKind.Error, term.Node, string.Format("A spec machine cannot have default transition."), 0, CompilingProgram));
                             }
                             else
                             {
@@ -1159,7 +1168,7 @@ namespace PCompiler
             {
                 var varName = GetName(e.Node, 0);
                 var ownerName = GetOwnerName(e.Node, 1, 0);
-                if (allMachines[ownerName].IsReal && !allMachines[ownerName].localVariableToVarInfo[varName].type.Erasable)
+                if (allMachines[ownerName].IsReal)
                     newDecls.AddLast(e);
             }
             factBins["VarDecl"] = newDecls;

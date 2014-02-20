@@ -137,6 +137,7 @@ namespace PParser
 
         public const string SYM_EVENT = "event";
         public const string SYM_MACHINE = "machine";
+        public const string SYM_MONITOR = "monitor";
         public const string SYM_VAR = "var";
         public const string SYM_STATE = "state";
         public const string SYM_SUBMACHINE = "submachine";
@@ -165,12 +166,17 @@ namespace PParser
 
         internal class GlobalScope : BaseScope
         {
-            public GlobalScope() : base("global", new string[]{SYM_EVENT, SYM_MACHINE, SYM_MAIN, SYM_BUILTIN_VAR}) { }
+            public GlobalScope() : base("global", new string[]{SYM_EVENT, SYM_MACHINE, SYM_MONITOR, SYM_MAIN, SYM_BUILTIN_VAR}) { }
         }
 
         internal class MachineScope : BaseScope
         {
             public MachineScope(string name) : base("machine_" + name, new string[] { SYM_VAR, SYM_STATE, SYM_FUN, SYM_ACTION, SYM_START, SYM_MAXQSIZE, SYM_SUBMACHINE}) { }
+        }
+
+        internal class MonitorScope : BaseScope
+        {
+            public MonitorScope(string name) : base("machine_" + name, new string[] { SYM_VAR, SYM_STATE, SYM_ACTION, SYM_START }) { }
         }
 
         internal class SubmachineScope : BaseScope
@@ -194,6 +200,7 @@ namespace PParser
 
         List<SemanticError> errs;
         List<MachineScope> machineScopes;
+        List<MonitorScope> monitorScopes;
         Dictionary<INode, BaseScope> scopeLookup;
         GlobalScope global;
         BaseScope current;
@@ -204,6 +211,7 @@ namespace PParser
         {
             errs = new List<SemanticError>();
             machineScopes = new List<MachineScope>();
+            monitorScopes = new List<MonitorScope>();
             global = new GlobalScope();
             scopeLookup = new Dictionary<INode, BaseScope>();
             current = global;
@@ -219,6 +227,10 @@ namespace PParser
                 errs.Add(new SemanticError(new DSLLoc(null), "Missing main expression."));
 
             foreach(MachineScope m in machineScopes)
+                if (!m.defined(VAR_START))
+                    errs.Add(new SemanticError(new DSLLoc(null), "Missing start for " + m.name));
+
+            foreach (MonitorScope m in monitorScopes)
                 if (!m.defined(VAR_START))
                     errs.Add(new SemanticError(new DSLLoc(null), "Missing start for " + m.name));
         }
@@ -326,14 +338,28 @@ namespace PParser
             }
 
             var newS = new MachineScope(n.id);
-
             
             // All machine implicitly have an Ignore Action
             newS.define(VAR_IGNORE_ACTION, SemanticPass.SYM_ACTION, n.loc, n);
             machineScopes.Add(newS);
             return pushScope(newS, n);                           // return old scope as machine declaration's scope
         }
+        public override BaseScope visit_pre(MonitorDeclaration n)
+        {
+            // Note that machine definitions themselves are checked in their parent scope, after which
+            // we push the scope they define.
+            if (!errorDefined(n.id, SYM_MONITOR, n.loc))
+                current.define(n.id, SYM_MONITOR, n.loc, n);
+
+            var newS = new MonitorScope(n.id);
+
+            // All machine implicitly have an Ignore Action
+            newS.define(VAR_IGNORE_ACTION, SemanticPass.SYM_ACTION, n.loc, n);
+            monitorScopes.Add(newS);
+            return pushScope(newS, n);                           // return old scope as machine declaration's scope
+        }
         public override BaseScope visit(MachineDeclaration n) { return popScope(); }
+        public override BaseScope visit(MonitorDeclaration n) { return popScope(); }
 
         public override BaseScope visit_pre(StateDeclaration n)
         {
@@ -351,7 +377,7 @@ namespace PParser
                 }
                 else
                 {
-                    if (current is MachineScope)
+                    if (current is MachineScope || current is MonitorScope)
                         current.define(VAR_START, SYM_START, n.loc, n);
                     else
                     {
@@ -594,7 +620,6 @@ namespace PParser
         public override BaseScope visit_pre(TypeNamedTuple n) { return current;  }
         public override BaseScope visit_pre(TypeMachineID n) { return current; }
         public override BaseScope visit_pre(TypeModelMachineID n) { return current; }
-        public override BaseScope visit_pre(TypeSpecMachineID n) { return current; }
         public override BaseScope visit_pre(TypeInt n) { return current; }
         public override BaseScope visit_pre(TypeEventID n) { return current; }
         public override BaseScope visit_pre(TypeBool n) { return current; }
@@ -617,9 +642,11 @@ namespace PParser
         public override BaseScope visit_pre(DSLFFCall n) { return current; }
         public override BaseScope visit_pre(DSLLeave n) { return current; }
         public override BaseScope visit_pre(DSLSCall n) { return current; }
+        public override BaseScope visit_pre(DSLMCall n) { return current; }
         public override BaseScope visit_pre(DSLBool n) { return current; }
         public override BaseScope visit_pre(DSLBlock n) { return current; }
         public override BaseScope visit_pre(DSLBinop n) { return current; }
         public override BaseScope visit_pre(DSLAssert n) { return current; }
+        public override BaseScope visit_pre(DSLNewStmt n) { return current; }
     }
 }

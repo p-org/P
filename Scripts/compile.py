@@ -79,7 +79,7 @@ try:
         os.remove(join(out, "SMRuntime.zing"));
 
     if (args.proj):
-        mainM = re.search("MainDecl\(New\(MachType\(\"([^\"]*)\"", \
+        mainM = re.search("MainDecl\(New\(\"([^\"]*)\"", \
             open(fmlFile).read()).groups()[0]
 
         print("Main machine is " + mainM)

@@ -132,7 +132,7 @@ for f in elaborateFiles(args.files):
         die("Zingering of Zing model failed:\n" + cat(zingerOut))
 
 
-    mainM = search("MainDecl\(New\(MachType\(\"([^\"]*)\"", \
+    mainM = search("MainDecl\(New\(\"([^\"]*)\"", \
         open(fmlFile).read()).groups()[0]
 
     print(fmt("Main machine is {mainM}"))

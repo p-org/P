@@ -21,12 +21,13 @@ namespace PParser
 
         public override int visit_pre(DSLNew n)
         {
+            /*
             if (!(getParent() is DSLAssign) ||
                 !(n == ((DSLAssign)getParent()).rhs))
             {
                 errs.Add(new SemanticError(n.loc, "new expressions can only appear on the right hand side of assignments"));
             }
-
+            */
             return 0;
         }
 

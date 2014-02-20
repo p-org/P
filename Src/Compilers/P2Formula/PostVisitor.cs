@@ -18,7 +18,6 @@ namespace PParser
         public override T visit_pre(TypeBool s) { return default(T); }
         public override T visit_pre(TypeMachineID s) { return default(T); }
         public override T visit_pre(TypeModelMachineID s) { return default(T); }
-        public override T visit_pre(TypeSpecMachineID s) { return default(T); }
         public override T visit_pre(TypeEventID s) { return default(T); }
         public override T visit_pre(TypeField s) { return default(T); }
         public override T visit_pre(TypeTuple s) { return default(T); }
@@ -29,6 +28,7 @@ namespace PParser
         public override T visit_pre(Program s) { return default(T); }
         public override T visit_pre(EventDeclaration s) { return default(T); }
         public override T visit_pre(MachineDeclaration s) { return default(T); }
+        public override T visit_pre(MonitorDeclaration s) { return default(T); }
         // Machine Declarations
         public override T visit_pre(VarDeclaration s) { return default(T); }
         public override T visit_pre(FunDeclaration s) { return default(T); }
@@ -52,6 +52,7 @@ namespace PParser
         public override T visit_pre(DSLFFCallStmt s) { return default(T); }
         public override T visit_pre(DSLSend s) { return default(T); }
         public override T visit_pre(DSLSCall s) { return default(T); }
+        public override T visit_pre(DSLMCall s) { return default(T); }
         public override T visit_pre(DSLRaise s) { return default(T); }
         public override T visit_pre(DSLAssert s) { return default(T); }
         public override T visit_pre(DSLReturn s) { return default(T); }
@@ -59,6 +60,7 @@ namespace PParser
         public override T visit_pre(DSLSkip s) { return default(T); }
         public override T visit_pre(DSLDelete s) { return default(T); }
         public override T visit_pre(DSLMutation s) { return default(T); }
+        public override T visit_pre(DSLNewStmt s) { return default(T); }
         // DSL Expressions
         public override T visit_pre(DSLId e) { return default(T); }
         public override T visit_pre(DSLMember e) { return default(T); }

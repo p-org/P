@@ -75,6 +75,7 @@ NonSMCntrChars  [^\'\"\n\r]*
 "assert"								   { return (int)PTokens.ASSERT;  }
 "send"									   { return (int)PTokens.SEND;  }
 "call"									   { return (int)PTokens.SCALL;  }
+"invoke"                                   { return (int)PTokens.INVOKE; }
 "raise"								       { return (int)PTokens.RAISE;  }
 "delete"								   { return (int)PTokens.DELETE;  }
 
@@ -84,13 +85,13 @@ NonSMCntrChars  [^\'\"\n\r]*
 "eid"							           { return (int)PTokens.T_EVENTID;  }
 "id"									   { return (int)PTokens.T_MACHINEID;  }
 "mid"									   { return (int)PTokens.T_MODELMACHINEID;  }
-"sid"									   { return (int)PTokens.T_SPECMACHINEID;  }
 "seq"									   { return (int)PTokens.T_SEQ;  }
 "map"									   { return (int)PTokens.T_MAP; }
 
 "main"									   { return (int)PTokens.MAIN;  }
 "event"									   { return (int)PTokens.EVENT;  }
-"machine"								   { return (int)PTokens.MACHINE;  }
+"machine"								   { return (int)PTokens.MACHINE; }
+"monitor"                                  { return (int)PTokens.MONITOR; }
 "assume"								   { return (int)PTokens.ASSUME;  }
 "ghost"									   { return (int)PTokens.GHOST;  }
 "default"								   { return (int)PTokens.DEFAULT; }
@@ -99,7 +100,6 @@ NonSMCntrChars  [^\'\"\n\r]*
 "start"									   { return (int)PTokens.START;  }
 "stable"								   { return (int)PTokens.STABLE;  }
 "model"									   { return (int)PTokens.MODEL;  }
-"spec"									   { return (int)PTokens.SPEC; }
 "fun"									   { return (int)PTokens.FUN;  }
 "action"								   { return (int)PTokens.ACTION;  }
 "state"									   { return (int)PTokens.STATE;  }

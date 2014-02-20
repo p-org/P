@@ -23,7 +23,6 @@ namespace PParser
         public abstract T visit(TypeBool s);
         public abstract T visit(TypeMachineID s);
         public abstract T visit(TypeModelMachineID s);
-        public abstract T visit(TypeSpecMachineID s);
         public abstract T visit(TypeEventID s);
         public abstract T visit(TypeNamedTuple s);
         public abstract T visit(TypeField s);
@@ -35,6 +34,7 @@ namespace PParser
         public abstract T visit(Program s);
         public abstract T visit(EventDeclaration s);
         public abstract T visit(MachineDeclaration s);
+        public abstract T visit(MonitorDeclaration s);
         // Machine Declarations
         public abstract T visit(VarDeclaration s);
         public abstract T visit(FunDeclaration s);
@@ -58,13 +58,15 @@ namespace PParser
         public abstract T visit(DSLFFCallStmt s) ;
         public abstract T visit(DSLSend s) ;
         public abstract T visit(DSLSCall s) ;
+        public abstract T visit(DSLMCall s);
         public abstract T visit(DSLRaise s) ;
         public abstract T visit(DSLAssert s) ;
         public abstract T visit(DSLReturn s) ;
         public abstract T visit(DSLLeave s) ;
-        public abstract T visit(DSLDelete s);
+        public abstract T visit(DSLDelete s) ;
         public abstract T visit(DSLSkip s) ;
-        public abstract T visit(DSLMutation s);
+        public abstract T visit(DSLMutation s) ;
+        public abstract T visit(DSLNewStmt s) ;
         // DSL Expressions
         public abstract T visit(DSLId e) ;
         public abstract T visit(DSLMember e);
@@ -88,7 +90,6 @@ namespace PParser
         public abstract T visit_pre(TypeBool s);
         public abstract T visit_pre(TypeMachineID s);
         public abstract T visit_pre(TypeModelMachineID s);
-        public abstract T visit_pre(TypeSpecMachineID s);
         public abstract T visit_pre(TypeEventID s);
         public abstract T visit_pre(TypeField s);
         public abstract T visit_pre(TypeNamedTuple s);
@@ -100,6 +101,7 @@ namespace PParser
         public abstract T visit_pre(Program s);
         public abstract T visit_pre(EventDeclaration s);
         public abstract T visit_pre(MachineDeclaration s);
+        public abstract T visit_pre(MonitorDeclaration s);
         // Machine Declarations
         public abstract T visit_pre(VarDeclaration s);
         public abstract T visit_pre(FunDeclaration s);
@@ -123,6 +125,7 @@ namespace PParser
         public abstract T visit_pre(DSLFFCallStmt s);
         public abstract T visit_pre(DSLSend s);
         public abstract T visit_pre(DSLSCall s);
+        public abstract T visit_pre(DSLMCall s);
         public abstract T visit_pre(DSLRaise s);
         public abstract T visit_pre(DSLAssert s);
         public abstract T visit_pre(DSLReturn s);
@@ -130,6 +133,7 @@ namespace PParser
         public abstract T visit_pre(DSLDelete s);
         public abstract T visit_pre(DSLSkip s);
         public abstract T visit_pre(DSLMutation s);
+        public abstract T visit_pre(DSLNewStmt s);
         // DSL Expressions
         public abstract T visit_pre(DSLId e);
         public abstract T visit_pre(DSLMember e);
@@ -154,7 +158,6 @@ namespace PParser
             if (n is TypeBool) { return this.visit(n as TypeBool); }
             if (n is TypeMachineID) { return this.visit(n as TypeMachineID); }
             if (n is TypeModelMachineID) { return this.visit(n as TypeModelMachineID); }
-            if (n is TypeSpecMachineID) { return this.visit(n as TypeSpecMachineID); }
             if (n is TypeEventID) { return this.visit(n as TypeEventID); }
             if (n is TypeNamedTuple) { return this.visit(n as TypeNamedTuple); }
             if (n is TypeField) { return this.visit(n as TypeField); }
@@ -166,6 +169,7 @@ namespace PParser
             if (n is Program) { return this.visit(n as Program); }
             if (n is EventDeclaration) { return this.visit(n as EventDeclaration); }
             if (n is MachineDeclaration) { return this.visit(n as MachineDeclaration); }
+            if (n is MonitorDeclaration) { return this.visit(n as MonitorDeclaration); }
 
             if (n is VarDeclaration) { return this.visit(n as VarDeclaration); }
             if (n is StateDeclaration) { return this.visit(n as StateDeclaration); }
@@ -189,6 +193,7 @@ namespace PParser
             if (n is DSLFFCallStmt) { return this.visit(n as DSLFFCallStmt); }
             if (n is DSLSend) { return this.visit(n as DSLSend); }
             if (n is DSLSCall) { return this.visit(n as DSLSCall); }
+            if (n is DSLMCall) { return this.visit(n as DSLMCall); }
             if (n is DSLRaise) { return this.visit(n as DSLRaise); }
             if (n is DSLAssert) { return this.visit(n as DSLAssert); }
             if (n is DSLReturn) { return this.visit(n as DSLReturn); }
@@ -196,6 +201,7 @@ namespace PParser
             if (n is DSLDelete) { return this.visit(n as DSLDelete); }
             if (n is DSLSkip) { return this.visit(n as DSLSkip); }
             if (n is DSLMutation) { return this.visit(n as DSLMutation); }
+            if (n is DSLNewStmt) { return this.visit(n as DSLNewStmt); }
 
             if (n is DSLId) { return this.visit(n as DSLId); }
             if (n is DSLMember) { return this.visit(n as DSLMember); }
@@ -223,7 +229,6 @@ namespace PParser
             if (n is TypeBool) { return this.visit_pre(n as TypeBool); }
             if (n is TypeMachineID) { return this.visit_pre(n as TypeMachineID); }
             if (n is TypeModelMachineID) { return this.visit_pre(n as TypeModelMachineID); }
-            if (n is TypeSpecMachineID) { return this.visit_pre(n as TypeSpecMachineID); }
             if (n is TypeEventID) { return this.visit_pre(n as TypeEventID); }
             if (n is TypeNamedTuple) { return this.visit_pre(n as TypeNamedTuple); }
             if (n is TypeField) { return this.visit_pre(n as TypeField); }
@@ -235,6 +240,7 @@ namespace PParser
             if (n is Program) { return this.visit_pre(n as Program); }
             if (n is EventDeclaration) { return this.visit_pre(n as EventDeclaration); }
             if (n is MachineDeclaration) { return this.visit_pre(n as MachineDeclaration); }
+            if (n is MonitorDeclaration) { return this.visit_pre(n as MonitorDeclaration); }
             if (n is MaxQueueDeclaration) { return this.visit_pre(n as MaxQueueDeclaration); }
 
             if (n is VarDeclaration) { return this.visit_pre(n as VarDeclaration); }
@@ -258,6 +264,7 @@ namespace PParser
             if (n is DSLFFCallStmt) { return this.visit_pre(n as DSLFFCallStmt); }
             if (n is DSLSend) { return this.visit_pre(n as DSLSend); }
             if (n is DSLSCall) { return this.visit_pre(n as DSLSCall); }
+            if (n is DSLMCall) { return this.visit_pre(n as DSLMCall); }
             if (n is DSLRaise) { return this.visit_pre(n as DSLRaise); }
             if (n is DSLAssert) { return this.visit_pre(n as DSLAssert); }
             if (n is DSLReturn) { return this.visit_pre(n as DSLReturn); }
@@ -265,6 +272,7 @@ namespace PParser
             if (n is DSLDelete) { return this.visit_pre(n as DSLDelete); }
             if (n is DSLSkip) { return this.visit_pre(n as DSLSkip); }
             if (n is DSLMutation) { return this.visit_pre(n as DSLMutation); }
+            if (n is DSLNewStmt) { return this.visit_pre(n as DSLNewStmt); }
 
             if (n is DSLId) { return this.visit_pre(n as DSLId); }
             if (n is DSLMember) { return this.visit_pre(n as DSLMember); }
@@ -440,7 +448,6 @@ namespace PParser
     public class TypeBool : TypeNode { }
     public class TypeMachineID : TypeNode { }
     public class TypeModelMachineID : TypeNode { }
-    public class TypeSpecMachineID : TypeNode { }
     public class TypeEventID : TypeNode { }
     public class TypeAny : TypeNode { }
 
@@ -550,6 +557,19 @@ namespace PParser
             this.isMain = main;
             this.isFair = fair;
             this.type = type;
+            this.body = body;
+        }
+    }
+
+    public sealed class MonitorDeclaration : BaseListNode<IMachineBodyItem>, IPDeclaration
+    {
+        public string id;
+        public IEnumerable<IMachineBodyItem> body;
+
+        public MonitorDeclaration(string id, IEnumerable<IMachineBodyItem> body)
+            : base(body)
+        {
+            this.id = id;
             this.body = body;
         }
     }
@@ -787,6 +807,21 @@ namespace PParser
         }
     }
 
+    public class DSLMCall : BaseNode, IDSLStmt
+    {
+        public string monitorName;
+        public IDSLExp evt;
+        public IDSLExp arg;
+
+        public DSLMCall(string monitorName, IDSLExp ev, IDSLExp arg)
+            : base(ev, arg)
+        {
+            this.monitorName = monitorName;
+            this.evt = ev;
+            this.arg = arg;
+        }
+    }
+
     public class DSLRaise : BaseNode, IDSLStmt
     {
         public IDSLExp evt;
@@ -816,6 +851,15 @@ namespace PParser
         }
     }
 
+    public sealed class DSLNewStmt : BaseNode, IDSLStmt
+    {
+        public IDSLExp newExp;
+        public DSLNewStmt(IDSLExp newExp) : base(newExp)
+        {
+            this.newExp = newExp;
+        }
+    }
+    
     public sealed class DSLLeave : BaseNode, IDSLStmt { }
     public sealed class DSLSkip : BaseNode, IDSLStmt { }
     public sealed class DSLDelete : BaseNode, IDSLStmt { }

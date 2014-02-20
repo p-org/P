@@ -51,6 +51,7 @@ namespace PParser
         public static AST<Id> Send_Iden = Factory.Instance.MkId("Send");
         public static AST<Id> Raise_Iden = Factory.Instance.MkId("Raise");
         public static AST<Id> Scall_Iden = Factory.Instance.MkId("Scall");
+        public static AST<Id> Mcall_Iden = Factory.Instance.MkId("Mcall");
         public static AST<Id> Ecall_Iden = Factory.Instance.MkId("Ecall");
         public static AST<Id> Seq_Iden = Factory.Instance.MkId("Seq");
         public static AST<Id> Assert_Iden = Factory.Instance.MkId("Assert");
@@ -66,7 +67,6 @@ namespace PParser
 
         //Types
         #region Types
-        public static AST<Id> MachType_Iden = Factory.Instance.MkId("MachType");    // TODO: Not sure this belongs here...
         public static AST<Id> TypeBOOL = Factory.Instance.MkId("BOOL");
         public static AST<Id> TypeINT = Factory.Instance.MkId("INT");
         public static AST<Id> TypeEVENT = Factory.Instance.MkId("EVENT");

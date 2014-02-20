@@ -204,10 +204,6 @@ namespace PParser
         {
             return wrap(P_FormulaNodes.TypeMID);
         }
-        public override IEnumerable<AST<Node>> visit(TypeSpecMachineID s)
-        {
-            return wrap(P_FormulaNodes.TypeSID);
-        }
         public override IEnumerable<AST<Node>> visit(TypeEventID s)
         {
             return wrap(P_FormulaNodes.TypeEVENT);
@@ -286,7 +282,7 @@ namespace PParser
             {
                 mTerms.Insert(0, fMkModelFact(fMkFuncTerm(P_FormulaNodes.MainDecl_Iden,
                                                             fMkFuncTerm(P_FormulaNodes.New_Iden,
-                                                                fMkFuncTerm(P_FormulaNodes.MachType_Iden, fMkCnst(s.id)),
+                                                                fMkCnst(s.id),
                                                                 P_FormulaNodes.Nil_Iden))));
             }
             if (s.isFair)
@@ -300,6 +296,21 @@ namespace PParser
             mTerms.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.ActionDecl_Iden, fMkCnst(actName), curMachine, P_FormulaNodes.Nil_Iden), actName));
             return mTerms;
         }
+
+        public override IEnumerable<AST<Node>> visit(MonitorDeclaration s)
+        {
+            List<AST<Node>> mTerms = new List<AST<Node>>(allChildTerms(s));
+            var machineName = sem.resolve(s, s.id);
+
+            var machineDecl = fMkModelFact(fMkFuncTerm(P_FormulaNodes.MachineDecl_Iden, fMkCnst(machineName), fMkId("SPEC"), P_FormulaNodes.Nil_Iden), machineName);
+            mTerms.Insert(0, machineDecl);
+            // Generate Machine Ignore Statement. It would be nice to do this optionally if the machine has any ignores.
+            var machScope = sem.getScope(s);
+            var actName = machScope.lookup(SemanticPass.VAR_IGNORE_ACTION).resolvedName();
+            mTerms.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.ActionDecl_Iden, fMkCnst(actName), curMachine, P_FormulaNodes.Nil_Iden), actName));
+            return mTerms;
+        }
+
         // Machine Declarations
         public override IEnumerable<AST<Node>> visit(VarDeclaration s)
         {
@@ -512,6 +523,10 @@ namespace PParser
 
             return wrap(fMkFuncTerm(P_FormulaNodes.Scall_Iden, target));
         }
+        public override IEnumerable<AST<Node>> visit(DSLMCall s)
+        {
+            return wrap(fMkFuncTerm(P_FormulaNodes.Mcall_Iden, fMkCnst(s.monitorName), getOne(s.evt), s.arg == null ? fMkId("NIL") : getOne(s.arg)));
+        }
         public override IEnumerable<AST<Node>> visit(DSLRaise s)
         {
             return wrap(fMkFuncTerm(P_FormulaNodes.Raise_Iden, getOne(s.evt), getOneOrNil(s.payload)));
@@ -543,6 +558,11 @@ namespace PParser
 
             return wrap(fMkFuncTerm(P_FormulaNodes.DataOp_Iden, op,
                 fMkFuncTerm(P_FormulaNodes.Exprs_Iden, getOne(s.baseE), Factory.Instance.ToAST(((FuncTerm)getOne(s.args).Node).Args.ElementAt(0)))));
+        }
+
+        public override IEnumerable<AST<Node>> visit(DSLNewStmt s)
+        {
+            return wrap(getOne(s.newExp));
         }
 
         // DSL Expressions
@@ -703,7 +723,7 @@ namespace PParser
             INode machineDecl = sem.lookup(e, e.machineName).n;
             var machineScope = sem.getScope(machineDecl);
 
-            return wrap(fMkFuncTerm(P_FormulaNodes.New_Iden, fMkFuncTerm(P_FormulaNodes.MachType_Iden, fMkCnst(e.machineName)), 
+            return wrap(fMkFuncTerm(P_FormulaNodes.New_Iden, fMkCnst(e.machineName), 
                                     e.arg == null ? P_FormulaNodes.Nil_Iden : getOne(e.arg)));
         }
 
@@ -727,6 +747,12 @@ namespace PParser
             return default(IEnumerable<AST<Node>>);
         }
 
+        public override IEnumerable<AST<Node>> visit_pre(MonitorDeclaration s)
+        {
+            curMachine = fMkId(sem.resolve(s, s.id));
+            return default(IEnumerable<AST<Node>>);
+        }
+
         public override IEnumerable<AST<Node>> visit_pre(StateDeclaration s)
         {
             curStateName = sem.resolve(s, s.id);
@@ -745,7 +771,6 @@ namespace PParser
         public override IEnumerable<AST<Node>> visit_pre(TypeBool s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(TypeMachineID s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(TypeModelMachineID s) { return default(IEnumerable<AST<Node>>); }
-        public override IEnumerable<AST<Node>> visit_pre(TypeSpecMachineID s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(TypeEventID s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(TypeAny s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(TypeField s) { return default(IEnumerable<AST<Node>>); }
@@ -777,6 +802,7 @@ namespace PParser
         public override IEnumerable<AST<Node>> visit_pre(DSLFFCallStmt s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(DSLSend s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(DSLSCall s) { return default(IEnumerable<AST<Node>>); }
+        public override IEnumerable<AST<Node>> visit_pre(DSLMCall s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(DSLRaise s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(DSLAssert s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(DSLReturn s) { return default(IEnumerable<AST<Node>>); }
@@ -784,6 +810,7 @@ namespace PParser
         public override IEnumerable<AST<Node>> visit_pre(DSLSkip s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(DSLDelete s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(DSLMutation s) { return default(IEnumerable<AST<Node>>); }
+        public override IEnumerable<AST<Node>> visit_pre(DSLNewStmt s) { return default(IEnumerable<AST<Node>>); }
         // DSL Expressions
         public override IEnumerable<AST<Node>> visit_pre(DSLId e) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(DSLMember e) { return default(IEnumerable<AST<Node>>); }

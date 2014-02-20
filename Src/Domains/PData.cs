@@ -57,7 +57,6 @@
         public static readonly AST<Id> Cnst_Int = Factory.Instance.MkId("INT");
         public static readonly AST<Id> Cnst_Id = Factory.Instance.MkId("ID");
         public static readonly AST<Id> Cnst_Mid = Factory.Instance.MkId("MID");
-        public static readonly AST<Id> Cnst_Sid = Factory.Instance.MkId("SID");
         public static readonly AST<Id> Cnst_Any = Factory.Instance.MkId("ANY");
 
         public static readonly AST<Id> Cnst_Insert = Factory.Instance.MkId("INSERT");
@@ -93,6 +92,7 @@
         public static readonly AST<Id> Con_Raise = Factory.Instance.MkId("Raise");
         public static readonly AST<Id> Con_Scall = Factory.Instance.MkId("Scall");
         public static readonly AST<Id> Con_Ecall = Factory.Instance.MkId("Ecall");
+        public static readonly AST<Id> Con_Mcall = Factory.Instance.MkId("Mcall");
         public static readonly AST<Id> Con_Tuple = Factory.Instance.MkId("Tuple");
         public static readonly AST<Id> Con_NamedTuple = Factory.Instance.MkId("NamedTuple");
         public static readonly AST<Id> Con_ITE = Factory.Instance.MkId("ITE");

@@ -16,7 +16,7 @@
         public static readonly AST<Cnst> Cnst_SmEventSet = Factory.Instance.MkCnst("SM_EVENT_SET");
         public static readonly AST<Cnst> Cnst_SmUnion = Factory.Instance.MkCnst("SM_ARG_UNION");
         public static readonly AST<Cnst> Cnst_SmHandle = Factory.Instance.MkCnst("SM_HANDLE");
-
+        public static readonly AST<Cnst> Cnst_SpecHandle = Factory.Instance.MkCnst("SPEC_HANDLE");
 
         public static readonly AST<Id> Cnst_Bool = Factory.Instance.MkId("BOOL");
         public static readonly AST<Id> Cnst_Int = Factory.Instance.MkId("INT");

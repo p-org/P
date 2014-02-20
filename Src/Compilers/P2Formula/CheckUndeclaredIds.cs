@@ -59,7 +59,10 @@ namespace PParser
 
         public override int visit_pre(DSLNew n)
         {
-            checkDefined(n, n.machineName, SemanticPass.SYM_MACHINE);
+            if (!sem.defined(n, n.machineName, SemanticPass.SYM_MACHINE) && !sem.defined(n, n.machineName, SemanticPass.SYM_MONITOR))
+            {
+                errs.Add(new SemanticError(n.loc, "Undefined machine or monitor " + n.machineName));
+            }  
 
             return 0;
         }
@@ -121,6 +124,13 @@ namespace PParser
                     return 0;
                 }
             }
+            return 0;
+        }
+
+        public override int visit_pre(DSLMCall n)
+        {
+            checkDefined(n, n.monitorName, SemanticPass.SYM_MONITOR);
+
             return 0;
         }
     }

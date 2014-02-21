@@ -282,13 +282,147 @@ class LocalActions {
     }
 };
 
-enum ContinuationReason { Nondet, Leave, Return, ReturnVal, Raise, Call, Send, Delete, NewM};
+enum ContinuationReason { Nondet, Leave, Return, ReturnVal, Raise, Call, Send, Delete, NewM };
 
 class StackFrame {
     int pc;
     StackFrame next;
 };
 
+class Continuation{
+    StackFrame returnTo;
+    SM_ARG_UNION payload;
+    SM_EVENT ev;
+    State state;
+    SM_HANDLE target;
+    ContinuationReason reason;
+    bool nondet;
+    SM_HANDLE id;
+
+    static Continuation Construct_Default() {
+        Continuation res;
+
+	res = new Continuation;
+	res.returnTo = null;
+	res.payload = null;
+	res.ev = null;
+	res.state = State._default;
+	res.target = null;
+	res.reason = ContinuationReason.Leave;
+	res.id = null;
+	return res;
+    }
+
+    int PopReturnTo() {
+        int res;
+	res = this.returnTo.pc;
+	this.returnTo = this.returnTo.next;
+	return res;
+    }
+
+    void PushReturnTo(int ret) {
+        StackFrame tmp;
+
+	tmp = new StackFrame;
+	tmp.pc = ret;
+	tmp.next = this.returnTo;
+	this.returnTo = tmp;
+    }
+
+    void Return() {
+        this.returnTo = null;
+	this.payload = null;
+	this.ev = null;
+	this.state = State._default;
+	this.target = null;
+	this.reason = ContinuationReason.Return;
+	this.id = null;
+    }
+
+    void ReturnVal(SM_ARG_UNION val) {
+        this.returnTo = null;
+	this.ev = null;
+	this.state = State._default;
+	this.target = null;
+	this.reason = ContinuationReason.ReturnVal;
+	this.payload = val;
+	this.id = null;
+    }
+
+    void Leave() {
+        this.returnTo = null;
+	this.payload = null;
+	this.ev = null;
+	this.state = State._default;
+	this.target = null;
+	this.reason = ContinuationReason.Leave;
+	this.id = null;
+    }
+
+    void Raise(SM_EVENT ev, SM_ARG_UNION payload) {
+        this.returnTo = null;
+	this.state = State._default;
+	this.target = null;
+	this.reason = ContinuationReason.Raise;
+	this.ev = ev;
+	this.payload = payload;
+	this.id = null;
+    }
+
+    void Send(int ret) {
+        this.returnTo = null;
+	this.state = State._default;
+	this.reason = ContinuationReason.Send;
+	this.target = null;
+	this.ev = null;
+	this.payload = null;
+	this.id = null;
+	this.PushReturnTo(ret);
+    }
+
+    void NewM(int ret, SM_HANDLE o) {
+        this.returnTo = null;
+	this.state = State._default;
+	this.reason = ContinuationReason.NewM;
+	this.target = null;
+	this.ev = null;
+	this.payload = null;
+	this.id = o;
+	this.PushReturnTo(ret);
+    }
+
+    void Call(State state, int ret) {
+        this.returnTo = null;
+	this.payload = null;
+	this.ev = null;
+	this.target = null;
+	this.reason = ContinuationReason.Call;
+	this.state = state;
+	this.id = null;
+	this.PushReturnTo(ret);
+    }
+
+    void Nondet(int ret) {
+        this.returnTo = null;
+	this.payload = null;
+	this.ev = null;
+	this.state = State._default;
+	this.target = null;
+	this.reason = ContinuationReason.Nondet;
+	this.id = null;
+	this.PushReturnTo(ret);
+    }
+
+    void Delete() {
+        this.returnTo = null;
+	this.payload = null;
+	this.ev = null;
+	this.state = State._default;
+	this.target = null;
+	this.reason = ContinuationReason.Delete;
+	this.id = null;
+    }
+};
 
 // Add an instance of FairScheduler per running P machine.
 // Add an instance of FairTransition per running P machine and fair state in that machine.

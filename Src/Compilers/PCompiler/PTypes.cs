@@ -164,20 +164,6 @@ namespace PCompiler
     // Encompasses Tuples, Named Tuples, Sets, Sequneces, Dictionaries
     abstract class PCompoundType : PType { }
 
-    class PSidType : PPrimitiveType
-    {
-        public PSidType() : base("SID") { }
-
-        public override PType LUB(PType other)
-        {
-            throw new NotImplementedException("Illegal operation");
-        }
-        public override bool isSubtypeOf(PType t)
-        {
-            return false;
-        }
-    }
-
     class PNilType : PPrimitiveType
     {
         public PNilType() : base(PData.Cnst_Nil.Node.Name) { }

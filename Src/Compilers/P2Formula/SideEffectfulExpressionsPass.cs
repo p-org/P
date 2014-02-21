@@ -21,13 +21,19 @@ namespace PParser
 
         public override int visit_pre(DSLNew n)
         {
-            /*
-            if (!(getParent() is DSLAssign) ||
-                !(n == ((DSLAssign)getParent()).rhs))
+            INode p = getParent();
+            if (p is DSLAssign && n == (p as DSLAssign).rhs)
             {
-                errs.Add(new SemanticError(n.loc, "new expressions can only appear on the right hand side of assignments"));
+                // do nothing
             }
-            */
+            else if (p is DSLNewStmt)
+            {
+                // do nothing
+            }
+            else
+            {
+                errs.Add(new SemanticError(n.loc, "new expressions can only appear on the right hand side of assignment or as statement"));
+            }
             return 0;
         }
 

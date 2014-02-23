@@ -112,25 +112,25 @@ for f in elaborateFiles(args.files):
         die("PCompiler failed.")
 
     print("Running zc");
+    zcOutFile = open(zcOut, "w");
     shutil.copy(zingRT, join(out, "SMRuntime.zing"));
     ret = check_call([zc, "-nowarning:292", zingFile, "SMRuntime.zing", '/out:' + zingDll], \
-        cwd=out);
+        cwd=out, stdout=zcOutFile, stderr=zcOutFile);
     os.remove(join(out, "SMRuntime.zing"));
-
-
-    if ret != 0:
+    zcOutFile.close();
+    if not (ret == 0 and zcSucceeded(cat(zcOut))):
         die("Compiling of Zing model failed:\n" + cat(zcOut))
 
     print("Running Zinger")
+    zingerOutFile = open(zingerOut, "w");
     shutil.copy(sched, join(out, 'sched.dll'));
     shutil.copy(stateCoverage, join(out, 'stateCov.dll'));
     ret = check_call([zinger, '-s', '-eo', '-p', '-delayc:100', \
        '-et:trace.txt', '-plugin:stateCov.dll', '-sched:sched.dll', zingDll], \
-       cwd=out);
-
-    if ret != 0 and not args.fail:
+                     cwd=out, stdout=zingerOutFile, stderr=zingerOutFile);
+    zingerOutFile.close();
+    if not (ret == 0 and zingerSucceeded(cat(zingerOut))) and not args.fail:
         die("Zingering of Zing model failed:\n" + cat(zingerOut))
-
 
     mainM = search("MainDecl\(New\(\"([^\"]*)\"", \
         open(fmlFile).read()).groups()[0]

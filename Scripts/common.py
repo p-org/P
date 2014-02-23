@@ -33,6 +33,12 @@ def buildSucceeded(out):
     signCmpWarnings = len(list(filter(lambda p:  p[0] in ignoredCompWarnings, result[6])))
     return result[0] and result[1] == 0 and result[2] == (len(result[4]) + signCmpWarnings)
 
+def zingerSucceeded(out):
+    return search('Check passed', out) != None
+
+def zcSucceeded(out):
+    return search('error', out) == None
+
 def getMyDir():
     return dirname(realpath(__file__));
 

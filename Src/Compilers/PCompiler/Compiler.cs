@@ -1525,7 +1525,7 @@ namespace PCompiler
                 return false;
             }
 
-            Console.WriteLine("Wrote {0}", fileName);
+            //Console.WriteLine("Wrote {0}", fileName);
             return true;
         }
 

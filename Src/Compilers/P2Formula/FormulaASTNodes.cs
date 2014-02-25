@@ -12,160 +12,539 @@ using Microsoft.Formula.API;
 
 namespace PParser
 {
+    public static class SpanHelpers
+    {
+        public static Span ToSpan(this DSLLoc loc)
+        {
+            if (loc == null)
+            {
+                return default(Span);
+            }
+            else
+            {
+                return new Span(loc.startLine, loc.startColumn, loc.endLine, loc.endColumn);
+            }
+        }
+
+        public static DSLLoc ToLoc(this Span span)
+        {
+            return new DSLLoc(span);
+        }
+    }
+
     public class P_FormulaNodes
     {
         //Specials
-        public static readonly Dictionary<Ops, AST<Id>> OperatorToId;
+        public static readonly Dictionary<Ops, Func<DSLLoc, AST<Id>>> OperatorToId;
 
         //Program Toplevel
-        public static AST<Id> MachineDecl_Iden = Factory.Instance.MkId("MachineDecl");
-        public static AST<Id> MainDecl_Iden = Factory.Instance.MkId("MainDecl");
-        public static AST<Id> EventDecl_Iden = Factory.Instance.MkId("EventDecl");
-        public static AST<Id> AssertMaxInstances_Iden = Factory.Instance.MkId("AssertMaxInstances");
-        public static AST<Id> AssumeMaxInstances_Iden = Factory.Instance.MkId("AssumeMaxInstances");
+        public static AST<Id> MkMachineDeclId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("MachineDecl", loc.ToSpan());
+        }
+
+        public static AST<Id> MkMainDeclId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("MainDecl", loc.ToSpan());
+        }
+
+        public static AST<Id> MkEventDeclId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("EventDecl", loc.ToSpan());
+        }
+
+        public static AST<Id> MkAssertMaxInstancesId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("AssertMaxInstances", loc.ToSpan());
+        }
+
+        public static AST<Id> MkAssumeMaxInstancesId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("AssumeMaxInstances", loc.ToSpan());
+        }
 
         //Machine Declaration Elements
-        public static AST<Id> VarDecl_Iden = Factory.Instance.MkId("VarDecl");
-        public static AST<Id> ActionDecl_Iden = Factory.Instance.MkId("ActionDecl");
-        public static AST<Id> Params_Iden = Factory.Instance.MkId("Params");
-        public static AST<Id> FunDecl_Iden = Factory.Instance.MkId("FunDecl");
-        public static AST<Id> Flags_Iden = Factory.Instance.MkId("Flags");
-        public static AST<Id> StateDecl_Iden = Factory.Instance.MkId("StateDecl");
-        public static AST<Id> MachStart_Iden = Factory.Instance.MkId("MachStart");
-        public static AST<Id> Stable_Iden = Factory.Instance.MkId("Stable");
-        public static AST<Id> Passive_Iden = Factory.Instance.MkId("PASSIVE");
-        public static AST<Id> StateSetDecl_Iden = Factory.Instance.MkId("StateSetDecl");
-        public static AST<Id> InStateSet_Iden = Factory.Instance.MkId("InStateSet");
+        public static AST<Id> MkVarDeclId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("VarDecl", loc.ToSpan());
+        }
+
+        public static AST<Id> MkActionDeclId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("ActionDecl", loc.ToSpan());
+        }
+      
+        public static AST<Id> MkParamsId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Params", loc.ToSpan());
+        }
+
+        public static AST<Id> MkFunDeclId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("FunDecl", loc.ToSpan());
+        }
+
+        public static AST<Id> MkFlagsId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Flags", loc.ToSpan());
+        }
+
+        public static AST<Id> MkStateDeclId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("StateDecl", loc.ToSpan());
+        }
+
+        public static AST<Id> MkMachStartId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("MachStart", loc.ToSpan());
+        }
+
+        public static AST<Id> MkStableId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Stable", loc.ToSpan());
+        }
+
+        public static AST<Id> MkPassiveId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("PASSIVE", loc.ToSpan());
+        }
+
+        public static AST<Id> MkStateSetDeclId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("StateSetDecl", loc.ToSpan());
+        }
+
+        public static AST<Id> MkInStateSetId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("InStateSet", loc.ToSpan());
+        }        
 
         //State Declaration Elements
-        public static AST<Id> EventSetDecl_Iden = Factory.Instance.MkId("EventSetDecl");
-        public static AST<Id> InEventSet_Iden = Factory.Instance.MkId("InEventSet");
-        public static AST<Id> ExitFun_Iden = Factory.Instance.MkId("ExitFun");
-        public static AST<Id> Install_Iden = Factory.Instance.MkId("Install");
-        public static AST<Id> TransDecl_Iden = Factory.Instance.MkId("TransDecl");
+        public static AST<Id> MkEventSetDeclId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("EventSetDecl", loc.ToSpan());
+        }
+
+        public static AST<Id> MkInEventSetId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("InEventSet", loc.ToSpan());
+        }
+
+        public static AST<Id> MkExitFunId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("ExitFun", loc.ToSpan());
+        }
+
+        public static AST<Id> MkInstallId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Install", loc.ToSpan());
+        }
+
+        public static AST<Id> MkTransDeclId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("TransDecl", loc.ToSpan());
+        }
 
         // DSL Statements
-        public static AST<Id> ITE_Iden = Factory.Instance.MkId("ITE");
-        public static AST<Id> While_Iden = Factory.Instance.MkId("While");
-        public static AST<Id> Assign_Iden = Factory.Instance.MkId("Assign");
-        public static AST<Id> Send_Iden = Factory.Instance.MkId("Send");
-        public static AST<Id> Raise_Iden = Factory.Instance.MkId("Raise");
-        public static AST<Id> Scall_Iden = Factory.Instance.MkId("Scall");
-        public static AST<Id> Mcall_Iden = Factory.Instance.MkId("Mcall");
-        public static AST<Id> Ecall_Iden = Factory.Instance.MkId("Ecall");
-        public static AST<Id> Seq_Iden = Factory.Instance.MkId("Seq");
-        public static AST<Id> Assert_Iden = Factory.Instance.MkId("Assert");
-        public static AST<Id> Return_Iden = Factory.Instance.MkId("Return");
-        public static AST<Id> LEAVE_Iden = Factory.Instance.MkId("LEAVE");
-        public static AST<Id> DELETE_Iden = Factory.Instance.MkId("DELETE");
-        public static AST<Id> DataOp_Iden = Factory.Instance.MkId("DataOp");
-        public static AST<Id> Fair_Iden = Factory.Instance.MkId("Fair");
+        public static AST<Id> MkITEId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("ITE", loc.ToSpan());
+        }
 
-        public static AST<Id> Insert_Iden = Factory.Instance.MkId("INSERT");
-        public static AST<Id> Remove_Iden = Factory.Instance.MkId("REMOVE");
-        public static AST<Id> Update_Iden = Factory.Instance.MkId("UPDATE");
+        public static AST<Id> MkWhileId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("While", loc.ToSpan());
+        }
+
+        public static AST<Id> MkAssignId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Assign", loc.ToSpan());
+        }
+
+        public static AST<Id> MkSendId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Send", loc.ToSpan());
+        }
+
+        public static AST<Id> MkRaiseId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Raise", loc.ToSpan());
+        }
+
+        public static AST<Id> MkScallId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Scall", loc.ToSpan());
+        }
+
+        public static AST<Id> MkMcallId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Mcall", loc.ToSpan());
+        }
+
+        public static AST<Id> MkEcallId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Ecall", loc.ToSpan());
+        }
+
+        public static AST<Id> MkSeqId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Seq", loc.ToSpan());
+        }
+
+        public static AST<Id> MkAssertId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Assert", loc.ToSpan());
+        }
+
+        public static AST<Id> MkReturnId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Return", loc.ToSpan());
+        }
+
+        public static AST<Id> MkLEAVEId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("LEAVE", loc.ToSpan());
+        }
+
+        public static AST<Id> MkDELETEId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("DELETE", loc.ToSpan());
+        }
+
+        public static AST<Id> MkDataOpId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("DataOp", loc.ToSpan());
+        }
+
+        public static AST<Id> MkFairId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Fair", loc.ToSpan());
+        }
+
+        public static AST<Id> MkInsertId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("INSERT", loc.ToSpan());
+        }
+
+        public static AST<Id> MkRemoveId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("REMOVE", loc.ToSpan());
+        }
+
+        public static AST<Id> MkUpdateId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("UPDATE", loc.ToSpan());
+        }
 
         //Types
         #region Types
-        public static AST<Id> TypeBOOL = Factory.Instance.MkId("BOOL");
-        public static AST<Id> TypeINT = Factory.Instance.MkId("INT");
-        public static AST<Id> TypeEVENT = Factory.Instance.MkId("EVENT");
-        public static AST<Id> TypeAny = Factory.Instance.MkId("ANY");
-        public static AST<Id> TypeID = Factory.Instance.MkId("ID");
-        public static AST<Id> TypeMID = Factory.Instance.MkId("MID");
-        public static AST<Id> TypeSID = Factory.Instance.MkId("SID");
-        public static AST<Id> TypeField = Factory.Instance.MkId("TypeField");
-        public static AST<Id> TypeNamedTuple = Factory.Instance.MkId("TypeNamedTuple");
-        public static AST<Id> TypeTuple = Factory.Instance.MkId("TypeTuple");
-        public static AST<Id> TypeSeq = Factory.Instance.MkId("TypeSeq");
-        public static AST<Id> TypeMap = Factory.Instance.MkId("TypeMap");
+        public static AST<Id> MkTypeBOOLId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("BOOL", loc.ToSpan());
+        }
+
+        public static AST<Id> MkTypeINTId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("INT", loc.ToSpan());
+        }
+
+        public static AST<Id> MkTypeEVENTId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("EVENT", loc.ToSpan());
+        }
+
+        public static AST<Id> MkTypeAnyId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("ANY", loc.ToSpan());
+        }
+
+        public static AST<Id> MkTypeIDId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("ID", loc.ToSpan());
+        }
+
+        public static AST<Id> MkTypeMIDId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("MID", loc.ToSpan());
+        }
+
+        public static AST<Id> MkTypeSIDId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("SID", loc.ToSpan());
+        }
+
+        public static AST<Id> MkTypeFieldId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("TypeField", loc.ToSpan());
+        }
+
+        public static AST<Id> MkTypeNamedTupleId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("TypeNamedTuple", loc.ToSpan());
+        }
+
+        public static AST<Id> MkTypeTupleId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("TypeTuple", loc.ToSpan());
+        }
+
+        public static AST<Id> MkTypeSeqId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("TypeSeq", loc.ToSpan());
+        }
+
+        public static AST<Id> MkTypeMapId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("TypeMap", loc.ToSpan());
+        }
         #endregion
 
         // Expressions
         #region Expressions
-        public static AST<Id> Use_Iden = Factory.Instance.MkId("Use");
-        public static AST<Id> Index_Iden = Factory.Instance.MkId("Index");
-        public static AST<Id> Apply_Iden = Factory.Instance.MkId("Apply");
-        public static AST<Id> Exprs_Iden = Factory.Instance.MkId("Exprs");
-        public static AST<Id> Strings_Iden = Factory.Instance.MkId("Strings");
-        public static AST<Id> Call_Iden = Factory.Instance.MkId("Call");
-        public static AST<Id> NamedTuple_Iden = Factory.Instance.MkId("NamedTuple");
-        public static AST<Id> Tuple_Iden = Factory.Instance.MkId("Tuple");
-        public static AST<Id> NamedExpr_Iden = Factory.Instance.MkId("NamedExpr");
-        public static AST<Id> NamedExprs_Iden = Factory.Instance.MkId("NamedExprs");
-        public static AST<Id> New_Iden = Factory.Instance.MkId("New");
-        public static AST<Id> Payload_Iden = Factory.Instance.MkId("Payload");
+        public static AST<Id> MkUseId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Use", loc.ToSpan());
+        }
 
-        public static AST<Id> StateKind_Iden = Factory.Instance.MkId("STATE");
-        public static AST<Id> EventKind_Iden = Factory.Instance.MkId("EVENT");
-        public static AST<Id> VarKind_Iden = Factory.Instance.MkId("VAR");
-        public static AST<Id> FieldKind_Iden = Factory.Instance.MkId("FIELD");
-        public static AST<Id> Nil_Iden = Factory.Instance.MkId("NIL");
-        public static AST<Id> Nondet_Iden = Factory.Instance.MkId("NONDET");
-        public static AST<Id> This_Iden = Factory.Instance.MkId("THIS");
-        public static AST<Id> Trigger_Iden = Factory.Instance.MkId("TRIGGER");
-        public static AST<Id> Default_Iden = Factory.Instance.MkId("DEFAULT");
-        public static AST<Id> Null_Iden = Factory.Instance.MkId("NULL");
+        public static AST<Id> MkIndexId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Index", loc.ToSpan());
+        }
+        public static AST<Id> MkApplyId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Apply", loc.ToSpan());
+        }
+
+        public static AST<Id> MkExprsId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Exprs", loc.ToSpan());
+        }
+
+        public static AST<Id> MkStringsId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Strings", loc.ToSpan());
+        }
+
+        public static AST<Id> MkCallId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Call", loc.ToSpan());
+        }
+
+        public static AST<Id> MkNamedTupleId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("NamedTuple", loc.ToSpan());
+        }
+
+        public static AST<Id> MkTupleId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Tuple", loc.ToSpan());
+        }
+
+        public static AST<Id> MkNamedExprId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("NamedExpr", loc.ToSpan());
+        }
+
+        public static AST<Id> MkNamedExprsId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("NamedExprs", loc.ToSpan());
+        }
+
+        public static AST<Id> MkNewId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("New", loc.ToSpan());
+        }
+
+        public static AST<Id> MkPayloadId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("Payload", loc.ToSpan());
+        }
+
+        public static AST<Id> MkStateKindId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("STATE", loc.ToSpan());
+        }
+
+        public static AST<Id> MkEventKindId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("EVENT", loc.ToSpan());
+        }
+
+        public static AST<Id> MkVarKindId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("VAR", loc.ToSpan());
+        }
+
+        public static AST<Id> MkFieldKindId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("FIELD", loc.ToSpan());
+        }
+
+        public static AST<Id> MkNilId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("NIL", loc.ToSpan());
+        }
+
+        public static AST<Id> MkNondetId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("NONDET", loc.ToSpan());
+        }
+
+        public static AST<Id> MkThisId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("THIS", loc.ToSpan());
+        }
+
+        public static AST<Id> MkTriggerId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("TRIGGER", loc.ToSpan());
+        }
+
+        public static AST<Id> MkDefaultId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("DEFAULT", loc.ToSpan());
+        }
+
+        public static AST<Id> MkNullId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("NULL", loc.ToSpan());
+        }
 
         #endregion
 
         //Operations
         #region Operations
-        public static AST<Id> Add_Iden = Factory.Instance.MkId("ADD");
-        public static AST<Id> Sub_Iden = Factory.Instance.MkId("SUB");
-        public static AST<Id> Mul_Iden = Factory.Instance.MkId("MUL");
-        public static AST<Id> IntDiv_Iden = Factory.Instance.MkId("INTDIV");
-        public static AST<Id> And_Iden = Factory.Instance.MkId("AND");
-        public static AST<Id> Or_Iden = Factory.Instance.MkId("OR");
-        public static AST<Id> Negative_Iden = Factory.Instance.MkId("NEG");
-        public static AST<Id> Not_Iden = Factory.Instance.MkId("NOT");
-        public static AST<Id> EqEq_Iden = Factory.Instance.MkId("EQ");
-        public static AST<Id> NEq_Iden = Factory.Instance.MkId("NEQ");
-        public static AST<Id> Gt_Iden = Factory.Instance.MkId("GT");
-        public static AST<Id> GtEq_Iden = Factory.Instance.MkId("GE");
-        public static AST<Id> Lt_Iden = Factory.Instance.MkId("LT");
-        public static AST<Id> LtEq_Iden = Factory.Instance.MkId("LE");
-        public static AST<Id> In_Iden = Factory.Instance.MkId("IN");
-        public static AST<Id> Choose_Iden = Factory.Instance.MkId("CHOOSE");
-        public static AST<Id> Enumerator_Iden = Factory.Instance.MkId("ENUM");
-        public static AST<Id> S_Enumerator_Iden = Factory.Instance.MkId("SENUM");
-        public static AST<Id> Sizeof_Iden = Factory.Instance.MkId("SIZEOF");
-        public static AST<Id> Keys_Iden = Factory.Instance.MkId("KEYS");
-        public static AST<Id> Fld_Iden = Factory.Instance.MkId("FLD");
-        public static AST<Id> Idx_Iden = Factory.Instance.MkId("IDX");
+        public static AST<Id> MkAddId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("ADD", loc.ToSpan());
+        }
+
+        public static AST<Id> MkSubId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("SUB", loc.ToSpan());
+        }
+
+        public static AST<Id> MkMulId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("MUL", loc.ToSpan());
+        }
+
+        public static AST<Id> MkIntDivId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("INTDIV", loc.ToSpan());
+        }
+
+        public static AST<Id> MkAndId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("AND", loc.ToSpan());
+        }
+
+        public static AST<Id> MkOrId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("OR", loc.ToSpan());
+        }
+
+        public static AST<Id> MkNegativeId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("NEG", loc.ToSpan());
+        }
+
+        public static AST<Id> MkNotId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("NOT", loc.ToSpan());
+        }
+
+        public static AST<Id> MkEqEqId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("EQ", loc.ToSpan());
+        }
+
+        public static AST<Id> MkNEqId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("NEQ", loc.ToSpan());
+        }
+
+        public static AST<Id> MkGtId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("GT", loc.ToSpan());
+        }
+
+        public static AST<Id> MkGtEqId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("GE", loc.ToSpan());
+        }
+
+        public static AST<Id> MkLtEqId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("LE", loc.ToSpan());
+        }
+
+        public static AST<Id> MkLtId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("LT", loc.ToSpan());
+        }
+
+        public static AST<Id> MkInId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("IN", loc.ToSpan());
+        }
+
+        public static AST<Id> MkChooseId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("CHOOSE", loc.ToSpan());
+        }
+
+        public static AST<Id> MkEnumeratorId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("ENUM", loc.ToSpan());
+        }
+
+        public static AST<Id> MkS_EnumeratorId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("SENUM", loc.ToSpan());
+        }
+
+        public static AST<Id> MkSizeofId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("SIZEOF", loc.ToSpan());
+        }
+
+        public static AST<Id> MkKeysId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("KEYS", loc.ToSpan());
+        }
+
+        public static AST<Id> MkFldId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("FLD", loc.ToSpan());
+        }
+
+        public static AST<Id> MkIdxId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("IDX", loc.ToSpan());
+        }
         #endregion
-
-        public static AST<Id> GetIdNode(string Id_Name, Span Span)
-        {
-            return Factory.Instance.MkId(Id_Name, Span);
-        }
-
-        public static AST<FuncTerm> GetFuncTermNode(string funcTerm_Name, Span Span)
-        {
-            var f_id = GetIdNode(funcTerm_Name, Span);
-            return Factory.Instance.MkFuncTerm(f_id, Span);
-        }
 
         static P_FormulaNodes()
         {  
-            OperatorToId = new Dictionary<Ops, AST<Id>>();
+            OperatorToId = new Dictionary<Ops, Func<DSLLoc, AST<Id>>>();
 
-            OperatorToId[Ops.U_LNOT] = Not_Iden;
-            OperatorToId[Ops.U_MINUS] = Negative_Iden;
+            OperatorToId[Ops.U_LNOT] = MkNotId;
+            OperatorToId[Ops.U_MINUS] = MkNegativeId;
 
-            OperatorToId[Ops.B_PLUS] = Add_Iden;
-            OperatorToId[Ops.B_MINUS] = Sub_Iden;
-            OperatorToId[Ops.B_MUL] = Mul_Iden;
-            OperatorToId[Ops.B_DIV] = IntDiv_Iden;
-            OperatorToId[Ops.B_LAND] = And_Iden;
-            OperatorToId[Ops.B_LOR] = Or_Iden;
-            OperatorToId[Ops.B_EQ] = EqEq_Iden;
-            OperatorToId[Ops.B_NE] = NEq_Iden;
-            OperatorToId[Ops.B_GT] = Gt_Iden;
-            OperatorToId[Ops.B_GE] = GtEq_Iden;
-            OperatorToId[Ops.B_LT] = Lt_Iden;
-            OperatorToId[Ops.B_LE] = LtEq_Iden;
-            OperatorToId[Ops.B_IN] = In_Iden;
+            OperatorToId[Ops.B_PLUS] = MkAddId;
+            OperatorToId[Ops.B_MINUS] = MkSubId;
+            OperatorToId[Ops.B_MUL] = MkMulId;
+            OperatorToId[Ops.B_DIV] = MkIntDivId;
+            OperatorToId[Ops.B_LAND] = MkAndId;
+            OperatorToId[Ops.B_LOR] = MkOrId;
+            OperatorToId[Ops.B_EQ] = MkEqEqId;
+            OperatorToId[Ops.B_NE] = MkNEqId;
+            OperatorToId[Ops.B_GT] = MkGtId;
+            OperatorToId[Ops.B_GE] = MkGtEqId;
+            OperatorToId[Ops.B_LT] = MkLtId;
+            OperatorToId[Ops.B_LE] = MkLtEqId;
+            OperatorToId[Ops.B_IN] = MkInId;
         }
     }
 }

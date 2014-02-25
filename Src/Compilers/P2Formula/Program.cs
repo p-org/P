@@ -139,9 +139,7 @@ namespace P2Formula
 
 
             PParser.PFormulaBuilder builder = new PParser.PFormulaBuilder(sem, "PData", domPath);
-
             var r = builder.build(parser.program, modelName);
-
             if (builder.errors.Count > 0)
             {
                 foreach (PParser.BuilderError err in builder.errors)

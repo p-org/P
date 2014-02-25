@@ -93,7 +93,7 @@ namespace PParser
         private AST<Node> getOneOrNil(INode n)
         {
             if (n == null)
-                return P_FormulaNodes.Nil_Iden;
+                return P_FormulaNodes.MkNilId(null);
             else
                 return getOne(n);
         }
@@ -119,20 +119,26 @@ namespace PParser
         
         private AST<Node> sequence(AST<Id> seqNode, params AST<Node>[] nodes)
         {
-            AST<Node> res = P_FormulaNodes.Nil_Iden;
+            DSLLoc loc = null;
+            if (nodes.Length > 0)
+            {
+                loc = nodes[nodes.Length - 1].Node.Span.ToLoc();
+            }
+
+            AST<Node> res = P_FormulaNodes.MkNilId(loc);
 
             foreach (AST<Node> n in nodes.Reverse<AST<Node>>())
-                    res = fMkFuncTerm(seqNode, n, res);
+                    res = fMkFuncTerm(seqNode, loc, n, res);
 
             return res;
         }
 
         private AST<Node> sequence(IEnumerable<AST<Node>> seq, AST<Id> seqNode)
         {
-            AST<Node> res = P_FormulaNodes.Nil_Iden;
-
+            var loc = seqNode.Node.Span.ToLoc();
+            AST<Node> res = P_FormulaNodes.MkNilId(loc);
             foreach (AST<Node> n in seq.Reverse())
-                    res = fMkFuncTerm(seqNode, n, res);
+                    res = fMkFuncTerm(seqNode, loc, n, res);
 
             return res;
         }
@@ -145,98 +151,98 @@ namespace PParser
                 return sequence(seq, seqNode);
         }
 
-        public AST<Node> fMkExprs(params AST<Node>[] nodes)
+        public AST<Node> fMkExprs(DSLLoc loc, params AST<Node>[] nodes)
         {
-            return sequence(P_FormulaNodes.Exprs_Iden, nodes);
+            return sequence(P_FormulaNodes.MkExprsId(loc), nodes);
         }
 
         // These are just short hand methods for creating new Formula Nodes. Save typing.
-        public AST<FuncTerm> fMkFuncTerm(AST<Id> name, params AST<Node>[] args)
+        public AST<FuncTerm> fMkFuncTerm(AST<Id> name, DSLLoc loc, params AST<Node>[] args)
         {
-            return Factory.Instance.MkFuncTerm(name, new Span(), args);
+            return Factory.Instance.MkFuncTerm(name, loc.ToSpan(), args);
         }
 
-        public AST<ModelFact> fMkModelFact(AST<Node> term)
+        public AST<ModelFact> fMkModelFact(AST<Node> term, DSLLoc loc)
         {
-            return Factory.Instance.MkModelFact(null, term);
+            return Factory.Instance.MkModelFact(null, term, loc.ToSpan());
         }
 
-        public AST<ModelFact> fMkModelFact(AST<Node> term, string id)
+        public AST<ModelFact> fMkModelFact(AST<Node> term, string id, DSLLoc loc)
         {
-            return Factory.Instance.MkModelFact(fMkId(id), term);
+            return Factory.Instance.MkModelFact(fMkId(id, loc), term, loc.ToSpan());
         }
 
-        private AST<Cnst> fMkCnst(string s)
+        private AST<Cnst> fMkCnst(string s, DSLLoc loc)
         {
-            return Factory.Instance.MkCnst(s);
+            return Factory.Instance.MkCnst(s, loc.ToSpan());
         }
 
-        private AST<Cnst> fMkCnst(int i)
+        private AST<Cnst> fMkCnst(int i, DSLLoc loc)
         {
-            return Factory.Instance.MkCnst(i);
+            return Factory.Instance.MkCnst(i, loc.ToSpan());
         }
 
-        private AST<Id> fMkId(string s)
+        private AST<Id> fMkId(string s, DSLLoc loc)
         {
-            return Factory.Instance.MkId(s);
+            return Factory.Instance.MkId(s, loc.ToSpan());
         }
 
-        private AST<Id> fMkCnst(Boolean b)
+        private AST<Id> fMkCnst(Boolean b, DSLLoc loc)
         {
-            return fMkId(b ? "TRUE" : "FALSE");
+            return fMkId(b ? "TRUE" : "FALSE", loc);
         }
 
         // ------------------ Actual Node Visitors ------------------------
         // Type Declarations
         public override IEnumerable<AST<Node>> visit(TypeInt s)
         {
-            return wrap(P_FormulaNodes.TypeINT);
+            return wrap(P_FormulaNodes.MkTypeINTId(s.loc));
         }
         public override IEnumerable<AST<Node>> visit(TypeBool s)
         {
-            return wrap(P_FormulaNodes.TypeBOOL);
+            return wrap(P_FormulaNodes.MkTypeBOOLId(s.loc));
         }
         public override IEnumerable<AST<Node>> visit(TypeMachineID s)
         {
-            return wrap(P_FormulaNodes.TypeID);
+            return wrap(P_FormulaNodes.MkTypeIDId(s.loc));
         }
         public override IEnumerable<AST<Node>> visit(TypeModelMachineID s)
         {
-            return wrap(P_FormulaNodes.TypeMID);
+            return wrap(P_FormulaNodes.MkTypeMIDId(s.loc));
         }
         public override IEnumerable<AST<Node>> visit(TypeEventID s)
         {
-            return wrap(P_FormulaNodes.TypeEVENT);
+            return wrap(P_FormulaNodes.MkTypeEVENTId(s.loc));
         }
 
         public override IEnumerable<AST<Node>> visit(TypeAny s)
         {
-            return wrap(P_FormulaNodes.TypeAny);
+            return wrap(P_FormulaNodes.MkTypeAnyId(s.loc));
         }
 
         public override IEnumerable<AST<Node>> visit(TypeField s)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.TypeField, fMkCnst(s.label), getOne(s.type)));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkTypeFieldId(s.loc), s.loc, fMkCnst(s.label, s.loc), getOne(s.type)));
         }
     
         public override IEnumerable<AST<Node>> visit(TypeNamedTuple s)
         {
-            return wrap(sequence(s.children.Select(c => getOne(c)), P_FormulaNodes.TypeNamedTuple));
+            return wrap(sequence(s.children.Select(c => getOne(c)), P_FormulaNodes.MkTypeNamedTupleId(s.loc)));
         }
 
         public override IEnumerable<AST<Node>> visit(TypeTuple s)
         {
-            return wrap(sequence(s.children.Select(c => getOne(c)), P_FormulaNodes.TypeTuple));
+            return wrap(sequence(s.children.Select(c => getOne(c)), P_FormulaNodes.MkTypeTupleId(s.loc)));
         }
 
         public override IEnumerable<AST<Node>> visit(TypeSeq s)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.TypeSeq, getOne(s.innerT)));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkTypeSeqId(s.loc), s.loc, getOne(s.innerT)));
         }
 
         public override IEnumerable<AST<Node>> visit(TypeMap s)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.TypeMap, getOne(s.domain), getOne(s.range)));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkTypeMapId(s.loc), s.loc, getOne(s.domain), getOne(s.range)));
         }
 
         // P Declarations
@@ -254,46 +260,49 @@ namespace PParser
 
         public override IEnumerable<AST<Node>> visit(EventDeclaration s)
         {
-            AST<Node> payload = P_FormulaNodes.Nil_Iden;
-            AST<Node> annotation = P_FormulaNodes.Nil_Iden;
+            AST<Node> payload = P_FormulaNodes.MkNilId(s.loc);
+            AST<Node> annotation = P_FormulaNodes.MkNilId(s.loc);
 
             if (s.payloadType != null)
                 payload = getOne(s.payloadType);
 
             if (s.assume != -1)
-                annotation = fMkFuncTerm(P_FormulaNodes.AssumeMaxInstances_Iden, fMkCnst(s.assume));
+                annotation = fMkFuncTerm(P_FormulaNodes.MkAssumeMaxInstancesId(s.loc), s.loc, fMkCnst(s.assume, s.loc));
             else if (s.assert != -1)
-                annotation = fMkFuncTerm(P_FormulaNodes.AssertMaxInstances_Iden, fMkCnst(s.assert));
+                annotation = fMkFuncTerm(P_FormulaNodes.MkAssertMaxInstancesId(s.loc), s.loc, fMkCnst(s.assert, s.loc));
 
 
             var name = sem.resolve(s, s.id);
-            return wrap(fMkModelFact(fMkFuncTerm(P_FormulaNodes.EventDecl_Iden, fMkCnst(name), annotation, payload), name));
+            return wrap(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkEventDeclId(s.loc), s.loc, fMkCnst(name, s.loc), annotation, payload), name, s.loc));
         }
 
         public override IEnumerable<AST<Node>> visit(MachineDeclaration s)
         {
             List<AST<Node>> mTerms = new List<AST<Node>>(allChildTerms(s));
-            AST<Node> maxQSize = curMachMaxQSize == -1 ? (AST<Node>)P_FormulaNodes.Nil_Iden : (AST<Node>)fMkCnst(curMachMaxQSize);
+            AST<Node> maxQSize = curMachMaxQSize == -1 ? (AST<Node>)P_FormulaNodes.MkNilId(s.loc) : (AST<Node>)fMkCnst(curMachMaxQSize, s.loc);
             var machineName = sem.resolve(s, s.id);
 
-            var machineDecl = fMkModelFact(fMkFuncTerm(P_FormulaNodes.MachineDecl_Iden, fMkCnst(machineName), fMkId(s.type), maxQSize), machineName);
+            var machineDecl = fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkMachineDeclId(s.loc), s.loc, fMkCnst(machineName, s.loc), fMkId(s.type, s.loc), maxQSize), machineName, s.loc);
             mTerms.Insert(0, machineDecl);
             if (s.isMain)
             {
-                mTerms.Insert(0, fMkModelFact(fMkFuncTerm(P_FormulaNodes.MainDecl_Iden,
-                                                            fMkFuncTerm(P_FormulaNodes.New_Iden,
-                                                                fMkCnst(s.id),
-                                                                P_FormulaNodes.Nil_Iden))));
+                mTerms.Insert(0, fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkMainDeclId(s.loc),
+                                                          s.loc,
+                                                            fMkFuncTerm(
+                                                                P_FormulaNodes.MkNewId(s.loc),
+                                                                s.loc,
+                                                                fMkCnst(s.id, s.loc),
+                                                                P_FormulaNodes.MkNilId(s.loc))), s.loc));
             }
             if (s.isFair)
             {
-                mTerms.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.Fair_Iden, fMkId(machineName))));
+                mTerms.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkFairId(s.loc), s.loc, fMkId(machineName, s.loc)), s.loc));
             }
 
             // Generate Machine Ignore Statement. It would be nice to do this optionally if the machine has any ignores.
             var machScope = sem.getScope(s);
             var actName = machScope.lookup(SemanticPass.VAR_IGNORE_ACTION).resolvedName();
-            mTerms.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.ActionDecl_Iden, fMkCnst(actName), curMachine, P_FormulaNodes.Nil_Iden), actName));
+            mTerms.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkActionDeclId(s.loc), s.loc, fMkCnst(actName, s.loc), curMachine, P_FormulaNodes.MkNilId(s.loc)), actName, s.loc));
             return mTerms;
         }
 
@@ -302,12 +311,12 @@ namespace PParser
             List<AST<Node>> mTerms = new List<AST<Node>>(allChildTerms(s));
             var machineName = sem.resolve(s, s.id);
 
-            var machineDecl = fMkModelFact(fMkFuncTerm(P_FormulaNodes.MachineDecl_Iden, fMkCnst(machineName), fMkId("SPEC"), P_FormulaNodes.Nil_Iden), machineName);
+            var machineDecl = fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkMachineDeclId(s.loc), s.loc, fMkCnst(machineName, s.loc), fMkId("SPEC", s.loc), P_FormulaNodes.MkNilId(s.loc)), machineName, s.loc);
             mTerms.Insert(0, machineDecl);
             // Generate Machine Ignore Statement. It would be nice to do this optionally if the machine has any ignores.
             var machScope = sem.getScope(s);
             var actName = machScope.lookup(SemanticPass.VAR_IGNORE_ACTION).resolvedName();
-            mTerms.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.ActionDecl_Iden, fMkCnst(actName), curMachine, P_FormulaNodes.Nil_Iden), actName));
+            mTerms.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkActionDeclId(s.loc), s.loc, fMkCnst(actName, s.loc), curMachine, P_FormulaNodes.MkNilId(s.loc)), actName, s.loc));
             return mTerms;
         }
 
@@ -315,18 +324,18 @@ namespace PParser
         public override IEnumerable<AST<Node>> visit(VarDeclaration s)
         {
             var varName = sem.resolve(s, s.name);
-            return wrap(fMkModelFact(fMkFuncTerm(P_FormulaNodes.VarDecl_Iden, fMkCnst(varName), curMachine, getOne(s.type), fMkCnst(s.isGhost))));
+            return wrap(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkVarDeclId(s.loc), s.loc, fMkCnst(varName, s.loc), curMachine, getOne(s.type), fMkCnst(s.isGhost, s.loc)), s.loc));
         }
         public override IEnumerable<AST<Node>> visit(ActionDeclaration s)
         {
             var actionName = sem.resolve(s, s.name);
-            return wrap(fMkModelFact(fMkFuncTerm(P_FormulaNodes.ActionDecl_Iden, fMkCnst(actionName), curMachine, getOne(s.body)), actionName));
+            return wrap(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkActionDeclId(s.loc), s.loc, fMkCnst(actionName, s.loc), curMachine, getOne(s.body)), actionName, s.loc));
         }
 
         public override IEnumerable<AST<Node>> visit(FunDeclaration s)
         {
             var funName = sem.resolve(s, s.name);
-            AST<Node> paramsN = P_FormulaNodes.Nil_Iden;
+            AST<Node> paramsN = P_FormulaNodes.MkNilId(s.loc);
             List<AST<Node>> res = new List<AST<Node>>();
 
             if (s.paramTypes != null)
@@ -334,15 +343,15 @@ namespace PParser
                 foreach (INode n in s.paramTypes.children.Reverse())
                 {
                     var field = (TypeField)n;
-                    paramsN = fMkFuncTerm(P_FormulaNodes.Params_Iden, fMkCnst(field.label), getOne(field.type), paramsN);
+                    paramsN = fMkFuncTerm(P_FormulaNodes.MkParamsId(n.loc), n.loc, fMkCnst(field.label, n.loc), getOne(field.type), paramsN);
                 }
             }
 
-            res.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.FunDecl_Iden, fMkCnst(funName), curMachine, paramsN, getOneOrNil(s.returnType), fMkCnst(s.isModel), getOne(s.body)), funName));
+            res.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkFunDeclId(s.loc), s.loc, fMkCnst(funName, s.loc), curMachine, paramsN, getOneOrNil(s.returnType), fMkCnst(s.isModel, s.loc), getOne(s.body)), funName, s.loc));
 
             if (s.passiveAttr != null && s.passiveAttr.name == "passive")
             {
-                res.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.Flags_Iden, fMkId(funName), P_FormulaNodes.Passive_Iden)));
+                res.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkFlagsId(s.loc), s.loc, fMkId(funName, s.loc), P_FormulaNodes.MkPassiveId(s.loc)), s.loc));
             }
 
             return res;
@@ -359,9 +368,9 @@ namespace PParser
             List<AST<Node>> retFacts = new List<AST<Node>>();
             var name = sem.resolve(s, s.id);
             retFacts.AddRange(allChildTerms(s));
-            retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.StateSetDecl_Iden, fMkCnst(name), curMachine), name));
-            retFacts.AddRange(s.children.Select(state => fMkModelFact(fMkFuncTerm(P_FormulaNodes.InStateSet_Iden,
-                fMkId(name), fMkId(sem.resolve(state, ((StateDeclaration)state).id))))));
+            retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkStateSetDeclId(s.loc), s.loc, fMkCnst(name, s.loc), curMachine), name, s.loc));
+            retFacts.AddRange(s.children.Select(state => fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkInStateSetId(s.loc), s.loc,
+                fMkId(name, s.loc), fMkId(sem.resolve(state, ((StateDeclaration)state).id), s.loc)), s.loc)));
             curSubmachName = null;
             return retFacts;
         }
@@ -379,7 +388,7 @@ namespace PParser
                 if (child is EntryFunction)
                     entry = getOne((child as EntryFunction).body);
             }
-            entry = (entry == null) ? P_FormulaNodes.Nil_Iden : entry;
+            entry = (entry == null) ? P_FormulaNodes.MkNilId(s.loc) : entry;
 
             // Find exit function and get its body
             foreach (INode child in s.children)
@@ -387,52 +396,54 @@ namespace PParser
                 if (child is ExitFunction)
                     exit = getOne((child as ExitFunction).body);
             }
-            exit = (exit == null) ? P_FormulaNodes.Nil_Iden : exit;
+            exit = (exit == null) ? P_FormulaNodes.MkNilId(s.loc) : exit;
             foreach (INode child in s.children)
             {
+                var loc = child.loc;
                 Transition trans = child as Transition;
                 if (trans == null || trans.block == null) continue;
                 var transBlock = getOne(trans.block);
-                AST<Node> condExpr = fMkCnst(false);
+                AST<Node> condExpr = fMkCnst(false, loc);
                 foreach (var e in trans.on)
                 {
-                    var useExpr = fMkFuncTerm(P_FormulaNodes.Use_Iden, fMkCnst(e), P_FormulaNodes.EventKind_Iden);
-                    var eqExpr = fMkFuncTerm(P_FormulaNodes.Apply_Iden, P_FormulaNodes.EqEq_Iden, fMkExprs(P_FormulaNodes.Trigger_Iden, useExpr));
-                    condExpr = fMkFuncTerm(P_FormulaNodes.Apply_Iden, P_FormulaNodes.Or_Iden, fMkExprs(eqExpr, condExpr));
+                    var useExpr = fMkFuncTerm(P_FormulaNodes.MkUseId(loc), loc, fMkCnst(e, loc), P_FormulaNodes.MkEventKindId(loc));
+                    var eqExpr = fMkFuncTerm(P_FormulaNodes.MkApplyId(loc), loc, P_FormulaNodes.MkEqEqId(loc), fMkExprs(loc, P_FormulaNodes.MkTriggerId(loc), useExpr));
+                    condExpr = fMkFuncTerm(P_FormulaNodes.MkApplyId(loc), loc, P_FormulaNodes.MkOrId(loc), fMkExprs(loc, eqExpr, condExpr));
                 }
-                exit = fMkFuncTerm(P_FormulaNodes.ITE_Iden, condExpr, transBlock, exit);
+                exit = fMkFuncTerm(P_FormulaNodes.MkITEId(loc), loc, condExpr, transBlock, exit);
             }
 
             bool hasDeferred = false;
             // Find the Defer child
             foreach (INode child in s.children)
             {
+                var loc = child.loc;
                 if (child is Defer)
                 {   // For each event in its event list add an InEventSet fact
                     foreach(string evt in (child as Defer).events) {
                         hasDeferred = true;
-                        retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.InEventSet_Iden, fMkId(deferSetName), fMkId(evt))));
+                        retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkInEventSetId(loc), loc, fMkId(deferSetName, loc), fMkId(evt, loc)), loc));
                     }
                 }
             }
             
             // If we have a non-empty defered set, then add the StateSetDecl for it.
             if (hasDeferred)
-                retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.EventSetDecl_Iden, fMkCnst(deferSetName), curMachine), deferSetName));
+                retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkEventSetDeclId(s.loc), s.loc, fMkCnst(deferSetName, s.loc), curMachine), deferSetName, s.loc));
 
             // If this is a start state, add the MachStart term.
             if (s.isStart)
-                retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MachStart_Iden, curMachine, fMkId(stateName))));
+                retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkMachStartId(s.loc), s.loc, curMachine, fMkId(stateName, s.loc)), s.loc));
 
             // If this is a stable state, add the Stable term.
             if (s.isStable)
-                retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.Stable_Iden, fMkId(stateName))));
+                retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkStableId(s.loc), s.loc, fMkId(stateName, s.loc)), s.loc));
 
             // add the exit function
-            retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.ExitFun_Iden, fMkId(stateName), exit)));
+            retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkExitFunId(s.loc), s.loc, fMkId(stateName, s.loc), exit), s.loc));
 
             // add the StateDecl node itself
-            retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.StateDecl_Iden, fMkCnst(stateName), curMachine, entry, (hasDeferred ? fMkId(deferSetName) : P_FormulaNodes.Nil_Iden)), stateName));
+            retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkStateDeclId(s.loc), s.loc, fMkCnst(stateName, s.loc), curMachine, entry, (hasDeferred ? fMkId(deferSetName, s.loc) : P_FormulaNodes.MkNilId(s.loc))), stateName, s.loc));
 
             // Finally add all the node created by the children
             retFacts.AddRange(allChildTerms(s));
@@ -448,13 +459,13 @@ namespace PParser
             List<AST<Node>> retFacts = new List<AST<Node>>();
 
             foreach (string ev in s.events)
-                retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.Install_Iden, curState, fMkId(ev), fMkId(actName))));
+                retFacts.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkInstallId(s.loc), s.loc, curState, fMkId(ev, s.loc), fMkId(actName, s.loc)), s.loc));
 
             return retFacts;
         }
 
-        private AST<Node> translateEvt(string ev) {
-            return ev == SemanticPass.VAR_DEFAULT ? P_FormulaNodes.Default_Iden : fMkId(ev);
+        private AST<Node> translateEvt(string ev, DSLLoc loc) {
+            return ev == SemanticPass.VAR_DEFAULT ? P_FormulaNodes.MkDefaultId(loc) : fMkId(ev, loc);
         }
 
         public override IEnumerable<AST<Node>> visit(Transition s)
@@ -462,11 +473,11 @@ namespace PParser
             List<AST<Node>> ret = new List<AST<Node>>();
             foreach (var ev in s.on)
             {
-                var ft = fMkFuncTerm(P_FormulaNodes.TransDecl_Iden, curState, translateEvt(ev), fMkId(sem.resolve(s, s.targetState)), fMkCnst(false));
-                ret.Add(fMkModelFact(ft));
+                var ft = fMkFuncTerm(P_FormulaNodes.MkTransDeclId(s.loc), s.loc, curState, translateEvt(ev, s.loc), fMkId(sem.resolve(s, s.targetState), s.loc), fMkCnst(false, s.loc));
+                ret.Add(fMkModelFact(ft, s.loc));
                 if (s.isFair)
                 {
-                    ret.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.Fair_Iden, ft)));
+                    ret.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkFairId(s.loc), s.loc, ft), s.loc));
                 }
             }
             return ret;
@@ -474,26 +485,26 @@ namespace PParser
         }
         public override IEnumerable<AST<Node>> visit(CallTransition s)
         {
-            return s.on.Select(ev => fMkModelFact(fMkFuncTerm(P_FormulaNodes.TransDecl_Iden, curState, translateEvt(ev), fMkId(sem.resolve(s, s.targetState)), fMkCnst(true))));
+            return s.on.Select(ev => fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkTransDeclId(s.loc), s.loc, curState, translateEvt(ev, s.loc), fMkId(sem.resolve(s, s.targetState), s.loc), fMkCnst(true, s.loc)), s.loc));
         }
         public override IEnumerable<AST<Node>> visit(Action s) {
-            return s.on.Select(ev => fMkModelFact(fMkFuncTerm(P_FormulaNodes.Install_Iden, curState, translateEvt(ev), fMkId(sem.resolve(s, s.action)))));
+            return s.on.Select(ev => fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkInstallId(s.loc), s.loc, curState, translateEvt(ev, s.loc), fMkId(sem.resolve(s, s.action), s.loc)), s.loc));
         }
         // DSL Statements
         public override IEnumerable<AST<Node>> visit(DSLITE s)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.ITE_Iden, getOne(s.c), getOne(s.sTrue), getOne(s.sFalse)));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkITEId(s.loc), s.loc, getOne(s.c), getOne(s.sTrue), getOne(s.sFalse)));
         }
         public override IEnumerable<AST<Node>> visit(DSLWhile s)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.While_Iden, getOne(s.c), getOne(s.body)));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkWhileId(s.loc), s.loc, getOne(s.c), getOne(s.body)));
         }
         public override IEnumerable<AST<Node>> visit(DSLAssign s)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.Assign_Iden, getOne(s.lhs), getOne(s.rhs)));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkAssignId(s.loc), s.loc, getOne(s.lhs), getOne(s.rhs)));
         }
         public override IEnumerable<AST<Node>> visit(DSLBlock s) {
-            return wrap(sequenceCollapsing(s.children.Select(child => getOne(child)), P_FormulaNodes.Seq_Iden));
+            return wrap(sequenceCollapsing(s.children.Select(child => getOne(child)), P_FormulaNodes.MkSeqId(s.loc)));
         }
 
         public override IEnumerable<AST<Node>> visit(DSLFFCallStmt s)
@@ -502,7 +513,7 @@ namespace PParser
         }
         public override IEnumerable<AST<Node>> visit(DSLSend s)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.Send_Iden, getOne(s.target), getOne(s.evt), getOneOrNil(s.payload)));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkSendId(s.loc), s.loc, getOne(s.target), getOne(s.evt), getOneOrNil(s.payload)));
         }
         public override IEnumerable<AST<Node>> visit(DSLSCall s)
         {
@@ -518,46 +529,46 @@ namespace PParser
                 var submScope = sem.getScope(submNode);
                 var state = submScope.lookup((s.target as DSLMember).member);
 
-                target = fMkFuncTerm(P_FormulaNodes.Use_Iden, fMkCnst(state.resolvedName()), P_FormulaNodes.StateKind_Iden);
+                target = fMkFuncTerm(P_FormulaNodes.MkUseId(s.loc), s.loc, fMkCnst(state.resolvedName(), s.loc), P_FormulaNodes.MkStateKindId(s.loc));
             }
 
-            return wrap(fMkFuncTerm(P_FormulaNodes.Scall_Iden, target));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkScallId(s.loc), s.loc, target));
         }
         public override IEnumerable<AST<Node>> visit(DSLMCall s)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.Mcall_Iden, fMkCnst(s.monitorName), getOne(s.evt), s.arg == null ? fMkId("NIL") : getOne(s.arg)));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkMcallId(s.loc), s.loc, fMkCnst(s.monitorName, s.loc), getOne(s.evt), s.arg == null ? fMkId("NIL", s.loc) : getOne(s.arg)));
         }
         public override IEnumerable<AST<Node>> visit(DSLRaise s)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.Raise_Iden, getOne(s.evt), getOneOrNil(s.payload)));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkRaiseId(s.loc), s.loc, getOne(s.evt), getOneOrNil(s.payload)));
         }
         public override IEnumerable<AST<Node>> visit(DSLAssert s)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.Assert_Iden, getOne(s.cond)));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkAssertId(s.loc), s.loc, getOne(s.cond)));
         }
         public override IEnumerable<AST<Node>> visit(DSLReturn s)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.Return_Iden, getOneOrNil(s.rval)));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkReturnId(s.loc), s.loc, getOneOrNil(s.rval)));
         }
         public override IEnumerable<AST<Node>> visit(DSLLeave s)
         {
-            return wrap(P_FormulaNodes.LEAVE_Iden);
+            return wrap(P_FormulaNodes.MkLEAVEId(s.loc));
         }
         public override IEnumerable<AST<Node>> visit(DSLSkip s)
         {
-            return wrap(P_FormulaNodes.Nil_Iden);
+            return wrap(P_FormulaNodes.MkNilId(s.loc));
         }
         public override IEnumerable<AST<Node>> visit(DSLDelete s)
         {
-            return wrap(P_FormulaNodes.DELETE_Iden);
+            return wrap(P_FormulaNodes.MkDELETEId(s.loc));
         }
 
         public override IEnumerable<AST<Node>> visit(DSLMutation s)
         {
-            AST<Node> op = s.op == "insert" ? P_FormulaNodes.Insert_Iden : s.op == "remove" ? P_FormulaNodes.Remove_Iden : P_FormulaNodes.Update_Iden;
+            AST<Node> op = s.op == "insert" ? P_FormulaNodes.MkInsertId(s.loc) : s.op == "remove" ? P_FormulaNodes.MkRemoveId(s.loc) : P_FormulaNodes.MkUpdateId(s.loc);
 
-            return wrap(fMkFuncTerm(P_FormulaNodes.DataOp_Iden, op,
-                fMkFuncTerm(P_FormulaNodes.Exprs_Iden, getOne(s.baseE), Factory.Instance.ToAST(((FuncTerm)getOne(s.args).Node).Args.ElementAt(0)))));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkDataOpId(s.loc), s.loc, op,
+                fMkFuncTerm(P_FormulaNodes.MkExprsId(s.loc), s.loc, getOne(s.baseE), Factory.Instance.ToAST(((FuncTerm)getOne(s.args).Node).Args.ElementAt(0)))));
         }
 
         public override IEnumerable<AST<Node>> visit(DSLNewStmt s)
@@ -581,45 +592,45 @@ namespace PParser
 
             if (sym.type == SemanticPass.SYM_EVENT)
             {
-                kind = P_FormulaNodes.EventKind_Iden;
+                kind = P_FormulaNodes.MkEventKindId(e.loc);
                 if (name == SemanticPass.VAR_DEFAULT)
                 {
-                    name = P_FormulaNodes.Default_Iden.Node.Name;
+                    name = P_FormulaNodes.MkDefaultId(e.loc).Node.Name;
                 }
             }
             else if (sym.type == SemanticPass.SYM_STATE)
             {
-                kind = P_FormulaNodes.StateKind_Iden;
+                kind = P_FormulaNodes.MkStateKindId(e.loc);
                 name = sem.resolve(e, name);
             }
             else if (sym.type == SemanticPass.SYM_VAR)
             {
-                kind = P_FormulaNodes.VarKind_Iden;
+                kind = P_FormulaNodes.MkVarKindId(e.loc);
                 name = sem.resolve(e, name);
             }
             else if (sym.type == SemanticPass.SYM_PARAM)
-                kind = P_FormulaNodes.VarKind_Iden;
+                kind = P_FormulaNodes.MkVarKindId(e.loc);
             else if (sym.type == SemanticPass.SYM_BUILTIN_VAR)
             {
                 // We have to handle this, arg, and nondet in a special way for backward compatibility
-                kind = P_FormulaNodes.VarKind_Iden;
+                kind = P_FormulaNodes.MkVarKindId(e.loc);
                 if (e.id == SemanticPass.VAR_CHOICE)
-                    return wrap(P_FormulaNodes.Nondet_Iden);
+                    return wrap(P_FormulaNodes.MkNondetId(e.loc));
 
                 if (e.id == SemanticPass.VAR_THIS)
-                    return wrap(P_FormulaNodes.This_Iden);
+                    return wrap(P_FormulaNodes.MkThisId(e.loc));
 
                 if (e.id == SemanticPass.VAR_TRIGGER)
-                    return wrap(P_FormulaNodes.Trigger_Iden);
+                    return wrap(P_FormulaNodes.MkTriggerId(e.loc));
 
                 if (e.id == SemanticPass.VAR_NULL)
-                    return wrap(P_FormulaNodes.Null_Iden);
+                    return wrap(P_FormulaNodes.MkNullId(e.loc));
 
                 name = e.id;
             }
             else if (sym.type == SemanticPass.SYM_SUBMACHINE)
             {   // This happens when we need to refer to a state in a submachine. (e.g. call(Subm.State);)
-                return wrap(P_FormulaNodes.Nil_Iden); // This will be ignored.
+                return wrap(P_FormulaNodes.MkNilId(e.loc)); // This will be ignored.
             }
             else
             {
@@ -627,13 +638,13 @@ namespace PParser
                 abort();
             }
 
-            return wrap(fMkFuncTerm(P_FormulaNodes.Use_Iden, fMkCnst(name), kind));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkUseId(e.loc), e.loc, fMkCnst(name, e.loc), kind));
         }
 
         public override IEnumerable<AST<Node>> visit(DSLMember e)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.Apply_Iden, P_FormulaNodes.Fld_Iden,
-                fMkExprs(getOne(e.baseExp), fMkFuncTerm(P_FormulaNodes.Use_Iden, fMkCnst(e.member), P_FormulaNodes.FieldKind_Iden))));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkApplyId(e.loc), e.loc, P_FormulaNodes.MkFldId(e.loc),
+                fMkExprs(e.loc, getOne(e.baseExp), fMkFuncTerm(P_FormulaNodes.MkUseId(e.loc), e.loc, fMkCnst(e.member, e.loc), P_FormulaNodes.MkFieldKindId(e.loc)))));
         }
 
         private string dbgAst2Str(AST<Node> n)
@@ -645,20 +656,20 @@ namespace PParser
 
         public override IEnumerable<AST<Node>> visit(DSLIndex e)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.Apply_Iden, P_FormulaNodes.Idx_Iden,
-                fMkExprs(getOne(e.baseExp), getOne(e.indexExp))));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkApplyId(e.loc), e.loc, P_FormulaNodes.MkIdxId(e.loc),
+                fMkExprs(e.loc, getOne(e.baseExp), getOne(e.indexExp))));
         }
         public override IEnumerable<AST<Node>> visit(DSLArg e)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.Payload_Iden, e.type != null ? getOne(e.type) : P_FormulaNodes.Nil_Iden ));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkPayloadId(e.loc), e.loc, e.type != null ? getOne(e.type) : P_FormulaNodes.MkNilId(e.loc)));
         }
         public override IEnumerable<AST<Node>> visit(DSLInt e)
         {
-            return wrap(fMkCnst(e.v));
+            return wrap(fMkCnst(e.v, e.loc));
         }
         public override IEnumerable<AST<Node>> visit(DSLBool e)
         {
-            return wrap(fMkCnst(e.v));
+            return wrap(fMkCnst(e.v, e.loc));
         }
         public override IEnumerable<AST<Node>> visit(DSLFFCall e)
         {
@@ -668,50 +679,54 @@ namespace PParser
             if (e.isExternalCall)
             {
                 string[] names = e.fname.Split(new string[] { "__" }, StringSplitOptions.None);
-                AST<Node> nameList = P_FormulaNodes.Nil_Iden;
+                AST<Node> nameList = P_FormulaNodes.MkNilId(e.loc);
                 for (int i = names.Length - 1; i > 0; i--)
                 {
-                    nameList = fMkFuncTerm(P_FormulaNodes.Strings_Iden, fMkCnst(names[i]), nameList);
+                    nameList = fMkFuncTerm(P_FormulaNodes.MkStringsId(e.loc), e.loc, fMkCnst(names[i], e.loc), nameList);
                 }
-                return wrap(fMkFuncTerm(P_FormulaNodes.Ecall_Iden, nameList, Factory.Instance.ToAST(argsExprs)));
+                return wrap(fMkFuncTerm(P_FormulaNodes.MkEcallId(e.loc), e.loc, nameList, Factory.Instance.ToAST(argsExprs)));
             }
             else
             {
-                return wrap(fMkFuncTerm(P_FormulaNodes.Call_Iden, fMkCnst(sem.resolve(e, e.fname)), Factory.Instance.ToAST(argsExprs)));
+                return wrap(fMkFuncTerm(P_FormulaNodes.MkCallId(e.loc), e.loc, fMkCnst(sem.resolve(e, e.fname), e.loc), Factory.Instance.ToAST(argsExprs)));
             }
         }
         public override IEnumerable<AST<Node>> visit(DSLUnop e)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.Apply_Iden, P_FormulaNodes.OperatorToId[e.op], fMkExprs(getOne(e.e))));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkApplyId(e.loc), e.loc, P_FormulaNodes.OperatorToId[e.op](e.loc), fMkExprs(e.loc, getOne(e.e))));
         }
         public override IEnumerable<AST<Node>> visit(DSLBinop e)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.Apply_Iden, P_FormulaNodes.OperatorToId[e.op], 
-                fMkExprs(getOne(e.e1), getOne(e.e2))));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkApplyId(e.loc), e.loc, P_FormulaNodes.OperatorToId[e.op](e.loc), 
+                fMkExprs(e.loc, getOne(e.e1), getOne(e.e2))));
         }
         public override IEnumerable<AST<Node>> visit(DSLTuple e)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.Tuple_Iden, sequence(e.children.Select(child => getOne(child)), P_FormulaNodes.Exprs_Iden)));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkTupleId(e.loc), e.loc, sequence(e.children.Select(child => getOne(child)), P_FormulaNodes.MkExprsId(e.loc))));
         }
 
         public override IEnumerable<AST<Node>> visit(DSLNamedTuple e)
         {
-            AST<Node> exprList = P_FormulaNodes.Nil_Iden;
+            AST<Node> exprList = P_FormulaNodes.MkNilId(e.loc);
 
             foreach (var field in e.els.Reverse<Tuple<string, IDSLExp>>())
             {
-                exprList = fMkFuncTerm(P_FormulaNodes.NamedExprs_Iden, fMkCnst(field.Item1), getOne(field.Item2), exprList);
+                var loc = field.Item2.loc;
+                exprList = fMkFuncTerm(P_FormulaNodes.MkNamedExprsId(loc), loc, fMkCnst(field.Item1, loc), getOne(field.Item2), exprList);
             }
 
-            return wrap(fMkFuncTerm(P_FormulaNodes.NamedTuple_Iden, exprList));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkNamedTupleId(e.loc), e.loc, exprList));
         }
 
         public override IEnumerable<AST<Node>> visit(DSLKWArgs e)
         {
-            AST<Node> ntuple = P_FormulaNodes.Nil_Iden;
+            AST<Node> ntuple = P_FormulaNodes.MkNilId(e.loc);
 
-            foreach (KeyValuePair<string, IDSLExp> kv in e.els)
-                ntuple = fMkFuncTerm(P_FormulaNodes.NamedTuple_Iden, fMkCnst(kv.Key), getOne(kv.Value), ntuple);
+            foreach (KeyValuePair<string, IDSLExp> kv in e.els)            
+            {
+                var loc = kv.Value.loc;
+                ntuple = fMkFuncTerm(P_FormulaNodes.MkNamedTupleId(loc), loc, fMkCnst(kv.Key, loc), getOne(kv.Value), ntuple);
+            }
 
             return wrap(ntuple);
         }
@@ -723,40 +738,40 @@ namespace PParser
             INode machineDecl = sem.lookup(e, e.machineName).n;
             var machineScope = sem.getScope(machineDecl);
 
-            return wrap(fMkFuncTerm(P_FormulaNodes.New_Iden, fMkCnst(e.machineName), 
-                                    e.arg == null ? P_FormulaNodes.Nil_Iden : getOne(e.arg)));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkNewId(e.loc), e.loc, fMkCnst(e.machineName, e.loc), 
+                                    e.arg == null ? P_FormulaNodes.MkNilId(e.loc) : getOne(e.arg)));
         }
 
         public override IEnumerable<AST<Node>> visit(DSLAttribute e) { return default(IEnumerable<AST<Node>>); }
 
         public override IEnumerable<AST<Node>> visit(DSLSizeof e)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.Apply_Iden, P_FormulaNodes.Sizeof_Iden, sequence(P_FormulaNodes.Exprs_Iden, getOne(e.of))));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkApplyId(e.loc), e.loc, P_FormulaNodes.MkSizeofId(e.loc), sequence(P_FormulaNodes.MkExprsId(e.loc), getOne(e.of))));
         }
 
         public override IEnumerable<AST<Node>> visit(DSLKeys e)
         {
-            return wrap(fMkFuncTerm(P_FormulaNodes.Apply_Iden, P_FormulaNodes.Keys_Iden, sequence(P_FormulaNodes.Exprs_Iden, getOne(e.of))));
+            return wrap(fMkFuncTerm(P_FormulaNodes.MkApplyId(e.loc), e.loc, P_FormulaNodes.MkKeysId(e.loc), sequence(P_FormulaNodes.MkExprsId(e.loc), getOne(e.of))));
         }
         
         // Preorder Visitors. Currently only used to set up Context information such as current Machine/State
         public override IEnumerable<AST<Node>> visit_pre(MachineDeclaration s)
         {
-            curMachine = fMkId(sem.resolve(s, s.id));
+            curMachine = fMkId(sem.resolve(s, s.id), s.loc);
             curMachMaxQSize = -1;
             return default(IEnumerable<AST<Node>>);
         }
 
         public override IEnumerable<AST<Node>> visit_pre(MonitorDeclaration s)
         {
-            curMachine = fMkId(sem.resolve(s, s.id));
+            curMachine = fMkId(sem.resolve(s, s.id), s.loc);
             return default(IEnumerable<AST<Node>>);
         }
 
         public override IEnumerable<AST<Node>> visit_pre(StateDeclaration s)
         {
             curStateName = sem.resolve(s, s.id);
-            curState = fMkId(curStateName);
+            curState = fMkId(curStateName, s.loc);
             return default(IEnumerable<AST<Node>>);
         }
 

@@ -320,6 +320,12 @@ namespace PParser
     {
         LexLocation l;
         internal DSLLoc(LexLocation l) { this.l = l; }
+
+        internal DSLLoc(Microsoft.Formula.API.Span span)
+        {
+            l = new LexLocation(span.StartLine, span.StartCol, span.EndLine, span.EndCol);
+        }
+
         public int startLine {
             get {
                 if (l != null)

@@ -39,6 +39,7 @@ namespace PCompiler
         public const string DeleteEvent = "delete";
 
         public string target;
+        private string domainPath;
         public string outputPath;
         public bool erase;
         public bool kernelMode;
@@ -46,7 +47,6 @@ namespace PCompiler
         public bool emitDebugC;
         public bool eraseFairnessConstraints;
         public AST<Model> model = null;
-        private string domainPath = null;
 
         private int nextOutputId = 0;
 
@@ -93,9 +93,10 @@ namespace PCompiler
             return prefix + '_' + ret;
         }
 
-        public Compiler(string target, string outputPath, bool erase, bool kernelMode, bool emitHeaderComment, bool emitDebugC, bool eraseFairnessConstraints)
+        public Compiler(string target, string domainPath, string outputPath, bool erase, bool kernelMode, bool emitHeaderComment, bool emitDebugC, bool eraseFairnessConstraints)
         {
             this.target = target;
+            this.domainPath = domainPath;
             this.outputPath = outputPath;
             this.erase = erase;
             this.kernelMode = kernelMode;
@@ -245,7 +246,8 @@ namespace PCompiler
         {
             InstallResult result;
             var env = new Env();
-            if (!env.Install(target, out result))
+            var program = Factory.Instance.AddModule(Factory.Instance.MkProgram(new ProgramName("out.4ml")), P2FormulaEntry.Compile(target, domainPath));
+            if (!env.Install(program, out result))
             {
                 return false;
             }
@@ -256,44 +258,9 @@ namespace PCompiler
                 return false;
             }
 
-            ProgramName inputName;
-            try
-            {
-                inputName = new ProgramName(target);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Could not find an input model at {0}: {1}", target, e.Message);
-                return false;
-            }
-
-            try
-            {
-                var outInfo = new System.IO.DirectoryInfo(outputPath);
-                if (!outInfo.Exists)
-                {
-                    Console.WriteLine("The output directory {0} does not exist", outputPath);
-                    return false;
-                }
-
-                outputPath = outInfo.FullName;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Bad output directory: {0}", e.Message);
-                return false;
-            }
-
-            var pDataQuery = new NodePred[]
-            {
-                NodePredFactory.Instance.Star,
-                NodePredFactory.Instance.MkPredicate(NodeKind.Domain) &
-                NodePredFactory.Instance.MkNamePredicate("PData")
-            };
-
             foreach (var p in result.Touched)
             {
-                if (model == null && p.Program.Node.Name.Equals(inputName))
+                if (model == null && p.Program.Node.Name.Equals(new ProgramName("out.4ml")))
                 {
                     CompilingProgram = p.Program.Node.Name;
                     model = p.Program.FindAny(
@@ -303,24 +270,6 @@ namespace PCompiler
                             NodePredFactory.Instance.MkPredicate(NodeKind.Model)
                         }) as AST<Model>;
                 }
-
-                if (domainPath == null &&
-                    p.Program.FindAny(pDataQuery) != null &&
-                    p.Program.Node.Name.IsFileProgramName)
-                {
-                    domainPath = System.IO.Path.GetDirectoryName(p.Program.Node.Name.Uri.LocalPath);
-                }
-            }
-
-            if (model == null)
-            {
-                Console.WriteLine("Could not find an input model at {0}", target);
-                return false;
-            }
-            else if (domainPath == null)
-            {
-                Console.WriteLine("Could not find required data models");
-                return false;
             }
 
             //// Reduced is the compiled AST eliminating quotations (among other things)

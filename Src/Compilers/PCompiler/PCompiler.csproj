@@ -73,6 +73,10 @@
       <Project>{09a73016-0395-4014-8f26-0dd25ed81d12}</Project>
       <Name>ZingParser</Name>
     </ProjectReference>
+    <ProjectReference Include="..\P2Formula\P2Formula.csproj">
+      <Project>{ec26abce-6bdb-4cc6-a6f7-7947784bd167}</Project>
+      <Name>P2Formula</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -1,16 +1,26 @@
-﻿namespace PCompiler 
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
+﻿using System;
+using System.IO;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Reflection;
 
+using Microsoft.Formula.API.ASTQueries;
+using Microsoft.Formula.API.Nodes;
+using Microsoft.Formula.API.Plugins;
+using Microsoft.Formula.Compiler;
+using Microsoft.Formula.API;
+
+namespace PCompiler 
+{
     class CompilerEntry
     {
         static void Main(string[] args)
         {
-            string model = null;
+            string inpFile = null;
+            string domainPath = null;
             string outputPath = null;
             bool erase = true;
             bool kernelMode = false;
@@ -65,15 +75,52 @@
                 }
                 else
                 {
-                    if (model != null)
+                    if (inpFile == null)
+                    {
+                        inpFile = arg;
+                    }
+                    else if (domainPath == null)
+                    {
+                        domainPath = arg;
+                    }
+                    else
+                    {
                         goto error;
-                    model = arg;
+                    }
                 }
             }
-            if (model == null)
+            if (inpFile == null)
                 goto error;
+            if (domainPath == null)
+            {
+                var runningLoc = new FileInfo(Assembly.GetExecutingAssembly().Location);
+                domainPath = runningLoc.Directory.FullName;
+            }
 
-            var comp = new Compiler(model, outputPath != null ? outputPath : Environment.CurrentDirectory, erase, kernelMode, emitHeaderComment, emitDebugC, eraseFairnessConstraints);
+            if (outputPath == null)
+            {
+                outputPath = Environment.CurrentDirectory;
+            }
+            else
+            {
+                try
+                {
+                    var outInfo = new System.IO.DirectoryInfo(outputPath);
+                    if (!outInfo.Exists)
+                    {
+                        Console.WriteLine("The output directory {0} does not exist", outputPath);
+                        goto error;
+                    }
+                    outputPath = outInfo.FullName;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Bad output directory: {0}", e.Message);
+                    goto error;
+                }
+            }
+
+            var comp = new Compiler(inpFile, domainPath, outputPath, erase, kernelMode, emitHeaderComment, emitDebugC, eraseFairnessConstraints);
             var result = comp.Compile();
             if (!result)
             {
@@ -83,7 +130,7 @@
             return;
 
         error:
-            Console.WriteLine("USAGE: pc.exe model.4ml [/doNotErase] [/kernelMode] [/debugC] [/outputDir:path]");
+            Console.WriteLine("USAGE: pcompiler.exe <pFile> <domainPath> [/doNotErase] [/kernelMode] [/debugC] [/outputDir:path]");
         }
     }
 }

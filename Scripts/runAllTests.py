@@ -81,7 +81,6 @@ for f in elaborateFiles(args.files):
     name = os.path.splitext(os.path.basename(f))[0]
     print("================= TEST: " + f + "=================");
     pFile = join(out, name + ".p")
-    fmlFile = join(out, name + ".4ml")
     zingFile = "output.zing"
     zingDll = name + ".dll"
     zcOut = join(out, "zc.out")
@@ -123,8 +122,8 @@ for f in elaborateFiles(args.files):
     if not (ret == 0 and zingerSucceeded(cat(zingerOut))) and not args.fail:
         die("Zingering of Zing model failed:\n" + cat(zingerOut))
 
-    mainM = search("MainDecl\(New\(\"([^\"]*)\"", \
-        open(fmlFile).read()).groups()[0]
+    mainM = search("main machine ([\w]*)", \
+        open(pFile).read()).groups()[0]
 
     print(fmt("Main machine is {mainM}"))
     print("Generating VS project...")

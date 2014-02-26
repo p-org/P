@@ -20,10 +20,9 @@ def generateVSProject(tdir, name, sm_headers, sm_libs, entryM, generateStubs, Ti
         m = machRe.search(l);
         if (m):
             machines.append(m.groups()[0]);
-
     if (entryM not in machines):
         error("Can't find entry machine " + entryM + \
-            ", and model doesnt have exactly 1 mahcine");
+            ", and model doesnt have exactly 1 machine");
 
     filtersTmpl = """<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">

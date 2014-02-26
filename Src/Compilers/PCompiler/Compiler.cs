@@ -38,7 +38,7 @@ namespace PCompiler
         public const string DefaultEvent = "default";
         public const string DeleteEvent = "delete";
 
-        public string target;
+        public string inpFile;
         private string domainPath;
         public string outputPath;
         public bool erase;
@@ -93,9 +93,9 @@ namespace PCompiler
             return prefix + '_' + ret;
         }
 
-        public Compiler(string target, string domainPath, string outputPath, bool erase, bool kernelMode, bool emitHeaderComment, bool emitDebugC, bool eraseFairnessConstraints)
+        public Compiler(string inpFile, string domainPath, string outputPath, bool erase, bool kernelMode, bool emitHeaderComment, bool emitDebugC, bool eraseFairnessConstraints)
         {
-            this.target = target;
+            this.inpFile = inpFile;
             this.domainPath = domainPath;
             this.outputPath = outputPath;
             this.erase = erase;
@@ -246,7 +246,7 @@ namespace PCompiler
         {
             InstallResult result;
             var env = new Env();
-            var program = Factory.Instance.AddModule(Factory.Instance.MkProgram(new ProgramName("out.4ml")), P2FormulaEntry.Compile(target, domainPath));
+            var program = Factory.Instance.AddModule(Factory.Instance.MkProgram(new ProgramName("out.4ml")), P2FormulaEntry.Compile(inpFile, domainPath));
             if (!env.Install(program, out result))
             {
                 return false;
@@ -276,7 +276,7 @@ namespace PCompiler
             AST<Node> reduced;
             if (!Microsoft.Formula.Compiler.Compiler.TryGetReducedForm(model, out reduced))
             {
-                Console.WriteLine("Unable to compile input model at {0}", target);
+                Console.WriteLine("Unable to compile input model at {0}", inpFile);
                 return false;
             }
 

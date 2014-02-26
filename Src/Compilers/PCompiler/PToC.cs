@@ -436,7 +436,7 @@ namespace PCompiler
                 string.Format(headerCmt,
                               "PublicEnumTypes.h",
                               "This file contains enumerated types for events, machines, and variables.",
-                              compiler.target,
+                              compiler.inpFile,
                               DateTime.Today.Date.ToShortDateString(),
                               compiler.kernelMode ? "Kernel mode" : "User mode");
             var pblEnmTypes = MkCFile(
@@ -571,7 +571,7 @@ namespace PCompiler
                 string.Format(headerCmt,
                               "ProtectedEnumTypes.h",
                               "This file contains enumerated types for states and event sets.",
-                              compiler.target,
+                              compiler.inpFile,
                               DateTime.Today.Date.ToShortDateString(),
                               compiler.kernelMode ? "Kernel mode" : "User mode");
             var prtEnmTypes = MkCFile(
@@ -614,7 +614,7 @@ namespace PCompiler
                               "ProtectedMachineDecls.h",
                               @"This file contains headers for entry functions, exit functions, action functions, and constructors; 
     it also contains tables for event sets, transitions, actions, states, and variables.",
-                              compiler.target,
+                              compiler.inpFile,
                               DateTime.Today.Date.ToShortDateString(),
                               compiler.kernelMode ? "Kernel mode" : "User mode");
             var prtMachDecls = MkCFile(
@@ -641,7 +641,7 @@ namespace PCompiler
                 string.Format(headerCmt,
                               "FunctionPrototypes.h",
                               "This file contains headers for functions.",
-                              compiler.target,
+                              compiler.inpFile,
                               DateTime.Today.Date.ToShortDateString(),
                               compiler.kernelMode ? "Kernel mode" : "User mode");
             var functionPrototypes = MkCFile(
@@ -658,7 +658,7 @@ namespace PCompiler
                 string.Format(headerCmt,
                               "EntryFunctions.c",
                               "This file contains definitions for entry functions, exit functions, action functions, and declared functions.",
-                              compiler.target,
+                              compiler.inpFile,
                               DateTime.Today.Date.ToShortDateString(),
                               compiler.kernelMode ? "Kernel mode" : "User mode");
             var entryAndExitFns = MkCFile(
@@ -682,7 +682,7 @@ namespace PCompiler
                 string.Format(headerCmt,
                               "ProtectedDriverDecl.h",
                               "This file contains tables for events, machines, and driver.",
-                              compiler.target,
+                              compiler.inpFile,
                               DateTime.Today.Date.ToShortDateString(),
                               compiler.kernelMode ? "Kernel mode" : "User mode");
             var driverDecl = MkCFile(
@@ -708,7 +708,7 @@ namespace PCompiler
                 string.Format(headerCmt,
                               driverName,
                               "This file contains the extern driver declaration.",
-                              compiler.target,
+                              compiler.inpFile,
                               DateTime.Today.Date.ToShortDateString(),
                               compiler.kernelMode ? "Kernel mode" : "User mode");
             var driver = MkCFile(

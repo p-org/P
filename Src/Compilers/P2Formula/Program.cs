@@ -216,7 +216,9 @@ namespace PCompiler
 
 
             PParser.PFormulaBuilder builder = new PParser.PFormulaBuilder(sem, "PData", domainPath + "\\PData.4ml");
-            var r = builder.build(parser.program, "Dummy");
+            var inpFileWithoutDir = System.IO.Path.GetFileName(inpFile);
+            var modelName = inpFileWithoutDir.EndsWith(".p") ? inpFileWithoutDir.Substring(0, inpFileWithoutDir.Length - 2) : inpFileWithoutDir;
+            var r = builder.build(parser.program, modelName);
             if (builder.errors.Count > 0)
             {
                 foreach (PParser.BuilderError err in builder.errors)

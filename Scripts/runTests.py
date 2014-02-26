@@ -25,13 +25,12 @@ baseDir = realpath(join(scriptDir, ".."));
 
 zc=join(baseDir, "Ext", "Zing", "zc");
 zinger=join(baseDir, "Ext", "Zing", "Zinger");
-p2f=join(baseDir, "Src", "Compilers", "P2Formula", "bin", "Debug", "P2Formula");
 pc=join(baseDir, "Src", "Compilers", "PCompiler", "bin", "Debug", "PCompiler");
 
 zingRT=join(baseDir, "Runtime", "Zing", "SMRuntime.zing");
 cInclude=join(baseDir, "Runtime", "Include");
 cLib=join(baseDir, "Runtime", "Libraries");
-pData=relpath(join(baseDir, "Src", "Formula", "Domains", "PData.4ml"), out);
+pData=join(baseDir, "Src", "Formula", "Domains");
 
 stateCoverage=join(baseDir, "Ext", "Zing", "StateCoveragePlugin.dll");
 sched=join(baseDir, "Ext", "Zing", "RandomDelayingScheduler.dll")
@@ -91,16 +90,8 @@ for f in elaborateFiles(args.files):
 
     shutil.copy(f, pFile);
 
-    print("Running P2Formula")
-    ret = os.system(fmt("{p2f} {pFile} {fmlFile} {pData} /modelName:{name}"))
-    if ret != 0:
-        if (args.fail):
-            continue;
-
-        die("P2Formula failed.")
-
-    print("Running pc")
-    ret = os.system(fmt("{pc} /doNotErase {fmlFile} /outputDir:{out}"))
+    print("Running PCompiler")
+    ret = os.system(fmt("{pc} /doNotErase {pFile} {pData} /outputDir:{out}"))
 
     if ret != 0:
         if (args.fail):

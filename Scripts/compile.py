@@ -38,7 +38,6 @@ baseDir = realpath(join(scriptDir, ".."))
 
 zc=join(baseDir, "Ext", "Zing", "zc")
 zinger=join(baseDir, "Ext", "Zing", "Zinger")
-p2f=join(baseDir, "Src", "Compilers", "P2Formula", "bin", "Debug", "P2Formula")
 pc=join(baseDir, "Src", "Compilers", "PCompiler", "bin", "Debug", "PCompiler")
 
 stateCoverage=join(baseDir, "Ext", "Zing", "StateCoveragePlugin.dll")
@@ -49,7 +48,7 @@ pFile = args.input
 out=args.output
 name = os.path.splitext(os.path.basename(pFile))[0]
 
-pData=relpath(join(baseDir, "Src", "Formula", "Domains", "PData.4ml"), out)
+pData=join(baseDir, "Src", "Formula", "Domains")
 zingRT=join(baseDir, "Runtime", "Zing", "SMRuntime.zing")
 cInclude=relpath(join(baseDir, "Runtime", "Include"), out)
 cLib=relpath(join(baseDir, "Runtime", "Libraries"), out)
@@ -65,11 +64,8 @@ def dumpOutput(s):
         print(l)
 
 try:
-    print("Running P2Formula")
-    check_output([p2f, pFile, fmlFile, pData, '/modelName:' + name]);
-
-    print("Running pc")
-    check_output([pc, '/doNotErase', fmlFile, '/outputDir:' + out])
+    print("Running PCompiler")
+    check_output([pc, '/doNotErase', pFile, pData, '/outputDir:' + out])
 
     if (args.zc):
         print("Running zc")

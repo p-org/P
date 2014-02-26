@@ -26,7 +26,6 @@ namespace PlangBuild
         /// </summary>
         private static readonly Tuple<bool, string, string>[] Projects = new Tuple<bool, string, string>[]
         {
-            new Tuple<bool, string, string>(false, "..\\..\\..\\..\\..\\Src\\Compilers\\P2Formula\\P2Formula.csproj", PlatformAny),
             new Tuple<bool, string, string>(false, "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\PCompiler.csproj", PlatformAny),
         };
         
@@ -114,8 +113,8 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Formula\\Domains\\CData.4ml", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\CData.4ml"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Compilers\\P2Formula\\bin\\Debug\\P2Formula.exe", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\P2Formula.exe"),
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Debug\\P2Formula.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\P2Formula.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Debug\\PCompiler.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\PCompiler.exe"),
@@ -214,8 +213,8 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Formula\\Domains\\CData.4ml", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\CData.4ml"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Compilers\\P2Formula\\bin\\Release\\P2Formula.exe", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\P2Formula.exe"),
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Release\\P2Formula.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\P2Formula.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Release\\PCompiler.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\PCompiler.exe"),

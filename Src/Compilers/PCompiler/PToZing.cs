@@ -3349,7 +3349,7 @@ namespace PCompiler
                     return new ZingTranslationInfo(res, new PNilType());
                 }
             }
-            else if (funName == PData.Con_TypeTuple.Node.Name || funName == PData.Con_TypeNamedTuple.Node.Name)
+            else if (funName == PData.Con_TypeTuple.Node.Name || funName == PData.Con_TypeNamedTuple.Node.Name || funName == PData.Con_TypeSeq.Node.Name || funName == PData.Con_TypeMap.Node.Name)
             {
                 return new ZingTranslationInfo(null, new PNilType()); // Ignore
             }

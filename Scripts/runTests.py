@@ -78,7 +78,6 @@ for f in elaborateFiles(args.files):
     name = os.path.splitext(os.path.basename(f))[0]
     print("================= TEST: " + f + "=================");
     pFile = join(out, name + ".p")
-    fmlFile = join(out, name + ".4ml")
     zingFile = "output.zing"
     zingDll = name + ".dll"
     zcOut = join(out, "zc.out")

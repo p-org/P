@@ -53,7 +53,6 @@ zingRT=join(baseDir, "Runtime", "Zing", "SMRuntime.zing")
 cInclude=relpath(join(baseDir, "Runtime", "Include"), out)
 cLib=relpath(join(baseDir, "Runtime", "Libraries"), out)
 
-fmlFile = join(out, name + ".4ml")
 zingFile = "output.zing"
 zingDll = name + ".dll"
 proj = join(out, name + ".vcxproj")
@@ -75,8 +74,8 @@ try:
         os.remove(join(out, "SMRuntime.zing"));
 
     if (args.proj):
-        mainM = re.search("MainDecl\(New\(\"([^\"]*)\"", \
-            open(fmlFile).read()).groups()[0]
+        mainM = re.search("main machine ([\w]*)", \
+                          open(pFile).read()).groups()[0]
 
         print("Main machine is " + mainM)
         print("Generating VS project...")

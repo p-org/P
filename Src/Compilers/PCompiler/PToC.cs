@@ -2396,13 +2396,14 @@ namespace PCompiler
                 foreach (var s in sideEffects) ctxt.addSideEffect(s);
                 return tmpVar;
             }
-            else if (t is PAnyType)
+            else if (t is PAnyType || t is PSeqType || t is PMapType)
             {
                 var tmpVar = ctxt.getTmpVar(t, false);
                 ctxt.addSideEffect(MkFunApp(getCBuildDefName(t), default(Span), ctxt.driver, MkAddrOf(tmpVar)));
                 return tmpVar;
             }
-            throw new NotImplementedException("Can't get Unknown type: " + t);
+            else
+                throw new NotImplementedException("Can't get Unknown type: " + t);
         }
 
         private AST<Node> GetCTypeSize(PType t)
@@ -3855,6 +3856,8 @@ Environment:
             }
             else if (funName == PData.Con_TypeTuple.Node.Name ||
                 funName == PData.Con_TypeNamedTuple.Node.Name ||
+                funName == PData.Con_TypeSeq.Node.Name ||
+                funName == PData.Con_TypeMap.Node.Name ||
                 funName == PData.Con_TypeField.Node.Name)
             {
                 return new CTranslationInfo(CData.Cnst_Nil(n.Span));

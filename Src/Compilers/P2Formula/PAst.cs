@@ -552,16 +552,14 @@ namespace PParser
     {
         public string id;
         public bool isMain;
-        public bool isFair;
         public string type;
         public IEnumerable<IMachineBodyItem> body;
 
-        public MachineDeclaration(string id, bool main, bool fair, string type, IEnumerable<IMachineBodyItem> body)
+        public MachineDeclaration(string id, bool main, string type, IEnumerable<IMachineBodyItem> body)
             : base(body)
         {
             this.id = id;
             this.isMain = main;
-            this.isFair = fair;
             this.type = type;
             this.body = body;
         }
@@ -711,11 +709,9 @@ namespace PParser
     }
 
     public sealed class Transition : BaseTransition {
-        public bool isFair;
         public DSLBlock block;
-        public Transition(List<string> on, string target, bool isFair, DSLBlock block) : base(on, target, block) 
+        public Transition(List<string> on, string target, DSLBlock block) : base(on, target, block) 
         { 
-            this.isFair = isFair;
             this.block = block;
         }
     }

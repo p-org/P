@@ -70,7 +70,6 @@ NonSMCntrChars  [^\'\"\n\r]*
 "false"									   { return (int)PTokens.FALSE;  }
 "sizeof"								   { return (int)PTokens.SIZEOF; }
 "keys"									   { return (int)PTokens.KEYS; }
-"fair"									   { return (int)PTokens.FAIR; }
 
 "assert"								   { return (int)PTokens.ASSERT;  }
 "send"									   { return (int)PTokens.SEND;  }
@@ -143,6 +142,8 @@ NonSMCntrChars  [^\'\"\n\r]*
 [!]										   { return (int)PTokens.LNOT;   }
 "&&"									   { return (int)PTokens.LAND;   }
 "||"									   { return (int)PTokens.LOR;   }
+
+"**"									   { return (int)PTokens.FAIRNONDET; }
 
 [{]                                        { return (int)PTokens.LCBRACE; }
 [}]                                        { return (int)PTokens.RCBRACE; }

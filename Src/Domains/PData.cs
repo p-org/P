@@ -24,6 +24,7 @@
         public static readonly AST<Id> Cnst_This = Factory.Instance.MkId("THIS");
         public static readonly AST<Id> Cnst_Trigger = Factory.Instance.MkId("TRIGGER");
         public static readonly AST<Id> Cnst_Nondet = Factory.Instance.MkId("NONDET");
+        public static readonly AST<Id> Cnst_FairNondet = Factory.Instance.MkId("FAIRNONDET");
         public static readonly AST<Id> Cnst_True = Factory.Instance.MkId("TRUE");
         public static readonly AST<Id> Cnst_False = Factory.Instance.MkId("FALSE");
         public static readonly AST<Id> Cnst_Delete = Factory.Instance.MkId("DELETE");
@@ -120,7 +121,6 @@
 
         public static readonly AST<Id> Con_Flags = Factory.Instance.MkId("Flags");
         public static readonly AST<Id> Con_File = Factory.Instance.MkId("File");
-        public static readonly AST<Id> Con_Fair = Factory.Instance.MkId("Fair");
         public static readonly AST<Id> Con_Stable = Factory.Instance.MkId("Stable");
 
         /// <summary>

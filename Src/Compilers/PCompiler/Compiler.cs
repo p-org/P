@@ -45,7 +45,8 @@ namespace PCompiler
         public bool kernelMode;
         public bool emitHeaderComment;
         public bool emitDebugC;
-        public bool eraseFairnessConstraints;
+        public bool liveness;
+        public bool existsInfinitelyOftenMonitor = false;
         public AST<Model> model = null;
 
         private int nextOutputId = 0;
@@ -93,7 +94,7 @@ namespace PCompiler
             return prefix + '_' + ret;
         }
 
-        public Compiler(string inpFile, string domainPath, string outputPath, bool erase, bool kernelMode, bool emitHeaderComment, bool emitDebugC, bool eraseFairnessConstraints)
+        public Compiler(string inpFile, string domainPath, string outputPath, bool erase, bool kernelMode, bool emitHeaderComment, bool emitDebugC, bool liveness)
         {
             this.inpFile = inpFile;
             this.domainPath = domainPath;
@@ -102,7 +103,7 @@ namespace PCompiler
             this.kernelMode = kernelMode;
             this.emitHeaderComment = emitHeaderComment;
             this.emitDebugC = emitDebugC;
-            this.eraseFairnessConstraints = eraseFairnessConstraints;
+            this.liveness = liveness;
 
             this.modelAliases = new MyDictionary<string, AST<FuncTerm>>();
             this.factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
@@ -789,7 +790,7 @@ namespace PCompiler
                 }
             }
 
-            if (!eraseFairnessConstraints)
+            if (liveness)
             {
                 terms = GetBin("Stable");
                 foreach (var term in terms)
@@ -804,36 +805,38 @@ namespace PCompiler
                     }
                 }
 
-                terms = GetBin("Fair");
-                foreach (var term in terms)
+                foreach (var machineName in allMachines.Keys)
                 {
-                    FuncTerm decl;
-                    using (var it = term.Node.Args.GetEnumerator())
+                    if (!allMachines[machineName].IsSpec) continue;
+                    var machineInfo = allMachines[machineName];
+                    HashSet<string> visitedStates = new HashSet<string>();
+                    Stack<string> dfsStack = new Stack<string>();
+                    foreach (var stateName in machineInfo.stateNameToStateInfo.Keys)
                     {
-                        it.MoveNext();
-                        decl = GetFuncTerm(it.Current);
-                    }
-                    if ((decl.Function as Id).Name == "TransDecl")
-                    {
-                        using (var it = decl.Args.GetEnumerator())
+                        if (!machineInfo.stateNameToStateInfo[stateName].isStable) continue;
+                        dfsStack.Push(stateName);
+                        while (dfsStack.Count > 0)
                         {
-                            it.MoveNext();
-                            var stateDecl = GetFuncTerm(it.Current);
-                            var stateName = GetName(stateDecl, 0);
-                            var stateOwnerMachineName = GetMachineName(stateDecl, 1);
-                            var stateTable = allMachines[stateOwnerMachineName].stateNameToStateInfo[stateName];
-                            it.MoveNext();
-                            string eventName;
-                            PType eventArgTypeName;
-                            GetEventInfo(it.Current, out eventName, out eventArgTypeName);
-                            stateTable.transitions[eventName].isFair = true;
+                            var curState = dfsStack.Pop();
+                            var curStateInfo = machineInfo.stateNameToStateInfo[curState];
+                            foreach (var e in curStateInfo.transitions.Keys)
+                            {
+                                var nextState = curStateInfo.transitions[e].target;
+                                if (visitedStates.Contains(nextState)) continue;
+                                visitedStates.Add(nextState);
+                                dfsStack.Push(nextState);
+                            }
                         }
                     }
-                    else
+                    foreach (var stateName in visitedStates)
                     {
-                        var machineName = GetName(decl, 0);
-                        allMachines[machineName].isFair = true;
+                        if (machineInfo.stateNameToStateInfo[stateName].isStable)
+                        {
+                            existsInfinitelyOftenMonitor = true;
+                            break;
+                        }
                     }
+                    if (existsInfinitelyOftenMonitor) break;
                 }
             }
 
@@ -929,11 +932,7 @@ namespace PCompiler
 
                 bool unsetMachine = false, unsetState = false;
 
-                if (Compiler.isInstanceOf(inner, PData.Con_Fair))
-                {
-                    yield return null;
-                }
-                else if (Compiler.isInstanceOf(inner, PData.Con_Stable))
+                if (Compiler.isInstanceOf(inner, PData.Con_Stable))
                 {
                     yield return null;
                 }

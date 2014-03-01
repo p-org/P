@@ -294,10 +294,6 @@ namespace PParser
                                                                 fMkCnst(s.id, s.loc),
                                                                 P_FormulaNodes.MkNilId(s.loc))), s.loc));
             }
-            if (s.isFair)
-            {
-                mTerms.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkFairId(s.loc), s.loc, fMkId(machineName, s.loc)), s.loc));
-            }
 
             // Generate Machine Ignore Statement. It would be nice to do this optionally if the machine has any ignores.
             var machScope = sem.getScope(s);
@@ -475,10 +471,6 @@ namespace PParser
             {
                 var ft = fMkFuncTerm(P_FormulaNodes.MkTransDeclId(s.loc), s.loc, curState, translateEvt(ev, s.loc), fMkId(sem.resolve(s, s.targetState), s.loc), fMkCnst(false, s.loc));
                 ret.Add(fMkModelFact(ft, s.loc));
-                if (s.isFair)
-                {
-                    ret.Add(fMkModelFact(fMkFuncTerm(P_FormulaNodes.MkFairId(s.loc), s.loc, ft), s.loc));
-                }
             }
             return ret;
             //return s.on.Select(ev => fMkModelFact(fMkFuncTerm(P_FormulaNodes.TransDecl_Iden, curState, translateEvt(ev), fMkId(sem.resolve(s, s.targetState)), fMkCnst(false))));
@@ -617,6 +609,9 @@ namespace PParser
                 if (e.id == SemanticPass.VAR_CHOICE)
                     return wrap(P_FormulaNodes.MkNondetId(e.loc));
 
+                if (e.id == SemanticPass.VAR_FAIRCHOICE)
+                    return wrap(P_FormulaNodes.MkFairNondetId(e.loc));
+                
                 if (e.id == SemanticPass.VAR_THIS)
                     return wrap(P_FormulaNodes.MkThisId(e.loc));
 

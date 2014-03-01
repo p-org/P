@@ -29,7 +29,7 @@ domain FuncData
     NamedTuple ::= new (body: any NamedExprs).
     Sequence ::= new (body: any Exprs).
     Map    ::= new (body: any Exprs).
-    Expr   ::= Use + Tuple + NamedTuple + Map + Sequence + New + Call + Apply + Payload + Integer + Boolean + { THIS, TRIGGER, NONDET, NULL }.
+    Expr   ::= Use + Tuple + NamedTuple + Map + Sequence + New + Call + Apply + Payload + Integer + Boolean + { THIS, TRIGGER, NONDET, FAIRNONDET, NULL }.
     
     //// Statements
     DataOp ::= new (op: { UPDATE, INSERT, REMOVE }, args: any Exprs).
@@ -67,6 +67,8 @@ domain PData extends FuncData
                        entryFun: any Stmt, 
                        defers: EventSetDecl + { NIL }).
 
+    Repeat ::= fun (state: StateDecl, events: Strings + NIL).
+
     Stable  ::= new (state: StateDecl).
 
     ExitFun ::= fun (state: StateDecl -> exitFun: any Stmt).
@@ -77,8 +79,6 @@ domain PData extends FuncData
     
     TransDecl ::= fun (src: StateDecl, trig: EventDecl + { DEFAULT } -> dst: StateDecl, isPush: Boolean).
 
-    Fair    ::= new (MachineDecl + TransDecl).
-    
     FunDecl ::= fun (name: String,
                      owner: MachineDecl ->
                      params: any Params + { NIL }, 

@@ -151,6 +151,7 @@ namespace PParser
         public const string VAR_TRIGGER = "trigger";
         public const string VAR_DEFAULT = "default";
         public const string VAR_CHOICE = "*";
+        public const string VAR_FAIRCHOICE = "**";
         public const string VAR_NULL = "null";
         public const string VAR_IGNORE_ACTION = "ignore";
 
@@ -218,6 +219,7 @@ namespace PParser
             
             // Define global built in symbols (e.g. non-det choice)
             global.define(VAR_CHOICE, SYM_BUILTIN_VAR, new DSLLoc(null), null);
+            global.define(VAR_FAIRCHOICE, SYM_BUILTIN_VAR, new DSLLoc(null), null);
             global.define("null", SYM_BUILTIN_VAR, new DSLLoc(null), null);
 
             walk(p);

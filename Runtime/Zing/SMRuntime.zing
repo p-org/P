@@ -130,7 +130,7 @@ class SM_HANDLE {
 	            currentEvent = Main.default_SM_EVENT;
 				blocked = false;
 				FairScheduler.AtYieldStatic(this);
-				FairTransition.AtYieldOrChooseStatic();
+				FairChoice.AtYieldOrChooseStatic();
 				yield;
 			} 
 			else 
@@ -139,7 +139,7 @@ class SM_HANDLE {
 				assume (!blocked);
 				if (stable) { blocked = true; }
 				FairScheduler.AtYieldStatic(this);
-				FairTransition.AtYieldOrChooseStatic();
+				FairChoice.AtYieldOrChooseStatic();
 				yield;
 			}
         }
@@ -384,115 +384,99 @@ class Continuation {
 };
 
 // Add an instance of FairScheduler per running P machine.
-// Add an instance of FairTransition per running P machine and fair state in that machine.
-// Invoke FairScheduler.AtYield and FairTransition.AtYieldOrChoose at each yield.
-// Invoke FairScheduler.AtChoose and FairTransition.AtYieldOrChoose at each choose.
-// Inovke FairTransitionObject.EnterFairState on entering fair state.
-// Invoke FairTransitionObject.ExitFairTransition on exiting via fair transition.
+// Add an instance of FairChoice per running P machine and fair choice in that machine.
+// Invoke FairScheduler.AtYieldStatic and FairChoice.AtYieldOrChooseStatic at each yield.
+// Invoke FairScheduler.AtChooseStatic and FairChoice.AtYieldOrChooseStatic at each choose.
 set FairSchedulers FairScheduler;
 class FairScheduler {      
-	SM_HANDLE handle;
+    SM_HANDLE handle;
     static bool noYieldFromNowOn = false;
 
     static void Init(FairScheduler fs, SM_HANDLE h) {
-		fs.handle = h;
+	fs.handle = h;
+	all = all + fs;
     }
 
     void AtYield(SM_HANDLE running) {
 		assume (!noYieldFromNowOn);
 		if (running == handle || handle.blocked) {
-			FairScheduler.Accept(this);
+		   FairScheduler.accepted = FairScheduler.accepted + this;
+		   FairCycle.Accept();
 		}
-	}
+    }
 
     void AtChoose() {
 	    if (!noYieldFromNowOn) {
 			noYieldFromNowOn = choose(bool);
 		}
 		if (noYieldFromNowOn) {
-      		FairScheduler.Accept(this);
+		   FairScheduler.accepted = FairScheduler.accepted + this;
+		   FairCycle.Accept();
 		}
     }
 
     static FairSchedulers all = new FairSchedulers;
     static FairSchedulers accepted = new FairSchedulers;
 
-    static void Add(FairScheduler m) {
-		all = all + m;
-    }
-
-    static void Accept(FairScheduler m) {
-		FairScheduler.accepted = FairScheduler.accepted + m;
-		if (sizeof(FairTransition.accepted) == sizeof(FairTransition.all) && 
-			sizeof(FairScheduler.accepted) == sizeof(FairScheduler.all)) 
-		{
-			trace("Accepting transition");
-			accept(true);
-      	    FairTransition.accepted = new FairTransitions;
-			FairScheduler.accepted = new FairSchedulers;
-		}	
-    }
-
     static void AtYieldStatic(SM_HANDLE running) {
-		foreach (FairScheduler m in all) {
-			m.AtYield(running);
-		}
+	foreach (FairScheduler m in all) {
+		m.AtYield(running);
+	}
     }
 
     static void AtChooseStatic() {
-		foreach (FairScheduler m in all) {
-			m.AtChoose();
-		}
+	foreach (FairScheduler m in all) {
+		m.AtChoose();
+	}
     }
 };
 
-set FairTransitions FairTransition;
-class FairTransition {
-	bool noFairStateFromNowOn;
+set FairChoices FairChoice;
+class FairChoice {
+    bool lastChoice;
 
-    static void Init(FairTransition fs) {
-		fs.noFairStateFromNowOn = false;
+    static void Init(FairChoice fs) {
+	fs.lastChoice = false;
+	all = all + fs;
     }
 
     void AtYieldOrChoose() {
-		if (!noFairStateFromNowOn) {
-      		noFairStateFromNowOn = choose(bool);
-		}
-      	if (noFairStateFromNowOn) {
-      		FairTransition.Accept(this);
-		}
+        bool b;
+	b = choose(bool);
+      	if (b) {
+	    FairChoice.all = FairChoice.all - this;
+	}
+    }
+    
+    void AtChoose(bool b) {
+        assume (this in FairChoice.all);
+        if (b != lastChoice) {
+	    lastChoice = b;
+	    FairChoice.accepted = FairChoice.accepted + this;
+	    FairCycle.Accept();
+	}
     }
 
-    void EnterFairState() {
-		assume (!noFairStateFromNowOn);
-    }
-
-    void ExitFairTransition() {
-		FairTransition.Accept(this);
-    }
-
-    static FairTransitions all = new FairTransitions;
-    static FairTransitions accepted = new FairTransitions;
-
-    static void Add(FairTransition m) {
-		all = all + m;
-    }
-
-    static void Accept(FairTransition m) {
-		FairTransition.accepted = FairTransition.accepted + m;
-		if (sizeof(FairTransition.accepted) == sizeof(FairTransition.all) && 
-			sizeof(FairScheduler.accepted) == sizeof(FairScheduler.all)) 
-		{
-			trace("Accepting transition");
-			accept(true);
-      	    FairTransition.accepted = new FairTransitions;
-			FairScheduler.accepted = new FairSchedulers;
-		}
-    }
+    static FairChoices all = new FairChoices;
+    static FairChoices accepted = new FairChoices;
 
     static void AtYieldOrChooseStatic() {
-		foreach (FairTransition m in all) {
-			m.AtYieldOrChoose();
-		}
+	foreach (FairChoice m in all) {
+	    m.AtYieldOrChoose();
+	}
+    }
+};
+
+class FairCycle {
+    static bool gate = true;
+    static void Accept() {
+        if (sizeof(FairChoice.accepted) == sizeof(FairChoice.all) && 
+       	    sizeof(FairScheduler.accepted) == sizeof(FairScheduler.all))
+	{
+	    trace("Accepting transition");
+	    accept(true);
+      	    FairChoice.accepted = new FairChoices;
+	    FairScheduler.accepted = new FairSchedulers;
+	}	
     }
 };

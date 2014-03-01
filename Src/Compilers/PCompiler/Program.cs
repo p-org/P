@@ -26,7 +26,7 @@ namespace PCompiler
             bool kernelMode = false;
             bool emitHeaderComment = false;
             bool emitDebugC = false;
-            bool eraseFairnessConstraints = false;
+            bool liveness = false;
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -66,8 +66,8 @@ namespace PCompiler
                                 goto error;
                             emitHeaderComment = true;
                             break;
-                        case "/eraseFairnessConstraints":
-                            eraseFairnessConstraints = true;
+                        case "/liveness":
+                            liveness = true;
                             break;
                         default:
                             goto error;
@@ -120,7 +120,7 @@ namespace PCompiler
                 }
             }
 
-            var comp = new Compiler(inpFile, domainPath, outputPath, erase, kernelMode, emitHeaderComment, emitDebugC, eraseFairnessConstraints);
+            var comp = new Compiler(inpFile, domainPath, outputPath, erase, kernelMode, emitHeaderComment, emitDebugC, liveness);
             var result = comp.Compile();
             if (!result)
             {
@@ -130,7 +130,7 @@ namespace PCompiler
             return;
 
         error:
-            Console.WriteLine("USAGE: pcompiler.exe <pFile> <domainPath> [/doNotErase] [/kernelMode] [/debugC] [/outputDir:path]");
+            Console.WriteLine("USAGE: pcompiler.exe <pFile> <domainPath> [/doNotErase] [/kernelMode] [/debugC] [/liveness] [/outputDir:path]");
         }
     }
 }

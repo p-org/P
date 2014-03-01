@@ -216,11 +216,6 @@ namespace PParser
             return Factory.Instance.MkId("DataOp", loc.ToSpan());
         }
 
-        public static AST<Id> MkFairId(DSLLoc loc)
-        {
-            return Factory.Instance.MkId("Fair", loc.ToSpan());
-        }
-
         public static AST<Id> MkInsertId(DSLLoc loc)
         {
             return Factory.Instance.MkId("INSERT", loc.ToSpan());
@@ -388,6 +383,11 @@ namespace PParser
         public static AST<Id> MkNondetId(DSLLoc loc)
         {
             return Factory.Instance.MkId("NONDET", loc.ToSpan());
+        }
+
+        public static AST<Id> MkFairNondetId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("FAIRNONDET", loc.ToSpan());
         }
 
         public static AST<Id> MkThisId(DSLLoc loc)

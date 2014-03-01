@@ -38,7 +38,7 @@
 
 %token ASSIGN
 %token EQ NE LT GT LE GE IN
-%left LAND LNOT LOR
+%left LAND LNOT LOR FAIRNONDET
 
 %token DOT COLON COMMA
 %left  SEMICOLON
@@ -167,7 +167,7 @@ TypeOrNull
 
 // --------------------  Machine Declarations --------------------
 MachineDecl
-	: IsMain IsFair ModelOrReal MACHINE ID LCBRACE MachineBody RCBRACE	{ $$.node = new MachineDeclaration($5.s, $1.b, $2.b, $3.s, Cast<INode, IMachineBodyItem>.list($7.lst)); setLoc($$.node, @1, @8);}
+	: IsMain ModelOrReal MACHINE ID LCBRACE MachineBody RCBRACE	{ $$.node = new MachineDeclaration($4.s, $1.b, $2.s, Cast<INode, IMachineBodyItem>.list($6.lst)); setLoc($$.node, @1, @7);}
 	;
 
 MonitorDecl
@@ -297,11 +297,6 @@ EventID
 	| DEFAULT
 	;
 
-IsFair
-	: FAIR														{ $$.b = true; }
-	|															{ $$.b = false; }
-	;
-
 StmtBlockOrNull
 	: StmtBlock																	{ $$.stmt = $1.stmt; }
 	|																			{ $$.stmt = null; }
@@ -312,7 +307,7 @@ StateBodyItem
 	| EXIT StmtBlock								{ $$.node = new ExitFunction((DSLBlock)$2.stmt); setLoc($$.node, @1, @2);}
 	| DEFER NonDefaultEventList SEMICOLON			{ $$.node = new Defer($2.slst); setLoc($$.node, @1, @3);}
 	| IGNORE NonDefaultEventList SEMICOLON			{ $$.node = new Ignore($2.slst); setLoc($$.node, @1, @3);}
-	| ON EventList IsFair GOTO ID StmtBlockOrNull SEMICOLON			{ $$.node = new Transition($2.slst, $5.s, $3.b, (DSLBlock)$6.stmt); setLoc($$.node, @1, @7);}
+	| ON EventList GOTO ID StmtBlockOrNull SEMICOLON			{ $$.node = new Transition($2.slst, $4.s, (DSLBlock)$5.stmt); setLoc($$.node, @1, @6);}
 	| ON EventList PUSH ID SEMICOLON				{ $$.node = new CallTransition($2.slst, $4.s); setLoc($$.node, @1, @5);}
 	| ON EventList DO ID SEMICOLON					{ $$.node = new Action($2.slst, $4.s); setLoc($$.node, @1, @5);}
 	;
@@ -417,6 +412,7 @@ Exp_7
 
 Exp_6
 	: MUL				{ $$.exp = new DSLId("*"); setLoc($$.exp, @1); } // A little bit of a hack to enable * as sugar for non-deterministic boolean choice
+	| FAIRNONDET        { $$.exp = new DSLId("**"); setLoc($$.exp, @1); }
 	| Exp_5
 	;
 

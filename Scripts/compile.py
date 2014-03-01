@@ -74,7 +74,7 @@ try:
         os.remove(join(out, "SMRuntime.zing"));
 
     if (args.proj):
-        mainM = re.search("main machine ([\w]*)", \
+        mainM = re.search("main[\w\s]*machine[\s]*([\w]*)", \
                           open(pFile).read()).groups()[0]
 
         print("Main machine is " + mainM)

@@ -122,7 +122,7 @@ for f in elaborateFiles(args.files):
     if not (ret == 0 and zingerSucceeded(cat(zingerOut))) and not args.fail:
         die("Zingering of Zing model failed:\n" + cat(zingerOut))
 
-    mainM = search("main machine ([\w]*)", \
+    mainM = search("main[\w\s]*machine[\s]*([\w]*)", \
         open(pFile).read()).groups()[0]
 
     print(fmt("Main machine is {mainM}"))

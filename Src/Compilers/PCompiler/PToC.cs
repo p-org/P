@@ -3215,7 +3215,7 @@ Environment:
                     {
                         return new CTranslationInfo(CData.Trm_Trigger(n.Span));
                     }
-                    else if (id.Name == PData.Cnst_Nondet.Node.Name)
+                    else if (id.Name == PData.Cnst_Nondet.Node.Name || id.Name == PData.Cnst_FairNondet.Node.Name)
                     {
                         if (compiler.erase)
                             return new CTranslationInfo((CData.Cnst_Nil(n.Span)));

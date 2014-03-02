@@ -4,7 +4,7 @@ event A;
 event B;
 event Done;
 
-main fair machine Program {
+main machine Program {
 	var sender: mid;
 	var receiver: mid;
 	start stable state Init {
@@ -17,13 +17,13 @@ main fair machine Program {
 	}
 }
 
-fair model machine Sender {
+model machine Sender {
 	var receiver: mid;
 	var done: bool;
 
 	model fun AmIDone(): bool 
 	{
-		if (*)
+		if (**)
 			return true;
 		else
 			return false;
@@ -45,7 +45,7 @@ fair model machine Sender {
 				send(receiver, A);
 		}
 		on B goto Ready;
-		on Done fair goto Finished;
+		on Done goto Finished;
 	}
 
 	stable state Finished {
@@ -53,7 +53,7 @@ fair model machine Sender {
 	}
 }
 
-fair model machine Receiver {
+model machine Receiver {
 	var sender: mid;
 	start state Init {
 		on SenderId goto Ready;

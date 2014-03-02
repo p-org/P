@@ -337,12 +337,12 @@ namespace PCompiler
             return Compiler.AddArgs(ZingData.App_Return, rVal);
         }
 
-        public static AST<Node> MkZingIf(AST<Node> cond, AST<Node> then)
+        public static AST<Node> MkZingIfThen(AST<Node> cond, AST<Node> then)
         {
             return Compiler.AddArgs(ZingData.App_ITE, cond, then, ZingData.Cnst_Nil);
         }
 
-        public static AST<Node> MkZingITE(AST<Node> cond, AST<Node> thenstmt, AST<Node> elsestmt)
+        public static AST<Node> MkZingIfThenElse(AST<Node> cond, AST<Node> thenstmt, AST<Node> elsestmt)
         {
             return Compiler.AddArgs(ZingData.App_ITE, cond, thenstmt, elsestmt);
         }
@@ -651,7 +651,7 @@ namespace PCompiler
                     continue;
                 var iteExpr = MkZingApply(ZingData.Cnst_In, MkZingEvent(eventName), MkZingIdentifier("eventSet"));
                 var assignStmt = MkZingAssign(MkZingIdentifier("returnEventSet"), MkZingApply(ZingData.Cnst_Add, MkZingIdentifier("returnEventSet"), MkZingEvent(eventName)));
-                var iteStmt = MkZingITE(iteExpr, ZingData.Cnst_Nil, assignStmt);
+                var iteStmt = MkZingIfThenElse(iteExpr, ZingData.Cnst_Nil, assignStmt);
                 calculateComplementBody = MkZingSeq(calculateComplementBody, iteStmt);
             }
             calculateComplementBody = MkZingSeq(calculateComplementBody, Compiler.AddArgs(ZingData.App_Return, MkZingIdentifier("returnEventSet")));
@@ -690,7 +690,7 @@ namespace PCompiler
             // Generate the IsSubtype static method. IsSybtype :: (Discriminator, Discriminator) -> Bool
             // Allows the runtime to check whether one statically declared type is a subtype of another.
             var isSubBody = new List<AST<Node>>();
-            isSubBody.Add(MkZingITE(MkZingEq(MkZingIdentifier("b"), pTypeToZingDiscriminator(PType.Any)),
+            isSubBody.Add(MkZingIfThenElse(MkZingEq(MkZingIdentifier("b"), pTypeToZingDiscriminator(PType.Any)),
                     Compiler.AddArgs(ZingData.App_Return, ZingData.Cnst_True), ZingData.Cnst_Nil));
 
             foreach (var t in compiler.allTypes)
@@ -699,16 +699,16 @@ namespace PCompiler
                     continue;
 
                 var ifBody = new List<AST<Node>>();
-                ifBody.Add(MkZingITE(MkZingEq(MkZingIdentifier("a"), pTypeToZingDiscriminator(t)),
+                ifBody.Add(MkZingIfThenElse(MkZingEq(MkZingIdentifier("a"), pTypeToZingDiscriminator(t)),
                         Compiler.AddArgs(ZingData.App_Return, ZingData.Cnst_True), ZingData.Cnst_Nil));
 
                 foreach (var subT in compiler.subtypes[t])
                 {
-                    ifBody.Add(MkZingITE(MkZingEq(MkZingIdentifier("a"), pTypeToZingDiscriminator(subT)),
+                    ifBody.Add(MkZingIfThenElse(MkZingEq(MkZingIdentifier("a"), pTypeToZingDiscriminator(subT)),
                         Compiler.AddArgs(ZingData.App_Return, ZingData.Cnst_True), ZingData.Cnst_Nil));
                 }
                 ifBody.Add(Compiler.AddArgs(ZingData.App_Return, ZingData.Cnst_False));
-                isSubBody.Add(MkZingITE(MkZingEq(MkZingIdentifier("b"), pTypeToZingDiscriminator(t)),
+                isSubBody.Add(MkZingIfThenElse(MkZingEq(MkZingIdentifier("b"), pTypeToZingDiscriminator(t)),
                     MkZingSeq(ifBody), ZingData.Cnst_Nil));
             }
             isSubBody.Add(Compiler.AddArgs(ZingData.App_Return, ZingData.Cnst_False));
@@ -722,12 +722,12 @@ namespace PCompiler
             var payloadOfBody = new List<AST<Node>>();
 
             // NULL Event
-            payloadOfBody.Add(MkZingIf(MkZingEq(MkZingIdentifier("e"), MkZingIdentifier("null")),
+            payloadOfBody.Add(MkZingIfThen(MkZingEq(MkZingIdentifier("e"), MkZingIdentifier("null")),
                 MkZingReturn(pTypeToZingDiscriminator(PType.Any))));
 
             foreach (var evt in compiler.allEvents.Keys.Where(x => x != Compiler.NullEvent))
             {
-                payloadOfBody.Add(MkZingITE(MkZingEq(MkZingDot("e", "name"), MkZingDot("Event", "_" + evt)),
+                payloadOfBody.Add(MkZingIfThenElse(MkZingEq(MkZingDot("e", "name"), MkZingDot("Event", "_" + evt)),
                     Compiler.AddArgs(ZingData.App_Return, pTypeToZingDiscriminator(compiler.allEvents[evt].payloadType)),
                     ZingData.Cnst_Nil));
             }
@@ -903,7 +903,7 @@ namespace PCompiler
             {
                 var thisM = MkZingDot("result", pTypeToZingUnionMember(t));
                 var otherM = MkZingDot("this", pTypeToZingUnionMember(t));
-                body.Add(MkZingIf(MkZingEq(MkZingDot("result", "d"), pTypeToZingDiscriminator(t)), MkZingAssignOrCast(thisM, t, otherM, t)));
+                body.Add(MkZingIfThen(MkZingEq(MkZingDot("result", "d"), pTypeToZingDiscriminator(t)), MkZingAssignOrCast(thisM, t, otherM, t)));
             }
 
             body.Add(Compiler.AddArgs(ZingData.App_Return, MkZingIdentifier("result")));
@@ -923,12 +923,12 @@ namespace PCompiler
 
                 foreach (var otherT in compiler.relatives(t).Where(tp => !(tp is PAnyType)))
                 {
-                    ifBody.Add(MkZingIf(MkZingEq(otherD, pTypeToZingDiscriminator(otherT)),
+                    ifBody.Add(MkZingIfThen(MkZingEq(otherD, pTypeToZingDiscriminator(otherT)),
                         eqCtxt.emitZingSideEffects(MkZingReturn(MkZingEq(eqCtxt, thisM, t, MkZingDot("other", pTypeToZingUnionMember(otherT)), otherT)))));
                     eqCtxt.pushSideEffectStack();
                 }
 
-                equalsBody.Add(MkZingIf(MkZingEq(MkZingDot("this", "d"), pTypeToZingDiscriminator(t)), MkZingSeq(ifBody)));
+                equalsBody.Add(MkZingIfThen(MkZingEq(MkZingDot("this", "d"), pTypeToZingDiscriminator(t)), MkZingSeq(ifBody)));
             }
 
             equalsBody.Add(MkZingReturn(ZingData.Cnst_False));
@@ -945,7 +945,7 @@ namespace PCompiler
 
                 foreach (var otherT in compiler.relatives(t).Where(tp => !(tp is PAnyType)))
                 {
-                    equalsSubBody.Add(MkZingIf(MkZingEq(MkZingDot("this", "d"), pTypeToZingDiscriminator(otherT)),
+                    equalsSubBody.Add(MkZingIfThen(MkZingEq(MkZingDot("this", "d"), pTypeToZingDiscriminator(otherT)),
                         ctxt.emitZingSideEffects(MkZingReturn(MkZingEq(ctxt, MkZingDot("this", pTypeToZingUnionMember(otherT)), otherT, MkZingIdentifier("other"), t)))));
                     ctxt.pushSideEffectStack();
                 }
@@ -974,7 +974,7 @@ namespace PCompiler
                 var resVar = ctxt.getTmpVar(t, "tmpRes");
                 foreach (var midT in compiler.relatives(t).Where(tp => !(tp is PAnyType)))
                 {
-                    downcastBody.Add(MkZingIf(MkZingEq(MkZingDot("this", "d"), pTypeToZingDiscriminator(midT)),
+                    downcastBody.Add(MkZingIfThen(MkZingEq(MkZingDot("this", "d"), pTypeToZingDiscriminator(midT)),
                         MkZingSeq(
                             MkZingAssignOrCast(resVar, t, MkZingDot("this", pTypeToZingUnionMember(midT)), midT),
                             Compiler.AddArgs(ZingData.App_Return, resVar))));
@@ -991,7 +991,7 @@ namespace PCompiler
 
                 foreach (var midT in compiler.supertypes[t].Where(tp => !(tp is PAnyType)))
                 {
-                    candowncastBody.Add(MkZingITE(MkZingEq(MkZingDot("this", "d"), pTypeToZingDiscriminator(midT)),
+                    candowncastBody.Add(MkZingIfThenElse(MkZingEq(MkZingDot("this", "d"), pTypeToZingDiscriminator(midT)),
                         ctxt.emitZingSideEffects(Compiler.AddArgs(ZingData.App_Return, MkZingCanDownCastTo(ctxt, MkZingDot("this", pTypeToZingUnionMember(midT)), midT, t))),
                         ZingData.Cnst_Nil));
                     ctxt.pushSideEffectStack();
@@ -999,7 +999,7 @@ namespace PCompiler
 
                 foreach (var subT in compiler.subtypes[t])
                 {
-                    candowncastBody.Add(MkZingITE(MkZingEq(MkZingDot("this", "d"), pTypeToZingDiscriminator(subT)),
+                    candowncastBody.Add(MkZingIfThenElse(MkZingEq(MkZingDot("this", "d"), pTypeToZingDiscriminator(subT)),
                             Compiler.AddArgs(ZingData.App_Return, ZingData.Cnst_True), ZingData.Cnst_Nil));
                 }
 
@@ -1015,14 +1015,14 @@ namespace PCompiler
             var tmpEq = canCastCtxt.getTmpVar(PType.Bool, "tmpEq");
 
             // this.d == toT
-            canCastBody.Add(MkZingIf(MkZingEq(MkZingIdentifier("toT"), MkZingDot("this", "d")), MkZingReturn(ZingData.Cnst_True)));
+            canCastBody.Add(MkZingIfThen(MkZingEq(MkZingIdentifier("toT"), MkZingDot("this", "d")), MkZingReturn(ZingData.Cnst_True)));
             // this.d is a subtype of toT
             canCastBody.Add(MkZingAssign(tmpEq, MkZingCall(MkZingDot("Main", "IsSubtype"), MkZingDot("this", "d"), MkZingIdentifier("toT"))));
-            canCastBody.Add(MkZingIf(tmpEq, MkZingReturn(ZingData.Cnst_True)));
+            canCastBody.Add(MkZingIfThen(tmpEq, MkZingReturn(ZingData.Cnst_True)));
             // this.d is a supertype of toT, and we can downcast to it.
             foreach (var t in anyMemberTypes)
             {
-                canCastBody.Add(MkZingIf(MkZingEq(MkZingIdentifier("toT"), pTypeToZingDiscriminator(t)),
+                canCastBody.Add(MkZingIfThen(MkZingEq(MkZingIdentifier("toT"), pTypeToZingDiscriminator(t)),
                     MkZingSeq(
                         MkZingAssign(tmpEq, MkZingCall(MkZingDot("this", getZingCanDownCastName(t)))),
                         MkZingReturn(tmpEq))));
@@ -1286,7 +1286,7 @@ namespace PCompiler
 
             var currentDeferredSet = MkZingIdentifier("currentDeferredSet");
             var smEventSetType = Factory.Instance.MkCnst("SM_EVENT_SET");
-            var iteStmt = MkZingITE(MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingEvent("delete")),
+            var iteStmt = MkZingIfThenElse(MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingEvent("delete")),
                                     MkZingSeq(MkZingAssign(currentDeferredSet, Compiler.AddArgs(ZingData.App_New, smEventSetType, ZingData.Cnst_Nil)),
                                               MkZingCallStmt(MkZingCall(MkZingDot("myHandle", "DequeueEvent"), ZingData.Cnst_False, currentDeferredSet, ZingData.Cnst_False))),
                                     ZingData.Cnst_Nil);
@@ -1319,7 +1319,7 @@ namespace PCompiler
                 var actionExpr = MkZingAction(machineName, actionFunName);
                 var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("actionFun"), actionExpr);
                 var gotoStmt = Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + actionFunName));
-                initStmt = MkZingITE(condExpr, gotoStmt, initStmt);
+                initStmt = MkZingIfThenElse(condExpr, gotoStmt, initStmt);
             }
             initStmt = Compiler.AddArgs(ZingData.App_LabelStmt, Factory.Instance.MkCnst("init"), initStmt);
 
@@ -1368,7 +1368,7 @@ namespace PCompiler
                 var actionExpr = MkZingAction(machineName, actionFunName);
                 var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("actionFun"), actionExpr);
                 var gotoStmt = Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + actionFunName));
-                initStmt = MkZingITE(condExpr, gotoStmt, initStmt);
+                initStmt = MkZingIfThenElse(condExpr, gotoStmt, initStmt);
             }
             initStmt = Compiler.AddArgs(ZingData.App_LabelStmt, Factory.Instance.MkCnst("init"), initStmt);
 
@@ -1422,17 +1422,17 @@ namespace PCompiler
             body.Add(MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), Factory.Instance.MkCnst(0))));
             body.Add(Compiler.AddArgs(ZingData.App_LabelStmt, Factory.Instance.MkCnst("reentry_" + name), MkZingAssign(cont,
                 MkZingCall(MkZingIdentifier(name), cont))));
-            body.Add(MkZingIf(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Leave")),
+            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Leave")),
                 MkZingSeq(
                 type == TranslationContext.Action ? MkZingReturn(ZingData.Cnst_False) : type == TranslationContext.Exit ? (AST<Node>)ZingData.Cnst_Nil : Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst("wait_" + entityName)))));
-            body.Add(MkZingIf(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Return")),
+            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Return")),
                 MkZingSeq(
                 type == TranslationContext.Action ? Compiler.AddArgs(ZingData.App_Return, ZingData.Cnst_True) : type == TranslationContext.Exit ? MkZingAssert(ZingData.Cnst_False) : Compiler.AddArgs(ZingData.App_Return, ZingData.Cnst_Nil))));
-            body.Add(MkZingIf(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Delete")),
+            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Delete")),
                     type == TranslationContext.Action ? Compiler.AddArgs(ZingData.App_Return, ZingData.Cnst_False) : type == TranslationContext.Exit ? MkZingAssert(ZingData.Cnst_False) : Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst("transition_" + entityName))));
-            body.Add(MkZingIf(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Raise")),
+            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Raise")),
                     type == TranslationContext.Action ? Compiler.AddArgs(ZingData.App_Return, ZingData.Cnst_False) : type == TranslationContext.Exit ? MkZingAssert(ZingData.Cnst_False) : Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst("transition_" + entityName))));
-            body.Add(MkZingIf(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Call")),
+            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Call")),
                 MkZingSeq(
                     MkZingAssign(savedDeferredSet, stackDeferredSet),
                     MkZingAssign(savedActionSet, stackActionSet),
@@ -1452,34 +1452,41 @@ namespace PCompiler
                     MkZingAssign(stackActionSet, savedActionSet),
                     MkZingAssign(stackStable, savedStable),
                     MkZingAssign(MkZingDot("cont", "state"), MkZingDot("State", "_default")),
-                    MkZingITE(MkZingApply(ZingData.Cnst_Eq, currentEvent, MkZingIdentifier("null")),
+                    MkZingIfThenElse(MkZingApply(ZingData.Cnst_Eq, currentEvent, MkZingIdentifier("null")),
                               MkZingSeq(restoreCurrentEvent, restoreCurrentArg),
                               MkZingSeq(errorTraceStmt, MkZingAssert(ZingData.Cnst_False))),
                     Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst("reentry_" + name)))));
-            AST<Node> infinitelyOftenNondetStmt = ZingData.Cnst_Nil;
-            if (compiler.existsInfinitelyOftenMonitor)
+            AST<Node> atChooseLivenessStmt = ZingData.Cnst_Nil;
+            AST<Node> atYieldLivenessStmt = ZingData.Cnst_Nil;
+            if (compiler.liveness)
             {
-                infinitelyOftenNondetStmt = MkZingIf(MkZingDot("FairCycle", "gate"), MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingCall(Factory.Instance.MkCnst("choose"), Factory.Instance.MkCnst("bool"))));
-            }
-            body.Add(MkZingIf(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Nondet")),
-                MkZingSeq(
+                AST<Node> infinitelyOftenNondetStmt = ZingData.Cnst_Nil;
+                if (compiler.existsInfinitelyOftenMonitor)
+                {
+                    infinitelyOftenNondetStmt = MkZingIfThen(MkZingDot("FairCycle", "gate"), MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingCall(Factory.Instance.MkCnst("choose"), Factory.Instance.MkCnst("bool"))));
+                }
+                atChooseLivenessStmt = MkZingSeq(
                     infinitelyOftenNondetStmt,
                     MkZingCallStmt(MkZingCall(MkZingDot("FairScheduler", "AtChooseStatic"))),
-                    MkZingCallStmt(MkZingCall(MkZingDot("FairChoice", "AtYieldOrChooseStatic"))),
+                    MkZingCallStmt(MkZingCall(MkZingDot("FairChoice", "AtYieldOrChooseStatic"))));
+                atYieldLivenessStmt = MkZingSeq(
+                    infinitelyOftenNondetStmt,
+                    MkZingCallStmt(MkZingCall(MkZingDot("FairScheduler", "AtYieldStatic"), MkZingIdentifier("myHandle"))),
+                    MkZingCallStmt(MkZingCall(MkZingDot("FairChoice", "AtYieldOrChooseStatic"))));
+            }
+            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Nondet")),
+                MkZingSeq(
+                    atChooseLivenessStmt,
                     MkZingAssign(MkZingDot(cont, "nondet"), MkZingCall(Factory.Instance.MkCnst("choose"), Factory.Instance.MkCnst("bool"))),
                     Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst("reentry_" + name)))));
-            body.Add(MkZingIf(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "NewM")),
+            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "NewM")),
                 MkZingSeq(
-                    infinitelyOftenNondetStmt,
-                    MkZingCallStmt(MkZingCall(MkZingDot("FairScheduler", "AtYieldStatic"), MkZingIdentifier("myHandle"))),
-				    MkZingCallStmt(MkZingCall(MkZingDot("FairChoice", "AtYieldOrChooseStatic"))),
+                    atYieldLivenessStmt,
                     ZingData.Cnst_Yield,
                     Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst("reentry_" + name)))));
-            body.Add(MkZingIf(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Send")),
+            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Send")),
                 MkZingSeq(
-                    infinitelyOftenNondetStmt,
-                    MkZingCallStmt(MkZingCall(MkZingDot("FairScheduler", "AtYieldStatic"), MkZingIdentifier("myHandle"))),
-                    MkZingCallStmt(MkZingCall(MkZingDot("FairChoice", "AtYieldOrChooseStatic"))),
+                    atYieldLivenessStmt,
                     ZingData.Cnst_Yield,
                     Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst("reentry_" + name)))));
 
@@ -1513,7 +1520,7 @@ namespace PCompiler
                 var stateExpr = MkZingDot("State", string.Format("_{0}", stateName));
                 var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("startState"), stateExpr);
                 var gotoStmt = Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + stateName));
-                initStmt = MkZingITE(condExpr, gotoStmt, initStmt);
+                initStmt = MkZingIfThenElse(condExpr, gotoStmt, initStmt);
             }
             initStmt = Compiler.AddArgs(ZingData.App_LabelStmt, Factory.Instance.MkCnst("init"), initStmt);
 
@@ -1572,12 +1579,12 @@ namespace PCompiler
                 }
 
                 var actionStmt =
-                    MkZingITE(
+                    MkZingIfThenElse(
                             MkZingApply(ZingData.Cnst_In, MkZingDot("myHandle", "currentEvent"), currentActionSet),
                             MkZingSeq(MkZingAssign(MkZingIdentifier("actionFun"), MkZingCall(MkZingDot("localActions", "Find"), MkZingDot("myHandle", "currentEvent"))),
                                       MkZingAssign(MkZingIdentifier("didActionPop"), MkZingCall(MkZingIdentifier("actionHelper"), MkZingIdentifier("actionFun"), currentActionSet, currentStable)),
-                                      MkZingITE(MkZingIdentifier("didActionPop"), Factory.Instance.AddArg(ZingData.App_Return, ZingData.Cnst_Nil), ZingData.Cnst_Nil),
-                                      MkZingITE(
+                                      MkZingIfThenElse(MkZingIdentifier("didActionPop"), Factory.Instance.AddArg(ZingData.App_Return, ZingData.Cnst_Nil), ZingData.Cnst_Nil),
+                                      MkZingIfThenElse(
                                               MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
                                               Factory.Instance.AddArg(ZingData.App_Goto, waitLabel),
                                               Factory.Instance.AddArg(ZingData.App_Goto, transitionLabel))),
@@ -1597,12 +1604,12 @@ namespace PCompiler
                                    ));
                     var pop = MkZingAssign(MkZingIdentifier("localActions"), MkZingDot("localActions", "next"));
                     var restore = MkZingSeq(MkZingAssign(stackDeferredSet, savedDeferredSet), MkZingAssign(stackActionSet, savedActionSet), MkZingAssign(stackStable, savedStable));
-                    var ite = MkZingITE(
+                    var ite = MkZingIfThenElse(
                         MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
                         Factory.Instance.AddArg(ZingData.App_Goto, waitLabel),
                         Factory.Instance.AddArg(ZingData.App_Goto, transitionLabel)
                         );
-                    callTransitionStmt = MkZingITE(condExpr, MkZingSeq(save, update, push, callStmt, pop, restore, ite), callTransitionStmt);
+                    callTransitionStmt = MkZingIfThenElse(condExpr, MkZingSeq(save, update, push, callStmt, pop, restore, ite), callTransitionStmt);
                 }
 
                 AST<Node> exitFunction = compiler.allMachines[machineName].stateNameToStateInfo[stateName].exitFun != null ?
@@ -1616,7 +1623,7 @@ namespace PCompiler
                     var targetStateName = ordinaryTransitions[eventName].target;
                     var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingEvent(eventName));
                     AST<Node> jumpStmt = Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + targetStateName));
-                    ordinaryTransitionStmt = MkZingITE(condExpr, jumpStmt, ordinaryTransitionStmt);
+                    ordinaryTransitionStmt = MkZingIfThenElse(condExpr, jumpStmt, ordinaryTransitionStmt);
                 }
 
                 blocks.Add(Compiler.AddArgs(ZingData.App_LabelStmt, transitionLabel, MkZingSeq(actionStmt, callTransitionStmt, exitFunction, ordinaryTransitionStmt)));
@@ -1642,10 +1649,10 @@ namespace PCompiler
                 var stateExpr = MkZingDot("State", string.Format("_{0}", stateName));
                 var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("startState"), stateExpr);
                 var gotoStmt = Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("transition_" + stateName));
-                initStmt = MkZingITE(condExpr, gotoStmt, initStmt);
+                initStmt = MkZingIfThenElse(condExpr, gotoStmt, initStmt);
             }
             string initStateName = compiler.GetName(compiler.allMachines[machineName].initStateDecl, 0);
-            initStmt = MkZingITE(MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("startState"), MkZingDot("State", "_default")), 
+            initStmt = MkZingIfThenElse(MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("startState"), MkZingDot("State", "_default")), 
                                  Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + initStateName)), 
                                  initStmt);
             initStmt = Compiler.AddArgs(ZingData.App_LabelStmt, Factory.Instance.MkCnst("init"), initStmt);
@@ -1669,7 +1676,7 @@ namespace PCompiler
                                     MkZingAssign(cont, MkZingCall(MkZingDot(Factory.Instance.MkCnst("Continuation"), "Construct_Default"))),
                                     MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), Factory.Instance.MkCnst(0))),
                                     MkZingAssign(cont, MkZingCall(MkZingIdentifier(getZingWrapperFunName(stateName, TranslationContext.Entry)), cont)),
-                                    MkZingITE(
+                                    MkZingIfThenElse(
                                               MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
                                               Factory.Instance.AddArg(ZingData.App_Goto, waitLabel),
                                               Factory.Instance.AddArg(ZingData.App_Goto, transitionLabel))
@@ -1681,11 +1688,11 @@ namespace PCompiler
                 blocks.Add(waitStmt);
 
                 var actionStmt =
-                    MkZingITE(
+                    MkZingIfThenElse(
                             MkZingApply(ZingData.Cnst_In, MkZingDot("myHandle", "currentEvent"), currentActionSet),
                             MkZingSeq(MkZingAssign(MkZingIdentifier("actionFun"), MkZingCall(MkZingDot("localActions", "Find"), MkZingDot("myHandle", "currentEvent"))),
                                       MkZingCallStmt(MkZingCall(MkZingIdentifier("actionHelper"), MkZingIdentifier("actionFun"), currentActionSet)),
-                                      MkZingITE(
+                                      MkZingIfThenElse(
                                               MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
                                               Factory.Instance.AddArg(ZingData.App_Goto, waitLabel),
                                               Factory.Instance.AddArg(ZingData.App_Goto, transitionLabel))),
@@ -1707,7 +1714,7 @@ namespace PCompiler
                                             MkZingAssign(MkZingIdentifier("startState"), MkZingDot("State", string.Format("_{0}", targetStateName))), 
                                             compiler.liveness && compiler.allMachines[machineName].stateNameToStateInfo[targetStateName].isStable ? MkZingAssume(MkZingDot("FairCycle", "gate")) : ZingData.Cnst_Nil,
                                             Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + targetStateName)));
-                    ordinaryTransitionStmt = MkZingITE(condExpr, jumpStmt, ordinaryTransitionStmt);
+                    ordinaryTransitionStmt = MkZingIfThenElse(condExpr, jumpStmt, ordinaryTransitionStmt);
                 }
 
                 blocks.Add(Compiler.AddArgs(ZingData.App_LabelStmt, transitionLabel, 
@@ -1773,12 +1780,12 @@ namespace PCompiler
                 var tmpVar = getTmpVar(PType.Int, "retTo");
 
                 prelude.Add(PToZing.MkZingAssign(tmpVar, PToZing.MkZingCall(MkZingDot("entryCtxt", "PopReturnTo"))));
-                prelude.Add(PToZing.MkZingIf(PToZing.MkZingEq(tmpVar, Factory.Instance.MkCnst(0)),
+                prelude.Add(PToZing.MkZingIfThen(PToZing.MkZingEq(tmpVar, Factory.Instance.MkCnst(0)),
                     Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst("start"))));
 
                 foreach (var l in labels.Keys)
                 {
-                    prelude.Add(PToZing.MkZingIf(PToZing.MkZingEq(tmpVar, Factory.Instance.MkCnst(labels[l])),
+                    prelude.Add(PToZing.MkZingIfThen(PToZing.MkZingEq(tmpVar, Factory.Instance.MkCnst(labels[l])),
                     Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(l))));
                 }
 
@@ -2161,7 +2168,7 @@ namespace PCompiler
                             ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
                             ctxt.addSideEffect(MkZingLabeledStmt(afterLabel, MkZingAssign(bvar, MkZingDot("entryCtxt", "nondet"))));
                             ctxt.addSideEffect(MkZingAssign(MkZingDot("entryCtxt", "nondet"), ZingData.Cnst_False));
-                            if (id.Name == PData.Cnst_FairNondet.Node.Name)
+                            if (compiler.liveness && id.Name == PData.Cnst_FairNondet.Node.Name)
                             {
                                 int i;
                                 if (ctxt.translationContext == TranslationContext.Action)
@@ -2631,7 +2638,7 @@ namespace PCompiler
                     var afterLabel = ifName + "_end";
                     var cookedElse = MkZingLabeledStmt(elseLabel, ctxt.emitZingSideEffects(zingWrapExprToStmts(elseStmt.node)));
                     var cookedThen = ctxt.emitZingSideEffects(zingWrapExprToStmts(thenStmt.node));
-                    var res = MkZingSeq(MkZingIf(MkZingApply(ZingData.Cnst_Not, condExpr.node), Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(elseLabel))),
+                    var res = MkZingSeq(MkZingIfThen(MkZingApply(ZingData.Cnst_Not, condExpr.node), Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(elseLabel))),
                         cookedThen,
                         Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(afterLabel)),
                         cookedElse,
@@ -3311,7 +3318,7 @@ namespace PCompiler
                 AST<Node> callStmt = MkZingSeq(
                     MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(0))),
                     MkZingLabeledStmt(beforeLabel, ctxt.emitZingSideEffects(MkZingAssign(MkZingIdentifier("entryCtxt"), callExpr))),
-                    MkZingITE(
+                    MkZingIfThenElse(
                                      MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "Return")),
                                      processOutput,
                                      MkZingSeq(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(ctxt.labelToId(beforeLabel)))),
@@ -3403,7 +3410,7 @@ namespace PCompiler
                     body = ctxt.emitZingSideEffects(zingWrapExprToStmts(body));
 
                     var res = MkZingLabeledStmt(loopStart, MkZingSeq(
-                        ctxt.emitZingSideEffects(MkZingIf(MkZingApply(ZingData.Cnst_Not, condExpr.node), Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(loopEnd)))),
+                        ctxt.emitZingSideEffects(MkZingIfThen(MkZingApply(ZingData.Cnst_Not, condExpr.node), Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(loopEnd)))),
                         body,
                         Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(loopStart)),
                         MkZingLabeledStmt(loopEnd, ZingData.Cnst_Nil)));
@@ -3525,10 +3532,10 @@ namespace PCompiler
             ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, name, this);
             var ind = ctxt.getTmpVar(PType.Int, "ind");
             var body = MkZingSeq(
-                MkZingIf(MkZingNeq(MkZingDot("this", "size"), MkZingDot("other", "size")),
+                MkZingIfThen(MkZingNeq(MkZingDot("this", "size"), MkZingDot("other", "size")),
                     MkZingReturn(ZingData.Cnst_False)),
                     MkZingFor(ind, 0, MkZingDot("this", "size"),
-                        ctxt.emitZingSideEffects(MkZingIf(MkZingNeq(ctxt, MkZingIndex(MkZingDot("this", "arr"), ind), meT.T, MkZingIndex(MkZingDot("other", "arr"), ind), otherT.T),
+                        ctxt.emitZingSideEffects(MkZingIfThen(MkZingNeq(ctxt, MkZingIndex(MkZingDot("this", "arr"), ind), meT.T, MkZingIndex(MkZingDot("other", "arr"), ind), otherT.T),
                             MkZingReturn(ZingData.Cnst_False)))),
                 MkZingReturn(ZingData.Cnst_True));
             ctxt.pushSideEffectStack();
@@ -3566,7 +3573,7 @@ namespace PCompiler
             var ind = ctxt.getTmpVar(PType.Int, "ind");
             var body = MkZingSeq(
                 MkZingFor(ind, 0, MkZingDot("this", "size"),
-                    ctxt.emitZingSideEffects(MkZingIf(MkZingApply(ZingData.Cnst_Not, MkZingCanDownCastTo(ctxt, MkZingIndex(MkZingDot("this", "arr"), ind), fromT.T, toT.T)),
+                    ctxt.emitZingSideEffects(MkZingIfThen(MkZingApply(ZingData.Cnst_Not, MkZingCanDownCastTo(ctxt, MkZingIndex(MkZingDot("this", "arr"), ind), fromT.T, toT.T)),
                         MkZingReturn(ZingData.Cnst_False)))),
                 MkZingReturn(ZingData.Cnst_True));
 
@@ -3678,13 +3685,13 @@ namespace PCompiler
             var found = ctxt.getTmpVar(PType.Bool, "found");
             var val = ctxt.getTmpVar(pTypeToZingType(otherT.ValT), "val");
             var body = MkZingSeq(
-                MkZingIf(MkZingNeq(MkZingDot("this", "size"), MkZingDot("other", "size")), MkZingReturn(ZingData.Cnst_False)),
+                MkZingIfThen(MkZingNeq(MkZingDot("this", "size"), MkZingDot("other", "size")), MkZingReturn(ZingData.Cnst_False)),
                 MkZingListIter(iter, MkZingDot("head", "next"), MkZingIdentifier("head"),
                                ctxt.emitZingSideEffects(
                                     MkZingSeq(MkZingAssign(found, MkZingCall(MkZingDot("other", "Contains"), MkZingDot(iter, "key"))),
-                                              MkZingIf(MkZingApply(ZingData.Cnst_Not, found), MkZingReturn(ZingData.Cnst_False)),
+                                              MkZingIfThen(MkZingApply(ZingData.Cnst_Not, found), MkZingReturn(ZingData.Cnst_False)),
                                               MkZingAssign(val, MkZingCall(MkZingDot("other", "Lookup"), MkZingDot(iter, "key"))),
-                                              MkZingIf(MkZingApply(ZingData.Cnst_Not, MkZingEq(ctxt, val, otherT.ValT, MkZingDot(iter, "val"), meT.ValT)), MkZingReturn(ZingData.Cnst_False))
+                                              MkZingIfThen(MkZingApply(ZingData.Cnst_Not, MkZingEq(ctxt, val, otherT.ValT, MkZingDot(iter, "val"), meT.ValT)), MkZingReturn(ZingData.Cnst_False))
                                               ))),
                 MkZingReturn(ZingData.Cnst_True));
             ctxt.pushSideEffectStack();
@@ -3723,7 +3730,7 @@ namespace PCompiler
             var iter = ctxt.getTmpVar(Factory.Instance.MkCnst(pTypeToZingClassName(fromT) + "_Entry"), "iter");
             var body = MkZingSeq(
                 MkZingListIter(iter, MkZingDot("head", "next"), MkZingIdentifier("head"),
-                    ctxt.emitZingSideEffects(MkZingIf(MkZingApply(ZingData.Cnst_Not,
+                    ctxt.emitZingSideEffects(MkZingIfThen(MkZingApply(ZingData.Cnst_Not,
                                                                   MkZingApply(ZingData.Cnst_And,
                                                                               MkZingCanDownCastTo(ctxt, MkZingDot("iter", "key"), fromT.KeyT, toT.KeyT),
                                                                               MkZingCanDownCastTo(ctxt, MkZingDot("iter", "val"), fromT.ValT, toT.ValT))),
@@ -3743,7 +3750,7 @@ namespace PCompiler
             var found = ctxt.getTmpVar(PType.Bool, "found");
             var containsBody = MkZingSeq(
                 MkZingListIter(iter, MkZingDot("head", "next"), MkZingIdentifier("head"),
-                               ctxt.emitZingSideEffects(MkZingIf(MkZingEq(ctxt, MkZingIdentifier("key"), t.KeyT, MkZingDot(iter, "key"), t.KeyT), MkZingReturn(ZingData.Cnst_True)))),
+                               ctxt.emitZingSideEffects(MkZingIfThen(MkZingEq(ctxt, MkZingIdentifier("key"), t.KeyT, MkZingDot(iter, "key"), t.KeyT), MkZingReturn(ZingData.Cnst_True)))),
                 MkZingReturn(ZingData.Cnst_False));
             ctxt.pushSideEffectStack();
 
@@ -3758,7 +3765,7 @@ namespace PCompiler
             var found = ctxt.getTmpVar(PType.Bool, "found");
             var lookupBody = MkZingSeq(
                 MkZingListIter(iter, MkZingDot("head", "next"), MkZingIdentifier("head"),
-                               ctxt.emitZingSideEffects(MkZingIf(MkZingEq(ctxt, MkZingIdentifier("key"), t.KeyT, MkZingDot(iter, "key"), t.KeyT), MkZingReturn(MkZingDot(iter, "val"))))),
+                               ctxt.emitZingSideEffects(MkZingIfThen(MkZingEq(ctxt, MkZingIdentifier("key"), t.KeyT, MkZingDot(iter, "key"), t.KeyT), MkZingReturn(MkZingDot(iter, "val"))))),
                 MkZingAssert(ZingData.Cnst_False));
             ctxt.pushSideEffectStack();
 
@@ -3776,7 +3783,7 @@ namespace PCompiler
                 MkZingAssert(MkZingApply(ZingData.Cnst_Lt, MkZingIdentifier("index"), MkZingIdentifier("size"))),
                 MkZingAssign(iter, MkZingDot("head", "next")),
                 MkZingAssign(i, Factory.Instance.MkCnst(0)),
-                MkZingIf(MkZingApply(ZingData.Cnst_Le, MkZingIdentifier("iterCacheIndex"), MkZingIdentifier("index")),
+                MkZingIfThen(MkZingApply(ZingData.Cnst_Le, MkZingIdentifier("iterCacheIndex"), MkZingIdentifier("index")),
                          MkZingSeq(MkZingAssign(iter, MkZingIdentifier("iterCache")), MkZingAssign(i, MkZingIdentifier("iterCacheIndex")))),
                 Compiler.AddArgs(ZingData.App_While,
                         MkZingApply(ZingData.Cnst_Lt, i, MkZingIdentifier("index")),
@@ -3802,7 +3809,7 @@ namespace PCompiler
                 MkZingAssign(prev, MkZingIdentifier("head")),
                 MkZingListIter(iter, MkZingDot("head", "next"), MkZingIdentifier("head"),
                                ctxt.emitZingSideEffects(
-                                    MkZingSeq(MkZingIf(MkZingEq(ctxt, MkZingIdentifier("key"), t.KeyT, MkZingDot(iter, "key"), t.KeyT), MkZingSeq(MkZingAssign(MkZingDot(iter, "val"), MkZingIdentifier("val")), MkZingReturn(ZingData.Cnst_Nil))),
+                                    MkZingSeq(MkZingIfThen(MkZingEq(ctxt, MkZingIdentifier("key"), t.KeyT, MkZingDot(iter, "key"), t.KeyT), MkZingSeq(MkZingAssign(MkZingDot(iter, "val"), MkZingIdentifier("val")), MkZingReturn(ZingData.Cnst_Nil))),
                                               MkZingAssign(prev, iter)))),
                 MkZingAssign(MkZingDot("head", "key"), MkZingIdentifier("key")),
                 MkZingAssign(MkZingDot("head", "val"), MkZingIdentifier("val")),
@@ -3827,7 +3834,7 @@ namespace PCompiler
                 MkZingAssign(prev, MkZingIdentifier("head")),
                 MkZingListIter(iter, MkZingDot("head", "next"), MkZingIdentifier("head"),
                                ctxt.emitZingSideEffects(
-                                    MkZingSeq(MkZingIf(MkZingEq(ctxt, MkZingIdentifier("key"), t.KeyT, MkZingDot(iter, "key"), t.KeyT), MkZingSeq(
+                                    MkZingSeq(MkZingIfThen(MkZingEq(ctxt, MkZingIdentifier("key"), t.KeyT, MkZingDot(iter, "key"), t.KeyT), MkZingSeq(
                                                                 MkZingAssign(MkZingDot(prev, "next"), MkZingDot(iter, "next")),
                                                                 MkZingAssign(MkZingIdentifier("size"), MkZingApply(ZingData.Cnst_Sub, MkZingIdentifier("size"), Factory.Instance.MkCnst(1))),
                                                                 MkZingAssign(MkZingIdentifier("iterCache"), MkZingDot("head", "next")),
@@ -3979,7 +3986,7 @@ namespace PCompiler
             foreach (var field in fieldDesc)
             {
                 var check = MkZingNeq(equalsCtxt, MkZingDot("this", field.Item2), field.Item1, MkZingDot("other", field.Item2), field.Item1);
-                equalsBody.Add(equalsCtxt.emitZingSideEffects(MkZingITE(check, Compiler.AddArgs(ZingData.App_Return, ZingData.Cnst_False), ZingData.Cnst_Nil)));
+                equalsBody.Add(equalsCtxt.emitZingSideEffects(MkZingIfThenElse(check, Compiler.AddArgs(ZingData.App_Return, ZingData.Cnst_False), ZingData.Cnst_Nil)));
                 equalsCtxt.pushSideEffectStack();
             }
 
@@ -4006,7 +4013,7 @@ namespace PCompiler
                     var subF = subFields.ElementAt(i);
                     var supF = fieldDesc.ElementAt(i);
 
-                    equalsBody.Add(ctxt.emitZingSideEffects(MkZingIf(MkZingNeq(ctxt, MkZingDot("this", supF.Item2), supF.Item1,
+                    equalsBody.Add(ctxt.emitZingSideEffects(MkZingIfThen(MkZingNeq(ctxt, MkZingDot("this", supF.Item2), supF.Item1,
                         MkZingDot("other", subF.Item2), subF.Item1), MkZingReturn(ZingData.Cnst_False))));
                     ctxt.pushSideEffectStack();
                 }
@@ -4096,7 +4103,7 @@ namespace PCompiler
                     else
                     {
                         var cond = MkZingApply(ZingData.Cnst_Not, MkZingCanDownCastTo(ctxt, MkZingDot("this", fromF.Item2), fromF.Item1, toF.Item1));
-                        checks.Add(ctxt.emitZingSideEffects(MkZingITE(cond, Compiler.AddArgs(ZingData.App_Return, ZingData.Cnst_False), ZingData.Cnst_Nil)));
+                        checks.Add(ctxt.emitZingSideEffects(MkZingIfThenElse(cond, Compiler.AddArgs(ZingData.App_Return, ZingData.Cnst_False), ZingData.Cnst_Nil)));
                         ctxt.pushSideEffectStack();
                     }
                 }

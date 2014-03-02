@@ -67,8 +67,6 @@ domain PData extends FuncData
                        entryFun: any Stmt, 
                        defers: EventSetDecl + { NIL }).
 
-    Repeat ::= fun (state: StateDecl, events: Strings + NIL).
-
     Stable  ::= new (state: StateDecl).
 
     ExitFun ::= fun (state: StateDecl -> exitFun: any Stmt).

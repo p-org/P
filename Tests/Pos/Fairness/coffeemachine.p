@@ -9,7 +9,7 @@ event Unit;
 event MsgInformCoffeeMachine:mid;
 event MsgInformCustomerMachine:mid;
 
-main fair model machine CoffeeShop
+main model machine CoffeeShop
 {
         var _customer, _server, _coffeemachine:mid;
         start state init
@@ -35,7 +35,7 @@ main fair model machine CoffeeShop
         }
 }
 
-fair model machine Customer
+model machine Customer
 {
         var _server:mid;
 
@@ -74,7 +74,7 @@ fair model machine Customer
         }
 }
 
-fair model machine Server
+model machine Server
 {
         var _customer:mid;
         var _coffeeMachine:mid;
@@ -133,7 +133,7 @@ fair model machine Server
         }
 } 
 
-fair model machine CoffeeMachine
+model machine CoffeeMachine
 {
         var _server:mid;
 

@@ -17,7 +17,7 @@ event MsgRedirectCustomerPlacesOrder:mid;
 event MsgServerDone;
 event MsgReadyForNewOrder:mid;
 
-main fair model machine CoffeeShop
+main model machine CoffeeShop
 {
         var _customer0,_customer1,_server0,_server1,_coffeemachine0,_serverGateKeeper0:mid;
         start state init
@@ -48,7 +48,7 @@ main fair model machine CoffeeShop
         }
 }
 
-fair model machine Customer
+model machine Customer
 {
         var _server0:mid;
 		var _server1:mid;
@@ -141,7 +141,7 @@ fair model machine Customer
         }
 }
 
-fair model machine ServerGateKeeper
+model machine ServerGateKeeper
 {
 	var CountBeenProcessed:int;
 	
@@ -177,7 +177,7 @@ fair model machine ServerGateKeeper
 	}
 }
 
-fair model machine Server
+model machine Server
 {
     var _coffeeMachine:mid;
 	var _serverGateKeeper0:mid; 
@@ -247,7 +247,7 @@ fair model machine Server
 	}
 } 
 
-fair model machine CoffeeMachine
+model machine CoffeeMachine
 {
         start state _Init {
 			entry { 		

@@ -467,10 +467,13 @@ class FairChoice {
     }
 };
 
+enum GateStatus { Init, Selected, InStable, Closed };
+
 class FairCycle {
-    static bool gate = true;
+    static bool gate = GateStatus.Init;
     static void Accept() {
-        if (sizeof(FairChoice.accepted) == sizeof(FairChoice.all) && 
+        if (gate == GateStatus.Closed &&
+	    sizeof(FairChoice.accepted) == sizeof(FairChoice.all) && 
        	    sizeof(FairScheduler.accepted) == sizeof(FairScheduler.all))
 	{
 	    trace("Accepting transition");

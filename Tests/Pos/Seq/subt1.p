@@ -9,6 +9,7 @@ main machine Entry {
             l1 = l;
             l.remove(0);
             l.remove(0);
+			assert(sizeof(l) == 0);
         }
     }
 }

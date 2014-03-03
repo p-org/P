@@ -1,7 +1,9 @@
 //announce message
-event Announce: (mid, int) assume 3;
-//Initialize variables on PowerUp when machines start
-event PowerUp: (mid, mid, int) assert 1;
+event Announce: (id, int) assume 3;
+//Initialise event to initialize the network (portconnectedto, myclock)
+event Initialise: (id, id) assert 1;
+//Initialize variables on PowerUp when machines start ((ParentGM))
+event PowerUp: (id, int) assert 1;
 //Local transitions
 event Local assert 1;
 //State decision event sent periodically by parent clock to port machines
@@ -9,8 +11,8 @@ event StateDecisionEvent assume 1;
 
 // all the below events are used for atomic state decision calculation
 event Ack assert 2;
-event ErBest : (mid, int) assert 2;
-
+event ErBest : (id, (id, int)) assert 2;
+event UpdateParentGM: (id, int) assert 1;
 //Recommended state
 event goMaster assert 1;
 event goSlave assert 1;
@@ -19,67 +21,109 @@ event goPassive assert 1;
 //Done state update
 event doneStateChange assert 1;
 
-// main machine the got machine which creates the verification instance
-main ghost machine GodMachine {
 
+////////////////////////////////////////////////////////////
+// THe topology under test is
+// OC1 -- BC1 -- BC2 -- OC2
+
+// If Rank = 1 it implies that the clock is a stratum 1 clock.
+///////////////////////////////////////////////////////////
+
+// main machine the got machine which creates the verification instance
+main model machine GodMachine {
+
+	//the clock nodes
 	var OC1 : id;
 	var OC2 : id;
 	var BC1 : id;
 	var	BC2 : id;
+	//ports connecting the clocks together
 	var pt1 : id;
 	var pt2 : id;
 	var	pt3 : id;
 	var	pt4 : id;
 	var pt5 : id;
 	var pt6 : id;
-	
+	//temp variable 
+	var link:seq[id];
 	start state GodMachine_Init {
 		
 		entry {
+			// create all the post machines
+			__seal();
 			pt1 = new PortMachine();
 			pt2 = new PortMachine();
 			pt3 = new PortMachine();
 			pt4 = new PortMachine();
 			pt5 = new PortMachine();
 			pt6 = new PortMachine();
-			OC1 = new OrdinaryClock((pt1, null, 1));
-			OC2 = new OrdinaryClock((pt6, null, 2));
-			BC1 = new BoundaryClock((pt2,);
-			BC2 = new BoundaryClock(P = (pt4, pt5) , D0 = (4, null, 0));
-			BC3 = new BoundaryClock(P = (pt6, pt7) , D0 = (5, null, 0));
-			
-			send(pt1, PowerUp, (pt2, MasterOC, 1));
-			send(pt2, PowerUp, (pt1, BC1, 2));
-			send(pt3, PowerUp, (pt4, BC1, 2));
-			send(pt4, PowerUp, (pt3, BC2, 3));
-			send(pt5, PowerUp, (pt6, BC2, 3));
-			send(pt6, PowerUp, (pt5, BC3, 4));
-			send(pt7, PowerUp, (pt8, BC3, 4));
-			send(pt8, PowerUp, (pt7, SlaveOC, 5));
+			__unseal();
+			// create the ordinary clock machines
+			link.insert(0,pt1);
+			OC1 = new Clock((link, 1));
+			link.remove(0);
+			assert(sizeof(link) == 0);
+			link.insert(0, pt6);
+			OC2 = new Clock((link, 2));
+			link.remove(0);
+			assert(sizeof(link) == 0);
+			//create the boundary clocks
+			link.insert(0, pt2);link.insert(0, pt3);
+			BC1 = new Clock((link, 3));
+			link.remove(0);link.remove(0);
+			assert(sizeof(link) == 0);
+			link.insert(0, pt4);link.insert(0,pt5);
+			BC2 = new Clock((link, 4));
+			link.remove(0);link.remove(0);
+			assert(sizeof(link) == 0);
+			__seal();
+			//initialize all the ports appropriately with the connections and power them up
+			send(pt1, Initialise, (pt2, OC1));
+			send(pt2, Initialise, (pt1, BC1));
+			send(pt3, Initialise, (pt4, BC1));
+			send(pt4, Initialise, (pt3, BC2));
+			send(pt5, Initialise, (pt6, BC2));
+			send(pt6, Initialise, (pt5, OC2));
+			__unseal();
+			//delete the machine Gods job is done
 			delete;
 		}
 	}
 }
 
 // Boundary clock 
-// this machine manages multiple state machines and also makes sure that the state-changes are atomic
-//
+// this machine manages multiple port state machines and also makes sure that the state-changes are atomic
+// across the port machines
 
-machine BoundaryClock {
+machine Clock {
 
-	var P:(mid, mid);
-	var Counter : int;
-	var ParentGM : mid; // pointer to the parent GM
-	var lengthFromGM : int; // number of boundary clocks from the GM
-	var D0 : (int, mid); // 0: Rank, 1: gmID 
-	var EBest : (mid, int);
-	var ErBestV : ((mid, int), (mid, int));
+	var Ports:seq[id]; // Port machines in this clock
+	var ParentGM : (id, int); // pointer to the parent GM for this clock (machine id, rank)
+	var lengthFromGM : int; // number of boundary clocks from the parent GM clock, it basically corresponds to the steps removed
+	var D0 : int; // myRank
+	var EBest : (id, (id, int)); // best message received in the current announce interval (received from, (GM, GM_rank))
+	var ErBestSeq : seq[(id, (id, int))]; // ErBest from each port machine
+	//temp variable
 	var check : bool;
+	var i:int;
+	var countAck:int;
 	
-	start state BSM_Init {
+	start state Init {
 		entry {
-			EBest = (this, 100);
-			Counter = 0;
+			__seal();
+			//initialize the EBest value to random
+			Ports = ((seq[id], int)) payload[0];
+			D0 = ((seq[id], int)) payload[1];
+			ParentGM = (this, D0);
+			EBest = (null, (null, 100000));
+			countAck = 0;
+			i = sizeof(Ports) - 1;
+			while(i>=0)
+			{
+				send(Ports[i], PowerUp, ParentGM);
+				i = i - 1;
+			}
+			__unseal();
 			raise(Local);
 		}
 			
@@ -87,24 +131,26 @@ machine BoundaryClock {
 	}
 	
 	action ReceiveErBest {
+		//add to the sequence
+		ErBestSeq.insert(0, ((id, (id, int))) payload);
 		
-		if(EBest[1] > payload[1])
+		if(sizeof(ErBestSeq) == sizeof(Ports))
 		{
-			EBest = payload;
-		}
-		if(Counter == 0)
-			ErBestV[0] = payload;
-		else
-			ErBestV[1] = payload;
-		Counter = Counter + 1;
-		if(Counter == 2)
-		{
-			Counter = 0;
+			//calculate EBest and also clear ErBest
+			i = sizeof(ErBestSeq) - 1;
+			while(i >= 0)
+			{
+				if(EBest[1][1] > ErBestSeq[i][1][1])
+				{
+					EBest = ErBestSeq[i];
+				}
+				i = i - 1;
+			}
 			raise(Local);
-		}
+		}	
 	}
 	
-	foreign fun IsPeriodicTimeOut() : bool {
+	model fun IsPeriodicAnnounceTimeOut() : bool {
 		if(*)
 			return true;
 		else 
@@ -116,15 +162,22 @@ machine BoundaryClock {
 		on ErBest do ReceiveErBest;
 		
 		entry {
-			check = IsPeriodicTimeOut();
+			check = IsPeriodicAnnounceTimeOut();
 			if(check)
 			{
-				send(P[0], StateDecisionEvent);
-				send(P[1], StateDecisionEvent);
+				i = sizeof(Ports) - 1;
+				__seal();
+				while(i>=0)
+				{
+					//send state decision event to all the ports so that we can evaluate new state
+					send(Ports[i], StateDecisionEvent);
+					i = i - 1;
+				}
+				__unseal();
+				//go to atomic transaction mode
 				call(WaitForErBest);
 			}
 		}
-		
 		on default goto PeriodicStateDecision;
 	}
 	
@@ -134,211 +187,153 @@ machine BoundaryClock {
 	}
 	
 	action ReceiveAck {
-	
-		Counter = Counter + 1;
-		if(Counter == 2)
+		countAck = countAck + 1;
+		if(countAck == sizeof(Ports))
 		{
-			Counter = 0;
-			send(P[0], Ack);
-			send(P[1], Ack);
+			countAck = 0;
+			i = sizeof(Ports) - 1;
+			while(i >= 0)
+			{
+				send(Ports[i], Ack);
+				i = i - 1;
+			}
 			return;
 		}
 	}
 	
-	foreign fun IsBetter(mid machine) : bool {
-	// Calculate if the machine is better by path or distance in the explorer
-	// my lengthToGM > machine.lengthToGM + 1
-	}
-	
-	foreign fun UpdateLocalData(mid machine) {
-	// Update the Parent GM and the length to GM in the explorer
-	// use the ebest value already updated
-	// (1) set lengthToParent = ebest.lengthtoparent
-	// (2) set parentGm = ebest.ParentGM.
-	}
+	//This state implements the logic shown in figure 26
 	state CalculateRecommendedState {
 		on Ack do ReceiveAck;
 		entry {
-			//check if I am the GM or my clock is better than all ErBest
-			UpdateLocalData(Erbest[0]);
-			if((D0[0] == 1) || (D0[0] < EBest[1]))
+			i = sizeof(Ports) - 1;
+			__seal();
+			//for each port calculate the recommended state
+			while(i >= 0)
 			{
-				send(P[0], goMaster);
-				send(P[1], goMaster);
-			}
-			else if ((D0[0] == 1))
-			{
-				if(IsBetter(ErBest[0][0]))
+				//check if I am the GM or my clock is better than all ErBest
+				if(D0 == 1) // D0 is class stratum 1
 				{
-					send(P[0], goMaster);
+					if(D0 < ErBestSeq[i][1][1]) // D0 is better than EBest
+					{
+						//the parentGM point to current node
+						ParentGM = (this, D0);
+						send(ErBestSeq[i][0], goMaster); // BMC_Master M1
+					}
+					else
+					{
+						//no change in the parentGM
+						send(ErBestSeq[i][0], goPassive); // BMC_Passive P1
+					}
 				}
 				else
 				{
-					send(P[0], goPassive);
+					if(D0 < EBest[1][1])
+					{
+						//GM is the current node
+						ParentGM = (this, D0);
+						send(ErBestSeq[i][0], goMaster); // BMC_Master M2
+					}
+					else
+					{
+						//check on which port Ebest was received
+						if(EBest[0] == ErBestSeq[i][0])
+						{
+							ParentGM = ErBestSeq[i][1];
+							send(ErBestSeq[i][0], goSlave); //BMC_Slave S1
+						}
+						else
+						{
+							if(EBest[1][1] < ErBestSeq[i][1][1])
+							{
+								send(ErBestSeq[i][0], goPassive); //BMC_Slave P2
+							}
+							else
+							{
+								ParentGM = EBest[1];
+								send(ErBestSeq[i][0], goMaster); //BMC_Master M3
+							}
+						}
+					}
 				}
-				if(IsBetter(ErBest[1][0]))
-				{
-					send(P[1], goMaster);
-				}
-				else
-				{
-					send(P[1], goPassive);
-				}
-				
+				i = i - 1;
 			}
-			else if(EBest[1] == ErBestV[0][1])
+			
+			//clear the Erbest seq
+			i = sizeof(ErBestSeq) - 1;
+			while(i>=0)
 			{
-				send(ErBestV[0][0], goSlave);
+				ErBestSeq.remove(0);
+				i = i - 1;
 			}
-			else if(EBest[1] == ErBestV[1][1])
+			
+			//send all the ports their new ParentGM
+			
+			i = sizeof(Ports) - 1;
+			while(i>=0)
 			{
-				send(ErBestV[1][0], goSlave);
+				send(Ports[i], UpdateParentGM, ParentGM);
+				i = i - 1;
 			}
-			else if(EBest[1] > ErBestV[0][1])
-			{
-				send(ErBestV[0][0], goMaster);
-			}
-			else if(EBest[1] > ErBestV[1][1])
-			{
-				send(ErBestV[1][0], goMaster);
-			}
-			else
-			{
-				if(!IsBetter(ErBest[0][0]))
-				{
-					send(P[0], goPassive);
-				}
-				if(!IsBetter(ErBest[1][0]))
-				{
-					send(P[1], goPassive);
-				}
-			}
+			__unseal();
 		}
 	}
-}
-
-// Ordinary Clock State Machine
-
-machine OrdinaryClock {
-	var P:mid;
-	var D0 : (int, mid, int); // 0: priority, 1: gmID , 2 : gmPriority
-	var EBest : (mid, int);
-	var check : bool;
-	var ParentGM : mid; // pointer to the parent GM
-	var lengthFromGM : int; // number of boundary clocks from the GM
-	
-	
-	start state OSM_Init {
-		entry { 
-			EBest = (this, 100);
-			raise(Local);
-		}
-		on Local goto PeriodicStateDecision;
-	}
-	
-	action ReceiveErBest {
-		EBest = payload;
-	}
-	
-	foreign fun IsPeriodicTimeOut() : bool {
-		if(*)
-			return true;
-		else 
-			return false;
-	}
-	
-	
-	state PeriodicStateDecision {
-		on ErBest do ReceiveErBest;
-		entry {
-			check =  IsPeriodicTimeOut();
-			if(check)
-			{
-				send(P, StateDecisionEvent);
-				call(WaitForErBest);
-			}
-		}
-		
-		on default goto PeriodicStateDecision;
-	}
-	
-	state WaitForErBest {
-		 entry {}
-		 on Local goto CalculateRecommendedState;
-	}
-	
-	action ReceiveAck {
-		send(P, Ack);
-		return;
-	}
-	
-	state CalculateRecommendedState {
-		on Ack do ReceiveAck;
-		entry {
-			if((D0[0] == 1) || (D0[0] < EBest[1]))
-			{
-				send(P, goMaster);
-			}
-			else
-			{
-				send(P, goSlave);
-			}
-		}
-	}
-	
 }
 
 // The port state machine
 
 machine PortMachine {
-	var receivedMessage: bool;
-	var ConnectedTo : mid;
-	var ParentClock : mid;
-	var ErBestV : (mid, int);
+	var ConnectedTo : id;
+	var MyClock : id;
+	var ErBestVar : (id, int);
+	var ParentGM : (id, int);
+	//temporary variables
 	var check : bool;
+	var numOfAnnounceIntervals: int;
 	// 0 : master, 1: slave, 2 : passive
 	var recState : int;
 	
 	start state PortInitState {
 		ignore Announce;
-		defer StateDecisionEvent;
-		entry { }
-		exit {
-			if(trigger == PowerUp)
-			{
-				ConnectedTo = (((mid, mid, int))payload)[0];
-				ParentClock = (((mid, mid, int))payload)[1];
-				ErBestV[0] = this;
-				ErBestV[1] = (((mid, mid, int))payload)[2];
-			}
-		}
-		on PowerUp goto Initializing;
+		defer StateDecisionEvent, PowerUp;
+		
+		on Initialise goto ConnectionInitialized
+		{
+				ConnectedTo = (((id, id))payload)[0];
+				MyClock = (((id, id))payload)[1];
+				ErBestVar[0] = this;
+				ErBestVar[1] = 10000;
+		};
 	}
 	
-	foreign fun IsMasterTimeOut() : bool {
-	// return true if announce time interval has reached
+	state ConnectionInitialized {
+		ignore Announce;
+		on PowerUp goto Initializing
+		{
+			ParentGM = ((id, int))payload;
+		};
+	}
+	model fun IsAnnounceReceiptTimeOut() : bool
+	{
+		if(*)
+			return true;
+		else 
+			return false;
 	}
 	
-	foreign fun IsSlaveTimeOut() : bool {
-	// return true if receivedMessage is false after 3 announce intervals
+	model fun IsThreeAnnounceReceiptTimeOut() : bool
+	{
+		if(*)
+			return true;
+		else 
+			return false;
 	}
 	
-	foreign fun IsPassiveTimeOut() : bool {
-	// return true if receivedMessage is false after 3 announce intervals
-	}
-	
-	foreign fun UpdateLocalData(mid machine) {
-	// Update the Parent GM and the length to GM
-	//algorithm 
-	//(1) if the sender is boundary clock lengthToGM = machine.lengthToGM + 1;
-	//(2) parentGM = machine.parentGM.
-	}
 	
 	state Initializing {
 		ignore Announce;
 		defer StateDecisionEvent;
 		entry {
-			check = IsTimeOut();
+			check = IsAnnounceReceiptTimeOut();
 			if(check)
 			{
 				raise(Local);
@@ -350,17 +345,16 @@ machine PortMachine {
 	}
 	
 	action HandleAnnounce {
-		if(ErBestV[1] > payload[1])
+		if(ErBestVar[1] > payload[1])
 		{
-			UpdateLocalData(payload);
-			ErBestV[1] = (((mid, int)) payload)[1];
+			ErBestVar = ((id, int)) payload;
 		}
 	}
 	state Listening {
 		
 		on Announce do HandleAnnounce;
 		entry {
-			check = IsTimeOut();
+			check = IsThreeAnnounceReceiptTimeOut();
 			if(check)
 			{
 				raise(goMaster);
@@ -373,13 +367,12 @@ machine PortMachine {
 	state Master {
 		on Announce do HandleAnnounce;
 		entry {
-			check = IsMasterTimeOut();
+			check = IsAnnounceReceiptTimeOut();
 			if(check)
-				send(ConnectedTo, Announce, ErBestV);
+				send(ConnectedTo, Announce, ParentGM);
 		}
 		
 		on default goto Master;
-		on goSlave goto Slave;
 		on StateDecisionEvent goto DeferAll;
 	}
 	
@@ -399,21 +392,26 @@ machine PortMachine {
 		on goPassive goto Passive;
 	}
 	
+	action UpdateState {
+		if(trigger == goMaster)
+			recState = 0;
+		if(trigger == goSlave)
+			recState = 1;
+		if(trigger == goPassive)
+			recState = 2;
+	}
 	state SendErBestAndWaitForRecState {
 		entry {
-			send(ParentClock, ErBest, ErBestV);
+			send(MyClock, ErBest, (this, ErBestVar));
 		}
-		on goMaster goto WaitForAck;
-		on goSlave goto WaitForAck;
-		exit {
-			if(trigger == goMaster)
-				recState = 0;
-			if(trigger == goSlave)
-				recState = 1;
-			if(trigger == goPassive)
-				recState = 2;
-			send(ParentClock, Ack);
-		}
+		on goMaster do UpdateState;
+		on goSlave do UpdateState;
+		on goPassive do UpdateState;
+		on UpdateParentGM goto WaitForAck
+		{
+			ParentGM = ((id, int)) payload;
+			send(MyClock, Ack);
+		};
 	}
 	
 	action JustReturn {
@@ -428,19 +426,19 @@ machine PortMachine {
 	state Slave {
 		on Announce do HandleAnnounce;
 		entry {
-			check = IsSlaveTimeOut();
+			check = IsThreeAnnounceReceiptTimeOut();
 			if(check)
 				raise(goMaster);
 		}
-		
+		on StateDecisionEvent goto DeferAll;
 		on goMaster goto Master;
 		on default goto Slave;
 	}
 	
 	state Passive {
-		on Announce do HandleAnnouce;
+		on Announce do HandleAnnounce;
 		entry {
-			check = IsPassiveTimeout();
+			check = IsThreeAnnounceReceiptTimeOut();
 			if(check)
 			{
 				raise(goMaster);
@@ -448,6 +446,7 @@ machine PortMachine {
 		}
 		on goMaster goto Master;
 		on default goto Passive;
+		on StateDecisionEvent goto DeferAll;
 	}
 }
 		

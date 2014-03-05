@@ -246,7 +246,7 @@ namespace PCompiler
         {
             InstallResult result;
             var env = new Env();
-            var program = Factory.Instance.AddModule(Factory.Instance.MkProgram(new ProgramName("out.4ml")), P2FormulaEntry.Compile(inpFile, domainPath));
+            var program = Factory.Instance.AddModule(Factory.Instance.MkProgram(new ProgramName(inpFile)), P2FormulaEntry.Compile(inpFile, domainPath));
             if (!env.Install(program, out result))
             {
                 return false;
@@ -260,7 +260,7 @@ namespace PCompiler
 
             foreach (var p in result.Touched)
             {
-                if (model == null && p.Program.Node.Name.Equals(new ProgramName("out.4ml")))
+                if (model == null && p.Program.Node.Name.Equals(new ProgramName(inpFile)))
                 {
                     CompilingProgram = p.Program.Node.Name;
                     model = p.Program.FindAny(

@@ -252,6 +252,7 @@ namespace PCompiler
         public Dictionary<string, List<string>> eventSetNameToEvents;
         public Dictionary<string, FunInfo> funNameToFunInfo;
         public Dictionary<string, ActionInfo> actionFunNameToActionFun;
+        public bool isInfinitelyOftenMonitor;
 
         public MachineInfo()
         {
@@ -263,6 +264,7 @@ namespace PCompiler
             eventSetNameToEvents = new Dictionary<string, List<string>>();
             funNameToFunInfo = new Dictionary<string, FunInfo>();
             actionFunNameToActionFun = new Dictionary<string, ActionInfo>();
+            isInfinitelyOftenMonitor = false;
         }
     }
 
@@ -1361,6 +1363,10 @@ namespace PCompiler
             locals.Add(MkZingVarDecl("savedCurrentEvent", ZingData.Cnst_SmEvent));
             locals.Add(MkZingVarDecl("savedCurrentArg", ZingData.Cnst_SmUnion));
             locals.Add(MkZingVarDecl("cont", Factory.Instance.MkCnst("Continuation")));
+            if (compiler.liveness)
+            {
+                locals.Add(MkZingVarDecl("gateProgress", ZingData.Cnst_Bool));
+            }
 
             AST<Node> initStmt = Factory.Instance.AddArg(ZingData.App_Assert, ZingData.Cnst_False);
             foreach (var actionFunName in compiler.allMachines[machineName].actionFunNameToActionFun.Keys)
@@ -1460,11 +1466,10 @@ namespace PCompiler
             AST<Node> atYieldLivenessStmt = ZingData.Cnst_Nil;
             if (compiler.liveness)
             {
-                AST<Node> infinitelyOftenNondetStmt = ZingData.Cnst_Nil;
-                if (compiler.existsInfinitelyOftenMonitor)
-                {
-                    infinitelyOftenNondetStmt = MkZingIfThen(MkZingDot("FairCycle", "gate"), MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingCall(Factory.Instance.MkCnst("choose"), Factory.Instance.MkCnst("bool"))));
-                }
+                AST<Node> thenStmt = MkZingSeq(
+                                MkZingAssign(MkZingIdentifier("gateProgress"), MkZingCall(Factory.Instance.MkCnst("choose"), Factory.Instance.MkCnst("bool"))),
+                                MkZingIfThen(MkZingIdentifier("gateProgress"), MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Closed"))));
+                AST<Node> infinitelyOftenNondetStmt = MkZingIfThen(MkZingApply(ZingData.Cnst_Eq, MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Selected")), thenStmt);
                 atChooseLivenessStmt = MkZingSeq(
                     infinitelyOftenNondetStmt,
                     MkZingCallStmt(MkZingCall(MkZingDot("FairScheduler", "AtChooseStatic"))),
@@ -1511,6 +1516,10 @@ namespace PCompiler
             locals.Add(MkZingVarDecl("didActionPop", ZingData.Cnst_Bool));
             locals.Add(MkZingVarDecl("currentStable", ZingData.Cnst_Bool));
             locals.Add(MkZingVarDecl("savedStable", ZingData.Cnst_Bool));
+            if (compiler.liveness)
+            {
+                locals.Add(MkZingVarDecl("gateProgress", ZingData.Cnst_Bool));
+            }
 
             // Initial block
             AST<Node> initStmt = Factory.Instance.AddArg(ZingData.App_Assert, ZingData.Cnst_False);
@@ -1638,6 +1647,7 @@ namespace PCompiler
             locals.Add(MkZingVarDecl("currentActionSet", ZingData.Cnst_SmEventSet));
             locals.Add(MkZingVarDecl("actionFun", Factory.Instance.MkCnst("ActionFun")));
             locals.Add(MkZingVarDecl("cont", Factory.Instance.MkCnst("Continuation")));
+            locals.Add(MkZingVarDecl("gateProgress", ZingData.Cnst_Bool));
 
             var cont = MkZingIdentifier("cont");
 
@@ -1710,11 +1720,25 @@ namespace PCompiler
                 {
                     var targetStateName = transitions[eventName].target;
                     var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingEvent(eventName));
-                    AST<Node> jumpStmt = MkZingSeq(
-                                            MkZingAssign(MkZingIdentifier("startState"), MkZingDot("State", string.Format("_{0}", targetStateName))), 
-                                            compiler.liveness && compiler.allMachines[machineName].stateNameToStateInfo[targetStateName].isStable ? MkZingAssume(MkZingDot("FairCycle", "gate")) : ZingData.Cnst_Nil,
-                                            Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + targetStateName)));
-                    ordinaryTransitionStmt = MkZingIfThenElse(condExpr, jumpStmt, ordinaryTransitionStmt);
+                    List<AST<Node>> jumpStmts = new List<AST<Node>>();
+                    if (compiler.liveness)
+                    {
+                        if (compiler.allMachines[machineName].stateNameToStateInfo[targetStateName].isStable)
+                        {
+                            jumpStmts.Add(MkZingAssume(MkZingApply(ZingData.Cnst_NEq, MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Closed"))));
+                            jumpStmts.Add(MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "InStable")));
+                        }
+                        else
+                        {
+                            AST<Node> thenStmt = MkZingSeq(
+                                MkZingAssign(MkZingIdentifier("gateProgress"), MkZingCall(Factory.Instance.MkCnst("choose"), Factory.Instance.MkCnst("bool"))),
+                                MkZingIfThenElse(MkZingIdentifier("gateProgress"), MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Selected")), MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Closed"))));
+                            jumpStmts.Add(MkZingIfThen(MkZingApply(ZingData.Cnst_NEq, MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Closed")), thenStmt));
+                        }
+                    }
+                    jumpStmts.Add(MkZingAssign(MkZingIdentifier("startState"), MkZingDot("State", string.Format("_{0}", targetStateName))));
+                    jumpStmts.Add(Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + targetStateName)));
+                    ordinaryTransitionStmt = MkZingIfThenElse(condExpr, MkZingSeq(jumpStmts), ordinaryTransitionStmt);
                 }
 
                 blocks.Add(Compiler.AddArgs(ZingData.App_LabelStmt, transitionLabel, 
@@ -4203,9 +4227,37 @@ namespace PCompiler
             var parameters = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl("arg", Factory.Instance.MkCnst("SM_ARG_UNION")), ZingData.Cnst_Nil);
             var localVars = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl(objectName, Factory.Instance.MkCnst(machineName)), ZingData.Cnst_Nil);
 
+            AST<Node> body = ZingData.Cnst_Nil;
+            if (compiler.liveness) 
+            {
+                localVars = Compiler.AddArgs(ZingData.App_VarDecls, MkZingVarDecl("gateProgress", ZingData.Cnst_Bool), localVars);
+                List<AST<Node>> stmts = new List<AST<Node>>();
+                stmts.Add(MkZingIfThen(MkZingApply(ZingData.Cnst_NEq, MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Init")), MkZingReturn(ZingData.Cnst_Nil)));
+                stmts.Add(MkZingAssign(MkZingIdentifier("gateProgress"), MkZingCall(Factory.Instance.MkCnst("choose"), Factory.Instance.MkCnst("bool"))));
+                stmts.Add(MkZingIfThen(MkZingIdentifier("gateProgress"), MkZingReturn(ZingData.Cnst_Nil)));
+                var machineInfo = compiler.allMachines[machineName];
+                if (machineInfo.isInfinitelyOftenMonitor)
+                {
+                    var initStateName = compiler.GetName(machineInfo.initStateDecl, 0);
+                    if (machineInfo.stateNameToStateInfo[initStateName].isStable)
+                    {
+                        stmts.Add(MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "InStable")));
+                    }
+                    else
+                    {
+                        stmts.Add(MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Selected")));
+                    }
+                }
+                else 
+                {
+                    stmts.Add(MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Closed")));
+                }
+                body = MkZingSeq(stmts);
+            }
+
             var machineInstance = MkZingIdentifier(string.Format("{0}_instance", machineName));
             var machineHandles = MkZingDot("Main", GetMonitorMachineName(machineName));
-            var body = MkZingSeq(
+            body = MkZingSeq(body,
                     MkZingAssign(MkZingIdentifier(objectName), Compiler.AddArgs(ZingData.App_New, Factory.Instance.MkCnst(machineName), ZingData.Cnst_Nil)),
                     MkInitializers(machineName, objectName),
                     MkZingAssign(MkZingDot(objectName, "myHandle"),

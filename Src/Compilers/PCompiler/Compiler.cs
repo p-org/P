@@ -46,7 +46,6 @@ namespace PCompiler
         public bool emitHeaderComment;
         public bool emitDebugC;
         public bool liveness;
-        public bool existsInfinitelyOftenMonitor = false;
         public AST<Model> model = null;
 
         private int nextOutputId = 0;
@@ -830,13 +829,10 @@ namespace PCompiler
                     }
                     foreach (var stateName in visitedStates)
                     {
-                        if (machineInfo.stateNameToStateInfo[stateName].isStable)
-                        {
-                            existsInfinitelyOftenMonitor = true;
-                            break;
-                        }
+                        if (machineInfo.stateNameToStateInfo[stateName].isStable) continue;
+                        machineInfo.isInfinitelyOftenMonitor = true;
+                        break;
                     }
-                    if (existsInfinitelyOftenMonitor) break;
                 }
             }
 

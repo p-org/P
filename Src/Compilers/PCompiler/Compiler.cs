@@ -46,6 +46,8 @@ namespace PCompiler
         public bool emitHeaderComment;
         public bool emitDebugC;
         public bool liveness;
+        public bool maceLiveness;
+
         public AST<Model> model = null;
 
         private int nextOutputId = 0;
@@ -93,7 +95,7 @@ namespace PCompiler
             return prefix + '_' + ret;
         }
 
-        public Compiler(string inpFile, string domainPath, string outputPath, bool erase, bool kernelMode, bool emitHeaderComment, bool emitDebugC, bool liveness)
+        public Compiler(string inpFile, string domainPath, string outputPath, bool erase, bool kernelMode, bool emitHeaderComment, bool emitDebugC, bool liveness, bool maceLiveness)
         {
             this.inpFile = inpFile;
             this.domainPath = domainPath;
@@ -103,6 +105,7 @@ namespace PCompiler
             this.emitHeaderComment = emitHeaderComment;
             this.emitDebugC = emitDebugC;
             this.liveness = liveness;
+            this.maceLiveness = maceLiveness;
 
             this.modelAliases = new MyDictionary<string, AST<FuncTerm>>();
             this.factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();

@@ -1736,6 +1736,17 @@ namespace PCompiler
                             jumpStmts.Add(MkZingIfThen(MkZingApply(ZingData.Cnst_NEq, MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Closed")), thenStmt));
                         }
                     }
+                    else if (compiler.maceLiveness)
+                    {
+                        if (compiler.allMachines[machineName].stateNameToStateInfo[targetStateName].isStable)
+                        {
+                            jumpStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("accept"), ZingData.Cnst_True)));
+                        }
+                        else
+                        {
+                            jumpStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("accept"), ZingData.Cnst_False)));
+                        }
+                    }
                     jumpStmts.Add(MkZingAssign(MkZingIdentifier("startState"), MkZingDot("State", string.Format("_{0}", targetStateName))));
                     jumpStmts.Add(Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + targetStateName)));
                     ordinaryTransitionStmt = MkZingIfThenElse(condExpr, MkZingSeq(jumpStmts), ordinaryTransitionStmt);

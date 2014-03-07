@@ -27,6 +27,7 @@ namespace PCompiler
             bool emitHeaderComment = false;
             bool emitDebugC = false;
             bool liveness = false;
+            bool maceLiveness = false;
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -69,6 +70,9 @@ namespace PCompiler
                         case "/liveness":
                             liveness = true;
                             break;
+                        case "/maceLiveness":
+                            maceLiveness = true;
+                            break;
                         default:
                             goto error;
                     }
@@ -91,6 +95,9 @@ namespace PCompiler
             }
             if (inpFile == null)
                 goto error;
+            if (liveness && maceLiveness)
+                goto error;
+
             if (domainPath == null)
             {
                 var runningLoc = new FileInfo(Assembly.GetExecutingAssembly().Location);
@@ -120,7 +127,7 @@ namespace PCompiler
                 }
             }
 
-            var comp = new Compiler(inpFile, domainPath, outputPath, erase, kernelMode, emitHeaderComment, emitDebugC, liveness);
+            var comp = new Compiler(inpFile, domainPath, outputPath, erase, kernelMode, emitHeaderComment, emitDebugC, liveness, maceLiveness);
             var result = comp.Compile();
             if (!result)
             {
@@ -130,7 +137,7 @@ namespace PCompiler
             return;
 
         error:
-            Console.WriteLine("USAGE: pcompiler.exe <pFile> <domainPath> [/doNotErase] [/kernelMode] [/debugC] [/liveness] [/outputDir:path]");
+            Console.WriteLine("USAGE: pcompiler.exe <pFile> <domainPath> [/doNotErase] [/kernelMode] [/debugC] [/liveness] [/maceLiveness] [/outputDir:path]");
         }
     }
 }

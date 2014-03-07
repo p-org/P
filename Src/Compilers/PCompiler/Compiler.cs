@@ -46,6 +46,8 @@ namespace PCompiler
         public bool emitHeaderComment;
         public bool emitDebugC;
         public bool liveness;
+        public bool maceLiveness;
+
         public AST<Model> model = null;
 
         private int nextOutputId = 0;
@@ -93,7 +95,7 @@ namespace PCompiler
             return prefix + '_' + ret;
         }
 
-        public Compiler(string inpFile, string domainPath, string outputPath, bool erase, bool kernelMode, bool emitHeaderComment, bool emitDebugC, bool liveness)
+        public Compiler(string inpFile, string domainPath, string outputPath, bool erase, bool kernelMode, bool emitHeaderComment, bool emitDebugC, bool liveness, bool maceLiveness)
         {
             this.inpFile = inpFile;
             this.domainPath = domainPath;
@@ -103,6 +105,7 @@ namespace PCompiler
             this.emitHeaderComment = emitHeaderComment;
             this.emitDebugC = emitDebugC;
             this.liveness = liveness;
+            this.maceLiveness = maceLiveness;
 
             this.modelAliases = new MyDictionary<string, AST<FuncTerm>>();
             this.factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
@@ -246,7 +249,7 @@ namespace PCompiler
         {
             InstallResult result;
             var env = new Env();
-            var program = Factory.Instance.AddModule(Factory.Instance.MkProgram(new ProgramName("out.4ml")), P2FormulaEntry.Compile(inpFile, domainPath));
+            var program = Factory.Instance.AddModule(Factory.Instance.MkProgram(new ProgramName(inpFile)), P2FormulaEntry.Compile(inpFile, domainPath));
             if (!env.Install(program, out result))
             {
                 return false;
@@ -260,7 +263,7 @@ namespace PCompiler
 
             foreach (var p in result.Touched)
             {
-                if (model == null && p.Program.Node.Name.Equals(new ProgramName("out.4ml")))
+                if (model == null && p.Program.Node.Name.Equals(new ProgramName(inpFile)))
                 {
                     CompilingProgram = p.Program.Node.Name;
                     model = p.Program.FindAny(

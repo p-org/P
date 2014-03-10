@@ -792,7 +792,7 @@ namespace PCompiler
                 }
             }
 
-            if (liveness)
+            if (liveness || maceLiveness)
             {
                 terms = GetBin("Stable");
                 foreach (var term in terms)

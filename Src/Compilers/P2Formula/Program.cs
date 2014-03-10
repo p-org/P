@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -217,7 +218,7 @@ namespace PCompiler
 
             PParser.PFormulaBuilder builder = new PParser.PFormulaBuilder(sem, "PData", domainPath + "\\PData.4ml");
             var inpFileWithoutDir = System.IO.Path.GetFileName(inpFile);
-            var modelName = inpFileWithoutDir.EndsWith(".p") ? inpFileWithoutDir.Substring(0, inpFileWithoutDir.Length - 2) : inpFileWithoutDir;
+            var modelName = MkValidIdentifier(inpFileWithoutDir.EndsWith(".p") ? inpFileWithoutDir.Substring(0, inpFileWithoutDir.Length - 2) : inpFileWithoutDir);
             var r = builder.build(parser.program, modelName);
             if (builder.errors.Count > 0)
             {
@@ -228,5 +229,34 @@ namespace PCompiler
             return (AST<Model>)r;
         }
 
+        private static string MkValidIdentifier(string name)
+        {
+            Contract.Requires(!string.IsNullOrWhiteSpace(name));
+            char c;
+            var idname = string.Empty;
+            for (int i = 0; i < name.Length; ++i)
+            {
+                c = name[i];
+                if (Char.IsWhiteSpace(c))
+                {
+                    continue;
+                }
+                else if (c == '_' || char.IsLetterOrDigit(c))
+                {
+                    idname += c;
+                }
+                else
+                {
+                    idname += "_";
+                }
+            }
+
+            if (char.IsDigit(idname[0]))
+            {
+                idname = "_" + idname;
+            }
+
+            return idname;
+        }
     }
 }

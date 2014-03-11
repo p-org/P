@@ -9,6 +9,7 @@ main machine Program {
 	var receiver: mid;
 	start stable state Init {
 		entry {
+			new Dummy();
 			sender = new Sender();
 			receiver = new Receiver();
 			send(receiver, SenderId, sender);
@@ -21,7 +22,7 @@ model machine Sender {
 	var receiver: mid;
 	var done: bool;
 
-	model fun AmIDone(): bool 
+	fun AmIDone(): bool 
 	{
 		if (**)
 			return true;
@@ -63,13 +64,12 @@ model machine Receiver {
 	}
 	
 	stable state Ready {
-		on A goto Respond;
-	}
-
-	stable state Respond {
-		entry {
+		on A goto Ready {
 			send(sender, B);
-		}
-		on A goto Respond;
+		};
 	}
+}
+
+monitor Dummy {
+	start state Init {}
 }

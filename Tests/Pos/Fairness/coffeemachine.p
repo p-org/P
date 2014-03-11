@@ -17,6 +17,7 @@ main model machine CoffeeShop
             on Unit goto WaitForDone;
             entry
             {
+				new Dummy();
 				_server = new Server();
                 _customer = new Customer(_server);
                 _coffeemachine = new CoffeeMachine(_server);
@@ -149,4 +150,8 @@ model machine CoffeeMachine
 				send (_server, MsgReady);
             };
         }
+}
+
+monitor Dummy {
+	start state Init {}
 }

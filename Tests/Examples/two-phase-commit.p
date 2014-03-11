@@ -172,12 +172,20 @@ model machine Client {
 
 	fun ChooseIndex(): int
 	{
-		return 0;
+		if (*) {
+			return 0;
+		} else {
+			return 1;
+		}
 	}
 
 	fun ChooseValue(): int
 	{
-		return 0;
+		if (*) {
+			return 0;
+		} else {
+			return 1;
+		}
 	}
 }
 

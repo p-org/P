@@ -1662,8 +1662,8 @@ namespace PCompiler
                 initStmt = MkZingIfThenElse(condExpr, gotoStmt, initStmt);
             }
             string initStateName = compiler.GetName(compiler.allMachines[machineName].initStateDecl, 0);
-            initStmt = MkZingIfThenElse(MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("startState"), MkZingDot("State", "_default")), 
-                                 Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + initStateName)), 
+            initStmt = MkZingIfThenElse(MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("startState"), MkZingDot("State", "_default")),
+                                 Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + initStateName)),
                                  initStmt);
             initStmt = Compiler.AddArgs(ZingData.App_LabelStmt, Factory.Instance.MkCnst("init"), initStmt);
 
@@ -1680,19 +1680,41 @@ namespace PCompiler
                 AST<Cnst> waitLabel = Factory.Instance.MkCnst("wait_" + stateName);
                 AST<Cnst> transitionLabel = Factory.Instance.MkCnst("transition_" + stateName);
                 string traceString = string.Format("\"<StateLog> Machine {0}-{{0}} entered State {1}\"", machineName, stateName);
-                var executeStmt = MkZingSeq(
-                                    MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"))),
-                                    MkZingCallStmt(MkZingCall(MkZingIdentifier("invokeplugin"), Factory.Instance.MkCnst("\"StateCoveragePlugin.dll\""), Factory.Instance.MkCnst(string.Format("\"{0}\"", machineName)), Factory.Instance.MkCnst(string.Format("\"{0}\"", stateName)))),
-                                    MkZingAssign(cont, MkZingCall(MkZingDot(Factory.Instance.MkCnst("Continuation"), "Construct_Default"))),
-                                    MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), Factory.Instance.MkCnst(0))),
-                                    MkZingAssign(cont, MkZingCall(MkZingIdentifier(getZingWrapperFunName(stateName, TranslationContext.Entry)), cont)),
-                                    MkZingIfThenElse(
-                                              MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
-                                              Factory.Instance.AddArg(ZingData.App_Goto, waitLabel),
-                                              Factory.Instance.AddArg(ZingData.App_Goto, transitionLabel))
-                                    );
-                executeStmt = Compiler.AddArgs(ZingData.App_LabelStmt, executeLabel, executeStmt);
-                blocks.Add(executeStmt);
+                List<AST<Node>> executeStmts = new List<AST<Node>>();
+                if (compiler.liveness)
+                {
+                    if (compiler.allMachines[machineName].stateNameToStateInfo[stateName].isStable)
+                    {
+                        executeStmts.Add(MkZingAssume(MkZingApply(ZingData.Cnst_NEq, MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Closed"))));
+                        executeStmts.Add(MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "InStable")));
+                    }
+                    else
+                    {
+                        executeStmts.Add(MkZingIfThen(MkZingApply(ZingData.Cnst_NEq, MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Closed")),
+                                                   MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Selected"))));
+                    }
+                }
+                else if (compiler.maceLiveness)
+                {
+                    if (compiler.allMachines[machineName].stateNameToStateInfo[stateName].isStable)
+                    {
+                        executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("accept"), ZingData.Cnst_True)));
+                    }
+                    else
+                    {
+                        executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("accept"), ZingData.Cnst_False)));
+                    }
+                }
+                executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"))));
+                executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("invokeplugin"), Factory.Instance.MkCnst("\"StateCoveragePlugin.dll\""), Factory.Instance.MkCnst(string.Format("\"{0}\"", machineName)), Factory.Instance.MkCnst(string.Format("\"{0}\"", stateName)))));
+                executeStmts.Add(MkZingAssign(cont, MkZingCall(MkZingDot(Factory.Instance.MkCnst("Continuation"), "Construct_Default"))));
+                executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), Factory.Instance.MkCnst(0))));
+                executeStmts.Add(MkZingAssign(cont, MkZingCall(MkZingIdentifier(getZingWrapperFunName(stateName, TranslationContext.Entry)), cont)));
+                executeStmts.Add(MkZingIfThenElse(
+                          MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
+                          Factory.Instance.AddArg(ZingData.App_Goto, waitLabel),
+                          Factory.Instance.AddArg(ZingData.App_Goto, transitionLabel)));
+                blocks.Add(Compiler.AddArgs(ZingData.App_LabelStmt, executeLabel, MkZingSeq(executeStmts)));
                 var waitStmt = MkZingReturn(ZingData.Cnst_Nil);
                 waitStmt = Compiler.AddArgs(ZingData.App_LabelStmt, waitLabel, waitStmt);
                 blocks.Add(waitStmt);
@@ -1709,10 +1731,10 @@ namespace PCompiler
                             ZingData.Cnst_Nil);
 
                 AST<Node> exitFunction = compiler.allMachines[machineName].stateNameToStateInfo[stateName].exitFun != null ?
-                    (AST<Node>) MkZingSeq(MkZingAssign(cont, MkZingCall(MkZingDot(Factory.Instance.MkCnst("Continuation"), "Construct_Default"))),
+                    (AST<Node>)MkZingSeq(MkZingAssign(cont, MkZingCall(MkZingDot(Factory.Instance.MkCnst("Continuation"), "Construct_Default"))),
                                           MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), Factory.Instance.MkCnst(0))),
                                           MkZingAssign(cont, MkZingCall(MkZingIdentifier(getZingWrapperFunName(stateName, TranslationContext.Exit)), cont))) :
-                    (AST<Node>) ZingData.Cnst_Nil;
+                    (AST<Node>)ZingData.Cnst_Nil;
 
                 AST<Node> ordinaryTransitionStmt = MkZingAssert(ZingData.Cnst_False);
                 var transitions = compiler.allMachines[machineName].stateNameToStateInfo[stateName].transitions;
@@ -1721,38 +1743,12 @@ namespace PCompiler
                     var targetStateName = transitions[eventName].target;
                     var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingEvent(eventName));
                     List<AST<Node>> jumpStmts = new List<AST<Node>>();
-                    if (compiler.liveness)
-                    {
-                        if (compiler.allMachines[machineName].stateNameToStateInfo[targetStateName].isStable)
-                        {
-                            jumpStmts.Add(MkZingAssume(MkZingApply(ZingData.Cnst_NEq, MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Closed"))));
-                            jumpStmts.Add(MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "InStable")));
-                        }
-                        else
-                        {
-                            AST<Node> thenStmt = MkZingSeq(
-                                MkZingAssign(MkZingIdentifier("gateProgress"), MkZingCall(Factory.Instance.MkCnst("choose"), Factory.Instance.MkCnst("bool"))),
-                                MkZingIfThenElse(MkZingIdentifier("gateProgress"), MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Selected")), MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Closed"))));
-                            jumpStmts.Add(MkZingIfThen(MkZingApply(ZingData.Cnst_NEq, MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Closed")), thenStmt));
-                        }
-                    }
-                    else if (compiler.maceLiveness)
-                    {
-                        if (compiler.allMachines[machineName].stateNameToStateInfo[targetStateName].isStable)
-                        {
-                            jumpStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("accept"), ZingData.Cnst_True)));
-                        }
-                        else
-                        {
-                            jumpStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("accept"), ZingData.Cnst_False)));
-                        }
-                    }
                     jumpStmts.Add(MkZingAssign(MkZingIdentifier("startState"), MkZingDot("State", string.Format("_{0}", targetStateName))));
                     jumpStmts.Add(Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + targetStateName)));
                     ordinaryTransitionStmt = MkZingIfThenElse(condExpr, MkZingSeq(jumpStmts), ordinaryTransitionStmt);
                 }
 
-                blocks.Add(Compiler.AddArgs(ZingData.App_LabelStmt, transitionLabel, 
+                blocks.Add(Compiler.AddArgs(ZingData.App_LabelStmt, transitionLabel,
                                             MkZingSeq(MkZingAssign(currentActionSet, Compiler.AddArgs(ZingData.App_New, smEventSetType, ZingData.Cnst_Nil)),
                                                       MkZingCallStmt(MkZingCall(MkZingIdentifier(string.Format("{0}_CalculateActionSet", stateName)), currentActionSet)),
                                                       actionStmt, exitFunction, ordinaryTransitionStmt)));
@@ -4247,19 +4243,7 @@ namespace PCompiler
                 stmts.Add(MkZingAssign(MkZingIdentifier("gateProgress"), MkZingCall(Factory.Instance.MkCnst("choose"), Factory.Instance.MkCnst("bool"))));
                 stmts.Add(MkZingIfThen(MkZingIdentifier("gateProgress"), MkZingReturn(ZingData.Cnst_Nil)));
                 var machineInfo = compiler.allMachines[machineName];
-                if (machineInfo.isInfinitelyOftenMonitor)
-                {
-                    var initStateName = compiler.GetName(machineInfo.initStateDecl, 0);
-                    if (machineInfo.stateNameToStateInfo[initStateName].isStable)
-                    {
-                        stmts.Add(MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "InStable")));
-                    }
-                    else
-                    {
-                        stmts.Add(MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Selected")));
-                    }
-                }
-                else 
+                if (!machineInfo.isInfinitelyOftenMonitor)
                 {
                     stmts.Add(MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Closed")));
                 }

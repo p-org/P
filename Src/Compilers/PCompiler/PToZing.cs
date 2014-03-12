@@ -1663,8 +1663,9 @@ namespace PCompiler
             }
             string initStateName = compiler.GetName(compiler.allMachines[machineName].initStateDecl, 0);
             initStmt = MkZingIfThenElse(MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("startState"), MkZingDot("State", "_default")),
-                                 Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + initStateName)),
-                                 initStmt);
+                                        MkZingSeq(MkZingAssign(MkZingIdentifier("startState"), MkZingDot("State", string.Format("_{0}", initStateName))),
+                                                  Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + initStateName))),
+                                        initStmt);
             initStmt = Compiler.AddArgs(ZingData.App_LabelStmt, Factory.Instance.MkCnst("init"), initStmt);
 
             var currentActionSet = MkZingIdentifier("currentActionSet");

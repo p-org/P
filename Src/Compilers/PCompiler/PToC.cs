@@ -2980,7 +2980,7 @@ namespace PCompiler
                         if (v.Item2)
                             throw new NotImplementedException("Haven't implemented cleanup for heap temporary vars yet!");
 
-                        if (!(v.Item1 is PTupleType) && !(v.Item1 is PNamedTupleType) && !(v.Item1 is PAnyType))
+                        if (!(v.Item1 is PTupleType) && !(v.Item1 is PNamedTupleType) && !(v.Item1 is PSeqType) && !(v.Item1 is PMapType) && !(v.Item1 is PAnyType))
                             throw new NotImplementedException("Revisit cleanup for new type " + v.Item1);
 
                         if (!typeNeedsDestroy(v.Item1))

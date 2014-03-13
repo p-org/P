@@ -113,18 +113,11 @@ for f in elaborateFiles(args.files):
         die("Compiling of Zing model failed:\n" + cat(zcOut))
 
     print("Running Zinger")
-<<<<<<< HEAD
     macelivenessoption = '-maceliveness:(' + args.limits[0] + ',' + args.limits[1]+')';
     zingerOutFile = open(zingerOut, "w");
     shutil.copy(sched, join(out, 'sched.dll'));
     shutil.copy(stateCoverage, join(out, 'stateCov.dll'));
     ret = check_call([zinger, '-s', '-eo', '-p', macelivenessoption, \
-=======
-    zingerOutFile = open(zingerOut, "w");
-    shutil.copy(sched, join(out, 'sched.dll'));
-    shutil.copy(stateCoverage, join(out, 'stateCov.dll'));
-    ret = check_call([zinger, '-s', '-eo', '-p', '-maceliveness:(' + args.limits[0] + ',' + args.limits[1]+')', \
->>>>>>> 2192b4592bc9011a5a313c1cf45e40d64ad08407
        '-et:trace.txt', '-plugin:stateCov.dll', '-sched:sched.dll', zingDll], \
                      cwd=out, stdout=zingerOutFile, stderr=zingerOutFile);
     zingerOutFile.close();

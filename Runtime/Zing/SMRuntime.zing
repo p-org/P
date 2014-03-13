@@ -470,7 +470,7 @@ class FairChoice {
 enum GateStatus { Init, Selected, InStable, Closed };
 
 class FairCycle {
-    static bool gate = GateStatus.Init;
+    static GateStatus gate = GateStatus.Init;
     static void Accept() {
         if (gate == GateStatus.Closed &&
 	    sizeof(FairChoice.accepted) == sizeof(FairChoice.all) && 

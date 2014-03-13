@@ -24,7 +24,7 @@ model machine Sender {
 
 	fun AmIDone(): bool 
 	{
-		if (**)
+		if (*)
 			return true;
 		else
 			return false;

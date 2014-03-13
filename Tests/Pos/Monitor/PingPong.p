@@ -47,7 +47,7 @@ machine PONG {
 }
 
 monitor M {
-    start state ExpectPing {
+    start stable state ExpectPing {
         on Ping goto ExpectPong;
     }
 

@@ -1,58 +1,105 @@
-event START_2PC;
-event WRITE_REQ_REPLICA:(idx:int,val:int);
-event WRITE_RESP_REPLICA_COMMIT;
-event WRITE_RESP_REPLICA_ABORT;
-event READ_REQ_REPLICA:int;
-event READ_RESP_REPLICA:int;
-event GLOBAL_ABORT;
-event GLOBAL_COMMIT;
+event REQ_REPLICA:(seqNum:int, idx:int, val:int);
+event RESP_REPLICA_COMMIT:int;
+event RESP_REPLICA_ABORT:int;
+event GLOBAL_ABORT:int;
+event GLOBAL_COMMIT:int;
 event WRITE_REQ:(client:mid, idx:int, val:int);
+event WRITE_FAIL;
+event WRITE_SUCCESS;
 event READ_REQ:(client:mid, idx:int);
-event WRITE_RESP;
-event READ_RESP:int;
+event READ_FAIL;
+event READ_UNAVAILABLE;
+event READ_SUCCESS:int;
 event Unit;
+event Timeout;
+event StartTimer:int;
+event CancelTimer;
+event CancelTimerFailure;
+event CancelTimerSuccess;
+event MONITOR_WRITE:(idx:int, val:int);
+event MONITOR_READ_SUCCESS:(idx:int, val:int);
+event MONITOR_READ_UNAVAILABLE:int;
+
+model machine Timer {
+	var target: id;
+	start state Init {
+		entry {
+			target = (id)payload;
+			raise(Unit);
+		}
+		on Unit goto Loop;
+	}
+
+	state Loop {
+		ignore CancelTimer;
+		on StartTimer goto TimerStarted;
+	}
+
+	state TimerStarted {
+		entry {
+			if (*) {
+				send(target, Timeout);
+				raise(Unit);
+			}
+		}
+		on Unit goto Loop;
+		on CancelTimer goto Loop {
+			if (*) {
+				send(target, CancelTimerFailure);
+				send(target, Timeout);
+			} else {
+				send(target, CancelTimerSuccess);
+			}		
+		};
+	}
+}
 
 machine Replica {
 	var coordinator: id;
     var data: map[int,int];
-    start state _Init {
+	var pendingWriteReq: (seqNum: int, idx: int, val: int);
+	var shouldCommit: bool;
+	var lastSeqNum: int;
+
+    start state Init {
 	    entry {
 		    coordinator = (id)payload;
+			lastSeqNum = 0;
 			raise(Unit);
 		}
-		on Unit goto Init;
+		on Unit goto Loop;
 	}
 
-	state Init {
-		on WRITE_REQ_REPLICA goto DoWrite;
-		on READ_REQ_REPLICA goto DoRead;
-	}
-
-	state DoRead {
-		entry {
-			send(coordinator, READ_RESP_REPLICA, data[payload]);
-			raise(Unit);
+	action HandleReqReplica {
+		pendingWriteReq = ((seqNum:int, idx:int, val:int))payload;
+		assert (pendingWriteReq.seqNum > lastSeqNum);
+		shouldCommit = ShouldCommitWrite();
+		if (shouldCommit) {
+			send(coordinator, RESP_REPLICA_COMMIT, pendingWriteReq.seqNum);
+		} else {
+			send(coordinator, RESP_REPLICA_ABORT, pendingWriteReq.seqNum);
 		}
-		on Unit goto Init;
 	}
 
-	var shouldCommit:bool;
-	state DoWrite {
-		entry {
-			shouldCommit = ShouldCommitWrite();
-			if (shouldCommit) {
-				send(coordinator, WRITE_RESP_REPLICA_COMMIT);
-			} else {
-				send(coordinator, WRITE_RESP_REPLICA_ABORT);
-			}
-			raise(Unit);
+	action HandleGlobalAbort {
+		assert (pendingWriteReq.seqNum >= payload);
+		if (pendingWriteReq.seqNum == payload) {
+			lastSeqNum = payload;
 		}
-		on Unit goto WaitForGlobalCommitOrAbort;
 	}
 
-	state WaitForGlobalCommitOrAbort {
-		on GLOBAL_ABORT goto Init;
-		on GLOBAL_COMMIT goto Init;
+	action HandleGlobalCommit {
+		assert (pendingWriteReq.seqNum >= payload);
+		if (pendingWriteReq.seqNum == payload) {
+			data.update(pendingWriteReq.idx, pendingWriteReq.val);
+			lastSeqNum = payload;
+		}
+	}
+
+	state Loop {
+		on GLOBAL_ABORT do HandleGlobalAbort;
+		on GLOBAL_COMMIT do HandleGlobalCommit;
+		on REQ_REPLICA do HandleReqReplica;
 	}
 
 	model fun ShouldCommitWrite(): bool 
@@ -62,90 +109,125 @@ machine Replica {
 }
 
 machine Coordinator {
-    var log: seq[eid];
+	var data: map[int,int];
 	var replicas: seq[id];
 	var numReplicas: int;
 	var i: int;
 	var pendingWriteReq: (client: mid, idx: int, val: int);
-	var pendingReadReq: (client: mid, idx: int);
+	var replica: id;
+	var currSeqNum:int;
+	var timer: mid;
 
-	start state _Init {
+	start state Init {
 		entry {
 			numReplicas = (int)payload;
 			assert (numReplicas > 0);
 			i = 0;
 			while (i < numReplicas) {
-				replicas[i] = new Replica(this);
+				replica = new Replica(this);
+				replicas.insert(i, replica);
 				i = i + 1;
 			}
+			currSeqNum = 0;
+			timer = new Timer(this);
 			raise(Unit);
 		}
-		on Unit goto Init;
+		on Unit goto Loop;
 	}
 
-	state Init {
-		on WRITE_REQ goto DoWrite {
-			pendingWriteReq = ((client: mid, idx: int, val: int))payload;
-		};
-		on READ_REQ goto DoRead {
-			pendingReadReq = ((client: mid, idx: int))payload;
-		};
-	}
-
-	state DoWrite {
-		entry {
-			log[sizeof(log)] = START_2PC;
-			i = 0;
-			while (i < sizeof(replicas)) {
-				send(replicas[i], WRITE_REQ_REPLICA, (idx=pendingWriteReq.idx, val=pendingWriteReq.val));
-				i = i + 1;
-			}
-			raise(Unit);
+	action DoRead {
+		if (payload.idx in data) {
+			invoke M(MONITOR_READ_SUCCESS, (idx=payload.idx, val=data[payload.idx]));
+			send(payload.client, READ_SUCCESS, data[payload.idx]);
+		} else {
+			invoke M(MONITOR_READ_UNAVAILABLE, payload.idx);
+			send(payload.client, READ_UNAVAILABLE);
 		}
+	}
+
+	action DoWrite {
+		pendingWriteReq = payload;
+		currSeqNum = currSeqNum + 1;
+		i = 0;
+		while (i < sizeof(replicas)) {
+			send(replicas[i], REQ_REPLICA, (seqNum=currSeqNum, idx=pendingWriteReq.idx, val=pendingWriteReq.val));
+			i = i + 1;
+		}
+		send(timer, StartTimer, 100);
+		raise(Unit);
+	}
+
+	state Loop {
+		on WRITE_REQ do DoWrite;
 		on Unit goto CountVote;
+		on READ_REQ do DoRead;
+		ignore RESP_REPLICA_COMMIT, RESP_REPLICA_ABORT;
+	}
+
+	fun DoGlobalAbort() {
+		i = 0;
+		while (i < sizeof(replicas)) {
+			send(replicas[i], GLOBAL_ABORT, currSeqNum);
+			i = i + 1;
+		}
+		send(pendingWriteReq.client, WRITE_FAIL);
 	}
 
 	state CountVote {
 		entry {
 			if (i == 0) {
-				log[sizeof(log)] = GLOBAL_COMMIT;
 				while (i < sizeof(replicas)) {
-					send(replicas[i], GLOBAL_COMMIT);
+					send(replicas[i], GLOBAL_COMMIT, currSeqNum);
 					i = i + 1;
 				}
-				send(pendingWriteReq.client, WRITE_RESP);
+				data.update(pendingWriteReq.idx, pendingWriteReq.val);
+				invoke M(MONITOR_WRITE, (idx=pendingWriteReq.idx, val=pendingWriteReq.val));
+				send(pendingWriteReq.client, WRITE_SUCCESS);
+				send(timer, CancelTimer);
 				raise(Unit);
 			}
 		}
-		on WRITE_RESP_REPLICA_COMMIT goto CountVote {
-			i = i - 1;
-		};
-		on WRITE_RESP_REPLICA_ABORT goto DoWrite {
-			log[sizeof(log)] = GLOBAL_ABORT;
-			i = 0;
-			while (i < sizeof(replicas)) {
-				send(replicas[i], GLOBAL_ABORT);
-				i = i + 1;
+		defer WRITE_REQ;
+		on READ_REQ do DoRead;
+		on RESP_REPLICA_COMMIT goto CountVote {
+			if (currSeqNum == (int)payload) {
+				i = i - 1;
 			}
 		};
-		on Unit goto Init;
+		on RESP_REPLICA_ABORT do HandleAbort;
+		on Timeout goto Loop {
+			DoGlobalAbort();
+		};
+		on Unit goto WaitForCancelTimerResponse;
 	}
 
-	state DoRead {
-		entry {
-			send(replicas[0], READ_REQ_REPLICA, pendingReadReq.idx);
+	action HandleAbort {
+		if (currSeqNum == (int)payload) {
+			DoGlobalAbort();
+			send(timer, CancelTimer);
+			raise(Unit);
 		}
-		on READ_RESP_REPLICA goto Init {
-			send(pendingReadReq.client, READ_RESP, payload);
-		};
+	}
+
+	state WaitForCancelTimerResponse {
+		defer WRITE_REQ, READ_REQ;
+		ignore RESP_REPLICA_COMMIT, RESP_REPLICA_ABORT;
+		on Timeout, CancelTimerSuccess goto Loop;
+		on CancelTimerFailure goto WaitForTimeout;
+	}
+
+	state WaitForTimeout {
+		defer WRITE_REQ, READ_REQ;
+		ignore RESP_REPLICA_COMMIT, RESP_REPLICA_ABORT;
+		on Timeout goto Loop;
 	}
 }
 
 model machine Client {
-    var coordinator: mid;
+    var coordinator: id;
     start state Init {
 	    entry {
-	        coordinator = (mid)payload;
+	        coordinator = (id)payload;
 			raise(Unit);
 		}
 		on Unit goto DoWrite;
@@ -156,19 +238,21 @@ model machine Client {
 	    entry {
 			idx = ChooseIndex();
 			val = ChooseValue();
-			send(coordinator, WRITE_REQ, (this, idx, val));
+			send(coordinator, WRITE_REQ, (client=this, idx=idx, val=val));
 		}
-		on WRITE_RESP goto DoRead;
+		on WRITE_FAIL goto End;
+		on WRITE_SUCCESS goto DoRead;
 	}
 
 	state DoRead {
 	    entry {
-			send(coordinator, READ_REQ, (this, idx));
+			send(coordinator, READ_REQ, (client=this, idx=idx));
 		}
-		on READ_RESP goto DoWrite {
-			assert ((int)payload == val);
-		};
+		on READ_FAIL goto End;
+		on READ_SUCCESS goto End;
 	}
+
+	state End { }
 
 	fun ChooseIndex(): int
 	{
@@ -189,12 +273,33 @@ model machine Client {
 	}
 }
 
+monitor M {
+	var data: map[int,int];
+	action DoWrite {
+			data.update(payload.idx, payload.val);
+	}
+	action CheckReadSuccess {
+		assert(payload.idx in data);
+		assert(data[payload.idx] == payload.val);
+	}
+	action CheckReadUnavailable {
+		assert(!(payload in data));
+	}
+	start state Init {
+		on MONITOR_WRITE do DoWrite;
+		on MONITOR_READ_SUCCESS do CheckReadSuccess;
+		on MONITOR_READ_UNAVAILABLE do CheckReadUnavailable;
+	}
+}
+
 main model machine TwoPhaseCommit {
     var coordinator: id;
 	var client: mid;
     start state Init {
 	    entry {
-	        coordinator = new Coordinator(3);
+			new M();
+	        coordinator = new Coordinator(2);
+			client = new Client(coordinator);
 			client = new Client(coordinator);
 		}
 	}

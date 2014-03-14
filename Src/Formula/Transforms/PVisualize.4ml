@@ -71,10 +71,10 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
         style.border = DEFAULT,
         style.stroke = DEFAULT,
         style.strokeWidth = DEFAULT,
-        style.minWidth = DEFAULT,
+        style.minWidth = 300,
         style.minHeight = DEFAULT,                            
-        style.maxWidth = DEFAULT,
-        style.maxHeight = DEFAULT.
+        style.maxWidth = 300,
+        style.maxHeight = 300.
         
    StateStyle(FALSE, TRUE, style) :-
         style : ContainerStyle,
@@ -83,10 +83,10 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
         style.border = DEFAULT,
         style.stroke = DEFAULT,
         style.strokeWidth = DEFAULT,
-        style.minWidth = DEFAULT,
+        style.minWidth = 300,
         style.minHeight = DEFAULT,                            
-        style.maxWidth = DEFAULT,
-        style.maxHeight = DEFAULT.
+        style.maxWidth = 300,
+        style.maxHeight = 300.
         
    StateStyle(TRUE, FALSE, style) :-
         style : ContainerStyle,
@@ -95,10 +95,10 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
         style.border = DEFAULT,
         style.stroke = DEFAULT,
         style.strokeWidth = DEFAULT,
-        style.minWidth = DEFAULT,
+        style.minWidth = 300,
         style.minHeight = DEFAULT,                            
-        style.maxWidth = DEFAULT,
-        style.maxHeight = DEFAULT.
+        style.maxWidth = 300,
+        style.maxHeight = 300.
         
    StateStyle(TRUE, TRUE, style) :-
         style : ContainerStyle,
@@ -107,10 +107,10 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
         style.border = DEFAULT,
         style.stroke = DEFAULT,
         style.strokeWidth = DEFAULT,
-        style.minWidth = DEFAULT,
+        style.minWidth = 300,
         style.minHeight = DEFAULT,                            
-        style.maxWidth = DEFAULT,
-        style.maxHeight = DEFAULT.
+        style.maxWidth = 300,
+        style.maxHeight = 300.
         
          
    State2Node ::= (StateDecl, Node).

@@ -49,10 +49,8 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
    Mach2Name ::= (MachineDecl, String).
    Mach2Name' ::= (MachineDecl, String).
    
-   Mach2Name(m, n) :- Mach2Name'(m, n'), no { md | md is MainDecl(New(mt, _)), mt.name = m.name }, no Fair(m), n = n';
-                      Mach2Name'(m, n'), no { md | md is MainDecl(New(mt, _)), mt.name = m.name }, Fair(m), n = strJoin("fair ", n');
-                      Mach2Name'(m, n'), md is MainDecl(New(mt, _)), mt.name = m.name, no Fair(m), n = strJoin("main ", n');
-                      Mach2Name'(m, n'), md is MainDecl(New(mt, _)), mt.name = m.name, Fair(m), n = strJoin("main fair ", n').
+   Mach2Name(m, n) :- Mach2Name'(m, n'), no { md | md is MainDecl(New(name, _)), name = m.name }, n = n';
+                      Mach2Name'(m, n'), md is MainDecl(New(name, _)), name = m.name, n = strJoin("main ", n').
                                             
    Mach2Name'(m, n) :- m is MachineDecl(n', REAL, NIL), n = n';
                        m is MachineDecl(n', MODEL, NIL), n = strJoin("model ", n');
@@ -73,10 +71,10 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
         style.border = DEFAULT,
         style.stroke = DEFAULT,
         style.strokeWidth = DEFAULT,
-        style.minWidth = DEFAULT,
+        style.minWidth = 300,
         style.minHeight = DEFAULT,                            
-        style.maxWidth = DEFAULT,
-        style.maxHeight = DEFAULT.
+        style.maxWidth = 300,
+        style.maxHeight = 300.
         
    StateStyle(FALSE, TRUE, style) :-
         style : ContainerStyle,
@@ -85,10 +83,10 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
         style.border = DEFAULT,
         style.stroke = DEFAULT,
         style.strokeWidth = DEFAULT,
-        style.minWidth = DEFAULT,
+        style.minWidth = 300,
         style.minHeight = DEFAULT,                            
-        style.maxWidth = DEFAULT,
-        style.maxHeight = DEFAULT.
+        style.maxWidth = 300,
+        style.maxHeight = 300.
         
    StateStyle(TRUE, FALSE, style) :-
         style : ContainerStyle,
@@ -97,10 +95,10 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
         style.border = DEFAULT,
         style.stroke = DEFAULT,
         style.strokeWidth = DEFAULT,
-        style.minWidth = DEFAULT,
+        style.minWidth = 300,
         style.minHeight = DEFAULT,                            
-        style.maxWidth = DEFAULT,
-        style.maxHeight = DEFAULT.
+        style.maxWidth = 300,
+        style.maxHeight = 300.
         
    StateStyle(TRUE, TRUE, style) :-
         style : ContainerStyle,
@@ -109,10 +107,10 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
         style.border = DEFAULT,
         style.stroke = DEFAULT,
         style.strokeWidth = DEFAULT,
-        style.minWidth = DEFAULT,
+        style.minWidth = 300,
         style.minHeight = DEFAULT,                            
-        style.maxWidth = DEFAULT,
-        style.maxHeight = DEFAULT.
+        style.maxWidth = 300,
+        style.maxHeight = 300.
         
          
    State2Node ::= (StateDecl, Node).
@@ -164,19 +162,12 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
    //// Make transitions
    Trans2Edge ::= (TransDecl, Edge).
    Trans2Edge(tr, ed) :- 
-       tr is TransDecl, State2Node(tr.src, src), State2Node(tr.dst, dst), trig = tr.trig, trig : EventDecl, no Fair(tr),
+       tr is TransDecl, State2Node(tr.src, src), State2Node(tr.dst, dst), trig = tr.trig, trig : EventDecl,
           ed = Edge(id, src, dst, Run(tr.trig.name), NIL, DEFAULT),
           id = strJoin(src.id, strJoin("--", strJoin(tr.trig.name, strJoin("-->", dst.id))));
-       tr is TransDecl, State2Node(tr.src, src), State2Node(tr.dst, dst), tr.trig = DEFAULT, no Fair(tr),
+       tr is TransDecl, State2Node(tr.src, src), State2Node(tr.dst, dst), tr.trig = DEFAULT,
           ed = Edge(id, src, dst, Run("*"), NIL, DEFAULT),
-          id = strJoin(src.id, strJoin("--*-->", dst.id));
-       tr is TransDecl, State2Node(tr.src, src), State2Node(tr.dst, dst), trig = tr.trig, trig : EventDecl, Fair(tr), Colors(KYWORD, cw),
-          ed = Edge(id, src, dst, Concat(Foreground(cw, Run("fair ")), Concat(Run(tr.trig.name), NIL)), NIL, DEFAULT),
-          id = strJoin(src.id, strJoin("--", strJoin(tr.trig.name, strJoin("-->", dst.id))));
-       tr is TransDecl, State2Node(tr.src, src), State2Node(tr.dst, dst), tr.trig = DEFAULT, Fair(tr), Colors(KYWORD, cw),
-          ed = Edge(id, src, dst, Concat(Foreground(cw, Run("fair ")), Concat(Run("*"), NIL)), NIL, DEFAULT),
           id = strJoin(src.id, strJoin("--*-->", dst.id)).
-          
                
    //// Make action decls
    MachineSec(m, s) :- 
@@ -305,7 +296,7 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
           t = Concat(Indent(i), Concat(Foreground(c, Run(n)), Concat(Run("("), Concat(t', Concat(Run(");"), Concat(BREAK, NIL)))))).             
                         
    //// Find the expressions in the input program 
-   GeneralExpr ::= Expr + Exprs + AllTypes + NamedExprs + MachType + Params + TypeField + { NIL }.
+   GeneralExpr ::= Expr + Exprs + AllTypes + NamedExprs + Params + TypeField + { NIL }.
    SubExpr ::= (GeneralExpr).
 
    SubExpr(e1) :- 
@@ -321,6 +312,7 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
           SubStmt(ITE(e1, _, _), _);
           SubStmt(While(e1, _), _);
           
+          SubExpr(New(_, e1));          
           SubExpr(Apply(_, e1));
           SubExpr(Call(_, e1));
           SubExpr(Payload(e1));
@@ -337,7 +329,6 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
           SubStmt(Assign(e1, e2), _);
           SubStmt(Raise(e1, e2), _);
 
-          SubExpr(New(e1, e2));          
           SubExpr(Exprs(e1, e2));
           SubExpr(NamedExprs(_, e1, e2));
           SubExpr(TypeTuple(e1, e2));
@@ -366,9 +357,9 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
        EQ,        NEQ,         LT,       LE, 
        GT,        GE,          IDX,      FLD, 
        IN,        CHOOSE,      KEYS,     SIZEOF,
-       THIS,      TRIGGER,     NONDET,   NULL,
-       TRUE,      FALSE,       #Call,    #New,    
-       #Payload,  #Tuple,      #Use,     #NamedTuple 
+       THIS,      TRIGGER,     NONDET,   FAIRNONDET,
+       NULL,      TRUE,        FALSE,    #Call,    
+       #New,      #Payload,    #Tuple,   #Use,     #NamedTuple 
      },
      { 0..8 }). 
      
@@ -403,6 +394,7 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
   PrecLevel(EQ,          5).     
   PrecLevel(NEQ,         5).       
   PrecLevel(NONDET,      6).       
+  PrecLevel(FAIRNONDET,  6).       
   PrecLevel(AND,         7).       
   PrecLevel(OR,          8).     
   PrecLevel(e,           n) :- SubExpr(e), e = Apply(op, _), PrecLevel(op, n).
@@ -436,12 +428,9 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
        e = INT, t = Foreground(c, Run("int")), Colors(KYWORD, c);   
        e = EVENT, t = Foreground(c, Run("eid")), Colors(KYWORD, c);   
        e = ID, t = Foreground(c, Run("id")), Colors(KYWORD, c);   
-       e = SID, t = Foreground(c, Run("sid")), Colors(KYWORD, c);   
        e = MID, t = Foreground(c, Run("mid")), Colors(KYWORD, c);   
        e = ANY, t = Foreground(c, Run("any")), Colors(KYWORD, c).
        
-  Expr2Text(e, t) :- SubExpr(e), e = MachType(n), t = Run(n).
-         
   Expr2Text(e, t) :-   
         SubExpr(e), e = TypeTuple(e', NIL), Expr2Text(e', t);
         SubExpr(e), e = TypeTuple(e', e''), e'' : TypeTuple, Expr2Text(e', t'), Expr2Text(e'', t''),
@@ -476,7 +465,8 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
        e = NULL, t = Foreground(c, Run("null")), Colors(KYWORD, c);   
        e = TRUE, t = Foreground(c, Run("true")), Colors(KYWORD, c);   
        e = FALSE, t = Foreground(c, Run("false")), Colors(KYWORD, c);
-       e = NONDET, t = Foreground(c, Run("*")), Colors(KYWORD, c).
+       e = NONDET, t = Foreground(c, Run("*")), Colors(KYWORD, c);
+       e = FAIRNONDET, t = Foreground(c, Run("**")), Colors(KYWORD, c).
        
   Expr2Text(e, t) :-
        SubExpr(e), e : Integer, t = Foreground(c, Run(toString(e))), Colors(CNST, c).    
@@ -519,9 +509,9 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
           t = Concat(Run("("), Concat(Foreground(ct, Concat(Run("("), Concat(t', Concat(Run(")"), NIL)))), Concat(Run(")"), Concat(Foreground(ck, Run("payload")), NIL)))).
           
   Expr2Text(e, t) :-
-       SubExpr(e), e = New(MachType(n), NIL), Colors(KYWORD, ck), Colors(ID, ci),
+       SubExpr(e), e = New(n, NIL), Colors(KYWORD, ck), Colors(ID, ci),
           t = Concat(Foreground(ck, Run("new ")), Concat(Foreground(ci, Run(n)), Concat(Run("()"), NIL)));
-       SubExpr(e), e = New(MachType(n), e'), e' : Expr, Expr2Text(e', t'), Colors(KYWORD, ck), Colors(ID, ci),
+       SubExpr(e), e = New(n, e'), e' : Expr, Expr2Text(e', t'), Colors(KYWORD, ck), Colors(ID, ci),
           t = Concat(Foreground(ck, Run("new ")), Concat(Foreground(ci, Run(n)), Concat(Run("("), Concat(t', Concat(Run(")"), NIL))))).
           
   Expr2Text(e, t) :-

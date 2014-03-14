@@ -26,7 +26,7 @@ namespace PlangBuild
         /// </summary>
         private static readonly Tuple<bool, string, string>[] Projects = new Tuple<bool, string, string>[]
         {
-            new Tuple<bool, string, string>(false, "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\PCompiler.csproj", PlatformAny),
+            new Tuple<bool, string, string>(false, "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\PCompiler.csproj", PlatformX86),
         };
         
         private static readonly Tuple<string, string>[] DebugMoveMap = new Tuple<string, string>[]
@@ -113,19 +113,19 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Formula\\Domains\\CData.4ml", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\CData.4ml"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Debug\\P2Formula.dll", 
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\x86\\Debug\\P2Formula.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\P2Formula.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Debug\\PCompiler.exe", 
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\x86\\Debug\\PCompiler.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\PCompiler.exe"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Debug\\CParser.dll", 
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\x86\\Debug\\CParser.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\CParser.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Debug\\ZingParser.dll", 
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\x86\\Debug\\ZingParser.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingParser.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Debug\\Domains.dll", 
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\x86\\Debug\\Domains.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Domains.dll")
         };
 
@@ -213,19 +213,19 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Formula\\Domains\\CData.4ml", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\CData.4ml"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Release\\P2Formula.dll", 
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\x86\\Release\\P2Formula.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\P2Formula.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Release\\PCompiler.exe", 
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\x86\\Release\\PCompiler.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\PCompiler.exe"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Release\\CParser.dll", 
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\x86\\Release\\CParser.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\CParser.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Release\\ZingParser.dll", 
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\x86\\Release\\ZingParser.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\ZingParser.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\Release\\Domains.dll", 
+                "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\x86\\Release\\Domains.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\Domains.dll")
         };
 

@@ -1404,11 +1404,6 @@ namespace PCompiler
             var prog = Factory.Instance.MkProgram(progName);
             prog = Factory.Instance.AddModule(prog, m);
 
-            System.IO.StreamWriter sw = new System.IO.StreamWriter("output.4ml");
-            prog.Print(sw);
-            sw.Flush(); 
-            sw.Close();
-
             InstallResult result;
             var success = env.Install(prog, out result);
             PrintResult(result);

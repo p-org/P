@@ -177,7 +177,7 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
 
    //// Make fun decls   
    MachineSec(m, s) :- 
-      m is MachineDecl, f is FunDecl, Fun2Sig(f, title), Stmt2Text(f.body, 1, body), s = Section(lbl, FontSize(1, title), FontFamily(MONO, body), TRUE),
+      m is MachineDecl, f is FunDecl, f.owner = m, Fun2Sig(f, title), Stmt2Text(f.body, 1, body), s = Section(lbl, FontSize(1, title), FontFamily(MONO, body), TRUE),
          lbl = strJoin(m.name, strJoin("--fun--", f.name)).
       
    Fun2Sig ::= (FunDecl, Text).
@@ -238,6 +238,9 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
       SubStmt(s, i), s = DELETE, Colors(KYWORD, c), t = Concat(Indent(i), Concat(Foreground(c, Run("delete")), Concat(Run(";"), Concat(BREAK, NIL)))).
       
    Stmt2Text(s, i, t) :-
+      SubStmt(s, i), s != NIL, s : Expr, Expr2Text(s, t'), t = Concat(Indent(i), Concat(t', Concat(Run(";"), Concat(BREAK, NIL)))).
+      
+   Stmt2Text(s, i, t) :-
       SubStmt(s, i), s = While(e', s''), Expr2Text(e', t'), Stmt2Text(s'', i + 1, t''), Colors(KYWORD, c),
          t = Concat(Indent(i), Concat(Foreground(c, Run("while")), Concat(Run("("), Concat(t', Concat(Run(")"), 
                       Concat(BREAK, Concat(Indent(i), Concat(Run("{"), Concat(BREAK, Concat(t'', Concat(Indent(i), Concat(Run("}"), Concat(BREAK, NIL))))))))))))).
@@ -288,13 +291,11 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
    Stmt2Text(s, i, t) :-
       SubStmt(s, i), s = Scall(e'), Expr2Text(e', t'), Colors(KYWORD, c),
          t = Concat(Indent(i), Concat(Foreground(c, Run("call")), Concat(Run("("), Concat(t', Concat(Run(");"), Concat(BREAK, NIL)))))).
-         
+
    Stmt2Text(s, i, t) :-
-       SubStmt(s, i), s = Call(n, NIL), Colors(ID, c),
-          t = Concat(Indent(i), Concat(Foreground(c, Run(n)), Concat(Run("();"), Concat(BREAK, NIL))));
-       SubStmt(s, i), s = Call(n, e'), e' : Exprs, Expr2Text(e', t'), Colors(ID, c),
-          t = Concat(Indent(i), Concat(Foreground(c, Run(n)), Concat(Run("("), Concat(t', Concat(Run(");"), Concat(BREAK, NIL)))))).             
-                        
+      SubStmt(s, i), s = DataOp(UPDATE, Exprs(e', e'')), Expr2Text(e', t'), Expr2Text(e'', t''), Colors(KYWORD, c),
+         t = Concat(Indent(i), Concat(t', Concat(Run("."), Concat(Foreground(c, Run("update")), Concat(Run("("), Concat(t'', Concat(Run(");"), Concat(BREAK, NIL)))))))).
+                                 
    //// Find the expressions in the input program 
    GeneralExpr ::= Expr + Exprs + AllTypes + NamedExprs + Params + TypeField + { NIL }.
    SubExpr ::= (GeneralExpr).
@@ -304,6 +305,7 @@ transform PVisualize (in:: PData) returns (out:: GraphLayout)
           VarDecl(_, _, e1, _);
           MainDecl(e1);
           
+          SubStmt(e1, _), e1: Expr;
           SubStmt(DataOp(_, e1), _);
           SubStmt(Assert(e1), _);
           SubStmt(Return(e1), _);

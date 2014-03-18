@@ -25,7 +25,7 @@ scriptDir = getMyDir();
 baseDir = realpath(join(scriptDir, ".."));
 zc=join(baseDir, "Ext", "Zing", "zc");
 zinger=join(baseDir, "Ext", "Zing", "Zinger");
-pc=join(baseDir, "Src", "Compilers", "PCompiler", "bin", "Debug", "PCompiler");
+pc=join(baseDir, "Src", "Compilers", "PCompiler", "bin", "x86", "Debug", "PCompiler");
 
 zingRT=join(baseDir, "Runtime", "Zing", "SMRuntime.zing");
 cInclude=join(baseDir, "Runtime", "Include");

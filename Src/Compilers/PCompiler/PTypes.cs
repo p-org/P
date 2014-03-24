@@ -39,7 +39,7 @@ namespace PCompiler
             nameToPrimType[PData.Cnst_Int.Node.Name] = new PIntType();
             nameToPrimType[PData.Cnst_Id.Node.Name] = new PIdType();
             nameToPrimType[PData.Cnst_Mid.Node.Name] = new PMidType();
-            nameToPrimType[PData.Cnst_Event.Node.Name] = new PEventType(null);
+            nameToPrimType[PData.Cnst_Event.Node.Name] = new PEventType();
             nameToPrimType[PData.Cnst_State.Node.Name] = new PStateType();
 
             Nil = new PNilType();
@@ -48,7 +48,7 @@ namespace PCompiler
             Bool = new PBoolType();
             Id = new PIdType();
             Mid = new PMidType();
-            Event = new PEventType(null);
+            Event = new PEventType();
             State = new PStateType();
         }
 
@@ -214,12 +214,9 @@ namespace PCompiler
 
     class PEventType : PPrimitiveType
     {
-        public string evtName { private set; get; }
-
-        public PEventType(string eName)
+        public PEventType()
             : base(PData.Cnst_Event.Node.Name)
         {
-            evtName = eName;
         }
     }
 

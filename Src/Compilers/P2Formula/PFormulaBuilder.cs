@@ -402,7 +402,15 @@ namespace PParser
                 AST<Node> condExpr = fMkCnst(false, loc);
                 foreach (var e in trans.on)
                 {
-                    var useExpr = fMkFuncTerm(P_FormulaNodes.MkUseId(loc), loc, fMkCnst(e, loc), P_FormulaNodes.MkEventKindId(loc));
+                    AST<Node> useExpr;
+                    if (e == "default")
+                    {
+                        useExpr = P_FormulaNodes.MkDefaultId(loc);
+                    }
+                    else
+                    {
+                        useExpr = fMkFuncTerm(P_FormulaNodes.MkUseId(loc), loc, fMkCnst(e, loc), P_FormulaNodes.MkEventKindId(loc));
+                    }
                     var eqExpr = fMkFuncTerm(P_FormulaNodes.MkApplyId(loc), loc, P_FormulaNodes.MkEqEqId(loc), fMkExprs(loc, P_FormulaNodes.MkTriggerId(loc), useExpr));
                     condExpr = fMkFuncTerm(P_FormulaNodes.MkApplyId(loc), loc, P_FormulaNodes.MkOrId(loc), fMkExprs(loc, eqExpr, condExpr));
                 }
@@ -587,7 +595,7 @@ namespace PParser
                 kind = P_FormulaNodes.MkEventKindId(e.loc);
                 if (name == SemanticPass.VAR_DEFAULT)
                 {
-                    name = P_FormulaNodes.MkDefaultId(e.loc).Node.Name;
+                    return wrap(P_FormulaNodes.MkDefaultId(e.loc));
                 }
             }
             else if (sym.type == SemanticPass.SYM_STATE)
@@ -620,8 +628,6 @@ namespace PParser
 
                 if (e.id == SemanticPass.VAR_NULL)
                     return wrap(P_FormulaNodes.MkNullId(e.loc));
-
-                name = e.id;
             }
             else if (sym.type == SemanticPass.SYM_SUBMACHINE)
             {   // This happens when we need to refer to a state in a submachine. (e.g. call(Subm.State);)

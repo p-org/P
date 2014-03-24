@@ -3247,6 +3247,10 @@ Environment:
                     {
                         return new CTranslationInfo(MkIntLiteral(0));
                     }
+                    else if (id.Name == PData.Cnst_Default.Node.Name)
+                    {
+                        return new CTranslationInfo(MkId("SmfDefaultEvent", n.Span));
+                    }
                     else
                     {
                         return null;
@@ -3481,8 +3485,6 @@ Environment:
                 else if (kind.Name == PData.Cnst_Event.Node.Name)
                 {
                     var eventName = compiler.GetName(ft, 0);
-                    if (eventName == PData.Cnst_Default.Node.Name)
-                        return new CTranslationInfo(MkId("SmfDefaultEvent", n.Span));
                     return new CTranslationInfo(MkId(string.Format("Event_{0}", eventName), n.Span));
                 }
                 else if (kind.Name == PData.Cnst_State.Node.Name)

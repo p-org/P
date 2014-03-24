@@ -29,7 +29,7 @@ domain FuncData
     NamedTuple ::= new (body: any NamedExprs).
     Sequence ::= new (body: any Exprs).
     Map    ::= new (body: any Exprs).
-    Expr   ::= Use + Tuple + NamedTuple + Map + Sequence + New + Call + Apply + Payload + Integer + Boolean + { THIS, TRIGGER, NONDET, FAIRNONDET, NULL }.
+    Expr   ::= Use + Tuple + NamedTuple + Map + Sequence + New + Call + Apply + Payload + Integer + Boolean + { THIS, TRIGGER, NONDET, FAIRNONDET, DEFAULT, NULL }.
     
     //// Statements
     DataOp ::= new (op: { UPDATE, INSERT, REMOVE }, args: any Exprs).

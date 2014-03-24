@@ -96,7 +96,7 @@ namespace PCompiler
                 case "INT": return new PIntType();
                 case "ID": return new PIdType();
                 case "MID": return new PMidType();
-                case "EVENT": return new PEventType(null);
+                case "EVENT": return new PEventType();
                 case "STATE": return new PStateType();
                 default:
                     throw new NotImplementedException("Unknown primitive type " + s);
@@ -2170,7 +2170,7 @@ namespace PCompiler
                             compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("TRIGGER disallowed in body of function {0}.", ctxt.entityName), 0, compiler.CompilingProgram));
                             return null;
                         }
-                        return new ZingTranslationInfo(MkZingDot("myHandle", "currentEvent"), new PEventType(null));
+                        return new ZingTranslationInfo(MkZingDot("myHandle", "currentEvent"), new PEventType());
                     }
                     else if (id.Name == PData.Cnst_Nil.Node.Name)
                     {
@@ -2284,6 +2284,10 @@ namespace PCompiler
                     else if (id.Name == PData.Cnst_Null.Node.Name)
                     {
                         return new ZingTranslationInfo(MkZingIdentifier("null"), new PNilType());
+                    }
+                    else if (id.Name == PData.Cnst_Default.Node.Name)
+                    {
+                        return new ZingTranslationInfo(MkZingEvent(Compiler.DefaultEvent), new PEventType());
                     }
                     else
                     {
@@ -2774,15 +2778,12 @@ namespace PCompiler
                 else if (kind.Name == PData.Cnst_Event.Node.Name)
                 {
                     var eventName = compiler.GetName(ft, 0);
-                    // The next two lines are a temporary hack until the DSLParser is retired and all old examples have been ported
-                    if (eventName == PData.Cnst_Default.Node.Name)
-                        eventName = Compiler.DefaultEvent;
                     if (!compiler.allEvents.ContainsKey(eventName))
                     {
                         compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Use of undeclared event {0}.", eventName), 0, compiler.CompilingProgram));
                         return null;
                     }
-                    return new ZingTranslationInfo(MkZingEvent(eventName), new PEventType(eventName));
+                    return new ZingTranslationInfo(MkZingEvent(eventName), new PEventType());
                 }
                 else if (kind.Name == PData.Cnst_State.Node.Name)
                 {

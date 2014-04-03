@@ -29,7 +29,7 @@ domain FuncData
     NamedTuple ::= new (body: any NamedExprs).
     Sequence ::= new (body: any Exprs).
     Map    ::= new (body: any Exprs).
-    Expr   ::= Use + Tuple + NamedTuple + Map + Sequence + New + Call + Apply + Payload + Integer + Boolean + { THIS, TRIGGER, NONDET, FAIRNONDET, DEFAULT, NULL }.
+    Expr   ::= Use + Tuple + NamedTuple + Map + Sequence + New + Call + Apply + Payload + Integer + Boolean + { THIS, TRIGGER, NONDET, FAIRNONDET, DEFAULT, NULL, DELETE }.
     
     //// Statements
     DataOp ::= new (op: { UPDATE, INSERT, REMOVE }, args: any Exprs).
@@ -45,7 +45,7 @@ domain FuncData
     While  ::= new (cond: any Expr, body: any Stmt).
     Seq    ::= new (s1: any Stmt, s2: any Stmt).
     Mcall  ::= new (type: String, ev: Expr, arg: Expr + { NIL }).
-    Stmt   ::= DataOp + Assert + Return + Assign + Send + Raise + Scall + ITE + Call + New + While + Seq + Ecall + Mcall + { NIL, LEAVE, DELETE }.
+    Stmt   ::= DataOp + Assert + Return + Assign + Send + Raise + Scall + ITE + Call + New + While + Seq + Ecall + Mcall + { NIL, LEAVE}.
 }
 
 domain PData extends FuncData

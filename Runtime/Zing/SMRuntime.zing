@@ -55,7 +55,8 @@ class SM_HANDLE {
 	SM_EVENT currentEvent;
     SM_ARG_UNION currentArg;
     bool blocked;
-
+	bool isDeleted;
+	
     static SM_HANDLE Construct(Machine mName, int inst, int maxBSize) {
     	SM_HANDLE handle;
 		handle = new SM_HANDLE;
@@ -73,33 +74,40 @@ class SM_HANDLE {
     void EnqueueEvent(SM_EVENT e, SM_ARG_UNION arg, SM_HANDLE source) {
     	assert (e != null);
 		assert (e != Main.default_SM_EVENT);
-
-		if (arg != null)
+		if(isDeleted)
 		{
-			if (arg.d == Discriminator.Bool)
-				trace("<EnqueueLog> Enqueued Event < {0}, bool: {1} > in Machine {2}-{3} by {4}-{5}", e.name, arg.m_Bool, machineName, instance, source.machineName, source.instance);
-			else if(arg.d == Discriminator.Int)
-				trace("<EnqueueLog> Enqueued Event < {0}, Int: {1} > in Machine {2}-{3} by {4}-{5}", e.name, arg.m_Int, machineName, instance, source.machineName, source.instance);
-			else if (arg.d == Discriminator.Id)
-				trace("<EnqueueLog> Enqueued Event < {0}, Handle: {1}-{2} > in Machine {3}-{4} by {5}-{6}", e.name, arg.m_Id.machineName, arg.m_Id.instance, machineName, instance, source.machineName, source.instance);
-			else if (arg.d == Discriminator.Mid)
-				trace("<EnqueueLog> Enqueued Event < {0}, Handle: {1}-{2} > in Machine {3}-{4} by {5}-{6}", e.name, arg.m_Mid.machineName, arg.m_Mid.instance, machineName, instance, source.machineName, source.instance);
-			else
-				trace("<EnqueueLog> Enqueued Event < {0}, Other: > in Machine {1}-{2} by {3}-{4}", e.name, machineName, instance, source.machineName, source.instance);
+			trace("<EnqueueLog> {0}-{1} Machine has been deleted and  Event {2} is dropped", machineName, instance, e.name);
+			
 		}
 		else
 		{
-			trace("<EnqueueLog> Enqueued Event < {0} > in Machine {1}-{2} by {3}-{4}", e.name, machineName, instance, source.machineName, source.instance);
-		}
+			if (arg != null)
+			{
+				if (arg.d == Discriminator.Bool)
+					trace("<EnqueueLog> Enqueued Event < {0}, bool: {1} > in Machine {2}-{3} by {4}-{5}", e.name, arg.m_Bool, machineName, instance, source.machineName, source.instance);
+				else if(arg.d == Discriminator.Int)
+					trace("<EnqueueLog> Enqueued Event < {0}, Int: {1} > in Machine {2}-{3} by {4}-{5}", e.name, arg.m_Int, machineName, instance, source.machineName, source.instance);
+				else if (arg.d == Discriminator.Id)
+					trace("<EnqueueLog> Enqueued Event < {0}, Handle: {1}-{2} > in Machine {3}-{4} by {5}-{6}", e.name, arg.m_Id.machineName, arg.m_Id.instance, machineName, instance, source.machineName, source.instance);
+				else if (arg.d == Discriminator.Mid)
+					trace("<EnqueueLog> Enqueued Event < {0}, Handle: {1}-{2} > in Machine {3}-{4} by {5}-{6}", e.name, arg.m_Mid.machineName, arg.m_Mid.instance, machineName, instance, source.machineName, source.instance);
+				else
+					trace("<EnqueueLog> Enqueued Event < {0}, Other: > in Machine {1}-{2} by {3}-{4}", e.name, machineName, instance, source.machineName, source.instance);
+			}
+			else
+			{
+				trace("<EnqueueLog> Enqueued Event < {0} > in Machine {1}-{2} by {3}-{4}", e.name, machineName, instance, source.machineName, source.instance);
+			}
 
-		buffer.EnqueueEvent(e, arg);
-		if (maxBufferSize != -1 && buffer.eventBufferSize > maxBufferSize)
-		{
-			trace("<EXCEPTION> Event Buffer Size Exceeded {0} in Machine {1}-{2}", maxBufferSize, machineName, instance);
-			assert(false);
+			buffer.EnqueueEvent(e, arg);
+			if (maxBufferSize != -1 && buffer.eventBufferSize > maxBufferSize)
+			{
+				trace("<EXCEPTION> Event Buffer Size Exceeded {0} in Machine {1}-{2}", maxBufferSize, machineName, instance);
+				assert(false);
+			}
+			blocked = false;
+			invokescheduler("push", machineId);
 		}
-		blocked = false;
-		invokescheduler("push", machineId);
     }
 	
     void DequeueEvent(bool hasDefault, SM_EVENT_SET deferredSet, bool stable) {

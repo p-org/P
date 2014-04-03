@@ -1450,6 +1450,7 @@ namespace PCompiler
             var file = (FuncTerm)n;
             var fileName = System.IO.Path.Combine(outputPath, ((Cnst)GetArgByIndex(file, 0)).GetStringValue());
             var fileBody = (Quote)GetArgByIndex(file, 1);
+            Console.WriteLine("Writing {0}...", fileName);
 
             try
             {

@@ -137,7 +137,7 @@ namespace PCompiler
             return;
 
         error:
-            Console.WriteLine("USAGE: pcompiler.exe <pFile> <domainPath> [/doNotErase] [/kernelMode] [/debugC] [/liveness] [/maceLiveness] [/outputDir:path]");
+            Console.WriteLine("USAGE: pcompiler.exe <pFile> [domainPath] [/doNotErase] [/kernelMode] [/debugC] [/liveness] [/maceLiveness] [/outputDir:path]");
         }
     }
 }

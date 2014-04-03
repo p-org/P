@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 8.00.0595 */
-/* at Sat Mar 29 21:39:26 2014
+/* at Wed Apr 02 16:00:19 2014
  */
 /* Compiler settings for Manager.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 8.00.0595 
@@ -52,12 +52,16 @@ extern "C"{
 /* interface Manager */
 /* [implicit_handle][version][uuid] */ 
 
-unsigned char *NewMachineId( void);
+void NewMachineId( 
+    /* [out] */ long *addressSize,
+    /* [size_is][size_is][out] */ unsigned char **address,
+    /* [out] */ long *portSize,
+    /* [size_is][size_is][out] */ unsigned char **port);
 
-void Shutdown( void);
+void ManagerShutdown( void);
 
 
-extern handle_t manage_IfHandle;
+extern handle_t manager_IfHandle;
 
 
 extern RPC_IF_HANDLE Manager_v1_0_c_ifspec;

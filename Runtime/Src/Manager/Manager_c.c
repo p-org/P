@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 8.00.0595 */
-/* at Sat Mar 29 21:39:26 2014
+/* at Wed Apr 02 16:00:19 2014
  */
 /* Compiler settings for Manager.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 8.00.0595 
@@ -35,8 +35,8 @@
 
 #include "Manager.h"
 
-#define TYPE_FORMAT_STRING_SIZE   7                                 
-#define PROC_FORMAT_STRING_SIZE   55                                
+#define TYPE_FORMAT_STRING_SIZE   47                                
+#define PROC_FORMAT_STRING_SIZE   73                                
 #define EXPR_FORMAT_STRING_SIZE   1                                 
 #define TRANSMIT_AS_TABLE_SIZE    0            
 #define WIRE_MARSHAL_TABLE_SIZE   0            
@@ -74,7 +74,7 @@ extern const Manager_MIDL_EXPR_FORMAT_STRING Manager__MIDL_ExprFormatString;
 /* Standard interface: Manager, ver. 1.0,
    GUID={0xec966b88,0xc0b1,0x4d9e,{0xa7,0x64,0xc1,0x4d,0x49,0x43,0x45,0xc8}} */
 
-handle_t manage_IfHandle;
+handle_t manager_IfHandle;
 
 
 static const RPC_CLIENT_INTERFACE Manager___RpcClientInterface =
@@ -96,26 +96,27 @@ extern const MIDL_STUB_DESC Manager_StubDesc;
 static RPC_BINDING_HANDLE Manager__MIDL_AutoBindHandle;
 
 
-unsigned char *NewMachineId( void)
-{
-
-    CLIENT_CALL_RETURN _RetVal;
-
-    _RetVal = NdrClientCall2(
-                  ( PMIDL_STUB_DESC  )&Manager_StubDesc,
-                  (PFORMAT_STRING) &Manager__MIDL_ProcFormatString.Format[0],
-                  ( unsigned char * )0);
-    return ( unsigned char * )_RetVal.Pointer;
-    
-}
-
-
-void Shutdown( void)
+void NewMachineId( 
+    /* [out] */ long *addressSize,
+    /* [size_is][size_is][out] */ unsigned char **address,
+    /* [out] */ long *portSize,
+    /* [size_is][size_is][out] */ unsigned char **port)
 {
 
     NdrClientCall2(
                   ( PMIDL_STUB_DESC  )&Manager_StubDesc,
-                  (PFORMAT_STRING) &Manager__MIDL_ProcFormatString.Format[30],
+                  (PFORMAT_STRING) &Manager__MIDL_ProcFormatString.Format[0],
+                  ( unsigned char * )&addressSize);
+    
+}
+
+
+void ManagerShutdown( void)
+{
+
+    NdrClientCall2(
+                  ( PMIDL_STUB_DESC  )&Manager_StubDesc,
+                  (PFORMAT_STRING) &Manager__MIDL_ProcFormatString.Format[48],
                   ( unsigned char * )0);
     
 }
@@ -144,39 +145,59 @@ static const Manager_MIDL_PROC_FORMAT_STRING Manager__MIDL_ProcFormatString =
 			0x48,		/* Old Flags:  */
 /*  2 */	NdrFcLong( 0x0 ),	/* 0 */
 /*  6 */	NdrFcShort( 0x0 ),	/* 0 */
-/*  8 */	NdrFcShort( 0x4 ),	/* x86 Stack size/offset = 4 */
+/*  8 */	NdrFcShort( 0x10 ),	/* x86 Stack size/offset = 16 */
 /* 10 */	NdrFcShort( 0x0 ),	/* 0 */
-/* 12 */	NdrFcShort( 0x19 ),	/* 25 */
-/* 14 */	0x44,		/* Oi2 Flags:  has return, has ext, */
-			0x1,		/* 1 */
+/* 12 */	NdrFcShort( 0x38 ),	/* 56 */
+/* 14 */	0x41,		/* Oi2 Flags:  srv must size, has ext, */
+			0x4,		/* 4 */
 /* 16 */	0x8,		/* 8 */
-			0x1,		/* Ext Flags:  new corr desc, */
-/* 18 */	NdrFcShort( 0x0 ),	/* 0 */
+			0x3,		/* Ext Flags:  new corr desc, clt corr check, */
+/* 18 */	NdrFcShort( 0x1 ),	/* 1 */
 /* 20 */	NdrFcShort( 0x0 ),	/* 0 */
 /* 22 */	NdrFcShort( 0x0 ),	/* 0 */
 
-	/* Return value */
+	/* Parameter addressSize */
 
-/* 24 */	NdrFcShort( 0x32 ),	/* Flags:  must free, out, return, */
+/* 24 */	NdrFcShort( 0x2150 ),	/* Flags:  out, base type, simple ref, srv alloc size=8 */
 /* 26 */	NdrFcShort( 0x0 ),	/* x86 Stack size/offset = 0 */
-/* 28 */	NdrFcShort( 0x2 ),	/* Type Offset=2 */
-
-	/* Procedure Shutdown */
-
-/* 30 */	0x32,		/* FC_BIND_PRIMITIVE */
-			0x48,		/* Old Flags:  */
-/* 32 */	NdrFcLong( 0x0 ),	/* 0 */
-/* 36 */	NdrFcShort( 0x1 ),	/* 1 */
-/* 38 */	NdrFcShort( 0x0 ),	/* x86 Stack size/offset = 0 */
-/* 40 */	NdrFcShort( 0x0 ),	/* 0 */
-/* 42 */	NdrFcShort( 0x0 ),	/* 0 */
-/* 44 */	0x40,		/* Oi2 Flags:  has ext, */
+/* 28 */	0x8,		/* FC_LONG */
 			0x0,		/* 0 */
-/* 46 */	0x8,		/* 8 */
+
+	/* Parameter address */
+
+/* 30 */	NdrFcShort( 0x2013 ),	/* Flags:  must size, must free, out, srv alloc size=8 */
+/* 32 */	NdrFcShort( 0x4 ),	/* x86 Stack size/offset = 4 */
+/* 34 */	NdrFcShort( 0x6 ),	/* Type Offset=6 */
+
+	/* Parameter portSize */
+
+/* 36 */	NdrFcShort( 0x2150 ),	/* Flags:  out, base type, simple ref, srv alloc size=8 */
+/* 38 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
+/* 40 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Parameter port */
+
+/* 42 */	NdrFcShort( 0x2013 ),	/* Flags:  must size, must free, out, srv alloc size=8 */
+/* 44 */	NdrFcShort( 0xc ),	/* x86 Stack size/offset = 12 */
+/* 46 */	NdrFcShort( 0x1a ),	/* Type Offset=26 */
+
+	/* Procedure ManagerShutdown */
+
+/* 48 */	0x32,		/* FC_BIND_PRIMITIVE */
+			0x48,		/* Old Flags:  */
+/* 50 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 54 */	NdrFcShort( 0x1 ),	/* 1 */
+/* 56 */	NdrFcShort( 0x0 ),	/* x86 Stack size/offset = 0 */
+/* 58 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 60 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 62 */	0x40,		/* Oi2 Flags:  has ext, */
+			0x0,		/* 0 */
+/* 64 */	0x8,		/* 8 */
 			0x1,		/* Ext Flags:  new corr desc, */
-/* 48 */	NdrFcShort( 0x0 ),	/* 0 */
-/* 50 */	NdrFcShort( 0x0 ),	/* 0 */
-/* 52 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 66 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 68 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 70 */	NdrFcShort( 0x0 ),	/* 0 */
 
 			0x0
         }
@@ -188,9 +209,41 @@ static const Manager_MIDL_TYPE_FORMAT_STRING Manager__MIDL_TypeFormatString =
         {
 			NdrFcShort( 0x0 ),	/* 0 */
 /*  2 */	
-			0x12, 0x8,	/* FC_UP [simple_pointer] */
-/*  4 */	0x2,		/* FC_CHAR */
+			0x11, 0xc,	/* FC_RP [alloced_on_stack] [simple_pointer] */
+/*  4 */	0x8,		/* FC_LONG */
 			0x5c,		/* FC_PAD */
+/*  6 */	
+			0x11, 0x14,	/* FC_RP [alloced_on_stack] [pointer_deref] */
+/*  8 */	NdrFcShort( 0x2 ),	/* Offset= 2 (10) */
+/* 10 */	
+			0x12, 0x0,	/* FC_UP */
+/* 12 */	NdrFcShort( 0x2 ),	/* Offset= 2 (14) */
+/* 14 */	
+			0x1b,		/* FC_CARRAY */
+			0x0,		/* 0 */
+/* 16 */	NdrFcShort( 0x1 ),	/* 1 */
+/* 18 */	0x28,		/* Corr desc:  parameter, FC_LONG */
+			0x54,		/* FC_DEREFERENCE */
+/* 20 */	NdrFcShort( 0x0 ),	/* x86 Stack size/offset = 0 */
+/* 22 */	NdrFcShort( 0x1 ),	/* Corr flags:  early, */
+/* 24 */	0x2,		/* FC_CHAR */
+			0x5b,		/* FC_END */
+/* 26 */	
+			0x11, 0x14,	/* FC_RP [alloced_on_stack] [pointer_deref] */
+/* 28 */	NdrFcShort( 0x2 ),	/* Offset= 2 (30) */
+/* 30 */	
+			0x12, 0x0,	/* FC_UP */
+/* 32 */	NdrFcShort( 0x2 ),	/* Offset= 2 (34) */
+/* 34 */	
+			0x1b,		/* FC_CARRAY */
+			0x0,		/* 0 */
+/* 36 */	NdrFcShort( 0x1 ),	/* 1 */
+/* 38 */	0x28,		/* Corr desc:  parameter, FC_LONG */
+			0x54,		/* FC_DEREFERENCE */
+/* 40 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
+/* 42 */	NdrFcShort( 0x1 ),	/* Corr flags:  early, */
+/* 44 */	0x2,		/* FC_CHAR */
+			0x5b,		/* FC_END */
 
 			0x0
         }
@@ -199,7 +252,7 @@ static const Manager_MIDL_TYPE_FORMAT_STRING Manager__MIDL_TypeFormatString =
 static const unsigned short Manager_FormatStringOffsetTable[] =
     {
     0,
-    30
+    48
     };
 
 
@@ -208,7 +261,7 @@ static const MIDL_STUB_DESC Manager_StubDesc =
     (void *)& Manager___RpcClientInterface,
     MIDL_user_allocate,
     MIDL_user_free,
-    &manage_IfHandle,
+    &manager_IfHandle,
     0,
     0,
     0,

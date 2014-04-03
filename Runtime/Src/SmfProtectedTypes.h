@@ -528,6 +528,14 @@ struct _SMF_STATESTACK
 	UINT16 Length;
 };
 
+#ifdef DISTRIBUTED_RUNTIME
+struct _SMF_SMCONTEXT_REMOTE {
+	RPC_WSTR Address;
+	RPC_WSTR Port;
+	handle_t RPCHandle;
+};
+typedef struct _SMF_SMCONTEXT_REMOTE SMF_SMCONTEXT_REMOTE, *PSMF_SMCONTEXT_REMOTE;
+#endif
 
 /*********************************************************************************
 
@@ -621,7 +629,10 @@ SmWorkItem --
 //	only the latest SMF_MAX_HISTORY_DEPTH steps taken by the state machine
 struct _SMF_SMCONTEXT
 {
-	
+#ifdef DISTRIBUTED_RUNTIME
+	RPC_WSTR Address;
+	RPC_WSTR Port;
+#endif
 	SMF_TRANSHISTORY TransitionHistory[SMF_MAX_HISTORY_DEPTH];
 	SMF_TRANSHISTORY_INDEX TransHistoryIndex;
 	

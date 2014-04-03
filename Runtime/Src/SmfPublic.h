@@ -75,27 +75,6 @@ __out PSMF_MACHINE_HANDLE		PSmHandle
 
 /*********************************************************************************
 
-		Functions - Life Time Management of the State-Machine (Reference Counting)
-
-*********************************************************************************/
-//
-// To Acquire Reference on a state machine (Reference count is incremented by 1)
-//
-VOID 
-SmfReference(
-__in SMF_MACHINE_HANDLE			Machine
-);
-
-//
-// To Release Reference on a state machine (remove statemachine if reference count is 0)
-//
-VOID SmfDereference(
-__in SMF_MACHINE_HANDLE			Machine
-);
-
-
-/*********************************************************************************
-
 		Functions - Machine Interaction
 
 *********************************************************************************/

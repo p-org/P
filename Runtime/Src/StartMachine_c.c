@@ -1,10 +1,10 @@
 
 
-/* this ALWAYS GENERATED file contains the RPC server stubs */
+/* this ALWAYS GENERATED file contains the RPC client stubs */
 
 
  /* File created by MIDL compiler version 8.00.0595 */
-/* at Mon Mar 31 10:33:49 2014
+/* at Wed Apr 02 17:29:29 2014
  */
 /* Compiler settings for StartMachine.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 8.00.0595 
@@ -32,6 +32,7 @@
 #pragma optimize("", off ) 
 
 #include <string.h>
+
 #include "StartMachine.h"
 
 #define TYPE_FORMAT_STRING_SIZE   3                                 
@@ -62,33 +63,86 @@ typedef struct _StartMachine_MIDL_EXPR_FORMAT_STRING
 static const RPC_SYNTAX_IDENTIFIER  _RpcTransferSyntax = 
 {{0x8A885D04,0x1CEB,0x11C9,{0x9F,0xE8,0x08,0x00,0x2B,0x10,0x48,0x60}},{2,0}};
 
+
 extern const StartMachine_MIDL_TYPE_FORMAT_STRING StartMachine__MIDL_TypeFormatString;
 extern const StartMachine_MIDL_PROC_FORMAT_STRING StartMachine__MIDL_ProcFormatString;
 extern const StartMachine_MIDL_EXPR_FORMAT_STRING StartMachine__MIDL_ExprFormatString;
+
+#define GENERIC_BINDING_TABLE_SIZE   0            
+
 
 /* Standard interface: StartMachine, ver. 1.0,
    GUID={0x1de89548,0xcb84,0x450f,{0xb9,0x29,0x40,0x77,0x93,0x16,0xe7,0x15}} */
 
 
-extern const MIDL_SERVER_INFO StartMachine_ServerInfo;
 
-extern const RPC_DISPATCH_TABLE StartMachine_v1_0_DispatchTable;
-
-static const RPC_SERVER_INTERFACE StartMachine___RpcServerInterface =
+static const RPC_CLIENT_INTERFACE StartMachine___RpcClientInterface =
     {
-    sizeof(RPC_SERVER_INTERFACE),
+    sizeof(RPC_CLIENT_INTERFACE),
     {{0x1de89548,0xcb84,0x450f,{0xb9,0x29,0x40,0x77,0x93,0x16,0xe7,0x15}},{1,0}},
     {{0x8A885D04,0x1CEB,0x11C9,{0x9F,0xE8,0x08,0x00,0x2B,0x10,0x48,0x60}},{2,0}},
-    (RPC_DISPATCH_TABLE*)&StartMachine_v1_0_DispatchTable,
     0,
     0,
     0,
-    &StartMachine_ServerInfo,
-    0x04000000
+    0,
+    0,
+    0x00000000
     };
-RPC_IF_HANDLE StartMachine_v1_0_s_ifspec = (RPC_IF_HANDLE)& StartMachine___RpcServerInterface;
+RPC_IF_HANDLE Client_StartMachine_v1_0_c_ifspec = (RPC_IF_HANDLE)& StartMachine___RpcClientInterface;
 
 extern const MIDL_STUB_DESC StartMachine_StubDesc;
+
+static RPC_BINDING_HANDLE StartMachine__MIDL_AutoBindHandle;
+
+
+void Client_WrapSmfNew( 
+    handle_t startMachine_IfHandle,
+    /* [in] */ long InstanceOf)
+{
+
+    NdrClientCall2(
+                  ( PMIDL_STUB_DESC  )&StartMachine_StubDesc,
+                  (PFORMAT_STRING) &StartMachine__MIDL_ProcFormatString.Format[0],
+                  ( unsigned char * )&startMachine_IfHandle);
+    
+}
+
+
+void Client_WrapSmfEnqueueEvent( 
+    handle_t startMachine_IfHandle,
+    /* [in] */ long EventIndex)
+{
+
+    NdrClientCall2(
+                  ( PMIDL_STUB_DESC  )&StartMachine_StubDesc,
+                  (PFORMAT_STRING) &StartMachine__MIDL_ProcFormatString.Format[34],
+                  ( unsigned char * )&startMachine_IfHandle);
+    
+}
+
+
+void Client_ChildUp( 
+    handle_t startMachine_IfHandle)
+{
+
+    NdrClientCall2(
+                  ( PMIDL_STUB_DESC  )&StartMachine_StubDesc,
+                  (PFORMAT_STRING) &StartMachine__MIDL_ProcFormatString.Format[68],
+                  ( unsigned char * )&startMachine_IfHandle);
+    
+}
+
+
+void Client_MachineShutdown( 
+    handle_t startMachine_IfHandle)
+{
+
+    NdrClientCall2(
+                  ( PMIDL_STUB_DESC  )&StartMachine_StubDesc,
+                  (PFORMAT_STRING) &StartMachine__MIDL_ProcFormatString.Format[96],
+                  ( unsigned char * )&startMachine_IfHandle);
+    
+}
 
 
 #if !defined(__RPC_WIN32__)
@@ -188,7 +242,7 @@ static const StartMachine_MIDL_PROC_FORMAT_STRING StartMachine__MIDL_ProcFormatS
 /* 92 */	NdrFcShort( 0x0 ),	/* 0 */
 /* 94 */	NdrFcShort( 0x0 ),	/* 0 */
 
-	/* Procedure Shutdown */
+	/* Procedure MachineShutdown */
 
 
 	/* Parameter startMachine_IfHandle */
@@ -236,10 +290,10 @@ static const unsigned short StartMachine_FormatStringOffsetTable[] =
 
 static const MIDL_STUB_DESC StartMachine_StubDesc = 
     {
-    (void *)& StartMachine___RpcServerInterface,
+    (void *)& StartMachine___RpcClientInterface,
     MIDL_user_allocate,
     MIDL_user_free,
-    0,
+    &StartMachine__MIDL_AutoBindHandle,
     0,
     0,
     0,
@@ -257,39 +311,6 @@ static const MIDL_STUB_DESC StartMachine_StubDesc =
     0,   /* proxy/server info */
     0
     };
-
-static const RPC_DISPATCH_FUNCTION StartMachine_table[] =
-    {
-    NdrServerCall2,
-    NdrServerCall2,
-    NdrServerCall2,
-    NdrServerCall2,
-    0
-    };
-static const RPC_DISPATCH_TABLE StartMachine_v1_0_DispatchTable = 
-    {
-    4,
-    (RPC_DISPATCH_FUNCTION*)StartMachine_table
-    };
-
-static const SERVER_ROUTINE StartMachine_ServerRoutineTable[] = 
-    {
-    (SERVER_ROUTINE)WrapSmfNew,
-    (SERVER_ROUTINE)WrapSmfEnqueueEvent,
-    (SERVER_ROUTINE)ChildUp,
-    (SERVER_ROUTINE)Shutdown
-    };
-
-static const MIDL_SERVER_INFO StartMachine_ServerInfo = 
-    {
-    &StartMachine_StubDesc,
-    StartMachine_ServerRoutineTable,
-    StartMachine__MIDL_ProcFormatString.Format,
-    StartMachine_FormatStringOffsetTable,
-    0,
-    0,
-    0,
-    0};
 #pragma optimize("", on )
 #if _MSC_VER >= 1200
 #pragma warning(pop)

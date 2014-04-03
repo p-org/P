@@ -193,8 +193,22 @@ __in PSMF_SMCONTEXT			Context
 FORCEINLINE
 PSMF_SMCONTEXT 
 SmfGetStateMachinePointer(
-__in ULONG_PTR				Handle
+__in SMF_MACHINE_HANDLE				Handle
 );
+
+#ifdef DISTRIBUTED_RUNTIME
+FORCEINLINE
+SMF_MACHINE_HANDLE 
+SmfGetStateMachineHandleRemote(
+__in PSMF_SMCONTEXT_REMOTE			Context
+);
+
+FORCEINLINE
+PSMF_SMCONTEXT_REMOTE
+SmfGetStateMachinePointerRemote(
+__in SMF_MACHINE_HANDLE				Handle
+);
+#endif
 
 /*********************************************************************************
 

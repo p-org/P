@@ -378,61 +378,6 @@ Return Value:
 }
 
 VOID 
-SmfReference(
-__in SMF_MACHINE_HANDLE			Machine
-)
-/*++
-
-Routine Description:
-
-    Kernel mode driver can call this rountine to acquire reference on a statemachine.
-	This can be used for life-time management of a statemachine using reference counting.
-	A state machine is not removed from the system until its reference count is zero.
-	If the reference count becomes zero, its responsibility of runtime to release the
-	state-machine
-
-
-Arguments:
-
-	Machine - Machine on which we need to acquire reference.
-
-
-Return Value:
-	
-	NONE (VOID)
-
---*/
-{
-	//
-	// Declarations
-	//
-	LONG localMachineRefCount;
-	PSMF_SMCONTEXT context;
-	
-	//
-	// Code
-	//
-
-	context = SmfGetStateMachinePointer(Machine);
-
-	SmfAcquireLock(context);
-	context->RefCount = context->RefCount + 1;
-	localMachineRefCount = context->RefCount;
-	SmfReleaseLock(context);
-	
-	//
-	// If the reference count is <= 1, it means that the machine should be freed
-	// any other machine trying to acquire reference on this machine is now an
-	// Illegal access
-	//
-	if(localMachineRefCount <= 1)
-	{
-		SmfReportException(IllegalAccess, context);
-	}
-}
-
-
-VOID 
 SmfDelete(
 PSMF_SMCONTEXT				Context
 )
@@ -440,9 +385,8 @@ PSMF_SMCONTEXT				Context
 
 Routine Description:
 
-    Kernel mode driver can call this rountine to delete a statemachine.
-	This function should be called only when the reference count is zero.
-	So this function is called from SmfDereference() and SmfRunStateMachine()
+    Call this rountine to delete a statemachine;
+	this function is called from SmfRunStateMachine()
 
 Arguments:
 
@@ -506,67 +450,61 @@ Return Value:
 	
 }
 
-
-VOID SmfDereference(
-__in SMF_MACHINE_HANDLE			Machine
+#ifdef DISTRIBUTED_RUNTIME
+extern void Client_WrapSmfNew(handle_t startMachine_IfHandle, long InstanceOf);
+extern handle_t OpenHandle(RPC_WSTR address, RPC_WSTR port);
+extern HANDLE ChildUpEvent;
+extern SMF_SMCONTEXT_REMOTE Manager;
+extern void NewMachineId( 
+    long *addressSize,
+    unsigned char **address,
+    long *portSize,
+    unsigned char **port);
+SMF_MACHINE_HANDLE 
+SmfNew(
+__in PSMF_DRIVERDECL			PDriverDecl, 
+__inout PSMF_SMCONTEXT			Context, 
+__in SMF_MACHINEDECL_INDEX		InstanceOf,
+__in PSMF_PACKED_VALUE			Arg
 )
-/*++
-
-Routine Description:
-
-    Kernel mode driver can call this rountine to release reference on a statemachine.
-	This function should be called only when the reference count is greater than zero.
-	A state machine is not removed from the system until its reference count is zero.
-	If the reference count becomes zero, its responsibility of runtime to release the
-	state-machine
-
-Arguments:
-
-	Machine - Machine which needs to be deleted.
-
-
-Return Value:
-	
-	NONE (VOID)
-
---*/
 {
-	//
-	// Declarations
-	//
-
-	LONG localMachineRefCount;
-	PSMF_SMCONTEXT context;
-
-	//
-	// Code
-	//
-
-	context = SmfGetStateMachinePointer(Machine);
-	SmfAcquireLock(context);
-	context->RefCount = context->RefCount - 1;
-	localMachineRefCount = context->RefCount;
-	SmfReleaseLock(context);
-
-
-	if(localMachineRefCount < 0)
-	{
-		//
-		// Reference count is less than zero, so some machine is trying to 
-		// release reference on a machine already freed. There is bug in reference counting
-		// implemented
-		//
-		SmfReportException(IllegalAccess, context);
-	}
-	else if(localMachineRefCount == 0)
-	{
-		//
-		//if ref count is zero delete current machine.
-		//
-		SmfDelete(context);
-	}
+    PSMF_SMCONTEXT_REMOTE remoteContext;
+	char *execString;
+	long execStringSize;
+	long addressSize;
+	unsigned char **address;
+	long portSize;
+	unsigned char **port;
+	address = (unsigned char**) midl_user_allocate(sizeof(unsigned char*));
+	*address = NULL;
+	port = (unsigned char**) midl_user_allocate(sizeof(unsigned char*));
+	*port = NULL;
+    NewMachineId(&addressSize, address, &portSize, port);
+	execStringSize = 
+				strlen("psExec") + 1 + 
+				strlen((char *)*address) + 1 +	 
+				strlen("start.exe") + 1 + 
+				strlen((char *)Manager.Address) + 1 + 
+				strlen((char *)Manager.Port) + 1 + 
+				strlen((char *)Context->Address) + 1 +
+				strlen((char *)Context->Port) + 1 +
+				addressSize + 1 +
+				portSize + 1;
+	execString = (char *) malloc(execStringSize);
+	sprintf_s(execString, execStringSize, "psExec %s start.exe %s %s %s %s %s %s", address, Manager.Address, Manager.Port, Context->Address, Context->Port, *address, *port);
+	system(execString);
+	free(execString);
+	WaitForSingleObject(ChildUpEvent, INFINITE);
+	remoteContext = (PSMF_SMCONTEXT_REMOTE) malloc(sizeof(SMF_SMCONTEXT_REMOTE));
+	remoteContext->Address = (RPC_WSTR)*address;
+	remoteContext->Port = (RPC_WSTR)*port;
+	remoteContext->RPCHandle = OpenHandle(remoteContext->Address, remoteContext->Port);
+	midl_user_free(address);
+	midl_user_free(port);
+	Client_WrapSmfNew(remoteContext->RPCHandle, InstanceOf);
+	return SmfGetStateMachineHandleRemote(remoteContext);
 }
-
+#else
 SMF_MACHINE_HANDLE 
 SmfNew(
 __in PSMF_DRIVERDECL			PDriverDecl, 
@@ -592,6 +530,7 @@ __in PSMF_PACKED_VALUE			Arg
 #endif
     return smHandle;
 }
+#endif
 
 BOOLEAN 
 SmfIsEventMaxInstanceExceeded(
@@ -697,9 +636,8 @@ Return Value:
 	return isMaxInstancesExceeded;
 }
 
-
 VOID 
-SmfEnqueueEvent(
+SmfEnqueueEventInternal(
 __in SMF_MACHINE_HANDLE			Machine, 
 __in SMF_EVENTDECL_INDEX		EventIndex, 
 __in PSMF_PACKED_VALUE			Arg,
@@ -830,6 +768,41 @@ Return Value:
 
 	return;
 }
+
+#ifdef DISTRIBUTED_RUNTIME
+extern SMF_MACHINE_HANDLE This;
+extern void Client_WrapSmfEnqueueEvent(handle_t startMachine_IfHandle, long EventIndex);
+VOID 
+SmfEnqueueEvent(
+__in SMF_MACHINE_HANDLE			Machine, 
+__in SMF_EVENTDECL_INDEX		EventIndex, 
+__in PSMF_PACKED_VALUE			Arg,
+__in BOOLEAN					UseWorkerItem
+)
+{
+	PSMF_SMCONTEXT_REMOTE remoteContext;
+	if (Machine == This) {
+		SmfEnqueueEventInternal(Machine, EventIndex, Arg, UseWorkerItem);
+		return;
+	}
+	remoteContext = SmfGetStateMachinePointerRemote(Machine);
+	if (remoteContext->RPCHandle == NULL) {
+		remoteContext->RPCHandle = OpenHandle(remoteContext->Address, remoteContext->Port);
+	}
+	Client_WrapSmfEnqueueEvent(remoteContext->RPCHandle, EventIndex);
+}
+#else
+VOID
+SmfEnqueueEvent(
+__in SMF_MACHINE_HANDLE			Machine, 
+__in SMF_EVENTDECL_INDEX		EventIndex, 
+__in PSMF_PACKED_VALUE			Arg,
+__in BOOLEAN					UseWorkerItem
+)
+{
+	SmfEnqueueEventInternal(Machine, EventIndex, Arg, UseWorkerItem);
+}
+#endif
 
 /*********************************************************************************
 
@@ -2347,11 +2320,10 @@ Return Value:
 	return (SMF_MACHINE_HANDLE)((ULONG_PTR)Context ^ 0x11);
 }
 
-
 FORCEINLINE
 PSMF_SMCONTEXT 
 SmfGetStateMachinePointer(
-__in ULONG_PTR				Handle
+__in SMF_MACHINE_HANDLE				Handle
 )
 /*++
 
@@ -2394,6 +2366,26 @@ Return Value:
 
 	return tempSMPointer;
 }
+
+#ifdef DISTRIBUTED_RUNTIME
+FORCEINLINE
+SMF_MACHINE_HANDLE 
+SmfGetStateMachineHandleRemote(
+__in PSMF_SMCONTEXT_REMOTE			Context
+)
+{
+	return (SMF_MACHINE_HANDLE)((ULONG_PTR)Context ^ 0x11);
+}
+
+FORCEINLINE
+PSMF_SMCONTEXT_REMOTE 
+SmfGetStateMachinePointerRemote(
+__in SMF_MACHINE_HANDLE				Handle
+)
+{
+	return (PSMF_SMCONTEXT_REMOTE)(Handle ^ 0x11);
+}
+#endif
 
 FORCEINLINE
 VOID SmfUpdateTransitionHistory(

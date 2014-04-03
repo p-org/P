@@ -7,6 +7,6 @@ interface StartMachine
     void WrapSmfNew(handle_t startMachine_IfHandle, [in] long InstanceOf);
     void WrapSmfEnqueueEvent(handle_t startMachine_IfHandle, [in] long EventIndex);
     void ChildUp(handle_t startMachine_IfHandle);
-    void Shutdown(handle_t startMachine_IfHandle);
+    void MachineShutdown(handle_t startMachine_IfHandle);
 }
 

@@ -4,7 +4,7 @@ version(1.0)
 ]
 interface Manager
 {
-    char* NewMachineId(void);
-    void Shutdown(void);
+    void NewMachineId([out] long *addressSize, [out, size_is(, *addressSize)] char **address, [out] long *portSize, [out, size_is(, *portSize)] char **port);
+    void ManagerShutdown(void);
 }
 

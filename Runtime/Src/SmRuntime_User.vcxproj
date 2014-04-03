@@ -24,11 +24,15 @@
     <ClInclude Include="SmfTrace.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ManagerClient.c" />
     <ClCompile Include="SmfHashtable.c" />
     <ClCompile Include="SmfLogger.c" />
     <ClCompile Include="SmfRuntime.c" />
     <ClCompile Include="SmfTrace.c" />
     <ClCompile Include="SmfArrayList.c" />
+    <ClCompile Include="StartMachine.c" />
+    <ClCompile Include="StartMachineClient.c" />
+    <ClCompile Include="StartMachineServer.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{011C07EE-AA5B-4520-8C96-0B6485E9D9DE}</ProjectGuid>
@@ -72,7 +76,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;DISTRIBUTED_RUNTIME;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Program Files %28x86%29\Windows Kits\8.0\Include\km;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnablePREfast>false</EnablePREfast>
       <TreatWarningAsError>true</TreatWarningAsError>

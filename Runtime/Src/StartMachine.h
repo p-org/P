@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 8.00.0595 */
-/* at Mon Mar 31 10:33:49 2014
+/* at Wed Apr 02 17:29:29 2014
  */
 /* Compiler settings for StartMachine.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 8.00.0595 
@@ -78,10 +78,10 @@ void ChildUp(
     handle_t startMachine_IfHandle);
 
 /* client prototype */
-void Client_Shutdown( 
+void Client_MachineShutdown( 
     handle_t startMachine_IfHandle);
 /* server prototype */
-void Shutdown( 
+void MachineShutdown( 
     handle_t startMachine_IfHandle);
 
 

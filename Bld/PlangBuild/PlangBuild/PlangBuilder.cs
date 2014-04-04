@@ -126,7 +126,19 @@ namespace PlangBuild
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingParser.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\x86\\Debug\\Domains.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Domains.dll")
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Domains.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\Drops\\Scripts\\common.py",
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Scripts\\common.py"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\Drops\\Scripts\\generate_project.py",
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Scripts\\generate_project.py"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\Drops\\Scripts\\runAllTests.py",
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Scripts\\runAllTests.py"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\Drops\\Scripts\\compile.py",
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Scripts\\compile.py")
         };
 
         private static readonly Tuple<string, string>[] ReleaseMoveMap = new Tuple<string, string>[]
@@ -226,7 +238,19 @@ namespace PlangBuild
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\ZingParser.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\bin\\x86\\Release\\Domains.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\Domains.dll")
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\Domains.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\Drops\\Scripts\\common.py",
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Scripts\\common.py"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\Drops\\Scripts\\generate_project.py",
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Scripts\\generate_project.py"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\Drops\\Scripts\\runAllTests.py",
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Scripts\\runAllTests.py"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\Drops\\Scripts\\compile.py",
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Scripts\\compile.py")
         };
 
         public static bool Build(bool isBldDebug)

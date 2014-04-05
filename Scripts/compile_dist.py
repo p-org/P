@@ -8,7 +8,7 @@ import sys
 import shutil
 import re
 import argparse
-import generate_project
+import generate_project_dist
 from subprocess import *
 from errno import *
 from common import *
@@ -79,7 +79,7 @@ try:
         print("Main machine is " + mainM)
         print("Generating VS project...")
 
-        generate_project.generateVSProject(out, name, cInclude, cLib, mainM, \
+        generate_project_dist.generateVSProject(out, name, cInclude, cLib, mainM, \
             False)
 
     if (args.cc):

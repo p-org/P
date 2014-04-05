@@ -451,15 +451,8 @@ Return Value:
 }
 
 #ifdef DISTRIBUTED_RUNTIME
-extern void Client_WrapSmfNew(handle_t startMachine_IfHandle, long InstanceOf);
-extern handle_t OpenHandle(RPC_WSTR address, RPC_WSTR port);
-extern HANDLE ChildUpEvent;
-extern SMF_SMCONTEXT_REMOTE Manager;
-extern void NewMachineId( 
-    long *addressSize,
-    unsigned char **address,
-    long *portSize,
-    unsigned char **port);
+SMF_MACHINE_HANDLE 
+SmfNewRemote(PSMF_DRIVERDECL PDriverDecl, PSMF_SMCONTEXT Context, SMF_MACHINEDECL_INDEX	InstanceOf, PSMF_PACKED_VALUE Arg);
 SMF_MACHINE_HANDLE 
 SmfNew(
 __in PSMF_DRIVERDECL			PDriverDecl, 
@@ -468,41 +461,7 @@ __in SMF_MACHINEDECL_INDEX		InstanceOf,
 __in PSMF_PACKED_VALUE			Arg
 )
 {
-    PSMF_SMCONTEXT_REMOTE remoteContext;
-	char *execString;
-	long execStringSize;
-	long addressSize;
-	unsigned char **address;
-	long portSize;
-	unsigned char **port;
-	address = (unsigned char**) midl_user_allocate(sizeof(unsigned char*));
-	*address = NULL;
-	port = (unsigned char**) midl_user_allocate(sizeof(unsigned char*));
-	*port = NULL;
-    NewMachineId(&addressSize, address, &portSize, port);
-	execStringSize = 
-				strlen("psExec") + 1 + 
-				strlen((char *)*address) + 1 +	 
-				strlen("start.exe") + 1 + 
-				strlen((char *)Manager.Address) + 1 + 
-				strlen((char *)Manager.Port) + 1 + 
-				strlen((char *)Context->Address) + 1 +
-				strlen((char *)Context->Port) + 1 +
-				addressSize + 1 +
-				portSize + 1;
-	execString = (char *) malloc(execStringSize);
-	sprintf_s(execString, execStringSize, "psExec %s start.exe %s %s %s %s %s %s", address, Manager.Address, Manager.Port, Context->Address, Context->Port, *address, *port);
-	system(execString);
-	free(execString);
-	WaitForSingleObject(ChildUpEvent, INFINITE);
-	remoteContext = (PSMF_SMCONTEXT_REMOTE) malloc(sizeof(SMF_SMCONTEXT_REMOTE));
-	remoteContext->Address = (RPC_WSTR)*address;
-	remoteContext->Port = (RPC_WSTR)*port;
-	remoteContext->RPCHandle = OpenHandle(remoteContext->Address, remoteContext->Port);
-	midl_user_free(address);
-	midl_user_free(port);
-	Client_WrapSmfNew(remoteContext->RPCHandle, InstanceOf);
-	return SmfGetStateMachineHandleRemote(remoteContext);
+	return SmfNewRemote(PDriverDecl, Context, InstanceOf, Arg);
 }
 #else
 SMF_MACHINE_HANDLE 
@@ -770,8 +729,7 @@ Return Value:
 }
 
 #ifdef DISTRIBUTED_RUNTIME
-extern SMF_MACHINE_HANDLE This;
-extern void Client_WrapSmfEnqueueEvent(handle_t startMachine_IfHandle, long EventIndex);
+extern VOID SmfEnqueueEventRemote(SMF_MACHINE_HANDLE Machine, SMF_EVENTDECL_INDEX	EventIndex, PSMF_PACKED_VALUE Arg, BOOLEAN UseWorkerItem);
 VOID 
 SmfEnqueueEvent(
 __in SMF_MACHINE_HANDLE			Machine, 
@@ -780,16 +738,7 @@ __in PSMF_PACKED_VALUE			Arg,
 __in BOOLEAN					UseWorkerItem
 )
 {
-	PSMF_SMCONTEXT_REMOTE remoteContext;
-	if (Machine == This) {
-		SmfEnqueueEventInternal(Machine, EventIndex, Arg, UseWorkerItem);
-		return;
-	}
-	remoteContext = SmfGetStateMachinePointerRemote(Machine);
-	if (remoteContext->RPCHandle == NULL) {
-		remoteContext->RPCHandle = OpenHandle(remoteContext->Address, remoteContext->Port);
-	}
-	Client_WrapSmfEnqueueEvent(remoteContext->RPCHandle, EventIndex);
+	SmfEnqueueEventRemote(Machine, EventIndex, Arg, UseWorkerItem);
 }
 #else
 VOID
@@ -2368,7 +2317,6 @@ Return Value:
 }
 
 #ifdef DISTRIBUTED_RUNTIME
-FORCEINLINE
 SMF_MACHINE_HANDLE 
 SmfGetStateMachineHandleRemote(
 __in PSMF_SMCONTEXT_REMOTE			Context
@@ -2377,7 +2325,6 @@ __in PSMF_SMCONTEXT_REMOTE			Context
 	return (SMF_MACHINE_HANDLE)((ULONG_PTR)Context ^ 0x11);
 }
 
-FORCEINLINE
 PSMF_SMCONTEXT_REMOTE 
 SmfGetStateMachinePointerRemote(
 __in SMF_MACHINE_HANDLE				Handle

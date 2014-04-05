@@ -97,3 +97,8 @@ PSMF_EXCONTEXT
 SmfGetForeignContext(
 __in SMF_MACHINE_HANDLE SmHandle
 );
+
+#ifdef DISTRIBUTED_RUNTIME
+int StartMachine(long InstanceOf, int argc, wchar_t* argv[]);
+int NewMachine(PSMF_DRIVERDECL decl, int argc, wchar_t* argv[]);
+#endif

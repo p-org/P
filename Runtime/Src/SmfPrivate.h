@@ -109,6 +109,14 @@ __inout _At_(Context->Irql, _IRQL_restores_)
 __in BOOLEAN			DoEntryOrExit
 );                                                              
 
+VOID 
+SmfEnqueueEventInternal(
+__in SMF_MACHINE_HANDLE			Machine, 
+__in SMF_EVENTDECL_INDEX		EventIndex, 
+__in PSMF_PACKED_VALUE			Arg,
+__in BOOLEAN					UseWorkerItem
+);
+
 //
 //Dequeue an event given the current state of the context
 //
@@ -197,13 +205,11 @@ __in SMF_MACHINE_HANDLE				Handle
 );
 
 #ifdef DISTRIBUTED_RUNTIME
-FORCEINLINE
 SMF_MACHINE_HANDLE 
 SmfGetStateMachineHandleRemote(
 __in PSMF_SMCONTEXT_REMOTE			Context
 );
 
-FORCEINLINE
 PSMF_SMCONTEXT_REMOTE
 SmfGetStateMachinePointerRemote(
 __in SMF_MACHINE_HANDLE				Handle

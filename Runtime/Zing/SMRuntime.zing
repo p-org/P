@@ -67,6 +67,7 @@ class SM_HANDLE {
 		handle.currentArg = SM_ARG_UNION.BuildDefault();
 		handle.maxBufferSize = maxBSize;
 		handle.blocked = false;
+		handle.isDeleted = false;
 		trace("<CreateLog> Created Machine {0}-{1}", handle.machineName, handle.instance);
 		return handle;
     }

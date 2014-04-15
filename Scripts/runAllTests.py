@@ -22,16 +22,16 @@ out=args.out[0]
 
 scriptDir = getMyDir(); 
 baseDir = realpath(join(scriptDir, ".."));
-zc=join(baseDir, "Ext", "Zing", "zc");
-zinger=join(baseDir, "Ext", "Zing", "Zinger");
-pc=join(baseDir, "Src", "Compilers", "PCompiler", "bin", "x86", "Debug", "PCompiler");
+zc=join(baseDir, "Compiler", "zc");
+zinger=join(baseDir, "Compiler", "Zinger");
+pc=join(baseDir, "Compiler", "PCompiler");
 
-zingRT=join(baseDir, "Runtime", "Zing", "SMRuntime.zing");
-cInclude=join(baseDir, "Runtime", "Include");
-cLib=join(baseDir, "Runtime", "Libraries");
-pData=join(baseDir, "Src", "Formula", "Domains");
-stateCoverage=join(baseDir, "Ext", "Zing", "StateCoveragePlugin.dll");
-sched=join(baseDir, "Ext", "Zing", "RandomDelayingScheduler.dll")
+zingRT=join(baseDir, "Runtime", "SMRuntime.zing");
+cInclude=join(baseDir, "Runtime");
+cLib=join(baseDir, "Runtime");
+pData=join(baseDir, "Compiler");
+stateCoverage=join(baseDir, "Compiler", "StateCoveragePlugin.dll");
+sched=join(baseDir, "Compiler", "RandomDelayingScheduler.dll")
 cc="MSBuild.exe"
 
 try:

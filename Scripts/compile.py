@@ -36,9 +36,9 @@ if (args.cc and not args.proj):
 scriptDir = dirname(realpath(__file__))
 baseDir = realpath(join(scriptDir, ".."))
 
-zc=join(baseDir, "Ext", "Zing", "zc")
-zinger=join(baseDir, "Ext", "Zing", "Zinger")
-pc=join(baseDir, "Src", "Compilers", "PCompiler", "bin", "x86", "Debug", "PCompiler")
+zc=join(baseDir, "Compiler", "zc");
+zinger=join(baseDir, "Compiler", "Zinger");
+pc=join(baseDir, "Compiler", "PCompiler");
 
 stateCoverage=join(baseDir, "Ext", "Zing", "StateCoveragePlugin.dll")
 sched=join(baseDir, "Ext", "Zing", "RandomDelayingScheduler.dll")
@@ -48,10 +48,10 @@ pFile = args.input
 out=args.output
 name = os.path.splitext(os.path.basename(pFile))[0]
 
-pData=join(baseDir, "Src", "Formula", "Domains")
-zingRT=join(baseDir, "Runtime", "Zing", "SMRuntime.zing")
-cInclude=relpath(join(baseDir, "Runtime", "Include"), out)
-cLib=relpath(join(baseDir, "Runtime", "Libraries"), out)
+zingRT=join(baseDir, "Runtime", "SMRuntime.zing");
+cInclude=join(baseDir, "Runtime");
+cLib=join(baseDir, "Runtime");
+pData=join(baseDir, "Compiler");
 
 zingFile = "output.zing"
 zingDll = name + ".dll"

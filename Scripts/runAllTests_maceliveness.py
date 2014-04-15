@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser(description='Execute the specified P Tests');
 parser.add_argument("out", type=str, nargs=1, help="output dir");
 parser.add_argument("--fail", action='store_const', dest='fail', const=True, default=False, help="specify this is a failing test");
 parser.add_argument("files", type=str, nargs="+", help="the P files to test, or directories with P files to recursively walk and test");
-parser.add_argument("limits", type=str, nargs=2, help="maceliveness takes 2 parameters as argument");
+parser.add_argument("limits", type=str, nargs=3, help="maceliveness takes 3 parameters as argument");
 
 args = parser.parse_args();
 out=args.out[0]
@@ -113,7 +113,7 @@ for f in elaborateFiles(args.files):
         die("Compiling of Zing model failed:\n" + cat(zcOut))
 
     print("Running Zinger")
-    macelivenessoption = '-maceliveness:(' + args.limits[0] + ',' + args.limits[1]+')';
+    macelivenessoption = '-maceliveness:(' + args.limits[0] + ',' + args.limits[1]+ ',' + args.limits[1] +')';
     zingerOutFile = open(zingerOut, "w");
     shutil.copy(sched, join(out, 'sched.dll'));
     shutil.copy(stateCoverage, join(out, 'stateCov.dll'));

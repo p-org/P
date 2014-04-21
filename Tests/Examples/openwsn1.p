@@ -36,8 +36,8 @@ event TxDone;
 event Tx;
 event Rx;
 event Sleep;
-event Data:(id, int) assert 1;
-event Ack assert 1;
+event Data:(id,int) assert 4;
+event Ack:(id,int) assert 1;
 event Initialize:(mid,seq[id]) assert 1;
 
 main model machine GodMachine {
@@ -247,7 +247,7 @@ machine OpenWSN_Mote {
 			if(((id,int))payload[0] == myTimeParent[0])
 				lastSynched = 0; //synched 
 			
-			send(((id,int))payload[0], Ack);
+			send(((id,int))payload[0], Ack, (this, myRank));
 			
 			send(slotTimer, endSlot);
 		};

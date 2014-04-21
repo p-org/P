@@ -17,6 +17,6 @@ machine Target {
     }
 
     state die {
-        entry { delete; }
+        entry { raise(delete); }
     }
 }

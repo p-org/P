@@ -469,7 +469,12 @@ namespace PParser
         }
 
         private AST<Node> translateEvt(string ev, DSLLoc loc) {
-            return ev == SemanticPass.VAR_DEFAULT ? P_FormulaNodes.MkDefaultId(loc) : fMkId(ev, loc);
+            if (ev == SemanticPass.VAR_DEFAULT)
+                return P_FormulaNodes.MkDefaultId(loc);
+            else if (ev == SemanticPass.VAR_DELETE)
+                return P_FormulaNodes.MkDeleteId(loc);
+            else
+                return fMkId(ev, loc);
         }
 
         public override IEnumerable<AST<Node>> visit(Transition s)
@@ -558,10 +563,6 @@ namespace PParser
         {
             return wrap(P_FormulaNodes.MkNilId(s.loc));
         }
-        public override IEnumerable<AST<Node>> visit(DSLDelete s)
-        {
-            return wrap(P_FormulaNodes.MkDELETEId(s.loc));
-        }
 
         public override IEnumerable<AST<Node>> visit(DSLMutation s)
         {
@@ -596,6 +597,10 @@ namespace PParser
                 if (name == SemanticPass.VAR_DEFAULT)
                 {
                     return wrap(P_FormulaNodes.MkDefaultId(e.loc));
+                }
+                if (name == SemanticPass.VAR_DELETE)
+                {
+                    return wrap(P_FormulaNodes.MkDeleteId(e.loc));
                 }
             }
             else if (sym.type == SemanticPass.SYM_STATE)
@@ -824,7 +829,6 @@ namespace PParser
         public override IEnumerable<AST<Node>> visit_pre(DSLReturn s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(DSLLeave s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(DSLSkip s) { return default(IEnumerable<AST<Node>>); }
-        public override IEnumerable<AST<Node>> visit_pre(DSLDelete s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(DSLMutation s) { return default(IEnumerable<AST<Node>>); }
         public override IEnumerable<AST<Node>> visit_pre(DSLNewStmt s) { return default(IEnumerable<AST<Node>>); }
         // DSL Expressions

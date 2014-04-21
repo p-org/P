@@ -295,6 +295,7 @@ EventList
 EventID
 	: ID
 	| DEFAULT
+	| DELETE
 	;
 
 StmtBlockOrNull
@@ -330,7 +331,6 @@ Stmt
 	| RETURN ExpOrNull SEMICOLON			%prec PREC_EVERYTHING_ELSE          { $$.stmt = new DSLReturn($2.exp); setLoc($$.stmt, @1, @3); }
 	| LEAVE SEMICOLON						%prec PREC_EVERYTHING_ELSE          { $$.stmt = new DSLLeave(); setLoc($$.stmt, @1, @2); }
 	| SEMICOLON								%prec PREC_EVERYTHING_ELSE			{ $$.stmt = new DSLSkip(); setLoc($$.stmt, @1); } // Allow empty statements
-	| DELETE SEMICOLON						%prec PREC_EVERYTHING_ELSE			{ $$.stmt = new DSLDelete(); setLoc($$.stmt, @1, @2); }
 	| Exp Args SEMICOLON				    %prec PREC_EVERYTHING_ELSE			{ if (!($1.exp is DSLMember)) {
 																					Scanner.yyerror(string.Format("Invalid Expression: '{0}'. Expected function name or variable size container mutation", $1.s));
 																				  } else {
@@ -530,6 +530,7 @@ BaseId
 	| TRIGGER
 	| DEFAULT
 	| NULL
+	| DELETE
 	;
 
 Attribute

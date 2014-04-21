@@ -206,11 +206,6 @@ namespace PParser
             return Factory.Instance.MkId("LEAVE", loc.ToSpan());
         }
 
-        public static AST<Id> MkDELETEId(DSLLoc loc)
-        {
-            return Factory.Instance.MkId("DELETE", loc.ToSpan());
-        }
-
         public static AST<Id> MkDataOpId(DSLLoc loc)
         {
             return Factory.Instance.MkId("DataOp", loc.ToSpan());
@@ -403,6 +398,11 @@ namespace PParser
         public static AST<Id> MkDefaultId(DSLLoc loc)
         {
             return Factory.Instance.MkId("DEFAULT", loc.ToSpan());
+        }
+
+        public static AST<Id> MkDeleteId(DSLLoc loc)
+        {
+            return Factory.Instance.MkId("DELETE", loc.ToSpan());
         }
 
         public static AST<Id> MkNullId(DSLLoc loc)

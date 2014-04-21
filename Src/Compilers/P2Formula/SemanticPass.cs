@@ -150,6 +150,7 @@ namespace PParser
         public const string VAR_PAYLOAD = "payload";
         public const string VAR_TRIGGER = "trigger";
         public const string VAR_DEFAULT = "default";
+        public const string VAR_DELETE = "delete";
         public const string VAR_CHOICE = "*";
         public const string VAR_FAIRCHOICE = "**";
         public const string VAR_NULL = "null";
@@ -393,6 +394,8 @@ namespace PParser
 
             if (!errorDefined(VAR_DEFAULT, SYM_EVENT, n.loc))
                 newS.define(VAR_DEFAULT, SYM_EVENT, n.loc, n);
+            if (!errorDefined(VAR_DELETE, SYM_EVENT, n.loc))
+                newS.define(VAR_DELETE, SYM_EVENT, n.loc, n);
 
             return pushScope(newS, n);
         }

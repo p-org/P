@@ -58,7 +58,6 @@ namespace PParser
         public override T visit_pre(DSLReturn s) { return default(T); }
         public override T visit_pre(DSLLeave s) { return default(T); }
         public override T visit_pre(DSLSkip s) { return default(T); }
-        public override T visit_pre(DSLDelete s) { return default(T); }
         public override T visit_pre(DSLMutation s) { return default(T); }
         public override T visit_pre(DSLNewStmt s) { return default(T); }
         // DSL Expressions

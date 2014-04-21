@@ -86,7 +86,7 @@ main model machine GodMachine {
 			send(pt6, Initialise, (pt5, OC2));
 			__unseal();
 			//delete the machine Gods job is done
-			delete;
+			raise(delete);
 		}
 	}
 }

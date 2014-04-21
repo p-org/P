@@ -63,7 +63,6 @@ namespace PParser
         public abstract T visit(DSLAssert s) ;
         public abstract T visit(DSLReturn s) ;
         public abstract T visit(DSLLeave s) ;
-        public abstract T visit(DSLDelete s) ;
         public abstract T visit(DSLSkip s) ;
         public abstract T visit(DSLMutation s) ;
         public abstract T visit(DSLNewStmt s) ;
@@ -130,7 +129,6 @@ namespace PParser
         public abstract T visit_pre(DSLAssert s);
         public abstract T visit_pre(DSLReturn s);
         public abstract T visit_pre(DSLLeave s);
-        public abstract T visit_pre(DSLDelete s);
         public abstract T visit_pre(DSLSkip s);
         public abstract T visit_pre(DSLMutation s);
         public abstract T visit_pre(DSLNewStmt s);
@@ -198,7 +196,6 @@ namespace PParser
             if (n is DSLAssert) { return this.visit(n as DSLAssert); }
             if (n is DSLReturn) { return this.visit(n as DSLReturn); }
             if (n is DSLLeave) { return this.visit(n as DSLLeave); }
-            if (n is DSLDelete) { return this.visit(n as DSLDelete); }
             if (n is DSLSkip) { return this.visit(n as DSLSkip); }
             if (n is DSLMutation) { return this.visit(n as DSLMutation); }
             if (n is DSLNewStmt) { return this.visit(n as DSLNewStmt); }
@@ -269,7 +266,6 @@ namespace PParser
             if (n is DSLAssert) { return this.visit_pre(n as DSLAssert); }
             if (n is DSLReturn) { return this.visit_pre(n as DSLReturn); }
             if (n is DSLLeave) { return this.visit_pre(n as DSLLeave); }
-            if (n is DSLDelete) { return this.visit_pre(n as DSLDelete); }
             if (n is DSLSkip) { return this.visit_pre(n as DSLSkip); }
             if (n is DSLMutation) { return this.visit_pre(n as DSLMutation); }
             if (n is DSLNewStmt) { return this.visit_pre(n as DSLNewStmt); }
@@ -864,7 +860,6 @@ namespace PParser
     
     public sealed class DSLLeave : BaseNode, IDSLStmt { }
     public sealed class DSLSkip : BaseNode, IDSLStmt { }
-    public sealed class DSLDelete : BaseNode, IDSLStmt { }
 
     //-------------------- Expression Nodes ----------------------------------------
     public enum Ops

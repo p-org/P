@@ -16,7 +16,7 @@ machine Target {
         on Shot goto die;
     }
 
-    model fun baz() { delete; }
+    model fun baz() { raise(delete); }
 
     state die {
         entry { baz(); }

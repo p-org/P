@@ -113,7 +113,7 @@ main model machine GodMachine {
 			new scenariotester(scenario);
 			
 			//delete the machine Gods job is done
-			delete;
+			raise(delete);
 		}
 	}
 }

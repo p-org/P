@@ -14,7 +14,7 @@ main machine Gun {
 machine Target {
     start state init {
         on Shot goto die;
-        exit { delete; }
+        exit { raise(delete); }
     }
 
     state die {

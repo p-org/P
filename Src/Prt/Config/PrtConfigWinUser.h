@@ -5,6 +5,9 @@
 #ifndef PRTCONFIG_WINUSER_H
 #define PRTCONFIG_WINUSER_H
 
+/** "unsafe" string functions are used safely. Allows for portability of code between operating systems. */
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <sal.h>
 #include <stddef.h>
 
@@ -18,8 +21,11 @@
 #error An invalid architecture was specified (see PrtConfig.h for details)
 #endif
 
-#include<synchapi.h>
-#include<windows.h>
+#include <synchapi.h>
+#include <windows.h>
+#include <stdlib.h>
+#include <malloc.h>
+#include <stdio.h>
 
 /** PRT_UINT8 is always an 8-bit unsigned integer. */
 typedef unsigned __int8  PRT_UINT8;
@@ -71,12 +77,11 @@ void PrtSpecialStartup(_In_ void *param);
 void PrtSpecialShutdown(_In_ void *param);
 
 /**
-* Terminates the process if `condition == PRT_FALSE` (with configuration-specific logging)
-* @param[in] condition A boolean value expected to be true
-* @param[in] code A code to be logged if condition is false
-* @param[in] message A message to be logged if condition is false
+* Terminates the process if `condition == 0` (with configuration-specific logging)
+* @param[in] condition A value expected to be non-zero
+* @param[in] message A message to be logged if condition is zero
 */
-void PrtAssert(_In_ PRT_BOOLEAN condition, _In_ PRT_UINT32 code, _In_opt_z_ PRT_CSTRING message);
+void PrtAssert(_In_ int condition, _In_opt_z_ PRT_CSTRING message);
 
 /**
 * Creates a fresh unnamed and unlocked recursive mutex. The mutex must be unlocked by a thread as many times as it was locked.
@@ -113,5 +118,43 @@ void PrtLockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 * @see PrtReleaseMutex
 */
 void PrtUnlockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
+
+/**
+* Calls system-specific implementation of malloc. 
+* Fails eagerly if memory cannot be allocated.
+* @param[in] size Number of bytes to allocate.
+* @returns A pointer to a memory location
+* @see PrtFree
+*/
+void *PrtMalloc(_In_ size_t size);
+
+/**
+* Calls system-specific implementation of free.
+* @param[in,out] ptr A pointer to a memory block to be freed.
+* @see PrtMalloc
+* @see PrtCalloc
+* @see PrtRealloc
+*/
+void PrtFree(_Inout_ void *ptr);
+
+/**
+* Calls system-specific implementation of calloc.
+* Fails eagerly if memory cannot be allocated.
+* @param[in] nmemb Number of bytes to allocate per member.
+* @param[in] size Number of bytes to allocate per member.
+* @returns A pointer to a memory location
+* @see PrtFree
+*/
+void *PrtCalloc(_In_ size_t nmemb, _In_ size_t size);
+
+/**
+* Calls system-specific implementation of realloc.
+* Fails eagerly if memory cannot be allocated.
+* @param[in,out] ptr A pointer to a memory block to reallocate.
+* @param[in] size Number of bytes to reallocate per member.
+* @returns A pointer to a memory location or NULL if size = 0
+* @see PrtFree
+*/
+void *PrtRealloc(_Inout_ void *ptr, _In_ size_t size);
 
 #endif

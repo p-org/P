@@ -69,6 +69,7 @@
   <ItemGroup>
     <ClCompile Include="Config\PrtConfigWinUser.c" />
     <ClCompile Include="Prt.c" />
+    <ClCompile Include="Values\PrtTypes.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config\PrtConfig.h" />

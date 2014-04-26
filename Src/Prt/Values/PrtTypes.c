@@ -1,6 +1,6 @@
 #include "PrtTypes.h"
 
-PRT_TYPE_KIND *PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType)
+PRT_TYPEEXPR PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType)
 {
 	switch (primType)
 	{
@@ -11,7 +11,7 @@ PRT_TYPE_KIND *PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType)
 	case PRT_KIND_INT:
 	case PRT_KIND_MID:
 	{
-		PRT_TYPE_KIND *type = (PRT_TYPE_KIND *)PrtMalloc(sizeof(PRT_TYPE_KIND));
+		PRT_TYPEEXPR type = (PRT_TYPEEXPR)PrtMalloc(sizeof(PRT_TYPE_KIND));
 		*type = primType;
 		return type;
 	}
@@ -46,7 +46,7 @@ PRT_FORGNTYPE *PrtMkForgnType(
 	return type;
 }
 
-PRT_MAPTYPE *PrtMkMapType(_In_ PRT_TYPE_KIND *domType, _In_ PRT_TYPE_KIND *codType)
+PRT_MAPTYPE *PrtMkMapType(_In_ PRT_TYPEEXPR domType, _In_ PRT_TYPEEXPR codType)
 {
 	PRT_MAPTYPE *type;
 	PrtAssert(*domType >= 0 && *domType < PRT_TYPE_KIND_COUNT, "Invalid type expression");
@@ -66,7 +66,7 @@ PRT_NMDTUPTYPE *PrtMkNmdTupType(_In_ PRT_UINT32 arity)
 	type->typeKind = PRT_KIND_NMDTUP;
 	type->arity = arity;
 	type->fieldNames = (PRT_STRING *)PrtCalloc((size_t)arity, sizeof(PRT_STRING));
-	type->fieldTypes = (PRT_TYPE_KIND **)PrtCalloc((size_t)arity, sizeof(PRT_TYPE_KIND *));
+	type->fieldTypes = (PRT_TYPEEXPR *)PrtCalloc((size_t)arity, sizeof(PRT_TYPEEXPR));
 	return type;
 }
 
@@ -77,11 +77,11 @@ PRT_TUPTYPE *PrtMkTupType(_In_ PRT_UINT32 arity)
 	type = (PRT_TUPTYPE *)PrtMalloc(sizeof(PRT_TUPTYPE));
 	type->typeKind = PRT_KIND_TUPLE;
 	type->arity = arity;
-	type->fieldTypes = (PRT_TYPE_KIND **)PrtCalloc((size_t)arity, sizeof(PRT_TYPE_KIND *));
+	type->fieldTypes = (PRT_TYPEEXPR *)PrtCalloc((size_t)arity, sizeof(PRT_TYPEEXPR));
 	return type;
 }
 
-PRT_SEQTYPE *PrtMkSeqType(_In_ PRT_TYPE_KIND *innerType)
+PRT_SEQTYPE *PrtMkSeqType(_In_ PRT_TYPEEXPR innerType)
 {
 	PRT_SEQTYPE *type;
 	PrtAssert(*innerType >= 0 && *innerType < PRT_TYPE_KIND_COUNT, "Invalid type expression");
@@ -91,7 +91,7 @@ PRT_SEQTYPE *PrtMkSeqType(_In_ PRT_TYPE_KIND *innerType)
 	return type;
 }
 
-void PrtSetFieldType(_Inout_ PRT_TYPE_KIND *tupleType, _In_ PRT_UINT32 index, _In_ PRT_TYPE_KIND *fieldType)
+void PrtSetFieldType(_Inout_ PRT_TYPEEXPR tupleType, _In_ PRT_UINT32 index, _In_ PRT_TYPEEXPR fieldType)
 {
 	PrtAssert(*tupleType == PRT_KIND_TUPLE || *tupleType == PRT_KIND_NMDTUP, "Invalid type expression");
 	PrtAssert(*fieldType >= 0 && *fieldType < PRT_TYPE_KIND_COUNT, "Invalid type expression");
@@ -125,7 +125,7 @@ void PrtSetFieldName(_Inout_ PRT_NMDTUPTYPE *tupleType, _In_ PRT_UINT32 index, _
 	tupleType->fieldNames[index] = fieldNameClone;
 }
 
-PRT_TYPE_KIND *PrtCloneType(_In_ PRT_TYPE_KIND *type)
+PRT_TYPEEXPR PrtCloneType(_In_ PRT_TYPEEXPR type)
 {
 	PRT_TYPE_KIND kind = *type;
 	switch (kind)
@@ -140,12 +140,12 @@ PRT_TYPE_KIND *PrtCloneType(_In_ PRT_TYPE_KIND *type)
 	case PRT_KIND_FORGN:
 	{
 		PRT_FORGNTYPE *ftype = (PRT_FORGNTYPE *)type;
-		return (PRT_TYPE_KIND *)PrtMkForgnType(ftype->typeTag, ftype->cloner, ftype->freer, ftype->hasher, ftype->eqTester);
+		return (PRT_TYPEEXPR)PrtMkForgnType(ftype->typeTag, ftype->cloner, ftype->freer, ftype->hasher, ftype->eqTester);
 	}
 	case PRT_KIND_MAP:
 	{		
 		PRT_MAPTYPE *mtype = (PRT_MAPTYPE *)type;
-		return (PRT_TYPE_KIND *)PrtMkMapType(mtype->domType, mtype->codType);
+		return (PRT_TYPEEXPR)PrtMkMapType(mtype->domType, mtype->codType);
 	}
 	case PRT_KIND_NMDTUP:
 	{
@@ -155,15 +155,15 @@ PRT_TYPE_KIND *PrtCloneType(_In_ PRT_TYPE_KIND *type)
 		for (i = 0; i < ntype->arity; ++i)
 		{
 			PrtSetFieldName(clone, i, ntype->fieldNames[i]);
-			PrtSetFieldType((PRT_TYPE_KIND *)clone, i, ntype->fieldTypes[i]);
+			PrtSetFieldType((PRT_TYPEEXPR)clone, i, ntype->fieldTypes[i]);
 		}
 
-		return (PRT_TYPE_KIND *)clone;
+		return (PRT_TYPEEXPR)clone;
 	}
 	case PRT_KIND_SEQ:
 	{
 		PRT_SEQTYPE *stype = (PRT_SEQTYPE *)type;
-		return (PRT_TYPE_KIND *)PrtMkSeqType(stype->innerType);
+		return (PRT_TYPEEXPR)PrtMkSeqType(stype->innerType);
 	}
 	case PRT_KIND_TUPLE:
 	{
@@ -172,10 +172,10 @@ PRT_TYPE_KIND *PrtCloneType(_In_ PRT_TYPE_KIND *type)
 		PRT_TUPTYPE *clone = PrtMkTupType(ttype->arity);
 		for (i = 0; i < ttype->arity; ++i)
 		{
-			PrtSetFieldType((PRT_TYPE_KIND *)clone, i, ttype->fieldTypes[i]);
+			PrtSetFieldType((PRT_TYPEEXPR)clone, i, ttype->fieldTypes[i]);
 		}
 
-		return (PRT_TYPE_KIND *)clone;
+		return (PRT_TYPEEXPR)clone;
 	}
 	default:
 		PrtAssert(PRT_FALSE, "Invalid type");
@@ -183,7 +183,7 @@ PRT_TYPE_KIND *PrtCloneType(_In_ PRT_TYPE_KIND *type)
 	}
 }
 
-void PrtFreeType(_Inout_ PRT_TYPE_KIND *type)
+void PrtFreeType(_Inout_ PRT_TYPEEXPR type)
 {
 	PRT_TYPE_KIND kind = *type;
 	switch (kind)
@@ -194,16 +194,22 @@ void PrtFreeType(_Inout_ PRT_TYPE_KIND *type)
 	case PRT_KIND_ID:
 	case PRT_KIND_INT:
 	case PRT_KIND_MID:
+		*type = PRT_TYPE_KIND_CANARY;
 		PrtFree(type);
 		break;
 	case PRT_KIND_FORGN:
-		PrtFree((PRT_FORGNTYPE *)type);
+	{
+		PRT_FORGNTYPE *ftype = (PRT_FORGNTYPE *)type;
+		ftype->typeKind = PRT_TYPE_KIND_CANARY;
+		PrtFree(ftype);
 		break;
+	}
 	case PRT_KIND_MAP:
 	{
 		PRT_MAPTYPE *mtype = (PRT_MAPTYPE *)type;
 		PrtFreeType(mtype->domType);
 		PrtFreeType(mtype->codType);
+		mtype->typeKind = PRT_TYPE_KIND_CANARY;
 		PrtFree(mtype);
 		break;
 	}
@@ -219,6 +225,7 @@ void PrtFreeType(_Inout_ PRT_TYPE_KIND *type)
 
 		PrtFree(ntype->fieldNames);
 		PrtFree(ntype->fieldTypes);
+		ntype->typeKind = PRT_TYPE_KIND_CANARY;
 		PrtFree(ntype);
 		break;
 	}
@@ -226,6 +233,7 @@ void PrtFreeType(_Inout_ PRT_TYPE_KIND *type)
 	{
 		PRT_SEQTYPE *stype = (PRT_SEQTYPE *)type;
 		PrtFreeType(stype->innerType);
+		stype->typeKind = PRT_TYPE_KIND_CANARY;
 		PrtFree(stype);
 		break;
 	}
@@ -239,6 +247,7 @@ void PrtFreeType(_Inout_ PRT_TYPE_KIND *type)
 		}
 
 		PrtFree(ttype->fieldTypes);
+		ttype->typeKind = PRT_TYPE_KIND_CANARY;
 		PrtFree(ttype);
 		break;
 	}

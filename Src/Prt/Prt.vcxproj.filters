@@ -21,6 +21,9 @@
     <ClCompile Include="Config\PrtConfigWinUser.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Values\PrtTypes.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config\PrtConfigWinUser.h">

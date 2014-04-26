@@ -18,5 +18,19 @@
     <ClCompile Include="PrtCmd.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Prt\Config\PrtConfigWinUser.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Prt\Prt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Prt\Values\PrtTypes.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PrtCmd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -25,7 +25,6 @@
 *       manager. Processes connected to the same central manager can interact. 
 */
 
-
 #ifndef PRTCONFIG_H
 #define PRTCONFIG_H
 
@@ -79,6 +78,16 @@
 */
 #ifndef PRT_DISTR
 #define PRT_DISTR PRT_DISTR_NONE
+#endif
+
+/**
+* \def PRT_DBG_ASSERT
+* Expands to PrtAssert unless PRT_DISABLE_DBGASSERTS is defined.
+*/
+#ifndef PRT_DISABLE_ASSERTS
+#define PRT_DBG_ASSERT(condition, message) PrtAssert((condition), (message))
+#else
+#define PRT_DBG_ASSERT(condition, message) 
 #endif
 
 /** PRT uses these definitions for boolean values */

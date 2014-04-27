@@ -38,14 +38,14 @@ typedef enum PRT_TYPE_KIND
 	PRT_KIND_NMDTUP = 8,   /**< The kind of all named tuple types */
 	PRT_KIND_SEQ    = 9,   /**< The kind of all sequence types    */
 	PRT_KIND_TUPLE  = 10,  /**< The kind of all tuple types       */
-	PRT_TYPE_KIND_COUNT = 11, /**< The number of type kinds        */
+	PRT_TYPE_KIND_COUNT = 11,   /**< The number of type kinds        */
 	PRT_TYPE_KIND_CANARY = 0xFF /**< A freed type will have this as its kind */
 } PRT_TYPE_KIND;
 
 /** The layout for map types. */
 typedef struct PRT_MAPTYPE
 {
-	PRT_TYPE_KIND typeKind;   /**< Must be PRT_KIND_MAP */       
+	PRT_TYPE_KIND typeKind;  /**< Must be PRT_KIND_MAP */       
 	PRT_TYPEEXPR  domType;   /**< The domain type of the map type */  
 	PRT_TYPEEXPR  codType;   /**< The codomain type of the map type */
 } PRT_MAPTYPE;
@@ -53,24 +53,24 @@ typedef struct PRT_MAPTYPE
 /** The layout for named tuple types. */
 typedef struct PRT_NMDTUPTYPE
 {
-	PRT_TYPE_KIND typeKind;       /**< Must be PRT_KIND_NMDTUP */
-	PRT_UINT32    arity;          /**< Arity of tuple type; arity > 0 */
-	PRT_STRING    *fieldNames;    /**< Array of valid field names; length = arity */
+	PRT_TYPE_KIND typeKind;      /**< Must be PRT_KIND_NMDTUP */
+	PRT_UINT32    arity;         /**< Arity of tuple type; arity > 0 */
+	PRT_STRING    *fieldNames;   /**< Array of valid field names; length = arity */
 	PRT_TYPEEXPR  *fieldTypes;   /**< Array of field types; length = arity */
 } PRT_NMDTUPTYPE;
 
 /** The layout for sequence types. */
 typedef struct PRT_SEQTYPE
 {
-	PRT_TYPE_KIND typeKind;     /**< Must be PRT_KIND_SEQ */
+	PRT_TYPE_KIND typeKind;    /**< Must be PRT_KIND_SEQ */
 	PRT_TYPEEXPR  innerType;   /**< Inner type of the sequence */
 } PRT_SEQTYPE;
 
 /** The layout for tuple types. */
 typedef struct PRT_TUPTYPE
 {
-	PRT_TYPE_KIND typeKind;       /**< Must be PRT_KIND_TUP */
-	PRT_UINT32    arity;          /**< Arity of tuple type; arity > 0 */
+	PRT_TYPE_KIND typeKind;      /**< Must be PRT_KIND_TUP */
+	PRT_UINT32    arity;         /**< Arity of tuple type; arity > 0 */
 	PRT_TYPEEXPR  *fieldTypes;   /**< Array of field types; length = arity */
 } PRT_TUPTYPE;
 

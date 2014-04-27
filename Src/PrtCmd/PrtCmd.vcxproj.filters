@@ -27,9 +27,15 @@
     <ClCompile Include="..\Prt\Values\PrtTypes.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PrtCmdPrinting.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrtCmd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PrtCmdPrinting.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

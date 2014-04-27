@@ -77,9 +77,11 @@
     <ClCompile Include="..\Prt\Prt.c" />
     <ClCompile Include="..\Prt\Values\PrtTypes.c" />
     <ClCompile Include="PrtCmd.c" />
+    <ClCompile Include="PrtCmdPrinting.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrtCmd.h" />
+    <ClInclude Include="PrtCmdPrinting.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

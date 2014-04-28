@@ -3,25 +3,25 @@
 int main(int argc, char *argv[])
 {
 	//// Make the integer type
-	PRT_TYPEEXPR intType = PrtMkPrimitiveType(PRT_KIND_INT);
+	PRT_TYPE intType = PrtMkPrimitiveType(PRT_KIND_INT);
 
 	//// Make the bool type
-	PRT_TYPEEXPR boolType = PrtMkPrimitiveType(PRT_KIND_BOOL);
+	PRT_TYPE boolType = PrtMkPrimitiveType(PRT_KIND_BOOL);
 
 	//// Make the sequence of booleans type
 	PRT_SEQTYPE *seqBoolType = PrtMkSeqType(boolType);
 
 	//// Make the int -> seq of bool type.
-	PRT_MAPTYPE *int2seqType = PrtMkMapType(intType, (PRT_TYPEEXPR)seqBoolType);
+	PRT_MAPTYPE *int2seqType = PrtMkMapType(intType, (PRT_TYPE)seqBoolType);
 
 	//// Clone the type
-	PRT_TYPEEXPR clone = PrtCloneType((PRT_TYPEEXPR)int2seqType);
+	PRT_TYPE clone = PrtCloneType((PRT_TYPE)int2seqType);
 
 	//// Print it
-	PrtCmdPrintType((PRT_TYPEEXPR)int2seqType);
+	PrtCmdPrintType((PRT_TYPE)int2seqType);
 
 	//// Free the type
-	PrtFreeType((PRT_TYPEEXPR)int2seqType);
+	PrtFreeType((PRT_TYPE)int2seqType);
 
 	//// Print the clone
 	printf_s("\n");
@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 	//// Free the remainder
 	PrtFreeType(intType);
 	PrtFreeType(boolType);
-	PrtFreeType((PRT_TYPEEXPR)seqBoolType);
+	PrtFreeType((PRT_TYPE)seqBoolType);
 
 	return 0;
 }

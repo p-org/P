@@ -22,7 +22,7 @@
 #define PRT_MAXFLDNAME_LENGTH 256
 
 /** A type expression is a pointer to a PRT_TYPE_KIND */
-typedef enum PRT_TYPE_KIND *PRT_TYPEEXPR;
+typedef enum PRT_TYPE_KIND *PRT_TYPE;
 
 /** These are the kinds of types in the P type system. */
 typedef enum PRT_TYPE_KIND
@@ -46,8 +46,8 @@ typedef enum PRT_TYPE_KIND
 typedef struct PRT_MAPTYPE
 {
 	PRT_TYPE_KIND typeKind;  /**< Must be PRT_KIND_MAP */       
-	PRT_TYPEEXPR  domType;   /**< The domain type of the map type */  
-	PRT_TYPEEXPR  codType;   /**< The codomain type of the map type */
+	PRT_TYPE      domType;   /**< The domain type of the map type */  
+	PRT_TYPE      codType;   /**< The codomain type of the map type */
 } PRT_MAPTYPE;
 
 /** The layout for named tuple types. */
@@ -56,14 +56,14 @@ typedef struct PRT_NMDTUPTYPE
 	PRT_TYPE_KIND typeKind;      /**< Must be PRT_KIND_NMDTUP */
 	PRT_UINT32    arity;         /**< Arity of tuple type; arity > 0 */
 	PRT_STRING    *fieldNames;   /**< Array of valid field names; length = arity */
-	PRT_TYPEEXPR  *fieldTypes;   /**< Array of field types; length = arity */
+	PRT_TYPE      *fieldTypes;   /**< Array of field types; length = arity */
 } PRT_NMDTUPTYPE;
 
 /** The layout for sequence types. */
 typedef struct PRT_SEQTYPE
 {
-	PRT_TYPE_KIND typeKind;    /**< Must be PRT_KIND_SEQ */
-	PRT_TYPEEXPR  innerType;   /**< Inner type of the sequence */
+	PRT_TYPE_KIND typeKind;   /**< Must be PRT_KIND_SEQ */
+	PRT_TYPE      innerType;  /**< Inner type of the sequence */
 } PRT_SEQTYPE;
 
 /** The layout for tuple types. */
@@ -71,7 +71,7 @@ typedef struct PRT_TUPTYPE
 {
 	PRT_TYPE_KIND typeKind;      /**< Must be PRT_KIND_TUP */
 	PRT_UINT32    arity;         /**< Arity of tuple type; arity > 0 */
-	PRT_TYPEEXPR  *fieldTypes;   /**< Array of field types; length = arity */
+	PRT_TYPE      *fieldTypes;   /**< Array of field types; length = arity */
 } PRT_TUPTYPE;
 
 /** The PRT_FORGN_CLONE function is called whenever a foreign value needs to be cloned.
@@ -120,7 +120,7 @@ typedef struct PRT_FORGNTYPE
 * @returns An instance of a primitive. Caller is responsible for freeing. 
 * @see PrtFreeType
 */
-PRT_TYPEEXPR PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType);
+PRT_TYPE PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType);
 
 /** Makes a foreign type. 
 * @param[in] typeTag The type tag for this type.
@@ -144,7 +144,7 @@ PRT_FORGNTYPE *PrtMkForgnType(
 * @returns An instance of a map type. Caller is responsible for freeing.
 * @see PrtFreeType
 */
-PRT_MAPTYPE *PrtMkMapType(_In_ PRT_TYPEEXPR domType, _In_ PRT_TYPEEXPR codType);
+PRT_MAPTYPE *PrtMkMapType(_In_ PRT_TYPE domType, _In_ PRT_TYPE codType);
 
 /** Makes a named tuple type with arity. Caller must fill in field names / types. 
 * @param[in] arity The arity of the tuple type; arity > 0.
@@ -160,7 +160,7 @@ PRT_NMDTUPTYPE *PrtMkNmdTupType(_In_ PRT_UINT32 arity);
 * @returns An instance of a sequence type. Caller is responsible for freeing.
 * @see PrtFreeType
 */
-PRT_SEQTYPE *PrtMkSeqType(_In_ PRT_TYPEEXPR innerType);
+PRT_SEQTYPE *PrtMkSeqType(_In_ PRT_TYPE innerType);
 
 /** Makes a tuple type with arity. Caller must fill in field types.
 * @param[in] arity The arity of the tuple type; arity > 0.
@@ -175,7 +175,7 @@ PRT_TUPTYPE *PrtMkTupType(_In_ PRT_UINT32 arity);
 * @param[in] index The field index to set.
 * @param[in] fieldType The type of the ith field (will be deeply cloned).
 */
-void PrtSetFieldType(_Inout_ PRT_TYPEEXPR tupleType, _In_ PRT_UINT32 index, _In_ PRT_TYPEEXPR fieldType);
+void PrtSetFieldType(_Inout_ PRT_TYPE tupleType, _In_ PRT_UINT32 index, _In_ PRT_TYPE fieldType);
 
 /** Sets the ith field name of a named tuple type.
 * @param[in,out] tupleType The named tuple type to mutate.
@@ -188,7 +188,7 @@ void PrtSetFieldName(_Inout_ PRT_NMDTUPTYPE *tupleType, _In_ PRT_UINT32 index, _
 * @param[in] type The type to clone.
 * @returns A deep clone of type. Caller is responsible for freeing. 
 */
-PRT_TYPEEXPR PrtCloneType(_In_ PRT_TYPEEXPR type);
+PRT_TYPE PrtCloneType(_In_ PRT_TYPE type);
 
 /** Recursively frees a type expression. Should only be called on types created using PrtMkXType()
 * @param[in,out] type The type to free.
@@ -199,6 +199,6 @@ PRT_TYPEEXPR PrtCloneType(_In_ PRT_TYPEEXPR type);
 * @see PrtMkSeqType
 * @see PrtMkTupType
 */
-void PrtFreeType(_Inout_ PRT_TYPEEXPR type);
+void PrtFreeType(_Inout_ PRT_TYPE type);
 
 #endif

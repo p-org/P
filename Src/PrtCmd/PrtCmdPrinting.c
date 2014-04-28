@@ -1,6 +1,6 @@
 #include "PrtCmdPrinting.h"
 
-void PrtCmdPrintType(_In_ PRT_TYPEEXPR type)
+void PrtCmdPrintType(_In_ PRT_TYPE type)
 {
 	PRT_TYPE_KIND kind = *type;
 	switch (kind)

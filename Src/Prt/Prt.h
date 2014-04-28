@@ -5,7 +5,7 @@
 #ifndef PRT_H
 #define PRT_H
 #include "Config\PrtConfig.h"
-#include "Values\PrtTypes.h"
+#include "Values\PrtValues.h"
 
 /**
 * Starts the P runtime. Must be called once per process and before any other calls to the runtime API.

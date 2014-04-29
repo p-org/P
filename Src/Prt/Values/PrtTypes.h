@@ -138,6 +138,13 @@ PRT_FORGNTYPE *PrtMkForgnType(
 		_In_ PRT_FORGN_GETHASHCODE hasher,
 		_In_ PRT_FORGN_ISEQUAL     eqTester);
 
+/** Makes the absent type. 
+* The absent type is a foreign type that represents the absence of a foreign value.
+* It has a single foreign value, NULL, and is the default value of `foreign`.
+* @returns An instance of the absent type. Caller is responsible for freeing.
+*/
+PRT_FORGNTYPE *PrtMkAbsentType();
+
 /** Makes a map type. 
 * @param domType The domain type (will be deeply cloned).
 * @param codType The codomain type (will be deeply cloned).

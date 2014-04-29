@@ -18,6 +18,9 @@
 
 #include "PrtTypes.h"
 
+/** The null (machine, model machine, event) id is the id 0. */
+#define PRT_NULL_ID 0 
+
 /** A value is a pointer to a type expression*/
 typedef PRT_TYPE *PRT_VALUE;
 
@@ -54,6 +57,7 @@ typedef struct PRT_SEQVALUE
 {
 	PRT_TYPE   type;     /**< Must be a sequence type.                */
 	PRT_UINT32 size;     /**< The number of elements in the sequence. */
+	PRT_UINT32 capacity; /**< The number of elements before resizing  */
 	PRT_VALUE *values;   /**< An array of values in the sequence.     */
 } PRT_SEQVALUE;
 
@@ -72,8 +76,197 @@ typedef struct PRT_MAPNODE
 {
 	PRT_VALUE key;     /**< The key of this node. */
 	PRT_VALUE value;   /**< The value of this node. */
-	struct PRT_MAPNODE *bucketNext;   /**< The next node in this bucket.     */
-	struct PRT_MAPNODE *insertNext;   /**< The next node in insertion order. */
+	struct PRT_MAPNODE *bucketNext;   /**< The next node in this bucket.         */
+	struct PRT_MAPNODE *insertNext;   /**< The next node in insertion order.     */
+	struct PRT_MAPNODE *insertPrev;   /**< The previous node in insertion order. */
 } PRT_MAPNODE;
+
+/** Makes a default value of an abitrary type. The defaults (def) are as follows:
+* 1.  def(any)                 = `null : id`.
+* 2.  def(bool)                = `false : bool`.
+* 3.  def(event)               = `null : event`.
+* 4.  def(foreign)             = `NULL pointer : foreign`.
+* 5.  def(id)                  = `null : id`.
+* 6.  def(int)                 = `0 : int`.
+* 7.  def(map[S, T])           = `[] : map[S, T]`.
+* 8.  def(mid)                 = `null : mid`.
+* 9.  def((l1: S1,.., ln: Sn)) = `(l1 = def(S1),..., ln = def(Sn)) : (l1: S1,..., ln: Sn)`.
+* 10. def([S])                 = `[] : [S]`.
+* 11. def((S1,..,Sn))          = `(def(S1),..., def(S2)) : (S1,..., Sn)`.
+* @param[in] type A type expression (will be cloned).
+* @returns The default value of the type. Caller is responsible for freeing.
+* @see PrtFreeValue
+*/
+PRT_VALUE PrtMkDefaultValue(_In_ PRT_TYPE type);
+
+/** Makes a boolean value.
+* @param[in] type The `bool` type (will be cloned).
+* @param[in] value A boolean value.
+* @returns A proper boolean value. Caller is responsible for freeing.
+* @see PrtFreeValue
+*/
+PRT_VALUE PrtMkBoolValue(_In_ PRT_TYPE type, _In_ PRT_BOOLEAN value);
+
+/** Makes an event value.
+* @param[in] type The `event` type (will be cloned).
+* @param[in] value An event id.
+* @returns A proper event value. Caller is responsible for freeing.
+* @see PrtFreeValue
+*/
+PRT_VALUE PrtMkEventValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
+
+/** Makes an integer value.
+* @param[in] type The `int` type (will be cloned).
+* @param[in] value An int value.
+* @returns A proper int value. Caller is responsible for freeing.
+* @see PrtFreeValue
+*/
+PRT_VALUE PrtMkIntValue(_In_ PRT_TYPE type, _In_ PRT_INT32 value);
+
+/** Makes an id value.
+* @param[in] type The `id` type (will be cloned).
+* @param[in] value A machine id.
+* @returns A proper id value. Caller is responsible for freeing.
+* @see PrtFreeValue
+*/
+PRT_VALUE PrtMkIdValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
+
+/** Makes an mid value.
+* @param[in] type The `mid` type (will be cloned).
+* @param[in] value A model machine id.
+* @returns A proper mid value. Caller is responsible for freeing.
+* @see PrtFreeValue
+*/
+PRT_VALUE PrtMkMIdValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
+
+/** Makes a foreign value.
+* @param[in] type A foreign type (will be cloned).
+* @param[in] value A pointer to foreign data (will be cloned).
+* @returns A proper foreign value. Caller is responsible for freeing.
+* @see PrtFreeValue
+*/
+PRT_VALUE PrtMkForeignValue(_In_ PRT_FORGNTYPE *type, _In_ void *value);
+
+/** Sets an element in a (named) tuple by index.
+* @param[in,out] tuple A (named) tuple to mutate.
+* @param[in]     index A 0-based element index.
+* @param[in]     value The value to set (will be cloned).
+*/
+void PrtTupleSet(_Inout_ PRT_TUPVALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VALUE value);
+
+/** Gets an element in a (named) tuple by index.
+* @param[in] tuple A (named) tuple.
+* @param[in] index A 0-based element index.
+* @returns The element at index i. Caller is responsible for freeing.
+*/
+PRT_VALUE *PrtTupleGet(_In_ PRT_TUPVALUE *tuple, _In_ PRT_UINT32 index);
+
+/** Sets an element in a named tuple by name.
+* @param[in,out] tuple A named tuple to mutate.
+* @param[in]     name  The name of the element to set. 
+* @param[in]     value The value to set (will be cloned).
+*/
+void PrtNmdTupleSet(_Inout_ PRT_TUPVALUE *tuple, _In_ PRT_STRING name, _In_ PRT_VALUE value);
+
+/** Gets an element in a named tuple by name.
+* @param[in] tuple A named tuple.
+* @param[in] name  The name of the element to set.
+* @returns The element named name. Caller is responsible for freeing.
+*/
+PRT_VALUE *PrtNmdTupleGet(_In_ PRT_TUPVALUE *tuple, _In_ PRT_STRING name);
+
+/** Updates the sequence at index.
+* @param[in,out] seq   A sequence to mutate.
+* @param[in]     index The name of the element to set. A value must already exist at this index.
+* @param[in]     value The value to store at index (will be cloned).
+*/
+void PrtSeqUpdate(_Inout_ PRT_SEQVALUE *seq, _In_ PRT_UINT32 index, _In_ PRT_VALUE value);
+
+/** Inserts value into the sequence at index. 
+* Index cannot be larger than the size of the sequence. Insertion causes:
+* seq'[index] = value.
+* For all i >= index, if seq[i] is defined, then seq'[i + 1] = seq[i].
+* For all i < index, if seq[i] is defined, then seq'[i] = seq[i].
+* @param[in,out] seq   A sequence to mutate.
+* @param[in]     index An 0-based index s.t. 0 <= index <= size(seq).
+* @param[in]     value The value to store at index (will be cloned).
+*/
+void PrtSeqInsert(_Inout_ PRT_SEQVALUE *seq, _In_ PRT_UINT32 index, _In_ PRT_VALUE value);
+
+/** Removes the value at index from the sequence, and shortens the sequence by one.
+* seq[index] must be defined. Removal causes:
+* For all i > index, if seq[i] is defined, then seq'[i - 1] = seq[i].
+* For all i < index, if seq[i] is defined, then seq'[i] = seq[i].
+* @param[in,out] seq   A sequence to mutate.
+* @param[in]     index An 0-based index s.t. 0 <= index < size(seq).
+*/
+void PrtSeqRemove(_Inout_ PRT_SEQVALUE *seq, _In_ PRT_UINT32 index);
+
+/** Gets the sequence at index.
+* @param[in] seq   A sequence.
+* @param[in] index A 0-based index s.t. 0 <= index < size(seq). 
+* @returns The value at index. Caller is responsible for freeing.
+*/
+PRT_VALUE PrtSeqGet(_In_ PRT_SEQVALUE *seq, _In_ PRT_UINT32 index);
+
+/** Gets the size of a sequence.
+* @param[in] seq A sequence.
+* @returns The size of the sequence.
+*/
+PRT_UINT32 PrtSeqSizeOf(_In_ PRT_SEQVALUE *seq);
+
+/** Updates the map at key. 
+* If key is not in the map, then adds it.
+* If key is already in the map, then changes its mapping.
+* @param[in,out] map   A map to mutate.
+* @param[in]     key   The key to update (will be cloned).
+* @param[in]     value The value to which the key maps (will be cloned).
+*/
+void PrtMapUpdate(_Inout_ PRT_MAPVALUE *map, _In_ PRT_VALUE key, _In_ PRT_VALUE value);
+
+/** Remove the key from the map. 
+* If the key is not in then map, then the map is unchanged.
+* @param[in,out] map   A map to mutate.
+* @param[in]     key   The key to remove (will be cloned).
+*/
+void PrtMapRemove(_Inout_ PRT_MAPVALUE *map, _In_ PRT_VALUE key);
+
+/** Gets the value to which this key maps.
+* The key must be present the map.
+* @param[in] map A map.
+* @param[in] key The key to lookup.
+* @returns The value to which the key maps. Caller is responsible for freeing.
+*/
+PRT_VALUE PrtMapGet(_In_ PRT_MAPVALUE *map, _In_ PRT_VALUE key);
+
+/** Converts a map to sequence of keys. Keys are returned in insertion order.
+* @param[in] map A map.
+* @returns The sequence of its keys. Caller is responsible for freeing.
+*/
+PRT_SEQVALUE *PrtMapGetKeys(_In_ PRT_MAPVALUE *map);
+
+/** Returns true if the map contains key; false otherwise.
+* @param[in] map A map.
+* @param[in] key The key to lookup.
+* @returns Returns true if the map contains key; false otherwise.
+*/
+PRT_VALUE PrtMapExists(_In_ PRT_MAPVALUE *map, _In_ PRT_VALUE key);
+
+/** Gets the size of a map.
+* @param[in] map A map.
+* @returns The size of the map.
+*/
+PRT_UINT32 PrtMapSizeOf(_In_ PRT_MAPVALUE *map);
+
+/** Deeply clones a value.
+* @param[in] value The value to clone.
+* @returns The cloned value.
+*/
+PRT_VALUE PrtCloneValue(_In_ PRT_VALUE value);
+
+/** Recursively frees a value. Should only be called on values created using PrtMkXValue()
+* @param[in,out] value The value to free.
+*/
+void PrtFreeValue(_Inout_ PRT_VALUE value);
 
 #endif

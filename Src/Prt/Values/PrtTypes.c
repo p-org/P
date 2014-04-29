@@ -29,7 +29,6 @@ PRT_FORGNTYPE *PrtMkForgnType(
 	_In_ PRT_FORGN_ISEQUAL     eqTester)
 {
 	PRT_FORGNTYPE *type;
-	PrtAssert(typeTag.data1 != 0 || typeTag.data2 != 0 || typeTag.data3 != 0 || typeTag.data4 != 0, "Bad type tag");
 	PrtAssert(cloner != NULL, "Bad cloner");
 	PrtAssert(freer != NULL, "Bad freer");
 	PrtAssert(hasher != NULL, "Bad hasher");
@@ -255,4 +254,100 @@ void PrtFreeType(_Inout_ PRT_TYPE type)
 		PrtAssert(PRT_FALSE, "Invalid type");
 		break;
 	}
+}
+
+/** The "Absent type" is a built-in foreign type used to represent the absence of a foreign value.
+* The type tag of the absent type 0. No other foreign type is permitted to use this type tag.
+* @param[in] typeTag A type tag.
+* @returns `true` if the typeTag is 0, `false` otherwise.
+*/
+PRT_BOOLEAN PrtIsAbsentTag(_In_ PRT_GUID typeTag)
+{
+	return 
+		typeTag.data1 == 0 &&
+		typeTag.data2 == 0 &&
+		typeTag.data3 == 0 &&
+		typeTag.data4 == 0 ? PRT_TRUE : PRT_FALSE;
+}
+
+/** The "Absent type" is a built-in foreign type used to represent the absence of a foreign value.
+* The absent type has a single value, which is NULL.
+* @param[in] typeTag The type tag of the absent type is always 0.
+* @param[in[ frgnVal The frgnVal must be NULL.
+* @returns NULL.
+*/
+void *PrtAbsentTypeClone(_In_ PRT_GUID typeTag, _In_ void *frgnVal)
+{
+	PrtAssert(PrtIsAbsentTag(typeTag), "Expected the absent type");
+	PrtAssert(frgnVal != NULL, "Expected the absent value");
+	return NULL;
+}
+
+/** The "Absent type" is a built-in foreign type used to represent the absence of a foreign value.
+* The absent type has a single value, which is NULL. Does nothing.
+* @param[in] typeTag The type tag of the absent type is always 0.
+* @param[in[ frgnVal The frgnVal must be NULL.
+*/
+void PrtAbsentTypeFree(_In_ PRT_GUID typeTag, _Inout_ void *frgnVal)
+{
+	PrtAssert(PrtIsAbsentTag(typeTag), "Expected the absent type");
+	PrtAssert(frgnVal != NULL, "Expected the absent value");
+}
+
+/** The "Absent type" is a built-in foreign type used to represent the absence of a foreign value.
+* The absent type has a single value, which is NULL.
+* @param[in] typeTag The type tag of the absent type is always 0.
+* @param[in[ frgnVal The frgnVal must be NULL.
+* @returns 0.
+*/
+PRT_UINT32 PrtAbsentTypeGetHashCode(_In_ PRT_GUID typeTag, _In_ void *frgnVal)
+{
+	PrtAssert(PrtIsAbsentTag(typeTag), "Expected the absent type");
+	PrtAssert(frgnVal != NULL, "Expected the absent value");
+	return 0;
+}
+
+/** The "Absent type" is a built-in foreign type used to represent the absence of a foreign value.
+* The absent type has a single value, which is NULL. One of the inputs must be `NULL : Absent`.
+* @param[in] typeTag1 The type tag of the first foreign value.
+* @param[in] frgnVal1 A pointer to the first foreign data.
+* @param[in] typeTag2 The type tag of the second foreign value.
+* @param[in] frgnVal2 A pointer to the second foreign data.
+* @returns `true` if both inputs are absent, `false` otherwise.
+*/
+PRT_BOOLEAN PrtAbsentTypeIsEqual(
+	_In_ PRT_GUID typeTag1,
+	_In_ void *frgnVal1,
+	_In_ PRT_GUID typeTag2,
+	_In_ void *frgnVal2)
+{
+	PrtAssert(PrtIsAbsentTag(typeTag1) || PrtIsAbsentTag(typeTag2), "Expected an absent value");
+	PrtAssert(!PrtIsAbsentTag(typeTag1) || frgnVal1 == NULL, "Invalid absent value");
+	PrtAssert(!PrtIsAbsentTag(typeTag2) || frgnVal2 == NULL, "Invalid absent value");
+	if (PrtIsAbsentTag(typeTag1))
+	{
+		return PrtIsAbsentTag(typeTag2) ? PRT_TRUE : PRT_FALSE;
+	}
+	else if (PrtIsAbsentTag(typeTag2))
+	{
+		return PrtIsAbsentTag(typeTag1) ? PRT_TRUE : PRT_FALSE;
+	}
+
+	return PRT_FALSE;
+}
+
+PRT_FORGNTYPE *PrtMkAbsentType()
+{
+	PRT_FORGNTYPE *absent = (PRT_FORGNTYPE *)PrtMalloc(sizeof(PRT_FORGNTYPE));
+	absent->typeKind = PRT_KIND_FORGN;
+	absent->typeTag.data1 = 0;
+	absent->typeTag.data2 = 0;
+	absent->typeTag.data3 = 0;
+	absent->typeTag.data4 = 0;
+	absent->cloner = &PrtAbsentTypeClone;
+	absent->freer = &PrtAbsentTypeFree;
+	absent->hasher = &PrtAbsentTypeGetHashCode;
+	absent->eqTester = &PrtAbsentTypeIsEqual;
+
+	return absent;
 }

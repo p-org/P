@@ -105,7 +105,7 @@ PRT_VALUE PrtMkDefaultValue(_In_ PRT_TYPE type);
 * @returns A proper boolean value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_VALUE PrtMkBoolValue(_In_ PRT_TYPE type, _In_ PRT_BOOLEAN value);
+PRT_PRIMVALUE *PrtMkBoolValue(_In_ PRT_TYPE type, _In_ PRT_BOOLEAN value);
 
 /** Makes an event value.
 * @param[in] type The `event` type (will be cloned).
@@ -113,7 +113,7 @@ PRT_VALUE PrtMkBoolValue(_In_ PRT_TYPE type, _In_ PRT_BOOLEAN value);
 * @returns A proper event value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_VALUE PrtMkEventValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
+PRT_PRIMVALUE *PrtMkEventValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
 
 /** Makes an integer value.
 * @param[in] type The `int` type (will be cloned).
@@ -121,7 +121,7 @@ PRT_VALUE PrtMkEventValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
 * @returns A proper int value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_VALUE PrtMkIntValue(_In_ PRT_TYPE type, _In_ PRT_INT32 value);
+PRT_PRIMVALUE *PrtMkIntValue(_In_ PRT_TYPE type, _In_ PRT_INT32 value);
 
 /** Makes an id value.
 * @param[in] type The `id` type (will be cloned).
@@ -129,7 +129,7 @@ PRT_VALUE PrtMkIntValue(_In_ PRT_TYPE type, _In_ PRT_INT32 value);
 * @returns A proper id value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_VALUE PrtMkIdValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
+PRT_PRIMVALUE *PrtMkIdValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
 
 /** Makes an mid value.
 * @param[in] type The `mid` type (will be cloned).
@@ -137,7 +137,7 @@ PRT_VALUE PrtMkIdValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
 * @returns A proper mid value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_VALUE PrtMkMIdValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
+PRT_PRIMVALUE *PrtMkMIdValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
 
 /** Makes a foreign value.
 * @param[in] type A foreign type (will be cloned).
@@ -145,7 +145,7 @@ PRT_VALUE PrtMkMIdValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
 * @returns A proper foreign value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_VALUE PrtMkForeignValue(_In_ PRT_FORGNTYPE *type, _In_ void *value);
+PRT_FORGNVALUE *PrtMkForeignValue(_In_ PRT_FORGNTYPE *type, _In_ void *value);
 
 /** Sets an element in a (named) tuple by index.
 * @param[in,out] tuple A (named) tuple to mutate.
@@ -257,6 +257,13 @@ PRT_VALUE PrtMapExists(_In_ PRT_MAPVALUE *map, _In_ PRT_VALUE key);
 * @returns The size of the map.
 */
 PRT_UINT32 PrtMapSizeOf(_In_ PRT_MAPVALUE *map);
+
+/** Determines if value inhabits type.
+* @param[in] value The value to check.
+* @param[in] type  The type to check.
+* @returns `true` if value inhabits type, `false` otherwise.
+*/
+PRT_BOOLEAN PrtInhabits(_In_ PRT_VALUE value, _In_ PRT_TYPE type);
 
 /** Deeply clones a value.
 * @param[in] value The value to clone.

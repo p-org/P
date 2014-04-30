@@ -147,6 +147,66 @@ PRT_PRIMVALUE *PrtMkMIdValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
 */
 PRT_FORGNVALUE *PrtMkForeignValue(_In_ PRT_FORGNTYPE *type, _In_ void *value);
 
+/** Sets the value of a boolean.
+* @param[in,out] prmVal A primitive boolean value to mutate.
+* @param[in]     value The value to set.
+*/
+void PrtPrimSetBool(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_BOOLEAN value);
+
+/** Gets the value of a boolean.
+* @param[in] prmVal A primitive boolean value.
+* @returns A boolean.
+*/
+PRT_BOOLEAN PrtPrimGetBool(_In_ PRT_PRIMVALUE *prmVal);
+
+/** Sets the value of an event.
+* @param[in,out] prmVal A primitive event value to mutate.
+* @param[in]     value The value to set.
+*/
+void PrtPrimSetEvent(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_UINT32 value);
+
+/** Gets the value of an event.
+* @param[in] prmVal A primitive event value.
+* @returns An event id.
+*/
+PRT_UINT32 PrtPrimGetEvent(_In_ PRT_PRIMVALUE *prmVal);
+
+/** Sets the value of an int.
+* @param[in,out] prmVal A primitive int value to mutate.
+* @param[in]     value The value to set.
+*/
+void PrtPrimSetInt(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_INT32 value);
+
+/** Gets the value of an integer.
+* @param[in] prmVal A primitive int value.
+* @returns An integer.
+*/
+PRT_INT32 PrtPrimGetInt(_In_ PRT_PRIMVALUE *prmVal);
+
+/** Sets the value of an id.
+* @param[in,out] prmVal A primitive id value to mutate.
+* @param[in]     value The value to set.
+*/
+void PrtPrimSetId(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_UINT32 value);
+
+/** Gets the value of an id.
+* @param[in] prmVal A primitive id value.
+* @returns A machine id.
+*/
+PRT_UINT32 PrtPrimGetId(_In_ PRT_PRIMVALUE *prmVal);
+
+/** Sets the value of an mid.
+* @param[in,out] prmVal A primitive mid value to mutate.
+* @param[in]     value The value to set.
+*/
+void PrtPrimSetMId(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_UINT32 value);
+
+/** Gets the value of an mid.
+* @param[in] prmVal A primitive mid value.
+* @returns A model machine id.
+*/
+PRT_UINT32 PrtPrimGetMId(_In_ PRT_PRIMVALUE *prmVal);
+
 /** Sets an element in a (named) tuple by index.
 * @param[in,out] tuple A (named) tuple to mutate.
 * @param[in]     index A 0-based element index.
@@ -263,11 +323,20 @@ PRT_UINT32 PrtMapSizeOf(_In_ PRT_MAPVALUE *map);
 * @param[in] type  The type to check.
 * @returns `true` if value inhabits type, `false` otherwise.
 */
-PRT_BOOLEAN PrtInhabits(_In_ PRT_VALUE value, _In_ PRT_TYPE type);
+PRT_BOOLEAN PrtInhabitsType(_In_ PRT_VALUE value, _In_ PRT_TYPE type);
+
+/** Casts value to type.   
+* Caller must know that type cast will succeed.
+* Method checks validity of type cast and causes an assertion failure if the case is invalid.
+* @param[in] value The value to cast (will be cloned).
+* @param[in] type  The type to cast (will be cloned).
+* @returns A copy of value with type. Caller is responsible for freeing.
+*/
+PRT_VALUE PrtCastValue(_In_ PRT_VALUE value, _In_ PRT_TYPE type);
 
 /** Deeply clones a value.
 * @param[in] value The value to clone.
-* @returns The cloned value.
+* @returns The cloned value. Caller is responsible for freeing.
 */
 PRT_VALUE PrtCloneValue(_In_ PRT_VALUE value);
 

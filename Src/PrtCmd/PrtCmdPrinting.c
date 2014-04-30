@@ -98,3 +98,113 @@ void PrtCmdPrintType(_In_ PRT_TYPE type)
 		break;
 	}
 }
+
+void PrtCmdPrintValue(_In_ PRT_VALUE value)
+{
+	PRT_TYPE_KIND kind = **value;
+	switch (kind)
+	{
+	case PRT_KIND_ANY:
+		PRT_DBG_ASSERT(PRT_FALSE, "Value must have a more concrete type");
+		break;
+	case PRT_KIND_BOOL:
+		printf_s(PrtPrimGetBool((PRT_PRIMVALUE *)value) == PRT_TRUE ? "true" : "false");
+		break;
+	case PRT_KIND_EVENT:
+	{
+		PRT_UINT32 id = PrtPrimGetEvent((PRT_PRIMVALUE *)value);
+		if (id == 0)
+		{
+			printf_s("null");
+		}
+		else 
+		{
+			printf_s("<%d>", id);
+		}
+
+		break;
+	}
+	case PRT_KIND_ID:
+	{
+		PRT_UINT32 id = PrtPrimGetId((PRT_PRIMVALUE *)value);
+		if (id == 0)
+		{
+			printf_s("null");
+		}
+		else
+		{
+			printf_s("<%d>", id);
+		}
+
+		break;
+	}
+	case PRT_KIND_INT:
+		printf_s("%d", PrtPrimGetInt((PRT_PRIMVALUE *)value));
+		break;
+	case PRT_KIND_MID:
+	{
+		PRT_UINT32 id = PrtPrimGetMId((PRT_PRIMVALUE *)value);
+		if (id == 0)
+		{
+			printf_s("null");
+		}
+		else
+		{
+			printf_s("<%d>", id);
+		}
+
+		break;
+	}
+	case PRT_KIND_FORGN:
+		printf_s("foreign");
+		break;
+	case PRT_KIND_MAP:
+		PrtAssert(PRT_FALSE, "Not implemented");
+		break;
+	case PRT_KIND_NMDTUP:
+		PrtAssert(PRT_FALSE, "Not implemented");
+		break;
+	case PRT_KIND_SEQ:
+		PrtAssert(PRT_FALSE, "Not implemented");
+		break;
+	case PRT_KIND_TUPLE:
+	{
+		PRT_UINT32 i;
+		PRT_TUPVALUE *tval = (PRT_TUPVALUE *)value;
+		PRT_TUPTYPE *ttype = (PRT_TUPTYPE *)tval->type;
+		printf_s("(");
+		if (ttype->arity == 1)
+		{
+			PrtCmdPrintValue(tval->values[0]);
+			printf_s(",)");
+		}
+		else
+		{
+			for (i = 0; i < ttype->arity; ++i)
+			{
+				PrtCmdPrintValue(tval->values[i]);
+				if (i < ttype->arity - 1)
+				{
+					printf_s(", ");
+				}
+				else
+				{
+					printf_s(")");
+				}
+			}
+		}
+
+		break;
+	}
+	default:
+		PrtAssert(PRT_FALSE, "Invalid type");
+		break;
+	}
+}
+
+void PrtCmdPrintValueAndType(_In_ PRT_VALUE value)
+{
+	PrtCmdPrintValue(value);
+	printf_s(" : ");
+	PrtCmdPrintType(*value);
+}

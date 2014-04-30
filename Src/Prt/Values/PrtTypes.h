@@ -191,6 +191,13 @@ void PrtSetFieldType(_Inout_ PRT_TYPE tupleType, _In_ PRT_UINT32 index, _In_ PRT
 */
 void PrtSetFieldName(_Inout_ PRT_NMDTUPTYPE *tupleType, _In_ PRT_UINT32 index, _In_ PRT_STRING fieldName);
 
+/** Determines if subType and supType are in a sub-type / super-type relationship.
+* @param[in] subType The sub-type.
+* @param[in] supType The super-type.
+* @returns `true` if subType is a sub-type of supType; `false` otherwise.
+*/
+PRT_BOOLEAN PrtIsSubtype(_In_ PRT_TYPE subType, _In_ PRT_TYPE supType);
+
 /** Performs a deep clone of type. 
 * @param[in] type The type to clone.
 * @returns A deep clone of type. Caller is responsible for freeing. 

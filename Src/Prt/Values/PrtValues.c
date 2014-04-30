@@ -69,15 +69,15 @@ PRT_VALUE PrtMkDefaultValue(_In_ PRT_TYPE type)
 		kind = PRT_KIND_ID;
 		return (PRT_VALUE)PrtMkIdValue(&kind, PRT_NULL_ID);
 	case PRT_KIND_BOOL:
-		return (PRT_VALUE)PrtMkIdValue(&kind, PRT_FALSE);
+		return (PRT_VALUE)PrtMkBoolValue(&kind, PRT_FALSE);
 	case PRT_KIND_EVENT:
-		return (PRT_VALUE)PrtMkIdValue(&kind, PRT_NULL_ID);
+		return (PRT_VALUE)PrtMkEventValue(&kind, PRT_NULL_ID);
 	case PRT_KIND_ID:
 		return (PRT_VALUE)PrtMkIdValue(&kind, PRT_NULL_ID);
 	case PRT_KIND_INT:
-		return (PRT_VALUE)PrtMkIdValue(&kind, 0);
+		return (PRT_VALUE)PrtMkIntValue(&kind, 0);
 	case PRT_KIND_MID:
-		return (PRT_VALUE)PrtMkIdValue(&kind, PRT_NULL_ID);
+		return (PRT_VALUE)PrtMkMIdValue(&kind, PRT_NULL_ID);
 	case PRT_KIND_FORGN:
 	{
 		PRT_FORGNVALUE *forgnVal;
@@ -144,8 +144,69 @@ PRT_VALUE PrtMkDefaultValue(_In_ PRT_TYPE type)
 	}
 }
 
+void PrtPrimSetBool(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_BOOLEAN value)
+{
+	PrtAssert(*(prmVal->type) == PRT_KIND_BOOL, "Invalid type on primitive set");
+	prmVal->value.bl = value;
+}
+
+PRT_BOOLEAN PrtPrimGetBool(_In_ PRT_PRIMVALUE *prmVal)
+{
+	PrtAssert(*(prmVal->type) == PRT_KIND_BOOL, "Invalid type on primitive get");
+	return prmVal->value.bl;
+}
+
+void PrtPrimSetEvent(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_UINT32 value)
+{
+	PrtAssert(*(prmVal->type) == PRT_KIND_EVENT, "Invalid type on primitive set");
+	prmVal->value.ev = value;
+}
+
+PRT_UINT32 PrtPrimGetEvent(_In_ PRT_PRIMVALUE *prmVal)
+{
+	PrtAssert(*(prmVal->type) == PRT_KIND_EVENT, "Invalid type on primitive get");
+	return prmVal->value.ev;
+}
+
+void PrtPrimSetInt(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_INT32 value)
+{
+	PrtAssert(*(prmVal->type) == PRT_KIND_INT, "Invalid type on primitive set");
+	prmVal->value.nt = value;
+}
+
+PRT_INT32 PrtPrimGetInt(_In_ PRT_PRIMVALUE *prmVal)
+{
+	PrtAssert(*(prmVal->type) == PRT_KIND_INT, "Invalid type on primitive get");
+	return prmVal->value.nt;
+}
+
+void PrtPrimSetId(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_UINT32 value)
+{
+	PrtAssert(*(prmVal->type) == PRT_KIND_ID, "Invalid type on primitive set");
+	prmVal->value.id = value;
+}
+
+PRT_UINT32 PrtPrimGetId(_In_ PRT_PRIMVALUE *prmVal)
+{
+	PrtAssert(*(prmVal->type) == PRT_KIND_ID, "Invalid type on primitive get");
+	return prmVal->value.id;
+}
+
+void PrtPrimSetMId(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_UINT32 value)
+{
+	PrtAssert(*(prmVal->type) == PRT_KIND_MID, "Invalid type on primitive set");
+	prmVal->value.md = value;
+}
+
+PRT_UINT32 PrtPrimGetMId(_In_ PRT_PRIMVALUE *prmVal)
+{
+	PrtAssert(*(prmVal->type) == PRT_KIND_MID, "Invalid type on primitive get");
+	return prmVal->value.md;
+}
+
 void PrtTupleSet(_Inout_ PRT_TUPVALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VALUE value)
 {
+	//// Eager dereferencing of inputs to check pointer validity
 	PrtAssert(*(tuple->type) == PRT_KIND_TUPLE || *(tuple->type) == PRT_KIND_NMDTUP, "Cannot perform tuple set on this value");
 	PrtAssert(**value >= 0 && **value < PRT_TYPE_KIND_COUNT, "Invalid value");
 
@@ -170,5 +231,71 @@ void PrtTupleSet(_Inout_ PRT_TUPVALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VA
 	}
 
 	PrtAssert(index < arity, "Invalid tuple index");
+	PrtAssert(PrtIsSubtype(*value, fieldTypes[index]), "Invalid type on tuple set");
+
+	tuple->values[index] = PrtCloneValue(value);
 }
 
+PRT_VALUE PrtCloneValue(_In_ PRT_VALUE value)
+{
+	PRT_TYPE_KIND kind = **value;
+	switch (kind)
+	{
+	case PRT_KIND_ANY:
+		PRT_DBG_ASSERT(PRT_FALSE, "Value must have a more concrete type");
+		return NULL;
+	case PRT_KIND_BOOL:
+	{
+		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
+		return (PRT_VALUE)PrtMkBoolValue(pVal->type, pVal->value.bl);
+	}
+	case PRT_KIND_EVENT:
+	{
+		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
+		return (PRT_VALUE)PrtMkEventValue(pVal->type, pVal->value.ev);
+	}
+	case PRT_KIND_ID:
+	{
+		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
+		return (PRT_VALUE)PrtMkIdValue(pVal->type, pVal->value.id);
+	}
+	case PRT_KIND_INT:
+	{
+		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
+		return (PRT_VALUE)PrtMkIntValue(pVal->type, pVal->value.nt);
+	}
+	case PRT_KIND_MID:
+	{
+		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
+		return (PRT_VALUE)PrtMkMIdValue(pVal->type, pVal->value.md);
+	}
+	case PRT_KIND_FORGN:
+	{
+		PrtAssert(PRT_FALSE, "Not implemented");
+		return NULL;
+	}
+	case PRT_KIND_MAP:
+	{
+		PrtAssert(PRT_FALSE, "Not implemented");
+		return NULL;
+	}
+	case PRT_KIND_NMDTUP:
+	{
+		PrtAssert(PRT_FALSE, "Not implemented");
+		return NULL;
+	}
+	case PRT_KIND_SEQ:
+	{
+		PrtAssert(PRT_FALSE, "Not implemented");
+		return NULL;
+	}
+	case PRT_KIND_TUPLE:
+	{
+		PrtAssert(PRT_FALSE, "Not implemented");
+		return NULL;
+	}
+	default:
+		PrtAssert(PRT_FALSE, "Invalid type");
+		return NULL;
+	}
+}

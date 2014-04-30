@@ -76,6 +76,7 @@
     <ClCompile Include="..\Prt\Config\PrtConfigWinUser.c" />
     <ClCompile Include="..\Prt\Prt.c" />
     <ClCompile Include="..\Prt\Values\PrtTypes.c" />
+    <ClCompile Include="..\Prt\Values\PrtValues.c" />
     <ClCompile Include="PrtCmd.c" />
     <ClCompile Include="PrtCmdPrinting.c" />
   </ItemGroup>

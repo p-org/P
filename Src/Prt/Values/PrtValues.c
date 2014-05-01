@@ -206,6 +206,7 @@ void PrtTupleSet(_Inout_ PRT_TUPVALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VA
 
 	PRT_UINT32 arity;
 	PRT_TYPE *fieldTypes;
+	PRT_VALUE clone;
 	if (*(tuple->type) == PRT_KIND_TUPLE)
 	{
 		PRT_TUPTYPE *ttype = (PRT_TUPTYPE *)tuple->type;
@@ -227,7 +228,9 @@ void PrtTupleSet(_Inout_ PRT_TUPVALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VA
 	PrtAssert(index < arity, "Invalid tuple index");
 	PrtAssert(PrtIsSubtype(*value, fieldTypes[index]), "Invalid type on tuple set");
 
-	tuple->values[index] = PrtCloneValue(value);
+	clone = PrtCloneValue(value);
+	PrtFreeValue(tuple->values[index]);
+	tuple->values[index] = clone;
 }
 
 PRT_VALUE PrtTupleGet(_In_ PRT_TUPVALUE *tuple, _In_ PRT_UINT32 index)
@@ -267,6 +270,7 @@ void PrtNmdTupleSet(_Inout_ PRT_TUPVALUE *tuple, _In_ PRT_STRING name, _In_ PRT_
 	PRT_UINT32 arity = type->arity;
 	PRT_TYPE *fieldTypes = type->fieldTypes;
 	PRT_STRING *fieldNames = type->fieldNames;
+	PRT_VALUE clone;
 
 	PRT_UINT32 index;
 	for (index = 0; index < arity; ++index)
@@ -279,10 +283,12 @@ void PrtNmdTupleSet(_Inout_ PRT_TUPVALUE *tuple, _In_ PRT_STRING name, _In_ PRT_
 
 	PrtAssert(index < arity, "Invalid tuple field name");
 	PrtAssert(PrtIsSubtype(*value, fieldTypes[index]), "Invalid type on tuple set");
-	tuple->values[index] = PrtCloneValue(value);
+	clone = PrtCloneValue(value);
+	PrtFreeValue(tuple->values[index]);
+	tuple->values[index] = clone;
 }
 
-PRT_VALUE PrtNmdTupleGet(_Inout_ PRT_TUPVALUE *tuple, _In_ PRT_STRING name)
+PRT_VALUE PrtNmdTupleGet(_In_ PRT_TUPVALUE *tuple, _In_ PRT_STRING name)
 {
 	//// Eager dereferencing of inputs to check pointer validity
 	PrtAssert(*(tuple->type) == PRT_KIND_NMDTUP, "Cannot perform tuple set on this value");
@@ -303,6 +309,110 @@ PRT_VALUE PrtNmdTupleGet(_Inout_ PRT_TUPVALUE *tuple, _In_ PRT_STRING name)
 
 	PrtAssert(index < arity, "Invalid tuple field name");
 	return PrtCloneValue(tuple->values[index]);
+}
+
+void PrtSeqUpdate(_Inout_ PRT_SEQVALUE *seq, _In_ PRT_UINT32 index, _In_ PRT_VALUE value)
+{
+	PRT_SEQTYPE *seqType;
+	PRT_VALUE clone;
+	PrtAssert(*(seq->type) == PRT_KIND_SEQ, "Invalid value");
+	PrtAssert(index >= 0 && index < seq->size, "Invalid index");
+	PrtAssert(*(*value) >= 0 && *(*value) < PRT_TYPE_KIND_COUNT, "Invalid value");
+	seqType = (PRT_SEQTYPE *)seq->type;
+	PrtAssert(PrtIsSubtype(*value, seqType->innerType), "Invalid type on sequence update");
+	clone = PrtCloneValue(value);
+	PrtFreeValue(seq->values[index]);
+	seq->values[index] = clone;
+}
+
+void PrtSeqInsert(_Inout_ PRT_SEQVALUE *seq, _In_ PRT_UINT32 index, _In_ PRT_VALUE value)
+{
+	PRT_VALUE clone;
+	PRT_SEQTYPE *seqType;
+	PrtAssert(*(seq->type) == PRT_KIND_SEQ, "Invalid value");
+	PrtAssert(index >= 0 && index <= seq->size, "Invalid index");
+	PrtAssert(*(*value) >= 0 && *(*value) < PRT_TYPE_KIND_COUNT, "Invalid value");
+	seqType = (PRT_SEQTYPE *)seq->type;
+	PrtAssert(PrtIsSubtype(*value, seqType->innerType), "Invalid type on sequence update");
+
+	clone = PrtCloneValue(value);
+	if (seq->capacity == 0)
+	{
+		seq->values = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
+		seq->values[0] = clone;
+		seq->capacity = 1;
+	}
+	else if (seq->size < seq->capacity)
+	{
+		PRT_UINT32 i;
+		PRT_VALUE *values = seq->values;
+		if (seq->size > 0)
+		{
+			for (i = seq->size - 1; i >= index; --i)
+			{
+				values[i + 1] = values[i];
+				if (i == 0)
+				{
+					break;
+				}
+			}
+		}
+
+		values[index] = clone;
+	}
+	else 
+	{
+		PRT_UINT32 i;
+		PRT_VALUE *values;
+		seq->capacity = 2 * seq->capacity;
+		values = (PRT_VALUE *)PrtCalloc(seq->capacity, sizeof(PRT_VALUE));
+		for (i = 0; i < seq->size; ++i)
+		{
+			if (i < index)
+			{
+				values[i] = seq->values[i];
+			}
+			else 
+			{
+				values[i + 1] = seq->values[i];
+			}
+		}
+
+		values[index] = clone;
+		PrtFree(seq->values);
+		seq->values = values;
+	}
+
+	seq->size = seq->size + 1;
+}
+
+void PrtSeqRemove(_Inout_ PRT_SEQVALUE *seq, _In_ PRT_UINT32 index)
+{
+	PRT_UINT32 i;
+	PRT_VALUE *values;
+	PrtAssert(*(seq->type) == PRT_KIND_SEQ, "Invalid value");
+	PrtAssert(index >= 0 && index < seq->size, "Invalid index");
+	values = seq->values;
+	PrtFreeValue(values[index]);
+	for (i = index; i < seq->size - 1; ++i)
+	{
+		values[i] = values[i + 1];
+	}
+
+	seq->size = seq->size - 1;
+}
+
+PRT_VALUE PrtSeqGet(_In_ PRT_SEQVALUE *seq, _In_ PRT_UINT32 index)
+{
+	PrtAssert(*(seq->type) == PRT_KIND_SEQ, "Invalid value");
+	PrtAssert(index >= 0 && index < seq->size, "Invalid index");
+	return PrtCloneValue(seq->values[index]);
+}
+
+PRT_UINT32 PrtSeqSizeOf(_In_ PRT_SEQVALUE *seq)
+{
+	PrtAssert(*(seq->type) == PRT_KIND_SEQ, "Invalid value");
+	return seq->size;
 }
 
 PRT_VALUE PrtCloneValue(_In_ PRT_VALUE value)
@@ -350,21 +460,64 @@ PRT_VALUE PrtCloneValue(_In_ PRT_VALUE value)
 	}
 	case PRT_KIND_NMDTUP:
 	{
-		PrtAssert(PRT_FALSE, "Not implemented");
-		return NULL;
-	}
-	case PRT_KIND_SEQ:
-	{
-		PrtAssert(PRT_FALSE, "Not implemented");
-		return NULL;
+		PRT_UINT32 i;
+		PRT_TUPVALUE *tVal = (PRT_TUPVALUE *)value;
+		PRT_UINT32 arity = ((PRT_NMDTUPTYPE *)tVal->type)->arity;
+		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
+		cVal->type = PrtCloneType(tVal->type);
+		cVal->values = (PRT_VALUE *)PrtCalloc(arity, sizeof(PRT_VALUE));
+		for (i = 0; i < arity; ++i)
+		{
+			cVal->values[i] = PrtCloneValue(tVal->values[i]);
+		}
+
+		return (PRT_VALUE)cVal;
 	}
 	case PRT_KIND_TUPLE:
 	{
-		PrtAssert(PRT_FALSE, "Not implemented");
-		return NULL;
+		PRT_UINT32 i;
+		PRT_TUPVALUE *tVal = (PRT_TUPVALUE *)value;
+		PRT_UINT32 arity = ((PRT_TUPTYPE *)tVal->type)->arity;
+		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
+		cVal->type = PrtCloneType(tVal->type);
+		cVal->values = (PRT_VALUE *)PrtCalloc(arity, sizeof(PRT_VALUE));
+		for (i = 0; i < arity; ++i)
+		{
+			cVal->values[i] = PrtCloneValue(tVal->values[i]);
+		}
+
+		return (PRT_VALUE)cVal;
+	}
+	case PRT_KIND_SEQ:
+	{
+		PRT_SEQVALUE *sVal = (PRT_SEQVALUE *)value;
+		PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
+		cVal->type = PrtCloneType(sVal->type);
+		cVal->capacity = sVal->capacity;
+		cVal->size = sVal->size;
+		if (sVal->capacity == 0)
+		{
+			cVal->values = NULL;
+		}
+		else 
+		{
+			PRT_UINT32 i;
+			cVal->values = (PRT_VALUE *)PrtCalloc(sVal->capacity, sizeof(PRT_VALUE));
+			for (i = 0; i < sVal->size; ++i)
+			{
+				cVal->values[i] = PrtCloneValue(sVal->values[i]);
+			}
+		}
+
+		return (PRT_VALUE)cVal;
 	}
 	default:
 		PrtAssert(PRT_FALSE, "Invalid type");
 		return NULL;
 	}
+}
+
+void PrtFreeValue(_Inout_ PRT_VALUE value)
+{
+
 }

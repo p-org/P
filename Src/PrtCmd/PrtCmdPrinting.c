@@ -184,8 +184,22 @@ void PrtCmdPrintValue(_In_ PRT_VALUE value)
 		break;
 	}
 	case PRT_KIND_SEQ:
-		PrtAssert(PRT_FALSE, "Not implemented");
+	{
+		PRT_UINT32 i;
+		PRT_SEQVALUE *sVal = (PRT_SEQVALUE *)value;
+		printf_s("[");
+		for (i = 0; i < sVal->size; ++i)
+		{
+			PrtCmdPrintValue(sVal->values[i]);
+			if (i < sVal->size - 1)
+			{
+				printf_s(", ");
+			}
+		}
+
+		printf_s("]");
 		break;
+	}
 	case PRT_KIND_TUPLE:
 	{
 		PRT_UINT32 i;

@@ -71,16 +71,16 @@ void TupleTest()
 void NamedTupleTest()
 {
 	PRT_TYPE anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
-	PRT_TYPE anyPairType = (PRT_TYPE)PrtMkNmdTupType(2);
+	PRT_NMDTUPTYPE *anyPairType = PrtMkNmdTupType(2);
 
 	PrtSetFieldName(anyPairType, 0, "foo");
-	PrtSetFieldType(anyPairType, 0, anyType);
+	PrtSetFieldType((PRT_TYPE)anyPairType, 0, anyType);
 	PrtSetFieldName(anyPairType, 1, "bar");
-	PrtSetFieldType(anyPairType, 1, anyType);
+	PrtSetFieldType((PRT_TYPE)anyPairType, 1, anyType);
 
 	PRT_VALUE oneVal = (PRT_VALUE)PrtMkIntValue(1);
 	PRT_VALUE boolVal = (PRT_VALUE)PrtMkBoolValue(PRT_TRUE);
-	PRT_VALUE anyPair = PrtMkDefaultValue(anyPairType);
+	PRT_VALUE anyPair = PrtMkDefaultValue((PRT_TYPE)anyPairType);
 
 	PrtCmdPrintValueAndType(anyPair);
 	printf_s("\n");
@@ -100,6 +100,125 @@ void NamedTupleTest()
 
 	PrtCmdPrintValueAndType((PRT_VALUE)PrtNmdTupleGet((PRT_TUPVALUE *)anyPair, "bar"));
 	printf_s("\n");
+}
+
+void SeqAppendTest()
+{
+	PRT_INT32 i;
+	PRT_TYPE intType = PrtMkPrimitiveType(PRT_KIND_INT);
+	PRT_SEQTYPE *iseqType = PrtMkSeqType(intType);
+	PRT_SEQVALUE *seq = (PRT_SEQVALUE *)PrtMkDefaultValue((PRT_TYPE)iseqType);
+	
+	PrtCmdPrintValueAndType((PRT_VALUE)seq);
+	printf_s("\n");
+
+	for (i = 0; i <= 10; ++i)
+	{
+		PrtSeqInsert(seq, seq->size, (PRT_VALUE)PrtMkIntValue(i));
+	}
+
+	PrtCmdPrintValueAndType((PRT_VALUE)seq);
+	printf_s("\n");
+
+	for (i = 10; i >= 0; --i)
+	{
+		PrtSeqInsert(seq, seq->size, (PRT_VALUE)PrtMkIntValue(i));
+	}
+
+	PrtCmdPrintValueAndType((PRT_VALUE)seq);
+	printf_s("\n");
+}
+
+void SeqPrependTest()
+{
+	PRT_INT32 i;
+	PRT_TYPE intType = PrtMkPrimitiveType(PRT_KIND_INT);
+	PRT_SEQTYPE *iseqType = PrtMkSeqType(intType);
+	PRT_SEQVALUE *seq = (PRT_SEQVALUE *)PrtMkDefaultValue((PRT_TYPE)iseqType);
+
+	PrtCmdPrintValueAndType((PRT_VALUE)seq);
+	printf_s("\n");
+
+	for (i = 0; i <= 10; ++i)
+	{
+		PrtSeqInsert(seq, 0, (PRT_VALUE)PrtMkIntValue(i));
+	}
+
+	PrtCmdPrintValueAndType((PRT_VALUE)seq);
+	printf_s("\n");
+
+	for (i = 10; i >= 0; --i)
+	{
+		PrtSeqInsert(seq, 0, (PRT_VALUE)PrtMkIntValue(i));
+	}
+
+	PrtCmdPrintValueAndType((PRT_VALUE)seq);
+	printf_s("\n");
+}
+
+void SeqAppendRemoveTest()
+{
+	PRT_INT32 i;
+	PRT_INT32 j;
+	PRT_TYPE intType = PrtMkPrimitiveType(PRT_KIND_INT);
+	PRT_SEQTYPE *iseqType = PrtMkSeqType(intType);
+	PRT_SEQVALUE *seq = (PRT_SEQVALUE *)PrtMkDefaultValue((PRT_TYPE)iseqType);
+
+	PrtCmdPrintValueAndType((PRT_VALUE)seq);
+	printf_s("\n");
+
+	for (i = 1; i < 10; ++i)
+	{
+		for (j = 0; j < i; ++j)
+		{
+			PrtSeqInsert(seq, seq->size, (PRT_VALUE)PrtMkIntValue(j));
+		}
+
+		PrtCmdPrintValueAndType((PRT_VALUE)seq);
+		printf_s("\n");
+
+		if (i % 2 == 0)
+		{
+			for (j = 0; j < i; ++j)
+			{
+				PrtSeqRemove(seq, 0);
+				PrtCmdPrintValueAndType((PRT_VALUE)seq);
+				printf_s("\n");
+			}
+		}
+		else 
+		{
+			for (j = i - 1; j >= 0; --j)
+			{
+				PrtSeqRemove(seq, j);
+				PrtCmdPrintValueAndType((PRT_VALUE)seq);
+				printf_s("\n");
+
+				if (j == 0)
+				{
+					break;
+				}
+			}
+		}
+	}
+}
+
+void SeqNestedTest()
+{
+	PRT_INT32 i;
+	PRT_TYPE anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
+	PRT_SEQTYPE *aseqType = PrtMkSeqType(anyType);
+	PRT_SEQVALUE *seq = (PRT_SEQVALUE *)PrtMkDefaultValue((PRT_TYPE)aseqType);
+
+	PrtCmdPrintValueAndType((PRT_VALUE)seq);
+	printf_s("\n");
+
+	for (i = 0; i < 10; ++i)
+	{
+		PrtSeqInsert(seq, seq->size, (PRT_VALUE)seq);
+		PrtCmdPrintValueAndType((PRT_VALUE)seq);
+		printf_s("\n");
+	}
 }
 
 void TupleTest2()
@@ -130,7 +249,12 @@ void TupleTest2()
 
 int main(int argc, char *argv[])
 {
+	/*
 	TupleTest();
 	NamedTupleTest();
+	SeqAppendTest();
+	SeqPrependTest();
+	SeqAppendRemoveTest();*/
+	SeqNestedTest();
 	return 0;
 }

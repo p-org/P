@@ -100,44 +100,39 @@ typedef struct PRT_MAPNODE
 PRT_VALUE PrtMkDefaultValue(_In_ PRT_TYPE type);
 
 /** Makes a boolean value.
-* @param[in] type The `bool` type (will be cloned).
 * @param[in] value A boolean value.
 * @returns A proper boolean value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_PRIMVALUE *PrtMkBoolValue(_In_ PRT_TYPE type, _In_ PRT_BOOLEAN value);
+PRT_PRIMVALUE *PrtMkBoolValue(_In_ PRT_BOOLEAN value);
 
 /** Makes an event value.
-* @param[in] type The `event` type (will be cloned).
 * @param[in] value An event id.
 * @returns A proper event value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_PRIMVALUE *PrtMkEventValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
+PRT_PRIMVALUE *PrtMkEventValue(_In_ PRT_UINT32 value);
 
 /** Makes an integer value.
-* @param[in] type The `int` type (will be cloned).
 * @param[in] value An int value.
 * @returns A proper int value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_PRIMVALUE *PrtMkIntValue(_In_ PRT_TYPE type, _In_ PRT_INT32 value);
+PRT_PRIMVALUE *PrtMkIntValue(_In_ PRT_INT32 value);
 
 /** Makes an id value.
-* @param[in] type The `id` type (will be cloned).
 * @param[in] value A machine id.
 * @returns A proper id value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_PRIMVALUE *PrtMkIdValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
+PRT_PRIMVALUE *PrtMkIdValue(_In_ PRT_UINT32 value);
 
 /** Makes an mid value.
-* @param[in] type The `mid` type (will be cloned).
 * @param[in] value A model machine id.
 * @returns A proper mid value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_PRIMVALUE *PrtMkMIdValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
+PRT_PRIMVALUE *PrtMkMIdValue(_In_ PRT_UINT32 value);
 
 /** Makes a foreign value.
 * @param[in] type A foreign type (will be cloned).
@@ -219,7 +214,7 @@ void PrtTupleSet(_Inout_ PRT_TUPVALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VA
 * @param[in] index A 0-based element index.
 * @returns The element at index i. Caller is responsible for freeing.
 */
-PRT_VALUE *PrtTupleGet(_In_ PRT_TUPVALUE *tuple, _In_ PRT_UINT32 index);
+PRT_VALUE PrtTupleGet(_In_ PRT_TUPVALUE *tuple, _In_ PRT_UINT32 index);
 
 /** Sets an element in a named tuple by name.
 * @param[in,out] tuple A named tuple to mutate.
@@ -233,7 +228,7 @@ void PrtNmdTupleSet(_Inout_ PRT_TUPVALUE *tuple, _In_ PRT_STRING name, _In_ PRT_
 * @param[in] name  The name of the element to set.
 * @returns The element named name. Caller is responsible for freeing.
 */
-PRT_VALUE *PrtNmdTupleGet(_In_ PRT_TUPVALUE *tuple, _In_ PRT_STRING name);
+PRT_VALUE PrtNmdTupleGet(_In_ PRT_TUPVALUE *tuple, _In_ PRT_STRING name);
 
 /** Updates the sequence at index.
 * @param[in,out] seq   A sequence to mutate.

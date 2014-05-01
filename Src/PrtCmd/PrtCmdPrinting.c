@@ -162,8 +162,27 @@ void PrtCmdPrintValue(_In_ PRT_VALUE value)
 		PrtAssert(PRT_FALSE, "Not implemented");
 		break;
 	case PRT_KIND_NMDTUP:
-		PrtAssert(PRT_FALSE, "Not implemented");
+	{
+		PRT_UINT32 i;
+		PRT_TUPVALUE *tval = (PRT_TUPVALUE *)value;
+		PRT_NMDTUPTYPE *ntype = (PRT_NMDTUPTYPE *)tval->type;
+		printf_s("(");
+		for (i = 0; i < ntype->arity; ++i)
+		{
+			printf_s("%s = ", ntype->fieldNames[i]);
+			PrtCmdPrintValue(tval->values[i]);
+			if (i < ntype->arity - 1)
+			{
+				printf_s(", ");
+			}
+			else
+			{
+				printf_s(")");
+			}
+		}
+
 		break;
+	}
 	case PRT_KIND_SEQ:
 		PrtAssert(PRT_FALSE, "Not implemented");
 		break;

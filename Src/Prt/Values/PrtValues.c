@@ -1,51 +1,46 @@
 #include "PrtValues.h"
 
-PRT_PRIMVALUE *PrtMkBoolValue(_In_ PRT_TYPE type, _In_ PRT_BOOLEAN value)
+PRT_PRIMVALUE *PrtMkBoolValue(_In_ PRT_BOOLEAN value)
 {
 	PRT_PRIMVALUE *primVal;
-	PrtAssert(*type == PRT_KIND_BOOL, "Did not receive bool type.");
 	primVal = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
-	primVal->type = PrtCloneType(type);
+	primVal->type = PrtMkPrimitiveType(PRT_KIND_BOOL);
 	primVal->value.bl = value;
 	return primVal;
 }
 
-PRT_PRIMVALUE *PrtMkEventValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value)
+PRT_PRIMVALUE *PrtMkEventValue(_In_ PRT_UINT32 value)
 {
 	PRT_PRIMVALUE *primVal;
-	PrtAssert(*type == PRT_KIND_EVENT, "Did not receive event type.");
 	primVal = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
-	primVal->type = PrtCloneType(type);
+	primVal->type = PrtMkPrimitiveType(PRT_KIND_EVENT);
 	primVal->value.ev = value;
 	return primVal;
 }
 
-PRT_PRIMVALUE *PrtMkIntValue(_In_ PRT_TYPE type, _In_ PRT_INT32 value)
+PRT_PRIMVALUE *PrtMkIntValue(_In_ PRT_INT32 value)
 {
 	PRT_PRIMVALUE *primVal;
-	PrtAssert(*type == PRT_KIND_INT, "Did not receive int type.");
 	primVal = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
-	primVal->type = PrtCloneType(type);
+	primVal->type = PrtMkPrimitiveType(PRT_KIND_INT);
 	primVal->value.nt = value;
 	return primVal;
 }
 
-PRT_PRIMVALUE *PrtMkIdValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value)
+PRT_PRIMVALUE *PrtMkIdValue(_In_ PRT_UINT32 value)
 {
 	PRT_PRIMVALUE *primVal;
-	PrtAssert(*type == PRT_KIND_ID, "Did not receive id type.");
 	primVal = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
-	primVal->type = PrtCloneType(type);
+	primVal->type = PrtMkPrimitiveType(PRT_KIND_ID);
 	primVal->value.id = value;
 	return primVal;
 }
 
-PRT_PRIMVALUE *PrtMkMIdValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value)
+PRT_PRIMVALUE *PrtMkMIdValue(_In_ PRT_UINT32 value)
 {
 	PRT_PRIMVALUE *primVal;
-	PrtAssert(*type == PRT_KIND_MID, "Did not receive mid type.");
 	primVal = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
-	primVal->type = PrtCloneType(type);
+	primVal->type = PrtMkPrimitiveType(PRT_KIND_MID);
 	primVal->value.md = value;
 	return primVal;
 }
@@ -66,18 +61,17 @@ PRT_VALUE PrtMkDefaultValue(_In_ PRT_TYPE type)
 	switch (kind)
 	{
 	case PRT_KIND_ANY:
-		kind = PRT_KIND_ID;
-		return (PRT_VALUE)PrtMkIdValue(&kind, PRT_NULL_ID);
+		return (PRT_VALUE)PrtMkIdValue(PRT_NULL_ID);
 	case PRT_KIND_BOOL:
-		return (PRT_VALUE)PrtMkBoolValue(&kind, PRT_FALSE);
+		return (PRT_VALUE)PrtMkBoolValue(PRT_FALSE);
 	case PRT_KIND_EVENT:
-		return (PRT_VALUE)PrtMkEventValue(&kind, PRT_NULL_ID);
+		return (PRT_VALUE)PrtMkEventValue(PRT_NULL_ID);
 	case PRT_KIND_ID:
-		return (PRT_VALUE)PrtMkIdValue(&kind, PRT_NULL_ID);
+		return (PRT_VALUE)PrtMkIdValue(PRT_NULL_ID);
 	case PRT_KIND_INT:
-		return (PRT_VALUE)PrtMkIntValue(&kind, 0);
+		return (PRT_VALUE)PrtMkIntValue(0);
 	case PRT_KIND_MID:
-		return (PRT_VALUE)PrtMkMIdValue(&kind, PRT_NULL_ID);
+		return (PRT_VALUE)PrtMkMIdValue(PRT_NULL_ID);
 	case PRT_KIND_FORGN:
 	{
 		PRT_FORGNVALUE *forgnVal;
@@ -236,6 +230,81 @@ void PrtTupleSet(_Inout_ PRT_TUPVALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VA
 	tuple->values[index] = PrtCloneValue(value);
 }
 
+PRT_VALUE PrtTupleGet(_In_ PRT_TUPVALUE *tuple, _In_ PRT_UINT32 index)
+{
+	//// Eager dereferencing of inputs to check pointer validity
+	PrtAssert(*(tuple->type) == PRT_KIND_TUPLE || *(tuple->type) == PRT_KIND_NMDTUP, "Cannot perform tuple get on this value");
+
+	PRT_UINT32 arity;
+	if (*(tuple->type) == PRT_KIND_TUPLE)
+	{
+		PRT_TUPTYPE *ttype = (PRT_TUPTYPE *)tuple->type;
+		arity = ttype->arity;
+	}
+	else if (*(tuple->type) == PRT_KIND_NMDTUP)
+	{
+		PRT_NMDTUPTYPE *ntype = (PRT_NMDTUPTYPE *)tuple->type;
+		arity = ntype->arity;
+	}
+	else
+	{
+		PRT_DBG_ASSERT(PRT_FALSE, "impossible");
+		return NULL;
+	}
+
+	PrtAssert(index < arity, "Invalid tuple index");
+	return PrtCloneValue(tuple->values[index]);
+}
+
+void PrtNmdTupleSet(_Inout_ PRT_TUPVALUE *tuple, _In_ PRT_STRING name, _In_ PRT_VALUE value)
+{
+	//// Eager dereferencing of inputs to check pointer validity
+	PrtAssert(*(tuple->type) == PRT_KIND_NMDTUP, "Cannot perform tuple set on this value");
+	PrtAssert(name != NULL && name[0] != '\0', "Invalid field name");
+	PrtAssert(**value >= 0 && **value < PRT_TYPE_KIND_COUNT, "Invalid value");
+
+	PRT_NMDTUPTYPE *type = (PRT_NMDTUPTYPE *)tuple->type;
+	PRT_UINT32 arity = type->arity;
+	PRT_TYPE *fieldTypes = type->fieldTypes;
+	PRT_STRING *fieldNames = type->fieldNames;
+
+	PRT_UINT32 index;
+	for (index = 0; index < arity; ++index)
+	{
+		if (strncmp(fieldNames[index], name, PRT_MAXFLDNAME_LENGTH) == 0)
+		{
+			break;
+		}
+	}
+
+	PrtAssert(index < arity, "Invalid tuple field name");
+	PrtAssert(PrtIsSubtype(*value, fieldTypes[index]), "Invalid type on tuple set");
+	tuple->values[index] = PrtCloneValue(value);
+}
+
+PRT_VALUE PrtNmdTupleGet(_Inout_ PRT_TUPVALUE *tuple, _In_ PRT_STRING name)
+{
+	//// Eager dereferencing of inputs to check pointer validity
+	PrtAssert(*(tuple->type) == PRT_KIND_NMDTUP, "Cannot perform tuple set on this value");
+	PrtAssert(name != NULL && name[0] != '\0', "Invalid field name");
+
+	PRT_NMDTUPTYPE *type = (PRT_NMDTUPTYPE *)tuple->type;
+	PRT_UINT32 arity = type->arity;
+	PRT_STRING *fieldNames = type->fieldNames;
+
+	PRT_UINT32 index;
+	for (index = 0; index < arity; ++index)
+	{
+		if (strncmp(fieldNames[index], name, PRT_MAXFLDNAME_LENGTH) == 0)
+		{
+			break;
+		}
+	}
+
+	PrtAssert(index < arity, "Invalid tuple field name");
+	return PrtCloneValue(tuple->values[index]);
+}
+
 PRT_VALUE PrtCloneValue(_In_ PRT_VALUE value)
 {
 	PRT_TYPE_KIND kind = **value;
@@ -247,27 +316,27 @@ PRT_VALUE PrtCloneValue(_In_ PRT_VALUE value)
 	case PRT_KIND_BOOL:
 	{
 		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
-		return (PRT_VALUE)PrtMkBoolValue(pVal->type, pVal->value.bl);
+		return (PRT_VALUE)PrtMkBoolValue(pVal->value.bl);
 	}
 	case PRT_KIND_EVENT:
 	{
 		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
-		return (PRT_VALUE)PrtMkEventValue(pVal->type, pVal->value.ev);
+		return (PRT_VALUE)PrtMkEventValue(pVal->value.ev);
 	}
 	case PRT_KIND_ID:
 	{
 		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
-		return (PRT_VALUE)PrtMkIdValue(pVal->type, pVal->value.id);
+		return (PRT_VALUE)PrtMkIdValue(pVal->value.id);
 	}
 	case PRT_KIND_INT:
 	{
 		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
-		return (PRT_VALUE)PrtMkIntValue(pVal->type, pVal->value.nt);
+		return (PRT_VALUE)PrtMkIntValue(pVal->value.nt);
 	}
 	case PRT_KIND_MID:
 	{
 		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
-		return (PRT_VALUE)PrtMkMIdValue(pVal->type, pVal->value.md);
+		return (PRT_VALUE)PrtMkMIdValue(pVal->value.md);
 	}
 	case PRT_KIND_FORGN:
 	{

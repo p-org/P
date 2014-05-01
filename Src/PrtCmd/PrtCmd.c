@@ -38,16 +38,14 @@ void TypeCreateTest()
 
 void TupleTest()
 {
-	PRT_TYPE intType = PrtMkPrimitiveType(PRT_KIND_INT);
-	PRT_TYPE boolType = PrtMkPrimitiveType(PRT_KIND_BOOL);
 	PRT_TYPE anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
 	PRT_TYPE anyPairType = (PRT_TYPE)PrtMkTupType(2);
 	
 	PrtSetFieldType(anyPairType, 0, anyType);
 	PrtSetFieldType(anyPairType, 1, anyType);
 
-	PRT_VALUE oneVal = (PRT_VALUE)PrtMkIntValue(intType, 10);
-	PRT_VALUE boolVal = (PRT_VALUE)PrtMkBoolValue(boolType, PRT_TRUE);
+	PRT_VALUE oneVal = (PRT_VALUE)PrtMkIntValue(1);
+	PRT_VALUE boolVal = (PRT_VALUE)PrtMkBoolValue(PRT_TRUE);
 	PRT_VALUE anyPair = PrtMkDefaultValue(anyPairType);
 	
 	PrtCmdPrintValueAndType(anyPair);
@@ -62,19 +60,58 @@ void TupleTest()
 
 	PrtCmdPrintValueAndType(anyPair);
 	printf_s("\n");
+
+	PrtCmdPrintValueAndType((PRT_VALUE)PrtTupleGet((PRT_TUPVALUE *)anyPair, 0));
+	printf_s("\n");
+
+	PrtCmdPrintValueAndType((PRT_VALUE)PrtTupleGet((PRT_TUPVALUE *)anyPair, 1));
+	printf_s("\n");
+}
+
+void NamedTupleTest()
+{
+	PRT_TYPE anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
+	PRT_TYPE anyPairType = (PRT_TYPE)PrtMkNmdTupType(2);
+
+	PrtSetFieldName(anyPairType, 0, "foo");
+	PrtSetFieldType(anyPairType, 0, anyType);
+	PrtSetFieldName(anyPairType, 1, "bar");
+	PrtSetFieldType(anyPairType, 1, anyType);
+
+	PRT_VALUE oneVal = (PRT_VALUE)PrtMkIntValue(1);
+	PRT_VALUE boolVal = (PRT_VALUE)PrtMkBoolValue(PRT_TRUE);
+	PRT_VALUE anyPair = PrtMkDefaultValue(anyPairType);
+
+	PrtCmdPrintValueAndType(anyPair);
+	printf_s("\n");
+
+	PrtNmdTupleSet((PRT_TUPVALUE *)anyPair, "foo", oneVal);
+
+	PrtCmdPrintValueAndType(anyPair);
+	printf_s("\n");
+
+	PrtNmdTupleSet((PRT_TUPVALUE *)anyPair, "bar", boolVal);
+
+	PrtCmdPrintValueAndType(anyPair);
+	printf_s("\n");
+
+	PrtCmdPrintValueAndType((PRT_VALUE)PrtNmdTupleGet((PRT_TUPVALUE *)anyPair, "foo"));
+	printf_s("\n");
+
+	PrtCmdPrintValueAndType((PRT_VALUE)PrtNmdTupleGet((PRT_TUPVALUE *)anyPair, "bar"));
+	printf_s("\n");
 }
 
 void TupleTest2()
 {
 	PRT_TYPE intType = PrtMkPrimitiveType(PRT_KIND_INT);
-	PRT_TYPE boolType = PrtMkPrimitiveType(PRT_KIND_BOOL);
 	PRT_TYPE intPairType = (PRT_TYPE)PrtMkTupType(2);
 
 	PrtSetFieldType(intPairType, 0, intType);
 	PrtSetFieldType(intPairType, 1, intType);
 
-	PRT_VALUE oneVal = (PRT_VALUE)PrtMkIntValue(intType, 10);
-	PRT_VALUE boolVal = (PRT_VALUE)PrtMkBoolValue(boolType, PRT_TRUE);
+	PRT_VALUE oneVal = (PRT_VALUE)PrtMkIntValue(1);
+	PRT_VALUE boolVal = (PRT_VALUE)PrtMkBoolValue(PRT_TRUE);
 	PRT_VALUE intPair = PrtMkDefaultValue(intPairType);
 
 	PrtCmdPrintValueAndType(intPair);
@@ -94,6 +131,6 @@ void TupleTest2()
 int main(int argc, char *argv[])
 {
 	TupleTest();
-	//// TupleTest2();
+	NamedTupleTest();
 	return 0;
 }

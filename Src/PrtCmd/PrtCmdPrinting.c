@@ -28,70 +28,70 @@ void PrtCmdPrintType(_In_ PRT_TYPE type)
 		break;
 	case PRT_KIND_MAP:
 	{
-						 PRT_MAPTYPE *mtype = (PRT_MAPTYPE *)type;
-						 printf_s("map[");
-						 PrtCmdPrintType(mtype->domType);
-						 printf_s(", ");
-						 PrtCmdPrintType(mtype->codType);
-						 printf_s("]");
-						 break;
+		PRT_MAPTYPE *mtype = (PRT_MAPTYPE *)type;
+		printf_s("map[");
+		PrtCmdPrintType(mtype->domType);
+		printf_s(", ");
+		PrtCmdPrintType(mtype->codType);
+		printf_s("]");
+		break;
 	}
 	case PRT_KIND_NMDTUP:
 	{
-							PRT_UINT32 i;
-							PRT_NMDTUPTYPE *ntype = (PRT_NMDTUPTYPE *)type;
-							printf_s("(");
-							for (i = 0; i < ntype->arity; ++i)
-							{
-								printf_s("%s: ", ntype->fieldNames[i]);
-								PrtCmdPrintType(ntype->fieldTypes[i]);
-								if (i < ntype->arity - 1)
-								{
-									printf_s(", ");
-								}
-								else
-								{
-									printf_s(")");
-								}
-							}
+		PRT_UINT32 i;
+		PRT_NMDTUPTYPE *ntype = (PRT_NMDTUPTYPE *)type;
+		printf_s("(");
+		for (i = 0; i < ntype->arity; ++i)
+		{
+			printf_s("%s: ", ntype->fieldNames[i]);
+			PrtCmdPrintType(ntype->fieldTypes[i]);
+			if (i < ntype->arity - 1)
+			{
+				printf_s(", ");
+			}
+			else
+			{
+				printf_s(")");
+			}
+		}
 
-							break;
+		break;
 	}
 	case PRT_KIND_SEQ:
 	{
-						 PRT_SEQTYPE *stype = (PRT_SEQTYPE *)type;
-						 printf_s("seq[");
-						 PrtCmdPrintType(stype->innerType);
-						 printf_s("]");
-						 break;
+		PRT_SEQTYPE *stype = (PRT_SEQTYPE *)type;
+		printf_s("seq[");
+		PrtCmdPrintType(stype->innerType);
+		printf_s("]");
+		break;
 	}
 	case PRT_KIND_TUPLE:
 	{
-						   PRT_UINT32 i;
-						   PRT_TUPTYPE *ttype = (PRT_TUPTYPE *)type;
-						   printf_s("(");
-						   if (ttype->arity == 1)
-						   {
-							   PrtCmdPrintType(ttype->fieldTypes[0]);
-							   printf_s(",)");
-						   }
-						   else
-						   {
-							   for (i = 0; i < ttype->arity; ++i)
-							   {
-								   PrtCmdPrintType(ttype->fieldTypes[i]);
-								   if (i < ttype->arity - 1)
-								   {
-									   printf_s(", ");
-								   }
-								   else
-								   {
-									   printf_s(")");
-								   }
-							   }
-						   }
+		PRT_UINT32 i;
+		PRT_TUPTYPE *ttype = (PRT_TUPTYPE *)type;
+		printf_s("(");
+		if (ttype->arity == 1)
+		{
+			PrtCmdPrintType(ttype->fieldTypes[0]);
+			printf_s(",)");
+		}
+		else
+		{
+			for (i = 0; i < ttype->arity; ++i)
+			{
+				PrtCmdPrintType(ttype->fieldTypes[i]);
+				if (i < ttype->arity - 1)
+				{
+					printf_s(", ");
+				}
+				else
+				{
+					printf_s(")");
+				}
+			}
+		}
 
-						   break;
+		break;
 	}
 	default:
 		PrtAssert(PRT_FALSE, "Invalid type");

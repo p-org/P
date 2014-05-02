@@ -1,5 +1,19 @@
 #include "PrtValues.h"
 
+/** Maximum load factor before hashtable is resized. */
+#define PRT_MAXHASHLOAD 0.75
+
+/** Array of prime hash table sizes. */
+const PRT_UINT32 PrtHashtableSizes[] =
+{
+	3,         13,        31,         61,         127,
+	251,       509,       1021,       2039,       4093,
+	8191,      16381,     32749,      65521,      131071, 
+	262139,    524287,    1048573,    2097143,    4194301,
+	8388593,   16777213,  33554393,   67108859,   134217689,
+	268435399, 536870909, 1073741789, 2147483647, 4294967291
+};
+
 PRT_PRIMVALUE *PrtMkBoolValue(_In_ PRT_BOOLEAN value)
 {
 	PRT_PRIMVALUE *primVal;
@@ -86,8 +100,8 @@ PRT_VALUE PrtMkDefaultValue(_In_ PRT_TYPE type)
 		mapVal = (PRT_MAPVALUE *)PrtMalloc(sizeof(PRT_MAPVALUE));
 		mapVal->type = PrtCloneType(type);
 		mapVal->size = 0;
-		mapVal->nBuckets = 0;
-		mapVal->buckets = NULL;
+		mapVal->capNum = 0;
+		mapVal->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableSizes[0], sizeof(PRT_MAPNODE *));
 		mapVal->first = NULL;
 		return (PRT_VALUE)mapVal;
 	}
@@ -413,6 +427,55 @@ PRT_UINT32 PrtSeqSizeOf(_In_ PRT_SEQVALUE *seq)
 {
 	PrtAssert(*(seq->type) == PRT_KIND_SEQ, "Invalid value");
 	return seq->size;
+}
+
+PRT_UINT32 PrtGetHashCode(_In_ PRT_VALUE value)
+{
+	PRT_TYPE_KIND kind = **value;
+	switch (kind)
+	{
+	case PRT_KIND_ANY:
+		PRT_DBG_ASSERT(PRT_FALSE, "Value must have a more concrete type");
+		return 0;
+	case PRT_KIND_BOOL:
+		return (PRT_UINT32)((PRT_PRIMVALUE *)value)->value.bl;
+	case PRT_KIND_EVENT:
+		return (PRT_UINT32)((PRT_PRIMVALUE *)value)->value.ev;
+	case PRT_KIND_ID:
+		return (PRT_UINT32)((PRT_PRIMVALUE *)value)->value.id;
+	case PRT_KIND_INT:
+		return (PRT_UINT32)((PRT_PRIMVALUE *)value)->value.nt;
+	case PRT_KIND_MID:
+		return (PRT_UINT32)((PRT_PRIMVALUE *)value)->value.md;
+	case PRT_KIND_FORGN:
+	{
+		PrtAssert(PRT_FALSE, "Not implemented");
+		return 0;
+	}
+	case PRT_KIND_MAP:
+	{
+		PrtAssert(PRT_FALSE, "Not implemented");
+		return 0;
+	}
+	case PRT_KIND_NMDTUP:
+	{
+		PrtAssert(PRT_FALSE, "Not implemented");
+		return 0;
+	}
+	case PRT_KIND_SEQ:
+	{
+		PrtAssert(PRT_FALSE, "Not implemented");
+		return 0;
+	}
+	case PRT_KIND_TUPLE:
+	{
+		PrtAssert(PRT_FALSE, "Not implemented");
+		return 0;
+	}
+	default:
+		PrtAssert(PRT_FALSE, "Invalid type");
+		return 0;
+	}
 }
 
 PRT_VALUE PrtCloneValue(_In_ PRT_VALUE value)

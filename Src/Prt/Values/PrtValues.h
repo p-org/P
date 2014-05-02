@@ -66,9 +66,9 @@ typedef struct PRT_MAPVALUE
 {
 	PRT_TYPE     type;       /**< Must be a map type.                     */
 	PRT_UINT32   size;       /**< The number of elements in the map.      */
-	PRT_UINT32   nBuckets;   /**< The number of buckets in the hash table */
-	struct PRT_MAPNODE *buckets;   /**< An array of values in the sequence.  */
-	struct PRT_MAPNODE *first;     /**< First element inserted into the map. */
+	PRT_UINT32   capNum;     /**< An opaque number related to the number of buckets */
+	struct PRT_MAPNODE *first;    /**< First element inserted into the map. */
+	struct PRT_MAPNODE **buckets; /**< An array of pointers to chained nodes.  */
 } PRT_MAPVALUE;
 
 /** A key-value node of a map. */
@@ -328,6 +328,19 @@ PRT_BOOLEAN PrtInhabitsType(_In_ PRT_VALUE value, _In_ PRT_TYPE type);
 * @returns A copy of value with type. Caller is responsible for freeing.
 */
 PRT_VALUE PrtCastValue(_In_ PRT_VALUE value, _In_ PRT_TYPE type);
+
+/** Returns a hash of this value.
+* @param[in] value The value to hash.
+* @returns The hash code.
+*/
+PRT_UINT32 PrtGetHashCodeValue(_In_ PRT_VALUE value);
+
+/** Returns `true` if values are equivalent; `false` otherwise.
+* @param[in] value1 The first value.
+* @param[in] value2 The second value.
+* @returns `true` if values are equivalent; `false` otherwise.
+*/
+PRT_BOOLEAN PrtIsEqualValue(_In_ PRT_VALUE value1, _In_ PRT_VALUE value2);
 
 /** Deeply clones a value.
 * @param[in] value The value to clone.

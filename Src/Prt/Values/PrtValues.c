@@ -3,8 +3,8 @@
 /** Maximum load factor before hashtable is resized. */
 #define PRT_MAXHASHLOAD 0.75
 
-/** Array of prime hash table sizes. */
-const PRT_UINT32 PrtHashtableSizes[] =
+/** Array of prime hash table capacities. */
+const PRT_UINT32 PrtHashtableCapacities[] =
 {
 	3,         13,        31,         61,         127,
 	251,       509,       1021,       2039,       4093,
@@ -101,8 +101,9 @@ PRT_VALUE PrtMkDefaultValue(_In_ PRT_TYPE type)
 		mapVal->type = PrtCloneType(type);
 		mapVal->size = 0;
 		mapVal->capNum = 0;
-		mapVal->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableSizes[0], sizeof(PRT_MAPNODE *));
+		mapVal->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[0], sizeof(PRT_MAPNODE *));
 		mapVal->first = NULL;
+		mapVal->last = NULL;
 		return (PRT_VALUE)mapVal;
 	}
 	case PRT_KIND_NMDTUP:
@@ -429,7 +430,332 @@ PRT_UINT32 PrtSeqSizeOf(_In_ PRT_SEQVALUE *seq)
 	return seq->size;
 }
 
-PRT_UINT32 PrtGetHashCode(_In_ PRT_VALUE value)
+/** Expands the map and rehashes its key-value pairs */
+void PrtMapExpand(_Inout_ PRT_MAPVALUE *map)
+{
+	if (map->capNum + 1 >= sizeof(PrtHashtableCapacities) / sizeof(PRT_UINT32))
+	{
+		//// Map has reached maximum capacity.
+		return;
+	}
+
+	map->capNum = map->capNum + 1;
+	//// Erase all bucket-next pointers
+	PRT_MAPNODE *next = map->first;
+	while (next != NULL)
+	{
+		next->bucketNext = NULL;
+		next = next->insertNext;
+	}
+
+	//// Resize buckets
+	PrtFree(map->buckets);
+	map->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[map->capNum], sizeof(PRT_MAPNODE *));
+
+	//// Do the rehash, updating the bucketNext pointers
+	PRT_UINT32 bucketNum;
+	PRT_MAPNODE *bucket;
+	next = map->first;
+	while (next != NULL)
+	{
+		bucketNum = PrtGetHashCodeValue(next->key) % PrtHashtableCapacities[map->capNum];
+		bucket = map->buckets[bucketNum];
+		if (bucket != NULL)
+		{
+			next->bucketNext = bucket;
+		}
+
+		map->buckets[bucketNum] = next;
+		next = next->insertNext;
+	}
+}
+
+void PrtMapUpdate(_Inout_ PRT_MAPVALUE *map, _In_ PRT_VALUE key, _In_ PRT_VALUE value)
+{
+	PRT_MAPTYPE *mapType;
+	PRT_UINT32 bucketNum;
+	PRT_MAPNODE *bucket;
+	PRT_MAPNODE *node = NULL;
+	PRT_BOOLEAN isNewKey = PRT_FALSE;
+
+	PrtAssert(*(map->type) == PRT_KIND_MAP, "Invalid map value");
+	PrtAssert(*(*key) >= 0 && *(*key) < PRT_TYPE_KIND_COUNT, "Invalid key");
+	PrtAssert(*(*value) >= 0 && *(*value) < PRT_TYPE_KIND_COUNT, "Invalid value");
+
+	mapType = (PRT_MAPTYPE *)map->type;
+	PrtAssert(PrtIsSubtype(*key, mapType->domType), "Invalid map update; key has bad type");
+	PrtAssert(PrtIsSubtype(*value, mapType->codType), "Invalid map update; value has bad type");
+
+	bucketNum = PrtGetHashCodeValue(key) % PrtHashtableCapacities[map->capNum];
+	bucket = map->buckets[bucketNum];
+
+	if (bucket == NULL)
+	{
+		isNewKey = PRT_TRUE;
+		node = (PRT_MAPNODE *)PrtMalloc(sizeof(PRT_MAPNODE));
+		node->key = PrtCloneValue(key);
+		node->value = PrtCloneValue(value);
+		node->bucketNext = NULL;
+		node->insertNext = NULL;
+		map->buckets[bucketNum] = node;
+	}
+	else
+	{
+		PRT_VALUE valueClone = PrtCloneValue(value);
+		PRT_MAPNODE *next = bucket;
+		isNewKey = PRT_TRUE;
+		while (next != NULL)
+		{
+			if (PrtIsEqualValue(next->key, key))
+			{
+				PrtFreeValue(next->value);
+				next->value = valueClone;
+				isNewKey = PRT_FALSE;
+				break;
+			}
+
+			next = next->bucketNext;
+		}
+
+		if (isNewKey == PRT_TRUE)
+		{
+			node = (PRT_MAPNODE *)PrtMalloc(sizeof(PRT_MAPNODE));
+			node->key = PrtCloneValue(key);
+			node->value = valueClone;
+			node->bucketNext = bucket;
+			node->insertNext = NULL;
+			map->buckets[bucketNum] = node;
+		}
+	}
+
+	if (isNewKey == PRT_TRUE)
+	{
+		if (map->last == NULL)
+		{
+			map->first = node;
+			map->last = node;
+			node->insertPrev = NULL;
+		}
+		else 
+		{
+			node->insertPrev = map->last;
+			map->last->insertNext = node;
+			map->last = node;
+		}
+
+		map->size = map->size + 1;
+
+		if (((double)map->size) / ((double)PrtHashtableCapacities[map->capNum]) > ((double)PRT_MAXHASHLOAD))
+		{
+			PrtMapExpand(map);
+		}
+	}
+}
+
+void PrtMapRemove(_Inout_ PRT_MAPVALUE *map, _In_ PRT_VALUE key)
+{
+	PRT_MAPTYPE *mapType;
+	PRT_UINT32 bucketNum;
+	PRT_MAPNODE *bucket;
+
+	PrtAssert(*(map->type) == PRT_KIND_MAP, "Invalid map value");
+	PrtAssert(*(*key) >= 0 && *(*key) < PRT_TYPE_KIND_COUNT, "Invalid key");
+	mapType = (PRT_MAPTYPE *)map->type;
+	PrtAssert(PrtIsSubtype(*key, mapType->domType), "Invalid map remove; key has bad type");
+
+	bucketNum = PrtGetHashCodeValue(key) % PrtHashtableCapacities[map->capNum];
+	bucket = map->buckets[bucketNum];
+	if (bucket == NULL)
+	{
+		return;
+	}
+
+	PRT_MAPNODE *next = bucket;
+	PRT_MAPNODE *prev = NULL;
+	while (next != NULL)
+	{
+		if (PrtIsEqualValue(next->key, key))
+		{
+			PrtFreeValue(next->key);
+			PrtFreeValue(next->value);
+			if (next == bucket)
+			{
+				map->buckets[bucketNum] = next->bucketNext;
+			}
+			else 
+			{
+				prev->bucketNext = next->bucketNext;
+			}
+
+			if (next->insertPrev == NULL)
+			{
+				//// Then this was the first key
+				map->first = next->insertNext;
+			}
+			else 
+			{
+				//// Otherwise the next of the previous key is the next of this key
+				next->insertPrev->insertNext = next->insertNext;
+			}
+
+			if (next->insertNext == NULL)
+			{
+				//// Then this was the last key
+				map->last = next->insertPrev;
+			}
+			else 
+			{
+				//// Otherwise the previous of the next key is the previous of this key
+				next->insertNext->insertPrev = next->insertPrev;
+			}
+
+			PrtFree(next);
+			map->size = map->size - 1;
+			return;
+		}
+
+		prev = next;
+		next = next->bucketNext;
+	}
+}
+
+PRT_VALUE PrtMapGet(_In_ PRT_MAPVALUE *map, _In_ PRT_VALUE key)
+{
+	PRT_MAPTYPE *mapType;
+	PRT_UINT32 bucketNum;
+	PRT_MAPNODE *bucket;
+
+	PrtAssert(*(map->type) == PRT_KIND_MAP, "Invalid map value");
+	PrtAssert(*(*key) >= 0 && *(*key) < PRT_TYPE_KIND_COUNT, "Invalid key");
+	mapType = (PRT_MAPTYPE *)map->type;
+	PrtAssert(PrtIsSubtype(*key, mapType->domType), "Invalid map get; key has bad type");
+
+	bucketNum = PrtGetHashCodeValue(key) % PrtHashtableCapacities[map->capNum];
+	bucket = map->buckets[bucketNum];
+	PrtAssert(bucket != NULL, "Invalid map get; key not found");
+
+	PRT_MAPNODE *next = bucket;
+	while (next != NULL)
+	{
+		if (PrtIsEqualValue(next->key, key))
+		{
+			return PrtCloneValue(next->value);
+		}
+
+		next = next->bucketNext;
+	}
+
+	PrtAssert(PRT_FALSE, "Invalid map get; key not found");
+	return NULL;
+}
+
+PRT_SEQVALUE *PrtMapGetKeys(_In_ PRT_MAPVALUE *map)
+{
+	PrtAssert(*(map->type) == PRT_KIND_MAP, "Invalid map value");
+	PRT_MAPTYPE *mapType = (PRT_MAPTYPE *)map->type;
+	PRT_SEQVALUE *seqVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
+	seqVal->type = (PRT_TYPE)PrtMkSeqType(mapType->domType);
+
+	if (map->size == 0)
+	{
+		seqVal->size = 0;
+		seqVal->capacity = 0;
+		seqVal->values = NULL;
+	}
+	else 
+	{
+		seqVal->size = map->size;
+		seqVal->capacity = map->size;
+		seqVal->values = (PRT_VALUE *)PrtCalloc(map->size, sizeof(PRT_VALUE));
+		PRT_MAPNODE* next = map->first;
+		PRT_UINT32 i = 0;
+		while (next != NULL)
+		{
+			seqVal->values[i] = PrtCloneValue(next->key);
+			++i;
+			next = next->insertNext;
+		}
+	}
+
+	return seqVal;
+}
+
+PRT_SEQVALUE *PrtMapGetValues(_In_ PRT_MAPVALUE *map)
+{
+	PrtAssert(*(map->type) == PRT_KIND_MAP, "Invalid map value");
+	PRT_MAPTYPE *mapType = (PRT_MAPTYPE *)map->type;
+	PRT_SEQVALUE *seqVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
+	seqVal->type = (PRT_TYPE)PrtMkSeqType(mapType->codType);
+
+	if (map->size == 0)
+	{
+		seqVal->size = 0;
+		seqVal->capacity = 0;
+		seqVal->values = NULL;
+	}
+	else
+	{
+		seqVal->size = map->size;
+		seqVal->capacity = map->size;
+		seqVal->values = (PRT_VALUE *)PrtCalloc(map->size, sizeof(PRT_VALUE));
+		PRT_MAPNODE* next = map->first;
+		PRT_UINT32 i = 0;
+		while (next != NULL)
+		{
+			seqVal->values[i] = PrtCloneValue(next->value);
+			++i;
+			next = next->insertNext;
+		}
+	}
+
+	return seqVal;
+}
+
+PRT_BOOLEAN PrtMapExists(_In_ PRT_MAPVALUE *map, _In_ PRT_VALUE key)
+{
+	PRT_MAPTYPE *mapType;
+	PRT_UINT32 bucketNum;
+	PRT_MAPNODE *bucket;
+
+	PrtAssert(*(map->type) == PRT_KIND_MAP, "Invalid map value");
+	PrtAssert(*(*key) >= 0 && *(*key) < PRT_TYPE_KIND_COUNT, "Invalid key");
+	mapType = (PRT_MAPTYPE *)map->type;
+	PrtAssert(PrtIsSubtype(*key, mapType->domType), "Invalid map get; key has bad type");
+
+	bucketNum = PrtGetHashCodeValue(key) % PrtHashtableCapacities[map->capNum];
+	bucket = map->buckets[bucketNum];
+	if (bucket == NULL)
+	{
+		return PRT_FALSE;
+	}
+
+	PRT_MAPNODE *next = bucket;
+	while (next != NULL)
+	{
+		if (PrtIsEqualValue(next->key, key))
+		{
+			return PRT_TRUE;
+		}
+
+		next = next->bucketNext;
+	}
+
+	return PRT_FALSE;
+}
+
+PRT_UINT32 PrtMapSizeOf(_In_ PRT_MAPVALUE *map)
+{
+	PrtAssert(*(map->type) == PRT_KIND_MAP, "Invalid map value");
+	return map->size;
+}
+
+PRT_UINT32 PrtMapCapacity(_In_ PRT_MAPVALUE *map)
+{
+	PrtAssert(*(map->type) == PRT_KIND_MAP, "Invalid map value");
+	return PrtHashtableCapacities[map->capNum];
+}
+
+PRT_UINT32 PrtGetHashCodeValue(_In_ PRT_VALUE value)
 {
 	PRT_TYPE_KIND kind = **value;
 	switch (kind)
@@ -475,6 +801,66 @@ PRT_UINT32 PrtGetHashCode(_In_ PRT_VALUE value)
 	default:
 		PrtAssert(PRT_FALSE, "Invalid type");
 		return 0;
+	}
+}
+
+PRT_BOOLEAN PrtIsEqualValue(_In_ PRT_VALUE value1, _In_ PRT_VALUE value2)
+{
+	PRT_TYPE_KIND kind1 = **value1;
+	PRT_TYPE_KIND kind2 = **value2;
+	PRT_DBG_ASSERT(kind1 != PRT_KIND_ANY, "Value must have a more concrete type");
+	PRT_DBG_ASSERT(kind2 != PRT_KIND_ANY, "Value must have a more concrete type");
+
+	if (kind1 != kind2)
+	{
+		return PRT_FALSE;
+	}
+
+	switch (kind1)
+	{
+	case PRT_KIND_BOOL:
+		return
+			((PRT_PRIMVALUE *)value1)->value.bl == ((PRT_PRIMVALUE *)value2)->value.bl ? PRT_TRUE : PRT_FALSE;
+	case PRT_KIND_EVENT:
+		return
+			((PRT_PRIMVALUE *)value1)->value.ev == ((PRT_PRIMVALUE *)value2)->value.ev ? PRT_TRUE : PRT_FALSE;
+	case PRT_KIND_ID:
+		return
+			((PRT_PRIMVALUE *)value1)->value.id == ((PRT_PRIMVALUE *)value2)->value.id ? PRT_TRUE : PRT_FALSE;
+	case PRT_KIND_INT:
+		return
+			((PRT_PRIMVALUE *)value1)->value.nt == ((PRT_PRIMVALUE *)value2)->value.nt ? PRT_TRUE : PRT_FALSE;
+	case PRT_KIND_MID:
+		return
+			((PRT_PRIMVALUE *)value1)->value.md == ((PRT_PRIMVALUE *)value2)->value.md ? PRT_TRUE : PRT_FALSE;
+	case PRT_KIND_FORGN:
+	{
+		PrtAssert(PRT_FALSE, "Not implemented");
+		return PRT_FALSE;
+	}
+	case PRT_KIND_MAP:
+	{
+		PrtAssert(PRT_FALSE, "Not implemented");
+		return PRT_FALSE;
+	}
+	case PRT_KIND_NMDTUP:
+	{
+		PrtAssert(PRT_FALSE, "Not implemented");
+		return PRT_FALSE;
+	}
+	case PRT_KIND_SEQ:
+	{
+		PrtAssert(PRT_FALSE, "Not implemented");
+		return PRT_FALSE;
+	}
+	case PRT_KIND_TUPLE:
+	{
+		PrtAssert(PRT_FALSE, "Not implemented");
+		return PRT_FALSE;
+	}
+	default:
+		PrtAssert(PRT_FALSE, "Invalid type");
+		return PRT_FALSE;
 	}
 }
 

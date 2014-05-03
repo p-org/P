@@ -247,6 +247,84 @@ void TupleTest2()
 	printf_s("\n");
 }
 
+void MapTest1()
+{
+	PRT_TYPE anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
+	PRT_MAPTYPE *any2anyType = PrtMkMapType(anyType, anyType);
+	PRT_MAPVALUE *a2aMap = (PRT_MAPVALUE *)PrtMkDefaultValue((PRT_TYPE)any2anyType);
+
+	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
+	printf_s("\n");
+
+	PRT_VALUE falseVal = (PRT_VALUE)PrtMkBoolValue(PRT_FALSE);
+	PrtMapUpdate(a2aMap, (PRT_VALUE)falseVal, (PRT_VALUE)falseVal);
+
+	PRT_UINT32 i;
+	for (i = 0; i < 5; ++i)
+	{
+		PrtMapUpdate(a2aMap, (PRT_VALUE)PrtMkIntValue(i), (PRT_VALUE)PrtMkIntValue(i));
+		PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
+		printf_s("\n");
+	}
+
+	PrtMapUpdate(a2aMap, (PRT_VALUE)falseVal, (PRT_VALUE)PrtMkIntValue(10));
+	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
+	printf_s("\n");
+
+	PrtCmdPrintValueAndType((PRT_VALUE)PrtMapGetKeys(a2aMap));
+	printf_s("\n");
+
+	PrtCmdPrintValueAndType((PRT_VALUE)PrtMapGetValues(a2aMap));
+	printf_s("\n");
+}
+
+void MapTest2()
+{
+	PRT_TYPE anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
+	PRT_MAPTYPE *any2anyType = PrtMkMapType(anyType, anyType);
+	PRT_MAPVALUE *a2aMap = (PRT_MAPVALUE *)PrtMkDefaultValue((PRT_TYPE)any2anyType);
+
+	PRT_VALUE zeroVal = (PRT_VALUE)PrtMkIntValue(0);
+	PRT_VALUE falseVal = (PRT_VALUE)PrtMkBoolValue(PRT_FALSE);
+
+	PrtMapUpdate(a2aMap, zeroVal, zeroVal);
+	PrtMapUpdate(a2aMap, falseVal, falseVal);
+	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
+	printf_s("\n");
+
+	PrtMapRemove(a2aMap, zeroVal);
+	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
+	printf_s("\n");
+
+	PrtMapRemove(a2aMap, zeroVal);
+	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
+	printf_s("\n");
+
+	PrtMapRemove(a2aMap, falseVal);
+	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
+	printf_s("\n");
+
+	PrtMapUpdate(a2aMap, falseVal, falseVal);
+	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
+	printf_s("\n");
+
+	PrtMapUpdate(a2aMap, zeroVal, zeroVal);
+	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
+	printf_s("\n");
+
+	PrtMapRemove(a2aMap, zeroVal);
+	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
+	printf_s("\n");
+
+	PrtMapRemove(a2aMap, zeroVal);
+	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
+	printf_s("\n");
+
+	PrtMapRemove(a2aMap, falseVal);
+	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
+	printf_s("\n");
+}
+
 int main(int argc, char *argv[])
 {
 	/*
@@ -254,7 +332,10 @@ int main(int argc, char *argv[])
 	NamedTupleTest();
 	SeqAppendTest();
 	SeqPrependTest();
-	SeqAppendRemoveTest();*/
+	SeqAppendRemoveTest();
 	SeqNestedTest();
+	*/
+	MapTest1();
+	//// MapTest2();
 	return 0;
 }

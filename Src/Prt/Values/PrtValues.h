@@ -68,6 +68,7 @@ typedef struct PRT_MAPVALUE
 	PRT_UINT32   size;       /**< The number of elements in the map.      */
 	PRT_UINT32   capNum;     /**< An opaque number related to the number of buckets */
 	struct PRT_MAPNODE *first;    /**< First element inserted into the map. */
+	struct PRT_MAPNODE *last;     /**< Last element inserted into the map. */
 	struct PRT_MAPNODE **buckets; /**< An array of pointers to chained nodes.  */
 } PRT_MAPVALUE;
 
@@ -282,7 +283,7 @@ void PrtMapUpdate(_Inout_ PRT_MAPVALUE *map, _In_ PRT_VALUE key, _In_ PRT_VALUE 
 /** Remove the key from the map. 
 * If the key is not in then map, then the map is unchanged.
 * @param[in,out] map   A map to mutate.
-* @param[in]     key   The key to remove (will be cloned).
+* @param[in]     key   The key to remove.
 */
 void PrtMapRemove(_Inout_ PRT_MAPVALUE *map, _In_ PRT_VALUE key);
 
@@ -300,18 +301,30 @@ PRT_VALUE PrtMapGet(_In_ PRT_MAPVALUE *map, _In_ PRT_VALUE key);
 */
 PRT_SEQVALUE *PrtMapGetKeys(_In_ PRT_MAPVALUE *map);
 
+/** Converts a map to sequence of values. values are returned in insertion order.
+* @param[in] map A map.
+* @returns The sequence of its values (map image). Caller is responsible for freeing.
+*/
+PRT_SEQVALUE *PrtMapGetValues(_In_ PRT_MAPVALUE *map);
+
 /** Returns true if the map contains key; false otherwise.
 * @param[in] map A map.
 * @param[in] key The key to lookup.
 * @returns Returns true if the map contains key; false otherwise.
 */
-PRT_VALUE PrtMapExists(_In_ PRT_MAPVALUE *map, _In_ PRT_VALUE key);
+PRT_BOOLEAN PrtMapExists(_In_ PRT_MAPVALUE *map, _In_ PRT_VALUE key);
 
 /** Gets the size of a map.
 * @param[in] map A map.
 * @returns The size of the map.
 */
 PRT_UINT32 PrtMapSizeOf(_In_ PRT_MAPVALUE *map);
+
+/** The hypothetical maximum number of keys that could be accessed in constant-time.
+* @param[in] map A map.
+* @returns The capacity of the map.
+*/
+PRT_UINT32 PrtMapCapacity(_In_ PRT_MAPVALUE *map);
 
 /** Determines if value inhabits type.
 * @param[in] value The value to check.

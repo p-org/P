@@ -159,8 +159,31 @@ void PrtCmdPrintValue(_In_ PRT_VALUE value)
 		printf_s("foreign");
 		break;
 	case PRT_KIND_MAP:
-		PrtAssert(PRT_FALSE, "Not implemented");
+	{
+		PRT_MAPVALUE *mval = (PRT_MAPVALUE *)value;
+		PRT_MAPNODE *next = mval->first;
+		printf_s("{");
+		while (next != NULL)
+		{
+			PrtCmdPrintValue(next->key);
+			printf_s(" --> ");
+			PrtCmdPrintValue(next->value);
+			if (next->bucketNext != NULL)
+			{
+				printf_s("*");
+			}
+
+			if (next->insertNext != NULL)
+			{
+				printf_s(", ");
+			}
+
+			next = next->insertNext;
+		}
+
+		printf_s("} (%d / %d)", mval->size, PrtMapCapacity(mval));
 		break;
+	}
 	case PRT_KIND_NMDTUP:
 	{
 		PRT_UINT32 i;

@@ -3,6 +3,9 @@
 /** Maximum load factor before hashtable is resized. */
 #define PRT_MAXHASHLOAD 0.75
 
+/** A 32-bit prime modulus for AC composition of hashcodes */
+#define PRT_HASH_AC_COMPOSEMOD 4294967291
+
 /** Array of prime hash table capacities. */
 const PRT_UINT32 PrtHashtableCapacities[] =
 {
@@ -743,6 +746,38 @@ PRT_BOOLEAN PrtMapExists(_In_ PRT_MAPVALUE *map, _In_ PRT_VALUE key)
 	return PRT_FALSE;
 }
 
+PRT_BOOLEAN PrtMapIsSameMapping(_In_ PRT_MAPVALUE *map, _In_ PRT_VALUE key, _In_ PRT_VALUE value)
+{
+	PRT_MAPTYPE *mapType;
+	PRT_UINT32 bucketNum;
+	PRT_MAPNODE *bucket;
+
+	PrtAssert(*(map->type) == PRT_KIND_MAP, "Invalid map value");
+	PrtAssert(*(*key) >= 0 && *(*key) < PRT_TYPE_KIND_COUNT, "Invalid key");
+	mapType = (PRT_MAPTYPE *)map->type;
+	PrtAssert(PrtIsSubtype(*key, mapType->domType), "Invalid map get; key has bad type");
+
+	bucketNum = PrtGetHashCodeValue(key) % PrtHashtableCapacities[map->capNum];
+	bucket = map->buckets[bucketNum];
+	if (bucket == NULL)
+	{
+		return PRT_FALSE;
+	}
+
+	PRT_MAPNODE *next = bucket;
+	while (next != NULL)
+	{
+		if (PrtIsEqualValue(next->key, key))
+		{
+			return PrtIsEqualValue(next->value, value);
+		}
+
+		next = next->bucketNext;
+	}
+
+	return PRT_FALSE;
+}
+
 PRT_UINT32 PrtMapSizeOf(_In_ PRT_MAPVALUE *map)
 {
 	PrtAssert(*(map->type) == PRT_KIND_MAP, "Invalid map value");
@@ -764,24 +799,35 @@ PRT_UINT32 PrtGetHashCodeValue(_In_ PRT_VALUE value)
 		PRT_DBG_ASSERT(PRT_FALSE, "Value must have a more concrete type");
 		return 0;
 	case PRT_KIND_BOOL:
-		return (PRT_UINT32)((PRT_PRIMVALUE *)value)->value.bl;
+		return 0x00400000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.bl);
 	case PRT_KIND_EVENT:
-		return (PRT_UINT32)((PRT_PRIMVALUE *)value)->value.ev;
+		return 0x00800000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.ev);
 	case PRT_KIND_ID:
-		return (PRT_UINT32)((PRT_PRIMVALUE *)value)->value.id;
+		return 0x01000000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.id);
 	case PRT_KIND_INT:
-		return (PRT_UINT32)((PRT_PRIMVALUE *)value)->value.nt;
+		return 0x02000000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.nt);
 	case PRT_KIND_MID:
-		return (PRT_UINT32)((PRT_PRIMVALUE *)value)->value.md;
+		return 0x04000000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.md);
 	case PRT_KIND_FORGN:
 	{
-		PrtAssert(PRT_FALSE, "Not implemented");
-		return 0;
+		PRT_FORGNVALUE *fVal = (PRT_FORGNVALUE *)value;
+		PRT_FORGNTYPE *fType = (PRT_FORGNTYPE *)fVal->type;
+		return 0x08000000 ^ fType->hasher(fType->typeTag, fVal->value);
 	}
 	case PRT_KIND_MAP:
 	{
-		PrtAssert(PRT_FALSE, "Not implemented");
-		return 0;
+		PRT_MAPVALUE *mVal = (PRT_MAPVALUE *)value;
+		PRT_MAPNODE *next = mVal->first;
+		PRT_UINT64 code = (PRT_UINT64)mVal->size;
+		code = (code << 16) % PRT_HASH_AC_COMPOSEMOD;
+		while (next != NULL)
+		{
+			code = (code + (PRT_UINT64)PrtGetHashCodeValue(next->value)) % PRT_HASH_AC_COMPOSEMOD;
+			code = (code + (PRT_UINT64)PrtGetHashCodeValue(next->key)) % PRT_HASH_AC_COMPOSEMOD;
+			next = next->insertNext;
+		}
+
+		return 0x10000000 ^ (PRT_UINT32)code;
 	}
 	case PRT_KIND_NMDTUP:
 	{
@@ -790,13 +836,31 @@ PRT_UINT32 PrtGetHashCodeValue(_In_ PRT_VALUE value)
 	}
 	case PRT_KIND_SEQ:
 	{
-		PrtAssert(PRT_FALSE, "Not implemented");
-		return 0;
+		PRT_UINT32 i;
+		PRT_SEQVALUE *sVal = (PRT_SEQVALUE *)value;
+		PRT_UINT32 code = sVal->size;
+		code = code << 16;
+		for (i = 0; i < sVal->size; ++i)
+		{
+			code = code << 1;
+			code = code + PrtGetHashCodeValue(sVal->values[i]);
+		}
+		return 0x40000000 ^ code;
 	}
 	case PRT_KIND_TUPLE:
 	{
-		PrtAssert(PRT_FALSE, "Not implemented");
-		return 0;
+		PRT_UINT32 i;
+		PRT_TUPVALUE *tVal = (PRT_TUPVALUE *)value;
+		PRT_UINT32 arity = ((PRT_TUPTYPE *)tVal->type)->arity;
+		PRT_UINT32 code = arity;
+		code = code << 16;
+		for (i = 0; i < arity; ++i)
+		{
+			code = code << 1;
+			code = code + PrtGetHashCodeValue(tVal->values[i]);
+		}
+
+		return 0x80000000 ^ code;
 	}
 	default:
 		PrtAssert(PRT_FALSE, "Invalid type");
@@ -814,6 +878,10 @@ PRT_BOOLEAN PrtIsEqualValue(_In_ PRT_VALUE value1, _In_ PRT_VALUE value2)
 	if (kind1 != kind2)
 	{
 		return PRT_FALSE;
+	}
+	else if (value1 == value2)
+	{
+		return PRT_TRUE;
 	}
 
 	switch (kind1)
@@ -835,28 +903,106 @@ PRT_BOOLEAN PrtIsEqualValue(_In_ PRT_VALUE value1, _In_ PRT_VALUE value2)
 			((PRT_PRIMVALUE *)value1)->value.md == ((PRT_PRIMVALUE *)value2)->value.md ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_FORGN:
 	{
-		PrtAssert(PRT_FALSE, "Not implemented");
-		return PRT_FALSE;
+		PRT_FORGNVALUE *fVal1 = (PRT_FORGNVALUE *)value1;
+		PRT_FORGNVALUE *fVal2 = (PRT_FORGNVALUE *)value2;
+		PRT_FORGNTYPE *fType1 = (PRT_FORGNTYPE *)fVal1->type;
+		PRT_FORGNTYPE *fType2 = (PRT_FORGNTYPE *)fVal2->type;
+		return fType1->eqTester(fType1->typeTag, fVal1->value, fType2->typeTag, fVal2->value);
 	}
 	case PRT_KIND_MAP:
 	{
-		PrtAssert(PRT_FALSE, "Not implemented");
-		return PRT_FALSE;
+		PRT_MAPVALUE *mVal1 = (PRT_MAPVALUE *)value1;
+		PRT_MAPVALUE *mVal2 = (PRT_MAPVALUE *)value2;
+
+		if (mVal1->size != mVal2->size)
+		{
+			return PRT_FALSE;
+		}
+
+		PRT_MAPNODE *next = mVal1->first;
+		while (next != NULL)
+		{
+			if (!PrtMapIsSameMapping(mVal2, next->key, next->value))
+			{
+				return PRT_FALSE;
+			}
+
+			next = next->insertNext;
+		}
+
+		return PRT_TRUE;
 	}
 	case PRT_KIND_NMDTUP:
 	{
-		PrtAssert(PRT_FALSE, "Not implemented");
-		return PRT_FALSE;
+		PRT_UINT32 i;
+		PRT_TUPVALUE *tVal1 = (PRT_TUPVALUE *)value1;
+		PRT_TUPVALUE *tVal2 = (PRT_TUPVALUE *)value2;
+		PRT_NMDTUPTYPE *tType1 = (PRT_NMDTUPTYPE *)tVal1->type;
+		PRT_NMDTUPTYPE *tType2 = (PRT_NMDTUPTYPE *)tVal2->type;
+
+		if (tType1->arity != tType2->arity)
+		{
+			return PRT_FALSE;
+		}
+
+		for (i = 0; i < tType1->arity; ++i)
+		{
+			if (strncmp(tType1->fieldNames[i], tType2->fieldNames[i], PRT_MAXFLDNAME_LENGTH) != 0)
+			{
+				return PRT_FALSE;
+			}
+
+			if (!PrtIsEqualValue(tVal1->values[i], tVal2->values[i]))
+			{
+				return PRT_FALSE;
+			}
+		}
+
+		return PRT_TRUE;
 	}
 	case PRT_KIND_SEQ:
 	{
-		PrtAssert(PRT_FALSE, "Not implemented");
-		return PRT_FALSE;
+		PRT_UINT32 i;
+		PRT_SEQVALUE *sVal1 = (PRT_SEQVALUE *)value1;
+		PRT_SEQVALUE *sVal2 = (PRT_SEQVALUE *)value2;
+
+		if (sVal1->size != sVal2->size)
+		{
+			return PRT_FALSE;
+		}
+
+		for (i = 0; i < sVal1->size; ++i)
+		{
+			if (!PrtIsEqualValue(sVal1->values[i], sVal2->values[i]))
+			{
+				return PRT_FALSE;
+			}
+		}
+
+		return PRT_TRUE;
 	}
 	case PRT_KIND_TUPLE:
 	{
-		PrtAssert(PRT_FALSE, "Not implemented");
-		return PRT_FALSE;
+		PRT_UINT32 i;
+		PRT_TUPVALUE *tVal1 = (PRT_TUPVALUE *)value1;
+		PRT_TUPVALUE *tVal2 = (PRT_TUPVALUE *)value2;
+		PRT_TUPTYPE *tType1 = (PRT_TUPTYPE *)tVal1->type;
+		PRT_TUPTYPE *tType2 = (PRT_TUPTYPE *)tVal2->type;
+
+		if (tType1->arity != tType2->arity)
+		{
+			return PRT_FALSE;
+		}
+
+		for (i = 0; i < tType1->arity; ++i)
+		{
+			if (!PrtIsEqualValue(tVal1->values[i], tVal2->values[i]))
+			{
+				return PRT_FALSE;
+			}
+		}
+
+		return PRT_TRUE;
 	}
 	default:
 		PrtAssert(PRT_FALSE, "Invalid type");
@@ -899,13 +1045,33 @@ PRT_VALUE PrtCloneValue(_In_ PRT_VALUE value)
 	}
 	case PRT_KIND_FORGN:
 	{
-		PrtAssert(PRT_FALSE, "Not implemented");
-		return NULL;
+		PRT_FORGNVALUE *fVal = (PRT_FORGNVALUE *)value;
+		PRT_FORGNTYPE *fType = (PRT_FORGNTYPE *)fVal->type;
+		PRT_FORGNVALUE *cVal = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
+		cVal->type = PrtCloneType(fVal->type);
+		cVal->value = fType->cloner(fType->typeTag, fVal->value);
+		return (PRT_VALUE)cVal;
 	}
 	case PRT_KIND_MAP:
 	{
-		PrtAssert(PRT_FALSE, "Not implemented");
-		return NULL;
+		PRT_MAPVALUE *mVal = (PRT_MAPVALUE *)value;
+		PRT_MAPVALUE *cVal = (PRT_MAPVALUE *)PrtMkDefaultValue(mVal->type);
+		if (mVal->capNum > 0)
+		{
+			//// Eagerly allocate capacity in the clone to avoid intermediate rehashings.
+			PrtFree(cVal->buckets);
+			cVal->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[mVal->capNum], sizeof(PRT_MAPNODE *));
+			cVal->capNum = mVal->capNum;
+		}
+
+		PRT_MAPNODE *next = mVal->first;
+		while (next != NULL)
+		{
+			PrtMapUpdate(cVal, next->key, next->value);
+			next = next->insertNext;
+		}
+
+		return (PRT_VALUE)cVal;
 	}
 	case PRT_KIND_NMDTUP:
 	{
@@ -968,5 +1134,101 @@ PRT_VALUE PrtCloneValue(_In_ PRT_VALUE value)
 
 void PrtFreeValue(_Inout_ PRT_VALUE value)
 {
+	PRT_TYPE_KIND kind = **value;
+	switch (kind)
+	{
+	case PRT_KIND_ANY:
+		PRT_DBG_ASSERT(PRT_FALSE, "Value must have a more concrete type");
+		break;
+	case PRT_KIND_BOOL:
+	case PRT_KIND_EVENT:
+	case PRT_KIND_ID:
+	case PRT_KIND_INT:
+	case PRT_KIND_MID:
+	{
+		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
+		PrtFreeType(pVal->type);
+		PrtFree(pVal);
+		break;
+	}
+	case PRT_KIND_FORGN:
+	{
+		PRT_FORGNVALUE *fVal = (PRT_FORGNVALUE *)value;
+		PRT_FORGNTYPE *fType = (PRT_FORGNTYPE *)fVal->type;
+		fType->freer(fType->typeTag, fVal->value);
+		PrtFreeType(fVal->type);
+		PrtFree(fVal);
+		break;
+	}
+	case PRT_KIND_MAP:
+	{
+		PRT_MAPVALUE *mVal = (PRT_MAPVALUE *)value;
+		PRT_MAPNODE *next = mVal->first;
+		PRT_MAPNODE *tmp;
+		while (next != NULL)
+		{
+			tmp = next->insertNext;
+			PrtFreeValue(next->key);
+			PrtFreeValue(next->value);
+			PrtFree(next);
+			next = tmp;
+		}
 
+		PrtFreeType(mVal->type);
+		PrtFree(mVal->buckets);
+		PrtFree(mVal);
+		break;
+	}
+	case PRT_KIND_NMDTUP:
+	{
+		PRT_UINT32 i;
+		PRT_TUPVALUE *tVal = (PRT_TUPVALUE *)value;
+		PRT_UINT32 arity = ((PRT_NMDTUPTYPE *)tVal->type)->arity;
+		for (i = 0; i < arity; ++i)
+		{
+			PrtFreeValue(tVal->values[i]);
+		}
+
+		PrtFreeType(tVal->type);
+		PrtFree(tVal->values);
+		PrtFree(tVal);
+		break;
+	}
+	case PRT_KIND_TUPLE:
+	{
+		PRT_UINT32 i;
+		PRT_TUPVALUE *tVal = (PRT_TUPVALUE *)value;
+		PRT_UINT32 arity = ((PRT_TUPTYPE *)tVal->type)->arity;
+		for (i = 0; i < arity; ++i)
+		{
+			PrtFreeValue(tVal->values[i]);
+		}
+
+		PrtFreeType(tVal->type);
+		PrtFree(tVal->values);
+		PrtFree(tVal);
+		break;
+	}
+	case PRT_KIND_SEQ:
+	{
+		PRT_SEQVALUE *sVal = (PRT_SEQVALUE *)value;
+		if (sVal->values != NULL)
+		{
+			PRT_UINT32 i;
+			for (i = 0; i < sVal->size; ++i)
+			{
+				PrtFreeValue(sVal->values[i]);
+			}
+
+			PrtFree(sVal->values);
+		}
+
+		PrtFreeType(sVal->type);
+		PrtFree(sVal);
+		break;
+	}
+	default:
+		PrtAssert(PRT_FALSE, "Invalid type");
+		break;
+	}
 }

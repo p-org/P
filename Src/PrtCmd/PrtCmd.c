@@ -325,6 +325,78 @@ void MapTest2()
 	printf_s("\n");
 }
 
+void BinaryBoolFunTest()
+{
+	PRT_TYPE boolType = (PRT_TYPE)PrtMkPrimitiveType(PRT_KIND_BOOL);
+	PRT_TYPE intType = (PRT_TYPE)PrtMkPrimitiveType(PRT_KIND_INT);
+	PRT_TYPE boolTupType = (PRT_TYPE)PrtMkTupType(2);
+	PrtSetFieldType(boolTupType, 0, boolType);
+	PrtSetFieldType(boolTupType, 1, boolType);
+	PRT_MAPTYPE *binFunType = PrtMkMapType(boolTupType, boolType);
+	PRT_MAPTYPE *popFunType = PrtMkMapType((PRT_TYPE)binFunType, intType);
+
+	printf_s("Bool fun type = ");
+	PrtCmdPrintType((PRT_TYPE)binFunType);
+	printf_s("\n");
+
+	printf_s("Population fun type = ");
+	PrtCmdPrintType((PRT_TYPE)popFunType);
+	printf_s("\n");
+
+	PRT_UINT32 funImg;
+	PRT_UINT32 funRng;
+	PRT_VALUE boolVal;
+	PRT_VALUE popCntVal;
+	PRT_TUPVALUE *boolTup;
+	PRT_MAPVALUE *popFun = (PRT_MAPVALUE *)PrtMkDefaultValue((PRT_TYPE)popFunType);
+	for (funImg = 0; funImg < 16; ++funImg)
+	{
+		PRT_MAPVALUE *fun = (PRT_MAPVALUE *)PrtMkDefaultValue((PRT_TYPE)binFunType);
+		for (funRng = 0; funRng < 4; ++funRng)
+		{
+			//// Set (funRng_1, funRng_0) -> img_0
+			boolTup = (PRT_TUPVALUE *)PrtMkDefaultValue(boolTupType);
+
+			boolVal = (PRT_VALUE)PrtMkBoolValue((funRng & 0x00000002) == 0 ? PRT_FALSE : PRT_TRUE);
+			PrtTupleSet(boolTup, 0, boolVal);
+			PrtFreeValue(boolVal);
+
+			boolVal = (PRT_VALUE)PrtMkBoolValue((funRng & 0x00000001) == 0 ? PRT_FALSE : PRT_TRUE);
+			PrtTupleSet(boolTup, 1, boolVal);
+			PrtFreeValue(boolVal);
+
+			boolVal = (PRT_VALUE)PrtMkBoolValue(((funImg >> funRng) & 0x00000001) == 0 ? PRT_FALSE : PRT_TRUE);
+			PrtMapUpdate(fun, (PRT_VALUE)boolTup, boolVal);
+			PrtFreeValue(boolVal);
+			PrtFreeValue((PRT_VALUE)boolTup);
+		}
+
+		popCntVal = (PRT_VALUE)PrtMkIntValue(
+			(0x00000001 & funImg) +
+			(0x00000001 & (funImg >> 1)) +
+			(0x00000001 & (funImg >> 2)) +
+			(0x00000001 & (funImg >> 3)));
+
+		PrtCmdPrintValue((PRT_VALUE)fun);
+		printf_s("\n");
+
+		PrtMapUpdate(popFun, (PRT_VALUE)fun, popCntVal);
+
+		PrtFreeValue(popCntVal);
+		PrtFreeValue((PRT_VALUE)fun);
+	}
+
+	PrtCmdPrintValue((PRT_VALUE)popFun);
+	printf_s("\n");
+
+	PrtFreeValue((PRT_VALUE)popFun);
+	PrtFreeType(intType);
+	PrtFreeType(boolType);
+	PrtFreeType(boolTupType);
+	PrtFreeType((PRT_TYPE)binFunType);
+	PrtFreeType((PRT_TYPE)popFunType);
+}
+
 int main(int argc, char *argv[])
 {
 	/*
@@ -334,8 +406,10 @@ int main(int argc, char *argv[])
 	SeqPrependTest();
 	SeqAppendRemoveTest();
 	SeqNestedTest();
-	*/
 	MapTest1();
-	//// MapTest2();
+	MapTest2();
+	*/
+
+	BinaryBoolFunTest();
 	return 0;
 }

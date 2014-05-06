@@ -17,6 +17,68 @@ const PRT_UINT32 PrtHashtableCapacities[] =
 	268435399, 536870909, 1073741789, 2147483647, 4294967291
 };
 
+PRT_UINT32 PrtGetHashCodeFieldName(PRT_STRING name)
+{
+	PRT_UINT32 i;
+	PRT_UINT32 code = 0;
+	PRT_UINT32 len = strnlen(name, PRT_MAXFLDNAME_LENGTH);
+	for (i = 0; i < len; ++i)
+	{
+		code += name[i];
+		code += (code << 10);
+		code ^= (code >> 6);
+	}
+
+	code += (code << 3);
+	code ^= (code >> 11);
+	code += (code << 15);
+	return code;
+}
+
+PRT_UINT32 PrtGetHashCodeUInt32(PRT_UINT32 value)
+{
+	PRT_UINT32 i;
+	PRT_UINT32 code = 0;
+	for (i = 0; i < 4; ++i)
+	{
+		code += (value & 0x000000FF);
+		code += (code << 10);
+		code ^= (code >> 6);
+		value = (value >> 8);
+	}
+
+	code += (code << 3);
+	code ^= (code >> 11);
+	code += (code << 15);
+	return code;
+}
+
+PRT_UINT32 PrtGetHashCodeTwoUInt32(PRT_UINT32 value1, PRT_UINT32 value2)
+{
+	PRT_UINT32 i;
+	PRT_UINT32 code = 0;
+	for (i = 0; i < 4; ++i)
+	{
+		code += (value1 & 0x000000FF);
+		code += (code << 10);
+		code ^= (code >> 6);
+		value1 = (value1 >> 8);
+	}
+
+	for (i = 0; i < 4; ++i)
+	{
+		code += (value2 & 0x000000FF);
+		code += (code << 10);
+		code ^= (code >> 6);
+		value2 = (value2 >> 8);
+	}
+
+	code += (code << 3);
+	code ^= (code >> 11);
+	code += (code << 15);
+	return code;
+}
+
 PRT_PRIMVALUE *PrtMkBoolValue(_In_ PRT_BOOLEAN value)
 {
 	PRT_PRIMVALUE *primVal;
@@ -799,15 +861,15 @@ PRT_UINT32 PrtGetHashCodeValue(_In_ PRT_VALUE value)
 		PRT_DBG_ASSERT(PRT_FALSE, "Value must have a more concrete type");
 		return 0;
 	case PRT_KIND_BOOL:
-		return 0x00400000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.bl);
+		return PrtGetHashCodeUInt32(0x00400000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.bl));
 	case PRT_KIND_EVENT:
-		return 0x00800000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.ev);
+		return PrtGetHashCodeUInt32(0x00800000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.ev));
 	case PRT_KIND_ID:
-		return 0x01000000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.id);
+		return PrtGetHashCodeUInt32(0x01000000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.id));
 	case PRT_KIND_INT:
-		return 0x02000000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.nt);
+		return PrtGetHashCodeUInt32(0x02000000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.nt));
 	case PRT_KIND_MID:
-		return 0x04000000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.md);
+		return PrtGetHashCodeUInt32(0x04000000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.md));
 	case PRT_KIND_FORGN:
 	{
 		PRT_FORGNVALUE *fVal = (PRT_FORGNVALUE *)value;
@@ -816,14 +878,21 @@ PRT_UINT32 PrtGetHashCodeValue(_In_ PRT_VALUE value)
 	}
 	case PRT_KIND_MAP:
 	{
+		//// Hash function designed so two maps with same key-value pairs are hashed equally (independently of order).
+		//// Hash codes are added on the finite field Z_{PRT_HASH_AC_COMPOSEMOD}.
 		PRT_MAPVALUE *mVal = (PRT_MAPVALUE *)value;
 		PRT_MAPNODE *next = mVal->first;
-		PRT_UINT64 code = (PRT_UINT64)mVal->size;
-		code = (code << 16) % PRT_HASH_AC_COMPOSEMOD;
+		PRT_UINT64 code = 1;
+		PRT_UINT64 pointCode;
 		while (next != NULL)
 		{
-			code = (code + (PRT_UINT64)PrtGetHashCodeValue(next->value)) % PRT_HASH_AC_COMPOSEMOD;
-			code = (code + (PRT_UINT64)PrtGetHashCodeValue(next->key)) % PRT_HASH_AC_COMPOSEMOD;
+			pointCode = (PRT_UINT64)PrtGetHashCodeTwoUInt32(PrtGetHashCodeValue(next->key), PrtGetHashCodeValue(next->value));
+			if (pointCode == 0)
+			{
+				pointCode = 1;
+			}
+
+			code = (code + pointCode) % PRT_HASH_AC_COMPOSEMOD;
 			next = next->insertNext;
 		}
 
@@ -831,35 +900,86 @@ PRT_UINT32 PrtGetHashCodeValue(_In_ PRT_VALUE value)
 	}
 	case PRT_KIND_NMDTUP:
 	{
-		PrtAssert(PRT_FALSE, "Not implemented");
-		return 0;
+		PRT_UINT32 i;
+		PRT_UINT32 j;
+		PRT_UINT32 code = 0;
+		PRT_UINT32 pointCode;
+		PRT_TUPVALUE *tVal = (PRT_TUPVALUE *)value;
+		PRT_UINT32 arity = ((PRT_NMDTUPTYPE *)tVal->type)->arity;
+		PRT_STRING *fnames = ((PRT_NMDTUPTYPE *)tVal->type)->fieldNames;
+		for (i = 0; i < arity; ++i)
+		{
+			pointCode = PrtGetHashCodeFieldName(fnames[i]);
+			for (j = 0; j < 4; ++j)
+			{
+				code += (pointCode & 0x000000FF);
+				code += (code << 10);
+				code ^= (code >> 6);
+				pointCode = (pointCode >> 8);
+			}
+
+			pointCode = PrtGetHashCodeValue(tVal->values[i]);
+			for (j = 0; j < 4; ++j)
+			{
+				code += (pointCode & 0x000000FF);
+				code += (code << 10);
+				code ^= (code >> 6);
+				pointCode = (pointCode >> 8);
+			}
+		}
+
+		code += (code << 3);
+		code ^= (code >> 11);
+		code += (code << 15);
+		return 0x80000000 ^ code;
 	}
 	case PRT_KIND_SEQ:
 	{
 		PRT_UINT32 i;
+		PRT_UINT32 j;
+		PRT_UINT32 code = 0;
+		PRT_UINT32 pointCode;
 		PRT_SEQVALUE *sVal = (PRT_SEQVALUE *)value;
-		PRT_UINT32 code = sVal->size;
-		code = code << 16;
 		for (i = 0; i < sVal->size; ++i)
 		{
-			code = code << 1;
-			code = code + PrtGetHashCodeValue(sVal->values[i]);
+			pointCode = PrtGetHashCodeValue(sVal->values[i]);
+			for (j = 0; j < 4; ++j)
+			{
+				code += (pointCode & 0x000000FF);
+				code += (code << 10);
+				code ^= (code >> 6);
+				pointCode = (pointCode >> 8);
+			}
 		}
+
+		code += (code << 3);
+		code ^= (code >> 11);
+		code += (code << 15);
 		return 0x40000000 ^ code;
 	}
 	case PRT_KIND_TUPLE:
 	{
 		PRT_UINT32 i;
+		PRT_UINT32 j;
+		PRT_UINT32 code = 0;
+		PRT_UINT32 pointCode;
 		PRT_TUPVALUE *tVal = (PRT_TUPVALUE *)value;
 		PRT_UINT32 arity = ((PRT_TUPTYPE *)tVal->type)->arity;
-		PRT_UINT32 code = arity;
-		code = code << 16;
 		for (i = 0; i < arity; ++i)
 		{
-			code = code << 1;
-			code = code + PrtGetHashCodeValue(tVal->values[i]);
+			pointCode = PrtGetHashCodeValue(tVal->values[i]);
+			for (j = 0; j < 4; ++j)
+			{
+				code += (pointCode & 0x000000FF);
+				code += (code << 10);
+				code ^= (code >> 6);
+				pointCode = (pointCode >> 8);
+			}
 		}
 
+		code += (code << 3);
+		code ^= (code >> 11);
+		code += (code << 15);
 		return 0x80000000 ^ code;
 	}
 	default:

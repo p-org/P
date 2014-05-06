@@ -389,6 +389,25 @@ void BinaryBoolFunTest()
 	PrtCmdPrintValue((PRT_VALUE)popFun);
 	printf_s("\n");
 
+	//// Build the population function in reverse.
+	//// Get the keys of the population function.
+	PRT_UINT32 i;
+	PRT_SEQVALUE *popKeys = PrtMapGetKeys(popFun);
+	PRT_MAPVALUE *revPopFun = (PRT_MAPVALUE *)PrtMkDefaultValue((PRT_TYPE)popFunType);
+	for (i = 1; i <= 16; ++i)
+	{
+		popCntVal = PrtMapGet(popFun, popKeys->values[16 - i]);
+		PrtMapUpdate(revPopFun, popKeys->values[16 - i], popCntVal);
+		PrtFreeValue(popCntVal);
+	}
+
+	PrtFreeValue((PRT_VALUE)popKeys);
+	PrtCmdPrintValue((PRT_VALUE)revPopFun);
+	printf_s("\n");
+
+	PrtAssert(PrtGetHashCodeValue((PRT_VALUE)popFun) == PrtGetHashCodeValue((PRT_VALUE)revPopFun), "Equivalent maps should have equivalent hash codes");
+
+	PrtFreeValue((PRT_VALUE)revPopFun);
 	PrtFreeValue((PRT_VALUE)popFun);
 	PrtFreeType(intType);
 	PrtFreeType(boolType);

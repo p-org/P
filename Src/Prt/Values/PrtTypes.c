@@ -124,6 +124,126 @@ void PrtSetFieldName(_Inout_ PRT_NMDTUPTYPE *tupleType, _In_ PRT_UINT32 index, _
 	tupleType->fieldNames[index] = fieldNameClone;
 }
 
+PRT_BOOLEAN PrtIsSubtype(_In_ PRT_TYPE subType, _In_ PRT_TYPE supType)
+{
+	PRT_TYPE_KIND subKind = *subType;
+	PRT_TYPE_KIND supKind = *supType;
+	switch (supKind)
+	{
+	case PRT_KIND_ANY:
+		//// Everything is a subtype of `any`.
+		return PRT_TRUE;
+	case PRT_KIND_BOOL:
+	case PRT_KIND_EVENT:
+	case PRT_KIND_ID:
+	case PRT_KIND_INT:
+	case PRT_KIND_MID:
+	case PRT_KIND_FORGN:
+		//// These types do not have any proper subtypes.
+		return subKind == supKind ? PRT_TRUE : PRT_FALSE;
+	case PRT_KIND_MAP:
+	{	
+		//// Both types are maps and inner types are in subtype relationship.
+		PRT_MAPTYPE *subMap;
+		PRT_MAPTYPE *supMap;
+		if (subKind != PRT_KIND_MAP)
+		{
+			return PRT_FALSE;
+		}
+
+		subMap = (PRT_MAPTYPE *)subType;
+		supMap = (PRT_MAPTYPE *)supType;
+		return
+			PrtIsSubtype(subMap->domType, supMap->domType) &&
+			PrtIsSubtype(subMap->codType, supMap->codType) ? PRT_TRUE : PRT_FALSE;
+	}
+	case PRT_KIND_NMDTUP:
+	{
+		//// Both types are named tuples with same field names, arity, and inner types are in subtype relationship.
+		PRT_UINT32 i;
+		PRT_NMDTUPTYPE *subNmdTup;
+		PRT_NMDTUPTYPE *supNmdTup;
+		if (subKind != PRT_KIND_NMDTUP)
+		{
+			return PRT_FALSE;
+		}
+
+		subNmdTup = (PRT_NMDTUPTYPE *)subType;
+		supNmdTup = (PRT_NMDTUPTYPE *)supType;
+		if (subNmdTup->arity != supNmdTup->arity)
+		{
+			return PRT_FALSE;
+		}
+		
+		//// Next check field names.
+		for (i = 0; i < subNmdTup->arity; ++i)
+		{
+			if (strncmp(subNmdTup->fieldNames[i], supNmdTup->fieldNames[i], PRT_MAXFLDNAME_LENGTH) != 0)
+			{
+				return PRT_FALSE;
+			}
+		}
+
+		//// Finally check field types.
+		for (i = 0; i < subNmdTup->arity; ++i)
+		{
+			if (!PrtIsSubtype(subNmdTup->fieldTypes[i], supNmdTup->fieldTypes[i]))
+			{
+				return PRT_FALSE;
+			}
+		}
+
+		return PRT_TRUE;
+	}
+	case PRT_KIND_SEQ:
+	{
+		//// Both types are sequences and inner types are in subtype relationship.
+		PRT_SEQTYPE *subSeq;
+		PRT_SEQTYPE *supSeq;
+		if (subKind != PRT_KIND_SEQ)
+		{
+			return PRT_FALSE;
+		}
+
+		subSeq = (PRT_SEQTYPE *)subType;
+		supSeq = (PRT_SEQTYPE *)supType;
+		return PrtIsSubtype(subSeq->innerType, supSeq->innerType);
+	}
+	case PRT_KIND_TUPLE:
+	{
+		//// Both types are tuples with same arity, and inner types are in subtype relationship.
+		PRT_UINT32 i;
+		PRT_TUPTYPE *subTup;
+		PRT_TUPTYPE *supTup;
+		if (subKind != PRT_KIND_TUPLE)
+		{
+			return PRT_FALSE;
+		}
+
+		subTup = (PRT_TUPTYPE *)subType;
+		supTup = (PRT_TUPTYPE *)supType;
+		if (subTup->arity != supTup->arity)
+		{
+			return PRT_FALSE;
+		}
+
+		//// Finally check field types.
+		for (i = 0; i < subTup->arity; ++i)
+		{
+			if (!PrtIsSubtype(subTup->fieldTypes[i], supTup->fieldTypes[i]))
+			{
+				return PRT_FALSE;
+			}
+		}
+
+		return PRT_TRUE;
+	}
+	default:
+		PrtAssert(PRT_FALSE, "Invalid type");
+		return PRT_FALSE;
+	}
+}
+
 PRT_TYPE PrtCloneType(_In_ PRT_TYPE type)
 {
 	PRT_TYPE_KIND kind = *type;

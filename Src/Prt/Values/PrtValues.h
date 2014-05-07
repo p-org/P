@@ -66,9 +66,10 @@ typedef struct PRT_MAPVALUE
 {
 	PRT_TYPE     type;       /**< Must be a map type.                     */
 	PRT_UINT32   size;       /**< The number of elements in the map.      */
-	PRT_UINT32   nBuckets;   /**< The number of buckets in the hash table */
-	struct PRT_MAPNODE *buckets;   /**< An array of values in the sequence.  */
-	struct PRT_MAPNODE *first;     /**< First element inserted into the map. */
+	PRT_UINT32   capNum;     /**< An opaque number related to the number of buckets */
+	struct PRT_MAPNODE *first;    /**< First element inserted into the map. */
+	struct PRT_MAPNODE *last;     /**< Last element inserted into the map. */
+	struct PRT_MAPNODE **buckets; /**< An array of pointers to chained nodes.  */
 } PRT_MAPVALUE;
 
 /** A key-value node of a map. */
@@ -100,44 +101,39 @@ typedef struct PRT_MAPNODE
 PRT_VALUE PrtMkDefaultValue(_In_ PRT_TYPE type);
 
 /** Makes a boolean value.
-* @param[in] type The `bool` type (will be cloned).
 * @param[in] value A boolean value.
 * @returns A proper boolean value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_PRIMVALUE *PrtMkBoolValue(_In_ PRT_TYPE type, _In_ PRT_BOOLEAN value);
+PRT_PRIMVALUE *PrtMkBoolValue(_In_ PRT_BOOLEAN value);
 
 /** Makes an event value.
-* @param[in] type The `event` type (will be cloned).
 * @param[in] value An event id.
 * @returns A proper event value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_PRIMVALUE *PrtMkEventValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
+PRT_PRIMVALUE *PrtMkEventValue(_In_ PRT_UINT32 value);
 
 /** Makes an integer value.
-* @param[in] type The `int` type (will be cloned).
 * @param[in] value An int value.
 * @returns A proper int value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_PRIMVALUE *PrtMkIntValue(_In_ PRT_TYPE type, _In_ PRT_INT32 value);
+PRT_PRIMVALUE *PrtMkIntValue(_In_ PRT_INT32 value);
 
 /** Makes an id value.
-* @param[in] type The `id` type (will be cloned).
 * @param[in] value A machine id.
 * @returns A proper id value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_PRIMVALUE *PrtMkIdValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
+PRT_PRIMVALUE *PrtMkIdValue(_In_ PRT_UINT32 value);
 
 /** Makes an mid value.
-* @param[in] type The `mid` type (will be cloned).
 * @param[in] value A model machine id.
 * @returns A proper mid value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_PRIMVALUE *PrtMkMIdValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
+PRT_PRIMVALUE *PrtMkMIdValue(_In_ PRT_UINT32 value);
 
 /** Makes a foreign value.
 * @param[in] type A foreign type (will be cloned).
@@ -146,6 +142,66 @@ PRT_PRIMVALUE *PrtMkMIdValue(_In_ PRT_TYPE type, _In_ PRT_UINT32 value);
 * @see PrtFreeValue
 */
 PRT_FORGNVALUE *PrtMkForeignValue(_In_ PRT_FORGNTYPE *type, _In_ void *value);
+
+/** Sets the value of a boolean.
+* @param[in,out] prmVal A primitive boolean value to mutate.
+* @param[in]     value The value to set.
+*/
+void PrtPrimSetBool(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_BOOLEAN value);
+
+/** Gets the value of a boolean.
+* @param[in] prmVal A primitive boolean value.
+* @returns A boolean.
+*/
+PRT_BOOLEAN PrtPrimGetBool(_In_ PRT_PRIMVALUE *prmVal);
+
+/** Sets the value of an event.
+* @param[in,out] prmVal A primitive event value to mutate.
+* @param[in]     value The value to set.
+*/
+void PrtPrimSetEvent(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_UINT32 value);
+
+/** Gets the value of an event.
+* @param[in] prmVal A primitive event value.
+* @returns An event id.
+*/
+PRT_UINT32 PrtPrimGetEvent(_In_ PRT_PRIMVALUE *prmVal);
+
+/** Sets the value of an int.
+* @param[in,out] prmVal A primitive int value to mutate.
+* @param[in]     value The value to set.
+*/
+void PrtPrimSetInt(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_INT32 value);
+
+/** Gets the value of an integer.
+* @param[in] prmVal A primitive int value.
+* @returns An integer.
+*/
+PRT_INT32 PrtPrimGetInt(_In_ PRT_PRIMVALUE *prmVal);
+
+/** Sets the value of an id.
+* @param[in,out] prmVal A primitive id value to mutate.
+* @param[in]     value The value to set.
+*/
+void PrtPrimSetId(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_UINT32 value);
+
+/** Gets the value of an id.
+* @param[in] prmVal A primitive id value.
+* @returns A machine id.
+*/
+PRT_UINT32 PrtPrimGetId(_In_ PRT_PRIMVALUE *prmVal);
+
+/** Sets the value of an mid.
+* @param[in,out] prmVal A primitive mid value to mutate.
+* @param[in]     value The value to set.
+*/
+void PrtPrimSetMId(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_UINT32 value);
+
+/** Gets the value of an mid.
+* @param[in] prmVal A primitive mid value.
+* @returns A model machine id.
+*/
+PRT_UINT32 PrtPrimGetMId(_In_ PRT_PRIMVALUE *prmVal);
 
 /** Sets an element in a (named) tuple by index.
 * @param[in,out] tuple A (named) tuple to mutate.
@@ -159,7 +215,7 @@ void PrtTupleSet(_Inout_ PRT_TUPVALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VA
 * @param[in] index A 0-based element index.
 * @returns The element at index i. Caller is responsible for freeing.
 */
-PRT_VALUE *PrtTupleGet(_In_ PRT_TUPVALUE *tuple, _In_ PRT_UINT32 index);
+PRT_VALUE PrtTupleGet(_In_ PRT_TUPVALUE *tuple, _In_ PRT_UINT32 index);
 
 /** Sets an element in a named tuple by name.
 * @param[in,out] tuple A named tuple to mutate.
@@ -173,7 +229,7 @@ void PrtNmdTupleSet(_Inout_ PRT_TUPVALUE *tuple, _In_ PRT_STRING name, _In_ PRT_
 * @param[in] name  The name of the element to set.
 * @returns The element named name. Caller is responsible for freeing.
 */
-PRT_VALUE *PrtNmdTupleGet(_In_ PRT_TUPVALUE *tuple, _In_ PRT_STRING name);
+PRT_VALUE PrtNmdTupleGet(_In_ PRT_TUPVALUE *tuple, _In_ PRT_STRING name);
 
 /** Updates the sequence at index.
 * @param[in,out] seq   A sequence to mutate.
@@ -227,7 +283,7 @@ void PrtMapUpdate(_Inout_ PRT_MAPVALUE *map, _In_ PRT_VALUE key, _In_ PRT_VALUE 
 /** Remove the key from the map. 
 * If the key is not in then map, then the map is unchanged.
 * @param[in,out] map   A map to mutate.
-* @param[in]     key   The key to remove (will be cloned).
+* @param[in]     key   The key to remove.
 */
 void PrtMapRemove(_Inout_ PRT_MAPVALUE *map, _In_ PRT_VALUE key);
 
@@ -245,12 +301,18 @@ PRT_VALUE PrtMapGet(_In_ PRT_MAPVALUE *map, _In_ PRT_VALUE key);
 */
 PRT_SEQVALUE *PrtMapGetKeys(_In_ PRT_MAPVALUE *map);
 
+/** Converts a map to sequence of values. values are returned in insertion order.
+* @param[in] map A map.
+* @returns The sequence of its values (map image). Caller is responsible for freeing.
+*/
+PRT_SEQVALUE *PrtMapGetValues(_In_ PRT_MAPVALUE *map);
+
 /** Returns true if the map contains key; false otherwise.
 * @param[in] map A map.
 * @param[in] key The key to lookup.
 * @returns Returns true if the map contains key; false otherwise.
 */
-PRT_VALUE PrtMapExists(_In_ PRT_MAPVALUE *map, _In_ PRT_VALUE key);
+PRT_BOOLEAN PrtMapExists(_In_ PRT_MAPVALUE *map, _In_ PRT_VALUE key);
 
 /** Gets the size of a map.
 * @param[in] map A map.
@@ -258,16 +320,44 @@ PRT_VALUE PrtMapExists(_In_ PRT_MAPVALUE *map, _In_ PRT_VALUE key);
 */
 PRT_UINT32 PrtMapSizeOf(_In_ PRT_MAPVALUE *map);
 
+/** The hypothetical maximum number of keys that could be accessed in constant-time.
+* @param[in] map A map.
+* @returns The capacity of the map.
+*/
+PRT_UINT32 PrtMapCapacity(_In_ PRT_MAPVALUE *map);
+
 /** Determines if value inhabits type.
 * @param[in] value The value to check.
 * @param[in] type  The type to check.
 * @returns `true` if value inhabits type, `false` otherwise.
 */
-PRT_BOOLEAN PrtInhabits(_In_ PRT_VALUE value, _In_ PRT_TYPE type);
+PRT_BOOLEAN PrtInhabitsType(_In_ PRT_VALUE value, _In_ PRT_TYPE type);
+
+/** Casts value to type.   
+* Caller must know that type cast will succeed.
+* Method checks validity of type cast and causes an assertion failure if the case is invalid.
+* @param[in] value The value to cast (will be cloned).
+* @param[in] type  The type to cast (will be cloned).
+* @returns A copy of value with type. Caller is responsible for freeing.
+*/
+PRT_VALUE PrtCastValue(_In_ PRT_VALUE value, _In_ PRT_TYPE type);
+
+/** Returns a hash of this value.
+* @param[in] value The value to hash.
+* @returns The hash code.
+*/
+PRT_UINT32 PrtGetHashCodeValue(_In_ PRT_VALUE value);
+
+/** Returns `true` if values are equivalent; `false` otherwise.
+* @param[in] value1 The first value.
+* @param[in] value2 The second value.
+* @returns `true` if values are equivalent; `false` otherwise.
+*/
+PRT_BOOLEAN PrtIsEqualValue(_In_ PRT_VALUE value1, _In_ PRT_VALUE value2);
 
 /** Deeply clones a value.
 * @param[in] value The value to clone.
-* @returns The cloned value.
+* @returns The cloned value. Caller is responsible for freeing.
 */
 PRT_VALUE PrtCloneValue(_In_ PRT_VALUE value);
 

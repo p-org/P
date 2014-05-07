@@ -30,6 +30,9 @@
     <ClCompile Include="PrtCmdPrinting.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Prt\Values\PrtValues.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrtCmd.h">

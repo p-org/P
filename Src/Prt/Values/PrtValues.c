@@ -535,7 +535,7 @@ void PrtMapExpand(_Inout_ PRT_MAPVALUE *map)
 	}
 }
 
-void PrtMapUpdate(_Inout_ PRT_MAPVALUE *map, _In_ PRT_VALUE key, _In_ PRT_VALUE value)
+void PrtMapUpdateEx(_Inout_ PRT_MAPVALUE *map, _In_ PRT_VALUE key, _In_ PRT_VALUE value, _In_ PRT_BOOLEAN cloneKeyVals)
 {
 	PRT_MAPTYPE *mapType;
 	PRT_UINT32 bucketNum;
@@ -558,15 +558,15 @@ void PrtMapUpdate(_Inout_ PRT_MAPVALUE *map, _In_ PRT_VALUE key, _In_ PRT_VALUE 
 	{
 		isNewKey = PRT_TRUE;
 		node = (PRT_MAPNODE *)PrtMalloc(sizeof(PRT_MAPNODE));
-		node->key = PrtCloneValue(key);
-		node->value = PrtCloneValue(value);
+		node->key = cloneKeyVals == PRT_TRUE ? PrtCloneValue(key) : key;
+		node->value = cloneKeyVals == PRT_TRUE ? PrtCloneValue(value) : value;
 		node->bucketNext = NULL;
 		node->insertNext = NULL;
 		map->buckets[bucketNum] = node;
 	}
 	else
 	{
-		PRT_VALUE valueClone = PrtCloneValue(value);
+		PRT_VALUE valueClone = cloneKeyVals == PRT_TRUE ? PrtCloneValue(value) : value;
 		PRT_MAPNODE *next = bucket;
 		isNewKey = PRT_TRUE;
 		while (next != NULL)
@@ -585,7 +585,7 @@ void PrtMapUpdate(_Inout_ PRT_MAPVALUE *map, _In_ PRT_VALUE key, _In_ PRT_VALUE 
 		if (isNewKey == PRT_TRUE)
 		{
 			node = (PRT_MAPNODE *)PrtMalloc(sizeof(PRT_MAPNODE));
-			node->key = PrtCloneValue(key);
+			node->key = cloneKeyVals == PRT_TRUE ? PrtCloneValue(key) : key;
 			node->value = valueClone;
 			node->bucketNext = bucket;
 			node->insertNext = NULL;
@@ -615,6 +615,11 @@ void PrtMapUpdate(_Inout_ PRT_MAPVALUE *map, _In_ PRT_VALUE key, _In_ PRT_VALUE 
 			PrtMapExpand(map);
 		}
 	}
+}
+
+void PrtMapUpdate(_Inout_ PRT_MAPVALUE *map, _In_ PRT_VALUE key, _In_ PRT_VALUE value)
+{
+	PrtMapUpdateEx(map, key, value, PRT_TRUE);
 }
 
 void PrtMapRemove(_Inout_ PRT_MAPVALUE *map, _In_ PRT_VALUE key)
@@ -1249,6 +1254,328 @@ PRT_VALUE PrtCloneValue(_In_ PRT_VALUE value)
 	default:
 		PrtAssert(PRT_FALSE, "Invalid type");
 		return NULL;
+	}
+}
+
+PRT_BOOLEAN PrtIsNullValue(_In_ PRT_VALUE value)
+{
+	PRT_TYPE_KIND kind = **value;
+	switch (kind)
+	{
+	case PRT_KIND_ANY:
+		PRT_DBG_ASSERT(PRT_FALSE, "Value must have a more concrete type");
+		return PRT_FALSE;
+	case PRT_KIND_EVENT:
+		return ((PRT_PRIMVALUE *)value)->value.ev == PRT_NULL_ID ? PRT_TRUE : PRT_FALSE;
+	case PRT_KIND_ID:
+		return ((PRT_PRIMVALUE *)value)->value.id == PRT_NULL_ID ? PRT_TRUE : PRT_FALSE;
+	case PRT_KIND_MID:
+		return ((PRT_PRIMVALUE *)value)->value.md == PRT_NULL_ID ? PRT_TRUE : PRT_FALSE;
+	case PRT_KIND_BOOL:
+	case PRT_KIND_INT:
+	case PRT_KIND_FORGN:
+	case PRT_KIND_MAP:
+	case PRT_KIND_NMDTUP:
+	case PRT_KIND_TUPLE:
+	case PRT_KIND_SEQ:
+		return PRT_FALSE;
+	default:
+		PrtAssert(PRT_FALSE, "Invalid type");
+		return PRT_FALSE;
+	}
+}
+
+PRT_VALUE PrtCastValue(_In_ PRT_VALUE value, _In_ PRT_TYPE type)
+{
+	PrtAssert(**value >= 0 && **value < PRT_TYPE_KIND_COUNT, "Invalid value");
+	PrtAssert(*type >= 0 && *type < PRT_TYPE_KIND_COUNT, "Invalid type");
+
+	PRT_TYPE_KIND tkind = *type;
+	PRT_TYPE_KIND vkind = **value;
+
+	if (tkind == PRT_KIND_ANY)
+	{
+		return PrtCloneValue(value);
+	}
+
+	switch (tkind)
+	{
+	case PRT_KIND_BOOL:
+	{
+		PrtAssert(vkind == PRT_KIND_BOOL, "Invalid type cast");
+		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
+		return (PRT_VALUE)PrtMkBoolValue(pVal->value.bl);
+	}
+	case PRT_KIND_EVENT:
+	{
+		//// Assumes event, id, mid are stored in a union with the same type 
+		PrtAssert(vkind == PRT_KIND_EVENT || PrtIsNullValue(value), "Invalid type cast");
+		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
+		return (PRT_VALUE)PrtMkEventValue(pVal->value.ev);
+	}
+	case PRT_KIND_ID:
+	{
+		//// Assumes event, id, mid are stored in a union with the same type 
+		PrtAssert(vkind == PRT_KIND_ID || PrtIsNullValue(value), "Invalid type cast");
+		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
+		return (PRT_VALUE)PrtMkIdValue(pVal->value.id);
+	}
+	case PRT_KIND_INT:
+	{
+		PrtAssert(vkind == PRT_KIND_INT, "Invalid type cast");
+		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
+		return (PRT_VALUE)PrtMkIntValue(pVal->value.nt);
+	}
+	case PRT_KIND_MID:
+	{
+		//// Assumes event, id, mid are stored in a union with the same type 
+		PrtAssert(vkind == PRT_KIND_MID || PrtIsNullValue(value), "Invalid type cast");
+		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
+		return (PRT_VALUE)PrtMkMIdValue(pVal->value.md);
+	}
+	case PRT_KIND_FORGN:
+	{
+		PrtAssert(vkind == PRT_KIND_FORGN, "Invalid type cast");
+		PRT_FORGNVALUE *fVal = (PRT_FORGNVALUE *)value;
+		PRT_FORGNTYPE *fType = (PRT_FORGNTYPE *)type;
+		PRT_FORGNVALUE *cVal = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
+		cVal->type = PrtCloneType((PRT_TYPE)fType);
+		cVal->value = fType->cloner(fType->typeTag, fVal->value);
+		return (PRT_VALUE)cVal;
+	}
+	case PRT_KIND_MAP:
+	{
+		PrtAssert(vkind == PRT_KIND_MAP, "Invalid type cast");
+		PRT_MAPVALUE *mVal = (PRT_MAPVALUE *)value;
+		PRT_MAPTYPE *mType = (PRT_MAPTYPE *)type;
+		PRT_MAPVALUE *cVal = (PRT_MAPVALUE *)PrtMkDefaultValue(type);
+		if (mVal->capNum > 0)
+		{
+			//// Eagerly allocate capacity in the clone to avoid intermediate rehashings.
+			PrtFree(cVal->buckets);
+			cVal->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[mVal->capNum], sizeof(PRT_MAPNODE *));
+			cVal->capNum = mVal->capNum;
+		}
+
+		PRT_MAPNODE *next = mVal->first;
+		while (next != NULL)
+		{
+			PrtMapUpdateEx(cVal, PrtCastValue(next->key, mType->domType), PrtCastValue(next->value, mType->codType), PRT_FALSE);
+			next = next->insertNext;
+		}
+
+		return (PRT_VALUE)cVal;
+	}
+	case PRT_KIND_NMDTUP:
+	{
+		PrtAssert(vkind == PRT_KIND_NMDTUP, "Invalid type cast");
+		PRT_UINT32 i;
+		PRT_TUPVALUE *tVal = (PRT_TUPVALUE *)value;
+		PRT_NMDTUPTYPE *tType = (PRT_NMDTUPTYPE *)type;
+		PRT_NMDTUPTYPE *srcType = (PRT_NMDTUPTYPE *)tVal->type;
+		PRT_UINT32 arity = tType->arity;
+		PrtAssert(arity == srcType->arity, "Invalid type cast");
+
+		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
+		cVal->type = PrtCloneType(type);
+		cVal->values = (PRT_VALUE *)PrtCalloc(arity, sizeof(PRT_VALUE));
+		for (i = 0; i < arity; ++i)
+		{
+			PrtAssert(strncmp(tType->fieldNames[i], srcType->fieldNames[i], PRT_MAXFLDNAME_LENGTH) == 0, "Invalid type cast");
+			cVal->values[i] = PrtCastValue(tVal->values[i], tType->fieldTypes[i]);
+		}
+
+		return (PRT_VALUE)cVal;
+	}
+	case PRT_KIND_TUPLE:
+	{
+		PrtAssert(vkind == PRT_KIND_TUPLE, "Invalid type cast");
+		PRT_UINT32 i;
+		PRT_TUPVALUE *tVal = (PRT_TUPVALUE *)value;
+		PRT_TUPTYPE *tType = (PRT_TUPTYPE *)type;
+		PRT_TUPTYPE *srcType = (PRT_TUPTYPE *)tVal->type;
+		PRT_UINT32 arity = tType->arity;
+		PrtAssert(arity == srcType->arity, "Invalid type cast");
+
+		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
+		cVal->type = PrtCloneType(type);
+		cVal->values = (PRT_VALUE *)PrtCalloc(arity, sizeof(PRT_VALUE));
+		for (i = 0; i < arity; ++i)
+		{
+			cVal->values[i] = PrtCastValue(tVal->values[i], tType->fieldTypes[i]);
+		}
+
+		return (PRT_VALUE)cVal;
+	}
+	case PRT_KIND_SEQ:
+	{
+		PrtAssert(vkind == PRT_KIND_SEQ, "Invalid type cast");
+		PRT_SEQVALUE *sVal = (PRT_SEQVALUE *)value;
+		PRT_SEQTYPE *sType = (PRT_SEQTYPE *)type;
+		PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
+		cVal->type = PrtCloneType(type);
+		cVal->capacity = sVal->capacity;
+		cVal->size = sVal->size;
+		if (sVal->capacity == 0)
+		{
+			cVal->values = NULL;
+		}
+		else
+		{
+			PRT_UINT32 i;
+			cVal->values = (PRT_VALUE *)PrtCalloc(sVal->capacity, sizeof(PRT_VALUE));
+			for (i = 0; i < sVal->size; ++i)
+			{
+				cVal->values[i] = PrtCastValue(sVal->values[i], sType->innerType);
+			}
+		}
+
+		return (PRT_VALUE)cVal;
+	}
+	default:
+		PrtAssert(PRT_FALSE, "Invalid type");
+		return NULL;
+	}
+}
+
+PRT_BOOLEAN PrtInhabitsType(_In_ PRT_VALUE value, _In_ PRT_TYPE type)
+{
+	PrtAssert(**value >= 0 && **value < PRT_TYPE_KIND_COUNT, "Invalid value");
+	PrtAssert(*type >= 0 && *type < PRT_TYPE_KIND_COUNT, "Invalid type");
+
+	PRT_TYPE_KIND tkind = *type;
+	PRT_TYPE_KIND vkind = **value;
+
+	PrtAssert(vkind != PRT_KIND_ANY, "Value must have a more concrete type");
+	if (tkind == PRT_KIND_ANY)
+	{
+		return PRT_TRUE;	
+	}
+
+	switch (tkind)
+	{
+	case PRT_KIND_BOOL:
+		return vkind == PRT_KIND_BOOL ? PRT_TRUE : PRT_FALSE;
+	case PRT_KIND_EVENT:
+		return (vkind == PRT_KIND_EVENT || PrtIsNullValue(value)) ? PRT_TRUE : PRT_FALSE;
+	case PRT_KIND_ID:
+		return (vkind == PRT_KIND_ID || PrtIsNullValue(value)) ? PRT_TRUE : PRT_FALSE;
+	case PRT_KIND_INT:
+		return vkind == PRT_KIND_INT ? PRT_TRUE : PRT_FALSE;
+	case PRT_KIND_MID:
+		return (vkind == PRT_KIND_MID || PrtIsNullValue(value)) ? PRT_TRUE : PRT_FALSE;
+	case PRT_KIND_FORGN:
+		return vkind == PRT_KIND_FORGN ? PRT_TRUE : PRT_FALSE;
+	case PRT_KIND_MAP:
+	{
+		if (vkind != PRT_KIND_MAP)
+		{
+			return PRT_FALSE;
+		}
+	
+		PRT_MAPVALUE *mVal = (PRT_MAPVALUE *)value;
+		PRT_MAPTYPE *mType = (PRT_MAPTYPE *)type;
+		PRT_MAPNODE *next = mVal->first;
+		while (next != NULL)
+		{
+			if (!PrtInhabitsType(next->key, mType->domType) || !PrtInhabitsType(next->value, mType->codType))
+			{
+				return PRT_FALSE;
+			}
+
+			next = next->insertNext;
+		}
+
+		return PRT_TRUE;
+	}
+	case PRT_KIND_NMDTUP:
+	{
+		if (vkind != PRT_KIND_NMDTUP)
+		{
+			return PRT_FALSE;
+		}
+
+		PRT_UINT32 i;
+		PRT_TUPVALUE *tVal = (PRT_TUPVALUE *)value;
+		PRT_NMDTUPTYPE *tType = (PRT_NMDTUPTYPE *)type;
+		PRT_NMDTUPTYPE *srcType = (PRT_NMDTUPTYPE *)tVal->type;
+		PRT_UINT32 arity = tType->arity;
+		if (arity != srcType->arity)
+		{
+			return PRT_FALSE;
+		}
+
+		for (i = 0; i < arity; ++i)
+		{
+			if (strncmp(tType->fieldNames[i], srcType->fieldNames[i], PRT_MAXFLDNAME_LENGTH) != 0)
+			{
+				return PRT_FALSE;
+			}
+			else if (!PrtInhabitsType(tVal->values[i], tType->fieldTypes[i]))
+			{
+				return PRT_FALSE;
+			}
+		}
+
+		return PRT_TRUE;
+	}
+	case PRT_KIND_TUPLE:
+	{
+		if (vkind != PRT_KIND_TUPLE)
+		{
+			return PRT_FALSE;
+		}
+
+		PRT_UINT32 i;
+		PRT_TUPVALUE *tVal = (PRT_TUPVALUE *)value;
+		PRT_TUPTYPE *tType = (PRT_TUPTYPE *)type;
+		PRT_TUPTYPE *srcType = (PRT_TUPTYPE *)tVal->type;
+		PRT_UINT32 arity = tType->arity;
+		if (arity != srcType->arity)
+		{
+			return PRT_FALSE;
+		}
+
+		for (i = 0; i < arity; ++i)
+		{
+			if (!PrtInhabitsType(tVal->values[i], tType->fieldTypes[i]))
+			{
+				return PRT_FALSE;
+			}
+		}
+
+		return PRT_TRUE;
+	}
+	case PRT_KIND_SEQ:
+	{
+		if (vkind != PRT_KIND_SEQ)
+		{
+			return PRT_FALSE;
+		}
+
+		PRT_SEQVALUE *sVal = (PRT_SEQVALUE *)value;
+		PRT_SEQTYPE *sType = (PRT_SEQTYPE *)type;
+		if (sVal->size == 0)
+		{
+			return PRT_TRUE;
+		}
+		else
+		{
+			PRT_UINT32 i;
+			for (i = 0; i < sVal->size; ++i)
+			{
+				if (!PrtInhabitsType(sVal->values[i], sType->innerType))
+				{
+					return PRT_FALSE;
+				}
+			}
+		}
+
+		return PRT_TRUE;
+	}
+	default:
+		PrtAssert(PRT_FALSE, "Invalid type");
+		return PRT_FALSE;
 	}
 }
 

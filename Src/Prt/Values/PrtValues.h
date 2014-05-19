@@ -333,12 +333,18 @@ PRT_UINT32 PrtMapCapacity(_In_ PRT_MAPVALUE *map);
 */
 PRT_BOOLEAN PrtInhabitsType(_In_ PRT_VALUE value, _In_ PRT_TYPE type);
 
+/** Determines if value is a null event, id, or mid.
+* @param[in] value The value to check.
+* @returns `true` if the null value, `false` otherwise.
+*/
+PRT_BOOLEAN PrtIsNullValue(_In_ PRT_VALUE value);
+
 /** Casts value to type.   
 * Caller must know that type cast will succeed.
 * Method checks validity of type cast and causes an assertion failure if the case is invalid.
 * @param[in] value The value to cast (will be cloned).
 * @param[in] type  The type to cast (will be cloned).
-* @returns A copy of value with type. Caller is responsible for freeing.
+* @returns A copy of value that is a subtype of type. Caller is responsible for freeing.
 */
 PRT_VALUE PrtCastValue(_In_ PRT_VALUE value, _In_ PRT_TYPE type);
 

@@ -47,7 +47,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <CompileAs>CompileAsC</CompileAs>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);PRT_PLAT=PRT_PLAT_WINUSER;PRT_ARCH=PRT_ARCH_X86</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);PRT_PLAT=PRT_PLAT_WINUSER;PRT_ARCH=PRT_ARCH_X86;PRT_DEBUG</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

@@ -8,9 +8,6 @@
 /** "unsafe" string functions are used safely. Allows for portability of code between operating systems. */
 #define _CRT_SECURE_NO_WARNINGS
 
-#include <sal.h>
-#include <stddef.h>
-
 #ifndef PRT_ARCH
 #error No architecture was specified (see PrtConfig.h for details)
 #elif PRT_ARCH == PRT_ARCH_X86
@@ -21,11 +18,37 @@
 #error An invalid architecture was specified (see PrtConfig.h for details)
 #endif
 
+#ifdef PRT_DEBUG
+#ifndef _DEBUG
+#define _DEBUG
+#endif
+
+#define _CRTDBG_MAP_ALLOC
+
+#include <stdlib.h>
+#include <malloc.h>
+#include <crtdbg.h>
+#include <sal.h>
+#include <stddef.h>
+#include <synchapi.h>
+#include <windows.h>
+#include <stdio.h>
+
+#define PRT_DBG_ASSERT(condition, message) PrtAssert((condition), (message))
+#define PRT_DBG_START_MEM_BALANCED_REGION { _CrtMemState prtDbgMemStateInitial, prtDbgMemStateFinal, prtDbgMemStateDiff; _CrtMemCheckpoint(&prtDbgMemStateInitial);
+#define PRT_DBG_END_MEM_BALANCED_REGION _CrtMemCheckpoint(&prtDbgMemStateFinal); PrtAssert(!_CrtMemDifference(&prtDbgMemStateDiff, &prtDbgMemStateInitial, &prtDbgMemStateFinal), "Memory leak"); }
+
+#else
+
+#include <sal.h>
+#include <stddef.h>
 #include <synchapi.h>
 #include <windows.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <stdio.h>
+#include <malloc.h>
+
+#endif
 
 /** PRT_UINT8 is always an 8-bit unsigned integer. */
 typedef unsigned __int8  PRT_UINT8;
@@ -156,5 +179,4 @@ void *PrtCalloc(_In_ size_t nmemb, _In_ size_t size);
 * @see PrtFree
 */
 void *PrtRealloc(_Inout_ void *ptr, _In_ size_t size);
-
 #endif

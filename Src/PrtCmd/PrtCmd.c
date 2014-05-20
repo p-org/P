@@ -418,6 +418,12 @@ void BinaryBoolFunTest()
 
 int main(int argc, char *argv[])
 {
+	PRT_DBG_START_MEM_BALANCED_REGION
+	{
+		BinaryBoolFunTest();
+	}
+	PRT_DBG_END_MEM_BALANCED_REGION
+
 	/*
 	TupleTest();
 	NamedTupleTest();
@@ -429,6 +435,5 @@ int main(int argc, char *argv[])
 	MapTest2();
 	*/
 
-	BinaryBoolFunTest();
 	return 0;
 }

@@ -13,6 +13,7 @@ Abstract:
 
 ***********************************************************************************/
 
+#define TRACE_DELETE(DeletedMachineName, InState) SmfTraceDelete(DeletedMachineName, InState)
 
 #define TRACE_ENQUEUE(DesMachineName, DesMachineId, EventName, Payload) SmfTraceEnqueue(DesMachineName, DesMachineId, EventName, Payload)
 

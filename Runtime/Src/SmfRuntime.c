@@ -1257,7 +1257,7 @@ DoEntryOrExitOrActionFunction:
 			}
 
 		}
-		else
+		else if(Context->StateExecFun == SmfStateAction)
 		{
 			//
 			// Execute the action installed corresponding to trigger
@@ -1486,6 +1486,7 @@ DoTakeTransition:
 			// Trigger is non-null and hence its a raise or dequeue or unhandled event
 			//
 			SmfTakeTransition(Context, Context->Trigger.Event);
+
 			goto DoEntryOrExitOrActionFunction;
 		
 		}
@@ -1608,9 +1609,20 @@ __in SMF_EVENTDECL_INDEX	EventIndex
 		}
 		else
 		{
-			//Exception
-			SmfReportException(UnhandledEvent, Context);
-			LEAVE;
+			if(Context->Trigger.Event == 1) // 1 == Event_delete in the generated code
+			{
+#ifndef NDEBUG
+				SmfTraceStep(Context, traceDelete);
+#endif
+				SmfReportException(UnhandledEvent, Context); // Needs to be fixed and update the delete logic.
+				LEAVE;
+			}
+			else
+			{
+				//Exception
+				SmfReportException(UnhandledEvent, Context);
+				LEAVE;
+			}
 		}
 		
 

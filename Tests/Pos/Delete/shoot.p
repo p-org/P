@@ -7,7 +7,6 @@ main machine Gun {
         entry {
             target = new Target();
             send(target, Shot);
-			send(target, Shot);
         }
     }
 }

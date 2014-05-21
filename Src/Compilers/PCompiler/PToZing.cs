@@ -1434,8 +1434,6 @@ namespace PCompiler
             body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Return")),
                 MkZingSeq(
                 type == TranslationContext.Action ? Compiler.AddArgs(ZingData.App_Return, ZingData.Cnst_True) : type == TranslationContext.Exit ? MkZingAssert(ZingData.Cnst_False) : Compiler.AddArgs(ZingData.App_Return, ZingData.Cnst_Nil))));
-            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Delete")),
-                    type == TranslationContext.Action ? Compiler.AddArgs(ZingData.App_Return, ZingData.Cnst_False) : type == TranslationContext.Exit ? MkZingAssert(ZingData.Cnst_False) : Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst("transition_" + entityName))));
             body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Raise")),
                     type == TranslationContext.Action ? Compiler.AddArgs(ZingData.App_Return, ZingData.Cnst_False) : type == TranslationContext.Exit ? MkZingAssert(ZingData.Cnst_False) : Compiler.AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst("transition_" + entityName))));
             body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Call")),
@@ -2245,26 +2243,6 @@ namespace PCompiler
                         ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
                         return new ZingTranslationInfo(ZingData.Cnst_Nil, new PNilType());
                     }
-                    else if (id.Name == PData.Cnst_Delete.Node.Name)
-                    {
-                        if (compiler.allMachines[ctxt.machineName].IsSpec)
-                        {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("A spec machine cannot perform the delete operation."), 0, compiler.CompilingProgram));
-                            return null;
-                        }
-                        if (ctxt.translationContext != TranslationContext.Entry)
-                        {
-                            compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("Delete statement allowed only in entry functions.", ctxt.entityName), 0, compiler.CompilingProgram));
-                            return null;
-                        }
-                        var res = MkZingSeq(
-                            MkZingAssign(MkZingDot("myHandle", "currentEvent"), MkZingEvent("delete")),
-                            MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingIdentifier("null")),
-                            MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Delete"))),
-                            MkZingReturn(MkZingIdentifier("entryCtxt")));
-
-                        return new ZingTranslationInfo(res, new PNilType());
-                    }
                     else if (id.Name == PData.Cnst_Bool.Node.Name)
                     {
                         return new ZingTranslationInfo(PData.Cnst_Bool, new PNilType());
@@ -2288,6 +2266,10 @@ namespace PCompiler
                     else if (id.Name == PData.Cnst_Default.Node.Name)
                     {
                         return new ZingTranslationInfo(MkZingEvent(Compiler.DefaultEvent), new PEventType());
+                    }
+                    else if (id.Name == PData.Cnst_Delete.Node.Name)
+                    {
+                        return new ZingTranslationInfo(MkZingEvent(Compiler.DeleteEvent), new PEventType());
                     }
                     else
                     {

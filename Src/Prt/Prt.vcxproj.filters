@@ -47,5 +47,8 @@
     <ClInclude Include="Values\PrtValues.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PrtProgram.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

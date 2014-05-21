@@ -4,8 +4,17 @@
 */
 #ifndef PRT_H
 #define PRT_H
-#include "Config\PrtConfig.h"
-#include "Values\PrtValues.h"
+
+#include "PrtProgram.h"
+
+/** The state of a machine instance */
+typedef struct PRT_MACHINE_INST
+{
+	PRT_PROGRAM *program;
+	PRT_UINT32  instIndex;
+	PRT_VALUE   *varValues;
+	PRT_UINT32  crntStateIndex;
+} PRT_MACHINE_INST;
 
 /**
 * Starts the P runtime. Must be called once per process and before any other calls to the runtime API.

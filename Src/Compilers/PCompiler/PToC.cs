@@ -3240,8 +3240,7 @@ Environment:
                     }
                     else if (id.Name == PData.Cnst_Delete.Node.Name)
                     {
-                        return new CTranslationInfo(Compiler.AddArgs(CData.App_Seq(n.Span), MkFunApp("SmfDelete", n.Span, MkId("Context")),
-                            ctxt.emitAllCleanup(Compiler.AddArgs(CData.App_Return(n.Span), CData.Cnst_Nil(n.Span)))));
+                        return new CTranslationInfo(MkId("SmfDeleteEvent", n.Span));
                     }
                     else if (id.Name == PData.Cnst_Null.Node.Name)
                     {

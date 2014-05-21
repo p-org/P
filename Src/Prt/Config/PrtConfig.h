@@ -49,6 +49,11 @@
 #define PRT_DISTR_CM 8
 
 /**
+* \def PRT_DEBUG
+* Uses debug versions of some libraries and performs extra run-time checks.
+*/
+
+/**
 * \def PRT_PLAT
 * Sets the target platform. Default is `PRT_PLAT_WINUSER`
 */
@@ -80,14 +85,26 @@
 #define PRT_DISTR PRT_DISTR_NONE
 #endif
 
+#ifndef PRT_DEBUG
 /**
-* \def PRT_DBG_ASSERT
-* Expands to PrtAssert unless PRT_DISABLE_DBGASSERTS is defined.
+* Expands to PrtAssert if PRT_DEBUG is defined.
 */
-#ifndef PRT_DISABLE_ASSERTS
-#define PRT_DBG_ASSERT(condition, message) PrtAssert((condition), (message))
-#else
 #define PRT_DBG_ASSERT(condition, message) 
+
+/**
+* Marks the beginning of a region of code that may allocate memory,
+* but will deallocate all such memory by the end of the region.
+* @see PRT_DBG_END_MEM_BALANCED_REGION
+*/
+#define PRT_DBG_START_MEM_BALANCED_REGION
+
+/**
+* Marks the end of a region of code that may have allocated memory,
+* but must have deallocate all such memory be now. An exception is thrown
+* if memory was not returned to the starting state.
+* @see PRT_DBG_START_MEM_BALANCED_REGION
+*/
+#define PRT_DBG_END_MEM_BALANCED_REGION
 #endif
 
 /** PRT uses these definitions for boolean values */

@@ -1289,8 +1289,13 @@ namespace PCompiler
             var currentDeferredSet = MkZingIdentifier("currentDeferredSet");
             var smEventSetType = Factory.Instance.MkCnst("SM_EVENT_SET");
             var iteStmt = MkZingIfThenElse(MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingEvent("delete")),
-                                    MkZingSeq(MkZingAssign(currentDeferredSet, Compiler.AddArgs(ZingData.App_New, smEventSetType, ZingData.Cnst_Nil)),
-                                              MkZingCallStmt(MkZingCall(MkZingDot("myHandle", "DequeueEvent"), ZingData.Cnst_False, currentDeferredSet, ZingData.Cnst_False))),
+                                    MkZingSeq(MkZingAssign(currentDeferredSet, MkZingIdentifier("null")),
+                                    MkZingAssign(MkZingDot("myHandle", "buffer"), MkZingIdentifier("null")),
+                                    MkZingAssign(MkZingDot("myHandle", "isDeleted"), ZingData.Cnst_True),
+                                    MkZingAssign(MkZingIdentifier("localActions"), MkZingIdentifier("null")),
+                                    MkZingAssign(MkZingIdentifier("stackActionSet"), MkZingIdentifier("null")),
+                                    MkZingAssign(MkZingIdentifier("stackDeferredSet"), MkZingIdentifier("null")),
+                                    MkZingReturn(ZingData.Cnst_Nil)),
                                     ZingData.Cnst_Nil);
 
 

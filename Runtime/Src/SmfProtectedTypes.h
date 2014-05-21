@@ -31,11 +31,14 @@ Environment:
 enum _SMF_RESERVED_EVENT
 {
 	SmfResEventStart = LONG_MAX,
-//
-// If Trigger points to this value then the transition taken was a Default transition
-//
+	//
+	// If Trigger points to this value then the transition taken was a Default transition
+	//
 	SmfDefaultEvent = LONG_MAX,
-
+	//
+	// Delete Event 
+	//
+	SmfDeleteEvent = LONG_MAX
 };
 
 //

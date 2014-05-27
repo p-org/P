@@ -94,13 +94,39 @@ typedef struct PRT_EVENTDECL
 	PRT_TYPE   type;         /**< The type of the payload associated with this event (or NULL) */
 } PRT_EVENTDECL;
 
+/** The kinds of program elements that can be annotated. */
+typedef enum PRT_ANNOTATION_KIND
+{
+	PRT_ANNOT_PROGRAM  = 0,  /**< A program-wide annotation, uniquely identified.                                                    */
+	PRT_ANNOT_MACHINE  = 1,  /**< A machine-wide annotation. Specific machine identified by a machine index.                         */
+	PRT_ANNOT_EVENT    = 2,  /**< An event annotation. Specific event identified by an event index.                                  */
+	PRT_ANNOT_EVENTSET = 3,  /**< An event set annotation. Specific set identified by a machine and set index.                       */
+	PRT_ANNOT_VAR      = 4,  /**< An variable annotation. Specific variable identified by a machine and variable index.              */
+	PRT_ANNOT_STATE    = 5,  /**< A state annotation. Specific state identified by a machine and state index.                        */
+	PRT_ANNOT_TRANS    = 6,  /**< A transition annotation. Specific transition identified by a machine, state, and transition index. */
+	PRT_ANNOT_ACTION   = 7   /**< An action annotation. Specific action identified by a machine, state, and action index.            */
+} PRT_ANNOTATION_KIND;
+
+/** Represents an annotation of a program element */
+typedef struct PRT_ANNOTATION
+{
+	PRT_ANNOTATION_KIND kind;       /**< The kind of element being annotated                   */
+	PRT_UINT32          index1;     /**< The first index for identifying the element           */
+	PRT_UINT32          index2;     /**< The second index for identifying the element          */
+	PRT_UINT32          index3;     /**< The third index for identifying the element           */
+	PRT_GUID            annotGuid;  /**< The a guid for describing the kind of annotation data */
+	void                *annotData; /**< A pointer to opaque annotation data                   */
+} PRT_ANNOTATION;
+
 /** Represents a P program */
 typedef struct PRT_PROGRAM
 {
-	PRT_UINT32      nEvents;   /**< The number of events   */
-	PRT_UINT32      nMachines; /**< The number of machines */
-	PRT_EVENTDECL   *events;   /**< The array of events    */
-	PRT_MACHINEDECL *machines; /**< The array of machines  */
+	PRT_UINT32      nEvents;      /**< The number of events      */
+	PRT_UINT32      nMachines;    /**< The number of machines    */
+	PRT_UINT32      nAnnotations; /**< The number of annotations */
+	PRT_EVENTDECL   *events;      /**< The array of events       */
+	PRT_MACHINEDECL *machines;    /**< The array of machines     */
+	PRT_ANNOTATION  *annotations; /**< The array of annotations  */
 } PRT_PROGRAM;
 
 #endif

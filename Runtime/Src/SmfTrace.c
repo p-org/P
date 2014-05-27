@@ -62,6 +62,25 @@ __in PCWSTR		ActionName
 }
 
 VOID
+SmfTraceDelete(
+__in PCWSTR DeletedMachineName,
+__in PCWSTR InState
+)
+{
+#ifdef KERNEL_MODE
+	DbgPrint(
+			"<DeleteLog> Machine %ws Deleted in State %ws \n", 
+			DeletedMachineName,
+			InState);
+#else
+	printf(
+			"<DeleteLog> Machine %ws Deleted in State %ws \n", 
+			DeletedMachineName,
+			InState);
+#endif
+}
+
+VOID
 SmfTraceEnqueue(
 __in PCWSTR		DesMachineName,
 __in ULONG_PTR	DesMachineId,

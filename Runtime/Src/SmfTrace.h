@@ -25,6 +25,12 @@ __in ULONG_PTR	Payload
 );
 
 VOID
+SmfTraceDelete(
+__in PCWSTR DeletedMachineName,
+__in PCWSTR InState
+);
+
+VOID
 SmfTraceDequeue(
 __in PCWSTR		MachineName,
 __in ULONG_PTR	MachineId,

@@ -1,0 +1,93 @@
+﻿domain P
+{        
+    /*************************************************************/
+    /****************          Type Language          ************/
+    /*************************************************************/    
+       
+    //// The basic type id accepts any machine.
+    BaseType        ::= new ({ NULL, BOOL, INT, EVENT, MACHINE, MODEL, FOREIGN, ANY }).
+    TupType         ::= new (hd: any TypeExpr, tl: any TupType + { NIL }).
+    NmdTupType      ::= new (hd: any NmdTupTypeField, tl: any NmdTupType + { NIL }).
+    SeqType         ::= new (x: any TypeExpr).
+    MapType         ::= new (k: any TypeExpr, v: any TypeExpr).
+    NmdTupTypeField ::= new (name: any String, type: any TypeExpr). 
+    TypeExpr        ::= BaseType + TupType + NmdTupType + SeqType + MapType.
+        
+    /*************************************************************/
+    /****************          Action Language        ************/
+    /*************************************************************/    
+                               
+    //// Expressions
+    Name       ::= new (name: String).
+    New        ::= new (name: String, arg: any Expr + { NIL }).
+    FunApp     ::= new (name: String, args: any Exprs + { NIL }).
+	NulApp     ::= new (op: Integer + Boolean + { THIS, TRIGGER, PAYLOAD, NONDET, FAIRNONDET, NULL, HALT }).
+	UnApp      ::= new (op: { NOT, NEG, KEYS, VALUES, SIZEOF }, arg1: any Expr).
+    BinApp     ::= new (op: { ADD, SUB, MUL, INTDIV, AND, OR, EQ, NEQ, LT, LE, GT, GE, IDX, IN }, arg1: any Expr, arg2: any Expr).
+	Field      ::= new (arg: any Expr, name: String).
+	Default    ::= new (type: any TypeExpr). 
+	Cast       ::= new (arg: any Expr, type: any TypeExpr). 
+    Tuple      ::= new (body: any Exprs).
+    NamedTuple ::= new (body: any NamedExprs).
+    Exprs      ::= new (head: any Expr, tail: any Exprs + { NIL }).              
+    NamedExprs ::= new (field: String, exp: any Expr, tail: any NamedExprs + { NIL }).
+    Expr       ::= Name + New + NulApp + UnApp + BinApp + FunApp + Cast + Field + Default + Tuple + NamedTuple.
+    ExprsExt   ::= Expr + Exprs + NamedExprs.
+
+    //// Statements
+    NewStmt  ::= new (name: String, arg:  any Expr + { NIL }).
+    FunStmt  ::= new (name: String, args: any Exprs + { NIL }).
+	NulStmt  ::= new (op: { SKIP, LEAVE }).
+	UnStmt   ::= new (op: { ASSERT }, arg1: any Expr).
+	BinStmt  ::= new (op: { REMOVE, ASSIGN }, arg1: any Expr, arg2: any Expr).
+	TerStmt  ::= new (op: { UPDATE, INSERT }, arg1: any Expr, arg2: any Expr, arg3: any Expr).
+    Return   ::= new (expr: any Expr + { NIL }).
+    Send     ::= new (target: any Expr, event: any Expr, payload: any Expr + { NIL }).
+    Raise    ::= new (ev: any Expr, payload: any Expr + { NIL }).
+    While    ::= new (cond: any Expr, body: any Stmt).
+    Ite      ::= new (cond: any Expr, true: any Stmt, false: any Stmt).
+    Seq      ::= new (s1: any Stmt, s2: any Stmt).
+
+    StateCall ::= new (name: String).
+    ExtCall   ::= new (names: any Strings, args: any Exprs + { NIL }).
+    MonCall   ::= new (type: String, ev: Expr, arg: Expr + { NIL }).
+    Strings   ::= new (str: any String, tail: any Strings + { NIL }).
+
+	Stmt ::= NewStmt + FunStmt + NulStmt + UnStmt + BinStmt + TerStmt + Return + Send +
+			 Raise + While + Ite + Seq + StateCall + ExtCall + MonCall. 
+
+    /*************************************************************/
+    /****************  State Machine Declarations    *************/
+    /*************************************************************/
+
+    MachineDecl  ::= fun (name: String -> kind: { REAL, MODEL, MONITOR }, card: any QueueConstraint, start: String).
+    EventDecl    ::= fun (name: String -> card: any QueueConstraint, payloadType: any TypeExpr + { NIL }).    
+    ActionDecl   ::= fun (name: String, owner: MachineDecl -> body: any Stmt).
+    StateDecl    ::= fun (name: String, owner: MachineDecl -> entryFun: any Stmt, exitFun: any Stmt, defers: EventSetDecl + { NIL }).
+    VarDecl      ::= fun (name: String, owner: MachineDecl -> type: any TypeExpr).
+    TransDecl    ::= fun (src: StateDecl, trig: EventDecl + { DEFAULT } -> dst: StateDecl, isPush: Boolean).
+    FunDecl      ::= fun (name: String, owner: MachineDecl -> params: any NmdTupType + { NIL },  return: any TypeExpr + { NIL }, isModel: Boolean, body: any Stmt).
+    SubMachDecl  ::= new (name: String, owner: MachineDecl).    
+    EventSetDecl ::= new (name: String, owner: MachineDecl).    
+	
+    AssumeMaxInstances ::= new (bound: Natural).
+    AssertMaxInstances ::= new (bound: Natural).
+	QueueConstraint    ::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
+
+    /*************************************************************/
+    /****************    Additional Configurators    *************/
+    /*************************************************************/
+
+    MainDecl   ::= new (main: MachineDecl).    
+	Install    ::= fun (state: StateDecl, event: EventDecl -> action: ActionDecl).
+    Stable     ::= new (state: StateDecl).
+    InSubMach  ::= fun (state: StateDecl -> sbm: SubMachDecl).
+    InEventSet ::= new (set: EventSetDecl, event: EventDecl).
+
+    /*************************************************************/
+    /****************          Annotations           *************/
+    /*************************************************************/
+
+	Annotation ::= new (ant: Annotable, key: String, value: Integer + Boolean + { NULL }).
+	Annotable  ::= MachineDecl + EventDecl + ActionDecl + StateDecl + VarDecl + TransDecl + FunDecl + EventSetDecl + { NIL }.
+}

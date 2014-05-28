@@ -178,6 +178,10 @@ App_Data/*.ldf
 # Microsoft Fakes
 FakesAssemblies/
 
+# =========================
+# Exclude generated cs files
+# =========================
+*.g.cs
 
 # =========================
 # Windows detritus

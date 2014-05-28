@@ -34,11 +34,7 @@ enum _SMF_RESERVED_EVENT
 	//
 	// If Trigger points to this value then the transition taken was a Default transition
 	//
-	SmfDefaultEvent = LONG_MAX,
-	//
-	// Delete Event 
-	//
-	SmfDeleteEvent = LONG_MAX
+	SmfDefaultEvent = LONG_MAX-1
 };
 
 //
@@ -92,6 +88,9 @@ enum _SMF_STATE_EXECFUN
 // If StateExecFun points to StateAction, then we should execute the action corresponding to trigger event for the current state
 //
 	SmfStateAction
+//
+// None of the above just execute the dequeue function
+//
 };
 
 /*********************************************************************************
@@ -228,7 +227,11 @@ typedef enum _SMF_TRACE_STEP
 //
 // trace Exit Function
 //
-	traceExit
+	traceExit,
+//
+// trace deletion of a machine
+//
+	traceDelete
 };
 
 /*********************************************************************************

@@ -52,6 +52,9 @@ Return Value:
 
 	switch (TStep)
 	{
+		case traceDelete:
+			TRACE_DELETE(Context->Driver->Machines[Context->InstanceOf].Name, SmfGetCurrentStateDecl(Context).Name);
+			break;
 		case traceEnqueue:
 			TRACE_ENQUEUE(Context->Driver->Machines[Context->InstanceOf].Name, Context->This, Context->Driver->Events[Context->EventQueue.Events[Context->EventQueue.Tail == 0 ? (Context->CurrentLengthOfEventQueue - 1) : (Context->EventQueue.Tail -1)].Event].Name, Context->EventQueue.Events[Context->EventQueue.Tail == 0 ? (Context->CurrentLengthOfEventQueue - 1) : (Context->EventQueue.Tail -1)].Arg.Value);
 			break;

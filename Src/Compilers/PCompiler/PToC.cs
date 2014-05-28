@@ -449,7 +449,7 @@ namespace PCompiler
                     "Event_",
                     0,
                     compiler.modelEventIds,
-                    Compiler.NullEvent),
+                    new List<string>() { Compiler.NullEvent, "delete" }),
                 MkEnum(
                     PData.Con_MachineDecl.Node.Name,
                     "MachineTypes",
@@ -1740,7 +1740,7 @@ namespace PCompiler
             string elemPrefix,
             int nameIndex,
             Dictionary<string, int> idMap = null,
-            string zeroth = null)
+            List<string> zeroth = null)
         {
             Contract.Requires(!string.IsNullOrEmpty(binName));
             var bin = compiler.GetBin(binName);
@@ -1748,8 +1748,10 @@ namespace PCompiler
             List<string> names = new List<string>();
 
             if (zeroth != null)
-                names.Add(zeroth);
-
+            {
+                foreach(var e in zeroth)
+                    names.Add(e);
+            }
             foreach (var e in bin)
             {
                 name = compiler.GetName(e.Node, nameIndex);
@@ -1837,7 +1839,7 @@ namespace PCompiler
                 var maxInstances = ev.Value.maxInstances;
                 var payloadType = ev.Value.payloadType;
 
-                if (eventName == Compiler.DefaultEvent || eventName == Compiler.DeleteEvent)
+                if (eventName == Compiler.DefaultEvent)
                     continue;
 
                 var data = MkInit(
@@ -3240,7 +3242,7 @@ Environment:
                     }
                     else if (id.Name == PData.Cnst_Delete.Node.Name)
                     {
-                        return new CTranslationInfo(MkId("SmfDeleteEvent", n.Span));
+                        return new CTranslationInfo(MkId("Event_delete", n.Span));
                     }
                     else if (id.Name == PData.Cnst_Null.Node.Name)
                     {

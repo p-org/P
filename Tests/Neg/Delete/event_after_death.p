@@ -8,6 +8,7 @@ main machine Gun {
             target = new Target();
             send(target, Shot);
             send(target, Shot);
+			assert(false);
         }
     }
 }

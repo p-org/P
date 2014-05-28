@@ -44,7 +44,7 @@
 				return;
 			 }
 
-			 keywords = new Dictionary<string, int>(49);
+			 keywords = new Dictionary<string, int>(64);
 
 			 keywords.Add("while", (int)Tokens.WHILE);
 			 keywords.Add("if", (int)Tokens.IF);
@@ -53,20 +53,20 @@
 			 keywords.Add("new", (int)Tokens.NEW);
 			 keywords.Add("this", (int)Tokens.THIS);
 			 keywords.Add("null", (int)Tokens.NULL);
-			 keywords.Add("arg", (int)Tokens.ARG);
 			 keywords.Add("trigger", (int)Tokens.TRIGGER);
 			 keywords.Add("leave", (int)Tokens.LEAVE);
 			 keywords.Add("true", (int)Tokens.TRUE);
 			 keywords.Add("false", (int)Tokens.FALSE);
 			 keywords.Add("sizeof", (int)Tokens.SIZEOF);
 			 keywords.Add("keys", (int)Tokens.KEYS);
+			 keywords.Add("values", (int)Tokens.VALUES);
 
 			 keywords.Add("assert", (int)Tokens.ASSERT);
 			 keywords.Add("send", (int)Tokens.SEND);
 			 keywords.Add("call", (int)Tokens.CALL);
 			 keywords.Add("monitor", (int)Tokens.MONITOR);
 			 keywords.Add("raise", (int)Tokens.RAISE);
-			 keywords.Add("delete", (int)Tokens.DELETE);
+			 keywords.Add("halt", (int)Tokens.HALT);
 
 			 keywords.Add("int", (int)Tokens.INT);
 			 keywords.Add("bool", (int)Tokens.BOOL);
@@ -101,6 +101,7 @@
 			 keywords.Add("do", (int)Tokens.DO);
 
 			 keywords.Add("in", (int)Tokens.IN);
+			 keywords.Add("as", (int)Tokens.AS);
 		 }
 
          int GetIdToken(string txt)
@@ -174,7 +175,8 @@ Id              [A-Za-z_]([A-Za-z_0-9]*)
 "&&"									   { return (int)Tokens.LAND;   }
 "||"									   { return (int)Tokens.LOR;    }
 
-"**"									   { return (int)Tokens.FAIRNONDET; }
+"$"									       { return (int)Tokens.NONDET; }
+"$$"    							       { return (int)Tokens.FAIRNONDET; }
 
 [{]                                        { return (int)Tokens.LCBRACE;  }
 [}]                                        { return (int)Tokens.RCBRACE;  }

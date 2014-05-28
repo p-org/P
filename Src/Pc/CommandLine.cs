@@ -19,6 +19,12 @@
         event e3 assume 5;
         event e4 : (machine, foreign);
         event e5 assert 1 : (mach: machine, dat: seq [foreign]);
+        main model M1 assume 10 { var x, y, z : int;  }
+        machine M2 { var x : int; var y : seq[foreign]; var z : (m: machine, c: int); }
+        monitor Mon { 
+            var x : int; 
+            action Foo { assert 1 > 2 == 3 < 4;  }
+        }
         ";
 
         static void Main(string[] args)
@@ -27,7 +33,6 @@
             List<Flag> flags;
             PProgram prog;
             var result = parser.ParseText(new ProgramName("test.p"), testProg1, out flags, out prog);
-
             foreach (var f in flags)
             {
                 Console.WriteLine(f.Message);

@@ -13,13 +13,21 @@
 
     internal partial class Parser : ShiftReduceParser<LexValue, LexLocation>
     {
+        private static readonly P_Root.Exprs TheDefaultExprs = new P_Root.Exprs();
+
         private ProgramName parseSource;
         private List<Flag> parseFlags;
         private PProgram parseProgram;
 
         private bool parseFailed = false;
         private P_Root.EventDecl crntEventDecl = null;
+        private P_Root.MachineDecl crntMachDecl = null;
+        private List<P_Root.VarDecl> crntVarList = new List<P_Root.VarDecl>();
+
+        private Stack<P_Root.Expr> valueExprStack = new Stack<P_Root.Expr>();
+        private Stack<P_Root.ExprsExt> exprsStack = new Stack<P_Root.ExprsExt>();
         private Stack<P_Root.TypeExpr> typeExprStack = new Stack<P_Root.TypeExpr>();
+        private Stack<P_Root.Stmt> stmtStack = new Stack<P_Root.Stmt>();
 
         public P_Root.TypeExpr Debug_PeekTypeStack
         {
@@ -73,6 +81,7 @@
             return new Span(loc.StartLine, loc.StartColumn + 1, loc.EndLine, loc.EndColumn + 1);
         }
 
+        #region Pushers
         private void PushTypeExpr(P_Root.TypeExpr typeExpr)
         {
             typeExprStack.Push(typeExpr);
@@ -94,7 +103,7 @@
             {
                 Contract.Assert(typeExprStack.Count > 0);
                 tupType.hd = (P_Root.IArgType_TupType__0)typeExprStack.Pop();
-                tupType.tl = MkNil(span);
+                tupType.tl = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
             else
             {
@@ -110,18 +119,16 @@
         {
             var tupType = P_Root.MkNmdTupType();
             var tupFld = P_Root.MkNmdTupTypeField();
-            var tupFldName = P_Root.MkString(fieldName);
 
             tupType.Span = span;
             tupFld.Span = span;
-            tupFldName.Span = span;
-            tupFld.name = tupFldName;
+            tupFld.name = MkString(fieldName, span);
             tupType.hd = tupFld;
             if (isLast)
             {
                 Contract.Assert(typeExprStack.Count > 0);
                 tupFld.type = (P_Root.IArgType_NmdTupTypeField__1)typeExprStack.Pop();
-                tupType.tl = MkNil(span);
+                tupType.tl = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
             else
             {
@@ -143,33 +150,258 @@
             typeExprStack.Push(mapType);
         }
 
-        private void AddEvent(string name, Span nameSpan, Span span)
+        private void PushNewExpr(string name, bool hasArgs, Span nameSpan, Span span)
         {
-            if (crntEventDecl == null)
+            Contract.Assert(!hasArgs || exprsStack.Count > 0);
+            var newExpr = P_Root.MkNew();
+            newExpr.name = MkString(name, nameSpan);
+            newExpr.Span = span;
+            if (hasArgs)
             {
-                crntEventDecl = P_Root.MkEventDecl();
-                crntEventDecl.card = MkNil(span);
-                crntEventDecl.payloadType = MkNil(span);
+                var arg = exprsStack.Pop();
+                if (arg.Symbol == TheDefaultExprs.Symbol)
+                {
+                    newExpr.arg = P_Root.MkTuple((P_Root.IArgType_Tuple__0)arg);
+                    newExpr.arg.Span = arg.Span;
+                }
+                else
+                {
+                    newExpr.arg = (P_Root.IArgType_New__1)arg;
+                }
+            }
+            else
+            {
+                newExpr.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
 
-            crntEventDecl.Span = span;
-            var nameNode = P_Root.MkString(name);
-            nameNode.Span = nameSpan;
-            crntEventDecl.name = nameNode;
-
-            parseProgram.Events.Add(crntEventDecl);
-            crntEventDecl = null;
+            valueExprStack.Push(newExpr);
         }
 
-        private void SetEventCard(string cardStr, bool isAssert, Span span)
+        private void PushFunExpr(string name, bool hasArgs, Span span)
         {
-            if (crntEventDecl == null)
+            Contract.Assert(!hasArgs || exprsStack.Count > 0);
+            var funExpr = P_Root.MkFunApp();
+            funExpr.name = MkString(name, span);
+            funExpr.Span = span;
+            if (hasArgs)
             {
-                crntEventDecl = P_Root.MkEventDecl();
-                crntEventDecl.payloadType = MkNil(span);
-                crntEventDecl.Span = span;
+                funExpr.args = (P_Root.Exprs)exprsStack.Pop();
+            }
+            else
+            {
+                funExpr.args = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
 
+            valueExprStack.Push(funExpr);
+        }
+
+        private void PushTupleExpr(bool isUnaryTuple)
+        {
+            Contract.Assert(valueExprStack.Count > 0);
+            P_Root.Exprs fullExprs;
+            var arg = (P_Root.IArgType_Exprs__0)valueExprStack.Pop();
+            if (isUnaryTuple)
+            {
+                fullExprs = P_Root.MkExprs(arg, MkUserCnst(P_Root.UserCnstKind.NIL, arg.Span));
+            }
+            else
+            {
+                fullExprs = P_Root.MkExprs(arg, (P_Root.Exprs)exprsStack.Pop());
+            }
+            
+            var tuple = P_Root.MkTuple(fullExprs);
+            fullExprs.Span = arg.Span;
+            tuple.Span = arg.Span;
+            valueExprStack.Push(tuple);
+        }
+
+        private void PushNmdTupleExpr(string name, Span span, bool isUnaryTuple)
+        {
+            Contract.Assert(valueExprStack.Count > 0);
+            P_Root.NamedExprs fullExprs;
+            var arg = (P_Root.IArgType_NamedExprs__1)valueExprStack.Pop();
+            if (isUnaryTuple)
+            {
+                fullExprs = P_Root.MkNamedExprs(
+                    MkString(name, span),
+                    arg, 
+                    MkUserCnst(P_Root.UserCnstKind.NIL, arg.Span));
+            }
+            else
+            {
+                fullExprs = P_Root.MkNamedExprs(
+                    MkString(name, span),                    
+                    arg,
+                    (P_Root.NamedExprs)exprsStack.Pop());
+            }
+
+            var tuple = P_Root.MkNamedTuple(fullExprs);
+            fullExprs.Span = span;
+            tuple.Span = span;
+            valueExprStack.Push(tuple);
+        }
+
+        private void PushExprs()
+        {
+            Contract.Assert(exprsStack.Count > 0);
+            Contract.Assert(valueExprStack.Count > 0);
+
+            var oldExprs = exprsStack.Pop();
+            if (oldExprs.Symbol != TheDefaultExprs.Symbol)
+            {
+                var coercedExprs = P_Root.MkExprs(
+                    (P_Root.IArgType_Exprs__0)oldExprs, 
+                    MkUserCnst(P_Root.UserCnstKind.NIL, oldExprs.Span));
+                coercedExprs.Span = oldExprs.Span;
+                oldExprs = coercedExprs;
+            }
+
+            var arg = (P_Root.IArgType_Exprs__0)valueExprStack.Pop();
+            var exprs = P_Root.MkExprs(arg, (P_Root.IArgType_Exprs__1)oldExprs);
+            exprs.Span = arg.Span;
+            exprsStack.Push(exprs);
+        }
+
+        private void PushNmdExprs(string name, Span span)
+        {
+            Contract.Assert(valueExprStack.Count > 0);
+            Contract.Assert(exprsStack.Count > 0);
+            var exprs = P_Root.MkNamedExprs(
+                MkString(name, span),
+                (P_Root.IArgType_NamedExprs__1)valueExprStack.Pop(),
+                (P_Root.NamedExprs)exprsStack.Pop());
+            exprs.Span = span;
+            exprsStack.Push(exprs);
+        }
+
+        private void MoveValToNmdExprs(string name, Span span)
+        {
+            Contract.Assert(valueExprStack.Count > 0);
+            var exprs = P_Root.MkNamedExprs(
+                MkString(name, span),
+                (P_Root.IArgType_NamedExprs__1)valueExprStack.Pop(),
+                MkUserCnst(P_Root.UserCnstKind.NIL, span));
+            exprs.Span = span;
+            exprsStack.Push(exprs);
+        }
+
+        private void MoveValToExprs(bool makeIntoExprs)
+        {
+            Contract.Assert(valueExprStack.Count > 0);
+            if (makeIntoExprs)
+            {
+                var arg = (P_Root.IArgType_Exprs__0)valueExprStack.Pop();
+                var exprs = P_Root.MkExprs(arg, MkUserCnst(P_Root.UserCnstKind.NIL, arg.Span));
+                exprs.Span = arg.Span;
+                exprsStack.Push(exprs);
+            }
+            else
+            {
+                exprsStack.Push((P_Root.ExprsExt)valueExprStack.Pop());
+            }
+        }
+
+        private void PushNulExpr(P_Root.UserCnstKind op, Span span)
+        {
+            var nulExpr = P_Root.MkNulApp(MkUserCnst(op, span));
+            nulExpr.Span = span;
+            valueExprStack.Push(nulExpr);
+        }
+
+        private void PushUnExpr(P_Root.UserCnstKind op, Span span)
+        {
+            Contract.Assert(valueExprStack.Count > 0);
+            var unExpr = P_Root.MkUnApp();
+            unExpr.op = MkUserCnst(op, span);
+            unExpr.arg1 = (P_Root.IArgType_UnApp__1)valueExprStack.Pop();
+            unExpr.Span = span;
+            valueExprStack.Push(unExpr);
+        }
+
+        private void PushDefaultExpr(Span span)
+        {
+            Contract.Assert(typeExprStack.Count > 0);
+            var defExpr = P_Root.MkDefault();
+            defExpr.type = (P_Root.IArgType_Default__0)typeExprStack.Pop();
+            defExpr.Span = span;
+            valueExprStack.Push(defExpr);
+        }
+
+        private void PushIntExpr(string intStr, Span span)
+        {
+            int val;
+            if (!int.TryParse(intStr, out val) || val < 0)
+            {
+                var errFlag = new Flag(
+                                 SeverityKind.Error,
+                                 span,
+                                 Constants.BadSyntax.ToString(string.Format("Bad int constant {0}", intStr)),
+                                 Constants.BadSyntax.Code,
+                                 parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+
+            var nulExpr = P_Root.MkNulApp(MkNumeric(val, span));
+            nulExpr.Span = span;
+            valueExprStack.Push(nulExpr);
+        }
+
+        private void PushCast(Span span)
+        {
+            Contract.Assert(valueExprStack.Count > 0);
+            Contract.Assert(typeExprStack.Count > 0);
+            var cast = P_Root.MkCast(
+                (P_Root.IArgType_Cast__0)valueExprStack.Pop(),
+                (P_Root.IArgType_Cast__1)typeExprStack.Pop());
+            cast.Span = span;
+            valueExprStack.Push(cast);
+        }
+
+        private void PushUnStmt(P_Root.UserCnstKind op, Span span)
+        {
+            Contract.Assert(valueExprStack.Count > 0);
+            var unStmt = P_Root.MkUnStmt();
+            unStmt.op = MkUserCnst(op, span);
+            unStmt.arg1 = (P_Root.IArgType_UnStmt__1)valueExprStack.Pop();
+            unStmt.Span = span;
+            stmtStack.Push(unStmt);
+        }
+
+        private void PushBinExpr(P_Root.UserCnstKind op, Span span)
+        {
+            Contract.Assert(valueExprStack.Count > 1);
+            var binApp = P_Root.MkBinApp();
+            binApp.op = MkUserCnst(op, span);
+            binApp.arg2 = (P_Root.IArgType_BinApp__2)valueExprStack.Pop();
+            binApp.arg1 = (P_Root.IArgType_BinApp__1)valueExprStack.Pop();
+            binApp.Span = span;
+            valueExprStack.Push(binApp);
+        }
+
+        private void PushName(string name, Span span)
+        {
+            var nameNode = P_Root.MkName(MkString(name, span));
+            nameNode.Span = span;
+            valueExprStack.Push(nameNode);
+        }
+
+        private void PushField(string name, Span span)
+        {
+            Contract.Assert(valueExprStack.Count > 0);
+            var field = P_Root.MkField();
+            field.name = MkString(name, span);
+            field.arg = (P_Root.IArgType_Field__0)valueExprStack.Pop();
+            field.Span = span;
+            valueExprStack.Push(field);
+        }
+
+        #endregion
+
+        #region Node setters
+        private void SetEventCard(string cardStr, bool isAssert, Span span)
+        {
+            var evDecl = GetCurrentEventDecl(span);
             int card;
             if (!int.TryParse(cardStr, out card) || card < 0)
             {
@@ -184,35 +416,176 @@
                 return;
             }
 
-            var cardNode = P_Root.MkNumeric(card);
-            cardNode.Span = span;
             if (isAssert)
             {
-                var assertNode = P_Root.MkAssertMaxInstances(cardNode);
+                var assertNode = P_Root.MkAssertMaxInstances(MkNumeric(card, span));
                 assertNode.Span = span;
-                crntEventDecl.card = assertNode;
+                evDecl.card = assertNode;
             }
             else
             {
-                var assumeNode = P_Root.MkAssumeMaxInstances(cardNode);
+                var assumeNode = P_Root.MkAssumeMaxInstances(MkNumeric(card, span));
                 assumeNode.Span = span;
-                crntEventDecl.card = assumeNode;
+                evDecl.card = assumeNode;
+            }
+        }
+
+        private void SetMachineCard(string cardStr, bool isAssert, Span span)
+        {
+            var machDecl = GetCurrentMachineDecl(span);
+            int card;
+            if (!int.TryParse(cardStr, out card) || card < 0)
+            {
+                var errFlag = new Flag(
+                                 SeverityKind.Error,
+                                 span,
+                                 Constants.BadSyntax.ToString(string.Format("Bad machine cardinality {0}", cardStr)),
+                                 Constants.BadSyntax.Code,
+                                 parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+                return;
+            }
+
+            if (isAssert)
+            {
+                var assertNode = P_Root.MkAssertMaxInstances(MkNumeric(card, span));
+                assertNode.Span = span;
+                machDecl.card = assertNode;
+            }
+            else
+            {
+                var assumeNode = P_Root.MkAssumeMaxInstances(MkNumeric(card, span));
+                assumeNode.Span = span;
+                machDecl.card = assumeNode;
             }
         }
 
         private void SetEventType(Span span)
         {
-            if (crntEventDecl == null)
-            {
-                crntEventDecl = P_Root.MkEventDecl();
-                crntEventDecl.card = MkNil(span);
-                crntEventDecl.Span = span;
-            }
-
+            var evDecl = GetCurrentEventDecl(span);
             Contract.Assert(typeExprStack.Count > 0);
-            crntEventDecl.payloadType = (P_Root.IArgType_EventDecl__2)typeExprStack.Pop();
+            evDecl.payloadType = (P_Root.IArgType_EventDecl__2)typeExprStack.Pop();
+        }
+        #endregion
+
+        #region Adders
+        private void AddVarDecl(string name, Span span)
+        {
+            var varDecl = P_Root.MkVarDecl();
+            varDecl.name = MkString(name, span);
+            varDecl.owner = GetCurrentMachineDecl(span);
+            varDecl.Span = span;
+            crntVarList.Add(varDecl);
         }
 
+        private void AddVarDecls()
+        {
+            Contract.Assert(typeExprStack.Count > 0);
+            Contract.Assert(crntVarList.Count > 0);
+            var typeExpr = (P_Root.IArgType_VarDecl__2)typeExprStack.Pop();
+            foreach (var vd in crntVarList)
+            {
+                vd.type = typeExpr;
+                parseProgram.Variables.Add(vd);
+            }
+
+            crntVarList.Clear();
+        }
+
+        private void AddEvent(string name, Span nameSpan, Span span)
+        {
+            var evDecl = GetCurrentEventDecl(span);
+            evDecl.Span = span;
+            evDecl.name = MkString(name, nameSpan);
+            parseProgram.Events.Add(evDecl);
+            crntEventDecl = null;
+        }
+
+        private void AddAction(string name, Span nameSpan, Span span)
+        {
+            P_Root.IArgType_ActionDecl__2 stmt;
+            if (stmtStack.Count == 0)
+            {
+                stmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
+                stmt.Span = span;
+            }
+            else
+            {
+                stmt = (P_Root.IArgType_ActionDecl__2)stmtStack.Pop();
+            }
+
+            var actDecl = P_Root.MkActionDecl(
+                MkString(name, nameSpan),
+                GetCurrentMachineDecl(span),
+                stmt);
+            actDecl.Span = span;
+            parseProgram.Actions.Add(actDecl);
+        }
+
+        private void AddMachine(P_Root.UserCnstKind kind, string name, Span nameSpan, Span span)
+        {
+            var machDecl = GetCurrentMachineDecl(span);
+            machDecl.Span = span;
+            machDecl.name = MkString(name, nameSpan);
+            machDecl.kind = MkUserCnst(kind, span);
+            parseProgram.Machines.Add(machDecl);
+            crntMachDecl = null;
+        }
+
+        private void AddMainDecl(Span span)
+        {
+            if (parseProgram.MainDecl != null)
+            {
+                var errFlag = new Flag(
+                                 SeverityKind.Error,
+                                 span,
+                                 Constants.BadSyntax.ToString("More than one main machine"),
+                                 Constants.BadSyntax.Code,
+                                 parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+                return;
+            }
+
+            var mainDecl = P_Root.MkMainDecl(GetCurrentMachineDecl(span));
+            mainDecl.Span = span;
+            parseProgram.MainDecl = mainDecl;
+        }
+        #endregion
+
+        #region Node getters
+        private P_Root.EventDecl GetCurrentEventDecl(Span span)
+        {
+            if (crntEventDecl != null)
+            {
+                return crntEventDecl;
+            }
+            
+            crntEventDecl = P_Root.MkEventDecl();
+            crntEventDecl.card = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            crntEventDecl.payloadType = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            crntEventDecl.Span = span;
+            return crntEventDecl;
+        }
+
+        private P_Root.MachineDecl GetCurrentMachineDecl(Span span)
+        {
+            if (crntMachDecl != null)
+            {
+                return crntMachDecl;
+            }
+
+            crntMachDecl = P_Root.MkMachineDecl();
+            crntMachDecl.name = MkString(string.Empty, span);
+            crntMachDecl.kind = MkUserCnst(P_Root.UserCnstKind.REAL, span);
+            crntMachDecl.card = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            crntMachDecl.start = MkString(string.Empty, span);
+            return crntMachDecl;
+        }
+        #endregion
+
+        #region Helpers
         private P_Root.TypeExpr MkBaseType(P_Root.UserCnstKind kind, Span span)
         {
             Contract.Requires(
@@ -232,18 +605,38 @@
             return bt;
         }
 
-        private P_Root.UserCnst MkNil(Span span)
+        private P_Root.UserCnst MkUserCnst(P_Root.UserCnstKind kind, Span span)
         {
-            var nil = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
-            nil.Span = span;
-            return nil;
+            var cnst = P_Root.MkUserCnst(kind);
+            cnst.Span = span;
+            return cnst;
+        }
+
+        private P_Root.StringCnst MkString(string s, Span span)
+        {
+            var str = P_Root.MkString(s);
+            str.Span = span;
+            return str;
+        }
+
+        private P_Root.RealCnst MkNumeric(int i, Span span)
+        {
+            var num = P_Root.MkNumeric(i);
+            num.Span = span;
+            return num;
         }
 
         private void ResetState()
         {
+            stmtStack.Clear();
+            valueExprStack.Clear();
+            exprsStack.Clear();
             typeExprStack.Clear();
+            crntVarList.Clear();
             parseFailed = false;
             crntEventDecl = null;
+            crntMachDecl = null;
         }
+        #endregion
     }
 }

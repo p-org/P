@@ -2969,7 +2969,7 @@ namespace PCompiler
                                 }
                                 var tmpVar = ctxt.getTmpVar(baseType.ValT, "tmpVal");
                                 ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(arg1.node, "Lookup"), arg2.node)));
-                                return new ZingTranslationInfo(tmpVar, baseType.KeyT, true, false);
+                                return new ZingTranslationInfo(tmpVar, baseType.ValT, true, false);
                             }
                             else
                             {

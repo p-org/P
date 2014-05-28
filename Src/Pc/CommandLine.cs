@@ -23,7 +23,7 @@
         machine M2 { var x : int; var y : seq[foreign]; var z : (m: machine, c: int); }
         monitor Mon { 
             var x : int; 
-            action Foo { assert 1 > 2 == 3 < 4;  }
+            action Foo {  monitor Mon1, foo, x; monitor Mon2, (x, y)[0];  }
         }
         ";
 

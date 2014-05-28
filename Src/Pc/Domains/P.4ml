@@ -35,26 +35,21 @@
     ExprsExt   ::= Expr + Exprs + NamedExprs.
 
     //// Statements
-    NewStmt  ::= new (name: String, arg:  any Expr + { NIL }).
+    Call     ::= new (name: String).
+    NewStmt  ::= new (name: String, arg: any Expr + { NIL }).
+    Raise    ::= new (ev: any Expr, arg: any Expr + { NIL }).
+    Send     ::= new (dest: any Expr, ev: any Expr, arg: any Expr + { NIL }).
+    Monitor  ::= new (name: String, ev: Expr, arg: Expr + { NIL }).
     FunStmt  ::= new (name: String, args: any Exprs + { NIL }).
 	NulStmt  ::= new (op: { SKIP, LEAVE }).
 	UnStmt   ::= new (op: { ASSERT }, arg1: any Expr).
 	BinStmt  ::= new (op: { REMOVE, ASSIGN }, arg1: any Expr, arg2: any Expr).
-	TerStmt  ::= new (op: { UPDATE, INSERT }, arg1: any Expr, arg2: any Expr, arg3: any Expr).
     Return   ::= new (expr: any Expr + { NIL }).
-    Send     ::= new (target: any Expr, event: any Expr, payload: any Expr + { NIL }).
-    Raise    ::= new (ev: any Expr, payload: any Expr + { NIL }).
     While    ::= new (cond: any Expr, body: any Stmt).
     Ite      ::= new (cond: any Expr, true: any Stmt, false: any Stmt).
     Seq      ::= new (s1: any Stmt, s2: any Stmt).
 
-    StateCall ::= new (name: String).
-    ExtCall   ::= new (names: any Strings, args: any Exprs + { NIL }).
-    MonCall   ::= new (type: String, ev: Expr, arg: Expr + { NIL }).
-    Strings   ::= new (str: any String, tail: any Strings + { NIL }).
-
-	Stmt ::= NewStmt + FunStmt + NulStmt + UnStmt + BinStmt + TerStmt + Return + Send +
-			 Raise + While + Ite + Seq + StateCall + ExtCall + MonCall. 
+	Stmt ::= NewStmt + FunStmt + NulStmt + UnStmt + BinStmt + Return + Send + Raise + While + Ite + Seq + Call + Monitor. 
 
     /*************************************************************/
     /****************  State Machine Declarations    *************/

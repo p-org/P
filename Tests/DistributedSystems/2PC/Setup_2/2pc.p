@@ -358,7 +358,7 @@ monitor ReadWrite {
 	}
 	action CheckReadFailure {
 		if(payload == client)
-			assert(data.key == -1 && data.val == -1);       
+			assert(data.key == -1 && data.val == -1);
 	}
 	start state Init {
 		entry {

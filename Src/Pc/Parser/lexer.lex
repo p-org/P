@@ -89,7 +89,6 @@
 			 keywords.Add("action", (int)Tokens.ACTION);
 			 keywords.Add("state", (int)Tokens.STATE);
 			 keywords.Add("submachine", (int)Tokens.SUBMACHINE);
-			 keywords.Add("maxqueue", (int)Tokens.MAXQUEUE);
 
 			 keywords.Add("entry", (int)Tokens.ENTRY);
 			 keywords.Add("exit", (int)Tokens.EXIT);
@@ -160,6 +159,7 @@ Id              [A-Za-z_]([A-Za-z_0-9]*)
 
 "=="                                       { return (int)Tokens.EQ;     }
 "="                                        { return (int)Tokens.ASSIGN; }
+"-="                                       { return (int)Tokens.REMOVE; }
 "!="                                       { return (int)Tokens.NE;     }
 "<="                                       { return (int)Tokens.LE;     }
 ">="                                       { return (int)Tokens.GE;     }

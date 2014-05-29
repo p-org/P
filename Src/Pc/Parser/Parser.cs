@@ -150,6 +150,136 @@
             typeExprStack.Push(mapType);
         }
 
+        private void PushCall(string name, Span nameSpan, Span span)
+        {
+            var callStmt = P_Root.MkCall(MkString(name, nameSpan));
+            callStmt.Span = span;
+            stmtStack.Push(callStmt);
+        }
+
+        private void PushSend(bool hasArgs, Span span)
+        {
+            Contract.Assert(!hasArgs || exprsStack.Count > 0);
+            Contract.Assert(valueExprStack.Count > 1);
+
+            var sendStmt = P_Root.MkSend();
+            sendStmt.Span = span;
+            if (hasArgs)
+            {
+                var arg = exprsStack.Pop();
+                if (arg.Symbol == TheDefaultExprs.Symbol)
+                {
+                    sendStmt.arg = P_Root.MkTuple((P_Root.IArgType_Tuple__0)arg);
+                    sendStmt.arg.Span = arg.Span;
+                }
+                else
+                {
+                    sendStmt.arg = (P_Root.IArgType_Send__2)arg;
+                }
+
+                sendStmt.ev = (P_Root.IArgType_Send__1)valueExprStack.Pop();
+                sendStmt.dest = (P_Root.IArgType_Send__0)valueExprStack.Pop();
+            }
+            else
+            {
+                sendStmt.ev = (P_Root.IArgType_Send__1)valueExprStack.Pop();
+                sendStmt.dest = (P_Root.IArgType_Send__0)valueExprStack.Pop();
+                sendStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            }
+
+            stmtStack.Push(sendStmt);
+        }
+
+        private void PushMonitor(bool hasArgs, string name, Span nameSpan, Span span)
+        {
+            Contract.Assert(!hasArgs || exprsStack.Count > 0);
+            Contract.Assert(valueExprStack.Count > 0);
+
+            var monitorStmt = P_Root.MkMonitor();
+            monitorStmt.name = MkString(name, nameSpan);
+            monitorStmt.Span = span;
+            if (hasArgs)
+            {
+                var arg = exprsStack.Pop();
+                if (arg.Symbol == TheDefaultExprs.Symbol)
+                {
+                    monitorStmt.arg = P_Root.MkTuple((P_Root.IArgType_Tuple__0)arg);
+                    monitorStmt.arg.Span = arg.Span;
+                }
+                else
+                {
+                    monitorStmt.arg = (P_Root.IArgType_Monitor__2)arg;
+                }
+
+                monitorStmt.ev = (P_Root.IArgType_Monitor__1)valueExprStack.Pop();
+            }
+            else
+            {
+                monitorStmt.ev = (P_Root.IArgType_Monitor__1)valueExprStack.Pop();
+                monitorStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            }
+
+            stmtStack.Push(monitorStmt);
+        }
+
+        private void PushRaise(bool hasArgs, Span span)
+        {
+            Contract.Assert(!hasArgs || exprsStack.Count > 0);
+            Contract.Assert(valueExprStack.Count > 0);
+
+            var raiseStmt = P_Root.MkRaise();
+            raiseStmt.Span = span;
+            if (hasArgs)
+            {
+                var arg = exprsStack.Pop();
+                if (arg.Symbol == TheDefaultExprs.Symbol)
+                {
+                    raiseStmt.arg = P_Root.MkTuple((P_Root.IArgType_Tuple__0)arg);
+                    raiseStmt.arg.Span = arg.Span;
+                }
+                else
+                {
+                    raiseStmt.arg = (P_Root.IArgType_Raise__1)arg;
+                }
+
+                raiseStmt.ev = (P_Root.IArgType_Raise__0)valueExprStack.Pop();
+            }
+            else
+            {
+                raiseStmt.ev = (P_Root.IArgType_Raise__0)valueExprStack.Pop();
+                raiseStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            }
+
+            stmtStack.Push(raiseStmt);
+        }
+
+        private void PushNewStmt(string name, bool hasArgs, Span nameSpan, Span span)
+        {
+            Contract.Assert(!hasArgs || exprsStack.Count > 0);
+            var newStmt = P_Root.MkNewStmt();
+            newStmt.name = MkString(name, nameSpan);
+            newStmt.Span = span;
+            if (hasArgs)
+            {
+                var arg = exprsStack.Pop();
+                if (arg.Symbol == TheDefaultExprs.Symbol)
+                {
+                    newStmt.arg = P_Root.MkTuple((P_Root.IArgType_Tuple__0)arg);
+                    newStmt.arg.Span = arg.Span;
+                }
+                else
+                {
+                    newStmt.arg = (P_Root.IArgType_NewStmt__1)arg;
+                }
+            }
+            else
+            {
+                newStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            }
+
+            stmtStack.Push(newStmt);
+        }
+
         private void PushNewExpr(string name, bool hasArgs, Span nameSpan, Span span)
         {
             Contract.Assert(!hasArgs || exprsStack.Count > 0);
@@ -175,6 +305,24 @@
             }
 
             valueExprStack.Push(newExpr);
+        }
+
+        private void PushFunStmt(string name, bool hasArgs, Span span)
+        {
+            Contract.Assert(!hasArgs || exprsStack.Count > 0);
+            var funStmt = P_Root.MkFunStmt();
+            funStmt.name = MkString(name, span);
+            funStmt.Span = span;
+            if (hasArgs)
+            {
+                funStmt.args = (P_Root.Exprs)exprsStack.Pop();
+            }
+            else
+            {
+                funStmt.args = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            }
+
+            stmtStack.Push(funStmt);
         }
 
         private void PushFunExpr(string name, bool hasArgs, Span span)
@@ -301,6 +449,23 @@
             }
         }
 
+        private void PushNulStmt(P_Root.UserCnstKind op, Span span)
+        {
+            var nulStmt = P_Root.MkNulStmt(MkUserCnst(op, span));
+            nulStmt.Span = span;
+            stmtStack.Push(nulStmt);
+        }
+
+        private void PushSeq()
+        {
+            Contract.Assert(stmtStack.Count > 1);
+            var seqStmt = P_Root.MkSeq();
+            seqStmt.s2 = (P_Root.IArgType_Seq__1)stmtStack.Pop();
+            seqStmt.s1 = (P_Root.IArgType_Seq__0)stmtStack.Pop();
+            seqStmt.Span = seqStmt.s1.Span;
+            stmtStack.Push(seqStmt);
+        }
+
         private void PushNulExpr(P_Root.UserCnstKind op, Span span)
         {
             var nulExpr = P_Root.MkNulApp(MkUserCnst(op, span));
@@ -358,6 +523,57 @@
             valueExprStack.Push(cast);
         }
 
+        private void PushIte(bool hasElse, Span span)
+        {
+            Contract.Assert(valueExprStack.Count > 0);
+            var ite = P_Root.MkIte();
+            ite.Span = span;
+            ite.cond = (P_Root.IArgType_Ite__0)valueExprStack.Pop();
+            if (hasElse)
+            {
+                Contract.Assert(stmtStack.Count > 1);
+                ite.@false = (P_Root.IArgType_Ite__2)stmtStack.Pop();
+                ite.@true = (P_Root.IArgType_Ite__1)stmtStack.Pop();
+            }
+            else
+            {
+                Contract.Assert(stmtStack.Count > 0);
+                var skip = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
+                skip.Span = span;
+                ite.@true = (P_Root.IArgType_Ite__1)stmtStack.Pop();
+                ite.@false = skip;
+            }
+
+            stmtStack.Push(ite);
+        }
+
+        private void PushReturn(bool returnsValue, Span span)
+        {
+            Contract.Assert(!returnsValue || valueExprStack.Count > 0);
+            var retStmt = P_Root.MkReturn();
+            retStmt.Span = span;
+            if (returnsValue)
+            {
+                retStmt.expr = (P_Root.IArgType_Return__0)valueExprStack.Pop();
+            }
+            else
+            {
+                retStmt.expr = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            }
+
+            stmtStack.Push(retStmt);
+        }
+
+        private void PushWhile(Span span)
+        {
+            Contract.Assert(valueExprStack.Count > 0 && stmtStack.Count > 0);
+            var whileStmt = P_Root.MkWhile(
+                (P_Root.IArgType_While__0)valueExprStack.Pop(),
+                (P_Root.IArgType_While__1)stmtStack.Pop());
+            whileStmt.Span = span;
+            stmtStack.Push(whileStmt);
+        }
+
         private void PushUnStmt(P_Root.UserCnstKind op, Span span)
         {
             Contract.Assert(valueExprStack.Count > 0);
@@ -366,6 +582,17 @@
             unStmt.arg1 = (P_Root.IArgType_UnStmt__1)valueExprStack.Pop();
             unStmt.Span = span;
             stmtStack.Push(unStmt);
+        }
+
+        private void PushBinStmt(P_Root.UserCnstKind op, Span span)
+        {
+            Contract.Assert(valueExprStack.Count > 1);
+            var binStmt = P_Root.MkBinStmt();
+            binStmt.op = MkUserCnst(op, span);
+            binStmt.arg2 = (P_Root.IArgType_BinStmt__2)valueExprStack.Pop();
+            binStmt.arg1 = (P_Root.IArgType_BinStmt__1)valueExprStack.Pop();
+            binStmt.Span = span;
+            stmtStack.Push(binStmt);
         }
 
         private void PushBinExpr(P_Root.UserCnstKind op, Span span)
@@ -504,17 +731,8 @@
 
         private void AddAction(string name, Span nameSpan, Span span)
         {
-            P_Root.IArgType_ActionDecl__2 stmt;
-            if (stmtStack.Count == 0)
-            {
-                stmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
-                stmt.Span = span;
-            }
-            else
-            {
-                stmt = (P_Root.IArgType_ActionDecl__2)stmtStack.Pop();
-            }
-
+            Contract.Assert(stmtStack.Count > 0);
+            var stmt = (P_Root.IArgType_ActionDecl__2)stmtStack.Pop();
             var actDecl = P_Root.MkActionDecl(
                 MkString(name, nameSpan),
                 GetCurrentMachineDecl(span),

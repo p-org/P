@@ -11,16 +11,16 @@
 %token INT BOOL FOREIGN ANY SEQ MAP ID
 %token MAIN EVENT MACHINE MONITOR ASSUME
 
-%token VAR START STABLE MODEL STATE FUN ACTION MAXQUEUE SUBMACHINE
+%token VAR START STABLE MODEL STATE FUN ACTION SUBMACHINE
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH AS
 
-%token IF WHILE THIS TRIGGER PAYLOAD NEW RETURN FAIR ID LEAVE ASSERT CALL INVOKE RAISE SEND DEFAULT HALT NULL ELSE
+%token IF WHILE THIS TRIGGER PAYLOAD NEW RETURN FAIR ID LEAVE ASSERT CALL INVOKE RAISE SEND DEFAULT HALT NULL 
 %token LPAREN RPAREN LCBRACE RCBRACE LBRACKET RBRACKET SIZEOF KEYS VALUES
 
 %token TRUE FALSE
 
-%token ASSIGN
+%token ASSIGN REMOVE
 %token EQ NE LT GT LE GE IN
 %left LAND LNOT LOR NONDET FAIRNONDET
 
@@ -32,6 +32,7 @@
 %left  PLUS MINUS
 %left  DIV
 %left  MUL 
+%token ELSE
 
 %token maxParseToken 
 %token LEX_WHITE LEX_ERROR LEX_COMMENT
@@ -111,8 +112,7 @@ VarList
 /******************* Action Declarations *******************/
 
 ActionDecl
-    : ACTION ID LCBRACE RCBRACE      { AddAction($2.str, ToSpan(@2), ToSpan(@1)); }
-    | ACTION ID LCBRACE Stmt RCBRACE { AddAction($2.str, ToSpan(@2), ToSpan(@1)); }
+    : ACTION ID StmtBlock            { AddAction($2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 
 /******************* Type Expressions *******************/
@@ -145,7 +145,39 @@ NmdTupTypeList
 /******************* Statements *******************/
 
 Stmt
-	: ASSERT Exp SEMICOLON  { PushUnStmt(P_Root.UserCnstKind.ASSERT, ToSpan(@1)); }
+	: SEMICOLON                                               { PushNulStmt(P_Root.UserCnstKind.SKIP,  ToSpan(@1));      }
+	| LCBRACE RCBRACE                                         { PushNulStmt(P_Root.UserCnstKind.SKIP,  ToSpan(@1));      }
+	| LEAVE SEMICOLON                                         { PushNulStmt(P_Root.UserCnstKind.LEAVE, ToSpan(@1));      }
+	| LCBRACE StmtList RCBRACE                                { }
+	| CALL ID SEMICOLON                                       { PushCall($2.str, ToSpan(@2), ToSpan(@1));                }
+	| ASSERT Exp SEMICOLON                                    { PushUnStmt(P_Root.UserCnstKind.ASSERT, ToSpan(@1));      }
+	| RETURN SEMICOLON                                        { PushReturn(false, ToSpan(@1));                           }
+	| RETURN Exp SEMICOLON                                    { PushReturn(true, ToSpan(@1));                            }
+	| Exp ASSIGN Exp SEMICOLON                                { PushBinStmt(P_Root.UserCnstKind.ASSIGN, ToSpan(@1));     }
+	| Exp REMOVE Exp SEMICOLON                                { PushBinStmt(P_Root.UserCnstKind.REMOVE, ToSpan(@1));     }
+	| WHILE LPAREN Exp RPAREN Stmt                            { PushWhile(ToSpan(@1));                                   }
+	| IF LPAREN Exp RPAREN Stmt ELSE Stmt %prec ELSE          { PushIte(true, ToSpan(@1));                               }					
+	| IF LPAREN Exp RPAREN Stmt		                          { PushIte(false, ToSpan(@1));                              }
+	| NEW ID LPAREN RPAREN SEMICOLON                          { PushNewStmt($2.str, false, ToSpan(@2), ToSpan(@1));      }
+	| NEW ID LPAREN SingleExprArgList RPAREN SEMICOLON        { PushNewStmt($2.str, true,  ToSpan(@2), ToSpan(@1));      }
+	| ID LPAREN RPAREN SEMICOLON                              { PushFunStmt($1.str, false, ToSpan(@1));                  }
+	| ID LPAREN ExprArgList RPAREN SEMICOLON                  { PushFunStmt($1.str, true,  ToSpan(@1));                  }						
+	| RAISE Exp SEMICOLON                                     { PushRaise(false, ToSpan(@1));                            }
+	| RAISE Exp COMMA SingleExprArgList SEMICOLON             { PushRaise(true,  ToSpan(@1));                            }
+	| SEND Exp COMMA Exp SEMICOLON                            { PushSend(false, ToSpan(@1));                             }
+	| SEND Exp COMMA Exp COMMA SingleExprArgList SEMICOLON    { PushSend(true,  ToSpan(@1));                             }
+	| MONITOR ID COMMA Exp SEMICOLON                          { PushMonitor(false, $2.str, ToSpan(@2), ToSpan(@1));      }
+	| MONITOR ID COMMA Exp COMMA SingleExprArgList SEMICOLON  { PushMonitor(true, $2.str, ToSpan(@2), ToSpan(@1));       }
+	;
+
+StmtBlock
+	: LCBRACE RCBRACE                                    { PushNulStmt(P_Root.UserCnstKind.SKIP,  ToSpan(@1));      }    
+    | LCBRACE StmtList RCBRACE
+	;
+
+StmtList
+	: Stmt
+	| Stmt StmtList    { PushSeq(); }													
 	;
 
 /******************* Value Expressions *******************/

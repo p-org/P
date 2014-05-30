@@ -3875,13 +3875,17 @@ namespace PCompiler
             ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, name, this);
             var res = ctxt.getTmpVar(toT, "res");
             var iter = ctxt.getTmpVar(Factory.Instance.MkCnst(pTypeToZingClassName(fromT) + "_Entry"), "iter");
+            var iterCount = ctxt.getTmpVar(PType.Int, "iterCount");
             var isUpcast = fromT.isSubtypeOf(toT) && toT != fromT;
             var from = isUpcast ? "obj" : "this"; // Only Upcasts are static
 
+            var listIterBody =  MkZingSeq(MkZingCallStmt(MkZingCall(MkZingDot(res, "Insert"), iterCount, MkZingDot(iter, "key"))),
+                                          MkZingAssign(iterCount, MkZingApply(ZingData.Cnst_Add, iterCount, Factory.Instance.MkCnst(1))));
+
             var body = MkZingSeq(
                 MkZingAssign(res, MkZingCall(MkZingDot(pTypeToZingClassName(toT), "BuildDefault"))),
-                MkZingListIter(iter, MkZingDot("head", "next"), MkZingIdentifier("head"),
-                               MkZingCallStmt(MkZingCall(MkZingDot(res, "Insert"), MkZingDot(iter, "key"), MkZingDot(iter, "val")))),
+                MkZingAssign(iterCount, Factory.Instance.MkCnst(0)),
+                MkZingListIter(iter, MkZingDot("head", "next"), MkZingIdentifier("head"), listIterBody),
                 MkZingReturn(res));
 
             if (isUpcast)

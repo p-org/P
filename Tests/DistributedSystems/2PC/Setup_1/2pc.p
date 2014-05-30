@@ -375,7 +375,6 @@ monitor ReadWrite {
 // The termination monitor checks the eventual consistency property. Eventually logs on all the machines 
 // are the same (coordinator, replicas).
 //
-/*
 monitor Termination {
 	var coordinator: id;
 	var replicas:seq[id];
@@ -440,7 +439,6 @@ monitor Termination {
 	}
 	
 }
-*/
 
 main model machine TwoPhaseCommit {
     var coordinator: id;

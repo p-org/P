@@ -2,10 +2,10 @@ event createmachine:(creator:id, type: int, parameter: any);
 event newMachineCreated:id;
 event unit;
 event SenderPort:id;
-event sendMessage:(target:id, e:event, p:any)
-event networkMessage:(iden:(source:id, seqnum:int), msg:(e:event, p:any));
+event sendMessage:(target:id, e:eid, p:any);
+event networkMessage:(iden:(source:id, seqnum:int), msg:(e:eid, p:any));
 
-machine NetworkMachine {
+main machine NetworkMachine {
 	var hostMachine: id;
 	var temp:id;
 	start state bootingState {
@@ -41,7 +41,7 @@ machine ReceiverMachine {
 				if(payload.iden.seqnum > lastReceivedMessage[payload.iden.source])
 				{
 					send(hostMachine, payload.msg.e, payload.msg.p);
-					lastReceivedMessage[payload.iden.source] = payload.iden.seqnum;
+					lastReceivedMessage.update(payload.iden.source, payload.iden.seqnum);
 				}
 			}
 			else
@@ -84,7 +84,7 @@ machine SenderMachine {
 		on sendMessage goto Listening;
 	}
 	
-	model fun sendRPC(target:id, e:event, p:any) : bool {
+	model fun sendRPC(target:id, e:eid, p:any) : bool {
 		
 		if(*)
 		{

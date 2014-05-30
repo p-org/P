@@ -5,7 +5,7 @@ event SenderPort:id;
 event sendMessage:(target:id, e:eid, p:any);
 event networkMessage:(iden:(source:id, seqnum:int), msg:(e:eid, p:any));
 
-main machine NetworkMachine {
+machine NetworkMachine {
 	var hostMachine: id;
 	var temp:id;
 	start state bootingState {
@@ -106,14 +106,14 @@ machine MachineCreator
 {
 	var tempparameter:any;
 	var typeofMachine : int; // 0 : coordinator, 1 : replica, 2 : client 
-	var tempNetworkMachine:id;
-	var tempHostMachine:id;
+	var tempNetworkMachine:any;
+	var tempHostMachine:any;
 	var createReqter:id;
 	start state bootingState {
 		entry {
-			raise(unit);
+			
 		}
-		on unit goto CreateMachineS;
+		on createmachine goto CreateMachineS;
 	}
 	
 	state CreateMachineS {

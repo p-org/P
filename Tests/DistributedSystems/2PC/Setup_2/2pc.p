@@ -138,13 +138,15 @@ machine Coordinator {
 	var client:mid;
 	var key: int;
 	var readResult: (bool, int);
+	var creatorMachine:id;
 	start state Init {
 		entry {
-			numReplicas = (int)payload;
+			creatorMachine = ((id, int))payload[0];
+			numReplicas = ((id, int))payload[1];
 			assert (numReplicas > 0);
 			i = 0;
 			while (i < numReplicas) {
-				replica = new Replica(this);
+				call(createReplica);
 				replicas.insert(i, replica);
 				i = i + 1;
 			}
@@ -155,7 +157,18 @@ machine Coordinator {
 		}
 		on Unit goto Loop;
 	}
-
+	
+	state createReplica {
+		entry {
+			send(creatorMachine, createmachine, (type = 2, parameter = this));
+		}
+		on newMachineCreated do PopState;
+	}
+	
+	action PopState {
+		replica = (id)payload;
+		return;
+	}
 	state DoRead {
 		entry {
 			client = payload.client;
@@ -444,11 +457,29 @@ monitor Termination {
 
 main model machine TwoPhaseCommit {
     var coordinator: id;
+	var creatorMachine:id;
+	var numberOfClients:int;
     start state Init {
 	    entry {
-	        coordinator = new Coordinator(2);
-			new Client((coordinator, 100));
-			new Client((coordinator, 200));
+			numberOfClients = 2;
+			creatorMachine = new MachineCreator();
+			send(creatorMachine, createmachine, (type =0, paramter = (creatorMachine, 2)));
+	    }
+		on newMachineCreated goto createClient
+		{
+			coordinator = (id)payload;
+		};
+	}
+	
+	state createClient {
+		entry {
+			if(numberOfClients == 0)
+				raise(delete);
+			send(creatorMachine, createmachine, (type = 1, parameter = (coordinator, 100*numberOfClients)));
 		}
+		on newMachineCreated goto createClient
+		{
+			numberOfClients = numberOfClients - 1;
+		};
 	}
 }

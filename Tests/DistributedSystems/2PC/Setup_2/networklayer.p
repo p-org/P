@@ -76,7 +76,7 @@ machine SenderMachine {
 			i = numberofRetry;
 			while(i != 0 && sendFail)
 			{
-				sendRPC(payload.target, networkMessage, ((hostMachine, CurrentSeqNum),(payload.e, payload.p)));
+				sendFail = sendRPC(payload.target, networkMessage, (iden = (source = hostMachine, seqnum = CurrentSeqNum),msg = (e = payload.e, p = payload.p)));
 				i = i - 1;
 			}
 		}
@@ -106,10 +106,25 @@ machine MachineCreator
 {
 	var tempparameter:any;
 	var typeofMachine : int; // 0 : coordinator, 1 : replica, 2 : client 
-	var tempNetworkMachine:any;
-	var tempHostMachine:any;
-	var createReqter:id;
+	var tempNetworkMachine:id;
+	var tempHostMachine:id;
+	
+	var sendPort:id;
+	
+	model fun sendToNetwork(target:id, e:eid, p:any) {
+		send(sendPort, sendMessage, (target = target, e = e, p = p));
+	}
+	
 	start state bootingState {
+		defer createmachine;
+	
+		on SenderPort goto Init
+		{
+			sendPort = (id)payload;
+		};
+	}
+	
+	state Init {
 		entry {
 			
 		}
@@ -124,6 +139,7 @@ machine MachineCreator
 			if(typeofMachine == 0)
 			{	
 				tempHostMachine = new Coordinator(tempparameter);
+				
 			}
 			else if (typeofMachine == 1)
 			{
@@ -132,10 +148,11 @@ machine MachineCreator
 			else
 			{
 				tempHostMachine = new Client(tempparameter);
+				
 			}
 			
 			tempNetworkMachine = new NetworkMachine(tempHostMachine);
-			send(createReqter, newMachineCreated, tempNetworkMachine);
+			send(payload.creator, newMachineCreated, tempNetworkMachine);
 		}
 		on createmachine goto CreateMachineS;
 	}

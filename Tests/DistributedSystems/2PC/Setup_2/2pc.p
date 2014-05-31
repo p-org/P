@@ -3,11 +3,11 @@ event RESP_REPLICA_COMMIT:int;
 event RESP_REPLICA_ABORT:int;
 event GLOBAL_ABORT:int;
 event GLOBAL_COMMIT:int;
-event WRITE_REQ:(client:mid, key:int, val:int);
+event WRITE_REQ:(client:id, key:int, val:int);
 event WRITE_FAIL;
 event WRITE_SUCCESS;
 event READ_REQ_REPLICA:int;
-event READ_REQ:(client:mid, key:int);
+event READ_REQ:(client:id, key:int);
 event READ_FAIL;
 event READ_SUCCESS:int;
 event REP_READ_FAIL;
@@ -18,10 +18,10 @@ event StartTimer:int;
 event CancelTimer;
 event CancelTimerFailure;
 event CancelTimerSuccess;
-event MONITOR_WRITE_SUCCESS:(m: mid, key:int, val:int);
-event MONITOR_WRITE_FAILURE:(m: mid, key:int, val:int);
-event MONITOR_READ_SUCCESS:(m: mid, key:int, val:int);
-event MONITOR_READ_FAILURE:mid;
+event MONITOR_WRITE_SUCCESS:(m: id, key:int, val:int);
+event MONITOR_WRITE_FAILURE:(m: id, key:int, val:int);
+event MONITOR_READ_SUCCESS:(m: id, key:int, val:int);
+event MONITOR_READ_FAILURE:id;
 event MONITOR_UPDATE:(m:id, key:int, val:int);
 event goEnd;
 event final;
@@ -69,10 +69,24 @@ machine Replica {
 	var pendingWriteReq: (seqNum: int, key: int, val: int);
 	var shouldCommit: bool;
 	var lastSeqNum: int;
-
-    start state Init {
+	var sendPort:id;
+	
+	model fun sendToNetwork(target:id, e:eid, p:any) {
+		send(sendPort, sendMessage, (target = target, e = e, p = p));
+	}
+	
+	start state bootingState {
+		entry {
+			coordinator = (id)payload;
+		}
+		on SenderPort goto Init
+		{
+			sendPort = (id)payload;
+		};
+	}
+	
+    state Init {
 	    entry {
-		    coordinator = (id)payload;
 			lastSeqNum = 0;
 			raise(Unit);
 		}
@@ -84,9 +98,9 @@ machine Replica {
 		assert (pendingWriteReq.seqNum > lastSeqNum);
 		shouldCommit = ShouldCommitWrite();
 		if (shouldCommit) {
-			send(coordinator, RESP_REPLICA_COMMIT, pendingWriteReq.seqNum);
+			sendToNetwork(coordinator, RESP_REPLICA_COMMIT, pendingWriteReq.seqNum);
 		} else {
-			send(coordinator, RESP_REPLICA_ABORT, pendingWriteReq.seqNum);
+			sendToNetwork(coordinator, RESP_REPLICA_ABORT, pendingWriteReq.seqNum);
 		}
 	}
 
@@ -108,9 +122,9 @@ machine Replica {
 
 	action ReadData{
 		if(payload in data)
-			send(coordinator, REP_READ_SUCCESS, data[payload]);
+			sendToNetwork(coordinator, REP_READ_SUCCESS, data[payload]);
 		else
-			send(coordinator, REP_READ_FAIL);
+			sendToNetwork(coordinator, REP_READ_FAIL, null);
 	}
 	
 	state Loop {
@@ -131,18 +145,36 @@ machine Coordinator {
 	var replicas: seq[id];
 	var numReplicas: int;
 	var i: int;
-	var pendingWriteReq: (client: mid, key: int, val: int);
+	var pendingWriteReq: (client: id, key: int, val: int);
 	var replica: id;
 	var currSeqNum:int;
 	var timer: mid;
-	var client:mid;
+	var client:id;
 	var key: int;
 	var readResult: (bool, int);
 	var creatorMachine:id;
-	start state Init {
+	var sendPort:id;
+	
+	model fun sendToNetwork(target:id, e:eid, p:any) {
+		send(sendPort, sendMessage, (target = target, e = e, p = p));
+	}
+	
+	start state bootingState {
 		entry {
 			creatorMachine = ((id, int))payload[0];
 			numReplicas = ((id, int))payload[1];
+		}
+	
+		on SenderPort goto Init
+		{
+			sendPort = (id)payload;
+		};
+	}
+	
+	
+	state Init {
+		entry {
+			
 			assert (numReplicas > 0);
 			i = 0;
 			while (i < numReplicas) {
@@ -160,7 +192,7 @@ machine Coordinator {
 	
 	state createReplica {
 		entry {
-			send(creatorMachine, createmachine, (type = 2, parameter = this));
+			sendToNetwork(creatorMachine, createmachine, (creator= this, type = 1, parameter = this));
 		}
 		on newMachineCreated do PopState;
 	}
@@ -181,20 +213,20 @@ machine Coordinator {
 		}
 		on READ_FAIL goto Loop
 		{
-			send(client, READ_FAIL);
+			sendToNetwork(client, READ_FAIL, null);
 		};
 		on READ_SUCCESS goto Loop
 		{	
-			send(client, READ_SUCCESS, payload);
+			sendToNetwork(client, READ_SUCCESS, payload);
 		};
 	}
 	
 	model fun ChooseReplica()
 	{
 			if(*) 
-				send(replicas[0], READ_REQ_REPLICA, key);
+				sendToNetwork(replicas[0], READ_REQ_REPLICA, key);
 			else
-				send(replicas[sizeof(replicas) - 1], READ_REQ_REPLICA, key);
+				sendToNetwork(replicas[sizeof(replicas) - 1], READ_REQ_REPLICA, key);
 				
 	}
 	
@@ -218,7 +250,7 @@ machine Coordinator {
 		currSeqNum = currSeqNum + 1;
 		i = 0;
 		while (i < sizeof(replicas)) {
-			send(replicas[i], REQ_REPLICA, (seqNum=currSeqNum, key=pendingWriteReq.key, val=pendingWriteReq.val));
+			sendToNetwork(replicas[i], REQ_REPLICA, (seqNum=currSeqNum, key=pendingWriteReq.key, val=pendingWriteReq.val));
 			i = i + 1;
 		}
 		send(timer, StartTimer, 100);
@@ -235,22 +267,22 @@ machine Coordinator {
 	fun DoGlobalAbort() {
 		i = 0;
 		while (i < sizeof(replicas)) {
-			send(replicas[i], GLOBAL_ABORT, currSeqNum);
+			sendToNetwork(replicas[i], GLOBAL_ABORT, currSeqNum);
 			i = i + 1;
 		}
-		send(pendingWriteReq.client, WRITE_FAIL);
+		sendToNetwork(pendingWriteReq.client, WRITE_FAIL, null);
 	}
 
 	state CountVote {
 		entry {
 			if (i == 0) {
 				while (i < sizeof(replicas)) {
-					send(replicas[i], GLOBAL_COMMIT, currSeqNum);
+					sendToNetwork(replicas[i], GLOBAL_COMMIT, currSeqNum);
 					i = i + 1;
 				}
 				data.update(pendingWriteReq.key, pendingWriteReq.val);
 				//invoke Termination(MONITOR_UPDATE, (m = this, key = pendingWriteReq.key, val = pendingWriteReq.val));
-				send(pendingWriteReq.client, WRITE_SUCCESS);
+				sendToNetwork(pendingWriteReq.client, WRITE_SUCCESS, null);
 				send(timer, CancelTimer);
 				raise(Unit);
 			}
@@ -290,16 +322,31 @@ machine Coordinator {
 	}
 }
 
-model machine Client {
+machine Client {
     var coordinator: id;
 	var mydata : int;
 	var counter : int;
-   
+    var sendPort:id;
 	
-	start state Init {
-	    entry {
-	        coordinator = ((id, int))payload[0];
+	model fun sendToNetwork(target:id, e:eid, p:any) {
+		send(sendPort, sendMessage, (target = target, e = e, p = p));
+	}
+	
+	start state bootingState {
+		entry {
+			coordinator = ((id, int))payload[0];
 			mydata = ((id, int))payload[1];
+		}
+	
+		on SenderPort goto Init
+		{
+			sendPort = (id)payload;
+		};
+	}
+	
+	state Init {
+	    entry {
+	        
 			counter = 0;
 			new ReadWrite(this);
 			raise(Unit);
@@ -314,7 +361,7 @@ model machine Client {
 			counter = counter + 1;
 			if(counter == 3)
 				raise(goEnd);
-			send(coordinator, WRITE_REQ, (client=this, key=mydata, val=mydata));
+			sendToNetwork(coordinator, WRITE_REQ, (client=this, key=mydata, val=mydata));
 		}
 		on WRITE_FAIL goto DoRead
 		{
@@ -329,7 +376,7 @@ model machine Client {
 
 	state DoRead {
 	    entry {
-			send(coordinator, READ_REQ, (client=this, key=mydata));
+			sendToNetwork(coordinator, READ_REQ, (client=this, key=mydata));
 		}
 		on READ_FAIL goto DoWrite
 		{
@@ -353,7 +400,7 @@ model machine Client {
 // This monitor is created local to each client.
 
 monitor ReadWrite {
-	var client : mid;
+	var client : id;
 	var data: (key:int,val:int);
 	action DoWriteSuccess {
 		if(payload.m == client)
@@ -375,7 +422,7 @@ monitor ReadWrite {
 	}
 	start state Init {
 		entry {
-			client = (mid) payload;
+			client = (id) payload;
 		}
 		on MONITOR_WRITE_SUCCESS do DoWriteSuccess;
 		on MONITOR_WRITE_FAILURE do DoWriteFailure;
@@ -455,15 +502,18 @@ monitor Termination {
 }
 */
 
-main model machine TwoPhaseCommit {
+main machine TwoPhaseCommit {
     var coordinator: id;
-	var creatorMachine:id;
+	var networkedcreatorMachine:id;
 	var numberOfClients:int;
+	var creatorMachine:id;
+	
     start state Init {
 	    entry {
 			numberOfClients = 2;
 			creatorMachine = new MachineCreator();
-			send(creatorMachine, createmachine, (type =0, paramter = (creatorMachine, 2)));
+			networkedcreatorMachine = new NetworkMachine(creatorMachine);
+			send(creatorMachine, createmachine, (creator = this, type =0, parameter = (networkedcreatorMachine, 2)));
 	    }
 		on newMachineCreated goto createClient
 		{
@@ -475,7 +525,7 @@ main model machine TwoPhaseCommit {
 		entry {
 			if(numberOfClients == 0)
 				raise(delete);
-			send(creatorMachine, createmachine, (type = 1, parameter = (coordinator, 100*numberOfClients)));
+			send(creatorMachine, createmachine, (creator = this, type = 2, parameter = (coordinator, 100*numberOfClients)));
 		}
 		on newMachineCreated goto createClient
 		{

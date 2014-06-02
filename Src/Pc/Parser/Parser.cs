@@ -20,14 +20,22 @@
         private PProgram parseProgram;
 
         private bool parseFailed = false;
+
+        private P_Root.FunDecl crntFunDecl = null;
         private P_Root.EventDecl crntEventDecl = null;
         private P_Root.MachineDecl crntMachDecl = null;
+        private P_Root.QualifiedName crntQualName = null;
+        private P_Root.StateDecl crntState = null;
         private List<P_Root.VarDecl> crntVarList = new List<P_Root.VarDecl>();
+        private List<P_Root.EventLabel> crntEventList = new List<P_Root.EventLabel>();
+        private List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>> crntAnnotList = new List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>();
+        private Stack<List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>> crntAnnotStack = new Stack<List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>>();
 
         private Stack<P_Root.Expr> valueExprStack = new Stack<P_Root.Expr>();
         private Stack<P_Root.ExprsExt> exprsStack = new Stack<P_Root.ExprsExt>();
         private Stack<P_Root.TypeExpr> typeExprStack = new Stack<P_Root.TypeExpr>();
         private Stack<P_Root.Stmt> stmtStack = new Stack<P_Root.Stmt>();
+        private Stack<P_Root.QualifiedName> groupStack = new Stack<P_Root.QualifiedName>();
 
         public P_Root.TypeExpr Debug_PeekTypeStack
         {
@@ -82,6 +90,12 @@
         }
 
         #region Pushers
+        private void PushAnnotationSet()
+        {
+            crntAnnotStack.Push(crntAnnotList);
+            crntAnnotList = new List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>();
+        }
+
         private void PushTypeExpr(P_Root.TypeExpr typeExpr)
         {
             typeExprStack.Push(typeExpr);
@@ -150,11 +164,13 @@
             typeExprStack.Push(mapType);
         }
 
-        private void PushCall(string name, Span nameSpan, Span span)
+        private void PushPush(Span span)
         {
-            var callStmt = P_Root.MkCall(MkString(name, nameSpan));
-            callStmt.Span = span;
-            stmtStack.Push(callStmt);
+            Contract.Assert(crntQualName != null);
+            var pushStmt = P_Root.MkPush(crntQualName);
+            pushStmt.Span = span;
+            stmtStack.Push(pushStmt);
+            crntQualName = null;
         }
 
         private void PushSend(bool hasArgs, Span span)
@@ -623,6 +639,41 @@
             valueExprStack.Push(field);
         }
 
+        private void PushGroup(string name, Span nameSpan, Span span)
+        {
+            var groupName = P_Root.MkQualifiedName(MkString(name, nameSpan));
+            groupName.Span = span;
+            if (groupStack.Count == 0)
+            {
+                groupName.qualifier = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            }
+            else
+            {
+                groupName.qualifier = groupStack.Peek();
+            }
+
+            groupStack.Push(groupName);
+        }
+
+        private void Qualify(string name, Span span)
+        {
+            if (crntQualName == null)
+            {
+                crntQualName = P_Root.MkQualifiedName(
+                    MkString(name, span),
+                    MkUserCnst(P_Root.UserCnstKind.NIL, span));
+            }
+            else
+            {
+                crntQualName = P_Root.MkQualifiedName(
+                    MkString(name, span),
+                    crntQualName);
+
+            }
+
+            crntQualName.Span = span;
+        }
+
         #endregion
 
         #region Node setters
@@ -688,15 +739,100 @@
             }
         }
 
+        private void SetStateIsStable(Span span)
+        {
+            var state = GetCurrentStateDecl(span);
+            state.isStable = MkUserCnst(P_Root.UserCnstKind.TRUE, span);
+        }
+
+        private void SetStateEntry()
+        {
+            Contract.Assert(stmtStack.Count > 0);
+            var entry = stmtStack.Pop();
+            var state = GetCurrentStateDecl(entry.Span);
+
+            if (state.entryFun is P_Root.NulStmt &&
+                (P_Root.UserCnstKind)((P_Root.UserCnst)((P_Root.NulStmt)state.entryFun)[0]).Value == P_Root.UserCnstKind.SKIP)
+            {
+                state.entryFun = (P_Root.IArgType_StateDecl__2)entry;
+            }
+            else
+            {
+                var errFlag = new Flag(
+                                 SeverityKind.Error,
+                                 entry.Span,
+                                 Constants.BadSyntax.ToString("Too many entry functions"),
+                                 Constants.BadSyntax.Code,
+                                 parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+        }
+
+        private void SetStateExit()
+        {
+            Contract.Assert(stmtStack.Count > 0);
+            var exit = stmtStack.Pop();
+            var state = GetCurrentStateDecl(exit.Span);
+
+            if (state.exitFun is P_Root.NulStmt &&
+                (P_Root.UserCnstKind)((P_Root.UserCnst)((P_Root.NulStmt)state.exitFun)[0]).Value == P_Root.UserCnstKind.SKIP)
+            {
+                state.exitFun = (P_Root.IArgType_StateDecl__3)exit;
+            }
+            else
+            {
+                var errFlag = new Flag(
+                                 SeverityKind.Error,
+                                 exit.Span,
+                                 Constants.BadSyntax.ToString("Too many exit functions"),
+                                 Constants.BadSyntax.Code,
+                                 parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+        }
+
+        private void SetMachineIsMain(Span span)
+        {
+            var machDecl = GetCurrentMachineDecl(span);
+            machDecl.isMain = MkUserCnst(P_Root.UserCnstKind.TRUE, span);
+        }
+
         private void SetEventType(Span span)
         {
             var evDecl = GetCurrentEventDecl(span);
             Contract.Assert(typeExprStack.Count > 0);
-            evDecl.payloadType = (P_Root.IArgType_EventDecl__2)typeExprStack.Pop();
+            evDecl.type = (P_Root.IArgType_EventDecl__2)typeExprStack.Pop();
+        }
+
+        private void SetFunKind(P_Root.UserCnstKind kind, Span span)
+        {
+            var funDecl = GetCurrentFunDecl(span);
+            funDecl.kind = MkUserCnst(kind, span);
+        }
+
+        private void SetFunParams(Span span)
+        {
+            Contract.Assert(typeExprStack.Count > 0);
+            var funDecl = GetCurrentFunDecl(span);
+            funDecl.@params = (P_Root.IArgType_FunDecl__3)typeExprStack.Pop();
+        }
+
+        private void SetFunReturn(Span span)
+        {
+            Contract.Assert(typeExprStack.Count > 0);
+            var funDecl = GetCurrentFunDecl(span);
+            funDecl.@return = (P_Root.IArgType_FunDecl__4)typeExprStack.Pop();
         }
         #endregion
 
         #region Adders
+        private void AddGroup()
+        {
+            groupStack.Pop();
+        }
+
         private void AddVarDecl(string name, Span span)
         {
             var varDecl = P_Root.MkVarDecl();
@@ -704,6 +840,171 @@
             varDecl.owner = GetCurrentMachineDecl(span);
             varDecl.Span = span;
             crntVarList.Add(varDecl);
+        }
+
+        private void AddToEventList(string name, Span span)
+        {
+            crntEventList.Add(MkString(name, span));
+        }
+
+        private void AddToEventList(P_Root.UserCnstKind kind, Span span)
+        {
+            crntEventList.Add(MkUserCnst(kind, span));
+        }
+
+        private void AddDefersOrIgnores(bool isDefer, Span span)
+        {
+            Contract.Assert(crntEventList.Count > 0);
+            var state = GetCurrentStateDecl(span);
+            var kind = MkUserCnst(isDefer ? P_Root.UserCnstKind.DEFER : P_Root.UserCnstKind.IGNORE, span);
+            foreach (var e in crntEventList)
+            {
+                var defOrIgn = P_Root.MkDefIgnDecl(state, (P_Root.IArgType_DefIgnDecl__1)e, kind);
+                defOrIgn.Span = span;
+                parseProgram.DefersOrIgnores.Add(defOrIgn);
+            }
+
+            crntEventList.Clear();
+        }
+
+        private void AddTransition(bool isPush, bool hasStmtAction, Span span)
+        {
+            Contract.Assert(crntEventList.Count > 0);
+            Contract.Assert(crntQualName != null);
+            Contract.Assert(!hasStmtAction || stmtStack.Count > 0);
+            Contract.Assert(!(hasStmtAction && isPush));
+
+            var state = GetCurrentStateDecl(span);
+            P_Root.IArgType_TransDecl__3 action;
+            if (isPush)
+            {
+                action = MkUserCnst(P_Root.UserCnstKind.PUSH, span);
+            }
+            else if (hasStmtAction)
+            {
+                action = (P_Root.IArgType_TransDecl__3)stmtStack.Pop();
+            }
+            else
+            {
+                action = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            }
+
+            foreach (var e in crntEventList)
+            {
+                var trans = P_Root.MkTransDecl(state, (P_Root.IArgType_TransDecl__1)e, crntQualName, action);
+                trans.Span = span;
+                parseProgram.Transitions.Add(trans);
+            }
+
+            crntQualName = null;
+            crntEventList.Clear();
+        }
+
+        private void AddProgramAnnots(Span span)
+        {
+            Contract.Assert(crntAnnotStack.Count > 0);
+            var annots = crntAnnotStack.Pop();
+            foreach (var kv in annots)
+            {
+                var annot = P_Root.MkAnnotation(
+                    MkUserCnst(P_Root.UserCnstKind.NIL, span),
+                    kv.Item1,
+                    (P_Root.IArgType_Annotation__2)kv.Item2);
+                annot.Span = span;
+                parseProgram.Annotations.Add(annot);  
+            }
+        }
+
+        private void AddAnnotStringVal(string keyName, string valStr, Span keySpan, Span valSpan)
+        {
+            crntAnnotList.Add(
+                new Tuple<P_Root.StringCnst, P_Root.AnnotValue>(
+                    MkString(keyName, keySpan),
+                    MkString(valStr, valSpan)));
+        }
+
+        private void AddAnnotIntVal(string keyName, string intStr, Span keySpan, Span valSpan)
+        {
+            int val;
+            if (!int.TryParse(intStr, out val) || val < 0)
+            {
+                var errFlag = new Flag(
+                                 SeverityKind.Error,
+                                 valSpan,
+                                 Constants.BadSyntax.ToString(string.Format("Bad int constant {0}", intStr)),
+                                 Constants.BadSyntax.Code,
+                                 parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+                return;
+            }
+
+            crntAnnotList.Add(
+                new Tuple<P_Root.StringCnst, P_Root.AnnotValue>(
+                    MkString(keyName, keySpan),
+                    MkNumeric(val, valSpan)));
+        }
+
+        private void AddAnnotUsrCnstVal(string keyName, P_Root.UserCnstKind valKind, Span keySpan, Span valSpan)
+        {
+            crntAnnotList.Add(
+                new Tuple<P_Root.StringCnst, P_Root.AnnotValue>(
+                    MkString(keyName, keySpan),
+                    MkUserCnst(valKind, valSpan)));
+        }
+
+        private void AddAction(string name, Span nameSpan, Span span)
+        {
+            Contract.Assert(crntEventList.Count > 0);
+            var state = GetCurrentStateDecl(span);
+            var actName = MkString(name, nameSpan);
+            foreach (var e in crntEventList)
+            {
+                var action = P_Root.MkActionDecl(state, (P_Root.IArgType_ActionDecl__1)e, actName);
+                action.Span = span;
+                parseProgram.Actions.Add(action);
+            }
+
+            crntEventList.Clear();
+        }
+
+        private void AddState(string name, bool isStart, Span nameSpan, Span span)
+        {
+            var state = GetCurrentStateDecl(span);
+            state.Span = span;
+            parseProgram.States.Add(state);
+            if (groupStack.Count == 0)
+            {
+                state.name = P_Root.MkQualifiedName(
+                    MkString(name, nameSpan),
+                    MkUserCnst(P_Root.UserCnstKind.NIL, span));
+            }
+            else
+            {
+                state.name = P_Root.MkQualifiedName(MkString(name, nameSpan), groupStack.Peek());
+            }
+
+            if (isStart)
+            {
+                var machDecl = GetCurrentMachineDecl(span);
+                if (string.IsNullOrEmpty(((P_Root.StringCnst)machDecl.start[0]).Value))
+                {
+                    machDecl.start = (P_Root.QualifiedName)state.name;
+                }
+                else
+                {
+                    var errFlag = new Flag(
+                                     SeverityKind.Error,
+                                     span,
+                                     Constants.BadSyntax.ToString("Too many start states"),
+                                     Constants.BadSyntax.Code,
+                                     parseSource);
+                    parseFailed = true;
+                    parseFlags.Add(errFlag);
+                }
+            }
+
+            crntState = null;
         }
 
         private void AddVarDecls()
@@ -729,18 +1030,6 @@
             crntEventDecl = null;
         }
 
-        private void AddAction(string name, Span nameSpan, Span span)
-        {
-            Contract.Assert(stmtStack.Count > 0);
-            var stmt = (P_Root.IArgType_ActionDecl__2)stmtStack.Pop();
-            var actDecl = P_Root.MkActionDecl(
-                MkString(name, nameSpan),
-                GetCurrentMachineDecl(span),
-                stmt);
-            actDecl.Span = span;
-            parseProgram.Actions.Add(actDecl);
-        }
-
         private void AddMachine(P_Root.UserCnstKind kind, string name, Span nameSpan, Span span)
         {
             var machDecl = GetCurrentMachineDecl(span);
@@ -751,24 +1040,16 @@
             crntMachDecl = null;
         }
 
-        private void AddMainDecl(Span span)
+        private void AddFunction(string name, Span nameSpan, Span span)
         {
-            if (parseProgram.MainDecl != null)
-            {
-                var errFlag = new Flag(
-                                 SeverityKind.Error,
-                                 span,
-                                 Constants.BadSyntax.ToString("More than one main machine"),
-                                 Constants.BadSyntax.Code,
-                                 parseSource);
-                parseFailed = true;
-                parseFlags.Add(errFlag);
-                return;
-            }
-
-            var mainDecl = P_Root.MkMainDecl(GetCurrentMachineDecl(span));
-            mainDecl.Span = span;
-            parseProgram.MainDecl = mainDecl;
+            Contract.Assert(stmtStack.Count > 0);
+            var funDecl = GetCurrentFunDecl(span);
+            funDecl.Span = span;
+            funDecl.name = MkString(name, nameSpan);
+            funDecl.owner = GetCurrentMachineDecl(span);
+            funDecl.body = (P_Root.IArgType_FunDecl__5)stmtStack.Pop();
+            parseProgram.Functions.Add(funDecl);
+            crntFunDecl = null;
         }
         #endregion
 
@@ -782,9 +1063,48 @@
             
             crntEventDecl = P_Root.MkEventDecl();
             crntEventDecl.card = MkUserCnst(P_Root.UserCnstKind.NIL, span);
-            crntEventDecl.payloadType = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            crntEventDecl.type = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             crntEventDecl.Span = span;
             return crntEventDecl;
+        }
+
+        private P_Root.FunDecl GetCurrentFunDecl(Span span)
+        {
+            if (crntFunDecl != null)
+            {
+                return crntFunDecl;
+            }
+
+            crntFunDecl = P_Root.MkFunDecl();
+            crntFunDecl.kind = MkUserCnst(P_Root.UserCnstKind.REAL, span);
+            crntFunDecl.@params = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            crntFunDecl.@return = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            crntFunDecl.Span = span;
+            return crntFunDecl;
+        }
+
+        private P_Root.StateDecl GetCurrentStateDecl(Span span)
+        {
+            if (crntState != null)
+            {
+                return crntState;
+            }
+
+            crntState = P_Root.MkStateDecl();
+            crntState.Span = span;
+            crntState.owner = GetCurrentMachineDecl(span);
+
+            var skipEntry = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
+            skipEntry.Span = span;
+            crntState.entryFun = skipEntry;
+
+            var skipExit = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
+            skipExit.Span = span;
+            crntState.exitFun = skipExit;
+
+            crntState.isStable = MkUserCnst(P_Root.UserCnstKind.FALSE, span);
+
+            return crntState;
         }
 
         private P_Root.MachineDecl GetCurrentMachineDecl(Span span)
@@ -798,7 +1118,11 @@
             crntMachDecl.name = MkString(string.Empty, span);
             crntMachDecl.kind = MkUserCnst(P_Root.UserCnstKind.REAL, span);
             crntMachDecl.card = MkUserCnst(P_Root.UserCnstKind.NIL, span);
-            crntMachDecl.start = MkString(string.Empty, span);
+            crntMachDecl.isMain = MkUserCnst(P_Root.UserCnstKind.FALSE, span);
+            crntMachDecl.start = P_Root.MkQualifiedName(
+                                        MkString(string.Empty, span),
+                                        MkUserCnst(P_Root.UserCnstKind.NIL, span));
+            crntMachDecl.start.Span = span;
             return crntMachDecl;
         }
         #endregion
@@ -851,9 +1175,15 @@
             exprsStack.Clear();
             typeExprStack.Clear();
             crntVarList.Clear();
+            groupStack.Clear();
+            crntEventList.Clear();
+            crntAnnotStack.Clear();
+            crntAnnotList = new List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>();
             parseFailed = false;
+            crntState = null;
             crntEventDecl = null;
             crntMachDecl = null;
+            crntQualName = null;
         }
         #endregion
     }

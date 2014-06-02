@@ -13,8 +13,8 @@
 
     class CommandLine
     {
-        private static string testProg1 = @"
-        event e1;
+        private static string testProg1 = 
+        @"[ key1 = 1, key2 = null ]   event e1;
         event e2 assert 4;
         event e3 assume 5;
         event e4 : (machine, foreign);
@@ -23,7 +23,16 @@
         machine M2 { var x : int; var y : seq[foreign]; var z : (m: machine, c: int); }
         monitor Mon { 
             var x : int; 
-            action Foo {  monitor Mon1, foo, x; monitor Mon2, (x, y)[0];  }
+            fun Foo (x: int, y : int) : map[int, int]
+            {
+               push S1;
+               push Group1.Group2.S3;
+            }
+
+            state S
+            {  defer E1, E2, E3; ignore E5; on F goto S;   entry { x = y; y = z; }  }
+            state T
+            {  on E1, E5 goto S { x = y + 1; }; on E push T; exit { push S; } entry { push T; }  }
         }
         ";
 
@@ -35,7 +44,7 @@
             var result = parser.ParseText(new ProgramName("test.p"), testProg1, out flags, out prog);
             foreach (var f in flags)
             {
-                Console.WriteLine(f.Message);
+                Console.WriteLine("{0}, {1}: {2}", f.Span.StartLine, f.Span.StartCol, f.Message);
             }
 
             if (!result)

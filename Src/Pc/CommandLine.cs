@@ -15,21 +15,21 @@
     {
         private static string testProg1 = 
         @"[ key1 = 1, key2 = null ]   event e1;
-        event e2 assert 4;
+        event e2 assert 4 [ sentBy = M1  ];
         event e3 assume 5;
         event e4 : (machine, foreign);
         event e5 assert 1 : (mach: machine, dat: seq [foreign]);
-        main model M1 assume 10 { var x, y, z : int;  }
+        main model M1 assume 10 [ schedule=fair  ] { var x, y, z : int;  }
         machine M2 { var x : int; var y : seq[foreign]; var z : (m: machine, c: int); }
         monitor Mon { 
-            var x : int; 
-            fun Foo (x: int, y : int) : map[int, int]
+            var x, y, z : int [ size = int32 ]; 
+            fun Foo (x: int, y : int) : map[int, int] [ isPassive = true ]
             {
                push S1;
                push Group1.Group2.S3;
             }
 
-            state S
+            state S [ failure = impossible ]
             {  defer E1, E2, E3; ignore E5; on F goto S;   entry { x = y; y = z; }  }
             state T
             {  on E1, E5 goto S { x = y + 1; }; on E push T; exit { push S; } entry { push T; }  }

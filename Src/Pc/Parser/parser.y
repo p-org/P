@@ -77,7 +77,7 @@ Annotation
 
 /******************* Event Declarations *******************/ 
 EventDecl
-	: EVENT ID EvCardOrNone EvTypeOrNone SEMICOLON  { AddEvent($2.str, ToSpan(@2), ToSpan(@1)); }
+	: EVENT ID EvCardOrNone EvTypeOrNone EventAnnotOrNone SEMICOLON { AddEvent($2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 
 EvCardOrNone
@@ -87,15 +87,20 @@ EvCardOrNone
 	;
 
 EvTypeOrNone
-	: COLON Type									{ SetEventType(ToSpan(@1)); }
+	: COLON Type									{ SetEventType(ToSpan(@1));                }
 	|												{ }
+	;
+
+EventAnnotOrNone
+    : AnnotationSet                                 { AddEventAnnots(ToSpan(@1));              }
+	|
 	;
 
 /******************* Machine Declarations *******************/
 MachineDecl
-	: IsMain MACHINE ID MachCardOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1)); }
-	| IsMain MODEL ID MachCardOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1)); }
-	| MONITOR ID MachCardOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
+	: IsMain MACHINE ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1));    }
+	| IsMain MODEL ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE   { AddMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1));   }
+	| MONITOR ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE        { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 
 IsMain
@@ -107,6 +112,11 @@ MachCardOrNone
 	: ASSERT INT									{ SetMachineCard($2.str, true,  ToSpan(@1)); }
 	| ASSUME INT									{ SetMachineCard($2.str, false, ToSpan(@1)); }
 	|												{ }
+	;
+
+MachAnnotOrNone
+    : AnnotationSet                                 { AddMachineAnnots(ToSpan(@1));              }
+	|
 	;
 
 /******************* Machine Bodies *******************/
@@ -124,7 +134,8 @@ MachineBodyItem
 
 /******************* Variable Declarations *******************/
 VarDecl
-	: VAR VarList COLON Type SEMICOLON	{ AddVarDecls(); }
+	: VAR VarList COLON Type SEMICOLON	             { AddVarDecls(false, ToSpan(@1)); }
+	| VAR VarList COLON Type AnnotationSet SEMICOLON { AddVarDecls(true,  ToSpan(@5)); }
 	;
 
 VarList
@@ -135,12 +146,17 @@ VarList
 /******************* Function Declarations *******************/
 
 FunDecl
-	: IsModel FUN ID ParamsOrNone RetTypeOrNone StmtBlock { AddFunction($3.str, ToSpan(@3), ToSpan(@1)); }
+	: IsModel FUN ID ParamsOrNone RetTypeOrNone FunAnnotOrNone StmtBlock { AddFunction($3.str, ToSpan(@3), ToSpan(@1)); }
 	;
 
 IsModel
 	: MODEL											{ SetFunKind(P_Root.UserCnstKind.MODEL, ToSpan(@1)); }
 	|												{ }
+	;
+
+FunAnnotOrNone
+    : AnnotationSet { AddFunAnnots(ToSpan(@1)); }
+	|
 	;
 
 ParamsOrNone
@@ -175,14 +191,19 @@ GroupName
 
 /******************* State Declarations *******************/
 StateDecl
-	: IsStable STATE ID LCBRACE RCBRACE                  { AddState($3.str, false, ToSpan(@3), ToSpan(@1)); }
-	| IsStable STATE ID LCBRACE StateBody RCBRACE        { AddState($3.str, false, ToSpan(@3), ToSpan(@1)); }	  
-	| START IsStable STATE ID LCBRACE RCBRACE            { AddState($4.str, true,  ToSpan(@4), ToSpan(@1)); }
-	| START IsStable STATE ID LCBRACE StateBody RCBRACE  { AddState($4.str, true,  ToSpan(@4), ToSpan(@1)); }	  
+	: IsStable STATE ID StateAnnotOrNone LCBRACE RCBRACE                  { AddState($3.str, false, ToSpan(@3), ToSpan(@1)); }
+	| IsStable STATE ID StateAnnotOrNone LCBRACE StateBody RCBRACE        { AddState($3.str, false, ToSpan(@3), ToSpan(@1)); }	  
+	| START IsStable STATE ID StateAnnotOrNone LCBRACE RCBRACE            { AddState($4.str, true,  ToSpan(@4), ToSpan(@1)); }
+	| START IsStable STATE ID StateAnnotOrNone LCBRACE StateBody RCBRACE  { AddState($4.str, true,  ToSpan(@4), ToSpan(@1)); }	  
 	;
 
 IsStable
-	: STABLE    { SetStateIsStable(ToSpan(@1)); }
+	: STABLE        { SetStateIsStable(ToSpan(@1)); }
+	|
+	;
+
+StateAnnotOrNone
+    : AnnotationSet { AddStateAnnots(ToSpan(@1)); }
 	|
 	;
 
@@ -192,14 +213,14 @@ StateBody
 	;
 
 StateBodyItem
-	: ENTRY StmtBlock                                        { SetStateEntry();                           }				
-	| EXIT StmtBlock								         { SetStateExit();                            }
-	| DEFER NonDefaultEventList SEMICOLON                    { AddDefersOrIgnores(true,  ToSpan(@1));     }			
-	| IGNORE NonDefaultEventList SEMICOLON			         { AddDefersOrIgnores(false, ToSpan(@1));     }
-	| ON EventList DO ID SEMICOLON                           { AddAction($4.str, ToSpan(@4), ToSpan(@1)); }
-	| ON EventList PUSH QualifiedId SEMICOLON                { AddTransition(true, false, ToSpan(@1));    }
- 	| ON EventList GOTO QualifiedId SEMICOLON                { AddTransition(false, false, ToSpan(@1));   } 
-	| ON EventList GOTO QualifiedId StmtBlock SEMICOLON      { AddTransition(false, true, ToSpan(@1));    }
+	: ENTRY StmtBlock                                                   { SetStateEntry();                           }				
+	| EXIT StmtBlock								                    { SetStateExit();                            }
+	| DEFER NonDefaultEventList TrigAnnotOrNone SEMICOLON               { AddDefersOrIgnores(true,  ToSpan(@1));     }			
+	| IGNORE NonDefaultEventList TrigAnnotOrNone SEMICOLON			    { AddDefersOrIgnores(false, ToSpan(@1));     }
+	| ON EventList DO ID TrigAnnotOrNone SEMICOLON                      { AddAction($4.str, ToSpan(@4), ToSpan(@1)); }
+	| ON EventList PUSH QualifiedId TrigAnnotOrNone SEMICOLON           { AddTransition(true, false, ToSpan(@1));    }
+ 	| ON EventList GOTO QualifiedId TrigAnnotOrNone SEMICOLON           { AddTransition(false, false, ToSpan(@1));   } 
+	| ON EventList GOTO QualifiedId TrigAnnotOrNone StmtBlock SEMICOLON { AddTransition(false, true, ToSpan(@1));    }
 	;
 
 NonDefaultEventList
@@ -221,6 +242,11 @@ EventId
 NonDefaultEventId
 	: ID        { AddToEventList($1.str, ToSpan(@1));                      }
 	| HALT      { AddToEventList(P_Root.UserCnstKind.HALT, ToSpan(@1));    }
+	;
+
+TrigAnnotOrNone
+    : AnnotationSet  { SetTrigAnnotated(ToSpan(@1)); }
+	|
 	;
 
 /******************* Type Expressions *******************/

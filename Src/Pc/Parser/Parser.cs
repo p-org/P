@@ -21,6 +21,8 @@
 
         private bool parseFailed = false;
 
+        private Span crntAnnotSpan;
+        private bool isTrigAnnotated = false;
         private P_Root.FunDecl crntFunDecl = null;
         private P_Root.EventDecl crntEventDecl = null;
         private P_Root.MachineDecl crntMachDecl = null;
@@ -745,6 +747,12 @@
             state.isStable = MkUserCnst(P_Root.UserCnstKind.TRUE, span);
         }
 
+        private void SetTrigAnnotated(Span span)
+        {
+            crntAnnotSpan = span;
+            isTrigAnnotated = true;
+        }
+
         private void SetStateEntry()
         {
             Contract.Assert(stmtStack.Count > 0);
@@ -855,15 +863,30 @@
         private void AddDefersOrIgnores(bool isDefer, Span span)
         {
             Contract.Assert(crntEventList.Count > 0);
+            Contract.Assert(!isTrigAnnotated || crntAnnotStack.Count > 0);
             var state = GetCurrentStateDecl(span);
             var kind = MkUserCnst(isDefer ? P_Root.UserCnstKind.DEFER : P_Root.UserCnstKind.IGNORE, span);
+            var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
             foreach (var e in crntEventList)
             {
                 var defOrIgn = P_Root.MkDefIgnDecl(state, (P_Root.IArgType_DefIgnDecl__1)e, kind);
                 defOrIgn.Span = span;
                 parseProgram.DefersOrIgnores.Add(defOrIgn);
+                if (isTrigAnnotated)
+                {
+                    foreach (var kv in annots)
+                    {
+                        var annot = P_Root.MkAnnotation(
+                            defOrIgn,
+                            kv.Item1,
+                            (P_Root.IArgType_Annotation__2)kv.Item2);
+                        annot.Span = crntAnnotSpan;
+                        parseProgram.Annotations.Add(annot);
+                    }
+                }
             }
 
+            isTrigAnnotated = false;
             crntEventList.Clear();
         }
 
@@ -873,7 +896,9 @@
             Contract.Assert(crntQualName != null);
             Contract.Assert(!hasStmtAction || stmtStack.Count > 0);
             Contract.Assert(!(hasStmtAction && isPush));
+            Contract.Assert(!isTrigAnnotated || crntAnnotStack.Count > 0);
 
+            var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
             var state = GetCurrentStateDecl(span);
             P_Root.IArgType_TransDecl__3 action;
             if (isPush)
@@ -894,8 +919,21 @@
                 var trans = P_Root.MkTransDecl(state, (P_Root.IArgType_TransDecl__1)e, crntQualName, action);
                 trans.Span = span;
                 parseProgram.Transitions.Add(trans);
+                if (isTrigAnnotated)
+                {
+                    foreach (var kv in annots)
+                    {
+                        var annot = P_Root.MkAnnotation(
+                            trans,
+                            kv.Item1,
+                            (P_Root.IArgType_Annotation__2)kv.Item2);
+                        annot.Span = crntAnnotSpan;
+                        parseProgram.Annotations.Add(annot);
+                    }
+                }
             }
 
+            isTrigAnnotated = false;
             crntQualName = null;
             crntEventList.Clear();
         }
@@ -956,15 +994,31 @@
         private void AddAction(string name, Span nameSpan, Span span)
         {
             Contract.Assert(crntEventList.Count > 0);
+            Contract.Assert(!isTrigAnnotated || crntAnnotStack.Count > 0);
+
             var state = GetCurrentStateDecl(span);
             var actName = MkString(name, nameSpan);
+            var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
             foreach (var e in crntEventList)
             {
                 var action = P_Root.MkActionDecl(state, (P_Root.IArgType_ActionDecl__1)e, actName);
                 action.Span = span;
                 parseProgram.Actions.Add(action);
+                if (isTrigAnnotated)
+                {
+                    foreach (var kv in annots)
+                    {
+                        var annot = P_Root.MkAnnotation(
+                            action,
+                            kv.Item1,
+                            (P_Root.IArgType_Annotation__2)kv.Item2);
+                        annot.Span = crntAnnotSpan;
+                        parseProgram.Annotations.Add(annot);
+                    }
+                }
             }
 
+            isTrigAnnotated = false;
             crntEventList.Clear();
         }
 
@@ -1007,15 +1061,30 @@
             crntState = null;
         }
 
-        private void AddVarDecls()
+        private void AddVarDecls(bool hasAnnots, Span annotSpan)
         {
             Contract.Assert(typeExprStack.Count > 0);
             Contract.Assert(crntVarList.Count > 0);
+            Contract.Assert(!hasAnnots || crntAnnotStack.Count > 0);
             var typeExpr = (P_Root.IArgType_VarDecl__2)typeExprStack.Pop();
+            var annots = hasAnnots ? crntAnnotStack.Pop() : null;
             foreach (var vd in crntVarList)
             {
                 vd.type = typeExpr;
                 parseProgram.Variables.Add(vd);
+
+                if (hasAnnots)
+                {
+                    foreach (var kv in annots)
+                    {
+                        var annot = P_Root.MkAnnotation(
+                            vd,
+                            kv.Item1,
+                            (P_Root.IArgType_Annotation__2)kv.Item2);
+                        annot.Span = annotSpan;
+                        parseProgram.Annotations.Add(annot);
+                    }
+                }
             }
 
             crntVarList.Clear();
@@ -1038,6 +1107,70 @@
             machDecl.kind = MkUserCnst(kind, span);
             parseProgram.Machines.Add(machDecl);
             crntMachDecl = null;
+        }
+
+        private void AddMachineAnnots(Span span)
+        {
+            Contract.Assert(crntAnnotStack.Count > 0);
+            var machDecl = GetCurrentMachineDecl(span);
+            var annots = crntAnnotStack.Pop();
+            foreach (var kv in annots)
+            {
+                var annot = P_Root.MkAnnotation(
+                    machDecl,
+                    kv.Item1,
+                    (P_Root.IArgType_Annotation__2)kv.Item2);
+                annot.Span = span;
+                parseProgram.Annotations.Add(annot);
+            }            
+        }
+
+        private void AddStateAnnots(Span span)
+        {
+            Contract.Assert(crntAnnotStack.Count > 0);
+            var stateDecl = GetCurrentStateDecl(span);
+            var annots = crntAnnotStack.Pop();
+            foreach (var kv in annots)
+            {
+                var annot = P_Root.MkAnnotation(
+                    stateDecl,
+                    kv.Item1,
+                    (P_Root.IArgType_Annotation__2)kv.Item2);
+                annot.Span = span;
+                parseProgram.Annotations.Add(annot);
+            }
+        }
+
+        private void AddEventAnnots(Span span)
+        {
+            Contract.Assert(crntAnnotStack.Count > 0);
+            var eventDecl = GetCurrentEventDecl(span);
+            var annots = crntAnnotStack.Pop();
+            foreach (var kv in annots)
+            {
+                var annot = P_Root.MkAnnotation(
+                    eventDecl,
+                    kv.Item1,
+                    (P_Root.IArgType_Annotation__2)kv.Item2);
+                annot.Span = span;
+                parseProgram.Annotations.Add(annot);
+            }
+        }
+
+        private void AddFunAnnots(Span span)
+        {
+            Contract.Assert(crntAnnotStack.Count > 0);
+            var funDecl = GetCurrentFunDecl(span);
+            var annots = crntAnnotStack.Pop();
+            foreach (var kv in annots)
+            {
+                var annot = P_Root.MkAnnotation(
+                    funDecl,
+                    kv.Item1,
+                    (P_Root.IArgType_Annotation__2)kv.Item2);
+                annot.Span = span;
+                parseProgram.Annotations.Add(annot);
+            }
         }
 
         private void AddFunction(string name, Span nameSpan, Span span)
@@ -1180,6 +1313,7 @@
             crntAnnotStack.Clear();
             crntAnnotList = new List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>();
             parseFailed = false;
+            isTrigAnnotated = false;
             crntState = null;
             crntEventDecl = null;
             crntMachDecl = null;

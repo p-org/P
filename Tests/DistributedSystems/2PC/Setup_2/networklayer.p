@@ -14,6 +14,7 @@ machine NetworkMachine {
 			temp = new SenderMachine(hostMachine);
 			send(hostMachine, SenderPort, temp);
 			temp = new ReceiverMachine(hostMachine);
+			
 			raise(delete);
 		}
 		
@@ -139,7 +140,6 @@ machine MachineCreator
 			if(typeofMachine == 0)
 			{	
 				tempHostMachine = new Coordinator(tempparameter);
-				
 			}
 			else if (typeofMachine == 1)
 			{
@@ -148,7 +148,6 @@ machine MachineCreator
 			else
 			{
 				tempHostMachine = new Client(tempparameter);
-				
 			}
 			
 			tempNetworkMachine = new NetworkMachine(tempHostMachine);

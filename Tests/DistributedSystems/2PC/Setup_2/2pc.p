@@ -523,8 +523,8 @@ main machine TwoPhaseCommit {
 	
 	state createClient {
 		entry {
-			if(numberOfClients == 0)
-				raise(delete);
+			/*if(numberOfClients == 0)
+				raise(delete);*/
 			send(creatorMachine, createmachine, (creator = this, type = 2, parameter = (coordinator, 100*numberOfClients)));
 		}
 		on newMachineCreated goto createClient

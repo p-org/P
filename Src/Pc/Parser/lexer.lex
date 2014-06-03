@@ -54,7 +54,7 @@
 			 keywords.Add("this", (int)Tokens.THIS);
 			 keywords.Add("null", (int)Tokens.NULL);
 			 keywords.Add("trigger", (int)Tokens.TRIGGER);
-			 keywords.Add("leave", (int)Tokens.LEAVE);
+			 keywords.Add("pop", (int)Tokens.POP);
 			 keywords.Add("true", (int)Tokens.TRUE);
 			 keywords.Add("false", (int)Tokens.FALSE);
 			 keywords.Add("sizeof", (int)Tokens.SIZEOF);
@@ -63,7 +63,6 @@
 
 			 keywords.Add("assert", (int)Tokens.ASSERT);
 			 keywords.Add("send", (int)Tokens.SEND);
-			 keywords.Add("call", (int)Tokens.CALL);
 			 keywords.Add("monitor", (int)Tokens.MONITOR);
 			 keywords.Add("raise", (int)Tokens.RAISE);
 			 keywords.Add("halt", (int)Tokens.HALT);
@@ -88,7 +87,7 @@
 			 keywords.Add("fun", (int)Tokens.FUN);
 			 keywords.Add("action", (int)Tokens.ACTION);
 			 keywords.Add("state", (int)Tokens.STATE);
-			 keywords.Add("submachine", (int)Tokens.SUBMACHINE);
+			 keywords.Add("group", (int)Tokens.GROUP);
 
 			 keywords.Add("entry", (int)Tokens.ENTRY);
 			 keywords.Add("exit", (int)Tokens.EXIT);

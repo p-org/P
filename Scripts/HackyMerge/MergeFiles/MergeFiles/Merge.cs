@@ -43,18 +43,41 @@ namespace MergeFiles
         Dictionary<string, List<string>> Machines;
         public void MergeAll()
         {
+            string concat = "\n";
             Machines = new Dictionary<string, List<string>>();
             foreach (var file in FilesToBeMerged)
-                GetMachinesInFile(file);
+            {
+                var f = File.OpenRead(file);
+                var strRd = new StreamReader(f);
+                var Code = strRd.ReadToEnd();
+                concat = concat + "\n\n" + Code;
+            }
+
+            GetMachines(concat);
         }
 
-        public Dictionary<string, List<string>> GetMachinesInFile(string PFile)
+        public Dictionary<string, List<string>> GetMachines(string code)
         {
-            var file = File.OpenRead(PFile);
-            var strRd = new StreamReader(file);
-            var entireCode = strRd.ReadToEnd();
+            Dictionary<string, KeyValuePair<string, List<string>>> CodeList = new Dictionary<string, KeyValuePair<string, List<string>>>();
+
+            //Parse the main machine
+            Regex rMachName_MainMachine = new Regex(@"main[\s\w]*machine[\s]*([\w]*)");
+            Match m1 = rMachName_MainMachine.Match(code);
+            while (m1.Success)
+            {
+                string machineType = m1.Groups[0].ToString();
+                string machineName = m1.Groups[1].ToString();
+                string pattern = @"\\begin{" + machineName + @"}([\s\S]*)\\end{" + machineName + "}";
+                Regex rMachBody = new Regex(pattern);
+                Match m2 = rMachBody.Match(code);
+                string machineBody = m2.Groups[1].ToString();
+                if(CodeList.ContainsKey(machineName))
+                {
+                   (CodeList.Value.Add(machineBody);
+                }
+                m1 = m1.NextMatch();
+            }
             
-            var allStart = entireCode.f
             return null;
         }
         #endregion

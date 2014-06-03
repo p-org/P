@@ -64,8 +64,8 @@
     <None Include="App.config" />
     <None Include="Domains\P.4ml">
       <Generator>FormulaCodeGenerator</Generator>
-      <LastGenOutput>P.4ml.g.cs</LastGenOutput>
       <CustomToolNamespace>Microsoft.Pc.Domains</CustomToolNamespace>
+      <LastGenOutput>P.4ml.g.cs</LastGenOutput>
     </None>
   </ItemGroup>
   <ItemGroup>

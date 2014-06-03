@@ -35,13 +35,13 @@
     ExprsExt   ::= Expr + Exprs + NamedExprs.
 
     //// Statements
-    Call     ::= new (name: String).
+    Push     ::= new (name: any QualifiedName).
     NewStmt  ::= new (name: String, arg: any Expr + { NIL }).
     Raise    ::= new (ev: any Expr, arg: any Expr + { NIL }).
     Send     ::= new (dest: any Expr, ev: any Expr, arg: any Expr + { NIL }).
     Monitor  ::= new (name: String, ev: Expr, arg: Expr + { NIL }).
     FunStmt  ::= new (name: String, args: any Exprs + { NIL }).
-	NulStmt  ::= new (op: { SKIP, LEAVE }).
+	NulStmt  ::= new (op: { SKIP, POP }).
 	UnStmt   ::= new (op: { ASSERT }, arg1: any Expr).
 	BinStmt  ::= new (op: { REMOVE, ASSIGN }, arg1: any Expr, arg2: any Expr).
     Return   ::= new (expr: any Expr + { NIL }).
@@ -49,40 +49,32 @@
     Ite      ::= new (cond: any Expr, true: any Stmt, false: any Stmt).
     Seq      ::= new (s1: any Stmt, s2: any Stmt).
 
-	Stmt ::= NewStmt + FunStmt + NulStmt + UnStmt + BinStmt + Return + Send + Raise + While + Ite + Seq + Call + Monitor. 
+	Stmt ::= NewStmt + FunStmt + NulStmt + UnStmt + BinStmt + Return + Send + Raise + While + Ite + Seq + Push + Monitor. 
 
     /*************************************************************/
     /****************  State Machine Declarations    *************/
     /*************************************************************/
 
-    MachineDecl  ::= fun (name: String -> kind: { REAL, MODEL, MONITOR }, card: any QueueConstraint, start: String).
-    EventDecl    ::= fun (name: String -> card: any QueueConstraint, payloadType: any TypeExpr + { NIL }).    
-    ActionDecl   ::= fun (name: String, owner: MachineDecl -> body: any Stmt).
-    StateDecl    ::= fun (name: String, owner: MachineDecl -> entryFun: any Stmt, exitFun: any Stmt, defers: EventSetDecl + { NIL }).
+    MachineDecl  ::= fun (name: String -> kind: { REAL, MODEL, MONITOR }, card: any QueueConstraint, start: QualifiedName, isMain: Boolean).
+    EventDecl    ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
     VarDecl      ::= fun (name: String, owner: MachineDecl -> type: any TypeExpr).
-    TransDecl    ::= fun (src: StateDecl, trig: EventDecl + { DEFAULT } -> dst: StateDecl, isPush: Boolean).
-    FunDecl      ::= fun (name: String, owner: MachineDecl -> params: any NmdTupType + { NIL },  return: any TypeExpr + { NIL }, isModel: Boolean, body: any Stmt).
-    SubMachDecl  ::= new (name: String, owner: MachineDecl).    
-    EventSetDecl ::= new (name: String, owner: MachineDecl).    
+    FunDecl      ::= fun (name: String, owner: MachineDecl -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL },  return: any TypeExpr + { NIL }, body: any Stmt).
+    StateDecl    ::= fun (name: QualifiedName, owner: MachineDecl -> entryFun: any Stmt, exitFun: any Stmt, isStable: Boolean).
+    TransDecl    ::= fun (src: StateDecl, trig: String + { DEFAULT, HALT } -> dst: any QualifiedName, action: any Stmt + { NIL, PUSH }).
+	ActionDecl   ::= fun (src: StateDecl, trig: String + { HALT } -> action: String).
+	DefIgnDecl   ::= fun (src: StateDecl, trig: String + { HALT } -> kind: { DEFER, IGNORE }).
 	
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
+	QualifiedName      ::= new (name: String, qualifier: any QualifiedName + { NIL }).
 	QueueConstraint    ::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
-
-    /*************************************************************/
-    /****************    Additional Configurators    *************/
-    /*************************************************************/
-
-    MainDecl   ::= new (main: MachineDecl).    
-	Install    ::= fun (state: StateDecl, event: EventDecl -> action: ActionDecl).
-    Stable     ::= new (state: StateDecl).
-    InSubMach  ::= fun (state: StateDecl -> sbm: SubMachDecl).
-    InEventSet ::= new (set: EventSetDecl, event: EventDecl).
+	EventLabel         ::= String + { DEFAULT, HALT }.
 
     /*************************************************************/
     /****************          Annotations           *************/
     /*************************************************************/
 
-	Annotation ::= new (ant: Annotable, key: String, value: Integer + Boolean + { NULL }).
-	Annotable  ::= MachineDecl + EventDecl + ActionDecl + StateDecl + VarDecl + TransDecl + FunDecl + EventSetDecl + { NIL }.
+	Annotation ::= new (ant: Annotable, key: String, value: any AnnotValue).
+	Annotable  ::= MachineDecl + EventDecl + StateDecl + VarDecl + TransDecl + FunDecl + ActionDecl + DefIgnDecl + { NIL }.
+	AnnotValue ::= Integer + String + Boolean + { NULL }.
 }

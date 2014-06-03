@@ -11,11 +11,11 @@
 %token INT BOOL FOREIGN ANY SEQ MAP ID
 %token MAIN EVENT MACHINE MONITOR ASSUME
 
-%token VAR START STABLE MODEL STATE FUN ACTION SUBMACHINE
+%token VAR START STABLE MODEL STATE FUN ACTION GROUP
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH AS
 
-%token IF WHILE THIS TRIGGER PAYLOAD NEW RETURN FAIR ID LEAVE ASSERT CALL INVOKE RAISE SEND DEFAULT HALT NULL 
+%token IF WHILE THIS TRIGGER PAYLOAD NEW RETURN ID POP ASSERT CALL INVOKE RAISE SEND DEFAULT HALT NULL 
 %token LPAREN RPAREN LCBRACE RCBRACE LBRACKET RBRACKET SIZEOF KEYS VALUES
 
 %token TRUE FALSE
@@ -42,11 +42,13 @@
 Program
     : EOF
 	| TopDeclList
+	| AnnotationSet                { AddProgramAnnots(ToSpan(@1)); }
+	| AnnotationSet TopDeclList    { AddProgramAnnots(ToSpan(@1)); }
 	;
 
 TopDeclList
     : TopDecl
-	| TopDecl TopDeclList
+	| TopDeclList TopDecl 
 	;
 
 TopDecl
@@ -54,9 +56,28 @@ TopDecl
 	| MachineDecl
 	;
 
+/******************* Annotations *******************/ 
+AnnotationSet
+    : LBRACKET RBRACKET                  { PushAnnotationSet(); }
+	| LBRACKET AnnotationList RBRACKET   { PushAnnotationSet(); }
+	;
+
+AnnotationList
+    : Annotation
+	| AnnotationList COMMA Annotation
+	;
+
+Annotation
+    : ID ASSIGN NULL    { AddAnnotUsrCnstVal($1.str, P_Root.UserCnstKind.NULL, ToSpan(@1), ToSpan(@3));  }
+	| ID ASSIGN TRUE    { AddAnnotUsrCnstVal($1.str, P_Root.UserCnstKind.TRUE, ToSpan(@1), ToSpan(@3));  }
+	| ID ASSIGN FALSE   { AddAnnotUsrCnstVal($1.str, P_Root.UserCnstKind.FALSE, ToSpan(@1), ToSpan(@3)); }
+	| ID ASSIGN ID      { AddAnnotStringVal($1.str, $3.str, ToSpan(@1), ToSpan(@3));                     }
+	| ID ASSIGN INT     { AddAnnotIntVal($1.str, $3.str, ToSpan(@1), ToSpan(@3));                        }
+	;
+
 /******************* Event Declarations *******************/ 
 EventDecl
-	: EVENT ID EvCardOrNone TypeOrNone SEMICOLON    { AddEvent($2.str, ToSpan(@2), ToSpan(@1)); }
+	: EVENT ID EvCardOrNone EvTypeOrNone EventAnnotOrNone SEMICOLON { AddEvent($2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 
 EvCardOrNone
@@ -65,20 +86,25 @@ EvCardOrNone
 	|												{ }
 	;
 
-TypeOrNone
-	: COLON Type									{ SetEventType(ToSpan(@1)); }
+EvTypeOrNone
+	: COLON Type									{ SetEventType(ToSpan(@1));                }
 	|												{ }
+	;
+
+EventAnnotOrNone
+    : AnnotationSet                                 { AddEventAnnots(ToSpan(@1));              }
+	|
 	;
 
 /******************* Machine Declarations *******************/
 MachineDecl
-	: IsMain MACHINE ID MachCardOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1)); }
-	| IsMain MODEL ID MachCardOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1)); }
-	| MONITOR ID MachCardOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
+	: IsMain MACHINE ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1));    }
+	| IsMain MODEL ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE   { AddMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1));   }
+	| MONITOR ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE        { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 
 IsMain
-	: MAIN											{ AddMainDecl(ToSpan(@1)); }
+	: MAIN											{ SetMachineIsMain(ToSpan(@1)); }
 	|												{ }
 	;
 
@@ -88,20 +114,28 @@ MachCardOrNone
 	|												{ }
 	;
 
+MachAnnotOrNone
+    : AnnotationSet                                 { AddMachineAnnots(ToSpan(@1));              }
+	|
+	;
+
 /******************* Machine Bodies *******************/
 MachineBody
 	: MachineBodyItem												
-	| MachineBodyItem MachineBody					
+	| MachineBody MachineBodyItem 					
 	;
 
 MachineBodyItem
 	: VarDecl
-	| ActionDecl
+	| FunDecl
+	| StateDecl
+	| Group
 	;
 
 /******************* Variable Declarations *******************/
 VarDecl
-	: VAR VarList COLON Type SEMICOLON	{ AddVarDecls(); }
+	: VAR VarList COLON Type SEMICOLON	             { AddVarDecls(false, ToSpan(@1)); }
+	| VAR VarList COLON Type AnnotationSet SEMICOLON { AddVarDecls(true,  ToSpan(@5)); }
 	;
 
 VarList
@@ -109,10 +143,110 @@ VarList
 	| ID COMMA VarList    { AddVarDecl($1.str, ToSpan(@1)); }
 	;
 
-/******************* Action Declarations *******************/
+/******************* Function Declarations *******************/
 
-ActionDecl
-    : ACTION ID StmtBlock            { AddAction($2.str, ToSpan(@2), ToSpan(@1)); }
+FunDecl
+	: IsModel FUN ID ParamsOrNone RetTypeOrNone FunAnnotOrNone StmtBlock { AddFunction($3.str, ToSpan(@3), ToSpan(@1)); }
+	;
+
+IsModel
+	: MODEL											{ SetFunKind(P_Root.UserCnstKind.MODEL, ToSpan(@1)); }
+	|												{ }
+	;
+
+FunAnnotOrNone
+    : AnnotationSet { AddFunAnnots(ToSpan(@1)); }
+	|
+	;
+
+ParamsOrNone
+    : LPAREN RPAREN
+	| LPAREN NmdTupTypeList RPAREN                  { SetFunParams(ToSpan(@1)); }
+	;
+
+RetTypeOrNone
+    : COLON Type                                    { SetFunReturn(ToSpan(@1)); }
+	| 
+	;
+
+/*******************       Group        *******************/
+Group
+    : GroupName LCBRACE RCBRACE             { AddGroup(); }      
+    | GroupName LCBRACE GroupBody RCBRACE   { AddGroup(); }
+	;
+
+GroupBody
+    : GroupItem
+	| GroupBody GroupItem 
+	;
+
+GroupItem
+    : StateDecl
+	| Group
+	;
+
+GroupName
+    : GROUP ID	{ PushGroup($2.str, ToSpan(@2), ToSpan(@1)); }
+	;
+
+/******************* State Declarations *******************/
+StateDecl
+	: IsStable STATE ID StateAnnotOrNone LCBRACE RCBRACE                  { AddState($3.str, false, ToSpan(@3), ToSpan(@1)); }
+	| IsStable STATE ID StateAnnotOrNone LCBRACE StateBody RCBRACE        { AddState($3.str, false, ToSpan(@3), ToSpan(@1)); }	  
+	| START IsStable STATE ID StateAnnotOrNone LCBRACE RCBRACE            { AddState($4.str, true,  ToSpan(@4), ToSpan(@1)); }
+	| START IsStable STATE ID StateAnnotOrNone LCBRACE StateBody RCBRACE  { AddState($4.str, true,  ToSpan(@4), ToSpan(@1)); }	  
+	;
+
+IsStable
+	: STABLE        { SetStateIsStable(ToSpan(@1)); }
+	|
+	;
+
+StateAnnotOrNone
+    : AnnotationSet { AddStateAnnots(ToSpan(@1)); }
+	|
+	;
+
+StateBody
+	: StateBodyItem
+	| StateBodyItem StateBody 
+	;
+
+StateBodyItem
+	: ENTRY StmtBlock                                                   { SetStateEntry();                           }				
+	| EXIT StmtBlock								                    { SetStateExit();                            }
+	| DEFER NonDefaultEventList TrigAnnotOrNone SEMICOLON               { AddDefersOrIgnores(true,  ToSpan(@1));     }			
+	| IGNORE NonDefaultEventList TrigAnnotOrNone SEMICOLON			    { AddDefersOrIgnores(false, ToSpan(@1));     }
+	| ON EventList DO ID TrigAnnotOrNone SEMICOLON                      { AddAction($4.str, ToSpan(@4), ToSpan(@1)); }
+	| ON EventList PUSH QualifiedId TrigAnnotOrNone SEMICOLON           { AddTransition(true, false, ToSpan(@1));    }
+ 	| ON EventList GOTO QualifiedId TrigAnnotOrNone SEMICOLON           { AddTransition(false, false, ToSpan(@1));   } 
+	| ON EventList GOTO QualifiedId TrigAnnotOrNone StmtBlock SEMICOLON { AddTransition(false, true, ToSpan(@1));    }
+	;
+
+NonDefaultEventList
+	: NonDefaultEventId
+	| NonDefaultEventList COMMA NonDefaultEventId 
+	;
+
+EventList
+	: EventId
+	| EventList COMMA EventId
+	;
+
+EventId
+	: ID        { AddToEventList($1.str, ToSpan(@1));                      }
+	| HALT      { AddToEventList(P_Root.UserCnstKind.HALT, ToSpan(@1));    }
+	| DEFAULT   { AddToEventList(P_Root.UserCnstKind.DEFAULT, ToSpan(@1)); }
+	;
+
+NonDefaultEventId
+	: ID        { AddToEventList($1.str, ToSpan(@1));                      }
+	| HALT      { AddToEventList(P_Root.UserCnstKind.HALT, ToSpan(@1));    }
+	;
+
+TrigAnnotOrNone
+    : AnnotationSet  { SetTrigAnnotated(ToSpan(@1)); }
+	|
 	;
 
 /******************* Type Expressions *******************/
@@ -147,9 +281,9 @@ NmdTupTypeList
 Stmt
 	: SEMICOLON                                               { PushNulStmt(P_Root.UserCnstKind.SKIP,  ToSpan(@1));      }
 	| LCBRACE RCBRACE                                         { PushNulStmt(P_Root.UserCnstKind.SKIP,  ToSpan(@1));      }
-	| LEAVE SEMICOLON                                         { PushNulStmt(P_Root.UserCnstKind.LEAVE, ToSpan(@1));      }
+	| POP SEMICOLON                                           { PushNulStmt(P_Root.UserCnstKind.POP,   ToSpan(@1));      }
 	| LCBRACE StmtList RCBRACE                                { }
-	| CALL ID SEMICOLON                                       { PushCall($2.str, ToSpan(@2), ToSpan(@1));                }
+	| PUSH QualifiedId SEMICOLON                              { PushPush(ToSpan(@1));                                    }
 	| ASSERT Exp SEMICOLON                                    { PushUnStmt(P_Root.UserCnstKind.ASSERT, ToSpan(@1));      }
 	| RETURN SEMICOLON                                        { PushReturn(false, ToSpan(@1));                           }
 	| RETURN Exp SEMICOLON                                    { PushReturn(true, ToSpan(@1));                            }
@@ -171,13 +305,18 @@ Stmt
 	;
 
 StmtBlock
-	: LCBRACE RCBRACE                                    { PushNulStmt(P_Root.UserCnstKind.SKIP,  ToSpan(@1));      }    
+	: LCBRACE RCBRACE                                         { PushNulStmt(P_Root.UserCnstKind.SKIP,  ToSpan(@1));      }    
     | LCBRACE StmtList RCBRACE
 	;
 
 StmtList
 	: Stmt
 	| Stmt StmtList    { PushSeq(); }													
+	;
+
+QualifiedId
+    : ID                  { Qualify($1.str, ToSpan(@1)); }
+	| QualifiedId DOT ID  { Qualify($3.str, ToSpan(@3)); }
 	;
 
 /******************* Value Expressions *******************/

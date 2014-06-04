@@ -1,25 +1,7 @@
-event createmachine:(creator:id, type: int, parameter: any);
-event newMachineCreated:id;
-event unit;
-event SenderPort:id;
+
 event sendMessage:(target:id, e:eid, p:any);
 event networkMessage:(iden:(source:id, seqnum:int), msg:(e:eid, p:any));
 
-machine NetworkMachine {
-	var hostMachine: id;
-	var temp:id;
-	start state bootingState {
-		entry {
-			hostMachine = (id)payload;
-			temp = new SenderMachine(hostMachine);
-			send(hostMachine, SenderPort, temp);
-			temp = new ReceiverMachine(hostMachine);
-			
-			raise(delete);
-		}
-		
-	}
-}
 
 
 machine ReceiverMachine {
@@ -75,7 +57,7 @@ machine SenderMachine {
 	state Listening {
 		entry {
 			i = numberofRetry;
-			while(i != 0 && sendFail)
+			while(i != 0 && !sendFail)
 			{
 				sendFail = sendRPC(payload.target, networkMessage, (iden = (source = hostMachine, seqnum = CurrentSeqNum),msg = (e = payload.e, p = payload.p)));
 				i = i - 1;
@@ -102,59 +84,3 @@ machine SenderMachine {
 	}
 }
 
-
-machine MachineCreator
-{
-	var tempparameter:any;
-	var typeofMachine : int; // 0 : coordinator, 1 : replica, 2 : client 
-	var tempNetworkMachine:id;
-	var tempHostMachine:id;
-	
-	var sendPort:id;
-	
-	model fun sendToNetwork(target:id, e:eid, p:any) {
-		send(sendPort, sendMessage, (target = target, e = e, p = p));
-	}
-	
-	start state bootingState {
-		defer createmachine;
-	
-		on SenderPort goto Init
-		{
-			sendPort = (id)payload;
-		};
-	}
-	
-	state Init {
-		entry {
-			
-		}
-		on createmachine goto CreateMachineS;
-	}
-	
-	state CreateMachineS {
-		entry {
-			typeofMachine = payload.type;
-			tempparameter = payload.parameter;
-			
-			if(typeofMachine == 0)
-			{	
-				tempHostMachine = new Coordinator(tempparameter);
-			}
-			else if (typeofMachine == 1)
-			{
-				tempHostMachine = new Replica(tempparameter);
-			}
-			else
-			{
-				tempHostMachine = new Client(tempparameter);
-			}
-			
-			tempNetworkMachine = new NetworkMachine(tempHostMachine);
-			send(payload.creator, newMachineCreated, tempNetworkMachine);
-		}
-		on createmachine goto CreateMachineS;
-	}
-	
-	
-}

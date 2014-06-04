@@ -63,7 +63,8 @@ model machine Timer {
 	}
 }
 
-machine Replica {
+machine Replica 
+\begin{Replica}
 	var coordinator: id;
     var data: map[int,int];
 	var pendingWriteReq: (seqNum: int, key: int, val: int);
@@ -71,22 +72,10 @@ machine Replica {
 	var lastSeqNum: int;
 	var sendPort:id;
 	
-	model fun sendToNetwork(target:id, e:eid, p:any) {
-		send(sendPort, sendMessage, (target = target, e = e, p = p));
-	}
-	
 	start state bootingState {
 		entry {
-			coordinator = (id)payload;
-		}
-		on SenderPort goto Init
-		{
-			sendPort = (id)payload;
-		};
-	}
-	
-    state Init {
-	    entry {
+			coordinator = payload.param;
+			sendPort = payload.sender;
 			lastSeqNum = 0;
 			raise(Unit);
 		}
@@ -98,9 +87,9 @@ machine Replica {
 		assert (pendingWriteReq.seqNum > lastSeqNum);
 		shouldCommit = ShouldCommitWrite();
 		if (shouldCommit) {
-			sendToNetwork(coordinator, RESP_REPLICA_COMMIT, pendingWriteReq.seqNum);
+			_SEND(coordinator, RESP_REPLICA_COMMIT, pendingWriteReq.seqNum);
 		} else {
-			sendToNetwork(coordinator, RESP_REPLICA_ABORT, pendingWriteReq.seqNum);
+			_SEND(coordinator, RESP_REPLICA_ABORT, pendingWriteReq.seqNum);
 		}
 	}
 
@@ -122,9 +111,9 @@ machine Replica {
 
 	action ReadData{
 		if(payload in data)
-			sendToNetwork(coordinator, REP_READ_SUCCESS, data[payload]);
+			_SEND(coordinator, REP_READ_SUCCESS, data[payload]);
 		else
-			sendToNetwork(coordinator, REP_READ_FAIL, null);
+			_SEND(coordinator, REP_READ_FAIL, null);
 	}
 	
 	state Loop {
@@ -138,9 +127,10 @@ machine Replica {
 	{
 		return *;
 	}
-}
+\end{Replica}
 
-machine Coordinator {
+machine Coordinator 
+\begin{Coordinator}
 	var data: map[int,int];
 	var replicas: seq[id];
 	var numReplicas: int;
@@ -154,31 +144,18 @@ machine Coordinator {
 	var readResult: (bool, int);
 	var creatorMachine:id;
 	var sendPort:id;
+	var temp_NM:id;
 	
-	model fun sendToNetwork(target:id, e:eid, p:any) {
-		send(sendPort, sendMessage, (target = target, e = e, p = p));
-	}
 	
 	start state bootingState {
 		entry {
-			creatorMachine = ((id, int))payload[0];
-			numReplicas = ((id, int))payload[1];
-		}
-	
-		on SenderPort goto Init
-		{
-			sendPort = (id)payload;
-		};
-	}
-	
-	
-	state Init {
-		entry {
-			
+			numReplicas = payload.param;
+			sendPort = payload.sender;
 			assert (numReplicas > 0);
 			i = 0;
 			while (i < numReplicas) {
-				call(createReplica);
+				temp_NM = _CREATENODE();
+				replica = _CREATEMACHINE(temp_NM, 2, this);
 				replicas.insert(i, replica);
 				i = i + 1;
 			}
@@ -190,17 +167,6 @@ machine Coordinator {
 		on Unit goto Loop;
 	}
 	
-	state createReplica {
-		entry {
-			sendToNetwork(creatorMachine, createmachine, (creator= this, type = 1, parameter = this));
-		}
-		on newMachineCreated do PopState;
-	}
-	
-	action PopState {
-		replica = (id)payload;
-		return;
-	}
 	state DoRead {
 		entry {
 			client = payload.client;
@@ -213,20 +179,20 @@ machine Coordinator {
 		}
 		on READ_FAIL goto Loop
 		{
-			sendToNetwork(client, READ_FAIL, null);
+			_SEND(client, READ_FAIL, null);
 		};
 		on READ_SUCCESS goto Loop
 		{	
-			sendToNetwork(client, READ_SUCCESS, payload);
+			_SEND(client, READ_SUCCESS, payload);
 		};
 	}
 	
 	model fun ChooseReplica()
 	{
 			if(*) 
-				sendToNetwork(replicas[0], READ_REQ_REPLICA, key);
+				_SEND(replicas[0], READ_REQ_REPLICA, key);
 			else
-				sendToNetwork(replicas[sizeof(replicas) - 1], READ_REQ_REPLICA, key);
+				_SEND(replicas[sizeof(replicas) - 1], READ_REQ_REPLICA, key);
 				
 	}
 	
@@ -250,7 +216,7 @@ machine Coordinator {
 		currSeqNum = currSeqNum + 1;
 		i = 0;
 		while (i < sizeof(replicas)) {
-			sendToNetwork(replicas[i], REQ_REPLICA, (seqNum=currSeqNum, key=pendingWriteReq.key, val=pendingWriteReq.val));
+			_SEND(replicas[i], REQ_REPLICA, (seqNum=currSeqNum, key=pendingWriteReq.key, val=pendingWriteReq.val));
 			i = i + 1;
 		}
 		send(timer, StartTimer, 100);
@@ -267,22 +233,22 @@ machine Coordinator {
 	fun DoGlobalAbort() {
 		i = 0;
 		while (i < sizeof(replicas)) {
-			sendToNetwork(replicas[i], GLOBAL_ABORT, currSeqNum);
+			_SEND(replicas[i], GLOBAL_ABORT, currSeqNum);
 			i = i + 1;
 		}
-		sendToNetwork(pendingWriteReq.client, WRITE_FAIL, null);
+		_SEND(pendingWriteReq.client, WRITE_FAIL, null);
 	}
 
 	state CountVote {
 		entry {
 			if (i == 0) {
 				while (i < sizeof(replicas)) {
-					sendToNetwork(replicas[i], GLOBAL_COMMIT, currSeqNum);
+					_SEND(replicas[i], GLOBAL_COMMIT, currSeqNum);
 					i = i + 1;
 				}
 				data.update(pendingWriteReq.key, pendingWriteReq.val);
 				//invoke Termination(MONITOR_UPDATE, (m = this, key = pendingWriteReq.key, val = pendingWriteReq.val));
-				sendToNetwork(pendingWriteReq.client, WRITE_SUCCESS, null);
+				_SEND(pendingWriteReq.client, WRITE_SUCCESS, null);
 				send(timer, CancelTimer);
 				raise(Unit);
 			}
@@ -320,33 +286,20 @@ machine Coordinator {
 		ignore RESP_REPLICA_COMMIT, RESP_REPLICA_ABORT;
 		on Timeout goto Loop;
 	}
-}
+\end{Coordinator}
 
-machine Client {
+machine Client 
+\begin{Client}
     var coordinator: id;
 	var mydata : int;
 	var counter : int;
     var sendPort:id;
 	
-	model fun sendToNetwork(target:id, e:eid, p:any) {
-		send(sendPort, sendMessage, (target = target, e = e, p = p));
-	}
-	
 	start state bootingState {
 		entry {
-			coordinator = ((id, int))payload[0];
-			mydata = ((id, int))payload[1];
-		}
-	
-		on SenderPort goto Init
-		{
-			sendPort = (id)payload;
-		};
-	}
-	
-	state Init {
-	    entry {
-	        
+			coordinator = ((id, int))payload.param[0];
+			mydata = ((id, int))payload.param[1];
+			sendPort = payload.sender;
 			counter = 0;
 			new ReadWrite(this);
 			raise(Unit);
@@ -361,7 +314,7 @@ machine Client {
 			counter = counter + 1;
 			if(counter == 3)
 				raise(goEnd);
-			sendToNetwork(coordinator, WRITE_REQ, (client=this, key=mydata, val=mydata));
+			_SEND(coordinator, WRITE_REQ, (client=this, key=mydata, val=mydata));
 		}
 		on WRITE_FAIL goto DoRead
 		{
@@ -376,7 +329,7 @@ machine Client {
 
 	state DoRead {
 	    entry {
-			sendToNetwork(coordinator, READ_REQ, (client=this, key=mydata));
+			_SEND(coordinator, READ_REQ, (client=this, key=mydata));
 		}
 		on READ_FAIL goto DoWrite
 		{
@@ -388,9 +341,9 @@ machine Client {
 		};
 	}
 
-	state End { }
+	state End {  }
 
-}
+\end{Client}
 
 //Monitors
 
@@ -502,34 +455,19 @@ monitor Termination {
 }
 */
 
-main machine TwoPhaseCommit {
+main machine TwoPhaseCommit 
+\begin{TwoPhaseCommit}
     var coordinator: id;
-	var networkedcreatorMachine:id;
-	var numberOfClients:int;
-	var creatorMachine:id;
-	
+	var temp_NM : id;
+	var sendPort:id;
     start state Init {
 	    entry {
-			numberOfClients = 2;
-			creatorMachine = new MachineCreator();
-			networkedcreatorMachine = new NetworkMachine(creatorMachine);
-			send(creatorMachine, createmachine, (creator = this, type =0, parameter = (networkedcreatorMachine, 2)));
+			temp_NM = _CREATENODE();
+			coordinator = _CREATEMACHINE(temp_NM, 1, 2); // create coordinator
+			temp_NM = _CREATENODE();
+			_CREATEMACHINE(temp_NM, 3, (coordinator, 100)); // create client machine
+			temp_NM = _CREATENODE();
+			_CREATEMACHINE(temp_NM, 3, (coordinator, 200)); // create client machine
 	    }
-		on newMachineCreated goto createClient
-		{
-			coordinator = (id)payload;
-		};
 	}
-	
-	state createClient {
-		entry {
-			/*if(numberOfClients == 0)
-				raise(delete);*/
-			send(creatorMachine, createmachine, (creator = this, type = 2, parameter = (coordinator, 100*numberOfClients)));
-		}
-		on newMachineCreated goto createClient
-		{
-			numberOfClients = numberOfClients - 1;
-		};
-	}
-}
+\end{TwoPhaseCommit}

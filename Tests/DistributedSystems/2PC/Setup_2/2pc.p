@@ -71,11 +71,13 @@ machine Replica
 	var shouldCommit: bool;
 	var lastSeqNum: int;
 	var sendPort:id;
+	var initMessage:(nodemanager:id, param:id, sender:id);
 	
 	start state bootingState {
 		entry {
-			coordinator = payload.param;
-			sendPort = payload.sender;
+			initMessage = ((nodemanager:id, param:id, sender:id))payload;
+			coordinator = initMessage.param;
+			sendPort = initMessage.sender;
 			lastSeqNum = 0;
 			raise(Unit);
 		}
@@ -145,20 +147,25 @@ machine Coordinator
 	var creatorMachine:id;
 	var sendPort:id;
 	var temp_NM:id;
-	
+	var initMessage:(nodemanager:id, param:int, sender:id);
 	
 	start state bootingState {
 		entry {
-			numReplicas = payload.param;
-			sendPort = payload.sender;
+			initMessage = ((nodemanager:id, param:int, sender:id))payload;
+			numReplicas = initMessage.param;
+			sendPort = initMessage.sender;
+			
 			assert (numReplicas > 0);
 			i = 0;
 			while (i < numReplicas) {
 				temp_NM = _CREATENODE();
-				replica = _CREATEMACHINE(temp_NM, 2, this);
+				createmachine_param = (nodeManager = temp_NM, typeofmachine = 2, param = this);
+				call(_CREATEMACHINE);
+				replica = createmachine_return;
 				replicas.insert(i, replica);
 				i = i + 1;
 			}
+			assert(false);
 			currSeqNum = 0;
 			//new Termination(this, replicas);
 			timer = new Timer(this);
@@ -294,12 +301,14 @@ machine Client
 	var mydata : int;
 	var counter : int;
     var sendPort:id;
+	var initMessage:(nodemanager:id, param:(id, int), sender:id);
 	
 	start state bootingState {
 		entry {
-			coordinator = ((id, int))payload.param[0];
-			mydata = ((id, int))payload.param[1];
-			sendPort = payload.sender;
+			initMessage = ((nodemanager:id, param:(id, int), sender:id))payload;
+			coordinator = initMessage.param[0];
+			mydata = initMessage.param[1];
+			sendPort = initMessage.sender;
 			counter = 0;
 			new ReadWrite(this);
 			raise(Unit);
@@ -462,12 +471,19 @@ main machine TwoPhaseCommit
 	var sendPort:id;
     start state Init {
 	    entry {
+			//Let me create my own sender 
+			sendPort = new SenderMachine((nodemanager = null, param = null));
 			temp_NM = _CREATENODE();
-			coordinator = _CREATEMACHINE(temp_NM, 1, 2); // create coordinator
+			createmachine_param = (nodeManager = temp_NM, typeofmachine = 1, param = 2);
+			call(_CREATEMACHINE); // create coordinator
+			assert(false);
+			coordinator = createmachine_return;
 			temp_NM = _CREATENODE();
-			_CREATEMACHINE(temp_NM, 3, (coordinator, 100)); // create client machine
+			createmachine_param = (nodeManager = temp_NM, typeofmachine = 3, param = (coordinator, 100));
+			call(_CREATEMACHINE);// create client machine
 			temp_NM = _CREATENODE();
-			_CREATEMACHINE(temp_NM, 3, (coordinator, 200)); // create client machine
+			createmachine_param = (nodeManager = temp_NM, typeofmachine = 3, param = (coordinator, 200));
+			call(_CREATEMACHINE);// create client machine
 	    }
 	}
 \end{TwoPhaseCommit}

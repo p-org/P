@@ -1,8 +1,8 @@
 GlobalFunctions {
 	
 	//send to the sender machine
-	fun _SEND(target:id, e:eid, p:any) : bool {
-		send(sendPort, sendMessage, (target = target, e = e, p = p));
+	fun _SEND(target:id, e:eid, p:any) {
+		send(sendPort, sendMessage, (source = this, target = target, e = e, p = p));
 	}
 
 	// This function sets up the entire VM and sets up the nodeManager.
@@ -17,11 +17,15 @@ GlobalFunctions {
 		return model_r;
 	}
 	
-	var func_return:id;
-	fun _CREATEMACHINE(nodeManager:id, typeofmachine:int, param:any) : id {
-		_SEND(nodeManager, Req_CreatePMachine, (creator = this, typeofmachine = typeofmachine, constructorparam = param));
-		call(DeferAll_CreateMachine);
-		return func_return;
+	var createmachine_return:id;
+	var createmachine_param:(nodeManager:id, typeofmachine:int, param:any);
+	state _CREATEMACHINE {
+		entry{
+			//NOTE : That the create machine right now uses the P Send.
+			_SEND(createmachine_param.nodeManager, Req_CreatePMachine, (creator = this, typeofmachine = createmachine_param.typeofmachine, constructorparam = createmachine_param.param));
+			call(DeferAll_CreateMachine);
+			return;
+		}
 	}
 	
 	state DeferAll_CreateMachine {
@@ -29,7 +33,7 @@ GlobalFunctions {
 	}
 	
 	action PopState {
-		func_return = payload.receiver;
+		createmachine_return = payload.receiver;
 		return;
 	}
 }

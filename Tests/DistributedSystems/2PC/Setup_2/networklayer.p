@@ -1,5 +1,5 @@
 
-event sendMessage:(target:id, e:eid, p:any);
+event sendMessage:(source:id, target:id, e:eid, p:any);
 event networkMessage:(iden:(source:id, seqnum:int), msg:(e:eid, p:any));
 
 
@@ -7,10 +7,11 @@ event networkMessage:(iden:(source:id, seqnum:int), msg:(e:eid, p:any));
 machine ReceiverMachine {
 	var hostMachine:id;
 	var lastReceivedMessage: map[id, int];
-	
+	var initMessage:(nodemanager:id, param:any, host:id);
 	start state bootingState {
 		entry {
-			hostMachine = (id)payload;
+			initMessage = ((nodemanager:id, param:any, host:id))payload;
+			hostMachine = initMessage.host;
 			
 		}
 		on networkMessage goto Listening;
@@ -39,16 +40,14 @@ machine ReceiverMachine {
 }
 
 machine SenderMachine {
-	var hostMachine:id;
 	var numberofRetry: int; 
 	var sendFail:bool;
 	var i: int;
 	var CurrentSeqNum:int;
 	start state bootingState {
 		entry {
-			hostMachine = (id)payload;
 			numberofRetry = 1;
-			sendFail = true;
+			sendFail = false;
 			CurrentSeqNum = 0;
 		}
 		on sendMessage goto Listening;
@@ -59,7 +58,7 @@ machine SenderMachine {
 			i = numberofRetry;
 			while(i != 0 && !sendFail)
 			{
-				sendFail = sendRPC(payload.target, networkMessage, (iden = (source = hostMachine, seqnum = CurrentSeqNum),msg = (e = payload.e, p = payload.p)));
+				sendFail = sendRPC(payload.target, networkMessage, (iden = (source = payload.source, seqnum = CurrentSeqNum),msg = (e = payload.e, p = payload.p)));
 				i = i - 1;
 			}
 		}

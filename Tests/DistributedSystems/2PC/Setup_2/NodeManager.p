@@ -27,7 +27,7 @@ machine NodeManager
 \begin{NodeManager}
 	//necessary variable
 	var sendPort:id;
-
+	var initMessage:(nodemanager:id, param:any, sender:id);
 	//stores the list of machines created on the local VM.
 	var localMachines:seq[id];
 	
@@ -36,7 +36,8 @@ machine NodeManager
 	var receiver:id;
 	start state Init {
 		entry {
-			sendPort = payload.sender;
+			initMessage = ((nodemanager:id, param:any, sender:id))payload;
+			sendPort = initMessage.sender;
 		}
 		on Req_CreatePMachine goto CreateNewMachine;
 	}
@@ -44,6 +45,7 @@ machine NodeManager
 	state CreateNewMachine {
 		entry {
 			sender = new SenderMachine((nodemanager = this, param = null));
+			
 			//switch case
 			if(payload.typeofmachine == 1)
 				host = new Coordinator((nodemanager = this, param = payload.constructorparam, sender = sender));

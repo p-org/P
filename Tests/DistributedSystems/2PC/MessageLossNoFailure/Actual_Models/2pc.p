@@ -70,14 +70,10 @@ machine Replica
 	var pendingWriteReq: (seqNum: int, key: int, val: int);
 	var shouldCommit: bool;
 	var lastSeqNum: int;
-	var sendPort:id;
-	var initMessage:(nodemanager:id, param:id, sender:id);
 	
-	start state bootingState {
+	state Init {
 		entry {
-			initMessage = ((nodemanager:id, param:id, sender:id))payload;
-			coordinator = initMessage.param;
-			sendPort = initMessage.sender;
+			coordinator = (id)payload;
 			lastSeqNum = 0;
 			raise(Unit);
 		}
@@ -145,16 +141,13 @@ machine Coordinator
 	var key: int;
 	var readResult: (bool, int);
 	var creatorMachine:id;
-	var sendPort:id;
 	var temp_NM:id;
-	var initMessage:(nodemanager:id, param:int, sender:id);
 	
-	start state bootingState {
+	
+	state Init {
 		entry {
-			initMessage = ((nodemanager:id, param:int, sender:id))payload;
-			numReplicas = initMessage.param;
-			sendPort = initMessage.sender;
 			
+			numReplicas = (int)payload;
 			assert (numReplicas > 0);
 			i = 0;
 			while (i < numReplicas) {
@@ -165,7 +158,6 @@ machine Coordinator
 				replicas.insert(i, replica);
 				i = i + 1;
 			}
-			assert(false);
 			currSeqNum = 0;
 			//new Termination(this, replicas);
 			timer = new Timer(this);
@@ -300,15 +292,11 @@ machine Client
     var coordinator: id;
 	var mydata : int;
 	var counter : int;
-    var sendPort:id;
-	var initMessage:(nodemanager:id, param:(id, int), sender:id);
-	
-	start state bootingState {
+
+	state Init {
 		entry {
-			initMessage = ((nodemanager:id, param:(id, int), sender:id))payload;
-			coordinator = initMessage.param[0];
-			mydata = initMessage.param[1];
-			sendPort = initMessage.sender;
+			coordinator = ((id,int))payload[0];
+			mydata = ((id,int))payload[1];
 			counter = 0;
 			new ReadWrite(this);
 			raise(Unit);
@@ -321,7 +309,7 @@ machine Client
 	    entry {
 			mydata = mydata + 1; 
 			counter = counter + 1;
-			if(counter == 3)
+			if(counter == 2)
 				raise(goEnd);
 			_SEND(coordinator, WRITE_REQ, (client=this, key=mydata, val=mydata));
 		}
@@ -354,129 +342,22 @@ machine Client
 
 \end{Client}
 
-//Monitors
-
-
-// ReadWrite monitor keeps track of the property that every successful write should be followed by
-// successful read and failed write should be followed by a failed read.
-// This monitor is created local to each client.
-
-monitor ReadWrite {
-	var client : id;
-	var data: (key:int,val:int);
-	action DoWriteSuccess {
-		if(payload.m == client)
-			data = (key = payload.key, val = payload.val);
-	}
-	
-	action DoWriteFailure {
-		if(payload.m == client)
-			data = (key = -1, val = -1);
-	}
-	action CheckReadSuccess {
-		if(payload.m == client)
-		{assert(data.key == payload.key && data.val == payload.val);}
-			
-	}
-	action CheckReadFailure {
-		if(payload == client)
-			assert(data.key == -1 && data.val == -1);
-	}
-	start state Init {
-		entry {
-			client = (id) payload;
-		}
-		on MONITOR_WRITE_SUCCESS do DoWriteSuccess;
-		on MONITOR_WRITE_FAILURE do DoWriteFailure;
-		on MONITOR_READ_SUCCESS do CheckReadSuccess;
-		on MONITOR_READ_FAILURE do CheckReadFailure;
-	}
-}
-
-//
-// The termination monitor checks the eventual consistency property. Eventually logs on all the machines 
-// are the same (coordinator, replicas).
-//
-/*
-monitor Termination {
-	var coordinator: id;
-	var replicas:seq[id];
-	var data : map[id, map[int, int]];
-	var i :int;
-	var j : int;
-	var same : bool;
-	start state init {
-		entry {
-			coordinator = ((id, seq[id]))payload[0];
-			replicas = ((id, seq[id]))payload[1];
-		}
-		on MONITOR_UPDATE goto UpdateData;
-	}
-	
-	state UpdateData {
-		entry {
-		
-			data[payload.m].update(payload.key, payload.val);
-			if(sizeof(data[coordinator]) == sizeof(data[replicas[0]]))
-			{
-				i = sizeof(replicas) - 1;
-				same = true;
-				while(i >= 0)
-				{
-					if(sizeof(data[replicas[i]]) == sizeof(data[replicas[0]]) && same)
-						same = true;
-					else
-						same = false;
-						
-					i = i - 1;
-				}
-			}
-			if(same)
-			{
-				i = sizeof(data[coordinator]) - 1; 
-				
-				same = true;
-				while(i>=0)
-				{
-					j = sizeof(replicas) - 1;
-					while(j>=0)
-					{
-						assert(keys(data[coordinator])[i] in data[replicas[j]]);
-						j = j - 1;
-					}
-				}
-				
-				raise(final);
-			}
-		
-		}
-		
-		on final goto StableState;
-		on MONITOR_UPDATE goto UpdateData;
-		
-	}
-	
-	stable state StableState{
-		entry{}
-		on MONITOR_UPDATE goto UpdateData;
-	}
-	
-}
-*/
-
 main machine TwoPhaseCommit 
 \begin{TwoPhaseCommit}
     var coordinator: id;
 	var temp_NM : id;
-	var sendPort:id;
+
     start state Init {
 	    entry {
-			//Let me create my own sender 
+			//Let me create my own sender/receiver
 			sendPort = new SenderMachine((nodemanager = null, param = null));
+            receivePort = new ReceiverMachine((nodemanager = this, param = null));
+            send(receivePort, hostM, this);
+
 			temp_NM = _CREATENODE();
-			createmachine_param = (nodeManager = temp_NM, typeofmachine = 1, param = 2);
+			createmachine_param = (nodeManager = temp_NM, typeofmachine = 1, param = 1);
 			call(_CREATEMACHINE); // create coordinator
-			assert(false);
+            assert(false);
 			coordinator = createmachine_return;
 			temp_NM = _CREATENODE();
 			createmachine_param = (nodeManager = temp_NM, typeofmachine = 3, param = (coordinator, 100));
@@ -484,6 +365,7 @@ main machine TwoPhaseCommit
 			temp_NM = _CREATENODE();
 			createmachine_param = (nodeManager = temp_NM, typeofmachine = 3, param = (coordinator, 200));
 			call(_CREATEMACHINE);// create client machine
+            
 	    }
 	}
 \end{TwoPhaseCommit}

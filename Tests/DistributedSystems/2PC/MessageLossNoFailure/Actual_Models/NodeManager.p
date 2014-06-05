@@ -25,37 +25,28 @@ event Resp_CreatePMachine : (receiver:id);
 
 machine NodeManager
 \begin{NodeManager}
-	//necessary variable
-	var sendPort:id;
-	var initMessage:(nodemanager:id, param:any, sender:id);
-	//stores the list of machines created on the local VM.
-	var localMachines:seq[id];
 	
 	var sender:id;
 	var host:id;
 	var receiver:id;
-	start state Init {
-		entry {
-			initMessage = ((nodemanager:id, param:any, sender:id))payload;
-			sendPort = initMessage.sender;
-		}
-		on Req_CreatePMachine goto CreateNewMachine;
-	}
 	
+	state Init {
+        on Req_CreatePMachine goto CreateNewMachine;
+    }
 	state CreateNewMachine {
 		entry {
+
 			sender = new SenderMachine((nodemanager = this, param = null));
-			
+            receiver = new ReceiverMachine((nodemanager = this, param = null));
 			//switch case
 			if(payload.typeofmachine == 1)
-				host = new Coordinator((nodemanager = this, param = payload.constructorparam, sender = sender));
+				host = new Coordinator((nodemanager = this, param = payload.constructorparam, sender = sender, receiver = receiver));
 			else if(payload.typeofmachine == 2)
-				host = new Replica((nodemanager = this, param = payload.constructorparam, sender = sender));
+				host = new Replica((nodemanager = this, param = payload.constructorparam, sender = sender, receiver = receiver));
 			else if(payload.typeofmachine == 3)
-				host = new Client((nodemanager = this, param = payload.constructorparam, sender = sender));
+				host = new Client((nodemanager = this, param = payload.constructorparam, sender = sender, receiver = receiver));
 			
-			receiver = new ReceiverMachine((nodemanager = this, param = null, host = host));
-			_SEND(payload.creator, Resp_CreatePMachine, (receiver = receiver));
+			_SENDRELIABLE(payload.creator, Resp_CreatePMachine, (receiver = receiver));
 		}
 		
 		on Req_CreatePMachine goto CreateNewMachine;

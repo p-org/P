@@ -55,7 +55,7 @@ namespace MergeFiles
         {
             var sr = new StreamReader(File.OpenRead(file));
             var entirecode = sr.ReadToEnd();
-            Regex rMachName_MainMachine = new Regex(@"GlobalFunctions[\s]*{([\s\S]+)}");
+            Regex rMachName_MainMachine = new Regex(@"GlobalFunctions[\s]*\\begin{GlobalFunctions}([\s\S]+)\\end{GlobalFunctions}");
             Match m1 = rMachName_MainMachine.Match(entirecode);
             return m1.Groups[1].ToString();
 
@@ -90,7 +90,15 @@ namespace MergeFiles
                 string endString = @"\end{" + codeMain.machineName + "}";
                 var end = entirecode.IndexOf(endString) + endString.Length;
                 var oldCode = entirecode.Substring(start, end - start);
-                entirecode =  entirecode.Replace(oldCode, "{\n" + codeMain.currentCode + codeModel.currentCode + GlobalCode + "\n}");
+                if(codeModel.currentCode.Length > 3)
+                {
+                    entirecode = entirecode.Replace(oldCode, "{\n" + codeMain.currentCode + codeModel.currentCode + "\n}");
+                }
+                else
+                {
+                    entirecode = entirecode.Replace(oldCode, "{\n" + codeMain.currentCode + GlobalCode + "\n}");
+                }
+                
             }
 
             outDump.WriteLine(entirecode);

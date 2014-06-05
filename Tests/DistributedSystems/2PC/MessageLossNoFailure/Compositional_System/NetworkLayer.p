@@ -1,23 +1,27 @@
-
+event sendRelMessage:(source:id, target:id, e:eid, p:any);
 event sendMessage:(source:id, target:id, e:eid, p:any);
 event networkMessage:(iden:(source:id, seqnum:int), msg:(e:eid, p:any));
-
-
+event hostM:id;
+event StartE:any;
 
 machine ReceiverMachine {
 	var hostMachine:id;
 	var lastReceivedMessage: map[id, int];
 	var initMessage:(nodemanager:id, param:any, host:id);
 	start state bootingState {
+        defer networkMessage;
 		entry {
-			initMessage = ((nodemanager:id, param:any, host:id))payload;
-			hostMachine = initMessage.host;
 			
 		}
-		on networkMessage goto Listening;
-		
+        on hostM goto InitHost;
 	}
 	
+    state InitHost {
+        entry {
+            hostMachine = (id)payload;
+        }        
+        on networkMessage goto Listening; 
+    }
 	state Listening {
 		entry {
 			if(payload.iden.source in lastReceivedMessage)
@@ -51,18 +55,30 @@ machine SenderMachine {
 			CurrentSeqNum = 0;
 		}
 		on sendMessage goto Listening;
+        on sendRelMessage goto Listening;
 	}
 	
 	state Listening {
 		entry {
-			i = numberofRetry;
-			while(i != 0 && !sendFail)
-			{
-				sendFail = sendRPC(payload.target, networkMessage, (iden = (source = payload.source, seqnum = CurrentSeqNum),msg = (e = payload.e, p = payload.p)));
-				i = i - 1;
-			}
+			
+			if(trigger == sendRelMessage)
+            {
+				assert(payload.target != null);
+                send(payload.target, networkMessage, (iden = (source = payload.source, seqnum = CurrentSeqNum),msg = (e = payload.e, p = payload.p)));
+                CurrentSeqNum = CurrentSeqNum + 1;
+            }
+            else
+            {
+                i = numberofRetry;
+			    while(i != 0 && !sendFail)
+			    {
+				    sendFail = sendRPC(payload.target, networkMessage, (iden = (source = payload.source, seqnum = CurrentSeqNum),msg = (e = payload.e, p = payload.p)));
+				    i = i - 1;
+			    }
+                CurrentSeqNum = CurrentSeqNum + 1;
+            }
 		}
-		
+		on sendRelMessage goto Listening;
 		on sendMessage goto Listening;
 	}
 	

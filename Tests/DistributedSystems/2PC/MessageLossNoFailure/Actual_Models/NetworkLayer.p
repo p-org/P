@@ -60,8 +60,10 @@ machine SenderMachine {
 	
 	state Listening {
 		entry {
+			
 			if(trigger == sendRelMessage)
             {
+				assert(payload.target != null);
                 send(payload.target, networkMessage, (iden = (source = payload.source, seqnum = CurrentSeqNum),msg = (e = payload.e, p = payload.p)));
                 CurrentSeqNum = CurrentSeqNum + 1;
             }

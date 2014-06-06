@@ -40,13 +40,13 @@ machine NodeManager
             receiver = new ReceiverMachine((nodemanager = this, param = null));
 			//switch case
 			if(payload.typeofmachine == 1)
-				host = new Coordinator((nodemanager = this, param = payload.constructorparam, sender = sender, receiver = receiver));
+				host = new PONG((nodemanager = this, param = payload.constructorparam, sender = sender, receiver = receiver));
 			else if(payload.typeofmachine == 2)
-				host = new Replica((nodemanager = this, param = payload.constructorparam, sender = sender, receiver = receiver));
-			else if(payload.typeofmachine == 3)
-				host = new Client((nodemanager = this, param = payload.constructorparam, sender = sender, receiver = receiver));
+				host = new PING((nodemanager = this, param = payload.constructorparam, sender = sender, receiver = receiver));
 			
-			_SENDRELIABLE(payload.creator, Resp_CreatePMachine, (receiver = receiver));
+			_SENDRELIABLE(payload.creator, Resp_CreatePMachine, (receiver = receiver));;
+			
+
 		}
 		
 		on Req_CreatePMachine goto CreateNewMachine;

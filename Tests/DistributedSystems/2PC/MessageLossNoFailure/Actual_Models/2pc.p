@@ -13,6 +13,7 @@ event READ_SUCCESS:int;
 event REP_READ_FAIL;
 event REP_READ_SUCCESS:int;
 event Unit;
+event StartE:any;
 event Timeout;
 event StartTimer:int;
 event CancelTimer;
@@ -350,14 +351,13 @@ main machine TwoPhaseCommit
     start state Init {
 	    entry {
 			//Let me create my own sender/receiver
-			sendPort = new SenderMachine((nodemanager = null, param = null));
-            receivePort = new ReceiverMachine((nodemanager = this, param = null));
-            send(receivePort, hostM, this);
+			//sendPort = new SenderMachine((nodemanager = null, param = null));
+            //receivePort = new ReceiverMachine((nodemanager = this, param = null));
+            //send(receivePort, hostM, this);
 
 			temp_NM = _CREATENODE();
 			createmachine_param = (nodeManager = temp_NM, typeofmachine = 1, param = 1);
 			call(_CREATEMACHINE); // create coordinator
-            assert(false);
 			coordinator = createmachine_return;
 			temp_NM = _CREATENODE();
 			createmachine_param = (nodeManager = temp_NM, typeofmachine = 3, param = (coordinator, 100));

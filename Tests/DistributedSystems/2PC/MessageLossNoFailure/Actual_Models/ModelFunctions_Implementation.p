@@ -56,8 +56,8 @@ GlobalFunctions
 
 \end{GlobalFunctions}
 
-machine TwoPhaseCommit 
-\begin{TwoPhaseCommit}
+machine GodMachine 
+\begin{GodMachine}
     
     var sendPort:id;
     var receivePort:id;
@@ -98,4 +98,4 @@ machine TwoPhaseCommit
 		createmachine_return = payload.receiver;
 		return;
 	}
-\end{TwoPhaseCommit}
+\end{GodMachine}

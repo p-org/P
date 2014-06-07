@@ -34,7 +34,8 @@ machine PING
 machine PONG 
 \begin{PONG}
     state Init {
-        entry { }
+        entry { 
+		}
         on Ping goto Pong_SendPong;
     }
 
@@ -58,6 +59,7 @@ monitor M {
     state ExpectPong {
 		entry {assert(false);}
         on Pong goto ExpectPing;
+		
     }
 }
 
@@ -69,6 +71,7 @@ main machine GodMachine
 
     start state Init {
 	    entry {
+			new M();
 			//Let me create my own sender/receiver
 			sendPort = new SenderMachine((nodemanager = null, param = null));
             receivePort = new ReceiverMachine((nodemanager = null, param = null));

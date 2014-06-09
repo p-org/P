@@ -39,12 +39,13 @@ machine NodeManager
 			sender = new SenderMachine((nodemanager = this, param = null));
             receiver = new ReceiverMachine((nodemanager = this, param = null));
 			//switch case
+			
 			if(payload.typeofmachine == 1)
 				host = new PONG((nodemanager = this, param = payload.constructorparam, sender = sender, receiver = receiver));
 			else if(payload.typeofmachine == 2)
 				host = new PING((nodemanager = this, param = payload.constructorparam, sender = sender, receiver = receiver));
 			
-			_SENDRELIABLE(payload.creator, Resp_CreatePMachine, (receiver = receiver));;
+			_SENDRELIABLE(payload.creator, Resp_CreatePMachine, (receiver = receiver));
 			
 
 		}

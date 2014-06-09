@@ -1,3 +1,8 @@
+// This file tests NodeManager functionality.
+// It consists of testing the _CREATEMACHINE and _CREATENODE API.
+// We Create 2 machines Ping and Pong on two different Nodes and make them communicate with each other.
+// The Example asserts that a Ping is Followed by sending of a Pong.
+
 event Ping:id assert 1;
 event Pong assert 1;
 event Success;

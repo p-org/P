@@ -8,12 +8,12 @@ event WRITE_FAIL;
 event WRITE_SUCCESS;
 event READ_REQ_REPLICA:int;
 event READ_REQ:(client:id, key:int);
-event READ_FAIL;
+event READ_FAIL:int;
 event READ_SUCCESS:int;
 event REP_READ_FAIL;
 event REP_READ_SUCCESS:int;
-event Unit;
 event StartE:any;
+event Unit;
 event Timeout;
 event StartTimer:int;
 event CancelTimer;
@@ -74,6 +74,7 @@ machine Replica
 	
 	state Init {
 		entry {
+
 			coordinator = (id)payload;
 			lastSeqNum = 0;
 			raise(Unit);
@@ -81,32 +82,37 @@ machine Replica
 		on Unit goto Loop;
 	}
 
-	action HandleReqReplica {
-		pendingWriteReq = ((seqNum:int, key:int, val:int))payload;
-		assert (pendingWriteReq.seqNum > lastSeqNum);
-		shouldCommit = ShouldCommitWrite();
-		if (shouldCommit) {
-			_SEND(coordinator, RESP_REPLICA_COMMIT, pendingWriteReq.seqNum);
-		} else {
-			_SEND(coordinator, RESP_REPLICA_ABORT, pendingWriteReq.seqNum);
+	state WaitCommitAbort {
+		defer READ_REQ_REPLICA;
+		entry {
+			pendingWriteReq = ((seqNum:int, key:int, val:int))payload;
+			assert (pendingWriteReq.seqNum > lastSeqNum);
+			shouldCommit = ShouldCommitWrite();
+			if (shouldCommit) {
+				_SEND(coordinator, RESP_REPLICA_COMMIT, pendingWriteReq.seqNum);
+			} else {
+				_SEND(coordinator, RESP_REPLICA_ABORT, pendingWriteReq.seqNum);
+			}
 		}
+		on GLOBAL_ABORT goto Loop {
+			assert (pendingWriteReq.seqNum >= (int)payload);
+			if (pendingWriteReq.seqNum == (int)payload) {
+				lastSeqNum = (int)payload;
+			}
+			
+		};
+		
+		on GLOBAL_COMMIT goto Loop {
+			assert (pendingWriteReq.seqNum >= (int)payload);
+			if (pendingWriteReq.seqNum == (int)payload) {
+				data.update(pendingWriteReq.key, pendingWriteReq.val);
+				//invoke Termination(MONITOR_UPDATE, (m = this, key = pendingWriteReq.key, val = pendingWriteReq.val));
+				lastSeqNum = (int)payload;
+			}
+		};
+
 	}
 
-	action HandleGlobalAbort {
-		assert (pendingWriteReq.seqNum >= payload);
-		if (pendingWriteReq.seqNum == payload) {
-			lastSeqNum = payload;
-		}
-	}
-
-	action HandleGlobalCommit {
-		assert (pendingWriteReq.seqNum >= payload);
-		if (pendingWriteReq.seqNum == payload) {
-			data.update(pendingWriteReq.key, pendingWriteReq.val);
-			//invoke Termination(MONITOR_UPDATE, (m = this, key = pendingWriteReq.key, val = pendingWriteReq.val));
-			lastSeqNum = payload;
-		}
-	}
 
 	action ReadData{
 		if(payload in data)
@@ -116,9 +122,8 @@ machine Replica
 	}
 	
 	state Loop {
-		on GLOBAL_ABORT do HandleGlobalAbort;
-		on GLOBAL_COMMIT do HandleGlobalCommit;
-		on REQ_REPLICA do HandleReqReplica;
+		ignore GLOBAL_ABORT;
+		on REQ_REPLICA goto WaitCommitAbort;
 		on READ_REQ_REPLICA do ReadData;
 	}
 
@@ -143,7 +148,6 @@ machine Coordinator
 	var readResult: (bool, int);
 	var creatorMachine:id;
 	var temp_NM:id;
-	
 	
 	state Init {
 		entry {
@@ -173,13 +177,13 @@ machine Coordinator
 			key = payload.key;
 			call(PerformRead);
 			if(readResult[0])
-				raise(READ_FAIL);
+				raise(READ_FAIL, readResult[1]);
 			else
 				raise(READ_SUCCESS, readResult[1]);
 		}
 		on READ_FAIL goto Loop
 		{
-			_SEND(client, READ_FAIL, null);
+			_SEND(client, READ_FAIL, payload);
 		};
 		on READ_SUCCESS goto Loop
 		{	
@@ -343,15 +347,16 @@ machine Client
 
 \end{Client}
 
-main machine TwoPhaseCommit 
-\begin{TwoPhaseCommit}
+main machine GodMachine 
+\begin{GodMachine}
     var coordinator: id;
 	var temp_NM : id;
 
     start state Init {
 	    entry {
+
 			//Let me create my own sender/receiver
-			//sendPort = new SenderMachine((nodemanager = null, param = null));
+			//sendPort = new SenderMachine((nodemanager = this, param = 3));
             //receivePort = new ReceiverMachine((nodemanager = this, param = null));
             //send(receivePort, hostM, this);
 
@@ -359,13 +364,12 @@ main machine TwoPhaseCommit
 			createmachine_param = (nodeManager = temp_NM, typeofmachine = 1, param = 1);
 			call(_CREATEMACHINE); // create coordinator
 			coordinator = createmachine_return;
-			temp_NM = _CREATENODE();
+			//temp_NM = _CREATENODE();
 			createmachine_param = (nodeManager = temp_NM, typeofmachine = 3, param = (coordinator, 100));
 			call(_CREATEMACHINE);// create client machine
-			temp_NM = _CREATENODE();
-			createmachine_param = (nodeManager = temp_NM, typeofmachine = 3, param = (coordinator, 200));
-			call(_CREATEMACHINE);// create client machine
-            
+			//temp_NM = _CREATENODE();
+			//createmachine_param = (nodeManager = temp_NM, typeofmachine = 3, param = (coordinator, 200));
+			//call(_CREATEMACHINE);// create client machine
 	    }
 	}
-\end{TwoPhaseCommit}
+\end{GodMachine}

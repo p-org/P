@@ -50,7 +50,7 @@ machine SenderMachine {
 	var CurrentSeqNum:int;
 	start state bootingState {
 		entry {
-			numberofRetry = 1;//((nodemanager:id, param:int))payload.param;
+			numberofRetry = ((nodemanager:id, param:int))payload.param;
 			sendFail = false;
 			CurrentSeqNum = 0;
 		}

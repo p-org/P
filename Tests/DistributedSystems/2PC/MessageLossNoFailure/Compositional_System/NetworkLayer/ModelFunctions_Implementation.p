@@ -64,7 +64,7 @@ machine GodMachine
 
     //send to the sender machine
 	fun _SEND(target:id, e:eid, p:any) {
-		send(sendPort, sendRelMessage, (source = this, target = target, e = e, p = p));
+		send(sendPort, sendMessage, (source = this, target = target, e = e, p = p));
 	}
 
     fun _SENDRELIABLE(target:id, e:eid, p:any) {

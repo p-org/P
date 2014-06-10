@@ -20,7 +20,7 @@ monitor ReadWrite {
 	}
 	action CheckReadSuccess {
 		if(payload.m == client)
-		{assert(data.key == payload.key && data.val != payload.val);}
+		{assert(data.key == payload.key && data.val == payload.val);}
 			
 	}
 	action CheckReadFailure {

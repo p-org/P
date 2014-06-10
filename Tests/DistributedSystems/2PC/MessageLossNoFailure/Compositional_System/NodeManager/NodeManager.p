@@ -48,11 +48,13 @@ machine NodeManager
 	
 	fun _CREATELOCALMACHINE(typeofmachine:int, p:any, sender:id, receiver:id) {
 		if(typeofmachine == 1)
-		{new Coordinator((nodemanager = this, param = p, sender = sender, receiver = receiver));}
+		{
+			new PONG((nodemanager = this, param = p, sender = sender, receiver = receiver));
+		}
 		else if(typeofmachine == 2)
-			{new Replica((nodemanager = this, param = p, sender = sender, receiver = receiver));}
-		else if(typeofmachine == 3)
-			{new Client((nodemanager = this, param = p, sender = sender, receiver = receiver));}
+		{
+			new PING((nodemanager = this, param = p, sender = sender, receiver = receiver));
+		}
 		else
 		{
 			assert(false);

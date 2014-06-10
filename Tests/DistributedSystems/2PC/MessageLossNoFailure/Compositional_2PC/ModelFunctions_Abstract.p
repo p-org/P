@@ -41,8 +41,8 @@ GlobalFunctions
 
 \end{GlobalFunctions}
 
-machine TwoPhaseCommit 
-\begin{TwoPhaseCommit}
+machine GodMachine 
+\begin{GodMachine}
 
 
     //send to the sender machine
@@ -71,4 +71,4 @@ machine TwoPhaseCommit
 			return;
 		}
 	}
-\end{TwoPhaseCommit}
+\end{GodMachine}

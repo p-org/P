@@ -31,7 +31,7 @@ GlobalFunctions
 	var model_h:id;
 	model fun _CREATENODE() : id {
 		//set up the VM
-		model_s = new SenderMachine((nodemanager = null, param = null));
+		model_s = new SenderMachine((nodemanager = null, param = 3));
 		model_r = new ReceiverMachine((nodemanager = null, param = null));
         model_h = new NodeManager((nodemanager = null, param = null, sender = model_s, receiver = model_r));
 		
@@ -64,7 +64,7 @@ machine GodMachine
 
     //send to the sender machine
 	fun _SEND(target:id, e:eid, p:any) {
-		send(sendPort, sendMessage, (source = this, target = target, e = e, p = p));
+		send(sendPort, sendRelMessage, (source = this, target = target, e = e, p = p));
 	}
 
     fun _SENDRELIABLE(target:id, e:eid, p:any) {
@@ -76,7 +76,7 @@ machine GodMachine
 	var model_h:id;
 	model fun _CREATENODE() : id {
 		//set up the VM
-		model_s = new SenderMachine((nodemanager = null, param = null));
+		model_s = new SenderMachine((nodemanager = null, param = 3));
 		model_r = new ReceiverMachine((nodemanager = null, param = null));
         model_h = new NodeManager((nodemanager = null, param = null, sender = model_s, receiver = model_r));
 		

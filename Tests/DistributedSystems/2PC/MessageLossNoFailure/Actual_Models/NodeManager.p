@@ -27,7 +27,6 @@ machine NodeManager
 \begin{NodeManager}
 	
 	var sender:id;
-	var host:id;
 	var receiver:id;
 	
 	state Init {
@@ -36,15 +35,10 @@ machine NodeManager
 	state CreateNewMachine {
 		entry {
 
-			sender = new SenderMachine((nodemanager = this, param = null));
+			sender = new SenderMachine((nodemanager = this, param = 3));
             receiver = new ReceiverMachine((nodemanager = this, param = null));
-			//switch case
-			if(payload.typeofmachine == 1)
-				host = new PONG((nodemanager = this, param = payload.constructorparam, sender = sender, receiver = receiver));
-			else if(payload.typeofmachine == 2)
-				host = new PING((nodemanager = this, param = payload.constructorparam, sender = sender, receiver = receiver));
-			
-			_SENDRELIABLE(payload.creator, Resp_CreatePMachine, (receiver = receiver));;
+			_CREATELOCALMACHINE(payload.typeofmachine, payload.constructorparam, sender, receiver);
+			_SENDRELIABLE(payload.creator, Resp_CreatePMachine, (receiver = receiver));
 			
 
 		}
@@ -52,4 +46,16 @@ machine NodeManager
 		on Req_CreatePMachine goto CreateNewMachine;
 	}
 	
+	fun _CREATELOCALMACHINE(typeofmachine:int, p:any, sender:id, receiver:id) {
+		if(typeofmachine == 1)
+		{new Coordinator((nodemanager = this, param = p, sender = sender, receiver = receiver));}
+		else if(typeofmachine == 2)
+			{new Replica((nodemanager = this, param = p, sender = sender, receiver = receiver));}
+		else if(typeofmachine == 3)
+			{new Client((nodemanager = this, param = p, sender = sender, receiver = receiver));}
+		else
+		{
+			assert(false);
+		}
+	}
 \end{NodeManager}

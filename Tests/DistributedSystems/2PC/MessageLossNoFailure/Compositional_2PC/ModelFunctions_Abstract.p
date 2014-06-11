@@ -13,8 +13,9 @@ GlobalFunctions
 	}
 
 	//send to the sender machine
-	fun _SEND(target:id, e:eid, p:any) {
-		send(target, e, p);
+	model fun _SEND(target:id, e:eid, p:any) {
+		if(*)
+			send(target, e, p);
 	}
 
     fun _SENDRELIABLE(target:id, e:eid, p:any) {

@@ -23,8 +23,8 @@ machine PING
     state Ping_SendPing {
         entry {
 	    invoke M(Ping);
-	    _SENDRELIABLE(pongId[0], Ping, receivePort);
-		_SENDRELIABLE(pongId[1], Ping, receivePort);
+	    _SEND(pongId[0], Ping, receivePort);
+		_SEND(pongId[1], Ping, receivePort);
 	    raise (Success);
 	}
         on Success goto Ping_WaitPong;
@@ -49,7 +49,7 @@ machine PONG
     state Pong_SendPong {
 	entry {
 	     invoke M(Pong);
-	     _SENDRELIABLE((id) payload, Pong, null);
+	     _SEND((id) payload, Pong, null);
 	     raise (Success);		 	  
 	}
         on Success goto End;

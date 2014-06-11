@@ -1,4 +1,4 @@
-event REQ_REPLICA:(seqNum:int, key:int, val:int);
+event WRITE_REQ_REPLICA:(seqNum:int, key:int, val:int);
 event RESP_REPLICA_COMMIT:int;
 event RESP_REPLICA_ABORT:int;
 event GLOBAL_ABORT:int;
@@ -79,11 +79,11 @@ machine Replica
 			lastSeqNum = 0;
 			raise(Unit);
 		}
-		on Unit goto Loop;
+		on Unit goto WaitForRequest;
 	}
 
 	state WaitCommitAbort {
-		defer READ_REQ_REPLICA;
+		defer READ_REQ_REPLICA, WRITE_REQ_REPLICA; //defer everything else
 		entry {
 			pendingWriteReq = ((seqNum:int, key:int, val:int))payload;
 			assert (pendingWriteReq.seqNum > lastSeqNum);
@@ -94,37 +94,50 @@ machine Replica
 				_SEND(coordinator, RESP_REPLICA_ABORT, pendingWriteReq.seqNum);
 			}
 		}
-		on GLOBAL_ABORT goto Loop {
-			assert (pendingWriteReq.seqNum >= (int)payload);
+		on GLOBAL_ABORT do CheckResponse;
+		on GLOBAL_COMMIT do CheckResponse;
+		on Unit goto WaitForRequest;
+	}
+
+	action CheckResponse {
+		if(trigger == GLOBAL_ABORT)
+		{
 			if (pendingWriteReq.seqNum == (int)payload) {
-				lastSeqNum = (int)payload;
+					lastSeqNum = (int)payload;
+					raise(Unit);
 			}
-			
-		};
-		
-		on GLOBAL_COMMIT goto Loop {
+			else
+			{
+				//just drop the abort
+			}
+		}
+		else 
+		{
 			assert (pendingWriteReq.seqNum >= (int)payload);
 			if (pendingWriteReq.seqNum == (int)payload) {
 				data.update(pendingWriteReq.key, pendingWriteReq.val);
 				//invoke Termination(MONITOR_UPDATE, (m = this, key = pendingWriteReq.key, val = pendingWriteReq.val));
 				lastSeqNum = (int)payload;
+				raise(Unit);
 			}
-		};
-
+			else
+			{
+				assert(false); // Not possible to move ahead of me.
+			}
+		}
 	}
 
-
-	action ReadData{
+	action SendReadData{
 		if(payload in data)
 			_SEND(coordinator, REP_READ_SUCCESS, data[payload]);
 		else
 			_SEND(coordinator, REP_READ_FAIL, null);
 	}
 	
-	state Loop {
+	state WaitForRequest {
 		ignore GLOBAL_ABORT;
-		on REQ_REPLICA goto WaitCommitAbort;
-		on READ_REQ_REPLICA do ReadData;
+		on WRITE_REQ_REPLICA goto WaitCommitAbort;
+		on READ_REQ_REPLICA do SendReadData;
 	}
 
 	model fun ShouldCommitWrite(): bool 
@@ -220,7 +233,7 @@ machine Coordinator
 		currSeqNum = currSeqNum + 1;
 		i = 0;
 		while (i < sizeof(replicas)) {
-			_SEND(replicas[i], REQ_REPLICA, (seqNum=currSeqNum, key=pendingWriteReq.key, val=pendingWriteReq.val));
+			_SEND(replicas[i], WRITE_REQ_REPLICA, (seqNum=currSeqNum, key=pendingWriteReq.key, val=pendingWriteReq.val));
 			i = i + 1;
 		}
 		send(timer, StartTimer, 100);
@@ -364,12 +377,12 @@ main machine GodMachine
 			createmachine_param = (nodeManager = temp_NM, typeofmachine = 1, param = 1);
 			call(_CREATEMACHINE); // create coordinator
 			coordinator = createmachine_return;
-			//temp_NM = _CREATENODE();
+			temp_NM = _CREATENODE();
 			createmachine_param = (nodeManager = temp_NM, typeofmachine = 3, param = (coordinator, 100));
 			call(_CREATEMACHINE);// create client machine
-			//temp_NM = _CREATENODE();
-			//createmachine_param = (nodeManager = temp_NM, typeofmachine = 3, param = (coordinator, 200));
-			//call(_CREATEMACHINE);// create client machine
+			temp_NM = _CREATENODE();
+			createmachine_param = (nodeManager = temp_NM, typeofmachine = 3, param = (coordinator, 200));
+			call(_CREATEMACHINE);// create client machine
 	    }
 	}
 \end{GodMachine}

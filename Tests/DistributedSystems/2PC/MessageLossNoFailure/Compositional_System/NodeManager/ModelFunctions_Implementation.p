@@ -31,7 +31,7 @@ GlobalFunctions
 	var model_h:id;
 	model fun _CREATENODE() : id {
 		//set up the VM
-		model_s = new SenderMachine((nodemanager = null, param = null));
+		model_s = new SenderMachine((nodemanager = null, param = 3));
 		model_r = new ReceiverMachine((nodemanager = null, param = null));
         model_h = new NodeManager((nodemanager = null, param = null, sender = model_s, receiver = model_r));
 		

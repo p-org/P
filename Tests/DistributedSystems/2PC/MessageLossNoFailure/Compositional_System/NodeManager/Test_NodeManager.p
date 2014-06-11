@@ -62,7 +62,7 @@ monitor M {
     }
 
     state ExpectPong {
-		entry {assert(false);}
+		entry {}
         on Pong goto ExpectPing;
 		
     }
@@ -78,7 +78,7 @@ main machine GodMachine
 	    entry {
 			new M();
 			//Let me create my own sender/receiver
-			sendPort = new SenderMachine((nodemanager = null, param = null));
+			sendPort = new SenderMachine((nodemanager = null, param = 2));
             receivePort = new ReceiverMachine((nodemanager = null, param = null));
             send(receivePort, hostM, this);	
 			

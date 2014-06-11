@@ -48,9 +48,10 @@ machine SenderMachine {
 	var sendFail:bool;
 	var i: int;
 	var CurrentSeqNum:int;
+	var RecMessage:(source:id, target:id, e:eid, p:any);
 	start state bootingState {
 		entry {
-			numberofRetry = 1;//((nodemanager:id, param:int))payload.param;
+			numberofRetry = ((nodemanager:id, param:int))payload.param;
 			sendFail = false;
 			CurrentSeqNum = 0;
 		}
@@ -60,7 +61,7 @@ machine SenderMachine {
 	
 	state Listening {
 		entry {
-			
+			RecMessage = ((source:id, target:id, e:eid, p:any))payload;
 			if(trigger == sendRelMessage)
             {
                 send(payload.target, networkMessage, (iden = (source = payload.source, seqnum = CurrentSeqNum),msg = (e = payload.e, p = payload.p)));
@@ -68,9 +69,9 @@ machine SenderMachine {
             else
             {
                 i = numberofRetry;
-			    while(i != 0 && !sendFail)
+			    while((i != 0) && (sendFail == false))
 			    {
-				    sendFail = sendRPC(payload.target, networkMessage, (iden = (source = payload.source, seqnum = CurrentSeqNum),msg = (e = payload.e, p = payload.p)));
+				    sendFail = sendRPC(RecMessage.target, networkMessage, (iden = (source = RecMessage.source, seqnum = CurrentSeqNum),msg = (e = RecMessage.e, p = RecMessage.p)));
 				    i = i - 1;
 			    }
                 
@@ -84,7 +85,7 @@ machine SenderMachine {
 		}
 	}
 	
-	model fun sendRPC(target:id, e:eid, p:any) : bool {
+	model fun sendRPC(target:id, e:eid, p:(iden:(source:id, seqnum:int), msg:(e:eid, p:any))) : bool {
 		
 		if(*)
 		{

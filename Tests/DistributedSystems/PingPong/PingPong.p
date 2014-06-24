@@ -27,14 +27,17 @@ machine PING
 		_SEND(pongId[1], Ping, receivePort);
 	    raise (Success);
 	}
-        on Success goto Ping_WaitPong;
+        on Success goto Ping_WaitPong_1;
      }
 
-     state Ping_WaitPong {
+     state Ping_WaitPong_1 {
+        on Pong goto Ping_WaitPong_2;
+     }
+
+	 state Ping_WaitPong_2 {
         on Pong goto Done;
      }
-
-    state Done { entry{raise(delete);}}
+    state Done {}
 \end{PING}
 
 
@@ -55,7 +58,7 @@ machine PONG
         on Success goto End;
     }
 	
-	state End{entry{raise(delete);}}
+	state End{}
 \end{PONG}
 
 

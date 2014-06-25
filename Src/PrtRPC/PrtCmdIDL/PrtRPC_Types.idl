@@ -1,0 +1,35 @@
+[
+	uuid(1397cac6-51ca-4c50-9484-1afd1c353d84),
+	version(1.0),
+	pointer_default(unique)
+]
+interface PrtRPC {
+	/** These are the kinds of types in the P type system. */
+	typedef enum {
+		PRT_KIND_ANY = 0,   /**< The kind of the `any` type        */
+		PRT_KIND_BOOL = 1,   /**< The kind of the `bool` type       */
+		PRT_KIND_EVENT = 2,   /**< The kind of the `event` type      */
+		PRT_KIND_FORGN = 3,   /**< The kind of all foreign types     */
+		PRT_KIND_ID = 4,   /**< The kind of the `id` type         */
+		PRT_KIND_INT = 5,   /**< The kind of the `int` type        */
+		PRT_KIND_MAP = 6,   /**< The kind of all map types         */
+		PRT_KIND_MID = 7,   /**< The kind of the `mid` type        */
+		PRT_KIND_NMDTUP = 8,   /**< The kind of all named tuple types */
+		PRT_KIND_SEQ = 9,   /**< The kind of all sequence types    */
+		PRT_KIND_TUPLE = 10,  /**< The kind of all tuple types       */
+		PRT_TYPE_KIND_COUNT = 11,   /**< The number of type kinds        */
+		PRT_TYPE_KIND_CANARY = 0xFF /**< A freed type will have this as its kind */
+	} PRT_TYPE_KIND, *PRT_TYPE;
+
+	/** A value is a pointer to a type expression*/
+	typedef PRT_TYPE *PRT_VALUE;
+
+	void SendValue1(
+		[in] handle_t handleM,
+		[in] PRT_VALUE value
+		);
+	void SendValue2(
+		[in] handle_t handleM,
+		[in] PRT_VALUE value
+		);
+};

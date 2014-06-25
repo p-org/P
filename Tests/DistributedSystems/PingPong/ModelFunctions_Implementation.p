@@ -80,6 +80,7 @@ machine GodMachine
 	var model_s:id;
 	var model_r:id;
 	var model_h:id;
+	
 	model fun _CREATENODE() : id {
 		//set up the VM
 		model_s = new SenderMachine((nodemanager = null, param = 3));

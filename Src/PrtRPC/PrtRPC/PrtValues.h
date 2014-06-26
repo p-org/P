@@ -22,19 +22,7 @@
 #define PRT_NULL_ID 0 
 
 
-/** A primitive value is primitive type paired with a primitive value. */
-typedef struct PRT_PRIMVALUE
-{
-	PRT_TYPE type;        /**< Must be a primitive type. */
-	union
-	{
-		PRT_BOOLEAN bl;   /**< A boolean value.    */
-		PRT_UINT32  ev;   /**< An event id.        */
-		PRT_INT32   nt;   /**< A signed integer.   */
-		PRT_UINT32  id;   /**< A machine id.       */
-		PRT_UINT32  md;   /**< A model machine id. */
-	} value;              /**< A primitive value is one of the above. */
-} PRT_PRIMVALUE;
+
 
 /** A foreign value is foreign type paired with a void *. */
 typedef struct PRT_FORGNVALUE
@@ -43,42 +31,7 @@ typedef struct PRT_FORGNVALUE
 	void    *value;   /**< A pointer to the foreign value. */
 } PRT_FORGNVALUE;
 
-/** A tuple value is a (named) tuple represented as an array. */
-typedef struct PRT_TUPVALUE
-{
-	PRT_TYPE   type;     /**< Must be a (named) tuple type. */
-	PRT_VALUE *values;   /**< Is an array of tuple args.    */
-} PRT_TUPVALUE;
 
-/** A sequence value is a sequence represented as a dynamic array. */
-typedef struct PRT_SEQVALUE
-{
-	PRT_TYPE   type;     /**< Must be a sequence type.                */
-	PRT_UINT32 size;     /**< The number of elements in the sequence. */
-	PRT_UINT32 capacity; /**< The number of elements before resizing  */
-	PRT_VALUE *values;   /**< An array of values in the sequence.     */
-} PRT_SEQVALUE;
-
-/** A map value is represented as a hash-table. */
-typedef struct PRT_MAPVALUE
-{
-	PRT_TYPE     type;       /**< Must be a map type.                     */
-	PRT_UINT32   size;       /**< The number of elements in the map.      */
-	PRT_UINT32   capNum;     /**< An opaque number related to the number of buckets */
-	struct PRT_MAPNODE *first;    /**< First element inserted into the map. */
-	struct PRT_MAPNODE *last;     /**< Last element inserted into the map. */
-	struct PRT_MAPNODE **buckets; /**< An array of pointers to chained nodes.  */
-} PRT_MAPVALUE;
-
-/** A key-value node of a map. */
-typedef struct PRT_MAPNODE
-{
-	PRT_VALUE key;     /**< The key of this node. */
-	PRT_VALUE value;   /**< The value of this node. */
-	struct PRT_MAPNODE *bucketNext;   /**< The next node in this bucket.         */
-	struct PRT_MAPNODE *insertNext;   /**< The next node in insertion order.     */
-	struct PRT_MAPNODE *insertPrev;   /**< The previous node in insertion order. */
-} PRT_MAPNODE;
 
 /** Makes a default value of an abitrary type. The defaults (def) are as follows:
 * 1.  def(any)                 = `null : id`.

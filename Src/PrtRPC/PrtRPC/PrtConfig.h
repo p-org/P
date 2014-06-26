@@ -118,19 +118,14 @@ typedef enum PRT_BOOLEAN
   #error No platform was specified (see PrtConfig.h for details)
 #elif PRT_PLAT == PRT_PLAT_WINUSER
   #include "PrtConfigWinUser.h"
+
 #elif PRT_PLAT == PRT_PLAT_WINKMDF
   #include "PrtConfigWinKMDF.h"
 #else
   #error An invalid platform was specified (see PrtConfig.h for details)
 #endif
 
-/** Structure for representing a standard GUID */
-typedef struct PRT_GUID
-{
-	PRT_UINT32 data1;   /**< 0 First data field (32 bits)  */
-	PRT_UINT16 data2;   /**< 0 Second data field (16 bits) */
-	PRT_UINT16 data3;   /**< 0 Third data field (16 bits)  */
-	PRT_UINT64 data4;   /**< 0 Fourth data field (64 bits) */
-} PRT_GUID;
+
+
 
 #endif

@@ -23,38 +23,6 @@
 #define PRT_MAXFLDNAME_LENGTH 256
 
 
-/** The layout for map types. */
-typedef struct PRT_MAPTYPE
-{
-	PRT_TYPE_KIND typeKind;  /**< Must be PRT_KIND_MAP */       
-	PRT_TYPE      domType;   /**< The domain type of the map type */  
-	PRT_TYPE      codType;   /**< The codomain type of the map type */
-} PRT_MAPTYPE;
-
-/** The layout for named tuple types. */
-typedef struct PRT_NMDTUPTYPE
-{
-	PRT_TYPE_KIND typeKind;      /**< Must be PRT_KIND_NMDTUP */
-	PRT_UINT32    arity;         /**< Arity of tuple type; arity > 0 */
-	PRT_STRING    *fieldNames;   /**< Array of valid field names; length = arity */
-	PRT_TYPE      *fieldTypes;   /**< Array of field types; length = arity */
-} PRT_NMDTUPTYPE;
-
-/** The layout for sequence types. */
-typedef struct PRT_SEQTYPE
-{
-	PRT_TYPE_KIND typeKind;   /**< Must be PRT_KIND_SEQ */
-	PRT_TYPE      innerType;  /**< Inner type of the sequence */
-} PRT_SEQTYPE;
-
-/** The layout for tuple types. */
-typedef struct PRT_TUPTYPE
-{
-	PRT_TYPE_KIND typeKind;      /**< Must be PRT_KIND_TUP */
-	PRT_UINT32    arity;         /**< Arity of tuple type; arity > 0 */
-	PRT_TYPE      *fieldTypes;   /**< Array of field types; length = arity */
-} PRT_TUPTYPE;
-
 /** The PRT_FORGN_CLONE function is called whenever a foreign value needs to be cloned.
 *   The cloning semantics depends on the memory management strategy of the client.
 *   @see PRT_PRT_FORGN_FREE

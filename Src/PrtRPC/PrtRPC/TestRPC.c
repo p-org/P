@@ -61,7 +61,7 @@ void TestPrimitiveType()
 	printf("\n");
 	RpcTryExcept
 	{
-		SendValue1(testHandle, intVal);
+		c_SendValue1(testHandle, (PRT_PRIMVALUE*)intVal);
 	}
 		RpcExcept(1)
 	{
@@ -73,7 +73,7 @@ void TestPrimitiveType()
 
 		RpcTryExcept
 	{
-		SendValue2(testHandle, intVal);
+		c_SendValue2(testHandle, (PRT_PRIMVALUE*)intVal);
 	}
 		RpcExcept(1)
 	{
@@ -85,6 +85,46 @@ void TestPrimitiveType()
 
 }
 
+void MapTest2()
+{
+	PRT_TYPE anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
+	PRT_MAPTYPE *any2anyType = PrtMkMapType(anyType, anyType);
+	PRT_MAPVALUE *a2aMap = (PRT_MAPVALUE *)PrtMkDefaultValue((PRT_TYPE)any2anyType);
+
+	PRT_VALUE zeroVal = (PRT_VALUE)PrtMkIntValue(0);
+	PRT_VALUE falseVal = (PRT_VALUE)PrtMkBoolValue(PRT_FALSE);
+
+	PrtMapUpdate(a2aMap, zeroVal, zeroVal);
+	PrtMapUpdate(a2aMap, falseVal, falseVal);
+	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
+	printf_s("Before Call to Server \n");
+
+	handle_t testHandle = CreateRPCClient();
+	RpcTryExcept
+	{
+		c_SendValueMap1(testHandle, a2aMap);
+	}
+		RpcExcept(1)
+	{
+		unsigned long ulCode;
+		ulCode = RpcExceptionCode();
+		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
+	}
+	RpcEndExcept
+
+	RpcTryExcept
+	{
+		c_SendValueMap2(testHandle, a2aMap);
+	}
+	RpcExcept(1)
+	{
+		unsigned long ulCode;
+		ulCode = RpcExceptionCode();
+		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
+	}
+	RpcEndExcept
+	
+}
 
 
 int main()
@@ -92,8 +132,8 @@ int main()
 	//Create RPC test server
 	CreateRPCTestServer();
 	//Test Cases
-	TestPrimitiveType();
-
+	//TestPrimitiveType();
+	MapTest2();
 
 	//wait
 	getchar();

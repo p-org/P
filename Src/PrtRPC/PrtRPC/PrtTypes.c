@@ -45,67 +45,66 @@ PRT_FORGNTYPE *PrtMkForgnType(
 	return type;
 }
 
-PRT_MAPTYPE *PrtMkMapType(_In_ PRT_TYPE domType, _In_ PRT_TYPE codType)
+PRT_TYPE *PrtMkMapType(_In_ PRT_TYPE domType, _In_ PRT_TYPE codType)
 {
-	PRT_MAPTYPE *type;
-	PrtAssert(*domType >= 0 && *domType < PRT_TYPE_KIND_COUNT, "Invalid type expression");
-	PrtAssert(*codType >= 0 && *codType < PRT_TYPE_KIND_COUNT, "Invalid type expression");
-	type = (PRT_MAPTYPE *)PrtMalloc(sizeof(PRT_MAPTYPE));
+	PRT_TYPE *type;
+	PrtAssert(domType.typeKind >= 0 && domType.typeKind < PRT_TYPE_KIND_COUNT, "Invalid type expression");
+	PrtAssert(codType.typeKind >= 0 && codType.typeKind < PRT_TYPE_KIND_COUNT, "Invalid type expression");
+	type = (PRT_TYPE *)PrtMalloc(sizeof(PRT_TYPE));
 	type->typeKind = PRT_KIND_MAP;
-	type->domType = PrtCloneType(domType);
-	type->codType = PrtCloneType(codType);
+	type->type_details.mapT->domType = PrtCloneType(domType);
+	type->type_details.mapT->codType = PrtCloneType(codType);
 	return type;
 }
 
-PRT_NMDTUPTYPE *PrtMkNmdTupType(_In_ PRT_UINT32 arity)
+PRT_TYPE *PrtMkNmdTupType(_In_ PRT_UINT32 arity)
 {
-	PRT_NMDTUPTYPE *type;
+	PRT_TYPE *type;
 	PrtAssert(arity > 0, "Invalid tuple arity");
-	type = (PRT_NMDTUPTYPE *)PrtMalloc(sizeof(PRT_NMDTUPTYPE));
+	type = (PRT_TYPE *)PrtMalloc(sizeof(PRT_TYPE));
 	type->typeKind = PRT_KIND_NMDTUP;
-	type->arity = arity;
-	type->fieldNames = (PRT_STRING *)PrtCalloc((size_t)arity, sizeof(PRT_STRING));
-	type->fieldTypes = (PRT_TYPE *)PrtCalloc((size_t)arity, sizeof(PRT_TYPE));
+	type->type_details.nmTupleT->arity = arity;
+	type->type_details.nmTupleT->fieldNames = (PRT_STRING *)PrtCalloc((size_t)arity, sizeof(PRT_STRING));
+	type->type_details.nmTupleT->fieldTypes = (PRT_TYPE *)PrtCalloc((size_t)arity, sizeof(PRT_TYPE));
 	return type;
 }
 
-PRT_TUPTYPE *PrtMkTupType(_In_ PRT_UINT32 arity)
+PRT_TYPE *PrtMkTupType(_In_ PRT_UINT32 arity)
 {
-	PRT_TUPTYPE *type;
+	PRT_TYPE *type;
 	PrtAssert(arity > 0, "Invalid tuple arity");
-	type = (PRT_TUPTYPE *)PrtMalloc(sizeof(PRT_TUPTYPE));
+	type = (PRT_TYPE *)PrtMalloc(sizeof(PRT_TYPE));
 	type->typeKind = PRT_KIND_TUPLE;
-	type->arity = arity;
-	type->fieldTypes = (PRT_TYPE *)PrtCalloc((size_t)arity, sizeof(PRT_TYPE));
+	type->type_details.tupleT->arity = arity;
+	type->type_details.tupleT->fieldTypes = (PRT_TYPE *)PrtCalloc((size_t)arity, sizeof(PRT_TYPE));
 	return type;
 }
 
-PRT_SEQTYPE *PrtMkSeqType(_In_ PRT_TYPE innerType)
+PRT_TYPE *PrtMkSeqType(_In_ PRT_TYPE innerType)
 {
-	PRT_SEQTYPE *type;
-	PrtAssert(*innerType >= 0 && *innerType < PRT_TYPE_KIND_COUNT, "Invalid type expression");
-	type = (PRT_SEQTYPE *)PrtMalloc(sizeof(PRT_SEQTYPE));
+	PRT_TYPE *type;
+	PrtAssert(innerType.typeKind >= 0 && innerType.typeKind < PRT_TYPE_KIND_COUNT, "Invalid type expression");
+	type = (PRT_TYPE *)PrtMalloc(sizeof(PRT_TYPE));
 	type->typeKind = PRT_KIND_SEQ;
-	type->innerType = PrtCloneType(innerType);
+	type->type_details.seqT->innerType = PrtCloneType(innerType);
 	return type;
 }
 
 void PrtSetFieldType(_Inout_ PRT_TYPE tupleType, _In_ PRT_UINT32 index, _In_ PRT_TYPE fieldType)
 {
-	PrtAssert(*tupleType == PRT_KIND_TUPLE || *tupleType == PRT_KIND_NMDTUP, "Invalid type expression");
-	PrtAssert(*fieldType >= 0 && *fieldType < PRT_TYPE_KIND_COUNT, "Invalid type expression");
+	PrtAssert(tupleType.typeKind == PRT_KIND_TUPLE || tupleType.typeKind == PRT_KIND_NMDTUP, "Invalid type expression");
+	PrtAssert(fieldType.typeKind >= 0 && fieldType.typeKind < PRT_TYPE_KIND_COUNT, "Invalid type expression");
 
-	if (*tupleType == PRT_KIND_TUPLE)
+	if (tupleType.typeKind == PRT_KIND_TUPLE)
 	{
 		PRT_TUPTYPE *type = (PRT_TUPTYPE *)tupleType;
 		PrtAssert(index < type->arity, "Invalid tuple index");
 		type->fieldTypes[index] = PrtCloneType(fieldType);
 	}
-	else if (*tupleType == PRT_KIND_NMDTUP)
+	else if (tupleType.typeKind == PRT_KIND_NMDTUP)
 	{
-		PRT_NMDTUPTYPE *type = (PRT_NMDTUPTYPE *)tupleType;
-		PrtAssert(index < type->arity, "Invalid tuple index");
-		type->fieldTypes[index] = PrtCloneType(fieldType);
+		PrtAssert(index < tupleType.type_details.nmTupleT->arity, "Invalid tuple index");
+		tupleType.type_details.nmTupleT->fieldTypes[index] = PrtCloneType(fieldType);
 	}
 }
 
@@ -119,15 +118,15 @@ void PrtSetFieldName(_Inout_ PRT_NMDTUPTYPE *tupleType, _In_ PRT_UINT32 index, _
 	nameLen = strnlen(fieldName, PRT_MAXFLDNAME_LENGTH);
 	PrtAssert(nameLen > 0 && nameLen < PRT_MAXFLDNAME_LENGTH, "Invalid field name");
 	fieldNameClone = (PRT_STRING)PrtCalloc(nameLen + 1, sizeof(PRT_CHAR));
-	strncpy(fieldNameClone, fieldName, nameLen);
+	strncpy_s(fieldNameClone, 100, fieldName, nameLen);
 	fieldNameClone[nameLen] = '\0';
 	tupleType->fieldNames[index] = fieldNameClone;
 }
 
 PRT_BOOLEAN PrtIsSubtype(_In_ PRT_TYPE subType, _In_ PRT_TYPE supType)
 {
-	PRT_TYPE_KIND subKind = *subType;
-	PRT_TYPE_KIND supKind = *supType;
+	PRT_TYPE_KIND subKind = subType.typeKind;
+	PRT_TYPE_KIND supKind = supType.typeKind;
 	switch (supKind)
 	{
 	case PRT_KIND_ANY:
@@ -151,8 +150,8 @@ PRT_BOOLEAN PrtIsSubtype(_In_ PRT_TYPE subType, _In_ PRT_TYPE supType)
 			return PRT_FALSE;
 		}
 
-		subMap = (PRT_MAPTYPE *)subType;
-		supMap = (PRT_MAPTYPE *)supType;
+		subMap = subType.type_details.mapT;
+		supMap = supType.type_details.mapT;
 		return
 			PrtIsSubtype(subMap->domType, supMap->domType) &&
 			PrtIsSubtype(subMap->codType, supMap->codType) ? PRT_TRUE : PRT_FALSE;
@@ -168,8 +167,8 @@ PRT_BOOLEAN PrtIsSubtype(_In_ PRT_TYPE subType, _In_ PRT_TYPE supType)
 			return PRT_FALSE;
 		}
 
-		subNmdTup = (PRT_NMDTUPTYPE *)subType;
-		supNmdTup = (PRT_NMDTUPTYPE *)supType;
+		subNmdTup = subType.type_details.nmTupleT;
+		supNmdTup = supType.type_details.nmTupleT;
 		if (subNmdTup->arity != supNmdTup->arity)
 		{
 			return PRT_FALSE;
@@ -205,8 +204,8 @@ PRT_BOOLEAN PrtIsSubtype(_In_ PRT_TYPE subType, _In_ PRT_TYPE supType)
 			return PRT_FALSE;
 		}
 
-		subSeq = (PRT_SEQTYPE *)subType;
-		supSeq = (PRT_SEQTYPE *)supType;
+		subSeq = subType.type_details.seqT;
+		supSeq = supType.type_details.seqT;
 		return PrtIsSubtype(subSeq->innerType, supSeq->innerType);
 	}
 	case PRT_KIND_TUPLE:
@@ -220,8 +219,8 @@ PRT_BOOLEAN PrtIsSubtype(_In_ PRT_TYPE subType, _In_ PRT_TYPE supType)
 			return PRT_FALSE;
 		}
 
-		subTup = (PRT_TUPTYPE *)subType;
-		supTup = (PRT_TUPTYPE *)supType;
+		subTup = subType.type_details.tupleT;
+		supTup = supType.type_details.tupleT;
 		if (subTup->arity != supTup->arity)
 		{
 			return PRT_FALSE;
@@ -246,7 +245,7 @@ PRT_BOOLEAN PrtIsSubtype(_In_ PRT_TYPE subType, _In_ PRT_TYPE supType)
 
 PRT_TYPE PrtCloneType(_In_ PRT_TYPE type)
 {
-	PRT_TYPE_KIND kind = *type;
+	PRT_TYPE_KIND kind = type.typeKind;
 	switch (kind)
 	{
 	case PRT_KIND_ANY:
@@ -258,8 +257,8 @@ PRT_TYPE PrtCloneType(_In_ PRT_TYPE type)
 		return PrtMkPrimitiveType(kind);
 	case PRT_KIND_FORGN:
 	{
-		PRT_FORGNTYPE *ftype = (PRT_FORGNTYPE *)type;
-		return (PRT_TYPE)PrtMkForgnType(ftype->typeTag, ftype->cloner, ftype->freer, ftype->hasher, ftype->eqTester);
+		PRT_TYPE *ftype = (PRT_TYPE *)PrtMalloc(sizeof(PRT_TYPE));
+		ftype PrtMkForgnType(ftype->typeTag, ftype->cloner, ftype->freer, ftype->hasher, ftype->eqTester);
 	}
 	case PRT_KIND_MAP:
 	{		

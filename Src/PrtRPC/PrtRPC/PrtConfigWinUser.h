@@ -2,6 +2,7 @@
 * \file PrtConfigWinUser.h
 * \brief Defines the Windows user configurations.
 */
+#include "../PrtCmdIDL/PrtRPC_Types_h.h"
 #ifndef PRTCONFIG_WINUSER_H
 #define PRTCONFIG_WINUSER_H
 
@@ -63,17 +64,7 @@ typedef unsigned __int64 PRT_UINT64;
 typedef signed __int8  PRT_INT8;
 /** PRT_INT16 is always a 16-bit signed integer. */
 typedef signed __int16 PRT_INT16;
-/** PRT_INT32 is always a 32-bit signed integer. */
-typedef signed __int32 PRT_INT32;
-/** PRT_INT64 is always a 64-bit signed integer. */
-typedef signed __int64 PRT_INT64;
 
-/** PRT_CHAR is always an ASCII character. */
-typedef char PRT_CHAR;
-/** PRT_STRING is always an array of ASCII characters. */
-typedef char * PRT_STRING;
-/** PRT_CSTRING is always a constant array of ASCII characters. */
-typedef char const * PRT_CSTRING;
 
 /** PRT_HANDLE is always a type s.t. sizeof(PRT_HANDLE) >= sizeof(void*). */
 typedef void * PRT_HANDLE;

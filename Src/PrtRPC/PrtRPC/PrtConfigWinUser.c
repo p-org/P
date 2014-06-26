@@ -1,4 +1,5 @@
 #include "PrtConfig.h"
+#include"../PrtCmdIDL/PrtRPC_Types_h.h"
 #if PRT_PLAT == PRT_PLAT_WINUSER
 void PrtSpecialStartup(_In_ void *param)
 {

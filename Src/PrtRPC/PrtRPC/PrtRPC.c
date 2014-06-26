@@ -287,52 +287,7 @@ void MapTest1()
 	printf_s("\n");
 }
 
-void MapTest2()
-{
-	PRT_TYPE anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
-	PRT_MAPTYPE *any2anyType = PrtMkMapType(anyType, anyType);
-	PRT_MAPVALUE *a2aMap = (PRT_MAPVALUE *)PrtMkDefaultValue((PRT_TYPE)any2anyType);
 
-	PRT_VALUE zeroVal = (PRT_VALUE)PrtMkIntValue(0);
-	PRT_VALUE falseVal = (PRT_VALUE)PrtMkBoolValue(PRT_FALSE);
-
-	PrtMapUpdate(a2aMap, zeroVal, zeroVal);
-	PrtMapUpdate(a2aMap, falseVal, falseVal);
-	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
-	printf_s("\n");
-
-	PrtMapRemove(a2aMap, zeroVal);
-	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
-	printf_s("\n");
-
-	PrtMapRemove(a2aMap, zeroVal);
-	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
-	printf_s("\n");
-
-	PrtMapRemove(a2aMap, falseVal);
-	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
-	printf_s("\n");
-
-	PrtMapUpdate(a2aMap, falseVal, falseVal);
-	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
-	printf_s("\n");
-
-	PrtMapUpdate(a2aMap, zeroVal, zeroVal);
-	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
-	printf_s("\n");
-
-	PrtMapRemove(a2aMap, zeroVal);
-	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
-	printf_s("\n");
-
-	PrtMapRemove(a2aMap, zeroVal);
-	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
-	printf_s("\n");
-
-	PrtMapRemove(a2aMap, falseVal);
-	PrtCmdPrintValueAndType((PRT_VALUE)a2aMap);
-	printf_s("\n");
-}
 
 void BinaryBoolFunTest()
 {
@@ -462,31 +417,52 @@ void* __cdecl WaitThreadForRPCListen(void* i)
 	return NULL;
 }
 
-#ifndef TEMP
-#define TEMP
-void SendValue1(
+
+void s_SendValue1(
 	handle_t handleM,
-	PRT_VALUE value
+	PRT_PRIMVALUE* value
 	)
 {
-	ReceivedValue = PrtCloneValue(value);
-	printf("In SendValue1\n");
+	ReceivedValue = PrtCloneValue((PRT_VALUE)value);
+	printf("In SendValue1 Value Received :");
 	PrtCmdPrintValue(ReceivedValue);
 }
 
-void SendValue2(
+void s_SendValue2(
 	handle_t handleM,
-	PRT_VALUE value
+	PRT_PRIMVALUE* value
 	)
 {
-	printf("In SendValue2\n");
-	PrtAssert(PrtIsEqualValue(ReceivedValue, value), "Not Equal in SendValue2");
-	printf("LastReceived : ");
+	printf("\nIn SendValue2");
+	PrtAssert(PrtIsEqualValue(ReceivedValue, (PRT_VALUE)value), "Not Equal in SendValue2");
+	printf("\nLastReceived : ");
 	PrtCmdPrintValue(ReceivedValue);
-	printf("Received : ");
+	printf("\nReceived : ");
 	PrtCmdPrintValue(value);
 }
-#endif
+
+void s_SendValueMap1(
+	handle_t handleM,
+	PRT_MAPVALUE* value
+	)
+{
+	ReceivedValue = PrtCloneValue((PRT_VALUE)value);
+	printf("In SendValue1 Value Received :");
+	PrtCmdPrintValue(ReceivedValue);
+}
+
+void s_SendValueMap2(
+	handle_t handleM,
+	PRT_MAPVALUE* value
+	)
+{
+	printf("\nIn SendValue2");
+	PrtAssert(PrtIsEqualValue(ReceivedValue, (PRT_VALUE)value), "Not Equal in SendValue2");
+	printf("\nLastReceived : ");
+	PrtCmdPrintValue(ReceivedValue);
+	printf("\nReceived : ");
+	PrtCmdPrintValue(value);
+}
 
 void CreateRPCTestServer()
 {
@@ -507,7 +483,7 @@ void CreateRPCTestServer()
 	}
 
 	status = RpcServerRegisterIf2(
-		PrtRPC_v1_0_s_ifspec, // Interface to register.
+		s_PrtRPC_v1_0_s_ifspec, // Interface to register.
 		NULL, // Use the MIDL generated entry-point vector.
 		NULL, // Use the MIDL generated entry-point vector.
 		RPC_IF_ALLOW_CALLBACKS_WITH_NO_AUTH, // Forces use of security callback.

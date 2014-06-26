@@ -84,7 +84,8 @@ PRT_PRIMVALUE *PrtMkBoolValue(_In_ PRT_BOOLEAN value)
 	PRT_PRIMVALUE *primVal;
 	primVal = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
 	primVal->type = PrtMkPrimitiveType(PRT_KIND_BOOL);
-	primVal->value.bl = value;
+	primVal->value.type = _bool;
+	primVal->value.val.bl = value;
 	return primVal;
 }
 
@@ -93,7 +94,8 @@ PRT_PRIMVALUE *PrtMkEventValue(_In_ PRT_UINT32 value)
 	PRT_PRIMVALUE *primVal;
 	primVal = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
 	primVal->type = PrtMkPrimitiveType(PRT_KIND_EVENT);
-	primVal->value.ev = value;
+	primVal->value.val.ev = value;
+	primVal->value.type = _event;
 	return primVal;
 }
 
@@ -102,7 +104,8 @@ PRT_PRIMVALUE *PrtMkIntValue(_In_ PRT_INT32 value)
 	PRT_PRIMVALUE *primVal;
 	primVal = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
 	primVal->type = PrtMkPrimitiveType(PRT_KIND_INT);
-	primVal->value.nt = value;
+	primVal->value.val.nt = value;
+	primVal->value.type = _integer;
 	return primVal;
 }
 
@@ -111,7 +114,9 @@ PRT_PRIMVALUE *PrtMkIdValue(_In_ PRT_UINT32 value)
 	PRT_PRIMVALUE *primVal;
 	primVal = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
 	primVal->type = PrtMkPrimitiveType(PRT_KIND_ID);
-	primVal->value.id = value;
+	primVal->value.type = _id;
+	primVal->value.val.id = value;
+
 	return primVal;
 }
 
@@ -120,7 +125,8 @@ PRT_PRIMVALUE *PrtMkMIdValue(_In_ PRT_UINT32 value)
 	PRT_PRIMVALUE *primVal;
 	primVal = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
 	primVal->type = PrtMkPrimitiveType(PRT_KIND_MID);
-	primVal->value.md = value;
+	primVal->value.val.mid = value;
+	primVal->value.type = _mid;
 	return primVal;
 }
 
@@ -221,61 +227,61 @@ PRT_VALUE PrtMkDefaultValue(_In_ PRT_TYPE type)
 void PrtPrimSetBool(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_BOOLEAN value)
 {
 	PrtAssert(*(prmVal->type) == PRT_KIND_BOOL, "Invalid type on primitive set");
-	prmVal->value.bl = value;
+	prmVal->value.val.bl = value;
 }
 
 PRT_BOOLEAN PrtPrimGetBool(_In_ PRT_PRIMVALUE *prmVal)
 {
 	PrtAssert(*(prmVal->type) == PRT_KIND_BOOL, "Invalid type on primitive get");
-	return prmVal->value.bl;
+	return prmVal->value.val.bl;
 }
 
 void PrtPrimSetEvent(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_UINT32 value)
 {
 	PrtAssert(*(prmVal->type) == PRT_KIND_EVENT, "Invalid type on primitive set");
-	prmVal->value.ev = value;
+	prmVal->value.val.ev = value;
 }
 
 PRT_UINT32 PrtPrimGetEvent(_In_ PRT_PRIMVALUE *prmVal)
 {
 	PrtAssert(*(prmVal->type) == PRT_KIND_EVENT, "Invalid type on primitive get");
-	return prmVal->value.ev;
+	return prmVal->value.val.ev;
 }
 
 void PrtPrimSetInt(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_INT32 value)
 {
 	PrtAssert(*(prmVal->type) == PRT_KIND_INT, "Invalid type on primitive set");
-	prmVal->value.nt = value;
+	prmVal->value.val.nt = value;
 }
 
 PRT_INT32 PrtPrimGetInt(_In_ PRT_PRIMVALUE *prmVal)
 {
 	PrtAssert(*(prmVal->type) == PRT_KIND_INT, "Invalid type on primitive get");
-	return prmVal->value.nt;
+	return prmVal->value.val.nt;
 }
 
 void PrtPrimSetId(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_UINT32 value)
 {
 	PrtAssert(*(prmVal->type) == PRT_KIND_ID, "Invalid type on primitive set");
-	prmVal->value.id = value;
+	prmVal->value.val.id = value;
 }
 
 PRT_UINT32 PrtPrimGetId(_In_ PRT_PRIMVALUE *prmVal)
 {
 	PrtAssert(*(prmVal->type) == PRT_KIND_ID, "Invalid type on primitive get");
-	return prmVal->value.id;
+	return prmVal->value.val.id;
 }
 
 void PrtPrimSetMId(_Inout_ PRT_PRIMVALUE *prmVal, _In_ PRT_UINT32 value)
 {
 	PrtAssert(*(prmVal->type) == PRT_KIND_MID, "Invalid type on primitive set");
-	prmVal->value.md = value;
+	prmVal->value.val.mid = value;
 }
 
 PRT_UINT32 PrtPrimGetMId(_In_ PRT_PRIMVALUE *prmVal)
 {
 	PrtAssert(*(prmVal->type) == PRT_KIND_MID, "Invalid type on primitive get");
-	return prmVal->value.md;
+	return prmVal->value.val.mid;
 }
 
 void PrtTupleSet(_Inout_ PRT_TUPVALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VALUE value)
@@ -866,15 +872,15 @@ PRT_UINT32 PrtGetHashCodeValue(_In_ PRT_VALUE value)
 		PRT_DBG_ASSERT(PRT_FALSE, "Value must have a more concrete type");
 		return 0;
 	case PRT_KIND_BOOL:
-		return PrtGetHashCodeUInt32(0x00400000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.bl));
+		return PrtGetHashCodeUInt32(0x00400000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.val.bl));
 	case PRT_KIND_EVENT:
-		return PrtGetHashCodeUInt32(0x00800000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.ev));
+		return PrtGetHashCodeUInt32(0x00800000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.val.ev));
 	case PRT_KIND_ID:
-		return PrtGetHashCodeUInt32(0x01000000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.id));
+		return PrtGetHashCodeUInt32(0x01000000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.val.id));
 	case PRT_KIND_INT:
-		return PrtGetHashCodeUInt32(0x02000000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.nt));
+		return PrtGetHashCodeUInt32(0x02000000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.val.nt));
 	case PRT_KIND_MID:
-		return PrtGetHashCodeUInt32(0x04000000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.md));
+		return PrtGetHashCodeUInt32(0x04000000 ^ ((PRT_UINT32)((PRT_PRIMVALUE *)value)->value.val.mid));
 	case PRT_KIND_FORGN:
 	{
 		PRT_FORGNVALUE *fVal = (PRT_FORGNVALUE *)value;
@@ -1013,19 +1019,19 @@ PRT_BOOLEAN PrtIsEqualValue(_In_ PRT_VALUE value1, _In_ PRT_VALUE value2)
 	{
 	case PRT_KIND_BOOL:
 		return
-			((PRT_PRIMVALUE *)value1)->value.bl == ((PRT_PRIMVALUE *)value2)->value.bl ? PRT_TRUE : PRT_FALSE;
+			((PRT_PRIMVALUE *)value1)->value.val.bl == ((PRT_PRIMVALUE *)value2)->value.val.bl ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_EVENT:
 		return
-			((PRT_PRIMVALUE *)value1)->value.ev == ((PRT_PRIMVALUE *)value2)->value.ev ? PRT_TRUE : PRT_FALSE;
+			((PRT_PRIMVALUE *)value1)->value.val.ev == ((PRT_PRIMVALUE *)value2)->value.val.ev ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_ID:
 		return
-			((PRT_PRIMVALUE *)value1)->value.id == ((PRT_PRIMVALUE *)value2)->value.id ? PRT_TRUE : PRT_FALSE;
+			((PRT_PRIMVALUE *)value1)->value.val.id == ((PRT_PRIMVALUE *)value2)->value.val.id ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_INT:
 		return
-			((PRT_PRIMVALUE *)value1)->value.nt == ((PRT_PRIMVALUE *)value2)->value.nt ? PRT_TRUE : PRT_FALSE;
+			((PRT_PRIMVALUE *)value1)->value.val.nt == ((PRT_PRIMVALUE *)value2)->value.val.nt ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_MID:
 		return
-			((PRT_PRIMVALUE *)value1)->value.md == ((PRT_PRIMVALUE *)value2)->value.md ? PRT_TRUE : PRT_FALSE;
+			((PRT_PRIMVALUE *)value1)->value.val.mid == ((PRT_PRIMVALUE *)value2)->value.val.mid ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_FORGN:
 	{
 		PRT_FORGNVALUE *fVal1 = (PRT_FORGNVALUE *)value1;
@@ -1146,27 +1152,27 @@ PRT_VALUE PrtCloneValue(_In_ PRT_VALUE value)
 	case PRT_KIND_BOOL:
 	{
 		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
-		return (PRT_VALUE)PrtMkBoolValue(pVal->value.bl);
+		return (PRT_VALUE)PrtMkBoolValue(pVal->value.val.bl);
 	}
 	case PRT_KIND_EVENT:
 	{
 		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
-		return (PRT_VALUE)PrtMkEventValue(pVal->value.ev);
+		return (PRT_VALUE)PrtMkEventValue(pVal->value.val.ev);
 	}
 	case PRT_KIND_ID:
 	{
 		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
-		return (PRT_VALUE)PrtMkIdValue(pVal->value.id);
+		return (PRT_VALUE)PrtMkIdValue(pVal->value.val.id);
 	}
 	case PRT_KIND_INT:
 	{
 		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
-		return (PRT_VALUE)PrtMkIntValue(pVal->value.nt);
+		return (PRT_VALUE)PrtMkIntValue(pVal->value.val.nt);
 	}
 	case PRT_KIND_MID:
 	{
 		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
-		return (PRT_VALUE)PrtMkMIdValue(pVal->value.md);
+		return (PRT_VALUE)PrtMkMIdValue(pVal->value.val.mid);
 	}
 	case PRT_KIND_FORGN:
 	{
@@ -1266,11 +1272,11 @@ PRT_BOOLEAN PrtIsNullValue(_In_ PRT_VALUE value)
 		PRT_DBG_ASSERT(PRT_FALSE, "Value must have a more concrete type");
 		return PRT_FALSE;
 	case PRT_KIND_EVENT:
-		return ((PRT_PRIMVALUE *)value)->value.ev == PRT_NULL_ID ? PRT_TRUE : PRT_FALSE;
+		return ((PRT_PRIMVALUE *)value)->value.val.ev == PRT_NULL_ID ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_ID:
-		return ((PRT_PRIMVALUE *)value)->value.id == PRT_NULL_ID ? PRT_TRUE : PRT_FALSE;
+		return ((PRT_PRIMVALUE *)value)->value.val.id == PRT_NULL_ID ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_MID:
-		return ((PRT_PRIMVALUE *)value)->value.md == PRT_NULL_ID ? PRT_TRUE : PRT_FALSE;
+		return ((PRT_PRIMVALUE *)value)->value.val.mid == PRT_NULL_ID ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_BOOL:
 	case PRT_KIND_INT:
 	case PRT_KIND_FORGN:
@@ -1304,34 +1310,34 @@ PRT_VALUE PrtCastValue(_In_ PRT_VALUE value, _In_ PRT_TYPE type)
 	{
 		PrtAssert(vkind == PRT_KIND_BOOL, "Invalid type cast");
 		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
-		return (PRT_VALUE)PrtMkBoolValue(pVal->value.bl);
+		return (PRT_VALUE)PrtMkBoolValue(pVal->value.val.bl);
 	}
 	case PRT_KIND_EVENT:
 	{
 		//// Assumes event, id, mid are stored in a union with the same type 
 		PrtAssert(vkind == PRT_KIND_EVENT || PrtIsNullValue(value), "Invalid type cast");
 		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
-		return (PRT_VALUE)PrtMkEventValue(pVal->value.ev);
+		return (PRT_VALUE)PrtMkEventValue(pVal->value.val.ev);
 	}
 	case PRT_KIND_ID:
 	{
 		//// Assumes event, id, mid are stored in a union with the same type 
 		PrtAssert(vkind == PRT_KIND_ID || PrtIsNullValue(value), "Invalid type cast");
 		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
-		return (PRT_VALUE)PrtMkIdValue(pVal->value.id);
+		return (PRT_VALUE)PrtMkIdValue(pVal->value.val.id);
 	}
 	case PRT_KIND_INT:
 	{
 		PrtAssert(vkind == PRT_KIND_INT, "Invalid type cast");
 		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
-		return (PRT_VALUE)PrtMkIntValue(pVal->value.nt);
+		return (PRT_VALUE)PrtMkIntValue(pVal->value.val.nt);
 	}
 	case PRT_KIND_MID:
 	{
 		//// Assumes event, id, mid are stored in a union with the same type 
 		PrtAssert(vkind == PRT_KIND_MID || PrtIsNullValue(value), "Invalid type cast");
 		PRT_PRIMVALUE *pVal = (PRT_PRIMVALUE *)value;
-		return (PRT_VALUE)PrtMkMIdValue(pVal->value.md);
+		return (PRT_VALUE)PrtMkMIdValue(pVal->value.val.mid);
 	}
 	case PRT_KIND_FORGN:
 	{

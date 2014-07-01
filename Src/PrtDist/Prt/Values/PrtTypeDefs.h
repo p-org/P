@@ -21,7 +21,7 @@ typedef struct _PRT_FORGNTYPE PRT_FORGNTYPE;
 ************************************************/
 typedef struct _PRT_VALUE PRT_VALUE;
 
-typedef struct _PRT_PRIMVALUE PRT_PRIMVALUE;
+typedef union _PRT_PRIMVALUE PRT_PRIMVALUE;
 
 typedef struct _PRT_FORGNVALUE PRT_FORGNVALUE;
 

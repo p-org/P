@@ -48,19 +48,19 @@ struct _PRT_PRIMVALUE
 };
 
 /** A foreign value is foreign type paired with a void *. */
-typedef struct _PRT_FORGNVALUE
+struct _PRT_FORGNVALUE
 {
 	void    *value;   /**< A pointer to the foreign value. */
 };
 
 /** A tuple value is a (named) tuple represented as an array. */
-typedef struct _PRT_TUPVALUE
+struct _PRT_TUPVALUE
 {
 	PRT_VALUE **values;   /**< Is an array of tuple args.    */
 };
 
 /** A sequence value is a sequence represented as a dynamic array. */
-typedef struct _PRT_SEQVALUE
+struct _PRT_SEQVALUE
 {               
 	PRT_UINT32 size;     /**< The number of elements in the sequence. */
 	PRT_UINT32 capacity; /**< The number of elements before resizing  */
@@ -68,7 +68,7 @@ typedef struct _PRT_SEQVALUE
 };
 
 /** A map value is represented as a hash-table. */
-typedef struct _PRT_MAPVALUE
+struct _PRT_MAPVALUE
 {
 	PRT_UINT32   size;       /**< The number of elements in the map.      */
 	PRT_UINT32   capNum;     /**< An opaque number related to the number of buckets */
@@ -78,7 +78,7 @@ typedef struct _PRT_MAPVALUE
 };
 
 /** A key-value node of a map. */
-typedef struct _PRT_MAPNODE
+struct _PRT_MAPNODE
 {
 	PRT_VALUE *key;     /**< The key of this node. */
 	PRT_VALUE *value;   /**< The value of this node. */

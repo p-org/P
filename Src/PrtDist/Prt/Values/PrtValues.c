@@ -579,15 +579,15 @@ PRT_UINT32 PrtSeqSizeOf(_In_ PRT_VALUE *seq)
 /** Expands the map and rehashes its key-value pairs */
 void PrtMapExpand(_Inout_ PRT_VALUE *map)
 {
-	if (map->capNum + 1 >= sizeof(PrtHashtableCapacities) / sizeof(PRT_UINT32))
+	if (map->valueUnion.map->capNum + 1 >= sizeof(PrtHashtableCapacities) / sizeof(PRT_UINT32))
 	{
 		//// Map has reached maximum capacity.
 		return;
 	}
 
-	map->capNum = map->capNum + 1;
+	map->valueUnion.map->capNum = map->valueUnion.map->capNum + 1;
 	//// Erase all bucket-next pointers
-	PRT_MAPNODE *next = map->first;
+	PRT_MAPNODE *next = map->valueUnion.map->first;
 	while (next != NULL)
 	{
 		next->bucketNext = NULL;
@@ -595,23 +595,23 @@ void PrtMapExpand(_Inout_ PRT_VALUE *map)
 	}
 
 	//// Resize buckets
-	PrtFree(map->buckets);
-	map->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[map->capNum], sizeof(PRT_MAPNODE *));
+	PrtFree(map->valueUnion.map->buckets);
+	map->valueUnion.map->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[map->valueUnion.map->capNum], sizeof(PRT_MAPNODE *));
 
 	//// Do the rehash, updating the bucketNext pointers
 	PRT_UINT32 bucketNum;
 	PRT_MAPNODE *bucket;
-	next = map->first;
+	next = map->valueUnion.map->first;
 	while (next != NULL)
 	{
-		bucketNum = PrtGetHashCodeValue(next->key) % PrtHashtableCapacities[map->capNum];
-		bucket = map->buckets[bucketNum];
+		bucketNum = PrtGetHashCodeValue(next->key) % PrtHashtableCapacities[map->valueUnion.map->capNum];
+		bucket = map->valueUnion.map->buckets[bucketNum];
 		if (bucket != NULL)
 		{
 			next->bucketNext = bucket;
 		}
 
-		map->buckets[bucketNum] = next;
+		map->valueUnion.map->buckets[bucketNum] = next;
 		next = next->insertNext;
 	}
 }
@@ -853,7 +853,7 @@ PRT_VALUE *PrtMapGetValues(_In_ PRT_VALUE *map)
 	{
 		seqVal->size = map->valueUnion.map->size;
 		seqVal->capacity = map->valueUnion.map->size;
-		seqVal->values = (PRT_VALUE *)PrtCalloc(map->valueUnion.map->size, sizeof(PRT_VALUE));
+		seqVal->values = (PRT_VALUE **)PrtCalloc(map->valueUnion.map->size, sizeof(PRT_VALUE*));
 		PRT_MAPNODE* next = map->valueUnion.map->first;
 		PRT_UINT32 i = 0;
 		while (next != NULL)
@@ -907,7 +907,7 @@ PRT_BOOLEAN PrtMapIsSameMapping(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key, _In_ P
 
 	PrtAssert((map->type.typeKind) == PRT_KIND_MAP, "Invalid map value");
 	PrtAssert(key->type.typeKind >= 0 && key->type.typeKind < PRT_TYPE_KIND_COUNT, "Invalid key");
-	mapType = (PRT_MAPTYPE *)map->type.typeUnion.map;
+	mapType = map->type.typeUnion.map;
 	PrtAssert(PrtIsSubtype(key->type, mapType->domType), "Invalid map get; key has bad type");
 
 	bucketNum = PrtGetHashCodeValue(key) % PrtHashtableCapacities[map->valueUnion.map->capNum];
@@ -1136,7 +1136,7 @@ PRT_BOOLEAN PrtIsEqualValue(_In_ PRT_VALUE* value1, _In_ PRT_VALUE* value2)
 		PRT_MAPNODE *next = mVal1->first;
 		while (next != NULL)
 		{
-			if (!PrtMapIsSameMapping(mVal2, next->key, next->value))
+			if (!PrtMapIsSameMapping(value2, next->key, next->value))
 			{
 				return PRT_FALSE;
 			}
@@ -1273,11 +1273,9 @@ PRT_VALUE* PrtCloneValue(_In_ PRT_VALUE* value)
 	}
 	case PRT_KIND_MAP:
 	{
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
-		retVal->type = PrtCloneType(value->type);
-		retVal->discriminator = retVal->type.typeKind;
+		PRT_VALUE *retVal = PrtMkDefaultValue(value->type);
 		PRT_MAPVALUE *mVal = value->valueUnion.map;
-		PRT_MAPVALUE *cVal = (PRT_MAPVALUE *)PrtMkDefaultValue(value->type);
+		PRT_MAPVALUE *cVal = retVal->valueUnion.map;
 		if (mVal->capNum > 0)
 		{
 			//// Eagerly allocate capacity in the clone to avoid intermediate rehashings.
@@ -1285,14 +1283,13 @@ PRT_VALUE* PrtCloneValue(_In_ PRT_VALUE* value)
 			cVal->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[mVal->capNum], sizeof(PRT_MAPNODE *));
 			cVal->capNum = mVal->capNum;
 		}
-
 		PRT_MAPNODE *next = mVal->first;
 		while (next != NULL)
 		{
-			PrtMapUpdate(cVal, next->key, next->value);
+			PrtMapUpdate(retVal, next->key, next->value);
 			next = next->insertNext;
 		}
-		retVal->valueUnion.map = cVal;
+		
 		return retVal;
 	}
 	case PRT_KIND_NMDTUP:
@@ -1304,7 +1301,7 @@ PRT_VALUE* PrtCloneValue(_In_ PRT_VALUE* value)
 		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
 		PRT_UINT32 arity = value->type.typeUnion.nmTuple->arity;
 		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
-		cVal->values = (PRT_VALUE *)PrtCalloc(arity, sizeof(PRT_VALUE));
+		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE*));
 		for (i = 0; i < arity; ++i)
 		{
 			cVal->values[i] = PrtCloneValue(tVal->values[i]);
@@ -1322,7 +1319,7 @@ PRT_VALUE* PrtCloneValue(_In_ PRT_VALUE* value)
 		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
 		PRT_UINT32 arity = value->type.typeUnion.tuple->arity;
 		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
-		cVal->values = (PRT_VALUE *)PrtCalloc(arity, sizeof(PRT_VALUE));
+		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE*));
 		for (i = 0; i < arity; ++i)
 		{
 			cVal->values[i] = PrtCloneValue(tVal->values[i]);
@@ -1347,14 +1344,14 @@ PRT_VALUE* PrtCloneValue(_In_ PRT_VALUE* value)
 		else 
 		{
 			PRT_UINT32 i;
-			cVal->values = (PRT_VALUE *)PrtCalloc(sVal->capacity, sizeof(PRT_VALUE));
+			cVal->values = (PRT_VALUE **)PrtCalloc(sVal->capacity, sizeof(PRT_VALUE*));
 			for (i = 0; i < sVal->size; ++i)
 			{
 				cVal->values[i] = PrtCloneValue(sVal->values[i]);
 			}
 		}
 		retVal->valueUnion.seq = cVal;
-		return cVal;
+		return retVal;
 	}
 	default:
 		PrtAssert(PRT_FALSE, "Invalid type");
@@ -1472,14 +1469,14 @@ PRT_VALUE *PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE type)
 			cVal->capNum = mVal->capNum;
 		}
 
+		retVal->valueUnion.map = cVal;
 		PRT_MAPNODE *next = mVal->first;
 		while (next != NULL)
 		{
-			PrtMapUpdateEx(cVal, PrtCastValue(next->key, mType->domType), PrtCastValue(next->value, mType->codType), PRT_FALSE);
+			PrtMapUpdateEx(retVal, PrtCastValue(next->key, mType->domType), PrtCastValue(next->value, mType->codType), PRT_FALSE);
 			next = next->insertNext;
 		}
 
-		retVal->valueUnion.map = cVal;
 		return retVal;
 	}
 	case PRT_KIND_NMDTUP:
@@ -1496,7 +1493,7 @@ PRT_VALUE *PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE type)
 		PrtAssert(arity == srcType->arity, "Invalid type cast");
 
 		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
-		cVal->values = (PRT_VALUE *)PrtCalloc(arity, sizeof(PRT_VALUE));
+		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE *));
 		for (i = 0; i < arity; ++i)
 		{
 			PrtAssert(strncmp(tType->fieldNames[i], srcType->fieldNames[i], PRT_MAXFLDNAME_LENGTH) == 0, "Invalid type cast");
@@ -1520,7 +1517,7 @@ PRT_VALUE *PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE type)
 		PrtAssert(arity == srcType->arity, "Invalid type cast");
 
 		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
-		cVal->values = (PRT_VALUE *)PrtCalloc(arity, sizeof(PRT_VALUE));
+		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE*));
 		for (i = 0; i < arity; ++i)
 		{
 			cVal->values[i] = PrtCastValue(tVal->values[i], tType->fieldTypes[i]);
@@ -1547,7 +1544,7 @@ PRT_VALUE *PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE type)
 		else
 		{
 			PRT_UINT32 i;
-			cVal->values = (PRT_VALUE *)PrtCalloc(sVal->capacity, sizeof(PRT_VALUE));
+			cVal->values = (PRT_VALUE **)PrtCalloc(sVal->capacity, sizeof(PRT_VALUE*));
 			for (i = 0; i < sVal->size; ++i)
 			{
 				cVal->values[i] = PrtCastValue(sVal->values[i], sType->innerType);
@@ -1776,8 +1773,8 @@ void PrtFreeValue(_Inout_ PRT_VALUE* value)
 	case PRT_KIND_TUPLE:
 	{
 		PRT_UINT32 i;
-		PRT_TUPVALUE *tVal = (PRT_TUPVALUE *)value;
-		PRT_UINT32 arity = ((PRT_TUPTYPE *)value->type.typeUnion.tuple)->arity;
+		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
+		PRT_UINT32 arity = (value->type.typeUnion.tuple)->arity;
 		for (i = 0; i < arity; ++i)
 		{
 			PrtFreeValue(tVal->values[i]);

@@ -31,6 +31,10 @@ interface PrtDistributed {
 
 	typedef struct _PRT_FORGNTYPE PRT_FORGNTYPE;
 
+	typedef struct _PRT_TYPE_NODE PRT_TYPE_NODE;
+
+	typedef struct _PRT_STRING_NODE PRT_STRING_NODE;
+
 	/** Declare all the platform dependent types */
 	/** PRT_UINT8 is always an 8-bit unsigned integer. */
 	typedef unsigned small  PRT_UINT8;
@@ -53,7 +57,7 @@ interface PrtDistributed {
 	/** PRT_CHAR is always an ASCII character. */
 	typedef char PRT_CHAR;
 	/** PRT_STRING is always an array of ASCII characters. */
-	typedef char * PRT_STRING;
+	typedef [string] char * PRT_STRING;
 	/** PRT_CSTRING is always a constant array of ASCII characters. */
 	typedef char const * PRT_CSTRING;
 
@@ -106,8 +110,19 @@ interface PrtDistributed {
 		PRT_UINT32    arity;         /**< Arity of tuple type; arity > 0 */
 		PRT_STRING    *fieldNames;   /**< Array of valid field names; length = arity */
 		PRT_TYPE      *fieldTypes;   /**< Array of field types; length = arity */
+		PRT_TYPE_NODE *fieldTypesSerialized;
+		PRT_STRING_NODE *fieldNamesSerialized;
 	};
 
+	struct _PRT_TYPE_NODE {
+		PRT_TYPE type;
+		PRT_TYPE_NODE *nextNode;
+	};
+
+	struct _PRT_STRING_NODE {
+		PRT_STRING name;
+		PRT_STRING_NODE *nextNode;
+	};
 	/** The layout for sequence types. */
 	struct _PRT_SEQTYPE
 	{
@@ -119,6 +134,7 @@ interface PrtDistributed {
 	{
 		PRT_UINT32    arity;         /**< Arity of tuple type; arity > 0 */
 		PRT_TYPE      *fieldTypes;   /**< Array of field types; length = arity */
+		PRT_TYPE_NODE *fieldTypesSerialized;
 	};
 
 	/** Structure for representing a standard GUID */
@@ -178,10 +194,7 @@ interface PrtDistributed {
 	/***********************************************************************************************/
 	//		Values
 	/***********************************************************************************************/
-
-	//typedef struct _PRT_PRIMVALUE_UNION PRT_PRIMVALUE_UNION;
-
-	typedef struct _PRT_PRIMVALUE PRT_PRIMVALUE;
+	typedef struct _PRT_VALUE PRT_VALUE;
 
 	typedef struct _PRT_FORGNVALUE PRT_FORGNVALUE;
 
@@ -193,48 +206,72 @@ interface PrtDistributed {
 
 	typedef struct _PRT_MAPNODE PRT_MAPNODE;
 
-	typedef union switch (PRT_TYPE_KIND discriminator) valueUnion{
+	typedef struct _PRT_VALUE_NODE PRT_VALUE_NODE;
+
+
+	typedef union switch (PRT_TYPE_KIND discriminator) value{
 	case PRT_KIND_BOOL: PRT_BOOLEAN bl;
 	case PRT_KIND_EVENT: PRT_UINT32  ev;
 	case PRT_KIND_MACHINE: PRT_UINT32  mach;
 	case PRT_KIND_MODEL: PRT_UINT32  model;
 	case PRT_KIND_INT: PRT_INT32   nt;
-	} PRT_VALUE;
+	} PRT_PRIMVALUE;
 
-	/** A primitive value is primitive type paired with a primitive value. */
-	struct _PRT_PRIMVALUE
-	{
-		PRT_TYPE type;        /**< Must be a primitive type. */
-		PRT_VALUE *value;  /**< A primitive value is of PRT_PRIMVALUE_UNION type. */
+
+	struct _PRT_VALUE {
+		PRT_TYPE type;
+		union switch (PRT_TYPE_KIND discriminator) valueUnion {
+		case PRT_KIND_ANY: 
+		case PRT_KIND_NULL: 
+		case PRT_KIND_INT:
+		case PRT_KIND_MODEL:
+		case PRT_KIND_MACHINE:
+		case PRT_KIND_BOOL:
+		case PRT_KIND_EVENT: [unique] PRT_PRIMVALUE *primValue;
+
+		case PRT_KIND_FORGN: [unique] PRT_FORGNVALUE *frgn;
+		case PRT_KIND_MAP: [unique] PRT_MAPVALUE *map;
+		case PRT_KIND_SEQ: [unique] PRT_SEQVALUE *seq;
+		case PRT_KIND_NMDTUP: 
+		case PRT_KIND_TUPLE: [unique] PRT_TUPVALUE *tuple;
+		};
 	};
 
 	/** A foreign value is foreign type paired with a void *. */
 	struct _PRT_FORGNVALUE
 	{
-		PRT_TYPE type;    /**< Must be a foreign type.         */
+		#if !defined(IGNORE_FRG)
 		void    *value;   /**< A pointer to the foreign value. */
+		#else
+		int		*value;
+		#endif
 	};
 
 	/** A tuple value is a (named) tuple represented as an array. */
 	struct _PRT_TUPVALUE
 	{
-		PRT_TYPE   type;     /**< Must be a (named) tuple type. */
-		PRT_VALUE *values;   /**< Is an array of tuple args.    */
+		PRT_VALUE **values;   /**< Is an array of tuple args.    */
+		PRT_VALUE_NODE *valuesSerialized;
 	};
+
 
 	/** A sequence value is a sequence represented as a dynamic array. */
 	struct _PRT_SEQVALUE
 	{
-		PRT_TYPE   type;     /**< Must be a sequence type.                */
 		PRT_UINT32 size;     /**< The number of elements in the sequence. */
 		PRT_UINT32 capacity; /**< The number of elements before resizing  */
-		PRT_VALUE *values;   /**< An array of values in the sequence.     */
+		PRT_VALUE **values;   /**< An array of values in the sequence.     */
+		PRT_VALUE_NODE *valuesSerialized;
+	};
+
+	struct _PRT_VALUE_NODE {
+		PRT_VALUE *value;
+		PRT_VALUE_NODE *nextNode;
 	};
 
 	/** A map value is represented as a hash-table. */
 	struct _PRT_MAPVALUE
 	{
-		PRT_TYPE     type;       /**< Must be a map type.                     */
 		PRT_UINT32   size;       /**< The number of elements in the map.      */
 		PRT_UINT32   capNum;     /**< An opaque number related to the number of buckets */
 		PRT_MAPNODE *first;    /**< First element inserted into the map. */
@@ -242,11 +279,12 @@ interface PrtDistributed {
 		PRT_MAPNODE **buckets; /**< An array of pointers to chained nodes.  */
 	};
 
+
 	/** A key-value node of a map. */
 	struct _PRT_MAPNODE
 	{
-		PRT_VALUE key;     /**< The key of this node. */
-		PRT_VALUE value;   /**< The value of this node. */
+		PRT_VALUE *key;     /**< The key of this node. */
+		PRT_VALUE *value;   /**< The value of this node. */
 		PRT_MAPNODE *bucketNext;   /**< The next node in this bucket.         */
 		PRT_MAPNODE *insertNext;   /**< The next node in insertion order.     */
 		PRT_MAPNODE *insertPrev;   /**< The previous node in insertion order. */
@@ -258,12 +296,12 @@ interface PrtDistributed {
 	
 	void SendValue1(
 		[in] handle_t handleM,
-		[in, ptr] PRT_PRIMVALUE* value
+		[in, ptr] PRT_VALUE* value
 		);
 
-	void SendValueMap1(
+	void SendValue2(
 		[in] handle_t handleM,
-		[in, ptr] PRT_MAPVALUE* value
+		[in, ptr] PRT_VALUE* value
 		);
 
 }

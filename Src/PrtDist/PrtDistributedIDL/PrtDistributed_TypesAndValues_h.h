@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 8.00.0603 */
-/* at Mon Jun 30 15:32:11 2014
+/* at Tue Jul 01 18:54:57 2014
  */
 /* Compiler settings for PrtDistributed_TypesAndValues.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 8.00.0603 
@@ -71,6 +71,10 @@ typedef struct _PRT_TUPTYPE PRT_TUPTYPE;
 
 typedef struct _PRT_FORGNTYPE PRT_FORGNTYPE;
 
+typedef struct _PRT_TYPE_NODE PRT_TYPE_NODE;
+
+typedef struct _PRT_STRING_NODE PRT_STRING_NODE;
+
 typedef unsigned small PRT_UINT8;
 
 typedef unsigned short PRT_UINT16;
@@ -89,7 +93,7 @@ typedef long long PRT_INT64;
 
 typedef unsigned char PRT_CHAR;
 
-typedef unsigned char *PRT_STRING;
+typedef /* [string] */ unsigned char *PRT_STRING;
 
 typedef const unsigned char *PRT_CSTRING;
 
@@ -111,7 +115,7 @@ enum _PRT_TYPE_KIND
         PRT_TYPE_KIND_COUNT	= 12,
         PRT_TYPE_KIND_CANARY	= 0xff
     } ;
-typedef /* [public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public] */ struct __MIDL_PrtDistributed_0001
+typedef /* [public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public] */ struct __MIDL_PrtDistributed_0001
     {
     PRT_TYPE_KIND typeKind;
     /* [switch_is] */ /* [switch_type] */ union __MIDL_PrtDistributed_0002
@@ -141,6 +145,18 @@ struct _PRT_NMDTUPTYPE
     PRT_UINT32 arity;
     PRT_STRING *fieldNames;
     PRT_TYPE *fieldTypes;
+    PRT_TYPE_NODE *fieldTypesSerialized;
+    PRT_STRING_NODE *fieldNamesSerialized;
+    } ;
+struct _PRT_TYPE_NODE
+    {
+    PRT_TYPE type;
+    PRT_TYPE_NODE *nextNode;
+    } ;
+struct _PRT_STRING_NODE
+    {
+    PRT_STRING name;
+    PRT_STRING_NODE *nextNode;
     } ;
 struct _PRT_SEQTYPE
     {
@@ -150,6 +166,7 @@ struct _PRT_TUPTYPE
     {
     PRT_UINT32 arity;
     PRT_TYPE *fieldTypes;
+    PRT_TYPE_NODE *fieldTypesSerialized;
     } ;
 typedef struct PRT_GUID
     {
@@ -181,7 +198,7 @@ struct _PRT_FORGNTYPE
     {
     PRT_GUID typeTag;
     } ;
-typedef struct _PRT_PRIMVALUE PRT_PRIMVALUE;
+typedef struct _PRT_VALUE PRT_VALUE;
 
 typedef struct _PRT_FORGNVALUE PRT_FORGNVALUE;
 
@@ -193,7 +210,9 @@ typedef struct _PRT_MAPVALUE PRT_MAPVALUE;
 
 typedef struct _PRT_MAPNODE PRT_MAPNODE;
 
-typedef /* [public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public] */ struct __MIDL_PrtDistributed_0003
+typedef struct _PRT_VALUE_NODE PRT_VALUE_NODE;
+
+typedef /* [public][public][public][public][public][public] */ struct __MIDL_PrtDistributed_0003
     {
     PRT_TYPE_KIND discriminator;
     /* [switch_is] */ /* [switch_type] */ union __MIDL_PrtDistributed_0004
@@ -203,34 +222,48 @@ typedef /* [public][public][public][public][public][public][public][public][publ
         /* [case()] */ PRT_UINT32 mach;
         /* [case()] */ PRT_UINT32 model;
         /* [case()] */ PRT_INT32 nt;
-        } 	valueUnion;
-    } 	PRT_VALUE;
+        } 	value;
+    } 	PRT_PRIMVALUE;
 
-struct _PRT_PRIMVALUE
+struct _PRT_VALUE
     {
     PRT_TYPE type;
-    PRT_VALUE *value;
+    struct 
+        {
+        PRT_TYPE_KIND discriminator;
+        /* [switch_is] */ /* [switch_type] */ union __MIDL_PrtDistributed_0006
+            {
+            /* [case()][unique] */ PRT_PRIMVALUE *primValue;
+            /* [case()][unique] */ PRT_FORGNVALUE *frgn;
+            /* [case()][unique] */ PRT_MAPVALUE *map;
+            /* [case()][unique] */ PRT_SEQVALUE *seq;
+            /* [case()][unique] */ PRT_TUPVALUE *tuple;
+            } 	valueUnion;
+        } 	;
     } ;
 struct _PRT_FORGNVALUE
     {
-    PRT_TYPE type;
-    void *value;
+    int *value;
     } ;
 struct _PRT_TUPVALUE
     {
-    PRT_TYPE type;
-    PRT_VALUE *values;
+    PRT_VALUE **values;
+    PRT_VALUE_NODE *valuesSerialized;
     } ;
 struct _PRT_SEQVALUE
     {
-    PRT_TYPE type;
     PRT_UINT32 size;
     PRT_UINT32 capacity;
-    PRT_VALUE *values;
+    PRT_VALUE **values;
+    PRT_VALUE_NODE *valuesSerialized;
+    } ;
+struct _PRT_VALUE_NODE
+    {
+    PRT_VALUE *value;
+    PRT_VALUE_NODE *nextNode;
     } ;
 struct _PRT_MAPVALUE
     {
-    PRT_TYPE type;
     PRT_UINT32 size;
     PRT_UINT32 capNum;
     PRT_MAPNODE *first;
@@ -239,8 +272,8 @@ struct _PRT_MAPVALUE
     } ;
 struct _PRT_MAPNODE
     {
-    PRT_VALUE key;
-    PRT_VALUE value;
+    PRT_VALUE *key;
+    PRT_VALUE *value;
     PRT_MAPNODE *bucketNext;
     PRT_MAPNODE *insertNext;
     PRT_MAPNODE *insertPrev;
@@ -248,20 +281,20 @@ struct _PRT_MAPNODE
 /* client prototype */
 void c_SendValue1( 
     /* [in] */ handle_t handleM,
-    /* [full][in] */ PRT_PRIMVALUE *value);
+    /* [full][in] */ PRT_VALUE *value);
 /* server prototype */
 void s_SendValue1( 
     /* [in] */ handle_t handleM,
-    /* [full][in] */ PRT_PRIMVALUE *value);
+    /* [full][in] */ PRT_VALUE *value);
 
 /* client prototype */
-void c_SendValueMap1( 
+void c_SendValue2( 
     /* [in] */ handle_t handleM,
-    /* [full][in] */ PRT_MAPVALUE *value);
+    /* [full][in] */ PRT_VALUE *value);
 /* server prototype */
-void s_SendValueMap1( 
+void s_SendValue2( 
     /* [in] */ handle_t handleM,
-    /* [full][in] */ PRT_MAPVALUE *value);
+    /* [full][in] */ PRT_VALUE *value);
 
 
 

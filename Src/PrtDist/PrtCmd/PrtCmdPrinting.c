@@ -99,20 +99,20 @@ void PrtCmdPrintType(_In_ PRT_TYPE type)
 	}
 }
 
-void PrtCmdPrintValue(_In_ PRT_VALUE value)
+void PrtCmdPrintValue(_In_ PRT_VALUE *value)
 {
-	PRT_TYPE_KIND kind = value->typeKind;
+	PRT_TYPE_KIND kind = value->type.typeKind;
 	switch (kind)
 	{
 	case PRT_KIND_ANY:
 		PRT_DBG_ASSERT(PRT_FALSE, "Value must have a more concrete type");
 		break;
 	case PRT_KIND_BOOL:
-		printf_s(PrtPrimGetBool((PRT_PRIMVALUE *)value) == PRT_TRUE ? "true" : "false");
+		printf_s(PrtPrimGetBool(value) == PRT_TRUE ? "true" : "false");
 		break;
 	case PRT_KIND_EVENT:
 	{
-		PRT_UINT32 event = PrtPrimGetEvent((PRT_PRIMVALUE *)value);
+		PRT_UINT32 event = PrtPrimGetEvent(value);
 		printf_s("<%d>", event);
 		break;
 	}
@@ -121,17 +121,17 @@ void PrtCmdPrintValue(_In_ PRT_VALUE value)
 		break;
 	case PRT_KIND_MACHINE:
 	{
-		PRT_UINT32 machine = PrtPrimGetMachine((PRT_PRIMVALUE *)value);
+		PRT_UINT32 machine = PrtPrimGetMachine(value);
 		printf_s("<%d>", machine);
 
 		break;
 	}
 	case PRT_KIND_INT:
-		printf_s("%d", PrtPrimGetInt((PRT_PRIMVALUE *)value));
+		printf_s("%d", PrtPrimGetInt(value));
 		break;
 	case PRT_KIND_MODEL:
 	{
-		PRT_UINT32 model = PrtPrimGetModel((PRT_PRIMVALUE *)value);
+		PRT_UINT32 model = PrtPrimGetModel(value);
 		printf_s("<%d>", model);
 
 		break;
@@ -141,7 +141,7 @@ void PrtCmdPrintValue(_In_ PRT_VALUE value)
 		break;
 	case PRT_KIND_MAP:
 	{
-		PRT_MAPVALUE *mval = (PRT_MAPVALUE *)value;
+		PRT_MAPVALUE *mval = value->valueUnion.map;
 		PRT_MAPNODE *next = mval->first;
 		printf_s("{");
 		while (next != NULL)
@@ -162,14 +162,14 @@ void PrtCmdPrintValue(_In_ PRT_VALUE value)
 			next = next->insertNext;
 		}
 
-		printf_s("} (%d / %d)", mval->size, PrtMapCapacity(mval));
+		printf_s("} (%d / %d)", mval->size, PrtMapCapacity(value));
 		break;
 	}
 	case PRT_KIND_NMDTUP:
 	{
 		PRT_UINT32 i;
-		PRT_TUPVALUE *tval = (PRT_TUPVALUE *)value;
-		PRT_NMDTUPTYPE *ntype = (PRT_NMDTUPTYPE *)tval->type.typeUnion.nmTuple;
+		PRT_TUPVALUE *tval = value->valueUnion.tuple;
+		PRT_NMDTUPTYPE *ntype = value->type.typeUnion.nmTuple;
 		printf_s("(");
 		for (i = 0; i < ntype->arity; ++i)
 		{
@@ -190,7 +190,7 @@ void PrtCmdPrintValue(_In_ PRT_VALUE value)
 	case PRT_KIND_SEQ:
 	{
 		PRT_UINT32 i;
-		PRT_SEQVALUE *sVal = (PRT_SEQVALUE *)value;
+		PRT_SEQVALUE *sVal = value->valueUnion.seq;
 		printf_s("[");
 		for (i = 0; i < sVal->size; ++i)
 		{
@@ -207,8 +207,8 @@ void PrtCmdPrintValue(_In_ PRT_VALUE value)
 	case PRT_KIND_TUPLE:
 	{
 		PRT_UINT32 i;
-		PRT_TUPVALUE *tval = (PRT_TUPVALUE *)value;
-		PRT_TUPTYPE *ttype = (PRT_TUPTYPE *)tval->type.typeUnion.tuple;
+		PRT_TUPVALUE *tval = value->valueUnion.tuple;
+		PRT_TUPTYPE *ttype = value->type.typeUnion.tuple;
 		printf_s("(");
 		if (ttype->arity == 1)
 		{
@@ -239,9 +239,9 @@ void PrtCmdPrintValue(_In_ PRT_VALUE value)
 	}
 }
 
-void PrtCmdPrintValueAndType(_In_ PRT_VALUE value)
+void PrtCmdPrintValueAndType(_In_ PRT_VALUE *value)
 {
 	PrtCmdPrintValue(value);
 	printf_s(" : ");
-	PrtCmdPrintType(*value);
+	PrtCmdPrintType(value->type);
 }

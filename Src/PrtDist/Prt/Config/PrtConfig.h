@@ -107,12 +107,14 @@
 #define PRT_DBG_END_MEM_BALANCED_REGION
 #endif
 
+#if !defined(DISTRIBUTED_RUNTIME)
 /** PRT uses these definitions for boolean values */
 typedef enum PRT_BOOLEAN 
 {
   PRT_FALSE = 0,   /**< 0 means false */
   PRT_TRUE  = 1    /**< 1 means true  */
 } PRT_BOOLEAN;
+#endif
 
 #ifndef PRT_PLAT
   #error No platform was specified (see PrtConfig.h for details)

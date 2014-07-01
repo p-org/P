@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PrtCmd", "..\PrtCmd\PrtCmd.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PrtDistributedIDL", "..\PrtDistributedIDL\PrtDistributedIDL.vcxproj", "{262D986B-9C2B-4F03-A1E4-C1C4A3EC9834}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PrtRPC", "..\PrtRPC\PrtRPC.vcxproj", "{F8A5BB72-9666-45CC-81CC-97A978B81DA2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -27,6 +29,10 @@ Global
 		{262D986B-9C2B-4F03-A1E4-C1C4A3EC9834}.Debug|Win32.Build.0 = Debug|Win32
 		{262D986B-9C2B-4F03-A1E4-C1C4A3EC9834}.Release|Win32.ActiveCfg = Release|Win32
 		{262D986B-9C2B-4F03-A1E4-C1C4A3EC9834}.Release|Win32.Build.0 = Release|Win32
+		{F8A5BB72-9666-45CC-81CC-97A978B81DA2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F8A5BB72-9666-45CC-81CC-97A978B81DA2}.Debug|Win32.Build.0 = Debug|Win32
+		{F8A5BB72-9666-45CC-81CC-97A978B81DA2}.Release|Win32.ActiveCfg = Release|Win32
+		{F8A5BB72-9666-45CC-81CC-97A978B81DA2}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

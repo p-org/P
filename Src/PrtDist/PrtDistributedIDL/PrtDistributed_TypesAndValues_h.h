@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 8.00.0603 */
-/* at Thu Jun 26 20:08:35 2014
+/* at Mon Jun 30 15:32:11 2014
  */
 /* Compiler settings for PrtDistributed_TypesAndValues.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 8.00.0603 
@@ -52,9 +52,14 @@ extern "C"{
 /* interface PrtDistributed */
 /* [full][version][uuid] */ 
 
-typedef enum _PRT_TYPE_KIND PRT_TYPE_KIND;
+typedef 
+enum PRT_BOOLEAN
+    {
+        PRT_FALSE	= 0,
+        PRT_TRUE	= 1
+    } 	PRT_BOOLEAN;
 
-typedef struct _PRT_TYPE PRT_TYPE;
+typedef enum _PRT_TYPE_KIND PRT_TYPE_KIND;
 
 typedef struct _PRT_MAPTYPE PRT_MAPTYPE;
 
@@ -106,18 +111,26 @@ enum _PRT_TYPE_KIND
         PRT_TYPE_KIND_COUNT	= 12,
         PRT_TYPE_KIND_CANARY	= 0xff
     } ;
-struct _PRT_TYPE
+typedef /* [public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public] */ struct __MIDL_PrtDistributed_0001
     {
     PRT_TYPE_KIND typeKind;
-    union 
+    /* [switch_is] */ /* [switch_type] */ union __MIDL_PrtDistributed_0002
         {
-        PRT_MAPTYPE *map;
-        PRT_NMDTUPTYPE *nmTuple;
-        PRT_SEQTYPE *seq;
-        PRT_TUPTYPE *tuple;
-        PRT_FORGNTYPE *forgn;
-        } 	type_union;
-    } ;
+        /* [case()] */ PRT_UINT32 dummy_1;
+        /* [case()] */ PRT_UINT32 dummy_2;
+        /* [case()] */ PRT_UINT32 dummy_3;
+        /* [case()] */ PRT_FORGNTYPE *forgn;
+        /* [case()] */ PRT_UINT32 dummy_4;
+        /* [case()] */ PRT_UINT32 dummy_5;
+        /* [case()] */ PRT_MAPTYPE *map;
+        /* [case()] */ PRT_UINT32 dummy_6;
+        /* [case()] */ PRT_NMDTUPTYPE *nmTuple;
+        /* [case()] */ PRT_UINT32 dummy_7;
+        /* [case()] */ PRT_SEQTYPE *seq;
+        /* [case()] */ PRT_TUPTYPE *tuple;
+        } 	typeUnion;
+    } 	PRT_TYPE;
+
 struct _PRT_MAPTYPE
     {
     PRT_TYPE domType;
@@ -167,15 +180,94 @@ typedef PRT_BOOLEAN ( *PRT_FORGN_ISEQUAL )(
 struct _PRT_FORGNTYPE
     {
     PRT_GUID typeTag;
-    PRT_FORGN_CLONE cloner;
-    PRT_FORGN_FREE freer;
-    PRT_FORGN_GETHASHCODE hasher;
-    PRT_FORGN_ISEQUAL eqTester;
     } ;
+typedef struct _PRT_PRIMVALUE PRT_PRIMVALUE;
+
+typedef struct _PRT_FORGNVALUE PRT_FORGNVALUE;
+
+typedef struct _PRT_TUPVALUE PRT_TUPVALUE;
+
+typedef struct _PRT_SEQVALUE PRT_SEQVALUE;
+
+typedef struct _PRT_MAPVALUE PRT_MAPVALUE;
+
+typedef struct _PRT_MAPNODE PRT_MAPNODE;
+
+typedef /* [public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public][public] */ struct __MIDL_PrtDistributed_0003
+    {
+    PRT_TYPE_KIND discriminator;
+    /* [switch_is] */ /* [switch_type] */ union __MIDL_PrtDistributed_0004
+        {
+        /* [case()] */ PRT_BOOLEAN bl;
+        /* [case()] */ PRT_UINT32 ev;
+        /* [case()] */ PRT_UINT32 mach;
+        /* [case()] */ PRT_UINT32 model;
+        /* [case()] */ PRT_INT32 nt;
+        } 	valueUnion;
+    } 	PRT_VALUE;
+
+struct _PRT_PRIMVALUE
+    {
+    PRT_TYPE type;
+    PRT_VALUE *value;
+    } ;
+struct _PRT_FORGNVALUE
+    {
+    PRT_TYPE type;
+    void *value;
+    } ;
+struct _PRT_TUPVALUE
+    {
+    PRT_TYPE type;
+    PRT_VALUE *values;
+    } ;
+struct _PRT_SEQVALUE
+    {
+    PRT_TYPE type;
+    PRT_UINT32 size;
+    PRT_UINT32 capacity;
+    PRT_VALUE *values;
+    } ;
+struct _PRT_MAPVALUE
+    {
+    PRT_TYPE type;
+    PRT_UINT32 size;
+    PRT_UINT32 capNum;
+    PRT_MAPNODE *first;
+    PRT_MAPNODE *last;
+    PRT_MAPNODE **buckets;
+    } ;
+struct _PRT_MAPNODE
+    {
+    PRT_VALUE key;
+    PRT_VALUE value;
+    PRT_MAPNODE *bucketNext;
+    PRT_MAPNODE *insertNext;
+    PRT_MAPNODE *insertPrev;
+    } ;
+/* client prototype */
+void c_SendValue1( 
+    /* [in] */ handle_t handleM,
+    /* [full][in] */ PRT_PRIMVALUE *value);
+/* server prototype */
+void s_SendValue1( 
+    /* [in] */ handle_t handleM,
+    /* [full][in] */ PRT_PRIMVALUE *value);
+
+/* client prototype */
+void c_SendValueMap1( 
+    /* [in] */ handle_t handleM,
+    /* [full][in] */ PRT_MAPVALUE *value);
+/* server prototype */
+void s_SendValueMap1( 
+    /* [in] */ handle_t handleM,
+    /* [full][in] */ PRT_MAPVALUE *value);
 
 
+
+extern RPC_IF_HANDLE c_PrtDistributed_v1_0_c_ifspec;
 extern RPC_IF_HANDLE PrtDistributed_v1_0_c_ifspec;
-extern RPC_IF_HANDLE PrtDistributed_v1_0_s_ifspec;
+extern RPC_IF_HANDLE s_PrtDistributed_v1_0_s_ifspec;
 #endif /* __PrtDistributed_INTERFACE_DEFINED__ */
 
 /* Additional Prototypes for ALL interfaces */

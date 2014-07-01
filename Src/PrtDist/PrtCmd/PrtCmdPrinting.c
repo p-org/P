@@ -28,7 +28,7 @@ void PrtCmdPrintType(_In_ PRT_TYPE type)
 		break;
 	case PRT_KIND_MAP:
 	{
-		PRT_MAPTYPE *mtype = (PRT_MAPTYPE *)type.type_union.map;
+		PRT_MAPTYPE *mtype = (PRT_MAPTYPE *)type.typeUnion.map;
 		printf_s("map[");
 		PrtCmdPrintType(mtype->domType);
 		printf_s(", ");
@@ -39,7 +39,7 @@ void PrtCmdPrintType(_In_ PRT_TYPE type)
 	case PRT_KIND_NMDTUP:
 	{
 		PRT_UINT32 i;
-		PRT_NMDTUPTYPE *ntype = (PRT_NMDTUPTYPE *)type.type_union.nmTuple;
+		PRT_NMDTUPTYPE *ntype = (PRT_NMDTUPTYPE *)type.typeUnion.nmTuple;
 		printf_s("(");
 		for (i = 0; i < ntype->arity; ++i)
 		{
@@ -59,7 +59,7 @@ void PrtCmdPrintType(_In_ PRT_TYPE type)
 	}
 	case PRT_KIND_SEQ:
 	{
-		PRT_SEQTYPE *stype = (PRT_SEQTYPE *)type.type_union.seq;
+		PRT_SEQTYPE *stype = (PRT_SEQTYPE *)type.typeUnion.seq;
 		printf_s("seq[");
 		PrtCmdPrintType(stype->innerType);
 		printf_s("]");
@@ -68,7 +68,7 @@ void PrtCmdPrintType(_In_ PRT_TYPE type)
 	case PRT_KIND_TUPLE:
 	{
 		PRT_UINT32 i;
-		PRT_TUPTYPE *ttype = (PRT_TUPTYPE *)type.type_union.tuple;
+		PRT_TUPTYPE *ttype = (PRT_TUPTYPE *)type.typeUnion.tuple;
 		printf_s("(");
 		if (ttype->arity == 1)
 		{
@@ -169,7 +169,7 @@ void PrtCmdPrintValue(_In_ PRT_VALUE value)
 	{
 		PRT_UINT32 i;
 		PRT_TUPVALUE *tval = (PRT_TUPVALUE *)value;
-		PRT_NMDTUPTYPE *ntype = (PRT_NMDTUPTYPE *)tval->type.type_union.nmTuple;
+		PRT_NMDTUPTYPE *ntype = (PRT_NMDTUPTYPE *)tval->type.typeUnion.nmTuple;
 		printf_s("(");
 		for (i = 0; i < ntype->arity; ++i)
 		{
@@ -208,7 +208,7 @@ void PrtCmdPrintValue(_In_ PRT_VALUE value)
 	{
 		PRT_UINT32 i;
 		PRT_TUPVALUE *tval = (PRT_TUPVALUE *)value;
-		PRT_TUPTYPE *ttype = (PRT_TUPTYPE *)tval->type.type_union.tuple;
+		PRT_TUPTYPE *ttype = (PRT_TUPTYPE *)tval->type.typeUnion.tuple;
 		printf_s("(");
 		if (ttype->arity == 1)
 		{

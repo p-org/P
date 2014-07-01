@@ -54,7 +54,7 @@ struct _PRT_TYPE {
 		PRT_SEQTYPE* seq;			/**< Sequence type		*/
 		PRT_TUPTYPE* tuple;			/**< Tuple type		*/
 		PRT_FORGNTYPE* forgn;		/**< Foreign type		*/
-	} type_union;
+	} typeUnion;
 };
 
 /** The layout for map types. */

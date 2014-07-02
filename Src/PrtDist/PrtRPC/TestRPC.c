@@ -11,7 +11,7 @@ void InsertValueNode(PRT_VALUE_NODE** head, PRT_VALUE *value){
 	PRT_VALUE_NODE* curr = *head;
 	if (curr == NULL)
 	{
-		PRT_VALUE_NODE* curr = (PRT_VALUE_NODE*)PrtMalloc(sizeof(PRT_VALUE_NODE));
+		PRT_VALUE_NODE* curr = (PRT_VALUE_NODE*)PrtCalloc(1, sizeof(PRT_VALUE_NODE));
 		curr->value = value;
 		curr->nextNode = NULL;
 		*head = curr;
@@ -22,7 +22,7 @@ void InsertValueNode(PRT_VALUE_NODE** head, PRT_VALUE *value){
 		{
 			curr = curr->nextNode;
 		}
-		curr->nextNode = (PRT_VALUE_NODE*)PrtMalloc(sizeof(PRT_VALUE_NODE));
+		curr->nextNode = (PRT_VALUE_NODE*)PrtCalloc(1, sizeof(PRT_VALUE_NODE));
 		curr->nextNode->value = value;
 		curr->nextNode->nextNode = NULL;
 	}
@@ -33,7 +33,7 @@ void InsertStringNode(PRT_STRING_NODE** head, PRT_STRING value){
 	PRT_STRING_NODE* curr = *head;
 	if (curr == NULL)
 	{
-		PRT_STRING_NODE* curr = (PRT_STRING_NODE*)PrtMalloc(sizeof(PRT_STRING_NODE));
+		PRT_STRING_NODE* curr = (PRT_STRING_NODE*)PrtCalloc(1, sizeof(PRT_STRING_NODE));
 		curr->name = value;
 		curr->nextNode = NULL;
 		*head = curr;
@@ -44,7 +44,7 @@ void InsertStringNode(PRT_STRING_NODE** head, PRT_STRING value){
 		{
 			curr = curr->nextNode;
 		}
-		curr->nextNode = (PRT_STRING_NODE*)PrtMalloc(sizeof(PRT_STRING_NODE));
+		curr->nextNode = (PRT_STRING_NODE*)PrtCalloc(1, sizeof(PRT_STRING_NODE));
 		curr->nextNode->name = value;
 		curr->nextNode->nextNode = NULL;
 	}
@@ -55,7 +55,7 @@ void InsertTypeNode(PRT_TYPE_NODE** head, PRT_TYPE value){
 	PRT_TYPE_NODE* curr = *head;
 	if (curr == NULL)
 	{
-		PRT_TYPE_NODE* curr = (PRT_TYPE_NODE*)PrtMalloc(sizeof(PRT_TYPE_NODE));
+		PRT_TYPE_NODE* curr = (PRT_TYPE_NODE*)PrtCalloc(1, sizeof(PRT_TYPE_NODE));
 		curr->type = value;
 		curr->nextNode = NULL;
 		*head = curr;
@@ -66,7 +66,7 @@ void InsertTypeNode(PRT_TYPE_NODE** head, PRT_TYPE value){
 		{
 			curr = curr->nextNode;
 		}
-		curr->nextNode = (PRT_TYPE_NODE*)PrtMalloc(sizeof(PRT_TYPE_NODE));
+		curr->nextNode = (PRT_TYPE_NODE*)PrtCalloc(1, sizeof(PRT_TYPE_NODE));
 		curr->nextNode->type = value;
 		curr->nextNode->nextNode = NULL;
 	}
@@ -95,7 +95,7 @@ PRT_TYPE SerializeType(PRT_TYPE type)
 	case PRT_KIND_MAP:
 	{
 		PRT_MAPTYPE *mtype = type.typeUnion.map;
-		return PrtMkMapType(mtype->domType, mtype->codType);
+		return PrtMkMapType(SerializeType(mtype->domType), SerializeType(mtype->codType));
 	}
 	case PRT_KIND_NMDTUP:
 	{
@@ -105,7 +105,7 @@ PRT_TYPE SerializeType(PRT_TYPE type)
 		for (i = 0; i < ntype->arity; ++i)
 		{
 			InsertStringNode(&clone.typeUnion.nmTuple->fieldNamesSerialized, ntype->fieldNames[i]);
-			InsertTypeNode(&clone.typeUnion.nmTuple->fieldTypesSerialized, ntype->fieldTypes[i]);
+			InsertTypeNode(&clone.typeUnion.nmTuple->fieldTypesSerialized, SerializeType(ntype->fieldTypes[i]));
 		}
 
 
@@ -114,7 +114,7 @@ PRT_TYPE SerializeType(PRT_TYPE type)
 	case PRT_KIND_SEQ:
 	{
 		PRT_SEQTYPE *stype = type.typeUnion.seq;
-		return PrtMkSeqType(stype->innerType);
+		return PrtMkSeqType(SerializeType(stype->innerType));
 	}
 	case PRT_KIND_TUPLE:
 	{
@@ -123,7 +123,7 @@ PRT_TYPE SerializeType(PRT_TYPE type)
 		PRT_TYPE clone = PrtMkTupType(ttype->arity);
 		for (i = 0; i < ttype->arity; ++i)
 		{
-			InsertTypeNode(&clone.typeUnion.nmTuple->fieldTypesSerialized, ttype->fieldTypes[i]);
+			InsertTypeNode(&clone.typeUnion.tuple->fieldTypesSerialized, SerializeType(ttype->fieldTypes[i]));
 		}
 
 		return clone;
@@ -135,6 +135,7 @@ PRT_TYPE SerializeType(PRT_TYPE type)
 		return rettype;
 	}
 }
+
 PRT_VALUE* SerializeValue(_In_ PRT_VALUE* value)
 {
 	PRT_TYPE_KIND kind = value->type.typeKind;
@@ -156,10 +157,10 @@ PRT_VALUE* SerializeValue(_In_ PRT_VALUE* value)
 	case PRT_KIND_FORGN:
 	{
 #if !defined(IGNORE_FRG)
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		PRT_FORGNVALUE *fVal = value->valueUnion.frgn;
 		PRT_FORGNTYPE *fType = value->type.typeUnion.forgn;
-		PRT_FORGNVALUE *cVal = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
+		PRT_FORGNVALUE *cVal = (PRT_FORGNVALUE *)PrtCalloc(1, sizeof(PRT_FORGNVALUE));
 		retVal->type = PrtCloneType(value->type);
 		retVal->discriminator = retVal->type.typeKind;
 		cVal->value = fType->cloner(fType->typeTag, fVal->value);
@@ -183,7 +184,7 @@ PRT_VALUE* SerializeValue(_In_ PRT_VALUE* value)
 		PRT_MAPNODE *next = mVal->first;
 		while (next != NULL)
 		{
-			PrtMapUpdate(retVal, SerializeValue(next->key), SerializeValue(next->value));
+			PrtMapUpdateEx(retVal, SerializeValue(next->key), SerializeValue(next->value), PRT_FALSE);
 			next = next->insertNext;
 		}
 
@@ -191,18 +192,18 @@ PRT_VALUE* SerializeValue(_In_ PRT_VALUE* value)
 	}
 	case PRT_KIND_NMDTUP:
 	{
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = SerializeType(value->type);
 		retVal->discriminator = retVal->type.typeKind;
 		PRT_UINT32 i;
 		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
 		PRT_UINT32 arity = value->type.typeUnion.nmTuple->arity;
-		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
-		
+		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtCalloc(1, sizeof(PRT_TUPVALUE));
+		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE*));
 		cVal->valuesSerialized = NULL;
-		cVal->values = NULL;
 		for (i = 0; i < arity; ++i)
 		{
+			cVal->values[i] = PrtCloneValue(tVal->values[i]);
 			InsertValueNode(&cVal->valuesSerialized, SerializeValue(tVal->values[i]));
 		}
 
@@ -211,18 +212,18 @@ PRT_VALUE* SerializeValue(_In_ PRT_VALUE* value)
 	}
 	case PRT_KIND_TUPLE:
 	{
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = SerializeType(value->type);
 		retVal->discriminator = retVal->type.typeKind;
 		PRT_UINT32 i;
 		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
 		PRT_UINT32 arity = value->type.typeUnion.tuple->arity;
-		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
+		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtCalloc(1, sizeof(PRT_TUPVALUE));
 		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE*));
 		cVal->valuesSerialized = NULL;
-		cVal->values = NULL;
 		for (i = 0; i < arity; ++i)
 		{
+			cVal->values[i] = PrtCloneValue(tVal->values[i]);
 			InsertValueNode(&cVal->valuesSerialized, SerializeValue(tVal->values[i]));
 		}
 
@@ -231,11 +232,11 @@ PRT_VALUE* SerializeValue(_In_ PRT_VALUE* value)
 	}
 	case PRT_KIND_SEQ:
 	{
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = SerializeType(value->type);
 		retVal->discriminator = retVal->type.typeKind;
 		PRT_SEQVALUE *sVal = value->valueUnion.seq;
-		PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
+		PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtCalloc(1, sizeof(PRT_SEQVALUE));
 		cVal->capacity = sVal->capacity;
 		cVal->size = sVal->size;
 		if (sVal->capacity == 0)
@@ -246,9 +247,10 @@ PRT_VALUE* SerializeValue(_In_ PRT_VALUE* value)
 		{
 			PRT_UINT32 i;
 			cVal->valuesSerialized = NULL;
-			cVal->values = NULL;
+			cVal->values = (PRT_VALUE **)PrtCalloc(sVal->capacity, sizeof(PRT_VALUE*));
 			for (i = 0; i < sVal->size; ++i)
 			{
+				cVal->values[i] = PrtCloneValue(sVal->values[i]);
 				InsertValueNode(&cVal->valuesSerialized, SerializeValue(sVal->values[i]));
 			}
 		}
@@ -261,8 +263,15 @@ PRT_VALUE* SerializeValue(_In_ PRT_VALUE* value)
 	}
 }
 
+
+
+/***************************************************************************
+* Test cases 
+****************************************************************************/
+
 handle_t CreateRPCClient()
 {
+	handle_t testme_handle = NULL;
 	//create RPC client
 	RPC_STATUS status;
 	unsigned char* szStringBinding = NULL;
@@ -283,8 +292,6 @@ handle_t CreateRPCClient()
 	if (status)
 		exit(status);
 
-	handle_t testme_handle = NULL;
-
 	// Validates the format of the string binding handle and converts
 	// it to a binding handle.
 	// Connection is not done here either.
@@ -298,6 +305,100 @@ handle_t CreateRPCClient()
 
 	return testme_handle;
 }
+
+void TestOverRPC(PRT_VALUE* value)
+{
+	handle_t testHandle = CreateRPCClient();
+
+	PRT_VALUE *serialized = SerializeValue(value);
+	RpcTryExcept
+	{
+		c_SendValue1(testHandle, serialized);
+	}
+	RpcExcept(1)
+	{
+		unsigned long ulCode;
+		ulCode = RpcExceptionCode();
+		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
+	}
+	RpcEndExcept
+
+		RpcTryExcept
+	{
+		c_SendValue2(testHandle, SerializeValue(value));
+	}
+	RpcExcept(1)
+	{
+		unsigned long ulCode;
+		ulCode = RpcExceptionCode();
+		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
+	}
+	RpcEndExcept
+
+}
+
+void TupleTest()
+{
+	PRT_TYPE anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
+	PRT_TYPE anyPairType = PrtMkTupType(2);
+
+	PrtSetFieldType(anyPairType, 0, anyType);
+	PrtSetFieldType(anyPairType, 1, anyType);
+
+	PRT_VALUE *oneVal = PrtMkIntValue(1);
+	PRT_VALUE *boolVal = PrtMkBoolValue(PRT_TRUE);
+	PRT_VALUE *anyPair = PrtMkDefaultValue(anyPairType);
+
+	PrtCmdPrintValueAndType(anyPair);
+	printf_s("\n");
+
+	PrtTupleSet(anyPair, 0, oneVal);
+
+	PrtCmdPrintValueAndType(anyPair);
+	printf_s("\n");
+
+	PrtTupleSet(anyPair, 1, boolVal);
+	printf_s("\n");
+
+	TestOverRPC(anyPair);
+}
+
+void NamedTupleTest()
+{
+	PRT_TYPE anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
+	PRT_TYPE anyPairType = PrtMkNmdTupType(2);
+
+	PrtSetFieldName(anyPairType, 0, "foo");
+	PrtSetFieldType(anyPairType, 0, anyType);
+	PrtSetFieldName(anyPairType, 1, "bar");
+	PrtSetFieldType(anyPairType, 1, anyType);
+
+	PRT_VALUE *oneVal = PrtMkIntValue(1);
+	PRT_VALUE *boolVal = PrtMkBoolValue(PRT_TRUE);
+	PRT_VALUE *anyPair = PrtMkDefaultValue(anyPairType);
+
+	PrtCmdPrintValueAndType(anyPair);
+	printf_s("\n");
+
+	PrtNmdTupleSet(anyPair, "foo", oneVal);
+
+	PrtCmdPrintValueAndType(anyPair);
+	printf_s("\n");
+
+	PrtNmdTupleSet(anyPair, "bar", boolVal);
+
+	PrtCmdPrintValueAndType(anyPair);
+	printf_s("\n");
+
+	PrtCmdPrintValueAndType(PrtNmdTupleGet(anyPair, "foo"));
+	printf_s("\n");
+
+	PrtCmdPrintValueAndType(PrtNmdTupleGet(anyPair, "bar"));
+	printf_s("\n");
+
+	TestOverRPC(anyPair);
+}
+
 
 void TestPrimitiveType()
 {
@@ -343,7 +444,7 @@ void SeqNestedTest()
 	PRT_TYPE aseqType = PrtMkSeqType(anyType);
 	PRT_VALUE *seq = PrtMkDefaultValue(aseqType);
 
-	for (i = 0; i < 1; ++i)
+	for (i = 0; i < 10; ++i)
 	{
 		PrtSeqInsert(seq, seq->valueUnion.seq->size, seq);
 	}
@@ -351,6 +452,7 @@ void SeqNestedTest()
 	printf_s("\n");
 
 	handle_t testHandle = CreateRPCClient();
+
 	RpcTryExcept
 	{
 		c_SendValue1(testHandle, SerializeValue(seq));
@@ -472,6 +574,35 @@ void SeqAppendTest()
 	RpcEndExcept
 }
 
+void SeqPrependTest()
+{
+	PRT_INT32 i;
+	PRT_TYPE intType = PrtMkPrimitiveType(PRT_KIND_INT);
+	PRT_TYPE iseqType = PrtMkSeqType(intType);
+	PRT_VALUE *seq = (PRT_VALUE *)PrtMkDefaultValue(iseqType);
+
+	PrtCmdPrintValueAndType(seq);
+	printf_s("\n");
+
+	for (i = 0; i <= 10; ++i)
+	{
+		PrtSeqInsert(seq, 0, PrtMkIntValue(i));
+	}
+
+	PrtCmdPrintValueAndType(seq);
+	printf_s("\n");
+
+	for (i = 10; i >= 0; --i)
+	{
+		PrtSeqInsert(seq, 0, PrtMkIntValue(i));
+	}
+
+	PrtCmdPrintValueAndType(seq);
+	printf_s("\n");
+
+	TestOverRPC(seq);
+}
+
 void MapTest2()
 {
 	PRT_TYPE anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
@@ -512,6 +643,99 @@ void MapTest2()
 	RpcEndExcept
 }
 
+void BinaryBoolFunTest()
+{
+	PRT_TYPE boolType = PrtMkPrimitiveType(PRT_KIND_BOOL);
+	PRT_TYPE intType = PrtMkPrimitiveType(PRT_KIND_INT);
+	PRT_TYPE boolTupType = PrtMkTupType(2);
+	PrtSetFieldType(boolTupType, 0, boolType);
+	PrtSetFieldType(boolTupType, 1, boolType);
+	PRT_TYPE binFunType = PrtMkMapType(boolTupType, boolType);
+	PRT_TYPE popFunType = PrtMkMapType(binFunType, intType);
+
+	printf_s("Bool fun type = ");
+	PrtCmdPrintType(binFunType);
+	printf_s("\n");
+
+	printf_s("Population fun type = ");
+	PrtCmdPrintType(popFunType);
+	printf_s("\n");
+
+	PRT_UINT32 funImg;
+	PRT_UINT32 funRng;
+	PRT_VALUE *boolVal;
+	PRT_VALUE *popCntVal;
+	PRT_VALUE *boolTup;
+	PRT_VALUE *popFun = PrtMkDefaultValue(popFunType);
+	for (funImg = 0; funImg < 16; ++funImg)
+	{
+		PRT_VALUE *fun = PrtMkDefaultValue(binFunType);
+		for (funRng = 0; funRng < 4; ++funRng)
+		{
+			//// Set (funRng_1, funRng_0) -> img_0
+			boolTup = PrtMkDefaultValue(boolTupType);
+
+			boolVal = PrtMkBoolValue((funRng & 0x00000002) == 0 ? PRT_FALSE : PRT_TRUE);
+			PrtTupleSet(boolTup, 0, boolVal);
+			PrtFreeValue(boolVal);
+
+			boolVal = PrtMkBoolValue((funRng & 0x00000001) == 0 ? PRT_FALSE : PRT_TRUE);
+			PrtTupleSet(boolTup, 1, boolVal);
+			PrtFreeValue(boolVal);
+
+			boolVal = PrtMkBoolValue(((funImg >> funRng) & 0x00000001) == 0 ? PRT_FALSE : PRT_TRUE);
+			PrtMapUpdate(fun, boolTup, boolVal);
+			PrtFreeValue(boolVal);
+			PrtFreeValue(boolTup);
+		}
+
+		popCntVal = PrtMkIntValue(
+			(0x00000001 & funImg) +
+			(0x00000001 & (funImg >> 1)) +
+			(0x00000001 & (funImg >> 2)) +
+			(0x00000001 & (funImg >> 3)));
+
+		PrtCmdPrintValue(fun);
+		printf_s("\n");
+
+		PrtMapUpdate(popFun, fun, popCntVal);
+
+		PrtFreeValue(popCntVal);
+		PrtFreeValue(fun);
+	}
+
+	PrtCmdPrintValue(popFun);
+	printf_s("\n");
+
+	//// Build the population function in reverse.
+	//// Get the keys of the population function.
+	PRT_UINT32 i;
+	PRT_VALUE *popKeys = PrtMapGetKeys(popFun);
+	PRT_VALUE *revPopFun = PrtMkDefaultValue(popFunType);
+	for (i = 1; i <= 16; ++i)
+	{
+		popCntVal = PrtMapGet(popFun, popKeys->valueUnion.seq->values[16 - i]);
+		PrtMapUpdate(revPopFun, popKeys->valueUnion.seq->values[16 - i], popCntVal);
+		PrtFreeValue(popCntVal);
+	}
+
+	PrtFreeValue(popKeys);
+	PrtCmdPrintValue(revPopFun);
+	printf_s("\n");
+
+	PrtAssert(PrtGetHashCodeValue(popFun) == PrtGetHashCodeValue(revPopFun), "Equivalent maps should have equivalent hash codes");
+
+	printf("-----------------------------------------------\n\n");
+	TestOverRPC(popFun);
+
+	PrtFreeValue(revPopFun);
+	PrtFreeValue(popFun);
+	PrtFreeType(intType);
+	PrtFreeType(boolType);
+	PrtFreeType(boolTupType);
+	PrtFreeType(binFunType);
+	PrtFreeType(popFunType);
+}
 
 int main()
 {
@@ -522,7 +746,11 @@ int main()
 	//MapTest1();
 	//MapTest2();
 	//SeqAppendTest();
-	SeqNestedTest();
+	//SeqNestedTest();
+	//TupleTest();
+	//NamedTupleTest();
+	//SeqPrependTest();
+	BinaryBoolFunTest();
 	//wait
 	getchar();
 

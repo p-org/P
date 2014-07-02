@@ -292,6 +292,8 @@ PRT_UINT32 PrtSeqSizeOf(_In_ PRT_VALUE *seq);
 */
 void PrtMapUpdate(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE* key, _In_ PRT_VALUE* value);
 
+void PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneKeyVals);
+
 /** Remove the key from the map. 
 * If the key is not in then map, then the map is unchanged.
 * @param[in,out] map   A map to mutate.

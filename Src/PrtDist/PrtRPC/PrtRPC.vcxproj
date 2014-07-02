@@ -44,13 +44,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>E:\Workspace\plang\Src\PrtDist\PrtDistributedIDL;E:\Workspace\plang\Src\PrtDist\Prt\Values;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Workspace\plang\Src\PrtDist\PrtDistributedIDL;C:\Workspace\plang\Src\PrtDist\Prt\Values;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DISTRIBUTED_RUNTIME;IGNORE_FRG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>Prt.lib;pthreadVC2.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>E:\Workspace\plang\Src\PrtDist\Prt\Debug\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Workspace\plang\Src\PrtDist\Prt\Debug</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

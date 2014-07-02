@@ -40,7 +40,7 @@ PRT_TYPE PrtMkForgnType(
 	PrtAssert(hasher != NULL, "Bad hasher");
 	PrtAssert(eqTester != NULL, "Bad equality tester");
 
-	prtType.typeUnion.forgn = (PRT_FORGNTYPE *)PrtMalloc(sizeof(PRT_FORGNTYPE));
+	prtType.typeUnion.forgn = (PRT_FORGNTYPE *)PrtCalloc(1, sizeof(PRT_FORGNTYPE));
 	prtType.typeKind = PRT_KIND_FORGN;
 	prtType.typeUnion.forgn->typeTag = typeTag;
 	prtType.typeUnion.forgn->cloner = cloner;
@@ -57,7 +57,7 @@ PRT_TYPE PrtMkMapType(_In_ PRT_TYPE domType, _In_ PRT_TYPE codType)
 	PRT_TYPE prtType;
 	PrtAssert(domType.typeKind >= 0 && domType.typeKind < PRT_TYPE_KIND_COUNT, "Invalid type expression");
 	PrtAssert(codType.typeKind >= 0 && codType.typeKind < PRT_TYPE_KIND_COUNT, "Invalid type expression");
-	prtType.typeUnion.map = (PRT_MAPTYPE *)PrtMalloc(sizeof(PRT_MAPTYPE));
+	prtType.typeUnion.map = (PRT_MAPTYPE *)PrtCalloc(1, sizeof(PRT_MAPTYPE));
 	prtType.typeKind = PRT_KIND_MAP;
 	prtType.typeUnion.map->domType = PrtCloneType(domType);
 	prtType.typeUnion.map->codType = PrtCloneType(codType);
@@ -68,7 +68,7 @@ PRT_TYPE PrtMkNmdTupType(_In_ PRT_UINT32 arity)
 {
 	PRT_TYPE prtType;
 	PrtAssert(arity > 0, "Invalid tuple arity");
-	prtType.typeUnion.nmTuple = (PRT_NMDTUPTYPE *)PrtMalloc(sizeof(PRT_NMDTUPTYPE));
+	prtType.typeUnion.nmTuple = (PRT_NMDTUPTYPE *)PrtCalloc(1, sizeof(PRT_NMDTUPTYPE));
 	prtType.typeKind = PRT_KIND_NMDTUP;
 	prtType.typeUnion.nmTuple->arity = arity;
 	prtType.typeUnion.nmTuple->fieldNames = (PRT_STRING *)PrtCalloc((size_t)arity, sizeof(PRT_STRING));
@@ -80,7 +80,7 @@ PRT_TYPE PrtMkTupType(_In_ PRT_UINT32 arity)
 {
 	PRT_TYPE prtType;
 	PrtAssert(arity > 0, "Invalid tuple arity");
-	prtType.typeUnion.tuple = (PRT_TUPTYPE *)PrtMalloc(sizeof(PRT_TUPTYPE));
+	prtType.typeUnion.tuple = (PRT_TUPTYPE *)PrtCalloc(1, sizeof(PRT_TUPTYPE));
 	prtType.typeKind = PRT_KIND_TUPLE;
 	prtType.typeUnion.tuple->arity = arity;
 	prtType.typeUnion.tuple->fieldTypes = (PRT_TYPE *)PrtCalloc((size_t)arity, sizeof(PRT_TYPE));
@@ -91,7 +91,7 @@ PRT_TYPE PrtMkSeqType(_In_ PRT_TYPE innerType)
 {
 	PRT_TYPE type;
 	PrtAssert(innerType.typeKind >= 0 && innerType.typeKind < PRT_TYPE_KIND_COUNT, "Invalid type expression");
-	type.typeUnion.seq = (PRT_SEQTYPE *)PrtMalloc(sizeof(PRT_SEQTYPE));
+	type.typeUnion.seq = (PRT_SEQTYPE *)PrtCalloc(1, sizeof(PRT_SEQTYPE));
 	type.typeKind = PRT_KIND_SEQ;
 	type.typeUnion.seq->innerType = PrtCloneType(innerType);
 	return type;
@@ -476,7 +476,7 @@ PRT_BOOLEAN PrtAbsentTypeIsEqual(
 PRT_TYPE PrtMkAbsentType()
 {
 	PRT_TYPE abstType;
-	abstType.typeUnion.forgn = (PRT_FORGNTYPE *)PrtMalloc(sizeof(PRT_FORGNTYPE));
+	abstType.typeUnion.forgn = (PRT_FORGNTYPE *)PrtCalloc(1, sizeof(PRT_FORGNTYPE));
 	abstType.typeKind = PRT_KIND_FORGN;
 	abstType.typeUnion.forgn->typeTag.data1 = 0;
 	abstType.typeUnion.forgn->typeTag.data2 = 0;

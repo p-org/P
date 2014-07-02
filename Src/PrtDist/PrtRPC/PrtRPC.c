@@ -117,10 +117,10 @@ PRT_VALUE* DeSerializeValue(_In_ PRT_VALUE* value)
 	case PRT_KIND_FORGN:
 	{
 #if !defined(IGNORE_FRG)
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		PRT_FORGNVALUE *fVal = value->valueUnion.frgn;
 		PRT_FORGNTYPE *fType = value->type.typeUnion.forgn;
-		PRT_FORGNVALUE *cVal = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
+		PRT_FORGNVALUE *cVal = (PRT_FORGNVALUE *)PrtCalloc(1, sizeof(PRT_FORGNVALUE));
 		retVal->type = PrtCloneType(value->type);
 		retVal->discriminator = retVal->type.typeKind;
 		cVal->value = fType->cloner(fType->typeTag, fVal->value);
@@ -154,13 +154,13 @@ PRT_VALUE* DeSerializeValue(_In_ PRT_VALUE* value)
 	case PRT_KIND_NMDTUP:
 	{
 		PRT_TYPE tt = DeSerializeType(value->type);
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtCloneType(tt);
 		retVal->discriminator = retVal->type.typeKind;
 		
 		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
 		PRT_UINT32 arity = value->type.typeUnion.nmTuple->arity;
-		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
+		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtCalloc(1, sizeof(PRT_TUPVALUE));
 		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE*));
 		
 		PRT_VALUE_NODE *curr = tVal->valuesSerialized;
@@ -179,13 +179,13 @@ PRT_VALUE* DeSerializeValue(_In_ PRT_VALUE* value)
 	case PRT_KIND_TUPLE:
 	{
 		PRT_TYPE tt = DeSerializeType(value->type);
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtCloneType(tt);
 		retVal->discriminator = retVal->type.typeKind;
 		
 		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
 		PRT_UINT32 arity = value->type.typeUnion.tuple->arity;
-		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
+		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtCalloc(1, sizeof(PRT_TUPVALUE));
 		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE*));
 
 		PRT_VALUE_NODE *curr = tVal->valuesSerialized;
@@ -203,11 +203,11 @@ PRT_VALUE* DeSerializeValue(_In_ PRT_VALUE* value)
 	case PRT_KIND_SEQ:
 	{
 		PRT_TYPE tt = DeSerializeType(value->type);
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtCloneType(tt);
 		retVal->discriminator = retVal->type.typeKind;
 		PRT_SEQVALUE *sVal = value->valueUnion.seq;
-		PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
+		PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtCalloc(1, sizeof(PRT_SEQVALUE));
 		cVal->capacity = sVal->capacity;
 		cVal->size = sVal->size;
 		if (sVal->capacity == 0)

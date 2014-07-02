@@ -84,10 +84,10 @@ PRT_UINT32 PrtGetHashCodeTwoUInt32(PRT_UINT32 value1, PRT_UINT32 value2)
 
 PRT_VALUE *PrtMkBoolValue(_In_ PRT_BOOLEAN value)
 {
-	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+	PRT_VALUE *retVal = (PRT_VALUE*)PrtCalloc(1, sizeof(PRT_VALUE));
 	retVal->type = PrtMkPrimitiveType(PRT_KIND_BOOL);
 	retVal->discriminator = retVal->type.typeKind;
-	retVal->valueUnion.primValue = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
+	retVal->valueUnion.primValue = (PRT_PRIMVALUE *)PrtCalloc(1, sizeof(PRT_PRIMVALUE));
 	retVal->valueUnion.primValue->discriminator = PRT_KIND_BOOL;
 	retVal->valueUnion.primValue->value.bl = value;
 	return retVal;
@@ -95,12 +95,12 @@ PRT_VALUE *PrtMkBoolValue(_In_ PRT_BOOLEAN value)
 
 PRT_VALUE *PrtMkEventValue(_In_ PRT_UINT32 value)
 {
-	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+	PRT_VALUE *retVal = (PRT_VALUE*)PrtCalloc(1, sizeof(PRT_VALUE));
 	if (value == PRT_NULL_VALUE) // NULL KIND
 	{
 		retVal->type = PrtMkPrimitiveType(PRT_KIND_NULL);
 		retVal->discriminator = retVal->type.typeKind;
-		retVal->valueUnion.primValue = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
+		retVal->valueUnion.primValue = (PRT_PRIMVALUE *)PrtCalloc(1, sizeof(PRT_PRIMVALUE));
 		retVal->valueUnion.primValue->discriminator = PRT_KIND_NULL;
 		retVal->valueUnion.primValue->value.ev = value;
 	}
@@ -108,7 +108,7 @@ PRT_VALUE *PrtMkEventValue(_In_ PRT_UINT32 value)
 	{
 		retVal->type = PrtMkPrimitiveType(PRT_KIND_EVENT);
 		retVal->discriminator = retVal->type.typeKind;
-		retVal->valueUnion.primValue = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
+		retVal->valueUnion.primValue = (PRT_PRIMVALUE *)PrtCalloc(1, sizeof(PRT_PRIMVALUE));
 		retVal->valueUnion.primValue->discriminator = PRT_KIND_EVENT;
 		retVal->valueUnion.primValue->value.ev = value;
 		return retVal;
@@ -118,10 +118,10 @@ PRT_VALUE *PrtMkEventValue(_In_ PRT_UINT32 value)
 
 PRT_VALUE *PrtMkIntValue(_In_ PRT_INT32 value)
 {
-	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+	PRT_VALUE *retVal = (PRT_VALUE*)PrtCalloc(1, sizeof(PRT_VALUE));
 	retVal->type = PrtMkPrimitiveType(PRT_KIND_INT);
 	retVal->discriminator = retVal->type.typeKind;
-	retVal->valueUnion.primValue = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
+	retVal->valueUnion.primValue = (PRT_PRIMVALUE *)PrtCalloc(1, sizeof(PRT_PRIMVALUE));
 	retVal->valueUnion.primValue->discriminator = PRT_KIND_INT;
 	retVal->valueUnion.primValue->value.nt = value;
 	return retVal;
@@ -129,10 +129,10 @@ PRT_VALUE *PrtMkIntValue(_In_ PRT_INT32 value)
 
 PRT_VALUE *PrtMkNullValue()
 {
-	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+	PRT_VALUE *retVal = (PRT_VALUE*)PrtCalloc(1, sizeof(PRT_VALUE));
 	retVal->type = PrtMkPrimitiveType(PRT_KIND_NULL);
 	retVal->discriminator = retVal->type.typeKind;
-	retVal->valueUnion.primValue = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
+	retVal->valueUnion.primValue = (PRT_PRIMVALUE *)PrtCalloc(1, sizeof(PRT_PRIMVALUE));
 	retVal->valueUnion.primValue->discriminator = PRT_KIND_NULL;
 	return retVal;
 }
@@ -140,12 +140,12 @@ PRT_VALUE *PrtMkNullValue()
 
 PRT_VALUE *PrtMkMachineValue(_In_ PRT_UINT32 value)
 {
-	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+	PRT_VALUE *retVal = (PRT_VALUE*)PrtCalloc(1, sizeof(PRT_VALUE));
 	if (value == PRT_NULL_VALUE) // NULL KIND
 	{
 		retVal->type = PrtMkPrimitiveType(PRT_KIND_NULL);
 		retVal->discriminator = retVal->type.typeKind;
-		retVal->valueUnion.primValue = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
+		retVal->valueUnion.primValue = (PRT_PRIMVALUE *)PrtCalloc(1, sizeof(PRT_PRIMVALUE));
 		retVal->valueUnion.primValue->discriminator = PRT_KIND_NULL;
 		retVal->valueUnion.primValue->value.mach = value;
 	}
@@ -153,7 +153,7 @@ PRT_VALUE *PrtMkMachineValue(_In_ PRT_UINT32 value)
 	{
 		retVal->type = PrtMkPrimitiveType(PRT_KIND_MACHINE);
 		retVal->discriminator = retVal->type.typeKind;
-		retVal->valueUnion.primValue = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
+		retVal->valueUnion.primValue = (PRT_PRIMVALUE *)PrtCalloc(1, sizeof(PRT_PRIMVALUE));
 		retVal->valueUnion.primValue->discriminator = PRT_KIND_MACHINE;
 		retVal->valueUnion.primValue->value.mach = value;
 	}
@@ -162,10 +162,10 @@ PRT_VALUE *PrtMkMachineValue(_In_ PRT_UINT32 value)
 
 PRT_VALUE *PrtMkModelValue(_In_ PRT_UINT32 value)
 {
-	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+	PRT_VALUE *retVal = (PRT_VALUE*)PrtCalloc(1, sizeof(PRT_VALUE));
 	if (value == PRT_NULL_VALUE) // NULL KIND
 	{
-		retVal->valueUnion.primValue = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
+		retVal->valueUnion.primValue = (PRT_PRIMVALUE *)PrtCalloc(1, sizeof(PRT_PRIMVALUE));
 		retVal->type = PrtMkPrimitiveType(PRT_KIND_NULL);
 		retVal->discriminator = retVal->type.typeKind;
 		retVal->valueUnion.primValue->discriminator = PRT_KIND_NULL;
@@ -173,7 +173,7 @@ PRT_VALUE *PrtMkModelValue(_In_ PRT_UINT32 value)
 	}
 	else
 	{
-		retVal->valueUnion.primValue = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
+		retVal->valueUnion.primValue = (PRT_PRIMVALUE *)PrtCalloc(1, sizeof(PRT_PRIMVALUE));
 		retVal->type = PrtMkPrimitiveType(PRT_KIND_MODEL);
 		retVal->discriminator = retVal->type.typeKind;
 		retVal->valueUnion.primValue->discriminator = PRT_KIND_MODEL;
@@ -185,12 +185,12 @@ PRT_VALUE *PrtMkModelValue(_In_ PRT_UINT32 value)
 #if !defined(IGNORE_FRG)
 PRT_VALUE *PrtMkForeignValue(_In_ PRT_TYPE type, _In_ void *value)
 {
-	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+	PRT_VALUE *retVal = (PRT_VALUE*)PrtCalloc(1, sizeof(PRT_VALUE));
 	retVal->type = PrtCloneType(type);
 	retVal->discriminator = retVal->type.typeKind;
 	PRT_FORGNVALUE *forgnVal;
 	PrtAssert(type.typeKind == PRT_KIND_FORGN, "Did not receive foreign type.");
-	forgnVal = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
+	forgnVal = (PRT_FORGNVALUE *)PrtCalloc(1, sizeof(PRT_FORGNVALUE));
 	forgnVal->value = type.typeUnion.forgn->cloner(type.typeUnion.forgn->typeTag, value);
 	retVal->valueUnion.frgn = forgnVal;
 	return retVal;
@@ -218,11 +218,11 @@ PRT_VALUE* PrtMkDefaultValue(_In_ PRT_TYPE type)
 	case PRT_KIND_FORGN:
 	{
 #if !defined(IGNORE_FRG)
-		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE*)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtMkAbsentType();
 		retVal->discriminator = retVal->type.typeKind;
 		PRT_FORGNVALUE *forgnVal;
-		forgnVal = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
+		forgnVal = (PRT_FORGNVALUE *)PrtCalloc(1, sizeof(PRT_FORGNVALUE));
 		forgnVal->value = NULL;
 		retVal->valueUnion.frgn = forgnVal;
 		return retVal;
@@ -231,11 +231,11 @@ PRT_VALUE* PrtMkDefaultValue(_In_ PRT_TYPE type)
 	}
 	case PRT_KIND_MAP:
 	{
-		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE*)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtCloneType(type);
 		retVal->discriminator = retVal->type.typeKind;
 		PRT_MAPVALUE *mapVal;
-		mapVal = (PRT_MAPVALUE *)PrtMalloc(sizeof(PRT_MAPVALUE));
+		mapVal = (PRT_MAPVALUE *)PrtCalloc(1, sizeof(PRT_MAPVALUE));
 		mapVal->size = 0;
 		mapVal->capNum = 0;
 		mapVal->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[0], sizeof(PRT_MAPNODE *));
@@ -246,13 +246,13 @@ PRT_VALUE* PrtMkDefaultValue(_In_ PRT_TYPE type)
 	}
 	case PRT_KIND_NMDTUP:
 	{
-		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE*)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtCloneType(type);
 		retVal->discriminator = retVal->type.typeKind;
 		PRT_UINT32 i;
 		PRT_TUPVALUE *tupVal;
 		PRT_NMDTUPTYPE *ntype = type.typeUnion.nmTuple;
-		tupVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
+		tupVal = (PRT_TUPVALUE *)PrtCalloc(1, sizeof(PRT_TUPVALUE));
 		
 		tupVal->values = (PRT_VALUE **)PrtCalloc(ntype->arity, sizeof(PRT_VALUE*));
 		for (i = 0; i < ntype->arity; ++i)
@@ -265,26 +265,27 @@ PRT_VALUE* PrtMkDefaultValue(_In_ PRT_TYPE type)
 	}
 	case PRT_KIND_SEQ:
 	{
-		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE*)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtCloneType(type);
 		retVal->discriminator = retVal->type.typeKind;
 		PRT_SEQVALUE *seqVal;
-		seqVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
+		seqVal = (PRT_SEQVALUE *)PrtCalloc(1, sizeof(PRT_SEQVALUE));
 		seqVal->size = 0;
 		seqVal->capacity = 0;
 		seqVal->values = NULL;
+		seqVal->valuesSerialized = NULL;
 		retVal->valueUnion.seq = seqVal;
 		return retVal;
 	}
 	case PRT_KIND_TUPLE:
 	{
-		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE*)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtCloneType(type);
 		retVal->discriminator = retVal->type.typeKind;
 		PRT_UINT32 i;
 		PRT_TUPVALUE *tupVal;
 		PRT_TUPTYPE *ttype = type.typeUnion.tuple;
-		tupVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
+		tupVal = (PRT_TUPVALUE *)PrtCalloc(1, sizeof(PRT_TUPVALUE));
 		tupVal->values = (PRT_VALUE **)PrtCalloc(ttype->arity, sizeof(PRT_VALUE*));
 		for (i = 0; i < ttype->arity; ++i)
 		{
@@ -638,7 +639,7 @@ void PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_VALUE 
 	if (bucket == NULL)
 	{
 		isNewKey = PRT_TRUE;
-		node = (PRT_MAPNODE *)PrtMalloc(sizeof(PRT_MAPNODE));
+		node = (PRT_MAPNODE *)PrtCalloc(1, sizeof(PRT_MAPNODE));
 		node->key = cloneKeyVals == PRT_TRUE ? PrtCloneValue(key) : key;
 		node->value = cloneKeyVals == PRT_TRUE ? PrtCloneValue(value) : value;
 		node->bucketNext = NULL;
@@ -665,7 +666,7 @@ void PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_VALUE 
 
 		if (isNewKey == PRT_TRUE)
 		{
-			node = (PRT_MAPNODE *)PrtMalloc(sizeof(PRT_MAPNODE));
+			node = (PRT_MAPNODE *)PrtCalloc(1, sizeof(PRT_MAPNODE));
 			node->key = cloneKeyVals == PRT_TRUE ? PrtCloneValue(key) : key;
 			node->value = valueClone;
 			node->bucketNext = bucket;
@@ -804,8 +805,8 @@ PRT_VALUE *PrtMapGetKeys(_In_ PRT_VALUE *map)
 {
 	PrtAssert(map->type.typeKind == PRT_KIND_MAP, "Invalid map value");
 	PRT_MAPTYPE *mapType = map->type.typeUnion.map;
-	PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
-	PRT_SEQVALUE *seqVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
+	PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
+	PRT_SEQVALUE *seqVal = (PRT_SEQVALUE *)PrtCalloc(1, sizeof(PRT_SEQVALUE));
 	retVal->type = PrtMkSeqType(mapType->domType);
 	retVal->valueUnion.seq = seqVal;
 	retVal->discriminator = retVal->type.typeKind;
@@ -837,8 +838,8 @@ PRT_VALUE *PrtMapGetValues(_In_ PRT_VALUE *map)
 {
 	PrtAssert(map->type.typeKind == PRT_KIND_MAP, "Invalid map value");
 	PRT_MAPTYPE *mapType = map->type.typeUnion.map;
-	PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
-	PRT_SEQVALUE *seqVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
+	PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
+	PRT_SEQVALUE *seqVal = (PRT_SEQVALUE *)PrtCalloc(1, sizeof(PRT_SEQVALUE));
 	retVal->type = PrtMkSeqType(mapType->domType);
 	retVal->valueUnion.seq = seqVal;
 	retVal->discriminator = retVal->type.typeKind;
@@ -1260,10 +1261,10 @@ PRT_VALUE* PrtCloneValue(_In_ PRT_VALUE* value)
 	case PRT_KIND_FORGN:
 	{
 #if !defined(IGNORE_FRG)
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		PRT_FORGNVALUE *fVal = value->valueUnion.frgn;
 		PRT_FORGNTYPE *fType = value->type.typeUnion.forgn;
-		PRT_FORGNVALUE *cVal = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
+		PRT_FORGNVALUE *cVal = (PRT_FORGNVALUE *)PrtCalloc(1, sizeof(PRT_FORGNVALUE));
 		retVal->type = PrtCloneType(value->type);
 		retVal->discriminator = retVal->type.typeKind;
 		cVal->value = fType->cloner(fType->typeTag, fVal->value);
@@ -1294,13 +1295,13 @@ PRT_VALUE* PrtCloneValue(_In_ PRT_VALUE* value)
 	}
 	case PRT_KIND_NMDTUP:
 	{
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtCloneType(value->type);
 		retVal->discriminator = retVal->type.typeKind;
 		PRT_UINT32 i;
 		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
 		PRT_UINT32 arity = value->type.typeUnion.nmTuple->arity;
-		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
+		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtCalloc(1, sizeof(PRT_TUPVALUE));
 		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE*));
 		for (i = 0; i < arity; ++i)
 		{
@@ -1312,13 +1313,13 @@ PRT_VALUE* PrtCloneValue(_In_ PRT_VALUE* value)
 	}
 	case PRT_KIND_TUPLE:
 	{
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtCloneType(value->type);
 		retVal->discriminator = retVal->type.typeKind;
 		PRT_UINT32 i;
 		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
 		PRT_UINT32 arity = value->type.typeUnion.tuple->arity;
-		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
+		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtCalloc(1, sizeof(PRT_TUPVALUE));
 		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE*));
 		for (i = 0; i < arity; ++i)
 		{
@@ -1330,11 +1331,11 @@ PRT_VALUE* PrtCloneValue(_In_ PRT_VALUE* value)
 	}
 	case PRT_KIND_SEQ:
 	{
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtCloneType(value->type);
 		retVal->discriminator = retVal->type.typeKind;
 		PRT_SEQVALUE *sVal = value->valueUnion.seq;
-		PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
+		PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtCalloc(1, sizeof(PRT_SEQVALUE));
 		cVal->capacity = sVal->capacity;
 		cVal->size = sVal->size;
 		if (sVal->capacity == 0)
@@ -1442,11 +1443,11 @@ PRT_VALUE *PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE type)
 #if !defined(IGNORE_FRG)
 		
 		PrtAssert(vkind == PRT_KIND_FORGN, "Invalid type cast");
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtCloneType(type);
 		retVal->discriminator = retVal->type.typeKind;
 		PRT_FORGNVALUE *fVal = value->valueUnion.frgn;
-		PRT_FORGNVALUE *cVal = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
+		PRT_FORGNVALUE *cVal = (PRT_FORGNVALUE *)PrtCalloc(1, sizeof(PRT_FORGNVALUE));
 		cVal->value = value->type.typeUnion.forgn->cloner(value->type.typeUnion.forgn->typeTag, fVal->value);
 		retVal->valueUnion.frgn = cVal;
 		return retVal;
@@ -1455,7 +1456,7 @@ PRT_VALUE *PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE type)
 	case PRT_KIND_MAP:
 	{
 		PrtAssert(vkind == PRT_KIND_MAP, "Invalid type cast");
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtCloneType(type);
 		retVal->discriminator = retVal->type.typeKind;
 		PRT_MAPVALUE *mVal = value->valueUnion.map;
@@ -1482,7 +1483,7 @@ PRT_VALUE *PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE type)
 	case PRT_KIND_NMDTUP:
 	{
 		PrtAssert(vkind == PRT_KIND_NMDTUP, "Invalid type cast");
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtCloneType(type);
 		retVal->discriminator = retVal->type.typeKind;
 		PRT_UINT32 i;
@@ -1492,7 +1493,7 @@ PRT_VALUE *PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE type)
 		PRT_UINT32 arity = tType->arity;
 		PrtAssert(arity == srcType->arity, "Invalid type cast");
 
-		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
+		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtCalloc(1, sizeof(PRT_TUPVALUE));
 		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE *));
 		for (i = 0; i < arity; ++i)
 		{
@@ -1506,7 +1507,7 @@ PRT_VALUE *PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE type)
 	case PRT_KIND_TUPLE:
 	{
 		PrtAssert(vkind == PRT_KIND_TUPLE, "Invalid type cast");
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtCloneType(type);
 		retVal->discriminator = retVal->type.typeKind;
 		PRT_UINT32 i;
@@ -1516,7 +1517,7 @@ PRT_VALUE *PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE type)
 		PRT_UINT32 arity = tType->arity;
 		PrtAssert(arity == srcType->arity, "Invalid type cast");
 
-		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
+		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtCalloc(1, sizeof(PRT_TUPVALUE));
 		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE*));
 		for (i = 0; i < arity; ++i)
 		{
@@ -1529,12 +1530,12 @@ PRT_VALUE *PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE type)
 	case PRT_KIND_SEQ:
 	{
 		PrtAssert(vkind == PRT_KIND_SEQ, "Invalid type cast");
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtCloneType(type);
 		retVal->discriminator = retVal->type.typeKind;
 		PRT_SEQVALUE *sVal = value->valueUnion.seq;
 		PRT_SEQTYPE *sType = type.typeUnion.seq;
-		PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
+		PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtCalloc(1, sizeof(PRT_SEQVALUE));
 		cVal->capacity = sVal->capacity;
 		cVal->size = sVal->size;
 		if (sVal->capacity == 0)

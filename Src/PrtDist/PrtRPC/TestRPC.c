@@ -336,6 +336,97 @@ void TestPrimitiveType()
 
 }
 
+void SeqNestedTest()
+{
+	PRT_INT32 i;
+	PRT_TYPE anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
+	PRT_TYPE aseqType = PrtMkSeqType(anyType);
+	PRT_VALUE *seq = PrtMkDefaultValue(aseqType);
+
+	for (i = 0; i < 1; ++i)
+	{
+		PrtSeqInsert(seq, seq->valueUnion.seq->size, seq);
+	}
+	PrtCmdPrintValueAndType(seq);
+	printf_s("\n");
+
+	handle_t testHandle = CreateRPCClient();
+	RpcTryExcept
+	{
+		c_SendValue1(testHandle, SerializeValue(seq));
+	}
+		RpcExcept(1)
+	{
+		unsigned long ulCode;
+		ulCode = RpcExceptionCode();
+		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
+	}
+	RpcEndExcept
+
+		RpcTryExcept
+	{
+		c_SendValue2(testHandle, SerializeValue(seq));
+	}
+		RpcExcept(1)
+	{
+		unsigned long ulCode;
+		ulCode = RpcExceptionCode();
+		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
+	}
+	RpcEndExcept
+
+}
+
+void MapTest1()
+{
+	PRT_TYPE anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
+	PRT_TYPE any2anyType = PrtMkMapType(anyType, anyType);
+	PRT_VALUE *a2aMap = PrtMkDefaultValue(any2anyType);
+
+	PrtCmdPrintValueAndType(a2aMap);
+	printf_s("\n");
+
+	PRT_VALUE *falseVal = PrtMkBoolValue(PRT_FALSE);
+	PrtMapUpdate(a2aMap, falseVal, falseVal);
+
+	PRT_UINT32 i;
+	for (i = 0; i < 5; ++i)
+	{
+		PrtMapUpdate(a2aMap, PrtMkIntValue(i), PrtMkIntValue(i));
+		PrtCmdPrintValueAndType(a2aMap);
+		printf_s("\n");
+	}
+
+	PrtMapUpdate(a2aMap, falseVal, PrtMkIntValue(10));
+	PrtCmdPrintValueAndType(a2aMap);
+	printf_s("\n");
+	handle_t testHandle = CreateRPCClient();
+	RpcTryExcept
+	{
+		c_SendValue1(testHandle, SerializeValue(a2aMap));
+	}
+		RpcExcept(1)
+	{
+		unsigned long ulCode;
+		ulCode = RpcExceptionCode();
+		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
+	}
+	RpcEndExcept
+
+		RpcTryExcept
+	{
+		c_SendValue2(testHandle, SerializeValue(a2aMap));
+	}
+		RpcExcept(1)
+	{
+		unsigned long ulCode;
+		ulCode = RpcExceptionCode();
+		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
+	}
+	RpcEndExcept
+
+}
+
 void SeqAppendTest()
 {
 	PRT_INT32 i;
@@ -355,13 +446,10 @@ void SeqAppendTest()
 
 	PrtCmdPrintValueAndType(seq);
 	printf_s("\n");
-
-	PRT_VALUE *seq2 = SerializeValue(seq);
-
 	handle_t testHandle = CreateRPCClient();
 	RpcTryExcept
 	{
-		c_SendValue1(testHandle, seq2);
+		c_SendValue1(testHandle, SerializeValue(seq));
 	}
 		RpcExcept(1)
 	{
@@ -373,7 +461,7 @@ void SeqAppendTest()
 
 	RpcTryExcept
 	{
-		c_SendValue2(testHandle, seq2);
+		c_SendValue2(testHandle, SerializeValue(seq));
 	}
 		RpcExcept(1)
 	{
@@ -401,7 +489,7 @@ void MapTest2()
 	handle_t testHandle = CreateRPCClient();
 	RpcTryExcept
 	{
-		c_SendValue1(testHandle, a2aMap);
+		c_SendValue1(testHandle, SerializeValue(a2aMap));
 	}
 		RpcExcept(1)
 	{
@@ -413,7 +501,7 @@ void MapTest2()
 
 	RpcTryExcept
 	{
-		c_SendValue2(testHandle, a2aMap);
+		c_SendValue2(testHandle, SerializeValue(a2aMap));
 	}
 	RpcExcept(1)
 	{
@@ -431,8 +519,10 @@ int main()
 	CreateRPCTestServer();
 	//Test Cases
 	//TestPrimitiveType();
+	//MapTest1();
 	//MapTest2();
 	//SeqAppendTest();
+	SeqNestedTest();
 	//wait
 	getchar();
 

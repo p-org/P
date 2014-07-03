@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Config">
+      <UniqueIdentifier>{47e4dc52-c94b-4ddf-8eef-a765145bb8b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Config">
+      <UniqueIdentifier>{0bde40c5-1171-46f3-8e2b-968441200838}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\PrtDT">
+      <UniqueIdentifier>{6891383e-f835-4606-bdc0-935c7d759c67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\PrtDT">
+      <UniqueIdentifier>{e67c6d3f-18ca-4d38-b220-70d785ebd34f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\PrtSM">
+      <UniqueIdentifier>{9163f2c1-b0a6-478b-800f-054511c7658a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Prt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Config\PrtConfigWinDist.c">
+      <Filter>Source Files\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="Config\PrtConfigWinUser.c">
+      <Filter>Source Files\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="Values\PrtDTTypes.c">
+      <Filter>Source Files\PrtDT</Filter>
+    </ClCompile>
+    <ClCompile Include="Values\PrtDTValues.c">
+      <Filter>Source Files\PrtDT</Filter>
+    </ClCompile>
+    <ClCompile Include="PrtSMLogger.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrtSMRuntime.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrtSMTrace.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Prt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PrtProgram.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Config\PrtConfig.h">
+      <Filter>Header Files\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="Config\PrtConfigWinDist.h">
+      <Filter>Header Files\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="Config\PrtConfigWinKMDF.h">
+      <Filter>Header Files\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="Config\PrtConfigWinUser.h">
+      <Filter>Header Files\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="Values\PrtDTTypeDefs.h">
+      <Filter>Header Files\PrtDT</Filter>
+    </ClInclude>
+    <ClInclude Include="Values\PrtDTTypes.h">
+      <Filter>Header Files\PrtDT</Filter>
+    </ClInclude>
+    <ClInclude Include="Values\PrtDTValues.h">
+      <Filter>Header Files\PrtDT</Filter>
+    </ClInclude>
+    <ClInclude Include="PrtSMPrivate.h">
+      <Filter>Header Files\PrtSM</Filter>
+    </ClInclude>
+    <ClInclude Include="PrtSMProtected.h">
+      <Filter>Header Files\PrtSM</Filter>
+    </ClInclude>
+    <ClInclude Include="PrtSMPublic.h">
+      <Filter>Header Files\PrtSM</Filter>
+    </ClInclude>
+    <ClInclude Include="PrtSMPrivateTypes.h">
+      <Filter>Header Files\PrtSM</Filter>
+    </ClInclude>
+    <ClInclude Include="PrtSMProtectedTypes.h">
+      <Filter>Header Files\PrtSM</Filter>
+    </ClInclude>
+    <ClInclude Include="PrtSMPublicTypes.h">
+      <Filter>Header Files\PrtSM</Filter>
+    </ClInclude>
+    <ClInclude Include="PrtSMTraceMacros.h">
+      <Filter>Header Files\PrtSM</Filter>
+    </ClInclude>
+    <ClInclude Include="PrtSMTrace.h">
+      <Filter>Header Files\PrtSM</Filter>
+    </ClInclude>
+    <ClInclude Include="PrtSMLogger.h">
+      <Filter>Header Files\PrtSM</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

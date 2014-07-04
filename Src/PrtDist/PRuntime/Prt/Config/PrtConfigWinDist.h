@@ -54,7 +54,7 @@
 
 
 /** PRT_HANDLE is always a type s.t. sizeof(PRT_HANDLE) >= sizeof(void*). */
-typedef void * PRT_HANDLE;
+typedef PVOID PRT_HANDLE;
 
 /** PRT_RECURSIVE_MUTEX identifies a recursive mutex. */
 typedef HANDLE PRT_RECURSIVE_MUTEX;
@@ -66,7 +66,7 @@ typedef HANDLE PRT_RECURSIVE_MUTEX;
 * @see PrtStartup
 * @see PrtShutdown
 */
-void PrtSpecialStartup(_In_ void *param);
+VOID PrtSpecialStartup(_In_ PVOID param);
 
 /**
 * Configuration-specific shutdown (for instance, closing log files). Will be called by the runtime in PrtShutdown()
@@ -75,14 +75,14 @@ void PrtSpecialStartup(_In_ void *param);
 * @see PrtStartup
 * @see PrtShutdown
 */
-void PrtSpecialShutdown(_In_ void *param);
+VOID PrtSpecialShutdown(_In_  PVOID param);
 
 /**
 * Terminates the process if `condition == 0` (with configuration-specific logging)
 * @param[in] condition A value expected to be non-zero
 * @param[in] message A message to be logged if condition is zero
 */
-void PrtAssert(_In_ int condition, _In_opt_z_ PRT_CSTRING message);
+VOID PrtAssert(_In_ int condition, _In_opt_z_ PRT_CSTRING message);
 
 /**
 * Creates a fresh unnamed and unlocked recursive mutex. The mutex must be unlocked by a thread as many times as it was locked.
@@ -100,7 +100,7 @@ PRT_RECURSIVE_MUTEX PrtCreateMutex();
 * @see PrtLockMutex
 * @see PrtUnlockMutex
 */
-void PrtReleaseMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
+VOID PrtReleaseMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 
 /**
 * Blocks until the mutex is locked. If the locking thread already owns the mutex, then succeeds and increments the lock count.
@@ -109,7 +109,7 @@ void PrtReleaseMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 * @see PrtCreateMutex
 * @see PrtReleaseMutex
 */
-void PrtLockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
+VOID PrtLockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 
 /**
 * Unlocks a locked mutex. Should not be called more times than the mutex has been locked.
@@ -118,7 +118,7 @@ void PrtLockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 * @see PrtCreateMutex
 * @see PrtReleaseMutex
 */
-void PrtUnlockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
+VOID PrtUnlockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 
 /**
 * Calls system-specific implementation of malloc.
@@ -127,7 +127,7 @@ void PrtUnlockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 * @returns A pointer to a memory location
 * @see PrtFree
 */
-void *PrtMalloc(_In_ size_t size);
+PVOID PrtMalloc(_In_ size_t size);
 
 /**
 * Calls system-specific implementation of free.
@@ -136,7 +136,7 @@ void *PrtMalloc(_In_ size_t size);
 * @see PrtCalloc
 * @see PrtRealloc
 */
-void PrtFree(void *ptr);
+VOID PrtFree(PVOID ptr);
 
 /**
 * Calls system-specific implementation of calloc.
@@ -146,7 +146,7 @@ void PrtFree(void *ptr);
 * @returns A pointer to a memory location
 * @see PrtFree
 */
-void *PrtCalloc(_In_ size_t nmemb, _In_ size_t size);
+PVOID PrtCalloc(_In_ size_t nmemb, _In_ size_t size);
 
 /**
 * Calls system-specific implementation of realloc.
@@ -156,5 +156,5 @@ void *PrtCalloc(_In_ size_t nmemb, _In_ size_t size);
 * @returns A pointer to a memory location or NULL if size = 0
 * @see PrtFree
 */
-void *PrtRealloc(_Inout_ void *ptr, _In_ size_t size);
+PVOID PrtRealloc(_Inout_ PVOID ptr, _In_ size_t size);
 #endif

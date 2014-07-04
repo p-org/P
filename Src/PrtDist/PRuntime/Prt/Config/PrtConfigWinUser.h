@@ -56,38 +56,38 @@ typedef enum PRT_BOOLEAN
 {
 	PRT_FALSE = 0,   /**< 0 means false */
 	PRT_TRUE = 1    /**< 1 means true  */
-} PRT_BOOLEAN;
+} PRT_BOOLEAN, *PPRT_BOOLEAN;
 
 
 /** PRT_UINT8 is always an 8-bit unsigned integer. */
-typedef unsigned __int8  PRT_UINT8;
+typedef unsigned __int8  PRT_UINT8, *PPRT_UINT8;
 /** PRT_UINT16 is always a 16-bit unsigned integer. */
-typedef unsigned __int16 PRT_UINT16;
+typedef unsigned __int16 PRT_UINT16, *PPRT_UINT16;
 /** PRT_UINT32 is always a 32-bit unsigned integer. */
-typedef unsigned __int32 PRT_UINT32;
+typedef unsigned __int32 PRT_UINT32, *PPRT_UINT32;
 /** PRT_UINT64 is always a 64-bit unsigned integer. */
-typedef unsigned __int64 PRT_UINT64;
+typedef unsigned __int64 PRT_UINT64, *PPRT_UINT64;
 
 /** PRT_INT8 is always an 8-bit signed integer. */
-typedef signed __int8  PRT_INT8;
+typedef signed __int8  PRT_INT8, *PPRT_INT8;
 /** PRT_INT16 is always a 16-bit signed integer. */
-typedef signed __int16 PRT_INT16;
+typedef signed __int16 PRT_INT16, *PPRT_INT16;
 /** PRT_INT32 is always a 32-bit signed integer. */
-typedef signed __int32 PRT_INT32;
+typedef signed __int32 PRT_INT32, *PPRT_INT32;
 /** PRT_INT64 is always a 64-bit signed integer. */
-typedef signed __int64 PRT_INT64;
+typedef signed __int64 PRT_INT64, *PPRT_INT64;
 
 /** PRT_CHAR is always an ASCII character. */
-typedef char PRT_CHAR;
+typedef char PRT_CHAR, *PPRT_CHAR;
 /** PRT_STRING is always an array of ASCII characters. */
-typedef char * PRT_STRING;
+typedef char * PRT_STRING, *PPRT_STRING;
 /** PRT_CSTRING is always a constant array of ASCII characters. */
-typedef char const * PRT_CSTRING;
+typedef char const * PRT_CSTRING, *PPRT_CSTRING;
 
 
 
-/** PRT_HANDLE is always a type s.t. sizeof(PRT_HANDLE) >= sizeof(void*). */
-typedef void * PRT_HANDLE;
+/** PRT_HANDLE is always a type s.t. sizeof(PRT_HANDLE) >= sizeof(VOID*). */
+typedef PVOID PRT_HANDLE;
 
 /** PRT_RECURSIVE_MUTEX identifies a recursive mutex. */
 typedef HANDLE PRT_RECURSIVE_MUTEX;
@@ -99,7 +99,7 @@ typedef HANDLE PRT_RECURSIVE_MUTEX;
 * @see PrtStartup
 * @see PrtShutdown
 */
-void PrtSpecialStartup(_In_ void *param);
+VOID PrtSpecialStartup(_In_ PVOID param);
 
 /**
 * Configuration-specific shutdown (for instance, closing log files). Will be called by the runtime in PrtShutdown()
@@ -108,14 +108,14 @@ void PrtSpecialStartup(_In_ void *param);
 * @see PrtStartup
 * @see PrtShutdown
 */
-void PrtSpecialShutdown(_In_ void *param);
+VOID PrtSpecialShutdown(_In_ PVOID param);
 
 /**
 * Terminates the process if `condition == 0` (with configuration-specific logging)
 * @param[in] condition A value expected to be non-zero
 * @param[in] message A message to be logged if condition is zero
 */
-void PrtAssert(_In_ int condition, _In_opt_z_ PRT_CSTRING message);
+VOID PrtAssert(_In_ int condition, _In_opt_z_ PRT_CSTRING message);
 
 /**
 * Creates a fresh unnamed and unlocked recursive mutex. The mutex must be unlocked by a thread as many times as it was locked.
@@ -133,7 +133,7 @@ PRT_RECURSIVE_MUTEX PrtCreateMutex();
 * @see PrtLockMutex
 * @see PrtUnlockMutex
 */
-void PrtReleaseMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
+VOID PrtReleaseMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 
 /**
 * Blocks until the mutex is locked. If the locking thread already owns the mutex, then succeeds and increments the lock count. 
@@ -142,7 +142,7 @@ void PrtReleaseMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 * @see PrtCreateMutex
 * @see PrtReleaseMutex
 */
-void PrtLockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
+VOID PrtLockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 
 /**
 * Unlocks a locked mutex. Should not be called more times than the mutex has been locked.
@@ -151,7 +151,7 @@ void PrtLockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 * @see PrtCreateMutex
 * @see PrtReleaseMutex
 */
-void PrtUnlockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
+VOID PrtUnlockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 
 /**
 * Calls system-specific implementation of malloc. 
@@ -160,7 +160,7 @@ void PrtUnlockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 * @returns A pointer to a memory location
 * @see PrtFree
 */
-void *PrtMalloc(_In_ size_t size);
+PVOID PrtMalloc(_In_ size_t size);
 
 /**
 * Calls system-specific implementation of free.
@@ -169,7 +169,7 @@ void *PrtMalloc(_In_ size_t size);
 * @see PrtCalloc
 * @see PrtRealloc
 */
-void PrtFree(void *ptr);
+VOID PrtFree(PVOID ptr);
 
 /**
 * Calls system-specific implementation of calloc.
@@ -179,7 +179,7 @@ void PrtFree(void *ptr);
 * @returns A pointer to a memory location
 * @see PrtFree
 */
-void *PrtCalloc(_In_ size_t nmemb, _In_ size_t size);
+PVOID PrtCalloc(_In_ size_t nmemb, _In_ size_t size);
 
 /**
 * Calls system-specific implementation of realloc.
@@ -189,5 +189,5 @@ void *PrtCalloc(_In_ size_t nmemb, _In_ size_t size);
 * @returns A pointer to a memory location or NULL if size = 0
 * @see PrtFree
 */
-void *PrtRealloc(_Inout_ void *ptr, _In_ size_t size);
+PVOID PrtRealloc(_Inout_ PVOID ptr, _In_ size_t size);
 #endif

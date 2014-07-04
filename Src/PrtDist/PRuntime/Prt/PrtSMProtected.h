@@ -4,7 +4,7 @@ Copyright (c) Microsoft Corporation
 
 File Name:
 
-SmfProtected.h
+PrtProtected.h
 
 Abstract:
 This header file contains function declarations of protected nature
@@ -27,17 +27,9 @@ Macros Functions
 
 *********************************************************************************/
 
-#ifdef KERNEL_MODE
-#define SMF_ASSERTMSG(msg, cond)	NT_ASSERTMSG(msg, (cond));
-#define SMF_ASSERT(cond)	NT_ASSERT((cond));
-#else																							
-#define SMF_ASSERTMSG(msg, cond)	if (!(cond)) { SmfLogAssertionFailure((const char *)__FILE__, (ULONG)__LINE__, (const char *)msg); exit(-1); };
-#define SMF_ASSERT(cond)	if (!(cond)) { exit(-1); }
-#endif
+#define MAKE_OPAQUE(Fun) (PPRT_OPAQUE_FUN)(&(Fun))
 
-#define MAKE_OPAQUE(Fun) (PSMF_OPAQUE_FUN)(&(Fun))
-
-#define MAKE_OPAQUE_CONSTRUCTOR(Fun) (PSMF_OPAQUE_CONST_FUN)(&(Fun))
+#define MAKE_OPAQUE_CONSTRUCTOR(Fun) (PPRT_OPAQUE_CONST_FUN)(&(Fun))
 //
 // Used for removing the UNREFERENCEDPARAMETER warning
 //
@@ -53,10 +45,10 @@ Raise / Pop / Call Statements in Entry Functions
 //Enqueue a private event 
 //
 VOID
-SmfRaise(
-__inout PSMF_SMCONTEXT		Context,
-__in SMF_EVENTDECL_INDEX	EventIndex,
-__in PSMF_PACKED_VALUE		Arg
+PrtRaise(
+__inout PPRT_SMCONTEXT		Context,
+__in PRT_EVENTDECL_INDEX	EventIndex,
+__in PPRT_PACKED_VALUE		Arg
 );
 
 //
@@ -64,53 +56,53 @@ __in PSMF_PACKED_VALUE		Arg
 //
 
 VOID
-SmfPop(
-__inout PSMF_SMCONTEXT		Context
+PrtPop(
+__inout PPRT_SMCONTEXT		Context
 );
 
 //
 // Execute Call Statement
 //
 VOID
-SmfCall(
-__inout PSMF_SMCONTEXT		Context,
-SMF_STATEDECL_INDEX			State
+PrtCall(
+__inout PPRT_SMCONTEXT		Context,
+PRT_STATEDECL_INDEX			State
 );
 
 //
 // Execute New Statement
 //
-SMF_MACHINE_HANDLE
-SmfNew(
-__in PSMF_DRIVERDECL			PDriverDecl,
-__inout PSMF_SMCONTEXT			Context,
-__in SMF_MACHINEDECL_INDEX		InstanceOf,
-__in PSMF_PACKED_VALUE			Arg
+PRT_MACHINE_HANDLE
+PrtNew(
+__in PPRT_DRIVERDECL			PDriverDecl,
+__inout PPRT_SMCONTEXT			Context,
+__in PRT_MACHINEDECL_INDEX		InstanceOf,
+__in PPRT_PACKED_VALUE			Arg
 );
 
 //
 // Delete the current state-machine
 //
 VOID
-SmfDelete(
-PSMF_SMCONTEXT				Context
+PrtDelete(
+PPRT_SMCONTEXT				Context
 );
 
 ULONG_PTR
-SmfAllocateType(
-__in PSMF_DRIVERDECL			Driver,
-__in SMF_TYPEDECL_INDEX			Type);
+PrtAllocateType(
+__in PPRT_DRIVERDECL			Driver,
+__in PRT_TYPEDECL_INDEX			Type);
 
 VOID
-SmfFreeType(
-__in PSMF_DRIVERDECL			Driver,
-__in SMF_TYPEDECL_INDEX			Type,
+PrtFreeType(
+__in PPRT_DRIVERDECL			Driver,
+__in PRT_TYPEDECL_INDEX			Type,
 __in PVOID						Value);
 
 ULONG_PTR
-SmfAllocateDefaultType(
-__in PSMF_DRIVERDECL			Driver,
-__in SMF_TYPEDECL_INDEX			Type);
+PrtAllocateDefaultType(
+__in PPRT_DRIVERDECL			Driver,
+__in PRT_TYPEDECL_INDEX			Type);
 
 /*********************************************************************************
 
@@ -120,67 +112,32 @@ Memory Management Functions.
 
 FORCEINLINE
 PVOID
-SmfAllocateMemory(
+PrtAllocateMemory(
 UINT						SizeOf
 );
 
 FORCEINLINE
 VOID
-SmfFreeMemory(
+PrtFreeMemory(
 PVOID						PointerTo
 );
 
-
-/*********************************************************************************
-
-Operations on Packed Values.
-
-*********************************************************************************/
-//
-// Pack a value in a preallocated piece of memory 
-//
-VOID
-PackValue(
-__in PSMF_DRIVERDECL			Driver,
-__in PSMF_PACKED_VALUE			Dst,
-__in ULONG_PTR					Value,
-__in SMF_TYPEDECL_INDEX			Type
-);
-
-//
-// Clone a packed value
-//
-VOID
-Clone_PackedValue(
-__in PSMF_DRIVERDECL			Driver,
-__in PSMF_PACKED_VALUE			Dst,
-__in PSMF_PACKED_VALUE			Src
-);
-
-//
-// Pack a value in a preallocated piece of memory 
-//
-VOID
-Destroy_PackedValue(
-__in PSMF_DRIVERDECL			Driver,
-__in PSMF_PACKED_VALUE			Dst
-);
 
 //
 // Function prototypes for communicating with model machines
 //
 VOID
 EnqueueEvent(
-__in SMF_MACHINE_HANDLE			Machine,
-__in SMF_EVENTDECL_INDEX		EventIndex,
-__in PSMF_PACKED_VALUE			Arg,
+__in PRT_MACHINE_HANDLE			Machine,
+__in PRT_EVENTDECL_INDEX		EventIndex,
+__in PPRT_PACKED_VALUE			Arg,
 __in BOOLEAN					UseWorkItem
 );
 
-SMF_MACHINE_HANDLE
+PRT_MACHINE_HANDLE
 New(
-__in PSMF_DRIVERDECL			PDriverDecl,
-__inout PSMF_SMCONTEXT			Context,
-__in SMF_MACHINEDECL_INDEX		InstanceOf,
-__in PSMF_PACKED_VALUE			Arg
+__in PPRT_DRIVERDECL			PDriverDecl,
+__inout PPRT_SMCONTEXT			Context,
+__in PRT_MACHINEDECL_INDEX		InstanceOf,
+__in PPRT_PACKED_VALUE			Arg
 );

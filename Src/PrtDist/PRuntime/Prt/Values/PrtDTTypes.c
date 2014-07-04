@@ -1,4 +1,4 @@
-#include "PrtTypes.h"
+#include "PrtDTTypes.h"
 
 PRT_TYPE PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType)
 {

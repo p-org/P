@@ -30,67 +30,67 @@ Structures / Unions and Tables Declaration
 //
 // State Machine Attributes used for initializing the Machine during creation
 //
-typedef struct _SMF_MACHINE_ATTRIBUTES SMF_MACHINE_ATTRIBUTES, *PSMF_MACHINE_ATTRIBUTES;
+typedef struct _PRT_MACHINE_ATTRIBUTES PRT_MACHINE_ATTRIBUTES, *PPRT_MACHINE_ATTRIBUTES;
 
 //
 // Driver Decl which provides the template for a driver
 //
-typedef struct _SMF_DRIVERDECL SMF_DRIVERDECL, *PSMF_DRIVERDECL;
+typedef struct _PRT_PROGRAMDECL PRT_PROGRAMDECL, *PPRT_PROGRAMDECL;
 
 //
 // State Machine variable declaration 
 //
-typedef struct _SMF_VARDECL SMF_VARDECL, *const SMF_VARDECL_TABLE;
+typedef struct _PRT_VARDECL PRT_VARDECL, *const PRT_VARDECL_TABLE;
 
 //
 // Event Set decl for the deferred/Ignored Events set
 //
-typedef struct _SMF_EVENTSETDECL SMF_EVENTSETDECL, *const SMF_EVENTSETDECL_TABLE;
+typedef struct _PRT_EVENTSETDECL PRT_EVENTSETDECL, *const PRT_EVENTSETDECL_TABLE;
 
 //
 // Event Decl (All events in the Program are of this type)
 //
-typedef struct _SMF_EVENTDECL SMF_EVENTDECL, *const SMF_EVENTDECL_TABLE;
+typedef struct _PRT_EVENTDECL PRT_EVENTDECL, *const PRT_EVENTDECL_TABLE;
 
 //
 // Machine Decl Template (Machine Types declared in the program)
 //
-typedef struct _SMF_MACHINEDECL SMF_MACHINEDECL, *const SMF_MACHINEDECL_TABLE;
+typedef struct _PRT_MACHINEDECL PRT_MACHINEDECL, *const PRT_MACHINEDECL_TABLE;
 
 //
 // Type Decl Template (User defined types in the program (Tuples, Named Tuples, Sets, Dictionaries)
 //
-typedef struct _SMF_TYPEDECL SMF_TYPEDECL, *const SMF_TYPEDECL_TABLE;
+typedef PRT_TYPE *const PRT_TYPEDECL_TABLE;
 
 //
 // Type Decl Template (User defined types in the program (Tuples, Named Tuples, Sets, Dictionaries)
 //
-typedef struct _SMF_PACKED_VALUE SMF_PACKED_VALUE, *PSMF_PACKED_VALUE;
+typedef struct _PRT_PACKED_VALUE PRT_PACKED_VALUE, *PPRT_PACKED_VALUE;
 
 //
 // State Decl 
 //
-typedef struct _SMF_STATEDECL SMF_STATEDECL, *SMF_STATEDECL_TABLE;
+typedef struct _PRT_STATEDECL PRT_STATEDECL, *PRT_STATEDECL_TABLE;
 
 //
 // Transition Table Decl
 //
-typedef struct _SMF_TRANSDECL SMF_TRANSDECL, *SMF_TRANSDECL_TABLE;
+typedef struct _PRT_TRANSDECL PRT_TRANSDECL, *PRT_TRANSDECL_TABLE;
 
 //
 // Action Table Decl
 //
-typedef struct _SMF_ACTIONDECL SMF_ACTIONDECL, *SMF_ACTIONDECL_TABLE, *PSMF_ACTIONDECL;
+typedef struct _PRT_ACTIONDECL PRT_ACTIONDECL, *PRT_ACTIONDECL_TABLE, *PPRT_ACTIONDECL;
 
 //
 // State Machine Variable Values
 //
-typedef ULONG_PTR SMF_VARVALUE, *SMF_VARVALUE_TABLE;
+typedef ULONG_PTR PRT_VARVALUE, *PRT_VARVALUE_TABLE;
 
 //
 //For External Memory Context accessed by foreign function
 //
-typedef struct _SMF_EXCONTEXT SMF_EXCONTEXT, *PSMF_EXCONTEXT;
+typedef struct _PRT_EXCONTEXT PRT_EXCONTEXT, *PPRT_EXCONTEXT;
 
 
 /*********************************************************************************
@@ -101,64 +101,64 @@ Handles / Indices / Flags Declaration
 //
 // State Machine Handle (Machine ID)
 //
-typedef ULONG_PTR SMF_MACHINE_HANDLE, *PSMF_MACHINE_HANDLE;
+typedef ULONG_PTR PRT_MACHINE_HANDLE, *PPRT_MACHINE_HANDLE;
 
 //
 // Local Variable Types 
 //
-typedef LONG32 SMF_VARTYPE, *PSMF_VARTYPE;
+typedef LONG32 PRT_VARTYPE, *PPRT_VARTYPE;
 
 //
 // Runtime Flags Associated with States and Events
 //
-typedef ULONG32 SMF_RUNTIMEFLAGS, *PSMF_RUNTIMEFLAGS;
+typedef ULONG32 PRT_RUNTIMEFLAGS, *PPRT_RUNTIMEFLAGS;
 
 //
 // Machine Decl Index
 //
-typedef ULONG32 SMF_MACHINEDECL_INDEX;
+typedef ULONG32 PRT_MACHINEDECL_INDEX;
 
 //
 // Type Decl Index
 //
-typedef ULONG32 SMF_TYPEDECL_INDEX;
+typedef ULONG32 PRT_TYPEDECL_INDEX;
 
 
 //
 // Event Decl Index
 //
-typedef ULONG32 SMF_EVENTSETDECL_INDEX;
+typedef ULONG32 PRT_EVENTSETDECL_INDEX;
 
 //
 // Event Decl Index
 //
-typedef ULONG32 SMF_EVENTDECL_INDEX, *SMF_EVENTDECL_INDEX_TABLE, *SMF_EVENTDECL_INDEX_PACKEDTABLE;
+typedef ULONG32 PRT_EVENTDECL_INDEX, *PRT_EVENTDECL_INDEX_TABLE, *PRT_EVENTDECL_INDEX_PACKEDTABLE;
 
 //
 // Bit Set
 //
-typedef ULONG32 const* const SMF_BIT_SET;
+typedef ULONG32 const* const PRT_BIT_SET;
 
 
 //
 // Variable Decl Index
 //
-typedef ULONG32 SMF_VARDECL_INDEX;
+typedef ULONG32 PRT_VARDECL_INDEX;
 
 //
 // State Decl Index
 //
-typedef ULONG32 SMF_STATEDECL_INDEX;
+typedef ULONG32 PRT_STATEDECL_INDEX;
 
 //
 // Transtition Decl Index
 //
-typedef ULONG32 SMF_TRANSDECL_INDEX, *SMF_TRANSDECL_INDEX_PACKEDTABLE;
+typedef ULONG32 PRT_TRANSDECL_INDEX, *PRT_TRANSDECL_INDEX_PACKEDTABLE;
 
 //
 // Action Decl Index
 //
-typedef ULONG32 SMF_ACTIONDECL_INDEX, *SMF_ACTIONDECL_INDEX_PACKEDTABLE;
+typedef ULONG32 PRT_ACTIONDECL_INDEX, *PRT_ACTIONDECL_INDEX_PACKEDTABLE;
 
 /*********************************************************************************
 
@@ -168,15 +168,9 @@ Function Pointer Types Declarations
 // 
 // Function Pointer to Entry/Exit/Constructor Function corresponding to each state
 //
-typedef VOID(*PSMF_OPAQUE_FUN)(PVOID);
+typedef VOID(*PPRT_OPAQUE_FUN)(PVOID);
 
-typedef VOID(*PSMF_OPAQUE_CONST_FUN)(PVOID, PVOID);
-
-typedef VOID(*PSMF_OPAQUE_BUILDDEF_FUN)(PVOID, PVOID);
-typedef VOID(*PSMF_OPAQUE_CLONE_FUN)(PVOID, PVOID, PVOID);
-typedef VOID(*PSMF_OPAQUE_DESTROY_FUN)(PVOID, PVOID);
-typedef BOOLEAN(*PSMF_OPAQUE_EQUALS_FUN)(PVOID, PVOID, PVOID);
-typedef ULONG(*PSMF_OPAQUE_HASHCODE_FUN)(PVOID, PVOID);
+typedef VOID(*PPRT_OPAQUE_CONST_FUN)(PVOID, PVOID);
 
 /*********************************************************************************
 
@@ -187,47 +181,12 @@ Enum Types Declarations
 //
 // Exceptions Thrown by Runtime
 //
-typedef enum _SMF_EXCEPTIONS SMF_EXCEPTIONS;
-
-//
-// Built in Types for Local Variables
-//
-typedef enum _SMF_BUILTINTYPE SMF_BUILTINTYPE;
-
-//
-// Runtime Flags Corresponding to each state/event
-//
-typedef enum _SMF_RUNTIMEFLAG SMF_RUNTIMEFLAG;
-
+typedef enum _PRT_EXCEPTIONS PRT_EXCEPTIONS;
 
 
 /*********************************************************************************
 
-Type Name : SMF_PACKED_VALUE
-
-Description :
-Structure for Representing Values Packed with a Type Tag
-
-Fields :
-
-Type --
-Type of the local variable
-
-Value --
-The actual value stored inside
-
-*********************************************************************************/
-
-struct _SMF_PACKED_VALUE
-{
-	SMF_TYPEDECL_INDEX Type;
-	ULONG_PTR Value;
-};
-
-
-/*********************************************************************************
-
-Type Name : SMF_MACHINE_ATTRIBUTES
+Type Name : PRT_MACHINE_ATTRIBUTES
 
 Description :
 Structure to store state-machine attributes used for initializing the state-machine
@@ -248,20 +207,17 @@ PDeviceObj --
 Pointer to Device Object for the current device.
 
 *********************************************************************************/
-struct _SMF_MACHINE_ATTRIBUTES
+struct _PRT_MACHINE_ATTRIBUTES
 {
-	PSMF_DRIVERDECL Driver;
-	SMF_MACHINEDECL_INDEX InstanceOf;
-	SMF_PACKED_VALUE Arg;
+	PPRT_PROGRAMDECL Program;
+	PRT_MACHINEDECL_INDEX InstanceOf;
+	PRT_VALUE *Arg;
 	PVOID ConstructorParam;
-#ifdef KERNEL_MODE
-	PDEVICE_OBJECT PDeviceObj;
-#endif
 };
 
 /*********************************************************************************
 
-Type Name : SMF_EXCONTEXT
+Type Name : PRT_EXCONTEXT
 
 Description :
 Structure having pointer to the External Context (foreign memory Blob)
@@ -282,9 +238,9 @@ Pointer to the external memory context corresponding to each statemachine,
 passed as parameter to foreign functions
 
 *********************************************************************************/
-struct _SMF_EXCONTEXT
+struct _PRT_EXCONTEXT
 {
-	BOOLEAN FreeThis;
+	PRT_BOOLEAN FreeThis;
 	PVOID PExMem;
 	PVOID ConstructorParam;
 };
@@ -292,7 +248,7 @@ struct _SMF_EXCONTEXT
 
 /*********************************************************************************
 
-Type Name : SMF_DRIVERDECL
+Type Name : PRT_DRIVERDECL
 
 Description :
 Structure for storing information about the current driver program
@@ -313,20 +269,20 @@ Table containing declarations of all the Machine Types
 
 *********************************************************************************/
 
-struct _SMF_DRIVERDECL
+struct _PRT_PROGRAMDECL
 {
 	const ULONG32 NEvents;
-	SMF_EVENTDECL_TABLE Events;
+	PRT_EVENTDECL_TABLE Events;
 	const ULONG32 NMachines;
-	SMF_MACHINEDECL_TABLE Machines;
+	PRT_MACHINEDECL_TABLE Machines;
 	const ULONG32 NTypes;
-	SMF_TYPEDECL_TABLE Types;
+	PRT_TYPEDECL_TABLE Types;
 
 };
 
 /*********************************************************************************
 
-Type Name : SMF_EVENTDECL
+Type Name : PRT_EVENTDECL
 
 Description :
 Structure for storing information about Event
@@ -347,17 +303,17 @@ Type of the payload of the event
 
 *********************************************************************************/
 
-struct _SMF_EVENTDECL
+struct _PRT_EVENTDECL
 {
-	const SMF_EVENTDECL_INDEX MyIndex;
+	const PRT_EVENTDECL_INDEX MyIndex;
 	const PCWSTR Name;
 	const UINT16 MaxInstances;
-	const SMF_TYPEDECL_INDEX Type;
+	const PRT_TYPE Type;
 };
 
 /*********************************************************************************
 
-Type Name : SMF_MACHINEDECL
+Type Name : PRT_MACHINEDECL
 
 Description :
 Structure for storing information about Machine Type
@@ -398,83 +354,25 @@ Pointer to the constructor function called on creation of machine of this type
 
 *********************************************************************************/
 
-struct _SMF_MACHINEDECL
+struct _PRT_MACHINEDECL
 {
-	const SMF_MACHINEDECL_INDEX MyIndex;
+	const PRT_MACHINEDECL_INDEX MyIndex;
 	const PCWSTR Name;
 	const ULONG32 NVars;
-	SMF_VARDECL_TABLE Vars;
+	PRT_VARDECL_TABLE Vars;
 	const ULONG32 NStates;
-	SMF_STATEDECL_TABLE States;
+	PRT_STATEDECL_TABLE States;
 	UCHAR MaxSizeOfEventQueue;
 	const ULONG32 NEventSets;
-	SMF_EVENTSETDECL_TABLE EventSets;
-	const SMF_STATEDECL_INDEX Initial;
-	const PSMF_OPAQUE_CONST_FUN constructorFun;
+	PRT_EVENTSETDECL_TABLE EventSets;
+	const PRT_STATEDECL_INDEX Initial;
+	const PPRT_OPAQUE_CONST_FUN constructorFun;
 };
+
 
 /*********************************************************************************
 
-Type Name : SMF_TYPEDECL
-
-Description :
-Structure for storing information about each user defined type. All of the described types
-are reference types, stored in the VARTABLE as type SmfRefType.
-
-Fields :
-
-Name --
-string representing the name of the datatype
-
-Size --
-size in memory of a value of this type
-
-Primitive --
-true iff the given type is a primitive (i.e. fits in ULONG_PTR, has no special clone/build default/destroy behavior.
-
-PrimitiveDefault --
-for primitive types, store the default initialization value
-
-SuperTypes --
-A Bit Set containing all the supertypes. Each Type is identified by its index in the Types enum
-
-SubTypes --
-A Bit Set containing all the subtypes. Each Type is identified by its index in the Types enum
-
-Clone --
-function pointer to a routine that performs a deep clone
-of a value of memory from one location in memory, to another. Calle responsible for
-memory management
-
-BuildDefault --
-function pointer to a routine that initializes the default value of the type, in the given memory.
-
-Destroy --
-function pointer to a routine that performs cleanup for a value of this type. For example,
-if this were a sequence, the destroy routine would be responsible for freeing all elements
-allocated in the sequence
-
-
-*********************************************************************************/
-
-struct _SMF_TYPEDECL
-{
-	const PCWSTR Name;
-	const SIZE_T Size;
-	const BOOLEAN Primitive;
-	ULONG_PTR PrimitiveDefault;
-	SMF_BIT_SET SuperTypes;
-	SMF_BIT_SET SubTypes;
-	PSMF_OPAQUE_CLONE_FUN Clone;
-	PSMF_OPAQUE_BUILDDEF_FUN BuildDefault;
-	PSMF_OPAQUE_DESTROY_FUN Destroy;
-	PSMF_OPAQUE_EQUALS_FUN Equals;
-	PSMF_OPAQUE_HASHCODE_FUN HashCode;
-};
-
-/*********************************************************************************
-
-Type Name : SMF_VARDECL
+Type Name : PRT_VARDECL
 
 Description :
 Structure for Representing local variables in a statemachine
@@ -482,7 +380,7 @@ Structure for Representing local variables in a statemachine
 Fields :
 
 MyIndex --
-Index in to the Values Table in SMF_SMContext
+Index in to the Values Table in PRT_SMContext
 
 MyMachine--
 Index into the MachineDecl table indicating the type of machine which contains
@@ -502,17 +400,17 @@ RefType points to.
 
 *********************************************************************************/
 
-struct _SMF_VARDECL
+struct _PRT_VARDECL
 {
-	const SMF_VARDECL_INDEX MyIndex;
-	const SMF_MACHINEDECL_INDEX MyMachine;
-	const PCWSTR Name;
-	const SMF_TYPEDECL_INDEX Type;
+	const PRT_VARDECL_INDEX MyIndex;
+	const PRT_MACHINEDECL_INDEX MyMachine;
+	const PRT_STRING Name;
+	const PRT_TYPE Type;
 };
 
 /*********************************************************************************
 
-Type Name : SMF_EVENTSETDECL
+Type Name : PRT_EVENTSETDECL
 
 Description :
 Structure for Representing Event set in a statemachine
@@ -535,18 +433,18 @@ of type ULONG32
 
 *********************************************************************************/
 
-struct _SMF_EVENTSETDECL
+struct _PRT_EVENTSETDECL
 {
-	const SMF_VARDECL_INDEX MyIndex;
-	const SMF_MACHINEDECL_INDEX MyMachine;
+	const PRT_VARDECL_INDEX MyIndex;
+	const PRT_MACHINEDECL_INDEX MyMachine;
 
-	const PCWSTR Name;
-	SMF_EVENTDECL_INDEX_PACKEDTABLE EventIndexPackedTable;
+	const PRT_STRING Name;
+	PRT_EVENTDECL_INDEX_PACKEDTABLE EventIndexPackedTable;
 };
 
 /*********************************************************************************
 
-Type Name : SMF_TRANSDECL
+Type Name : PRT_TRANSDECL
 
 Description :
 Structure for declaring a transition
@@ -573,20 +471,20 @@ IsPush --
 Is it a push transition / call edge
 
 *********************************************************************************/
-struct _SMF_TRANSDECL
+struct _PRT_TRANSDECL
 {
-	const SMF_TRANSDECL_INDEX MyIndex;
-	const SMF_STATEDECL_INDEX MyState;
-	const SMF_MACHINEDECL_INDEX MyMachine;
+	const PRT_TRANSDECL_INDEX MyIndex;
+	const PRT_STATEDECL_INDEX MyState;
+	const PRT_MACHINEDECL_INDEX MyMachine;
 
-	const SMF_EVENTDECL_INDEX EventIndex;
-	const SMF_STATEDECL_INDEX Destination;
-	const BOOLEAN IsPush;
+	const PRT_EVENTDECL_INDEX EventIndex;
+	const PRT_STATEDECL_INDEX Destination;
+	const PRT_BOOLEAN IsPush;
 };
 
 /*********************************************************************************
 
-Type Name : SMF_ACTIONDECL
+Type Name : PRT_ACTIONDECL
 
 Description :
 Structure for declaring a transition
@@ -613,22 +511,22 @@ ActionFun --
 Function Pointer to the action function corresponding to event EventIndex
 
 *********************************************************************************/
-struct _SMF_ACTIONDECL
+struct _PRT_ACTIONDECL
 {
-	const SMF_ACTIONDECL_INDEX MyIndex;
-	const SMF_STATEDECL_INDEX MyState;
-	const SMF_MACHINEDECL_INDEX MyMachine;
+	const PRT_ACTIONDECL_INDEX MyIndex;
+	const PRT_STATEDECL_INDEX MyState;
+	const PRT_MACHINEDECL_INDEX MyMachine;
 
-	const PCWSTR Name;
-	const SMF_EVENTDECL_INDEX EventIndex;
-	const PSMF_OPAQUE_FUN ActionFun;
-	const BOOLEAN IsActionFunPassiveLevel;
+	const PRT_STRING Name;
+	const PRT_EVENTDECL_INDEX EventIndex;
+	const PPRT_OPAQUE_FUN ActionFun;
+	const PRT_BOOLEAN IsActionFunPassiveLevel;
 
 };
 
 /*********************************************************************************
 
-Type Name : SMF_STATEDECL
+Type Name : PRT_STATEDECL
 
 Description :
 Structure for declaring a
@@ -679,25 +577,24 @@ HasDefaultTransition --
 
 *********************************************************************************/
 
-struct _SMF_STATEDECL
+struct _PRT_STATEDECL
 {
-	const SMF_STATEDECL_INDEX MyIndex;
-	const SMF_MACHINEDECL_INDEX MyMachine;
-	const PCWSTR Name;
-	const SMF_RUNTIMEFLAGS Flags;
+	const PRT_STATEDECL_INDEX MyIndex;
+	const PRT_MACHINEDECL_INDEX MyMachine;
+	const PRT_STRING Name;
 
-	const PSMF_OPAQUE_FUN EntryFunc;
-	const PSMF_OPAQUE_FUN ExitFunc;
+	const PPRT_OPAQUE_FUN EntryFunc;
+	const PPRT_OPAQUE_FUN ExitFunc;
 
-	const SMF_EVENTSETDECL_INDEX Defers;
+	const PRT_EVENTSETDECL_INDEX Defers;
 
 	const UINT16 NTransitions;
-	SMF_TRANSDECL_TABLE Transitions;
-	const SMF_TRANSDECL_INDEX_PACKEDTABLE TransitionsPacked;
+	PRT_TRANSDECL_TABLE Transitions;
+	const PRT_TRANSDECL_INDEX_PACKEDTABLE TransitionsPacked;
 
 	const UINT16 NActions;
-	SMF_ACTIONDECL_TABLE Actions;
-	const SMF_ACTIONDECL_INDEX_PACKEDTABLE ActionsPacked;
+	PRT_ACTIONDECL_TABLE Actions;
+	const PRT_ACTIONDECL_INDEX_PACKEDTABLE ActionsPacked;
 
 	const BOOLEAN HasDefaultTransition;
 
@@ -710,7 +607,7 @@ P Exceptions
 
 *********************************************************************************/
 
-enum _SMF_EXCEPTIONS
+enum _PRT_EXCEPTIONS
 {
 	//
 	// Unhandled event exception
@@ -742,25 +639,5 @@ enum _SMF_EXCEPTIONS
 	// Max Queue size exceeded
 	//
 	MaxQueueSizeExceeded
-};
-
-/*********************************************************************************
-
-Builtin Types
-
-Note: The only type the runtime needs to explicitly be aware of,
-is the Null type, and that is only so that the g_SmfNullPayload event
-can be declared statically here. For operations on all other types, the runtime
-uses the type to index into the Types array of the SMF_DRIVERDECL struct,
-to retrieve the neccessary function pointer/type metadata.
-
-*********************************************************************************/
-
-enum _SMF_BUILTINTYPES
-{
-	//
-	// Null Type
-	//
-	SmfNullType = 0,
 };
 

@@ -4,7 +4,7 @@ Copyright (c) Microsoft Corporation
 
 File Name:
 
-SmfPublic.h
+PrtPublic.h
 
 Abstract:
 This header file contains declarations of all the public functions which can be
@@ -19,21 +19,7 @@ Kernel mode only.
 
 #include "PrtSMPublicTypes.h"
 #include "Config\PrtConfig.h"
-/*********************************************************************************
 
-Macro Functions For Enqueue
-
-*********************************************************************************/
-
-//
-// Macro to enqueue an Event with Payload
-//
-#define SMF_ENQUEUEEVENT_WITH_PAYLOAD(Machine, EventIndex, Payload, UseWorkItem) SmfEnqueueEvent(Machine, EventIndex, Payload, UseWorkItem)
-
-//
-//Macro to enqueue an Event without Payload
-//
-#define SMF_ENQUEUEEVENT(Machine, EventIndex, UseWorkItem) SmfEnqueueEvent(Machine, EventIndex, 0, UseWorkItem)
 
 
 /*********************************************************************************
@@ -46,21 +32,21 @@ Functions - Machine Creation
 // Initializes StateMachine attributes used for creating a machine of type InstanceOf
 //
 VOID
-SmfInitAttributes(
-__inout PSMF_MACHINE_ATTRIBUTES Attributes,
+PrtInitAttributes(
+__inout PPRT_MACHINE_ATTRIBUTES Attributes,
 __in PDEVICE_OBJECT				PDeviceObj,
-__in PSMF_DRIVERDECL			Driver,
-__in SMF_MACHINEDECL_INDEX		InstanceOf,
-__in PSMF_PACKED_VALUE			Arg,
+__in PPRT_DRIVERDECL			Driver,
+__in PRT_MACHINEDECL_INDEX		InstanceOf,
+__in PPRT_PACKED_VALUE			Arg,
 __in PVOID						PFrgnMem
 );
 #else
 VOID
-SmfInitAttributes(
-__inout PSMF_MACHINE_ATTRIBUTES Attributes,
-__in PSMF_DRIVERDECL			Driver,
-__in SMF_MACHINEDECL_INDEX		InstanceOf,
-__in PSMF_PACKED_VALUE			Arg,
+PrtInitAttributes(
+__inout PPRT_MACHINE_ATTRIBUTES Attributes,
+__in PPRT_DRIVERDECL			Driver,
+__in PRT_MACHINEDECL_INDEX		InstanceOf,
+__in PPRT_PACKED_VALUE			Arg,
 __in PVOID						PFrgnMem
 );
 #endif
@@ -68,9 +54,9 @@ __in PVOID						PFrgnMem
 //Creates a new State Machine of using Machine_Attributes and initializes PSmHandle to new Machine handle
 //
 NTSTATUS
-SmfCreate(
-__in PSMF_MACHINE_ATTRIBUTES	InitAttributes,
-__out PSMF_MACHINE_HANDLE		PSmHandle
+PrtCreate(
+__in PPRT_MACHINE_ATTRIBUTES	InitAttributes,
+__out PPRT_MACHINE_HANDLE		PSmHandle
 );
 
 /*********************************************************************************
@@ -84,16 +70,16 @@ Functions - Machine Interaction
 
 VOID
 SmfEnqueueEvent(
-__in SMF_MACHINE_HANDLE			Machine,
-__in SMF_EVENTDECL_INDEX		EventIndex,
-__in PSMF_PACKED_VALUE			Arg,
-__in BOOLEAN					UseWorkItem
+__in PRT_MACHINE_HANDLE			Machine,
+__in PRT_EVENTDECL_INDEX		EventIndex,
+__in PPRT_PACKED_VALUE			Arg,
+__in PRT_BOOLEAN					UseWorkItem
 );
 
 //
 // Get Foreign Memory Context for the State Machine
 //
-PSMF_EXCONTEXT
-SmfGetForeignContext(
-__in SMF_MACHINE_HANDLE SmHandle
+PPRT_EXCONTEXT
+PrtGetForeignContext(
+__in PRT_MACHINE_HANDLE SmHandle
 );

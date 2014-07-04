@@ -4,7 +4,7 @@ Copyright (c) Microsoft Corporation
 
 Module Name:
 
-SmfLogger.c
+PrtLogger.c
 
 Abstract:
 This module contains functions used by P runtime for logging runtime information
@@ -23,9 +23,9 @@ Kernel mode only.
 #include "PrtSMTrace.h"
 
 VOID
-SmfTraceStep(
-__in PSMF_SMCONTEXT Context,
-__in SMF_TRACE_STEP TStep,
+PrtTraceStep(
+__in PPRT_SMCONTEXT Context,
+__in PRT_TRACE_STEP TStep,
 ...
 )
 /*++
@@ -53,43 +53,43 @@ NONE (VOID)
 	switch (TStep)
 	{
 	case traceDelete:
-		TRACE_DELETE(Context->Driver->Machines[Context->InstanceOf].Name, SmfGetCurrentStateDecl(Context).Name);
+		TRACE_DELETE(Context->Program->Machines[Context->InstanceOf].Name, PrtGetCurrentStateDecl(Context).Name);
 		break;
 	case traceEnqueue:
-		TRACE_ENQUEUE(Context->Driver->Machines[Context->InstanceOf].Name, Context->This, Context->Driver->Events[Context->EventQueue.Events[Context->EventQueue.Tail == 0 ? (Context->CurrentLengthOfEventQueue - 1) : (Context->EventQueue.Tail - 1)].Event].Name, Context->EventQueue.Events[Context->EventQueue.Tail == 0 ? (Context->CurrentLengthOfEventQueue - 1) : (Context->EventQueue.Tail - 1)].Arg.Value);
+		TRACE_ENQUEUE(Context->Program->Machines[Context->InstanceOf].Name, Context->This, Context->Program->Events[Context->EventQueue.Events[Context->EventQueue.Tail == 0 ? (Context->CurrentLengthOfEventQueue - 1) : (Context->EventQueue.Tail - 1)].Event].Name, Context->EventQueue.Events[Context->EventQueue.Tail == 0 ? (Context->CurrentLengthOfEventQueue - 1) : (Context->EventQueue.Tail - 1)].Arg.Value);
 		break;
 	case traceDequeue:
-		TRACE_DEQUEUE(Context->Driver->Machines[Context->InstanceOf].Name, Context->This, Context->Driver->Events[Context->Trigger.Event].Name, Context->Trigger.Arg.Value);
+		TRACE_DEQUEUE(Context->Program->Machines[Context->InstanceOf].Name, Context->This, Context->Program->Events[Context->Trigger.Event].Name, Context->Trigger.Arg.Value);
 		break;
 	case traceStateChange:
-		TRACE_STATECHANGE(Context->Driver->Machines[Context->InstanceOf].Name, Context->This, SmfGetCurrentStateDecl(Context).Name);
+		TRACE_STATECHANGE(Context->Program->Machines[Context->InstanceOf].Name, Context->This, PrtGetCurrentStateDecl(Context).Name);
 		break;
 	case traceCreateMachine:
-		TRACE_CREATEMACHINE(Context->Driver->Machines[Context->InstanceOf].Name, Context->This);
+		TRACE_CREATEMACHINE(Context->Program->Machines[Context->InstanceOf].Name, Context->This);
 		break;
 	case traceRaiseEvent:
-		TRACE_RAISEEVENT(Context->Driver->Machines[Context->InstanceOf].Name, Context->This, Context->Driver->Events[Context->Trigger.Event].Name, Context->Trigger.Arg.Value);
+		TRACE_RAISEEVENT(Context->Program->Machines[Context->InstanceOf].Name, Context->This, Context->Program->Events[Context->Trigger.Event].Name, Context->Trigger.Arg.Value);
 		break;
 	case tracePop:
-		TRACE_POP(Context->Driver->Machines[Context->InstanceOf].Name, Context->This, SmfGetCurrentStateDecl(Context).Name);
+		TRACE_POP(Context->Program->Machines[Context->InstanceOf].Name, Context->This, PrtGetCurrentStateDecl(Context).Name);
 		break;
 	case traceCallStatement:
-		TRACE_CALLSTATEMENT(Context->Driver->Machines[Context->InstanceOf].Name, Context->This, SmfGetCurrentStateDecl(Context).Name);
+		TRACE_CALLSTATEMENT(Context->Program->Machines[Context->InstanceOf].Name, Context->This, PrtGetCurrentStateDecl(Context).Name);
 		break;
 	case traceCallEdge:
-		TRACE_CALLTRANSITION(Context->Driver->Machines[Context->InstanceOf].Name, Context->This, SmfGetCurrentStateDecl(Context).Name);
+		TRACE_CALLTRANSITION(Context->Program->Machines[Context->InstanceOf].Name, Context->This, PrtGetCurrentStateDecl(Context).Name);
 		break;
 	case traceUnhandledEvent:
-		TRACE_UNHANDLEDEVENT(Context->Driver->Machines[Context->InstanceOf].Name, Context->This, Context->Driver->Events[Context->Trigger.Event].Name, SmfGetCurrentStateDecl(Context).Name);
+		TRACE_UNHANDLEDEVENT(Context->Program->Machines[Context->InstanceOf].Name, Context->This, Context->Program->Events[Context->Trigger.Event].Name, PrtGetCurrentStateDecl(Context).Name);
 		break;
 	case traceActions:
-		TRACE_ACTIONS(Context->Driver->Machines[Context->InstanceOf].Name, Context->This, (PWSTR)(*(&TStep + 1)));
+		TRACE_ACTIONS(Context->Program->Machines[Context->InstanceOf].Name, Context->This, (PWSTR)(*(&TStep + 1)));
 		break;
 	case traceQueueResize:
-		TRACE_QUEUERESIZE(Context->Driver->Machines[Context->InstanceOf].Name, Context->This, Context->CurrentLengthOfEventQueue);
+		TRACE_QUEUERESIZE(Context->Program->Machines[Context->InstanceOf].Name, Context->This, Context->CurrentLengthOfEventQueue);
 		break;
 	case traceExit:
-		TRACE_EXIT(Context->Driver->Machines[Context->InstanceOf].Name, Context->This, SmfGetCurrentStateDecl(Context).Name);
+		TRACE_EXIT(Context->Program->Machines[Context->InstanceOf].Name, Context->This, PrtGetCurrentStateDecl(Context).Name);
 		break;
 	default:
 
@@ -98,9 +98,9 @@ NONE (VOID)
 }
 
 
-VOID SmfReportException(
-	__in SMF_EXCEPTIONS		Exception,
-	__in PSMF_SMCONTEXT		Machine
+VOID PrtReportException(
+	__in PRT_EXCEPTIONS		Exception,
+	__in PPRT_SMCONTEXT		Machine
 	)
 	/*++
 
@@ -122,10 +122,10 @@ VOID SmfReportException(
 
 	--*/
 {
-	TRACE_REPORTEXCEPTION(Machine->Driver->Machines[Machine->InstanceOf].Name, Machine->This, Exception);
+	TRACE_REPORTEXCEPTION(Machine->Program->Machines[Machine->InstanceOf].Name, Machine->This, Exception);
 }
 
-VOID SmfLogAssertionFailure(
+VOID PrtLogAssertionFailure(
 	const char* File,
 	ULONG Line,
 	const char* Msg

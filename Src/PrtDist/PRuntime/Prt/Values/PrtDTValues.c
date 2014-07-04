@@ -1,7 +1,6 @@
-#include "PrtValues.h"
+#include "PrtDTValues.h"
 
-/** Null Value passed to the Makevalue function for initializing values of event, machine, model to NULL */
-#define PRT_NULL_VALUE (INT_MAX - 1)
+
 
 /** Maximum load factor before hashtable is resized. */
 #define PRT_MAXHASHLOAD 0.75
@@ -273,7 +272,6 @@ PRT_VALUE* PrtMkDefaultValue(_In_ PRT_TYPE type)
 		seqVal->size = 0;
 		seqVal->capacity = 0;
 		seqVal->values = NULL;
-		seqVal->valuesSerialized = NULL;
 		retVal->valueUnion.seq = seqVal;
 		return retVal;
 	}

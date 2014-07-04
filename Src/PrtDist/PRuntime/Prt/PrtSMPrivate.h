@@ -4,7 +4,7 @@ Copyright (c) Microsoft Corporation
 
 File Name:
 
-SmfPrivate.h
+PrtSMPrivate.h
 
 Abstract:
 This header file contains declarations for functions used internally by P Runtime,
@@ -21,67 +21,8 @@ Kernel mode only.
 #include "PrtSMProtected.h"
 #include "PrtSMPublicTypes.h"
 #include "Config\PrtConfig.h"
-
-
-#if (PRT_PLAT == PRT_PLAT_WINKMDF)
-/*********************************************************************************
-
-Functions used for executing the state machine.
-
-*********************************************************************************/
-//
-//Service Worker Item in Worker Item Queue
-//
-IO_WORKITEM_ROUTINE_EX SmfRunStateMachineWorkItemNonBlocking;
-
-VOID
-SmfRunStateMachineWorkItemNonBlocking(
-_In_ PVOID IoObject,
-_In_opt_ PVOID Context,
-_In_ PIO_WORKITEM IoWorkItem
-);
-//
-//Enqueue the current statemachine execution onto the workerItem list
-//
-VOID
-SmfEnqueueStateMachineAsWorkerItemNonBlocking(
-__in PSMF_SMCONTEXT		Context
-);
-
-IO_WORKITEM_ROUTINE_EX SmfRunStateMachineWorkItemPassiveFlag;
-
-VOID
-SmfRunStateMachineWorkItemPassiveFlag(
-_In_ PVOID IoObject,
-_In_opt_ PVOID Context,
-_In_ PIO_WORKITEM IoWorkItem
-);
-//
-//Enqueue the current statemachine execution onto the workerItem list
-//
-VOID
-SmfEnqueueStateMachineAsWorkerItemPassiveFlag(
-__in PSMF_SMCONTEXT		Context
-);
-
-
-//
-//Check if the Entry Function Needs Passive Level Execution 
-//
-BOOLEAN
-SmfIsEntryFunRequiresPassiveLevel(
-__in PSMF_SMCONTEXT		Context
-);
-
-//
-//Check if the Exit Function Needs Passive Level Execution 
-//
-BOOLEAN
-SmfIsExitFunRequiresPassiveLevel(
-__in PSMF_SMCONTEXT		Context
-);
-
-#endif
+#include "Values\PrtDTTypes.h"
+#include "Values\PrtDTValues.h"
 
 //
 // Run the machine until no further work can be done.
@@ -92,26 +33,26 @@ _IRQL_requires_(DISPATCH_LEVEL)
 _Requires_lock_held_(Context->StateMachineLock)
 _Releases_lock_(Context->StateMachineLock)
 VOID
-SmfRunStateMachine(
+PrtRunStateMachine(
 __inout _At_(Context->Irql, _IRQL_restores_)
-PSMF_SMCONTEXT	    Context,
-__in BOOLEAN			DoEntryOrExit
+PPRT_SMCONTEXT	    context,
+__in PRT_BOOLEAN	doEntryOrExit
 );
 
+
 VOID
-SmfEnqueueEventInternal(
-__in SMF_MACHINE_HANDLE			Machine,
-__in SMF_EVENTDECL_INDEX		EventIndex,
-__in PSMF_PACKED_VALUE			Arg,
-__in BOOLEAN					UseWorkerItem
+PrtEnqueueEvent(
+__in PRT_MACHINE_HANDLE			machine,
+__in PRT_EVENTDECL_INDEX		eventIndex,
+__in PPRT_VALUE					payload,
 );
 
 //
 //Dequeue an event given the current state of the context
 //
-SMF_TRIGGER
-SmfDequeueEvent(
-__inout PSMF_SMCONTEXT	Context
+PRT_TRIGGER
+PrtDequeueEvent(
+__inout PPRT_SMCONTEXT	context
 );
 
 //
@@ -119,9 +60,9 @@ __inout PSMF_SMCONTEXT	Context
 // (may Pop state on an unhandled event exception)
 //
 VOID
-SmfTakeTransition(
-__inout PSMF_SMCONTEXT		Context,
-__in SMF_EVENTDECL_INDEX	EventIndex
+PrtTakeTransition(
+__inout PPRT_SMCONTEXT		context,
+__in PRT_EVENTDECL_INDEX	eventIndex
 );
 
 //
@@ -129,8 +70,8 @@ __in SMF_EVENTDECL_INDEX	EventIndex
 //and execute exit function .
 //
 VOID
-SmfTakeDefaultTransition(
-__inout PSMF_SMCONTEXT		Context
+PrtTakeDefaultTransition(
+__inout PPRT_SMCONTEXT		context
 );
 
 //
@@ -139,9 +80,9 @@ __inout PSMF_SMCONTEXT		Context
 // deferred list.
 //
 VOID
-SmfPushState(
-__inout PSMF_SMCONTEXT		Context,
-__in	BOOLEAN				isCallStatement
+PrtPushState(
+__inout PPRT_SMCONTEXT		context,
+__in	PRT_BOOLEAN			isCallStatement
 );
 
 //
@@ -149,9 +90,9 @@ __in	BOOLEAN				isCallStatement
 // its events from the Context's deferred list.
 //
 VOID
-SmfPopState(
-__inout PSMF_SMCONTEXT		Context,
-__in BOOLEAN				RestoreTrigger
+PrtPopState(
+__inout PPRT_SMCONTEXT		context,
+__in PRT_BOOLEAN			restoreTrigger
 );
 
 
@@ -165,8 +106,8 @@ Functions used for Life Time Management of the statemachine.
 //Remove State Machine Free all the memory allocated to this statemachine
 //
 VOID
-SmfRemoveMachine(
-__in PSMF_SMCONTEXT			Context
+PrtRemoveMachine(
+__in PPRT_SMCONTEXT			context
 );
 
 
@@ -179,18 +120,18 @@ Functions to get machine handles and pointers.
 //Get machine handle from machine Pointer
 //
 FORCEINLINE
-SMF_MACHINE_HANDLE
-SmfGetStateMachineHandle(
-__in PSMF_SMCONTEXT			Context
+PRT_MACHINE_HANDLE
+PrtGetStateMachineHandle(
+__in PPRT_SMCONTEXT			context
 );
 
 //
 //Get machine Pointer back from the machine Handle
 //
 FORCEINLINE
-PSMF_SMCONTEXT
-SmfGetStateMachinePointer(
-__in SMF_MACHINE_HANDLE				Handle
+PPRT_SMCONTEXT
+PrtGetStateMachinePointer(
+__in PRT_MACHINE_HANDLE				handle
 );
 
 
@@ -203,9 +144,9 @@ FORCEINLINE
 _Acquires_lock_(Context->StateMachineLock)
 _IRQL_raises_(DISPATCH_LEVEL)
 VOID
-SmfAcquireLock(
+PrtAcquireLock(
 _In_ _At_(Context->Irql, _IRQL_saves_)
-PSMF_SMCONTEXT	Context
+PPRT_SMCONTEXT	context
 );
 
 FORCEINLINE
@@ -213,15 +154,15 @@ _IRQL_requires_(DISPATCH_LEVEL)
 _Requires_lock_held_(Context->StateMachineLock)
 _Releases_lock_(Context->StateMachineLock)
 VOID
-SmfReleaseLock(
+PrtReleaseLock(
 _In_ _At_(Context->Irql, _IRQL_restores_)
-PSMF_SMCONTEXT	Context
+PPRT_SMCONTEXT	context
 );
 
 FORCEINLINE
 VOID
-SmfInitializeLock(
-PSMF_SMCONTEXT				Context
+PrtInitializeLock(
+PPRT_SMCONTEXT				context
 );
 
 
@@ -234,104 +175,102 @@ Helper Functions.
 //
 // Dynamically resize the queue
 //
-UCHAR
-SmfResizeEventQueue(
-__in PSMF_SMCONTEXT Context
+PRT_INT16
+PrtResizeEventQueue(
+__in PPRT_SMCONTEXT context
 );
 
 //
 //Check if the current events maxinstance exceeded
 //
-BOOLEAN
-SmfIsEventMaxInstanceExceeded(
-__in PSMF_EVENTQUEUE		Queue,
-__in SMF_EVENTDECL_INDEX	EventIndex,
-__in UINT16					MaxInstances,
-__in UINT16					QueueSize
+PRT_BOOLEAN
+PrtIsEventMaxInstanceExceeded(
+__in PPRT_EVENTQUEUE			queue,
+__in PRT_EVENTDECL_INDEX	eventIndex,
+__in PRT_UINT16					maxInstances,
+__in PRT_UINT16					queueSize
 );
 
 //
 // Check if the Current State has out-going After Transition
 //
 FORCEINLINE
-BOOLEAN
-SmfStateHasDefaultTransition(
-__in PSMF_SMCONTEXT			Context
+PRT_BOOLEAN
+PrtStateHasDefaultTransition(
+__in PPRT_SMCONTEXT			context
 );
 
 //
 // Get the Current State Decl
 //
 FORCEINLINE
-SMF_STATEDECL
-SmfGetCurrentStateDecl(
-__in PSMF_SMCONTEXT			Context
+PRT_STATEDECL
+PrtGetCurrentStateDecl(
+__in PPRT_SMCONTEXT			context
 );
 
 //
 // Check if the event is deferred in the current state
 //
 FORCEINLINE
-BOOLEAN
-SmfIsEventDeferred(
-__in SMF_EVENTDECL_INDEX	EventIndex,
-SMF_EVENTDECL_INDEX_PACKEDTABLE
-DefSet
+PRT_BOOLEAN
+PrtIsEventDeferred(
+__in PRT_EVENTDECL_INDEX	eventIndex,
+PRT_EVENTDECL_INDEX_PACKEDTABLE defSet
 );
 
 //
 // Check if the transition corresponding to event exits in the current state
 //
 FORCEINLINE
-BOOLEAN
-SmfIsTransitionPresent(
-__in SMF_EVENTDECL_INDEX	EventIndex,
-__in PSMF_SMCONTEXT			Context
+PRT_BOOLEAN
+PrtIsTransitionPresent(
+__in PRT_EVENTDECL_INDEX	eventIndex,
+__in PPRT_SMCONTEXT			context
 );
 
 
 FORCEINLINE
-BOOLEAN
-SmfIsActionInstalled(
-__in SMF_EVENTDECL_INDEX	EventIndex,
-SMF_ACTIONDECL_INDEX_PACKEDTABLE
-ActionSet
+PRT_BOOLEAN
+PrtIsActionInstalled(
+__in PRT_EVENTDECL_INDEX	eventIndex,
+PRT_ACTIONDECL_INDEX_PACKEDTABLE actionSet
 );
 
 //
 // Check if the Event Buffer is Empty
 //
 FORCEINLINE
-BOOLEAN
-SmfIsQueueEmpty(
-__in PSMF_EVENTQUEUE		Queue
+PRT_BOOLEAN
+PrtIsQueueEmpty(
+__in PPRT_EVENTQUEUE		queue
 );
 
 //
 // Gets the exit function of the current state
 //
 FORCEINLINE
-PSMF_EXITFUN
-SmfGetExitFunction(
-__in PSMF_SMCONTEXT			Context
+PPRT_EXITFUN
+PrtGetExitFunction(
+__in PPRT_SMCONTEXT		context
 );
 
 //
 // Gets the entry function of the current state
 //
 FORCEINLINE
-PSMF_ENTRYFUN
-SmfGetEntryFunction(
-__in PSMF_SMCONTEXT			Context
+PPRT_ENTRYFUN
+PrtGetEntryFunction(
+__in PPRT_SMCONTEXT		context
 );
 
 //
 // Gets the correct action function for the event
 //
 FORCEINLINE
-PSMF_ACTIONDECL
-SmfGetAction(
-__in PSMF_SMCONTEXT			Context
+PPRT_ACTIONDECL
+PrtGetAction(
+__in PPRT_SMCONTEXT			context
 );
 
 //
@@ -339,39 +278,39 @@ __in PSMF_SMCONTEXT			Context
 //
 
 FORCEINLINE
-SMF_ACTIONDECL_INDEX_PACKEDTABLE
-SmfGetActionsPacked(
-__in PSMF_SMCONTEXT			Context,
-__in SMF_STATEDECL_INDEX	StateIndex
+PRT_ACTIONDECL_INDEX_PACKEDTABLE
+PrtGetActionsPacked(
+__in PPRT_SMCONTEXT			context,
+__in PRT_STATEDECL_INDEX	stateIndex
 );
 
 //
 // Gets the packed deferred events of StateIndex
 //
 FORCEINLINE
-SMF_EVENTDECL_INDEX_PACKEDTABLE
-SmfGetDeferredPacked(
-__in PSMF_SMCONTEXT			Context,
-__in SMF_STATEDECL_INDEX	StateIndex
+PRT_EVENTDECL_INDEX_PACKEDTABLE
+PrtGetDeferredPacked(
+__in PPRT_SMCONTEXT			context,
+__in PRT_STATEDECL_INDEX	stateIndex
 );
 
 //
 // Gets the packed deferred events of StateIndex
 //
 FORCEINLINE
-SMF_TRANSDECL_TABLE
-SmfGetTransTable(
-__in PSMF_SMCONTEXT			Context,
-__in SMF_STATEDECL_INDEX	StateIndex,
-__out UINT16				*NTransitions);
+PRT_TRANSDECL_TABLE
+PrtGetTransTable(
+__in PPRT_SMCONTEXT			context,
+__in PRT_STATEDECL_INDEX	stateIndex,
+__out PPRT_UINT16			nTransitions);
 
 //
 // Gets the size of the Packed defered/action/transition set  
 //
 FORCEINLINE
-UINT16
-SmfGetPackSize(
-__in PSMF_SMCONTEXT			Context
+PRT_UINT16
+PrtGetPackSize(
+__in PPRT_SMCONTEXT			context
 );
 
 
@@ -379,20 +318,20 @@ __in PSMF_SMCONTEXT			Context
 // Update the Transition History 
 //
 FORCEINLINE
-VOID SmfUpdateTransitionHistory(
-__in PSMF_SMCONTEXT				Context,
-__in SMF_TRANSHISTORY_STEP		Step,
-__in SMF_EVENTDECL_INDEX		EventIndex,
-__in SMF_STATEDECL_INDEX		StateEntered
+VOID PrtUpdateTransitionHistory(
+__in PPRT_SMCONTEXT				context,
+__in PRT_TRANSHISTORY_STEP		step,
+__in PRT_EVENTDECL_INDEX		eventIndex,
+__in PRT_STATEDECL_INDEX		stateEntered
 );
 
 //
 // Check if the transition on event is a call transition
 //
-BOOLEAN
-SmfIsCallTransition(
-PSMF_SMCONTEXT			Context,
-SMF_EVENTDECL_INDEX		Event
+PRT_BOOLEAN
+PrtIsCallTransition(
+PPRT_SMCONTEXT			context,
+PRT_EVENTDECL_INDEX		event
 );
 
 
@@ -400,31 +339,31 @@ SMF_EVENTDECL_INDEX		Event
 // Create a clone of packed set
 //
 PVOID
-SmfClonePackedSet(
-PVOID					PackedSet,
-UINT					Size
+PrtClonePackedSet(
+PVOID					packedSet,
+UINT					size
 );
 
 //
 // Calculate Actions set for the current State 
 //
 VOID
-SmfUpdateCurrentActionsSet(
-PSMF_SMCONTEXT			Context
+PrtUpdateCurrentActionsSet(
+PPRT_SMCONTEXT			context
 );
 
 //
 // Calculate Deferred set for the current State
 //
 VOID
-SmfUpdateCurrentDeferredSet(
-PSMF_SMCONTEXT			Context
+PrtUpdateCurrentDeferredSet(
+PPRT_SMCONTEXT			context
 );
 
 //
 // Free the allocated memory of SMContext
 //
 VOID
-SmfFreeSMContext(
-PSMF_SMCONTEXT			Context
+PrtFreeSMContext(
+PPRT_SMCONTEXT			context
 );

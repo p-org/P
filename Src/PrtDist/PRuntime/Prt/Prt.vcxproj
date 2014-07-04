@@ -74,7 +74,6 @@
   <ItemGroup>
     <ClCompile Include="Config\PrtConfigWinDist.c" />
     <ClCompile Include="Config\PrtConfigWinUser.c" />
-    <ClCompile Include="Prt.c" />
     <ClCompile Include="PrtSMLogger.c" />
     <ClCompile Include="PrtSMRuntime.c" />
     <ClCompile Include="PrtSMTrace.c" />
@@ -86,8 +85,6 @@
     <ClInclude Include="Config\PrtConfigWinDist.h" />
     <ClInclude Include="Config\PrtConfigWinKMDF.h" />
     <ClInclude Include="Config\PrtConfigWinUser.h" />
-    <ClInclude Include="Prt.h" />
-    <ClInclude Include="PrtProgram.h" />
     <ClInclude Include="PrtSMLogger.h" />
     <ClInclude Include="PrtSMPrivate.h" />
     <ClInclude Include="PrtSMPrivateTypes.h" />

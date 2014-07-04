@@ -4,7 +4,7 @@ Copyright (c) Microsoft Corporation
 
 File Name:
 
-SmfLogger.h
+PrtLogger.h
 
 Abstract:
 This header file contains declarations for functions used for logging information
@@ -18,17 +18,17 @@ Kernel mode only.
 
 
 #pragma once
-#include "SmfDepends.h"
-#include "SmfPublicTypes.h"
+#include "Config\PrtConfig.h"
+#include "PrtSMPublicTypes.h"
 
 
 //
 // Trace P Step
 //
 VOID
-SmfTraceStep(
-__in PSMF_SMCONTEXT Context,
-__in SMF_TRACE_STEP TStep,
+PrtTraceStep(
+__in PPRT_SMCONTEXT context,
+__in PRT_TRACE_STEP tStep,
 ...
 );
 
@@ -37,17 +37,17 @@ __in SMF_TRACE_STEP TStep,
 //
 
 VOID
-SmfReportException(
-__in SMF_EXCEPTIONS		ExC,
-__in PSMF_SMCONTEXT		Machine
+PrtReportException(
+__in PRT_EXCEPTIONS		exception,
+__in PPRT_SMCONTEXT		machine
 );
 
 //
 // Log an Assertion Failure
 //
-VOID SmfLogAssertionFailure(
-	const char* File,
-	ULONG Line,
-	const char* Msg
-	);
+VOID PrtLogAssertionFailure(
+	PRT_CSTRING file,
+	PRT_INT32 line,
+	PRT_CSTRING msg
+);
 

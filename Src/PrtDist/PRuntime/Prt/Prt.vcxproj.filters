@@ -30,9 +30,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Prt.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Config\PrtConfigWinDist.c">
       <Filter>Source Files\Config</Filter>
     </ClCompile>
@@ -56,12 +53,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Prt.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PrtProgram.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Config\PrtConfig.h">
       <Filter>Header Files\Config</Filter>
     </ClInclude>

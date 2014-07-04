@@ -5,105 +5,105 @@
 
 
 VOID
-SmfTraceExit(
-__in PCWSTR		MachineName,
-__in ULONG_PTR	MachineId,
-__in PCWSTR		StateExited
+PrtTraceExit(
+__in PRT_STRING		MachineName,
+__in ULONG_PTR		MachineId,
+__in PRT_STRING		StateExited
 );
 
-VOID SmfTraceQueueResize(
-	__in PCWSTR		MachineName,
-	__in ULONG_PTR	MachineId,
+VOID PrtTraceQueueResize(
+	__in PRT_STRING		MachineName,
+	__in ULONG_PTR		MachineId,
 	__in UCHAR newQueueSize);
 
 VOID
-SmfTraceEnqueue(
-__in PCWSTR		DesMachineName,
+PrtTraceEnqueue(
+__in PRT_STRING		DesMachineName,
 __in ULONG_PTR	DesMachineId,
-__in PCWSTR		EventName,
+__in PRT_STRING		EventName,
 __in ULONG_PTR	Payload
 );
 
 VOID
-SmfTraceDelete(
-__in PCWSTR DeletedMachineName,
-__in PCWSTR InState
+PrtTraceDelete(
+__in PRT_STRING DeletedMachineName,
+__in PRT_STRING InState
 );
 
 VOID
-SmfTraceDequeue(
-__in PCWSTR		MachineName,
+PrtTraceDequeue(
+__in PRT_STRING		MachineName,
 __in ULONG_PTR	MachineId,
-__in PCWSTR		EventName,
+__in PRT_STRING		EventName,
 __in ULONG_PTR	Payload
 );
 
 VOID
-SmfTraceStateChange(
-__in PCWSTR		MachineName,
+PrtTraceStateChange(
+__in PRT_STRING		MachineName,
 __in ULONG_PTR	MachineId,
-__in PCWSTR		NewStateEntered
+__in PRT_STRING		NewStateEntered
 );
 
 VOID
-SmfTraceRaiseEvent(
-__in PCWSTR		MachineName,
+PrtTraceRaiseEvent(
+__in PRT_STRING		MachineName,
 __in ULONG_PTR	MachineId,
-__in PCWSTR		EventRaised,
+__in PRT_STRING		EventRaised,
 __in ULONG_PTR	Payload
 );
 
 VOID
-SmfTraceCreateMachine(
-__in PCWSTR		MachineName,
+PrtTraceCreateMachine(
+__in PRT_STRING		MachineName,
 __in ULONG_PTR	MachineId
 );
 
 VOID
-SmfTracePop(
-__in PCWSTR		MachineName,
+PrtTracePop(
+__in PRT_STRING		MachineName,
 __in ULONG_PTR	MachineId,
-__in PCWSTR		EnteredState
+__in PRT_STRING		EnteredState
 );
 
 VOID
-SmfTraceCallStatement(
-__in PCWSTR		MachineName,
+PrtTraceCallStatement(
+__in PRT_STRING		MachineName,
 __in ULONG_PTR	MachineId,
-__in PCWSTR		CallState
+__in PRT_STRING		CallState
 );
 
 VOID
-SmfTraceCallTransition(
-__in PCWSTR		MachineName,
+PrtTraceCallTransition(
+__in PRT_STRING		MachineName,
 __in ULONG_PTR	MachineId,
-__in PCWSTR		CallState
+__in PRT_STRING		CallState
 );
 
 VOID
-SmfTraceActions(
-__in PCWSTR		MachineName,
+PrtTraceActions(
+__in PRT_STRING		MachineName,
 __in ULONG_PTR	MachineId,
-__in PCWSTR		ActionName
+__in PRT_STRING		ActionName
 );
 
 VOID
-SmfTraceUnhandledEvent(
-__in PCWSTR		DesMachineName,
+PrtTraceUnhandledEvent(
+__in PRT_STRING		DesMachineName,
 __in ULONG_PTR	DesMachineId,
-__in PCWSTR		EventName,
-__in PCWSTR	EnteredState
+__in PRT_STRING		EventName,
+__in PRT_STRING	EnteredState
 );
 
 VOID
-SmfTraceReportException(
-__in PCWSTR		MachineName,
+PrtTraceReportException(
+__in PRT_STRING		MachineName,
 __in ULONG_PTR	MachineId,
-__in SMF_EXCEPTIONS		Exception
+__in PRT_EXCEPTIONS		Exception
 );
 
 VOID
-SmfTraceAssertionFailure(
+PrtTraceAssertionFailure(
 __in const char*	MachineName,
 __in ULONG		MachineId,
 __in const char*	Msg

@@ -1,5 +1,5 @@
-#include"SmfTrace.h"
-#include "SmfProtected.h"
+#include"PrtSMTrace.h"
+#include "PrtSMProtected.h"
 
 VOID
 SmfTraceExit(
@@ -258,7 +258,7 @@ VOID
 SmfTraceReportException(
 __in PCWSTR		MachineName,
 __in ULONG_PTR	MachineId,
-__in SMF_EXCEPTIONS		Exception
+__in PRT_EXCEPTIONS		Exception
 )
 {
 	//
@@ -333,54 +333,54 @@ __in SMF_EXCEPTIONS		Exception
 			"<EXCEPTION> Machine %ws(0x%lu) : Unhandled Event Exception\n",
 			MachineName,
 			MachineId);
-		SMF_ASSERT(FALSE);
+		PRT_ASSERT(FALSE);
 		break;
 	case UnfinishedEvents:
 		printf(
 			"<EXCEPTION> Machine %ws(0x%lu) : UnfinishedEvents Exception\n",
 			MachineName,
 			MachineId);
-		SMF_ASSERT(FALSE);
+		PRT_ASSERT(FALSE);
 		break;
 	case IllegalAccess:
 		printf(
 			"<EXCEPTION> Machine %ws(0x%lu) : IllegalAccess Exception\n",
 			MachineName,
 			MachineId);
-		SMF_ASSERT(FALSE);
+		PRT_ASSERT(FALSE);
 		break;
 	case MaxInstanceExceeded:
 		printf(
 			"<EXCEPTION> Machine %ws(0x%lu) : MaxInstance of Event Exceeded Exception\n",
 			MachineName,
 			MachineId);
-		SMF_ASSERT(FALSE);
+		PRT_ASSERT(FALSE);
 		break;
 	case FailedToAllocateMemory:
 		printf(
 			"<EXCEPTION> Failed to allocate memory Exception\n");
-		SMF_ASSERT(FALSE);
+		PRT_ASSERT(FALSE);
 		break;
 	case UnhandledEventInCallS:
 		printf(
 			"<EXCEPTION> Call Statement terminated with an unhandled event in Machine %ws(0x%lu)\n",
 			MachineName,
 			MachineId);
-		SMF_ASSERT(FALSE);
+		PRT_ASSERT(FALSE);
 		break;
 	case MaxQueueSizeExceeded:
 		printf(
 			"<EXCEPTION> Queue Size Exceeded Max Limits in Machine %ws(0x%lu)\n",
 			MachineName,
 			MachineId);
-		SMF_ASSERT(FALSE);
+		PRT_ASSERT(FALSE);
 		break;
 	default:
 		printf(
 			"<EXCEPTION> Machine %ws(0x%lu) : Unknown Exception\n",
 			MachineName,
 			MachineId);
-		SMF_ASSERT(FALSE);
+		PRT_ASSERT(FALSE);
 		break;
 	}
 

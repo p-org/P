@@ -4,7 +4,7 @@ Copyright (c) Microsoft Corporation
 
 File Name:
 
-SmfProtectedTypes.h
+PrtProtectedTypes.h
 
 Abstract:
 This header file contains Type declarations of protected nature,
@@ -20,7 +20,7 @@ Kernel mode only.
 #pragma once
 #include "PrtSMPublicTypes.h"
 #include "Config\PrtConfig.h"
-
+#define MAX_INSTANCES_NIL INT_MAX
 /*********************************************************************************
 
 Reserved Constants
@@ -29,66 +29,66 @@ Reserved Constants
 //
 //Reserved Events 
 //
-enum _SMF_RESERVED_EVENT
+enum _PRT_RESERVED_EVENT
 {
-	SmfResEventStart = LONG_MAX,
+	PrtResEventStart = LONG_MAX,
 	//
 	// If Trigger points to this value then the transition taken was a Default transition
 	//
-	SmfDefaultEvent = LONG_MAX - 1
+	PrtDefaultEvent = LONG_MAX - 1
 };
 
 //
 //Reserved States
 //
-enum _SMF_RESERVED_STATE
+enum _PRT_RESERVED_STATE
 {
-	SmfResStateStart = LONG_MAX
+	PrtResStateStart = LONG_MAX
 };
 
 //
 // To specify where to return in entry or exit functions
 //
-enum _SMF_RETURNTO
+enum _PRT_RETURNTO
 {
 	//
 	// If ReturnTo points to this value then the call was a call edge/transition
 	// and control should return to dequeue
 	//
-	SmfEntryFunEnd = INT_MAX,
+	PrtEntryFunEnd = INT_MAX,
 	//
 	// If ReturnTo points to this value then the call returns to the start of Entry Function
 	//
-	SmfEntryFunStart = 0,
+	PrtEntryFunStart = 0,
 	//
 	// If ReturnTo points to this value then the call returnds to the start of Exit function
 	//
-	SmfExitFunStart = 0,
+	PrtExitFunStart = 0,
 
 	//
 	// If ReturnTo points to this value then the call returns to the start of Action
 	//
-	SmfActionFunStart = 0
+	PrtActionFunStart = 0
 };
 
 //
 // To indicate whether to execute entry or exit function
 //
-enum _SMF_STATE_EXECFUN
+enum _PRT_STATE_EXECFUN
 {
 	//
 	// If StateExecFun points to StateEntry, then we should execute the entry function for this state
 	//
-	SmfStateEntry,
+	PrtStateEntry,
 	//
 	// If StateExecFun points to StateExit, then we should execute the exit function for this state
 	//
-	SmfStateExit,
+	PrtStateExit,
 
 	//
 	// If StateExecFun points to StateAction, then we should execute the action corresponding to trigger event for the current state
 	//
-	SmfStateAction
+	PrtStateAction
 	//
 	// None of the above just execute the dequeue function
 	//
@@ -96,32 +96,12 @@ enum _SMF_STATE_EXECFUN
 
 /*********************************************************************************
 
-Type Name : SMF_LASTOPERATION
-
-Description :
-Enum for State Runtime Flags
-*********************************************************************************/
-enum _SMF_RUNTIMEFLAG
-{
-	SmfNoFlag = 0x00,
-	//
-	// Runtime state flag to indicate that the entry function of the state should 
-	// be executed at passive level
-	SmfEntryFunPassiveLevel = 0x01,
-	//
-	// Runtime state flag to indicate that the exit function of the state should 
-	// be executed at passive level
-	SmfExitFunPassiveLevel = 0x02
-};
-
-/*********************************************************************************
-
-Type Name : SMF_LASTOPERATION
+Type Name : PRT_LASTOPERATION
 
 Description :
 Enum for last P operation performed inside entry/exit function
 *********************************************************************************/
-enum _SMF_LASTOPERATION
+enum _PRT_LASTOPERATION
 {
 	PopStatement,
 	RaiseStatement,
@@ -129,48 +109,17 @@ enum _SMF_LASTOPERATION
 	OtherStatement
 };
 
+
+
 /*********************************************************************************
 
-Type Name : SMF_TRANSHISTORY_STEP
+Type Name : PRT_TRANSHISTORY_STEP
 
 Description :
 Enum for specifying the type of step taken by the state-machine,
 this is used for storing the transition history
 *********************************************************************************/
-typedef enum _SMF_TRANSHISTORY_STEP
-{
-	//
-	// Executed Transition on Event (not-call Transition) (raise or dequeue)
-	//
-	onEvent,
-	//
-	// Executed Call Statement
-	//
-	onCallS,
-	//
-	// Executed Pop Statement
-	//
-	onPop,
-	// 
-	// Executed Transition on Event + Call Edge
-	//
-	onCallE,
-	//
-	// Unhandled Event caused pop
-	//
-	onUnhandledEvent
-};
-
-
-/*********************************************************************************
-
-Type Name : SMF_TRANSHISTORY_STEP
-
-Description :
-Enum for specifying the type of step taken by the state-machine,
-this is used for storing the transition history
-*********************************************************************************/
-typedef enum _SMF_TRACE_STEP
+typedef enum _PRT_TRACE_STEP
 {
 	//
 	// Trace enqueue of an event
@@ -243,17 +192,17 @@ Macros Constants
 //
 // Max call stack depth of each machine
 //
-#define SMF_MAX_CALL_DEPTH 16 
+#define PRT_MAX_CALL_DEPTH 16 
 
 //
 // Max Transition History Depth for each machine
 //
-#define SMF_MAX_HISTORY_DEPTH 64
+#define PRT_MAX_HISTORY_DEPTH 64
 
 //
 // Max length of the event queue for each machine
 //
-#define SMF_QUEUE_LEN_DEFAULT 16
+#define PRT_QUEUE_LEN_DEFAULT 16
 
 
 
@@ -263,7 +212,7 @@ Modifiable Version of Packed Set
 
 *********************************************************************************/
 
-typedef ULONG32 *PSMF_EVENTDECL_INDEX_PACKEDTABLE;
+typedef ULONG32 *PPRT_EVENTDECL_INDEX_PACKEDTABLE;
 
 /*********************************************************************************
 
@@ -273,32 +222,32 @@ Struct Declarations
 //
 // Trigger tuple <event, arg>
 //
-typedef struct _SMF_TRIGGER SMF_TRIGGER, *PSMF_TRIGGER;
+typedef struct _PRT_TRIGGER PRT_TRIGGER, *PPRT_TRIGGER;
 
 //
 // Structure for Statemachine Context
 //
-typedef struct _SMF_SMCONTEXT SMF_SMCONTEXT, *PSMF_SMCONTEXT;
+typedef struct _PRT_SMCONTEXT PRT_SMCONTEXT, *PPRT_SMCONTEXT;
 
 //
 // Event Buffer 
 //
-typedef struct _SMF_EVENTQUEUE SMF_EVENTQUEUE, *PSMF_EVENTQUEUE;
+typedef struct _PRT_EVENTQUEUE PRT_EVENTQUEUE, *PPRT_EVENTQUEUE;
 
 //
 // Call Stack Element for each statemachine tuple <state, Event, Arg, ReturnTo>
 //
-typedef struct _SMF_STACKSTATE_INFO SMF_STACKSTATE_INFO, *PSMF_STACKSTATE_INFO;
+typedef struct _PRT_STACKSTATE_INFO PRT_STACKSTATE_INFO, *PPRT_STACKSTATE_INFO;
 
 //
 // Call Stack for each state-machine
 //
-typedef struct _SMF_STATESTACK SMF_STATESTACK, *PSMF_STATESTACK;
+typedef struct _PRT_STATESTACK PRT_STATESTACK, *PPRT_STATESTACK;
 
 //
 // Transition Properties
 //
-typedef struct _SMF_TRANSHISTORY SMF_TRANSHISTORY;
+typedef struct _PRT_TRANSHISTORY PRT_TRANSHISTORY;
 
 /*********************************************************************************
 
@@ -308,12 +257,12 @@ Indexes and Counter
 //
 // Index into the Transition Table
 //
-typedef UCHAR SMF_TRANSHISTORY_INDEX;
+typedef UCHAR PRT_TRANSHISTORY_INDEX;
 
 //
 //Machine Reference Count for maintainting references
 //
-typedef LONG32 SMF_MACHINEREFCOUNT;
+typedef LONG32 PRT_MACHINEREFCOUNT;
 
 /*********************************************************************************
 
@@ -323,42 +272,42 @@ Enum Declarations
 //
 //Reserved Events Enum
 //
-typedef enum _SMF_RESERVED_EVENT SMF_RESERVED_EVENT;
+typedef enum _PRT_RESERVED_EVENT PRT_RESERVED_EVENT;
 
 //
 //Reserved States
 //
-typedef enum _SMF_RESERVED_STATE SMF_RESERVED_STATE;
+typedef enum _PRT_RESERVED_STATE PRT_RESERVED_STATE;
 
 //
 //Reserved Machines
 //
-typedef enum _SMF_RESERVED_MACHINE SMF_RESERVED_MACHINE;
+typedef enum _PRT_RESERVED_MACHINE PRT_RESERVED_MACHINE;
 
 //
 //Last Operation Performed in entry function
 //
-typedef enum _SMF_LASTOPERATION SMF_LASTOPERATION;
+typedef enum _PRT_LASTOPERATION PRT_LASTOPERATION;
 
 //
 // Enum type to identify the type of Step taken by statemachine
 //
-typedef enum _SMF_TRANSHISTORY_STEP SMF_TRANSHISTORY_STEP;
+typedef enum _PRT_TRANSHISTORY_STEP PRT_TRANSHISTORY_STEP;
 
 //
 // Enum type to identify the type of Step taken by statemachine
 //
-typedef enum _SMF_TRACE_STEP SMF_TRACE_STEP;
+typedef enum _PRT_TRACE_STEP PRT_TRACE_STEP;
 
 //
 // Enum type to specify where the control should return after returning from a call statement
 //
-typedef enum _SMF_RETURNTO SMF_RETURNTO;
+typedef enum _PRT_RETURNTO PRT_RETURNTO;
 
 //
 // Enum type to specify if RunMachine() should execute current state entry or exit function
 //
-typedef enum _SMF_STATE_EXECFUN SMF_STATE_EXECFUN;
+typedef enum _PRT_STATE_EXECFUN PRT_STATE_EXECFUN;
 
 /*********************************************************************************
 
@@ -369,30 +318,30 @@ Abstract Function types
 //State Entry Functions
 //Function type used by all state machines for entry functions                                                     
 //
-typedef VOID(SMF_ENTRYFUN)(__inout PSMF_SMCONTEXT Context);
-typedef SMF_ENTRYFUN *PSMF_ENTRYFUN;
+typedef VOID(PRT_ENTRYFUN)(__inout PPRT_SMCONTEXT Context);
+typedef PRT_ENTRYFUN *PPRT_ENTRYFUN;
 
 //
 //Function type used by all state machines for constructors
 //
-typedef VOID(SMF_CONSTRUCTORFUN)(__in PVOID ConstructorParam, __inout PSMF_EXCONTEXT exContext);
-typedef SMF_CONSTRUCTORFUN *PSMF_CONSTRUCTFUN;
+typedef VOID(PRT_CONSTRUCTORFUN)(__in PVOID ConstructorParam, __inout PPRT_EXCONTEXT exContext);
+typedef PRT_CONSTRUCTORFUN *PPRT_CONSTRUCTFUN;
 
 //
 //Function type used by all state machines for exit functions                                                     
 //
-typedef VOID(SMF_EXITFUN)(__inout PSMF_SMCONTEXT Context);
-typedef SMF_EXITFUN *PSMF_EXITFUN;
+typedef VOID(PRT_EXITFUN)(__inout PPRT_SMCONTEXT Context);
+typedef PRT_EXITFUN *PPRT_EXITFUN;
 
 //
 //Function type used by all state machines for exit functions                                                     
 //
-typedef VOID(SMF_ACTIONFUN)(__inout PSMF_SMCONTEXT Context);
-typedef SMF_ACTIONFUN *PSMF_ACTIONFUN;
+typedef VOID(PRT_ACTIONFUN)(__inout PPRT_SMCONTEXT Context);
+typedef PRT_ACTIONFUN *PPRT_ACTIONFUN;
 
 /*********************************************************************************
 
-Type Name : SMF_TRIGGER
+Type Name : PRT_TRIGGER
 
 Description :
 Structure to store Trigger value for a state-machine,
@@ -409,16 +358,16 @@ Arg Value corresponding to Event
 
 *********************************************************************************/
 
-struct _SMF_TRIGGER
+struct _PRT_TRIGGER
 {
-	SMF_EVENTDECL_INDEX Event;
-	SMF_PACKED_VALUE Arg;
+	PPRT_VALUE Event;
+	PPRT_VALUE Payload;
 };
 
 
 /*********************************************************************************
 
-Type Name : SMF_EVENTQUEUE
+Type Name : PRT_EVENTQUEUE
 
 Description :
 Structure for Event buffer for a state-machine,
@@ -440,18 +389,18 @@ IsFull --
 <FALSE> -- if event queue is not full
 
 *********************************************************************************/
-struct _SMF_EVENTQUEUE
+struct _PRT_EVENTQUEUE
 {
-	PSMF_TRIGGER Events;
-	UINT16 Head;
-	UINT16 Tail;
-	UINT16 Size;
-	BOOLEAN IsFull;
+	PPRT_TRIGGER Events;
+	PRT_UINT16 Head;
+	PRT_UINT16 Tail;
+	PRT_UINT16 Size;
+	PRT_BOOLEAN IsFull;
 };
 
 /*********************************************************************************
 
-Type Name : SMF_TRANSHISTORY
+Type Name : PRT_TRANSHISTORY
 
 Description :
 Structure for Transition History Element for storing transition history of
@@ -470,16 +419,16 @@ If the state change was caused by an event, OnEvent points to that event.
 
 *********************************************************************************/
 
-struct _SMF_TRANSHISTORY
+struct _PRT_TRANSHISTORY
 {
-	SMF_STATEDECL_INDEX StateEntered;
-	SMF_TRANSHISTORY_STEP OnStep;
-	SMF_EVENTDECL_INDEX OnEvent;
+	PRT_STATEDECL_INDEX StateEntered;
+	PRT_TRANSHISTORY_STEP OnStep;
+	PRT_EVENTDECL_INDEX OnEvent;
 };
 
 /*********************************************************************************
 
-Type Name : SMF_STACKSTATE_INFO
+Type Name : PRT_STACKSTATE_INFO
 
 Description :
 Structure for Call Stack Element, storing State information on stack because
@@ -501,19 +450,19 @@ To store whether the call statement was executed from entry function or exit fun
 of the current state.
 *********************************************************************************/
 
-struct _SMF_STACKSTATE_INFO
+struct _PRT_STACKSTATE_INFO
 {
-	SMF_STATEDECL_INDEX StateIndex;
-	SMF_TRIGGER Trigger;
-	UINT16 ReturnTo;
-	SMF_STATE_EXECFUN StateExecFun;
-	SMF_EVENTDECL_INDEX_PACKEDTABLE InheritedDef;
-	SMF_ACTIONDECL_INDEX_PACKEDTABLE InheritedAct;
+	PRT_STATEDECL_INDEX StateIndex;
+	PRT_TRIGGER Trigger;
+	PRT_UINT16 ReturnTo;
+	PRT_STATE_EXECFUN StateExecFun;
+	PRT_EVENTDECL_INDEX_PACKEDTABLE InheritedDef;
+	PRT_ACTIONDECL_INDEX_PACKEDTABLE InheritedAct;
 };
 
 /*********************************************************************************
 
-Type Name : SMF_STATESTACK
+Type Name : PRT_STATESTACK
 
 Description :
 Structure for Call Stack of a statemachine to push state-info on a call statement or
@@ -523,30 +472,21 @@ Fields :
 
 StatesStack --
 Array of State-Info for implementing call-stack, size of the call stack is fixed to
-SMF_MAX_CALL_DEPTH
+PRT_MAX_CALL_DEPTH
 
 Length --
 Length/depth of the call-stack
 *********************************************************************************/
 
-struct _SMF_STATESTACK
+struct _PRT_STATESTACK
 {
-	SMF_STACKSTATE_INFO StatesStack[SMF_MAX_CALL_DEPTH];
-	UINT16 Length;
+	PRT_STACKSTATE_INFO StatesStack[PRT_MAX_CALL_DEPTH];
+	PRT_UINT16 Length;
 };
-
-#ifdef DISTRIBUTED_RUNTIME
-struct _SMF_SMCONTEXT_REMOTE {
-	RPC_WSTR Address;
-	RPC_WSTR Port;
-	handle_t RPCHandle;
-};
-typedef struct _SMF_SMCONTEXT_REMOTE SMF_SMCONTEXT_REMOTE, *PSMF_SMCONTEXT_REMOTE;
-#endif
 
 /*********************************************************************************
 
-Type Name : SMF_SMCONTEXT
+Type Name : PRT_SMCONTEXT
 
 Description :
 Structure for storing the state-machine context, it stores all the information
@@ -556,7 +496,7 @@ Fields :
 
 TransitionHistory --
 Stores the history of steps taken by the statemachine, size of the history
-is fixed to SMF_MAX_HISTORY_DEPTH and stores only the latest SMF_MAX_HISTORY_DEPTH
+is fixed to PRT_MAX_HISTORY_DEPTH and stores only the latest PRT_MAX_HISTORY_DEPTH
 steps taken by the state machine
 
 TransHistoryIndex --
@@ -583,10 +523,10 @@ State machine handle
 
 Trigger --
 Stores the Trigger value for the current state of the state-machine
-Look at SMF_TRIGGER for more details
+Look at PRT_TRIGGER for more details
 
 StateExecFun --
-To indicate whether the SmfRunStateMachine() function should execute state entry or
+To indicate whether the PrtRunStateMachine() function should execute state entry or
 exit function for the current state.
 
 ReturnTo --
@@ -604,7 +544,7 @@ EventQueue --
 Event Buffer/Queue for the current state machine (FIFO Queue)
 
 MaxLengthOfEventQueue --
-Max. length of the circular event queue, by default is set to SMF_MAX_QUEUE_LEN_DEFAULT
+Max. length of the circular event queue, by default is set to PRT_MAX_QUEUE_LEN_DEFAULT
 can be overridden in Machine_Decl
 
 Deferred --
@@ -632,53 +572,36 @@ Worker Item for executing state-machine at passive level.
 
 *********************************************************************************/
 
-//size of the history is fixed to SMF_MAX_HISTORY_DEPTH and stores
-//	only the latest SMF_MAX_HISTORY_DEPTH steps taken by the state machine
-struct _SMF_SMCONTEXT
+//size of the history is fixed to PRT_MAX_HISTORY_DEPTH and stores
+//	only the latest PRT_MAX_HISTORY_DEPTH steps taken by the state machine
+struct _PRT_SMCONTEXT
 {
-#ifdef DISTRIBUTED_RUNTIME
-	RPC_WSTR Address;
-	RPC_WSTR Port;
-#endif
-	SMF_TRANSHISTORY TransitionHistory[SMF_MAX_HISTORY_DEPTH];
-	SMF_TRANSHISTORY_INDEX TransHistoryIndex;
-
 	ULONG StateMachineSignature;
-	PSMF_DRIVERDECL Driver;
-	SMF_MACHINEDECL_INDEX InstanceOf;
-	SMF_VARVALUE_TABLE Values;
-	SMF_STATEDECL_INDEX CurrentState;
-	SMF_MACHINE_HANDLE This;
-	SMF_TRIGGER Trigger;
+	PPRT_PROGRAMDECL Program;
+	PRT_MACHINEDECL_INDEX InstanceOf;
+	PRT_VARVALUE_TABLE Values;
+	PRT_STATEDECL_INDEX CurrentState;
+	PRT_MACHINE_HANDLE This;
+	PRT_TRIGGER Trigger;
 
 
-	UINT16 ReturnTo;
-	SMF_STATE_EXECFUN StateExecFun;
+	PRT_UINT16 ReturnTo;
+	PRT_STATE_EXECFUN StateExecFun;
 
-	BOOLEAN IsRunning;
-	SMF_STATESTACK CallStack;
-	SMF_EVENTQUEUE EventQueue;
-	UCHAR CurrentLengthOfEventQueue;
-	PSMF_EVENTDECL_INDEX_PACKEDTABLE InheritedDeferred;
-	PSMF_EVENTDECL_INDEX_PACKEDTABLE CurrentDeferred;
+	PRT_BOOLEAN IsRunning;
+	PRT_STATESTACK CallStack;
+	PRT_EVENTQUEUE EventQueue;
+	PRT_UINT8 CurrentLengthOfEventQueue;
+	PPRT_EVENTDECL_INDEX_PACKEDTABLE InheritedDeferred;
+	PPRT_EVENTDECL_INDEX_PACKEDTABLE CurrentDeferred;
 
-	SMF_ACTIONDECL_INDEX_PACKEDTABLE InheritedActions;
-	SMF_ACTIONDECL_INDEX_PACKEDTABLE CurrentActions;
+	PRT_ACTIONDECL_INDEX_PACKEDTABLE InheritedActions;
+	PRT_ACTIONDECL_INDEX_PACKEDTABLE CurrentActions;
 
-	SMF_LASTOPERATION LastOperation;
+	PRT_LASTOPERATION LastOperation;
 
-	PSMF_EXCONTEXT ExtContext;
+	PPRT_EXCONTEXT ExtContext;
+	PRT_RECURSIVE_MUTEX StateMachineLock;
 
-	SMF_MACHINEREFCOUNT RefCount;
-
-#ifdef KERNEL_MODE
-	KSPIN_LOCK StateMachineLock;
-	KIRQL Irql;
-	PDEVICE_OBJECT PDeviceObj;
-
-	PIO_WORKITEM SmWorkItem;
-#else
-	SRWLOCK StateMachineLock;
-#endif
 };
 

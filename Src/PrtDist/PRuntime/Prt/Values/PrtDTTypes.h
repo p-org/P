@@ -64,11 +64,11 @@ enum _PRT_TYPE_KIND
 struct _PRT_TYPE {
 	PRT_TYPE_KIND typeKind;
 	union {
-		PPRT_MAPTYPE map;			/**< MAP type		*/
-		PPRT_NMDTUPTYPE nmTuple;	/**< Named Tuple type		*/
-		PPRT_SEQTYPE seq;			/**< Sequence type		*/
-		PPRT_TUPTYPE tuple;			/**< Tuple type		*/
-		PPRT_FORGNTYPE forgn;		/**< Foreign type		*/
+		PRT_MAPTYPE *map;			/**< MAP type		*/
+		PRT_NMDTUPTYPE *nmTuple;	/**< Named Tuple type		*/
+		PRT_SEQTYPE *seq;			/**< Sequence type		*/
+		PRT_TUPTYPE *tuple;			/**< Tuple type		*/
+		PRT_FORGNTYPE *forgn;		/**< Foreign type		*/
 	} typeUnion;
 };
 
@@ -89,8 +89,8 @@ struct _PRT_MAPTYPE
 struct _PRT_NMDTUPTYPE
 {
 	PRT_UINT32    arity;         /**< Arity of tuple type; arity > 0 */
-	PPRT_STRING   fieldNames;   /**< Array of valid field names; length = arity */
-	PPRT_TYPE     fieldTypes;   /**< Array of field types; length = arity */
+	PRT_STRING   *fieldNames;   /**< Array of valid field names; length = arity */
+	PRT_TYPE     *fieldTypes;   /**< Array of field types; length = arity */
 };
 
 /** 
@@ -109,7 +109,7 @@ struct _PRT_SEQTYPE
 struct _PRT_TUPTYPE
 {
 	PRT_UINT32    arity;         /**< Arity of tuple type; arity > 0 */
-	PPRT_TYPE     fieldTypes;   /**< Array of field types; length = arity */
+	PRT_TYPE     *fieldTypes;   /**< Array of field types; length = arity */
 };
 
 

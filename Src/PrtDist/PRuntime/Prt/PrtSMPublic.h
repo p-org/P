@@ -22,41 +22,15 @@ Kernel mode only.
 
 
 
-/*********************************************************************************
-
-Functions - Machine Creation
-
-*********************************************************************************/
-#ifdef KERNEL_MODE
-//
-// Initializes StateMachine attributes used for creating a machine of type InstanceOf
-//
-VOID
-PrtInitAttributes(
-__inout PPRT_MACHINE_ATTRIBUTES Attributes,
-__in PDEVICE_OBJECT				PDeviceObj,
-__in PPRT_DRIVERDECL			Driver,
-__in PRT_MACHINEDECL_INDEX		InstanceOf,
-__in PPRT_PACKED_VALUE			Arg,
-__in PVOID						PFrgnMem
-);
-#else
-VOID
-PrtInitAttributes(
-__inout PPRT_MACHINE_ATTRIBUTES Attributes,
-__in PPRT_DRIVERDECL			Driver,
-__in PRT_MACHINEDECL_INDEX		InstanceOf,
-__in PPRT_PACKED_VALUE			Arg,
-__in PVOID						PFrgnMem
-);
-#endif
 //
 //Creates a new State Machine of using Machine_Attributes and initializes PSmHandle to new Machine handle
 //
-NTSTATUS
+PRT_STATUS
 PrtCreate(
-__in PPRT_MACHINE_ATTRIBUTES	InitAttributes,
-__out PPRT_MACHINE_HANDLE		PSmHandle
+__in  PRT_PROGRAMDECL			*program,
+__in  PRT_UINT32				instanceOf,
+__in  PRT_VALUE					*payload,
+__out PRT_MACHINE_HANDLE		*pSmHandle
 );
 
 /*********************************************************************************
@@ -64,22 +38,17 @@ __out PPRT_MACHINE_HANDLE		PSmHandle
 Functions - Machine Interaction
 
 *********************************************************************************/
-//
-// Enqueue Event on to the State Machine
-//
-
 VOID
-SmfEnqueueEvent(
-__in PRT_MACHINE_HANDLE			Machine,
-__in PRT_EVENTDECL_INDEX		EventIndex,
-__in PPRT_PACKED_VALUE			Arg,
-__in PRT_BOOLEAN					UseWorkItem
+PrtEnqueueEvent(
+__in PRT_MACHINE_HANDLE			machine,
+__in PRT_VALUE					*event,
+__in PRT_VALUE					*payload
 );
 
 //
 // Get Foreign Memory Context for the State Machine
 //
-PPRT_EXCONTEXT
+PRT_EXCONTEXT*
 PrtGetForeignContext(
-__in PRT_MACHINE_HANDLE SmHandle
+__in PRT_MACHINE_HANDLE smHandle
 );

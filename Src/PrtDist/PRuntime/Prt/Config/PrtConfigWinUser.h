@@ -58,31 +58,33 @@ typedef enum PRT_BOOLEAN
 	PRT_TRUE = 1    /**< 1 means true  */
 } PRT_BOOLEAN, *PPRT_BOOLEAN;
 
+/** PRT_STATUS is the status of the operation performed */
+typedef PRT_BOOLEAN PRT_STATUS;
 
 /** PRT_UINT8 is always an 8-bit unsigned integer. */
-typedef unsigned __int8  PRT_UINT8, *PPRT_UINT8;
+typedef unsigned __int8  PRT_UINT8;
 /** PRT_UINT16 is always a 16-bit unsigned integer. */
-typedef unsigned __int16 PRT_UINT16, *PPRT_UINT16;
+typedef unsigned __int16 PRT_UINT16;
 /** PRT_UINT32 is always a 32-bit unsigned integer. */
-typedef unsigned __int32 PRT_UINT32, *PPRT_UINT32;
+typedef unsigned __int32 PRT_UINT32;
 /** PRT_UINT64 is always a 64-bit unsigned integer. */
-typedef unsigned __int64 PRT_UINT64, *PPRT_UINT64;
+typedef unsigned __int64 PRT_UINT64;
 
 /** PRT_INT8 is always an 8-bit signed integer. */
-typedef signed __int8  PRT_INT8, *PPRT_INT8;
+typedef signed __int8  PRT_INT8;
 /** PRT_INT16 is always a 16-bit signed integer. */
-typedef signed __int16 PRT_INT16, *PPRT_INT16;
+typedef signed __int16 PRT_INT16;
 /** PRT_INT32 is always a 32-bit signed integer. */
-typedef signed __int32 PRT_INT32, *PPRT_INT32;
+typedef signed __int32 PRT_INT32;
 /** PRT_INT64 is always a 64-bit signed integer. */
-typedef signed __int64 PRT_INT64, *PPRT_INT64;
+typedef signed __int64 PRT_INT64;
 
 /** PRT_CHAR is always an ASCII character. */
-typedef char PRT_CHAR, *PPRT_CHAR;
+typedef char PRT_CHAR;
 /** PRT_STRING is always an array of ASCII characters. */
-typedef char * PRT_STRING, *PPRT_STRING;
+typedef char * PRT_STRING;
 /** PRT_CSTRING is always a constant array of ASCII characters. */
-typedef char const * PRT_CSTRING, *PPRT_CSTRING;
+typedef char const * PRT_CSTRING;
 
 
 

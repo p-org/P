@@ -21,13 +21,13 @@ Kernel mode only.
 #include "Config\PrtConfig.h"
 
 
-
 //
 //Creates a new State Machine of using Machine_Attributes and initializes PSmHandle to new Machine handle
 //
 PRT_STATUS
 PrtCreate(
 __in  PRT_PROGRAMDECL			*program,
+__in  PRT_PROCESS				*process,
 __in  PRT_UINT32				instanceOf,
 __in  PRT_VALUE					*payload,
 __out PRT_MACHINE_HANDLE		*pSmHandle

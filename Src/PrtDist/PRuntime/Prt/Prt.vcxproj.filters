@@ -45,6 +45,9 @@
     <ClCompile Include="PrtSMRuntime.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PrtProcess.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config\PrtConfig.h">
@@ -85,6 +88,9 @@
     </ClInclude>
     <ClInclude Include="PrtSMTypeDefs.h">
       <Filter>Header Files\PrtSM</Filter>
+    </ClInclude>
+    <ClInclude Include="PrtProcess.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -146,6 +146,25 @@ __in PRT_MACHINE_HANDLE				handle
 Helper Functions.
 
 *********************************************************************************/
+//
+// Call Exception handler
+//
+VOID
+PrtExceptionHandler(
+__in PRT_EXCEPTIONS ex,
+__in PRT_SMCONTEXT *context
+);
+
+
+//
+// Call external logging call back
+//
+VOID
+PrtLog(
+__in PRT_STEP step,
+__in PRT_SMCONTEXT *context
+);
+
 
 //
 // Dynamically resize the queue

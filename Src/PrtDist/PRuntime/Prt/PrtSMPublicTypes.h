@@ -21,6 +21,7 @@ Kernel mode only.
 #include "Values\PrtDTTypes.h"
 #include "Values\PrtDTValues.h"
 #include "PrtSMTypeDefs.h"
+#include "PrtProcess.h"
 
 
 /*********************************************************************************
@@ -44,6 +45,73 @@ Enum Types Declarations
 // Exceptions Thrown by Runtime
 //
 typedef enum _PRT_EXCEPTIONS PRT_EXCEPTIONS;
+
+typedef enum _PRT_STEP PRT_STEP;
+
+enum _PRT_STEP
+{
+	//
+	// Trace enqueue of an event
+	//
+	traceEnqueue,
+	//
+	// Trace dequeue of an event
+	//
+	traceDequeue,
+	//
+	// Trace State Change (entry into a new state)
+	//
+	traceStateChange,
+
+	//
+	// Trace creation of a new state-machine
+	//
+	traceCreateMachine,
+
+	//
+	// Trace raise of an event
+	//
+	traceRaiseEvent,
+
+	//
+	// Trace Pop from a state
+	//
+	tracePop,
+
+	//
+	// Trace Call Statement
+	//
+	traceCallStatement,
+
+	//
+	// Trace Call Edge
+	//
+	traceCallEdge,
+
+	// 
+	// Trace Unhandled Event causing Pop
+	//
+	traceUnhandledEvent,
+
+	//
+	// Trace actions 
+	//
+	traceActions,
+
+	//
+	// Trace Queue Resize
+	//
+	traceQueueResize,
+
+	//
+	// trace Exit Function
+	//
+	traceExit,
+	//
+	// trace deletion of a machine
+	//
+	traceDelete
+};
 
 struct _PRT_EXCONTEXT
 {
@@ -182,13 +250,9 @@ enum _PRT_EXCEPTIONS
 	//
 	UnhandledEvent,
 	//
-	// P runtime tried to delete a state-machine with non-empty event queue
+	// Tried to enqueue on halted statemachine, statemachine no-longer exists
 	//
-	UnfinishedEvents,
-	//
-	// Tried to access an illegal statemachine, statemachine no-longer exists
-	//
-	IllegalAccess,
+	EnqueueOnHaltedMachine,
 	//
 	// Tried to enqueue an event twice more than max instances
 	//
@@ -197,12 +261,10 @@ enum _PRT_EXCEPTIONS
 	// Failed to allocate memory on creation of a state-machine
 	//
 	FailedToAllocateMemory,
-
 	//
 	// Call Statement should not terminate with an unhandled event
 	//
 	UnhandledEventInCallS,
-
 	//
 	// Max Queue size exceeded
 	//

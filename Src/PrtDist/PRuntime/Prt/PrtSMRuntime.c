@@ -31,6 +31,7 @@ Public Functions
 PRT_STATUS
 PrtCreate(
 __in  PRT_PROGRAMDECL			*program,
+__in  PRT_PROCESS				*process,
 __in  PRT_UINT32				instanceOf,
 __in  PRT_VALUE					*payload,
 __out PRT_MACHINE_HANDLE		*pSmHandle
@@ -92,6 +93,7 @@ STATUS_INSUFFICIENT_RESOURCES = If failed to allocate memory
 	// Initialize Machine Identity
 	//
 	context->program = program;
+	context->parentProcess = process;
 	context->instanceOf = instanceOf;
 
 	//
@@ -239,7 +241,9 @@ STATUS_INSUFFICIENT_RESOURCES = If failed to allocate memory
 	//
 	PrtRunStateMachine(context, TRUE);
 
-
+	//
+	//add it to the process allMachines log
+	PrtProcessAddMachine(context);
 	return TRUE;
 }
 
@@ -393,13 +397,14 @@ NONE (VOID)
 
 
 	eventIndex = PrtPrimGetEvent(event);
-	PRT_ASSERTMSG("Enqueued Event Cannot be a NULL event", PrtIsNullValue(event));
-	PRT_ASSERTMSG("Enqueued Event Cannot be a DEFAULT event", eventIndex != PrtDefaultEvent);
+	PrtAssert(PrtIsNullValue(event), "Enqueued Event Cannot be a NULL event");
+	PrtAssert(eventIndex != PrtDefaultEvent, "Enqueued Event Cannot be a DEFAULT event");
 	
 	//check if the machine is still alive or halted
 	if (context->isHalted)
 	{
 		//drop the event silently
+		PrtExceptionHandler(EnqueueOnHaltedMachine, context);
 		return;
 	}
 
@@ -410,7 +415,7 @@ NONE (VOID)
 	if (context->eventQueue.size == context->program->machines[context->instanceOf].maxQueueSize)
 	{
 		PrtUnlockMutex(context->stateMachineLock);
-		PrtAssert(PRT_FALSE, "Fix Me");
+		PrtExceptionHandler(MaxQueueSizeExceeded, context);
 		return;
 	}
 
@@ -429,7 +434,7 @@ NONE (VOID)
 		//  Check if event is occuring more than maxinstances
 		//
 		PrtUnlockMutex(context->stateMachineLock);
-		PrtAssert(PRT_FALSE, "Fix Me");
+		PrtExceptionHandler(MaxInstanceExceeded, context);
 		return;
 
 	}
@@ -803,7 +808,7 @@ DoEntryOrExitOrActionFunction:
 		{
 		case RaiseStatement:
 		case PopStatement:
-			PRT_ASSERTMSG("Pop or Raise is not allowed inside Exit Function", FALSE);
+			PrtAssert(PRT_FALSE, "Pop or Raise is not allowed inside Exit Function");
 			break;
 		case CallStatement:
 			context->stateExecFun = PrtStateEntry;
@@ -1126,7 +1131,7 @@ __in PRT_UINT32				eventIndex
 		else
 		{
 			//Exception
-			PrtAssert(FALSE, "FixMe");
+			PrtExceptionHandler(UnhandledEvent, context);
 			return;
 		}
 	}
@@ -1209,7 +1214,7 @@ __in	PRT_BOOLEAN			isCallStatement
 	currActions = PrtGetActionsPacked(context, context->currentState);
 	currTransitions = PrtGetTransitionsPacked(context, context->currentState);
 
-	PRT_ASSERTMSG("Call Stack Overflow", length < PRT_MAX_CALL_DEPTH);
+	PrtAssert(length < PRT_MAX_CALL_DEPTH, "Call Stack Overflow");
 	//
 	// push <state, trigger, arg, ReturnTo, StateExecFun, defSet, ActSet>
 	//
@@ -1267,7 +1272,7 @@ __in PRT_BOOLEAN			restoreTrigger
 	packSize = PrtGetPackSize(context);
 	length = context->callStack.length;
 
-	PRT_ASSERTMSG("PopState Called on Empty Stack", length > 0);
+	PrtAssert(length > 0, "PopState Called on Empty Stack");
 
 	context->callStack.length = length - 1;
 	poppedState = context->callStack.statesStack[length - 1];
@@ -1311,15 +1316,14 @@ __in PRT_BOOLEAN			restoreTrigger
 		// If the popped state is ExitFunction then its an error
 		// there is an unhandled event in exit function
 		//
-		PRT_ASSERTMSG("Unhandled Event in Exit Function", poppedState.StateExecFun == PrtStateEntry || poppedState.StateExecFun == PrtStateAction);
+		PrtAssert(poppedState.stateExecFun == PrtStateEntry || poppedState.stateExecFun == PrtStateAction, "Unhandled Event in Exit Function");
 
 		//
 		// assert that we are popping back because of an call-edge and not because of a call statement (implicit pop)
 		//
 		if (poppedState.returnTo != PrtEntryFunEnd)
 		{
-			//PrtReportException(UnhandledEventInCallS, context);
-			PrtAssert(FALSE, "FixMe");
+			PrtExceptionHandler(UnhandledEventInCallS, context);
 		}
 
 		//check if there is a push transition defined for the unhandled event
@@ -1593,7 +1597,7 @@ __in PRT_SMCONTEXT		*context
 	}
 
 
-	PRT_ASSERT(actionDecl != NULL);
+	PrtAssert(actionDecl != NULL, "Action cannot be NULL");
 	return actionDecl;
 }
 
@@ -1946,5 +1950,23 @@ __in PRT_MACHINE_HANDLE SmHandle
 
 	context = PrtGetStateMachinePointer(SmHandle);
 	return context->extContext;
+}
+
+VOID
+PrtExceptionHandler(
+__in PRT_EXCEPTIONS ex,
+__in PRT_SMCONTEXT *context
+)
+{
+	context->parentProcess->exceptionHandler(ex, context);
+}
+
+VOID
+PrtLog(
+__in PRT_STEP step,
+__in PRT_SMCONTEXT *context
+)
+{
+	context->parentProcess->log(step, context);
 }
 

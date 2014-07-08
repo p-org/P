@@ -22,6 +22,7 @@ Kernel mode only.
 #include "Values\PrtDTTypes.h"
 #include "Values\PrtDTValues.h"
 #include "Config\PrtConfig.h"
+#include "PrtProcess.h"
 
 #define MAX_INSTANCES_NIL INT_MAX
 /*********************************************************************************
@@ -343,6 +344,7 @@ Worker Item for executing state-machine at passive level.
 //	only the latest PRT_MAX_HISTORY_DEPTH steps taken by the state machine
 struct _PRT_SMCONTEXT
 {
+	PRT_PROCESS			*parentProcess;
 	PRT_PROGRAMDECL		*program;
 	PRT_UINT32			instanceOf;
 	PRT_VALUE			**values;

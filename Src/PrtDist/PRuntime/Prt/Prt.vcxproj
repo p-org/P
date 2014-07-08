@@ -74,6 +74,7 @@
   <ItemGroup>
     <ClCompile Include="Config\PrtConfigWinDist.c" />
     <ClCompile Include="Config\PrtConfigWinUser.c" />
+    <ClCompile Include="PrtProcess.c" />
     <ClCompile Include="PrtSMRuntime.c" />
     <ClCompile Include="Values\PrtDTTypes.c" />
     <ClCompile Include="Values\PrtDTValues.c" />
@@ -83,6 +84,7 @@
     <ClInclude Include="Config\PrtConfigWinDist.h" />
     <ClInclude Include="Config\PrtConfigWinKMDF.h" />
     <ClInclude Include="Config\PrtConfigWinUser.h" />
+    <ClInclude Include="PrtProcess.h" />
     <ClInclude Include="PrtSMPrivate.h" />
     <ClInclude Include="PrtSMProtected.h" />
     <ClInclude Include="PrtSMProtectedTypes.h" />

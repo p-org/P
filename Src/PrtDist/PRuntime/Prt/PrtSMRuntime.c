@@ -101,6 +101,7 @@ STATUS_INSUFFICIENT_RESOURCES = If failed to allocate memory
 	context->this = PrtGetStateMachineHandle(context);
 	*pSmHandle = PrtGetStateMachineHandle(context);
 	context->isRunning = FALSE;
+	context->isHalted = FALSE;
 	context->lastOperation = OtherStatement;
 
 	context->trigger.event = PrtMkNullValue();
@@ -247,7 +248,7 @@ PRT_BOOLEAN
 PrtIsEventMaxInstanceExceeded(
 __in PRT_EVENTQUEUE			*queue,
 __in PRT_UINT32				eventIndex,
-__in PRT_UINT16				maxInstances,
+__in PRT_UINT32				maxInstances,
 __in PRT_UINT16				queueSize
 )
 /*++
@@ -378,7 +379,7 @@ NONE (VOID)
 	PRT_SMCONTEXT *context;
 	PRT_EVENTQUEUE *queue;
 	PRT_UINT32 tail;
-	PRT_UINT16 currMaxInstance;
+	PRT_UINT32 currMaxInstance;
 	PRT_INT16 newQueueSize;
 	PRT_UINT32 eventIndex;
 	//
@@ -395,7 +396,13 @@ NONE (VOID)
 	PRT_ASSERTMSG("Enqueued Event Cannot be a NULL event", PrtIsNullValue(event));
 	PRT_ASSERTMSG("Enqueued Event Cannot be a DEFAULT event", eventIndex != PrtDefaultEvent);
 	
-	//TODO Fix this with the correct value of maxInstance for the event
+	//check if the machine is still alive or halted
+	if (context->isHalted)
+	{
+		//drop the event silently
+		return;
+	}
+
 	currMaxInstance = context->program->events[eventIndex].eventMaxInstances;
 	
 	PrtLockMutex(context->stateMachineLock);
@@ -1006,6 +1013,13 @@ DoTakeTransition:
 		//
 		PrtTakeTransition(context, PrtPrimGetEvent(context->trigger.event));
 
+		//
+		// If the machine is halted because of halt event then return
+		//
+		if (context->isHalted)
+			return;
+
+
 		goto DoEntryOrExitOrActionFunction;
 
 	}
@@ -1023,7 +1037,7 @@ __inout PRT_SMCONTEXT		*context
 	// Declarations
 	//
 	ULONG i;
-	UINT16 nTransitions;
+	PRT_UINT32 nTransitions;
 	PRT_TRANSDECL* transTable;
 
 	//
@@ -1069,7 +1083,7 @@ __in PRT_UINT32				eventIndex
 	// Declarations
 	//
 	PRT_UINT32 i;
-	PRT_UINT16 nTransitions;
+	PRT_UINT32 nTransitions;
 	PRT_TRANSDECL* transTable;
 
 	//
@@ -1104,18 +1118,70 @@ __in PRT_UINT32				eventIndex
 	}
 	else
 	{
-		if (PrtPrimGetEvent(context->trigger.event) == PrtDeleteEvent) 
+		if (PrtPrimGetEvent(context->trigger.event) == PrtHaltEvent) 
 		{
-			PrtAssert(FALSE, "FixMe");
+			PrtHaltMachine(context);
+			return;
 		}
 		else
 		{
 			//Exception
 			PrtAssert(FALSE, "FixMe");
+			return;
 		}
 	}
 
 	return;
+}
+
+VOID
+PrtHaltMachine(
+__inout PRT_SMCONTEXT			*context
+)
+{
+	if (context->currentActionsSetCompact != NULL)
+	{
+		PrtFree(context->currentActionsSetCompact);
+	}
+
+	if (context->currentDeferredSetCompact != NULL)
+	{
+		PrtFree(context->currentDeferredSetCompact);
+	}
+
+	if (context->eventQueue.events != NULL)
+	{
+		PrtFree(context->eventQueue.events);
+	}
+
+	if (context->extContext != NULL)
+	{
+		PrtFree(context->extContext);
+	}
+
+	if (context->inheritedActionsSetCompact != NULL)
+	{
+		PrtFree(context->inheritedActionsSetCompact);
+	}
+
+	if (context->inheritedDeferredSetCompact != NULL)
+	{
+		PrtFree(context->inheritedDeferredSetCompact);
+	}
+
+	if (context->values != NULL)
+	{
+		UINT i;
+		PRT_MACHINEDECL *mdecl = &(context->program->machines[context->instanceOf]);
+
+		for (i = 0; i < mdecl->nVars; i++) {
+			PrtFreeValue(context->values[i]);
+		}
+		PrtFree(context->values);
+	}
+
+	context->isHalted = TRUE;
+
 }
 
 VOID
@@ -1574,7 +1640,7 @@ PRT_TRANSDECL_TABLE
 PrtGetTransTable(
 __in PRT_SMCONTEXT			*context,
 __in PRT_UINT32				stateIndex,
-__out PRT_UINT16			*nTransitions
+__out PRT_UINT32			*nTransitions
 )
 {
 	*nTransitions = context->program->machines[context->instanceOf].states[stateIndex].nTransitions;
@@ -1653,8 +1719,8 @@ PRT_UINT32				event
 	//
 	// Declarations
 	//
-	ULONG i;
-	UINT16 nTransitions;
+	PRT_UINT16 i;
+	PRT_UINT32 nTransitions;
 	PRT_TRANSDECL* transTable;
 	PRT_BOOLEAN isCallTransition;
 
@@ -1771,9 +1837,9 @@ PrtResizeEventQueue(
 __in PRT_SMCONTEXT *context
 )
 {
-	PRT_INT16 maxEventQueueSize = context->program->machines[context->instanceOf].maxQueueSize;
+	PRT_INT32 maxEventQueueSize = context->program->machines[context->instanceOf].maxQueueSize;
 	PRT_INT16 currEventQueueSize = context->currentLengthOfEventQueue;
-	PRT_INT8 newQueueSize = context->currentLengthOfEventQueue * 2 > maxEventQueueSize ? maxEventQueueSize : context->currentLengthOfEventQueue * 2;
+	PRT_INT32 newQueueSize = context->currentLengthOfEventQueue * 2 > maxEventQueueSize ? maxEventQueueSize : context->currentLengthOfEventQueue * 2;
 	PRT_TRIGGER* oldQueue = context->eventQueue.events;
 	PRT_INT16 oldHead = context->eventQueue.headIndex;
 	PRT_INT16 oldTail = context->eventQueue.tailIndex;
@@ -1812,7 +1878,7 @@ __in PRT_SMCONTEXT *context
 	context->eventQueue.size = newTail - newHead;
 	context->eventQueue.tailIndex = newTail;
 	context->eventQueue.isFull = FALSE;
-	context->currentLengthOfEventQueue = newQueueSize;
+	context->currentLengthOfEventQueue = (PRT_UINT8)newQueueSize;
 
 	//Release the older Queue
 	PrtFree(oldQueue);

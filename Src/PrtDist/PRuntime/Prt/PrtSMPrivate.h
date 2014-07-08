@@ -162,7 +162,7 @@ PRT_BOOLEAN
 PrtIsEventMaxInstanceExceeded(
 __in PRT_EVENTQUEUE			*queue,
 __in PRT_UINT32				eventIndex,
-__in PRT_UINT16				maxInstances,
+__in PRT_UINT32				maxInstances,
 __in PRT_UINT16				queueSize
 );
 
@@ -284,7 +284,7 @@ PRT_TRANSDECL_TABLE
 PrtGetTransTable(
 __in PRT_SMCONTEXT			*context,
 __in PRT_UINT32				stateIndex,
-__out PRT_UINT16			*nTransitions
+__out PRT_UINT32			*nTransitions
 );
 
 //

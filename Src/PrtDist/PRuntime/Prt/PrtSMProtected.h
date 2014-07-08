@@ -71,19 +71,9 @@ __in PRT_UINT32				stateIndex
 //
 // Execute New Statement
 //
-PRT_MACHINE_HANDLE
-PrtNew(
-__in PRT_PROGRAMDECL			*programDecl,
-__inout PRT_SMCONTEXT			*context,
-__in PRT_UINT32					instanceOf,
-__in PRT_VALUE					*payload
+VOID
+PrtHaltMachine(
+__inout PRT_SMCONTEXT			*context
 );
 
-//
-// Delete the current state-machine
-//
-VOID
-PrtDelete(
-PRT_SMCONTEXT				*context
-);
 

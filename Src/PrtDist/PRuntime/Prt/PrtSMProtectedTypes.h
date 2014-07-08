@@ -42,7 +42,7 @@ enum _PRT_RESERVED_EVENT
 	//
 	// Special delete event
 	//
-	PrtDeleteEvent = 0
+	PrtHaltEvent = 0
 };
 
 //
@@ -355,6 +355,7 @@ struct _PRT_SMCONTEXT
 	PRT_STATE_EXECFUN	stateExecFun;
 
 	PRT_BOOLEAN			isRunning;
+	PRT_BOOLEAN			isHalted;
 	PRT_STATESTACK		callStack;
 	PRT_EVENTQUEUE		eventQueue;
 	PRT_UINT8			currentLengthOfEventQueue;

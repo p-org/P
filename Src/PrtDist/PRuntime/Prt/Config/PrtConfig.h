@@ -63,7 +63,7 @@
 * Sets the target platform. Default is `PRT_PLAT_WINUSER`
 */
 #ifndef PRT_PLAT
-#define PRT_PLAT PRT_PLAT_WINUSER
+#define PRT_PLAT PRT_PLAT_WINDIST
 #endif
 
 /**

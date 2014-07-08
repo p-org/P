@@ -52,9 +52,8 @@
 
 #include"../../PrtDistributedIDL/PrtDistributed.h"
 
-
-/** PRT_HANDLE is always a type s.t. sizeof(PRT_HANDLE) >= sizeof(void*). */
-typedef PVOID PRT_HANDLE;
+/** PRT_STATUS is the status of the operation performed */
+typedef PRT_BOOLEAN PRT_STATUS;
 
 /** PRT_RECURSIVE_MUTEX identifies a recursive mutex. */
 typedef HANDLE PRT_RECURSIVE_MUTEX;

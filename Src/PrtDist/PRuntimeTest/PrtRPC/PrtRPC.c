@@ -1,7 +1,7 @@
 
 #include "../PrtCmd/PrtCmdPrinting.h"
-#include"../../PRuntime/Prt/Values/PrtTypes.h"
-#include"../../PRuntime/Prt/Values/PrtValues.h"
+#include"../../PRuntime/Prt/Values/PrtDTTypes.h"
+#include"../../PRuntime/Prt/Values/PrtDTValues.h"
 #include<pthread.h>
 #include"../../PRuntime/PrtDistributedIDL/PrtDistributed_s.c"
 

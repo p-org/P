@@ -92,5 +92,8 @@
     <ClInclude Include="PrtProcess.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PrtHeaders.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

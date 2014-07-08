@@ -108,9 +108,9 @@ enum _PRT_STEP
 	//
 	traceExit,
 	//
-	// trace deletion of a machine
+	// trace Halting of a machine
 	//
-	traceDelete
+	traceHalt
 };
 
 struct _PRT_EXCONTEXT

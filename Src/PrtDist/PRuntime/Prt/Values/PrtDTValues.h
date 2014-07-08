@@ -88,6 +88,8 @@ struct _PRT_MAPNODE
 	PRT_MAPNODE *insertPrev;   /**< The previous node in insertion order. */
 };
 
+#else
+extern const PRT_UINT32 PrtHashtableCapacities[];
 #endif
 /** Makes a default value of an abitrary type. The defaults (def) are as follows:
 * 1.  def(any)                 = `null : id`.

@@ -84,6 +84,7 @@
     <ClInclude Include="Config\PrtConfigWinDist.h" />
     <ClInclude Include="Config\PrtConfigWinKMDF.h" />
     <ClInclude Include="Config\PrtConfigWinUser.h" />
+    <ClInclude Include="PrtHeaders.h" />
     <ClInclude Include="PrtProcess.h" />
     <ClInclude Include="PrtSMPrivate.h" />
     <ClInclude Include="PrtSMProtected.h" />
@@ -94,6 +95,11 @@
     <ClInclude Include="Values\PrtDTTypeDefs.h" />
     <ClInclude Include="Values\PrtDTTypes.h" />
     <ClInclude Include="Values\PrtDTValues.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PrtDistributedIDL\PrtDistributedIDL.vcxproj">
+      <Project>{262d986b-9c2b-4f03-a1e4-c1c4a3ec9834}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

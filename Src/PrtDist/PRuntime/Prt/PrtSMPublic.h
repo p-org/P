@@ -26,8 +26,7 @@ Kernel mode only.
 //
 PRT_STATUS
 PrtCreate(
-__in  PRT_PROGRAMDECL			*program,
-__in  PRT_PROCESS				*process,
+__in  PRT_PPROCESS				*process,
 __in  PRT_UINT32				instanceOf,
 __in  PRT_VALUE					*payload,
 __out PRT_MACHINE_HANDLE		*pSmHandle

@@ -11,15 +11,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F8A5BB72-9666-45CC-81CC-97A978B81DA2}</ProjectGuid>
-    <RootNamespace>PrtRPC</RootNamespace>
+    <ProjectGuid>{2AB7385E-A8A6-42F3-9A65-1566E23031B6}</ProjectGuid>
+    <RootNamespace>PrtDistributed</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
-    <CharacterSet>NotSet</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -38,19 +38,20 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>..\..\Lib\</OutDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Workspace\plang\Src\PrtDist\PrtDistributedIDL;C:\Workspace\plang\Src\PrtDist\Prt\Values;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>IGNORE_FRG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>PrtDistributed.lib;Prt.lib;pthreadVC2.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../Lib/</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Prt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -68,14 +69,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\PrtCmd\PrtCmdPrinting.c" />
-    <ClCompile Include="PrtRPC.c" />
-    <ClCompile Include="TestRPC.c" />
+    <ClInclude Include="PrtDistExternalHandlers.h" />
+    <ClInclude Include="PrtDistHeaders.h" />
+    <ClInclude Include="PrtDistSerializer.h" />
+    <ClInclude Include="PrtDistToString.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\PrtCmd\PrtCmd.h" />
-    <ClInclude Include="..\PrtCmd\PrtCmdPrinting.h" />
-    <ClInclude Include="PrtRPC.h" />
+    <ClCompile Include="PrtDistExternalHandlers.c" />
+    <ClCompile Include="PrtDistSerializer.c" />
+    <ClCompile Include="PrtDistToString.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

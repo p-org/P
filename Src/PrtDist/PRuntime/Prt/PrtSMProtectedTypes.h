@@ -344,7 +344,7 @@ Worker Item for executing state-machine at passive level.
 //	only the latest PRT_MAX_HISTORY_DEPTH steps taken by the state machine
 struct _PRT_SMCONTEXT
 {
-	PRT_PROCESS			*parentProcess;
+	PRT_PPROCESS		*parentProcess;
 	PRT_PROGRAMDECL		*program;
 	PRT_UINT32			instanceOf;
 	PRT_VALUE			**values;

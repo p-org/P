@@ -16,11 +16,8 @@ Kernel mode only.
 
 ***********************************************************************************/
 
-#include "PrtSMPrivate.h"
-#include "Config\PrtConfig.h"
-#include "Values\PrtDTTypes.h"
-#include "Values\PrtDTValues.h"
-#include "PrtSMPublicTypes.h"
+
+#include "PrtHeaders.h"
 
 /*********************************************************************************
 
@@ -30,8 +27,7 @@ Public Functions
 
 PRT_STATUS
 PrtCreate(
-__in  PRT_PROGRAMDECL			*program,
-__in  PRT_PROCESS				*process,
+__in  PRT_PPROCESS				*process,
 __in  PRT_UINT32				instanceOf,
 __in  PRT_VALUE					*payload,
 __out PRT_MACHINE_HANDLE		*pSmHandle
@@ -74,7 +70,7 @@ STATUS_INSUFFICIENT_RESOURCES = If failed to allocate memory
 	// Code
 	//
 
-	nVars = program->machines[instanceOf].nVars;
+	nVars = process->program->machines[instanceOf].nVars;
 	eQSize = PRT_QUEUE_LEN_DEFAULT;
 
 	//
@@ -92,7 +88,7 @@ STATUS_INSUFFICIENT_RESOURCES = If failed to allocate memory
 	//
 	// Initialize Machine Identity
 	//
-	context->program = program;
+	context->program = process->program;
 	context->parentProcess = process;
 	context->instanceOf = instanceOf;
 
@@ -133,7 +129,7 @@ STATUS_INSUFFICIENT_RESOURCES = If failed to allocate memory
 	{
 		for (i = 0; i < nVars; i++)
 		{
-			context->values[i] = PrtMkDefaultValue(program->machines[instanceOf].vars[i].type);
+			context->values[i] = PrtMkDefaultValue(context->program->machines[instanceOf].vars[i].type);
 		}
 	}
 
@@ -233,6 +229,10 @@ STATUS_INSUFFICIENT_RESOURCES = If failed to allocate memory
 	context->stateMachineLock = PrtCreateMutex();
 
 	//
+	//Log
+	//
+	PrtLog(traceCreateMachine, context);
+	//
 	//Acquire the lock while stabilizing the state machine
 	//
 	PrtLockMutex(context->stateMachineLock);
@@ -243,7 +243,7 @@ STATUS_INSUFFICIENT_RESOURCES = If failed to allocate memory
 
 	//
 	//add it to the process allMachines log
-	PrtProcessAddMachine(context);
+	PrtPProcessAddMachine(context);
 	return TRUE;
 }
 
@@ -423,6 +423,10 @@ NONE (VOID)
 	if (context->eventQueue.isFull)
 	{
 		newQueueSize = PrtResizeEventQueue(context);
+		//
+		// Log
+		//
+		PrtLog(traceQueueResize, context);
 	}
 
 	queue = &context->eventQueue;
@@ -452,6 +456,10 @@ NONE (VOID)
 	queue->tailIndex = (tail + 1) % context->currentLengthOfEventQueue;
 	queue->isFull = (queue->tailIndex == queue->headIndex) ? TRUE : FALSE;
 
+	//
+	//Log
+	//
+	PrtLog(traceEnqueue, context);
 	//
 	// Now try to run the machine if its not running already
 	//
@@ -576,6 +584,10 @@ NONE (VOID)
 	context->trigger.payload = PrtCloneValue(payload);
 	context->trigger.event = PrtCloneValue(event);
 
+	//
+	//Log
+	//
+	PrtLog(traceRaiseEvent, context);
 }
 
 
@@ -625,6 +637,11 @@ NONE (VOID)
 	// Last operation set to call Statement
 	//
 	context->lastOperation = CallStatement;
+
+	//
+	//Log
+	//
+	PrtLog(traceCallStatement, context);
 
 	return;
 }
@@ -718,6 +735,12 @@ DoEntryOrExitOrActionFunction:
 		// Execute Entry Function
 		//
 		//
+
+		//
+		//Log
+		//
+		if (context->returnTo == PrtEntryFunStart)
+			PrtLog(traceStateChange, context);
 		// Initialize context before executing entry function
 		//
 		context->lastOperation = OtherStatement;
@@ -799,6 +822,11 @@ DoEntryOrExitOrActionFunction:
 		//
 		if (PrtGetCurrentStateDecl(context).exitFun != NULL)
 		{
+			//
+			//Log
+			//
+			PrtLog(traceExit, context);
+
 			PrtGetExitFunction(context)(context);
 		}
 
@@ -829,6 +857,12 @@ DoEntryOrExitOrActionFunction:
 		//
 		// Get the current action decl
 		currActionDecl = PrtGetAction(context);
+
+		//
+		//Log
+		//
+		if (context->returnTo == PrtActionFunStart)
+			PrtLog(traceActions, context);
 		//
 		// Initialize context before executing entry function
 		//
@@ -987,6 +1021,11 @@ DoTakeTransition:
 		//
 		PrtPopState(context, TRUE);
 
+		//
+		//Log
+		//
+		PrtLog(tracePop, context);
+
 		if (context->returnTo == PrtEntryFunEnd)
 		{
 			//
@@ -1114,12 +1153,22 @@ __in PRT_UINT32				eventIndex
 			context->currentState = transTable[i].destStateIndex;
 			context->returnTo = PrtEntryFunStart;
 			context->stateExecFun = PrtStateEntry;
+
+			//
+			//Log
+			//
+			PrtLog(traceCallEdge, context);
+
 			return;
 		}
 	}
 	if (context->callStack.length > 0)
 	{
 		PrtPopState(context, FALSE);
+		//
+		//Log
+		//
+		PrtLog(UnhandledEvent, context);
 	}
 	else
 	{
@@ -1186,6 +1235,8 @@ __inout PRT_SMCONTEXT			*context
 	}
 
 	context->isHalted = TRUE;
+
+	PrtLog(traceHalt, context);
 
 }
 
@@ -1430,6 +1481,10 @@ __inout PRT_SMCONTEXT	*context
 	PRT_DBG_ASSERT(queue->Head >= 0, "Check Failed");
 	PRT_DBG_ASSERT(queue->Tail >= 0, "Check Failed");
 
+	//
+	//Log
+	//
+	PrtLog(traceDequeue, context);
 	return e;
 }
 

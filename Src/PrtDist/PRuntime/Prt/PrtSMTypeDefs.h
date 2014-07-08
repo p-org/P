@@ -9,7 +9,7 @@ Structures / Unions
 *********************************************************************************/
 
 //
-// Driver Decl which provides the template for a driver
+// Program Decl which provides the template for a driver
 //
 typedef struct _PRT_PROGRAMDECL PRT_PROGRAMDECL;
 

@@ -96,6 +96,9 @@
 */
 #define PRT_DBG_ASSERT(condition, message) 
 
+#define PRT_ASSERT(cond)	if (!(cond)) { exit(-1); }
+
+#define PRT_ASSERTMSG(msg, cond) PRT_DBG_ASSERT(cond, msg) ;
 /**
 * Marks the beginning of a region of code that may allocate memory,
 * but will deallocate all such memory by the end of the region.

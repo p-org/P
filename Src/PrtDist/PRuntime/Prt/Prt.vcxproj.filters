@@ -42,13 +42,7 @@
     <ClCompile Include="Values\PrtDTValues.c">
       <Filter>Source Files\PrtDT</Filter>
     </ClCompile>
-    <ClCompile Include="PrtSMLogger.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="PrtSMRuntime.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PrtSMTrace.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -83,22 +77,13 @@
     <ClInclude Include="PrtSMPublic.h">
       <Filter>Header Files\PrtSM</Filter>
     </ClInclude>
-    <ClInclude Include="PrtSMPrivateTypes.h">
-      <Filter>Header Files\PrtSM</Filter>
-    </ClInclude>
     <ClInclude Include="PrtSMProtectedTypes.h">
       <Filter>Header Files\PrtSM</Filter>
     </ClInclude>
     <ClInclude Include="PrtSMPublicTypes.h">
       <Filter>Header Files\PrtSM</Filter>
     </ClInclude>
-    <ClInclude Include="PrtSMTraceMacros.h">
-      <Filter>Header Files\PrtSM</Filter>
-    </ClInclude>
-    <ClInclude Include="PrtSMTrace.h">
-      <Filter>Header Files\PrtSM</Filter>
-    </ClInclude>
-    <ClInclude Include="PrtSMLogger.h">
+    <ClInclude Include="PrtSMTypeDefs.h">
       <Filter>Header Files\PrtSM</Filter>
     </ClInclude>
   </ItemGroup>

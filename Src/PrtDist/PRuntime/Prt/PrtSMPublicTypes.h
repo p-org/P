@@ -18,147 +18,10 @@ Kernel mode only.
 
 #pragma once
 #include "Config\PrtConfig.h"
+#include "Values\PrtDTTypes.h"
+#include "Values\PrtDTValues.h"
+#include "PrtSMTypeDefs.h"
 
-
-
-/*********************************************************************************
-
-Structures / Unions and Tables Declaration
-
-*********************************************************************************/
-
-//
-// State Machine Attributes used for initializing the Machine during creation
-//
-typedef struct _PRT_MACHINE_ATTRIBUTES PRT_MACHINE_ATTRIBUTES, *PPRT_MACHINE_ATTRIBUTES;
-
-//
-// Driver Decl which provides the template for a driver
-//
-typedef struct _PRT_PROGRAMDECL PRT_PROGRAMDECL, *PPRT_PROGRAMDECL;
-
-//
-// State Machine variable declaration 
-//
-typedef struct _PRT_VARDECL PRT_VARDECL, *const PRT_VARDECL_TABLE;
-
-//
-// Event Set decl for the deferred/Ignored Events set
-//
-typedef struct _PRT_EVENTSETDECL PRT_EVENTSETDECL, *const PRT_EVENTSETDECL_TABLE;
-
-//
-// Event Decl (All events in the Program are of this type)
-//
-typedef struct _PRT_EVENTDECL PRT_EVENTDECL, *const PRT_EVENTDECL_TABLE;
-
-//
-// Machine Decl Template (Machine Types declared in the program)
-//
-typedef struct _PRT_MACHINEDECL PRT_MACHINEDECL, *const PRT_MACHINEDECL_TABLE;
-
-//
-// Type Decl Template (User defined types in the program (Tuples, Named Tuples, Sets, Dictionaries)
-//
-typedef PRT_TYPE *const PRT_TYPEDECL_TABLE;
-
-//
-// Type Decl Template (User defined types in the program (Tuples, Named Tuples, Sets, Dictionaries)
-//
-typedef struct _PRT_PACKED_VALUE PRT_PACKED_VALUE, *PPRT_PACKED_VALUE;
-
-//
-// State Decl 
-//
-typedef struct _PRT_STATEDECL PRT_STATEDECL, *PRT_STATEDECL_TABLE;
-
-//
-// Transition Table Decl
-//
-typedef struct _PRT_TRANSDECL PRT_TRANSDECL, *PRT_TRANSDECL_TABLE;
-
-//
-// Action Table Decl
-//
-typedef struct _PRT_ACTIONDECL PRT_ACTIONDECL, *PRT_ACTIONDECL_TABLE, *PPRT_ACTIONDECL;
-
-//
-// State Machine Variable Values
-//
-typedef ULONG_PTR PRT_VARVALUE, *PRT_VARVALUE_TABLE;
-
-//
-//For External Memory Context accessed by foreign function
-//
-typedef struct _PRT_EXCONTEXT PRT_EXCONTEXT, *PPRT_EXCONTEXT;
-
-
-/*********************************************************************************
-
-Handles / Indices / Flags Declaration
-
-*********************************************************************************/
-//
-// State Machine Handle (Machine ID)
-//
-typedef ULONG_PTR PRT_MACHINE_HANDLE, *PPRT_MACHINE_HANDLE;
-
-//
-// Local Variable Types 
-//
-typedef LONG32 PRT_VARTYPE, *PPRT_VARTYPE;
-
-//
-// Runtime Flags Associated with States and Events
-//
-typedef ULONG32 PRT_RUNTIMEFLAGS, *PPRT_RUNTIMEFLAGS;
-
-//
-// Machine Decl Index
-//
-typedef ULONG32 PRT_MACHINEDECL_INDEX;
-
-//
-// Type Decl Index
-//
-typedef ULONG32 PRT_TYPEDECL_INDEX;
-
-
-//
-// Event Decl Index
-//
-typedef ULONG32 PRT_EVENTSETDECL_INDEX;
-
-//
-// Event Decl Index
-//
-typedef ULONG32 PRT_EVENTDECL_INDEX, *PRT_EVENTDECL_INDEX_TABLE, *PRT_EVENTDECL_INDEX_PACKEDTABLE;
-
-//
-// Bit Set
-//
-typedef ULONG32 const* const PRT_BIT_SET;
-
-
-//
-// Variable Decl Index
-//
-typedef ULONG32 PRT_VARDECL_INDEX;
-
-//
-// State Decl Index
-//
-typedef ULONG32 PRT_STATEDECL_INDEX;
-
-//
-// Transtition Decl Index
-//
-typedef ULONG32 PRT_TRANSDECL_INDEX, *PRT_TRANSDECL_INDEX_PACKEDTABLE;
-
-//
-// Action Decl Index
-//
-typedef ULONG32 PRT_ACTIONDECL_INDEX, *PRT_ACTIONDECL_INDEX_PACKEDTABLE;
 
 /*********************************************************************************
 
@@ -166,11 +29,10 @@ Function Pointer Types Declarations
 
 *********************************************************************************/
 // 
-// Function Pointer to Entry/Exit/Constructor Function corresponding to each state
+// Function Pointer to Entry/Exit/Action Function corresponding to each state
 //
-typedef VOID(*PPRT_OPAQUE_FUN)(PVOID);
+typedef VOID(*PRT_MACHINE_FUN)(PVOID);
 
-typedef VOID(*PPRT_OPAQUE_CONST_FUN)(PVOID, PVOID);
 
 /*********************************************************************************
 
@@ -183,420 +45,126 @@ Enum Types Declarations
 //
 typedef enum _PRT_EXCEPTIONS PRT_EXCEPTIONS;
 
-
-/*********************************************************************************
-
-Type Name : PRT_MACHINE_ATTRIBUTES
-
-Description :
-Structure to store state-machine attributes used for initializing the state-machine
-
-Fields :
-
-Driver --
-Pointer to the driver decl for current program.
-
-InstanceOf --
-Index in the MachineDecl Table, indicating the type of machine to be created.
-
-InitValues --
-Values of Local variable of the Machine being created, used to initialize local
-variables before creating the state-machine
-
-PDeviceObj --
-Pointer to Device Object for the current device.
-
-*********************************************************************************/
-struct _PRT_MACHINE_ATTRIBUTES
-{
-	PPRT_PROGRAMDECL Program;
-	PRT_MACHINEDECL_INDEX InstanceOf;
-	PRT_VALUE *Arg;
-	PVOID ConstructorParam;
-};
-
-/*********************************************************************************
-
-Type Name : PRT_EXCONTEXT
-
-Description :
-Structure having pointer to the External Context (foreign memory Blob)
-
-Fields :
-
-freeThis --
-boolean value to indicate if the memory pointed to by PExMem should
-freed when the statemachine is deleted.
-<TRUE> = Free memory pointed by pExMem
-<FALSE> = Memory is not freed by Runtime when state machine is deleted, developers
-responsibility to free this memory
-
-Note : State Machine nolonger points to PExMem once deleted
-
-PExMem --
-Pointer to the external memory context corresponding to each statemachine,
-passed as parameter to foreign functions
-
-*********************************************************************************/
 struct _PRT_EXCONTEXT
 {
 	PRT_BOOLEAN FreeThis;
 	PVOID PExMem;
-	PVOID ConstructorParam;
 };
 
+/** The kinds of program elements that can be annotated. */
+typedef enum PRT_ANNOTATION_KIND
+{
+	PRT_ANNOT_PROGRAM = 0,  /**< A program-wide annotation, uniquely identified.                                                    */
+	PRT_ANNOT_MACHINE = 1,  /**< A machine-wide annotation. Specific machine identified by a machine index.                         */
+	PRT_ANNOT_EVENT = 2,  /**< An event annotation. Specific event identified by an event index.                                  */
+	PRT_ANNOT_EVENTSET = 3,  /**< An event set annotation. Specific set identified by a machine and set index.                       */
+	PRT_ANNOT_VAR = 4,  /**< An variable annotation. Specific variable identified by a machine and variable index.              */
+	PRT_ANNOT_STATE = 5,  /**< A state annotation. Specific state identified by a machine and state index.                        */
+	PRT_ANNOT_TRANS = 6,  /**< A transition annotation. Specific transition identified by a machine, state, and transition index. */
+	PRT_ANNOT_ACTION = 7   /**< An action annotation. Specific action identified by a machine, state, and action index.            */
+} PRT_ANNOTATION_KIND;
 
-/*********************************************************************************
-
-Type Name : PRT_DRIVERDECL
-
-Description :
-Structure for storing information about the current driver program
-
-Fields :
-
-NEvents --
-Number of Events in the Driver (Program)
-
-Events --
-Table of all the events in Driver
-
-NMachines --
-Number of Machine Types in the Driver Program
-
-Machines --
-Table containing declarations of all the Machine Types
-
-*********************************************************************************/
+/** Represents an annotation of a program element */
+typedef struct PRT_ANNOTATION
+{
+	PRT_ANNOTATION_KIND kind;       /**< The kind of element being annotated                   */
+	PRT_UINT32          index1;     /**< The first index for identifying the element           */
+	PRT_UINT32          index2;     /**< The second index for identifying the element          */
+	PRT_UINT32          index3;     /**< The third index for identifying the element           */
+	PRT_GUID            annotGuid;  /**< The a guid for describing the kind of annotation data */
+	void                *annotData; /**< A pointer to opaque annotation data                   */
+} PRT_ANNOTATION;
 
 struct _PRT_PROGRAMDECL
 {
-	const ULONG32 NEvents;
-	PRT_EVENTDECL_TABLE Events;
-	const ULONG32 NMachines;
-	PRT_MACHINEDECL_TABLE Machines;
-	const ULONG32 NTypes;
-	PRT_TYPEDECL_TABLE Types;
+	PRT_UINT32      nEvents;      /**< The number of events      */
+	PRT_UINT32      nMachines;    /**< The number of machines    */
+	PRT_UINT32      nAnnotations; /**< The number of annotations */
+	PRT_EVENTDECL   *events;      /**< The array of events       */
+	PRT_MACHINEDECL *machines;    /**< The array of machines     */
+	PRT_ANNOTATION  *annotations; /**< The array of annotations  */
 
 };
-
-/*********************************************************************************
-
-Type Name : PRT_EVENTDECL
-
-Description :
-Structure for storing information about Event
-
-Fields :
-
-MyIndex --
-My index in the EventDecl Table in DriverDecl
-
-Name --
-Name of the Event (String)
-
-MaxInstances --
-Maximum number of instances of this event in a queue
-
-Type --
-Type of the payload of the event
-
-*********************************************************************************/
 
 struct _PRT_EVENTDECL
 {
-	const PRT_EVENTDECL_INDEX MyIndex;
-	const PCWSTR Name;
-	const UINT16 MaxInstances;
-	const PRT_TYPE Type;
+	PRT_UINT32 declIndex;      /**< The index of event set in owner machine */
+	PRT_UINT32 ownerMachIndex; /**< The index of owner machine in program   */
+	PRT_STRING name;           /**< The name of this event set              */
+	PRT_UINT32 eventMaxInstances; /**< The value of maximum instances of the event that can occur in the queue */
+	PRT_TYPE   payloadType;	/** The type of the payload associated with this event */
+	PRT_UINT32 *packedEvents;  /**< The events packed into an array of ints */
 };
-
-/*********************************************************************************
-
-Type Name : PRT_MACHINEDECL
-
-Description :
-Structure for storing information about Machine Type
-
-Fields :
-
-MyIndex --
-Index into the Machine Decl Table in ProtectedMachineDecl.h
-
-Name --
-Name of the machine
-
-NVars --
-Number of local variables
-
-Vars --
-Values of the local variables
-
-NStates --
-Number of states in the machine
-States --
-Collection of StateDecl
-
-SizeOfEventQueue --
-maximum size of the event queue
-
-NEventSets --
-number of event sets declared for the given machine
-
-EventSets --
-Collection of event sets
-
-Initial --
-Initial state of the statemachine
-
-constructorFun
-Pointer to the constructor function called on creation of machine of this type
-
-*********************************************************************************/
 
 struct _PRT_MACHINEDECL
 {
-	const PRT_MACHINEDECL_INDEX MyIndex;
-	const PCWSTR Name;
-	const ULONG32 NVars;
-	PRT_VARDECL_TABLE Vars;
-	const ULONG32 NStates;
-	PRT_STATEDECL_TABLE States;
-	UCHAR MaxSizeOfEventQueue;
-	const ULONG32 NEventSets;
-	PRT_EVENTSETDECL_TABLE EventSets;
-	const PRT_STATEDECL_INDEX Initial;
-	const PPRT_OPAQUE_CONST_FUN constructorFun;
+	PRT_UINT32       declIndex;         /**< The index of machine in program     */
+	PRT_STRING       name;              /**< The name of this machine            */
+	PRT_UINT32       nVars;             /**< The number of state variables       */
+	PRT_UINT32       nStates;           /**< The number of states                */
+	PRT_UINT32       nEventSets;        /**< The number of event sets            */
+	PRT_INT32        maxQueueSize;      /**< The max queue size, if non-negative */
+	PRT_UINT32       initStateIndex;    /**< The index of the initial state      */
+	PRT_VARDECL      *vars;             /**< The array of variable declarations  */
+	PRT_STATEDECL    *states;           /**< The array of state declarations     */
+	PRT_EVENTSETDECL *eventSets;        /**< The array of event set declarations */
 };
 
-
-/*********************************************************************************
-
-Type Name : PRT_VARDECL
-
-Description :
-Structure for Representing local variables in a statemachine
-
-Fields :
-
-MyIndex --
-Index in to the Values Table in PRT_SMContext
-
-MyMachine--
-Index into the MachineDecl table indicating the type of machine which contains
-this variable
-
-Name --
-Name of the local variable
-
-Type --
-Type of the local variable
-
-RefType --
-If the type is SmfRefType, then RefType is an index into the Types
-table of the driver, with the description of the type that this
-RefType points to.
-
-
-*********************************************************************************/
 
 struct _PRT_VARDECL
 {
-	const PRT_VARDECL_INDEX MyIndex;
-	const PRT_MACHINEDECL_INDEX MyMachine;
-	const PRT_STRING Name;
-	const PRT_TYPE Type;
+	PRT_UINT32 declIndex;      /**< The index of variable in owner machine */
+	PRT_UINT32 ownerMachIndex; /**< The index of owner machine in program  */
+	PRT_STRING name;           /**< The name of this variable              */
+	PRT_TYPE   type;           /**< The type of this variable              */
 };
 
-/*********************************************************************************
-
-Type Name : PRT_EVENTSETDECL
-
-Description :
-Structure for Representing Event set in a statemachine
-
-Fields :
-
-MyIndex --
-Index in to the Event Set Table in Machine_Decl
-
-MyMachine--
-Index into the MachineDecl table indicating the type of machine which contains
-this event set
-
-Name --
-Name of the Event set
-
-EventIndexPackedTable --
-Packed Version of EventSet in the form of bit-vector array, where each element is
-of type ULONG32
-
-*********************************************************************************/
 
 struct _PRT_EVENTSETDECL
 {
-	const PRT_VARDECL_INDEX MyIndex;
-	const PRT_MACHINEDECL_INDEX MyMachine;
-
-	const PRT_STRING Name;
-	PRT_EVENTDECL_INDEX_PACKEDTABLE EventIndexPackedTable;
+	PRT_UINT32 declIndex;      /**< The index of event set in owner machine */
+	PRT_UINT32 ownerMachIndex; /**< The index of owner machine in program   */
+	PRT_STRING name;           /**< The name of this event set              */
+	PRT_UINT32 *packedEvents;  /**< The events packed into an array of ints */
 };
 
-/*********************************************************************************
-
-Type Name : PRT_TRANSDECL
-
-Description :
-Structure for declaring a transition
-
-Fields :
-
-MyIndex --
-Index in to the Transition Table in State_Decl.
-
-MyState --
-Index into the State Table in Machine_Decl to point to the State which includes
-this transition.
-
-MyMachine --
-Index into the Machines Table in Driver Decl
-
-EventIndex --
-Points to the event which caused transition
-
-Destination --
-Target state for this transition
-
-IsPush --
-Is it a push transition / call edge
-
-*********************************************************************************/
 struct _PRT_TRANSDECL
 {
-	const PRT_TRANSDECL_INDEX MyIndex;
-	const PRT_STATEDECL_INDEX MyState;
-	const PRT_MACHINEDECL_INDEX MyMachine;
-
-	const PRT_EVENTDECL_INDEX EventIndex;
-	const PRT_STATEDECL_INDEX Destination;
-	const PRT_BOOLEAN IsPush;
+	PRT_UINT32  declIndex;         /**< The index of this decl in owner state           */
+	PRT_UINT32  ownerStateIndex;   /**< The index of owner state in owner machine       */
+	PRT_UINT32  ownerMachIndex;    /**< The index of owner machine in program           */
+	PRT_UINT32  triggerEventIndex; /**< The index of the trigger event in program       */
+	PRT_UINT32  destStateIndex;    /**< The index of destination state in owner machine */
+	PRT_BOOLEAN isPush;            /**< True if owner state is pushed onto state stack  */
 };
 
-/*********************************************************************************
-
-Type Name : PRT_ACTIONDECL
-
-Description :
-Structure for declaring a transition
-
-Fields :
-
-MyIndex --
-Index in to the Transition Table in State_Decl.
-
-MyState --
-Index into the State Table in Machine_Decl to point to the State which includes
-this transition.
-
-MyMachine --
-Index into the Machines Table in Driver Decl
-
-EventIndex --
-Points to the event which caused transition
-
-Destination --
-Target state for this transition
-
-ActionFun --
-Function Pointer to the action function corresponding to event EventIndex
-
-*********************************************************************************/
 struct _PRT_ACTIONDECL
 {
-	const PRT_ACTIONDECL_INDEX MyIndex;
-	const PRT_STATEDECL_INDEX MyState;
-	const PRT_MACHINEDECL_INDEX MyMachine;
-
-	const PRT_STRING Name;
-	const PRT_EVENTDECL_INDEX EventIndex;
-	const PPRT_OPAQUE_FUN ActionFun;
-	const PRT_BOOLEAN IsActionFunPassiveLevel;
+	PRT_UINT32      declIndex;         /**< The index of this decl in owner state                  */
+	PRT_UINT32      ownerStateIndex;   /**< The index of owner state in owner machine              */
+	PRT_UINT32      ownerMachIndex;    /**< The index of owner machine in program                  */
+	PRT_STRING      name;              /**< The name of this action                                */
+	PRT_UINT32      triggerEventIndex; /**< The index of the trigger event in program              */
+	PRT_MACHINE_FUN actionFun;         /**< The function to execute when this action is triggered  */
 
 };
-
-/*********************************************************************************
-
-Type Name : PRT_STATEDECL
-
-Description :
-Structure for declaring a
-
-Fields :
-
-MyIndex --
-Index into the State Table in Machine_Decl
-
-MyMachine --
-Index into the Machine Type Table in Driver_Decl
-
-Name --
-Name of the State
-
-Flags --
-State level run time flags e.g. Passive level execution
-
-EntryFunc --
-Pointer to State Entry function
-
-ExitFunc --
-Pointer to state exit function
-
-Defers --
-set of events deferred by the current state
-
-NTransitions --
-Number of Transitions in the Transitions Table
-
-Transitions --
-Transitions table for the current state
-
-TransitionsPacked --
-Packed representation of Transitions set
-
-NActions --
-Number of Actions in the Actions Table
-
-Transitions --
-Actions table for the current state
-
-ActionsPacked --
-Packed representation of Actions
-
-HasDefaultTransition --
-<True> -- If current state has an out-going Default transition
-
-*********************************************************************************/
 
 struct _PRT_STATEDECL
 {
-	const PRT_STATEDECL_INDEX MyIndex;
-	const PRT_MACHINEDECL_INDEX MyMachine;
-	const PRT_STRING Name;
+	PRT_UINT32  declIndex;       /**< The index of state in owner machine    */
+	PRT_UINT32  ownerMachIndex;  /**< The index of owner machine in program  */
+	PRT_STRING  name;            /**< The name of this state                 */
+	PRT_UINT32  nTransitions;    /**< The number of transitions              */
+	PRT_UINT32  nActions;        /**< The number of installed actions        */
+	PRT_BOOLEAN hasDefaultTrans; /**< True of there is a default transition  */
 
-	const PPRT_OPAQUE_FUN EntryFunc;
-	const PPRT_OPAQUE_FUN ExitFunc;
-
-	const PRT_EVENTSETDECL_INDEX Defers;
-
-	const UINT16 NTransitions;
-	PRT_TRANSDECL_TABLE Transitions;
-	const PRT_TRANSDECL_INDEX_PACKEDTABLE TransitionsPacked;
-
-	const UINT16 NActions;
-	PRT_ACTIONDECL_TABLE Actions;
-	const PRT_ACTIONDECL_INDEX_PACKEDTABLE ActionsPacked;
-
-	const BOOLEAN HasDefaultTransition;
+	PRT_UINT32      defersSetIndex; /**< The index of the defers set in owner machine             */
+	PRT_UINT32      transSetIndex;  /**< The index of the transition trigger set in owner machine */
+	PRT_UINT32      actionSetIndex; /**< The index of the action trigger set in owner machine     */
+	PRT_TRANSDECL   *transitions;   /**< The array of transitions                                 */
+	PRT_ACTIONDECL  *actions;       /**< The array of installed actions                           */
+	PRT_MACHINE_FUN entryFun;       /**< The entry function                                       */
+	PRT_MACHINE_FUN exitFun;        /**< The exit function                                        */
 
 };
 

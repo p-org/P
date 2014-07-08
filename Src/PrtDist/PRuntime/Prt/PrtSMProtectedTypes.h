@@ -19,7 +19,10 @@ Kernel mode only.
 
 #pragma once
 #include "PrtSMPublicTypes.h"
+#include "Values\PrtDTTypes.h"
+#include "Values\PrtDTValues.h"
 #include "Config\PrtConfig.h"
+
 #define MAX_INSTANCES_NIL INT_MAX
 /*********************************************************************************
 
@@ -35,7 +38,11 @@ enum _PRT_RESERVED_EVENT
 	//
 	// If Trigger points to this value then the transition taken was a Default transition
 	//
-	PrtDefaultEvent = LONG_MAX - 1
+	PrtDefaultEvent = LONG_MAX - 1,
+	//
+	// Special delete event
+	//
+	PrtDeleteEvent = 0
 };
 
 //
@@ -109,81 +116,6 @@ enum _PRT_LASTOPERATION
 	OtherStatement
 };
 
-
-
-/*********************************************************************************
-
-Type Name : PRT_TRANSHISTORY_STEP
-
-Description :
-Enum for specifying the type of step taken by the state-machine,
-this is used for storing the transition history
-*********************************************************************************/
-typedef enum _PRT_TRACE_STEP
-{
-	//
-	// Trace enqueue of an event
-	//
-	traceEnqueue,
-	//
-	// Trace dequeue of an event
-	//
-	traceDequeue,
-	//
-	// Trace State Change (entry into a new state)
-	//
-	traceStateChange,
-
-	//
-	// Trace creation of a new state-machine
-	//
-	traceCreateMachine,
-
-	//
-	// Trace raise of an event
-	//
-	traceRaiseEvent,
-
-	//
-	// Trace Pop from a state
-	//
-	tracePop,
-
-	//
-	// Trace Call Statement
-	//
-	traceCallStatement,
-
-	//
-	// Trace Call Edge
-	//
-	traceCallEdge,
-
-	// 
-	// Trace Unhandled Event causing Pop
-	//
-	traceUnhandledEvent,
-
-	//
-	// Trace actions 
-	//
-	traceActions,
-
-	//
-	// Trace Queue Resize
-	//
-	traceQueueResize,
-
-	//
-	// trace Exit Function
-	//
-	traceExit,
-	//
-	// trace deletion of a machine
-	//
-	traceDelete
-};
-
 /*********************************************************************************
 
 Macros Constants
@@ -195,149 +127,12 @@ Macros Constants
 #define PRT_MAX_CALL_DEPTH 16 
 
 //
-// Max Transition History Depth for each machine
-//
-#define PRT_MAX_HISTORY_DEPTH 64
-
-//
 // Max length of the event queue for each machine
 //
-#define PRT_QUEUE_LEN_DEFAULT 16
+#define PRT_QUEUE_LEN_DEFAULT 64
 
 
 
-/*********************************************************************************
-
-Modifiable Version of Packed Set
-
-*********************************************************************************/
-
-typedef ULONG32 *PPRT_EVENTDECL_INDEX_PACKEDTABLE;
-
-/*********************************************************************************
-
-Struct Declarations
-
-*********************************************************************************/
-//
-// Trigger tuple <event, arg>
-//
-typedef struct _PRT_TRIGGER PRT_TRIGGER, *PPRT_TRIGGER;
-
-//
-// Structure for Statemachine Context
-//
-typedef struct _PRT_SMCONTEXT PRT_SMCONTEXT, *PPRT_SMCONTEXT;
-
-//
-// Event Buffer 
-//
-typedef struct _PRT_EVENTQUEUE PRT_EVENTQUEUE, *PPRT_EVENTQUEUE;
-
-//
-// Call Stack Element for each statemachine tuple <state, Event, Arg, ReturnTo>
-//
-typedef struct _PRT_STACKSTATE_INFO PRT_STACKSTATE_INFO, *PPRT_STACKSTATE_INFO;
-
-//
-// Call Stack for each state-machine
-//
-typedef struct _PRT_STATESTACK PRT_STATESTACK, *PPRT_STATESTACK;
-
-//
-// Transition Properties
-//
-typedef struct _PRT_TRANSHISTORY PRT_TRANSHISTORY;
-
-/*********************************************************************************
-
-Indexes and Counter
-
-*********************************************************************************/
-//
-// Index into the Transition Table
-//
-typedef UCHAR PRT_TRANSHISTORY_INDEX;
-
-//
-//Machine Reference Count for maintainting references
-//
-typedef LONG32 PRT_MACHINEREFCOUNT;
-
-/*********************************************************************************
-
-Enum Declarations
-
-*********************************************************************************/
-//
-//Reserved Events Enum
-//
-typedef enum _PRT_RESERVED_EVENT PRT_RESERVED_EVENT;
-
-//
-//Reserved States
-//
-typedef enum _PRT_RESERVED_STATE PRT_RESERVED_STATE;
-
-//
-//Reserved Machines
-//
-typedef enum _PRT_RESERVED_MACHINE PRT_RESERVED_MACHINE;
-
-//
-//Last Operation Performed in entry function
-//
-typedef enum _PRT_LASTOPERATION PRT_LASTOPERATION;
-
-//
-// Enum type to identify the type of Step taken by statemachine
-//
-typedef enum _PRT_TRANSHISTORY_STEP PRT_TRANSHISTORY_STEP;
-
-//
-// Enum type to identify the type of Step taken by statemachine
-//
-typedef enum _PRT_TRACE_STEP PRT_TRACE_STEP;
-
-//
-// Enum type to specify where the control should return after returning from a call statement
-//
-typedef enum _PRT_RETURNTO PRT_RETURNTO;
-
-//
-// Enum type to specify if RunMachine() should execute current state entry or exit function
-//
-typedef enum _PRT_STATE_EXECFUN PRT_STATE_EXECFUN;
-
-/*********************************************************************************
-
-Abstract Function types
-
-*********************************************************************************/
-//
-//State Entry Functions
-//Function type used by all state machines for entry functions                                                     
-//
-typedef VOID(PRT_ENTRYFUN)(__inout PPRT_SMCONTEXT Context);
-typedef PRT_ENTRYFUN *PPRT_ENTRYFUN;
-
-//
-//Function type used by all state machines for constructors
-//
-typedef VOID(PRT_CONSTRUCTORFUN)(__in PVOID ConstructorParam, __inout PPRT_EXCONTEXT exContext);
-typedef PRT_CONSTRUCTORFUN *PPRT_CONSTRUCTFUN;
-
-//
-//Function type used by all state machines for exit functions                                                     
-//
-typedef VOID(PRT_EXITFUN)(__inout PPRT_SMCONTEXT Context);
-typedef PRT_EXITFUN *PPRT_EXITFUN;
-
-//
-//Function type used by all state machines for exit functions                                                     
-//
-typedef VOID(PRT_ACTIONFUN)(__inout PPRT_SMCONTEXT Context);
-typedef PRT_ACTIONFUN *PPRT_ACTIONFUN;
 
 /*********************************************************************************
 
@@ -360,8 +155,8 @@ Arg Value corresponding to Event
 
 struct _PRT_TRIGGER
 {
-	PPRT_VALUE Event;
-	PPRT_VALUE Payload;
+	PRT_VALUE *event;
+	PRT_VALUE *payload;
 };
 
 
@@ -391,39 +186,11 @@ IsFull --
 *********************************************************************************/
 struct _PRT_EVENTQUEUE
 {
-	PPRT_TRIGGER Events;
-	PRT_UINT16 Head;
-	PRT_UINT16 Tail;
-	PRT_UINT16 Size;
-	PRT_BOOLEAN IsFull;
-};
-
-/*********************************************************************************
-
-Type Name : PRT_TRANSHISTORY
-
-Description :
-Structure for Transition History Element for storing transition history of
-a state machine,
-
-Fields :
-
-StateEntered --
-New state entered by the state machine
-
-OnStep --
-Operation that caused the state to change.
-
-OnEvent --
-If the state change was caused by an event, OnEvent points to that event.
-
-*********************************************************************************/
-
-struct _PRT_TRANSHISTORY
-{
-	PRT_STATEDECL_INDEX StateEntered;
-	PRT_TRANSHISTORY_STEP OnStep;
-	PRT_EVENTDECL_INDEX OnEvent;
+	PRT_TRIGGER		*events;
+	PRT_UINT16		 headIndex;
+	PRT_UINT16		 tailIndex;
+	PRT_UINT16		 size;
+	PRT_BOOLEAN		isFull;
 };
 
 /*********************************************************************************
@@ -452,12 +219,12 @@ of the current state.
 
 struct _PRT_STACKSTATE_INFO
 {
-	PRT_STATEDECL_INDEX StateIndex;
-	PRT_TRIGGER Trigger;
-	PRT_UINT16 ReturnTo;
-	PRT_STATE_EXECFUN StateExecFun;
-	PRT_EVENTDECL_INDEX_PACKEDTABLE InheritedDef;
-	PRT_ACTIONDECL_INDEX_PACKEDTABLE InheritedAct;
+	PRT_UINT32			stateIndex;
+	PRT_TRIGGER			trigger;
+	PRT_UINT16			returnTo;
+	PRT_STATE_EXECFUN	stateExecFun;
+	PRT_UINT32*			inheritedDefSetCompact;
+	PRT_UINT32*			inheritedActSetCompact;
 };
 
 /*********************************************************************************
@@ -480,8 +247,8 @@ Length/depth of the call-stack
 
 struct _PRT_STATESTACK
 {
-	PRT_STACKSTATE_INFO StatesStack[PRT_MAX_CALL_DEPTH];
-	PRT_UINT16 Length;
+	PRT_STACKSTATE_INFO statesStack[PRT_MAX_CALL_DEPTH];
+	PRT_UINT16			length;
 };
 
 /*********************************************************************************
@@ -576,32 +343,31 @@ Worker Item for executing state-machine at passive level.
 //	only the latest PRT_MAX_HISTORY_DEPTH steps taken by the state machine
 struct _PRT_SMCONTEXT
 {
-	ULONG StateMachineSignature;
-	PPRT_PROGRAMDECL Program;
-	PRT_MACHINEDECL_INDEX InstanceOf;
-	PRT_VARVALUE_TABLE Values;
-	PRT_STATEDECL_INDEX CurrentState;
-	PRT_MACHINE_HANDLE This;
-	PRT_TRIGGER Trigger;
+	PRT_PROGRAMDECL		*program;
+	PRT_UINT32			instanceOf;
+	PRT_VALUE			**values;
+	PRT_UINT32			currentState;
+	PRT_MACHINE_HANDLE	this;
+	PRT_TRIGGER			trigger;
 
 
-	PRT_UINT16 ReturnTo;
-	PRT_STATE_EXECFUN StateExecFun;
+	PRT_UINT16			returnTo;
+	PRT_STATE_EXECFUN	stateExecFun;
 
-	PRT_BOOLEAN IsRunning;
-	PRT_STATESTACK CallStack;
-	PRT_EVENTQUEUE EventQueue;
-	PRT_UINT8 CurrentLengthOfEventQueue;
-	PPRT_EVENTDECL_INDEX_PACKEDTABLE InheritedDeferred;
-	PPRT_EVENTDECL_INDEX_PACKEDTABLE CurrentDeferred;
+	PRT_BOOLEAN			isRunning;
+	PRT_STATESTACK		callStack;
+	PRT_EVENTQUEUE		eventQueue;
+	PRT_UINT8			currentLengthOfEventQueue;
+	PRT_UINT32*			inheritedDeferredSetCompact;
+	PRT_UINT32*			currentDeferredSetCompact;
 
-	PRT_ACTIONDECL_INDEX_PACKEDTABLE InheritedActions;
-	PRT_ACTIONDECL_INDEX_PACKEDTABLE CurrentActions;
+	PRT_UINT32*			inheritedActionsSetCompact;
+	PRT_UINT32*			currentActionsSetCompact;
 
-	PRT_LASTOPERATION LastOperation;
+	PRT_LASTOPERATION	lastOperation;
 
-	PPRT_EXCONTEXT ExtContext;
-	PRT_RECURSIVE_MUTEX StateMachineLock;
+	PRT_EXCONTEXT*		extContext;
+	PRT_RECURSIVE_MUTEX stateMachineLock;
 
 };
 

@@ -51,7 +51,7 @@
       <CompileAs>CompileAsC</CompileAs>
       <EnablePREfast>false</EnablePREfast>
       <PreprocessorDefinitions>IGNORE_FRG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -74,9 +74,7 @@
   <ItemGroup>
     <ClCompile Include="Config\PrtConfigWinDist.c" />
     <ClCompile Include="Config\PrtConfigWinUser.c" />
-    <ClCompile Include="PrtSMLogger.c" />
     <ClCompile Include="PrtSMRuntime.c" />
-    <ClCompile Include="PrtSMTrace.c" />
     <ClCompile Include="Values\PrtDTTypes.c" />
     <ClCompile Include="Values\PrtDTValues.c" />
   </ItemGroup>
@@ -85,15 +83,12 @@
     <ClInclude Include="Config\PrtConfigWinDist.h" />
     <ClInclude Include="Config\PrtConfigWinKMDF.h" />
     <ClInclude Include="Config\PrtConfigWinUser.h" />
-    <ClInclude Include="PrtSMLogger.h" />
     <ClInclude Include="PrtSMPrivate.h" />
-    <ClInclude Include="PrtSMPrivateTypes.h" />
     <ClInclude Include="PrtSMProtected.h" />
     <ClInclude Include="PrtSMProtectedTypes.h" />
     <ClInclude Include="PrtSMPublic.h" />
     <ClInclude Include="PrtSMPublicTypes.h" />
-    <ClInclude Include="PrtSMTrace.h" />
-    <ClInclude Include="PrtSMTraceMacros.h" />
+    <ClInclude Include="PrtSMTypeDefs.h" />
     <ClInclude Include="Values\PrtDTTypeDefs.h" />
     <ClInclude Include="Values\PrtDTTypes.h" />
     <ClInclude Include="Values\PrtDTValues.h" />

@@ -29,7 +29,6 @@ Macros Functions
 
 #define MAKE_OPAQUE(Fun) (PPRT_OPAQUE_FUN)(&(Fun))
 
-#define MAKE_OPAQUE_CONSTRUCTOR(Fun) (PPRT_OPAQUE_CONST_FUN)(&(Fun))
 //
 // Used for removing the UNREFERENCEDPARAMETER warning
 //
@@ -46,9 +45,9 @@ Raise / Pop / Call Statements in Entry Functions
 //
 VOID
 PrtRaise(
-__inout PPRT_SMCONTEXT		Context,
-__in PRT_EVENTDECL_INDEX	EventIndex,
-__in PPRT_PACKED_VALUE		Arg
+__inout PRT_SMCONTEXT		*context,
+__in PRT_VALUE	*event,
+__in PRT_VALUE	*payload
 );
 
 //
@@ -57,7 +56,7 @@ __in PPRT_PACKED_VALUE		Arg
 
 VOID
 PrtPop(
-__inout PPRT_SMCONTEXT		Context
+__inout PRT_SMCONTEXT		*context
 );
 
 //
@@ -65,8 +64,8 @@ __inout PPRT_SMCONTEXT		Context
 //
 VOID
 PrtCall(
-__inout PPRT_SMCONTEXT		Context,
-PRT_STATEDECL_INDEX			State
+__inout PRT_SMCONTEXT		*context,
+__in PRT_UINT32				stateIndex
 );
 
 //
@@ -74,10 +73,10 @@ PRT_STATEDECL_INDEX			State
 //
 PRT_MACHINE_HANDLE
 PrtNew(
-__in PPRT_DRIVERDECL			PDriverDecl,
-__inout PPRT_SMCONTEXT			Context,
-__in PRT_MACHINEDECL_INDEX		InstanceOf,
-__in PPRT_PACKED_VALUE			Arg
+__in PRT_PROGRAMDECL			*programDecl,
+__inout PRT_SMCONTEXT			*context,
+__in PRT_UINT32					instanceOf,
+__in PRT_VALUE					*payload
 );
 
 //
@@ -85,59 +84,6 @@ __in PPRT_PACKED_VALUE			Arg
 //
 VOID
 PrtDelete(
-PPRT_SMCONTEXT				Context
+PRT_SMCONTEXT				*context
 );
 
-ULONG_PTR
-PrtAllocateType(
-__in PPRT_DRIVERDECL			Driver,
-__in PRT_TYPEDECL_INDEX			Type);
-
-VOID
-PrtFreeType(
-__in PPRT_DRIVERDECL			Driver,
-__in PRT_TYPEDECL_INDEX			Type,
-__in PVOID						Value);
-
-ULONG_PTR
-PrtAllocateDefaultType(
-__in PPRT_DRIVERDECL			Driver,
-__in PRT_TYPEDECL_INDEX			Type);
-
-/*********************************************************************************
-
-Memory Management Functions.
-
-*********************************************************************************/
-
-FORCEINLINE
-PVOID
-PrtAllocateMemory(
-UINT						SizeOf
-);
-
-FORCEINLINE
-VOID
-PrtFreeMemory(
-PVOID						PointerTo
-);
-
-
-//
-// Function prototypes for communicating with model machines
-//
-VOID
-EnqueueEvent(
-__in PRT_MACHINE_HANDLE			Machine,
-__in PRT_EVENTDECL_INDEX		EventIndex,
-__in PPRT_PACKED_VALUE			Arg,
-__in BOOLEAN					UseWorkItem
-);
-
-PRT_MACHINE_HANDLE
-New(
-__in PPRT_DRIVERDECL			PDriverDecl,
-__inout PPRT_SMCONTEXT			Context,
-__in PRT_MACHINEDECL_INDEX		InstanceOf,
-__in PPRT_PACKED_VALUE			Arg
-);

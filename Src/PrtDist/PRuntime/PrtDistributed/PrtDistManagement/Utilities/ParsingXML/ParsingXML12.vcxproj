@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -11,8 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{29D30682-BEB0-4570-82B5-2A835E402277}</ProjectGuid>
-    <RootNamespace>Prt</RootNamespace>
+    <ProjectGuid>{E8936605-6F7C-4298-AA4C-9D9D7A349CD9}</ProjectGuid>
+    <RootNamespace>ParsingXML12</RootNamespace>
+    <ProjectName>ParsingXML</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -24,7 +25,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v110</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -39,19 +40,14 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>..\..\Lib\</OutDir>
-    <RunCodeAnalysis>false</RunCodeAnalysis>
-    <CodeAnalysisRuleSet>MixedRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <OutDir>..\..\Libs\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <CompileAs>CompileAsC</CompileAs>
-      <EnablePREfast>false</EnablePREfast>
-      <PreprocessorDefinitions>IGNORE_FRG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <TreatWarningAsError>false</TreatWarningAsError>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -72,34 +68,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Config\PrtConfigWinDist.c" />
-    <ClCompile Include="Config\PrtConfigWinUser.c" />
-    <ClCompile Include="PrtProcess.c" />
-    <ClCompile Include="PrtSMRuntime.c" />
-    <ClCompile Include="Values\PrtDTTypes.c" />
-    <ClCompile Include="Values\PrtDTValues.c" />
+    <ClCompile Include="ParsingXML.cpp" />
+    <ClCompile Include="StdAfx.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Config\PrtConfig.h" />
-    <ClInclude Include="Config\PrtConfigWinDist.h" />
-    <ClInclude Include="Config\PrtConfigWinKMDF.h" />
-    <ClInclude Include="Config\PrtConfigWinUser.h" />
-    <ClInclude Include="PrtHeaders.h" />
-    <ClInclude Include="PrtProcess.h" />
-    <ClInclude Include="PrtSMPrivate.h" />
-    <ClInclude Include="PrtSMProtected.h" />
-    <ClInclude Include="PrtSMProtectedTypes.h" />
-    <ClInclude Include="PrtSMPublic.h" />
-    <ClInclude Include="PrtSMPublicTypes.h" />
-    <ClInclude Include="PrtSMTypeDefs.h" />
-    <ClInclude Include="Values\PrtDTTypeDefs.h" />
-    <ClInclude Include="Values\PrtDTTypes.h" />
-    <ClInclude Include="Values\PrtDTValues.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\PrtDistributed\PrtDistributedIDL\PrtDistributedIDL.vcxproj">
-      <Project>{262d986b-9c2b-4f03-a1e4-c1c4a3ec9834}</Project>
-    </ProjectReference>
+    <ClInclude Include="ParsingXML.h" />
+    <ClInclude Include="StdAfx.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

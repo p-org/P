@@ -50,7 +50,7 @@
 
 #endif
 
-#include"../../PrtDistributedIDL/PrtDistributed.h"
+#include"../../PrtDistributed/PrtDistributedIDL/PrtDistributed.h"
 
 /** PRT_STATUS is the status of the operation performed */
 typedef PRT_BOOLEAN PRT_STATUS;
@@ -58,23 +58,6 @@ typedef PRT_BOOLEAN PRT_STATUS;
 /** PRT_RECURSIVE_MUTEX identifies a recursive mutex. */
 typedef HANDLE PRT_RECURSIVE_MUTEX;
 
-/**
-* Configuration-specific startup (for instance, opening log files). Will be called by the runtime in PrtStartup()
-* @param[in] param Configuration-specific startup data.
-* @see PrtSpecialShutdown
-* @see PrtStartup
-* @see PrtShutdown
-*/
-VOID PrtSpecialStartup(_In_ PVOID param);
-
-/**
-* Configuration-specific shutdown (for instance, closing log files). Will be called by the runtime in PrtShutdown()
-* @param[in] param Configuration-specific shutdown data.
-* @see PrtSpecialStartup
-* @see PrtStartup
-* @see PrtShutdown
-*/
-VOID PrtSpecialShutdown(_In_  PVOID param);
 
 /**
 * Terminates the process if `condition == 0` (with configuration-specific logging)

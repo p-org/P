@@ -10,7 +10,7 @@ __in PVOID vcontext
 {
 	PRT_SMCONTEXT *context = (PRT_SMCONTEXT*)vcontext;
 	PRT_STRING MachineName = context->program->machines[context->instanceOf].name;
-	PRT_MACHINE_HANDLE MachineId = context->this;
+	PRT_MACHINE_HANDLE MachineId = context->thisP;
 
 	switch (exception)
 	{
@@ -69,7 +69,7 @@ __in PVOID vcontext
 	static FILE *logfile = NULL;
 	PRT_SMCONTEXT *context = (PRT_SMCONTEXT*)vcontext;
 	PRT_STRING MachineName = context->program->machines[context->instanceOf].name;
-	PRT_MACHINE_HANDLE MachineId = context->this;
+	PRT_MACHINE_HANDLE MachineId = context->thisP;
 	PRT_STRING eventName = context->program->events[PrtPrimGetEvent(context->trigger.event)].name;
 	PRT_STRING payloadValue = PrtValueToString(context->trigger.payload);
 

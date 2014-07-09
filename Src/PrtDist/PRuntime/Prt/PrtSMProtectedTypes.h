@@ -349,7 +349,7 @@ struct _PRT_SMCONTEXT
 	PRT_UINT32			instanceOf;
 	PRT_VALUE			**values;
 	PRT_UINT32			currentState;
-	PRT_MACHINE_HANDLE	this;
+	PRT_MACHINE_HANDLE	thisP;
 	PRT_TRIGGER			trigger;
 
 

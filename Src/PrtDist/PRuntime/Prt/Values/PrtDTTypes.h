@@ -178,7 +178,7 @@ PRT_TYPE PrtMkForgnType(
 
 
 #else
-#include "../../PrtDistributedIDL/PrtDistributed.h"
+#include"../../PrtDistributed/PrtDistributedIDL/PrtDistributed.h"
 #endif
 
 /** Makes an instance of a primitive type.

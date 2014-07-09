@@ -11,15 +11,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{29D30682-BEB0-4570-82B5-2A835E402277}</ProjectGuid>
-    <RootNamespace>Prt</RootNamespace>
+    <ProjectGuid>{2AB7385E-A8A6-42F3-9A65-1566E23031B6}</ProjectGuid>
+    <RootNamespace>PrtDistributed</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
-    <CharacterSet>NotSet</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -39,22 +39,19 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>..\..\Lib\</OutDir>
-    <RunCodeAnalysis>false</RunCodeAnalysis>
-    <CodeAnalysisRuleSet>MixedRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <OutDir>..\..\..\Lib\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <CompileAs>CompileAsC</CompileAs>
-      <EnablePREfast>false</EnablePREfast>
       <PreprocessorDefinitions>IGNORE_FRG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>../../Lib/</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Prt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -72,33 +69,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Config\PrtConfigWinDist.c" />
-    <ClCompile Include="Config\PrtConfigWinUser.c" />
-    <ClCompile Include="PrtProcess.c" />
-    <ClCompile Include="PrtSMRuntime.c" />
-    <ClCompile Include="Values\PrtDTTypes.c" />
-    <ClCompile Include="Values\PrtDTValues.c" />
+    <ClInclude Include="PrtDistExternalHandlers.h" />
+    <ClInclude Include="PrtDistHeaders.h" />
+    <ClInclude Include="PrtDistSerializer.h" />
+    <ClInclude Include="PrtDistToString.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Config\PrtConfig.h" />
-    <ClInclude Include="Config\PrtConfigWinDist.h" />
-    <ClInclude Include="Config\PrtConfigWinKMDF.h" />
-    <ClInclude Include="Config\PrtConfigWinUser.h" />
-    <ClInclude Include="PrtHeaders.h" />
-    <ClInclude Include="PrtProcess.h" />
-    <ClInclude Include="PrtSMPrivate.h" />
-    <ClInclude Include="PrtSMProtected.h" />
-    <ClInclude Include="PrtSMProtectedTypes.h" />
-    <ClInclude Include="PrtSMPublic.h" />
-    <ClInclude Include="PrtSMPublicTypes.h" />
-    <ClInclude Include="PrtSMTypeDefs.h" />
-    <ClInclude Include="Values\PrtDTTypeDefs.h" />
-    <ClInclude Include="Values\PrtDTTypes.h" />
-    <ClInclude Include="Values\PrtDTValues.h" />
+    <ClCompile Include="PrtDistExternalHandlers.c" />
+    <ClCompile Include="PrtDistSerializer.c" />
+    <ClCompile Include="PrtDistToString.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PrtDistributed\PrtDistributedIDL\PrtDistributedIDL.vcxproj">
-      <Project>{262d986b-9c2b-4f03-a1e4-c1c4a3ec9834}</Project>
+    <ProjectReference Include="..\..\Prt\Prt.vcxproj">
+      <Project>{29d30682-beb0-4570-82b5-2a835e402277}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

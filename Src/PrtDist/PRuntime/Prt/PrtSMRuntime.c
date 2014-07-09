@@ -96,7 +96,7 @@ STATUS_INSUFFICIENT_RESOURCES = If failed to allocate memory
 	// Initialize Machine Internal Variables
 	//
 	context->currentState = context->program->machines[context->instanceOf].initStateIndex;
-	context->this = PrtGetStateMachineHandle(context);
+	context->thisP = PrtGetStateMachineHandle(context);
 	*pSmHandle = PrtGetStateMachineHandle(context);
 	context->isRunning = FALSE;
 	context->isHalted = FALSE;

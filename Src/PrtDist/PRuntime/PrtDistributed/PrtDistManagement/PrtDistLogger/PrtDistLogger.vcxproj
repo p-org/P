@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{2AB7385E-A8A6-42F3-9A65-1566E23031B6}</ProjectGuid>
-    <RootNamespace>PrtDistributed</RootNamespace>
+    <ProjectGuid>{7FDC5451-9D00-47E1-AF54-62AD736BEC6B}</ProjectGuid>
+    <RootNamespace>PrtDistLogger</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -39,19 +39,16 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>..\..\Lib\</OutDir>
+    <OutDir>..\..\..\..\Lib\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>IGNORE_FRG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>../../Lib/</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Prt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -69,15 +66,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="PrtDistExternalHandlers.h" />
-    <ClInclude Include="PrtDistHeaders.h" />
-    <ClInclude Include="PrtDistSerializer.h" />
-    <ClInclude Include="PrtDistToString.h" />
+    <ClInclude Include="PrtDistLogger.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="PrtDistExternalHandlers.c" />
-    <ClCompile Include="PrtDistSerializer.c" />
-    <ClCompile Include="PrtDistToString.c" />
+    <ClCompile Include="PrtDistLogger.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

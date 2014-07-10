@@ -2,6 +2,10 @@
 * \file PrtConfigWinDist.h
 * \brief Defines the Distributed Runtime configuration.
 */
+#ifdef __cplusplus
+extern "C"{
+#endif
+
 #ifndef PRTCONFIG_WINDIST_H
 #define PRTCONFIG_WINDIST_H
 
@@ -139,4 +143,8 @@ PVOID PrtCalloc(_In_ size_t nmemb, _In_ size_t size);
 * @see PrtFree
 */
 PVOID PrtRealloc(_Inout_ PVOID ptr, _In_ size_t size);
+#endif
+
+#ifdef __cplusplus
+}
 #endif

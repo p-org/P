@@ -2,6 +2,10 @@
 * \file PrtConfigWinUser.h
 * \brief Defines the Windows user configurations.
 */
+#ifdef __cplusplus
+extern "C"{
+#endif
+
 #ifndef PRTCONFIG_WINUSER_H
 #define PRTCONFIG_WINUSER_H
 
@@ -192,4 +196,8 @@ PVOID PrtCalloc(_In_ size_t nmemb, _In_ size_t size);
 * @see PrtFree
 */
 PVOID PrtRealloc(_Inout_ PVOID ptr, _In_ size_t size);
+#endif
+
+#ifdef __cplusplus
+}
 #endif

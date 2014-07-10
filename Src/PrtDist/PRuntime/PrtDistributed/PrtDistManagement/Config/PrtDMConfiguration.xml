@@ -1,16 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!--<configuration>
+<configuration>
   <DeploymentFolder>\\msr-arrays\Scratch\msr-pool\Scratch_Storage1\t-ankusd\</DeploymentFolder>
   <CentralServer>MSR-L25-DEV01</CentralServer>
   <Node>MSR-L25-DEV02</Node>
   <Node>MSR-L25-DEV03</Node>
   <Node>MSR-L25-DEV04</Node>
-</configuration>-->
+</configuration>
 
-<configuration>
+<!--<configuration>
   <DeploymentFolder>F:\Deployer\</DeploymentFolder>
   <CentralServer>LOCALHOST</CentralServer>
   <Node>LOCALHOST</Node>
   <Node>LOCALHOST</Node>
   <Node>LOCALHOST</Node>
-</configuration>
+</configuration>-->

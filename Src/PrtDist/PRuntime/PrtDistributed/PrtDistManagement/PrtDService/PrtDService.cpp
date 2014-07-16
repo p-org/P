@@ -1,7 +1,7 @@
 #include "PrtDService.h"
 
 /* GLobal Variables */
-string configurationFile = "../PrtDistManagement/Config/PrtDMConfiguration.xml";
+string configurationFile = "PrtDMConfiguration.xml";
 
 string PrtDGetDeploymentFolder() {
 	int i = 0;
@@ -124,11 +124,12 @@ void PrtDCreatePServiceRPCServer()
 {
 	PrtDLog(PRTD_SERVICE, "Creating RPC server for PrtDService ....");
 	RPC_STATUS status;
-
+	char buffPort[100];
+	_itoa_s(PRTD_SERVICE_PORT, buffPort, 10);
 	status = RpcServerUseProtseqEp(
 		reinterpret_cast<unsigned char*>("ncacn_ip_tcp"), // Use TCP/IP protocol.
 		RPC_C_PROTSEQ_MAX_REQS_DEFAULT, // Backlog queue length for TCP/IP.
-		(unsigned char*)PRTD_SERVICE, // TCP/IP port to use.
+		(RPC_CSTR)buffPort, // TCP/IP port to use.
 		NULL);
 
 	if (status)

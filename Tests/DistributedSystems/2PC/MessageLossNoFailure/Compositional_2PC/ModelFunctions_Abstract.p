@@ -18,7 +18,7 @@ GlobalFunctions
 			send(target, e, p);
 	}
 
-    fun _SENDRELIABLE(target:id, e:eid, p:any) {
+    model fun _SENDRELIABLE(target:id, e:eid, p:any) {
         send(target, e, p);
     }
 	

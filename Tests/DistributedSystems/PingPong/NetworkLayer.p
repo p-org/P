@@ -64,7 +64,7 @@ machine SenderMachine {
 			RecMessage = ((source:id, target:id, e:eid, p:any))payload;
 			if(trigger == sendRelMessage)
             {
-                send(payload.target, networkMessage, (iden = (source = payload.source, seqnum = CurrentSeqNum),msg = (e = payload.e, p = payload.p)));
+                sendReliableBlocking(payload.target, networkMessage, (iden = (source = payload.source, seqnum = CurrentSeqNum),msg = (e = payload.e, p = payload.p)));
             }
             else
             {
@@ -83,6 +83,11 @@ machine SenderMachine {
 			sendFail = false;
 			CurrentSeqNum = CurrentSeqNum + 1;
 		}
+	}
+	
+	model fun sendReliableBlocking(target:id, e:eid, p:(iden:(source:id, seqnum:int), msg:(e:eid, p:any))) 
+	{
+		send(target, e, p); 
 	}
 	
 	model fun sendRPC(target:id, e:eid, p:(iden:(source:id, seqnum:int), msg:(e:eid, p:any))) : bool {

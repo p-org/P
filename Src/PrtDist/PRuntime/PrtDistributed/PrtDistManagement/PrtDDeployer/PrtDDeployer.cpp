@@ -5,7 +5,7 @@ PRT_STRING configurationFile = "../PrtDistManagement/Config/PrtDMConfiguration.x
 string allBinaries = ".\\";
 string localDeploymentFolder = "..\\DeploymentFolder\\";
 string pThreadsFolder = "..\\..\\..\\Resources\\PThreads\\";
-
+string vsdllsFolder = "..\\..\\..\\Resources\\VS2013\\";
 
 PRT_STRING PrtDGetPathToPHome(PRT_STRING nodeAddress)
 {
@@ -38,6 +38,14 @@ string PrtDDeployPProgram()
 		cerr << "Failed to Copy Phreads in " << localDeploymentFolder << endl;
 		exit(-1);
 	}
+
+	copycommand = "robocopy " + vsdllsFolder + " " + localDeploymentFolder + " > " + localDeploymentFolder + "ROBOCOPY_LOG.txt";
+	if (system(copycommand.c_str()) == -1)
+	{
+		cerr << "Failed to Copy VS2013 in " << localDeploymentFolder << endl;
+		exit(-1);
+	}
+
 	
 	copycommand = "robocopy " + allBinaries + " " + localDeploymentFolder + " >> " + localDeploymentFolder + "ROBOCOPY_LOG.txt";
 	if (system(copycommand.c_str()) == -1)

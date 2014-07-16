@@ -97,7 +97,6 @@ main machine GodMachine
 			
 			//create central server 
 			_CREATECENTRALSERVER();
-			
 			temp_NM = _CREATENODE();
 			createmachine_param = (nodeManager = temp_NM, typeofmachine = 1, param = null);
 			call(_CREATEMACHINE);

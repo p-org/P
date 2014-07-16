@@ -208,6 +208,7 @@ MonitorBodyItem
 	: VarDecl
 	| StateDecl
 	| ActionDecl
+	| FunDecl
 	;
 
 SubmachineDecl

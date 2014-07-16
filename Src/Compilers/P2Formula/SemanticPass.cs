@@ -178,7 +178,7 @@ namespace PParser
 
         internal class MonitorScope : BaseScope
         {
-            public MonitorScope(string name) : base("machine_" + name, new string[] { SYM_VAR, SYM_STATE, SYM_ACTION, SYM_START }) { }
+            public MonitorScope(string name) : base("machine_" + name, new string[] { SYM_VAR, SYM_STATE, SYM_FUN, SYM_ACTION, SYM_START }) { }
         }
 
         internal class SubmachineScope : BaseScope

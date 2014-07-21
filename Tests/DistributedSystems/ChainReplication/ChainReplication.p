@@ -2,48 +2,72 @@
 We are modelling the chain replication protocol 
 **/
 
-event predNode : (pred: id);
-event update : (client:id, seqId:int, kv: (key:int, value:int));
+event predSucc : (pred: id, succ:id);
+event update : (client:id, kv: (key:int, value:int));
 event query : (client:id, key:int);
 event responsetoquery : (client: id, value : int);
 event responsetoupdate;
-event forwardAck : (seqId:int);
-event forwardUpdate : (client:id, seqId:int, kv: (key:int, value:int));
+event backwardAck : (seqId:int);
+event forwardUpdate : (seqId:int, client:id, kv: (key:int, value:int));
 event local;
 event done;
+
 machine ChainReplicationServer {
+	var nextSeqId : int;
 	var keyvalue : map[int, int];
 	var history : seq[int];
 	var isHead : bool;
 	var isTail : bool;
 	var succ : id; //NULL for tail
 	var pred : id; //NULL for head
-	var sent : seq[(seqId:int, kv: (key:int, value:int))];
+	var sent : seq[(seqId:int, client : id, kv: (key:int, value:int))];
 	var iter : int;
 	var removeIndex : int;
 	var myId : int;
 	
 	action InitPred {
 		pred = payload.pred;
+		succ = payload.succ;
 		raise(local);
 	}
+	
+	action SendPong {
+		send((id)payload, CR_Pong);
+	}
+	
 	start state Init {
-		defer update, query, forwardAck, forwardUpdate;
+		defer update, query, backwardAck, forwardUpdate, CR_Ping;
 		entry {
-			isHead = (((isHead:bool, isTail:bool, succ:id, smId:int))payload).isHead;
-			isTail = (((isHead:bool, isTail:bool, succ:id, smId:int))payload).isTail;
-			succ = (((isHead:bool, isTail:bool, succ:id, smId:int))payload).succ;
-			myId = (((isHead:bool, isTail:bool, succ:id, smId:int))payload).smId;
+			isHead = (((isHead:bool, isTail:bool, smId:int))payload).isHead;
+			isTail = (((isHead:bool, isTail:bool, smId:int))payload).isTail;
+			myId = (((isHead:bool, isTail:bool, smId:int))payload).smId;
+			nextSeqId = 0;
 		}
-		on predNode do InitPred;
+		on predSucc do InitPred;
 		on local goto WaitForRequest;
 	
 	}
-	
+	action {
+		isTail = true;
+		//send all the events in sent to both client and the predecessor
+		iter = 0;
+		while(iter < sizeof(sent))
+		{
+			
+		}
+	}
 	state WaitForRequest {
-	
+		
+		/***********fault tolerance****************/
+		on CR_Ping do SendPong;
+		on becomeTail do becomeTailAction;
+		
+		
+		
+		/***************************/
 		on update goto ProcessUpdate
 		{
+			nextSeqId = nextSeqId + 1;
 			assert(isHead);
 		};
 		
@@ -52,6 +76,9 @@ machine ChainReplicationServer {
 			assert(isTail);
 			if(((client:id, key:int))payload.key in keyvalue)
 			{
+				//Invoke the monitor
+				invoke UpdateResponse_QueryResponse_Seq(monitor_responsetoquery, (key = ((client:id, key:int))payload.key, value = keyvalue[((client:id, key:int))payload.key]));
+				
 				send(((client:id, key:int))payload.client, responsetoquery, (client = ((client:id, key:int))payload.client, value = keyvalue[((client:id, key:int))payload.key]));
 			}
 			else
@@ -59,35 +86,65 @@ machine ChainReplicationServer {
 				send(((client:id, key:int))payload.client, responsetoquery, (client = ((client:id, key:int))payload.client, value = -1));
 			}
 		};
-		on forwardUpdate goto ProcessUpdate
-		{
-			assert(!isHead);
-		};
-		on forwardAck goto ProcessAck 
-		{
-			assert(!isTail);
-		};
+		on forwardUpdate goto ProcessfwdUpdate;
+		on backwardAck goto ProcessAck;
 	}
 	state ProcessUpdate {
-		entry {
+		entry {	
+			//add it to the history seq (represents the successfully serviced requests)
+			history.insert(sizeof(history), nextSeqId);
+			//invoke the monitor
+			invoke Update_Propagation_Invariant(monitor_history_update, (smId = myId, history = history));
+			
 			//Add the update request to sent seq
-			sent.insert(0, (seqId = payload.seqId, kv = (key = payload.kv.key, value = payload.kv.value)));
+			sent.insert(sizeof(sent), (seqId = nextSeqId, kv = (key = payload.kv.key, value = payload.kv.value)));
+			//call the monitor
+			invoke Update_Propagation_Invariant(monitor_sent_update, (smId = myId, sent = sent));
+			//forward the update to the succ
+			send(succ, forwardUpdate, (seqId = nextSeqId, client = payload.client, kv = payload.kv));
+	
+			raise(local);
+		}
+		on local goto WaitForRequest;
+	}
+	state ProcessfwdUpdate {
+		entry {
+			//update my nextSeqId
+			nextSeqId = payload.seqId;
+			
 			//Add the update message to keyvalue store
 			keyvalue.update(payload.kv.key, payload.kv.value);
 			
 			if(!isTail)
 			{
+				//add it to the history seq (represents the successfully serviced requests)
+				history.insert(sizeof(history), payload.seqId);
+				//invoke the monitor
+				invoke Update_Propagation_Invariant(monitor_history_update, (smId = myId, history = history));
+				//Add the update request to sent seq
+				sent.insert(sizeof(sent), (seqId = payload.seqId, kv = (key = payload.kv.key, value = payload.kv.value)));
+				//call the monitor
+				invoke Update_Propagation_Invariant(monitor_sent_update, (smId = myId, sent = sent));
 				//forward the update to the succ
 				send(succ, forwardUpdate, (seqId = payload.seqId, client = payload.client, kv = payload.kv));
 			}
 			else
 			{
-				//add it to the history seq (represents the successfully serviced requests)
-				history.insert(0, payload.seqId);
+				if(!isHead)
+				{
+					//add it to the history seq (represents the successfully serviced requests)
+					history.insert(sizeof(history), payload.seqId);
+				}
+				
+				//invoke the monitor
+				invoke UpdateResponse_QueryResponse_Seq(monitor_reponsetoupdate, payload.kv);
+				
 				//send the response to client
 				send(payload.client, responsetoupdate);
+				
 				//send ack to the pred
-				send(pred, forwardAck, (seqId = payload.seqId));
+				send(pred, backwardAck, (seqId = payload.seqId));
+
 			}
 			raise(local);
 		}
@@ -99,13 +156,11 @@ machine ChainReplicationServer {
 		entry {
 			//remove the request from sent seq.
 			RemoveItemFromSent(payload.seqId);
-			//add it to the history seq (represents the successfully serviced requests)
-			history.insert(0, payload.seqId);
 			
 			if(!isHead)
 			{
 				//forward it back to the pred
-				send(pred, forwardAck, (seqId = payload.seqId));
+				send(pred, backwardAck, (seqId = payload.seqId));
 			}
 			raise(local);
 		}
@@ -124,126 +179,6 @@ machine ChainReplicationServer {
 		sent.remove(removeIndex);
 	}
 	
-}
-
-machine Client {
-	var nextSeqId : int;
-	var headNode: id;
-	var tailNode:id;
-	var keyvalue: map[int, int];
-	var success: bool;
-	var startIn : int;
-	start state Init {
-		entry {
-			nextSeqId = 1;
-			new Update_Query_Seq(this);
-			headNode = ((head:id, tail:id, startIn:int))payload.head;
-			tailNode = ((head:id, tail:id, startIn:int))payload.tail;
-			startIn = ((head:id, tail:id, startIn:int))payload.startIn;
-			keyvalue.update(1*startIn,100);
-			keyvalue.update(2*startIn,200);
-			keyvalue.update(3*startIn,300);
-			keyvalue.update(4*startIn,400);
-			success = true;
-			raise(local);
-		}
-		on local goto PumpRequests;
-	}
-	
-	state PumpRequests
-	{
-		entry {
-			call(Update_Response);
-			call(Query_Response);
-			nextSeqId = nextSeqId + 1;
-			if(nextSeqId >= 2) // only test for now
-			{
-				call(RandomQuery);
-				raise(done);
-			}
-			else
-			{
-				raise(local);
-			}
-		}
-		on local goto PumpRequests;
-	}
-	action Return {
-		if(trigger == responsetoquery)
-		{
-			invoke Update_Query_Seq(responsetoquery, payload);
-			
-		}
-		return;
-	}
-	
-	state Update_Response {
-		entry {
-			send(headNode, update, (client = this, seqId = nextSeqId, kv = (key = nextSeqId * startIn, value = keyvalue[nextSeqId * startIn])));
-			invoke Update_Query_Seq(update, (client = this, seqId = nextSeqId, kv = (key = nextSeqId * startIn, value = keyvalue[nextSeqId * startIn])))
-		}
-		on responsetoupdate do Return;
-	}
-	
-	state Query_Response {
-		entry {
-			send(tailNode, query, (client = this, key = nextSeqId * startIn));
-		}
-		on responsetoquery do Return;
-	}
-	
-	model fun QueryNonDet () {
-		//can query any item between 1 to nextSeqId
-		if(*)
-		{
-			send(tailNode, query, (client = this, key = (nextSeqId - 1)* startIn));
-			success = true;
-		}
-		else
-		{
-			send(tailNode, query, (client = this, key = (nextSeqId + 1) * startIn));
-			success = false;
-		}
-	}
-	
-	action checkReturn {
-			if(success)
-			{
-				assert(keyvalue[(nextSeqId - 1)* startIn] == ((client:id, value:int))payload.value);
-			}
-			else
-			{
-				assert(((client:id, value:int))payload.value == -1);
-			}
-	}
-	state RandomQuery {
-		entry {
-			QueryNonDet();
-		}
-		
-		on responsetoquery do checkReturn;
-		
-	}	
-}
-
-
-main machine TheGodMachine {
-	var servers : (one:id, two:id, three:id);
-	start state Init {
-		entry {
-			servers.three = new ChainReplicationServer((isHead = false, isTail = true, succ =null, smId = 3));
-			servers.two = new ChainReplicationServer((isHead = false, isTail = false, succ =servers.three, smId = 2));
-			servers.one = new ChainReplicationServer((isHead = true, isTail = false, succ =servers.two, smId = 1));
-			send(servers.three, predNode, (pred = servers.two));
-			send(servers.two, predNode, (pred = servers.one));
-			send(servers.one, predNode, (pred = null));
-			//create the client and start the game
-			new Client((head = servers.one, tail = servers.three, startIn = 1));
-			new Client((head = servers.one, tail = servers.three, startIn = 1));
-			raise(delete);
-		}
-	}
-
 }
 
 

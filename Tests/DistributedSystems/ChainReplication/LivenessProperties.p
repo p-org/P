@@ -1,0 +1,93 @@
+/*
+We will check 3 liveness properties 
+1 -> In the absence of failures all client update request should be followed eventually by a response.
+2 -> In the presence of n nodes and n-1 failures and the head node does not fail then all client requests should be followed eventually by a response.
+3 -> In the presence of n nodes and n-1 failures where even the tail node can fail then all client query requests should be followed eventually by a response.
+*/
+event monitor_updateLiveness : (reqId : int);
+event monitor_responseLiveness : (reqId : int);
+event monitor_queryLiveness : (reqId : int);
+
+monitor livenessUpdatetoResponse {
+	var myRequestId;
+	start state Init {
+		entry {
+			myRequestId = (int) payload;
+			raise(local);
+		}
+		on local goto WaitForUpdateRequest;
+	}
+	action checkIfMine {
+		if(payload.reqId = myRequestId)
+			raise(monitor_success);
+	}
+	
+	action assertNotMine {
+		assert(myRequestId != payload.reqId);
+	}
+	state WaitForUpdateRequest {
+		entry {
+			
+		}
+		on monitor_updateLiveness do checkIfMine;
+		on monitor_responseLiveness do assertNotMine;
+		on monitor_success goto WaitForResponse;
+	}
+	
+	state WaitForResponse {
+		entry {
+		
+		}
+		on monitor_updateLiveness do assertNotMine;
+		on monitor_responseLiveness do checkIfMine;
+		on monitor_success goto DoneMoveToStableState;
+	}
+	
+	stable state DoneMoveToStableState {
+		ignore monitor_updateLiveness, monitor_responseLiveness;
+	}
+	
+	
+}
+
+monitor livenessQuerytoResponse {
+	var myRequestId;
+	start state Init {
+		entry {
+			myRequestId = (int) payload;
+			raise(local);
+		}
+		on local goto WaitForQueryRequest;
+	}
+	action checkIfMine {
+		if(payload.reqId = myRequestId)
+			raise(monitor_success);
+	}
+	
+	action assertNotMine {
+		assert(myRequestId != payload.reqId);
+	}
+	state WaitForQueryRequest {
+		entry {
+			
+		}
+		on monitor_queryLiveness do checkIfMine;
+		on monitor_responseLiveness do assertNotMine;
+		on monitor_success goto WaitForResponse;
+	}
+	
+	state WaitForResponse {
+		entry {
+		
+		}
+		on monitor_queryLiveness do assertNotMine;
+		on monitor_responseLiveness do checkIfMine;
+		on monitor_success goto DoneMoveToStableState;
+	}
+	
+	stable state DoneMoveToStableState {
+		ignore monitor_queryLiveness, monitor_responseLiveness;
+	}
+	
+	
+}

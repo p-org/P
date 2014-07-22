@@ -12,11 +12,12 @@ event tailChanged;
 event tailFailed;
 event success;
 event timeout;
-event becomeHead;
-event becomeTail;
-event newPredecessor : id;
-event newSuccessor : id;
+event becomeHead : id;
+event becomeTail : id;
+event newPredecessor : (pred : id, master : id);
+event newSuccessor : (succ : id, master : id, lastUpdateRec: int, lastAckSent: int);
 event updateHeadTail : (head : id, tail : id);
+event newSuccInfo : (lastUpdateRec : int, lastAckSent : int);
 
 machine ChainReplicationMaster {
 	var clients : seq[id];
@@ -26,6 +27,8 @@ machine ChainReplicationMaster {
 	var tail : id;
 	var iter : int;
 	var faultyNodeIndex : int;
+	var lastUpdateReceivedSucc : int;
+	var lastAckSent : int;
 	start state Init {
 		entry {
 			clients = ((clients:seq[id], servers: seq[id]))payload.clients;
@@ -77,7 +80,7 @@ machine ChainReplicationMaster {
 					{
 						faultyNodeIndex = iter;
 					}
-					iter = iter + 1;
+					iter = iter - 1;
 				}
 				raise(serverFailed);
 			}
@@ -89,7 +92,7 @@ machine ChainReplicationMaster {
 			//make successor the head node
 			servers.remove(0);
 			head = servers[0];
-			send(head, becomeHead);
+			send(head, becomeHead, this);
 		}
 		on headChanged do UpdateClients;
 		on done goto WaitforFault
@@ -104,7 +107,7 @@ machine ChainReplicationMaster {
 			//make successor the head node
 			servers.remove(sizeof(servers) - 1);
 			tail = servers[sizeof(servers) - 1];
-			send(tail, becomeTail);
+			send(tail, becomeTail, this);
 		}
 		on tailChanged do UpdateClients;
 		on done goto WaitforFault
@@ -127,17 +130,24 @@ machine ChainReplicationMaster {
 			};
 		
 	}
+	action SetLastUpdateAndReturn{
+		
+		lastUpdateReceivedSucc = payload.lastUpdateRec;
+		lastAckSent = payload.lastAckSent;
+		return;
+		
+	}
 	
 	state FixSuccessor {
 		entry {
-			send(servers[faultyNodeIndex + 1], newPredecessor, servers[faultyNodeIndex - 1]);
+			send(servers[faultyNodeIndex + 1], newPredecessor, (pred = servers[faultyNodeIndex - 1], master = this));
 		}
-		on success do Return;
+		on newSuccInfo do SetLastUpdateAndReturn;
 	}
 	
 	state FixPredecessor {
 		entry {
-			send(servers[faultyNodeIndex - 1], newSuccessor, servers[faultyNodeIndex + 1]);
+			send(servers[faultyNodeIndex - 1], newSuccessor, (succ = servers[faultyNodeIndex + 1], master = this, lastAckSent = lastAckSent, lastUpdateRec = lastUpdateReceivedSucc));
 		}
 		on success do Return;
 	}

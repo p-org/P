@@ -86,7 +86,7 @@ monitor Update_Query_Seq
 //This is a global monitor
 
 event monitor_history_update: (smId : int, history: seq[int]);
-event monitor_sent_update: (smId : int, sent : seq[(seqId:int, kv: (key:int, value:int))]);
+event monitor_sent_update: (smId : int, sent : seq[(seqId:int, client : id, kv: (key:int, value:int))]);
 
 monitor Update_Propagation_Invariant {
 	var histMap : map[int, seq[int]];
@@ -138,7 +138,7 @@ monitor Update_Propagation_Invariant {
 	}
 	
 	
-	fun extractSeqId(s : seq[(seqId:int, kv: (key:int, value:int))]) {
+	fun extractSeqId(s : seq[(seqId:int, client : id, kv: (key:int, value:int))]) {
 		clearTempSeq();
 		iter1 = sizeof(s) - 1;
 		while(iter1 >= 0)

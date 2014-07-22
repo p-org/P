@@ -15,7 +15,7 @@ machine Client {
 	start state Init {
 		entry {
 			next = 1;
-			new Update_Query_Seq(this);
+			//new Update_Query_Seq(this);
 			headNode = ((head:id, tail:id, startIn:int))payload.head;
 			tailNode = ((head:id, tail:id, startIn:int))payload.tail;
 			startIn = ((head:id, tail:id, startIn:int))payload.startIn;
@@ -46,11 +46,16 @@ machine Client {
 			}
 		}
 		on done goto end;
-		
+		on updateHeadTail do updateHeadTailAction;
 		on local goto PumpRequests
 		{
 			next = next + 1;
 		};
+	}
+	
+	action updateHeadTailAction {
+		headNode = payload.head;
+		tailNode = payload.tail;
 	}
 	
 	state end {
@@ -96,29 +101,20 @@ machine Client {
 		}
 	}
 	
-	action checkReturn {
-			if(success)
-			{
-				assert(keyvalue[(next - 1)* startIn] == ((client:id, value:int))payload.value);
-			}
-			else
-			{
-				assert(((client:id, value:int))payload.value == -1);
-			}
-			return;
-	}
 	state RandomQuery {
 		entry {
 			QueryNonDet();
 		}
 		
-		on responsetoquery do checkReturn;
+		on responsetoquery do Return;
 		
 	}	
 }
 
 main machine TheGodMachine {
-	var servers : (one:id);
+	var servers : seq[id];
+	var clients : seq[id];
+	var temp : id;
 	start state Init {
 		entry {
 			//Global Monitor
@@ -126,11 +122,16 @@ main machine TheGodMachine {
 			new UpdateResponse_QueryResponse_Seq();
 			
 		
-			servers.one = new ChainReplicationServer((isHead = true, isTail = true, smId = 1));
-			send(servers.one, predSucc, (pred = servers.one, succ = servers.one));
+			temp = new ChainReplicationServer((isHead = true, isTail = true, smId = 1));
+			servers.insert(0, temp);
+			send(servers[0], predSucc, (pred = servers[0], succ = servers[0]));
 			//create the client and start the game
-			new Client((head = servers.one, tail = servers.one, startIn = 1));
-			new Client((head = servers.one, tail = servers.one, startIn = 100));
+			temp = new Client((head = servers[0], tail = servers[0], startIn = 1));
+			clients.insert( 0, temp);
+			temp = new Client((head = servers[0], tail = servers[0], startIn = 100));
+			clients.insert( 0, temp);
+			
+			new ChainReplicationMaster((servers = servers, clients = clients));
 			raise(delete);
 		}
 	}

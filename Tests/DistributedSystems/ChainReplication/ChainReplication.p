@@ -91,33 +91,37 @@ machine ChainReplicationServer {
 	}
 	
 	action updateSuccessor {
+		tempIndex = 1000000; //some large number
 		succ = payload.succ;
-		//send the remaining history
-		iter = 0;
-		while(iter < sizeof(sent))
+		if(sizeof(sent) > 0)
 		{
-			if(sent[iter].seqId > payload.lastUpdateRec)
-				send(succ, forwardUpdate, sent[iter]);
+			//send the remaining history
+			iter = 0;
+			while(iter < sizeof(sent))
+			{
+				if(sent[iter].seqId > payload.lastUpdateRec)
+					send(succ, forwardUpdate, sent[iter]);
+				
+				iter = iter + 1;
+			}
 			
-			iter = iter + 1;
-		}
-		
-		//send the backward acks
-		iter = sizeof(sent) - 1;
-		while(iter >= 0)
-		{
-			if(sent[iter].seqId == payload.lastAckSent)
-				tempIndex = iter;
+			//send the backward acks
+			iter = sizeof(sent) - 1;
+			while(iter >= 0)
+			{
+				if(sent[iter].seqId == payload.lastAckSent)
+					tempIndex = iter;
+				
+				iter = iter - 1;
+			}
 			
-			iter = iter - 1;
-		}
-		
-		iter = 0;
-		while(iter <= tempIndex)
-		{
-			send(pred, backwardAck, sent[0].seqId);
-			sent.remove(0);
-			iter = iter + 1;
+			iter = 0;
+			while(iter <= tempIndex)
+			{
+				send(pred, backwardAck, sent[0].seqId);
+				sent.remove(0);
+				iter = iter + 1;
+			}
 		}
 		send(payload.master, success);
 	}
@@ -146,7 +150,7 @@ machine ChainReplicationServer {
 				//Invoke the monitor
 				invoke UpdateResponse_QueryResponse_Seq(monitor_responsetoquery, (key = ((client:id, key:int))payload.key, value = keyvalue[((client:id, key:int))payload.key]));
 				
-				send(((client:id, key:int))payload.client, responsetoquery, (client = ((client:id, key:int))payload.client, value = keyvalue[((client:id, key:int))payload.key]));
+				send(((client:id, key:int))payload.client, responsetoquery, (client = ((client:id, key:int))payload.client,value = keyvalue[((client:id, key:int))payload.key]));
 			}
 			else
 			{
@@ -158,6 +162,9 @@ machine ChainReplicationServer {
 	}
 	state ProcessUpdate {
 		entry {	
+			//Add the update message to keyvalue store
+			keyvalue.update(payload.kv.key, payload.kv.value);
+		
 			//add it to the history seq (represents the successfully serviced requests)
 			history.insert(sizeof(history), nextSeqId);
 			//invoke the monitor
@@ -235,6 +242,7 @@ machine ChainReplicationServer {
 	}
 	
 	fun RemoveItemFromSent(req : int) {
+		removeIndex = -1;
 		iter = sizeof(sent) - 1;
 		while(iter >=0)
 		{
@@ -243,7 +251,11 @@ machine ChainReplicationServer {
 			
 			iter = iter - 1;
 		}
-		sent.remove(removeIndex);
+		
+		if(removeIndex != -1)
+		{
+			sent.remove(removeIndex);
+		}
 	}
 	
 }

@@ -69,6 +69,7 @@ machine ChainReplicationMaster {
 			}
 			else if(tail == (id)payload)
 			{
+				
 				raise(tailFailed);
 			}
 			else
@@ -172,7 +173,7 @@ machine ChainReplicationFaultDetection {
 	start state Init{
 		entry {
 			checkNode = 0;
-			timerM = new Timer(this);
+			//timerM = new Timer(this);  //1
 			master = ((master: id, servers : seq[id]))payload.master;
 			servers = ((master: id, servers : seq[id]))payload.servers;
 			raise(local);
@@ -180,16 +181,35 @@ machine ChainReplicationFaultDetection {
 		on local goto StartMonitoring;
 	}
 	
+	model fun BoundedFailureInjection () {
+		if(sizeof(servers) > 1)
+		{
+			if(*)
+			{
+				send(this, timeout);
+			}
+			else
+			{
+				send(this, CR_Pong);
+			}
+		}
+		else
+		{
+			send(this, CR_Pong);
+		}
+	}
+	
 	state StartMonitoring {
 		entry {
 			//start Timer
-			send(timerM, startTimer);
-			send(servers[checkNode], CR_Ping, this);
+			//send(timerM, startTimer); //2
+			//send(servers[checkNode], CR_Ping, this); //3
+			BoundedFailureInjection ();
 		}
 		on CR_Pong goto StartMonitoring
 		{
 			//stop timer
-			call(CancelTimer);
+			//call(CancelTimer); //4
 			checkNode = checkNode + 1;
 			if(checkNode == sizeof(servers))
 			{

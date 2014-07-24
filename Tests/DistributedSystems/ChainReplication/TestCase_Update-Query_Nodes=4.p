@@ -117,9 +117,6 @@ main machine TheGodMachine {
 	var temp : id;
 	start state Init {
 		entry {
-			//Global Monitor
-			new Update_Propagation_Invariant();
-			new UpdateResponse_QueryResponse_Seq();
 			
 			temp = new ChainReplicationServer((isHead = false, isTail = true, smId = 4));
 			servers.insert(0, temp);
@@ -129,6 +126,10 @@ main machine TheGodMachine {
 			servers.insert(0, temp);
 			temp = new ChainReplicationServer((isHead = true, isTail = false, smId = 1));
 			servers.insert(0, temp);
+			
+			//Global Monitor
+			new Update_Propagation_Invariant(servers);
+			new UpdateResponse_QueryResponse_Seq(servers);
 			
 			send(servers[3], predSucc, (pred = servers[2], succ = servers[3]));
 			send(servers[2], predSucc, (pred = servers[1], succ = servers[3]));

@@ -51,7 +51,7 @@ main machine Entry {
             i = 0;
             while (i < 10) {
                 rev.insert(0, i);
-                sorted.insert(i,i);
+                sorted.insert(sizeof(sorted),i);
                 i = i + 1;
             }
 

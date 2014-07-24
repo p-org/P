@@ -8,7 +8,7 @@ event query : (client:id, key:int);
 event responsetoquery : (client: id, value : int);
 event responsetoupdate;
 event backwardAck : (seqId:int);
-event forwardUpdate : (seqId:int, client:id, kv: (key:int, value:int));
+event forwardUpdate : (mess : (seqId:int, client:id, kv: (key:int, value:int)), pred : id);
 event local;
 event done;
 
@@ -55,7 +55,7 @@ machine ChainReplicationServer {
 		while(iter < sizeof(sent))
 		{
 			//invoke the monitor
-			invoke UpdateResponse_QueryResponse_Seq(monitor_reponsetoupdate, sent[iter].kv);
+			invoke UpdateResponse_QueryResponse_Seq(monitor_reponsetoupdate, (tail = this, key = sent[iter].kv.key, value = sent[iter].kv.value));
 			//send the response to client
 			send(sent[iter].client, responsetoupdate);
 			
@@ -81,7 +81,7 @@ machine ChainReplicationServer {
 		if(sizeof(history) > 0)
 		{
 			if(sizeof(sent) > 0)
-				send(payload.master, newSuccInfo , (lastUpdateRec = history[sizeof(history) - 1], lastAckSent = sent[0].seqId - 1));
+				send(payload.master, newSuccInfo , (lastUpdateRec = history[sizeof(history) - 1], lastAckSent = sent[0].seqId));
 			else
 				send(payload.master, newSuccInfo , (lastUpdateRec = history[sizeof(history) - 1], lastAckSent = history[sizeof(history) - 1]));
 		}
@@ -89,7 +89,7 @@ machine ChainReplicationServer {
 	}
 	
 	action updateSuccessor {
-		tempIndex = 1000000; //some large number
+		tempIndex = -1; //some large number
 		succ = payload.succ;
 		if(sizeof(sent) > 0)
 		{
@@ -98,7 +98,7 @@ machine ChainReplicationServer {
 			while(iter < sizeof(sent))
 			{
 				if(sent[iter].seqId > payload.lastUpdateRec)
-					send(succ, forwardUpdate, sent[iter]);
+					send(succ, forwardUpdate, (mess = sent[iter], pred = this));
 				
 				iter = iter + 1;
 			}
@@ -114,13 +114,14 @@ machine ChainReplicationServer {
 			}
 			
 			iter = 0;
-			while(iter <= tempIndex)
+			while(iter < tempIndex)
 			{
-				send(pred, backwardAck, sent[0].seqId);
+				send(pred, backwardAck, (seqId = sent[0].seqId));
 				sent.remove(0);
 				iter = iter + 1;
 			}
 		}
+		
 		send(payload.master, success);
 	}
 	
@@ -146,7 +147,7 @@ machine ChainReplicationServer {
 			if(((client:id, key:int))payload.key in keyvalue)
 			{
 				//Invoke the monitor
-				invoke UpdateResponse_QueryResponse_Seq(monitor_responsetoquery, (key = ((client:id, key:int))payload.key, value = keyvalue[((client:id, key:int))payload.key]));
+				invoke UpdateResponse_QueryResponse_Seq(monitor_responsetoquery, (tail = this, key = ((client:id, key:int))payload.key, value = keyvalue[((client:id, key:int))payload.key]));
 				
 				send(((client:id, key:int))payload.client, responsetoquery, (client = ((client:id, key:int))payload.client,value = keyvalue[((client:id, key:int))payload.key]));
 			}
@@ -173,7 +174,7 @@ machine ChainReplicationServer {
 			//call the monitor
 			invoke Update_Propagation_Invariant(monitor_sent_update, (smId = this, sent = sent));
 			//forward the update to the succ
-			send(succ, forwardUpdate, (seqId = nextSeqId, client = payload.client, kv = payload.kv));
+			send(succ, forwardUpdate, (mess = (seqId = nextSeqId, client = payload.client, kv = payload.kv), pred = this));
 	
 			raise(local);
 		}
@@ -181,42 +182,45 @@ machine ChainReplicationServer {
 	}
 	state ProcessfwdUpdate {
 		entry {
-			//update my nextSeqId
-			nextSeqId = payload.seqId;
-			
-			//Add the update message to keyvalue store
-			keyvalue.update(payload.kv.key, payload.kv.value);
-			
-			if(!isTail)
+			if(payload.pred == pred)
 			{
-				//add it to the history seq (represents the successfully serviced requests)
-				history.insert(sizeof(history), payload.seqId);
-				//invoke the monitor
-				invoke Update_Propagation_Invariant(monitor_history_update, (smId = this, history = history));
-				//Add the update request to sent seq
-				sent.insert(sizeof(sent), (seqId = payload.seqId, client = payload.client, kv = (key = payload.kv.key, value = payload.kv.value)));
-				//call the monitor
-				invoke Update_Propagation_Invariant(monitor_sent_update, (smId = this, sent = sent));
-				//forward the update to the succ
-				send(succ, forwardUpdate, (seqId = payload.seqId, client = payload.client, kv = payload.kv));
-			}
-			else
-			{
-				if(!isHead)
+				//update my nextSeqId
+				nextSeqId = payload.mess.seqId;
+				
+				//Add the update message to keyvalue store
+				keyvalue.update(payload.mess.kv.key, payload.mess.kv.value);
+				
+				if(!isTail)
 				{
 					//add it to the history seq (represents the successfully serviced requests)
-					history.insert(sizeof(history), payload.seqId);
+					history.insert(sizeof(history), payload.mess.seqId);
+					//invoke the monitor
+					invoke Update_Propagation_Invariant(monitor_history_update, (smId = this, history = history));
+					//Add the update request to sent seq
+					sent.insert(sizeof(sent), (seqId = payload.mess.seqId, client = payload.mess.client, kv = (key = payload.mess.kv.key, value = payload.mess.kv.value)));
+					//call the monitor
+					invoke Update_Propagation_Invariant(monitor_sent_update, (smId = this, sent = sent));
+					//forward the update to the succ
+					send(succ, forwardUpdate, (mess = (seqId = payload.mess.seqId, client = payload.mess.client, kv = payload.mess.kv), pred = this));
 				}
-				
-				//invoke the monitor
-				invoke UpdateResponse_QueryResponse_Seq(monitor_reponsetoupdate, payload.kv);
-				
-				//send the response to client
-				send(payload.client, responsetoupdate);
-				
-				//send ack to the pred
-				send(pred, backwardAck, (seqId = payload.seqId));
+				else
+				{
+					if(!isHead)
+					{
+						//add it to the history seq (represents the successfully serviced requests)
+						history.insert(sizeof(history), payload.mess.seqId);
+					}
+					
+					//invoke the monitor
+					invoke UpdateResponse_QueryResponse_Seq(monitor_reponsetoupdate, (tail = this, key = payload.mess.kv.key, value = payload.mess.kv.value));
+					
+					//send the response to client
+					send(payload.mess.client, responsetoupdate);
+					
+					//send ack to the pred
+					send(pred, backwardAck, (seqId = payload.mess.seqId));
 
+				}
 			}
 			raise(local);
 		}

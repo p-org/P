@@ -94,6 +94,7 @@ machine ChainReplicationMaster {
 			servers.remove(0);
 			//Update the monitor
 			invoke Update_Propagation_Invariant(monitor_update_servers, (servers = servers));
+			invoke UpdateResponse_QueryResponse_Seq(monitor_update_servers, (servers = servers));
 			
 			head = servers[0];
 			send(head, becomeHead, this);
@@ -112,6 +113,9 @@ machine ChainReplicationMaster {
 			servers.remove(sizeof(servers) - 1);
 			//Update the monitor
 			invoke Update_Propagation_Invariant(monitor_update_servers, (servers = servers));
+			invoke UpdateResponse_QueryResponse_Seq(monitor_update_servers, (servers = servers));
+			
+			
 			tail = servers[sizeof(servers) - 1];
 			send(tail, becomeTail, this);
 		}
@@ -125,11 +129,14 @@ machine ChainReplicationMaster {
 	
 	state CorrectServerFailure {
 		entry {
-				call(FixSuccessor);
-				call(FixPredecessor);
 				servers.remove(faultyNodeIndex);
 				//Update the monitor
 				invoke Update_Propagation_Invariant(monitor_update_servers, (servers = servers));
+				invoke UpdateResponse_QueryResponse_Seq(monitor_update_servers, (servers = servers));
+		
+				call(FixSuccessor);
+				call(FixPredecessor);
+				
 				raise(done);
 			}
 			on done goto WaitforFault
@@ -148,14 +155,14 @@ machine ChainReplicationMaster {
 	
 	state FixSuccessor {
 		entry {
-			send(servers[faultyNodeIndex + 1], newPredecessor, (pred = servers[faultyNodeIndex - 1], master = this));
+			send(servers[faultyNodeIndex], newPredecessor, (pred = servers[faultyNodeIndex - 1], master = this));
 		}
 		on newSuccInfo do SetLastUpdateAndReturn;
 	}
 	
 	state FixPredecessor {
 		entry {
-			send(servers[faultyNodeIndex - 1], newSuccessor, (succ = servers[faultyNodeIndex + 1], master = this, lastAckSent = lastAckSent, lastUpdateRec = lastUpdateReceivedSucc));
+			send(servers[faultyNodeIndex - 1], newSuccessor, (succ = servers[faultyNodeIndex], master = this, lastAckSent = lastAckSent, lastUpdateRec = lastUpdateReceivedSucc));
 		}
 		on success do Return;
 	}

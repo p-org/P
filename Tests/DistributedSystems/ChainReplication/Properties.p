@@ -281,11 +281,14 @@ tail node.
 It is a global monitor !
 
 */
-event monitor_reponsetoupdate : (key :int, value: int);
-event monitor_responsetoquery : (key : int, value : int);
+event monitor_reponsetoupdate : (tail:id, key :int, value: int);
+event monitor_responsetoquery : (tail: id, key : int, value : int);
 
 monitor UpdateResponse_QueryResponse_Seq {
 	var lastUpdateReponse : map[int, int];
+	var servers : seq[id];
+	var iter : int;
+	var returnVal : bool;
 	start state Init {
 		entry {
 			raise(local);
@@ -293,12 +296,38 @@ monitor UpdateResponse_QueryResponse_Seq {
 		on local goto Wait;
 	}
 	
+	action UpdateServers {
+		servers = payload.servers;
+	}
+	
+	fun Contains(s: seq[id], item:id){
+		iter = 0;
+		while(iter < sizeof(servers))
+		{
+			if(s[iter] == item)
+			{
+				returnVal = true;
+			}
+			iter = iter + 1;
+		}
+		returnVal = false;
+	}
+	
 	state Wait {
+		on monitor_update_servers do UpdateServers;
 		on monitor_reponsetoupdate goto Wait {
-			lastUpdateReponse.update (((key : int, value : int))payload.key, ((key : int, value : int))payload.value);
+			Contains(servers, ((tail:id, key :int, value: int))payload.tail);
+			if(returnVal)
+			{
+				lastUpdateReponse.update (((tail:id, key :int, value: int))payload.key, ((key : int, value : int))payload.value);
+			}
 		}; 
 		on monitor_responsetoquery goto Wait {
-			assert(((key : int, value : int))payload.value == lastUpdateReponse[((key : int, value : int))payload.key]);
+			Contains(servers, ((tail:id, key :int, value: int))payload.tail);
+			if(returnVal)
+			{
+				assert(((tail:id, key :int, value: int))payload.value == lastUpdateReponse[((tail:id, key :int, value: int))payload.key]);
+			}
 		};
 	}
 }

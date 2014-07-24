@@ -125,7 +125,7 @@ main machine TheGodMachine {
 			
 			//Global Monitor
 			new Update_Propagation_Invariant(servers);
-			//new UpdateResponse_QueryResponse_Seq();
+			new UpdateResponse_QueryResponse_Seq(servers);
 			
 			send(servers[1], predSucc, (pred = servers[0], succ = servers[1]));
 			send(servers[0], predSucc, (pred = servers[0], succ = servers[1]));

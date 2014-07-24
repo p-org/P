@@ -92,6 +92,9 @@ machine ChainReplicationMaster {
 		entry {
 			//make successor the head node
 			servers.remove(0);
+			//Update the monitor
+			invoke Update_Propagation_Invariant(monitor_update_servers, (servers = servers));
+			
 			head = servers[0];
 			send(head, becomeHead, this);
 		}
@@ -107,6 +110,8 @@ machine ChainReplicationMaster {
 			
 			//make successor the head node
 			servers.remove(sizeof(servers) - 1);
+			//Update the monitor
+			invoke Update_Propagation_Invariant(monitor_update_servers, (servers = servers));
 			tail = servers[sizeof(servers) - 1];
 			send(tail, becomeTail, this);
 		}
@@ -123,6 +128,8 @@ machine ChainReplicationMaster {
 				call(FixSuccessor);
 				call(FixPredecessor);
 				servers.remove(faultyNodeIndex);
+				//Update the monitor
+				invoke Update_Propagation_Invariant(monitor_update_servers, (servers = servers));
 				raise(done);
 			}
 			on done goto WaitforFault

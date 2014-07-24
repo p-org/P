@@ -85,27 +85,37 @@ monitor Update_Query_Seq
 // Histi = Histj + Senti -- Invariant 2
 //This is a global monitor
 
-event monitor_history_update: (smId : int, history: seq[int]);
-event monitor_sent_update: (smId : int, sent : seq[(seqId:int, client : id, kv: (key:int, value:int))]);
+event monitor_history_update: (smId : id, history: seq[int]);
+event monitor_sent_update: (smId : id, sent : seq[(seqId:int, client : id, kv: (key:int, value:int))]);
+event monitor_update_servers : (servers: seq[id]);
 
 monitor Update_Propagation_Invariant {
-	var histMap : map[int, seq[int]];
-	var sentMap : map[int, seq[int]];
+	var servers : seq[id];
+	var histMap : map[id, seq[int]];
+	var sentMap : map[id, seq[int]];
 	var tempSeq : seq[int];
+	var next : id;
+	var prev : id;
 	var iter1 :int;
 	var iter2 :int;
 	start state Init {
 		entry {
+			servers = (seq[id])payload;
 			raise(local);
 		}
 		on local goto WaitForUpdateMessage;
 		
 	}
 	
+	action UpdateServers {
+		servers = payload.servers;
+	}
+	
 	state WaitForUpdateMessage {
 		
 		on monitor_sent_update do CheckInvariant_2;
 		on monitor_history_update do CheckInvariant_1;
+		on monitor_update_servers do UpdateServers;
 	}
 	
 	fun checklessthan(s1 : seq[int], s2 : seq[int]) {
@@ -120,6 +130,29 @@ monitor Update_Propagation_Invariant {
 		}
 	
 	}
+	fun GetNext(curr:id){
+		next = null;
+		iter1 = 1;
+		while(iter1 < sizeof(servers) - 1)
+		{
+			if(servers[iter1 - 1] == curr)
+				next = servers[iter1];
+				
+			iter1 = iter1 + 1;
+		}
+	}
+	
+	fun GetPrev(curr:id) {
+		prev = null;
+		iter1 = 1;
+		while(iter1 < sizeof(servers) - 1)
+		{
+			if(servers[iter1] == curr)
+				prev = servers[iter1 - 1];
+				
+			iter1 = iter1 + 1;
+		}
+	}
 	
 	action CheckInvariant_1 {
 		IsSorted(payload.history);
@@ -127,13 +160,15 @@ monitor Update_Propagation_Invariant {
 		histMap.update(payload.smId, payload.history);
 		
 		//histsmid+1 <= histsmid
-		if((payload.smId+1) in histMap) {
-			checklessthan(histMap[(payload.smId+1)], histMap[payload.smId]);
+		GetNext(payload.smId);
+		if(next in histMap) {
+			checklessthan(histMap[next], histMap[payload.smId]);
 		}
 		
 		//histsmId <= histsmId-1
-		if((payload.smId-1) in histMap) {
-			checklessthan(histMap[(payload.smId)], histMap[payload.smId -1]);
+		GetPrev(payload.smId);
+		if(prev in histMap) {
+			checklessthan(histMap[payload.smId], histMap[prev]);
 		}
 	}
 	
@@ -216,21 +251,22 @@ monitor Update_Propagation_Invariant {
 		sentMap.update(payload.smId, tempSeq);
 		clearTempSeq();
 		
-		
+		GetNext(payload.smId);
 		//histsmid = hist(smid+1) + sentsmid
-		if((payload.smId + 1) in histMap)
+		if(next in histMap)
 		{
-			mergeSeq(histMap[payload.smId + 1], sentMap[payload.smId]);
+			mergeSeq(histMap[next], sentMap[payload.smId]);
 			checkequal(histMap[payload.smId], tempSeq);
 		}
 		
 		clearTempSeq();
 		
+		GetPrev(payload.smId);
 		//histsmid-1 = hist(smid) + sentsmid-1	
-		if((payload.smId - 1) in sentMap)
+		if(prev in sentMap)
 		{
-			mergeSeq(histMap[payload.smId], sentMap[payload.smId - 1]);
-			checkequal(histMap[payload.smId - 1], tempSeq);
+			mergeSeq(histMap[payload.smId], sentMap[prev]);
+			checkequal(histMap[prev], tempSeq);
 		}
 		
 		clearTempSeq();

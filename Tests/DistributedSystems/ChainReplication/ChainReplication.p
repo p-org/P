@@ -25,7 +25,6 @@ machine ChainReplicationServer {
 	var iter : int;
 	var tempIndex : int;
 	var removeIndex : int;
-	var myId : int;
 	
 	action InitPred {
 		pred = payload.pred;
@@ -42,7 +41,6 @@ machine ChainReplicationServer {
 		entry {
 			isHead = (((isHead:bool, isTail:bool, smId:int))payload).isHead;
 			isTail = (((isHead:bool, isTail:bool, smId:int))payload).isTail;
-			myId = (((isHead:bool, isTail:bool, smId:int))payload).smId;
 			nextSeqId = 0;
 		}
 		on predSucc do InitPred;
@@ -168,12 +166,12 @@ machine ChainReplicationServer {
 			//add it to the history seq (represents the successfully serviced requests)
 			history.insert(sizeof(history), nextSeqId);
 			//invoke the monitor
-			invoke Update_Propagation_Invariant(monitor_history_update, (smId = myId, history = history));
+			invoke Update_Propagation_Invariant(monitor_history_update, (smId = this, history = history));
 			
 			//Add the update request to sent seq
 			sent.insert(sizeof(sent), (seqId = nextSeqId, client = payload.client, kv = (key = payload.kv.key, value = payload.kv.value)));
 			//call the monitor
-			invoke Update_Propagation_Invariant(monitor_sent_update, (smId = myId, sent = sent));
+			invoke Update_Propagation_Invariant(monitor_sent_update, (smId = this, sent = sent));
 			//forward the update to the succ
 			send(succ, forwardUpdate, (seqId = nextSeqId, client = payload.client, kv = payload.kv));
 	
@@ -194,11 +192,11 @@ machine ChainReplicationServer {
 				//add it to the history seq (represents the successfully serviced requests)
 				history.insert(sizeof(history), payload.seqId);
 				//invoke the monitor
-				invoke Update_Propagation_Invariant(monitor_history_update, (smId = myId, history = history));
+				invoke Update_Propagation_Invariant(monitor_history_update, (smId = this, history = history));
 				//Add the update request to sent seq
 				sent.insert(sizeof(sent), (seqId = payload.seqId, client = payload.client, kv = (key = payload.kv.key, value = payload.kv.value)));
 				//call the monitor
-				invoke Update_Propagation_Invariant(monitor_sent_update, (smId = myId, sent = sent));
+				invoke Update_Propagation_Invariant(monitor_sent_update, (smId = this, sent = sent));
 				//forward the update to the succ
 				send(succ, forwardUpdate, (seqId = payload.seqId, client = payload.client, kv = payload.kv));
 			}

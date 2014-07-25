@@ -117,13 +117,15 @@ main machine TheGodMachine {
 	var temp : id;
 	start state Init {
 		entry {
-			//Global Monitor
-			new Update_Propagation_Invariant();
-			new UpdateResponse_QueryResponse_Seq();
-			
-		
+
 			temp = new ChainReplicationServer((isHead = true, isTail = true, smId = 1));
 			servers.insert(0, temp);
+			
+			//Global Monitor for Safety
+			//new Update_Propagation_Invariant(servers);
+			//new UpdateResponse_QueryResponse_Seq(servers);
+			
+			
 			send(servers[0], predSucc, (pred = servers[0], succ = servers[0]));
 			//create the client and start the game
 			temp = new Client((head = servers[0], tail = servers[0], startIn = 1));

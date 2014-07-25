@@ -56,6 +56,9 @@ machine ChainReplicationServer {
 		{
 			//invoke the monitor
 			invoke UpdateResponse_QueryResponse_Seq(monitor_reponsetoupdate, (tail = this, key = sent[iter].kv.key, value = sent[iter].kv.value));
+			invoke livenessUpdatetoResponse(monitor_responseLiveness, (reqId = sent[iter].seqId));
+			
+			
 			//send the response to client
 			send(sent[iter].client, responsetoupdate);
 			
@@ -139,6 +142,8 @@ machine ChainReplicationServer {
 		{
 			nextSeqId = nextSeqId + 1;
 			assert(isHead);
+			new livenessUpdatetoResponse(nextSeqId);
+			invoke livenessUpdatetoResponse(monitor_updateLiveness, (reqId = nextSeqId));
 		};
 		
 		on query goto WaitForRequest 
@@ -213,6 +218,8 @@ machine ChainReplicationServer {
 					
 					//invoke the monitor
 					invoke UpdateResponse_QueryResponse_Seq(monitor_reponsetoupdate, (tail = this, key = payload.mess.kv.key, value = payload.mess.kv.value));
+					invoke livenessUpdatetoResponse(monitor_responseLiveness, (reqId =payload.mess.seqId));
+					
 					
 					//send the response to client
 					send(payload.mess.client, responsetoupdate);

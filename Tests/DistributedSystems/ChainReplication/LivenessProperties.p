@@ -9,7 +9,7 @@ event monitor_responseLiveness : (reqId : int);
 event monitor_queryLiveness : (reqId : int);
 
 monitor livenessUpdatetoResponse {
-	var myRequestId;
+	var myRequestId : int;
 	start state Init {
 		entry {
 			myRequestId = (int) payload;
@@ -18,7 +18,7 @@ monitor livenessUpdatetoResponse {
 		on local goto WaitForUpdateRequest;
 	}
 	action checkIfMine {
-		if(payload.reqId = myRequestId)
+		if(payload.reqId == myRequestId)
 			raise(monitor_success);
 	}
 	
@@ -51,7 +51,7 @@ monitor livenessUpdatetoResponse {
 }
 
 monitor livenessQuerytoResponse {
-	var myRequestId;
+	var myRequestId : int;
 	start state Init {
 		entry {
 			myRequestId = (int) payload;
@@ -60,7 +60,7 @@ monitor livenessQuerytoResponse {
 		on local goto WaitForQueryRequest;
 	}
 	action checkIfMine {
-		if(payload.reqId = myRequestId)
+		if(payload.reqId == myRequestId)
 			raise(monitor_success);
 	}
 	

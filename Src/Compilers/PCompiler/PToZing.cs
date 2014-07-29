@@ -2435,7 +2435,7 @@ namespace PCompiler
             }
             else if (funName == PData.Con_Return.Node.Name)
             {
-                if (compiler.allMachines[ctxt.machineName].IsSpec)
+                if (compiler.allMachines[ctxt.machineName].IsSpec && ctxt.translationContext != TranslationContext.Function)
                 {
                     compiler.errors.Add(new Flag(SeverityKind.Error, n, string.Format("A spec machine cannot make a return statement."), 0, compiler.CompilingProgram));
                     return null;

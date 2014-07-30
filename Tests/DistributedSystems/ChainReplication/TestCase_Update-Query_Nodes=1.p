@@ -122,8 +122,8 @@ main machine TheGodMachine {
 			servers.insert(0, temp);
 			
 			//Global Monitor for Safety
-			//new Update_Propagation_Invariant(servers);
-			//new UpdateResponse_QueryResponse_Seq(servers);
+			new Update_Propagation_Invariant(servers);
+			new UpdateResponse_QueryResponse_Seq(servers);
 			
 			
 			send(servers[0], predSucc, (pred = servers[0], succ = servers[0]));

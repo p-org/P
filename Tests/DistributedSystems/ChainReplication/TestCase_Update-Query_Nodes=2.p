@@ -124,8 +124,8 @@ main machine TheGodMachine {
 			servers.insert(0, temp);
 			
 			//Global Monitor
-			//new Update_Propagation_Invariant(servers);
-			//new UpdateResponse_QueryResponse_Seq(servers);
+			new Update_Propagation_Invariant(servers);
+			new UpdateResponse_QueryResponse_Seq(servers);
 			
 			send(servers[1], predSucc, (pred = servers[0], succ = servers[1]));
 			send(servers[0], predSucc, (pred = servers[0], succ = servers[1]));
@@ -133,8 +133,8 @@ main machine TheGodMachine {
 			//create the client and start the game
 			temp = new Client((head = servers[0], tail = servers[1], startIn = 1));
 			clients.insert( 0, temp);
-			//temp = new Client((head = servers[0], tail = servers[1], startIn = 100));
-			//clients.insert( 0, temp);
+			temp = new Client((head = servers[0], tail = servers[1], startIn = 100));
+			clients.insert( 0, temp);
 			
 			new ChainReplicationMaster((servers = servers, clients = clients));
 			raise(delete);

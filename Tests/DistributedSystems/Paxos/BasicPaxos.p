@@ -1,11 +1,11 @@
 /*
 The basic paxos algorithm. 
 */
-event prepare : (proposer: id, proposal : (round: int, serverId : int), value : int);
-event accept : (proposer: id, proposal : (round: int, serverId : int), value : int);
+event prepare : (proposer: id, proposal : (round: int, serverId : int), value : int) assume 3;
+event accept : (proposer: id, proposal : (round: int, serverId : int), value : int) assume 3;
 event agree : (proposal : (round: int, serverId : int), value : int) assume 6;
-event reject : (proposal : (round: int, serverId : int));
-event accepted : (proposal : (round: int, serverId : int), value : int);
+event reject : (proposal : (round: int, serverId : int)) assume 6;
+event accepted : (proposal : (round: int, serverId : int), value : int) assume 6;
 event timeout;
 event startTimer;
 event cancelTimer;
@@ -122,27 +122,19 @@ machine Proposer {
 	var roundNum : int;
 	var myId : int ;
 	var nextProposal: (round: int, serverId : int);
-	var receivedAgree : seq[(proposal : (round: int, serverId : int), value : int)];
+	var receivedAgree : (proposal : (round: int, serverId : int), value : int);
 	var iter : int ;
 	var maxRound : int;
 	var countAccept : int;
-	var tempProposal : (round: int, serverId : int);
+	var countAgree : int;
 	var tempVal : int;
 	var returnVal : bool;
 	var timer: mid;
+	var receivedMess : (proposal : (round: int, serverId : int), value : int);
+	
 	
 	fun GetNextProposal(maxRound : int) : (round: int, serverId : int) {
 		return (round = maxRound + 1, serverId = myId);
-	}
-	
-	fun ClearSeq (s : seq[(proposal : (round: int, serverId : int), value : int)]) {
-		assert(sizeof(s) < 10);
-		iter = sizeof(s) - 1;
-		while(iter >=0)
-		{
-			s.remove(0);
-			iter = iter - 1;
-		}
 	}
 	
 	fun equal (p1 : (round: int, serverId : int), p2 : (round: int, serverId : int)) : bool {
@@ -179,6 +171,7 @@ machine Proposer {
 			roundNum = 0;
 			maxRound = 0;
 			majority = (sizeof(acceptors))/2 + 1;
+			assert(majority == 2);
 			timer = new Timer(this);
 			raise(local);
 		}
@@ -196,22 +189,36 @@ machine Proposer {
 	}
 	
 	action CountAgree {
-		receivedAgree.insert(0, payload);
-		if(sizeof(receivedAgree) == majority)
+		receivedMess = ((proposal : (round: int, serverId : int), value : int))payload;
+		countAgree = countAgree + 1;
+		returnVal = lessThan(receivedAgree.proposal, receivedMess.proposal);
+		if(returnVal)
+		{
+			receivedAgree.proposal = receivedMess.proposal;
+			receivedAgree.value = receivedMess.value;
+		}
+		if(countAgree == majority)
 			raise(success);
 		
 	}
 	state ProposeValuePhase1 {
 		ignore accepted;
 		entry {
+			countAgree = 0;
 			nextProposal = GetNextProposal(maxRound);
 			BroadCastAcceptors(prepare, (proposer = this, proposal = (round = nextProposal.round, serverId = myId), value = proposeVal));
 			send(timer, startTimer);
 		}
+		
+		exit {
+			receivedAgree = (proposal = (round = -1, serverId = -1), value = -1);
+		}
+		
 		on agree do CountAgree;
 		on reject goto ProposeValuePhase1 {
 			if(nextProposal.round <= ((proposal : (round: int, serverId : int)))payload.proposal.round)
 				maxRound = ((proposal : (round: int, serverId : int)))payload.proposal.round;
+				
 			send(timer, cancelTimer);
 		};
 		on success goto ProposeValuePhase2
@@ -234,21 +241,9 @@ machine Proposer {
 	}
 	
 	fun getHighestProposedValue() : int {
-		iter = 0;
-		tempProposal = (round = -1, serverId = 0);
-		while(iter < sizeof(receivedAgree))
+		if(receivedAgree.value != -1)
 		{
-			returnVal = lessThan(tempProposal, receivedAgree[iter].proposal);
-			if(returnVal)
-			{
-				tempProposal = receivedAgree[iter].proposal;
-				tempVal = receivedAgree[iter].value;
-			}
-			iter = iter + 1;
-		}
-		if(tempVal != -1)
-		{
-			return tempVal;
+			return receivedAgree.value;
 		}
 		else
 		{
@@ -262,6 +257,9 @@ machine Proposer {
 		
 			countAccept = 0;
 			proposeVal = getHighestProposedValue();
+			//invoke the monitor on proposal event
+			invoke BasicPaxosInvariant_P2b(monitor_valueProposed, (proposer = this, proposal = nextProposal, value = proposeVal));
+			
 			BroadCastAcceptors(accept, (proposer = this, proposal = nextProposal, value = proposeVal));
 			send(timer, startTimer);
 		}
@@ -271,17 +269,15 @@ machine Proposer {
 			if(nextProposal.round <= ((proposal : (round: int, serverId : int)))payload.proposal.round)
 				maxRound = ((proposal : (round: int, serverId : int)))payload.proposal.round;
 				
-			ClearSeq(receivedAgree);
 			send(timer, cancelTimer);
 		};
 		on success goto Done
 		{
+			//the value is chosen, hence invoke the monitor on chosen event
+			invoke BasicPaxosInvariant_P2b(monitor_valueChosen, (proposer = this, proposal = nextProposal, value = proposeVal));
 			send(timer, cancelTimer);
 		};
-		on timeout goto ProposeValuePhase1
-		{
-			ClearSeq(receivedAgree);
-		};
+		on timeout goto ProposeValuePhase1;
 		
 	}
 	

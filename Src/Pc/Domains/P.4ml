@@ -1,11 +1,16 @@
-﻿domain P
+﻿domain P extends PStaticTyping
+{
+
+}
+
+domain PData
 {        
     /*************************************************************/
     /****************          Type Language          ************/
     /*************************************************************/    
        
-    //// The basic type id accepts any machine.
-    BaseType        ::= new ({ NULL, BOOL, INT, EVENT, MACHINE, MODEL, FOREIGN, ANY }).
+    //// The BaseType REAL is the type of real machines.
+    BaseType        ::= new ({ NULL, BOOL, INT, EVENT, REAL, MODEL, FOREIGN, ANY }).
     TupType         ::= new (hd: any TypeExpr, tl: any TupType + { NIL }).
     NmdTupType      ::= new (hd: any NmdTupTypeField, tl: any NmdTupType + { NIL }).
     SeqType         ::= new (x: any TypeExpr).
@@ -21,12 +26,12 @@
     Name       ::= new (name: String).
     New        ::= new (name: String, arg: any Expr + { NIL }).
     FunApp     ::= new (name: String, args: any Exprs + { NIL }).
-	NulApp     ::= new (op: Integer + Boolean + { THIS, TRIGGER, PAYLOAD, NONDET, FAIRNONDET, NULL, HALT }).
-	UnApp      ::= new (op: { NOT, NEG, KEYS, VALUES, SIZEOF }, arg1: any Expr).
+    NulApp     ::= new (op: Integer + Boolean + { THIS, TRIGGER, PAYLOAD, NONDET, FAIRNONDET, NULL, HALT }).
+    UnApp      ::= new (op: { NOT, NEG, KEYS, VALUES, SIZEOF }, arg1: any Expr).
     BinApp     ::= new (op: { ADD, SUB, MUL, INTDIV, AND, OR, EQ, NEQ, LT, LE, GT, GE, IDX, IN }, arg1: any Expr, arg2: any Expr).
-	Field      ::= new (arg: any Expr, name: String).
-	Default    ::= new (type: any TypeExpr). 
-	Cast       ::= new (arg: any Expr, type: any TypeExpr). 
+    Field      ::= new (arg: any Expr, name: String).
+    Default    ::= new (type: any TypeExpr). 
+    Cast       ::= new (arg: any Expr, type: any TypeExpr). 
     Tuple      ::= new (body: any Exprs).
     NamedTuple ::= new (body: any NamedExprs).
     Exprs      ::= new (head: any Expr, tail: any Exprs + { NIL }).              
@@ -41,15 +46,15 @@
     Send     ::= new (dest: any Expr, ev: any Expr, arg: any Expr + { NIL }).
     Monitor  ::= new (name: String, ev: Expr, arg: Expr + { NIL }).
     FunStmt  ::= new (name: String, args: any Exprs + { NIL }).
-	NulStmt  ::= new (op: { SKIP, POP }).
-	UnStmt   ::= new (op: { ASSERT }, arg1: any Expr).
-	BinStmt  ::= new (op: { REMOVE, ASSIGN }, arg1: any Expr, arg2: any Expr).
+    NulStmt  ::= new (op: { SKIP, POP }).
+    UnStmt   ::= new (op: { ASSERT }, arg1: any Expr).
+    BinStmt  ::= new (op: { REMOVE, ASSIGN }, arg1: any Expr, arg2: any Expr).
     Return   ::= new (expr: any Expr + { NIL }).
     While    ::= new (cond: any Expr, body: any Stmt).
     Ite      ::= new (cond: any Expr, true: any Stmt, false: any Stmt).
     Seq      ::= new (s1: any Stmt, s2: any Stmt).
 
-	Stmt ::= NewStmt + FunStmt + NulStmt + UnStmt + BinStmt + Return + Send + Raise + While + Ite + Seq + Push + Monitor. 
+    Stmt ::= NewStmt + FunStmt + NulStmt + UnStmt + BinStmt + Return + Send + Raise + While + Ite + Seq + Push + Monitor. 
 
     /*************************************************************/
     /****************  State Machine Declarations    *************/
@@ -61,20 +66,334 @@
     FunDecl      ::= fun (name: String, owner: MachineDecl -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL },  return: any TypeExpr + { NIL }, body: any Stmt).
     StateDecl    ::= fun (name: QualifiedName, owner: MachineDecl -> entryFun: any Stmt, exitFun: any Stmt, isStable: Boolean).
     TransDecl    ::= fun (src: StateDecl, trig: String + { DEFAULT, HALT } -> dst: any QualifiedName, action: any Stmt + { NIL, PUSH }).
-	ActionDecl   ::= fun (src: StateDecl, trig: String + { HALT } -> action: String).
-	DefIgnDecl   ::= fun (src: StateDecl, trig: String + { HALT } -> kind: { DEFER, IGNORE }).
+    ActionDecl   ::= fun (src: StateDecl, trig: String + { HALT } -> action: String).
+    DefIgnDecl   ::= fun (src: StateDecl, trig: String + { HALT } -> kind: { DEFER, IGNORE }).
 	
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
-	QualifiedName      ::= new (name: String, qualifier: any QualifiedName + { NIL }).
-	QueueConstraint    ::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
-	EventLabel         ::= String + { DEFAULT, HALT }.
+    QualifiedName      ::= new (name: String, qualifier: any QualifiedName + { NIL }).
+    QueueConstraint    ::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
+    EventLabel         ::= String + { DEFAULT, HALT }.
 
     /*************************************************************/
     /****************          Annotations           *************/
     /*************************************************************/
 
-	Annotation ::= new (ant: Annotable, key: String, value: any AnnotValue).
-	Annotable  ::= MachineDecl + EventDecl + StateDecl + VarDecl + TransDecl + FunDecl + ActionDecl + DefIgnDecl + { NIL }.
-	AnnotValue ::= Integer + String + Boolean + { NULL }.
+    Annotation ::= new (ant: Annotable, key: String, value: any AnnotValue).
+    Annotable  ::= MachineDecl + EventDecl + StateDecl + VarDecl + TransDecl + FunDecl + ActionDecl + DefIgnDecl + { NIL }.
+    AnnotValue ::= Integer + String + Boolean + { NULL }.
 }
+
+domain PStaticTyping extends PData
+/*
+[
+    compiler_ProductivityCheck = "TypeOf[1], TypeRel[0, 1]"
+]
+*/
+{
+    //// The declarations that may contain expressions or statements that should be typed.
+    TypingContext ::= FunDecl + StateDecl + TransDecl.
+    
+    //// The set of typeable expressions and statements.
+    Typeable ::= Expr + Stmt + Exprs + NamedExprs.
+    
+    //// The type judgement. NIL is a placeholder for untyped constructs.
+    TypeOf ::= (cntxt: TypingContext, expr: Typeable, type: TypeExpr + { ERROR, NIL }).
+    
+    //// All typeable subexpressions / substatements and the declarations in which they appear.
+    SubSE ::= sub (cntxt: TypingContext, typeable: Typeable).
+
+    //// The machine owning a context.
+    TCOwner ::= (cntxt: TypingContext, mach: MachineDecl).    
+    TCOwner(x, x.owner) :- x is FunDecl; x is StateDecl; y is TransDecl, x = y.src.
+
+    /*************************************************************/
+    /*                      Types of Expressions                 */
+    /*************************************************************/
+    
+    //// (1) The types of nullary expressions
+    TypeOf(c, e, BaseType(NULL))  :- SubSE(c, e), e = NulApp(NULL).
+    TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = NulApp(TRIGGER).
+    TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = NulApp(HALT).
+    TypeOf(c, e, BaseType(ANY))   :- SubSE(c, e), e = NulApp(PAYLOAD).
+    
+    TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = NulApp(THIS), TCOwner(c, m), m.kind = REAL.
+    TypeOf(c, e, BaseType(MODEL)) :- SubSE(c, e), e = NulApp(THIS), TCOwner(c, m), m.kind = MODEL.
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(THIS), TCOwner(c, m), m.kind = MONITOR.
+    
+    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(NONDET), TCOwner(c, m), m.kind != REAL.
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(NONDET), TCOwner(c, m), m.kind = REAL.
+
+    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(FAIRNONDET), TCOwner(c, m), m.kind != REAL.
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(FAIRNONDET), TCOwner(c, m), m.kind = REAL.
+    
+    TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = NulApp(v), v : Integer.
+    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(v), v : Boolean.          
+    
+    //// (2) The types of unary expressions
+    TypeOf(c, e, t)               :- SubSE(c, e), e = Default(t). 
+    
+    TypeOf(c, e, t)               :- SubSE(c, e), e = Tuple(e'), TypeOf(c, e', t).
+     
+    TypeOf(c, e, t)               :- SubSE(c, e), e = NamedTuple(e'), TypeOf(c, e', t).     
+
+    // Variables hide the names of events, in case both have the same name.
+    TypeOf(c, e, t)               :- SubSE(c, e), e = Name(n), TCOwner(c, m), VarDecl(n, m, t). 
+    TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = Name(n), EventDecl(n, _, _), TCOwner(c, m), no VarDecl(n, m, _). 
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n), TCOwner(c, m), no EventDecl(n, _, _), no VarDecl(n, m, _). 
+    
+    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = UnApp(NOT, e'), TypeOf(c, e', BaseType(b)), b = BOOL. 
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(NOT, e'), TypeOf(c, e', BaseType(b)), b != BOOL. 
+    
+    TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = UnApp(NEG, e'), TypeOf(c, e', BaseType(b)), b = INT. 
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(NEG, e'), TypeOf(c, e', BaseType(b)), b != INT. 
+    
+    TypeOf(c, e, dom)             :- SubSE(c, e), e = UnApp(KEYS, e'), TypeOf(c, e', t), t = MapType(dom, cod). 
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(KEYS, e'), TypeOf(c, e', t), toSymbol(t) != #MapType. 
+
+    TypeOf(c, e, cod)             :- SubSE(c, e), e = UnApp(VALUES, e'), TypeOf(c, e', t), t = MapType(dom, cod). 
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(VALUES, e'), TypeOf(c, e', t), toSymbol(t) != #MapType. 
+
+    TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = UnApp(SIZEOF, e'), TypeOf(c, e', t), t : MapType. 
+    TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = UnApp(SIZEOF, e'), TypeOf(c, e', t), t : SeqType. 
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(SIZEOF, e'), TypeOf(c, e', t), toSymbol(t) != #MapType, toSymbol(t) != #SeqType. 
+    
+    //// (2) The types of binary expressions
+    TypeOf(c, e, t)                :- SubSE(c, e), e = Cast(e', t), TypeOf(c, e', t'), TypeRel(t, t', k), k != EMPTY.
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Cast(e', t), TypeOf(c, e', t'), TypeRel(t, t', k), k = EMPTY.
+
+    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _), MachineDecl(n, REAL, _, _, _).
+    TypeOf(c, e, BaseType(MODEL))  :- SubSE(c, e), e = New(n, _), MachineDecl(n, MODEL, _, _, _).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), MachineDecl(n, MONITOR, _, _, _).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), no MachineDecl(n, _, _, _, _).   
+    
+    TypeOf(c, e, ft)               :- SubSE(c, e), e = Field(e', n), TypeOf(c, e', t), TypeOfField(t, n, ft).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Field(e', n), TypeOf(c, e', t), toSymbol(t) != #NmdTupType.
+    
+    PureIntOp ::= { ADD, MUL, INTDIV }.
+    TypeOf(c, e, bint)             :- SubSE(c, e), e = BinApp(op, e', e''), TypeOf(c, e', bint), TypeOf(c, e'', bint), op : PureIntOp, bint = BaseType(INT).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, e', _), TypeOf(c, e', t), op : PureIntOp, t != BaseType(INT).    
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e''), TypeOf(c, e'', t), op : PureIntOp, t != BaseType(INT).    
+    
+    PureIntRel ::= { LT, LE, GT, GE }.
+    TypeOf(c, e, BaseType(BOOL))   :- SubSE(c, e), e = BinApp(op, e', e''), TypeOf(c, e', bint), TypeOf(c, e'', bint), op : PureIntRel, bint = BaseType(INT).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, e', _), TypeOf(c, e', t), op : PureIntRel, t != BaseType(INT).    
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e''), TypeOf(c, e'', t), op : PureIntRel, t != BaseType(INT).    
+    
+    PureBoolOp ::= { AND, OR }.
+    TypeOf(c, e, BaseType(BOOL))   :- SubSE(c, e), e = BinApp(op, e', e''), TypeOf(c, e', bbool), TypeOf(c, e'', bbool), op : PureBoolOp, bbool = BaseType(BOOL).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, e', _), TypeOf(c, e', t), op : PureBoolOp, t != BaseType(BOOL).    
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e''), TypeOf(c, e'', t), op : PureBoolOp, t != BaseType(BOOL).    
+    
+    PolyRel ::= { EQ, NEQ }.
+    TypeOf(c, e, BaseType(BOOL))   :- SubSE(c, e), e = BinApp(op, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), op : PolyRel, TypeRel(t', t'', k), k != EMPTY.
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), op : PolyRel, TypeRel(t', t'', k), k = EMPTY.
+    
+    TypeOf(c, e, inner)            :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = SeqType(inner), t'' = BaseType(INT).
+    TypeOf(c, e, cod)              :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = MapType(dom, cod), TypeRel(t'', dom, SUB).
+    TypeOf(c, e, fld)              :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOfIdx(t', e'', fld).    
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IDX, e', _), TypeOf(c, e', t'), toSymbol(t') != #SeqType, toSymbol(t') != #MapType, toSymbol(t') != #TupType.
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' : SeqType, t'' != BaseType(INT).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = MapType(dom, _), TypeRel(t'', dom, k), t'' != dom, k != SUB.
+    
+    TypeOf(c, e, bint)             :- SubSE(c, e), e = BinApp(SUB, e', e''), TypeOf(c, e', bint), TypeOf(c, e'', bint), bint = BaseType(INT).
+    TypeOf(c, e, t')               :- SubSE(c, e), e = BinApp(SUB, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = SeqType(inner), t'' = BaseType(INT).
+    TypeOf(c, e, t')               :- SubSE(c, e), e = BinApp(SUB, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = MapType(dom, _), TypeRel(t'', dom, SUB).        
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(SUB, e', e''), TypeOf(c, e', bint), TypeOf(c, e'', t''), t'' != bint, bint = BaseType(INT).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(SUB, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = SeqType(inner), t'' != BaseType(INT).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(SUB, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = MapType(dom, _), TypeRel(t'', dom, k), k != SUB.        
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(SUB, e', _),   TypeOf(c, e', t'), t' != BaseType(INT), toSymbol(t') != #SeqType, toSymbol(t') != #MapType.
+    
+    TypeOf(c, e, BaseType(BOOL))   :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = SeqType(inner), TypeRel(t', inner, k), k != EMPTY.
+    TypeOf(c, e, BaseType(BOOL))   :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = MapType(dom, _), TypeRel(t', dom, k), k != EMPTY.        
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = SeqType(inner), TypeRel(t', inner, EMPTY).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = MapType(dom, _), TypeRel(t', dom, EMPTY).        
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, _, e''),  TypeOf(c, e'', t''), toSymbol(t'') != #SeqType, toSymbol(t'') != #MapType.
+    
+
+    //// Used to lookup the type of a field in a named tuple type.
+    TypeOfField    ::= (tupTyp: NmdTupType, lookup: String, fieldType: TypeExpr + { ERROR }).    
+    TypeOfFieldAux ::= (tupTyp: NmdTupType, lookup: String, fieldType: TypeExpr + { ERROR }, tail: NmdTupType + { NIL }).
+    TypeOfFieldAux(ttup, n, ERROR, ttup)            :- SubSE(c, e), e = Field(e', n), TypeOf(c, e', ttup), ttup : NmdTupType.                   
+    TypeOfFieldAux(ttup, n, ft, aux.tl)             :- TypeOfFieldAux(ttup, n, ft, aux), aux.hd.name != n.
+    TypeOfFieldAux(ttup, n, aux.hd.type, aux.tl)    :- TypeOfFieldAux(ttup, n, ERROR, aux), aux.hd.name = n.
+    TypeOfField(ttup, n, ft)                        :- TypeOfFieldAux(ttup, n, ft, NIL).            
+    
+    //// Used to lookup the type of a field in a tuple.
+    TypeOfIdx    ::= (tupTyp: TupType, lookup: Expr, fieldType: TypeExpr + { ERROR }).    
+    TypeOfIdxAux ::= (tupTyp: TupType, lookup: Expr, fieldType: TypeExpr + { ERROR }, pos: Natural, tail: TupType + { NIL }).
+    TypeOfIdxAux(ttup, e'', ERROR, 0, ttup)          :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', ttup), ttup : TupType.                   
+    TypeOfIdxAux(ttup, n, ft, pos', aux.tl)          :- TypeOfIdxAux(ttup, n, ft, pos, aux), n != NulApp(pos), pos' = pos + 1.
+    TypeOfIdxAux(ttup, n, aux.hd, pos', aux.tl)      :- TypeOfIdxAux(ttup, n, ERROR, pos, aux), n = NulApp(pos), pos' = pos + 1.
+    TypeOfIdx(ttup, n, ft)                           :- TypeOfIdxAux(ttup, n, ft, _, NIL).    
+
+    /*************************************************************/
+    /*                      Types of Statements                  */
+    /*************************************************************/
+
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(POP).
+
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(SKIP).
+
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(_).
+
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Seq(_, _).
+    
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = UnStmt(ASSERT, e'), TypeOf(c, e', t'), t' = BaseType(BOOL).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = UnStmt(ASSERT, e'), TypeOf(c, e', t'), t' != BaseType(BOOL).
+    
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Ite(e', _, _), TypeOf(c, e', t'), t' = BaseType(BOOL).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Ite(e', _, _), TypeOf(c, e', t'), t' != BaseType(BOOL).
+    
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = While(e', _), TypeOf(c, e', t'), t' = BaseType(BOOL).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = While(e', _), TypeOf(c, e', t'), t' != BaseType(BOOL).
+               
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Push(name), TCOwner(c, m), StateDecl(name, m, _, _, _). 
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Push(name), TCOwner(c, m), no StateDecl(name, m, _, _, _). 
+    
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _), MachineDecl(n, _, _, _, _).   
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _), no MachineDecl(n, _, _, _, _).   
+    
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Raise(e', _), TypeOf(c, e', t'), t' = BaseType(EVENT).   
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Raise(e', _), TypeOf(c, e', t'), t' != BaseType(EVENT).      
+      
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Send(e', e'', _), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = BaseType(REAL), t'' = BaseType(EVENT).
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Send(e', e'', _), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = BaseType(MODEL), t'' = BaseType(EVENT).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(e', e'', _), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = BaseType(REAL), t'' != BaseType(EVENT).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(e', e'', _), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = BaseType(MODEL), t'' != BaseType(EVENT).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(e', _, _), TypeOf(c, e', t'), t' != BaseType(REAL), t' != BaseType(MODEL).
+    
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Monitor(n, e', _), MachineDecl(n, MONITOR, _, _, _), TypeOf(c, e', t'), t' = BaseType(EVENT).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(n, _, _), no MachineDecl(n, MONITOR, _, _, _).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(_, e', _), TypeOf(c, e', t'), t' != BaseType(EVENT).
+                                                    
+    /*************************************************************/
+    /*                      Type Comparability                   */
+    /*************************************************************/
+    //// TypeRel determines the relationship between types. 
+    //// If types are not subtype related, then they can
+    //// either have an empty (EMPTY) or nonempty (NONEMPTY) intersection. 
+    TypeRel ::= (ta: TypeExpr + { ERROR, NIL }, 
+                 tb: TypeExpr + { ERROR, NIL }, 
+                 rel: { SUB, SUP, EMPTY, NONEMPTY }).
+    
+    //// (1) The set of all computed type expressions (plus base types).
+    TypeSub ::= (TypeExpr + { NIL, ERROR }).
+    
+    TypeSub(NIL).
+    TypeSub(ERROR).
+    TypeSub(base)          :- base = BaseType(NULL).
+    TypeSub(base)          :- base = BaseType(BOOL).
+    TypeSub(base)          :- base = BaseType(INT).
+    TypeSub(base)          :- base = BaseType(EVENT).
+    TypeSub(base)          :- base = BaseType(REAL).
+    TypeSub(base)          :- base = BaseType(MODEL).
+    TypeSub(base)          :- base = BaseType(FOREIGN).
+    TypeSub(base)          :- base = BaseType(ANY).
+
+    TypeSub(t)             :- TypeOf(_, _, t).
+    TypeSub(t)             :- TypeSub(s), s = SeqType(t).
+    TypeSub(t), TypeSub(u) :- TypeSub(s), s = MapType(t, u).
+    TypeSub(t), TypeSub(u) :- TypeSub(s), s = TupType(t, u), u : TypeExpr.
+    TypeSub(t), TypeSub(u) :- TypeSub(s), s = NmdTupType(f, u), t = f.type, u : TypeExpr.
+        
+    //// (2) Type (non-) emptiness.    
+    // Commutativity rule for the (non-) emptiness 
+    TypeRel(t, s, EMPTY)    :- TypeRel(s, t, EMPTY).
+    TypeRel(s, t, NONEMPTY) :- TypeRel(s, t, NONEMPTY).
+    
+    // For convenience, the ERROR type is incomparable to all types, even itself.
+    TypeRel(ERROR, t, EMPTY) :- TypeSub(t).
+    
+    // For convenience, the NIL type is incomparable to all types, except itself.
+    TypeRel(NIL, t, EMPTY) :- TypeSub(t), t != NIL.
+    
+    // The NULL type has empty intersections with NonNullBase and complex types.
+    NonNullBase ::= { BOOL, INT, FOREIGN }.
+    ComplexType ::= TupType  + NmdTupType + SeqType + MapType.
+    TypeRel(null, t, EMPTY) :- TypeSub(t), t = BaseType(kt), kt : NonNullBase, null = BaseType(NULL).
+    TypeRel(null, t, EMPTY) :- TypeSub(t), t : ComplexType, null = BaseType(NULL).
+        
+    // NonNullBase types have empty intersections with all types, except themselves and ANY.
+    TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s = BaseType(ks), ks : NonNullBase, s != t, t != BaseType(ANY).
+
+    // NullBase types have empty intersections with all types, except themselves, ANY, and NIL.
+    NullBase    ::= { EVENT, REAL, MODEL }.
+    TypeRel(s, t, EMPTY)    :- TypeSub(s), TypeSub(t), s = BaseType(ks), ks : NullBase, s != t, t != BaseType(ANY), t != BaseType(NULL).
+    TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = BaseType(ks), ks : NullBase, t = BaseType(kt), kt : NullBase, s != t.
+
+    // Complex types have empty intersections with all differing type kinds, except ANY.
+    TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s : ComplexType, toSymbol(s) != toSymbol(t), t != BaseType(ANY).
+    
+    // Sequences are EMPTY or NONEMPTY if their inner types are.
+    TypeRel(s, t, EMPTY)    :- TypeSub(s), TypeSub(t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', EMPTY). 
+    TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', NONEMPTY). 
+    
+    // Maps are EMPTY or NONEMPTY if their inner types are.
+    TypeRel(s, t, EMPTY)    :- TypeSub(s), TypeSub(t), s = MapType(sd, _),  t = MapType(td, _),  TypeRel(sd, td, EMPTY).
+    TypeRel(s, t, EMPTY)    :- TypeSub(s), TypeSub(t), s = MapType(_, sc),  t = MapType(_, tc),  TypeRel(sc, tc, EMPTY).    
+    TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = MapType(sd, sc), t = MapType(td, tc), TypeRel(sd, td, NONEMPTY), TypeRel(sc, tc, NONEMPTY). 
+
+    // Tuples and NmdTups are EMPTY if their lengths differ.
+    TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s : TupType, t : TupType, lstLength(#TupType, s) != lstLength(#TupType, t).
+    TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s : NmdTupType, t : NmdTupType, lstLength(#NmdTupType, s) != lstLength(#NmdTupType, t).
+    
+    // Tuples are EMPTY if any pair of inner types is EMPTY. 
+    // Tuples are NONEMPTY if not all inners types are in identical super / sub relationships. 
+    TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s = TupType(s', _), t = TupType(t', _), TypeRel(s', t', EMPTY). 
+    TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s = TupType(_, s'), t = TupType(_, t'), TypeRel(s', t', EMPTY). 
+    
+    TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = TupType(s', s''), t = TupType(t', t''), 
+                               TypeRel(s', t', NONEMPTY), TypeRel(s'', t'', r), r != EMPTY.
+                                                            
+    TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = TupType(s', s''), t = TupType(t', t''), 
+                               TypeRel(s', t', r), TypeRel(s'', t'', NONEMPTY), r != EMPTY.
+
+    TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = TupType(s', s''), t = TupType(t', t''), 
+                               TypeRel(s', t', SUB), TypeRel(s'', t'', SUP), s' != t', s'' != t''.
+                               
+    // Named Tuples are EMPTY if any pair of inner types is EMPTY or they name arguments differently. 
+    // Named Tuples are NONEMPTY if not all inners types are in identical super / sub relationships. 
+    TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s = NmdTupType(fs, _), t = NmdTupType(ft, _), fs.name != ft.name. 
+    TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s = NmdTupType(fs, _), t = NmdTupType(ft, _), TypeRel(fs.type, ft.type, EMPTY). 
+    TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s = NmdTupType(_, s'), t = NmdTupType(_, t'), TypeRel(s', t', EMPTY). 
+    
+    TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
+                               TypeRel(fs.type, ft.type, NONEMPTY), TypeRel(s'', t'', r), r != EMPTY.
+                                                            
+    TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
+                               TypeRel(fs.type, ft.type, r), TypeRel(s'', t'', NONEMPTY), r != EMPTY.
+
+    TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
+                               TypeRel(fs.type, ft.type, SUB), TypeRel(s'', t'', SUP), fs.type != ft.type, s'' != t''.
+                               
+    //// (3) Sub-typing. 
+                
+    // If two types are subtype-related, then they are also supertype-related.
+    TypeRel(t, s, SUP) :- TypeRel(s, t, SUB).            
+                               
+    // Any non-ERROR type is subtype related to itself.
+    TypeRel(t, t, SUB) :- TypeSub(t), t != ERROR.
+    
+    // Every proper type is a sub-type of any.
+    TypeRel(t, bany, SUB) :- TypeSub(t), t != ERROR, t != NIL, bany = BaseType(ANY).
+    
+    // For convenience, NIL is a subtype of itself
+    TypeRel(NIL, NIL, SUB).
+    
+    // NULL is a subtype of all Nullable types.
+    TypeRel(null, bany, SUB) :- null = BaseType(NULL), bany = BaseType(ANY).
+    TypeRel(null, t, SUB)    :- TypeSub(t), t = BaseType(kt), kt : NullBase, null = BaseType(NULL).
+    
+    // Sequences are subtype related if their inner types are subtype related.
+    TypeRel(s, t, SUB)    :- TypeSub(s), TypeSub(t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', SUB). 
+    
+    // Maps are subtype related if their inner types are subtype related.
+    TypeRel(s, t, SUB) :- TypeSub(s), TypeSub(t), s = MapType(sd, sc), t = MapType(td, tc), TypeRel(sd, td, SUB), TypeRel(sc, tc, SUB). 
+    
+    // Tuples are subtype related if their inner types are subtype related.
+    TypeRel(s, t, SUB) :- TypeSub(s), TypeSub(t), s = TupType(s', s''), t = TupType(t', t''), TypeRel(s', t', SUB), TypeRel(s'', t'', SUB).
+    
+    TypeRel(s, t, SUB) :- TypeSub(s), TypeSub(t), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
+                          TypeRel(fs.type, ft.type, SUB), TypeRel(s'', t'', SUB).    
+ }

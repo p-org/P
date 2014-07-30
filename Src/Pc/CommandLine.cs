@@ -13,48 +13,58 @@
 
     class CommandLine
     {
-        private static string testProg1 = 
-        @"[ key1 = 1, key2 = null ]   event e1;
-        event e2 assert 4 [ sentBy = M1  ];
-        event e3 assume 5;
-        event e4 : (machine, foreign);
-        event e5 assert 1 : (mach: machine, dat: seq [foreign]);
-        main model M1 assume 10 [ schedule=fair  ] { var x, y, z : int;  }
-        machine M2 { var x : int; var y : seq[foreign]; var z : (m: machine, c: int); }
-        monitor Mon { 
-            var x, y, z : int [ size = int32 ]; 
-            fun Foo (x: int, y : int) : map[int, int] [ isPassive = true ]
-            {
-               push S1;
-               push Group1.Group2.S3;
-            }
-
-            state S [ failure = impossible ]
-            {  defer E1, E2, E3; ignore E5; on F goto S;   entry { x = y; y = z; }  }
-            state T
-            {  on E1, E5 goto S { x = y + 1; }; on E push T; exit { push S; } entry { push T; }  }
-        }
-        ";
-
         static void Main(string[] args)
         {
-            var parser = new Parser.Parser();
-            List<Flag> flags;
-            PProgram prog;
-            var result = parser.ParseText(new ProgramName("test.p"), testProg1, out flags, out prog);
-            foreach (var f in flags)
+            if (args.Length != 1)
             {
-                Console.WriteLine("{0}, {1}: {2}", f.Span.StartLine, f.Span.StartCol, f.Message);
-            }
-
-            if (!result)
-            {
+                Console.WriteLine("USAGE: Pc.exe file.p");
                 return;
             }
 
-            AST<Model> model;
-            Microsoft.Formula.API.Factory.Instance.MkModel("foo", "P", prog.Terms, out model);
-            model.Print(System.Console.Out);
+            List<Flag> flags;
+            var comp = new Compiler(args[0]);
+            var result = comp.Compile(out flags);
+            WriteFlags(flags);
+
+            if (!result)
+            {
+                WriteMessage("Compilation failed", SeverityKind.Error);
+            }
+        }
+
+        private static void WriteFlags(List<Flag> flags)
+        {
+            foreach (var f in flags)
+            {
+                WriteMessage(
+                    string.Format("{0} ({1}, {2}): {3}",
+                    f.ProgramName == null ? "?" : f.ProgramName.ToString(),
+                    f.Span.StartLine,
+                    f.Span.StartCol,
+                    f.Message), f.Severity);               
+            }
+        }
+
+        private static void WriteMessage(string msg, SeverityKind severity)
+        {
+            switch (severity)
+            {
+                case SeverityKind.Info:
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    break;
+                case SeverityKind.Warning:
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    break;
+                case SeverityKind.Error:
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    break;
+                default:
+                    Console.ForegroundColor = ConsoleColor.White;
+                    break;
+            }
+
+            Console.Write(msg);
+            Console.ForegroundColor = ConsoleColor.Gray;
         }
     }
 }

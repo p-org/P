@@ -49,6 +49,56 @@
         {
         }
 
+        internal bool ParseFile(
+            ProgramName file,
+            out List<Flag> flags,
+            out PProgram program)
+        {
+            flags = parseFlags = new List<Flag>();
+            program = parseProgram = new PProgram();
+            parseSource = file;
+            bool result;
+            try
+            {
+                var fi = new System.IO.FileInfo(file.Uri.AbsolutePath);
+                if (!fi.Exists)
+                {
+                    var badFile = new Flag(
+                        SeverityKind.Error,
+                        default(Span),
+                        Constants.BadFile.ToString(string.Format("The file {0} does not exist", file.ToString())),
+                        Constants.BadFile.Code,
+                        file);
+                    result = false;
+                    flags.Add(badFile);
+                    return false;
+                }
+
+                var str = new System.IO.FileStream(file.Uri.AbsolutePath, System.IO.FileMode.Open, System.IO.FileAccess.Read);
+                var scanner = ((Scanner)Scanner);
+                scanner.SetSource(str);
+                scanner.SourceProgram = file;
+                scanner.Flags = flags;
+                scanner.Failed = false;
+                ResetState();
+                result = (!scanner.Failed) && Parse(default(System.Threading.CancellationToken)) && !parseFailed;
+                str.Close();
+            }
+            catch (Exception e)
+            {
+                var badFile = new Flag(
+                    SeverityKind.Error,
+                    default(Span),
+                    Constants.BadFile.ToString(e.Message),
+                    Constants.BadFile.Code,
+                    file);
+                flags.Add(badFile);
+                return false;
+            }
+
+            return result;
+        }
+
         internal bool ParseText(
             ProgramName file, 
             string programText, 
@@ -513,7 +563,7 @@
         private void PushIntExpr(string intStr, Span span)
         {
             int val;
-            if (!int.TryParse(intStr, out val) || val < 0)
+            if (!int.TryParse(intStr, out val))
             {
                 var errFlag = new Flag(
                                  SeverityKind.Error,
@@ -964,7 +1014,7 @@
         private void AddAnnotIntVal(string keyName, string intStr, Span keySpan, Span valSpan)
         {
             int val;
-            if (!int.TryParse(intStr, out val) || val < 0)
+            if (!int.TryParse(intStr, out val))
             {
                 var errFlag = new Flag(
                                  SeverityKind.Error,
@@ -1267,7 +1317,7 @@
                 kind == P_Root.UserCnstKind.NULL ||
                 kind == P_Root.UserCnstKind.BOOL ||
                 kind == P_Root.UserCnstKind.INT ||
-                kind == P_Root.UserCnstKind.MACHINE ||
+                kind == P_Root.UserCnstKind.REAL ||
                 kind == P_Root.UserCnstKind.MODEL ||
                 kind == P_Root.UserCnstKind.EVENT ||
                 kind == P_Root.UserCnstKind.FOREIGN ||

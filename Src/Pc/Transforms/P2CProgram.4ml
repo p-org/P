@@ -1,0 +1,12 @@
+﻿[
+   modules.P = '"P at ..\Domains\P.4ml"',
+   modules.C = '"C at ..\Domains\C.4ml"'
+]
+
+transform P2CProgram (in:: P) returns (out:: C)
+{
+    
+	Struct(s.name)  :- s is StateDecl.
+
+
+}

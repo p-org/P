@@ -64,3 +64,45 @@ monitor BasicPaxosInvariant_P2b {
 	}
 
 }
+
+
+/*
+Monitor to check if 
+the proposed value is from the set send by the client (accept)
+chosen value is the one proposed by atleast one proposer (chosen).
+*/
+event monitor_client_sent : int;
+event monitor_proposer_sent : int;
+event monitor_proposer_chosen : int;
+
+monitor ValidityCheck {
+	var clientSet : map[int, int];
+	var ProposedSet : map[int, int];
+	
+	start state Init {
+		entry {
+			raise(local);
+		}
+		on local goto Wait;
+	}
+	
+	state Wait {
+		on monitor_client_sent do addClientSet;
+		on monitor_proposer_sent do addProposerSet;
+		on monitor_proposer_chosen do checkChosenValidity;
+	}
+	
+	action addClientSet {
+		clientSet.update((int)payload, 0);
+	}
+	
+	action addProposerSet {
+		assert((int)payload in clientSet);
+		ProposedSet.update((int)payload, 0);
+	}
+	
+	action checkChosenValidity {
+		assert((int)payload in ProposedSet);
+	}
+}
+

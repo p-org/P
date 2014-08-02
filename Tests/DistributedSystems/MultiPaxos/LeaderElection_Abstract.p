@@ -14,8 +14,6 @@ machine LeaderElection {
 	var parentServer : id;
 	var currentLeader : (rank:int, server : id);
 	var myRank : int;
-	var CommunicateLeaderTimeout : mid;
-	var BroadCastTimeout : mid;
 	var iter : int;
 	
 	start state Init {
@@ -24,44 +22,37 @@ machine LeaderElection {
 			parentServer = ((servers: seq[id], parentServer:id, rank : int))payload.parentServer;
 			myRank = ((servers: seq[id], parentServer:id, rank : int))payload.rank;
 			currentLeader = (rank = myRank, server = this);
-			CommunicateLeaderTimeout = new Timer((this, 100));
-			BroadCastTimeout = new Timer((this, 10));
 			raise(local);
 		}
-		on local goto ProcessPings;
+		on local goto SendLeader;
+		
 	}
 	
-	action calculateLeader {
-		if(payload.rank < myRank)
-		{
-			currentLeader = payload;
-		}
-	}
-	fun BroadCast(ev : eid, pd : any) {
-		iter = 0;
-		while(iter < sizeof(servers))
-		{
-			send(servers[iter], ev, pd);
-		}
-	}
-	state ProcessPings {
+	state SendLeader {
 		entry {
-				BroadCast(Ping, (rank = myRank, server = this));
-				send(BroadCastTimeout, startTimer);
+			currentLeader = GetNewLeader();
+			assert(currentLeader.rank <= myRank);
+			send(parentServer, newLeader, currentLeader);
 		}
-		on Ping do calculateLeader;
-		on timeout goto ProcessPings
-		{
-			if(((myId : mid))payload.myId == CommunicateLeaderTimeout)
-			{
-				assert(currentLeader.rank <= myRank);
-				send(parentServer, newLeader, currentLeader);
-				currentLeader = (rank = myRank, server = this);
-				send(CommunicateLeaderTimeout, startTimer);
-				send(BroadCastTimeout, cancelTimer);
-			}
-		};
 	}
+	model fun GetNewLeader() : (rank:int, server : id) {
+			/*iter = 0;
+			while(iter < sizeof(servers))
+			{
+				if((iter + 1) < myRank) {
+					if(*)
+					{
+						return (rank = iter + 1, server = servers[iter]);
+					}
+				}
+				
+				iter = iter + 1;	
+			}
+			return (rank = myRank, server = parentServer);*/
+			
+			return (rank = 1, server = servers[0]);
+		}
+
 }
 
 model machine Timer {

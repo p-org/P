@@ -49,7 +49,7 @@
             private set;
         }
 
-        public bool AttempedCompile
+        public bool AttemptedCompile
         {
             get;
             private set;
@@ -65,8 +65,8 @@
 
         public bool Compile(out List<Flag> flags)
         {
-            Contract.Requires(!AttempedCompile);
-            AttempedCompile = true;
+            Contract.Requires(!AttemptedCompile);
+            AttemptedCompile = true;
             var parser = new Parser.Parser();
             PProgram prog;
             var result = parser.ParseFile(

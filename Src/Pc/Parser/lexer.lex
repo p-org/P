@@ -54,6 +54,7 @@
 			 keywords.Add("this", (int)Tokens.THIS);
 			 keywords.Add("null", (int)Tokens.NULL);
 			 keywords.Add("trigger", (int)Tokens.TRIGGER);
+			 keywords.Add("payload", (int)Tokens.PAYLOAD);
 			 keywords.Add("pop", (int)Tokens.POP);
 			 keywords.Add("true", (int)Tokens.TRUE);
 			 keywords.Add("false", (int)Tokens.FALSE);

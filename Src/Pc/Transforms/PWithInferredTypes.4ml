@@ -1,0 +1,22 @@
+[
+   modules.P     = '"P     at ..\Domains\P.4ml"',
+   modules.PData = '"PData at ..\Domains\P.4ml"'
+]
+
+domain PWithInferredTypes extends PData
+{
+    //// The declarations that may contain expressions or statements that should be typed.
+    TypingContext ::= FunDecl + StateDecl + TransDecl.
+    
+    //// The set of typeable expressions and statements.
+    Typeable ::= Expr + Stmt + Exprs + NamedExprs.
+    
+    //// The type judgement. NIL is a placeholder for untyped constructs.
+    TypeOf ::= new (cntxt: any TypingContext, expr: any Typeable, type: any TypeExpr + { ERROR, NIL }).
+}
+
+transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
+{
+    out._(x) :- x is in.Data.
+	out.TypeOf(c, e, t) :- in.TypeOf(c, e, t).
+}

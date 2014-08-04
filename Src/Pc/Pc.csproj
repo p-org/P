@@ -106,6 +106,8 @@
       <CustomToolNamespace>Microsoft.Pc.Domains</CustomToolNamespace>
       <LastGenOutput>P.4ml.g.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Include="Domains\Zing.4ml" />
+    <EmbeddedResource Include="Transforms\PWithInferredTypes.4ml" />
   </ItemGroup>
   <ItemGroup>
     <MPLexCompile Include="Parser\lexer.lex" />

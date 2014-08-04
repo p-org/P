@@ -9,17 +9,23 @@
     using System.Threading.Tasks;
 
     using Microsoft.Formula.API;
+    using Microsoft.Formula.API.ASTQueries;
     using Microsoft.Formula.API.Nodes;
 
     internal class Compiler
     {
         private const string PDomain = "P";
         private const string CDomain = "C";
+        private const string ZingDomain = "Zing";
+        private const string P2InfTypesTransform = "P2PWithInferredTypes";
+        private const string AliasPrefix = "p_compiler__";
 
         private static readonly Tuple<string, string>[] ManifestPrograms = new Tuple<string, string>[]
         {
             new Tuple<string, string>("Pc.Domains.P.4ml", "Domains\\P.4ml"),
-            new Tuple<string, string>("Pc.Domains.C.4ml", "Domains\\C.4ml")
+            new Tuple<string, string>("Pc.Domains.C.4ml", "Domains\\C.4ml"),
+            new Tuple<string, string>("Pc.Domains.Zing.4ml", "Domains\\Zing.4ml"),
+            new Tuple<string, string>("Pc.Transforms.PWithInferredTypes.4ml", "Transforms\\PWithInferredTypes.4ml"),
         };
 
         private static readonly Dictionary<string, string> ReservedModuleToLocation;
@@ -29,6 +35,8 @@
             ReservedModuleToLocation = new Dictionary<string, string>();
             ReservedModuleToLocation.Add(PDomain, "Domains\\P.4ml");
             ReservedModuleToLocation.Add(CDomain, "Domains\\P.4ml");
+            ReservedModuleToLocation.Add(ZingDomain, "Domains\\Zing.4ml");
+            ReservedModuleToLocation.Add(P2InfTypesTransform, "Transforms\\PWithInferredTypes.4ml");
         }
 
         public Env CompilerEnv
@@ -67,22 +75,43 @@
         {
             Contract.Requires(!AttemptedCompile);
             AttemptedCompile = true;
-            var parser = new Parser.Parser();
+
+            //// Step 0. Make sure the filename is meaningful.
+            flags = new List<Flag>();
+            ProgramName inputFile = null;
+            try
+            {
+                inputFile = new ProgramName(Path.Combine(Environment.CurrentDirectory, InputFile));
+            }
+            catch (Exception e)
+            {
+                flags.Add(
+                    new Flag(
+                        SeverityKind.Error,
+                        default(Span),
+                        Constants.BadFile.ToString(string.Format("{0} : {1}", InputFile, e.Message)),
+                        Constants.BadFile.Code));
+                return false;
+            }
+
+            //// Step 1. Attempt to parse the P program, and stop if parse fails.
             PProgram prog;
-            var result = parser.ParseFile(
-                new ProgramName(Path.Combine(Environment.CurrentDirectory, InputFile)), 
-                out flags, 
-                out prog);
+            var parserFlags = new List<Flag>();
+            var parser = new Parser.Parser();
+            var result = parser.ParseFile(inputFile, out parserFlags, out prog);
+            flags.AddRange(parserFlags);
 
             if (!result)
             {
                 return false;
             }
 
+            //// Step 2. Serialize the parsed object graph into a Formula model and install it. Should not fail.
             AST<Model> model;
             ParsedProgram = prog;
+            var inputModule = MkSafeModuleName(InputFile);
             result = Factory.Instance.MkModel(
-                MkSafeModuleName(InputFile), 
+                inputModule, 
                 PDomain, 
                 prog.Terms, 
                 out model,
@@ -90,7 +119,12 @@
                 MkReservedModuleLocation(PDomain));
             Contract.Assert(result);
 
-            model.Print(Console.Out);
+            InstallResult instResult;
+            var progressed = CompilerEnv.Install(Factory.Instance.AddModule(Factory.Instance.MkProgram(inputFile), model), out instResult);
+            Contract.Assert(progressed && instResult.Succeeded);
+
+            //// Step 3. Perform Zing compilation.
+            GenerateZing(inputModule, inputFile);
 
             return true;
         }
@@ -190,6 +224,33 @@
             {
                 return "unknown";
             }
+        }
+
+        private AST<Model> GenerateZing(string inputModelName, ProgramName inputProgram)
+        {
+            //// Get out the P program with type annotations. The Zing compiler is going to walk to AST.
+            var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
+            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(inputModelName, null, inputProgram.ToString()));
+            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(inputModelName + "_WithTypes"));
+            List<Flag> flags;
+            Task<ApplyResult> apply;
+            Formula.Common.Rules.ExecuterStatistics stats;
+            CompilerEnv.Apply(transStep, false, false, out flags, out apply, out stats);
+            apply.RunSynchronously();
+
+            var extractTask = apply.Result.GetOutputModel(
+                inputModelName + "_WithTypes",
+                new ProgramName(Path.Combine(Environment.CurrentDirectory, inputModelName + "_WithTypes.4ml")),
+                AliasPrefix);
+            extractTask.Wait();
+
+            var modelWithTypes = extractTask.Result.FindAny(
+                new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
+            Contract.Assert(modelWithTypes != null);
+
+            modelWithTypes.Print(System.Console.Out);
+
+            return null;
         }
     }
 }

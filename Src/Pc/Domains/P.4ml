@@ -79,9 +79,9 @@ domain PData
     /****************          Annotations           *************/
     /*************************************************************/
 
-    Annotation ::= new (ant: Annotable, key: String, value: any AnnotValue).
-    Annotable  ::= MachineDecl + EventDecl + StateDecl + VarDecl + TransDecl + FunDecl + ActionDecl + DefIgnDecl + { NIL }.
-    AnnotValue ::= Integer + String + Boolean + { NULL }.
+    Annotation  ::= new (ant: Annotatable, key: String, value: any AnnotValue).
+    Annotatable ::= MachineDecl + EventDecl + StateDecl + VarDecl + TransDecl + FunDecl + ActionDecl + DefIgnDecl + { NIL }.
+    AnnotValue  ::= Integer + String + Boolean + { NULL }.
 }
 
 domain PStaticTyping extends PData

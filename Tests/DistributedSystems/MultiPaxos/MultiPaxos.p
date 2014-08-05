@@ -1,16 +1,16 @@
 /*
 The basic paxos algorithm. 
 */
-event prepare : (proposer: id, proposal : (round: int, serverId : int)) assume 3;
-event accept : (proposer: id, proposal : (round: int, serverId : int), value : int) assume 3;
-event agree : (proposal : (round: int, serverId : int), value : int) assume 6;
-event reject : (proposal : (round: int, serverId : int)) assume 6;
-event accepted : (proposal : (round: int, serverId : int), value : int) assume 6;
+event prepare : (proposer: id, slot : int, proposal : (round: int, serverId : int)) assume 3;
+event accept : (proposer: id, slot: int, proposal : (round: int, serverId : int), value : int) assume 3;
+event agree : (slot:int, proposal : (round: int, serverId : int), value : int) assume 6;
+event reject : (slot: int, proposal : (round: int, serverId : int)) assume 6;
+event accepted : (slot:int, proposal : (round: int, serverId : int), value : int) assume 6;
 event local;
 event success;
 event allNodes: (nodes: seq[id]);
 event goPropose;
-event Chosen : (command:int);
+event chosen : (slot:int, proposal : (round: int, serverId : int), value : int);
 /**** client events ********/
 event update : (seqId: int, command : int);
 
@@ -20,6 +20,7 @@ machine PaxosNode {
 	var leaderElectionService : id;
 /********************** Proposer **************************************************/
 	var acceptors : seq[id];
+	var commitValue : int;
 	var proposeVal : int;
 	var majority : int;
 	var roundNum : int;
@@ -33,22 +34,26 @@ machine PaxosNode {
 	var tempVal : int;
 	var returnVal : bool;
 	var timer: mid;
-	var receivedMess_1 : (proposal : (round: int, serverId : int), value : int);
+	var receivedMess_1 : (slot:int, proposal : (round: int, serverId : int), value : int);
+	var nextSlotForProposer : int;
+	var currCommitOperation : bool;
 /*************************** Acceptor **********************************************/
-	var lastSeenProposal : (proposal : (round: int, serverId : int), value : int);
-	var receivedMess_2 : (proposer: id, proposal : (round: int, serverId : int), value : int);
-	
+	var acceptorSlots : map[int, (proposal : (round: int, serverId : int), value : int)];
+	var receivedMess_2 : (proposer: id, slot : int, proposal : (round: int, serverId : int), value : int);
+/**************************** Learner **************************************/
+	var learnerSlots : map[int, (proposal : (round: int, serverId : int), value : int)];
+	var lastExecutedSlot:int;
 	
 	start state Init {
 		defer Ping;
 		entry {
-			lastSeenProposal.proposal = (round = -1, serverId = -1);
-			lastSeenProposal.value = -1;
 			myRank = ((rank:int))payload.rank;
 			currentLeader = (rank = myRank, server = this);
 			roundNum = 0;
 			maxRound = 0;
 			timer = new Timer((this, 10));
+			lastExecutedSlot = -1;
+			nextSlotForProposer = 0;
 		}
 		on allNodes do UpdateAcceptors;
 		on local goto PerformOperation;
@@ -67,7 +72,8 @@ machine PaxosNode {
 	action CheckIfLeader {
 		if(currentLeader.rank == myRank) {
 			// I am the leader 
-			proposeVal = payload.command;
+			commitValue = payload.command;
+			proposeVal = commitValue;
 			raise(goPropose);
 		}
 		else
@@ -77,7 +83,7 @@ machine PaxosNode {
 		}
 	}
 	state PerformOperation {
-		ignore agree;
+		ignore agree, accepted, timeout;
 		
 		/***** proposer ******/
 		on update do CheckIfLeader;
@@ -88,7 +94,7 @@ machine PaxosNode {
 		on accept do acceptAction;
 		
 		/**** leaner ****/
-		on Chosen goto RunLearner;
+		on chosen push RunLearner;
 		
 		/*****leader election ****/
 		on Ping do ForwardToLE;
@@ -104,37 +110,42 @@ machine PaxosNode {
 	}
 	
 	action prepareAction {
-		receivedMess_2.proposal = ((proposer: id, proposal : (round: int, serverId : int)))payload.proposal;
-		receivedMess_2.proposer = ((proposer: id, proposal : (round: int, serverId : int)))payload.proposer;
-		returnVal = lessThan(receivedMess_2.proposal, lastSeenProposal.proposal);
-		if(lastSeenProposal.value ==  -1)
+		receivedMess_2.proposal = ((proposer: id, slot : int, proposal : (round: int, serverId : int)))payload.proposal;
+		receivedMess_2.proposer = ((proposer: id, slot : int, proposal : (round: int, serverId : int)))payload.proposer;
+		receivedMess_2.slot = ((proposer: id, slot : int, proposal : (round: int, serverId : int)))payload.slot;
+		
+		if(!(receivedMess_2.slot in acceptorSlots))
 		{
-			send(receivedMess_2.proposer, agree, (proposal = (round = -1, serverId = -1), value = -1));
-			lastSeenProposal.proposal = receivedMess_2.proposal;
+			send(receivedMess_2.proposer, agree, (slot = receivedMess_2.slot, proposal = (round = -1, serverId = -1), value = -1));
+			acceptorSlots.update(receivedMess_2.slot, (proposal = receivedMess_2.proposal, value = -1));
+			leave;
 		}
-		else if(returnVal)
+		returnVal = lessThan(receivedMess_2.proposal, acceptorSlots[receivedMess_2.slot].proposal);
+		if(returnVal)
 		{
-			send(receivedMess_2.proposer, reject, (proposal = lastSeenProposal.proposal));
+			send(receivedMess_2.proposer, reject, (slot = receivedMess_2.slot, proposal = acceptorSlots[receivedMess_2.slot].proposal));
 		}
 		else 
 		{
-			send(receivedMess_2.proposer, agree, lastSeenProposal);
-			lastSeenProposal.proposal = receivedMess_2.proposal;
+			send(receivedMess_2.proposer, agree, (slot = receivedMess_2.slot, proposal = acceptorSlots[receivedMess_2.slot].proposal, value = acceptorSlots[receivedMess_2.slot].value));
+			acceptorSlots.update(receivedMess_2.slot, (proposal = receivedMess_2.proposal, value = -1));
 		}
 	}
 	
 	action acceptAction {
-		receivedMess_2 = ((proposer: id, proposal : (round: int, serverId : int), value : int))payload;
-		returnVal = equal(receivedMess_2.proposal, lastSeenProposal.proposal);
-		if(!returnVal)
+		receivedMess_2 = ((proposer: id, slot:int, proposal : (round: int, serverId : int), value : int))payload;
+		if(receivedMess_2.slot in acceptorSlots)
 		{
-			send(receivedMess_2.proposer, reject, (proposal = lastSeenProposal.proposal));
-		}
-		else
-		{
-			lastSeenProposal.proposal = receivedMess_2.proposal;
-			lastSeenProposal.value = receivedMess_2.value;
-			send(receivedMess_2.proposer, accepted, (proposal = receivedMess_2.proposal, value = receivedMess_2.value));
+			returnVal = equal(receivedMess_2.proposal, acceptorSlots[receivedMess_2.slot].proposal);
+			if(!returnVal)
+			{
+				send(receivedMess_2.proposer, reject, (slot = receivedMess_2.slot, proposal = acceptorSlots[receivedMess_2.slot].proposal));
+			}
+			else
+			{
+				acceptorSlots.update(receivedMess_2.slot, (proposal = receivedMess_2.proposal, value = receivedMess_2.value));
+				send(receivedMess_2.proposer, accepted, (slot = receivedMess_2.slot, proposal = receivedMess_2.proposal, value = receivedMess_2.value));
+			}
 		}
 	}
 	
@@ -183,16 +194,19 @@ machine PaxosNode {
 	}
 	
 	action CountAgree {
-		receivedMess_1 = ((proposal : (round: int, serverId : int), value : int))payload;
-		countAgree = countAgree + 1;
-		returnVal = lessThan(receivedAgree.proposal, receivedMess_1.proposal);
-		if(returnVal)
+		receivedMess_1 = ((slot : int, proposal : (round: int, serverId : int), value : int))payload;
+		if(receivedMess_1.slot == nextSlotForProposer)
 		{
-			receivedAgree.proposal = receivedMess_1.proposal;
-			receivedAgree.value = receivedMess_1.value;
+			countAgree = countAgree + 1;
+			returnVal = lessThan(receivedAgree.proposal, receivedMess_1.proposal);
+			if(returnVal)
+			{
+				receivedAgree.proposal = receivedMess_1.proposal;
+				receivedAgree.value = receivedMess_1.value;
+			}
+			if(countAgree == majority)
+				raise(success);
 		}
-		if(countAgree == majority)
-			raise(success);
 		
 	}
 	state ProposeValuePhase1 {
@@ -201,7 +215,7 @@ machine PaxosNode {
 			countAgree = 0;
 			nextProposal = GetNextProposal(maxRound);
 			receivedAgree = (proposal = (round = -1, serverId = -1), value = -1);
-			BroadCastAcceptors(prepare, (proposer = this, proposal = (round = nextProposal.round, serverId = myRank)));
+			BroadCastAcceptors(prepare, (proposer = this, slot = nextSlotForProposer, proposal = (round = nextProposal.round, serverId = myRank)));
 			invoke ValidityCheck(monitor_proposer_sent, proposeVal);
 			send(timer, startTimer);
 		}
@@ -221,14 +235,18 @@ machine PaxosNode {
 	}
 	
 	action CountAccepted {
-		returnVal = equal(((proposal : (round: int, serverId : int), value : int))payload.proposal, nextProposal);
-		if(returnVal)
+		receivedMess_1 = ((slot:int, proposal : (round: int, serverId : int), value : int))payload;
+		if(receivedMess_1.slot == nextSlotForProposer)
 		{
-			countAccept = countAccept + 1;
-		}
-		if(countAccept == majority)
-		{
-			raise(success);
+			returnVal = equal(receivedMess_1.proposal, nextProposal);
+			if(returnVal)
+			{
+				countAccept = countAccept + 1;
+			}
+			if(countAccept == majority)
+			{
+				raise(chosen, receivedMess_1);
+			}
 		}
 	
 	}
@@ -236,11 +254,13 @@ machine PaxosNode {
 	fun getHighestProposedValue() : int {
 		if(receivedAgree.value != -1)
 		{
+			currCommitOperation = false;
 			return receivedAgree.value;
 		}
 		else
 		{
-			return proposeVal;
+			currCommitOperation = true;
+			return commitValue;
 		}
 	}
 	
@@ -254,10 +274,24 @@ machine PaxosNode {
 			invoke BasicPaxosInvariant_P2b(monitor_valueProposed, (proposer = this, proposal = nextProposal, value = proposeVal));
 			invoke ValidityCheck(monitor_proposer_sent, proposeVal);
 			
-			BroadCastAcceptors(accept, (proposer = this, proposal = nextProposal, value = proposeVal));
+			BroadCastAcceptors(accept, (slot = nextSlotForProposer, proposer = this, proposal = nextProposal, value = proposeVal));
 			send(timer, startTimer);
 		}
 		
+		exit {
+			if(trigger == chosen)
+			{
+				//the value is chosen, hence invoke the monitor on chosen event
+				invoke BasicPaxosInvariant_P2b(monitor_valueChosen, (proposer = this, proposal = nextProposal, value = proposeVal));
+			
+				send(timer, cancelTimer);
+				
+				invoke ValidityCheck(monitor_proposer_chosen, proposeVal);
+
+				//increment the nextSlotForProposer
+				nextSlotForProposer = nextSlotForProposer + 1;
+			}
+		}
 		on accepted do CountAccepted;
 		on reject goto ProposeValuePhase1 {
 			if(nextProposal.round <= ((proposal : (round: int, serverId : int)))payload.proposal.round)
@@ -265,30 +299,46 @@ machine PaxosNode {
 				
 			send(timer, cancelTimer);
 		};
-		on success goto DoneProposal
-		{
-			//the value is chosen, hence invoke the monitor on chosen event
-			invoke BasicPaxosInvariant_P2b(monitor_valueChosen, (proposer = this, proposal = nextProposal, value = proposeVal));
-		
-			send(timer, cancelTimer);
-		};
 		on timeout goto ProposeValuePhase1;
 		
 	}
 	
-	state DoneProposal {
-		entry {
-			invoke ValidityCheck(monitor_proposer_chosen, proposeVal);
-			raise(Chosen, (command = proposeVal));
+	/**************************** Learner *******************************************/
+	fun RunReplicatedMachine() {
+		while(true)
+		{
+			if((lastExecutedSlot + 1) in learnerSlots)
+			{
+				//run the machine
+				lastExecutedSlot = lastExecutedSlot + 1;
+			}
+			else
+			{
+				return;
+			}
 		}
+	
 	}
 	
-	/**************************** Learner *******************************************/
-	
+
 	state RunLearner {
 		ignore agree, accepted, timeout, prepare, reject, accept;
+		defer newLeader;
 		entry {
+			receivedMess_1 = ((slot:int, proposal : (round: int, serverId : int), value : int)) payload;
+			learnerSlots.update(receivedMess_1.slot, (proposal = receivedMess_1.proposal, value = receivedMess_1.value));
+			RunReplicatedMachine();
+			if(currCommitOperation && commitValue == receivedMess_1.value)
+			{
+				return;
+			}
+			else
+			{
+				proposeVal = commitValue;
+				raise(goPropose);
+			}
 		}
 	
 	}
 }
+

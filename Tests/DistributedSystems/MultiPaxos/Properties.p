@@ -5,13 +5,13 @@ P2b : If a proposal is chosen with value v , then every higher numbered proposal
 
 */
 
-event monitor_valueChosen : (proposer: id, proposal : (round: int, serverId : int), value : int);
-event monitor_valueProposed : (proposer: id, proposal : (round: int, serverId : int), value : int);
+event monitor_valueChosen : (proposer: id, slot: int, proposal : (round: int, serverId : int), value : int);
+event monitor_valueProposed : (proposer: id, slot:int, proposal : (round: int, serverId : int), value : int);
 
 monitor BasicPaxosInvariant_P2b {
-	var lastValueChosen : (proposer: id, proposal : (round: int, serverId : int), value : int);
+	var lastValueChosen : map[int, (proposal : (round: int, serverId : int), value : int)];
 	var returnVal : bool;
-	var receivedValue : (proposer: id, proposal : (round: int, serverId : int), value : int);
+	var receivedValue : (proposer: id, slot: int, proposal : (round: int, serverId : int), value : int);
 	start state Init {
 		entry {
 			raise(local);
@@ -27,7 +27,8 @@ monitor BasicPaxosInvariant_P2b {
 		}
 		on monitor_valueChosen goto CheckValueProposed
 		{
-			lastValueChosen = ((proposer: id, proposal : (round: int, serverId : int), value : int))payload;
+			receivedValue = ((proposer: id, slot:int, proposal : (round: int, serverId : int), value : int))payload;
+			lastValueChosen.update(receivedValue.slot, (proposal = receivedValue.proposal, value = receivedValue.value));
 		};
 	}
 	
@@ -52,14 +53,14 @@ monitor BasicPaxosInvariant_P2b {
 	
 	state CheckValueProposed {
 		on monitor_valueChosen goto CheckValueProposed {
-			receivedValue = ((proposer: id, proposal : (round: int, serverId : int), value : int)) payload;
-			assert(lastValueChosen.value == receivedValue.value);
+			receivedValue = ((proposer: id, slot: int, proposal : (round: int, serverId : int), value : int)) payload;
+			assert(lastValueChosen[receivedValue.slot].value == receivedValue.value);
 		};
 		on monitor_valueProposed goto CheckValueProposed {
-		receivedValue = ((proposer: id, proposal : (round: int, serverId : int), value : int)) payload;
-		returnVal = lessThan(lastValueChosen.proposal, receivedValue.proposal);
+			receivedValue = ((proposer: id, slot : int, proposal : (round: int, serverId : int), value : int)) payload;
+			returnVal = lessThan(lastValueChosen[receivedValue.slot].proposal, receivedValue.proposal);
 			if(returnVal)
-				assert(lastValueChosen.value == receivedValue.value);
+				assert(lastValueChosen[receivedValue.slot].value == receivedValue.value);
 		};
 	}
 

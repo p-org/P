@@ -13,8 +13,6 @@
     using Microsoft.Formula.API.Plugins;
     using Microsoft.Formula.Compiler;
 
-    using PCompiler;
-
     public class Parser : IQuoteParser
     {
         public string UnquotePrefix
@@ -82,7 +80,7 @@
                     enumerator.MoveNext();
                     FuncTerm decl = (FuncTerm)enumerator.Current;
                     Id declId = (Id)decl.Function;
-                    if (declId.Name == ZingData.Con_ArrayDecl.Node.Name)
+                    if (declId.Name == "ArrayDecl")
                     {
                         RenderArrayDecl(decl, writer);
                     } else if (declId.Name == "EnumDecl")

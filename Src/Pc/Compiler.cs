@@ -14,6 +14,9 @@
 
     internal class Compiler
     {
+        public bool liveness;
+        public bool maceLiveness;
+
         private const string PDomain = "P";
         private const string CDomain = "C";
         private const string ZingDomain = "Zing";

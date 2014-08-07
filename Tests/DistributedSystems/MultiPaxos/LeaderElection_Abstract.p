@@ -76,7 +76,7 @@ model machine Timer {
 		ignore startTimer;
 		entry {
 			if (*) {
-				send(target, timeout, (myId = this));
+				//send(target, timeout, (myId = this));
 				raise(local);
 			}
 		}

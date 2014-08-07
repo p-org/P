@@ -83,7 +83,7 @@ machine PaxosNode {
 		}
 	}
 	state PerformOperation {
-		ignore agree, accepted, timeout, reject;
+		ignore agree, accepted, timeout;
 		
 		/***** proposer ******/
 		on update do CheckIfLeader;
@@ -222,8 +222,8 @@ machine PaxosNode {
 		
 		on agree do CountAgree;
 		on reject goto ProposeValuePhase1 {
-			if(nextProposal.round <= ((slot:int, proposal : (round: int, serverId : int)))payload.proposal.round)
-				maxRound = ((slot:int, proposal : (round: int, serverId : int)))payload.proposal.round;
+			if(nextProposal.round <= ((proposal : (round: int, serverId : int)))payload.proposal.round)
+				maxRound = ((proposal : (round: int, serverId : int)))payload.proposal.round;
 				
 			send(timer, cancelTimer);
 		};
@@ -294,8 +294,8 @@ machine PaxosNode {
 		}
 		on accepted do CountAccepted;
 		on reject goto ProposeValuePhase1 {
-			if(nextProposal.round <= ((slot:int, proposal : (round: int, serverId : int)))payload.proposal.round)
-				maxRound = ((slot:int, proposal : (round: int, serverId : int)))payload.proposal.round;
+			if(nextProposal.round <= ((proposal : (round: int, serverId : int)))payload.proposal.round)
+				maxRound = ((proposal : (round: int, serverId : int)))payload.proposal.round;
 				
 			send(timer, cancelTimer);
 		};
@@ -342,3 +342,271 @@ machine PaxosNode {
 	}
 }
 
+
+/*
+Properties :
+The property we check is that 
+P2b : If a proposal is chosen with value v , then every higher numbered proposal issued by any proposer has value v.
+
+*/
+
+event monitor_valueChosen : (proposer: id, slot: int, proposal : (round: int, serverId : int), value : int);
+event monitor_valueProposed : (proposer: id, slot:int, proposal : (round: int, serverId : int), value : int);
+
+monitor BasicPaxosInvariant_P2b {
+	var lastValueChosen : map[int, (proposal : (round: int, serverId : int), value : int)];
+	var returnVal : bool;
+	var receivedValue : (proposer: id, slot: int, proposal : (round: int, serverId : int), value : int);
+	start state Init {
+		entry {
+			raise(local);
+		
+		}
+		on local goto WaitForValueChosen;
+	}
+	
+	state WaitForValueChosen {
+		ignore monitor_valueProposed;
+		entry {
+			
+		}
+		on monitor_valueChosen goto CheckValueProposed
+		{
+			receivedValue = ((proposer: id, slot:int, proposal : (round: int, serverId : int), value : int))payload;
+			lastValueChosen.update(receivedValue.slot, (proposal = receivedValue.proposal, value = receivedValue.value));
+		};
+	}
+	
+	fun lessThan (p1 : (round: int, serverId : int), p2 : (round: int, serverId : int)) : bool {
+		if(p1.round < p2.round)
+		{
+			return true;
+		}
+		else if(p1.round == p2.round)
+		{
+			if(p1.serverId < p2.serverId)
+				return true;
+			else
+				return false;
+		}
+		else
+		{
+			return false;
+		}
+	
+	}
+	
+	state CheckValueProposed {
+		on monitor_valueChosen goto CheckValueProposed {
+			receivedValue = ((proposer: id, slot: int, proposal : (round: int, serverId : int), value : int)) payload;
+			assert(lastValueChosen[receivedValue.slot].value == receivedValue.value);
+		};
+		on monitor_valueProposed goto CheckValueProposed {
+			receivedValue = ((proposer: id, slot : int, proposal : (round: int, serverId : int), value : int)) payload;
+			returnVal = lessThan(lastValueChosen[receivedValue.slot].proposal, receivedValue.proposal);
+			if(returnVal)
+				assert(lastValueChosen[receivedValue.slot].value == receivedValue.value);
+		};
+	}
+
+}
+
+
+/*
+Monitor to check if 
+the proposed value is from the set send by the client (accept)
+chosen value is the one proposed by atleast one proposer (chosen).
+*/
+event monitor_client_sent : int;
+event monitor_proposer_sent : int;
+event monitor_proposer_chosen : int;
+
+monitor ValidityCheck {
+	var clientSet : map[int, int];
+	var ProposedSet : map[int, int];
+	
+	start state Init {
+		entry {
+			raise(local);
+		}
+		on local goto Wait;
+	}
+	
+	state Wait {
+		on monitor_client_sent do addClientSet;
+		on monitor_proposer_sent do addProposerSet;
+		on monitor_proposer_chosen do checkChosenValidity;
+	}
+	
+	action addClientSet {
+		clientSet.update((int)payload, 0);
+	}
+	
+	action addProposerSet {
+		assert((int)payload in clientSet);
+		ProposedSet.update((int)payload, 0);
+	}
+	
+	action checkChosenValidity {
+		assert((int)payload in ProposedSet);
+	}
+}
+
+
+/*
+The leader election protocol for multi-paxos, the protocol is based on broadcast based approach. 
+
+*/
+event Ping : (rank:int, server : id) assume 4;
+event newLeader : (rank:int, server : id);
+event timeout : (myId : mid);
+event startTimer;
+event cancelTimer;
+event cancelTimerSuccess;
+
+machine LeaderElection {
+	var servers : seq[id];
+	var parentServer : id;
+	var currentLeader : (rank:int, server : id);
+	var myRank : int;
+	var iter : int;
+	
+	start state Init {
+		entry {
+			servers = ((servers: seq[id], parentServer:id, rank : int)) payload.servers;
+			parentServer = ((servers: seq[id], parentServer:id, rank : int))payload.parentServer;
+			myRank = ((servers: seq[id], parentServer:id, rank : int))payload.rank;
+			currentLeader = (rank = myRank, server = this);
+			raise(local);
+		}
+		on local goto SendLeader;
+		
+	}
+	
+	state SendLeader {
+		entry {
+			currentLeader = GetNewLeader();
+			assert(currentLeader.rank <= myRank);
+			send(parentServer, newLeader, currentLeader);
+		}
+	}
+	model fun GetNewLeader() : (rank:int, server : id) {
+			/*iter = 0;
+			while(iter < sizeof(servers))
+			{
+				if((iter + 1) < myRank) {
+					if(*)
+					{
+						return (rank = iter + 1, server = servers[iter]);
+					}
+				}
+				
+				iter = iter + 1;	
+			}
+			return (rank = myRank, server = parentServer);*/
+			
+			return (rank = 1, server = servers[0]);
+		}
+
+}
+
+model machine Timer {
+	var target: id;
+	var timeoutvalue : int;
+	start state Init {
+		entry {
+			target = ((id, int))payload[0];
+			timeoutvalue = ((id, int))payload[1];
+			raise(local);
+		}
+		on local goto Loop;
+	}
+
+	state Loop {
+		ignore cancelTimer;
+		on startTimer goto TimerStarted;
+	}
+
+	state TimerStarted {
+		ignore startTimer;
+		entry {
+			if (*) {
+				//send(target, timeout, (myId = this));
+				raise(local);
+			}
+		}
+		on local goto Loop;
+		on cancelTimer goto Loop;
+	}
+}
+
+event response;
+
+main machine GodMachine {
+	var paxosnodes : seq[id];
+	var temp : id;
+	var iter : int;
+	start state Init {
+		entry {
+			temp = new PaxosNode((rank = 3));
+			paxosnodes.insert(0, temp);
+			temp = new PaxosNode((rank = 2));
+			paxosnodes.insert(0, temp);
+			temp = new PaxosNode((rank = 1));
+			paxosnodes.insert(0, temp);
+			//send all nodes the other machines
+			iter = 0;
+			while(iter < sizeof(paxosnodes))
+			{
+				send(paxosnodes[iter], allNodes, (nodes = paxosnodes));
+				iter = iter + 1;
+			}
+			//create the client nodes
+			new Client(paxosnodes);
+		}
+	}
+}
+
+model machine Client {
+	var servers :seq[id];
+	start state Init {
+		entry {
+			new ValidityCheck();
+			servers = (seq[id])payload;
+			raise(local);
+		}
+		on local goto PumpRequestOne;
+	}
+	
+	state PumpRequestOne {
+		entry {
+			
+			invoke ValidityCheck(monitor_client_sent, 1);
+			if(*)
+				send(servers[0], update, (seqId  = 0, command = 1));
+			else
+				send(servers[sizeof(servers) - 1], update, (seqId  = 0, command = 1));
+				
+			raise(response);
+		}
+		on response goto PumpRequestTwo;
+	}
+	
+	state PumpRequestTwo {
+		entry {
+			
+			invoke ValidityCheck(monitor_client_sent, 2);
+			if(*)
+				send(servers[0], update, (seqId  = 0, command = 2));
+			else
+				send(servers[sizeof(servers) - 1], update, (seqId  = 0, command = 2));
+				
+			raise(response);
+		}
+		on response goto Done;
+	}
+
+	state Done {
+	
+	}
+}

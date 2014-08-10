@@ -1330,17 +1330,14 @@ PRT_BOOLEAN PrtIsNullValue(_In_ PRT_VALUE *value)
 	PRT_TYPE_KIND kind = value->type.typeKind;
 	switch (kind)
 	{
-	case PRT_KIND_ANY:
-		PRT_DBG_ASSERT(PRT_FALSE, "Value must have a more concrete type");
-		return PRT_FALSE;
-	case PRT_KIND_EVENT:
-		return (value)->type.typeKind == PRT_KIND_NULL ? PRT_TRUE : PRT_FALSE;
-	case PRT_KIND_MACHINE:
-		return (value)->type.typeKind == PRT_KIND_NULL ? PRT_TRUE : PRT_FALSE;
-	case PRT_KIND_MODEL:
-		return (value)->type.typeKind == PRT_KIND_NULL ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_NULL:
 		return PRT_TRUE;
+	case PRT_KIND_ANY:
+		PrtAssert(PRT_FALSE, "Value must have a more concrete type");
+	case PRT_KIND_EVENT:
+	case PRT_KIND_MACHINE:
+	case PRT_KIND_MODEL:
+		return PRT_FALSE;
 	case PRT_KIND_BOOL:
 	case PRT_KIND_INT:
 	case PRT_KIND_FORGN:
@@ -1348,6 +1345,7 @@ PRT_BOOLEAN PrtIsNullValue(_In_ PRT_VALUE *value)
 	case PRT_KIND_NMDTUP:
 	case PRT_KIND_TUPLE:
 	case PRT_KIND_SEQ:
+		PrtAssert(PRT_FALSE, "Invalid comparison with null type");
 		return PRT_FALSE;
 	default:
 		PrtAssert(PRT_FALSE, "Invalid type");

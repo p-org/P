@@ -231,7 +231,7 @@
 
         private AST<Model> GenerateZing(string inputModelName, ProgramName inputProgram)
         {
-            //// Get out the P program with type annotations. The Zing compiler is going to walk to AST.
+            //// Get out the P program with type annotations. The Zing compiler is going to walk the AST.
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(inputModelName, null, inputProgram.ToString()));
             var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(inputModelName + "_WithTypes"));
@@ -253,7 +253,40 @@
 
             modelWithTypes.Print(System.Console.Out);
 
+            //var outZingModel = MkZingOutputModel();
+            //new PToZing(this, (AST<Model>)modelWithTypes).GenerateZing(ref outZingModel);           
+            //outZingModel.Print(System.Console.Out);
+
             return null;
         }
+
+        private AST<Model> MkZingOutputModel()
+        {
+            var mod = Factory.Instance.MkModel(
+                "OutputZing",
+                false,
+                Factory.Instance.MkModRef(ZingDomain, null, MkReservedModuleLocation(ZingDomain)),
+                ComposeKind.Extends);
+
+            var conf = (AST<Config>)mod.FindAny(
+                new NodePred[] 
+                {
+                    NodePredFactory.Instance.MkPredicate(NodeKind.AnyNodeKind),
+                    NodePredFactory.Instance.MkPredicate(NodeKind.Config)
+                });
+
+            var myDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
+            conf = Factory.Instance.AddSetting(
+                conf,
+                Factory.Instance.MkId("parsers.Zing"),
+                Factory.Instance.MkCnst("Parser at " + myDir + "\\ZingParser.dll"));
+            conf = Factory.Instance.AddSetting(
+                conf,
+                Factory.Instance.MkId("parse_ActiveRenderer"),
+                Factory.Instance.MkCnst("Zing"));
+
+            return (AST<Model>)Factory.Instance.ToAST(conf.Root);
+        }
+
     }
 }

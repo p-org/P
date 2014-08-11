@@ -258,25 +258,6 @@ namespace Microsoft.Pc
         public const string DeleteEvent = "delete";
 
         private Dictionary<string, AST<FuncTerm>> modelAliases;
-        private Dictionary<string, LinkedList<AST<FuncTerm>>> factBins;
-        public LinkedList<AST<FuncTerm>> GetBin(FuncTerm ft)
-        {
-            var fun = (Id)ft.Function;
-            return GetBin(fun.Name);
-        }
-
-        public LinkedList<AST<FuncTerm>> GetBin(string name)
-        {
-            Contract.Requires(!string.IsNullOrEmpty(name));
-            LinkedList<AST<FuncTerm>> bin;
-            if (!factBins.TryGetValue(name, out bin))
-            {
-                bin = new LinkedList<AST<FuncTerm>>();
-                factBins.Add(name, bin);
-            }
-
-            return bin;
-        }
 
         public FuncTerm GetFuncTerm(Node node)
         {
@@ -300,9 +281,9 @@ namespace Microsoft.Pc
             }
         }
 
-        public Dictionary<Node, ZingTranslationInfo> computedType;
         public Dictionary<string, EventInfo> allEvents;
         public Dictionary<string, MachineInfo> allMachines;
+        public string mainMachineName;
         public Dictionary<PType, TypeInfo> declaredTypes;
         public HashSet<PType> allTypes;
         public Dictionary<PType, List<PType>> subtypes, supertypes;
@@ -428,7 +409,7 @@ namespace Microsoft.Pc
         }
 
         Compiler compiler;
-        public PToZing(Compiler compiler)
+        public PToZing(Compiler compiler, AST<Model> model)
         {
             this.compiler = compiler;
         }
@@ -720,13 +701,12 @@ namespace Microsoft.Pc
         #endregion
 
         #region ZingCompiler
-        public bool GenerateZing(Env env, ref AST<Model> outModel)
+        public void GenerateZing(ref AST<Model> outModel)
         {
             List<AST<Node>> elements = new List<AST<Node>>();
             MkZingEnums(elements);
             MkZingClasses(elements);
             outModel = Add(outModel, MkZingFile("output.zing", elements));
-            return true;
         }
 
         private void MkZingEnums(List<AST<Node>> elements)
@@ -749,11 +729,12 @@ namespace Microsoft.Pc
 
             List<AST<Node>> stateConsts = new List<AST<Node>>();
             stateConsts.Add(Factory.Instance.MkCnst("_default"));
-            var terms = GetBin("StateDecl");
-            foreach (var term in terms)
+            foreach (var machine in allMachines.Values)
             {
-                var stateName = GetName(term.Node, 0);
-                stateConsts.Add(Factory.Instance.MkCnst(string.Format("_{0}", stateName)));
+                foreach (var stateName in machine.stateNameToStateInfo.Keys)
+                {
+                    stateConsts.Add(Factory.Instance.MkCnst(string.Format("_{0}", stateName)));
+                }
             }
             var stateList = ConstructList(ZingData.App_EnumElems, stateConsts);
             elements.Add(AddArgs(ZingData.App_EnumDecl, Factory.Instance.MkCnst("State"), stateList));
@@ -857,12 +838,12 @@ namespace Microsoft.Pc
                     runBody = MkZingSeq(runBody, assignStmt);
                 }
             }
-            var terms = GetBin("MainDecl");
+
             var locals = new List<AST<Node>>();
-            foreach (var term in terms)
             {
+                var mainStmt = AddArgs(PData.App_New, Factory.Instance.MkCnst(mainMachineName), PData.Cnst_Nil);
                 var ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, null, this);
-                var mainConstructor = Factory.Instance.ToAST(GetArgByIndex(term.Node, 0)).Compute<ZingTranslationInfo>(
+                var mainConstructor = mainStmt.Compute<ZingTranslationInfo>(
                     x => ZingEntryFun_UnFold(ctxt, x),
                     (x, ch) => ZingEntryFun_Fold(ctxt, x, ch));
 
@@ -870,7 +851,6 @@ namespace Microsoft.Pc
                 {
                     locals.AddRange(ctxt.emitLocalsList());
                     Debug.Assert(ctxt.sideEffectsStack.Count == 1);
-
                     runBody = MkZingSeq(runBody, ctxt.emitZingSideEffects(mainConstructor.node));
                 }
             }
@@ -2367,15 +2347,6 @@ namespace Microsoft.Pc
         }
 
         private ZingTranslationInfo ZingEntryFun_Fold(ZingEntryFun_FoldContext ctxt, Node n, IEnumerable<ZingTranslationInfo> children)
-        {
-            var res = ZingEntryFun_Fold_Impl(ctxt, n, children);
-            if (res != null)
-                computedType[n] = res;
-
-            return res;
-        }
-
-        private ZingTranslationInfo ZingEntryFun_Fold_Impl(ZingEntryFun_FoldContext ctxt, Node n, IEnumerable<ZingTranslationInfo> children)
         {
             if (n.NodeKind != NodeKind.FuncTerm)
             {

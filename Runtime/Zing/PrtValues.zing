@@ -1,0 +1,772 @@
+array PRT_VALUE_ARRAY[] PRT_VALUE;
+
+class PRT_VALUE {
+    PRT_TYPE type;
+
+    bool bl;
+    SM_EVENT ev;
+    int nt;
+    SM_HANDLE mach;
+
+    PRT_VALUE_ARRAY tuple;
+    
+    PRT_SEQ seq;
+
+    PRT_MAP map;
+
+    static PRT_VALUE PrtMkDefaultValue(PRT_TYPE type) {
+        int i;
+        PRT_VALUE value;
+	value = new PRT_VALUE;
+	value.type = type;
+	value.bl = false;
+	value.ev = null;
+	value.nt = 0;
+	value.mach = null;
+	value.tuple = null;
+	value.seq = null;
+	value.map = null;
+
+	if (type.typeKind == PRT_TYPE_KIND.PRT_KIND_TUPLE || type.typeKind == PRT_TYPE_KIND.PRT_KIND_NMDTUP) {
+	    value.tuple = new PRT_VALUE_ARRAY[type.arity];
+	    i = 0;
+	    while (i < type.arity) {
+	        value.tuple[i] = PrtMkDefaultValue(type.fieldTypes[i]);
+		i = i + 1;
+	    }
+	} else if (type.typeKind == PRT_TYPE_KIND.PRT_KIND_SEQ) {
+	    value.seq = PRT_SEQ.PrtMkDefaultSeq();
+	} else if (type.typeKind == PRT_TYPE_KIND.PRT_KIND_MAP) {
+	    value.map = PRT_MAP.PrtMkDefaultMap();
+	}
+	return value;
+    }
+
+    static PRT_VALUE PrtCloneValue(PRT_VALUE value) {
+        int i;
+	PRT_VALUE newValue;
+	newValue = new PRT_VALUE;
+	newValue.type = value.type;
+	newValue.bl = value.bl;
+	newValue.ev = value.ev;
+	newValue.nt = value.nt;
+	newValue.mach = value.mach;
+	newValue.tuple = value.tuple;
+	newValue.seq = value.seq;
+	newValue.map = value.map;
+	
+	if (value.type.typeKind == PRT_TYPE_KIND.PRT_KIND_TUPLE || value.type.typeKind == PRT_TYPE_KIND.PRT_KIND_NMDTUP) {
+	    newValue.tuple = new PRT_VALUE_ARRAY[value.type.arity];
+	    i = 0;
+	    while (i < value.type.arity) {
+	        newValue.tuple[i] = PrtCloneValue(value.tuple[i]);
+		i = i + 1;
+	    }
+	} else if (value.type.typeKind == PRT_TYPE_KIND.PRT_KIND_SEQ) {
+	    newValue.seq = value.seq.Clone();
+	} else if (value.type.typeKind == PRT_TYPE_KIND.PRT_KIND_MAP) {
+	    newValue.map = value.map.Clone();
+	}
+	return newValue;
+    }
+
+    static bool PrtInhabitsType(PRT_VALUE value, PRT_TYPE type) {
+        PRT_TYPE_KIND tkind;
+	PRT_TYPE_KIND vkind;
+	int i;
+	bool isNullValue;
+	bool retVal;
+	bool b;
+
+	isNullValue = PrtIsNullValue(value);
+	tkind = type.typeKind;
+	vkind = value.type.typeKind;
+
+	if (tkind == PRT_TYPE_KIND.PRT_KIND_ANY)
+	    return true;
+
+	if (tkind == PRT_TYPE_KIND.PRT_KIND_BOOL)
+	    return vkind == PRT_TYPE_KIND.PRT_KIND_BOOL;
+	
+	if (tkind == PRT_TYPE_KIND.PRT_KIND_EVENT)
+	    return (vkind == PRT_TYPE_KIND.PRT_KIND_EVENT || isNullValue);
+
+	if (tkind == PRT_TYPE_KIND.PRT_KIND_MACHINE)
+	    return (vkind == PRT_TYPE_KIND.PRT_KIND_MACHINE || isNullValue);
+
+	if (tkind == PRT_TYPE_KIND.PRT_KIND_INT)
+	    return vkind == PRT_TYPE_KIND.PRT_KIND_INT;
+
+	if (tkind == PRT_TYPE_KIND.PRT_KIND_MODEL)
+	    return (vkind == PRT_TYPE_KIND.PRT_KIND_MODEL || isNullValue);
+
+	if (tkind == PRT_TYPE_KIND.PRT_KIND_MAP)
+	{
+	    if (vkind != PRT_TYPE_KIND.PRT_KIND_MAP)
+	    {
+	        return false;
+	    }
+	    retVal = value.map.InhabitsType(type);
+	    return retVal;
+	}
+
+	if (tkind == PRT_TYPE_KIND.PRT_KIND_NMDTUP)
+	{
+	    if (vkind != PRT_TYPE_KIND.PRT_KIND_NMDTUP)
+	    {
+		return false;
+	    }
+
+	    if (type.arity != value.type.arity)
+	    {
+		return false;
+	    }
+
+	    i = 0;
+	    while (i < type.arity)
+	    {
+		if (type.fieldNames[i] != value.type.fieldNames[i])
+		{
+		    return false;
+		}
+		b = PrtInhabitsType(value.tuple[i], type.fieldTypes[i]);
+		if (!b)
+		{
+		    return false;
+		}
+		i = i + 1;
+	    }
+	    return true;
+	}
+
+	if (tkind == PRT_TYPE_KIND.PRT_KIND_TUPLE)
+	{
+	    if (vkind != PRT_TYPE_KIND.PRT_KIND_TUPLE)
+	    {
+		return false;
+	    }
+
+	    if (type.arity != value.type.arity)
+	    {
+		return false;
+	    }
+
+	    i = 0;
+	    while (i < type.arity)
+	    {
+	        b = PrtInhabitsType(value.tuple[i], type.fieldTypes[i]);
+		if (!b)
+		{
+		    return false;
+		}
+		i = i + 1;
+	    }
+	    return true;
+	}
+
+	if (tkind == PRT_TYPE_KIND.PRT_KIND_SEQ)
+	{
+	    if (vkind != PRT_TYPE_KIND.PRT_KIND_SEQ)
+	    {
+		return false;
+	    }
+	    retVal = value.seq.InhabitsType(type);
+	    return retVal;
+	}
+
+	assert (false);
+	return false;
+    }
+
+    static bool PrtIsNullValue(PRT_VALUE value) {
+	PRT_TYPE_KIND kind;
+	kind = value.type.typeKind;
+	assert (kind != PRT_TYPE_KIND.PRT_KIND_ANY);
+
+	if (kind == PRT_TYPE_KIND.PRT_KIND_EVENT)
+		return value.ev == null;
+
+	if (kind == PRT_TYPE_KIND.PRT_KIND_MACHINE)
+		return value.mach == null;
+
+	if (kind == PRT_TYPE_KIND.PRT_KIND_MODEL)
+		return value.mach == null;
+
+	if (kind == PRT_TYPE_KIND.PRT_KIND_NULL)
+		return true;
+
+	return false;
+    }
+
+    static PRT_VALUE PrtCastValue(PRT_VALUE value, PRT_TYPE type) {
+        bool b;
+	PRT_VALUE newValue;
+	b = PrtInhabitsType(value, type);
+        assert (b);
+	newValue = PrtCloneValue(value);
+	value.type = type;
+	return newValue;
+    }
+
+    static bool PrtIsEqualValue(PRT_VALUE value1, PRT_VALUE value2)
+    {
+        PRT_TYPE type1 = value1.type;
+	PRT_TYPE type2 = value2.type;
+	PRT_TYPE_KIND kind1 = type1.typeKind;
+	PRT_TYPE_KIND kind2 = type2.typeKind;
+	bool isNullValue1;
+	bool isNullValue2;
+	bool retVal;
+	int i;
+	bool b;
+
+	isNullValue1 = PrtIsNullValue(value1);
+	isNullValue2 = PrtIsNullValue(value2);
+
+	if (isNullValue1 && isNullValue2) 
+	{
+	    return true;
+	}
+	else if (kind1 != kind2)
+	{
+	    return false;
+	}
+	else if (value1 == value2)
+	{
+	    return true;
+	}
+
+	if (kind1 == PRT_TYPE_KIND.PRT_KIND_BOOL)
+	    return value1.bl == value2.bl;
+
+	if (kind1 == PRT_TYPE_KIND.PRT_KIND_EVENT)
+	    return value1.ev == value2.ev;
+
+	if (kind1 == PRT_TYPE_KIND.PRT_KIND_MACHINE)
+	    return value1.mach == value2.mach;
+
+	if (kind1 == PRT_TYPE_KIND.PRT_KIND_INT)
+	    return value1.nt == value2.nt;
+
+	if (kind1 == PRT_TYPE_KIND.PRT_KIND_MODEL)
+	    return value1.mach == value2.mach;
+
+	if (kind1 == PRT_TYPE_KIND.PRT_KIND_MAP)
+	{
+	    retVal = value1.map.Equals(value2.map);
+	    return retVal;
+	}
+
+	if (kind1 == PRT_TYPE_KIND.PRT_KIND_NMDTUP)
+	{
+	    if (type1.arity != type2.arity)
+	    {
+	        return false;
+	    }
+	    i = 0;
+	    while (i < type1.arity)
+	    {
+		if (type1.fieldNames[i] != type2.fieldNames[i])
+		{
+		    return false;
+		}
+		b = PrtIsEqualValue(value1.tuple[i], value2.tuple[i]);
+		if (!b)
+		{
+		    return false;
+		}
+		i = i + 1;
+	    }
+	    return true;
+	}
+
+	if (kind1 == PRT_TYPE_KIND.PRT_KIND_SEQ)
+	{
+	    retVal = value1.seq.Equals(value2.seq);
+	}
+
+	if (kind1 == PRT_TYPE_KIND.PRT_KIND_TUPLE)
+	{
+	    if (type1.arity != type2.arity)
+	    {
+		return false;
+	    }
+	    i = 0;
+	    while (i < type1.arity)
+	    {
+ 	        b = PrtIsEqualValue(value1.tuple[i], value2.tuple[i]);
+		if (!b)
+		{
+		    return false;
+		}
+		i = i + 1;
+	    }
+	    return true;
+	}
+    }
+
+    static void PrtPrimSetBool(PRT_VALUE prmVal, bool value) {
+        prmVal.bl = value;
+    }
+
+    static bool PrtPrimGetBool(PRT_VALUE prmVal) {
+        return prmVal.bl;
+    }
+
+    static void PrtPrimSetEvent(PRT_VALUE prmVal, SM_EVENT value) {
+        prmVal.ev = value;
+    }
+
+    static SM_EVENT PrtPrimGetEvent(PRT_VALUE prmVal) {
+        return prmVal.ev;
+    }
+
+    static void PrtPrimSetInt(PRT_VALUE prmVal, int value) {
+        prmVal.nt = value;
+    }
+
+    static int PrtPrimGetInt(PRT_VALUE prmVal) {
+        return prmVal.nt;
+    }
+
+    static void PrtPrimSetMachine(PRT_VALUE prmVal, SM_HANDLE value) {
+        prmVal.mach = value;
+    }
+
+    static SM_HANDLE PrtPrimGetMachine(PRT_VALUE prmVal) {
+        return prmVal.mach;
+    }
+
+    static void PrtPrimSetModel(PRT_VALUE prmVal, SM_HANDLE value) {
+        prmVal.mach = value;
+    }
+
+    static SM_HANDLE PrtPrimGetModel(PRT_VALUE prmVal) {
+        return prmVal.mach;
+    }
+
+    static void PrtTupleSet(PRT_VALUE tuple, int index, PRT_VALUE value) {
+        tuple.tuple[index] = PrtCloneValue(value);
+    }
+
+    static PRT_VALUE PrtTupleGet(PRT_VALUE tuple, int index) {
+        PRT_VALUE retVal;
+	retVal = PRT_VALUE.PrtCloneValue(tuple.tuple[index]);
+        return retVal;
+    }
+
+    static void PrtNmdTupleSet(PRT_VALUE tuple, int index, PRT_VALUE value) {
+        tuple.tuple[index] = PrtCloneValue(value);
+    }
+
+    static PRT_VALUE PrtNmdTupleGet(PRT_VALUE tuple, int index) {
+        PRT_VALUE retVal;
+	retVal = PRT_VALUE.PrtCloneValue(tuple.tuple[index]);
+	return retVal;
+    }
+
+    static void PrtSeqUpdate(PRT_VALUE seq, int index, PRT_VALUE value) {
+        seq.seq.Update(index, value);
+    }
+
+    static void PrtSeqInsert(PRT_VALUE seq, int index, PRT_VALUE value) {
+        seq.seq.Insert(index, value);
+    }
+
+    static void PrtSeqRemove(PRT_VALUE seq, int index) {
+        seq.seq.Remove(index);
+    }
+
+    static PRT_VALUE PrtSeqGet(PRT_VALUE seq, int index) {
+        PRT_VALUE retVal;
+	retVal = seq.seq.Get(index);
+	return retVal;
+    }
+
+    static int PrtSeqSizeOf(PRT_VALUE seq) {
+        int retVal;
+	retVal = seq.seq.SizeOf();
+	return retVal;
+    }
+
+    static void PrtMapUpdate(PRT_VALUE map, PRT_VALUE key, PRT_VALUE value) {
+        map.map.Update(key, value);
+    }
+
+    static void PrtMapRemove(PRT_VALUE map, PRT_VALUE key) {
+        map.map.Remove(key);
+    }
+
+    static PRT_VALUE PrtMapGet(PRT_VALUE map, PRT_VALUE key) {
+        PRT_VALUE retVal;
+	retVal = map.map.Get(key);
+	return retVal;
+    }
+
+    static PRT_VALUE PrtMapGetKeys(PRT_VALUE map) {
+        PRT_VALUE retVal;
+	retVal = map.map.GetKeys(map.type.domType);
+	return retVal;
+    }
+
+    static PRT_VALUE PrtMapGetValues(PRT_VALUE map) {
+        PRT_VALUE retVal;
+        retVal = map.map.GetValues(map.type.codType);
+	return retVal;
+    }
+
+    static bool PrtMapExists(PRT_VALUE map, PRT_VALUE key) {
+        bool retVal;
+        retVal = map.map.Exists(key);
+	return retVal;
+    }
+
+    static int PrtMapSizeOf(PRT_VALUE map) {
+        int retVal;
+        retVal = map.map.SizeOf();
+	return retVal;
+    }
+};
+
+class PRT_SEQ {
+    int size;
+    PRT_VALUE_ARRAY contents;
+
+    static PRT_SEQ PrtMkDefaultSeq() {
+        PRT_SEQ seq;
+        seq = new PRT_SEQ;
+	seq.size = 0;
+	seq.contents = null;
+	return seq;
+    }
+
+    PRT_SEQ Clone() {
+        int i;
+        PRT_SEQ seq;
+	seq = new PRT_SEQ;
+	seq.size = size;
+	seq.contents = new PRT_VALUE_ARRAY[size];
+	i = 0;
+	while (i < size) {
+	    seq.contents[i] = PRT_VALUE.PrtCloneValue(contents[i]);
+	    i = i + 1;
+	}
+    }
+
+    void Update(int index, PRT_VALUE value) {
+	assert (0 <= index && index < size);
+        contents[index] = PRT_VALUE.PrtCloneValue(value);
+    }
+
+    void Insert(int index, PRT_VALUE value) {
+    	PRT_VALUE_ARRAY newContents;
+	int i;
+	assert (0 <= index && index <= size);
+	newContents = new PRT_VALUE_ARRAY[size+1];
+	i = 0;
+	while (i < size + 1) {
+	    if (i < index) {
+	        newContents[i] = contents[i];
+	    } else if (i == index) {
+	        newContents[i] = PRT_VALUE.PrtCloneValue(value);
+	    } else {
+	        newContents[i] = contents[i-1];
+	    }
+	    i = i + 1;
+	}
+	contents = contents;
+	size = size + 1;	
+    }
+
+    void Remove(int index) {
+	int i;
+	assert (0 <= index && index < size);
+	i = index;
+	while (i < size - 1) {
+	    contents[i] = contents[i+1];
+	    i = i + 1;
+	}
+	size = size - 1;	
+    }
+
+    PRT_VALUE Get(int index) {
+        PRT_VALUE retVal;
+	assert (0 <= index && index < size);
+        retVal = PRT_VALUE.PrtCloneValue(contents[index]);
+	return retVal;
+    }
+
+    int SizeOf() {
+        return size;
+    }
+
+    bool InhabitsType(PRT_TYPE type) {
+        int i;
+	bool b;
+
+	i = 0;
+	while (i < size)
+	{
+	    b = PRT_VALUE.PrtInhabitsType(contents[i], type.innerType);
+	    if (!b) {
+	        return false;
+	    }
+	    i = i + 1;
+	}
+	return true;
+    }
+
+    bool Equals(PRT_SEQ seq) {
+        int i;
+	bool b;
+	if (size != seq.size)
+	{
+	    return false;
+	}
+	i = 0;
+	while (i < size)
+	{
+	    b = PRT_VALUE.PrtIsEqualValue(contents[i], seq.contents[i]);
+	    if (!b)
+	    {
+	        return false;
+	    }
+	    i = i + 1;
+	}
+	return true;
+    }
+};
+
+class PRT_MAP {
+    int size;
+    PRT_VALUE_ARRAY keys;
+    PRT_VALUE_ARRAY values;
+
+    static PRT_MAP PrtMkDefaultMap() {
+        PRT_MAP map;
+	map = new PRT_MAP;
+	map.size = 0;
+	map.keys = null;
+	map.values = null;
+    }
+
+    PRT_MAP Clone() {
+        int i;
+        PRT_MAP map;
+	map = new PRT_MAP;
+	map.size = size;
+	map.keys = new PRT_VALUE_ARRAY[size];
+	map.values = new PRT_VALUE_ARRAY[size];
+	i = 0;
+	while (i < size) {
+	    map.keys[i] = PRT_VALUE.PrtCloneValue(keys[i]);
+	    map.values[i] = PRT_VALUE.PrtCloneValue(values[i]);	    
+	    i = i + 1;
+	}
+    }
+
+    void Update(PRT_VALUE key, PRT_VALUE value) {
+        int i;
+	bool b;
+	PRT_VALUE_ARRAY newKeys;
+	PRT_VALUE_ARRAY newValues;
+	int j;
+
+	i = 0;
+	while (i < size) {
+	    b = PRT_VALUE.PrtIsEqualValue(keys[i], key);
+	    if (b) {
+	        values[i] = PRT_VALUE.PrtCloneValue(value);
+	        return;
+	    } else {
+	        i = i + 1;
+	    }
+	}
+
+	newKeys = new PRT_VALUE_ARRAY[size + 1];
+	newValues = new PRT_VALUE_ARRAY[size + 1];
+	j = 0;
+	while (j < size) {
+	    newKeys[j] = keys[j];
+	    newValues[j] = values[j];
+	    j = j + 1;
+	}
+	newKeys[size] = PRT_VALUE.PrtCloneValue(key);
+	newValues[size] = PRT_VALUE.PrtCloneValue(value);
+
+	keys = newKeys;
+	values = newValues;
+	size = size + 1;
+    }
+
+    void Remove(PRT_VALUE key) {
+        int i;
+	bool b;
+	PRT_VALUE_ARRAY newKeys;
+	PRT_VALUE_ARRAY newValues;
+	int j;
+
+	i = 0;
+	while (i < size) {
+	    b = PRT_VALUE.PrtIsEqualValue(keys[i], key);
+	    if (b) {
+	        newKeys = new PRT_VALUE_ARRAY[size - 1];
+		newValues = new PRT_VALUE_ARRAY[size - 1];
+		j = 0;
+		while (j < size) {
+		    if (j < i) {
+	    	        newKeys[j] = keys[j];
+	    	    	newValues[j] = values[j];
+		    } else if (j > i) {
+	    	        newKeys[j-1] = keys[j];
+	    	    	newValues[j-1] = values[j];		        
+		    }
+	    	    j = j + 1;
+		}
+
+		keys = newKeys;
+		values = newValues;
+		size = size - 1;
+		return;	        
+	    } else {
+	        i = i + 1;
+	    }
+	}
+        assert (false);
+    }
+
+    PRT_VALUE Get(PRT_VALUE key) {
+        int i;
+	bool b;
+	PRT_VALUE retVal;
+
+	i = 0;
+	while (i < size) {
+	    b = PRT_VALUE.PrtIsEqualValue(keys[i], key);
+	    if (b) {
+	        retVal = PRT_VALUE.PrtCloneValue(values[i]);
+		return retVal;
+	    } else {
+	        i = i + 1;
+	    }
+	}
+        assert (false);
+    }
+
+    PRT_VALUE GetKeys(PRT_TYPE domType) {
+        PRT_VALUE retVal;
+        int i;
+	PRT_SEQ seq;
+	seq = new PRT_SEQ;
+	seq.size = size;
+	seq.contents = new PRT_VALUE_ARRAY[size];
+	i = 0;
+	while (i < size) {
+	    seq.contents[i] = PRT_VALUE.PrtCloneValue(keys[i]);
+	    i = i + 1;
+	}
+	retVal = new PRT_VALUE;
+	retVal.type = PRT_TYPE.PrtMkSeqType(domType);
+	retVal.seq = seq;
+        return retVal;
+    }
+
+    PRT_VALUE GetValues(PRT_TYPE codType) {
+        PRT_VALUE retVal;
+        int i;
+	PRT_SEQ seq;
+	seq = new PRT_SEQ;
+	seq.size = size;
+	seq.contents = new PRT_VALUE_ARRAY[size];
+	i = 0;
+	while (i < size) {
+	    seq.contents[i] = PRT_VALUE.PrtCloneValue(values[i]);
+	    i = i + 1;
+	}
+	retVal = new PRT_VALUE;
+	retVal.type = PRT_TYPE.PrtMkSeqType(codType);
+	retVal.seq = seq;
+        return retVal;
+    }
+
+    bool Exists(PRT_VALUE key) {
+        int i;
+	bool b;
+
+	i = 0;
+	while (i < size) {
+	    b = PRT_VALUE.PrtIsEqualValue(keys[i], key);
+	    if (b) {
+	        return true;
+	    } else {
+	        i = i + 1;
+	    }
+	}
+        return false;
+    }
+
+    int SizeOf() {
+        return size;
+    }
+
+    bool IsSameMapping(PRT_VALUE key, PRT_VALUE value) {
+        int i;
+	bool b;
+
+	i = 0;
+	while (i < size) {
+	    b = PRT_VALUE.PrtIsEqualValue(keys[i], key);
+	    if (b) {
+	        b = PRT_VALUE.PrtIsEqualValue(values[i], value);
+		return b;
+	    } else {
+	        i = i + 1;
+	    }
+	}
+	return false;
+    }
+
+    bool InhabitsType(PRT_TYPE type) {
+        int i;
+	bool b;
+
+	i = 0;
+	while (i < size)
+	{
+	    b = PRT_VALUE.PrtInhabitsType(keys[i], type.domType);
+	    if (!b) {
+	        return false;
+	    }
+	    b = PRT_VALUE.PrtInhabitsType(values[i], type.codType);
+	    if (!b) {
+	        return false;
+	    }
+	    i = i + 1;
+	}
+	return true;
+    }
+
+    bool Equals(PRT_MAP map) {
+	int i;
+	bool b;
+
+	if (size != map.size)
+	{
+	    return false;
+	}
+
+	i = 0;
+	while (i < size) 
+	{
+            b = map.IsSameMapping(keys[i], values[i]);
+	    if (!b)
+	    {
+		return false;
+	    }
+	    i = i + 1;
+	}
+	return true;
+    }
+};
+
+

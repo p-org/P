@@ -48,7 +48,7 @@ domain PData
     FunStmt  ::= new (name: String, args: any Exprs + { NIL }).
     NulStmt  ::= new (op: { SKIP, POP }).
     UnStmt   ::= new (op: { ASSERT }, arg1: any Expr).
-    BinStmt  ::= new (op: { REMOVE, ASSIGN }, arg1: any Expr, arg2: any Expr).
+    BinStmt  ::= new (op: { REMOVE, ASSIGN, INSERT }, arg1: any Expr, arg2: any Expr).
     Return   ::= new (expr: any Expr + { NIL }).
     While    ::= new (cond: any Expr, body: any Stmt).
     Ite      ::= new (cond: any Expr, true: any Stmt, false: any Stmt).
@@ -64,9 +64,10 @@ domain PData
     EventDecl    ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
     VarDecl      ::= fun (name: String, owner: MachineDecl -> type: any TypeExpr).
     FunDecl      ::= fun (name: String, owner: MachineDecl -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL },  return: any TypeExpr + { NIL }, body: any Stmt).
-    StateDecl    ::= fun (name: QualifiedName, owner: MachineDecl -> entryFun: any Stmt, exitFun: any Stmt, isStable: Boolean).
+    ActionDecl   ::= fun (name: String, owner: MachineDecl -> body: any Stmt).
+    StateDecl    ::= fun (name: QualifiedName, owner: MachineDecl -> entryFun: any Stmt + String, exitFun: any Stmt + string, isStable: Boolean).
     TransDecl    ::= fun (src: StateDecl, trig: String + { DEFAULT, HALT } -> dst: any QualifiedName, action: any Stmt + { NIL, PUSH }).
-    ActionDecl   ::= fun (src: StateDecl, trig: String + { HALT } -> action: String).
+	DoDecl       ::= fun (src: StateDecl, trig: String + { HALT } -> action: any Stmt + String).
     DefIgnDecl   ::= fun (src: StateDecl, trig: String + { HALT } -> kind: { DEFER, IGNORE }).
 	
     AssumeMaxInstances ::= new (bound: Natural).

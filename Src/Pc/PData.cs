@@ -28,7 +28,7 @@
         public static readonly AST<Id> Cnst_True = Factory.Instance.MkId("TRUE");
         public static readonly AST<Id> Cnst_False = Factory.Instance.MkId("FALSE");
         public static readonly AST<Id> Cnst_Delete = Factory.Instance.MkId("DELETE");
-        public static readonly AST<Id> Cnst_Leave = Factory.Instance.MkId("LEAVE");
+        public static readonly AST<Id> Cnst_Pop = Factory.Instance.MkId("POP");
         public static readonly AST<Id> Cnst_Default = Factory.Instance.MkId("DEFAULT");
         public static readonly AST<Id> Cnst_Null = Factory.Instance.MkId("NULL");
 
@@ -69,7 +69,7 @@
         /// </summary>
         //// Expressions
         public static readonly AST<Id> Con_Payload = Factory.Instance.MkId("Payload");
-        public static readonly AST<Id> Con_Use = Factory.Instance.MkId("Use");
+        public static readonly AST<Id> Con_Name = Factory.Instance.MkId("Use");
         public static readonly AST<Id> Con_Apply = Factory.Instance.MkId("Apply");
         public static readonly AST<Id> Con_Exprs = Factory.Instance.MkId("Exprs");
         public static readonly AST<Id> Con_Strings = Factory.Instance.MkId("Strings");
@@ -91,7 +91,7 @@
         public static readonly AST<Id> Con_Assign = Factory.Instance.MkId("Assign");
         public static readonly AST<Id> Con_Send = Factory.Instance.MkId("Send");
         public static readonly AST<Id> Con_Raise = Factory.Instance.MkId("Raise");
-        public static readonly AST<Id> Con_Scall = Factory.Instance.MkId("Scall");
+        public static readonly AST<Id> Con_Push = Factory.Instance.MkId("Push");
         public static readonly AST<Id> Con_Ecall = Factory.Instance.MkId("Ecall");
         public static readonly AST<Id> Con_Mcall = Factory.Instance.MkId("Mcall");
         public static readonly AST<Id> Con_Tuple = Factory.Instance.MkId("Tuple");
@@ -128,7 +128,7 @@
         /// </summary>
         //// Expressions
         public static readonly AST<FuncTerm> App_Payload = Factory.Instance.MkFuncTerm(Con_Payload);
-        public static readonly AST<FuncTerm> App_Use = Factory.Instance.MkFuncTerm(Con_Use);
+        public static readonly AST<FuncTerm> App_Use = Factory.Instance.MkFuncTerm(Con_Name);
         public static readonly AST<FuncTerm> App_Apply = Factory.Instance.MkFuncTerm(Con_Apply);
         public static readonly AST<FuncTerm> App_Strings = Factory.Instance.MkFuncTerm(Con_Strings);
         public static readonly AST<FuncTerm> App_Exprs = Factory.Instance.MkFuncTerm(Con_Exprs);
@@ -143,7 +143,7 @@
         public static readonly AST<FuncTerm> App_Assign = Factory.Instance.MkFuncTerm(Con_Assign);
         public static readonly AST<FuncTerm> App_Send = Factory.Instance.MkFuncTerm(Con_Send);
         public static readonly AST<FuncTerm> App_Raise = Factory.Instance.MkFuncTerm(Con_Raise);
-        public static readonly AST<FuncTerm> App_Scall = Factory.Instance.MkFuncTerm(Con_Scall);
+        public static readonly AST<FuncTerm> App_Scall = Factory.Instance.MkFuncTerm(Con_Push);
         public static readonly AST<FuncTerm> App_ITE = Factory.Instance.MkFuncTerm(Con_ITE);
         public static readonly AST<FuncTerm> App_While = Factory.Instance.MkFuncTerm(Con_While);
         public static readonly AST<FuncTerm> App_Seq = Factory.Instance.MkFuncTerm(Con_Seq);

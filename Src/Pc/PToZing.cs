@@ -236,28 +236,25 @@ namespace Microsoft.Pc
         }
     }
 
-    internal class TypeInfo
-    {
-        public string cType;
-        public string zingType;
-    }
-
     class PToZing
     {
         public const string Con_LabeledExpr = "___InternalLabeledExpression";
         public static AST<FuncTerm> App_LabeledExpr = Factory.Instance.MkFuncTerm(Factory.Instance.MkId(Con_LabeledExpr));
 
-        public const string SM_ARG_UNION = "SM_ARG_UNION";
-        public const string SM_NULL = "SM_NULL";
-        public const string SMF_PACKED_VALUE = "SMF_PACKED_VALUE";
-        public const string SMF_ARRAYLIST = "SMF_ARRAYLIST";
-        public const string SMF_HASHTABLE = "SMF_HASHTABLE";
+        public const string PRT_VALUE = "PRT_VALUE";
+        public static AST<Node> PrtValue = Factory.Instance.MkCnst("PRT_VALUE");
+        public static AST<Node> PrtCastValue = MkZingDot("PRT_VALUE", "PrtCastValue");
+        public static AST<Node> PrtCloneValue = MkZingDot("PRT_VALUE", "PrtCloneValue");
+        public static AST<Node> PrtIsEqualValue = MkZingDot("PRT_VALUE", "PrtIsEqualValue");
 
         public const string NullEvent = "null";
         public const string DefaultEvent = "default";
         public const string DeleteEvent = "delete";
 
         private Dictionary<string, AST<FuncTerm>> modelAliases;
+        public Dictionary<string, EventInfo> allEvents;
+        public Dictionary<string, MachineInfo> allMachines;
+        public string mainMachineName;
 
         public FuncTerm GetFuncTerm(Node node)
         {
@@ -281,20 +278,6 @@ namespace Microsoft.Pc
             }
         }
 
-        public Dictionary<string, EventInfo> allEvents;
-        public Dictionary<string, MachineInfo> allMachines;
-        public string mainMachineName;
-        public Dictionary<PType, TypeInfo> declaredTypes;
-        public HashSet<PType> allTypes;
-        public Dictionary<PType, List<PType>> subtypes, supertypes;
-        public IEnumerable<PType> relatives(PType t)
-        {
-            var res = new List<PType>(supertypes[t]);
-            res.AddRange(subtypes[t]);
-            res.Add(t);
-            return res;
-        }
-
         Dictionary<string, int> uniqIDCounters = new Dictionary<string, int>();
         public string getUnique(string prefix)
         {
@@ -304,36 +287,6 @@ namespace Microsoft.Pc
             var ret = uniqIDCounters[prefix];
             uniqIDCounters[prefix]++;
             return prefix + '_' + ret;
-        }
-
-        public void registerType(PType t)
-        {
-            if (declaredTypes.ContainsKey(t))
-                return; // Already registered
-
-            allTypes.Add(t);
-            TypeInfo ti = new TypeInfo();
-
-            if (t is PTupleType)
-                ti.cType = ti.zingType = getUnique("Tuple");
-            else if (t is PNamedTupleType)
-                ti.cType = ti.zingType = getUnique("NamedTuple");
-            else if (t is PSeqType)
-                ti.cType = ti.zingType = getUnique("Seq");
-            else if (t is PMapType)
-            {
-                registerType(new PSeqType((t as PMapType).KeyT));
-                ti.cType = ti.zingType = getUnique("Map");
-            }
-            else if (t is PAnyType)
-            { // TODO: We shouldn't register Any and just always emit code for it.
-                ti.cType = SMF_PACKED_VALUE;
-                ti.zingType = SM_ARG_UNION;
-            }
-            else
-                throw new NotImplementedException("Can't register unknown complex type " + t);
-
-            declaredTypes[t] = ti;
         }
 
         public PType GetPType(Node n)
@@ -363,7 +316,6 @@ namespace Microsoft.Pc
                     }
 
                     var type = new PTupleType(fieldTypes);
-                    registerType(type);
                     return type;
                 }
 
@@ -381,16 +333,13 @@ namespace Microsoft.Pc
                     }
 
                     var type = new PNamedTupleType(fieldTypes);
-                    registerType(type);
                     return type;
-
                 }
 
                 if (fname == PData.Con_TypeSeq.Node.Name)
                 {
                     var innerT = GetPType(GetArgByIndex((n as FuncTerm), 0));
                     var type = new PSeqType(innerT);
-                    registerType(type);
                     return type;
                 }
 
@@ -400,7 +349,6 @@ namespace Microsoft.Pc
                     var domain = GetPType(GetArgByIndex(ft, 0));
                     var range = GetPType(GetArgByIndex(ft, 1));
                     var type = new PMapType(domain, range);
-                    registerType(type);
                     return type;
                 }
 
@@ -412,6 +360,16 @@ namespace Microsoft.Pc
         public PToZing(Compiler compiler, AST<Model> model)
         {
             this.compiler = compiler;
+            this.modelAliases = new Dictionary<string, AST<FuncTerm>>();
+            this.allEvents = new Dictionary<string, EventInfo>();
+            this.allMachines = new Dictionary<string, MachineInfo>();
+            this.mainMachineName = null;
+            GenerateProgramData(model);  
+        }
+
+        private void GenerateProgramData(AST<Model> model)
+        {
+
         }
 
         #region Static helpers
@@ -440,10 +398,6 @@ namespace Microsoft.Pc
             return "field_" + fNum;
         }
 
-        public static string getFuncArg(int fNum)
-        {
-            return "arg_" + fNum;
-        }
         public static Node GetArgByIndex(FuncTerm ft, int index)
         {
             Contract.Requires(index >= 0 && index < ft.Args.Count);
@@ -879,75 +833,18 @@ namespace Microsoft.Pc
             AST<Node> calculateComplementMethod = MkZingMethodDecl("CalculateComplementOfEventSet", calculateComplementParameters, ZingData.Cnst_SmEventSet, calculateComplementLocalVars, calculateComplementBody, ZingData.Cnst_Static);
             methods = AddArgs(ZingData.App_MethodDecls, calculateComplementMethod, methods);
 
-            // At this point, the set of Types mentioned anywhere in the program is collected.
-            // Compute subtyping relations by checking all possible pairs of types.
-            foreach (var t in allTypes)
-            {
-                subtypes[t] = new List<PType>();
-                supertypes[t] = new List<PType>();
-            }
-
-            foreach (var t1 in allTypes)
-            {
-                foreach (var t2 in allTypes)
-                {
-                    if (t1 != t2 && t1.isSubtypeOf(t2))
-                    {
-                        subtypes[t2].Add(t1);
-                        supertypes[t1].Add(t2);
-                        Debug.Assert(   // Reminder to revisit this when adding new types.
-                            t2 is PAnyType ||
-                            (t2 is PTupleType && t1 is PTupleType) ||
-                            (t2 is PNamedTupleType && t1 is PNamedTupleType) ||
-                            (t2.IsMachineId && t1 is PNilType) ||
-                            (t2 is PEventType && t1 is PNilType) ||
-                            (t2 is PSeqType && t1 is PSeqType));
-                    }
-                }
-            }
-
-            // Generate the IsSubtype static method. IsSybtype :: (Discriminator, Discriminator) -> Bool
-            // Allows the runtime to check whether one statically declared type is a subtype of another.
-            var isSubBody = new List<AST<Node>>();
-            isSubBody.Add(MkZingIfThenElse(MkZingEq(MkZingIdentifier("b"), pTypeToZingDiscriminator(PType.Any)),
-                    AddArgs(ZingData.App_Return, ZingData.Cnst_True), ZingData.Cnst_Nil));
-
-            foreach (var t in allTypes)
-            {
-                if (t is PAnyType)
-                    continue;
-
-                var ifBody = new List<AST<Node>>();
-                ifBody.Add(MkZingIfThenElse(MkZingEq(MkZingIdentifier("a"), pTypeToZingDiscriminator(t)),
-                        AddArgs(ZingData.App_Return, ZingData.Cnst_True), ZingData.Cnst_Nil));
-
-                foreach (var subT in subtypes[t])
-                {
-                    ifBody.Add(MkZingIfThenElse(MkZingEq(MkZingIdentifier("a"), pTypeToZingDiscriminator(subT)),
-                        AddArgs(ZingData.App_Return, ZingData.Cnst_True), ZingData.Cnst_Nil));
-                }
-                ifBody.Add(AddArgs(ZingData.App_Return, ZingData.Cnst_False));
-                isSubBody.Add(MkZingIfThenElse(MkZingEq(MkZingIdentifier("b"), pTypeToZingDiscriminator(t)),
-                    MkZingSeq(ifBody), ZingData.Cnst_Nil));
-            }
-            isSubBody.Add(AddArgs(ZingData.App_Return, ZingData.Cnst_False));
-            AST<Node> isSubtypeMethod = MkZingMethodDecl("IsSubtype",
-                MkZingVarDecls(MkZingVarDecl("a", Factory.Instance.MkCnst("Discriminator")), MkZingVarDecl("b", Factory.Instance.MkCnst("Discriminator"))),
-                pTypeToZingType(PType.Bool), ZingData.Cnst_Nil, MkZingBlock("dummy", MkZingSeq(isSubBody)), ZingData.Cnst_Static);
-            methods = AddArgs(ZingData.App_MethodDecls, isSubtypeMethod, methods);
-
             // Generate the PayloadOf static method. PayloadOf :: (EventId) -> Discriminator
             // Returns the statically declared type for the given event.
             var payloadOfBody = new List<AST<Node>>();
 
             // NULL Event
             payloadOfBody.Add(MkZingIfThen(MkZingEq(MkZingIdentifier("e"), MkZingIdentifier("null")),
-                MkZingReturn(pTypeToZingDiscriminator(PType.Any))));
+                MkZingReturn(pTypeToZingType(PType.Any))));
 
             foreach (var evt in allEvents.Keys.Where(x => x != NullEvent))
             {
                 payloadOfBody.Add(MkZingIfThenElse(MkZingEq(MkZingDot("e", "name"), MkZingDot("Event", "_" + evt)),
-                    AddArgs(ZingData.App_Return, pTypeToZingDiscriminator(allEvents[evt].payloadType)),
+                    AddArgs(ZingData.App_Return, pTypeToZingType(allEvents[evt].payloadType)),
                     ZingData.Cnst_Nil));
             }
 
@@ -1081,180 +978,6 @@ namespace Microsoft.Pc
             return AddArgs(ZingData.App_ClassDecl, Factory.Instance.MkCnst(machineName), fields, methods);
         }
 
-        private AST<FuncTerm> GenerateUnionClass()
-        {
-            var anyMemberTypes = allTypes.Where(t => !(t is PAnyType));
-            var anyVars = new List<AST<Node>>();
-            var anyMethods = new List<AST<Node>>();
-            anyVars.Add(MkZingVarDecl("d", Factory.Instance.MkCnst("Discriminator")));
-            anyVars.AddRange(anyMemberTypes.Select(type => MkZingVarDecl(pTypeToZingUnionMember(type), pTypeToZingType(type))));
-
-
-            // Make BuildDefault
-            var body = new List<AST<Node>>();
-            var locals = new List<AST<Node>>();
-            locals.Add(MkZingVarDecl("result", Factory.Instance.MkCnst(SM_ARG_UNION)));
-            body.Add(MkZingAssign(MkZingIdentifier("result"), AddArgs(ZingData.App_New, Factory.Instance.MkCnst(SM_ARG_UNION), ZingData.Cnst_Nil)));
-            body.Add(MkZingAssign(MkZingDot("result", "d"), pTypeToZingDiscriminator(PType.Nil)));
-
-            ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "BuildDefault", this);
-            foreach (var t in anyMemberTypes)
-            {
-                body.Add(ctxt.emitZingSideEffects(MkZingAssign(MkZingDot("result", pTypeToZingUnionMember(t)),
-                    t is PPrimitiveType ? getZingDefault(ctxt, t) : MkZingIdentifier("null"))));
-                ctxt.pushSideEffectStack();
-            }
-
-            locals.AddRange(ctxt.emitLocalsList());
-            body.Add(AddArgs(ZingData.App_Return, MkZingIdentifier("result")));
-            anyMethods.Add(MkZingMethodDecl("BuildDefault", ZingData.Cnst_Nil, Factory.Instance.MkCnst(SM_ARG_UNION),
-                ConstructList(ZingData.App_VarDecls, locals), MkZingBlock("dummy", MkZingSeq(body)), ZingData.Cnst_Static));
-
-            // Emit Clone Method
-            locals = new List<AST<Node>>();
-            body = new List<AST<Node>>();
-
-            locals.Add(MkZingVarDecl("result", Factory.Instance.MkCnst(SM_ARG_UNION)));
-            body.Add(MkZingAssign(MkZingIdentifier("result"), MkZingCall(MkZingDot(SM_ARG_UNION, "BuildDefault"))));
-            body.Add(MkZingAssign(MkZingDot("result", "d"), MkZingDot("this", "d")));
-
-            foreach (var t in anyMemberTypes)
-            {
-                var thisM = MkZingDot("result", pTypeToZingUnionMember(t));
-                var otherM = MkZingDot("this", pTypeToZingUnionMember(t));
-                body.Add(MkZingIfThen(MkZingEq(MkZingDot("result", "d"), pTypeToZingDiscriminator(t)), MkZingAssignOrCast(thisM, t, otherM, t)));
-            }
-
-            body.Add(AddArgs(ZingData.App_Return, MkZingIdentifier("result")));
-            anyMethods.Add(MkZingMethodDecl("Clone", ZingData.Cnst_Nil, Factory.Instance.MkCnst(SM_ARG_UNION),
-                ConstructList(ZingData.App_VarDecls, locals), MkZingBlock("dummy", MkZingSeq(body))));
-
-            // Emit Equals Method. Note: Equality is aware of subtyping. For example, Any values containing values of types
-            // a:(any, any) and b:(int, int) are considered equal if they both contain the concrete value (1,1).
-            var equalsBody = new List<AST<Node>>();
-            var eqCtxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Equals", this);
-
-            foreach (var t in anyMemberTypes)
-            {
-                var thisM = MkZingDot("this", pTypeToZingUnionMember(t));
-                var otherD = MkZingDot("other", "d");
-                var ifBody = new List<AST<Node>>();
-
-                foreach (var otherT in relatives(t).Where(tp => !(tp is PAnyType)))
-                {
-                    ifBody.Add(MkZingIfThen(MkZingEq(otherD, pTypeToZingDiscriminator(otherT)),
-                        eqCtxt.emitZingSideEffects(MkZingReturn(MkZingEq(eqCtxt, thisM, t, MkZingDot("other", pTypeToZingUnionMember(otherT)), otherT)))));
-                    eqCtxt.pushSideEffectStack();
-                }
-
-                equalsBody.Add(MkZingIfThen(MkZingEq(MkZingDot("this", "d"), pTypeToZingDiscriminator(t)), MkZingSeq(ifBody)));
-            }
-
-            equalsBody.Add(MkZingReturn(ZingData.Cnst_False));
-
-            anyMethods.Add(MkZingMethodDecl("Equals", MkZingVarDecls(MkZingVarDecl("other", Factory.Instance.MkCnst(SM_ARG_UNION))),
-                ZingData.Cnst_Bool, eqCtxt.emitLocals(), MkZingBlock("dummy", MkZingSeq(equalsBody))));
-
-            // Emit UpCast,Downcast and Equals Methods
-            foreach (var t in anyMemberTypes)
-            {
-                // Emit the Equals_<T> Method
-                ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, getZingEqualsName(t), this);
-                var equalsSubBody = new List<AST<Node>>();
-
-                foreach (var otherT in relatives(t).Where(tp => !(tp is PAnyType)))
-                {
-                    equalsSubBody.Add(MkZingIfThen(MkZingEq(MkZingDot("this", "d"), pTypeToZingDiscriminator(otherT)),
-                        ctxt.emitZingSideEffects(MkZingReturn(MkZingEq(ctxt, MkZingDot("this", pTypeToZingUnionMember(otherT)), otherT, MkZingIdentifier("other"), t)))));
-                    ctxt.pushSideEffectStack();
-                }
-
-                equalsSubBody.Add(MkZingReturn(ZingData.Cnst_False));
-                anyMethods.Add(MkZingMethodDecl(getZingEqualsName(t),
-                    MkZingVarDecls(MkZingVarDecl("other", pTypeToZingType(t))), pTypeToZingType(PType.Bool),
-                    ctxt.emitLocals(), MkZingBlock("dummy", MkZingSeq(equalsSubBody))));
-
-                // Emit the UpCastFrom Method
-                var upcastBody = MkZingSeq(
-                    MkZingAssign(MkZingIdentifier("result"), MkZingCall(MkZingDot(SM_ARG_UNION, "BuildDefault"))),
-                    MkZingAssign(MkZingDot("result", "d"), pTypeToZingDiscriminator(t)),
-                    MkZingAssignOrCast(MkZingDot("result", pTypeToZingUnionMember(t)), t, MkZingIdentifier("other"), t),
-                    AddArgs(ZingData.App_Return, MkZingIdentifier("result")));
-
-                anyMethods.Add(MkZingMethodDecl(getZingUpCastName(t),
-                    MkZingVarDecls(MkZingVarDecl("other", pTypeToZingType(t))), pTypeToZingType(PType.Any),
-                    MkZingVarDecls(MkZingVarDecl("result", pTypeToZingType(PType.Any))),
-                    MkZingBlock("dummy", upcastBody), ZingData.Cnst_Static));
-
-                // Emit the DownCastTo Method
-                var downcastBody = new List<AST<Node>>();
-                ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, getZingDownCastName(t), this);
-
-                var resVar = ctxt.getTmpVar(t, "tmpRes");
-                foreach (var midT in relatives(t).Where(tp => !(tp is PAnyType)))
-                {
-                    downcastBody.Add(MkZingIfThen(MkZingEq(MkZingDot("this", "d"), pTypeToZingDiscriminator(midT)),
-                        MkZingSeq(
-                            MkZingAssignOrCast(resVar, t, MkZingDot("this", pTypeToZingUnionMember(midT)), midT),
-                            AddArgs(ZingData.App_Return, resVar))));
-
-                }
-                downcastBody.Add(MkZingAssert(ZingData.Cnst_False));
-
-                anyMethods.Add(MkZingMethodDecl(getZingDownCastName(t),
-                    ZingData.Cnst_Nil, pTypeToZingType(t), ctxt.emitLocals(), MkZingBlock("dummy", MkZingSeq(downcastBody))));
-
-                // Emit the CanDownCastTo Method
-                var candowncastBody = new List<AST<Node>>();
-                ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, getZingDownCastName(t), this);
-
-                foreach (var midT in supertypes[t].Where(tp => !(tp is PAnyType)))
-                {
-                    candowncastBody.Add(MkZingIfThenElse(MkZingEq(MkZingDot("this", "d"), pTypeToZingDiscriminator(midT)),
-                        ctxt.emitZingSideEffects(AddArgs(ZingData.App_Return, MkZingCanDownCastTo(ctxt, MkZingDot("this", pTypeToZingUnionMember(midT)), midT, t))),
-                        ZingData.Cnst_Nil));
-                    ctxt.pushSideEffectStack();
-                }
-
-                foreach (var subT in subtypes[t])
-                {
-                    candowncastBody.Add(MkZingIfThenElse(MkZingEq(MkZingDot("this", "d"), pTypeToZingDiscriminator(subT)),
-                            AddArgs(ZingData.App_Return, ZingData.Cnst_True), ZingData.Cnst_Nil));
-                }
-
-                candowncastBody.Add(AddArgs(ZingData.App_Return, MkZingEq(MkZingDot("this", "d"), pTypeToZingDiscriminator(t))));
-                anyMethods.Add(MkZingMethodDecl(getZingCanDownCastName(t),
-                    ZingData.Cnst_Nil, pTypeToZingType(PType.Bool), ctxt.emitLocals(), MkZingBlock("dummy", MkZingSeq(candowncastBody))));
-            }
-
-            // Emit the CanCastTo(Discriminator t) method
-            var canCastBody = new List<AST<Node>>();
-            var canCastCtxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "CanCastTo", this);
-
-            var tmpEq = canCastCtxt.getTmpVar(PType.Bool, "tmpEq");
-
-            // this.d == toT
-            canCastBody.Add(MkZingIfThen(MkZingEq(MkZingIdentifier("toT"), MkZingDot("this", "d")), MkZingReturn(ZingData.Cnst_True)));
-            // this.d is a subtype of toT
-            canCastBody.Add(MkZingAssign(tmpEq, MkZingCall(MkZingDot("Main", "IsSubtype"), MkZingDot("this", "d"), MkZingIdentifier("toT"))));
-            canCastBody.Add(MkZingIfThen(tmpEq, MkZingReturn(ZingData.Cnst_True)));
-            // this.d is a supertype of toT, and we can downcast to it.
-            foreach (var t in anyMemberTypes)
-            {
-                canCastBody.Add(MkZingIfThen(MkZingEq(MkZingIdentifier("toT"), pTypeToZingDiscriminator(t)),
-                    MkZingSeq(
-                        MkZingAssign(tmpEq, MkZingCall(MkZingDot("this", getZingCanDownCastName(t)))),
-                        MkZingReturn(tmpEq))));
-            }
-
-            canCastBody.Add(MkZingAssert(ZingData.Cnst_False)); // Sanity Check that we don't make it there.
-            anyMethods.Add(MkZingMethodDecl("CanCastTo", MkZingVarDecls(MkZingVarDecl("toT", Factory.Instance.MkCnst("Discriminator"))),
-                pTypeToZingType(PType.Bool), canCastCtxt.emitLocals(), MkZingBlock("dummy", MkZingSeq(canCastBody))));
-
-            return AddArgs(ZingData.App_ClassDecl, Factory.Instance.MkCnst(SM_ARG_UNION),
-                MkZingVarDecls(anyVars), ConstructList(ZingData.App_MethodDecls, anyMethods));
-        }
-
         private void MkZingClasses(List<AST<Node>> elements)
         {
             foreach (string machineName in allMachines.Keys)
@@ -1270,37 +993,6 @@ namespace Microsoft.Pc
             }
 
             elements.Add(GenerateMainClass());
-    
-            // Emit class declarations for each Tuple/Named/Seq Tuple
-            foreach (PType t in declaredTypes.Keys)
-            {
-                if (t is PTupleType || t is PNamedTupleType)
-                    elements.Add(MkZingTupleClassDefinition(getFieldDescriptions(t), pTypeToZingType(t), declaredTypes[t].zingType, t));
-                else if (t is PSeqType)
-                {
-                    PSeqType seqT = t as PSeqType;
-                    elements.Add(MkZingSeqClassDefinition(seqT));
-                    elements.Add(AddArgs(ZingData.App_ArrayDecl, Factory.Instance.MkCnst(pTypeToZingName(seqT.T) + "_array"),
-                        pTypeToZingType(seqT.T)));
-                }
-                else if (t is PMapType)
-                {
-                    PMapType mapT = t as PMapType;
-                    AST<FuncTerm> mapClass, mapEntryClass;
-                    MkZingMapClassDefinition(mapT, out mapClass, out mapEntryClass);
-                    elements.Add(mapClass);
-                    elements.Add(mapEntryClass);
-                }
-                else if (!(t is PAnyType))
-                    throw new NotImplementedException("Unknown complex type " + t);
-            }
-
-            // Emit the Discriminator enum
-            elements.Add(AddArgs(ZingData.App_EnumDecl, Factory.Instance.MkCnst("Discriminator"),
-                ConstructList(ZingData.App_EnumElems, allTypes.Select(type => Factory.Instance.MkCnst(pTypeToZingName(type))))));
-
-            // Emit the SM_ARG_UNION class
-            elements.Add(GenerateUnionClass());
         }
 
         private AST<Node> MkZingNeq(ZingEntryFun_FoldContext ctxt, AST<Node> e1, PType t1, AST<Node> e2, PType t2)
@@ -1310,78 +1002,9 @@ namespace Microsoft.Pc
 
         private AST<Node> MkZingEq(ZingEntryFun_FoldContext ctxt, AST<Node> e1, PType t1, AST<Node> e2, PType t2)
         {
-            AST<Node> sub, super;
-            PType subT, supT;
-
-            if (t1 == t2)
-            {
-                if (t1 is PNilType)
-                {
-                    return ZingData.Cnst_True;
-                }
-                else if (t1 is PPrimitiveType)
-                    return MkZingApply(ZingData.Cnst_Eq, e1, e2);
-                else
-                {
-                    var tmpEqVar = ctxt.getTmpVar(PType.Bool, "eqVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpEqVar, MkZingCall(MkZingDot(e1, "Equals"), e2)));
-                    return tmpEqVar;
-                }
-            }
-            else
-            {
-                if (t1.isSubtypeOf(t2))
-                {
-                    super = e2;
-                    sub = e1;
-                    subT = t1;
-                    supT = t2;
-                }
-                else
-                {
-                    Debug.Assert(t2.isSubtypeOf(t1));
-                    super = e1;
-                    sub = e2;
-                    subT = t2;
-                    supT = t1;
-                }
-
-                // Special case Null Events/Machine Ids
-                if (supT is PIdType && subT is PNilType)
-                {
-                    return MkZingEq(super, getZingDefault(ctxt, PType.Id));
-                }
-                else if (supT is PMidType && subT is PNilType)
-                {
-                    return MkZingEq(super, getZingDefault(ctxt, PType.Mid));
-                }
-                else if (supT is PEventType && subT is PNilType)
-                {
-                    return MkZingEq(super, getZingDefault(ctxt, PType.Event));
-                }
-                else
-                {
-                    var tmpEqVar = ctxt.getTmpVar(PType.Bool, "eqVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpEqVar, MkZingCall(MkZingDot(super, getZingEqualsName(subT)), sub)));
-                    return tmpEqVar;
-                }
-            }
-        }
-
-        private AST<Node> MkZingCanDownCastTo(ZingEntryFun_FoldContext ctxt, AST<Node> from, PType fromT, PType toT)
-        {
-            if (fromT is PAnyType || fromT is PCompoundType || fromT is PSeqType)
-            {
-                var tmpVar = ctxt.getTmpVar(PType.Bool, "tmpEq");
-                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(from, getZingCanDownCastName(toT)))));
-
-                return tmpVar;
-            }
-            else
-            {
-                Debug.Assert(fromT.IsMachineId || fromT is PEventType);
-                return MkZingEq(from, MkZingIdentifier("null"));
-            }
+            var tmpEqVar = ctxt.getTmpVar(PType.Bool, "eqVar");
+            ctxt.addSideEffect(MkZingAssign(tmpEqVar, MkZingCall(PrtIsEqualValue, e1, e2)));
+            return tmpEqVar;
         }
 
         private void AddEventSet(List<AST<FuncTerm>> stmts, IEnumerable<string> eventNames, AST<FuncTerm> set)
@@ -1406,7 +1029,7 @@ namespace Microsoft.Pc
 
         private AST<FuncTerm> MkZingVarDecl(string varName, PType varType, params AST<Node>[] attrs)
         {
-            return MkZingVarDecl(varName, pTypeToZingType(varType), attrs);
+            return MkZingVarDecl(varName, PrtValue, attrs);
         }
 
         private AST<Node> GenerateCalculateDeferredAndActionSetMethodDecl(FuncTerm stateDecl)
@@ -2068,7 +1691,7 @@ namespace Microsoft.Pc
 
             public AST<Node> getTmpVar(PType t, string baseName)
             {
-                return getTmpVar(pToZing.pTypeToZingType(t), baseName);
+                return getTmpVar(PrtValue, baseName);
             }
 
             public AST<Node> getTmpVar(AST<Node> type, string baseName)
@@ -2268,24 +1891,6 @@ namespace Microsoft.Pc
             }
         }
 
-        private AST<Node> generatePayloadCastAsserts(ZingEntryFun_FoldContext ctxt, PType type)
-        {
-            AST<Node> assert = ZingData.Cnst_Nil;
-
-            if (!(type is PAnyType))
-            {
-                assert = ctxt.emitZingSideEffects(MkZingAssert(MkZingCanDownCastTo(ctxt, MkZingDot("myHandle", "currentArg"), PType.Any, type)));
-                ctxt.pushSideEffectStack();
-            }
-
-            if (!(type is PNilType))
-            {
-                assert = MkZingSeq(MkZingAssert(MkZingNeq(MkZingDot("myHandle", "currentArg"), MkZingIdentifier("null"))), assert);
-            }
-
-            return assert;
-        }
-
         private AST<Node> MkZingLabeledStmt(string label, AST<Node> stmt)
         {
             return AddArgs(ZingData.App_LabelStmt, Factory.Instance.MkCnst(label), stmt);
@@ -2309,41 +1914,7 @@ namespace Microsoft.Pc
 
         private AST<Node> MkZingAssignOrCast(AST<Node> lhs, PType lhsType, AST<Node> rhs, PType rhsType)
         {
-            AST<Node> rhsNode;
-
-            if (lhsType == rhsType)
-            {
-                rhsNode = (rhsType is PPrimitiveType) ? rhs : MkZingCall(MkZingDot(rhs, "Clone"));
-            }
-            else if (rhsType.isSubtypeOf(lhsType))
-            {   // UPCAST
-                if (lhsType is PTupleType || lhsType is PNamedTupleType || lhsType is PAnyType || lhsType is PSeqType)
-                {
-                    rhsNode = MkZingCall(MkZingDot(pTypeToZingClassName(lhsType), getZingUpCastName(rhsType)), rhs);
-                }
-                else if (lhsType.IsMachineId || lhsType is PEventType)
-                {
-                    Debug.Assert(rhsType is PNilType);
-                    rhsNode = MkZingIdentifier("null");
-                }
-                else
-                    throw new NotImplementedException(string.Format("Unknown LHS Type {0} in assignment.", lhsType));
-            }
-            else if (lhsType.isSubtypeOf(rhsType))
-            {   // DOWNCAST
-                if (!(lhsType is PNilType))
-                {
-                    rhsNode = MkZingCall(MkZingDot(rhs, getZingDownCastName(lhsType)));
-                }
-                else
-                {
-                    rhsNode = MkZingIdentifier("null");
-                }
-            }
-            else
-                throw new Exception(string.Format("Cannot assign from type {0} to type {1}", rhsType, lhsType));
-
-            return AddArgs(ZingData.App_Assign, lhs, rhsNode);
+            return AddArgs(ZingData.App_Assign, lhs, MkZingCall(PrtCloneValue, rhs));
         }
 
         private ZingTranslationInfo ZingEntryFun_Fold(ZingEntryFun_FoldContext ctxt, Node n, IEnumerable<ZingTranslationInfo> children)
@@ -2382,6 +1953,24 @@ namespace Microsoft.Pc
                             return null;
                         }
                         return new ZingTranslationInfo(MkZingDot("myHandle", "currentEvent"), new PEventType());
+                    }
+                    else if (id.Name == PData.Cnst_Pop.Node.Name)
+                    {
+                        if (allMachines[ctxt.machineName].IsSpec)
+                        {
+                            Debug.Assert(false, string.Format("A spec machine cannot make a pop statement."));
+                            return null;
+                        }
+                        if (ctxt.translationContext == TranslationContext.Exit)
+                        {
+                            Debug.Assert(false, string.Format("Pop statement not allowed in exit function."));
+                            return null;
+                        }
+                        ctxt.addSideEffect(MkZingAssignOrCast(MkZingDot("myHandle", "currentEvent"), PType.Event, MkZingIdentifier("null"), PType.Nil));
+                        ctxt.addSideEffect(MkZingAssignOrCast(MkZingDot("myHandle", "currentArg"), PType.Any, MkZingIdentifier("null"), PType.Nil));
+                        ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Pop"))));
+                        ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
+                        return new ZingTranslationInfo(ZingData.Cnst_Nil, new PNilType());
                     }
                     else if (id.Name == PData.Cnst_Nil.Node.Name)
                     {
@@ -2439,22 +2028,6 @@ namespace Microsoft.Pc
                             Debug.Assert(false, string.Format("Nondeterministic choice allowed only in model machines or model functions.", ctxt.entityName));
                             return null;
                         }
-                    }
-                    else if (id.Name == PData.Cnst_Leave.Node.Name)
-                    {
-                        if (ctxt.translationContext == TranslationContext.Function)
-                        {
-                            Debug.Assert(false, string.Format("Leave statement disallowed in body of function {0}.", ctxt.entityName));
-                            return null;
-                        }
-                        if (ctxt.translationContext == TranslationContext.Entry || ctxt.translationContext == TranslationContext.Action)
-                        {
-                            ctxt.addSideEffect(MkZingAssignOrCast(MkZingDot("myHandle", "currentEvent"), PType.Event, MkZingIdentifier("null"), PType.Nil));
-                            ctxt.addSideEffect(MkZingAssignOrCast(MkZingDot("myHandle", "currentArg"), PType.Any, MkZingIdentifier("null"), PType.Nil));
-                        }
-                        ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Leave"))));
-                        ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
-                        return new ZingTranslationInfo(ZingData.Cnst_Nil, new PNilType());
                     }
                     else if (id.Name == PData.Cnst_Bool.Node.Name)
                     {
@@ -2643,42 +2216,6 @@ namespace Microsoft.Pc
             }
             else if (funName == PData.Con_Return.Node.Name)
             {
-                if (allMachines[ctxt.machineName].IsSpec && ctxt.translationContext != TranslationContext.Function)
-                {
-                    Debug.Assert(false, string.Format("A spec machine cannot make a return statement."));
-                    return null;
-                }
-                if (ctxt.translationContext == TranslationContext.Exit)
-                {
-                    Debug.Assert(false, string.Format("Return statement not allowed in exit functions.", ctxt.entityName));
-                    return null;
-                }
-
-                if (ctxt.translationContext == TranslationContext.Entry || ctxt.translationContext == TranslationContext.Action)
-                {
-                    using (var it = children.GetEnumerator())
-                    {
-                        it.MoveNext();
-                        if (it.Current == null)
-                        {
-                            return null;
-                        }
-                        else if (it.Current.type != PType.Nil)
-                        {
-                            Debug.Assert(false, string.Format("Return statement should not have an argument.", ctxt.entityName));
-                            return null;
-                        }
-                        else
-                        {
-                            ctxt.addSideEffect(MkZingAssignOrCast(MkZingDot("myHandle", "currentEvent"), PType.Event, MkZingIdentifier("null"), PType.Nil));
-                            ctxt.addSideEffect(MkZingAssignOrCast(MkZingDot("myHandle", "currentArg"), PType.Any, MkZingIdentifier("null"), PType.Nil));
-                            ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Return"))));
-                            ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
-                            return new ZingTranslationInfo(ZingData.Cnst_Nil, new PNilType());
-                        }
-                    }
-                }
-
                 var returnType = allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].returnType;
                 using (var it = children.GetEnumerator())
                 {
@@ -2708,7 +2245,7 @@ namespace Microsoft.Pc
                     }
                 }
             }
-            else if (funName == PData.Con_Scall.Node.Name)
+            else if (funName == PData.Con_Push.Node.Name)
             {
                 if (allMachines[ctxt.machineName].IsSpec)
                 {
@@ -2767,12 +2304,7 @@ namespace Microsoft.Pc
                     var res = MkZingSeq(
                         MkZingCallStmt(MkZingCall(MkZingIdentifier("invokescheduler"), listnodes)));
                     return new ZingTranslationInfo(res, new PNilType());
-                
-                    
-
                 }
-                
-                
             }
             else if (funName == PData.Con_Strings.Node.Name)
             {
@@ -2923,9 +2455,6 @@ namespace Microsoft.Pc
                         return null;
                     }
 
-                    // Emit a check that the payload is castable to whatever we are trying to cast it to
-                    ctxt.addSideEffect(generatePayloadCastAsserts(ctxt, castType));
-
                     // Emit a check that the payload is castable to the expected event payload (a.k.a it matches the event)
                     var tmpEvPayload = ctxt.getTmpVar(Factory.Instance.MkCnst("Discriminator"), "tmpEvPayloadType");
                     ctxt.addSideEffect(MkZingAssign(tmpEvPayload, MkZingCall(MkZingDot("Main", "PayloadOf"), curTrigger)));
@@ -2937,7 +2466,7 @@ namespace Microsoft.Pc
                     if (!(castType is PAnyType))
                     {
                         outNode = ctxt.getTmpVar(castType, "tmpPayloadCast");
-                        ctxt.addSideEffect(MkZingAssign(outNode, MkZingCall(MkZingDot("myHandle", "currentArg", getZingDownCastName(castType)))));
+                        ctxt.addSideEffect(MkZingAssign(outNode, MkZingCall(PrtCastValue, MkZingDot("myHandle", "currentArg"), pTypeToZingType(castType))));
                     }
                     else
                     {
@@ -2947,7 +2476,7 @@ namespace Microsoft.Pc
                     return new ZingTranslationInfo(outNode, castType);
                 }
             }
-            else if (funName == PData.Con_Use.Node.Name)
+            else if (funName == PData.Con_Name.Node.Name)
             {
                 var kind = (Id)GetArgByIndex(ft, 1);
                 if (kind.Name == PData.Cnst_Var.Node.Name)
@@ -3013,9 +2542,8 @@ namespace Microsoft.Pc
                     return null;
 
                 var tupType = new PTupleType(children.Select(child => child.type));
-                registerType(tupType);
 
-                var node = MkZingCall(MkZingDot(pTypeToZingType(tupType), "Build"), children.Select(child => child.node));
+                var node = MkZingCall(MkZingDot(PrtValue, "Build"), children.Select(child => child.node));
                 var tmpVar = ctxt.getTmpVar(tupType, "tmpTuple");
                 ctxt.addSideEffect(MkZingAssign(tmpVar, node));
 
@@ -3034,14 +2562,13 @@ namespace Microsoft.Pc
 
                 var type = new PNamedTupleType(children.Select(child => new Tuple<string, PType>(
                     ((Cnst)GetArgByIndex((FuncTerm)child.node.Node, 0)).GetStringValue(), child.type)));
-                registerType(type);
 
                 var buildArgs = ConstructList(ZingData.App_Args,
                     children.OrderBy(child => ((Cnst)GetArgByIndex((FuncTerm)child.node.Node, 0)).GetStringValue()).Select(
                         child => Factory.Instance.ToAST(GetArgByIndex((FuncTerm)child.node.Node, 1))
                     ));
 
-                var node = AddArgs(ZingData.App_Call, AddArgs(ZingData.App_Args, MkZingDot(pTypeToZingType(type), "Build"), buildArgs));
+                var node = AddArgs(ZingData.App_Call, AddArgs(ZingData.App_Args, MkZingDot(PrtValue, "Build"), buildArgs));
                 var tmpVar = ctxt.getTmpVar(type, "tmpNamedTuple");
                 ctxt.addSideEffect(MkZingAssign(tmpVar, node));
                 return new ZingTranslationInfo(tmpVar, type);
@@ -3199,7 +2726,7 @@ namespace Microsoft.Pc
 
                             // Verify that the second P Node is indeed a Use("f", FIELD) node
                             var useNode = GetArgByIndex((FuncTerm)GetArgByIndex((FuncTerm)GetArgByIndex(ft, 1), 1), 0) as FuncTerm;
-                            if (useNode == null || ((Id)useNode.Function).Name != PData.Con_Use.Node.Name ||
+                            if (useNode == null || ((Id)useNode.Function).Name != PData.Con_Name.Node.Name ||
                                 !(GetArgByIndex(useNode, 1) is Id) || ((Id)GetArgByIndex(useNode, 1)).Name != PData.Cnst_Field.Node.Name)
                             {
                                 Debug.Assert(false, string.Format("Invalid Field expression in field lookup", baseType));
@@ -3754,619 +3281,9 @@ namespace Microsoft.Pc
             return MkZingFor(indVar, Factory.Instance.MkCnst(start), end, body);
         }
 
-        private AST<FuncTerm> MkZingSeqEqMethod(PSeqType meT, PSeqType otherT)
-        {
-            var name = meT == otherT ? "Equals" : getZingEqualsName(otherT);
-            ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, name, this);
-            var ind = ctxt.getTmpVar(PType.Int, "ind");
-            var body = MkZingSeq(
-                MkZingIfThen(MkZingNeq(MkZingDot("this", "size"), MkZingDot("other", "size")),
-                    MkZingReturn(ZingData.Cnst_False)),
-                    MkZingFor(ind, 0, MkZingDot("this", "size"),
-                        ctxt.emitZingSideEffects(MkZingIfThen(MkZingNeq(ctxt, MkZingIndex(MkZingDot("this", "arr"), ind), meT.T, MkZingIndex(MkZingDot("other", "arr"), ind), otherT.T),
-                            MkZingReturn(ZingData.Cnst_False)))),
-                MkZingReturn(ZingData.Cnst_True));
-            ctxt.pushSideEffectStack();
-
-            return MkZingMethodDecl(name, MkZingVarDecls(MkZingVarDecl("other", otherT)),
-                ZingData.Cnst_Bool, ctxt.emitLocals(), MkZingBlock("dummy", ctxt.emitZingSideEffects(body)));
-        }
-
-        private AST<FuncTerm> MkZingSeqCastOrClone(PSeqType fromT, PSeqType toT)
-        {
-            var name = getZingCastOrCloneName(fromT, toT);
-            ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, name, this);
-            var res = ctxt.getTmpVar(toT, "res");
-            var ind = ctxt.getTmpVar(PType.Int, "ind");
-            var isUpcast = fromT.isSubtypeOf(toT) && toT != fromT;
-            var from = isUpcast ? "obj" : "this"; // Only Upcasts are static
-            var body = MkZingSeq(MkZingAssign(res, AddArgs(ZingData.App_New, pTypeToZingType(toT), ZingData.Cnst_Nil)),
-                MkZingAssign(MkZingDot(res, "arr"), AddArgs(ZingData.App_New, Factory.Instance.MkCnst(pTypeToZingName(toT.T) + "_array"), MkZingDot(from, "size"))),
-                MkZingAssign(MkZingDot(res, "size"), MkZingDot(from, "size")),
-                MkZingFor(ind, 0, MkZingDot(from, "size"),
-                        MkZingAssignOrCast(MkZingIndex(MkZingDot(res, "arr"), ind), toT.T, MkZingIndex(MkZingDot(from, "arr"), ind), fromT.T)),
-                MkZingReturn(res));
-
-            if (isUpcast)
-                return MkZingMethodDecl(name, MkZingVarDecls(MkZingVarDecl(from, fromT)), pTypeToZingType(toT), ctxt.emitLocals(),
-                    MkZingBlock("dummy", ctxt.emitZingSideEffects(body)), ZingData.Cnst_Static);
-            else
-                return MkZingMethodDecl(name, ZingData.Cnst_Nil, pTypeToZingType(toT), ctxt.emitLocals(),
-                    MkZingBlock("dummy", ctxt.emitZingSideEffects(body)));
-        }
-
-        private AST<FuncTerm> MkZingSeqCanDownCast(PSeqType fromT, PSeqType toT)
-        {
-            ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Clone", this);
-            var ind = ctxt.getTmpVar(PType.Int, "ind");
-            var body = MkZingSeq(
-                MkZingFor(ind, 0, MkZingDot("this", "size"),
-                    ctxt.emitZingSideEffects(MkZingIfThen(MkZingApply(ZingData.Cnst_Not, MkZingCanDownCastTo(ctxt, MkZingIndex(MkZingDot("this", "arr"), ind), fromT.T, toT.T)),
-                        MkZingReturn(ZingData.Cnst_False)))),
-                MkZingReturn(ZingData.Cnst_True));
-
-            ctxt.pushSideEffectStack();
-
-            return MkZingMethodDecl(getZingCanDownCastName(toT), ZingData.Cnst_Nil, pTypeToZingType(PType.Bool), ctxt.emitLocals(),
-                MkZingBlock("dummy", ctxt.emitZingSideEffects(body)));
-        }
-
-        private AST<FuncTerm> MkZingSeqInsert(PSeqType t)
-        {
-            ZingEntryFun_FoldContext insertCtxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Insert", this);
-            var arrT = Factory.Instance.MkCnst(pTypeToZingName(t.T) + "_array");
-            var tmpArrVar = insertCtxt.getTmpVar(arrT, "newArr");
-            var ind = insertCtxt.getTmpVar(PType.Int, "i");
-            var insertBody = MkZingSeq(
-                MkZingAssert(MkZingApply(ZingData.Cnst_Le, Factory.Instance.MkCnst(0), MkZingIdentifier("ind"))),
-                MkZingAssert(MkZingApply(ZingData.Cnst_Le, MkZingIdentifier("ind"), MkZingDot("this", "size"))),
-                MkZingAssign(MkZingDot("this", "size"), MkZingPlus(MkZingDot("this", "size"), 1)),
-                MkZingAssign(tmpArrVar, AddArgs(ZingData.App_New, arrT, MkZingDot("this", "size"))),
-                MkZingFor(ind, 0, MkZingIdentifier("ind"),
-                    MkZingAssignOrCast(MkZingIndex(tmpArrVar, ind), t.T, MkZingIndex(MkZingDot("this", "arr"), ind), t.T)),
-                MkZingAssignOrCast(MkZingIndex(tmpArrVar, MkZingIdentifier("ind")), t.T, MkZingIdentifier("val"), t.T),
-                MkZingFor(ind, MkZingPlus(MkZingIdentifier("ind"), 1), MkZingDot("this", "size"),
-                    MkZingAssignOrCast(MkZingIndex(tmpArrVar, ind), t.T, MkZingIndex(MkZingDot("this", "arr"), MkZingMinus(ind, 1)), t.T)),
-                MkZingAssign(MkZingDot("this", "arr"), tmpArrVar));
-
-            return MkZingMethodDecl("Insert", MkZingVarDecls(MkZingVarDecl("ind", PType.Int), MkZingVarDecl("val", t.T)),
-                ZingData.Cnst_Void, insertCtxt.emitLocals(), MkZingBlock("dummy", insertBody));
-        }
-
-        private AST<FuncTerm> MkZingSeqRemove(PSeqType t)
-        {
-            ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Remove", this);
-            var arrT = Factory.Instance.MkCnst(pTypeToZingName(t.T) + "_array");
-            var tmpArrVar = ctxt.getTmpVar(arrT, "newArr");
-            var ind = ctxt.getTmpVar(PType.Int, "i");
-            var insertBody = MkZingSeq(
-                MkZingAssert(MkZingApply(ZingData.Cnst_Le, Factory.Instance.MkCnst(0), MkZingIdentifier("ind"))),
-                MkZingAssert(MkZingApply(ZingData.Cnst_Lt, MkZingIdentifier("ind"), MkZingDot("this", "size"))),
-                MkZingAssign(MkZingDot("this", "size"), MkZingMinus(MkZingDot("this", "size"), 1)),
-                MkZingAssign(tmpArrVar, AddArgs(ZingData.App_New, arrT, MkZingDot("this", "size"))),
-                MkZingFor(ind, 0, MkZingIdentifier("ind"),
-                    MkZingAssignOrCast(MkZingIndex(tmpArrVar, ind), t.T, MkZingIndex(MkZingDot("this", "arr"), ind), t.T)),
-                MkZingFor(ind, MkZingIdentifier("ind"), MkZingDot("this", "size"),
-                    MkZingAssignOrCast(MkZingIndex(tmpArrVar, ind), t.T, MkZingIndex(MkZingDot("this", "arr"), MkZingPlus(ind, 1)), t.T)),
-                MkZingAssign(MkZingDot("this", "arr"), tmpArrVar));
-
-            return MkZingMethodDecl("Remove", MkZingVarDecls(MkZingVarDecl("ind", PType.Int)),
-                ZingData.Cnst_Void, ctxt.emitLocals(), MkZingBlock("dummy", insertBody));
-        }
-
-        private AST<FuncTerm> MkZingSeqClassDefinition(PSeqType t)
-        {
-            var zType = pTypeToZingType(t);
-            var arrayName = Factory.Instance.MkCnst(pTypeToZingName(t.T) + "_array");
-            var fields = ConstructList(ZingData.App_VarDecls, MkZingVarDecl("arr", arrayName), MkZingVarDecl("size", pTypeToZingType(PType.Int)));
-
-            var methods = new List<AST<Node>>();
-
-            // Create the BuildDefault Method
-            ZingEntryFun_FoldContext buildDefCtxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "BuildDefault", this);
-            var buildDefRes = buildDefCtxt.getTmpVar(t, "res");
-            var buildDefBody = MkZingSeq(
-                                    MkZingAssign(buildDefRes, AddArgs(ZingData.App_New, Factory.Instance.MkCnst(pTypeToZingName(t)), ZingData.Cnst_Nil)),
-                                    MkZingAssign(MkZingDot(buildDefRes, "arr"), AddArgs(ZingData.App_New, arrayName, Factory.Instance.MkCnst(0))),
-                                    MkZingAssign(MkZingDot(buildDefRes, "size"), Factory.Instance.MkCnst(0)),
-                                    AddArgs(ZingData.App_Return, buildDefRes));
-            methods.Add(MkZingMethodDecl("BuildDefault", ZingData.Cnst_Nil, zType, buildDefCtxt.emitLocals(), // Local variables
-                MkZingBlock("dummy", buildDefCtxt.emitZingSideEffects(buildDefBody)), ZingData.Cnst_Static));
-
-            // Create the Clone Method
-            methods.Add(MkZingSeqCastOrClone(t, t));
-
-            // Create the Equals Method
-            methods.Add(MkZingSeqEqMethod(t, t));
-
-            foreach (var subT in subtypes[t])
-            {
-                Debug.Assert(subT is PSeqType);
-                // Emit "Equals_<subtype>" method
-                methods.Add(MkZingSeqEqMethod(t, (PSeqType)subT));
-
-                // Emit "UpCastFrom_<SubT>" method
-                methods.Add(MkZingSeqCastOrClone((PSeqType)subT, t));
-
-                // Emit the "DownCatTo_<SubT>" method
-                methods.Add(MkZingSeqCastOrClone(t, (PSeqType)subT));
-
-                // Emit the "CanDownCastTo_<SubT>" method
-                methods.Add(MkZingSeqCanDownCast(t, (PSeqType)subT));
-            }
-
-            // Create the Insert Method.
-            methods.Add(MkZingSeqInsert(t));
-
-            // Create the Remove Method.
-            methods.Add(MkZingSeqRemove(t));
-
-            return AddArgs(ZingData.App_ClassDecl, Factory.Instance.MkCnst(pTypeToZingName(t)), fields, ConstructList(ZingData.App_MethodDecls, methods));
-        }
-
-        private AST<FuncTerm> MkZingMapEqMethod(PMapType meT, PMapType otherT)
-        {
-            var name = meT == otherT ? "Equals" : getZingEqualsName(otherT);
-            ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, name, this);
-
-            var iter = ctxt.getTmpVar(Factory.Instance.MkCnst(pTypeToZingClassName(meT) + "_Entry"), "iter");
-            var found = ctxt.getTmpVar(PType.Bool, "found");
-            var val = ctxt.getTmpVar(pTypeToZingType(otherT.ValT), "val");
-            var body = MkZingSeq(
-                MkZingIfThen(MkZingNeq(MkZingDot("this", "size"), MkZingDot("other", "size")), MkZingReturn(ZingData.Cnst_False)),
-                MkZingListIter(iter, MkZingDot("head", "next"), MkZingIdentifier("head"),
-                               ctxt.emitZingSideEffects(
-                                    MkZingSeq(MkZingAssign(found, MkZingCall(MkZingDot("other", "Contains"), MkZingDot(iter, "key"))),
-                                              MkZingIfThen(MkZingApply(ZingData.Cnst_Not, found), MkZingReturn(ZingData.Cnst_False)),
-                                              MkZingAssign(val, MkZingCall(MkZingDot("other", "Lookup"), MkZingDot(iter, "key"))),
-                                              MkZingIfThen(MkZingApply(ZingData.Cnst_Not, MkZingEq(ctxt, val, otherT.ValT, MkZingDot(iter, "val"), meT.ValT)), MkZingReturn(ZingData.Cnst_False))
-                                              ))),
-                MkZingReturn(ZingData.Cnst_True));
-            ctxt.pushSideEffectStack();
-
-            return MkZingMethodDecl(name, MkZingVarDecls(MkZingVarDecl("other", otherT)),
-                ZingData.Cnst_Bool, ctxt.emitLocals(), MkZingBlock("dummy", ctxt.emitZingSideEffects(body)));
-        }
-
-        private AST<FuncTerm> MkZingMapCastOrClone(PMapType fromT, PMapType toT)
-        {
-            var name = getZingCastOrCloneName(fromT, toT);
-            ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, name, this);
-            var res = ctxt.getTmpVar(toT, "res");
-            var iter = ctxt.getTmpVar(Factory.Instance.MkCnst(pTypeToZingClassName(fromT) + "_Entry"), "iter");
-            var isUpcast = fromT.isSubtypeOf(toT) && toT != fromT;
-            var from = isUpcast ? "obj" : "this"; // Only Upcasts are static
-
-            var body = MkZingSeq(
-                MkZingAssign(res, MkZingCall(MkZingIdentifier("BuildDefault"))),
-                MkZingListIter(iter, MkZingDot("head", "next"), MkZingIdentifier("head"),
-                               MkZingCallStmt(MkZingCall(MkZingDot(res, "Update"), MkZingDot(iter, "key"), MkZingDot(iter, "val")))),
-                MkZingReturn(res));
-
-            if (isUpcast)
-                return MkZingMethodDecl(name, MkZingVarDecls(MkZingVarDecl(from, fromT)), pTypeToZingType(toT), ctxt.emitLocals(),
-                    MkZingBlock("dummy", ctxt.emitZingSideEffects(body)), ZingData.Cnst_Static);
-            else
-                return MkZingMethodDecl(name, ZingData.Cnst_Nil, pTypeToZingType(toT), ctxt.emitLocals(),
-                    MkZingBlock("dummy", ctxt.emitZingSideEffects(body)));
-        }
-
-        private AST<FuncTerm> MkZingMapCanDownCast(PMapType fromT, PMapType toT)
-        {
-            ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Clone", this);
-
-            var iter = ctxt.getTmpVar(Factory.Instance.MkCnst(pTypeToZingClassName(fromT) + "_Entry"), "iter");
-            var body = MkZingSeq(
-                MkZingListIter(iter, MkZingDot("head", "next"), MkZingIdentifier("head"),
-                    ctxt.emitZingSideEffects(MkZingIfThen(MkZingApply(ZingData.Cnst_Not,
-                                                                  MkZingApply(ZingData.Cnst_And,
-                                                                              MkZingCanDownCastTo(ctxt, MkZingDot("iter", "key"), fromT.KeyT, toT.KeyT),
-                                                                              MkZingCanDownCastTo(ctxt, MkZingDot("iter", "val"), fromT.ValT, toT.ValT))),
-                                                      MkZingReturn(ZingData.Cnst_False)))),
-                MkZingReturn(ZingData.Cnst_True));
-
-            ctxt.pushSideEffectStack();
-
-            return MkZingMethodDecl(getZingCanDownCastName(toT), ZingData.Cnst_Nil, pTypeToZingType(PType.Bool), ctxt.emitLocals(),
-                MkZingBlock("dummy", ctxt.emitZingSideEffects(body)));
-        }
-
-        private AST<FuncTerm> MkZingMapContains(PMapType t)
-        {
-            ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Contains", this);
-            var iter = ctxt.getTmpVar(Factory.Instance.MkCnst(pTypeToZingClassName(t) + "_Entry"), "iter");
-            var found = ctxt.getTmpVar(PType.Bool, "found");
-            var containsBody = MkZingSeq(
-                MkZingListIter(iter, MkZingDot("head", "next"), MkZingIdentifier("head"),
-                               ctxt.emitZingSideEffects(MkZingIfThen(MkZingEq(ctxt, MkZingIdentifier("key"), t.KeyT, MkZingDot(iter, "key"), t.KeyT), MkZingReturn(ZingData.Cnst_True)))),
-                MkZingReturn(ZingData.Cnst_False));
-            ctxt.pushSideEffectStack();
-
-            return MkZingMethodDecl("Contains", MkZingVarDecls(MkZingVarDecl("key", t.KeyT)),
-                ZingData.Cnst_Bool, ctxt.emitLocals(), MkZingBlock("dummy", containsBody));
-        }
-
-        private AST<FuncTerm> MkZingMapLookup(PMapType t)
-        {
-            ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Lookup", this);
-            var iter = ctxt.getTmpVar(Factory.Instance.MkCnst(pTypeToZingClassName(t) + "_Entry"), "iter");
-            var found = ctxt.getTmpVar(PType.Bool, "found");
-            var lookupBody = MkZingSeq(
-                MkZingListIter(iter, MkZingDot("head", "next"), MkZingIdentifier("head"),
-                               ctxt.emitZingSideEffects(MkZingIfThen(MkZingEq(ctxt, MkZingIdentifier("key"), t.KeyT, MkZingDot(iter, "key"), t.KeyT), MkZingReturn(MkZingDot(iter, "val"))))),
-                MkZingAssert(ZingData.Cnst_False));
-            ctxt.pushSideEffectStack();
-
-            return MkZingMethodDecl("Lookup", MkZingVarDecls(MkZingVarDecl("key", t.KeyT)),
-                pTypeToZingType(t.ValT), ctxt.emitLocals(), MkZingBlock("dummy", lookupBody));
-        }
-
-        private AST<FuncTerm> MkZingMapLookupKeyAtIndex(PMapType t)
-        {
-            ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "LookupKeyAtIndex", this);
-            var iter = ctxt.getTmpVar(Factory.Instance.MkCnst(pTypeToZingClassName(t) + "_Entry"), "iter");
-            var i = ctxt.getTmpVar(PType.Int, "i");
-            var lookupBody = MkZingSeq(
-                MkZingAssert(MkZingApply(ZingData.Cnst_Le, Factory.Instance.MkCnst(0), MkZingIdentifier("index"))),
-                MkZingAssert(MkZingApply(ZingData.Cnst_Lt, MkZingIdentifier("index"), MkZingIdentifier("size"))),
-                MkZingAssign(iter, MkZingDot("head", "next")),
-                MkZingAssign(i, Factory.Instance.MkCnst(0)),
-                MkZingIfThen(MkZingApply(ZingData.Cnst_Le, MkZingIdentifier("iterCacheIndex"), MkZingIdentifier("index")),
-                         MkZingSeq(MkZingAssign(iter, MkZingIdentifier("iterCache")), MkZingAssign(i, MkZingIdentifier("iterCacheIndex")))),
-                AddArgs(ZingData.App_While,
-                        MkZingApply(ZingData.Cnst_Lt, i, MkZingIdentifier("index")),
-                        MkZingSeq(MkZingAssign(iter, MkZingDot(iter, "next")),
-                        MkZingAssignOrCast(i, PType.Int, MkZingPlus(i, 1), PType.Int))),
-                MkZingAssert(MkZingApply(ZingData.Cnst_NEq, iter, MkZingIdentifier("head"))),
-                MkZingAssign(MkZingIdentifier("iterCache"), iter),
-                MkZingAssign(MkZingIdentifier("iterCacheIndex"), MkZingIdentifier("index")),
-                MkZingReturn(MkZingDot(iter, "key")));
-            ctxt.pushSideEffectStack();
-
-            return MkZingMethodDecl("LookupKeyAtIndex", MkZingVarDecls(MkZingVarDecl("index", PType.Int)),
-                pTypeToZingType(t.KeyT), ctxt.emitLocals(), MkZingBlock("dummy", lookupBody));
-        }
-
-        private AST<FuncTerm> MkZingMapUpdate(PMapType t)
-        {
-            ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Update", this);
-            var prev = ctxt.getTmpVar(Factory.Instance.MkCnst(pTypeToZingClassName(t) + "_Entry"), "prev");
-            var iter = ctxt.getTmpVar(Factory.Instance.MkCnst(pTypeToZingClassName(t) + "_Entry"), "iter");
-            var found = ctxt.getTmpVar(PType.Bool, "found");
-            var insertBody = MkZingSeq(
-                MkZingAssign(prev, MkZingIdentifier("head")),
-                MkZingListIter(iter, MkZingDot("head", "next"), MkZingIdentifier("head"),
-                               ctxt.emitZingSideEffects(
-                                    MkZingSeq(MkZingIfThen(MkZingEq(ctxt, MkZingIdentifier("key"), t.KeyT, MkZingDot(iter, "key"), t.KeyT), MkZingSeq(MkZingAssign(MkZingDot(iter, "val"), MkZingIdentifier("val")), MkZingReturn(ZingData.Cnst_Nil))),
-                                              MkZingAssign(prev, iter)))),
-                MkZingAssign(MkZingDot("head", "key"), MkZingIdentifier("key")),
-                MkZingAssign(MkZingDot("head", "val"), MkZingIdentifier("val")),
-                MkZingAssign(MkZingIdentifier("head"), AddArgs(ZingData.App_New, Factory.Instance.MkCnst(pTypeToZingClassName(t) + "_Entry"), ZingData.Cnst_Nil)),
-                MkZingAssign(MkZingDot("head", "next"), iter),
-                MkZingAssign(MkZingDot(prev, "next"), MkZingIdentifier("head")),
-                MkZingAssign(MkZingIdentifier("size"), MkZingApply(ZingData.Cnst_Add, MkZingIdentifier("size"), Factory.Instance.MkCnst(1)))
-                );
-            ctxt.pushSideEffectStack();
-
-            return MkZingMethodDecl("Update", MkZingVarDecls(MkZingVarDecl("key", t.KeyT), MkZingVarDecl("val", t.ValT)),
-                ZingData.Cnst_Void, ctxt.emitLocals(), MkZingBlock("dummy", insertBody));
-        }
-
-        private AST<FuncTerm> MkZingMapRemove(PMapType t)
-        {
-            ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Remove", this);
-            var prev = ctxt.getTmpVar(Factory.Instance.MkCnst(pTypeToZingClassName(t) + "_Entry"), "prev");
-            var iter = ctxt.getTmpVar(Factory.Instance.MkCnst(pTypeToZingClassName(t) + "_Entry"), "iter");
-            var found = ctxt.getTmpVar(PType.Bool, "found");
-            var removeBody = MkZingSeq(
-                MkZingAssign(prev, MkZingIdentifier("head")),
-                MkZingListIter(iter, MkZingDot("head", "next"), MkZingIdentifier("head"),
-                               ctxt.emitZingSideEffects(
-                                    MkZingSeq(MkZingIfThen(MkZingEq(ctxt, MkZingIdentifier("key"), t.KeyT, MkZingDot(iter, "key"), t.KeyT), MkZingSeq(
-                                                                MkZingAssign(MkZingDot(prev, "next"), MkZingDot(iter, "next")),
-                                                                MkZingAssign(MkZingIdentifier("size"), MkZingApply(ZingData.Cnst_Sub, MkZingIdentifier("size"), Factory.Instance.MkCnst(1))),
-                                                                MkZingAssign(MkZingIdentifier("iterCache"), MkZingDot("head", "next")),
-                                                                MkZingAssign(MkZingIdentifier("iterCacheIndex"), Factory.Instance.MkCnst(0)),
-                                                                MkZingReturn(ZingData.Cnst_Nil))),
-                                              MkZingAssign(prev, iter))))
-                );
-            ctxt.pushSideEffectStack();
-
-            return MkZingMethodDecl("Remove", MkZingVarDecls(MkZingVarDecl("key", t.KeyT)),
-                ZingData.Cnst_Void, ctxt.emitLocals(), MkZingBlock("dummy", removeBody));
-        }
-
-        private AST<FuncTerm> MkZingMapToSeq(PMapType fromT)
-        {
-            PSeqType toT = new PSeqType(fromT.KeyT);
-            var name = "ToSeq";
-            ZingEntryFun_FoldContext ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, name, this);
-            var res = ctxt.getTmpVar(toT, "res");
-            var iter = ctxt.getTmpVar(Factory.Instance.MkCnst(pTypeToZingClassName(fromT) + "_Entry"), "iter");
-            var iterCount = ctxt.getTmpVar(PType.Int, "iterCount");
-            var isUpcast = fromT.isSubtypeOf(toT) && toT != fromT;
-            var from = isUpcast ? "obj" : "this"; // Only Upcasts are static
-
-            var listIterBody =  MkZingSeq(MkZingCallStmt(MkZingCall(MkZingDot(res, "Insert"), iterCount, MkZingDot(iter, "key"))),
-                                          MkZingAssign(iterCount, MkZingApply(ZingData.Cnst_Add, iterCount, Factory.Instance.MkCnst(1))));
-
-            var body = MkZingSeq(
-                MkZingAssign(res, MkZingCall(MkZingDot(pTypeToZingClassName(toT), "BuildDefault"))),
-                MkZingAssign(iterCount, Factory.Instance.MkCnst(0)),
-                MkZingListIter(iter, MkZingDot("head", "next"), MkZingIdentifier("head"), listIterBody),
-                MkZingReturn(res));
-
-            if (isUpcast)
-                return MkZingMethodDecl(name, MkZingVarDecls(MkZingVarDecl(from, fromT)), pTypeToZingType(toT), ctxt.emitLocals(),
-                    MkZingBlock("dummy", ctxt.emitZingSideEffects(body)), ZingData.Cnst_Static);
-            else
-                return MkZingMethodDecl(name, ZingData.Cnst_Nil, pTypeToZingType(toT), ctxt.emitLocals(),
-                    MkZingBlock("dummy", ctxt.emitZingSideEffects(body)));
-        }
-
-        private void MkZingMapClassDefinition(PMapType t, out AST<FuncTerm> mapClass, out AST<FuncTerm> mapEntryClass)
-        {
-            var zType = pTypeToZingType(t);
-            var domainType = pTypeToZingType(t.KeyT);
-            var rangeType = pTypeToZingType(t.ValT);
-
-            var entryClassName = Factory.Instance.MkCnst(pTypeToZingClassName(t) + "_Entry");
-            var entryClassFields = ConstructList(ZingData.App_VarDecls, MkZingVarDecl("next", entryClassName), MkZingVarDecl("key", domainType), MkZingVarDecl("val", rangeType));
-            mapEntryClass = AddArgs(ZingData.App_ClassDecl, entryClassName, entryClassFields, ZingData.Cnst_Nil);
-
-            var fields = ConstructList(ZingData.App_VarDecls, MkZingVarDecl("head", entryClassName), MkZingVarDecl("size", pTypeToZingType(PType.Int)), MkZingVarDecl("iterCache", Factory.Instance.MkCnst(pTypeToZingClassName(t) + "_Entry")), MkZingVarDecl("iterCacheIndex", PType.Int));
-
-            var methods = new List<AST<Node>>();
-
-            // Create the BuildDefault Method
-            ZingEntryFun_FoldContext buildDefCtxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "BuildDefault", this);
-            var buildDefRes = buildDefCtxt.getTmpVar(t, "res");
-            var buildDefHead = buildDefCtxt.getTmpVar(entryClassName, "head");
-            var buildDefBody = MkZingSeq(
-                                    MkZingAssign(buildDefRes, AddArgs(ZingData.App_New, Factory.Instance.MkCnst(pTypeToZingName(t)), ZingData.Cnst_Nil)),
-                                    MkZingAssign(buildDefHead, AddArgs(ZingData.App_New, Factory.Instance.MkCnst(pTypeToZingClassName(t) + "_Entry"), ZingData.Cnst_Nil)),
-                                    MkZingAssign(MkZingDot(buildDefHead, "next"), buildDefHead),
-                                    MkZingAssign(MkZingDot(buildDefRes, "head"), buildDefHead),
-                                    MkZingAssign(MkZingDot(buildDefRes, "size"), Factory.Instance.MkCnst(0)),
-                                    MkZingAssign(MkZingDot(buildDefRes, "iterCache"), buildDefHead),
-                                    MkZingAssign(MkZingDot(buildDefRes, "iterCacheIndex"), Factory.Instance.MkCnst(0)),
-                                    AddArgs(ZingData.App_Return, buildDefRes));
-            methods.Add(MkZingMethodDecl("BuildDefault", ZingData.Cnst_Nil, zType, buildDefCtxt.emitLocals(), // Local variables
-                MkZingBlock("dummy", buildDefCtxt.emitZingSideEffects(buildDefBody)), ZingData.Cnst_Static));
-
-            // Create the Clone Method
-            methods.Add(MkZingMapCastOrClone(t, t));
-
-            // Create the Equals Method
-            methods.Add(MkZingMapEqMethod(t, t));
-
-            foreach (var subT in subtypes[t])
-            {
-                Debug.Assert(subT is PMapType);
-                // Emit "Equals_<subtype>" method
-                methods.Add(MkZingMapEqMethod(t, (PMapType)subT));
-
-                // Emit "UpCastFrom_<SubT>" method
-                methods.Add(MkZingMapCastOrClone((PMapType)subT, t));
-
-                // Emit the "DownCatTo_<SubT>" method
-                methods.Add(MkZingMapCastOrClone(t, (PMapType)subT));
-
-                // Emit the "CanDownCastTo_<SubT>" method
-                methods.Add(MkZingMapCanDownCast(t, (PMapType)subT));
-            }
-
-            methods.Add(MkZingMapContains(t));
-
-            methods.Add(MkZingMapLookup(t));
-
-            methods.Add(MkZingMapLookupKeyAtIndex(t));
-
-            methods.Add(MkZingMapUpdate(t));
-
-            methods.Add(MkZingMapRemove(t));
-
-            methods.Add(MkZingMapToSeq(t));
-
-            mapClass = AddArgs(ZingData.App_ClassDecl, Factory.Instance.MkCnst(pTypeToZingName(t)), fields, ConstructList(ZingData.App_MethodDecls, methods));
-        }
-
-        private AST<FuncTerm> MkZingTupleClassDefinition(IEnumerable<Tuple<PType, string, string>> fieldDesc, AST<Node> zType, string zTypeName, PType pType)
-        {
-            var fields = ConstructList(ZingData.App_VarDecls, fieldDesc.Select(field => MkZingVarDecl(field.Item2, pTypeToZingType(field.Item1))));
-            var methods = new List<AST<Node>>();
-            var buildParams = ConstructList(ZingData.App_VarDecls, fieldDesc.Select(field => MkZingVarDecl(field.Item3, pTypeToZingType(field.Item1))));
-
-            // Create the Build method
-            var buildBody = new List<AST<Node>>();
-
-            buildBody.Add(MkZingAssign(MkZingIdentifier("result"), AddArgs(ZingData.App_New, zType, ZingData.Cnst_Nil)));
-            buildBody.AddRange(fieldDesc.Select(fDesc => MkZingAssignOrCast(MkZingDot("result", fDesc.Item2), fDesc.Item1, MkZingIdentifier(fDesc.Item3), fDesc.Item1)));
-            buildBody.Add(AddArgs(ZingData.App_Return, MkZingIdentifier("result")));
-            methods.Add(MkZingMethodDecl("Build", buildParams, zType,
-                AddArgs(ZingData.App_VarDecls, MkZingVarDecl("result", zType), ZingData.Cnst_Nil), // Local variables
-                MkZingBlock("dummy", ConstructList(ZingData.App_Seq, buildBody)), ZingData.Cnst_Static));
-
-            // Create the BuildDefault method
-            ZingEntryFun_FoldContext buildDefCtxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "BuildDefault", this);
-            var buildDefAssigns = new List<AST<Node>>();
-            foreach (var fDesc in fieldDesc)
-            {
-                buildDefAssigns.Add(buildDefCtxt.emitZingSideEffects(MkZingAssign(MkZingDot("result", fDesc.Item2), getZingDefault(buildDefCtxt, fDesc.Item1))));
-                buildDefCtxt.pushSideEffectStack();
-            }
-            var buildDefBody = MkZingBlock("dummy", MkZingSeq(
-                                    MkZingAssign(MkZingIdentifier("result"), AddArgs(ZingData.App_New, zType, ZingData.Cnst_Nil)),
-                                    MkZingSeq(buildDefAssigns),
-                                    AddArgs(ZingData.App_Return, MkZingIdentifier("result"))));
-            methods.Add(MkZingMethodDecl("BuildDefault", ZingData.Cnst_Nil, zType,
-                AddArgs(ZingData.App_VarDecls, MkZingVarDecl("result", zType), buildDefCtxt.emitLocals()), // Local variables
-                buildDefBody, ZingData.Cnst_Static));
-
-            // Create the "Clone" method.
-            var cloneBuildArgs = new List<AST<Node>>(fieldDesc.Select(fDesc => MkZingDot("this", fDesc.Item2)));
-
-            var cloneBody = MkZingBlock("dummy", MkZingSeq(
-                MkZingAssign(MkZingIdentifier("result"), MkZingCall(MkZingDot(zType, "Build"), cloneBuildArgs)),
-                AddArgs(ZingData.App_Return, MkZingIdentifier("result"))));
-            var cloneLocals = AddArgs(ZingData.App_VarDecls, MkZingVarDecl("result", zType), ZingData.Cnst_Nil);
-            methods.Add(MkZingMethodDecl("Clone", ZingData.Cnst_Nil, zType, cloneLocals, cloneBody));
-
-            // Create the "Equals" method.
-            var equalsBody = new List<AST<Node>>();
-            ZingEntryFun_FoldContext equalsCtxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, "Equals", this);
-            foreach (var field in fieldDesc)
-            {
-                var check = MkZingNeq(equalsCtxt, MkZingDot("this", field.Item2), field.Item1, MkZingDot("other", field.Item2), field.Item1);
-                equalsBody.Add(equalsCtxt.emitZingSideEffects(MkZingIfThenElse(check, AddArgs(ZingData.App_Return, ZingData.Cnst_False), ZingData.Cnst_Nil)));
-                equalsCtxt.pushSideEffectStack();
-            }
-
-            equalsBody.Add(AddArgs(ZingData.App_Return, ZingData.Cnst_True));
-
-            methods.Add(MkZingMethodDecl("Equals", AddArgs(ZingData.App_VarDecls, MkZingVarDecl("other", zType), ZingData.Cnst_Nil),
-                ZingData.Cnst_Bool, equalsCtxt.emitLocals(), MkZingBlock("dummy", ConstructList(ZingData.App_Seq, equalsBody))));
-
-            // For all subtypes, emit the DownCastTo and UpCastFrom methods
-            foreach (var subT in subtypes[pType])
-            {
-                ZingEntryFun_FoldContext ctxt;
-                List<AST<Node>> buildArgs;
-
-                var subFields = getFieldDescriptions(subT);
-                Debug.Assert(subFields.Count() == fieldDesc.Count());
-
-                // Emit dynamic "Equals_<subtype>" method
-                ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, getZingEqualsName(subT), this);
-                equalsBody = new List<AST<Node>>();
-
-                for (int i = 0; i < fieldDesc.Count(); i++)
-                {
-                    var subF = subFields.ElementAt(i);
-                    var supF = fieldDesc.ElementAt(i);
-
-                    equalsBody.Add(ctxt.emitZingSideEffects(MkZingIfThen(MkZingNeq(ctxt, MkZingDot("this", supF.Item2), supF.Item1,
-                        MkZingDot("other", subF.Item2), subF.Item1), MkZingReturn(ZingData.Cnst_False))));
-                    ctxt.pushSideEffectStack();
-                }
-
-                equalsBody.Add(MkZingReturn(ZingData.Cnst_True));
-                methods.Add(MkZingMethodDecl(getZingEqualsName(subT), MkZingVarDecls(MkZingVarDecl("other", pTypeToZingType(subT))), pTypeToZingType(PType.Bool),
-                    ctxt.emitLocals(), MkZingBlock("dummy", MkZingSeq(equalsBody))));
-
-                // Emit static 'UpCastFrom' Method
-                ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, getZingUpCastName(subT), this);
-                buildArgs = new List<AST<Node>>();
-                AST<Node> resVar, body;
-
-                for (int i = 0; i < fieldDesc.Count(); i++)
-                {
-                    var subF = subFields.ElementAt(i);
-                    var supF = fieldDesc.ElementAt(i);
-
-                    if (subF.Item1 == supF.Item1)
-                    {
-                        buildArgs.Add(MkZingDot("other", subF.Item2));
-                    }
-                    else if (!(subF.Item1 is PNilType))
-                    {
-                        var tmpVar = ctxt.getTmpVar(supF.Item1, "tmp");
-                        ctxt.addSideEffect(MkZingAssign(tmpVar,
-                            MkZingCall(MkZingDot(pTypeToZingClassName(supF.Item1), getZingUpCastName(subF.Item1)), MkZingDot("other", subF.Item2))));
-                        buildArgs.Add(tmpVar);
-                    }
-                    else
-                    {
-                        Debug.Assert(supF.Item1 is PAnyType || supF.Item1 is PEventType || supF.Item1.IsMachineId);
-                        buildArgs.Add(getZingDefault(ctxt, supF.Item1));
-                    }
-                }
-
-                resVar = ctxt.getTmpVar(pType, "res");
-                body = MkZingSeq(
-                    ctxt.emitZingSideEffects(MkZingAssign(resVar, MkZingCall(MkZingDot(pTypeToZingClassName(pType), "Build"), buildArgs))),
-                    AddArgs(ZingData.App_Return, resVar));
-
-                methods.Add(MkZingMethodDecl(getZingUpCastName(subT), MkZingVarDecls(MkZingVarDecl("other", pTypeToZingType(subT))), zType,
-                    ctxt.emitLocals(), MkZingBlock("dummy", body), ZingData.Cnst_Static));
-
-                // Emit 'DownCastTo' Method
-                ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, getZingDownCastName(subT), this);
-                buildArgs = new List<AST<Node>>();
-
-                for (int i = 0; i < fieldDesc.Count(); i++)
-                {
-                    var subF = subFields.ElementAt(i);
-                    var supF = fieldDesc.ElementAt(i);
-
-                    if (subF.Item1 == supF.Item1)
-                    {
-                        buildArgs.Add(MkZingDot("this", supF.Item2));
-                    }
-                    else
-                    {
-                        var tmpVar = ctxt.getTmpVar(subF.Item1, "tmp");
-                        ctxt.addSideEffect(MkZingAssignOrCast(tmpVar, subF.Item1, MkZingDot("this", supF.Item2), supF.Item1));
-                        buildArgs.Add(tmpVar);
-                    }
-                }
-
-                resVar = ctxt.getTmpVar(subT, "res");
-                body = MkZingSeq(
-                    ctxt.emitZingSideEffects(MkZingAssign(resVar, MkZingCall(MkZingDot(pTypeToZingClassName(subT), "Build"), buildArgs))),
-                    AddArgs(ZingData.App_Return, resVar));
-
-                methods.Add(MkZingMethodDecl(getZingDownCastName(subT), ZingData.Cnst_Nil, pTypeToZingType(subT),
-                    ctxt.emitLocals(), MkZingBlock("dummy", body)));
-
-                // Emit 'CanDownCastTo' Method
-                ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, getZingCanDownCastName(subT), this);
-                var checks = new List<AST<Node>>();
-
-                for (int i = 0; i < fieldDesc.Count(); i++)
-                {
-                    var toF = subFields.ElementAt(i);
-                    var fromF = fieldDesc.ElementAt(i);
-
-                    if (fromF.Item1 == toF.Item1)
-                    {
-                        // Nothing to do.
-                    }
-                    else
-                    {
-                        var cond = MkZingApply(ZingData.Cnst_Not, MkZingCanDownCastTo(ctxt, MkZingDot("this", fromF.Item2), fromF.Item1, toF.Item1));
-                        checks.Add(ctxt.emitZingSideEffects(MkZingIfThenElse(cond, AddArgs(ZingData.App_Return, ZingData.Cnst_False), ZingData.Cnst_Nil)));
-                        ctxt.pushSideEffectStack();
-                    }
-                }
-
-                checks.Add(AddArgs(ZingData.App_Return, ZingData.Cnst_True));
-                methods.Add(MkZingMethodDecl(getZingCanDownCastName(subT), ZingData.Cnst_Nil, pTypeToZingType(PType.Bool),
-                    ctxt.emitLocals(), MkZingBlock("dummy", MkZingSeq(checks))));
-
-            }
-
-            return AddArgs(ZingData.App_ClassDecl, Factory.Instance.MkCnst(zTypeName), fields, ConstructList(ZingData.App_MethodDecls, methods));
-        }
-
-        private IEnumerable<Tuple<PType, string, string>> getFieldDescriptions(PType t)
-        {
-            if (t is PTupleType)
-            {
-                int fcount = (t as PTupleType).elements.Count();
-                return (t as PTupleType).elements.Zip(System.Linq.Enumerable.Range(0, fcount), (type, num) => new Tuple<PType, string, string>(type, getTupleField(num), getFuncArg(num)));
-            }
-            else if (t is PNamedTupleType)
-            {
-                return (t as PNamedTupleType).elements.Select(elmnt => new Tuple<PType, string, string>(elmnt.Item2, elmnt.Item1, "arg_" + elmnt.Item1));
-            }
-            else
-                throw new NotImplementedException(string.Format("Unexpected type {0} in getFieldDescriptions.", t));
-        }
-
         private AST<Node> LocalVariablesToVarDecls(IEnumerable<string> varNames, Dictionary<string, VariableInfo> varNameToVarInfo)
         {
-            return MkZingVarDecls(varNames.Select(name => MkZingVarDecl(name, pTypeToZingType(varNameToVarInfo[name].type))));
+            return MkZingVarDecls(varNames.Select(name => MkZingVarDecl(name, PrtValue)));
         }
 
         private AST<Node> MkInvokeMonitorMethod(string machineName)
@@ -4393,38 +3310,7 @@ namespace Microsoft.Pc
             foreach (string varName in machineInfo.localVariableToVarInfo.Keys)
             {
                 var t = machineInfo.localVariableToVarInfo[varName].type;
-                if (t is PIntType)
-                {
-                    initializers.Add(MkZingAssign(MkZingDot(obj, varName), Factory.Instance.MkCnst(0)));
-                }
-                else if (t is PBoolType)
-                {
-                    initializers.Add(MkZingAssign(MkZingDot(obj, varName), MkZingIdentifier("false")));
-                }
-                else if (t.IsMachineId)
-                {
-                    initializers.Add(MkZingAssign(MkZingDot(obj, varName), MkZingIdentifier("null")));
-                }
-                else if (t is PEventType)
-                {
-                    initializers.Add(MkZingAssign(MkZingDot(obj, varName), MkZingIdentifier("null")));
-                }
-                else if (t is PNilType)
-                {
-                    initializers.Add(MkZingAssign(MkZingDot(obj, varName), MkZingIdentifier("null")));
-                }
-                else if (t is PAnyType)
-                {
-                    initializers.Add(MkZingAssign(MkZingDot(obj, varName), MkZingCall(MkZingDot(SM_ARG_UNION, "BuildDefault"))));
-                }
-                else if (t is PTupleType || t is PNamedTupleType || t is PSeqType || t is PMapType)
-                {
-                    initializers.Add(MkZingAssign(MkZingDot(obj, varName), MkZingCall(MkZingDot(pTypeToZingType(t), "BuildDefault"))));
-                }
-                else
-                {
-                    throw new NotImplementedException("Unknown type " + t);
-                }
+                initializers.Add(MkZingAssign(MkZingDot(obj, varName), MkZingCall(MkZingDot(PRT_VALUE, "MkDefaultValue"), pTypeToZingType(t))));
             }
             return MkZingSeq(initializers);
         }
@@ -4556,158 +3442,7 @@ namespace Microsoft.Pc
 
         private AST<Node> pTypeToZingType(PType t)
         {
-            if (t is PNilType)
-            {
-                return Factory.Instance.MkCnst(SM_NULL);
-            }
-            else if (t is PPrimitiveType)
-            {
-                return ZingData.pTypeToZingType((t as PPrimitiveType).name);
-            }
-            else if (t is PTupleType || t is PNamedTupleType || t is PSeqType || t is PMapType)
-            {
-                return Factory.Instance.MkCnst(declaredTypes[t].zingType);
-            }
-            else if (t is PAnyType)
-            {
-                return Factory.Instance.MkCnst(SM_ARG_UNION);
-            }
-            else
-            {
-                throw new NotImplementedException("Unknown type " + t);
-            }
-        }
-
-        private string pTypeToZingClassName(PType t)
-        {
-            if (t is PTupleType || t is PNamedTupleType || t is PSeqType || t is PMapType)
-                return declaredTypes[t].zingType;
-            else if (t is PAnyType)
-                return SM_ARG_UNION;
-            else if (t is PNilType)
-                return SM_NULL;
-            else
-                throw new Exception("Unexpected type " + t);
-        }
-
-        private string pTypeToZingName(PType t)
-        {
-            if (t is PIntType)
-            {
-                return "Int";
-            }
-            else if (t is PBoolType)
-            {
-                return "Bool";
-            }
-            else if (t is PIdType)
-            {
-                return "Id";
-            }
-            else if (t is PMidType)
-            {
-                return "Mid";
-            }
-            else if (t is PEventType)
-            {
-                return "Eid";
-            }
-            else if (t is PNilType)
-            {
-                return "Null";
-            }
-            else if (t is PAnyType)
-            {
-                return "Any";
-            }
-            else if (t is PTupleType || t is PNamedTupleType || t is PSeqType || t is PMapType)
-            {
-                return declaredTypes[t].zingType;
-            }
-            else
-            {
-                throw new NotImplementedException("Unknown type " + t);
-            }
-        }
-
-        private string pTypeToZingUnionMember(PType t)
-        {
-            return "m_" + pTypeToZingName(t);
-        }
-
-        private AST<Node> pTypeToZingDiscriminator(PType t)
-        {
-            return MkZingDot("Discriminator", pTypeToZingName(t));
-        }
-
-        private string getZingUpCastName(PType t)
-        {
-            return "UpCastFrom_" + pTypeToZingName(t);
-        }
-
-        private string getZingEqualsName(PType t)
-        {
-            return "Equals_" + pTypeToZingName(t);
-        }
-
-        private string getZingDownCastName(PType t)
-        {
-            return "DownCastTo_" + pTypeToZingName(t);
-        }
-
-        private string getZingCanDownCastName(PType t)
-        {
-            return "CanDownCastTo_" + pTypeToZingName(t);
-        }
-
-        private string getZingCastOrCloneName(PType fromT, PType toT)
-        {
-            if (fromT == toT) return "Clone";
-            else if (fromT.isSubtypeOf(toT)) return getZingUpCastName(fromT); // static toT UpCastFrom_<formT>(fromT from)
-            else return getZingDownCastName(toT);   // toT DownCastTo_<ToT>()
-        }
-
-        private AST<Node> getZingDefault(ZingEntryFun_FoldContext ctxt, PType t)
-        {
-            if (t is PIntType)
-            {
-                return Factory.Instance.MkCnst(0);
-            }
-            else if (t is PBoolType)
-            {
-                return MkZingIdentifier("false");
-            }
-            else if (t.IsMachineId)
-            {
-                return MkZingIdentifier("null");
-            }
-            else if (t is PEventType)
-            {
-                return MkZingIdentifier("null");
-            }
-            else if (t is PNilType)
-            {
-                return MkZingIdentifier("null");
-            }
-            else if (t is PAnyType)
-            {
-                var tmpVar = ctxt.getTmpVar(Factory.Instance.MkCnst(SM_ARG_UNION), "tmpDefault");
-                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(SM_ARG_UNION, "BuildDefault"))));
-
-                return tmpVar;
-            }
-            else if (t is PTupleType || t is PNamedTupleType || t is PSeqType || t is PMapType)
-            {
-                var tmpVar = ctxt.getTmpVar(pTypeToZingType(t), "tmpDefault");
-                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(pTypeToZingType(t), "BuildDefault"))));
-
-                return tmpVar;
-            }
-            else
-            {
-                throw new NotImplementedException("Unknown type " + t);
-            }
-
+            throw new NotImplementedException();
         }
     }
 }

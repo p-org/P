@@ -13,43 +13,13 @@ using Microsoft.Formula.Common;
 
 namespace Microsoft.Pc
 {
-    internal class ZingTranslationInfo : ICloneable
+    internal class ZingTranslationInfo
     {
         public AST<Node> node = null;
-        public string stateName = null;
-        public bool isMapIndex = false;
-        public bool isKeys = false;
-        public string newAfterLabel = null;
-
-        private ZingTranslationInfo() { }
-        public object Clone()
-        {
-            ZingTranslationInfo info = new ZingTranslationInfo();
-            info.node = node;
-            info.stateName = stateName;
-            info.isMapIndex = isMapIndex;
-            info.isKeys = isKeys;
-            info.newAfterLabel = newAfterLabel;
-            return info;
-        }
-          
-
+        
         public ZingTranslationInfo(AST<Node> n)
         {
             this.node = n;
-        }
-
-        public ZingTranslationInfo(AST<Node> n, string stateName)
-        {
-            this.node = n;
-            this.stateName = stateName;
-        }
-
-        public ZingTranslationInfo(AST<Node> n,bool isMapIndex, bool isKeys)
-        {
-            this.node = n;
-            this.isMapIndex = isMapIndex;
-            this.isKeys = isKeys;
         }
     }
 
@@ -1598,11 +1568,6 @@ namespace Microsoft.Pc
                 this.sideEffectsStack.Push(new List<AST<Node>>());
             }
 
-            public List<AST<Node>> popSideEffectStack()
-            {
-                return this.sideEffectsStack.Pop();
-            }
-
             // type must be Zing type
             public AST<Node> getTmpVar(AST<Node> type, string baseName)
             {
@@ -1669,7 +1634,70 @@ namespace Microsoft.Pc
 
             var ft = (FuncTerm)n;
             var funName = ((Id)ft.Function).Name;
-            if (funName == PData.Con_Exprs.Node.Name)
+            if (funName == PData.Con_New.Node.Name || funName == PData.Con_NewStmt.Node.Name)
+            {
+                yield return GetArgByIndex(ft, 1);
+            }
+            else if (funName == PData.Con_FunApp.Node.Name || funName == PData.Con_FunStmt.Node.Name)
+            {
+                ctxt.pushSideEffectStack();
+                bool first = true;
+                foreach (var t in ft.Args)
+                {
+                    if (first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        foreach (var a in ZingEntryFun_UnFold(ctxt, t))
+                        {
+                            yield return a;
+                        }
+                    }
+                }
+            }
+            else if (funName == PData.Con_Name.Node.Name || 
+                     funName == PData.Con_NulApp.Node.Name || 
+                     funName == PData.Con_UnApp.Node.Name || 
+                     funName == PData.Con_BinApp.Node.Name || 
+                     funName == PData.Con_Default.Node.Name ||
+                     funName == PData.Con_Push.Node.Name ||
+                     funName == PData.Con_Monitor.Node.Name ||
+                     funName == PData.Con_NulStmt.Node.Name || 
+                     funName == PData.Con_UnStmt.Node.Name || 
+                     funName == PData.Con_BinStmt.Node.Name)
+            {
+                var first = true;
+                foreach (var t in ft.Args)
+                {
+                    if (first)
+                    {
+                        first = false;
+                        continue;
+                    }
+                    yield return t;
+                }
+            }
+            else if (funName == PData.Con_Field.Node.Name || funName == PData.Con_Cast.Node.Name)
+            {
+                yield return ft.Args.First<Node>();
+            }
+            else if (funName == PData.Con_Tuple.Node.Name)
+            {
+                foreach (var a in ZingEntryFun_UnFold(ctxt, GetArgByIndex(ft, 0)))
+                {
+                    yield return a;
+                }
+            }
+            else if (funName == PData.Con_NamedTuple.Node.Name)
+            {
+                foreach (var a in ZingEntryFun_UnFold(ctxt, GetArgByIndex(ft, 0)))
+                {
+                    yield return a;
+                }
+            }
+            else if (funName == PData.Con_Exprs.Node.Name)
             {
                 do
                 {
@@ -1686,48 +1714,6 @@ namespace Microsoft.Pc
                     ft = GetArgByIndex(ft, 2) as FuncTerm;
                 }
                 while (ft != null);
-            }
-            else if (funName == PData.Con_Tuple.Node.Name)
-            {
-                foreach (var a in ZingEntryFun_UnFold(ctxt, GetArgByIndex(ft, 0)))
-                {
-                    yield return a;
-                }
-            }
-            else if (funName == PData.Con_NamedTuple.Node.Name)
-            {
-                foreach (var a in ZingEntryFun_UnFold(ctxt, GetArgByIndex(ft, 0)))
-                {
-                    yield return a;
-                }
-            }
-            else if (funName == PData.Con_DataOp.Node.Name)
-            {
-                foreach (var a in ZingEntryFun_UnFold(ctxt, GetArgByIndex(ft, 1)))
-                {
-                    yield return a;
-                }
-            }
-            else if (funName == PData.Con_NulApp.Node.Name || funName == PData.Con_UnApp.Node.Name || funName == PData.Con_BinApp.Node.Name || funName == PData.Con_FunApp.Node.Name)
-            {
-                if (funName == PData.Con_FunApp.Node.Name)
-                    ctxt.pushSideEffectStack();
-
-                bool first = true;
-                foreach (var t in ft.Args)
-                {
-                    if (first)
-                    {
-                        first = false;
-                    }
-                    else
-                    {
-                        foreach (var a in ZingEntryFun_UnFold(ctxt, t))
-                        {
-                            yield return a;
-                        }
-                    }
-                }
             }
             else if (funName == PData.Con_Seq.Node.Name)
             {
@@ -1766,34 +1752,12 @@ namespace Microsoft.Pc
                     yield return it.Current;
                 }
             }
-            else if (funName == PData.Con_Strings.Node.Name)
-            {
-                do
-                {
-                    yield return ft.Args.First<Node>();
-                    ft = GetArgByIndex(ft, 1) as FuncTerm;
-                }
-                while (ft != null);
-            }
             else
             {
                 foreach (var t in ft.Args)
                 {
                     yield return t;
                 }
-            }
-        }
-
-        private AST<Node> emitZingSideEffects(List<AST<Node>> sideEffects, AST<Node> stmt)
-        {
-            if (sideEffects.Count > 0)
-            {
-                sideEffects.Add(stmt);
-                return MkZingSeq(sideEffects);
-            }
-            else
-            {
-                return stmt;
             }
         }
 
@@ -1825,6 +1789,9 @@ namespace Microsoft.Pc
 
         private ZingTranslationInfo ZingEntryFun_Fold(ZingEntryFun_FoldContext ctxt, Node n, IEnumerable<ZingTranslationInfo> children)
         {
+            if (n.NodeKind == NodeKind.Id)
+                return new ZingTranslationInfo(ZingData.Cnst_Nil);
+
             var ft = (FuncTerm)n;
             var funName = ((Id)ft.Function).Name;
 
@@ -1933,7 +1900,7 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldName(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
         {
-            var name = ((Cnst)GetArgByIndex(ft, 0)).GetStringValue();
+            var name = GetName(ft, 0);
             if (ctxt.translationContext == TranslationContext.Function && 
                 allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].parameterNameToInfo.ContainsKey(name))
             {
@@ -1952,10 +1919,9 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldNew(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
         {
+            var typeName = GetName(ft, 0);
             using (var it = children.GetEnumerator())
             {
-                it.MoveNext();
-                var typeName = ((Cnst)it.Current.node.Node).GetStringValue();
                 it.MoveNext();
                 AST<Node> arg = it.Current.node != ZingData.Cnst_Nil ? it.Current.node : MkZingIdentifier("null");
                 var tmpVar = ctxt.getTmpVar(PrtValue, "tmpSendPayload");
@@ -2055,28 +2021,28 @@ namespace Microsoft.Pc
             }
 
             // n.NodeKind == NodeKind.Id
-            var id = (Id)n;
-            if (id.Name == PData.Cnst_True.Node.Name)
+            var op = ((Id)n).Name;
+            if (op == PData.Cnst_True.Node.Name)
             {
                 return new ZingTranslationInfo(ZingData.Cnst_True);
             }
-            else if (id.Name == PData.Cnst_False.Node.Name)
+            else if (op == PData.Cnst_False.Node.Name)
             {
                 return new ZingTranslationInfo(ZingData.Cnst_False);
             }
-            else if (id.Name == PData.Cnst_This.Node.Name)
+            else if (op == PData.Cnst_This.Node.Name)
             {
                 return new ZingTranslationInfo(MkZingIdentifier("myHandle"));
             }
-            else if (id.Name == PData.Cnst_Trigger.Node.Name)
+            else if (op == PData.Cnst_Trigger.Node.Name)
             {
                 return new ZingTranslationInfo(MkZingDot("myHandle", "currentEvent"));
             }
-            else if (id.Name == PData.Con_Payload.Node.Name)
+            else if (op == PData.Cnst_Payload.Node.Name)
             {
                 return new ZingTranslationInfo(MkZingDot("myHandle", "currentArg"));
             }
-            else if (id.Name == PData.Cnst_Nondet.Node.Name || id.Name == PData.Cnst_FairNondet.Node.Name)
+            else if (op == PData.Cnst_Nondet.Node.Name || op == PData.Cnst_FairNondet.Node.Name)
             {
                 var afterLabel = ctxt.getFreshLabel();
                 var bvar = ctxt.getTmpVar(ZingData.Cnst_Bool, "nondet");
@@ -2084,7 +2050,7 @@ namespace Microsoft.Pc
                 ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
                 ctxt.addSideEffect(MkZingLabeledStmt(afterLabel, MkZingAssign(bvar, MkZingDot("entryCtxt", "nondet"))));
                 ctxt.addSideEffect(MkZingAssign(MkZingDot("entryCtxt", "nondet"), ZingData.Cnst_False));
-                if (compiler.liveness && id.Name == PData.Cnst_FairNondet.Node.Name)
+                if (compiler.liveness && op == PData.Cnst_FairNondet.Node.Name)
                 {
                     int i;
                     if (ctxt.translationContext == TranslationContext.Action)
@@ -2107,23 +2073,22 @@ namespace Microsoft.Pc
                 }
                 return new ZingTranslationInfo(bvar);
             }
-            else if (id.Name == PData.Cnst_Null.Node.Name)
+            else if (op == PData.Cnst_Null.Node.Name)
             {
                 return new ZingTranslationInfo(MkZingIdentifier("null"));
             }
             else
             {
-                // id.Name == PData.Cnst_Halt.Node.Name
+                // op == PData.Cnst_Halt.Node.Name
                 return new ZingTranslationInfo(MkZingEvent(HaltEvent));
             }
         }
 
         ZingTranslationInfo FoldUnApp(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
         {
-            var op = ((Id)GetArgByIndex(ft, 0)).Name;
+            var op = ((Id)GetArgByIndex(ft, 0)).Name; 
             using (var it = children.GetEnumerator())
             {
-                it.MoveNext();
                 it.MoveNext();
                 var arg = it.Current.node;
                 if (op == PData.Cnst_Not.Node.Name)
@@ -2158,10 +2123,9 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldBinApp(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
         {
-            var op = ((Id)GetArgByIndex(ft, 0)).Name;
+            var op = ((Id)GetArgByIndex(ft, 0)).Name; 
             using (var it = children.GetEnumerator())
             {
-                it.MoveNext();
                 it.MoveNext();
                 var arg1 = it.Current.node;
                 it.MoveNext();
@@ -2240,7 +2204,7 @@ namespace Microsoft.Pc
                         // op == PData.Con_MapType.Node.Name
                         var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVal");
                         ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapGet"), arg1, arg2)));
-                        return new ZingTranslationInfo(tmpVar, true, false);
+                        return new ZingTranslationInfo(tmpVar);
                     }
                 }
                 else 
@@ -2258,24 +2222,23 @@ namespace Microsoft.Pc
             var expr = GetArgByIndex(ft, 0);
             FuncTerm exprType = LookupType(ctxt, expr).Node;
             var field = GetArgByIndex(ft, 1);
-            int i = 0;
+            int fieldIndex = 0;
             while (exprType != null)
             {
                 var fieldInfo = (FuncTerm)GetArgByIndex(exprType, 0);
                 if (field.Equals(GetArgByIndex(fieldInfo, 0)))
                     break;
                 exprType = GetArgByIndex(exprType, 1) as FuncTerm;
-                i++;
+                fieldIndex++;
             }
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
                 var arg = it.Current.node;
                 var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVal");
-                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtNamedTupleGet"), arg, Factory.Instance.MkCnst(i))));
+                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtNamedTupleGet"), arg, Factory.Instance.MkCnst(fieldIndex))));
                 return new ZingTranslationInfo(tmpVar);
             }
-            return null;
         }
 
         ZingTranslationInfo FoldDefault(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
@@ -2329,17 +2292,19 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldPush(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
         {
-            using (var it = children.GetEnumerator())
+            var qualifiedName = (FuncTerm)GetArgByIndex(ft, 0);
+            var stateName = "";
+            while (qualifiedName != null)
             {
-                it.MoveNext();
-                var stateName = it.Current.stateName;
-                var afterLabel = ctxt.getFreshLabel();
-                var res = MkZingSeq(
-                    MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Call"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)), it.Current.node)),
-                    MkZingReturn(MkZingIdentifier("entryCtxt")),
-                    MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil));
-                return new ZingTranslationInfo(res);
+                stateName = GetName(qualifiedName, 0) + stateName;
+                qualifiedName = GetArgByIndex(qualifiedName, 1) as FuncTerm;
             }
+            var afterLabel = ctxt.getFreshLabel();
+            var res = MkZingSeq(
+                MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Call"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)), MkZingDot("State", string.Format("_{0}", stateName)))),
+                MkZingReturn(MkZingIdentifier("entryCtxt")),
+                MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil));
+            return new ZingTranslationInfo(res);
         }
 
         ZingTranslationInfo FoldNewStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
@@ -2411,10 +2376,9 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldMonitor(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
         {
+            var typeName = GetName(ft, 0);
             using (var it = children.GetEnumerator())
             {
-                it.MoveNext();
-                var typeName = ((Cnst)it.Current.node.Node).GetStringValue();
                 it.MoveNext();
                 AST<Node> evt = it.Current.node;
                 it.MoveNext();
@@ -2422,8 +2386,7 @@ namespace Microsoft.Pc
                 var tmpVar = ctxt.getTmpVar(PrtValue, "tmpSendPayload");
                 ctxt.addSideEffect(MkZingAssignOrCast(tmpVar, arg));
                 MachineInfo machineInfo = allMachines[typeName];
-                return new ZingTranslationInfo(
-                    MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", typeName)), evt, tmpVar));
+                return new ZingTranslationInfo(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", typeName)), evt, tmpVar));
             }
         }
 
@@ -2453,7 +2416,6 @@ namespace Microsoft.Pc
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
-                it.MoveNext();
                 return new ZingTranslationInfo(AddArgs(ZingData.App_Assert, it.Current.node));
             }
         }
@@ -2466,7 +2428,6 @@ namespace Microsoft.Pc
             AST<Node> src = null, index = null, dest = null;
             using (var it = children.GetEnumerator())
             {
-                it.MoveNext(); 
                 it.MoveNext();
                 dest = it.Current.node;
                 it.MoveNext();
@@ -2567,7 +2528,6 @@ namespace Microsoft.Pc
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
-                ctxt.addSideEffect(MkZingAssignOrCast(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")));
                 if (returnType.Equals(PTypeNull))
                 {
                     ctxt.addSideEffect(MkZingAssignOrCast(MkZingDot("myHandle", "currentArg"), MkZingIdentifier("null")));

@@ -11,20 +11,16 @@
 
     public static class PData
     {
-        public static readonly AST<Id> Cnst_State = Factory.Instance.MkId("STATE");
-        public static readonly AST<Id> Cnst_Event = Factory.Instance.MkId("EVENT");
-        public static readonly AST<Id> Cnst_Var = Factory.Instance.MkId("VAR");
-        public static readonly AST<Id> Cnst_Field = Factory.Instance.MkId("FIELD");
-        public static readonly AST<Id> Cnst_This = Factory.Instance.MkId("THIS");
-        public static readonly AST<Id> Cnst_Trigger = Factory.Instance.MkId("TRIGGER");
-        public static readonly AST<Id> Cnst_Nondet = Factory.Instance.MkId("NONDET");
-        public static readonly AST<Id> Cnst_FairNondet = Factory.Instance.MkId("FAIRNONDET");
         public static readonly AST<Id> Cnst_True = Factory.Instance.MkId("TRUE");
         public static readonly AST<Id> Cnst_False = Factory.Instance.MkId("FALSE");
+        public static readonly AST<Id> Cnst_This = Factory.Instance.MkId("THIS");
+        public static readonly AST<Id> Cnst_Trigger = Factory.Instance.MkId("TRIGGER");
+        public static readonly AST<Id> Cnst_Payload = Factory.Instance.MkId("PAYLOAD");
+        public static readonly AST<Id> Cnst_Nondet = Factory.Instance.MkId("NONDET");
+        public static readonly AST<Id> Cnst_FairNondet = Factory.Instance.MkId("FAIRNONDET");
+        public static readonly AST<Id> Cnst_Null = Factory.Instance.MkId("NULL");
         public static readonly AST<Id> Cnst_Halt = Factory.Instance.MkId("HALT");
         public static readonly AST<Id> Cnst_Pop = Factory.Instance.MkId("POP");
-        public static readonly AST<Id> Cnst_Default = Factory.Instance.MkId("DEFAULT");
-        public static readonly AST<Id> Cnst_Null = Factory.Instance.MkId("NULL");
 
         public static readonly AST<Id> Cnst_Not = Factory.Instance.MkId("NOT");
         public static readonly AST<Id> Cnst_Neg = Factory.Instance.MkId("NEG");
@@ -41,20 +37,10 @@
         public static readonly AST<Id> Cnst_Gt = Factory.Instance.MkId("GT");
         public static readonly AST<Id> Cnst_Ge = Factory.Instance.MkId("GE");
         public static readonly AST<Id> Cnst_In = Factory.Instance.MkId("IN");
-
         public static readonly AST<Id> Cnst_Idx = Factory.Instance.MkId("IDX");
-        public static readonly AST<Id> Cnst_Fld = Factory.Instance.MkId("FLD");
         public static readonly AST<Id> Cnst_Sizeof = Factory.Instance.MkId("SIZEOF");
         public static readonly AST<Id> Cnst_Keys = Factory.Instance.MkId("KEYS");
         public static readonly AST<Id> Cnst_Values = Factory.Instance.MkId("VALUES");
-
-        public static readonly AST<Id> Cnst_Nil = Factory.Instance.MkId("NIL");
-        public static readonly AST<Id> Cnst_Bool = Factory.Instance.MkId("BOOL");
-        public static readonly AST<Id> Cnst_Int = Factory.Instance.MkId("INT");
-        public static readonly AST<Id> Cnst_Id = Factory.Instance.MkId("ID");
-        public static readonly AST<Id> Cnst_Mid = Factory.Instance.MkId("MID");
-        public static readonly AST<Id> Cnst_Any = Factory.Instance.MkId("ANY");
-
         public static readonly AST<Id> Cnst_Insert = Factory.Instance.MkId("INSERT");
         public static readonly AST<Id> Cnst_Remove = Factory.Instance.MkId("REMOVE");
         public static readonly AST<Id> Cnst_Update = Factory.Instance.MkId("UPDATE");
@@ -63,10 +49,9 @@
         /// <summary>
         /// Expressions
         /// </summary>
-        public static readonly AST<Id> Con_Payload = Factory.Instance.MkId("Payload");
+        public static readonly AST<Id> Cnst_Nil = Factory.Instance.MkId("NIL");        
         public static readonly AST<Id> Con_Name = Factory.Instance.MkId("Name");
         public static readonly AST<Id> Con_Exprs = Factory.Instance.MkId("Exprs");
-        public static readonly AST<Id> Con_Strings = Factory.Instance.MkId("Strings");
         public static readonly AST<Id> Con_NamedExprs = Factory.Instance.MkId("NamedExprs");
         public static readonly AST<Id> Con_New = Factory.Instance.MkId("New");
         public static readonly AST<Id> Con_FunApp = Factory.Instance.MkId("FunApp");
@@ -97,6 +82,9 @@
         public static readonly AST<Id> Con_Seq = Factory.Instance.MkId("Seq");
 
         //// Types
+        public static readonly AST<Id> Cnst_Bool = Factory.Instance.MkId("BOOL");
+        public static readonly AST<Id> Cnst_Int = Factory.Instance.MkId("INT");
+        public static readonly AST<Id> Cnst_Any = Factory.Instance.MkId("ANY");
         public static readonly AST<Id> Con_BaseType = Factory.Instance.MkId("BaseType");
         public static readonly AST<Id> Con_TupType = Factory.Instance.MkId("TupType");
         public static readonly AST<Id> Con_NamedTupType = Factory.Instance.MkId("NamedTupType");
@@ -104,11 +92,8 @@
         public static readonly AST<Id> Con_MapType = Factory.Instance.MkId("MapType");
         public static readonly AST<Id> Con_NmdTupTypeField = Factory.Instance.MkId("NmdTupTypeField");
 
-        //// Statements
+        //// Machine declarations
         public static readonly AST<Id> Con_MachType = Factory.Instance.MkId("MachType");
-        public static readonly AST<Id> Con_Assert = Factory.Instance.MkId("Assert");
-        public static readonly AST<Id> Con_Ecall = Factory.Instance.MkId("Ecall");
-        public static readonly AST<Id> Con_DataOp = Factory.Instance.MkId("DataOp");
         public static readonly AST<Id> Con_MachineDecl = Factory.Instance.MkId("MachineDecl");
         public static readonly AST<Id> Con_EventDecl = Factory.Instance.MkId("EventDecl");
         public static readonly AST<Id> Con_StateDecl = Factory.Instance.MkId("StateDecl");

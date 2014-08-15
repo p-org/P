@@ -67,8 +67,7 @@ domain PData
     ActionDecl   ::= fun (name: String, owner: MachineDecl -> body: any Stmt).
     StateDecl    ::= fun (name: QualifiedName, owner: MachineDecl -> entryFun: any Stmt + String, exitFun: any Stmt + string, isStable: Boolean).
     TransDecl    ::= fun (src: StateDecl, trig: String + { DEFAULT, HALT } -> dst: any QualifiedName, action: any Stmt + { NIL, PUSH }).
-	DoDecl       ::= fun (src: StateDecl, trig: String + { HALT } -> action: any Stmt + String).
-    DefIgnDecl   ::= fun (src: StateDecl, trig: String + { HALT } -> kind: { DEFER, IGNORE }).
+    DoDecl       ::= fun (src: StateDecl, trig: String + { HALT } -> kind: { DEFER, IGNORE } + any Stmt + String).
 	
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).

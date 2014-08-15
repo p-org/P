@@ -207,10 +207,54 @@ namespace Microsoft.Pc
         public const string DefaultEvent = "default";
         public const string HaltEvent = "halt";
 
+        private Dictionary<string, LinkedList<AST<FuncTerm>>> factBins; 
         private Dictionary<string, AST<FuncTerm>> modelAliases;
         public Dictionary<string, EventInfo> allEvents;
         public Dictionary<string, MachineInfo> allMachines;
         public string mainMachineName;
+
+        public LinkedList<AST<FuncTerm>> GetBin(FuncTerm ft)
+        {
+            var fun = (Id)ft.Function;
+            return GetBin(fun.Name);
+        }
+
+        public LinkedList<AST<FuncTerm>> GetBin(string name)
+        {
+            Contract.Requires(!string.IsNullOrEmpty(name));
+            LinkedList<AST<FuncTerm>> bin;
+            if (!factBins.TryGetValue(name, out bin))
+            {
+                bin = new LinkedList<AST<FuncTerm>>();
+                factBins.Add(name, bin);
+            }
+
+            return bin;
+        }
+
+        private void IndexModel(AST<Model> model)
+        {
+            this.modelAliases = new Dictionary<string, AST<FuncTerm>>();
+            this.factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
+            model.FindAll(
+                new NodePred[]
+                {
+                    NodePredFactory.Instance.Star,
+                    NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
+                },
+
+                (path, n) =>
+                {
+                    var mf = (ModelFact)n;
+                    if (mf.Binding != null)
+                    {
+                        modelAliases.Add(((Id)mf.Binding).Name, (AST<FuncTerm>)Factory.Instance.ToAST(mf.Match));
+                    }
+
+                    FuncTerm ft = (FuncTerm)mf.Match;
+                    GetBin(ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
+                });
+        }
 
         public FuncTerm GetFuncTerm(Node node)
         {
@@ -234,6 +278,13 @@ namespace Microsoft.Pc
             }
         }
 
+        public string GetMachineName(FuncTerm ft, int index)
+        {
+            FuncTerm machineDecl = GetFuncTerm(GetArgByIndex(ft, index));
+            var machineName = GetName(machineDecl, 0);
+            return machineName;
+        }
+
         Dictionary<string, int> uniqIDCounters = new Dictionary<string, int>();
         public string getUnique(string prefix)
         {
@@ -249,16 +300,250 @@ namespace Microsoft.Pc
         public PToZing(Compiler compiler, AST<Model> model)
         {
             this.compiler = compiler;
-            this.modelAliases = new Dictionary<string, AST<FuncTerm>>();
-            this.allEvents = new Dictionary<string, EventInfo>();
-            this.allMachines = new Dictionary<string, MachineInfo>();
-            this.mainMachineName = null;
+            IndexModel(model);
             GenerateProgramData(model);  
         }
 
         private void GenerateProgramData(AST<Model> model)
         {
+            allEvents = new Dictionary<string, EventInfo>();
+            allEvents[DefaultEvent] = new EventInfo(1, false, PTypeNull);
+            allEvents[HaltEvent] = new EventInfo(1, false, PTypeNull);
+            allEvents[NullEvent] = new EventInfo(1, false, PTypeNull);
+            allMachines = new Dictionary<string, MachineInfo>();
 
+            LinkedList<AST<FuncTerm>> terms;
+
+            terms = GetBin("EventDecl");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var name = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var bound = it.Current;
+                    it.MoveNext();
+                    var payloadType = it.Current;
+                    if (bound.NodeKind == NodeKind.Id)
+                    {
+                        allEvents[name] = new EventInfo(Factory.Instance.ToAST(payloadType));
+                    }
+                    else
+                    {
+                        var ft = (FuncTerm)bound;
+                        var maxInstances = (int)((Cnst)GetArgByIndex(ft, 0)).GetNumericValue().Numerator;
+                        var maxInstancesAssumed = ((Id)ft.Function).Name == "AssumeMaxInstances";
+                        allEvents[name] = new EventInfo(maxInstances, maxInstancesAssumed, Factory.Instance.ToAST(payloadType));
+                    }
+                }
+            }
+
+            terms = GetBin("MachineDecl");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var name = ((Cnst)it.Current).GetStringValue();
+                    allMachines[name] = new MachineInfo();
+                    it.MoveNext();
+                    allMachines[name].type = ((Id)it.Current).Name;
+                    it.MoveNext();
+                    if (it.Current.NodeKind != NodeKind.Id)
+                    {
+                        int maxQueueSize = (int)((Cnst)it.Current).GetNumericValue().Numerator;
+                        allMachines[name].maxQueueSize = maxQueueSize;
+                    }
+                }
+            }
+
+            terms = GetBin("StateDecl");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var stateName = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var machineDecl = GetFuncTerm(it.Current);
+                    var machineName = GetName(machineDecl, 0);
+                    it.MoveNext();
+                    it.MoveNext();
+                    var stateTable = allMachines[machineName].stateNameToStateInfo;
+                    stateTable[stateName] = new StateInfo(term.Node);
+                }
+            }
+
+            terms = GetBin("VarDecl");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var varName = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var machineDecl = GetFuncTerm(it.Current);
+                    var machineName = GetName(machineDecl, 0);
+                    var varTable = allMachines[machineName].localVariableToVarInfo;
+                    it.MoveNext();
+                    var type = it.Current;
+                    it.MoveNext();
+                    var isGhost = ((Id)it.Current).Name == "TRUE";
+                    varTable[varName] = new VariableInfo(Factory.Instance.ToAST(type));
+                }
+            }
+
+            terms = GetBin("TransDecl");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var stateDecl = GetFuncTerm(it.Current);
+                    var stateName = GetName(stateDecl, 0);
+                    var stateOwnerMachineName = GetMachineName(stateDecl, 1);
+                    var stateTable = allMachines[stateOwnerMachineName].stateNameToStateInfo[stateName];
+                    it.MoveNext();
+                    string eventName = GetName((FuncTerm)it.Current, 0);
+                    it.MoveNext();
+                    var targetStateDecl = GetFuncTerm(it.Current);
+                    var targetStateName = GetName(targetStateDecl, 0);
+                    var targetStateOwnerMachineName = GetMachineName(targetStateDecl, 1);
+                    var targetStateInfo = allMachines[targetStateOwnerMachineName].stateNameToStateInfo[targetStateName];
+                    it.MoveNext();
+                    var isPush = ((Id)it.Current).Name == "TRUE";
+                    var tinfo = new TransitionInfo(targetStateName, isPush);
+                    stateTable.transitions[eventName] = tinfo;
+                    if (eventName == DefaultEvent)
+                    {
+                        stateTable.hasDefaultTransition = true;
+                    }
+                }
+            }
+
+            terms = GetBin("ActionDecl");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var actionName = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var actionOwnerMachineDecl = GetFuncTerm(it.Current);
+                    var actionOwnerMachineName = GetName(actionOwnerMachineDecl, 0);
+                    it.MoveNext();
+                    allMachines[actionOwnerMachineName].actionFunNameToActionFun[actionName] = new ActionInfo(it.Current);
+                }
+            }
+
+            terms = GetBin("Install");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var stateDecl = GetFuncTerm(it.Current);
+                    var stateName = GetName(stateDecl, 0);
+                    var stateOwnerMachineName = GetMachineName(stateDecl, 1);
+                    var stateTable = allMachines[stateOwnerMachineName].stateNameToStateInfo[stateName];
+                    it.MoveNext();
+                    string eventName = GetName((FuncTerm)it.Current, 0);
+                    it.MoveNext();
+                    var actionDecl = GetFuncTerm(it.Current);
+                    var actionFunName = GetName(actionDecl, 0);
+                    var actionOwnerMachineName = GetOwnerName(actionDecl, 1, 0);
+                    var actionInfo = allMachines[actionOwnerMachineName].actionFunNameToActionFun[actionFunName];
+                    stateTable.actions[eventName] = actionFunName;
+                }
+            }
+
+            terms = GetBin("FunDecl");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    string funName = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var machineDecl = GetFuncTerm(it.Current);
+                    var machineName = GetName(machineDecl, 0);
+                    var machineInfo = allMachines[machineName];
+                    it.MoveNext();
+                    var iter = it.Current;
+                    it.MoveNext();
+                    var returnTypeName = Factory.Instance.ToAST(it.Current);
+                    it.MoveNext();
+                    var isModel = ((Id)it.Current).Name == "TRUE";
+                    var funInfo = new FunInfo(isModel, returnTypeName, term.Node);
+                    Dictionary<string, VariableInfo> parameters = funInfo.parameterNameToInfo;
+                    while (true)
+                    {
+                        if (iter.NodeKind == NodeKind.Id)
+                            break;
+                        FuncTerm ft = (FuncTerm)iter;
+                        using (var enumerator = ft.Args.GetEnumerator())
+                        {
+                            enumerator.MoveNext();
+                            var varName = ((Cnst)enumerator.Current).GetStringValue();
+                            enumerator.MoveNext();
+                            var typeName = Factory.Instance.ToAST(enumerator.Current);
+                            parameters[varName] = new VariableInfo(typeName);
+                            funInfo.parameterNames.Add(varName);
+                            enumerator.MoveNext();
+                            iter = enumerator.Current;
+                        }
+                    }
+                    machineInfo.funNameToFunInfo[funName] = funInfo;
+                }
+            }
+
+            if (compiler.liveness || compiler.maceLiveness)
+            {
+                terms = GetBin("Stable");
+                foreach (var term in terms)
+                {
+                    using (var it = term.Node.Args.GetEnumerator())
+                    {
+                        it.MoveNext();
+                        var stateDecl = GetFuncTerm(it.Current);
+                        var stateName = GetName(stateDecl, 0);
+                        var ownerMachineName = GetOwnerName(stateDecl, 1, 0);
+                        allMachines[ownerMachineName].stateNameToStateInfo[stateName].isStable = true;
+                    }
+                }
+
+                foreach (var machineName in allMachines.Keys)
+                {
+                    if (!allMachines[machineName].IsSpec) continue;
+                    var machineInfo = allMachines[machineName];
+                    HashSet<string> visitedStates = new HashSet<string>();
+                    Stack<string> dfsStack = new Stack<string>();
+                    foreach (var stateName in machineInfo.stateNameToStateInfo.Keys)
+                    {
+                        if (!machineInfo.stateNameToStateInfo[stateName].isStable) continue;
+                        dfsStack.Push(stateName);
+                        while (dfsStack.Count > 0)
+                        {
+                            var curState = dfsStack.Pop();
+                            var curStateInfo = machineInfo.stateNameToStateInfo[curState];
+                            foreach (var e in curStateInfo.transitions.Keys)
+                            {
+                                var nextState = curStateInfo.transitions[e].target;
+                                if (visitedStates.Contains(nextState)) continue;
+                                visitedStates.Add(nextState);
+                                dfsStack.Push(nextState);
+                            }
+                        }
+                    }
+                    foreach (var stateName in visitedStates)
+                    {
+                        if (machineInfo.stateNameToStateInfo[stateName].isStable) continue;
+                        machineInfo.isInfinitelyOftenMonitor = true;
+                        break;
+                    }
+                }
+            }
         }
 
         #region Static helpers

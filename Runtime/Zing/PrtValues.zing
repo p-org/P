@@ -365,21 +365,21 @@ class PRT_VALUE {
 	return retVal;
     }
 
-    static void PrtSeqUpdate(PRT_VALUE seq, int index, PRT_VALUE value) {
-        seq.seq.Update(index, value);
+    static void PrtSeqSet(PRT_VALUE seq, PRT_VALUE index, PRT_VALUE value) {
+        seq.seq.Set(index.nt, value);
     }
 
-    static void PrtSeqInsert(PRT_VALUE seq, int index, PRT_VALUE value) {
-        seq.seq.Insert(index, value);
+    static void PrtSeqInsert(PRT_VALUE seq, PRT_VALUE index, PRT_VALUE value) {
+        seq.seq.Insert(index.nt, value);
     }
 
-    static void PrtSeqRemove(PRT_VALUE seq, int index) {
-        seq.seq.Remove(index);
+    static void PrtSeqRemove(PRT_VALUE seq, PRT_VALUE index) {
+        seq.seq.Remove(index.nt);
     }
 
-    static PRT_VALUE PrtSeqGet(PRT_VALUE seq, int index) {
+    static PRT_VALUE PrtSeqGet(PRT_VALUE seq, PRT_VALUE index) {
         PRT_VALUE retVal;
-	retVal = seq.seq.Get(index);
+	retVal = seq.seq.Get(index.nt);
 	return retVal;
     }
 
@@ -389,8 +389,8 @@ class PRT_VALUE {
 	return retVal;
     }
 
-    static void PrtMapUpdate(PRT_VALUE map, PRT_VALUE key, PRT_VALUE value) {
-        map.map.Update(key, value);
+    static void PrtMapSet(PRT_VALUE map, PRT_VALUE key, PRT_VALUE value) {
+        map.map.Set(key, value);
     }
 
     static void PrtMapRemove(PRT_VALUE map, PRT_VALUE key) {
@@ -453,7 +453,7 @@ class PRT_SEQ {
 	}
     }
 
-    void Update(int index, PRT_VALUE value) {
+    void Set(int index, PRT_VALUE value) {
 	assert (0 <= index && index < size);
         contents[index] = PRT_VALUE.PrtCloneValue(value);
     }
@@ -565,7 +565,7 @@ class PRT_MAP {
 	}
     }
 
-    void Update(PRT_VALUE key, PRT_VALUE value) {
+    void Set(PRT_VALUE key, PRT_VALUE value) {
         int i;
 	bool b;
 	PRT_VALUE_ARRAY newKeys;

@@ -61,11 +61,8 @@ namespace Microsoft.Pc
         public Dictionary<string, TransitionInfo> transitions;
         public Dictionary<string, string> actions;
         public HashSet<string> entryFunCallees;
-        public bool entryFunAtPassive;
         public HashSet<string> exitFunCallees;
-        public bool exitFunAtPassive;
         public HashSet<AST<Node>> argTypes;
-        public string submachineName;
         public bool isStable;
         public int numFairChoicesInEntry;
         public int numFairChoicesInExit;
@@ -104,7 +101,6 @@ namespace Microsoft.Pc
         public AST<Node> returnType;
         public FuncTerm funDecl;
         public HashSet<string> callers;
-        public bool atPassive;
         public int numFairChoices;
 
         public FunInfo(bool isModel, AST<Node> returnType, FuncTerm funDecl)
@@ -124,7 +120,6 @@ namespace Microsoft.Pc
         public Node actionFun;
         public HashSet<AST<Node>> argTypes;
         public HashSet<string> callees;
-        public bool atPassive;
         public int numFairChoices;
 
         public ActionInfo(Node actionFun)
@@ -140,11 +135,12 @@ namespace Microsoft.Pc
     {
         public bool IsReal { get { return type == "REAL"; } }
         public bool IsModel { get { return type == "MODEL"; } }
-        public bool IsSpec { get { return type == "SPEC"; } }
+        public bool IsMonitor { get { return type == "MONITOR"; } }
 
         public string type;
         public int maxQueueSize;
-        public FuncTerm initStateDecl;
+        public bool maxQueueSizeAssumed;
+        public string initStateName;
         public Dictionary<string, StateInfo> stateNameToStateInfo;
         public Dictionary<string, VariableInfo> localVariableToVarInfo;
         public Dictionary<string, List<string>> eventSetNameToEvents;
@@ -156,7 +152,8 @@ namespace Microsoft.Pc
         {
             type = "REAL";
             maxQueueSize = -1;
-            initStateDecl = null;
+            maxQueueSizeAssumed = false;
+            initStateName = null;
             stateNameToStateInfo = new Dictionary<string, StateInfo>();
             localVariableToVarInfo = new Dictionary<string, VariableInfo>();
             eventSetNameToEvents = new Dictionary<string, List<string>>();
@@ -324,17 +321,17 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var bound = it.Current;
                     it.MoveNext();
-                    var payloadType = it.Current;
+                    var payloadType = it.Current.NodeKind == NodeKind.Id ? PTypeNull : Factory.Instance.ToAST(it.Current);
                     if (bound.NodeKind == NodeKind.Id)
                     {
-                        allEvents[name] = new EventInfo(Factory.Instance.ToAST(payloadType));
+                        allEvents[name] = new EventInfo(payloadType);
                     }
                     else
                     {
                         var ft = (FuncTerm)bound;
                         var maxInstances = (int)((Cnst)GetArgByIndex(ft, 0)).GetNumericValue().Numerator;
                         var maxInstancesAssumed = ((Id)ft.Function).Name == "AssumeMaxInstances";
-                        allEvents[name] = new EventInfo(maxInstances, maxInstancesAssumed, Factory.Instance.ToAST(payloadType));
+                        allEvents[name] = new EventInfo(maxInstances, maxInstancesAssumed, payloadType);
                     }
                 }
             }
@@ -350,10 +347,19 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     allMachines[name].type = ((Id)it.Current).Name;
                     it.MoveNext();
-                    if (it.Current.NodeKind != NodeKind.Id)
+                    var bound = it.Current;
+                    if (bound.NodeKind != NodeKind.Id)
                     {
-                        int maxQueueSize = (int)((Cnst)it.Current).GetNumericValue().Numerator;
-                        allMachines[name].maxQueueSize = maxQueueSize;
+                        var ft = (FuncTerm)bound;
+                        allMachines[name].maxQueueSize = (int)((Cnst)GetArgByIndex(ft, 0)).GetNumericValue().Numerator;
+                        allMachines[name].maxQueueSizeAssumed = ((Id)ft.Function).Name == "AssumeMaxInstances";
+                    }
+                    it.MoveNext();
+                    allMachines[name].initStateName = GetNameFromQualifiedName((FuncTerm)it.Current);
+                    it.MoveNext();
+                    if (((Id)it.Current).Name == "TRUE")
+                    { 
+                        mainMachineName = name; 
                     }
                 }
             }
@@ -364,7 +370,7 @@ namespace Microsoft.Pc
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    var stateName = ((Cnst)it.Current).GetStringValue();
+                    var stateName = GetNameFromQualifiedName((FuncTerm)it.Current);
                     it.MoveNext();
                     var machineDecl = GetFuncTerm(it.Current);
                     var machineName = GetName(machineDecl, 0);
@@ -515,7 +521,7 @@ namespace Microsoft.Pc
 
                 foreach (var machineName in allMachines.Keys)
                 {
-                    if (!allMachines[machineName].IsSpec) continue;
+                    if (!allMachines[machineName].IsMonitor) continue;
                     var machineInfo = allMachines[machineName];
                     HashSet<string> visitedStates = new HashSet<string>();
                     Stack<string> dfsStack = new Stack<string>();
@@ -595,6 +601,17 @@ namespace Microsoft.Pc
         public static string GetName(FuncTerm ft, int nameIndex)
         {
             return ((Cnst)GetArgByIndex(ft, nameIndex)).GetStringValue();
+        }
+
+        public static string GetNameFromQualifiedName(FuncTerm qualifiedName)
+        {
+            var stateName = "";
+            while (qualifiedName != null)
+            {
+                stateName = "_" + GetName(qualifiedName, 0) + stateName;
+                qualifiedName = GetArgByIndex(qualifiedName, 1) as FuncTerm;
+            }
+            return stateName;
         }
 
         public string GetOwnerName(FuncTerm ft, int ownerIndex, int ownerNameIndex)
@@ -912,7 +929,7 @@ namespace Microsoft.Pc
             }
             foreach (var machineName in allMachines.Keys)
             {
-                if (!allMachines[machineName].IsSpec) continue;
+                if (!allMachines[machineName].IsMonitor) continue;
                 var field = MkZingVarDecl(GetMonitorMachineName(machineName), Factory.Instance.MkCnst(machineName), ZingData.Cnst_Static);
                 fields = AddArgs(ZingData.App_VarDecls, field, fields);
             }
@@ -920,7 +937,7 @@ namespace Microsoft.Pc
             foreach (var machineName in allMachines.Keys)
             {
                 AST<Node> method;
-                if (allMachines[machineName].IsSpec)
+                if (allMachines[machineName].IsMonitor)
                 {
                     method = MkCreateMonitorMethod(machineName);
                 }
@@ -932,7 +949,7 @@ namespace Microsoft.Pc
             }
             foreach (var machineName in allMachines.Keys)
             {
-                if (!allMachines[machineName].IsSpec) continue;
+                if (!allMachines[machineName].IsMonitor) continue;
                 AST<Node> method = MkInvokeMonitorMethod(machineName);
                 methods = AddArgs(ZingData.App_MethodDecls, method, methods);
             }
@@ -960,7 +977,7 @@ namespace Microsoft.Pc
             }
             foreach (var machineName in allMachines.Keys)
             {
-                if (allMachines[machineName].IsSpec)
+                if (allMachines[machineName].IsMonitor)
                 {
                     var assignStmt = MkZingAssign(MkZingIdentifier(GetMonitorMachineName(machineName)), MkZingIdentifier("null"));
                     runBody = MkZingSeq(runBody, assignStmt);
@@ -1156,7 +1173,7 @@ namespace Microsoft.Pc
         {
             foreach (string machineName in allMachines.Keys)
             {
-                if (allMachines[machineName].IsSpec)
+                if (allMachines[machineName].IsMonitor)
                 {
                     elements.Add(GenerateMonitorClass(machineName));
                 }
@@ -1290,10 +1307,10 @@ namespace Microsoft.Pc
                     MkZingVarDecl("currentDeferredSet", ZingData.Cnst_SmEventSet)
                     );
 
-            FuncTerm initStateDecl = allMachines[machineName].initStateDecl;
+            string initStateName = allMachines[machineName].initStateName;
             var callStmt = MkZingCallStmt(
                             MkZingCall(MkZingIdentifier("runHelper"),
-                                       MkZingDot("State", string.Format("_{0}", GetName(initStateDecl, 0)))));
+                                       MkZingDot("State", string.Format("_{0}", initStateName))));
 
             var currentDeferredSet = MkZingIdentifier("currentDeferredSet");
             var smEventSetType = Factory.Instance.MkCnst("SM_EVENT_SET");
@@ -1673,7 +1690,7 @@ namespace Microsoft.Pc
                 var gotoStmt = Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("transition_" + stateName));
                 initStmt = MkZingIfThenElse(condExpr, gotoStmt, initStmt);
             }
-            string initStateName = GetName(allMachines[machineName].initStateDecl, 0);
+            string initStateName = allMachines[machineName].initStateName;
             initStmt = MkZingIfThenElse(MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("startState"), MkZingDot("State", "_default")),
                                         MkZingSeq(MkZingAssign(MkZingIdentifier("startState"), MkZingDot("State", string.Format("_{0}", initStateName))),
                                                   Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + initStateName))),
@@ -2213,7 +2230,7 @@ namespace Microsoft.Pc
                 ctxt.addSideEffect(MkZingAssignOrCast(tmpVar, arg));
 
                 MachineInfo machineInfo = allMachines[typeName];
-                if (machineInfo.IsSpec || ctxt.entityName == null)
+                if (machineInfo.IsMonitor || ctxt.entityName == null)
                 {
                     ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar)));
                     return new ZingTranslationInfo(ZingData.Cnst_Nil);
@@ -2578,12 +2595,7 @@ namespace Microsoft.Pc
         ZingTranslationInfo FoldPush(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
         {
             var qualifiedName = (FuncTerm)GetArgByIndex(ft, 0);
-            var stateName = "";
-            while (qualifiedName != null)
-            {
-                stateName = GetName(qualifiedName, 0) + stateName;
-                qualifiedName = GetArgByIndex(qualifiedName, 1) as FuncTerm;
-            }
+            var stateName = GetNameFromQualifiedName(qualifiedName);
             var afterLabel = ctxt.getFreshLabel();
             var res = MkZingSeq(
                 MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Call"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)), MkZingDot("State", string.Format("_{0}", stateName)))),

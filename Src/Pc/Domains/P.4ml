@@ -80,7 +80,7 @@ domain PData
     /*************************************************************/
 
     Annotation  ::= new (ant: Annotatable, key: String, value: any AnnotValue).
-    Annotatable ::= MachineDecl + EventDecl + StateDecl + VarDecl + TransDecl + FunDecl + ActionDecl + DefIgnDecl + { NIL }.
+    Annotatable ::= MachineDecl + EventDecl + StateDecl + VarDecl + TransDecl + FunDecl + ActionDecl + DoDecl + { NIL }.
     AnnotValue  ::= Integer + String + Boolean + { NULL }.
 }
 

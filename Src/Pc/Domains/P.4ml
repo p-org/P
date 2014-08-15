@@ -36,7 +36,7 @@ domain PData
     NamedTuple ::= new (body: any NamedExprs).
     Exprs      ::= new (head: any Expr, tail: any Exprs + { NIL }).              
     NamedExprs ::= new (field: String, exp: any Expr, tail: any NamedExprs + { NIL }).
-    Expr       ::= Name + New + NulApp + UnApp + BinApp + FunApp + Cast + Field + Default + Tuple + NamedTuple.
+    Expr       ::= Name + New + FunApp + NulApp + UnApp + BinApp + Field + Default + Cast + Tuple + NamedTuple.
     ExprsExt   ::= Expr + Exprs + NamedExprs.
 
     //// Statements
@@ -54,7 +54,7 @@ domain PData
     Ite      ::= new (cond: any Expr, true: any Stmt, false: any Stmt).
     Seq      ::= new (s1: any Stmt, s2: any Stmt).
 
-    Stmt ::= NewStmt + FunStmt + NulStmt + UnStmt + BinStmt + Return + Send + Raise + While + Ite + Seq + Push + Monitor. 
+    Stmt ::= Push + NewStmt + Raise + Send + Monitor + FunStmt + NulStmt + UnStmt + BinStmt + Return + While + Ite + Seq. 
 
     /*************************************************************/
     /****************  State Machine Declarations    *************/

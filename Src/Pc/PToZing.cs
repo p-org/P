@@ -16,7 +16,6 @@ namespace Microsoft.Pc
     internal class ZingTranslationInfo : ICloneable
     {
         public AST<Node> node = null;
-        public PType type = null;
         public string stateName = null;
         public bool isMapIndex = false;
         public bool isKeys = false;
@@ -27,7 +26,6 @@ namespace Microsoft.Pc
         {
             ZingTranslationInfo info = new ZingTranslationInfo();
             info.node = node;
-            info.type = type;
             info.stateName = stateName;
             info.isMapIndex = isMapIndex;
             info.isKeys = isKeys;
@@ -35,39 +33,21 @@ namespace Microsoft.Pc
             return info;
         }
           
-        private PType primitiveTypeFromStr(string s)
-        {
-            switch (s)
-            {   // Its fairly annoying that we can't use PData.Cnst_*.Node.Name here (switches require constants). Need to keep this in sync..
-                case "NIL": return new PNilType();
-                case "BOOL": return new PBoolType();
-                case "INT": return new PIntType();
-                case "ID": return new PIdType();
-                case "MID": return new PMidType();
-                case "EVENT": return new PEventType();
-                case "STATE": return new PStateType();
-                default:
-                    throw new NotImplementedException("Unknown primitive type " + s);
-            }
-        }
 
-        public ZingTranslationInfo(AST<Node> n, PType t)
+        public ZingTranslationInfo(AST<Node> n)
         {
             this.node = n;
-            this.type = t;
         }
 
-        public ZingTranslationInfo(AST<Node> n, PType t, string stateName)
+        public ZingTranslationInfo(AST<Node> n, string stateName)
         {
             this.node = n;
-            this.type = t;
             this.stateName = stateName;
         }
 
-        public ZingTranslationInfo(AST<Node> n, PType t, bool isMapIndex, bool isKeys)
+        public ZingTranslationInfo(AST<Node> n,bool isMapIndex, bool isKeys)
         {
             this.node = n;
-            this.type = t;
             this.isMapIndex = isMapIndex;
             this.isKeys = isKeys;
         }
@@ -114,7 +94,7 @@ namespace Microsoft.Pc
         public bool entryFunAtPassive;
         public HashSet<string> exitFunCallees;
         public bool exitFunAtPassive;
-        public HashSet<PType> argTypes;
+        public HashSet<AST<Node>> argTypes;
         public string submachineName;
         public bool isStable;
         public int numFairChoicesInEntry;
@@ -127,7 +107,7 @@ namespace Microsoft.Pc
             this.hasDefaultTransition = false;
             this.transitions = new Dictionary<string, TransitionInfo>();
             this.actions = new Dictionary<string, string>();
-            this.argTypes = new HashSet<PType>();
+            this.argTypes = new HashSet<AST<Node>>();
             this.entryFunCallees = new HashSet<string>();
             this.exitFunCallees = new HashSet<string>();
             this.isStable = false;
@@ -138,9 +118,9 @@ namespace Microsoft.Pc
 
     internal class VariableInfo
     {
-        public PType type;
+        public AST<Node> type;
 
-        public VariableInfo(PType type)
+        public VariableInfo(AST<Node> type)
         {
             this.type = type;
         }
@@ -151,13 +131,13 @@ namespace Microsoft.Pc
         public bool isModel;
         public Dictionary<string, VariableInfo> parameterNameToInfo;
         public List<string> parameterNames;
-        public PType returnType;
+        public AST<Node> returnType;
         public FuncTerm funDecl;
         public HashSet<string> callers;
         public bool atPassive;
         public int numFairChoices;
 
-        public FunInfo(bool isModel, PType returnType, FuncTerm funDecl)
+        public FunInfo(bool isModel, AST<Node> returnType, FuncTerm funDecl)
         {
             this.isModel = isModel;
             this.parameterNameToInfo = new Dictionary<string, VariableInfo>();
@@ -172,7 +152,7 @@ namespace Microsoft.Pc
     internal class ActionInfo
     {
         public Node actionFun;
-        public HashSet<PType> argTypes;
+        public HashSet<AST<Node>> argTypes;
         public HashSet<string> callees;
         public bool atPassive;
         public int numFairChoices;
@@ -181,7 +161,7 @@ namespace Microsoft.Pc
         {
             this.actionFun = actionFun;
             this.callees = new HashSet<string>();
-            this.argTypes = new HashSet<PType>();
+            this.argTypes = new HashSet<AST<Node>>();
             this.numFairChoices = 0;
         }
     }
@@ -220,15 +200,15 @@ namespace Microsoft.Pc
     {
         public int maxInstances;  // -1 represents no bound
         public bool maxInstancesAssumed;
-        public PType payloadType;
+        public AST<Node> payloadType;
 
-        public EventInfo(PType payloadType)
+        public EventInfo(AST<Node> payloadType)
         {
             this.payloadType = payloadType;
             this.maxInstances = -1;
         }
 
-        public EventInfo(int maxInstances, bool maxInstancesAssumed, PType payloadType)
+        public EventInfo(int maxInstances, bool maxInstancesAssumed, AST<Node> payloadType)
         {
             this.maxInstances = maxInstances;
             this.maxInstancesAssumed = maxInstancesAssumed;
@@ -238,18 +218,24 @@ namespace Microsoft.Pc
 
     class PToZing
     {
-        public const string Con_LabeledExpr = "___InternalLabeledExpression";
-        public static AST<FuncTerm> App_LabeledExpr = Factory.Instance.MkFuncTerm(Factory.Instance.MkId(Con_LabeledExpr));
+        public static AST<Node> PTypeNull = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("BaseType")), Factory.Instance.MkId("NULL"));
 
+        public static AST<Node> PTypeAny = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("BaseType")), Factory.Instance.MkId("ANY"));
+
+        public const string SM_EVENT = "SM_EVENT";
+        public static AST<Node> SmEvent = Factory.Instance.MkCnst("SM_EVENT");
+        public const string SM_HANDLE = "SM_HANDLE";
+        public static AST<Node> SmHandle = Factory.Instance.MkCnst("SM_HANDLE");
         public const string PRT_VALUE = "PRT_VALUE";
         public static AST<Node> PrtValue = Factory.Instance.MkCnst("PRT_VALUE");
         public static AST<Node> PrtCastValue = MkZingDot("PRT_VALUE", "PrtCastValue");
+        public static AST<Node> PrtMkDefaultValue = MkZingDot("PRT_VALUE", "PrtMkDefaultValue");
         public static AST<Node> PrtCloneValue = MkZingDot("PRT_VALUE", "PrtCloneValue");
         public static AST<Node> PrtIsEqualValue = MkZingDot("PRT_VALUE", "PrtIsEqualValue");
 
         public const string NullEvent = "null";
         public const string DefaultEvent = "default";
-        public const string DeleteEvent = "delete";
+        public const string HaltEvent = "halt";
 
         private Dictionary<string, AST<FuncTerm>> modelAliases;
         public Dictionary<string, EventInfo> allEvents;
@@ -287,73 +273,6 @@ namespace Microsoft.Pc
             var ret = uniqIDCounters[prefix];
             uniqIDCounters[prefix]++;
             return prefix + '_' + ret;
-        }
-
-        public PType GetPType(Node n)
-        {
-            if (n is Id)
-            {
-                var name = (n as Id).Name;
-
-                if (name == PData.Cnst_Any.Node.Name)
-                    return new PAnyType();
-                else
-                    return PType.primtiveTypeFromName((n as Id).Name);
-            }
-            else
-            {
-                var fname = ((n as FuncTerm).Function as Id).Name;
-                if (fname == PData.Con_TypeTuple.Node.Name)
-                {
-                    var fieldTypes = new List<PType>();
-
-                    while (n is FuncTerm)
-                    {
-                        var nf = (FuncTerm)n;
-
-                        fieldTypes.Add(GetPType(nf.Args.ElementAt(0)));
-                        n = nf.Args.ElementAt(1);
-                    }
-
-                    var type = new PTupleType(fieldTypes);
-                    return type;
-                }
-
-                if (fname == PData.Con_TypeNamedTuple.Node.Name)
-                {
-                    var fieldTypes = new List<Tuple<string, PType>>();
-
-                    while (n is FuncTerm)
-                    {
-                        var nf = (FuncTerm)n;
-                        var fName = ((Cnst)GetArgByIndex((FuncTerm)GetArgByIndex(nf, 0), 0)).GetStringValue();
-                        var fType = GetPType(GetArgByIndex((FuncTerm)GetArgByIndex(nf, 0), 1));
-                        fieldTypes.Add(new Tuple<string, PType>(fName, fType));
-                        n = nf.Args.ElementAt(1);
-                    }
-
-                    var type = new PNamedTupleType(fieldTypes);
-                    return type;
-                }
-
-                if (fname == PData.Con_TypeSeq.Node.Name)
-                {
-                    var innerT = GetPType(GetArgByIndex((n as FuncTerm), 0));
-                    var type = new PSeqType(innerT);
-                    return type;
-                }
-
-                if (fname == PData.Con_TypeMap.Node.Name)
-                {
-                    FuncTerm ft = n as FuncTerm;
-                    var domain = GetPType(GetArgByIndex(ft, 0));
-                    var range = GetPType(GetArgByIndex(ft, 1));
-                    var type = new PMapType(domain, range);
-                    return type;
-                }
-
-                throw new NotImplementedException("Unknown complex type " + fname);
-            }
         }
 
         Compiler compiler;
@@ -795,7 +714,7 @@ namespace Microsoft.Pc
 
             var locals = new List<AST<Node>>();
             {
-                var mainStmt = AddArgs(PData.App_New, Factory.Instance.MkCnst(mainMachineName), PData.Cnst_Nil);
+                var mainStmt = AddArgs(ZingData.App_New, Factory.Instance.MkCnst(mainMachineName), PData.Cnst_Nil);
                 var ctxt = new ZingEntryFun_FoldContext(null, TranslationContext.Function, null, this);
                 var mainConstructor = mainStmt.Compute<ZingTranslationInfo>(
                     x => ZingEntryFun_UnFold(ctxt, x),
@@ -820,7 +739,7 @@ namespace Microsoft.Pc
             AST<Node> calculateComplementBody = MkZingAssign(MkZingIdentifier("returnEventSet"), AddArgs(ZingData.App_New, ZingData.Cnst_SmEventSet, ZingData.Cnst_Nil));
             foreach (var eventName in allEvents.Keys)
             {
-                if (eventName == DefaultEvent || eventName == DeleteEvent)
+                if (eventName == DefaultEvent || eventName == HaltEvent)
                     continue;
                 var iteExpr = MkZingApply(ZingData.Cnst_In, MkZingEvent(eventName), MkZingIdentifier("eventSet"));
                 var assignStmt = MkZingAssign(MkZingIdentifier("returnEventSet"), MkZingApply(ZingData.Cnst_Add, MkZingIdentifier("returnEventSet"), MkZingEvent(eventName)));
@@ -839,7 +758,7 @@ namespace Microsoft.Pc
 
             // NULL Event
             payloadOfBody.Add(MkZingIfThen(MkZingEq(MkZingIdentifier("e"), MkZingIdentifier("null")),
-                MkZingReturn(pTypeToZingType(PType.Any))));
+                MkZingReturn(pTypeToZingType(PTypeNull))));
 
             foreach (var evt in allEvents.Keys.Where(x => x != NullEvent))
             {
@@ -995,14 +914,14 @@ namespace Microsoft.Pc
             elements.Add(GenerateMainClass());
         }
 
-        private AST<Node> MkZingNeq(ZingEntryFun_FoldContext ctxt, AST<Node> e1, PType t1, AST<Node> e2, PType t2)
+        private AST<Node> MkZingNeq(ZingEntryFun_FoldContext ctxt, AST<Node> e1, AST<Node> t1, AST<Node> e2, AST<Node> t2)
         {
             return MkZingApply(ZingData.Cnst_Not, MkZingEq(ctxt, e1, t1, e2, t2));
         }
 
-        private AST<Node> MkZingEq(ZingEntryFun_FoldContext ctxt, AST<Node> e1, PType t1, AST<Node> e2, PType t2)
+        private AST<Node> MkZingEq(ZingEntryFun_FoldContext ctxt, AST<Node> e1, AST<Node> t1, AST<Node> e2, AST<Node> t2)
         {
-            var tmpEqVar = ctxt.getTmpVar(PType.Bool, "eqVar");
+            var tmpEqVar = ctxt.getTmpVar(ZingData.Cnst_Bool, "eqVar");
             ctxt.addSideEffect(MkZingAssign(tmpEqVar, MkZingCall(PrtIsEqualValue, e1, e2)));
             return tmpEqVar;
         }
@@ -1025,11 +944,6 @@ namespace Microsoft.Pc
                 var subStmt = AddArgs(ZingData.App_Assign, actionSet, subExpr);
                 stmts.Add(subStmt);
             }
-        }
-
-        private AST<FuncTerm> MkZingVarDecl(string varName, PType varType, params AST<Node>[] attrs)
-        {
-            return MkZingVarDecl(varName, PrtValue, attrs);
         }
 
         private AST<Node> GenerateCalculateDeferredAndActionSetMethodDecl(FuncTerm stateDecl)
@@ -1291,8 +1205,8 @@ namespace Microsoft.Pc
                     MkZingAssign(stackStable, currentStable),
                     MkZingAssign(stackActionSet, currentActionSet),
                     MkZingAssign(stackDeferredSet, MkZingCall(MkZingDot("Main", "CalculateComplementOfEventSet"), currentActionSet)),
-                    MkZingAssignOrCast(currentEvent, PType.Event, MkZingIdentifier("null"), PType.Nil),
-                    MkZingAssignOrCast(currentArg, PType.Any, MkZingIdentifier("null"), PType.Nil),
+                    MkZingAssign(currentEvent, MkZingIdentifier("null")),
+                    MkZingAssign(currentArg, MkZingIdentifier("null")),
                     MkZingAssign(MkZingIdentifier("localActions"), MkZingCall(MkZingDot("LocalActions", "Construct"), MkZingIdentifier("localActions"))),
                     MkZingCallStmt(MkZingCall(MkZingIdentifier("runHelper"), MkZingDot("cont", "state"))),
                     MkZingAssign(MkZingIdentifier("localActions"), MkZingDot("localActions", "next")),
@@ -1652,7 +1566,7 @@ namespace Microsoft.Pc
             public AST<Node> emitLabelPrelude()
             {
                 var prelude = new List<AST<Node>>();
-                var tmpVar = getTmpVar(PType.Int, "retTo");
+                var tmpVar = getTmpVar(ZingData.Cnst_Int, "retTo");
 
                 prelude.Add(PToZing.MkZingAssign(tmpVar, PToZing.MkZingCall(MkZingDot("entryCtxt", "PopReturnTo"))));
                 prelude.Add(PToZing.MkZingIfThen(PToZing.MkZingEq(tmpVar, Factory.Instance.MkCnst(0)),
@@ -1689,11 +1603,7 @@ namespace Microsoft.Pc
                 return this.sideEffectsStack.Pop();
             }
 
-            public AST<Node> getTmpVar(PType t, string baseName)
-            {
-                return getTmpVar(PrtValue, baseName);
-            }
-
+            // type must be Zing type
             public AST<Node> getTmpVar(AST<Node> type, string baseName)
             {
                 var tmpVarName = pToZing.getUnique(baseName);
@@ -1772,14 +1682,10 @@ namespace Microsoft.Pc
             {
                 do
                 {
-                    yield return AddArgs(App_LabeledExpr, Factory.Instance.ToAST(GetArgByIndex(ft, 0)), Factory.Instance.ToAST(GetArgByIndex(ft, 1))).Node;
+                    yield return GetArgByIndex(ft, 1);
                     ft = GetArgByIndex(ft, 2) as FuncTerm;
                 }
                 while (ft != null);
-            }
-            else if (funName == Con_LabeledExpr)
-            {
-                yield return GetArgByIndex(ft, 1);
             }
             else if (funName == PData.Con_Tuple.Node.Name)
             {
@@ -1802,9 +1708,9 @@ namespace Microsoft.Pc
                     yield return a;
                 }
             }
-            else if (funName == PData.Con_Apply.Node.Name || funName == PData.Con_Call.Node.Name)
+            else if (funName == PData.Con_NulApp.Node.Name || funName == PData.Con_UnApp.Node.Name || funName == PData.Con_BinApp.Node.Name || funName == PData.Con_FunApp.Node.Name)
             {
-                if (funName == PData.Con_Call.Node.Name)
+                if (funName == PData.Con_FunApp.Node.Name)
                     ctxt.pushSideEffectStack();
 
                 bool first = true;
@@ -1912,1279 +1818,825 @@ namespace Microsoft.Pc
                 return exp;
         }
 
-        private AST<Node> MkZingAssignOrCast(AST<Node> lhs, PType lhsType, AST<Node> rhs, PType rhsType)
+        private AST<Node> MkZingAssignOrCast(AST<Node> lhs, AST<Node> rhs)
         {
             return AddArgs(ZingData.App_Assign, lhs, MkZingCall(PrtCloneValue, rhs));
         }
 
         private ZingTranslationInfo ZingEntryFun_Fold(ZingEntryFun_FoldContext ctxt, Node n, IEnumerable<ZingTranslationInfo> children)
         {
-            if (n.NodeKind != NodeKind.FuncTerm)
-            {
-                if (n.NodeKind == NodeKind.Cnst)
-                {
-                    Cnst cnst = (Cnst)n;
-                    if (cnst.CnstKind == CnstKind.String)
-                        return new ZingTranslationInfo(Factory.Instance.ToAST(n), new PNilType());
-                    else
-                        return new ZingTranslationInfo(Factory.Instance.ToAST(n), new PIntType());
-                }
-                else if (n.NodeKind == NodeKind.Id)
-                {
-                    var id = (Id)n;
-                    if (id.Name == PData.Cnst_This.Node.Name)
-                    {
-                        MachineInfo machineInfo = allMachines[ctxt.machineName];
-                        if (machineInfo.IsSpec)
-                        {
-                            Debug.Assert(false, string.Format("THIS disallowed in spec machine."));
-                            return null;
-                        }
-                        else
-                        {
-                            return new ZingTranslationInfo(MkZingIdentifier("myHandle"), machineInfo.IsModel ? (PType)new PMidType() : (PType)new PIdType());
-                        }
-                    }
-                    else if (id.Name == PData.Cnst_Trigger.Node.Name)
-                    {
-                        if (ctxt.translationContext == TranslationContext.Function)
-                        {
-                            Debug.Assert(false, string.Format("TRIGGER disallowed in body of function {0}.", ctxt.entityName));
-                            return null;
-                        }
-                        return new ZingTranslationInfo(MkZingDot("myHandle", "currentEvent"), new PEventType());
-                    }
-                    else if (id.Name == PData.Cnst_Pop.Node.Name)
-                    {
-                        if (allMachines[ctxt.machineName].IsSpec)
-                        {
-                            Debug.Assert(false, string.Format("A spec machine cannot make a pop statement."));
-                            return null;
-                        }
-                        if (ctxt.translationContext == TranslationContext.Exit)
-                        {
-                            Debug.Assert(false, string.Format("Pop statement not allowed in exit function."));
-                            return null;
-                        }
-                        ctxt.addSideEffect(MkZingAssignOrCast(MkZingDot("myHandle", "currentEvent"), PType.Event, MkZingIdentifier("null"), PType.Nil));
-                        ctxt.addSideEffect(MkZingAssignOrCast(MkZingDot("myHandle", "currentArg"), PType.Any, MkZingIdentifier("null"), PType.Nil));
-                        ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Pop"))));
-                        ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
-                        return new ZingTranslationInfo(ZingData.Cnst_Nil, new PNilType());
-                    }
-                    else if (id.Name == PData.Cnst_Nil.Node.Name)
-                    {
-                        return new ZingTranslationInfo(ZingData.Cnst_Nil, new PNilType());
-                    }
-                    else if (id.Name == PData.Cnst_True.Node.Name)
-                    {
-                        return new ZingTranslationInfo(ZingData.Cnst_True, new PBoolType());
-                    }
-                    else if (id.Name == PData.Cnst_False.Node.Name)
-                    {
-                        return new ZingTranslationInfo(ZingData.Cnst_False, new PBoolType());
-                    }
-                    else if (id.Name == PData.Cnst_Nondet.Node.Name || id.Name == PData.Cnst_FairNondet.Node.Name)
-                    {
-                        if (allMachines[ctxt.machineName].IsSpec)
-                        {
-                            Debug.Assert(false, string.Format("A spec machine cannot use nondeterministic choice."));
-                            return null;
-                        }
-                        if (!allMachines[ctxt.machineName].IsReal ||
-                            (ctxt.translationContext == TranslationContext.Function && allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].isModel))
-                        {
-                            var afterLabel = ctxt.getFreshLabel();
-                            var bvar = ctxt.getTmpVar(PType.Bool, "nondet");
-                            ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Nondet"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)))));
-                            ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
-                            ctxt.addSideEffect(MkZingLabeledStmt(afterLabel, MkZingAssign(bvar, MkZingDot("entryCtxt", "nondet"))));
-                            ctxt.addSideEffect(MkZingAssign(MkZingDot("entryCtxt", "nondet"), ZingData.Cnst_False));
-                            if (compiler.liveness && id.Name == PData.Cnst_FairNondet.Node.Name)
-                            {
-                                int i;
-                                if (ctxt.translationContext == TranslationContext.Action)
-                                {
-                                    i = allMachines[ctxt.machineName].actionFunNameToActionFun[ctxt.entityName].numFairChoices++;
-                                }
-                                else if (ctxt.translationContext == TranslationContext.Entry)
-                                {
-                                    i = allMachines[ctxt.machineName].stateNameToStateInfo[ctxt.entityName].numFairChoicesInEntry++;
-                                }
-                                else if (ctxt.translationContext == TranslationContext.Exit)
-                                {
-                                    i = allMachines[ctxt.machineName].stateNameToStateInfo[ctxt.entityName].numFairChoicesInExit++;
-                                }
-                                else
-                                {
-                                    i = allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].numFairChoices++;
-                                }
-                                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(GetFairChoice(ctxt.translationContext, ctxt.entityName, i), "AtChoose"), bvar)));
-                            }
-                            return new ZingTranslationInfo(bvar, new PBoolType());
-                        }
-                        else
-                        {
-                            Debug.Assert(false, string.Format("Nondeterministic choice allowed only in model machines or model functions.", ctxt.entityName));
-                            return null;
-                        }
-                    }
-                    else if (id.Name == PData.Cnst_Bool.Node.Name)
-                    {
-                        return new ZingTranslationInfo(PData.Cnst_Bool, new PNilType());
-                    }
-                    else if (id.Name == PData.Cnst_Int.Node.Name)
-                    {
-                        return new ZingTranslationInfo(PData.Cnst_Int, new PNilType());
-                    }
-                    else if (id.Name == PData.Cnst_Id.Node.Name)
-                    {
-                        return new ZingTranslationInfo(PData.Cnst_Id, new PNilType());
-                    }
-                    else if (id.Name == PData.Cnst_Event.Node.Name)
-                    {
-                        return new ZingTranslationInfo(PData.Cnst_Event, new PNilType());
-                    }
-                    else if (id.Name == PData.Cnst_Null.Node.Name)
-                    {
-                        return new ZingTranslationInfo(MkZingIdentifier("null"), new PNilType());
-                    }
-                    else if (id.Name == PData.Cnst_Default.Node.Name)
-                    {
-                        return new ZingTranslationInfo(MkZingEvent(DefaultEvent), new PEventType());
-                    }
-                    else if (id.Name == PData.Cnst_Delete.Node.Name)
-                    {
-                        return new ZingTranslationInfo(MkZingEvent(DeleteEvent), new PEventType());
-                    }
-                    else
-                    {
-                        // comes here if id.Name == VAR
-                        return null;
-                    }
-                }
-                else
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
             var ft = (FuncTerm)n;
             var funName = ((Id)ft.Function).Name;
 
-            if (funName == PData.Con_Assert.Node.Name)
+            if (funName == PData.Con_Name.Node.Name)
             {
-                using (var it = children.GetEnumerator())
-                {
-                    it.MoveNext();
-                    if (it.Current == null)
-                        return null;
-                    if (it.Current.type != PType.Bool)
-                    {
-                        Debug.Assert(false, string.Format("Assert expression must be of Boolean type."));
-                        return null;
-                    }
-
-                    return new ZingTranslationInfo(AddArgs(ZingData.App_Assert, it.Current.node), new PNilType());
-                }
-            }
-            else if (funName == PData.Con_DataOp.Node.Name)
-            {
-                var op = ((Id)GetArgByIndex(ft, 0)).Name;
-                using (var it = children.GetEnumerator())
-                {
-                    it.MoveNext();
-                    if (it.Current == null)
-                        return null;
-                    var mutatedVar = it.Current.node;
-                    var mutatedVarT = it.Current.type;
-
-                    if (op == PData.Cnst_Insert.Node.Name || op == PData.Cnst_Remove.Node.Name || op == PData.Cnst_Update.Node.Name)
-                    {
-                        // expected case, so do nothing
-                    }
-                    else
-                    {
-                        Debug.Assert(false, string.Format("Unknown operation {0}.", op));
-                        return null;
-                    }
-                    if (mutatedVarT is PSeqType || (mutatedVarT is PMapType && op != PData.Cnst_Insert.Node.Name))
-                    {
-                        // expected case, so do nothing
-                    }
-                    else
-                    {
-                        Debug.Assert(false, string.Format("Cannot perform {0} on variable of type {1}.", op, mutatedVarT));
-                        return null;
-                    }
-
-                    PSeqType mutatedVarTAsSeqType = mutatedVarT as PSeqType;
-                    PMapType mutatedVarTAsMapType = mutatedVarT as PMapType;
-
-                    it.MoveNext();
-                    if (it.Current == null)
-                        return null;
-                    var ind = it.Current.node;
-                    var indT = it.Current.type;
-
-                    if (mutatedVarT is PSeqType)
-                    {
-                        if (!(indT is PIntType))
-                        {
-                            Debug.Assert(false, string.Format("Expected the index to be of type {0}, not {1}.", PType.Int, indT));
-                            return null;
-                        }
-                    }
-                    else
-                    {
-                        if (!indT.isSubtypeOf(mutatedVarTAsMapType.KeyT))
-                        {
-                            Debug.Assert(false, string.Format("Expected the index to be subtype of type {0}, not {1}.", mutatedVarTAsMapType, indT));
-                            return null;
-                        }
-                    }
-
-                    if (op == PData.Cnst_Remove.Node.Name)
-                    {
-                        if (it.MoveNext())
-                        {
-                            Debug.Assert(false, string.Format("Unnecessary arguments to remove(.)."));
-                            return null;
-                        }
-
-                        if (mutatedVarTAsMapType == null)
-                        {
-                            return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Remove"), ind)), new PNilType());
-                        }
-                        else
-                        {
-                            var tmpKey = ctxt.getTmpVar(mutatedVarTAsMapType.KeyT, "tmpVal");
-                            ctxt.addSideEffect(MkZingAssignOrCast(tmpKey, mutatedVarTAsMapType.KeyT, ind, indT));
-                            return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Remove"), tmpKey)), new PNilType());
-                        }
-                    }
-
-                    it.MoveNext();
-                    if (it.Current == null)
-                        return null;
-                    var val = it.Current.node;
-                    var valT = it.Current.type;
-
-                    if (it.MoveNext())
-                    {
-                        Debug.Assert(false, string.Format("Unnecessary arguments to insert(.,.)."));
-                        return null;
-                    }
-
-                    var innerT = mutatedVarTAsMapType == null ? mutatedVarTAsSeqType.T : mutatedVarTAsMapType.ValT;
-                    if (!valT.isSubtypeOf(innerT))
-                    {
-                        if (mutatedVarTAsMapType == null)
-                        {
-                            Debug.Assert(false, string.Format("Cannot insert a value of type {0} into a sequence of type {1}.", valT, innerT));
-                        }
-                        else
-                        {
-                            Debug.Assert(false, string.Format("Cannot insert a value of type {0} into a map with value type {1}.", valT, innerT));
-                        }
-                        return null;
-                    }
-
-                    if (mutatedVarTAsMapType == null)
-                    {
-                        var tmpVal = ctxt.getTmpVar(innerT, "tmpVal");
-                        ctxt.addSideEffect(MkZingAssignOrCast(tmpVal, innerT, val, valT));
-                        if (op == PData.Cnst_Insert.Node.Name)
-                        {
-                            return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Insert"), ind, tmpVal)), new PNilType());
-                        }
-                        else
-                        {
-                            return new ZingTranslationInfo(MkZingAssign(MkZingIndex(MkZingDot(mutatedVar, "arr"), ind), tmpVal), new PNilType());
-                        }
-                    }
-                    else
-                    {
-                        Debug.Assert(op == PData.Cnst_Update.Node.Name);
-                        var tmpKey = ctxt.getTmpVar(mutatedVarTAsMapType.KeyT, "tmpVal");
-                        ctxt.addSideEffect(MkZingAssignOrCast(tmpKey, mutatedVarTAsMapType.KeyT, ind, indT));
-                        var tmpVal = ctxt.getTmpVar(innerT, "tmpVal");
-                        ctxt.addSideEffect(MkZingAssignOrCast(tmpVal, innerT, val, valT));
-                        return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot(mutatedVar, "Update"), tmpKey, tmpVal)), new PNilType());
-                    }
-                }
-            }
-            else if (funName == PData.Con_Return.Node.Name)
-            {
-                var returnType = allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].returnType;
-                using (var it = children.GetEnumerator())
-                {
-                    it.MoveNext();
-                    if (it.Current == null)
-                        return null;
-
-                    if (it.Current.type.isSubtypeOf(returnType))
-                    {
-                        ctxt.addSideEffect(MkZingAssignOrCast(MkZingDot("myHandle", "currentEvent"), PType.Event, MkZingIdentifier("null"), PType.Nil));
-                        if (returnType is PNilType)
-                        {
-                            ctxt.addSideEffect(MkZingAssignOrCast(MkZingDot("myHandle", "currentArg"), PType.Any, MkZingIdentifier("null"), PType.Nil));
-                        }
-                        else
-                        {
-                            ctxt.addSideEffect(MkZingAssignOrCast(MkZingDot("myHandle", "currentArg"), PType.Any, it.Current.node, it.Current.type));
-                        }
-                        ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Return"))));
-                        ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
-                        return new ZingTranslationInfo(ZingData.Cnst_Nil, new PNilType());
-                    }
-                    else
-                    {
-                        Debug.Assert(false, string.Format("Type mismatch in return expression of function {0}. Expected {1}, got {2}", ctxt.entityName, returnType, it.Current.type));
-                        return null;
-                    }
-                }
-            }
-            else if (funName == PData.Con_Push.Node.Name)
-            {
-                if (allMachines[ctxt.machineName].IsSpec)
-                {
-                    Debug.Assert(false, string.Format("A spec machine cannot make a call statement."));
-                    return null;
-                }
-                if (ctxt.translationContext == TranslationContext.Function)
-                {
-                    Debug.Assert(false, string.Format("Call statement not allowed in function."));
-                    return null;
-                }
-
-                using (var it = children.GetEnumerator())
-                {
-                    it.MoveNext();
-                    if (it.Current == null || it.Current.type != PType.State)
-                        return null;
-
-                    var stateName = it.Current.stateName;
-
-                    var afterLabel = ctxt.getFreshLabel();
-                    var res = MkZingSeq(
-                        MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Call"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)), it.Current.node)),
-                        MkZingReturn(MkZingIdentifier("entryCtxt")),
-                        MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil));
-                    return new ZingTranslationInfo(res, new PNilType());
-                }
-            }
-            else if (funName == PData.Con_Ecall.Node.Name)
-            {
-                using (var it = children.GetEnumerator())
-                {
-                    it.MoveNext();
-                    if (it.Current == null)
-                        return null;
-                    
-                    //Implement Scheduler seal operation
-                    var arglist = (it.Current.node.Node as FuncTerm).Args;
-                    var listnodes = new List<AST<Node>>();
-                    foreach(var command in arglist)
-                    {
-                        var c = (command as Cnst).GetStringValue() ;
-                        if(c == "seal" || c == "unseal" || c == "rtc" || c=="rr")
-                        {
-                            listnodes.Add(Factory.Instance.MkCnst("\"" + c + "\""));
-                        }
-                        else
-                        {
-                            Debug.Assert(false, string.Format("only __seal() __unseal() are allowed scheduler operations"));
-                            return null;
-                        }
-                    }
-                    
-                    it.MoveNext();
-                        
-                    var res = MkZingSeq(
-                        MkZingCallStmt(MkZingCall(MkZingIdentifier("invokescheduler"), listnodes)));
-                    return new ZingTranslationInfo(res, new PNilType());
-                }
-            }
-            else if (funName == PData.Con_Strings.Node.Name)
-            {
-                List<AST<Node>> ll = new List<AST<Node>>();
-                using (var it = children.GetEnumerator())
-                {
-                    while (it.MoveNext())
-                    {
-                        ll.Add(it.Current.node);
-                    }
-                    return new ZingTranslationInfo(MkZingStrings(ll), new PNilType());
-                }
-            }
-            else if (funName == PData.Con_Seq.Node.Name)
-            {
-                using (var it = children.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var first = it.Current;
-                    it.MoveNext();
-                    var second = it.Current;
-                    if (first == null || second == null)
-                    {
-                        return null;
-                    }
-                    else
-                    {
-                        return new ZingTranslationInfo(MkZingSeq(zingWrapExprToStmts(first.node), ctxt.emitZingSideEffects(zingWrapExprToStmts(second.node))), new PNilType());
-                    }
-                }
-            }
-            else if (funName == PData.Con_Assign.Node.Name)
-            {
-                using (var it = children.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var lhs = it.Current;
-                    it.MoveNext();
-                    var rhs = it.Current;
-                    if (lhs == null || rhs == null)
-                    {
-                        return null;
-                    }
-                    else
-                    {
-                        // type(lhs) == type(rhs)
-                        if (!rhs.type.isSubtypeOf(lhs.type))
-                        {
-                            Debug.Assert(false,
-                                string.Format("Type of left-hand side ({0}) does not match type of right-hand side ({1}) in assignment.", lhs.type, rhs.type));
-                            return null;
-                        }
-                        if (lhs.isMapIndex)
-                        {
-                            Debug.Assert(false, string.Format("Cannot assign to map via an index."));
-                            return null;
-                        }
-
-                        if (rhs.isKeys)
-                        {
-                            return new ZingTranslationInfo(MkZingAssignOrCast(lhs.node, lhs.type, MkZingCall(MkZingDot(rhs.node, "ToSeq")), rhs.type), new PNilType());
-                        }
-                        else
-                        {
-                            return new ZingTranslationInfo(MkZingAssignOrCast(lhs.node, lhs.type, rhs.node, rhs.type), new PNilType());
-                        }
-                    }
-                }
-            }
-            else if (funName == PData.Con_ITE.Node.Name)
-            {
-                using (var it = children.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var condExpr = it.Current;
-                    it.MoveNext();
-                    var thenStmt = it.Current;
-                    it.MoveNext();
-                    var elseStmt = it.Current;
-
-                    if (condExpr == null || thenStmt == null || elseStmt == null)
-                    {
-                        return null;
-                    }
-                    if (condExpr.type != PType.Bool)
-                    {
-                        Debug.Assert(false, string.Format("Conditional expression must be Boolean."));
-                        return null;
-                    }
-
-                    // Order in which we emit side effets (else,then) is the reverse of the order in which the side effect stacks were pushed(then, else).
-                    var ifName = getUnique(ctxt.entityName + "_if");
-                    var elseLabel = ifName + "_else";
-                    var afterLabel = ifName + "_end";
-                    var cookedElse = MkZingLabeledStmt(elseLabel, ctxt.emitZingSideEffects(zingWrapExprToStmts(elseStmt.node)));
-                    var cookedThen = ctxt.emitZingSideEffects(zingWrapExprToStmts(thenStmt.node));
-                    var res = MkZingSeq(MkZingIfThen(MkZingApply(ZingData.Cnst_Not, condExpr.node), AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(elseLabel))),
-                        cookedThen,
-                        AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(afterLabel)),
-                        cookedElse,
-                        MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil));
-
-                    return new ZingTranslationInfo(res, new PNilType());
-                }
-            }
-            else if (funName == PData.Con_Payload.Node.Name)
-            {
-                if (ctxt.translationContext == TranslationContext.Function)
-                {
-                    Debug.Assert(false, string.Format("ARG disallowed in body of function {0}.", ctxt.entityName));
-                    return null;
-                }
-                using (var it = children.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var typeArg = ft.Args.ElementAt(0);
-
-                    var curPayload = MkZingDot("myHandle", "currentArg");
-                    var curTrigger = MkZingDot("myHandle", "currentEvent");
-
-                    IEnumerable<PType> possiblePayloads;
-
-                    if (ctxt.translationContext == TranslationContext.Action)
-                    {
-                        possiblePayloads = allMachines[ctxt.machineName].actionFunNameToActionFun[ctxt.entityName].argTypes;
-                    }
-                    else if (ctxt.translationContext == TranslationContext.Entry)
-                    {
-                        if (GetName(allMachines[ctxt.machineName].initStateDecl, 0) == ctxt.entityName)
-                            possiblePayloads = Enumerable.Repeat<PType>(PType.Any, 1);
-                        else
-                            possiblePayloads = allMachines[ctxt.machineName].stateNameToStateInfo[ctxt.entityName].argTypes;
-                    }
-                    else
-                    {
-                        Debug.Assert(ctxt.translationContext == TranslationContext.Exit);
-                        possiblePayloads = Enumerable.Repeat<PType>(PType.Any, 1);
-                    }
-
-                    PType castType = (typeArg is Id && ((Id)typeArg).Name == PData.Cnst_Nil.Node.Name) ?
-                        PType.computeLUB(possiblePayloads) : GetPType(typeArg);
-
-                    // Statically check that our cast can be a relative of at least one of the possible payloads.
-                    if (!possiblePayloads.Any(t => t.relative(castType)))
-                    {
-                        Debug.Assert(false, string.Format("Cannot cast to {0} from any of the possible payload types in {1}: {2}", castType, ctxt.prettyName(),
-                            possiblePayloads.Aggregate("", (str, t) => str + ", " + t)));
-                        return null;
-                    }
-
-                    // Emit a check that the payload is castable to the expected event payload (a.k.a it matches the event)
-                    var tmpEvPayload = ctxt.getTmpVar(Factory.Instance.MkCnst("Discriminator"), "tmpEvPayloadType");
-                    ctxt.addSideEffect(MkZingAssign(tmpEvPayload, MkZingCall(MkZingDot("Main", "PayloadOf"), curTrigger)));
-                    var tmpEq = ctxt.getTmpVar(PType.Bool, "tmpEq");
-                    ctxt.addSideEffect(MkZingAssignOrCast(tmpEq, PType.Bool, MkZingCall(MkZingDot(curPayload, "CanCastTo"), tmpEvPayload), PType.Bool));
-                    ctxt.addSideEffect(MkZingAssert(tmpEq));
-                    AST<Node> outNode;
-
-                    if (!(castType is PAnyType))
-                    {
-                        outNode = ctxt.getTmpVar(castType, "tmpPayloadCast");
-                        ctxt.addSideEffect(MkZingAssign(outNode, MkZingCall(PrtCastValue, MkZingDot("myHandle", "currentArg"), pTypeToZingType(castType))));
-                    }
-                    else
-                    {
-                        outNode = MkZingDot("myHandle", "currentArg");
-                    }
-
-                    return new ZingTranslationInfo(outNode, castType);
-                }
-            }
-            else if (funName == PData.Con_Name.Node.Name)
-            {
-                var kind = (Id)GetArgByIndex(ft, 1);
-                if (kind.Name == PData.Cnst_Var.Node.Name)
-                {
-                    var varName = GetName(ft, 0);
-                    VariableInfo varInfo;
-                    if (allMachines[ctxt.machineName].localVariableToVarInfo.ContainsKey(varName))
-                    {
-                        varInfo = allMachines[ctxt.machineName].localVariableToVarInfo[varName];
-                    }
-                    else if (ctxt.translationContext == TranslationContext.Function && allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].parameterNameToInfo.ContainsKey(varName))
-                    {
-                        varInfo = allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].parameterNameToInfo[varName];
-                    }
-                    else
-                    {
-                        Debug.Assert(false, string.Format("Use of undeclared variable {0}.", varName));
-                        return null;
-                    }
-
-                    return new ZingTranslationInfo(MkZingIdentifier(varName), varInfo.type);
-                }
-                else if (kind.Name == PData.Cnst_Event.Node.Name)
-                {
-                    var eventName = GetName(ft, 0);
-                    if (!allEvents.ContainsKey(eventName))
-                    {
-                        Debug.Assert(false, string.Format("Use of undeclared event {0}.", eventName));
-                        return null;
-                    }
-                    return new ZingTranslationInfo(MkZingEvent(eventName), new PEventType());
-                }
-                else if (kind.Name == PData.Cnst_State.Node.Name)
-                {
-                    var stateName = GetName(ft, 0);
-                    if (!allMachines[ctxt.machineName].stateNameToStateInfo.ContainsKey(stateName))
-                    {
-                        Debug.Assert(false, string.Format("Use of undeclared state {0}.", stateName));
-                        return null;
-                    }
-                    return new ZingTranslationInfo(MkZingDot("State", string.Format("_{0}", stateName)), new PStateType(), stateName);
-                }
-                else if (kind.Name == PData.Cnst_Field.Node.Name)
-                {
-                    var field = GetName(ft, 0);
-                    // Fields by themselves really don't have a type
-                    return new ZingTranslationInfo(Factory.Instance.MkCnst(field), new PNilType());
-                }
-                else
-                {
-                    throw new NotImplementedException();
-                }
-            }
-            else if (funName == PData.Con_Tuple.Node.Name)
-            {
-                if (ctxt.machineName == null) // We are in the main context. Shouldn't have tuples here!
-                {
-                    Debug.Assert(false, string.Format("Unexpected tuple in MainDecl statement!"));
-                    return null;
-                }
-
-                if (children.Any(child => child == null))
-                    return null;
-
-                var tupType = new PTupleType(children.Select(child => child.type));
-
-                var node = MkZingCall(MkZingDot(PrtValue, "Build"), children.Select(child => child.node));
-                var tmpVar = ctxt.getTmpVar(tupType, "tmpTuple");
-                ctxt.addSideEffect(MkZingAssign(tmpVar, node));
-
-                return new ZingTranslationInfo(tmpVar, tupType);
-            }
-            else if (funName == PData.Con_NamedTuple.Node.Name)
-            {
-                if (ctxt.machineName == null) // We are in the main context. Shouldn't have tuples here!
-                {
-                    Debug.Assert(false, string.Format("Unexpected named tuple in MainDecl statement!"));
-                    return null;
-                }
-
-                if (children.Any(child => child == null))
-                    return null;
-
-                var type = new PNamedTupleType(children.Select(child => new Tuple<string, PType>(
-                    ((Cnst)GetArgByIndex((FuncTerm)child.node.Node, 0)).GetStringValue(), child.type)));
-
-                var buildArgs = ConstructList(ZingData.App_Args,
-                    children.OrderBy(child => ((Cnst)GetArgByIndex((FuncTerm)child.node.Node, 0)).GetStringValue()).Select(
-                        child => Factory.Instance.ToAST(GetArgByIndex((FuncTerm)child.node.Node, 1))
-                    ));
-
-                var node = AddArgs(ZingData.App_Call, AddArgs(ZingData.App_Args, MkZingDot(PrtValue, "Build"), buildArgs));
-                var tmpVar = ctxt.getTmpVar(type, "tmpNamedTuple");
-                ctxt.addSideEffect(MkZingAssign(tmpVar, node));
-                return new ZingTranslationInfo(tmpVar, type);
-            }
-            else if (funName == PData.Con_Apply.Node.Name)
-            {
-                var pOp = (Id)GetArgByIndex(ft, 0);
-                int arity;
-                var zingOp = PData.POpToZingOp(pOp, out arity);
-                using (var it = children.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var arg1 = it.Current;
-                    if (arg1 == null)
-                        return null;
-                    if (arity == 1)
-                    {
-                        if (pOp.Name == PData.Cnst_Not.Node.Name && arg1.type == PType.Bool)
-                        {   // TODO: In some places we return, in others we use outTerm. I think this is legacy could. Should refactor to always return
-                            return new ZingTranslationInfo(MkZingApply(zingOp, arg1.node), new PBoolType());
-                        }
-                        else if (pOp.Name == PData.Cnst_Neg.Node.Name && arg1.type == PType.Int)
-                        {
-                            return new ZingTranslationInfo(MkZingApply(zingOp, arg1.node), new PIntType());
-                        }
-                        else if (pOp.Name == PData.Cnst_Sizeof.Node.Name)
-                        {
-                            if (!(arg1.type is PSeqType || arg1.type is PMapType))
-                            {
-                                Debug.Assert(false, string.Format("sizeof() expects a sequence or map."));
-                                return null;
-                            }
-                            return new ZingTranslationInfo(MkZingDot(arg1.node, "size"), new PIntType());
-                        }
-                        else if (pOp.Name == PData.Cnst_Keys.Node.Name)
-                        {
-                            if (!(arg1.type is PMapType))
-                            {
-                                Debug.Assert(false, string.Format("keys() expects a map."));
-                                return null;
-                            }
-                            return new ZingTranslationInfo(arg1.node, new PSeqType((arg1.type as PMapType).KeyT), false, true);
-                        }
-                        else
-                        {
-                            Debug.Assert(false, string.Format("Mismatched types in expression."));
-                            return null;
-                        }
-                    }
-                    else if (arity == 2)
-                    {
-                        it.MoveNext();
-                        var arg2 = it.Current;
-                        if (arg2 == null)
-                            return null;
-                        if (pOp.Name == PData.Cnst_In.Node.Name)
-                        {
-                            PMapType mapType = arg2.type as PMapType;
-                            if (mapType == null)
-                            {
-                                Debug.Assert(false, string.Format("Expected a map with the in operator"));
-                                return null;
-                            }
-                            PType keyType = arg1.type;
-                            if (!(keyType.isSubtypeOf(mapType.KeyT)))
-                            {
-                                Debug.Assert(false, string.Format("Expected a subtype of {0} for the key when applying in operator to a map of type {1}", keyType, mapType));
-                                return null;
-                            }
-                            var tmpVar = ctxt.getTmpVar(PType.Bool, "tmpVal");
-                            ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(arg2.node, "Contains"), arg1.node)));
-                            return new ZingTranslationInfo(tmpVar, PType.Bool);
-                        }
-                        else if (pOp.Name == PData.Cnst_Idx.Node.Name)
-                        {
-                            var indType = arg2.type;
-
-                            if (arg1.type is PTupleType)
-                            {
-                                var baseType = arg1.type as PTupleType;
-                                var indN = arg2.node.Node;
-
-                                if (indType != PType.Int)
-                                {
-                                    Debug.Assert(false, string.Format("Expected an int when indexing a tuple"));
-                                    return null;
-                                }
-
-                                if (!(indN is Cnst))
-                                {
-                                    Debug.Assert(false, string.Format("Can only index a tuple with a constant"));
-                                    return null;
-                                }
-
-                                var elInd = (int)((Cnst)indN).GetNumericValue().Numerator;
-
-                                if (elInd < 0 || elInd > baseType.elements.Count())
-                                {
-                                    Debug.Assert(false, string.Format("Invalid index {0} into tuple of length {1}", elInd, baseType.elements.Count()));
-                                    return null;
-                                }
-
-                                return new ZingTranslationInfo(MkZingDot(arg1.node, getTupleField(elInd)), baseType.elements.ElementAt(elInd));
-                            }
-                            else if (arg1.type is PSeqType)
-                            {
-                                var baseType = arg1.type as PSeqType;
-
-                                if (indType != PType.Int)
-                                {
-                                    Debug.Assert(false, string.Format("Expected an int when indexing a sequence"));
-                                    return null;
-                                }
-                                if (arg1.isKeys)
-                                {
-                                    var tmpVar = ctxt.getTmpVar(baseType.T, "tmpVal");
-                                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(arg1.node, "LookupKeyAtIndex"), arg2.node)));
-                                    return new ZingTranslationInfo(tmpVar, baseType.T);
-                                }
-                                else
-                                {
-                                    return new ZingTranslationInfo(MkZingIndex(MkZingDot(arg1.node, "arr"), arg2.node), baseType.T);
-                                }
-                            }
-                            else if (arg1.type is PMapType)
-                            {
-                                var baseType = arg1.type as PMapType;
-
-                                if (!indType.isSubtypeOf(baseType.KeyT))
-                                {
-                                    Debug.Assert(false, string.Format("Expected subtype of type {0} when indexing a map of type {1}", baseType.KeyT, baseType));
-                                    return null;
-                                }
-                                var tmpVar = ctxt.getTmpVar(baseType.ValT, "tmpVal");
-                                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(arg1.node, "Lookup"), arg2.node)));
-                                return new ZingTranslationInfo(tmpVar, baseType.ValT, true, false);
-                            }
-                            else
-                            {
-                                Debug.Assert(false, string.Format("Unexpected expression of type {0} on the left side of indexing", arg1.type));
-                                return null;
-                            }
-                        }
-                        else if (pOp.Name == PData.Cnst_Fld.Node.Name)
-                        {
-                            var baseType = arg1.type;
-                            var indType = arg2.type;
-                            var tupType = baseType as PNamedTupleType;
-
-                            if (tupType == null)
-                            {
-                                Debug.Assert(false, string.Format("Unexpected expression of type {0} on the left side of field lookup", baseType));
-                                return null;
-                            }
-
-                            // Verify that the second P Node is indeed a Use("f", FIELD) node
-                            var useNode = GetArgByIndex((FuncTerm)GetArgByIndex((FuncTerm)GetArgByIndex(ft, 1), 1), 0) as FuncTerm;
-                            if (useNode == null || ((Id)useNode.Function).Name != PData.Con_Name.Node.Name ||
-                                !(GetArgByIndex(useNode, 1) is Id) || ((Id)GetArgByIndex(useNode, 1)).Name != PData.Cnst_Field.Node.Name)
-                            {
-                                Debug.Assert(false, string.Format("Invalid Field expression in field lookup", baseType));
-                                return null;
-                            }
-
-                            var memberName = (arg2.node.Node as Cnst).GetStringValue();
-                            PType memberType = null;
-
-                            foreach (var el in tupType.elements)
-                            {
-                                if (el.Item1 == memberName)
-                                {
-                                    memberType = el.Item2;
-                                    break;
-                                }
-                            }
-
-                            if (memberType == null)
-                            {
-                                Debug.Assert(false, string.Format("Named Tuple {0} doesn't conatin a field {1}.", tupType, memberName));
-                                return null;
-                            }
-
-                            return new ZingTranslationInfo(MkZingDot(arg1.node, memberName), memberType);
-                        } 
-                        if (pOp.Name == PData.Cnst_Eq.Node.Name || pOp.Name == PData.Cnst_NEq.Node.Name)
-                        {
-                            if (!arg1.type.isSubtypeOf(arg2.type) && !arg2.type.isSubtypeOf(arg1.type))
-                            {
-                                Debug.Assert(false, string.Format("Cannot compare for equality items of types {0} and {1}", arg1.type, arg2.type));
-                                return null;
-                            }
-
-                            var outNode = pOp.Name == PData.Cnst_Eq.Node.Name ?
-                                MkZingEq(ctxt, arg1.node, arg1.type, arg2.node, arg2.type) :
-                                MkZingNeq(ctxt, arg1.node, arg1.type, arg2.node, arg2.type);
-                            return new ZingTranslationInfo(outNode, new PBoolType());
-                        }
-                        else if (arg1.type == arg2.type)
-                        {
-                            if (pOp.Name == PData.Cnst_And.Node.Name || pOp.Name == PData.Cnst_Or.Node.Name)
-                            {
-                                if (arg1.type == PType.Bool)
-                                {
-                                    return new ZingTranslationInfo(MkZingApply(zingOp, arg1.node, arg2.node), new PBoolType());
-                                }
-                                else
-                                {
-                                    Debug.Assert(false, string.Format("Mismatched types in expression."));
-                                    return null;
-                                }
-                            }
-                            else if (arg1.type == PType.Int)
-                            {
-                                if (pOp.Name == PData.Cnst_Add.Node.Name || pOp.Name == PData.Cnst_Sub.Node.Name || pOp.Name == PData.Cnst_Mul.Node.Name || pOp.Name == PData.Cnst_IntDiv.Node.Name)
-                                {
-                                    return new ZingTranslationInfo(MkZingApply(zingOp, arg1.node, arg2.node), new PIntType());
-                                }
-                                else
-                                {
-                                    return new ZingTranslationInfo(MkZingApply(zingOp, arg1.node, arg2.node), new PBoolType());
-                                }
-                            }
-                            else
-                            {
-                                Debug.Assert(false, string.Format("Mismatched types in expression."));
-                                return null;
-                            }
-                        }
-                        else
-                        {
-                            Debug.Assert(false, string.Format("Mismatched types in expression. Arguments have different types - {0} and {1}", arg1.type, arg2.type));
-                            return null;
-                        }
-                    }
-                    else
-                    {
-                        throw new NotImplementedException();
-                    }
-                }
-            }
-            else if (funName == Con_LabeledExpr)
-            {
-                using (var it = children.GetEnumerator())
-                {
-                    it.MoveNext();
-                    if (it.Current == null)
-                        return null;
-
-                    ZingTranslationInfo info = (ZingTranslationInfo)it.Current.Clone();
-                    info.node = AddArgs(App_LabeledExpr, Factory.Instance.ToAST(GetArgByIndex(ft, 0)), info.node);
-                    return info;
-                }
-            }
-            else if (funName == PData.Con_Mcall.Node.Name)
-            {
-                if (ctxt.machineName != null && allMachines[ctxt.machineName].IsSpec)
-                {
-                    Debug.Assert(false, string.Format("A spec machine cannot invoke other machines."));
-                    return null;
-                }
-                using (var it = children.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var typeName = ((Cnst)it.Current.node.Node).GetStringValue();
-                    if (!allMachines.ContainsKey(typeName))
-                    {
-                        Debug.Assert(false, string.Format("Machine type {0} has not been declared.", typeName));
-                        return null;
-                    }
-                    if (!allMachines[typeName].IsSpec)
-                    {
-                        Debug.Assert(false, string.Format("Only monitor machine can be invoked."));
-                        return null;
-                    }
-                    it.MoveNext();
-                    if (it.Current == null)
-                        return null;
-                    if (it.Current.type != PType.Event)
-                    {
-                        Debug.Assert(false, string.Format("First argument to a monitor invocation must have event type."));
-                        return null;
-                    }
-                    AST<Node> evt = it.Current.node;
-                    it.MoveNext();
-                    if (it.Current == null)
-                        return null;
-
-                    PType argType = it.Current.node != ZingData.Cnst_Nil ? it.Current.type : PType.Nil;
-                    AST<Node> arg = it.Current.node != ZingData.Cnst_Nil ? it.Current.node : MkZingIdentifier("null");
-                    var tmpVar = ctxt.getTmpVar(PType.Any, "tmpSendPayload");
-                    ctxt.addSideEffect(MkZingAssignOrCast(tmpVar, PType.Any, arg, argType));
-                    MachineInfo machineInfo = allMachines[typeName];
-                    return new ZingTranslationInfo(
-                        MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", typeName)), evt, tmpVar), new PNilType());
-                }
+                return FoldName(ft, children, ctxt);
             }
             else if (funName == PData.Con_New.Node.Name)
             {
-                if (ctxt.machineName != null && allMachines[ctxt.machineName].IsSpec)
-                {
-                    Debug.Assert(false, string.Format("A spec machine cannot create machines."));
-                    return null;
-                }
-                using (var it = children.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var typeName = ((Cnst)it.Current.node.Node).GetStringValue();
-                    if (!allMachines.ContainsKey(typeName))
-                    {
-                        Debug.Assert(false, string.Format("Machine type {0} has not been declared.", typeName));
-                        return null;
-                    }
-                    if (ctxt.machineName == null && allMachines[typeName].IsSpec)
-                    {
-                        Debug.Assert(false, string.Format("Main machine cannot be a monitor."));
-                        return null;
-                    }
-                    it.MoveNext();
-                    if (it.Current == null)
-                        return null;
-
-                    PType argType = it.Current.node != ZingData.Cnst_Nil ? it.Current.type : PType.Nil;
-                    AST<Node> arg = it.Current.node != ZingData.Cnst_Nil ? it.Current.node : MkZingIdentifier("null");
-                    var tmpVar = ctxt.getTmpVar(PType.Any, "tmpSendPayload");
-                    ctxt.addSideEffect(MkZingAssignOrCast(tmpVar, PType.Any, arg, argType));
-                   
-                    MachineInfo machineInfo = allMachines[typeName];
-                    if (machineInfo.IsSpec || ctxt.entityName == null)
-                    {
-                        ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar)));
-                        return new ZingTranslationInfo(ZingData.Cnst_Nil, new PNilType());
-                    }
-                    else
-                    {
-                        PType machineType = machineInfo.IsModel ? (PType)new PMidType() : (PType)new PIdType();
-                        var newMachine = ctxt.getTmpVar(machineType, "newMachine");
-                        ctxt.addSideEffect(MkZingAssign(newMachine, MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar)));
-                        string afterLabel = ctxt.getFreshLabel();
-                        ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewM"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)), newMachine)));
-                        ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
-                        ctxt.addSideEffect(MkZingLabeledStmt(afterLabel, MkZingAssign(newMachine, MkZingDot("entryCtxt", "id"))));
-                        ctxt.addSideEffect(MkZingAssign(MkZingDot("entryCtxt", "id"), MkZingIdentifier("null")));
-                        return new ZingTranslationInfo(newMachine, machineType);
-                    }
-                }
+                return FoldNew(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_FunApp.Node.Name)
+            {
+                return FoldFunApp(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_NulApp.Node.Name)
+            {
+                return FoldNulApp(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_UnApp.Node.Name)
+            {
+                return FoldUnApp(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_BinApp.Node.Name)
+            {
+                return FoldBinApp(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_Field.Node.Name)
+            {
+                return FoldField(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_Default.Node.Name)
+            {
+                return FoldDefault(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_Cast.Node.Name)
+            {
+                return FoldCast(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_Tuple.Node.Name)
+            {
+                return FoldTuple(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_NamedTuple.Node.Name)
+            {
+                return FoldNamedTuple(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_Push.Node.Name)
+            {
+                return FoldPush(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_NewStmt.Node.Name)
+            {
+                return FoldNewStmt(ft, children, ctxt);
             }
             else if (funName == PData.Con_Raise.Node.Name)
             {
-                if (ctxt.translationContext != TranslationContext.Entry && ctxt.translationContext != TranslationContext.Action)
-                {
-                    Debug.Assert(false, string.Format("Raise statement allowed only in entry functions or actions.", ctxt.entityName));
-                    return null;
-                }
-                using (var it = children.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var eventExpr = it.Current;
-
-                    if (eventExpr == null)
-                    {
-                        return null;
-                    }
-
-                    PEventType evtType = it.Current.type as PEventType;
-
-                    if (evtType == null)
-                    {
-                        Debug.Assert(false, string.Format("The argument to raise must be an event."));
-                        return null;
-                    }
-
-                    it.MoveNext();
-
-                    var payloadExpr = it.Current;
-                    if (payloadExpr == null)
-                    {
-                        return null;
-                    }
-                    AST<Node> payload = payloadExpr.node != ZingData.Cnst_Nil ? payloadExpr.node : MkZingIdentifier("null");
-                    PType payloadType = payloadExpr.type;
-
-                    var assertStmt = MkZingSeq(Factory.Instance.AddArg(ZingData.App_Assert, MkZingApply(ZingData.Cnst_NEq, eventExpr.node, MkZingIdentifier("null"))),
-                                               Factory.Instance.AddArg(ZingData.App_Assert, MkZingApply(ZingData.Cnst_NEq, eventExpr.node, MkZingEvent("default"))));
-                    string traceString = string.Format("\"<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\"", ctxt.machineName);
-                    var traceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"), MkZingApply(ZingData.Cnst_Dot, eventExpr.node, Factory.Instance.MkCnst("name"))));
-                    var tmpArg = ctxt.getTmpVar(PType.Any, "arg");
-                    var tmpEv = ctxt.getTmpVar(PType.Event, "ev");
-                    var eventPayloadCasts = MkZingSeq(MkZingAssignOrCast(tmpEv, PType.Event, eventExpr.node, PType.Event),
-                                               MkZingAssignOrCast(tmpArg, PType.Any, payload, payloadType));
-                    // Emit a check that the payload can be casted to the expected Event Payload
-                    var tmpEvPayload = ctxt.getTmpVar(Factory.Instance.MkCnst("Discriminator"), "tmpEvPayloadType");
-                    var tmpEq = ctxt.getTmpVar(PType.Bool, "tmpEq");
-                    var payloadEventMatchAssert = MkZingSeq(
-                        MkZingAssign(tmpEvPayload, MkZingCall(MkZingDot("Main", "PayloadOf"), eventExpr.node)),
-                        MkZingAssignOrCast(tmpEq, PType.Bool, MkZingCall(MkZingDot(tmpArg, "CanCastTo"), tmpEvPayload), PType.Bool),
-                        MkZingAssert(tmpEq));
-                    var assignStmt = MkZingSeq(MkZingAssign(MkZingDot("myHandle", "currentEvent"), tmpEv), MkZingAssign(MkZingDot("myHandle", "currentArg"), tmpArg));
-                    var createRetCtxt = MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Raise")));
-
-                    var outNode = MkZingSeq(assertStmt, traceStmt, eventPayloadCasts, payloadEventMatchAssert, assignStmt, createRetCtxt,
-                        MkZingReturn(MkZingIdentifier("entryCtxt")));
-                    return new ZingTranslationInfo(outNode, new PNilType());
-                }
-            }
-            else if (funName == PData.Con_Call.Node.Name)
-            {
-                var calleeName = GetName(ft, 0);
-                if (!allMachines[ctxt.machineName].funNameToFunInfo.ContainsKey(calleeName))
-                {
-                    Debug.Assert(false, string.Format("Function {0} has not been declared.", calleeName));
-                    return null;
-                }
-                var calleeInfo = allMachines[ctxt.machineName].funNameToFunInfo[calleeName];
-                if (ctxt.translationContext == TranslationContext.Action)
-                {
-                    allMachines[ctxt.machineName].actionFunNameToActionFun[ctxt.entityName].callees.Add(calleeName);
-                }
-                else if (ctxt.translationContext == TranslationContext.Function)
-                {
-                    allMachines[ctxt.machineName].funNameToFunInfo[calleeName].callers.Add(ctxt.entityName);
-                }
-                else if (ctxt.translationContext == TranslationContext.Entry)
-                {
-                    allMachines[ctxt.machineName].stateNameToStateInfo[ctxt.entityName].entryFunCallees.Add(calleeName);
-                }
-                else
-                {
-                    allMachines[ctxt.machineName].stateNameToStateInfo[ctxt.entityName].exitFunCallees.Add(calleeName);
-                }
-
-                List<AST<Node>> args = new List<AST<Node>>();
-                // Prepend the default entryCtxt argument.
-                args.Add(MkZingIdentifier("entryCtxt"));
-
-                int count = 0;
-                foreach (var child in children)
-                {
-                    if (child == null)
-                    {
-                        return null;
-                    }
-                    if (count == calleeInfo.parameterNames.Count)
-                    {
-                        Debug.Assert(false, string.Format("Fewer parameters than arguments."));
-                        return null;
-                    }
-                    var lhsInfo = calleeInfo.parameterNameToInfo[calleeInfo.parameterNames[count]];
-                    var rhsInfo = child;
-                    if (!rhsInfo.type.isSubtypeOf(lhsInfo.type))
-                    {
-                        Debug.Assert(false, string.Format("Mismatch in type of argument {0}.", count));
-                        return null;
-                    }
-
-                    Debug.Assert(!(lhsInfo.type is PNilType)); // Can't declare formal parameters of type null.
-                    AST<Node> argActual;
-                    if (rhsInfo.type == lhsInfo.type)
-                    {
-                        if (rhsInfo.type is PPrimitiveType)
-                        {
-                            argActual = child.node;
-                        }
-                        else
-                        {
-                            var tmpVar = ctxt.getTmpVar(rhsInfo.type, "argCloneVar");
-                            ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(child.node, "Clone"))));
-                            argActual = tmpVar;
-                        }
-                    }
-                    else
-                    {
-                        var tmpVar = ctxt.getTmpVar(lhsInfo.type, "argCastVar");
-                        ctxt.addSideEffect(MkZingAssignOrCast(tmpVar, lhsInfo.type, child.node, rhsInfo.type));
-                        argActual = tmpVar;
-                    }
-                    count++;
-                    args.Add(argActual);
-                }
-                if (count < calleeInfo.parameterNames.Count)
-                {
-                    Debug.Assert(false, string.Format("Fewer arguments than parameters."));
-                    return null;
-                }
-
-                AST<Node> callExpr = MkZingCall(MkZingIdentifier(calleeName), args);
-                AST<Node> processOutput;
-                AST<Node> outExp;
-
-                var beforeLabel = ctxt.getFreshLabel();
-                if (calleeInfo.returnType is PNilType)
-                {
-                    processOutput = ZingData.Cnst_Nil;
-                    outExp = ZingData.Cnst_Nil;
-                }
-                else
-                {
-                    var retVar = ctxt.getTmpVar(calleeInfo.returnType, "ret");
-                    processOutput = MkZingAssignOrCast(retVar, calleeInfo.returnType, MkZingDot("myHandle", "currentArg"), PType.Any);
-                    outExp = retVar;
-                }
-
-                AST<Node> callStmt = MkZingSeq(
-                    MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(0))),
-                    MkZingLabeledStmt(beforeLabel, ctxt.emitZingSideEffects(MkZingAssign(MkZingIdentifier("entryCtxt"), callExpr))),
-                    MkZingIfThenElse(
-                                     MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "Return")),
-                                     processOutput,
-                                     MkZingSeq(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(ctxt.labelToId(beforeLabel)))),
-                                               MkZingReturn(MkZingIdentifier("entryCtxt")))));
-                ctxt.addSideEffect(callStmt);
-                return new ZingTranslationInfo(outExp, calleeInfo.returnType);
+                return FoldRaise(ft, children, ctxt);
             }
             else if (funName == PData.Con_Send.Node.Name)
             {
-                if (allMachines[ctxt.machineName].IsSpec)
-                {
-                    Debug.Assert(false, string.Format("A spec machine cannot send messages."));
-                    return null;
-                }
-                using (var it = children.GetEnumerator())
-                {
-                    it.MoveNext();
-                    if (it.Current == null)
-                    {
-                        return null;
-                    }
-                    if (!it.Current.type.IsMachineId)
-                    {
-                        Debug.Assert(false, string.Format("The target of a send must be of machine type."));
-                        return null;
-                    }
-                    var targetExpr = it.Current.node;
-                    it.MoveNext();
-                    if (it.Current == null)
-                    {
-                        return null;
-                    }
-                    if (it.Current.type != PType.Event)
-                    {
-                        Debug.Assert(false, string.Format("The argument to send must be an event."));
-                        return null;
-                    }
-                    var eventExpr = it.Current.node;
-                    var evtType = it.Current.type as PEventType;
-                    it.MoveNext();
-                    if (it.Current == null)
-                    {
-                        return null;
-                    }
-                    PType payloadType = it.Current.node != ZingData.Cnst_Nil ? it.Current.type : PType.Nil;
-                    AST<Node> payload = it.Current.node != ZingData.Cnst_Nil ? it.Current.node : MkZingIdentifier("null");
-
-                    // Emit a Cast/Clone from the actual payload to Any
-                    var tmpVar = ctxt.getTmpVar(PType.Any, "tmpSendPayload");
-                    ctxt.addSideEffect(MkZingAssignOrCast(tmpVar, PType.Any, payload, payloadType));
-                    // Emit a check that the payload can be casted to the expected Event Payload
-                    var tmpEvPayload = ctxt.getTmpVar(Factory.Instance.MkCnst("Discriminator"), "tmpEvPayloadType");
-                    ctxt.addSideEffect(MkZingAssign(tmpEvPayload, MkZingCall(MkZingDot("Main", "PayloadOf"), eventExpr)));
-                    var tmpEq = ctxt.getTmpVar(PType.Bool, "tmpEq");
-                    ctxt.addSideEffect(MkZingAssignOrCast(tmpEq, PType.Bool, MkZingCall(MkZingDot(tmpVar, "CanCastTo"), tmpEvPayload), PType.Bool));
-                    ctxt.addSideEffect(MkZingAssert(tmpEq));
-                    var afterLabel = ctxt.getFreshLabel();
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingApply(ZingData.Cnst_Dot, targetExpr, MkZingIdentifier("EnqueueEvent")), eventExpr, tmpVar, Factory.Instance.MkCnst("myHandle"))));
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Send"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)))));
-                    // Actual Send statement
-
-                    return new ZingTranslationInfo(MkZingSeq(MkZingReturn(MkZingIdentifier("entryCtxt")),
-                        MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil)), new PNilType());
-                }
+                return FoldSend(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_Monitor.Node.Name)
+            {
+                return FoldMonitor(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_FunStmt.Node.Name)
+            {
+                return FoldFunStmt(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_NulStmt.Node.Name)
+            {
+                return FoldNulStmt(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_UnStmt.Node.Name)
+            {
+                return FoldUnStmt(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_BinStmt.Node.Name)
+            {
+                return FoldBinStmt(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_Return.Node.Name)
+            {
+                return FoldReturn(ft, children, ctxt);
             }
             else if (funName == PData.Con_While.Node.Name)
             {
-                using (var it = children.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var condExpr = it.Current;
-                    it.MoveNext();
-
-                    if (condExpr == null || it.Current == null)
-                    {
-                        return null;
-                    }
-
-                    if (condExpr.node != null && condExpr.type != PType.Bool)
-                    {
-                        Debug.Assert(false, string.Format("Conditional expression must be Boolean not {0}", condExpr.type));
-                        return null;
-                    }
-
-                    var loopStart = getUnique(ctxt.entityName + "_loop_start");
-                    var loopEnd = getUnique(ctxt.entityName + "_loop_end");
-
-                    var body = it.Current.node;
-                    body = ctxt.emitZingSideEffects(zingWrapExprToStmts(body));
-
-                    var res = MkZingLabeledStmt(loopStart, MkZingSeq(
-                        ctxt.emitZingSideEffects(MkZingIfThen(MkZingApply(ZingData.Cnst_Not, condExpr.node), AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(loopEnd)))),
-                        body,
-                        AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(loopStart)),
-                        MkZingLabeledStmt(loopEnd, ZingData.Cnst_Nil)));
-
-                    return new ZingTranslationInfo(res, new PNilType());
-                }
+                return FoldWhile(ft, children, ctxt);
             }
-            else if (funName == PData.Con_TypeTuple.Node.Name || funName == PData.Con_TypeNamedTuple.Node.Name || funName == PData.Con_TypeSeq.Node.Name || funName == PData.Con_TypeMap.Node.Name)
+            else if (funName == PData.Con_ITE.Node.Name)
             {
-                return new ZingTranslationInfo(null, new PNilType()); // Ignore
+                return FoldITE(ft, children, ctxt);
             }
-            else if (funName == PData.Con_TypeField.Node.Name)
+            else if (funName == PData.Con_Seq.Node.Name)
             {
-                return new ZingTranslationInfo(null, new PNilType()); // Ignore
+                return FoldSeq(ft, children, ctxt);
             }
             else
             {
                 Console.WriteLine("Unknown term name: " + funName);
                 throw new NotImplementedException();
+            }
+        }
+
+        ZingTranslationInfo FoldName(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            var name = ((Cnst)GetArgByIndex(ft, 0)).GetStringValue();
+            if (ctxt.translationContext == TranslationContext.Function && 
+                allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].parameterNameToInfo.ContainsKey(name))
+            {
+                // TBD: The name should be qualified to prevent collision with machine variable names
+                return new ZingTranslationInfo(MkZingIdentifier(name)); 
+            }
+            else if (allMachines[ctxt.machineName].localVariableToVarInfo.ContainsKey(name))
+            {
+                return new ZingTranslationInfo(MkZingIdentifier(name));
+            }
+            else 
+            {
+                return new ZingTranslationInfo(MkZingEvent(name));
+            }
+        }
+
+        ZingTranslationInfo FoldNew(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            using (var it = children.GetEnumerator())
+            {
+                it.MoveNext();
+                var typeName = ((Cnst)it.Current.node.Node).GetStringValue();
+                it.MoveNext();
+                AST<Node> arg = it.Current.node != ZingData.Cnst_Nil ? it.Current.node : MkZingIdentifier("null");
+                var tmpVar = ctxt.getTmpVar(PrtValue, "tmpSendPayload");
+                ctxt.addSideEffect(MkZingAssignOrCast(tmpVar, arg));
+
+                MachineInfo machineInfo = allMachines[typeName];
+                if (machineInfo.IsSpec || ctxt.entityName == null)
+                {
+                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar)));
+                    return new ZingTranslationInfo(ZingData.Cnst_Nil);
+                }
+                else
+                {
+                    var newMachine = ctxt.getTmpVar(SmHandle, "newMachine");
+                    ctxt.addSideEffect(MkZingAssign(newMachine, MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar)));
+                    string afterLabel = ctxt.getFreshLabel();
+                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewM"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)), newMachine)));
+                    ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
+                    ctxt.addSideEffect(MkZingLabeledStmt(afterLabel, MkZingAssign(newMachine, MkZingDot("entryCtxt", "id"))));
+                    ctxt.addSideEffect(MkZingAssign(MkZingDot("entryCtxt", "id"), MkZingIdentifier("null")));
+                    return new ZingTranslationInfo(newMachine);
+                }
+            }
+        }
+
+        ZingTranslationInfo FoldFunApp(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            var calleeName = GetName(ft, 0);
+            var calleeInfo = allMachines[ctxt.machineName].funNameToFunInfo[calleeName];
+            if (ctxt.translationContext == TranslationContext.Action)
+            {
+                allMachines[ctxt.machineName].actionFunNameToActionFun[ctxt.entityName].callees.Add(calleeName);
+            }
+            else if (ctxt.translationContext == TranslationContext.Function)
+            {
+                allMachines[ctxt.machineName].funNameToFunInfo[calleeName].callers.Add(ctxt.entityName);
+            }
+            else if (ctxt.translationContext == TranslationContext.Entry)
+            {
+                allMachines[ctxt.machineName].stateNameToStateInfo[ctxt.entityName].entryFunCallees.Add(calleeName);
+            }
+            else
+            {
+                allMachines[ctxt.machineName].stateNameToStateInfo[ctxt.entityName].exitFunCallees.Add(calleeName);
+            }
+
+            List<AST<Node>> args = new List<AST<Node>>();
+            // Prepend the default entryCtxt argument.
+            args.Add(MkZingIdentifier("entryCtxt"));
+
+            int count = 0;
+            foreach (var child in children)
+            {
+                var lhsInfo = calleeInfo.parameterNameToInfo[calleeInfo.parameterNames[count]];
+                var rhsInfo = child;
+                var tmpVar = ctxt.getTmpVar(PrtValue, "argCloneVar");
+                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(child.node, "Clone"))));
+                count++;
+                args.Add(tmpVar);
+            }
+
+            AST<Node> callExpr = MkZingCall(MkZingIdentifier(calleeName), args);
+            AST<Node> processOutput;
+            AST<Node> outExp;
+
+            var beforeLabel = ctxt.getFreshLabel();
+            if (calleeInfo.returnType.Equals(PTypeNull))
+            {
+                processOutput = ZingData.Cnst_Nil;
+                outExp = ZingData.Cnst_Nil;
+            }
+            else
+            {
+                var retVar = ctxt.getTmpVar(PrtValue, "ret");
+                processOutput = MkZingAssignOrCast(retVar, MkZingDot("myHandle", "currentArg"));
+                outExp = retVar;
+            }
+
+            AST<Node> callStmt = MkZingSeq(
+                MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(0))),
+                MkZingLabeledStmt(beforeLabel, ctxt.emitZingSideEffects(MkZingAssign(MkZingIdentifier("entryCtxt"), callExpr))),
+                MkZingIfThenElse(
+                                 MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "Return")),
+                                 processOutput,
+                                 MkZingSeq(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(ctxt.labelToId(beforeLabel)))),
+                                           MkZingReturn(MkZingIdentifier("entryCtxt")))));
+            ctxt.addSideEffect(callStmt);
+            return new ZingTranslationInfo(outExp);
+        }
+
+        ZingTranslationInfo FoldNulApp(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            var n = GetArgByIndex(ft, 0);
+            if (n.NodeKind == NodeKind.Cnst)
+            {
+                return new ZingTranslationInfo(Factory.Instance.ToAST(n));
+            }
+
+            // n.NodeKind == NodeKind.Id
+            var id = (Id)n;
+            if (id.Name == PData.Cnst_True.Node.Name)
+            {
+                return new ZingTranslationInfo(ZingData.Cnst_True);
+            }
+            else if (id.Name == PData.Cnst_False.Node.Name)
+            {
+                return new ZingTranslationInfo(ZingData.Cnst_False);
+            }
+            else if (id.Name == PData.Cnst_This.Node.Name)
+            {
+                return new ZingTranslationInfo(MkZingIdentifier("myHandle"));
+            }
+            else if (id.Name == PData.Cnst_Trigger.Node.Name)
+            {
+                return new ZingTranslationInfo(MkZingDot("myHandle", "currentEvent"));
+            }
+            else if (id.Name == PData.Con_Payload.Node.Name)
+            {
+                return new ZingTranslationInfo(MkZingDot("myHandle", "currentArg"));
+            }
+            else if (id.Name == PData.Cnst_Nondet.Node.Name || id.Name == PData.Cnst_FairNondet.Node.Name)
+            {
+                var afterLabel = ctxt.getFreshLabel();
+                var bvar = ctxt.getTmpVar(ZingData.Cnst_Bool, "nondet");
+                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Nondet"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)))));
+                ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
+                ctxt.addSideEffect(MkZingLabeledStmt(afterLabel, MkZingAssign(bvar, MkZingDot("entryCtxt", "nondet"))));
+                ctxt.addSideEffect(MkZingAssign(MkZingDot("entryCtxt", "nondet"), ZingData.Cnst_False));
+                if (compiler.liveness && id.Name == PData.Cnst_FairNondet.Node.Name)
+                {
+                    int i;
+                    if (ctxt.translationContext == TranslationContext.Action)
+                    {
+                        i = allMachines[ctxt.machineName].actionFunNameToActionFun[ctxt.entityName].numFairChoices++;
+                    }
+                    else if (ctxt.translationContext == TranslationContext.Entry)
+                    {
+                        i = allMachines[ctxt.machineName].stateNameToStateInfo[ctxt.entityName].numFairChoicesInEntry++;
+                    }
+                    else if (ctxt.translationContext == TranslationContext.Exit)
+                    {
+                        i = allMachines[ctxt.machineName].stateNameToStateInfo[ctxt.entityName].numFairChoicesInExit++;
+                    }
+                    else
+                    {
+                        i = allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].numFairChoices++;
+                    }
+                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(GetFairChoice(ctxt.translationContext, ctxt.entityName, i), "AtChoose"), bvar)));
+                }
+                return new ZingTranslationInfo(bvar);
+            }
+            else if (id.Name == PData.Cnst_Null.Node.Name)
+            {
+                return new ZingTranslationInfo(MkZingIdentifier("null"));
+            }
+            else
+            {
+                // id.Name == PData.Cnst_Halt.Node.Name
+                return new ZingTranslationInfo(MkZingEvent(HaltEvent));
+            }
+        }
+
+        ZingTranslationInfo FoldUnApp(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            var op = ((Id)GetArgByIndex(ft, 0)).Name;
+            using (var it = children.GetEnumerator())
+            {
+                it.MoveNext();
+                it.MoveNext();
+                var arg = it.Current.node;
+                if (op == PData.Cnst_Not.Node.Name)
+                {
+                    return new ZingTranslationInfo(MkZingApply(ZingData.Cnst_Not, arg));
+                }
+                else if (op == PData.Cnst_Neg.Node.Name)
+                {
+                    return new ZingTranslationInfo(MkZingApply(ZingData.Cnst_Neg, arg));
+                }
+                else if (op == PData.Cnst_Keys.Node.Name)
+                {
+                    var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
+                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapGetKeys"), arg)));
+                    return new ZingTranslationInfo(tmpVar);
+                }
+                else if (op == PData.Cnst_Values.Node.Name)
+                {
+                    var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
+                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapGetValues"), arg)));
+                    return new ZingTranslationInfo(tmpVar);
+                }
+                else
+                {
+                    //  op == PData.Cnst_Sizeof.Node.Name
+                    var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
+                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapSizeOf"), arg)));
+                    return new ZingTranslationInfo(tmpVar);
+                }
+            }
+        }
+
+        ZingTranslationInfo FoldBinApp(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            var op = ((Id)GetArgByIndex(ft, 0)).Name;
+            using (var it = children.GetEnumerator())
+            {
+                it.MoveNext();
+                it.MoveNext();
+                var arg1 = it.Current.node;
+                it.MoveNext();
+                var arg2 = it.Current.node;
+
+                if (op == PData.Cnst_Add.Node.Name)
+                {
+                    return new ZingTranslationInfo(MkZingApply(ZingData.Cnst_Add, arg1, arg2));
+                }
+                else if (op == PData.Cnst_Sub.Node.Name)
+                {
+                    return new ZingTranslationInfo(MkZingApply(ZingData.Cnst_Sub, arg1, arg2));
+                }
+                else if (op == PData.Cnst_Mul.Node.Name)
+                {
+                    return new ZingTranslationInfo(MkZingApply(ZingData.Cnst_Mul, arg1, arg2));
+                }
+                else if (op == PData.Cnst_IntDiv.Node.Name)
+                {
+                    return new ZingTranslationInfo(MkZingApply(ZingData.Cnst_IntDiv, arg1, arg2));
+                }
+                else if (op == PData.Cnst_And.Node.Name)
+                {
+                    return new ZingTranslationInfo(MkZingApply(ZingData.Cnst_And, arg1, arg2));
+                }
+                else if (op == PData.Cnst_Or.Node.Name)
+                {
+                    return new ZingTranslationInfo(MkZingApply(ZingData.Cnst_Or, arg1, arg2));
+                }
+                else if (op == PData.Cnst_Eq.Node.Name)
+                {
+                    var tmpVar = ctxt.getTmpVar(ZingData.Cnst_Bool, "tmpVar");
+                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtIsEqualValue"), arg1, arg2)));
+                    return new ZingTranslationInfo(tmpVar);
+                }
+                else if (op == PData.Cnst_NEq.Node.Name)
+                {
+                    var tmpVar = ctxt.getTmpVar(ZingData.Cnst_Bool, "tmpVar");
+                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtIsEqualValue"), arg1, arg2)));
+                    return new ZingTranslationInfo(MkZingApply(ZingData.Cnst_Not, tmpVar));
+                }
+                else if (op == PData.Cnst_Lt.Node.Name)
+                {
+                    return new ZingTranslationInfo(MkZingApply(ZingData.Cnst_Lt, arg1, arg2));
+                }
+                else if (op == PData.Cnst_Le.Node.Name)
+                {
+                    return new ZingTranslationInfo(MkZingApply(ZingData.Cnst_Le, arg1, arg2));
+                }
+                else if (op == PData.Cnst_Gt.Node.Name)
+                {
+                    return new ZingTranslationInfo(MkZingApply(ZingData.Cnst_Gt, arg1, arg2));
+                }
+                else if (op == PData.Cnst_Ge.Node.Name)
+                {
+                    return new ZingTranslationInfo(MkZingApply(ZingData.Cnst_Ge, arg1, arg2));
+                }
+                else if (op == PData.Cnst_Idx.Node.Name)
+                {
+                    var type = LookupType(ctxt, arg1.Node);
+                    var typeOp = ((Id)GetArgByIndex(type.Node, 0)).Name;
+                    if (typeOp == PData.Con_TupType.Node.Name)
+                    {
+                        var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVal");
+                        ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtTupleGet"), arg1, arg2)));
+                        return new ZingTranslationInfo(tmpVar);
+                    }
+                    else if (typeOp == PData.Con_SeqType.Node.Name)
+                    {
+                        var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVal");
+                        ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtSeqGet"), arg1, arg2)));
+                        return new ZingTranslationInfo(tmpVar);
+                    }
+                    else 
+                    {
+                        // op == PData.Con_MapType.Node.Name
+                        var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVal");
+                        ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapGet"), arg1, arg2)));
+                        return new ZingTranslationInfo(tmpVar, true, false);
+                    }
+                }
+                else 
+                {
+                    // op == PData.Cnst_In.Node.Name
+                    var tmpVar = ctxt.getTmpVar(ZingData.Cnst_Bool, "tmpVal");
+                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapExists"), arg2, arg1)));
+                    return new ZingTranslationInfo(tmpVar);
+                }
+            }
+        }
+
+        ZingTranslationInfo FoldField(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            var expr = GetArgByIndex(ft, 0);
+            FuncTerm exprType = LookupType(ctxt, expr).Node;
+            var field = GetArgByIndex(ft, 1);
+            int i = 0;
+            while (exprType != null)
+            {
+                var fieldInfo = (FuncTerm)GetArgByIndex(exprType, 0);
+                if (field.Equals(GetArgByIndex(fieldInfo, 0)))
+                    break;
+                exprType = GetArgByIndex(exprType, 1) as FuncTerm;
+                i++;
+            }
+            using (var it = children.GetEnumerator())
+            {
+                it.MoveNext();
+                var arg = it.Current.node;
+                var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVal");
+                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtNamedTupleGet"), arg, Factory.Instance.MkCnst(i))));
+                return new ZingTranslationInfo(tmpVar);
+            }
+            return null;
+        }
+
+        ZingTranslationInfo FoldDefault(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            var typeArg = Factory.Instance.ToAST(GetArgByIndex(ft, 0));
+            var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
+            ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, pTypeToZingType(typeArg))));
+            return new ZingTranslationInfo(tmpVar);
+        }
+
+        ZingTranslationInfo FoldCast(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            var typeArg = Factory.Instance.ToAST(GetArgByIndex(ft, 1));
+            using (var it = children.GetEnumerator())
+            {
+                it.MoveNext();
+                var valueArg = it.Current.node;
+                var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
+                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtCastValue, valueArg, pTypeToZingType(typeArg))));
+                return new ZingTranslationInfo(tmpVar);
+            }
+        }
+
+        ZingTranslationInfo FoldTuple(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            var tupType = LookupType(ctxt, ft);
+            var tmpVar = ctxt.getTmpVar(PrtValue, "tmpTuple");
+            ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, pTypeToZingType(tupType))));
+            int i = 0;
+            foreach (var c in children)
+            {
+                ctxt.addSideEffect(MkZingCallStmt(MkZingDot(PRT_VALUE, "PrtTupleSet"), tmpVar, Factory.Instance.MkCnst(i), c.node));
+                i++;
+            }
+            return new ZingTranslationInfo(tmpVar);
+        }
+
+        ZingTranslationInfo FoldNamedTuple(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            var tupType = LookupType(ctxt, ft);
+            var tmpVar = ctxt.getTmpVar(PrtValue, "tmpTuple");
+            ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, pTypeToZingType(tupType))));
+            int i = 0;
+            foreach (var c in children)
+            {
+                ctxt.addSideEffect(MkZingCallStmt(MkZingDot(PRT_VALUE, "PrtNamedTupleSet"), tmpVar, Factory.Instance.MkCnst(i), c.node));
+                i++;
+            }
+            return new ZingTranslationInfo(tmpVar);
+        }
+
+        ZingTranslationInfo FoldPush(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            using (var it = children.GetEnumerator())
+            {
+                it.MoveNext();
+                var stateName = it.Current.stateName;
+                var afterLabel = ctxt.getFreshLabel();
+                var res = MkZingSeq(
+                    MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Call"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)), it.Current.node)),
+                    MkZingReturn(MkZingIdentifier("entryCtxt")),
+                    MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil));
+                return new ZingTranslationInfo(res);
+            }
+        }
+
+        ZingTranslationInfo FoldNewStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            return FoldNew(ft, children, ctxt);
+        }
+
+        ZingTranslationInfo FoldRaise(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            using (var it = children.GetEnumerator())
+            {
+                it.MoveNext();
+                var eventExpr = it.Current;
+                it.MoveNext();
+                var payloadExpr = it.Current;
+                AST<Node> payload = payloadExpr.node != ZingData.Cnst_Nil ? payloadExpr.node : MkZingIdentifier("null");
+                var assertStmt = MkZingSeq(Factory.Instance.AddArg(ZingData.App_Assert, MkZingApply(ZingData.Cnst_NEq, eventExpr.node, MkZingIdentifier("null"))),
+                                           Factory.Instance.AddArg(ZingData.App_Assert, MkZingApply(ZingData.Cnst_NEq, eventExpr.node, MkZingEvent("default"))));
+                string traceString = string.Format("\"<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\"", ctxt.machineName);
+                var traceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"), MkZingApply(ZingData.Cnst_Dot, eventExpr.node, Factory.Instance.MkCnst("name"))));
+                var tmpArg = ctxt.getTmpVar(PrtValue, "arg");
+                var tmpEv = ctxt.getTmpVar(SmEvent, "ev");
+                var eventPayloadCasts = MkZingSeq(MkZingAssignOrCast(tmpEv, eventExpr.node),
+                                                  MkZingAssignOrCast(tmpArg, payload));
+                // Emit a check that the payload can be casted to the expected Event Payload
+                var tmpEvPayload = ctxt.getTmpVar(Factory.Instance.MkCnst("Discriminator"), "tmpEvPayloadType");
+                var tmpEq = ctxt.getTmpVar(ZingData.Cnst_Bool, "tmpEq");
+                var payloadEventMatchAssert = MkZingSeq(
+                    MkZingAssign(tmpEvPayload, MkZingCall(MkZingDot("Main", "PayloadOf"), eventExpr.node)),
+                    MkZingAssignOrCast(tmpEq, MkZingCall(MkZingDot(tmpArg, "CanCastTo"), tmpEvPayload)),
+                    MkZingAssert(tmpEq));
+                var assignStmt = MkZingSeq(MkZingAssign(MkZingDot("myHandle", "currentEvent"), tmpEv), MkZingAssign(MkZingDot("myHandle", "currentArg"), tmpArg));
+                var createRetCtxt = MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Raise")));
+
+                var outNode = MkZingSeq(assertStmt, traceStmt, eventPayloadCasts, payloadEventMatchAssert, assignStmt, createRetCtxt,
+                    MkZingReturn(MkZingIdentifier("entryCtxt")));
+                return new ZingTranslationInfo(outNode);
+            }
+        }
+
+        ZingTranslationInfo FoldSend(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            using (var it = children.GetEnumerator())
+            {
+                it.MoveNext();
+                var targetExpr = it.Current.node;
+                it.MoveNext();
+                var eventExpr = it.Current.node;
+                it.MoveNext();
+                AST<Node> payload = it.Current.node != ZingData.Cnst_Nil ? it.Current.node : MkZingIdentifier("null");
+
+                // Emit a Cast/Clone from the actual payload to Any
+                var tmpVar = ctxt.getTmpVar(PrtValue, "tmpSendPayload");
+                ctxt.addSideEffect(MkZingAssignOrCast(tmpVar, payload));
+                // Emit a check that the payload can be casted to the expected Event Payload
+                var tmpEvPayload = ctxt.getTmpVar(Factory.Instance.MkCnst("Discriminator"), "tmpEvPayloadType");
+                ctxt.addSideEffect(MkZingAssign(tmpEvPayload, MkZingCall(MkZingDot("Main", "PayloadOf"), eventExpr)));
+                var tmpEq = ctxt.getTmpVar(ZingData.Cnst_Bool, "tmpEq");
+                ctxt.addSideEffect(MkZingAssignOrCast(tmpEq, MkZingCall(MkZingDot(tmpVar, "CanCastTo"), tmpEvPayload)));
+                ctxt.addSideEffect(MkZingAssert(tmpEq));
+                var afterLabel = ctxt.getFreshLabel();
+                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingApply(ZingData.Cnst_Dot, targetExpr, MkZingIdentifier("EnqueueEvent")), eventExpr, tmpVar, Factory.Instance.MkCnst("myHandle"))));
+                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Send"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)))));
+                // Actual Send statement
+                return new ZingTranslationInfo(MkZingSeq(MkZingReturn(MkZingIdentifier("entryCtxt")),
+                    MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil)));
+            }
+        }
+
+        ZingTranslationInfo FoldMonitor(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            using (var it = children.GetEnumerator())
+            {
+                it.MoveNext();
+                var typeName = ((Cnst)it.Current.node.Node).GetStringValue();
+                it.MoveNext();
+                AST<Node> evt = it.Current.node;
+                it.MoveNext();
+                AST<Node> arg = it.Current.node != ZingData.Cnst_Nil ? it.Current.node : MkZingIdentifier("null");
+                var tmpVar = ctxt.getTmpVar(PrtValue, "tmpSendPayload");
+                ctxt.addSideEffect(MkZingAssignOrCast(tmpVar, arg));
+                MachineInfo machineInfo = allMachines[typeName];
+                return new ZingTranslationInfo(
+                    MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", typeName)), evt, tmpVar));
+            }
+        }
+
+        ZingTranslationInfo FoldFunStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            return FoldFunApp(ft, children, ctxt);
+        }
+
+        ZingTranslationInfo FoldNulStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            var op = ((Id)GetArgByIndex(ft, 0)).Name;
+            if (op == PData.Cnst_Pop.Node.Name)
+            {
+                ctxt.addSideEffect(MkZingAssign(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")));
+                ctxt.addSideEffect(MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingIdentifier("null")));
+                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Pop"))));
+                ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
+            }
+            return new ZingTranslationInfo(ZingData.Cnst_Nil);
+
+        }
+
+        ZingTranslationInfo FoldUnStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            var op = ((Id)GetArgByIndex(ft, 0)).Name; 
+            // op == PData.Con_Assert.Node.Name
+            using (var it = children.GetEnumerator())
+            {
+                it.MoveNext();
+                it.MoveNext();
+                return new ZingTranslationInfo(AddArgs(ZingData.App_Assert, it.Current.node));
+            }
+        }
+
+        ZingTranslationInfo FoldBinStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt) 
+        {
+            var op = ((Id)GetArgByIndex(ft, 0)).Name; 
+            var type = LookupType(ctxt, GetArgByIndex(ft, 1));
+            var typeName = ((Id)GetArgByIndex(type.Node, 0)).Name;
+            AST<Node> src = null, index = null, dest = null;
+            using (var it = children.GetEnumerator())
+            {
+                it.MoveNext(); 
+                it.MoveNext();
+                dest = it.Current.node;
+                it.MoveNext();
+                src = it.Current.node;
+                it.MoveNext();
+                if (it.Current != null)
+                {
+                    index = src;
+                    src = it.Current.node;
+                }
+
+                if (op == PData.Cnst_Assign.Node.Name)
+                {
+                    if (index == null)
+                    {
+                        return new ZingTranslationInfo(MkZingAssignOrCast(dest, src));
+                    }
+                    else
+                    {
+                        if (typeName == PData.Con_TupType.Node.Name)
+                        {
+                            return new ZingTranslationInfo(MkZingCallStmt(MkZingDot("PRT_VALUE", "PrtTupleSet"), dest, index, src));
+                        }
+                        else if (typeName == PData.Con_NamedTupType.Node.Name)
+                        {
+                            return new ZingTranslationInfo(MkZingCallStmt(MkZingDot("PRT_VALUE", "PrtNamedTupleSet"), dest, index, src));
+                        }
+                        else if (typeName == PData.Con_SeqType.Node.Name)
+                        {
+                            return new ZingTranslationInfo(MkZingCallStmt(MkZingDot("PRT_VALUE", "PrtSeqSet"), dest, index, src));
+                        }
+                        else
+                        {
+                            // type is PMapType
+                            return new ZingTranslationInfo(MkZingCallStmt(MkZingDot("PRT_VALUE", "PrtMapSet"), dest, index, src));
+                        }
+                    }
+                }
+
+                // op == "REMOVE" || op == "INSERT"
+                // in either case, the value being updated is either a sequence or a map
+                if (index != null)
+                {
+                    var lhs = ctxt.getTmpVar(PrtValue, "lhs");
+                    if (typeName == PData.Con_TupType.Node.Name)
+                    {
+                        ctxt.addSideEffect(MkZingAssign(lhs, MkZingCall(MkZingDot("PRT_VALUE", "PrtTupleGet"), dest, index)));
+                    }
+                    else if (typeName == PData.Con_NamedTupType.Node.Name)
+                    {
+                        ctxt.addSideEffect(MkZingAssign(lhs, MkZingCall(MkZingDot("PRT_VALUE", "PrtNamedTupleGet"), dest, index)));
+                    }
+                    else if (typeName == PData.Con_SeqType.Node.Name)
+                    {
+                        ctxt.addSideEffect(MkZingAssign(lhs, MkZingCall(MkZingDot("PRT_VALUE", "PrtSeqGet"), dest, index)));
+                    }
+                    else
+                    {
+                        // type is MapType
+                        ctxt.addSideEffect(MkZingAssign(lhs, MkZingCall(MkZingDot("PRT_VALUE", "PrtMapGet"), dest, index)));
+                    }
+                    dest = lhs;
+                }
+
+                if (op == PData.Cnst_Remove.Node.Name)
+                {
+                    if (typeName == PData.Con_SeqType.Node.Name)
+                    {
+                        return new ZingTranslationInfo(MkZingCallStmt(MkZingDot(PRT_VALUE, "PrtSeqRemove"), dest, src));
+                    }
+                    else
+                    {
+                        return new ZingTranslationInfo(MkZingCallStmt(MkZingDot(PRT_VALUE, "PrtMapRemove"), dest, src));
+                    }
+                }
+                else
+                {
+                    // op == PData.Cnst_Insert.Node.Name
+                    var idx = ctxt.getTmpVar(PrtValue, "idx");
+                    var val = ctxt.getTmpVar(PrtValue, "val");
+                    ctxt.addSideEffect(MkZingAssign(idx, MkZingCall(MkZingDot("PRT_VALUE", "PrtTupleGet"), src, Factory.Instance.MkCnst(0))));
+                    ctxt.addSideEffect(MkZingAssign(val, MkZingCall(MkZingDot("PRT_VALUE", "PrtTupleGet"), src, Factory.Instance.MkCnst(1))));
+                    if (typeName == PData.Con_SeqType.Node.Name)
+                    {
+                        return new ZingTranslationInfo(MkZingCallStmt(MkZingDot("PRT_VALUE", "PrtSeqInsert"), dest, idx, val));
+                    }
+                    else
+                    {
+                        return new ZingTranslationInfo(MkZingCallStmt(MkZingDot("PRT_VALUE", "PrtMapInsert"), dest, idx, val));
+                    }
+                }
+            }
+        }
+
+        ZingTranslationInfo FoldReturn(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            var returnType = allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].returnType;
+            using (var it = children.GetEnumerator())
+            {
+                it.MoveNext();
+                ctxt.addSideEffect(MkZingAssignOrCast(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")));
+                if (returnType.Equals(PTypeNull))
+                {
+                    ctxt.addSideEffect(MkZingAssignOrCast(MkZingDot("myHandle", "currentArg"), MkZingIdentifier("null")));
+                }
+                else
+                {
+                    ctxt.addSideEffect(MkZingAssignOrCast(MkZingDot("myHandle", "currentArg"), it.Current.node));
+                }
+                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Return"))));
+                ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
+                return new ZingTranslationInfo(ZingData.Cnst_Nil);
+            }
+        }
+
+        ZingTranslationInfo FoldWhile(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            using (var it = children.GetEnumerator())
+            {
+                it.MoveNext();
+                var condExpr = it.Current;
+                it.MoveNext();
+                var loopStart = getUnique(ctxt.entityName + "_loop_start");
+                var loopEnd = getUnique(ctxt.entityName + "_loop_end");
+                var body = it.Current.node;
+                body = ctxt.emitZingSideEffects(zingWrapExprToStmts(body));
+                var res = MkZingLabeledStmt(loopStart, MkZingSeq(
+                    ctxt.emitZingSideEffects(MkZingIfThen(MkZingApply(ZingData.Cnst_Not, condExpr.node), AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(loopEnd)))),
+                    body,
+                    AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(loopStart)),
+                    MkZingLabeledStmt(loopEnd, ZingData.Cnst_Nil)));
+                return new ZingTranslationInfo(res);
+            }
+        }
+
+        ZingTranslationInfo FoldITE(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            using (var it = children.GetEnumerator())
+            {
+                it.MoveNext();
+                var condExpr = it.Current;
+                it.MoveNext();
+                var thenStmt = it.Current;
+                it.MoveNext();
+                var elseStmt = it.Current;
+
+                // Order in which we emit side effets (else,then) is the reverse of the order in which the side effect stacks were pushed(then, else).
+                var ifName = getUnique(ctxt.entityName + "_if");
+                var elseLabel = ifName + "_else";
+                var afterLabel = ifName + "_end";
+                var cookedElse = MkZingLabeledStmt(elseLabel, ctxt.emitZingSideEffects(zingWrapExprToStmts(elseStmt.node)));
+                var cookedThen = ctxt.emitZingSideEffects(zingWrapExprToStmts(thenStmt.node));
+                var res = MkZingSeq(MkZingIfThen(MkZingApply(ZingData.Cnst_Not, condExpr.node), AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(elseLabel))),
+                    cookedThen,
+                    AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(afterLabel)),
+                    cookedElse,
+                    MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil));
+                return new ZingTranslationInfo(res);
+            }
+        }
+
+        ZingTranslationInfo FoldSeq(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        {
+            using (var it = children.GetEnumerator())
+            {
+                it.MoveNext();
+                var first = it.Current;
+                it.MoveNext();
+                var second = it.Current;
+                return new ZingTranslationInfo(MkZingSeq(zingWrapExprToStmts(first.node), ctxt.emitZingSideEffects(zingWrapExprToStmts(second.node))));
             }
         }
 
@@ -3223,8 +2675,8 @@ namespace Microsoft.Pc
                 ctxt.emitLabelPrelude(),
                 MkZingLabeledStmt("start", body),
                 (ctxt.translationContext == TranslationContext.Entry || ctxt.translationContext == TranslationContext.Action)
-                          ? MkZingSeq(MkZingAssignOrCast(MkZingDot("myHandle", "currentEvent"), PType.Event, MkZingIdentifier("null"), PType.Nil),
-                                      MkZingAssignOrCast(MkZingDot("myHandle", "currentArg"), PType.Any, MkZingIdentifier("null"), PType.Nil)) 
+                          ? MkZingSeq(MkZingAssignOrCast(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
+                                      MkZingAssignOrCast(MkZingDot("myHandle", "currentArg"), MkZingIdentifier("null"))) 
                           : ZingData.Cnst_Nil,
                 MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Leave"))),
                 MkZingReturn(MkZingIdentifier("entryCtxt")));
@@ -3273,7 +2725,7 @@ namespace Microsoft.Pc
                 MkZingAssign(indVar, start),
                 AddArgs(ZingData.App_While, MkZingApply(ZingData.Cnst_Lt, indVar, end),
                     MkZingSeq(body,
-                        MkZingAssignOrCast(indVar, PType.Int, MkZingPlus(indVar, 1), PType.Int))));
+                        MkZingAssignOrCast(indVar, MkZingPlus(indVar, 1)))));
         }
 
         private AST<Node> MkZingFor(AST<Node> indVar, int start, AST<Node> end, AST<Node> body)
@@ -3440,7 +2892,12 @@ namespace Microsoft.Pc
         }
         #endregion
 
-        private AST<Node> pTypeToZingType(PType t)
+        private AST<Node> pTypeToZingType(AST<Node> t)
+        {
+            throw new NotImplementedException();
+        }
+
+        private AST<FuncTerm> LookupType(ZingEntryFun_FoldContext ctxt, Node node)
         {
             throw new NotImplementedException();
         }

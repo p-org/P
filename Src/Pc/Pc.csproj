@@ -100,7 +100,6 @@
     <Compile Include="PProgram.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PToZing.cs" />
-    <Compile Include="PTypes.cs" />
     <Compile Include="ZingData.cs" />
   </ItemGroup>
   <ItemGroup>

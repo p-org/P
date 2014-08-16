@@ -60,12 +60,12 @@ domain PData
     /****************  State Machine Declarations    *************/
     /*************************************************************/
 
-    MachineDecl  ::= fun (name: String -> kind: { REAL, MODEL, MONITOR }, card: any QueueConstraint, start: QualifiedName, isMain: Boolean).
     EventDecl    ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
+    MachineDecl  ::= fun (name: String -> kind: { REAL, MODEL, MONITOR }, card: any QueueConstraint, start: QualifiedName, isMain: Boolean).
     VarDecl      ::= fun (name: String, owner: MachineDecl -> type: any TypeExpr).
     FunDecl      ::= fun (name: String, owner: MachineDecl -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL },  return: any TypeExpr + { NIL }, body: any Stmt).
     ActionDecl   ::= fun (name: String, owner: MachineDecl -> body: any Stmt).
-    StateDecl    ::= fun (name: QualifiedName, owner: MachineDecl -> entryFun: any Stmt + String, exitFun: any Stmt + string, isStable: Boolean).
+    StateDecl    ::= fun (name: QualifiedName, owner: MachineDecl -> entryAction: any Stmt + String, exitFun: any Stmt + string, isStable: Boolean).
     TransDecl    ::= fun (src: StateDecl, trig: String + { DEFAULT, HALT } -> dst: any QualifiedName, action: { NIL, PUSH } + any Stmt + String).
     DoDecl       ::= fun (src: StateDecl, trig: String + { HALT } -> action: { DEFER, IGNORE } + any Stmt + String).
 	
@@ -80,7 +80,7 @@ domain PData
     /*************************************************************/
 
     Annotation  ::= new (ant: Annotatable, key: String, value: any AnnotValue).
-    Annotatable ::= MachineDecl + EventDecl + StateDecl + VarDecl + TransDecl + FunDecl + ActionDecl + DoDecl + { NIL }.
+    Annotatable ::= EventDecl + MachineDecl + VarDecl + FunDecl + ActionDecl + StateDecl + TransDecl + DoDecl + { NIL }.
     AnnotValue  ::= Integer + String + Boolean + { NULL }.
 }
 

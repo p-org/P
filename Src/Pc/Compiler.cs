@@ -12,10 +12,11 @@
     using Microsoft.Formula.API.ASTQueries;
     using Microsoft.Formula.API.Nodes;
 
+    public enum LivenessOption { None, Standard, Mace };
+
     internal class Compiler
     {
-        public bool liveness;
-        public bool maceLiveness;
+        public LivenessOption liveness;
 
         private const string PDomain = "P";
         private const string CDomain = "C";

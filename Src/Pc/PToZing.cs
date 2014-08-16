@@ -89,7 +89,7 @@ namespace Microsoft.Pc
         public int numFairChoicesInEntry;
         public int numFairChoicesInExit;
 
-        public Dictionary<AST<Node>, AST<Node>> typeInfo;
+        public Dictionary<Node, Node> typeInfo;
 
         public StateInfo(string ownerName, Node entryAction, Node exitFun, bool isStable)
         {
@@ -119,7 +119,7 @@ namespace Microsoft.Pc
             this.numFairChoicesInEntry = 0;
             this.numFairChoicesInExit = 0;
 
-            typeInfo = new Dictionary<AST<Node>, AST<Node>>();
+            typeInfo = new Dictionary<Node, Node>();
         }
     }
 
@@ -143,7 +143,7 @@ namespace Microsoft.Pc
         public Node body;
         public int numFairChoices;
 
-        public Dictionary<AST<Node>, AST<Node>> typeInfo;
+        public Dictionary<Node, Node> typeInfo;
 
         public FunInfo(string ownerName, bool isModel, AST<Node> returnType, Node body)
         {
@@ -155,7 +155,7 @@ namespace Microsoft.Pc
             this.body = body;
             this.numFairChoices = 0;
 
-            typeInfo = new Dictionary<AST<Node>, AST<Node>>();
+            typeInfo = new Dictionary<Node, Node>();
         }
     }
 
@@ -164,14 +164,14 @@ namespace Microsoft.Pc
         public Node actionFun;
         public int numFairChoices;
 
-        public Dictionary<AST<Node>, AST<Node>> typeInfo;
+        public Dictionary<Node, Node> typeInfo;
 
         public ActionInfo(Node actionFun)
         {
             this.actionFun = actionFun;
             this.numFairChoices = 0;
 
-            typeInfo = new Dictionary<AST<Node>, AST<Node>>();
+            typeInfo = new Dictionary<Node, Node>();
         }
     }
 
@@ -571,6 +571,44 @@ namespace Microsoft.Pc
                     else
                     {
                         stateTable.actions[eventName] = new AnonymousActionFun(action);
+                    }
+                }
+            }
+
+            terms = GetBin("TypeOf");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    FuncTerm typingContext = GetFuncTerm(it.Current);
+                    it.MoveNext();
+                    var expr = it.Current;
+                    it.MoveNext();
+                    var type = it.Current;
+                    string typingContextKind = ((Id)typingContext.Function).Name;
+                    if (typingContextKind == "FunDecl")
+                    {
+                        string ownerName = GetOwnerName(typingContext, 1, 0);
+                        string funName = GetName(typingContext, 0);
+                        allMachines[ownerName].funNameToFunInfo[funName].typeInfo[expr] = type;
+                    }
+                    else if (typingContextKind == "ActionDecl")
+                    {
+                        string ownerName = GetOwnerName(typingContext, 1, 0);
+                        string actionName = GetName(typingContext, 0);
+                        allMachines[ownerName].funNameToFunInfo[actionName].typeInfo[expr] = type;
+                    }
+                    else
+                    {
+                        // typingContextKind == "StateDecl" || typingContextKind == "TransDecl"
+                        if (typingContextKind == "TransDecl")
+                        {
+                            typingContext = GetFuncTerm(GetArgByIndex(typingContext, 0));
+                        }
+                        string ownerName = GetOwnerName(typingContext, 1, 0);
+                        string stateName = GetName(typingContext, 0);
+                        allMachines[ownerName].funNameToFunInfo[stateName].typeInfo[expr] = type;
                     }
                 }
             }

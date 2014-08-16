@@ -27,39 +27,33 @@ namespace Microsoft.Pc
     {
         public string target;
         public bool isPush;
+        public Node exitFun;
+
         public TransitionInfo(string target, bool isPush)
         {
             this.target = target;
             this.isPush = isPush;
+            this.exitFun = null;
         }
-        public override bool Equals(object obj)
-        {
-            if (obj == null)
-            {
-                return false;
-            }
 
-            TransitionInfo p = obj as TransitionInfo;
-            if ((System.Object)p == null)
-            {
-                return false;
-            }
-
-            return (target == p.target) && (isPush == p.isPush);
-        }
-        public override int GetHashCode()
+        public TransitionInfo(string target, Node exitFun)
         {
-            return base.GetHashCode();
+            this.target = target;
+            this.isPush = false;
+            this.exitFun = exitFun;
         }
     }
 
     internal class StateInfo
     {
-        public FuncTerm stateDecl;
+        public string ownerName;
+        public Node entryFun;
         public Node exitFun;
         public bool hasDefaultTransition;
         public Dictionary<string, TransitionInfo> transitions;
         public Dictionary<string, string> actions;
+        public List<string> deferredEvents;
+        public List<string> ignoredEvents;
         public HashSet<string> entryFunCallees;
         public HashSet<string> exitFunCallees;
         public HashSet<AST<Node>> argTypes;
@@ -67,19 +61,26 @@ namespace Microsoft.Pc
         public int numFairChoicesInEntry;
         public int numFairChoicesInExit;
 
-        public StateInfo(FuncTerm stateDecl)
+        public Dictionary<AST<Node>, AST<Node>> typeInfo;
+
+        public StateInfo(string ownerName, Node entryFun, Node exitFun, bool isStable)
         {
-            this.stateDecl = stateDecl;
-            this.exitFun = null;
+            this.ownerName = ownerName;
+            this.entryFun = entryFun;
+            this.exitFun = exitFun;
             this.hasDefaultTransition = false;
             this.transitions = new Dictionary<string, TransitionInfo>();
             this.actions = new Dictionary<string, string>();
+            this.deferredEvents = new List<string>();
+            this.ignoredEvents = new List<string>();
             this.argTypes = new HashSet<AST<Node>>();
             this.entryFunCallees = new HashSet<string>();
             this.exitFunCallees = new HashSet<string>();
-            this.isStable = false;
+            this.isStable = isStable;
             this.numFairChoicesInEntry = 0;
             this.numFairChoicesInExit = 0;
+
+            typeInfo = new Dictionary<AST<Node>, AST<Node>>();
         }
     }
 
@@ -103,6 +104,8 @@ namespace Microsoft.Pc
         public HashSet<string> callers;
         public int numFairChoices;
 
+        public Dictionary<AST<Node>, AST<Node>> typeInfo;
+
         public FunInfo(bool isModel, AST<Node> returnType, FuncTerm funDecl)
         {
             this.isModel = isModel;
@@ -112,6 +115,8 @@ namespace Microsoft.Pc
             this.funDecl = funDecl;
             this.callers = new HashSet<string>();
             this.numFairChoices = 0;
+
+            typeInfo = new Dictionary<AST<Node>, AST<Node>>();
         }
     }
 
@@ -122,12 +127,16 @@ namespace Microsoft.Pc
         public HashSet<string> callees;
         public int numFairChoices;
 
+        public Dictionary<AST<Node>, AST<Node>> typeInfo;
+
         public ActionInfo(Node actionFun)
         {
             this.actionFun = actionFun;
             this.callees = new HashSet<string>();
             this.argTypes = new HashSet<AST<Node>>();
             this.numFairChoices = 0;
+
+            typeInfo = new Dictionary<AST<Node>, AST<Node>>();
         }
     }
 
@@ -186,7 +195,6 @@ namespace Microsoft.Pc
     class PToZing
     {
         public static AST<Node> PTypeNull = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("BaseType")), Factory.Instance.MkId("NULL"));
-
         public static AST<Node> PTypeAny = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("BaseType")), Factory.Instance.MkId("ANY"));
 
         public const string SM_EVENT = "SM_EVENT";
@@ -261,18 +269,6 @@ namespace Microsoft.Pc
                 return modelAliases[((Id)node).Name].Node;
             Debug.Assert(false);
             return null;
-        }
-
-        public void DeconstructEventSetDecl(FuncTerm term, out string eventSetName, out string machineName)
-        {
-            using (var enumerator = term.Args.GetEnumerator())
-            {
-                enumerator.MoveNext();
-                eventSetName = ((Cnst)enumerator.Current).GetStringValue();
-                enumerator.MoveNext();
-                var machine = (eventSetName == "None") ? (FuncTerm)enumerator.Current : GetFuncTerm(enumerator.Current);
-                machineName = GetName(machine, 0);
-            }
         }
 
         public string GetMachineName(FuncTerm ft, int index)
@@ -364,23 +360,6 @@ namespace Microsoft.Pc
                 }
             }
 
-            terms = GetBin("StateDecl");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var stateName = GetNameFromQualifiedName((FuncTerm)it.Current);
-                    it.MoveNext();
-                    var machineDecl = GetFuncTerm(it.Current);
-                    var machineName = GetName(machineDecl, 0);
-                    it.MoveNext();
-                    it.MoveNext();
-                    var stateTable = allMachines[machineName].stateNameToStateInfo;
-                    stateTable[stateName] = new StateInfo(term.Node);
-                }
-            }
-
             terms = GetBin("VarDecl");
             foreach (var term in terms)
             {
@@ -394,37 +373,44 @@ namespace Microsoft.Pc
                     var varTable = allMachines[machineName].localVariableToVarInfo;
                     it.MoveNext();
                     var type = it.Current;
-                    it.MoveNext();
-                    var isGhost = ((Id)it.Current).Name == "TRUE";
                     varTable[varName] = new VariableInfo(Factory.Instance.ToAST(type));
                 }
             }
 
-            terms = GetBin("TransDecl");
+            terms = GetBin("FunDecl");
             foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    var stateDecl = GetFuncTerm(it.Current);
-                    var stateName = GetName(stateDecl, 0);
-                    var stateOwnerMachineName = GetMachineName(stateDecl, 1);
-                    var stateTable = allMachines[stateOwnerMachineName].stateNameToStateInfo[stateName];
+                    string funName = ((Cnst)it.Current).GetStringValue();
                     it.MoveNext();
-                    string eventName = GetName((FuncTerm)it.Current, 0);
+                    var machineDecl = GetFuncTerm(it.Current);
+                    var machineName = GetName(machineDecl, 0);
+                    var machineInfo = allMachines[machineName];
                     it.MoveNext();
-                    var targetStateDecl = GetFuncTerm(it.Current);
-                    var targetStateName = GetName(targetStateDecl, 0);
-                    var targetStateOwnerMachineName = GetMachineName(targetStateDecl, 1);
-                    var targetStateInfo = allMachines[targetStateOwnerMachineName].stateNameToStateInfo[targetStateName];
+                    var isModel = ((Id)it.Current).Name == "MODEL"; 
                     it.MoveNext();
-                    var isPush = ((Id)it.Current).Name == "TRUE";
-                    var tinfo = new TransitionInfo(targetStateName, isPush);
-                    stateTable.transitions[eventName] = tinfo;
-                    if (eventName == DefaultEvent)
+                    var iter = (FuncTerm)it.Current;
+                    it.MoveNext();
+                    var returnTypeName = ((Id)it.Current).Name == "NIL" ? PTypeNull : Factory.Instance.ToAST(it.Current);
+                    var funInfo = new FunInfo(isModel, returnTypeName, term.Node);
+                    Dictionary<string, VariableInfo> parameters = funInfo.parameterNameToInfo;
+                    while (iter != null)
                     {
-                        stateTable.hasDefaultTransition = true;
+                        var ft = (FuncTerm)GetArgByIndex(iter, 0);
+                        using (var enumerator = ft.Args.GetEnumerator())
+                        {
+                            enumerator.MoveNext();
+                            var varName = ((Cnst)enumerator.Current).GetStringValue();
+                            enumerator.MoveNext();
+                            var typeName = Factory.Instance.ToAST(enumerator.Current);
+                            parameters[varName] = new VariableInfo(typeName);
+                            funInfo.parameterNames.Add(varName);
+                        }
+                        iter = GetArgByIndex(iter, 1) as FuncTerm;
                     }
+                    machineInfo.funNameToFunInfo[funName] = funInfo;
                 }
             }
 
@@ -443,7 +429,28 @@ namespace Microsoft.Pc
                 }
             }
 
-            terms = GetBin("Install");
+            terms = GetBin("StateDecl");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var stateName = GetNameFromQualifiedName((FuncTerm)it.Current);
+                    it.MoveNext();
+                    var machineDecl = GetFuncTerm(it.Current);
+                    var ownerName = GetName(machineDecl, 0);
+                    it.MoveNext();
+                    var entryFun = it.Current;
+                    it.MoveNext();
+                    var exitFun = it.Current;
+                    it.MoveNext();
+                    var isStable = ((Id)it.Current).Name == "TRUE";
+                    var stateTable = allMachines[ownerName].stateNameToStateInfo;
+                    stateTable[stateName] = new StateInfo(ownerName, entryFun, exitFun, isStable);
+                }
+            }
+
+            terms = GetBin("TransDecl");
             foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
@@ -454,8 +461,78 @@ namespace Microsoft.Pc
                     var stateOwnerMachineName = GetMachineName(stateDecl, 1);
                     var stateTable = allMachines[stateOwnerMachineName].stateNameToStateInfo[stateName];
                     it.MoveNext();
-                    string eventName = GetName((FuncTerm)it.Current, 0);
+                    string eventName;
+                    if (it.Current.NodeKind == NodeKind.Id)
+                    {
+                        var name = ((Id)it.Current).Name;
+                        if (name == "DEFAULT")
+                        {
+                            eventName = DefaultEvent;
+                            stateTable.hasDefaultTransition = true;
+                        }
+                        else
+                        {
+                            // name == "HALT"
+                            eventName = HaltEvent;
+                        }
+                    }
+                    else
+                    {
+                        eventName = ((Cnst)it.Current).GetStringValue();
+                    }
                     it.MoveNext();
+                    var targetStateName = GetNameFromQualifiedName((FuncTerm)it.Current);
+                    it.MoveNext();
+                    var action = it.Current;
+                    if (action.NodeKind == NodeKind.Cnst)
+                    {
+                        stateTable.transitions[eventName] = new TransitionInfo(targetStateName, action);
+                    }
+                    else if (action.NodeKind == NodeKind.Id)
+                    {
+                        stateTable.transitions[eventName] = new TransitionInfo(targetStateName, ((Id)action).Name == "PUSH");
+                    }
+                    else
+                    {
+                        // action.NodeKind == NodeKind.FuncTerm
+                        stateTable.transitions[eventName] = new TransitionInfo(targetStateName, action);
+                    }
+                }
+            }
+
+            terms = GetBin("DoDecl");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var stateDecl = GetFuncTerm(it.Current);
+                    var stateName = GetName(stateDecl, 0);
+                    var stateOwnerMachineName = GetMachineName(stateDecl, 1);
+                    var stateTable = allMachines[stateOwnerMachineName].stateNameToStateInfo[stateName];
+                    it.MoveNext();
+                    string eventName;
+                    if (it.Current.NodeKind == NodeKind.Id)
+                    {
+                        eventName = HaltEvent;
+                    }
+                    else
+                    {
+                        eventName = ((Cnst)it.Current).GetStringValue();
+                    }
+                    it.MoveNext();
+                    var action = it.Current;
+                    if (action.NodeKind == NodeKind.Cnst)
+                    {
+                        stateTable.actions[eventName] = 
+                    }
+                    else if (action.NodeKind == NodeKind.Id) 
+                    {
+                    }
+                    else
+                    {
+                        // action.NodeKind == NodeKind.FuncTerm
+                    }
                     var actionDecl = GetFuncTerm(it.Current);
                     var actionFunName = GetName(actionDecl, 0);
                     var actionOwnerMachineName = GetOwnerName(actionDecl, 1, 0);
@@ -464,61 +541,8 @@ namespace Microsoft.Pc
                 }
             }
 
-            terms = GetBin("FunDecl");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    string funName = ((Cnst)it.Current).GetStringValue();
-                    it.MoveNext();
-                    var machineDecl = GetFuncTerm(it.Current);
-                    var machineName = GetName(machineDecl, 0);
-                    var machineInfo = allMachines[machineName];
-                    it.MoveNext();
-                    var iter = it.Current;
-                    it.MoveNext();
-                    var returnTypeName = Factory.Instance.ToAST(it.Current);
-                    it.MoveNext();
-                    var isModel = ((Id)it.Current).Name == "TRUE";
-                    var funInfo = new FunInfo(isModel, returnTypeName, term.Node);
-                    Dictionary<string, VariableInfo> parameters = funInfo.parameterNameToInfo;
-                    while (true)
-                    {
-                        if (iter.NodeKind == NodeKind.Id)
-                            break;
-                        FuncTerm ft = (FuncTerm)iter;
-                        using (var enumerator = ft.Args.GetEnumerator())
-                        {
-                            enumerator.MoveNext();
-                            var varName = ((Cnst)enumerator.Current).GetStringValue();
-                            enumerator.MoveNext();
-                            var typeName = Factory.Instance.ToAST(enumerator.Current);
-                            parameters[varName] = new VariableInfo(typeName);
-                            funInfo.parameterNames.Add(varName);
-                            enumerator.MoveNext();
-                            iter = enumerator.Current;
-                        }
-                    }
-                    machineInfo.funNameToFunInfo[funName] = funInfo;
-                }
-            }
-
             if (compiler.liveness || compiler.maceLiveness)
             {
-                terms = GetBin("Stable");
-                foreach (var term in terms)
-                {
-                    using (var it = term.Node.Args.GetEnumerator())
-                    {
-                        it.MoveNext();
-                        var stateDecl = GetFuncTerm(it.Current);
-                        var stateName = GetName(stateDecl, 0);
-                        var ownerMachineName = GetOwnerName(stateDecl, 1, 0);
-                        allMachines[ownerMachineName].stateNameToStateInfo[stateName].isStable = true;
-                    }
-                }
-
                 foreach (var machineName in allMachines.Keys)
                 {
                     if (!allMachines[machineName].IsMonitor) continue;
@@ -1057,9 +1081,9 @@ namespace Microsoft.Pc
             fields = AddArgs(ZingData.App_VarDecls, MkZingVarDecl("startState", Factory.Instance.MkCnst("State")), fields);
 
             AST<Node> methods = ZingData.Cnst_Nil;
-            foreach (var stateDecl in allMachines[machineName].stateNameToStateInfo.Values.Select(x => x.stateDecl))
+            foreach (var x in allMachines[machineName].stateNameToStateInfo)
             {
-                AST<Node> dequeueEventMethod = GenerateCalculateActionSetMethodDeclForMonitor(stateDecl);
+                AST<Node> dequeueEventMethod = GenerateCalculateActionSetMethodDeclForMonitor(x.Key, x.Value);
                 methods = AddArgs(ZingData.App_MethodDecls, dequeueEventMethod, methods);
             }
             AST<Node> runHelperMethod = GenerateRunHelperMethodDeclForMonitor(machineName);
@@ -1075,7 +1099,7 @@ namespace Microsoft.Pc
             foreach (var stateInfo in allMachines[machineName].stateNameToStateInfo)
             {
                 var stateName = stateInfo.Key;
-                var entryFun = GetArgByIndex(stateInfo.Value.stateDecl, 2);
+                var entryFun = stateInfo.Value.entryFun;
                 var exitFun = stateInfo.Value.exitFun;
                 methods = AddArgs(ZingData.App_MethodDecls, MkZingWrapperFn(entryFun, machineName, TranslationContext.Entry, stateName), methods);
                 if (exitFun != null)
@@ -1101,9 +1125,9 @@ namespace Microsoft.Pc
             fields = AddArgs(ZingData.App_VarDecls, MkZingVarDecl("localActions", Factory.Instance.MkCnst("LocalActions")), fields);
 
             AST<Node> methods = ZingData.Cnst_Nil;
-            foreach (var stateDecl in allMachines[machineName].stateNameToStateInfo.Values.Select(x => x.stateDecl))
+            foreach (var x in allMachines[machineName].stateNameToStateInfo)
             {
-                AST<Node> dequeueEventMethod = GenerateCalculateDeferredAndActionSetMethodDecl(stateDecl);
+                AST<Node> dequeueEventMethod = GenerateCalculateDeferredAndActionSetMethodDecl(x.Key, x.Value);
                 methods = AddArgs(ZingData.App_MethodDecls, dequeueEventMethod, methods);
             }
             AST<Node> runMethod = GenerateRunMethodDecl(machineName);
@@ -1121,7 +1145,7 @@ namespace Microsoft.Pc
             foreach (var stateInfo in allMachines[machineName].stateNameToStateInfo)
             {
                 var stateName = stateInfo.Key;
-                var entryFun = GetArgByIndex(stateInfo.Value.stateDecl, 2);
+                var entryFun = stateInfo.Value.entryFun;
                 var exitFun = stateInfo.Value.exitFun;
                 methods = AddArgs(ZingData.App_MethodDecls, MkZingWrapperFn(entryFun, machineName, TranslationContext.Entry, stateName), methods);
                 if (exitFun != null)
@@ -1218,9 +1242,8 @@ namespace Microsoft.Pc
             }
         }
 
-        private AST<Node> GenerateCalculateDeferredAndActionSetMethodDecl(FuncTerm stateDecl)
+        private AST<Node> GenerateCalculateDeferredAndActionSetMethodDecl(string stateName, StateInfo stateInfo)
         {
-            var stateName = GetName(stateDecl, 0);
             AST<Node> parameters = ZingData.Cnst_Nil;
             parameters = AddArgs(ZingData.App_VarDecls, MkZingVarDecl("currentActionSet", ZingData.Cnst_SmEventSet), parameters);
             parameters = AddArgs(ZingData.App_VarDecls, MkZingVarDecl("currentDeferredSet", ZingData.Cnst_SmEventSet), parameters);
@@ -1231,19 +1254,11 @@ namespace Microsoft.Pc
             var stackActionSet = MkZingIdentifier("stackActionSet");
             var currentDeferredSet = MkZingIdentifier("currentDeferredSet");
             var currentActionSet = MkZingIdentifier("currentActionSet");
-            var deferredSetDecl = GetArgByIndex(stateDecl, 3);
-            var ownerName = GetOwnerName(stateDecl, 1, 0);
 
-            List<string> localDeferredSet = new List<string>();
-            if (deferredSetDecl.NodeKind == NodeKind.Id && ((Id)deferredSetDecl).Name != PData.Cnst_Nil.Node.Name)
-            {
-                string eventSetName, machineName;
-                DeconstructEventSetDecl(GetFuncTerm(deferredSetDecl), out eventSetName, out machineName);
-                localDeferredSet = allMachines[machineName].eventSetNameToEvents[eventSetName];
-            }
-
-            var actions = allMachines[ownerName].stateNameToStateInfo[stateName].actions;
-            var transitions = allMachines[ownerName].stateNameToStateInfo[stateName].transitions;
+            var ownerName = stateInfo.ownerName;
+            var localDeferredSet = stateInfo.deferredEvents;
+            var actions = stateInfo.actions;
+            var transitions = stateInfo.transitions;
 
             stmts.Add(MkZingAssign(currentDeferredSet, MkZingApply(ZingData.Cnst_Add, currentDeferredSet, stackDeferredSet)));
             AddEventSet(stmts, localDeferredSet, currentDeferredSet);
@@ -1269,18 +1284,17 @@ namespace Microsoft.Pc
             return MkZingMethodDecl(string.Format("{0}_CalculateDeferredAndActionSet", stateName), parameters, ZingData.Cnst_Void, ZingData.Cnst_Nil, ConstructList(ZingData.App_Blocks, body));
         }
 
-        private AST<Node> GenerateCalculateActionSetMethodDeclForMonitor(FuncTerm stateDecl)
+        private AST<Node> GenerateCalculateActionSetMethodDeclForMonitor(string stateName, StateInfo stateInfo)
         {
-            var stateName = GetName(stateDecl, 0);
             AST<Node> parameters = AddArgs(ZingData.App_VarDecls, MkZingVarDecl("currentActionSet", ZingData.Cnst_SmEventSet), ZingData.Cnst_Nil);
 
             List<AST<FuncTerm>> stmts = new List<AST<FuncTerm>>();
             var smEventSetType = Factory.Instance.MkCnst("SM_EVENT_SET");
             var currentActionSet = MkZingIdentifier("currentActionSet");
-            var ownerName = GetOwnerName(stateDecl, 1, 0);
 
-            var actions = allMachines[ownerName].stateNameToStateInfo[stateName].actions;
-            var transitions = allMachines[ownerName].stateNameToStateInfo[stateName].transitions;
+            var ownerName = stateInfo.ownerName;
+            var actions = stateInfo.actions;
+            var transitions = stateInfo.transitions;
 
             AddEventSet(stmts, actions.Keys, currentActionSet);
             SubtractEventSet(stmts, transitions.Keys, currentActionSet);
@@ -1552,9 +1566,8 @@ namespace Microsoft.Pc
 
             // Initial block
             AST<Node> initStmt = Factory.Instance.AddArg(ZingData.App_Assert, ZingData.Cnst_False);
-            foreach (var stateDecl in allMachines[machineName].stateNameToStateInfo.Values.Select(x => x.stateDecl))
+            foreach (var stateName in allMachines[machineName].stateNameToStateInfo.Keys)
             {
-                var stateName = GetName(stateDecl, 0);
                 var stateExpr = MkZingDot("State", string.Format("_{0}", stateName));
                 var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("startState"), stateExpr);
                 var gotoStmt = Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + stateName));
@@ -1682,9 +1695,8 @@ namespace Microsoft.Pc
 
             // Initial block
             AST<Node> initStmt = Factory.Instance.AddArg(ZingData.App_Assert, ZingData.Cnst_False);
-            foreach (var stateDecl in allMachines[machineName].stateNameToStateInfo.Values.Select(x => x.stateDecl))
+            foreach (var stateName in allMachines[machineName].stateNameToStateInfo.Keys)
             {
-                var stateName = GetName(stateDecl, 0);
                 var stateExpr = MkZingDot("State", string.Format("_{0}", stateName));
                 var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("startState"), stateExpr);
                 var gotoStmt = Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("transition_" + stateName));
@@ -1787,7 +1799,7 @@ namespace Microsoft.Pc
             return MkZingMethodDecl("runHelper", ZingData.Cnst_Nil, ZingData.Cnst_Void, MkZingVarDecls(locals), body);
         }
 
-        enum TranslationContext { Action, Entry, Exit, Function };
+        enum TranslationContext { Action, Entry, Exit, Function, Transition };
         class ZingEntryFun_FoldContext
         {
             public string machineName;

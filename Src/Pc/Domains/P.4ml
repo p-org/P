@@ -66,8 +66,8 @@ domain PData
     FunDecl      ::= fun (name: String, owner: MachineDecl -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL },  return: any TypeExpr + { NIL }, body: any Stmt).
     ActionDecl   ::= fun (name: String, owner: MachineDecl -> body: any Stmt).
     StateDecl    ::= fun (name: QualifiedName, owner: MachineDecl -> entryFun: any Stmt + String, exitFun: any Stmt + string, isStable: Boolean).
-    TransDecl    ::= fun (src: StateDecl, trig: String + { DEFAULT, HALT } -> dst: any QualifiedName, action: any Stmt + { NIL, PUSH }).
-    DoDecl       ::= fun (src: StateDecl, trig: String + { HALT } -> kind: { DEFER, IGNORE } + any Stmt + String).
+    TransDecl    ::= fun (src: StateDecl, trig: String + { DEFAULT, HALT } -> dst: any QualifiedName, action: { NIL, PUSH } + any Stmt + String).
+    DoDecl       ::= fun (src: StateDecl, trig: String + { HALT } -> action: { DEFER, IGNORE } + any Stmt + String).
 	
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
@@ -92,7 +92,7 @@ domain PStaticTyping extends PData
 */
 {
     //// The declarations that may contain expressions or statements that should be typed.
-    TypingContext ::= FunDecl + StateDecl + TransDecl.
+    TypingContext ::= FunDecl + ActionDecl + StateDecl + TransDecl.
     
     //// The set of typeable expressions and statements.
     Typeable ::= Expr + Stmt + Exprs + NamedExprs.

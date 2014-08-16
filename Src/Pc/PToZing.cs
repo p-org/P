@@ -52,6 +52,7 @@ namespace Microsoft.Pc
         public bool hasDefaultTransition;
         public Dictionary<string, TransitionInfo> transitions;
         public Dictionary<string, string> actions;
+        public Dictionary<string, Node> anonymousActions;
         public List<string> deferredEvents;
         public List<string> ignoredEvents;
         public HashSet<string> entryFunCallees;
@@ -71,6 +72,7 @@ namespace Microsoft.Pc
             this.hasDefaultTransition = false;
             this.transitions = new Dictionary<string, TransitionInfo>();
             this.actions = new Dictionary<string, string>();
+            this.anonymousActions = new Dictionary<string, Node>();
             this.deferredEvents = new List<string>();
             this.ignoredEvents = new List<string>();
             this.argTypes = new HashSet<AST<Node>>();
@@ -524,20 +526,25 @@ namespace Microsoft.Pc
                     var action = it.Current;
                     if (action.NodeKind == NodeKind.Cnst)
                     {
-                        stateTable.actions[eventName] = 
+                        stateTable.actions[eventName] = ((Cnst)action).GetStringValue();
                     }
-                    else if (action.NodeKind == NodeKind.Id) 
+                    else if (action.NodeKind == NodeKind.Id)
                     {
+                        if (((Id)action).Name == "DEFER")
+                        {
+                            stateTable.deferredEvents.Add(eventName);
+                        }
+                        else
+                        {
+                            // ((Id)action).Name == "IGNORE"
+                            stateTable.ignoredEvents.Add(eventName);
+                        }
                     }
                     else
                     {
                         // action.NodeKind == NodeKind.FuncTerm
+                        stateTable.anonymousActions[eventName] = action;
                     }
-                    var actionDecl = GetFuncTerm(it.Current);
-                    var actionFunName = GetName(actionDecl, 0);
-                    var actionOwnerMachineName = GetOwnerName(actionDecl, 1, 0);
-                    var actionInfo = allMachines[actionOwnerMachineName].actionFunNameToActionFun[actionFunName];
-                    stateTable.actions[eventName] = actionFunName;
                 }
             }
 

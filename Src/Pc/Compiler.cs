@@ -254,11 +254,11 @@
 
             modelWithTypes.Print(System.Console.Out);
 
-            //var outZingModel = MkZingOutputModel();
-            //new PToZing(this, (AST<Model>)modelWithTypes).GenerateZing(ref outZingModel);           
-            //outZingModel.Print(System.Console.Out);
+            var outZingModel = MkZingOutputModel();
+            new PToZing(this, (AST<Model>)modelWithTypes).GenerateZing(ref outZingModel);           
+            outZingModel.Print(System.Console.Out);
 
-            return null;
+            return outZingModel;
         }
 
         private AST<Model> MkZingOutputModel()

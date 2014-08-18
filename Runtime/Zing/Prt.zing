@@ -291,7 +291,7 @@ class LocalActions {
     }
 };
 
-enum ContinuationReason { Nondet, Leave, Return, Raise, Call, Send, Delete, NewM };
+enum ContinuationReason { Return, Nondet, Pop, Raise, Call, Send, NewMachine };
 
 class StackFrame {
     int pc;
@@ -309,7 +309,7 @@ class Continuation {
         Continuation res;
 	res = new Continuation;
 	res.returnTo = null;
-	res.reason = ContinuationReason.Leave;
+	res.reason = ContinuationReason.Return;
 	res.state = State._default;
 	res.nondet = false;
 	res.id = null;
@@ -338,9 +338,9 @@ class Continuation {
 	this.id = null;
     }
 
-    void Leave() {
+    void Pop() {
         this.returnTo = null;
-	this.reason = ContinuationReason.Leave;
+	this.reason = ContinuationReason.Pop;
 	this.state = State._default;
 	this.id = null;
     }
@@ -360,9 +360,9 @@ class Continuation {
 	this.PushReturnTo(ret);
     }
 
-    void NewM(int ret, SM_HANDLE o) {
+    void NewMachine(int ret, SM_HANDLE o) {
         this.returnTo = null;
-	this.reason = ContinuationReason.NewM;
+	this.reason = ContinuationReason.NewMachine;
 	this.state = State._default;
 	this.id = o;
 	this.PushReturnTo(ret);
@@ -382,13 +382,6 @@ class Continuation {
 	this.state = State._default;
 	this.id = null;
 	this.PushReturnTo(ret);
-    }
-
-    void Delete() {
-        this.returnTo = null;
-	this.reason = ContinuationReason.Delete;
-	this.state = State._default;
-	this.id = null;
     }
 };
 

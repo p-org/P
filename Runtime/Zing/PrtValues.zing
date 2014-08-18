@@ -337,14 +337,6 @@ class PRT_VALUE {
         return prmVal.mach;
     }
 
-    static void PrtPrimSetModel(PRT_VALUE prmVal, SM_HANDLE value) {
-        prmVal.mach = value;
-    }
-
-    static SM_HANDLE PrtPrimGetModel(PRT_VALUE prmVal) {
-        return prmVal.mach;
-    }
-
     static void PrtTupleSet(PRT_VALUE tuple, int index, PRT_VALUE value) {
         tuple.tuple[index] = PrtCloneValue(value);
     }
@@ -353,16 +345,6 @@ class PRT_VALUE {
         PRT_VALUE retVal;
 	retVal = PRT_VALUE.PrtCloneValue(tuple.tuple[index]);
         return retVal;
-    }
-
-    static void PrtNmdTupleSet(PRT_VALUE tuple, int index, PRT_VALUE value) {
-        tuple.tuple[index] = PrtCloneValue(value);
-    }
-
-    static PRT_VALUE PrtNmdTupleGet(PRT_VALUE tuple, int index) {
-        PRT_VALUE retVal;
-	retVal = PRT_VALUE.PrtCloneValue(tuple.tuple[index]);
-	return retVal;
     }
 
     static void PrtSeqSet(PRT_VALUE seq, PRT_VALUE index, PRT_VALUE value) {

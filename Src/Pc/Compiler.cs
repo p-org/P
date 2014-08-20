@@ -167,30 +167,20 @@
             flags.AddRange(queryFlags);
             task.RunSynchronously();
 
+            var errors = new SortedSet<Flag>(default(FlagSorter));
             //// Enumerate typing errors
-            var typeErrors = new SortedSet<Flag>(default(FlagSorter));
-            foreach (var p in task.Result.EnumerateProofs(@"TypeOf(_, _, ERROR)", out queryFlags, 1))
-            {
-                if (!p.HasRuleClass(ErrorClassName))
-                {
-                    continue;
-                }
-
-                var errorMsg = GetMessageFromProof(p);
-                foreach (var loc in p.ComputeLocators())
-                {
-                    var exprLoc = loc[1];
-                    typeErrors.Add(new Flag(
-                        SeverityKind.Error, 
-                        exprLoc.Span, 
-                        errorMsg, 
-                        TypeErrorCode, 
-                        ProgramName.Compare(inputProgram, exprLoc.Program) != 0 ? null : exprLoc.Program));
-                }
-            }
-
+            AddErrors(task.Result, "TypeOf(_, _, ERROR)", inputProgram, errors);
             //// Enumerate duplicate definitions
-            foreach (var p in task.Result.EnumerateProofs(@"DuplicateEvent(_, _)", out queryFlags, 1))
+            AddErrors(task.Result, "DuplicateEvent(_, _)", inputProgram, errors); 
+
+            flags.AddRange(errors);
+            return task.Result.Conclusion == LiftedBool.True;
+        }
+
+        private static void AddErrors(QueryResult result, string errorPattern, ProgramName inputProgram, SortedSet<Flag> errors)
+        {
+            List<Flag> queryFlags;
+            foreach (var p in result.EnumerateProofs(errorPattern, out queryFlags, 1))
             {
                 if (!p.HasRuleClass(ErrorClassName))
                 {
@@ -201,7 +191,7 @@
                 foreach (var loc in p.ComputeLocators())
                 {
                     var exprLoc = loc[1];
-                    typeErrors.Add(new Flag(
+                    errors.Add(new Flag(
                         SeverityKind.Error,
                         exprLoc.Span,
                         errorMsg,
@@ -210,10 +200,10 @@
                 }
             }
 
-            flags.AddRange(queryFlags);
-            flags.AddRange(typeErrors);
-
-            return task.Result.Conclusion == LiftedBool.True;
+            foreach (var f in queryFlags)
+            {
+                errors.Add(f);
+            }
         }
 
         private static string GetMessageFromProof(ProofTree p)

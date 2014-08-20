@@ -9,14 +9,23 @@ using Microsoft.Formula.Compiler;
 using Microsoft.Formula.API.Nodes;
 using System.IO;
 
-
 namespace CParser
 {
-
     public class Parser : IQuoteParser
     {
         //Configuration Settings per instance of parser
         #region Configuration Settings
+
+        public string Description
+        {
+            get { return "A parser / renderer for ANSI C extended with standard pragmas"; }
+        }
+
+        public IEnumerable<Tuple<string, CnstKind, string>> SuggestedSettings
+        {
+            get { yield break; }
+        }
+
         public class configurationSettings
         {
             public bool isStructDeclaration;
@@ -155,11 +164,6 @@ namespace CParser
             get { throw new NotImplementedException(); }
         }
 
-        public IEnumerable<Tuple<string, CnstKind>> SuggestedSettings
-        {
-            get { throw new NotImplementedException(); }
-        }
-
         public bool Parse(
             Configuration config,
             System.IO.Stream quoteStream, 
@@ -169,16 +173,6 @@ namespace CParser
         {
             flags = new List<Flag>();
             throw new NotImplementedException();
-        }
-
-        public string Description
-        {
-            get { throw new NotImplementedException(); }
-        }
-
-        public IEnumerable<Tuple<Microsoft.Formula.API.Nodes.Id, Microsoft.Formula.API.Nodes.Cnst>> Settings
-        {
-            get { throw new NotImplementedException(); }
         }
 
         public bool TrySet(Microsoft.Formula.API.Nodes.Id settingName, Microsoft.Formula.API.Nodes.Cnst cnst, out List<Flag> flags)
@@ -326,5 +320,4 @@ namespace CParser
             };
         }
     }
-
 }

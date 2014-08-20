@@ -61,14 +61,14 @@ domain PData
     /*************************************************************/
 
     EventDecl    ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
-    MachineDecl  ::= fun (name: String -> kind: { REAL, MODEL, MONITOR }, card: any QueueConstraint, start: QualifiedName, isMain: Boolean).
+    MachineDecl  ::= fun (name: String -> kind: { REAL, MODEL, MONITOR }, card: any QueueConstraint, start: any QualifiedName, isMain: Boolean).
     VarDecl      ::= fun (name: String, owner: MachineDecl -> type: any TypeExpr).
     FunDecl      ::= fun (name: String, owner: MachineDecl -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL },  return: any TypeExpr + { NIL }, body: any Stmt).
     ActionDecl   ::= fun (name: String, owner: MachineDecl -> body: any Stmt).
-    StateDecl    ::= fun (name: QualifiedName, owner: MachineDecl -> entryAction: any Stmt + String, exitFun: any Stmt + string, isStable: Boolean).
-    TransDecl    ::= fun (src: StateDecl, trig: String + { DEFAULT, HALT } -> dst: any QualifiedName, action: { NIL, PUSH } + any Stmt + String).
-    DoDecl       ::= fun (src: StateDecl, trig: String + { HALT } -> action: { DEFER, IGNORE } + any Stmt + String).
-	
+    StateDecl    ::= fun (name: any QualifiedName, owner: MachineDecl -> entryAction: any Stmt + String, exitFun: any Stmt + String, isStable: Boolean).
+    TransDecl    ::= fun (src: StateDecl, trig: String + { DEFAULT, HALT } -> dst: any QualifiedName, action: any { NIL, PUSH } + Stmt + String).
+    DoDecl       ::= fun (src: StateDecl, trig: String + { HALT } -> action: any { DEFER, IGNORE } + Stmt + String).
+    
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
     QualifiedName      ::= new (name: String, qualifier: any QualifiedName + { NIL }).
@@ -91,6 +91,10 @@ domain PStaticTyping extends PData
 ]
 */
 {
+    /*************************************************************/
+	conforms no TypeOf(_, _, ERROR). 
+    /*************************************************************/
+
     //// The declarations that may contain expressions or statements that should be typed.
     TypingContext ::= FunDecl + ActionDecl + StateDecl + TransDecl.
     
@@ -119,12 +123,15 @@ domain PStaticTyping extends PData
     
     TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = NulApp(THIS), TCOwner(c, m), m.kind = REAL.
     TypeOf(c, e, BaseType(MODEL)) :- SubSE(c, e), e = NulApp(THIS), TCOwner(c, m), m.kind = MODEL.
+	[ rule_Classes = '"error, msg: Monitors cannot refer to "this""']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(THIS), TCOwner(c, m), m.kind = MONITOR.
     
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(NONDET), TCOwner(c, m), m.kind != REAL.
+	[ rule_Classes = '"error, msg: Nonderminitistic choice cannot be used in real machines"']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(NONDET), TCOwner(c, m), m.kind = REAL.
 
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(FAIRNONDET), TCOwner(c, m), m.kind != REAL.
+	[ rule_Classes = '"error, msg: Nonderminitistic choice cannot be used in real machines"']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(FAIRNONDET), TCOwner(c, m), m.kind = REAL.
     
     TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = NulApp(v), v : Integer.
@@ -140,77 +147,91 @@ domain PStaticTyping extends PData
     // Variables hide the names of events, in case both have the same name.
     TypeOf(c, e, t)               :- SubSE(c, e), e = Name(n), TCOwner(c, m), VarDecl(n, m, t). 
     TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = Name(n), EventDecl(n, _, _), TCOwner(c, m), no VarDecl(n, m, _). 
+	[ rule_Classes = '"error, msg: Undefined symbol"']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n), TCOwner(c, m), no EventDecl(n, _, _), no VarDecl(n, m, _). 
     
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = UnApp(NOT, e'), TypeOf(c, e', BaseType(b)), b = BOOL. 
+	[ rule_Classes = '"error, msg: Operator expected a boolean value"']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(NOT, e'), TypeOf(c, e', BaseType(b)), b != BOOL. 
     
     TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = UnApp(NEG, e'), TypeOf(c, e', BaseType(b)), b = INT. 
+	[ rule_Classes = '"error, msg: Operator expected an integer value"']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(NEG, e'), TypeOf(c, e', BaseType(b)), b != INT. 
     
     TypeOf(c, e, dom)             :- SubSE(c, e), e = UnApp(KEYS, e'), TypeOf(c, e', t), t = MapType(dom, cod). 
+	[ rule_Classes = '"error, msg: Operator expected a map value"']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(KEYS, e'), TypeOf(c, e', t), toSymbol(t) != #MapType. 
 
     TypeOf(c, e, cod)             :- SubSE(c, e), e = UnApp(VALUES, e'), TypeOf(c, e', t), t = MapType(dom, cod). 
+	[ rule_Classes = '"error, msg: Operator expected a map value"']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(VALUES, e'), TypeOf(c, e', t), toSymbol(t) != #MapType. 
 
     TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = UnApp(SIZEOF, e'), TypeOf(c, e', t), t : MapType. 
     TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = UnApp(SIZEOF, e'), TypeOf(c, e', t), t : SeqType. 
+	[ rule_Classes = '"error, msg: Operator expected a map or sequence value"']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(SIZEOF, e'), TypeOf(c, e', t), toSymbol(t) != #MapType, toSymbol(t) != #SeqType. 
     
     //// (2) The types of binary expressions
     TypeOf(c, e, t)                :- SubSE(c, e), e = Cast(e', t), TypeOf(c, e', t'), TypeRel(t, t', k), k != EMPTY.
+	[ rule_Classes = '"error, msg: Cast can never succeed"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Cast(e', t), TypeOf(c, e', t'), TypeRel(t, t', k), k = EMPTY.
 
     TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _), MachineDecl(n, REAL, _, _, _).
     TypeOf(c, e, BaseType(MODEL))  :- SubSE(c, e), e = New(n, _), MachineDecl(n, MODEL, _, _, _).
+	[ rule_Classes = '"error, msg: Monitors cannot be created with "new""']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), MachineDecl(n, MONITOR, _, _, _).
+	[ rule_Classes = '"error, msg: Undefined machine type"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), no MachineDecl(n, _, _, _, _).   
     
     TypeOf(c, e, ft)               :- SubSE(c, e), e = Field(e', n), TypeOf(c, e', t), TypeOfField(t, n, ft).
+	[ rule_Classes = '"error, msg: Operator expected a named tuple value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Field(e', n), TypeOf(c, e', t), toSymbol(t) != #NmdTupType.
     
-    PureIntOp ::= { ADD, MUL, INTDIV }.
+    PureIntOp ::= { ADD, SUB, MUL, INTDIV }.
     TypeOf(c, e, bint)             :- SubSE(c, e), e = BinApp(op, e', e''), TypeOf(c, e', bint), TypeOf(c, e'', bint), op : PureIntOp, bint = BaseType(INT).
+	[ rule_Classes = '"error, msg: Operator expected first argument to be an integer value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, e', _), TypeOf(c, e', t), op : PureIntOp, t != BaseType(INT).    
+	[ rule_Classes = '"error, msg: Operator expected second argument to be an integer value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e''), TypeOf(c, e'', t), op : PureIntOp, t != BaseType(INT).    
     
     PureIntRel ::= { LT, LE, GT, GE }.
     TypeOf(c, e, BaseType(BOOL))   :- SubSE(c, e), e = BinApp(op, e', e''), TypeOf(c, e', bint), TypeOf(c, e'', bint), op : PureIntRel, bint = BaseType(INT).
+	[ rule_Classes = '"error, msg: Operator expected first argument to be an integer value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, e', _), TypeOf(c, e', t), op : PureIntRel, t != BaseType(INT).    
+	[ rule_Classes = '"error, msg: Operator expected second argument to be an integer value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e''), TypeOf(c, e'', t), op : PureIntRel, t != BaseType(INT).    
     
     PureBoolOp ::= { AND, OR }.
     TypeOf(c, e, BaseType(BOOL))   :- SubSE(c, e), e = BinApp(op, e', e''), TypeOf(c, e', bbool), TypeOf(c, e'', bbool), op : PureBoolOp, bbool = BaseType(BOOL).
+	[ rule_Classes = '"error, msg: Operator expected first argument to be a boolean value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, e', _), TypeOf(c, e', t), op : PureBoolOp, t != BaseType(BOOL).    
+	[ rule_Classes = '"error, msg: Operator expected second argument to be a boolean value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e''), TypeOf(c, e'', t), op : PureBoolOp, t != BaseType(BOOL).    
     
     PolyRel ::= { EQ, NEQ }.
     TypeOf(c, e, BaseType(BOOL))   :- SubSE(c, e), e = BinApp(op, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), op : PolyRel, TypeRel(t', t'', k), k != EMPTY.
+	[ rule_Classes = '"error, msg: Values cannot be compared because their types are incompatible"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), op : PolyRel, TypeRel(t', t'', k), k = EMPTY.
     
     TypeOf(c, e, inner)            :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = SeqType(inner), t'' = BaseType(INT).
     TypeOf(c, e, cod)              :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = MapType(dom, cod), TypeRel(t'', dom, SUB).
     TypeOf(c, e, fld)              :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOfIdx(t', e'', fld).    
+	[ rule_Classes = '"error, msg: Indexer must be applied to a sequence, map, or tuple"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IDX, e', _), TypeOf(c, e', t'), toSymbol(t') != #SeqType, toSymbol(t') != #MapType, toSymbol(t') != #TupType.
+	[ rule_Classes = '"error, msg: Index must be an integer"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' : SeqType, t'' != BaseType(INT).
+	[ rule_Classes = '"error, msg: Index may not be in the domain of the map"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = MapType(dom, _), TypeRel(t'', dom, k), t'' != dom, k != SUB.
-    
-    TypeOf(c, e, bint)             :- SubSE(c, e), e = BinApp(SUB, e', e''), TypeOf(c, e', bint), TypeOf(c, e'', bint), bint = BaseType(INT).
-    TypeOf(c, e, t')               :- SubSE(c, e), e = BinApp(SUB, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = SeqType(inner), t'' = BaseType(INT).
-    TypeOf(c, e, t')               :- SubSE(c, e), e = BinApp(SUB, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = MapType(dom, _), TypeRel(t'', dom, SUB).        
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(SUB, e', e''), TypeOf(c, e', bint), TypeOf(c, e'', t''), t'' != bint, bint = BaseType(INT).
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(SUB, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = SeqType(inner), t'' != BaseType(INT).
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(SUB, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = MapType(dom, _), TypeRel(t'', dom, k), k != SUB.        
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(SUB, e', _),   TypeOf(c, e', t'), t' != BaseType(INT), toSymbol(t') != #SeqType, toSymbol(t') != #MapType.
     
     TypeOf(c, e, BaseType(BOOL))   :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = SeqType(inner), TypeRel(t', inner, k), k != EMPTY.
     TypeOf(c, e, BaseType(BOOL))   :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = MapType(dom, _), TypeRel(t', dom, k), k != EMPTY.        
+	[ rule_Classes = '"error, msg: Value can never be in the sequence"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = SeqType(inner), TypeRel(t', inner, EMPTY).
+	[ rule_Classes = '"error, msg: Value can never be in the map"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = MapType(dom, _), TypeRel(t', dom, EMPTY).        
+	[ rule_Classes = '"error, msg: "in" expects a sequence or map"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, _, e''),  TypeOf(c, e'', t''), toSymbol(t'') != #SeqType, toSymbol(t'') != #MapType.
     
-
     //// Used to lookup the type of a field in a named tuple type.
     TypeOfField    ::= (tupTyp: NmdTupType, lookup: String, fieldType: TypeExpr + { ERROR }).    
     TypeOfFieldAux ::= (tupTyp: NmdTupType, lookup: String, fieldType: TypeExpr + { ERROR }, tail: NmdTupType + { NIL }).
@@ -240,31 +261,42 @@ domain PStaticTyping extends PData
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Seq(_, _).
     
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = UnStmt(ASSERT, e'), TypeOf(c, e', t'), t' = BaseType(BOOL).
+	[ rule_Classes = '"error, msg: "assert" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = UnStmt(ASSERT, e'), TypeOf(c, e', t'), t' != BaseType(BOOL).
     
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Ite(e', _, _), TypeOf(c, e', t'), t' = BaseType(BOOL).
+	[ rule_Classes = '"error, msg: "if (...)" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Ite(e', _, _), TypeOf(c, e', t'), t' != BaseType(BOOL).
     
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = While(e', _), TypeOf(c, e', t'), t' = BaseType(BOOL).
+	[ rule_Classes = '"error, msg: "while (...)" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = While(e', _), TypeOf(c, e', t'), t' != BaseType(BOOL).
                
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Push(name), TCOwner(c, m), StateDecl(name, m, _, _, _). 
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Push(name), TCOwner(c, m), no StateDecl(name, m, _, _, _). 
+	[ rule_Classes = '"error, msg: Undeclared state name"']
+	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Push(name), TCOwner(c, m), no StateDecl(name, m, _, _, _). 
     
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _), MachineDecl(n, _, _, _, _).   
+	[ rule_Classes = '"error, msg: Undeclared machine"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _), no MachineDecl(n, _, _, _, _).   
     
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Raise(e', _), TypeOf(c, e', t'), t' = BaseType(EVENT).   
+	[ rule_Classes = '"error, msg: "raise" expects an event value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Raise(e', _), TypeOf(c, e', t'), t' != BaseType(EVENT).      
       
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Send(e', e'', _), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = BaseType(REAL), t'' = BaseType(EVENT).
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Send(e', e'', _), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = BaseType(MODEL), t'' = BaseType(EVENT).
+	[ rule_Classes = '"error, msg: argument 2 of "send" expects an event value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(e', e'', _), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = BaseType(REAL), t'' != BaseType(EVENT).
+	[ rule_Classes = '"error, msg: argument 2 of "send" expects an event value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(e', e'', _), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = BaseType(MODEL), t'' != BaseType(EVENT).
+	[ rule_Classes = '"error, msg: argument 1 of "send" expects a machine value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(e', _, _), TypeOf(c, e', t'), t' != BaseType(REAL), t' != BaseType(MODEL).
     
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Monitor(n, e', _), MachineDecl(n, MONITOR, _, _, _), TypeOf(c, e', t'), t' = BaseType(EVENT).
+	[ rule_Classes = '"error, msg: Undeclared monitor"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(n, _, _), no MachineDecl(n, MONITOR, _, _, _).
+	[ rule_Classes = '"error, msg: argument 2 of "monitor" expects an event value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(_, e', _), TypeOf(c, e', t'), t' != BaseType(EVENT).
                                                     
     /*************************************************************/

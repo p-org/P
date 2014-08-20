@@ -15,6 +15,11 @@
 
     public class Parser : IQuoteParser
     {
+        public string Description
+        {
+            get { return "A renderer for Zing"; }
+        }
+
         public string UnquotePrefix
         {
             get { throw new NotImplementedException(); }
@@ -23,9 +28,9 @@
         {
             get { throw new NotImplementedException(); }
         }
-        public IEnumerable<Tuple<string, CnstKind>> SuggestedSettings
+        public IEnumerable<Tuple<string, CnstKind, string>> SuggestedSettings
         {
-            get { throw new NotImplementedException(); }
+            get { yield break; }
         }
         public IQuoteParser CreateInstance(
                             AST<Node> module,

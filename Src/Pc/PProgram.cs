@@ -53,7 +53,7 @@
             private set;
         }
 
-        public List<P_Root.DefIgnDecl> DefersOrIgnores
+        public List<P_Root.DoDecl> Dos
         {
             get;
             private set;
@@ -104,7 +104,7 @@
                     yield return ac;
                 }
 
-                foreach (var di in DefersOrIgnores)
+                foreach (var di in Dos)
                 {
                     yield return di;
                 }
@@ -125,7 +125,7 @@
             Transitions = new List<P_Root.TransDecl>();
             Functions = new List<P_Root.FunDecl>();
             Actions = new List<P_Root.ActionDecl>();
-            DefersOrIgnores = new List<P_Root.DefIgnDecl>();
+            Dos = new List<P_Root.DoDecl>();
             Annotations = new List<P_Root.Annotation>();
         }
     }

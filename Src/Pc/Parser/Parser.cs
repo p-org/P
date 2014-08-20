@@ -809,10 +809,10 @@
             var entry = stmtStack.Pop();
             var state = GetCurrentStateDecl(entry.Span);
 
-            if (state.entryFun is P_Root.NulStmt &&
-                (P_Root.UserCnstKind)((P_Root.UserCnst)((P_Root.NulStmt)state.entryFun)[0]).Value == P_Root.UserCnstKind.SKIP)
+            if (state.entryAction is P_Root.NulStmt &&
+                (P_Root.UserCnstKind)((P_Root.UserCnst)((P_Root.NulStmt)state.entryAction)[0]).Value == P_Root.UserCnstKind.SKIP)
             {
-                state.entryFun = (P_Root.IArgType_StateDecl__2)entry;
+                state.entryAction = (P_Root.IArgType_StateDecl__2)entry;
             }
             else
             {
@@ -919,9 +919,9 @@
             var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
             foreach (var e in crntEventList)
             {
-                var defOrIgn = P_Root.MkDefIgnDecl(state, (P_Root.IArgType_DefIgnDecl__1)e, kind);
+                var defOrIgn = P_Root.MkDoDecl(state, (P_Root.IArgType_DoDecl__1)e, kind);
                 defOrIgn.Span = span;
-                parseProgram.DefersOrIgnores.Add(defOrIgn);
+                parseProgram.Dos.Add(defOrIgn);
                 if (isTrigAnnotated)
                 {
                     foreach (var kv in annots)
@@ -1041,7 +1041,7 @@
                     MkUserCnst(valKind, valSpan)));
         }
 
-        private void AddAction(string name, Span nameSpan, Span span)
+        private void AddDoNamedAction(string name, Span nameSpan, Span span)
         {
             Contract.Assert(crntEventList.Count > 0);
             Contract.Assert(!isTrigAnnotated || crntAnnotStack.Count > 0);
@@ -1051,9 +1051,9 @@
             var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
             foreach (var e in crntEventList)
             {
-                var action = P_Root.MkActionDecl(state, (P_Root.IArgType_ActionDecl__1)e, actName);
+                var action = P_Root.MkDoDecl(state, (P_Root.IArgType_DoDecl__1)e, actName);
                 action.Span = span;
-                parseProgram.Actions.Add(action);
+                parseProgram.Dos.Add(action);
                 if (isTrigAnnotated)
                 {
                     foreach (var kv in annots)
@@ -1279,7 +1279,7 @@
 
             var skipEntry = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
             skipEntry.Span = span;
-            crntState.entryFun = skipEntry;
+            crntState.entryAction = skipEntry;
 
             var skipExit = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
             skipExit.Span = span;

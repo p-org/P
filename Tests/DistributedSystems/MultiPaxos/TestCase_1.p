@@ -1,5 +1,5 @@
 
-
+event response;
 
 main machine GodMachine {
 	var paxosnodes : seq[id];
@@ -34,10 +34,10 @@ model machine Client {
 			servers = (seq[id])payload;
 			raise(local);
 		}
-		on local goto PumpOneRequest;
+		on local goto PumpRequestOne;
 	}
 	
-	state PumpOneRequest {
+	state PumpRequestOne {
 		entry {
 			
 			invoke ValidityCheck(monitor_client_sent, 1);
@@ -45,7 +45,27 @@ model machine Client {
 				send(servers[0], update, (seqId  = 0, command = 1));
 			else
 				send(servers[sizeof(servers) - 1], update, (seqId  = 0, command = 1));
+				
+			raise(response);
 		}
+		on response goto PumpRequestTwo;
+	}
+	
+	state PumpRequestTwo {
+		entry {
+			
+			invoke ValidityCheck(monitor_client_sent, 2);
+			if(*)
+				send(servers[0], update, (seqId  = 0, command = 2));
+			else
+				send(servers[sizeof(servers) - 1], update, (seqId  = 0, command = 2));
+				
+			raise(response);
+		}
+		on response goto Done;
 	}
 
+	state Done {
+	
+	}
 }

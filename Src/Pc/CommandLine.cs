@@ -28,7 +28,7 @@
 
             if (!result)
             {
-                WriteMessage("Compilation failed", SeverityKind.Error);
+                WriteMessageLine("Compilation failed", SeverityKind.Error);
             }
         }
 
@@ -36,16 +36,16 @@
         {
             foreach (var f in flags)
             {
-                WriteMessage(
+                WriteMessageLine(
                     string.Format("{0} ({1}, {2}): {3}",
-                    f.ProgramName == null ? "?" : f.ProgramName.ToString(),
+                    f.ProgramName == null ? "?" : (f.ProgramName.Uri.IsFile ? f.ProgramName.Uri.AbsolutePath : f.ProgramName.ToString()),
                     f.Span.StartLine,
                     f.Span.StartCol,
                     f.Message), f.Severity);               
             }
         }
 
-        private static void WriteMessage(string msg, SeverityKind severity)
+        private static void WriteMessageLine(string msg, SeverityKind severity)
         {
             switch (severity)
             {
@@ -63,7 +63,7 @@
                     break;
             }
 
-            Console.Write(msg);
+            Console.WriteLine(msg);
             Console.ForegroundColor = ConsoleColor.Gray;
         }
     }

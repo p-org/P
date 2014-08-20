@@ -11,6 +11,8 @@
     using Microsoft.Formula.API;
     using Microsoft.Formula.API.ASTQueries;
     using Microsoft.Formula.API.Nodes;
+    using Microsoft.Formula.Common;
+    using Microsoft.Formula.Compiler;
 
     internal class Compiler
     {
@@ -19,6 +21,9 @@
         private const string ZingDomain = "Zing";
         private const string P2InfTypesTransform = "P2PWithInferredTypes";
         private const string AliasPrefix = "p_compiler__";
+        private const string MsgPrefix = "msg:";
+        private const string ErrorClassName = "error";
+        private const int TypeErrorCode = 1;
 
         private static readonly Tuple<string, string>[] ManifestPrograms = new Tuple<string, string>[]
         {
@@ -96,7 +101,7 @@
 
             //// Step 1. Attempt to parse the P program, and stop if parse fails.
             PProgram prog;
-            var parserFlags = new List<Flag>();
+            List<Flag> parserFlags;
             var parser = new Parser.Parser();
             var result = parser.ParseFile(inputFile, out parserFlags, out prog);
             flags.AddRange(parserFlags);
@@ -115,18 +120,125 @@
                 PDomain, 
                 prog.Terms, 
                 out model,
-                null,
+                MkDeclAliases(prog),
                 MkReservedModuleLocation(PDomain));
             Contract.Assert(result);
 
             InstallResult instResult;
-            var progressed = CompilerEnv.Install(Factory.Instance.AddModule(Factory.Instance.MkProgram(inputFile), model), out instResult);
+            var modelProgram = MkProgWithSettings(inputFile, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
+            var progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, model), out instResult);
             Contract.Assert(progressed && instResult.Succeeded);
 
-            //// Step 3. Perform Zing compilation.
-            GenerateZing(inputModule, inputFile);
+            //// Step 3. Perform static analysis.
+            if (!Check(inputModule, inputFile, flags))
+            {
+                return false;
+            }
 
+            //// Step 4. Perform Zing compilation.
+            GenerateZing(inputModule, inputFile);
             return true;
+        }
+
+        /// <summary>
+        /// Run static analysis on the program.
+        /// </summary>
+        private bool Check(string inputModule, ProgramName inputProgram, List<Flag> flags)
+        {
+            //// Run static analysis on input program.
+            List<Flag> queryFlags;
+            Task<QueryResult> task;
+            Formula.Common.Rules.ExecuterStatistics stats;
+            var canStart = CompilerEnv.Query(
+                inputProgram,
+                inputModule,
+                new AST<Body>[] { Factory.Instance.AddConjunct(Factory.Instance.MkBody(), Factory.Instance.MkFind(null, Factory.Instance.MkId(inputModule + ".requires"))) },
+                true,
+                false,
+                out queryFlags,
+                out task,
+                out stats);
+
+            Contract.Assert(canStart);
+            flags.AddRange(queryFlags);
+            task.RunSynchronously();
+
+            //// Enumerate typing errors
+            var typeErrors = new SortedSet<Flag>(default(FlagSorter));
+            foreach (var p in task.Result.EnumerateProofs(@"TypeOf(_, _, ERROR)", out queryFlags, 1))
+            {
+                if (!p.HasRuleClass(ErrorClassName))
+                {
+                    continue;
+                }
+
+                var errorMsg = GetMessageFromProof(p);
+                foreach (var loc in p.ComputeLocators())
+                {
+                    var exprLoc = loc[1];
+                    typeErrors.Add(new Flag(
+                        SeverityKind.Error, 
+                        exprLoc.Span, 
+                        errorMsg, 
+                        TypeErrorCode, 
+                        ProgramName.Compare(inputProgram, exprLoc.Program) != 0 ? null : exprLoc.Program));
+                }
+            }
+
+            flags.AddRange(queryFlags);
+            flags.AddRange(typeErrors);
+
+            return task.Result.Conclusion == LiftedBool.True;
+        }
+
+        private static string GetMessageFromProof(ProofTree p)
+        {
+            foreach (var cls in p.RuleClasses)
+            {
+                if (cls.StartsWith(MsgPrefix))
+                {
+                    return cls.Substring(MsgPrefix.Length).Trim();
+
+                }
+            }
+
+            return "Unknown error";
+        }
+
+        private static AST<Program> MkProgWithSettings(
+            ProgramName name, 
+            params KeyValuePair<string, object>[] settings)
+        {
+            var prog = Factory.Instance.MkProgram(name);
+
+            var configQuery = new NodePred[] 
+            { 
+                NodePredFactory.Instance.MkPredicate(NodeKind.Program), 
+                NodePredFactory.Instance.MkPredicate(NodeKind.Config)
+            };
+
+            var config = (AST<Config>)prog.FindAny(configQuery);
+            Contract.Assert(config != null);
+            if (settings != null)
+            {
+                foreach (var kv in settings)
+                {
+                    if (kv.Value is string)
+                    {
+                        config = Factory.Instance.AddSetting(config, Factory.Instance.MkId(kv.Key), Factory.Instance.MkCnst((string)kv.Value));
+                    }
+                    else if (kv.Value is int)
+                    {
+                        config = Factory.Instance.AddSetting(config, Factory.Instance.MkId(kv.Key), Factory.Instance.MkCnst((int)kv.Value));
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
+                }
+            }
+
+            return (AST<Program>)Factory.Instance.ToAST(config.Root);
         }
 
         private static void InitEnv(Env env)
@@ -226,6 +338,38 @@
             }
         }
 
+        /// <summary>
+        /// Users may create several declarations with the same name. This method gives these different aliases
+        /// to avoid failure of model compilation.
+        /// </summary>
+        private static string MkSafeAlias(string name, Dictionary<string, int> occurrenceMap)
+        {
+            if (!occurrenceMap.ContainsKey(name))
+            {
+                occurrenceMap.Add(name, 1);
+                return name;
+            }
+
+            int n = occurrenceMap[name];
+            occurrenceMap[name] = n + 1;
+            return string.Format("{0}_{1}", name, n);
+        }
+
+        private static string MkQualifiedAlias(Domains.P_Root.QualifiedName qualName)
+        {
+            Contract.Requires(qualName != null);
+            var alias = ((Domains.P_Root.StringCnst)qualName.name).Value;
+            var qualifier = qualName.qualifier as Domains.P_Root.QualifiedName;
+            if (qualifier == null)
+            {
+                return alias;
+            }
+            else
+            {
+                return string.Format("{0}_{1}", MkQualifiedAlias(qualifier), alias);
+            }
+        }
+
         private AST<Model> GenerateZing(string inputModelName, ProgramName inputProgram)
         {
             //// Get out the P program with type annotations. The Zing compiler is going to walk to AST.
@@ -248,9 +392,84 @@
                 new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
             Contract.Assert(modelWithTypes != null);
 
-            modelWithTypes.Print(System.Console.Out);
+            //// Visit modelWithTypes.
+            //// modelWithTypes.Print(System.Console.Out);
 
             return null;
+        }
+
+        private Dictionary<Microsoft.Formula.API.Generators.ICSharpTerm, string> MkDeclAliases(PProgram program)
+        {
+            Contract.Requires(program != null);
+            var aliases = new Dictionary<Microsoft.Formula.API.Generators.ICSharpTerm, string>();
+            var occurrenceMap = new Dictionary<string, int>();
+
+            foreach (var m in program.Machines)
+            {
+                aliases.Add(m, MkSafeAlias("machdecl__" + ((Domains.P_Root.StringCnst)m.name).Value, occurrenceMap));
+            }
+
+            foreach (var e in program.Events)
+            {
+                aliases.Add(e, MkSafeAlias("evdecl__" + ((Domains.P_Root.StringCnst)e.name).Value, occurrenceMap));
+            }
+
+            foreach (var v in program.Variables)
+            {
+                aliases.Add(v, MkSafeAlias(string.Format("vardecl__{0}__{1}", ((Domains.P_Root.StringCnst)((Domains.P_Root.MachineDecl)v.owner).name).Value, ((Domains.P_Root.StringCnst)v.name).Value), occurrenceMap));
+            }
+
+            foreach (var f in program.Functions)
+            {
+                aliases.Add(f, MkSafeAlias(string.Format("fundecl__{0}__{1}", ((Domains.P_Root.StringCnst)((Domains.P_Root.MachineDecl)f.owner).name).Value, ((Domains.P_Root.StringCnst)f.name).Value), occurrenceMap));
+            }
+
+            foreach (var s in program.States)
+            {
+                aliases.Add(s, MkSafeAlias(string.Format("statedecl__{0}__{1}", ((Domains.P_Root.StringCnst)((Domains.P_Root.MachineDecl)s.owner).name).Value, MkQualifiedAlias((Domains.P_Root.QualifiedName)s.name)), occurrenceMap));
+            }
+
+            return aliases;
+        }
+
+        private struct FlagSorter : IComparer<Flag>
+        {
+            public int Compare(Flag x, Flag y)
+            {
+                if (x.Severity != y.Severity)
+                {
+                    return ((int)x.Severity) - ((int)y.Severity);
+                }
+
+                var cmp = string.Compare(x.ProgramName.ToString(), y.ProgramName.ToString());
+                if (cmp != 0)
+                {
+                    return cmp;
+                }
+
+                if (x.Span.StartLine != y.Span.StartLine)
+                {
+                    return x.Span.StartLine < y.Span.StartLine ? -1 : 1;
+                }
+
+                if (x.Span.StartCol != y.Span.StartCol)
+                {
+                    return x.Span.StartCol < y.Span.StartCol ? -1 : 1;
+                }
+
+                cmp = string.Compare(x.Message, y.Message);
+                if (cmp != 0)
+                {
+                    return cmp;
+                }
+
+                if (x.Code != y.Code)
+                {
+                    return x.Code < y.Code ? -1 : 1;
+                }
+
+                return 0;
+            }
         }
     }
 }

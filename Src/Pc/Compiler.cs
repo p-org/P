@@ -189,6 +189,27 @@
                 }
             }
 
+            //// Enumerate duplicate definitions
+            foreach (var p in task.Result.EnumerateProofs(@"DuplicateEvent(_, _)", out queryFlags, 1))
+            {
+                if (!p.HasRuleClass(ErrorClassName))
+                {
+                    continue;
+                }
+
+                var errorMsg = GetMessageFromProof(p);
+                foreach (var loc in p.ComputeLocators())
+                {
+                    var exprLoc = loc[1];
+                    typeErrors.Add(new Flag(
+                        SeverityKind.Error,
+                        exprLoc.Span,
+                        errorMsg,
+                        TypeErrorCode,
+                        ProgramName.Compare(inputProgram, exprLoc.Program) != 0 ? null : exprLoc.Program));
+                }
+            }
+
             flags.AddRange(queryFlags);
             flags.AddRange(typeErrors);
 

@@ -1,4 +1,4 @@
-﻿domain P extends PStaticTyping
+﻿domain P extends PStaticTyping, PStructuralTyping
 {
 
 }
@@ -84,10 +84,18 @@ domain PData
     AnnotValue  ::= Integer + String + Boolean + { NULL }.
 }
 
+domain PStructuralTyping extends PData
+{
+    DuplicateEvent ::= (EventDecl, EventDecl).
+
+	[ rule_Classes = '"error, msg: An event has multiple definitions"']
+	DuplicateEvent(e1, e2) :- e1 is EventDecl, e2 is EventDecl, e1.name = e2.name, e1 != e2.
+}
+
 domain PStaticTyping extends PData
 /*
 [
-    compiler_ProductivityCheck = "TypeOf[1], TypeRel[0, 1]"
+    compiler_ProductivityCheck = "TypeOf[1]"
 ]
 */
 {

@@ -170,7 +170,7 @@
     </CreateItem>
   </Target>
   <!-- Start Formula code generator MSBuild integration -->
-  <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="..\..\Ext\FormulaCodeGeneratorTask.dll" />
+  <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="..\..\Ext\Formula\FormulaCodeGeneratorTask.dll" />
   <Target Name="BeforeBuild" Condition="'$(BuildingInsideVisualStudio)' != 'true'">
     <ItemGroup>
       <FormulaGenFiles Include="@(EmbeddedResource->'%(FullPath)')" Condition="%(EmbeddedResource.Generator) == 'FormulaCodeGenerator'" />

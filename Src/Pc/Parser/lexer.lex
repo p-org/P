@@ -98,6 +98,7 @@
 			 keywords.Add("push", (int)Tokens.PUSH);
 			 keywords.Add("on", (int)Tokens.ON);
 			 keywords.Add("do", (int)Tokens.DO);
+			 keywords.Add("with", (int)Tokens.WITH);
 
 			 keywords.Add("in", (int)Tokens.IN);
 			 keywords.Add("as", (int)Tokens.AS);

@@ -23,6 +23,7 @@
 
         private Span crntAnnotSpan;
         private bool isTrigAnnotated = false;
+        private P_Root.ActionDecl crntActionDecl = null;
         private P_Root.FunDecl crntFunDecl = null;
         private P_Root.EventDecl crntEventDecl = null;
         private P_Root.MachineDecl crntMachDecl = null;
@@ -940,6 +941,40 @@
             crntEventList.Clear();
         }
 
+        private void AddTransitionWithNamedFun(string func, Span funcSpan, Span span)
+        {
+            Contract.Assert(crntEventList.Count > 0);
+            Contract.Assert(crntQualName != null);
+            Contract.Assert(!isTrigAnnotated || crntAnnotStack.Count > 0);
+
+            var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
+            var state = GetCurrentStateDecl(span);
+            P_Root.IArgType_TransDecl__3 action;
+            action = MkString(func, funcSpan);
+
+            foreach (var e in crntEventList)
+            {
+                var trans = P_Root.MkTransDecl(state, (P_Root.IArgType_TransDecl__1)e, crntQualName, action);
+                trans.Span = span;
+                parseProgram.Transitions.Add(trans);
+                if (isTrigAnnotated)
+                {
+                    foreach (var kv in annots)
+                    {
+                        var annot = P_Root.MkAnnotation(
+                            trans,
+                            kv.Item1,
+                            (P_Root.IArgType_Annotation__2)kv.Item2);
+                        annot.Span = crntAnnotSpan;
+                        parseProgram.Annotations.Add(annot);
+                    }
+                }
+            }
+
+            isTrigAnnotated = false;
+            crntQualName = null;
+            crntEventList.Clear();
+        }
         private void AddTransition(bool isPush, bool hasStmtAction, Span span)
         {
             Contract.Assert(crntEventList.Count > 0);
@@ -1040,6 +1075,39 @@
                     MkString(keyName, keySpan),
                     MkUserCnst(valKind, valSpan)));
         }
+
+
+        private void AddDoAnonyAction(Span span)
+        {
+            Contract.Assert(crntEventList.Count > 0);
+            Contract.Assert(!isTrigAnnotated || crntAnnotStack.Count > 0);
+
+            var state = GetCurrentStateDecl(span);
+            var actFunction = (P_Root.IArgType_DoDecl__2) stmtStack.Pop();
+            var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
+            foreach (var e in crntEventList)
+            {
+                var action = P_Root.MkDoDecl(state, (P_Root.IArgType_DoDecl__1)e, actFunction);
+                action.Span = span;
+                parseProgram.Dos.Add(action);
+                if (isTrigAnnotated)
+                {
+                    foreach (var kv in annots)
+                    {
+                        var annot = P_Root.MkAnnotation(
+                            action,
+                            kv.Item1,
+                            (P_Root.IArgType_Annotation__2)kv.Item2);
+                        annot.Span = crntAnnotSpan;
+                        parseProgram.Annotations.Add(annot);
+                    }
+                }
+            }
+
+            isTrigAnnotated = false;
+            crntEventList.Clear();
+        }
+
 
         private void AddDoNamedAction(string name, Span nameSpan, Span span)
         {
@@ -1223,6 +1291,18 @@
             }
         }
 
+        private void AddAction(string name, Span nameSpan, Span span)
+        {
+            Contract.Assert(stmtStack.Count > 0);
+            var actionDecl = GetCurrentActionDecl(span);
+            actionDecl.Span = span;
+            actionDecl.name = MkString(name, nameSpan);
+            actionDecl.owner = GetCurrentMachineDecl(span);
+            actionDecl.body = (P_Root.IArgType_ActionDecl__2)stmtStack.Pop();
+            parseProgram.Actions.Add(actionDecl);
+            crntActionDecl = null;
+        }
+
         private void AddFunction(string name, Span nameSpan, Span span)
         {
             Contract.Assert(stmtStack.Count > 0);
@@ -1249,6 +1329,18 @@
             crntEventDecl.type = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             crntEventDecl.Span = span;
             return crntEventDecl;
+        }
+
+        private P_Root.ActionDecl GetCurrentActionDecl(Span span)
+        {
+            if (crntActionDecl != null)
+            {
+                return crntActionDecl;
+            }
+
+            crntActionDecl = P_Root.MkActionDecl();
+            crntActionDecl.Span = span;
+            return crntActionDecl;
         }
 
         private P_Root.FunDecl GetCurrentFunDecl(Span span)
@@ -1289,6 +1381,7 @@
 
             return crntState;
         }
+        
 
         private P_Root.MachineDecl GetCurrentMachineDecl(Span span)
         {

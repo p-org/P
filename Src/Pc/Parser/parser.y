@@ -225,10 +225,10 @@ StateBodyItem
 	| IGNORE NonDefaultEventList TrigAnnotOrNone SEMICOLON					{ AddDefersOrIgnores(false, ToSpan(@1));            }
 	| ON EventList DO ID TrigAnnotOrNone SEMICOLON							{ AddDoNamedAction($4.str, ToSpan(@4), ToSpan(@1)); }
 	| ON EventList DO TrigAnnotOrNone StmtBlock SEMICOLON					{ AddDoAnonyAction(ToSpan(@1)); }
-	| ON EventList PUSH QualifiedId TrigAnnotOrNone SEMICOLON				{ AddTransition(true, false, ToSpan(@1));           }
- 	| ON EventList GOTO QualifiedId TrigAnnotOrNone SEMICOLON				{ AddTransition(false, false, ToSpan(@1));          } 
-	| ON EventList GOTO QualifiedId TrigAnnotOrNone WITH StmtBlock SEMICOLON { AddTransition(false, true, ToSpan(@1));           }
-	| ON EventList GOTO QualifiedId TrigAnnotOrNone WITH ID SEMICOLON		 { AddTransitionWithNamedFun($7.str, ToSpan(@7), ToSpan(@1));           }
+	| ON EventList PUSH QualifiedId TrigAnnotOrNone SEMICOLON				{ AddTransition(true, ToSpan(@1));           }
+ 	| ON EventList GOTO QualifiedId TrigAnnotOrNone SEMICOLON				{ AddTransition(false, ToSpan(@1));          } 
+	| ON EventList GOTO QualifiedId TrigAnnotOrNone WITH StmtBlock SEMICOLON { AddTransitionWithAction(true, "", ToSpan(@1), ToSpan(@1));           }
+	| ON EventList GOTO QualifiedId TrigAnnotOrNone WITH ID SEMICOLON		 { AddTransitionWithAction(false, $7.str, ToSpan(@7), ToSpan(@1));           }
 	;
 
 NonDefaultEventList

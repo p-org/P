@@ -941,17 +941,24 @@
             crntEventList.Clear();
         }
 
-        private void AddTransitionWithNamedFun(string func, Span funcSpan, Span span)
+        private void AddTransitionWithAction (bool isAnonymous, string actName, Span actNameSpan, Span span)
         {
             Contract.Assert(crntEventList.Count > 0);
             Contract.Assert(crntQualName != null);
             Contract.Assert(!isTrigAnnotated || crntAnnotStack.Count > 0);
+            Contract.Assert(!isAnonymous || stmtStack.Count > 0);
 
             var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
             var state = GetCurrentStateDecl(span);
             P_Root.IArgType_TransDecl__3 action;
-            action = MkString(func, funcSpan);
-
+            if (!isAnonymous)
+            {
+                action = MkString(actName, actNameSpan);
+            }
+            else
+            {
+                action = (P_Root.IArgType_TransDecl__3)stmtStack.Pop();
+            }
             foreach (var e in crntEventList)
             {
                 var trans = P_Root.MkTransDecl(state, (P_Root.IArgType_TransDecl__1)e, crntQualName, action);
@@ -975,12 +982,10 @@
             crntQualName = null;
             crntEventList.Clear();
         }
-        private void AddTransition(bool isPush, bool hasStmtAction, Span span)
+        private void AddTransition(bool isPush, Span span)
         {
             Contract.Assert(crntEventList.Count > 0);
             Contract.Assert(crntQualName != null);
-            Contract.Assert(!hasStmtAction || stmtStack.Count > 0);
-            Contract.Assert(!(hasStmtAction && isPush));
             Contract.Assert(!isTrigAnnotated || crntAnnotStack.Count > 0);
 
             var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
@@ -989,10 +994,6 @@
             if (isPush)
             {
                 action = MkUserCnst(P_Root.UserCnstKind.PUSH, span);
-            }
-            else if (hasStmtAction)
-            {
-                action = (P_Root.IArgType_TransDecl__3)stmtStack.Pop();
             }
             else
             {

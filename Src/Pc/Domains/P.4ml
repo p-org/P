@@ -117,7 +117,7 @@ domain PStaticTyping extends PData
 
     //// The machine owning a context.
     TCOwner ::= (cntxt: TypingContext, mach: MachineDecl).    
-    TCOwner(x, x.owner) :- x is FunDecl; x is StateDecl; y is TransDecl, x = y.src.
+    TCOwner(x, x.owner) :- x is FunDecl; x is StateDecl; x is ActionDecl; y is TransDecl, x = y.src.
 
     /*************************************************************/
     /*                      Types of Expressions                 */

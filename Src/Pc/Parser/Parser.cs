@@ -804,11 +804,22 @@
             isTrigAnnotated = true;
         }
 
-        private void SetStateEntry()
+        private void SetStateEntry(bool isStmtBlock, string actionName = "", Span actionSpan = new Span())
         {
-            Contract.Assert(stmtStack.Count > 0);
-            var entry = stmtStack.Pop();
-            var state = GetCurrentStateDecl(entry.Span);
+            Contract.Assert(!isStmtBlock || stmtStack.Count > 0);
+            P_Root.IArgType_StateDecl__2 entry;
+            P_Root.StateDecl state;
+            if(isStmtBlock)
+            {
+                entry = (P_Root.IArgType_StateDecl__2)stmtStack.Pop();
+                state = GetCurrentStateDecl(entry.Span);
+            }
+            else
+            {
+                entry = (P_Root.IArgType_StateDecl__2)MkString(actionName, actionSpan);
+                state = GetCurrentStateDecl(actionSpan);
+            }
+            
 
             if (state.entryAction is P_Root.NulStmt &&
                 (P_Root.UserCnstKind)((P_Root.UserCnst)((P_Root.NulStmt)state.entryAction)[0]).Value == P_Root.UserCnstKind.SKIP)
@@ -828,11 +839,22 @@
             }
         }
 
-        private void SetStateExit()
+        private void SetStateExit(bool isStmtBlock, string funtionName = "", Span functionSpan = new Span())
         {
-            Contract.Assert(stmtStack.Count > 0);
-            var exit = stmtStack.Pop();
-            var state = GetCurrentStateDecl(exit.Span);
+            Contract.Assert(!isStmtBlock || stmtStack.Count > 0);
+            P_Root.IArgType_StateDecl__3 exit;
+            P_Root.StateDecl state;
+
+            if (isStmtBlock)
+            {
+                exit = (P_Root.IArgType_StateDecl__3)stmtStack.Pop();
+                state = GetCurrentStateDecl(exit.Span);
+            }
+            else
+            {
+                exit = (P_Root.IArgType_StateDecl__3)MkString(funtionName, functionSpan);
+                state = GetCurrentStateDecl(functionSpan);
+            }
 
             if (state.exitFun is P_Root.NulStmt &&
                 (P_Root.UserCnstKind)((P_Root.UserCnst)((P_Root.NulStmt)state.exitFun)[0]).Value == P_Root.UserCnstKind.SKIP)

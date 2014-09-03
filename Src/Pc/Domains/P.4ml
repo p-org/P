@@ -115,6 +115,11 @@ domain PStaticTyping extends PData
     //// All typeable subexpressions / substatements and the declarations in which they appear.
     SubSE ::= sub (cntxt: TypingContext, typeable: Typeable).
 
+	///// The isSubTerm constructor 
+	isSubTerm ::= sub (params: NmdTupType, param: NmdTupTypeField).
+	
+	///// Local variable declarations
+	isLocalVariableDecl ::= (cntxt: TypingContext, owner: MachineDecl, name:String).
     //// The machine owning a context.
     TCOwner ::= (cntxt: TypingContext, mach: MachineDecl).    
     TCOwner(x, x.owner) :- x is FunDecl; x is StateDecl; x is ActionDecl; y is TransDecl, x = y.src.
@@ -153,10 +158,14 @@ domain PStaticTyping extends PData
     TypeOf(c, e, t)               :- SubSE(c, e), e = NamedTuple(e'), TypeOf(c, e', t).     
 
     // Variables hide the names of events, in case both have the same name.
-    TypeOf(c, e, t)               :- SubSE(c, e), e = Name(n), TCOwner(c, m), VarDecl(n, m, t). 
-    TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = Name(n), EventDecl(n, _, _), TCOwner(c, m), no VarDecl(n, m, _). 
+	
+	
+	isLocalVariableDecl(c,m,n) :- c is FunDecl(_, m, _, p, _, _), p : NmdTupType, isSubTerm(p, x), x = NmdTupTypeField(n, _).
+	TypeOf(c, e, x.type)				  :- SubSE(c, e), e = Name(n), TCOwner(c, m), c is FunDecl(_, m, _, p, _, _), p : NmdTupType, isSubTerm(p, x), x = NmdTupTypeField(n, _).
+    TypeOf(c, e, t)               :- SubSE(c, e), e = Name(n), TCOwner(c, m), VarDecl(n, m, t), no isLocalVariableDecl(c,m,n). 
+    TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = Name(n), EventDecl(n, _, _), TCOwner(c, m), no VarDecl(n, m, _), no isLocalVariableDecl(c,m,n) . 
 	[ rule_Classes = '"error, msg: Undefined symbol"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n), TCOwner(c, m), no EventDecl(n, _, _), no VarDecl(n, m, _). 
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n), TCOwner(c, m), no EventDecl(n, _, _), no VarDecl(n, m, _), no isLocalVariableDecl(c,m,n). 
     
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = UnApp(NOT, e'), TypeOf(c, e', BaseType(b)), b = BOOL. 
 	[ rule_Classes = '"error, msg: Operator expected a boolean value"']

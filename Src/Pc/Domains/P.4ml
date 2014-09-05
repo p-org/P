@@ -274,19 +274,10 @@ domain PStaticTyping extends PData
 	TypeOf(c, e, t) :- SubSE(c, e), e = NamedExprs(fld, exp, tail), t = NmdTupType(NmdTupTypeField(fld, t_exp), NIL), toSymbol(tail) = NIL, TypeOf(c, exp, t_exp), t_exp : TypeExpr; SubSE(c, e), e = NamedExprs(fld, exp, tail), t = NmdTupType(NmdTupTypeField(fld, t_exp), t_tail), toSymbol(tail) = #NamedExprs, TypeOf(c, exp, t_exp), t_exp : TypeExpr, TypeOf(c, tail, t_tail).
 	
 	//FunApp
-<<<<<<< HEAD
 	TypeOf(c, e, retType) 			   :- SubSE(c, e), e = FunApp(name, args), TCOwner(c, m), FunDecl(name, m, _, args_type, retType, _).
 	[ rule_Classes = '"error, msg: invalid function call, no such function declared"']
 	TypeOf(c, e, ERROR) 			   :- SubSE(c, e), e = FunApp(name, args), TCOwner(c, m), no FunDecl(name, m, _, _, _, _).
 	
-	
-=======
-	TypeOf(c, e, retType) 			   :- SubSE(c, e), e = FunApp(name, args), TCOwner(c, m), FunDecl(name, m, _, args_type, retType, _), TypeOf(c, args, t_args), t_args = args_type.
-	[ rule_Classes = '"error, msg: invalid function call, no such function declared"']
-	TypeOf(c, e, ERROR) 			   :- SubSE(c, e), e = FunApp(name, args), TCOwner(c, m), no FunDecl(name, m, _, _, _, _).
-	[ rule_Classes = '"error, msg: values passed to the function do no match the arguments in function declaration"']
-	TypeOf(c, e, ERROR) 			   :- SubSE(c, e), e = FunApp(name, args), TCOwner(c, m), FunDecl(name, m, _, args_type, _, _), TypeOf(c, args, t_args), t_args != args_type.
->>>>>>> 16f266a540d4f3390b69c6dd38952bbc1658b46b
 	[ rule_Classes = '"error, msg: Function should return a value"']
 	TypeOf(c, e, ERROR) 			   :- SubSE(c, e), e = FunApp(name, args), TCOwner(c, m), FunDecl(name, m, _, args_type, NIL, _).
 	
@@ -381,13 +372,7 @@ domain PStaticTyping extends PData
 	TypeOf(c, e, NIL) 			   :- SubSE(c, e), e = FunStmt(name, args), TCOwner(c, m), FunDecl(name, m, _, args_type, _, _), TypeOf(c, args, t_args), t_args = args_type.
 	[ rule_Classes = '"error, msg: invalid function, no such function declared"']
 	TypeOf(c, e, ERROR) 			   :- SubSE(c, e), e = FunStmt(name, args), TCOwner(c, m), no FunDecl(name, m, _, _, _, _).
-<<<<<<< HEAD
-	
-=======
-	[ rule_Classes = '"error, msg: values passed to the function do no match the arguments i function declaration"']
-	TypeOf(c, e, ERROR) 			   :- SubSE(c, e), e = FunStmt(name, args), TCOwner(c, m), FunDecl(name, m, _, args_type, _, _), TypeOf(c, args, t_args), t_args != args_type.
->>>>>>> 16f266a540d4f3390b69c6dd38952bbc1658b46b
-	
+
 	
 	                                          
     /*************************************************************/

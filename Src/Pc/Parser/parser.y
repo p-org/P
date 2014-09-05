@@ -20,7 +20,7 @@
 
 %token TRUE FALSE
 
-%token ASSIGN REMOVE
+%token ASSIGN REMOVE INSERT
 %token EQ NE LT GT LE GE IN
 %left LAND LNOT LOR NONDET FAIRNONDET
 
@@ -299,6 +299,7 @@ Stmt
 	| RETURN Exp SEMICOLON                                    { PushReturn(true, ToSpan(@1));                            }
 	| Exp ASSIGN Exp SEMICOLON                                { PushBinStmt(P_Root.UserCnstKind.ASSIGN, ToSpan(@1));     }
 	| Exp REMOVE Exp SEMICOLON                                { PushBinStmt(P_Root.UserCnstKind.REMOVE, ToSpan(@1));     }
+	| Exp INSERT Exp SEMICOLON								  { PushBinStmt(P_Root.UserCnstKind.INSERT, ToSpan(@1));	 }
 	| WHILE LPAREN Exp RPAREN Stmt                            { PushWhile(ToSpan(@1));                                   }
 	| IF LPAREN Exp RPAREN Stmt ELSE Stmt %prec ELSE          { PushIte(true, ToSpan(@1));                               }					
 	| IF LPAREN Exp RPAREN Stmt		                          { PushIte(false, ToSpan(@1));                              }

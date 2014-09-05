@@ -160,6 +160,7 @@ Id              [A-Za-z_]([A-Za-z_0-9]*)
 
 "=="                                       { return (int)Tokens.EQ;     }
 "="                                        { return (int)Tokens.ASSIGN; }
+"+="									   { return (int)Tokens.INSERT; }
 "-="                                       { return (int)Tokens.REMOVE; }
 "!="                                       { return (int)Tokens.NE;     }
 "<="                                       { return (int)Tokens.LE;     }

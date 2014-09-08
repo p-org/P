@@ -170,9 +170,9 @@
             zingProgram = (AST<Program>)Factory.Instance.ToAST(zingProgramConfig.Root);
             zingProgram = Factory.Instance.AddModule(zingProgram, m);
 
-            var sw = new StreamWriter("out.4ml");
-            zingProgram.Print(sw);
-            sw.Flush();
+            //var sw = new StreamWriter("out.4ml");
+            //zingProgram.Print(sw);
+            //sw.Flush();
 
             //// Install and render the program.
             InstallResult instResult;

@@ -429,7 +429,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var isModel = ((Id)it.Current).Name == "MODEL"; 
                     it.MoveNext();
-                    var iter = (FuncTerm)it.Current;
+                    var iter = it.Current as FuncTerm;
                     it.MoveNext();
                     var returnTypeName = ((Id)it.Current).Name == "NIL" ? PTypeNull : Factory.Instance.ToAST(it.Current);
                     it.MoveNext();
@@ -495,7 +495,7 @@ namespace Microsoft.Pc
                 {
                     it.MoveNext();
                     var stateDecl = GetFuncTerm(it.Current);
-                    var stateName = GetName(stateDecl, 0);
+                    var stateName = GetNameFromQualifiedName((FuncTerm)GetArgByIndex(stateDecl, 0));
                     var stateOwnerMachineName = GetMachineName(stateDecl, 1);
                     var stateTable = allMachines[stateOwnerMachineName].stateNameToStateInfo[stateName];
                     it.MoveNext();
@@ -540,7 +540,7 @@ namespace Microsoft.Pc
                 {
                     it.MoveNext();
                     var stateDecl = GetFuncTerm(it.Current);
-                    var stateName = GetName(stateDecl, 0);
+                    var stateName = GetNameFromQualifiedName((FuncTerm)GetArgByIndex(stateDecl, 0));
                     var stateOwnerMachineName = GetMachineName(stateDecl, 1);
                     var stateTable = allMachines[stateOwnerMachineName].stateNameToStateInfo[stateName];
                     it.MoveNext();
@@ -588,7 +588,8 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var expr = it.Current;
                     it.MoveNext();
-                    var type = (FuncTerm)it.Current;
+                    var type = it.Current as FuncTerm;
+                    if (type == null) continue;
                     string typingContextKind = ((Id)typingContext.Function).Name;
                     if (typingContextKind == "FunDecl")
                     {
@@ -610,7 +611,7 @@ namespace Microsoft.Pc
                             typingContext = GetFuncTerm(GetArgByIndex(typingContext, 0));
                         }
                         string ownerName = GetOwnerName(typingContext, 1, 0);
-                        string stateName = GetName(typingContext, 0);
+                        string stateName = GetNameFromQualifiedName((FuncTerm)GetArgByIndex(typingContext, 0));
                         allMachines[ownerName].stateNameToStateInfo[stateName].typeInfo[expr] = type;
                     }
                 }

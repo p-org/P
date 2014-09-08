@@ -140,8 +140,7 @@
             }
 
             //// Step 4. Perform Zing compilation.
-            //Ankush : Comment out zing code generation
-            //GenerateZing(inputModule, inputFile);
+            GenerateZing(inputModule, inputFile);
             return true;
         }
 

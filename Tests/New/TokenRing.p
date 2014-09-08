@@ -26,7 +26,7 @@ machine Node assume 100 {
 
     state SetNext_Main_Node {
       entry {
-        NextMachine = payload;
+	NextMachine = payload as machine;
         send MyRing, Ready;
         raise Unit;
       }

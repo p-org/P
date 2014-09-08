@@ -78,7 +78,7 @@
         public static readonly AST<Id> Con_BinStmt = Factory.Instance.MkId("BinStmt");
         public static readonly AST<Id> Con_Return = Factory.Instance.MkId("Return");
         public static readonly AST<Id> Con_While = Factory.Instance.MkId("While");
-        public static readonly AST<Id> Con_ITE = Factory.Instance.MkId("ITE");
+        public static readonly AST<Id> Con_Ite = Factory.Instance.MkId("Ite");
         public static readonly AST<Id> Con_Seq = Factory.Instance.MkId("Seq");
 
         //// Types

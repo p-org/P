@@ -1,8 +1,4 @@
 domain C extends CData
-/*[
-  parsers.C = '"Parser at ..\CParser.dll"',
-  parse_ActiveRenderer = "C"
-]*/
 {
 
 }
@@ -59,27 +55,29 @@ domain CData
                      name:    String,
                      prms:    any Params + { NIL },
                      body:    any Stmt + { UNKNOWN }).                   
-                     
-     Params ::= new (storage: StorageClass,
-                     name:    String,
-                     tail:    any Params + { NIL }).
+     
+     Param  ::= new (storage: StorageClass, name: String).
+	 	                 
+     Params ::= new (param: any Param, tail: any Params + { NIL }).
                      
      DatDef ::= new (storage: StorageClass,
                      kind:    { STRUCT, UNION },
                      name:    String,               
                      flds:    any Fields + { NIL, UNKNOWN }).
-     
-     Fields ::= new (type: any Type,
+
+     Field  ::= new (type: any Type,
                      name: String,
-                     bits: any Expr + { NIL },
-                     tail: any Fields + { NIL }).
+                     bits: any Expr + { NIL }).
+
+     Fields ::= new (field: any Field, tail: any Fields + { NIL }).
                      
      EnmDef ::= new (storage:  StorageClass,
                      name:     String,  
                      elements: any Elements + { NIL, UNKNOWN }). 
-                      
-     Elements ::= new (name: String, value: any Expr + { NIL }, 
-                       tail: any Elements + { NIL }).                                         
+     
+     Element  ::= new (name: String, value: any Expr + { NIL }).
+	                  
+     Elements ::= new (element: any Element, tail: any Elements + { NIL }).                                         
                                             
      Def  ::= TypDef + VarDef + FunDef + DatDef + EnmDef + Comment.
      Defs ::= new (def: any Def, tail: any Defs + { NIL }).                     
@@ -101,8 +99,10 @@ domain CData
                      upd:  any Expr + { NIL },
                      cnd:  any Expr + { NIL },
                      body: any Stmt).
+                     
+     Case   ::= new (cond: any Expr + { DEFAULT }, body: any Stmt).                
                                             
-     Cases  ::= new (case: any Expr + { DEFAULT }, body: any Stmt, tail: any Cases + { NIL }).
+     Cases  ::= new (case: any Case, tail: any Cases + { NIL }).
                     
      Stmt   ::= Expr   + Seq + Block  + Lbl  + Goto + 
                 Return + ITE + Switch + Loop + For  +

@@ -24,6 +24,7 @@
         private const string CDomain = "C";
         private const string ZingDomain = "Zing";
         private const string P2InfTypesTransform = "P2PWithInferredTypes";
+        private const string P2CTransform = "P2CProgram";
         private const string AliasPrefix = "p_compiler__";
         private const string MsgPrefix = "msg:";
         private const string ErrorClassName = "error";
@@ -35,6 +36,7 @@
             new Tuple<string, string>("Pc.Domains.C.4ml", "Domains\\C.4ml"),
             new Tuple<string, string>("Pc.Domains.Zing.4ml", "Domains\\Zing.4ml"),
             new Tuple<string, string>("Pc.Transforms.PWithInferredTypes.4ml", "Transforms\\PWithInferredTypes.4ml"),
+            new Tuple<string, string>("Pc.Transforms.P2CProgram.4ml", "Transforms\\P2CProgram.4ml"),
         };
 
         private static readonly Dictionary<string, string> ReservedModuleToLocation;
@@ -46,6 +48,7 @@
             ReservedModuleToLocation.Add(CDomain, "Domains\\P.4ml");
             ReservedModuleToLocation.Add(ZingDomain, "Domains\\Zing.4ml");
             ReservedModuleToLocation.Add(P2InfTypesTransform, "Transforms\\PWithInferredTypes.4ml");
+            ReservedModuleToLocation.Add(P2CTransform, "Transforms\\P2CProgram.4ml");
         }
 
         public Env CompilerEnv
@@ -138,6 +141,8 @@
             {
                 return false;
             }
+
+            GenerateC(inputModule, inputFile).Print(Console.Out);
 
             //// Step 4. Perform Zing compilation.
             //Ankush : Comment out zing code generation
@@ -416,6 +421,56 @@
             outZingModel.Print(System.Console.Out);
 
             return outZingModel;
+        }
+
+        private AST<Model> GenerateC(string inputModelName, ProgramName inputProgram)
+        {
+            //// Apply the P2C transform.
+            var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2CTransform, null, MkReservedModuleLocation(P2CTransform)));
+            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(inputModelName, null, inputProgram.ToString()));
+            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(inputModelName + "_CModel"));
+            List<Flag> flags;
+            Task<ApplyResult> apply;
+            Formula.Common.Rules.ExecuterStatistics stats;
+            CompilerEnv.Apply(transStep, false, false, out flags, out apply, out stats);
+            apply.RunSynchronously();
+
+            //// Extract the result
+            var extractTask = apply.Result.GetOutputModel(
+                inputModelName + "_CModel",
+                new ProgramName(Path.Combine(Environment.CurrentDirectory, inputModelName + "_CModel.4ml")),
+                AliasPrefix);
+            extractTask.Wait();
+
+            var cProgram = extractTask.Result;
+            Contract.Assert(cProgram != null);
+            
+            //// Set the renderer of the C program so terms can be converted to text.
+            var cProgramConfig = (AST<Config>)cProgram.FindAny(new NodePred[]
+                {
+                    NodePredFactory.Instance.MkPredicate(NodeKind.Program),
+                    NodePredFactory.Instance.MkPredicate(NodeKind.Config)
+                });
+            Contract.Assert(cProgramConfig != null);
+            var binPath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
+            cProgramConfig = Factory.Instance.AddSetting(
+                cProgramConfig,
+                Factory.Instance.MkId(Configuration.Parse_ActiveRenderSetting),
+                Factory.Instance.MkCnst(typeof(CParser.Parser).Name + " at " + Path.Combine(binPath.FullName, "CParser.dll")));
+            cProgram = (AST<Program>)Factory.Instance.ToAST(cProgramConfig.Root);
+
+            cProgram.Print(System.Console.Out);
+
+            //// Install and render the program.
+            InstallResult instResult;
+            Task<RenderResult> renderTask;
+            var didStart = CompilerEnv.Install(cProgram, out instResult);
+            Contract.Assert(didStart && instResult.Succeeded);
+            didStart = CompilerEnv.Render(cProgram.Node.Name, inputModelName + "_CModel", out renderTask);
+            Contract.Assert(didStart);
+            renderTask.Wait();
+            Contract.Assert(renderTask.Result.Succeeded);
+            return (AST<Model>)renderTask.Result.Module;
         }
 
         private AST<Model> MkZingOutputModel()

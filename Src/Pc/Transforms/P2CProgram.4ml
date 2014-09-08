@@ -5,8 +5,18 @@
 
 transform P2CProgram (in:: P) returns (out:: C)
 {
-    
-	Struct(s.name)  :- s is StateDecl.
+  //// Give an Id to each event declaration
+	EventDeclList    ::= (head: EventDecl, tail: EventDeclList + {NIL}).
+	EventId          ::= (decl: EventDecl + {NIL}, id: Natural, cnst: String, decls: EventDeclList + {NIL}).
 
-
+	EventId(NIL, 0, "P_EVENTS_COUNT", NIL)  :- no d is EventDecl.
+	EventId(NIL, 0, "", list)               :- list = toList(#EventDeclList, NIL, { d | d is EventDecl }), list != NULL.
+	EventId(list.head, i, cnst, list.tail)  :- EventId(NIL, i, _, list), cnst = strJoin("P_EVENT_", list.head.name).
+	EventId(list.head, j, cnst, list.tail)  :- EventId(_  , i, _, list), cnst = strJoin("P_EVENT_", list.head.name), j = i + 1. 
+	EventId(NIL, j, "P_EVENTS_COUNT", NIL)  :- EventId(dcl, i, _, NIL), dcl != NIL, j = i + 1. 
+	
+	//// Emit an enum declaration for events.
+	out.EnmDef(NIL, "P_EVENTS", list) :- 
+	     list = toList(#Elements, NIL, { Element(name, iid) | EventId(_, id, name, _), name != "", iid = IntLit(id, DEC, NIL) }).  
+	
 }

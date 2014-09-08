@@ -142,7 +142,7 @@
                 return false;
             }
 
-            GenerateC(inputModule, inputFile).Print(Console.Out);
+            //// GenerateC(inputModule, inputFile).Print(Console.Out);
 
             //// Step 4. Perform Zing compilation.
             GenerateZing(inputModule, inputFile);
@@ -413,7 +413,7 @@
             Contract.Assert(modelWithTypes != null);
 
             //// Visit modelWithTypes.
-            //// modelWithTypes.Print(System.Console.Out);
+            modelWithTypes.Print(System.Console.Out);
 
             var outZingModel = MkZingOutputModel();
             new PToZing(this, (AST<Model>)modelWithTypes).GenerateZing(ref outZingModel);           

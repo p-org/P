@@ -89,7 +89,7 @@ namespace Microsoft.Pc
         public int numFairChoicesInEntry;
         public int numFairChoicesInExit;
 
-        public Dictionary<Node, FuncTerm> typeInfo;
+        public Dictionary<AST<Node>, FuncTerm> typeInfo;
 
         public StateInfo(string ownerName, Node entryAction, Node exitFun, bool isStable)
         {
@@ -119,7 +119,7 @@ namespace Microsoft.Pc
             this.numFairChoicesInEntry = 0;
             this.numFairChoicesInExit = 0;
 
-            this.typeInfo = new Dictionary<Node, FuncTerm>();
+            this.typeInfo = new Dictionary<AST<Node>, FuncTerm>();
         }
     }
 
@@ -143,7 +143,7 @@ namespace Microsoft.Pc
         public Node body;
         public int numFairChoices;
 
-        public Dictionary<Node, FuncTerm> typeInfo;
+        public Dictionary<AST<Node>, FuncTerm> typeInfo;
 
         public FunInfo(string ownerName, bool isModel, AST<Node> returnType, Node body)
         {
@@ -155,7 +155,7 @@ namespace Microsoft.Pc
             this.body = body;
             this.numFairChoices = 0;
 
-            typeInfo = new Dictionary<Node, FuncTerm>();
+            typeInfo = new Dictionary<AST<Node>, FuncTerm>();
         }
     }
 
@@ -164,14 +164,14 @@ namespace Microsoft.Pc
         public Node actionFun;
         public int numFairChoices;
 
-        public Dictionary<Node, FuncTerm> typeInfo;
+        public Dictionary<AST<Node>, FuncTerm> typeInfo;
 
         public ActionInfo(Node actionFun)
         {
             this.actionFun = actionFun;
             this.numFairChoices = 0;
 
-            typeInfo = new Dictionary<Node, FuncTerm>();
+            typeInfo = new Dictionary<AST<Node>, FuncTerm>();
         }
     }
 
@@ -578,6 +578,7 @@ namespace Microsoft.Pc
                 }
             }
 
+
             terms = GetBin("TypeOf");
             foreach (var term in terms)
             {
@@ -586,10 +587,11 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     FuncTerm typingContext = GetFuncTerm(it.Current);
                     it.MoveNext();
-                    var expr = it.Current;
+                    var expr = Factory.Instance.ToAST(it.Current);
                     it.MoveNext();
                     var type = it.Current as FuncTerm;
                     if (type == null) continue;
+
                     string typingContextKind = ((Id)typingContext.Function).Name;
                     if (typingContextKind == "FunDecl")
                     {
@@ -653,6 +655,13 @@ namespace Microsoft.Pc
         }
 
         #region Static helpers
+        public static string NodeToString(Node n)
+        {
+            System.IO.StringWriter sw = new System.IO.StringWriter();
+            Factory.Instance.ToAST(n).Print(sw);
+            return sw.ToString();
+        }
+
         public static bool isInstanceOf(Node n, AST<FuncTerm> m)
         {
             return isInstanceOf(n, (Id)m.Node.Function);
@@ -3262,17 +3271,26 @@ namespace Microsoft.Pc
 
         private FuncTerm LookupType(ZingEntryFun_FoldContext ctxt, Node node)
         {
+            var ast = Factory.Instance.ToAST(node);
             if (ctxt.translationContext == TranslationContext.Action)
             {
-                return allMachines[ctxt.machineName].actionNameToActionInfo[ctxt.entityName].typeInfo[node];
+                return allMachines[ctxt.machineName].actionNameToActionInfo[ctxt.entityName].typeInfo[ast];
             }
             else if (ctxt.translationContext == TranslationContext.Function)
             {
-                return allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].typeInfo[node];
+                return allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].typeInfo[ast];
             }
             else
             {
-                return allMachines[ctxt.machineName].stateNameToStateInfo[ctxt.entityName].typeInfo[node];
+                return allMachines[ctxt.machineName].stateNameToStateInfo[ctxt.entityName].typeInfo[ast];
+            }
+        }
+
+        private void Debug_PrintTypes(string machName, string entityName)
+        {
+            foreach (var kv in allMachines[machName].stateNameToStateInfo[entityName].typeInfo)
+            {
+                var s = string.Format("{0} : {1}", NodeToString(kv.Key.Node), NodeToString(kv.Value));
             }
         }
 

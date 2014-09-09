@@ -75,6 +75,8 @@ class SM_HANDLE {
     void EnqueueEvent(SM_EVENT e, PRT_VALUE arg, SM_HANDLE source) {
     	assert (e != null);
 		assert (e != Main.default_SM_EVENT);
+		//assertion to check if argument passed inhabits the payload type.
+		assert (PrtInhabitsType(arg, Main.PayloadOf(e)));
 		if(isDeleted)
 		{
 			trace("<EnqueueLog> {0}-{1} Machine has been deleted and  Event {2} is dropped", machineName, instance, e.name);

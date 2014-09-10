@@ -383,24 +383,24 @@ namespace Microsoft.Pc
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    var name = ((Cnst)it.Current).GetStringValue();
-                    allMachines[name] = new MachineInfo();
+                    var machineName = ((Cnst)it.Current).GetStringValue();
+                    allMachines[machineName] = new MachineInfo();
                     it.MoveNext();
-                    allMachines[name].type = ((Id)it.Current).Name;
+                    allMachines[machineName].type = ((Id)it.Current).Name;
                     it.MoveNext();
                     var bound = it.Current;
                     if (bound.NodeKind != NodeKind.Id)
                     {
                         var ft = (FuncTerm)bound;
-                        allMachines[name].maxQueueSize = (int)((Cnst)GetArgByIndex(ft, 0)).GetNumericValue().Numerator;
-                        allMachines[name].maxQueueSizeAssumed = ((Id)ft.Function).Name == "AssumeMaxInstances";
+                        allMachines[machineName].maxQueueSize = (int)((Cnst)GetArgByIndex(ft, 0)).GetNumericValue().Numerator;
+                        allMachines[machineName].maxQueueSizeAssumed = ((Id)ft.Function).Name == "AssumeMaxInstances";
                     }
                     it.MoveNext();
-                    allMachines[name].initStateName = GetNameFromQualifiedName((FuncTerm)it.Current);
+                    allMachines[machineName].initStateName = GetNameFromQualifiedName(machineName, (FuncTerm)it.Current);
                     it.MoveNext();
                     if (((Id)it.Current).Name == "TRUE")
                     {
-                        mainMachineName = name;
+                        mainMachineName = machineName;
                     }
                 }
             }
@@ -480,10 +480,11 @@ namespace Microsoft.Pc
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    var stateName = GetNameFromQualifiedName((FuncTerm)it.Current);
+                    var qualifiedStateName = (FuncTerm)it.Current;
                     it.MoveNext();
                     var machineDecl = GetFuncTerm(it.Current);
                     var ownerName = GetName(machineDecl, 0);
+                    var stateName = GetNameFromQualifiedName(ownerName, qualifiedStateName);
                     it.MoveNext();
                     var entryFun = it.Current;
                     it.MoveNext();
@@ -502,8 +503,9 @@ namespace Microsoft.Pc
                 {
                     it.MoveNext();
                     var stateDecl = GetFuncTerm(it.Current);
-                    var stateName = GetNameFromQualifiedName((FuncTerm)GetArgByIndex(stateDecl, 0));
+                    var qualifiedStateName = (FuncTerm)GetArgByIndex(stateDecl, 0);
                     var stateOwnerMachineName = GetMachineName(stateDecl, 1);
+                    var stateName = GetNameFromQualifiedName(stateOwnerMachineName, qualifiedStateName);
                     var stateTable = allMachines[stateOwnerMachineName].stateNameToStateInfo[stateName];
                     it.MoveNext();
                     string eventName;
@@ -526,7 +528,7 @@ namespace Microsoft.Pc
                         eventName = ((Cnst)it.Current).GetStringValue();
                     }
                     it.MoveNext();
-                    var targetStateName = GetNameFromQualifiedName((FuncTerm)it.Current);
+                    var targetStateName = GetNameFromQualifiedName(stateOwnerMachineName, (FuncTerm)it.Current);
                     it.MoveNext();
                     var action = it.Current;
                     if (action.NodeKind == NodeKind.Id)
@@ -547,8 +549,9 @@ namespace Microsoft.Pc
                 {
                     it.MoveNext();
                     var stateDecl = GetFuncTerm(it.Current);
-                    var stateName = GetNameFromQualifiedName((FuncTerm)GetArgByIndex(stateDecl, 0));
+                    var qualifiedStateName = (FuncTerm)GetArgByIndex(stateDecl, 0);
                     var stateOwnerMachineName = GetMachineName(stateDecl, 1);
+                    var stateName = GetNameFromQualifiedName(stateOwnerMachineName, qualifiedStateName);
                     var stateTable = allMachines[stateOwnerMachineName].stateNameToStateInfo[stateName];
                     it.MoveNext();
                     string eventName;
@@ -620,7 +623,8 @@ namespace Microsoft.Pc
                             typingContext = GetFuncTerm(GetArgByIndex(typingContext, 0));
                         }
                         string ownerName = GetOwnerName(typingContext, 1, 0);
-                        string stateName = GetNameFromQualifiedName((FuncTerm)GetArgByIndex(typingContext, 0));
+                        var qualifiedStateName = (FuncTerm)GetArgByIndex(typingContext, 0);
+                        var stateName = GetNameFromQualifiedName(ownerName, qualifiedStateName);
                         allMachines[ownerName].stateNameToStateInfo[stateName].typeInfo[expr] = type;
                     }
                 }
@@ -714,9 +718,9 @@ namespace Microsoft.Pc
             return ((Cnst)GetArgByIndex(ft, nameIndex)).GetStringValue();
         }
 
-        public static string GetNameFromQualifiedName(FuncTerm qualifiedName)
+        public static string GetNameFromQualifiedName(string machineName, FuncTerm qualifiedName)
         {
-            var stateName = "";
+            var stateName = "_" + machineName;
             while (qualifiedName != null)
             {
                 stateName = "_" + GetName(qualifiedName, 0) + stateName;
@@ -2052,7 +2056,7 @@ namespace Microsoft.Pc
                     }
                     else if (lhsName == PData.Con_Field.Node.Name)
                     {
-                        yield return GetArgByIndex(lhs, 1);
+                        yield return GetArgByIndex(lhs, 0);
                     }
                     else
                     {
@@ -2759,7 +2763,7 @@ namespace Microsoft.Pc
         ZingTranslationInfo FoldPush(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
         {
             var qualifiedName = (FuncTerm)GetArgByIndex(ft, 0);
-            var stateName = GetNameFromQualifiedName(qualifiedName);
+            var stateName = GetNameFromQualifiedName(ctxt.machineName, qualifiedName);
             var afterLabel = ctxt.getFreshLabel();
             var res = MkZingSeq(
                 MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Call"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)), MkZingDot("State", string.Format("_{0}", stateName)))),
@@ -3349,7 +3353,7 @@ namespace Microsoft.Pc
 
             private AST<FuncTerm> GetField()
             {
-                var retVal = MkZingDot("Main", string.Format("{0}_PRT_FIELD_NAME", fieldCount));
+                var retVal = MkZingDot("Main", string.Format("field_{0}_PRT_FIELD_NAME", fieldCount));
                 fieldCount++;
                 return retVal;
             }

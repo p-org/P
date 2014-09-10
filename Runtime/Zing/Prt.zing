@@ -36,11 +36,13 @@ class SPEC_HANDLE {
 
     static SPEC_HANDLE Construct(Machine mName, int inst) {
     	SPEC_HANDLE handle;
+	PRT_TYPE prtType;
 		handle = new SPEC_HANDLE;
 		handle.machineName = mName;
 		handle.instance = inst;
 		handle.currentEvent = null;
-		handle.currentArg = PRT_VALUE.PrtMkDefaultValue();
+		prtType = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL);
+		handle.currentArg = PRT_VALUE.PrtMkDefaultValue(prtType);
 		trace("<CreateLog> Created Machine {0}-{1}", handle.machineName, handle.instance);
 		return handle;
     }
@@ -59,12 +61,14 @@ class SM_HANDLE {
 	
     static SM_HANDLE Construct(Machine mName, int inst, int maxBSize) {
     	SM_HANDLE handle;
+	PRT_TYPE prtType;
 		handle = new SM_HANDLE;
 		handle.machineName = mName;
 		handle.instance = inst;
 		handle.buffer = EVENT_BUFFER.Construct();
 		handle.currentEvent = null;
-		handle.currentArg = PRT_VALUE.PrtMkDefaultValue();
+		prtType = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL);
+		handle.currentArg = PRT_VALUE.PrtMkDefaultValue(prtType);
 		handle.maxBufferSize = maxBSize;
 		handle.blocked = false;
 		handle.isDeleted = false;
@@ -73,10 +77,14 @@ class SM_HANDLE {
     }
 
     void EnqueueEvent(SM_EVENT e, PRT_VALUE arg, SM_HANDLE source) {
+        bool b;
+	PRT_TYPE prtType;
     	assert (e != null);
 		assert (e != Main.default_SM_EVENT);
 		//assertion to check if argument passed inhabits the payload type.
-		assert (PrtInhabitsType(arg, Main.PayloadOf(e)));
+		prtType = Main.PayloadOf(e);
+		b = PRT_VALUE.PrtInhabitsType(arg, prtType);
+		assert (b);
 		if(isDeleted)
 		{
 			trace("<EnqueueLog> {0}-{1} Machine has been deleted and  Event {2} is dropped", machineName, instance, e.name);
@@ -86,14 +94,14 @@ class SM_HANDLE {
 		{
 			if (arg != null)
 			{
-				if (arg.d == Discriminator.Bool)
-					trace("<EnqueueLog> Enqueued Event < {0}, bool: {1} > in Machine {2}-{3} by {4}-{5}", e.name, arg.m_Bool, machineName, instance, source.machineName, source.instance);
-				else if(arg.d == Discriminator.Int)
-					trace("<EnqueueLog> Enqueued Event < {0}, Int: {1} > in Machine {2}-{3} by {4}-{5}", e.name, arg.m_Int, machineName, instance, source.machineName, source.instance);
-				else if (arg.d == Discriminator.Id)
-					trace("<EnqueueLog> Enqueued Event < {0}, Handle: {1}-{2} > in Machine {3}-{4} by {5}-{6}", e.name, arg.m_Id.machineName, arg.m_Id.instance, machineName, instance, source.machineName, source.instance);
-				else if (arg.d == Discriminator.Mid)
-					trace("<EnqueueLog> Enqueued Event < {0}, Handle: {1}-{2} > in Machine {3}-{4} by {5}-{6}", e.name, arg.m_Mid.machineName, arg.m_Mid.instance, machineName, instance, source.machineName, source.instance);
+				if (arg.type.typeKind == PRT_TYPE_KIND.PRT_KIND_BOOL)
+					trace("<EnqueueLog> Enqueued Event < {0}, bool: {1} > in Machine {2}-{3} by {4}-{5}", e.name, arg.bl, machineName, instance, source.machineName, source.instance);
+				else if(arg.type.typeKind == PRT_TYPE_KIND.PRT_KIND_INT)
+					trace("<EnqueueLog> Enqueued Event < {0}, Int: {1} > in Machine {2}-{3} by {4}-{5}", e.name, arg.nt, machineName, instance, source.machineName, source.instance);
+				else if (arg.type.typeKind == PRT_TYPE_KIND.PRT_KIND_REAL)
+					trace("<EnqueueLog> Enqueued Event < {0}, Handle: {1}-{2} > in Machine {3}-{4} by {5}-{6}", e.name, arg.mach.machineName, arg.mach.instance, machineName, instance, source.machineName, source.instance);
+				else if (arg.type.typeKind == PRT_TYPE_KIND.PRT_KIND_MODEL)
+					trace("<EnqueueLog> Enqueued Event < {0}, Handle: {1}-{2} > in Machine {3}-{4} by {5}-{6}", e.name, arg.mach.machineName, arg.mach.instance, machineName, instance, source.machineName, source.instance);
 				else
 					trace("<EnqueueLog> Enqueued Event < {0}, Other: > in Machine {1}-{2} by {3}-{4}", e.name, machineName, instance, source.machineName, source.instance);
 			}
@@ -121,15 +129,17 @@ class SM_HANDLE {
 			if (currentEvent != null) 
 			{
 				assert(currentArg != null);
-				if (currentArg.d == Discriminator.Bool)
-					trace("<DequeueLog> Dequeued Event < {0}, Bool: {1} > at Machine {2}-{3}", currentEvent.name, currentArg.m_Bool, machineName, instance);
-				else if (currentArg.d == Discriminator.Int)
-					trace("<DequeueLog> Dequeued Event < {0}, Int: {1} > at Machine {2}-{3}", currentEvent.name, currentArg.m_Int, machineName, instance);
-				else if (currentArg.d == Discriminator.Mid)
-					trace("<DequeueLog> Dequeued Event < {0}, Handle: {1}-{2} > at Machine {3}-{4}", currentEvent.name, currentArg.m_Mid.machineName, currentArg.m_Mid.instance, machineName, instance);
-				else if (currentArg.d == Discriminator.Eid)
-					trace("<DequeueLog> Dequeued Event < {0}, Event: {1} > at Machine {2}-{3}", currentEvent.name, currentArg.m_Eid, machineName, instance);
-				else if (currentArg.d == Discriminator.Null)
+				if (currentArg.type.typeKind == PRT_TYPE_KIND.PRT_KIND_BOOL)
+					trace("<DequeueLog> Dequeued Event < {0}, Bool: {1} > at Machine {2}-{3}", currentEvent.name, currentArg.bl, machineName, instance);
+				else if (currentArg.type.typeKind == PRT_TYPE_KIND.PRT_KIND_INT)
+					trace("<DequeueLog> Dequeued Event < {0}, Int: {1} > at Machine {2}-{3}", currentEvent.name, currentArg.nt, machineName, instance);
+				else if (currentArg.type.typeKind == PRT_TYPE_KIND.PRT_KIND_REAL)
+					trace("<DequeueLog> Dequeued Event < {0}, Handle: {1}-{2} > in Machine {3}-{4}", currentEvent.name, currentArg.mach.machineName, currentArg.mach.instance, machineName, instance);
+				else if (currentArg.type.typeKind == PRT_TYPE_KIND.PRT_KIND_MODEL)
+					trace("<DequeueLog> Dequeued Event < {0}, Handle: {1}-{2} > at Machine {3}-{4}", currentEvent.name, currentArg.mach.machineName, currentArg.mach.instance, machineName, instance);
+				else if (currentArg.type.typeKind == PRT_TYPE_KIND.PRT_KIND_EVENT)
+					trace("<DequeueLog> Dequeued Event < {0}, Event: {1} > at Machine {2}-{3}", currentEvent.name, currentArg.ev, machineName, instance);
+				else if (currentArg.type.typeKind == PRT_TYPE_KIND.PRT_KIND_NULL)
 					trace("<DequeueLog> Dequeued Event < {0}, Null Payload > at Machine {1}-{2}", currentEvent.name, machineName, instance);
 				else
 					trace("<DequeueLog> Dequeued Event < {0}, Other: > at Machine {1}-{2}", currentEvent.name, machineName, instance);

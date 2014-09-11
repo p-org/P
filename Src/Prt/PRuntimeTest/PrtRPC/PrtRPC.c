@@ -4,7 +4,7 @@
 #include"../../PRuntime/Prt/Values/PrtDTValues.h"
 #include<pthread.h>
 #include"../../PRuntime/PrtDistributedIDL/PrtDistributed_s.c"
-#include "../../PRuntime/PrtDistributed/PrtDistHeaders.h"
+#include "../../PRuntime/PrtDistributed/PrtDistributed/PrtDistHeaders.h"
 
 PRT_VALUE *ReceivedValue;
 

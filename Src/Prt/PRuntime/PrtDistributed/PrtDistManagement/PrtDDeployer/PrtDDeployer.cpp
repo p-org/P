@@ -1,15 +1,15 @@
 #include "PrtDDeployer.h"
 
 /* GLobal Variables */
-PRT_STRING configurationFile = "../PrtDistManagement/Config/PrtDMConfiguration.xml";
+string configurationFile = "../PrtDistManagement/Config/PrtDMConfiguration.xml";
 string allBinaries = ".\\";
 string localDeploymentFolder = "..\\DeploymentFolder\\";
 string pThreadsFolder = "..\\..\\..\\Resources\\PThreads\\";
 string vsdllsFolder = "..\\..\\..\\Resources\\VS2013\\";
 
-PRT_STRING PrtDGetPathToPHome(PRT_STRING nodeAddress)
+char* PrtDGetPathToPHome(char* nodeAddress)
 {
-	PRT_STRING path = (PRT_STRING)PrtMalloc(sizeof(char) * 1000);
+	char* path = (char*)PrtMalloc(sizeof(char) * 1000);
 	strcpy_s(path, 1000, "");
 	strcat_s(path, 1000, "\\\\");
 	strcat_s(path, 1000, nodeAddress);
@@ -30,7 +30,7 @@ string PrtDDeployPProgram()
 	//copy the configuration file
 	string configFile = "PrtDMConfiguration.xml";
 	string newFilePath = localDeploymentFolder + configFile;
-	CopyFile(configurationFile, newFilePath.c_str(), FALSE);
+	CopyFile(configurationFile.c_str(), newFilePath.c_str(), FALSE);
 	//copy all resources into the deployment package
 	copycommand = "robocopy " + pThreadsFolder + " " + localDeploymentFolder + " > " + localDeploymentFolder + "ROBOCOPY_LOG.txt";
 	if (system(copycommand.c_str()) == -1)
@@ -86,7 +86,7 @@ string PrtDGetDeploymentFolder() {
 	XMLNODE* currNode;
 	string DeploymentFolder;
 	strcpy_s(DM, 200, "DeploymentFolder");
-	listofNodes = XMLDOMParsingNodes(configurationFile);
+	listofNodes = XMLDOMParsingNodes(configurationFile.c_str());
 	currNode = listofNodes[i];
 	while (currNode != NULL)
 	{
@@ -103,7 +103,7 @@ string PrtDGetDeploymentFolder() {
 
 int main(int argc, char * argv[])
 {
-	PRT_STRING log = (PRT_STRING)PrtCalloc(100, sizeof(char));
+	char* log = (char*)PrtCalloc(100, sizeof(char));
 	//create the Log File
 	PrtDCreateLogFile(PRTD_DEPLOYER);
 	sprintf_s(log, 100,"Starting the Deployment Operation for P Program \n");

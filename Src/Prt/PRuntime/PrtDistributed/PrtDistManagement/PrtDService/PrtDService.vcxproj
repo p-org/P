@@ -74,8 +74,17 @@
     <ClCompile Include="PrtDService.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Prt\Prt.vcxproj">
+      <Project>{29d30682-beb0-4570-82b5-2a835e402277}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\PrtDistLogger\PrtDistLogger.vcxproj">
+      <Project>{7fdc5451-9d00-47e1-af54-62ad736bec6b}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\PrtDServiceIDL\PrtDServiceIDL.vcxproj">
       <Project>{a5bde8e1-31d4-45aa-9c1a-ec496f5ed9b5}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Utilities\ParsingXML\ParsingXML12.vcxproj">
+      <Project>{e8936605-6f7c-4298-aa4c-9d9d7a349cd9}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

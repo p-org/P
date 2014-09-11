@@ -29,7 +29,7 @@ enum _PRTD_COMPONENT {
 //Functions
 VOID PrtDCreateLogFile(PRTD_COMPONENT pComponent);
 VOID PrtDCloseLogFile();
-VOID PrtDLog(PRTD_COMPONENT op, PRT_STRING log);
+VOID PrtDLog(PRTD_COMPONENT op, char* log);
 
 #ifdef __cplusplus
 }

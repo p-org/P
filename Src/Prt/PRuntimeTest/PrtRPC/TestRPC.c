@@ -3,7 +3,7 @@
 #include"../../PRuntime/Prt/Values/PrtDTValues.h"
 #include"../../PRuntime/PrtDistributedIDL/PrtDistributed.h"
 #include"../../PRuntime/PrtDistributedIDL/PrtDistributed_c.c"
-#include"../../PRuntime/PrtDistributed/PrtDistHeaders.h"
+#include"../../PRuntime/PrtDistributed/PrtDistributed/PrtDistHeaders.h"
 
 extern void CreateRPCTestServer();
 

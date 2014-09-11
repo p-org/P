@@ -77,6 +77,11 @@
     <ClInclude Include="..\PrtCmd\PrtCmdPrinting.h" />
     <ClInclude Include="PrtRPC.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\PRuntime\PrtDistributed\PrtDistributed\PrtDistributed.vcxproj">
+      <Project>{2ab7385e-a8a6-42f3-9a65-1566e23031b6}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

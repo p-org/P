@@ -36,7 +36,7 @@ VOID PrtDCloseLogFile()
 	PrtDLogStream.close();
 }
 
-VOID PrtDLog(PRTD_COMPONENT op, PRT_STRING log)
+VOID PrtDLog(PRTD_COMPONENT op, char* log)
 {
 	switch (op)
 	{

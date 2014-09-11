@@ -8,7 +8,7 @@ main machine TestMachine {
 		}
 	}
 	
-	fun foo (x : event) {
+	fun foo (x : event) : event {
 		return true;
 	}
 

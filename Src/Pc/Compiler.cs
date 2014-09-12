@@ -19,6 +19,7 @@
     internal class Compiler
     {
         public LivenessOption liveness;
+        string outputPath;
 
         private const string PDomain = "P";
         private const string CDomain = "C";
@@ -147,8 +148,117 @@
             //// GenerateC(inputModule, inputFile).Print(Console.Out);
 
             //// Step 4. Perform Zing compilation.
-            GenerateZing(inputModule, inputFile);
+            AST<Model> zingModel = GenerateZing(inputModule, inputFile);
+            PrintFile(zingModel, CompilerEnv);
             return true;
+        }
+
+        private bool PrintFile(AST<Model> m, Env env)
+        {
+            var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, m.Node.Name + "_ZingModel.4ml"));
+            var zingProgram = Factory.Instance.MkProgram(progName);
+            //// Set the renderer of the C program so terms can be converted to text.
+            var zingProgramConfig = (AST<Config>)zingProgram.FindAny(new NodePred[]
+                {
+                    NodePredFactory.Instance.MkPredicate(NodeKind.Program),
+                    NodePredFactory.Instance.MkPredicate(NodeKind.Config)
+                });
+            Contract.Assert(zingProgramConfig != null);
+            var binPath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
+            zingProgramConfig = Factory.Instance.AddSetting(
+                zingProgramConfig,
+                Factory.Instance.MkId(Configuration.Parse_ActiveRenderSetting),
+                Factory.Instance.MkCnst(typeof(ZingParser.Parser).Name + " at " + Path.Combine(binPath.FullName, "ZingParser.dll")));
+            zingProgram = (AST<Program>)Factory.Instance.ToAST(zingProgramConfig.Root);
+            zingProgram = Factory.Instance.AddModule(zingProgram, m);
+
+            //var sw = new StreamWriter("out.4ml");
+            //zingProgram.Print(sw);
+            //sw.Flush();
+
+            //// Install and render the program.
+            InstallResult instResult;
+            Task<RenderResult> renderTask;
+            var didStart = CompilerEnv.Install(zingProgram, out instResult);
+            Contract.Assert(didStart);
+            PrintResult(instResult);
+            if (!instResult.Succeeded)
+                return false;
+            didStart = CompilerEnv.Render(progName, m.Node.Name, out renderTask);
+            Contract.Assert(didStart);
+            renderTask.Wait();
+            Contract.Assert(renderTask.Result.Succeeded);
+            var rendered = renderTask.Result.Module;
+
+            var fileQuery = new NodePred[]
+            {
+                NodePredFactory.Instance.Star,
+                NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact),
+                NodePredFactory.Instance.MkPredicate(NodeKind.FuncTerm) &
+                NodePredFactory.Instance.MkNamePredicate("File")
+            };
+
+            var success = true;
+            rendered.FindAll(
+                fileQuery,
+                (p, n) =>
+                {
+                    success = PrintFile(n) && success;
+                });
+
+            return success;
+        }
+
+        private bool PrintFile(Node n)
+        {
+            var file = (FuncTerm)n;
+            string fileName;
+            Quote fileBody;
+            using (var it = file.Args.GetEnumerator())
+            {
+                it.MoveNext();
+                fileName = System.IO.Path.Combine(Environment.CurrentDirectory, ((Cnst)it.Current).GetStringValue());
+                it.MoveNext();
+                fileBody = (Quote)it.Current;
+            }
+            Console.WriteLine("Writing {0}...", fileName);
+
+            try
+            {
+                using (var sw = new System.IO.StreamWriter(fileName))
+                {
+                    foreach (var c in fileBody.Contents)
+                    {
+                        Factory.Instance.ToAST(c).Print(sw);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Could not save file {0} - {1}", fileName, e.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        private void PrintResult(InstallResult result)
+        {
+            foreach (var f in result.Flags)
+            {
+                if (f.Item2.Severity != SeverityKind.Error)
+                {
+                    continue;
+                }
+
+                Console.WriteLine(
+                    "{0} ({1}, {2}): {3} - {4}",
+                    f.Item1.Node.Name,
+                    f.Item2.Span.StartLine,
+                    f.Item2.Span.StartCol,
+                    f.Item2.Severity,
+                    f.Item2.Message);
+            }
         }
 
         /// <summary>
@@ -418,12 +528,12 @@
                 new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
             Contract.Assert(modelWithTypes != null);
 
-            //// Visit modelWithTypes.
-            modelWithTypes.Print(System.Console.Out);
+            // Visit modelWithTypes.
+            // modelWithTypes.Print(System.Console.Out);
 
             var outZingModel = MkZingOutputModel();
             new PToZing(this, (AST<Model>)modelWithTypes).GenerateZing(ref outZingModel);           
-            outZingModel.Print(System.Console.Out);
+            // outZingModel.Print(System.Console.Out);
 
             return outZingModel;
         }

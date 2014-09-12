@@ -1,0 +1,25 @@
+[
+	uuid(6f15af3b-0784-4fe4-a512-02e9006cf660),
+	version(1.0),
+	pointer_default(ptr)
+]
+
+interface PrtDistributed {
+
+	import "PrtDistValues.idl";
+
+	/******************************/
+	//		Functions
+	/*****************************/
+	
+	void SendValue1(
+		[in] handle_t handleM,
+		[in, ptr] PRT_VALUE* value
+		);
+
+	void SendValue2(
+		[in] handle_t handleM,
+		[in, ptr] PRT_VALUE* value
+		);
+
+}

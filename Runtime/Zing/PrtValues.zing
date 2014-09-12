@@ -91,8 +91,8 @@ class PRT_VALUE {
 	if (tkind == PRT_TYPE_KIND.PRT_KIND_EVENT)
 	    return (vkind == PRT_TYPE_KIND.PRT_KIND_EVENT || isNullValue);
 
-	if (tkind == PRT_TYPE_KIND.PRT_KIND_MACHINE)
-	    return (vkind == PRT_TYPE_KIND.PRT_KIND_MACHINE || isNullValue);
+	if (tkind == PRT_TYPE_KIND.PRT_KIND_REAL)
+	    return (vkind == PRT_TYPE_KIND.PRT_KIND_REAL || isNullValue);
 
 	if (tkind == PRT_TYPE_KIND.PRT_KIND_INT)
 	    return vkind == PRT_TYPE_KIND.PRT_KIND_INT;
@@ -186,7 +186,7 @@ class PRT_VALUE {
 	if (kind == PRT_TYPE_KIND.PRT_KIND_EVENT)
 		return value.ev == null;
 
-	if (kind == PRT_TYPE_KIND.PRT_KIND_MACHINE)
+	if (kind == PRT_TYPE_KIND.PRT_KIND_REAL)
 		return value.mach == null;
 
 	if (kind == PRT_TYPE_KIND.PRT_KIND_MODEL)
@@ -242,7 +242,7 @@ class PRT_VALUE {
 	if (kind1 == PRT_TYPE_KIND.PRT_KIND_EVENT)
 	    return value1.ev == value2.ev;
 
-	if (kind1 == PRT_TYPE_KIND.PRT_KIND_MACHINE)
+	if (kind1 == PRT_TYPE_KIND.PRT_KIND_REAL)
 	    return value1.mach == value2.mach;
 
 	if (kind1 == PRT_TYPE_KIND.PRT_KIND_INT)

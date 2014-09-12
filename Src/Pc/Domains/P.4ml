@@ -90,10 +90,36 @@ domain PData
 
 domain PStructuralTyping extends PData
 {
+	////// Duplicate Declarations 
     DuplicateEvent ::= (EventDecl, EventDecl).
-
+	DuplicateState ::= (StateDecl, StateDecl).
+	DuplicateFunct ::= (FunDecl, FunDecl).
+	DuplicateTransDecl ::= (TransDecl, TransDecl).
+	DuplicateDoDecl ::= (DoDecl, DoDecl).
+	DuplicateVarDecl ::= (VarDecl, VarDecl).
+	DuplicateMacDecl ::= (MachineDecl, MachineDecl).
+	
 	[ rule_Classes = '"error, msg: An event has multiple definitions"']
 	DuplicateEvent(e1, e2) :- e1 is EventDecl, e2 is EventDecl, e1.name = e2.name, e1 != e2.
+	[ rule_Classes = '"error, msg: Multiple states with the same name"']
+	DuplicateState(s1, s2) :- s1 != s2, s1 is StateDecl, s2 is StateDecl, s1.name = s2.name, s1.owner = s2.owner.
+	[ rule_Classes = '"error, msg: Multiple Functions with the same name"']
+	DuplicateFunct(f1, f2) :- f1 != f2, f1 is FunDecl, f2 is FunDecl, f1.name = f2.name, f1.owner = f2.owner.
+	[ rule_Classes = '"error, msg: Multiple Transitions over the same event"']
+	DuplicateTransDecl(t1, t2) :- t1 != t2, t1 is TransDecl, t2 is TransDecl, t1.src = t2.src, t1.trig = t2.trig.
+	[ rule_Classes = '"error, msg: Multiple actions over the same event"']
+	DuplicateDoDecl(a1, a2) :- a1 != a2, a1 is DoDecl(state, owner, _), a2 is DoDecl(state, owner, _), a1.src = a2.src, a1.trig = a2.trig.
+	[ rule_Classes = '"error, msg: Multiple variables with the same name"']
+	DuplicateVarDecl(v1, v2) :- v1 != v2, v1 is VarDecl, v2 is VarDecl, v1.name = v2.name, v1.owner = v2.owner.
+	[ rule_Classes = '"error, msg: Multiple machines with the same name"']
+	DuplicateMacDecl(m1, m2) :- m1 != m2, m1 is MachineDecl, m2 is MachineDecl, m1.name = m2.name.
+	
+	////// There should be a main machine
+	[rule_Classes = '"error, msg: There should be one main machine in the program"']
+	noMainMachine :- no MachineDecl(_, _, _, _, TRUE).
+	
+	
+	
 }
 
 domain PStaticTyping extends PData

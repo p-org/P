@@ -292,7 +292,17 @@
             AddErrors(task.Result, "LValueError(_, _)", inputProgram, errors);
 
             //// Enumerate duplicate definitions
-            AddErrors(task.Result, "DuplicateEvent(_, _)", inputProgram, errors); 
+            AddErrors(task.Result, "DuplicateEvent(_, _)", inputProgram, errors);
+            AddErrors(task.Result, "DuplicateState(_, _)", inputProgram, errors);
+            AddErrors(task.Result, "DuplicateFunct(_, _)", inputProgram, errors);
+            AddErrors(task.Result, "DuplicateTransDecl(_, _)", inputProgram, errors);
+            AddErrors(task.Result, "DuplicateDoDecl(_, _)", inputProgram, errors);
+            AddErrors(task.Result, "DuplicateVarDecl(_, _)", inputProgram, errors);
+            AddErrors(task.Result, "DuplicateMacDecl(_, _)", inputProgram, errors); 
+
+            //There should be a single main machine
+            AddErrors(task.Result, "noMainMachine", inputProgram, errors);
+
 
             flags.AddRange(errors);
             return task.Result.Conclusion == LiftedBool.True;

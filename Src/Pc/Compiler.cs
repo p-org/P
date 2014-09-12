@@ -286,19 +286,19 @@
 
             var errors = new SortedSet<Flag>(default(FlagSorter));
             //// Enumerate typing errors
-            AddErrors(task.Result, "TypeOf(_, _, ERROR)", inputProgram, errors);
-            AddErrors(task.Result, "DupNmdSubE(_, _, _, _)", inputProgram, errors);
-            AddErrors(task.Result, "PurityError(_, _)", inputProgram, errors);
-            AddErrors(task.Result, "LValueError(_, _)", inputProgram, errors);
+            AddErrors(task.Result, "TypeOf(_, _, ERROR)", inputProgram, errors, 1);
+            AddErrors(task.Result, "DupNmdSubE(_, _, _, _)", inputProgram, errors, 1);
+            AddErrors(task.Result, "PurityError(_, _)", inputProgram, errors, 1);
+            AddErrors(task.Result, "LValueError(_, _)", inputProgram, errors, 1);
 
             //// Enumerate duplicate definitions
-            AddErrors(task.Result, "DuplicateEvent(_, _)", inputProgram, errors);
-            AddErrors(task.Result, "DuplicateState(_, _)", inputProgram, errors);
-            AddErrors(task.Result, "DuplicateFunct(_, _)", inputProgram, errors);
-            AddErrors(task.Result, "DuplicateTransDecl(_, _)", inputProgram, errors);
-            AddErrors(task.Result, "DuplicateDoDecl(_, _)", inputProgram, errors);
-            AddErrors(task.Result, "DuplicateVarDecl(_, _)", inputProgram, errors);
-            AddErrors(task.Result, "DuplicateMacDecl(_, _)", inputProgram, errors); 
+            AddErrors(task.Result, "DuplicateEvent(_, _)", inputProgram, errors, 1);
+            AddErrors(task.Result, "DuplicateState(_, _)", inputProgram, errors, 1);
+            AddErrors(task.Result, "DuplicateFunct(_, _)", inputProgram, errors, 1);
+            AddErrors(task.Result, "DuplicateTransDecl(_, _)", inputProgram, errors, 1);
+            AddErrors(task.Result, "DuplicateDoDecl(_, _)", inputProgram, errors, 1);
+            AddErrors(task.Result, "DuplicateVarDecl(_, _)", inputProgram, errors, 1);
+            AddErrors(task.Result, "DuplicateMacDecl(_, _)", inputProgram, errors, 1); 
 
             //There should be a single main machine
             AddErrors(task.Result, "noMainMachine", inputProgram, errors);
@@ -308,7 +308,7 @@
             return task.Result.Conclusion == LiftedBool.True;
         }
 
-        private static void AddErrors(QueryResult result, string errorPattern, ProgramName inputProgram, SortedSet<Flag> errors)
+        private static void AddErrors(QueryResult result, string errorPattern, ProgramName inputProgram, SortedSet<Flag> errors, int locationIndex = -1)
         {
             List<Flag> queryFlags;
             foreach (var p in result.EnumerateProofs(errorPattern, out queryFlags, 1))
@@ -319,15 +319,27 @@
                 }
 
                 var errorMsg = GetMessageFromProof(p);
-                foreach (var loc in p.ComputeLocators())
+                if (locationIndex >= 0)
                 {
-                    var exprLoc = loc[1];
+                    foreach (var loc in p.ComputeLocators())
+                    {
+                        var exprLoc = loc[locationIndex];
+                        errors.Add(new Flag(
+                            SeverityKind.Error,
+                            exprLoc.Span,
+                            errorMsg,
+                            TypeErrorCode,
+                            ProgramName.Compare(inputProgram, exprLoc.Program) != 0 ? null : exprLoc.Program));
+                    }
+                }
+                else
+                {
                     errors.Add(new Flag(
                         SeverityKind.Error,
-                        exprLoc.Span,
+                        default(Span),
                         errorMsg,
                         TypeErrorCode,
-                        ProgramName.Compare(inputProgram, exprLoc.Program) != 0 ? null : exprLoc.Program));
+                        inputProgram));
                 }
             }
 

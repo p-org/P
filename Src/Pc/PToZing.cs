@@ -555,7 +555,6 @@ namespace Microsoft.Pc
                 }
             }
 
-
             terms = GetBin("TypeOf");
             foreach (var term in terms)
             {

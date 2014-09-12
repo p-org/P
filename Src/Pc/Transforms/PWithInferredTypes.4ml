@@ -6,7 +6,7 @@
 domain PWithInferredTypes extends PData
 {
     //// The declarations that may contain expressions or statements that should be typed.
-    TypingContext ::= FunDecl + ActionDecl + StateDecl + TransDecl.
+    TypingContext ::= FunDecl + ActionDecl + AnonFunDecl + AnonActionDecl.
     
     //// The set of typeable expressions and statements.
     Typeable ::= Expr + Stmt + Exprs + NamedExprs.

@@ -394,9 +394,10 @@ Exp_0
     | FAIRNONDET                             { PushNulExpr(P_Root.UserCnstKind.FAIRNONDET, ToSpan(@1)); }
     | NULL                                   { PushNulExpr(P_Root.UserCnstKind.NULL,       ToSpan(@1)); }
     | HALT                                   { PushNulExpr(P_Root.UserCnstKind.HALT,       ToSpan(@1)); }
-	| INT                                    { PushIntExpr($1.str, ToSpan(@1));                         }
-    | ID                                     { PushName($1.str,    ToSpan(@1));                         }         
-	| Exp_0 DOT ID                           { PushField($3.str,   ToSpan(@3));                         }   
+	| INT                                    { PushIntExpr($1.str,  ToSpan(@1));                        }
+    | ID                                     { PushName($1.str,     ToSpan(@1));                        }         
+	| Exp_0 DOT ID                           { PushField($3.str,    ToSpan(@3));                        }   
+	| Exp_0 DOT INT                          { PushFieldInt($3.str, ToSpan(@3));                        }   
 	| Exp_0 LBRACKET Exp RBRACKET            { PushBinExpr(P_Root.UserCnstKind.IDX,        ToSpan(@2)); }
 	| LPAREN Exp RPAREN                      { }
     | KEYS LPAREN Exp RPAREN                 { PushUnExpr(P_Root.UserCnstKind.KEYS,   ToSpan(@1));      }

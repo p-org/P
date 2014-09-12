@@ -4,21 +4,17 @@ event a;
 event b;
 event c;
 
-machine m1 {
+main machine m1 {
 	start state S1 {
 	
 	
 	}
 	
-	state S1 {
-	
-	
-	}
 
 
 }
 
-machine m1 {
+main machine m1 {
 	var x : int;
 	var x : bool;
 

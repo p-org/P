@@ -271,7 +271,7 @@ class PRT_VALUE {
 	    retVal = value.seq.InhabitsType(type);
 	    return retVal;
 	}
-
+	trace("Invalid tkind value : {0}", tkind);
 	assert (false);
 	return false;
     }

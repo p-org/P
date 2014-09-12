@@ -114,12 +114,18 @@ domain PStructuralTyping extends PData
 	[ rule_Classes = '"error, msg: Multiple machines with the same name"']
 	DuplicateMacDecl(m1, m2) :- m1 != m2, m1 is MachineDecl, m2 is MachineDecl, m1.name = m2.name.
 	
-	////// There should be a main machine
-	[rule_Classes = '"error, msg: There should be one main machine in the program"']
+	//// There should be a main machine
+	[rule_Classes = '"error, msg: No Main Machine"']
 	noMainMachine :- no MachineDecl(_, _, _, _, TRUE).
+	multipleMainMachines ::= (MachineDecl, MachineDecl).
+	[ rule_Classes = '"error, msg: Multiple machines are declared as main machines"']
+	multipleMainMachines(m1, m2) :- m1 is MachineDecl, m2 is MachineDecl, m1.isMain = TRUE, m2.isMain = TRUE, m1 != m2.
 	
-	
-	
+	//// there should be a start state in each state machine.
+	noStartState ::= (MachineDecl).
+	[ rule_Classes = '"error, msg: no start state in machine"']
+	noStartState(m) :- m is MachineDecl, no StateDecl(s, m , _, _, _), m.start = s.
+
 }
 
 domain PStaticTyping extends PData

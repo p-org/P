@@ -78,13 +78,17 @@ class SM_HANDLE {
 
     void EnqueueEvent(SM_EVENT e, PRT_VALUE arg, SM_HANDLE source) {
         bool b;
-	PRT_TYPE prtType;
+		PRT_TYPE prtType;
     	assert (e != null);
 		assert (e != Main.default_SM_EVENT);
 		//assertion to check if argument passed inhabits the payload type.
 		prtType = Main.PayloadOf(e);
-		b = PRT_VALUE.PrtInhabitsType(arg, prtType);
-		assert (b);
+		
+		assert(prtType.typeKind == PRT_TYPE_KIND.PRT_KIND_NULL && arg.type.typeKind == PRT_TYPE_KIND.PRT_KIND_NULL, "Type of payload does not match the expected type with event");
+		if(prtType.typeKind != PRT_TYPE_KIND.PRT_KIND_NULL) {
+			b = PRT_VALUE.PrtInhabitsType(arg, prtType);
+			assert (b, "Type of payload does not match the expected type with event");
+		}
 		if(isDeleted)
 		{
 			trace("<EnqueueLog> {0}-{1} Machine has been deleted and  Event {2} is dropped\n", machineName, instance, e.name);

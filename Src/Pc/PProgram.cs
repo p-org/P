@@ -47,7 +47,19 @@
             private set;
         }
 
+        public List<P_Root.AnonFunDecl> AnonFunctions
+        {
+            get;
+            private set;
+        }
+
         public List<P_Root.ActionDecl> Actions
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.AnonActionDecl> AnonActions
         {
             get;
             private set;
@@ -99,9 +111,19 @@
                     yield return fd;
                 }
 
+                foreach (var afd in AnonFunctions)
+                {
+                    yield return afd;
+                }
+
                 foreach (var ac in Actions)
                 {
                     yield return ac;
+                }
+
+                foreach (var aac in AnonActions)
+                {
+                    yield return aac;
                 }
 
                 foreach (var di in Dos)
@@ -124,7 +146,9 @@
             Variables = new List<P_Root.VarDecl>();
             Transitions = new List<P_Root.TransDecl>();
             Functions = new List<P_Root.FunDecl>();
+            AnonFunctions = new List<P_Root.AnonFunDecl>();
             Actions = new List<P_Root.ActionDecl>();
+            AnonActions = new List<P_Root.AnonActionDecl>();
             Dos = new List<P_Root.DoDecl>();
             Annotations = new List<P_Root.Annotation>();
         }

@@ -128,7 +128,7 @@
                 PDomain, 
                 prog.Terms, 
                 out model,
-                MkDeclAliases(prog),
+                null,
                 MkReservedModuleLocation(PDomain));
             Contract.Assert(result);
 
@@ -137,7 +137,7 @@
             var progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, model), out instResult);
             Contract.Assert(progressed && instResult.Succeeded);
 
-            model.Print(Console.Out);
+            ////model.Print(Console.Out);
 
             //// Step 3. Perform static analysis.
             if (!Check(inputModule, inputFile, flags))
@@ -521,7 +521,7 @@
             var extractTask = apply.Result.GetOutputModel(
                 inputModelName + "_WithTypes",
                 new ProgramName(Path.Combine(Environment.CurrentDirectory, inputModelName + "_WithTypes.4ml")),
-                AliasPrefix);
+                null);
             extractTask.Wait();
 
             var modelWithTypes = extractTask.Result.FindAny(
@@ -614,40 +614,6 @@
                 Factory.Instance.MkCnst("Zing"));
 
             return (AST<Model>)Factory.Instance.ToAST(conf.Root);
-        }
-
-        private Dictionary<Microsoft.Formula.API.Generators.ICSharpTerm, string> MkDeclAliases(PProgram program)
-        {
-            Contract.Requires(program != null);
-            var aliases = new Dictionary<Microsoft.Formula.API.Generators.ICSharpTerm, string>();
-            var occurrenceMap = new Dictionary<string, int>();
-
-            foreach (var m in program.Machines)
-            {
-                aliases.Add(m, MkSafeAlias("machdecl__" + ((Domains.P_Root.StringCnst)m.name).Value, occurrenceMap));
-            }
-
-            foreach (var e in program.Events)
-            {
-                aliases.Add(e, MkSafeAlias("evdecl__" + ((Domains.P_Root.StringCnst)e.name).Value, occurrenceMap));
-            }
-
-            foreach (var v in program.Variables)
-            {
-                aliases.Add(v, MkSafeAlias(string.Format("vardecl__{0}__{1}", ((Domains.P_Root.StringCnst)((Domains.P_Root.MachineDecl)v.owner).name).Value, ((Domains.P_Root.StringCnst)v.name).Value), occurrenceMap));
-            }
-
-            foreach (var f in program.Functions)
-            {
-                aliases.Add(f, MkSafeAlias(string.Format("fundecl__{0}__{1}", ((Domains.P_Root.StringCnst)((Domains.P_Root.MachineDecl)f.owner).name).Value, ((Domains.P_Root.StringCnst)f.name).Value), occurrenceMap));
-            }
-
-            foreach (var s in program.States)
-            {
-                aliases.Add(s, MkSafeAlias(string.Format("statedecl__{0}__{1}", ((Domains.P_Root.StringCnst)((Domains.P_Root.MachineDecl)s.owner).name).Value, MkQualifiedAlias((Domains.P_Root.QualifiedName)s.name)), occurrenceMap));
-            }
-
-            return aliases;
         }
 
         private struct FlagSorter : IComparer<Flag>

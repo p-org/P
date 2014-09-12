@@ -839,6 +839,7 @@
                 state = GetCurrentStateDecl(stmt.Span);
                 entry = P_Root.MkAnonActionDecl((P_Root.MachineDecl)state.owner, stmt);
                 entry.Span = stmt.Span;
+                parseProgram.AnonActions.Add((P_Root.AnonActionDecl)entry);
             }
             else
             {
@@ -875,6 +876,7 @@
                 state = GetCurrentStateDecl(stmt.Span);
                 exit = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, stmt);
                 exit.Span = stmt.Span;
+                parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)exit);
             }
             else
             {
@@ -1007,6 +1009,7 @@
                 var stmt = (P_Root.IArgType_AnonFunDecl__1)stmtStack.Pop();
                 action = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, stmt);
                 action.Span = stmt.Span;
+                parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)action);
             }
 
             foreach (var e in crntEventList)
@@ -1138,6 +1141,7 @@
             var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
             var anonAction = P_Root.MkAnonActionDecl((P_Root.MachineDecl)state.owner, stmt);
             anonAction.Span = stmt.Span;
+            parseProgram.AnonActions.Add(anonAction);
             foreach (var e in crntEventList)
             {
                 var action = P_Root.MkDoDecl(state, (P_Root.IArgType_DoDecl__1)e, anonAction);
@@ -1476,6 +1480,7 @@
         {
             var decl = P_Root.MkAnonFunDecl(owner, P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span)));
             decl.Span = span;
+            parseProgram.AnonFunctions.Add(decl);
             return decl;
         }
 
@@ -1483,6 +1488,7 @@
         {
             var decl = P_Root.MkAnonActionDecl(owner, P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span)));
             decl.Span = span;
+            parseProgram.AnonActions.Add(decl);
             return decl;
         }
 

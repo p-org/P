@@ -80,40 +80,30 @@ namespace Microsoft.Pc
         }
     }
 
-    internal class FunInfo
+    internal class FunInfo : ActionInfo
     {
         public bool isModel;
         public Dictionary<string, VariableInfo> parameterNameToInfo;
         public List<string> parameterNames;
-        public AST<Node> returnType;
+        public AST<FuncTerm> returnType;
         public string ownerName;
-        public Node body;
-        public int numFairChoices;
 
-        public Dictionary<AST<Node>, FuncTerm> typeInfo;
-
-        public FunInfo(string ownerName, bool isModel, AST<Node> returnType, Node body)
+        public FunInfo(string ownerName, bool isModel, AST<FuncTerm> returnType, Node body) : base(body)
         {
             this.ownerName = ownerName;
             this.isModel = isModel;
             this.parameterNameToInfo = new Dictionary<string, VariableInfo>();
             this.parameterNames = new List<string>();
             this.returnType = returnType;
-            this.body = body;
-            this.numFairChoices = 0;
-            this.typeInfo = new Dictionary<AST<Node>, FuncTerm>();
         }
 
-        public FunInfo(string ownerName, Node body)
+        public FunInfo(string ownerName, Node body) : base(body)
         {
             this.ownerName = ownerName;
             this.isModel = false;
             this.parameterNameToInfo = new Dictionary<string, VariableInfo>();
             this.parameterNames = new List<string>();
             this.returnType = PToZing.PTypeNull;
-            this.body = body;
-            this.numFairChoices = 0;
-            this.typeInfo = new Dictionary<AST<Node>, FuncTerm>();
         }
     }
 
@@ -121,7 +111,6 @@ namespace Microsoft.Pc
     {
         public Node body;
         public int numFairChoices;
-
         public Dictionary<AST<Node>, FuncTerm> typeInfo;
 
         public ActionInfo(Node body)
@@ -214,7 +203,6 @@ namespace Microsoft.Pc
         public const string HaltEvent = "halt";
 
         private Dictionary<string, LinkedList<AST<FuncTerm>>> factBins; 
-        private Dictionary<string, AST<FuncTerm>> modelAliases;
         public Dictionary<string, EventInfo> allEvents;
         public Dictionary<string, MachineInfo> allMachines;
         public string mainMachineName;
@@ -242,7 +230,6 @@ namespace Microsoft.Pc
 
         private void IndexModel(AST<Model> model)
         {
-            this.modelAliases = new Dictionary<string, AST<FuncTerm>>();
             this.factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
             model.FindAll(
                 new NodePred[]
@@ -254,29 +241,14 @@ namespace Microsoft.Pc
                 (path, n) =>
                 {
                     var mf = (ModelFact)n;
-                    if (mf.Binding != null)
-                    {
-                        modelAliases.Add(((Id)mf.Binding).Name, (AST<FuncTerm>)Factory.Instance.ToAST(mf.Match));
-                    }
-
                     FuncTerm ft = (FuncTerm)mf.Match;
                     GetBin(ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
                 });
         }
 
-        public FuncTerm GetFuncTerm(Node node)
-        {
-            if (node.NodeKind == NodeKind.FuncTerm)
-                return (FuncTerm)node;
-            else if (node.NodeKind == NodeKind.Id)
-                return modelAliases[((Id)node).Name].Node;
-            Debug.Assert(false);
-            return null;
-        }
-
         public string GetMachineName(FuncTerm ft, int index)
         {
-            FuncTerm machineDecl = GetFuncTerm(GetArgByIndex(ft, index));
+            FuncTerm machineDecl = (FuncTerm)GetArgByIndex(ft, index);
             var machineName = GetName(machineDecl, 0);
             return machineName;
         }
@@ -372,7 +344,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var varName = ((Cnst)it.Current).GetStringValue();
                     it.MoveNext();
-                    var machineDecl = GetFuncTerm(it.Current);
+                    var machineDecl = (FuncTerm)it.Current;
                     var machineName = GetName(machineDecl, 0);
                     var varTable = allMachines[machineName].localVariableToVarInfo;
                     it.MoveNext();
@@ -389,7 +361,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     string funName = ((Cnst)it.Current).GetStringValue();
                     it.MoveNext();
-                    var machineDecl = GetFuncTerm(it.Current);
+                    var machineDecl = (FuncTerm)it.Current;
                     var machineName = GetName(machineDecl, 0);
                     var machineInfo = allMachines[machineName];
                     it.MoveNext();
@@ -397,7 +369,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var iter = it.Current as FuncTerm;
                     it.MoveNext();
-                    var returnTypeName = ((Id)it.Current).Name == "NIL" ? PTypeNull : Factory.Instance.ToAST(it.Current);
+                    var returnTypeName = ((Id)it.Current).Name == "NIL" ? PTypeNull : (AST<FuncTerm>)Factory.Instance.ToAST(it.Current);
                     it.MoveNext();
                     var funInfo = new FunInfo(machineName, isModel, returnTypeName, it.Current);
                     while (iter != null)
@@ -425,7 +397,7 @@ namespace Microsoft.Pc
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    var machineDecl = GetFuncTerm(it.Current);
+                    var machineDecl = (FuncTerm)it.Current;
                     var machineName = GetName(machineDecl, 0);
                     var machineInfo = allMachines[machineName];
                     it.MoveNext();
@@ -443,7 +415,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var actionName = ((Cnst)it.Current).GetStringValue();
                     it.MoveNext();
-                    var actionOwnerMachineDecl = GetFuncTerm(it.Current);
+                    var actionOwnerMachineDecl = (FuncTerm)it.Current;
                     var actionOwnerMachineName = GetName(actionOwnerMachineDecl, 0);
                     it.MoveNext();
                     allMachines[actionOwnerMachineName].actionNameToActionInfo[actionName] = new ActionInfo(it.Current);
@@ -457,7 +429,7 @@ namespace Microsoft.Pc
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    var machineDecl = GetFuncTerm(it.Current);
+                    var machineDecl = (FuncTerm)it.Current;
                     var machineName = GetName(machineDecl, 0);
                     it.MoveNext();
                     var actionName = "AnonAction" + anonActionToName.Count;
@@ -474,7 +446,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var qualifiedStateName = (FuncTerm)it.Current;
                     it.MoveNext();
-                    var machineDecl = GetFuncTerm(it.Current);
+                    var machineDecl = (FuncTerm)it.Current;
                     var ownerName = GetName(machineDecl, 0);
                     var stateName = GetNameFromQualifiedName(ownerName, qualifiedStateName);
                     it.MoveNext();
@@ -498,7 +470,7 @@ namespace Microsoft.Pc
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    var stateDecl = GetFuncTerm(it.Current);
+                    var stateDecl = (FuncTerm)it.Current;
                     var qualifiedStateName = (FuncTerm)GetArgByIndex(stateDecl, 0);
                     var stateOwnerMachineName = GetMachineName(stateDecl, 1);
                     var stateName = GetNameFromQualifiedName(stateOwnerMachineName, qualifiedStateName);
@@ -546,7 +518,7 @@ namespace Microsoft.Pc
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    var stateDecl = GetFuncTerm(it.Current);
+                    var stateDecl = (FuncTerm)it.Current;
                     var qualifiedStateName = (FuncTerm)GetArgByIndex(stateDecl, 0);
                     var stateOwnerMachineName = GetMachineName(stateDecl, 1);
                     var stateName = GetNameFromQualifiedName(stateOwnerMachineName, qualifiedStateName);
@@ -593,7 +565,7 @@ namespace Microsoft.Pc
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    FuncTerm typingContext = GetFuncTerm(it.Current);
+                    FuncTerm typingContext = (FuncTerm)it.Current;
                     it.MoveNext();
                     var expr = Factory.Instance.ToAST(it.Current);
                     it.MoveNext();
@@ -734,7 +706,7 @@ namespace Microsoft.Pc
             switch (ownerArg.NodeKind)
             {
                 case NodeKind.Id:
-                    return ((Cnst)GetArgByIndex(GetFuncTerm(ownerArg), ownerNameIndex)).GetStringValue();
+                    return ((Cnst)GetArgByIndex((FuncTerm)ownerArg, ownerNameIndex)).GetStringValue();
                 case NodeKind.FuncTerm:
                     return ((Cnst)GetArgByIndex((FuncTerm)ownerArg, ownerNameIndex)).GetStringValue();
                 default:
@@ -1177,20 +1149,19 @@ namespace Microsoft.Pc
                 methods = AddArgs(ZingData.App_MethodDecls, MkZingFunMethod(funName, funInfo), methods);
             }
 
-            foreach (var stateInfo in allMachines[machineName].stateNameToStateInfo)
+            foreach (var stateName in allMachines[machineName].stateNameToStateInfo.Keys)
             {
-                var stateName = stateInfo.Key;
-                var entryFun = allMachines[machineName].actionNameToActionInfo[stateInfo.Value.entryActionName].body;
-                var exitFun = allMachines[machineName].funNameToFunInfo[stateInfo.Value.exitFunName].body;
-                methods = AddArgs(ZingData.App_MethodDecls, MkZingWrapperFn(entryFun, machineName, TranslationContext.Action, stateName), methods);
-                if (exitFun != null)
-                    methods = AddArgs(ZingData.App_MethodDecls, MkZingWrapperFn(exitFun, machineName, TranslationContext.Function, stateName), methods);
+                var stateInfo = allMachines[machineName].stateNameToStateInfo[stateName];
+                var entryActionInfo = allMachines[machineName].actionNameToActionInfo[stateInfo.entryActionName];
+                var exitFunInfo = allMachines[machineName].funNameToFunInfo[stateInfo.exitFunName];
+                methods = AddArgs(ZingData.App_MethodDecls, MkZingWrapperFn(machineName, stateInfo.entryActionName, entryActionInfo), methods);
+                methods = AddArgs(ZingData.App_MethodDecls, MkZingWrapperFn(machineName, stateInfo.exitFunName, exitFunInfo), methods);
             }
 
-            foreach (var actName in allMachines[machineName].actionNameToActionInfo.Keys)
+            foreach (var actionName in allMachines[machineName].actionNameToActionInfo.Keys)
             {
-                var actInfo = allMachines[machineName].actionNameToActionInfo[actName];
-                methods = AddArgs(ZingData.App_MethodDecls, MkZingWrapperFn(actInfo.body, machineName, TranslationContext.Action, actName), methods);
+                var actionInfo = allMachines[machineName].actionNameToActionInfo[actionName];
+                methods = AddArgs(ZingData.App_MethodDecls, MkZingWrapperFn(machineName, actionName, actionInfo), methods);
             }
 
             return AddArgs(ZingData.App_ClassDecl, Factory.Instance.MkCnst(machineName), fields, methods);
@@ -1223,20 +1194,19 @@ namespace Microsoft.Pc
                 methods = AddArgs(ZingData.App_MethodDecls, MkZingFunMethod(funName, funInfo), methods);
             }
 
-            foreach (var stateInfo in allMachines[machineName].stateNameToStateInfo)
+            foreach (var stateName in allMachines[machineName].stateNameToStateInfo.Keys)
             {
-                var stateName = stateInfo.Key;
-                var entryAction = allMachines[machineName].actionNameToActionInfo[stateInfo.Value.entryActionName].body;
-                var exitFun = allMachines[machineName].funNameToFunInfo[stateInfo.Value.exitFunName].body;
-                methods = AddArgs(ZingData.App_MethodDecls, MkZingWrapperFn(entryAction, machineName, TranslationContext.Action, stateName), methods);
-                if (exitFun != null)
-                    methods = AddArgs(ZingData.App_MethodDecls, MkZingWrapperFn(exitFun, machineName, TranslationContext.Function, stateName), methods);
+                var stateInfo = allMachines[machineName].stateNameToStateInfo[stateName];
+                var entryActionInfo = allMachines[machineName].actionNameToActionInfo[stateInfo.entryActionName];
+                var exitFunInfo = allMachines[machineName].funNameToFunInfo[stateInfo.exitFunName];
+                methods = AddArgs(ZingData.App_MethodDecls, MkZingWrapperFn(machineName, stateInfo.entryActionName, entryActionInfo), methods);
+                methods = AddArgs(ZingData.App_MethodDecls, MkZingWrapperFn(machineName, stateInfo.exitFunName, exitFunInfo), methods);
             }
 
-            foreach (var actName in allMachines[machineName].actionNameToActionInfo.Keys)
+            foreach (var actionName in allMachines[machineName].actionNameToActionInfo.Keys)
             {
-                var actInfo = allMachines[machineName].actionNameToActionInfo[actName];
-                methods = AddArgs(ZingData.App_MethodDecls, MkZingWrapperFn(actInfo.body, machineName, TranslationContext.Action, actName), methods);
+                var actionInfo = allMachines[machineName].actionNameToActionInfo[actionName];
+                methods = AddArgs(ZingData.App_MethodDecls, MkZingWrapperFn(machineName, actionName, actionInfo), methods);
             }
 
             if (compiler.liveness == LivenessOption.Standard)
@@ -1858,26 +1828,25 @@ namespace Microsoft.Pc
             return MkZingMethodDecl("runHelper", ZingData.Cnst_Nil, ZingData.Cnst_Void, MkZingVarDecls(locals), body);
         }
 
-        enum TranslationContext { Action, Function };
         class ZingEntryFun_FoldContext
         {
+            private PToZing pToZing;
             public string machineName;
-            public TranslationContext translationContext;
             public string entityName;
+            public ActionInfo entityInfo;
             public Stack<List<AST<Node>>> sideEffectsStack;
             public List<Tuple<AST<Node>, string>> locals;
             private Dictionary<string, int> labels;
-            private PToZing pToZing;
 
-            public ZingEntryFun_FoldContext(string machineName, TranslationContext translationContext, string entityName, PToZing comp)
+            public ZingEntryFun_FoldContext(PToZing comp, string machineName, string entityName, ActionInfo entityInfo)
             {
+                this.pToZing = comp;
                 this.machineName = machineName;
-                this.translationContext = translationContext;
                 this.entityName = entityName;
+                this.entityInfo = entityInfo;
                 this.sideEffectsStack = new Stack<List<AST<Node>>>();
                 pushSideEffectStack();
                 this.locals = new List<Tuple<AST<Node>, string>>();
-                this.pToZing = comp;
                 this.labels = new Dictionary<string, int>();
             }
 
@@ -2257,8 +2226,8 @@ namespace Microsoft.Pc
         ZingTranslationInfo FoldName(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
         {
             var name = GetName(ft, 0);
-            if (ctxt.translationContext == TranslationContext.Function && 
-                allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].parameterNameToInfo.ContainsKey(name))
+            FunInfo funInfo = ctxt.entityInfo as FunInfo;
+            if (funInfo != null && funInfo.parameterNameToInfo.ContainsKey(name))
             {
                 return new ZingTranslationInfo(MkZingIdentifier(name)); 
             }
@@ -2417,15 +2386,7 @@ namespace Microsoft.Pc
                 ctxt.addSideEffect(MkZingAssign(MkZingDot("entryCtxt", "nondet"), ZingData.Cnst_False));
                 if (compiler.liveness == LivenessOption.Standard && op == PData.Cnst_FairNondet.Node.Name)
                 {
-                    int i;
-                    if (ctxt.translationContext == TranslationContext.Action)
-                    {
-                        i = allMachines[ctxt.machineName].actionNameToActionInfo[ctxt.entityName].numFairChoices++;
-                    }
-                    else
-                    {
-                        i = allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].numFairChoices++;
-                    }
+                    int i = ctxt.entityInfo.numFairChoices++;
                     ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(GetFairChoice(ctxt.entityName, i), "AtChoose"), bvar)));
                 }
                 var tmpVar = ctxt.getTmpVar(PrtValue, "tmp");
@@ -2917,7 +2878,12 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldReturn(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
         {
-            var returnType = allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].returnType;
+            FunInfo funInfo = ctxt.entityInfo as FunInfo;
+            AST<FuncTerm> returnType = PTypeNull;
+            if (funInfo != null)
+            {
+                returnType = funInfo.returnType;
+            }
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
@@ -2993,12 +2959,12 @@ namespace Microsoft.Pc
             }
         }
 
-        private AST<Node> MkZingWrapperFn(Node n, string machine, TranslationContext ctxType, string entityName)
+        private AST<Node> MkZingWrapperFn(string machineName, string entityName, ActionInfo actionInfo)
         {
             AST<Node> body;
 
-            var ctxt = new ZingEntryFun_FoldContext(machine, ctxType, entityName, this);
-            var tuple = Factory.Instance.ToAST(n).Compute<ZingTranslationInfo>(
+            var ctxt = new ZingEntryFun_FoldContext(this, machineName, entityName, actionInfo);
+            var tuple = Factory.Instance.ToAST(actionInfo.body).Compute<ZingTranslationInfo>(
                 x => ZingEntryFun_UnFold(ctxt, x),
                 (x, ch) => ZingEntryFun_Fold(ctxt, x, ch));
 
@@ -3013,10 +2979,10 @@ namespace Microsoft.Pc
             body = MkZingSeq(
                 ctxt.emitLabelPrelude(),
                 MkZingLabeledStmt("start", body),
-                ctxt.translationContext == TranslationContext.Action
-                          ? MkZingSeq(MkZingAssign(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
-                                      MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node)))) 
-                          : ZingData.Cnst_Nil,
+                actionInfo is FunInfo
+                ? ZingData.Cnst_Nil
+                : MkZingSeq(MkZingAssign(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
+                            MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node)))),
                 MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Return"))),
                 MkZingReturn(MkZingIdentifier("entryCtxt")));
 
@@ -3032,7 +2998,7 @@ namespace Microsoft.Pc
             AST<Node> funBody;
             AST<Node> entry = Factory.Instance.ToAST(funInfo.body);
 
-            var ctxt = new ZingEntryFun_FoldContext(machineName, TranslationContext.Function, funName, this);
+            var ctxt = new ZingEntryFun_FoldContext(this, machineName, funName, funInfo);
             var tuple = Factory.Instance.ToAST(entry.Node).Compute<ZingTranslationInfo>(
                 x => ZingEntryFun_UnFold(ctxt, x),
                 (x, ch) => ZingEntryFun_Fold(ctxt, x, ch));
@@ -3215,16 +3181,7 @@ namespace Microsoft.Pc
 
         private FuncTerm LookupType(ZingEntryFun_FoldContext ctxt, Node node)
         {
-            var ast = Factory.Instance.ToAST(node);
-            if (ctxt.translationContext == TranslationContext.Action)
-            {
-                return allMachines[ctxt.machineName].actionNameToActionInfo[ctxt.entityName].typeInfo[ast];
-            }
-            else
-            {
-                // ctxt.translationContext == TranslationContext.Function
-                return allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName].typeInfo[ast];
-            }
+            return ctxt.entityInfo.typeInfo[Factory.Instance.ToAST(node)];
         }
 
         TypeTranslationContext typeContext;

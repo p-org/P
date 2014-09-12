@@ -94,7 +94,7 @@ class SM_HANDLE {
 		{
 			if (arg != null)
 			{
-				trace("<EnqueueLog> Enqueued Event < {0}, ", e.anme); PRT_VALUE.Print(arg); trace(" > in Machine {0}-{1} by {2}-{3}\n", machineName, instance, source.machineName, source.instance);
+				trace("<EnqueueLog> Enqueued Event < {0}, ", e.name); PRT_VALUE.Print(arg); trace(" > in Machine {0}-{1} by {2}-{3}\n", machineName, instance, source.machineName, source.instance);
 			}
 			else
 			{
@@ -252,15 +252,15 @@ class EVENT_BUFFER {
 };
 
 array SM_EVENT_array[] SM_EVENT;
-array ActionFun_array[] ActionFun;
+array ActionOrFun_array[] ActionOrFun;
 
 class LocalActions {
     SM_EVENT_array es;
-    ActionFun_array as;
+    ActionOrFun_array as;
     LocalActions next;
 
-    ActionFun Find(SM_EVENT f) {
-        ActionFun af;
+    ActionOrFun Find(SM_EVENT f) {
+        ActionOrFun af;
         int i = 0;
 		while (i < sizeof(es)) {
 			if (es[i] == f) {

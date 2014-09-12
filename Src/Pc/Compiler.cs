@@ -147,7 +147,7 @@
             //// GenerateC(inputModule, inputFile).Print(Console.Out);
 
             //// Step 4. Perform Zing compilation.
-            //// GenerateZing(inputModule, inputFile);
+            GenerateZing(inputModule, inputFile);
             return true;
         }
 

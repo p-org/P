@@ -44,7 +44,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Workspace\plang\Src\PrtDist\PrtDistributedIDL;C:\Workspace\plang\Src\PrtDist\Prt\Values;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Prt\PRuntime\PrtDistributedIDL\;..\Prt\PRuntime\Prt\Values;..\Prt\Resources\PThreads\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>IGNORE_FRG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>

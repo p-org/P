@@ -749,6 +749,105 @@ class PRT_MAP {
 	}
 	return true;
     }
+	
+	static void Print(PRT_VALUE value)
+	{
+		PRT_TYPE_KIND tkind;
+		bool isNullValue;
+		
+		tkind = value.typeKind;
+		isNullValue = PrtIsNullValue(value);
+		if (tkind == PRT_TYPE_KIND.PRT_KIND_ANY)
+			assert(false, "Value must have a more concrete type");
+
+		if (tkind == PRT_TYPE_KIND.PRT_KIND_BOOL)
+		{
+			if(value.bl == true)
+				trace("true");
+			else
+				trace("false");
+		}
+		
+		if (tkind == PRT_TYPE_KIND.PRT_KIND_EVENT)
+		{
+			if(isNullValue)
+				trace("null");
+			else
+				trace("{0}", value.ev.name)
+		}
+
+		if (tkind == PRT_TYPE_KIND.PRT_KIND_REAL || tkind == PRT_TYPE_KIND.PRT_KIND_MODEL)
+		{
+			if(isNullValue)
+				trace("null");
+			else
+				trace("{0}-{1}", value.mach.machineName, value.mach.instance);
+		}
+
+		if (tkind == PRT_TYPE_KIND.PRT_KIND_INT)
+			trace("{0}", value.nt);
+
+		if (tkind == PRT_TYPE_KIND.PRT_KIND_MAP)
+		{
+			int i;
+			i = 0;
+			trace("map : {");
+			while (i < value.map.size) {
+				trace("(");
+				Print(value.map.keys[i]);
+				trace(",");
+				Print(value.map.values[i]);
+				trace(")");
+				i = i + 1;
+			}
+			trace("}");
+		}
+		
+		if(tkind ==  PRT_TYPE_KIND.PRT_KIND_NULL)
+		{
+			trace("null");
+		}
+		
+		if(tkind == PRT_TYPE_KIND.PRT_KIND_SEQ)
+		{
+			trace("seq : {");
+			int i;
+			i = 0;
+			while(i < value.seq.size) {
+				Print(value.seq.contents[i]);
+				trace(",");
+				i = i + 1;
+			}
+			trace("}");
+		}
+		
+		if(tkind == PRT_TYPE_KIND.PRT_KIND_TUPLE)
+		{
+			int i;
+			i = 0;
+			trace("tuple : (");
+			while(i < type.arity)
+			{
+				Print(value.tuple[i]);
+				trace(",");
+			}
+			trace(")");
+		}
+		
+		if(tkind == PRT_TYPE_KIND.PRT_KIND_NMDTUP)
+		{
+			int i;
+			i = 0;
+			trace("namedTup : (");
+			while(i < type.arity)
+			{
+				trace("field {0}:", i);
+				Print(value.tuple[i]);
+				trace(",");
+			}
+			trace(")");
+		}
+	}
 };
 
 

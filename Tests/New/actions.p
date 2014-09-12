@@ -7,13 +7,15 @@ event e;
 
 
 machine Node {
-
+	var x: int;
 	start state Init {
+		
 		entry {
-			//x = x + 1;
+			x = x + 1;
+			send this, a;
 		}
 		on a do foo;
-		on b do {};
+		on b do { assert(false);};
 		on c goto xyz;
 		on d goto xyz with {};
 		on e goto xyz with bar;
@@ -21,6 +23,7 @@ machine Node {
 	
 	action foo {
 		x = x + 1;
+		send this, b;
 	}
 
 	fun bar () {

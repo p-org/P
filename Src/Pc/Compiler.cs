@@ -137,6 +137,8 @@
             var progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, model), out instResult);
             Contract.Assert(progressed && instResult.Succeeded);
 
+            model.Print(Console.Out);
+
             //// Step 3. Perform static analysis.
             if (!Check(inputModule, inputFile, flags))
             {
@@ -285,6 +287,10 @@
             var errors = new SortedSet<Flag>(default(FlagSorter));
             //// Enumerate typing errors
             AddErrors(task.Result, "TypeOf(_, _, ERROR)", inputProgram, errors);
+            AddErrors(task.Result, "DupNmdSubE(_, _, _, _)", inputProgram, errors);
+            AddErrors(task.Result, "PurityError(_, _)", inputProgram, errors);
+            AddErrors(task.Result, "LValueError(_, _)", inputProgram, errors);
+
             //// Enumerate duplicate definitions
             AddErrors(task.Result, "DuplicateEvent(_, _)", inputProgram, errors); 
 
@@ -653,10 +659,22 @@
                     return ((int)x.Severity) - ((int)y.Severity);
                 }
 
-                var cmp = string.Compare(x.ProgramName.ToString(), y.ProgramName.ToString());
-                if (cmp != 0)
+                int cmp;
+                if (x.ProgramName == null && y.ProgramName != null)
                 {
-                    return cmp;
+                    return -1;
+                }
+                else if (y.ProgramName == null && x.ProgramName != null)
+                {
+                    return 1;
+                }
+                else if (x.ProgramName != null && y.ProgramName != null)
+                {
+                    cmp = string.Compare(x.ProgramName.ToString(), y.ProgramName.ToString());
+                    if (cmp != 0)
+                    {
+                        return cmp;
+                    }
                 }
 
                 if (x.Span.StartLine != y.Span.StartLine)

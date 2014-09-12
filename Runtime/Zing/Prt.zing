@@ -359,8 +359,8 @@ class Continuation {
 
     void Raise() {
         this.returnTo = null;
-	this.state = State._default;
 	this.reason = ContinuationReason.Raise;
+	this.state = State._default;
 	this.id = null;
     }
 

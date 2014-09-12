@@ -251,7 +251,7 @@ namespace Microsoft.Pc
         }
 
         Dictionary<string, int> uniqIDCounters = new Dictionary<string, int>();
-        public string getUnique(string prefix)
+        public string GetUnique(string prefix)
         {
             if (!uniqIDCounters.ContainsKey(prefix))
                 uniqIDCounters[prefix] = 0;
@@ -641,26 +641,6 @@ namespace Microsoft.Pc
             return sw.ToString();
         }
 
-        public static bool isInstanceOf(Node n, AST<FuncTerm> m)
-        {
-            return isInstanceOf(n, (Id)m.Node.Function);
-        }
-
-        public static bool isInstanceOf(Node n, AST<Id> m)
-        {
-            return isInstanceOf(n, m.Node);
-        }
-
-        public static bool isInstanceOf(Node n, Id m)
-        {
-            return n is FuncTerm && getFtName(n as FuncTerm) == m.Name;
-        }
-
-        public static string getFtName(FuncTerm n)
-        {
-            return ((Id)n.Function).Name;
-        }
-
         public static Node GetArgByIndex(FuncTerm ft, int index)
         {
             Contract.Requires(index >= 0 && index < ft.Args.Count);
@@ -904,7 +884,7 @@ namespace Microsoft.Pc
             return MkZingSeq(new List<AST<Node>>(stmts));
         }
 
-        private static AST<Node> MkZingAssert(AST<Node> condition, params AST<Node>[] msgs)
+        private static AST<Node> MkZingAssert(AST<Node> condition)
         {
             return AddArgs(ZingData.App_Assert, condition);
         }
@@ -1228,15 +1208,15 @@ namespace Microsoft.Pc
             elements.Add(GenerateMainClass());
         }
 
-        private AST<Node> MkZingNeq(ZingEntryFun_FoldContext ctxt, AST<Node> e1, AST<Node> t1, AST<Node> e2, AST<Node> t2)
+        private AST<Node> MkZingNeq(ZingFoldContext ctxt, AST<Node> e1, AST<Node> t1, AST<Node> e2, AST<Node> t2)
         {
             return MkZingApply(ZingData.Cnst_Not, MkZingEq(ctxt, e1, t1, e2, t2));
         }
 
-        private AST<Node> MkZingEq(ZingEntryFun_FoldContext ctxt, AST<Node> e1, AST<Node> t1, AST<Node> e2, AST<Node> t2)
+        private AST<Node> MkZingEq(ZingFoldContext ctxt, AST<Node> e1, AST<Node> t1, AST<Node> e2, AST<Node> t2)
         {
-            var tmpEqVar = ctxt.getTmpVar(ZingData.Cnst_Bool, "eqVar");
-            ctxt.addSideEffect(MkZingAssign(tmpEqVar, MkZingCall(PrtIsEqualValue, e1, e2)));
+            var tmpEqVar = ctxt.GetTmpVar(ZingData.Cnst_Bool, "eqVar");
+            ctxt.AddSideEffect(MkZingAssign(tmpEqVar, MkZingCall(PrtIsEqualValue, e1, e2)));
             return tmpEqVar;
         }
 
@@ -1807,7 +1787,7 @@ namespace Microsoft.Pc
             return MkZingMethodDecl("runHelper", ZingData.Cnst_Nil, ZingData.Cnst_Void, MkZingVarDecls(locals), body);
         }
 
-        class ZingEntryFun_FoldContext
+        class ZingFoldContext
         {
             private PToZing pToZing;
             public string machineName;
@@ -1817,34 +1797,34 @@ namespace Microsoft.Pc
             public List<Tuple<AST<Node>, string>> locals;
             private Dictionary<string, int> labels;
 
-            public ZingEntryFun_FoldContext(PToZing comp, string machineName, string entityName, ActionInfo entityInfo)
+            public ZingFoldContext(PToZing comp, string machineName, string entityName, ActionInfo entityInfo)
             {
                 this.pToZing = comp;
                 this.machineName = machineName;
                 this.entityName = entityName;
                 this.entityInfo = entityInfo;
                 this.sideEffectsStack = new Stack<List<AST<Node>>>();
-                pushSideEffectStack();
+                PushSideEffectStack();
                 this.locals = new List<Tuple<AST<Node>, string>>();
                 this.labels = new Dictionary<string, int>();
             }
 
-            public int labelToId(string l)
+            public int LabelToId(string l)
             {
                 return labels[l];
             }
 
-            public string getFreshLabel()
+            public string GetFreshLabel()
             {
-                var l = pToZing.getUnique(entityName);
+                var l = pToZing.GetUnique(entityName);
                 labels[l] = labels.Count + 1;
                 return l;
             }
 
-            public AST<Node> emitLabelPrelude()
+            public AST<Node> EmitLabelPrelude()
             {
                 var prelude = new List<AST<Node>>();
-                var tmpVar = getTmpVar(ZingData.Cnst_Int, "retTo");
+                var tmpVar = GetTmpVar(ZingData.Cnst_Int, "retTo");
 
                 prelude.Add(PToZing.MkZingAssign(tmpVar, PToZing.MkZingCall(MkZingDot("entryCtxt", "PopReturnTo"))));
                 prelude.Add(PToZing.MkZingIfThen(PToZing.MkZingEq(tmpVar, Factory.Instance.MkCnst(0)),
@@ -1861,26 +1841,26 @@ namespace Microsoft.Pc
                 return PToZing.MkZingSeq(prelude);
             }
 
-            public void addSideEffect(AST<Node> stmt)
+            public void AddSideEffect(AST<Node> stmt)
             {
                 this.sideEffectsStack.Peek().Add(stmt);
             }
 
-            public void pushSideEffectStack()
+            public void PushSideEffectStack()
             {
                 this.sideEffectsStack.Push(new List<AST<Node>>());
             }
 
             // type must be Zing type
-            public AST<Node> getTmpVar(AST<Node> type, string baseName)
+            public AST<Node> GetTmpVar(AST<Node> type, string baseName)
             {
-                var tmpVarName = pToZing.getUnique(baseName);
+                var tmpVarName = pToZing.GetUnique(baseName);
                 var tmpVar = MkZingIdentifier(tmpVarName);
                 this.locals.Add(new Tuple<AST<Node>, string>(type, tmpVarName));
                 return tmpVar;
             }
 
-            public AST<Node> emitZingSideEffects(AST<Node> stmt)
+            public AST<Node> EmitZingSideEffects(AST<Node> stmt)
             {
                 Debug.Assert(sideEffectsStack.Count > 0);
                 var sideEffects = sideEffectsStack.Pop();
@@ -1896,13 +1876,13 @@ namespace Microsoft.Pc
                 }
             }
 
-            public AST<Node> emitLocals()
+            public AST<Node> EmitLocals()
             {
                 return ConstructList(ZingData.App_VarDecls, locals.Select(loc => PToZing.MkZingVarDecl(loc.Item2, loc.Item1)));
             }
         }
 
-        private IEnumerable<Node> ZingEntryFun_UnFold(ZingEntryFun_FoldContext ctxt, Node n)
+        private IEnumerable<Node> ZingUnfold(ZingFoldContext ctxt, Node n)
         {
             if (n.NodeKind != NodeKind.FuncTerm)
             {
@@ -1917,7 +1897,7 @@ namespace Microsoft.Pc
             }
             else if (funName == PData.Con_FunApp.Node.Name || funName == PData.Con_FunStmt.Node.Name)
             {
-                ctxt.pushSideEffectStack();
+                ctxt.PushSideEffectStack();
                 bool first = true;
                 foreach (var t in ft.Args)
                 {
@@ -1927,7 +1907,7 @@ namespace Microsoft.Pc
                     }
                     else
                     {
-                        foreach (var a in ZingEntryFun_UnFold(ctxt, t))
+                        foreach (var a in ZingUnfold(ctxt, t))
                         {
                             yield return a;
                         }
@@ -1989,14 +1969,14 @@ namespace Microsoft.Pc
             }
             else if (funName == PData.Con_Tuple.Node.Name)
             {
-                foreach (var a in ZingEntryFun_UnFold(ctxt, GetArgByIndex(ft, 0)))
+                foreach (var a in ZingUnfold(ctxt, GetArgByIndex(ft, 0)))
                 {
                     yield return a;
                 }
             }
             else if (funName == PData.Con_NamedTuple.Node.Name)
             {
-                foreach (var a in ZingEntryFun_UnFold(ctxt, GetArgByIndex(ft, 0)))
+                foreach (var a in ZingUnfold(ctxt, GetArgByIndex(ft, 0)))
                 {
                     yield return a;
                 }
@@ -2026,7 +2006,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     yield return it.Current;
                     it.MoveNext();
-                    ctxt.pushSideEffectStack();
+                    ctxt.PushSideEffectStack();
                     yield return it.Current;
                 }
             }
@@ -2037,10 +2017,10 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     yield return it.Current;
                     it.MoveNext();
-                    ctxt.pushSideEffectStack();
+                    ctxt.PushSideEffectStack();
                     yield return it.Current;
                     it.MoveNext();
-                    ctxt.pushSideEffectStack();
+                    ctxt.PushSideEffectStack();
                     yield return it.Current;
                 }
             }
@@ -2049,10 +2029,10 @@ namespace Microsoft.Pc
                 using (var it = ft.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    ctxt.pushSideEffectStack();
+                    ctxt.PushSideEffectStack();
                     yield return it.Current;
                     it.MoveNext();
-                    ctxt.pushSideEffectStack();
+                    ctxt.PushSideEffectStack();
                     yield return it.Current;
                 }
             }
@@ -2070,28 +2050,12 @@ namespace Microsoft.Pc
             return AddArgs(ZingData.App_LabelStmt, Factory.Instance.MkCnst(label), stmt);
         }
 
-        private AST<Node> zingWrapExprToStmts(AST<Node> exp)
-        {
-            if (isInstanceOf(exp.Node, ZingData.App_Call))
-            {
-                return MkZingCallStmt(exp);
-            }
-            else if (isInstanceOf(exp.Node, ZingData.App_Identifier))
-            {
-                // This can happen when we have a function, that returns a compound type,
-                // whose return value is ignored.
-                return ZingData.Cnst_Nil;
-            }
-            else
-                return exp;
-        }
-
         private AST<Node> MkZingAssignWithClone(AST<Node> lhs, AST<Node> rhs)
         {
             return AddArgs(ZingData.App_Assign, lhs, MkZingCall(PrtCloneValue, rhs));
         }
 
-        private ZingTranslationInfo ZingEntryFun_Fold(ZingEntryFun_FoldContext ctxt, Node n, IEnumerable<ZingTranslationInfo> children)
+        private ZingTranslationInfo ZingFold(ZingFoldContext ctxt, Node n, IEnumerable<ZingTranslationInfo> children)
         {
             if (n.NodeKind == NodeKind.Id)
                 return new ZingTranslationInfo(ZingData.Cnst_Nil);
@@ -2202,7 +2166,7 @@ namespace Microsoft.Pc
             }
         }
 
-        ZingTranslationInfo FoldName(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldName(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             var name = GetName(ft, 0);
             FunInfo funInfo = ctxt.entityInfo as FunInfo;
@@ -2216,14 +2180,14 @@ namespace Microsoft.Pc
             }
             else 
             {
-                var tmpVar = ctxt.getTmpVar(PrtValue, "tmp");
-                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeEvent.Node))));
-                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetEvent"), tmpVar, MkZingEvent(name))));
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmp");
+                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeEvent.Node))));
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetEvent"), tmpVar, MkZingEvent(name))));
                 return new ZingTranslationInfo(tmpVar);
             }
         }
 
-        ZingTranslationInfo FoldNew(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldNew(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             var type = LookupType(ctxt, ft);
             var typeName = GetName(ft, 0);
@@ -2235,33 +2199,33 @@ namespace Microsoft.Pc
                 {
                     arg = MkZingIdentifier("null");
                 }
-                var tmpVar = ctxt.getTmpVar(PrtValue, "tmpSendPayload");
-                ctxt.addSideEffect(MkZingAssignWithClone(tmpVar, arg));
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpSendPayload");
+                ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, arg));
 
                 MachineInfo machineInfo = allMachines[typeName];
                 if (machineInfo.IsMonitor)
                 {
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar)));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar)));
                     return new ZingTranslationInfo(ZingData.Cnst_Nil);
                 }
                 else
                 {
-                    var newMachine = ctxt.getTmpVar(SmHandle, "newMachine");
-                    ctxt.addSideEffect(MkZingAssign(newMachine, MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar)));
-                    string afterLabel = ctxt.getFreshLabel();
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewMachine"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)), newMachine)));
-                    ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
-                    ctxt.addSideEffect(MkZingLabeledStmt(afterLabel, MkZingAssign(newMachine, MkZingDot("entryCtxt", "id"))));
-                    ctxt.addSideEffect(MkZingAssign(MkZingDot("entryCtxt", "id"), MkZingIdentifier("null")));
-                    var retVal = ctxt.getTmpVar(PrtValue, "tmp");
-                    ctxt.addSideEffect(MkZingAssign(retVal, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(type))));
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetMachine"), retVal, newMachine)));
+                    var newMachine = ctxt.GetTmpVar(SmHandle, "newMachine");
+                    ctxt.AddSideEffect(MkZingAssign(newMachine, MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar)));
+                    string afterLabel = ctxt.GetFreshLabel();
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewMachine"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), newMachine)));
+                    ctxt.AddSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
+                    ctxt.AddSideEffect(MkZingLabeledStmt(afterLabel, MkZingAssign(newMachine, MkZingDot("entryCtxt", "id"))));
+                    ctxt.AddSideEffect(MkZingAssign(MkZingDot("entryCtxt", "id"), MkZingIdentifier("null")));
+                    var retVal = ctxt.GetTmpVar(PrtValue, "tmp");
+                    ctxt.AddSideEffect(MkZingAssign(retVal, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(type))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetMachine"), retVal, newMachine)));
                     return new ZingTranslationInfo(retVal);
                 }
             }
         }
 
-        ZingTranslationInfo FoldFunApp(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldFunApp(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             var calleeName = GetName(ft, 0);
             var calleeInfo = allMachines[ctxt.machineName].funNameToFunInfo[calleeName];
@@ -2274,8 +2238,8 @@ namespace Microsoft.Pc
             {
                 var lhsInfo = calleeInfo.parameterNameToInfo[calleeInfo.parameterNames[count]];
                 var rhsInfo = child;
-                var tmpVar = ctxt.getTmpVar(PrtValue, "argCloneVar");
-                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(child.node, "Clone"))));
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "argCloneVar");
+                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(child.node, "Clone"))));
                 count++;
                 args.Add(tmpVar);
             }
@@ -2284,7 +2248,7 @@ namespace Microsoft.Pc
             AST<Node> processOutput;
             AST<Node> outExp;
 
-            var beforeLabel = ctxt.getFreshLabel();
+            var beforeLabel = ctxt.GetFreshLabel();
             if (calleeInfo.returnType.Equals(PTypeNull))
             {
                 processOutput = ZingData.Cnst_Nil;
@@ -2292,31 +2256,31 @@ namespace Microsoft.Pc
             }
             else
             {
-                var retVar = ctxt.getTmpVar(PrtValue, "ret");
+                var retVar = ctxt.GetTmpVar(PrtValue, "ret");
                 processOutput = MkZingAssignWithClone(retVar, MkZingDot("myHandle", "currentArg"));
                 outExp = retVar;
             }
 
             AST<Node> callStmt = MkZingSeq(
                 MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(0))),
-                MkZingLabeledStmt(beforeLabel, ctxt.emitZingSideEffects(MkZingAssign(MkZingIdentifier("entryCtxt"), callExpr))),
+                MkZingLabeledStmt(beforeLabel, ctxt.EmitZingSideEffects(MkZingAssign(MkZingIdentifier("entryCtxt"), callExpr))),
                 MkZingIfThenElse(
                                  MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "Return")),
                                  processOutput,
-                                 MkZingSeq(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(ctxt.labelToId(beforeLabel)))),
+                                 MkZingSeq(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(ctxt.LabelToId(beforeLabel)))),
                                            MkZingReturn(MkZingIdentifier("entryCtxt")))));
-            ctxt.addSideEffect(callStmt);
+            ctxt.AddSideEffect(callStmt);
             return new ZingTranslationInfo(outExp);
         }
 
-        ZingTranslationInfo FoldNulApp(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldNulApp(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             var n = GetArgByIndex(ft, 0);
             if (n.NodeKind == NodeKind.Cnst)
             {
-                var tmpVar = ctxt.getTmpVar(PrtValue, "tmp");
-                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
-                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, Factory.Instance.ToAST(n))));
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmp");
+                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, Factory.Instance.ToAST(n))));
                 return new ZingTranslationInfo(tmpVar);
             }
 
@@ -2324,31 +2288,31 @@ namespace Microsoft.Pc
             var op = ((Id)n).Name;
             if (op == PData.Cnst_True.Node.Name)
             {
-                var tmpVar = ctxt.getTmpVar(PrtValue, "tmp");
-                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
-                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, ZingData.Cnst_True)));
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmp");
+                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, ZingData.Cnst_True)));
                 return new ZingTranslationInfo(tmpVar);
             }
             else if (op == PData.Cnst_False.Node.Name)
             {
-                var tmpVar = ctxt.getTmpVar(PrtValue, "tmp");
-                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
-                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, ZingData.Cnst_False)));
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmp");
+                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, ZingData.Cnst_False)));
                 return new ZingTranslationInfo(tmpVar);
             }
             else if (op == PData.Cnst_This.Node.Name)
             {
                 var machineType = allMachines[ctxt.machineName].IsModel ? PTypeModel : PTypeReal;
-                var tmpVar = ctxt.getTmpVar(PrtValue, "tmp");
-                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(machineType.Node))));
-                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetMachine"), tmpVar, MkZingIdentifier("myHandle"))));
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmp");
+                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(machineType.Node))));
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetMachine"), tmpVar, MkZingIdentifier("myHandle"))));
                 return new ZingTranslationInfo(tmpVar);
             }
             else if (op == PData.Cnst_Trigger.Node.Name)
             {
-                var tmpVar = ctxt.getTmpVar(PrtValue, "tmp");
-                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeEvent.Node))));
-                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetEvent"), tmpVar, MkZingDot("myHandle", "currentEvent"))));
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmp");
+                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeEvent.Node))));
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetEvent"), tmpVar, MkZingDot("myHandle", "currentEvent"))));
                 return new ZingTranslationInfo(tmpVar);
             }
             else if (op == PData.Cnst_Payload.Node.Name)
@@ -2357,39 +2321,39 @@ namespace Microsoft.Pc
             }
             else if (op == PData.Cnst_Nondet.Node.Name || op == PData.Cnst_FairNondet.Node.Name)
             {
-                var afterLabel = ctxt.getFreshLabel();
-                var bvar = ctxt.getTmpVar(ZingData.Cnst_Bool, "nondet");
-                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Nondet"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)))));
-                ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
-                ctxt.addSideEffect(MkZingLabeledStmt(afterLabel, MkZingAssign(bvar, MkZingDot("entryCtxt", "nondet"))));
-                ctxt.addSideEffect(MkZingAssign(MkZingDot("entryCtxt", "nondet"), ZingData.Cnst_False));
+                var afterLabel = ctxt.GetFreshLabel();
+                var bvar = ctxt.GetTmpVar(ZingData.Cnst_Bool, "nondet");
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Nondet"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)))));
+                ctxt.AddSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
+                ctxt.AddSideEffect(MkZingLabeledStmt(afterLabel, MkZingAssign(bvar, MkZingDot("entryCtxt", "nondet"))));
+                ctxt.AddSideEffect(MkZingAssign(MkZingDot("entryCtxt", "nondet"), ZingData.Cnst_False));
                 if (compiler.liveness == LivenessOption.Standard && op == PData.Cnst_FairNondet.Node.Name)
                 {
                     int i = ctxt.entityInfo.numFairChoices++;
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(GetFairChoice(ctxt.entityName, i), "AtChoose"), bvar)));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(GetFairChoice(ctxt.entityName, i), "AtChoose"), bvar)));
                 }
-                var tmpVar = ctxt.getTmpVar(PrtValue, "tmp");
-                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
-                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, bvar)));
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmp");
+                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, bvar)));
                 return new ZingTranslationInfo(tmpVar);
             }
             else if (op == PData.Cnst_Null.Node.Name)
             {
-                var tmpVar = ctxt.getTmpVar(PrtValue, "tmp");
-                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmp");
+                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
                 return new ZingTranslationInfo(tmpVar);
             }
             else
             {
                 // op == PData.Cnst_Halt.Node.Name
-                var tmpVar = ctxt.getTmpVar(PrtValue, "tmp");
-                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeEvent.Node))));
-                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetEvent"), tmpVar, MkZingEvent(HaltEvent))));
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmp");
+                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeEvent.Node))));
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetEvent"), tmpVar, MkZingEvent(HaltEvent))));
                 return new ZingTranslationInfo(tmpVar);
             }
         }
 
-        ZingTranslationInfo FoldUnApp(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldUnApp(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             var op = ((Id)GetArgByIndex(ft, 0)).Name; 
             using (var it = children.GetEnumerator())
@@ -2398,41 +2362,41 @@ namespace Microsoft.Pc
                 var arg = it.Current.node;
                 if (op == PData.Cnst_Not.Node.Name)
                 {
-                    var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Not, MkZingDot(arg, "bl")))));
+                    var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Not, MkZingDot(arg, "bl")))));
                     return new ZingTranslationInfo(tmpVar);
                 }
                 else if (op == PData.Cnst_Neg.Node.Name)
                 {
-                    var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, MkZingApply(ZingData.Cnst_Neg, MkZingDot(arg, "nt")))));
+                    var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, MkZingApply(ZingData.Cnst_Neg, MkZingDot(arg, "nt")))));
                     return new ZingTranslationInfo(tmpVar);
                 }
                 else if (op == PData.Cnst_Keys.Node.Name)
                 {
-                    var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapGetKeys"), arg)));
+                    var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapGetKeys"), arg)));
                     return new ZingTranslationInfo(tmpVar);
                 }
                 else if (op == PData.Cnst_Values.Node.Name)
                 {
-                    var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapGetValues"), arg)));
+                    var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapGetValues"), arg)));
                     return new ZingTranslationInfo(tmpVar);
                 }
                 else
                 {
                     //  op == PData.Cnst_Sizeof.Node.Name
-                    var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapSizeOf"), arg)));
+                    var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapSizeOf"), arg)));
                     return new ZingTranslationInfo(tmpVar);
                 }
             }
         }
 
-        ZingTranslationInfo FoldBinApp(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldBinApp(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             var op = ((Id)GetArgByIndex(ft, 0)).Name; 
             using (var it = children.GetEnumerator())
@@ -2444,90 +2408,90 @@ namespace Microsoft.Pc
 
                 if (op == PData.Cnst_Add.Node.Name)
                 {
-                    var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, MkZingApply(ZingData.Cnst_Add, MkZingDot(arg1, "nt"), MkZingDot(arg2, "nt")))));
+                    var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, MkZingApply(ZingData.Cnst_Add, MkZingDot(arg1, "nt"), MkZingDot(arg2, "nt")))));
                     return new ZingTranslationInfo(tmpVar);
                 }
                 else if (op == PData.Cnst_Sub.Node.Name)
                 {
-                    var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, MkZingApply(ZingData.Cnst_Sub, MkZingDot(arg1, "nt"), MkZingDot(arg2, "nt")))));
+                    var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, MkZingApply(ZingData.Cnst_Sub, MkZingDot(arg1, "nt"), MkZingDot(arg2, "nt")))));
                     return new ZingTranslationInfo(tmpVar);
                 }
                 else if (op == PData.Cnst_Mul.Node.Name)
                 {
-                    var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, MkZingApply(ZingData.Cnst_Mul, MkZingDot(arg1, "nt"), MkZingDot(arg2, "nt")))));
+                    var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, MkZingApply(ZingData.Cnst_Mul, MkZingDot(arg1, "nt"), MkZingDot(arg2, "nt")))));
                     return new ZingTranslationInfo(tmpVar);
                 }
                 else if (op == PData.Cnst_IntDiv.Node.Name)
                 {
-                    var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, MkZingApply(ZingData.Cnst_IntDiv, MkZingDot(arg1, "nt"), MkZingDot(arg2, "nt")))));
+                    var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, MkZingApply(ZingData.Cnst_IntDiv, MkZingDot(arg1, "nt"), MkZingDot(arg2, "nt")))));
                     return new ZingTranslationInfo(tmpVar);
                 }
                 else if (op == PData.Cnst_And.Node.Name)
                 {
-                    var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_And, MkZingDot(arg1, "bl"), MkZingDot(arg2, "bl")))));
+                    var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_And, MkZingDot(arg1, "bl"), MkZingDot(arg2, "bl")))));
                     return new ZingTranslationInfo(tmpVar);
                 }
                 else if (op == PData.Cnst_Or.Node.Name)
                 {
-                    var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Or, MkZingDot(arg1, "bl"), MkZingDot(arg2, "bl")))));
+                    var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Or, MkZingDot(arg1, "bl"), MkZingDot(arg2, "bl")))));
                     return new ZingTranslationInfo(tmpVar);
                 }
                 else if (op == PData.Cnst_Eq.Node.Name)
                 {
-                    var tmpVar = ctxt.getTmpVar(ZingData.Cnst_Bool, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtIsEqualValue"), arg1, arg2)));
-                    var retVal = ctxt.getTmpVar(PrtValue, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(retVal, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), retVal, tmpVar)));
+                    var tmpVar = ctxt.GetTmpVar(ZingData.Cnst_Bool, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtIsEqualValue"), arg1, arg2)));
+                    var retVal = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(retVal, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), retVal, tmpVar)));
                     return new ZingTranslationInfo(retVal);
                 }
                 else if (op == PData.Cnst_NEq.Node.Name)
                 {
-                    var tmpVar = ctxt.getTmpVar(ZingData.Cnst_Bool, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtIsEqualValue"), arg1, arg2)));
-                    var retVal = ctxt.getTmpVar(PrtValue, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(retVal, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), retVal, MkZingApply(ZingData.Cnst_Not, tmpVar))));
+                    var tmpVar = ctxt.GetTmpVar(ZingData.Cnst_Bool, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtIsEqualValue"), arg1, arg2)));
+                    var retVal = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(retVal, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), retVal, MkZingApply(ZingData.Cnst_Not, tmpVar))));
                     return new ZingTranslationInfo(retVal);
                 }
                 else if (op == PData.Cnst_Lt.Node.Name)
                 {
-                    var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Lt, MkZingDot(arg1, "bl"), MkZingDot(arg2, "bl")))));
+                    var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Lt, MkZingDot(arg1, "bl"), MkZingDot(arg2, "bl")))));
                     return new ZingTranslationInfo(tmpVar);
                 }
                 else if (op == PData.Cnst_Le.Node.Name)
                 {
-                    var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Le, MkZingDot(arg1, "bl"), MkZingDot(arg2, "bl")))));
+                    var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Le, MkZingDot(arg1, "bl"), MkZingDot(arg2, "bl")))));
                     return new ZingTranslationInfo(tmpVar);
                 }
                 else if (op == PData.Cnst_Gt.Node.Name)
                 {
-                    var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Gt, MkZingDot(arg1, "bl"), MkZingDot(arg2, "bl")))));
+                    var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Gt, MkZingDot(arg1, "bl"), MkZingDot(arg2, "bl")))));
                     return new ZingTranslationInfo(tmpVar);
                 }
                 else if (op == PData.Cnst_Ge.Node.Name)
                 {
-                    var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Ge, MkZingDot(arg1, "bl"), MkZingDot(arg2, "bl")))));
+                    var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Ge, MkZingDot(arg1, "bl"), MkZingDot(arg2, "bl")))));
                     return new ZingTranslationInfo(tmpVar);
                 }
                 else if (op == PData.Cnst_Idx.Node.Name)
@@ -2536,32 +2500,32 @@ namespace Microsoft.Pc
                     var typeOp = ((Id)GetArgByIndex(type, 0)).Name;
                     if (typeOp == PData.Con_TupType.Node.Name)
                     {
-                        var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                        ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtTupleGet"), arg1, arg2)));
+                        var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                        ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtTupleGet"), arg1, arg2)));
                         return new ZingTranslationInfo(tmpVar);
                     }
                     else if (typeOp == PData.Con_SeqType.Node.Name)
                     {
-                        var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                        ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtSeqGet"), arg1, arg2)));
+                        var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                        ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtSeqGet"), arg1, arg2)));
                         return new ZingTranslationInfo(tmpVar);
                     }
                     else 
                     {
                         // op == PData.Con_MapType.Node.Name
-                        var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                        ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapGet"), arg1, arg2)));
+                        var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                        ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapGet"), arg1, arg2)));
                         return new ZingTranslationInfo(tmpVar);
                     }
                 }
                 else 
                 {
                     // op == PData.Cnst_In.Node.Name
-                    var tmpVar = ctxt.getTmpVar(ZingData.Cnst_Bool, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapExists"), arg2, arg1)));
-                    var retVal = ctxt.getTmpVar(PrtValue, "tmpVar");
-                    ctxt.addSideEffect(MkZingAssign(retVal, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
-                    ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), retVal, tmpVar)));
+                    var tmpVar = ctxt.GetTmpVar(ZingData.Cnst_Bool, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapExists"), arg2, arg1)));
+                    var retVal = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    ctxt.AddSideEffect(MkZingAssign(retVal, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), retVal, tmpVar)));
                     return new ZingTranslationInfo(retVal);
                 }
             }
@@ -2583,7 +2547,7 @@ namespace Microsoft.Pc
             return 0;
         }
 
-        ZingTranslationInfo FoldField(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldField(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             var expr = GetArgByIndex(ft, 0);
             var field = (Cnst)GetArgByIndex(ft, 1);
@@ -2600,79 +2564,79 @@ namespace Microsoft.Pc
             {
                 it.MoveNext();
                 var arg = it.Current.node;
-                var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVal");
-                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtTupleGet"), arg, Factory.Instance.MkCnst(fieldIndex))));
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVal");
+                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtTupleGet"), arg, Factory.Instance.MkCnst(fieldIndex))));
                 return new ZingTranslationInfo(tmpVar);
             }
         }
 
-        ZingTranslationInfo FoldDefault(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldDefault(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             var typeArg = (FuncTerm)GetArgByIndex(ft, 0);
-            var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-            ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(typeArg))));
+            var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+            ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(typeArg))));
             return new ZingTranslationInfo(tmpVar);
         }
 
-        ZingTranslationInfo FoldCast(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldCast(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             var typeArg = (FuncTerm)GetArgByIndex(ft, 1);
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
                 var valueArg = it.Current.node;
-                var tmpVar = ctxt.getTmpVar(PrtValue, "tmpVar");
-                ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtCastValue, valueArg, typeContext.PTypeToZingExpr(typeArg))));
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtCastValue, valueArg, typeContext.PTypeToZingExpr(typeArg))));
                 return new ZingTranslationInfo(tmpVar);
             }
         }
 
-        ZingTranslationInfo FoldTuple(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldTuple(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             var tupType = LookupType(ctxt, ft);
-            var tmpVar = ctxt.getTmpVar(PrtValue, "tmpTuple");
-            ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(tupType))));
+            var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpTuple");
+            ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(tupType))));
             int i = 0;
             foreach (var c in children)
             {
-                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtTupleSet"), tmpVar, Factory.Instance.MkCnst(i), c.node)));
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtTupleSet"), tmpVar, Factory.Instance.MkCnst(i), c.node)));
                 i++;
             }
             return new ZingTranslationInfo(tmpVar);
         }
 
-        ZingTranslationInfo FoldNamedTuple(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldNamedTuple(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             var tupType = LookupType(ctxt, ft);
-            var tmpVar = ctxt.getTmpVar(PrtValue, "tmpTuple");
-            ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(tupType))));
+            var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpTuple");
+            ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(tupType))));
             int i = 0;
             foreach (var c in children)
             {
-                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtTupleSet"), tmpVar, Factory.Instance.MkCnst(i), c.node)));
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtTupleSet"), tmpVar, Factory.Instance.MkCnst(i), c.node)));
                 i++;
             }
             return new ZingTranslationInfo(tmpVar);
         }
 
-        ZingTranslationInfo FoldPush(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldPush(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             var qualifiedName = (FuncTerm)GetArgByIndex(ft, 0);
             var stateName = GetNameFromQualifiedName(ctxt.machineName, qualifiedName);
-            var afterLabel = ctxt.getFreshLabel();
+            var afterLabel = ctxt.GetFreshLabel();
             var res = MkZingSeq(
-                MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Call"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)), MkZingDot("State", string.Format("_{0}", stateName)))),
+                MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Call"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingDot("State", string.Format("_{0}", stateName)))),
                 MkZingReturn(MkZingIdentifier("entryCtxt")),
                 MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil));
             return new ZingTranslationInfo(res);
         }
 
-        ZingTranslationInfo FoldNewStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldNewStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             return FoldNew(ft, children, ctxt);
         }
 
-        ZingTranslationInfo FoldRaise(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldRaise(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             using (var it = children.GetEnumerator())
             {
@@ -2684,14 +2648,14 @@ namespace Microsoft.Pc
                                            Factory.Instance.AddArg(ZingData.App_Assert, MkZingApply(ZingData.Cnst_NEq, eventExpr, MkZingEvent("default"))));
                 string traceString = string.Format("\"<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\"", ctxt.machineName);
                 var traceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"), MkZingDot(eventExpr, "name")));
-                var tmpVar = ctxt.getTmpVar(PrtValue, "tmpPayload");
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpPayload");
                 if (payloadExpr == ZingData.Cnst_Nil)
                 {
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
                 }
                 else
                 {
-                    ctxt.addSideEffect(MkZingAssignWithClone(tmpVar, payloadExpr));
+                    ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, payloadExpr));
                 }
 
                 var assignStmt = MkZingSeq(MkZingAssign(MkZingDot("myHandle", "currentEvent"), eventExpr), MkZingAssign(MkZingDot("myHandle", "currentArg"), tmpVar));
@@ -2700,7 +2664,7 @@ namespace Microsoft.Pc
             }
         }
 
-        ZingTranslationInfo FoldSend(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldSend(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             using (var it = children.GetEnumerator())
             {
@@ -2710,23 +2674,23 @@ namespace Microsoft.Pc
                 var eventExpr = MkZingDot(it.Current.node, "ev");
                 it.MoveNext();
                 AST<Node> payloadExpr = it.Current.node;
-                var tmpVar = ctxt.getTmpVar(PrtValue, "tmpPayload");
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpPayload");
                 if (payloadExpr == ZingData.Cnst_Nil)
                 {
-                    ctxt.addSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
                 }
                 else
                 {
-                    ctxt.addSideEffect(MkZingAssignWithClone(tmpVar, payloadExpr));
+                    ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, payloadExpr));
                 }
-                var afterLabel = ctxt.getFreshLabel();
-                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(targetExpr, "EnqueueEvent"), eventExpr, tmpVar, Factory.Instance.MkCnst("myHandle"))));
-                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Send"), Factory.Instance.MkCnst(ctxt.labelToId(afterLabel)))));
+                var afterLabel = ctxt.GetFreshLabel();
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(targetExpr, "EnqueueEvent"), eventExpr, tmpVar, Factory.Instance.MkCnst("myHandle"))));
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Send"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)))));
                 return new ZingTranslationInfo(MkZingSeq(MkZingReturn(MkZingIdentifier("entryCtxt")), MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil)));
             }
         }
 
-        ZingTranslationInfo FoldMonitor(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldMonitor(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             var typeName = GetName(ft, 0);
             using (var it = children.GetEnumerator())
@@ -2735,44 +2699,44 @@ namespace Microsoft.Pc
                 AST<Node> evt = it.Current.node;
                 it.MoveNext();
                 AST<Node> arg = it.Current.node != ZingData.Cnst_Nil ? it.Current.node : MkZingIdentifier("null");
-                var tmpVar = ctxt.getTmpVar(PrtValue, "tmpSendPayload");
-                ctxt.addSideEffect(MkZingAssignWithClone(tmpVar, arg));
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpSendPayload");
+                ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, arg));
                 MachineInfo machineInfo = allMachines[typeName];
-                return new ZingTranslationInfo(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", typeName)), evt, tmpVar));
+                return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", typeName)), evt, tmpVar)));
             }
         }
 
-        ZingTranslationInfo FoldFunStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldFunStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             return FoldFunApp(ft, children, ctxt);
         }
 
-        ZingTranslationInfo FoldNulStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldNulStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             var op = ((Id)GetArgByIndex(ft, 0)).Name;
             if (op == PData.Cnst_Pop.Node.Name)
             {
-                ctxt.addSideEffect(MkZingAssign(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")));
-                ctxt.addSideEffect(MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingIdentifier("null")));
-                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Pop"))));
-                ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
+                ctxt.AddSideEffect(MkZingAssign(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")));
+                ctxt.AddSideEffect(MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingIdentifier("null")));
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Pop"))));
+                ctxt.AddSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
             }
             return new ZingTranslationInfo(ZingData.Cnst_Nil);
 
         }
 
-        ZingTranslationInfo FoldUnStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldUnStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             var op = ((Id)GetArgByIndex(ft, 0)).Name; 
             // op == PData.Con_Assert.Node.Name
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
-                return new ZingTranslationInfo(AddArgs(ZingData.App_Assert, MkZingDot(it.Current.node, "bl")));
+                return new ZingTranslationInfo(MkZingAssert(MkZingDot(it.Current.node, "bl")));
             }
         }
 
-        ZingTranslationInfo FoldBinStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt) 
+        ZingTranslationInfo FoldBinStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt) 
         {
             var op = ((Id)GetArgByIndex(ft, 0)).Name; 
             var lhs = (FuncTerm)GetArgByIndex(ft, 1);
@@ -2839,10 +2803,10 @@ namespace Microsoft.Pc
                 else
                 {
                     // op == PData.Cnst_Insert.Node.Name
-                    var idx = ctxt.getTmpVar(PrtValue, "idx");
-                    var val = ctxt.getTmpVar(PrtValue, "val");
-                    ctxt.addSideEffect(MkZingAssign(idx, MkZingCall(MkZingDot("PRT_VALUE", "PrtTupleGet"), src, Factory.Instance.MkCnst(0))));
-                    ctxt.addSideEffect(MkZingAssign(val, MkZingCall(MkZingDot("PRT_VALUE", "PrtTupleGet"), src, Factory.Instance.MkCnst(1))));
+                    var idx = ctxt.GetTmpVar(PrtValue, "idx");
+                    var val = ctxt.GetTmpVar(PrtValue, "val");
+                    ctxt.AddSideEffect(MkZingAssign(idx, MkZingCall(MkZingDot("PRT_VALUE", "PrtTupleGet"), src, Factory.Instance.MkCnst(0))));
+                    ctxt.AddSideEffect(MkZingAssign(val, MkZingCall(MkZingDot("PRT_VALUE", "PrtTupleGet"), src, Factory.Instance.MkCnst(1))));
                     if (typeName == PData.Con_SeqType.Node.Name)
                     {
                         return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "PrtSeqInsert"), dest, idx, val)));
@@ -2855,7 +2819,7 @@ namespace Microsoft.Pc
             }
         }
 
-        ZingTranslationInfo FoldReturn(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldReturn(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             FunInfo funInfo = ctxt.entityInfo as FunInfo;
             AST<FuncTerm> returnType = PTypeNull;
@@ -2868,31 +2832,31 @@ namespace Microsoft.Pc
                 it.MoveNext();
                 if (returnType.Equals(PTypeNull))
                 {
-                    ctxt.addSideEffect(MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
+                    ctxt.AddSideEffect(MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
                 }
                 else
                 {
-                    ctxt.addSideEffect(MkZingAssignWithClone(MkZingDot("myHandle", "currentArg"), it.Current.node));
+                    ctxt.AddSideEffect(MkZingAssignWithClone(MkZingDot("myHandle", "currentArg"), it.Current.node));
                 }
-                ctxt.addSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Return"))));
-                ctxt.addSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Return"))));
+                ctxt.AddSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
                 return new ZingTranslationInfo(ZingData.Cnst_Nil);
             }
         }
 
-        ZingTranslationInfo FoldWhile(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldWhile(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
                 var condExpr = MkZingDot(it.Current.node, "bl");
                 it.MoveNext();
-                var loopStart = getUnique(ctxt.entityName + "_loop_start");
-                var loopEnd = getUnique(ctxt.entityName + "_loop_end");
+                var loopStart = GetUnique(ctxt.entityName + "_loop_start");
+                var loopEnd = GetUnique(ctxt.entityName + "_loop_end");
                 var body = it.Current.node;
-                body = ctxt.emitZingSideEffects(zingWrapExprToStmts(body));
+                body = ctxt.EmitZingSideEffects(body);
                 var res = MkZingLabeledStmt(loopStart, MkZingSeq(
-                    ctxt.emitZingSideEffects(MkZingIfThen(MkZingApply(ZingData.Cnst_Not, condExpr), AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(loopEnd)))),
+                    ctxt.EmitZingSideEffects(MkZingIfThen(MkZingApply(ZingData.Cnst_Not, condExpr), AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(loopEnd)))),
                     body,
                     AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(loopStart)),
                     MkZingLabeledStmt(loopEnd, ZingData.Cnst_Nil)));
@@ -2900,7 +2864,7 @@ namespace Microsoft.Pc
             }
         }
 
-        ZingTranslationInfo FoldIte(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldIte(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             using (var it = children.GetEnumerator())
             {
@@ -2912,11 +2876,11 @@ namespace Microsoft.Pc
                 var elseStmt = it.Current.node;
 
                 // Order in which we emit side effets (else,then) is the reverse of the order in which the side effect stacks were pushed(then, else).
-                var ifName = getUnique(ctxt.entityName + "_if");
+                var ifName = GetUnique(ctxt.entityName + "_if");
                 var elseLabel = ifName + "_else";
                 var afterLabel = ifName + "_end";
-                var cookedElse = MkZingLabeledStmt(elseLabel, ctxt.emitZingSideEffects(zingWrapExprToStmts(elseStmt)));
-                var cookedThen = ctxt.emitZingSideEffects(zingWrapExprToStmts(thenStmt));
+                var cookedElse = MkZingLabeledStmt(elseLabel, ctxt.EmitZingSideEffects(elseStmt));
+                var cookedThen = ctxt.EmitZingSideEffects(thenStmt);
                 var res = MkZingSeq(MkZingIfThen(MkZingApply(ZingData.Cnst_Not, condExpr), AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(elseLabel))),
                     cookedThen,
                     AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst(afterLabel)),
@@ -2926,7 +2890,7 @@ namespace Microsoft.Pc
             }
         }
 
-        ZingTranslationInfo FoldSeq(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingEntryFun_FoldContext ctxt)
+        ZingTranslationInfo FoldSeq(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             using (var it = children.GetEnumerator())
             {
@@ -2934,7 +2898,7 @@ namespace Microsoft.Pc
                 var first = it.Current;
                 it.MoveNext();
                 var second = it.Current;
-                return new ZingTranslationInfo(MkZingSeq(zingWrapExprToStmts(first.node), ctxt.emitZingSideEffects(zingWrapExprToStmts(second.node))));
+                return new ZingTranslationInfo(MkZingSeq(first.node, ctxt.EmitZingSideEffects(second.node)));
             }
         }
 
@@ -2942,21 +2906,14 @@ namespace Microsoft.Pc
         {
             AST<Node> body;
 
-            var ctxt = new ZingEntryFun_FoldContext(this, machineName, entityName, actionInfo);
+            var ctxt = new ZingFoldContext(this, machineName, entityName, actionInfo);
             var tuple = Factory.Instance.ToAST(actionInfo.body).Compute<ZingTranslationInfo>(
-                x => ZingEntryFun_UnFold(ctxt, x),
-                (x, ch) => ZingEntryFun_Fold(ctxt, x, ch));
-
-            if (tuple == null)
-                body = ZingData.Cnst_Nil;
-            else
-            {
-                Debug.Assert(ctxt.sideEffectsStack.Count == 1);
-                body = ctxt.emitZingSideEffects(zingWrapExprToStmts(tuple.node));
-            }
-                                
+                x => ZingUnfold(ctxt, x),
+                (x, ch) => ZingFold(ctxt, x, ch));
+            Debug.Assert(ctxt.sideEffectsStack.Count == 1);
+            body = ctxt.EmitZingSideEffects(tuple.node);
             body = MkZingSeq(
-                ctxt.emitLabelPrelude(),
+                ctxt.EmitLabelPrelude(),
                 MkZingLabeledStmt("start", body),
                 MkZingSeq(MkZingAssign(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
                             MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node)))),
@@ -2964,7 +2921,7 @@ namespace Microsoft.Pc
                 MkZingReturn(MkZingIdentifier("entryCtxt")));
 
             return MkZingMethodDecl(entityName, MkZingVarDecls(MkZingVarDecl("entryCtxt", Factory.Instance.MkCnst("Continuation"))), Factory.Instance.MkCnst("Continuation"),
-                ctxt.emitLocals(), MkZingBlock("dummy", body));
+                ctxt.EmitLocals(), MkZingBlock("dummy", body));
         }
 
         private AST<Node> MkZingFunMethod(string machineName, string funName, FunInfo funInfo)
@@ -2974,30 +2931,21 @@ namespace Microsoft.Pc
             AST<Node> funBody;
             AST<Node> entry = Factory.Instance.ToAST(funInfo.body);
 
-            var ctxt = new ZingEntryFun_FoldContext(this, machineName, funName, funInfo);
+            var ctxt = new ZingFoldContext(this, machineName, funName, funInfo);
             var tuple = Factory.Instance.ToAST(entry.Node).Compute<ZingTranslationInfo>(
-                x => ZingEntryFun_UnFold(ctxt, x),
-                (x, ch) => ZingEntryFun_Fold(ctxt, x, ch));
-
-            if (tuple == null)
-            {
-                funBody = ZingData.Cnst_Nil;
-            }
-            else
-            {
-                Debug.Assert(ctxt.sideEffectsStack.Count == 1);
-                funBody = ctxt.emitZingSideEffects(zingWrapExprToStmts(tuple.node));
-                ctxt.pushSideEffectStack();
-            }
-
+                x => ZingUnfold(ctxt, x),
+                (x, ch) => ZingFold(ctxt, x, ch));
+            Debug.Assert(ctxt.sideEffectsStack.Count == 1);
+            funBody = ctxt.EmitZingSideEffects(tuple.node);
+            ctxt.PushSideEffectStack();
             funBody = MkZingSeq(
-                ctxt.emitLabelPrelude(),
+                ctxt.EmitLabelPrelude(),
                 MkZingLabeledStmt("start", funBody),
                 MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Return"))),
                 MkZingReturn(MkZingIdentifier("entryCtxt")));
 
             var retType = Factory.Instance.MkCnst("Continuation");
-            return MkZingMethodDecl(funName, parameters, retType, ctxt.emitLocals(), MkZingBlock("dummy", funBody));
+            return MkZingMethodDecl(funName, parameters, retType, ctxt.EmitLocals(), MkZingBlock("dummy", funBody));
         }
 
         private AST<Node> MkZingFor(AST<Node> indVar, AST<Node> start, AST<Node> end, AST<Node> body)
@@ -3155,7 +3103,7 @@ namespace Microsoft.Pc
         }
         #endregion
 
-        private FuncTerm LookupType(ZingEntryFun_FoldContext ctxt, Node node)
+        private FuncTerm LookupType(ZingFoldContext ctxt, Node node)
         {
             return ctxt.entityInfo.typeInfo[Factory.Instance.ToAST(node)];
         }

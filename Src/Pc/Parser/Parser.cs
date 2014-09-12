@@ -692,6 +692,30 @@
             valueExprStack.Push(field);
         }
 
+        private void PushFieldInt(string indexStr, Span span)
+        {
+            Contract.Assert(valueExprStack.Count > 0);
+            int index = 0;
+            if (!int.TryParse(indexStr, out index) || index < 0)
+            {
+                var errFlag = new Flag(
+                                 SeverityKind.Error,
+                                 span,
+                                 Constants.BadSyntax.ToString(string.Format("Bad tuple index {0}", indexStr)),
+                                 Constants.BadSyntax.Code,
+                                 parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+                index = 0;
+            }
+
+            var field = P_Root.MkField();
+            field.name = MkNumeric(index, span);
+            field.arg = (P_Root.IArgType_Field__0)valueExprStack.Pop();
+            field.Span = span;
+            valueExprStack.Push(field);
+        }
+
         private void PushGroup(string name, Span nameSpan, Span span)
         {
             var groupName = P_Root.MkQualifiedName(MkString(name, nameSpan));
@@ -811,18 +835,18 @@
             P_Root.StateDecl state;
             if(isStmtBlock)
             {
-                entry = (P_Root.IArgType_StateDecl__2)stmtStack.Pop();
-                state = GetCurrentStateDecl(entry.Span);
+                var stmt = (P_Root.IArgType_AnonActionDecl__1)stmtStack.Pop();
+                state = GetCurrentStateDecl(stmt.Span);
+                entry = P_Root.MkAnonActionDecl((P_Root.MachineDecl)state.owner, stmt);
+                entry.Span = stmt.Span;
             }
             else
             {
                 entry = (P_Root.IArgType_StateDecl__2)MkString(actionName, actionSpan);
                 state = GetCurrentStateDecl(actionSpan);
             }
-            
-
-            if (state.entryAction is P_Root.NulStmt &&
-                (P_Root.UserCnstKind)((P_Root.UserCnst)((P_Root.NulStmt)state.entryAction)[0]).Value == P_Root.UserCnstKind.SKIP)
+           
+            if (IsSkipActionOrFun((P_Root.GroundTerm)state.entryAction))            
             {
                 state.entryAction = (P_Root.IArgType_StateDecl__2)entry;
             }
@@ -847,8 +871,10 @@
 
             if (isStmtBlock)
             {
-                exit = (P_Root.IArgType_StateDecl__3)stmtStack.Pop();
-                state = GetCurrentStateDecl(exit.Span);
+                var stmt = (P_Root.IArgType_AnonFunDecl__1)stmtStack.Pop();
+                state = GetCurrentStateDecl(stmt.Span);
+                exit = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, stmt);
+                exit.Span = stmt.Span;
             }
             else
             {
@@ -856,8 +882,7 @@
                 state = GetCurrentStateDecl(functionSpan);
             }
 
-            if (state.exitFun is P_Root.NulStmt &&
-                (P_Root.UserCnstKind)((P_Root.UserCnst)((P_Root.NulStmt)state.exitFun)[0]).Value == P_Root.UserCnstKind.SKIP)
+            if (IsSkipActionOrFun((P_Root.GroundTerm)state.exitFun))
             {
                 state.exitFun = (P_Root.IArgType_StateDecl__3)exit;
             }
@@ -979,8 +1004,11 @@
             }
             else
             {
-                action = (P_Root.IArgType_TransDecl__3)stmtStack.Pop();
+                var stmt = (P_Root.IArgType_AnonFunDecl__1)stmtStack.Pop();
+                action = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, stmt);
+                action.Span = stmt.Span;
             }
+
             foreach (var e in crntEventList)
             {
                 var trans = P_Root.MkTransDecl(state, (P_Root.IArgType_TransDecl__1)e, crntQualName, action);
@@ -1004,6 +1032,7 @@
             crntQualName = null;
             crntEventList.Clear();
         }
+
         private void AddTransition(bool isPush, Span span)
         {
             Contract.Assert(crntEventList.Count > 0);
@@ -1099,18 +1128,19 @@
                     MkUserCnst(valKind, valSpan)));
         }
 
-
         private void AddDoAnonyAction(Span span)
         {
             Contract.Assert(crntEventList.Count > 0);
             Contract.Assert(!isTrigAnnotated || crntAnnotStack.Count > 0);
 
             var state = GetCurrentStateDecl(span);
-            var actFunction = (P_Root.IArgType_DoDecl__2) stmtStack.Pop();
+            var stmt = (P_Root.IArgType_AnonActionDecl__1)stmtStack.Pop();
             var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
+            var anonAction = P_Root.MkAnonActionDecl((P_Root.MachineDecl)state.owner, stmt);
+            anonAction.Span = stmt.Span;
             foreach (var e in crntEventList)
             {
-                var action = P_Root.MkDoDecl(state, (P_Root.IArgType_DoDecl__1)e, actFunction);
+                var action = P_Root.MkDoDecl(state, (P_Root.IArgType_DoDecl__1)e, anonAction);
                 action.Span = span;
                 parseProgram.Dos.Add(action);
                 if (isTrigAnnotated)
@@ -1392,20 +1422,13 @@
             crntState.Span = span;
             crntState.owner = GetCurrentMachineDecl(span);
 
-            var skipEntry = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
-            skipEntry.Span = span;
-            crntState.entryAction = skipEntry;
-
-            var skipExit = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
-            skipExit.Span = span;
-            crntState.exitFun = skipExit;
-
+            crntState.entryAction = MkSkipAction((P_Root.MachineDecl)crntState.owner, span);
+            crntState.exitFun = MkSkipFun((P_Root.MachineDecl)crntState.owner, span);
             crntState.isStable = MkUserCnst(P_Root.UserCnstKind.FALSE, span);
 
             return crntState;
         }
         
-
         private P_Root.MachineDecl GetCurrentMachineDecl(Span span)
         {
             if (crntMachDecl != null)
@@ -1427,6 +1450,42 @@
         #endregion
 
         #region Helpers
+        private static bool IsSkipActionOrFun(P_Root.GroundTerm term)
+        {
+            P_Root.NulStmt nulStmt = null;
+            if (term is P_Root.AnonActionDecl)
+            {
+                nulStmt = ((P_Root.AnonActionDecl)term).body as P_Root.NulStmt;
+            }
+            else if (term is P_Root.AnonFunDecl)
+            {
+                nulStmt = ((P_Root.AnonFunDecl)term).body as P_Root.NulStmt;
+            }
+
+            if (nulStmt == null)
+            {
+                return false;
+            }
+            else
+            {
+                return ((P_Root.UserCnstKind)((P_Root.UserCnst)nulStmt[0]).Value) == P_Root.UserCnstKind.SKIP;
+            }
+        }
+
+        private P_Root.AnonFunDecl MkSkipFun(P_Root.MachineDecl owner, Span span)
+        {
+            var decl = P_Root.MkAnonFunDecl(owner, P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span)));
+            decl.Span = span;
+            return decl;
+        }
+
+        private P_Root.AnonActionDecl MkSkipAction(P_Root.MachineDecl owner, Span span)
+        {
+            var decl = P_Root.MkAnonActionDecl(owner, P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span)));
+            decl.Span = span;
+            return decl;
+        }
+
         private P_Root.TypeExpr MkBaseType(P_Root.UserCnstKind kind, Span span)
         {
             Contract.Requires(

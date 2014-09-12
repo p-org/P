@@ -29,7 +29,7 @@ domain PData
     NulApp     ::= new (op: Integer + Boolean + { THIS, TRIGGER, PAYLOAD, NONDET, FAIRNONDET, NULL, HALT }).
     UnApp      ::= new (op: { NOT, NEG, KEYS, VALUES, SIZEOF }, arg1: any Expr).
     BinApp     ::= new (op: { ADD, SUB, MUL, INTDIV, AND, OR, EQ, NEQ, LT, LE, GT, GE, IDX, IN }, arg1: any Expr, arg2: any Expr).
-    Field      ::= new (arg: any Expr, name: String).
+    Field      ::= new (arg: any Expr, name: String + Natural).
     Default    ::= new (type: any TypeExpr). 
     Cast       ::= new (arg: any Expr, type: any TypeExpr). 
     Tuple      ::= new (body: any Exprs).
@@ -60,15 +60,19 @@ domain PData
     /****************  State Machine Declarations    *************/
     /*************************************************************/
 
-    EventDecl    ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
-    MachineDecl  ::= fun (name: String -> kind: { REAL, MODEL, MONITOR }, card: any QueueConstraint, start: any QualifiedName, isMain: Boolean).
-    VarDecl      ::= fun (name: String, owner: MachineDecl -> type: any TypeExpr).
-    FunDecl      ::= fun (name: String, owner: MachineDecl -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL },  return: any TypeExpr + { NIL }, body: any Stmt).
-    ActionDecl   ::= fun (name: String, owner: MachineDecl -> body: any Stmt).
-    StateDecl    ::= fun (name: any QualifiedName, owner: MachineDecl -> entryAction: any Stmt + String, exitFun: any Stmt + String, isStable: Boolean).
-    TransDecl    ::= fun (src: StateDecl, trig: String + { DEFAULT, HALT } -> dst: any QualifiedName, action: any { NIL, PUSH } + Stmt + String).
-    DoDecl       ::= fun (src: StateDecl, trig: String + { HALT } -> action: any { DEFER, IGNORE } + Stmt + String).
+    EventDecl      ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
+    MachineDecl    ::= fun (name: String -> kind: { REAL, MODEL, MONITOR }, card: any QueueConstraint, start: any QualifiedName, isMain: Boolean).
+    VarDecl        ::= fun (name: String, owner: MachineDecl -> type: any TypeExpr).
     
+    FunDecl        ::= fun (name: String, owner: MachineDecl -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL },  return: any TypeExpr + { NIL }, body: any Stmt).
+    AnonFunDecl    ::= new (owner: MachineDecl, body: any Stmt).
+    ActionDecl     ::= fun (name: String, owner: MachineDecl -> body: any Stmt).
+    AnonActionDecl ::= new (owner: MachineDecl, body: any Stmt).
+    
+    StateDecl      ::= fun (name: any QualifiedName, owner: MachineDecl -> entryAction: any AnonActionDecl + String, exitFun: any AnonFunDecl + String, isStable: Boolean).
+    TransDecl      ::= fun (src: StateDecl, trig: String + { DEFAULT, HALT } -> dst: any QualifiedName, action: any { NIL, PUSH } + AnonFunDecl + String).
+    DoDecl         ::= fun (src: StateDecl, trig: String + { HALT } -> action: any { DEFER, IGNORE } + AnonActionDecl + String).
+            
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
     QualifiedName      ::= new (name: String, qualifier: any QualifiedName + { NIL }).
@@ -93,18 +97,21 @@ domain PStructuralTyping extends PData
 }
 
 domain PStaticTyping extends PData
-
+/*
 [
     compiler_ProductivityCheck = "TypeOf[1]"
 ]
-
+*/
 {
     /*************************************************************/
 	conforms no TypeOf(_, _, ERROR). 
+	conforms no DupNmdSubE(_, _, _, _).
+	conforms no PurityError(_, _).
+	conforms no LValueError(_, _).
     /*************************************************************/
 
     //// The declarations that may contain expressions or statements that should be typed.
-    TypingContext ::= FunDecl + ActionDecl + StateDecl + TransDecl.
+    TypingContext ::= FunDecl + ActionDecl + AnonFunDecl + AnonActionDecl.
     
     //// The set of typeable expressions and statements.
     Typeable ::= Expr + Stmt + Exprs + NamedExprs.
@@ -114,15 +121,6 @@ domain PStaticTyping extends PData
     
     //// All typeable subexpressions / substatements and the declarations in which they appear.
     SubSE ::= sub (cntxt: TypingContext, typeable: Typeable).
-
-	///// The isSubTerm constructor 
-	isSubTerm ::= sub (params: NmdTupType, param: NmdTupTypeField).
-	
-	///// Local variable declarations
-	isLocalVariableDecl ::= (cntxt: TypingContext, owner: MachineDecl, name:String).
-    //// The machine owning a context.
-    TCOwner ::= (cntxt: TypingContext, mach: MachineDecl).    
-    TCOwner(x, x.owner) :- x is FunDecl; x is StateDecl; x is ActionDecl; y is TransDecl, x = y.src.
 
     /*************************************************************/
     /*                      Types of Expressions                 */
@@ -134,18 +132,18 @@ domain PStaticTyping extends PData
     TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = NulApp(HALT).
     TypeOf(c, e, BaseType(ANY))   :- SubSE(c, e), e = NulApp(PAYLOAD).
     
-    TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = NulApp(THIS), TCOwner(c, m), m.kind = REAL.
-    TypeOf(c, e, BaseType(MODEL)) :- SubSE(c, e), e = NulApp(THIS), TCOwner(c, m), m.kind = MODEL.
+    TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = REAL.
+    TypeOf(c, e, BaseType(MODEL)) :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = MODEL.
 	[ rule_Classes = '"error, msg: Monitors cannot refer to "this""']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(THIS), TCOwner(c, m), m.kind = MONITOR.
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = MONITOR.
     
-    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(NONDET), TCOwner(c, m), m.kind != REAL.
+    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind != REAL.
 	[ rule_Classes = '"error, msg: Nonderminitistic choice cannot be used in real machines"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(NONDET), TCOwner(c, m), m.kind = REAL.
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind = REAL.
 
-    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(FAIRNONDET), TCOwner(c, m), m.kind != REAL.
+    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind != REAL.
 	[ rule_Classes = '"error, msg: Nonderminitistic choice cannot be used in real machines"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(FAIRNONDET), TCOwner(c, m), m.kind = REAL.
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind = REAL.
     
     TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = NulApp(v), v : Integer.
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(v), v : Boolean.          
@@ -158,14 +156,11 @@ domain PStaticTyping extends PData
     TypeOf(c, e, t)               :- SubSE(c, e), e = NamedTuple(e'), TypeOf(c, e', t).     
 
     // Variables hide the names of events, in case both have the same name.
-	
-	
-	isLocalVariableDecl(c,m,n) :- c is FunDecl(_, m, _, p, _, _), p : NmdTupType, isSubTerm(p, x), x = NmdTupTypeField(n, _).
-	TypeOf(c, e, x.type)				  :- SubSE(c, e), e = Name(n), TCOwner(c, m), c is FunDecl(_, m, _, p, _, _), p : NmdTupType, isSubTerm(p, x), x = NmdTupTypeField(n, _).
-    TypeOf(c, e, t)               :- SubSE(c, e), e = Name(n), TCOwner(c, m), VarDecl(n, m, t), no isLocalVariableDecl(c,m,n). 
-    TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = Name(n), EventDecl(n, _, _), TCOwner(c, m), no VarDecl(n, m, _), no isLocalVariableDecl(c,m,n) . 
+	TypeOf(c, e, t)	              :- SubSE(c, e), e = Name(n), TypeOfFormalParam(c, n, t).
+    TypeOf(c, e, t)               :- SubSE(c, e), e = Name(n), VarDecl(n, c.owner, t), no TypeOfFormalParam(c, n, _). 
+    TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = Name(n), EventDecl(n, _, _), no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _). 
 	[ rule_Classes = '"error, msg: Undefined symbol"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n), TCOwner(c, m), no EventDecl(n, _, _), no VarDecl(n, m, _), no isLocalVariableDecl(c,m,n). 
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n), no EventDecl(n, _, _), no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _). 
     
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = UnApp(NOT, e'), TypeOf(c, e', BaseType(b)), b = BOOL. 
 	[ rule_Classes = '"error, msg: Operator expected a boolean value"']
@@ -188,7 +183,7 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Operator expected a map or sequence value"']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(SIZEOF, e'), TypeOf(c, e', t), toSymbol(t) != #MapType, toSymbol(t) != #SeqType. 
     
-    //// (2) The types of binary expressions
+    //// (3) The types of binary expressions
     TypeOf(c, e, t)                :- SubSE(c, e), e = Cast(e', t), TypeOf(c, e', t'), TypeRel(t, t', k), k != EMPTY.
 	[ rule_Classes = '"error, msg: Cast can never succeed"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Cast(e', t), TypeOf(c, e', t'), TypeRel(t, t', k), k = EMPTY.
@@ -200,9 +195,11 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Undefined machine type"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), no MachineDecl(n, _, _, _, _).   
     
-    TypeOf(c, e, ft)               :- SubSE(c, e), e = Field(e', n), TypeOf(c, e', t), TypeOfField(t, n, ft).
-	[ rule_Classes = '"error, msg: Operator expected a named tuple value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Field(e', n), TypeOf(c, e', t), toSymbol(t) != #NmdTupType.
+    TypeOf(c, e, ft)               :- SubSE(c, e), e = Field(e', n), TypeOf(c, e', t), TypeOfField(t, n, ft), ft != ERROR.
+	[ rule_Classes = '"error, msg: Bad field name"']
+    TypeOf(c, e, ft)               :- SubSE(c, e), e = Field(e', n), TypeOf(c, e', t), TypeOfField(t, n, ft), ft = ERROR.
+	[ rule_Classes = '"error, msg: Operator expected a (named) tuple value"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Field(e', n), TypeOf(c, e', t), toSymbol(t) != #TupType, toSymbol(t) != #NmdTupType.
     
     PureIntOp ::= { ADD, SUB, MUL, INTDIV }.
     TypeOf(c, e, bint)             :- SubSE(c, e), e = BinApp(op, e', e''), TypeOf(c, e', bint), TypeOf(c, e'', bint), op : PureIntOp, bint = BaseType(INT).
@@ -232,9 +229,8 @@ domain PStaticTyping extends PData
     
     TypeOf(c, e, inner)            :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = SeqType(inner), t'' = BaseType(INT).
     TypeOf(c, e, cod)              :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = MapType(dom, cod), TypeRel(t'', dom, SUB).
-    TypeOf(c, e, fld)              :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOfIdx(t', e'', fld).    
-	[ rule_Classes = '"error, msg: Indexer must be applied to a sequence, map, or tuple"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IDX, e', _), TypeOf(c, e', t'), toSymbol(t') != #SeqType, toSymbol(t') != #MapType, toSymbol(t') != #TupType.
+	[ rule_Classes = '"error, msg: Indexer must be applied to a sequence or map"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IDX, e', _), TypeOf(c, e', t'), toSymbol(t') != #SeqType, toSymbol(t') != #MapType.
 	[ rule_Classes = '"error, msg: Index must be an integer"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' : SeqType, t'' != BaseType(INT).
 	[ rule_Classes = '"error, msg: Index may not be in the domain of the map"']
@@ -249,48 +245,51 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: "in" expects a sequence or map"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, _, e''),  TypeOf(c, e'', t''), toSymbol(t'') != #SeqType, toSymbol(t'') != #MapType.
     
-    //// Used to lookup the type of a field in a named tuple type.
-    TypeOfField    ::= (tupTyp: NmdTupType, lookup: String, fieldType: TypeExpr + { ERROR }).    
-    TypeOfFieldAux ::= (tupTyp: NmdTupType, lookup: String, fieldType: TypeExpr + { ERROR }, tail: NmdTupType + { NIL }).
-    TypeOfFieldAux(ttup, n, ERROR, ttup)            :- SubSE(c, e), e = Field(e', n), TypeOf(c, e', ttup), ttup : NmdTupType.                   
-    TypeOfFieldAux(ttup, n, ft, aux.tl)             :- TypeOfFieldAux(ttup, n, ft, aux), aux.hd.name != n.
-    TypeOfFieldAux(ttup, n, aux.hd.type, aux.tl)    :- TypeOfFieldAux(ttup, n, ERROR, aux), aux.hd.name = n.
-    TypeOfField(ttup, n, ft)                        :- TypeOfFieldAux(ttup, n, ft, NIL).            
-    
-    //// Used to lookup the type of a field in a tuple.
-    TypeOfIdx    ::= (tupTyp: TupType, lookup: Expr, fieldType: TypeExpr + { ERROR }).    
-    TypeOfIdxAux ::= (tupTyp: TupType, lookup: Expr, fieldType: TypeExpr + { ERROR }, pos: Natural, tail: TupType + { NIL }).
-    TypeOfIdxAux(ttup, e'', ERROR, 0, ttup)          :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', ttup), ttup : TupType.                   
-    TypeOfIdxAux(ttup, n, ft, pos', aux.tl)          :- TypeOfIdxAux(ttup, n, ft, pos, aux), n != NulApp(pos), pos' = pos + 1.
-    TypeOfIdxAux(ttup, n, aux.hd, pos', aux.tl)      :- TypeOfIdxAux(ttup, n, ERROR, pos, aux), n = NulApp(pos), pos' = pos + 1.
-    TypeOfIdx(ttup, n, ft)                           :- TypeOfIdxAux(ttup, n, ft, _, NIL).    
+	///// (4) Exprs produces a tuple type
+	TypeOf(c, e, t) :- SubSE(c, e), e = Exprs(e', NIL), TypeOf(c, e', t'), t = TupType(t', NIL).
+	TypeOf(c, e, t) :- SubSE(c, e), e = Exprs(e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' : TupType, t = TupType(t', t'').
+		
+	//// (5) NamedExprs produces a named tuple type.
+	TypeOf(c, e, t) :- SubSE(c, e), e = NamedExprs(n', e', NIL), TypeOf(c, e', t'), t = NmdTupType(NmdTupTypeField(n', t'), NIL).
+	TypeOf(c, e, t) :- SubSE(c, e), e = NamedExprs(n', e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' : NmdTupType, t = NmdTupType(NmdTupTypeField(n', t'), t'').
+	
+	//// (6) FunApps must refer to a defined function that has a non-NIL return type and args must be sub-types of function signature. 
+	TypeOf(c, e, t)     :- SubSE(c, e), e = FunApp(n, NIL), FunDecl(n, c.owner, _, NIL, t, _), t != NIL.
+	TypeOf(c, e, t)     :- SubSE(c, e), e = FunApp(n, e'), TypeOf(c, e', argt), decl is FunDecl(n, c.owner, _, _, t, _), FuncSigTupleType(decl, inpt), TypeRel(argt, inpt, SUB), t != NIL.
 
-	
-	///// type of Exprs
-	TypeOf(c, e, t) :- SubSE(c, e), e = Exprs(hd, tail), TypeOf(c, hd, t_hd), t_hd : TypeExpr, toSymbol(tail) = NIL, t = TupType(t_hd, NIL); SubSE(c, e), e = Exprs(hd, tail), TypeOf(c, hd, t_hd), t_hd : TypeExpr, toSymbol(tail) = #Exprs, t = TupType(t_hd, t_tail), TypeOf(c, tail, t_tail).
-	
-	
-	//// type of NamedExprs
-	TypeOf(c, e, t) :- SubSE(c, e), e = NamedExprs(fld, exp, tail), t = NmdTupType(NmdTupTypeField(fld, t_exp), NIL), toSymbol(tail) = NIL, TypeOf(c, exp, t_exp), t_exp : TypeExpr; SubSE(c, e), e = NamedExprs(fld, exp, tail), t = NmdTupType(NmdTupTypeField(fld, t_exp), t_tail), toSymbol(tail) = #NamedExprs, TypeOf(c, exp, t_exp), t_exp : TypeExpr, TypeOf(c, tail, t_tail).
-	
-	//FunApp
-	TypeOf(c, e, retType) 			   :- SubSE(c, e), e = FunApp(name, args), TCOwner(c, m), FunDecl(name, m, _, args_type, retType, _).
-	[ rule_Classes = '"error, msg: invalid function call, no such function declared"']
-	TypeOf(c, e, ERROR) 			   :- SubSE(c, e), e = FunApp(name, args), TCOwner(c, m), no FunDecl(name, m, _, _, _, _).
-	
-	[ rule_Classes = '"error, msg: Function should return a value"']
-	TypeOf(c, e, ERROR) 			   :- SubSE(c, e), e = FunApp(name, args), TCOwner(c, m), FunDecl(name, m, _, args_type, NIL, _).
+	[ rule_Classes = '"error, msg: function not defined"']
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _), no FunDecl(n, c.owner, _, _, _, _).	
+	[ rule_Classes = '"error, msg: function does not return a value"']
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _), FunDecl(n, c.owner, _, _, NIL, _).
+	[ rule_Classes = '"error, msg: function requires arguments"']
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, NIL), FunDecl(n, c.owner, _, params, _, _), params != NIL.
+	[ rule_Classes = '"error, msg: function arguments have incorrect types"']
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, e'), TypeOf(c, e', argt), decl is FunDecl(n, c.owner, _, _, _, _), FuncSigTupleType(decl, inpt), TypeRel(argt, inpt, k), argt != inpt, k != SUB.
 	
     /*************************************************************/
     /*                      Types of Statements                  */
     /*************************************************************/
 
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(POP).
-
+	//// (1) Nullary statements
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(SKIP).
 
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(_).
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(POP), c : ActionDecl.
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(POP), c : AnonActionDecl.
+	[ rule_Classes = '"error, msg: "pop" can only appear in an action."']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NulStmt(POP), toSymbol(c) != #ActionDecl, toSymbol(c) != #AnonActionDecl.
 
+	//// (2) Return statement
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL), c = FunDecl(_, _, _, _, NIL, _). 
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(e'), c = FunDecl(_, _, _, _, t, _), TypeOf(c, e', t'), TypeRel(t', t, SUB).
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL), toSymbol(c) != #FunDecl. 
+	[ rule_Classes = '"error, msg: function must return a value"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(NIL), c = FunDecl(_, _, _, _, t, _), t != NIL. 
+	[ rule_Classes = '"error, msg: return value has incorrect type"' ]
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(e'), c = FunDecl(_, _, _, _, t, _), TypeOf(c, e', t'), TypeRel(t', t, k), t' != t, k != SUB.
+	[ rule_Classes = '"error, msg: return cannot return a value here"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(t), toSymbol(c) != #FunDecl, t != NIL. 
+
+	//// (3) Non-mutating statements
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Seq(_, _).
     
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = UnStmt(ASSERT, e'), TypeOf(c, e', t'), t' = BaseType(BOOL).
@@ -305,17 +304,23 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: "while (...)" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = While(e', _), TypeOf(c, e', t'), t' != BaseType(BOOL).
                
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Push(name), TCOwner(c, m), StateDecl(name, m, _, _, _). 
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Push(name), StateDecl(name, c.owner, _, _, _), c : ActionDecl. 
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Push(name), StateDecl(name, c.owner, _, _, _), c : AnonActionDecl. 
 	[ rule_Classes = '"error, msg: Undeclared state name"']
-	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Push(name), TCOwner(c, m), no StateDecl(name, m, _, _, _). 
+	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Push(name), no StateDecl(name, c.owner, _, _, _). 
+	[ rule_Classes = '"error, msg: "push" can only appear in an action"']
+	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Push(_), toSymbol(c) != #ActionDecl, toSymbol(c) != #AnonActionDecl. 
     
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _), MachineDecl(n, _, _, _, _).   
 	[ rule_Classes = '"error, msg: Undeclared machine"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _), no MachineDecl(n, _, _, _, _).   
     
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Raise(e', _), TypeOf(c, e', t'), t' = BaseType(EVENT).   
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Raise(e', _), TypeOf(c, e', t'), t' = BaseType(EVENT), c : ActionDecl.   
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Raise(e', _), TypeOf(c, e', t'), t' = BaseType(EVENT), c : AnonActionDecl.   
 	[ rule_Classes = '"error, msg: "raise" expects an event value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Raise(e', _), TypeOf(c, e', t'), t' != BaseType(EVENT).      
+	[ rule_Classes = '"error, msg: "raise" can only appear in an action"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Raise(_, _), toSymbol(c) != #ActionDecl, toSymbol(c) != #AnonActionDecl.      
       
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Send(e', e'', _), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = BaseType(REAL), t'' = BaseType(EVENT).
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Send(e', e'', _), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = BaseType(MODEL), t'' = BaseType(EVENT).
@@ -331,50 +336,157 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(n, _, _), no MachineDecl(n, MONITOR, _, _, _).
 	[ rule_Classes = '"error, msg: argument 2 of "monitor" expects an event value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(_, e', _), TypeOf(c, e', t'), t' != BaseType(EVENT).
-	
+
+	//// (4) Mutating statements		
 	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = BinStmt(ASSIGN, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), TypeRel(t2, t1, SUB).
 	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
 	TypeOf(c, e , ERROR)		   :- SubSE(c, e), e = BinStmt(ASSIGN, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), TypeRel(t2, t1, k), k!= SUB, t1 != t2.
-	
-	
+		
 	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = BinStmt(REMOVE, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 : SeqType, t2 = BaseType(INT).
-	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = BinStmt(REMOVE, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), TypeRel(t2, dom, SUB).
-	
-	[ rule_Classes = '"error, msg: remove must be applied to a sequence, or a map"']
+	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = BinStmt(REMOVE, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), TypeRel(t2, dom, SUB).	
+	[ rule_Classes = '"error, msg: remove must be applied to a sequence or map"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinStmt(REMOVE, e', _), TypeOf(c, e', t'), toSymbol(t') != #SeqType, toSymbol(t') != #MapType.
-    [ rule_Classes = '"error, msg: remove Index must be an integer"']
+    [ rule_Classes = '"error, msg: index must be an integer"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinStmt(REMOVE, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' : SeqType, t'' != BaseType(INT).
-	[ rule_Classes = '"error, msg: remove Index may not be in the domain of the map"']
+	[ rule_Classes = '"error, msg: Index may not be in the domain of the map"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinStmt(REMOVE, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = MapType(dom, _), TypeRel(t'', dom, k), t'' != dom, k != SUB.
 	
 	
 	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = SeqType(inner), t2 = TupType(BaseType(INT), TupType(value, NIL)), TypeRel(value, inner, SUB).
-	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)), TypeRel(value, cod, SUB), TypeRel(key, dom, SUB).
-
-	
+	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)), TypeRel(value, cod, SUB), TypeRel(key, dom, SUB).	
 	[ rule_Classes = '"error, msg: insert must be applied to a sequence or a map"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinStmt(INSERT, e', _), TypeOf(c, e', t'), toSymbol(t') != #SeqType, toSymbol(t') != #MapType.
 	[ rule_Classes = '"error, msg: for insert right syntax is seq += (index value) or map += (key value)"']
-	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = BinStmt(INSERT, _, arg2), TypeOf(c, arg2, t2), toSymbol(t2) != #TupType; SubSE(c, e), e = BinStmt(INSERT, _, arg2), TypeOf(c, arg2, t2), toSymbol(t2) = #TupType, lstLength(#TupType, t2) != 2.
-    [ rule_Classes = '"error, msg: insert Index must be an integer"']
-    TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)), idx != BaseType(INT).
-	
-    [ rule_Classes = '"error, msg: value to be inserted is not a subtype of the seq inner type"']
-    TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)), idx = BaseType(INT), TypeRel(value, inner, k), k != SUB, value != inner.
-	
+	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = BinStmt(INSERT, _, arg2), TypeOf(c, arg2, t2), toSymbol(t2) != #TupType; 
+	                                  SubSE(c, e), e = BinStmt(INSERT, _, arg2), TypeOf(c, arg2, t2), t2 : TupType, lstLength(#TupType, t2) != 2.
+    [ rule_Classes = '"error, msg: key must be an integer"']
+    TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)), idx != BaseType(INT).	
+    [ rule_Classes = '"error, msg: value must be a subtype of sequence type"']
+    TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)), TypeRel(value, inner, k), k != SUB, value != inner.	
 	[ rule_Classes = '"error, msg: key not in the domain of the map"']
-    TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)), TypeRel(key, dom, k), k != SUB, key != dom.
-	
+    TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)), TypeRel(key, dom, k), k != SUB, key != dom.	
 	[ rule_Classes = '"error, msg: value not in the codomain of the map"']
-    TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)), TypeRel(key, dom, SUB), TypeRel(value, cod, k), k != SUB, value != cod.
+    TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)), TypeRel(value, cod, k), k != SUB, value != cod.
 	
-	//FunStmt
-	TypeOf(c, e, NIL) 			   :- SubSE(c, e), e = FunStmt(name, args), TCOwner(c, m), FunDecl(name, m, _, args_type, _, _), TypeOf(c, args, t_args), t_args = args_type.
-	[ rule_Classes = '"error, msg: invalid function, no such function declared"']
-	TypeOf(c, e, ERROR) 			   :- SubSE(c, e), e = FunStmt(name, args), TCOwner(c, m), no FunDecl(name, m, _, _, _, _).
+	//// (5) Function statements
+	TypeOf(c, e, NIL)   :- SubSE(c, e), e = FunStmt(n, NIL), FunDecl(n, c.owner, _, NIL, _, _).
+	TypeOf(c, e, NIL)   :- SubSE(c, e), e = FunStmt(n, e'), TypeOf(c, e', argt), decl is FunDecl(n, c.owner, _, _, _, _), FuncSigTupleType(decl, inpt), TypeRel(argt, inpt, SUB).
+	[ rule_Classes = '"error, msg: function not defined"']
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _), no FunDecl(n, c.owner, _, _, _, _).	
+	[ rule_Classes = '"error, msg: function requires arguments"']
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, NIL), FunDecl(n, c.owner, _, params, _, _), params != NIL.
+	[ rule_Classes = '"error, msg: function arguments have incorrect types"']
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, e'), TypeOf(c, e', argt), decl is FunDecl(n, c.owner, _, _, _, _), FuncSigTupleType(decl, inpt), TypeRel(argt, inpt, k), argt != inpt, k != SUB.
 
-	
-	                                          
+    /*************************************************************/
+    /*                      Field helpers                        */
+    /*************************************************************/
+
+	TOrNTType      ::= TupType + NmdTupType.
+	FieldLabel     ::= String + Natural.
+    TypeOfField    ::= (tupTyp: TOrNTType, lookup: FieldLabel, fieldType: TypeExpr + { ERROR }).    
+    TypeOfFieldAux ::= (tupTyp: TOrNTType, lookup: FieldLabel, fieldType: TypeExpr + { ERROR }, pos: Natural, tail: TOrNTType + { NIL }).
+
+    TypeOfFieldAux(ttup, n, ERROR, 0, ttup)  :- SubSE(c, e), e = Field(e', n), TypeOf(c, e', ttup), ttup : TOrNTType.    
+    TypeOfFieldAux(ttup, n, t, pos', tl)     :- TypeOfFieldAux(ttup, n, ERROR, pos, aux), n = pos, pos' = pos + 1, aux = TupType(t, tl).
+    TypeOfFieldAux(ttup, n, t, pos', tl)     :- TypeOfFieldAux(ttup, n, ERROR, pos, aux), n = pos, pos' = pos + 1, aux = NmdTupType(NmdTupTypeField(_, t), tl).
+    TypeOfFieldAux(ttup, n, t, pos', tl)     :- TypeOfFieldAux(ttup, n, ERROR, pos, aux), pos' = pos + 1, aux = NmdTupType(NmdTupTypeField(n, t), tl).
+
+    TypeOfFieldAux(ttup, n, t, pos', tl)     :- TypeOfFieldAux(ttup, n, t, pos, aux), n != pos, pos' = pos + 1, aux = TupType(_, tl).
+    TypeOfFieldAux(ttup, n, t, pos', tl)     :- TypeOfFieldAux(ttup, n, t, pos, aux), n != pos, n != fn, pos' = pos + 1, aux = NmdTupType(NmdTupTypeField(fn, _), tl).
+
+    TypeOfField(ttup, n, ft)                 :- TypeOfFieldAux(ttup, n, ft, _, NIL).    
+	TypeOfField(ttup, n, ERROR)              :- TypeOfFieldAux(ttup, n, ERROR, 0, ttup), n : String, ttup : TupType.
+
+    /*************************************************************/
+    /*                  Formal Parameter Types                   */
+    /*************************************************************/
+    TypeOfFormalParam    ::= (cntxt: FunDecl, name: String, type: TypeExpr + { ERROR }).
+    TypeOfFormalParamAux ::= (cntxt: FunDecl, name: String, type: TypeExpr, aux: NmdTupType + { NIL }).
+
+    TypeOfFormalParamAux(cntxt, name, type, tl) :- cntxt is FunDecl(_, _, _, params, _, _), params = NmdTupType(NmdTupTypeField(name, type), tl).  
+    TypeOfFormalParamAux(cntxt, name, type, tl) :- TypeOfFormalParamAux(cntxt, _, _, aux), aux = NmdTupType(NmdTupTypeField(name, type), tl).
+    
+    TypeOfFormalParam(cntxt, name, type)  :- TypeOfFormalParamAux(cntxt, name, type, aux), no { aux' | TypeOfFormalParamAux(cntxt, name, _, aux'), aux != aux' }.      
+	//// This error is generated as part of DupNmdSubE
+    TypeOfFormalParam(cntxt, name, ERROR) :- TypeOfFormalParamAux(cntxt, name, _, aux), TypeOfFormalParamAux(cntxt, name, _, aux'), aux != aux'.
+
+	//// The input type of a function, ignoring names.
+	FuncSigTupleType    ::= (cntxt: FunDecl, type: TupType + { NIL }).
+	FuncSigTupleTypeAux ::= (cntxt: FunDecl, type: TupType + { NIL }, aux: NmdTupType + { NIL }).
+
+	FuncSigTupleTypeAux(cntxt, params, NIL) :- cntxt is FunDecl(_, _, _, params, _, _), params = NIL.
+	FuncSigTupleTypeAux(cntxt, type, tl)    :- cntxt is FunDecl(_, _, _, params, _, _), params = NmdTupType(NmdTupTypeField(_, t), tl), type = TupType(t, NIL).
+	FuncSigTupleTypeAux(cntxt, type, tl)    :- FuncSigTupleTypeAux(cntxt, t', aux), aux = NmdTupType(NmdTupTypeField(_, t), tl), type = TupType(t, t').
+	FuncSigTupleType(cntxt, t)              :- FuncSigTupleTypeAux(cntxt, t, NIL), type = lstReverse(#TupType, t).
+
+    /*************************************************************/
+    /* Check that named tuple (types) don't reuse the same name  */
+    /*************************************************************/
+	NmdList       ::= NmdTupType + NamedExprs.
+	NmdListOrNone ::= NmdTupType + NamedExprs + { NIL }.
+
+	NmdSubE     ::= sub (NmdList).
+	MaxNmdSubE  ::=     (NmdList).
+	NmdSubNames ::=     (list: NmdList, name: String, aux: NmdListOrNone). 
+	DupNmdSubE  ::=     (list: NmdList, name: String, aux1: NmdListOrNone, aux2: NmdListOrNone).
+
+	MaxNmdSubE(e) :- NmdSubE(e), no NmdSubE(NmdTupType(_, e)), no NmdSubE(NamedExprs(_, _, e)).
+	NmdSubNames(list, name, tl) :- MaxNmdSubE(list), list = NmdTupType(NmdTupTypeField(name, _), tl). 
+	NmdSubNames(list, name, tl) :- MaxNmdSubE(list), list = NamedExprs(name, _, tl). 
+	NmdSubNames(list, name, tl) :- NmdSubNames(list, _, aux), aux = NmdTupType(NmdTupTypeField(name, _), tl). 
+	NmdSubNames(list, name, tl) :- NmdSubNames(list, _, aux), aux = NamedExprs(name, _, tl). 
+
+    [ rule_Classes = '"error, msg: same name appears more than once in name tuple or named tuple type"']
+	DupNmdSubE(list, name, tl, tl') :- NmdSubNames(list, name, tl), NmdSubNames(list, name, tl'), tl != tl'.
+
+    /*************************************************************/
+    /*                          L-values                         */
+    /*************************************************************/
+	LValueError    ::= (cntxt: TypingContext, stmt: BinStmt).
+	BinStmtSubExpr ::= sub (cntxt: TypingContext, stmt: BinStmt, expr: Expr).
+	IsLValue       ::=     (cntxt: TypingContext, expr: Expr). 		
+    IsLValue(c, e)  :- BinStmtSubExpr(c, _, e), e = Name(n), VarDecl(n, c.owner, t), no TypeOfFormalParam(c, n, _). 
+    IsLValue(c, e)  :- BinStmtSubExpr(c, _, e), e = Field(e', _), IsLValue(c, e'). 
+    IsLValue(c, e)  :- BinStmtSubExpr(c, _, e), e = BinApp(IDX, e', _), IsLValue(c, e'). 
+
+    [ rule_Classes = '"error, msg: invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name"']
+	LValueError(c, e) :- SubSE(c, e), e = BinStmt(_, e', _), no IsLValue(c, e').
+    /*************************************************************/
+    /*                         Impurity                          */
+    /*************************************************************/
+	Impure      ::= (FunDecl).
+    PurityError ::= (cntxt: TypingContext, expr: Typeable).
+
+	Impure(c) :- SubSE(c, e), c : FunDecl, e : BinStmt.
+	Impure(c) :- SubSE(c, e), e = FunApp(n, _), c : FunDecl, called is FunDecl(n, c.owner, _, _, _, _), Impure(called).
+	Impure(c) :- SubSE(c, e), e = FunStmt(n, _), c : FunDecl, called is FunDecl(n, c.owner, _, _, _, _), Impure(called).
+
+    [ rule_Classes = '"error, msg: this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" "']
+    PurityError(c, e') :- 
+       SubSE(c, e), e = New(_, e'),           e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
+       SubSE(c, e), e = UnApp(_, e'),         e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
+       SubSE(c, e), e = BinApp(_, e', _),     e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
+       SubSE(c, e), e = BinApp(_, _, e'),     e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);    
+       SubSE(c, e), e = Field(e', _),         e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
+       SubSE(c, e), e = Cast(e', _),          e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);    
+       SubSE(c, e), e = Exprs(e', _),         e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);              
+       SubSE(c, e), e = NamedExprs(_, e', _), e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
+       SubSE(c, e), e = NewStmt(_, e'),       e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
+       SubSE(c, e), e = Raise(e', _),         e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
+       SubSE(c, e), e = Raise(_, e'),         e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);        
+       SubSE(c, e), e = Send(e', _, _),       e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
+       SubSE(c, e), e = Send(_, e', _),       e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
+       SubSE(c, e), e = Send(_, _, e'),       e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);    
+       SubSE(c, e), e = Monitor(_, e', _),    e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
+       SubSE(c, e), e = Monitor(_, _, e'),    e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);    
+       SubSE(c, e), e = UnStmt(_, e'),        e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
+       SubSE(c, e), e = Return (e'),          e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
+       SubSE(c, e), e = While(e', _),         e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
+       SubSE(c, e), e = Ite(e', _, _),        e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
+       SubSE(c, e), e = BinStmt(_, e', _),    e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
+       SubSE(c, e), e = BinStmt(_, e', e''),  e'' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called), toSymbol(e') != #Name.
+							                                          
     /*************************************************************/
     /*                      Type Comparability                   */
     /*************************************************************/
@@ -400,6 +512,8 @@ domain PStaticTyping extends PData
     TypeSub(base)          :- base = BaseType(ANY).
 
     TypeSub(t)             :- TypeOf(_, _, t).
+	TypeSub(t)             :- TypeOfFormalParam(_, _, t).
+    TypeSub(t)             :- FuncSigTupleType(_, t).
     TypeSub(t)             :- TypeSub(s), s = SeqType(t).
     TypeSub(t), TypeSub(u) :- TypeSub(s), s = MapType(t, u).
     TypeSub(t), TypeSub(u) :- TypeSub(s), s = TupType(t, u), u : TypeExpr.

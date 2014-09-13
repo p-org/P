@@ -55,8 +55,9 @@ namespace Microsoft.Pc
         public List<string> deferredEvents;
         public List<string> ignoredEvents;
         public bool isStable;
+        public string printedName;
 
-        public StateInfo(string ownerName, string entryActionName, string exitFunName, bool isStable)
+        public StateInfo(string ownerName, string entryActionName, string exitFunName, bool isStable, string printedName)
         {
             this.ownerName = ownerName;
             this.entryActionName = entryActionName;
@@ -67,6 +68,7 @@ namespace Microsoft.Pc
             this.deferredEvents = new List<string>();
             this.ignoredEvents = new List<string>();
             this.isStable = isStable;
+            this.printedName = printedName;
         }
     }
 
@@ -457,7 +459,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var isStable = compiler.liveness != LivenessOption.None && ((Id)it.Current).Name == "TRUE";
                     var stateTable = allMachines[ownerName].stateNameToStateInfo;
-                    stateTable[stateName] = new StateInfo(ownerName, entryActionName, exitFunName, isStable);
+                    stateTable[stateName] = new StateInfo(ownerName, entryActionName, exitFunName, isStable, GetPrintedNameFromQualifiedName(qualifiedStateName));
                 }
             }
 
@@ -663,6 +665,18 @@ namespace Microsoft.Pc
         public static string GetName(FuncTerm ft, int nameIndex)
         {
             return ((Cnst)GetArgByIndex(ft, nameIndex)).GetStringValue();
+        }
+
+        public static string GetPrintedNameFromQualifiedName(FuncTerm qualifiedName)
+        {
+            var stateName = GetName(qualifiedName, 0);
+            while (true)
+            {
+                qualifiedName = GetArgByIndex(qualifiedName, 1) as FuncTerm;
+                if (qualifiedName == null) break;
+                stateName = stateName + "." + GetName(qualifiedName, 0);
+            }
+            return stateName;
         }
 
         public static string GetNameFromQualifiedName(string machineName, FuncTerm qualifiedName)
@@ -1596,9 +1610,9 @@ namespace Microsoft.Pc
                 AST<Cnst> executeLabel = Factory.Instance.MkCnst("execute_" + stateName);
                 AST<Cnst> waitLabel = Factory.Instance.MkCnst("wait_" + stateName);
                 AST<Cnst> transitionLabel = Factory.Instance.MkCnst("transition_" + stateName);
-                string traceString = string.Format("\"<StateLog> Machine {0}-{{0}} entered State {1}\\n\"", machineName, stateName);
+                string enterTraceString = string.Format("\"<StateLog> Machine {0}-{{0}} entered State {1}\\n\"", machineName, stateInfo.printedName);
                 var executeStmt = MkZingSeq(
-                                    MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"))),
+                                    MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(enterTraceString), MkZingDot("myHandle", "instance"))),
                                     MkZingCallStmt(MkZingCall(MkZingIdentifier("invokeplugin"), Factory.Instance.MkCnst("\"StateCoveragePlugin.dll\""), Factory.Instance.MkCnst(string.Format("\"{0}\"", machineName)), Factory.Instance.MkCnst(string.Format("\"{0}\"", stateName)))),
                                     MkZingAssign(currentStable, MkZingApply(ZingData.Cnst_Or, stackStable, stateInfo.isStable ? ZingData.Cnst_True : ZingData.Cnst_False)),
                                     MkZingAssign(currentDeferredSet, AddArgs(ZingData.App_New, smEventSetType, ZingData.Cnst_Nil)),
@@ -1665,7 +1679,6 @@ namespace Microsoft.Pc
                     callTransitionStmt = MkZingIfThenElse(condExpr, MkZingSeq(save, update, push, callStmt, pop, restore, ite), callTransitionStmt);
                 }
 
-                var exitFun = MkZingFun(machineName, allMachines[machineName].stateNameToStateInfo[stateName].exitFunName);
                 AST<Node> ordinaryTransitionStmt = Factory.Instance.AddArg(ZingData.App_Return, ZingData.Cnst_Nil);
                 foreach (var eventName in ordinaryTransitions.Keys)
                 {
@@ -1675,9 +1688,12 @@ namespace Microsoft.Pc
                     ordinaryTransitionStmt = MkZingIfThenElse(condExpr, jumpStmt, ordinaryTransitionStmt);
                 }
 
+                var exitFun = MkZingFun(machineName, allMachines[machineName].stateNameToStateInfo[stateName].exitFunName);
+                string exitTraceString = string.Format("\"<StateLog> Machine {0}-{{0}} exiting State {1}\\n\"", machineName, stateInfo.printedName);
                 blocks.Add(AddArgs(ZingData.App_LabelStmt, transitionLabel, 
                                     MkZingSeq(actionStmt, 
-                                              callTransitionStmt, 
+                                              callTransitionStmt,
+                                              MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(exitTraceString), MkZingDot("myHandle", "instance"))),
                                               MkZingAssign(MkZingIdentifier("didActionPop"), MkZingCall(MkZingIdentifier("ReentrancyHelper"), exitFun, currentActionSet, currentStable)),
                                               ordinaryTransitionStmt)));
             }
@@ -1723,7 +1739,7 @@ namespace Microsoft.Pc
                 AST<Cnst> executeLabel = Factory.Instance.MkCnst("execute_" + stateName);
                 AST<Cnst> waitLabel = Factory.Instance.MkCnst("wait_" + stateName);
                 AST<Cnst> transitionLabel = Factory.Instance.MkCnst("transition_" + stateName);
-                string traceString = string.Format("\"<StateLog> Machine {0}-{{0}} entered State {1}\\n\"", machineName, stateName);
+                string enterTraceString = string.Format("\"<StateLog> Machine {0}-{{0}} entered State {1}\\n\"", machineName, stateInfo.printedName);
                 List<AST<Node>> executeStmts = new List<AST<Node>>();
                 if (compiler.liveness == LivenessOption.Standard)
                 {
@@ -1749,7 +1765,7 @@ namespace Microsoft.Pc
                         executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("accept"), ZingData.Cnst_False)));
                     }
                 }
-                executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"))));
+                executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(enterTraceString), MkZingDot("myHandle", "instance"))));
                 executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("invokeplugin"), Factory.Instance.MkCnst("\"StateCoveragePlugin.dll\""), Factory.Instance.MkCnst(string.Format("\"{0}\"", machineName)), Factory.Instance.MkCnst(string.Format("\"{0}\"", stateName)))));
                 executeStmts.Add(MkZingAssign(cont, MkZingCall(MkZingDot(Factory.Instance.MkCnst("Continuation"), "Construct_Default"))));
                 executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), Factory.Instance.MkCnst(0))));
@@ -1774,11 +1790,6 @@ namespace Microsoft.Pc
                                               Factory.Instance.AddArg(ZingData.App_Goto, transitionLabel))),
                             ZingData.Cnst_Nil);
 
-                AST<Node> exitFunction =
-                    (AST<Node>)MkZingSeq(MkZingAssign(cont, MkZingCall(MkZingDot(Factory.Instance.MkCnst("Continuation"), "Construct_Default"))),
-                                          MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), Factory.Instance.MkCnst(0))),
-                                          MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingFun(machineName, stateInfo.exitFunName), currentActionSet)));
-
                 AST<Node> ordinaryTransitionStmt = MkZingAssert(ZingData.Cnst_False);
                 var transitions = allMachines[machineName].stateNameToStateInfo[stateName].transitions;
                 foreach (var eventName in transitions.Keys)
@@ -1791,10 +1802,17 @@ namespace Microsoft.Pc
                     ordinaryTransitionStmt = MkZingIfThenElse(condExpr, MkZingSeq(jumpStmts), ordinaryTransitionStmt);
                 }
 
+                AST<Node> exitFunction =
+                    (AST<Node>)MkZingSeq(MkZingAssign(cont, MkZingCall(MkZingDot(Factory.Instance.MkCnst("Continuation"), "Construct_Default"))),
+                                          MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), Factory.Instance.MkCnst(0))),
+                                          MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingFun(machineName, stateInfo.exitFunName), currentActionSet)));
+                string exitTraceString = string.Format("\"<StateLog> Machine {0}-{{0}} exiting State {1}\\n\"", machineName, stateInfo.printedName);
                 blocks.Add(AddArgs(ZingData.App_LabelStmt, transitionLabel,
                                             MkZingSeq(MkZingAssign(currentActionSet, AddArgs(ZingData.App_New, smEventSetType, ZingData.Cnst_Nil)),
                                                       MkZingCallStmt(MkZingCall(MkZingIdentifier(string.Format("{0}_CalculateActionSet", stateName)), currentActionSet)),
-                                                      actionStmt, exitFunction, ordinaryTransitionStmt)));
+                                                      actionStmt,
+                                                      MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(exitTraceString), MkZingDot("myHandle", "instance"))),
+                                                      exitFunction, ordinaryTransitionStmt)));
             }
             AST<Node> body = ConstructList(ZingData.App_Blocks, blocks);
             return MkZingMethodDecl("RunHelper", ZingData.Cnst_Nil, ZingData.Cnst_Void, MkZingVarDecls(locals), body);
@@ -3033,11 +3051,13 @@ namespace Microsoft.Pc
 
             var machineInstance = MkZingIdentifier(string.Format("{0}_instance", machineName));
             var machineHandles = MkZingDot("Main", GetMonitorMachineName(machineName));
+            string createTraceString = string.Format("\"<CreateLog> Created Machine {0}-{{0}}\\n\"", machineName);
             body = MkZingSeq(body,
                     MkZingAssign(MkZingIdentifier(objectName), AddArgs(ZingData.App_New, Factory.Instance.MkCnst(machineName), ZingData.Cnst_Nil)),
                     MkInitializers(machineName, objectName),
                     MkZingAssign(MkZingDot(objectName, "myHandle"),
                                  MkZingCall(MkZingDot("SPEC_HANDLE", "Construct"), MkZingDot("Machine", string.Format("_{0}", machineName)), machineInstance)),
+                    MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(createTraceString), machineInstance)),
                     MkZingAssign(MkZingDot(objectName, "myHandle", "currentArg"), MkZingIdentifier("arg")),
                     MkZingAssign(machineInstance, MkZingApply(ZingData.Cnst_Add, machineInstance, Factory.Instance.MkCnst(1))),
                     MkZingAssign(MkZingDot(objectName, "startState"), MkZingDot("State", "_default")),
@@ -3059,12 +3079,14 @@ namespace Microsoft.Pc
             localVars = AddArgs(ZingData.App_VarDecls, MkZingVarDecl("fairScheduler", Factory.Instance.MkCnst("FairScheduler")), localVars);
             localVars = AddArgs(ZingData.App_VarDecls, MkZingVarDecl("fairChoice", Factory.Instance.MkCnst("FairChoice")), localVars);
 
+            string createTraceString = string.Format("\"<CreateLog> Created Machine {0}-{{0}}\\n\"", machineName);
             var machineInstance = MkZingIdentifier(string.Format("{0}_instance", machineName));
             var body = MkZingSeq(
                     MkZingAssign(MkZingIdentifier(objectName), AddArgs(ZingData.App_New, Factory.Instance.MkCnst(machineName), ZingData.Cnst_Nil)),
                     MkInitializers(machineName, objectName),
                     MkZingAssign(MkZingDot(objectName, "myHandle"),
                                  MkZingCall(MkZingDot("SM_HANDLE", "Construct"), MkZingDot("Machine", string.Format("_{0}", machineName)), machineInstance, Factory.Instance.MkCnst(allMachines[machineName].maxQueueSize))),
+                    MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(createTraceString), machineInstance)),
                     MkZingAssign(MkZingDot(objectName, "myHandle", "currentArg"), MkZingIdentifier("arg")),
                     MkZingAssign(machineInstance, MkZingApply(ZingData.Cnst_Add, machineInstance, Factory.Instance.MkCnst(1))),
                     MkZingAssign(MkZingDot(objectName, "stackStable"), ZingData.Cnst_False),

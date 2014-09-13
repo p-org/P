@@ -43,7 +43,6 @@ class SPEC_HANDLE {
 		handle.currentEvent = null;
 		prtType = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL);
 		handle.currentArg = PRT_VALUE.PrtMkDefaultValue(prtType);
-		trace("<CreateLog> Created Machine {0}-{1}\n", handle.machineName, handle.instance);
 		return handle;
     }
 };
@@ -72,7 +71,6 @@ class SM_HANDLE {
 		handle.maxBufferSize = maxBSize;
 		handle.blocked = false;
 		handle.isDeleted = false;
-		trace("<CreateLog> Created Machine {0}-{1}\n", handle.machineName, handle.instance);
 		return handle;
     }
 

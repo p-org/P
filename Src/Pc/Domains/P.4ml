@@ -26,7 +26,7 @@ domain PData
     Name       ::= new (name: String).
     New        ::= new (name: String, arg: any Expr + { NIL }).
     FunApp     ::= new (name: String, args: any Exprs + { NIL }).
-    NulApp     ::= new (op: Integer + Boolean + { THIS, TRIGGER, PAYLOAD, NONDET, FAIRNONDET, NULL, HALT }).
+    NulApp     ::= new (op: Integer + Boolean + { THIS, TRIGGER, PAYLOAD, NONDET, FAIRNONDET, NULL, HALT, DEFAULT }).
     UnApp      ::= new (op: { NOT, NEG, KEYS, VALUES, SIZEOF }, arg1: any Expr).
     BinApp     ::= new (op: { ADD, SUB, MUL, INTDIV, AND, OR, EQ, NEQ, LT, LE, GT, GE, IDX, IN }, arg1: any Expr, arg2: any Expr).
     Field      ::= new (arg: any Expr, name: String + Natural).
@@ -203,6 +203,7 @@ domain PStaticTyping extends PData
     TypeOf(c, e, BaseType(NULL))  :- SubSE(c, e), e = NulApp(NULL).
     TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = NulApp(TRIGGER).
     TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = NulApp(HALT).
+	TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = NulApp(DEFAULT).
     TypeOf(c, e, BaseType(ANY))   :- SubSE(c, e), e = NulApp(PAYLOAD).
     
     TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = REAL.
@@ -210,13 +211,14 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Monitors cannot refer to "this""']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = MONITOR.
     
-    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind != REAL.
-	[ rule_Classes = '"error, msg: Nonderminitistic choice cannot be used in real machines"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind = REAL.
+    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind != REAL; SubSE(c, e), e = NulApp(NONDET), c is FunDecl(_, _, MODEL, _, _, _).
+	[ rule_Classes = '"error, msg: Nondeterminitistic choice can be used only in model machine and model functions"']
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind = REAL, toSymbol(c) != #FunDecl; SubSE(c, e), e = NulApp(NONDET), c.owner.kind = REAL, c is FunDecl, c.kind != MODEL.
 
-    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind != REAL.
-	[ rule_Classes = '"error, msg: Nonderminitistic choice cannot be used in real machines"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind = REAL.
+    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind != REAL; SubSE(c, e), e = NulApp(NONDET), c is FunDecl(_, _, MODEL, _, _, _).
+	[ rule_Classes = '"error, msg: Nondeterminitistic choice can be used only in model machine and model functions"']
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind = REAL, toSymbol(c) != #FunDecl; SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind = REAL, c is FunDecl, c.kind != MODEL.
+	
     
     TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = NulApp(v), v : Integer.
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(v), v : Boolean.          

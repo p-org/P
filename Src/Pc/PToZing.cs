@@ -3189,14 +3189,14 @@ namespace Microsoft.Pc
             private int fieldCount;
             private int typeCount;
             private List<AST<Node>> computation;
-            private Dictionary<FuncTerm, AST<Node>> pTypeToZingExpr;
+            private Dictionary<AST<Node>, AST<Node>> pTypeToZingExpr;
 
             public TypeTranslationContext()
             {
                 fieldCount = 0;
                 typeCount = 0;
                 computation = new List<AST<Node>>();
-                pTypeToZingExpr = new Dictionary<FuncTerm, AST<Node>>();
+                pTypeToZingExpr = new Dictionary<AST<Node>, AST<Node>>();
             }
 
             public AST<Node> InitializeTypesAndFields()
@@ -3239,11 +3239,12 @@ namespace Microsoft.Pc
 
             public AST<Node> PTypeToZingExpr(FuncTerm pType)
             {
-                if (!pTypeToZingExpr.ContainsKey(pType))
+                var pTypeAST = Factory.Instance.ToAST(pType);
+                if (!pTypeToZingExpr.ContainsKey(pTypeAST))
                 {
-                    pTypeToZingExpr[pType] = ConstructType(pType);
+                    pTypeToZingExpr[pTypeAST] = ConstructType(pType);
                 }
-                return pTypeToZingExpr[pType];
+                return pTypeToZingExpr[pTypeAST];
             }
 
             private AST<Node> ConstructType(FuncTerm type)

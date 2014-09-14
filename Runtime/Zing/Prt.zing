@@ -82,10 +82,14 @@ class SM_HANDLE {
 		//assertion to check if argument passed inhabits the payload type.
 		prtType = Main.PayloadOf(e);
 		
-		assert(prtType.typeKind == PRT_TYPE_KIND.PRT_KIND_NULL && arg.type.typeKind == PRT_TYPE_KIND.PRT_KIND_NULL, "Type of payload does not match the expected type with event");
+		
 		if(prtType.typeKind != PRT_TYPE_KIND.PRT_KIND_NULL) {
 			b = PRT_VALUE.PrtInhabitsType(arg, prtType);
 			assert (b, "Type of payload does not match the expected type with event");
+		}
+		else
+		{
+			assert(arg.type.typeKind == PRT_TYPE_KIND.PRT_KIND_NULL, "Type of payload does not match the expected type with event");
 		}
 		if(isDeleted)
 		{

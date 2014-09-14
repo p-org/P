@@ -134,11 +134,39 @@ domain PStructuralTyping extends PData
 	invalidEventOnTransDecl ::= (TransDecl).
 	[ rule_Classes = '"error, msg: transition on an undefined event"']
 	invalidEventOnTransDecl(trns) :- trns is TransDecl, no EventDecl(trns.trig, _, _), trns.trig != DEFAULT, trns.trig != HALT.
+	invalidStateOnTransDecl ::=(TransDecl).
+	[rule_Classes = '"error, msg: transition to an undefined state"']
+	invalidStateOnTransDecl(trns) :- trns is TransDecl, no StateDecl(trns.dst, trns.src.owner, _, _, _).
+	
+	invalidFunOnTransDecl ::= (TransDecl).
+	[rule_Classes = '"error, msg: transition function not defined"']
+	invalidFunOnTransDecl(trns) :- trns is TransDecl(_, _, _, act), act : String , no FunDecl(act, trns.src.owner, _, _, _, _).
+	
+	invalidFunTypeOnTransDecl ::= (TransDecl).
+	[rule_Classes = '"error, msg: transition function should have type (void)->(*)"']
+	invalidFunTypeOnTransDecl(trns) :- trns is TransDecl(_, _, _, act), act : String , FunDecl(act, trns.src.owner, _, p, _, _), p != NIL.
 	
 	//valid doDecl
 	invalidEventOnDoDecl ::= (DoDecl).
 	[ rule_Classes = '"error, msg: action on an undefined event"']
 	invalidEventOnDoDecl(doD) :- doD is DoDecl, no EventDecl(doD.trig, _, _), doD.trig != HALT.
+	
+	invalidFunOnDoDecl ::= (DoDecl).
+	[rule_Classes = '"error, msg: action function not defined"']
+	invalidFunOnDoDecl(trns) :- trns is DoDecl(_, _, act), act : String , no ActionDecl(act, trns.src.owner, _), no FunDecl(act, trns.src.owner, _, _, _, _).
+	
+	invalidFunTypeOnDoDecl ::= (DoDecl).
+	[rule_Classes = '"error, msg: action function should have type (void)->(*)"']
+	invalidFunTypeOnDoDecl(trns) :- trns is DoDecl(_, _, act), act : String , FunDecl(act, trns.src.owner, _, p, _, _), p != NIL.
+	
+	//Entry Exit Functions
+	invalidFunForEntry ::= (StateDecl, String).
+	[rule_Classes = '"error, msg: undefined function/action for entry"']
+	invalidFunForEntry(s, eF) :- s is StateDecl(_, _, eF, _, _), eF : String, no FunDecl(eF, s.owner, _, _, _, _), no ActionDecl(eF, s.owner, _).
+	invalidFunForExit ::= (StateDecl, String).
+	[rule_Classes = '"error, msg: undefined function for exit"']
+	invalidFunForExit(s, eF) :- s is StateDecl(_, _, _, eF, _), eF : String, no FunDecl(s.exitFun, s.owner, _, _, _, _), eF = s.exitFun.
+	
 }
 
 domain PStaticTyping extends PData

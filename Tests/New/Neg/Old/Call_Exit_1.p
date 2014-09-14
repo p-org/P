@@ -49,21 +49,12 @@ main machine Employee {
         }
         exit { 
             assert(RemoteCheckIn == false); 
-            
-			push dummyState;
             if (trigger != default) send CityCabmachine, Thanks;
         }
 
-        on default goto TakeBus;
-        on CabBooked goto TakeCab;
+        on default goto TakeBus with { RemoteCheckIn = true; };
+        on CabBooked goto TakeCab with { RemoteCheckIn = true; };
     }
-
-	state dummyState{
-		entry {
-			RemoteCheckIn = true; 
-			pop;
-		}
-	}
 	
     state TakeCab {
         entry { 
@@ -103,20 +94,20 @@ main machine Employee {
     }
 
     model fun AmILucky():bool { 
-        if (*) 
+        if ($) 
             return true;
         else
             return false;
     }
 }
 
-model machine TravelAgent {
+model TravelAgent {
     var Employeemachine: machine;
 
     start state _Init {
       entry {
 	    Employeemachine = payload as machine;
-	    raise Unit);
+	    raise Unit;
       }
       on Unit goto Init;
     }
@@ -134,7 +125,7 @@ model machine TravelAgent {
     }
 }
 
-model machine CityCab {
+model CityCab {
     var Employeemachine: machine;
 
     start state _Init {

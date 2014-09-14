@@ -220,9 +220,9 @@ StateBody
 
 StateBodyItem
 	: ENTRY StmtBlock														{ SetStateEntry(true);                                  }	
-	| ENTRY ID SEMICOLON															{ SetStateEntry(false, $2.str, ToSpan(@2)); }			
+	| ENTRY ID SEMICOLON													{ SetStateEntry(false, $2.str, ToSpan(@2)); }			
 	| EXIT StmtBlock														{ SetStateExit(true);                                   }
-	| EXIT ID SEMICOLON															{ SetStateExit(false);                                 }
+	| EXIT ID SEMICOLON														{ SetStateExit(false, $2.str, ToSpan(@2));                                 }
 	| DEFER NonDefaultEventList TrigAnnotOrNone SEMICOLON					{ AddDefersOrIgnores(true,  ToSpan(@1));            }		
 	| IGNORE NonDefaultEventList TrigAnnotOrNone SEMICOLON					{ AddDefersOrIgnores(false, ToSpan(@1));            }
 	| ON EventList DO ID TrigAnnotOrNone SEMICOLON							{ AddDoNamedAction($4.str, ToSpan(@4), ToSpan(@1)); }

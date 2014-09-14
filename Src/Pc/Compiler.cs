@@ -307,10 +307,16 @@
 
             //Valid TransDecl
             AddErrors(task.Result, "invalidEventOnTransDecl(_)", inputProgram, errors, 0);
-
+            AddErrors(task.Result, "invalidStateOnTransDecl(_)", inputProgram, errors, 0);
+            AddErrors(task.Result, "invalidFunTypeOnTransDecl(_)", inputProgram, errors, 0);
+            AddErrors(task.Result, "invalidFunOnTransDecl(_)", inputProgram, errors, 0);
             //Valid DoDecl
             AddErrors(task.Result, "invalidEventOnDoDecl(_)", inputProgram, errors, 0);
-
+            AddErrors(task.Result, "invalidFunOnDoDecl(_)", inputProgram, errors, 0);
+            AddErrors(task.Result, "invalidFunTypeOnDoDecl(_)", inputProgram, errors, 0);
+            //Entry Exit Function
+            AddErrors(task.Result, "invalidFunForEntry(_, _)", inputProgram, errors, 1);
+            AddErrors(task.Result, "invalidFunForExit(_, _)", inputProgram, errors, 1);
 
             flags.AddRange(errors);
             return task.Result.Conclusion == LiftedBool.True;

@@ -4,7 +4,7 @@ event seqpayload: seq[int];
 main machine Entry {
     var l:seq[int];
     var i:int;
-	var mac:id;
+	var mac:machine;
     start state init {
         entry {
             l += (0,1);

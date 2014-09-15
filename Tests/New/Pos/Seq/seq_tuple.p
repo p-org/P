@@ -4,7 +4,7 @@ event seqpayload: seq[int];
 main machine Entry {
 	var l: seq[int];
     var i:int;
-	var mac:id;
+	var mac:machine;
 	var t :(seq[int], int);
     start state init {
        entry {
@@ -15,7 +15,7 @@ main machine Entry {
 			l += (0,12);
 			l += (0,23);
 			mac = new test(l, 1);
-			send(mac, seqpayload, l);
+			send mac, seqpayload, l;
 	   }
     }
 }
@@ -26,8 +26,8 @@ machine test {
 	var i:int;
 	start state init {
 		entry {
-			ii = (payload as (seq[int],int))[0];
-			assert( (payload as (seq[int],int))[1] == 1 );
+		      ii = (payload as (seq[int],int)).0;
+		      assert( (payload as (seq[int],int)).1 == 1 );
 		}
 		on seqpayload goto testitnow;
 	}

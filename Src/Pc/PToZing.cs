@@ -2511,8 +2511,8 @@ namespace Microsoft.Pc
                 }
                 else if (op == PData.Cnst_Idx.Node.Name)
                 {
-                    var type = LookupType(ctxt, arg1.Node);
-                    var typeOp = ((Id)GetArgByIndex(type, 0)).Name;
+                    var type = LookupType(ctxt, GetArgByIndex(ft, 1));
+                    var typeOp = ((Id)type.Function).Name;
                     if (typeOp == PData.Con_TupType.Node.Name)
                     {
                         var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
@@ -2753,7 +2753,7 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldBinStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt) 
         {
-            var op = ((Id)GetArgByIndex(ft, 0)).Name; 
+            var op = ((Id)ft.Function).Name; 
             var lhs = (FuncTerm)GetArgByIndex(ft, 1);
             var type = LookupType(ctxt, lhs);
             var typeName = ((Id)type.Function).Name;

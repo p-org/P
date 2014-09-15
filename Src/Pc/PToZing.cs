@@ -363,7 +363,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var iter = it.Current as FuncTerm;
                     it.MoveNext();
-                    var returnTypeName = ((Id)it.Current).Name == "NIL" ? PTypeNull : (AST<FuncTerm>)Factory.Instance.ToAST(it.Current);
+                    var returnTypeName = it.Current is Id ? PTypeNull : (AST<FuncTerm>)Factory.Instance.ToAST(it.Current);
                     it.MoveNext();
                     var funInfo = new FunInfo(isModel, returnTypeName, it.Current);
                     while (iter != null)

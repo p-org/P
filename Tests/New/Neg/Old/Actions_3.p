@@ -49,7 +49,7 @@ model Ghost {
     var real_machine: machine;
     start state Ghost_Init {
         entry {
-	      real_machine = payload as (machine);
+	      real_machine = payload as machine;
         }
         on E1 goto Ghost_S1;
     }

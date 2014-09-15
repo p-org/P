@@ -107,7 +107,7 @@ model TravelAgent {
     var Employeemachine: machine;
     start state _Init {
       entry {
-	    Employeemachine =  payload as (machine);
+	    Employeemachine =  payload as machine;
 	    raise Unit;
       }
       on Unit goto Init;

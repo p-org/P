@@ -389,6 +389,7 @@ Exp_0
     | FALSE                                  { PushNulExpr(P_Root.UserCnstKind.FALSE,      ToSpan(@1)); }
     | THIS                                   { PushNulExpr(P_Root.UserCnstKind.THIS,       ToSpan(@1)); }
     | TRIGGER                                { PushNulExpr(P_Root.UserCnstKind.TRIGGER,    ToSpan(@1)); }
+	| DEFAULT								 { PushNulExpr(P_Root.UserCnstKind.DEFAULT,    ToSpan(@1)); }
     | PAYLOAD                                { PushNulExpr(P_Root.UserCnstKind.PAYLOAD,    ToSpan(@1)); }
     | NONDET                                 { PushNulExpr(P_Root.UserCnstKind.NONDET,     ToSpan(@1)); }
     | FAIRNONDET                             { PushNulExpr(P_Root.UserCnstKind.FAIRNONDET, ToSpan(@1)); }

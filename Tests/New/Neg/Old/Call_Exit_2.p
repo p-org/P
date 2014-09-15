@@ -45,12 +45,11 @@ main machine Employee {
 
     state SBookCab { 
         entry { 
-            send CityCabmachine, BookCab; 
+            send CityCabmachine, BookCab;
+			push dummyState;			
         }
         exit { 
             assert(RemoteCheckIn == false); 
-            
-			push dummyState;
             if (trigger != default) send CityCabmachine, Thanks;
         }
 
@@ -115,7 +114,7 @@ model  TravelAgent {
 
     start state _Init {
       entry {
-	    Employeemachine = payload;
+	    Employeemachine = payload as machine;
 	    raise Unit;
       }
       on Unit goto Init;
@@ -139,7 +138,7 @@ model CityCab {
 
     start state _Init {
       entry {
-	    Employeemachine = payload;
+	    Employeemachine = payload as machine;
 	    raise Unit;
       }
       on Unit goto Init;

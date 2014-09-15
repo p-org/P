@@ -46,7 +46,7 @@ main machine Employee {
     state SBookCab { 
         entry { 
             send CityCabmachine, BookCab; 
-			call(dummyState);
+			push dummyState;
         }
         exit { 
             assert(RemoteCheckIn == false); 
@@ -108,13 +108,13 @@ main machine Employee {
     }
 }
 
-model machine TravelAgent {
+model TravelAgent {
     var Employeemachine: machine;
 
     start state _Init {
       entry {
 	    Employeemachine = payload as machine;
-	    raise Unit);
+	    raise Unit;
       }
       on Unit goto Init;
     }
@@ -125,14 +125,14 @@ model machine TravelAgent {
 
     state SBookFlight {
         entry { 
-            if ($) { send Employeemachine, TryAgain; raise Unit); } else { send Employeemachine, FlightBooked; } 
+            if ($) { send Employeemachine, TryAgain; raise Unit; } else { send Employeemachine, FlightBooked; } 
         }
         on Unit goto Init;
         on Thanks goto Init;
     }
 }
 
-model machine CityCab {
+model CityCab {
     var Employeemachine: machine;
 
     start state _Init {

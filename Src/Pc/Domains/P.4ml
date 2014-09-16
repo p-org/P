@@ -245,11 +245,11 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Operator expected an integer value"']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(NEG, e'), TypeOf(c, e', BaseType(b)), b != INT. 
     
-    TypeOf(c, e, dom)             :- SubSE(c, e), e = UnApp(KEYS, e'), TypeOf(c, e', t), t = MapType(dom, cod). 
+    TypeOf(c, e, SeqType(dom))    :- SubSE(c, e), e = UnApp(KEYS, e'), TypeOf(c, e', t), t = MapType(dom, cod). 
 	[ rule_Classes = '"error, msg: Operator expected a map value"']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(KEYS, e'), TypeOf(c, e', t), toSymbol(t) != #MapType. 
 
-    TypeOf(c, e, cod)             :- SubSE(c, e), e = UnApp(VALUES, e'), TypeOf(c, e', t), t = MapType(dom, cod). 
+    TypeOf(c, e, SeqType(cod))    :- SubSE(c, e), e = UnApp(VALUES, e'), TypeOf(c, e', t), t = MapType(dom, cod). 
 	[ rule_Classes = '"error, msg: Operator expected a map value"']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(VALUES, e'), TypeOf(c, e', t), toSymbol(t) != #MapType. 
 

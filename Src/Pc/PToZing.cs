@@ -2753,7 +2753,7 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldBinStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt) 
         {
-            var op = ((Id)ft.Function).Name; 
+            var op = ((Id)GetArgByIndex(ft, 0)).Name; 
             var lhs = (FuncTerm)GetArgByIndex(ft, 1);
             var type = LookupType(ctxt, lhs);
             var typeName = ((Id)type.Function).Name;

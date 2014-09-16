@@ -1020,45 +1020,6 @@ namespace Microsoft.Pc
                 methods = AddArgs(ZingData.App_MethodDecls, method, methods);
             }
 
-            AST<Node> runBody = ZingData.Cnst_Nil;
-            foreach (var eventName in allEvents.Keys)
-            {
-                AST<Node> rhs;
-                if (eventName == NullEvent)
-                    rhs = MkZingIdentifier("null");
-                else
-                    rhs = MkZingCall(
-                                    MkZingDot("SM_EVENT", "Construct"),
-                                    MkZingDot("Event", string.Format("_{0}", eventName)),
-                                    Factory.Instance.MkCnst(allEvents[eventName].maxInstances),
-                                    allEvents[eventName].maxInstancesAssumed ? ZingData.Cnst_True : ZingData.Cnst_False);
-
-                var assignStmt = MkZingAssign(MkZingEvent(eventName), rhs);
-                runBody = MkZingSeq(runBody, assignStmt);
-            }
-            foreach (var machineName in allMachines.Keys)
-            {
-                var assignStmt = MkZingAssign(MkZingIdentifier(string.Format("{0}_instance", machineName)), Factory.Instance.MkCnst(0));
-                runBody = MkZingSeq(runBody, assignStmt);
-            }
-            foreach (var machineName in allMachines.Keys)
-            {
-                if (allMachines[machineName].IsMonitor)
-                {
-                    var assignStmt = MkZingAssign(MkZingIdentifier(GetMonitorMachineName(machineName)), MkZingIdentifier("null"));
-                    runBody = MkZingSeq(runBody, assignStmt);
-                }
-            }
-            runBody = MkZingSeq(runBody, typeContext.InitializeTypesAndFields());
-
-            var locals = new List<AST<Node>>();
-            runBody = MkZingSeq(runBody, MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", mainMachineName)), MkZingIdentifier("null"))));
-            runBody = AddArgs(ZingData.App_LabelStmt, Factory.Instance.MkCnst("dummy"), runBody);
-            runBody = ConstructList(ZingData.App_Blocks, runBody);
-            AST<Node> runMethod = MkZingMethodDecl("run", ZingData.Cnst_Nil, ZingData.Cnst_Void, ConstructList(ZingData.App_VarDecls, locals), runBody,
-                ZingData.Cnst_Static, ZingData.Cnst_Activate);
-            methods = AddArgs(ZingData.App_MethodDecls, runMethod, methods);
-
             // Generate method for computing complement of a set of events
             AST<Node> calculateComplementParameters = AddArgs(ZingData.App_VarDecls, MkZingVarDecl("eventSet", SmEventSet), ZingData.Cnst_Nil);
             AST<Node> calculateComplementLocalVars = AddArgs(ZingData.App_VarDecls, MkZingVarDecl("returnEventSet", SmEventSet), ZingData.Cnst_Nil);
@@ -1099,6 +1060,45 @@ namespace Microsoft.Pc
             {
                 fields = AddArgs(ZingData.App_VarDecls, field, fields);
             }
+
+            AST<Node> runBody = ZingData.Cnst_Nil;
+            foreach (var eventName in allEvents.Keys)
+            {
+                AST<Node> rhs;
+                if (eventName == NullEvent)
+                    rhs = MkZingIdentifier("null");
+                else
+                    rhs = MkZingCall(
+                                    MkZingDot("SM_EVENT", "Construct"),
+                                    MkZingDot("Event", string.Format("_{0}", eventName)),
+                                    Factory.Instance.MkCnst(allEvents[eventName].maxInstances),
+                                    allEvents[eventName].maxInstancesAssumed ? ZingData.Cnst_True : ZingData.Cnst_False);
+
+                var assignStmt = MkZingAssign(MkZingEvent(eventName), rhs);
+                runBody = MkZingSeq(runBody, assignStmt);
+            }
+            foreach (var machineName in allMachines.Keys)
+            {
+                var assignStmt = MkZingAssign(MkZingIdentifier(string.Format("{0}_instance", machineName)), Factory.Instance.MkCnst(0));
+                runBody = MkZingSeq(runBody, assignStmt);
+            }
+            foreach (var machineName in allMachines.Keys)
+            {
+                if (allMachines[machineName].IsMonitor)
+                {
+                    var assignStmt = MkZingAssign(MkZingIdentifier(GetMonitorMachineName(machineName)), MkZingIdentifier("null"));
+                    runBody = MkZingSeq(runBody, assignStmt);
+                }
+            }
+            runBody = MkZingSeq(runBody, typeContext.InitializeTypesAndFields());
+
+            var locals = new List<AST<Node>>();
+            runBody = MkZingSeq(runBody, MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", mainMachineName)), MkZingIdentifier("null"))));
+            runBody = AddArgs(ZingData.App_LabelStmt, Factory.Instance.MkCnst("dummy"), runBody);
+            runBody = ConstructList(ZingData.App_Blocks, runBody);
+            AST<Node> runMethod = MkZingMethodDecl("run", ZingData.Cnst_Nil, ZingData.Cnst_Void, ConstructList(ZingData.App_VarDecls, locals), runBody,
+                ZingData.Cnst_Static, ZingData.Cnst_Activate);
+            methods = AddArgs(ZingData.App_MethodDecls, runMethod, methods);
 
             return AddArgs(ZingData.App_ClassDecl, Factory.Instance.MkCnst("Main"), fields, methods);
         }
@@ -2408,8 +2408,18 @@ namespace Microsoft.Pc
                 else
                 {
                     //  op == PData.Cnst_Sizeof.Node.Name
+                    var type = LookupType(ctxt, GetArgByIndex(ft, 1));
+                    var typeOp = ((Id)type.Function).Name;
                     var tmpVar = ctxt.GetTmpVar(ZingData.Cnst_Int, "tmpVar");
-                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapSizeOf"), arg)));
+                    if (typeOp == PData.Con_SeqType.Node.Name)
+                    {
+                        ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtSeqSizeOf"), arg)));
+                    }
+                    else
+                    {
+                        // typeOp == PData.Con_MapType.Node.Name)
+                        ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapSizeOf"), arg)));
+                    }
                     var retVal = ctxt.GetTmpVar(PrtValue, "retVal");
                     ctxt.AddSideEffect(MkZingAssign(retVal, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
                     ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), retVal, tmpVar)));
@@ -2799,6 +2809,9 @@ namespace Microsoft.Pc
                     }
                     else
                     {
+                        lhs = (FuncTerm)GetArgByIndex(lhs, 1);
+                        type = LookupType(ctxt, lhs);
+                        typeName = ((Id)type.Function).Name;
                         if (typeName == PData.Con_SeqType.Node.Name)
                         {
                             return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "PrtSeqSet"), dest, index, src)));
@@ -3145,7 +3158,7 @@ namespace Microsoft.Pc
                 return retVal;
             }
 
-            public void AddSideEffect(AST<Node> n)
+            private void AddSideEffect(AST<Node> n)
             {
                 computation.Add(n);
             }
@@ -3220,7 +3233,7 @@ namespace Microsoft.Pc
                     List<AST<Node>> memberTypes = new List<AST<Node>>();
                     while (type != null)
                     {
-                        memberTypes.Add(ConstructType((FuncTerm)GetArgByIndex(type, 0)));
+                        memberTypes.Add(PTypeToZingExpr((FuncTerm)GetArgByIndex(type, 0)));
                         type = GetArgByIndex(type, 1) as FuncTerm;
                     }
                     var tupleType = GetType();
@@ -3239,7 +3252,7 @@ namespace Microsoft.Pc
                     {
                         var typeField = (FuncTerm)GetArgByIndex(type, 0);
                         memberNames.Add(GetField());
-                        memberTypes.Add(ConstructType((FuncTerm)GetArgByIndex(typeField, 1)));
+                        memberTypes.Add(PTypeToZingExpr((FuncTerm)GetArgByIndex(typeField, 1)));
                         type = GetArgByIndex(type, 1) as FuncTerm;
                     }
                     var tupleType = GetType();
@@ -3254,7 +3267,7 @@ namespace Microsoft.Pc
                 }
                 else if (typeKind == "SeqType")
                 {
-                    var innerType = ConstructType((FuncTerm)GetArgByIndex(type, 0));
+                    var innerType = PTypeToZingExpr((FuncTerm)GetArgByIndex(type, 0));
                     var seqType = GetType();
                     AddSideEffect(MkZingAssign(seqType, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkSeqType"), innerType)));
                     return seqType;
@@ -3262,8 +3275,8 @@ namespace Microsoft.Pc
                 else
                 {
                     // typeKind == "MapType"
-                    var domType = ConstructType((FuncTerm)GetArgByIndex(type, 0));
-                    var codType = ConstructType((FuncTerm)GetArgByIndex(type, 1));
+                    var domType = PTypeToZingExpr((FuncTerm)GetArgByIndex(type, 0));
+                    var codType = PTypeToZingExpr((FuncTerm)GetArgByIndex(type, 1));
                     var mapType = GetType();
                     AddSideEffect(MkZingAssign(mapType, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkMapType"), domType, codType)));
                     return mapType;

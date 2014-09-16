@@ -82,40 +82,36 @@ namespace Microsoft.Pc
         }
     }
 
-    internal class FunInfo : ActionInfo
+    internal class FunInfo
     {
         public bool isModel;
         public AST<FuncTerm> returnType;
+        public Node body;
         public Dictionary<string, VariableInfo> parameterNameToInfo;
         public List<string> parameterNames;
+        public int numFairChoices;
+        public bool isAnonymous;
+        public Dictionary<AST<Node>, FuncTerm> typeInfo; 
 
-        public FunInfo(bool isModel, AST<FuncTerm> returnType, Node body) : base(body, false)
+        public FunInfo(bool isModel, AST<FuncTerm> returnType, Node body)
         {
             this.isModel = isModel;
             this.returnType = returnType;
+            this.body = body;
             this.parameterNameToInfo = new Dictionary<string, VariableInfo>();
             this.parameterNames = new List<string>();
+            this.numFairChoices = 0;
+            this.isAnonymous = false;
+            this.typeInfo = new Dictionary<AST<Node>, FuncTerm>();
         }
 
-        public FunInfo(Node body) : base(body, true)
+        public FunInfo(Node body, bool isAnonymous)
         {
             this.isModel = false;
             this.returnType = PToZing.PTypeNull;
+            this.body = body;
             this.parameterNameToInfo = new Dictionary<string, VariableInfo>();
             this.parameterNames = new List<string>();
-        }
-    }
-
-    internal class ActionInfo
-    {
-        public Node body;
-        public int numFairChoices;
-        public bool isAnonymous;
-        public Dictionary<AST<Node>, FuncTerm> typeInfo;
-
-        public ActionInfo(Node body, bool isAnonymous)
-        {
-            this.body = body;
             this.numFairChoices = 0;
             this.isAnonymous = isAnonymous;
             this.typeInfo = new Dictionary<AST<Node>, FuncTerm>();
@@ -136,7 +132,6 @@ namespace Microsoft.Pc
         public Dictionary<string, VariableInfo> localVariableToVarInfo;
         public Dictionary<string, List<string>> eventSetNameToEvents;
         public Dictionary<string, FunInfo> funNameToFunInfo;
-        public Dictionary<string, ActionInfo> actionNameToActionInfo;
         public bool isInfinitelyOftenMonitor;
 
         public MachineInfo()
@@ -149,7 +144,6 @@ namespace Microsoft.Pc
             localVariableToVarInfo = new Dictionary<string, VariableInfo>();
             eventSetNameToEvents = new Dictionary<string, List<string>>();
             funNameToFunInfo = new Dictionary<string, FunInfo>();
-            actionNameToActionInfo = new Dictionary<string, ActionInfo>();
             isInfinitelyOftenMonitor = false;
         }
     }
@@ -208,7 +202,6 @@ namespace Microsoft.Pc
         public Dictionary<string, MachineInfo> allMachines;
         public string mainMachineName;
         private Dictionary<AST<Node>, string> anonFunToName;
-        private Dictionary<AST<Node>, string> anonActionToName;
 
         public LinkedList<AST<FuncTerm>> GetBin(FuncTerm ft)
         {
@@ -370,7 +363,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var iter = it.Current as FuncTerm;
                     it.MoveNext();
-                    var returnTypeName = ((Id)it.Current).Name == "NIL" ? PTypeNull : (AST<FuncTerm>)Factory.Instance.ToAST(it.Current);
+                    var returnTypeName = it.Current is Id ? PTypeNull : (AST<FuncTerm>)Factory.Instance.ToAST(it.Current);
                     it.MoveNext();
                     var funInfo = new FunInfo(isModel, returnTypeName, it.Current);
                     while (iter != null)
@@ -391,23 +384,6 @@ namespace Microsoft.Pc
                 }
             }
 
-            terms = GetBin("AnonFunDecl");
-            this.anonFunToName = new Dictionary<AST<Node>, string>();
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var machineDecl = (FuncTerm)it.Current;
-                    var machineName = GetName(machineDecl, 0);
-                    var machineInfo = allMachines[machineName];
-                    it.MoveNext();
-                    var funName = "AnonFun" + anonFunToName.Count;
-                    machineInfo.funNameToFunInfo[funName] = new FunInfo(it.Current);
-                    anonFunToName[term] = funName;
-                }
-            }
-
             terms = GetBin("ActionDecl");
             foreach (var term in terms)
             {
@@ -419,12 +395,29 @@ namespace Microsoft.Pc
                     var actionOwnerMachineDecl = (FuncTerm)it.Current;
                     var actionOwnerMachineName = GetName(actionOwnerMachineDecl, 0);
                     it.MoveNext();
-                    allMachines[actionOwnerMachineName].actionNameToActionInfo[actionName] = new ActionInfo(it.Current, false);
+                    allMachines[actionOwnerMachineName].funNameToFunInfo[actionName] = new FunInfo(it.Current, false);
+                }
+            }
+
+            this.anonFunToName = new Dictionary<AST<Node>, string>();
+
+            terms = GetBin("AnonFunDecl");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var machineDecl = (FuncTerm)it.Current;
+                    var machineName = GetName(machineDecl, 0);
+                    var machineInfo = allMachines[machineName];
+                    it.MoveNext();
+                    var funName = "AnonFun" + anonFunToName.Count;
+                    machineInfo.funNameToFunInfo[funName] = new FunInfo(it.Current, true);
+                    anonFunToName[term] = funName;
                 }
             }
 
             terms = GetBin("AnonActionDecl");
-            this.anonActionToName = new Dictionary<AST<Node>, string>();
             foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
@@ -433,9 +426,9 @@ namespace Microsoft.Pc
                     var machineDecl = (FuncTerm)it.Current;
                     var machineName = GetName(machineDecl, 0);
                     it.MoveNext();
-                    var actionName = "AnonAction" + anonActionToName.Count;
-                    allMachines[machineName].actionNameToActionInfo[actionName] = new ActionInfo(it.Current, true);
-                    anonActionToName[term] = actionName;
+                    var actionName = "AnonFun" + anonFunToName.Count;
+                    allMachines[machineName].funNameToFunInfo[actionName] = new FunInfo(it.Current, true);
+                    anonFunToName[term] = actionName;
                 }
             }
 
@@ -453,7 +446,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var entryActionName = it.Current.NodeKind == NodeKind.Cnst 
                                             ? ((Cnst)it.Current).GetStringValue() 
-                                            : anonActionToName[Factory.Instance.ToAST(it.Current)];
+                                            : anonFunToName[Factory.Instance.ToAST(it.Current)];
                     it.MoveNext();
                     var exitFunName = it.Current.NodeKind == NodeKind.Cnst
                                             ? ((Cnst)it.Current).GetStringValue()
@@ -554,7 +547,7 @@ namespace Microsoft.Pc
                     }
                     else
                     {
-                        stateTable.actions[eventName] = anonActionToName[Factory.Instance.ToAST(action)];
+                        stateTable.actions[eventName] = anonFunToName[Factory.Instance.ToAST(action)];
                     }
                 }
             }
@@ -589,14 +582,14 @@ namespace Microsoft.Pc
                     {
                         string ownerName = GetOwnerName(typingContext, 1, 0);
                         string actionName = GetName(typingContext, 0);
-                        allMachines[ownerName].actionNameToActionInfo[actionName].typeInfo[expr] = type;
+                        allMachines[ownerName].funNameToFunInfo[actionName].typeInfo[expr] = type;
                     }
                     else
                     {
                         // typingContextKind == "AnonActionDecl"
                         string ownerName = GetOwnerName(typingContext, 0, 0);
-                        string actionName = anonActionToName[Factory.Instance.ToAST(typingContext)];
-                        allMachines[ownerName].actionNameToActionInfo[actionName].typeInfo[expr] = type;
+                        string actionName = anonFunToName[Factory.Instance.ToAST(typingContext)];
+                        allMachines[ownerName].funNameToFunInfo[actionName].typeInfo[expr] = type;
                     }
                 }
             }
@@ -864,14 +857,9 @@ namespace Microsoft.Pc
             return AddArgs(ZingData.App_Apply, op, ConstructList(ZingData.App_Args, args));
         }
 
-        private static AST<Node> MkZingAction(string machineName, string actionName)
+        private static AST<Node> MkZingActionOrFun(string machineName, string entityName)
         {
-            return MkZingDot("ActionOrFun", string.Format("_{0}_Action_{1}", machineName, actionName));
-        }
-
-        private static AST<Node> MkZingFun(string machineName, string funName)
-        {
-            return MkZingDot("ActionOrFun", string.Format("_{0}_Fun_{1}", machineName, funName));
+            return MkZingDot("ActionOrFun", string.Format("_{0}_{1}", machineName, entityName));
         }
 
         private static AST<Node> MkZingVarDecls(params AST<Node>[] vars)
@@ -972,13 +960,9 @@ namespace Microsoft.Pc
             actionOrFunConsts.Add(Factory.Instance.MkCnst("_default"));
             foreach (string machineName in allMachines.Keys)
             {
-                foreach (string actionName in allMachines[machineName].actionNameToActionInfo.Keys)
-                {
-                    actionOrFunConsts.Add(Factory.Instance.MkCnst(string.Format("_{0}_Action_{1}", machineName, actionName)));
-                }
                 foreach (string funName in allMachines[machineName].funNameToFunInfo.Keys)
                 {
-                    actionOrFunConsts.Add(Factory.Instance.MkCnst(string.Format("_{0}_Fun_{1}", machineName, funName)));
+                    actionOrFunConsts.Add(Factory.Instance.MkCnst(string.Format("_{0}_{1}", machineName, funName)));
                 }
             }
             elements.Add(AddArgs(ZingData.App_EnumDecl, Factory.Instance.MkCnst("ActionOrFun"), ConstructList(ZingData.App_EnumElems, actionOrFunConsts)));
@@ -1142,12 +1126,6 @@ namespace Microsoft.Pc
                 var funInfo = allMachines[machineName].funNameToFunInfo[funName];
                 methods = AddArgs(ZingData.App_MethodDecls, MkZingFunMethod(machineName, funName, funInfo), methods);
             }
-            foreach (var actionName in allMachines[machineName].actionNameToActionInfo.Keys)
-            {
-                var actionInfo = allMachines[machineName].actionNameToActionInfo[actionName];
-                methods = AddArgs(ZingData.App_MethodDecls, MkZingActionMethod(machineName, actionName, actionInfo), methods);
-            }
-
             return AddArgs(ZingData.App_ClassDecl, Factory.Instance.MkCnst(machineName), fields, methods);
         }
 
@@ -1177,22 +1155,9 @@ namespace Microsoft.Pc
                 var funInfo = allMachines[machineName].funNameToFunInfo[funName];
                 methods = AddArgs(ZingData.App_MethodDecls, MkZingFunMethod(machineName, funName, funInfo), methods);
             }
-            foreach (var actionName in allMachines[machineName].actionNameToActionInfo.Keys)
-            {
-                var actionInfo = allMachines[machineName].actionNameToActionInfo[actionName];
-                methods = AddArgs(ZingData.App_MethodDecls, MkZingActionMethod(machineName, actionName, actionInfo), methods);
-            }
 
             if (compiler.liveness == LivenessOption.Standard)
             {
-                foreach (var actionName in allMachines[machineName].actionNameToActionInfo.Keys)
-                {
-                    var actionInfo = allMachines[machineName].actionNameToActionInfo[actionName];
-                    for (int i = 0; i < actionInfo.numFairChoices; i++)
-                    {
-                        fields = AddArgs(ZingData.App_VarDecls, MkZingVarDecl(GetFairChoice(actionName, i), Factory.Instance.MkCnst("FairChoice")), fields);
-                    }
-                }
                 foreach (var funName in allMachines[machineName].funNameToFunInfo.Keys)
                 {
                     var funInfo = allMachines[machineName].funNameToFunInfo[funName];
@@ -1289,7 +1254,7 @@ namespace Microsoft.Pc
             foreach (var eventName in actions.Keys)
             {
                 stmts.Add(MkZingAssign(MkZingApply(ZingData.Cnst_Index, MkZingDot("localActions", "es"), Factory.Instance.MkCnst(count)), MkZingEvent(eventName)));
-                stmts.Add(MkZingAssign(MkZingApply(ZingData.Cnst_Index, MkZingDot("localActions", "as"), Factory.Instance.MkCnst(count)), MkZingAction(ownerName, actions[eventName])));
+                stmts.Add(MkZingAssign(MkZingApply(ZingData.Cnst_Index, MkZingDot("localActions", "as"), Factory.Instance.MkCnst(count)), MkZingActionOrFun(ownerName, actions[eventName])));
                 count = count + 1;
             }
 
@@ -1318,7 +1283,7 @@ namespace Microsoft.Pc
             foreach (var eventName in actions.Keys)
             {
                 stmts.Add(MkZingAssign(MkZingApply(ZingData.Cnst_Index, MkZingDot("localActions", "es"), Factory.Instance.MkCnst(count)), MkZingEvent(eventName)));
-                stmts.Add(MkZingAssign(MkZingApply(ZingData.Cnst_Index, MkZingDot("localActions", "as"), Factory.Instance.MkCnst(count)), MkZingAction(ownerName, actions[eventName])));
+                stmts.Add(MkZingAssign(MkZingApply(ZingData.Cnst_Index, MkZingDot("localActions", "as"), Factory.Instance.MkCnst(count)), MkZingActionOrFun(ownerName, actions[eventName])));
                 count = count + 1;
             }
 
@@ -1366,34 +1331,18 @@ namespace Microsoft.Pc
         private AST<Node> GenerateReentrancyHelperMethodDeclForMonitor(string machineName)
         {
             AST<Node> parameters = ConstructList(ZingData.App_VarDecls,
+                                                 MkZingVarDecl("cont", Factory.Instance.MkCnst("Continuation")),
                                                  MkZingVarDecl("actionFun", Factory.Instance.MkCnst("ActionOrFun")),
                                                  MkZingVarDecl("currentActionSet", SmEventSet)
                                                  );
-            List<AST<Node>> locals = new List<AST<Node>>();
-            locals.Add(MkZingVarDecl("cont", Factory.Instance.MkCnst("Continuation")));
+            var locals = new List<AST<Node>>();
 
             List<AST<Node>> initStmts = new List<AST<Node>>();
-            foreach (var actionName in allMachines[machineName].actionNameToActionInfo.Keys)
-            {
-                var actionInfo = allMachines[machineName].actionNameToActionInfo[actionName];
-                var actionExpr = MkZingAction(machineName, actionName);
-                var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("actionFun"), actionExpr);
-                var gotoStmt = Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + actionName));
-                if (actionInfo.isAnonymous)
-                {
-                    initStmts.Add(MkZingIfThen(condExpr, gotoStmt));
-                }
-                else
-                {
-                    string traceString = string.Format("\"<ActionLog> Machine {0}-{{0}} executing Action {1}\\n\"", machineName, actionName);
-                    var traceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance")));
-                    initStmts.Add(MkZingIfThen(condExpr, MkZingSeq(traceStmt, gotoStmt)));
-                }
-            }
             foreach (var funName in allMachines[machineName].funNameToFunInfo.Keys)
             {
+                if (allMachines[machineName].funNameToFunInfo[funName].parameterNames.Count > 0) continue;
                 var funInfo = allMachines[machineName].funNameToFunInfo[funName];
-                var funExpr = MkZingFun(machineName, funName);
+                var funExpr = MkZingActionOrFun(machineName, funName);
                 var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("actionFun"), funExpr);
                 var gotoStmt = Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + funName));
                 if (funInfo.isAnonymous)
@@ -1409,31 +1358,28 @@ namespace Microsoft.Pc
             }
             initStmts.Add(Factory.Instance.AddArg(ZingData.App_Assert, ZingData.Cnst_False));
             AST<Node> initStmt = AddArgs(ZingData.App_LabelStmt, Factory.Instance.MkCnst("init"), MkZingSeq(initStmts));
-
+            
             // Action blocks
             List<AST<Node>> blocks = new List<AST<Node>>();
             blocks.Add(initStmt);
             var cont = MkZingIdentifier("cont");
-            foreach (var actionFunName in allMachines[machineName].actionNameToActionInfo.Keys.Union(allMachines[machineName].funNameToFunInfo.Keys))
+            foreach (var funName in allMachines[machineName].funNameToFunInfo.Keys)
             {
-                AST<Cnst> executeLabel = Factory.Instance.MkCnst("execute_" + actionFunName);
-                var executeStmt = MkZingSeq(
-                                    MkZingAssign(cont, MkZingCall(MkZingDot(Factory.Instance.MkCnst("Continuation"), "Construct_Default"))),
-                                    MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), Factory.Instance.MkCnst(0))),
-                                    MkZingAssign(cont, MkZingCall(MkZingIdentifier(actionFunName), cont)),
-                                    MkZingReturn(ZingData.Cnst_Nil)
-                                    );
+                if (allMachines[machineName].funNameToFunInfo[funName].parameterNames.Count > 0) continue;
+                AST<Cnst> executeLabel = Factory.Instance.MkCnst("execute_" + funName);
+                var executeStmt = MkZingSeq(MkZingCallStmt(MkZingCall(MkZingIdentifier(funName), cont)), MkZingReturn(cont));
                 executeStmt = AddArgs(ZingData.App_LabelStmt, executeLabel, executeStmt);
                 blocks.Add(executeStmt);
             }
 
             AST<Node> body = ConstructList(ZingData.App_Blocks, blocks);
-            return MkZingMethodDecl("ReentrancyHelper", parameters, ZingData.Cnst_Void, MkZingVarDecls(locals), body);
+            return MkZingMethodDecl("ReentrancyHelper", parameters, Factory.Instance.MkCnst("Continuation"), MkZingVarDecls(locals), body);
         }
 
         private AST<Node> GenerateReentrancyHelperMethodDecl(string machineName)
         {
             AST<Node> parameters = ConstructList(ZingData.App_VarDecls,
+                                                 MkZingVarDecl("cont", Factory.Instance.MkCnst("Continuation")),
                                                  MkZingVarDecl("actionFun", Factory.Instance.MkCnst("ActionOrFun")),
                                                  MkZingVarDecl("currentActionSet", SmEventSet),
                                                  MkZingVarDecl("currentStable", ZingData.Cnst_Bool)
@@ -1446,34 +1392,17 @@ namespace Microsoft.Pc
             locals.Add(MkZingVarDecl("savedActionSet", SmEventSet));
             locals.Add(MkZingVarDecl("savedCurrentEvent", SmEvent));
             locals.Add(MkZingVarDecl("savedCurrentArg", PrtValue));
-            locals.Add(MkZingVarDecl("cont", Factory.Instance.MkCnst("Continuation")));
             if (compiler.liveness == LivenessOption.Standard)
             {
                 locals.Add(MkZingVarDecl("gateProgress", ZingData.Cnst_Bool));
             }
 
             List<AST<Node>> initStmts = new List<AST<Node>>();
-            foreach (var actionName in allMachines[machineName].actionNameToActionInfo.Keys)
-            {
-                var actionInfo = allMachines[machineName].actionNameToActionInfo[actionName];
-                var actionExpr = MkZingAction(machineName, actionName);
-                var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("actionFun"), actionExpr);
-                var gotoStmt = Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + actionName));
-                if (actionInfo.isAnonymous)
-                {
-                    initStmts.Add(MkZingIfThen(condExpr, gotoStmt));
-                }
-                else
-                {
-                    string traceString = string.Format("\"<ActionLog> Machine {0}-{{0}} executing Action {1}\\n\"", machineName, actionName);
-                    var traceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance")));
-                    initStmts.Add(MkZingIfThen(condExpr, MkZingSeq(traceStmt, gotoStmt)));
-                }
-            }
             foreach (var funName in allMachines[machineName].funNameToFunInfo.Keys)
             {
+                if (allMachines[machineName].funNameToFunInfo[funName].parameterNames.Count > 0) continue;
                 var funInfo = allMachines[machineName].funNameToFunInfo[funName];
-                var funExpr = MkZingFun(machineName, funName);
+                var funExpr = MkZingActionOrFun(machineName, funName);
                 var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("actionFun"), funExpr);
                 var gotoStmt = Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + funName));
                 if (funInfo.isAnonymous)
@@ -1493,15 +1422,16 @@ namespace Microsoft.Pc
             // Action blocks
             List<AST<Node>> blocks = new List<AST<Node>>();
             blocks.Add(initStmt);
-            foreach (var actionFunName in allMachines[machineName].actionNameToActionInfo.Keys.Union(allMachines[machineName].funNameToFunInfo.Keys))
+            foreach (var funName in allMachines[machineName].funNameToFunInfo.Keys)
             {
-                AST<Cnst> executeLabel = Factory.Instance.MkCnst("execute_" + actionFunName);
-                var executeStmt = MkZingInvokeWrapperFun(machineName, actionFunName);
+                if (allMachines[machineName].funNameToFunInfo[funName].parameterNames.Count > 0) continue;
+                AST<Cnst> executeLabel = Factory.Instance.MkCnst("execute_" + funName);
+                var executeStmt = MkZingInvokeWrapperFun(machineName, funName);
                 executeStmt = AddArgs(ZingData.App_LabelStmt, executeLabel, executeStmt);
                 blocks.Add(executeStmt);
             }
             AST<Node> body = ConstructList(ZingData.App_Blocks, blocks);
-            return MkZingMethodDecl("ReentrancyHelper", parameters, ZingData.Cnst_Bool, MkZingVarDecls(locals), body);
+            return MkZingMethodDecl("ReentrancyHelper", parameters, ZingData.Cnst_Void, MkZingVarDecls(locals), body);
         }
 
         private AST<Node> MkZingInvokeWrapperFun(string machineName, string entityName)
@@ -1527,14 +1457,11 @@ namespace Microsoft.Pc
             var gotoStmt = AddArgs(ZingData.App_Goto, Factory.Instance.MkCnst("transition_" + entityName));
             string errorTraceString = string.Format("\"<StateLog> Call statement terminated due to unhandled event by machine {0}-{{0}}\\n\"", machineName);
             var errorTraceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(errorTraceString), MkZingDot("myHandle", "instance")));
-
             var body = new List<AST<Node>>();
-            body.Add(MkZingAssign(cont, MkZingCall(MkZingDot(Factory.Instance.MkCnst("Continuation"), "Construct_Default"))));
-            body.Add(MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), Factory.Instance.MkCnst(0))));
-            body.Add(AddArgs(ZingData.App_LabelStmt, Factory.Instance.MkCnst("reentry_" + name), MkZingAssign(cont, MkZingCall(MkZingIdentifier(name), cont))));
-            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Return")), MkZingReturn(ZingData.Cnst_False)));
-            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Pop")), MkZingReturn(ZingData.Cnst_True)));
-            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Raise")), MkZingReturn(ZingData.Cnst_False)));
+            body.Add(AddArgs(ZingData.App_LabelStmt, Factory.Instance.MkCnst("reentry_" + name), MkZingCallStmt(MkZingCall(MkZingIdentifier(name), cont))));
+            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Return")), MkZingSeq(MkZingReturn(ZingData.Cnst_Nil))));
+            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Pop")), MkZingReturn(ZingData.Cnst_Nil)));
+            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Raise")), MkZingReturn(ZingData.Cnst_Nil)));
             body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Call")),
                 MkZingSeq(
                     MkZingAssign(savedDeferredSet, stackDeferredSet),
@@ -1596,11 +1523,8 @@ namespace Microsoft.Pc
 
         private AST<Node> GenerateRunHelperMethodDecl(string machineName)
         {
-            AST<Node> parameters = ConstructList(ZingData.App_VarDecls,
-                                                 MkZingVarDecl("startState", Factory.Instance.MkCnst("State")));
-
+            AST<Node> parameters = ConstructList(ZingData.App_VarDecls, MkZingVarDecl("startState", Factory.Instance.MkCnst("State")));
             List<AST<Node>> locals = new List<AST<Node>>();
-
             locals.Add(MkZingVarDecl("currentDeferredSet", SmEventSet));
             locals.Add(MkZingVarDecl("currentActionSet", SmEventSet));
             locals.Add(MkZingVarDecl("savedDeferredSet", SmEventSet));
@@ -1637,19 +1561,28 @@ namespace Microsoft.Pc
             var currentStable = MkZingIdentifier("currentStable");
             var stackStable = MkZingIdentifier("stackStable");
             var savedStable = MkZingIdentifier("savedStable");
+            var cont = MkZingIdentifier("cont");
 
+            var clearStmt = MkZingIfThen(
+                                MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Return")), 
+                                         MkZingSeq(MkZingAssign(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
+                                                   MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node)))));
+            clearStmt = MkZingIfThenElse(
+                                MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Pop")),
+                                MkZingReturn(ZingData.Cnst_Nil),
+                                clearStmt);
             // State blocks
             List<AST<Node>> blocks = new List<AST<Node>>();
             blocks.Add(initStmt);
             var smEventSetType = Factory.Instance.MkCnst("SM_EVENT_SET");
             foreach (var stateName in allMachines[machineName].stateNameToStateInfo.Keys)
             {
-                var entryAction = MkZingAction(machineName, allMachines[machineName].stateNameToStateInfo[stateName].entryActionName);
+                var entryAction = MkZingActionOrFun(machineName, allMachines[machineName].stateNameToStateInfo[stateName].entryActionName);
                 StateInfo stateInfo = allMachines[machineName].stateNameToStateInfo[stateName];
                 AST<Cnst> executeLabel = Factory.Instance.MkCnst("execute_" + stateName);
                 AST<Cnst> waitLabel = Factory.Instance.MkCnst("wait_" + stateName);
                 AST<Cnst> transitionLabel = Factory.Instance.MkCnst("transition_" + stateName);
-                string enterTraceString = string.Format("\"<StateLog> Machine {0}-{{0}} entered State {1}\\n\"", machineName, stateInfo.printedName);
+                string enterTraceString = string.Format("\"<StateLog> Machine {0}-{{0}} entered State {1}\\n\"", machineName, stateInfo.printedName);                
                 var executeStmt = MkZingSeq(
                                     MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(enterTraceString), MkZingDot("myHandle", "instance"))),
                                     MkZingCallStmt(MkZingCall(MkZingIdentifier("invokeplugin"), Factory.Instance.MkCnst("\"StateCoveragePlugin.dll\""), Factory.Instance.MkCnst(string.Format("\"{0}\"", machineName)), Factory.Instance.MkCnst(string.Format("\"{0}\"", stateName)))),
@@ -1657,9 +1590,11 @@ namespace Microsoft.Pc
                                     MkZingAssign(currentDeferredSet, AddArgs(ZingData.App_New, smEventSetType, ZingData.Cnst_Nil)),
                                     MkZingAssign(currentActionSet, AddArgs(ZingData.App_New, smEventSetType, ZingData.Cnst_Nil)),
                                     MkZingCallStmt(MkZingCall(MkZingIdentifier(string.Format("{0}_CalculateDeferredAndActionSet", stateName)), currentDeferredSet, currentActionSet)),
-                                    MkZingAssign(MkZingIdentifier("didActionPop"), MkZingCall(MkZingIdentifier("ReentrancyHelper"), entryAction, currentActionSet, currentStable)),
-                                      MkZingIfThenElse(MkZingIdentifier("didActionPop"), Factory.Instance.AddArg(ZingData.App_Return, ZingData.Cnst_Nil), ZingData.Cnst_Nil),
-                                      MkZingIfThenElse(
+                                    MkZingAssign(cont, MkZingCall(MkZingDot(Factory.Instance.MkCnst("Continuation"), "Construct_Default"))),
+                                    MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), Factory.Instance.MkCnst(0))),
+                                    MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), cont, entryAction, currentActionSet, currentStable)),
+                                    clearStmt,
+                                    MkZingIfThenElse(
                                               MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
                                               Factory.Instance.AddArg(ZingData.App_Goto, waitLabel),
                                               Factory.Instance.AddArg(ZingData.App_Goto, transitionLabel))
@@ -1691,8 +1626,10 @@ namespace Microsoft.Pc
                     MkZingIfThenElse(
                             MkZingApply(ZingData.Cnst_In, MkZingDot("myHandle", "currentEvent"), currentActionSet),
                             MkZingSeq(MkZingAssign(MkZingIdentifier("actionFun"), MkZingCall(MkZingDot("localActions", "Find"), MkZingDot("myHandle", "currentEvent"))),
-                                      MkZingAssign(MkZingIdentifier("didActionPop"), MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingIdentifier("actionFun"), currentActionSet, currentStable)),
-                                      MkZingIfThenElse(MkZingIdentifier("didActionPop"), Factory.Instance.AddArg(ZingData.App_Return, ZingData.Cnst_Nil), ZingData.Cnst_Nil),
+                                      MkZingAssign(cont, MkZingCall(MkZingDot(Factory.Instance.MkCnst("Continuation"), "Construct_Default"))),
+                                      MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), Factory.Instance.MkCnst(0))),
+                                      MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), cont, MkZingIdentifier("actionFun"), currentActionSet, currentStable)),
+                                      clearStmt,
                                       MkZingIfThenElse(
                                               MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
                                               Factory.Instance.AddArg(ZingData.App_Goto, waitLabel),
@@ -1727,13 +1664,15 @@ namespace Microsoft.Pc
                     ordinaryTransitionStmt = MkZingIfThenElse(condExpr, jumpStmt, ordinaryTransitionStmt);
                 }
 
-                var exitFun = MkZingFun(machineName, allMachines[machineName].stateNameToStateInfo[stateName].exitFunName);
+                var exitFun = MkZingActionOrFun(machineName, allMachines[machineName].stateNameToStateInfo[stateName].exitFunName);
                 string exitTraceString = string.Format("\"<StateLog> Machine {0}-{{0}} exiting State {1}\\n\"", machineName, stateInfo.printedName);
                 blocks.Add(AddArgs(ZingData.App_LabelStmt, transitionLabel, 
                                     MkZingSeq(actionStmt, 
                                               callTransitionStmt,
                                               MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(exitTraceString), MkZingDot("myHandle", "instance"))),
-                                              MkZingAssign(MkZingIdentifier("didActionPop"), MkZingCall(MkZingIdentifier("ReentrancyHelper"), exitFun, currentActionSet, currentStable)),
+                                              MkZingAssign(cont, MkZingCall(MkZingDot(Factory.Instance.MkCnst("Continuation"), "Construct_Default"))),
+                                              MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), Factory.Instance.MkCnst(0))),
+                                              MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), cont, exitFun, currentActionSet, currentStable)),
                                               ordinaryTransitionStmt)));
             }
             AST<Node> body = ConstructList(ZingData.App_Blocks, blocks);
@@ -1808,7 +1747,11 @@ namespace Microsoft.Pc
                 executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("invokeplugin"), Factory.Instance.MkCnst("\"StateCoveragePlugin.dll\""), Factory.Instance.MkCnst(string.Format("\"{0}\"", machineName)), Factory.Instance.MkCnst(string.Format("\"{0}\"", stateName)))));
                 executeStmts.Add(MkZingAssign(cont, MkZingCall(MkZingDot(Factory.Instance.MkCnst("Continuation"), "Construct_Default"))));
                 executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), Factory.Instance.MkCnst(0))));
-                executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingAction(machineName, stateInfo.entryActionName), currentActionSet)));
+                executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), cont, MkZingActionOrFun(machineName, stateInfo.entryActionName), currentActionSet)));
+                executeStmts.Add(MkZingIfThen(
+                                 MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Return")),
+                                          MkZingSeq(MkZingAssign(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
+                                                    MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))))));
                 executeStmts.Add(MkZingIfThenElse(
                           MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
                           Factory.Instance.AddArg(ZingData.App_Goto, waitLabel),
@@ -1822,7 +1765,13 @@ namespace Microsoft.Pc
                     MkZingIfThenElse(
                             MkZingApply(ZingData.Cnst_In, MkZingDot("myHandle", "currentEvent"), currentActionSet),
                             MkZingSeq(MkZingAssign(MkZingIdentifier("actionFun"), MkZingCall(MkZingDot("localActions", "Find"), MkZingDot("myHandle", "currentEvent"))),
-                                      MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingIdentifier("actionFun"), currentActionSet)),
+                                      MkZingAssign(cont, MkZingCall(MkZingDot(Factory.Instance.MkCnst("Continuation"), "Construct_Default"))),
+                                      MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), Factory.Instance.MkCnst(0))),
+                                      MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), cont, MkZingIdentifier("actionFun"), currentActionSet)),
+                                      MkZingIfThen(
+                                      MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Return")),
+                                               MkZingSeq(MkZingAssign(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
+                                                         MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))))),
                                       MkZingIfThenElse(
                                               MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
                                               Factory.Instance.AddArg(ZingData.App_Goto, waitLabel),
@@ -1844,7 +1793,7 @@ namespace Microsoft.Pc
                 AST<Node> exitFunction =
                     (AST<Node>)MkZingSeq(MkZingAssign(cont, MkZingCall(MkZingDot(Factory.Instance.MkCnst("Continuation"), "Construct_Default"))),
                                           MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), Factory.Instance.MkCnst(0))),
-                                          MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingFun(machineName, stateInfo.exitFunName), currentActionSet)));
+                                          MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), cont, MkZingActionOrFun(machineName, stateInfo.exitFunName), currentActionSet)));
                 string exitTraceString = string.Format("\"<StateLog> Machine {0}-{{0}} exiting State {1}\\n\"", machineName, stateInfo.printedName);
                 blocks.Add(AddArgs(ZingData.App_LabelStmt, transitionLabel,
                                             MkZingSeq(MkZingAssign(currentActionSet, AddArgs(ZingData.App_New, smEventSetType, ZingData.Cnst_Nil)),
@@ -1862,12 +1811,12 @@ namespace Microsoft.Pc
             private PToZing pToZing;
             public string machineName;
             public string entityName;
-            public ActionInfo entityInfo;
+            public FunInfo entityInfo;
             public Stack<List<AST<Node>>> sideEffectsStack;
             public List<Tuple<AST<Node>, string>> locals;
             private Dictionary<string, int> labels;
 
-            public ZingFoldContext(PToZing comp, string machineName, string entityName, ActionInfo entityInfo)
+            public ZingFoldContext(PToZing comp, string machineName, string entityName, FunInfo entityInfo)
             {
                 this.pToZing = comp;
                 this.machineName = machineName;
@@ -2284,7 +2233,7 @@ namespace Microsoft.Pc
                     ctxt.AddSideEffect(MkZingAssign(newMachine, MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar)));
                     string afterLabel = ctxt.GetFreshLabel();
                     ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewMachine"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), newMachine)));
-                    ctxt.AddSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
+                    ctxt.AddSideEffect(MkZingReturn(ZingData.Cnst_Nil));
                     ctxt.AddSideEffect(MkZingLabeledStmt(afterLabel, MkZingAssign(newMachine, MkZingDot("entryCtxt", "id"))));
                     ctxt.AddSideEffect(MkZingAssign(MkZingDot("entryCtxt", "id"), MkZingIdentifier("null")));
                     var retVal = ctxt.GetTmpVar(PrtValue, "tmp");
@@ -2309,7 +2258,7 @@ namespace Microsoft.Pc
                 var lhsInfo = calleeInfo.parameterNameToInfo[calleeInfo.parameterNames[count]];
                 var rhsInfo = child;
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "argCloneVar");
-                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(child.node, "Clone"))));
+                ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, child.node));
                 count++;
                 args.Add(tmpVar);
             }
@@ -2327,18 +2276,18 @@ namespace Microsoft.Pc
             else
             {
                 var retVar = ctxt.GetTmpVar(PrtValue, "ret");
-                processOutput = MkZingAssignWithClone(retVar, MkZingDot("myHandle", "currentArg"));
+                processOutput = MkZingAssignWithClone(retVar, MkZingDot("entryCtxt", "retVal"));
                 outExp = retVar;
             }
 
             AST<Node> callStmt = MkZingSeq(
                 MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(0))),
-                MkZingLabeledStmt(beforeLabel, ctxt.EmitZingSideEffects(MkZingAssign(MkZingIdentifier("entryCtxt"), callExpr))),
+                MkZingLabeledStmt(beforeLabel, ctxt.EmitZingSideEffects(MkZingCallStmt(callExpr))),
                 MkZingIfThenElse(
                                  MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "Return")),
                                  processOutput,
                                  MkZingSeq(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(ctxt.LabelToId(beforeLabel)))),
-                                           MkZingReturn(MkZingIdentifier("entryCtxt")))));
+                                           MkZingReturn(ZingData.Cnst_Nil))));
             ctxt.AddSideEffect(callStmt);
             return new ZingTranslationInfo(outExp);
         }
@@ -2394,7 +2343,7 @@ namespace Microsoft.Pc
                 var afterLabel = ctxt.GetFreshLabel();
                 var bvar = ctxt.GetTmpVar(ZingData.Cnst_Bool, "nondet");
                 ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Nondet"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)))));
-                ctxt.AddSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
+                ctxt.AddSideEffect(MkZingReturn(ZingData.Cnst_Nil));
                 ctxt.AddSideEffect(MkZingLabeledStmt(afterLabel, MkZingAssign(bvar, MkZingDot("entryCtxt", "nondet"))));
                 ctxt.AddSideEffect(MkZingAssign(MkZingDot("entryCtxt", "nondet"), ZingData.Cnst_False));
                 if (compiler.liveness == LivenessOption.Standard && op == PData.Cnst_FairNondet.Node.Name)
@@ -2459,9 +2408,12 @@ namespace Microsoft.Pc
                 else
                 {
                     //  op == PData.Cnst_Sizeof.Node.Name
-                    var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    var tmpVar = ctxt.GetTmpVar(ZingData.Cnst_Int, "tmpVar");
                     ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapSizeOf"), arg)));
-                    return new ZingTranslationInfo(tmpVar);
+                    var retVal = ctxt.GetTmpVar(PrtValue, "retVal");
+                    ctxt.AddSideEffect(MkZingAssign(retVal, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), retVal, tmpVar)));
+                    return new ZingTranslationInfo(retVal);
                 }
             }
         }
@@ -2540,34 +2492,34 @@ namespace Microsoft.Pc
                 {
                     var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
                     ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
-                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Lt, MkZingDot(arg1, "bl"), MkZingDot(arg2, "bl")))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Lt, MkZingDot(arg1, "nt"), MkZingDot(arg2, "nt")))));
                     return new ZingTranslationInfo(tmpVar);
                 }
                 else if (op == PData.Cnst_Le.Node.Name)
                 {
                     var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
                     ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
-                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Le, MkZingDot(arg1, "bl"), MkZingDot(arg2, "bl")))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Le, MkZingDot(arg1, "nt"), MkZingDot(arg2, "nt")))));
                     return new ZingTranslationInfo(tmpVar);
                 }
                 else if (op == PData.Cnst_Gt.Node.Name)
                 {
                     var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
                     ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
-                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Gt, MkZingDot(arg1, "bl"), MkZingDot(arg2, "bl")))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Gt, MkZingDot(arg1, "nt"), MkZingDot(arg2, "nt")))));
                     return new ZingTranslationInfo(tmpVar);
                 }
                 else if (op == PData.Cnst_Ge.Node.Name)
                 {
                     var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
                     ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
-                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Ge, MkZingDot(arg1, "bl"), MkZingDot(arg2, "bl")))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, MkZingApply(ZingData.Cnst_Ge, MkZingDot(arg1, "nt"), MkZingDot(arg2, "nt")))));
                     return new ZingTranslationInfo(tmpVar);
                 }
                 else if (op == PData.Cnst_Idx.Node.Name)
                 {
-                    var type = LookupType(ctxt, arg1.Node);
-                    var typeOp = ((Id)GetArgByIndex(type, 0)).Name;
+                    var type = LookupType(ctxt, GetArgByIndex(ft, 1));
+                    var typeOp = ((Id)type.Function).Name;
                     if (typeOp == PData.Con_TupType.Node.Name)
                     {
                         var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
@@ -2696,7 +2648,7 @@ namespace Microsoft.Pc
             var afterLabel = ctxt.GetFreshLabel();
             var res = MkZingSeq(
                 MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Call"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingDot("State", string.Format("_{0}", stateName)))),
-                MkZingReturn(MkZingIdentifier("entryCtxt")),
+                MkZingReturn(ZingData.Cnst_Nil),
                 MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil));
             return new ZingTranslationInfo(res);
         }
@@ -2730,7 +2682,7 @@ namespace Microsoft.Pc
 
                 var assignStmt = MkZingSeq(MkZingAssign(MkZingDot("myHandle", "currentEvent"), eventExpr), MkZingAssign(MkZingDot("myHandle", "currentArg"), tmpVar));
                 var createRetCtxt = MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Raise")));
-                return new ZingTranslationInfo(MkZingSeq(assertStmt, traceStmt, assignStmt, createRetCtxt, MkZingReturn(MkZingIdentifier("entryCtxt"))));
+                return new ZingTranslationInfo(MkZingSeq(assertStmt, traceStmt, assignStmt, createRetCtxt, MkZingReturn(ZingData.Cnst_Nil)));
             }
         }
 
@@ -2756,7 +2708,7 @@ namespace Microsoft.Pc
                 var afterLabel = ctxt.GetFreshLabel();
                 ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(targetExpr, "EnqueueEvent"), eventExpr, tmpVar, Factory.Instance.MkCnst("myHandle"))));
                 ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Send"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)))));
-                return new ZingTranslationInfo(MkZingSeq(MkZingReturn(MkZingIdentifier("entryCtxt")), MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil)));
+                return new ZingTranslationInfo(MkZingSeq(MkZingReturn(ZingData.Cnst_Nil), MkZingLabeledStmt(afterLabel, ZingData.Cnst_Nil)));
             }
         }
 
@@ -2789,7 +2741,7 @@ namespace Microsoft.Pc
                 ctxt.AddSideEffect(MkZingAssign(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")));
                 ctxt.AddSideEffect(MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingIdentifier("null")));
                 ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Pop"))));
-                ctxt.AddSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
+                ctxt.AddSideEffect(MkZingReturn(ZingData.Cnst_Nil));
             }
             return new ZingTranslationInfo(ZingData.Cnst_Nil);
 
@@ -2902,14 +2854,13 @@ namespace Microsoft.Pc
                 it.MoveNext();
                 if (returnType.Equals(PTypeNull))
                 {
-                    ctxt.AddSideEffect(MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Return"))));
                 }
                 else
                 {
-                    ctxt.AddSideEffect(MkZingAssignWithClone(MkZingDot("myHandle", "currentArg"), it.Current.node));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "ReturnVal"), it.Current.node)));
                 }
-                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Return"))));
-                ctxt.AddSideEffect(MkZingReturn(MkZingIdentifier("entryCtxt")));
+                ctxt.AddSideEffect(MkZingReturn(ZingData.Cnst_Nil));
                 return new ZingTranslationInfo(ZingData.Cnst_Nil);
             }
         }
@@ -2972,50 +2923,24 @@ namespace Microsoft.Pc
             }
         }
 
-        private AST<Node> MkZingActionMethod(string machineName, string entityName, ActionInfo actionInfo)
-        {
-            AST<Node> body;
-
-            var ctxt = new ZingFoldContext(this, machineName, entityName, actionInfo);
-            var tuple = Factory.Instance.ToAST(actionInfo.body).Compute<ZingTranslationInfo>(
-                x => ZingUnfold(ctxt, x),
-                (x, ch) => ZingFold(ctxt, x, ch));
-            Debug.Assert(ctxt.sideEffectsStack.Count == 1);
-            body = ctxt.EmitZingSideEffects(tuple.node);
-            body = MkZingSeq(
-                ctxt.EmitLabelPrelude(),
-                MkZingLabeledStmt("start", body),
-                MkZingSeq(MkZingAssign(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
-                            MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node)))),
-                MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Return"))),
-                MkZingReturn(MkZingIdentifier("entryCtxt")));
-
-            return MkZingMethodDecl(entityName, MkZingVarDecls(MkZingVarDecl("entryCtxt", Factory.Instance.MkCnst("Continuation"))), Factory.Instance.MkCnst("Continuation"),
-                ctxt.EmitLocals(), MkZingBlock("dummy", body));
-        }
-
         private AST<Node> MkZingFunMethod(string machineName, string funName, FunInfo funInfo)
         {
             AST<Node> parameters = LocalVariablesToVarDecls(funInfo.parameterNames, funInfo.parameterNameToInfo);
             parameters = AddArgs(ZingData.App_VarDecls, MkZingVarDecl("entryCtxt", Factory.Instance.MkCnst("Continuation")), parameters);
-            AST<Node> funBody;
-            AST<Node> entry = Factory.Instance.ToAST(funInfo.body);
 
             var ctxt = new ZingFoldContext(this, machineName, funName, funInfo);
-            var tuple = Factory.Instance.ToAST(entry.Node).Compute<ZingTranslationInfo>(
+            var tuple = Factory.Instance.ToAST(funInfo.body).Compute<ZingTranslationInfo>(
                 x => ZingUnfold(ctxt, x),
                 (x, ch) => ZingFold(ctxt, x, ch));
             Debug.Assert(ctxt.sideEffectsStack.Count == 1);
-            funBody = ctxt.EmitZingSideEffects(tuple.node);
+            var funBody = ctxt.EmitZingSideEffects(tuple.node);
             ctxt.PushSideEffectStack();
             funBody = MkZingSeq(
                 ctxt.EmitLabelPrelude(),
                 MkZingLabeledStmt("start", funBody),
                 MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Return"))),
-                MkZingReturn(MkZingIdentifier("entryCtxt")));
-
-            var retType = Factory.Instance.MkCnst("Continuation");
-            return MkZingMethodDecl(funName, parameters, retType, ctxt.EmitLocals(), MkZingBlock("dummy", funBody));
+                MkZingReturn(ZingData.Cnst_Nil));
+            return MkZingMethodDecl(funName, parameters, ZingData.Cnst_Void, ctxt.EmitLocals(), MkZingBlock("dummy", funBody));
         }
 
         private AST<Node> MkZingFor(AST<Node> indVar, AST<Node> start, AST<Node> end, AST<Node> body)
@@ -3139,18 +3064,6 @@ namespace Microsoft.Pc
                 body = MkZingSeq(body,
                                  MkZingAssign(MkZingIdentifier("fairScheduler"), AddArgs(ZingData.App_New, Factory.Instance.MkCnst("FairScheduler"), ZingData.Cnst_Nil)),
                                  MkZingCallStmt(MkZingCall(MkZingDot("FairScheduler", "Init"), MkZingIdentifier("fairScheduler"), MkZingDot(objectName, "myHandle"))));
-
-                foreach (var actionName in allMachines[machineName].actionNameToActionInfo.Keys)
-                {
-                    var actionInfo = allMachines[machineName].actionNameToActionInfo[actionName];
-                    for (int i = 0; i < actionInfo.numFairChoices; i++)
-                    {
-                        body = MkZingSeq(body,
-                                         MkZingAssign(MkZingIdentifier("fairChoice"), AddArgs(ZingData.App_New, Factory.Instance.MkCnst("FairChoice"), ZingData.Cnst_Nil)),
-                                         MkZingCallStmt(MkZingCall(MkZingDot("FairChoice", "Init"), MkZingIdentifier("fairChoice"))),
-                                         MkZingAssign(MkZingDot(objectName, GetFairChoice(actionName, i)), MkZingIdentifier("fairChoice")));
-                    }
-                }
                 foreach (var funName in allMachines[machineName].funNameToFunInfo.Keys)
                 {
                     var funInfo = allMachines[machineName].funNameToFunInfo[funName];

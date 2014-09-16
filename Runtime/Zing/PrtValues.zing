@@ -516,7 +516,7 @@ class PRT_SEQ {
         PRT_SEQ seq;
         seq = new PRT_SEQ;
 	seq.size = 0;
-	seq.contents = null;
+	seq.contents = new PRT_VALUE_ARRAY[0];
 	return seq;
     }
 
@@ -531,6 +531,7 @@ class PRT_SEQ {
 	    seq.contents[i] = PRT_VALUE.PrtCloneValue(contents[i]);
 	    i = i + 1;
 	}
+	return seq;
     }
 
     void Set(int index, PRT_VALUE value) {
@@ -554,7 +555,7 @@ class PRT_SEQ {
 	    }
 	    i = i + 1;
 	}
-	contents = contents;
+	contents = newContents;
 	size = size + 1;	
     }
 
@@ -626,8 +627,9 @@ class PRT_MAP {
         PRT_MAP map;
 	map = new PRT_MAP;
 	map.size = 0;
-	map.keys = null;
-	map.values = null;
+	map.keys = new PRT_VALUE_ARRAY[0];
+	map.values = new PRT_VALUE_ARRAY[0];
+	return map;
     }
 
     PRT_MAP Clone() {
@@ -643,6 +645,7 @@ class PRT_MAP {
 	    map.values[i] = PRT_VALUE.PrtCloneValue(values[i]);	    
 	    i = i + 1;
 	}
+	return map;
     }
 
     void Set(PRT_VALUE key, PRT_VALUE value) {
@@ -731,10 +734,12 @@ class PRT_MAP {
 	    }
 	}
         assert (false);
+	return null;
     }
 
     PRT_VALUE GetKeys(PRT_TYPE domType) {
         PRT_VALUE retVal;
+	PRT_TYPE seqType;
         int i;
 	PRT_SEQ seq;
 	seq = new PRT_SEQ;
@@ -745,14 +750,15 @@ class PRT_MAP {
 	    seq.contents[i] = PRT_VALUE.PrtCloneValue(keys[i]);
 	    i = i + 1;
 	}
-	retVal = new PRT_VALUE;
-	retVal.type = PRT_TYPE.PrtMkSeqType(domType);
+	seqType = PRT_TYPE.PrtMkSeqType(domType);
+	retVal = PRT_VALUE.PrtMkDefaultValue(seqType);
 	retVal.seq = seq;
         return retVal;
     }
 
     PRT_VALUE GetValues(PRT_TYPE codType) {
         PRT_VALUE retVal;
+	PRT_TYPE seqType;
         int i;
 	PRT_SEQ seq;
 	seq = new PRT_SEQ;
@@ -763,8 +769,8 @@ class PRT_MAP {
 	    seq.contents[i] = PRT_VALUE.PrtCloneValue(values[i]);
 	    i = i + 1;
 	}
-	retVal = new PRT_VALUE;
-	retVal.type = PRT_TYPE.PrtMkSeqType(codType);
+	seqType = PRT_TYPE.PrtMkSeqType(codType);
+	retVal = PRT_VALUE.PrtMkDefaultValue(seqType);
 	retVal.seq = seq;
         return retVal;
     }

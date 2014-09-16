@@ -1340,6 +1340,7 @@ namespace Microsoft.Pc
             List<AST<Node>> initStmts = new List<AST<Node>>();
             foreach (var funName in allMachines[machineName].funNameToFunInfo.Keys)
             {
+                if (allMachines[machineName].funNameToFunInfo[funName].parameterNames.Count > 0) continue;
                 var funInfo = allMachines[machineName].funNameToFunInfo[funName];
                 var funExpr = MkZingActionOrFun(machineName, funName);
                 var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("actionFun"), funExpr);
@@ -1362,10 +1363,11 @@ namespace Microsoft.Pc
             List<AST<Node>> blocks = new List<AST<Node>>();
             blocks.Add(initStmt);
             var cont = MkZingIdentifier("cont");
-            foreach (var actionFunName in allMachines[machineName].funNameToFunInfo.Keys)
+            foreach (var funName in allMachines[machineName].funNameToFunInfo.Keys)
             {
-                AST<Cnst> executeLabel = Factory.Instance.MkCnst("execute_" + actionFunName);
-                var executeStmt = MkZingSeq(MkZingCallStmt(MkZingCall(MkZingIdentifier(actionFunName), cont)), MkZingReturn(cont));
+                if (allMachines[machineName].funNameToFunInfo[funName].parameterNames.Count > 0) continue;
+                AST<Cnst> executeLabel = Factory.Instance.MkCnst("execute_" + funName);
+                var executeStmt = MkZingSeq(MkZingCallStmt(MkZingCall(MkZingIdentifier(funName), cont)), MkZingReturn(cont));
                 executeStmt = AddArgs(ZingData.App_LabelStmt, executeLabel, executeStmt);
                 blocks.Add(executeStmt);
             }
@@ -1398,6 +1400,7 @@ namespace Microsoft.Pc
             List<AST<Node>> initStmts = new List<AST<Node>>();
             foreach (var funName in allMachines[machineName].funNameToFunInfo.Keys)
             {
+                if (allMachines[machineName].funNameToFunInfo[funName].parameterNames.Count > 0) continue;
                 var funInfo = allMachines[machineName].funNameToFunInfo[funName];
                 var funExpr = MkZingActionOrFun(machineName, funName);
                 var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("actionFun"), funExpr);
@@ -1419,10 +1422,11 @@ namespace Microsoft.Pc
             // Action blocks
             List<AST<Node>> blocks = new List<AST<Node>>();
             blocks.Add(initStmt);
-            foreach (var actionFunName in allMachines[machineName].funNameToFunInfo.Keys)
+            foreach (var funName in allMachines[machineName].funNameToFunInfo.Keys)
             {
-                AST<Cnst> executeLabel = Factory.Instance.MkCnst("execute_" + actionFunName);
-                var executeStmt = MkZingInvokeWrapperFun(machineName, actionFunName);
+                if (allMachines[machineName].funNameToFunInfo[funName].parameterNames.Count > 0) continue;
+                AST<Cnst> executeLabel = Factory.Instance.MkCnst("execute_" + funName);
+                var executeStmt = MkZingInvokeWrapperFun(machineName, funName);
                 executeStmt = AddArgs(ZingData.App_LabelStmt, executeLabel, executeStmt);
                 blocks.Add(executeStmt);
             }
@@ -2254,7 +2258,7 @@ namespace Microsoft.Pc
                 var lhsInfo = calleeInfo.parameterNameToInfo[calleeInfo.parameterNames[count]];
                 var rhsInfo = child;
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "argCloneVar");
-                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(child.node, "Clone"))));
+                ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, child.node));
                 count++;
                 args.Add(tmpVar);
             }
@@ -2404,9 +2408,12 @@ namespace Microsoft.Pc
                 else
                 {
                     //  op == PData.Cnst_Sizeof.Node.Name
-                    var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+                    var tmpVar = ctxt.GetTmpVar(ZingData.Cnst_Int, "tmpVar");
                     ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapSizeOf"), arg)));
-                    return new ZingTranslationInfo(tmpVar);
+                    var retVal = ctxt.GetTmpVar(PrtValue, "retVal");
+                    ctxt.AddSideEffect(MkZingAssign(retVal, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), retVal, tmpVar)));
+                    return new ZingTranslationInfo(retVal);
                 }
             }
         }
@@ -2753,7 +2760,7 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldBinStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt) 
         {
-            var op = ((Id)ft.Function).Name; 
+            var op = ((Id)GetArgByIndex(ft, 0)).Name; 
             var lhs = (FuncTerm)GetArgByIndex(ft, 1);
             var type = LookupType(ctxt, lhs);
             var typeName = ((Id)type.Function).Name;

@@ -25,7 +25,7 @@ model Timer {
 	start state Init {
 		entry {
 			target = payload as machine;
-			raise(Unit);
+			raise Unit;
 		}
 		on Unit goto Loop;
 	}
@@ -39,16 +39,16 @@ model Timer {
 		entry {
 			if ($) {
 				send target, Timeout;
-				raise(Unit);
+				raise Unit;
 			}
 		}
 		on Unit goto Loop;
-		on CancelTimer goto Loop {
+		on CancelTimer goto Loop with {
 			if ($) {
-				send(target, CancelTimerFailure);
-				send(target, Timeout);
+				send target, CancelTimerFailure;
+				send target, Timeout;
 			} else {
-				send(target, CancelTimerSuccess);
+				send target, CancelTimerSuccess;
 			}		
 		};
 	}
@@ -65,34 +65,34 @@ machine Replica {
 	    entry {
 		  coordinator = payload as machine;
 			lastSeqNum = 0;
-			raise(Unit);
+			raise Unit;
 		}
 		on Unit goto Loop;
 	}
 
-	action HandleReqReplica {
+	fun HandleReqReplica() {
 				pendingWriteReq = payload as (seqNum:int, idx:int, val:int);
 		assert (pendingWriteReq.seqNum > lastSeqNum);
 		shouldCommit = ShouldCommitWrite();
 		if (shouldCommit) {
-			send(coordinator, RESP_REPLICA_COMMIT, pendingWriteReq.seqNum);
+			send coordinator, RESP_REPLICA_COMMIT, pendingWriteReq.seqNum;
 		} else {
-			send(coordinator, RESP_REPLICA_ABORT, pendingWriteReq.seqNum);
+			send coordinator, RESP_REPLICA_ABORT, pendingWriteReq.seqNum;
 		}
 	}
 
-	action HandleGlobalAbort {
-		assert (pendingWriteReq.seqNum >= payload);
+	fun HandleGlobalAbort() {
+		assert (pendingWriteReq.seqNum >= payload as int);
 		if (pendingWriteReq.seqNum == payload) {
-			lastSeqNum = payload;
+			lastSeqNum = payload as int;
 		}
 	}
 
-	action HandleGlobalCommit {
-		assert (pendingWriteReq.seqNum >= payload);
+	fun HandleGlobalCommit() {
+		assert (pendingWriteReq.seqNum >= payload as int);
 		if (pendingWriteReq.seqNum == payload) {
-			data.update(pendingWriteReq.idx, pendingWriteReq.val);
-			lastSeqNum = payload;
+			data[pendingWriteReq.idx] = pendingWriteReq.val;
+			lastSeqNum = payload as int;
 		}
 	}
 
@@ -104,7 +104,7 @@ machine Replica {
 
 	model fun ShouldCommitWrite(): bool 
 	{
-		return *;
+		return $;
 	}
 }
 
@@ -125,36 +125,36 @@ machine Coordinator {
 			i = 0;
 			while (i < numReplicas) {
 				replica = new Replica(this);
-				replicas.insert(i, replica);
+				replicas += (i, replica);
 				i = i + 1;
 			}
 			currSeqNum = 0;
 			timer = new Timer(this);
-			raise(Unit);
+			raise Unit;
 		}
 		on Unit goto Loop;
 	}
 
-	action DoRead {
+	fun DoRead() {
 		if (payload.idx in data) {
 			monitor M, MONITOR_READ_SUCCESS, (idx=payload.idx, val=data[payload.idx]);
-			send(payload.client, READ_SUCCESS, data[payload.idx]);
+			send payload.client, READ_SUCCESS, data[payload.idx];
 		} else {
-			invoke M(MONITOR_READ_UNAVAILABLE, payload.idx);
-			send(payload.client, READ_UNAVAILABLE);
+			monitor M, MONITOR_READ_UNAVAILABLE, payload.idx;
+			send payload.client, READ_UNAVAILABLE;
 		}
 	}
 
-	action DoWrite {
+	fun DoWrite() {
 		pendingWriteReq = payload;
 		currSeqNum = currSeqNum + 1;
 		i = 0;
 		while (i < sizeof(replicas)) {
-			send(replicas[i], REQ_REPLICA, (seqNum=currSeqNum, idx=pendingWriteReq.idx, val=pendingWriteReq.val));
+			send replicas[i], REQ_REPLICA, (seqNum=currSeqNum, idx=pendingWriteReq.idx, val=pendingWriteReq.val);
 			i = i + 1;
 		}
-		send(timer, StartTimer, 100);
-		raise(Unit);
+		send timer, StartTimer, 100;
+		raise Unit;
 	}
 
 	state Loop {
@@ -167,45 +167,45 @@ machine Coordinator {
 	fun DoGlobalAbort() {
 		i = 0;
 		while (i < sizeof(replicas)) {
-			send(replicas[i], GLOBAL_ABORT, currSeqNum);
+			send replicas[i], GLOBAL_ABORT, currSeqNum;
 			i = i + 1;
 		}
-		send(pendingWriteReq.client, WRITE_FAIL);
+		send pendingWriteReq.client, WRITE_FAIL;
 	}
 
 	state CountVote {
 		entry {
 			if (i == 0) {
 				while (i < sizeof(replicas)) {
-					send(replicas[i], GLOBAL_COMMIT, currSeqNum);
+					send replicas[i], GLOBAL_COMMIT, currSeqNum;
 					i = i + 1;
 				}
-				data.update(pendingWriteReq.idx, pendingWriteReq.val);
-				invoke M(MONITOR_WRITE, (idx=pendingWriteReq.idx, val=pendingWriteReq.val));
-				send(pendingWriteReq.client, WRITE_SUCCESS);
-				send(timer, CancelTimer);
-				raise(Unit);
+				data[pendingWriteReq.idx] = pendingWriteReq.val;
+				monitor M, MONITOR_WRITE, (idx=pendingWriteReq.idx, val=pendingWriteReq.val);
+				send pendingWriteReq.client, WRITE_SUCCESS;
+				send timer, CancelTimer;
+				raise Unit;
 			}
 		}
 		defer WRITE_REQ;
 		on READ_REQ do DoRead;
-		on RESP_REPLICA_COMMIT goto CountVote {
+		on RESP_REPLICA_COMMIT goto CountVote with {
 			if (currSeqNum == payload as int) {
 				i = i - 1;
 			}
 		};
 		on RESP_REPLICA_ABORT do HandleAbort;
-		on Timeout goto Loop {
+		on Timeout goto Loop with {
 			DoGlobalAbort();
 		};
 		on Unit goto WaitForCancelTimerResponse;
 	}
 
-	action HandleAbort {
+	fun HandleAbort() {
 		if (currSeqNum == payload as int) {
 			DoGlobalAbort();
-			send(timer, CancelTimer);
-			raise(Unit);
+			send timer, CancelTimer;
+			raise Unit;
 		}
 	}
 
@@ -228,7 +228,7 @@ model Client {
     start state Init {
 	    entry {
 	        coordinator = payload as machine;
-			raise(Unit);
+			raise Unit;
 		}
 		on Unit goto DoWrite;
 	}
@@ -238,7 +238,7 @@ model Client {
 	    entry {
 			idx = ChooseIndex();
 			val = ChooseValue();
-			send(coordinator, WRITE_REQ, (client=this, idx=idx, val=val));
+			send coordinator, WRITE_REQ, (client=this, idx=idx, val=val);
 		}
 		on WRITE_FAIL goto End;
 		on WRITE_SUCCESS goto DoRead;
@@ -246,7 +246,7 @@ model Client {
 
 	state DoRead {
 	    entry {
-			send(coordinator, READ_REQ, (client=this, idx=idx));
+			send coordinator, READ_REQ, (client=this, idx=idx);
 		}
 		on READ_FAIL goto End;
 		on READ_SUCCESS goto End;
@@ -275,14 +275,14 @@ model Client {
 
 monitor M {
 	var data: map[int,int];
-	action DoWrite {
-			data.update(payload.idx, payload.val);
+	fun DoWrite() {
+			data[payload.idx] = payload.val;
 	}
-	action CheckReadSuccess {
+	fun CheckReadSuccess() {
 		assert(payload.idx in data);
 		assert(data[payload.idx] == payload.val);
 	}
-	action CheckReadUnavailable {
+	fun CheckReadUnavailable() {
 		assert(!(payload in data));
 	}
 	start state Init {

@@ -50,7 +50,7 @@ main machine Employee {
         }
         exit { 
             assert(RemoteCheckIn == false); 
-            if (trigger != default) send CityCabmachine, Thanks;
+            if (trigger != null) send CityCabmachine, Thanks;
         }
 
         on default goto TakeBus;

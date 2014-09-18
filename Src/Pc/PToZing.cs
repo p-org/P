@@ -1373,7 +1373,7 @@ namespace Microsoft.Pc
             }
 
             AST<Node> body = ConstructList(ZingData.App_Blocks, blocks);
-            return MkZingMethodDecl("ReentrancyHelper", parameters, Factory.Instance.MkCnst("Continuation"), MkZingVarDecls(locals), body);
+            return MkZingMethodDecl("ReentrancyHelper", parameters, ZingData.Cnst_Void, MkZingVarDecls(locals), body);
         }
 
         private AST<Node> GenerateReentrancyHelperMethodDecl(string machineName)
@@ -1533,7 +1533,6 @@ namespace Microsoft.Pc
             locals.Add(MkZingVarDecl("cont", Factory.Instance.MkCnst("Continuation")));
             locals.Add(MkZingVarDecl("savedCurrentEvent", SmEvent));
             locals.Add(MkZingVarDecl("savedCurrentArg", PrtValue));
-            locals.Add(MkZingVarDecl("didActionPop", ZingData.Cnst_Bool));
             locals.Add(MkZingVarDecl("currentStable", ZingData.Cnst_Bool));
             locals.Add(MkZingVarDecl("savedStable", ZingData.Cnst_Bool));
             if (compiler.liveness == LivenessOption.Standard)

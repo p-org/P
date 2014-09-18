@@ -27,6 +27,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PrtWinUser", "PrtWinUser", "{E804954F-1ED6-4F3C-AEFF-24E7AAB81E27}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PrtWinUser", "PRuntime\PrtWinUser\PrtWinUser.vcxproj", "{EF4C4CBF-824D-4B53-BC4A-1C8F02591554}"
+	ProjectSection(ProjectDependencies) = postProject
+		{262D986B-9C2B-4F03-A1E4-C1C4A3EC9834} = {262D986B-9C2B-4F03-A1E4-C1C4A3EC9834}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PrtDistributed", "PrtDistributed", "{8EF9B167-1689-4B13-8A17-7C0A6D35CC89}"
 EndProject
@@ -65,6 +68,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestPrtDService", "TestPrtDService", "{0616D1BF-F4C5-401C-8DF0-F489E3E6164C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PrtDistLogger", "PRuntime\PrtDistributed\PrtDistManagement\PrtDistLogger\PrtDistLogger.vcxproj", "{7FDC5451-9D00-47E1-AF54-62AD736BEC6B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{262D986B-9C2B-4F03-A1E4-C1C4A3EC9834} = {262D986B-9C2B-4F03-A1E4-C1C4A3EC9834}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

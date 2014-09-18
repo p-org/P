@@ -18,9 +18,6 @@
 
     internal class Compiler
     {
-        public LivenessOption liveness;
-        string outputPath;
-
         private const string PDomain = "P";
         private const string CDomain = "C";
         private const string ZingDomain = "Zing";
@@ -76,10 +73,17 @@
             private set;
         }
 
-        public Compiler(string inputFile)
+        public CommandLineOptions Options
+        {
+            get;
+            private set;
+        }
+
+        public Compiler(string inputFile, CommandLineOptions options)
         {
             Contract.Assert(!string.IsNullOrEmpty(inputFile));
             InputFile = inputFile;
+            Options = options;
             CompilerEnv = new Env();
             InitEnv(CompilerEnv);
         }

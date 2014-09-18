@@ -3,10 +3,10 @@ event RESP_REPLICA_COMMIT:int;
 event RESP_REPLICA_ABORT:int;
 event GLOBAL_ABORT:int;
 event GLOBAL_COMMIT:int;
-event WRITE_REQ:(client:mid, idx:int, val:int);
+event WRITE_REQ:(client:model, idx:int, val:int);
 event WRITE_FAIL;
 event WRITE_SUCCESS;
-event READ_REQ:(client:mid, idx:int);
+event READ_REQ:(client:model, idx:int);
 event READ_FAIL;
 event READ_UNAVAILABLE;
 event READ_SUCCESS:int;
@@ -20,11 +20,11 @@ event MONITOR_WRITE:(idx:int, val:int);
 event MONITOR_READ_SUCCESS:(idx:int, val:int);
 event MONITOR_READ_UNAVAILABLE:int;
 
-model machine Timer {
-	var target: id;
+model Timer {
+	var target: machine;
 	start state Init {
 		entry {
-			target = (id)payload;
+			target = (machine)payload;
 			raise(Unit);
 		}
 		on Unit goto Loop;
@@ -55,7 +55,7 @@ model machine Timer {
 }
 
 machine Replica {
-	var coordinator: id;
+	var coordinator: machine;
     var data: map[int,int];
 	var pendingWriteReq: (seqNum: int, idx: int, val: int);
 	var shouldCommit: bool;
@@ -63,7 +63,7 @@ machine Replica {
 
     start state Init {
 	    entry {
-		    coordinator = (id)payload;
+		    coordinator = (machine)payload;
 			lastSeqNum = 0;
 			raise(Unit);
 		}
@@ -110,13 +110,13 @@ machine Replica {
 
 machine Coordinator {
 	var data: map[int,int];
-	var replicas: seq[id];
+	var replicas: seq[machine];
 	var numReplicas: int;
 	var i: int;
-	var pendingWriteReq: (client: mid, idx: int, val: int);
-	var replica: id;
+	var pendingWriteReq: (client: model, idx: int, val: int);
+	var replica: machine;
 	var currSeqNum:int;
-	var timer: mid;
+	var timer: model;
 
 	start state Init {
 		entry {
@@ -137,7 +137,7 @@ machine Coordinator {
 
 	action DoRead {
 		if (payload.idx in data) {
-			invoke M(MONITOR_READ_SUCCESS, (idx=payload.idx, val=data[payload.idx]));
+			monitor M, MONITOR_READ_SUCCESS, (idx=payload.idx, val=data[payload.idx]);
 			send(payload.client, READ_SUCCESS, data[payload.idx]);
 		} else {
 			invoke M(MONITOR_READ_UNAVAILABLE, payload.idx);
@@ -223,11 +223,11 @@ machine Coordinator {
 	}
 }
 
-model machine Client {
-    var coordinator: id;
+model Client {
+    var coordinator: machine;
     start state Init {
 	    entry {
-	        coordinator = (id)payload;
+	        coordinator = (machine)payload;
 			raise(Unit);
 		}
 		on Unit goto DoWrite;
@@ -292,9 +292,9 @@ monitor M {
 	}
 }
 
-main model machine TwoPhaseCommit {
-    var coordinator: id;
-	var client: mid;
+main model TwoPhaseCommit {
+    var coordinator: machine;
+	var client: model;
     start state Init {
 	    entry {
 			new M();

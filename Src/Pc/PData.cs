@@ -100,7 +100,6 @@
         public static readonly AST<Id> Con_ExitFun = Factory.Instance.MkId("ExitFun");
         public static readonly AST<Id> Con_VarDecl = Factory.Instance.MkId("VarDecl");
         public static readonly AST<Id> Con_TransDecl = Factory.Instance.MkId("TransDecl");
-        public static readonly AST<Id> Con_ActionDecl = Factory.Instance.MkId("ActionDecl");
         public static readonly AST<Id> Con_Install = Factory.Instance.MkId("Install");
         public static readonly AST<Id> Con_FunDecl = Factory.Instance.MkId("FunDecl");
         public static readonly AST<Id> Con_Params = Factory.Instance.MkId("Params");

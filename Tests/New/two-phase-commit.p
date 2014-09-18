@@ -24,7 +24,7 @@ model Timer {
 	var target: machine;
 	start state Init {
 		entry {
-			target = (machine)payload;
+			target = payload as machine;
 			raise(Unit);
 		}
 		on Unit goto Loop;
@@ -37,14 +37,14 @@ model Timer {
 
 	state TimerStarted {
 		entry {
-			if (*) {
-				send(target, Timeout);
+			if ($) {
+				send target, Timeout;
 				raise(Unit);
 			}
 		}
 		on Unit goto Loop;
 		on CancelTimer goto Loop {
-			if (*) {
+			if ($) {
 				send(target, CancelTimerFailure);
 				send(target, Timeout);
 			} else {
@@ -63,7 +63,7 @@ machine Replica {
 
     start state Init {
 	    entry {
-		    coordinator = (machine)payload;
+		  coordinator = payload as machine;
 			lastSeqNum = 0;
 			raise(Unit);
 		}
@@ -71,7 +71,7 @@ machine Replica {
 	}
 
 	action HandleReqReplica {
-		pendingWriteReq = ((seqNum:int, idx:int, val:int))payload;
+				pendingWriteReq = payload as (seqNum:int, idx:int, val:int);
 		assert (pendingWriteReq.seqNum > lastSeqNum);
 		shouldCommit = ShouldCommitWrite();
 		if (shouldCommit) {
@@ -120,7 +120,7 @@ machine Coordinator {
 
 	start state Init {
 		entry {
-			numReplicas = (int)payload;
+			numReplicas = payload as int;
 			assert (numReplicas > 0);
 			i = 0;
 			while (i < numReplicas) {
@@ -190,7 +190,7 @@ machine Coordinator {
 		defer WRITE_REQ;
 		on READ_REQ do DoRead;
 		on RESP_REPLICA_COMMIT goto CountVote {
-			if (currSeqNum == (int)payload) {
+			if (currSeqNum == payload as int) {
 				i = i - 1;
 			}
 		};
@@ -202,7 +202,7 @@ machine Coordinator {
 	}
 
 	action HandleAbort {
-		if (currSeqNum == (int)payload) {
+		if (currSeqNum == payload as int) {
 			DoGlobalAbort();
 			send(timer, CancelTimer);
 			raise(Unit);
@@ -227,7 +227,7 @@ model Client {
     var coordinator: machine;
     start state Init {
 	    entry {
-	        coordinator = (machine)payload;
+	        coordinator = payload as machine;
 			raise(Unit);
 		}
 		on Unit goto DoWrite;
@@ -256,7 +256,7 @@ model Client {
 
 	fun ChooseIndex(): int
 	{
-		if (*) {
+		if ($) {
 			return 0;
 		} else {
 			return 1;
@@ -265,7 +265,7 @@ model Client {
 
 	fun ChooseValue(): int
 	{
-		if (*) {
+		if ($) {
 			return 0;
 		} else {
 			return 1;

@@ -196,7 +196,6 @@ namespace Microsoft.Pc
         public static AST<Node> PrtIsEqualValue = MkZingDot("PRT_VALUE", "PrtIsEqualValue");
 
         public const string NullEvent = "null";
-        public const string DefaultEvent = "default";
         public const string HaltEvent = "halt";
 
         private Dictionary<string, LinkedList<AST<FuncTerm>>> factBins; 
@@ -272,7 +271,6 @@ namespace Microsoft.Pc
         private void GenerateProgramData(AST<Model> model)
         {
             allEvents = new Dictionary<string, EventInfo>();
-            allEvents[DefaultEvent] = new EventInfo(1, false, PTypeNull.Node);
             allEvents[HaltEvent] = new EventInfo(1, false, PTypeNull.Node);
             allEvents[NullEvent] = new EventInfo(1, false, PTypeNull.Node);
             allMachines = new Dictionary<string, MachineInfo>();
@@ -386,23 +384,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            terms = GetBin("ActionDecl");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var actionName = ((Cnst)it.Current).GetStringValue();
-                    it.MoveNext();
-                    var actionOwnerMachineDecl = (FuncTerm)it.Current;
-                    var actionOwnerMachineName = GetName(actionOwnerMachineDecl, 0);
-                    it.MoveNext();
-                    allMachines[actionOwnerMachineName].funNameToFunInfo[actionName] = new FunInfo(it.Current, false);
-                }
-            }
-
             this.anonFunToName = new Dictionary<AST<Node>, string>();
-
             terms = GetBin("AnonFunDecl");
             foreach (var term in terms)
             {
@@ -416,21 +398,6 @@ namespace Microsoft.Pc
                     var funName = "AnonFun" + anonFunToName.Count;
                     machineInfo.funNameToFunInfo[funName] = new FunInfo(it.Current, true);
                     anonFunToName[term] = funName;
-                }
-            }
-
-            terms = GetBin("AnonActionDecl");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var machineDecl = (FuncTerm)it.Current;
-                    var machineName = GetName(machineDecl, 0);
-                    it.MoveNext();
-                    var actionName = "AnonFun" + anonFunToName.Count;
-                    allMachines[machineName].funNameToFunInfo[actionName] = new FunInfo(it.Current, true);
-                    anonFunToName[term] = actionName;
                 }
             }
 
@@ -454,9 +421,9 @@ namespace Microsoft.Pc
                                             ? ((Cnst)it.Current).GetStringValue()
                                             : anonFunToName[Factory.Instance.ToAST(it.Current)];
                     it.MoveNext();
-                    var isStable = compiler.Options.liveness != LivenessOption.None && ((Id)it.Current).Name == "TRUE";
+                    var isHot = compiler.Options.liveness != LivenessOption.None && ((Id)it.Current).Name == "TRUE";
                     var stateTable = allMachines[ownerName].stateNameToStateInfo;
-                    stateTable[stateName] = new StateInfo(ownerName, entryActionName, exitFunName, isStable, GetPrintedNameFromQualifiedName(qualifiedStateName));
+                    stateTable[stateName] = new StateInfo(ownerName, entryActionName, exitFunName, !isHot, GetPrintedNameFromQualifiedName(qualifiedStateName));
                 }
             }
 
@@ -478,7 +445,7 @@ namespace Microsoft.Pc
                         var name = ((Id)it.Current).Name;
                         if (name == "DEFAULT")
                         {
-                            eventName = DefaultEvent;
+                            eventName = NullEvent;
                             stateTable.hasDefaultTransition = true;
                         }
                         else
@@ -574,24 +541,12 @@ namespace Microsoft.Pc
                         string funName = GetName(typingContext, 0);
                         allMachines[ownerName].funNameToFunInfo[funName].typeInfo[expr] = type;
                     }
-                    else if (typingContextKind == "AnonFunDecl")
+                    else 
                     {
+                        // typingContextKind == "AnonFunDecl"
                         string ownerName = GetOwnerName(typingContext, 0, 0);
                         string funName = anonFunToName[Factory.Instance.ToAST(typingContext)];
                         allMachines[ownerName].funNameToFunInfo[funName].typeInfo[expr] = type;
-                    }
-                    else if (typingContextKind == "ActionDecl")
-                    {
-                        string ownerName = GetOwnerName(typingContext, 1, 0);
-                        string actionName = GetName(typingContext, 0);
-                        allMachines[ownerName].funNameToFunInfo[actionName].typeInfo[expr] = type;
-                    }
-                    else
-                    {
-                        // typingContextKind == "AnonActionDecl"
-                        string ownerName = GetOwnerName(typingContext, 0, 0);
-                        string actionName = anonFunToName[Factory.Instance.ToAST(typingContext)];
-                        allMachines[ownerName].funNameToFunInfo[actionName].typeInfo[expr] = type;
                     }
                 }
             }
@@ -1026,7 +981,7 @@ namespace Microsoft.Pc
             AST<Node> calculateComplementBody = MkZingAssign(MkZingIdentifier("returnEventSet"), AddArgs(ZingData.App_New, SmEventSet, ZingData.Cnst_Nil));
             foreach (var eventName in allEvents.Keys)
             {
-                if (eventName == DefaultEvent || eventName == HaltEvent)
+                if (eventName == HaltEvent)
                     continue;
                 var iteExpr = MkZingApply(ZingData.Cnst_In, MkZingEvent(eventName), MkZingIdentifier("eventSet"));
                 var assignStmt = MkZingAssign(MkZingIdentifier("returnEventSet"), MkZingApply(ZingData.Cnst_Add, MkZingIdentifier("returnEventSet"), MkZingEvent(eventName)));
@@ -2645,8 +2600,7 @@ namespace Microsoft.Pc
                 var eventExpr = MkZingDot(it.Current.node, "ev");
                 it.MoveNext();
                 var payloadExpr = it.Current.node;
-                var assertStmt = MkZingSeq(Factory.Instance.AddArg(ZingData.App_Assert, MkZingApply(ZingData.Cnst_NEq, eventExpr, MkZingIdentifier("null"))),
-                                           Factory.Instance.AddArg(ZingData.App_Assert, MkZingApply(ZingData.Cnst_NEq, eventExpr, MkZingEvent("default"))));
+                var assertStmt = MkZingAssert(MkZingApply(ZingData.Cnst_NEq, eventExpr, MkZingIdentifier("null")));
                 string traceString = string.Format("\"<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\\n\"", ctxt.machineName);
                 var traceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"), MkZingDot(eventExpr, "name")));
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpPayload");

@@ -78,7 +78,6 @@ class SM_HANDLE {
         bool b;
 		PRT_TYPE prtType;
     	assert (e != null);
-		assert (e != Main.default_SM_EVENT);
 		//assertion to check if argument passed inhabits the payload type.
 		prtType = Main.PayloadOf(e);
 		
@@ -121,22 +120,23 @@ class SM_HANDLE {
     void DequeueEvent(bool hasDefault, SM_EVENT_SET deferredSet) {
 		currentEvent = null;
 		currentArg = null;
-		while (currentEvent == null) {
+		while (true) {
 			buffer.DequeueEvent(deferredSet, this);
 			if (currentEvent != null) 
 			{
 				assert(currentArg != null);
 				trace("<DequeueLog> Dequeued Event < {0}, ", currentEvent.name); PRT_VALUE.Print(currentArg); trace(" > at Machine {0}-{1}\n", machineName, instance);
 				blocked = false;
+				return;
 			} 
 			else if (hasDefault) 
 			{
 				trace("<DefaultTransLog> Default transition taken by Machine {0}-{1}\n", machineName, instance);
-	            currentEvent = Main.default_SM_EVENT;
 				blocked = false;
 				FairScheduler.AtYieldStatic(this);
 				FairChoice.AtYieldOrChooseStatic();
 				yield;
+				return;
 			} 
 			else 
 			{

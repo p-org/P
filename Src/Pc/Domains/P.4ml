@@ -165,8 +165,22 @@ domain PStructuralTyping extends PData
 	invalidFunForEntry(s, eF) :- s is StateDecl(_, _, eF, _, _), eF : String, no FunDecl(eF, s.owner, _, _, _, _), no ActionDecl(eF, s.owner, _).
 	invalidFunForExit ::= (StateDecl, String).
 	[rule_Classes = '"error, msg: undefined function for exit"']
-	invalidFunForExit(s, eF) :- s is StateDecl(_, _, _, eF, _), eF : String, no FunDecl(s.exitFun, s.owner, _, _, _, _), eF = s.exitFun.
+	invalidFunForExit(s, eF) :- s is StateDecl(_, _, _, eF, _), eF : String, no FunDecl(eF, s.owner, _, _, _, _), eF = s.exitFun.
 	
+	invalidFunTypeOnEntry ::= (StateDecl).
+	[rule_Classes = '"error, msg: function should have type (void)->(*)"']
+	invalidFunTypeOnEntry(s) :- s is StateDecl(_, _, eF, _, _), eF : String , FunDecl(eF, s.owner, _, p, _, _), p != NIL.
+	
+	invalidFunTypeOnExit ::= (StateDecl).
+	[rule_Classes = '"error, msg: function should have type (void)->(*)"']
+	invalidFunTypeOnExit(s) :- s is StateDecl(_, _, _, eF, _), eF : String , FunDecl(eF, s.owner, _, p, _, _), p != NIL.
+	
+	//model only in real
+	modelFunOnlyInReal ::= (FunDecl).
+	[rule_Classes = '"error, msg: model functions can be declared only in real machines"']
+	modelFunOnlyInReal(f) :- f is FunDecl, f.owner.kind != REAL, f.kind = MODEL.
+	
+
 }
 
 domain PStaticTyping extends PData
@@ -211,13 +225,13 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Monitors cannot refer to "this""']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = MONITOR.
     
-    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind != REAL; SubSE(c, e), e = NulApp(NONDET), c is FunDecl(_, _, MODEL, _, _, _).
+    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind = MODEL; SubSE(c, e), e = NulApp(NONDET), c is FunDecl(_, _, MODEL, _, _, _).
 	[ rule_Classes = '"error, msg: Nondeterminitistic choice can be used only in model machine and model functions"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind = REAL, toSymbol(c) != #FunDecl; SubSE(c, e), e = NulApp(NONDET), c.owner.kind = REAL, c is FunDecl, c.kind != MODEL.
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind != MODEL, toSymbol(c) != #FunDecl; SubSE(c, e), e = NulApp(NONDET), c.owner.kind != MODEL, c is FunDecl, c.kind != MODEL.
 
-    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind != REAL; SubSE(c, e), e = NulApp(NONDET), c is FunDecl(_, _, MODEL, _, _, _).
+    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind = MODEL; SubSE(c, e), e = NulApp(FAIRNONDET), c is FunDecl(_, _, MODEL, _, _, _).
 	[ rule_Classes = '"error, msg: Nondeterminitistic choice can be used only in model machine and model functions"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind = REAL, toSymbol(c) != #FunDecl; SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind = REAL, c is FunDecl, c.kind != MODEL.
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind != MODEL, toSymbol(c) != #FunDecl; SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind != MODEL, c is FunDecl, c.kind != MODEL.
 	
     
     TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = NulApp(v), v : Integer.
@@ -269,7 +283,9 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), MachineDecl(n, MONITOR, _, _, _).
 	[ rule_Classes = '"error, msg: Undefined machine type"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), no MachineDecl(n, _, _, _, _).   
-    
+    [ rule_Classes = '"error, msg: monitors cannot have : new / send / monitor invocation/ push / pop"']
+	TypeOf(c, e, ERROR)			   :- SubSE(c, e), c.owner.kind = MONITOR, toSymbol(e) = #Send; SubSE(c, e), c.owner.kind = MONITOR, toSymbol(e) = #NewStmt; SubSE(c, e), c.owner.kind = MONITOR, toSymbol(e) = #Monitor; SubSE(c, e), c.owner.kind = MONITOR, toSymbol(e) = #Push; SubSE(c, e), c.owner.kind = MONITOR, e.op = POP.
+	
     TypeOf(c, e, ft)               :- SubSE(c, e), e = Field(e', n), TypeOf(c, e', t), TypeOfField(t, n, ft), ft != ERROR.
 	[ rule_Classes = '"error, msg: Bad field name"']
     TypeOf(c, e, ft)               :- SubSE(c, e), e = Field(e', n), TypeOf(c, e', t), TypeOfField(t, n, ft), ft = ERROR.
@@ -372,7 +388,7 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = UnStmt(ASSERT, e'), TypeOf(c, e', t'), t' != BaseType(BOOL).
     
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Ite(e', _, _), TypeOf(c, e', t'), t' = BaseType(BOOL).
-	[ rule_Classes = '"error, msg: "if (...)" expects a boolean value"']
+	[ rule_Classes                                   = '"error, msg: "if (...)" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Ite(e', _, _), TypeOf(c, e', t'), t' != BaseType(BOOL).
     
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = While(e', _), TypeOf(c, e', t'), t' = BaseType(BOOL).

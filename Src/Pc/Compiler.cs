@@ -321,6 +321,12 @@
             //Entry Exit Function
             AddErrors(task.Result, "invalidFunForEntry(_, _)", inputProgram, errors, 1);
             AddErrors(task.Result, "invalidFunForExit(_, _)", inputProgram, errors, 1);
+            AddErrors(task.Result, "invalidFunTypeOnEntry(_)", inputProgram, errors, 0);
+            AddErrors(task.Result, "invalidFunTypeOnExit(_)", inputProgram, errors, 0);
+
+            //Model functions
+            AddErrors(task.Result, "modelFunOnlyInReal(_)", inputProgram, errors, 0);
+
 
             flags.AddRange(errors);
             return task.Result.Conclusion == LiftedBool.True;

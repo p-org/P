@@ -23,7 +23,6 @@
 
         private Span crntAnnotSpan;
         private bool isTrigAnnotated = false;
-        private P_Root.ActionDecl crntActionDecl = null;
         private P_Root.FunDecl crntFunDecl = null;
         private P_Root.EventDecl crntEventDecl = null;
         private P_Root.MachineDecl crntMachDecl = null;
@@ -816,10 +815,10 @@
             }
         }
 
-        private void SetStateIsStable(Span span)
+        private void SetStateIsHot(Span span)
         {
             var state = GetCurrentStateDecl(span);
-            state.isStable = MkUserCnst(P_Root.UserCnstKind.TRUE, span);
+            state.isHot = MkUserCnst(P_Root.UserCnstKind.TRUE, span);
         }
 
         private void SetTrigAnnotated(Span span)
@@ -835,11 +834,11 @@
             P_Root.StateDecl state;
             if(isStmtBlock)
             {
-                var stmt = (P_Root.IArgType_AnonActionDecl__1)stmtStack.Pop();
+                var stmt = (P_Root.IArgType_AnonFunDecl__1)stmtStack.Pop();
                 state = GetCurrentStateDecl(stmt.Span);
-                entry = P_Root.MkAnonActionDecl((P_Root.MachineDecl)state.owner, stmt);
+                entry = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, stmt);
                 entry.Span = stmt.Span;
-                parseProgram.AnonActions.Add((P_Root.AnonActionDecl)entry);
+                parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)entry);
             }
             else
             {
@@ -847,7 +846,7 @@
                 state = GetCurrentStateDecl(actionSpan);
             }
            
-            if (IsSkipActionOrFun((P_Root.GroundTerm)state.entryAction))            
+            if (IsSkipFun((P_Root.GroundTerm)state.entryAction))            
             {
                 state.entryAction = (P_Root.IArgType_StateDecl__2)entry;
             }
@@ -884,7 +883,7 @@
                 state = GetCurrentStateDecl(functionSpan);
             }
 
-            if (IsSkipActionOrFun((P_Root.GroundTerm)state.exitFun))
+            if (IsSkipFun((P_Root.GroundTerm)state.exitFun))
             {
                 state.exitFun = (P_Root.IArgType_StateDecl__3)exit;
             }
@@ -1137,11 +1136,11 @@
             Contract.Assert(!isTrigAnnotated || crntAnnotStack.Count > 0);
 
             var state = GetCurrentStateDecl(span);
-            var stmt = (P_Root.IArgType_AnonActionDecl__1)stmtStack.Pop();
+            var stmt = (P_Root.IArgType_AnonFunDecl__1)stmtStack.Pop();
             var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
-            var anonAction = P_Root.MkAnonActionDecl((P_Root.MachineDecl)state.owner, stmt);
+            var anonAction = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, stmt);
             anonAction.Span = stmt.Span;
-            parseProgram.AnonActions.Add(anonAction);
+            parseProgram.AnonFunctions.Add(anonAction);
             foreach (var e in crntEventList)
             {
                 var action = P_Root.MkDoDecl(state, (P_Root.IArgType_DoDecl__1)e, anonAction);
@@ -1164,7 +1163,6 @@
             isTrigAnnotated = false;
             crntEventList.Clear();
         }
-
 
         private void AddDoNamedAction(string name, Span nameSpan, Span span)
         {
@@ -1348,18 +1346,6 @@
             }
         }
 
-        private void AddAction(string name, Span nameSpan, Span span)
-        {
-            Contract.Assert(stmtStack.Count > 0);
-            var actionDecl = GetCurrentActionDecl(span);
-            actionDecl.Span = span;
-            actionDecl.name = MkString(name, nameSpan);
-            actionDecl.owner = GetCurrentMachineDecl(span);
-            actionDecl.body = (P_Root.IArgType_ActionDecl__2)stmtStack.Pop();
-            parseProgram.Actions.Add(actionDecl);
-            crntActionDecl = null;
-        }
-
         private void AddFunction(string name, Span nameSpan, Span span)
         {
             Contract.Assert(stmtStack.Count > 0);
@@ -1388,18 +1374,6 @@
             return crntEventDecl;
         }
 
-        private P_Root.ActionDecl GetCurrentActionDecl(Span span)
-        {
-            if (crntActionDecl != null)
-            {
-                return crntActionDecl;
-            }
-
-            crntActionDecl = P_Root.MkActionDecl();
-            crntActionDecl.Span = span;
-            return crntActionDecl;
-        }
-
         private P_Root.FunDecl GetCurrentFunDecl(Span span)
         {
             if (crntFunDecl != null)
@@ -1426,9 +1400,9 @@
             crntState.Span = span;
             crntState.owner = GetCurrentMachineDecl(span);
 
-            crntState.entryAction = MkSkipAction((P_Root.MachineDecl)crntState.owner, span);
+            crntState.entryAction = MkSkipFun((P_Root.MachineDecl)crntState.owner, span);
             crntState.exitFun = MkSkipFun((P_Root.MachineDecl)crntState.owner, span);
-            crntState.isStable = MkUserCnst(P_Root.UserCnstKind.FALSE, span);
+            crntState.isHot = MkUserCnst(P_Root.UserCnstKind.FALSE, span);
 
             return crntState;
         }
@@ -1454,14 +1428,10 @@
         #endregion
 
         #region Helpers
-        private static bool IsSkipActionOrFun(P_Root.GroundTerm term)
+        private static bool IsSkipFun(P_Root.GroundTerm term)
         {
             P_Root.NulStmt nulStmt = null;
-            if (term is P_Root.AnonActionDecl)
-            {
-                nulStmt = ((P_Root.AnonActionDecl)term).body as P_Root.NulStmt;
-            }
-            else if (term is P_Root.AnonFunDecl)
+            if (term is P_Root.AnonFunDecl)
             {
                 nulStmt = ((P_Root.AnonFunDecl)term).body as P_Root.NulStmt;
             }
@@ -1481,14 +1451,6 @@
             var decl = P_Root.MkAnonFunDecl(owner, P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span)));
             decl.Span = span;
             parseProgram.AnonFunctions.Add(decl);
-            return decl;
-        }
-
-        private P_Root.AnonActionDecl MkSkipAction(P_Root.MachineDecl owner, Span span)
-        {
-            var decl = P_Root.MkAnonActionDecl(owner, P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span)));
-            decl.Span = span;
-            parseProgram.AnonActions.Add(decl);
             return decl;
         }
 

@@ -421,7 +421,16 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(e', e'', _), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = BaseType(MODEL), t'' != BaseType(EVENT).
 	[ rule_Classes = '"error, msg: argument 1 of "send" expects a machine value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(e', _, _), TypeOf(c, e', t'), t' != BaseType(REAL), t' != BaseType(MODEL).
-    
+	
+	[ rule_Classes = '"error, msg: invalid payload type : event expects no payload"']
+	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = Send(_, ev, payload), EventDecl(ev.name, _, NIL), payload != NIL.
+	
+	[ rule_Classes = '"error, msg: no payload : event expects payload"']
+	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = Send(_, ev, payload), EventDecl(ev.name, _, exPayload), payload = NIL, exPayload != NIL.
+	
+    [ rule_Classes = '"error, msg: invalid payload type in send"']
+	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = Send(_, ev, payload), payload != NIL, EventDecl(ev.name, _, t''), t'' != NIL, TypeOf(c, payload, t'), TypeRel(t', t'', k), k != SUB, k != SUP.
+	
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Monitor(n, e', _), MachineDecl(n, MONITOR, _, _, _), TypeOf(c, e', t'), t' = BaseType(EVENT).
 	[ rule_Classes = '"error, msg: Undeclared monitor"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(n, _, _), no MachineDecl(n, MONITOR, _, _, _).

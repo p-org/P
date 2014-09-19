@@ -141,7 +141,7 @@
             var progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, model), out instResult);
             Contract.Assert(progressed && instResult.Succeeded);
 
-            ////model.Print(Console.Out);
+            //// model.Print(Console.Out);
 
             //// Step 3. Perform static analysis.
             if (!Check(inputModule, inputFile, flags))

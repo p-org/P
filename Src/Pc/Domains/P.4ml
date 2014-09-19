@@ -44,7 +44,7 @@ domain PData
     NewStmt  ::= new (name: String, arg: any Expr + { NIL }).
     Raise    ::= new (ev: any Expr, arg: any Expr + { NIL }).
     Send     ::= new (dest: any Expr, ev: any Expr, arg: any Expr + { NIL }).
-    Monitor  ::= new (name: String, ev: Expr, arg: Expr + { NIL }).
+    Monitor  ::= new (name: String, ev: any Expr, arg: any Expr + { NIL }).
     FunStmt  ::= new (name: String, args: any Exprs + { NIL }).
     NulStmt  ::= new (op: { SKIP, POP }).
     UnStmt   ::= new (op: { ASSERT }, arg1: any Expr).

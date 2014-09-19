@@ -64,7 +64,7 @@ main model GodMachine {
 		
 		entry {
 			// create all the post machines
-			__seal();
+			// __seal();
 			new RogueFrame();
 			pt1 = new PortMachine();
 			pt2 = new PortMachine();
@@ -74,7 +74,7 @@ main model GodMachine {
 			pt6 = new PortMachine();
 			pt7 = new PortMachine();
 			pt8 = new PortMachine();
-			__unseal();
+			// __unseal();
 			// create the ordinary clock machines
 			link += (0,pt4);
 			P1 = new Clock(link, 1);
@@ -158,7 +158,7 @@ machine Clock {
 		on Local goto PeriodicStateDecision;
 	}
 	
-	action ReceiveErBest {
+	fun ReceiveErBest() {
 		//add to the sequence
 		ErBestSeq += (0, payload as (machine, (machine, int, int)));
 		assert(sizeof(ErBestSeq) <= sizeof(Ports));
@@ -185,7 +185,7 @@ machine Clock {
 			return false;
 	}
 	
-	action BreakLink {
+	fun BreakLink() {
 		i = sizeof(Ports) - 1;
 		while(i>=0)
 		{
@@ -197,7 +197,7 @@ machine Clock {
 		}
 	}
 	
-	action JoinLink {
+	fun JoinLink() {
 		Ports += (0, payload as machine);
 		send payload as machine, PowerUp, ParentGM;
 	}
@@ -233,7 +233,7 @@ machine Clock {
 		on Local goto CalculateRecommendedState;
 	}
 	
-	action ReceiveAck {
+	fun ReceiveAck() {
 		countAck = countAck + 1;
 		if(countAck == sizeof(Ports))
 		{
@@ -254,7 +254,7 @@ machine Clock {
 		defer break, join;
 		entry {
 			i = sizeof(Ports) - 1;
-			__seal();
+			// __seal();
 			//for each port calculate the recommended state
 			while(i >= 0)
 			{
@@ -322,7 +322,7 @@ machine Clock {
 				send Ports[i], UpdateParentGM, (ParentGM[0], ParentGM[1], ParentGM[2] + 1); // increment the number of stepsremoved irrespective of OC / BC //// make 0 for OC. ??
 				i = i - 1;
 			}
-			__unseal();
+			// __unseal();
 		}
 	}
 }
@@ -344,7 +344,7 @@ machine PortMachine {
 		ignore Announce;
 		defer StateDecisionEvent, PowerUp;
 		
-		on Initialise goto ConnectionInitialized
+		on Initialise goto ConnectionInitialized with
 		{
 				ConnectedTo = (payload as (machine, machine))[0];
 				MyClock = (payload as (machine, machine))[1];
@@ -355,7 +355,7 @@ machine PortMachine {
 	
 	state ConnectionInitialized {
 		ignore Announce;
-		on PowerUp goto Initializing
+		on PowerUp goto Initializing with
 		{
 			ParentGM = payload as (machine, int, int);
 		};
@@ -392,7 +392,7 @@ machine PortMachine {
 		on Local goto Listening;
 	}
 	
-	action HandleAnnounce {
+	fun HandleAnnounce() {
 		if(ErBestVar[1] > payload[1])
 		{
 			ErBestVar = payload as (machine, int, int);
@@ -418,7 +418,7 @@ machine PortMachine {
 			check = IsAnnounceReceiptTimeOut();
 			if(check)
 			{
-				invoke RogueFrame(mAnnounce, ParentGM[2]);
+				monitor RogueFrame, mAnnounce, ParentGM[2];
 				send ConnectedTo, Announce, ParentGM;
 			}
 		}
@@ -443,7 +443,7 @@ machine PortMachine {
 		on goPassive goto Passive;
 	}
 	
-	action UpdateState {
+	fun UpdateState() {
 		if(trigger == goMaster)
 			recState = 0;
 		if(trigger == goSlave)
@@ -458,14 +458,14 @@ machine PortMachine {
 		on goMaster do UpdateState;
 		on goSlave do UpdateState;
 		on goPassive do UpdateState;
-		on UpdateParentGM goto WaitForAck
+		on UpdateParentGM goto WaitForAck with
 		{
 			ParentGM = payload as (machine, int, int);
 			send MyClock, Ack;
 		};
 	}
 	
-	action JustReturn {
+	fun JustReturn() {
 		return;
 	}
 	
@@ -501,7 +501,7 @@ machine PortMachine {
 	}
 }
 		
-model machine scenariotester {
+model scenariotester {
 	var scenario: seq[(int, machine, machine)];
 	var i:int;
 	start state init {
@@ -517,7 +517,7 @@ model machine scenariotester {
 			if($)
 			{
 				i = sizeof(scenario) -1;
-				__seal();
+				//__seal();
 				while(i>=0)
 				{
 					if(scenario[i][0] == 0)
@@ -526,7 +526,7 @@ model machine scenariotester {
 					}
 					i = i - 1;
 				}
-				__unseal();
+				//__unseal();
 				raise(Local);
 			}
 		}
@@ -538,7 +538,7 @@ model machine scenariotester {
 		entry {
 			if($)
 			{
-				__seal();
+				//__seal();
 				i = sizeof(scenario) -1;
 				while(i>=0)
 				{
@@ -548,7 +548,7 @@ model machine scenariotester {
 					}
 					i = i - 1;
 				}
-				__unseal();
+				//__unseal();
 				raise(Local);
 			}
 		}

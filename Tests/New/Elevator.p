@@ -19,13 +19,13 @@ event eStopTimerReturned assert 1;
 event eObjectEncountered assert 1;
 
 machine Elevator {
-    var TimerV, DoorV: mid;
+    var TimerV, DoorV: model;
 
     start state Init {
         entry {
             TimerV = new Timer(this);
             DoorV = new Door(this);
-            raise(eUnit);
+            raise eUnit;
         }
 
         on eUnit goto DoorClosed;
@@ -35,7 +35,7 @@ machine Elevator {
         ignore eCloseDoor;
 
         entry { 
-            send(DoorV, eSendCommandToResetDoor);
+            send DoorV, eSendCommandToResetDoor;
         }
 
         on eOpenDoor goto DoorOpening;
@@ -46,7 +46,7 @@ machine Elevator {
         defer eCloseDoor;
 
         entry {
-            send(DoorV, eSendCommandToOpenDoor);
+            send DoorV, eSendCommandToOpenDoor;
         }
 
         on eDoorOpened goto DoorOpened;
@@ -56,8 +56,8 @@ machine Elevator {
         defer eCloseDoor;
 
         entry {
-            send(DoorV,eSendCommandToResetDoor);
-            send(TimerV,eStartDoorCloseTimer);
+            send DoorV,eSendCommandToResetDoor;
+            send TimerV,eStartDoorCloseTimer;
         }
 
         on eTimerFired goto DoorOpenedOkToClose;
@@ -69,7 +69,7 @@ machine Elevator {
         defer eOpenDoor;
 
         entry {
-            send(TimerV,eStartDoorCloseTimer);
+            send TimerV,eStartDoorCloseTimer;
         }
 
         on eStopTimerReturned, eTimerFired goto DoorClosing;
@@ -80,7 +80,7 @@ machine Elevator {
         defer eCloseDoor;
 
         entry {
-            send(DoorV,eSendCommandToCloseDoor);
+            send DoorV,eSendCommandToCloseDoor;
         }
 
         on eOpenDoor goto StoppingDoor;
@@ -93,7 +93,7 @@ machine Elevator {
         ignore eOpenDoor, eObjectDetected;
 
         entry {
-             send(DoorV,eSendCommandToStopDoor);
+             send DoorV,eSendCommandToStopDoor;
         }
 
         on eDoorOpened goto DoorOpened;
@@ -105,7 +105,7 @@ machine Elevator {
         defer eOpenDoor, eCloseDoor, eObjectDetected;
 
         entry {
-             send(TimerV,eStopDoorCloseTimer);
+             send TimerV,eStopDoorCloseTimer;
         } 
 
         on eOperationSuccess goto ReturnState;
@@ -121,18 +121,18 @@ machine Elevator {
 
     state ReturnState {
         entry {
-            raise(eStopTimerReturned);
+            raise eStopTimerReturned;
         }
     }
 }
 
-main model machine User {
-    var ElevatorV : id;
+main model User {
+    var ElevatorV : machine;
 
     start state Init {
         entry {
             ElevatorV = new Elevator();
-            raise(eUnit); 
+            raise eUnit; 
         }
 
         on eUnit goto Loop;
@@ -140,24 +140,24 @@ main model machine User {
 
     state Loop {
         entry {
-            if (*) {
-				invoke M(eOpenDoor);
-				send(ElevatorV,eOpenDoor);
-            } else if (*) {
-               send(ElevatorV,eCloseDoor);
+            if ($) {
+				monitor M, eOpenDoor;
+				send ElevatorV,eOpenDoor;
+            } else if ($) {
+               send ElevatorV,eCloseDoor;
             }
-            raise(eUnit);
+            raise eUnit;
         }
 
         on eUnit goto Loop;
     }
 }
 
-model machine Door {
-    var ElevatorV : id;
+model Door {
+    var ElevatorV : machine;
 
     start state _Init {
-	entry { ElevatorV = (id) payload; raise(eUnit); }
+	entry { ElevatorV = payload as machine; raise eUnit; }
         on eUnit goto Init;
     }
 
@@ -171,9 +171,9 @@ model machine Door {
 
     state OpenDoor {
         entry {
-			invoke M(eDoorOpened);
-            send(ElevatorV,eDoorOpened);
-            raise(eUnit);
+			monitor M, eDoorOpened;
+            send ElevatorV,eDoorOpened;
+            raise eUnit;
         }
 
         on eUnit goto ResetDoor;
@@ -181,10 +181,10 @@ model machine Door {
 
     state ConsiderClosingDoor {
         entry {
-            if (*) {
-                raise(eUnit);
-            } else if (*) {
-                raise(eObjectEncountered);
+            if ($) {
+                raise eUnit;
+            } else if ($) {
+                raise eObjectEncountered;
             }
         }
 
@@ -195,8 +195,8 @@ model machine Door {
 
     state ObjectEncountered {
         entry {
-            send(ElevatorV,eObjectDetected);
-            raise(eUnit);
+            send ElevatorV,eObjectDetected;
+            raise eUnit;
         }
 
         on eUnit goto Init;
@@ -204,7 +204,7 @@ model machine Door {
 
     state CloseDoor {
         entry {
-             send(ElevatorV,eDoorClosed); raise(eUnit);
+             send ElevatorV,eDoorClosed; raise eUnit;
         }
 
         on eUnit goto ResetDoor;
@@ -212,7 +212,7 @@ model machine Door {
 
     state StopDoor {
         entry {
-            send(ElevatorV,eDoorStopped); raise(eUnit);
+            send ElevatorV,eDoorStopped; raise eUnit;
         }
 
         on eUnit goto OpenDoor;
@@ -227,11 +227,11 @@ model machine Door {
     }
 }
 
-model machine Timer {
-    var ElevatorV : id;
+model Timer {
+    var ElevatorV : machine;
 
     start state _Init {
-	entry { ElevatorV = (id) payload; raise(eUnit); }
+	entry { ElevatorV = payload as machine; raise eUnit; }
         on eUnit goto Init;
     }
 
@@ -244,7 +244,7 @@ model machine Timer {
     state TimerStarted {
         defer eStartDoorCloseTimer;
         entry {
-             if (*) { raise(eUnit); }
+             if ($) { raise eUnit; }
         }
         on eUnit goto SendTimerFired;
         on eStopDoorCloseTimer goto ConsiderStopping;
@@ -253,7 +253,7 @@ model machine Timer {
     state SendTimerFired {
         defer eStartDoorCloseTimer;
         entry {
-            send(ElevatorV,eTimerFired); raise(eUnit); 
+            send ElevatorV,eTimerFired; raise eUnit; 
         }
         on eUnit goto Init;
     }
@@ -261,24 +261,24 @@ model machine Timer {
     state ConsiderStopping {
         defer eStartDoorCloseTimer;
         entry {
-            if (*) {
-                send(ElevatorV,eOperationFailure);
-                send(ElevatorV,eTimerFired);
+            if ($) {
+                send ElevatorV,eOperationFailure;
+                send ElevatorV,eTimerFired;
             } else {
-                send(ElevatorV,eOperationSuccess);
+                send ElevatorV,eOperationSuccess;
             }
-            raise(eUnit);
+            raise eUnit;
         }
         on eUnit goto Init;
     }
 }
 
 monitor M {
-    start stable state WaitForRequest {
+    start state WaitForRequest {
         on eOpenDoor goto WaitForResponse;
     }
 
-    state  WaitForResponse {
+    hot state WaitForResponse {
         on eDoorOpened goto WaitForRequest;
     }
 }

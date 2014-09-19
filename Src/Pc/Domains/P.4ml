@@ -26,7 +26,7 @@ domain PData
     Name       ::= new (name: String).
     New        ::= new (name: String, arg: any Expr + { NIL }).
     FunApp     ::= new (name: String, args: any Exprs + { NIL }).
-    NulApp     ::= new (op: Integer + Boolean + { THIS, TRIGGER, PAYLOAD, NONDET, FAIRNONDET, NULL, HALT, DEFAULT }).
+    NulApp     ::= new (op: Integer + Boolean + { THIS, TRIGGER, PAYLOAD, NONDET, FAIRNONDET, NULL, HALT }).
     UnApp      ::= new (op: { NOT, NEG, KEYS, VALUES, SIZEOF }, arg1: any Expr).
     BinApp     ::= new (op: { ADD, SUB, MUL, INTDIV, AND, OR, EQ, NEQ, LT, LE, GT, GE, IDX, IN }, arg1: any Expr, arg2: any Expr).
     Field      ::= new (arg: any Expr, name: String + Natural).
@@ -44,7 +44,7 @@ domain PData
     NewStmt  ::= new (name: String, arg: any Expr + { NIL }).
     Raise    ::= new (ev: any Expr, arg: any Expr + { NIL }).
     Send     ::= new (dest: any Expr, ev: any Expr, arg: any Expr + { NIL }).
-    Monitor  ::= new (name: String, ev: Expr, arg: Expr + { NIL }).
+    Monitor  ::= new (name: String, ev: any Expr, arg: any Expr + { NIL }).
     FunStmt  ::= new (name: String, args: any Exprs + { NIL }).
     NulStmt  ::= new (op: { SKIP, POP }).
     UnStmt   ::= new (op: { ASSERT }, arg1: any Expr).
@@ -66,12 +66,10 @@ domain PData
     
     FunDecl        ::= fun (name: String, owner: MachineDecl -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL },  return: any TypeExpr + { NIL }, body: any Stmt).
     AnonFunDecl    ::= new (owner: MachineDecl, body: any Stmt).
-    ActionDecl     ::= fun (name: String, owner: MachineDecl -> body: any Stmt).
-    AnonActionDecl ::= new (owner: MachineDecl, body: any Stmt).
     
-    StateDecl      ::= fun (name: any QualifiedName, owner: MachineDecl -> entryAction: any AnonActionDecl + String, exitFun: any AnonFunDecl + String, isStable: Boolean).
+    StateDecl      ::= fun (name: any QualifiedName, owner: MachineDecl -> entryAction: any AnonFunDecl + String, exitFun: any AnonFunDecl + String, isHot: Boolean).
     TransDecl      ::= fun (src: StateDecl, trig: String + { DEFAULT, HALT } -> dst: any QualifiedName, action: any { NIL, PUSH } + AnonFunDecl + String).
-    DoDecl         ::= fun (src: StateDecl, trig: String + { HALT } -> action: any { DEFER, IGNORE } + AnonActionDecl + String).
+    DoDecl         ::= fun (src: StateDecl, trig: String + { DEFAULT, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String).
             
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
@@ -84,7 +82,7 @@ domain PData
     /*************************************************************/
 
     Annotation  ::= new (ant: Annotatable, key: String, value: any AnnotValue).
-    Annotatable ::= EventDecl + MachineDecl + VarDecl + FunDecl + ActionDecl + StateDecl + TransDecl + DoDecl + { NIL }.
+    Annotatable ::= EventDecl + MachineDecl + VarDecl + FunDecl + StateDecl + TransDecl + DoDecl + { NIL }.
     AnnotValue  ::= Integer + String + Boolean + { NULL }.
 }
 
@@ -98,7 +96,6 @@ domain PStructuralTyping extends PData
 	DuplicateDoDecl ::= (DoDecl, DoDecl).
 	DuplicateVarDecl ::= (VarDecl, VarDecl).
 	DuplicateMacDecl ::= (MachineDecl, MachineDecl).
-	DuplicateAction ::= (ActionDecl, ActionDecl).
 	
 	[ rule_Classes = '"error, msg: An event has multiple definitions"']
 	DuplicateEvent(e1, e2) :- e1 is EventDecl, e2 is EventDecl, e1.name = e2.name, e1 != e2.
@@ -106,8 +103,6 @@ domain PStructuralTyping extends PData
 	DuplicateState(s1, s2) :- s1 != s2, s1 is StateDecl, s2 is StateDecl, s1.name = s2.name, s1.owner = s2.owner.
 	[ rule_Classes = '"error, msg: Multiple Functions with the same name"']
 	DuplicateFunct(f1, f2) :- f1 != f2, f1 is FunDecl, f2 is FunDecl, f1.name = f2.name, f1.owner = f2.owner.
-	[ rule_Classes = '"error, msg: Multiple actions with the same name"']
-	DuplicateAction(f1, f2) :- f1 != f2, f1 is ActionDecl, f2 is ActionDecl, f1.name = f2.name, f1.owner = f2.owner.
 	[ rule_Classes = '"error, msg: Multiple variables with the same name"']
 	DuplicateVarDecl(v1, v2) :- v1 != v2, v1 is VarDecl, v2 is VarDecl, v1.name = v2.name, v1.owner = v2.owner.
 	[ rule_Classes = '"error, msg: Multiple machines with the same name"']
@@ -143,7 +138,7 @@ domain PStructuralTyping extends PData
 	invalidFunOnTransDecl(trns) :- trns is TransDecl(_, _, _, act), act : String , no FunDecl(act, trns.src.owner, _, _, _, _).
 	
 	invalidFunTypeOnTransDecl ::= (TransDecl).
-	[rule_Classes = '"error, msg: transition function should have type (void)->(*)"']
+	[rule_Classes = '"error, msg: function cannot take arguments"']
 	invalidFunTypeOnTransDecl(trns) :- trns is TransDecl(_, _, _, act), act : String , FunDecl(act, trns.src.owner, _, p, _, _), p != NIL.
 	
 	//valid doDecl
@@ -152,35 +147,33 @@ domain PStructuralTyping extends PData
 	invalidEventOnDoDecl(doD) :- doD is DoDecl, no EventDecl(doD.trig, _, _), doD.trig != HALT.
 	
 	invalidFunOnDoDecl ::= (DoDecl).
-	[rule_Classes = '"error, msg: action function not defined"']
-	invalidFunOnDoDecl(trns) :- trns is DoDecl(_, _, act), act : String , no ActionDecl(act, trns.src.owner, _), no FunDecl(act, trns.src.owner, _, _, _, _).
+	[rule_Classes = '"error, msg: function not defined"']
+	invalidFunOnDoDecl(trns) :- trns is DoDecl(_, _, act), act : String, no FunDecl(act, trns.src.owner, _, _, _, _).
 	
 	invalidFunTypeOnDoDecl ::= (DoDecl).
-	[rule_Classes = '"error, msg: action function should have type (void)->(*)"']
+	[rule_Classes = '"error, msg: function cannot take arguments"']
 	invalidFunTypeOnDoDecl(trns) :- trns is DoDecl(_, _, act), act : String , FunDecl(act, trns.src.owner, _, p, _, _), p != NIL.
 	
 	//Entry Exit Functions
 	invalidFunForEntry ::= (StateDecl, String).
-	[rule_Classes = '"error, msg: undefined function/action for entry"']
-	invalidFunForEntry(s, eF) :- s is StateDecl(_, _, eF, _, _), eF : String, no FunDecl(eF, s.owner, _, _, _, _), no ActionDecl(eF, s.owner, _).
+	[rule_Classes = '"error, msg: undefined function for entry"']
+	invalidFunForEntry(s, eF) :- s is StateDecl(_, _, eF, _, _), eF : String, no FunDecl(eF, s.owner, _, _, _, _).
 	invalidFunForExit ::= (StateDecl, String).
 	[rule_Classes = '"error, msg: undefined function for exit"']
-	invalidFunForExit(s, eF) :- s is StateDecl(_, _, _, eF, _), eF : String, no FunDecl(eF, s.owner, _, _, _, _), eF = s.exitFun.
+	invalidFunForExit(s, eF) :- s is StateDecl(_, _, _, eF, _), eF : String, no FunDecl(eF, s.owner, _, _, _, _).
 	
 	invalidFunTypeOnEntry ::= (StateDecl).
-	[rule_Classes = '"error, msg: function should have type (void)->(*)"']
+	[rule_Classes = '"error, msg: function cannot take arguments"']
 	invalidFunTypeOnEntry(s) :- s is StateDecl(_, _, eF, _, _), eF : String , FunDecl(eF, s.owner, _, p, _, _), p != NIL.
 	
 	invalidFunTypeOnExit ::= (StateDecl).
-	[rule_Classes = '"error, msg: function should have type (void)->(*)"']
+	[rule_Classes = '"error, msg: function cannot take arguments"']
 	invalidFunTypeOnExit(s) :- s is StateDecl(_, _, _, eF, _), eF : String , FunDecl(eF, s.owner, _, p, _, _), p != NIL.
 	
 	//model only in real
 	modelFunOnlyInReal ::= (FunDecl).
 	[rule_Classes = '"error, msg: model functions can be declared only in real machines"']
 	modelFunOnlyInReal(f) :- f is FunDecl, f.owner.kind != REAL, f.kind = MODEL.
-	
-
 }
 
 domain PStaticTyping extends PData
@@ -198,7 +191,7 @@ domain PStaticTyping extends PData
     /*************************************************************/
 
     //// The declarations that may contain expressions or statements that should be typed.
-    TypingContext ::= FunDecl + ActionDecl + AnonFunDecl + AnonActionDecl.
+    TypingContext ::= FunDecl + AnonFunDecl.
     
     //// The set of typeable expressions and statements.
     Typeable ::= Expr + Stmt + Exprs + NamedExprs.
@@ -217,7 +210,6 @@ domain PStaticTyping extends PData
     TypeOf(c, e, BaseType(NULL))  :- SubSE(c, e), e = NulApp(NULL).
     TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = NulApp(TRIGGER).
     TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = NulApp(HALT).
-	TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = NulApp(DEFAULT).
     TypeOf(c, e, BaseType(ANY))   :- SubSE(c, e), e = NulApp(PAYLOAD).
     
     TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = REAL.
@@ -363,22 +355,18 @@ domain PStaticTyping extends PData
 
 	//// (1) Nullary statements
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(SKIP).
-
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(POP), c : ActionDecl.
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(POP), c : AnonActionDecl.
-	[ rule_Classes = '"error, msg: "pop" can only appear in an action."']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NulStmt(POP), toSymbol(c) != #ActionDecl, toSymbol(c) != #AnonActionDecl.
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(POP).
 
 	//// (2) Return statement
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL), c = FunDecl(_, _, _, _, NIL, _). 
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL), c : AnonFunDecl.
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(e'), c = FunDecl(_, _, _, _, t, _), TypeOf(c, e', t'), TypeRel(t', t, SUB).
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL), toSymbol(c) != #FunDecl. 
 	[ rule_Classes = '"error, msg: function must return a value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(NIL), c = FunDecl(_, _, _, _, t, _), t != NIL. 
 	[ rule_Classes = '"error, msg: return value has incorrect type"' ]
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(e'), c = FunDecl(_, _, _, _, t, _), TypeOf(c, e', t'), TypeRel(t', t, k), t' != t, k != SUB.
-	[ rule_Classes = '"error, msg: return cannot return a value here"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(t), toSymbol(c) != #FunDecl, t != NIL. 
+	[ rule_Classes = '"error, msg: anonymous function cannot return a value"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(t), c : AnonFunDecl, t != NIL. 
 
 	//// (3) Non-mutating statements
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Seq(_, _).
@@ -395,23 +383,17 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: "while (...)" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = While(e', _), TypeOf(c, e', t'), t' != BaseType(BOOL).
                
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Push(name), StateDecl(name, c.owner, _, _, _), c : ActionDecl. 
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Push(name), StateDecl(name, c.owner, _, _, _), c : AnonActionDecl. 
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Push(name), StateDecl(name, c.owner, _, _, _). 
 	[ rule_Classes = '"error, msg: Undeclared state name"']
 	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Push(name), no StateDecl(name, c.owner, _, _, _). 
-	[ rule_Classes = '"error, msg: "push" can only appear in an action"']
-	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Push(_), toSymbol(c) != #ActionDecl, toSymbol(c) != #AnonActionDecl. 
     
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _), MachineDecl(n, _, _, _, _).   
 	[ rule_Classes = '"error, msg: Undeclared machine"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _), no MachineDecl(n, _, _, _, _).   
     
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Raise(e', _), TypeOf(c, e', t'), t' = BaseType(EVENT), c : ActionDecl.   
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Raise(e', _), TypeOf(c, e', t'), t' = BaseType(EVENT), c : AnonActionDecl.   
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Raise(e', _), TypeOf(c, e', t'), t' = BaseType(EVENT).   
 	[ rule_Classes = '"error, msg: "raise" expects an event value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Raise(e', _), TypeOf(c, e', t'), t' != BaseType(EVENT).      
-	[ rule_Classes = '"error, msg: "raise" can only appear in an action"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Raise(_, _), toSymbol(c) != #ActionDecl, toSymbol(c) != #AnonActionDecl.      
       
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Send(e', e'', _), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = BaseType(REAL), t'' = BaseType(EVENT).
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Send(e', e'', _), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = BaseType(MODEL), t'' = BaseType(EVENT).
@@ -553,40 +535,74 @@ domain PStaticTyping extends PData
 
     [ rule_Classes = '"error, msg: invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name"']
 	LValueError(c, e) :- SubSE(c, e), e = BinStmt(_, e', _), no IsLValue(c, e', _).
-    /*************************************************************/
-    /*                         Impurity                          */
-    /*************************************************************/
-	Impure      ::= (FunDecl).
-    PurityError ::= (cntxt: TypingContext, expr: Typeable).
 
-	Impure(c) :- SubSE(c, e), c : FunDecl, e = BinStmt(_, e', e''), IsLValue(c, e', TRUE).
-	Impure(c) :- SubSE(c, e), e = FunApp(n, _), c : FunDecl, called is FunDecl(n, c.owner, _, _, _, _), Impure(called).
-	Impure(c) :- SubSE(c, e), e = FunStmt(n, _), c : FunDecl, called is FunDecl(n, c.owner, _, _, _, _), Impure(called).
+    /*************************************************************/
+    /*                      Control Impurity                     */
+    /*************************************************************/
+    PurityError ::= (cntxt: TypingContext + StateDecl + TransDecl, expr: Typeable + String + AnonFunDecl).
 
-    [ rule_Classes = '"error, msg: this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" "']
+	ControlImpure ::= (TypingContext).
+	ControlImpure(c) :- SubSE(c, e), e : Raise.
+	ControlImpure(c) :- SubSE(c, e), e : Push.
+	ControlImpure(c) :- SubSE(c, e), e = NulStmt(POP).
+
+    [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
+    PurityError(c, e) :- 
+       SubSE(c, e), e = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), ControlImpure(called).
+
+    [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
+    PurityError(c, e) :- 
+       SubSE(c, e), e = FunStmt(n, _), called is FunDecl(n, c.owner, _, _, _, _), ControlImpure(called).
+
+    [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
+    PurityError(c, n) :- 
+	       c is StateDecl(_, owner, _, n, _), called is FunDecl(n, owner, _, _, _, _), ControlImpure(called).
+
+    [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
+    PurityError(c, called) :- 
+	       c is StateDecl(_, owner, _, called, _), called = AnonFunDecl(owner, _), ControlImpure(called).
+
+    [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
+    PurityError(c, n) :- 
+	       c is TransDecl(src, _, _, n), called is FunDecl(n, src.owner, _, _, _, _), ControlImpure(called).
+
+    [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
+    PurityError(c, called) :- 
+	       c is TransDecl(src, _, _, called), called = AnonFunDecl(src.owner, _), ControlImpure(called).
+
+    /*************************************************************/
+    /*                         Data Impurity                     */
+    /*************************************************************/
+	DataImpure ::= (FunDecl).
+
+	DataImpure(c) :- SubSE(c, e), c : FunDecl, e = BinStmt(_, e', e''), IsLValue(c, e', TRUE).
+	DataImpure(c) :- SubSE(c, e), e = FunApp(n, _), c : FunDecl, called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called).
+	DataImpure(c) :- SubSE(c, e), e = FunStmt(n, _), c : FunDecl, called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called).
+
+    [ rule_Classes = '"error, msg: this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);" "']
     PurityError(c, e') :- 
-       SubSE(c, e), e = New(_, e'),           e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
-       SubSE(c, e), e = UnApp(_, e'),         e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
-       SubSE(c, e), e = BinApp(_, e', _),     e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
-       SubSE(c, e), e = BinApp(_, _, e'),     e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);    
-       SubSE(c, e), e = Field(e', _),         e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
-       SubSE(c, e), e = Cast(e', _),          e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);    
-       SubSE(c, e), e = Exprs(e', _),         e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);              
-       SubSE(c, e), e = NamedExprs(_, e', _), e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
-       SubSE(c, e), e = NewStmt(_, e'),       e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
-       SubSE(c, e), e = Raise(e', _),         e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
-       SubSE(c, e), e = Raise(_, e'),         e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);        
-       SubSE(c, e), e = Send(e', _, _),       e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
-       SubSE(c, e), e = Send(_, e', _),       e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
-       SubSE(c, e), e = Send(_, _, e'),       e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);    
-       SubSE(c, e), e = Monitor(_, e', _),    e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
-       SubSE(c, e), e = Monitor(_, _, e'),    e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);    
-       SubSE(c, e), e = UnStmt(_, e'),        e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
-       SubSE(c, e), e = Return (e'),          e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
-       SubSE(c, e), e = While(e', _),         e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
-       SubSE(c, e), e = Ite(e', _, _),        e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
-       SubSE(c, e), e = BinStmt(_, e', _),    e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called);
-       SubSE(c, e), e = BinStmt(_, e', e''),  e'' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), Impure(called), toSymbol(e') != #Name.
+       SubSE(c, e), e = New(_, e'),           e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);
+       SubSE(c, e), e = UnApp(_, e'),         e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);
+       SubSE(c, e), e = BinApp(_, e', _),     e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);
+       SubSE(c, e), e = BinApp(_, _, e'),     e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);    
+       SubSE(c, e), e = Field(e', _),         e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);
+       SubSE(c, e), e = Cast(e', _),          e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);    
+       SubSE(c, e), e = Exprs(e', _),         e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);              
+       SubSE(c, e), e = NamedExprs(_, e', _), e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);
+       SubSE(c, e), e = NewStmt(_, e'),       e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);
+       SubSE(c, e), e = Raise(e', _),         e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);
+       SubSE(c, e), e = Raise(_, e'),         e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);        
+       SubSE(c, e), e = Send(e', _, _),       e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);
+       SubSE(c, e), e = Send(_, e', _),       e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);
+       SubSE(c, e), e = Send(_, _, e'),       e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);    
+       SubSE(c, e), e = Monitor(_, e', _),    e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);
+       SubSE(c, e), e = Monitor(_, _, e'),    e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);    
+       SubSE(c, e), e = UnStmt(_, e'),        e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);
+       SubSE(c, e), e = Return (e'),          e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);
+       SubSE(c, e), e = While(e', _),         e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);
+       SubSE(c, e), e = Ite(e', _, _),        e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);
+       SubSE(c, e), e = BinStmt(_, e', _),    e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);
+       SubSE(c, e), e = BinStmt(_, e', e''),  e'' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called), toSymbol(e') != #Name.
 							                                          
     /*************************************************************/
     /*                      Type Comparability                   */

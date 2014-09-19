@@ -18,9 +18,6 @@
 
     internal class Compiler
     {
-        public LivenessOption liveness;
-        string outputPath;
-
         private const string PDomain = "P";
         private const string CDomain = "C";
         private const string ZingDomain = "Zing";
@@ -76,10 +73,17 @@
             private set;
         }
 
-        public Compiler(string inputFile)
+        public CommandLineOptions Options
+        {
+            get;
+            private set;
+        }
+
+        public Compiler(string inputFile, CommandLineOptions options)
         {
             Contract.Assert(!string.IsNullOrEmpty(inputFile));
             InputFile = inputFile;
+            Options = options;
             CompilerEnv = new Env();
             InitEnv(CompilerEnv);
         }
@@ -137,7 +141,7 @@
             var progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, model), out instResult);
             Contract.Assert(progressed && instResult.Succeeded);
 
-            model.Print(Console.Out);
+            //// model.Print(Console.Out);
 
             //// Step 3. Perform static analysis.
             if (!Check(inputModule, inputFile, flags))
@@ -299,7 +303,6 @@
             AddErrors(task.Result, "DuplicateDoDecl(_, _)", inputProgram, errors, 1);
             AddErrors(task.Result, "DuplicateVarDecl(_, _)", inputProgram, errors, 1);
             AddErrors(task.Result, "DuplicateMacDecl(_, _)", inputProgram, errors, 1);
-            AddErrors(task.Result, "DuplicateAction(_, _)", inputProgram, errors, 1);
             //There should be a main machine declared
             AddErrors(task.Result, "noMainMachine", inputProgram, errors);
             AddErrors(task.Result, "multipleMainMachines(_, _)", inputProgram, errors, 1);

@@ -83,7 +83,7 @@
 
 			 keywords.Add("var", (int)Tokens.VAR);
 			 keywords.Add("start", (int)Tokens.START);
-			 keywords.Add("stable", (int)Tokens.STABLE);
+			 keywords.Add("hot", (int)Tokens.HOT);
 			 keywords.Add("model", (int)Tokens.MODEL);
 			 keywords.Add("fun", (int)Tokens.FUN);
 			 keywords.Add("action", (int)Tokens.ACTION);

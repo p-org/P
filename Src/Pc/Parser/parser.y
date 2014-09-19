@@ -11,7 +11,7 @@
 %token INT BOOL FOREIGN ANY SEQ MAP ID
 %token MAIN EVENT MACHINE MONITOR ASSUME
 
-%token VAR START STABLE MODEL STATE FUN ACTION GROUP
+%token VAR START HOT MODEL STATE FUN ACTION GROUP
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH AS WITH
 
@@ -128,7 +128,6 @@ MachineBody
 MachineBodyItem
 	: VarDecl
 	| FunDecl
-	| ActionDecl
 	| StateDecl
 	| Group
 	;
@@ -142,11 +141,6 @@ VarDecl
 VarList
 	: ID                  { AddVarDecl($1.str, ToSpan(@1)); }									
 	| ID COMMA VarList    { AddVarDecl($1.str, ToSpan(@1)); }
-	;
-
-/******************* Action Declarations *********************/
-ActionDecl 
-	: ACTION ID StmtBlock { AddAction($2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 
 /******************* Function Declarations *******************/
@@ -197,14 +191,14 @@ GroupName
 
 /******************* State Declarations *******************/
 StateDecl
-	: IsStable STATE ID StateAnnotOrNone LCBRACE RCBRACE                  { AddState($3.str, false, ToSpan(@3), ToSpan(@1)); }
-	| IsStable STATE ID StateAnnotOrNone LCBRACE StateBody RCBRACE        { AddState($3.str, false, ToSpan(@3), ToSpan(@1)); }	  
-	| START IsStable STATE ID StateAnnotOrNone LCBRACE RCBRACE            { AddState($4.str, true,  ToSpan(@4), ToSpan(@1)); }
-	| START IsStable STATE ID StateAnnotOrNone LCBRACE StateBody RCBRACE  { AddState($4.str, true,  ToSpan(@4), ToSpan(@1)); }	  
+	: IsHot STATE ID StateAnnotOrNone LCBRACE RCBRACE                  { AddState($3.str, false, ToSpan(@3), ToSpan(@1)); }
+	| IsHot STATE ID StateAnnotOrNone LCBRACE StateBody RCBRACE        { AddState($3.str, false, ToSpan(@3), ToSpan(@1)); }	  
+	| START IsHot STATE ID StateAnnotOrNone LCBRACE RCBRACE            { AddState($4.str, true,  ToSpan(@4), ToSpan(@1)); }
+	| START IsHot STATE ID StateAnnotOrNone LCBRACE StateBody RCBRACE  { AddState($4.str, true,  ToSpan(@4), ToSpan(@1)); }	  
 	;
 
-IsStable
-	: STABLE        { SetStateIsStable(ToSpan(@1)); }
+IsHot
+	: HOT        { SetStateIsHot(ToSpan(@1)); }
 	|
 	;
 
@@ -389,7 +383,6 @@ Exp_0
     | FALSE                                  { PushNulExpr(P_Root.UserCnstKind.FALSE,      ToSpan(@1)); }
     | THIS                                   { PushNulExpr(P_Root.UserCnstKind.THIS,       ToSpan(@1)); }
     | TRIGGER                                { PushNulExpr(P_Root.UserCnstKind.TRIGGER,    ToSpan(@1)); }
-	| DEFAULT								 { PushNulExpr(P_Root.UserCnstKind.DEFAULT,    ToSpan(@1)); }
     | PAYLOAD                                { PushNulExpr(P_Root.UserCnstKind.PAYLOAD,    ToSpan(@1)); }
     | NONDET                                 { PushNulExpr(P_Root.UserCnstKind.NONDET,     ToSpan(@1)); }
     | FAIRNONDET                             { PushNulExpr(P_Root.UserCnstKind.FAIRNONDET, ToSpan(@1)); }

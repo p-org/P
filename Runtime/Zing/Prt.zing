@@ -78,7 +78,6 @@ class SM_HANDLE {
         bool b;
 		PRT_TYPE prtType;
     	assert (e != null);
-		assert (e != Main.default_SM_EVENT);
 		//assertion to check if argument passed inhabits the payload type.
 		prtType = Main.PayloadOf(e);
 		
@@ -118,31 +117,32 @@ class SM_HANDLE {
 		}
     }
 	
-    void DequeueEvent(bool hasDefault, SM_EVENT_SET deferredSet, bool stable) {
+    void DequeueEvent(bool hasDefault, SM_EVENT_SET deferredSet) {
 		currentEvent = null;
 		currentArg = null;
-		while (currentEvent == null) {
+		while (true) {
 			buffer.DequeueEvent(deferredSet, this);
 			if (currentEvent != null) 
 			{
 				assert(currentArg != null);
 				trace("<DequeueLog> Dequeued Event < {0}, ", currentEvent.name); PRT_VALUE.Print(currentArg); trace(" > at Machine {0}-{1}\n", machineName, instance);
 				blocked = false;
+				return;
 			} 
 			else if (hasDefault) 
 			{
 				trace("<DefaultTransLog> Default transition taken by Machine {0}-{1}\n", machineName, instance);
-	            currentEvent = Main.default_SM_EVENT;
 				blocked = false;
 				FairScheduler.AtYieldStatic(this);
 				FairChoice.AtYieldOrChooseStatic();
 				yield;
+				return;
 			} 
 			else 
 			{
   				invokescheduler("pop");
 				assume (!blocked);
-				if (stable) { blocked = true; }
+				blocked = true;
 				FairScheduler.AtYieldStatic(this);
 				FairChoice.AtYieldOrChooseStatic();
 				yield;
@@ -410,8 +410,10 @@ class Continuation {
 // Invoke FairScheduler.AtChooseStatic and FairChoice.AtYieldOrChooseStatic at each choose.
 set FairSchedulers FairScheduler;
 class FairScheduler {      
-    SM_HANDLE handle;
+    static FairSchedulers all = new FairSchedulers;
+    static FairSchedulers accepted = new FairSchedulers;
     static bool noYieldFromNowOn = false;
+    SM_HANDLE handle;
 
     static void Init(FairScheduler fs, SM_HANDLE h) {
 	fs.handle = h;
@@ -426,19 +428,6 @@ class FairScheduler {
 		}
     }
 
-    void AtChoose() {
-	    if (!noYieldFromNowOn) {
-			noYieldFromNowOn = choose(bool);
-		}
-		if (noYieldFromNowOn) {
-		   FairScheduler.accepted = FairScheduler.accepted + this;
-		   FairCycle.Accept();
-		}
-    }
-
-    static FairSchedulers all = new FairSchedulers;
-    static FairSchedulers accepted = new FairSchedulers;
-
     static void AtYieldStatic(SM_HANDLE running) {
 	foreach (FairScheduler m in all) {
 		m.AtYield(running);
@@ -446,14 +435,22 @@ class FairScheduler {
     }
 
     static void AtChooseStatic() {
-	foreach (FairScheduler m in all) {
-		m.AtChoose();
+    	if (noYieldFromNowOn) {
+		FairCycle.Accept();
+		return;
+	}
+	noYieldFromNowOn = choose(bool);
+	if (noYieldFromNowOn) {
+	    FairScheduler.all = new FairSchedulers;
+	    FairScheduler.accepted = new FairSchedulers;
 	}
     }
 };
 
 set FairChoices FairChoice;
 class FairChoice {
+    static FairChoices all = new FairChoices;
+    static FairChoices accepted = new FairChoices;
     bool lastChoice;
 
     static void Init(FairChoice fs) {
@@ -469,6 +466,12 @@ class FairChoice {
 	}
     }
     
+    static void AtYieldOrChooseStatic() {
+	foreach (FairChoice m in all) {
+	    m.AtYieldOrChoose();
+	}
+    }
+
     void AtChoose(bool b) {
         assume (this in FairChoice.all);
         if (b != lastChoice) {
@@ -477,21 +480,23 @@ class FairChoice {
 	    FairCycle.Accept();
 	}
     }
-
-    static FairChoices all = new FairChoices;
-    static FairChoices accepted = new FairChoices;
-
-    static void AtYieldOrChooseStatic() {
-	foreach (FairChoice m in all) {
-	    m.AtYieldOrChoose();
-	}
-    }
 };
 
 enum GateStatus { Init, Selected, InStable, Closed };
 
 class FairCycle {
     static GateStatus gate = GateStatus.Init;
+
+    static void GateProgress() {
+        bool b;
+        if (gate == GateStatus.Selected) {
+	    b = choose(bool);
+	    if (b) {
+	        gate = GateStatus.Closed;
+	    }
+	}
+    }
+
     static void Accept() {
         if (gate == GateStatus.Closed &&
 	    sizeof(FairChoice.accepted) == sizeof(FairChoice.all) && 

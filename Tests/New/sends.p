@@ -1,4 +1,5 @@
 event intTE : (int, int);
+event IAEvent : (int, any);
 event boolTE : (bool, bool);
 event seqE : seq[int];
 event seqAny : seq[any];
@@ -6,12 +7,15 @@ event unit;
 
 main machine Dummy {
 	var rec : machine;
+	var AIvar : (any, int);
+	var IAvar : (int, any);
 	var temp1 : (any, any);
 	var tempint : (int, any);
 	var tempbool : (any, bool);
 	var seqInt : seq[int];
 	var seqA : seq[any];
 	var A : any;
+	var ev : event;
 	start state Init {
 		entry {
 			rec = new Dummy();
@@ -21,6 +25,9 @@ main machine Dummy {
 	
 	state sender {
 		entry {
+			seqA = 1;
+			AIvar = IAvar as (any, int);
+			
 			send rec, intTE, (1,);
 			send rec, intTE, (1, 3, 5);
 			send rec, intTE, true;
@@ -35,15 +42,18 @@ main machine Dummy {
 			send rec, boolTE, tempbool;
 			
 			send rec, seqE, seqInt;
-			send rec, seqE, seqAny;
+			send rec, seqE, seqA;
 			
-			send rec, seqAny, seqAny;
+			send rec, seqAny, seqA;
 			send rec, seqAny, seqInt;
 			send rec, seqAny, A;
 			send rec, seqAny, 1;
+			send rec, IAEvent, AIvar;
+			send rec, ev, seqA;
 			
 			monitor M, seqE, seqInt;
 			monitor M, seqAny, tempbool;
+			monitor M, seqAny;
 			
 		}
 	

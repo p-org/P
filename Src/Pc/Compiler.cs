@@ -303,7 +303,6 @@
             AddErrors(task.Result, "DuplicateDoDecl(_, _)", inputProgram, errors, 1);
             AddErrors(task.Result, "DuplicateVarDecl(_, _)", inputProgram, errors, 1);
             AddErrors(task.Result, "DuplicateMacDecl(_, _)", inputProgram, errors, 1);
-            AddErrors(task.Result, "DuplicateAction(_, _)", inputProgram, errors, 1);
             //There should be a main machine declared
             AddErrors(task.Result, "noMainMachine", inputProgram, errors);
             AddErrors(task.Result, "multipleMainMachines(_, _)", inputProgram, errors, 1);

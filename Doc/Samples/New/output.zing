@@ -1,0 +1,772 @@
+enum Machine {_default, _Sample, _Sample2};
+
+enum Event {_halt, _b, _a};
+
+enum State {_default, __X1_Sample, __X1_Sample2};
+
+enum ActionOrFun {_default, _Sample_foo, _Sample_AnonFun0, _Sample_AnonFun1, _Sample2_AnonFun2};
+
+class Sample{
+LocalActions localActions;
+SM_EVENT_SET stackActionSet;
+SM_EVENT_SET stackDeferredSet;
+SM_HANDLE myHandle;
+void AnonFun1(Continuation entryCtxt) {
+int retTo_2;
+
+dummy:
+retTo_2 = entryCtxt.PopReturnTo();
+if ((retTo_2 == 0)) {
+goto start;
+}
+assert(false);
+
+start:
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun0(Continuation entryCtxt) {
+int retTo_1;
+
+dummy:
+retTo_1 = entryCtxt.PopReturnTo();
+if ((retTo_1 == 0)) {
+goto start;
+}
+if ((retTo_1 == 1)) {
+goto AnonFun0_0;
+}
+assert(false);
+
+start:
+entryCtxt.PushReturnTo(0);
+
+AnonFun0_0:
+foo(entryCtxt);
+
+;
+if ((entryCtxt.reason == ContinuationReason.Return)) {
+
+} else {
+entryCtxt.PushReturnTo(1);
+return;
+
+}
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void foo(Continuation entryCtxt) {
+int retTo_0;
+
+dummy:
+retTo_0 = entryCtxt.PopReturnTo();
+if ((retTo_0 == 0)) {
+goto start;
+}
+assert(false);
+
+start:
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void ReentrancyHelper(Continuation cont, ActionOrFun actionFun, SM_EVENT_SET currentActionSet) {
+SM_EVENT_SET savedDeferredSet;
+SM_EVENT_SET savedActionSet;
+SM_EVENT savedCurrentEvent;
+PRT_VALUE savedCurrentArg;
+
+init:
+if ((actionFun == ActionOrFun._Sample_foo)) {
+trace("<FunctionLog> Machine Sample-{0} executing Function foo\n", myHandle.instance);
+goto execute_foo;
+}
+if ((actionFun == ActionOrFun._Sample_AnonFun0)) {
+goto execute_AnonFun0;
+}
+if ((actionFun == ActionOrFun._Sample_AnonFun1)) {
+goto execute_AnonFun1;
+}
+assert(false);
+
+;
+
+
+execute_foo:
+
+reentry_foo:
+foo(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedDeferredSet = stackDeferredSet;
+savedActionSet = stackActionSet;
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+stackActionSet = currentActionSet;
+stackDeferredSet = Main.CalculateComplementOfEventSet(currentActionSet);
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+localActions = LocalActions.Construct(localActions);
+RunHelper(cont.state);
+localActions = localActions.next;
+stackDeferredSet = savedDeferredSet;
+stackActionSet = savedActionSet;
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Sample-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_foo;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_foo;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_foo;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_foo;
+}
+
+;
+
+
+execute_AnonFun0:
+
+reentry_AnonFun0:
+AnonFun0(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedDeferredSet = stackDeferredSet;
+savedActionSet = stackActionSet;
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+stackActionSet = currentActionSet;
+stackDeferredSet = Main.CalculateComplementOfEventSet(currentActionSet);
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+localActions = LocalActions.Construct(localActions);
+RunHelper(cont.state);
+localActions = localActions.next;
+stackDeferredSet = savedDeferredSet;
+stackActionSet = savedActionSet;
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Sample-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun0;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun0;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun0;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun0;
+}
+
+;
+
+
+execute_AnonFun1:
+
+reentry_AnonFun1:
+AnonFun1(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedDeferredSet = stackDeferredSet;
+savedActionSet = stackActionSet;
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+stackActionSet = currentActionSet;
+stackDeferredSet = Main.CalculateComplementOfEventSet(currentActionSet);
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+localActions = LocalActions.Construct(localActions);
+RunHelper(cont.state);
+localActions = localActions.next;
+stackDeferredSet = savedDeferredSet;
+stackActionSet = savedActionSet;
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Sample-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun1;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun1;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun1;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun1;
+}
+
+;
+
+}
+void RunHelper(State startState) {
+SM_EVENT_SET currentDeferredSet;
+SM_EVENT_SET currentActionSet;
+SM_EVENT_SET savedDeferredSet;
+SM_EVENT_SET savedActionSet;
+ActionOrFun actionFun;
+Continuation cont;
+SM_EVENT savedCurrentEvent;
+PRT_VALUE savedCurrentArg;
+
+init:
+if ((startState == State.__X1_Sample)) {
+goto execute__X1_Sample;
+} else {
+assert(false);
+
+}
+
+;
+
+
+execute__X1_Sample:
+trace("<StateLog> Machine Sample-{0} entered State X1\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Sample", "_X1_Sample");
+currentDeferredSet = new SM_EVENT_SET;
+currentActionSet = new SM_EVENT_SET;
+_X1_Sample_CalculateDeferredAndActionSet(currentDeferredSet, currentActionSet);
+cont = Continuation.Construct_Default();
+cont.PushReturnTo(0);
+ReentrancyHelper(cont, ActionOrFun._Sample_AnonFun0, currentActionSet);
+if ((cont.reason == ContinuationReason.Pop)) {
+return;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+goto wait__X1_Sample;
+} else {
+goto transition__X1_Sample;
+}
+
+;
+
+
+wait__X1_Sample:
+myHandle.DequeueEvent(true, currentDeferredSet);
+goto transition__X1_Sample;
+;
+
+
+transition__X1_Sample:
+if (myHandle.currentEvent in currentActionSet) {
+actionFun = localActions.Find(myHandle.currentEvent);
+cont = Continuation.Construct_Default();
+cont.PushReturnTo(0);
+ReentrancyHelper(cont, actionFun, currentActionSet);
+if ((cont.reason == ContinuationReason.Pop)) {
+return;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+goto wait__X1_Sample;
+} else {
+goto transition__X1_Sample;
+}
+
+}
+trace("<StateLog> Machine Sample-{0} exiting State X1\n", myHandle.instance);
+cont = Continuation.Construct_Default();
+cont.PushReturnTo(0);
+ReentrancyHelper(cont, ActionOrFun._Sample_AnonFun1, currentActionSet);
+if ((myHandle.currentEvent == Main.a_SM_EVENT)) {
+goto execute__X1_Sample;
+} else {
+if ((myHandle.currentEvent == Main.null_SM_EVENT)) {
+goto execute__X2_Sample;
+} else {
+return;
+
+}
+
+}
+
+;
+
+}
+void run() {
+SM_EVENT_SET currentDeferredSet;
+
+dummy:
+RunHelper(State.__X1_Sample);
+if ((myHandle.currentEvent == Main.halt_SM_EVENT)) {
+currentDeferredSet = null;
+myHandle.buffer = null;
+myHandle.isDeleted = true;
+localActions = null;
+stackActionSet = null;
+stackDeferredSet = null;
+return;
+
+}
+trace("<StateLog> Unhandled event exception by machine Sample-{0}\n", myHandle.instance);
+assert(false);
+
+;
+
+}
+void _X1_Sample_CalculateDeferredAndActionSet(SM_EVENT_SET currentDeferredSet, SM_EVENT_SET currentActionSet) {
+
+dummy:
+currentDeferredSet = (currentDeferredSet + stackDeferredSet);
+currentDeferredSet = (currentDeferredSet - Main.null_SM_EVENT);
+currentDeferredSet = (currentDeferredSet - Main.a_SM_EVENT);
+currentActionSet = (currentActionSet + stackActionSet);
+currentActionSet = (currentActionSet - Main.null_SM_EVENT);
+currentActionSet = (currentActionSet - Main.a_SM_EVENT);
+localActions.es = new SM_EVENT_array[0];
+localActions.as = new ActionOrFun_array[0];
+
+;
+
+}
+};
+
+class Sample2{
+LocalActions localActions;
+SM_EVENT_SET stackActionSet;
+SM_EVENT_SET stackDeferredSet;
+SM_HANDLE myHandle;
+void AnonFun2(Continuation entryCtxt) {
+int retTo_3;
+
+dummy:
+retTo_3 = entryCtxt.PopReturnTo();
+if ((retTo_3 == 0)) {
+goto start;
+}
+assert(false);
+
+start:
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void ReentrancyHelper(Continuation cont, ActionOrFun actionFun, SM_EVENT_SET currentActionSet) {
+SM_EVENT_SET savedDeferredSet;
+SM_EVENT_SET savedActionSet;
+SM_EVENT savedCurrentEvent;
+PRT_VALUE savedCurrentArg;
+
+init:
+if ((actionFun == ActionOrFun._Sample2_AnonFun2)) {
+goto execute_AnonFun2;
+}
+assert(false);
+
+;
+
+
+execute_AnonFun2:
+
+reentry_AnonFun2:
+AnonFun2(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedDeferredSet = stackDeferredSet;
+savedActionSet = stackActionSet;
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+stackActionSet = currentActionSet;
+stackDeferredSet = Main.CalculateComplementOfEventSet(currentActionSet);
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+localActions = LocalActions.Construct(localActions);
+RunHelper(cont.state);
+localActions = localActions.next;
+stackDeferredSet = savedDeferredSet;
+stackActionSet = savedActionSet;
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Sample2-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun2;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun2;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun2;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun2;
+}
+
+;
+
+}
+void RunHelper(State startState) {
+SM_EVENT_SET currentDeferredSet;
+SM_EVENT_SET currentActionSet;
+SM_EVENT_SET savedDeferredSet;
+SM_EVENT_SET savedActionSet;
+ActionOrFun actionFun;
+Continuation cont;
+SM_EVENT savedCurrentEvent;
+PRT_VALUE savedCurrentArg;
+
+init:
+if ((startState == State.__X1_Sample2)) {
+goto execute__X1_Sample2;
+} else {
+assert(false);
+
+}
+
+;
+
+
+execute__X1_Sample2:
+trace("<StateLog> Machine Sample2-{0} entered State X1\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Sample2", "_X1_Sample2");
+currentDeferredSet = new SM_EVENT_SET;
+currentActionSet = new SM_EVENT_SET;
+_X1_Sample2_CalculateDeferredAndActionSet(currentDeferredSet, currentActionSet);
+cont = Continuation.Construct_Default();
+cont.PushReturnTo(0);
+ReentrancyHelper(cont, ActionOrFun._Sample2_AnonFun2, currentActionSet);
+if ((cont.reason == ContinuationReason.Pop)) {
+return;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+goto wait__X1_Sample2;
+} else {
+goto transition__X1_Sample2;
+}
+
+;
+
+
+wait__X1_Sample2:
+myHandle.DequeueEvent(false, currentDeferredSet);
+goto transition__X1_Sample2;
+;
+
+
+transition__X1_Sample2:
+if (myHandle.currentEvent in currentActionSet) {
+actionFun = localActions.Find(myHandle.currentEvent);
+cont = Continuation.Construct_Default();
+cont.PushReturnTo(0);
+ReentrancyHelper(cont, actionFun, currentActionSet);
+if ((cont.reason == ContinuationReason.Pop)) {
+return;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+goto wait__X1_Sample2;
+} else {
+goto transition__X1_Sample2;
+}
+
+}
+trace("<StateLog> Machine Sample2-{0} exiting State X1\n", myHandle.instance);
+cont = Continuation.Construct_Default();
+cont.PushReturnTo(0);
+ReentrancyHelper(cont, ActionOrFun._Sample2_AnonFun2, currentActionSet);
+return;
+
+;
+
+}
+void run() {
+SM_EVENT_SET currentDeferredSet;
+
+dummy:
+RunHelper(State.__X1_Sample2);
+if ((myHandle.currentEvent == Main.halt_SM_EVENT)) {
+currentDeferredSet = null;
+myHandle.buffer = null;
+myHandle.isDeleted = true;
+localActions = null;
+stackActionSet = null;
+stackDeferredSet = null;
+return;
+
+}
+trace("<StateLog> Unhandled event exception by machine Sample2-{0}\n", myHandle.instance);
+assert(false);
+
+;
+
+}
+void _X1_Sample2_CalculateDeferredAndActionSet(SM_EVENT_SET currentDeferredSet, SM_EVENT_SET currentActionSet) {
+
+dummy:
+currentDeferredSet = (currentDeferredSet + stackDeferredSet);
+currentDeferredSet = (currentDeferredSet - Main.halt_SM_EVENT);
+currentActionSet = (currentActionSet + stackActionSet);
+currentActionSet = (currentActionSet + Main.halt_SM_EVENT);
+localActions.es = new SM_EVENT_array[1];
+localActions.as = new ActionOrFun_array[1];
+localActions.es[0] = Main.halt_SM_EVENT;
+localActions.as[0] = ActionOrFun._Sample2_AnonFun2;
+
+;
+
+}
+};
+
+class Main{
+static PRT_TYPE type_0_PRT_TYPE;
+static int Sample2_instance;
+static int Sample_instance;
+static SM_EVENT a_SM_EVENT;
+static SM_EVENT b_SM_EVENT;
+static SM_EVENT null_SM_EVENT;
+static SM_EVENT halt_SM_EVENT;
+static activate void run() {
+
+dummy:
+Main.halt_SM_EVENT = SM_EVENT.Construct(Event._halt, 1, false);
+Main.null_SM_EVENT = null;
+Main.b_SM_EVENT = SM_EVENT.Construct(Event._b, -1, false);
+Main.a_SM_EVENT = SM_EVENT.Construct(Event._a, -1, false);
+Sample_instance = 0;
+Sample2_instance = 0;
+Main.type_0_PRT_TYPE = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL);
+Main.CreateMachine_Sample(null);
+
+;
+
+}
+static PRT_TYPE PayloadOf(SM_EVENT e) {
+
+dummy:
+if ((e == null)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._halt)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._b)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._a)) {
+return Main.type_0_PRT_TYPE;
+
+}
+assert(false);
+
+;
+
+}
+static SM_EVENT_SET CalculateComplementOfEventSet(SM_EVENT_SET eventSet) {
+SM_EVENT_SET returnEventSet;
+
+dummy:
+returnEventSet = new SM_EVENT_SET;
+if (Main.null_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.null_SM_EVENT);
+
+}
+if (Main.b_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.b_SM_EVENT);
+
+}
+if (Main.a_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.a_SM_EVENT);
+
+}
+return returnEventSet;
+
+;
+
+}
+static SM_HANDLE CreateMachine_Sample2(PRT_VALUE arg) {
+FairChoice fairChoice;
+FairScheduler fairScheduler;
+Sample2 o_Sample2;
+
+dummy:
+o_Sample2 = new Sample2;
+o_Sample2.myHandle = SM_HANDLE.Construct(Machine._Sample2, Sample2_instance, -1);
+trace("<CreateLog> Created Machine Sample2-{0}\n", Sample2_instance);
+o_Sample2.myHandle.currentArg = arg;
+Sample2_instance = (Sample2_instance + 1);
+o_Sample2.stackDeferredSet = new SM_EVENT_SET;
+o_Sample2.stackActionSet = new SM_EVENT_SET;
+o_Sample2.localActions = LocalActions.Construct(null);
+o_Sample2.myHandle.machineId = MachineId.GetNextId();
+async o_Sample2.run();
+invokescheduler("map", o_Sample2.myHandle.machineId);
+return o_Sample2.myHandle;
+
+;
+
+}
+static SM_HANDLE CreateMachine_Sample(PRT_VALUE arg) {
+FairChoice fairChoice;
+FairScheduler fairScheduler;
+Sample o_Sample;
+
+dummy:
+o_Sample = new Sample;
+o_Sample.myHandle = SM_HANDLE.Construct(Machine._Sample, Sample_instance, -1);
+trace("<CreateLog> Created Machine Sample-{0}\n", Sample_instance);
+o_Sample.myHandle.currentArg = arg;
+Sample_instance = (Sample_instance + 1);
+o_Sample.stackDeferredSet = new SM_EVENT_SET;
+o_Sample.stackActionSet = new SM_EVENT_SET;
+o_Sample.localActions = LocalActions.Construct(null);
+o_Sample.myHandle.machineId = MachineId.GetNextId();
+async o_Sample.run();
+invokescheduler("map", o_Sample.myHandle.machineId);
+return o_Sample.myHandle;
+
+;
+
+}
+};
+

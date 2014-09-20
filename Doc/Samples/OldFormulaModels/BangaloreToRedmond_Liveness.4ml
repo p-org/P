@@ -1,0 +1,131 @@
+[
+	parsers.DSL = '"Parser at ..\Tools\PCompiler\DSLParser.dll"',
+	modules.PData = '"PData at ..\Libraries\Formula\PData.4ml"',
+	parse_ActiveParser = "DSL"
+]
+
+model BangaloreToRedmond_Liveness of PData 
+{
+	BookCab is EventDecl("BookCab", AssumeMaxInstances(2), NIL).
+	BookFlight is EventDecl("BookFlight", AssertMaxInstances(2), NIL).
+    FlightBooked is EventDecl("FlightBooked", AssertMaxInstances(2), NIL).
+    TryAgain is EventDecl("TryAgain", AssertMaxInstances(2), NIL).
+    CabBooked is EventDecl("CabBooked", AssumeMaxInstances(1), NIL).
+	Thanks is EventDecl("Thanks", AssumeMaxInstances(1), NIL).
+    ReachedAirport is EventDecl("ReachedAirport", AssertMaxInstances(2), NIL).
+    MissedFlight is EventDecl("MissedFlight", AssertMaxInstances(2), NIL).
+    TookFlight is EventDecl("TookFlight", AssertMaxInstances(2), NIL).
+    Unit is EventDecl("Unit", AssertMaxInstances(2), NIL).
+
+    mEmployee is MachineDecl("Employee", FALSE, NIL).
+    
+    VarDecl("TravelAgent", mEmployee, ID, TRUE).
+	VarDecl("CityCab", mEmployee, ID, TRUE).
+	VarDecl("Check", mEmployee, BOOL, FALSE).
+	VarDecl("RemoteCheckIn", mEmployee, BOOL, FALSE).
+	
+	es1 is EventSetDecl("Es1", mEmployee).
+    InEventSet(es1, CabBooked).
+ 
+MachStart(mEmployee, sInit).
+
+sInit is StateDecl("Init", mEmployee, 
+		`{
+		TravelAgent = new TravelAgent(Employee=THIS); 
+		CityCab = new CityCab(Employee=THIS);
+		RemoteCheckIn = false;
+		raise(Events.Unit);
+		}`, es1).
+		
+sBangaloreOffice is StateDecl("BangaloreOffice", mEmployee, 
+       `{
+           call (States.BookFlight);
+		}`,
+       es1).
+
+ExitFun(sBangaloreOffice, `{ if(TRIGGER == Events.FlightBooked) send(TravelAgent, Events.Thanks);}`).
+
+sBookFlight is StateDecl("BookFlight", mEmployee, `{ send(TravelAgent, Events.BookFlight); return; }`, es1).
+
+sBookCab is StateDecl("BookCab", mEmployee, `{ send(CityCab, Events.BookCab); }`, es1).
+
+ExitFun(sBookCab, `{ assert(RemoteCheckIn == false); RemoteCheckIn = true; if(TRIGGER != Events.DEFAULT) send(CityCab, Events.Thanks);}`).
+
+sTakeCab is StateDecl("TakeCab", mEmployee, `{ raise(Events.ReachedAirport); }`, NIL).
+
+sTakeBus is StateDecl("TakeBus", mEmployee, `{ raise(Events.ReachedAirport); }`, NIL).
+
+
+sAtAirport is StateDecl("AtAirport", mEmployee,
+	`{
+        
+		assert(RemoteCheckIn == true);
+		Check = AmILucky();
+		if(Check)
+		{
+			raise(Events.TookFlight);
+		}
+		else
+		{
+			raise(Events.MissedFlight);
+		}
+	}`,
+	NIL).
+
+//Reset RemoteCheckIn Variable in exit function
+ExitFun(sAtAirport, `{RemoteCheckIn = false;}`).
+sReachedRedmond is StateDecl("ReachedRedmond", mEmployee, `{raise(Events.Unit);}`, NIL).
+
+FunDecl("AmILucky", mEmployee, NIL, BOOL, TRUE, 
+				      `{ 
+				      	 if (NONDET) 
+					    return true;
+					 else
+					    return false;
+					}`).
+
+TransDecl(sInit, Unit, sBangaloreOffice, FALSE).
+TransDecl(sBangaloreOffice, TryAgain, sBangaloreOffice, FALSE).
+TransDecl(sBangaloreOffice, FlightBooked, sBookCab, FALSE).
+
+TransDecl(sBookCab, DEFAULT, sTakeBus , FALSE).
+TransDecl(sBookCab, CabBooked, sTakeCab , FALSE).
+TransDecl(sTakeCab, ReachedAirport, sAtAirport , FALSE).
+TransDecl(sTakeBus, ReachedAirport, sAtAirport , FALSE).
+TransDecl(sAtAirport, TookFlight, sReachedRedmond , FALSE).
+TransDecl(sAtAirport, MissedFlight, sBangaloreOffice , FALSE).
+TransDecl(sReachedRedmond, Unit, sBangaloreOffice , FALSE).
+
+mTravelAgent is MachineDecl("TravelAgent", TRUE, NIL).
+
+VarDecl("Employee", mTravelAgent, ID, FALSE).
+
+MachStart(mTravelAgent, sInitTravelAgent).
+
+sInitTravelAgent is StateDecl("Init", mTravelAgent, `{ }`, NIL).
+sBookFlightTravelAgent is StateDecl("BookFlight", mTravelAgent, `{ if(NONDET) { send(Employee, Events.TryAgain); raise(Events.Unit);} else { send(Employee, Events.FlightBooked);} }`, NIL).
+
+
+TransDecl(sInitTravelAgent, BookFlight, sBookFlightTravelAgent, FALSE).
+TransDecl(sBookFlightTravelAgent, Unit, sInitTravelAgent, FALSE).
+TransDecl(sBookFlightTravelAgent, Thanks, sInitTravelAgent, FALSE).
+
+mCityCab is MachineDecl("CityCab", TRUE, NIL).
+
+VarDecl("Employee", mCityCab, ID, FALSE).
+
+MachStart(mCityCab, sInit_).
+
+sInit_ is StateDecl("Init", mCityCab, `{ }`, NIL).
+sBookCab_ is StateDecl("BookCab", mCityCab, `{ if(NONDET) { raise(Events.Unit);} else { send(Employee, Events.CabBooked);} }`, NIL).
+
+mIAction is ActionDecl("Action_5", mCityCab, `{ }`). 
+
+Install(sInit_, Thanks, mIAction).
+
+TransDecl(sInit_, BookCab, sBookCab_, FALSE).
+TransDecl(sBookCab_, BookCab, sBookCab_, FALSE).
+TransDecl(sBookCab_, Unit, sInit_, FALSE).
+TransDecl(sBookCab_, Thanks, sInit_, FALSE).
+  MainDecl(New(MachType("Employee"), NIL)).
+}

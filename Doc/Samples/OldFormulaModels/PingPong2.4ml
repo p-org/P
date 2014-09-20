@@ -1,0 +1,169 @@
+[
+	parsers.DSL = '"Parser at ..\Tools\PCompiler\DSLParser.dll"',
+	modules.PData = '"PData at ..\Libraries\Formula\PData.4ml"',
+	parse_ActiveParser = "DSL"
+]
+
+model PingPong of PData
+{
+   ///////////////////////////////////////////////
+   ///////        Foreign Functions       ////////
+   ///////////////////////////////////////////////
+
+   ///////////////////////////////////////////////
+   ///////        Event Alphabet          ////////
+   ///////////////////////////////////////////////
+
+   ePing is EventDecl("Ping", AssertMaxInstances(1), ID).
+   ePong is EventDecl("Pong", AssertMaxInstances(1), NIL).
+   eSuccess is EventDecl("Success", AssertMaxInstances(1), NIL).   
+   
+   esPPSet is EventSetDecl("PPSet", mPing).
+   InEventSet(esPPSet, ePing).
+   InEventSet(esPPSet, ePong).
+     
+   esResSet is EventSetDecl("ResultSet", mPong).
+   InEventSet(esResSet, eSuccess).
+   
+
+   FunDecl("Foo", mPing, NIL, NIL, TRUE, 
+   	`{    
+
+	}`).
+
+   FunDecl("Bar", mPong, Params("p", INT, NIL), NIL, TRUE, 
+   	`{    
+	      p = 42;
+	}`).
+
+   FunDecl("Baz", mPong, NIL, INT, TRUE, 
+   	`{    
+	      return 42;
+	}`).
+
+   ///////////////////////////////////////////////
+   ///////    Declartions of Machines     ////////
+   ///////////////////////////////////////////////
+     
+   mPing is MachineDecl("PING", FALSE, NIL).
+   MachStart(mPing, sPing_Init).
+
+   mPong is MachineDecl("PONG", FALSE, NIL).
+   MachStart(mPong, sPong_WaitPing).
+
+    ///////////////////////////////////////////////
+   ///////         Var Declarations        ////////
+   ///////////////////////////////////////////////
+ 
+   VarDecl("pongId", mPing, INT, FALSE).      
+   VarDecl("x", mPing, INT, FALSE).      
+   VarDecl("y", mPing, INT, FALSE).      
+   
+   VarDecl("x", mPong, ID, FALSE).      
+   VarDecl("y", mPong, INT, FALSE).      
+   VarDecl("z", mPong, INT, FALSE).      
+
+   ///////////////////////////////////////////////
+   ///////  Ping States and Transitions   ////////
+   ///////////////////////////////////////////////
+     
+   sPing_Init is StateDecl(     
+       "Ping_Init",
+       mPing,
+       `{
+	       pongId = 4;
+       }`,
+       NIL).                   
+	   
+   sPing_SendPing is StateDecl(
+       "Ping_SendPing",
+	   mPing,
+	   `{
+	     x = 2;
+	   }`,
+	   NIL).
+
+  sPing_WaitPong is StateDecl(
+      "Ping_WaitPong",
+	  mPing,
+	  `{
+	    if (x > 100)
+	    {
+	    	    leave;
+	    }
+	    else {
+	      x  = x + 1;
+	    }
+	    
+	    if (x > 100)
+	    {
+	         x = 2;
+	    	    leave;
+	    }
+	    else {
+	      x = 3;
+	      x  = x + 1;
+	    }
+	    
+	    if (x > 100)
+	    {
+	       Foo();
+	    }
+	    else if (x < 100) 
+	    {
+	       if (y == 100)
+	          x = 3;	   
+	       else if (y < 10)
+	       {
+	         {
+	          x = y;
+	         } 
+	       }    
+	       else 
+	          y = 4;
+	       x = 5 + y;
+	    }
+	    else { x = 5; }
+	    
+	  }`,
+	  NIL). 
+
+   TransDecl(sPing_Init, eSuccess, sPing_SendPing, FALSE).
+   TransDecl(sPing_SendPing, eSuccess, sPing_WaitPong, FALSE).
+   TransDecl(sPing_WaitPong, ePong, sPing_SendPing, FALSE).
+                    
+   ///////////////////////////////////////////////
+   ///////  Pong States and Transitions   ////////
+   ///////////////////////////////////////////////
+     
+   sPong_WaitPing is StateDecl(
+       "Pong_WaitPing",
+	   mPong,
+	   `{
+	     x = new PONG();
+	     y = 42;
+	   }`,
+	   NIL).
+
+  sPong_SendPong is StateDecl(
+      "Pong_SendPong",
+	  mPong,
+	  `{
+	     while (z < 5)
+	     {
+	         y = y + 1;
+           y = (4*z) + 5;
+           z = (4 + y) * 5;
+	   Bar(10);
+           y = Baz();
+	     }	  
+	     
+	     raise ( Events.Success );
+	  }`,
+	  NIL). 
+
+   TransDecl(sPong_WaitPing, ePing, sPong_SendPong, FALSE).
+   TransDecl(sPong_SendPong, eSuccess, sPong_WaitPing, FALSE).
+   
+   MainDecl(New(MachType("PONG"), NIL)).
+}

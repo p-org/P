@@ -1,0 +1,108 @@
+[
+	parsers.DSL = '"Parser at ..\Tools\PCompiler\DSLParser.dll"',
+	modules.PData = '"PData at ..\Libraries\Formula\PData.4ml"',
+	parse_ActiveParser = "DSL"
+]
+
+
+//////
+// Description : Defer_1
+// This example tests the defer set implementation along with priority 
+// transitions has higher priority over deferred set
+/////  
+model Defer_1 of PData
+{
+
+   ///////////////////////////////////////////////
+   ///////        Event Alphabet          ////////
+   ///////////////////////////////////////////////
+    eE1 is EventDecl("E1", AssertMaxInstances(1), NIL).
+	eE2 is EventDecl("E2", AssertMaxInstances(1), NIL).
+	eE3 is EventDecl("E3", AssertMaxInstances(1), NIL).
+	eE4 is EventDecl("E4", AssertMaxInstances(1), NIL).
+	eUnit is EventDecl("unit", AssertMaxInstances(1), NIL).
+
+    /// Event Set
+    es1Real is EventSetDecl("Es1", mReal).
+    InEventSet(es1Real, eE1).
+    InEventSet(es1Real, eE2).
+    InEventSet(es1Real, eE3).
+    InEventSet(es1Real, eE4).
+   ///////////////////////////////////////////////
+   ///////    Declartions of Machines     ////////
+   ///////////////////////////////////////////////
+     
+   mReal is MachineDecl("Real", FALSE, NIL).
+   MachStart(mReal, sReal_Init).
+
+   mGhost is MachineDecl("Ghost", TRUE, NIL).
+   MachStart(mGhost, sGhost_Init).
+
+    ///////////////////////////////////////////////
+   ///////         Var Declarations        ////////
+   ///////////////////////////////////////////////
+ 
+   VarDecl("ghost", mReal, ID, TRUE).    
+   VarDecl("real", mGhost, ID, FALSE). 
+
+   ///////////////////////////////////////////////
+   ///////  Real States and Transitions   ////////
+   ///////////////////////////////////////////////
+     
+   sReal_Init is StateDecl(     
+       "Real_Init",
+       mReal,
+       `{
+	       ghost = new Ghost(real = this);  
+           raise(Events.unit);	   
+       }`,
+       NIL).                   
+
+   sReal_S1 is StateDecl(
+       "Real_S1",
+	   mReal,
+	   `{
+          
+	   }`,
+	   es1Real).
+
+
+  sReal_S2 is StateDecl(
+       "Real_S2",
+	   mReal,
+	   `{
+           assert(false);
+	   }`,
+	   NIL). 
+
+   TransDecl(sReal_Init, eUnit, sReal_S1, FALSE).
+   TransDecl(sReal_S1, eE3, sReal_S2, FALSE).
+                    
+   ///////////////////////////////////////////////
+   ///////  ghost States and Transitions   ////////
+   ///////////////////////////////////////////////
+     
+   sGhost_Init is StateDecl(
+       "Ghost_Init",
+	   mGhost,
+	   `{
+            send (real, Events.E1);
+            send (real, Events.E2);
+            send (real, Events.E3);
+            send (real, Events.E4);
+            raise(Events.unit);
+	   }`,
+	   NIL).
+
+  sGhost_S1 is StateDecl(
+      "Ghost_S1",
+	  mGhost,
+	  `{	 	  
+	  }`,
+	  NIL). 
+
+ 
+   TransDecl(sGhost_Init, eUnit, sGhost_S1, FALSE).
+   
+   MainDecl(New(MachType("Real"), NIL)).
+}

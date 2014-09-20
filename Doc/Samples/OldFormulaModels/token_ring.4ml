@@ -1,0 +1,190 @@
+[
+	parsers.DSL = '"Parser at ..\Tools\PCompiler\DSLParser.dll"',
+	modules.PData = '"PData at ..\Libraries\Formula\PData.4ml"',
+	parse_ActiveParser = "DSL"
+]
+
+model TokenRing of PData
+{
+    eEmpty is EventDecl("Empty", AssertMaxInstances(1), NIL).
+    eSending is EventDecl("Sending", AssertMaxInstances(1), ID).
+    eDone is EventDecl("Done", AssertMaxInstances(1), ID).
+    eUnit is EventDecl("Unit", AssertMaxInstances(0), NIL).
+    eNext is EventDecl("Next", AssertMaxInstances(1), ID).
+    eSend is EventDecl("Send", NIL, ID).
+    eReady is EventDecl("Ready", NIL, NIL).
+
+    mNode is MachineDecl("Node", FALSE, 100).
+
+        VarDecl("IsSending", mNode, BOOL, FALSE).
+        VarDecl("NextMachine", mNode, ID, FALSE).
+        VarDecl("MyRing", mNode, ID, TRUE).
+
+        smMain_Node is StateSetDecl("Main", mNode).
+
+            sInit_Main_Node is StateDecl("Init_Main_Node", mNode, `{
+                
+            }`, NIL).
+
+            TransDecl(sInit_Main_Node, eNext, sSetNext_Main_Node, FALSE).
+
+            InStateSet(smMain_Node, sInit_Main_Node).
+
+            sWait_Main_Node is StateDecl("Wait_Main_Node", mNode, `{
+                
+            }`, NIL).
+
+            TransDecl(sWait_Main_Node, eEmpty, sSendEmpty_Main_Node, FALSE).
+            TransDecl(sWait_Main_Node, eSend, sStartSending_Main_Node, FALSE).
+            TransDecl(sWait_Main_Node, eSending, sKeepSending_Main_Node, FALSE).
+            TransDecl(sWait_Main_Node, eDone, sStopSending_Main_Node, FALSE).
+
+            InStateSet(smMain_Node, sWait_Main_Node).
+
+            sSetNext_Main_Node is StateDecl("SetNext_Main_Node", mNode, `{
+                NextMachine = Arg.ID;
+                send(MyRing, Events.Ready);
+                raise(Events.Unit);
+            }`, NIL).
+
+            TransDecl(sSetNext_Main_Node, eUnit, sWait_Main_Node, FALSE).
+
+            InStateSet(smMain_Node, sSetNext_Main_Node).
+
+            sSendEmpty_Main_Node is StateDecl("SendEmpty_Main_Node", mNode, `{
+                send(NextMachine, Events.Empty);
+                raise(Events.Unit);
+            }`, NIL).
+
+            TransDecl(sSendEmpty_Main_Node, eUnit, sWait_Main_Node, FALSE).
+
+            InStateSet(smMain_Node, sSendEmpty_Main_Node).
+
+            sStartSending_Main_Node is StateDecl("StartSending_Main_Node", mNode, `{
+                IsSending = true;
+                send(NextMachine, Events.Sending, Arg.ID);
+                raise(Events.Unit);
+            }`, NIL).
+
+            TransDecl(sStartSending_Main_Node, eUnit, sWait_Main_Node, FALSE).
+
+            InStateSet(smMain_Node, sStartSending_Main_Node).
+
+            sKeepSending_Main_Node is StateDecl("KeepSending_Main_Node", mNode, `{
+                if (Arg.ID == this) 
+                  send(NextMachine, Events.Done, this);
+                else
+                  send(NextMachine, Events.Sending, Arg.ID);
+                raise(Events.Unit);
+            }`, NIL).
+
+            TransDecl(sKeepSending_Main_Node, eUnit, sWait_Main_Node, FALSE).
+
+            InStateSet(smMain_Node, sKeepSending_Main_Node).
+
+            sStopSending_Main_Node is StateDecl("StopSending_Main_Node", mNode, `{
+                if (IsSending == true)
+                   send(NextMachine, Events.Empty);
+                else 
+                   send(NextMachine, Events.Done, Arg.ID);
+                raise(Events.Unit);
+            }`, NIL).
+
+            TransDecl(sStopSending_Main_Node, eUnit, sWait_Main_Node, FALSE).
+
+            InStateSet(smMain_Node, sStopSending_Main_Node).
+
+        MachStart(mNode, sInit_Main_Node).
+
+    mRing4 is MachineDecl("Ring4", TRUE, 100).
+
+        VarDecl("N1", mRing4, ID, FALSE).
+        VarDecl("N2", mRing4, ID, FALSE).
+        VarDecl("N3", mRing4, ID, FALSE).
+        VarDecl("N4", mRing4, ID, FALSE).
+        VarDecl("N5", mRing4, ID, FALSE).
+        VarDecl("ReadyCount", mRing4, INT, FALSE).
+        VarDecl("Rand1", mRing4, BOOL, FALSE).
+        VarDecl("Rand2", mRing4, BOOL, FALSE).
+        VarDecl("RandSrc", mRing4, ID, FALSE).
+        VarDecl("RandDst", mRing4, ID, FALSE).
+
+        smMain_Ring4 is StateSetDecl("Main", mRing4).
+
+            defer_Boot_Main_Ring4 is EventSetDecl("defer_Boot_Main_Ring4", mRing4).
+                InEventSet(defer_Boot_Main_Ring4, eReady).
+
+            sBoot_Main_Ring4 is StateDecl("Boot_Main_Ring4", mRing4, `{
+                N1 = new Node(MyRing = this);
+                N2 = new Node(MyRing = this);
+                N3 = new Node(MyRing = this);
+                N4 = new Node(MyRing = this);
+                send(N1, Events.Next, N2);
+                send(N2, Events.Next, N3);
+                send(N3, Events.Next, N4);
+                send(N4, Events.Next, N1);
+                ReadyCount = -1;
+                raise(Events.Unit);
+            }`, defer_Boot_Main_Ring4).
+
+            TransDecl(sBoot_Main_Ring4, eUnit, sStabilize_Main_Ring4, FALSE).
+
+            InStateSet(smMain_Ring4, sBoot_Main_Ring4).
+
+            sStabilize_Main_Ring4 is StateDecl("Stabilize_Main_Ring4", mRing4, `{
+                ReadyCount = ReadyCount + 1;
+                if (ReadyCount == 4)
+                   raise(Events.Unit);
+            }`, NIL).
+
+            TransDecl(sStabilize_Main_Ring4, eReady, sStabilize_Main_Ring4, FALSE).
+            TransDecl(sStabilize_Main_Ring4, eUnit, sRandomComm_Main_Ring4, FALSE).
+
+            InStateSet(smMain_Ring4, sStabilize_Main_Ring4).
+
+            sRandomComm_Main_Ring4 is StateDecl("RandomComm_Main_Ring4", mRing4, `{
+                if (NONDET)
+                  Rand1 = true;
+                else
+                  Rand1 = false;                                   
+                if (NONDET)
+                  Rand2 = true;
+                else
+                  Rand2 = false;
+                                  
+                if (!Rand1 && !Rand2)
+                   RandSrc = N1;
+                else if (!Rand1 && Rand2)
+                   RandSrc = N2;
+                else if (Rand1 && !Rand2)
+                   RandSrc = N3;
+                else
+                   RandSrc = N4;
+                if (NONDET)
+                  Rand1 = true;
+                else
+                  Rand1 = false;                                   
+                if (NONDET)
+                  Rand2 = true;
+                else
+                  Rand2 = false;
+                if (!Rand1 && !Rand2)
+                   RandDst = N1;
+                else if (!Rand1 && Rand2)
+                   RandDst = N2;
+                else if (Rand1 && !Rand2)
+                   RandDst = N3;
+                else
+                   RandDst = N4;
+                send(RandSrc, Events.Send, RandDst);
+                raise(Events.Unit);
+            }`, NIL).
+
+            TransDecl(sRandomComm_Main_Ring4, eUnit, sRandomComm_Main_Ring4, FALSE).
+
+            InStateSet(smMain_Ring4, sRandomComm_Main_Ring4).
+
+        MachStart(mRing4, sBoot_Main_Ring4).
+
+    MainDecl(New(MachType("Ring4"), NIL)).
+}

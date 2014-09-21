@@ -27,6 +27,7 @@ namespace PlangBuild
         private static readonly Tuple<bool, string, string>[] Projects = new Tuple<bool, string, string>[]
         {
             new Tuple<bool, string, string>(false, "..\\..\\..\\..\\..\\Src\\Compilers\\PCompiler\\PCompiler.csproj", PlatformX86),
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\Pc.csproj", PlatformX86),
         };
         
         private static readonly Tuple<string, string>[] DebugMoveMap = new Tuple<string, string>[]
@@ -138,7 +139,13 @@ namespace PlangBuild
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Scripts\\runAllTests.py"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Scripts\\compile.py",
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Scripts\\compile.py")
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Scripts\\compile.py"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x86\\Debug\\Pc.exe", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Pc.exe"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x86\\Debug\\Pc.pdb", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Pc.pdb"),
         };
 
         private static readonly Tuple<string, string>[] ReleaseMoveMap = new Tuple<string, string>[]
@@ -250,7 +257,10 @@ namespace PlangBuild
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Scripts\\runAllTests.py"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Scripts\\compile.py",
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Scripts\\compile.py")
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Scripts\\compile.py"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x86\\Release\\Pc.exe", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\Pc.exe")
         };
 
         public static bool Build(bool isBldDebug)

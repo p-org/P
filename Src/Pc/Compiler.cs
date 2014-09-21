@@ -84,7 +84,15 @@
             Contract.Assert(!string.IsNullOrEmpty(inputFile));
             InputFile = inputFile;
             Options = options;
-            CompilerEnv = new Env();
+
+            EnvParams envParams = null;
+            if (options.shortFilenames)
+            {
+                envParams = new EnvParams(
+                    new Tuple<EnvParamKind, object>(EnvParamKind.Msgs_SuppressPaths, true));    
+            }
+
+            CompilerEnv = new Env(envParams);
             InitEnv(CompilerEnv);
         }
 
@@ -326,12 +334,17 @@
             //Model functions
             AddErrors(task.Result, "modelFunOnlyInReal(_)", inputProgram, errors, 0);
 
+            if (Options.printTypeInference)
+            {
+                AddTerms(task.Result, "TypeOf(_, _, _)", inputProgram, errors, SeverityKind.Info, 0, "inferred type: ", 1, 2);
+            }
 
             flags.AddRange(errors);
+
             return task.Result.Conclusion == LiftedBool.True;
         }
 
-        private static void AddErrors(QueryResult result, string errorPattern, ProgramName inputProgram, SortedSet<Flag> errors, int locationIndex = -1)
+        private void AddErrors(QueryResult result, string errorPattern, ProgramName inputProgram, SortedSet<Flag> errors, int locationIndex = -1)
         {
             List<Flag> queryFlags;
             foreach (var p in result.EnumerateProofs(errorPattern, out queryFlags, 1))
@@ -369,6 +382,74 @@
             foreach (var f in queryFlags)
             {
                 errors.Add(f);
+            }
+        }
+
+        private void AddTerms(
+            QueryResult result, 
+            string termPattern, 
+            ProgramName inputProgram, 
+            SortedSet<Flag> flags, 
+            SeverityKind severity,
+            int msgCode,
+            string msgPrefix,
+            int locationIndex = -1,
+            int printIndex = -1)
+        {
+            List<Flag> queryFlags;
+            foreach (var p in result.EnumerateProofs(termPattern, out queryFlags, 1))
+            {
+                if (locationIndex >= 0)
+                {
+                    foreach (var loc in p.ComputeLocators())
+                    {
+                        var sw = new System.IO.StringWriter();
+                        sw.Write(msgPrefix);
+                        sw.Write(" ");
+                        if (printIndex < 0)
+                        {
+                            p.Conclusion.PrintTerm(sw);
+                        }
+                        else
+                        {
+                            p.Conclusion.Args[printIndex].PrintTerm(sw);
+                        }
+
+                        var exprLoc = loc[locationIndex];
+                        flags.Add(new Flag(
+                            severity,
+                            exprLoc.Span,
+                            sw.ToString(),
+                            msgCode,
+                            ProgramName.Compare(inputProgram, exprLoc.Program) != 0 ? null : exprLoc.Program));
+                    }
+                }
+                else
+                {
+                    var sw = new System.IO.StringWriter();
+                    sw.Write(msgPrefix);
+                    sw.Write(" ");
+                    if (printIndex < 0)
+                    {
+                        p.Conclusion.PrintTerm(sw);
+                    }
+                    else
+                    {
+                        p.Conclusion.Args[printIndex].PrintTerm(sw);
+                    }
+
+                    flags.Add(new Flag(
+                        severity,
+                        default(Span),
+                        sw.ToString(),
+                        msgCode,
+                        inputProgram));
+                }
+            }
+
+            foreach (var f in queryFlags)
+            {
+                flags.Add(f);
             }
         }
 

@@ -1,0 +1,12 @@
+=================================
+         Console output          
+=================================
+OUT: Writing C:\Projects\Plang\Tst\Tests\Neg\AnonFuns\output.zing...
+OUT: anonfunction.p (6, 4): inferred type:  NIL
+OUT: anonfunction.p (13, 21): inferred type:  NIL
+OUT: anonfunction.p (16, 12): inferred type:  NIL
+OUT: anonfunction.p (24, 17): inferred type:  NIL
+OUT: anonfunction.p (12, 3): transition to an undefined state
+OUT: anonfunction.p (24, 3): action on an undefined event
+OUT: 
+EXIT: 0

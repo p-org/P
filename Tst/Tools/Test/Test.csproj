@@ -48,14 +48,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Tests\API\LittleFuncLang\LittleFuncLang.csproj">
-      <Project>{89deb961-3df1-4826-852a-69edff62632d}</Project>
-      <Name>LittleFuncLang</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Tests\Parsers\ListParser\ListParser.csproj">
-      <Project>{ed7b13fc-fdcd-4230-a404-8ef9cff7e321}</Project>
-      <Name>ListParser</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Check\Check.csproj">
       <Project>{e9014c29-75c5-4484-a4d3-63ca735fd3ff}</Project>
       <Name>Check</Name>

@@ -18,6 +18,8 @@
         public bool erase;
         public bool emitLineDirectives;
         public bool emitHeaderComment;
+        public bool shortFilenames;
+        public bool printTypeInference;
 
         public CommandLineOptions()
         {
@@ -26,6 +28,8 @@
             this.erase = true;
             this.emitLineDirectives = false;
             this.emitHeaderComment = false;
+            this.shortFilenames = false;
+            this.printTypeInference = false;
         }
     }
 
@@ -35,6 +39,11 @@
         {
             string inputFile = null;
             var options = new CommandLineOptions();
+            if (args.Length == 0)
+            {
+                goto error;
+            }
+
             for (int i = 0; i < args.Length; i++)
             {
                 string arg = args[i];
@@ -57,6 +66,16 @@
                             if (colonArg != null)
                                 goto error;
                             options.erase = false;
+                            break;
+                        case "/shortFileNames":
+                            if (colonArg != null)
+                                goto error;
+                            options.shortFilenames = true;
+                            break;
+                        case "/printTypeInference":
+                            if (colonArg != null)
+                                goto error;
+                            options.printTypeInference = true;
                             break;
                         case "/emitLineDirectives":
                             if (colonArg != null)
@@ -96,7 +115,7 @@
             var comp = new Compiler(args[0], options);
             List<Flag> flags;
             var result = comp.Compile(out flags);
-            WriteFlags(flags);
+            WriteFlags(flags, options);
 
             if (!result)
             {
@@ -106,21 +125,45 @@
 
         error:
             {
-                Console.WriteLine("USAGE: Pc.exe file.p [/outputDir:path] [/doNotErase] [/emitLineDirectives] [/emitHeaderComment] [/liveness[:mace]]");
+                Console.WriteLine("USAGE: Pc.exe file.p [options]");
+                Console.WriteLine("/outputDir:path");
+                Console.WriteLine("/doNotErase");
+                Console.WriteLine("/emitLineDirectives");
+                Console.WriteLine("/emitHeaderComment");
+                Console.WriteLine("/liveness[:mace]");
+                Console.WriteLine("/shortFileNames");
+                Console.WriteLine("/printTypeInference");
                 return;
             }
         }
 
-        private static void WriteFlags(List<Flag> flags)
+        private static void WriteFlags(List<Flag> flags, CommandLineOptions options)
         {
-            foreach (var f in flags)
+            if (options.shortFilenames)
             {
-                WriteMessageLine(
-                    string.Format("{0} ({1}, {2}): {3}",
-                    f.ProgramName == null ? "?" : (f.ProgramName.Uri.IsFile ? f.ProgramName.Uri.AbsolutePath : f.ProgramName.ToString()),
-                    f.Span.StartLine,
-                    f.Span.StartCol,
-                    f.Message), f.Severity);               
+                var envParams = new EnvParams(
+                    new Tuple<EnvParamKind, object>(EnvParamKind.Msgs_SuppressPaths, true));
+                foreach (var f in flags)
+                {
+                    WriteMessageLine(
+                        string.Format("{0} ({1}, {2}): {3}",
+                        f.ProgramName == null ? "?" : f.ProgramName.ToString(envParams),
+                        f.Span.StartLine,
+                        f.Span.StartCol,
+                        f.Message), f.Severity);
+                }
+            }
+            else
+            {
+                foreach (var f in flags)
+                {
+                    WriteMessageLine(
+                        string.Format("{0} ({1}, {2}): {3}",
+                        f.ProgramName == null ? "?" : (f.ProgramName.Uri.IsFile ? f.ProgramName.Uri.AbsolutePath : f.ProgramName.ToString()),
+                        f.Span.StartLine,
+                        f.Span.StartCol,
+                        f.Message), f.Severity);
+                }
             }
         }
 

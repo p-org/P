@@ -1,0 +1,6 @@
+run: ..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+arg: anonFunction.p 
+arg: /printTypeInference
+arg: /shortFileNames
+acc: .\
+dsc: Testing incorrect usages of anonymous functions

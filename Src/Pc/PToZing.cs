@@ -730,17 +730,17 @@ namespace Microsoft.Pc
             return MkZingDot("State", string.Format("_{0}", stateName));
         }
 
-        private static AST<Node> MkZingReturn(AST<Node> rVal)
+        private static AST<FuncTerm> MkZingReturn(AST<Node> rVal)
         {
             return AddArgs(ZingData.App_Return, rVal);
         }
 
-        public static AST<Node> MkZingIfThen(AST<Node> cond, AST<Node> then)
+        public static AST<FuncTerm> MkZingIfThen(AST<Node> cond, AST<Node> then)
         {
             return AddArgs(ZingData.App_ITE, cond, then, ZingData.Cnst_Nil);
         }
 
-        public static AST<Node> MkZingIfThenElse(AST<Node> cond, AST<Node> thenstmt, AST<Node> elsestmt)
+        public static AST<FuncTerm> MkZingIfThenElse(AST<Node> cond, AST<Node> thenstmt, AST<Node> elsestmt)
         {
             return AddArgs(ZingData.App_ITE, cond, thenstmt, elsestmt);
         }
@@ -1468,6 +1468,7 @@ namespace Microsoft.Pc
                     callTransitionStmt = MkZingIfThenElse(condExpr, MkZingSeq(callStmt, ite), callTransitionStmt);
                 }
 
+                var actionFunStmt = MkZingAssign(MkZingIdentifier("actionFun"), MkZingActionOrFun(machineName, allMachines[machineName].stateNameToStateInfo[stateName].exitFunName));
                 AST<Node> ordinaryTransitionStmt = MkZingReturn(cont);
                 foreach (var eventName in ordinaryTransitions.Keys)
                 {
@@ -1475,15 +1476,19 @@ namespace Microsoft.Pc
                     var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingEvent(eventName));
                     AST<Node> jumpStmt = Factory.Instance.AddArg(ZingData.App_Goto, Factory.Instance.MkCnst("execute_" + targetStateName));
                     ordinaryTransitionStmt = MkZingIfThenElse(condExpr, jumpStmt, ordinaryTransitionStmt);
+                    string exitFunName = ordinaryTransitions[eventName].exitFunName;
+                    if (exitFunName != null)
+                    {
+                        actionFunStmt = MkZingIfThenElse(condExpr, MkZingAssign(MkZingIdentifier("actionFun"), MkZingActionOrFun(machineName, exitFunName)), actionFunStmt);
+                    }
                 }
-
-                var exitFun = MkZingActionOrFun(machineName, allMachines[machineName].stateNameToStateInfo[stateName].exitFunName);
+                var exitFun = MkZingAssign(cont, MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingIdentifier("actionFun")));
                 string exitTraceString = string.Format("\"<StateLog> Machine {0}-{{0}} exiting State {1}\\n\"", machineName, stateInfo.printedName);
                 blocks.Add(AddArgs(ZingData.App_LabelStmt, transitionLabel,
                                     MkZingSeq(actionStmt,
                                               callTransitionStmt,
                                               MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(exitTraceString), MkZingDot("myHandle", "instance"))),
-                                              MkZingAssign(cont, MkZingCall(MkZingIdentifier("ReentrancyHelper"), exitFun)),
+                                              exitFun,
                                               ordinaryTransitionStmt)));
             }
             AST<Node> body = ConstructList(ZingData.App_Blocks, blocks);
@@ -1892,7 +1897,6 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldNew(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
-            var type = LookupType(ctxt, ft);
             var typeName = GetName(ft, 0);
             using (var it = children.GetEnumerator())
             {
@@ -1913,6 +1917,7 @@ namespace Microsoft.Pc
                 }
                 else
                 {
+                    var type = LookupType(ctxt, ft);
                     var newMachine = ctxt.GetTmpVar(SmHandle, "newMachine");
                     ctxt.AddSideEffect(MkZingAssign(newMachine, MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar)));
                     string afterLabel = ctxt.GetFreshLabel();

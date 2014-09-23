@@ -136,17 +136,17 @@ machine Coordinator {
 	}
 
 	fun DoRead() {
-		if (payload.idx in data) {
-			monitor M, MONITOR_READ_SUCCESS, (idx=payload.idx, val=data[payload.idx]);
-			send payload.client, READ_SUCCESS, data[payload.idx];
+		     if ((payload as (client: model, idx:int, val:int)).idx in data) {
+			monitor M, MONITOR_READ_SUCCESS, (idx=(payload as (client: model, idx:int, val:int)).idx, val=data[(payload as (client: model, idx:int, val:int)).idx]);
+			send (payload as (client: model, idx:int, val:int)).client, READ_SUCCESS, data[(payload as (client: model, idx:int, val:int)).idx];
 		} else {
-			monitor M, MONITOR_READ_UNAVAILABLE, payload.idx;
-			send payload.client, READ_UNAVAILABLE;
+			monitor M, MONITOR_READ_UNAVAILABLE, (payload as (client: model, idx:int, val:int)).idx;
+			send (payload as (client: model, idx:int, val:int)).client, READ_UNAVAILABLE;
 		}
 	}
 
 	fun DoWrite() {
-		pendingWriteReq = payload;
+		pendingWriteReq = payload as (client: model, idx: int, val: int);
 		currSeqNum = currSeqNum + 1;
 		i = 0;
 		while (i < sizeof(replicas)) {
@@ -276,14 +276,14 @@ model Client {
 monitor M {
 	var data: map[int,int];
 	fun DoWrite() {
-			data[payload.idx] = payload.val;
+			data[(payload as (idx:int, val:int)).idx] = (payload as (idx:int, val:int)).val;
 	}
 	fun CheckReadSuccess() {
-		assert(payload.idx in data);
-		assert(data[payload.idx] == payload.val);
+		assert((payload as (idx:int, val:int)).idx in data);
+		assert(data[(payload as (idx:int, val:int)).idx] == (payload as (idx:int, val:int)).val);
 	}
 	fun CheckReadUnavailable() {
-		assert(!(payload in data));
+		assert(!((payload as int) in data));
 	}
 	start state Init {
 		on MONITOR_WRITE do DoWrite;

@@ -1,22 +1,350 @@
-enum Machine {_default, _Sample, _Sample2};
+enum Machine {_default, _Elevator, _M, _Timer, _Door, _User};
 
-enum Event {_halt, _b, _a};
+enum Event {_default, _halt, _eObjectEncountered, _eStopTimerReturned, _eUnit, _eStopDoorCloseTimer, _eStartDoorCloseTimer, _eSendCommandToResetDoor, _eSendCommandToStopDoor, _eSendCommandToCloseDoor, _eSendCommandToOpenDoor, _eOperationFailure, _eOperationSuccess, _eTimerFired, _eObjectDetected, _eDoorStopped, _eDoorClosed, _eDoorOpened, _eResetDoor, _eCloseDoor, _eOpenDoor};
 
-enum State {_default, __X1_Sample, __X1_Sample2};
+enum State {_default, __ReturnState_Elevator, __WaitingForTimer_Elevator, __StoppingTimer_Elevator, __StoppingDoor_Elevator, __DoorClosing_Elevator, __DoorOpenedOkToClose_Elevator, __DoorOpened_Elevator, __DoorOpening_Elevator, __DoorClosed_Elevator, __Init_Elevator, __WaitForResponse_M, __WaitForRequest_M, __ConsiderStopping_Timer, __SendTimerFired_Timer, __TimerStarted_Timer, __Init_Timer, ___Init_Timer, __ResetDoor_Door, __StopDoor_Door, __CloseDoor_Door, __Init_Door, __ObjectEncountered_Door, __ConsiderClosingDoor_Door, __OpenDoor_Door, ___Init_Door, __Loop_User, __Init_User};
 
-enum ActionOrFun {_default, _Sample_foo, _Sample_AnonFun0, _Sample_AnonFun1, _Sample2_AnonFun2};
+enum ActionOrFun {_default, _Elevator_AnonFun0, _Elevator_AnonFun1, _Elevator_AnonFun2, _Elevator_AnonFun3, _Elevator_AnonFun4, _Elevator_AnonFun5, _Elevator_AnonFun6, _Elevator_AnonFun7, _Elevator_AnonFun8, _Elevator_AnonFun9, _M_AnonFun10, _Timer_AnonFun11, _Timer_AnonFun12, _Timer_AnonFun13, _Timer_AnonFun14, _Timer_AnonFun15, _Door_AnonFun16, _Door_AnonFun17, _Door_AnonFun18, _Door_AnonFun19, _Door_AnonFun20, _Door_AnonFun21, _Door_AnonFun22, _User_AnonFun23, _User_AnonFun24, _User_AnonFun25};
 
-class Sample{
-LocalActions localActions;
-SM_EVENT_SET stackActionSet;
-SM_EVENT_SET stackDeferredSet;
+set M_set M;
+
+class Elevator{
 SM_HANDLE myHandle;
-void AnonFun1(Continuation entryCtxt) {
+PRT_VALUE TimerV;
+PRT_VALUE DoorV;
+void AnonFun9(Continuation entryCtxt) {
+PRT_VALUE tmp_9;
+PRT_VALUE tmpSendPayload_0;
+SM_HANDLE newMachine_0;
+PRT_VALUE tmp_10;
+PRT_VALUE tmp_11;
+PRT_VALUE tmpSendPayload_1;
+SM_HANDLE newMachine_1;
+PRT_VALUE tmp_12;
+PRT_VALUE tmp_13;
+PRT_VALUE tmpPayload_9;
+int retTo_9;
+
+dummy:
+retTo_9 = entryCtxt.PopReturnTo();
+if ((retTo_9 == 0)) {
+goto start;
+}
+if ((retTo_9 == 1)) {
+goto AnonFun9_0;
+}
+if ((retTo_9 == 2)) {
+goto AnonFun9_1;
+}
+assert(false);
+
+start:
+tmp_9 = PRT_VALUE.PrtMkDefaultValue(Main.type_2_PRT_TYPE);
+PRT_VALUE.PrtPrimSetMachine(tmp_9, myHandle);
+tmpSendPayload_0 = PRT_VALUE.PrtCloneValue(tmp_9);
+newMachine_0 = Main.CreateMachine_Timer(tmpSendPayload_0);
+entryCtxt.NewMachine(1, newMachine_0);
+return;
+
+AnonFun9_0:
+newMachine_0 = entryCtxt.id;
+
+;
+entryCtxt.id = null;
+tmp_10 = PRT_VALUE.PrtMkDefaultValue(Main.type_3_PRT_TYPE);
+PRT_VALUE.PrtPrimSetMachine(tmp_10, newMachine_0);
+TimerV = PRT_VALUE.PrtCloneValue(tmp_10);
+tmp_11 = PRT_VALUE.PrtMkDefaultValue(Main.type_2_PRT_TYPE);
+PRT_VALUE.PrtPrimSetMachine(tmp_11, myHandle);
+tmpSendPayload_1 = PRT_VALUE.PrtCloneValue(tmp_11);
+newMachine_1 = Main.CreateMachine_Door(tmpSendPayload_1);
+entryCtxt.NewMachine(2, newMachine_1);
+return;
+
+AnonFun9_1:
+newMachine_1 = entryCtxt.id;
+
+;
+entryCtxt.id = null;
+tmp_12 = PRT_VALUE.PrtMkDefaultValue(Main.type_3_PRT_TYPE);
+PRT_VALUE.PrtPrimSetMachine(tmp_12, newMachine_1);
+DoorV = PRT_VALUE.PrtCloneValue(tmp_12);
+tmp_13 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_13, Main.eUnit_SM_EVENT);
+tmpPayload_9 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+assert((tmp_13.ev != null));
+trace("<RaiseLog> Machine Elevator-{0} raised Event {1}\n", myHandle.instance, tmp_13.ev.name);
+myHandle.currentEvent = tmp_13.ev;
+myHandle.currentArg = tmpPayload_9;
+entryCtxt.Raise();
+return;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun8(Continuation entryCtxt) {
+PRT_VALUE tmp_8;
+PRT_VALUE tmpPayload_8;
+int retTo_8;
+
+dummy:
+retTo_8 = entryCtxt.PopReturnTo();
+if ((retTo_8 == 0)) {
+goto start;
+}
+if ((retTo_8 == 1)) {
+goto AnonFun8_0;
+}
+assert(false);
+
+start:
+tmp_8 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_8, Main.eSendCommandToResetDoor_SM_EVENT);
+tmpPayload_8 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+DoorV.mach.EnqueueEvent(tmp_8.ev, tmpPayload_8, myHandle);
+entryCtxt.Send(1);
+return;
+
+AnonFun8_0:
+
+;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun7(Continuation entryCtxt) {
+PRT_VALUE tmp_7;
+PRT_VALUE tmpPayload_7;
+int retTo_7;
+
+dummy:
+retTo_7 = entryCtxt.PopReturnTo();
+if ((retTo_7 == 0)) {
+goto start;
+}
+if ((retTo_7 == 1)) {
+goto AnonFun7_0;
+}
+assert(false);
+
+start:
+tmp_7 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_7, Main.eSendCommandToOpenDoor_SM_EVENT);
+tmpPayload_7 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+DoorV.mach.EnqueueEvent(tmp_7.ev, tmpPayload_7, myHandle);
+entryCtxt.Send(1);
+return;
+
+AnonFun7_0:
+
+;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun6(Continuation entryCtxt) {
+PRT_VALUE tmp_5;
+PRT_VALUE tmpPayload_5;
+PRT_VALUE tmp_6;
+PRT_VALUE tmpPayload_6;
+int retTo_6;
+
+dummy:
+retTo_6 = entryCtxt.PopReturnTo();
+if ((retTo_6 == 0)) {
+goto start;
+}
+if ((retTo_6 == 1)) {
+goto AnonFun6_0;
+}
+if ((retTo_6 == 2)) {
+goto AnonFun6_1;
+}
+assert(false);
+
+start:
+tmp_5 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_5, Main.eSendCommandToResetDoor_SM_EVENT);
+tmpPayload_5 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+DoorV.mach.EnqueueEvent(tmp_5.ev, tmpPayload_5, myHandle);
+entryCtxt.Send(1);
+return;
+
+AnonFun6_0:
+
+;
+tmp_6 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_6, Main.eStartDoorCloseTimer_SM_EVENT);
+tmpPayload_6 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+TimerV.mach.EnqueueEvent(tmp_6.ev, tmpPayload_6, myHandle);
+entryCtxt.Send(2);
+return;
+
+AnonFun6_1:
+
+;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun5(Continuation entryCtxt) {
+PRT_VALUE tmp_4;
+PRT_VALUE tmpPayload_4;
+int retTo_5;
+
+dummy:
+retTo_5 = entryCtxt.PopReturnTo();
+if ((retTo_5 == 0)) {
+goto start;
+}
+if ((retTo_5 == 1)) {
+goto AnonFun5_0;
+}
+assert(false);
+
+start:
+tmp_4 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_4, Main.eStartDoorCloseTimer_SM_EVENT);
+tmpPayload_4 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+TimerV.mach.EnqueueEvent(tmp_4.ev, tmpPayload_4, myHandle);
+entryCtxt.Send(1);
+return;
+
+AnonFun5_0:
+
+;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun4(Continuation entryCtxt) {
+PRT_VALUE tmp_3;
+PRT_VALUE tmpPayload_3;
+int retTo_4;
+
+dummy:
+retTo_4 = entryCtxt.PopReturnTo();
+if ((retTo_4 == 0)) {
+goto start;
+}
+if ((retTo_4 == 1)) {
+goto AnonFun4_0;
+}
+assert(false);
+
+start:
+tmp_3 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_3, Main.eSendCommandToCloseDoor_SM_EVENT);
+tmpPayload_3 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+DoorV.mach.EnqueueEvent(tmp_3.ev, tmpPayload_3, myHandle);
+entryCtxt.Send(1);
+return;
+
+AnonFun4_0:
+
+;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun3(Continuation entryCtxt) {
+PRT_VALUE tmp_2;
+PRT_VALUE tmpPayload_2;
+int retTo_3;
+
+dummy:
+retTo_3 = entryCtxt.PopReturnTo();
+if ((retTo_3 == 0)) {
+goto start;
+}
+if ((retTo_3 == 1)) {
+goto AnonFun3_0;
+}
+assert(false);
+
+start:
+tmp_2 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_2, Main.eSendCommandToStopDoor_SM_EVENT);
+tmpPayload_2 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+DoorV.mach.EnqueueEvent(tmp_2.ev, tmpPayload_2, myHandle);
+entryCtxt.Send(1);
+return;
+
+AnonFun3_0:
+
+;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun2(Continuation entryCtxt) {
+PRT_VALUE tmp_1;
+PRT_VALUE tmpPayload_1;
 int retTo_2;
 
 dummy:
 retTo_2 = entryCtxt.PopReturnTo();
 if ((retTo_2 == 0)) {
+goto start;
+}
+if ((retTo_2 == 1)) {
+goto AnonFun2_0;
+}
+assert(false);
+
+start:
+tmp_1 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_1, Main.eStopDoorCloseTimer_SM_EVENT);
+tmpPayload_1 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+TimerV.mach.EnqueueEvent(tmp_1.ev, tmpPayload_1, myHandle);
+entryCtxt.Send(1);
+return;
+
+AnonFun2_0:
+
+;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun1(Continuation entryCtxt) {
+int retTo_1;
+
+dummy:
+retTo_1 = entryCtxt.PopReturnTo();
+if ((retTo_1 == 0)) {
 goto start;
 }
 assert(false);
@@ -31,41 +359,8 @@ return;
 
 }
 void AnonFun0(Continuation entryCtxt) {
-int retTo_1;
-
-dummy:
-retTo_1 = entryCtxt.PopReturnTo();
-if ((retTo_1 == 0)) {
-goto start;
-}
-if ((retTo_1 == 1)) {
-goto AnonFun0_0;
-}
-assert(false);
-
-start:
-entryCtxt.PushReturnTo(0);
-
-AnonFun0_0:
-foo(entryCtxt);
-
-;
-if ((entryCtxt.reason == ContinuationReason.Return)) {
-
-} else {
-entryCtxt.PushReturnTo(1);
-return;
-
-}
-
-;
-entryCtxt.Return();
-return;
-
-;
-
-}
-void foo(Continuation entryCtxt) {
+PRT_VALUE tmp_0;
+PRT_VALUE tmpPayload_0;
 int retTo_0;
 
 dummy:
@@ -76,6 +371,15 @@ goto start;
 assert(false);
 
 start:
+tmp_0 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_0, Main.eStopTimerReturned_SM_EVENT);
+tmpPayload_0 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+assert((tmp_0.ev != null));
+trace("<RaiseLog> Machine Elevator-{0} raised Event {1}\n", myHandle.instance, tmp_0.ev.name);
+myHandle.currentEvent = tmp_0.ev;
+myHandle.currentArg = tmpPayload_0;
+entryCtxt.Raise();
+return;
 
 ;
 entryCtxt.Return();
@@ -84,84 +388,94 @@ return;
 ;
 
 }
-void ReentrancyHelper(Continuation cont, ActionOrFun actionFun, SM_EVENT_SET currentActionSet) {
+bool HasDefaultTransition(State state) {
+
+init:
+if ((state == State.__ReturnState_Elevator)) {
+return false;
+
+}
+if ((state == State.__WaitingForTimer_Elevator)) {
+return false;
+
+}
+if ((state == State.__StoppingTimer_Elevator)) {
+return false;
+
+}
+if ((state == State.__StoppingDoor_Elevator)) {
+return false;
+
+}
+if ((state == State.__DoorClosing_Elevator)) {
+return false;
+
+}
+if ((state == State.__DoorOpenedOkToClose_Elevator)) {
+return false;
+
+}
+if ((state == State.__DoorOpened_Elevator)) {
+return false;
+
+}
+if ((state == State.__DoorOpening_Elevator)) {
+return false;
+
+}
+if ((state == State.__DoorClosed_Elevator)) {
+return false;
+
+}
+if ((state == State.__Init_Elevator)) {
+return false;
+
+}
+assert(false);
+
+;
+
+}
+Continuation ReentrancyHelper(ActionOrFun actionFun) {
+Continuation cont;
 SM_EVENT_SET savedDeferredSet;
-SM_EVENT_SET savedActionSet;
 SM_EVENT savedCurrentEvent;
 PRT_VALUE savedCurrentArg;
 
 init:
-if ((actionFun == ActionOrFun._Sample_foo)) {
-trace("<FunctionLog> Machine Sample-{0} executing Function foo\n", myHandle.instance);
-goto execute_foo;
-}
-if ((actionFun == ActionOrFun._Sample_AnonFun0)) {
+cont = Continuation.Construct_Default();
+cont.PushReturnTo(0);
+if ((actionFun == ActionOrFun._Elevator_AnonFun0)) {
 goto execute_AnonFun0;
 }
-if ((actionFun == ActionOrFun._Sample_AnonFun1)) {
+if ((actionFun == ActionOrFun._Elevator_AnonFun1)) {
 goto execute_AnonFun1;
 }
+if ((actionFun == ActionOrFun._Elevator_AnonFun2)) {
+goto execute_AnonFun2;
+}
+if ((actionFun == ActionOrFun._Elevator_AnonFun3)) {
+goto execute_AnonFun3;
+}
+if ((actionFun == ActionOrFun._Elevator_AnonFun4)) {
+goto execute_AnonFun4;
+}
+if ((actionFun == ActionOrFun._Elevator_AnonFun5)) {
+goto execute_AnonFun5;
+}
+if ((actionFun == ActionOrFun._Elevator_AnonFun6)) {
+goto execute_AnonFun6;
+}
+if ((actionFun == ActionOrFun._Elevator_AnonFun7)) {
+goto execute_AnonFun7;
+}
+if ((actionFun == ActionOrFun._Elevator_AnonFun8)) {
+goto execute_AnonFun8;
+}
+if ((actionFun == ActionOrFun._Elevator_AnonFun9)) {
+goto execute_AnonFun9;
+}
 assert(false);
-
-;
-
-
-execute_foo:
-
-reentry_foo:
-foo(cont);
-
-;
-if ((cont.reason == ContinuationReason.Return)) {
-return;
-
-}
-if ((cont.reason == ContinuationReason.Pop)) {
-return;
-
-}
-if ((cont.reason == ContinuationReason.Raise)) {
-return;
-
-}
-if ((cont.reason == ContinuationReason.Call)) {
-savedDeferredSet = stackDeferredSet;
-savedActionSet = stackActionSet;
-savedCurrentEvent = myHandle.currentEvent;
-savedCurrentArg = myHandle.currentArg;
-stackActionSet = currentActionSet;
-stackDeferredSet = Main.CalculateComplementOfEventSet(currentActionSet);
-myHandle.currentEvent = null;
-myHandle.currentArg = null;
-localActions = LocalActions.Construct(localActions);
-RunHelper(cont.state);
-localActions = localActions.next;
-stackDeferredSet = savedDeferredSet;
-stackActionSet = savedActionSet;
-cont.state = State._default;
-if ((myHandle.currentEvent == null)) {
-myHandle.currentEvent = savedCurrentEvent;
-myHandle.currentArg = savedCurrentArg;
-
-} else {
-trace("<StateLog> Call statement terminated due to unhandled event by machine Sample-{0}\n", myHandle.instance);
-assert(false);
-
-}
-goto reentry_foo;
-}
-if ((cont.reason == ContinuationReason.Nondet)) {
-cont.nondet = choose(bool);
-goto reentry_foo;
-}
-if ((cont.reason == ContinuationReason.NewMachine)) {
-yield;
-goto reentry_foo;
-}
-if ((cont.reason == ContinuationReason.Send)) {
-yield;
-goto reentry_foo;
-}
 
 ;
 
@@ -173,38 +487,33 @@ AnonFun0(cont);
 
 ;
 if ((cont.reason == ContinuationReason.Return)) {
-return;
+return cont;
 
 }
 if ((cont.reason == ContinuationReason.Pop)) {
-return;
+return cont;
 
 }
 if ((cont.reason == ContinuationReason.Raise)) {
-return;
+return cont;
 
 }
 if ((cont.reason == ContinuationReason.Call)) {
-savedDeferredSet = stackDeferredSet;
-savedActionSet = stackActionSet;
 savedCurrentEvent = myHandle.currentEvent;
 savedCurrentArg = myHandle.currentArg;
-stackActionSet = currentActionSet;
-stackDeferredSet = Main.CalculateComplementOfEventSet(currentActionSet);
+savedDeferredSet = myHandle.stack.deferredSet;
 myHandle.currentEvent = null;
 myHandle.currentArg = null;
-localActions = LocalActions.Construct(localActions);
-RunHelper(cont.state);
-localActions = localActions.next;
-stackDeferredSet = savedDeferredSet;
-stackActionSet = savedActionSet;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
 cont.state = State._default;
 if ((myHandle.currentEvent == null)) {
 myHandle.currentEvent = savedCurrentEvent;
 myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
 
 } else {
-trace("<StateLog> Call statement terminated due to unhandled event by machine Sample-{0}\n", myHandle.instance);
+trace("<StateLog> Call statement terminated due to unhandled event by machine Elevator-{0}\n", myHandle.instance);
 assert(false);
 
 }
@@ -233,38 +542,33 @@ AnonFun1(cont);
 
 ;
 if ((cont.reason == ContinuationReason.Return)) {
-return;
+return cont;
 
 }
 if ((cont.reason == ContinuationReason.Pop)) {
-return;
+return cont;
 
 }
 if ((cont.reason == ContinuationReason.Raise)) {
-return;
+return cont;
 
 }
 if ((cont.reason == ContinuationReason.Call)) {
-savedDeferredSet = stackDeferredSet;
-savedActionSet = stackActionSet;
 savedCurrentEvent = myHandle.currentEvent;
 savedCurrentArg = myHandle.currentArg;
-stackActionSet = currentActionSet;
-stackDeferredSet = Main.CalculateComplementOfEventSet(currentActionSet);
+savedDeferredSet = myHandle.stack.deferredSet;
 myHandle.currentEvent = null;
 myHandle.currentArg = null;
-localActions = LocalActions.Construct(localActions);
-RunHelper(cont.state);
-localActions = localActions.next;
-stackDeferredSet = savedDeferredSet;
-stackActionSet = savedActionSet;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
 cont.state = State._default;
 if ((myHandle.currentEvent == null)) {
 myHandle.currentEvent = savedCurrentEvent;
 myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
 
 } else {
-trace("<StateLog> Call statement terminated due to unhandled event by machine Sample-{0}\n", myHandle.instance);
+trace("<StateLog> Call statement terminated due to unhandled event by machine Elevator-{0}\n", myHandle.instance);
 assert(false);
 
 }
@@ -285,39 +589,546 @@ goto reentry_AnonFun1;
 
 ;
 
+
+execute_AnonFun2:
+
+reentry_AnonFun2:
+AnonFun2(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
 }
-void RunHelper(State startState) {
-SM_EVENT_SET currentDeferredSet;
-SM_EVENT_SET currentActionSet;
-SM_EVENT_SET savedDeferredSet;
-SM_EVENT_SET savedActionSet;
-ActionOrFun actionFun;
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Elevator-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun2;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun2;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun2;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun2;
+}
+
+;
+
+
+execute_AnonFun3:
+
+reentry_AnonFun3:
+AnonFun3(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Elevator-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun3;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun3;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun3;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun3;
+}
+
+;
+
+
+execute_AnonFun4:
+
+reentry_AnonFun4:
+AnonFun4(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Elevator-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun4;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun4;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun4;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun4;
+}
+
+;
+
+
+execute_AnonFun5:
+
+reentry_AnonFun5:
+AnonFun5(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Elevator-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun5;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun5;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun5;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun5;
+}
+
+;
+
+
+execute_AnonFun6:
+
+reentry_AnonFun6:
+AnonFun6(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Elevator-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun6;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun6;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun6;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun6;
+}
+
+;
+
+
+execute_AnonFun7:
+
+reentry_AnonFun7:
+AnonFun7(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Elevator-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun7;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun7;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun7;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun7;
+}
+
+;
+
+
+execute_AnonFun8:
+
+reentry_AnonFun8:
+AnonFun8(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Elevator-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun8;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun8;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun8;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun8;
+}
+
+;
+
+
+execute_AnonFun9:
+
+reentry_AnonFun9:
+AnonFun9(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Elevator-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun9;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun9;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun9;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun9;
+}
+
+;
+
+}
+Continuation RunHelper(bool start) {
+State state;
 Continuation cont;
-SM_EVENT savedCurrentEvent;
-PRT_VALUE savedCurrentArg;
+ActionOrFun actionFun;
 
 init:
-if ((startState == State.__X1_Sample)) {
-goto execute__X1_Sample;
+state = myHandle.stack.state;
+if ((state == State.__ReturnState_Elevator)) {
+if (start) {
+goto execute__ReturnState_Elevator;
 } else {
+goto transition__ReturnState_Elevator;
+}
+
+}
+if ((state == State.__WaitingForTimer_Elevator)) {
+if (start) {
+goto execute__WaitingForTimer_Elevator;
+} else {
+goto transition__WaitingForTimer_Elevator;
+}
+
+}
+if ((state == State.__StoppingTimer_Elevator)) {
+if (start) {
+goto execute__StoppingTimer_Elevator;
+} else {
+goto transition__StoppingTimer_Elevator;
+}
+
+}
+if ((state == State.__StoppingDoor_Elevator)) {
+if (start) {
+goto execute__StoppingDoor_Elevator;
+} else {
+goto transition__StoppingDoor_Elevator;
+}
+
+}
+if ((state == State.__DoorClosing_Elevator)) {
+if (start) {
+goto execute__DoorClosing_Elevator;
+} else {
+goto transition__DoorClosing_Elevator;
+}
+
+}
+if ((state == State.__DoorOpenedOkToClose_Elevator)) {
+if (start) {
+goto execute__DoorOpenedOkToClose_Elevator;
+} else {
+goto transition__DoorOpenedOkToClose_Elevator;
+}
+
+}
+if ((state == State.__DoorOpened_Elevator)) {
+if (start) {
+goto execute__DoorOpened_Elevator;
+} else {
+goto transition__DoorOpened_Elevator;
+}
+
+}
+if ((state == State.__DoorOpening_Elevator)) {
+if (start) {
+goto execute__DoorOpening_Elevator;
+} else {
+goto transition__DoorOpening_Elevator;
+}
+
+}
+if ((state == State.__DoorClosed_Elevator)) {
+if (start) {
+goto execute__DoorClosed_Elevator;
+} else {
+goto transition__DoorClosed_Elevator;
+}
+
+}
+if ((state == State.__Init_Elevator)) {
+if (start) {
+goto execute__Init_Elevator;
+} else {
+goto transition__Init_Elevator;
+}
+
+}
 assert(false);
 
-}
-
 ;
 
 
-execute__X1_Sample:
-trace("<StateLog> Machine Sample-{0} entered State X1\n", myHandle.instance);
-invokeplugin("StateCoveragePlugin.dll", "Sample", "_X1_Sample");
-currentDeferredSet = new SM_EVENT_SET;
-currentActionSet = new SM_EVENT_SET;
-_X1_Sample_CalculateDeferredAndActionSet(currentDeferredSet, currentActionSet);
-cont = Continuation.Construct_Default();
-cont.PushReturnTo(0);
-ReentrancyHelper(cont, ActionOrFun._Sample_AnonFun0, currentActionSet);
+execute__ReturnState_Elevator:
+trace("<StateLog> Machine Elevator-{0} entered State ReturnState\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Elevator", "_ReturnState_Elevator");
+_ReturnState_Elevator_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun0);
 if ((cont.reason == ContinuationReason.Pop)) {
-return;
+return cont;
 
 } else {
 if ((cont.reason == ContinuationReason.Return)) {
@@ -328,28 +1139,21 @@ myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
 
 }
 if ((myHandle.currentEvent == null)) {
-goto wait__X1_Sample;
+return cont;
+
 } else {
-goto transition__X1_Sample;
+goto transition__ReturnState_Elevator;
 }
 
 ;
 
 
-wait__X1_Sample:
-myHandle.DequeueEvent(true, currentDeferredSet);
-goto transition__X1_Sample;
-;
-
-
-transition__X1_Sample:
-if (myHandle.currentEvent in currentActionSet) {
-actionFun = localActions.Find(myHandle.currentEvent);
-cont = Continuation.Construct_Default();
-cont.PushReturnTo(0);
-ReentrancyHelper(cont, actionFun, currentActionSet);
+transition__ReturnState_Elevator:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
 if ((cont.reason == ContinuationReason.Pop)) {
-return;
+return cont;
 
 } else {
 if ((cont.reason == ContinuationReason.Return)) {
@@ -360,23 +1164,139 @@ myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
 
 }
 if ((myHandle.currentEvent == null)) {
-goto wait__X1_Sample;
+return cont;
+
 } else {
-goto transition__X1_Sample;
+goto transition__ReturnState_Elevator;
 }
 
 }
-trace("<StateLog> Machine Sample-{0} exiting State X1\n", myHandle.instance);
-cont = Continuation.Construct_Default();
-cont.PushReturnTo(0);
-ReentrancyHelper(cont, ActionOrFun._Sample_AnonFun1, currentActionSet);
-if ((myHandle.currentEvent == Main.a_SM_EVENT)) {
-goto execute__X1_Sample;
+trace("<StateLog> Machine Elevator-{0} exiting State ReturnState\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun1);
+return cont;
+
+;
+
+
+execute__WaitingForTimer_Elevator:
+trace("<StateLog> Machine Elevator-{0} entered State WaitingForTimer\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Elevator", "_WaitingForTimer_Elevator");
+_WaitingForTimer_Elevator_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun1);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
 } else {
-if ((myHandle.currentEvent == Main.null_SM_EVENT)) {
-goto execute__X2_Sample;
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
 } else {
-return;
+goto transition__WaitingForTimer_Elevator;
+}
+
+;
+
+
+transition__WaitingForTimer_Elevator:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__WaitingForTimer_Elevator;
+}
+
+}
+trace("<StateLog> Machine Elevator-{0} exiting State WaitingForTimer\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun1);
+if ((myHandle.currentEvent == Main.eTimerFired_SM_EVENT)) {
+goto execute__ReturnState_Elevator;
+} else {
+return cont;
+
+}
+
+;
+
+
+execute__StoppingTimer_Elevator:
+trace("<StateLog> Machine Elevator-{0} entered State StoppingTimer\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Elevator", "_StoppingTimer_Elevator");
+_StoppingTimer_Elevator_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun2);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__StoppingTimer_Elevator;
+}
+
+;
+
+
+transition__StoppingTimer_Elevator:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__StoppingTimer_Elevator;
+}
+
+}
+trace("<StateLog> Machine Elevator-{0} exiting State StoppingTimer\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun1);
+if ((myHandle.currentEvent == Main.eOperationSuccess_SM_EVENT)) {
+goto execute__ReturnState_Elevator;
+} else {
+if ((myHandle.currentEvent == Main.eOperationFailure_SM_EVENT)) {
+goto execute__WaitingForTimer_Elevator;
+} else {
+return cont;
 
 }
 
@@ -384,56 +1304,731 @@ return;
 
 ;
 
+
+execute__StoppingDoor_Elevator:
+trace("<StateLog> Machine Elevator-{0} entered State StoppingDoor\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Elevator", "_StoppingDoor_Elevator");
+_StoppingDoor_Elevator_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun3);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
 }
-void run() {
-SM_EVENT_SET currentDeferredSet;
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__StoppingDoor_Elevator;
+}
+
+;
+
+
+transition__StoppingDoor_Elevator:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__StoppingDoor_Elevator;
+}
+
+}
+trace("<StateLog> Machine Elevator-{0} exiting State StoppingDoor\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun1);
+if ((myHandle.currentEvent == Main.eDoorOpened_SM_EVENT)) {
+goto execute__DoorOpened_Elevator;
+} else {
+if ((myHandle.currentEvent == Main.eDoorClosed_SM_EVENT)) {
+goto execute__DoorClosed_Elevator;
+} else {
+if ((myHandle.currentEvent == Main.eDoorStopped_SM_EVENT)) {
+goto execute__DoorOpening_Elevator;
+} else {
+return cont;
+
+}
+
+}
+
+}
+
+;
+
+
+execute__DoorClosing_Elevator:
+trace("<StateLog> Machine Elevator-{0} entered State DoorClosing\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Elevator", "_DoorClosing_Elevator");
+_DoorClosing_Elevator_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun4);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__DoorClosing_Elevator;
+}
+
+;
+
+
+transition__DoorClosing_Elevator:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__DoorClosing_Elevator;
+}
+
+}
+trace("<StateLog> Machine Elevator-{0} exiting State DoorClosing\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun1);
+if ((myHandle.currentEvent == Main.eOpenDoor_SM_EVENT)) {
+goto execute__StoppingDoor_Elevator;
+} else {
+if ((myHandle.currentEvent == Main.eDoorClosed_SM_EVENT)) {
+goto execute__DoorClosed_Elevator;
+} else {
+if ((myHandle.currentEvent == Main.eObjectDetected_SM_EVENT)) {
+goto execute__DoorOpening_Elevator;
+} else {
+return cont;
+
+}
+
+}
+
+}
+
+;
+
+
+execute__DoorOpenedOkToClose_Elevator:
+trace("<StateLog> Machine Elevator-{0} entered State DoorOpenedOkToClose\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Elevator", "_DoorOpenedOkToClose_Elevator");
+_DoorOpenedOkToClose_Elevator_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun5);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__DoorOpenedOkToClose_Elevator;
+}
+
+;
+
+
+transition__DoorOpenedOkToClose_Elevator:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__DoorOpenedOkToClose_Elevator;
+}
+
+}
+if ((myHandle.currentEvent == Main.eCloseDoor_SM_EVENT)) {
+Run(State.__StoppingTimer_Elevator);
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__DoorOpenedOkToClose_Elevator;
+}
+
+}
+trace("<StateLog> Machine Elevator-{0} exiting State DoorOpenedOkToClose\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun1);
+if ((myHandle.currentEvent == Main.eStopTimerReturned_SM_EVENT)) {
+goto execute__DoorClosing_Elevator;
+} else {
+if ((myHandle.currentEvent == Main.eTimerFired_SM_EVENT)) {
+goto execute__DoorClosing_Elevator;
+} else {
+return cont;
+
+}
+
+}
+
+;
+
+
+execute__DoorOpened_Elevator:
+trace("<StateLog> Machine Elevator-{0} entered State DoorOpened\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Elevator", "_DoorOpened_Elevator");
+_DoorOpened_Elevator_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun6);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__DoorOpened_Elevator;
+}
+
+;
+
+
+transition__DoorOpened_Elevator:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__DoorOpened_Elevator;
+}
+
+}
+if ((myHandle.currentEvent == Main.eOpenDoor_SM_EVENT)) {
+Run(State.__StoppingTimer_Elevator);
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__DoorOpened_Elevator;
+}
+
+}
+trace("<StateLog> Machine Elevator-{0} exiting State DoorOpened\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun1);
+if ((myHandle.currentEvent == Main.eTimerFired_SM_EVENT)) {
+goto execute__DoorOpenedOkToClose_Elevator;
+} else {
+if ((myHandle.currentEvent == Main.eStopTimerReturned_SM_EVENT)) {
+goto execute__DoorOpened_Elevator;
+} else {
+return cont;
+
+}
+
+}
+
+;
+
+
+execute__DoorOpening_Elevator:
+trace("<StateLog> Machine Elevator-{0} entered State DoorOpening\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Elevator", "_DoorOpening_Elevator");
+_DoorOpening_Elevator_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun7);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__DoorOpening_Elevator;
+}
+
+;
+
+
+transition__DoorOpening_Elevator:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__DoorOpening_Elevator;
+}
+
+}
+trace("<StateLog> Machine Elevator-{0} exiting State DoorOpening\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun1);
+if ((myHandle.currentEvent == Main.eDoorOpened_SM_EVENT)) {
+goto execute__DoorOpened_Elevator;
+} else {
+return cont;
+
+}
+
+;
+
+
+execute__DoorClosed_Elevator:
+trace("<StateLog> Machine Elevator-{0} entered State DoorClosed\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Elevator", "_DoorClosed_Elevator");
+_DoorClosed_Elevator_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun8);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__DoorClosed_Elevator;
+}
+
+;
+
+
+transition__DoorClosed_Elevator:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__DoorClosed_Elevator;
+}
+
+}
+trace("<StateLog> Machine Elevator-{0} exiting State DoorClosed\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun1);
+if ((myHandle.currentEvent == Main.eOpenDoor_SM_EVENT)) {
+goto execute__DoorOpening_Elevator;
+} else {
+return cont;
+
+}
+
+;
+
+
+execute__Init_Elevator:
+trace("<StateLog> Machine Elevator-{0} entered State Init\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Elevator", "_Init_Elevator");
+_Init_Elevator_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun9);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__Init_Elevator;
+}
+
+;
+
+
+transition__Init_Elevator:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__Init_Elevator;
+}
+
+}
+trace("<StateLog> Machine Elevator-{0} exiting State Init\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Elevator_AnonFun1);
+if ((myHandle.currentEvent == Main.eUnit_SM_EVENT)) {
+goto execute__DoorClosed_Elevator;
+} else {
+return cont;
+
+}
+
+;
+
+}
+void Run(State state) {
+Continuation cont;
+bool hasDefaultTransition;
+
+init:
+myHandle.Push();
+myHandle.stack.state = state;
+cont = RunHelper(true);
+goto dequeue;
+;
+
+
+dequeue:
+if ((cont.reason != ContinuationReason.Return)) {
+myHandle.Push();
+return;
+
+}
+hasDefaultTransition = HasDefaultTransition(myHandle.stack.state);
+myHandle.DequeueEvent(hasDefaultTransition);
+goto execute;
+;
+
+
+execute:
+cont = RunHelper(false);
+goto dequeue;
+;
+
+}
+void Start() {
 
 dummy:
-RunHelper(State.__X1_Sample);
+Run(State.__Init_Elevator);
 if ((myHandle.currentEvent == Main.halt_SM_EVENT)) {
-currentDeferredSet = null;
+myHandle.stack = null;
 myHandle.buffer = null;
+myHandle.currentArg = null;
 myHandle.isDeleted = true;
-localActions = null;
-stackActionSet = null;
-stackDeferredSet = null;
+myHandle.isBlocked = true;
 return;
 
 }
-trace("<StateLog> Unhandled event exception by machine Sample-{0}\n", myHandle.instance);
+trace("<StateLog> Unhandled event exception by machine Elevator-{0}\n", myHandle.instance);
 assert(false);
 
 ;
 
 }
-void _X1_Sample_CalculateDeferredAndActionSet(SM_EVENT_SET currentDeferredSet, SM_EVENT_SET currentActionSet) {
+void _Init_Elevator_CalculateDeferredAndActionSet() {
 
 dummy:
-currentDeferredSet = (currentDeferredSet + stackDeferredSet);
-currentDeferredSet = (currentDeferredSet - Main.null_SM_EVENT);
-currentDeferredSet = (currentDeferredSet - Main.a_SM_EVENT);
-currentActionSet = (currentActionSet + stackActionSet);
-currentActionSet = (currentActionSet - Main.null_SM_EVENT);
-currentActionSet = (currentActionSet - Main.a_SM_EVENT);
-localActions.es = new SM_EVENT_array[0];
-localActions.as = new ActionOrFun_array[0];
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eUnit_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eUnit_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _DoorClosed_Elevator_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eOpenDoor_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eOpenDoor_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _DoorOpening_Elevator_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + Main.eCloseDoor_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eDoorOpened_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eCloseDoor_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eDoorOpened_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _DoorOpened_Elevator_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + Main.eCloseDoor_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eOpenDoor_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eStopTimerReturned_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eTimerFired_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eCloseDoor_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eOpenDoor_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eStopTimerReturned_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eTimerFired_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _DoorOpenedOkToClose_Elevator_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + Main.eOpenDoor_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eCloseDoor_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eTimerFired_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eStopTimerReturned_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eOpenDoor_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eCloseDoor_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eTimerFired_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eStopTimerReturned_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _DoorClosing_Elevator_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + Main.eCloseDoor_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eObjectDetected_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eDoorClosed_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eOpenDoor_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eCloseDoor_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eObjectDetected_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eDoorClosed_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eOpenDoor_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _StoppingDoor_Elevator_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + Main.eCloseDoor_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eDoorStopped_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eDoorClosed_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eDoorOpened_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eCloseDoor_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eDoorStopped_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eDoorClosed_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eDoorOpened_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _StoppingTimer_Elevator_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + Main.eObjectDetected_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + Main.eCloseDoor_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + Main.eOpenDoor_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eOperationFailure_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eOperationSuccess_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eObjectDetected_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eCloseDoor_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eOpenDoor_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eOperationFailure_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eOperationSuccess_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _WaitingForTimer_Elevator_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + Main.eObjectDetected_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + Main.eCloseDoor_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + Main.eOpenDoor_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eTimerFired_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eObjectDetected_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eCloseDoor_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eOpenDoor_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eTimerFired_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _ReturnState_Elevator_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
 
 ;
 
 }
 };
 
-class Sample2{
-LocalActions localActions;
-SM_EVENT_SET stackActionSet;
-SM_EVENT_SET stackDeferredSet;
+class M{
 SM_HANDLE myHandle;
-void AnonFun2(Continuation entryCtxt) {
-int retTo_3;
+void AnonFun10(Continuation entryCtxt) {
+int retTo_10;
 
 dummy:
-retTo_3 = entryCtxt.PopReturnTo();
-if ((retTo_3 == 0)) {
+retTo_10 = entryCtxt.PopReturnTo();
+if ((retTo_10 == 0)) {
 goto start;
 }
 assert(false);
@@ -447,113 +2042,973 @@ return;
 ;
 
 }
-void ReentrancyHelper(Continuation cont, ActionOrFun actionFun, SM_EVENT_SET currentActionSet) {
+bool HasDefaultTransition(State state) {
+
+init:
+if ((state == State.__WaitForResponse_M)) {
+return false;
+
+}
+if ((state == State.__WaitForRequest_M)) {
+return false;
+
+}
+assert(false);
+
+;
+
+}
+Continuation ReentrancyHelper(ActionOrFun actionFun) {
+Continuation cont;
 SM_EVENT_SET savedDeferredSet;
-SM_EVENT_SET savedActionSet;
 SM_EVENT savedCurrentEvent;
 PRT_VALUE savedCurrentArg;
 
 init:
-if ((actionFun == ActionOrFun._Sample2_AnonFun2)) {
-goto execute_AnonFun2;
+cont = Continuation.Construct_Default();
+cont.PushReturnTo(0);
+if ((actionFun == ActionOrFun._M_AnonFun10)) {
+goto execute_AnonFun10;
 }
 assert(false);
 
 ;
 
 
-execute_AnonFun2:
+execute_AnonFun10:
 
-reentry_AnonFun2:
-AnonFun2(cont);
+reentry_AnonFun10:
+AnonFun10(cont);
 
 ;
 if ((cont.reason == ContinuationReason.Return)) {
-return;
+return cont;
 
 }
 if ((cont.reason == ContinuationReason.Pop)) {
-return;
+return cont;
 
 }
 if ((cont.reason == ContinuationReason.Raise)) {
-return;
+return cont;
 
 }
 if ((cont.reason == ContinuationReason.Call)) {
-savedDeferredSet = stackDeferredSet;
-savedActionSet = stackActionSet;
 savedCurrentEvent = myHandle.currentEvent;
 savedCurrentArg = myHandle.currentArg;
-stackActionSet = currentActionSet;
-stackDeferredSet = Main.CalculateComplementOfEventSet(currentActionSet);
+savedDeferredSet = myHandle.stack.deferredSet;
 myHandle.currentEvent = null;
 myHandle.currentArg = null;
-localActions = LocalActions.Construct(localActions);
-RunHelper(cont.state);
-localActions = localActions.next;
-stackDeferredSet = savedDeferredSet;
-stackActionSet = savedActionSet;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
 cont.state = State._default;
 if ((myHandle.currentEvent == null)) {
 myHandle.currentEvent = savedCurrentEvent;
 myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
 
 } else {
-trace("<StateLog> Call statement terminated due to unhandled event by machine Sample2-{0}\n", myHandle.instance);
+trace("<StateLog> Call statement terminated due to unhandled event by machine M-{0}\n", myHandle.instance);
 assert(false);
 
 }
-goto reentry_AnonFun2;
+goto reentry_AnonFun10;
 }
 if ((cont.reason == ContinuationReason.Nondet)) {
 cont.nondet = choose(bool);
-goto reentry_AnonFun2;
+goto reentry_AnonFun10;
 }
 if ((cont.reason == ContinuationReason.NewMachine)) {
 yield;
-goto reentry_AnonFun2;
+goto reentry_AnonFun10;
 }
 if ((cont.reason == ContinuationReason.Send)) {
 yield;
-goto reentry_AnonFun2;
+goto reentry_AnonFun10;
 }
 
 ;
 
 }
-void RunHelper(State startState) {
-SM_EVENT_SET currentDeferredSet;
-SM_EVENT_SET currentActionSet;
-SM_EVENT_SET savedDeferredSet;
-SM_EVENT_SET savedActionSet;
-ActionOrFun actionFun;
+Continuation RunHelper(bool start) {
+State state;
 Continuation cont;
+ActionOrFun actionFun;
+
+init:
+state = myHandle.stack.state;
+if ((state == State.__WaitForResponse_M)) {
+if (start) {
+goto execute__WaitForResponse_M;
+} else {
+goto transition__WaitForResponse_M;
+}
+
+}
+if ((state == State.__WaitForRequest_M)) {
+if (start) {
+goto execute__WaitForRequest_M;
+} else {
+goto transition__WaitForRequest_M;
+}
+
+}
+assert(false);
+
+;
+
+
+execute__WaitForResponse_M:
+trace("<StateLog> Machine M-{0} entered State WaitForResponse\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "M", "_WaitForResponse_M");
+_WaitForResponse_M_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._M_AnonFun10);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__WaitForResponse_M;
+}
+
+;
+
+
+transition__WaitForResponse_M:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__WaitForResponse_M;
+}
+
+}
+trace("<StateLog> Machine M-{0} exiting State WaitForResponse\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._M_AnonFun10);
+if ((myHandle.currentEvent == Main.eDoorOpened_SM_EVENT)) {
+goto execute__WaitForRequest_M;
+} else {
+return cont;
+
+}
+
+;
+
+
+execute__WaitForRequest_M:
+trace("<StateLog> Machine M-{0} entered State WaitForRequest\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "M", "_WaitForRequest_M");
+_WaitForRequest_M_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._M_AnonFun10);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__WaitForRequest_M;
+}
+
+;
+
+
+transition__WaitForRequest_M:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__WaitForRequest_M;
+}
+
+}
+trace("<StateLog> Machine M-{0} exiting State WaitForRequest\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._M_AnonFun10);
+if ((myHandle.currentEvent == Main.eOpenDoor_SM_EVENT)) {
+goto execute__WaitForResponse_M;
+} else {
+return cont;
+
+}
+
+;
+
+}
+void Run(State state) {
+Continuation cont;
+bool hasDefaultTransition;
+
+init:
+myHandle.Push();
+myHandle.stack.state = state;
+cont = RunHelper(true);
+goto dequeue;
+;
+
+
+dequeue:
+if ((cont.reason != ContinuationReason.Return)) {
+myHandle.Push();
+return;
+
+}
+hasDefaultTransition = HasDefaultTransition(myHandle.stack.state);
+myHandle.DequeueEvent(hasDefaultTransition);
+goto execute;
+;
+
+
+execute:
+cont = RunHelper(false);
+goto dequeue;
+;
+
+}
+void Start() {
+
+dummy:
+Run(State.__WaitForRequest_M);
+if ((myHandle.currentEvent == Main.halt_SM_EVENT)) {
+myHandle.stack = null;
+myHandle.buffer = null;
+myHandle.currentArg = null;
+myHandle.isDeleted = true;
+myHandle.isBlocked = true;
+return;
+
+}
+trace("<StateLog> Unhandled event exception by machine M-{0}\n", myHandle.instance);
+assert(false);
+
+;
+
+}
+void _WaitForRequest_M_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eOpenDoor_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eOpenDoor_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _WaitForResponse_M_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eDoorOpened_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eDoorOpened_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+};
+
+class Timer{
+SM_HANDLE myHandle;
+PRT_VALUE ElevatorV;
+void AnonFun15(Continuation entryCtxt) {
+PRT_VALUE tmpVar_0;
+PRT_VALUE tmp_23;
+PRT_VALUE tmpPayload_17;
+int retTo_15;
+
+dummy:
+retTo_15 = entryCtxt.PopReturnTo();
+if ((retTo_15 == 0)) {
+goto start;
+}
+assert(false);
+
+start:
+tmpVar_0 = PRT_VALUE.PrtCastValue(myHandle.currentArg, Main.type_2_PRT_TYPE);
+ElevatorV = PRT_VALUE.PrtCloneValue(tmpVar_0);
+tmp_23 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_23, Main.eUnit_SM_EVENT);
+tmpPayload_17 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+assert((tmp_23.ev != null));
+trace("<RaiseLog> Machine Timer-{0} raised Event {1}\n", myHandle.instance, tmp_23.ev.name);
+myHandle.currentEvent = tmp_23.ev;
+myHandle.currentArg = tmpPayload_17;
+entryCtxt.Raise();
+return;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun14(Continuation entryCtxt) {
+bool nondet_1;
+PRT_VALUE tmp_21;
+PRT_VALUE tmp_22;
+PRT_VALUE tmpPayload_16;
+int retTo_14;
+
+dummy:
+retTo_14 = entryCtxt.PopReturnTo();
+if ((retTo_14 == 0)) {
+goto start;
+}
+if ((retTo_14 == 1)) {
+goto AnonFun14_0;
+}
+assert(false);
+
+start:
+entryCtxt.Nondet(1);
+return;
+
+AnonFun14_0:
+nondet_1 = entryCtxt.nondet;
+
+;
+entryCtxt.nondet = false;
+tmp_21 = PRT_VALUE.PrtMkDefaultValue(Main.type_4_PRT_TYPE);
+PRT_VALUE.PrtPrimSetBool(tmp_21, nondet_1);
+if (!tmp_21.bl) {
+goto AnonFun14_if_0_else;
+}
+tmp_22 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_22, Main.eUnit_SM_EVENT);
+tmpPayload_16 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+assert((tmp_22.ev != null));
+trace("<RaiseLog> Machine Timer-{0} raised Event {1}\n", myHandle.instance, tmp_22.ev.name);
+myHandle.currentEvent = tmp_22.ev;
+myHandle.currentArg = tmpPayload_16;
+entryCtxt.Raise();
+return;
+goto AnonFun14_if_0_end;
+AnonFun14_if_0_else:
+
+;
+
+AnonFun14_if_0_end:
+
+;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun13(Continuation entryCtxt) {
+PRT_VALUE tmp_19;
+PRT_VALUE tmpPayload_14;
+PRT_VALUE tmp_20;
+PRT_VALUE tmpPayload_15;
+int retTo_13;
+
+dummy:
+retTo_13 = entryCtxt.PopReturnTo();
+if ((retTo_13 == 0)) {
+goto start;
+}
+if ((retTo_13 == 1)) {
+goto AnonFun13_0;
+}
+assert(false);
+
+start:
+tmp_19 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_19, Main.eTimerFired_SM_EVENT);
+tmpPayload_14 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+ElevatorV.mach.EnqueueEvent(tmp_19.ev, tmpPayload_14, myHandle);
+entryCtxt.Send(1);
+return;
+
+AnonFun13_0:
+
+;
+tmp_20 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_20, Main.eUnit_SM_EVENT);
+tmpPayload_15 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+assert((tmp_20.ev != null));
+trace("<RaiseLog> Machine Timer-{0} raised Event {1}\n", myHandle.instance, tmp_20.ev.name);
+myHandle.currentEvent = tmp_20.ev;
+myHandle.currentArg = tmpPayload_15;
+entryCtxt.Raise();
+return;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun12(Continuation entryCtxt) {
+int retTo_12;
+
+dummy:
+retTo_12 = entryCtxt.PopReturnTo();
+if ((retTo_12 == 0)) {
+goto start;
+}
+assert(false);
+
+start:
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun11(Continuation entryCtxt) {
+bool nondet_0;
+PRT_VALUE tmp_14;
+PRT_VALUE tmp_15;
+PRT_VALUE tmpPayload_10;
+PRT_VALUE tmp_16;
+PRT_VALUE tmpPayload_11;
+PRT_VALUE tmp_17;
+PRT_VALUE tmpPayload_12;
+PRT_VALUE tmp_18;
+PRT_VALUE tmpPayload_13;
+int retTo_11;
+
+dummy:
+retTo_11 = entryCtxt.PopReturnTo();
+if ((retTo_11 == 0)) {
+goto start;
+}
+if ((retTo_11 == 1)) {
+goto AnonFun11_0;
+}
+if ((retTo_11 == 2)) {
+goto AnonFun11_1;
+}
+if ((retTo_11 == 3)) {
+goto AnonFun11_2;
+}
+if ((retTo_11 == 4)) {
+goto AnonFun11_3;
+}
+assert(false);
+
+start:
+entryCtxt.Nondet(1);
+return;
+
+AnonFun11_0:
+nondet_0 = entryCtxt.nondet;
+
+;
+entryCtxt.nondet = false;
+tmp_14 = PRT_VALUE.PrtMkDefaultValue(Main.type_4_PRT_TYPE);
+PRT_VALUE.PrtPrimSetBool(tmp_14, nondet_0);
+if (!tmp_14.bl) {
+goto AnonFun11_if_0_else;
+}
+tmp_15 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_15, Main.eOperationFailure_SM_EVENT);
+tmpPayload_10 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+ElevatorV.mach.EnqueueEvent(tmp_15.ev, tmpPayload_10, myHandle);
+entryCtxt.Send(2);
+return;
+
+AnonFun11_1:
+
+;
+tmp_16 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_16, Main.eTimerFired_SM_EVENT);
+tmpPayload_11 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+ElevatorV.mach.EnqueueEvent(tmp_16.ev, tmpPayload_11, myHandle);
+entryCtxt.Send(3);
+return;
+
+AnonFun11_2:
+
+;
+goto AnonFun11_if_0_end;
+AnonFun11_if_0_else:
+tmp_17 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_17, Main.eOperationSuccess_SM_EVENT);
+tmpPayload_12 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+ElevatorV.mach.EnqueueEvent(tmp_17.ev, tmpPayload_12, myHandle);
+entryCtxt.Send(4);
+return;
+
+AnonFun11_3:
+
+;
+
+;
+
+AnonFun11_if_0_end:
+
+;
+tmp_18 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_18, Main.eUnit_SM_EVENT);
+tmpPayload_13 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+assert((tmp_18.ev != null));
+trace("<RaiseLog> Machine Timer-{0} raised Event {1}\n", myHandle.instance, tmp_18.ev.name);
+myHandle.currentEvent = tmp_18.ev;
+myHandle.currentArg = tmpPayload_13;
+entryCtxt.Raise();
+return;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+bool HasDefaultTransition(State state) {
+
+init:
+if ((state == State.__ConsiderStopping_Timer)) {
+return false;
+
+}
+if ((state == State.__SendTimerFired_Timer)) {
+return false;
+
+}
+if ((state == State.__TimerStarted_Timer)) {
+return false;
+
+}
+if ((state == State.__Init_Timer)) {
+return false;
+
+}
+if ((state == State.___Init_Timer)) {
+return false;
+
+}
+assert(false);
+
+;
+
+}
+Continuation ReentrancyHelper(ActionOrFun actionFun) {
+Continuation cont;
+SM_EVENT_SET savedDeferredSet;
 SM_EVENT savedCurrentEvent;
 PRT_VALUE savedCurrentArg;
 
 init:
-if ((startState == State.__X1_Sample2)) {
-goto execute__X1_Sample2;
+cont = Continuation.Construct_Default();
+cont.PushReturnTo(0);
+if ((actionFun == ActionOrFun._Timer_AnonFun11)) {
+goto execute_AnonFun11;
+}
+if ((actionFun == ActionOrFun._Timer_AnonFun12)) {
+goto execute_AnonFun12;
+}
+if ((actionFun == ActionOrFun._Timer_AnonFun13)) {
+goto execute_AnonFun13;
+}
+if ((actionFun == ActionOrFun._Timer_AnonFun14)) {
+goto execute_AnonFun14;
+}
+if ((actionFun == ActionOrFun._Timer_AnonFun15)) {
+goto execute_AnonFun15;
+}
+assert(false);
+
+;
+
+
+execute_AnonFun11:
+
+reentry_AnonFun11:
+AnonFun11(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
 } else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Timer-{0}\n", myHandle.instance);
 assert(false);
 
 }
+goto reentry_AnonFun11;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun11;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun11;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun11;
+}
 
 ;
 
 
-execute__X1_Sample2:
-trace("<StateLog> Machine Sample2-{0} entered State X1\n", myHandle.instance);
-invokeplugin("StateCoveragePlugin.dll", "Sample2", "_X1_Sample2");
-currentDeferredSet = new SM_EVENT_SET;
-currentActionSet = new SM_EVENT_SET;
-_X1_Sample2_CalculateDeferredAndActionSet(currentDeferredSet, currentActionSet);
-cont = Continuation.Construct_Default();
-cont.PushReturnTo(0);
-ReentrancyHelper(cont, ActionOrFun._Sample2_AnonFun2, currentActionSet);
+execute_AnonFun12:
+
+reentry_AnonFun12:
+AnonFun12(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
 if ((cont.reason == ContinuationReason.Pop)) {
-return;
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Timer-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun12;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun12;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun12;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun12;
+}
+
+;
+
+
+execute_AnonFun13:
+
+reentry_AnonFun13:
+AnonFun13(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Timer-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun13;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun13;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun13;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun13;
+}
+
+;
+
+
+execute_AnonFun14:
+
+reentry_AnonFun14:
+AnonFun14(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Timer-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun14;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun14;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun14;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun14;
+}
+
+;
+
+
+execute_AnonFun15:
+
+reentry_AnonFun15:
+AnonFun15(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Timer-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun15;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun15;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun15;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun15;
+}
+
+;
+
+}
+Continuation RunHelper(bool start) {
+State state;
+Continuation cont;
+ActionOrFun actionFun;
+
+init:
+state = myHandle.stack.state;
+if ((state == State.__ConsiderStopping_Timer)) {
+if (start) {
+goto execute__ConsiderStopping_Timer;
+} else {
+goto transition__ConsiderStopping_Timer;
+}
+
+}
+if ((state == State.__SendTimerFired_Timer)) {
+if (start) {
+goto execute__SendTimerFired_Timer;
+} else {
+goto transition__SendTimerFired_Timer;
+}
+
+}
+if ((state == State.__TimerStarted_Timer)) {
+if (start) {
+goto execute__TimerStarted_Timer;
+} else {
+goto transition__TimerStarted_Timer;
+}
+
+}
+if ((state == State.__Init_Timer)) {
+if (start) {
+goto execute__Init_Timer;
+} else {
+goto transition__Init_Timer;
+}
+
+}
+if ((state == State.___Init_Timer)) {
+if (start) {
+goto execute___Init_Timer;
+} else {
+goto transition___Init_Timer;
+}
+
+}
+assert(false);
+
+;
+
+
+execute__ConsiderStopping_Timer:
+trace("<StateLog> Machine Timer-{0} entered State ConsiderStopping\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Timer", "_ConsiderStopping_Timer");
+_ConsiderStopping_Timer_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Timer_AnonFun11);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
 
 } else {
 if ((cont.reason == ContinuationReason.Return)) {
@@ -564,28 +3019,21 @@ myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
 
 }
 if ((myHandle.currentEvent == null)) {
-goto wait__X1_Sample2;
+return cont;
+
 } else {
-goto transition__X1_Sample2;
+goto transition__ConsiderStopping_Timer;
 }
 
 ;
 
 
-wait__X1_Sample2:
-myHandle.DequeueEvent(false, currentDeferredSet);
-goto transition__X1_Sample2;
-;
-
-
-transition__X1_Sample2:
-if (myHandle.currentEvent in currentActionSet) {
-actionFun = localActions.Find(myHandle.currentEvent);
-cont = Continuation.Construct_Default();
-cont.PushReturnTo(0);
-ReentrancyHelper(cont, actionFun, currentActionSet);
+transition__ConsiderStopping_Timer:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
 if ((cont.reason == ContinuationReason.Pop)) {
-return;
+return cont;
 
 } else {
 if ((cont.reason == ContinuationReason.Return)) {
@@ -596,53 +3044,2576 @@ myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
 
 }
 if ((myHandle.currentEvent == null)) {
-goto wait__X1_Sample2;
+return cont;
+
 } else {
-goto transition__X1_Sample2;
+goto transition__ConsiderStopping_Timer;
 }
 
 }
-trace("<StateLog> Machine Sample2-{0} exiting State X1\n", myHandle.instance);
-cont = Continuation.Construct_Default();
-cont.PushReturnTo(0);
-ReentrancyHelper(cont, ActionOrFun._Sample2_AnonFun2, currentActionSet);
-return;
+trace("<StateLog> Machine Timer-{0} exiting State ConsiderStopping\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Timer_AnonFun12);
+if ((myHandle.currentEvent == Main.eUnit_SM_EVENT)) {
+goto execute__Init_Timer;
+} else {
+return cont;
+
+}
+
+;
+
+
+execute__SendTimerFired_Timer:
+trace("<StateLog> Machine Timer-{0} entered State SendTimerFired\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Timer", "_SendTimerFired_Timer");
+_SendTimerFired_Timer_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Timer_AnonFun13);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__SendTimerFired_Timer;
+}
+
+;
+
+
+transition__SendTimerFired_Timer:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__SendTimerFired_Timer;
+}
+
+}
+trace("<StateLog> Machine Timer-{0} exiting State SendTimerFired\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Timer_AnonFun12);
+if ((myHandle.currentEvent == Main.eUnit_SM_EVENT)) {
+goto execute__Init_Timer;
+} else {
+return cont;
+
+}
+
+;
+
+
+execute__TimerStarted_Timer:
+trace("<StateLog> Machine Timer-{0} entered State TimerStarted\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Timer", "_TimerStarted_Timer");
+_TimerStarted_Timer_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Timer_AnonFun14);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__TimerStarted_Timer;
+}
+
+;
+
+
+transition__TimerStarted_Timer:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__TimerStarted_Timer;
+}
+
+}
+trace("<StateLog> Machine Timer-{0} exiting State TimerStarted\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Timer_AnonFun12);
+if ((myHandle.currentEvent == Main.eUnit_SM_EVENT)) {
+goto execute__SendTimerFired_Timer;
+} else {
+if ((myHandle.currentEvent == Main.eStopDoorCloseTimer_SM_EVENT)) {
+goto execute__ConsiderStopping_Timer;
+} else {
+return cont;
+
+}
+
+}
+
+;
+
+
+execute__Init_Timer:
+trace("<StateLog> Machine Timer-{0} entered State Init\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Timer", "_Init_Timer");
+_Init_Timer_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Timer_AnonFun12);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__Init_Timer;
+}
+
+;
+
+
+transition__Init_Timer:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__Init_Timer;
+}
+
+}
+trace("<StateLog> Machine Timer-{0} exiting State Init\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Timer_AnonFun12);
+if ((myHandle.currentEvent == Main.eStartDoorCloseTimer_SM_EVENT)) {
+goto execute__TimerStarted_Timer;
+} else {
+return cont;
+
+}
+
+;
+
+
+execute___Init_Timer:
+trace("<StateLog> Machine Timer-{0} entered State _Init\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Timer", "__Init_Timer");
+__Init_Timer_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Timer_AnonFun15);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition___Init_Timer;
+}
+
+;
+
+
+transition___Init_Timer:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition___Init_Timer;
+}
+
+}
+trace("<StateLog> Machine Timer-{0} exiting State _Init\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Timer_AnonFun12);
+if ((myHandle.currentEvent == Main.eUnit_SM_EVENT)) {
+goto execute__Init_Timer;
+} else {
+return cont;
+
+}
 
 ;
 
 }
-void run() {
-SM_EVENT_SET currentDeferredSet;
+void Run(State state) {
+Continuation cont;
+bool hasDefaultTransition;
+
+init:
+myHandle.Push();
+myHandle.stack.state = state;
+cont = RunHelper(true);
+goto dequeue;
+;
+
+
+dequeue:
+if ((cont.reason != ContinuationReason.Return)) {
+myHandle.Push();
+return;
+
+}
+hasDefaultTransition = HasDefaultTransition(myHandle.stack.state);
+myHandle.DequeueEvent(hasDefaultTransition);
+goto execute;
+;
+
+
+execute:
+cont = RunHelper(false);
+goto dequeue;
+;
+
+}
+void Start() {
 
 dummy:
-RunHelper(State.__X1_Sample2);
+Run(State.___Init_Timer);
 if ((myHandle.currentEvent == Main.halt_SM_EVENT)) {
-currentDeferredSet = null;
+myHandle.stack = null;
 myHandle.buffer = null;
+myHandle.currentArg = null;
 myHandle.isDeleted = true;
-localActions = null;
-stackActionSet = null;
-stackDeferredSet = null;
+myHandle.isBlocked = true;
 return;
 
 }
-trace("<StateLog> Unhandled event exception by machine Sample2-{0}\n", myHandle.instance);
+trace("<StateLog> Unhandled event exception by machine Timer-{0}\n", myHandle.instance);
 assert(false);
 
 ;
 
 }
-void _X1_Sample2_CalculateDeferredAndActionSet(SM_EVENT_SET currentDeferredSet, SM_EVENT_SET currentActionSet) {
+void __Init_Timer_CalculateDeferredAndActionSet() {
 
 dummy:
-currentDeferredSet = (currentDeferredSet + stackDeferredSet);
-currentDeferredSet = (currentDeferredSet - Main.halt_SM_EVENT);
-currentActionSet = (currentActionSet + stackActionSet);
-currentActionSet = (currentActionSet + Main.halt_SM_EVENT);
-localActions.es = new SM_EVENT_array[1];
-localActions.as = new ActionOrFun_array[1];
-localActions.es[0] = Main.halt_SM_EVENT;
-localActions.as[0] = ActionOrFun._Sample2_AnonFun2;
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eUnit_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eUnit_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _Init_Timer_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eStartDoorCloseTimer_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eStartDoorCloseTimer_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _TimerStarted_Timer_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + Main.eStartDoorCloseTimer_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eStopDoorCloseTimer_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eUnit_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eStartDoorCloseTimer_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eStopDoorCloseTimer_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eUnit_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _SendTimerFired_Timer_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + Main.eStartDoorCloseTimer_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eUnit_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eStartDoorCloseTimer_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eUnit_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _ConsiderStopping_Timer_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + Main.eStartDoorCloseTimer_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eUnit_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eStartDoorCloseTimer_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eUnit_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+};
+
+class Door{
+SM_HANDLE myHandle;
+PRT_VALUE ElevatorV;
+void AnonFun22(Continuation entryCtxt) {
+PRT_VALUE tmpVar_1;
+PRT_VALUE tmp_37;
+PRT_VALUE tmpPayload_28;
+int retTo_22;
+
+dummy:
+retTo_22 = entryCtxt.PopReturnTo();
+if ((retTo_22 == 0)) {
+goto start;
+}
+assert(false);
+
+start:
+tmpVar_1 = PRT_VALUE.PrtCastValue(myHandle.currentArg, Main.type_2_PRT_TYPE);
+ElevatorV = PRT_VALUE.PrtCloneValue(tmpVar_1);
+tmp_37 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_37, Main.eUnit_SM_EVENT);
+tmpPayload_28 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+assert((tmp_37.ev != null));
+trace("<RaiseLog> Machine Door-{0} raised Event {1}\n", myHandle.instance, tmp_37.ev.name);
+myHandle.currentEvent = tmp_37.ev;
+myHandle.currentArg = tmpPayload_28;
+entryCtxt.Raise();
+return;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun21(Continuation entryCtxt) {
+PRT_VALUE tmp_34;
+PRT_VALUE tmpSendPayload_2;
+PRT_VALUE tmp_35;
+PRT_VALUE tmpPayload_26;
+PRT_VALUE tmp_36;
+PRT_VALUE tmpPayload_27;
+int retTo_21;
+
+dummy:
+retTo_21 = entryCtxt.PopReturnTo();
+if ((retTo_21 == 0)) {
+goto start;
+}
+if ((retTo_21 == 1)) {
+goto AnonFun21_0;
+}
+assert(false);
+
+start:
+tmp_34 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_34, Main.eDoorOpened_SM_EVENT);
+tmpSendPayload_2 = PRT_VALUE.PrtCloneValue(null);
+Main.InvokeMachine_M(tmp_34.ev, tmpSendPayload_2);
+tmp_35 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_35, Main.eDoorOpened_SM_EVENT);
+tmpPayload_26 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+ElevatorV.mach.EnqueueEvent(tmp_35.ev, tmpPayload_26, myHandle);
+entryCtxt.Send(1);
+return;
+
+AnonFun21_0:
+
+;
+tmp_36 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_36, Main.eUnit_SM_EVENT);
+tmpPayload_27 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+assert((tmp_36.ev != null));
+trace("<RaiseLog> Machine Door-{0} raised Event {1}\n", myHandle.instance, tmp_36.ev.name);
+myHandle.currentEvent = tmp_36.ev;
+myHandle.currentArg = tmpPayload_27;
+entryCtxt.Raise();
+return;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun20(Continuation entryCtxt) {
+bool nondet_2;
+PRT_VALUE tmp_30;
+PRT_VALUE tmp_31;
+PRT_VALUE tmpPayload_24;
+bool nondet_3;
+PRT_VALUE tmp_32;
+PRT_VALUE tmp_33;
+PRT_VALUE tmpPayload_25;
+int retTo_20;
+
+dummy:
+retTo_20 = entryCtxt.PopReturnTo();
+if ((retTo_20 == 0)) {
+goto start;
+}
+if ((retTo_20 == 1)) {
+goto AnonFun20_0;
+}
+if ((retTo_20 == 2)) {
+goto AnonFun20_1;
+}
+assert(false);
+
+start:
+entryCtxt.Nondet(1);
+return;
+
+AnonFun20_0:
+nondet_2 = entryCtxt.nondet;
+
+;
+entryCtxt.nondet = false;
+tmp_30 = PRT_VALUE.PrtMkDefaultValue(Main.type_4_PRT_TYPE);
+PRT_VALUE.PrtPrimSetBool(tmp_30, nondet_2);
+if (!tmp_30.bl) {
+goto AnonFun20_if_1_else;
+}
+tmp_31 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_31, Main.eUnit_SM_EVENT);
+tmpPayload_24 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+assert((tmp_31.ev != null));
+trace("<RaiseLog> Machine Door-{0} raised Event {1}\n", myHandle.instance, tmp_31.ev.name);
+myHandle.currentEvent = tmp_31.ev;
+myHandle.currentArg = tmpPayload_24;
+entryCtxt.Raise();
+return;
+goto AnonFun20_if_1_end;
+AnonFun20_if_1_else:
+entryCtxt.Nondet(2);
+return;
+
+AnonFun20_1:
+nondet_3 = entryCtxt.nondet;
+
+;
+entryCtxt.nondet = false;
+tmp_32 = PRT_VALUE.PrtMkDefaultValue(Main.type_4_PRT_TYPE);
+PRT_VALUE.PrtPrimSetBool(tmp_32, nondet_3);
+if (!tmp_32.bl) {
+goto AnonFun20_if_0_else;
+}
+tmp_33 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_33, Main.eObjectEncountered_SM_EVENT);
+tmpPayload_25 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+assert((tmp_33.ev != null));
+trace("<RaiseLog> Machine Door-{0} raised Event {1}\n", myHandle.instance, tmp_33.ev.name);
+myHandle.currentEvent = tmp_33.ev;
+myHandle.currentArg = tmpPayload_25;
+entryCtxt.Raise();
+return;
+goto AnonFun20_if_0_end;
+AnonFun20_if_0_else:
+
+;
+
+AnonFun20_if_0_end:
+
+;
+
+;
+
+AnonFun20_if_1_end:
+
+;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun19(Continuation entryCtxt) {
+PRT_VALUE tmp_28;
+PRT_VALUE tmpPayload_22;
+PRT_VALUE tmp_29;
+PRT_VALUE tmpPayload_23;
+int retTo_19;
+
+dummy:
+retTo_19 = entryCtxt.PopReturnTo();
+if ((retTo_19 == 0)) {
+goto start;
+}
+if ((retTo_19 == 1)) {
+goto AnonFun19_0;
+}
+assert(false);
+
+start:
+tmp_28 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_28, Main.eObjectDetected_SM_EVENT);
+tmpPayload_22 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+ElevatorV.mach.EnqueueEvent(tmp_28.ev, tmpPayload_22, myHandle);
+entryCtxt.Send(1);
+return;
+
+AnonFun19_0:
+
+;
+tmp_29 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_29, Main.eUnit_SM_EVENT);
+tmpPayload_23 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+assert((tmp_29.ev != null));
+trace("<RaiseLog> Machine Door-{0} raised Event {1}\n", myHandle.instance, tmp_29.ev.name);
+myHandle.currentEvent = tmp_29.ev;
+myHandle.currentArg = tmpPayload_23;
+entryCtxt.Raise();
+return;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun18(Continuation entryCtxt) {
+PRT_VALUE tmp_26;
+PRT_VALUE tmpPayload_20;
+PRT_VALUE tmp_27;
+PRT_VALUE tmpPayload_21;
+int retTo_18;
+
+dummy:
+retTo_18 = entryCtxt.PopReturnTo();
+if ((retTo_18 == 0)) {
+goto start;
+}
+if ((retTo_18 == 1)) {
+goto AnonFun18_0;
+}
+assert(false);
+
+start:
+tmp_26 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_26, Main.eDoorClosed_SM_EVENT);
+tmpPayload_20 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+ElevatorV.mach.EnqueueEvent(tmp_26.ev, tmpPayload_20, myHandle);
+entryCtxt.Send(1);
+return;
+
+AnonFun18_0:
+
+;
+tmp_27 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_27, Main.eUnit_SM_EVENT);
+tmpPayload_21 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+assert((tmp_27.ev != null));
+trace("<RaiseLog> Machine Door-{0} raised Event {1}\n", myHandle.instance, tmp_27.ev.name);
+myHandle.currentEvent = tmp_27.ev;
+myHandle.currentArg = tmpPayload_21;
+entryCtxt.Raise();
+return;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun17(Continuation entryCtxt) {
+PRT_VALUE tmp_24;
+PRT_VALUE tmpPayload_18;
+PRT_VALUE tmp_25;
+PRT_VALUE tmpPayload_19;
+int retTo_17;
+
+dummy:
+retTo_17 = entryCtxt.PopReturnTo();
+if ((retTo_17 == 0)) {
+goto start;
+}
+if ((retTo_17 == 1)) {
+goto AnonFun17_0;
+}
+assert(false);
+
+start:
+tmp_24 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_24, Main.eDoorStopped_SM_EVENT);
+tmpPayload_18 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+ElevatorV.mach.EnqueueEvent(tmp_24.ev, tmpPayload_18, myHandle);
+entryCtxt.Send(1);
+return;
+
+AnonFun17_0:
+
+;
+tmp_25 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_25, Main.eUnit_SM_EVENT);
+tmpPayload_19 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+assert((tmp_25.ev != null));
+trace("<RaiseLog> Machine Door-{0} raised Event {1}\n", myHandle.instance, tmp_25.ev.name);
+myHandle.currentEvent = tmp_25.ev;
+myHandle.currentArg = tmpPayload_19;
+entryCtxt.Raise();
+return;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun16(Continuation entryCtxt) {
+int retTo_16;
+
+dummy:
+retTo_16 = entryCtxt.PopReturnTo();
+if ((retTo_16 == 0)) {
+goto start;
+}
+assert(false);
+
+start:
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+bool HasDefaultTransition(State state) {
+
+init:
+if ((state == State.__ResetDoor_Door)) {
+return false;
+
+}
+if ((state == State.__StopDoor_Door)) {
+return false;
+
+}
+if ((state == State.__CloseDoor_Door)) {
+return false;
+
+}
+if ((state == State.__Init_Door)) {
+return false;
+
+}
+if ((state == State.__ObjectEncountered_Door)) {
+return false;
+
+}
+if ((state == State.__ConsiderClosingDoor_Door)) {
+return false;
+
+}
+if ((state == State.__OpenDoor_Door)) {
+return false;
+
+}
+if ((state == State.___Init_Door)) {
+return false;
+
+}
+assert(false);
+
+;
+
+}
+Continuation ReentrancyHelper(ActionOrFun actionFun) {
+Continuation cont;
+SM_EVENT_SET savedDeferredSet;
+SM_EVENT savedCurrentEvent;
+PRT_VALUE savedCurrentArg;
+
+init:
+cont = Continuation.Construct_Default();
+cont.PushReturnTo(0);
+if ((actionFun == ActionOrFun._Door_AnonFun16)) {
+goto execute_AnonFun16;
+}
+if ((actionFun == ActionOrFun._Door_AnonFun17)) {
+goto execute_AnonFun17;
+}
+if ((actionFun == ActionOrFun._Door_AnonFun18)) {
+goto execute_AnonFun18;
+}
+if ((actionFun == ActionOrFun._Door_AnonFun19)) {
+goto execute_AnonFun19;
+}
+if ((actionFun == ActionOrFun._Door_AnonFun20)) {
+goto execute_AnonFun20;
+}
+if ((actionFun == ActionOrFun._Door_AnonFun21)) {
+goto execute_AnonFun21;
+}
+if ((actionFun == ActionOrFun._Door_AnonFun22)) {
+goto execute_AnonFun22;
+}
+assert(false);
+
+;
+
+
+execute_AnonFun16:
+
+reentry_AnonFun16:
+AnonFun16(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Door-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun16;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun16;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun16;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun16;
+}
+
+;
+
+
+execute_AnonFun17:
+
+reentry_AnonFun17:
+AnonFun17(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Door-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun17;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun17;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun17;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun17;
+}
+
+;
+
+
+execute_AnonFun18:
+
+reentry_AnonFun18:
+AnonFun18(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Door-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun18;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun18;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun18;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun18;
+}
+
+;
+
+
+execute_AnonFun19:
+
+reentry_AnonFun19:
+AnonFun19(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Door-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun19;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun19;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun19;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun19;
+}
+
+;
+
+
+execute_AnonFun20:
+
+reentry_AnonFun20:
+AnonFun20(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Door-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun20;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun20;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun20;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun20;
+}
+
+;
+
+
+execute_AnonFun21:
+
+reentry_AnonFun21:
+AnonFun21(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Door-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun21;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun21;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun21;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun21;
+}
+
+;
+
+
+execute_AnonFun22:
+
+reentry_AnonFun22:
+AnonFun22(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine Door-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun22;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun22;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun22;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun22;
+}
+
+;
+
+}
+Continuation RunHelper(bool start) {
+State state;
+Continuation cont;
+ActionOrFun actionFun;
+
+init:
+state = myHandle.stack.state;
+if ((state == State.__ResetDoor_Door)) {
+if (start) {
+goto execute__ResetDoor_Door;
+} else {
+goto transition__ResetDoor_Door;
+}
+
+}
+if ((state == State.__StopDoor_Door)) {
+if (start) {
+goto execute__StopDoor_Door;
+} else {
+goto transition__StopDoor_Door;
+}
+
+}
+if ((state == State.__CloseDoor_Door)) {
+if (start) {
+goto execute__CloseDoor_Door;
+} else {
+goto transition__CloseDoor_Door;
+}
+
+}
+if ((state == State.__Init_Door)) {
+if (start) {
+goto execute__Init_Door;
+} else {
+goto transition__Init_Door;
+}
+
+}
+if ((state == State.__ObjectEncountered_Door)) {
+if (start) {
+goto execute__ObjectEncountered_Door;
+} else {
+goto transition__ObjectEncountered_Door;
+}
+
+}
+if ((state == State.__ConsiderClosingDoor_Door)) {
+if (start) {
+goto execute__ConsiderClosingDoor_Door;
+} else {
+goto transition__ConsiderClosingDoor_Door;
+}
+
+}
+if ((state == State.__OpenDoor_Door)) {
+if (start) {
+goto execute__OpenDoor_Door;
+} else {
+goto transition__OpenDoor_Door;
+}
+
+}
+if ((state == State.___Init_Door)) {
+if (start) {
+goto execute___Init_Door;
+} else {
+goto transition___Init_Door;
+}
+
+}
+assert(false);
+
+;
+
+
+execute__ResetDoor_Door:
+trace("<StateLog> Machine Door-{0} entered State ResetDoor\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Door", "_ResetDoor_Door");
+_ResetDoor_Door_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Door_AnonFun16);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__ResetDoor_Door;
+}
+
+;
+
+
+transition__ResetDoor_Door:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__ResetDoor_Door;
+}
+
+}
+trace("<StateLog> Machine Door-{0} exiting State ResetDoor\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Door_AnonFun16);
+if ((myHandle.currentEvent == Main.eSendCommandToResetDoor_SM_EVENT)) {
+goto execute__Init_Door;
+} else {
+return cont;
+
+}
+
+;
+
+
+execute__StopDoor_Door:
+trace("<StateLog> Machine Door-{0} entered State StopDoor\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Door", "_StopDoor_Door");
+_StopDoor_Door_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Door_AnonFun17);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__StopDoor_Door;
+}
+
+;
+
+
+transition__StopDoor_Door:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__StopDoor_Door;
+}
+
+}
+trace("<StateLog> Machine Door-{0} exiting State StopDoor\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Door_AnonFun16);
+if ((myHandle.currentEvent == Main.eUnit_SM_EVENT)) {
+goto execute__OpenDoor_Door;
+} else {
+return cont;
+
+}
+
+;
+
+
+execute__CloseDoor_Door:
+trace("<StateLog> Machine Door-{0} entered State CloseDoor\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Door", "_CloseDoor_Door");
+_CloseDoor_Door_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Door_AnonFun18);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__CloseDoor_Door;
+}
+
+;
+
+
+transition__CloseDoor_Door:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__CloseDoor_Door;
+}
+
+}
+trace("<StateLog> Machine Door-{0} exiting State CloseDoor\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Door_AnonFun16);
+if ((myHandle.currentEvent == Main.eUnit_SM_EVENT)) {
+goto execute__ResetDoor_Door;
+} else {
+return cont;
+
+}
+
+;
+
+
+execute__Init_Door:
+trace("<StateLog> Machine Door-{0} entered State Init\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Door", "_Init_Door");
+_Init_Door_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Door_AnonFun16);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__Init_Door;
+}
+
+;
+
+
+transition__Init_Door:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__Init_Door;
+}
+
+}
+trace("<StateLog> Machine Door-{0} exiting State Init\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Door_AnonFun16);
+if ((myHandle.currentEvent == Main.eSendCommandToOpenDoor_SM_EVENT)) {
+goto execute__OpenDoor_Door;
+} else {
+if ((myHandle.currentEvent == Main.eSendCommandToCloseDoor_SM_EVENT)) {
+goto execute__ConsiderClosingDoor_Door;
+} else {
+return cont;
+
+}
+
+}
+
+;
+
+
+execute__ObjectEncountered_Door:
+trace("<StateLog> Machine Door-{0} entered State ObjectEncountered\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Door", "_ObjectEncountered_Door");
+_ObjectEncountered_Door_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Door_AnonFun19);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__ObjectEncountered_Door;
+}
+
+;
+
+
+transition__ObjectEncountered_Door:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__ObjectEncountered_Door;
+}
+
+}
+trace("<StateLog> Machine Door-{0} exiting State ObjectEncountered\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Door_AnonFun16);
+if ((myHandle.currentEvent == Main.eUnit_SM_EVENT)) {
+goto execute__Init_Door;
+} else {
+return cont;
+
+}
+
+;
+
+
+execute__ConsiderClosingDoor_Door:
+trace("<StateLog> Machine Door-{0} entered State ConsiderClosingDoor\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Door", "_ConsiderClosingDoor_Door");
+_ConsiderClosingDoor_Door_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Door_AnonFun20);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__ConsiderClosingDoor_Door;
+}
+
+;
+
+
+transition__ConsiderClosingDoor_Door:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__ConsiderClosingDoor_Door;
+}
+
+}
+trace("<StateLog> Machine Door-{0} exiting State ConsiderClosingDoor\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Door_AnonFun16);
+if ((myHandle.currentEvent == Main.eUnit_SM_EVENT)) {
+goto execute__CloseDoor_Door;
+} else {
+if ((myHandle.currentEvent == Main.eObjectEncountered_SM_EVENT)) {
+goto execute__ObjectEncountered_Door;
+} else {
+if ((myHandle.currentEvent == Main.eSendCommandToStopDoor_SM_EVENT)) {
+goto execute__StopDoor_Door;
+} else {
+return cont;
+
+}
+
+}
+
+}
+
+;
+
+
+execute__OpenDoor_Door:
+trace("<StateLog> Machine Door-{0} entered State OpenDoor\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Door", "_OpenDoor_Door");
+_OpenDoor_Door_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Door_AnonFun21);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__OpenDoor_Door;
+}
+
+;
+
+
+transition__OpenDoor_Door:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__OpenDoor_Door;
+}
+
+}
+trace("<StateLog> Machine Door-{0} exiting State OpenDoor\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Door_AnonFun16);
+if ((myHandle.currentEvent == Main.eUnit_SM_EVENT)) {
+goto execute__ResetDoor_Door;
+} else {
+return cont;
+
+}
+
+;
+
+
+execute___Init_Door:
+trace("<StateLog> Machine Door-{0} entered State _Init\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "Door", "__Init_Door");
+__Init_Door_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._Door_AnonFun22);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition___Init_Door;
+}
+
+;
+
+
+transition___Init_Door:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition___Init_Door;
+}
+
+}
+trace("<StateLog> Machine Door-{0} exiting State _Init\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._Door_AnonFun16);
+if ((myHandle.currentEvent == Main.eUnit_SM_EVENT)) {
+goto execute__Init_Door;
+} else {
+return cont;
+
+}
+
+;
+
+}
+void Run(State state) {
+Continuation cont;
+bool hasDefaultTransition;
+
+init:
+myHandle.Push();
+myHandle.stack.state = state;
+cont = RunHelper(true);
+goto dequeue;
+;
+
+
+dequeue:
+if ((cont.reason != ContinuationReason.Return)) {
+myHandle.Push();
+return;
+
+}
+hasDefaultTransition = HasDefaultTransition(myHandle.stack.state);
+myHandle.DequeueEvent(hasDefaultTransition);
+goto execute;
+;
+
+
+execute:
+cont = RunHelper(false);
+goto dequeue;
+;
+
+}
+void Start() {
+
+dummy:
+Run(State.___Init_Door);
+if ((myHandle.currentEvent == Main.halt_SM_EVENT)) {
+myHandle.stack = null;
+myHandle.buffer = null;
+myHandle.currentArg = null;
+myHandle.isDeleted = true;
+myHandle.isBlocked = true;
+return;
+
+}
+trace("<StateLog> Unhandled event exception by machine Door-{0}\n", myHandle.instance);
+assert(false);
+
+;
+
+}
+void __Init_Door_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eUnit_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eUnit_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _OpenDoor_Door_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eUnit_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eUnit_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _ConsiderClosingDoor_Door_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eSendCommandToStopDoor_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eObjectEncountered_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eUnit_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eSendCommandToStopDoor_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eObjectEncountered_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eUnit_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _ObjectEncountered_Door_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eUnit_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eUnit_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _Init_Door_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eSendCommandToCloseDoor_SM_EVENT);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eSendCommandToOpenDoor_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eSendCommandToCloseDoor_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eSendCommandToOpenDoor_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _CloseDoor_Door_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eUnit_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eUnit_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _StopDoor_Door_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eUnit_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eUnit_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _ResetDoor_Door_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eSendCommandToResetDoor_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eSendCommandToResetDoor_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+};
+
+class User{
+SM_HANDLE myHandle;
+PRT_VALUE ElevatorV;
+void AnonFun25(Continuation entryCtxt) {
+PRT_VALUE tmpSendPayload_4;
+SM_HANDLE newMachine_2;
+PRT_VALUE tmp_44;
+PRT_VALUE tmp_45;
+PRT_VALUE tmpPayload_32;
+int retTo_25;
+
+dummy:
+retTo_25 = entryCtxt.PopReturnTo();
+if ((retTo_25 == 0)) {
+goto start;
+}
+if ((retTo_25 == 1)) {
+goto AnonFun25_0;
+}
+assert(false);
+
+start:
+tmpSendPayload_4 = PRT_VALUE.PrtCloneValue(null);
+newMachine_2 = Main.CreateMachine_Elevator(tmpSendPayload_4);
+entryCtxt.NewMachine(1, newMachine_2);
+return;
+
+AnonFun25_0:
+newMachine_2 = entryCtxt.id;
+
+;
+entryCtxt.id = null;
+tmp_44 = PRT_VALUE.PrtMkDefaultValue(Main.type_2_PRT_TYPE);
+PRT_VALUE.PrtPrimSetMachine(tmp_44, newMachine_2);
+ElevatorV = PRT_VALUE.PrtCloneValue(tmp_44);
+tmp_45 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_45, Main.eUnit_SM_EVENT);
+tmpPayload_32 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+assert((tmp_45.ev != null));
+trace("<RaiseLog> Machine User-{0} raised Event {1}\n", myHandle.instance, tmp_45.ev.name);
+myHandle.currentEvent = tmp_45.ev;
+myHandle.currentArg = tmpPayload_32;
+entryCtxt.Raise();
+return;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun24(Continuation entryCtxt) {
+int retTo_24;
+
+dummy:
+retTo_24 = entryCtxt.PopReturnTo();
+if ((retTo_24 == 0)) {
+goto start;
+}
+assert(false);
+
+start:
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+void AnonFun23(Continuation entryCtxt) {
+bool nondet_4;
+PRT_VALUE tmp_38;
+PRT_VALUE tmp_39;
+PRT_VALUE tmpSendPayload_3;
+PRT_VALUE tmp_40;
+PRT_VALUE tmpPayload_29;
+bool nondet_5;
+PRT_VALUE tmp_41;
+PRT_VALUE tmp_42;
+PRT_VALUE tmpPayload_30;
+PRT_VALUE tmp_43;
+PRT_VALUE tmpPayload_31;
+int retTo_23;
+
+dummy:
+retTo_23 = entryCtxt.PopReturnTo();
+if ((retTo_23 == 0)) {
+goto start;
+}
+if ((retTo_23 == 1)) {
+goto AnonFun23_0;
+}
+if ((retTo_23 == 2)) {
+goto AnonFun23_1;
+}
+if ((retTo_23 == 3)) {
+goto AnonFun23_2;
+}
+if ((retTo_23 == 4)) {
+goto AnonFun23_3;
+}
+assert(false);
+
+start:
+entryCtxt.Nondet(1);
+return;
+
+AnonFun23_0:
+nondet_4 = entryCtxt.nondet;
+
+;
+entryCtxt.nondet = false;
+tmp_38 = PRT_VALUE.PrtMkDefaultValue(Main.type_4_PRT_TYPE);
+PRT_VALUE.PrtPrimSetBool(tmp_38, nondet_4);
+if (!tmp_38.bl) {
+goto AnonFun23_if_1_else;
+}
+tmp_39 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_39, Main.eOpenDoor_SM_EVENT);
+tmpSendPayload_3 = PRT_VALUE.PrtCloneValue(null);
+Main.InvokeMachine_M(tmp_39.ev, tmpSendPayload_3);
+tmp_40 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_40, Main.eOpenDoor_SM_EVENT);
+tmpPayload_29 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+ElevatorV.mach.EnqueueEvent(tmp_40.ev, tmpPayload_29, myHandle);
+entryCtxt.Send(2);
+return;
+
+AnonFun23_1:
+
+;
+goto AnonFun23_if_1_end;
+AnonFun23_if_1_else:
+entryCtxt.Nondet(3);
+return;
+
+AnonFun23_2:
+nondet_5 = entryCtxt.nondet;
+
+;
+entryCtxt.nondet = false;
+tmp_41 = PRT_VALUE.PrtMkDefaultValue(Main.type_4_PRT_TYPE);
+PRT_VALUE.PrtPrimSetBool(tmp_41, nondet_5);
+if (!tmp_41.bl) {
+goto AnonFun23_if_0_else;
+}
+tmp_42 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_42, Main.eCloseDoor_SM_EVENT);
+tmpPayload_30 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+ElevatorV.mach.EnqueueEvent(tmp_42.ev, tmpPayload_30, myHandle);
+entryCtxt.Send(4);
+return;
+
+AnonFun23_3:
+
+;
+goto AnonFun23_if_0_end;
+AnonFun23_if_0_else:
+
+;
+
+AnonFun23_if_0_end:
+
+;
+
+;
+
+AnonFun23_if_1_end:
+
+;
+tmp_43 = PRT_VALUE.PrtMkDefaultValue(Main.type_1_PRT_TYPE);
+PRT_VALUE.PrtPrimSetEvent(tmp_43, Main.eUnit_SM_EVENT);
+tmpPayload_31 = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+assert((tmp_43.ev != null));
+trace("<RaiseLog> Machine User-{0} raised Event {1}\n", myHandle.instance, tmp_43.ev.name);
+myHandle.currentEvent = tmp_43.ev;
+myHandle.currentArg = tmpPayload_31;
+entryCtxt.Raise();
+return;
+
+;
+entryCtxt.Return();
+return;
+
+;
+
+}
+bool HasDefaultTransition(State state) {
+
+init:
+if ((state == State.__Loop_User)) {
+return false;
+
+}
+if ((state == State.__Init_User)) {
+return false;
+
+}
+assert(false);
+
+;
+
+}
+Continuation ReentrancyHelper(ActionOrFun actionFun) {
+Continuation cont;
+SM_EVENT_SET savedDeferredSet;
+SM_EVENT savedCurrentEvent;
+PRT_VALUE savedCurrentArg;
+
+init:
+cont = Continuation.Construct_Default();
+cont.PushReturnTo(0);
+if ((actionFun == ActionOrFun._User_AnonFun23)) {
+goto execute_AnonFun23;
+}
+if ((actionFun == ActionOrFun._User_AnonFun24)) {
+goto execute_AnonFun24;
+}
+if ((actionFun == ActionOrFun._User_AnonFun25)) {
+goto execute_AnonFun25;
+}
+assert(false);
+
+;
+
+
+execute_AnonFun23:
+
+reentry_AnonFun23:
+AnonFun23(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine User-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun23;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun23;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun23;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun23;
+}
+
+;
+
+
+execute_AnonFun24:
+
+reentry_AnonFun24:
+AnonFun24(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine User-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun24;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun24;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun24;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun24;
+}
+
+;
+
+
+execute_AnonFun25:
+
+reentry_AnonFun25:
+AnonFun25(cont);
+
+;
+if ((cont.reason == ContinuationReason.Return)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Raise)) {
+return cont;
+
+}
+if ((cont.reason == ContinuationReason.Call)) {
+savedCurrentEvent = myHandle.currentEvent;
+savedCurrentArg = myHandle.currentArg;
+savedDeferredSet = myHandle.stack.deferredSet;
+myHandle.currentEvent = null;
+myHandle.currentArg = null;
+myHandle.stack.deferredSet = Main.CalculateComplementOfEventSet(myHandle.stack.actionSet);
+Run(cont.state);
+cont.state = State._default;
+if ((myHandle.currentEvent == null)) {
+myHandle.currentEvent = savedCurrentEvent;
+myHandle.currentArg = savedCurrentArg;
+myHandle.stack.deferredSet = savedDeferredSet;
+
+} else {
+trace("<StateLog> Call statement terminated due to unhandled event by machine User-{0}\n", myHandle.instance);
+assert(false);
+
+}
+goto reentry_AnonFun25;
+}
+if ((cont.reason == ContinuationReason.Nondet)) {
+cont.nondet = choose(bool);
+goto reentry_AnonFun25;
+}
+if ((cont.reason == ContinuationReason.NewMachine)) {
+yield;
+goto reentry_AnonFun25;
+}
+if ((cont.reason == ContinuationReason.Send)) {
+yield;
+goto reentry_AnonFun25;
+}
+
+;
+
+}
+Continuation RunHelper(bool start) {
+State state;
+Continuation cont;
+ActionOrFun actionFun;
+
+init:
+state = myHandle.stack.state;
+if ((state == State.__Loop_User)) {
+if (start) {
+goto execute__Loop_User;
+} else {
+goto transition__Loop_User;
+}
+
+}
+if ((state == State.__Init_User)) {
+if (start) {
+goto execute__Init_User;
+} else {
+goto transition__Init_User;
+}
+
+}
+assert(false);
+
+;
+
+
+execute__Loop_User:
+trace("<StateLog> Machine User-{0} entered State Loop\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "User", "_Loop_User");
+_Loop_User_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._User_AnonFun23);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__Loop_User;
+}
+
+;
+
+
+transition__Loop_User:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__Loop_User;
+}
+
+}
+trace("<StateLog> Machine User-{0} exiting State Loop\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._User_AnonFun24);
+if ((myHandle.currentEvent == Main.eUnit_SM_EVENT)) {
+goto execute__Loop_User;
+} else {
+return cont;
+
+}
+
+;
+
+
+execute__Init_User:
+trace("<StateLog> Machine User-{0} entered State Init\n", myHandle.instance);
+invokeplugin("StateCoveragePlugin.dll", "User", "_Init_User");
+_Init_User_CalculateDeferredAndActionSet();
+cont = ReentrancyHelper(ActionOrFun._User_AnonFun25);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__Init_User;
+}
+
+;
+
+
+transition__Init_User:
+if (myHandle.currentEvent in myHandle.stack.actionSet) {
+actionFun = myHandle.stack.Find(myHandle.currentEvent);
+cont = ReentrancyHelper(actionFun);
+if ((cont.reason == ContinuationReason.Pop)) {
+return cont;
+
+} else {
+if ((cont.reason == ContinuationReason.Return)) {
+myHandle.currentEvent = null;
+myHandle.currentArg = PRT_VALUE.PrtMkDefaultValue(Main.type_0_PRT_TYPE);
+
+}
+
+}
+if ((myHandle.currentEvent == null)) {
+return cont;
+
+} else {
+goto transition__Init_User;
+}
+
+}
+trace("<StateLog> Machine User-{0} exiting State Init\n", myHandle.instance);
+cont = ReentrancyHelper(ActionOrFun._User_AnonFun24);
+if ((myHandle.currentEvent == Main.eUnit_SM_EVENT)) {
+goto execute__Loop_User;
+} else {
+return cont;
+
+}
+
+;
+
+}
+void Run(State state) {
+Continuation cont;
+bool hasDefaultTransition;
+
+init:
+myHandle.Push();
+myHandle.stack.state = state;
+cont = RunHelper(true);
+goto dequeue;
+;
+
+
+dequeue:
+if ((cont.reason != ContinuationReason.Return)) {
+myHandle.Push();
+return;
+
+}
+hasDefaultTransition = HasDefaultTransition(myHandle.stack.state);
+myHandle.DequeueEvent(hasDefaultTransition);
+goto execute;
+;
+
+
+execute:
+cont = RunHelper(false);
+goto dequeue;
+;
+
+}
+void Start() {
+
+dummy:
+Run(State.__Init_User);
+if ((myHandle.currentEvent == Main.halt_SM_EVENT)) {
+myHandle.stack = null;
+myHandle.buffer = null;
+myHandle.currentArg = null;
+myHandle.isDeleted = true;
+myHandle.isBlocked = true;
+return;
+
+}
+trace("<StateLog> Unhandled event exception by machine User-{0}\n", myHandle.instance);
+assert(false);
+
+;
+
+}
+void _Init_User_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eUnit_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eUnit_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
+
+;
+
+}
+void _Loop_User_CalculateDeferredAndActionSet() {
+
+dummy:
+myHandle.stack.deferredSet = new SM_EVENT_SET;
+myHandle.stack.actionSet = new SM_EVENT_SET;
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet + myHandle.stack.next.deferredSet);
+myHandle.stack.deferredSet = (myHandle.stack.deferredSet - Main.eUnit_SM_EVENT);
+myHandle.stack.actionSet = (myHandle.stack.actionSet + myHandle.stack.next.actionSet);
+myHandle.stack.actionSet = (myHandle.stack.actionSet - Main.eUnit_SM_EVENT);
+myHandle.stack.es = new SM_EVENT_array[0];
+myHandle.stack.as = new ActionOrFun_array[0];
 
 ;
 
@@ -650,24 +5621,74 @@ localActions.as[0] = ActionOrFun._Sample2_AnonFun2;
 };
 
 class Main{
+static PRT_TYPE type_4_PRT_TYPE;
+static PRT_TYPE type_3_PRT_TYPE;
+static PRT_TYPE type_2_PRT_TYPE;
+static PRT_TYPE type_1_PRT_TYPE;
 static PRT_TYPE type_0_PRT_TYPE;
-static int Sample2_instance;
-static int Sample_instance;
-static SM_EVENT a_SM_EVENT;
-static SM_EVENT b_SM_EVENT;
+static M_set M_handles;
+static int User_instance;
+static int Door_instance;
+static int Timer_instance;
+static int M_instance;
+static int Elevator_instance;
+static SM_EVENT eOpenDoor_SM_EVENT;
+static SM_EVENT eCloseDoor_SM_EVENT;
+static SM_EVENT eResetDoor_SM_EVENT;
+static SM_EVENT eDoorOpened_SM_EVENT;
+static SM_EVENT eDoorClosed_SM_EVENT;
+static SM_EVENT eDoorStopped_SM_EVENT;
+static SM_EVENT eObjectDetected_SM_EVENT;
+static SM_EVENT eTimerFired_SM_EVENT;
+static SM_EVENT eOperationSuccess_SM_EVENT;
+static SM_EVENT eOperationFailure_SM_EVENT;
+static SM_EVENT eSendCommandToOpenDoor_SM_EVENT;
+static SM_EVENT eSendCommandToCloseDoor_SM_EVENT;
+static SM_EVENT eSendCommandToStopDoor_SM_EVENT;
+static SM_EVENT eSendCommandToResetDoor_SM_EVENT;
+static SM_EVENT eStartDoorCloseTimer_SM_EVENT;
+static SM_EVENT eStopDoorCloseTimer_SM_EVENT;
+static SM_EVENT eUnit_SM_EVENT;
+static SM_EVENT eStopTimerReturned_SM_EVENT;
+static SM_EVENT eObjectEncountered_SM_EVENT;
 static SM_EVENT null_SM_EVENT;
 static SM_EVENT halt_SM_EVENT;
-static activate void run() {
+static activate void Run() {
 
 dummy:
 Main.halt_SM_EVENT = SM_EVENT.Construct(Event._halt, 1, false);
 Main.null_SM_EVENT = null;
-Main.b_SM_EVENT = SM_EVENT.Construct(Event._b, -1, false);
-Main.a_SM_EVENT = SM_EVENT.Construct(Event._a, -1, false);
-Sample_instance = 0;
-Sample2_instance = 0;
+Main.eObjectEncountered_SM_EVENT = SM_EVENT.Construct(Event._eObjectEncountered, 1, false);
+Main.eStopTimerReturned_SM_EVENT = SM_EVENT.Construct(Event._eStopTimerReturned, 1, false);
+Main.eUnit_SM_EVENT = SM_EVENT.Construct(Event._eUnit, 1, false);
+Main.eStopDoorCloseTimer_SM_EVENT = SM_EVENT.Construct(Event._eStopDoorCloseTimer, 1, true);
+Main.eStartDoorCloseTimer_SM_EVENT = SM_EVENT.Construct(Event._eStartDoorCloseTimer, 1, true);
+Main.eSendCommandToResetDoor_SM_EVENT = SM_EVENT.Construct(Event._eSendCommandToResetDoor, 1, true);
+Main.eSendCommandToStopDoor_SM_EVENT = SM_EVENT.Construct(Event._eSendCommandToStopDoor, 1, true);
+Main.eSendCommandToCloseDoor_SM_EVENT = SM_EVENT.Construct(Event._eSendCommandToCloseDoor, 1, true);
+Main.eSendCommandToOpenDoor_SM_EVENT = SM_EVENT.Construct(Event._eSendCommandToOpenDoor, 1, true);
+Main.eOperationFailure_SM_EVENT = SM_EVENT.Construct(Event._eOperationFailure, 1, false);
+Main.eOperationSuccess_SM_EVENT = SM_EVENT.Construct(Event._eOperationSuccess, 1, false);
+Main.eTimerFired_SM_EVENT = SM_EVENT.Construct(Event._eTimerFired, 1, true);
+Main.eObjectDetected_SM_EVENT = SM_EVENT.Construct(Event._eObjectDetected, 1, false);
+Main.eDoorStopped_SM_EVENT = SM_EVENT.Construct(Event._eDoorStopped, 1, false);
+Main.eDoorClosed_SM_EVENT = SM_EVENT.Construct(Event._eDoorClosed, 1, false);
+Main.eDoorOpened_SM_EVENT = SM_EVENT.Construct(Event._eDoorOpened, 1, false);
+Main.eResetDoor_SM_EVENT = SM_EVENT.Construct(Event._eResetDoor, 1, false);
+Main.eCloseDoor_SM_EVENT = SM_EVENT.Construct(Event._eCloseDoor, 1, true);
+Main.eOpenDoor_SM_EVENT = SM_EVENT.Construct(Event._eOpenDoor, 1, true);
+Elevator_instance = 0;
+M_instance = 0;
+Timer_instance = 0;
+Door_instance = 0;
+User_instance = 0;
+M_handles = null;
 Main.type_0_PRT_TYPE = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL);
-Main.CreateMachine_Sample(null);
+Main.type_1_PRT_TYPE = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_EVENT);
+Main.type_2_PRT_TYPE = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_REAL);
+Main.type_3_PRT_TYPE = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_MODEL);
+Main.type_4_PRT_TYPE = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_BOOL);
+Main.CreateMachine_User(null);
 
 ;
 
@@ -683,11 +5704,79 @@ if ((e.name == Event._halt)) {
 return Main.type_0_PRT_TYPE;
 
 }
-if ((e.name == Event._b)) {
+if ((e.name == Event._eObjectEncountered)) {
 return Main.type_0_PRT_TYPE;
 
 }
-if ((e.name == Event._a)) {
+if ((e.name == Event._eStopTimerReturned)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._eUnit)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._eStopDoorCloseTimer)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._eStartDoorCloseTimer)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._eSendCommandToResetDoor)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._eSendCommandToStopDoor)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._eSendCommandToCloseDoor)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._eSendCommandToOpenDoor)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._eOperationFailure)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._eOperationSuccess)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._eTimerFired)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._eObjectDetected)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._eDoorStopped)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._eDoorClosed)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._eDoorOpened)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._eResetDoor)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._eCloseDoor)) {
+return Main.type_0_PRT_TYPE;
+
+}
+if ((e.name == Event._eOpenDoor)) {
 return Main.type_0_PRT_TYPE;
 
 }
@@ -707,16 +5796,118 @@ if (Main.null_SM_EVENT in eventSet) {
 returnEventSet = (returnEventSet + Main.null_SM_EVENT);
 
 }
-if (Main.b_SM_EVENT in eventSet) {
+if (Main.eObjectEncountered_SM_EVENT in eventSet) {
 
 } else {
-returnEventSet = (returnEventSet + Main.b_SM_EVENT);
+returnEventSet = (returnEventSet + Main.eObjectEncountered_SM_EVENT);
 
 }
-if (Main.a_SM_EVENT in eventSet) {
+if (Main.eStopTimerReturned_SM_EVENT in eventSet) {
 
 } else {
-returnEventSet = (returnEventSet + Main.a_SM_EVENT);
+returnEventSet = (returnEventSet + Main.eStopTimerReturned_SM_EVENT);
+
+}
+if (Main.eUnit_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.eUnit_SM_EVENT);
+
+}
+if (Main.eStopDoorCloseTimer_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.eStopDoorCloseTimer_SM_EVENT);
+
+}
+if (Main.eStartDoorCloseTimer_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.eStartDoorCloseTimer_SM_EVENT);
+
+}
+if (Main.eSendCommandToResetDoor_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.eSendCommandToResetDoor_SM_EVENT);
+
+}
+if (Main.eSendCommandToStopDoor_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.eSendCommandToStopDoor_SM_EVENT);
+
+}
+if (Main.eSendCommandToCloseDoor_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.eSendCommandToCloseDoor_SM_EVENT);
+
+}
+if (Main.eSendCommandToOpenDoor_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.eSendCommandToOpenDoor_SM_EVENT);
+
+}
+if (Main.eOperationFailure_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.eOperationFailure_SM_EVENT);
+
+}
+if (Main.eOperationSuccess_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.eOperationSuccess_SM_EVENT);
+
+}
+if (Main.eTimerFired_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.eTimerFired_SM_EVENT);
+
+}
+if (Main.eObjectDetected_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.eObjectDetected_SM_EVENT);
+
+}
+if (Main.eDoorStopped_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.eDoorStopped_SM_EVENT);
+
+}
+if (Main.eDoorClosed_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.eDoorClosed_SM_EVENT);
+
+}
+if (Main.eDoorOpened_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.eDoorOpened_SM_EVENT);
+
+}
+if (Main.eResetDoor_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.eResetDoor_SM_EVENT);
+
+}
+if (Main.eCloseDoor_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.eCloseDoor_SM_EVENT);
+
+}
+if (Main.eOpenDoor_SM_EVENT in eventSet) {
+
+} else {
+returnEventSet = (returnEventSet + Main.eOpenDoor_SM_EVENT);
 
 }
 return returnEventSet;
@@ -724,46 +5915,123 @@ return returnEventSet;
 ;
 
 }
-static SM_HANDLE CreateMachine_Sample2(PRT_VALUE arg) {
-FairChoice fairChoice;
-FairScheduler fairScheduler;
-Sample2 o_Sample2;
+static void InvokeMachine_M(SM_EVENT evt, PRT_VALUE arg) {
 
 dummy:
-o_Sample2 = new Sample2;
-o_Sample2.myHandle = SM_HANDLE.Construct(Machine._Sample2, Sample2_instance, -1);
-trace("<CreateLog> Created Machine Sample2-{0}\n", Sample2_instance);
-o_Sample2.myHandle.currentArg = arg;
-Sample2_instance = (Sample2_instance + 1);
-o_Sample2.stackDeferredSet = new SM_EVENT_SET;
-o_Sample2.stackActionSet = new SM_EVENT_SET;
-o_Sample2.localActions = LocalActions.Construct(null);
-o_Sample2.myHandle.machineId = MachineId.GetNextId();
-async o_Sample2.run();
-invokescheduler("map", o_Sample2.myHandle.machineId);
-return o_Sample2.myHandle;
+foreach (M iter in Main.M_handles) {
+iter.myHandle.currentEvent = evt;
+iter.myHandle.currentArg = arg;
+iter.RunHelper(false);
+
+}
 
 ;
 
 }
-static SM_HANDLE CreateMachine_Sample(PRT_VALUE arg) {
+static SM_HANDLE CreateMachine_User(PRT_VALUE arg) {
 FairChoice fairChoice;
 FairScheduler fairScheduler;
-Sample o_Sample;
+User o_User;
 
 dummy:
-o_Sample = new Sample;
-o_Sample.myHandle = SM_HANDLE.Construct(Machine._Sample, Sample_instance, -1);
-trace("<CreateLog> Created Machine Sample-{0}\n", Sample_instance);
-o_Sample.myHandle.currentArg = arg;
-Sample_instance = (Sample_instance + 1);
-o_Sample.stackDeferredSet = new SM_EVENT_SET;
-o_Sample.stackActionSet = new SM_EVENT_SET;
-o_Sample.localActions = LocalActions.Construct(null);
-o_Sample.myHandle.machineId = MachineId.GetNextId();
-async o_Sample.run();
-invokescheduler("map", o_Sample.myHandle.machineId);
-return o_Sample.myHandle;
+o_User = new User;
+o_User.ElevatorV = PRT_VALUE.PrtMkDefaultValue(Main.type_2_PRT_TYPE);
+o_User.myHandle = SM_HANDLE.Construct(Machine._User, User_instance, -1);
+trace("<CreateLog> Created Machine User-{0}\n", User_instance);
+o_User.myHandle.currentArg = arg;
+User_instance = (User_instance + 1);
+o_User.myHandle.machineId = MachineId.GetNextId();
+async o_User.Start();
+invokescheduler("map", o_User.myHandle.machineId);
+return o_User.myHandle;
+
+;
+
+}
+static SM_HANDLE CreateMachine_Door(PRT_VALUE arg) {
+FairChoice fairChoice;
+FairScheduler fairScheduler;
+Door o_Door;
+
+dummy:
+o_Door = new Door;
+o_Door.ElevatorV = PRT_VALUE.PrtMkDefaultValue(Main.type_2_PRT_TYPE);
+o_Door.myHandle = SM_HANDLE.Construct(Machine._Door, Door_instance, -1);
+trace("<CreateLog> Created Machine Door-{0}\n", Door_instance);
+o_Door.myHandle.currentArg = arg;
+Door_instance = (Door_instance + 1);
+o_Door.myHandle.machineId = MachineId.GetNextId();
+async o_Door.Start();
+invokescheduler("map", o_Door.myHandle.machineId);
+return o_Door.myHandle;
+
+;
+
+}
+static SM_HANDLE CreateMachine_Timer(PRT_VALUE arg) {
+FairChoice fairChoice;
+FairScheduler fairScheduler;
+Timer o_Timer;
+
+dummy:
+o_Timer = new Timer;
+o_Timer.ElevatorV = PRT_VALUE.PrtMkDefaultValue(Main.type_2_PRT_TYPE);
+o_Timer.myHandle = SM_HANDLE.Construct(Machine._Timer, Timer_instance, -1);
+trace("<CreateLog> Created Machine Timer-{0}\n", Timer_instance);
+o_Timer.myHandle.currentArg = arg;
+Timer_instance = (Timer_instance + 1);
+o_Timer.myHandle.machineId = MachineId.GetNextId();
+async o_Timer.Start();
+invokescheduler("map", o_Timer.myHandle.machineId);
+return o_Timer.myHandle;
+
+;
+
+}
+static void CreateMachine_M(PRT_VALUE arg) {
+bool chooseMonitor;
+M o_M;
+
+dummy:
+if ((FairCycle.gate != GateStatus.Init)) {
+return;
+
+}
+chooseMonitor = choose(bool);
+if (chooseMonitor) {
+return;
+
+}
+FairCycle.gate = GateStatus.Closed;
+o_M = new M;
+o_M.myHandle = SM_HANDLE.Construct(Machine._M, M_instance, 0);
+trace("<CreateLog> Created Machine M-{0}\n", M_instance);
+o_M.myHandle.currentArg = arg;
+M_instance = (M_instance + 1);
+o_M.myHandle.stack.state = State.__WaitForRequest_M;
+Main.M_handles = (Main.M_handles + o_M);
+o_M.RunHelper(true);
+
+;
+
+}
+static SM_HANDLE CreateMachine_Elevator(PRT_VALUE arg) {
+FairChoice fairChoice;
+FairScheduler fairScheduler;
+Elevator o_Elevator;
+
+dummy:
+o_Elevator = new Elevator;
+o_Elevator.TimerV = PRT_VALUE.PrtMkDefaultValue(Main.type_3_PRT_TYPE);
+o_Elevator.DoorV = PRT_VALUE.PrtMkDefaultValue(Main.type_3_PRT_TYPE);
+o_Elevator.myHandle = SM_HANDLE.Construct(Machine._Elevator, Elevator_instance, -1);
+trace("<CreateLog> Created Machine Elevator-{0}\n", Elevator_instance);
+o_Elevator.myHandle.currentArg = arg;
+Elevator_instance = (Elevator_instance + 1);
+o_Elevator.myHandle.machineId = MachineId.GetNextId();
+async o_Elevator.Start();
+invokescheduler("map", o_Elevator.myHandle.machineId);
+return o_Elevator.myHandle;
 
 ;
 

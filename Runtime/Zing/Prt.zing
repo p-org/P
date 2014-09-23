@@ -35,10 +35,10 @@ class SM_HANDLE {
 	Machine machineName;
 	int machineId;
 	int instance;
-	SM_EVENT currentEvent;
-    	PRT_VALUE currentArg;
     	bool isBlocked;
 	bool isDeleted;
+	SM_EVENT currentEvent;
+    	PRT_VALUE currentArg;
 	
     static SM_HANDLE Construct(Machine mName, int inst, int maxBSize) {
     	SM_HANDLE handle;
@@ -46,14 +46,15 @@ class SM_HANDLE {
 		handle = new SM_HANDLE;
 		handle.stack = null;
 		handle.buffer = EVENT_BUFFER.Construct();
+		handle.maxBufferSize = maxBSize;
 		handle.machineName = mName;
+		handle.machineId = MachineId.GetNextId();
 		handle.instance = inst;
+		handle.isBlocked = false;
+		handle.isDeleted = false;
 		handle.currentEvent = null;
 		prtType = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL);
 		handle.currentArg = PRT_VALUE.PrtMkDefaultValue(prtType);
-		handle.maxBufferSize = maxBSize;
-		handle.isBlocked = false;
-		handle.isDeleted = false;
 		return handle;
     }
 
@@ -437,7 +438,7 @@ class FairScheduler {
 
     void AtYield(SM_HANDLE running) {
 		assume (!noYieldFromNowOn);
-		if (running == handle || handle.isBlocked) {
+		if (running == handle || handle.isBlocked || handle.isDeleted) {
 		   FairScheduler.accepted = FairScheduler.accepted + this;
 		   FairCycle.Accept();
 		}

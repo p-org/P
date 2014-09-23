@@ -629,10 +629,10 @@ namespace Microsoft.Pc
 
         public static string GetNameFromQualifiedName(string machineName, FuncTerm qualifiedName)
         {
-            var stateName = "_" + machineName;
+            var stateName = machineName;
             while (qualifiedName != null)
             {
-                stateName = "_" + GetName(qualifiedName, 0) + stateName;
+                stateName = stateName + "_" + GetName(qualifiedName, 0);
                 qualifiedName = GetArgByIndex(qualifiedName, 1) as FuncTerm;
             }
             return stateName;
@@ -1200,7 +1200,6 @@ namespace Microsoft.Pc
                                         MkZingAssign(MkZingDot("myHandle", "stack"), MkZingIdentifier("null")),
                                         MkZingAssign(MkZingDot("myHandle", "buffer"), MkZingIdentifier("null")),
                                         MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingIdentifier("null")),
-                                        MkZingAssign(MkZingDot("myHandle", "isDeleted"), ZingData.Cnst_True),
                                         MkZingAssign(MkZingDot("myHandle", "isBlocked"), ZingData.Cnst_True),
                                         MkZingReturn(ZingData.Cnst_Nil))
                                         );
@@ -1235,18 +1234,14 @@ namespace Microsoft.Pc
 
             List<AST<Node>> dequeueStmts = new List<AST<Node>>();
             dequeueStmts.Add(MkZingIfThen(MkZingNeq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Return")),
-                             MkZingSeq(MkZingCallStmt(MkZingCall(MkZingDot("myHandle", "Push"))), MkZingReturn(ZingData.Cnst_Nil))));
+                             MkZingSeq(MkZingCallStmt(MkZingCall(MkZingDot("myHandle", "Pop"))), MkZingReturn(ZingData.Cnst_Nil))));
             dequeueStmts.Add(MkZingAssign(hasDefaultTransition, MkZingCall(MkZingIdentifier("HasDefaultTransition"), MkZingDot("myHandle", "stack", "state"))));
             dequeueStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("myHandle", "DequeueEvent"), hasDefaultTransition)));
-            dequeueStmts.Add(MkZingGoto("execute"));
+            dequeueStmts.Add(MkZingAssign(cont, MkZingCall(MkZingIdentifier("RunHelper"), ZingData.Cnst_False)));
+            dequeueStmts.Add(MkZingGoto("dequeue"));
             var dequeueBlock = MkZingBlock("dequeue", MkZingSeq(dequeueStmts));
 
-            List<AST<Node>> executeStmts = new List<AST<Node>>();
-            executeStmts.Add(MkZingAssign(cont, MkZingCall(MkZingIdentifier("RunHelper"), ZingData.Cnst_False)));
-            executeStmts.Add(MkZingGoto("dequeue"));
-            var executeBlock = MkZingBlock("execute", MkZingSeq(executeStmts));
-
-            return MkZingMethodDecl("Run", MkZingVarDecls(parameters), ZingData.Cnst_Void, MkZingVarDecls(locals), MkZingBlocks(initBlock, dequeueBlock, executeBlock));
+            return MkZingMethodDecl("Run", MkZingVarDecls(parameters), ZingData.Cnst_Void, MkZingVarDecls(locals), MkZingBlocks(initBlock, dequeueBlock));
         }
 
         private AST<Node> GenerateReentrancyHelperMethodDecl(string machineName)
@@ -2758,7 +2753,6 @@ namespace Microsoft.Pc
 
             body = MkZingSeq(
                 body,
-                MkZingAssign(MkZingDot(objectName, "myHandle", "machineId"), MkZingCall(MkZingDot("MachineId", "GetNextId"))),
                 MkZingCallStmt(MkZingCall(MkZingDot(objectName, "Start")), ZingData.Cnst_Async),
                 MkZingCallStmt(MkZingCall(MkZingIdentifier("invokescheduler"), Factory.Instance.MkCnst("\"map\""), MkZingDot(objectName, "myHandle", "machineId"))),
                 Factory.Instance.AddArg(ZingData.App_Return, MkZingDot(objectName, "myHandle"))

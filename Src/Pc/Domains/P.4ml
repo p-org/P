@@ -217,13 +217,13 @@ domain PStaticTyping extends PData
 	//PayloadFP(c, e, wider) :- PayloadFP(c, e, t'), PayloadFP(c, e, t''), Widen(t', t'', wider).
 	
 	
-	// payload type inference in doDecl for AnonFunc
+	// payload type inference in doDecl
 	PayloadTypeDoDecl ::= (DoDecl, TypeExpr + {ERROR, NIL}).
 	PayloadTypeDoDecl(d, t) :- d is DoDecl, EventDecl(d.trig, _, NIL), t = BaseType(NULL); d is DoDecl, no EventDecl(d.trig, _, _), t = BaseType(NULL); d is DoDecl, EventDecl(d.trig, _, t), t : TypeExpr.
 	
 	PayloadFP(c, e, t) 	:- SubSE(c, e), c is AnonFunDecl, e = NulApp(PAYLOAD), d = DoDecl(src, trig, c), src.owner = c.owner, PayloadTypeDoDecl(d, t); SubSE(c, e), c is FunDecl, e = NulApp(PAYLOAD), d = DoDecl(src, trig, c.name), src.owner = c.owner, PayloadTypeDoDecl(d, t).
 	
-	// payload type inference in transition functions for AnonFunc
+	// payload type inference in transition function
 	PayloadTypeTransDecl ::= (TransDecl, TypeExpr + {ERROR, NIL}).
 	PayloadTypeTransDecl(tr, t) :- tr is TransDecl, EventDecl(tr.trig, _, NIL), t = BaseType(NULL); tr is TransDecl, no EventDecl(tr.trig, _, _), t = BaseType(NULL); tr is TransDecl, EventDecl(tr.trig, _, t), t : TypeExpr.
 	
@@ -231,7 +231,7 @@ domain PStaticTyping extends PData
 	PayloadFP(c, e, t) 	:- SubSE(c, e), c is AnonFunDecl, e = NulApp(PAYLOAD), tr = TransDecl(src, trig, _, c), src.owner = c.owner, PayloadTypeTransDecl(tr, t); SubSE(c, e), c is FunDecl, e = NulApp(PAYLOAD), tr = TransDecl(src, trig, _, c.name), src.owner = c.owner, PayloadTypeTransDecl(tr, t).
 	
 	
-	//payload type inference in entry for AnonFunc
+	//payload type inference in entry
 	PayloadTypeEntry ::= (StateDecl, TypeExpr + {ERROR, NIL}).
 	PayloadTypeEntry(s, t) :- s is StateDecl, tr is TransDecl(src, ev, dst, _), src.owner = s.owner, dst = s.name, EventDecl(ev, _, t1), t1 : TypeExpr, t = t1; s is StateDecl, tr is TransDecl(src, ev, dst, _), src.owner = s.owner, dst = s.name, EventDecl(ev, _, NIL), t = BaseType(NULL); s is StateDecl, tr is TransDecl(src, ev, dst, _), src.owner = s.owner, dst = s.name, no EventDecl(ev, _, _), t = BaseType(NULL).
 	
@@ -239,7 +239,7 @@ domain PStaticTyping extends PData
 	
 	PayloadFP(c, e, t) :-  SubSE(c, e), c is AnonFunDecl, e = NulApp(PAYLOAD), s is StateDecl(_, c.owner, c, _, _), PayloadTypeEntry(s, t); SubSE(c, e), c is FunDecl, e = NulApp(PAYLOAD), s is StateDecl(_, c.owner, c.name, _, _), PayloadTypeEntry(s, t).
 	
-	//payload type inference in exit for AnonFunc
+	//payload type inference in exit
 	PayloadTypeExit ::= (StateDecl, TypeExpr + {ERROR, NIL}).
 	PayloadTypeExit(s, t) :- s is StateDecl, tr is TransDecl(s, ev, _, _), EventDecl(ev, _, t1), t1 : TypeExpr, t = t1; s is StateDecl, tr is TransDecl(s, ev, _, _), EventDecl(ev, _, NIL), t = BaseType(NULL); s is StateDecl, tr is TransDecl(s, ev, _, _), no EventDecl(ev, _, _), t = BaseType(NULL).
 	

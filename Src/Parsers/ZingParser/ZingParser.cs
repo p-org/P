@@ -88,7 +88,12 @@
                     if (declId.Name == "ArrayDecl")
                     {
                         RenderArrayDecl(decl, writer);
-                    } else if (declId.Name == "EnumDecl")
+                    }
+                    else if (declId.Name == "SetDecl")
+                    {
+                        RenderSetDecl(decl, writer);
+                    }
+                    else if (declId.Name == "EnumDecl")
                     {
                         RenderEnumDecl(decl, writer);
                     }
@@ -120,6 +125,22 @@
             }
 
             writer.Write("array " + arrName + "[] " + TypeName(innerT) + ";\n\n");
+        }
+
+        void RenderSetDecl(FuncTerm term, TextWriter writer)
+        {
+            string setName = null;
+            Node innerT = null;
+            using (var it = term.Args.GetEnumerator())
+            {
+                it.MoveNext();
+                setName = ((Cnst)it.Current).GetStringValue();
+                it.MoveNext();
+                innerT = it.Current;
+                Debug.Assert(!it.MoveNext());
+            }
+
+            writer.Write("set " + setName + " " + TypeName(innerT) + ";\n\n");
         }
 
         void RenderEnumDecl(FuncTerm term, TextWriter writer)
@@ -459,6 +480,21 @@
                     enumerator.MoveNext();
                     var bodyStmt = RenderStmt(enumerator.Current);
                     return string.Format("while ({0}) {{\n{1}\n}}\n", condExpr, bodyStmt);
+                }
+            }
+            else if (functionName == "Foreach")
+            {
+                using (var enumerator = ft.Args.GetEnumerator())
+                {
+                    enumerator.MoveNext();
+                    var typeExpr = enumerator.Current;
+                    enumerator.MoveNext();
+                    var iterExpr = ((Cnst)enumerator.Current).GetStringValue();
+                    enumerator.MoveNext();
+                    var setExpr = RenderExpr(enumerator.Current);
+                    enumerator.MoveNext();
+                    var bodyStmt = RenderStmt(enumerator.Current);
+                    return string.Format("foreach ({0} {1} in {2}) {{\n{3}\n}}\n", TypeName(typeExpr), iterExpr, setExpr, bodyStmt);
                 }
             }
             else if (functionName == "Seq")

@@ -28,50 +28,44 @@ class SM_EVENT {
 
 set SM_EVENT_SET SM_EVENT;
 
-class SPEC_HANDLE {
-	Machine machineName;
-	int instance;
-	SM_EVENT currentEvent;
-        PRT_VALUE currentArg;
-
-    static SPEC_HANDLE Construct(Machine mName, int inst) {
-    	SPEC_HANDLE handle;
-	PRT_TYPE prtType;
-		handle = new SPEC_HANDLE;
-		handle.machineName = mName;
-		handle.instance = inst;
-		handle.currentEvent = null;
-		prtType = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL);
-		handle.currentArg = PRT_VALUE.PrtMkDefaultValue(prtType);
-		return handle;
-    }
-};
-
 class SM_HANDLE {
-    EVENT_BUFFER buffer;
+	StateStack stack;
+       	EVENT_BUFFER buffer;
 	int maxBufferSize;
 	Machine machineName;
 	int machineId;
 	int instance;
 	SM_EVENT currentEvent;
-    PRT_VALUE currentArg;
-    bool blocked;
+    	PRT_VALUE currentArg;
+    	bool isBlocked;
 	bool isDeleted;
 	
     static SM_HANDLE Construct(Machine mName, int inst, int maxBSize) {
     	SM_HANDLE handle;
 	PRT_TYPE prtType;
 		handle = new SM_HANDLE;
+		handle.stack = null;
+		handle.buffer = EVENT_BUFFER.Construct();
 		handle.machineName = mName;
 		handle.instance = inst;
-		handle.buffer = EVENT_BUFFER.Construct();
 		handle.currentEvent = null;
 		prtType = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL);
 		handle.currentArg = PRT_VALUE.PrtMkDefaultValue(prtType);
 		handle.maxBufferSize = maxBSize;
-		handle.blocked = false;
+		handle.isBlocked = false;
 		handle.isDeleted = false;
 		return handle;
+    }
+
+    void Push() {
+           	StateStack s;
+		s = new StateStack;
+		s.next = stack;
+		stack = s;
+    }
+    
+    void Pop() {
+    	   	stack = stack.next;
     }
 
     void EnqueueEvent(SM_EVENT e, PRT_VALUE arg, SM_HANDLE source) {
@@ -112,27 +106,31 @@ class SM_HANDLE {
 				trace("<EXCEPTION> Event Buffer Size Exceeded {0} in Machine {1}-{2}\n", maxBufferSize, machineName, instance);
 				assert(false);
 			}
-			blocked = false;
-			invokescheduler("push", machineId);
+			if (isBlocked) {
+			   	isBlocked = buffer.IsBlocked(this);
+			}
+			if (!isBlocked) {
+			   	invokescheduler("push", machineId);
+			}
 		}
     }
 	
-    void DequeueEvent(bool hasDefault, SM_EVENT_SET deferredSet) {
+    void DequeueEvent(bool hasDefault) {
 		currentEvent = null;
 		currentArg = null;
 		while (true) {
-			buffer.DequeueEvent(deferredSet, this);
+			buffer.DequeueEvent(this);
 			if (currentEvent != null) 
 			{
 				assert(currentArg != null);
 				trace("<DequeueLog> Dequeued Event < {0}, ", currentEvent.name); PRT_VALUE.Print(currentArg); trace(" > at Machine {0}-{1}\n", machineName, instance);
-				blocked = false;
+				isBlocked = false;
 				return;
 			} 
 			else if (hasDefault) 
 			{
 				trace("<DefaultTransLog> Default transition taken by Machine {0}-{1}\n", machineName, instance);
-				blocked = false;
+				isBlocked = false;
 				FairScheduler.AtYieldStatic(this);
 				FairChoice.AtYieldOrChooseStatic();
 				yield;
@@ -141,8 +139,8 @@ class SM_HANDLE {
 			else 
 			{
   				invokescheduler("pop");
-				assume (!blocked);
-				blocked = true;
+				assume (!isBlocked);
+				isBlocked = true;
 				FairScheduler.AtYieldStatic(this);
 				FairChoice.AtYieldOrChooseStatic();
 				yield;
@@ -234,9 +232,11 @@ class EVENT_BUFFER {
 		}
 	}
 
-    void DequeueEvent(SM_EVENT_SET deferredSet, SM_HANDLE owner) {
+    void DequeueEvent(SM_HANDLE owner) {
+    	SM_EVENT_SET deferredSet;
         EVENT_NODE iter;
-		
+	
+	deferredSet = owner.stack.deferredSet;
         iter = head.next;
         while (iter != head) {
 			if (iter.e in deferredSet)
@@ -255,15 +255,37 @@ class EVENT_BUFFER {
         }
 		return;
     }
+
+    bool IsBlocked(SM_HANDLE owner) {
+        EVENT_NODE iter;
+	SM_EVENT_SET deferredSet;
+	
+	deferredSet = owner.stack.deferredSet;
+        iter = head.next;
+        while (iter != head) {
+			if (iter.e in deferredSet)
+			{
+				iter = iter.next;
+			}
+			else 
+			{
+				return false;
+			} 
+        }
+	return true;
+    }
 };
 
 array SM_EVENT_array[] SM_EVENT;
 array ActionOrFun_array[] ActionOrFun;
 
-class LocalActions {
+class StateStack {
+    State state;
+    SM_EVENT_SET deferredSet;
+    SM_EVENT_SET actionSet;
     SM_EVENT_array es;
     ActionOrFun_array as;
-    LocalActions next;
+    StateStack next;
 
     ActionOrFun Find(SM_EVENT f) {
         ActionOrFun af;
@@ -277,13 +299,6 @@ class LocalActions {
 		}
 		af = next.Find(f);
 		return af;
-    }
-
-    static LocalActions Construct(LocalActions nextElem) {
-        LocalActions localActions;
-		localActions = new LocalActions;
-		localActions.next = nextElem;
-		return localActions;
     }
 };
 
@@ -422,7 +437,7 @@ class FairScheduler {
 
     void AtYield(SM_HANDLE running) {
 		assume (!noYieldFromNowOn);
-		if (running == handle || handle.blocked) {
+		if (running == handle || handle.isBlocked) {
 		   FairScheduler.accepted = FairScheduler.accepted + this;
 		   FairCycle.Accept();
 		}

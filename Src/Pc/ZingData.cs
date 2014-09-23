@@ -66,6 +66,7 @@
         public static readonly AST<Id> Con_Goto = Factory.Instance.MkId("Goto");
         public static readonly AST<Id> Con_ITE = Factory.Instance.MkId("ITE");
         public static readonly AST<Id> Con_While = Factory.Instance.MkId("While");
+        public static readonly AST<Id> Con_Foreach = Factory.Instance.MkId("Foreach");
         public static readonly AST<Id> Con_Seq = Factory.Instance.MkId("Seq");
         public static readonly AST<Id> Con_Stmt = Factory.Instance.MkId("Stmt");
         public static readonly AST<Id> Con_LabelStmt = Factory.Instance.MkId("LabelStmt");
@@ -76,6 +77,7 @@
         public static readonly AST<Id> Con_MethodDecl = Factory.Instance.MkId("MethodDecl");
         public static readonly AST<Id> Con_MethodDecls = Factory.Instance.MkId("MethodDecls");
         public static readonly AST<Id> Con_ArrayDecl = Factory.Instance.MkId("ArrayDecl");
+        public static readonly AST<Id> Con_SetDecl = Factory.Instance.MkId("SetDecl");
         public static readonly AST<Id> Con_EnumDecl = Factory.Instance.MkId("EnumDecl");
         public static readonly AST<Id> Con_EnumElems = Factory.Instance.MkId("EnumElems");
         public static readonly AST<Id> Con_Decls = Factory.Instance.MkId("Decls");
@@ -102,12 +104,14 @@
         public static readonly AST<FuncTerm> App_Goto = Factory.Instance.MkFuncTerm(Con_Goto);
         public static readonly AST<FuncTerm> App_ITE = Factory.Instance.MkFuncTerm(Con_ITE);
         public static readonly AST<FuncTerm> App_While = Factory.Instance.MkFuncTerm(Con_While);
+        public static readonly AST<FuncTerm> App_Foreach = Factory.Instance.MkFuncTerm(Con_Foreach);
         public static readonly AST<FuncTerm> App_Seq = Factory.Instance.MkFuncTerm(Con_Seq);
         public static readonly AST<FuncTerm> App_Stmt = Factory.Instance.MkFuncTerm(Con_Stmt);
         public static readonly AST<FuncTerm> App_LabelStmt = Factory.Instance.MkFuncTerm(Con_LabelStmt);
         public static readonly AST<FuncTerm> App_Blocks = Factory.Instance.MkFuncTerm(Con_Blocks);
 
         public static readonly AST<FuncTerm> App_ArrayDecl = Factory.Instance.MkFuncTerm(Con_ArrayDecl);
+        public static readonly AST<FuncTerm> App_SetDecl = Factory.Instance.MkFuncTerm(Con_SetDecl);
         public static readonly AST<FuncTerm> App_EnumDecl = Factory.Instance.MkFuncTerm(Con_EnumDecl);
         public static readonly AST<FuncTerm> App_EnumElems = Factory.Instance.MkFuncTerm(Con_EnumElems);
         public static readonly AST<FuncTerm> App_VarDecl = Factory.Instance.MkFuncTerm(Con_VarDecl);

@@ -20,18 +20,19 @@ domain ZingData
     Expr   ::= Identifier + Call + New + Apply + Integer + Boolean + String.
     
     //// Statements
-    Return ::= new (expr: any Expr + { NIL }).
-    Assert ::= new (expr: any Expr).
-    Assume ::= new (expr: any Expr).
+    Return   ::= new (expr: any Expr + { NIL }).
+    Assert   ::= new (expr: any Expr).
+    Assume   ::= new (expr: any Expr).
     CallStmt ::= new (callExpr: any Call, attrs: any Attrs + { NIL }).
-    Assign ::= new (lhs: any Expr, rhs: any Expr).
-    ITE    ::= new (cond: any Expr, true: any Stmt, false: any Stmt).
-    While  ::= new (cond: any Expr, body: any Stmt).
-    Seq    ::= new (s1: any Stmt, s2: any Stmt).
-    Goto   ::= new (label: String).
-    Stmt   ::= Assert + Assume + Assign + ITE + While + Seq + Goto + CallStmt + Return + LabelStmt + { YIELD, NIL }.     
+    Assign   ::= new (lhs: any Expr, rhs: any Expr).
+    ITE      ::= new (cond: any Expr, true: any Stmt, false: any Stmt).
+    While    ::= new (cond: any Expr, body: any Stmt).
+	Foreach  ::= new (type: any Type, iter: String, set: any Expr, body: any Stmt).
+    Seq      ::= new (s1: any Stmt, s2: any Stmt).
+    Goto     ::= new (label: String).
+    Stmt     ::= Assert + Assume + Assign + ITE + While + Foreach + Seq + Goto + CallStmt + Return + LabelStmt + { YIELD, NIL }.     
     LabelStmt  ::= new (label: String, stmt: any Stmt).
-    Blocks    ::= new (block: LabelStmt, tail: any Blocks + { NIL }).
+    Blocks   ::= new (block: LabelStmt, tail: any Blocks + { NIL }).
 
     //// Top-level declarations
     VarDecl   ::= new (name: String, type: any Type, attrs: any Attrs + { NIL }).
@@ -42,6 +43,7 @@ domain ZingData
     EnumDecl ::= fun (name: String -> any EnumElems + { NIL }).
     EnumElems ::= new (name: String, tail: any EnumElems + { NIL }).
     ArrayDecl ::= new (name: String, innerType: any Type).
-    Decls ::= new (decl: EnumDecl + ClassDecl + ArrayDecl, tail: any Decls + { NIL }).
+	SetDecl   ::= new (name: String, innerType: any Type).
+    Decls ::= new (decl: EnumDecl + ClassDecl + ArrayDecl + SetDecl, tail: any Decls + { NIL }).
     File ::= new (name: String, decls: any Decls + { NIL }).
 }

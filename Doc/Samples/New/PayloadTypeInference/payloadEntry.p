@@ -2,7 +2,7 @@ event myTuple : (int, bool);
 event myNmTuple : (first:int, sec:bool);
 event mySeq : seq[int];
 event myMapSeq : (first: map[int, int], sec : seq[bool]);
-
+event unit;
 main machine MachOS {
 	var INT : int;
 	var BOOL : bool;
@@ -48,6 +48,15 @@ main machine MachOS {
 		entry {
 			INT = payload.first;
 			BOOL = payload.sec;
+			push State5;
+		}
+		on myNmTuple goto State5;
+	}
+	
+	state State5 {
+		entry {
+			INT = payload.first;
+			BOOL = payload;
 		}
 	}
 	

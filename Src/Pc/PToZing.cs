@@ -1941,7 +1941,6 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    var type = LookupType(ctxt, ft);
                     var newMachine = ctxt.GetTmpVar(SmHandle, "newMachine");
                     ctxt.AddSideEffect(MkZingAssign(newMachine, MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar)));
                     string afterLabel = ctxt.GetFreshLabel();
@@ -1949,10 +1948,19 @@ namespace Microsoft.Pc
                     ctxt.AddSideEffect(MkZingReturn(ZingData.Cnst_Nil));
                     ctxt.AddSideEffect(MkZingLabeledStmt(afterLabel, MkZingAssign(newMachine, MkZingDot("entryCtxt", "id"))));
                     ctxt.AddSideEffect(MkZingAssign(MkZingDot("entryCtxt", "id"), MkZingIdentifier("null")));
-                    var retVal = ctxt.GetTmpVar(PrtValue, "tmp");
-                    ctxt.AddSideEffect(MkZingAssign(retVal, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(type))));
-                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetMachine"), retVal, newMachine)));
-                    return new ZingTranslationInfo(retVal);
+                    if (((Id)ft.Function).Name == "New")
+                    {
+                        var type = LookupType(ctxt, ft);
+                        var retVal = ctxt.GetTmpVar(PrtValue, "tmp");
+                        ctxt.AddSideEffect(MkZingAssign(retVal, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(type))));
+                        ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetMachine"), retVal, newMachine)));
+                        return new ZingTranslationInfo(retVal);
+                    }
+                    else
+                    {
+                        // ((Id)ft.Function).Name == "NewStmt"
+                        return new ZingTranslationInfo(ZingData.Cnst_Nil);
+                    }
                 }
             }
         }

@@ -2699,8 +2699,6 @@ namespace Microsoft.Pc
                     MkZingAssign(MkZingDot("iter", "myHandle", "currentEvent"), MkZingIdentifier("evt")),
                     MkZingAssign(MkZingDot("iter", "myHandle", "currentArg"), MkZingIdentifier("arg")),
                     MkZingAssign(cont, MkZingCall(MkZingDot("iter", "RunHelper"), ZingData.Cnst_True)),
-                    MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Pop")),
-                                 MkZingAssign(machineHandles, MkZingSub(machineHandles, MkZingIdentifier("iter")))),
                     MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Raise")),
                                  MkZingSeq(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(errorTraceString), MkZingDot("iter", "instance"))),
                                            MkZingAssert(ZingData.Cnst_False))));
@@ -2762,8 +2760,6 @@ namespace Microsoft.Pc
                     MkZingAssign(MkZingDot(objectName, "myHandle", "stack", "state"), MkZingState(machineInfo.initStateName)),
                     MkZingAssign(machineHandles, MkZingAdd(machineHandles, MkZingIdentifier(objectName))),
                     MkZingAssign(cont, MkZingCall(MkZingDot(objectName, "RunHelper"), ZingData.Cnst_True)),
-                    MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Pop")), 
-                                 MkZingAssign(machineHandles, MkZingSub(machineHandles, MkZingIdentifier(objectName)))),
                     MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Raise")), 
                                  MkZingSeq(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(errorTraceString), MkZingDot(objectName, "instance"))),
                                            MkZingAssert(ZingData.Cnst_False)))

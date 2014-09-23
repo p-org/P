@@ -1389,14 +1389,6 @@ namespace Microsoft.Pc
 
             var cont = MkZingIdentifier("cont");
 
-            var clearStmt = MkZingIfThen(
-                                MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Return")),
-                                         MkZingSeq(MkZingAssign(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
-                                                   MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node)))));
-            clearStmt = MkZingIfThenElse(
-                                MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Pop")),
-                                MkZingReturn(cont),
-                                clearStmt);
             // State blocks
             List<AST<Node>> blocks = new List<AST<Node>>();
             blocks.Add(initStmt);
@@ -1413,12 +1405,12 @@ namespace Microsoft.Pc
                                     MkZingCallStmt(MkZingCall(MkZingIdentifier("invokeplugin"), Factory.Instance.MkCnst("\"StateCoveragePlugin.dll\""), Factory.Instance.MkCnst(string.Format("\"{0}\"", machineName)), Factory.Instance.MkCnst(string.Format("\"{0}\"", stateName)))),
                                     MkZingCallStmt(MkZingCall(MkZingIdentifier(string.Format("{0}_CalculateDeferredAndActionSet", stateName)))),
                                     MkZingAssign(cont, MkZingCall(MkZingIdentifier("ReentrancyHelper"), entryAction)),
-                                    clearStmt,
                                     MkZingIfThenElse(
-                                              MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
-                                              MkZingReturn(cont),
-                                              Factory.Instance.AddArg(ZingData.App_Goto, transitionLabel))
-                                    );
+                                             MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Raise")),
+                                             MkZingGoto("transition_" + stateName),
+                                             MkZingSeq(MkZingAssign(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
+                                                       MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))),
+                                                       MkZingReturn(cont))));
                 executeStmt = AddArgs(ZingData.App_LabelStmt, executeLabel, executeStmt);
                 blocks.Add(executeStmt);
 
@@ -1438,16 +1430,16 @@ namespace Microsoft.Pc
                 }
 
                 var actionStmt =
-                    MkZingIfThenElse(
+                    MkZingIfThen(
                             MkZingApply(ZingData.Cnst_In, MkZingDot("myHandle", "currentEvent"), MkZingDot("myHandle", "stack", "actionSet")),
                             MkZingSeq(MkZingAssign(MkZingIdentifier("actionFun"), MkZingCall(MkZingDot("myHandle", "stack", "Find"), MkZingDot("myHandle", "currentEvent"))),
                                       MkZingAssign(cont, MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingIdentifier("actionFun"))),
-                                      clearStmt,
                                       MkZingIfThenElse(
-                                              MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
-                                              MkZingReturn(cont),
-                                              Factory.Instance.AddArg(ZingData.App_Goto, transitionLabel))),
-                            ZingData.Cnst_Nil);
+                                             MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Raise")),
+                                             MkZingGoto("transition_" + stateName),
+                                             MkZingSeq(MkZingAssign(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
+                                                       MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))),
+                                                       MkZingReturn(cont)))));
 
                 AST<Node> callTransitionStmt = ZingData.Cnst_Nil;
                 foreach (var eventName in callTransitions.Keys)

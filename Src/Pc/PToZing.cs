@@ -1166,8 +1166,6 @@ namespace Microsoft.Pc
         private AST<Node> GenerateCalculateDeferredAndActionSetMethodDecl(string stateName, StateInfo stateInfo)
         {
             var smEventSetType = Factory.Instance.MkCnst("SM_EVENT_SET");
-            var stackDeferredSet = MkZingDot("myHandle", "stack", "next", "deferredSet");
-            var stackActionSet = MkZingDot("myHandle", "stack", "next", "actionSet");
             var currentDeferredSet = MkZingDot("myHandle", "stack", "deferredSet");
             var currentActionSet = MkZingDot("myHandle", "stack", "actionSet");
 
@@ -1179,11 +1177,11 @@ namespace Microsoft.Pc
             List<AST<FuncTerm>> stmts = new List<AST<FuncTerm>>();
             stmts.Add(MkZingAssign(currentDeferredSet, AddArgs(ZingData.App_New, smEventSetType, ZingData.Cnst_Nil)));
             stmts.Add(MkZingAssign(currentActionSet, AddArgs(ZingData.App_New, smEventSetType, ZingData.Cnst_Nil)));
-            stmts.Add(MkZingAssign(currentDeferredSet, MkZingApply(ZingData.Cnst_Add, currentDeferredSet, stackDeferredSet)));
+            stmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("myHandle", "stack", "AddStackDeferredSet"), currentDeferredSet)));
             AddEventSet(stmts, localDeferredSet, currentDeferredSet);
             SubtractEventSet(stmts, actions.Keys, currentDeferredSet);
             SubtractEventSet(stmts, transitions.Keys, currentDeferredSet);
-            stmts.Add(MkZingAssign(currentActionSet, MkZingApply(ZingData.Cnst_Add, currentActionSet, stackActionSet)));
+            stmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("myHandle", "stack", "AddStackActionSet"), currentActionSet)));
             SubtractEventSet(stmts, localDeferredSet, currentActionSet);
             AddEventSet(stmts, actions.Keys, currentActionSet);
             SubtractEventSet(stmts, transitions.Keys, currentActionSet);
@@ -1441,6 +1439,7 @@ namespace Microsoft.Pc
                 }
                 executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(enterTraceString), MkZingDot("myHandle", "instance"))));
                 executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("invokeplugin"), Factory.Instance.MkCnst("\"StateCoveragePlugin.dll\""), Factory.Instance.MkCnst(string.Format("\"{0}\"", machineName)), Factory.Instance.MkCnst(string.Format("\"{0}\"", stateName)))));
+                executeStmts.Add(MkZingAssign(MkZingDot("myHandle", "stack", "state"), MkZingState(stateName)));
                 executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier(string.Format("{0}_CalculateDeferredAndActionSet", stateName)))));
                 executeStmts.Add(MkZingAssign(cont, MkZingCall(MkZingIdentifier("ReentrancyHelper"), entryAction)));
                 executeStmts.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Raise")), MkZingGoto("transition_" + stateName)));

@@ -301,6 +301,18 @@ class StateStack {
 		af = next.Find(f);
 		return af;
     }
+
+    void AddStackDeferredSet(SM_EVENT_SET localDeferredSet) {
+         if (next == null)
+	     return;
+	 localDeferredSet = localDeferredSet + next.deferredSet;
+    }
+
+    void AddStackActionSet(SM_EVENT_SET localActionSet) {
+         if (next == null)
+	     return;
+	 localActionSet = localActionSet + next.actionSet;
+    }
 };
 
 enum ContinuationReason { Return, Nondet, Pop, Raise, Call, Send, NewMachine };

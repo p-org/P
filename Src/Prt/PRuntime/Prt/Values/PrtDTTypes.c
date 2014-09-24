@@ -139,7 +139,6 @@ PRT_BOOLEAN PrtIsSubtype(_In_ PRT_TYPE subType, _In_ PRT_TYPE supType)
 	case PRT_KIND_ANY:
 		//// Everything is a subtype of `any`.
 		return PRT_TRUE;
-	case PRT_KIND_BOOL:
 	case PRT_KIND_NULL:
 	case PRT_KIND_EVENT:
 	case PRT_KIND_MACHINE:
@@ -148,6 +147,7 @@ PRT_BOOLEAN PrtIsSubtype(_In_ PRT_TYPE subType, _In_ PRT_TYPE supType)
 		if (subKind == PRT_KIND_NULL)
 			return PRT_TRUE;
 	}
+	case PRT_KIND_BOOL:
 	case PRT_KIND_INT:
 	case PRT_KIND_FORGN:
 		//// These types do not have any proper subtypes.

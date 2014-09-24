@@ -149,7 +149,12 @@
             var progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, model), out instResult);
             Contract.Assert(progressed && instResult.Succeeded);
 
-            //// model.Print(Console.Out);
+            if (Options.outputFormula)
+            {
+                StreamWriter wr = new StreamWriter(File.Create("output.4ml"));
+                model.Print(wr);
+                wr.Close();
+            }
 
             //// Step 3. Perform static analysis.
             if (!Check(inputModule, inputFile, flags))
@@ -333,6 +338,9 @@
 
             //Model functions
             AddErrors(task.Result, "modelFunOnlyInReal(_)", inputProgram, errors, 0);
+
+            AddErrors(task.Result, "noDefaultTransInMonitors(_)", inputProgram, errors, 0);
+            AddErrors(task.Result, "noDeferInMonitor(_)", inputProgram, errors, 0);
 
             if (Options.printTypeInference)
             {

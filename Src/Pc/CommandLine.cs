@@ -15,6 +15,7 @@
     {
         public LivenessOption liveness;
         public string outputDir;
+        public bool outputFormula;
         public bool erase;
         public bool emitLineDirectives;
         public bool emitHeaderComment;
@@ -25,6 +26,7 @@
         {
             this.liveness = LivenessOption.None;
             this.outputDir = ".";
+            this.outputFormula = false;
             this.erase = true;
             this.emitLineDirectives = false;
             this.emitHeaderComment = false;
@@ -59,6 +61,11 @@
 
                     switch (arg)
                     {
+                        case "/dumpFormulaModel":
+                            if (colonArg != null)
+                                goto error;
+                            options.outputFormula = true;
+                            break;
                         case "/outputDir":
                             options.outputDir = colonArg;
                             break;

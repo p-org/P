@@ -34,7 +34,7 @@ main machine Real {
 	}
     }
 
-    action Action1 {
+    fun Action1() {
 		assert(payload == 100);
         send ghost_machine, E3;
     }

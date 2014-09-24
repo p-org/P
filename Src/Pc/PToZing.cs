@@ -147,6 +147,7 @@ namespace Microsoft.Pc
             eventSetNameToEvents = new Dictionary<string, List<string>>();
             funNameToFunInfo = new Dictionary<string, FunInfo>();
             monitorType = MonitorType.SAFETY;
+            funNameToFunInfo["ignore"] = new FunInfo(Factory.Instance.AddArg(Factory.Instance.MkFuncTerm(PData.Con_NulStmt), PData.Cnst_Skip).Node, false);
         }
     }
 
@@ -398,7 +399,7 @@ namespace Microsoft.Pc
                     anonFunToName[term] = funName;
                 }
             }
-
+            
             terms = GetBin("StateDecl");
             foreach (var term in terms)
             {
@@ -510,6 +511,7 @@ namespace Microsoft.Pc
                         {
                             // ((Id)action).Name == "IGNORE"
                             stateTable.ignoredEvents.Add(eventName);
+                            stateTable.actions[eventName] = "ignore";
                         }
                     }
                     else

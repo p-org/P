@@ -24,7 +24,7 @@ main model Scheduler {
         }
 		on unit goto Sync;
     }
-	action CountReq {
+	fun CountReq() {
 		count = count + 1;
 		if(count == 3)
 		{
@@ -66,13 +66,13 @@ model Process {
 		on init do initaction;
 		on Resp goto SendCount;
 	}
-	action initaction {
+	fun initaction() {
 		other1 = (payload as (model, model)).0;
 		other2 = (payload as (model, model)).1;
 		send parent, Req;
 		
 	}
-	action ConfirmThatInSync {
+	fun ConfirmThatInSync() {
 		assert(count <= (payload as int) && count >= (payload as int) - 1);
 	}
 	state SendCount {

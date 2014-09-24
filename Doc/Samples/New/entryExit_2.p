@@ -20,7 +20,7 @@ main machine Node {
 		exit {}
 	}
 	
-	action foo {
+	fun foo() {
 		x = x + 1;
 	}
 

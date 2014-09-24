@@ -1084,7 +1084,10 @@ namespace Microsoft.Pc
             {
                 if (allMachines[machineName].IsMonitor)
                 {
-                    var assignStmt = MkZingAssign(MkZingIdentifier(GetMonitorMachineName(machineName)), MkZingIdentifier("null"));
+                    var assignStmt = MkZingAssign(MkZingIdentifier(GetMonitorMachineName(machineName)), 
+                                                  AddArgs(ZingData.App_New, 
+                                                          Factory.Instance.MkCnst(string.Format("{0}_set", machineName)),
+                                                          ZingData.Cnst_Nil));
                     runBody = MkZingSeq(runBody, assignStmt);
                 }
             }
@@ -1918,12 +1921,16 @@ namespace Microsoft.Pc
             {
                 it.MoveNext();
                 AST<Node> arg = it.Current.node;
+                
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpSendPayload");
                 if (arg == ZingData.Cnst_Nil)
                 {
-                    arg = MkZingIdentifier("null");
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
                 }
-                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpSendPayload");
-                ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, arg));
+                else
+                {
+                    ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, arg));
+                }
 
                 MachineInfo machineInfo = allMachines[typeName];
                 if (machineInfo.IsMonitor)
@@ -2443,9 +2450,16 @@ namespace Microsoft.Pc
                 it.MoveNext();
                 AST<Node> evt = it.Current.node;
                 it.MoveNext();
-                AST<Node> arg = it.Current.node != ZingData.Cnst_Nil ? it.Current.node : MkZingIdentifier("null");
+                AST<Node> arg = it.Current.node;
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpSendPayload");
-                ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, arg));
+                if (arg == ZingData.Cnst_Nil)
+                {
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
+                }
+                else
+                {
+                    ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, arg));
+                }
                 MachineInfo machineInfo = allMachines[typeName];
                 return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", typeName)), MkZingDot(evt, "ev"), tmpVar)));
             }

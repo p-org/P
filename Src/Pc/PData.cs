@@ -21,6 +21,7 @@
         public static readonly AST<Id> Cnst_Null = Factory.Instance.MkId("NULL");
         public static readonly AST<Id> Cnst_Halt = Factory.Instance.MkId("HALT");
         public static readonly AST<Id> Cnst_Pop = Factory.Instance.MkId("POP");
+        public static readonly AST<Id> Cnst_Skip = Factory.Instance.MkId("SKIP");
 
         public static readonly AST<Id> Cnst_Not = Factory.Instance.MkId("NOT");
         public static readonly AST<Id> Cnst_Neg = Factory.Instance.MkId("NEG");

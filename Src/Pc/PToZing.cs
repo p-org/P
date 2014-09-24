@@ -2704,7 +2704,7 @@ namespace Microsoft.Pc
                 MkZingSeq(
                     MkZingAssign(MkZingDot("iter", "myHandle", "currentEvent"), MkZingIdentifier("evt")),
                     MkZingAssign(MkZingDot("iter", "myHandle", "currentArg"), MkZingIdentifier("arg")),
-                    MkZingAssign(doPop, MkZingCall(MkZingDot("iter", "RunHelper"), ZingData.Cnst_True)),
+                    MkZingAssign(doPop, MkZingCall(MkZingDot("iter", "RunHelper"), ZingData.Cnst_False)),
                     MkZingIfThen(doPop,
                                  MkZingSeq(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(errorTraceString), MkZingDot("iter", "myHandle", "instance"))),
                                            MkZingAssert(ZingData.Cnst_False))));

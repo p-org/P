@@ -259,7 +259,7 @@ domain PStaticTyping extends PData
 	s is StateDecl, tr is TransDecl(src, ev, dst, _), src.owner = s.owner, dst = s.name, EventDecl(ev, _, NIL), t = BaseType(NULL);  //event with no payload
 	s is StateDecl, tr is TransDecl(src, ev, dst, _), src.owner = s.owner, dst = s.name, no EventDecl(ev, _, _), t = BaseType(NULL);  //default + halt
 	s is StateDecl, t = BaseType(ANY), MachineDecl(_, _, _,s.name, _); //start state
-	s is StateDecl, t = BaseType(NULL), no TransDecl(_, _, dst, _), dst = s.name; // state has no incoming transition
+	s is StateDecl, t = BaseType(NULL), no TransDecl(_, _, dst, _), dst = s.name, no MachineDecl(_, _, _,s.name, _); // state has no incoming transition
 	s is StateDecl, StateDecl(_, _, c, _, _), SubSE(c, e), e = Push(s.name), t = BaseType(NULL). // payload = null for push
 	
 	PayloadTypeEntry(s, wider) :- PayloadTypeEntry(s, t'), PayloadTypeEntry(s, t''), Widen(t', t'', wider).

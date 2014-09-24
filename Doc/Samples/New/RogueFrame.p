@@ -515,7 +515,7 @@ model scenariotester {
 	start state init {
 		entry {
 		      scenario = payload as seq[(int, machine, machine)];
-			raise(Local);
+			  raise(Local);
 		}
 		on Local goto breaklink;
 	}

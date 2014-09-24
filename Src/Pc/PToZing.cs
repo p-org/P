@@ -1230,25 +1230,25 @@ namespace Microsoft.Pc
             parameters.Add(MkZingVarDecl("state", Factory.Instance.MkCnst("State")));
 
             List<AST<Node>> locals = new List<AST<Node>>();
-            locals.Add(MkZingVarDecl("cont", Factory.Instance.MkCnst("Continuation")));
+            locals.Add(MkZingVarDecl("doPop", ZingData.Cnst_Bool));
             locals.Add(MkZingVarDecl("hasDefaultTransition", ZingData.Cnst_Bool));
 
-            var cont = MkZingIdentifier("cont");
+            var doPop = MkZingIdentifier("doPop");
             var hasDefaultTransition = MkZingIdentifier("hasDefaultTransition");
 
             List<AST<Node>> initStmts = new List<AST<Node>>();
             initStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("myHandle", "Push"))));
             initStmts.Add(MkZingAssign(MkZingDot("myHandle", "stack", "state"), MkZingIdentifier("state")));
-            initStmts.Add(MkZingAssign(cont, MkZingCall(MkZingIdentifier("RunHelper"), ZingData.Cnst_True)));
+            initStmts.Add(MkZingAssign(doPop, MkZingCall(MkZingIdentifier("RunHelper"), ZingData.Cnst_True)));
             initStmts.Add(MkZingGoto("dequeue"));
             var initBlock = MkZingBlock("init", MkZingSeq(initStmts));
 
             List<AST<Node>> dequeueStmts = new List<AST<Node>>();
-            dequeueStmts.Add(MkZingIfThen(MkZingNeq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Return")),
+            dequeueStmts.Add(MkZingIfThen(doPop,
                              MkZingSeq(MkZingCallStmt(MkZingCall(MkZingDot("myHandle", "Pop"))), MkZingReturn(ZingData.Cnst_Nil))));
             dequeueStmts.Add(MkZingAssign(hasDefaultTransition, MkZingCall(MkZingIdentifier("HasDefaultTransition"), MkZingDot("myHandle", "stack", "state"))));
             dequeueStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("myHandle", "DequeueEvent"), hasDefaultTransition)));
-            dequeueStmts.Add(MkZingAssign(cont, MkZingCall(MkZingIdentifier("RunHelper"), ZingData.Cnst_False)));
+            dequeueStmts.Add(MkZingAssign(doPop, MkZingCall(MkZingIdentifier("RunHelper"), ZingData.Cnst_False)));
             dequeueStmts.Add(MkZingGoto("dequeue"));
             var dequeueBlock = MkZingBlock("dequeue", MkZingSeq(dequeueStmts));
 
@@ -1451,7 +1451,7 @@ namespace Microsoft.Pc
                                                  MkZingSeq(
                                                  MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(exitTraceString), MkZingDot("myHandle", "instance"))), 
                                                  MkZingSeq(MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingActionOrFun(machineName, stateInfo.exitFunName)))))));
-                executeStmts.Add(MkZingReturn(cont));
+                executeStmts.Add(MkZingReturn(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Pop"))));
                 blocks.Add(MkZingBlock("execute_" + stateName, MkZingSeq(executeStmts)));
 
                 var callTransitions = new Dictionary<string, TransitionInfo>();
@@ -1480,7 +1480,7 @@ namespace Microsoft.Pc
                                                     MkZingSeq(
                                                     MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(exitTraceString), MkZingDot("myHandle", "instance"))),
                                                     MkZingSeq(MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingActionOrFun(machineName, stateInfo.exitFunName)))))),
-                                      MkZingReturn(cont)));
+                                      MkZingReturn(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Pop")))));
                 AST<Node> callTransitionStmt = ZingData.Cnst_Nil;
                 foreach (var eventName in callTransitions.Keys)
                 {
@@ -1489,14 +1489,14 @@ namespace Microsoft.Pc
                     var callStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("Run"), MkZingState(targetStateName)));
                     var ite = MkZingIfThenElse(
                         MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")),
-                        MkZingReturn(cont),
+                        MkZingReturn(ZingData.Cnst_False),
                         MkZingGoto("transition_" + stateName)
                         );
                     callTransitionStmt = MkZingIfThenElse(condExpr, MkZingSeq(callStmt, ite), callTransitionStmt);
                 }
 
                 AST<Node> exitFunStmt = MkZingAssign(MkZingIdentifier("exitFun"), MkZingActionOrFun(machineName, allMachines[machineName].stateNameToStateInfo[stateName].exitFunName));
-                AST<Node> ordinaryTransitionStmt = MkZingReturn(cont);
+                AST<Node> ordinaryTransitionStmt = MkZingReturn(ZingData.Cnst_True);
                 foreach (var eventName in ordinaryTransitions.Keys)
                 {
                     var targetStateName = ordinaryTransitions[eventName].target;
@@ -1515,7 +1515,7 @@ namespace Microsoft.Pc
                 blocks.Add(MkZingBlock("transition_" + stateName, MkZingSeq(actionStmt, callTransitionStmt, exitFunStmt, ordinaryTransitionStmt)));
             }
             AST<Node> body = ConstructList(ZingData.App_Blocks, blocks);
-            return MkZingMethodDecl("RunHelper", parameters, Factory.Instance.MkCnst("Continuation"), MkZingVarDecls(locals), body);
+            return MkZingMethodDecl("RunHelper", parameters, ZingData.Cnst_Bool, MkZingVarDecls(locals), body);
         }
 
         class ZingFoldContext

@@ -7,7 +7,7 @@ main machine Entry {
     }
 
 
-    action Noop {
+    fun Noop() {
         if ($) {
             raise(Unit);
         }

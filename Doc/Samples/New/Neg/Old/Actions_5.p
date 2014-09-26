@@ -34,7 +34,7 @@ main machine Real {
 	}
     }
 
-    action Action1 {
+    fun Action1() {
         send ghost_machine, E3;
     }
  

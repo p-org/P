@@ -34,12 +34,12 @@ main machine Real {
 	}
     }
 
-    action Action1 {
+    fun Action1() {
         push Real_S1; 
         send ghost_machine, E3;
     }
  
-    action Action_2 {
+    fun Action_2() {
 		pop;
     }
 }

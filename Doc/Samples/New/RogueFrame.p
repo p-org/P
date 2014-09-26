@@ -57,6 +57,7 @@ main model GodMachine {
 	var pt6 : machine;
 	var pt7 : machine;
 	var pt8 : machine;
+	var temp : model;
 	//temp variable 
 	var link:seq[machine];
 	var scenario: seq[(int, machine, machine)]; // specifies the scenario (operation, clock, port)
@@ -94,6 +95,7 @@ main model GodMachine {
 			link -= (0); link -= (0);
 			assert(sizeof(link) == 0);
 			//__seal();
+			
 			//initialize all the ports appropriately with the connections and power them up
 			send pt1, Initialise, (pt2, P2);
 			send pt2, Initialise, (pt1, P3);
@@ -113,7 +115,7 @@ main model GodMachine {
 			new scenariotester(scenario);
 			
 			//delete the machine Gods job is done
-			raise(halt);
+			raise halt;
 		}
 	}
 }
@@ -138,10 +140,11 @@ machine Clock {
 	start state Init {
 		defer join, break;
 		entry {
+		
 			// __seal();
 			//initialize the EBest value to random
-		      Ports = payload[0] as (seq[machine], int);
-		      D0 = payload[1] as (seq[machine], int);
+		    Ports = (payload as (seq[machine], int)).0;
+		    D0 = (payload as (seq[machine], int)).1;
 			ParentGM = (this, D0, 0);
 			EBest = (null, (null, 100000, 0));
 			countAck = 0;
@@ -152,7 +155,8 @@ machine Clock {
 				i = i - 1;
 			}
 			// __unseal();
-			raise(Local);
+			raise Local;
+			
 		}
 			
 		on Local goto PeriodicStateDecision;
@@ -168,7 +172,7 @@ machine Clock {
 			i = sizeof(ErBestSeq) - 1;
 			while(i >= 0)
 			{
-				if(EBest[1][1] > ErBestSeq[i][1][1])
+				if((EBest.1).1 > (ErBestSeq[i].1).1)
 				{
 					EBest = ErBestSeq[i];
 				}
@@ -199,7 +203,7 @@ machine Clock {
 	
 	fun JoinLink() {
 		Ports += (0, payload as machine);
-		send payload as machine, PowerUp, ParentGM;
+		send payload, PowerUp, ParentGM;
 	}
 	
 	state PeriodicStateDecision {
@@ -221,7 +225,7 @@ machine Clock {
 				}
 				// __unseal();
 				//go to atomic transaction mode
-				call(WaitForErBest);
+				push WaitForErBest;
 			}
 		}
 		on default goto PeriodicStateDecision;
@@ -229,7 +233,9 @@ machine Clock {
 	
 	state WaitForErBest {
 		defer break,join;
-		entry {}
+		entry {
+			assert(true);
+		}
 		on Local goto CalculateRecommendedState;
 	}
 	
@@ -253,6 +259,7 @@ machine Clock {
 		on Ack do ReceiveAck;
 		defer break, join;
 		entry {
+		
 			i = sizeof(Ports) - 1;
 			// __seal();
 			//for each port calculate the recommended state
@@ -261,44 +268,44 @@ machine Clock {
 				//check if I am the GM or my clock is better than all ErBest
 				if(D0 == 1) // D0 is class stratum 1
 				{
-					if(D0 < ErBestSeq[i][1][1]) // D0 is better than EBest
+					if(D0 < (ErBestSeq[i].1).1) // D0 is better than EBest
 					{
 						//the parentGM point to current node
 						ParentGM = (this, D0, 0);
-						send ErBestSeq[i][0], goMaster; // BMC_Master M1
+						send ErBestSeq[i].0, goMaster; // BMC_Master M1
 					}
 					else
 					{
 						//no change in the parentGM
-						send ErBestSeq[i][0], goPassive; // BMC_Passive P1
+						send ErBestSeq[i].0, goPassive; // BMC_Passive P1
 					}
 				}
 				else
 				{
-					if(D0 < EBest[1][1])
+					if(D0 < (EBest.1).1)
 					{
 						//GM is the current node
 						ParentGM = (this, D0, 0);
-						send ErBestSeq[i][0], goMaster; // BMC_Master M2
+						send ErBestSeq[i].0, goMaster; // BMC_Master M2
 					}
 					else
 					{
 						//check on which port Ebest was received
-						if(EBest[0] == ErBestSeq[i][0])
+						if(EBest.0 == ErBestSeq[i].0)
 						{
-							ParentGM = ErBestSeq[i][1];
-							send ErBestSeq[i][0], goSlave; //BMC_Slave S1
+							ParentGM = ErBestSeq[i].1;
+							send ErBestSeq[i].0, goSlave; //BMC_Slave S1
 						}
 						else
 						{
-							if(EBest[1][1] < ErBestSeq[i][1][1])
+							if((EBest.1).1 < (ErBestSeq[i].1).1)
 							{
-								send ErBestSeq[i][0], goPassive; //BMC_Slave P2
+								send ErBestSeq[i].0, goPassive; //BMC_Slave P2
 							}
 							else
 							{
-								ParentGM = EBest[1];
-								send ErBestSeq[i][0], goMaster; //BMC_Master M3
+								ParentGM = EBest.1;
+								send ErBestSeq[i].0, goMaster; //BMC_Master M3
 							}
 						}
 					}
@@ -319,10 +326,11 @@ machine Clock {
 			i = sizeof(Ports) - 1;
 			while(i>=0)
 			{
-				send Ports[i], UpdateParentGM, (ParentGM[0], ParentGM[1], ParentGM[2] + 1); // increment the number of stepsremoved irrespective of OC / BC //// make 0 for OC. ??
+				send Ports[i], UpdateParentGM, (ParentGM.0, ParentGM.1, ParentGM.2 + 1); // increment the number of stepsremoved irrespective of OC / BC //// make 0 for OC. ??
 				i = i - 1;
 			}
 			// __unseal();
+			
 		}
 	}
 }
@@ -346,8 +354,8 @@ machine PortMachine {
 		
 		on Initialise goto ConnectionInitialized with
 		{
-				ConnectedTo = (payload as (machine, machine))[0];
-				MyClock = (payload as (machine, machine))[1];
+				ConnectedTo = (payload as (machine, machine)).0;
+				MyClock = (payload as (machine, machine)).1;
 				ErBestVar = (this, 10000, 0);
 				
 		};
@@ -393,7 +401,7 @@ machine PortMachine {
 	}
 	
 	fun HandleAnnounce() {
-		if(ErBestVar[1] > payload[1])
+		if(ErBestVar.1 > payload.1)
 		{
 			ErBestVar = payload as (machine, int, int);
 		}
@@ -418,7 +426,7 @@ machine PortMachine {
 			check = IsAnnounceReceiptTimeOut();
 			if(check)
 			{
-				monitor RogueFrame, mAnnounce, ParentGM[2];
+				monitor RogueFrame, mAnnounce, ParentGM.2;
 				send ConnectedTo, Announce, ParentGM;
 			}
 		}
@@ -430,7 +438,7 @@ machine PortMachine {
 	state DeferAll {
 		defer Announce;
 		entry {
-			call(SendErBestAndWaitForRecState);
+			push SendErBestAndWaitForRecState;
 			if(recState == 0)
 				raise(goMaster);
 			if(recState == 1)
@@ -507,7 +515,7 @@ model scenariotester {
 	start state init {
 		entry {
 		      scenario = payload as seq[(int, machine, machine)];
-			raise(Local);
+			  raise(Local);
 		}
 		on Local goto breaklink;
 	}
@@ -520,9 +528,9 @@ model scenariotester {
 				//__seal();
 				while(i>=0)
 				{
-					if(scenario[i][0] == 0)
+					if(scenario[i].0 == 0)
 					{
-						send scenario[i][1], break, scenario[i][2];
+						send scenario[i].1, break, scenario[i].2;
 					}
 					i = i - 1;
 				}
@@ -542,9 +550,9 @@ model scenariotester {
 				i = sizeof(scenario) -1;
 				while(i>=0)
 				{
-					if(scenario[i][0] == 1)
+					if(scenario[i].0 == 1)
 					{
-						send scenario[i][1], join, scenario[i][2];
+						send scenario[i].1, join, scenario[i].2;
 					}
 					i = i - 1;
 				}

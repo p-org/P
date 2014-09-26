@@ -12,7 +12,7 @@ main model Foo {
         on EBar do IntAct;
     }   
 
-    action IntAct {
+    fun IntAct() {
         a = payload as int;
     }
 

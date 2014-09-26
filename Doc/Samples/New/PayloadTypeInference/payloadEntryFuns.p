@@ -2,11 +2,21 @@ event myTuple : (int, bool);
 event myNmTuple : (first:int, sec:bool);
 event mySeq : seq[int];
 event myMapSeq : (first: map[int, int], sec : seq[bool]);
-event unit;
+
 main machine MachOS {
 	var INT : int;
 	var BOOL : bool;
 	var MACH : machine;
+	
+	fun foo_1() {
+			INT = payload.0; 
+			BOOL = payload.1; 
+		}
+		
+	fun foo_2() {
+			MACH = payload;
+			INT = payload;
+		}
 	start state Init {
 		
 		on myTuple goto State1;
@@ -29,17 +39,11 @@ main machine MachOS {
 	}
 	
 	state State1 {
-		entry {
-			INT = payload.0; 
-			BOOL = payload.1; 
-		}
+		entry foo_1;
 	}
 	
 	state State2 {
-		entry {
-			MACH = payload;
-			INT = payload;
-		}
+		entry foo_2;
 		on myNmTuple goto State3;
 		on myMapSeq goto State4;
 	}
@@ -48,23 +52,16 @@ main machine MachOS {
 		entry {
 			INT = payload.first;
 			BOOL = payload.sec;
-			push State5;
-		}
-		on myNmTuple goto State5;
-	}
-	
-	state State5 {
-		entry {
-			INT = payload.first;
-			BOOL = payload;
 		}
 	}
 	
 	state State4 {
-		entry {
+		entry foo_3;
+		
+	}
+	
+	fun foo_3() {
 			INT = payload.first[true];
 			BOOL = payload.sec[2];
 		}
-		
-	}
 }

@@ -35,11 +35,11 @@ main machine Real {
 	}
     }
 
-	action Action2 {
+	fun Action2() {
 		pop; // pop from this state
 	}
 	
-    action Action1 {
+    fun Action1() {
         send ghost_machine, E3;
     }
  

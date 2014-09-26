@@ -12,7 +12,7 @@ main model Foo {
         on EFoo do IntAct;
     }   
 
-    action IntAct {
+    fun IntAct() {
         b = arg;
     }
 

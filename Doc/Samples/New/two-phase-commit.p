@@ -82,17 +82,17 @@ machine Replica {
 	}
 
 	fun HandleGlobalAbort() {
-		assert (pendingWriteReq.seqNum >= payload as int);
+		assert (pendingWriteReq.seqNum >= payload);
 		if (pendingWriteReq.seqNum == payload) {
-			lastSeqNum = payload as int;
+			lastSeqNum = payload;
 		}
 	}
 
 	fun HandleGlobalCommit() {
-		assert (pendingWriteReq.seqNum >= payload as int);
+		assert (pendingWriteReq.seqNum >= payload);
 		if (pendingWriteReq.seqNum == payload) {
 			data[pendingWriteReq.idx] = pendingWriteReq.val;
-			lastSeqNum = payload as int;
+			lastSeqNum = payload;
 		}
 	}
 
@@ -190,7 +190,7 @@ machine Coordinator {
 		defer WRITE_REQ;
 		on READ_REQ do DoRead;
 		on RESP_REPLICA_COMMIT goto CountVote with {
-			if (currSeqNum == payload as int) {
+			if (currSeqNum == payload) {
 				i = i - 1;
 			}
 		};
@@ -202,7 +202,7 @@ machine Coordinator {
 	}
 
 	fun HandleAbort() {
-		if (currSeqNum == payload as int) {
+		if (currSeqNum == payload) {
 			DoGlobalAbort();
 			send timer, CancelTimer;
 			raise Unit;

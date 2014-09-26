@@ -29,7 +29,8 @@
             "..\\..\\..\\..\\..\\Ext\\Formula\\Formula.exe.config",
             "..\\..\\..\\..\\..\\Ext\\Formula\\Core.dll",
             "..\\..\\..\\..\\..\\Ext\\Formula\\Microsoft.Z3.dll",
-            "..\\..\\..\\..\\..\\Ext\\Formula\\libz3.dll"
+            "..\\..\\..\\..\\..\\Ext\\Formula\\libz3.dll",
+            "..\\..\\..\\..\\..\\Ext\\Formula\\FormulaCodeGeneratorTask.dll"
         };
 
         private static readonly Tuple<string, string>[] ReleaseMoveMap = new Tuple<string, string>[]
@@ -55,7 +56,9 @@
             new Tuple<string, string>(
                 "Bld\\Drops\\Formula_Release_x86\\libz3.dll",
                 "..\\libz3.dll"),
-
+            new Tuple<string, string>(
+                "Src\\Extensions\\FormulaCodeGeneratorTask\\bin\\x86\\FormulaCodeGeneratorTask.dll",
+                "..\\FormulaCodeGeneratorTask.dll"),
         };
 
         private static bool Verify(string[] outputs)

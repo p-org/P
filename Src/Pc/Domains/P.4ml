@@ -144,7 +144,7 @@ domain PStructuralTyping extends PData
 	//valid doDecl
 	invalidEventOnDoDecl ::= (DoDecl).
 	[ rule_Classes = '"error, msg: action on an undefined event"']
-	invalidEventOnDoDecl(doD) :- doD is DoDecl, no EventDecl(doD.trig, _, _), doD.trig != HALT.
+	invalidEventOnDoDecl(doD) :- doD is DoDecl, no EventDecl(doD.trig, _, _), doD.trig != HALT, doD.trig != DEFAULT.
 	
 	invalidFunOnDoDecl ::= (DoDecl).
 	[rule_Classes = '"error, msg: function not defined"']

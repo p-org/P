@@ -1205,10 +1205,12 @@
                 state.name = P_Root.MkQualifiedName(
                     MkString(name, nameSpan),
                     MkUserCnst(P_Root.UserCnstKind.NIL, span));
+                state.name.Span = nameSpan;
             }
             else
             {
                 state.name = P_Root.MkQualifiedName(MkString(name, nameSpan), groupStack.Peek());
+                state.name.Span = nameSpan;
             }
 
             if (isStart)
@@ -1448,7 +1450,9 @@
 
         private P_Root.AnonFunDecl MkSkipFun(P_Root.MachineDecl owner, Span span)
         {
-            var decl = P_Root.MkAnonFunDecl(owner, P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span)));
+            var stmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
+            stmt.Span = span;
+            var decl = P_Root.MkAnonFunDecl(owner, stmt);
             decl.Span = span;
             parseProgram.AnonFunctions.Add(decl);
             return decl;

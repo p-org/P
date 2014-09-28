@@ -140,7 +140,7 @@
                 PDomain, 
                 prog.Terms, 
                 out model,
-                null,
+                null, //MkDeclAliases(ParsedProgram),
                 MkReservedModuleLocation(PDomain));
             Contract.Assert(result);
 
@@ -638,6 +638,45 @@
             {
                 return string.Format("{0}_{1}", MkQualifiedAlias(qualifier), alias);
             }
+        }
+
+        private Dictionary<Microsoft.Formula.API.Generators.ICSharpTerm, string> MkDeclAliases(PProgram program)
+        {
+            Contract.Requires(program != null);
+            var aliases = new Dictionary<Microsoft.Formula.API.Generators.ICSharpTerm, string>();
+            var occurrenceMap = new Dictionary<string, int>();
+
+            foreach (var m in program.Machines)
+            {
+                aliases.Add(m, MkSafeAlias("machdecl__" + ((Domains.P_Root.StringCnst)m.name).Value, occurrenceMap));
+            }
+
+            foreach (var e in program.Events)
+            {
+                aliases.Add(e, MkSafeAlias("evdecl__" + ((Domains.P_Root.StringCnst)e.name).Value, occurrenceMap));
+            }
+
+            foreach (var v in program.Variables)
+            {
+                aliases.Add(v, MkSafeAlias(string.Format("vardecl__{0}__{1}", ((Domains.P_Root.StringCnst)((Domains.P_Root.MachineDecl)v.owner).name).Value, ((Domains.P_Root.StringCnst)v.name).Value), occurrenceMap));
+            }
+
+            foreach (var f in program.Functions)
+            {
+                aliases.Add(f, MkSafeAlias(string.Format("fundecl__{0}__{1}", ((Domains.P_Root.StringCnst)((Domains.P_Root.MachineDecl)f.owner).name).Value, ((Domains.P_Root.StringCnst)f.name).Value), occurrenceMap));
+            }
+
+            foreach (var af in program.AnonFunctions)
+            {
+                aliases.Add(af, MkSafeAlias("afundecl__", occurrenceMap));
+            }
+
+            foreach (var s in program.States)
+            {
+                aliases.Add(s, MkSafeAlias(string.Format("statedecl__{0}__{1}", ((Domains.P_Root.StringCnst)((Domains.P_Root.MachineDecl)s.owner).name).Value, MkQualifiedAlias((Domains.P_Root.QualifiedName)s.name)), occurrenceMap));
+            }
+
+            return aliases;
         }
 
         private AST<Model> GenerateZing(string inputModelName, ProgramName inputProgram)

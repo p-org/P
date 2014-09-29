@@ -225,7 +225,7 @@ domain PStaticTyping extends PData
 	////// Type Inference for the payload type
 	
 	PayloadFP ::= (TypingContext, Typeable, TypeExpr + { ERROR, NIL }).
-	//PayloadFP(c, e, wider) :- PayloadFP(c, e, t'), PayloadFP(c, e, t''), Widen(t', t'', wider).
+	PayloadFP(c, e, wider) :- PayloadFP(c, e, t'), PayloadFP(c, e, t''), Widen(t', t'', wider).
 	
 	
 	// payload type inference in doDecl
@@ -255,7 +255,7 @@ domain PStaticTyping extends PData
 	//payload type inference in entry
 	PayloadTypeEntry ::= (StateDecl, TypeExpr + {ERROR, NIL}).
 	PayloadTypeEntry(s, t) :- 
-	s is StateDecl, tr is TransDecl(src, ev, dst, _), src.owner = s.owner, dst = s.name, EventDecl(ev, _, t1), t1 : TypeExpr, t = t1; // event with payload
+	s is StateDecl, tr is TransDecl(src, ev, dst, _), src.owner = s.owner, dst = s.name, EventDecl(ev, _, t), t : TypeExpr; // event with payload
 	s is StateDecl, tr is TransDecl(src, ev, dst, _), src.owner = s.owner, dst = s.name, EventDecl(ev, _, NIL), t = BaseType(NULL);  //event with no payload
 	s is StateDecl, tr is TransDecl(src, ev, dst, _), src.owner = s.owner, dst = s.name, no EventDecl(ev, _, _), t = BaseType(NULL);  //default + halt
 	s is StateDecl, t = BaseType(ANY), MachineDecl(_, _, _,s.name, _); //start state

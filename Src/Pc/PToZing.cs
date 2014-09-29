@@ -92,6 +92,8 @@ namespace Microsoft.Pc
         public int numFairChoices;
         public bool isAnonymous;
         public Dictionary<AST<Node>, FuncTerm> typeInfo;
+        public HashSet<Node> invokeSchedulerFuns;
+
 
         public FunInfo(bool isModel, AST<FuncTerm> returnType, Node body)
         {
@@ -103,6 +105,7 @@ namespace Microsoft.Pc
             this.numFairChoices = 0;
             this.isAnonymous = false;
             this.typeInfo = new Dictionary<AST<Node>, FuncTerm>();
+            this.invokeSchedulerFuns = new HashSet<Node>();
         }
 
         public FunInfo(Node body, bool isAnonymous)
@@ -115,6 +118,7 @@ namespace Microsoft.Pc
             this.numFairChoices = 0;
             this.isAnonymous = isAnonymous;
             this.typeInfo = new Dictionary<AST<Node>, FuncTerm>();
+            this.invokeSchedulerFuns = new HashSet<Node>();
         }
     }
 
@@ -548,6 +552,25 @@ namespace Microsoft.Pc
                         string funName = anonFunToName[Factory.Instance.ToAST(typingContext)];
                         allMachines[ownerName].funNameToFunInfo[funName].typeInfo[expr] = type;
                     }
+                }
+            }
+
+            terms = GetBin("Annotation");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    FuncTerm annotationContext = (FuncTerm)it.Current;
+                    string annotationContextKind = ((Id)annotationContext.Function).Name;
+                    if (annotationContextKind != "FunDecl") continue;
+                    string ownerName = GetOwnerName(annotationContext, 1, 0);
+                    string funName = GetName(annotationContext, 0);
+                    it.MoveNext();
+                    string annotation = ((Cnst)it.Current).GetStringValue();
+                    if (annotation != "invokescheduler") continue;
+                    it.MoveNext();
+                    allMachines[ownerName].funNameToFunInfo[funName].invokeSchedulerFuns.Add(it.Current);
                 }
             }
 
@@ -1969,9 +1992,6 @@ namespace Microsoft.Pc
             var calleeName = GetName(ft, 0);
             var calleeInfo = allMachines[ctxt.machineName].funNameToFunInfo[calleeName];
             List<AST<Node>> args = new List<AST<Node>>();
-            // Prepend the default entryCtxt argument.
-            args.Add(MkZingIdentifier("entryCtxt"));
-
             int count = 0;
             foreach (var child in children)
             {
@@ -1983,7 +2003,7 @@ namespace Microsoft.Pc
                 args.Add(tmpVar);
             }
 
-            AST<Node> callExpr = MkZingCall(MkZingIdentifier(calleeName), args);
+            AST<Node> callExpr = MkZingCall(MkZingIdentifier(calleeName), new AST<Node>[] { MkZingIdentifier("entryCtxt") }.AsEnumerable().Union(args));
             AST<Node> processOutput;
             AST<Node> outExp;
 
@@ -1998,6 +2018,27 @@ namespace Microsoft.Pc
                 var retVar = ctxt.GetTmpVar(PrtValue, "ret");
                 processOutput = MkZingAssignWithClone(retVar, MkZingDot("entryCtxt", "retVal"));
                 outExp = retVar;
+            }
+            foreach (var x in allMachines[ctxt.machineName].funNameToFunInfo[calleeName].invokeSchedulerFuns)
+            {
+                List<AST<Node>> invokeSchedulerArgs = new List<AST<Node>>();
+                if (x.NodeKind == NodeKind.Cnst)
+                {
+                    Cnst cnst = x as Cnst;
+                    if (cnst.CnstKind == CnstKind.String)
+                    {
+                        invokeSchedulerArgs.Add(Factory.Instance.MkCnst(string.Format("\"{0}\"", cnst.GetStringValue())));
+                    }
+                    else
+                    {
+                        invokeSchedulerArgs.Add(Factory.Instance.ToAST(x));
+                    }
+                }
+                foreach (var arg in args)
+                {
+                    invokeSchedulerArgs.Add(MkZingDot(arg, "nt"));
+                }
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingIdentifier("invokescheduler"), invokeSchedulerArgs)));
             }
 
             AST<Node> callStmt = MkZingSeq(

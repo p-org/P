@@ -42,6 +42,8 @@ event mAnnounce assert 1 : int;
 
 // main machine the got machine which creates the verification instance
 main model GodMachine {
+    fun seal() [invokescheduler = seal] {}
+    fun unseal() [invokescheduler = unseal] {}
 
 	//the clock nodes
 	var P1 : machine;
@@ -65,7 +67,7 @@ main model GodMachine {
 		
 		entry {
 			// create all the post machines
-			// __seal();
+			seal();
 			new RogueFrame();
 			pt1 = new PortMachine();
 			pt2 = new PortMachine();
@@ -75,7 +77,7 @@ main model GodMachine {
 			pt6 = new PortMachine();
 			pt7 = new PortMachine();
 			pt8 = new PortMachine();
-			// __unseal();
+			unseal();
 			// create the ordinary clock machines
 			link += (0,pt4);
 			P1 = new Clock(link, 1);
@@ -94,7 +96,7 @@ main model GodMachine {
 			P3 = new Clock(link, 3);
 			link -= (0); link -= (0);
 			assert(sizeof(link) == 0);
-			//__seal();
+			seal();
 			
 			//initialize all the ports appropriately with the connections and power them up
 			send pt1, Initialise, (pt2, P2);
@@ -105,7 +107,7 @@ main model GodMachine {
 			send pt6, Initialise, (pt5, P4);
 			send pt7, Initialise, (pt8, P4);
 			send pt8, Initialise, (pt7, P3);
-			//__unseal();
+			unseal();
 			
 			//create the scenario testing machine
 			scenario += (0, (0, P3, pt3));
@@ -125,6 +127,8 @@ main model GodMachine {
 // across the port machines
 
 machine Clock {
+    fun seal() [invokescheduler = seal] {}
+    fun unseal() [invokescheduler = unseal] {}
 
 	var Ports:seq[machine]; // Port machines in this clock
 	var ParentGM : (machine, int, int); // pointer to the parent GM for this clock (machine machine, rank, stepsremoved)
@@ -141,7 +145,7 @@ machine Clock {
 		defer join, break;
 		entry {
 		
-			// __seal();
+			seal();
 			//initialize the EBest value to random
 		    Ports = (payload as (seq[machine], int)).0;
 		    D0 = (payload as (seq[machine], int)).1;
@@ -154,7 +158,7 @@ machine Clock {
 				send Ports[i], PowerUp, ParentGM;
 				i = i - 1;
 			}
-			// __unseal();
+			unseal();
 			raise Local;
 			
 		}
@@ -216,14 +220,14 @@ machine Clock {
 			if(check)
 			{
 				i = sizeof(Ports) - 1;
-				// __seal();
+				seal();
 				while(i>=0)
 				{
 					//send state decision event to all the ports so that we can evaluate new state
 					send Ports[i], StateDecisionEvent;
 					i = i - 1;
 				}
-				// __unseal();
+				unseal();
 				//go to atomic transaction mode
 				push WaitForErBest;
 			}
@@ -261,7 +265,7 @@ machine Clock {
 		entry {
 		
 			i = sizeof(Ports) - 1;
-			// __seal();
+			seal();
 			//for each port calculate the recommended state
 			while(i >= 0)
 			{
@@ -329,7 +333,7 @@ machine Clock {
 				send Ports[i], UpdateParentGM, (ParentGM.0, ParentGM.1, ParentGM.2 + 1); // increment the number of stepsremoved irrespective of OC / BC //// make 0 for OC. ??
 				i = i - 1;
 			}
-			// __unseal();
+			unseal();
 			
 		}
 	}
@@ -510,6 +514,9 @@ machine PortMachine {
 }
 		
 model scenariotester {
+    fun seal() [invokescheduler = seal] {}
+    fun unseal() [invokescheduler = unseal] {}
+
 	var scenario: seq[(int, machine, machine)];
 	var i:int;
 	start state init {
@@ -525,7 +532,7 @@ model scenariotester {
 			if($)
 			{
 				i = sizeof(scenario) -1;
-				//__seal();
+				seal();
 				while(i>=0)
 				{
 					if(scenario[i].0 == 0)
@@ -534,7 +541,7 @@ model scenariotester {
 					}
 					i = i - 1;
 				}
-				//__unseal();
+				unseal();
 				raise(Local);
 			}
 		}
@@ -546,7 +553,7 @@ model scenariotester {
 		entry {
 			if($)
 			{
-				//__seal();
+				seal();
 				i = sizeof(scenario) -1;
 				while(i>=0)
 				{
@@ -556,7 +563,7 @@ model scenariotester {
 					}
 					i = i - 1;
 				}
-				//__unseal();
+				unseal();
 				raise(Local);
 			}
 		}

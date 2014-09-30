@@ -31,64 +31,6 @@
 #ifndef PRTCONFIG_H
 #define PRTCONFIG_H
 
-/** Build runtime in Windows user mode. */
-#define PRT_PLAT_WINUSER 1
-/** Build runtime in Windows kernel mode (KMDF). */
-#define PRT_PLAT_WINKMDF 2
-/** Build runtime in Windows user mode for distributed setting using RPC */
-#define PRT_PLAT_WINDIST 3
-
-/** Build runtime for 32-bit x86 architecture */
-#define PRT_ARCH_X86 4
-/** Build runtime for 64 - bit AMD architecture */
-#define PRT_ARCH_X64 5
-
-/** Build runtime with reactive scheduling. */
-#define PRT_EXEC_REACTIVE 6
-/** Build runtime with proactive scheduling. */
-#define PRT_EXEC_PROACTIVE 7
-
-/** Build runtime without distribution */
-#define PRT_DISTR_NONE 8
-/** Build runtime with distribution using a central manager. */
-#define PRT_DISTR_CM 9
-
-/**
-* \def PRT_DEBUG
-* Uses debug versions of some libraries and performs extra run-time checks.
-*/
-
-/**
-* \def PRT_PLAT
-* Sets the target platform. Default is `PRT_PLAT_WINUSER`
-*/
-#ifndef PRT_PLAT
-#define PRT_PLAT PRT_PLAT_WINDIST
-#endif
-
-/**
-* \def PRT_ARCH
-* Sets the target architecture. Default is `PRT_ARCH_X86`
-*/
-#ifndef PRT_ARCH
-#define PRT_ARCH PRT_ARCH_X86
-#endif
-
-/**
-* \def PRT_EXEC
-* Sets the execution model. Default is `PRT_EXEC_REACTIVE`
-*/
-#ifndef PRT_EXEC
-#define PRT_EXEC PRT_EXEC_REACTIVE
-#endif
-
-/**
-* \def PRT_DISTR
-* Sets the distribution model. `Default is PRT_DISTR_NONE`
-*/
-#ifndef PRT_DISTR
-#define PRT_DISTR PRT_DISTR_NONE
-#endif
 
 #ifndef PRT_DEBUG
 /**
@@ -112,17 +54,12 @@
 #define PRT_DBG_END_MEM_BALANCED_REGION
 #endif
 
-#if !defined(DISTRIBUTED_RUNTIME)
 
-#endif
-
-#ifndef PRT_PLAT
-  #error No platform was specified (see PrtConfig.h for details)
-#elif PRT_PLAT == PRT_PLAT_WINUSER
+#if defined(PRT_PLAT_WINUSER)
   #include "PrtConfigWinUser.h"
-#elif PRT_PLAT == PRT_PLAT_WINKMDF
+#elif defined(PRT_PLAT_WINKMDF)
   #include "PrtConfigWinKMDF.h"
-#elif PRT_PLAT == PRT_PLAT_WINDIST
+#elif defined(PRT_PLAT_WINDIST)
   #include "PrtConfigWinDist.h"
 #else
   #error An invalid platform was specified (see PrtConfig.h for details)

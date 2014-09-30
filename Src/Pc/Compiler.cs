@@ -165,7 +165,7 @@
             //// GenerateC(inputModule, inputFile).Print(Console.Out);
 
             //// Step 4. Perform Zing compilation.
-            AST<Model> zingModel = GenerateZing(inputModule, inputFile);
+            AST<Model> zingModel = GenerateZing(inputModule, model, inputFile);
             PrintFile(zingModel, CompilerEnv);
             return true;
         }
@@ -679,7 +679,7 @@
             return aliases;
         }
 
-        private AST<Model> GenerateZing(string inputModelName, ProgramName inputProgram)
+        private AST<Model> GenerateZing(string inputModelName, AST<Model> inputModel, ProgramName inputProgram)
         {
             //// Get out the P program with type annotations. The Zing compiler is going to walk the AST.
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
@@ -705,7 +705,7 @@
             // modelWithTypes.Print(System.Console.Out);
 
             var outZingModel = MkZingOutputModel();
-            new PToZing(this, (AST<Model>)modelWithTypes).GenerateZing(ref outZingModel);           
+            new PToZing(this, (AST<Model>)inputModel, (AST<Model>)modelWithTypes).GenerateZing(ref outZingModel);           
             // outZingModel.Print(System.Console.Out);
 
             return outZingModel;

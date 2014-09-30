@@ -201,19 +201,18 @@ namespace Microsoft.Pc
         public const string NullEvent = "null";
         public const string HaltEvent = "halt";
 
-        private Dictionary<string, LinkedList<AST<FuncTerm>>> factBins;
         public Dictionary<string, EventInfo> allEvents;
         public Dictionary<string, MachineInfo> allMachines;
         public string mainMachineName;
         private Dictionary<AST<Node>, string> anonFunToName;
 
-        public LinkedList<AST<FuncTerm>> GetBin(FuncTerm ft)
+        public LinkedList<AST<FuncTerm>> GetBin(Dictionary<string, LinkedList<AST<FuncTerm>>> factBins, FuncTerm ft)
         {
             var fun = (Id)ft.Function;
-            return GetBin(fun.Name);
+            return GetBin(factBins, fun.Name);
         }
 
-        public LinkedList<AST<FuncTerm>> GetBin(string name)
+        public LinkedList<AST<FuncTerm>> GetBin(Dictionary<string, LinkedList<AST<FuncTerm>>> factBins, string name)
         {
             Contract.Requires(!string.IsNullOrEmpty(name));
             LinkedList<AST<FuncTerm>> bin;
@@ -224,24 +223,6 @@ namespace Microsoft.Pc
             }
 
             return bin;
-        }
-
-        private void IndexModel(AST<Model> model)
-        {
-            this.factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
-            model.FindAll(
-                new NodePred[]
-                {
-                    NodePredFactory.Instance.Star,
-                    NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
-                },
-
-                (path, n) =>
-                {
-                    var mf = (ModelFact)n;
-                    FuncTerm ft = (FuncTerm)mf.Match;
-                    GetBin(ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
-                });
         }
 
         public string GetMachineName(FuncTerm ft, int index)
@@ -263,16 +244,30 @@ namespace Microsoft.Pc
         }
 
         Compiler compiler;
-        public PToZing(Compiler compiler, AST<Model> model)
+        public PToZing(Compiler compiler, AST<Model> model, AST<Model> modelWithTypes)
         {
             this.compiler = compiler;
             this.typeContext = new TypeTranslationContext();
-            IndexModel(model);
-            GenerateProgramData(model);
+            GenerateProgramData(modelWithTypes);
+            GenerateTypeInfo(modelWithTypes);
         }
 
         private void GenerateProgramData(AST<Model> model)
         {
+            var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
+            model.FindAll(
+                new NodePred[]
+                {
+                    NodePredFactory.Instance.Star,
+                    NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
+                },
+
+                (path, n) =>
+                {
+                    var mf = (ModelFact)n;
+                    FuncTerm ft = (FuncTerm)mf.Match;
+                    GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
+                });
             allEvents = new Dictionary<string, EventInfo>();
             allEvents[HaltEvent] = new EventInfo(1, false, PTypeNull.Node);
             allEvents[NullEvent] = new EventInfo(1, false, PTypeNull.Node);
@@ -280,7 +275,7 @@ namespace Microsoft.Pc
 
             LinkedList<AST<FuncTerm>> terms;
 
-            terms = GetBin("EventDecl");
+            terms = GetBin(factBins, "EventDecl");
             foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
@@ -305,7 +300,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            terms = GetBin("MachineDecl");
+            terms = GetBin(factBins, "MachineDecl");
             foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
@@ -333,7 +328,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            terms = GetBin("VarDecl");
+            terms = GetBin(factBins, "VarDecl");
             foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
@@ -350,7 +345,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            terms = GetBin("FunDecl");
+            terms = GetBin(factBins, "FunDecl");
             foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
@@ -388,7 +383,7 @@ namespace Microsoft.Pc
             }
 
             this.anonFunToName = new Dictionary<AST<Node>, string>();
-            terms = GetBin("AnonFunDecl");
+            terms = GetBin(factBins, "AnonFunDecl");
             foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
@@ -403,8 +398,8 @@ namespace Microsoft.Pc
                     anonFunToName[term] = funName;
                 }
             }
-            
-            terms = GetBin("StateDecl");
+
+            terms = GetBin(factBins, "StateDecl");
             foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
@@ -430,7 +425,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            terms = GetBin("TransDecl");
+            terms = GetBin(factBins, "TransDecl");
             foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
@@ -478,7 +473,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            terms = GetBin("DoDecl");
+            terms = GetBin(factBins, "DoDecl");
             foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
@@ -525,37 +520,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            terms = GetBin("TypeOf");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    FuncTerm typingContext = (FuncTerm)it.Current;
-                    it.MoveNext();
-                    var expr = Factory.Instance.ToAST(it.Current);
-                    it.MoveNext();
-                    var type = it.Current as FuncTerm;
-                    if (type == null) continue;
-
-                    string typingContextKind = ((Id)typingContext.Function).Name;
-                    if (typingContextKind == "FunDecl")
-                    {
-                        string ownerName = GetOwnerName(typingContext, 1, 0);
-                        string funName = GetName(typingContext, 0);
-                        allMachines[ownerName].funNameToFunInfo[funName].typeInfo[expr] = type;
-                    }
-                    else
-                    {
-                        // typingContextKind == "AnonFunDecl"
-                        string ownerName = GetOwnerName(typingContext, 0, 0);
-                        string funName = anonFunToName[Factory.Instance.ToAST(typingContext)];
-                        allMachines[ownerName].funNameToFunInfo[funName].typeInfo[expr] = type;
-                    }
-                }
-            }
-
-            terms = GetBin("Annotation");
+            terms = GetBin(factBins, "Annotation");
             foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
@@ -612,7 +577,60 @@ namespace Microsoft.Pc
             }
         }
 
+        void GenerateTypeInfo(AST<Model> model)
+        {
+            var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
+            model.FindAll(
+                new NodePred[]
+                {
+                    NodePredFactory.Instance.Star,
+                    NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
+                },
+
+                (path, n) =>
+                {
+                    var mf = (ModelFact)n;
+                    FuncTerm ft = (FuncTerm)mf.Match;
+                    GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
+                });
+            var terms = GetBin(factBins, "TypeOf");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    FuncTerm typingContext = (FuncTerm)it.Current;
+                    it.MoveNext();
+                    var expr = Factory.Instance.ToAST(it.Current);
+                    it.MoveNext();
+                    var type = it.Current as FuncTerm;
+                    if (type == null) continue;
+
+                    string typingContextKind = ((Id)typingContext.Function).Name;
+                    if (typingContextKind == "FunDecl")
+                    {
+                        string ownerName = GetOwnerName(typingContext, 1, 0);
+                        string funName = GetName(typingContext, 0);
+                        allMachines[ownerName].funNameToFunInfo[funName].typeInfo[expr] = type;
+                    }
+                    else
+                    {
+                        // typingContextKind == "AnonFunDecl"
+                        string ownerName = GetOwnerName(typingContext, 0, 0);
+                        string funName = anonFunToName[Factory.Instance.ToAST(typingContext)];
+                        allMachines[ownerName].funNameToFunInfo[funName].typeInfo[expr] = type;
+                    }
+                }
+            }
+        }
+
         #region Static helpers
+
+        public static string SpanToString(Span span)
+        {
+            return string.Format("({0}, {1})", span.StartLine, span.StartCol);
+        }
+
         public static string NodeToString(Node n)
         {
             System.IO.StringWriter sw = new System.IO.StringWriter();
@@ -911,7 +929,12 @@ namespace Microsoft.Pc
 
         private static AST<FuncTerm> MkZingAssert(AST<Node> condition)
         {
-            return AddArgs(ZingData.App_Assert, condition);
+            return AddArgs(ZingData.App_Assert, condition, ZingData.Cnst_Nil);
+        }
+
+        private static AST<FuncTerm> MkZingAssert(AST<Node> condition, string msg)
+        {
+            return AddArgs(ZingData.App_Assert, condition, Factory.Instance.MkCnst(msg));
         }
 
         private static AST<FuncTerm> MkZingAssume(AST<Node> condition)
@@ -1071,7 +1094,7 @@ namespace Microsoft.Pc
                     MkZingReturn(typeContext.PTypeToZingExpr(allEvents[evt].payloadType)),
                     ZingData.Cnst_Nil));
             }
-            payloadOfBody.Add(AddArgs(ZingData.App_Assert, ZingData.Cnst_False));
+            payloadOfBody.Add(MkZingAssert(ZingData.Cnst_False, "Internal error"));
             AST<Node> payloadOfMethod = MkZingMethodDecl("PayloadOf",
                 MkZingVarDecls(MkZingVarDecl("e", Factory.Instance.MkCnst("SM_EVENT"))),
                 Factory.Instance.MkCnst("PRT_TYPE"), ZingData.Cnst_Nil, MkZingBlocks(MkZingBlock("dummy", MkZingSeq(payloadOfBody))), ZingData.Cnst_Static);
@@ -1177,7 +1200,7 @@ namespace Microsoft.Pc
                     MkZingIfThen(MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("state"), MkZingState(stateName)),
                                  MkZingReturn(stateInfo.hasDefaultTransition ? ZingData.Cnst_True : ZingData.Cnst_False)));
             }
-            initStmts.Add(MkZingAssert(ZingData.Cnst_False));
+            initStmts.Add(MkZingAssert(ZingData.Cnst_False, "Internal error"));
             var initBlock = MkZingBlock("init", MkZingSeq(initStmts));
             return MkZingMethodDecl("HasDefaultTransition", MkZingVarDecls(parameters), ZingData.Cnst_Bool, ZingData.Cnst_Nil, MkZingBlocks(initBlock));
         }
@@ -1242,7 +1265,7 @@ namespace Microsoft.Pc
                                         );
             string traceString = string.Format("\"<StateLog> Unhandled event exception by machine {0}-{{0}}\\n\"", machineName);
             var traceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance")));
-            var assertStmt = Factory.Instance.AddArg(ZingData.App_Assert, ZingData.Cnst_False);
+            var assertStmt = MkZingAssert(ZingData.Cnst_False, "Internal error");
             var body = ConstructList(
                             ZingData.App_Blocks,
                             MkZingBlock("dummy", MkZingSeq(callStmt, iteStmt, traceStmt, assertStmt))
@@ -1316,7 +1339,7 @@ namespace Microsoft.Pc
                     initStmts.Add(MkZingIfThen(condExpr, MkZingSeq(traceStmt, gotoStmt)));
                 }
             }
-            initStmts.Add(Factory.Instance.AddArg(ZingData.App_Assert, ZingData.Cnst_False));
+            initStmts.Add(MkZingAssert(ZingData.Cnst_False, "Internal error"));
             AST<Node> initStmt = MkZingBlock("init", MkZingSeq(initStmts));
 
             // Action blocks
@@ -1421,7 +1444,7 @@ namespace Microsoft.Pc
                 var gotoTransitionStmt = MkZingGoto("transition_" + stateName);
                 initStmts.Add(MkZingIfThen(condExpr, MkZingIfThenElse(MkZingIdentifier("start"), gotoExecuteStmt, gotoTransitionStmt)));
             }
-            initStmts.Add(Factory.Instance.AddArg(ZingData.App_Assert, ZingData.Cnst_False));
+            initStmts.Add(MkZingAssert(ZingData.Cnst_False, "Internal error"));
             var initStmt = MkZingBlock("init", MkZingSeq(initStmts));
 
             var cont = MkZingIdentifier("cont");
@@ -1591,7 +1614,7 @@ namespace Microsoft.Pc
                     prelude.Add(PToZing.MkZingIfThen(PToZing.MkZingEq(tmpVar, Factory.Instance.MkCnst(labels[l])), MkZingGoto(l)));
                 }
 
-                prelude.Add(AddArgs(ZingData.App_Assert, ZingData.Cnst_False));
+                prelude.Add(MkZingAssert(ZingData.Cnst_False, "Internal error"));
 
                 return PToZing.MkZingSeq(prelude);
             }
@@ -2438,7 +2461,7 @@ namespace Microsoft.Pc
                 var eventExpr = MkZingDot(it.Current.node, "ev");
                 it.MoveNext();
                 var payloadExpr = it.Current.node;
-                var assertStmt = MkZingAssert(MkZingApply(ZingData.Cnst_NEq, eventExpr, MkZingIdentifier("null")));
+                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0}: Raised null", SpanToString(ft.Span)));
                 string traceString = string.Format("\"<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\\n\"", ctxt.machineName);
                 var traceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"), MkZingDot(eventExpr, "name")));
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpPayload");
@@ -2532,7 +2555,7 @@ namespace Microsoft.Pc
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
-                return new ZingTranslationInfo(MkZingAssert(MkZingDot(it.Current.node, "bl")));
+                return new ZingTranslationInfo(MkZingAssert(MkZingDot(it.Current.node, "bl"), string.Format("{0}: Assert failed", SpanToString(ft.Span))));
             }
         }
 

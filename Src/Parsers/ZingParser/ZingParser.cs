@@ -417,7 +417,16 @@
                 using (var enumerator = ft.Args.GetEnumerator())
                 {
                     enumerator.MoveNext();
-                    return string.Format("assert({0});\n", RenderExpr(enumerator.Current));
+                    var expr = RenderExpr(enumerator.Current);
+                    enumerator.MoveNext();
+                    if (enumerator.Current.NodeKind == NodeKind.Cnst)
+                    {
+                        return string.Format("assert({0}, \"{1}\");\n", expr, ((Cnst)enumerator.Current).GetStringValue());
+                    }
+                    else
+                    {
+                        return string.Format("assert({0});\n", expr);
+                    }
                 }
             }
             else if (functionName == "Assume")

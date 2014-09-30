@@ -21,7 +21,7 @@ domain ZingData
     
     //// Statements
     Return   ::= new (expr: any Expr + { NIL }).
-    Assert   ::= new (expr: any Expr).
+    Assert   ::= new (expr: any Expr, msg: String + { NIL }).
     Assume   ::= new (expr: any Expr).
     CallStmt ::= new (callExpr: any Call, attrs: any Attrs + { NIL }).
     Assign   ::= new (lhs: any Expr, rhs: any Expr).

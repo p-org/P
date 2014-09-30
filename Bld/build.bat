@@ -22,7 +22,7 @@ if %ERRORLEVEL% neq 0 (
   exit /B 1
 )
 
-.\PlangBuild\PlangBuild\bin\Debug\PlangBuild.exe %1
+.\PlangBuild\PlangBuild\bin\Debug\PlangBuild.exe %1 %2
 if %ERRORLEVEL% neq 0 (
   echo Build failed.
   exit /B 1

@@ -2051,7 +2051,8 @@ namespace Microsoft.Pc
                 ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingIdentifier("invokescheduler"), invokeSchedulerArgs)));
             }
 
-            AST<Node> callExpr = MkZingCall(MkZingIdentifier(calleeName), new AST<Node>[] { MkZingIdentifier("entryCtxt") }.AsEnumerable().Union(args));
+            args.Add(MkZingIdentifier("entryCtxt"));
+            AST<Node> callExpr = MkZingCall(MkZingIdentifier(calleeName), args);
             var beforeLabel = ctxt.GetFreshLabel();
             AST<Node> processOutput;
             AST<Node> outExp;
@@ -2752,8 +2753,8 @@ namespace Microsoft.Pc
         private AST<Node> MkInvokeMonitorMethod(string machineName)
         {
             List<AST<Node>> parameters = new List<AST<Node>>();
-            parameters.Add(MkZingVarDecl("arg", Factory.Instance.MkCnst("PRT_VALUE")));
             parameters.Add(MkZingVarDecl("evt", Factory.Instance.MkCnst("SM_EVENT")));
+            parameters.Add(MkZingVarDecl("arg", Factory.Instance.MkCnst("PRT_VALUE")));
 
             List<AST<Node>> localVars = new List<AST<Node>>();
             localVars.Add(MkZingVarDecl("doPop", ZingData.Cnst_Bool));

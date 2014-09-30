@@ -248,7 +248,7 @@ namespace Microsoft.Pc
         {
             this.compiler = compiler;
             this.typeContext = new TypeTranslationContext();
-            GenerateProgramData(modelWithTypes);
+            GenerateProgramData(model);
             GenerateTypeInfo(modelWithTypes);
         }
 
@@ -383,9 +383,15 @@ namespace Microsoft.Pc
             }
 
             this.anonFunToName = new Dictionary<AST<Node>, string>();
+            var anonFunCounter = new Dictionary<string, int>();
+            foreach (var x in allMachines.Keys)
+            {
+                anonFunCounter[x] = 0;
+            }
             terms = GetBin(factBins, "AnonFunDecl");
             foreach (var term in terms)
             {
+                if (anonFunToName.ContainsKey(term)) continue;
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
@@ -393,9 +399,10 @@ namespace Microsoft.Pc
                     var machineName = GetName(machineDecl, 0);
                     var machineInfo = allMachines[machineName];
                     it.MoveNext();
-                    var funName = "AnonFun" + anonFunToName.Count;
+                    var funName = "AnonFun" + anonFunCounter[machineName];
                     machineInfo.funNameToFunInfo[funName] = new FunInfo(it.Current, true);
                     anonFunToName[term] = funName;
+                    anonFunCounter[machineName]++;
                 }
             }
 

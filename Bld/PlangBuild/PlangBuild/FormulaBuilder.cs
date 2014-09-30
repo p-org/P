@@ -21,44 +21,83 @@
             }
         }
 
+        private const string Folderx86 = "..\\x86\\";
+        private const string Folderx64 = "..\\x64\\";
+
         private static readonly string[] outputs = new string[]
         {
-            "..\\..\\..\\..\\..\\Ext\\Formula\\gplex45.exe",
-            "..\\..\\..\\..\\..\\Ext\\Formula\\gppg45.exe",
-            "..\\..\\..\\..\\..\\Ext\\Formula\\Formula.exe",
-            "..\\..\\..\\..\\..\\Ext\\Formula\\Formula.exe.config",
-            "..\\..\\..\\..\\..\\Ext\\Formula\\Core.dll",
-            "..\\..\\..\\..\\..\\Ext\\Formula\\Microsoft.Z3.dll",
-            "..\\..\\..\\..\\..\\Ext\\Formula\\libz3.dll",
-            "..\\..\\..\\..\\..\\Ext\\Formula\\FormulaCodeGeneratorTask.dll" 
+            "..\\..\\..\\..\\..\\Ext\\Formula\\x86\\gplex45.exe",
+            "..\\..\\..\\..\\..\\Ext\\Formula\\x86\\gppg45.exe",
+            "..\\..\\..\\..\\..\\Ext\\Formula\\x86\\Formula.exe",
+            "..\\..\\..\\..\\..\\Ext\\Formula\\x86\\Formula.exe.config",
+            "..\\..\\..\\..\\..\\Ext\\Formula\\x86\\Core.dll",
+            "..\\..\\..\\..\\..\\Ext\\Formula\\x86\\Microsoft.Z3.dll",
+            "..\\..\\..\\..\\..\\Ext\\Formula\\x86\\libz3.dll",
+            "..\\..\\..\\..\\..\\Ext\\Formula\\x86\\FormulaCodeGeneratorTask.dll", 
+
+            "..\\..\\..\\..\\..\\Ext\\Formula\\x64\\gplex45.exe",
+            "..\\..\\..\\..\\..\\Ext\\Formula\\x64\\gppg45.exe",
+            "..\\..\\..\\..\\..\\Ext\\Formula\\x64\\Formula.exe",
+            "..\\..\\..\\..\\..\\Ext\\Formula\\x64\\Formula.exe.config",
+            "..\\..\\..\\..\\..\\Ext\\Formula\\x64\\Core.dll",
+            "..\\..\\..\\..\\..\\Ext\\Formula\\x64\\Microsoft.Z3.dll",
+            "..\\..\\..\\..\\..\\Ext\\Formula\\x64\\libz3.dll",
+            "..\\..\\..\\..\\..\\Ext\\Formula\\x64\\FormulaCodeGeneratorTask.dll"
+
         };
 
         private static readonly Tuple<string, string>[] ReleaseMoveMap = new Tuple<string, string>[]
         {
+            // x86
             new Tuple<string, string>(
                 "Ext\\GPLEX\\gplex45.exe",
-                "..\\gplex45.exe"),
+                "..\\x86\\gplex45.exe"),
             new Tuple<string, string>(
                 "Ext\\GPPG\\gppg45.exe",
-                "..\\gppg45.exe"),
+                "..\\x86\\gppg45.exe"),
             new Tuple<string, string>(
                 "Bld\\Drops\\Formula_Release_x86\\Formula.exe",
-                "..\\Formula.exe"),
+                "..\\x86\\Formula.exe"),
             new Tuple<string, string>(
                 "Bld\\Drops\\Formula_Release_x86\\Formula.exe.config",
-                "..\\Formula.exe.config"),
+                "..\\x86\\Formula.exe.config"),
             new Tuple<string, string>(
                 "Bld\\Drops\\Formula_Release_x86\\Core.dll",
-                "..\\Core.dll"),
+                "..\\x86\\Core.dll"),
             new Tuple<string, string>(
                 "Bld\\Drops\\Formula_Release_x86\\Microsoft.Z3.dll",
-                "..\\Microsoft.Z3.dll"),
+                "..\\x86\\Microsoft.Z3.dll"),
             new Tuple<string, string>(
                 "Bld\\Drops\\Formula_Release_x86\\libz3.dll",
-                "..\\libz3.dll"),
+                "..\\x86\\libz3.dll"),
             new Tuple<string, string>(   
                 "Src\\Extensions\\FormulaCodeGeneratorTask\\bin\\x86\\FormulaCodeGeneratorTask.dll",   
-                "..\\FormulaCodeGeneratorTask.dll"),  
+                "..\\x86\\FormulaCodeGeneratorTask.dll"),  
+            // x64
+            new Tuple<string, string>(
+                "Ext\\GPLEX\\gplex45.exe",
+                "..\\x64\\gplex45.exe"),
+            new Tuple<string, string>(
+                "Ext\\GPPG\\gppg45.exe",
+                "..\\x64\\gppg45.exe"),
+            new Tuple<string, string>(
+                "Bld\\Drops\\Formula_Release_x64\\Formula.exe",
+                "..\\x64\\Formula.exe"),
+            new Tuple<string, string>(
+                "Bld\\Drops\\Formula_Release_x64\\Formula.exe.config",
+                "..\\x64\\Formula.exe.config"),
+            new Tuple<string, string>(
+                "Bld\\Drops\\Formula_Release_x64\\Core.dll",
+                "..\\x64\\Core.dll"),
+            new Tuple<string, string>(
+                "Bld\\Drops\\Formula_Release_x64\\Microsoft.Z3.dll",
+                "..\\x64\\Microsoft.Z3.dll"),
+            new Tuple<string, string>(
+                "Bld\\Drops\\Formula_Release_x64\\libz3.dll",
+                "..\\x64\\libz3.dll"),
+            new Tuple<string, string>(   
+                "Src\\Extensions\\FormulaCodeGeneratorTask\\bin\\x86\\FormulaCodeGeneratorTask.dll",   
+                "..\\x64\\FormulaCodeGeneratorTask.dll"),
         };
 
         private static bool Verify(string[] outputs)
@@ -133,6 +172,10 @@
             bool result = true;
             try
             {
+                //create the folders if not present
+                if (!Directory.Exists(Path.Combine(srcRoot.FullName, Folderx64))) Directory.CreateDirectory(Path.Combine(srcRoot.FullName, Folderx64));
+                if (!Directory.Exists(Path.Combine(srcRoot.FullName, Folderx86))) Directory.CreateDirectory(Path.Combine(srcRoot.FullName, Folderx86));
+
                 foreach (var t in moveMap)
                 {
                     var inFile = new FileInfo(Path.Combine(srcRoot.FullName, t.Item1));

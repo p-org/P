@@ -19,32 +19,60 @@ namespace PlangBuild
             }
         }
 
-        private const string msbuildArgs = "\"{0}\" /p:Configuration=Release";
+        private const string MsBuildCommand = "\"{0}\" /p:Configuration=Release /p:Platform={1}";
+        private const string PlatformX86 = "x86";
+        private const string PlatformX64 = "x64";
+        private const string Folderx86 = "..\\x86\\";
+        private const string Folderx64 = "..\\x64\\";
+
         private const string zingSln = "ZING.sln";
 
         private static readonly string[] outputs = new string[]
         {
-            "..\\..\\..\\..\\..\\Ext\\Zing\\zc.exe",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\Microsoft.Comega.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\Microsoft.Comega.Runtime.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\Microsoft.Zing.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\Microsoft.Zing.Runtime.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\System.Compiler.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\System.Compiler.Framework.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\System.Compiler.Runtime.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\ZingDelayingScheduler.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\ZingOptions.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\ZingPlugin.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\Zinger.exe",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\FrontierTree.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\ParallelExplorer.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\ZingDelayingScheduler.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\ZingStateSpaceTraversal.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\RandomDelayingScheduler.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\RoundRobinScheduler.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\RunToCompletionDBSched.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\StateCoveragePlugin.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\StateVisitCount.dll"
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\zc.exe",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\Microsoft.Comega.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\Microsoft.Comega.Runtime.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\Microsoft.Zing.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\Microsoft.Zing.Runtime.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\System.Compiler.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\System.Compiler.Framework.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\System.Compiler.Runtime.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingDelayingScheduler.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingOptions.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingPlugin.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\Zinger.exe",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\FrontierTree.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ParallelExplorer.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingDelayingScheduler.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingStateSpaceTraversal.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RandomDelayingScheduler.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RoundRobinScheduler.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RunToCompletionDBSched.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\StateCoveragePlugin.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\StateVisitCount.dll",
+
+
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\zc.exe",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\Microsoft.Comega.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\Microsoft.Comega.Runtime.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\Microsoft.Zing.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\Microsoft.Zing.Runtime.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\System.Compiler.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\System.Compiler.Framework.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\System.Compiler.Runtime.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingDelayingScheduler.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingOptions.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingPlugin.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\Zinger.exe",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\FrontierTree.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ParallelExplorer.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingDelayingScheduler.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingStateSpaceTraversal.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RandomDelayingScheduler.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RoundRobinScheduler.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RunToCompletionDBSched.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\StateCoveragePlugin.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\StateVisitCount.dll"
         };
 
         private static void OutputReceived(object sender, DataReceivedEventArgs e)
@@ -54,27 +82,50 @@ namespace PlangBuild
         
         private static readonly Tuple<string, string>[] ZingMoveMap = new Tuple<string, string>[]
         {
-            new Tuple<string, string>("zc\\bin\\Release\\zc.exe", "..\\zc.exe"),
-            new Tuple<string, string>("zc\\bin\\Release\\Microsoft.Comega.dll", "..\\Microsoft.Comega.dll"),
-            new Tuple<string, string>("zc\\bin\\Release\\Microsoft.Comega.Runtime.dll", "..\\Microsoft.Comega.Runtime.dll"),
-            new Tuple<string, string>("zc\\bin\\Release\\Microsoft.Zing.dll", "..\\Microsoft.Zing.dll"),
-            new Tuple<string, string>("zc\\bin\\Release\\Microsoft.Zing.Runtime.dll", "..\\Microsoft.Zing.Runtime.dll"),
-            new Tuple<string, string>("zc\\bin\\Release\\System.Compiler.dll", "..\\System.Compiler.dll"),
-            new Tuple<string, string>("zc\\bin\\Release\\System.Compiler.Framework.dll", "..\\System.Compiler.Framework.dll"),
-            new Tuple<string, string>("zc\\bin\\Release\\System.Compiler.Runtime.dll", "..\\System.Compiler.Runtime.dll"),
-            new Tuple<string, string>("zc\\bin\\Release\\ZingDelayingScheduler.dll", "..\\ZingDelayingScheduler.dll"),
-            new Tuple<string, string>("zc\\bin\\Release\\ZingOptions.dll", "..\\ZingOptions.dll"),
-            new Tuple<string, string>("zc\\bin\\Release\\ZingPlugin.dll", "..\\ZingPlugin.dll"),
-            new Tuple<string, string>("Zinger\\bin\\Release\\Zinger.exe", "..\\Zinger.exe"),
-            new Tuple<string, string>("Zinger\\bin\\Release\\FrontierTree.dll", "..\\FrontierTree.dll"),
-            new Tuple<string, string>("Zinger\\bin\\Release\\ParallelExplorer.dll", "..\\ParallelExplorer.dll"),
-            new Tuple<string, string>("Zinger\\bin\\Release\\ZingDelayingScheduler.dll", "..\\ZingDelayingScheduler.dll"),
-            new Tuple<string, string>("Zinger\\bin\\Release\\ZingStateSpaceTraversal.dll", "..\\ZingStateSpaceTraversal.dll"),
-            new Tuple<string, string>("Schedulers\\RandomDelayingScheduler\\bin\\Release\\RandomDelayingScheduler.dll", "..\\RandomDelayingScheduler.dll"),
-            new Tuple<string, string>("Schedulers\\RoundRobinScheduler\\bin\\Release\\RoundRobinScheduler.dll", "..\\RoundRobinScheduler.dll"),
-            new Tuple<string, string>("Schedulers\\RunToCompletionDBSched\\bin\\Release\\RunToCompletionDBSched.dll", "..\\RunToCompletionDBSched.dll"),
-            new Tuple<string, string>("Plugins\\StateCoveragePlugin\\bin\\Release\\StateCoveragePlugin.dll", "..\\StateCoveragePlugin.dll"),
-            new Tuple<string, string>("Plugins\\StateVisitCount\\bin\\Release\\StateVisitCount.dll", "..\\StateVisitCount.dll")
+            new Tuple<string, string>("zc\\bin\\x64\\Release\\zc.exe", "..\\x64\\zc.exe"),
+            new Tuple<string, string>("zc\\bin\\x64\\Release\\Microsoft.Comega.dll", "..\\x64\\Microsoft.Comega.dll"),
+            new Tuple<string, string>("zc\\bin\\x64\\Release\\Microsoft.Comega.Runtime.dll", "..\\x64\\Microsoft.Comega.Runtime.dll"),
+            new Tuple<string, string>("zc\\bin\\x64\\Release\\Microsoft.Zing.dll", "..\\x64\\Microsoft.Zing.dll"),
+            new Tuple<string, string>("zc\\bin\\x64\\Release\\Microsoft.Zing.Runtime.dll", "..\\x64\\Microsoft.Zing.Runtime.dll"),
+            new Tuple<string, string>("zc\\bin\\x64\\Release\\System.Compiler.dll", "..\\x64\\System.Compiler.dll"),
+            new Tuple<string, string>("zc\\bin\\x64\\Release\\System.Compiler.Framework.dll", "..\\x64\\System.Compiler.Framework.dll"),
+            new Tuple<string, string>("zc\\bin\\x64\\Release\\System.Compiler.Runtime.dll", "..\\x64\\System.Compiler.Runtime.dll"),
+            new Tuple<string, string>("zc\\bin\\x64\\Release\\ZingDelayingScheduler.dll", "..\\x64\\ZingDelayingScheduler.dll"),
+            new Tuple<string, string>("zc\\bin\\x64\\Release\\ZingOptions.dll", "..\\x64\\ZingOptions.dll"),
+            new Tuple<string, string>("zc\\bin\\x64\\Release\\ZingPlugin.dll", "..\\x64\\ZingPlugin.dll"),
+            new Tuple<string, string>("Zinger\\bin\\x64\\Release\\Zinger.exe", "..\\x64\\Zinger.exe"),
+            new Tuple<string, string>("Zinger\\bin\\x64\\Release\\FrontierTree.dll", "..\\x64\\FrontierTree.dll"),
+            new Tuple<string, string>("Zinger\\bin\\x64\\Release\\ParallelExplorer.dll", "..\\x64\\ParallelExplorer.dll"),
+            new Tuple<string, string>("Zinger\\bin\\x64\\Release\\ZingDelayingScheduler.dll", "..\\x64\\ZingDelayingScheduler.dll"),
+            new Tuple<string, string>("Zinger\\bin\\x64\\Release\\ZingStateSpaceTraversal.dll", "..\\x64\\ZingStateSpaceTraversal.dll"),
+            new Tuple<string, string>("Schedulers\\RandomDelayingScheduler\\bin\\x64\\Release\\RandomDelayingScheduler.dll", "..\\x64\\RandomDelayingScheduler.dll"),
+            new Tuple<string, string>("Schedulers\\RoundRobinScheduler\\bin\\x64\\Release\\RoundRobinScheduler.dll", "..\\x64\\RoundRobinScheduler.dll"),
+            new Tuple<string, string>("Schedulers\\RunToCompletionDBSched\\bin\\x64\\Release\\RunToCompletionDBSched.dll", "..\\x64\\RunToCompletionDBSched.dll"),
+            new Tuple<string, string>("Plugins\\StateCoveragePlugin\\bin\\x64\\Release\\StateCoveragePlugin.dll", "..\\x64\\StateCoveragePlugin.dll"),
+            new Tuple<string, string>("Plugins\\StateVisitCount\\bin\\x64\\Release\\StateVisitCount.dll", "..\\x64\\StateVisitCount.dll"),
+
+
+            new Tuple<string, string>("zc\\bin\\x86\\Release\\zc.exe", "..\\x86\\zc.exe"),
+            new Tuple<string, string>("zc\\bin\\x86\\Release\\Microsoft.Comega.dll", "..\\x86\\Microsoft.Comega.dll"),
+            new Tuple<string, string>("zc\\bin\\x86\\Release\\Microsoft.Comega.Runtime.dll", "..\\x86\\Microsoft.Comega.Runtime.dll"),
+            new Tuple<string, string>("zc\\bin\\x86\\Release\\Microsoft.Zing.dll", "..\\x86\\Microsoft.Zing.dll"),
+            new Tuple<string, string>("zc\\bin\\x86\\Release\\Microsoft.Zing.Runtime.dll", "..\\x86\\Microsoft.Zing.Runtime.dll"),
+            new Tuple<string, string>("zc\\bin\\x86\\Release\\System.Compiler.dll", "..\\x86\\System.Compiler.dll"),
+            new Tuple<string, string>("zc\\bin\\x86\\Release\\System.Compiler.Framework.dll", "..\\x86\\System.Compiler.Framework.dll"),
+            new Tuple<string, string>("zc\\bin\\x86\\Release\\System.Compiler.Runtime.dll", "..\\x86\\System.Compiler.Runtime.dll"),
+            new Tuple<string, string>("zc\\bin\\x86\\Release\\ZingDelayingScheduler.dll", "..\\x86\\ZingDelayingScheduler.dll"),
+            new Tuple<string, string>("zc\\bin\\x86\\Release\\ZingOptions.dll", "..\\x86\\ZingOptions.dll"),
+            new Tuple<string, string>("zc\\bin\\x86\\Release\\ZingPlugin.dll", "..\\x86\\ZingPlugin.dll"),
+            new Tuple<string, string>("Zinger\\bin\\x86\\Release\\Zinger.exe", "..\\x86\\Zinger.exe"),
+            new Tuple<string, string>("Zinger\\bin\\x86\\Release\\FrontierTree.dll", "..\\x86\\FrontierTree.dll"),
+            new Tuple<string, string>("Zinger\\bin\\x86\\Release\\ParallelExplorer.dll", "..\\x86\\ParallelExplorer.dll"),
+            new Tuple<string, string>("Zinger\\bin\\x86\\Release\\ZingDelayingScheduler.dll", "..\\x86\\ZingDelayingScheduler.dll"),
+            new Tuple<string, string>("Zinger\\bin\\x86\\Release\\ZingStateSpaceTraversal.dll", "..\\x86\\ZingStateSpaceTraversal.dll"),
+            new Tuple<string, string>("Schedulers\\RandomDelayingScheduler\\bin\\x86\\Release\\RandomDelayingScheduler.dll", "..\\x86\\RandomDelayingScheduler.dll"),
+            new Tuple<string, string>("Schedulers\\RoundRobinScheduler\\bin\\x86\\Release\\RoundRobinScheduler.dll", "..\\x86\\RoundRobinScheduler.dll"),
+            new Tuple<string, string>("Schedulers\\RunToCompletionDBSched\\bin\\x86\\Release\\RunToCompletionDBSched.dll", "..\\x86\\RunToCompletionDBSched.dll"),
+            new Tuple<string, string>("Plugins\\StateCoveragePlugin\\bin\\x86\\Release\\StateCoveragePlugin.dll", "..\\x86\\StateCoveragePlugin.dll"),
+            new Tuple<string, string>("Plugins\\StateVisitCount\\bin\\x86\\Release\\StateVisitCount.dll", "..\\x86\\StateVisitCount.dll")
         };
 
         public static bool Build(bool isRebuildForced)
@@ -128,6 +179,10 @@ namespace PlangBuild
             bool result = true;
             try
             {
+                //create the folders if not present
+                if(!Directory.Exists(Path.Combine(srcRoot.FullName, Folderx64)))  Directory.CreateDirectory(Path.Combine(srcRoot.FullName, Folderx64));
+                if(!Directory.Exists(Path.Combine(srcRoot.FullName, Folderx86))) Directory.CreateDirectory(Path.Combine(srcRoot.FullName, Folderx86));
+
                 foreach (var t in moveMap)
                 {
                     var inFile = new FileInfo(Path.Combine(srcRoot.FullName, t.Item1));
@@ -205,13 +260,14 @@ namespace PlangBuild
                     return false;
                 }
 
+                //build x64
                 var psi = new ProcessStartInfo();
                 psi.UseShellExecute = false;
                 psi.RedirectStandardError = true;
                 psi.RedirectStandardOutput = true;
                 psi.WorkingDirectory = inProj.Directory.FullName;
                 psi.FileName = msbuild.FullName;
-                psi.Arguments = string.Format(msbuildArgs, inProj.FullName);
+                psi.Arguments = string.Format(MsBuildCommand, inProj.FullName, PlatformX64);
                 psi.CreateNoWindow = true;
 
                 var process = new Process();
@@ -223,6 +279,31 @@ namespace PlangBuild
                 process.WaitForExit();
 
                 Program.WriteInfo("EXIT: {0}", process.ExitCode);
+
+                if (process.ExitCode != 0)
+                    return false;
+
+                // build x86
+                psi = new ProcessStartInfo();
+                psi.UseShellExecute = false;
+                psi.RedirectStandardError = true;
+                psi.RedirectStandardOutput = true;
+                psi.WorkingDirectory = inProj.Directory.FullName;
+                psi.FileName = msbuild.FullName;
+                psi.Arguments = string.Format(MsBuildCommand, inProj.FullName, PlatformX86);
+                psi.CreateNoWindow = true;
+
+                process = new Process();
+                process.StartInfo = psi;
+                process.OutputDataReceived += OutputReceived;
+                process.Start();
+                process.BeginErrorReadLine();
+                process.BeginOutputReadLine();
+                process.WaitForExit();
+
+                Program.WriteInfo("EXIT: {0}", process.ExitCode);
+
+
                 return process.ExitCode == 0;
             }
             catch (Exception e)

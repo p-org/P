@@ -21,7 +21,7 @@
 #define PRT_MAXFLDNAME_LENGTH 256
 #include "..\Config\PrtConfig.h"
 
-#if (PRT_PLAT != PRT_PLAT_WINDIST)
+#if !defined(PRT_PLAT_WINDIST)
 #include"PrtDTTypeDefs.h"
 
 /** Structure for representing a standard GUID */

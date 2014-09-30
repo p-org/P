@@ -12,11 +12,10 @@ extern "C"{
 /** "unsafe" string functions are used safely. Allows for portability of code between operating systems. */
 #define _CRT_SECURE_NO_WARNINGS
 
-#ifndef PRT_ARCH
-#error No architecture was specified (see PrtConfig.h for details)
-#elif PRT_ARCH == PRT_ARCH_X86
+
+#if defined(PRT_ARCH_X86)
 #define _X86_
-#elif PRT_PLAT == PRT_ARCH_X64
+#elif defined(PRT_ARCH_X64)
 #define _AMD64_
 #else
 #error An invalid architecture was specified (see PrtConfig.h for details)

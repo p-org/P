@@ -19,7 +19,7 @@
 #include "PrtDTTypes.h"
 
 
-#if (PRT_PLAT != PRT_PLAT_WINDIST)
+#if  !defined(PRT_PLAT_WINDIST)
 
 
 /** A Union type to discriminate the Prt value */

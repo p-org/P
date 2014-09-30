@@ -2032,23 +2032,7 @@ namespace Microsoft.Pc
                 count++;
                 args.Add(tmpVar);
             }
-
-            AST<Node> callExpr = MkZingCall(MkZingIdentifier(calleeName), new AST<Node>[] { MkZingIdentifier("entryCtxt") }.AsEnumerable().Union(args));
-            AST<Node> processOutput;
-            AST<Node> outExp;
-
-            var beforeLabel = ctxt.GetFreshLabel();
-            if (calleeInfo.returnType.Equals(PTypeNull))
-            {
-                processOutput = ZingData.Cnst_Nil;
-                outExp = ZingData.Cnst_Nil;
-            }
-            else
-            {
-                var retVar = ctxt.GetTmpVar(PrtValue, "ret");
-                processOutput = MkZingAssignWithClone(retVar, MkZingDot("entryCtxt", "retVal"));
-                outExp = retVar;
-            }
+            
             foreach (var x in allMachines[ctxt.machineName].funNameToFunInfo[calleeName].invokeSchedulerFuns)
             {
                 List<AST<Node>> invokeSchedulerArgs = new List<AST<Node>>();
@@ -2071,6 +2055,21 @@ namespace Microsoft.Pc
                 ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingIdentifier("invokescheduler"), invokeSchedulerArgs)));
             }
 
+            AST<Node> callExpr = MkZingCall(MkZingIdentifier(calleeName), new AST<Node>[] { MkZingIdentifier("entryCtxt") }.AsEnumerable().Union(args));
+            var beforeLabel = ctxt.GetFreshLabel();
+            AST<Node> processOutput;
+            AST<Node> outExp;
+            if (((Id)ft.Function).Name == "FunStmt")
+            {
+                processOutput = ZingData.Cnst_Nil;
+                outExp = ZingData.Cnst_Nil;
+            }
+            else
+            {
+                var retVar = ctxt.GetTmpVar(PrtValue, "ret");
+                processOutput = MkZingAssign(retVar, MkZingDot("entryCtxt", "retVal"));
+                outExp = retVar;
+            } 
             AST<Node> callStmt = MkZingSeq(
                 MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(0))),
                 MkZingBlock(beforeLabel, ctxt.EmitZingSideEffects(MkZingCallStmt(callExpr))),

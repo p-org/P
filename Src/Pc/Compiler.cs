@@ -162,7 +162,7 @@
                 return false;
             }
 
-            //// GenerateC(inputModule, inputFile).Print(Console.Out);
+            GenerateC(inputModule, inputFile).Print(Console.Out);
 
             //// Step 4. Perform Zing compilation.
             AST<Model> zingModel = GenerateZing(inputModule, model, inputFile);
@@ -741,10 +741,17 @@
                 });
             Contract.Assert(cProgramConfig != null);
             var binPath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
+
+            cProgramConfig = Factory.Instance.AddSetting(
+                cProgramConfig,
+                Factory.Instance.MkId(Configuration.ParsersCollectionName + ".C"),
+                Factory.Instance.MkCnst(typeof(CParser.Parser).Name + " at " + Path.Combine(binPath.FullName, "CParser.dll")));
+
             cProgramConfig = Factory.Instance.AddSetting(
                 cProgramConfig,
                 Factory.Instance.MkId(Configuration.Parse_ActiveRenderSetting),
-                Factory.Instance.MkCnst(typeof(CParser.Parser).Name + " at " + Path.Combine(binPath.FullName, "CParser.dll")));
+                Factory.Instance.MkCnst("C"));
+
             cProgram = (AST<Program>)Factory.Instance.ToAST(cProgramConfig.Root);
 
             cProgram.Print(System.Console.Out);

@@ -10,7 +10,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	EventId          ::= (decl: EventDecl + {NIL}, id: Natural, cnst: String, decls: EventDeclList + {NIL}).
 
 	EventId(NIL, 0, "P_EVENTS_COUNT", NIL)  :- no d is EventDecl.
-	EventId(NIL, 0, "", list)               :- list = toList(#EventDeclList, NIL, { d | d is EventDecl }), list != NULL.
+	EventId(NIL, 0, "", list)               :- list = toList(#EventDeclList, NIL, { d | d is EventDecl }), list != NIL.
 	EventId(list.head, i, cnst, list.tail)  :- EventId(NIL, i, _, list), cnst = strJoin("P_EVENT_", list.head.name).
 	EventId(list.head, j, cnst, list.tail)  :- EventId(_  , i, _, list), cnst = strJoin("P_EVENT_", list.head.name), j = i + 1. 
 	EventId(NIL, j, "P_EVENTS_COUNT", NIL)  :- EventId(dcl, i, _, NIL), dcl != NIL, j = i + 1. 

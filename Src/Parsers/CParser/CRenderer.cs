@@ -53,6 +53,8 @@
             FrmToSyntaxInfo[FormulaNodes.DatDef_Iden.Node] = new SyntaxInfo(StartDataDef, EndDataDef, ValidateDataDef);
             FrmToSyntaxInfo[FormulaNodes.Defs_Iden.Node] = new SyntaxInfo(StartDefs, EndDefs, ValidateDefs);
             FrmToSyntaxInfo[FormulaNodes.Elements_Iden.Node] = new SyntaxInfo(StartElements, EndElements, ValidateElements);
+            FrmToSyntaxInfo[FormulaNodes.Element_Iden.Node] = new SyntaxInfo(StartElement, EndElement, ValidateElement);
+
             FrmToSyntaxInfo[FormulaNodes.Fields_Iden.Node] = new SyntaxInfo(StartFields, EndFields, ValidateFields);
 
             FrmToSyntaxInfo[FormulaNodes.BaseType_Iden.Node] = new SyntaxInfo(StartTypeExpr, EndTypeExpr, ValidateBaseType);
@@ -1428,9 +1430,21 @@
 
         private static bool ValidateElements(FuncTerm node, List<Flag> flags, SuccessToken success)
         {
-            if (node.Args.Count != 3)
+            if (node.Args.Count != 2)
             {
-                flags.Add(MkBadArityFlag(node, 3));
+                flags.Add(MkBadArityFlag(node, 2));
+                success.Failed();
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool ValidateElement(FuncTerm node, List<Flag> flags, SuccessToken success)
+        {
+            if (node.Args.Count != 2)
+            {
+                flags.Add(MkBadArityFlag(node, 2));
                 success.Failed();
                 return false;
             }
@@ -1440,15 +1454,57 @@
 
         private static IEnumerable<Tuple<Node, PrintData>> StartElements(FuncTerm node, PrintData data, CTextWriter wr)
         {
-            Node arg1 = null, arg2 = null, arg3 = null;
+            Node arg1 = null, arg2 = null;
             using (var it = node.Args.GetEnumerator())
             {
                 it.MoveNext();
                 arg1 = it.Current;
                 it.MoveNext();
                 arg2 = it.Current;
+            }
+
+            var isPrintable = IsDefinition(arg1);
+
+            if (!isPrintable || !data.InQuotation)
+            {
+                if (data.InQuotation)
+                {
+                    wr.Write("${0}(", ((Id)node.Function).Name);
+                    data.PrivateSuffix = ")$";
+                }
+                else
+                {
+                    wr.Write("{0}(", ((Id)node.Function).Name);
+                    data.PrivateSuffix = ")";
+                }
+
+                var i = 0;
+                foreach (var m in node.Args)
+                {
+                    yield return new Tuple<Node, PrintData>(
+                        m,
+                        new PrintData(null, i++ < node.Args.Count - 1 ? ", " : null, 0, false));
+                }
+
+                yield break;
+            }
+
+            yield return new Tuple<Node, PrintData>(arg1, new PrintData(null, IsNil(arg2) ? "\n" : ",\n", 0, true));
+            if (!IsNil(arg2))
+            {
+                yield return new Tuple<Node, PrintData>(arg2, new PrintData(null, null, data.Indentation, true));
+            }
+        }
+
+        private static IEnumerable<Tuple<Node, PrintData>> StartElement(FuncTerm node, PrintData data, CTextWriter wr)
+        {
+            Node arg1 = null, arg2 = null;
+            using (var it = node.Args.GetEnumerator())
+            {
                 it.MoveNext();
-                arg3 = it.Current;
+                arg1 = it.Current;
+                it.MoveNext();
+                arg2 = it.Current;
             }
 
             string elementName = null;
@@ -1480,21 +1536,22 @@
             }
 
             if (IsNil(arg2))
-            {                
-                wr.Write("{0}{1}", elementName, IsNil(arg3) ? "\n" : ",\n");
+            {
+                wr.Write(elementName);
             }
             else
             {
                 wr.Write("{0} = ", elementName);
-                yield return new Tuple<Node, PrintData>(arg2, new PrintData(null, IsNil(arg3) ? "\n" : ",\n", 0, true));
-                if (!IsNil(arg3))
-                {
-                    yield return new Tuple<Node, PrintData>(arg3, new PrintData(null, null, data.Indentation, true));
-                }
+                yield return new Tuple<Node, PrintData>(arg2, new PrintData(null, "", 0, true));
             }
         }
 
         private static void EndElements(Node node, PrintData data, CTextWriter wr)
+        {
+            wr.Write(data.PrivateSuffix);
+        }
+
+        private static void EndElement(Node node, PrintData data, CTextWriter wr)
         {
             wr.Write(data.PrivateSuffix);
         }
@@ -4649,6 +4706,17 @@
                 default:
                     return false;
             }
+        }
+
+        private static bool IsElement(Node n)
+        {
+            if (n.NodeKind != NodeKind.FuncTerm)
+            {
+                return false;
+            }
+
+            var func = ((FuncTerm)n).Function as Id;
+            return func != null && func.Name == FormulaNodes.Element_Iden.Node.Name;
         }
 
         private static bool IsDefinition(Node n)

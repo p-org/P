@@ -25,7 +25,7 @@
         public CommandLineOptions()
         {
             this.liveness = LivenessOption.None;
-            this.outputDir = ".";
+            this.outputDir = null;
             this.outputFormula = false;
             this.erase = true;
             this.emitLineDirectives = false;
@@ -39,7 +39,7 @@
     {
         static void Main(string[] args)
         {
-            string inputFile = null;
+            string inputFileName = null;
             var options = new CommandLineOptions();
             if (args.Length == 0)
             {
@@ -108,9 +108,9 @@
                 }
                 else
                 {
-                    if (inputFile == null)
+                    if (inputFileName == null)
                     {
-                        inputFile = arg;
+                        inputFileName = arg;
                     }
                     else
                     {
@@ -118,9 +118,9 @@
                     }
                 }
             }
-            if (inputFile.Length > 2 && inputFile.EndsWith(".p"))
+            if (inputFileName.Length > 2 && inputFileName.EndsWith(".p"))
             {
-                var comp = new Compiler(inputFile, options);
+                var comp = new Compiler(inputFileName, options);
                 List<Flag> flags;
                 var result = comp.Compile(out flags);
                 WriteFlags(flags, options);

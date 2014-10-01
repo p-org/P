@@ -55,7 +55,7 @@
             private set;
         }
 
-        public string InputFile
+        public string InputFileName
         {
             get;
             private set;
@@ -79,10 +79,10 @@
             private set;
         }
 
-        public Compiler(string inputFile, CommandLineOptions options)
+        public Compiler(string inputFileName, CommandLineOptions options)
         {
-            Contract.Assert(!string.IsNullOrEmpty(inputFile));
-            InputFile = inputFile;
+            Contract.Assert(!string.IsNullOrEmpty(inputFileName));
+            InputFileName = inputFileName;
             Options = options;
 
             EnvParams envParams = null;
@@ -105,7 +105,7 @@
             ProgramName inputFile = null;
             try
             {
-                inputFile = new ProgramName(Path.Combine(Environment.CurrentDirectory, InputFile));
+                inputFile = new ProgramName(Path.Combine(Environment.CurrentDirectory, InputFileName));
             }
             catch (Exception e)
             {
@@ -114,7 +114,7 @@
                     new Flag(
                         SeverityKind.Error,
                         default(Span),
-                        Constants.BadFile.ToString(string.Format("{0} : {1}", InputFile, e.Message)),
+                        Constants.BadFile.ToString(string.Format("{0} : {1}", InputFileName, e.Message)),
                         Constants.BadFile.Code));
                 return false;
             }
@@ -131,7 +131,7 @@
             //// Step 2. Serialize the parsed object graph into a Formula model and install it. Should not fail.
             AST<Model> model;
             ParsedProgram = prog;
-            var inputModule = MkSafeModuleName(InputFile);
+            var inputModule = MkSafeModuleName(InputFileName);
             result = Factory.Instance.MkModel(
                 inputModule, 
                 PDomain, 
@@ -179,26 +179,30 @@
             Contract.Assert(modelWithTypes != null);
             
             AST<Model> zingModel = MkZingOutputModel();
-            string zingFileName = InputFile.Remove(InputFile.Length - 1) + "zing";
+            string directoryName = Path.GetDirectoryName(Path.GetFullPath(InputFileName));
+            string fileName = Path.GetFileNameWithoutExtension(InputFileName);
+            string zingFileName = fileName + ".zing";
+            string dllFileName = fileName + ".dll";
+            string outputDirName = Options.outputDir == null ? directoryName : Options.outputDir;
             new PToZing(this, (AST<Model>)model, (AST<Model>)modelWithTypes).GenerateZing(zingFileName, ref zingModel);
-            PrintZingFile(zingModel, CompilerEnv);
+            PrintZingFile(zingModel, CompilerEnv, outputDirName);
             var binPath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
             var zcProcessInfo = new System.Diagnostics.ProcessStartInfo(Path.Combine(binPath.FullName, "zc.exe"));
-            string zingFileNameFull = System.IO.Path.Combine(Environment.CurrentDirectory, zingFileName);
-            zcProcessInfo.Arguments = "/nowarn:292 " + zingFileNameFull;
+            string zingFileNameFull = Path.Combine(directoryName, zingFileName);
+            zcProcessInfo.Arguments = string.Format("/nowarn:292 /out:{0}\\{1} {2}", outputDirName, dllFileName, zingFileNameFull);
             zcProcessInfo.UseShellExecute = false;
             zcProcessInfo.CreateNoWindow = true;
-            Console.WriteLine("Compiling {0} ...", zingFileNameFull);
+            Console.WriteLine("Compiling {0} to {1} ...", zingFileName, dllFileName);
             var zcProcess = System.Diagnostics.Process.Start(zcProcessInfo);
             zcProcess.WaitForExit();
             return true;
         }
 
-        private bool PrintZingFile(AST<Model> m, Env env)
+        private bool PrintZingFile(AST<Model> m, Env env, string outputDirName)
         {
             var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, m.Node.Name + "_ZingModel.4ml"));
             var zingProgram = Factory.Instance.MkProgram(progName);
-            //// Set the renderer of the C program so terms can be converted to text.
+            //// Set the renderer of the Zing program so terms can be converted to text.
             var zingProgramConfig = (AST<Config>)zingProgram.FindAny(new NodePred[]
                 {
                     NodePredFactory.Instance.MkPredicate(NodeKind.Program),
@@ -244,13 +248,13 @@
                 fileQuery,
                 (p, n) =>
                 {
-                    success = PrintZingFile(n) && success;
+                    success = PrintZingFile(n, outputDirName) && success;
                 });
 
             return success;
         }
 
-        private bool PrintZingFile(Node n)
+        private bool PrintZingFile(Node n, string outputDirName)
         {
             var file = (FuncTerm)n;
             string fileName;
@@ -258,7 +262,7 @@
             using (var it = file.Args.GetEnumerator())
             {
                 it.MoveNext();
-                fileName = System.IO.Path.Combine(Environment.CurrentDirectory, ((Cnst)it.Current).GetStringValue());
+                fileName = ((Cnst)it.Current).GetStringValue();
                 it.MoveNext();
                 fileBody = (Quote)it.Current;
             }
@@ -266,7 +270,8 @@
 
             try
             {
-                using (var sw = new System.IO.StreamWriter(fileName))
+                var fullPath = Path.Combine(outputDirName, fileName);
+                using (var sw = new System.IO.StreamWriter(fullPath))
                 {
                     foreach (var c in fileBody.Contents)
                     {

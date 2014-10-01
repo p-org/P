@@ -132,8 +132,8 @@
     <ClCompile Include="PrtDService.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Prt\Prt.vcxproj">
-      <Project>{29d30682-beb0-4570-82b5-2a835e402277}</Project>
+    <ProjectReference Include="..\..\PrtDist\PrtDist\PrtDist.vcxproj">
+      <Project>{88589011-c704-470a-8a39-05dc0c816da8}</Project>
     </ProjectReference>
     <ProjectReference Include="..\PrtDistLogger\PrtDistLogger.vcxproj">
       <Project>{7fdc5451-9d00-47e1-af54-62ad736bec6b}</Project>

@@ -1,7 +1,6 @@
 #ifndef PRTCMDPRINTING_H
 #define PRTCMDPRINTING_H
 
-#include <stdio.h>
 #include "PrtHeaders.h"
 
 void PrtCmdPrintType(_In_ PRT_TYPE type);

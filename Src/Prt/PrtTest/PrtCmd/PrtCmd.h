@@ -3,6 +3,5 @@
 
 #include "PrtHeaders.h"
 #include "PrtCmdPrinting.h"
-#include <stdio.h>
 
 #endif

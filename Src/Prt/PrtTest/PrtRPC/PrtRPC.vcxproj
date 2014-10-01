@@ -71,7 +71,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Prt/;../../PrtDist/PrtDistIDL/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../Prt/;../../PrtDist/PrtDistIDL/;../../Resources/PThreads</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>PRT_ARCH_X86;PRT_PLAT_WINDIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>

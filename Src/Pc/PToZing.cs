@@ -981,12 +981,12 @@ namespace Microsoft.Pc
         #endregion
 
         #region ZingCompiler
-        public void GenerateZing(ref AST<Model> outModel)
+        public void GenerateZing(string zingFileName, ref AST<Model> outModel)
         {
             List<AST<Node>> elements = new List<AST<Node>>();
             MkZingEnums(elements);
             MkZingClasses(elements);
-            outModel = Add(outModel, MkZingFile("output.zing", elements));
+            outModel = Add(outModel, MkZingFile(zingFileName, elements));
         }
 
         private void MkZingEnums(List<AST<Node>> elements)

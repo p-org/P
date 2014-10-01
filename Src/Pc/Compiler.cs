@@ -102,7 +102,6 @@
             AttemptedCompile = true;
 
             //// Step 0. Make sure the filename is meaningful.
-            flags = new List<Flag>();
             ProgramName inputFile = null;
             try
             {
@@ -110,6 +109,7 @@
             }
             catch (Exception e)
             {
+                flags = new List<Flag>();
                 flags.Add(
                     new Flag(
                         SeverityKind.Error,
@@ -121,11 +121,8 @@
 
             //// Step 1. Attempt to parse the P program, and stop if parse fails.
             PProgram prog;
-            List<Flag> parserFlags;
             var parser = new Parser.Parser();
-            var result = parser.ParseFile(inputFile, out parserFlags, out prog);
-            flags.AddRange(parserFlags);
-
+            var result = parser.ParseFile(inputFile, out flags, out prog);
             if (!result)
             {
                 return false;
@@ -165,8 +162,35 @@
             ////GenerateC(inputModule, inputFile).Print(Console.Out);
 
             //// Step 4. Perform Zing compilation.
-            AST<Model> zingModel = GenerateZing(inputModule, model, inputFile);
+            var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
+            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(inputModule, null, inputFile.ToString()));
+            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(inputModule + "_WithTypes"));
+            Task<ApplyResult> apply;
+            Formula.Common.Rules.ExecuterStatistics stats;
+            CompilerEnv.Apply(transStep, false, false, out flags, out apply, out stats);
+            apply.RunSynchronously();
+            var extractTask = apply.Result.GetOutputModel(
+                inputModule + "_WithTypes",
+                new ProgramName(Path.Combine(Environment.CurrentDirectory, inputModule + "_WithTypes.4ml")),
+                null);
+            extractTask.Wait();
+            var modelWithTypes = extractTask.Result.FindAny(
+                new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
+            Contract.Assert(modelWithTypes != null);
+            
+            AST<Model> zingModel = MkZingOutputModel();
+            string zingFileName = InputFile.Remove(InputFile.Length - 1) + "zing";
+            new PToZing(this, (AST<Model>)model, (AST<Model>)modelWithTypes).GenerateZing(zingFileName, ref zingModel);
             PrintZingFile(zingModel, CompilerEnv);
+            var binPath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
+            var zcProcessInfo = new System.Diagnostics.ProcessStartInfo(Path.Combine(binPath.FullName, "zc.exe"));
+            string zingFileNameFull = System.IO.Path.Combine(Environment.CurrentDirectory, zingFileName);
+            zcProcessInfo.Arguments = "/nowarn:292 " + zingFileNameFull;
+            zcProcessInfo.UseShellExecute = false;
+            zcProcessInfo.CreateNoWindow = true;
+            Console.WriteLine("Compiling {0} ...", zingFileNameFull);
+            var zcProcess = System.Diagnostics.Process.Start(zcProcessInfo);
+            zcProcess.WaitForExit();
             return true;
         }
 
@@ -238,7 +262,7 @@
                 it.MoveNext();
                 fileBody = (Quote)it.Current;
             }
-            Console.WriteLine("Writing {0}...", fileName);
+            Console.WriteLine("Writing {0} ...", fileName);
 
             try
             {
@@ -697,38 +721,6 @@
             }
 
             return aliases;
-        }
-
-        private AST<Model> GenerateZing(string inputModelName, AST<Model> inputModel, ProgramName inputProgram)
-        {
-            //// Get out the P program with type annotations. The Zing compiler is going to walk the AST.
-            var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
-            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(inputModelName, null, inputProgram.ToString()));
-            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(inputModelName + "_WithTypes"));
-            List<Flag> flags;
-            Task<ApplyResult> apply;
-            Formula.Common.Rules.ExecuterStatistics stats;
-            CompilerEnv.Apply(transStep, false, false, out flags, out apply, out stats);
-            apply.RunSynchronously();
-
-            var extractTask = apply.Result.GetOutputModel(
-                inputModelName + "_WithTypes",
-                new ProgramName(Path.Combine(Environment.CurrentDirectory, inputModelName + "_WithTypes.4ml")),
-                null);
-            extractTask.Wait();
-
-            var modelWithTypes = extractTask.Result.FindAny(
-                new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
-            Contract.Assert(modelWithTypes != null);
-
-            // Visit modelWithTypes.
-            // modelWithTypes.Print(System.Console.Out);
-
-            var outZingModel = MkZingOutputModel();
-            new PToZing(this, (AST<Model>)inputModel, (AST<Model>)modelWithTypes).GenerateZing(ref outZingModel);           
-            // outZingModel.Print(System.Console.Out);
-
-            return outZingModel;
         }
 
         private AST<Model> GenerateC(string inputModelName, ProgramName inputProgram)

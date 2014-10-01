@@ -118,18 +118,23 @@
                     }
                 }
             }
-
-            var comp = new Compiler(args[0], options);
-            List<Flag> flags;
-            var result = comp.Compile(out flags);
-            WriteFlags(flags, options);
-
-            if (!result)
+            if (inputFile.Length > 2 && inputFile.EndsWith(".p"))
             {
-                WriteMessageLine("Compilation failed", SeverityKind.Error);
-            }
-            return;
+                var comp = new Compiler(inputFile, options);
+                List<Flag> flags;
+                var result = comp.Compile(out flags);
+                WriteFlags(flags, options);
 
+                if (!result)
+                {
+                    WriteMessageLine("Compilation failed", SeverityKind.Error);
+                }
+                return;
+            }
+            else
+            {
+                Console.WriteLine("Illegal input file name");
+            }
         error:
             {
                 Console.WriteLine("USAGE: Pc.exe file.p [options]");

@@ -104,8 +104,9 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="zc">
-      <HintPath>..\..\Ext\Zing\zc.exe</HintPath>
+    <Reference Include="zc, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Ext\Zing\x86\zc.exe</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

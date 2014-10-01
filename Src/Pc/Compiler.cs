@@ -43,7 +43,7 @@
         {
             ReservedModuleToLocation = new Dictionary<string, string>();
             ReservedModuleToLocation.Add(PDomain, "Domains\\P.4ml");
-            ReservedModuleToLocation.Add(CDomain, "Domains\\P.4ml");
+            ReservedModuleToLocation.Add(CDomain, "Domains\\C.4ml");
             ReservedModuleToLocation.Add(ZingDomain, "Domains\\Zing.4ml");
             ReservedModuleToLocation.Add(P2InfTypesTransform, "Transforms\\PWithInferredTypes.4ml");
             ReservedModuleToLocation.Add(P2CTransform, "Transforms\\P2CProgram.4ml");
@@ -162,15 +162,15 @@
                 return false;
             }
 
-            GenerateC(inputModule, inputFile).Print(Console.Out);
+            ////GenerateC(inputModule, inputFile).Print(Console.Out);
 
             //// Step 4. Perform Zing compilation.
             AST<Model> zingModel = GenerateZing(inputModule, model, inputFile);
-            PrintFile(zingModel, CompilerEnv);
+            PrintZingFile(zingModel, CompilerEnv);
             return true;
         }
 
-        private bool PrintFile(AST<Model> m, Env env)
+        private bool PrintZingFile(AST<Model> m, Env env)
         {
             var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, m.Node.Name + "_ZingModel.4ml"));
             var zingProgram = Factory.Instance.MkProgram(progName);
@@ -220,13 +220,13 @@
                 fileQuery,
                 (p, n) =>
                 {
-                    success = PrintFile(n) && success;
+                    success = PrintZingFile(n) && success;
                 });
 
             return success;
         }
 
-        private bool PrintFile(Node n)
+        private bool PrintZingFile(Node n)
         {
             var file = (FuncTerm)n;
             string fileName;
@@ -247,6 +247,26 @@
                     foreach (var c in fileBody.Contents)
                     {
                         Factory.Instance.ToAST(c).Print(sw);
+                    }
+                    try
+                    {
+                        var asm = Assembly.GetExecutingAssembly();
+                        using (var sr = new StreamReader(asm.GetManifestResourceStream("Pc.Zing.Prt.zing")))
+                        {
+                            sw.Write(sr.ReadToEnd());
+                        }
+                        using (var sr = new StreamReader(asm.GetManifestResourceStream("Pc.Zing.PrtTypes.zing")))
+                        {
+                            sw.Write(sr.ReadToEnd());
+                        }
+                        using (var sr = new StreamReader(asm.GetManifestResourceStream("Pc.Zing.PrtValues.zing")))
+                        {
+                            sw.Write(sr.ReadToEnd());
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        throw new Exception("Unable to load resources: " + e.Message);
                     }
                 }
             }

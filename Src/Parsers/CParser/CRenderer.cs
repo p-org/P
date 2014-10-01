@@ -1463,7 +1463,7 @@
                 arg2 = it.Current;
             }
 
-            var isPrintable = IsDefinition(arg1);
+            var isPrintable = IsElement(arg1);
 
             if (!isPrintable || !data.InQuotation)
             {

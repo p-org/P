@@ -1,0 +1,106 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{88589011-C704-470A-8A39-05DC0C816DA8}</ProjectGuid>
+    <RootNamespace>PrtDist</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>../../Prt/;../PrtDistIDL/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_ARCH_X86;PRT_PLAT_WINDIST;IGNORE_FRG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\Prt\PrtConfig.h" />
+    <ClInclude Include="..\..\Prt\PrtConfigWinDist.h" />
+    <ClInclude Include="..\..\Prt\PrtDTTypeDefs.h" />
+    <ClInclude Include="..\..\Prt\PrtDTTypes.h" />
+    <ClInclude Include="..\..\Prt\PrtDTValues.h" />
+    <ClInclude Include="..\..\Prt\PrtHeaders.h" />
+    <ClInclude Include="..\..\Prt\PrtProcess.h" />
+    <ClInclude Include="..\..\Prt\PrtSMPrivate.h" />
+    <ClInclude Include="..\..\Prt\PrtSMProtected.h" />
+    <ClInclude Include="..\..\Prt\PrtSMProtectedTypes.h" />
+    <ClInclude Include="..\..\Prt\PrtSMPublic.h" />
+    <ClInclude Include="..\..\Prt\PrtSMPublicTypes.h" />
+    <ClInclude Include="..\..\Prt\PrtSMTypeDefs.h" />
+    <ClInclude Include="PrtDistExternalHandlers.h" />
+    <ClInclude Include="PrtDistSerializer.h" />
+    <ClInclude Include="PrtDistToString.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\Prt\PrtDTTypes.c" />
+    <ClCompile Include="..\..\Prt\PrtDTValues.c" />
+    <ClCompile Include="..\..\Prt\PrtProcess.c" />
+    <ClCompile Include="..\..\Prt\PrtSMRuntime.c" />
+    <ClCompile Include="PrtConfigWinDist.c" />
+    <ClCompile Include="PrtDistExternalHandlers.c" />
+    <ClCompile Include="PrtDistSerializer.c" />
+    <ClCompile Include="PrtDistToString.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PrtDistIDL\PrtDistIDL.vcxproj">
+      <Project>{13dcfb0e-a18a-4e6b-ae2e-f46a7b89a145}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

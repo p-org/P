@@ -13,14 +13,6 @@ extern "C"{
 #define _CRT_SECURE_NO_WARNINGS
 
 
-#if defined(PRT_ARCH_X86)
-#define _X86_
-#elif defined(PRT_ARCH_X64)
-#define _AMD64_
-#else
-#error An invalid architecture was specified (see PrtConfig.h for details)
-#endif
-
 #ifdef PRT_DEBUG
 #ifndef _DEBUG
 #define _DEBUG
@@ -45,7 +37,6 @@ extern "C"{
 
 #include <sal.h>
 #include <stddef.h>
-#include <synchapi.h>
 #include <windows.h>
 #include <stdlib.h>
 #include <stdio.h>

@@ -41,6 +41,7 @@ namespace CParser
         public static AST<Id> Fields_Iden = Factory.Instance.MkId("Fields");
         public static AST<Id> Params_Iden = Factory.Instance.MkId("Params");
         public static AST<Id> Elements_Iden = Factory.Instance.MkId("Elements");
+        public static AST<Id> Element_Iden = Factory.Instance.MkId("Element");
 
         public static AST<Id> Nil_Iden = Factory.Instance.MkId("NIL");
         public static AST<Id> True_Iden = Factory.Instance.MkId("TRUE");

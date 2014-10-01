@@ -1418,10 +1418,10 @@ __inout PRT_SMCONTEXT	*context
 	e.event = PrtMkNullValue(); 
 	e.payload = PrtMkNullValue();
 
-	PRT_DBG_ASSERT(queue->Size <= queueLength, "Check Failed");
-	PRT_DBG_ASSERT(queue->Size >= 0, "Check Failed");
-	PRT_DBG_ASSERT(queue->Head >= 0, "Check Failed");
-	PRT_DBG_ASSERT(queue->Tail >= 0, "Check Failed");
+	PRT_DBG_ASSERT(queue->size <= queueLength, "Check Failed");
+	PRT_DBG_ASSERT(queue->size >= 0, "Check Failed");
+	PRT_DBG_ASSERT(queue->headIndex >= 0, "Check Failed");
+	PRT_DBG_ASSERT(queue->tailIndex >= 0, "Check Failed");
 
 	if (PrtIsQueueEmpty(queue)) {
 		return e;
@@ -1476,10 +1476,10 @@ __inout PRT_SMCONTEXT	*context
 	context->trigger.event = e.event;
 	context->trigger.payload = e.payload;
 	
-	PRT_DBG_ASSERT(queue->Size <= queueLength, "Check Failed");
-	PRT_DBG_ASSERT(queue->Size >= 0, "Check Failed");
-	PRT_DBG_ASSERT(queue->Head >= 0, "Check Failed");
-	PRT_DBG_ASSERT(queue->Tail >= 0, "Check Failed");
+	PRT_DBG_ASSERT(queue->size <= queueLength, "Check Failed");
+	PRT_DBG_ASSERT(queue->size >= 0, "Check Failed");
+	PRT_DBG_ASSERT(queue->headIndex >= 0, "Check Failed");
+	PRT_DBG_ASSERT(queue->tailIndex >= 0, "Check Failed");
 
 	//
 	//Log

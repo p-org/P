@@ -189,7 +189,7 @@ struct _PRT_EVENTQUEUE
 	PRT_UINT16		 headIndex;
 	PRT_UINT16		 tailIndex;
 	PRT_UINT16		 size;
-	PRT_BOOLEAN		isFull;
+	PRT_BOOLEAN		 isFull;
 };
 
 /*********************************************************************************

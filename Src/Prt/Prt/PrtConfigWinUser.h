@@ -25,7 +25,6 @@ extern "C"{
 #include <crtdbg.h>
 #include <sal.h>
 #include <stddef.h>
-#include <synchapi.h>
 #include <windows.h>
 #include <stdio.h>
 

@@ -133,8 +133,8 @@
     <ClInclude Include="PrtRPC.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\PRuntime\PrtDistributed\PrtDistributed\PrtDistributed.vcxproj">
-      <Project>{2ab7385e-a8a6-42f3-9a65-1566e23031b6}</Project>
+    <ProjectReference Include="..\..\PrtDist\PrtDist\PrtDist.vcxproj">
+      <Project>{88589011-c704-470a-8a39-05dc0c816da8}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -16,6 +16,8 @@ namespace PlangBuild
         private const string ConfigRelease = "Release";
         private const string PlatformX86 = "x86";
         private const string PlatformX64 = "x64";
+        
+
 
         /// <summary>
         /// Project is described by:
@@ -25,7 +27,7 @@ namespace PlangBuild
         /// </summary>
         private static readonly Tuple<bool, string, string>[] Projects = new Tuple<bool, string, string>[]
         {
-            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\Pc.csproj", PlatformX64),
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\Pcx64.csproj", PlatformX64),
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\Pc.csproj", PlatformX86),
         };
         
@@ -421,6 +423,7 @@ namespace PlangBuild
 
             result = DoMove(isBldDebug ? DebugMoveMap : ReleaseMoveMap) && result;
 
+            /* commentted out the runtime copy 
             var path = isBldDebug ? "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime" : "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime";
             var runningLoc = new FileInfo(Assembly.GetExecutingAssembly().Location);
             var inDir = new DirectoryInfo(Path.Combine(runningLoc.Directory.FullName, "..\\..\\..\\..\\..\\Runtime"));
@@ -437,8 +440,18 @@ namespace PlangBuild
                     inFile.CopyTo(outFile.FullName, true);
                 }
             }
+             */
             return result;
         }
+
+        #region Runtime Files List
+        private static readonly Tuple<string, string>[] headersMoveMap = new Tuple<string, string>[] {
+            new Tuple<string, string>(
+                // x86
+                "..\\..\\..\\..\\..\\Src\\Prt\\PRuntime\\Prt\\PrtHeaders.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtHeaders.h")
+        };
+        #endregion
 
         private static bool DoMove(Tuple<string, string>[] moveMap)
         {

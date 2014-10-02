@@ -1,0 +1,4 @@
+run: ..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+arg: Actions_1.dll
+acc: .\
+dsc: Testing assert

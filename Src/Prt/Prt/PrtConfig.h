@@ -33,11 +33,11 @@
 #endif
 
 #if defined(PRT_PLAT_WINUSER)
-#include "PrtConfigWinUser.h"
+#include "PrtWinUser.h"
 #elif defined(PRT_PLAT_WINKMDF)
-#include "PrtConfigWinKMDF.h"
+#include "PrtWinKMDF.h"
 #elif defined(PRT_PLAT_WINDIST)
-#include "PrtConfigWinDist.h"
+#include "PrtWinDist.h"
 #else
 #error An invalid platform was specified (see PrtConfig.h for details)
 #endif

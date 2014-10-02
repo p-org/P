@@ -15,15 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="PrtConfigWinUser.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PrtWUExternalHandlers.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PrtWUToString.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Prt\PrtDTTypes.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -36,21 +27,18 @@
     <ClCompile Include="..\Prt\PrtSMRuntime.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PrtExternalHandlers.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrtToString.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrtWinUser.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PrtWUExternalHandlers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PrtWUHeaders.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PrtWUToString.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Prt\PrtConfig.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Prt\PrtConfigWinUser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Prt\PrtDTTypeDefs.h">
@@ -84,6 +72,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Prt\PrtSMTypeDefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Prt\PrtToString.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Prt\PrtWinUser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Prt\PrtExternalHandlers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

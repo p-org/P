@@ -135,10 +135,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Prt\PrtConfig.h" />
-    <ClInclude Include="..\..\Prt\PrtConfigWinDist.h" />
     <ClInclude Include="..\..\Prt\PrtDTTypeDefs.h" />
     <ClInclude Include="..\..\Prt\PrtDTTypes.h" />
     <ClInclude Include="..\..\Prt\PrtDTValues.h" />
+    <ClInclude Include="..\..\Prt\PrtExternalHandlers.h" />
     <ClInclude Include="..\..\Prt\PrtHeaders.h" />
     <ClInclude Include="..\..\Prt\PrtProcess.h" />
     <ClInclude Include="..\..\Prt\PrtSMPrivate.h" />
@@ -147,19 +147,19 @@
     <ClInclude Include="..\..\Prt\PrtSMPublic.h" />
     <ClInclude Include="..\..\Prt\PrtSMPublicTypes.h" />
     <ClInclude Include="..\..\Prt\PrtSMTypeDefs.h" />
-    <ClInclude Include="PrtDistExternalHandlers.h" />
+    <ClInclude Include="..\..\Prt\PrtToString.h" />
+    <ClInclude Include="..\..\Prt\PrtWinDist.h" />
     <ClInclude Include="PrtDistSerializer.h" />
-    <ClInclude Include="PrtDistToString.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Prt\PrtDTTypes.c" />
     <ClCompile Include="..\..\Prt\PrtDTValues.c" />
     <ClCompile Include="..\..\Prt\PrtProcess.c" />
     <ClCompile Include="..\..\Prt\PrtSMRuntime.c" />
-    <ClCompile Include="PrtConfigWinDist.c" />
-    <ClCompile Include="PrtDistExternalHandlers.c" />
+    <ClCompile Include="PrtWinDist.c" />
+    <ClCompile Include="PrtExternalHandlers.c" />
     <ClCompile Include="PrtDistSerializer.c" />
-    <ClCompile Include="PrtDistToString.c" />
+    <ClCompile Include="PrtToString.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PrtDistIDL\PrtDistIDL.vcxproj">

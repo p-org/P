@@ -138,16 +138,16 @@
     <ClCompile Include="..\Prt\PrtDTValues.c" />
     <ClCompile Include="..\Prt\PrtProcess.c" />
     <ClCompile Include="..\Prt\PrtSMRuntime.c" />
-    <ClCompile Include="PrtConfigWinUser.c" />
-    <ClCompile Include="PrtWUExternalHandlers.c" />
-    <ClCompile Include="PrtWUToString.c" />
+    <ClCompile Include="PrtWinUser.c" />
+    <ClCompile Include="PrtExternalHandlers.c" />
+    <ClCompile Include="PrtToString.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Prt\PrtConfig.h" />
-    <ClInclude Include="..\Prt\PrtConfigWinUser.h" />
     <ClInclude Include="..\Prt\PrtDTTypeDefs.h" />
     <ClInclude Include="..\Prt\PrtDTTypes.h" />
     <ClInclude Include="..\Prt\PrtDTValues.h" />
+    <ClInclude Include="..\Prt\PrtExternalHandlers.h" />
     <ClInclude Include="..\Prt\PrtHeaders.h" />
     <ClInclude Include="..\Prt\PrtProcess.h" />
     <ClInclude Include="..\Prt\PrtSMPrivate.h" />
@@ -156,9 +156,8 @@
     <ClInclude Include="..\Prt\PrtSMPublic.h" />
     <ClInclude Include="..\Prt\PrtSMPublicTypes.h" />
     <ClInclude Include="..\Prt\PrtSMTypeDefs.h" />
-    <ClInclude Include="PrtWUExternalHandlers.h" />
-    <ClInclude Include="PrtWUHeaders.h" />
-    <ClInclude Include="PrtWUToString.h" />
+    <ClInclude Include="..\Prt\PrtToString.h" />
+    <ClInclude Include="..\Prt\PrtWinUser.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -10,5 +10,7 @@
 #include "PrtSMPublicTypes.h"
 #include "PrtDTTypes.h"
 #include "PrtDTValues.h"
+#include "PrtToString.h"
+#include "PrtExternalHandlers.h"
 
 #endif

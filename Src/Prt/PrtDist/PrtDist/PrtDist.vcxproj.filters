@@ -39,16 +39,7 @@
     <ClInclude Include="..\..\Prt\PrtSMPublicTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Prt\PrtConfigWinDist.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PrtDistExternalHandlers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PrtDistSerializer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PrtDistToString.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Prt\PrtDTTypes.h">
@@ -61,6 +52,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Prt\PrtDTTypeDefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Prt\PrtExternalHandlers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Prt\PrtToString.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Prt\PrtWinDist.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -77,16 +77,16 @@
     <ClCompile Include="..\..\Prt\PrtSMRuntime.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PrtConfigWinDist.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PrtDistExternalHandlers.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="PrtDistSerializer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PrtDistToString.c">
+    <ClCompile Include="PrtWinDist.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrtExternalHandlers.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrtToString.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

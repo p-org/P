@@ -88,103 +88,91 @@ domain PData
 
 domain PStructuralTyping extends PData
 {
-	////// Duplicate Declarations 
-    DuplicateEvent ::= (EventDecl, EventDecl).
-	DuplicateState ::= (StateDecl, StateDecl).
-	DuplicateFunct ::= (FunDecl, FunDecl).
-	DuplicateTransDecl ::= (TransDecl, TransDecl).
-	DuplicateDoDecl ::= (DoDecl, DoDecl).
-	DuplicateVarDecl ::= (VarDecl, VarDecl).
-	DuplicateMacDecl ::= (MachineDecl, MachineDecl).
+    /*************************************************************/
+	conforms no missingDecl. 
+	conforms no OneDeclError(_).
+	conforms no TwoDeclError(_, _).
+	conforms no DeclFunError(_, _).
+    /*************************************************************/
+
+	////// Three kinds of declaration errors.
+	missingDecl  :- missingDecl.
+    OneDeclError ::= (PDecl).
+    TwoDeclError ::= (PDecl, PDecl).
+    DeclFunError ::= (PDecl, String).
+    PDecl ::= EventDecl + MachineDecl + VarDecl + FunDecl + StateDecl + TransDecl + DoDecl.
 	
 	[ rule_Classes = '"error, msg: An event has multiple definitions"']
-	DuplicateEvent(e1, e2) :- e1 is EventDecl, e2 is EventDecl, e1.name = e2.name, e1 != e2.
+	TwoDeclError(e1, e2) :- e1 is EventDecl, e2 is EventDecl, e1.name = e2.name, e1 != e2.
 	[ rule_Classes = '"error, msg: Multiple states with the same name"']
-	DuplicateState(s1, s2) :- s1 != s2, s1 is StateDecl, s2 is StateDecl, s1.name = s2.name, s1.owner = s2.owner.
+	TwoDeclError(s1, s2) :- s1 != s2, s1 is StateDecl, s2 is StateDecl, s1.name = s2.name, s1.owner = s2.owner.
 	[ rule_Classes = '"error, msg: Multiple Functions with the same name"']
-	DuplicateFunct(f1, f2) :- f1 != f2, f1 is FunDecl, f2 is FunDecl, f1.name = f2.name, f1.owner = f2.owner.
+	TwoDeclError(f1, f2) :- f1 != f2, f1 is FunDecl, f2 is FunDecl, f1.name = f2.name, f1.owner = f2.owner.
 	[ rule_Classes = '"error, msg: Multiple variables with the same name"']
-	DuplicateVarDecl(v1, v2) :- v1 != v2, v1 is VarDecl, v2 is VarDecl, v1.name = v2.name, v1.owner = v2.owner.
+	TwoDeclError(v1, v2) :- v1 != v2, v1 is VarDecl, v2 is VarDecl, v1.name = v2.name, v1.owner = v2.owner.
 	[ rule_Classes = '"error, msg: Multiple machines with the same name"']
-	DuplicateMacDecl(m1, m2) :- m1 != m2, m1 is MachineDecl, m2 is MachineDecl, m1.name = m2.name.
+	TwoDeclError(m1, m2) :- m1 != m2, m1 is MachineDecl, m2 is MachineDecl, m1.name = m2.name.
 	[ rule_Classes = '"error, msg: Multiple Transitions over the same event"']
-	DuplicateTransDecl(t1, t2) :- t1 != t2, t1 is TransDecl, t2 is TransDecl, t1.src = t2.src, t1.trig = t2.trig.
+	TwoDeclError(t1, t2) :- t1 != t2, t1 is TransDecl, t2 is TransDecl, t1.src = t2.src, t1.trig = t2.trig.
 	[ rule_Classes = '"error, msg: Multiple actions over the same event"']
-	DuplicateDoDecl(a1, a2) :- a1 != a2, a1 is DoDecl(state, owner, _), a2 is DoDecl(state, owner, _), a1.src = a2.src, a1.trig = a2.trig.
-	
+	TwoDeclError(a1, a2) :- a1 != a2, a1 is DoDecl(state, owner, _), a2 is DoDecl(state, owner, _), a1.src = a2.src, a1.trig = a2.trig.
 	
 	//// There should be a main machine
 	[rule_Classes = '"error, msg: No Main Machine"']
-	noMainMachine :- no MachineDecl(_, _, _, _, TRUE).
-	multipleMainMachines ::= (MachineDecl, MachineDecl).
+	missingDecl :- no MachineDecl(_, _, _, _, TRUE).
 	[ rule_Classes = '"error, msg: Multiple machines are declared as main machines"']
-	multipleMainMachines(m1, m2) :- m1 is MachineDecl, m2 is MachineDecl, m1.isMain = TRUE, m2.isMain = TRUE, m1 != m2.
-	
+	TwoDeclError(m1, m2) :- m1 is MachineDecl, m2 is MachineDecl, m1.isMain = TRUE, m2.isMain = TRUE, m1 != m2.
+		
 	//// there should be a start state in each state machine.
-	noStartState ::= (MachineDecl).
 	[ rule_Classes = '"error, msg: no start state in machine"']
-	noStartState(m) :- m is MachineDecl, no StateDecl(s, m , _, _, _), m.start = s.
+	OneDeclError(m) :- m is MachineDecl, no StateDecl(s, m , _, _, _), m.start = s.
 	
 	//Valid TransDecl
-	invalidEventOnTransDecl ::= (TransDecl).
 	[ rule_Classes = '"error, msg: transition on an undefined event"']
-	invalidEventOnTransDecl(trns) :- trns is TransDecl, no EventDecl(trns.trig, _, _), trns.trig != DEFAULT, trns.trig != HALT.
-	invalidStateOnTransDecl ::=(TransDecl).
+	OneDeclError(trns) :- trns is TransDecl, no EventDecl(trns.trig, _, _), trns.trig != DEFAULT, trns.trig != HALT.
 	[rule_Classes = '"error, msg: transition to an undefined state"']
-	invalidStateOnTransDecl(trns) :- trns is TransDecl, no StateDecl(trns.dst, trns.src.owner, _, _, _).
+	OneDeclError(trns) :- trns is TransDecl, no StateDecl(trns.dst, trns.src.owner, _, _, _).
 	
-	invalidFunOnTransDecl ::= (TransDecl).
 	[rule_Classes = '"error, msg: transition function not defined"']
-	invalidFunOnTransDecl(trns) :- trns is TransDecl(_, _, _, act), act : String , no FunDecl(act, trns.src.owner, _, _, _, _).
+	OneDeclError(trns) :- trns is TransDecl(_, _, _, act), act : String , no FunDecl(act, trns.src.owner, _, _, _, _).
 	
-	invalidFunTypeOnTransDecl ::= (TransDecl).
 	[rule_Classes = '"error, msg: function cannot take arguments"']
-	invalidFunTypeOnTransDecl(trns) :- trns is TransDecl(_, _, _, act), act : String , FunDecl(act, trns.src.owner, _, p, _, _), p != NIL.
+	OneDeclError(trns) :- trns is TransDecl(_, _, _, act), act : String , FunDecl(act, trns.src.owner, _, p, _, _), p != NIL.
 	
 	//valid doDecl
-	invalidEventOnDoDecl ::= (DoDecl).
 	[ rule_Classes = '"error, msg: action on an undefined event"']
-	invalidEventOnDoDecl(doD) :- doD is DoDecl, no EventDecl(doD.trig, _, _), doD.trig != HALT, doD.trig != DEFAULT.
+	OneDeclError(doD) :- doD is DoDecl, no EventDecl(doD.trig, _, _), doD.trig != HALT, doD.trig != DEFAULT.
 	
-	invalidFunOnDoDecl ::= (DoDecl).
 	[rule_Classes = '"error, msg: function not defined"']
-	invalidFunOnDoDecl(trns) :- trns is DoDecl(_, _, act), act : String, no FunDecl(act, trns.src.owner, _, _, _, _).
+	OneDeclError(trns) :- trns is DoDecl(_, _, act), act : String, no FunDecl(act, trns.src.owner, _, _, _, _).
 	
-	invalidFunTypeOnDoDecl ::= (DoDecl).
 	[rule_Classes = '"error, msg: function cannot take arguments"']
-	invalidFunTypeOnDoDecl(trns) :- trns is DoDecl(_, _, act), act : String , FunDecl(act, trns.src.owner, _, p, _, _), p != NIL.
+	OneDeclError(trns) :- trns is DoDecl(_, _, act), act : String , FunDecl(act, trns.src.owner, _, p, _, _), p != NIL.
 	
 	//Entry Exit Functions
-	invalidFunForEntry ::= (StateDecl, String).
 	[rule_Classes = '"error, msg: undefined function for entry"']
-	invalidFunForEntry(s, eF) :- s is StateDecl(_, _, eF, _, _), eF : String, no FunDecl(eF, s.owner, _, _, _, _).
-	invalidFunForExit ::= (StateDecl, String).
+	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _), eF : String, no FunDecl(eF, s.owner, _, _, _, _).
+
 	[rule_Classes = '"error, msg: undefined function for exit"']
-	invalidFunForExit(s, eF) :- s is StateDecl(_, _, _, eF, _), eF : String, no FunDecl(eF, s.owner, _, _, _, _).
+	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _), eF : String, no FunDecl(eF, s.owner, _, _, _, _).
 	
-	invalidFunTypeOnEntry ::= (StateDecl).
 	[rule_Classes = '"error, msg: function cannot take arguments"']
-	invalidFunTypeOnEntry(s) :- s is StateDecl(_, _, eF, _, _), eF : String , FunDecl(eF, s.owner, _, p, _, _), p != NIL.
+	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _), eF : String , FunDecl(eF, s.owner, _, p, _, _), p != NIL.
 	
-	invalidFunTypeOnExit ::= (StateDecl).
 	[rule_Classes = '"error, msg: function cannot take arguments"']
-	invalidFunTypeOnExit(s) :- s is StateDecl(_, _, _, eF, _), eF : String , FunDecl(eF, s.owner, _, p, _, _), p != NIL.
+	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _), eF : String , FunDecl(eF, s.owner, _, p, _, _), p != NIL.
 	
 	//model only in real
-	modelFunOnlyInReal ::= (FunDecl).
 	[rule_Classes = '"error, msg: model functions can be declared only in real machines"']
-	modelFunOnlyInReal(f) :- f is FunDecl, f.owner.kind != REAL, f.kind = MODEL.
+	OneDeclError(f) :- f is FunDecl, f.owner.kind != REAL, f.kind = MODEL.
 	
 	//cannot have default in Monitors
-	noDefaultTransInMonitors ::= (TransDecl).
 	[rule_Classes = '"error, msg: default transitions not allowed in monitors"']
-	noDefaultTransInMonitors(t) :- t is TransDecl(s, DEFAULT, _, _), s.owner.kind = MONITOR, t.trig = DEFAULT.
+	OneDeclError(t) :- t is TransDecl(s, DEFAULT, _, _), s.owner.kind = MONITOR, t.trig = DEFAULT.
 	
 	//no defer in monitors
-	noDeferInMonitor ::= (DoDecl).
 	[rule_Classes = '"error, msg: defer not allowed in monitor"']
-	noDeferInMonitor(d) :- d is DoDecl(s, _, DEFER), s.owner.kind = MONITOR.
-	
+	OneDeclError(d) :- d is DoDecl(s, _, DEFER), s.owner.kind = MONITOR.	
 }
 
 domain PStaticTyping extends PData

@@ -159,7 +159,7 @@
                 return false;
             }
 
-            ////GenerateC(inputModule, inputFile).Print(Console.Out);
+            //// GenerateC(inputModule, inputFile).Print(Console.Out);
 
             //// Step 4. Perform Zing compilation.
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
@@ -357,39 +357,11 @@
             AddErrors(task.Result, "PurityError(_, _)", inputProgram, errors, 1);
             AddErrors(task.Result, "LValueError(_, _)", inputProgram, errors, 1);
 
-            //// Enumerate duplicate definitions
-            AddErrors(task.Result, "DuplicateEvent(_, _)", inputProgram, errors, 1);
-            AddErrors(task.Result, "DuplicateState(_, _)", inputProgram, errors, 1);
-            AddErrors(task.Result, "DuplicateFunct(_, _)", inputProgram, errors, 1);
-            AddErrors(task.Result, "DuplicateTransDecl(_, _)", inputProgram, errors, 1);
-            AddErrors(task.Result, "DuplicateDoDecl(_, _)", inputProgram, errors, 1);
-            AddErrors(task.Result, "DuplicateVarDecl(_, _)", inputProgram, errors, 1);
-            AddErrors(task.Result, "DuplicateMacDecl(_, _)", inputProgram, errors, 1);
-            //There should be a main machine declared
-            AddErrors(task.Result, "noMainMachine", inputProgram, errors);
-            AddErrors(task.Result, "multipleMainMachines(_, _)", inputProgram, errors, 1);
-            AddErrors(task.Result, "noStartState(_)", inputProgram, errors, 0);
-
-            //Valid TransDecl
-            AddErrors(task.Result, "invalidEventOnTransDecl(_)", inputProgram, errors, 0);
-            AddErrors(task.Result, "invalidStateOnTransDecl(_)", inputProgram, errors, 0);
-            AddErrors(task.Result, "invalidFunTypeOnTransDecl(_)", inputProgram, errors, 0);
-            AddErrors(task.Result, "invalidFunOnTransDecl(_)", inputProgram, errors, 0);
-            //Valid DoDecl
-            AddErrors(task.Result, "invalidEventOnDoDecl(_)", inputProgram, errors, 0);
-            AddErrors(task.Result, "invalidFunOnDoDecl(_)", inputProgram, errors, 0);
-            AddErrors(task.Result, "invalidFunTypeOnDoDecl(_)", inputProgram, errors, 0);
-            //Entry Exit Function
-            AddErrors(task.Result, "invalidFunForEntry(_, _)", inputProgram, errors, 1);
-            AddErrors(task.Result, "invalidFunForExit(_, _)", inputProgram, errors, 1);
-            AddErrors(task.Result, "invalidFunTypeOnEntry(_)", inputProgram, errors, 0);
-            AddErrors(task.Result, "invalidFunTypeOnExit(_)", inputProgram, errors, 0);
-
-            //Model functions
-            AddErrors(task.Result, "modelFunOnlyInReal(_)", inputProgram, errors, 0);
-
-            AddErrors(task.Result, "noDefaultTransInMonitors(_)", inputProgram, errors, 0);
-            AddErrors(task.Result, "noDeferInMonitor(_)", inputProgram, errors, 0);
+            //// Enumerate structural errors
+            AddErrors(task.Result, "missingDecl", inputProgram, errors);
+            AddErrors(task.Result, "OneDeclError(_)", inputProgram, errors, 0);
+            AddErrors(task.Result, "TwoDeclError(_, _)", inputProgram, errors, 1);
+            AddErrors(task.Result, "DeclFunError(_, _)", inputProgram, errors, 1);
 
             if (Options.printTypeInference)
             {

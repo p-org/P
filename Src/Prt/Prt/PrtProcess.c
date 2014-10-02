@@ -3,16 +3,14 @@
 PRT_PPROCESS*
 PrtStartPProcess(
 __in PRT_UINT16 processId,
-__in PRT_PROGRAMDECL *program,
-__in PRT_EXCEPHANDLER_FUN exHandler,
-__in PRT_LOG_FUN logger
+__in PRT_PROGRAMDECL *program
 )
 {
 	PRT_PPROCESS* retPProcess = (PRT_PPROCESS*)PrtMalloc(sizeof(PRT_PPROCESS));
 	retPProcess->allMachines = NULL;
-	retPProcess->exceptionHandler = exHandler;
+	retPProcess->exceptionHandler = PrtExceptionHandler;
 	retPProcess->lock = PrtCreateMutex();
-	retPProcess->log = logger;
+	retPProcess->log = PrtExternalLogHandler;
 	retPProcess->processId = processId;
 
 	return retPProcess;

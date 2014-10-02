@@ -232,14 +232,14 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtConfig.h"),
                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfigWinDist.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtConfigWinDist.h"),
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinDist.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtWinDist.h"),
                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfigWinDriver.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtConfigWinDriver.h"),
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinDriver.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtWinDriver.h"),
                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfigWinUser.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtConfigWinUser.h"),
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinUser.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtWinUser.h"),
                 new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtDTTypeDefs.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtDTTypeDefs.h"),
@@ -270,6 +270,12 @@ namespace PlangBuild
                 new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMTypeDefs.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtSMTypeDefs.h"),
+                new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtToString.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtToString.h"),
+                new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtExternalHandlers.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtExternalHandlers.h"),
 
             // x64
             new Tuple<string, string>(
@@ -279,14 +285,14 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtConfig.h"),
                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfigWinDist.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtConfigWinDist.h"),
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinDist.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtWinDist.h"),
                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfigWinDriver.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtConfigWinDriver.h"),
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinDriver.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtWinDriver.h"),
                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfigWinUser.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtConfigWinUser.h"),
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinUser.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtWinUser.h"),
                 new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtDTTypeDefs.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtDTTypeDefs.h"),
@@ -317,6 +323,12 @@ namespace PlangBuild
                 new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMTypeDefs.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtSMTypeDefs.h"),
+                new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtToString.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtToString.h"),
+                new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtExternalHandlers.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtExternalHandlers.h"),
 
 
                 // win32 lib
@@ -426,6 +438,7 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\StateVisitCount.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\StateVisitCount.dll"),
 
+
             //zing x64
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\zc.exe", 
@@ -520,14 +533,14 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtConfig.h"),
                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfigWinDist.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtConfigWinDist.h"),
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinDist.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtWinDist.h"),
                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfigWinDriver.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtConfigWinDriver.h"),
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinDriver.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtWinDriver.h"),
                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfigWinUser.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtConfigWinUser.h"),
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinUser.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtWinUser.h"),
                 new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtDTTypeDefs.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtDTTypeDefs.h"),
@@ -558,6 +571,12 @@ namespace PlangBuild
                 new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMTypeDefs.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtSMTypeDefs.h"),
+                new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtToString.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtToString.h"),
+                new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtExternalHandlers.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtExternalHandlers.h"),
 
             // x64  Runtime
             new Tuple<string, string>(
@@ -567,14 +586,14 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtConfig.h"),
                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfigWinDist.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtConfigWinDist.h"),
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinDist.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtWinDist.h"),
                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfigWinDriver.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtConfigWinDriver.h"),
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinDriver.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtWinDriver.h"),
                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfigWinUser.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtConfigWinUser.h"),
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinUser.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtWinUser.h"),
                 new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtDTTypeDefs.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtDTTypeDefs.h"),
@@ -605,6 +624,12 @@ namespace PlangBuild
                 new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMTypeDefs.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtSMTypeDefs.h"),
+                new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtToString.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtToString.h"),
+                new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtExternalHandlers.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtExternalHandlers.h"),
 
                 // win32 lib
                 new Tuple<string, string>(

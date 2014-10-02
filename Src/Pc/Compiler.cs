@@ -100,6 +100,7 @@
         {
             Contract.Requires(!AttemptedCompile);
             AttemptedCompile = true;
+            flags = new List<Flag>();
 
             //// Step 0. Make sure the filename is meaningful.
             ProgramName inputFile = null;
@@ -109,7 +110,6 @@
             }
             catch (Exception e)
             {
-                flags = new List<Flag>();
                 flags.Add(
                     new Flag(
                         SeverityKind.Error,
@@ -121,8 +121,10 @@
 
             //// Step 1. Attempt to parse the P program, and stop if parse fails.
             PProgram prog;
+            List<Flag> parserFlags;
             var parser = new Parser.Parser();
-            var result = parser.ParseFile(inputFile, out flags, out prog);
+            var result = parser.ParseFile(inputFile, out parserFlags, out prog);
+            flags.AddRange(parserFlags);
             if (!result)
             {
                 return false;
@@ -167,7 +169,8 @@
             var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(inputModule + "_WithTypes"));
             Task<ApplyResult> apply;
             Formula.Common.Rules.ExecuterStatistics stats;
-            CompilerEnv.Apply(transStep, false, false, out flags, out apply, out stats);
+            List<Flag> applyFlags;
+            CompilerEnv.Apply(transStep, false, false, out applyFlags, out apply, out stats);
             apply.RunSynchronously();
             var extractTask = apply.Result.GetOutputModel(
                 inputModule + "_WithTypes",

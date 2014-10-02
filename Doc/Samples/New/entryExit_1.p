@@ -1,3 +1,14 @@
+//(35, 4): "if (...)" expects a boolean value
+//(35, 7): Nondeterminitistic choice can be used only in model machine and model functions
+//(50, 4): "if (...)" expects a boolean value
+//(50, 7): Nondeterminitistic choice can be used only in model machine and model functions
+//(65, 2): model functions can be declared only in real machines
+//(94, 4): "if (...)" expects a boolean value
+//(94, 7): Nondeterminitistic choice can be used only in model machine and model functions
+//(101, 2): model functions can be declared only in real machines
+//(108, 3): "if (...)" expects aboolean value
+//(108, 6): Nondeterminitistic choice can be used only in model machine and model functions
+
 event Empty   assert 1;
 event a;
 event b;

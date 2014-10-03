@@ -22,16 +22,13 @@ out=args.out[0]
 
 scriptDir = getMyDir(); 
 baseDir = realpath(join(scriptDir, ".."));
-zc=join(baseDir, "Compiler", "zc");
-zinger=join(baseDir, "Compiler", "Zinger");
-pc=join(baseDir, "Compiler", "PCompiler");
+zc=join(baseDir, "Bld", "Drops", "Plang_Debug_x64","Compiler", "zc");
+zinger=join(baseDir, "Bld", "Drops", "Plang_Debug_x64","Compiler", "Zinger");
+pc=join(baseDir, "Bld", "Drops", "Plang_Debug_x64","Compiler", "Pc");
 
-zingRT=join(baseDir, "Runtime", "SMRuntime.zing");
-cInclude=join(baseDir, "Runtime");
-cLib=join(baseDir, "Runtime");
-pData=join(baseDir, "Compiler");
-stateCoverage=join(baseDir, "Compiler", "StateCoveragePlugin.dll");
-sched=join(baseDir, "Compiler", "RandomDelayingScheduler.dll")
+cInclude=join(baseDir, "Bld", "Drops", "Plang_Debug_x64", "Runtime", "Headers");
+cLib=join(baseDir, "Bld", "Drops", "Plang_Debug_x64", "Runtime", "Lib");
+sched=join(baseDir, "Bld", "Drops", "Plang_Debug_x64","Compiler", "RandomDelayingScheduler.dll")
 cc="MSBuild.exe"
 
 try:
@@ -93,7 +90,7 @@ for f in elaborateFiles(args.files):
     shutil.copy(f, pFile);
 
     print("Running PCompiler")
-    ret = os.system(fmt("{pc} /doNotErase {pFile} {pData} /outputDir:{out}"))
+    ret = os.system(fmt("{pc} /doNotErase {pFile} /outputDir:{out}"))
 
     if ret != 0:
         if (args.fail):
@@ -101,27 +98,16 @@ for f in elaborateFiles(args.files):
 
         die("PCompiler failed.")
 
-    print("Running zc");
-    zcOutFile = open(zcOut, "w");
-    shutil.copy(zingRT, join(out, "SMRuntime.zing"));
-    ret = check_call([zc, "-nowarning:292", zingFile, "SMRuntime.zing", '/out:' + zingDll], \
-        cwd=out, stdout=zcOutFile, stderr=zcOutFile);
-    os.remove(join(out, "SMRuntime.zing"));
-    zcOutFile.close();
-    if not (ret == 0 and zcSucceeded(cat(zcOut))):
-        die("Compiling of Zing model failed:\n" + cat(zcOut))
-
     print("Running Zinger")
     zingerOutFile = open(zingerOut, "w");
     shutil.copy(sched, join(out, 'sched.dll'));
-    shutil.copy(stateCoverage, join(out, 'stateCov.dll'));
     ret = check_call([zinger, '-s', '-eo', '-p', '-delayc:100', \
-       '-et:trace.txt', '-plugin:stateCov.dll', '-sched:sched.dll', zingDll], \
+       '-et:trace.txt', '-sched:sched.dll', zingDll], \
                      cwd=out, stdout=zingerOutFile, stderr=zingerOutFile);
     zingerOutFile.close();
     if not (ret == 0 and zingerSucceeded(cat(zingerOut))) and not args.fail:
         die("Zingering of Zing model failed:\n" + cat(zingerOut))
-
+    '''
     mainM = search("main[\w\s]*machine[\s]*([\w]*)", \
         open(pFile).read()).groups()[0]
 
@@ -178,3 +164,4 @@ for f in elaborateFiles(args.files):
         die("Binary didn't fail when we expected it");
 
 print("ALL TESTS RAN SUCCESSFULLY");
+       '''

@@ -1508,7 +1508,7 @@
             }
 
             string elementName = null;
-            var isPrintable = IsStringCnst(arg1, out elementName) &&
+            var isPrintable = IsStringCnst(arg2, out elementName) &&
                               IsCIdentifier(elementName);
 
             if (!isPrintable || !data.InQuotation)
@@ -1535,14 +1535,14 @@
                 yield break;
             }
 
-            if (IsNil(arg2))
+            if (IsNil(arg1))
             {
                 wr.Write(elementName);
             }
             else
             {
                 wr.Write("{0} = ", elementName);
-                yield return new Tuple<Node, PrintData>(arg2, new PrintData(null, "", 0, true));
+                yield return new Tuple<Node, PrintData>(arg1, new PrintData(null, "", 0, true));
             }
         }
 

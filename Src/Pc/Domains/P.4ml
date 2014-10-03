@@ -70,7 +70,9 @@ domain PData
     StateDecl      ::= fun (name: any QualifiedName, owner: MachineDecl -> entryAction: any AnonFunDecl + String, exitFun: any AnonFunDecl + String, isHot: Boolean).
     TransDecl      ::= fun (src: StateDecl, trig: String + { DEFAULT, HALT } -> dst: any QualifiedName, action: any { NIL, PUSH } + AnonFunDecl + String).
     DoDecl         ::= fun (src: StateDecl, trig: String + { DEFAULT, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String).
-            
+
+    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl.            
+
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
     QualifiedName      ::= new (name: String, qualifier: any QualifiedName + { NIL }).
@@ -95,12 +97,10 @@ domain PStructuralTyping extends PData
 	conforms no DeclFunError(_, _).
     /*************************************************************/
 
-	////// Three kinds of declaration errors.
-	missingDecl  :- missingDecl.
+	////// Three kinds of declaration errors (and missingDecl).
     OneDeclError ::= (PDecl).
     TwoDeclError ::= (PDecl, PDecl).
     DeclFunError ::= (PDecl, String).
-    PDecl ::= EventDecl + MachineDecl + VarDecl + FunDecl + StateDecl + TransDecl + DoDecl.
 	
 	[ rule_Classes = '"error, msg: An event has multiple definitions"']
 	TwoDeclError(e1, e2) :- e1 is EventDecl, e2 is EventDecl, e1.name = e2.name, e1 != e2.

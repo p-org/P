@@ -159,7 +159,6 @@ struct _PRT_EVENTDECL
 	PRT_STRING name;           /**< The name of this event set              */
 	PRT_UINT32 eventMaxInstances; /**< The value of maximum instances of the event that can occur in the queue */
 	PRT_TYPE   payloadType;	/** The type of the payload associated with this event */
-	//PRT_UINT32 *packedEvents;  /**< The events packed into an array of ints */
 };
 
 struct _PRT_MACHINEDECL

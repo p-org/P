@@ -5,18 +5,80 @@
 
 transform P2CProgram (in:: P) returns (out:: C)
 {
-  //// Give an Id to each event declaration
-	EventDeclList    ::= (head: EventDecl, tail: EventDeclList + {NIL}).
-	EventId          ::= (decl: EventDecl + {NIL}, id: Natural, cnst: String, decls: EventDeclList + {NIL}).
-
-	EventId(NIL, 0, "P_EVENTS_COUNT", NIL)  :- no d is EventDecl.
-	EventId(NIL, 0, "", list)               :- list = toList(#EventDeclList, NIL, { d | d is EventDecl }), list != NIL.
-	EventId(list.head, i, cnst, list.tail)  :- EventId(NIL, i, _, list), cnst = strJoin("P_EVENT_", list.head.name).
-	EventId(list.head, j, cnst, list.tail)  :- EventId(_  , i, _, list), cnst = strJoin("P_EVENT_", list.head.name), j = i + 1. 
-	EventId(NIL, j, "P_EVENTS_COUNT", NIL)  :- EventId(dcl, i, _, NIL), dcl != NIL, j = i + 1. 
+    /*************************************************************/
+    /**********     Create C Enums for P Decls         ***********/
+    /*************************************************************/
+	DeclId ::= (decl: PDecl, id: Natural, cname: String).
 	
-	//// Emit an enum declaration for events.
+	//// (1) EventDecls - Id 0 is reserved for default event, which can appear in transition tables.
+	DeclId(d, id, cn) :- d is EventDecl, id = 1 + toOrdinal(d, 0, { d' | d' is EventDecl }), cn = strJoin("P_EVENT_", strUpper(d.name)).
+	
 	out.EnmDef(NIL, "P_EVENTS", list) :- 
-	     list = toList(#Elements, NIL, { Element(name, iid) | EventId(_, id, name, _), name != "", iid = IntLit(id, DEC, NIL) }).  
+	   list = toList(#Elements, NIL, { enumMember | 
+									   enumMember = Element(IntLit(0, DEC, NIL), "_P_EVENT_DEFAULT");
+									   DeclId(d, id, cn), d : EventDecl, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTS_COUNT"), size = 1 + count({d | d is EventDecl}) }).  
+
+	//// (2) MachineDecls - Start at Id 0.
+	DeclId(d, id, cn) :- d is MachineDecl, id = toOrdinal(d, 0, { d' | d' is MachineDecl }), cn = strJoin("P_MACHINE_", strUpper(d.name)).
 	
+	out.EnmDef(NIL, "P_MACHINES", list) :- 
+	   list = toList(#Elements, NIL, { enumMember | 
+									   DeclId(d, id, cn), d : MachineDecl, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   DeclId(d, id, _), d : MachineDecl, d.isMain = TRUE, enumMember = Element(IntLit(id, DEC, NIL), "_P_MACHINE_MAIN"); 
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_MACHINES_COUNT"), size = count({d | d is MachineDecl}) }).  
+
+	//// (3) VarDecls - Start at Id 0.
+	DeclId(d, id, cn) :- d is VarDecl, id = toOrdinal(d, 0, { d' | d' is VarDecl, d'.owner = d.owner }), 
+									   cn = strJoin("P_VAR_", strJoin(strUpper(d.owner.name), strJoin("_", strUpper(d.name)))).
+	
+	out.EnmDef(NIL, enumName, list) :- 
+	   m is MachineDecl,
+	   enumName = strJoin("P_VARS_", strUpper(m.name)),
+	   list = toList(#Elements, NIL, { enumMember | 
+									   DeclId(d, id, cn), d : VarDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_VARS_", strJoin(strUpper(m.name), "_COUNT"))), size = count({d | d is VarDecl, d.owner = m}) }).  
+
+	//// (4) FunDecls - Start at Id 0.
+	DeclId(d, id, cn) :- d is FunDecl, id = toOrdinal(d, 0, { d' | d' is FunDecl, d'.owner = d.owner }), 
+									   cn = strJoin("P_FUN_", strJoin(strUpper(d.owner.name), strJoin("_", strUpper(d.name)))).
+	
+	out.EnmDef(NIL, enumName, list) :- 
+	   m is MachineDecl,
+	   enumName = strJoin("P_FUNS_", strUpper(m.name)),
+	   list = toList(#Elements, NIL, { enumMember | 
+									   DeclId(d, id, cn), d : FunDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(strUpper(m.name), "_COUNT"))), size = count({d | d is FunDecl, d.owner = m}) }).  
+
+	//// (5) AnonFunDecl - Start at Id 0.
+	AnonFunDeclSub ::= sub (AnonFunDecl).
+
+	DeclId(d, id, cn) :- AnonFunDeclSub(d), id = toOrdinal(d, 0, { d' | AnonFunDeclSub(d'), d'.owner = d.owner }), 
+									   cn = strJoin("P_ANONFUN_", strJoin(strUpper(d.owner.name), strJoin("_", toString(id)))).
+	
+	out.EnmDef(NIL, enumName, list) :- 
+	   m is MachineDecl,
+	   enumName = strJoin("P_ANONFUNS_", strUpper(m.name)),
+	   list = toList(#Elements, NIL, { enumMember | 
+									   DeclId(d, id, cn), d : AnonFunDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_ANONFUNS_", strJoin(strUpper(m.name), "_COUNT"))), size = count({d | AnonFunDeclSub(d), d.owner = m}) }).  
+
+	//// (6) StateDecls - Start at Id 0. Need to encode qualified names.
+	DeclId(d, id, cn) :- d is StateDecl, QualName2CStr(d.name, name), 
+					     id = toOrdinal(d, 0, { d' | d' is StateDecl, d'.owner = d.owner }), 
+						 cn = strJoin("P_STATE_", strJoin(strUpper(d.owner.name), strJoin("_", name))).
+	
+	out.EnmDef(NIL, enumName, list) :- 
+	   m is MachineDecl,
+	   enumName = strJoin("P_STATES_", strUpper(m.name)),
+	   list = toList(#Elements, NIL, { enumMember | 
+									   DeclId(d, id, cn), d : StateDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_STATES_", strJoin(strUpper(m.name), "_COUNT"))), size = count({d | d is StateDecl, d.owner = m}) }).  
+
+	//// (7) Convert qualified names to C strings
+	QualNameSub ::= sub (QualifiedName).
+	QualName2CStr ::= (QualifiedName, String).
+	QualName2CStr(q, su) :- QualNameSub(q), q = QualifiedName(s, NIL), su = strUpper(s).
+	QualName2CStr(q, su) :- QualNameSub(q), QualName2CStr(q', s'), q = QualifiedName(s, q'), su = strJoin(s', strJoin("_", strUpper(s))).
+
 }

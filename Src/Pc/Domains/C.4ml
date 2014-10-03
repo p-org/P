@@ -75,7 +75,7 @@ domain CData
                      name:     String,  
                      elements: any Elements + { NIL, UNKNOWN }). 
      
-     Element  ::= new (name: String, value: any Expr + { NIL }).
+     Element  ::= new (value: any Expr + { NIL }, name: String).
 	                  
      Elements ::= new (element: any Element, tail: any Elements + { NIL }).                                         
                                             

@@ -1,6 +1,4 @@
 run: ..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
-del: output.zing
-inc: output.zing
 arg: mutations.p 
 arg: /printTypeInference
 arg: /shortFileNames

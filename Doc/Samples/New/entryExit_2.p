@@ -1,3 +1,7 @@
+//(40, 2): function cannot take arguments
+//(45, 2): function cannot take arguments
+//(52, 8): undefined function for exit
+
 event Empty   assert 1;
 event a;
 event b;

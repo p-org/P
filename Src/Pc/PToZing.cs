@@ -44,6 +44,8 @@ namespace Microsoft.Pc
         }
     }
 
+    enum StateTemperature { COLD, WARM, HOT }
+
     internal class StateInfo
     {
         public string ownerName;
@@ -54,10 +56,25 @@ namespace Microsoft.Pc
         public Dictionary<string, string> actions;
         public List<string> deferredEvents;
         public List<string> ignoredEvents;
-        public bool isHot;
+        public StateTemperature temperature;
         public string printedName;
 
-        public StateInfo(string ownerName, string entryActionName, string exitFunName, bool isHot, string printedName)
+        public bool IsHot
+        {
+            get { return temperature == StateTemperature.HOT; }
+        }
+
+        public bool IsCold
+        {
+            get { return temperature == StateTemperature.COLD; }
+        }
+
+        public bool IsWarm
+        {
+            get { return temperature == StateTemperature.WARM; }
+        }
+
+        public StateInfo(string ownerName, string entryActionName, string exitFunName, StateTemperature temperature, string printedName)
         {
             this.ownerName = ownerName;
             this.entryActionName = entryActionName;
@@ -67,7 +84,7 @@ namespace Microsoft.Pc
             this.actions = new Dictionary<string, string>();
             this.deferredEvents = new List<string>();
             this.ignoredEvents = new List<string>();
-            this.isHot = isHot;
+            this.temperature = temperature;
             this.printedName = printedName;
         }
     }
@@ -426,9 +443,25 @@ namespace Microsoft.Pc
                                             ? ((Cnst)it.Current).GetStringValue()
                                             : anonFunToName[Factory.Instance.ToAST(it.Current)];
                     it.MoveNext();
-                    var isHot = compiler.Options.liveness != LivenessOption.None && ((Id)it.Current).Name == "TRUE";
+                    var temperature = StateTemperature.WARM;
+                    if (compiler.Options.liveness != LivenessOption.None)
+                    {
+                        var t = ((Id)it.Current).Name;
+                        if (t == "HOT")
+                        {
+                            temperature = StateTemperature.HOT;
+                        }
+                        else if (t == "COLD")
+                        {
+                            temperature = StateTemperature.COLD;
+                        }
+                        else
+                        {
+                            temperature = StateTemperature.WARM;
+                        }
+                    }
                     var stateTable = allMachines[ownerName].stateNameToStateInfo;
-                    stateTable[stateName] = new StateInfo(ownerName, entryActionName, exitFunName, isHot, GetPrintedNameFromQualifiedName(qualifiedStateName));
+                    stateTable[stateName] = new StateInfo(ownerName, entryActionName, exitFunName, temperature, GetPrintedNameFromQualifiedName(qualifiedStateName));
                 }
             }
 
@@ -550,38 +583,53 @@ namespace Microsoft.Pc
             {
                 if (!allMachines[machineName].IsMonitor) continue;
                 var machineInfo = allMachines[machineName];
-                HashSet<string> visitedStates = new HashSet<string>();
-                Stack<string> dfsStack = new Stack<string>();
-                foreach (var stateName in machineInfo.stateNameToStateInfo.Keys)
+                List<string> initialSet = new List<string>();
+                foreach (var stateName in ComputeReachableStates(machineInfo, new string[] { machineInfo.initStateName }))
                 {
-                    if (machineInfo.stateNameToStateInfo[stateName].isHot)
+                    if (machineInfo.stateNameToStateInfo[stateName].IsWarm)
+                    { 
+                        continue; 
+                    }
+                    if (machineInfo.stateNameToStateInfo[stateName].IsHot)
                     {
                         machineInfo.monitorType = MonitorType.FINALLY;
                         continue;
                     }
-                    dfsStack.Push(stateName);
-                    while (dfsStack.Count > 0)
-                    {
-                        var curState = dfsStack.Pop();
-                        var curStateInfo = machineInfo.stateNameToStateInfo[curState];
-                        foreach (var e in curStateInfo.transitions.Keys)
-                        {
-                            var nextState = curStateInfo.transitions[e].target;
-                            if (visitedStates.Contains(nextState)) continue;
-                            visitedStates.Add(nextState);
-                            dfsStack.Push(nextState);
-                        }
-                    }
+                    initialSet.Add(stateName);
                 }
-                foreach (var stateName in visitedStates)
+                foreach (var stateName in ComputeReachableStates(machineInfo, initialSet))
                 {
-                    if (machineInfo.stateNameToStateInfo[stateName].isHot)
+                    if (machineInfo.stateNameToStateInfo[stateName].IsHot)
                     {
                         machineInfo.monitorType = MonitorType.REPEATEDLY;
                         break;
                     }
                 }
             }
+        }
+
+        HashSet<string> ComputeReachableStates(MachineInfo machineInfo, IEnumerable<string> initialSet)
+        {
+            Stack<string> dfsStack = new Stack<string>();
+            HashSet<string> visitedStates = new HashSet<string>();
+            foreach (var stateName in initialSet)
+            {
+                dfsStack.Push(stateName);
+                visitedStates.Add(stateName);
+            }
+            while (dfsStack.Count > 0)
+            {
+                var curState = dfsStack.Pop();
+                var curStateInfo = machineInfo.stateNameToStateInfo[curState];
+                foreach (var e in curStateInfo.transitions.Keys)
+                {
+                    var nextState = curStateInfo.transitions[e].target;
+                    if (visitedStates.Contains(nextState)) continue;
+                    visitedStates.Add(nextState);
+                    dfsStack.Push(nextState);
+                }
+            }
+            return visitedStates;
         }
 
         void GenerateTypeInfo(AST<Model> model)
@@ -1468,21 +1516,24 @@ namespace Microsoft.Pc
                 {
                     if (compiler.Options.liveness == LivenessOption.Standard)
                     {
-                        if (allMachines[machineName].stateNameToStateInfo[stateName].isHot)
+                        if (allMachines[machineName].stateNameToStateInfo[stateName].IsHot)
                         {
-                            executeStmts.Add(MkZingIfThen(MkZingNeq(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Closed")),
-                                                       MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Selected"))));
+                            executeStmts.Add(MkZingAssign(MkZingDot("FairCycle", "temperature"), MkZingDot("StateTemperature", "Hot")));
+                        }
+                        else if (allMachines[machineName].stateNameToStateInfo[stateName].IsWarm)
+                        {
+                            executeStmts.Add(MkZingAssign(MkZingDot("FairCycle", "temperature"), MkZingDot("StateTemperature", "Warm")));
                         }
                         else
                         {
                             executeStmts.Add(MkZingAssume(MkZingNeq(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Closed"))));
-                            executeStmts.Add(MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "InStable")));
+                            executeStmts.Add(MkZingAssign(MkZingDot("FairCycle", "temperature"), MkZingDot("StateTemperature", "Cold")));
                         }
                     }
                     else 
                     {
                         // compiler.Options.liveness == LivenessOption.Mace
-                        if (allMachines[machineName].stateNameToStateInfo[stateName].isHot)
+                        if (allMachines[machineName].stateNameToStateInfo[stateName].IsHot)
                         {
                             executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("accept"), ZingData.Cnst_False)));
                         }
@@ -2810,6 +2861,10 @@ namespace Microsoft.Pc
                 if (machineInfo.monitorType == MonitorType.FINALLY)
                 {
                     stmts.Add(MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Closed")));
+                }
+                else
+                {
+                    stmts.Add(MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Selected")));
                 }
                 body = MkZingSeq(stmts);
             }

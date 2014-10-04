@@ -11,7 +11,7 @@
 %token INT BOOL FOREIGN ANY SEQ MAP ID
 %token MAIN EVENT MACHINE MONITOR ASSUME
 
-%token VAR START HOT MODEL STATE FUN ACTION GROUP
+%token VAR START HOT COLD MODEL STATE FUN ACTION GROUP
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH AS WITH
 
@@ -191,14 +191,15 @@ GroupName
 
 /******************* State Declarations *******************/
 StateDecl
-	: IsHot STATE ID StateAnnotOrNone LCBRACE RCBRACE                  { AddState($3.str, false, ToSpan(@3), ToSpan(@1)); }
-	| IsHot STATE ID StateAnnotOrNone LCBRACE StateBody RCBRACE        { AddState($3.str, false, ToSpan(@3), ToSpan(@1)); }	  
-	| START IsHot STATE ID StateAnnotOrNone LCBRACE RCBRACE            { AddState($4.str, true,  ToSpan(@4), ToSpan(@1)); }
-	| START IsHot STATE ID StateAnnotOrNone LCBRACE StateBody RCBRACE  { AddState($4.str, true,  ToSpan(@4), ToSpan(@1)); }	  
+	: IsHotOrCold STATE ID StateAnnotOrNone LCBRACE RCBRACE                  { AddState($3.str, false, ToSpan(@3), ToSpan(@1)); }
+	| IsHotOrCold STATE ID StateAnnotOrNone LCBRACE StateBody RCBRACE        { AddState($3.str, false, ToSpan(@3), ToSpan(@1)); }	  
+	| START IsHotOrCold STATE ID StateAnnotOrNone LCBRACE RCBRACE            { AddState($4.str, true,  ToSpan(@4), ToSpan(@1)); }
+	| START IsHotOrCold STATE ID StateAnnotOrNone LCBRACE StateBody RCBRACE  { AddState($4.str, true,  ToSpan(@4), ToSpan(@1)); }	  
 	;
 
-IsHot
+IsHotOrCold
 	: HOT        { SetStateIsHot(ToSpan(@1)); }
+	| COLD		 { SetStateIsCold(ToSpan(@1)); }
 	|
 	;
 

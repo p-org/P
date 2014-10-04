@@ -274,7 +274,7 @@ model Timer {
 }
 
 monitor M {
-    start state WaitForRequest {
+    start cold state WaitForRequest {
         on eOpenDoor goto WaitForResponse;
     }
 

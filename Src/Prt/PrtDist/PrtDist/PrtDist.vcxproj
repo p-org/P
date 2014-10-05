@@ -83,7 +83,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>../../Prt/;../PrtDistIDL/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINDIST;IGNORE_FRG;_CRT_SECURE_NO_WARNINGS;PRT_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PRT_PLAT_WINDIST;IGNORE_FRG;_CRT_SECURE_NO_WARNINGS;PRT_DEBUG</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -140,12 +140,11 @@
     <ClInclude Include="..\..\Prt\PrtDTValues.h" />
     <ClInclude Include="..\..\Prt\PrtExternalHandlers.h" />
     <ClInclude Include="..\..\Prt\PrtHeaders.h" />
+    <ClInclude Include="..\..\Prt\PrtInterface.h" />
     <ClInclude Include="..\..\Prt\PrtProcess.h" />
     <ClInclude Include="..\..\Prt\PrtSMPrivate.h" />
     <ClInclude Include="..\..\Prt\PrtSMProtected.h" />
     <ClInclude Include="..\..\Prt\PrtSMProtectedTypes.h" />
-    <ClInclude Include="..\..\Prt\PrtSMPublic.h" />
-    <ClInclude Include="..\..\Prt\PrtSMPublicTypes.h" />
     <ClInclude Include="..\..\Prt\PrtSMTypeDefs.h" />
     <ClInclude Include="..\..\Prt\PrtToString.h" />
     <ClInclude Include="..\..\Prt\PrtWinDist.h" />
@@ -156,6 +155,7 @@
     <ClCompile Include="..\..\Prt\PrtDTValues.c" />
     <ClCompile Include="..\..\Prt\PrtProcess.c" />
     <ClCompile Include="..\..\Prt\PrtSMRuntime.c" />
+    <ClCompile Include="PrtInterface.c" />
     <ClCompile Include="PrtWinDist.c" />
     <ClCompile Include="PrtExternalHandlers.c" />
     <ClCompile Include="PrtDistSerializer.c" />

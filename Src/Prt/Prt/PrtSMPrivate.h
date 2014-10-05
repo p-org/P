@@ -19,33 +19,8 @@ Kernel mode only.
 
 #pragma once
 #include "PrtSMProtected.h"
-#include "PrtSMPublicTypes.h"
 #include "PrtConfig.h"
 #include "PrtSMTypeDefs.h"
-
-/*********************************************************************************
-
-Abstract Function types
-
-*********************************************************************************/
-
-//
-//State Entry Functions
-//Function type used by all state machines for entry functions                                                     
-//
-
-typedef VOID(PRT_ENTRYFUN)  (PRT_SMCONTEXT *context);
-
-
-//
-//Function type used by all state machines for exit functions                                                     
-//
-typedef VOID(PRT_EXITFUN)  (PRT_SMCONTEXT *context);
-
-//
-//Function type used by all state machines for exit functions                                                     
-//
-typedef VOID(PRT_ACTIONFUN)  (PRT_SMCONTEXT *context);
 
 /*********************************************************************************
 
@@ -272,7 +247,7 @@ __in PRT_EVENTQUEUE		*queue
 // Gets the exit function of the current state
 //
 FORCEINLINE
-PRT_EXITFUN*
+PRT_MACHINE_FUN*
 PrtGetExitFunction(
 __in PRT_SMCONTEXT		*context
 );
@@ -281,7 +256,7 @@ __in PRT_SMCONTEXT		*context
 // Gets the entry function of the current state
 //
 FORCEINLINE
-PRT_ENTRYFUN*
+PRT_MACHINE_FUN*
 PrtGetEntryFunction(
 __in PRT_SMCONTEXT		*context
 );

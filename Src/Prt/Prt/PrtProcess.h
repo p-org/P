@@ -1,6 +1,7 @@
-#pragma once
-#include "PrtHeaders.h"
-#include "PrtSMPublicTypes.h"
+#ifndef PRTPROCESS_H
+#define PRTPROCESS_H
+#include "PrtSMTypeDefs.h"
+#include "PrtConfig.h"
 
 typedef struct _PRT_PPROCESS PRT_PPROCESS;
 
@@ -39,4 +40,6 @@ VOID
 PrtPProcessAddMachine(
 __in PVOID context
 );
+
+#endif
 

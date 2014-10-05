@@ -33,12 +33,6 @@
     <ClInclude Include="..\..\Prt\PrtSMProtectedTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Prt\PrtSMPublic.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Prt\PrtSMPublicTypes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PrtDistSerializer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -61,6 +55,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Prt\PrtWinDist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Prt\PrtInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -87,6 +84,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PrtToString.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrtInterface.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

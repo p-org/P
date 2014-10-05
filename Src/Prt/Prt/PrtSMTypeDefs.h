@@ -59,6 +59,13 @@ typedef struct _PRT_EXCONTEXT PRT_EXCONTEXT;
 //
 typedef ULONG_PTR PRT_MACHINE_HANDLE;
 
+//
+// Exceptions Thrown by Runtime
+//
+typedef enum _PRT_EXCEPTIONS PRT_EXCEPTIONS;
+
+typedef enum _PRT_STEP PRT_STEP;
+
 /*********************************************************************************
 
 Struct Declarations

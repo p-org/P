@@ -262,11 +262,9 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMProtectedTypes.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtSMProtectedTypes.h"),
                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMPublic.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtSMPublic.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMPublicTypes.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtSMPublicTypes.h"),
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtInterface.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtInterface.h"),
+
                 new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMTypeDefs.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtSMTypeDefs.h"),
@@ -315,11 +313,9 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMProtectedTypes.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtSMProtectedTypes.h"),
                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMPublic.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtSMPublic.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMPublicTypes.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtSMPublicTypes.h"),
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtInterface.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtInterface.h"),
+
                 new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMTypeDefs.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtSMTypeDefs.h"),
@@ -563,11 +559,8 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMProtectedTypes.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtSMProtectedTypes.h"),
                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMPublic.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtSMPublic.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMPublicTypes.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtSMPublicTypes.h"),
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtInterface.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtInterface.h"),
                 new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMTypeDefs.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtSMTypeDefs.h"),
@@ -616,11 +609,9 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMProtectedTypes.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtSMProtectedTypes.h"),
                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMPublic.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtSMPublic.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMPublicTypes.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtSMPublicTypes.h"),
+                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtInterface.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtInterface.h"),
+
                 new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMTypeDefs.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtSMTypeDefs.h"),

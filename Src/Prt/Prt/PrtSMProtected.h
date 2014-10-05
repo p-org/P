@@ -18,7 +18,6 @@ Kernel mode only.
 ***********************************************************************************/
 
 #pragma once
-#include "PrtSMPublic.h"
 #include "PrtSMProtectedTypes.h"
 
 /*********************************************************************************
@@ -74,6 +73,37 @@ __in PRT_UINT32				stateIndex
 VOID
 PrtHaltMachine(
 __inout PRT_SMCONTEXT			*context
+);
+
+//
+//Creates a new State Machine of using Machine_Attributes and initializes PSmHandle to new Machine handle
+//
+PRT_STATUS
+PrtCreate(
+__in  PRT_PPROCESS				*process,
+__in  PRT_UINT32				instanceOf,
+__in  PRT_VALUE					*payload,
+__out PRT_MACHINE_HANDLE		*pSmHandle
+);
+
+/*********************************************************************************
+
+Functions - Machine Interaction
+
+*********************************************************************************/
+VOID
+PrtEnqueueEvent(
+__in PRT_MACHINE_HANDLE			machine,
+__in PRT_VALUE					*event,
+__in PRT_VALUE					*payload
+);
+
+//
+// Get Foreign Memory Context for the State Machine
+//
+PRT_EXCONTEXT*
+PrtGetForeignContext(
+__in PRT_MACHINE_HANDLE smHandle
 );
 
 

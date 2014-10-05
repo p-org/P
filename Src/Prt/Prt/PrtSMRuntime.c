@@ -232,6 +232,11 @@ STATUS_INSUFFICIENT_RESOURCES = If failed to allocate memory
 	//Log
 	//
 	PrtLog(traceCreateMachine, context);
+	
+	//
+	// call the contructor function
+	//
+	context->program->machines[context->instanceOf].constructorFun(context->extContext);
 	//
 	//Acquire the lock while stabilizing the state machine
 	//
@@ -1572,21 +1577,21 @@ __in PRT_EVENTQUEUE		*queue
 }
 
 FORCEINLINE
-PRT_EXITFUN*
+PRT_MACHINE_FUN*
 PrtGetExitFunction(
 __in PRT_SMCONTEXT		*context
 )
 {
-	return (PRT_EXITFUN*)context->program->machines[context->instanceOf].states[context->currentState].exitFun;
+	return (PRT_MACHINE_FUN*)context->program->machines[context->instanceOf].states[context->currentState].exitFun;
 }
 
 FORCEINLINE
-PRT_ENTRYFUN*
+PRT_MACHINE_FUN*
 PrtGetEntryFunction(
 __in PRT_SMCONTEXT		*context
 )
 {
-	return (PRT_ENTRYFUN*)context->program->machines[context->instanceOf].states[context->currentState].entryFun;
+	return (PRT_MACHINE_FUN*)context->program->machines[context->instanceOf].states[context->currentState].entryFun;
 }
 
 

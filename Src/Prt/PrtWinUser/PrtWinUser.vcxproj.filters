@@ -36,6 +36,9 @@
     <ClCompile Include="PrtWinUser.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PrtInterface.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Prt\PrtConfig.h">
@@ -81,6 +84,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Prt\PrtExternalHandlers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Prt\PrtInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

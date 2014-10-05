@@ -138,6 +138,7 @@
     <ClCompile Include="..\Prt\PrtDTValues.c" />
     <ClCompile Include="..\Prt\PrtProcess.c" />
     <ClCompile Include="..\Prt\PrtSMRuntime.c" />
+    <ClCompile Include="PrtInterface.c" />
     <ClCompile Include="PrtWinUser.c" />
     <ClCompile Include="PrtExternalHandlers.c" />
     <ClCompile Include="PrtToString.c" />
@@ -149,6 +150,7 @@
     <ClInclude Include="..\Prt\PrtDTValues.h" />
     <ClInclude Include="..\Prt\PrtExternalHandlers.h" />
     <ClInclude Include="..\Prt\PrtHeaders.h" />
+    <ClInclude Include="..\Prt\PrtInterface.h" />
     <ClInclude Include="..\Prt\PrtProcess.h" />
     <ClInclude Include="..\Prt\PrtSMPrivate.h" />
     <ClInclude Include="..\Prt\PrtSMProtected.h" />

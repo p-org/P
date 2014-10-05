@@ -818,7 +818,13 @@
         private void SetStateIsHot(Span span)
         {
             var state = GetCurrentStateDecl(span);
-            state.isHot = MkUserCnst(P_Root.UserCnstKind.TRUE, span);
+            state.temperature = MkUserCnst(P_Root.UserCnstKind.HOT, span);
+        }
+
+        private void SetStateIsCold(Span span)
+        {
+            var state = GetCurrentStateDecl(span);
+            state.temperature = MkUserCnst(P_Root.UserCnstKind.COLD, span);
         }
 
         private void SetTrigAnnotated(Span span)
@@ -1404,7 +1410,7 @@
 
             crntState.entryAction = MkSkipFun((P_Root.MachineDecl)crntState.owner, span);
             crntState.exitFun = MkSkipFun((P_Root.MachineDecl)crntState.owner, span);
-            crntState.isHot = MkUserCnst(P_Root.UserCnstKind.FALSE, span);
+            crntState.temperature = MkUserCnst(P_Root.UserCnstKind.WARM, span);
 
             return crntState;
         }

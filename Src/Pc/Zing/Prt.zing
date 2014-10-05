@@ -510,10 +510,12 @@ class FairChoice {
     }
 };
 
-enum GateStatus { Init, Selected, InStable, Closed };
+enum GateStatus { Init, Selected, Closed };
+enum StateTemperature { Cold, Warm, Hot };
 
 class FairCycle {
     static GateStatus gate = GateStatus.Init;
+	static StateTemperature temperature = StateTemperature.Warm;
 
     static void GateProgress() {
         bool b;
@@ -526,7 +528,7 @@ class FairCycle {
     }
 
     static void Accept() {
-        if (gate == GateStatus.Closed &&
+        if (gate == GateStatus.Closed && temperature == StateTemperature.Hot &&
 	    sizeof(FairChoice.accepted) == sizeof(FairChoice.all) && 
        	    sizeof(FairScheduler.accepted) == sizeof(FairScheduler.all))
 	{

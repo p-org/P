@@ -127,7 +127,7 @@ namespace TwoPhaseCommit
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Initializing Timer ...");
 
@@ -154,7 +154,7 @@ namespace TwoPhaseCommit
 
         private class Loop : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 if (this.Message == typeof(eCancelTimer))
                 {
@@ -188,7 +188,7 @@ namespace TwoPhaseCommit
 
         private class TimerStarted : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 if (Model.Havoc.Boolean)
                 {
@@ -200,17 +200,17 @@ namespace TwoPhaseCommit
             }
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(eUnit), typeof(Loop));
 
-            StateTransitions loopDict = new StateTransitions();
+            StepStateTransitions loopDict = new StepStateTransitions();
             loopDict.Add(typeof(eStartTimer), typeof(TimerStarted));
 
-            StateTransitions timerStartedDict = new StateTransitions();
+            StepStateTransitions timerStartedDict = new StepStateTransitions();
             timerStartedDict.Add(typeof(eUnit), typeof(Loop));
             timerStartedDict.Add(typeof(eCancelTimer), typeof(Loop));
 
@@ -233,7 +233,7 @@ namespace TwoPhaseCommit
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Initializing Replica ...");
 
@@ -315,11 +315,11 @@ namespace TwoPhaseCommit
             return Model.Havoc.Boolean;
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(eUnit), typeof(Loop));
 
             dict.Add(typeof(Init), initDict);
@@ -356,7 +356,7 @@ namespace TwoPhaseCommit
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Initializing Coordinator ...");
 
@@ -386,7 +386,7 @@ namespace TwoPhaseCommit
 
         private class Loop : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 if (this.Message == typeof(eTimeout))
                 {
@@ -406,7 +406,7 @@ namespace TwoPhaseCommit
 
         private class CountVote : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 if (this.Message == typeof(eRESP_REPLICA_COMMIT))
                 {
@@ -441,7 +441,7 @@ namespace TwoPhaseCommit
 
                     Console.WriteLine("{0} sending event {1} to monitor {2}", this,
                         typeof(eMONITOR_WRITE), typeof(M));
-                    Runtime.Invoke<M>(new eMONITOR_WRITE(new Tuple<int, int>(
+                    this.Invoke<M>(new eMONITOR_WRITE(new Tuple<int, int>(
                         (this.Machine as Coordinator).PendingWriteReq.Item2,
                         (this.Machine as Coordinator).PendingWriteReq.Item3)));
 
@@ -518,7 +518,7 @@ namespace TwoPhaseCommit
             {
                 Console.WriteLine("{0} sending event {1} to monitor {2}", this,
                     typeof(eMONITOR_READ_SUCCESS), typeof(M));
-                Runtime.Invoke<M>(new eMONITOR_READ_SUCCESS(new Tuple<int, int>(
+                this.Invoke<M>(new eMONITOR_READ_SUCCESS(new Tuple<int, int>(
                     ((Tuple<Machine, int>)this.Payload).Item2,
                     this.Data[((Tuple<Machine, int>)this.Payload).Item2])));
 
@@ -531,7 +531,7 @@ namespace TwoPhaseCommit
             {
                 Console.WriteLine("{0} sending event {1} to monitor {2}", this,
                     typeof(eMONITOR_READ_UNAVAILABLE), typeof(M));
-                Runtime.Invoke<M>(new eMONITOR_READ_UNAVAILABLE(
+                this.Invoke<M>(new eMONITOR_READ_UNAVAILABLE(
                     ((Tuple<Machine, int>)this.Payload).Item2));
 
                 Console.WriteLine("{0} sending event {1} to {2}", this, typeof(eREAD_UNAVAILABLE),
@@ -593,27 +593,27 @@ namespace TwoPhaseCommit
             }
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(eUnit), typeof(Loop));
 
-            StateTransitions loopDict = new StateTransitions();
+            StepStateTransitions loopDict = new StepStateTransitions();
             loopDict.Add(typeof(eUnit), typeof(CountVote));
 
-            StateTransitions countVoteDict = new StateTransitions();
+            StepStateTransitions countVoteDict = new StepStateTransitions();
             countVoteDict.Add(typeof(eRESP_REPLICA_COMMIT), typeof(CountVote));
             countVoteDict.Add(typeof(eTimeout), typeof(Loop));
             countVoteDict.Add(typeof(eUnit), typeof(WaitForCancelTimerResponse));
 
-            StateTransitions waitForCancelTimerResponseDict = new StateTransitions();
+            StepStateTransitions waitForCancelTimerResponseDict = new StepStateTransitions();
             waitForCancelTimerResponseDict.Add(typeof(eTimeout), typeof(Loop));
             waitForCancelTimerResponseDict.Add(typeof(eCancelTimerSuccess), typeof(Loop));
             waitForCancelTimerResponseDict.Add(typeof(eCancelTimerFailure), typeof(WaitForTimeout));
 
-            StateTransitions waitForTimeoutDict = new StateTransitions();
+            StepStateTransitions waitForTimeoutDict = new StepStateTransitions();
             waitForTimeoutDict.Add(typeof(eTimeout), typeof(Loop));
 
             dict.Add(typeof(Init), initDict);
@@ -654,7 +654,7 @@ namespace TwoPhaseCommit
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Initializing Client ...");
 
@@ -666,7 +666,7 @@ namespace TwoPhaseCommit
 
         private class DoWrite : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Client: DoWrite");
 
@@ -685,7 +685,7 @@ namespace TwoPhaseCommit
 
         private class DoRead : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Client: DoRead");
 
@@ -718,7 +718,7 @@ namespace TwoPhaseCommit
 
         private class End : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Client: Finished");
             }
@@ -761,18 +761,18 @@ namespace TwoPhaseCommit
             }
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(eUnit), typeof(DoWrite));
 
-            StateTransitions doWriteDict = new StateTransitions();
+            StepStateTransitions doWriteDict = new StepStateTransitions();
             doWriteDict.Add(typeof(eWRITE_FAIL), typeof(End));
             doWriteDict.Add(typeof(eWRITE_SUCCESS), typeof(DoRead));
 
-            StateTransitions doReadDict = new StateTransitions();
+            StepStateTransitions doReadDict = new StepStateTransitions();
             doReadDict.Add(typeof(eREAD_FAIL), typeof(End));
             doReadDict.Add(typeof(eREAD_SUCCESS), typeof(End));
 
@@ -792,7 +792,7 @@ namespace TwoPhaseCommit
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Initializing Monitor ...");
                 (this.Machine as M).Data = new Dictionary<int, int>();
@@ -850,7 +850,7 @@ namespace TwoPhaseCommit
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Machine.Factory.CreateMonitor<M>();
 

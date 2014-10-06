@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------
-// <copyright file="Operation.cs" company="Microsoft">
+// <copyright file="Exceptions.cs" company="Microsoft">
 //      Copyright (c) Microsoft Corporation. All rights reserved.
 // 
 //      THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, 
@@ -15,35 +15,47 @@
 //-----------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
-using Microsoft.PSharp.IO;
-
-namespace Microsoft.PSharp.Scheduling
+namespace Microsoft.PSharp
 {
     /// <summary>
-    /// Class representing a scheduling operation.
+    /// This exception is thrown whenever an event is raised.
     /// </summary>
-    public sealed class Operation
+    internal class EventRaisedException : Exception
     {
         /// <summary>
-        /// Monotonically increasing operation counter.
+        /// The raised event.
         /// </summary>
-        private static int IdCounter = 0;
+        internal Event RaisedEvent;
 
         /// <summary>
-        /// Unique operation ID.
+        /// Default constructor of the EventRaisedException class.
         /// </summary>
-        public readonly int Id;
-
-        /// <summary>
-        /// Constructor of the Operation class. The operation
-        /// is assigned a monotonically increasing ID.
-        /// </summary>
-        public Operation()
+        /// <param name="e">Raised event</param>
+        public EventRaisedException(Event e)
         {
-            this.Id = Operation.IdCounter++;
+            this.RaisedEvent = e;
+        }
+    }
+
+    /// <summary>
+    /// This exception is thrown whenever the Return() statement
+    /// is executed to pop a state from the call state stack.
+    /// </summary>
+    internal class ReturnUsedException : Exception
+    {
+        /// <summary>
+        /// State from which Return() was used.
+        /// </summary>
+        internal State ReturningState;
+
+        /// <summary>
+        /// Default constructor of the ReturnUsedException class.
+        /// </summary>
+        /// <param name="s">State</param>
+        public ReturnUsedException(State s)
+        {
+            this.ReturningState = s;
         }
     }
 }

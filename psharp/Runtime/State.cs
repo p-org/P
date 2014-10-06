@@ -42,10 +42,7 @@ namespace Microsoft.PSharp
         /// </summary>
         protected Type Message
         {
-            get
-            {
-                return this.Machine.Message;
-            }
+            get { return this.Machine.Message; }
         }
 
         /// <summary>
@@ -55,24 +52,21 @@ namespace Microsoft.PSharp
         /// </summary>
         protected Object Payload
         {
-            get
-            {
-                return this.Machine.Payload;
-            }
+            get { return this.Machine.Payload; }
         }
 
         /// <summary>
-        /// Dictionary containing all step state transitions.
+        /// Dictionary containing all the step state transitions.
         /// </summary>
-        private StateTransitions StepTransitions;
+        private StepStateTransitions StepTransitions;
 
         /// <summary>
-        /// Dictionary containing all call state transitions.
+        /// Dictionary containing all the call state transitions.
         /// </summary>
-        private StateTransitions CallTransitions;
+        private CallStateTransitions CallTransitions;
 
         /// <summary>
-        /// Dictionary containing all action bindings.
+        /// Dictionary containing all the action bindings.
         /// </summary>
         private ActionBindings ActionBindings;
 
@@ -96,14 +90,14 @@ namespace Microsoft.PSharp
         /// <param name="sst">Step state transitions</param>
         /// <param name="cst">Call state transitions</param>
         /// <param name="ab">Action bindings</param>
-        internal void InitializeState(StateTransitions st,
-            StateTransitions ct, ActionBindings ab)
+        internal void InitializeState(StepStateTransitions sst,
+            CallStateTransitions cst, ActionBindings ab)
         {
-            if (st == null) this.StepTransitions = new StateTransitions();
-            else this.StepTransitions = st;
+            if (sst == null) this.StepTransitions = new StepStateTransitions();
+            else this.StepTransitions = sst;
 
-            if (ct == null) this.CallTransitions = new StateTransitions();
-            else this.CallTransitions = ct;
+            if (cst == null) this.CallTransitions = new CallStateTransitions();
+            else this.CallTransitions = cst;
 
             if (ab == null) this.ActionBindings = new ActionBindings();
             else this.ActionBindings = ab;
@@ -149,11 +143,13 @@ namespace Microsoft.PSharp
 
         /// <summary>
         /// Returns the type of the state that is the target of
-        /// the step transition triggered by the given event.
+        /// the step transition triggered by the given event, and
+        /// an optional lambda function which can override the
+        /// default OnExit function of the exiting state.
         /// </summary>
         /// <param name="e">Event</param>
         /// <returns>Type of the state</returns>
-        internal Type GetStepTransition(Event e)
+        internal Tuple<Type, Action> GetStepTransition(Event e)
         {
             return this.StepTransitions[e.GetType()];
         }
@@ -179,6 +175,41 @@ namespace Microsoft.PSharp
             return this.ActionBindings[e.GetType()];
         }
 
+        /// <summary>
+        /// Executes the on entry function.
+        /// </summary>
+        internal void ExecuteEntryFunction()
+        {
+            this.OnEntry();
+        }
+
+        /// <summary>
+        /// Executes the on exit function.
+        /// </summary>
+        internal void ExecuteExitFunction()
+        {
+            this.OnExit();
+        }
+
+        /// <summary>
+        /// Checks if the state can handle the given event.
+        /// </summary>
+        /// <param name="e">Event</param>
+        /// <returns>Boolean value</returns>
+        internal bool CanHandleEvent(Event e)
+        {
+            if (!this.IgnoredEvents.Contains(e.GetType()) &&
+                !this.DeferredEvents.Contains(e.GetType()) &&
+                (this.ContainsStepTransition(e) ||
+                this.ContainsCallTransition(e) ||
+                this.ContainsActionBinding(e)))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         #endregion
 
         #region P# API methods
@@ -186,12 +217,12 @@ namespace Microsoft.PSharp
         /// <summary>
         /// Method to be executed when entering the state.
         /// </summary>
-        public virtual void OnEntry() { }
+        protected virtual void OnEntry() { }
 
         /// <summary>
         /// Method to be executed when exiting the state.
         /// </summary>
-        public virtual void OnExit() { }
+        protected virtual void OnExit() { }
 
         /// <summary>
         /// Defines all event types that are ignored by this state.
@@ -212,43 +243,40 @@ namespace Microsoft.PSharp
         }
 
         /// <summary>
-        /// Sends an asynchronous event to a machine. The P# runtime
-        /// treats the send as a new operation.
-        /// </summary>
-        /// <param name="m">Machine</param>
-        /// <param name="e">Event</param>
-        protected void SendNew(Machine m, Event e)
-        {
-            Runtime.Send(this.Machine.GetType().Name, m, e);
-        }
-
-        /// <summary>
         /// Sends an asynchronous event to a machine.
         /// </summary>
         /// <param name="m">Machine</param>
         /// <param name="e">Event</param>
         protected void Send(Machine m, Event e)
         {
-            Runtime.Send(this.Machine.GetType().Name, m, e);
+            this.Machine.Send(m, e);
         }
 
         /// <summary>
-        /// Adds the given event to this machine's mailbox.
+        /// Invokes the specified monitor with the given event.
         /// </summary>
+        /// <typeparam name="T">Type of the monitor</typeparam>
+        /// <param name="e">Event</param>
+        protected internal void Invoke<T>(Event e)
+        {
+            this.Machine.Invoke<T>(e);
+        }
+
+        /// <summary>
+        /// Raises an event internally and returns from the execution context.
+        /// </summary>
+        /// <param name="e">Event</param>
         protected void Raise(Event e)
         {
-            Utilities.Verbose("Machine {0} raised event {1}.\n", this.Machine, e);
-            e.Operation = new Operation(true);
-            this.Machine.Inbox.Add(e);
+            this.Machine.Raise(e);
         }
 
         /// <summary>
-        /// Performs a call state transition to the given target state.
+        /// Pops the current state from the call state stack.
         /// </summary>
-        /// <param name="s">Type of the state</param>
-        protected void Call(Type s)
+        protected void Return()
         {
-            this.Machine.Call(s);
+            this.Machine.Return();
         }
 
         /// <summary>
@@ -287,9 +315,9 @@ namespace Microsoft.PSharp
         {
             List<Type> events = new List<Type>();
 
-            events.AddRange(this.StepTransitions.Keys);
-            events.AddRange(this.CallTransitions.Keys);
-            events.AddRange(this.ActionBindings.Keys);
+            events.AddRange(this.StepTransitions.Keys());
+            events.AddRange(this.CallTransitions.Keys());
+            events.AddRange(this.ActionBindings.Keys());
 
             for (int i = 0; i < events.Count; i++)
             {
@@ -297,9 +325,9 @@ namespace Microsoft.PSharp
                 {
                     if (i == j)
                         continue;
-                    Runtime.Assert(events[i] != events[j], "The state {0} contains " +
-                        "the event {1} that triggers more than one state transitions " +
-                        "or action bindings.\n", this, events[i]);
+                    Runtime.Assert(events[i] != events[j], "State '{0}' can trigger more " +
+                        "than one state transition or action binding when receiving " +
+                        "event '{1}'.\n", this.GetType().Name, events[i].Name);
                 }
             }
         }

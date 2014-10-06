@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------
-// <copyright file="ActionBindings.cs" company="Microsoft">
+// <copyright file="CallStateTransitions.cs" company="Microsoft">
 //      Copyright (c) Microsoft Corporation. All rights reserved.
 // 
 //      THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, 
@@ -21,41 +21,42 @@ using System.Collections.Generic;
 namespace Microsoft.PSharp
 {
     /// <summary>
-    /// Class representing a collection of action bindings.
+    /// Class representing a collection of call state transitions.
     /// </summary>
-    public sealed class ActionBindings : IEnumerable<KeyValuePair<Type, Action>>
+    public sealed class CallStateTransitions : IEnumerable<KeyValuePair<Type, Type>>
     {
         /// <summary>
-        /// A dictionary of action bindings. A key represents
-        /// the type of an event, and the value is the action
-        /// that is triggered by the event.
+        /// A dictionary of call state transitions. A key represents
+        /// the type of an event, and the value is the target state
+        /// of the call transition.
         /// </summary>
-        private Dictionary<Type, Action> Dictionary;
+        private Dictionary<Type, Type> Dictionary;
 
         /// <summary>
-        /// Default constructor of the ActionBindings class.
+        /// Default constructor of the CallStateTransitions class.
         /// </summary>
-        public ActionBindings()
+        public CallStateTransitions()
         {
-            this.Dictionary = new Dictionary<Type, Action>();
+            this.Dictionary = new Dictionary<Type, Type>();
         }
 
         /// <summary>
-        /// Adds the specified pair of event and action to the collection.
+        /// Adds the specified pair of event and state for transition.
         /// </summary>
         /// <param name="e">Type of the event</param>
-        /// <param name="a">Action</param>
-        public void Add(Type e, Action a)
+        /// <param name="s">Type of the state</param>
+        public void Add(Type e, Type s)
         {
-            this.Dictionary.Add(e, a);
+            this.Dictionary.Add(e, s);
         }
 
         /// <summary>
-        /// Returns the action triggered by the specified type of event.
+        /// Returns the state to transition to when receiving the
+        /// specified type of event.
         /// </summary>
         /// <param name="key">Type of the event</param>
-        /// <returns>Action</returns>
-        public Action this[Type key]
+        /// <returns>Type of the state</returns>
+        public Type this[Type key]
         {
             internal get
             {
@@ -90,7 +91,7 @@ namespace Microsoft.PSharp
         /// Returns an enumerator that iterates through the collection.
         /// </summary>
         /// <returns>IEnumerator</returns>
-        public IEnumerator<KeyValuePair<Type, Action>> GetEnumerator()
+        public IEnumerator<KeyValuePair<Type, Type>> GetEnumerator()
         {
             return this.Dictionary.GetEnumerator();
         }

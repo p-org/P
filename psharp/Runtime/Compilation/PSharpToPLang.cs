@@ -236,7 +236,7 @@ namespace Microsoft.PSharp.Compilation
                             foreach (var step in machineSteps[stepsKey])
                             {
                                 str = "    on " + step.Key.Name +
-                                    " goto " + step.Value.Name + ";";
+                                    " goto " + step.Value.Item1.Name + ";";
                                 this.CompiledProgram.Add(str);
                             }
                         }
@@ -294,11 +294,11 @@ namespace Microsoft.PSharp.Compilation
         }
 
         /// <summary>
-        /// Parses and returns the step transitions of the given machine.
+        /// Parses and returns the step state transitions of the given machine.
         /// </summary>
         /// <param name="m">Machine</param>
         /// <returns>Dictionary<Type, StateTransitions></returns>
-        private Dictionary<Type, StateTransitions> ParseStepTransitions(Type m)
+        private Dictionary<Type, StepStateTransitions> ParseStepTransitions(Type m)
         {
             MethodInfo steps = null;
             Type machineType = m;
@@ -319,15 +319,15 @@ namespace Microsoft.PSharp.Compilation
                 return null;
 
             object classInstance = Activator.CreateInstance(m);
-            return (Dictionary<Type, StateTransitions>)steps.Invoke(classInstance, null);
+            return (Dictionary<Type, StepStateTransitions>)steps.Invoke(classInstance, null);
         }
 
         /// <summary>
-        /// Parses and returns the call transitions of the given machine.
+        /// Parses and returns the call state transitions of the given machine.
         /// </summary>
         /// <param name="m">Machine</param>
         /// <returns>Dictionary<Type, StateTransitions></returns>
-        private Dictionary<Type, StateTransitions> ParseCallTransitions(Type m)
+        private Dictionary<Type, CallStateTransitions> ParseCallTransitions(Type m)
         {
             MethodInfo calls = null;
             Type machineType = m;
@@ -348,7 +348,7 @@ namespace Microsoft.PSharp.Compilation
                 return null;
 
             object classInstance = Activator.CreateInstance(m);
-            return (Dictionary<Type, StateTransitions>)calls.Invoke(classInstance, null);
+            return (Dictionary<Type, CallStateTransitions>)calls.Invoke(classInstance, null);
         }
 
         /// <summary>

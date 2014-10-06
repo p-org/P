@@ -29,7 +29,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace PSharpMonitor
+namespace Microsoft.PSharp.Monitoring
 {
     public partial class PSharpMonitor : Form
     {
@@ -37,7 +37,6 @@ namespace PSharpMonitor
 
         private int IterationsDone = 0;
         private int BugsFound = 0;
-        private bool SkipIteration = false;
 
         private List<string> Info;
         private CancellationTokenSource CTS;
@@ -79,14 +78,6 @@ namespace PSharpMonitor
                 this.SendSchedulingConfiguration();
                 this.WaitAndParseResults();
                 this.KillTestingProcesses();
-
-                if (this.SkipIteration)
-                {
-                    this.UpdateTestingInfo("Iteration skipped. Attempting again ...\n");
-                    this.SkipIteration = false;
-                    continue;
-                }
-
                 this.IterationsDone++;
                 this.ProgressBar.Value = this.IterationsDone;
                 this.UpdateTestingInfo("Finished Iteration: {0}.\nFound {1} bugs so far.\n",
@@ -137,9 +128,7 @@ namespace PSharpMonitor
 
         private void SendSchedulingConfiguration()
         {
-            string request = Options.PathToProgram + " " +
-                Options.IterationLimit + " " +
-                (int)Options.Scheduler + " " +
+            string request = (int)Options.Scheduler + " " +
                 Options.OperationsBound + " " +
                 Options.StopAtBug + " " +
                 Options.Debug + " ";
@@ -177,11 +166,7 @@ namespace PSharpMonitor
             while (check.Equals("false"))
                 continue;
             string[] result = request.Split(' ');
-
-            this.SkipIteration = Boolean.Parse(result[0]);
-            if (this.SkipIteration)
-                return;
-            if (Boolean.Parse(result[1]))
+            if (Boolean.Parse(result[0]))
                 this.BugsFound++;
         }
 
@@ -244,7 +229,6 @@ namespace PSharpMonitor
         {
             this.IterationsDone = 0;
             this.BugsFound = 0;
-            this.SkipIteration = false;
             this.Info.Clear();
         }
 

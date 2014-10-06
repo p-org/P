@@ -108,7 +108,7 @@ namespace LinearTopology
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("GodMachine is creating all post machines ...");
 
@@ -246,7 +246,7 @@ namespace LinearTopology
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 // Initialize the EBest value to random.
                 (this.Machine as Clock).Ports = ((Tuple<List<Machine>, int>)this.Payload).Item1;
@@ -276,7 +276,7 @@ namespace LinearTopology
 
         private class PeriodicStateDecision : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 (this.Machine as Clock).Check =
                     (this.Machine as Clock).IsPeriodicAnnounceTimeOut();
@@ -295,7 +295,7 @@ namespace LinearTopology
 
                     Console.WriteLine("Clock goes to atomic transaction mode");
                     // Goes to atomic transaction mode.
-                    this.Call(typeof(WaitForErBest));
+                    //this.Call(typeof(WaitForErBest));
                 }
 
                 this.Raise(new eUnit());
@@ -309,7 +309,7 @@ namespace LinearTopology
 
         private class CalculateRecommendedState : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 (this.Machine as Clock).I = (this.Machine as Clock).Ports.Count - 1;
 
@@ -466,17 +466,17 @@ namespace LinearTopology
             }
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(eLocal), typeof(PeriodicStateDecision));
 
-            StateTransitions periodicStateDecisionDict = new StateTransitions();
+            StepStateTransitions periodicStateDecisionDict = new StepStateTransitions();
             periodicStateDecisionDict.Add(typeof(eUnit), typeof(PeriodicStateDecision));
 
-            StateTransitions waitForErBestDict = new StateTransitions();
+            StepStateTransitions waitForErBestDict = new StepStateTransitions();
             waitForErBestDict.Add(typeof(eLocal), typeof(CalculateRecommendedState));
 
             dict.Add(typeof(Init), initDict);
@@ -543,7 +543,7 @@ namespace LinearTopology
 
         private class ConnectionInitialized : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 (this.Machine as PortMachine).ConnectedTo =
                     ((Tuple<Machine, Machine>)this.Payload).Item1;
@@ -565,7 +565,7 @@ namespace LinearTopology
 
         private class Initializing : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 (this.Machine as PortMachine).ParentGM = (Tuple<Machine, int>)this.Payload;
 
@@ -591,7 +591,7 @@ namespace LinearTopology
 
         private class Listening : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 (this.Machine as PortMachine).Check =
                     (this.Machine as PortMachine).IsThreeAnnounceReceiptTimeOut();
@@ -605,7 +605,7 @@ namespace LinearTopology
 
         private class Master : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 (this.Machine as PortMachine).Check =
                     (this.Machine as PortMachine).IsAnnounceReceiptTimeOut();
@@ -623,9 +623,9 @@ namespace LinearTopology
 
         private class DeferAll : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
-                this.Call(typeof(SendErBestAndWaitForRecState));
+                //this.Call(typeof(SendErBestAndWaitForRecState));
 
                 if ((this.Machine as PortMachine).RecState == 0)
                 {
@@ -703,25 +703,25 @@ namespace LinearTopology
             }
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(eInitialise), typeof(ConnectionInitialized));
 
-            StateTransitions connectionInitializedDict = new StateTransitions();
+            StepStateTransitions connectionInitializedDict = new StepStateTransitions();
             connectionInitializedDict.Add(typeof(ePowerUp), typeof(Initializing));
 
-            StateTransitions initializingDict = new StateTransitions();
+            StepStateTransitions initializingDict = new StepStateTransitions();
             initializingDict.Add(typeof(eUnit), typeof(Initializing));
             initializingDict.Add(typeof(eLocal), typeof(Listening));
 
-            StateTransitions listeningDict = new StateTransitions();
+            StepStateTransitions listeningDict = new StepStateTransitions();
             listeningDict.Add(typeof(eStateDecisionEvent), typeof(DeferAll));
             listeningDict.Add(typeof(eGoMaster), typeof(Master));
 
-            StateTransitions masterDict = new StateTransitions();
+            StepStateTransitions masterDict = new StepStateTransitions();
             masterDict.Add(typeof(eUnit), typeof(Master));
             masterDict.Add(typeof(eStateDecisionEvent), typeof(DeferAll));
 

@@ -32,7 +32,21 @@ namespace Microsoft.PSharp
     /// </summary>
     public abstract class Machine
     {
+        #region static fields
+
+        /// <summary>
+        /// Monotonically increasing machine ID counter.
+        /// </summary>
+        private static int IdCounter = 0;
+
+        #endregion
+
         #region fields
+
+        /// <summary>
+        /// Unique machine ID.
+        /// </summary>
+        internal readonly int Id;
         
         /// <summary>
         /// Set of all possible states.
@@ -68,12 +82,12 @@ namespace Microsoft.PSharp
         /// <summary>
         /// Collection of all possible step state transitions.
         /// </summary>
-        private Dictionary<Type, StateTransitions> StepTransitions;
+        private Dictionary<Type, StepStateTransitions> StepTransitions;
 
         /// <summary>
         /// Collection of all possible call state transitions.
         /// </summary>
-        private Dictionary<Type, StateTransitions> CallTransitions;
+        private Dictionary<Type, CallStateTransitions> CallTransitions;
 
         /// <summary>
         /// Collection of all possible action bindings.
@@ -88,9 +102,16 @@ namespace Microsoft.PSharp
         internal BlockingCollection<Event> Inbox;
 
         /// <summary>
-        /// The operation associated with the machine.
+        /// The raised event if one exists. This has higher priority
+        /// over any other events in the inbox queue.
         /// </summary>
-        internal Operation Operation;
+        internal Event RaisedEvent;
+
+        /// <summary>
+        /// Queue of the available machine operations. The machine
+        /// is always associated with the head operation.
+        /// </summary>
+        internal Queue<Operation> OperationQueue;
 
         /// <summary>
         /// Handle to the latest received event type.
@@ -115,20 +136,22 @@ namespace Microsoft.PSharp
         /// </summary>
         protected Machine()
         {
+            this.Id = Machine.IdCounter++;
             this.Inbox = new BlockingCollection<Event>();
+            this.RaisedEvent = null;
             this.StateStack = new Stack<State>();
-            this.Operation = null;
             this.Wrapper = null;
             this.IsActive = true;
 
+            this.OperationQueue = new Queue<Operation>();
             this.CTS = new CancellationTokenSource();
 
-            this.StepTransitions = this.DefineStepTransitions();
-            this.CallTransitions = this.DefineCallTransitions();
+            this.StepTransitions = this.DefineStepStateTransitions();
+            this.CallTransitions = this.DefineCallStateTransitions();
             this.ActionBindings = this.DefineActionBindings();
 
             this.InitializeStates();
-            this.DoErrorChecking();
+            this.AssertStateValidity();
         }
 
         #endregion
@@ -156,8 +179,8 @@ namespace Microsoft.PSharp
                     {
                         if (s.IsDefined(typeof(Initial), false))
                         {
-                            Runtime.Assert(initialState == null, "Machine {0} can " +
-                                "not have more than one initial states.\n", this);
+                            Runtime.Assert(initialState == null, "Machine '{0}' can not have " +
+                                "more than one initial states.\n", this.GetType().Name);
                             initialState = s;
                         }
 
@@ -170,20 +193,20 @@ namespace Microsoft.PSharp
 
             foreach (Type s in stateTypes)
             {
-                Runtime.Assert(s.BaseType == typeof(State), "The state is " +
-                        "not of the correct type.\n");
+                Runtime.Assert(s.BaseType == typeof(State), "State '{0}' is " +
+                        "not of the correct type.\n", s.Name);
                 State state = State.Factory.CreateState(s);
 
-                StateTransitions st = null;
-                StateTransitions ct = null;
+                StepStateTransitions sst = null;
+                CallStateTransitions cst = null;
                 ActionBindings ab = null;
 
-                this.StepTransitions.TryGetValue(s, out st);
-                this.CallTransitions.TryGetValue(s, out ct);
+                this.StepTransitions.TryGetValue(s, out sst);
+                this.CallTransitions.TryGetValue(s, out cst);
                 this.ActionBindings.TryGetValue(s, out ab);
 
                 state.Machine = this;
-                state.InitializeState(st, ct, ab);
+                state.InitializeState(sst, cst, ab);
 
                 this.States.Add(state);
             }
@@ -203,20 +226,19 @@ namespace Microsoft.PSharp
         /// state to the new one.
         /// </summary>
         /// <param name="s">Type of the state</param>
-        private void Goto(Type s)
+        /// <param name="onExit">Lambda to override OnExit</param>
+        private void Goto(Type s, Action onExit)
         {
-            // Performs the on exit statements of the current state.
-            this.StateStack.Peek().OnExit();
-
+            State nextState = this.GetTransitionStateFromType(s);
+            // The machine performs the on exit statements of the current state.
+            this.ExecuteCurrentStateOnExit(onExit);
             // The machine transitions to the new state.
             this.StateStack.Pop();
-            this.StateStack.Push(this.States.First(state => state.GetType() == s));
-
-            // Performs the on entry statements of the new state.
-            this.StateStack.Peek().OnEntry();
-
-            Runtime.Assert(this.StateStack.Peek() != null, "The machine's current " +
-                "state cannot be null.\n");
+            this.StateStack.Push(nextState);
+            // The machine performs the on entry statements of the new state.
+            this.ExecuteCurrentStateOnEntry();
+            Runtime.Assert(this.StateStack.Peek() != null, "Machine '{0}' cannot not " +
+                "have a null current state.\n", this.GetType().Name);
         }
 
         /// <summary>
@@ -227,118 +249,121 @@ namespace Microsoft.PSharp
         /// <param name="s">Type of the state</param>
         private void Push(Type s)
         {
+            State nextState = this.GetTransitionStateFromType(s);
             // The machine transitions to the new state.
-            this.StateStack.Push(this.States.First(state => state.GetType() == s));
-
-            // Performs the on entry statements of the new state.
-            this.StateStack.Peek().OnEntry();
-
-            Runtime.Assert(this.StateStack.Peek() != null, "The machine's current " +
-                "state cannot be null.\n");
+            this.StateStack.Push(nextState);
+            // The machine performs the on entry statements of the new state.
+            this.ExecuteCurrentStateOnEntry();
+            Runtime.Assert(this.StateStack.Peek() != null, "Machine '{0}' cannot not " +
+                "have a null current state.\n", this.GetType().Name);
         }
 
         /// <summary>
         /// Performs an action.
         /// </summary>
-        /// <param name="a"></param>
+        /// <param name="a">Action</param>
         private void Do(Action a)
         {
-            a();
+            try
+            {
+                a();
+            }
+            catch (EventRaisedException ex)
+            {
+                // Assigns the raised event.
+                this.RaisedEvent = ex.RaisedEvent;
+                // Handles a raised event.
+                //this.HandleEvent(ex.RaisedEvent);
+            }
+            catch (ReturnUsedException ex)
+            {
+                // Handles the returning state.
+                this.AssertReturnStatementValidity(ex.ReturningState);
+            }
+            catch (Exception ex)
+            {
+                // Handles generic exception.
+                this.ReportGenericAssertion(ex);
+            }
         }
 
         /// <summary>
-        /// The machine starts listening for incoming events.
+        /// The machine handles the given event.
         /// </summary>
-        private void StartListener()
+        /// <param name="e">Type of the event</param>
+        private void HandleEvent(Event e)
         {
-            while (this.IsActive)
+            Runtime.Assert(e != null, "Machine '{0}' received a null event.\n", this);
+
+            State currentState = this.StateStack.Peek();
+            this.Message = e.GetType();
+            this.Payload = e.Payload;
+
+            // Checks if the event can be handled by the current state.
+            if (!currentState.CanHandleEvent(e))
             {
-                // We are using a blocking collection so the attempt to
-                // take an event will block if there is no available
-                // event int he mailbox. The operation will unblock when
-                // the next event arrives.
-                Event nextEvent = this.Inbox.Take(this.CTS.Token);
-                if (this.CTS.Token.IsCancellationRequested)
-                    break;
-
-                // If in bug-finding mode, only proceed if the operation
-                // of the machine equals to the current operation of the
-                // P# runtime.
-                if (Runtime.Options.Mode == Runtime.Mode.BugFinding &&
-                    nextEvent.Operation.Id > 0)
+                // Checks if the event can be handled by any state in the call
+                // state stack, if there are any. If it can be handled, then
+                // the call state stack is manipulated appropriately.
+                if (!this.TryFindStateThatCanHandleEvent(ref currentState, e))
                 {
-                    this.Operation = nextEvent.Operation;
-                    while (this.Operation.Id != Runtime.Operation.Id)
+                    Runtime.Assert(!(currentState.IgnoredEvents.Contains(e.GetType()) &&
+                        currentState.DeferredEvents.Contains(e.GetType())), "Machine '{0}' " +
+                        "received event '{1}' which is both ignored and deferred in state '{2}'.\n",
+                        this.GetType().Name, e.GetType().Name, currentState.GetType().Name);
+                    Runtime.Assert(currentState.IgnoredEvents.Contains(e.GetType()) ||
+                        currentState.DeferredEvents.Contains(e.GetType()), "Machine '{0}' " +
+                        "received event '{1}', which cannot be handled in state '{2}'.\n",
+                        this.GetType().Name, e.GetType().Name, currentState.GetType().Name);
+
+                    // If the event to process is in the ignored set of the current
+                    // state (or stack of states in case of a call transition), then
+                    // the event is removed from the inbox queue.
+                    if (currentState.IgnoredEvents.Contains(e.GetType()))
                     {
-                        Thread.Sleep(10);
+                        return;
+                    }
+                    // If the event to process is in the deferred set of the current
+                    // state (or stack of states in case of a call transition), then
+                    // the event processing is deferred and the machine will attempt
+                    // to process the next event in the inbox queue.
+                    else if (currentState.DeferredEvents.Contains(e.GetType()))
+                    {
+                        this.Inbox.Add(e);
+                        return;
                     }
                 }
+            }
 
-                State currentState = this.StateStack.Peek();
-
-                this.Message = nextEvent.GetType();
-                this.Payload = nextEvent.Payload;
-
-                if (nextEvent != null)
-                {
-                    // If next event to process is in the ignored set of the current
-                    // state, then the event is removed from the inbox queue.
-                    if (currentState.IgnoredEvents.Contains(nextEvent.GetType()))
-                    {
-                        continue;
-                    }
-                    // If next event to process is in the deferred set of the current
-                    // state, then the event processing is deferred and the machine
-                    // will attempt to process the next event in the inbox queue.
-                    else if (currentState.DeferredEvents.Contains(nextEvent.GetType()))
-                    {
-                        this.Inbox.Add(nextEvent);
-                        continue;
-                    }
-                    // If the event is neither in the ignored nor in the deferred set
-                    // of the current state, then the machine can process it. The
-                    // machine checks if the event triggers an action.
-                    else if (currentState.ContainsActionBinding(nextEvent))
-                    {
-                        Action action = currentState.GetActionBinding(nextEvent);
-                        this.Do(action);
-                        continue;
-                    }
-                    // If the event is neither in the ignored nor in the deferred set
-                    // of the current state, then the machine can process it. The
-                    // machine checks if the event triggers a step state transition.
-                    else if (currentState.ContainsStepTransition(nextEvent))
-                    {
-                        Type targetState = currentState.GetStepTransition(nextEvent);
-                        Utilities.Verbose("{0}: {1} --- STEP ---> {2}\n",
-                            this, currentState, targetState);
-                        this.Goto(targetState);
-                        continue;
-                    }
-                    // If the event is neither in the ignored nor in the deferred set
-                    // of the current state, then the machine can process it. The
-                    // machine checks if the event triggers a call state transition.
-                    else if (currentState.ContainsCallTransition(nextEvent))
-                    {
-                        Type targetState = currentState.GetCallTransition(nextEvent);
-                        Utilities.Verbose("{0}: {1} --- CALL ---> {2}\n",
-                            this, currentState, targetState);
-                        this.Push(targetState);
-                        continue;
-                    }
-                    // The event cannot be handled by the current state. The machine
-                    // attempts to pop the current state and handle the event with the
-                    // underlying state in the stack. If the stack is empty it means
-                    // that the event was erroneous sent and the runtime reports an
-                    // error before terminating.
-                    else
-                    {
-                        this.StateStack.Pop();
-                        Runtime.Assert(this.StateStack.Count > 0, "Machine {0} " +
-                            "received an event ({1}) that cannot be handled in " +
-                            "state {2}.\n", this, nextEvent, currentState);
-                    }
-                }
+            // If the event is neither in the ignored nor in the deferred set
+            // of the current state, then the machine can process it. The
+            // machine checks if the event triggers a step state transition.
+            if (currentState.ContainsStepTransition(e))
+            {
+                var transition = currentState.GetStepTransition(e);
+                Type targetState = transition.Item1;
+                Action onExitOverride = transition.Item2;
+                Utilities.Verbose("{0}: {1} --- STEP ---> {2}\n",
+                    this, currentState, targetState);
+                this.Goto(targetState, onExitOverride);
+            }
+            // If the event is neither in the ignored nor in the deferred set
+            // of the current state, then the machine can process it. The
+            // machine checks if the event triggers a call state transition.
+            else if (currentState.ContainsCallTransition(e))
+            {
+                Type targetState = currentState.GetCallTransition(e);
+                Utilities.Verbose("{0}: {1} --- CALL ---> {2}\n",
+                    this, currentState, targetState);
+                this.Push(targetState);
+            }
+            // If the event is neither in the ignored nor in the deferred set
+            // of the current state, then the machine can process it. The
+            // machine checks if the event triggers an action.
+            else if (currentState.ContainsActionBinding(e))
+            {
+                Action action = currentState.GetActionBinding(e);
+                this.Do(action);
             }
         }
 
@@ -347,17 +372,66 @@ namespace Microsoft.PSharp
         #region P# internal methods
 
         /// <summary>
-        /// Starts the machine with an optional payload.
+        /// Starts the machine concurrently with an optional payload.
         /// </summary>
         /// /// <param name="payload">Optional payload</param>
         internal void Start(Object payload = null)
         {
             Task.Factory.StartNew((Object pl) =>
             {
-                this.Payload = pl;
-                this.StateStack.Peek().OnEntry();
-                this.StartListener();
+                this.GotoInitialState(pl);
+
+                while (this.IsActive)
+                {
+                    if (this.RaisedEvent != null)
+                    {
+                        Event nextEvent = this.RaisedEvent;
+                        this.RaisedEvent = null;
+                        this.HandleEvent(nextEvent);
+                    }
+                    else
+                    {
+                        // We are using a blocking collection so the attempt to
+                        // dequeue an event will block if there is no available
+                        // event in the mailbox. The operation will unblock when
+                        // the next event arrives.
+                        Event nextEvent = this.Inbox.Take(this.CTS.Token);
+                        if (this.CTS.Token.IsCancellationRequested)
+                            return;
+                        this.HandleEvent(nextEvent);
+                    }
+                }
             }, payload);
+        }
+
+        /// <summary>
+        /// Starts the machine at the initial state with an
+        /// optional payload.
+        /// </summary>
+        /// /// <param name="payload">Optional payload</param>
+        internal void GotoInitialState(Object payload = null)
+        {
+            this.Payload = payload;
+            // Performs the on entry statements of the new state.
+            this.ExecuteCurrentStateOnEntry();
+        }
+
+        /// <summary>
+        /// The machine handles the next available event in its inbox.
+        /// </summary>
+        internal void HandleNextEvent()
+        {
+            if (this.RaisedEvent != null)
+            {
+                Event nextEvent = this.RaisedEvent;
+                this.RaisedEvent = null;
+                this.HandleEvent(nextEvent);
+            }
+            else
+            {
+                Event nextEvent = this.Inbox.Take(this.CTS.Token);
+                this.HandleEvent(nextEvent);
+            }
         }
 
         /// <summary>
@@ -379,9 +453,9 @@ namespace Microsoft.PSharp
         /// a state and a value represents the state's transitions.
         /// </summary>
         /// <returns>Dictionary<Type, StateTransitions></returns>
-        protected virtual Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected virtual Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            return new Dictionary<Type, StateTransitions>();
+            return new Dictionary<Type, StepStateTransitions>();
         }
 
         /// <summary>
@@ -390,9 +464,9 @@ namespace Microsoft.PSharp
         /// a state and a value represents the state's transitions.
         /// </summary>
         /// <returns>Dictionary<Type, StateTransitions></returns>
-        protected virtual Dictionary<Type, StateTransitions> DefineCallTransitions()
+        protected virtual Dictionary<Type, CallStateTransitions> DefineCallStateTransitions()
         {
-            return new Dictionary<Type, StateTransitions>();
+            return new Dictionary<Type, CallStateTransitions>();
         }
 
         /// <summary>
@@ -411,28 +485,44 @@ namespace Microsoft.PSharp
         /// </summary>
         /// <param name="m">Machine</param>
         /// <param name="e">Event</param>
-        protected void Send(Machine m, Event e)
+        protected internal void Send(Machine m, Event e)
         {
             Runtime.Send(this.GetType().Name, m, e);
         }
 
         /// <summary>
-        /// Adds the given event to this machine's mailbox.
+        /// Invokes the specified monitor with the given event.
         /// </summary>
-        protected void Raise(Event e)
+        /// <typeparam name="T">Type of the monitor</typeparam>
+        /// <param name="e">Event</param>
+        protected internal void Invoke<T>(Event e)
         {
-            Utilities.Verbose("Machine {0} raised event {1}.\n", this, e);
-            e.Operation = new Operation(true);
-            this.Inbox.Add(e);
+            Runtime.Invoke<T>(e);
         }
 
         /// <summary>
-        /// Performs a call state transition to the given target state.
+        /// Raises an event internally and returns from the execution context.
         /// </summary>
-        /// <param name="s">Type of the state</param>
-        protected internal void Call(Type s)
+        /// <param name="e">Event</param>
+        protected internal void Raise(Event e)
         {
-            this.Push(s);
+            Utilities.Verbose("Machine {0} raised event {1}.\n", this, e);
+            
+            if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
+            {
+                e.Operation = new Operation();
+                this.OperationQueue.Enqueue(e.Operation);
+            }
+
+            throw new EventRaisedException(e);
+        }
+
+        /// <summary>
+        /// Pops the current state from the call state stack.
+        /// </summary>
+        protected internal void Return()
+        {
+            throw new ReturnUsedException(this.StateStack.Pop());
         }
 
         /// <summary>
@@ -454,14 +544,13 @@ namespace Microsoft.PSharp
             /// Creates a new machine of type T with an optional payload.
             /// </summary>
             /// <param name="m">Type of machine</param>
-            /// <param name="payload">Payload</param>
+            /// <param name="payload">Optional payload</param>
             /// <returns>Machine</returns>
             public static Machine CreateMachine(Type m, Object payload = null)
             {
                 Runtime.Assert(m.IsSubclassOf(typeof(Machine)), "The provided " +
-                    "type {0} is not a subclass of Machine.\n", m);
-                Machine machine = Runtime.TryCreateNewMachineInstance(m);
-                machine.Start(payload);
+                    "type '{0}' is not a subclass of Machine.\n", m.Name);
+                Machine machine = Runtime.TryCreateNewMachineInstance(m, payload);
                 return machine;
             }
 
@@ -469,14 +558,13 @@ namespace Microsoft.PSharp
             /// Creates a new machine of type T with an optional payload.
             /// </summary>
             /// <typeparam name="T">Type of machine</typeparam>
-            /// <param name="payload">Payload</param>
+            /// <param name="payload">Optional payload</param>
             /// <returns>Machine</returns>
             public static T CreateMachine<T>(Object payload = null)
             {
                 Runtime.Assert(typeof(T).IsSubclassOf(typeof(Machine)), "The provided " +
-                    "type {0} is not a subclass of Machine.\n", typeof(T));
-                T machine = Runtime.TryCreateNewMachineInstance<T>();
-                (machine as Machine).Start(payload);
+                    "type '{0}' is not a subclass of Machine.\n", typeof(T).Name);
+                T machine = Runtime.TryCreateNewMachineInstance<T>(payload);
                 return machine;
             }
 
@@ -484,33 +572,235 @@ namespace Microsoft.PSharp
             /// Creates a new monitor of type T with an optional payload.
             /// </summary>
             /// <param name="m">Type of monitor</param>
-            /// <param name="payload">Payload</param>
+            /// <param name="payload">Optional payload</param>
             public static void CreateMonitor(Type m, Object payload = null)
             {
                 Runtime.Assert(m.IsSubclassOf(typeof(Machine)), "The provided " +
-                    "type {0} is not a subclass of Machine.\n", m);
+                    "type '{0}' is not a subclass of Machine.\n", m.Name);
                 Runtime.Assert(m.IsDefined(typeof(Monitor), false), "The provided " +
-                    "type {0} is not a monitor.\n", m);
-
-                Machine machine = Runtime.TryCreateNewMonitorInstance(m);
-                machine.Start(payload);
+                    "type '{0}' is not a monitor.\n", m.Name);
+                Machine machine = Runtime.TryCreateNewMonitorInstance(m, payload);
             }
 
             /// <summary>
             /// Creates a new monitor of type T with an optional payload.
             /// </summary>
             /// <typeparam name="T">Type of monitor</typeparam>
-            /// <param name="payload">Payload</param>
+            /// <param name="payload">Optional payload</param>
             public static void CreateMonitor<T>(Object payload = null)
             {
                 Runtime.Assert(typeof(T).IsSubclassOf(typeof(Machine)), "The provided " +
-                    "type {0} is not a subclass of Machine.\n", typeof(T));
+                    "type '{0}' is not a subclass of Machine.\n", typeof(T).Name);
                 Runtime.Assert(typeof(T).IsDefined(typeof(Monitor), false), "The provided " +
-                    "type {0} is not a monitor.\n", typeof(T));
-
-                T machine = Runtime.TryCreateNewMonitorInstance<T>();
-                (machine as Machine).Start(payload);
+                    "type '{0}' is not a monitor.\n", typeof(T).Name);
+                T machine = Runtime.TryCreateNewMonitorInstance<T>(payload);
             }
+        }
+
+        #endregion
+
+        #region helper methods
+
+        /// <summary>
+        /// Gets the transition state from the given type. The method also
+        /// performs error checking to ensure the state's validity.
+        /// </summary>
+        /// <param name="s">Type of the state</param>
+        /// <returns>State</returns>
+        private State GetTransitionStateFromType(Type s)
+        {
+            State transitionState = null;
+
+            Runtime.Assert(s != null, "Machine '{0}' tried to transition to a " +
+                "null state from state '{1}'.\n", this.GetType().Name,
+                this.StateStack.Peek().GetType().Name);
+
+            try
+            {
+                transitionState = this.States.First(state => state.GetType() == s);
+            }
+            catch (InvalidOperationException ex)
+            {
+                Runtime.Assert(ex == null, "Machine '{0}' tried to transition to invalid " +
+                    "state '{1}' from state '{2}'.\n", this.GetType().Name, s.Name,
+                    this.StateStack.Peek().GetType().Name);
+            }
+
+            return transitionState;
+        }
+
+        /// <summary>
+        /// Executes the on entry function of the current state.
+        /// </summary>
+        private void ExecuteCurrentStateOnEntry()
+        {
+            try
+            {
+                // Performs the on entry statements of the new state.
+                this.StateStack.Peek().ExecuteEntryFunction();
+            }
+            catch (EventRaisedException ex)
+            {
+                // Assigns the raised event.
+                this.RaisedEvent = ex.RaisedEvent;
+                // Handles a raised event.
+                //this.HandleEvent(ex.RaisedEvent);
+            }
+            catch (ReturnUsedException ex)
+            {
+                // Handles the returning state.
+                this.AssertReturnStatementValidity(ex.ReturningState);
+            }
+            catch (Exception ex)
+            {
+                // Handles generic exception.
+                this.ReportGenericAssertion(ex);
+            }
+        }
+
+        /// <summary>
+        /// Executes the on exit function of the current state.
+        /// </summary>
+        /// <param name="onExit">Lambda to override OnExit</param>
+        private void ExecuteCurrentStateOnExit(Action onExit)
+        {
+            try
+            {
+                if (onExit == null)
+                {
+                    // Performs the on exit statements of the current state.
+                    this.StateStack.Peek().ExecuteExitFunction();
+                }
+                else
+                {
+                    // Overrides the on exit method of the current state.
+                    onExit();
+                }
+            }
+            catch (EventRaisedException ex)
+            {
+                // Assigns the raised event.
+                this.RaisedEvent = ex.RaisedEvent;
+                // Handles a raised event.
+                //this.HandleEvent(ex.RaisedEvent);
+            }
+            catch (ReturnUsedException ex)
+            {
+                // Handles the returning state.
+                this.AssertReturnStatementValidity(ex.ReturningState);
+            }
+            catch (Exception ex)
+            {
+                // Handles generic exception.
+                this.ReportGenericAssertion(ex);
+            }
+        }
+
+        /// <summary>
+        /// Attempts to find a state in the call state stack that can handle
+        /// the given event. If such a state is found, then it manipulates
+        /// the call state stack appropriately.
+        /// </summary>
+        /// <param name="currentState">Current state</param>
+        /// <param name="e">Event</param>
+        /// <returns>Boolean value</returns>
+        private bool TryFindStateThatCanHandleEvent(ref State currentState, Event e)
+        {
+            bool result = false;
+            State handlerState = null;
+
+            foreach (var state in this.StateStack)
+            {
+                if (!state.Equals(currentState))
+                {
+                    if (state.ContainsStepTransition(e) ||
+                        state.ContainsCallTransition(e))
+                    {
+                        result = true;
+                        handlerState = state;
+                        break;
+                    }
+
+                    if (state.ContainsActionBinding(e))
+                    {
+                        result = true;
+                        currentState = state;
+                        break;
+                    }
+                }
+            }
+
+            if (result && handlerState != null)
+            {
+                while (!this.StateStack.Peek().Equals(handlerState))
+                {
+                    this.StateStack.Pop();
+                }
+
+                currentState = handlerState;
+            }
+
+            return result;
+        }
+
+        #endregion
+
+        #region generic public and override methods
+
+        /// <summary>
+        /// Determines whether the specified machine is equal
+        /// to the current machine.
+        /// </summary>
+        /// <param name="m">Machine</param>
+        /// <returns>Boolean value</returns>
+        public bool Equals(Machine m)
+        {
+            if (m == null)
+            {
+                return false;
+            }
+
+            return this.Id == m.Id;
+        }
+
+        /// <summary>
+        /// Determines whether the specified System.Object is equal
+        /// to the current System.Object.
+        /// </summary>
+        /// <param name="obj">Object</param>
+        /// <returns>Boolean value</returns>
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+            {
+                return false;
+            }
+
+            Machine m = obj as Machine;
+            if (m == null)
+            {
+                return false;
+            }
+
+            return this.Id == m.Id;
+        }
+
+        /// <summary>
+        /// Hash function.
+        /// </summary>
+        /// <returns>int</returns>
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
+        /// <summary>
+        /// Returns a string that represents the current machine.
+        /// </summary>
+        /// <returns>string</returns>
+        public override string ToString()
+        {
+            return this.GetType().Name;
         }
 
         #endregion
@@ -518,14 +808,37 @@ namespace Microsoft.PSharp
         #region error checking
 
         /// <summary>
-        /// Check machine for errors.
+        /// Check machine for state related errors.
         /// </summary>
-        private void DoErrorChecking()
+        private void AssertStateValidity()
         {
-            Runtime.Assert(this.States.Count > 0, "Machine {0} must " +
-                "have one or more states.\n", this);
-            Runtime.Assert(this.StateStack.Peek() != null, "Machine {0} " +
-                "must not have a null current state.\n", this);
+            Runtime.Assert(this.States.Count > 0, "Machine '{0}' must " +
+                "have one or more states.\n", this.GetType().Name);
+            Runtime.Assert(this.StateStack.Peek() != null, "Machine '{0}' " +
+                "must not have a null current state.\n", this.GetType().Name);
+        }
+
+        /// <summary>
+        /// Checks if the Return() statement was performed properly.
+        /// </summary>
+        /// <param name="returningState">Returnig state</param>
+        private void AssertReturnStatementValidity(State returningState)
+        {
+            Runtime.Assert(this.StateStack.Count > 0, "Machine '{0}' executed a Return() " +
+                "statement while there was only the state '{1}' in the stack.\n",
+                this.GetType().Name, returningState.GetType().Name);
+        }
+
+        /// <summary>
+        /// Reports the generic assertion and raises a generic
+        /// runtime assertion error.
+        /// </summary>
+        /// <param name="ex">Exception</param>
+        private void ReportGenericAssertion(Exception ex)
+        {
+            Runtime.Assert(false, "Exception '{0}' was thrown while machine '{1}' was " +
+                "in state '{2}'. The stack trace is:\n{3}\n", ex.GetType(), this.GetType().Name,
+                this.StateStack.Peek().GetType().Name, ex.StackTrace);
         }
 
         #endregion

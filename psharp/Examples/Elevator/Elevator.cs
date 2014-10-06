@@ -54,7 +54,7 @@ namespace Elevator
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Initializing Elevator");
                 (this.Machine as Elevator).Timer =
@@ -71,7 +71,7 @@ namespace Elevator
 
         private class DoorClosed : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("{0} sending event {1} to {2}\n", this.Machine,
                     typeof(eSendCommandToResetDoor), (this.Machine as Elevator).Door);
@@ -89,7 +89,7 @@ namespace Elevator
 
         private class DoorOpening : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("{0} sending event {1} to {2}\n", this.Machine,
                     typeof(eSendCommandToOpenDoor), (this.Machine as Elevator).Door);
@@ -115,7 +115,7 @@ namespace Elevator
 
         private class DoorOpened : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("{0} sending event {1} to {2}\n", this.Machine,
                     typeof(eSendCommandToResetDoor), (this.Machine as Elevator).Door);
@@ -137,7 +137,7 @@ namespace Elevator
 
         private class DoorOpenedOkToClose : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("{0} sending event {1} to {2}\n", this.Machine,
                     typeof(eStartDoorCloseTimer), (this.Machine as Elevator).Timer);
@@ -155,7 +155,7 @@ namespace Elevator
 
         private class DoorClosing : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("{0} sending event {1} to {2}\n", this.Machine,
                     typeof(eSendCommandToCloseDoor), (this.Machine as Elevator).Door);
@@ -173,7 +173,7 @@ namespace Elevator
 
         private class StoppingDoor : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("{0} sending event {1} to {2}\n", this.Machine,
                     typeof(eSendCommandToStopDoor), (this.Machine as Elevator).Door);
@@ -200,7 +200,7 @@ namespace Elevator
 
         private class StoppingTimer : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("{0} sending event {1} to {2}\n", this.Machine,
                     typeof(eStopDoorCloseTimer), (this.Machine as Elevator).Timer);
@@ -233,7 +233,7 @@ namespace Elevator
 
         private class ReturnState : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("{0} raising event {1} from state {2}\n", this.Machine,
                     typeof(eStopTimerReturned), this);
@@ -241,42 +241,42 @@ namespace Elevator
             }
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(eUnit), typeof(DoorClosed));
 
-            StateTransitions doorClosedDict = new StateTransitions();
+            StepStateTransitions doorClosedDict = new StepStateTransitions();
             doorClosedDict.Add(typeof(eOpenDoor), typeof(DoorOpening));
 
-            StateTransitions doorOpeningDict = new StateTransitions();
+            StepStateTransitions doorOpeningDict = new StepStateTransitions();
             doorOpeningDict.Add(typeof(eDoorOpened), typeof(DoorOpened));
 
-            StateTransitions doorOpenedDict = new StateTransitions();
+            StepStateTransitions doorOpenedDict = new StepStateTransitions();
             doorOpenedDict.Add(typeof(eTimerFired), typeof(DoorOpenedOkToClose));
             doorOpenedDict.Add(typeof(eStopTimerReturned), typeof(DoorOpened));
 
-            StateTransitions doorOpenedOkToCloseDict = new StateTransitions();
+            StepStateTransitions doorOpenedOkToCloseDict = new StepStateTransitions();
             doorOpenedOkToCloseDict.Add(typeof(eStopTimerReturned), typeof(DoorClosing));
             doorOpenedOkToCloseDict.Add(typeof(eTimerFired), typeof(DoorClosing));
 
-            StateTransitions doorClosingDict = new StateTransitions();
+            StepStateTransitions doorClosingDict = new StepStateTransitions();
             doorClosingDict.Add(typeof(eOpenDoor), typeof(StoppingDoor));
             doorClosingDict.Add(typeof(eDoorClosed), typeof(DoorClosed));
             doorClosingDict.Add(typeof(eObjectDetected), typeof(DoorOpening));
 
-            StateTransitions stoppingDoorDict = new StateTransitions();
+            StepStateTransitions stoppingDoorDict = new StepStateTransitions();
             stoppingDoorDict.Add(typeof(eDoorOpened), typeof(DoorOpened));
             stoppingDoorDict.Add(typeof(eDoorClosed), typeof(DoorClosed));
             stoppingDoorDict.Add(typeof(eDoorStopped), typeof(DoorOpening));
 
-            StateTransitions stoppingTimerDict = new StateTransitions();
+            StepStateTransitions stoppingTimerDict = new StepStateTransitions();
             stoppingTimerDict.Add(typeof(eOperationSuccess), typeof(ReturnState));
             stoppingTimerDict.Add(typeof(eOperationFailure), typeof(WaitingForTimer));
 
-            StateTransitions waitingForTimerDict = new StateTransitions();
+            StepStateTransitions waitingForTimerDict = new StepStateTransitions();
             waitingForTimerDict.Add(typeof(eTimerFired), typeof(ReturnState));
 
             dict.Add(typeof(Init), initDict);
@@ -292,14 +292,14 @@ namespace Elevator
             return dict;
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineCallTransitions()
+        protected override Dictionary<Type, CallStateTransitions> DefineCallStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, CallStateTransitions> dict = new Dictionary<Type, CallStateTransitions>();
 
-            StateTransitions doorOpenedDict = new StateTransitions();
+            CallStateTransitions doorOpenedDict = new CallStateTransitions();
             doorOpenedDict.Add(typeof(eOpenDoor), typeof(StoppingTimer));
 
-            StateTransitions doorOpenedOkToCloseDict = new StateTransitions();
+            CallStateTransitions doorOpenedOkToCloseDict = new CallStateTransitions();
             doorOpenedOkToCloseDict.Add(typeof(eCloseDoor), typeof(StoppingTimer));
 
             dict.Add(typeof(DoorOpened), doorOpenedDict);
@@ -318,7 +318,7 @@ namespace Elevator
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Initializing User");
                 (this.Machine as User).Elevator =
@@ -332,7 +332,7 @@ namespace Elevator
 
         private class Loop : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 // We don't want the user to make an action too often ...
                 Model.Sleep(5000);
@@ -356,14 +356,14 @@ namespace Elevator
             }
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(eUnit), typeof(Loop));
 
-            StateTransitions loopDict = new StateTransitions();
+            StepStateTransitions loopDict = new StepStateTransitions();
             loopDict.Add(typeof(eUnit), typeof(Loop));
 
             dict.Add(typeof(Init), initDict);
@@ -381,7 +381,7 @@ namespace Elevator
         [Initial]
         private class _Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Initializing Door");
                 (this.Machine as Door).Elevator = (Machine) this.Payload;
@@ -389,6 +389,14 @@ namespace Elevator
                 Console.WriteLine("{0} raising event {1} from state {2}\n", this.Machine,
                     typeof(eUnit), this);
                 this.Raise(new eUnit());
+            }
+
+            protected override HashSet<Type> DefineDeferredEvents()
+            {
+                return new HashSet<Type>
+                {
+                    typeof(eSendCommandToResetDoor)
+                };
             }
         }
 
@@ -407,7 +415,7 @@ namespace Elevator
 
         private class OpenDoor : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("{0} sending event {1} to {2}\n", this.Machine,
                         typeof(eDoorOpened), (this.Machine as Door).Elevator);
@@ -421,7 +429,7 @@ namespace Elevator
 
         private class ConsiderClosingDoor : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 if (Model.Havoc.Boolean)
                 {
@@ -440,7 +448,7 @@ namespace Elevator
 
         private class ObjectEncountered : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("{0} sending event {1} to {2}\n", this.Machine,
                         typeof(eObjectDetected), (this.Machine as Door).Elevator);
@@ -462,7 +470,7 @@ namespace Elevator
 
         private class CloseDoor : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("{0} sending event {1} to {2}\n", this.Machine,
                         typeof(eDoorClosed), (this.Machine as Door).Elevator);
@@ -476,7 +484,7 @@ namespace Elevator
 
         private class StopDoor : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("{0} sending event {1} to {2}\n", this.Machine,
                         typeof(eDoorStopped), (this.Machine as Door).Elevator);
@@ -509,35 +517,35 @@ namespace Elevator
             }
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions _initDict = new StateTransitions();
+            StepStateTransitions _initDict = new StepStateTransitions();
             _initDict.Add(typeof(eUnit), typeof(Init));
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(eSendCommandToOpenDoor), typeof(OpenDoor));
             initDict.Add(typeof(eSendCommandToCloseDoor), typeof(ConsiderClosingDoor));
 
-            StateTransitions openDoorDict = new StateTransitions();
+            StepStateTransitions openDoorDict = new StepStateTransitions();
             openDoorDict.Add(typeof(eUnit), typeof(ResetDoor));
 
-            StateTransitions considerClosingDoorDict = new StateTransitions();
+            StepStateTransitions considerClosingDoorDict = new StepStateTransitions();
             considerClosingDoorDict.Add(typeof(eUnit), typeof(CloseDoor));
             considerClosingDoorDict.Add(typeof(eObjectEncountered), typeof(ObjectEncountered));
             considerClosingDoorDict.Add(typeof(eSendCommandToStopDoor), typeof(StopDoor));
 
-            StateTransitions objectEncounteredDict = new StateTransitions();
+            StepStateTransitions objectEncounteredDict = new StepStateTransitions();
             objectEncounteredDict.Add(typeof(eUnit), typeof(Init));
 
-            StateTransitions closeDoorDict = new StateTransitions();
+            StepStateTransitions closeDoorDict = new StepStateTransitions();
             closeDoorDict.Add(typeof(eUnit), typeof(ResetDoor));
 
-            StateTransitions stopDoorDict = new StateTransitions();
+            StepStateTransitions stopDoorDict = new StepStateTransitions();
             stopDoorDict.Add(typeof(eUnit), typeof(OpenDoor));
 
-            StateTransitions resetDoorDict = new StateTransitions();
+            StepStateTransitions resetDoorDict = new StepStateTransitions();
             resetDoorDict.Add(typeof(eSendCommandToResetDoor), typeof(Init));
 
             dict.Add(typeof(_Init), _initDict);
@@ -561,7 +569,7 @@ namespace Elevator
         [Initial]
         private class _Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Initializing Timer");
                 (this.Machine as Timer).Elevator = (Machine) this.Payload;
@@ -585,7 +593,7 @@ namespace Elevator
 
         private class TimerStarted : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 if (Model.Havoc.Boolean)
                 {
@@ -606,7 +614,7 @@ namespace Elevator
 
         private class SendTimerFired : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("{0} sending event {1} to {2}\n", this.Machine,
                         typeof(eTimerFired), (this.Machine as Timer).Elevator);
@@ -628,7 +636,7 @@ namespace Elevator
 
         private class ConsiderStopping : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 if (Model.Havoc.Boolean)
                 {
@@ -662,24 +670,24 @@ namespace Elevator
             }
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions _initDict = new StateTransitions();
+            StepStateTransitions _initDict = new StepStateTransitions();
             _initDict.Add(typeof(eUnit), typeof(Init));
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(eStartDoorCloseTimer), typeof(TimerStarted));
 
-            StateTransitions timerStartedDict = new StateTransitions();
+            StepStateTransitions timerStartedDict = new StepStateTransitions();
             timerStartedDict.Add(typeof(eUnit), typeof(SendTimerFired));
             timerStartedDict.Add(typeof(eStopDoorCloseTimer), typeof(ConsiderStopping));
 
-            StateTransitions sendTimerFiredDict = new StateTransitions();
+            StepStateTransitions sendTimerFiredDict = new StepStateTransitions();
             sendTimerFiredDict.Add(typeof(eUnit), typeof(Init));
 
-            StateTransitions considerStoppingDict = new StateTransitions();
+            StepStateTransitions considerStoppingDict = new StepStateTransitions();
             considerStoppingDict.Add(typeof(eUnit), typeof(Init));
 
             dict.Add(typeof(_Init), _initDict);

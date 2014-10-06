@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------
-// <copyright file="ActionBindings.cs" company="Microsoft">
+// <copyright file="StepStateTransitions.cs" company="Microsoft">
 //      Copyright (c) Microsoft Corporation. All rights reserved.
 // 
 //      THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, 
@@ -21,41 +21,47 @@ using System.Collections.Generic;
 namespace Microsoft.PSharp
 {
     /// <summary>
-    /// Class representing a collection of action bindings.
+    /// Class representing a collection of step state transitions.
     /// </summary>
-    public sealed class ActionBindings : IEnumerable<KeyValuePair<Type, Action>>
+    public sealed class StepStateTransitions : IEnumerable<KeyValuePair<Type, Tuple<Type, Action>>>
     {
         /// <summary>
-        /// A dictionary of action bindings. A key represents
-        /// the type of an event, and the value is the action
-        /// that is triggered by the event.
+        /// A dictionary of step state transitions. A key represents
+        /// the type of an event, and the value is the target state
+        /// of the step transition and an optional lambda function,
+        /// which can override the default OnExit function of the
+        /// exiting state.
         /// </summary>
-        private Dictionary<Type, Action> Dictionary;
+        private Dictionary<Type, Tuple<Type, Action>> Dictionary;
 
         /// <summary>
-        /// Default constructor of the ActionBindings class.
+        /// Default constructor of the StepStateTransitions class.
         /// </summary>
-        public ActionBindings()
+        public StepStateTransitions()
         {
-            this.Dictionary = new Dictionary<Type, Action>();
+            this.Dictionary = new Dictionary<Type, Tuple<Type, Action>>();
         }
 
         /// <summary>
-        /// Adds the specified pair of event and action to the collection.
+        /// Adds the specified pair of event, state to transition to, and
+        /// an optional lambda function, which can override the default
+        /// OnExit function of the exiting state, to the collection.
         /// </summary>
         /// <param name="e">Type of the event</param>
-        /// <param name="a">Action</param>
-        public void Add(Type e, Action a)
+        /// <param name="s">Type of the state</param>
+        /// <param name="a">Optional OnExit lambda</param>
+        public void Add(Type e, Type s, Action a = null)
         {
-            this.Dictionary.Add(e, a);
+            this.Dictionary.Add(e, new Tuple<Type, Action>(s, a));
         }
 
         /// <summary>
-        /// Returns the action triggered by the specified type of event.
+        /// Returns the state to transition to when receiving the
+        /// specified type of event.
         /// </summary>
         /// <param name="key">Type of the event</param>
-        /// <returns>Action</returns>
-        public Action this[Type key]
+        /// <returns>Type of the state</returns>
+        public Tuple<Type, Action> this[Type key]
         {
             internal get
             {
@@ -90,7 +96,7 @@ namespace Microsoft.PSharp
         /// Returns an enumerator that iterates through the collection.
         /// </summary>
         /// <returns>IEnumerator</returns>
-        public IEnumerator<KeyValuePair<Type, Action>> GetEnumerator()
+        public IEnumerator<KeyValuePair<Type, Tuple<Type, Action>>> GetEnumerator()
         {
             return this.Dictionary.GetEnumerator();
         }

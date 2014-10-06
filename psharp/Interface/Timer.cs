@@ -17,7 +17,7 @@
 using System;
 using System.Diagnostics;
 
-namespace PSharpMonitor
+namespace Microsoft.PSharp.Monitoring
 {
     internal static class Timer
     {

@@ -39,7 +39,7 @@ namespace PingPong
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 (this.Machine as Server).Client =
                     Machine.Factory.CreateMachine<Client>(this.Machine);
@@ -49,7 +49,7 @@ namespace PingPong
 
         private class Playing : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 this.Send((this.Machine as Server).Client, new Pong());
             }
@@ -66,11 +66,11 @@ namespace PingPong
             this.Delete();
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(Unit), typeof(Playing));
 
             dict.Add(typeof(Init), initDict);
@@ -101,7 +101,7 @@ namespace PingPong
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 (this.Machine as Client).Server = (Machine) this.Payload;
                 (this.Machine as Client).counter = 0;
@@ -111,7 +111,7 @@ namespace PingPong
 
         private class Playing : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 if ((this.Machine as Client).counter == 5)
                 {
@@ -135,14 +135,14 @@ namespace PingPong
             this.Delete();
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(Unit), typeof(Playing));
 
-            StateTransitions playingDict = new StateTransitions();
+            StepStateTransitions playingDict = new StepStateTransitions();
             playingDict.Add(typeof(Unit), typeof(Playing));
 
             dict.Add(typeof(Init), initDict);

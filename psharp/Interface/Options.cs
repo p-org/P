@@ -16,7 +16,7 @@
 
 using System;
 
-namespace PSharpMonitor
+namespace Microsoft.PSharp.Monitoring
 {
     internal static class Options
     {

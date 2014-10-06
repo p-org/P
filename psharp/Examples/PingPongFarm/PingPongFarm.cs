@@ -46,7 +46,7 @@ namespace PingPongFarm
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 (this.Machine as Server).Master = (Machine)this.Payload;
             }
@@ -62,7 +62,7 @@ namespace PingPongFarm
 
         private class Configuring : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 (this.Machine as Server).Client = (Machine)this.Payload;
                 this.Raise(new Unit());
@@ -80,7 +80,7 @@ namespace PingPongFarm
 
         private class Playing : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("{0} sending event {1} to {2}\n", this.Machine,
                         typeof(Pong), (this.Machine as Server).Client);
@@ -90,7 +90,7 @@ namespace PingPongFarm
 
         private class Closing : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("{0} sending event {1} to {2}\n", this,
                         typeof(Stop), (this.Machine as Server).Master);
@@ -116,17 +116,17 @@ namespace PingPongFarm
             this.Send(this.Client, new Pong());
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(Configuration), typeof(Configuring));
 
-            StateTransitions configuringDict = new StateTransitions();
+            StepStateTransitions configuringDict = new StepStateTransitions();
             configuringDict.Add(typeof(Unit), typeof(Playing));
 
-            StateTransitions playingDict = new StateTransitions();
+            StepStateTransitions playingDict = new StepStateTransitions();
             playingDict.Add(typeof(Stop), typeof(Closing));
 
             dict.Add(typeof(Init), initDict);
@@ -159,7 +159,7 @@ namespace PingPongFarm
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 (this.Machine as Client).Counter = 0;
             }
@@ -176,7 +176,7 @@ namespace PingPongFarm
 
         private class Configuring : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Tuple<Machine, int> pair = (Tuple<Machine, int>)this.Payload;
 
@@ -196,7 +196,7 @@ namespace PingPongFarm
 
         private class Playing : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 if ((this.Machine as Client).Counter == (this.Machine as Client).Turns)
                 {
@@ -210,7 +210,7 @@ namespace PingPongFarm
 
         private class Closing : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Client stopped.\n");
                 this.Delete();
@@ -237,17 +237,17 @@ namespace PingPongFarm
             this.Raise(new Unit());
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(Configuration), typeof(Configuring));
 
-            StateTransitions configuringDict = new StateTransitions();
+            StepStateTransitions configuringDict = new StepStateTransitions();
             configuringDict.Add(typeof(Unit), typeof(Playing));
 
-            StateTransitions playingDict = new StateTransitions();
+            StepStateTransitions playingDict = new StepStateTransitions();
             playingDict.Add(typeof(Stop), typeof(Closing));
             playingDict.Add(typeof(Unit), typeof(Playing));
 
@@ -283,7 +283,7 @@ namespace PingPongFarm
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 (this.Machine as Master).Size = 5;
 
@@ -308,7 +308,7 @@ namespace PingPongFarm
 
         private class KickOffFarm : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 for (int idx = 0; idx < (this.Machine as Master).Size; idx++)
                 {
@@ -338,11 +338,11 @@ namespace PingPongFarm
             }
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(Unit), typeof(KickOffFarm));
 
             dict.Add(typeof(Init), initDict);

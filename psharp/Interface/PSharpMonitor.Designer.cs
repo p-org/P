@@ -1,4 +1,4 @@
-﻿namespace PSharpMonitor
+﻿namespace Microsoft.PSharp.Monitoring
 {
     partial class PSharpMonitor
     {
@@ -251,8 +251,8 @@
             // 
             // TestInfoTextBox
             // 
-            this.TestInfoTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.TestInfoTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.TestInfoTextBox.Location = new System.Drawing.Point(402, 12);
             this.TestInfoTextBox.Name = "TestInfoTextBox";

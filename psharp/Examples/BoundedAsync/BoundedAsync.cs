@@ -58,7 +58,7 @@ namespace BoundedAsync
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Initializing Scheduler");
 
@@ -101,11 +101,19 @@ namespace BoundedAsync
                 Console.WriteLine("{0} raising event {1}", this.Machine, typeof(eResp));
                 this.Raise(new eUnit());
             }
+
+            protected override HashSet<Type> DefineDeferredEvents()
+            {
+                return new HashSet<Type>
+                {
+                    typeof(eReq)
+                };
+            }
         }
 
         private class Sync : State
         {
-            public override void OnExit()
+            protected override void OnExit()
             {
                 Console.WriteLine("{0} sending event {1} to {2}",
                     this.Machine, typeof(eResp), (this.Machine as Scheduler).Process1);
@@ -123,7 +131,7 @@ namespace BoundedAsync
 
         private class Done : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 this.Delete();
             }
@@ -155,14 +163,14 @@ namespace BoundedAsync
             }
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(eUnit), typeof(Sync));
 
-            StateTransitions syncDict = new StateTransitions();
+            StepStateTransitions syncDict = new StepStateTransitions();
             syncDict.Add(typeof(eResp), typeof(Sync));
             syncDict.Add(typeof(eUnit), typeof(Done));
 
@@ -197,7 +205,7 @@ namespace BoundedAsync
         [Initial]
         private class _Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Initializing Process");
 
@@ -218,7 +226,7 @@ namespace BoundedAsync
 
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 (this.Machine as Process).Count = 0;
                 Console.WriteLine("Process: Count: {0}", (this.Machine as Process).Count);
@@ -227,7 +235,7 @@ namespace BoundedAsync
 
         private class SendCount : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 (this.Machine as Process).Count++;
                 Console.WriteLine("Process: Count: {0}", (this.Machine as Process).Count);
@@ -255,7 +263,7 @@ namespace BoundedAsync
 
         private class Done : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Process: Done");
                 this.Send((this.Machine as Process).Scheduler, new eDone());
@@ -291,18 +299,18 @@ namespace BoundedAsync
                 (this.Count >= ((int)this.Payload - 1)));
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions _initDict = new StateTransitions();
+            StepStateTransitions _initDict = new StepStateTransitions();
             _initDict.Add(typeof(eUnit), typeof(Init));
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(eMyCount), typeof(Init));
             initDict.Add(typeof(eResp), typeof(SendCount));
 
-            StateTransitions sendCountDict = new StateTransitions();
+            StepStateTransitions sendCountDict = new StepStateTransitions();
             sendCountDict.Add(typeof(eUnit), typeof(Done));
             sendCountDict.Add(typeof(eResp), typeof(SendCount));
 

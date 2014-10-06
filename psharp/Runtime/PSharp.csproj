@@ -43,10 +43,13 @@
   <ItemGroup>
     <Compile Include="Attributes\Main.cs" />
     <Compile Include="Attributes\Monitor.cs" />
-    <Compile Include="Collections\ActionBindings.cs" />
     <Compile Include="Attributes\Ghost.cs" />
+    <Compile Include="Collections\ActionBindings.cs" />
+    <Compile Include="Collections\CallStateTransitions.cs" />
+    <Compile Include="Collections\StepStateTransitions.cs" />
     <Compile Include="Event.cs" />
     <Compile Include="Attributes\Initial.cs" />
+    <Compile Include="Exceptions.cs" />
     <Compile Include="Machine.cs" />
     <Compile Include="MachineWrapper.cs" />
     <Compile Include="Model.cs" />
@@ -67,7 +70,6 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="State.cs" />
-    <Compile Include="Collections\StateTransitions.cs" />
     <Compile Include="IO\Utilities.cs" />
   </ItemGroup>
   <ItemGroup>

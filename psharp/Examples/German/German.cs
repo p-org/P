@@ -81,7 +81,7 @@ namespace German
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Initializing Host");
 
@@ -122,7 +122,7 @@ namespace German
 
         private class ShareRequest : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 (this.Machine as Host).CurrentClient = (Machine)this.Payload;
                 (this.Machine as Host).IsCurrReqExcl = false;
@@ -133,7 +133,7 @@ namespace German
 
         private class ExclRequest : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 (this.Machine as Host).CurrentClient = (Machine)this.Payload;
                 (this.Machine as Host).IsCurrReqExcl = true;
@@ -144,7 +144,7 @@ namespace German
 
         private class ProcessReq : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 if ((this.Machine as Host).IsCurrReqExcl || (this.Machine as Host).IsExclGranted)
                 {
@@ -161,7 +161,7 @@ namespace German
 
         private class Inv : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 (this.Machine as Host).I = 0;
                 (this.Machine as Host).S = (this.Machine as Host).SharerList.Count;
@@ -193,7 +193,7 @@ namespace German
 
         private class GrantAccess : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 if ((this.Machine as Host).IsCurrReqExcl)
                 {
@@ -228,31 +228,31 @@ namespace German
             }
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(eUnit), typeof(Receive));
 
-            StateTransitions receiveDict = new StateTransitions();
+            StepStateTransitions receiveDict = new StepStateTransitions();
             receiveDict.Add(typeof(eReqShare), typeof(ShareRequest));
             receiveDict.Add(typeof(eReqExcl), typeof(ExclRequest));
 
-            StateTransitions shareRequestDict = new StateTransitions();
+            StepStateTransitions shareRequestDict = new StepStateTransitions();
             shareRequestDict.Add(typeof(eUnit), typeof(ProcessReq));
 
-            StateTransitions exclRequestDict = new StateTransitions();
+            StepStateTransitions exclRequestDict = new StepStateTransitions();
             exclRequestDict.Add(typeof(eUnit), typeof(ProcessReq));
 
-            StateTransitions processReqDict = new StateTransitions();
+            StepStateTransitions processReqDict = new StepStateTransitions();
             processReqDict.Add(typeof(eInvalidate), typeof(Inv));
             processReqDict.Add(typeof(eGrant), typeof(GrantAccess));
 
-            StateTransitions invDict = new StateTransitions();
+            StepStateTransitions invDict = new StepStateTransitions();
             invDict.Add(typeof(eGrant), typeof(GrantAccess));
 
-            StateTransitions grantAccessDict = new StateTransitions();
+            StepStateTransitions grantAccessDict = new StepStateTransitions();
             grantAccessDict.Add(typeof(eUnit), typeof(Receive));
 
             dict.Add(typeof(Init), initDict);
@@ -287,7 +287,7 @@ namespace German
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Initializing Client");
 
@@ -305,7 +305,7 @@ namespace German
 
         private class AskedShare : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("{0} sending event {1} to {2}", this.Machine,
                         typeof(eReqShare), (this.Machine as Client).Host);
@@ -328,7 +328,7 @@ namespace German
 
         private class AskedExcl : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("{0} sending event {1} to {2}", this.Machine,
                         typeof(eReqExcl), (this.Machine as Client).Host);
@@ -363,7 +363,7 @@ namespace German
 
         private class AskedEx2 : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("{0} sending event {1} to {2}", this.Machine,
                         typeof(eReqExcl), (this.Machine as Client).Host);
@@ -377,7 +377,7 @@ namespace German
 
         private class Sharing : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Client is sharing ...");
                 (this.Machine as Client).Pending = false;
@@ -398,7 +398,7 @@ namespace German
 
         private class Exclusive : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Client is exclusive ...");
                 (this.Machine as Client).Pending = false;
@@ -416,7 +416,7 @@ namespace German
 
         private class Invalidating : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Client is invalidating ...");
 
@@ -437,52 +437,52 @@ namespace German
             }
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(eUnit), typeof(Invalid));
 
-            StateTransitions invalidDict = new StateTransitions();
+            StepStateTransitions invalidDict = new StepStateTransitions();
             invalidDict.Add(typeof(eAskShare), typeof(AskedShare));
             invalidDict.Add(typeof(eAskExcl), typeof(AskedExcl));
             invalidDict.Add(typeof(eInvalidate), typeof(Invalidating));
             invalidDict.Add(typeof(eGrantExcl), typeof(Exclusive));
             invalidDict.Add(typeof(eGrantShare), typeof(Sharing));
 
-            StateTransitions askedShareDict = new StateTransitions();
+            StepStateTransitions askedShareDict = new StepStateTransitions();
             askedShareDict.Add(typeof(eUnit), typeof(InvalidWait));
 
-            StateTransitions askedExclDict = new StateTransitions();
+            StepStateTransitions askedExclDict = new StepStateTransitions();
             askedExclDict.Add(typeof(eUnit), typeof(InvalidWait));
 
-            StateTransitions invalidWaitDict = new StateTransitions();
+            StepStateTransitions invalidWaitDict = new StepStateTransitions();
             invalidWaitDict.Add(typeof(eInvalidate), typeof(Invalidating));
             invalidWaitDict.Add(typeof(eGrantExcl), typeof(Exclusive));
             invalidWaitDict.Add(typeof(eGrantShare), typeof(Sharing));
 
-            StateTransitions askedEx2Dict = new StateTransitions();
+            StepStateTransitions askedEx2Dict = new StepStateTransitions();
             askedEx2Dict.Add(typeof(eUnit), typeof(SharingWait));
 
-            StateTransitions sharingDict = new StateTransitions();
+            StepStateTransitions sharingDict = new StepStateTransitions();
             sharingDict.Add(typeof(eInvalidate), typeof(Invalidating));
             sharingDict.Add(typeof(eGrantShare), typeof(Sharing));
             sharingDict.Add(typeof(eGrantExcl), typeof(Exclusive));
             sharingDict.Add(typeof(eAskShare), typeof(Sharing));
             sharingDict.Add(typeof(eAskExcl), typeof(AskedEx2));
 
-            StateTransitions sharingWaitDict = new StateTransitions();
+            StepStateTransitions sharingWaitDict = new StepStateTransitions();
             sharingWaitDict.Add(typeof(eInvalidate), typeof(Invalidating));
             sharingWaitDict.Add(typeof(eGrantShare), typeof(SharingWait));
             sharingWaitDict.Add(typeof(eGrantExcl), typeof(Exclusive));
 
-            StateTransitions exclusiveDict = new StateTransitions();
+            StepStateTransitions exclusiveDict = new StepStateTransitions();
             exclusiveDict.Add(typeof(eInvalidate), typeof(Invalidating));
             exclusiveDict.Add(typeof(eGrantShare), typeof(Sharing));
             exclusiveDict.Add(typeof(eGrantExcl), typeof(Exclusive));
 
-            StateTransitions invalidatingDict = new StateTransitions();
+            StepStateTransitions invalidatingDict = new StepStateTransitions();
             invalidatingDict.Add(typeof(eWait), typeof(InvalidWait));
             invalidatingDict.Add(typeof(eNormal), typeof(Invalid));
 
@@ -509,7 +509,7 @@ namespace German
         [Initial]
         private class Init : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 Console.WriteLine("Initializing CPU");
 
@@ -521,7 +521,7 @@ namespace German
 
         private class MakeReq : State
         {
-            public override void OnEntry()
+            protected override void OnEntry()
             {
                 if (Model.Havoc.Boolean)
                 {
@@ -569,14 +569,14 @@ namespace German
             }
         }
 
-        protected override Dictionary<Type, StateTransitions> DefineStepTransitions()
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
-            Dictionary<Type, StateTransitions> dict = new Dictionary<Type, StateTransitions>();
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
-            StateTransitions initDict = new StateTransitions();
+            StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(eUnit), typeof(MakeReq));
 
-            StateTransitions makeReqDict = new StateTransitions();
+            StepStateTransitions makeReqDict = new StepStateTransitions();
             makeReqDict.Add(typeof(eUnit), typeof(MakeReq));
 
             dict.Add(typeof(Init), initDict);

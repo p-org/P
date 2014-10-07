@@ -1,0 +1,48 @@
+=================================
+         Console output          
+=================================
+OUT: Writing Actions_1.zing ...
+OUT: Compiling Actions_1.zing to Actions_1.dll ...
+OUT: actions_1.p (12, 4): inferred type:  BaseType(MODEL)
+OUT: actions_1.p (12, 4): inferred type:  NIL
+OUT: actions_1.p (12, 20): inferred type:  BaseType(MODEL)
+OUT: actions_1.p (12, 30): inferred type:  BaseType(REAL)
+OUT: actions_1.p (13, 13): inferred type:  NIL
+OUT: actions_1.p (13, 18): inferred type:  BaseType(MODEL)
+OUT: actions_1.p (13, 33): inferred type:  BaseType(EVENT)
+OUT: actions_1.p (18, 6): inferred type:  BaseType(BOOL)
+OUT: actions_1.p (18, 6): inferred type:  NIL
+OUT: actions_1.p (18, 13): inferred type:  BaseType(BOOL)
+OUT: actions_1.p (25, 4): inferred type:  NIL
+OUT: actions_1.p (25, 11): inferred type:  BaseType(BOOL)
+OUT: actions_1.p (25, 16): inferred type:  BaseType(BOOL)
+OUT: actions_1.p (25, 19): inferred type:  BaseType(BOOL)
+OUT: actions_1.p (26, 4): inferred type:  NIL
+OUT: actions_1.p (26, 10): inferred type:  BaseType(EVENT)
+OUT: actions_1.p (34, 6): inferred type:  NIL
+OUT: actions_1.p (34, 13): inferred type:  BaseType(BOOL)
+OUT: actions_1.p (39, 9): inferred type:  NIL
+OUT: actions_1.p (39, 14): inferred type:  BaseType(MODEL)
+OUT: actions_1.p (39, 29): inferred type:  BaseType(EVENT)
+OUT: actions_1.p (48, 8): inferred type:  BaseType(REAL)
+OUT: actions_1.p (48, 8): inferred type:  NIL
+OUT: actions_1.p (48, 23): inferred type:  BaseType(ANY)
+OUT: actions_1.p (48, 31): inferred type:  BaseType(REAL)
+OUT: actions_1.p (55, 4): inferred type:  NIL
+OUT: actions_1.p (55, 9): inferred type:  BaseType(REAL)
+OUT: actions_1.p (55, 23): inferred type:  BaseType(EVENT)
+OUT: actions_1.p (56, 4): inferred type:  NIL
+OUT: actions_1.p (56, 9): inferred type:  BaseType(REAL)
+OUT: actions_1.p (56, 23): inferred type:  BaseType(EVENT)
+OUT: actions_1.p (62, 15): inferred type:  NIL
+OUT: 
+EXIT: 0
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 15 distinct states, 22 total transitions, 7 steps max depth
+OUT: 
+EXIT: 0

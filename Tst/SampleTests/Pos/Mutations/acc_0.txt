@@ -1,0 +1,40 @@
+=================================
+         Console output          
+=================================
+OUT: Writing mutations.zing ...
+OUT: Compiling mutations.zing to mutations.dll ...
+OUT: mutations.p (10, 7): inferred type:  NIL
+OUT: mutations.p (10, 7): inferred type:  TupType(BaseType(INT), NIL)
+OUT: mutations.p (10, 12): inferred type:  BaseType(INT)
+OUT: mutations.p (10, 12): inferred type:  TupType(BaseType(INT), NIL)
+OUT: mutations.p (10, 17): inferred type:  TupType(BaseType(INT), NIL)
+OUT: mutations.p (11, 7): inferred type:  NIL
+OUT: mutations.p (11, 7): inferred type:  NmdTupType(NmdTupTypeField("item1", BaseType(INT)), NmdTupType(NmdTupTypeField("item2", BaseType(BOOL)), NIL))
+OUT: mutations.p (11, 13): inferred type:  NmdTupType(NmdTupTypeField("item1", BaseType(INT)), NmdTupType(NmdTupTypeField("item2", BaseType(BOOL)), NIL))
+OUT: mutations.p (11, 21): inferred type:  BaseType(INT)
+OUT: mutations.p (11, 24): inferred type:  NmdTupType(NmdTupTypeField("item2", BaseType(BOOL)), NIL)
+OUT: mutations.p (11, 32): inferred type:  BaseType(BOOL)
+OUT: mutations.p (12, 7): inferred type:  NIL
+OUT: mutations.p (12, 7): inferred type:  NmdTupType(NmdTupTypeField("item1", BaseType(INT)), NmdTupType(NmdTupTypeField("item2", BaseType(BOOL)), NIL))
+OUT: mutations.p (12, 10): inferred type:  BaseType(INT)
+OUT: mutations.p (12, 18): inferred type:  BaseType(INT)
+OUT: mutations.p (13, 7): inferred type:  NIL
+OUT: mutations.p (13, 7): inferred type:  SeqType(BaseType(INT))
+OUT: mutations.p (13, 13): inferred type:  BaseType(INT)
+OUT: mutations.p (13, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: mutations.p (13, 15): inferred type:  BaseType(INT)
+OUT: mutations.p (13, 15): inferred type:  TupType(BaseType(INT), NIL)
+OUT: mutations.p (14, 7): inferred type:  NIL
+OUT: mutations.p (14, 7): inferred type:  SeqType(BaseType(INT))
+OUT: mutations.p (14, 13): inferred type:  BaseType(INT)
+OUT: 
+EXIT: 0
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 2 distinct states, 1 total transitions, 1 steps max depth
+OUT: 
+EXIT: 0

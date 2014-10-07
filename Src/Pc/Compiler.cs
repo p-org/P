@@ -161,7 +161,7 @@
                 return false;
             }
 
-            GenerateC(inputModule, inputFile).Print(Console.Out);
+            //// GenerateC(inputModule, inputFile).Print(Console.Out);
 
             //// Step 4. Perform Zing compilation.
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));

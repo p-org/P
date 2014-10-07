@@ -4,6 +4,11 @@
 ]
 
 transform P2CProgram (in:: P) returns (out:: C)
+/*
+[
+    compiler_ProductivityCheck = "TypeConstant[0]"
+]
+*/
 {
     /*************************************************************/
     /**********     Create C Enums for P Decls         ***********/
@@ -11,7 +16,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	DeclId ::= (decl: PDecl, id: Natural, cname: String).
 	
 	//// (1) EventDecls - Id 0 is reserved for default event, which can appear in transition tables.
-	DeclId(d, id, cn) :- d is EventDecl, id = 1 + toOrdinal(d, 0, { d' | d' is EventDecl }), cn = strJoin("P_EVENT_", strUpper(d.name)).
+	DeclId(d, id, cn) :- d is EventDecl, id = 1 + toOrdinal(d, 0, { d' | d' is EventDecl }), cn = strJoin("P_EVENT_", d.name).
 	
 	out.EnmDef(NIL, "P_EVENTS", list) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
@@ -20,7 +25,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTS_COUNT"), size = 1 + count({d | d is EventDecl}) }).  
 
 	//// (2) MachineDecls - Start at Id 0.
-	DeclId(d, id, cn) :- d is MachineDecl, id = toOrdinal(d, 0, { d' | d' is MachineDecl }), cn = strJoin("P_MACHINE_", strUpper(d.name)).
+	DeclId(d, id, cn) :- d is MachineDecl, id = toOrdinal(d, 0, { d' | d' is MachineDecl }), cn = strJoin("P_MACHINE_", d.name).
 	
 	out.EnmDef(NIL, "P_MACHINES", list) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
@@ -30,55 +35,215 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	//// (3) VarDecls - Start at Id 0.
 	DeclId(d, id, cn) :- d is VarDecl, id = toOrdinal(d, 0, { d' | d' is VarDecl, d'.owner = d.owner }), 
-									   cn = strJoin("P_VAR_", strJoin(strUpper(d.owner.name), strJoin("_", strUpper(d.name)))).
+									   cn = strJoin("P_VAR_", strJoin(d.owner.name, strJoin("_", d.name))).
 	
 	out.EnmDef(NIL, enumName, list) :- 
 	   m is MachineDecl,
-	   enumName = strJoin("P_VARS_", strUpper(m.name)),
+	   enumName = strJoin("P_VARS_", m.name),
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : VarDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_VARS_", strJoin(strUpper(m.name), "_COUNT"))), size = count({d | d is VarDecl, d.owner = m}) }).  
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_VARS_", strJoin(m.name, "_COUNT"))), size = count({d | d is VarDecl, d.owner = m}) }).  
 
 	//// (4) FunDecls - Start at Id 0.
 	DeclId(d, id, cn) :- d is FunDecl, id = toOrdinal(d, 0, { d' | d' is FunDecl, d'.owner = d.owner }), 
-									   cn = strJoin("P_FUN_", strJoin(strUpper(d.owner.name), strJoin("_", strUpper(d.name)))).
+									   cn = strJoin("P_FUN_", strJoin(d.owner.name, strJoin("_", d.name))).
 	
 	out.EnmDef(NIL, enumName, list) :- 
 	   m is MachineDecl,
-	   enumName = strJoin("P_FUNS_", strUpper(m.name)),
+	   enumName = strJoin("P_FUNS_", m.name),
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : FunDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(strUpper(m.name), "_COUNT"))), size = count({d | d is FunDecl, d.owner = m}) }).  
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(m.name, "_COUNT"))), size = count({d | d is FunDecl, d.owner = m}) }).  
 
 	//// (5) AnonFunDecl - Start at Id 0.
 	AnonFunDeclSub ::= sub (AnonFunDecl).
 
 	DeclId(d, id, cn) :- AnonFunDeclSub(d), id = toOrdinal(d, 0, { d' | AnonFunDeclSub(d'), d'.owner = d.owner }), 
-									   cn = strJoin("P_ANONFUN_", strJoin(strUpper(d.owner.name), strJoin("_", toString(id)))).
+									   cn = strJoin("P_ANONFUN_", strJoin(d.owner.name, strJoin("_", toString(id)))).
 	
 	out.EnmDef(NIL, enumName, list) :- 
 	   m is MachineDecl,
-	   enumName = strJoin("P_ANONFUNS_", strUpper(m.name)),
+	   enumName = strJoin("P_ANONFUNS_", m.name),
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : AnonFunDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_ANONFUNS_", strJoin(strUpper(m.name), "_COUNT"))), size = count({d | AnonFunDeclSub(d), d.owner = m}) }).  
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_ANONFUNS_", strJoin(m.name, "_COUNT"))), size = count({d | AnonFunDeclSub(d), d.owner = m}) }).  
 
 	//// (6) StateDecls - Start at Id 0. Need to encode qualified names.
 	DeclId(d, id, cn) :- d is StateDecl, QualName2CStr(d.name, name), 
 					     id = toOrdinal(d, 0, { d' | d' is StateDecl, d'.owner = d.owner }), 
-						 cn = strJoin("P_STATE_", strJoin(strUpper(d.owner.name), strJoin("_", name))).
+						 cn = strJoin("P_STATE_", strJoin(d.owner.name, strJoin("_", name))).
 	
 	out.EnmDef(NIL, enumName, list) :- 
 	   m is MachineDecl,
-	   enumName = strJoin("P_STATES_", strUpper(m.name)),
+	   enumName = strJoin("P_STATES_", m.name),
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : StateDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_STATES_", strJoin(strUpper(m.name), "_COUNT"))), size = count({d | d is StateDecl, d.owner = m}) }).  
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_STATES_", strJoin(m.name, "_COUNT"))), size = count({d | d is StateDecl, d.owner = m}) }).  
 
 	//// (7) Convert qualified names to C strings
 	QualNameSub ::= sub (QualifiedName).
 	QualName2CStr ::= (QualifiedName, String).
-	QualName2CStr(q, su) :- QualNameSub(q), q = QualifiedName(s, NIL), su = strUpper(s).
-	QualName2CStr(q, su) :- QualNameSub(q), QualName2CStr(q', s'), q = QualifiedName(s, q'), su = strJoin(s', strJoin("_", strUpper(s))).
+	QualName2CStr(q, s) :- QualNameSub(q), q = QualifiedName(s, NIL).
+	QualName2CStr(q, sj) :- QualNameSub(q), QualName2CStr(q', s'), q = QualifiedName(s, q'), sj = strJoin(s', strJoin("_", s)).
 
-}
+    /*************************************************************/
+    /******     Generate C statics for types in program     ******/
+    /*************************************************************/
+	TypeExprSub ::= sub (TypeExpr).
+
+	//// Labels a type expression with a number greater than the labels of all its sub-expressions.
+	//// TypeId linearizes the dependency order to get a schedule for emitting type expressions.
+	TypeId      ::= (id: Natural, type: TypeExpr).
+	TypeDepNum  ::= (id: Natural, type: TypeExpr).
+
+	TypeDepNum(0, t) :- TypeExprSub(t), t : in.BaseType.
+	TypeDepNum(i, t) :- TypeExprSub(t), t = SeqType(t'), TypeDepNum(j, t'), i = j + 1.  
+	TypeDepNum(i, t) :- TypeExprSub(t), t = MapType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1.  
+	TypeDepNum(i, t) :- TypeExprSub(t), t = TupType(t', NIL), TypeDepNum(j, t'), i = j + 1.  
+	TypeDepNum(i, t) :- TypeExprSub(t), t = TupType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1.  
+	TypeDepNum(i, t) :- TypeExprSub(t), t = NmdTupType(NmdTupTypeField(_, t'), NIL), TypeDepNum(j, t'), i = j + 1.  
+	TypeDepNum(i, t) :- TypeExprSub(t), t = NmdTupType(NmdTupTypeField(_, t'), t''), TypeDepNum(j, t'), TypeDepNum(k, t''), i = j + k + 1.  
+	TypeId(id, t) :- td is TypeDepNum(_, t), id = toOrdinal(td, 0, { td' | td' is TypeDepNum }).
+
+	//// Build type initializers in reverse order of linearization.
+	//// typeStatic is the C expression to use when forming a static P_TYPE struct.
+	//// defs is the definitions that preceed the encoding of this type constant.
+	TypeConstant ::= (type: TypeExpr + { NIL }, typeExprId: Integer, defs: out.Section + { NIL }, typeStatic: out.Expr).
+	TypeConstant(NIL, -1, NIL, Ident("?")).
+
+	//// Base types
+	BaseType2Kind ::= ({ NULL, BOOL, INT, EVENT, REAL, MODEL, FOREIGN, ANY }, String).
+
+	TypeConstant(t, m, defs, typeStatic) :- TypeId(m, t), TypeConstant(_, m - 1, before, _), t = in.BaseType(base), BaseType2Kind(base, kind),
+							             typeStatic = out.Init(Args(Ident(kind), Args(Ident("NULL"), NIL))),
+								         defs = out.Section(before, def),
+										 def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStatic),
+								         typeName = strJoin("P_GEND_TYPE_", toString(m)).
+
+	BaseType2Kind(NULL, "PRT_KIND_NULL").
+	BaseType2Kind(BOOL, "PRT_KIND_BOOL").
+	BaseType2Kind(INT, "PRT_KIND_INT").
+	BaseType2Kind(EVENT, "PRT_KIND_EVENT").
+	BaseType2Kind(REAL, "PRT_KIND_MACHINE").
+	BaseType2Kind(MODEL, "PRT_KIND_MODEL").
+	BaseType2Kind(FOREIGN, "PRT_KIND_FORGN").
+	BaseType2Kind(ANY, "PRT_KIND_ANY").
+
+	//// Complex type Seq 
+	//// (cast type PRT_MAPTYPE * is used to avoid compiler warnings)
+	TypeConstant(t, m, defs, typeStatic) :- TypeId(m, t), TypeConstant(_, m - 1, before, _), t = in.SeqType(tinner), TypeConstant(tinner, _, _, innerStatic),
+								         defs = out.Section(Section(before, defSeq), def),
+										 defSeq = out.VarDef(
+										               NIL, 
+													   NmdType(NIL, "PRT_SEQTYPE"), 
+													   typeNameSeq, 
+													   Init(Args(innerStatic, NIL))),										 
+										 def = out.VarDef(
+										               NIL, 
+													   NmdType(NIL, "PRT_TYPE"), 
+													   strJoin("P_GEND_TYPE_", toString(m)), 
+													   typeStatic),
+								        typeStatic = out.Init(
+										      Args(Ident("PRT_KIND_SEQ"), 
+											  Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameSeq))), 
+											  NIL))),
+									    typeNameSeq = strJoin("P_GEND_TYPE_SEQ_", toString(m)). 
+
+	//// Complex type Map 
+	TypeConstant(t, m, defs, typeStatic) :- TypeId(m, t), TypeConstant(_, m - 1, before, _), t = in.MapType(tdom, tcod), TypeConstant(tdom, _, _, tdomStatic), TypeConstant(tcod, _, _, tcodStatic),
+								         defs = out.Section(Section(before, defMap), def),
+										 defMap = out.VarDef(
+										                  NIL, 
+														  NmdType(NIL, "PRT_MAPTYPE"), 
+														  typeNameMap, 
+														  Init(Args(tdomStatic, Args(tcodStatic, NIL)))),
+										 def = out.VarDef(
+										                  NIL, 
+														  NmdType(NIL, "PRT_TYPE"), 
+														  strJoin("P_GEND_TYPE_", toString(m)), 
+														  typeStatic),
+							             typeStatic = out.Init(
+										      Args(Ident("PRT_KIND_MAP"), 
+											  Args(UnApp(ADDR, Ident(typeNameMap)), 
+											  NIL))),
+										 typeNameMap = strJoin("P_GEND_TYPE_MAP_", toString(m)).
+
+	//// Complex type Tuple 
+	Tup2ArrayInit ::= (type: TupType, arr: out.Expr). 
+	Tup2ArrayInit(t, init) :- TypeExprSub(t), t = TupType(t', NIL), TypeConstant(t', _, _, ts'), init = Init(Args(ts', NIL)). 
+	Tup2ArrayInit(t, init) :- TypeExprSub(t), t = TupType(t', t''), TypeConstant(t', _, _, ts'), Tup2ArrayInit(t'', Init(ts'')), init = Init(Args(ts', ts'')). 
+
+	TypeConstant(t, m, defs, typeStatic) :- TypeId(m, t), TypeConstant(_, m - 1, before, _), Tup2ArrayInit(t, arrInit), t : in.TupType, 
+								         defs = out.Section(Section(before, Section(defTupArr, defTup)), def),
+										 defTupArr = out.VarDef(
+										                     NIL, 
+															 ArrType(NmdType(NIL, "PRT_TYPE"), NIL), 
+															 typeNameTupArr, 
+															 arrInit),
+										 defTup = out.VarDef(
+										                  NIL, 
+														  NmdType(NIL, "PRT_TUPTYPE"), 
+														  typeNameTup, 
+														  Init(
+														    Args(IntLit(lstLength(#TupType, t), DEC, NIL), 
+															Args(Ident(typeNameTupArr), 
+															NIL)))),
+										 def = out.VarDef(
+										               NIL, 
+													   NmdType(NIL, "PRT_TYPE"), 
+													   strJoin("P_GEND_TYPE_", toString(m)), 
+													   typeStatic),
+							             typeStatic = out.Init(
+										      Args(Ident("PRT_KIND_TUPLE"), 
+											  Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameTup))), 
+											  NIL))),
+										 typeNameTupArr = strJoin("P_GEND_TYPE_TUP_ARR_", toString(m)),
+										 typeNameTup = strJoin("P_GEND_TYPE_TUP_", toString(m)).
+
+	//// Complex type NmdTuple 
+	NmdTup2ArrayInit ::= (type: NmdTupType, narr: out.Expr, tarr: out.Expr). 
+	NmdTup2ArrayInit(t, narr, tarr) :- TypeExprSub(t), t = NmdTupType(NmdTupTypeField(n', t'), NIL), TypeConstant(t', _, _, ts'), 
+	                                   narr = Init(Args(StringLit(n', NIL), NIL)), 
+	                                   tarr = Init(Args(ts', NIL)).
+									    
+	NmdTup2ArrayInit(t, narr, tarr) :- TypeExprSub(t), t = NmdTupType(NmdTupTypeField(n', t'), t''), TypeConstant(t', _, _, ts'), NmdTup2ArrayInit(t'', Init(n''), Init(ts'')), 
+	                                   narr = Init(Args(StringLit(n', NIL), n'')), 
+	                                   tarr = Init(Args(ts', ts'')). 
+
+	TypeConstant(t, m, defs, typeStatic) :- TypeId(m, t), TypeConstant(_, m - 1, before, _), NmdTup2ArrayInit(t, narr, tarr), t : in.NmdTupType, 
+								         defs = out.Section(before, Section(defNmdTupNArr, Section(defNmdTupTArr, Section(defNmdTup, def)))),
+										 defNmdTupNArr = out.VarDef(
+										                        NIL, 
+															    ArrType(NmdType(NIL, "PRT_STRING"), NIL), 
+															    typeNameNmdTupNArr, 
+															    narr),
+										 defNmdTupTArr = out.VarDef(
+										                        NIL, 
+															    ArrType(NmdType(NIL, "PRT_TYPE"), NIL), 
+															    typeNameNmdTupTArr, 
+															    tarr),
+										 defNmdTup = out.VarDef(
+										                  NIL, 
+														  NmdType(NIL, "PRT_NMDTUPTYPE"), 
+														  typeNameNmdTup, 
+														  Init(
+														    Args(IntLit(lstLength(#NmdTupType, t), DEC, NIL), 
+															Args(Ident(typeNameNmdTupNArr), 
+															Args(Ident(typeNameNmdTupTArr), 
+															NIL))))),
+										 def = out.VarDef(
+										               NIL, 
+													   NmdType(NIL, "PRT_TYPE"), 
+													   strJoin("P_GEND_TYPE_", toString(m)), 
+													   typeStatic),
+							             typeStatic = out.Init(
+										      Args(Ident("PRT_KIND_NMDTUP"), 
+											  Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameNmdTup))), 
+											  NIL))),
+										 typeNameNmdTupTArr = strJoin("P_GEND_TYPE_NMDTUP_TARR_", toString(m)),
+										 typeNameNmdTupNArr = strJoin("P_GEND_TYPE_NMDTUP_NARR_", toString(m)),
+										 typeNameNmdTup = strJoin("P_GEND_TYPE_NMDTUP_", toString(m)).
+
+   out._(defs) :- TypeConstant(_, c, defs, _), defs : out.Section, c = count({ td | td is TypeId}) - 1.
+
+}	

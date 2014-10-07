@@ -80,10 +80,6 @@ typedef char * PRT_STRING;
 typedef char const * PRT_CSTRING;
 
 
-
-/** PRT_HANDLE is always a type s.t. sizeof(PRT_HANDLE) >= sizeof(VOID*). */
-typedef PVOID PRT_HANDLE;
-
 /** PRT_RECURSIVE_MUTEX identifies a recursive mutex. */
 typedef HANDLE PRT_RECURSIVE_MUTEX;
 

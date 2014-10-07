@@ -161,9 +161,13 @@
                 return false;
             }
 
-            //// GenerateC(inputModule, inputFile).Print(Console.Out);
+            //// Step 4. Generate outputs
+            return GenerateC(inputModule, inputFile, flags) & 
+                   GenerateZing(inputModule, inputFile, model, flags);
+        }
 
-            //// Step 4. Perform Zing compilation.
+        private bool GenerateZing(string inputModule, ProgramName inputFile, AST<Model> model, List<Flag> flags)
+        {
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(inputModule, null, inputFile.ToString()));
             var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(inputModule + "_WithTypes"));
@@ -180,7 +184,7 @@
             var modelWithTypes = extractTask.Result.FindAny(
                 new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
             Contract.Assert(modelWithTypes != null);
-            
+
             AST<Model> zingModel = MkZingOutputModel();
             string directoryName = Path.GetDirectoryName(Path.GetFullPath(InputFileName));
             string fileName = Path.GetFileNameWithoutExtension(InputFileName);
@@ -703,18 +707,20 @@
             return aliases;
         }
 
-        private AST<Model> GenerateC(string inputModelName, ProgramName inputProgram)
+        private bool GenerateC(string inputModelName, ProgramName inputProgram, List<Flag> flags)
         {
             //// Apply the P2C transform.
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2CTransform, null, MkReservedModuleLocation(P2CTransform)));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(inputModelName, null, inputProgram.ToString()));
             var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(inputModelName + "_CModel"));
-            List<Flag> flags;
+
+            List<Flag> appFlags;
             Task<ApplyResult> apply;
             Formula.Common.Rules.ExecuterStatistics stats;
-            CompilerEnv.Apply(transStep, false, false, out flags, out apply, out stats);
+            CompilerEnv.Apply(transStep, false, false, out appFlags, out apply, out stats);
             apply.RunSynchronously();
 
+            flags.AddRange(appFlags);
             //// Extract the result
             var extractTask = apply.Result.GetOutputModel(
                 inputModelName + "_CModel",
@@ -746,7 +752,7 @@
 
             cProgram = (AST<Program>)Factory.Instance.ToAST(cProgramConfig.Root);
 
-            cProgram.Print(System.Console.Out);
+            //// cProgram.Print(System.Console.Out);
 
             //// Install and render the program.
             InstallResult instResult;
@@ -757,7 +763,65 @@
             Contract.Assert(didStart);
             renderTask.Wait();
             Contract.Assert(renderTask.Result.Succeeded);
-            return (AST<Model>)renderTask.Result.Module;
+
+            var fileQuery = new NodePred[]
+            {
+                NodePredFactory.Instance.Star,
+                NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact),
+                NodePredFactory.Instance.MkPredicate(NodeKind.FuncTerm) &
+                NodePredFactory.Instance.MkNamePredicate("File")
+            };
+
+            var success = true;
+            renderTask.Result.Module.FindAll(
+                fileQuery,
+                (p, n) =>
+                {
+                    success = PrintFile(inputModelName, n, flags) && success;
+                });
+
+            return success;
+        }
+
+        private bool PrintFile(string filePrefix, Node n, List<Flag> flags)
+        {
+            var file = (FuncTerm)n;
+            string fileName;
+            string shortFileName;
+            Quote fileBody;
+            using (var it = file.Args.GetEnumerator())
+            {
+                it.MoveNext();
+                shortFileName = filePrefix + ((Cnst)it.Current).GetStringValue();
+                fileName = Path.Combine(Environment.CurrentDirectory, shortFileName);
+                it.MoveNext();
+                fileBody = (Quote)it.Current;
+            }
+
+            Console.WriteLine("Writing {0} ...", shortFileName);
+
+            try
+            {
+                using (var sw = new System.IO.StreamWriter(fileName))
+                {
+                    foreach (var c in fileBody.Contents)
+                    {
+                        Factory.Instance.ToAST(c).Print(sw);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                flags.Add(
+                    new Flag(
+                        SeverityKind.Error,
+                        default(Span),
+                        string.Format("Could not save file {0} - {1}", fileName, e.Message),
+                        1));
+                return false;
+            }
+
+            return true;
         }
 
         private AST<Model> MkZingOutputModel()

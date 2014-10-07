@@ -105,7 +105,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	TypeDepNum(i, t) :- TypeExprSub(t), t = NmdTupType(NmdTupTypeField(_, t'), t''), TypeDepNum(j, t'), TypeDepNum(k, t''), i = j + k + 1.  
 	TypeId(id, t) :- td is TypeDepNum(_, t), id = toOrdinal(td, 0, { td' | td' is TypeDepNum }).
 
-	//// Build type initializers in reverse order of linearization.
+	//// Build type initializers in linearization order.
 	//// typeStatic is the C expression to use when forming a static P_TYPE struct.
 	//// defs is the definitions that preceed the encoding of this type constant.
 	TypeConstant ::= (type: TypeExpr + { NIL }, typeExprId: Integer, defs: out.Section + { NIL }, typeStatic: out.Expr).

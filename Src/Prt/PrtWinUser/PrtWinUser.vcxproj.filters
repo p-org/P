@@ -68,12 +68,6 @@
     <ClInclude Include="..\Prt\PrtSMProtectedTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Prt\PrtSMPublic.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Prt\PrtSMPublicTypes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Prt\PrtSMTypeDefs.h">
       <Filter>Header Files</Filter>
     </ClInclude>

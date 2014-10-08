@@ -1,11 +1,11 @@
 #include "PrtDDeployer.h"
 
 /* GLobal Variables */
-string configurationFile = "../PrtDistManagement/Config/PrtDMConfiguration.xml";
+string configurationFile = "..\\PrtDistManagement\\Commons\\PrtDMConfiguration.xml";
 string allBinaries = ".\\";
 string localDeploymentFolder = "..\\DeploymentFolder\\";
-string pThreadsFolder = "..\\..\\..\\Resources\\PThreads\\";
-string vsdllsFolder = "..\\..\\..\\Resources\\VS2013\\";
+string pThreadsFolder = "..\\Resources\\PThreads\\";
+string vsdllsFolder = "..\\Resources\\VS2013\\";
 
 char* PrtDGetPathToPHome(char* nodeAddress)
 {
@@ -19,6 +19,8 @@ char* PrtDGetPathToPHome(char* nodeAddress)
 
 string PrtDDeployPProgram()
 {
+	//debug 
+
 	string remoteDeploymentFolder = PrtDGetDeploymentFolder();
 	string copycommand;
 	//create the folder to be deployed in 

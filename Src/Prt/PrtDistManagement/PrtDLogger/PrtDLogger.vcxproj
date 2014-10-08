@@ -134,15 +134,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="PrtDistLogger.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="PrtDistLogger.cpp" />
+    <ClInclude Include="PrtDLogger.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\PrtDist\PrtDist\PrtDist.vcxproj">
       <Project>{88589011-c704-470a-8a39-05dc0c816da8}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="PrtDLogger.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

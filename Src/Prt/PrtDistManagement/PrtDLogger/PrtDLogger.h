@@ -7,7 +7,7 @@ using namespace std;
 #include"Macros.h"
 #include <sal.h>
 #endif
-#include "PrtHeaders.h"
+#include "../../Prt/PrtHeaders.h"
 
 
 #ifdef __cplusplus

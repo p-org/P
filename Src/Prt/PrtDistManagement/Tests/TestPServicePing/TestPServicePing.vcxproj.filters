@@ -15,12 +15,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PrtDistLogger.h">
+    <ClInclude Include="TestPService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="PrtDistLogger.cpp">
+    <ClCompile Include="TestPServicePing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

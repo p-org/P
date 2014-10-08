@@ -29,7 +29,9 @@ struct _PRT_PPROCESS {
 PRT_PPROCESS*
 PrtStartPProcess(
 __in PRT_UINT16 processId,
-__in PRT_PROGRAMDECL *program
+__in PRT_PROGRAMDECL *program,
+__in PRT_EXCEPHANDLER_FUN exHandler,
+__in PRT_LOG_FUN logger
 );
 
 void

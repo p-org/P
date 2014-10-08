@@ -12,13 +12,13 @@ if exist "%WinDir%\Microsoft.NET\Framework\v4.0.30319\msbuild.exe" (
   exit /B 1)
 
 echo Bootstrapping the test utility...
-%bldexe%  .\Tools\Test\Test.csproj /t:Clean /p:Configuration=Debug /p:Platform=AnyCPU /verbosity:quiet /nologo
+%bldexe%  .\Tools\RunPTool\RunPTool.csproj /t:Clean /p:Configuration=Debug /p:Platform=AnyCPU /verbosity:quiet /nologo
 if %ERRORLEVEL% neq 0 (
   echo Could not clean test utility.
   exit /B 1
 )
 
-%bldexe%  .\Tools\Test\Test.csproj /t:Build /p:Configuration=Debug /p:Platform=AnyCPU /verbosity:quiet /nologo
+%bldexe%  .\Tools\RunPTool\RunPTool.csproj /t:Build /p:Configuration=Debug /p:Platform=AnyCPU /verbosity:quiet /nologo
 if %ERRORLEVEL% neq 0 (
   echo Could not compile test utility.
   exit /B 1

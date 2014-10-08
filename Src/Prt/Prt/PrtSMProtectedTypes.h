@@ -487,11 +487,10 @@ struct _PRT_PROGRAMDECL
 
 struct _PRT_EVENTDECL
 {
-	PRT_UINT32 declIndex;      /**< The index of event set in owner machine */
-	PRT_UINT32 ownerMachIndex; /**< The index of owner machine in program   */
-	PRT_STRING name;           /**< The name of this event set              */
+	PRT_UINT32 declIndex;         /**< The index of event in program */
+	PRT_STRING name;              /**< The name of this event set              */
 	PRT_UINT32 eventMaxInstances; /**< The value of maximum instances of the event that can occur in the queue */
-	PRT_TYPE   payloadType;	/** The type of the payload associated with this event */
+	PRT_TYPE   payloadType;	      /** The type of the payload associated with this event */
 };
 
 struct _PRT_MACHINEDECL

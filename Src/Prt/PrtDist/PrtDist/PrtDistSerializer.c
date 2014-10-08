@@ -111,7 +111,7 @@ __in PRT_VALUE* value
 		PRT_FORGNTYPE *fType = value->type.typeUnion.forgn;
 		PRT_FORGNVALUE *cVal = (PRT_FORGNVALUE *)PrtCalloc(1, sizeof(PRT_FORGNVALUE));
 		retVal->type = PrtCloneType(value->type);
-		retVal->discriminator = retVal->type.typeKind;
+		retVal->discriminator = PRT_KIND_FORGNVALUE;
 		cVal->value = fType->cloner(fType->typeTag, fVal->value);
 		retVal->valueUnion.frgn = cVal;
 		return retVal;
@@ -145,7 +145,7 @@ __in PRT_VALUE* value
 		PRT_TYPE tt = PrtDistDeserializeType(value->type);
 		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtCloneType(tt);
-		retVal->discriminator = retVal->type.typeKind;
+		retVal->discriminator = PRT_KIND_TUPVALUE;
 
 		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
 		PRT_UINT32 arity = value->type.typeUnion.nmTuple->arity;
@@ -170,7 +170,7 @@ __in PRT_VALUE* value
 		PRT_TYPE tt = PrtDistDeserializeType(value->type);
 		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtCloneType(tt);
-		retVal->discriminator = retVal->type.typeKind;
+		retVal->discriminator = PRT_KIND_TUPVALUE;
 
 		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
 		PRT_UINT32 arity = value->type.typeUnion.tuple->arity;
@@ -194,7 +194,7 @@ __in PRT_VALUE* value
 		PRT_TYPE tt = PrtDistDeserializeType(value->type);
 		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtCloneType(tt);
-		retVal->discriminator = retVal->type.typeKind;
+		retVal->discriminator = PRT_KIND_SEQVALUE;
 		PRT_SEQVALUE *sVal = value->valueUnion.seq;
 		PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtCalloc(1, sizeof(PRT_SEQVALUE));
 		cVal->capacity = sVal->capacity;
@@ -387,7 +387,7 @@ __in PRT_VALUE* value
 		PRT_FORGNTYPE *fType = value->type.typeUnion.forgn;
 		PRT_FORGNVALUE *cVal = (PRT_FORGNVALUE *)PrtCalloc(1, sizeof(PRT_FORGNVALUE));
 		retVal->type = PrtCloneType(value->type);
-		retVal->discriminator = retVal->type.typeKind;
+		retVal->discriminator = PRT_KIND_FORGNVALUE;
 		cVal->value = fType->cloner(fType->typeTag, fVal->value);
 		retVal->valueUnion.frgn = cVal;
 		return retVal;
@@ -419,7 +419,7 @@ __in PRT_VALUE* value
 	{
 		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtDistSerializeType(value->type);
-		retVal->discriminator = retVal->type.typeKind;
+		retVal->discriminator = PRT_KIND_TUPVALUE;
 		PRT_UINT32 i;
 		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
 		PRT_UINT32 arity = value->type.typeUnion.nmTuple->arity;
@@ -439,7 +439,7 @@ __in PRT_VALUE* value
 	{
 		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtDistSerializeType(value->type);
-		retVal->discriminator = retVal->type.typeKind;
+		retVal->discriminator = PRT_KIND_TUPVALUE;
 		PRT_UINT32 i;
 		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
 		PRT_UINT32 arity = value->type.typeUnion.tuple->arity;
@@ -459,7 +459,7 @@ __in PRT_VALUE* value
 	{
 		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 		retVal->type = PrtDistSerializeType(value->type);
-		retVal->discriminator = retVal->type.typeKind;
+		retVal->discriminator = PRT_KIND_SEQVALUE;
 		PRT_SEQVALUE *sVal = value->valueUnion.seq;
 		PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtCalloc(1, sizeof(PRT_SEQVALUE));
 		cVal->capacity = sVal->capacity;

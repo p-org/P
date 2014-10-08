@@ -27,14 +27,15 @@ transform P2CProgram (in:: P) returns (out:: C)
     /*************************************************************/
 	DeclId ::= (decl: PDecl, id: Natural, cname: String).
 	
-	//// (1) EventDecls - Id 0 is reserved for default event, which can appear in transition tables.
-	DeclId(d, id, cn) :- d is EventDecl, id = 1 + toOrdinal(d, 0, { d' | d' is EventDecl }), cn = strJoin("P_EVENT_", d.name).
+	//// (1) EventDecls - Id 0, 1 are reserved for default, hault event, which can appear in transition tables.
+	DeclId(d, id, cn) :- d is EventDecl, id = 2 + toOrdinal(d, 0, { d' | d' is EventDecl }), cn = strJoin("P_EVENT_", d.name).
 	
 	HOut(0, out.EnmDef(NIL, "P_EVENTS", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
 									   enumMember = Element(IntLit(0, DEC, NIL), "_P_EVENT_DEFAULT");
+									   enumMember = Element(IntLit(1, DEC, NIL), "_P_EVENT_HALT");
 									   DeclId(d, id, cn), d : EventDecl, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTS_COUNT"), size = 1 + count({d | d is EventDecl}) }).  
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTS_COUNT"), size = 2 + count({d | d is EventDecl}) }).  
 
 	//// (2) MachineDecls - Start at Id 0.
 	DeclId(d, id, cn) :- d is MachineDecl, id = toOrdinal(d, 0, { d' | d' is MachineDecl }), cn = strJoin("P_MACHINE_", d.name).
@@ -103,7 +104,8 @@ transform P2CProgram (in:: P) returns (out:: C)
     /*************************************************************/
 	TypeExprSub ::= sub (TypeExpr).
 
-	//// Always encode NULL type.
+	//// Always encode NULL and ANY types.
+	TypeExprSub(in.BaseType(ANY)).
 	TypeExprSub(in.BaseType(NULL)).
 
 	//// Labels a type expression with a number greater than the labels of all its sub-expressions.
@@ -263,37 +265,50 @@ transform P2CProgram (in:: P) returns (out:: C)
 
     /*************************************************************/
     /******            Generate event decls                 ******/
-    /*************************************************************/
-	
+    /*************************************************************/	
 	EvDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
-	
-	EvDeclConcat(c, NIL) :- c = count({d | d is EventDecl}) + 1.
 
-	//// Case of no payload type expression
-	EvDeclConcat(m, arr) :- DeclId(d, m, _), EvDeclConcat(m + 1, after), arr = out.Args(def, after), d.type = NIL, d : EventDecl,
-	                        TypeConstant(in.BaseType(NULL), typeId, _, _),
+	EvDecl2PayloadType ::= (EventDecl, out.Expr).
+	//// An EventDecl without a payload type has a null payload type.
+	EvDecl2PayloadType(d, e) :- d is EventDecl(_, _, NIL), TypeConstant(in.BaseType(NULL), typeId, _, _), e = Ident(strJoin("P_GEND_TYPE_", toString(typeId))).
+	//// An EventDecl with a payload type refers to one of the statically generated types.
+	EvDecl2PayloadType(d, e) :- d is EventDecl(_, _, type), TypeConstant(type, typeId, _, _), e = Ident(strJoin("P_GEND_TYPE_", toString(typeId))), type : in.TypeExpr.
+
+	EvDecl2EvCard      ::= (EventDecl, out.Expr).
+	//// An EventDecl without a queue constraint allows 2^32 - 1 events in a queue.
+	EvDecl2EvCard(d, e) :- d is EventDecl(_, NIL, _), e = IntLit(4294967295, DEC, U).
+	//// An EventDecl with a payload type refers to one of the statically generated types.
+	EvDecl2EvCard(d, e) :- d is EventDecl(_, card, _), e = IntLit(card.bound, DEC, U).
+
+	//// Base case
+	EvDeclConcat(c, NIL) :- c = count({d | d is EventDecl}) + 2.
+
+    //// Build event array in reverse order
+	EvDeclConcat(m, arr) :- DeclId(d, m, cn), EvDeclConcat(m + 1, after), arr = out.Args(def, after), EvDecl2PayloadType(d, type), EvDecl2EvCard(d, card), 
 	                        def = Init(
-							   Args(IntLit(m, DEC, NIL),
+							   Args(Ident(cn),
 							   Args(StringLit(d.name, NIL),
-							   Args(Ident(strJoin("P_GEND_TYPE_", toString(typeId))),
-							   NIL)))).
+							   Args(card,
+							   Args(type,
+							   NIL))))).
 
-	//// Case of payloay type expression
-	EvDeclConcat(m, arr) :- DeclId(d, m, _), EvDeclConcat(m + 1, after), arr = out.Args(def, after), d.type != NIL, d : EventDecl,
-	                        TypeConstant(d.type, typeId, _, _),
+	//// Define the halt event
+	EvDeclConcat(1, arr) :- EvDeclConcat(2, after), arr = out.Args(def, after), TypeConstant(in.BaseType(ANY), typeId, _, _),
 	                        def = Init(
-							   Args(IntLit(m, DEC, NIL),
-							   Args(StringLit(d.name, NIL),
+							   Args(Ident("_P_EVENT_HALT"),
+							   Args(StringLit("halt", NIL),
+							   Args(IntLit(4294967295, DEC, U),
 							   Args(Ident(strJoin("P_GEND_TYPE_", toString(typeId))),
-							   NIL)))).
+							   NIL))))).
 
-	//// Define the null event
+	//// Define the default event
 	EvDeclConcat(0, arr) :- EvDeclConcat(1, after), arr = out.Args(def, after), TypeConstant(in.BaseType(NULL), typeId, _, _),
 	                        def = Init(
-							   Args(IntLit(0, DEC, NIL),
-							   Args(StringLit("null", NIL),
+							   Args(Ident("_P_EVENT_DEFAULT"),
+							   Args(StringLit("default", NIL),
+							   Args(IntLit(0, DEC, U),
 							   Args(Ident(strJoin("P_GEND_TYPE_", toString(typeId))),
-							   NIL)))).
+							   NIL))))).
 
     //// Emit the event decl array.
 	HOut(2, def) :- EvDeclConcat(0, arr), 
@@ -302,5 +317,37 @@ transform P2CProgram (in:: P) returns (out:: C)
 								  ArrType(NmdType(NIL, "PRT_EVENTDECL"), NIL), 
 								  "P_GEND_EVENTS", 
 								  Init(arr)).
+
+    /*************************************************************/
+    /******            Generate Variable Decl Arrays        ******/
+    /*************************************************************/	
+	VarDeclConcat ::= (pos: Natural, mach: MachineDecl, arr: out.Args + {NIL}).
+
+	//// Base case
+	VarDeclConcat(c, m, NIL) :- m is MachineDecl, c = count({v | v is VarDecl, v.owner = m}).
+
+    //// Build every variable array in reverse order
+	VarDeclConcat(m, d.owner, arr) :- 
+							DeclId(d, m, cvar), DeclId(d.owner, _, cmach), VarDeclConcat(m + 1, d.owner, after), d : VarDecl, TypeConstant(d.type, typeId, _, _),							  
+							arr = out.Args(def, after), 
+	                        def = Init(
+							   Args(Ident(cmach),
+							   Args(Ident(cvar),
+							   Args(StringLit(d.name, NIL),
+							   Args(Ident(strJoin("P_GEND_TYPE_", toString(typeId))),
+							   NIL))))).
+
+	HOut(3, def) :- VarDeclConcat(0, mach, arr),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_VARDECL"), NIL), 
+								  strJoin("P_GEND_VARS_", mach.name), 
+								  Init(arr)).
+
+    /*************************************************************/
+    /******          Generate Transition Decl Arrays        ******/
+    /*************************************************************/	
+	TransDeclConcat ::= (pos: Natural, context: StateDecl, arr: out.Args + {NIL}).
+	TransDeclId     ::= (decl: TransDecl, id: Natural).
 
 }	

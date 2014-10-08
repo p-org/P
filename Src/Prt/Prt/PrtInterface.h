@@ -11,7 +11,7 @@ typedef struct PRT_STATEMACHINE	PRT_STATEMACHINE;
 * @param[in] payload : payload to be send with 'even'.
 * @see PrtEnqueueEvent
 */
-VOID PrtSend (__in PRT_STATEMACHINE machine, __in PRT_VALUE *event, __in PRT_VALUE *payload);
+void PrtSend (__in PRT_STATEMACHINE machine, __in PRT_VALUE *event, __in PRT_VALUE *payload);
 
 /** Send message to P state machine.
 * @param[in] process : p process, instance of a P program.

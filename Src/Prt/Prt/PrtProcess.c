@@ -16,7 +16,7 @@ __in PRT_PROGRAMDECL *program
 	return retPProcess;
 }
 
-VOID
+void
 PrtStopPProcess(
 PRT_PPROCESS* stopProcess)
 {
@@ -32,9 +32,9 @@ PRT_PPROCESS* stopProcess)
 	}
 }
 
-VOID
+void
 PrtPProcessAddMachine(
-__in PVOID context
+__in void* context
 )
 {
 	PRT_SMCONTEXT *prtContext = (PRT_SMCONTEXT*)context;

@@ -3,10 +3,10 @@
 #include <stdio.h>
 #include <string.h>
 
-VOID
+void
 PrtExternalExceptionHandler(
 __in PRT_EXCEPTIONS exception,
-__in PVOID vcontext
+__in void* vcontext
 )
 {
 	PRT_SMCONTEXT *context = (PRT_SMCONTEXT*)vcontext;
@@ -61,10 +61,10 @@ __in PVOID vcontext
 
 }
 
-VOID
+void
 PrtExternalLogHandler(
 __in PRT_STEP step,
-__in PVOID vcontext
+__in void* vcontext
 )
 {
 	static FILE *logfile = NULL;

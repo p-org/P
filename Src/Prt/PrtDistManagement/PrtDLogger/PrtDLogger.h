@@ -27,9 +27,9 @@ enum _PRTD_COMPONENT {
 	
 
 //Functions
-VOID PrtDCreateLogFile(PRTD_COMPONENT pComponent);
-VOID PrtDCloseLogFile();
-VOID PrtDLog(PRTD_COMPONENT op, char* log);
+void PrtDCreateLogFile(PRTD_COMPONENT pComponent);
+void PrtDCloseLogFile();
+void PrtDLog(PRTD_COMPONENT op, char* log);
 
 #ifdef __cplusplus
 }

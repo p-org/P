@@ -3,7 +3,7 @@
 using namespace std;
 
 ofstream PrtDLogStream;
-VOID PrtDCreateLogFile(PRTD_COMPONENT pComponent)
+void PrtDCreateLogFile(PRTD_COMPONENT pComponent)
 {
 
 	switch (pComponent)
@@ -30,13 +30,13 @@ VOID PrtDCreateLogFile(PRTD_COMPONENT pComponent)
 
 }
 
-VOID PrtDCloseLogFile()
+void PrtDCloseLogFile()
 {
 	PrtDLogStream << "<EndLog> " << "GOOD BYE" << endl;
 	PrtDLogStream.close();
 }
 
-VOID PrtDLog(PRTD_COMPONENT op, char* log)
+void PrtDLog(PRTD_COMPONENT op, char* log)
 {
 	switch (op)
 	{

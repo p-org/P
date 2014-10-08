@@ -118,20 +118,20 @@ struct _PRT_TUPTYPE
 *   The cloning semantics depends on the memory management strategy of the client.
 *   @see PRT_PRT_FORGN_FREE
 */
-typedef PVOID (*PRT_FORGN_CLONE)(_In_ PRT_GUID typeTag, _In_  PVOID frgnVal);
+typedef void* (*PRT_FORGN_CLONE)(_In_ PRT_GUID typeTag, _In_  void* frgnVal);
 
 /** The PRT_FORGN_FREE function is called whenever a foreign value will never be used again.
 *   The semantics of PRT_FORGN_FREE depends on the memory management strategy of the client.
 *   @see PRT_FORGN_CLONE
 */
-typedef VOID (*PRT_FORGN_FREE)(_In_ PRT_GUID typeTag, _Inout_ PVOID frgnVal);
+typedef void (*PRT_FORGN_FREE)(_In_ PRT_GUID typeTag, _Inout_ void* frgnVal);
 
 /** The PRT_FORGN_GETHASHCODE function is called to get a hashcode for a foreign value.
 *   The semantics depends of the client's definition of value equality. If two values
 *   are equal, then the function must return the same hashcode.
 *   @see PRT_FORGN_GETHASHCODE
 */
-typedef PRT_UINT32(*PRT_FORGN_GETHASHCODE)(_In_ PRT_GUID typeTag, _In_ PVOID frgnVal);
+typedef PRT_UINT32(*PRT_FORGN_GETHASHCODE)(_In_ PRT_GUID typeTag, _In_ void* frgnVal);
 
 /** The PRT_FORGN_ISEQUAL function tests if two values are equal.
 *   Equality semantics is determined by the client. If two values
@@ -141,9 +141,9 @@ typedef PRT_UINT32(*PRT_FORGN_GETHASHCODE)(_In_ PRT_GUID typeTag, _In_ PVOID frg
 
 typedef PRT_BOOLEAN(*PRT_FORGN_ISEQUAL)(
 	_In_ PRT_GUID typeTag1,
-	_In_ PVOID frgnVal1,
+	_In_ void* frgnVal1,
 	_In_ PRT_GUID typeTag2,
-	_In_ PVOID frgnVal2);
+	_In_ void* frgnVal2);
 
 
 /** 
@@ -230,14 +230,14 @@ PRT_TYPE PrtMkTupType(_In_ PRT_UINT32 arity);
 * @param[in] index The field index to set.
 * @param[in] fieldType The type of the ith field (will be deeply cloned).
 */
-VOID PrtSetFieldType(_Inout_ PRT_TYPE tupleType, _In_ PRT_UINT32 index, _In_ PRT_TYPE fieldType);
+void PrtSetFieldType(_Inout_ PRT_TYPE tupleType, _In_ PRT_UINT32 index, _In_ PRT_TYPE fieldType);
 
 /** Sets the ith field name of a named tuple type.
 * @param[in,out] tupleType The named tuple type to mutate.
 * @param[in] index The field index to set.
 * @param[in] fieldName The name of the ith field (will be deeply cloned).
 */
-VOID PrtSetFieldName(_Inout_ PRT_TYPE tupleType, _In_ PRT_UINT32 index, _In_ PRT_STRING fieldName);
+void PrtSetFieldName(_Inout_ PRT_TYPE tupleType, _In_ PRT_UINT32 index, _In_ PRT_STRING fieldName);
 
 /** Determines if subType and supType are in a sub-type / super-type relationship.
 * @param[in] subType The sub-type.
@@ -261,6 +261,6 @@ PRT_TYPE PrtCloneType(_In_ PRT_TYPE type);
 * @see PrtMkSeqType
 * @see PrtMkTupType
 */
-VOID PrtFreeType(_Inout_ PRT_TYPE type);
+void PrtFreeType(_Inout_ PRT_TYPE type);
 
 #endif

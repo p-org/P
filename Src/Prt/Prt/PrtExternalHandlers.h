@@ -2,15 +2,15 @@
 
 #include <stdio.h>
 
-VOID
+void
 PrtExternalExceptionHandler(
 __in PRT_EXCEPTIONS exception,
-__in PVOID vcontext
+__in void* vcontext
 );
 
-VOID
+void
 PrtExternalLogHandler(
 __in PRT_STEP step,
-__in PVOID vcontext
+__in void* vcontext
 );
 

@@ -1,0 +1,8 @@
+runPc: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: AlonBug.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+runZing: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: AlonBug.dll
+acc: .\
+dsc: Feature Integration

@@ -1,0 +1,61 @@
+=================================
+         Console output          
+=================================
+OUT: Writing MaxInstances_2_p_.h ...
+OUT: Writing MaxInstances_2.zing ...
+OUT: Compiling MaxInstances_2.zing to MaxInstances_2.dll ...
+OUT: maxinstances_2.p (13, 4): inferred type:  BaseType(MODEL)
+OUT: maxinstances_2.p (13, 4): inferred type:  NIL
+OUT: maxinstances_2.p (13, 20): inferred type:  BaseType(MODEL)
+OUT: maxinstances_2.p (13, 30): inferred type:  BaseType(REAL)
+OUT: maxinstances_2.p (14, 10): inferred type:  NIL
+OUT: maxinstances_2.p (14, 16): inferred type:  BaseType(EVENT)
+OUT: maxinstances_2.p (18, 4): inferred type:  BaseType(BOOL)
+OUT: maxinstances_2.p (18, 4): inferred type:  NIL
+OUT: maxinstances_2.p (18, 11): inferred type:  BaseType(BOOL)
+OUT: maxinstances_2.p (26, 13): inferred type:  NIL
+OUT: maxinstances_2.p (26, 18): inferred type:  BaseType(MODEL)
+OUT: maxinstances_2.p (26, 33): inferred type:  BaseType(EVENT)
+OUT: maxinstances_2.p (32, 4): inferred type:  NIL
+OUT: maxinstances_2.p (32, 10): inferred type:  BaseType(EVENT)
+OUT: maxinstances_2.p (38, 9): inferred type:  NIL
+OUT: maxinstances_2.p (42, 3): inferred type:  NIL
+OUT: maxinstances_2.p (42, 10): inferred type:  BaseType(INT)
+OUT: maxinstances_2.p (42, 18): inferred type:  BaseType(BOOL)
+OUT: maxinstances_2.p (42, 21): inferred type:  BaseType(INT)
+OUT: maxinstances_2.p (43, 3): inferred type:  NIL
+OUT: maxinstances_2.p (43, 8): inferred type:  BaseType(MODEL)
+OUT: maxinstances_2.p (43, 23): inferred type:  BaseType(EVENT)
+OUT: maxinstances_2.p (44, 9): inferred type:  NIL
+OUT: maxinstances_2.p (44, 14): inferred type:  BaseType(MODEL)
+OUT: maxinstances_2.p (44, 29): inferred type:  BaseType(EVENT)
+OUT: maxinstances_2.p (52, 10): inferred type:  BaseType(REAL)
+OUT: maxinstances_2.p (52, 10): inferred type:  NIL
+OUT: maxinstances_2.p (52, 25): inferred type:  BaseType(ANY)
+OUT: maxinstances_2.p (52, 33): inferred type:  BaseType(REAL)
+OUT: maxinstances_2.p (52, 45): inferred type:  NIL
+OUT: maxinstances_2.p (52, 51): inferred type:  BaseType(EVENT)
+OUT: maxinstances_2.p (65, 4): inferred type:  NIL
+OUT: maxinstances_2.p (65, 9): inferred type:  BaseType(REAL)
+OUT: maxinstances_2.p (65, 23): inferred type:  BaseType(EVENT)
+OUT: maxinstances_2.p (65, 27): inferred type:  BaseType(INT)
+OUT: maxinstances_2.p (72, 6): inferred type:  NIL
+OUT: maxinstances_2.p (72, 11): inferred type:  BaseType(REAL)
+OUT: maxinstances_2.p (72, 25): inferred type:  BaseType(EVENT)
+OUT: maxinstances_2.p (73, 3): inferred type:  NIL
+OUT: maxinstances_2.p (73, 8): inferred type:  BaseType(REAL)
+OUT: maxinstances_2.p (73, 22): inferred type:  BaseType(EVENT)
+OUT: maxinstances_2.p (74, 3): inferred type:  NIL
+OUT: maxinstances_2.p (74, 8): inferred type:  BaseType(REAL)
+OUT: maxinstances_2.p (74, 22): inferred type:  BaseType(EVENT)
+OUT: 
+EXIT: 0
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Passed
+OUT: ##################
+OUT: 33 distinct states, 47 total transitions, 12 steps max depth
+OUT: 
+EXIT: 0

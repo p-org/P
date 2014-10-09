@@ -1,0 +1,114 @@
+=================================
+         Console output          
+=================================
+OUT: Writing BangaloreToRedmond_Liveness_p_.h ...
+OUT: Writing BangaloreToRedmond_Liveness.zing ...
+OUT: Compiling BangaloreToRedmond_Liveness.zing to BangaloreToRedmond_Liveness.dll ...
+OUT: bangaloretoredmond_liveness.p (21, 13): inferred type:  BaseType(MODEL)
+OUT: bangaloretoredmond_liveness.p (21, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (21, 29): inferred type:  BaseType(MODEL)
+OUT: bangaloretoredmond_liveness.p (21, 45): inferred type:  BaseType(REAL)
+OUT: bangaloretoredmond_liveness.p (22, 13): inferred type:  BaseType(MODEL)
+OUT: bangaloretoredmond_liveness.p (22, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (22, 25): inferred type:  BaseType(MODEL)
+OUT: bangaloretoredmond_liveness.p (22, 37): inferred type:  BaseType(REAL)
+OUT: bangaloretoredmond_liveness.p (23, 13): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (23, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (23, 29): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (24, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (24, 19): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond_liveness.p (32, 12): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (35, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (35, 17): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond_liveness.p (35, 25): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (35, 28): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond_liveness.p (35, 42): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (35, 47): inferred type:  BaseType(MODEL)
+OUT: bangaloretoredmond_liveness.p (35, 62): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond_liveness.p (44, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (44, 18): inferred type:  BaseType(MODEL)
+OUT: bangaloretoredmond_liveness.p (44, 33): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond_liveness.p (45, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (52, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (52, 18): inferred type:  BaseType(MODEL)
+OUT: bangaloretoredmond_liveness.p (52, 29): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond_liveness.p (55, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (55, 20): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (55, 34): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (55, 37): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (56, 13): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (56, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (56, 29): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (57, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (57, 17): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond_liveness.p (57, 25): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (57, 28): inferred type:  BaseType(NULL)
+OUT: bangaloretoredmond_liveness.p (57, 34): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (57, 39): inferred type:  BaseType(MODEL)
+OUT: bangaloretoredmond_liveness.p (57, 50): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond_liveness.p (72, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (72, 19): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond_liveness.p (79, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (79, 20): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (79, 34): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (79, 37): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (80, 13): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (80, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (80, 21): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (81, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (81, 17): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (82, 17): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (82, 23): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond_liveness.p (84, 17): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (84, 23): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond_liveness.p (89, 13): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (89, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (89, 29): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (97, 17): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (97, 23): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond_liveness.p (102, 9): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (102, 13): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (103, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (103, 20): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (105, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (105, 20): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (113, 8): inferred type:  BaseType(REAL)
+OUT: bangaloretoredmond_liveness.p (113, 8): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (113, 21): inferred type:  BaseType(ANY)
+OUT: bangaloretoredmond_liveness.p (113, 29): inferred type:  BaseType(REAL)
+OUT: bangaloretoredmond_liveness.p (114, 8): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (114, 14): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond_liveness.p (125, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (125, 17): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (125, 22): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (125, 27): inferred type:  BaseType(REAL)
+OUT: bangaloretoredmond_liveness.p (125, 39): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond_liveness.p (125, 49): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (125, 55): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond_liveness.p (125, 70): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (125, 75): inferred type:  BaseType(REAL)
+OUT: bangaloretoredmond_liveness.p (125, 87): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond_liveness.p (137, 7): inferred type:  BaseType(REAL)
+OUT: bangaloretoredmond_liveness.p (137, 7): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (137, 20): inferred type:  BaseType(ANY)
+OUT: bangaloretoredmond_liveness.p (137, 28): inferred type:  BaseType(REAL)
+OUT: bangaloretoredmond_liveness.p (138, 7): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (138, 13): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond_liveness.p (150, 13): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (150, 17): inferred type:  BaseType(BOOL)
+OUT: bangaloretoredmond_liveness.p (150, 22): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (150, 28): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond_liveness.p (150, 42): inferred type:  NIL
+OUT: bangaloretoredmond_liveness.p (150, 47): inferred type:  BaseType(REAL)
+OUT: bangaloretoredmond_liveness.p (150, 59): inferred type:  BaseType(EVENT)
+OUT: 
+EXIT: 0
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Passed
+OUT: ##################
+OUT: 36 distinct states, 61 total transitions, 9 steps max depth
+OUT: 
+EXIT: 0

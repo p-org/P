@@ -1,24 +1,25 @@
-event BookCab assert 2;
+event BookCab assume 2;
 event BookFlight assert 2;
 event FlightBooked assert 2;
 event TryAgain assert 2;
-event CabBooked assert 2; 
-event Thanks assert 2; 
+event CabBooked assume 1; 
+event Thanks assume 1; 
 event ReachedAirport assert 2; 
 event MissedFlight assert 2; 
 event TookFlight assert 2; 
 event Unit assert 2;
 
 main machine Employee {
-    var TravelAgentmachine: model;
-    var CityCabmachine: model;
+    var TravelAgentId: model;
+    var CityCabId: model;
     var Check: bool;
     var RemoteCheckIn: bool;
 
     start state Init {
+		defer CabBooked;
         entry {
-            TravelAgentmachine = new TravelAgent(this); 
-            CityCabmachine = new CityCab(this);
+            TravelAgentId = new TravelAgent(this); 
+            CityCabId = new CityCab(this);
             RemoteCheckIn = false;
             raise Unit;
         }
@@ -26,43 +27,39 @@ main machine Employee {
         }
 
     state BangaloreOffice {
+	defer CabBooked;
         entry {
            push SBookFlight;
         }
         exit {
-            if (trigger == FlightBooked) send TravelAgentmachine, Thanks;
+            if (trigger == FlightBooked) send TravelAgentId, Thanks;
         }
         on TryAgain goto BangaloreOffice;
         on FlightBooked goto SBookCab;
     }
 
     state SBookFlight { 
+		defer CabBooked;
         entry {
-            send TravelAgentmachine, BookFlight; 
-            pop; 
+            send TravelAgentId, BookFlight; 
+            return; 
         }
     }
 
     state SBookCab { 
+		
         entry { 
-            send CityCabmachine, BookCab; 
-			push dummyState;
+            send CityCabId, BookCab; 
         }
         exit { 
             assert(RemoteCheckIn == false); 
-            if (trigger != null) send CityCabmachine, Thanks;
+            RemoteCheckIn = true; 
+            if (trigger != null) send CityCabId, Thanks;
         }
+		on CabBooked goto TakeCab;
         on default goto TakeBus;
-        on CabBooked goto TakeCab;
     }
 
-	state dummyState{
-		entry {
-			RemoteCheckIn = true; 
-			raise CabBooked;
-		}
-	}
-	
     state TakeCab {
         entry { 
             raise ReachedAirport; 
@@ -97,7 +94,8 @@ main machine Employee {
     }
 
     state ReachedRedmond {
-        entry { assert(false); }
+        entry { raise Unit; }
+		on Unit goto BangaloreOffice;
     }
 
     model fun AmILucky():bool { 
@@ -109,49 +107,50 @@ main machine Employee {
 }
 
 model TravelAgent {
-    var Employeemachine: machine;
-
-    start state _Init {
-      entry {
-	    Employeemachine = payload as machine;
-	    raise Unit;
-      }
-      on Unit goto Init;
+    var EmployeeId: machine;
+    start state Init {
+        entry {
+	      EmployeeId = payload as machine;
+	      raise Unit;
+        }
+        on Unit goto WaitToBook;
     }
 
-    state Init { 
+    state WaitToBook { 
         on BookFlight goto SBookFlight;
     }
 
     state SBookFlight {
         entry { 
-            if ($) { send Employeemachine, TryAgain; raise Unit; } else { send Employeemachine, FlightBooked; } 
+            if ($) { send EmployeeId, TryAgain; raise Unit; } else { send EmployeeId, FlightBooked; } 
         }
-        on Unit goto Init;
-        on Thanks goto Init;
+        on Unit goto WaitToBook;
+        on Thanks goto WaitToBook;
     }
 }
 
 model CityCab {
-    var Employeemachine: machine;
+    var EmployeeId: machine;
 
-    start state _Init {
-      entry {
-	    Employeemachine = payload as machine;
-	    raise Unit;
-      }
-      on Unit goto Init;
+    start state Init {
+	entry {
+			   EmployeeId = payload as machine;
+			   raise Unit;
+	}
+        on Unit goto WaitToBook;
     }
 
-    state Init { 
+    state WaitToBook { 
+		ignore Thanks;
         on BookCab goto SBookCab;
     }
 
     state SBookCab {
         entry { 
-            if ($) { raise Unit;} else { send Employeemachine, CabBooked; }
+            if ($) { raise Unit;} else { send EmployeeId, CabBooked; }
         } 
-        on Unit goto Init;
-        on Thanks goto Init;
+        on Unit goto WaitToBook;
+        on Thanks goto WaitToBook;
+		on BookCab goto SBookCab;
     }
 }

@@ -37,6 +37,7 @@ interface PrtDistTypes
 	};
 
 
+
 	/** A type is expressed as a discriminicated union of all types */
 	typedef union switch (PRT_TYPE_KIND typeKind) typeUnion{
 	case PRT_KIND_ANY: PRT_UINT32 dummy_1;

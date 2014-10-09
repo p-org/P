@@ -352,7 +352,7 @@ Type - BOOLEAN
 	return isMaxInstancesExceeded;
 }
 
-VOID
+void
 PrtEnqueueEvent(
 __in PRT_MACHINE_HANDLE			machine,
 __in PRT_VALUE					*event,
@@ -378,7 +378,7 @@ Arg - Argument associated with the event.
 
 Return Value:
 
-NONE (VOID)
+NONE (void)
 
 --*/
 {
@@ -489,7 +489,7 @@ Protected Functions
 
 *********************************************************************************/
 
-VOID
+void
 PrtPop(
 __inout PRT_SMCONTEXT		*context
 )
@@ -508,7 +508,7 @@ context - Pointer to the State-Machine context.
 
 Return Value:
 
-NONE (VOID)
+NONE (void)
 
 --*/
 {
@@ -546,7 +546,7 @@ PRT_VALUE	  *event
 }
 
 
-VOID
+void
 PrtRaise(
 __inout PRT_SMCONTEXT		*context,
 __in PRT_VALUE	*event,
@@ -569,7 +569,7 @@ EventIndex - Internal Private event raised.
 
 Return Value:
 
-NONE (VOID)
+NONE (void)
 
 --*/
 {
@@ -596,7 +596,7 @@ NONE (VOID)
 }
 
 
-VOID
+void
 PrtCall(
 __inout PRT_SMCONTEXT		*context,
 __in PRT_UINT32				stateIndex
@@ -617,7 +617,7 @@ State - Called State.
 
 Return Value:
 
-NONE (VOID)
+NONE (void)
 
 --*/
 {
@@ -674,7 +674,7 @@ __in PRT_SMCONTEXT			*context
 _IRQL_requires_(DISPATCH_LEVEL)
 _Requires_lock_held_(context->StateMachineLock)
 _Releases_lock_(context->StateMachineLock)
-VOID
+void
 PrtRunStateMachine(
 __inout _At_(context->Irql, _IRQL_restores_)
 PRT_SMCONTEXT	    *context,
@@ -1077,7 +1077,7 @@ DoTakeTransition:
 
 }
 
-VOID
+void
 PrtTakeDefaultTransition(
 __inout PRT_SMCONTEXT		*context
 )
@@ -1122,7 +1122,7 @@ __inout PRT_SMCONTEXT		*context
 
 
 
-VOID
+void
 PrtTakeTransition(
 __inout PRT_SMCONTEXT		*context,
 __in PRT_UINT32				eventIndex
@@ -1193,7 +1193,7 @@ __in PRT_UINT32				eventIndex
 	return;
 }
 
-VOID
+void
 PrtHaltMachine(
 __inout PRT_SMCONTEXT			*context
 )
@@ -1245,7 +1245,7 @@ __inout PRT_SMCONTEXT			*context
 
 }
 
-VOID
+void
 PrtPushState(
 __inout PRT_SMCONTEXT		*context,
 __in	PRT_BOOLEAN			isCallStatement
@@ -1308,7 +1308,7 @@ __in	PRT_BOOLEAN			isCallStatement
 	}
 }
 
-VOID
+void
 PrtPopState(
 __inout PRT_SMCONTEXT		*context,
 __in PRT_BOOLEAN			restoreTrigger
@@ -1824,9 +1824,9 @@ __in PRT_SMCONTEXT			*context
 	return FALSE;
 }
 
-PVOID
+void*
 PrtClonePackedSet(
-PVOID					packedSet,
+void*					packedSet,
 PRT_UINT32					size
 )
 {
@@ -1842,7 +1842,7 @@ PRT_UINT32					size
 	return clone;
 }
 
-VOID
+void
 PrtUpdateCurrentActionsSet(
 PRT_SMCONTEXT			*context
 )
@@ -1868,7 +1868,7 @@ PRT_SMCONTEXT			*context
 	}
 }
 
-VOID
+void
 PrtUpdateCurrentDeferredSet(
 PRT_SMCONTEXT			*context
 )
@@ -1950,7 +1950,7 @@ __in PRT_SMCONTEXT *context
 	return context->currentLengthOfEventQueue;
 }
 
-VOID
+void
 PrtFreeSMContext(
 PRT_SMCONTEXT			*context
 )
@@ -2012,7 +2012,7 @@ __in PRT_MACHINE_HANDLE SmHandle
 	return context->extContext;
 }
 
-VOID
+void
 PrtExceptionHandler(
 __in PRT_EXCEPTIONS ex,
 __in PRT_SMCONTEXT *context
@@ -2021,7 +2021,7 @@ __in PRT_SMCONTEXT *context
 	context->parentProcess->exceptionHandler(ex, context);
 }
 
-VOID
+void
 PrtLog(
 __in PRT_STEP step,
 __in PRT_SMCONTEXT *context

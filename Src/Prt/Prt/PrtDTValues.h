@@ -21,11 +21,31 @@
 
 #if  !defined(PRT_PLAT_WINDIST)
 
+/** An enum to discriminate the Primitive value types */
+enum _PRT_PRIMVALUE_KIND {
+
+	PRT_KIND_BOOLVALUE,
+	PRT_KIND_EVENTVALUE,
+	PRT_KIND_MACHINEVALUE,
+	PRT_KIND_MODELVALUE,
+	PRT_KIND_INTVALUE,
+	PRT_KIND_NULLVALUE
+};
+
+/** An enum to discriminate the value type*/
+enum _PRT_VALUE_KIND {
+	PRT_KIND_PRIMVALUE,
+	PRT_KIND_FORGNVALUE,
+	PRT_KIND_MAPVALUE,
+	PRT_KIND_SEQVALUE,
+	PRT_KIND_TUPVALUE
+};
+
 
 /** A Union type to discriminate the Prt value */
 struct _PRT_VALUE {
 	PRT_TYPE type;
-	PRT_TYPE_KIND discriminator; /**< A typekind to discriminate the union */
+	PRT_VALUE_KIND discriminator; /**< A typekind to discriminate the union */
 	union
 	{
 		PRT_PRIMVALUE *primValue;
@@ -38,7 +58,7 @@ struct _PRT_VALUE {
 
 struct _PRT_PRIMVALUE
 {
-	PRT_TYPE_KIND discriminator;
+	PRT_PRIMVALUE_KIND discriminator;
 	union {
 		PRT_BOOLEAN bl;   /**< A boolean value.    */
 		PRT_UINT32  ev;   /**< An event id.        */

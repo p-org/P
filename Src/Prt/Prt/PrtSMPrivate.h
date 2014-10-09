@@ -35,7 +35,7 @@ Private Functions
 _IRQL_requires_(DISPATCH_LEVEL)
 _Requires_lock_held_(Context->StateMachineLock)
 _Releases_lock_(Context->StateMachineLock)
-VOID
+void
 PrtRunStateMachine(
 __inout _At_(Context->Irql, _IRQL_restores_)
 PRT_SMCONTEXT	    *context,
@@ -43,7 +43,7 @@ __in PRT_BOOLEAN	doEntryOrExit
 );
 
 
-VOID
+void
 PrtEnqueueEvent(
 __in PRT_MACHINE_HANDLE			machine,
 __in PRT_VALUE					*event,
@@ -62,7 +62,7 @@ __inout PRT_SMCONTEXT	*context
 // Makes transition to the next state given a non-deferred input event 
 // (may Pop state on an unhandled event exception)
 //
-VOID
+void
 PrtTakeTransition(
 __inout PRT_SMCONTEXT		*context,
 __in PRT_UINT32				eventIndex
@@ -72,7 +72,7 @@ __in PRT_UINT32				eventIndex
 //check if the current state has After Transition and if it does take the transition 
 //and execute exit function .
 //
-VOID
+void
 PrtTakeDefaultTransition(
 __inout PRT_SMCONTEXT		*context
 );
@@ -82,7 +82,7 @@ __inout PRT_SMCONTEXT		*context
 // the deferred list of the current state to the Context's
 // deferred list.
 //
-VOID
+void
 PrtPushState(
 __inout PRT_SMCONTEXT		*context,
 __in	PRT_BOOLEAN			isCallStatement
@@ -92,7 +92,7 @@ __in	PRT_BOOLEAN			isCallStatement
 // Pops the current state from call stack and removes
 // its events from the Context's deferred list.
 //
-VOID
+void
 PrtPopState(
 __inout PRT_SMCONTEXT		*context,
 __in PRT_BOOLEAN			restoreTrigger
@@ -114,7 +114,7 @@ Functions used for Life Time Management of the statemachine.
 //
 //Remove State Machine Free all the memory allocated to this statemachine
 //
-VOID
+void
 PrtRemoveMachine(
 __in PRT_SMCONTEXT			*context
 );
@@ -152,7 +152,7 @@ Helper Functions.
 //
 // Call Exception handler
 //
-VOID
+void
 PrtExceptionHandler(
 __in PRT_EXCEPTIONS ex,
 __in PRT_SMCONTEXT *context
@@ -162,7 +162,7 @@ __in PRT_SMCONTEXT *context
 //
 // Call external logging call back
 //
-VOID
+void
 PrtLog(
 __in PRT_STEP step,
 __in PRT_SMCONTEXT *context
@@ -332,16 +332,16 @@ PRT_UINT32				event
 //
 // Create a clone of packed set
 //
-PVOID
+void*
 PrtClonePackedSet(
-PVOID					packedSet,
+void*					packedSet,
 PRT_UINT32					size
 );
 
 //
 // Calculate Actions set for the current State 
 //
-VOID
+void
 PrtUpdateCurrentActionsSet(
 PRT_SMCONTEXT			*context
 );
@@ -349,7 +349,7 @@ PRT_SMCONTEXT			*context
 //
 // Calculate Deferred set for the current State
 //
-VOID
+void
 PrtUpdateCurrentDeferredSet(
 PRT_SMCONTEXT			*context
 );
@@ -357,7 +357,7 @@ PRT_SMCONTEXT			*context
 //
 // Free the allocated memory of SMContext
 //
-VOID
+void
 PrtFreeSMContext(
 PRT_SMCONTEXT			*context
 );

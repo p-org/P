@@ -3,20 +3,22 @@
 PRT_PPROCESS*
 PrtStartPProcess(
 __in PRT_UINT16 processId,
-__in PRT_PROGRAMDECL *program
+__in PRT_PROGRAMDECL *program,
+__in PRT_EXCEPHANDLER_FUN exHandler,
+__in PRT_LOG_FUN logger
 )
 {
 	PRT_PPROCESS* retPProcess = (PRT_PPROCESS*)PrtMalloc(sizeof(PRT_PPROCESS));
 	retPProcess->allMachines = NULL;
-	retPProcess->exceptionHandler = PrtExceptionHandler;
+	retPProcess->exceptionHandler = exHandler;
 	retPProcess->lock = PrtCreateMutex();
-	retPProcess->log = PrtExternalLogHandler;
+	retPProcess->log = logger;
 	retPProcess->processId = processId;
 
 	return retPProcess;
 }
 
-VOID
+void
 PrtStopPProcess(
 PRT_PPROCESS* stopProcess)
 {
@@ -32,9 +34,9 @@ PRT_PPROCESS* stopProcess)
 	}
 }
 
-VOID
+void
 PrtPProcessAddMachine(
-__in PVOID context
+__in void* context
 )
 {
 	PRT_SMCONTEXT *prtContext = (PRT_SMCONTEXT*)context;

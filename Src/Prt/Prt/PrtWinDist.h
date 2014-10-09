@@ -57,7 +57,7 @@ typedef HANDLE PRT_RECURSIVE_MUTEX;
 * @param[in] condition A value expected to be non-zero
 * @param[in] message A message to be logged if condition is zero
 */
-VOID PrtAssert(_In_ int condition, _In_opt_z_ PRT_CSTRING message);
+void PrtAssert(_In_ int condition, _In_opt_z_ PRT_CSTRING message);
 
 /**
 * Creates a fresh unnamed and unlocked recursive mutex. The mutex must be unlocked by a thread as many times as it was locked.
@@ -75,7 +75,7 @@ PRT_RECURSIVE_MUTEX PrtCreateMutex();
 * @see PrtLockMutex
 * @see PrtUnlockMutex
 */
-VOID PrtReleaseMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
+void PrtReleaseMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 
 /**
 * Blocks until the mutex is locked. If the locking thread already owns the mutex, then succeeds and increments the lock count.
@@ -84,7 +84,7 @@ VOID PrtReleaseMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 * @see PrtCreateMutex
 * @see PrtReleaseMutex
 */
-VOID PrtLockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
+void PrtLockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 
 /**
 * Unlocks a locked mutex. Should not be called more times than the mutex has been locked.
@@ -93,7 +93,7 @@ VOID PrtLockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 * @see PrtCreateMutex
 * @see PrtReleaseMutex
 */
-VOID PrtUnlockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
+void PrtUnlockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 
 /**
 * Calls system-specific implementation of malloc.
@@ -102,7 +102,7 @@ VOID PrtUnlockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 * @returns A pointer to a memory location
 * @see PrtFree
 */
-PVOID PrtMalloc(_In_ size_t size);
+void* PrtMalloc(_In_ size_t size);
 
 /**
 * Calls system-specific implementation of free.
@@ -111,7 +111,7 @@ PVOID PrtMalloc(_In_ size_t size);
 * @see PrtCalloc
 * @see PrtRealloc
 */
-VOID PrtFree(PVOID ptr);
+void PrtFree(void* ptr);
 
 /**
 * Calls system-specific implementation of calloc.
@@ -121,7 +121,7 @@ VOID PrtFree(PVOID ptr);
 * @returns A pointer to a memory location
 * @see PrtFree
 */
-PVOID PrtCalloc(_In_ size_t nmemb, _In_ size_t size);
+void* PrtCalloc(_In_ size_t nmemb, _In_ size_t size);
 
 /**
 * Calls system-specific implementation of realloc.
@@ -131,7 +131,7 @@ PVOID PrtCalloc(_In_ size_t nmemb, _In_ size_t size);
 * @returns A pointer to a memory location or NULL if size = 0
 * @see PrtFree
 */
-PVOID PrtRealloc(_Inout_ PVOID ptr, _In_ size_t size);
+void* PrtRealloc(_Inout_ void* ptr, _In_ size_t size);
 #endif
 
 #ifdef __cplusplus

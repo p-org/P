@@ -5,7 +5,7 @@ struct PRT_STATEMACHINE {
 
 };
 
-VOID PrtSend(__in PRT_STATEMACHINE machine, __in PRT_VALUE *event, __in PRT_VALUE *payload)
+void PrtSend(__in PRT_STATEMACHINE machine, __in PRT_VALUE *event, __in PRT_VALUE *payload)
 {
 
 	PrtEnqueueEvent(machine.handle, event, payload);

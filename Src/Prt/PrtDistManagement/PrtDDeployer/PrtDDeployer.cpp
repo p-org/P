@@ -6,6 +6,8 @@ string allBinaries = ".\\";
 string localDeploymentFolder = "..\\DeploymentFolder\\";
 string pThreadsFolder = "..\\Resources\\PThreads\\";
 string vsdllsFolder = "..\\Resources\\VS2013\\";
+string pstoolsFolder = "..\\Resources\\PsTools\\";
+string scriptsFolder = "..\\Resources\\ScriptsForAzure\\";
 
 char* PrtDGetPathToPHome(char* nodeAddress)
 {
@@ -19,7 +21,6 @@ char* PrtDGetPathToPHome(char* nodeAddress)
 
 string PrtDDeployPProgram()
 {
-	//debug 
 
 	string remoteDeploymentFolder = PrtDGetDeploymentFolder();
 	string copycommand;
@@ -56,6 +57,19 @@ string PrtDDeployPProgram()
 		exit(-1);
 	}
 
+	copycommand = "robocopy " + pstoolsFolder + " " + localDeploymentFolder + " >> " + localDeploymentFolder + "ROBOCOPY_LOG.txt";
+	if (system(copycommand.c_str()) == -1)
+	{
+		cerr << "Failed to Copy PsTools in " << localDeploymentFolder << endl;
+		exit(-1);
+	}
+
+	copycommand = "robocopy " + scriptsFolder + " " + localDeploymentFolder + " >> " + localDeploymentFolder + "ROBOCOPY_LOG.txt";
+	if (system(copycommand.c_str()) == -1)
+	{
+		cerr << "Failed to Copy PsTools in " << localDeploymentFolder << endl;
+		exit(-1);
+	}
 
 	SYSTEMTIME time;
 	GetLocalTime(&time);

@@ -42,7 +42,7 @@ Raise / Pop / Call Statements in Entry Functions
 //
 //Enqueue a private event 
 //
-VOID
+void
 PrtRaise(
 __inout PRT_SMCONTEXT		*context,
 __in PRT_VALUE	*event,
@@ -53,7 +53,7 @@ __in PRT_VALUE	*payload
 // Pop Current state and return to the caller state
 //
 
-VOID
+void
 PrtPop(
 __inout PRT_SMCONTEXT		*context
 );
@@ -61,7 +61,7 @@ __inout PRT_SMCONTEXT		*context
 //
 // Execute Call Statement
 //
-VOID
+void
 PrtCall(
 __inout PRT_SMCONTEXT		*context,
 __in PRT_UINT32				stateIndex
@@ -70,7 +70,7 @@ __in PRT_UINT32				stateIndex
 //
 // Execute New Statement
 //
-VOID
+void
 PrtHaltMachine(
 __inout PRT_SMCONTEXT			*context
 );
@@ -91,7 +91,7 @@ __out PRT_MACHINE_HANDLE		*pSmHandle
 Functions - Machine Interaction
 
 *********************************************************************************/
-VOID
+void
 PrtEnqueueEvent(
 __in PRT_MACHINE_HANDLE			machine,
 __in PRT_VALUE					*event,

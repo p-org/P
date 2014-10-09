@@ -440,14 +440,14 @@ Function Pointer Types Declarations
 // 
 // Function Pointer to Entry/Exit/Action Function corresponding to each state
 //
-typedef VOID(PRT_MACHINE_FUN)(PVOID);
+typedef void(PRT_MACHINE_FUN)(void*);
 
-typedef VOID(PRT_CONSTRUCT_FUN)(PRT_EXCONTEXT*);
+typedef void(PRT_CONSTRUCT_FUN)(PRT_EXCONTEXT*);
 
 struct _PRT_EXCONTEXT
 {
 	PRT_BOOLEAN FreeThis;
-	PVOID PExMem;
+	void* PExMem;
 };
 
 /** The kinds of program elements that can be annotated. */

@@ -7,7 +7,7 @@ string localDeploymentFolder = "..\\DeploymentFolder\\";
 string pThreadsFolder = "..\\Resources\\PThreads\\";
 string vsdllsFolder = "..\\Resources\\VS2013\\";
 string pstoolsFolder = "..\\Resources\\PsTools\\";
-string scriptsFolder = "..\\Resources\\Scripts\\";
+string scriptsFolder = "..\\Resources\\ScriptsForAzure\\";
 
 char* PrtDGetPathToPHome(char* nodeAddress)
 {

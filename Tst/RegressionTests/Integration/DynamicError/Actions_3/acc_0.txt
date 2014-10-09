@@ -1,0 +1,46 @@
+=================================
+         Console output          
+=================================
+OUT: Writing Actions_3_p_.h ...
+OUT: Writing Actions_3.zing ...
+OUT: Compiling Actions_3.zing to Actions_3.dll ...
+OUT: actions_3.p (12, 4): inferred type:  BaseType(MODEL)
+OUT: actions_3.p (12, 4): inferred type:  NIL
+OUT: actions_3.p (12, 20): inferred type:  BaseType(MODEL)
+OUT: actions_3.p (12, 30): inferred type:  BaseType(REAL)
+OUT: actions_3.p (13, 13): inferred type:  NIL
+OUT: actions_3.p (19, 6): inferred type:  BaseType(BOOL)
+OUT: actions_3.p (19, 6): inferred type:  NIL
+OUT: actions_3.p (19, 13): inferred type:  BaseType(BOOL)
+OUT: actions_3.p (26, 4): inferred type:  NIL
+OUT: actions_3.p (26, 9): inferred type:  BaseType(MODEL)
+OUT: actions_3.p (26, 24): inferred type:  BaseType(EVENT)
+OUT: actions_3.p (27, 4): inferred type:  NIL
+OUT: actions_3.p (27, 10): inferred type:  BaseType(EVENT)
+OUT: actions_3.p (34, 6): inferred type:  NIL
+OUT: actions_3.p (34, 13): inferred type:  BaseType(BOOL)
+OUT: actions_3.p (39, 3): inferred type:  NIL
+OUT: actions_3.p (43, 9): inferred type:  NIL
+OUT: actions_3.p (43, 14): inferred type:  BaseType(MODEL)
+OUT: actions_3.p (43, 29): inferred type:  BaseType(EVENT)
+OUT: actions_3.p (52, 8): inferred type:  BaseType(REAL)
+OUT: actions_3.p (52, 8): inferred type:  NIL
+OUT: actions_3.p (52, 23): inferred type:  BaseType(ANY)
+OUT: actions_3.p (52, 31): inferred type:  BaseType(REAL)
+OUT: actions_3.p (60, 4): inferred type:  NIL
+OUT: actions_3.p (60, 9): inferred type:  BaseType(REAL)
+OUT: actions_3.p (60, 23): inferred type:  BaseType(EVENT)
+OUT: actions_3.p (67, 4): inferred type:  NIL
+OUT: actions_3.p (67, 9): inferred type:  BaseType(REAL)
+OUT: actions_3.p (67, 23): inferred type:  BaseType(EVENT)
+OUT: 
+EXIT: 0
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 15 distinct states, 20 total transitions, 7 steps max depth
+OUT: 
+EXIT: 0

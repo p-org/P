@@ -1,0 +1,117 @@
+=================================
+         Console output          
+=================================
+OUT: Writing Call_Exit_3_p_.h ...
+OUT: Writing Call_Exit_3.zing ...
+OUT: Compiling Call_Exit_3.zing to Call_Exit_3.dll ...
+OUT: call_exit_3.p (20, 13): inferred type:  BaseType(MODEL)
+OUT: call_exit_3.p (20, 13): inferred type:  NIL
+OUT: call_exit_3.p (20, 34): inferred type:  BaseType(MODEL)
+OUT: call_exit_3.p (20, 50): inferred type:  BaseType(REAL)
+OUT: call_exit_3.p (21, 13): inferred type:  BaseType(MODEL)
+OUT: call_exit_3.p (21, 13): inferred type:  NIL
+OUT: call_exit_3.p (21, 30): inferred type:  BaseType(MODEL)
+OUT: call_exit_3.p (21, 42): inferred type:  BaseType(REAL)
+OUT: call_exit_3.p (22, 13): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (22, 13): inferred type:  NIL
+OUT: call_exit_3.p (22, 29): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (23, 13): inferred type:  NIL
+OUT: call_exit_3.p (23, 19): inferred type:  BaseType(EVENT)
+OUT: call_exit_3.p (30, 12): inferred type:  NIL
+OUT: call_exit_3.p (33, 13): inferred type:  NIL
+OUT: call_exit_3.p (33, 17): inferred type:  BaseType(EVENT)
+OUT: call_exit_3.p (33, 25): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (33, 28): inferred type:  BaseType(EVENT)
+OUT: call_exit_3.p (33, 42): inferred type:  NIL
+OUT: call_exit_3.p (33, 47): inferred type:  BaseType(MODEL)
+OUT: call_exit_3.p (33, 67): inferred type:  BaseType(EVENT)
+OUT: call_exit_3.p (41, 13): inferred type:  NIL
+OUT: call_exit_3.p (41, 18): inferred type:  BaseType(MODEL)
+OUT: call_exit_3.p (41, 38): inferred type:  BaseType(EVENT)
+OUT: call_exit_3.p (42, 13): inferred type:  NIL
+OUT: call_exit_3.p (48, 13): inferred type:  NIL
+OUT: call_exit_3.p (48, 18): inferred type:  BaseType(MODEL)
+OUT: call_exit_3.p (48, 34): inferred type:  BaseType(EVENT)
+OUT: call_exit_3.p (49, 4): inferred type:  NIL
+OUT: call_exit_3.p (52, 13): inferred type:  NIL
+OUT: call_exit_3.p (52, 20): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (52, 34): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (52, 37): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (53, 13): inferred type:  NIL
+OUT: call_exit_3.p (53, 17): inferred type:  BaseType(EVENT)
+OUT: call_exit_3.p (53, 25): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (53, 28): inferred type:  BaseType(NULL)
+OUT: call_exit_3.p (53, 34): inferred type:  NIL
+OUT: call_exit_3.p (53, 39): inferred type:  BaseType(MODEL)
+OUT: call_exit_3.p (53, 55): inferred type:  BaseType(EVENT)
+OUT: call_exit_3.p (61, 4): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (61, 4): inferred type:  NIL
+OUT: call_exit_3.p (61, 20): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (62, 4): inferred type:  NIL
+OUT: call_exit_3.p (62, 10): inferred type:  BaseType(EVENT)
+OUT: call_exit_3.p (75, 13): inferred type:  NIL
+OUT: call_exit_3.p (75, 19): inferred type:  BaseType(EVENT)
+OUT: call_exit_3.p (82, 13): inferred type:  NIL
+OUT: call_exit_3.p (82, 20): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (82, 34): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (82, 37): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (83, 13): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (83, 13): inferred type:  NIL
+OUT: call_exit_3.p (83, 21): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (84, 13): inferred type:  NIL
+OUT: call_exit_3.p (84, 17): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (85, 17): inferred type:  NIL
+OUT: call_exit_3.p (85, 23): inferred type:  BaseType(EVENT)
+OUT: call_exit_3.p (87, 17): inferred type:  NIL
+OUT: call_exit_3.p (87, 23): inferred type:  BaseType(EVENT)
+OUT: call_exit_3.p (92, 13): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (92, 13): inferred type:  NIL
+OUT: call_exit_3.p (92, 29): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (100, 17): inferred type:  NIL
+OUT: call_exit_3.p (100, 24): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (104, 9): inferred type:  NIL
+OUT: call_exit_3.p (104, 13): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (105, 13): inferred type:  NIL
+OUT: call_exit_3.p (105, 20): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (107, 13): inferred type:  NIL
+OUT: call_exit_3.p (107, 20): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (116, 6): inferred type:  BaseType(REAL)
+OUT: call_exit_3.p (116, 6): inferred type:  NIL
+OUT: call_exit_3.p (116, 24): inferred type:  BaseType(ANY)
+OUT: call_exit_3.p (116, 32): inferred type:  BaseType(REAL)
+OUT: call_exit_3.p (117, 6): inferred type:  NIL
+OUT: call_exit_3.p (117, 12): inferred type:  BaseType(EVENT)
+OUT: call_exit_3.p (128, 13): inferred type:  NIL
+OUT: call_exit_3.p (128, 17): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (128, 22): inferred type:  NIL
+OUT: call_exit_3.p (128, 27): inferred type:  BaseType(REAL)
+OUT: call_exit_3.p (128, 44): inferred type:  BaseType(EVENT)
+OUT: call_exit_3.p (128, 54): inferred type:  NIL
+OUT: call_exit_3.p (128, 60): inferred type:  BaseType(EVENT)
+OUT: call_exit_3.p (128, 75): inferred type:  NIL
+OUT: call_exit_3.p (128, 80): inferred type:  BaseType(REAL)
+OUT: call_exit_3.p (128, 97): inferred type:  BaseType(EVENT)
+OUT: call_exit_3.p (140, 6): inferred type:  BaseType(REAL)
+OUT: call_exit_3.p (140, 6): inferred type:  NIL
+OUT: call_exit_3.p (140, 24): inferred type:  BaseType(ANY)
+OUT: call_exit_3.p (140, 32): inferred type:  BaseType(REAL)
+OUT: call_exit_3.p (141, 6): inferred type:  NIL
+OUT: call_exit_3.p (141, 12): inferred type:  BaseType(EVENT)
+OUT: call_exit_3.p (152, 13): inferred type:  NIL
+OUT: call_exit_3.p (152, 17): inferred type:  BaseType(BOOL)
+OUT: call_exit_3.p (152, 22): inferred type:  NIL
+OUT: call_exit_3.p (152, 28): inferred type:  BaseType(EVENT)
+OUT: call_exit_3.p (152, 42): inferred type:  NIL
+OUT: call_exit_3.p (152, 47): inferred type:  BaseType(REAL)
+OUT: call_exit_3.p (152, 64): inferred type:  BaseType(EVENT)
+OUT: 
+EXIT: 0
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 35 distinct states, 71 total transitions, 9 steps max depth
+OUT: 
+EXIT: 0

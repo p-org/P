@@ -1,0 +1,8 @@
+runPc: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: BangaloreToRedmond_Liveness.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+runZing: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: BangaloreToRedmond_Liveness.dll
+acc: .\
+dsc: Feature Integration

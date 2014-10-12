@@ -1,0 +1,70 @@
+=================================
+         Console output          
+=================================
+OUT: Writing CallStatement_1_p_.h ...
+OUT: Writing CallStatement_1.zing ...
+OUT: Compiling CallStatement_1.zing to CallStatement_1.dll ...
+OUT: callstatement_1.p (13, 4): inferred type:  BaseType(INT)
+OUT: callstatement_1.p (13, 4): inferred type:  NIL
+OUT: callstatement_1.p (13, 14): inferred type:  BaseType(INT)
+OUT: callstatement_1.p (14, 4): inferred type:  BaseType(MODEL)
+OUT: callstatement_1.p (14, 4): inferred type:  NIL
+OUT: callstatement_1.p (14, 20): inferred type:  BaseType(MODEL)
+OUT: callstatement_1.p (14, 30): inferred type:  BaseType(REAL)
+OUT: callstatement_1.p (15, 13): inferred type:  NIL
+OUT: callstatement_1.p (20, 6): inferred type:  BaseType(BOOL)
+OUT: callstatement_1.p (20, 6): inferred type:  NIL
+OUT: callstatement_1.p (20, 13): inferred type:  BaseType(BOOL)
+OUT: callstatement_1.p (27, 3): inferred type:  NIL
+OUT: callstatement_1.p (27, 6): inferred type:  BaseType(INT)
+OUT: callstatement_1.p (27, 14): inferred type:  BaseType(BOOL)
+OUT: callstatement_1.p (27, 17): inferred type:  BaseType(INT)
+OUT: callstatement_1.p (29, 4): inferred type:  NIL
+OUT: callstatement_1.p (29, 9): inferred type:  BaseType(MODEL)
+OUT: callstatement_1.p (29, 24): inferred type:  BaseType(EVENT)
+OUT: callstatement_1.p (31, 3): inferred type:  BaseType(INT)
+OUT: callstatement_1.p (31, 3): inferred type:  NIL
+OUT: callstatement_1.p (31, 13): inferred type:  BaseType(INT)
+OUT: callstatement_1.p (31, 21): inferred type:  BaseType(INT)
+OUT: callstatement_1.p (31, 23): inferred type:  BaseType(INT)
+OUT: callstatement_1.p (32, 3): inferred type:  NIL
+OUT: callstatement_1.p (38, 3): inferred type:  NIL
+OUT: callstatement_1.p (39, 3): inferred type:  NIL
+OUT: callstatement_1.p (40, 3): inferred type:  NIL
+OUT: callstatement_1.p (41, 3): inferred type:  NIL
+OUT: callstatement_1.p (41, 9): inferred type:  BaseType(INT)
+OUT: callstatement_1.p (41, 17): inferred type:  BaseType(BOOL)
+OUT: callstatement_1.p (41, 19): inferred type:  BaseType(INT)
+OUT: callstatement_1.p (43, 4): inferred type:  NIL
+OUT: callstatement_1.p (45, 6): inferred type:  NIL
+OUT: callstatement_1.p (45, 13): inferred type:  BaseType(INT)
+OUT: callstatement_1.p (45, 21): inferred type:  BaseType(BOOL)
+OUT: callstatement_1.p (45, 24): inferred type:  BaseType(INT)
+OUT: callstatement_1.p (46, 9): inferred type:  NIL
+OUT: callstatement_1.p (46, 16): inferred type:  BaseType(INT)
+OUT: callstatement_1.p (46, 24): inferred type:  BaseType(BOOL)
+OUT: callstatement_1.p (46, 27): inferred type:  BaseType(INT)
+OUT: callstatement_1.p (52, 9): inferred type:  NIL
+OUT: callstatement_1.p (52, 14): inferred type:  BaseType(MODEL)
+OUT: callstatement_1.p (52, 29): inferred type:  BaseType(EVENT)
+OUT: callstatement_1.p (61, 8): inferred type:  BaseType(REAL)
+OUT: callstatement_1.p (61, 8): inferred type:  NIL
+OUT: callstatement_1.p (61, 23): inferred type:  BaseType(ANY)
+OUT: callstatement_1.p (61, 31): inferred type:  BaseType(REAL)
+OUT: callstatement_1.p (68, 4): inferred type:  NIL
+OUT: callstatement_1.p (68, 9): inferred type:  BaseType(REAL)
+OUT: callstatement_1.p (68, 23): inferred type:  BaseType(EVENT)
+OUT: callstatement_1.p (75, 6): inferred type:  NIL
+OUT: callstatement_1.p (75, 11): inferred type:  BaseType(REAL)
+OUT: callstatement_1.p (75, 25): inferred type:  BaseType(EVENT)
+OUT: 
+EXIT: 0
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 15 distinct states, 20 total transitions, 7 steps max depth
+OUT: 
+EXIT: 0

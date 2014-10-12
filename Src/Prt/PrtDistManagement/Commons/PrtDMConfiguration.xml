@@ -1,16 +1,23 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Configuration for Windows Azure -->
 <configuration>
-  <DeploymentFolder>\\msr-arrays\Scratch\msr-pool\Scratch_Storage1\t-ankusd\</DeploymentFolder>
-  <CentralServer>MSR-L25-DEV01</CentralServer>
-  <Node>MSR-L25-DEV02</Node>
-  <Node>MSR-L25-DEV03</Node>
-  <Node>MSR-L25-DEV04</Node>
+  <DeploymentFolder>\\plangdist1\Users\planguser\Documents\PlangShared\</DeploymentFolder>
+  <PServiceFolder>C:\Plang\PService\</PServiceFolder>
+  <CentralServer>plangdist1</CentralServer>
+  <NNodes>3</NNodes>
+  <AllNodes>
+    <Node>plangdist2</Node>
+    <Node>plangdist3</Node>
+    <Node>plangdist4</Node>
+  </AllNodes>
 </configuration>
 
-<!--<configuration>
-  <DeploymentFolder>F:\Deployer\</DeploymentFolder>
+<!-- Configuration for Single Server Debugging -->
+<!--
+<configuration>
+  <DeploymentFolder>.\Deployer\</DeploymentFolder>
   <CentralServer>LOCALHOST</CentralServer>
+  <NNodes>1</NNodes>
   <Node>LOCALHOST</Node>
-  <Node>LOCALHOST</Node>
-  <Node>LOCALHOST</Node>
-</configuration>-->
+</configuration>
+-->

@@ -4,7 +4,7 @@
 #include <thread>
 #include "../Commons/PrtDGlobals.h"
 #include"../Utilities/ParsingXML/ParsingXML.h"
-#include"../PrtDistLogger/PrtDistLogger.h"
+#include"../PrtDLogger/PrtDLogger.h"
 #include<fstream>
 #include"../PrtDServiceIDL/PrtDService_h.h"
 #include"../PrtDServiceIDL/PrtDService_s.c"

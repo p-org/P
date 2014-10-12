@@ -155,8 +155,6 @@
     <ClInclude Include="..\Prt\PrtSMPrivate.h" />
     <ClInclude Include="..\Prt\PrtSMProtected.h" />
     <ClInclude Include="..\Prt\PrtSMProtectedTypes.h" />
-    <ClInclude Include="..\Prt\PrtSMPublic.h" />
-    <ClInclude Include="..\Prt\PrtSMPublicTypes.h" />
     <ClInclude Include="..\Prt\PrtSMTypeDefs.h" />
     <ClInclude Include="..\Prt\PrtToString.h" />
     <ClInclude Include="..\Prt\PrtWinUser.h" />

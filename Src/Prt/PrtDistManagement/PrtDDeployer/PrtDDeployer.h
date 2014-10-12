@@ -6,7 +6,7 @@
 #include <ctime>
 #include"../Utilities/ParsingXML/ParsingXML.h"
 #include<fstream>
-#include"../PrtDistLogger/PrtDistLogger.h"
+#include"../PrtDLogger/PrtDLogger.h"
 extern "C"
 {
 	#include "PrtHeaders.h"

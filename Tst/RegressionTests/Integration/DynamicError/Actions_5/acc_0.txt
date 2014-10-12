@@ -1,0 +1,44 @@
+=================================
+         Console output          
+=================================
+OUT: Writing Actions_5_p_.h ...
+OUT: Writing Actions_5.zing ...
+OUT: Compiling Actions_5.zing to Actions_5.dll ...
+OUT: actions_5.p (12, 4): inferred type:  BaseType(MODEL)
+OUT: actions_5.p (12, 4): inferred type:  NIL
+OUT: actions_5.p (12, 20): inferred type:  BaseType(MODEL)
+OUT: actions_5.p (12, 30): inferred type:  BaseType(REAL)
+OUT: actions_5.p (13, 13): inferred type:  NIL
+OUT: actions_5.p (13, 19): inferred type:  BaseType(EVENT)
+OUT: actions_5.p (19, 6): inferred type:  BaseType(BOOL)
+OUT: actions_5.p (19, 6): inferred type:  NIL
+OUT: actions_5.p (19, 13): inferred type:  BaseType(BOOL)
+OUT: actions_5.p (26, 13): inferred type:  NIL
+OUT: actions_5.p (26, 18): inferred type:  BaseType(MODEL)
+OUT: actions_5.p (26, 33): inferred type:  BaseType(EVENT)
+OUT: actions_5.p (33, 6): inferred type:  NIL
+OUT: actions_5.p (33, 13): inferred type:  BaseType(BOOL)
+OUT: actions_5.p (38, 9): inferred type:  NIL
+OUT: actions_5.p (38, 14): inferred type:  BaseType(MODEL)
+OUT: actions_5.p (38, 29): inferred type:  BaseType(EVENT)
+OUT: actions_5.p (47, 8): inferred type:  BaseType(REAL)
+OUT: actions_5.p (47, 8): inferred type:  NIL
+OUT: actions_5.p (47, 23): inferred type:  BaseType(ANY)
+OUT: actions_5.p (47, 31): inferred type:  BaseType(REAL)
+OUT: actions_5.p (54, 4): inferred type:  NIL
+OUT: actions_5.p (54, 9): inferred type:  BaseType(REAL)
+OUT: actions_5.p (54, 23): inferred type:  BaseType(EVENT)
+OUT: actions_5.p (61, 6): inferred type:  NIL
+OUT: actions_5.p (61, 11): inferred type:  BaseType(REAL)
+OUT: actions_5.p (61, 25): inferred type:  BaseType(EVENT)
+OUT: 
+EXIT: 0
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 15 distinct states, 20 total transitions, 7 steps max depth
+OUT: 
+EXIT: 0

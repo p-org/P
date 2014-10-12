@@ -1,0 +1,8 @@
+runPc: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: Actions_2.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+runZing: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: Actions_2.dll
+acc: .\
+dsc: Feature Integration

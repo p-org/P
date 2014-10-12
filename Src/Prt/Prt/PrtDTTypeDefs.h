@@ -19,6 +19,10 @@ typedef struct _PRT_FORGNTYPE PRT_FORGNTYPE;
 /***********************************************
 * For Values
 ************************************************/
+typedef enum _PRT_VALUE_KIND PRT_VALUE_KIND;
+
+typedef enum _PRT_PRIMVALUE_KIND PRT_PRIMVALUE_KIND;
+
 typedef struct _PRT_VALUE PRT_VALUE;
 
 typedef struct _PRT_PRIMVALUE PRT_PRIMVALUE;

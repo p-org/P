@@ -1,0 +1,11 @@
+=================================
+         Console output          
+=================================
+OUT: anonfunction.p (7, 4): inferred type:  NIL
+OUT: anonfunction.p (14, 21): inferred type:  NIL
+OUT: anonfunction.p (17, 12): inferred type:  NIL
+OUT: anonfunction.p (25, 17): inferred type:  NIL
+OUT: anonfunction.p (13, 3): transition to an undefined state
+OUT: Compilation failed
+OUT: 
+EXIT: 0

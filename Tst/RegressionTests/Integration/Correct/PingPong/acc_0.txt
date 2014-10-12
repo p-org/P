@@ -1,0 +1,35 @@
+=================================
+         Console output          
+=================================
+OUT: Writing PingPong_p_.h ...
+OUT: Writing PingPong.zing ...
+OUT: Compiling PingPong.zing to PingPong.dll ...
+OUT: pingpong.p (10, 8): inferred type:  BaseType(REAL)
+OUT: pingpong.p (10, 8): inferred type:  NIL
+OUT: pingpong.p (10, 17): inferred type:  BaseType(REAL)
+OUT: pingpong.p (11, 6): inferred type:  NIL
+OUT: pingpong.p (11, 12): inferred type:  BaseType(EVENT)
+OUT: pingpong.p (18, 6): inferred type:  NIL
+OUT: pingpong.p (18, 11): inferred type:  BaseType(REAL)
+OUT: pingpong.p (18, 19): inferred type:  BaseType(EVENT)
+OUT: pingpong.p (18, 25): inferred type:  BaseType(REAL)
+OUT: pingpong.p (19, 6): inferred type:  NIL
+OUT: pingpong.p (19, 12): inferred type:  BaseType(EVENT)
+OUT: pingpong.p (28, 5): inferred type:  NIL
+OUT: pingpong.p (39, 7): inferred type:  NIL
+OUT: pingpong.p (39, 12): inferred type:  BaseType(REAL)
+OUT: pingpong.p (39, 20): inferred type:  BaseType(REAL)
+OUT: pingpong.p (39, 32): inferred type:  BaseType(EVENT)
+OUT: pingpong.p (40, 7): inferred type:  NIL
+OUT: pingpong.p (40, 13): inferred type:  BaseType(EVENT)
+OUT: 
+EXIT: 0
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Passed
+OUT: ##################
+OUT: 17 distinct states, 25 total transitions, 7 steps max depth
+OUT: 
+EXIT: 0

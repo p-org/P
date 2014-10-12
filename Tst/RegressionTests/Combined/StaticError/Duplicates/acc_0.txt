@@ -1,0 +1,22 @@
+=================================
+         Console output          
+=================================
+OUT: duplicates.p (23, 2): inferred type:  NIL
+OUT: duplicates.p (51, 11): inferred type:  NIL
+OUT: duplicates.p (52, 13): inferred type:  NIL
+OUT: duplicates.p (52, 20): inferred type:  BaseType(BOOL)
+OUT: duplicates.p (16, 1): An event has multiple definitions
+OUT: duplicates.p (17, 1): An event has multiple definitions
+OUT: duplicates.p (22, 1): Multiple machines with the same name
+OUT: duplicates.p (32, 1): Multiple machines with the same name
+OUT: duplicates.p (32, 1): no start state in machine
+OUT: duplicates.p (33, 6): Multiple variables with the same name
+OUT: duplicates.p (34, 6): Multiple variables with the same name
+OUT: duplicates.p (39, 1): no start state in machine
+OUT: duplicates.p (43, 2): Multiple Transitions over the same event
+OUT: duplicates.p (45, 2): Multiple Transitions over the same event
+OUT: duplicates.p (51, 3): Multiple actions over the same event
+OUT: duplicates.p (52, 3): Multiple actions over the same event
+OUT: Compilation failed
+OUT: 
+EXIT: 0

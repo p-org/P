@@ -1,0 +1,36 @@
+=================================
+         Console output          
+=================================
+OUT: Writing AlonBug_p_.h ...
+OUT: Writing AlonBug.zing ...
+OUT: Compiling AlonBug.zing to AlonBug.dll ...
+OUT: alonbug.p (6, 13): inferred type:  BaseType(INT)
+OUT: alonbug.p (6, 13): inferred type:  NIL
+OUT: alonbug.p (6, 17): inferred type:  BaseType(INT)
+OUT: alonbug.p (6, 20): inferred type:  NIL
+OUT: alonbug.p (6, 26): inferred type:  BaseType(EVENT)
+OUT: alonbug.p (7, 10): inferred type:  NIL
+OUT: alonbug.p (7, 18): inferred type:  BaseType(BOOL)
+OUT: alonbug.p (13, 5): inferred type:  NIL
+OUT: alonbug.p (13, 9): inferred type:  BaseType(INT)
+OUT: alonbug.p (13, 11): inferred type:  BaseType(BOOL)
+OUT: alonbug.p (13, 14): inferred type:  BaseType(INT)
+OUT: alonbug.p (14, 10): inferred type:  NIL
+OUT: alonbug.p (18, 8): inferred type:  BaseType(INT)
+OUT: alonbug.p (18, 8): inferred type:  NIL
+OUT: alonbug.p (18, 12): inferred type:  BaseType(INT)
+OUT: alonbug.p (18, 14): inferred type:  BaseType(INT)
+OUT: alonbug.p (18, 16): inferred type:  BaseType(INT)
+OUT: alonbug.p (20, 5): inferred type:  NIL
+OUT: alonbug.p (20, 11): inferred type:  BaseType(EVENT)
+OUT: 
+EXIT: 0
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Passed
+OUT: ##################
+OUT: 3 distinct states, 2 total transitions, 2 steps max depth
+OUT: 
+EXIT: 0

@@ -5,14 +5,14 @@
 
 typedef struct _PRT_PPROCESS PRT_PPROCESS;
 
-typedef VOID(*PRT_EXCEPHANDLER_FUN)(PRT_EXCEPTIONS, PVOID);
+typedef void(*PRT_EXCEPHANDLER_FUN)(PRT_EXCEPTIONS, void*);
 
-typedef VOID(*PRT_LOG_FUN)(PRT_STEP, PVOID);
+typedef void(*PRT_LOG_FUN)(PRT_STEP, void*);
 
 typedef struct _PRT_LINKEDLIST PRT_LINKEDLIST;
 
 struct _PRT_LINKEDLIST {
-	PVOID data;
+	void* data;
 	PRT_LINKEDLIST *next;
 };
 
@@ -29,16 +29,18 @@ struct _PRT_PPROCESS {
 PRT_PPROCESS*
 PrtStartPProcess(
 __in PRT_UINT16 processId,
-__in PRT_PROGRAMDECL *program
+__in PRT_PROGRAMDECL *program,
+__in PRT_EXCEPHANDLER_FUN exHandler,
+__in PRT_LOG_FUN logger
 );
 
-VOID
+void
 PrtStopPProcess(
 PRT_PPROCESS* stopProcess);
 
-VOID 
+void 
 PrtPProcessAddMachine(
-__in PVOID context
+__in void* context
 );
 
 #endif

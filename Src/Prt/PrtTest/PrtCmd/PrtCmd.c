@@ -1,5 +1,338 @@
 #include "PrtCmd.h"
 
+void StaticTypeCreateTest()
+{
+	PRT_TYPE intType = { PRT_KIND_INT, NULL };
+	PrtCmdPrintType(intType);
+	printf_s("\n");
+
+	PRT_TYPE twoInts[] = { { PRT_KIND_INT, NULL }, { PRT_KIND_INT, NULL } };
+	PRT_TUPTYPE twoIntTup = { 2, twoInts };
+	PRT_TYPE tupType = { PRT_KIND_TUPLE, &twoIntTup };
+
+	PrtCmdPrintType(tupType);
+	printf_s("\n");
+
+	PRT_TYPE twoPairsOfInts[] = { { PRT_KIND_TUPLE, &twoIntTup }, { PRT_KIND_TUPLE, &twoIntTup } };
+	PRT_TUPTYPE twoPairIntTup = { 2, twoPairsOfInts };
+	PRT_TYPE tupPairType = { PRT_KIND_TUPLE, &twoPairIntTup };
+	
+	PrtCmdPrintType(tupPairType);
+	printf_s("\n");
+
+	PRT_MAPTYPE mapPairIntTup2Int = { { PRT_KIND_TUPLE, &twoPairIntTup }, { PRT_KIND_INT, NULL } };
+	PRT_TYPE mapPairIntTup2IntType = { PRT_KIND_MAP, &mapPairIntTup2Int };
+
+	PrtCmdPrintType(mapPairIntTup2IntType);
+	printf_s("\n");
+
+	PRT_SEQTYPE seqPairIntTup2Int = { { PRT_KIND_TUPLE, &twoPairIntTup } };
+	PRT_TYPE seqPairIntTup2IntType = { PRT_KIND_SEQ, &seqPairIntTup2Int };
+
+	PrtCmdPrintType(seqPairIntTup2IntType);
+	printf_s("\n");
+}
+
+void StaticTypeCreateTest2()
+{
+	PRT_TYPE P_GEND_TYPE_0 =
+	{
+		PRT_KIND_ANY,
+		NULL
+	};
+	PRT_TYPE P_GEND_TYPE_1 =
+	{
+		PRT_KIND_BOOL,
+		NULL
+	};
+	PRT_TYPE P_GEND_TYPE_2 =
+	{
+		PRT_KIND_EVENT,
+		NULL
+	};
+	PRT_TYPE P_GEND_TYPE_3 =
+	{
+		PRT_KIND_INT,
+		NULL
+	};
+	PRT_TYPE P_GEND_TYPE_4 =
+	{
+		PRT_KIND_MODEL,
+		NULL
+	};
+	PRT_TYPE P_GEND_TYPE_5 =
+	{
+		PRT_KIND_MACHINE,
+		NULL
+	};
+	PRT_MAPTYPE P_GEND_TYPE_MAP_6 =
+	{
+
+		{
+			PRT_KIND_BOOL,
+			NULL
+		},
+
+		{
+			PRT_KIND_BOOL,
+			NULL
+		}
+	};
+	PRT_TYPE P_GEND_TYPE_6 =
+	{
+		PRT_KIND_MAP,
+		&P_GEND_TYPE_MAP_6
+	};
+	PRT_STRING P_GEND_TYPE_NMDTUP_NARR_7[] =
+	{
+		"z"
+	};
+	PRT_TYPE P_GEND_TYPE_NMDTUP_TARR_7[] =
+	{
+
+		{
+			PRT_KIND_EVENT,
+			NULL
+		}
+	};
+	PRT_NMDTUPTYPE P_GEND_TYPE_NMDTUP_7 =
+	{
+		1,
+		P_GEND_TYPE_NMDTUP_NARR_7,
+		P_GEND_TYPE_NMDTUP_TARR_7
+	};
+	PRT_TYPE P_GEND_TYPE_7 =
+	{
+		PRT_KIND_NMDTUP,
+		(PRT_MAPTYPE *)&P_GEND_TYPE_NMDTUP_7
+	};
+	PRT_SEQTYPE P_GEND_TYPE_SEQ_8 =
+	{
+
+		{
+			PRT_KIND_ANY,
+			NULL
+		}
+	};
+	PRT_TYPE P_GEND_TYPE_8 =
+	{
+		PRT_KIND_SEQ,
+		(PRT_MAPTYPE *)&P_GEND_TYPE_SEQ_8
+	};
+	PRT_SEQTYPE P_GEND_TYPE_SEQ_9 =
+	{
+
+		{
+			PRT_KIND_INT,
+			NULL
+		}
+	};
+	PRT_TYPE P_GEND_TYPE_9 =
+	{
+		PRT_KIND_SEQ,
+		(PRT_MAPTYPE *)&P_GEND_TYPE_SEQ_9
+	};
+	PRT_TYPE P_GEND_TYPE_TUP_ARR_10[] =
+	{
+
+		{
+			PRT_KIND_MODEL,
+			NULL
+		}
+	};
+	PRT_TUPTYPE P_GEND_TYPE_TUP_10 =
+	{
+		1,
+		P_GEND_TYPE_TUP_ARR_10
+	};
+	PRT_TYPE P_GEND_TYPE_10 =
+	{
+		PRT_KIND_TUPLE,
+		(PRT_MAPTYPE *)&P_GEND_TYPE_TUP_10
+	};
+	PRT_STRING P_GEND_TYPE_NMDTUP_NARR_11[] =
+	{
+		"y",
+		"z"
+	};
+	PRT_TYPE P_GEND_TYPE_NMDTUP_TARR_11[] =
+	{
+
+		{
+			PRT_KIND_MACHINE,
+			NULL
+		},
+
+		{
+			PRT_KIND_EVENT,
+			NULL
+		}
+	};
+	PRT_NMDTUPTYPE P_GEND_TYPE_NMDTUP_11 =
+	{
+		2,
+		P_GEND_TYPE_NMDTUP_NARR_11,
+		P_GEND_TYPE_NMDTUP_TARR_11
+	};
+	PRT_TYPE P_GEND_TYPE_11 =
+	{
+		PRT_KIND_NMDTUP,
+		(PRT_MAPTYPE *)&P_GEND_TYPE_NMDTUP_11
+	};
+	PRT_SEQTYPE P_GEND_TYPE_SEQ_12 =
+	{
+
+		{
+			PRT_KIND_SEQ,
+			(PRT_MAPTYPE *)&P_GEND_TYPE_SEQ_8
+		}
+	};
+	PRT_TYPE P_GEND_TYPE_12 =
+	{
+		PRT_KIND_SEQ,
+		(PRT_MAPTYPE *)&P_GEND_TYPE_SEQ_12
+	};
+	PRT_TYPE P_GEND_TYPE_TUP_ARR_13[] =
+	{
+
+		{
+			PRT_KIND_BOOL,
+			NULL
+		},
+
+		{
+			PRT_KIND_MODEL,
+			NULL
+		}
+	};
+	PRT_TUPTYPE P_GEND_TYPE_TUP_13 =
+	{
+		2,
+		P_GEND_TYPE_TUP_ARR_13
+	};
+	PRT_TYPE P_GEND_TYPE_13 =
+	{
+		PRT_KIND_TUPLE,
+		(PRT_MAPTYPE *)&P_GEND_TYPE_TUP_13
+	};
+	PRT_MAPTYPE P_GEND_TYPE_MAP_14 =
+	{
+
+		{
+			PRT_KIND_SEQ,
+			(PRT_MAPTYPE *)&P_GEND_TYPE_SEQ_9
+		},
+
+		{
+			PRT_KIND_MAP,
+			&P_GEND_TYPE_MAP_6
+		}
+	};
+	PRT_TYPE P_GEND_TYPE_14 =
+	{
+		PRT_KIND_MAP,
+		&P_GEND_TYPE_MAP_14
+	};
+	PRT_STRING P_GEND_TYPE_NMDTUP_NARR_15[] =
+	{
+		"x",
+		"y",
+		"z"
+	};
+	PRT_TYPE P_GEND_TYPE_NMDTUP_TARR_15[] =
+	{
+
+		{
+			PRT_KIND_MODEL,
+			NULL
+		},
+
+		{
+			PRT_KIND_MACHINE,
+			NULL
+		},
+
+		{
+			PRT_KIND_EVENT,
+			NULL
+		}
+	};
+	PRT_NMDTUPTYPE P_GEND_TYPE_NMDTUP_15 =
+	{
+		3,
+		P_GEND_TYPE_NMDTUP_NARR_15,
+		P_GEND_TYPE_NMDTUP_TARR_15
+	};
+	PRT_TYPE P_GEND_TYPE_15 =
+	{
+		PRT_KIND_NMDTUP,
+		(PRT_MAPTYPE *)&P_GEND_TYPE_NMDTUP_15
+	};
+	PRT_TYPE P_GEND_TYPE_TUP_ARR_16[] =
+	{
+
+		{
+			PRT_KIND_INT,
+			NULL
+		},
+
+		{
+			PRT_KIND_BOOL,
+			NULL
+		},
+
+		{
+			PRT_KIND_MODEL,
+			NULL
+		}
+	};
+	PRT_TUPTYPE P_GEND_TYPE_TUP_16 =
+	{
+		3,
+		P_GEND_TYPE_TUP_ARR_16
+	};
+	PRT_TYPE P_GEND_TYPE_16 =
+	{
+		PRT_KIND_TUPLE,
+		(PRT_MAPTYPE *)&P_GEND_TYPE_TUP_16
+	};
+
+	PrtCmdPrintType(P_GEND_TYPE_0);
+	printf_s("\n");
+	PrtCmdPrintType(P_GEND_TYPE_1);
+	printf_s("\n");
+	PrtCmdPrintType(P_GEND_TYPE_2);
+	printf_s("\n");
+	PrtCmdPrintType(P_GEND_TYPE_3);
+	printf_s("\n");
+	PrtCmdPrintType(P_GEND_TYPE_4);
+	printf_s("\n");
+	PrtCmdPrintType(P_GEND_TYPE_5);
+	printf_s("\n");
+	PrtCmdPrintType(P_GEND_TYPE_6);
+	printf_s("\n");
+	PrtCmdPrintType(P_GEND_TYPE_7);
+	printf_s("\n");
+	PrtCmdPrintType(P_GEND_TYPE_8);
+	printf_s("\n");
+	PrtCmdPrintType(P_GEND_TYPE_9);
+	printf_s("\n");
+	PrtCmdPrintType(P_GEND_TYPE_10);
+	printf_s("\n");
+	PrtCmdPrintType(P_GEND_TYPE_11);
+	printf_s("\n");
+	PrtCmdPrintType(P_GEND_TYPE_12);
+	printf_s("\n");
+	PrtCmdPrintType(P_GEND_TYPE_13);
+	printf_s("\n");
+	PrtCmdPrintType(P_GEND_TYPE_14);
+	printf_s("\n");
+	PrtCmdPrintType(P_GEND_TYPE_15);
+	printf_s("\n");
+	PrtCmdPrintType(P_GEND_TYPE_16);
+	printf_s("\n");
+}
+
 void TypeCreateTest()
 {
 	//// Make the integer type
@@ -433,7 +766,8 @@ int main(int argc, char *argv[])
 	SeqNestedTest();
 	MapTest1();
 	MapTest2();
-	
+	StaticTypeCreateTest();
+	StaticTypeCreateTest2();
 
 	return 0;
 }

@@ -440,14 +440,14 @@ Function Pointer Types Declarations
 // 
 // Function Pointer to Entry/Exit/Action Function corresponding to each state
 //
-typedef VOID(PRT_MACHINE_FUN)(PVOID);
+typedef void(PRT_MACHINE_FUN)(void*);
 
-typedef VOID(PRT_CONSTRUCT_FUN)(PRT_EXCONTEXT*);
+typedef void(PRT_CONSTRUCT_FUN)(PRT_EXCONTEXT*);
 
 struct _PRT_EXCONTEXT
 {
 	PRT_BOOLEAN FreeThis;
-	PVOID PExMem;
+	void* PExMem;
 };
 
 /** The kinds of program elements that can be annotated. */
@@ -487,11 +487,10 @@ struct _PRT_PROGRAMDECL
 
 struct _PRT_EVENTDECL
 {
-	PRT_UINT32 declIndex;      /**< The index of event set in owner machine */
-	PRT_UINT32 ownerMachIndex; /**< The index of owner machine in program   */
-	PRT_STRING name;           /**< The name of this event set              */
+	PRT_UINT32 declIndex;         /**< The index of event in program */
+	PRT_STRING name;              /**< The name of this event set              */
 	PRT_UINT32 eventMaxInstances; /**< The value of maximum instances of the event that can occur in the queue */
-	PRT_TYPE   payloadType;	/** The type of the payload associated with this event */
+	PRT_TYPE   payloadType;	      /** The type of the payload associated with this event */
 };
 
 struct _PRT_MACHINEDECL

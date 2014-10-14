@@ -1,3 +1,5 @@
+// This sample tests the deferred-by-default semantics of push statement
+
 event E1 assert 1;
 event E2 assert 1;
 event E3 assert 1;
@@ -6,7 +8,6 @@ event unit assert 1;
 
 main machine Real {
     var ghost_machine: model;
-    var test: bool;
     start state Real_Init {
         entry {
 		ghost_machine = new Ghost(this);  
@@ -14,12 +15,10 @@ main machine Real {
         }
         on E2 do Action1;
         on E4 goto Real_S2;
-        exit {
-	    test = true;
-        }
     }
 
     state Real_S1 {
+    // In this state, E2 may be dequeued but not E4
 	entry {
             send ghost_machine, E1;
 	}
@@ -27,7 +26,6 @@ main machine Real {
 
     state Real_S2 {
 	entry {
-        assert(test == false);
 	    assert(false);
 	}
     }

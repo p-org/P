@@ -1,3 +1,4 @@
+// This sample tests assert/assume annotations on events
 event E1 assert 1;
 event E2 assert 1 :int;
 event E3 assume 1;
@@ -6,7 +7,6 @@ event unit assert 1;
 
 main machine Real {
     var ghost_machine: model;
-    var test: bool;
     start state Real_Init {
 		on E2 do Action1;
         entry {
@@ -14,9 +14,6 @@ main machine Real {
         	raise unit;   
         }
         
-        exit {
-			test = true;
-        }
 		on unit push Real_S1;
 		on E4 goto Real_S2;
     }

@@ -1,3 +1,4 @@
+// This sample tests that a pop statement only pops one stack frame
 event E;
 
 main machine Program {
@@ -11,7 +12,7 @@ main machine Program {
 	state Call {
 		   entry { 
 			 if (i == 3) {
-				     return; 
+				     pop; 
 			 }
                          else
 			    {

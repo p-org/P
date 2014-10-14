@@ -1,3 +1,5 @@
+// This sample enhances PingPong.p with push transitions accompanied by pops happening because of received events.
+// This sample should have bounded reachable states.
 event Ping assert 1 : machine;
 event Pong assert 1;
 event Success assert 1;

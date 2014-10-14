@@ -1,3 +1,4 @@
+// This sample tests basic semantics of actions 
 event E1 assert 1;
 event E2 assert 1;
 event E3 assert 1;

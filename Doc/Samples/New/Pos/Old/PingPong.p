@@ -1,3 +1,4 @@
+// This sample tests the basic send and receive of events between two machines
 event Ping assert 1 : machine;
 event Pong assert 1;
 event Success;

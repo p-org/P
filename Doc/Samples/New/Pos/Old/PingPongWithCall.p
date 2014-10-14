@@ -1,3 +1,5 @@
+// This sample enhances PingPong.p with a push statement.  
+// It has unbounded reachable states.
 event Ping assert 1 : machine;
 event Pong assert 1;
 event Success assert 1;
@@ -22,7 +24,8 @@ main machine PING {
      }
 
      state Ping_WaitPong {
-        on Pong push Ping_SendPing;
+	// This push causes stack to grow unbounded because there is no corresponding pop
+        on Pong push Ping_SendPing;  
      }
 
 }

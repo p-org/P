@@ -1,3 +1,4 @@
+// This sample tests push and pop with if-while control flow
 event E1 assert 1;
 event E2 assert 1;
 event E3 assert 1;
@@ -6,7 +7,6 @@ event unit assert 1;
 
 main machine Real {
     var ghost_machine: model;
-    var test: bool;
 	var counter:int;
     start state Real_Init {
         entry {
@@ -16,9 +16,6 @@ main machine Real {
         }
         on E2 do Action1;
         on E4 goto Real_S2;
-        exit {
-	    test = true;
-        }
     }
 
     state Real_S1 {
@@ -42,7 +39,6 @@ main machine Real {
 		{
 			push Real_S1; 
 		}
-	    assert(counter == 10);
         assert(counter != 10);
 	}
     }

@@ -1,3 +1,4 @@
+// This sample tests overriding of action handlers by a pushed state
 event E1 assert 1;
 event E2 assert 1;
 event E3 assert 1;
@@ -20,7 +21,7 @@ main machine Real {
     }
 
     state Real_S1 {
-    on unit do Action_2;
+    on unit do Action2;  // overrides Action1 on unit installed by Real_Init
 	entry {
             send ghost_machine, E1;
 	    raise unit;
@@ -30,7 +31,6 @@ main machine Real {
     state Real_S2 {
 	entry {
         assert(test == false);
-	    assert(false);
 	}
     }
 
@@ -39,7 +39,7 @@ main machine Real {
         send ghost_machine, E3;
     }
  
-    fun Action_2() {
+    fun Action2() {
 		pop;
     }
 }

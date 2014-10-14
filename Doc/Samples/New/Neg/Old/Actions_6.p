@@ -1,3 +1,4 @@
+// This sample tests that payload works correctly with a push transition
 event E1 assert 1;
 event E2 assert 1 : int ;
 event E3 assert 1;
@@ -6,7 +7,6 @@ event unit assert 1;
 
 main machine Real {
     var ghost_machine: model;
-    var test: bool;
     start state Real_Init {
         entry {
 			ghost_machine = new Ghost(this);  
@@ -15,9 +15,6 @@ main machine Real {
         on E2 do Action1;
 		on unit push Real_S1;
         on E4 goto Real_S2;
-        exit {
-	    test = true;
-        }
     }
 
     state Real_S1 {

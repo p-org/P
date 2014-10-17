@@ -141,48 +141,48 @@ typedef struct PRT_MAPNODE
 * @returns The default value of the type. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_VALUE *PrtMkDefaultValue(_In_ PRT_TYPE *type);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type);
 
 /** Makes a boolean value.
 * @param[in] value A boolean value.
 * @returns A proper boolean value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_VALUE *PrtMkBoolValue(_In_ PRT_BOOLEAN value);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkBoolValue(_In_ PRT_BOOLEAN value);
 
 /** Makes an event value.
 * @param[in] value An event id.
 * @returns A proper event value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_VALUE *PrtMkEventValue(_In_ PRT_UINT32 value);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkEventValue(_In_ PRT_UINT32 value);
 
 /** Makes an integer value.
 * @param[in] value An int value.
 * @returns A proper int value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_VALUE *PrtMkIntValue(_In_ PRT_INT32 value);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkIntValue(_In_ PRT_INT32 value);
 
 /** Makes null value.
 * @returns A proper null value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_VALUE *PrtMkNullValue();
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkNullValue();
 
 /** Makes an machine value.
 * @param[in] value A machine id.
 * @returns A propermachinevalue. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_VALUE *PrtMkMachineValue(_In_ PRT_UINT32 value);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkMachineValue(_In_ PRT_UINT32 value);
 
 /** Makes an model value.
 * @param[in] value A model machine id.
 * @returns A proper model value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_VALUE *PrtMkModelValue(_In_ PRT_UINT32 value);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkModelValue(_In_ PRT_UINT32 value);
 
 /** Makes a foreign value.
 * @param[in] type A foreign type (will be cloned).
@@ -190,102 +190,102 @@ PRT_VALUE *PrtMkModelValue(_In_ PRT_UINT32 value);
 * @returns A proper foreign value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_VALUE *PrtMkForeignValue(_In_ PRT_TYPE *type, _In_ void *value);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(_In_ PRT_TYPE *type, _In_ void *value);
 
 /** Sets the value of a boolean.
 * @param[in,out] prmVal A primitive boolean value to mutate.
 * @param[in]     value The value to set.
 */
-void PrtPrimSetBool(_Inout_ PRT_VALUE *prmVal, _In_ PRT_BOOLEAN value);
+PRT_API void PRT_CALL_CONV PrtPrimSetBool(_Inout_ PRT_VALUE *prmVal, _In_ PRT_BOOLEAN value);
 
 /** Gets the value of a boolean.
 * @param[in] prmVal A primitive boolean value.
 * @returns A boolean.
 */
-PRT_BOOLEAN PrtPrimGetBool(_In_ PRT_VALUE *prmVal);
+PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtPrimGetBool(_In_ PRT_VALUE *prmVal);
 
 /** Sets the value of an event.
 * @param[in,out] prmVal A primitive event value to mutate.
 * @param[in]     value The value to set.
 */
-void PrtPrimSetEvent(_Inout_ PRT_VALUE *prmVal, _In_ PRT_UINT32 value);
+PRT_API void PRT_CALL_CONV PrtPrimSetEvent(_Inout_ PRT_VALUE *prmVal, _In_ PRT_UINT32 value);
 
 /** Gets the value of an event.
 * @param[in] prmVal A primitive event value.
 * @returns An event id.
 */
-PRT_UINT32 PrtPrimGetEvent(_In_ PRT_VALUE *prmVal);
+PRT_API PRT_UINT32 PRT_CALL_CONV PrtPrimGetEvent(_In_ PRT_VALUE *prmVal);
 
 /** Sets the value of an int.
 * @param[in,out] prmVal A primitive int value to mutate.
 * @param[in]     value The value to set.
 */
-void PrtPrimSetInt(_Inout_ PRT_VALUE *prmVal, _In_ PRT_INT32 value);
+PRT_API void PRT_CALL_CONV PrtPrimSetInt(_Inout_ PRT_VALUE *prmVal, _In_ PRT_INT32 value);
 
 /** Gets the value of an integer.
 * @param[in] prmVal A primitive int value.
 * @returns An integer.
 */
-PRT_INT32 PrtPrimGetInt(_In_ PRT_VALUE *prmVal);
+PRT_API PRT_INT32 PRT_CALL_CONV PrtPrimGetInt(_In_ PRT_VALUE *prmVal);
 
 /** Sets the value of an Machine.
 * @param[in,out] prmVal A primitivemachinevalue to mutate.
 * @param[in]     value The value to set.
 */
-void PrtPrimSetMachine(_Inout_ PRT_VALUE *prmVal, _In_ PRT_UINT32 value);
+PRT_API void PRT_CALL_CONV PrtPrimSetMachine(_Inout_ PRT_VALUE *prmVal, _In_ PRT_UINT32 value);
 
 /** Gets the value of an Machine.
 * @param[in] prmVal A primitive machine value.
 * @returns A machine machine
 */
-PRT_UINT32 PrtPrimGetMachine(_In_ PRT_VALUE *prmVal);
+PRT_API PRT_UINT32 PRT_CALL_CONV PrtPrimGetMachine(_In_ PRT_VALUE *prmVal);
 
 /** Sets the value of an model.
 * @param[in,out] prmVal A primitive model value to mutate.
 * @param[in]     value The value to set.
 */
-void PrtPrimSetModel(_Inout_ PRT_VALUE *prmVal, _In_ PRT_UINT32 value);
+PRT_API void PRT_CALL_CONV PrtPrimSetModel(_Inout_ PRT_VALUE *prmVal, _In_ PRT_UINT32 value);
 
 /** Gets the value of an model.
 * @param[in] prmVal A primitive model value.
 * @returns A model machine machine
 */
-PRT_UINT32 PrtPrimGetModel(_In_ PRT_VALUE *prmVal);
+PRT_API PRT_UINT32 PRT_CALL_CONV PrtPrimGetModel(_In_ PRT_VALUE *prmVal);
 
 /** Sets an element in a (named) tuple by index.
 * @param[in,out] tuple A (named) tuple to mutate.
 * @param[in]     index A 0-based element index.
 * @param[in]     value The value to set (will be cloned).
 */
-void PrtTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VALUE *value);
+PRT_API void PRT_CALL_CONV PrtTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VALUE *value);
 
 /** Gets an element in a (named) tuple by index.
 * @param[in] tuple A (named) tuple.
 * @param[in] index A 0-based element index.
 * @returns The element at index i. Caller is responsible for freeing.
 */
-PRT_VALUE* PrtTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index);
 
 /** Sets an element in a named tuple by name.
 * @param[in,out] tuple A named tuple to mutate.
 * @param[in]     name  The name of the element to set.
 * @param[in]     value The value to set (will be cloned).
 */
-void PrtNmdTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_STRING name, _In_ PRT_VALUE *value);
+PRT_API void PRT_CALL_CONV PrtNmdTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_STRING name, _In_ PRT_VALUE *value);
 
 /** Gets an element in a named tuple by name.
 * @param[in] tuple A named tuple.
 * @param[in] name  The name of the element to set.
 * @returns The element named name. Caller is responsible for freeing.
 */
-PRT_VALUE* PrtNmdTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_STRING name);
+PRT_API PRT_VALUE* PRT_CALL_CONV PrtNmdTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_STRING name);
 
 /** Updates the sequence at index.
 * @param[in,out] seq   A sequence to mutate.
 * @param[in]     index The name of the element to set. A value must already exist at this index.
 * @param[in]     value The value to store at index (will be cloned).
 */
-void PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index, _In_ PRT_VALUE *value);
+PRT_API void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index, _In_ PRT_VALUE *value);
 
 /** Inserts value into the sequence at index.
 * Index cannot be larger than the size of the sequence. Insertion causes:
@@ -296,7 +296,7 @@ void PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index, _In_ PRT_VALUE 
 * @param[in]     index An 0-based index s.t. 0 <= index <= size(seq).
 * @param[in]     value The value to store at index (will be cloned).
 */
-void PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index, _In_ PRT_VALUE* value);
+PRT_API void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index, _In_ PRT_VALUE* value);
 
 /** Removes the value at index from the sequence, and shortens the sequence by one.
 * seq[index] must be defined. Removal causes:
@@ -305,20 +305,20 @@ void PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index, _In_ PRT_VALUE*
 * @param[in,out] seq   A sequence to mutate.
 * @param[in]     index An 0-based index s.t. 0 <= index < size(seq).
 */
-void PrtSeqRemove(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index);
+PRT_API void PRT_CALL_CONV PrtSeqRemove(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index);
 
 /** Gets the sequence at index.
 * @param[in] seq   A sequence.
 * @param[in] index A 0-based index s.t. 0 <= index < size(seq).
 * @returns The value at index. Caller is responsible for freeing.
 */
-PRT_VALUE* PrtSeqGet(_In_ PRT_VALUE *seq, _In_ PRT_UINT32 index);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtSeqGet(_In_ PRT_VALUE *seq, _In_ PRT_UINT32 index);
 
 /** Gets the size of a sequence.
 * @param[in] seq A sequence.
 * @returns The size of the sequence.
 */
-PRT_UINT32 PrtSeqSizeOf(_In_ PRT_VALUE *seq);
+PRT_API PRT_UINT32 PRT_CALL_CONV PrtSeqSizeOf(_In_ PRT_VALUE *seq);
 
 /** Updates the map at key.
 * If key is not in the map, then adds it.
@@ -327,7 +327,7 @@ PRT_UINT32 PrtSeqSizeOf(_In_ PRT_VALUE *seq);
 * @param[in]     key   The key to update (will be cloned).
 * @param[in]     value The value to which the key maps (will be cloned).
 */
-void PrtMapUpdate(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE* key, _In_ PRT_VALUE* value);
+PRT_API void PRT_CALL_CONV PrtMapUpdate(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE* key, _In_ PRT_VALUE* value);
 
 /** Updates the map at key.
 * If key is not in the map, then adds it.
@@ -337,14 +337,14 @@ void PrtMapUpdate(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE* key, _In_ PRT_VALUE* v
 * @param[in]     value The value to which the key maps (will be cloned if cloneKeyVals is true).
 * @param[in]     cloneKeyVals Only set to false if key/value will be forever owned by this map.
 */
-void PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneKeyVals);
+PRT_API void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneKeyVals);
 
 /** Remove the key from the map.
 * If the key is not in then map, then the map is unchanged.
 * @param[in,out] map   A map to mutate.
 * @param[in]     key   The key to remove.
 */
-void PrtMapRemove(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key);
+PRT_API void PRT_CALL_CONV PrtMapRemove(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key);
 
 /** Gets the value to which this key maps.
 * The key must be present the map.
@@ -352,51 +352,51 @@ void PrtMapRemove(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key);
 * @param[in] key The key to lookup.
 * @returns The value to which the key maps. Caller is responsible for freeing.
 */
-PRT_VALUE *PrtMapGet(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtMapGet(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key);
 
 /** Converts a map to sequence of keys. Keys are returned in insertion order.
 * @param[in] map A map.
 * @returns The sequence of its keys. Caller is responsible for freeing.
 */
-PRT_VALUE *PrtMapGetKeys(_In_ PRT_VALUE *map);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtMapGetKeys(_In_ PRT_VALUE *map);
 
 /** Converts a map to sequence of values. values are returned in insertion order.
 * @param[in] map A map.
 * @returns The sequence of its values (map image). Caller is responsible for freeing.
 */
-PRT_VALUE *PrtMapGetValues(_In_ PRT_VALUE *map);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtMapGetValues(_In_ PRT_VALUE *map);
 
 /** Returns true if the map contains key; false otherwise.
 * @param[in] map A map.
 * @param[in] key The key to lookup.
 * @returns Returns true if the map contains key; false otherwise.
 */
-PRT_BOOLEAN PrtMapExists(_In_ PRT_VALUE *map, _In_ PRT_VALUE *key);
+PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtMapExists(_In_ PRT_VALUE *map, _In_ PRT_VALUE *key);
 
 /** Gets the size of a map.
 * @param[in] map A map.
 * @returns The size of the map.
 */
-PRT_UINT32 PrtMapSizeOf(_In_ PRT_VALUE *map);
+PRT_API PRT_UINT32 PRT_CALL_CONV PrtMapSizeOf(_In_ PRT_VALUE *map);
 
 /** The hypothetical maximum number of keys that could be accessed in constant-time.
 * @param[in] map A map.
 * @returns The capacity of the map.
 */
-PRT_UINT32 PrtMapCapacity(_In_ PRT_VALUE *map);
+PRT_API PRT_UINT32 PRT_CALL_CONV PrtMapCapacity(_In_ PRT_VALUE *map);
 
 /** Determines if value inhabits type.
 * @param[in] value The value to check.
 * @param[in] type  The type to check.
 * @returns `true` if value inhabits type, `false` otherwise.
 */
-PRT_BOOLEAN PrtInhabitsType(_In_ PRT_VALUE* value, _In_ PRT_TYPE *type);
+PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE* value, _In_ PRT_TYPE *type);
 
 /** Determines if value is a null event, id, or model.
 * @param[in] value The value to check.
 * @returns `true` if the null value, `false` otherwise.
 */
-PRT_BOOLEAN PrtIsNullValue(_In_ PRT_VALUE* value);
+PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtIsNullValue(_In_ PRT_VALUE* value);
 
 /** Casts value to type.
 * Caller must know that type cast will succeed.
@@ -405,36 +405,36 @@ PRT_BOOLEAN PrtIsNullValue(_In_ PRT_VALUE* value);
 * @param[in] type  The type to cast (will be cloned).
 * @returns A copy of value that is a subtype of type. Caller is responsible for freeing.
 */
-PRT_VALUE *PrtCastValue(_In_ PRT_VALUE* value, _In_ PRT_TYPE *type);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtCastValue(_In_ PRT_VALUE* value, _In_ PRT_TYPE *type);
 
 /** Returns a hash of this value.
 * @param[in] value The value to hash.
 * @returns The hash code.
 */
-PRT_UINT32 PrtGetHashCodeValue(_In_ PRT_VALUE *value);
+PRT_API PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE *value);
 
 /** Returns `true` if values are equivalent; `false` otherwise.
 * @param[in] value1 The first value.
 * @param[in] value2 The second value.
 * @returns `true` if values are equivalent; `false` otherwise.
 */
-PRT_BOOLEAN PrtIsEqualValue(_In_ PRT_VALUE *value1, _In_ PRT_VALUE *value2);
+PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE *value1, _In_ PRT_VALUE *value2);
 
 /** Deeply clones a value.
 * @param[in] value The value to clone.
 * @returns The cloned value. Caller is responsible for freeing.
 */
-PRT_VALUE *PrtCloneValue(_In_ PRT_VALUE *value);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE *value);
 
 /** Recursively frees a value. Should only be called on values created using PrtMkXValue()
 * @param[in,out] value The value to free.
 */
-void PrtFreeValue(_Inout_ PRT_VALUE *value);
+PRT_API void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE *value);
 
 /** Shallow test that value members are non-null.
 * @param[in] value The value to check.
 */
-PRT_BOOLEAN PrtIsValidValue(_In_ PRT_VALUE *value);
+PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtIsValidValue(_In_ PRT_VALUE *value);
 
 #ifdef __cplusplus
 }

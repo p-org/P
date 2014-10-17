@@ -116,27 +116,27 @@ typedef struct PRT_TUPTYPE
 *   The cloning semantics depends on the memory management strategy of the client.
 *   @see PRT_FORGN_FREE
 */
-typedef void*(*PRT_FORGN_CLONE)(_In_ PRT_GUID typeTag, _In_  void *frgnVal);
+typedef void*(PRT_CALL_CONV *PRT_FORGN_CLONE)(_In_ PRT_GUID typeTag, _In_  void *frgnVal);
 
 /** The PRT_FORGN_FREE function is called whenever a foreign value will never be used again.
 *   The semantics of PRT_FORGN_FREE depends on the memory management strategy of the client.
 *   @see PRT_FORGN_CLONE
 */
-typedef void(*PRT_FORGN_FREE)(_In_ PRT_GUID typeTag, _Inout_ void *frgnVal);
+typedef void(PRT_CALL_CONV *PRT_FORGN_FREE)(_In_ PRT_GUID typeTag, _Inout_ void *frgnVal);
 
 /** The PRT_FORGN_GETHASHCODE function is called to get a hashcode for a foreign value.
 *   The semantics depends of the client's definition of value equality. If two values
 *   are equal, then the function must return the same hashcode.
 *   @see PRT_FORGN_GETHASHCODE
 */
-typedef PRT_UINT32(*PRT_FORGN_GETHASHCODE)(_In_ PRT_GUID typeTag, _In_ void* frgnVal);
+typedef PRT_UINT32(PRT_CALL_CONV *PRT_FORGN_GETHASHCODE)(_In_ PRT_GUID typeTag, _In_ void* frgnVal);
 
 /** The PRT_FORGN_ISEQUAL function tests if two values are equal.
 *   Equality semantics is determined by the client. If two values
 *   are equal, then they should also have the same hashcode.
 *   @see PRT_FORGN_GETHASHCODE
 */
-typedef PRT_BOOLEAN(*PRT_FORGN_ISEQUAL)(
+typedef PRT_BOOLEAN(PRT_CALL_CONV *PRT_FORGN_ISEQUAL)(
 	_In_ PRT_GUID typeTag1,
 	_In_ void *frgnVal1,
 	_In_ PRT_GUID typeTag2,
@@ -164,7 +164,7 @@ typedef struct PRT_FORGNTYPE
 * @returns An instance of the foreign type. Caller is responsible for freeing.
 * @see PrtFreeType
 */
-PRT_TYPE *PrtMkForgnType(
+PRT_API PRT_TYPE * PRT_CALL_CONV PrtMkForgnType(
 	_In_ PRT_GUID              typeTag,
 	_In_ PRT_FORGN_CLONE       cloner,
 	_In_ PRT_FORGN_FREE        freer,
@@ -176,14 +176,14 @@ PRT_TYPE *PrtMkForgnType(
 * @returns An instance of a primitive. Caller is responsible for freeing.
 * @see PrtFreeType
 */
-PRT_TYPE *PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType);
+PRT_API PRT_TYPE * PRT_CALL_CONV PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType);
 
 /** Makes the absent type. 
 * The absent type is a foreign type that represents the absence of a foreign value.
 * It has a single foreign value, NULL, and is the default value of `foreign`.
 * @returns An instance of the absent type. Caller is responsible for freeing.
 */
-PRT_TYPE *PrtMkAbsentType();
+PRT_API PRT_TYPE * PRT_CALL_CONV PrtMkAbsentType();
 
 /** Makes a map type. 
 * @param domType The domain type (will be deeply cloned).
@@ -191,7 +191,7 @@ PRT_TYPE *PrtMkAbsentType();
 * @returns An instance of a map type. Caller is responsible for freeing.
 * @see PrtFreeType
 */
-PRT_TYPE *PrtMkMapType(_In_ PRT_TYPE *domType, _In_ PRT_TYPE *codType);
+PRT_API PRT_TYPE * PRT_CALL_CONV PrtMkMapType(_In_ PRT_TYPE *domType, _In_ PRT_TYPE *codType);
 
 /** Makes a named tuple type with arity. Caller must fill in field names / types. 
 * @param[in] arity The arity of the tuple type; arity > 0.
@@ -200,14 +200,14 @@ PRT_TYPE *PrtMkMapType(_In_ PRT_TYPE *domType, _In_ PRT_TYPE *codType);
 * @see PrtSetFieldType
 * @see PrtFreeType
 */
-PRT_TYPE* PrtMkNmdTupType(_In_ PRT_UINT32 arity);
+PRT_API PRT_TYPE * PRT_CALL_CONV PrtMkNmdTupType(_In_ PRT_UINT32 arity);
 
 /** Makes a sequence type.
 * @param innerType The type of sequence's elements (will be deeply cloned).
 * @returns An instance of a sequence type. Caller is responsible for freeing.
 * @see PrtFreeType
 */
-PRT_TYPE* PrtMkSeqType(_In_ PRT_TYPE *innerType);
+PRT_API PRT_TYPE * PRT_CALL_CONV PrtMkSeqType(_In_ PRT_TYPE *innerType);
 
 /** Makes a tuple type with arity. Caller must fill in field types.
 * @param[in] arity The arity of the tuple type; arity > 0.
@@ -215,34 +215,34 @@ PRT_TYPE* PrtMkSeqType(_In_ PRT_TYPE *innerType);
 * @see PrtSetFieldType
 * @see PrtFreeType
 */
-PRT_TYPE *PrtMkTupType(_In_ PRT_UINT32 arity);
+PRT_API PRT_TYPE * PRT_CALL_CONV PrtMkTupType(_In_ PRT_UINT32 arity);
 
 /** Sets the ith field type of a (named) tuple type. 
 * @param[in,out] tupleType The (named) tuple type to mutate.
 * @param[in] index The field index to set.
 * @param[in] fieldType The type of the ith field (will be deeply cloned).
 */
-void PrtSetFieldType(_Inout_ PRT_TYPE *tupleType, _In_ PRT_UINT32 index, _In_ PRT_TYPE *fieldType);
+PRT_API void PRT_CALL_CONV PrtSetFieldType(_Inout_ PRT_TYPE *tupleType, _In_ PRT_UINT32 index, _In_ PRT_TYPE *fieldType);
 
 /** Sets the ith field name of a named tuple type.
 * @param[in,out] tupleType The named tuple type to mutate.
 * @param[in] index The field index to set.
 * @param[in] fieldName The name of the ith field (will be deeply cloned).
 */
-void PrtSetFieldName(_Inout_ PRT_TYPE *tupleType, _In_ PRT_UINT32 index, _In_ PRT_STRING fieldName);
+PRT_API void PRT_CALL_CONV PrtSetFieldName(_Inout_ PRT_TYPE *tupleType, _In_ PRT_UINT32 index, _In_ PRT_STRING fieldName);
 
 /** Determines if subType and supType are in a sub-type / super-type relationship.
 * @param[in] subType The sub-type.
 * @param[in] supType The super-type.
 * @returns `true` if subType is a sub-type of supType; `false` otherwise.
 */
-PRT_BOOLEAN PrtIsSubtype(_In_ PRT_TYPE *subType, _In_ PRT_TYPE *supType);
+PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtIsSubtype(_In_ PRT_TYPE *subType, _In_ PRT_TYPE *supType);
 
 /** Performs a deep clone of type. 
 * @param[in] type The type to clone.
 * @returns A deep clone of type. Caller is responsible for freeing. 
 */
-PRT_TYPE *PrtCloneType(_In_ PRT_TYPE *type);
+PRT_API PRT_TYPE * PRT_CALL_CONV PrtCloneType(_In_ PRT_TYPE *type);
 
 /** Recursively frees a type expression. Should only be called on types created using PrtMkXType()
 * @param[in,out] type The type to free.
@@ -253,12 +253,12 @@ PRT_TYPE *PrtCloneType(_In_ PRT_TYPE *type);
 * @see PrtMkSeqType
 * @see PrtMkTupType
 */
-void PrtFreeType(_Inout_ PRT_TYPE *type);
+PRT_API void PRT_CALL_CONV PrtFreeType(_Inout_ PRT_TYPE *type);
 
 /** Shallow test that type members are non-null.
 * @param[in] type The type to check.
 */
-PRT_BOOLEAN PrtIsValidType(_In_ PRT_TYPE *type);
+PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtIsValidType(_In_ PRT_TYPE *type);
 
 #ifdef __cplusplus
 }

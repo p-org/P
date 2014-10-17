@@ -734,7 +734,7 @@ domain PStaticTyping extends PData
     // NonNullBase types have empty intersections with all types, except themselves and ANY.
     TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s = BaseType(ks), ks : NonNullBase, s != t, t != BaseType(ANY).
 
-    // NullBase types have empty intersections with all types, except themselves, ANY, and NIL.
+    // NullBase types have empty intersections with all types, except themselves, ANY, and NULL.
     NullBase    ::= { EVENT, REAL, MODEL }.
     TypeRel(s, t, EMPTY)    :- TypeSub(s), TypeSub(t), s = BaseType(ks), ks : NullBase, s != t, t != BaseType(ANY), t != BaseType(NULL).
     TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = BaseType(ks), ks : NullBase, t = BaseType(kt), kt : NullBase, s != t.

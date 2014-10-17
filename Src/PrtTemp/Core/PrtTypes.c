@@ -1,6 +1,6 @@
 #include "../API/PrtTypes.h"
 
-PRT_TYPE *PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType)
+PRT_TYPE * PRT_CALL_CONV PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType)
 {
 	PRT_TYPE *type = (PRT_TYPE *)PrtMalloc(sizeof(PRT_TYPE));
 	type->typeUnion.map = NULL;
@@ -26,7 +26,7 @@ PRT_TYPE *PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType)
 	}
 }
 
-PRT_TYPE *PrtMkForgnType(
+PRT_TYPE * PRT_CALL_CONV PrtMkForgnType(
 	_In_ PRT_GUID              typeTag,
 	_In_ PRT_FORGN_CLONE       cloner,
 	_In_ PRT_FORGN_FREE        freer,
@@ -52,7 +52,7 @@ PRT_TYPE *PrtMkForgnType(
 	return type;
 }
 
-PRT_TYPE *PrtMkMapType(_In_ PRT_TYPE *domType, _In_ PRT_TYPE *codType)
+PRT_TYPE * PRT_CALL_CONV PrtMkMapType(_In_ PRT_TYPE *domType, _In_ PRT_TYPE *codType)
 {
 	PrtAssert(PrtIsValidType(domType), "Invalid type expression");
 	PrtAssert(PrtIsValidType(codType), "Invalid type expression");
@@ -67,7 +67,7 @@ PRT_TYPE *PrtMkMapType(_In_ PRT_TYPE *domType, _In_ PRT_TYPE *codType)
 	return type;
 }
 
-PRT_TYPE *PrtMkNmdTupType(_In_ PRT_UINT32 arity)
+PRT_TYPE * PRT_CALL_CONV PrtMkNmdTupType(_In_ PRT_UINT32 arity)
 {
 	PrtAssert(arity > 0, "Invalid tuple arity");
 	PRT_TYPE *type = (PRT_TYPE *)PrtMalloc(sizeof(PRT_TYPE));
@@ -81,7 +81,7 @@ PRT_TYPE *PrtMkNmdTupType(_In_ PRT_UINT32 arity)
 	return type;
 }
 
-PRT_TYPE *PrtMkTupType(_In_ PRT_UINT32 arity)
+PRT_TYPE * PRT_CALL_CONV PrtMkTupType(_In_ PRT_UINT32 arity)
 {
 	PrtAssert(arity > 0, "Invalid tuple arity");
 	PRT_TYPE *type = (PRT_TYPE *)PrtMalloc(sizeof(PRT_TYPE));
@@ -94,7 +94,7 @@ PRT_TYPE *PrtMkTupType(_In_ PRT_UINT32 arity)
 	return type;
 }
 
-PRT_TYPE *PrtMkSeqType(_In_ PRT_TYPE *innerType)
+PRT_TYPE * PRT_CALL_CONV PrtMkSeqType(_In_ PRT_TYPE *innerType)
 {
 	PrtAssert(PrtIsValidType(innerType), "Invalid type expression");
 	PRT_TYPE *type = (PRT_TYPE *)PrtMalloc(sizeof(PRT_TYPE));
@@ -105,7 +105,7 @@ PRT_TYPE *PrtMkSeqType(_In_ PRT_TYPE *innerType)
 	return type;
 }
 
-void PrtSetFieldType(_Inout_ PRT_TYPE *tupleType, _In_ PRT_UINT32 index, _In_ PRT_TYPE *fieldType)
+void PRT_CALL_CONV PrtSetFieldType(_Inout_ PRT_TYPE *tupleType, _In_ PRT_UINT32 index, _In_ PRT_TYPE *fieldType)
 {
 	PrtAssert(PrtIsValidType(tupleType), "Invalid type expression");
 	PrtAssert(PrtIsValidType(fieldType), "Invalid type expression");
@@ -123,7 +123,7 @@ void PrtSetFieldType(_Inout_ PRT_TYPE *tupleType, _In_ PRT_UINT32 index, _In_ PR
 	}
 }
 
-void PrtSetFieldName(_Inout_ PRT_TYPE *tupleType, _In_ PRT_UINT32 index, _In_ PRT_STRING fieldName)
+void PRT_CALL_CONV PrtSetFieldName(_Inout_ PRT_TYPE *tupleType, _In_ PRT_UINT32 index, _In_ PRT_STRING fieldName)
 {
 	PrtAssert(PrtIsValidType(tupleType), "Invalid type expression");
 	PrtAssert(tupleType->typeKind == PRT_KIND_NMDTUP, "Invalid type expression");
@@ -141,7 +141,7 @@ void PrtSetFieldName(_Inout_ PRT_TYPE *tupleType, _In_ PRT_UINT32 index, _In_ PR
 	tupleType->typeUnion.nmTuple->fieldNames[index] = fieldNameClone;
 }
 
-PRT_BOOLEAN PrtIsSubtype(_In_ PRT_TYPE *subType, _In_ PRT_TYPE *supType)
+PRT_BOOLEAN PRT_CALL_CONV PrtIsSubtype(_In_ PRT_TYPE *subType, _In_ PRT_TYPE *supType)
 {
 	PrtAssert(PrtIsValidType(subType), "Invalid type expression");
 	PrtAssert(PrtIsValidType(supType), "Invalid type expression");
@@ -272,7 +272,7 @@ PRT_BOOLEAN PrtIsSubtype(_In_ PRT_TYPE *subType, _In_ PRT_TYPE *supType)
 	}
 }
 
-PRT_TYPE *PrtCloneType(_In_ PRT_TYPE *type)
+PRT_TYPE * PRT_CALL_CONV PrtCloneType(_In_ PRT_TYPE *type)
 {
 	PrtAssert(PrtIsValidType(type), "Invalid type expression");
 	PRT_TYPE_KIND kind = type->typeKind;
@@ -334,7 +334,7 @@ PRT_TYPE *PrtCloneType(_In_ PRT_TYPE *type)
 	}
 }
 
-void PrtFreeType(_Inout_ PRT_TYPE *type)
+void PRT_CALL_CONV PrtFreeType(_Inout_ PRT_TYPE *type)
 {
 	PRT_TYPE_KIND kind = type->typeKind;
 	switch (kind)
@@ -419,7 +419,7 @@ void PrtFreeType(_Inout_ PRT_TYPE *type)
 * @param[in] typeTag A type tag.
 * @returns `true` if the typeTag is 0, `false` otherwise.
 */
-PRT_BOOLEAN PrtIsAbsentTag(_In_ PRT_GUID typeTag)
+PRT_BOOLEAN PRT_CALL_CONV PrtIsAbsentTag(_In_ PRT_GUID typeTag)
 {
 	return 
 		typeTag.data1 == 0 &&
@@ -434,7 +434,7 @@ PRT_BOOLEAN PrtIsAbsentTag(_In_ PRT_GUID typeTag)
 * @param[in[ frgnVal The frgnVal must be NULL.
 * @returns NULL.
 */
-void *PrtAbsentTypeClone(_In_ PRT_GUID typeTag, _In_ void *frgnVal)
+void * PRT_CALL_CONV PrtAbsentTypeClone(_In_ PRT_GUID typeTag, _In_ void *frgnVal)
 {
 	PrtAssert(PrtIsAbsentTag(typeTag), "Expected the absent type");
 	PrtAssert(frgnVal != NULL, "Expected the absent value");
@@ -446,7 +446,7 @@ void *PrtAbsentTypeClone(_In_ PRT_GUID typeTag, _In_ void *frgnVal)
 * @param[in] typeTag The type tag of the absent type is always 0.
 * @param[in[ frgnVal The frgnVal must be NULL.
 */
-void PrtAbsentTypeFree(_In_ PRT_GUID typeTag, _Inout_ void *frgnVal)
+void PRT_CALL_CONV PrtAbsentTypeFree(_In_ PRT_GUID typeTag, _Inout_ void *frgnVal)
 {
 	PrtAssert(PrtIsAbsentTag(typeTag), "Expected the absent type");
 	PrtAssert(frgnVal != NULL, "Expected the absent value");
@@ -458,7 +458,7 @@ void PrtAbsentTypeFree(_In_ PRT_GUID typeTag, _Inout_ void *frgnVal)
 * @param[in[ frgnVal The frgnVal must be NULL.
 * @returns 0.
 */
-PRT_UINT32 PrtAbsentTypeGetHashCode(_In_ PRT_GUID typeTag, _In_ void *frgnVal)
+PRT_UINT32 PRT_CALL_CONV PrtAbsentTypeGetHashCode(_In_ PRT_GUID typeTag, _In_ void *frgnVal)
 {
 	PrtAssert(PrtIsAbsentTag(typeTag), "Expected the absent type");
 	PrtAssert(frgnVal != NULL, "Expected the absent value");
@@ -473,7 +473,7 @@ PRT_UINT32 PrtAbsentTypeGetHashCode(_In_ PRT_GUID typeTag, _In_ void *frgnVal)
 * @param[in] frgnVal2 A pointer to the second foreign data.
 * @returns `true` if both inputs are absent, `false` otherwise.
 */
-PRT_BOOLEAN PrtAbsentTypeIsEqual(
+PRT_BOOLEAN PRT_CALL_CONV PrtAbsentTypeIsEqual(
 	_In_ PRT_GUID typeTag1,
 	_In_ void *frgnVal1,
 	_In_ PRT_GUID typeTag2,
@@ -497,7 +497,7 @@ PRT_BOOLEAN PrtAbsentTypeIsEqual(
 /** The "Absent type" is a built-in foreign type used to represent the absence of a foreign value.
 * This function constructs an instance of the absent type.
 */
-PRT_TYPE *PrtMkAbsentType()
+PRT_TYPE * PRT_CALL_CONV PrtMkAbsentType()
 {
 	PRT_TYPE *type = (PRT_TYPE *)PrtMalloc(sizeof(PRT_TYPE));
 	PRT_FORGNTYPE *forgn = (PRT_FORGNTYPE *)PrtMalloc(sizeof(PRT_FORGNTYPE));
@@ -516,7 +516,7 @@ PRT_TYPE *PrtMkAbsentType()
 	return type;
 }
 
-PRT_BOOLEAN PrtIsValidType(_In_ PRT_TYPE *type)
+PRT_BOOLEAN PRT_CALL_CONV PrtIsValidType(_In_ PRT_TYPE *type)
 {
 	if (type == NULL)
 	{

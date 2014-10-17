@@ -35,7 +35,7 @@ extern "C"{
 #endif
 
 #if defined(PRT_PLAT_WINUSER)	
-#include "../WinUser/PrtWinUser.h"
+#include "../WinUser/PrtWinUserConfig.h"
 #elif defined(PRT_PLAT_WINKMDF)
 #include "PrtWinKMDF.h"
 #elif defined(PRT_PLAT_WINDIST)

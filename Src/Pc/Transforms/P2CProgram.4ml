@@ -349,5 +349,22 @@ transform P2CProgram (in:: P) returns (out:: C)
     /*************************************************************/	
 	TransDeclConcat ::= (pos: Natural, context: StateDecl, arr: out.Args + {NIL}).
 	TransDeclId     ::= (decl: TransDecl, id: Natural).
+	TransDeclId(t, id) :- t is TransDecl, id = toOrdinal(t, 0, { t' | t' is TransDecl, t'.src = t.src }).
+
+	//// Base case
+	TransDeclConcat(c, s, NIL) :- s is StateDecl, c = count({t | t is TransDecl, t.src = s}).
+
+    //// Build every transition list in reverse order
+	TransDeclConcat(m, d.owner, arr) :- 
+							TransDeclId(d, m, cvar), TransDeclConcat(m + 1, d.owner, after), 
+							DeclId(d.src, _, srcname), DeclId(d.src.owner, _, machname), 
+							sdst is StateDecl, sdst.owner = d.src.owner, sdst.name = d.dst							  
+							arr = out.Args(def, after), 
+	                        def = Init(
+							   Args(Ident(cmach),
+							   Args(Ident(cvar),
+							   Args(StringLit(d.name, NIL),
+							   Args(Ident(strJoin("P_GEND_TYPE_", toString(typeId))),
+							   NIL))))).
 
 }	

@@ -81,6 +81,8 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeTwoUInt32(PRT_UINT32 value1, PRT_UINT32 v
 
 PRT_VALUE * PRT_CALL_CONV PrtMkBoolValue(_In_ PRT_BOOLEAN value)
 {
+	PrtAssert(value == PRT_TRUE || value == PRT_FALSE, "Expected a bool value");
+
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 	PRT_TYPE *type = PrtMkPrimitiveType(PRT_KIND_BOOL);
 	PRT_PRIMVALUE *prim = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
@@ -276,6 +278,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 
 void PRT_CALL_CONV PrtPrimSetBool(_Inout_ PRT_VALUE *prmVal, _In_ PRT_BOOLEAN value)
 {
+	PrtAssert(value == PRT_TRUE || value == PRT_FALSE, "Expected a bool value");
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
 	PrtAssert(prmVal->type->typeKind == PRT_KIND_BOOL, "Invalid type on primitive set");
 	prmVal->valueUnion.prim->value.bl = value;
@@ -1250,13 +1253,13 @@ PRT_VALUE * PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE *value)
 	case PRT_KIND_BOOL:
 		return PrtMkBoolValue(value->valueUnion.prim->value.bl);
 	case PRT_KIND_EVENT:
-		return PrtMkBoolValue(value->valueUnion.prim->value.ev);
+		return PrtMkEventValue(value->valueUnion.prim->value.ev);
 	case PRT_KIND_MACHINE:
-		return PrtMkBoolValue(value->valueUnion.prim->value.mc);
+		return PrtMkMachineValue(value->valueUnion.prim->value.mc);
 	case PRT_KIND_INT:
-		return PrtMkBoolValue(value->valueUnion.prim->value.nt);
+		return PrtMkIntValue(value->valueUnion.prim->value.nt);
 	case PRT_KIND_MODEL:
-		return PrtMkBoolValue(value->valueUnion.prim->value.md);
+		return PrtMkModelValue(value->valueUnion.prim->value.md);
 	case PRT_KIND_FORGN:
 	{
 		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));

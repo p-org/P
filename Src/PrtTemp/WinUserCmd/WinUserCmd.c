@@ -24,6 +24,8 @@ void BinaryBoolFunTest()
 	PRT_VALUE *popCntVal;
 	PRT_VALUE *boolTup;
 	PRT_VALUE *popFun = PrtMkDefaultValue(popFunType);
+
+	printf_s("All binary boolean functions\n");
 	for (funImg = 0; funImg < 16; ++funImg)
 	{
 		PRT_VALUE *fun = PrtMkDefaultValue(binFunType);
@@ -61,6 +63,7 @@ void BinaryBoolFunTest()
 		PrtFreeValue(fun);
 	}
 	
+	printf_s("Map from a binary boolean function to number of true values in image\n");
 	PrtPrintValue(popFun);
 	printf_s("\n");
 	
@@ -69,6 +72,7 @@ void BinaryBoolFunTest()
 	PRT_UINT32 i;
 	PRT_VALUE *popKeys = PrtMapGetKeys(popFun);
 	PRT_VALUE *revPopFun = PrtMkDefaultValue(popFunType);
+
 	for (i = 1; i <= 16; ++i)
 	{
 		popCntVal = PrtMapGet(popFun, popKeys->valueUnion.seq->values[16 - i]);
@@ -77,11 +81,13 @@ void BinaryBoolFunTest()
 	}
 	
 	PrtFreeValue(popKeys);
+	printf_s("Reverse of population function \n");
 	PrtPrintValue(revPopFun);
 	printf_s("\n");
 
 	PrtAssert(PrtGetHashCodeValue(popFun) == PrtGetHashCodeValue(revPopFun), "Equivalent maps should have equivalent hash codes");
-	
+	PrtAssert(PrtIsEqualValue(popFun, revPopFun), "Equivalent maps should be equal");
+
 	PrtFreeValue(revPopFun);
 	PrtFreeValue(popFun);
 	PrtFreeType(intType);

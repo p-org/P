@@ -39,7 +39,7 @@ typedef enum PRT_STEP
 typedef enum PRT_STATUS
 {
 	PRT_STATUS_SUCCESS   = 0,        /**< Indicates normal completion of operation. Any status greater than SUCCESS is an error. */
-	PRT_STATUS_ASSERT    = 1,        /**< Indicates that a queue has grown too large.                   */
+	PRT_STATUS_ASSERT    = 1,        /**< Indicates an assertion failure.                               */
 	PRT_STATUS_EVENT_OVERFLOW  = 2,  /**< Indicates too many occurrences of the same event in a queue.  */
 	PRT_STATUS_EVENT_UNHANDLED = 3,  /**< Indicates failure of a machine to handle an event.            */
 	PRT_STATUS_MACH_OVERFLOW = 4,    /**< Indicates that too many machines have been created.           */

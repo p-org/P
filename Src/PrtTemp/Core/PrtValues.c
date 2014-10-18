@@ -17,7 +17,10 @@ const PRT_UINT32 PrtHashtableCapacities[] =
 	268435399, 536870909, 1073741789, 2147483647, 4294967291
 };
 
-PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeFieldName(PRT_STRING name)
+/** The null machine id */
+const PRT_MACHINEID PrtNullMachineId = { { 0, 0, 0, 0 }, PRT_SPECIAL_EVENT_DEFAULT_OR_NULL };
+
+PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeFieldName(_In_ PRT_STRING name)
 {
 	PRT_UINT32 i;
 	PRT_UINT32 code = 0;
@@ -35,7 +38,7 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeFieldName(PRT_STRING name)
 	return code;
 }
 
-PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeUInt32(PRT_UINT32 value)
+PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeUInt32(_In_ PRT_UINT32 value)
 {
 	PRT_UINT32 i;
 	PRT_UINT32 code = 0;
@@ -53,7 +56,7 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeUInt32(PRT_UINT32 value)
 	return code;
 }
 
-PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeTwoUInt32(PRT_UINT32 value1, PRT_UINT32 value2)
+PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeTwoUInt32(_In_ PRT_UINT32 value1, _In_ PRT_UINT32 value2)
 {
 	PRT_UINT32 i;
 	PRT_UINT32 code = 0;
@@ -79,18 +82,82 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeTwoUInt32(PRT_UINT32 value1, PRT_UINT32 v
 	return code;
 }
 
+PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeMachineId(_In_ PRT_MACHINEID id)
+{
+	PRT_UINT32 i;
+	PRT_UINT32 code = 0;
+
+	PRT_UINT32 value = id.processId.data1;
+	for (i = 0; i < 4; ++i)
+	{
+		code += (value & 0x000000FF);
+		code += (code << 10);
+		code ^= (code >> 6);
+		value = (value >> 8);
+	}
+
+	value = id.processId.data2;
+	for (i = 0; i < 4; ++i)
+	{
+		code += (value & 0x000000FF);
+		code += (code << 10);
+		code ^= (code >> 6);
+		value = (value >> 8);
+	}
+
+	value = id.processId.data3;
+	for (i = 0; i < 4; ++i)
+	{
+		code += (value & 0x000000FF);
+		code += (code << 10);
+		code ^= (code >> 6);
+		value = (value >> 8);
+	}
+
+	//// Hash lower-order bits
+	value = (PRT_UINT32)id.processId.data4;
+	for (i = 0; i < 4; ++i)
+	{
+		code += (value & 0x000000FF);
+		code += (code << 10);
+		code ^= (code >> 6);
+		value = (value >> 8);
+	}
+
+	//// Hash higher-order bits
+	value = (PRT_UINT32)(id.processId.data4 >> 32);
+	for (i = 0; i < 4; ++i)
+	{
+		code += (value & 0x000000FF);
+		code += (code << 10);
+		code ^= (code >> 6);
+		value = (value >> 8);
+	}
+
+	value = id.machineId;
+	for (i = 0; i < 4; ++i)
+	{
+		code += (value & 0x000000FF);
+		code += (code << 10);
+		code ^= (code >> 6);
+		value = (value >> 8);
+	}
+
+	code += (code << 3);
+	code ^= (code >> 11);
+	code += (code << 15);
+	return code;
+}
+
 PRT_VALUE * PRT_CALL_CONV PrtMkBoolValue(_In_ PRT_BOOLEAN value)
 {
 	PrtAssert(value == PRT_TRUE || value == PRT_FALSE, "Expected a bool value");
 
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 	PRT_TYPE *type = PrtMkPrimitiveType(PRT_KIND_BOOL);
-	PRT_PRIMVALUE *prim = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
 	retVal->type = type;
-	retVal->discriminator = PRT_VALKIND_PRIM;
-	retVal->valueUnion.prim = prim;
-	prim->discriminator = PRT_PRIMVALKIND_BOOL;
-	prim->value.bl = value;
+	retVal->discriminator = PRT_VALKIND_BOOL;
+	retVal->valueUnion.bl = value;
 	return retVal;
 }
 
@@ -98,12 +165,9 @@ PRT_VALUE * PRT_CALL_CONV PrtMkEventValue(_In_ PRT_UINT32 value)
 {
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 	PRT_TYPE *type = PrtMkPrimitiveType(PRT_KIND_EVENT);
-	PRT_PRIMVALUE *prim = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
 	retVal->type = type;
-	retVal->discriminator = PRT_VALKIND_PRIM;
-	retVal->valueUnion.prim = prim;
-	prim->discriminator = PRT_PRIMVALKIND_EVENT;
-	prim->value.ev = value;
+	retVal->discriminator = PRT_VALKIND_EVENT;
+	retVal->valueUnion.ev = value;
 	return retVal;
 }
 
@@ -111,12 +175,9 @@ PRT_VALUE * PRT_CALL_CONV PrtMkIntValue(_In_ PRT_INT32 value)
 {
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 	PRT_TYPE *type = PrtMkPrimitiveType(PRT_KIND_INT);
-	PRT_PRIMVALUE *prim = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
 	retVal->type = type;
-	retVal->discriminator = PRT_VALKIND_PRIM;
-	retVal->valueUnion.prim = prim;
-	prim->discriminator = PRT_PRIMVALKIND_INT;
-	prim->value.nt = value;
+	retVal->discriminator = PRT_VALKIND_INT;
+	retVal->valueUnion.nt = value;
 	return retVal;
 }
 
@@ -124,42 +185,41 @@ PRT_VALUE * PRT_CALL_CONV PrtMkNullValue()
 {
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 	PRT_TYPE *type = PrtMkPrimitiveType(PRT_KIND_NULL);
-	PRT_PRIMVALUE *prim = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
 	retVal->type = type;
-	retVal->discriminator = PRT_VALKIND_PRIM;
-	retVal->valueUnion.prim = prim;
-	prim->discriminator = PRT_PRIMVALKIND_NULL;
-
-	//// Set all nullable types to null, incase the sizes of these fields would ever change.
-	prim->value.ev = PRT_CNST_NULL;
-	prim->value.md = PRT_CNST_NULL;
-	prim->value.mc = PRT_CNST_NULL;
+	retVal->discriminator = PRT_VALKIND_NULL;
+	retVal->valueUnion.ev = PRT_SPECIAL_EVENT_DEFAULT_OR_NULL;
 	return retVal;
 }
 
-PRT_VALUE * PRT_CALL_CONV PrtMkMachineValue(_In_ PRT_UINT32 value)
+PRT_VALUE * PRT_CALL_CONV PrtMkMachineValue(_In_ PRT_MACHINEID value)
 {
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 	PRT_TYPE *type = PrtMkPrimitiveType(PRT_KIND_MACHINE);
-	PRT_PRIMVALUE *prim = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
+	PRT_MACHINEID *id = (PRT_MACHINEID *)PrtMalloc(sizeof(PRT_MACHINEID));
 	retVal->type = type;
-	retVal->discriminator = PRT_VALKIND_PRIM;
-	retVal->valueUnion.prim = prim;
-	prim->discriminator = PRT_PRIMVALKIND_MACHINE;
-	prim->value.mc = value;
+	retVal->discriminator = PRT_VALKIND_MID;
+	retVal->valueUnion.mid = id;
+	id->machineId = value.machineId;
+	id->processId.data1 = value.processId.data1;
+	id->processId.data2 = value.processId.data2;
+	id->processId.data3 = value.processId.data3;
+	id->processId.data4 = value.processId.data4;
 	return retVal;
 }
 
-PRT_VALUE * PRT_CALL_CONV PrtMkModelValue(_In_ PRT_UINT32 value)
+PRT_VALUE * PRT_CALL_CONV PrtMkModelValue(_In_ PRT_MACHINEID value)
 {
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 	PRT_TYPE *type = PrtMkPrimitiveType(PRT_KIND_MODEL);
-	PRT_PRIMVALUE *prim = (PRT_PRIMVALUE *)PrtMalloc(sizeof(PRT_PRIMVALUE));
+	PRT_MACHINEID *id = (PRT_MACHINEID *)PrtMalloc(sizeof(PRT_MACHINEID));
 	retVal->type = type;
-	retVal->discriminator = PRT_VALKIND_PRIM;
-	retVal->valueUnion.prim = prim;
-	prim->discriminator = PRT_PRIMVALKIND_MODEL;
-	prim->value.md = value;
+	retVal->discriminator = PRT_VALKIND_MID;
+	retVal->valueUnion.mid = id;
+	id->machineId = value.machineId;
+	id->processId.data1 = value.processId.data1;
+	id->processId.data2 = value.processId.data2;
+	id->processId.data3 = value.processId.data3;
+	id->processId.data4 = value.processId.data4;
 	return retVal;
 }
 
@@ -180,7 +240,6 @@ PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(_In_ PRT_TYPE *type, _In_ void *valu
 PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 {
 	PrtAssert(PrtIsValidType(type), "Invalid type expression.");
-
 	PRT_TYPE_KIND kind = type->typeKind;
 	switch (kind)
 	{
@@ -189,15 +248,15 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 	case PRT_KIND_BOOL:
 		return PrtMkBoolValue(PRT_FALSE);
 	case PRT_KIND_EVENT:
-		return PrtMkEventValue(PRT_CNST_NULL);
+		return PrtMkEventValue(PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
 	case PRT_KIND_MACHINE:
-		return PrtMkMachineValue(PRT_CNST_NULL);
+		return PrtMkMachineValue(PrtNullMachineId);
 	case PRT_KIND_INT:
 		return PrtMkIntValue(0);
 	case PRT_KIND_NULL:
 		return PrtMkNullValue();
 	case PRT_KIND_MODEL:
-		return PrtMkModelValue(PRT_CNST_NULL);
+		return PrtMkModelValue(PrtNullMachineId);
 	case PRT_KIND_FORGN:
 	{
 		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
@@ -281,70 +340,80 @@ void PRT_CALL_CONV PrtPrimSetBool(_Inout_ PRT_VALUE *prmVal, _In_ PRT_BOOLEAN va
 	PrtAssert(value == PRT_TRUE || value == PRT_FALSE, "Expected a bool value");
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
 	PrtAssert(prmVal->type->typeKind == PRT_KIND_BOOL, "Invalid type on primitive set");
-	prmVal->valueUnion.prim->value.bl = value;
+	prmVal->valueUnion.bl = value;
 }
 
 PRT_BOOLEAN PRT_CALL_CONV PrtPrimGetBool(_In_ PRT_VALUE *prmVal)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
 	PrtAssert(prmVal->type->typeKind == PRT_KIND_BOOL, "Invalid type on primitive get");
-	return prmVal->valueUnion.prim->value.bl;
+	return prmVal->valueUnion.bl;
 }
 
 void PRT_CALL_CONV PrtPrimSetEvent(_Inout_ PRT_VALUE *prmVal, _In_ PRT_UINT32 value)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
 	PrtAssert(prmVal->type->typeKind == PRT_KIND_EVENT, "Invalid type on primitive set");
-	prmVal->valueUnion.prim->value.ev = value;
+	prmVal->valueUnion.ev = value;
 }
 
 PRT_UINT32 PRT_CALL_CONV PrtPrimGetEvent(_In_ PRT_VALUE *prmVal)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
 	PrtAssert(prmVal->type->typeKind == PRT_KIND_EVENT, "Invalid type on primitive get");
-	return prmVal->valueUnion.prim->value.ev;
+	return prmVal->valueUnion.ev;
 }
 
 void PRT_CALL_CONV PrtPrimSetInt(_Inout_ PRT_VALUE *prmVal, _In_ PRT_INT32 value)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
 	PrtAssert(prmVal->type->typeKind == PRT_KIND_INT, "Invalid type on primitive set");
-	prmVal->valueUnion.prim->value.nt = value;
+	prmVal->valueUnion.nt = value;
 }
 
 PRT_INT32 PRT_CALL_CONV PrtPrimGetInt(_In_ PRT_VALUE *prmVal)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
 	PrtAssert(prmVal->type->typeKind == PRT_KIND_INT, "Invalid type on primitive get");
-	return prmVal->valueUnion.prim->value.nt;
+	return prmVal->valueUnion.nt;
 }
 
-void PRT_CALL_CONV PrtPrimSetMachine(_Inout_ PRT_VALUE *prmVal, _In_ PRT_UINT32 value)
+void PRT_CALL_CONV PrtPrimSetMachine(_Inout_ PRT_VALUE *prmVal, _In_ PRT_MACHINEID value)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
 	PrtAssert(prmVal->type->typeKind == PRT_KIND_MACHINE, "Invalid type on primitive set");
-	prmVal->valueUnion.prim->value.mc = value;
+	PRT_MACHINEID *id = prmVal->valueUnion.mid;
+	id->machineId = value.machineId;
+	id->processId.data1 = value.processId.data1;
+	id->processId.data2 = value.processId.data2;
+	id->processId.data3 = value.processId.data3;
+	id->processId.data4 = value.processId.data4;
 }
 
-PRT_UINT32 PRT_CALL_CONV PrtPrimGetMachine(_In_ PRT_VALUE *prmVal)
+PRT_MACHINEID PRT_CALL_CONV PrtPrimGetMachine(_In_ PRT_VALUE *prmVal)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
 	PrtAssert(prmVal->type->typeKind == PRT_KIND_MACHINE, "Invalid type on primitive get");
-	return prmVal->valueUnion.prim->value.mc;
+	return *prmVal->valueUnion.mid;
 }
 
-void PRT_CALL_CONV PrtPrimSetModel(_Inout_ PRT_VALUE *prmVal, _In_ PRT_UINT32 value)
+void PRT_CALL_CONV PrtPrimSetModel(_Inout_ PRT_VALUE *prmVal, _In_ PRT_MACHINEID value)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
 	PrtAssert(prmVal->type->typeKind == PRT_KIND_MODEL, "Invalid type on primitive set");
-	prmVal->valueUnion.prim->value.md = value;
+	PRT_MACHINEID *id = prmVal->valueUnion.mid;
+	id->machineId = value.machineId;
+	id->processId.data1 = value.processId.data1;
+	id->processId.data2 = value.processId.data2;
+	id->processId.data3 = value.processId.data3;
+	id->processId.data4 = value.processId.data4;
 }
 
-PRT_UINT32 PRT_CALL_CONV PrtPrimGetModel(_In_ PRT_VALUE *prmVal)
+PRT_MACHINEID PRT_CALL_CONV PrtPrimGetModel(_In_ PRT_VALUE *prmVal)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
 	PrtAssert(prmVal->type->typeKind == PRT_KIND_MODEL, "Invalid type on primitive get");
-	return prmVal->valueUnion.prim->value.md;
+	return *prmVal->valueUnion.mid;
 }
 
 void PRT_CALL_CONV PrtTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VALUE *value)
@@ -960,15 +1029,15 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE* inputValue)
 		PRT_DBG_ASSERT(PRT_FALSE, "Value must have a more concrete type");
 		return 0;
 	case PRT_KIND_BOOL:
-		return PrtGetHashCodeUInt32(0x00400000 ^ ((PRT_UINT32)(inputValue->valueUnion.prim)->value.bl));
+		return PrtGetHashCodeUInt32(0x00400000 ^ ((PRT_UINT32)inputValue->valueUnion.bl));
 	case PRT_KIND_EVENT:
-		return PrtGetHashCodeUInt32(0x00800000 ^ ((PRT_UINT32)(inputValue->valueUnion.prim)->value.ev));
+		return PrtGetHashCodeUInt32(0x00800000 ^ (inputValue->valueUnion.ev));
 	case PRT_KIND_MACHINE:
-		return PrtGetHashCodeUInt32(0x01000000 ^ ((PRT_UINT32)(inputValue->valueUnion.prim)->value.mc));
+		return PrtGetHashCodeUInt32(0x01000000 ^ PrtGetHashCodeMachineId(*inputValue->valueUnion.mid));
 	case PRT_KIND_INT:
-		return PrtGetHashCodeUInt32(0x02000000 ^ ((PRT_UINT32)(inputValue->valueUnion.prim)->value.nt));
+		return PrtGetHashCodeUInt32(0x02000000 ^ ((PRT_UINT32)inputValue->valueUnion.nt));
 	case PRT_KIND_MODEL:
-		return PrtGetHashCodeUInt32(0x04000000 ^ ((PRT_UINT32)(inputValue->valueUnion.prim)->value.md));
+		return PrtGetHashCodeUInt32(0x04000000 ^ PrtGetHashCodeMachineId(*inputValue->valueUnion.mid));
 	case PRT_KIND_FORGN:
 	{
 		PRT_FORGNTYPE* fType = inputValue->type->typeUnion.forgn;
@@ -1116,19 +1185,25 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE *value1, _In_ PRT_VALUE
 		return PRT_FALSE;
 	case PRT_KIND_BOOL:
 		return
-			value1->valueUnion.prim->value.bl == value2->valueUnion.prim->value.bl ? PRT_TRUE : PRT_FALSE;
+			value1->valueUnion.bl == value2->valueUnion.bl ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_EVENT:
 		return
-			value1->valueUnion.prim->value.ev == value2->valueUnion.prim->value.ev ? PRT_TRUE : PRT_FALSE;
+			value1->valueUnion.ev == value2->valueUnion.ev ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_MACHINE:
+	case PRT_KIND_MODEL:
+	{
+		PRT_MACHINEID *id1 = value1->valueUnion.mid;
+		PRT_MACHINEID *id2 = value2->valueUnion.mid;
 		return
-			value1->valueUnion.prim->value.mc == value2->valueUnion.prim->value.mc ? PRT_TRUE : PRT_FALSE;
+			id1->processId.data1 == id2->processId.data1 &&
+			id1->processId.data2 == id2->processId.data2 &&
+			id1->processId.data3 == id2->processId.data3 &&
+			id1->processId.data4 == id2->processId.data4 &&
+			id1->machineId == id2->machineId ? PRT_TRUE : PRT_FALSE;
+	}
 	case PRT_KIND_INT:
 		return
-			value1->valueUnion.prim->value.nt == value2->valueUnion.prim->value.nt ? PRT_TRUE : PRT_FALSE;
-	case PRT_KIND_MODEL:
-		return
-			value1->valueUnion.prim->value.md == value2->valueUnion.prim->value.md ? PRT_TRUE : PRT_FALSE;
+			value1->valueUnion.nt == value2->valueUnion.nt ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_FORGN:
 	{
 		PRT_FORGNVALUE *fVal1 = value1->valueUnion.frgn;
@@ -1251,15 +1326,15 @@ PRT_VALUE * PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE *value)
 	case PRT_KIND_NULL:
 		return PrtMkNullValue();
 	case PRT_KIND_BOOL:
-		return PrtMkBoolValue(value->valueUnion.prim->value.bl);
+		return PrtMkBoolValue(value->valueUnion.bl);
 	case PRT_KIND_EVENT:
-		return PrtMkEventValue(value->valueUnion.prim->value.ev);
+		return PrtMkEventValue(value->valueUnion.ev);
 	case PRT_KIND_MACHINE:
-		return PrtMkMachineValue(value->valueUnion.prim->value.mc);
+		return PrtMkMachineValue(*value->valueUnion.mid);
 	case PRT_KIND_INT:
-		return PrtMkIntValue(value->valueUnion.prim->value.nt);
+		return PrtMkIntValue(value->valueUnion.nt);
 	case PRT_KIND_MODEL:
-		return PrtMkModelValue(value->valueUnion.prim->value.md);
+		return PrtMkModelValue(*value->valueUnion.mid);
 	case PRT_KIND_FORGN:
 	{
 		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
@@ -1374,11 +1449,18 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsNullValue(_In_ PRT_VALUE *value)
 	case PRT_KIND_NULL:
 		return PRT_TRUE;
 	case PRT_KIND_EVENT:
-		return value->valueUnion.prim->value.ev == PRT_CNST_NULL ? PRT_TRUE : PRT_FALSE;
+		return value->valueUnion.ev == PRT_SPECIAL_EVENT_DEFAULT_OR_NULL ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_MACHINE:
-		return value->valueUnion.prim->value.mc == PRT_CNST_NULL ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_MODEL:
-		return value->valueUnion.prim->value.md == PRT_CNST_NULL ? PRT_TRUE : PRT_FALSE;
+	{
+		PRT_MACHINEID *id = value->valueUnion.mid;
+		return 
+			id->processId.data1 == PrtNullMachineId.processId.data1 && 
+			id->processId.data2 == PrtNullMachineId.processId.data2 &&
+			id->processId.data3 == PrtNullMachineId.processId.data3 &&
+			id->processId.data4 == PrtNullMachineId.processId.data4 &&
+			id->machineId == PrtNullMachineId.machineId ? PRT_TRUE : PRT_FALSE;
+	}
 	case PRT_KIND_BOOL:
 	case PRT_KIND_INT:
 	case PRT_KIND_FORGN:
@@ -1420,7 +1502,9 @@ PRT_VALUE * PRT_CALL_CONV PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE *typ
 	{
 		if (PrtIsNullValue(value))
 		{
-			return PrtMkEventValue(PRT_CNST_NULL);
+			//// If the type is nullable and the value is null,
+			//// then use MkDefaultValue(type) because it returns the null value for that type.
+			return PrtMkDefaultValue(type);
 		}
 
 		PrtAssert(frmKind == toKind, "Invalid type cast");
@@ -1693,14 +1777,19 @@ void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE *value)
 		break;
 	case PRT_KIND_BOOL:
 	case PRT_KIND_EVENT:
-	case PRT_KIND_MACHINE:
 	case PRT_KIND_INT:
 	case PRT_KIND_NULL:
+	{
+		PrtFreeType(value->type);
+		PrtFree(value);
+		break;
+	}
+	case PRT_KIND_MACHINE:
 	case PRT_KIND_MODEL:
 	{
-		PRT_PRIMVALUE *pVal = value->valueUnion.prim;
+		PRT_MACHINEID *id = value->valueUnion.mid;
 		PrtFreeType(value->type);
-		PrtFree(pVal);
+		PrtFree(id);
 		PrtFree(value);
 		break;
 	}
@@ -1802,23 +1891,18 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsValidValue(_In_ PRT_VALUE *value)
 	switch (kind)
 	{
 	case PRT_KIND_BOOL:
-		return value->discriminator == PRT_VALKIND_PRIM &&
-			value->valueUnion.prim->discriminator == PRT_PRIMVALKIND_BOOL;
+		return value->discriminator == PRT_VALKIND_BOOL &&
+			(value->valueUnion.bl == PRT_TRUE || value->valueUnion.bl == PRT_FALSE);
 	case PRT_KIND_EVENT:
-		return value->discriminator == PRT_VALKIND_PRIM &&
-			value->valueUnion.prim->discriminator == PRT_PRIMVALKIND_EVENT;
+		return value->discriminator == PRT_VALKIND_EVENT;	
 	case PRT_KIND_MACHINE:
-		return value->discriminator == PRT_VALKIND_PRIM &&
-			value->valueUnion.prim->discriminator == PRT_PRIMVALKIND_MACHINE;
-	case PRT_KIND_INT:
-		return value->discriminator == PRT_VALKIND_PRIM &&
-			value->valueUnion.prim->discriminator == PRT_PRIMVALKIND_INT;
 	case PRT_KIND_MODEL:
-		return value->discriminator == PRT_VALKIND_PRIM &&
-			value->valueUnion.prim->discriminator == PRT_PRIMVALKIND_MODEL;
+		return value->discriminator == PRT_VALKIND_MID;
+	case PRT_KIND_INT:
+		return value->discriminator == PRT_VALKIND_INT;
 	case PRT_KIND_NULL:
-		return value->discriminator == PRT_VALKIND_PRIM &&
-			value->valueUnion.prim->discriminator == PRT_PRIMVALKIND_NULL;
+		return value->discriminator == PRT_VALKIND_NULL &&
+			value->valueUnion.ev == PRT_SPECIAL_EVENT_DEFAULT_OR_NULL;
 	case PRT_KIND_FORGN:
 		return value->discriminator == PRT_VALKIND_FORGN &&
 			value->valueUnion.frgn != NULL;

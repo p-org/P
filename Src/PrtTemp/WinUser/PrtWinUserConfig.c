@@ -1,13 +1,5 @@
 #include "PrtWinUserConfig.h"
 
-void PRT_CALL_CONV PrtSpecialStartup(_In_ void *param)
-{
-}
-
-void PRT_CALL_CONV PrtSpecialShutdown(_In_ void *param)
-{
-}
-
 void PRT_CALL_CONV PrtAssert(_In_ int condition, _In_opt_z_ PRT_CSTRING message)
 {
 	if (condition != 0)
@@ -33,7 +25,7 @@ PRT_RECURSIVE_MUTEX PRT_CALL_CONV PrtCreateMutex()
 	return mutex;
 }
 
-void PRT_CALL_CONV PrtReleaseMutex(_In_ PRT_RECURSIVE_MUTEX mutex)
+void PRT_CALL_CONV PrtDestroyMutex(_In_ PRT_RECURSIVE_MUTEX mutex)
 {
 	BOOL result = CloseHandle(mutex);
 	PrtAssert(result != FALSE, "Unable to release mutex");

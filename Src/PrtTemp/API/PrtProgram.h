@@ -21,8 +21,7 @@ extern "C"{
 *   Function frees value.
 */
 typedef void(PRT_CALL_CONV *PRT_SM_FUN)(
-	_Inout_ struct PRT_SMCONTEXT * context, 
-	_In_    PRT_UINT32 machIndex, 
+	_Inout_ struct PRT_SM_CONTEXT * context, 
 	_In_    PRT_UINT32 funIndex, 
 	_Inout_ PRT_VALUE *value);
 
@@ -31,12 +30,12 @@ typedef void(PRT_CALL_CONV *PRT_SM_FUN)(
 *   value is the value passed to the new M(...) operation. It will be the P null value if no value was passed.
 *   Function frees value.
 */
-typedef void(PRT_CALL_CONV *PRT_SM_EXTCTOR)(_Inout_ struct PRT_SMCONTEXT * context, _Inout_ PRT_VALUE *value);
+typedef void(PRT_CALL_CONV *PRT_SM_EXTCTOR)(_Inout_ struct PRT_SM_CONTEXT * context, _Inout_ PRT_VALUE *value);
 
 /** A PRT_SM_EXTDTOR function destructs the external blob attached to a machine.
 *   context is the machine context to destruct.
 */
-typedef void(PRT_CALL_CONV *PRT_SM_EXTDTOR)(_Inout_ struct PRT_SMCONTEXT * context);
+typedef void(PRT_CALL_CONV *PRT_SM_EXTDTOR)(_Inout_ struct PRT_SM_CONTEXT * context);
 
 /** A PRT_SM_MODELNEW function constructs a model machine in process.
 *   Returns a new model identifier.
@@ -165,11 +164,13 @@ typedef struct PRT_MACHINEDECL
 	PRT_STRING       name;              /**< The name of this machine            */
 	PRT_UINT32       nVars;             /**< The number of state variables       */
 	PRT_UINT32       nStates;           /**< The number of states                */
+	PRT_UINT32       nFuns;             /**< The number of functions             */
 
 	PRT_UINT32       maxQueueSize;      /**< The max queue size                  */
 	PRT_UINT32       initStateIndex;    /**< The index of the initial state      */
 	PRT_VARDECL      *vars;             /**< The array of variable declarations  */
 	PRT_STATEDECL    *states;           /**< The array of state declarations     */
+	PRT_FUNDECL      *funs;             /**< The array of fun declarations       */
 	PRT_SM_EXTCTOR   extCtor;           /**< external blob constructor           */
 	PRT_SM_EXTDTOR   extDtor;           /**< external blob destructor            */
 

@@ -92,24 +92,6 @@ typedef char const * PRT_CSTRING;
 typedef HANDLE PRT_RECURSIVE_MUTEX;
 
 /**
-* Configuration-specific startup (for instance, opening log files). Will be called by the runtime in PrtStartup()
-* @param[in] param Configuration-specific startup data.
-* @see PrtSpecialShutdown
-* @see PrtStartup
-* @see PrtShutdown
-*/
-void PRT_CALL_CONV PrtSpecialStartup(_In_ void * param);
-
-/**
-* Configuration-specific shutdown (for instance, closing log files). Will be called by the runtime in PrtShutdown()
-* @param[in] param Configuration-specific shutdown data.
-* @see PrtSpecialStartup
-* @see PrtStartup
-* @see PrtShutdown
-*/
-void PRT_CALL_CONV PrtSpecialShutdown(_In_ void * param);
-
-/**
 * Terminates the process if `condition == 0` (with configuration-specific logging)
 * @param[in] condition A value expected to be non-zero
 * @param[in] message A message to be logged if condition is zero
@@ -119,27 +101,27 @@ PRT_API void PRT_CALL_CONV PrtAssert(_In_ int condition, _In_opt_z_ PRT_CSTRING 
 /**
 * Creates a fresh unnamed and unlocked recursive mutex. The mutex must be unlocked by a thread as many times as it was locked.
 * @return A configuration-specific value identifying the mutex.
-* @see PrtReleaseMutex
+* @see PrtDestroyMutex
 * @see PrtLockMutex
 * @see PrtUnlockMutex
 */
 PRT_RECURSIVE_MUTEX PRT_CALL_CONV PrtCreateMutex();
 
 /**
-* Allows the system to dispose of this mutex. Release must be called at most once per mutex, and a released mutex never be used again.
+* Allows the system to dispose of this mutex. Destroy must be called at most once per mutex, and a destroyed mutex never be used again.
 * @param[in] mutex A mutex that has been created, but has not yet been released.
 * @see PrtCreateMutex
 * @see PrtLockMutex
 * @see PrtUnlockMutex
 */
-void PRT_CALL_CONV PrtReleaseMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
+void PRT_CALL_CONV PrtDestroyMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 
 /**
 * Blocks until the mutex is locked. If the locking thread already owns the mutex, then succeeds and increments the lock count. 
 * @param[in] mutex The mutex to lock.
 * @see PrtUnlockMutex
 * @see PrtCreateMutex
-* @see PrtReleaseMutex
+* @see PrtDestroyMutex
 */
 void PRT_CALL_CONV PrtLockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 
@@ -148,7 +130,7 @@ void PRT_CALL_CONV PrtLockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 * @param[in] mutex The mutex to unlock.
 * @see PrtLockMutex
 * @see PrtCreateMutex
-* @see PrtReleaseMutex
+* @see PrtDestroyMutex
 */
 void PRT_CALL_CONV PrtUnlockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 

@@ -1768,7 +1768,7 @@ PRT_SMCONTEXT_PRIV			*context
 		PrtFree(context->context.values);
 	}
 
-	PrtReleaseMutex(context->stateMachineLock);
+	PrtDestroyMutex(context->stateMachineLock);
 
 	PrtFree(context);
 }

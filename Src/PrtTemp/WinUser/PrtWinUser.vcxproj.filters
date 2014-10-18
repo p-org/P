@@ -14,9 +14,5 @@
     <ClCompile Include="..\Core\PrtValues.c" />
     <ClCompile Include="PrtWinUserConfig.c" />
     <ClCompile Include="PrtWinUser.c" />
-    <ClCompile Include="..\Core\Prt.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\Core\PrtExecution.h" />
   </ItemGroup>
 </Project>

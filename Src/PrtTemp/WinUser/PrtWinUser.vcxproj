@@ -28,14 +28,10 @@
     <ClInclude Include="PrtWinUserConfig.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Core\Prt.c" />
     <ClCompile Include="..\Core\PrtTypes.c" />
     <ClCompile Include="..\Core\PrtValues.c" />
     <ClCompile Include="PrtWinUser.c" />
     <ClCompile Include="PrtWinUserConfig.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\Core\PrtExecution.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F8C72C0E-450C-4AE1-9885-31B8565C1D63}</ProjectGuid>

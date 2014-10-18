@@ -21,13 +21,11 @@
 extern "C"{
 #endif
 
-/** The null values (null, event, machine, model) are represented by this value. 
-*/
-#define PRT_CNST_NULL 0
-
-/** The halt event will always have this id.
-*/
-#define PRT_CNST_HALT 1
+typedef enum PRT_SPECIAL_EVENT
+{
+	PRT_SPECIAL_EVENT_DEFAULT_OR_NULL = 0,  /**< The id of the default / null event */
+	PRT_SPECIAL_EVENT_HALT = 1              /**< The id of the halt event           */
+} PRT_SPECIAL_EVENT;
 
 /**
 * \enum
@@ -35,28 +33,17 @@ extern "C"{
 **/
 typedef enum PRT_VALUE_KIND
 {
-	PRT_VALKIND_PRIM = 0,     /**< The kind of a primitive value        */
-	PRT_VALKIND_FORGN = 1,    /**< The kind of all foreign values       */
-	PRT_VALKIND_TUPLE = 2,    /**< The kind of all (named) tuple values */
-	PRT_VALKIND_SEQ = 3,      /**< The kind of all sequence values      */
-	PRT_VALKIND_MAP = 4,      /**< The kind of all map values           */
-	PRT_VALUE_KIND_COUNT = 5, /**< The number of value kinds            */
+	PRT_VALKIND_NULL  = 0,    /**< The kind of the null value in type null */
+	PRT_VALKIND_BOOL  = 1,    /**< The kind of bool values                 */
+	PRT_VALKIND_INT   = 2,    /**< The kind of int values                  */
+	PRT_VALKIND_EVENT = 3,    /**< The kind of event id values             */
+	PRT_VALKIND_MID   = 4,    /**< The kind of (model) machine id values   */
+	PRT_VALKIND_FORGN = 5,    /**< The kind of all foreign values          */
+	PRT_VALKIND_TUPLE = 6,    /**< The kind of all (named) tuple values    */
+	PRT_VALKIND_SEQ   = 7,    /**< The kind of all sequence values         */
+	PRT_VALKIND_MAP   = 8,    /**< The kind of all map values              */
+	PRT_VALUE_KIND_COUNT = 9, /**< The number of value kinds               */
 } PRT_VALUE_KIND;
-
-/**
-* \enum
-* These are the kinds of primitive values in the P type system.
-**/
-typedef enum PRT_PRIMVALUE_KIND
-{
-	PRT_PRIMVALKIND_BOOL = 0,        /**< The kind bool values      */
-	PRT_PRIMVALKIND_EVENT = 1,       /**< The kind of event values */
-	PRT_PRIMVALKIND_INT = 2,         /**< The kind of int values */
-	PRT_PRIMVALKIND_MACHINE = 3,     /**< The kind of machine values */
-	PRT_PRIMVALKIND_MODEL = 4,       /**< The kind of model values */
-	PRT_PRIMVALKIND_NULL = 5,	     /**< The kind of null values (no field in union) */
-	PRT_PRIMVALUE_KIND_COUNT = 6,    /**< The number of type kinds        */
-} PRT_PRIMVALUE_KIND;
 
 /** A Union type to discriminate the Prt value */
 typedef struct PRT_VALUE {
@@ -64,25 +51,24 @@ typedef struct PRT_VALUE {
 	PRT_VALUE_KIND discriminator; /**< A value kind to discriminate the union */
 	union
 	{
-		struct PRT_PRIMVALUE *prim;
-		struct PRT_FORGNVALUE *frgn;	/**< A foreign value       */
-		struct PRT_TUPVALUE *tuple;		/**< A (named) tuple value */
-		struct PRT_SEQVALUE *seq;		/**< A sequence value	   */
-		struct PRT_MAPVALUE *map;		/**< A map value		   */
+		PRT_BOOLEAN bl;                 /**< A boolean value            */
+		PRT_INT32   nt;                 /**< An integer value           */
+		PRT_UINT32  ev;                 /**< An event id value          */
+		struct PRT_MACHINEID *mid;      /**< A (model) machine id value */
+		struct PRT_FORGNVALUE *frgn;	/**< A foreign value            */
+		struct PRT_TUPVALUE *tuple;		/**< A (named) tuple value      */
+		struct PRT_SEQVALUE *seq;		/**< A sequence value	        */
+		struct PRT_MAPVALUE *map;		/**< A map value		        */
 	} valueUnion;
 } PRT_VALUE;
 
-typedef struct PRT_PRIMVALUE
+/** The id of a (model) machine is a combination of the id of the owner process and an id unique to that process.
+*/
+typedef struct PRT_MACHINEID
 {
-	PRT_PRIMVALUE_KIND discriminator; /**< A prim value kind to discriminate the union */
-	union {
-		PRT_BOOLEAN bl;   /**< A boolean value.    */
-		PRT_UINT32  ev;   /**< An event id.        */
-		PRT_INT32   nt;   /**< A signed integer.   */
-		PRT_UINT32  mc;   /**< A machine machine        */
-		PRT_UINT32  md;   /**< A model machine id. */
-	} value;              /**< A primitive value is one of the above. */
-} PRT_PRIMVALUE;
+	PRT_GUID   processId;
+	PRT_UINT32 machineId;
+} PRT_MACHINEID;
 
 /** A foreign value is foreign type paired with a void *. */
 typedef struct PRT_FORGNVALUE
@@ -164,7 +150,10 @@ PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkEventValue(_In_ PRT_UINT32 value);
 */
 PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkIntValue(_In_ PRT_INT32 value);
 
-/** Makes null value.
+/** Makes null value. 
+* The types null, event, machine, and model all share the null value.
+* The null value projected onto event is the id PRT_SPECIAL_EVENT_DEFAULT_OR_NULL.
+* The null value projected onto model / machine is the processId 0-0-0-0 with machineId PRT_SPECIAL_EVENT_DEFAULT_OR_NULL. 
 * @returns A proper null value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
@@ -175,14 +164,14 @@ PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkNullValue();
 * @returns A propermachinevalue. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkMachineValue(_In_ PRT_UINT32 value);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkMachineValue(_In_ PRT_MACHINEID value);
 
 /** Makes an model value.
 * @param[in] value A model machine id.
 * @returns A proper model value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkModelValue(_In_ PRT_UINT32 value);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkModelValue(_In_ PRT_MACHINEID value);
 
 /** Makes a foreign value.
 * @param[in] type A foreign type (will be cloned).
@@ -232,25 +221,25 @@ PRT_API PRT_INT32 PRT_CALL_CONV PrtPrimGetInt(_In_ PRT_VALUE *prmVal);
 * @param[in,out] prmVal A primitivemachinevalue to mutate.
 * @param[in]     value The value to set.
 */
-PRT_API void PRT_CALL_CONV PrtPrimSetMachine(_Inout_ PRT_VALUE *prmVal, _In_ PRT_UINT32 value);
+PRT_API void PRT_CALL_CONV PrtPrimSetMachine(_Inout_ PRT_VALUE *prmVal, _In_ PRT_MACHINEID value);
 
 /** Gets the value of an Machine.
 * @param[in] prmVal A primitive machine value.
 * @returns A machine machine
 */
-PRT_API PRT_UINT32 PRT_CALL_CONV PrtPrimGetMachine(_In_ PRT_VALUE *prmVal);
+PRT_API PRT_MACHINEID PRT_CALL_CONV PrtPrimGetMachine(_In_ PRT_VALUE *prmVal);
 
 /** Sets the value of an model.
 * @param[in,out] prmVal A primitive model value to mutate.
 * @param[in]     value The value to set.
 */
-PRT_API void PRT_CALL_CONV PrtPrimSetModel(_Inout_ PRT_VALUE *prmVal, _In_ PRT_UINT32 value);
+PRT_API void PRT_CALL_CONV PrtPrimSetModel(_Inout_ PRT_VALUE *prmVal, _In_ PRT_MACHINEID value);
 
 /** Gets the value of an model.
 * @param[in] prmVal A primitive model value.
 * @returns A model machine machine
 */
-PRT_API PRT_UINT32 PRT_CALL_CONV PrtPrimGetModel(_In_ PRT_VALUE *prmVal);
+PRT_API PRT_MACHINEID PRT_CALL_CONV PrtPrimGetModel(_In_ PRT_VALUE *prmVal);
 
 /** Sets an element in a (named) tuple by index.
 * @param[in,out] tuple A (named) tuple to mutate.

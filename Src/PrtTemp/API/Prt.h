@@ -58,7 +58,7 @@ typedef struct PRT_PROCESS {
 	PRT_PROGRAMDECL *program;  /**< The program running in this process.               */
 } PRT_PROCESS;
 
-/** The state of running machine in a program. 
+/** The state of running machine in a process. 
 *   @see PrtMkMachine
 */
 typedef struct PRT_SM_CONTEXT

@@ -1,25 +1,19 @@
-#include "Prt.h"
-
-typedef struct PRT_MACHINELIST {
-	PRT_SMCONTEXT   *machine;
-	PRT_MACHINELIST *next;
-} PRT_MACHINELIST;
+#include "../API/Prt.h"
 
 typedef struct PRT_PROCESS_PRIV {
 	PRT_PROCESS			    process;
-	PRT_EXCEPHANDLER_FUN	exceptionHandler;
+	PRT_ERROR_FUN	        errorHandler;
 	PRT_LOG_FUN				log;
 	PRT_RECURSIVE_MUTEX		lock;
-	PRT_MACHINELIST			*machines;
+	PRT_UINT32				numMachines;
+	PRT_UINT32				machineCount;
+	PRT_SMCONTEXT			**machines;
 } PRT_PROCESS_PRIV;
-
-
-
 
 //
 // To specify where to return in entry or exit functions
 //
-enum _PRT_RETURNTO
+typedef enum PRT_RETURNTO
 {
 	//
 	// If ReturnTo points to this value then the call was a call edge/transition
@@ -39,12 +33,12 @@ enum _PRT_RETURNTO
 	// If ReturnTo points to this value then the call returns to the start of Action
 	//
 	PrtActionFunStart = 0
-};
+} PRT_RETURNTO;
 
 //
 // To indicate whether to execute entry or exit function
 //
-enum _PRT_STATE_EXECFUN
+typedef enum PRT_STATE_EXECFUN
 {
 	//
 	// If StateExecFun points to StateEntry, then we should execute the entry function for this state
@@ -62,7 +56,7 @@ enum _PRT_STATE_EXECFUN
 	//
 	// None of the above just execute the dequeue function
 	//
-};
+} PRT_STATE_EXECFUN;
 
 /*********************************************************************************
 
@@ -71,13 +65,13 @@ Type Name : PRT_LASTOPERATION
 Description :
 Enum for last P operation performed inside entry/exit function
 *********************************************************************************/
-enum _PRT_LASTOPERATION
+typedef enum PRT_LASTOPERATION
 {
 	PopStatement,
 	RaiseStatement,
 	CallStatement,
 	OtherStatement
-};
+} PRT_LASTOPERATION;
 
 /*********************************************************************************
 
@@ -116,11 +110,11 @@ Arg Value corresponding to Event
 
 *********************************************************************************/
 
-struct _PRT_TRIGGER
+typedef struct PRT_TRIGGER
 {
 	PRT_VALUE *event;
 	PRT_VALUE *payload;
-};
+} PRT_TRIGGER;
 
 
 /*********************************************************************************
@@ -147,14 +141,14 @@ IsFull --
 <FALSE> -- if event queue is not full
 
 *********************************************************************************/
-struct _PRT_EVENTQUEUE
+typedef struct PRT_EVENTQUEUE
 {
 	PRT_TRIGGER		*events;
 	PRT_UINT16		 headIndex;
 	PRT_UINT16		 tailIndex;
 	PRT_UINT16		 size;
 	PRT_BOOLEAN		 isFull;
-};
+} PRT_EVENTQUEUE;
 
 /*********************************************************************************
 
@@ -180,7 +174,7 @@ To store whether the call statement was executed from entry function or exit fun
 of the current state.
 *********************************************************************************/
 
-struct _PRT_STACKSTATE_INFO
+typedef struct PRT_STACKSTATE_INFO
 {
 	PRT_UINT32			stateIndex;
 	PRT_TRIGGER			trigger;
@@ -188,7 +182,7 @@ struct _PRT_STACKSTATE_INFO
 	PRT_STATE_EXECFUN	stateExecFun;
 	PRT_UINT32*			inheritedDefSetCompact;
 	PRT_UINT32*			inheritedActSetCompact;
-};
+} PRT_STACKSTATE_INFO;
 
 /*********************************************************************************
 
@@ -208,14 +202,15 @@ Length --
 Length/depth of the call-stack
 *********************************************************************************/
 
-struct _PRT_STATESTACK
+typedef struct PRT_STATESTACK
 {
 	PRT_STACKSTATE_INFO statesStack[PRT_MAX_CALL_DEPTH];
 	PRT_UINT16			length;
-};
+} PRT_STATESTACK;
 
 typedef struct PRT_SMCONTEXT_PRIV {
 	PRT_SMCONTEXT		context;
+	PRT_UINT32			currentState;
 	PRT_TRIGGER			trigger;
 	PRT_UINT16			returnTo;
 	PRT_STATE_EXECFUN	stateExecFun;
@@ -237,7 +232,7 @@ typedef struct PRT_SMCONTEXT_PRIV {
 //
 void
 PrtRaise(
-__inout PRT_SMCONTEXT		*context,
+__inout PRT_SMCONTEXT_PRIV		*context,
 __in PRT_VALUE	*event,
 __in PRT_VALUE	*payload
 );
@@ -248,7 +243,7 @@ __in PRT_VALUE	*payload
 
 void
 PrtPop(
-__inout PRT_SMCONTEXT		*context
+__inout PRT_SMCONTEXT_PRIV		*context
 );
 
 //
@@ -256,7 +251,7 @@ __inout PRT_SMCONTEXT		*context
 //
 void
 PrtPush(
-__inout PRT_SMCONTEXT		*context,
+__inout PRT_SMCONTEXT_PRIV		*context,
 __in PRT_UINT32				stateIndex
 );
 
@@ -268,7 +263,7 @@ __in PRT_UINT32				stateIndex
 void
 PrtRunStateMachine(
 __inout
-PRT_SMCONTEXT	    *context,
+PRT_SMCONTEXT_PRIV	    *context,
 __in PRT_BOOLEAN	doEntryOrExit
 );
 
@@ -278,7 +273,7 @@ __in PRT_BOOLEAN	doEntryOrExit
 //
 PRT_TRIGGER
 PrtDequeueEvent(
-__inout PRT_SMCONTEXT	*context
+__inout PRT_SMCONTEXT_PRIV	*context
 );
 
 //
@@ -287,7 +282,7 @@ __inout PRT_SMCONTEXT	*context
 //
 void
 PrtTakeTransition(
-__inout PRT_SMCONTEXT		*context,
+__inout PRT_SMCONTEXT_PRIV		*context,
 __in PRT_UINT32				eventIndex
 );
 
@@ -297,7 +292,7 @@ __in PRT_UINT32				eventIndex
 //
 void
 PrtTakeDefaultTransition(
-__inout PRT_SMCONTEXT		*context
+__inout PRT_SMCONTEXT_PRIV		*context
 );
 
 //
@@ -307,7 +302,7 @@ __inout PRT_SMCONTEXT		*context
 //
 void
 PrtPushState(
-__inout PRT_SMCONTEXT		*context,
+__inout PRT_SMCONTEXT_PRIV	*context,
 __in	PRT_BOOLEAN			isCallStatement
 );
 
@@ -317,7 +312,7 @@ __in	PRT_BOOLEAN			isCallStatement
 //
 void
 PrtPopState(
-__inout PRT_SMCONTEXT		*context,
+__inout PRT_SMCONTEXT_PRIV		*context,
 __in PRT_BOOLEAN			restoreTrigger
 );
 
@@ -342,13 +337,25 @@ __in PRT_SMCONTEXT			*context
 Helper Functions.
 
 *********************************************************************************/
+
+PRT_TYPE*
+PrtGetPayloadType(
+PRT_SMCONTEXT_PRIV *context,
+PRT_VALUE	  *event
+);
+
+void
+PrtHaltMachine(
+__inout PRT_SMCONTEXT_PRIV			*context
+);
+
 //
 // Call Exception handler
 //
 void
 PrtExceptionHandler(
-__in PRT_EXCEPTIONS ex,
-__in PRT_SMCONTEXT *context
+__in PRT_STATUS ex,
+__in PRT_SMCONTEXT_PRIV *context
 );
 
 
@@ -358,7 +365,7 @@ __in PRT_SMCONTEXT *context
 void
 PrtLog(
 __in PRT_STEP step,
-__in PRT_SMCONTEXT *context
+__in PRT_SMCONTEXT_PRIV *context
 );
 
 
@@ -367,7 +374,7 @@ __in PRT_SMCONTEXT *context
 //
 PRT_INT16
 PrtResizeEventQueue(
-__in PRT_SMCONTEXT *context
+__in PRT_SMCONTEXT_PRIV *context
 );
 
 //
@@ -387,7 +394,7 @@ __in PRT_UINT16				queueSize
 FORCEINLINE
 PRT_BOOLEAN
 PrtStateHasDefaultTransition(
-__in PRT_SMCONTEXT			*context
+__in PRT_SMCONTEXT_PRIV			*context
 );
 
 //
@@ -396,7 +403,7 @@ __in PRT_SMCONTEXT			*context
 FORCEINLINE
 PRT_STATEDECL
 PrtGetCurrentStateDecl(
-__in PRT_SMCONTEXT			*context
+__in PRT_SMCONTEXT_PRIV			*context
 );
 
 //
@@ -416,7 +423,7 @@ FORCEINLINE
 PRT_BOOLEAN
 PrtIsTransitionPresent(
 __in PRT_UINT32				eventIndex,
-__in PRT_SMCONTEXT			*context
+__in PRT_SMCONTEXT_PRIV			*context
 );
 
 
@@ -440,27 +447,27 @@ __in PRT_EVENTQUEUE		*queue
 // Gets the exit function of the current state
 //
 FORCEINLINE
-PRT_MACHINE_FUN*
+PRT_SM_FUN
 PrtGetExitFunction(
-__in PRT_SMCONTEXT		*context
+__in PRT_SMCONTEXT_PRIV		*context
 );
 
 //
 // Gets the entry function of the current state
 //
 FORCEINLINE
-PRT_MACHINE_FUN*
+PRT_SM_FUN
 PrtGetEntryFunction(
-__in PRT_SMCONTEXT		*context
+__in PRT_SMCONTEXT_PRIV		*context
 );
 
 //
 // Gets the correct action function for the event
 //
 FORCEINLINE
-PRT_ACTIONDECL*
+PRT_DODECL*
 PrtGetAction(
-__in PRT_SMCONTEXT		*context
+__in PRT_SMCONTEXT_PRIV		*context
 );
 
 //
@@ -470,7 +477,7 @@ __in PRT_SMCONTEXT		*context
 FORCEINLINE
 PRT_UINT32*
 PrtGetActionsPacked(
-__in PRT_SMCONTEXT			*context,
+__in PRT_SMCONTEXT_PRIV			*context,
 __in PRT_UINT32				stateIndex
 );
 
@@ -480,14 +487,14 @@ __in PRT_UINT32				stateIndex
 FORCEINLINE
 PRT_UINT32*
 PrtGetDeferredPacked(
-__in PRT_SMCONTEXT			*context,
+__in PRT_SMCONTEXT_PRIV			*context,
 __in PRT_UINT32				stateIndex
 );
 
 FORCEINLINE
 PRT_UINT32*
 PrtGetTransitionsPacked(
-__in PRT_SMCONTEXT			*context,
+__in PRT_SMCONTEXT_PRIV			*context,
 __in PRT_UINT32				stateIndex
 );
 
@@ -495,9 +502,9 @@ __in PRT_UINT32				stateIndex
 // Gets the packed deferred events of StateIndex
 //
 FORCEINLINE
-PRT_TRANSDECL_TABLE
+PRT_TRANSDECL*
 PrtGetTransTable(
-__in PRT_SMCONTEXT			*context,
+__in PRT_SMCONTEXT_PRIV		*context,
 __in PRT_UINT32				stateIndex,
 __out PRT_UINT32			*nTransitions
 );
@@ -508,7 +515,7 @@ __out PRT_UINT32			*nTransitions
 FORCEINLINE
 PRT_UINT16
 PrtGetPackSize(
-__in PRT_SMCONTEXT			*context
+__in PRT_SMCONTEXT_PRIV			*context
 );
 
 
@@ -517,7 +524,7 @@ __in PRT_SMCONTEXT			*context
 //
 PRT_BOOLEAN
 PrtIsCallTransition(
-PRT_SMCONTEXT			*context,
+PRT_SMCONTEXT_PRIV			*context,
 PRT_UINT32				event
 );
 
@@ -536,7 +543,7 @@ PRT_UINT32					size
 //
 void
 PrtUpdateCurrentActionsSet(
-PRT_SMCONTEXT			*context
+PRT_SMCONTEXT_PRIV			*context
 );
 
 //
@@ -544,7 +551,7 @@ PRT_SMCONTEXT			*context
 //
 void
 PrtUpdateCurrentDeferredSet(
-PRT_SMCONTEXT			*context
+PRT_SMCONTEXT_PRIV			*context
 );
 
 //
@@ -552,6 +559,6 @@ PRT_SMCONTEXT			*context
 //
 void
 PrtFreeSMContext(
-PRT_SMCONTEXT			*context
+PRT_SMCONTEXT_PRIV			*context
 );
 

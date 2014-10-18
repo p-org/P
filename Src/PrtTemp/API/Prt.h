@@ -23,7 +23,6 @@ typedef struct PRT_SMCONTEXT
 	PRT_UINT32			instanceOf;
 	PRT_VALUE			*thisP;
 	PRT_VALUE			**values;
-	PRT_UINT32			currentState;
 	void				*extContext;
 } PRT_SMCONTEXT;
 
@@ -157,7 +156,7 @@ typedef struct PRT_SMCONTEXT
 
 	PRT_API PRT_STATUS PRT_CALL_CONV PrtMkMachine(
 		__in PRT_PROCESS *process, 
-		__in PRT_INT32 instanceOfMachine, 
+		__in PRT_UINT32 instanceOfMachine, 
 		__in PRT_VALUE *payload, 
 		__out PRT_SMCONTEXT *pSM);
 

@@ -8,11 +8,13 @@
     <ClInclude Include="..\API\PrtProgram.h" />
     <ClInclude Include="..\API\Prt.h" />
     <ClInclude Include="PrtWinUser.h" />
+    <ClInclude Include="..\Core\PrtExecution.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Core\PrtTypes.c" />
     <ClCompile Include="..\Core\PrtValues.c" />
     <ClCompile Include="PrtWinUserConfig.c" />
     <ClCompile Include="PrtWinUser.c" />
+    <ClCompile Include="..\Core\Prt.c" />
   </ItemGroup>
 </Project>

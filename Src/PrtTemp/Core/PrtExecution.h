@@ -7,7 +7,7 @@ typedef struct PRT_PROCESS_PRIV {
 	PRT_RECURSIVE_MUTEX		lock;
 	PRT_UINT32				numMachines;
 	PRT_UINT32				machineCount;
-	PRT_SMCONTEXT			**machines;
+	PRT_SM_CONTEXT			**machines;
 } PRT_PROCESS_PRIV;
 
 //
@@ -208,8 +208,8 @@ typedef struct PRT_STATESTACK
 	PRT_UINT16			length;
 } PRT_STATESTACK;
 
-typedef struct PRT_SMCONTEXT_PRIV {
-	PRT_SMCONTEXT		context;
+typedef struct PRT_SM_CONTEXT_PRIV {
+	PRT_SM_CONTEXT		context;
 	PRT_UINT32			currentState;
 	PRT_TRIGGER			trigger;
 	PRT_UINT16			returnTo;
@@ -225,14 +225,14 @@ typedef struct PRT_SMCONTEXT_PRIV {
 	PRT_UINT32*			currentActionsSetCompact;
 	PRT_LASTOPERATION	lastOperation;
 	PRT_RECURSIVE_MUTEX stateMachineLock;
-} PRT_SMCONTEXT_PRIV;
+} PRT_SM_CONTEXT_PRIV;
 
 //
 //Enqueue a private event 
 //
 void
 PrtRaise(
-__inout PRT_SMCONTEXT_PRIV		*context,
+__inout PRT_SM_CONTEXT_PRIV		*context,
 __in PRT_VALUE	*event,
 __in PRT_VALUE	*payload
 );
@@ -243,7 +243,7 @@ __in PRT_VALUE	*payload
 
 void
 PrtPop(
-__inout PRT_SMCONTEXT_PRIV		*context
+__inout PRT_SM_CONTEXT_PRIV		*context
 );
 
 //
@@ -251,7 +251,7 @@ __inout PRT_SMCONTEXT_PRIV		*context
 //
 void
 PrtPush(
-__inout PRT_SMCONTEXT_PRIV		*context,
+__inout PRT_SM_CONTEXT_PRIV		*context,
 __in PRT_UINT32				stateIndex
 );
 
@@ -263,7 +263,7 @@ __in PRT_UINT32				stateIndex
 void
 PrtRunStateMachine(
 __inout
-PRT_SMCONTEXT_PRIV	    *context,
+PRT_SM_CONTEXT_PRIV	    *context,
 __in PRT_BOOLEAN	doEntryOrExit
 );
 
@@ -273,7 +273,7 @@ __in PRT_BOOLEAN	doEntryOrExit
 //
 PRT_TRIGGER
 PrtDequeueEvent(
-__inout PRT_SMCONTEXT_PRIV	*context
+__inout PRT_SM_CONTEXT_PRIV	*context
 );
 
 //
@@ -282,7 +282,7 @@ __inout PRT_SMCONTEXT_PRIV	*context
 //
 void
 PrtTakeTransition(
-__inout PRT_SMCONTEXT_PRIV		*context,
+__inout PRT_SM_CONTEXT_PRIV		*context,
 __in PRT_UINT32				eventIndex
 );
 
@@ -292,7 +292,7 @@ __in PRT_UINT32				eventIndex
 //
 void
 PrtTakeDefaultTransition(
-__inout PRT_SMCONTEXT_PRIV		*context
+__inout PRT_SM_CONTEXT_PRIV		*context
 );
 
 //
@@ -302,7 +302,7 @@ __inout PRT_SMCONTEXT_PRIV		*context
 //
 void
 PrtPushState(
-__inout PRT_SMCONTEXT_PRIV	*context,
+__inout PRT_SM_CONTEXT_PRIV	*context,
 __in	PRT_BOOLEAN			isCallStatement
 );
 
@@ -312,7 +312,7 @@ __in	PRT_BOOLEAN			isCallStatement
 //
 void
 PrtPopState(
-__inout PRT_SMCONTEXT_PRIV		*context,
+__inout PRT_SM_CONTEXT_PRIV		*context,
 __in PRT_BOOLEAN			restoreTrigger
 );
 
@@ -328,7 +328,7 @@ Functions used for Life Time Management of the statemachine.
 //
 void
 PrtRemoveMachine(
-__in PRT_SMCONTEXT			*context
+__in PRT_SM_CONTEXT			*context
 );
 
 
@@ -340,13 +340,13 @@ Helper Functions.
 
 PRT_TYPE*
 PrtGetPayloadType(
-PRT_SMCONTEXT_PRIV *context,
+PRT_SM_CONTEXT_PRIV *context,
 PRT_VALUE	  *event
 );
 
 void
 PrtHaltMachine(
-__inout PRT_SMCONTEXT_PRIV			*context
+__inout PRT_SM_CONTEXT_PRIV			*context
 );
 
 //
@@ -355,7 +355,7 @@ __inout PRT_SMCONTEXT_PRIV			*context
 void
 PrtExceptionHandler(
 __in PRT_STATUS ex,
-__in PRT_SMCONTEXT_PRIV *context
+__in PRT_SM_CONTEXT_PRIV *context
 );
 
 
@@ -365,7 +365,7 @@ __in PRT_SMCONTEXT_PRIV *context
 void
 PrtLog(
 __in PRT_STEP step,
-__in PRT_SMCONTEXT_PRIV *context
+__in PRT_SM_CONTEXT_PRIV *context
 );
 
 
@@ -374,7 +374,7 @@ __in PRT_SMCONTEXT_PRIV *context
 //
 PRT_INT16
 PrtResizeEventQueue(
-__in PRT_SMCONTEXT_PRIV *context
+__in PRT_SM_CONTEXT_PRIV *context
 );
 
 //
@@ -394,7 +394,7 @@ __in PRT_UINT16				queueSize
 FORCEINLINE
 PRT_BOOLEAN
 PrtStateHasDefaultTransition(
-__in PRT_SMCONTEXT_PRIV			*context
+__in PRT_SM_CONTEXT_PRIV			*context
 );
 
 //
@@ -403,7 +403,7 @@ __in PRT_SMCONTEXT_PRIV			*context
 FORCEINLINE
 PRT_STATEDECL
 PrtGetCurrentStateDecl(
-__in PRT_SMCONTEXT_PRIV			*context
+__in PRT_SM_CONTEXT_PRIV			*context
 );
 
 //
@@ -423,7 +423,7 @@ FORCEINLINE
 PRT_BOOLEAN
 PrtIsTransitionPresent(
 __in PRT_UINT32				eventIndex,
-__in PRT_SMCONTEXT_PRIV			*context
+__in PRT_SM_CONTEXT_PRIV			*context
 );
 
 
@@ -449,7 +449,7 @@ __in PRT_EVENTQUEUE		*queue
 FORCEINLINE
 PRT_SM_FUN
 PrtGetExitFunction(
-__in PRT_SMCONTEXT_PRIV		*context
+__in PRT_SM_CONTEXT_PRIV		*context
 );
 
 //
@@ -458,7 +458,7 @@ __in PRT_SMCONTEXT_PRIV		*context
 FORCEINLINE
 PRT_SM_FUN
 PrtGetEntryFunction(
-__in PRT_SMCONTEXT_PRIV		*context
+__in PRT_SM_CONTEXT_PRIV		*context
 );
 
 //
@@ -467,7 +467,7 @@ __in PRT_SMCONTEXT_PRIV		*context
 FORCEINLINE
 PRT_DODECL*
 PrtGetAction(
-__in PRT_SMCONTEXT_PRIV		*context
+__in PRT_SM_CONTEXT_PRIV		*context
 );
 
 //
@@ -477,7 +477,7 @@ __in PRT_SMCONTEXT_PRIV		*context
 FORCEINLINE
 PRT_UINT32*
 PrtGetActionsPacked(
-__in PRT_SMCONTEXT_PRIV			*context,
+__in PRT_SM_CONTEXT_PRIV			*context,
 __in PRT_UINT32				stateIndex
 );
 
@@ -487,14 +487,14 @@ __in PRT_UINT32				stateIndex
 FORCEINLINE
 PRT_UINT32*
 PrtGetDeferredPacked(
-__in PRT_SMCONTEXT_PRIV			*context,
+__in PRT_SM_CONTEXT_PRIV			*context,
 __in PRT_UINT32				stateIndex
 );
 
 FORCEINLINE
 PRT_UINT32*
 PrtGetTransitionsPacked(
-__in PRT_SMCONTEXT_PRIV			*context,
+__in PRT_SM_CONTEXT_PRIV			*context,
 __in PRT_UINT32				stateIndex
 );
 
@@ -504,7 +504,7 @@ __in PRT_UINT32				stateIndex
 FORCEINLINE
 PRT_TRANSDECL*
 PrtGetTransTable(
-__in PRT_SMCONTEXT_PRIV		*context,
+__in PRT_SM_CONTEXT_PRIV		*context,
 __in PRT_UINT32				stateIndex,
 __out PRT_UINT32			*nTransitions
 );
@@ -515,7 +515,7 @@ __out PRT_UINT32			*nTransitions
 FORCEINLINE
 PRT_UINT16
 PrtGetPackSize(
-__in PRT_SMCONTEXT_PRIV			*context
+__in PRT_SM_CONTEXT_PRIV			*context
 );
 
 
@@ -524,7 +524,7 @@ __in PRT_SMCONTEXT_PRIV			*context
 //
 PRT_BOOLEAN
 PrtIsCallTransition(
-PRT_SMCONTEXT_PRIV			*context,
+PRT_SM_CONTEXT_PRIV			*context,
 PRT_UINT32				event
 );
 
@@ -543,7 +543,7 @@ PRT_UINT32					size
 //
 void
 PrtUpdateCurrentActionsSet(
-PRT_SMCONTEXT_PRIV			*context
+PRT_SM_CONTEXT_PRIV			*context
 );
 
 //
@@ -551,7 +551,7 @@ PRT_SMCONTEXT_PRIV			*context
 //
 void
 PrtUpdateCurrentDeferredSet(
-PRT_SMCONTEXT_PRIV			*context
+PRT_SM_CONTEXT_PRIV			*context
 );
 
 //
@@ -559,6 +559,6 @@ PRT_SMCONTEXT_PRIV			*context
 //
 void
 PrtFreeSMContext(
-PRT_SMCONTEXT_PRIV			*context
+PRT_SM_CONTEXT_PRIV			*context
 );
 

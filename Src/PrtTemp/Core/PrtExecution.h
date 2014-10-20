@@ -28,7 +28,6 @@ typedef enum PRT_RETURNTO
 	// If ReturnTo points to this value then the call returns to the start of Exit function
 	//
 	PrtExitFunStart = 0,
-
 	//
 	// If ReturnTo points to this value then the call returns to the start of Action
 	//
@@ -210,6 +209,7 @@ typedef struct PRT_STATESTACK
 
 typedef struct PRT_SM_CONTEXT_PRIV {
 	PRT_SM_CONTEXT		context;
+	PRT_VALUE			**varValues;
 	PRT_UINT32			currentState;
 	PRT_TRIGGER			trigger;
 	PRT_UINT16			returnTo;

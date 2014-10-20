@@ -59,12 +59,12 @@ __in  PRT_VALUE					*payload
 	//
 	// Allocate memory for local variables
 	//
-	publicContext->varValues = nVars == 0 ? NULL : PrtCalloc(nVars, sizeof(PRT_VALUE*));
+	context->varValues = nVars == 0 ? NULL : PrtCalloc(nVars, sizeof(PRT_VALUE*));
 
 	//
 	// If failed to allocate memory
 	//
-	if ((nVars > 0) && (publicContext->varValues == NULL))
+	if ((nVars > 0) && (context->varValues == NULL))
 	{
 		PrtFreeSMContext(context);
 		PrtAssert(PRT_FALSE, "Failed to Allocate Memory");
@@ -78,7 +78,7 @@ __in  PRT_VALUE					*payload
 	{
 		for (i = 0; i < nVars; i++)
 		{
-			publicContext->varValues[i] = PrtMkDefaultValue(publicContext->process->program->machines[instanceOf].vars[i].type);
+			context->varValues[i] = PrtMkDefaultValue(publicContext->process->program->machines[instanceOf].vars[i].type);
 		}
 	}
 
@@ -1049,15 +1049,15 @@ __inout PRT_SM_CONTEXT_PRIV			*context
 		PrtFree(context->inheritedDeferredSetCompact);
 	}
 
-	if (context->context.varValues != NULL)
+	if (context->varValues != NULL)
 	{
 		UINT i;
 		PRT_MACHINEDECL *mdecl = &(context->context.process->program->machines[context->context.instanceOf]);
 
 		for (i = 0; i < mdecl->nVars; i++) {
-			PrtFreeValue(context->context.varValues[i]);
+			PrtFreeValue(context->varValues[i]);
 		}
-		PrtFree(context->context.varValues);
+		PrtFree(context->varValues);
 	}
 
 	context->isHalted = TRUE;
@@ -1730,15 +1730,15 @@ PRT_SM_CONTEXT_PRIV			*context
 		PrtFree(context->inheritedDeferredSetCompact);
 	}
 
-	if (context->context.varValues != NULL)
+	if (context->varValues != NULL)
 	{
 		UINT i;
 		PRT_MACHINEDECL *mdecl = &(context->context.process->program->machines[context->context.instanceOf]);
 
 		for (i = 0; i < mdecl->nVars; i++) {
-			PrtFreeValue(context->context.varValues[i]);
+			PrtFreeValue(context->varValues[i]);
 		}
-		PrtFree(context->context.varValues);
+		PrtFree(context->varValues);
 	}
 
 	PrtDestroyMutex(context->stateMachineLock);

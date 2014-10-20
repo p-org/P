@@ -66,7 +66,6 @@ typedef struct PRT_SM_CONTEXT
 	PRT_PROCESS		    *process;     /**< The process that owns this machine.             */
 	PRT_UINT32			instanceOf;   /**< Index of machine type in PRT_PROGRAMDECL.       */
 	PRT_VALUE			*id;          /**< The id of this machine.                         */
-	PRT_VALUE			**varValues;  /**< Current valuation of machine variables.         */
 	void				*extContext;  /**< Pointer to an external context owned by client. */
 } PRT_SM_CONTEXT;
 
@@ -114,6 +113,16 @@ PRT_API PRT_SM_CONTEXT * PRT_CALL_CONV PrtMkMachine(
 	_Inout_ PRT_PROCESS *process,
 	_In_ PRT_UINT32 instanceOf,
 	_In_ PRT_VALUE *payload);
+
+/** Gets machine instance corresponding to id in process. 
+* @param[in] process    The process containing the machine id.
+* @returns       A pointer to a PRT_SM_CONTEXT or NULL if id is not valid for process.
+* @see PrtMkMachine
+* @see PRT_SM_CONTEXT
+*/
+PRT_API PRT_SM_CONTEXT * PRT_CALL_CONV PrtGetMachine(
+	_In_ PRT_PROCESS *process,
+	_In_ PRT_VALUE *id);
 
 /** Sends message to P state machine.
 * @param[in,out] machine The machine that will receive this message.

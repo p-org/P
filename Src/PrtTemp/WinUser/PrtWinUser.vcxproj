@@ -24,10 +24,12 @@
     <ClInclude Include="..\API\PrtProgram.h" />
     <ClInclude Include="..\API\PrtTypes.h" />
     <ClInclude Include="..\API\PrtValues.h" />
+    <ClInclude Include="..\Core\PrtExecution.h" />
     <ClInclude Include="PrtWinUser.h" />
     <ClInclude Include="PrtWinUserConfig.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Core\Prt.c" />
     <ClCompile Include="..\Core\PrtTypes.c" />
     <ClCompile Include="..\Core\PrtValues.c" />
     <ClCompile Include="PrtWinUser.c" />

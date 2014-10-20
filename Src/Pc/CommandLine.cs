@@ -37,7 +37,7 @@
 
     class CommandLine
     {
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             string inputFileName = null;
             var options = new CommandLineOptions();
@@ -128,8 +128,9 @@
                 if (!result)
                 {
                     WriteMessageLine("Compilation failed", SeverityKind.Error);
+                    return -1;
                 }
-                return;
+                return 0;
             }
             else
             {
@@ -145,7 +146,7 @@
                 Console.WriteLine("/liveness[:mace]");
                 Console.WriteLine("/shortFileNames");
                 Console.WriteLine("/printTypeInference");
-                return;
+                return 0;
             }
         }
 

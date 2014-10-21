@@ -570,7 +570,7 @@ domain PStaticTyping extends PData
 	FuncSigTupleTypeAux(cntxt, params, NIL) :- cntxt is FunDecl(_, _, _, params, _, _), params = NIL.
 	FuncSigTupleTypeAux(cntxt, type, tl)    :- cntxt is FunDecl(_, _, _, params, _, _), params = NmdTupType(NmdTupTypeField(_, t), tl), type = TupType(t, NIL).
 	FuncSigTupleTypeAux(cntxt, type, tl)    :- FuncSigTupleTypeAux(cntxt, t', aux), aux = NmdTupType(NmdTupTypeField(_, t), tl), type = TupType(t, t').
-	FuncSigTupleType(cntxt, t)              :- FuncSigTupleTypeAux(cntxt, t, NIL), type = lstReverse(#TupType, t).
+	FuncSigTupleType(cntxt, type)           :- FuncSigTupleTypeAux(cntxt, t, NIL), type = lstReverse(#TupType, t).
 
     /*************************************************************/
     /* Check that named tuple (types) don't reuse the same name  */

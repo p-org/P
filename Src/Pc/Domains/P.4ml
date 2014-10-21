@@ -212,18 +212,22 @@ domain PStaticTyping extends PData
 	
 	////// Type Inference for the payload type
 	
-	PayloadFP ::= (TypingContext, Typeable, TypeExpr + { ERROR, NIL }).
-	PayloadFP(c, e, wider) :- PayloadFP(c, e, t'), PayloadFP(c, e, t''), Widen(t', t'', wider).
+	PayloadType ::= (c : TypingContext, t : TypeExpr + { ERROR, NIL }).
+	PayloadType(c, wider) :- PayloadType(c, t'), PayloadType(c, t''), Widen(t', t'', wider).
 	
 	
-	// payload type inference in doDecl
+	PUnion ::= (TypingContext, TypeExpr + { ERROR, NIL }).
+	PUnion(c, union) :- PayloadType(c, union), no PayloadType(c, t), TypeRel(union, t, SUB).
+	//PUnion (c ,union) :- PayloadType(c, union), no {x | x is PayloadType(c, t), TypeRel(union, t, SUB)}.
+	
+	// payload type inference in DoDecl
 	PayloadTypeDoDecl ::= (DoDecl, TypeExpr + {ERROR, NIL}).
 	PayloadTypeDoDecl(d, t) :- 
 	d is DoDecl, EventDecl(d.trig, _, NIL), t = BaseType(NULL); // if event has no payload
 	d is DoDecl, no EventDecl(d.trig, _, _), t = BaseType(NULL); // if the action is on default or halt
 	d is DoDecl, EventDecl(d.trig, _, t), t : TypeExpr. // event with payload
 	
-	PayloadFP(c, e, t) 	:- 
+	PayloadType(c, t) 	:- 
 	SubSE(c, e), c is AnonFunDecl, e = NulApp(PAYLOAD), d = DoDecl(src, trig, c), src.owner = c.owner, PayloadTypeDoDecl(d, t); 
 	SubSE(c, e), c is FunDecl, e = NulApp(PAYLOAD), d = DoDecl(src, trig, c.name), src.owner = c.owner, PayloadTypeDoDecl(d, t).
 	
@@ -235,7 +239,7 @@ domain PStaticTyping extends PData
 	tr is TransDecl, EventDecl(tr.trig, _, t), t : TypeExpr. // event with payload
 	
 	
-	PayloadFP(c, e, t) 	:- 
+	PayloadType(c, t) 	:- 
 	SubSE(c, e), c is AnonFunDecl, e = NulApp(PAYLOAD), tr = TransDecl(src, trig, _, c), src.owner = c.owner, PayloadTypeTransDecl(tr, t); 
 	SubSE(c, e), c is FunDecl, e = NulApp(PAYLOAD), tr = TransDecl(src, trig, _, c.name), src.owner = c.owner, PayloadTypeTransDecl(tr, t).
 	
@@ -247,34 +251,22 @@ domain PStaticTyping extends PData
 	s is StateDecl, tr is TransDecl(src, ev, dst, _), src.owner = s.owner, dst = s.name, EventDecl(ev, _, NIL), t = BaseType(NULL);  //event with no payload
 	s is StateDecl, tr is TransDecl(src, ev, dst, _), src.owner = s.owner, dst = s.name, no EventDecl(ev, _, _), t = BaseType(NULL);  //default + halt
 	s is StateDecl, t = BaseType(ANY), MachineDecl(_, _, _,s.name, _); //start state
-	s is StateDecl, t = BaseType(NULL), no TransDecl(_, _, dst, _), dst = s.name, no MachineDecl(_, _, _,s.name, _); // state has no incoming transition
-	s is StateDecl, StateDecl(_, _, c, _, _), SubSE(c, e), e = Push(s.name), t = BaseType(NULL). // payload = null for push
+	s is StateDecl, StateDecl(_, _, c, _, _), SubSE(c, e), e = Push(s.name), t = BaseType(NULL); // payload = null for push from entry
+	s is StateDecl, DoDecl(_, _, c), SubSE(c, e), e = Push(s.name), t = BaseType(NULL). // payload = null for push from action
 	
 	PayloadTypeEntry(s, wider) :- PayloadTypeEntry(s, t'), PayloadTypeEntry(s, t''), Widen(t', t'', wider).
 	
-	PayloadFP(c, e, t) :-  
+	PayloadType(c, t) :-  
 	SubSE(c, e), c is AnonFunDecl, e = NulApp(PAYLOAD), s is StateDecl(_, c.owner, c, _, _), PayloadTypeEntry(s, t); 
 	SubSE(c, e), c is FunDecl, e = NulApp(PAYLOAD), s is StateDecl(_, c.owner, c.name, _, _), PayloadTypeEntry(s, t).
 	
 	//payload type inference in exit
-	PayloadTypeExit ::= (StateDecl, TypeExpr + {ERROR, NIL}).
-	PayloadTypeExit(s, t) :- 
-	s is StateDecl, tr is TransDecl(s, ev, _, _), EventDecl(ev, _, t1), t1 : TypeExpr, t = t1; //event with payload
-	s is StateDecl, tr is TransDecl(s, ev, _, _), EventDecl(ev, _, NIL), t = BaseType(NULL);  // event wihtout payload
-	s is StateDecl, tr is TransDecl(s, ev, _, _), no EventDecl(ev, _, _), t = BaseType(NULL); // default or halt
-	s is StateDecl, no TransDecl(s, _, _ , _), t = BaseType(NULL). // no out going transition.
-	
-	
-	PayloadTypeExit(s, wider) :- PayloadTypeExit(s, t'), PayloadTypeExit(s, t''), Widen(t', t'', wider).
-	
-	PayloadFP(c, e, t) :-  
-	SubSE(c, e), c is AnonFunDecl, e = NulApp(PAYLOAD), s is StateDecl(_, c.owner, _, c, _), PayloadTypeExit(s, t); 
-	SubSE(c, e), c is FunDecl, e = NulApp(PAYLOAD), s is StateDecl(_, c.owner, _, c.name, _), PayloadTypeExit(s, t).
+	PayloadType(c, t) :-  
+	SubSE(c, e), c is AnonFunDecl, e = NulApp(PAYLOAD), s is StateDecl(_, c.owner, _, c, _), t = BaseType(ANY); 
+	SubSE(c, e), c is FunDecl, e = NulApp(PAYLOAD), s is StateDecl(_, c.owner, _, c.name, _), t = BaseType(ANY).
 	
 	//Type of Payload
-	TypeOf(c, e, t) :- 
-	SubSE(c, e), c is AnonFunDecl, e = NulApp(PAYLOAD), PayloadFP(c, e, t); 
-	SubSE(c, e), e = NulApp(PAYLOAD), c is FunDecl,  PayloadFP(c, e, t).
+	TypeOf(c, e, t) :- SubSE(c, e), e = NulApp(PAYLOAD), PayloadType(c, t).
 	
 	
 	Widen ::= (TypeExpr + {ERROR, NIL}, TypeExpr + {ERROR, NIL}, TypeExpr + {ERROR, NIL}).

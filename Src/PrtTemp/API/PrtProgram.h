@@ -15,7 +15,6 @@ extern "C"{
 
 /** A PRT_SM_FUN function is a pointer to a P function.
 *   context is the current machine context.
-*   machIndex is the machine decl index where this function is defined.
 *   funIndex is the function decl index of this function.
 *   value is the argument to this function. It will be the P null value if this function is nullary.
 *   Function frees value.

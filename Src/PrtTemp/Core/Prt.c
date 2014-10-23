@@ -28,7 +28,15 @@ PRT_PROCESS * PrtStartProcess(
 
 void PrtStopProcess(_Inout_ PRT_PROCESS* process)
 {
-
+	PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
+	for (PRT_UINT32 i = 0; i < privateProcess->numMachines; i++)
+	{
+		PrtCleanupSMContext(privateProcess->machines[i]);
+		PrtFree(privateProcess->machines[i]);
+	}
+	PrtFree(privateProcess->machines);
+	PrtDestroyMutex(privateProcess->lock);
+	PrtFree(process);
 }
 
 PRT_SM_CONTEXT * PrtMkMachine(
@@ -43,6 +51,9 @@ __in  PRT_VALUE					*payload
 	PRT_SM_CONTEXT_PRIV *context;
 	PRT_UINT32 i;
 	PRT_SM_CONTEXT *publicContext;
+	PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
+
+	PrtLockMutex(privateProcess->lock);
 
 	nVars = process->program->machines[instanceOf].nVars;
 	eQSize = PRT_QUEUE_LEN_DEFAULT;
@@ -55,7 +66,6 @@ __in  PRT_VALUE					*payload
 	//
 	// Add it to the array of machines in the process
 	//
-	PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)context->context.process;
 	PRT_UINT32 numMachines = privateProcess->numMachines;
 	PRT_UINT32 machineCount = privateProcess->machineCount;
 	PRT_SM_CONTEXT **machines = privateProcess->machines;
@@ -157,6 +167,8 @@ __in  PRT_VALUE					*payload
 	//
 	process->program->machines[publicContext->instanceOf].extCtor(publicContext, payload);
 
+	PrtUnlockMutex(privateProcess->lock);
+
 	//
 	// Run the state machine
 	//
@@ -173,6 +185,9 @@ PRT_SM_CONTEXT * PrtMkModel(
 {
 	PRT_SM_CONTEXT_PRIV *context;
 	PRT_SM_CONTEXT *publicContext;
+	PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
+
+	PrtLockMutex(privateProcess->lock);
 
 	//
 	// Allocate memory for state machine context
@@ -182,7 +197,6 @@ PRT_SM_CONTEXT * PrtMkModel(
 	//
 	// Add it to the array of machines in the process
 	//
-	PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)context->context.process;
 	PRT_UINT32 numMachines = privateProcess->numMachines;
 	PRT_UINT32 machineCount = privateProcess->machineCount;
 	PRT_SM_CONTEXT **machines = privateProcess->machines;
@@ -273,6 +287,8 @@ PRT_SM_CONTEXT * PrtMkModel(
 	// Allocate External context Structure
 	//
 	process->program->machines[publicContext->instanceOf].extCtor(publicContext, payload);
+
+	PrtUnlockMutex(privateProcess->lock);
 
 	return publicContext;
 }
@@ -824,49 +840,8 @@ PrtHaltMachine(
 __inout PRT_SM_CONTEXT_PRIV			*context
 )
 {
-	if (context->currentActionsSetCompact != NULL)
-	{
-		PrtFree(context->currentActionsSetCompact);
-	}
-
-	if (context->currentDeferredSetCompact != NULL)
-	{
-		PrtFree(context->currentDeferredSetCompact);
-	}
-
-	if (context->eventQueue.events != NULL)
-	{
-		PrtFree(context->eventQueue.events);
-	}
-
-	if (context->context.extContext != NULL)
-	{
-		PrtFree(context->context.extContext);
-	}
-
-	if (context->inheritedActionsSetCompact != NULL)
-	{
-		PrtFree(context->inheritedActionsSetCompact);
-	}
-
-	if (context->inheritedDeferredSetCompact != NULL)
-	{
-		PrtFree(context->inheritedDeferredSetCompact);
-	}
-
-	if (context->varValues != NULL)
-	{
-		UINT i;
-		PRT_MACHINEDECL *mdecl = &(context->context.process->program->machines[context->context.instanceOf]);
-
-		for (i = 0; i < mdecl->nVars; i++) {
-			PrtFreeValue(context->varValues[i]);
-		}
-		PrtFree(context->varValues);
-	}
-
+	PrtCleanupSMContext(context);
 	context->isHalted = PRT_TRUE;
-
 	PrtLog(PRT_STEP_HALT, context);
 }
 
@@ -1272,7 +1247,7 @@ PRT_UINT32				event
 	isPushTransition = PRT_FALSE;
 	for (i = 0; i < nTransitions; ++i)
 	{
-		//check if transition is Call
+		//check if transition is Push
 		if (transTable[i].isPush && transTable[i].triggerEventIndex == event)
 		{
 			isPushTransition = PRT_TRUE;
@@ -1419,10 +1394,12 @@ __in PRT_SM_CONTEXT_PRIV *context
 }
 
 void
-PrtFreeSMContext(
+PrtCleanupSMContext(
 PRT_SM_CONTEXT_PRIV			*context
 )
 {
+	PRT_SM_CONTEXT *publicContext = &context->context;
+	 
 	if (context->currentActionsSetCompact != NULL)
 	{
 		PrtFree(context->currentActionsSetCompact);
@@ -1436,11 +1413,6 @@ PRT_SM_CONTEXT_PRIV			*context
 	if (context->eventQueue.events != NULL)
 	{
 		PrtFree(context->eventQueue.events);
-	}
-
-	if (context->context.extContext != NULL)
-	{
-		PrtFree(context->context.extContext);
 	}
 
 	if (context->inheritedActionsSetCompact != NULL)
@@ -1466,7 +1438,7 @@ PRT_SM_CONTEXT_PRIV			*context
 
 	PrtDestroyMutex(context->stateMachineLock);
 
-	PrtFree(context);
+	context->context.process->program->machines[publicContext->instanceOf].extDtor(publicContext);
 }
 
 void

@@ -525,11 +525,8 @@ PrtUpdateCurrentDeferredSet(
 PRT_SM_CONTEXT_PRIV			*context
 );
 
-//
-// Free the allocated memory of SMContext
-//
 void
-PrtFreeSMContext(
+PrtCleanupSMContext(
 PRT_SM_CONTEXT_PRIV			*context
 );
 

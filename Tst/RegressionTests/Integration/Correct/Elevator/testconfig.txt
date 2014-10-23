@@ -1,0 +1,8 @@
+runPc: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: Elevator.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+runZing: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: Elevator.dll
+acc: .\
+dsc: Feature Integration

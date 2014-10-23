@@ -1,0 +1,36 @@
+=================================
+         Console output          
+=================================
+OUT: Writing MaxInstances_3_p_.h ...
+OUT: Writing MaxInstances_3.zing ...
+OUT: Compiling MaxInstances_3.zing to MaxInstances_3.dll ...
+OUT: maxinstances_3.p (11, 4): inferred type:  BaseType(INT)
+OUT: maxinstances_3.p (11, 4): inferred type:  NIL
+OUT: maxinstances_3.p (11, 8): inferred type:  BaseType(INT)
+OUT: maxinstances_3.p (12, 4): inferred type:  BaseType(MODEL)
+OUT: maxinstances_3.p (12, 4): inferred type:  NIL
+OUT: maxinstances_3.p (12, 20): inferred type:  BaseType(MODEL)
+OUT: maxinstances_3.p (12, 30): inferred type:  BaseType(REAL)
+OUT: maxinstances_3.p (13, 10): inferred type:  NIL
+OUT: maxinstances_3.p (13, 15): inferred type:  BaseType(MODEL)
+OUT: maxinstances_3.p (13, 30): inferred type:  BaseType(EVENT)
+OUT: maxinstances_3.p (18, 3): inferred type:  NIL
+OUT: maxinstances_3.p (18, 10): inferred type:  BaseType(BOOL)
+OUT: maxinstances_3.p (26, 3): inferred type:  BaseType(REAL)
+OUT: maxinstances_3.p (26, 3): inferred type:  NIL
+OUT: maxinstances_3.p (26, 18): inferred type:  BaseType(ANY)
+OUT: maxinstances_3.p (26, 26): inferred type:  BaseType(REAL)
+OUT: maxinstances_3.p (27, 3): inferred type:  NIL
+OUT: maxinstances_3.p (27, 8): inferred type:  BaseType(REAL)
+OUT: maxinstances_3.p (27, 22): inferred type:  BaseType(EVENT)
+OUT: 
+EXIT: 0
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Passed
+OUT: ##################
+OUT: 5 distinct states, 4 total transitions, 4 steps max depth
+OUT: 
+EXIT: 0

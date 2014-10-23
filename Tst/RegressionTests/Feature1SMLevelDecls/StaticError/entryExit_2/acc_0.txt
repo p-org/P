@@ -1,0 +1,23 @@
+=================================
+         Console output          
+=================================
+OUT: entryexit_2.p (13, 4): inferred type:  BaseType(INT)
+OUT: entryexit_2.p (13, 4): inferred type:  NIL
+OUT: entryexit_2.p (13, 8): inferred type:  BaseType(INT)
+OUT: entryexit_2.p (13, 10): inferred type:  BaseType(INT)
+OUT: entryexit_2.p (13, 12): inferred type:  BaseType(INT)
+OUT: entryexit_2.p (24, 3): inferred type:  BaseType(INT)
+OUT: entryexit_2.p (24, 3): inferred type:  NIL
+OUT: entryexit_2.p (24, 7): inferred type:  BaseType(INT)
+OUT: entryexit_2.p (24, 9): inferred type:  BaseType(INT)
+OUT: entryexit_2.p (24, 11): inferred type:  BaseType(INT)
+OUT: entryexit_2.p (27, 13): inferred type:  NIL
+OUT: entryexit_2.p (31, 25): inferred type:  NIL
+OUT: entryexit_2.p (47, 9): inferred type:  NIL
+OUT: entryexit_2.p (31, 6): function cannot take arguments
+OUT: entryexit_2.p (37, 9): function cannot take arguments
+OUT: entryexit_2.p (43, 8): function cannot take arguments
+OUT: entryexit_2.p (48, 8): undefined function for exit
+OUT: Compilation failed
+OUT: 
+EXIT: -1

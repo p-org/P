@@ -1,0 +1,11 @@
+runPc: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: MaxInstances_1.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+runZing: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: MaxInstances_1.dll
+argZing: -et:MaxInstances_1.trace
+incZing: MaxInstances_1.trace
+del: MaxInstances_1.trace
+acc: .\
+dsc: 1.10. assert max instances of event: max number of instances exceeded

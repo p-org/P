@@ -1,0 +1,26 @@
+=================================
+         Console output          
+=================================
+OUT: Writing PingPongWithCall_p_.h ...
+OUT: Writing PingPongWithCall.zing ...
+OUT: Compiling PingPongWithCall.zing to PingPongWithCall.dll ...
+OUT: pingpongwithcall.p (14, 8): inferred type:  BaseType(REAL)
+OUT: pingpongwithcall.p (14, 8): inferred type:  NIL
+OUT: pingpongwithcall.p (14, 17): inferred type:  BaseType(REAL)
+OUT: pingpongwithcall.p (15, 6): inferred type:  NIL
+OUT: pingpongwithcall.p (15, 12): inferred type:  BaseType(EVENT)
+OUT: pingpongwithcall.p (22, 6): inferred type:  NIL
+OUT: pingpongwithcall.p (22, 11): inferred type:  BaseType(REAL)
+OUT: pingpongwithcall.p (22, 19): inferred type:  BaseType(EVENT)
+OUT: pingpongwithcall.p (22, 25): inferred type:  BaseType(REAL)
+OUT: pingpongwithcall.p (23, 6): inferred type:  NIL
+OUT: pingpongwithcall.p (23, 12): inferred type:  BaseType(EVENT)
+OUT: pingpongwithcall.p (29, 9): inferred type:  NIL
+OUT: pingpongwithcall.p (42, 7): inferred type:  NIL
+OUT: pingpongwithcall.p (42, 12): inferred type:  BaseType(REAL)
+OUT: pingpongwithcall.p (42, 20): inferred type:  BaseType(REAL)
+OUT: pingpongwithcall.p (42, 32): inferred type:  BaseType(EVENT)
+OUT: pingpongwithcall.p (43, 7): inferred type:  NIL
+OUT: pingpongwithcall.p (43, 13): inferred type:  BaseType(EVENT)
+OUT: 
+EXIT: 0

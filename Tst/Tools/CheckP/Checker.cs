@@ -54,6 +54,7 @@
         };
 
         private string activeDirectory;
+        private bool reset = false;
 
         public string Description
         {
@@ -61,15 +62,16 @@
             private set;
         }
 
-        public Checker(string activeDirectory)
+        public Checker(string activeDirectory, bool reset)
         {
             this.activeDirectory = activeDirectory;
+            this.reset = reset;
         }
 
         public static void PrintUsage()
         {
             Console.WriteLine(
-                "USAGE: Check -{0}: pc.exe -{1}: zinger.exe -{2}: prtMain.exe -{3}: dir [-{10}: args] [-{11}: args] [-{12}: args] [-{4}: files] [-{5}: files] [-{6}: files] [-{14}: files] [-{13}: file] [-{7}] [-{8}] [-{9}: descriptors]",
+                "USAGE: CheckP -{0}: pc.exe -{1}: zinger.exe -{2}: prtMain.exe -{3}: dir [-{10}: args] [-{11}: args] [-{12}: args] [-{4}: files] [-{5}: files] [-{6}: files] [-{14}: files] [-{13}: file] [-{7}] [-{8}] [-{9}: descriptors]",
                 RunPcOption,
                 RunZingerOption,
                 RunPrtOption,
@@ -197,6 +199,8 @@
             bool isAdd;
             Tuple<OptValueKind, object>[] values;
             result = ValidateOption(opts, AddOption, true, 0, 0, out isAdd, out values) && result;
+            //If CheckP is called from Test with "reset" option, override isAdd:
+            if (!isAdd && this.reset) isAdd = true;
 
             bool isIgnPrmpt;
             result = ValidateOption(opts, IgnorePromptOption, true, 0, 0, out isIgnPrmpt, out values) && result;

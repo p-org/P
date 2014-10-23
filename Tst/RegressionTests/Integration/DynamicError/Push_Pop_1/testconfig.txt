@@ -1,0 +1,11 @@
+runPc: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: Push_Pop_1.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+runZing: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: Push_Pop_1.dll
+argZing: -et:Push_Pop_1.trace
+incZing: Push_Pop_1.trace
+del: Push_Pop_1.trace
+acc: .\
+dsc: Feature Integration

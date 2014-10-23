@@ -1,0 +1,89 @@
+=================================
+         Console output          
+=================================
+OUT: entryexit_1.p (13, 4): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (13, 4): inferred type:  NIL
+OUT: entryexit_1.p (13, 8): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (13, 10): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (13, 12): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (24, 4): inferred type:  ERROR
+OUT: entryexit_1.p (24, 4): inferred type:  NIL
+OUT: entryexit_1.p (24, 7): inferred type:  ERROR
+OUT: entryexit_1.p (25, 5): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (25, 5): inferred type:  NIL
+OUT: entryexit_1.p (25, 9): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (25, 11): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (25, 13): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (29, 3): inferred type:  NIL
+OUT: entryexit_1.p (29, 6): inferred type:  BaseType(BOOL)
+OUT: entryexit_1.p (30, 4): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (30, 4): inferred type:  NIL
+OUT: entryexit_1.p (30, 8): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (30, 10): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (30, 12): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (39, 4): inferred type:  ERROR
+OUT: entryexit_1.p (39, 4): inferred type:  NIL
+OUT: entryexit_1.p (39, 7): inferred type:  ERROR
+OUT: entryexit_1.p (40, 5): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (40, 5): inferred type:  NIL
+OUT: entryexit_1.p (40, 9): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (40, 11): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (40, 13): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (50, 3): inferred type:  NIL
+OUT: entryexit_1.p (50, 6): inferred type:  BaseType(BOOL)
+OUT: entryexit_1.p (51, 4): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (51, 4): inferred type:  NIL
+OUT: entryexit_1.p (51, 8): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (51, 10): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (51, 12): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (55, 3): inferred type:  NIL
+OUT: entryexit_1.p (55, 6): inferred type:  BaseType(BOOL)
+OUT: entryexit_1.p (57, 4): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (57, 4): inferred type:  NIL
+OUT: entryexit_1.p (57, 8): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (57, 10): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (57, 12): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (62, 9): inferred type:  NIL
+OUT: entryexit_1.p (69, 4): inferred type:  NIL
+OUT: entryexit_1.p (69, 7): inferred type:  BaseType(BOOL)
+OUT: entryexit_1.p (71, 5): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (71, 5): inferred type:  NIL
+OUT: entryexit_1.p (71, 9): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (71, 11): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (71, 13): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (83, 4): inferred type:  ERROR
+OUT: entryexit_1.p (83, 4): inferred type:  NIL
+OUT: entryexit_1.p (83, 7): inferred type:  ERROR
+OUT: entryexit_1.p (85, 5): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (85, 5): inferred type:  NIL
+OUT: entryexit_1.p (85, 9): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (85, 11): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (85, 13): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (91, 3): inferred type:  NIL
+OUT: entryexit_1.p (91, 6): inferred type:  BaseType(BOOL)
+OUT: entryexit_1.p (92, 4): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (92, 4): inferred type:  NIL
+OUT: entryexit_1.p (92, 8): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (92, 10): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (92, 12): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (97, 3): inferred type:  ERROR
+OUT: entryexit_1.p (97, 3): inferred type:  NIL
+OUT: entryexit_1.p (97, 6): inferred type:  ERROR
+OUT: entryexit_1.p (98, 4): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (98, 4): inferred type:  NIL
+OUT: entryexit_1.p (98, 8): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (98, 10): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (98, 12): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (24, 4): "if (...)" expects a boolean value
+OUT: entryexit_1.p (24, 7): Nondeterminitistic choice can be used only in model machine and model functions
+OUT: entryexit_1.p (39, 4): "if (...)" expects a boolean value
+OUT: entryexit_1.p (39, 7): Nondeterminitistic choice can be used only in model machine and model functions
+OUT: entryexit_1.p (54, 2): model functions can be declared only in real machines
+OUT: entryexit_1.p (83, 4): "if (...)" expects a boolean value
+OUT: entryexit_1.p (83, 7): Nondeterminitistic choice can be used only in model machine and model functions
+OUT: entryexit_1.p (90, 2): model functions can be declared only in real machines
+OUT: entryexit_1.p (97, 3): "if (...)" expects a boolean value
+OUT: entryexit_1.p (97, 6): Nondeterminitistic choice can be used only in model machine and model functions
+OUT: Compilation failed
+OUT: 
+EXIT: -1

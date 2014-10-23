@@ -1,0 +1,135 @@
+=================================
+         Console output          
+=================================
+OUT: sends.p (21, 4): inferred type:  BaseType(REAL)
+OUT: sends.p (21, 4): inferred type:  NIL
+OUT: sends.p (21, 10): inferred type:  BaseType(REAL)
+OUT: sends.p (22, 4): inferred type:  NIL
+OUT: sends.p (22, 10): inferred type:  BaseType(EVENT)
+OUT: sends.p (28, 4): inferred type:  ERROR
+OUT: sends.p (28, 4): inferred type:  NIL
+OUT: sends.p (28, 4): inferred type:  SeqType(BaseType(ANY))
+OUT: sends.p (28, 11): inferred type:  BaseType(INT)
+OUT: sends.p (29, 4): inferred type:  NIL
+OUT: sends.p (29, 4): inferred type:  TupType(BaseType(ANY), TupType(BaseType(INT), NIL))
+OUT: sends.p (29, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(ANY), NIL))
+OUT: sends.p (31, 4): inferred type:  ERROR
+OUT: sends.p (31, 4): inferred type:  NIL
+OUT: sends.p (31, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (31, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (31, 22): inferred type:  BaseType(INT)
+OUT: sends.p (31, 22): inferred type:  TupType(BaseType(INT), NIL)
+OUT: sends.p (32, 4): inferred type:  ERROR
+OUT: sends.p (32, 4): inferred type:  NIL
+OUT: sends.p (32, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (32, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (32, 22): inferred type:  BaseType(INT)
+OUT: sends.p (32, 22): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
+OUT: sends.p (32, 25): inferred type:  BaseType(INT)
+OUT: sends.p (32, 25): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: sends.p (32, 28): inferred type:  BaseType(INT)
+OUT: sends.p (32, 28): inferred type:  TupType(BaseType(INT), NIL)
+OUT: sends.p (33, 4): inferred type:  ERROR
+OUT: sends.p (33, 4): inferred type:  NIL
+OUT: sends.p (33, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (33, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (33, 21): inferred type:  BaseType(BOOL)
+OUT: sends.p (34, 4): inferred type:  NIL
+OUT: sends.p (34, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (34, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (34, 21): inferred type:  TupType(BaseType(ANY), TupType(BaseType(ANY), NIL))
+OUT: sends.p (35, 4): inferred type:  NIL
+OUT: sends.p (35, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (35, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (35, 21): inferred type:  TupType(BaseType(INT), TupType(BaseType(ANY), NIL))
+OUT: sends.p (37, 4): inferred type:  ERROR
+OUT: sends.p (37, 4): inferred type:  NIL
+OUT: sends.p (37, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (37, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (37, 23): inferred type:  BaseType(INT)
+OUT: sends.p (37, 23): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
+OUT: sends.p (37, 26): inferred type:  BaseType(BOOL)
+OUT: sends.p (37, 26): inferred type:  TupType(BaseType(BOOL), NIL)
+OUT: sends.p (38, 4): inferred type:  NIL
+OUT: sends.p (38, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (38, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (38, 23): inferred type:  BaseType(BOOL)
+OUT: sends.p (38, 23): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
+OUT: sends.p (38, 29): inferred type:  BaseType(BOOL)
+OUT: sends.p (38, 29): inferred type:  TupType(BaseType(BOOL), NIL)
+OUT: sends.p (39, 4): inferred type:  ERROR
+OUT: sends.p (39, 4): inferred type:  NIL
+OUT: sends.p (39, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (39, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (39, 22): inferred type:  BaseType(INT)
+OUT: sends.p (40, 4): inferred type:  ERROR
+OUT: sends.p (40, 4): inferred type:  NIL
+OUT: sends.p (40, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (40, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (40, 23): inferred type:  BaseType(BOOL)
+OUT: sends.p (40, 23): inferred type:  TupType(BaseType(BOOL), NIL)
+OUT: sends.p (41, 4): inferred type:  NIL
+OUT: sends.p (41, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (41, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (41, 22): inferred type:  TupType(BaseType(ANY), TupType(BaseType(ANY), NIL))
+OUT: sends.p (42, 4): inferred type:  NIL
+OUT: sends.p (42, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (42, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (42, 22): inferred type:  TupType(BaseType(ANY), TupType(BaseType(BOOL), NIL))
+OUT: sends.p (44, 4): inferred type:  NIL
+OUT: sends.p (44, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (44, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (44, 20): inferred type:  SeqType(BaseType(INT))
+OUT: sends.p (45, 4): inferred type:  NIL
+OUT: sends.p (45, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (45, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (45, 20): inferred type:  SeqType(BaseType(ANY))
+OUT: sends.p (47, 4): inferred type:  NIL
+OUT: sends.p (47, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (47, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (47, 22): inferred type:  SeqType(BaseType(ANY))
+OUT: sends.p (48, 4): inferred type:  NIL
+OUT: sends.p (48, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (48, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (48, 22): inferred type:  SeqType(BaseType(INT))
+OUT: sends.p (49, 4): inferred type:  NIL
+OUT: sends.p (49, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (49, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (49, 22): inferred type:  BaseType(ANY)
+OUT: sends.p (50, 4): inferred type:  ERROR
+OUT: sends.p (50, 4): inferred type:  NIL
+OUT: sends.p (50, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (50, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (50, 22): inferred type:  BaseType(INT)
+OUT: sends.p (51, 4): inferred type:  NIL
+OUT: sends.p (51, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (51, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (51, 23): inferred type:  TupType(BaseType(ANY), TupType(BaseType(INT), NIL))
+OUT: sends.p (52, 4): inferred type:  NIL
+OUT: sends.p (52, 9): inferred type:  BaseType(REAL)
+OUT: sends.p (52, 14): inferred type:  BaseType(EVENT)
+OUT: sends.p (52, 18): inferred type:  SeqType(BaseType(ANY))
+OUT: sends.p (54, 4): inferred type:  NIL
+OUT: sends.p (54, 15): inferred type:  BaseType(EVENT)
+OUT: sends.p (54, 21): inferred type:  SeqType(BaseType(INT))
+OUT: sends.p (55, 4): inferred type:  ERROR
+OUT: sends.p (55, 4): inferred type:  NIL
+OUT: sends.p (55, 15): inferred type:  BaseType(EVENT)
+OUT: sends.p (55, 23): inferred type:  TupType(BaseType(ANY), TupType(BaseType(BOOL), NIL))
+OUT: sends.p (56, 4): inferred type:  ERROR
+OUT: sends.p (56, 4): inferred type:  NIL
+OUT: sends.p (56, 15): inferred type:  BaseType(EVENT)
+OUT: sends.p (67, 2): inferred type:  NIL
+OUT: sends.p (28, 4): invalid assignment. right hand side is not a subtype of left hand side
+OUT: sends.p (31, 4): invalid payload type in send
+OUT: sends.p (32, 4): invalid payload type in send
+OUT: sends.p (33, 4): invalid payload type in send
+OUT: sends.p (37, 4): invalid payload type in send
+OUT: sends.p (39, 4): invalid payload type in send
+OUT: sends.p (40, 4): invalid payload type in send
+OUT: sends.p (50, 4): invalid payload type in send
+OUT: sends.p (55, 4): invalid payload type in monitor
+OUT: sends.p (56, 4): no payload : event expects payload
+OUT: Compilation failed
+OUT: 
+EXIT: -1

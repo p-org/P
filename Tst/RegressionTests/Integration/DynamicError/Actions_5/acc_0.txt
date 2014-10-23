@@ -4,33 +4,30 @@
 OUT: Writing Actions_5_p_.h ...
 OUT: Writing Actions_5.zing ...
 OUT: Compiling Actions_5.zing to Actions_5.dll ...
-OUT: actions_5.p (12, 4): inferred type:  BaseType(MODEL)
-OUT: actions_5.p (12, 4): inferred type:  NIL
-OUT: actions_5.p (12, 20): inferred type:  BaseType(MODEL)
-OUT: actions_5.p (12, 30): inferred type:  BaseType(REAL)
-OUT: actions_5.p (13, 13): inferred type:  NIL
-OUT: actions_5.p (13, 19): inferred type:  BaseType(EVENT)
-OUT: actions_5.p (19, 6): inferred type:  BaseType(BOOL)
-OUT: actions_5.p (19, 6): inferred type:  NIL
-OUT: actions_5.p (19, 13): inferred type:  BaseType(BOOL)
-OUT: actions_5.p (26, 13): inferred type:  NIL
-OUT: actions_5.p (26, 18): inferred type:  BaseType(MODEL)
-OUT: actions_5.p (26, 33): inferred type:  BaseType(EVENT)
-OUT: actions_5.p (33, 6): inferred type:  NIL
-OUT: actions_5.p (33, 13): inferred type:  BaseType(BOOL)
-OUT: actions_5.p (38, 9): inferred type:  NIL
-OUT: actions_5.p (38, 14): inferred type:  BaseType(MODEL)
-OUT: actions_5.p (38, 29): inferred type:  BaseType(EVENT)
-OUT: actions_5.p (47, 8): inferred type:  BaseType(REAL)
-OUT: actions_5.p (47, 8): inferred type:  NIL
-OUT: actions_5.p (47, 23): inferred type:  BaseType(ANY)
-OUT: actions_5.p (47, 31): inferred type:  BaseType(REAL)
-OUT: actions_5.p (54, 4): inferred type:  NIL
-OUT: actions_5.p (54, 9): inferred type:  BaseType(REAL)
-OUT: actions_5.p (54, 23): inferred type:  BaseType(EVENT)
-OUT: actions_5.p (61, 6): inferred type:  NIL
-OUT: actions_5.p (61, 11): inferred type:  BaseType(REAL)
-OUT: actions_5.p (61, 25): inferred type:  BaseType(EVENT)
+OUT: actions_5.p (15, 4): inferred type:  BaseType(MODEL)
+OUT: actions_5.p (15, 4): inferred type:  NIL
+OUT: actions_5.p (15, 20): inferred type:  BaseType(MODEL)
+OUT: actions_5.p (15, 30): inferred type:  BaseType(REAL)
+OUT: actions_5.p (16, 13): inferred type:  NIL
+OUT: actions_5.p (16, 19): inferred type:  BaseType(EVENT)
+OUT: actions_5.p (28, 13): inferred type:  NIL
+OUT: actions_5.p (28, 18): inferred type:  BaseType(MODEL)
+OUT: actions_5.p (28, 33): inferred type:  BaseType(EVENT)
+OUT: actions_5.p (42, 6): inferred type:  NIL
+OUT: actions_5.p (42, 13): inferred type:  BaseType(BOOL)
+OUT: actions_5.p (47, 9): inferred type:  NIL
+OUT: actions_5.p (47, 14): inferred type:  BaseType(MODEL)
+OUT: actions_5.p (47, 29): inferred type:  BaseType(EVENT)
+OUT: actions_5.p (56, 8): inferred type:  BaseType(REAL)
+OUT: actions_5.p (56, 8): inferred type:  NIL
+OUT: actions_5.p (56, 23): inferred type:  BaseType(ANY)
+OUT: actions_5.p (56, 31): inferred type:  BaseType(REAL)
+OUT: actions_5.p (63, 4): inferred type:  NIL
+OUT: actions_5.p (63, 9): inferred type:  BaseType(REAL)
+OUT: actions_5.p (63, 23): inferred type:  BaseType(EVENT)
+OUT: actions_5.p (70, 6): inferred type:  NIL
+OUT: actions_5.p (70, 11): inferred type:  BaseType(REAL)
+OUT: actions_5.p (70, 25): inferred type:  BaseType(EVENT)
 OUT: 
 EXIT: 0
 =================================
@@ -42,3 +39,46 @@ OUT: ##################
 OUT: 15 distinct states, 20 total transitions, 7 steps max depth
 OUT: 
 EXIT: 0
+
+=================================
+Actions_5.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine Real-0
+<StateLog> Machine Real-0 entering State Real_Init
+<CreateLog> Created Machine Ghost-0
+<RaiseLog> Machine Real-0 raised Event ____unit
+<StateLog> Machine Real-0 entering State Real_S1
+<EnqueueLog> Enqueued Event < ____E1, null > in Machine ____Ghost-0 by ____Real-0
+<StateLog> Machine Ghost-0 entering State Ghost_Init
+<DequeueLog> Dequeued Event < ____E1, null > at Machine ____Ghost-0
+<StateLog> Machine Ghost-0 exiting State Ghost_Init
+<StateLog> Machine Ghost-0 entering State Ghost_S1
+<EnqueueLog> Enqueued Event < ____E2, null > in Machine ____Real-0 by ____Ghost-0
+<DequeueLog> Dequeued Event < ____E2, null > at Machine ____Real-0
+<FunctionLog> Machine Real-0 executing Function Action1
+<EnqueueLog> Enqueued Event < ____E3, null > in Machine ____Ghost-0 by ____Real-0
+<DequeueLog> Dequeued Event < ____E3, null > at Machine ____Ghost-0
+<StateLog> Machine Ghost-0 exiting State Ghost_S1
+<StateLog> Machine Ghost-0 entering State Ghost_S2
+<EnqueueLog> Enqueued Event < ____E4, null > in Machine ____Real-0 by ____Ghost-0
+<DequeueLog> Dequeued Event < ____E4, null > at Machine ____Real-0
+<StateLog> Machine Real-0 exiting State Real_S1
+<StateLog> Machine Real-0 exiting State Real_Init
+<StateLog> Machine Real-0 entering State Real_S2
+
+Error:
+Zing Assertion failed:
+    Expression: tmp_5.bl,
+    Comment: (42, 6): Assert failed
+
+Microsoft.Zing.ZingAssertionFailureException: Exception of type 'Microsoft.Zing.ZingAssertionFailureException' was thrown.
+
+Stack trace:
+    Real.AnonFun3 (Actions_5.zing, Line 847)
+    Real.ReentrancyHelper (Actions_5.zing, Line 603)
+    Real.RunHelper (Actions_5.zing, Line 250)
+    Real.Run (Actions_5.zing, Line 83)
+    Real.Start (Actions_5.zing, Line 61)
+

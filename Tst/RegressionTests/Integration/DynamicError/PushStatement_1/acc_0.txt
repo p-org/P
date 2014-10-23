@@ -1,0 +1,121 @@
+=================================
+         Console output          
+=================================
+OUT: Writing PushStatement_1_p_.h ...
+OUT: Writing PushStatement_1.zing ...
+OUT: Compiling PushStatement_1.zing to PushStatement_1.dll ...
+OUT: pushstatement_1.p (13, 4): inferred type:  BaseType(INT)
+OUT: pushstatement_1.p (13, 4): inferred type:  NIL
+OUT: pushstatement_1.p (13, 14): inferred type:  BaseType(INT)
+OUT: pushstatement_1.p (14, 4): inferred type:  BaseType(MODEL)
+OUT: pushstatement_1.p (14, 4): inferred type:  NIL
+OUT: pushstatement_1.p (14, 20): inferred type:  BaseType(MODEL)
+OUT: pushstatement_1.p (14, 30): inferred type:  BaseType(REAL)
+OUT: pushstatement_1.p (15, 13): inferred type:  NIL
+OUT: pushstatement_1.p (24, 3): inferred type:  NIL
+OUT: pushstatement_1.p (24, 6): inferred type:  BaseType(INT)
+OUT: pushstatement_1.p (24, 14): inferred type:  BaseType(BOOL)
+OUT: pushstatement_1.p (24, 17): inferred type:  BaseType(INT)
+OUT: pushstatement_1.p (26, 4): inferred type:  NIL
+OUT: pushstatement_1.p (26, 9): inferred type:  BaseType(MODEL)
+OUT: pushstatement_1.p (26, 24): inferred type:  BaseType(EVENT)
+OUT: pushstatement_1.p (28, 3): inferred type:  BaseType(INT)
+OUT: pushstatement_1.p (28, 3): inferred type:  NIL
+OUT: pushstatement_1.p (28, 13): inferred type:  BaseType(INT)
+OUT: pushstatement_1.p (28, 21): inferred type:  BaseType(INT)
+OUT: pushstatement_1.p (28, 23): inferred type:  BaseType(INT)
+OUT: pushstatement_1.p (29, 3): inferred type:  NIL
+OUT: pushstatement_1.p (35, 3): inferred type:  NIL
+OUT: pushstatement_1.p (36, 3): inferred type:  NIL
+OUT: pushstatement_1.p (37, 3): inferred type:  NIL
+OUT: pushstatement_1.p (38, 3): inferred type:  NIL
+OUT: pushstatement_1.p (38, 9): inferred type:  BaseType(INT)
+OUT: pushstatement_1.p (38, 17): inferred type:  BaseType(BOOL)
+OUT: pushstatement_1.p (38, 19): inferred type:  BaseType(INT)
+OUT: pushstatement_1.p (40, 4): inferred type:  NIL
+OUT: pushstatement_1.p (43, 9): inferred type:  NIL
+OUT: pushstatement_1.p (43, 16): inferred type:  BaseType(INT)
+OUT: pushstatement_1.p (43, 24): inferred type:  BaseType(BOOL)
+OUT: pushstatement_1.p (43, 27): inferred type:  BaseType(INT)
+OUT: pushstatement_1.p (49, 9): inferred type:  NIL
+OUT: pushstatement_1.p (49, 14): inferred type:  BaseType(MODEL)
+OUT: pushstatement_1.p (49, 29): inferred type:  BaseType(EVENT)
+OUT: pushstatement_1.p (58, 8): inferred type:  BaseType(REAL)
+OUT: pushstatement_1.p (58, 8): inferred type:  NIL
+OUT: pushstatement_1.p (58, 23): inferred type:  BaseType(ANY)
+OUT: pushstatement_1.p (58, 31): inferred type:  BaseType(REAL)
+OUT: pushstatement_1.p (65, 4): inferred type:  NIL
+OUT: pushstatement_1.p (65, 9): inferred type:  BaseType(REAL)
+OUT: pushstatement_1.p (65, 23): inferred type:  BaseType(EVENT)
+OUT: pushstatement_1.p (72, 6): inferred type:  NIL
+OUT: pushstatement_1.p (72, 11): inferred type:  BaseType(REAL)
+OUT: pushstatement_1.p (72, 25): inferred type:  BaseType(EVENT)
+OUT: 
+EXIT: 0
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 15 distinct states, 20 total transitions, 7 steps max depth
+OUT: 
+EXIT: 0
+
+=================================
+PushStatement_1.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine Real-0
+<StateLog> Machine Real-0 entering State Real_Init
+<CreateLog> Created Machine Ghost-0
+<StateLog> Machine Real-0 entering State Real_S1
+<EnqueueLog> Enqueued Event < ____E1, null > in Machine ____Ghost-0 by ____Real-0
+<StateLog> Machine Ghost-0 entering State Ghost_Init
+<DequeueLog> Dequeued Event < ____E1, null > at Machine ____Ghost-0
+<StateLog> Machine Ghost-0 exiting State Ghost_Init
+<StateLog> Machine Ghost-0 entering State Ghost_S1
+<EnqueueLog> Enqueued Event < ____E2, null > in Machine ____Real-0 by ____Ghost-0
+<StateLog> Machine Real-0 exiting State Real_S1
+<DequeueLog> Dequeued Event < ____E2, null > at Machine ____Real-0
+<FunctionLog> Machine Real-0 executing Function Action1
+<EnqueueLog> Enqueued Event < ____E3, null > in Machine ____Ghost-0 by ____Real-0
+<DequeueLog> Dequeued Event < ____E3, null > at Machine ____Ghost-0
+<StateLog> Machine Ghost-0 exiting State Ghost_S1
+<StateLog> Machine Ghost-0 entering State Ghost_S2
+<EnqueueLog> Enqueued Event < ____E4, null > in Machine ____Real-0 by ____Ghost-0
+<DequeueLog> Dequeued Event < ____E4, null > at Machine ____Real-0
+<StateLog> Machine Real-0 exiting State Real_Init
+<StateLog> Machine Real-0 entering State Real_S2
+<StateLog> Machine Real-0 entering State Real_S1
+<StateLog> Machine Real-0 exiting State Real_S1
+<StateLog> Machine Real-0 entering State Real_S1
+<StateLog> Machine Real-0 exiting State Real_S1
+<StateLog> Machine Real-0 entering State Real_S1
+<StateLog> Machine Real-0 exiting State Real_S1
+<StateLog> Machine Real-0 entering State Real_S1
+<StateLog> Machine Real-0 exiting State Real_S1
+<StateLog> Machine Real-0 entering State Real_S1
+<StateLog> Machine Real-0 exiting State Real_S1
+<StateLog> Machine Real-0 entering State Real_S1
+<StateLog> Machine Real-0 exiting State Real_S1
+<StateLog> Machine Real-0 entering State Real_S1
+<StateLog> Machine Real-0 exiting State Real_S1
+<StateLog> Machine Real-0 entering State Real_S1
+<StateLog> Machine Real-0 exiting State Real_S1
+
+Error:
+Zing Assertion failed:
+    Expression: tmpVar_5.bl,
+    Comment: (43, 9): Assert failed
+
+Microsoft.Zing.ZingAssertionFailureException: Exception of type 'Microsoft.Zing.ZingAssertionFailureException' was thrown.
+
+Stack trace:
+    Real.AnonFun3 (PushStatement_1.zing, Line 926)
+    Real.ReentrancyHelper (PushStatement_1.zing, Line 592)
+    Real.RunHelper (PushStatement_1.zing, Line 239)
+    Real.Run (PushStatement_1.zing, Line 95)
+    Real.Start (PushStatement_1.zing, Line 60)
+

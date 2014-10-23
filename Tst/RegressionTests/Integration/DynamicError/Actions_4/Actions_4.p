@@ -1,3 +1,4 @@
+// This sample tests overriding of action handlers by a pushed state
 event E1 assert 1;
 event E2 assert 1;
 event E3 assert 1;
@@ -9,28 +10,28 @@ main machine Real {
     var test: bool;
     start state Real_Init {
         entry {
-	    ghost_machine = new Ghost(this);  
-            raise unit;	   
+			ghost_machine = new Ghost(this);  
+			raise unit;	   
         }
         on unit do Action1;
         on E4 goto Real_S2;
         exit {
-	    test = true;
+			test = true;
         }
     }
 
     state Real_S1 {
-    on unit do Action_2;
+    on unit do Action2;  // overrides Action1 on unit installed by Real_Init
 	entry {
-            send ghost_machine, E1;
+        send ghost_machine, E1;
 	    raise unit;
 	}
     }
 
     state Real_S2 {
 	entry {
+		//this assert is reachable:
         assert(test == false);
-	    assert(false);
 	}
     }
 
@@ -39,7 +40,7 @@ main machine Real {
         send ghost_machine, E3;
     }
  
-    fun Action_2() {
+    fun Action2() {
 		pop;
     }
 }

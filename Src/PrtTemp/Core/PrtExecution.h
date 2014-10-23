@@ -146,8 +146,8 @@ typedef struct PRT_STACKSTATE_INFO
 	PRT_TRIGGER			trigger;
 	PRT_UINT16			returnTo;
 	PRT_STATE_EXECFUN	stateExecFun;
-	PRT_UINT32*			inheritedDefSetCompact;
-	PRT_UINT32*			inheritedActSetCompact;
+	PRT_UINT32*			inheritedDeferredSetCompact;
+	PRT_UINT32*			inheritedActionsSetCompact;
 } PRT_STACKSTATE_INFO;
 
 /*********************************************************************************
@@ -240,6 +240,12 @@ __in PRT_BOOLEAN	doDequeue
 PRT_BOOLEAN
 PrtDequeueEvent(
 __inout PRT_SM_CONTEXT_PRIV	*context
+);
+
+PRT_UINT32
+PrtFindTransition(
+__inout PRT_SM_CONTEXT_PRIV		*context,
+__in PRT_UINT32					eventIndex
 );
 
 //
@@ -375,7 +381,7 @@ __in PRT_VALUE * event
 // Get the Current State Decl
 //
 FORCEINLINE
-PRT_STATEDECL
+PRT_STATEDECL *
 PrtGetCurrentStateDecl(
 __in PRT_SM_CONTEXT_PRIV			*context
 );
@@ -396,8 +402,8 @@ __in PRT_UINT32*		defSet
 FORCEINLINE
 PRT_BOOLEAN
 PrtIsTransitionPresent(
-__in PRT_UINT32				eventIndex,
-__in PRT_SM_CONTEXT_PRIV			*context
+__in PRT_SM_CONTEXT_PRIV	*context,
+__in PRT_UINT32				eventIndex
 );
 
 
@@ -405,16 +411,7 @@ FORCEINLINE
 PRT_BOOLEAN
 PrtIsActionInstalled(
 __in PRT_UINT32		eventIndex,
-__in PRT_UINT32*		actionSet
-);
-
-//
-// Check if the Event Buffer is Empty
-//
-FORCEINLINE
-PRT_BOOLEAN
-PrtIsQueueEmpty(
-__in PRT_EVENTQUEUE		*queue
+__in PRT_UINT32*	actionSet
 );
 
 //
@@ -451,7 +448,7 @@ __in PRT_SM_CONTEXT_PRIV		*context
 FORCEINLINE
 PRT_UINT32*
 PrtGetActionsPacked(
-__in PRT_SM_CONTEXT_PRIV			*context,
+__in PRT_SM_CONTEXT_PRIV	*context,
 __in PRT_UINT32				stateIndex
 );
 
@@ -461,14 +458,14 @@ __in PRT_UINT32				stateIndex
 FORCEINLINE
 PRT_UINT32*
 PrtGetDeferredPacked(
-__in PRT_SM_CONTEXT_PRIV			*context,
+__in PRT_SM_CONTEXT_PRIV	*context,
 __in PRT_UINT32				stateIndex
 );
 
 FORCEINLINE
 PRT_UINT32*
 PrtGetTransitionsPacked(
-__in PRT_SM_CONTEXT_PRIV			*context,
+__in PRT_SM_CONTEXT_PRIV	*context,
 __in PRT_UINT32				stateIndex
 );
 
@@ -478,7 +475,7 @@ __in PRT_UINT32				stateIndex
 FORCEINLINE
 PRT_TRANSDECL*
 PrtGetTransTable(
-__in PRT_SM_CONTEXT_PRIV		*context,
+__in PRT_SM_CONTEXT_PRIV	*context,
 __in PRT_UINT32				stateIndex,
 __out PRT_UINT32			*nTransitions
 );
@@ -498,7 +495,7 @@ __in PRT_SM_CONTEXT_PRIV			*context
 //
 PRT_BOOLEAN
 PrtIsPushTransition(
-PRT_SM_CONTEXT_PRIV			*context,
+PRT_SM_CONTEXT_PRIV		*context,
 PRT_UINT32				event
 );
 

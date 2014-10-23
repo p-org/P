@@ -1,11 +1,3 @@
-/*
-Outstanding issues:
-1. Default transitions and actions
-2. Transition functions
-3. Push can return with a raised event
-4. Polling without deadlock
-*/
-
 #include "PrtExecution.h"
 
 /*********************************************************************************
@@ -96,8 +88,8 @@ __in  PRT_VALUE					*payload
 	// Initialize Machine Internal Variables
 	//
 	context->currentState = process->program->machines[context->context.instanceOf].initStateIndex;
-	context->isRunning = FALSE;
-	context->isHalted = FALSE;
+	context->isRunning = PRT_FALSE;
+	context->isHalted = PRT_FALSE;
 	context->lastOperation = ReturnStatement;
 
 	context->trigger.event = PrtMkNullValue();
@@ -168,7 +160,7 @@ __in  PRT_VALUE					*payload
 	//
 	// Run the state machine
 	//
-	PrtRunStateMachine(context, FALSE);
+	PrtRunStateMachine(context, PRT_FALSE);
 
 	return publicContext;
 }
@@ -223,8 +215,8 @@ PRT_SM_CONTEXT * PrtMkModel(
 	// Initialize Machine Internal Variables
 	//
 	context->currentState = process->program->machines[context->context.instanceOf].initStateIndex;
-	context->isRunning = FALSE;
-	context->isHalted = FALSE;
+	context->isRunning = PRT_FALSE;
+	context->isHalted = PRT_FALSE;
 	context->lastOperation = ReturnStatement;
 
 	context->trigger.event = PrtMkNullValue();
@@ -326,7 +318,7 @@ __in PRT_UINT32				maxInstances
 	head = queue->headIndex;
 	tail = queue->tailIndex;
 	currMaxInstance = 0;
-	isMaxInstancesExceeded = FALSE;
+	isMaxInstancesExceeded = PRT_FALSE;
 	//
 	// head is ahead of tail
 	//
@@ -370,7 +362,7 @@ __in PRT_UINT32				maxInstances
 
 	if (currMaxInstance >= maxInstances)
 	{
-		isMaxInstancesExceeded = TRUE;
+		isMaxInstancesExceeded = PRT_TRUE;
 	}
 
 	return isMaxInstancesExceeded;
@@ -453,7 +445,7 @@ __in PRT_VALUE					*payload
 	}
 	else
 	{
-		PrtRunStateMachine(context, TRUE);
+		PrtRunStateMachine(context, PRT_TRUE);
 	}
 
 	return;
@@ -471,20 +463,11 @@ PrtPop(
 __inout PRT_SM_CONTEXT_PRIV		*context
 )
 {
-	//
-	// Set operation performed to PopStatement
-	//
 	context->lastOperation = PopStatement;
-
-	//free the previous event and payload values
 	PrtFreeValue(context->trigger.event);
 	PrtFreeValue(context->trigger.payload);
-
-	// Set Trigger to NULL indicating that the last statement executed was Pop 
-	// TRIGGER access in Exit function after Pop is evaluated to NULL
 	context->trigger.event = PrtMkNullValue();
 	context->trigger.payload = PrtMkNullValue();
-
 }
 
 void
@@ -522,33 +505,14 @@ __inout PRT_SM_CONTEXT_PRIV		*context,
 __in PRT_UINT32				stateIndex
 )
 {
-	//
-	// Push current state on top of the stack
-	//
-	PrtPushState(context, TRUE);
-
-	//
-	// Set Trigger to NULL after a push statement
-	//
+	PrtPushState(context, PRT_TRUE);
 	PrtFreeValue(context->trigger.event);
 	PrtFreeValue(context->trigger.payload);
-
 	context->trigger.event = PrtMkNullValue();
 	context->trigger.payload = PrtMkNullValue();
-	//
-	// Change current state
-	//
 	context->currentState = stateIndex;
-	//
-	// Last operation set to push statement
-	//
 	context->lastOperation = PushStatement;
-
-	//
-	//Log
-	//
 	PrtLog(PRT_STEP_PUSH, context);
-
 	return;
 }
 
@@ -558,29 +522,39 @@ PrtStateHasDefaultTransition(
 __in PRT_SM_CONTEXT_PRIV			*context
 )
 {
-	return (context->context.process->program->eventSets[PrtGetCurrentStateDecl(context).transSetIndex].packedEvents[0] & 0x1) == 1;
+	return (context->context.process->program->eventSets[PrtGetCurrentStateDecl(context)->transSetIndex].packedEvents[0] & 0x1) == 1;
 }
 
 FORCEINLINE
-PRT_STATEDECL
+PRT_STATEDECL *
 PrtGetCurrentStateDecl(
 __in PRT_SM_CONTEXT_PRIV			*context
 )
 {
-	return context->context.process->program->machines[context->context.instanceOf].states[context->currentState];
+	return &(context->context.process->program->machines[context->context.instanceOf].states[context->currentState]);
 }
 
 FORCEINLINE
 void
 PrtRunExitFunction(
-__in PRT_SM_CONTEXT_PRIV			*context
+__in PRT_SM_CONTEXT_PRIV			*context,
+__in PRT_UINT32						transIndex
 )
 {
+	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
 	context->returnTo = 0;
 	context->lastOperation = ReturnStatement;
-	PRT_UINT32 exitFunIndex = context->context.process->program->machines[context->context.instanceOf].states[context->currentState].exitFunIndex;
 	PrtLog(PRT_STEP_EXIT, context);
-	PrtGetExitFunction(context)(&context->context, exitFunIndex, NULL);
+	if (transIndex < stateDecl->nTransitions && stateDecl->transitions[transIndex].transFunIndex < context->context.process->program->machines[context->context.instanceOf].nFuns)
+	{
+		PRT_UINT32 transFunIndex = stateDecl->transitions[transIndex].transFunIndex;
+		context->context.process->program->machines[context->context.instanceOf].funs[transFunIndex].implementation(&context->context, transFunIndex, NULL);
+	}
+	else 
+	{
+		PRT_UINT32 exitFunIndex = context->context.process->program->machines[context->context.instanceOf].states[context->currentState].exitFunIndex;
+		PrtGetExitFunction(context)(&context->context, exitFunIndex, NULL);
+	}
 	PRT_DBG_ASSERT(context->lastOperation == ReturnStatement, "Exit function must terminate with a ReturnStatement");
 }
 
@@ -597,11 +571,15 @@ __in PRT_BOOLEAN	doDequeue
 	// The state machine lock is held at entry iff an event was just enqueued.
 	lockHeld = doDequeue;
 
-	context->isRunning = TRUE;
+	context->isRunning = PRT_TRUE;
 
 	if (doDequeue)
 	{
 		goto DoDequeue;
+	}
+	else 
+	{
+		goto DoEntryOrAction;
 	}
 
 DoEntryOrAction:
@@ -611,195 +589,114 @@ DoEntryOrAction:
 	PRT_DBG_ASSERT(context->stateExecFun != PrtDequeue, "stateExecFun must not be PrtDequeue");
 	if (context->stateExecFun == PrtStateEntry)
 	{
-		//
-		// Log
-		//
 		if (context->returnTo == 0)
 			PrtLog(PRT_STEP_MOVE, context);
-		//
-		// Initialize context before executing entry function
-		//
 		context->lastOperation = ReturnStatement;
-		//
-		// Execute the Entry function
-		//
 		PRT_UINT32 entryFunIndex = context->context.process->program->machines[context->context.instanceOf].states[context->currentState].entryFunIndex;
 		PrtGetEntryFunction(context)(&context->context, entryFunIndex, NULL);
-
-		switch (context->lastOperation)
-		{
-		case PopStatement:
-			goto DoPop;
-			break;
-		case RaiseStatement:
-			eventValue = PrtPrimGetEvent(context->trigger.event);
-			if (PrtIsTransitionPresent(eventValue, context))
-			{
-				if (!PrtIsPushTransition(context, eventValue))
-				{
-					PrtRunExitFunction(context);
-				}
-				goto DoTakeTransition;
-			}
-			else if (PrtIsActionInstalled(eventValue, context->currentActionsSetCompact))
-			{
-				context->stateExecFun = PrtStateAction;
-				context->returnTo = 0;
-				goto DoEntryOrAction;
-			}
-			else
-			{
-				//
-				// Unhandled raised event
-				//
-				PrtRunExitFunction(context);
-				goto DoTakeTransition;
-			}
-			break;
-		case PushStatement:
-			context->stateExecFun = PrtStateEntry;
-			context->returnTo = 0;
-			goto DoEntryOrAction;
-			break;
-		case ReturnStatement:
-			goto DoDequeue;
-			break;
-		default:
-			PRT_DBG_ASSERT(0, "Unexpected case in switch");
-			break;
-		}
 	}
-	else 
+	else
 	{
 		PRT_DBG_ASSERT(context->stateExecFun == PrtStateAction, "stateExecFun must be PrtStateAction");
-		//
-		// Get the current action decl
-		//
 		currActionDecl = PrtGetAction(context);
-		//
-		// Log
-		//
 		if (context->returnTo == 0)
 			PrtLog(PRT_STEP_DO, context);
-		//
-		// Initialize context before executing entry function
-		//
 		context->lastOperation = ReturnStatement;
-		//
-		// Execute the Action function
-		//
 		context->context.process->program->machines[context->context.instanceOf].funs[currActionDecl->doFunIndex].implementation(&context->context, currActionDecl->doFunIndex, NULL);
-
-		switch (context->lastOperation)
-		{
-		case PopStatement:
-			goto DoPop;
-			break;
-		case RaiseStatement:
-			eventValue = PrtPrimGetEvent(context->trigger.event);
-			if (PrtIsTransitionPresent(eventValue, context))
-			{
-				if (!PrtIsPushTransition(context, eventValue))
-				{
-					PrtRunExitFunction(context);
-				}
-				goto DoTakeTransition;
-			}
-			else if (PrtIsActionInstalled(eventValue, context->currentActionsSetCompact))
-			{
-				context->stateExecFun = PrtStateAction;
-				context->returnTo = 0;
-				goto DoEntryOrAction;
-			}
-			else
-			{
-				//
-				// Unhandled raised event
-				//
-				goto DoTakeTransition;
-			}
-			break;
-		case PushStatement:
-			context->stateExecFun = PrtStateEntry;
-			context->returnTo = 0;
-			goto DoEntryOrAction;
-			break;
-		case ReturnStatement:
-			goto DoDequeue;
-			break;
-		default:
-			PRT_DBG_ASSERT(0, "Unexpected case in switch");
-			break;
-		}
 	}
-
+	switch (context->lastOperation)
+	{
+	case PopStatement:
+		goto DoPop;
+		break;
+	case RaiseStatement:
+		goto DoHandleEvent;
+		break;
+	case PushStatement:
+		context->stateExecFun = PrtStateEntry;
+		context->returnTo = 0;
+		goto DoEntryOrAction;
+		break;
+	case ReturnStatement:
+		goto DoDequeue;
+		break;
+	default:
+		PRT_DBG_ASSERT(0, "Unexpected case in switch");
+		break;
+	}
+	
 DoDequeue:
 	if (!lockHeld)
 	{
-		lockHeld = TRUE;
+		lockHeld = PRT_TRUE;
 		PrtLockMutex(context->stateMachineLock);
 	}
 
 	if (PrtDequeueEvent(context))
 	{
 		// release Lock
-		lockHeld = FALSE;
+		lockHeld = PRT_FALSE;
 		PrtUnlockMutex(context->stateMachineLock);
-		if (PrtIsPushTransition(context, PrtPrimGetEvent(context->trigger.event)))
-		{
-			goto DoTakeTransition;
-		}
-		else if (PrtIsTransitionPresent(PrtPrimGetEvent(context->trigger.event), context))
-		{
-			PrtRunExitFunction(context);
-			goto DoTakeTransition;
-		}
-		else if (PrtIsActionInstalled(PrtPrimGetEvent(context->trigger.event), context->currentActionsSetCompact))
-		{
-			context->stateExecFun = PrtStateAction;
-			context->returnTo = 0;
-			goto DoEntryOrAction;
-		}
-		else
-		{
-			PrtRunExitFunction(context);
-			goto DoTakeTransition;
-		}
-	}
-	else if (PrtStateHasDefaultTransition(context))
-	{
-		// release lock
-		lockHeld = FALSE;
-		PrtUnlockMutex(context->stateMachineLock);
-		PrtRunExitFunction(context);
-		goto DoTakeTransition;
+		goto DoHandleEvent;
 	}
 	else
 	{
-		context->isRunning = FALSE;
+		context->isRunning = PRT_FALSE;
 		// release Lock
-		lockHeld = FALSE;
+		lockHeld = PRT_FALSE;
 		PrtUnlockMutex(context->stateMachineLock);
 		return;
 	}
 
 DoPop:
-	PrtRunExitFunction(context);
-	PrtPopState(context, PRT_TRUE);
+	PrtRunExitFunction(context, PrtGetCurrentStateDecl(context)->nTransitions);
 	PrtLog(PRT_STEP_POP, context);
 	if (context->stateExecFun == PrtDequeue)
 	{
 		//
-		// Pop returned to a push edge; we should return to dequeue
+		// Pop retured from a push edge
 		//
+		PrtPopState(context, PRT_FALSE);
 		goto DoDequeue;
+	}
+	else if (PrtIsNullValue(context->trigger.event))
+	{
+		//
+		// Pop returned from a push statement with a pop
+		//
+		PrtPopState(context, PRT_TRUE);
+		goto DoEntryOrAction;
 	}
 	else
 	{
 		//
-		// Pop returns to end of a push statement; we should execute the next statement in entry/action function
+		// Pop returned from a push statement with an unhandled event
 		//
+		PrtPopState(context, PRT_FALSE);
+		goto DoHandleEvent;
+	}
+
+DoHandleEvent:
+	eventValue = PrtPrimGetEvent(context->trigger.event);
+	if (PrtIsPushTransition(context, eventValue))
+	{
+		goto DoTakeTransition;
+	}
+	else if (PrtIsTransitionPresent(context, eventValue))
+	{
+		PrtRunExitFunction(context, PrtFindTransition(context, eventValue));
+		goto DoTakeTransition;
+	}
+	else if (PrtIsActionInstalled(eventValue, context->currentActionsSetCompact))
+	{
+		context->stateExecFun = PrtStateAction;
+		context->returnTo = 0;
 		goto DoEntryOrAction;
+	}
+	else
+	{
+		PrtRunExitFunction(context, PrtGetCurrentStateDecl(context)->nTransitions);
+		goto DoTakeTransition;
 	}
 
 DoTakeTransition:
@@ -816,7 +713,7 @@ DoTakeTransition:
 		goto DoEntryOrAction;
 	}
 
-	PRT_DBG_ASSERT(PRT_FALSE, "Cannot get here");
+	PRT_DBG_ASSERT(PRT_FALSE, "Must not get here");
 	return;
 }
 
@@ -855,10 +752,10 @@ __inout PRT_SM_CONTEXT_PRIV		*context
 	return;
 }
 
-void
-PrtTakeTransition(
+PRT_UINT32
+PrtFindTransition(
 __inout PRT_SM_CONTEXT_PRIV		*context,
-__in PRT_UINT32				eventIndex
+__in PRT_UINT32					eventIndex
 )
 {
 	PRT_UINT32 i;
@@ -871,20 +768,40 @@ __in PRT_UINT32				eventIndex
 	{
 		if (transTable[i].triggerEventIndex == eventIndex)
 		{
-			if (transTable[i].isPush)
-			{
-				context->stateExecFun = PrtDequeue;
-				context->returnTo = 0;
-				PrtPushState(context, PRT_FALSE);
-				PrtLog(PRT_STEP_PUSH, context);
-			}
-
-			context->currentState = transTable[i].destStateIndex;
-			context->stateExecFun = PrtStateEntry;
-			context->returnTo = 0;
-			return;
+			break;
 		}
 	}
+	return i;
+}
+
+void
+PrtTakeTransition(
+__inout PRT_SM_CONTEXT_PRIV		*context,
+__in PRT_UINT32					eventIndex
+)
+{
+	PRT_UINT32 nTransitions;
+	PRT_TRANSDECL* transTable;
+	PRT_UINT32 transIndex;
+
+	transTable = PrtGetTransTable(context, context->currentState, &nTransitions);
+	transIndex = PrtFindTransition(context, eventIndex);
+	if (transIndex < nTransitions)
+	{
+		if (transTable[transIndex].isPush)
+		{
+			context->stateExecFun = PrtDequeue;
+			context->returnTo = 0;
+			PrtPushState(context, PRT_FALSE);
+			PrtLog(PRT_STEP_PUSH, context);
+		}
+
+		context->currentState = transTable[transIndex].destStateIndex;
+		context->stateExecFun = PrtStateEntry;
+		context->returnTo = 0;
+		return;
+	}
+
 	if (context->callStack.length > 0)
 	{
 		PrtPopState(context, PRT_FALSE);
@@ -948,7 +865,7 @@ __inout PRT_SM_CONTEXT_PRIV			*context
 		PrtFree(context->varValues);
 	}
 
-	context->isHalted = TRUE;
+	context->isHalted = PRT_TRUE;
 
 	PrtLog(PRT_STEP_HALT, context);
 }
@@ -959,9 +876,6 @@ __inout PRT_SM_CONTEXT_PRIV		*context,
 __in	PRT_BOOLEAN			isPushStatement
 )
 {
-	//
-	// Declarations
-	//
 	PRT_UINT16 i;
 	PRT_UINT16 packSize;
 	PRT_UINT16 length;
@@ -969,9 +883,6 @@ __in	PRT_BOOLEAN			isPushStatement
 	PRT_UINT32 *currActions;
 	PRT_UINT32 *currTransitions;
 
-	//
-	// Code
-	//
 	packSize = PrtGetPackSize(context);
 	length = context->callStack.length;
 	currDef = PrtGetDeferredPacked(context, context->currentState);
@@ -980,15 +891,15 @@ __in	PRT_BOOLEAN			isPushStatement
 
 	PrtAssert(length < PRT_MAX_CALL_DEPTH, "Call Stack Overflow");
 	//
-	// push <state, trigger, arg, ReturnTo, StateExecFun, defSet, ActSet>
+	// push <state, trigger, stateExecFun, returnTo, defSet, actSet>
 	//
 	context->callStack.statesStack[length].stateIndex = context->currentState;
 	context->callStack.statesStack[length].trigger.event = context->trigger.event;
 	context->callStack.statesStack[length].trigger.payload = context->trigger.payload;
-	context->callStack.statesStack[length].returnTo = context->returnTo;
 	context->callStack.statesStack[length].stateExecFun = context->stateExecFun;
-	context->callStack.statesStack[length].inheritedDefSetCompact = (PRT_UINT32*)PrtClonePackedSet(context->inheritedDeferredSetCompact, packSize);
-	context->callStack.statesStack[length].inheritedActSetCompact = (PRT_UINT32*)PrtClonePackedSet(context->inheritedActionsSetCompact, packSize);
+	context->callStack.statesStack[length].returnTo = context->returnTo;
+	context->callStack.statesStack[length].inheritedDeferredSetCompact = (PRT_UINT32*)PrtClonePackedSet(context->inheritedDeferredSetCompact, packSize);
+	context->callStack.statesStack[length].inheritedActionsSetCompact = (PRT_UINT32*)PrtClonePackedSet(context->inheritedActionsSetCompact, packSize);
 
 	context->callStack.length = length + 1;
 
@@ -996,7 +907,6 @@ __in	PRT_BOOLEAN			isPushStatement
 	// D = (D + d) - a - e
 	for (i = 0; i < packSize; ++i)
 	{
-
 		// Update the actions set inherited by state-machine
 		// A = (A - d) + a - e
 		context->inheritedActionsSetCompact[i] &= ~currDef[i]; // A - d
@@ -1041,14 +951,14 @@ __in PRT_BOOLEAN			restoreTrigger
 	//
 	for (i = 0; i < packSize; i++)
 	{
-		context->inheritedDeferredSetCompact[i] = poppedState.inheritedDefSetCompact[i];
-		context->inheritedActionsSetCompact[i] = poppedState.inheritedActSetCompact[i];
+		context->inheritedDeferredSetCompact[i] = poppedState.inheritedDeferredSetCompact[i];
+		context->inheritedActionsSetCompact[i] = poppedState.inheritedActionsSetCompact[i];
 	}
 	//
 	// Free the allocated memory for def and act state
 	//
-	PrtFree(poppedState.inheritedDefSetCompact);
-	PrtFree(poppedState.inheritedActSetCompact);
+	PrtFree(poppedState.inheritedDeferredSetCompact);
+	PrtFree(poppedState.inheritedActionsSetCompact);
 
 	//
 	// Restore the trigger value
@@ -1057,11 +967,10 @@ __in PRT_BOOLEAN			restoreTrigger
 	{
 		PrtFreeValue(context->trigger.event);
 		PrtFreeValue(context->trigger.payload);
-
 		context->trigger.event = poppedState.trigger.event;
 		context->trigger.payload = poppedState.trigger.payload;
-		context->returnTo = poppedState.returnTo;
 		context->stateExecFun = poppedState.stateExecFun;
+		context->returnTo = poppedState.returnTo;
 	}
 	
 	return;
@@ -1093,12 +1002,6 @@ __inout PRT_SM_CONTEXT_PRIV	*context
 	PRT_DBG_ASSERT(queue->headIndex >= 0, "Check Failed");
 	PRT_DBG_ASSERT(queue->tailIndex >= 0, "Check Failed");
 
-	if (PrtIsQueueEmpty(queue)) {
-		context->trigger.event = PrtMkEventValue(PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
-		context->trigger.payload = PrtMkNullValue();
-		return PRT_FALSE;
-	}
-
 	//
 	// Find the element to dequeue
 	//
@@ -1117,7 +1020,7 @@ __inout PRT_SM_CONTEXT_PRIV	*context
 	if (i == queue->size) {
 		context->trigger.event = PrtMkEventValue(PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
 		context->trigger.payload = PrtMkNullValue();
-		return PRT_FALSE;
+		return PrtStateHasDefaultTransition(context);
 	}
 
 	//
@@ -1174,22 +1077,15 @@ __in PRT_UINT32		eventIndex,
 __in PRT_UINT32*		defSet
 )
 {
-	//
-	// Declarations
-	//
 	PRT_BOOLEAN isDeferred;
 
-	//
-	// Code
-	//
-
-	isDeferred = FALSE;
+	isDeferred = PRT_FALSE;
 	if
 		(
 		((defSet[eventIndex / (sizeof(PRT_UINT32)* 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32)* 8)))) != 0)
 		)
 	{
-		isDeferred = TRUE;
+		isDeferred = PRT_TRUE;
 	}
 
 	return isDeferred;
@@ -1202,22 +1098,15 @@ __in PRT_UINT32		eventIndex,
 __in PRT_UINT32*		actionSet
 )
 {
-	//
-	// Declarations
-	//
 	PRT_BOOLEAN isActionInstalled;
 
-	//
-	// Code
-	//
-
-	isActionInstalled = FALSE;
+	isActionInstalled = PRT_FALSE;
 	if
 		(
 		((actionSet[eventIndex / (sizeof(PRT_UINT32)* 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32)* 8)))) != 0)
 		)
 	{
-		isActionInstalled = TRUE;
+		isActionInstalled = PRT_TRUE;
 	}
 
 	return isActionInstalled;
@@ -1233,15 +1122,6 @@ __in PRT_SM_CONTEXT_PRIV			*context
 	return (UINT16)(((nEvents == 0) || (nEvents % (sizeof(PRT_UINT32) * 8) != 0))
 		? (1 + (nEvents / (sizeof(PRT_UINT32) * 8)))
 		: (nEvents / (sizeof(PRT_UINT32) * 8)));
-}
-
-FORCEINLINE
-PRT_BOOLEAN
-PrtIsQueueEmpty(
-__in PRT_EVENTQUEUE		*queue
-)
-{
-	return queue->size == 0;
 }
 
 FORCEINLINE
@@ -1271,12 +1151,12 @@ __in PRT_SM_CONTEXT_PRIV		*context
 )
 {
 	PRT_UINT32 currEvent = PrtPrimGetEvent(context->trigger.event);
-	PRT_BOOLEAN isActionInstalled = FALSE;
+	PRT_BOOLEAN isActionInstalled = PRT_FALSE;
 	PRT_UINT32 i, nActions;
 	PRT_STATESTACK currStack;
 	PRT_STATEDECL *stateTable;
 	PRT_UINT32 topOfStackState;
-
+	PRT_STATEDECL *stateDecl;
 	PRT_DODECL *actionDecl = NULL;
 
 	//check if action is defined for the current state
@@ -1286,12 +1166,13 @@ __in PRT_SM_CONTEXT_PRIV		*context
 		//
 		// get action function
 		//
-		nActions = PrtGetCurrentStateDecl(context).nDos;
+		stateDecl = PrtGetCurrentStateDecl(context);
+		nActions = stateDecl->nDos;
 		for (i = 0; i < nActions; i++)
 		{
-			if (PrtGetCurrentStateDecl(context).dos[i].triggerEventIndex == currEvent)
+			if (stateDecl->dos[i].triggerEventIndex == currEvent)
 			{
-				actionDecl = &PrtGetCurrentStateDecl(context).dos[i];
+				actionDecl = &stateDecl->dos[i];
 				return actionDecl;
 			}
 		}
@@ -1364,7 +1245,6 @@ __in PRT_UINT32				stateIndex
 	return evSets[evSetIndex].packedEvents;
 }
 
-
 FORCEINLINE
 PRT_TRANSDECL*
 PrtGetTransTable(
@@ -1389,13 +1269,13 @@ PRT_UINT32				event
 	PRT_BOOLEAN isPushTransition;
 
 	transTable = PrtGetTransTable(context, context->currentState, &nTransitions);
-	isPushTransition = FALSE;
+	isPushTransition = PRT_FALSE;
 	for (i = 0; i < nTransitions; ++i)
 	{
 		//check if transition is Call
 		if (transTable[i].isPush && transTable[i].triggerEventIndex == event)
 		{
-			isPushTransition = TRUE;
+			isPushTransition = PRT_TRUE;
 		}
 	}
 
@@ -1405,17 +1285,17 @@ PRT_UINT32				event
 FORCEINLINE
 PRT_BOOLEAN
 PrtIsTransitionPresent(
-__in PRT_UINT32				eventIndex,
-__in PRT_SM_CONTEXT_PRIV			*context
+__in PRT_SM_CONTEXT_PRIV	*context,
+__in PRT_UINT32				eventIndex
 )
 {
 	PRT_UINT32* transitionsPacked = PrtGetTransitionsPacked(context, context->currentState);
 	if ((transitionsPacked[eventIndex / (sizeof(PRT_UINT32)* 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32)* 8)))) != 0)
 	{
-		return TRUE;
+		return PRT_TRUE;
 	}
 
-	return FALSE;
+	return PRT_FALSE;
 }
 
 void*
@@ -1488,7 +1368,6 @@ PRT_SM_CONTEXT_PRIV			*context
 		context->currentDeferredSetCompact[i] &= ~currTransitionsPacked[i]; // -e
 	}
 }
-
 
 void
 PrtResizeEventQueue(

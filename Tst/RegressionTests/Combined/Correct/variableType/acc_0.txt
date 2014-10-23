@@ -1,0 +1,28 @@
+=================================
+         Console output          
+=================================
+OUT: Writing variableType_p_.h ...
+OUT: Writing variableType.zing ...
+OUT: Compiling variableType.zing to variableType.dll ...
+OUT: variabletype.p (6, 4): inferred type:  BaseType(INT)
+OUT: variabletype.p (6, 4): inferred type:  NIL
+OUT: variabletype.p (6, 8): inferred type:  BaseType(INT)
+OUT: variabletype.p (6, 10): inferred type:  BaseType(INT)
+OUT: variabletype.p (6, 12): inferred type:  BaseType(INT)
+OUT: variabletype.p (11, 3): inferred type:  NIL
+OUT: variabletype.p (11, 8): inferred type:  BaseType(REAL)
+OUT: variabletype.p (11, 14): inferred type:  BaseType(EVENT)
+OUT: variabletype.p (20, 4): inferred type:  NIL
+OUT: variabletype.p (20, 9): inferred type:  BaseType(REAL)
+OUT: variabletype.p (20, 15): inferred type:  BaseType(EVENT)
+OUT: 
+EXIT: 0
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Passed
+OUT: ##################
+OUT: 3 distinct states, 2 total transitions, 2 steps max depth
+OUT: 
+EXIT: 0

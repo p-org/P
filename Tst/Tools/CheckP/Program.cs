@@ -13,7 +13,7 @@
         private const int FailCode = 1;
         public static void Main(string[] args)
         {
-            var checker = new CheckP.Checker(Environment.CurrentDirectory);
+            var checker = new CheckP.Checker(Environment.CurrentDirectory, false);
             if (!checker.Check())
             {
                 Environment.ExitCode = FailCode;

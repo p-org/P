@@ -1,3 +1,4 @@
+// This sample tests basic semantics of actions and goto transitions
 event E1 assert 1;
 event E2 assert 1;
 event E3 assert 1;
@@ -12,8 +13,9 @@ main machine Real {
 			ghost_machine = new Ghost(this);  
             send ghost_machine, E1;	   
         }
-        on E4 do Action1;
-        on E2 goto Real_S1;
+		//next line can be commented out w/out changing the result:
+        on E4 do Action1;   //E4, E3 have no effect on reachability of assert(false) 
+        on E2 goto Real_S1; //exit actions are performed before transition to Real_S1
         exit {
 	    test = true;
         }
@@ -22,7 +24,7 @@ main machine Real {
     state Real_S1 {
     
 		entry {
-			assert(test == true);    
+			assert(test == true);  //holds
 			raise unit;
 		}
 		on unit goto Real_S2;
@@ -30,8 +32,9 @@ main machine Real {
 
     state Real_S2 {
 	entry {
-        
-	    assert(false);
+        //this assert is reachable: Real -E1-> Ghost -E2-> Real; 
+		//then Real_S1 (assert holds), Real_S2 (assert fails)
+	    assert(false);  //this assert is reachable 
 	}
     }
 

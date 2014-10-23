@@ -1,4 +1,3 @@
-//Expected: syntax error "anonfunction.p (13, 3): transition to an undefined state"
 event a;
 event b;
 main machine Sample {

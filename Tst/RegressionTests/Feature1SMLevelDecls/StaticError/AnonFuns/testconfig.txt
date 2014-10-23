@@ -3,4 +3,4 @@ argPc: anonFunction.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 acc: .\
-dsc: 1.7. Transition to undefined state: error
+dsc: 1.7. Transition to undefined states

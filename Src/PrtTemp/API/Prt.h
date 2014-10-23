@@ -42,9 +42,8 @@ typedef enum PRT_STATUS
 	PRT_STATUS_ASSERT    = 1,        /**< Indicates an assertion failure.                               */
 	PRT_STATUS_EVENT_OVERFLOW  = 2,  /**< Indicates too many occurrences of the same event in a queue.  */
 	PRT_STATUS_EVENT_UNHANDLED = 3,  /**< Indicates failure of a machine to handle an event.            */
-	PRT_STATUS_MACH_OVERFLOW = 4,    /**< Indicates that too many machines have been created.           */
-	PRT_STATUS_QUEUE_OVERFLOW = 5,   /**< Indicates that a queue has grown too large.                   */
-	PRT_STATUS_COUNT = 6,            /**< The valid number of status codes.                             */
+	PRT_STATUS_QUEUE_OVERFLOW = 4,   /**< Indicates that a queue has grown too large.                   */
+	PRT_STATUS_COUNT = 5,            /**< The valid number of status codes.                             */
 } PRT_STATUS;
 
 /** Represents a running P program. Every process has a GUID and client is responsible
@@ -105,11 +104,24 @@ PRT_API void PRT_CALL_CONV PrtStopProcess(_Inout_ PRT_PROCESS* process);
 * @param[in,out] process    The process that will own this machine.
 * @param[in]     instanceOf An index of a machine type in process' program.
 * @param[in]     payload The payload to pass to the start state of machine instance (cloned, user frees).
-* @returns       A pointer to a PRT_SM_CONTEXT or NULL if too many machines have been created.
+* @returns       A pointer to a PRT_SM_CONTEXT.
 * @see PrtSend
 * @see PRT_SM_CONTEXT
 */
 PRT_API PRT_SM_CONTEXT * PRT_CALL_CONV PrtMkMachine(
+	_Inout_ PRT_PROCESS *process,
+	_In_ PRT_UINT32 instanceOf,
+	_In_ PRT_VALUE *payload);
+
+/** Creates a new model machine instance in process. Will be freed when process is stopped.
+* @param[in,out] process    The process that will own this machine.
+* @param[in]     instanceOf An index of a machine type in process' program.
+* @param[in]     payload The payload to pass to the start state of machine instance (cloned, user frees).
+* @returns       A pointer to a PRT_SM_CONTEXT.
+* @see PrtSend
+* @see PRT_SM_CONTEXT
+*/
+PRT_API PRT_SM_CONTEXT * PRT_CALL_CONV PrtMkModel(
 	_Inout_ PRT_PROCESS *process,
 	_In_ PRT_UINT32 instanceOf,
 	_In_ PRT_VALUE *payload);

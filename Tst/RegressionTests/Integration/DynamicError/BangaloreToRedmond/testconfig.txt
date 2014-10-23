@@ -4,5 +4,8 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 runZing: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
 argZing: BangaloreToRedmond.dll
+argZing: -et:BangaloreToRedmond.trace
+incZing: BangaloreToRedmond.trace
+del: BangaloreToRedmond.trace
 acc: .\
 dsc: Feature Integration

@@ -4,5 +4,8 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 runZing: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
 argZing: Actions_4.dll
+argZing: -et:Actions_4.trace
+incZing: Actions_4.trace
+del: Actions_4.trace
 acc: .\
-dsc: Feature Integration
+dsc: Feature Integration: overriding of action handlers by a pushed state

@@ -1,0 +1,11 @@
+runPc: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: PushStatement_1.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+runZing: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: PushStatement_1.dll
+argZing: -et:PushStatement_1.trace
+incZing: PushStatement_1.trace
+del: PushStatement_1.trace
+acc: .\
+dsc: Feature Integration: push and pop statements with if-while control flow

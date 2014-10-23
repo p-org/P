@@ -3,7 +3,7 @@
 typedef struct PRT_PROCESS_PRIV {
 	PRT_PROCESS			    process;
 	PRT_ERROR_FUN	        errorHandler;
-	PRT_LOG_FUN				log;
+	PRT_LOG_FUN				logHandler;
 	PRT_RECURSIVE_MUTEX		lock;
 	PRT_UINT32				numMachines;
 	PRT_UINT32				machineCount;
@@ -68,7 +68,7 @@ typedef enum PRT_LASTOPERATION
 {
 	PopStatement,
 	RaiseStatement,
-	CallStatement,
+	PushStatement,
 	OtherStatement
 } PRT_LASTOPERATION;
 
@@ -134,19 +134,14 @@ Head --
 Head of the Event Queue, pointing to the event next.
 Tail --
 Tail of the Event Queue, pointing to las event
-
-IsFull --
-<TRUE> -- if event queue is full
-<FALSE> -- if event queue is not full
-
 *********************************************************************************/
 typedef struct PRT_EVENTQUEUE
 {
+	PRT_UINT32		 eventsSize;
 	PRT_TRIGGER		*events;
-	PRT_UINT16		 headIndex;
-	PRT_UINT16		 tailIndex;
-	PRT_UINT16		 size;
-	PRT_BOOLEAN		 isFull;
+	PRT_UINT32		 headIndex;
+	PRT_UINT32		 tailIndex;
+	PRT_UINT32		 size;
 } PRT_EVENTQUEUE;
 
 /*********************************************************************************
@@ -218,7 +213,6 @@ typedef struct PRT_SM_CONTEXT_PRIV {
 	PRT_BOOLEAN			isHalted;
 	PRT_STATESTACK		callStack;
 	PRT_EVENTQUEUE		eventQueue;
-	PRT_UINT8			currentLengthOfEventQueue;
 	PRT_UINT32*			inheritedDeferredSetCompact;
 	PRT_UINT32*			currentDeferredSetCompact;
 	PRT_UINT32*			inheritedActionsSetCompact;
@@ -353,7 +347,7 @@ __inout PRT_SM_CONTEXT_PRIV			*context
 // Call Exception handler
 //
 void
-PrtExceptionHandler(
+PrtHandleError(
 __in PRT_STATUS ex,
 __in PRT_SM_CONTEXT_PRIV *context
 );
@@ -372,7 +366,7 @@ __in PRT_SM_CONTEXT_PRIV *context
 //
 // Dynamically resize the queue
 //
-PRT_INT16
+void
 PrtResizeEventQueue(
 __in PRT_SM_CONTEXT_PRIV *context
 );
@@ -384,8 +378,7 @@ PRT_BOOLEAN
 PrtIsEventMaxInstanceExceeded(
 __in PRT_EVENTQUEUE			*queue,
 __in PRT_UINT32				eventIndex,
-__in PRT_UINT32				maxInstances,
-__in PRT_UINT16				queueSize
+__in PRT_UINT32				maxInstances
 );
 
 //
@@ -395,6 +388,15 @@ FORCEINLINE
 PRT_BOOLEAN
 PrtStateHasDefaultTransition(
 __in PRT_SM_CONTEXT_PRIV			*context
+);
+
+//
+// Check if event is null or default
+// 
+FORCEINLINE
+PRT_BOOLEAN
+PrtIsSpecialEvent(
+__in PRT_VALUE * event
 );
 
 //
@@ -523,7 +525,7 @@ __in PRT_SM_CONTEXT_PRIV			*context
 // Check if the transition on event is a call transition
 //
 PRT_BOOLEAN
-PrtIsCallTransition(
+PrtIsPushTransition(
 PRT_SM_CONTEXT_PRIV			*context,
 PRT_UINT32				event
 );

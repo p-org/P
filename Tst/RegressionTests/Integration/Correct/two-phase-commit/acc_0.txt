@@ -1,0 +1,379 @@
+=================================
+         Console output          
+=================================
+OUT: Writing twophasecommit_p_.h ...
+OUT: Writing two-phase-commit.zing ...
+OUT: Compiling two-phase-commit.zing to two-phase-commit.dll ...
+OUT: two-phase-commit.p (27, 4): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (27, 4): inferred type:  NIL
+OUT: two-phase-commit.p (27, 13): inferred type:  BaseType(ANY)
+OUT: two-phase-commit.p (27, 21): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (28, 4): inferred type:  NIL
+OUT: two-phase-commit.p (28, 10): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (40, 4): inferred type:  NIL
+OUT: two-phase-commit.p (40, 8): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (41, 5): inferred type:  NIL
+OUT: two-phase-commit.p (41, 10): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (41, 18): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (42, 5): inferred type:  NIL
+OUT: two-phase-commit.p (42, 11): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (47, 4): inferred type:  NIL
+OUT: two-phase-commit.p (47, 8): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (48, 5): inferred type:  NIL
+OUT: two-phase-commit.p (48, 10): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (48, 18): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (49, 5): inferred type:  NIL
+OUT: two-phase-commit.p (49, 10): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (49, 18): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (51, 5): inferred type:  NIL
+OUT: two-phase-commit.p (51, 10): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (51, 18): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (66, 5): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (66, 5): inferred type:  NIL
+OUT: two-phase-commit.p (66, 19): inferred type:  BaseType(ANY)
+OUT: two-phase-commit.p (66, 27): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (67, 4): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (67, 4): inferred type:  NIL
+OUT: two-phase-commit.p (67, 17): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (68, 4): inferred type:  NIL
+OUT: two-phase-commit.p (68, 10): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (74, 5): inferred type:  NIL
+OUT: two-phase-commit.p (74, 5): inferred type:  NmdTupType(NmdTupTypeField("seqNum", BaseType(INT)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (74, 23): inferred type:  NmdTupType(NmdTupTypeField("seqNum", BaseType(INT)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (74, 31): inferred type:  NmdTupType(NmdTupTypeField("seqNum", BaseType(INT)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (75, 3): inferred type:  NIL
+OUT: two-phase-commit.p (75, 11): inferred type:  NmdTupType(NmdTupTypeField("seqNum", BaseType(INT)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (75, 27): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (75, 34): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (75, 36): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (76, 3): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (76, 3): inferred type:  NIL
+OUT: two-phase-commit.p (76, 18): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (77, 3): inferred type:  NIL
+OUT: two-phase-commit.p (77, 7): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (78, 4): inferred type:  NIL
+OUT: two-phase-commit.p (78, 9): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (78, 22): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (78, 43): inferred type:  NmdTupType(NmdTupTypeField("seqNum", BaseType(INT)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (78, 59): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (80, 4): inferred type:  NIL
+OUT: two-phase-commit.p (80, 9): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (80, 22): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (80, 42): inferred type:  NmdTupType(NmdTupTypeField("seqNum", BaseType(INT)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (80, 58): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (85, 3): inferred type:  NIL
+OUT: two-phase-commit.p (85, 11): inferred type:  NmdTupType(NmdTupTypeField("seqNum", BaseType(INT)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (85, 27): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (85, 34): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (85, 37): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (86, 3): inferred type:  NIL
+OUT: two-phase-commit.p (86, 7): inferred type:  NmdTupType(NmdTupTypeField("seqNum", BaseType(INT)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (86, 23): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (86, 30): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (86, 33): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (87, 4): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (87, 4): inferred type:  NIL
+OUT: two-phase-commit.p (87, 17): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (92, 3): inferred type:  NIL
+OUT: two-phase-commit.p (92, 11): inferred type:  NmdTupType(NmdTupTypeField("seqNum", BaseType(INT)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (92, 27): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (92, 34): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (92, 37): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (93, 3): inferred type:  NIL
+OUT: two-phase-commit.p (93, 7): inferred type:  NmdTupType(NmdTupTypeField("seqNum", BaseType(INT)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (93, 23): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (93, 30): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (93, 33): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (94, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
+OUT: two-phase-commit.p (94, 4): inferred type:  NIL
+OUT: two-phase-commit.p (94, 8): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (94, 9): inferred type:  NmdTupType(NmdTupTypeField("seqNum", BaseType(INT)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (94, 25): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (94, 32): inferred type:  NmdTupType(NmdTupTypeField("seqNum", BaseType(INT)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (94, 48): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (95, 4): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (95, 4): inferred type:  NIL
+OUT: two-phase-commit.p (95, 17): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (100, 3): inferred type:  NIL
+OUT: two-phase-commit.p (107, 3): inferred type:  NIL
+OUT: two-phase-commit.p (107, 10): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (123, 4): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (123, 4): inferred type:  NIL
+OUT: two-phase-commit.p (123, 18): inferred type:  BaseType(ANY)
+OUT: two-phase-commit.p (123, 26): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (124, 4): inferred type:  NIL
+OUT: two-phase-commit.p (124, 12): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (124, 24): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (124, 26): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (125, 4): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (125, 4): inferred type:  NIL
+OUT: two-phase-commit.p (125, 8): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (126, 4): inferred type:  NIL
+OUT: two-phase-commit.p (126, 11): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (126, 13): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (126, 15): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (127, 5): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (127, 5): inferred type:  NIL
+OUT: two-phase-commit.p (127, 15): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (127, 27): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (128, 5): inferred type:  NIL
+OUT: two-phase-commit.p (128, 5): inferred type:  SeqType(BaseType(REAL))
+OUT: two-phase-commit.p (128, 18): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (128, 18): inferred type:  TupType(BaseType(INT), TupType(BaseType(REAL), NIL))
+OUT: two-phase-commit.p (128, 21): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (128, 21): inferred type:  TupType(BaseType(REAL), NIL)
+OUT: two-phase-commit.p (129, 5): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (129, 5): inferred type:  NIL
+OUT: two-phase-commit.p (129, 9): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (129, 11): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (129, 13): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (131, 4): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (131, 4): inferred type:  NIL
+OUT: two-phase-commit.p (131, 17): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (132, 4): inferred type:  BaseType(MODEL)
+OUT: two-phase-commit.p (132, 4): inferred type:  NIL
+OUT: two-phase-commit.p (132, 12): inferred type:  BaseType(MODEL)
+OUT: two-phase-commit.p (132, 22): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (133, 4): inferred type:  NIL
+OUT: two-phase-commit.p (133, 10): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (139, 3): inferred type:  NIL
+OUT: two-phase-commit.p (139, 7): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NIL))
+OUT: two-phase-commit.p (139, 15): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (139, 19): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (139, 22): inferred type:  MapType(BaseType(INT), BaseType(INT))
+OUT: two-phase-commit.p (140, 4): inferred type:  NIL
+OUT: two-phase-commit.p (140, 15): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (140, 38): inferred type:  NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL))
+OUT: two-phase-commit.p (140, 42): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NIL))
+OUT: two-phase-commit.p (140, 50): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (140, 55): inferred type:  NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)
+OUT: two-phase-commit.p (140, 59): inferred type:  MapType(BaseType(INT), BaseType(INT))
+OUT: two-phase-commit.p (140, 63): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (140, 64): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NIL))
+OUT: two-phase-commit.p (140, 72): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (141, 4): inferred type:  NIL
+OUT: two-phase-commit.p (141, 9): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NIL))
+OUT: two-phase-commit.p (141, 17): inferred type:  BaseType(MODEL)
+OUT: two-phase-commit.p (141, 25): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (141, 39): inferred type:  MapType(BaseType(INT), BaseType(INT))
+OUT: two-phase-commit.p (141, 43): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (141, 44): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NIL))
+OUT: two-phase-commit.p (141, 52): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (143, 4): inferred type:  NIL
+OUT: two-phase-commit.p (143, 15): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (143, 41): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NIL))
+OUT: two-phase-commit.p (143, 49): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (144, 4): inferred type:  NIL
+OUT: two-phase-commit.p (144, 9): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NIL))
+OUT: two-phase-commit.p (144, 17): inferred type:  BaseType(MODEL)
+OUT: two-phase-commit.p (144, 25): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (149, 3): inferred type:  NIL
+OUT: two-phase-commit.p (149, 3): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (149, 21): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (150, 3): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (150, 3): inferred type:  NIL
+OUT: two-phase-commit.p (150, 16): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (150, 27): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (150, 29): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (151, 3): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (151, 3): inferred type:  NIL
+OUT: two-phase-commit.p (151, 7): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (152, 3): inferred type:  NIL
+OUT: two-phase-commit.p (152, 10): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (152, 12): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (152, 14): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (152, 21): inferred type:  SeqType(BaseType(REAL))
+OUT: two-phase-commit.p (153, 4): inferred type:  NIL
+OUT: two-phase-commit.p (153, 9): inferred type:  SeqType(BaseType(REAL))
+OUT: two-phase-commit.p (153, 17): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (153, 18): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (153, 22): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (153, 36): inferred type:  NmdTupType(NmdTupTypeField("seqNum", BaseType(INT)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (153, 43): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (153, 55): inferred type:  NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL))
+OUT: two-phase-commit.p (153, 59): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (153, 75): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (153, 80): inferred type:  NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)
+OUT: two-phase-commit.p (153, 84): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (153, 100): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (154, 4): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (154, 4): inferred type:  NIL
+OUT: two-phase-commit.p (154, 8): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (154, 10): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (154, 12): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (156, 3): inferred type:  NIL
+OUT: two-phase-commit.p (156, 8): inferred type:  BaseType(MODEL)
+OUT: two-phase-commit.p (156, 15): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (156, 27): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (157, 3): inferred type:  NIL
+OUT: two-phase-commit.p (157, 9): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (168, 3): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (168, 3): inferred type:  NIL
+OUT: two-phase-commit.p (168, 7): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (169, 3): inferred type:  NIL
+OUT: two-phase-commit.p (169, 10): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (169, 12): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (169, 14): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (169, 21): inferred type:  SeqType(BaseType(REAL))
+OUT: two-phase-commit.p (170, 4): inferred type:  NIL
+OUT: two-phase-commit.p (170, 9): inferred type:  SeqType(BaseType(REAL))
+OUT: two-phase-commit.p (170, 17): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (170, 18): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (170, 22): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (170, 36): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (171, 4): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (171, 4): inferred type:  NIL
+OUT: two-phase-commit.p (171, 8): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (171, 10): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (171, 12): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (173, 3): inferred type:  NIL
+OUT: two-phase-commit.p (173, 8): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (173, 24): inferred type:  BaseType(MODEL)
+OUT: two-phase-commit.p (173, 32): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (178, 4): inferred type:  NIL
+OUT: two-phase-commit.p (178, 8): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (178, 10): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (178, 13): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (179, 5): inferred type:  NIL
+OUT: two-phase-commit.p (179, 12): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (179, 14): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (179, 16): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (179, 23): inferred type:  SeqType(BaseType(REAL))
+OUT: two-phase-commit.p (180, 6): inferred type:  NIL
+OUT: two-phase-commit.p (180, 11): inferred type:  SeqType(BaseType(REAL))
+OUT: two-phase-commit.p (180, 19): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (180, 20): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (180, 24): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (180, 39): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (181, 6): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (181, 6): inferred type:  NIL
+OUT: two-phase-commit.p (181, 10): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (181, 12): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (181, 14): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (183, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
+OUT: two-phase-commit.p (183, 5): inferred type:  NIL
+OUT: two-phase-commit.p (183, 9): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (183, 10): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (183, 26): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (183, 33): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (183, 49): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (184, 5): inferred type:  NIL
+OUT: two-phase-commit.p (184, 16): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (184, 32): inferred type:  NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL))
+OUT: two-phase-commit.p (184, 36): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (184, 52): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (184, 57): inferred type:  NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)
+OUT: two-phase-commit.p (184, 61): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (184, 77): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (185, 5): inferred type:  NIL
+OUT: two-phase-commit.p (185, 10): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (185, 26): inferred type:  BaseType(MODEL)
+OUT: two-phase-commit.p (185, 34): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (186, 5): inferred type:  NIL
+OUT: two-phase-commit.p (186, 10): inferred type:  BaseType(MODEL)
+OUT: two-phase-commit.p (186, 17): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (187, 5): inferred type:  NIL
+OUT: two-phase-commit.p (187, 11): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (193, 4): inferred type:  NIL
+OUT: two-phase-commit.p (193, 8): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (193, 19): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (193, 22): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (194, 5): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (194, 5): inferred type:  NIL
+OUT: two-phase-commit.p (194, 9): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (194, 11): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (194, 13): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (199, 4): inferred type:  NIL
+OUT: two-phase-commit.p (205, 3): inferred type:  NIL
+OUT: two-phase-commit.p (205, 7): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (205, 18): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (205, 21): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (206, 4): inferred type:  NIL
+OUT: two-phase-commit.p (207, 4): inferred type:  NIL
+OUT: two-phase-commit.p (207, 9): inferred type:  BaseType(MODEL)
+OUT: two-phase-commit.p (207, 16): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (208, 4): inferred type:  NIL
+OUT: two-phase-commit.p (208, 10): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (220, 3): inferred type:  NIL
+OUT: two-phase-commit.p (230, 10): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (230, 10): inferred type:  NIL
+OUT: two-phase-commit.p (230, 24): inferred type:  BaseType(ANY)
+OUT: two-phase-commit.p (230, 32): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (231, 4): inferred type:  NIL
+OUT: two-phase-commit.p (231, 10): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (239, 4): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (239, 4): inferred type:  NIL
+OUT: two-phase-commit.p (239, 10): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (240, 4): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (240, 4): inferred type:  NIL
+OUT: two-phase-commit.p (240, 10): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (241, 4): inferred type:  NIL
+OUT: two-phase-commit.p (241, 9): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (241, 22): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (241, 34): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)))
+OUT: two-phase-commit.p (241, 41): inferred type:  BaseType(MODEL)
+OUT: two-phase-commit.p (241, 47): inferred type:  NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL))
+OUT: two-phase-commit.p (241, 51): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (241, 56): inferred type:  NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL)
+OUT: two-phase-commit.p (241, 60): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (249, 4): inferred type:  NIL
+OUT: two-phase-commit.p (249, 9): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (249, 22): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (249, 33): inferred type:  NmdTupType(NmdTupTypeField("client", BaseType(MODEL)), NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NIL))
+OUT: two-phase-commit.p (249, 40): inferred type:  BaseType(MODEL)
+OUT: two-phase-commit.p (249, 46): inferred type:  NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NIL)
+OUT: two-phase-commit.p (249, 50): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (255, 2): inferred type:  NIL
+OUT: two-phase-commit.p (259, 3): inferred type:  NIL
+OUT: two-phase-commit.p (259, 7): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (260, 4): inferred type:  NIL
+OUT: two-phase-commit.p (260, 11): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (262, 4): inferred type:  NIL
+OUT: two-phase-commit.p (262, 11): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (268, 3): inferred type:  NIL
+OUT: two-phase-commit.p (268, 7): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (269, 4): inferred type:  NIL
+OUT: two-phase-commit.p (269, 11): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (271, 4): inferred type:  NIL
+OUT: two-phase-commit.p (271, 11): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (279, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
+OUT: two-phase-commit.p (279, 4): inferred type:  NIL
+OUT: two-phase-commit.p (279, 8): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (279, 9): inferred type:  NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL))
+OUT: two-phase-commit.p (279, 17): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (279, 24): inferred type:  NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL))
+OUT: two-phase-commit.p (279, 32): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (282, 3): inferred type:  NIL
+OUT: two-phase-commit.p (282, 10): inferred type:  NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL))
+OUT: two-phase-commit.p (282, 18): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (282, 22): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (282, 25): inferred type:  MapType(BaseType(INT), BaseType(INT))
+OUT: two-phase-commit.p (283, 3): inferred type:  NIL
+OUT: two-phase-commit.p (283, 10): inferred type:  MapType(BaseType(INT), BaseType(INT))
+OUT: two-phase-commit.p (283, 14): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (283, 15): inferred type:  NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL))
+OUT: two-phase-commit.p (283, 23): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (283, 28): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (283, 31): inferred type:  NmdTupType(NmdTupTypeField("idx", BaseType(INT)), NmdTupType(NmdTupTypeField("val", BaseType(INT)), NIL))
+OUT: two-phase-commit.p (283, 39): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (286, 3): inferred type:  NIL
+OUT: two-phase-commit.p (286, 10): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (286, 12): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (286, 20): inferred type:  BaseType(BOOL)
+OUT: two-phase-commit.p (286, 23): inferred type:  MapType(BaseType(INT), BaseType(INT))
+OUT: two-phase-commit.p (289, 3): inferred type:  NIL
+OUT: two-phase-commit.p (300, 4): inferred type:  NIL
+OUT: two-phase-commit.p (301, 10): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (301, 10): inferred type:  NIL
+OUT: two-phase-commit.p (301, 24): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (301, 40): inferred type:  BaseType(INT)
+OUT: two-phase-commit.p (302, 4): inferred type:  BaseType(MODEL)
+OUT: two-phase-commit.p (302, 4): inferred type:  NIL
+OUT: two-phase-commit.p (302, 13): inferred type:  BaseType(MODEL)
+OUT: two-phase-commit.p (302, 24): inferred type:  BaseType(REAL)
+OUT: two-phase-commit.p (303, 4): inferred type:  BaseType(MODEL)
+OUT: two-phase-commit.p (303, 4): inferred type:  NIL
+OUT: two-phase-commit.p (303, 13): inferred type:  BaseType(MODEL)
+OUT: two-phase-commit.p (303, 24): inferred type:  BaseType(REAL)
+OUT: 
+EXIT: 0

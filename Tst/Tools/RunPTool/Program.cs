@@ -16,9 +16,9 @@
         {
             try
             {
-                if (args.Length > 1)
+                if (args.Length > 2)
                 {
-                    Console.WriteLine("USAGE: Test.exe [root dir]");
+                    Console.WriteLine("USAGE: RunPTool.exe [root dir] [reset]");
                 }
                 DirectoryInfo di = args.Length == 0
                     ? new DirectoryInfo(Environment.CurrentDirectory)
@@ -33,7 +33,10 @@
 
                 Console.WriteLine("Running tests under {0}...", di.FullName);
                 int testCount = 0, failCount = 0;
-                Test(di, ref testCount, ref failCount);
+                bool reset = args.Length == 1
+                    ? false
+                    : (args[1] == "reset") ? true : false;
+                Test(di, reset, ref testCount, ref failCount);
 
                 Console.WriteLine();
                 Console.WriteLine("Total tests: {0}, Passed tests: {1}. Failed tests: {2}", testCount, testCount - failCount, failCount);
@@ -49,14 +52,14 @@
             }
         }
 
-        private static void Test(DirectoryInfo di, ref int testCount, ref int failCount)
+        private static void Test(DirectoryInfo di, bool reset, ref int testCount, ref int failCount)
         {
             //TODO: try{} at the top level
             //enumerating files in the top dor only
             foreach (var fi in di.EnumerateFiles(TestFilePattern))
             {
                 ++testCount;
-                var checker = new CheckP.Checker(di.FullName);
+                var checker = new CheckP.Checker(di.FullName, reset);
                 if (!checker.Check(fi.Name))
                 {
                     ++failCount;
@@ -65,7 +68,7 @@
 
             foreach (var dp in di.EnumerateDirectories())
             {
-                Test(dp, ref testCount, ref failCount);
+                Test(dp, reset, ref testCount, ref failCount);
             }
         }
     }

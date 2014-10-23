@@ -1,0 +1,20 @@
+=================================
+         Console output          
+=================================
+OUT: transdecl_dodecl.p (6, 4): inferred type:  NIL
+OUT: transdecl_dodecl.p (6, 8): inferred type:  BaseType(INT)
+OUT: transdecl_dodecl.p (6, 8): inferred type:  TupType(BaseType(INT), NIL)
+OUT: transdecl_dodecl.p (15, 11): inferred type:  NIL
+OUT: transdecl_dodecl.p (20, 19): inferred type:  NIL
+OUT: transdecl_dodecl.p (27, 12): inferred type:  NIL
+OUT: transdecl_dodecl.p (33, 2): inferred type:  NIL
+OUT: transdecl_dodecl.p (12, 3): transition to an undefined state
+OUT: transdecl_dodecl.p (13, 3): function cannot take arguments
+OUT: transdecl_dodecl.p (14, 3): transition function not defined
+OUT: transdecl_dodecl.p (15, 3): action on an undefined event
+OUT: transdecl_dodecl.p (16, 3): function not defined
+OUT: transdecl_dodecl.p (17, 3): function cannot take arguments
+OUT: transdecl_dodecl.p (33, 2): transition to an undefined state
+OUT: Compilation failed
+OUT: 
+EXIT: -1

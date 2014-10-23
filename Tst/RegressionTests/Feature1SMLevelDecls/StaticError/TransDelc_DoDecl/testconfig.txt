@@ -1,0 +1,6 @@
+runPc: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: TransDecl_DoDecl.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+acc: .\
+dsc: 1.7/1.8 Transition/Do declarations

@@ -1,0 +1,27 @@
+=================================
+         Console output          
+=================================
+OUT: function.p (6, 7): inferred type:  BaseType(EVENT)
+OUT: function.p (6, 7): inferred type:  ERROR
+OUT: function.p (6, 7): inferred type:  NIL
+OUT: function.p (6, 11): inferred type:  ERROR
+OUT: function.p (12, 5): inferred type:  ERROR
+OUT: function.p (12, 12): inferred type:  BaseType(BOOL)
+OUT: function.p (16, 5): inferred type:  NIL
+OUT: function.p (16, 12): inferred type:  BaseType(INT)
+OUT: function.p (20, 5): inferred type:  ERROR
+OUT: function.p (28, 5): inferred type:  ERROR
+OUT: function.p (28, 5): inferred type:  NIL
+OUT: function.p (28, 12): inferred type:  BaseType(INT)
+OUT: function.p (29, 4): inferred type:  NIL
+OUT: function.p (29, 9): inferred type:  BaseType(REAL)
+OUT: function.p (29, 15): inferred type:  BaseType(EVENT)
+OUT: function.p (6, 7): invalid assignment. right hand side is not a subtype of left hand side
+OUT: function.p (6, 7): invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name
+OUT: function.p (6, 11): function requires arguments
+OUT: function.p (12, 5): return value has incorrect type
+OUT: function.p (20, 5): function must return a value
+OUT: function.p (28, 5): anonymous function cannot return a value
+OUT: Compilation failed
+OUT: 
+EXIT: -1

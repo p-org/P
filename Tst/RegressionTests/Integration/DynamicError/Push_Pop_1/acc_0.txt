@@ -1,0 +1,167 @@
+=================================
+         Console output          
+=================================
+OUT: Writing Push_Pop_1_p_.h ...
+OUT: Writing Push_Pop_1.zing ...
+OUT: Compiling Push_Pop_1.zing to Push_Pop_1.dll ...
+OUT: push_pop_1.p (20, 13): inferred type:  BaseType(MODEL)
+OUT: push_pop_1.p (20, 13): inferred type:  NIL
+OUT: push_pop_1.p (20, 34): inferred type:  BaseType(MODEL)
+OUT: push_pop_1.p (20, 50): inferred type:  BaseType(REAL)
+OUT: push_pop_1.p (21, 13): inferred type:  BaseType(MODEL)
+OUT: push_pop_1.p (21, 13): inferred type:  NIL
+OUT: push_pop_1.p (21, 30): inferred type:  BaseType(MODEL)
+OUT: push_pop_1.p (21, 42): inferred type:  BaseType(REAL)
+OUT: push_pop_1.p (22, 13): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (22, 13): inferred type:  NIL
+OUT: push_pop_1.p (22, 29): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (23, 13): inferred type:  NIL
+OUT: push_pop_1.p (23, 19): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (30, 12): inferred type:  NIL
+OUT: push_pop_1.p (33, 13): inferred type:  NIL
+OUT: push_pop_1.p (33, 17): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (33, 25): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (33, 28): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (33, 42): inferred type:  NIL
+OUT: push_pop_1.p (33, 47): inferred type:  BaseType(MODEL)
+OUT: push_pop_1.p (33, 67): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (41, 13): inferred type:  NIL
+OUT: push_pop_1.p (41, 18): inferred type:  BaseType(MODEL)
+OUT: push_pop_1.p (41, 38): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (42, 13): inferred type:  NIL
+OUT: push_pop_1.p (48, 13): inferred type:  NIL
+OUT: push_pop_1.p (48, 18): inferred type:  BaseType(MODEL)
+OUT: push_pop_1.p (48, 34): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (51, 13): inferred type:  NIL
+OUT: push_pop_1.p (51, 20): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (51, 34): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (51, 37): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (52, 13): inferred type:  NIL
+OUT: push_pop_1.p (52, 17): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (52, 25): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (52, 28): inferred type:  BaseType(NULL)
+OUT: push_pop_1.p (52, 34): inferred type:  NIL
+OUT: push_pop_1.p (52, 39): inferred type:  BaseType(MODEL)
+OUT: push_pop_1.p (52, 55): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (56, 42): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (56, 42): inferred type:  NIL
+OUT: push_pop_1.p (56, 58): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (68, 13): inferred type:  NIL
+OUT: push_pop_1.p (68, 19): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (75, 13): inferred type:  NIL
+OUT: push_pop_1.p (75, 20): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (75, 34): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (75, 37): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (76, 13): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (76, 13): inferred type:  NIL
+OUT: push_pop_1.p (76, 21): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (77, 13): inferred type:  NIL
+OUT: push_pop_1.p (77, 17): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (78, 17): inferred type:  NIL
+OUT: push_pop_1.p (78, 23): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (80, 17): inferred type:  NIL
+OUT: push_pop_1.p (80, 23): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (85, 13): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (85, 13): inferred type:  NIL
+OUT: push_pop_1.p (85, 29): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (93, 17): inferred type:  NIL
+OUT: push_pop_1.p (93, 24): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (97, 9): inferred type:  NIL
+OUT: push_pop_1.p (97, 13): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (98, 13): inferred type:  NIL
+OUT: push_pop_1.p (98, 20): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (100, 13): inferred type:  NIL
+OUT: push_pop_1.p (100, 20): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (109, 6): inferred type:  BaseType(REAL)
+OUT: push_pop_1.p (109, 6): inferred type:  NIL
+OUT: push_pop_1.p (109, 24): inferred type:  BaseType(ANY)
+OUT: push_pop_1.p (109, 32): inferred type:  BaseType(REAL)
+OUT: push_pop_1.p (110, 6): inferred type:  NIL
+OUT: push_pop_1.p (110, 12): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (121, 13): inferred type:  NIL
+OUT: push_pop_1.p (121, 17): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (121, 22): inferred type:  NIL
+OUT: push_pop_1.p (121, 27): inferred type:  BaseType(REAL)
+OUT: push_pop_1.p (121, 44): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (121, 54): inferred type:  NIL
+OUT: push_pop_1.p (121, 60): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (121, 75): inferred type:  NIL
+OUT: push_pop_1.p (121, 80): inferred type:  BaseType(REAL)
+OUT: push_pop_1.p (121, 97): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (133, 6): inferred type:  BaseType(REAL)
+OUT: push_pop_1.p (133, 6): inferred type:  NIL
+OUT: push_pop_1.p (133, 24): inferred type:  BaseType(ANY)
+OUT: push_pop_1.p (133, 32): inferred type:  BaseType(REAL)
+OUT: push_pop_1.p (134, 6): inferred type:  NIL
+OUT: push_pop_1.p (134, 12): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (145, 13): inferred type:  NIL
+OUT: push_pop_1.p (145, 17): inferred type:  BaseType(BOOL)
+OUT: push_pop_1.p (145, 22): inferred type:  NIL
+OUT: push_pop_1.p (145, 28): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (145, 42): inferred type:  NIL
+OUT: push_pop_1.p (145, 47): inferred type:  BaseType(REAL)
+OUT: push_pop_1.p (145, 64): inferred type:  BaseType(EVENT)
+OUT: 
+EXIT: 0
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 59 distinct states, 122 total transitions, 11 steps max depth
+OUT: 
+EXIT: 0
+
+=================================
+Push_Pop_1.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine Employee-0
+<StateLog> Machine Employee-0 entering State Init
+<CreateLog> Created Machine TravelAgent-0
+<CreateLog> Created Machine CityCab-0
+<RaiseLog> Machine Employee-0 raised Event ____Unit
+<StateLog> Machine Employee-0 exiting State Init
+<StateLog> Machine Employee-0 entering State BangaloreOffice
+<StateLog> Machine Employee-0 entering State SBookFlight
+<EnqueueLog> Enqueued Event < ____BookFlight, null > in Machine ____TravelAgent-0 by ____Employee-0
+<StateLog> Machine TravelAgent-0 entering State _Init
+<RaiseLog> Machine TravelAgent-0 raised Event ____Unit
+<StateLog> Machine TravelAgent-0 exiting State _Init
+<StateLog> Machine TravelAgent-0 entering State Init
+<DequeueLog> Dequeued Event < ____BookFlight, null > at Machine ____TravelAgent-0
+<StateLog> Machine TravelAgent-0 exiting State Init
+<StateLog> Machine TravelAgent-0 entering State SBookFlight
+<EnqueueLog> Enqueued Event < ____FlightBooked, null > in Machine ____Employee-0 by ____TravelAgent-0
+<StateLog> Machine Employee-0 exiting State SBookFlight
+<DequeueLog> Dequeued Event < ____FlightBooked, null > at Machine ____Employee-0
+<StateLog> Machine Employee-0 exiting State BangaloreOffice
+<EnqueueLog> Enqueued Event < ____Thanks, null > in Machine ____TravelAgent-0 by ____Employee-0
+<StateLog> Machine Employee-0 entering State SBookCab
+<EnqueueLog> Enqueued Event < ____BookCab, null > in Machine ____CityCab-0 by ____Employee-0
+<DefaultTransLog> Default transition taken by Machine ____Employee-0
+<StateLog> Machine Employee-0 exiting State SBookCab
+<StateLog> Machine Employee-0 entering State TakeBus
+<RaiseLog> Machine Employee-0 raised Event ____ReachedAirport
+<StateLog> Machine Employee-0 exiting State TakeBus
+<StateLog> Machine Employee-0 entering State AtAirport
+<RaiseLog> Machine Employee-0 raised Event ____TookFlight
+<StateLog> Machine Employee-0 exiting State AtAirport
+<StateLog> Machine Employee-0 entering State ReachedRedmond
+
+Error:
+Zing Assertion failed:
+    Expression: tmp_24.bl,
+    Comment: (93, 17): Assert failed
+
+Microsoft.Zing.ZingAssertionFailureException: Exception of type 'Microsoft.Zing.ZingAssertionFailureException' was thrown.
+
+Stack trace:
+    Employee.AnonFun11 (Push_Pop_1.zing, Line 2110)
+    Employee.ReentrancyHelper (Push_Pop_1.zing, Line 1457)
+    Employee.RunHelper (Push_Pop_1.zing, Line 640)
+    Employee.Run (Push_Pop_1.zing, Line 174)
+    Employee.Start (Push_Pop_1.zing, Line 139)
+

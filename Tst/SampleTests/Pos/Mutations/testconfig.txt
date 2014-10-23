@@ -1,8 +1,0 @@
-runPc: ..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
-argPc: mutations.p 
-argPc: /printTypeInference
-argPc: /shortFileNames
-runZing: ..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: mutations.dll
-acc: .\
-dsc: various state variable mutation expressions

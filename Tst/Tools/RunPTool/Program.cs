@@ -33,9 +33,9 @@
 
                 Console.WriteLine("Running tests under {0}...", di.FullName);
                 int testCount = 0, failCount = 0;
-                bool reset = args.Length == 1
-                    ? false
-                    : (args[1] == "reset") ? true : false;
+                bool reset = args.Length == 2
+                    ? (args[1] == "reset") ? true : false
+                    : false;
                 Test(di, reset, ref testCount, ref failCount);
 
                 Console.WriteLine();

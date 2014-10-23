@@ -199,9 +199,16 @@
             zcProcessInfo.Arguments = string.Format("/nowarn:292 /out:{0}\\{1} {2}", outputDirName, dllFileName, zingFileNameFull);
             zcProcessInfo.UseShellExecute = false;
             zcProcessInfo.CreateNoWindow = true;
+            zcProcessInfo.RedirectStandardOutput = true;
             Console.WriteLine("Compiling {0} to {1} ...", zingFileName, dllFileName);
             var zcProcess = System.Diagnostics.Process.Start(zcProcessInfo);
             zcProcess.WaitForExit();
+            if(zcProcess.ExitCode != 0)
+            {
+                Console.WriteLine("Zc failed to Compile the generated code :");
+                Console.WriteLine(zcProcess.StandardOutput.ReadToEnd());
+                return false;
+            }
             return true;
         }
 

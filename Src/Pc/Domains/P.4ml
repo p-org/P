@@ -210,6 +210,7 @@ domain PStaticTyping extends PData
     TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = NulApp(TRIGGER).
     TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = NulApp(HALT).
 	
+	/*
 	////// Type Inference for the payload type
 	
 	PayloadType ::= (c : TypingContext, t : TypeExpr + { ERROR, NIL }).
@@ -271,7 +272,8 @@ domain PStaticTyping extends PData
 	
 	Widen ::= (TypeExpr + {ERROR, NIL}, TypeExpr + {ERROR, NIL}, TypeExpr + {ERROR, NIL}).
 	Widen(t1, t2, wider) :- TypeRel(t1, t2, SUB), wider = t2; TypeRel(t1, t2, SUP), wider = t1, t1 != t2; TypeRel(t1, t2, EMPTY), wider = BaseType(ANY);TypeRel(t1, t2, NONEMPTY), wider = BaseType(ANY).
-
+	*/
+	TypeOf(c, e, t) :- SubSE(c, e), e = NulApp(PAYLOAD), t = BaseType(ANY).
 	
     TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = REAL.
     TypeOf(c, e, BaseType(MODEL)) :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = MODEL.

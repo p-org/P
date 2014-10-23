@@ -146,6 +146,7 @@
                 Console.WriteLine("/liveness[:mace]");
                 Console.WriteLine("/shortFileNames");
                 Console.WriteLine("/printTypeInference");
+                Console.WriteLine("/dumpFormulaModel");
                 return 0;
             }
         }

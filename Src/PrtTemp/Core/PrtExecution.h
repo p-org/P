@@ -11,30 +11,6 @@ typedef struct PRT_PROCESS_PRIV {
 } PRT_PROCESS_PRIV;
 
 //
-// To specify where to return in entry or exit functions
-//
-typedef enum PRT_RETURNTO
-{
-	//
-	// If ReturnTo points to this value then the call was a call edge/transition
-	// and control should return to dequeue
-	//
-	PrtEntryFunEnd = INT_MAX,
-	//
-	// If ReturnTo points to this value then the call returns to the start of Entry Function
-	//
-	PrtEntryFunStart = 0,
-	//
-	// If ReturnTo points to this value then the call returns to the start of Exit function
-	//
-	PrtExitFunStart = 0,
-	//
-	// If ReturnTo points to this value then the call returns to the start of Action
-	//
-	PrtActionFunStart = 0
-} PRT_RETURNTO;
-
-//
 // To indicate whether to execute entry or exit function
 //
 typedef enum PRT_STATE_EXECFUN
@@ -44,17 +20,13 @@ typedef enum PRT_STATE_EXECFUN
 	//
 	PrtStateEntry,
 	//
-	// If StateExecFun points to StateExit, then we should execute the exit function for this state
-	//
-	PrtStateExit,
-
-	//
 	// If StateExecFun points to StateAction, then we should execute the action corresponding to trigger event for the current state
 	//
-	PrtStateAction
+	PrtStateAction,
 	//
 	// None of the above just execute the dequeue function
 	//
+	PrtDequeue
 } PRT_STATE_EXECFUN;
 
 /*********************************************************************************
@@ -69,7 +41,7 @@ typedef enum PRT_LASTOPERATION
 	PopStatement,
 	RaiseStatement,
 	PushStatement,
-	OtherStatement
+	ReturnStatement
 } PRT_LASTOPERATION;
 
 /*********************************************************************************
@@ -258,14 +230,14 @@ void
 PrtRunStateMachine(
 __inout
 PRT_SM_CONTEXT_PRIV	    *context,
-__in PRT_BOOLEAN	doEntryOrExit
+__in PRT_BOOLEAN	doDequeue
 );
 
 
 //
 //Dequeue an event given the current state of the context
 //
-PRT_TRIGGER
+PRT_BOOLEAN
 PrtDequeueEvent(
 __inout PRT_SM_CONTEXT_PRIV	*context
 );

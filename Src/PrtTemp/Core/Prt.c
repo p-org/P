@@ -98,12 +98,12 @@ __in  PRT_VALUE					*payload
 	context->currentState = process->program->machines[context->context.instanceOf].initStateIndex;
 	context->isRunning = FALSE;
 	context->isHalted = FALSE;
-	context->lastOperation = OtherStatement;
+	context->lastOperation = ReturnStatement;
 
 	context->trigger.event = PrtMkNullValue();
 	context->trigger.payload = PrtCloneValue(payload);
-	context->returnTo = PrtEntryFunStart;
 	context->stateExecFun = PrtStateEntry;
+	context->returnTo = 0;
 
 	//
 	// Allocate memory for local variables and initialize them
@@ -166,13 +166,9 @@ __in  PRT_VALUE					*payload
 	process->program->machines[publicContext->instanceOf].extCtor(publicContext, payload);
 
 	//
-	//Acquire the lock while stabilizing the state machine
-	//
-	PrtLockMutex(context->stateMachineLock);
-	//
 	// Run the state machine
 	//
-	PrtRunStateMachine(context, TRUE);
+	PrtRunStateMachine(context, FALSE);
 
 	return publicContext;
 }
@@ -229,11 +225,11 @@ PRT_SM_CONTEXT * PrtMkModel(
 	context->currentState = process->program->machines[context->context.instanceOf].initStateIndex;
 	context->isRunning = FALSE;
 	context->isHalted = FALSE;
-	context->lastOperation = OtherStatement;
+	context->lastOperation = ReturnStatement;
 
 	context->trigger.event = PrtMkNullValue();
 	context->trigger.payload = PrtCloneValue(payload);
-	context->returnTo = PrtEntryFunStart;
+	context->returnTo = 0;
 	context->stateExecFun = PrtStateEntry;
 
 	//
@@ -457,7 +453,7 @@ __in PRT_VALUE					*payload
 	}
 	else
 	{
-		PrtRunStateMachine(context, FALSE);
+		PrtRunStateMachine(context, TRUE);
 	}
 
 	return;
@@ -574,395 +570,253 @@ __in PRT_SM_CONTEXT_PRIV			*context
 	return context->context.process->program->machines[context->context.instanceOf].states[context->currentState];
 }
 
+FORCEINLINE
+void
+PrtRunExitFunction(
+__in PRT_SM_CONTEXT_PRIV			*context
+)
+{
+	context->returnTo = 0;
+	context->lastOperation = ReturnStatement;
+	PRT_UINT32 exitFunIndex = context->context.process->program->machines[context->context.instanceOf].states[context->currentState].exitFunIndex;
+	PrtLog(PRT_STEP_EXIT, context);
+	PrtGetExitFunction(context)(&context->context, exitFunIndex, NULL);
+	PRT_DBG_ASSERT(context->lastOperation == ReturnStatement, "Exit function must terminate with a ReturnStatement");
+}
+
 void
 PrtRunStateMachine(
 __inout PRT_SM_CONTEXT_PRIV	    *context,
-__in PRT_BOOLEAN	doEntryOrExit
+__in PRT_BOOLEAN	doDequeue
 )
 {
-	//
-	// Declarations
-	//
-	PRT_TRIGGER e;
-	PRT_BOOLEAN isLockAcq;
+	PRT_BOOLEAN lockHeld;
 	PRT_DODECL *currActionDecl;
-	//
-	// Code
-	//
+	PRT_UINT32 eventValue;
 
-	e.event = PrtMkNullValue();
-	e.payload = PrtMkNullValue();
-
-	isLockAcq = TRUE;
+	// The state machine lock is held at entry iff an event was just enqueued.
+	lockHeld = doDequeue;
 
 	context->isRunning = TRUE;
 
-	//// If doEntry is false, then the current state of the machine
-	//// has already been executed in a previous call to PrtStabilize
-	if (!doEntryOrExit)
+	if (doDequeue)
 	{
-		//// We only return to the top of the loop if the state changed
-		//// so the entry function should be executed
-		doEntryOrExit = TRUE;
 		goto DoDequeue;
 	}
 
-	//Since we are not accessing event queues we can release the locks
-	if (isLockAcq)
-	{
-		isLockAcq = FALSE;
-		PrtUnlockMutex(context->stateMachineLock);
-	}
-
-
-DoEntryOrExitOrActionFunction:
-
-	// SM is entering or re-entering the state (entry or action or exit)
-	// update the current deferred and actions set
+DoEntryOrAction:
 	PrtUpdateCurrentActionsSet(context);
 	PrtUpdateCurrentDeferredSet(context);
 
-	//// Step 1. Execute the entry function or Exit Function
-	// 
-	// Check whether to execute entry or exit function
-	//
+	PRT_DBG_ASSERT(context->stateExecFun != PrtDequeue, "stateExecFun must not be PrtDequeue");
 	if (context->stateExecFun == PrtStateEntry)
 	{
-		// handle the case when we are entering a state with an unhandled event
-		if (context->returnTo == PrtEntryFunEnd && PrtIsNullValue(context->trigger.event))
-		{
-			goto DoTakeTransition;
-		}
-
 		//
-		// Execute Entry Function
+		// Log
 		//
-		//
-
-		//
-		//Log
-		//
-		if (context->returnTo == PrtEntryFunStart)
+		if (context->returnTo == 0)
 			PrtLog(PRT_STEP_MOVE, context);
+		//
 		// Initialize context before executing entry function
 		//
-		context->lastOperation = OtherStatement;
+		context->lastOperation = ReturnStatement;
 		//
 		// Execute the Entry function
 		//
 		PRT_UINT32 entryFunIndex = context->context.process->program->machines[context->context.instanceOf].states[context->currentState].entryFunIndex;
 		PrtGetEntryFunction(context)(&context->context, entryFunIndex, NULL);
 
-		//// Step 2. Handle any raised event -- call --- Pop -- others
 		switch (context->lastOperation)
 		{
 		case PopStatement:
-			context->stateExecFun = PrtStateExit;
-			context->returnTo = PrtExitFunStart;
-			goto DoEntryOrExitOrActionFunction;
+			goto DoPop;
 			break;
 		case RaiseStatement:
-			if (PrtIsTransitionPresent(PrtPrimGetEvent(context->trigger.event), context))
+			eventValue = PrtPrimGetEvent(context->trigger.event);
+			if (PrtIsTransitionPresent(eventValue, context))
 			{
-
-				if (PrtIsPushTransition(context, PrtPrimGetEvent(context->trigger.event)))
+				if (!PrtIsPushTransition(context, eventValue))
 				{
-					//
-					// call transition so no exit function executed
-					//
-					goto DoTakeTransition;
+					PrtRunExitFunction(context);
 				}
-
-				else
-				{
-					// execute exit function
-
-					context->stateExecFun = PrtStateExit;
-					context->returnTo = PrtExitFunStart;
-					goto DoEntryOrExitOrActionFunction;
-				}
+				goto DoTakeTransition;
 			}
-			//
-			// check if there is an action installed for this event
-			//
-			else if (PrtIsActionInstalled(PrtPrimGetEvent(context->trigger.event), context->currentActionsSetCompact))
+			else if (PrtIsActionInstalled(eventValue, context->currentActionsSetCompact))
 			{
 				context->stateExecFun = PrtStateAction;
-				context->returnTo = PrtActionFunStart;
-				goto DoEntryOrExitOrActionFunction;
+				context->returnTo = 0;
+				goto DoEntryOrAction;
 			}
-			//
-			// Unhandled raised event
-			//
 			else
 			{
-				context->stateExecFun = PrtStateExit;
-				context->returnTo = PrtExitFunStart;
-				goto DoEntryOrExitOrActionFunction;
+				//
+				// Unhandled raised event
+				//
+				PrtRunExitFunction(context);
+				goto DoTakeTransition;
 			}
 			break;
 		case PushStatement:
 			context->stateExecFun = PrtStateEntry;
-			context->returnTo = PrtEntryFunStart;
-			goto DoEntryOrExitOrActionFunction;
+			context->returnTo = 0;
+			goto DoEntryOrAction;
 			break;
-		case OtherStatement:
+		case ReturnStatement:
 			goto DoDequeue;
 			break;
 		default:
+			PRT_DBG_ASSERT(0, "Unexpected case in switch");
 			break;
 		}
 	}
-	else if (context->stateExecFun == PrtStateExit)
+	else 
 	{
-		//
-		//Execute the exit function
-		//
-		// Initialize context before executing exit function
-		//
-		context->lastOperation = OtherStatement;
-		//
-		// Execute the exit function for the current state
-		//
-		PRT_UINT32 exitFunIndex = context->context.process->program->machines[context->context.instanceOf].states[context->currentState].exitFunIndex;
-		PrtLog(PRT_STEP_EXIT, context);
-		PrtGetExitFunction(context)(&context->context, exitFunIndex, NULL);
-
-		//// Step 2. Handle call or others
-		switch (context->lastOperation)
-		{
-		case RaiseStatement:
-		case PopStatement:
-			PrtAssert(PRT_FALSE, "Pop or Raise is not allowed inside Exit Function");
-			break;
-		case PushStatement:
-			context->stateExecFun = PrtStateEntry;
-			context->returnTo = PrtEntryFunStart;
-			goto DoEntryOrExitOrActionFunction;
-		case OtherStatement:
-			goto DoTakeTransition;
-		default:
-			break;
-		}
-	}
-	else if (context->stateExecFun == PrtStateAction)
-	{
-		//
-		// Execute the action installed corresponding to trigger
-		//
+		PRT_DBG_ASSERT(context->stateExecFun == PrtStateAction, "stateExecFun must be PrtStateAction");
 		//
 		// Get the current action decl
+		//
 		currActionDecl = PrtGetAction(context);
-
 		//
-		//Log
+		// Log
 		//
-		if (context->returnTo == PrtActionFunStart)
+		if (context->returnTo == 0)
 			PrtLog(PRT_STEP_DO, context);
 		//
 		// Initialize context before executing entry function
 		//
-		context->lastOperation = OtherStatement;
+		context->lastOperation = ReturnStatement;
 		//
-		// Execute the Entry function
+		// Execute the Action function
 		//
 		context->context.process->program->machines[context->context.instanceOf].funs[currActionDecl->doFunIndex].implementation(&context->context, currActionDecl->doFunIndex, NULL);
 
-		//// Step 2. Handle any raised event -- call --- Pop -- others
 		switch (context->lastOperation)
 		{
 		case PopStatement:
-			context->stateExecFun = PrtStateExit;
-			context->returnTo = PrtExitFunStart;
-			goto DoEntryOrExitOrActionFunction;
+			goto DoPop;
 			break;
 		case RaiseStatement:
-			if (PrtIsTransitionPresent(context->trigger.event->valueUnion.ev, context))
+			eventValue = PrtPrimGetEvent(context->trigger.event);
+			if (PrtIsTransitionPresent(eventValue, context))
 			{
-
-				if (PrtIsPushTransition(context, context->trigger.event->valueUnion.ev))
+				if (!PrtIsPushTransition(context, eventValue))
 				{
-					//
-					// call transition so no exit function executed
-					//
-					goto DoTakeTransition;
+					PrtRunExitFunction(context);
 				}
-
-				else
-				{
-					// execute exit function
-					context->stateExecFun = PrtStateExit;
-					context->returnTo = PrtExitFunStart;
-					goto DoEntryOrExitOrActionFunction;
-				}
+				goto DoTakeTransition;
 			}
-			//
-			// check if there is an action installed for this event
-			//
-			else if (PrtIsActionInstalled(PrtPrimGetEvent(context->trigger.event), context->currentActionsSetCompact))
+			else if (PrtIsActionInstalled(eventValue, context->currentActionsSetCompact))
 			{
 				context->stateExecFun = PrtStateAction;
-				context->returnTo = PrtActionFunStart;
-				goto DoEntryOrExitOrActionFunction;
+				context->returnTo = 0;
+				goto DoEntryOrAction;
 			}
-			//
-			// Unhandled raised event
-			//
 			else
 			{
-				context->stateExecFun = PrtStateExit;
-				context->returnTo = PrtExitFunStart;
-				goto DoEntryOrExitOrActionFunction;
+				//
+				// Unhandled raised event
+				//
+				goto DoTakeTransition;
 			}
 			break;
 		case PushStatement:
 			context->stateExecFun = PrtStateEntry;
-			context->returnTo = PrtEntryFunStart;
-			goto DoEntryOrExitOrActionFunction;
+			context->returnTo = 0;
+			goto DoEntryOrAction;
 			break;
-		case OtherStatement:
+		case ReturnStatement:
 			goto DoDequeue;
 			break;
 		default:
+			PRT_DBG_ASSERT(0, "Unexpected case in switch");
 			break;
 		}
 	}
 
-
 DoDequeue:
-
-	//// Step 3. Try to get an event from the queue.
-	if (!isLockAcq)
+	if (!lockHeld)
 	{
-		isLockAcq = TRUE;
+		lockHeld = TRUE;
 		PrtLockMutex(context->stateMachineLock);
 	}
 
-	e = PrtDequeueEvent(context);
-
-	//Successfully dequeued an event
-	if (PrtIsNullValue(e.event))
+	if (PrtDequeueEvent(context))
 	{
-		//Release Lock
-		isLockAcq = FALSE;
+		// release Lock
+		lockHeld = FALSE;
 		PrtUnlockMutex(context->stateMachineLock);
-		if (PrtIsPushTransition(context, PrtPrimGetEvent(e.event)))
+		if (PrtIsPushTransition(context, PrtPrimGetEvent(context->trigger.event)))
 		{
 			goto DoTakeTransition;
 		}
-		//
-		// Transition corresponding to dequeued event (Ankush : this takes care of local priority of e over actions)
-		//
 		else if (PrtIsTransitionPresent(PrtPrimGetEvent(context->trigger.event), context))
 		{
-			context->stateExecFun = PrtStateExit;
-			context->returnTo = PrtExitFunStart;
-			goto DoEntryOrExitOrActionFunction;
+			PrtRunExitFunction(context);
+			goto DoTakeTransition;
 		}
-		//
-		// check if there is an action installed for this event
-		//
 		else if (PrtIsActionInstalled(PrtPrimGetEvent(context->trigger.event), context->currentActionsSetCompact))
 		{
 			context->stateExecFun = PrtStateAction;
-			context->returnTo = PrtActionFunStart;
-			goto DoEntryOrExitOrActionFunction;
+			context->returnTo = 0;
+			goto DoEntryOrAction;
 		}
-		//
-		// Unhandled dequeued event
-		//
 		else
 		{
-			context->stateExecFun = PrtStateExit;
-			context->returnTo = PrtExitFunStart;
-			goto DoEntryOrExitOrActionFunction;
+			PrtRunExitFunction(context);
+			goto DoTakeTransition;
 		}
-
 	}
-	// failed to dequeue an event -> two possibility either take default branch(if available) else block
 	else if (PrtStateHasDefaultTransition(context))
 	{
-		//release lock
-		isLockAcq = FALSE;
+		// release lock
+		lockHeld = FALSE;
 		PrtUnlockMutex(context->stateMachineLock);
-
-		//Free memory
-		PrtFreeValue(context->trigger.event);
-		PrtFreeValue(context->trigger.payload);
-
-		context->trigger.event = PrtMkEventValue(PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
-		context->trigger.payload = PrtMkNullValue();
-		context->stateExecFun = PrtStateExit;
-		context->returnTo = PrtExitFunStart;
-		goto DoEntryOrExitOrActionFunction;
+		PrtRunExitFunction(context);
+		goto DoTakeTransition;
 	}
 	else
 	{
 		context->isRunning = FALSE;
-		//Release Lock
-		isLockAcq = FALSE;
+		// release Lock
+		lockHeld = FALSE;
 		PrtUnlockMutex(context->stateMachineLock);
 		return;
-
 	}
 
-
-DoTakeTransition:
-
-	if ((PrtIsNullValue(context->trigger.event)))
+DoPop:
+	PrtRunExitFunction(context);
+	PrtPopState(context, PRT_TRUE);
+	PrtLog(PRT_STEP_POP, context);
+	if (context->stateExecFun == PrtDequeue)
 	{
 		//
-		// The last statement executed was a pop statement
+		// Pop returned to a push edge; we should return to dequeue
 		//
-		PrtPopState(context, TRUE);
-
-		//
-		//Log
-		//
-		PrtLog(PRT_STEP_POP, context);
-
-		if (context->returnTo == PrtEntryFunEnd)
-		{
-			//
-			// Pop returned to a call edge and hence we should return to the dequeue of 
-			// current state
-			//
-			goto DoDequeue;
-		}
-		else
-		{
-			//
-			// Pop returns to end of a call statement and hence should execute the next
-			//statement in entry/exit function.
-			goto DoEntryOrExitOrActionFunction;
-		}
-	}
-	else if (PrtPrimGetEvent(context->trigger.event) == PRT_SPECIAL_EVENT_DEFAULT_OR_NULL)
-	{
-		//
-		// Take default transition
-		//
-		PrtTakeDefaultTransition(context);
-		goto DoEntryOrExitOrActionFunction;
+		goto DoDequeue;
 	}
 	else
 	{
 		//
-		// Trigger is non-null and hence its a raise or dequeue or unhandled event
+		// Pop returns to end of a push statement; we should execute the next statement in entry/action function
 		//
-		PrtTakeTransition(context, PrtPrimGetEvent(context->trigger.event));
-
-		//
-		// If the machine is halted because of halt event then return
-		//
-		if (context->isHalted)
-			return;
-
-
-		goto DoEntryOrExitOrActionFunction;
-
+		goto DoEntryOrAction;
 	}
 
+DoTakeTransition:
+	if (PrtPrimGetEvent(context->trigger.event) == PRT_SPECIAL_EVENT_DEFAULT_OR_NULL)
+	{
+		PrtTakeDefaultTransition(context);
+		goto DoEntryOrAction;
+	}
+	else
+	{
+		PrtTakeTransition(context, PrtPrimGetEvent(context->trigger.event));
+		if (context->isHalted)
+			return;
+		goto DoEntryOrAction;
+	}
+
+	PRT_DBG_ASSERT(PRT_FALSE, "Cannot get here");
 	return;
 }
 
@@ -971,18 +825,10 @@ PrtTakeDefaultTransition(
 __inout PRT_SM_CONTEXT_PRIV		*context
 )
 {
-	//
-	// Declarations
-	//
 	ULONG i;
 	PRT_UINT32 nTransitions;
 	PRT_TRANSDECL* transTable;
-
-	//
-	// Code
-	//
-
-
+	
 	transTable = PrtGetTransTable(context, context->currentState, &nTransitions);
 
 	for (i = 0; i < nTransitions; ++i)
@@ -990,23 +836,23 @@ __inout PRT_SM_CONTEXT_PRIV		*context
 		//check if transition is After
 		if (transTable[i].triggerEventIndex == PRT_SPECIAL_EVENT_DEFAULT_OR_NULL)
 		{
-			//check if its a call transition
-			if (transTable[i].isPush != FALSE)
+			//check if its a push transition
+			if (transTable[i].isPush)
 			{
-				context->returnTo = (PRT_UINT16)PrtEntryFunEnd;
-				PrtPushState(context, FALSE);
+				context->stateExecFun = PrtDequeue;
+				context->returnTo = 0;
+				PrtPushState(context, PRT_FALSE);
 			}
 
 			//update the state
 			context->currentState = transTable[i].destStateIndex;
-			context->returnTo = PrtEntryFunStart;
+			context->returnTo = 0;
 			context->stateExecFun = PrtStateEntry;
 			return;
 		}
 	}
 
 	return;
-
 }
 
 void
@@ -1015,66 +861,42 @@ __inout PRT_SM_CONTEXT_PRIV		*context,
 __in PRT_UINT32				eventIndex
 )
 {
-	//
-	// Declarations
-	//
 	PRT_UINT32 i;
 	PRT_UINT32 nTransitions;
 	PRT_TRANSDECL* transTable;
-
-	//
-	//code
-	//
 
 	transTable = PrtGetTransTable(context, context->currentState, &nTransitions);
 
 	for (i = 0; i < nTransitions; ++i)
 	{
-		if ((transTable[i].triggerEventIndex == eventIndex))
+		if (transTable[i].triggerEventIndex == eventIndex)
 		{
-
-			//check if its a call transition
-			if (transTable[i].isPush != FALSE)
+			if (transTable[i].isPush)
 			{
-				context->returnTo = (PRT_UINT16)PrtEntryFunEnd;
-				PrtPushState(context, FALSE);
+				context->stateExecFun = PrtDequeue;
+				context->returnTo = 0;
+				PrtPushState(context, PRT_FALSE);
+				PrtLog(PRT_STEP_PUSH, context);
 			}
 
-			// change CurrentState state and set returnTo to smfEntryFunStart 
-			// next to execute is the entry function of the destination state
 			context->currentState = transTable[i].destStateIndex;
-			context->returnTo = PrtEntryFunStart;
 			context->stateExecFun = PrtStateEntry;
-
-			//
-			//Log
-			//
-			PrtLog(PRT_STEP_PUSH, context);
-
+			context->returnTo = 0;
 			return;
 		}
 	}
 	if (context->callStack.length > 0)
 	{
-		PrtPopState(context, FALSE);
-		//
-		//Log
-		//
+		PrtPopState(context, PRT_FALSE);
 		PrtLog(PRT_STEP_UNHANDLED, context);
+	}
+	else if (PrtPrimGetEvent(context->trigger.event) == PRT_SPECIAL_EVENT_HALT)
+	{
+		PrtHaltMachine(context);
 	}
 	else
 	{
-		if (PrtPrimGetEvent(context->trigger.event) == PRT_SPECIAL_EVENT_HALT)
-		{
-			PrtHaltMachine(context);
-			return;
-		}
-		else
-		{
-			//Exception
-			PrtHandleError(PRT_STATUS_EVENT_UNHANDLED, context);
-			return;
-		}
+		PrtHandleError(PRT_STATUS_EVENT_UNHANDLED, context);
 	}
 
 	return;
@@ -1200,16 +1022,10 @@ __inout PRT_SM_CONTEXT_PRIV		*context,
 __in PRT_BOOLEAN			restoreTrigger
 )
 {
-	//
-	// Declarations
-	//
 	PRT_UINT16 i;
 	PRT_UINT16 packSize;
 	PRT_UINT16 length;
 	PRT_STACKSTATE_INFO poppedState;
-	// 
-	// Code
-	//
 	i = 0;
 	packSize = PrtGetPackSize(context);
 	length = context->callStack.length;
@@ -1223,7 +1039,7 @@ __in PRT_BOOLEAN			restoreTrigger
 	//
 	// Restore the Deferred Set and Actions Set
 	//
-	for (i = 0; i<packSize; i++)
+	for (i = 0; i < packSize; i++)
 	{
 		context->inheritedDeferredSetCompact[i] = poppedState.inheritedDefSetCompact[i];
 		context->inheritedActionsSetCompact[i] = poppedState.inheritedActSetCompact[i];
@@ -1239,7 +1055,6 @@ __in PRT_BOOLEAN			restoreTrigger
 	//
 	if (restoreTrigger)
 	{
-
 		PrtFreeValue(context->trigger.event);
 		PrtFreeValue(context->trigger.payload);
 
@@ -1248,68 +1063,30 @@ __in PRT_BOOLEAN			restoreTrigger
 		context->returnTo = poppedState.returnTo;
 		context->stateExecFun = poppedState.stateExecFun;
 	}
-	else
-	{
-		//
-		// Poppped because of an unhandled event
-		//
-		// TODO : Confirm if we are here then there is definitely no action defined for this event.
-		//
-		// If the popped state is ExitFunction then its an error
-		// there is an unhandled event in exit function
-		//
-		PrtAssert(poppedState.stateExecFun == PrtStateEntry || poppedState.stateExecFun == PrtStateAction, "Unhandled Event in Exit Function");
-
-		//
-		// assert that we are popping back because of an call-edge and not because of a call statement (implicit pop)
-		//
-		if (poppedState.returnTo != PrtEntryFunEnd)
-		{
-			// TBD: This is the case when a push statement terminates in a raised event
-			// Temporarily making it an assertion failure
-			PrtHandleError(PRT_STATUS_ASSERT, context);
-		}
-
-		//check if there is a push transition defined for the unhandled event
-		if (PrtIsTransitionPresent(PrtPrimGetEvent(context->trigger.event), context) && PrtIsPushTransition(context, PrtPrimGetEvent(context->trigger.event)))
-		{
-			context->stateExecFun = PrtStateEntry;
-			context->returnTo = (PRT_UINT16)PrtEntryFunEnd;
-		}
-		else
-		{
-			context->stateExecFun = PrtStateExit;
-			context->returnTo = (PRT_UINT16)PrtExitFunStart;
-		}
-	}
+	
 	return;
 }
 
-
-PRT_TRIGGER
+PRT_BOOLEAN
 PrtDequeueEvent(
 __inout PRT_SM_CONTEXT_PRIV	*context
 )
 {
-	//
-	// Declarations
-	//
 	PRT_UINT32 queueLength;
 	PRT_EVENTQUEUE *queue;
 	PRT_UINT32* deferPacked;
 	PRT_UINT32 i, head;
-	PRT_TRIGGER e;
 
 	//
-	// Code
+	// Free old trigger
 	//
+	PrtFreeValue(context->trigger.event);
+	PrtFreeValue(context->trigger.payload);
 
 	queue = &context->eventQueue;
 	queueLength = queue->eventsSize;
 	deferPacked = PrtGetDeferredPacked(context, context->currentState);
 	head = queue->headIndex;
-	e.event = PrtMkNullValue();
-	e.payload = PrtMkNullValue();
 
 	PRT_DBG_ASSERT(queue->size <= queueLength, "Check Failed");
 	PRT_DBG_ASSERT(queue->size >= 0, "Check Failed");
@@ -1317,16 +1094,19 @@ __inout PRT_SM_CONTEXT_PRIV	*context
 	PRT_DBG_ASSERT(queue->tailIndex >= 0, "Check Failed");
 
 	if (PrtIsQueueEmpty(queue)) {
-		return e;
+		context->trigger.event = PrtMkEventValue(PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
+		context->trigger.payload = PrtMkNullValue();
+		return PRT_FALSE;
 	}
 
 	//
 	// Find the element to dequeue
 	//
 	for (i = 0; i < queue->size; i++) {
-		INT index = (head + i) % queueLength;
-		e = queue->events[index];
+		PRT_UINT32 index = (head + i) % queueLength;
+		PRT_TRIGGER e = queue->events[index];
 		if (!PrtIsEventDeferred(PrtPrimGetEvent(e.event), context->currentDeferredSetCompact)) {
+			context->trigger = e;
 			break;
 		}
 	}
@@ -1335,9 +1115,9 @@ __inout PRT_SM_CONTEXT_PRIV	*context
 	// Check if not found
 	//
 	if (i == queue->size) {
-		e.event = PrtMkNullValue();
-		e.payload = PrtMkNullValue();
-		return e;
+		context->trigger.event = PrtMkEventValue(PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
+		context->trigger.payload = PrtMkNullValue();
+		return PRT_FALSE;
 	}
 
 	//
@@ -1356,18 +1136,6 @@ __inout PRT_SM_CONTEXT_PRIV	*context
 	queue->headIndex = (queue->headIndex + 1) % queueLength;
 	queue->size--;
 
-	//
-	// Free old trigger, if any.
-	//
-	PrtFreeValue(context->trigger.event);
-	PrtFreeValue(context->trigger.payload);
-
-	//
-	// Store the event and argument
-	//
-	context->trigger.event = e.event;
-	context->trigger.payload = e.payload;
-
 	PRT_DBG_ASSERT(queue->size <= queueLength, "Check Failed");
 	PRT_DBG_ASSERT(queue->size >= 0, "Check Failed");
 	PRT_DBG_ASSERT(queue->headIndex >= 0, "Check Failed");
@@ -1377,7 +1145,7 @@ __inout PRT_SM_CONTEXT_PRIV	*context
 	//Log
 	//
 	PrtLog(PRT_STEP_DEQUEUE, context);
-	return e;
+	return PRT_TRUE;
 }
 
 FORCEINLINE

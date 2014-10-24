@@ -167,11 +167,12 @@ namespace Microsoft.PSharp
         {
             while (Runtime.IsRunning)
                 Thread.Sleep(Properties.Settings.Default.WaitDelay);
+            Runtime.ProcessAssertionCache();
         }
 
         /// <summary>
         /// Stops the P# runtime. Also prints additional runtime
-        /// results depending ont he enabled runtime options.
+        /// results depending on the enabled runtime options.
         /// </summary>
         public static void Stop()
         {
@@ -782,6 +783,42 @@ namespace Microsoft.PSharp
                     Console.ReadLine();
                     Environment.Exit(1);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Checks if the assertion holds, and if not it reports
+        /// an error and exits. The assertion check happens only
+        /// when the system has stabilized. Every time this method
+        /// is called, it overrides the previous assertion check
+        /// in the assertion cache.
+        /// </summary>
+        /// <param name="obj">Object</param>
+        /// <param name="action">Action</param>
+        /// <param name="s">Message</param>
+        /// <param name="args">Message arguments</param>
+        public static void AssertWhenStable(object obj, Func<object, bool> action, string s, params object[] args)
+        {
+            Runtime.AssertionCache = new Tuple<object, Func<object, bool>, string, object[]>(
+                obj, action, s, args);
+        }
+
+        /// <summary>
+        /// Assertion caching.
+        /// </summary>
+        private static Tuple<object, Func<object, bool>, string, object[]> AssertionCache = null;
+
+        /// <summary>
+        /// Checks any assertions in the cache.
+        /// </summary>
+        private static void ProcessAssertionCache()
+        {
+            if (Runtime.AssertionCache != null)
+            {
+                var predicate = Runtime.AssertionCache.Item2(Runtime.AssertionCache.Item1);
+                var s = Runtime.AssertionCache.Item3;
+                var p = Runtime.AssertionCache.Item4;
+                Runtime.Assert(predicate, s, p);
             }
         }
 

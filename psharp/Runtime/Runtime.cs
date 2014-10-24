@@ -197,6 +197,31 @@ namespace Microsoft.PSharp
         }
 
         /// <summary>
+        /// Tests the P# program using the given runtime action. The program is
+        /// tested a used-defined number of times. It enables bug-finding mode
+        /// by default, and measures assertion failures and the testing runtime.
+        /// </summary>
+        /// <param name="runtimeAction">Runtime action</param>
+        /// <param name="iterations">Iterations</param>
+        public static void Test(Action runtimeAction, int iterations)
+        {
+            Runtime.Options.Mode = Runtime.Mode.BugFinding;
+            Runtime.Options.CountAssertions = true;
+
+            Profiler.StartMeasuringExecutionTime();
+            for (int idx = 0; idx < iterations; idx++)
+            {
+                Console.WriteLine("Starting iteration: {0}", idx + 1);
+                runtimeAction();
+                Console.WriteLine("Finished iteration: {0}", idx + 1);
+            }
+
+            Profiler.StopMeasuringExecutionTime();
+            Console.WriteLine("Found {0} assertion failures.", Runtime.AssertionCount);
+            Profiler.PrintResults();
+        }
+
+        /// <summary>
         /// Replays the previously explored execution path. The
         /// main machine is constructed with an optional payload.
         /// The input payload must be the same as the one in the
@@ -625,6 +650,13 @@ namespace Microsoft.PSharp
             public static bool Verbose = false;
 
             /// <summary>
+            /// Counts the assertion failures. Only enabled internally
+            /// when runtime is in testing mode. When enabled, assertions
+            /// do not cause the environment to exit.
+            /// </summary>
+            internal static bool CountAssertions = false;
+
+            /// <summary>
             /// Static class implementing monitoring options for the P# runtime.
             /// </summary>
             internal static class Monitoring
@@ -735,6 +767,16 @@ namespace Microsoft.PSharp
         #region error checking
 
         /// <summary>
+        /// Assertion counter.
+        /// </summary>
+        private static int AssertionCount = 0;
+
+        /// <summary>
+        /// Assertion caching.
+        /// </summary>
+        private static Tuple<object, Func<object, bool>, string, object[]> AssertionCache = null;
+
+        /// <summary>
         /// Checks if the assertion holds, and if not it reports
         /// an error and exits.
         /// </summary>
@@ -750,10 +792,14 @@ namespace Microsoft.PSharp
                 {
                     Runtime.SendResultsToPSharpMonitor(true);
                 }
-                else
+                else if (!Runtime.Options.CountAssertions)
                 {
                     Console.ReadLine();
                     Environment.Exit(1);
+                }
+                else
+                {
+                    Runtime.AssertionCount++;
                 }
             }
         }
@@ -778,10 +824,14 @@ namespace Microsoft.PSharp
                 {
                     Runtime.SendResultsToPSharpMonitor(true);
                 }
-                else
+                else if (!Runtime.Options.CountAssertions)
                 {
                     Console.ReadLine();
                     Environment.Exit(1);
+                }
+                else
+                {
+                    Runtime.AssertionCount++;
                 }
             }
         }
@@ -802,11 +852,6 @@ namespace Microsoft.PSharp
             Runtime.AssertionCache = new Tuple<object, Func<object, bool>, string, object[]>(
                 obj, action, s, args);
         }
-
-        /// <summary>
-        /// Assertion caching.
-        /// </summary>
-        private static Tuple<object, Func<object, bool>, string, object[]> AssertionCache = null;
 
         /// <summary>
         /// Checks any assertions in the cache.

@@ -272,8 +272,6 @@ namespace Microsoft.PSharp
             {
                 // Assigns the raised event.
                 this.RaisedEvent = ex.RaisedEvent;
-                // Handles a raised event.
-                //this.HandleEvent(ex.RaisedEvent);
             }
             catch (ReturnUsedException ex)
             {
@@ -643,8 +641,6 @@ namespace Microsoft.PSharp
             {
                 // Assigns the raised event.
                 this.RaisedEvent = ex.RaisedEvent;
-                // Handles a raised event.
-                //this.HandleEvent(ex.RaisedEvent);
             }
             catch (ReturnUsedException ex)
             {
@@ -681,8 +677,6 @@ namespace Microsoft.PSharp
             {
                 // Assigns the raised event.
                 this.RaisedEvent = ex.RaisedEvent;
-                // Handles a raised event.
-                //this.HandleEvent(ex.RaisedEvent);
             }
             catch (ReturnUsedException ex)
             {

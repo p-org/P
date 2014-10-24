@@ -92,7 +92,7 @@ namespace LeaderElection
                 }
             }
 
-            //Runtime.Assert(count == 1);
+            Runtime.Assert(count == 1);
             this.Counter = 0;
         }
 

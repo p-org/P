@@ -210,70 +210,7 @@ domain PStaticTyping extends PData
     TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = NulApp(TRIGGER).
     TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = NulApp(HALT).
 	
-	/*
-	////// Type Inference for the payload type
-	
-	PayloadType ::= (c : TypingContext, t : TypeExpr + { ERROR, NIL }).
-	PayloadType(c, wider) :- PayloadType(c, t'), PayloadType(c, t''), Widen(t', t'', wider).
-	
-	
-	PUnion ::= (TypingContext, TypeExpr + { ERROR, NIL }).
-	PUnion(c, union) :- PayloadType(c, union), no PayloadType(c, t), TypeRel(union, t, SUB).
-	//PUnion (c ,union) :- PayloadType(c, union), no {x | x is PayloadType(c, t), TypeRel(union, t, SUB)}.
-	
-	// payload type inference in DoDecl
-	PayloadTypeDoDecl ::= (DoDecl, TypeExpr + {ERROR, NIL}).
-	PayloadTypeDoDecl(d, t) :- 
-	d is DoDecl, EventDecl(d.trig, _, NIL), t = BaseType(NULL); // if event has no payload
-	d is DoDecl, no EventDecl(d.trig, _, _), t = BaseType(NULL); // if the action is on default or halt
-	d is DoDecl, EventDecl(d.trig, _, t), t : TypeExpr. // event with payload
-	
-	PayloadType(c, t) 	:- 
-	SubSE(c, e), c is AnonFunDecl, e = NulApp(PAYLOAD), d = DoDecl(src, trig, c), src.owner = c.owner, PayloadTypeDoDecl(d, t); 
-	SubSE(c, e), c is FunDecl, e = NulApp(PAYLOAD), d = DoDecl(src, trig, c.name), src.owner = c.owner, PayloadTypeDoDecl(d, t).
-	
-	// payload type inference in transition function
-	PayloadTypeTransDecl ::= (TransDecl, TypeExpr + {ERROR, NIL}).
-	PayloadTypeTransDecl(tr, t) :- 
-	tr is TransDecl, EventDecl(tr.trig, _, NIL), t = BaseType(NULL); // event without payload
-	tr is TransDecl, no EventDecl(tr.trig, _, _), t = BaseType(NULL); // default or halt
-	tr is TransDecl, EventDecl(tr.trig, _, t), t : TypeExpr. // event with payload
-	
-	
-	PayloadType(c, t) 	:- 
-	SubSE(c, e), c is AnonFunDecl, e = NulApp(PAYLOAD), tr = TransDecl(src, trig, _, c), src.owner = c.owner, PayloadTypeTransDecl(tr, t); 
-	SubSE(c, e), c is FunDecl, e = NulApp(PAYLOAD), tr = TransDecl(src, trig, _, c.name), src.owner = c.owner, PayloadTypeTransDecl(tr, t).
-	
-	
-	//payload type inference in entry
-	PayloadTypeEntry ::= (StateDecl, TypeExpr + {ERROR, NIL}).
-	PayloadTypeEntry(s, t) :- 
-	s is StateDecl, tr is TransDecl(src, ev, dst, _), src.owner = s.owner, dst = s.name, EventDecl(ev, _, t), t : TypeExpr; // event with payload
-	s is StateDecl, tr is TransDecl(src, ev, dst, _), src.owner = s.owner, dst = s.name, EventDecl(ev, _, NIL), t = BaseType(NULL);  //event with no payload
-	s is StateDecl, tr is TransDecl(src, ev, dst, _), src.owner = s.owner, dst = s.name, no EventDecl(ev, _, _), t = BaseType(NULL);  //default + halt
-	s is StateDecl, t = BaseType(ANY), MachineDecl(_, _, _,s.name, _); //start state
-	s is StateDecl, StateDecl(_, _, c, _, _), SubSE(c, e), e = Push(s.name), t = BaseType(NULL); // payload = null for push from entry
-	s is StateDecl, DoDecl(_, _, c), SubSE(c, e), e = Push(s.name), t = BaseType(NULL). // payload = null for push from action
-	
-	PayloadTypeEntry(s, wider) :- PayloadTypeEntry(s, t'), PayloadTypeEntry(s, t''), Widen(t', t'', wider).
-	
-	PayloadType(c, t) :-  
-	SubSE(c, e), c is AnonFunDecl, e = NulApp(PAYLOAD), s is StateDecl(_, c.owner, c, _, _), PayloadTypeEntry(s, t); 
-	SubSE(c, e), c is FunDecl, e = NulApp(PAYLOAD), s is StateDecl(_, c.owner, c.name, _, _), PayloadTypeEntry(s, t).
-	
-	//payload type inference in exit
-	PayloadType(c, t) :-  
-	SubSE(c, e), c is AnonFunDecl, e = NulApp(PAYLOAD), s is StateDecl(_, c.owner, _, c, _), t = BaseType(ANY); 
-	SubSE(c, e), c is FunDecl, e = NulApp(PAYLOAD), s is StateDecl(_, c.owner, _, c.name, _), t = BaseType(ANY).
-	
-	//Type of Payload
 	TypeOf(c, e, t) :- SubSE(c, e), e = NulApp(PAYLOAD), PayloadType(c, t).
-	
-	
-	Widen ::= (TypeExpr + {ERROR, NIL}, TypeExpr + {ERROR, NIL}, TypeExpr + {ERROR, NIL}).
-	Widen(t1, t2, wider) :- TypeRel(t1, t2, SUB), wider = t2; TypeRel(t1, t2, SUP), wider = t1, t1 != t2; TypeRel(t1, t2, EMPTY), wider = BaseType(ANY);TypeRel(t1, t2, NONEMPTY), wider = BaseType(ANY).
-	*/
-	TypeOf(c, e, t) :- SubSE(c, e), e = NulApp(PAYLOAD), t = BaseType(ANY).
 	
     TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = REAL.
     TypeOf(c, e, BaseType(MODEL)) :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = MODEL.
@@ -679,132 +616,313 @@ domain PStaticTyping extends PData
     /*************************************************************/
     /*                      Type Comparability                   */
     /*************************************************************/
-    //// TypeRel determines the relationship between types. 
+    //// These are the pairs of types whose relationships must be computed.
+    CompTypeRel ::= (TypeExpr + { NIL, ERROR }, TypeExpr + { NIL, ERROR }).
+    CompTypeRel(ta', tb')                    :- CompTypeRel(ta, tb), ta = SeqType(ta'), tb = SeqType(tb').
+    CompTypeRel(da, db), CompTypeRel(ca, cb) :- CompTypeRel(ta, tb), ta = MapType(da, ca), tb = MapType(db, cb).
+    CompTypeRel(la, lb), CompTypeRel(ra, rb) :- CompTypeRel(ta, tb), ta = TupType(la, ra), tb = TupType(lb, rb).
+    CompTypeRel(la, lb), CompTypeRel(ra, rb) :- CompTypeRel(ta, tb), ta = NmdTupType(lfa, ra), tb = NmdTupType(lfb, rb), la = lfa.type, lb = lfb.type.
+    
+    CompTypeRel(t, t')        :- SubSE(c, e), e = Cast(e', t), TypeOf(c, e', t').
+    CompTypeRel(t', t'')      :- SubSE(c, e), e = BinApp(op, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), op : PolyRel.
+    CompTypeRel(t'', dom)     :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = MapType(dom, _).
+    CompTypeRel(t', inner)    :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = SeqType(inner).
+    CompTypeRel(t', dom)      :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = MapType(dom, _).
+    CompTypeRel(argt, inpt)   :- SubSE(c, e), e = FunApp(n, e'), TypeOf(c, e', argt), decl is FunDecl(n, c.owner, _, _, t, _), FuncSigTupleType(decl, inpt), t != NIL.
+    CompTypeRel(t', t)        :- SubSE(c, e), e = Return(e'), c = FunDecl(_, _, _, _, t, _), TypeOf(c, e', t').
+    CompTypeRel(t', t'')      :- SubSE(c, e), e = Send(_, ev, payload), payload != NIL, EventDecl(ev.name, _, t''), t'' != NIL, TypeOf(c, payload, t').
+    CompTypeRel(t', t'')      :- SubSE(c, e), e = Monitor(_, ev, payload), payload != NIL, EventDecl(ev.name, _, t''), t'' != NIL, TypeOf(c, payload, t').
+    CompTypeRel(t2, t1)       :- SubSE(c, e), e = BinStmt(ASSIGN, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2).
+    CompTypeRel(t2, dom)      :- SubSE(c, e), e = BinStmt(REMOVE, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, _).
+    CompTypeRel(value, inner) :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = SeqType(inner), t2 = TupType(BaseType(INT), TupType(value, NIL)).
+    CompTypeRel(value, cod)   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)).	
+    CompTypeRel(key, dom)		  :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)).	
+    CompTypeRel(argt, inpt)   :- SubSE(c, e), e = FunStmt(n, e'), TypeOf(c, e', argt), decl is FunDecl(n, c.owner, _, _, _, _), FuncSigTupleType(decl, inpt).
+    
+    //// TypeRel determines the relationship type expressions ta and tb.
     //// If types are not subtype related, then they can
     //// either have an empty (EMPTY) or nonempty (NONEMPTY) intersection. 
-    TypeRel ::= (ta: TypeExpr + { ERROR, NIL }, 
-                 tb: TypeExpr + { ERROR, NIL }, 
-                 rel: { SUB, SUP, EMPTY, NONEMPTY }).
-    
-    //// (1) The set of all computed type expressions (plus base types).
-    TypeSub ::= (TypeExpr + { NIL, ERROR }).
-    
-    TypeSub(NIL).
-    TypeSub(ERROR).
-    TypeSub(base)          :- base = BaseType(NULL).
-    TypeSub(base)          :- base = BaseType(BOOL).
-    TypeSub(base)          :- base = BaseType(INT).
-    TypeSub(base)          :- base = BaseType(EVENT).
-    TypeSub(base)          :- base = BaseType(REAL).
-    TypeSub(base)          :- base = BaseType(MODEL).
-    TypeSub(base)          :- base = BaseType(FOREIGN).
-    TypeSub(base)          :- base = BaseType(ANY).
-
-    TypeSub(t)             :- TypeOf(_, _, t).
-	TypeSub(t)             :- TypeOfFormalParam(_, _, t).
-    TypeSub(t)             :- FuncSigTupleType(_, t).
-    TypeSub(t)             :- TypeSub(s), s = SeqType(t).
-    TypeSub(t), TypeSub(u) :- TypeSub(s), s = MapType(t, u).
-    TypeSub(t), TypeSub(u) :- TypeSub(s), s = TupType(t, u), u : TypeExpr.
-    TypeSub(t), TypeSub(u) :- TypeSub(s), s = NmdTupType(f, u), t = f.type, u : TypeExpr.
-        
-    //// (2) Type (non-) emptiness.    
-    // Commutativity rule for the (non-) emptiness 
-    TypeRel(t, s, EMPTY)    :- TypeRel(s, t, EMPTY).
-    TypeRel(s, t, NONEMPTY) :- TypeRel(s, t, NONEMPTY).
-    
+    TypeRel ::= (ta: TypeExpr + { ERROR, NIL }, tb: TypeExpr + { ERROR, NIL }, rel: { SUB, SUP, EMPTY, NONEMPTY }).
+                            
+    //// (1) Type (non-) emptiness.       
     // For convenience, the ERROR type is incomparable to all types, even itself.
-    TypeRel(ERROR, t, EMPTY) :- TypeSub(t).
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = ERROR.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = ERROR.
     
     // For convenience, the NIL type is incomparable to all types, except itself.
-    TypeRel(NIL, t, EMPTY) :- TypeSub(t), t != NIL.
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NIL, t != NIL.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NIL, t != NIL.
     
     // The NULL type has empty intersections with NonNullBase and complex types.
     NonNullBase ::= { BOOL, INT, FOREIGN }.
     ComplexType ::= TupType  + NmdTupType + SeqType + MapType.
-    TypeRel(null, t, EMPTY) :- TypeSub(t), t = BaseType(kt), kt : NonNullBase, null = BaseType(NULL).
-    TypeRel(null, t, EMPTY) :- TypeSub(t), t : ComplexType, null = BaseType(NULL).
+    TypeRel(s, t, EMPTY)   :- CompTypeRel(s, t), s = BaseType(kt), kt : NonNullBase, t = BaseType(NULL).
+    TypeRel(t, s, EMPTY)   :- CompTypeRel(t, s), s = BaseType(kt), kt : NonNullBase, t = BaseType(NULL).
+    
+    TypeRel(s, t, EMPTY)   :- CompTypeRel(s, t), s : ComplexType, t = BaseType(NULL).
+    TypeRel(t, s, EMPTY)   :- CompTypeRel(t, s), s : ComplexType, t = BaseType(NULL).
         
     // NonNullBase types have empty intersections with all types, except themselves and ANY.
-    TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s = BaseType(ks), ks : NonNullBase, s != t, t != BaseType(ANY).
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = BaseType(ks), ks : NonNullBase, s != t, t != BaseType(ANY).
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = BaseType(ks), ks : NonNullBase, s != t, t != BaseType(ANY).
 
     // NullBase types have empty intersections with all types, except themselves, ANY, and NULL.
-    NullBase    ::= { EVENT, REAL, MODEL }.
-    TypeRel(s, t, EMPTY)    :- TypeSub(s), TypeSub(t), s = BaseType(ks), ks : NullBase, s != t, t != BaseType(ANY), t != BaseType(NULL).
-    TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = BaseType(ks), ks : NullBase, t = BaseType(kt), kt : NullBase, s != t.
+    NullBase    ::= { EVENT, REAL, MODEL }.    
+    TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), s = BaseType(ks), ks : NullBase, t = BaseType(kt), kt : NonNullBase.
+    TypeRel(t, s, EMPTY)    :- CompTypeRel(t, s), s = BaseType(ks), ks : NullBase, t = BaseType(kt), kt : NonNullBase.
+    
+    TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), s = BaseType(ks), ks : NullBase, toSymbol(t) != #BaseType.
+    TypeRel(t, s, EMPTY)    :- CompTypeRel(t, s), s = BaseType(ks), ks : NullBase, toSymbol(t) != #BaseType.
+          
+    TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s = BaseType(ks), ks : NullBase, t = BaseType(kt), kt : NullBase, s != t, kt != ANY, kt != NULL.
+    TypeRel(t, s, NONEMPTY) :- CompTypeRel(t, s), s = BaseType(ks), ks : NullBase, t = BaseType(kt), kt : NullBase, s != t, kt != ANY, kt != NULL.
 
     // Complex types have empty intersections with all differing type kinds, except ANY.
-    TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s : ComplexType, toSymbol(s) != toSymbol(t), t != BaseType(ANY).
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : ComplexType, toSymbol(s) != toSymbol(t), t != BaseType(ANY).
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s : ComplexType, toSymbol(s) != toSymbol(t), t != BaseType(ANY).
     
-    // Sequences are EMPTY or NONEMPTY if their inner types are.
-    TypeRel(s, t, EMPTY)    :- TypeSub(s), TypeSub(t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', EMPTY). 
-    TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', NONEMPTY). 
+    // Sequences are EMPTY or NONEMPTY if their inner types are. (Only need one version of these rules.)
+    TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', EMPTY). 
     
-    // Maps are EMPTY or NONEMPTY if their inner types are.
-    TypeRel(s, t, EMPTY)    :- TypeSub(s), TypeSub(t), s = MapType(sd, _),  t = MapType(td, _),  TypeRel(sd, td, EMPTY).
-    TypeRel(s, t, EMPTY)    :- TypeSub(s), TypeSub(t), s = MapType(_, sc),  t = MapType(_, tc),  TypeRel(sc, tc, EMPTY).    
-    TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = MapType(sd, sc), t = MapType(td, tc), TypeRel(sd, td, NONEMPTY), TypeRel(sc, tc, NONEMPTY). 
+    TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', NONEMPTY). 
+    
+    // Maps are EMPTY or NONEMPTY if their inner types are. (Only need one version of these rules.)
+    TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), s = MapType(sd, _),  t = MapType(td, _),  TypeRel(sd, td, EMPTY).
+    
+    TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), s = MapType(_, sc),  t = MapType(_, tc),  TypeRel(sc, tc, EMPTY).    
+    
+    TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s = MapType(sd, sc), t = MapType(td, tc), TypeRel(sd, td, NONEMPTY), TypeRel(sc, tc, NONEMPTY). 
 
-    // Tuples and NmdTups are EMPTY if their lengths differ.
-    TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s : TupType, t : TupType, lstLength(#TupType, s) != lstLength(#TupType, t).
-    TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s : NmdTupType, t : NmdTupType, lstLength(#NmdTupType, s) != lstLength(#NmdTupType, t).
+    // Tuples and NmdTups are EMPTY if their lengths differ. (Only need one version of these rules.)
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : TupType, t : TupType, lstLength(#TupType, s) != lstLength(#TupType, t).
     
-    // Tuples are EMPTY if any pair of inner types is EMPTY. 
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : NmdTupType, t : NmdTupType, lstLength(#NmdTupType, s) != lstLength(#NmdTupType, t).
+    
+    // Tuples are EMPTY if any pair of inner types is EMPTY.  (Only need one version of some of these rules.)
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = TupType(s', _), t = TupType(t', _), TypeRel(s', t', EMPTY). 
+    
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = TupType(_, s'), t = TupType(_, t'), TypeRel(s', t', EMPTY). 
+    
     // Tuples are NONEMPTY if not all inners types are in identical super / sub relationships. 
-    TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s = TupType(s', _), t = TupType(t', _), TypeRel(s', t', EMPTY). 
-    TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s = TupType(_, s'), t = TupType(_, t'), TypeRel(s', t', EMPTY). 
-    
-    TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = TupType(s', s''), t = TupType(t', t''), 
+    TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s = TupType(s', s''), t = TupType(t', t''), 
                                TypeRel(s', t', NONEMPTY), TypeRel(s'', t'', r), r != EMPTY.
-                                                            
-    TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = TupType(s', s''), t = TupType(t', t''), 
+    TypeRel(t, s, NONEMPTY) :- CompTypeRel(t, s), s = TupType(s', s''), t = TupType(t', t''), 
+                               TypeRel(s', t', NONEMPTY), TypeRel(s'', t'', r), r != EMPTY.
+                                                                                           
+    TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s = TupType(s', s''), t = TupType(t', t''), 
+                               TypeRel(s', t', r), TypeRel(s'', t'', NONEMPTY), r != EMPTY.
+    TypeRel(t, s, NONEMPTY) :- CompTypeRel(t, s), s = TupType(s', s''), t = TupType(t', t''), 
                                TypeRel(s', t', r), TypeRel(s'', t'', NONEMPTY), r != EMPTY.
 
-    TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = TupType(s', s''), t = TupType(t', t''), 
+    TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s = TupType(s', s''), t = TupType(t', t''), 
+                               TypeRel(s', t', SUB), TypeRel(s'', t'', SUP), s' != t', s'' != t''.
+    TypeRel(t, s, NONEMPTY) :- CompTypeRel(t, s), s = TupType(s', s''), t = TupType(t', t''), 
                                TypeRel(s', t', SUB), TypeRel(s'', t'', SUP), s' != t', s'' != t''.
                                
-    // Named Tuples are EMPTY if any pair of inner types is EMPTY or they name arguments differently. 
-    // Named Tuples are NONEMPTY if not all inners types are in identical super / sub relationships. 
-    TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s = NmdTupType(fs, _), t = NmdTupType(ft, _), fs.name != ft.name. 
-    TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s = NmdTupType(fs, _), t = NmdTupType(ft, _), TypeRel(fs.type, ft.type, EMPTY). 
-    TypeRel(s, t, EMPTY) :- TypeSub(s), TypeSub(t), s = NmdTupType(_, s'), t = NmdTupType(_, t'), TypeRel(s', t', EMPTY). 
+    // Named Tuples are EMPTY if any pair of inner types is EMPTY or they name arguments differently. (Only need one version of some of these rules.) 
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NmdTupType(fs, _), t = NmdTupType(ft, _), fs.name != ft.name. 
     
-    TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NmdTupType(fs, _), t = NmdTupType(ft, _), TypeRel(fs.type, ft.type, EMPTY). 
+    
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NmdTupType(_, s'), t = NmdTupType(_, t'), TypeRel(s', t', EMPTY). 
+    
+    // Named Tuples are NONEMPTY if not all inners types are in identical super / sub relationships. 
+    TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
+                               TypeRel(fs.type, ft.type, NONEMPTY), TypeRel(s'', t'', r), r != EMPTY.
+    TypeRel(t, s, NONEMPTY) :- CompTypeRel(t, s), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
                                TypeRel(fs.type, ft.type, NONEMPTY), TypeRel(s'', t'', r), r != EMPTY.
                                                             
-    TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
+    TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
+                               TypeRel(fs.type, ft.type, r), TypeRel(s'', t'', NONEMPTY), r != EMPTY.
+    TypeRel(t, s, NONEMPTY) :- CompTypeRel(t, s), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
                                TypeRel(fs.type, ft.type, r), TypeRel(s'', t'', NONEMPTY), r != EMPTY.
 
-    TypeRel(s, t, NONEMPTY) :- TypeSub(s), TypeSub(t), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
+    TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
+                               TypeRel(fs.type, ft.type, SUB), TypeRel(s'', t'', SUP), fs.type != ft.type, s'' != t''.
+    TypeRel(t, s, NONEMPTY) :- CompTypeRel(t, s), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
                                TypeRel(fs.type, ft.type, SUB), TypeRel(s'', t'', SUP), fs.type != ft.type, s'' != t''.
                                
-    //// (3) Sub-typing. 
-                
-    // If two types are subtype-related, then they are also supertype-related.
-    TypeRel(t, s, SUP) :- TypeRel(s, t, SUB).            
-                               
-    // Any non-ERROR type is subtype related to itself.
-    TypeRel(t, t, SUB) :- TypeSub(t), t != ERROR.
-    
+    //// (3) Sub-typing.                
+    // Any non-ERROR type is sub-type related to itself.
+    TypeRel(s, s, SUB) :- CompTypeRel(s, s), s != ERROR.
+    TypeRel(s, s, SUP) :- CompTypeRel(s, s), s != ERROR.
+   
     // Every proper type is a sub-type of any.
-    TypeRel(t, bany, SUB) :- TypeSub(t), t != ERROR, t != NIL, bany = BaseType(ANY).
-    
-    // For convenience, NIL is a subtype of itself
-    TypeRel(NIL, NIL, SUB).
-    
+    TypeRel(s, t, SUB) :- CompTypeRel(s, t), s != ERROR, s != NIL, t = BaseType(ANY).
+    TypeRel(t, s, SUP) :- CompTypeRel(t, s), s != ERROR, s != NIL, t = BaseType(ANY).
+        
     // NULL is a subtype of all Nullable types.
-    TypeRel(null, bany, SUB) :- null = BaseType(NULL), bany = BaseType(ANY).
-    TypeRel(null, t, SUB)    :- TypeSub(t), t = BaseType(kt), kt : NullBase, null = BaseType(NULL).
+    TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = BaseType(NULL), t = BaseType(ANY).
+    TypeRel(t, s, SUP) :- CompTypeRel(t, s), s = BaseType(NULL), t = BaseType(ANY).
+    
+    TypeRel(s, t, SUB) :-  CompTypeRel(s, t), s = BaseType(NULL), t = BaseType(kt), kt : NullBase.
+    TypeRel(t, s, SUP) :-  CompTypeRel(t, s), s = BaseType(NULL), t = BaseType(kt), kt : NullBase.
     
     // Sequences are subtype related if their inner types are subtype related.
-    TypeRel(s, t, SUB)    :- TypeSub(s), TypeSub(t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', SUB). 
+    TypeRel(s, t, SUB)    :- CompTypeRel(s, t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', SUB). 
+    TypeRel(s, t, SUP)    :- CompTypeRel(s, t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', SUP). 
     
     // Maps are subtype related if their inner types are subtype related.
-    TypeRel(s, t, SUB) :- TypeSub(s), TypeSub(t), s = MapType(sd, sc), t = MapType(td, tc), TypeRel(sd, td, SUB), TypeRel(sc, tc, SUB). 
+    TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = MapType(sd, sc), t = MapType(td, tc), TypeRel(sd, td, SUB), TypeRel(sc, tc, SUB). 
+    TypeRel(s, t, SUP) :- CompTypeRel(s, t), s = MapType(sd, sc), t = MapType(td, tc), TypeRel(sd, td, SUP), TypeRel(sc, tc, SUP). 
     
     // Tuples are subtype related if their inner types are subtype related.
-    TypeRel(s, t, SUB) :- TypeSub(s), TypeSub(t), s = TupType(s', s''), t = TupType(t', t''), TypeRel(s', t', SUB), TypeRel(s'', t'', SUB).
+    TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = TupType(s', s''), t = TupType(t', t''), TypeRel(s', t', SUB), TypeRel(s'', t'', SUB).
+    TypeRel(s, t, SUP) :- CompTypeRel(s, t), s = TupType(s', s''), t = TupType(t', t''), TypeRel(s', t', SUP), TypeRel(s'', t'', SUP).
     
-    TypeRel(s, t, SUB) :- TypeSub(s), TypeSub(t), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
-                          TypeRel(fs.type, ft.type, SUB), TypeRel(s'', t'', SUB).    
+    TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, TypeRel(fs.type, ft.type, SUB), TypeRel(s'', t'', SUB).    
+    TypeRel(s, t, SUP) :- CompTypeRel(s, t), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, TypeRel(fs.type, ft.type, SUP), TypeRel(s'', t'', SUP).   
+	
+    /*************************************************************/
+    /*                      Payload Inference                    */
+    /*************************************************************/	
+
+	//// The type of a payload in some (anonymous) function is based on the events
+	//// that could have lead to that execution of that function.
+	PayloadType ::= (TypingContext, TypeExpr).
+
+	PayloadType(plc, type) :- plc is PlContext, plc : TypingContext, 
+	                          joins = toList(#TypeJoinList, NIL, 
+	                          { t | TriggerSet(plc, DEFAULT), t = BaseType(NULL);
+							        TriggerSet(plc, NEW),     t = BaseType(ANY);
+									TriggerSet(plc, HALT),    t = BaseType(ANY);
+									TriggerSet(plc, e), EventDecl(e, _, t), t : TypeExpr;
+									TriggerSet(plc, e), EventDecl(e, _, NIL), t = BaseType(NULL) }),
+							  TypeJoins(joins, type).
+
+	//// Need to record the set of events that could lead to the evaluation of a function.
+	//// A default trigger, pushed state (via push statement), or intial state results in a null event.
+
+	//// These are the places where payload can be written or read.
+	PlContext ::= StateDecl + TransDecl + DoDecl + FunDecl + AnonFunDecl.
+
+	//// The set of events that could have changed trigger and payload in this context.
+	//// The NEW constant represents the new pseudo-event.
+	TriggerSet ::= (cntxt: PlContext, name: String + { DEFAULT, HALT, NEW }).
+	
+	//// (1) A transition's trigger set is a singleton containing the trigger.
+	TriggerSet(t, t.trig) :- t is TransDecl. 
+
+	//// (2) A do's trigger set is a singleton containing the trigger.
+	TriggerSet(d, d.trig) :- d is DoDecl. 
+
+	//// (3) A state's trigger set is the set of events that could have lead to this entry function.
+	//// This state is an initial state, so give it the NEW pseudo-event.
+	TriggerSet(s, NEW) :- m is MachineDecl, s is StateDecl, m.start = s.name, s.owner = m.
+
+	//// This state is reached by a push statement, so give it the DEFAULT pseudo-event.
+	TriggerSet(s, DEFAULT) :- SubSE(c, x), x = Push(name), s is StateDecl, s.owner = c.owner, s.name = name.
+
+	//// This state can be reached by a transition, so give it the trigger of this transition.
+	TriggerSet(s, t.trig) :- t is TransDecl, s is StateDecl, s.name = t.dst, s.owner = t.src.owner. 
+
+	//// (4) An AnonFunDecl's trigger set is the set of events of its calling context.
+	//// (TODO: Must change AnonFunDecl's to capture different calling contexts.)
+    TriggerSet(a, e) :- TriggerSet(s, e), s : StateDecl, a = s.entryAction, a : AnonFunDecl.
+    TriggerSet(a, e) :- TriggerSet(t, e), t : TransDecl, a = t.action, a : AnonFunDecl.
+    TriggerSet(a, e) :- TriggerSet(d, e), d : DoDecl, a = d.action, a : AnonFunDecl.
+
+	//// (5) An FunDecl's trigger set is the set of events of its calling contexts.
+    TriggerSet(f, e) :- TriggerSet(s, e), s : StateDecl, f is FunDecl, f.name = s.entryAction, f.owner = s.owner.
+    TriggerSet(f, e) :- TriggerSet(t, e), t : TransDecl, f is FunDecl, f.name = t.action, f.owner = t.src.owner.
+    TriggerSet(f, e) :- TriggerSet(d, e), d : DoDecl, f is FunDecl, f.name = d.action, f.owner = d.src.owner.
+
+    TriggerSet(f, e) :- TriggerSet(c, e), SubSE(c, x), x = FunApp(name, _), f is FunDecl, f.owner = c.owner, f.name = name.
+    TriggerSet(f, e) :- TriggerSet(c, e), SubSE(c, x), x = FunStmt(name, _), f is FunDecl, f.owner = c.owner, f.name = name.
+
+    /*************************************************************/
+    /*                      Compute type joins                   */
+    /*************************************************************/	
+
+	TypeJoinList ::= (TypeExpr, TypeJoinList + { NIL }). 
+
+	//// The join of a pair of types and of a list of types.
+	TypeJoin     ::= (ta: TypeExpr + { NIL }, tb: TypeExpr + { NIL }, j: TypeExpr + { NIL }).
+    TypeJoins    ::= (list: TypeJoinList + { NIL }, type: TypeExpr).
+
+	//// A pair of joins that need to be computed, and a list of joins that need to be computed.
+	CompTypeJoin  ::= (TypeExpr + { NIL }, TypeExpr + { NIL }).
+    CompTypeJoins ::= (list: TypeJoinList + { NIL }).
+
+	//// Compute the type joins of payload contexts.
+	CompTypeJoins(joins) :- plc is PlContext, 
+	                        joins = toList(#TypeJoinList, NIL, 
+	                          { t | TriggerSet(plc, DEFAULT), t = BaseType(NULL);
+							        TriggerSet(plc, NEW),     t = BaseType(ANY);
+									TriggerSet(plc, HALT),    t = BaseType(ANY);
+									TriggerSet(plc, e), EventDecl(e, _, t), t : TypeExpr;
+									TriggerSet(plc, e), EventDecl(e, _, NIL), t = BaseType(NULL) }).
+
+   //// Compute the joins of sub-lists
+   CompTypeJoins(tail) :- CompTypeJoins(TypeJoinList(_, tail)).
+
+   //// To compute the join of a longer list, must compute the binary join of head and joined sub-list.
+   CompTypeJoin(hd, tj) :- CompTypeJoins(list), list = TypeJoinList(hd, tl), TypeJoins(tl, tj), tl : TypeJoinList.
+   
+   //// Once the binary join of head and tail are known, then the join of the list is known.   
+   TypeJoins(list, j) :- CompTypeJoins(list), list = TypeJoinList(hd, tl), TypeJoins(tl, tj), TypeJoin(hd, tj, j), tl : TypeJoinList, j : TypeExpr.
+
+   //// The join of a singleton list is the type in the list. 
+   TypeJoins(list, t) :- CompTypeJoins(list), list = TypeJoinList(t, NIL).
+
+   //// The join of the empty list is, by definition, the null type.
+   TypeJoins(NIL, BaseType(NULL)).
+
+   /*************************************************************/
+   /*                      Binary type joins                    */
+   /*************************************************************/	
+
+    CompTypeJoin(ta', tb')                     :- CompTypeJoin(ta, tb), ta = SeqType(ta'), tb = SeqType(tb').    
+    CompTypeJoin(da, db), CompTypeJoin(ca, cb) :- CompTypeJoin(ta, tb), ta = MapType(da, ca), tb = MapType(db, cb).
+    CompTypeJoin(la, lb), CompTypeJoin(ra, rb) :- CompTypeJoin(ta, tb), ta = TupType(la, ra), tb = TupType(lb, rb).
+    CompTypeJoin(la, lb), CompTypeJoin(ra, rb) :- CompTypeJoin(ta, tb), ta = NmdTupType(lfa, ra), tb = NmdTupType(lfb, rb), la = lfa.type, lb = lfb.type.
+
+	//// (1) Handle NIL cases.
+    TypeJoin(NIL, s, s) :- CompTypeJoin(NIL, s).
+    TypeJoin(s, NIL, s) :- CompTypeJoin(s, NIL).
+
+	//// (2) Join is idempotent 
+    TypeJoin(s, s, s) :- CompTypeJoin(s, s).
+
+    //// (3) Join of nullable types with null id null   
+    TypeJoin(s, t, s) :- CompTypeJoin(s, t), s = BaseType(sk), sk : NullBase, t = BaseType(NULL). 
+    TypeJoin(t, s, s) :- CompTypeJoin(t, s), s = BaseType(sk), sk : NullBase, t = BaseType(NULL). 
+
+    //// (4) Join of sequence types. 
+    TypeJoin(s, t, j) :- CompTypeJoin(s, t), s = SeqType(snr), t = SeqType(tnr), TypeJoin(snr, tnr, jnr), j = SeqType(jnr).
+
+    //// (5) Join of map types. 
+    TypeJoin(s, t, j) :- CompTypeJoin(s, t), s = MapType(sd, sc), t = MapType(td, tc), TypeJoin(sd, td, jd), TypeJoin(sc, tc, jc), j = MapType(jd, jc).
+
+    //// (6) Join of tup types. 
+    TypeJoin(s, t, j) :- CompTypeJoin(s, t), s = TupType(sh, st), t = TupType(th, tt), lstLength(#TupType, st) = lstLength(#TupType, tt), 
+	                     TypeJoin(sh, th, jh), TypeJoin(st, tt, jt), j = TupType(jh, jt).
+
+    //// (7) Join of named tup types. 
+	//// If the tail of the named tuple is NIL, then the named tuple can be joined.
+    TypeJoin(s, t, j) :- CompTypeJoin(s, t), s = NmdTupType(sh, NIL), t = NmdTupType(th, NIL),  
+	                     TypeJoin(sh.type, th.type, jh), sh.name = th.name, j = NmdTupType(NmdTupTypeField(sh.name, jh), NIL).
+
+	//// Otherwise, the tail must be joinable to a named tuple for the tuple to be joined
+    TypeJoin(s, t, j) :- CompTypeJoin(s, t), s = NmdTupType(sh, st), t = NmdTupType(th, tt), 
+	                     TypeJoin(sh.type, th.type, jh), sh.name = th.name, TypeJoin(st, tt, jt), 
+						 st: NmdTupType, tt : NmdTupType, jt : NmdTupType,						 
+						 j = NmdTupType(NmdTupTypeField(sh.name, jh), jt).
+
+    //// (8) Remaining cases join to ANY. 
+	NonNullAny ::= NonNullBase + { ANY }.
+
+    TypeJoin(s, t, BaseType(ANY)) :- CompTypeJoin(s, t), toSymbol(s) != toSymbol(t), s : TypeExpr, t : TypeExpr.
+
+    TypeJoin(s, t, BaseType(ANY)) :- CompTypeJoin(s, t), s != t, s = BaseType(sk), t = BaseType(tk), sk != NULL, tk != NULL. 
+
+    TypeJoin(s, t, BaseType(ANY)) :- CompTypeJoin(s, t), s = BaseType(NULL), t = BaseType(tk), tk : NonNullAny. 
+    TypeJoin(t, s, BaseType(ANY)) :- CompTypeJoin(t, s), s = BaseType(NULL), t = BaseType(tk), tk : NonNullAny. 
+
+    TypeJoin(s, t, BaseType(ANY)) :- CompTypeJoin(s, t), s : TupType, t : TupType, lstLength(#TupType, s) != lstLength(#TupType, t).
+
+    TypeJoin(s, t, BaseType(ANY)) :- CompTypeJoin(s, t), s : NmdTupType, t : NmdTupType, lstLength(#NmdTupType, s) != lstLength(#NmdTupType, t).
+    TypeJoin(s, t, BaseType(ANY)) :- CompTypeJoin(s, t), s : NmdTupType, t : NmdTupType, s.hd.name != t.hd.name.
+    TypeJoin(s, t, BaseType(ANY)) :- CompTypeJoin(s, t), s = NmdTupType(_, st), t = NmdTupType(_, tt), TypeJoin(st, tt, jt), 
+						             st: NmdTupType, tt : NmdTupType, toSymbol(jt) != #NmdTupType.
  }

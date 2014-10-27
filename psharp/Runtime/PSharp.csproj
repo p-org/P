@@ -53,6 +53,7 @@
     <Compile Include="Machine.cs" />
     <Compile Include="MachineWrapper.cs" />
     <Compile Include="Model.cs" />
+    <Compile Include="Profiler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Compilation\PSharpToPLang.cs" />
     <Compile Include="Scheduling\Replayer.cs" />

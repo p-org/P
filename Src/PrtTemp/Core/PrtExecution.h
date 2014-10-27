@@ -4,15 +4,12 @@ typedef struct PRT_PROCESS_PRIV {
 	PRT_PROCESS			    process;
 	PRT_ERROR_FUN	        errorHandler;
 	PRT_LOG_FUN				logHandler;
-	PRT_RECURSIVE_MUTEX		lock;
+	PRT_RECURSIVE_MUTEX		processLock;
 	PRT_UINT32				numMachines;
 	PRT_UINT32				machineCount;
 	PRT_SM_CONTEXT			**machines;
 } PRT_PROCESS_PRIV;
 
-//
-// To indicate whether to execute entry or exit function
-//
 typedef enum PRT_STATE_EXECFUN
 {
 	//
@@ -60,8 +57,6 @@ Macros Constants
 #define PRT_QUEUE_LEN_DEFAULT 64
 
 
-
-
 /*********************************************************************************
 
 Type Name : PRT_TRIGGER
@@ -73,11 +68,11 @@ Tigger value in exit function indicates the event on which we leave a state
 
 Fields :
 
-Event --
+event --
 Event on which we enter or exit a state
 
-Arg --
-Arg Value corresponding to Event
+payload --
+Payload value corresponding to event
 
 *********************************************************************************/
 
@@ -176,21 +171,21 @@ typedef struct PRT_STATESTACK
 
 typedef struct PRT_SM_CONTEXT_PRIV {
 	PRT_SM_CONTEXT		context;
-	PRT_VALUE			**varValues;
-	PRT_UINT32			currentState;
-	PRT_TRIGGER			trigger;
-	PRT_UINT16			returnTo;
-	PRT_STATE_EXECFUN	stateExecFun;
+	PRT_RECURSIVE_MUTEX stateMachineLock;
 	PRT_BOOLEAN			isRunning;
 	PRT_BOOLEAN			isHalted;
+	PRT_VALUE			**varValues;
+	PRT_UINT32			currentState;
 	PRT_STATESTACK		callStack;
 	PRT_EVENTQUEUE		eventQueue;
+	PRT_TRIGGER			trigger;
+	PRT_LASTOPERATION	lastOperation;
+	PRT_STATE_EXECFUN	stateExecFun;
+	PRT_UINT16			returnTo;
 	PRT_UINT32*			inheritedDeferredSetCompact;
 	PRT_UINT32*			currentDeferredSetCompact;
 	PRT_UINT32*			inheritedActionsSetCompact;
 	PRT_UINT32*			currentActionsSetCompact;
-	PRT_LASTOPERATION	lastOperation;
-	PRT_RECURSIVE_MUTEX stateMachineLock;
 } PRT_SM_CONTEXT_PRIV;
 
 //
@@ -248,23 +243,10 @@ __inout PRT_SM_CONTEXT_PRIV		*context,
 __in PRT_UINT32					eventIndex
 );
 
-//
-// Makes transition to the next state given a non-deferred input event 
-// (may Pop state on an unhandled event exception)
-//
 void
 PrtTakeTransition(
 __inout PRT_SM_CONTEXT_PRIV		*context,
 __in PRT_UINT32				eventIndex
-);
-
-//
-//check if the current state has After Transition and if it does take the transition 
-//and execute exit function .
-//
-void
-PrtTakeDefaultTransition(
-__inout PRT_SM_CONTEXT_PRIV		*context
 );
 
 //

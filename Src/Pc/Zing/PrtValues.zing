@@ -473,32 +473,39 @@ class PRT_VALUE {
         map.map.Set(key, value);
     }
 
+	static void PrtMapInsert(PRT_VALUE map, PRT_VALUE key, PRT_VALUE value) {
+	    bool b;
+		b = map.map.Exists(key);
+		assert(!b);
+	    map.map.Set(key, value);
+	}
+
     static void PrtMapRemove(PRT_VALUE map, PRT_VALUE key) {
         map.map.Remove(key);
     }
 
     static PRT_VALUE PrtMapGet(PRT_VALUE map, PRT_VALUE key) {
         PRT_VALUE retVal;
-	retVal = map.map.Get(key);
-	return retVal;
+		retVal = map.map.Get(key);
+		return retVal;
     }
 
     static PRT_VALUE PrtMapGetKeys(PRT_VALUE map) {
         PRT_VALUE retVal;
-	retVal = map.map.GetKeys(map.type.domType);
-	return retVal;
+		retVal = map.map.GetKeys(map.type.domType);
+		return retVal;
     }
 
     static PRT_VALUE PrtMapGetValues(PRT_VALUE map) {
         PRT_VALUE retVal;
         retVal = map.map.GetValues(map.type.codType);
-	return retVal;
+		return retVal;
     }
 
     static bool PrtMapExists(PRT_VALUE map, PRT_VALUE key) {
         bool retVal;
         retVal = map.map.Exists(key);
-	return retVal;
+		return retVal;
     }
 
     static int PrtMapSizeOf(PRT_VALUE map) {

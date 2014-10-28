@@ -637,5 +637,56 @@ namespace AdvancedExamples
         }
     }
 
+    internal class M3 : Machine
+    {
+        private Machine Target;
+        private Envelope E;
+
+        [Initial]
+        private class Init : State
+        {
+            protected override void OnEntry()
+            {
+                var machine = this.Machine as M3;
+
+                machine.Target = Machine.Factory.CreateMachine<M3>();
+                Envelope envelope = new Envelope("London", 0);
+                machine.E = envelope;
+
+                this.Send(machine.Target, new eUnit(envelope));
+
+                machine.E = new Envelope();
+            }
+        }
+    }
+
+    internal class N3 : Machine
+    {
+        private Machine Target;
+        private Envelope E;
+
+        [Initial]
+        private class Init : State
+        {
+            protected override void OnEntry()
+            {
+                var machine = this.Machine as N3;
+
+                machine.Target = Machine.Factory.CreateMachine<N3>();
+                machine.E = new Envelope("London", 0);
+
+                this.Send(machine.Target, new eUnit(machine.E));
+
+                machine.E = new Envelope();
+            }
+        }
+
+        private void foo()
+        {
+            this.E = new Envelope();
+            this.E.Id = 5;
+        }
+    }
+
     #endregion
 }

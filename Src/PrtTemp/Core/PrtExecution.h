@@ -35,10 +35,10 @@ Enum for last P operation performed inside entry/exit function
 *********************************************************************************/
 typedef enum PRT_LASTOPERATION
 {
+	ReturnStatement,
 	PopStatement,
 	RaiseStatement,
-	PushStatement,
-	ReturnStatement
+	PushStatement
 } PRT_LASTOPERATION;
 
 /*********************************************************************************

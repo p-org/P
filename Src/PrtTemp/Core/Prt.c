@@ -224,71 +224,34 @@ PRT_SM_CONTEXT * PrtMkModel(
 	id.machineId = privateProcess->numMachines; // index begins with 1 since 0 is reserved
 	id.processId = process->guid;
 	publicContext->id = PrtMkModelValue(id);
+	publicContext->extContext = NULL;
 
-	//
-	// Initialize Machine Internal Variables
-	//
-	context->currentState = process->program->machines[context->context.instanceOf].initStateIndex;
+	context->currentState = 0;
 	context->isRunning = PRT_FALSE;
 	context->isHalted = PRT_FALSE;
 	context->lastOperation = ReturnStatement;
 
-	context->trigger.event = PrtMkNullValue();
-	context->trigger.payload = PrtCloneValue(payload);
+	context->trigger.event = NULL;
+	context->trigger.payload = NULL;
 	context->returnTo = 0;
 	context->stateExecFun = PrtStateEntry;
 
-	//
-	// Allocate memory for local variables and initialize them
-	//
 	context->varValues = NULL;
 
-	//
-	// Machine Call State Depth
-	//
 	context->callStack.length = 0;
 
-	//
-	// Initialize event queue
-	//
 	context->eventQueue.eventsSize = 0;
 	context->eventQueue.events = NULL;
 	context->eventQueue.headIndex = 0;
 	context->eventQueue.tailIndex = 0;
 	context->eventQueue.size = 0;
 
-	//
-	// Initialize Inherited Deferred Set 
-	//
 	context->inheritedDeferredSetCompact = NULL;
-
-	//
-	// Initialize the current deferred set
-	//
 	context->currentDeferredSetCompact = NULL;
-
-	//
-	// Initialize actions
-	//
 	context->inheritedActionsSetCompact = NULL;
 	context->currentActionsSetCompact = NULL;
 
-	//
-	//Initialize state machine lock
-	//
-	context->stateMachineLock = PrtCreateMutex();
-
-	//
-	//Log
-	//
-	PrtLog(PRT_STEP_CREATE, context);
-
-	//
-	// Allocate External context Structure
-	//
-	process->program->machines[publicContext->instanceOf].extCtor(publicContext, payload);
-
-	PrtUnlockMutex(privateProcess->processLock);
+	context->stateMachineLock = NULL;
 
 	return publicContext;
 }
@@ -536,11 +499,14 @@ __in PRT_UINT32				stateIndex
 
 FORCEINLINE
 PRT_BOOLEAN
-PrtStateHasDefaultTransition(
+PrtStateHasDefaultTransitionOrAction(
 __in PRT_SM_CONTEXT_PRIV			*context
 )
 {
-	return (context->context.process->program->eventSets[PrtGetCurrentStateDecl(context)->transSetIndex].packedEvents[0] & 0x1) == 1;
+	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
+	PRT_BOOLEAN hasDefaultTransition = (context->context.process->program->eventSets[stateDecl->transSetIndex].packedEvents[0] & 0x1) == 1;
+	PRT_BOOLEAN hasDefaultAction = (context->currentActionsSetCompact[0] & 0x1) == 1;
+	return hasDefaultTransition || hasDefaultAction;
 }
 
 FORCEINLINE
@@ -915,7 +881,7 @@ __inout PRT_SM_CONTEXT_PRIV	*context
 	if (i == queue->size) {
 		context->trigger.event = PrtMkEventValue(PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
 		context->trigger.payload = PrtMkNullValue();
-		return PrtStateHasDefaultTransition(context);
+		return PrtStateHasDefaultTransitionOrAction(context);
 	}
 
 	//
@@ -1348,7 +1314,7 @@ PRT_SM_CONTEXT_PRIV			*context
 	if (context->varValues != NULL)
 	{
 		UINT i;
-		PRT_MACHINEDECL *mdecl = &(context->context.process->program->machines[context->context.instanceOf]);
+		PRT_MACHINEDECL *mdecl = &(publicContext->process->program->machines[context->context.instanceOf]);
 
 		for (i = 0; i < mdecl->nVars; i++) {
 			PrtFreeValue(context->varValues[i]);
@@ -1356,9 +1322,13 @@ PRT_SM_CONTEXT_PRIV			*context
 		PrtFree(context->varValues);
 	}
 
-	PrtDestroyMutex(context->stateMachineLock);
+	if (context->stateMachineLock != NULL)
+	{
+		PrtDestroyMutex(context->stateMachineLock);
+	}
 
-	context->context.process->program->machines[publicContext->instanceOf].extDtor(publicContext);
+	if (publicContext->extContext != NULL)
+		publicContext->process->program->machines[publicContext->instanceOf].extDtor(publicContext);
 }
 
 void

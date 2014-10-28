@@ -1201,7 +1201,7 @@ namespace Microsoft.Pc
                     runBodyStmts.Add(assignStmt);
                 }
             }
-            runBodyStmts.Add(typeContext.InitializeTypesAndFields());
+            runBodyStmts.Add(typeContext.InitializeFieldNamesAndTypes());
             runBodyStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", mainMachineName)), MkZingIdentifier("null"))));
             AST<Node> runMethod = MkZingMethodDecl("Run", ZingData.Cnst_Nil, ZingData.Cnst_Void, ZingData.Cnst_Nil, MkZingBlocks(MkZingBlock("dummy", MkZingSeq(runBodyStmts))), ZingData.Cnst_Static, ZingData.Cnst_Activate);
             methods.Add(runMethod);
@@ -2958,20 +2958,24 @@ namespace Microsoft.Pc
         {
             private int fieldCount;
             private int typeCount;
-            private List<AST<Node>> computation;
+            private List<AST<Node>> fieldNameInitialization;
+            private List<AST<Node>> typeInitialization;
+            private Dictionary<string, AST<FuncTerm>> fieldNameToZingExpr;
             private Dictionary<AST<Node>, AST<Node>> pTypeToZingExpr;
 
             public TypeTranslationContext()
             {
                 fieldCount = 0;
                 typeCount = 0;
-                computation = new List<AST<Node>>();
+                fieldNameInitialization = new List<AST<Node>>();
+                typeInitialization = new List<AST<Node>>();
+                fieldNameToZingExpr = new Dictionary<string, AST<FuncTerm>>();
                 pTypeToZingExpr = new Dictionary<AST<Node>, AST<Node>>();
             }
 
-            public AST<Node> InitializeTypesAndFields()
+            public AST<Node> InitializeFieldNamesAndTypes()
             {
-                return MkZingSeq(computation);
+                return MkZingSeq(MkZingSeq(fieldNameInitialization), MkZingSeq(typeInitialization));
             }
 
             public IEnumerable<AST<Node>> MainVarDecls()
@@ -2988,10 +2992,14 @@ namespace Microsoft.Pc
                 return varDecls;
             }
 
-            private AST<FuncTerm> GetField()
+            private AST<FuncTerm> GetField(string fieldName)
             {
+                if (fieldNameToZingExpr.ContainsKey(fieldName))
+                    return fieldNameToZingExpr[fieldName];
                 var retVal = MkZingDot("Main", string.Format("field_{0}_PRT_FIELD_NAME", fieldCount));
+                AddFieldNameInitialization(MkZingAssign(retVal, MkZingNew(Factory.Instance.MkCnst("PRT_FIELD_NAME"), ZingData.Cnst_Nil)));
                 fieldCount++;
+                fieldNameToZingExpr[fieldName] = retVal;
                 return retVal;
             }
 
@@ -3002,9 +3010,14 @@ namespace Microsoft.Pc
                 return retVal;
             }
 
-            private void AddSideEffect(AST<Node> n)
+            private void AddFieldNameInitialization(AST<Node> n)
             {
-                computation.Add(n);
+                fieldNameInitialization.Add(n);
+            }
+
+            private void AddTypeInitialization(AST<Node> n)
+            {
+                typeInitialization.Add(n);
             }
 
             public AST<Node> PTypeToZingExpr(FuncTerm pType)
@@ -3026,49 +3039,49 @@ namespace Microsoft.Pc
                     if (primitiveType == "NULL")
                     {
                         var tmpVar = GetType();
-                        AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_NULL"))));
+                        AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_NULL"))));
                         return tmpVar;
                     }
                     else if (primitiveType == "BOOL")
                     {
                         var tmpVar = GetType();
-                        AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_BOOL"))));
+                        AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_BOOL"))));
                         return tmpVar;
                     }
                     else if (primitiveType == "INT")
                     {
                         var tmpVar = GetType();
-                        AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_INT"))));
+                        AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_INT"))));
                         return tmpVar;
                     }
                     else if (primitiveType == "EVENT")
                     {
                         var tmpVar = GetType();
-                        AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_EVENT"))));
+                        AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_EVENT"))));
                         return tmpVar;
                     }
                     else if (primitiveType == "REAL")
                     {
                         var tmpVar = GetType();
-                        AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_REAL"))));
+                        AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_REAL"))));
                         return tmpVar;
                     }
                     else if (primitiveType == "MODEL")
                     {
                         var tmpVar = GetType();
-                        AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_MODEL"))));
+                        AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_MODEL"))));
                         return tmpVar;
                     }
                     else if (primitiveType == "ANY")
                     {
                         var tmpVar = GetType();
-                        AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_ANY"))));
+                        AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_ANY"))));
                         return tmpVar;
                     }
                     else
                     {
                         var tmpVar = GetType();
-                        AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_FORGN"))));
+                        AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_FORGN"))));
                         return tmpVar;
                     }
                 }
@@ -3081,10 +3094,10 @@ namespace Microsoft.Pc
                         type = GetArgByIndex(type, 1) as FuncTerm;
                     }
                     var tupleType = GetType();
-                    AddSideEffect(MkZingAssign(tupleType, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkTupType"), Factory.Instance.MkCnst(memberTypes.Count))));
+                    AddTypeInitialization(MkZingAssign(tupleType, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkTupType"), Factory.Instance.MkCnst(memberTypes.Count))));
                     for (int i = 0; i < memberTypes.Count; i++)
                     {
-                        AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("PRT_TYPE", "PrtSetFieldType"), tupleType, Factory.Instance.MkCnst(i), memberTypes[i])));
+                        AddTypeInitialization(MkZingCallStmt(MkZingCall(MkZingDot("PRT_TYPE", "PrtSetFieldType"), tupleType, Factory.Instance.MkCnst(i), memberTypes[i])));
                     }
                     return tupleType;
                 }
@@ -3095,17 +3108,16 @@ namespace Microsoft.Pc
                     while (type != null)
                     {
                         var typeField = (FuncTerm)GetArgByIndex(type, 0);
-                        memberNames.Add(GetField());
+                        memberNames.Add(GetField(((Cnst)GetArgByIndex(typeField, 0)).GetStringValue()));
                         memberTypes.Add(PTypeToZingExpr((FuncTerm)GetArgByIndex(typeField, 1)));
                         type = GetArgByIndex(type, 1) as FuncTerm;
                     }
                     var tupleType = GetType();
-                    AddSideEffect(MkZingAssign(tupleType, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkNmdTupType"), Factory.Instance.MkCnst(memberTypes.Count))));
+                    AddTypeInitialization(MkZingAssign(tupleType, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkNmdTupType"), Factory.Instance.MkCnst(memberTypes.Count))));
                     for (int i = 0; i < memberTypes.Count; i++)
                     {
-                        AddSideEffect(MkZingAssign(memberNames[i], MkZingNew(Factory.Instance.MkCnst("PRT_FIELD_NAME"), ZingData.Cnst_Nil)));
-                        AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("PRT_TYPE", "PrtSetFieldName"), tupleType, Factory.Instance.MkCnst(i), memberNames[i])));
-                        AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("PRT_TYPE", "PrtSetFieldType"), tupleType, Factory.Instance.MkCnst(i), memberTypes[i])));
+                        AddTypeInitialization(MkZingCallStmt(MkZingCall(MkZingDot("PRT_TYPE", "PrtSetFieldName"), tupleType, Factory.Instance.MkCnst(i), memberNames[i])));
+                        AddTypeInitialization(MkZingCallStmt(MkZingCall(MkZingDot("PRT_TYPE", "PrtSetFieldType"), tupleType, Factory.Instance.MkCnst(i), memberTypes[i])));
                     }
                     return tupleType;
                 }
@@ -3113,7 +3125,7 @@ namespace Microsoft.Pc
                 {
                     var innerType = PTypeToZingExpr((FuncTerm)GetArgByIndex(type, 0));
                     var seqType = GetType();
-                    AddSideEffect(MkZingAssign(seqType, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkSeqType"), innerType)));
+                    AddTypeInitialization(MkZingAssign(seqType, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkSeqType"), innerType)));
                     return seqType;
                 }
                 else
@@ -3122,7 +3134,7 @@ namespace Microsoft.Pc
                     var domType = PTypeToZingExpr((FuncTerm)GetArgByIndex(type, 0));
                     var codType = PTypeToZingExpr((FuncTerm)GetArgByIndex(type, 1));
                     var mapType = GetType();
-                    AddSideEffect(MkZingAssign(mapType, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkMapType"), domType, codType)));
+                    AddTypeInitialization(MkZingAssign(mapType, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkMapType"), domType, codType)));
                     return mapType;
                 }
             }

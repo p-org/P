@@ -204,7 +204,7 @@ OUT: tokenring_typos.p (159, 23): inferred type:  ERROR
 OUT: tokenring_typos.p (99, 9): argument 2 of "send" expects an event value
 OUT: tokenring_typos.p (137, 17): "if (...)" expects a boolean value
 OUT: tokenring_typos.p (137, 39): Values cannot be compared because their types are incompatible
-OUT: tokenring_typos.p (159, 17): "raise" expects an event value
+OUT: tokenring_typos.p (159, 17): argument 1 of "raise" expects an event value
 OUT: tokenring_typos.p (159, 23): Undefined symbol
 OUT: Compilation failed
 OUT: 

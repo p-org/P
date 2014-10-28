@@ -38,7 +38,7 @@
         private static readonly Tuple<string, string, string, string>[] Versions = new Tuple<string, string, string, string>[] 
         {
             new Tuple<string, string, string, string>("zing", "6ac87c23f82c659627a8e7d4ffbb193ae59301e3", "..\\..\\..\\..\\..\\Ext\\Zing\\Zing_.zip", "..\\..\\..\\..\\..\\Ext\\Zing\\Zing_\\"),
-            new Tuple<string, string, string, string>("formula", "71ff2f29c6595b46c72727faa2cdcaf228016670", "..\\..\\..\\..\\..\\Ext\\Formula\\Formula_.zip", "..\\..\\..\\..\\..\\Ext\\Formula\\Formula_\\"),
+            new Tuple<string, string, string, string>("formula", "aa4cf15c2670c57d0f7ac86888aa17dbe6e47cd0", "..\\..\\..\\..\\..\\Ext\\Formula\\Formula_.zip", "..\\..\\..\\..\\..\\Ext\\Formula\\Formula_\\"),
         };
        
         public static bool GetBuildRelDir(string dirname, bool shouldCreate, out DirectoryInfo dir)

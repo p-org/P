@@ -766,6 +766,12 @@ void PRT_CALL_CONV PrtMapUpdate(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In
 	PrtMapUpdateEx(map, key, value, PRT_TRUE);
 }
 
+void PRT_CALL_CONV PrtMapInsert(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_VALUE *value)
+{
+	PrtAssert(!PrtMapExists(map, key), "key must not be in map");
+	PrtMapUpdate(map, key, value);
+}
+
 void PRT_CALL_CONV PrtMapRemove(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");

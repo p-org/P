@@ -332,5 +332,36 @@ namespace InheritanceExamples
         }
     }
 
+    internal abstract class H2 : Machine
+    {
+        private Machine Target;
+
+        [Initial]
+        private class Init : State
+        {
+            protected override void OnEntry()
+            {
+                var machine = this.Machine as H2;
+
+                machine.Target = Machine.Factory.CreateMachine<H2>();
+                Envelope envelope = new Envelope();
+
+                this.Send(machine.Target, new eUnit(envelope));
+
+                machine.foo(envelope);
+            }
+        }
+
+        protected abstract void foo(Envelope e);
+    }
+
+    internal class I2 : H2
+    {
+        protected override void foo(Envelope e)
+        {
+            e.Id = 2;
+        }
+    }
+
     #endregion
 }

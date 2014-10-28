@@ -201,6 +201,9 @@ domain PStaticTyping extends PData
     //// All typeable subexpressions / substatements and the declarations in which they appear.
     SubSE ::= sub (cntxt: TypingContext, typeable: Typeable).
 
+	//// True if in this context
+	IsEventCnst ::= (cntxt: TypingContext, expr: Typeable, paytype: TypeExpr).
+
     /*************************************************************/
     /*                      Types of Expressions                 */
     /*************************************************************/
@@ -224,8 +227,7 @@ domain PStaticTyping extends PData
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind = MODEL; SubSE(c, e), e = NulApp(FAIRNONDET), c is FunDecl(_, _, MODEL, _, _, _).
 	[ rule_Classes = '"error, msg: Nondeterminitistic choice can be used only in model machine and model functions"']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind != MODEL, toSymbol(c) != #FunDecl; SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind != MODEL, c is FunDecl, c.kind != MODEL.
-	
-    
+	    
     TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = NulApp(v), v : Integer.
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(v), v : Boolean.          
     
@@ -240,6 +242,10 @@ domain PStaticTyping extends PData
 	TypeOf(c, e, t)	              :- SubSE(c, e), e = Name(n), TypeOfFormalParam(c, n, t).
     TypeOf(c, e, t)               :- SubSE(c, e), e = Name(n), VarDecl(n, c.owner, t), no TypeOfFormalParam(c, n, _). 
     TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = Name(n), EventDecl(n, _, _), no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _). 
+
+    IsEventCnst(c, e, BaseType(NULL)) :- SubSE(c, e), e = Name(n), EventDecl(n, _, NIL), no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _). 
+    IsEventCnst(c, e, pt)             :- SubSE(c, e), e = Name(n), EventDecl(n, _, pt), pt : TypeExpr, no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _). 
+
 	[ rule_Classes = '"error, msg: Undefined symbol"']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n), no EventDecl(n, _, _), no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _). 
     
@@ -391,43 +397,96 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Undeclared machine"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _), no MachineDecl(n, _, _, _, _).   
     
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Raise(e', _), TypeOf(c, e', t'), t' = BaseType(EVENT).   
-	[ rule_Classes = '"error, msg: "raise" expects an event value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Raise(e', _), TypeOf(c, e', t'), t' != BaseType(EVENT).      
-      
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Send(e', e'', _), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = BaseType(REAL), t'' = BaseType(EVENT).
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Send(e', e'', _), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = BaseType(MODEL), t'' = BaseType(EVENT).
-	[ rule_Classes = '"error, msg: argument 2 of "send" expects an event value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(e', e'', _), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = BaseType(REAL), t'' != BaseType(EVENT).
-	[ rule_Classes = '"error, msg: argument 2 of "send" expects an event value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(e', e'', _), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = BaseType(MODEL), t'' != BaseType(EVENT).
-	[ rule_Classes = '"error, msg: argument 1 of "send" expects a machine value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(e', _, _), TypeOf(c, e', t'), t' != BaseType(REAL), t' != BaseType(MODEL).
-	
-	[ rule_Classes = '"error, msg: invalid payload type : event expects no payload"']
-	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = Send(_, ev, payload), EventDecl(ev.name, _, NIL), payload != NIL.
-	
-	[ rule_Classes = '"error, msg: no payload : event expects payload"']
-	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = Send(_, ev, payload), EventDecl(ev.name, _, exPayload), payload = NIL, exPayload != NIL.
-	
-    [ rule_Classes = '"error, msg: invalid payload type in send"']
-	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = Send(_, ev, payload), payload != NIL, EventDecl(ev.name, _, t''), t'' != NIL, TypeOf(c, payload, t'), TypeRel(t', t'', EMPTY).
-	
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Monitor(n, e', _), MachineDecl(n, MONITOR, _, _, _), TypeOf(c, e', t'), t' = BaseType(EVENT).
-	[ rule_Classes = '"error, msg: Undeclared monitor"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(n, _, _), no MachineDecl(n, MONITOR, _, _, _).
-	[ rule_Classes = '"error, msg: argument 2 of "monitor" expects an event value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(_, e', _), TypeOf(c, e', t'), t' != BaseType(EVENT).
+	//// Rules for raise with non-constant event expression.
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Raise(ev, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), no IsEventCnst(c, ev, _).
 
-	[ rule_Classes = '"error, msg: invalid payload type : event expects no payload"']
-	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = Monitor(_, ev, payload), EventDecl(ev.name, _, NIL), payload != NIL.
-	
-	[ rule_Classes = '"error, msg: no payload : event expects payload"']
-	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = Monitor(_, ev, payload), EventDecl(ev.name, _, exPayload), payload = NIL, exPayload != NIL.
-	
+	//// Rules for raise with constant event expression.
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Raise(ev, NIL),                            ///// < raise has NIL payload,
+	                                  IsEventCnst(c, ev, evt), TypeRel(BaseType(NULL), evt, SUB). ///// < event type contains null.
+
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Raise(ev, p), p != NIL,                          ///// < raise has non-NIL payload,             
+	                                  IsEventCnst(c, ev, evt), TypeOf(c, p, pt), TypeRel(pt, evt, SUB). ///// < and pt is a subtype of evt.
+
+	//// Error rules for raise.
+	[ rule_Classes = '"error, msg: argument 1 of "raise" expects an event value"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Raise(ev, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
+
+	//// Error rules for raise with constant event expression. 	
+    [ rule_Classes = '"error, msg: invalid payload type in raise (cannot send null value)"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Raise(ev, NIL), null = BaseType(NULL),   ///// < raise has NIL payload,
+	                                  IsEventCnst(c, ev, evt),                                  ///// < constant event expression
+									  TypeRel(null, evt, k), k != SUB, null != evt.             ///// < and null not in event type.
+
+    [ rule_Classes = '"error, msg: invalid payload type in raise"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Raise(ev, p), p != NIL,                    ///// < p has non-NIL payload,             
+	                                  IsEventCnst(c, ev, evt),                                    ///// < constant event expression
+									  TypeOf(c, p, pt), TypeRel(pt, evt, k), k != SUB, pt != evt. ///// < and pt is not a subtype of evt.
+
+	//// Rules for send with non-constant event expression.
+	RealOrModel ::= { REAL, MODEL }.  
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Send(m, ev, _),  
+	                                  TypeOf(c, m, mt), mt = BaseType(mk), mk : RealOrModel,                ///// < m is a machine type,
+	                                  TypeOf(c, ev, evt), evt = BaseType(EVENT), no IsEventCnst(c, ev, _).  ///// < ev is a non-constant event type.
+
+	//// Rules for send with constant event expression.
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Send(m, ev, NIL),                          ///// < send has NIL payload,
+	                                  TypeOf(c, m, mt), mt = BaseType(mk), mk : RealOrModel,      ///// < m is a machine type,
+	                                  IsEventCnst(c, ev, evt), TypeRel(BaseType(NULL), evt, SUB). ///// < event type contains null.
+
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Send(m, ev, p), p != NIL,                        ///// < send has non-NIL payload,             
+	                                  TypeOf(c, m, mt), mt = BaseType(mk), mk : RealOrModel,            ///// < m is a machine type,
+	                                  IsEventCnst(c, ev, evt), TypeOf(c, p, pt), TypeRel(pt, evt, SUB). ///// < and pt is a subtype of evt.
+
+	//// Error rules for send.
+	[ rule_Classes = '"error, msg: argument 1 of "send" expects a machine value"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(m, _, _), TypeOf(c, m, mt), mt != BaseType(REAL), mt != BaseType(MODEL).
+
+	[ rule_Classes = '"error, msg: argument 2 of "send" expects an event value"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, ev, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
+
+	//// Error rules for send with constant event expression. 	
+    [ rule_Classes = '"error, msg: invalid payload type in send (cannot send null value)"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, ev, NIL), null = BaseType(NULL),   ///// < send has NIL payload,
+	                                  IsEventCnst(c, ev, evt),                                    ///// < constant event expression
+									  TypeRel(null, evt, k), k != SUB, null != evt.               ///// < and null not in event type.
+
+    [ rule_Classes = '"error, msg: invalid payload type in send"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, ev, p), p != NIL,                  ///// < p has non-NIL payload,             
+	                                  IsEventCnst(c, ev, evt),                                    ///// < constant event expression
+									  TypeOf(c, p, pt), TypeRel(pt, evt, k), k != SUB, pt != evt. ///// < and pt is not a subtype of evt.
+
+	//// Rules for monitor with non-constant event expression.
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Monitor(m, ev, _),  
+	                                  MachineDecl(m, MONITOR, _, _, _),                                     ///// < m is a monitor type,
+	                                  TypeOf(c, ev, evt), evt = BaseType(EVENT), no IsEventCnst(c, ev, _).  ///// < ev is a non-constant event type.
+
+	//// Rules for monitor with constant event expression.
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Monitor(m, ev, NIL),                       ///// < monitor has NIL payload,
+	                                  MachineDecl(m, MONITOR, _, _, _),                           ///// < m is a monitor type,
+	                                  IsEventCnst(c, ev, evt), TypeRel(BaseType(NULL), evt, SUB). ///// < event type contains null.
+
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Monitor(m, ev, p), p != NIL,                     ///// < monitor has non-NIL payload,             
+	                                  MachineDecl(m, MONITOR, _, _, _),                                 ///// < m is a monitor type,
+	                                  IsEventCnst(c, ev, evt), TypeOf(c, p, pt), TypeRel(pt, evt, SUB). ///// < and pt is a subtype of evt.
+
+	//// Error rules for monitor.
+	[ rule_Classes = '"error, msg: Undeclared monitor"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(m, _, _), no MachineDecl(m, MONITOR, _, _, _).
+
+	[ rule_Classes = '"error, msg: argument 2 of "monitor" expects an event value"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(_, ev, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
+
+	//// Error rules for monitor with constant event expression. 	
+    [ rule_Classes = '"error, msg: invalid payload type in monitor (cannot send null value)"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(_, ev, NIL), null = BaseType(NULL), ///// < monitor has NIL payload,
+	                                  IsEventCnst(c, ev, evt),                                     ///// < constant event expression
+									  TypeRel(null, evt, k), k != SUB, null != evt.                ///// < and null not in event type.
+
     [ rule_Classes = '"error, msg: invalid payload type in monitor"']
-	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = Monitor(_, ev, payload), payload != NIL, EventDecl(ev.name, _, t''), t'' != NIL, TypeOf(c, payload, t'), TypeRel(t', t'', EMPTY).
-	
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(_, ev, p), p != NIL,               ///// < p has non-NIL payload,             
+	                                  IsEventCnst(c, ev, evt),                                    ///// < constant event expression
+									  TypeOf(c, p, pt), TypeRel(pt, evt, k), k != SUB, pt != evt. ///// < and pt is not a subtype of evt.
+
 	//// (4) Mutating statements		
 	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = BinStmt(ASSIGN, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), TypeRel(t2, t1, SUB).
 	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
@@ -630,13 +689,17 @@ domain PStaticTyping extends PData
     CompTypeRel(t', dom)      :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = MapType(dom, _).
     CompTypeRel(argt, inpt)   :- SubSE(c, e), e = FunApp(n, e'), TypeOf(c, e', argt), decl is FunDecl(n, c.owner, _, _, t, _), FuncSigTupleType(decl, inpt), t != NIL.
     CompTypeRel(t', t)        :- SubSE(c, e), e = Return(e'), c = FunDecl(_, _, _, _, t, _), TypeOf(c, e', t').
-    CompTypeRel(t', t'')      :- SubSE(c, e), e = Send(_, ev, payload), payload != NIL, EventDecl(ev.name, _, t''), t'' != NIL, TypeOf(c, payload, t').
-    CompTypeRel(t', t'')      :- SubSE(c, e), e = Monitor(_, ev, payload), payload != NIL, EventDecl(ev.name, _, t''), t'' != NIL, TypeOf(c, payload, t').
+    CompTypeRel(null, evt)    :- SubSE(c, e), e = Send(_, ev, NIL), IsEventCnst(c, ev, evt), null = BaseType(NULL).
+    CompTypeRel(pt, evt)      :- SubSE(c, e), e = Send(_, ev, p), p != NIL, IsEventCnst(c, ev, evt), TypeOf(c, p, pt).    
+    CompTypeRel(null, evt)    :- SubSE(c, e), e = Raise(ev, NIL), null = BaseType(NULL), IsEventCnst(c, ev, evt).
+    CompTypeRel(pt, evt)      :- SubSE(c, e), e = Raise(ev, p), p != NIL, IsEventCnst(c, ev, evt), TypeOf(c, p, pt).
+    CompTypeRel(null, evt)    :- SubSE(c, e), e = Monitor(_, ev, NIL), null = BaseType(NULL), IsEventCnst(c, ev, evt).
+    CompTypeRel(pt, evt)      :- SubSE(c, e), e = Monitor(_, ev, p), p != NIL, IsEventCnst(c, ev, evt), TypeOf(c, p, pt).
     CompTypeRel(t2, t1)       :- SubSE(c, e), e = BinStmt(ASSIGN, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2).
     CompTypeRel(t2, dom)      :- SubSE(c, e), e = BinStmt(REMOVE, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, _).
     CompTypeRel(value, inner) :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = SeqType(inner), t2 = TupType(BaseType(INT), TupType(value, NIL)).
     CompTypeRel(value, cod)   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)).	
-    CompTypeRel(key, dom)		  :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)).	
+    CompTypeRel(key, dom)     :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)).	
     CompTypeRel(argt, inpt)   :- SubSE(c, e), e = FunStmt(n, e'), TypeOf(c, e', argt), decl is FunDecl(n, c.owner, _, _, _, _), FuncSigTupleType(decl, inpt).
     
     //// TypeRel determines the relationship type expressions ta and tb.
@@ -786,6 +849,7 @@ domain PStaticTyping extends PData
 	                          { t | TriggerSet(plc, DEFAULT), t = BaseType(NULL);
 							        TriggerSet(plc, NEW),     t = BaseType(ANY);
 									TriggerSet(plc, HALT),    t = BaseType(ANY);
+									TriggerSet(plc, EXIT),    t = BaseType(ANY);
 									TriggerSet(plc, e), EventDecl(e, _, t), t : TypeExpr;
 									TriggerSet(plc, e), EventDecl(e, _, NIL), t = BaseType(NULL) }),
 							  TypeJoins(joins, type).
@@ -798,7 +862,7 @@ domain PStaticTyping extends PData
 
 	//// The set of events that could have changed trigger and payload in this context.
 	//// The NEW constant represents the new pseudo-event.
-	TriggerSet ::= (cntxt: PlContext, name: String + { DEFAULT, HALT, NEW }).
+	TriggerSet ::= (cntxt: PlContext, name: String + { DEFAULT, HALT, NEW, EXIT }).
 	
 	//// (1) A transition's trigger set is a singleton containing the trigger.
 	TriggerSet(t, t.trig) :- t is TransDecl. 
@@ -817,15 +881,19 @@ domain PStaticTyping extends PData
 	TriggerSet(s, t.trig) :- t is TransDecl, s is StateDecl, s.name = t.dst, s.owner = t.src.owner. 
 
 	//// (4) An AnonFunDecl's trigger set is the set of events of its calling context.
+	//// payloads in exit functions are unpredictable.
 	//// (TODO: Must change AnonFunDecl's to capture different calling contexts.)
-    TriggerSet(a, e) :- TriggerSet(s, e), s : StateDecl, a = s.entryAction, a : AnonFunDecl.
-    TriggerSet(a, e) :- TriggerSet(t, e), t : TransDecl, a = t.action, a : AnonFunDecl.
-    TriggerSet(a, e) :- TriggerSet(d, e), d : DoDecl, a = d.action, a : AnonFunDecl.
+    TriggerSet(a, EXIT) :- s is StateDecl, a = s.exitFun, a : AnonFunDecl.
+    TriggerSet(a, e)    :- TriggerSet(s, e), s : StateDecl, a = s.entryAction, a : AnonFunDecl.
+    TriggerSet(a, e)    :- TriggerSet(t, e), t : TransDecl, a = t.action, a : AnonFunDecl.
+    TriggerSet(a, e)    :- TriggerSet(d, e), d : DoDecl, a = d.action, a : AnonFunDecl.
 
 	//// (5) An FunDecl's trigger set is the set of events of its calling contexts.
-    TriggerSet(f, e) :- TriggerSet(s, e), s : StateDecl, f is FunDecl, f.name = s.entryAction, f.owner = s.owner.
-    TriggerSet(f, e) :- TriggerSet(t, e), t : TransDecl, f is FunDecl, f.name = t.action, f.owner = t.src.owner.
-    TriggerSet(f, e) :- TriggerSet(d, e), d : DoDecl, f is FunDecl, f.name = d.action, f.owner = d.src.owner.
+	//// payloads in exit functions are unpredictable.
+    TriggerSet(f, EXIT) :- s is StateDecl, f is FunDecl, f.name = s.exitFun, f.owner = s.owner.
+    TriggerSet(f, e)    :- TriggerSet(s, e), s : StateDecl, f is FunDecl, f.name = s.entryAction, f.owner = s.owner.
+    TriggerSet(f, e)    :- TriggerSet(t, e), t : TransDecl, f is FunDecl, f.name = t.action, f.owner = t.src.owner.
+    TriggerSet(f, e)    :- TriggerSet(d, e), d : DoDecl, f is FunDecl, f.name = d.action, f.owner = d.src.owner.
 
     TriggerSet(f, e) :- TriggerSet(c, e), SubSE(c, x), x = FunApp(name, _), f is FunDecl, f.owner = c.owner, f.name = name.
     TriggerSet(f, e) :- TriggerSet(c, e), SubSE(c, x), x = FunStmt(name, _), f is FunDecl, f.owner = c.owner, f.name = name.
@@ -850,6 +918,7 @@ domain PStaticTyping extends PData
 	                          { t | TriggerSet(plc, DEFAULT), t = BaseType(NULL);
 							        TriggerSet(plc, NEW),     t = BaseType(ANY);
 									TriggerSet(plc, HALT),    t = BaseType(ANY);
+									TriggerSet(plc, EXIT),    t = BaseType(ANY);
 									TriggerSet(plc, e), EventDecl(e, _, t), t : TypeExpr;
 									TriggerSet(plc, e), EventDecl(e, _, NIL), t = BaseType(NULL) }).
 

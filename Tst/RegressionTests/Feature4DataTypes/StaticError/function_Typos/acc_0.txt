@@ -11,7 +11,7 @@ OUT: function_typos.p (20, 22): inferred type:  NmdTupType(NmdTupTypeField("a", 
 OUT: function_typos.p (20, 26): inferred type:  BaseType(INT)
 OUT: function_typos.p (20, 29): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NIL)
 OUT: function_typos.p (20, 33): inferred type:  BaseType(INT)
-OUT: function_typos.p (21, 4): inferred type:  NIL
+OUT: function_typos.p (21, 4): inferred type:  ERROR
 OUT: function_typos.p (21, 9): inferred type:  BaseType(REAL)
 OUT: function_typos.p (21, 15): inferred type:  BaseType(EVENT)
 OUT: function_typos.p (21, 19): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("a", BaseType(INT)), NIL))
@@ -26,9 +26,10 @@ OUT: function_typos.p (3, 1): no start state in machine
 OUT: function_typos.p (4, 11): same name appears more than once in name tuple or named tuple type
 OUT: function_typos.p (4, 22): same name appears more than once in name tuple or named tuple type
 OUT: function_typos.p (5, 3): return value has incorrect type
-OUT: function_typos.p (20, 7): invalid payload type : event expects no payload
+OUT: function_typos.p (20, 7): invalid payload type in send
 OUT: function_typos.p (20, 22): same name appears more than once in name tuple or named tuple type
 OUT: function_typos.p (20, 29): same name appears more than once in name tuple or named tuple type
+OUT: function_typos.p (21, 4): invalid payload type in send
 OUT: function_typos.p (21, 19): same name appears more than once in name tuple or named tuple type
 OUT: function_typos.p (21, 26): same name appears more than once in name tuple or named tuple type
 OUT: Compilation failed

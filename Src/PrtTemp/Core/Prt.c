@@ -702,7 +702,7 @@ DoHandleEvent:
 	else
 	{
 		PrtRunExitFunction(context, PrtGetCurrentStateDecl(context)->nTransitions);
-		PrtLog(PRT_STEP_POP, context);
+		PrtLog(PRT_STEP_UNHANDLED, context);
 		PrtPopState(context, PRT_FALSE);
 		PrtUpdateCurrentActionsSet(context);
 		PrtUpdateCurrentDeferredSet(context);
@@ -834,7 +834,7 @@ __in PRT_BOOLEAN			restoreTrigger
 
 	if (length == 0)
 	{
-		if (PrtPrimGetEvent(context->trigger.event) == PRT_SPECIAL_EVENT_DEFAULT_OR_NULL)
+		if (PrtPrimGetEvent(context->trigger.event) == PRT_SPECIAL_EVENT_HALT)
 		{
 			PrtHaltMachine(context);
 		}

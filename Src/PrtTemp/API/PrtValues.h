@@ -318,6 +318,14 @@ PRT_API PRT_UINT32 PRT_CALL_CONV PrtSeqSizeOf(_In_ PRT_VALUE *seq);
 */
 PRT_API void PRT_CALL_CONV PrtMapUpdate(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE* key, _In_ PRT_VALUE* value);
 
+/** Inserts (key, value) in map.
+* requires that key is not already in the map
+* @param[in,out] map   A map to mutate.
+* @param[in]     key   The key to update (will be cloned).
+* @param[in]     value The value to which the key maps (will be cloned).
+*/
+PRT_API void PRT_CALL_CONV PrtMapInsert(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE* key, _In_ PRT_VALUE* value);
+
 /** Updates the map at key.
 * If key is not in the map, then adds it.
 * If key is already in the map, then changes its mapping.

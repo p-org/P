@@ -29,10 +29,10 @@ namespace PlangBuild
         {
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\Pcx64.csproj", PlatformX64),
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\Pc.csproj", PlatformX86),
-            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\PrtDist\\PrtDist\\PrtDist.vcxproj", PlatformX64),
-            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\PrtDist\\PrtDist\\PrtDist.vcxproj", PlatformX86),
-            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\PrtWinUser\\PrtWinUser.vcxproj", PlatformX64),
-            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\PrtWinUser\\PrtWinUser.vcxproj", PlatformX86),
+            //new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\PrtDist\\PrtDist\\PrtDist.vcxproj", PlatformX64),
+            //new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\PrtDist\\PrtDist\\PrtDist.vcxproj", PlatformX86),
+            //new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\PrtWinUser\\PrtWinUser.vcxproj", PlatformX64),
+            //new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\PrtWinUser\\PrtWinUser.vcxproj", PlatformX86),
         };
         
         private static readonly Tuple<string, string>[] DebugMoveMap = new Tuple<string, string>[]
@@ -224,6 +224,7 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x64\\Debug\\ZingParser.pdb", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\ZingParser.pdb"),
 
+            /*
             // x86
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtHeaders.h", 
@@ -342,7 +343,7 @@ namespace PlangBuild
                 new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\PrtWinUser\\Debug\\x64\\PrtWinUser.lib", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Lib\\PrtWinUser.lib"),
-
+            */
                 
         };
 
@@ -520,7 +521,7 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x64\\Release\\ZingParser.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\ZingParser.dll"),
 
-
+           /*
             // x86  Runtime
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtHeaders.h", 
@@ -637,6 +638,7 @@ namespace PlangBuild
                 new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\PrtWinUser\\Release\\x64\\PrtWinUser.lib", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtWinUser.lib"),
+            */
         };
 
         public static bool Build(bool isBldDebug)

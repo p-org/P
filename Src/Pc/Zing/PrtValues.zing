@@ -103,7 +103,7 @@ class PRT_VALUE {
 			trace("namedTup : (");
 			while(i < value.type.arity)
 			{
-				trace("field {0}:", i);
+				trace("field_{0}: ", i);
 				Print(value.tuple[i]);
 				trace(",");
 				i = i + 1;

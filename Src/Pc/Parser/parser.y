@@ -27,7 +27,7 @@
 %token DOT COLON COMMA
 %left  SEMICOLON
 
-%token INT REAL BOOL
+%token INT BOOL
 
 %left  PLUS MINUS
 %left  DIV

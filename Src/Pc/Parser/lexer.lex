@@ -151,7 +151,6 @@ Id              [A-Za-z_]([A-Za-z_0-9]*)
 
 [A-Za-z_][A-Za-z_0-9]*  			       { return GetIdToken(yytext);  }
 [0-9]+									   { return (int)Tokens.INT;     }
-[0-9]+[\.][0-9]+						   { return (int)Tokens.REAL;    }
 
 [\.]                                       { return (int)Tokens.DOT;     }
 [:]                                        { return (int)Tokens.COLON;   }

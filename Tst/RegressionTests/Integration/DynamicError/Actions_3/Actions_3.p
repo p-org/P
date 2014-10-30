@@ -8,7 +8,7 @@ event E4 assert 1;
 event unit assert 1;
 
 main machine Real {
-    var ghost_machine: model;
+    var ghost_machine: machine;
     start state Real_Init {
         entry {
 			ghost_machine = new Ghost(this);  

@@ -181,9 +181,9 @@ model Timer {
 		
 machine OSRDriver {
 	
-	var TimerV: model;
-	var LEDV: model;
-	var SwitchV: model;
+	var TimerV: machine;
+	var LEDV: machine;
+	var SwitchV: machine;
 	var check: bool;
 	
 	start state Driver_Init {

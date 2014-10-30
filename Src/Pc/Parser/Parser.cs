@@ -1471,7 +1471,6 @@
                 kind == P_Root.UserCnstKind.BOOL ||
                 kind == P_Root.UserCnstKind.INT ||
                 kind == P_Root.UserCnstKind.REAL ||
-                kind == P_Root.UserCnstKind.MODEL ||
                 kind == P_Root.UserCnstKind.EVENT ||
                 kind == P_Root.UserCnstKind.FOREIGN ||
                 kind == P_Root.UserCnstKind.ANY);

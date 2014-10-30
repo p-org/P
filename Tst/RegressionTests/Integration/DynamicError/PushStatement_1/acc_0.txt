@@ -7,9 +7,9 @@ OUT: Compiling PushStatement_1.zing to PushStatement_1.dll ...
 OUT: pushstatement_1.p (13, 4): inferred type:  BaseType(INT)
 OUT: pushstatement_1.p (13, 4): inferred type:  NIL
 OUT: pushstatement_1.p (13, 14): inferred type:  BaseType(INT)
-OUT: pushstatement_1.p (14, 4): inferred type:  BaseType(MODEL)
+OUT: pushstatement_1.p (14, 4): inferred type:  BaseType(REAL)
 OUT: pushstatement_1.p (14, 4): inferred type:  NIL
-OUT: pushstatement_1.p (14, 20): inferred type:  BaseType(MODEL)
+OUT: pushstatement_1.p (14, 20): inferred type:  BaseType(REAL)
 OUT: pushstatement_1.p (14, 30): inferred type:  BaseType(REAL)
 OUT: pushstatement_1.p (15, 13): inferred type:  NIL
 OUT: pushstatement_1.p (24, 3): inferred type:  NIL
@@ -17,7 +17,7 @@ OUT: pushstatement_1.p (24, 6): inferred type:  BaseType(INT)
 OUT: pushstatement_1.p (24, 14): inferred type:  BaseType(BOOL)
 OUT: pushstatement_1.p (24, 17): inferred type:  BaseType(INT)
 OUT: pushstatement_1.p (26, 4): inferred type:  NIL
-OUT: pushstatement_1.p (26, 9): inferred type:  BaseType(MODEL)
+OUT: pushstatement_1.p (26, 9): inferred type:  BaseType(REAL)
 OUT: pushstatement_1.p (26, 24): inferred type:  BaseType(EVENT)
 OUT: pushstatement_1.p (28, 3): inferred type:  BaseType(INT)
 OUT: pushstatement_1.p (28, 3): inferred type:  NIL
@@ -38,7 +38,7 @@ OUT: pushstatement_1.p (43, 16): inferred type:  BaseType(INT)
 OUT: pushstatement_1.p (43, 24): inferred type:  BaseType(BOOL)
 OUT: pushstatement_1.p (43, 27): inferred type:  BaseType(INT)
 OUT: pushstatement_1.p (49, 9): inferred type:  NIL
-OUT: pushstatement_1.p (49, 14): inferred type:  BaseType(MODEL)
+OUT: pushstatement_1.p (49, 14): inferred type:  BaseType(REAL)
 OUT: pushstatement_1.p (49, 29): inferred type:  BaseType(EVENT)
 OUT: pushstatement_1.p (58, 8): inferred type:  BaseType(REAL)
 OUT: pushstatement_1.p (58, 8): inferred type:  NIL

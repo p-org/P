@@ -4,19 +4,19 @@
 OUT: Writing Actions_5_p_.h ...
 OUT: Writing Actions_5.zing ...
 OUT: Compiling Actions_5.zing to Actions_5.dll ...
-OUT: actions_5.p (15, 4): inferred type:  BaseType(MODEL)
+OUT: actions_5.p (15, 4): inferred type:  BaseType(REAL)
 OUT: actions_5.p (15, 4): inferred type:  NIL
-OUT: actions_5.p (15, 20): inferred type:  BaseType(MODEL)
+OUT: actions_5.p (15, 20): inferred type:  BaseType(REAL)
 OUT: actions_5.p (15, 30): inferred type:  BaseType(REAL)
 OUT: actions_5.p (16, 13): inferred type:  NIL
 OUT: actions_5.p (16, 19): inferred type:  BaseType(EVENT)
 OUT: actions_5.p (28, 13): inferred type:  NIL
-OUT: actions_5.p (28, 18): inferred type:  BaseType(MODEL)
+OUT: actions_5.p (28, 18): inferred type:  BaseType(REAL)
 OUT: actions_5.p (28, 33): inferred type:  BaseType(EVENT)
 OUT: actions_5.p (42, 6): inferred type:  NIL
 OUT: actions_5.p (42, 13): inferred type:  BaseType(BOOL)
 OUT: actions_5.p (47, 9): inferred type:  NIL
-OUT: actions_5.p (47, 14): inferred type:  BaseType(MODEL)
+OUT: actions_5.p (47, 14): inferred type:  BaseType(REAL)
 OUT: actions_5.p (47, 29): inferred type:  BaseType(EVENT)
 OUT: actions_5.p (56, 8): inferred type:  BaseType(REAL)
 OUT: actions_5.p (56, 8): inferred type:  NIL

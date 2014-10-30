@@ -36,13 +36,6 @@ typedef void(PRT_CALL_CONV *PRT_SM_EXTCTOR)(_Inout_ struct PRT_SM_CONTEXT * cont
 */
 typedef void(PRT_CALL_CONV *PRT_SM_EXTDTOR)(_Inout_ struct PRT_SM_CONTEXT * context);
 
-/** A PRT_SM_MODELNEW function constructs a model machine in process.
-*   Returns a new model identifier.
-*   value is the value passed to the new M(...) operation. It will be the P null value if no value was passed.
-*   Function frees value.
-*/
-typedef PRT_VALUE *(PRT_CALL_CONV *PRT_SM_MODELNEW)(_In_ struct PRT_PROCESS * process, _Inout_ PRT_VALUE *value);
-
 /** A PRT_SM_MODELSEND function sends an event to a model machine.
 *  process is the calling process.
 *  id is the model id of the target machine.
@@ -55,13 +48,6 @@ typedef void(PRT_CALL_CONV *PRT_SM_MODELSEND)(
 	_Inout_ PRT_VALUE *id, 
 	_Inout_ PRT_VALUE *evnt, 
 	_Inout_ PRT_VALUE *payload);
-
-/** A PRT_SM_MODELSHUTDOWN function is called when a model's process is shutdown.
-*  process is the process shutting down.
-*  modelid is the model id of the model to be shut down.
-*   Function frees value.
-*/
-typedef PRT_VALUE *(PRT_CALL_CONV *PRT_SM_MODELSHUTDOWN)(_In_ struct PRT_PROCESS * process, _Inout_ PRT_VALUE *modelid);
 
 /** Represents a P event declaration */
 typedef struct PRT_EVENTDECL
@@ -183,9 +169,9 @@ typedef struct PRT_MODELIMPLDECL
 	PRT_UINT32       declIndex;     /**< The index of model implementation in program       */
 	PRT_STRING       name;          /**< The name of this machine                           */
 
-	PRT_SM_MODELNEW      newFun;    /**< Function that creates instances of this machine    */
-	PRT_SM_MODELSEND     sendFun;   /**< Function that sends to instances of this machine   */
-	PRT_SM_MODELSHUTDOWN shutFun;   /**< Function that shuts down instances of this machine */
+	PRT_SM_EXTCTOR      newFun;     /**< Function that creates instances of this machine    */
+	PRT_SM_MODELSEND    sendFun;    /**< Function that sends to instances of this machine   */
+	PRT_SM_EXTDTOR		shutFun;    /**< Function that shuts down instances of this machine */
 
 	PRT_UINT32      nAnnotations;   /**< Number of annotations                              */
 	void            **annotations;  /**< An array of annotations                            */

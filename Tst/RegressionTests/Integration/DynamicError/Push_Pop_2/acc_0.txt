@@ -4,13 +4,13 @@
 OUT: Writing Push_Pop_2_p_.h ...
 OUT: Writing Push_Pop_2.zing ...
 OUT: Compiling Push_Pop_2.zing to Push_Pop_2.dll ...
-OUT: push_pop_2.p (20, 13): inferred type:  BaseType(MODEL)
+OUT: push_pop_2.p (20, 13): inferred type:  BaseType(REAL)
 OUT: push_pop_2.p (20, 13): inferred type:  NIL
-OUT: push_pop_2.p (20, 34): inferred type:  BaseType(MODEL)
+OUT: push_pop_2.p (20, 34): inferred type:  BaseType(REAL)
 OUT: push_pop_2.p (20, 50): inferred type:  BaseType(REAL)
-OUT: push_pop_2.p (21, 13): inferred type:  BaseType(MODEL)
+OUT: push_pop_2.p (21, 13): inferred type:  BaseType(REAL)
 OUT: push_pop_2.p (21, 13): inferred type:  NIL
-OUT: push_pop_2.p (21, 30): inferred type:  BaseType(MODEL)
+OUT: push_pop_2.p (21, 30): inferred type:  BaseType(REAL)
 OUT: push_pop_2.p (21, 42): inferred type:  BaseType(REAL)
 OUT: push_pop_2.p (22, 13): inferred type:  BaseType(BOOL)
 OUT: push_pop_2.p (22, 13): inferred type:  NIL
@@ -23,14 +23,14 @@ OUT: push_pop_2.p (33, 17): inferred type:  BaseType(EVENT)
 OUT: push_pop_2.p (33, 25): inferred type:  BaseType(BOOL)
 OUT: push_pop_2.p (33, 28): inferred type:  BaseType(EVENT)
 OUT: push_pop_2.p (33, 42): inferred type:  NIL
-OUT: push_pop_2.p (33, 47): inferred type:  BaseType(MODEL)
+OUT: push_pop_2.p (33, 47): inferred type:  BaseType(REAL)
 OUT: push_pop_2.p (33, 67): inferred type:  BaseType(EVENT)
 OUT: push_pop_2.p (41, 13): inferred type:  NIL
-OUT: push_pop_2.p (41, 18): inferred type:  BaseType(MODEL)
+OUT: push_pop_2.p (41, 18): inferred type:  BaseType(REAL)
 OUT: push_pop_2.p (41, 38): inferred type:  BaseType(EVENT)
 OUT: push_pop_2.p (42, 13): inferred type:  NIL
 OUT: push_pop_2.p (48, 13): inferred type:  NIL
-OUT: push_pop_2.p (48, 18): inferred type:  BaseType(MODEL)
+OUT: push_pop_2.p (48, 18): inferred type:  BaseType(REAL)
 OUT: push_pop_2.p (48, 34): inferred type:  BaseType(EVENT)
 OUT: push_pop_2.p (49, 4): inferred type:  NIL
 OUT: push_pop_2.p (52, 13): inferred type:  NIL
@@ -42,7 +42,7 @@ OUT: push_pop_2.p (53, 17): inferred type:  BaseType(EVENT)
 OUT: push_pop_2.p (53, 25): inferred type:  BaseType(BOOL)
 OUT: push_pop_2.p (53, 28): inferred type:  BaseType(NULL)
 OUT: push_pop_2.p (53, 34): inferred type:  NIL
-OUT: push_pop_2.p (53, 39): inferred type:  BaseType(MODEL)
+OUT: push_pop_2.p (53, 39): inferred type:  BaseType(REAL)
 OUT: push_pop_2.p (53, 55): inferred type:  BaseType(EVENT)
 OUT: push_pop_2.p (62, 4): inferred type:  BaseType(BOOL)
 OUT: push_pop_2.p (62, 4): inferred type:  NIL

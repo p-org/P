@@ -10,10 +10,10 @@ machine Node assume 100 {
 
   var IsSending    : bool;
   var NextMachine  : machine;
-  var MyRing       : model;
+  var MyRing       : machine;
 
     start state Init_Main_Node {
-			entry { MyRing = payload as model; }
+			entry { MyRing = payload as machine; }
       on Next goto SetNext_Main_Node;
     }
 

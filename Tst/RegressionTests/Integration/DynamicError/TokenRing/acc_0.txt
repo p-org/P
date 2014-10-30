@@ -295,10 +295,10 @@ Zing Assertion failed:
 Microsoft.Zing.ZingAssertionFailureException: Exception of type 'Microsoft.Zing.ZingAssertionFailureException' was thrown.
 
 Stack trace:
-    EVENT_BUFFER.EnqueueEvent (TokenRing.zing, Line 3103)
-    SM_HANDLE.EnqueueEvent (TokenRing.zing, Line 2988)
-    Node.AnonFun4 (TokenRing.zing, Line 1302)
-    Node.ReentrancyHelper (TokenRing.zing, Line 925)
+    EVENT_BUFFER.EnqueueEvent (TokenRing.zing, Line 3142)
+    SM_HANDLE.EnqueueEvent (TokenRing.zing, Line 3027)
+    Node.AnonFun4 (TokenRing.zing, Line 1326)
+    Node.ReentrancyHelper (TokenRing.zing, Line 940)
     Node.RunHelper (TokenRing.zing, Line 460)
     Node.Run (TokenRing.zing, Line 162)
     Node.Start (TokenRing.zing, Line 127)

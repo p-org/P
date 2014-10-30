@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 8.00.0603 */
-/* at Thu Oct 09 20:17:34 2014
+/* at Wed Oct 29 11:21:46 2014
  */
 /* Compiler settings for PrtDistTypes.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 8.00.0603 

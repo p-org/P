@@ -373,9 +373,10 @@ namespace Microsoft.PSharp
         /// Starts the machine concurrently with an optional payload.
         /// </summary>
         /// /// <param name="payload">Optional payload</param>
-        internal void Start(Object payload = null)
+        /// <returns>Task</returns>
+        internal Task Start(Object payload = null)
         {
-            Task.Factory.StartNew((Object pl) =>
+            return Task.Factory.StartNew((Object pl) =>
             {
                 this.GotoInitialState(pl);
 

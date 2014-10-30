@@ -61,6 +61,18 @@ namespace Microsoft.PSharp
             }
 
             /// <summary>
+            /// Nondeterministic integer value. The return
+            /// value v is equal or greater than 0 and lower
+            /// than the given ceiling.
+            /// </summary>
+            /// <param name="ceiling">Ceiling</param>
+            /// <returns>int</returns>
+            public static int Integer(int ceiling)
+            {
+                return Havoc.UnsignedInteger(ceiling);
+            }
+
+            /// <summary>
             /// Returns a nondeterministic boolean value.
             /// </summary>
             /// <returns>bool</returns>
@@ -88,7 +100,7 @@ namespace Microsoft.PSharp
             /// The return value v is equal or greater than 0
             /// and lower than the given ceiling.
             /// </summary>
-            /// <param name="ceiling"></param>
+            /// <param name="ceiling">Ceiling</param>
             /// <returns>int</returns>
             internal static int UnsignedInteger(int ceiling)
             {

@@ -65,6 +65,11 @@ namespace Microsoft.PSharp
         private static Object Lock = new Object();
 
         /// <summary>
+        /// List of machine tasks.
+        /// </summary>
+        private static List<Task> MachineTasks = new List<Task>();
+
+        /// <summary>
         /// True if runtime is running. False otherwise.
         /// </summary>
         internal static bool IsRunning = false;
@@ -165,8 +170,28 @@ namespace Microsoft.PSharp
         /// </summary>
         public static void Wait()
         {
-            while (Runtime.IsRunning)
-                Thread.Sleep(Properties.Settings.Default.WaitDelay);
+            if (Runtime.Options.Mode == Runtime.Mode.Execution)
+            {
+                Task[] taskArray = null;
+                lock (Runtime.Lock)
+                {
+                    taskArray = Runtime.MachineTasks.ToArray();
+                }
+
+                Task.WaitAll(Runtime.MachineTasks.ToArray());
+
+                bool moreTasksExist = false;
+                lock (Runtime.Lock)
+                {
+                    moreTasksExist = taskArray.Length != Runtime.MachineTasks.Count;
+                }
+
+                if (moreTasksExist)
+                {
+                    Runtime.Wait();
+                }
+            }
+
             Runtime.ProcessAssertionCache();
         }
 
@@ -194,6 +219,7 @@ namespace Microsoft.PSharp
                 m.StopListener();
             Runtime.Machines.Clear();
             Runtime.Monitors.Clear();
+            Runtime.MachineTasks.Clear();
         }
 
         /// <summary>
@@ -203,10 +229,16 @@ namespace Microsoft.PSharp
         /// </summary>
         /// <param name="runtimeAction">Runtime action</param>
         /// <param name="iterations">Iterations</param>
-        public static void Test(Action runtimeAction, int iterations)
+        /// <param name="enableBugFindMode">Enable bug find mode</param>
+        public static void Test(Action runtimeAction, int iterations,
+            bool enableBugFindMode = true)
         {
-            Runtime.Options.Mode = Runtime.Mode.BugFinding;
             Runtime.Options.CountAssertions = true;
+
+            if (enableBugFindMode)
+            {
+                Runtime.Options.Mode = Runtime.Mode.BugFinding;
+            }
 
             Profiler.StartMeasuringExecutionTime();
             for (int idx = 0; idx < iterations; idx++)
@@ -282,7 +314,7 @@ namespace Microsoft.PSharp
 
             if (Runtime.Options.Mode == Runtime.Mode.Execution)
             {
-                machine.Start(payload);
+                Runtime.MachineTasks.Add(machine.Start(payload));
             }
             else
             {
@@ -314,7 +346,7 @@ namespace Microsoft.PSharp
 
             if (Runtime.Options.Mode == Runtime.Mode.Execution)
             {
-                (machine as Machine).Start(payload);
+                Runtime.MachineTasks.Add((machine as Machine).Start(payload));
             }
             else
             {
@@ -345,7 +377,7 @@ namespace Microsoft.PSharp
 
             if (Runtime.Options.Mode == Runtime.Mode.Execution)
             {
-                machine.Start(payload);
+                Runtime.MachineTasks.Add(machine.Start(payload));
             }
             else
             {
@@ -376,7 +408,7 @@ namespace Microsoft.PSharp
 
             if (Runtime.Options.Mode == Runtime.Mode.Execution)
             {
-                (machine as Machine).Start(payload);
+                Runtime.MachineTasks.Add((machine as Machine).Start(payload));
             }
             else
             {
@@ -594,6 +626,7 @@ namespace Microsoft.PSharp
             foreach (var m in Runtime.Monitors)
                 m.StopListener();
             Runtime.Monitors.Clear();
+            Runtime.MachineTasks.Clear();
             Runtime.RegisteredMachineTypes.Clear();
             Runtime.RegisteredMonitorTypes.Clear();
             Runtime.RegisteredEventTypes.Clear();

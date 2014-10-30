@@ -25,6 +25,10 @@ namespace Chord
 
     internal class eJoinAck : Event { }
 
+    internal class eFail : Event { }
+
+    internal class eStop : Event { }
+
     internal class eStabilize : Event { }
 
     internal class eNotifySuccessor : Event
@@ -229,6 +233,11 @@ namespace Chord
                 var machine = this.Machine as Cluster;
 
                 //Console.WriteLine("[Cluster] Waiting ...\n");
+
+                if (machine.QueryCounter == 10)
+                {
+                    machine.TriggerStop();
+                }
             }
         }
 
@@ -244,6 +253,7 @@ namespace Chord
 
             if (newId < 0)
             {
+                this.TriggerStop();
                 return;
             }
             
@@ -275,6 +285,45 @@ namespace Chord
             }
 
             this.Raise(new eLocal());
+        }
+
+        private void TriggerFailure()
+        {
+            //Console.WriteLine("[Cluster] Triggering a failure ...\n");
+
+            int failId = -1;
+            Random random = new Random();
+            while ((failId < 0 || !this.NodeIds.Contains(failId)) &&
+                this.NodeIds.Count > 0)
+            {
+                failId = random.Next(this.NumOfId);
+            }
+
+            if (failId < 0)
+            {
+                this.TriggerStop();
+                return;
+            }
+
+            var nodeToFail = this.Nodes[failId];
+
+            this.Send(nodeToFail, new eFail());
+
+            this.QueryStabilize();
+        }
+
+        private void TriggerStop()
+        {
+            //Console.WriteLine("[Cluster] Stopping ...\n");
+
+            this.Send(this.Client, new eStop());
+
+            foreach (var node in this.Nodes)
+            {
+                this.Send(node, new eStop());
+            }
+
+            this.Delete();
         }
 
         private void FindSuccessor()
@@ -352,7 +401,10 @@ namespace Chord
                 return new HashSet<Type>
                 {
                     typeof(eFindSuccessor),
-                    typeof(eNotifySuccessor)
+                    typeof(eFindPredecessor),
+                    typeof(eNotifySuccessor),
+                    typeof(eStabilize),
+                    typeof(eStop)
                 };
             }
         }
@@ -401,7 +453,10 @@ namespace Chord
                 return new HashSet<Type>
                 {
                     typeof(eFindSuccessor),
-                    typeof(eNotifySuccessor)
+                    typeof(eFindPredecessor),
+                    typeof(eNotifySuccessor),
+                    typeof(eStabilize),
+                    typeof(eStop)
                 };
             }
         }
@@ -439,7 +494,10 @@ namespace Chord
                 return new HashSet<Type>
                 {
                     typeof(eFindSuccessor),
-                    typeof(eNotifySuccessor)
+                    typeof(eFindPredecessor),
+                    typeof(eNotifySuccessor),
+                    typeof(eStabilize),
+                    typeof(eStop)
                 };
             }
         }
@@ -468,7 +526,7 @@ namespace Chord
             var id = ((Tuple<Machine, int, int>)this.Payload).Item2;
             var timeout = ((Tuple<Machine, int, int>)this.Payload).Item3;
 
-            Console.WriteLine("[ChordNode-{0}] Finding successor of {1} ...\n", this.Id, id);
+            //Console.WriteLine("[ChordNode-{0}] Finding successor of {1} ...\n", this.Id, id);
 
             if (this.Keys.Contains(id))
             {
@@ -606,7 +664,7 @@ namespace Chord
 
         private void SendPredecessor()
         {
-            Console.WriteLine("[ChordNode-{0}] Sending predecessor ...\n", this.Id);
+            //Console.WriteLine("[ChordNode-{0}] Sending predecessor ...\n", this.Id);
 
             var sender = (Machine)this.Payload;
             if (this.Predecessor != null)
@@ -642,6 +700,18 @@ namespace Chord
             {
                 this.Keys.Remove(key);
             }
+        }
+
+        private void Failing()
+        {
+            //Console.WriteLine("[ChordNode-{0}] Failing ...\n", this.Id);
+            this.Delete();
+        }
+
+        private void Stopping()
+        {
+            //Console.WriteLine("[ChordNode-{0}] Stopping ...\n", this.Id);
+            this.Delete();
         }
 
         private int WrapAdd(int left, int right, int ceiling)
@@ -756,6 +826,8 @@ namespace Chord
             waitingDict.Add(typeof(eFindPredecessorResp), new Action(UpdateSuccessor));
             waitingDict.Add(typeof(eAskForKeys), new Action(SendCorrespondingKeys));
             waitingDict.Add(typeof(eAskForKeysAck), new Action(UpdateKeys));
+            waitingDict.Add(typeof(eFail), new Action(Failing));
+            waitingDict.Add(typeof(eStop), new Action(Stopping));
 
             dict.Add(typeof(Joining), joiningDict);
             dict.Add(typeof(Waiting), waitingDict);
@@ -780,7 +852,7 @@ namespace Chord
                 var machine = this.Machine as Client;
 
                 //Console.WriteLine("[Client] Initializing ...\n");
-                    //Console.WriteLine("[Client] Querying ...\n");
+
                 machine.Cluster = ((Tuple<Machine, List<int>>)this.Payload).Item1;
                 machine.Keys = ((Tuple<Machine, List<int>>)this.Payload).Item2;
                 machine.QueryCounter = 0;
@@ -807,17 +879,11 @@ namespace Chord
 
                 if (machine.QueryCounter < 3)
                 {
-
+                    //Console.WriteLine("[Client] Querying ...\n");
 
                     Random random = new Random();
                     var randomValue = random.Next(machine.Keys.Count);
                     machine.QueryKey = machine.Keys[randomValue];
-
-                    //if (Model.Havoc.Boolean)
-                    //{
-                    //    this.Send(machine.Cluster, new eFindSuccessor(new Tuple<Machine, int, int>(
-                    //        machine, machine.QueryKey, 100)));
-                    //}
 
                     this.Send(machine.Cluster, new eFindSuccessor(new Tuple<Machine, int>(
                         machine, machine.QueryKey)));
@@ -834,7 +900,7 @@ namespace Chord
             var id = (int)this.Payload;
 
             //Console.WriteLine("[Client] Received successor with Id {0} for Key {1}  ...\n",
-                //id, this.QueryKey);
+            //    id, this.QueryKey);
 
             this.Raise(new eLocal());
         }
@@ -846,6 +912,12 @@ namespace Chord
             var successor = ((Tuple<Machine, int>)this.Payload).Item1;
             var id = ((Tuple<Machine, int>)this.Payload).Item2;
             this.Send(successor, new eQueryId(this));
+        }
+
+        private void Stopping()
+        {
+            //Console.WriteLine("[Client] Stopping ...\n");
+            this.Delete();
         }
 
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
@@ -876,6 +948,7 @@ namespace Chord
             ActionBindings waitingDict = new ActionBindings();
             waitingDict.Add(typeof(eQueryIdResp), new Action(ReceiveSuccessorId));
             waitingDict.Add(typeof(eFindSuccessorResp), new Action(SuccessorFound));
+            waitingDict.Add(typeof(eStop), new Action(Stopping));
 
             dict.Add(typeof(Waiting), waitingDict);
 

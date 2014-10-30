@@ -20,6 +20,8 @@ namespace Chord
             //Runtime.RegisterNewEvent(typeof(eConfigure));
             //Runtime.RegisterNewEvent(typeof(eJoin));
             //Runtime.RegisterNewEvent(typeof(eJoinAck));
+            //Runtime.RegisterNewEvent(typeof(eFail));
+            //Runtime.RegisterNewEvent(typeof(eStop));
             //Runtime.RegisterNewEvent(typeof(eStabilize));
             //Runtime.RegisterNewEvent(typeof(eNotifySuccessor));
             //Runtime.RegisterNewEvent(typeof(eAskForKeys));
@@ -38,10 +40,6 @@ namespace Chord
             //Runtime.RegisterNewMachine(typeof(ChordNode));
             //Runtime.RegisterNewMachine(typeof(Client));
 
-            //Console.WriteLine("Configuring the runtime.\n");
-            //Runtime.Options.Mode = Runtime.Mode.BugFinding;
-            ////Runtime.Options.MonitorExecutions = true;
-
             //Console.WriteLine("Starting the runtime.\n");
             //Runtime.Start(new Tuple<int, List<int>, List<int>>(
             //    3,
@@ -55,11 +53,13 @@ namespace Chord
             Runtime.Test(
                 () =>
                 {
-                    Console.WriteLine("Registering events to the runtime.\n");
+                    //Console.WriteLine("Registering events to the runtime.\n");
                     Runtime.RegisterNewEvent(typeof(eLocal));
                     Runtime.RegisterNewEvent(typeof(eConfigure));
                     Runtime.RegisterNewEvent(typeof(eJoin));
                     Runtime.RegisterNewEvent(typeof(eJoinAck));
+                    Runtime.RegisterNewEvent(typeof(eFail));
+                    Runtime.RegisterNewEvent(typeof(eStop));
                     Runtime.RegisterNewEvent(typeof(eStabilize));
                     Runtime.RegisterNewEvent(typeof(eNotifySuccessor));
                     Runtime.RegisterNewEvent(typeof(eAskForKeys));
@@ -73,14 +73,10 @@ namespace Chord
                     Runtime.RegisterNewEvent(typeof(eQueryJoin));
                     Runtime.RegisterNewEvent(typeof(eNotifyClient));
 
-                    Console.WriteLine("Registering state machines to the runtime.\n");
+                    //Console.WriteLine("Registering state machines to the runtime.\n");
                     Runtime.RegisterNewMachine(typeof(Cluster));
                     Runtime.RegisterNewMachine(typeof(ChordNode));
                     Runtime.RegisterNewMachine(typeof(Client));
-
-                    Console.WriteLine("Configuring the runtime.\n");
-                    Runtime.Options.Mode = Runtime.Mode.BugFinding;
-                    //Runtime.Options.MonitorExecutions = true;
 
                     Console.WriteLine("Starting the runtime.\n");
                     Runtime.Start(new Tuple<int, List<int>, List<int>>(
@@ -92,7 +88,7 @@ namespace Chord
                     Console.WriteLine("Performing cleanup.\n");
                     Runtime.Dispose();
                 },
-                10000);
+                100000);
         }
     }
 }

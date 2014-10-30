@@ -75,8 +75,8 @@ Zing Assertion failed:
 Microsoft.Zing.ZingAssertionFailureException: Exception of type 'Microsoft.Zing.ZingAssertionFailureException' was thrown.
 
 Stack trace:
-    Real.AnonFun3 (Actions_2_fails.zing, Line 837)
-    Real.ReentrancyHelper (Actions_2_fails.zing, Line 591)
+    Real.AnonFun3 (Actions_2_fails.zing, Line 855)
+    Real.ReentrancyHelper (Actions_2_fails.zing, Line 606)
     Real.RunHelper (Actions_2_fails.zing, Line 238)
     Real.Run (Actions_2_fails.zing, Line 94)
     Real.Start (Actions_2_fails.zing, Line 59)

@@ -82,10 +82,10 @@ Zing Assertion failed:
 Microsoft.Zing.ZingAssertionFailureException: Exception of type 'Microsoft.Zing.ZingAssertionFailureException' was thrown.
 
 Stack trace:
-    EVENT_BUFFER.EnqueueEvent (MaxInstances_1.zing, Line 2231)
-    SM_HANDLE.EnqueueEvent (MaxInstances_1.zing, Line 2116)
-    Real.AnonFun2 (MaxInstances_1.zing, Line 943)
-    Real.ReentrancyHelper (MaxInstances_1.zing, Line 629)
+    EVENT_BUFFER.EnqueueEvent (MaxInstances_1.zing, Line 2264)
+    SM_HANDLE.EnqueueEvent (MaxInstances_1.zing, Line 2149)
+    Real.AnonFun2 (MaxInstances_1.zing, Line 961)
+    Real.ReentrancyHelper (MaxInstances_1.zing, Line 641)
     Real.RunHelper (MaxInstances_1.zing, Line 229)
     Real.Run (MaxInstances_1.zing, Line 100)
     Real.RunHelper (MaxInstances_1.zing, Line 202)

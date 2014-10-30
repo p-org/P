@@ -1,6 +1,6 @@
 runPc: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
-argPc: OSR.p
+argPc: nmdType.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 acc: .\
-dsc: Feature Integration: static checks only
+dsc: 2.9.1. Assignment: types of LHS and RHS: wrong names in named tuples

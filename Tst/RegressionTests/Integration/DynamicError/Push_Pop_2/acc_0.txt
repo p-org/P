@@ -147,18 +147,19 @@ Trace-Log 0:
 <StateLog> Machine Employee-0 entering State dummyState
 <RaiseLog> Machine Employee-0 raised Event ____CabBooked
 <StateLog> Machine Employee-0 exiting State dummyState
-<StateLog> Call statement terminated due to unhandled event by machine Employee-0
+<StateLog> Machine Employee-0 exiting State SBookCab
 
 Error:
 Zing Assertion failed:
-    Expression: false
-    Comment: 
+    Expression: tmpVar_3.bl,
+    Comment: (52, 13): Assert failed
 
 Microsoft.Zing.ZingAssertionFailureException: Exception of type 'Microsoft.Zing.ZingAssertionFailureException' was thrown.
 
 Stack trace:
-    Employee.ReentrancyHelper (Push_Pop_2.zing, Line 1213)
-    Employee.RunHelper (Push_Pop_2.zing, Line 435)
+    Employee.AnonFun6 (Push_Pop_2.zing, Line 2014)
+    Employee.ReentrancyHelper (Push_Pop_2.zing, Line 1261)
+    Employee.RunHelper (Push_Pop_2.zing, Line 470)
     Employee.Run (Push_Pop_2.zing, Line 187)
     Employee.Start (Push_Pop_2.zing, Line 152)
 

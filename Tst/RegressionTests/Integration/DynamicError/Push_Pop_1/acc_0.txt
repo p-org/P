@@ -159,8 +159,8 @@ Zing Assertion failed:
 Microsoft.Zing.ZingAssertionFailureException: Exception of type 'Microsoft.Zing.ZingAssertionFailureException' was thrown.
 
 Stack trace:
-    Employee.AnonFun11 (Push_Pop_1.zing, Line 2110)
-    Employee.ReentrancyHelper (Push_Pop_1.zing, Line 1457)
+    Employee.AnonFun11 (Push_Pop_1.zing, Line 2152)
+    Employee.ReentrancyHelper (Push_Pop_1.zing, Line 1496)
     Employee.RunHelper (Push_Pop_1.zing, Line 640)
     Employee.Run (Push_Pop_1.zing, Line 174)
     Employee.Start (Push_Pop_1.zing, Line 139)

@@ -1418,18 +1418,12 @@ namespace Microsoft.Pc
             var savedDeferredSet = MkZingIdentifier("savedDeferredSet");
             var cont = MkZingIdentifier("cont");
 
-            var restoreCurrentEvent = MkZingAssign(currentEvent, savedCurrentEvent);
-            var restoreCurrentArg = MkZingAssign(currentArg, savedCurrentArg);
-            var restoreDeferredSet = MkZingAssign(MkZingDot("myHandle", "stack", "deferredSet"), savedDeferredSet);
-            var gotoStmt = MkZingGoto("transition_" + entityName);
-            string errorTraceString = string.Format("\"<StateLog> Call statement terminated due to unhandled event by machine {0}-{{0}}\\n\"", machineName);
-            var errorTraceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(errorTraceString), MkZingDot("myHandle", "instance")));
             var body = new List<AST<Node>>();
             body.Add(MkZingBlock("reentry_" + name, MkZingCallStmt(MkZingCall(MkZingIdentifier(name), cont))));
             body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Return")), MkZingReturn(cont)));
             body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Pop")), MkZingReturn(cont)));
             body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Raise")), MkZingReturn(cont)));
-            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Call")),
+            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Push")),
                 MkZingSeq(
                     MkZingAssign(savedCurrentEvent, currentEvent),
                     MkZingAssign(savedCurrentArg, currentArg),
@@ -1439,10 +1433,10 @@ namespace Microsoft.Pc
                     MkZingAssign(MkZingDot("myHandle", "stack", "deferredSet"), MkZingCall(MkZingDot("Main", "CalculateComplementOfEventSet"), MkZingDot("myHandle", "stack", "actionSet"))),
                     MkZingCallStmt(MkZingCall(MkZingIdentifier("Run"), MkZingDot("cont", "state"))),
                     MkZingAssign(MkZingDot("cont", "state"), MkZingState("default")),
-                    MkZingIfThenElse(MkZingApply(ZingData.Cnst_Eq, currentEvent, MkZingIdentifier("null")),
-                              MkZingSeq(restoreCurrentEvent, restoreCurrentArg, restoreDeferredSet),
-                              MkZingSeq(errorTraceStmt, MkZingAssert(ZingData.Cnst_False))),
-                    MkZingGoto("reentry_" + name))));
+                    MkZingIfThenElse(
+                              MkZingApply(ZingData.Cnst_Eq, currentEvent, MkZingIdentifier("null")),
+                              MkZingSeq(MkZingAssign(currentEvent, savedCurrentEvent), MkZingAssign(currentArg, savedCurrentArg), MkZingAssign(MkZingDot("myHandle", "stack", "deferredSet"), savedDeferredSet), MkZingGoto("reentry_" + name)),
+                              MkZingSeq(MkZingAssign(currentEvent, savedCurrentEvent), MkZingAssign(currentArg, savedCurrentArg), MkZingAssign(MkZingDot("myHandle", "stack", "deferredSet"), savedDeferredSet), MkZingCallStmt(MkZingCall(MkZingDot(cont, "Raise"))), MkZingReturn(cont))))));
             AST<Node> atChooseLivenessStmt = ZingData.Cnst_Nil;
             AST<Node> atYieldLivenessStmt = ZingData.Cnst_Nil;
             if (compiler.Options.liveness == LivenessOption.Standard)
@@ -2496,7 +2490,7 @@ namespace Microsoft.Pc
             var stateName = GetNameFromQualifiedName(ctxt.machineName, qualifiedName);
             var afterLabel = ctxt.GetFreshLabel();
             var res = MkZingSeq(
-                MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Call"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingState(stateName))),
+                MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Push"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingState(stateName))),
                 MkZingReturn(ZingData.Cnst_Nil),
                 MkZingBlock(afterLabel, ZingData.Cnst_Nil));
             return new ZingTranslationInfo(res);

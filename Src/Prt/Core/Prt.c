@@ -321,8 +321,8 @@ __in PRT_UINT32				maxInstances
 }
 
 void
-PrtEnqueueEvent(
-__in PRT_SM_CONTEXT_PRIV		*context,
+PrtSend(
+__in PRT_SM_CONTEXT				*machine,
 __in PRT_VALUE					*event,
 __in PRT_VALUE					*payload
 )
@@ -332,7 +332,16 @@ __in PRT_VALUE					*payload
 	PRT_UINT32 eventMaxInstances;
 	PRT_UINT32 maxQueueSize;
 	PRT_UINT32 eventIndex;
-	
+	PRT_SM_CONTEXT_PRIV *context;
+
+	if (machine->isModel)
+	{
+		machine->process->program->modelImpls[machine->instanceOf].sendFun(machine->process, machine->id, event, payload);
+		return;
+	}
+
+	context = (PRT_SM_CONTEXT_PRIV *)machine;
+
 	//check that the enqueued message is event type
 	PrtAssert(event->type->typeKind == PRT_KIND_EVENT, "Parameter event is not of type EVENT");
 	PrtAssert(PrtIsSubtype(payload->type, PrtGetPayloadType(context, event)), "Payload type mismatch");

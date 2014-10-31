@@ -4980,20 +4980,47 @@
                 }
             }
 
-            //// Second make sure the is a proper prms term
+            //// Second make sure that prms is a proper prms term
             if (prms.NodeKind != NodeKind.FuncTerm)
             {
                 return false;
             }
 
             funcTerm = (FuncTerm)prms;
-            if (funcTerm.Args.Count != 3)
+            if (funcTerm.Args.Count != 2)
             {
                 return false;
             }
 
             func = funcTerm.Function as Id;
             if (func == null || func.Name != FormulaNodes.Params_Iden.Node.Name)
+            {
+                return false;
+            }
+
+            Node prm;
+            using (var it = funcTerm.Args.GetEnumerator())
+            {
+                it.MoveNext();
+                prm = it.Current;
+                it.MoveNext();
+                tailPrms = it.Current;
+            }
+
+            //// Third make sure that prm is a proper prm term
+            if (prm.NodeKind != NodeKind.FuncTerm)
+            {
+                return false;
+            }
+
+            funcTerm = (FuncTerm)prm;
+            if (funcTerm.Args.Count != 2)
+            {
+                return false;
+            }
+
+            func = funcTerm.Function as Id;
+            if (func == null || func.Name != FormulaNodes.Param_Iden.Node.Name)
             {
                 return false;
             }
@@ -5005,8 +5032,6 @@
                 storId = it.Current;
                 it.MoveNext();
                 nameCnst = it.Current;
-                it.MoveNext();
-                tailPrms = it.Current;
             }
 
             if (!IsStorageKind(storId, out kind) ||

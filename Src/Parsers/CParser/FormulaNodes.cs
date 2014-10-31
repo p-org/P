@@ -40,6 +40,7 @@ namespace CParser
 
         public static AST<Id> Fields_Iden = Factory.Instance.MkId("Fields");
         public static AST<Id> Params_Iden = Factory.Instance.MkId("Params");
+        public static AST<Id> Param_Iden = Factory.Instance.MkId("Param");
         public static AST<Id> Elements_Iden = Factory.Instance.MkId("Elements");
         public static AST<Id> Element_Iden = Factory.Instance.MkId("Element");
 
@@ -206,6 +207,7 @@ namespace CParser
         public static AST<FuncTerm> FunDef_FuncTerm = Factory.Instance.MkFuncTerm(FunDef_Iden);
         public static AST<FuncTerm> PrmTypes_FuncTerm = Factory.Instance.MkFuncTerm(PrmTypes_Iden);
         public static AST<FuncTerm> Params_FuncTerm = Factory.Instance.MkFuncTerm(Params_Iden);
+        public static AST<FuncTerm> Param_FuncTerm = Factory.Instance.MkFuncTerm(Param_Iden);
         public static AST<FuncTerm> Defs_FuncTerm = Factory.Instance.MkFuncTerm(Defs_Iden);
         public static AST<FuncTerm> VarDef_FuncTerm = Factory.Instance.MkFuncTerm(VarDef_Iden);
         public static AST<FuncTerm> Locals_FuncTerm = Factory.Instance.MkFuncTerm(Locals_Iden, default(Span));

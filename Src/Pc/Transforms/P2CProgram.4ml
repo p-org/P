@@ -95,8 +95,6 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// (5) (Anon)FunDecls - Start at Id 1. The id 0 is reserved for the PUSH action.
 	AnonOrNamedFun ::= FunDecl + AnonFunDecl.
 
-	DeclId(PUSH, 0) :- m is MachineDecl
-
 	DeclId(d, id, cn) :- d is FunDecl, d.owner.kind = REAL, 
 	                     id = 1 + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun, d'.owner = d.owner }), 
 	                     cn = strJoin("P_FUN_", strJoin(d.owner.name, strJoin("_", d.name))).
@@ -107,11 +105,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 						 cn = strJoin("P_FUN_", strJoin(d.owner.name, strJoin("_ANON", toString(num)))).
 	
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
-	   m is MachineDecl,
+	   m is MachineDecl, m.kind = REAL,
 	   enumName = strJoin("P_FUNS_", m.name),
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : AnonOrNamedFun, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(m.name, "_COUNT"))), size = count({d | d is AnonOrNamedFun, d.owner = m}) }).  
+									   enumMember = Element(IntLit(0, DEC, NIL), strJoin("_P_FUN_", strJoin(m.name, "_PUSH")));
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(m.name, "_COUNT"))), size = 1 + count({d | d is AnonOrNamedFun, d.owner = m}) }).  
 
 	//// (7) StateDecls - Start at Id 0. Need to encode qualified names.
 	DeclId(d, id, cn) :- d is StateDecl, d.owner.kind = REAL, 
@@ -372,8 +371,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 							DeclId(d, m, cvar), DeclId(d.owner, _, cmach), VarDeclConcat(m + 1, d.owner, after), d : VarDecl, TypeConstant(d.type, typeId, _),							  
 							arr = out.Args(def, after), 
 	                        def = Init(
-							   Args(Ident(cmach),
 							   Args(Ident(cvar),
+							   Args(Ident(cmach),
 							   Args(StringLit(d.name, NIL),
 							   Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(typeId)))),
 							   Args(IntLit(0, DEC, U),
@@ -408,17 +407,19 @@ transform P2CProgram (in:: P) returns (out:: C)
 	TransDeclEvnt(t, evname) :- t is TransDecl, trig = t.trig, trig : DefaultOrHalt, DeclId(trig, _, evname).
 
 	//// Transition action index depends on whether the transition is a push transition or not.
+    TransDeclAction  ::= (decl: TransDecl, funName: String).
+	TransDeclAction(t, funname) :- t is TransDecl, t.action = PUSH, funname = strJoin("_P_FUN_", strJoin(t.src.owner.name, "_PUSH")). 
+	TransDeclAction(t, funname) :- t is TransDecl, act = t.action, act : AnonOrNamedFun, DeclId(act, _, funname). 
 
-    /*
 	//// Base case
 	TransDeclConcat(c, s, NIL) :- s is StateDecl, c = count({t | t is TransDecl, t.src = s}).
 
     //// Build every transition list in reverse order
-	TransDeclConcat(m, d.owner, arr) :- 
-							TransDeclId(d, m), TransDeclConcat(m + 1, d.owner, after), 
-							DeclId(d.src, _, srcname), DeclId(d.src.owner, _, machname), 
-							dst is StateDecl, dst.owner = d.src.owner, dst.name = d.dst, DeclId(dst, _, dstname), 	
-							ev is EventDecl, ev.name = d.trig, DeclId(ev, _, evname),						  
+	TransDeclConcat(m, d.src, arr) :- 
+							TransDeclId(d, m, srcname, dstname, machname),
+							TransDeclEvnt(d, evname),
+							TransDeclAction(d, funname),
+							TransDeclConcat(m + 1, d.src, after), 
 							arr = out.Args(def, after), 
 	                        def = Init(
 							   Args(IntLit(m, DEC, NIL),
@@ -426,5 +427,117 @@ transform P2CProgram (in:: P) returns (out:: C)
 							   Args(Ident(machname),
 							   Args(Ident(evname),
 							   Args(Ident(dstname),
-    */
+							   Args(Ident(funname),
+							   Args(IntLit(0, DEC, NIL),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL)))))))))).
+
+	COut(3, def) :- TransDeclConcat(0, state, arr),
+	                QualName2CStr(state.name, statename),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_TRANSDECL"), NIL), 
+								  strJoin("P_GEND_TRANS_", strJoin(state.owner.name, strJoin("_", statename))), 
+								  Init(arr)).
+
+    /*************************************************************/
+    /******            Generate Fun Implementations         ******/
+    /*************************************************************/	
+
+	COut(4, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = REAL, f.owner.kind = REAL,
+	                params = Params(Param(NIL, "context"), 
+						     Params(Param(NIL, "funIndex"), 
+							 Params(Param(NIL, "value"), NIL))),
+				    funType = FunType(BaseType(VOID), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_SM_CONTEXT")),
+					           PrmTypes(NmdType(NIL, "PRT_UINT32"),
+							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin(name, "_IMPL"),
+					  params,
+					  NIL).
+
+	COut(4, def) :- DeclId(f, id, name), id > 0, f : AnonFunDecl, f.owner.kind = REAL,
+	                params = Params(Param(NIL, "context"), 
+						     Params(Param(NIL, "funIndex"), 
+							 Params(Param(NIL, "value"), NIL))),
+				    funType = FunType(BaseType(VOID), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_SM_CONTEXT")),
+					           PrmTypes(NmdType(NIL, "PRT_UINT32"),
+							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin(name, "_IMPL"),
+					  params,
+					  NIL).
+
+	HOut(1, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = MODEL, f.owner.kind = REAL,
+	                params = Params(Param(NIL, "context"), 
+						     Params(Param(NIL, "funIndex"), 
+							 Params(Param(NIL, "value"), NIL))),
+				    funType = FunType(BaseType(VOID), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_SM_CONTEXT")),
+					           PrmTypes(NmdType(NIL, "PRT_UINT32"),
+							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin(name, "_IMPL"),
+					  params,
+					  UNKNOWN).
+				
+    /*************************************************************/
+    /******            Generate Fun Decl Arrays             ******/
+    /*************************************************************/	
+	FunDeclConcat ::= (pos: Natural, mach: MachineDecl, arr: out.Args + {NIL}).
+
+	//// Base case
+	FunDeclConcat(c, m, NIL) :- m is MachineDecl, m.kind = REAL, c = 1 + count({f | f is AnonOrNamedFun, f.owner = m}).
+
+    //// Build every fundecl array in reverse order
+	FunDeclConcat(m, d.owner, arr) :- 
+							DeclId(d, m, cfun), DeclId(d.owner, _, cmach), FunDeclConcat(m + 1, d.owner, after), d : FunDecl,							  
+							arr = out.Args(def, after), 
+	                        def = Init(
+							   Args(Ident(cfun),
+							   Args(Ident(cmach),
+							   Args(StringLit(d.name, NIL),
+							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))).
+
+	FunDeclConcat(m, d.owner, arr) :- 
+							DeclId(d, m, cfun), DeclId(d.owner, _, cmach), FunDeclConcat(m + 1, d.owner, after), d : AnonFunDecl,							  
+							arr = out.Args(def, after), 
+	                        def = Init(
+							   Args(Ident(cfun),
+							   Args(Ident(cmach),
+							   Args(Ident("NULL"),
+							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))).
+
+	//// Reserve the zeroth decl for the push transition
+	FunDeclConcat(0, m, arr) :- FunDeclConcat(1, m, after), DeclId(m, _, cmach), arr = out.Args(def, after),
+	                        def = Init(
+							   Args(Ident(strJoin("_P_FUN_", strJoin(m.name, "_PUSH"))),
+							   Args(Ident(cmach),
+							   Args(Ident("NULL"),
+							   Args(Ident("NULL"),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))).
+
+	COut(5, def) :- FunDeclConcat(0, mach, arr),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_FUNDECL"), NIL), 
+								  strJoin("P_GEND_FUNS_", mach.name), 
+								  Init(arr)).
 }	

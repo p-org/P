@@ -90,7 +90,7 @@ typedef struct PRT_VARDECL
 /** Represents a P function declaration */
 typedef struct PRT_FUNDECL
 {
-	PRT_UINT32 declIndex;      /**< The index of variable in owner machine        */
+	PRT_UINT32 declIndex;      /**< The index of function in owner machine        */
 	PRT_UINT32 ownerMachIndex; /**< The index of owner machine in program         */
 	PRT_STRING name;           /**< The name of this function (NULL is anonymous) */
 	PRT_SM_FUN implementation; /**< The implementation of this function           */

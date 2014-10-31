@@ -507,19 +507,18 @@ __in PRT_SM_CONTEXT_PRIV			*context,
 __in PRT_UINT32						transIndex
 )
 {
+	PRT_SM_CONTEXT *publicContext = &context->context;
 	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
 	context->returnTo = 0;
 	context->lastOperation = ReturnStatement;
 	PrtLog(PRT_STEP_EXIT, context);
-	if (transIndex < stateDecl->nTransitions && stateDecl->transitions[transIndex].transFunIndex < context->context.process->program->machines[context->context.instanceOf].nFuns)
+	PRT_UINT32 exitFunIndex = publicContext->process->program->machines[publicContext->instanceOf].states[context->currentState].exitFunIndex;
+	PrtGetExitFunction(context)(publicContext, exitFunIndex, NULL); 
+	if (transIndex < stateDecl->nTransitions)
 	{
 		PRT_UINT32 transFunIndex = stateDecl->transitions[transIndex].transFunIndex;
-		context->context.process->program->machines[context->context.instanceOf].funs[transFunIndex].implementation(&context->context, transFunIndex, NULL);
-	}
-	else 
-	{
-		PRT_UINT32 exitFunIndex = context->context.process->program->machines[context->context.instanceOf].states[context->currentState].exitFunIndex;
-		PrtGetExitFunction(context)(&context->context, exitFunIndex, NULL);
+		PRT_DBG_ASSERT(transFunIndex != PRT_SPECIAL_ACTION_PUSH_OR_IGN, "Must be valid function index");
+		publicContext->process->program->machines[publicContext->instanceOf].funs[transFunIndex].implementation(publicContext, transFunIndex, NULL);
 	}
 	PRT_DBG_ASSERT(context->lastOperation == ReturnStatement, "Exit function must terminate with a ReturnStatement");
 }
@@ -553,13 +552,14 @@ DoEntryOrAction:
 	PrtUpdateCurrentDeferredSet(context);
 
 	PRT_DBG_ASSERT(context->stateExecFun != PrtDequeue, "stateExecFun must not be PrtDequeue");
+	PRT_SM_CONTEXT *publicContext = &context->context;
 	if (context->stateExecFun == PrtStateEntry)
 	{
 		if (context->returnTo == 0)
 			PrtLog(PRT_STEP_MOVE, context);
 		context->lastOperation = ReturnStatement;
-		PRT_UINT32 entryFunIndex = context->context.process->program->machines[context->context.instanceOf].states[context->currentState].entryFunIndex;
-		PrtGetEntryFunction(context)(&context->context, entryFunIndex, NULL);
+		PRT_UINT32 entryFunIndex = publicContext->process->program->machines[publicContext->instanceOf].states[context->currentState].entryFunIndex;
+		PrtGetEntryFunction(context)(publicContext, entryFunIndex, NULL);
 	}
 	else
 	{
@@ -568,7 +568,11 @@ DoEntryOrAction:
 		if (context->returnTo == 0)
 			PrtLog(PRT_STEP_DO, context);
 		context->lastOperation = ReturnStatement;
-		context->context.process->program->machines[context->context.instanceOf].funs[currActionDecl->doFunIndex].implementation(&context->context, currActionDecl->doFunIndex, NULL);
+		PRT_UINT32 doFunIndex = currActionDecl->doFunIndex;
+		if (doFunIndex != PRT_SPECIAL_ACTION_PUSH_OR_IGN)
+		{
+			publicContext->process->program->machines[publicContext->instanceOf].funs[doFunIndex].implementation(publicContext, doFunIndex, NULL);
+		}
 	}
 	switch (context->lastOperation)
 	{
@@ -670,7 +674,7 @@ __in PRT_UINT32				eventIndex
 	PRT_UINT32 nTransitions;
 	PRT_TRANSDECL *transTable = PrtGetTransTable(context, context->currentState, &nTransitions);
 	PRT_UINT32 transIndex = PrtFindTransition(context, eventIndex);
-	if (transTable[transIndex].isPush)
+	if (transTable[transIndex].transFunIndex == PRT_SPECIAL_ACTION_PUSH_OR_IGN)
 	{
 		PrtPushState(context, PRT_FALSE);
 		PrtLog(PRT_STEP_PUSH, context);
@@ -1103,7 +1107,7 @@ __out PRT_UINT32			*nTransitions
 
 PRT_BOOLEAN
 PrtIsPushTransition(
-PRT_SM_CONTEXT_PRIV			*context,
+PRT_SM_CONTEXT_PRIV		*context,
 PRT_UINT32				event
 )
 {
@@ -1117,7 +1121,7 @@ PRT_UINT32				event
 	for (i = 0; i < nTransitions; ++i)
 	{
 		//check if transition is Push
-		if (transTable[i].isPush && transTable[i].triggerEventIndex == event)
+		if (transTable[i].transFunIndex == PRT_SPECIAL_ACTION_PUSH_OR_IGN && transTable[i].triggerEventIndex == event)
 		{
 			isPushTransition = PRT_TRUE;
 		}

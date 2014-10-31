@@ -5,4 +5,4 @@ argPc: /shortFileNames
 runZing: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
 argZing: PingPong.dll
 acc: .\
-dsc: Feature Integration
+dsc: Feature Integration: protocol sample

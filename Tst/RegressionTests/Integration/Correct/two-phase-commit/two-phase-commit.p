@@ -3,10 +3,10 @@ event RESP_REPLICA_COMMIT:int;
 event RESP_REPLICA_ABORT:int;
 event GLOBAL_ABORT:int;
 event GLOBAL_COMMIT:int;
-event WRITE_REQ:(client:model, idx:int, val:int);
+event WRITE_REQ:(client:machine, idx:int, val:int);
 event WRITE_FAIL;
 event WRITE_SUCCESS;
-event READ_REQ:(client:model, idx:int);
+event READ_REQ:(client:machine, idx:int);
 event READ_FAIL;
 event READ_UNAVAILABLE;
 event READ_SUCCESS:int;
@@ -113,10 +113,10 @@ machine Coordinator {
 	var replicas: seq[machine];
 	var numReplicas: int;
 	var i: int;
-	var pendingWriteReq: (client: model, idx: int, val: int);
+	var pendingWriteReq: (client: machine, idx: int, val: int);
 	var replica: machine;
 	var currSeqNum:int;
-	var timer: model;
+	var timer: machine;
 
 	start state Init {
 		entry {
@@ -294,7 +294,7 @@ monitor M {
 
 main model TwoPhaseCommit {
     var coordinator: machine;
-	var client: model;
+	var client: machine;
     start state Init {
 	    entry {
 			new M();

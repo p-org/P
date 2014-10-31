@@ -47,12 +47,11 @@ typedef enum PRT_TYPE_KIND
 	PRT_KIND_MACHINE    = 4,   /**< The kind of the `MACHINE` type         */
 	PRT_KIND_INT    = 5,   /**< The kind of the `int` type        */
 	PRT_KIND_MAP    = 6,   /**< The kind of all map types         */
-	PRT_KIND_MODEL    = 7,   /**< The kind of the `MODEL` type        */
-	PRT_KIND_NMDTUP = 8,   /**< The kind of all named tuple types */
-	PRT_KIND_NULL = 9,	   /**< The kind of the `NULL` type		  */
-	PRT_KIND_SEQ    = 10,   /**< The kind of all sequence types    */
-	PRT_KIND_TUPLE  = 11,  /**< The kind of all tuple types       */
-	PRT_TYPE_KIND_COUNT = 12,   /**< The number of type kinds        */
+	PRT_KIND_NMDTUP = 7,   /**< The kind of all named tuple types */
+	PRT_KIND_NULL = 8,	   /**< The kind of the `NULL` type		  */
+	PRT_KIND_SEQ    = 9,   /**< The kind of all sequence types    */
+	PRT_KIND_TUPLE  = 10,  /**< The kind of all tuple types       */
+	PRT_TYPE_KIND_COUNT = 11,   /**< The number of type kinds        */
 	PRT_TYPE_KIND_CANARY = 0xFF /**< A freed type will have this as its kind */
 } PRT_TYPE_KIND;
 

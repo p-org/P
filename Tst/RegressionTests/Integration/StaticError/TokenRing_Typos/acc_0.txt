@@ -1,15 +1,15 @@
 =================================
          Console output          
 =================================
-OUT: tokenring_typos.p (16, 12): inferred type:  BaseType(MODEL)
+OUT: tokenring_typos.p (16, 12): inferred type:  BaseType(REAL)
 OUT: tokenring_typos.p (16, 12): inferred type:  NIL
 OUT: tokenring_typos.p (16, 21): inferred type:  BaseType(ANY)
-OUT: tokenring_typos.p (16, 29): inferred type:  BaseType(MODEL)
+OUT: tokenring_typos.p (16, 29): inferred type:  BaseType(REAL)
 OUT: tokenring_typos.p (29, 9): inferred type:  BaseType(REAL)
 OUT: tokenring_typos.p (29, 9): inferred type:  NIL
 OUT: tokenring_typos.p (29, 23): inferred type:  BaseType(REAL)
 OUT: tokenring_typos.p (30, 9): inferred type:  NIL
-OUT: tokenring_typos.p (30, 14): inferred type:  BaseType(MODEL)
+OUT: tokenring_typos.p (30, 14): inferred type:  BaseType(REAL)
 OUT: tokenring_typos.p (30, 22): inferred type:  BaseType(EVENT)
 OUT: tokenring_typos.p (31, 9): inferred type:  NIL
 OUT: tokenring_typos.p (31, 15): inferred type:  BaseType(EVENT)
@@ -57,23 +57,23 @@ OUT: tokenring_typos.p (74, 15): inferred type:  BaseType(EVENT)
 OUT: tokenring_typos.p (95, 9): inferred type:  BaseType(REAL)
 OUT: tokenring_typos.p (95, 9): inferred type:  NIL
 OUT: tokenring_typos.p (95, 14): inferred type:  BaseType(REAL)
-OUT: tokenring_typos.p (95, 23): inferred type:  BaseType(MODEL)
+OUT: tokenring_typos.p (95, 23): inferred type:  BaseType(REAL)
 OUT: tokenring_typos.p (96, 9): inferred type:  BaseType(REAL)
 OUT: tokenring_typos.p (96, 9): inferred type:  NIL
 OUT: tokenring_typos.p (96, 14): inferred type:  BaseType(REAL)
-OUT: tokenring_typos.p (96, 23): inferred type:  BaseType(MODEL)
+OUT: tokenring_typos.p (96, 23): inferred type:  BaseType(REAL)
 OUT: tokenring_typos.p (97, 9): inferred type:  BaseType(REAL)
 OUT: tokenring_typos.p (97, 9): inferred type:  NIL
 OUT: tokenring_typos.p (97, 14): inferred type:  BaseType(REAL)
-OUT: tokenring_typos.p (97, 23): inferred type:  BaseType(MODEL)
+OUT: tokenring_typos.p (97, 23): inferred type:  BaseType(REAL)
 OUT: tokenring_typos.p (98, 9): inferred type:  BaseType(REAL)
 OUT: tokenring_typos.p (98, 9): inferred type:  NIL
 OUT: tokenring_typos.p (98, 14): inferred type:  BaseType(REAL)
-OUT: tokenring_typos.p (98, 23): inferred type:  BaseType(MODEL)
+OUT: tokenring_typos.p (98, 23): inferred type:  BaseType(REAL)
 OUT: tokenring_typos.p (99, 9): inferred type:  ERROR
 OUT: tokenring_typos.p (99, 9): inferred type:  NIL
 OUT: tokenring_typos.p (99, 14): inferred type:  BaseType(REAL)
-OUT: tokenring_typos.p (99, 18): inferred type:  BaseType(MODEL)
+OUT: tokenring_typos.p (99, 18): inferred type:  BaseType(REAL)
 OUT: tokenring_typos.p (99, 24): inferred type:  BaseType(REAL)
 OUT: tokenring_typos.p (100, 9): inferred type:  NIL
 OUT: tokenring_typos.p (100, 14): inferred type:  BaseType(REAL)

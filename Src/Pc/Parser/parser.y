@@ -262,7 +262,6 @@ Type
 	| INT                                   { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.INT,     ToSpan(@1))); }
 	| EVENT                                 { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.EVENT,   ToSpan(@1))); }
 	| MACHINE                               { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.REAL,    ToSpan(@1))); }						
-	| MODEL                                 { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.MODEL,   ToSpan(@1))); }						
 	| FOREIGN                               { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.FOREIGN, ToSpan(@1))); }						
 	| ANY                                   { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.ANY,     ToSpan(@1))); }
 	| SEQ LBRACKET Type RBRACKET            { PushSeqType(ToSpan(@1)); }

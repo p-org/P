@@ -166,13 +166,6 @@ PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkNullValue();
 */
 PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkMachineValue(_In_ PRT_MACHINEID value);
 
-/** Makes an model value.
-* @param[in] value A model machine id.
-* @returns A proper model value. Caller is responsible for freeing.
-* @see PrtFreeValue
-*/
-PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkModelValue(_In_ PRT_MACHINEID value);
-
 /** Makes a foreign value.
 * @param[in] type A foreign type (will be cloned).
 * @param[in] value A pointer to foreign data (will be cloned).
@@ -228,18 +221,6 @@ PRT_API void PRT_CALL_CONV PrtPrimSetMachine(_Inout_ PRT_VALUE *prmVal, _In_ PRT
 * @returns A machine machine
 */
 PRT_API PRT_MACHINEID PRT_CALL_CONV PrtPrimGetMachine(_In_ PRT_VALUE *prmVal);
-
-/** Sets the value of an model.
-* @param[in,out] prmVal A primitive model value to mutate.
-* @param[in]     value The value to set.
-*/
-PRT_API void PRT_CALL_CONV PrtPrimSetModel(_Inout_ PRT_VALUE *prmVal, _In_ PRT_MACHINEID value);
-
-/** Gets the value of an model.
-* @param[in] prmVal A primitive model value.
-* @returns A model machine machine
-*/
-PRT_API PRT_MACHINEID PRT_CALL_CONV PrtPrimGetModel(_In_ PRT_VALUE *prmVal);
 
 /** Sets an element in a (named) tuple by index.
 * @param[in,out] tuple A (named) tuple to mutate.

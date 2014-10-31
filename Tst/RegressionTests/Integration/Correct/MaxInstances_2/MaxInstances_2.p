@@ -5,7 +5,7 @@ event E4;
 event unit assert 1;
 
 main machine Real {
-    var ghost_machine: model;
+    var ghost_machine: machine;
     var test: bool;
     start state Real_Init {
 		on E2 do Action1;

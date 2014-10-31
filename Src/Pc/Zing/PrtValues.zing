@@ -41,7 +41,7 @@ class PRT_VALUE {
 				trace("{0}", value.ev.name);
 		}
 
-		if (tkind == PRT_TYPE_KIND.PRT_KIND_REAL || tkind == PRT_TYPE_KIND.PRT_KIND_MODEL)
+		if (tkind == PRT_TYPE_KIND.PRT_KIND_REAL)
 		{
 			if(isNullValue)
 				trace("null");
@@ -195,9 +195,6 @@ class PRT_VALUE {
 	if (tkind == PRT_TYPE_KIND.PRT_KIND_INT)
 	    return vkind == PRT_TYPE_KIND.PRT_KIND_INT;
 
-	if (tkind == PRT_TYPE_KIND.PRT_KIND_MODEL)
-	    return (vkind == PRT_TYPE_KIND.PRT_KIND_MODEL || isNullValue);
-
 	if (tkind == PRT_TYPE_KIND.PRT_KIND_MAP)
 	{
 	    if (vkind != PRT_TYPE_KIND.PRT_KIND_MAP)
@@ -287,9 +284,6 @@ class PRT_VALUE {
 	if (kind == PRT_TYPE_KIND.PRT_KIND_REAL)
 		return value.mach == null;
 
-	if (kind == PRT_TYPE_KIND.PRT_KIND_MODEL)
-		return value.mach == null;
-
 	if (kind == PRT_TYPE_KIND.PRT_KIND_NULL)
 		return true;
 
@@ -345,9 +339,6 @@ class PRT_VALUE {
 
 	if (kind1 == PRT_TYPE_KIND.PRT_KIND_INT)
 	    return value1.nt == value2.nt;
-
-	if (kind1 == PRT_TYPE_KIND.PRT_KIND_MODEL)
-	    return value1.mach == value2.mach;
 
 	if (kind1 == PRT_TYPE_KIND.PRT_KIND_MAP)
 	{

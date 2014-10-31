@@ -59,7 +59,7 @@ main model GodMachine {
 	var pt6 : machine;
 	var pt7 : machine;
 	var pt8 : machine;
-	var temp : model;
+	var temp : machine;
 	//temp variable 
 	var link:seq[machine];
 	var scenario: seq[(int, machine, machine)]; // specifies the scenario (operation, clock, port)

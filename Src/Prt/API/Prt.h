@@ -66,6 +66,7 @@ typedef struct PRT_SM_CONTEXT
 	PRT_UINT32			instanceOf;   /**< Index of machine type in PRT_PROGRAMDECL.       */
 	PRT_VALUE			*id;          /**< The id of this machine.                         */
 	void				*extContext;  /**< Pointer to an external context owned by client. */
+	PRT_BOOLEAN			isModel;	  /**< Indicates whether this is a model machine. */
 } PRT_SM_CONTEXT;
 
 /** An error function that will be called whenever an error arises. */

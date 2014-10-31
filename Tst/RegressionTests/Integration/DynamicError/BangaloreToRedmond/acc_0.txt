@@ -4,13 +4,13 @@
 OUT: Writing BangaloreToRedmond_p_.h ...
 OUT: Writing BangaloreToRedmond.zing ...
 OUT: Compiling BangaloreToRedmond.zing to BangaloreToRedmond.dll ...
-OUT: bangaloretoredmond.p (20, 13): inferred type:  BaseType(MODEL)
+OUT: bangaloretoredmond.p (20, 13): inferred type:  BaseType(REAL)
 OUT: bangaloretoredmond.p (20, 13): inferred type:  NIL
-OUT: bangaloretoredmond.p (20, 34): inferred type:  BaseType(MODEL)
+OUT: bangaloretoredmond.p (20, 34): inferred type:  BaseType(REAL)
 OUT: bangaloretoredmond.p (20, 50): inferred type:  BaseType(REAL)
-OUT: bangaloretoredmond.p (21, 13): inferred type:  BaseType(MODEL)
+OUT: bangaloretoredmond.p (21, 13): inferred type:  BaseType(REAL)
 OUT: bangaloretoredmond.p (21, 13): inferred type:  NIL
-OUT: bangaloretoredmond.p (21, 30): inferred type:  BaseType(MODEL)
+OUT: bangaloretoredmond.p (21, 30): inferred type:  BaseType(REAL)
 OUT: bangaloretoredmond.p (21, 42): inferred type:  BaseType(REAL)
 OUT: bangaloretoredmond.p (22, 13): inferred type:  BaseType(BOOL)
 OUT: bangaloretoredmond.p (22, 13): inferred type:  NIL
@@ -23,14 +23,14 @@ OUT: bangaloretoredmond.p (33, 17): inferred type:  BaseType(EVENT)
 OUT: bangaloretoredmond.p (33, 25): inferred type:  BaseType(BOOL)
 OUT: bangaloretoredmond.p (33, 28): inferred type:  BaseType(EVENT)
 OUT: bangaloretoredmond.p (33, 42): inferred type:  NIL
-OUT: bangaloretoredmond.p (33, 47): inferred type:  BaseType(MODEL)
+OUT: bangaloretoredmond.p (33, 47): inferred type:  BaseType(REAL)
 OUT: bangaloretoredmond.p (33, 67): inferred type:  BaseType(EVENT)
 OUT: bangaloretoredmond.p (41, 13): inferred type:  NIL
-OUT: bangaloretoredmond.p (41, 18): inferred type:  BaseType(MODEL)
+OUT: bangaloretoredmond.p (41, 18): inferred type:  BaseType(REAL)
 OUT: bangaloretoredmond.p (41, 38): inferred type:  BaseType(EVENT)
 OUT: bangaloretoredmond.p (42, 13): inferred type:  NIL
 OUT: bangaloretoredmond.p (48, 13): inferred type:  NIL
-OUT: bangaloretoredmond.p (48, 18): inferred type:  BaseType(MODEL)
+OUT: bangaloretoredmond.p (48, 18): inferred type:  BaseType(REAL)
 OUT: bangaloretoredmond.p (48, 34): inferred type:  BaseType(EVENT)
 OUT: bangaloretoredmond.p (51, 13): inferred type:  NIL
 OUT: bangaloretoredmond.p (51, 20): inferred type:  BaseType(BOOL)
@@ -44,7 +44,7 @@ OUT: bangaloretoredmond.p (53, 17): inferred type:  BaseType(EVENT)
 OUT: bangaloretoredmond.p (53, 25): inferred type:  BaseType(BOOL)
 OUT: bangaloretoredmond.p (53, 28): inferred type:  BaseType(NULL)
 OUT: bangaloretoredmond.p (54, 5): inferred type:  NIL
-OUT: bangaloretoredmond.p (54, 10): inferred type:  BaseType(MODEL)
+OUT: bangaloretoredmond.p (54, 10): inferred type:  BaseType(REAL)
 OUT: bangaloretoredmond.p (54, 26): inferred type:  BaseType(EVENT)
 OUT: bangaloretoredmond.p (70, 13): inferred type:  NIL
 OUT: bangaloretoredmond.p (70, 19): inferred type:  BaseType(EVENT)

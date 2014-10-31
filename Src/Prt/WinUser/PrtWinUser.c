@@ -23,9 +23,6 @@ void PRT_CALL_CONV PrtPrintType(_In_ PRT_TYPE *type)
 	case PRT_KIND_INT:
 		printf_s("int");
 		break;
-	case PRT_KIND_MODEL:
-		printf_s("model");
-		break;
 	case PRT_KIND_FORGN:
 		printf_s("foreign");
 		break;
@@ -124,9 +121,6 @@ void PRT_CALL_CONV PrtPrintValue(_In_ PRT_VALUE *value)
 		break;
 	case PRT_KIND_MACHINE:
 		printf_s("<%d>", PrtPrimGetMachine(value));
-		break;
-	case PRT_KIND_MODEL:
-		printf_s("<%d>", PrtPrimGetModel(value));
 		break;
 	case PRT_KIND_FORGN:
 		printf_s("foreign");

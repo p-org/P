@@ -20,7 +20,7 @@ main machine Program {
 			    {
 					i = i + 1;
 			    }
-			     raise E;   //Call is popped
+			     raise E; 
 			 }
 	}
 }

@@ -784,7 +784,7 @@
                 fileQuery,
                 (p, n) =>
                 {
-                    success = PrintFile(inputModelName, n, flags) && success;
+                    success = PrintFile(string.Empty, n, flags) && success;
                 });
 
             return success;

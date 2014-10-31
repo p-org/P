@@ -400,7 +400,7 @@ namespace Microsoft.PSharp
                         this.HandleEvent(nextEvent);
                     }
                 }
-            }, payload);
+            }, payload, TaskCreationOptions.LongRunning);
         }
 
         /// <summary>

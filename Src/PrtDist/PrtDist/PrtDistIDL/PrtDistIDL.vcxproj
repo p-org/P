@@ -76,9 +76,11 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Midl>
-      <PreprocessorDefinitions>IGNORE_FRG</PreprocessorDefinitions>
+      <PreprocessorDefinitions>
+      </PreprocessorDefinitions>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
       <HeaderFileName>%(Filename).h</HeaderFileName>
+      <AdditionalIncludeDirectories>../../../Prt/API/</AdditionalIncludeDirectories>
     </Midl>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -135,11 +137,10 @@
     </Midl>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="PDistributed.acf" />
+    <None Include="PrtDist.acf" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="PrtDistPrimitiveTypes.idl" />
-    <Midl Include="PrtDistributed.idl" />
+    <Midl Include="PrtDist.idl" />
     <Midl Include="PrtDistTypes.idl" />
     <Midl Include="PrtDistValues.idl" />
   </ItemGroup>

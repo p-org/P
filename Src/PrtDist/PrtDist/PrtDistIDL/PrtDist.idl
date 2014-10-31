@@ -4,7 +4,7 @@
 	pointer_default(ptr)
 ]
 
-interface PrtDistributed {
+interface PrtDist {
 
 	import "PrtDistValues.idl";
 
@@ -12,14 +12,10 @@ interface PrtDistributed {
 	//		Functions
 	/*****************************/
 	
-	void SendValue1(
-		[in] handle_t handleM,
-		[in, ptr] PRT_VALUE* value
-		);
-
-	void SendValue2(
-		[in] handle_t handleM,
-		[in, ptr] PRT_VALUE* value
-		);
+	PRT_BOOLEAN PrtDistSend(
+		[in] handle_t handleSM,
+		[in, ptr] PRT_VALUE* event,
+		[in, ptr] PRT_VALUE* payload
+	);
 
 }

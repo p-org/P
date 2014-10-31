@@ -36,10 +36,6 @@ extern "C"{
 
 #if defined(PRT_PLAT_WINUSER)	
 #include "../WinUser/PrtWinUserConfig.h"
-#elif defined(PRT_PLAT_WINKMDF)
-#include "PrtWinKMDF.h"
-#elif defined(PRT_PLAT_WINDIST)
-#include "PrtWinDist.h"
 #else
 #error An invalid platform was specified (see PrtConfig.h for details)
 #endif

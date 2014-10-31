@@ -15,79 +15,19 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Prt\PrtConfig.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Prt\PrtHeaders.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Prt\PrtProcess.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Prt\PrtSMPrivate.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Prt\PrtSMProtected.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Prt\PrtSMProtectedTypes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PrtDistSerializer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Prt\PrtDTTypes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Prt\PrtDTValues.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Prt\PrtSMTypeDefs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Prt\PrtDTTypeDefs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Prt\PrtExternalHandlers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Prt\PrtToString.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Prt\PrtWinDist.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Prt\PrtInterface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <ClCompile Include="PrtDist.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\Prt\PrtDTTypes.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Prt\PrtDTValues.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Prt\PrtProcess.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Prt\PrtSMRuntime.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PrtDistSerializer.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PrtWinDist.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PrtExternalHandlers.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PrtToString.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PrtInterface.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <ClInclude Include="PrtDist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PrtDistHeader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PrtTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

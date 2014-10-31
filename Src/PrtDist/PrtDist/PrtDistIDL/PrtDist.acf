@@ -1,7 +1,7 @@
 [
 explicit_handle
 ]
-interface PrtDistributed
+interface PrtDist
 {
 
 }

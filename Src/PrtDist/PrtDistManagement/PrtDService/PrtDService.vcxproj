@@ -138,9 +138,6 @@
     <ClCompile Include="PrtDService.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\PrtDist\PrtDist\PrtDist.vcxproj">
-      <Project>{88589011-c704-470a-8a39-05dc0c816da8}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\PrtDServiceIDL\PrtDServiceIDL.vcxproj">
       <Project>{a5bde8e1-31d4-45aa-9c1a-ec496f5ed9b5}</Project>
     </ProjectReference>

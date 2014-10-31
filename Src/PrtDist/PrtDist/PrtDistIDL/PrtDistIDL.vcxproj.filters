@@ -15,20 +15,17 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="PDistributed.acf" />
-  </ItemGroup>
-  <ItemGroup>
-    <Midl Include="PrtDistPrimitiveTypes.idl">
-      <Filter>Source Files</Filter>
-    </Midl>
-    <Midl Include="PrtDistributed.idl">
-      <Filter>Source Files</Filter>
-    </Midl>
     <Midl Include="PrtDistTypes.idl">
       <Filter>Source Files</Filter>
     </Midl>
     <Midl Include="PrtDistValues.idl">
       <Filter>Source Files</Filter>
     </Midl>
+    <Midl Include="PrtDist.idl">
+      <Filter>Source Files</Filter>
+    </Midl>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PrtDist.acf" />
   </ItemGroup>
 </Project>

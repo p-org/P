@@ -13,6 +13,13 @@ extern "C"{
 
 #include "PrtValues.h"
 
+/** These are reserved indices in the array of function decls.
+*/
+typedef enum PRT_SPECIAL_ACTIONS
+{
+	PRT_SPECIAL_ACTION_PUSH = 0 /**< The index of push action. */
+} PRT_SPECIAL_ACTION;
+
 /** A PRT_SM_FUN function is a pointer to a P function.
 *   context is the current machine context.
 *   funIndex is the function decl index of this function.

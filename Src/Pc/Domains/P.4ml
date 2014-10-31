@@ -68,7 +68,7 @@ domain PData
     AnonFunDecl    ::= new (owner: MachineDecl, body: any Stmt).
     
     StateDecl      ::= fun (name: any QualifiedName, owner: MachineDecl -> entryAction: any AnonFunDecl + String, exitFun: any AnonFunDecl + String, temperature: { HOT, WARM, COLD }).
-    TransDecl      ::= fun (src: StateDecl, trig: String + { DEFAULT, HALT } -> dst: any QualifiedName, action: any { NIL, PUSH } + AnonFunDecl + String).
+    TransDecl      ::= fun (src: StateDecl, trig: String + { DEFAULT, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String).
     DoDecl         ::= fun (src: StateDecl, trig: String + { DEFAULT, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String).
 
     PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl.            

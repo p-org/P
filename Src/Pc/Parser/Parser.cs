@@ -1056,7 +1056,7 @@
             }
             else
             {
-                action = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+                action = MkSkipFun((P_Root.MachineDecl)state.owner, span);
             }
 
             foreach (var e in crntEventList)

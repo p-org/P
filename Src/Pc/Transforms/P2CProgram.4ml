@@ -19,36 +19,71 @@ transform P2CProgram (in:: P) returns (out:: C)
     //// Concat elements in order.
 	HConcatOut ::= (pos: Integer, cmp: out.Cmp).	
 	HConcatOut(-1, NIL).
-	HConcatOut(m', cmp) :- ho is HOut(_, nxt), HConcatOut(m, before), m' = toOrdinal(ho, 0, { ho' | ho' is HOut }), cmp = Section(before, nxt), m' = m + 1. 			
-	out.File("_.h", cmp) :- HConcatOut(count({ho | ho is HOut}) - 1, cmp).
+	HConcatOut(m', cmp) :- 
+	ho is HOut(_, nxt), HConcatOut(m, before), m' = toOrdinal(ho, 0, { ho' | ho' is HOut }), cmp = Section(before, nxt), m' = m + 1. 		
+		
+	out.File("program.h", body) :- HConcatOut(count({ho | ho is HOut}) - 1, cmp), 
+									body = PpITE(
+									   IFNDEF,
+									   Ident("P_PROGRAM_H"),
+									   Section(
+										   Section(
+											  PpDefine(Ident("P_PROGRAM_H"), NIL),
+											  PpInclude("PrtWinUser.h", FALSE)),
+										   cmp),
+									   NIL).
 
+    //// Elements will be output to c file in order of position.
+    COut ::= (pos: Natural, cmp: out.Cmp).
+
+    //// Concat elements in order.
+	CConcatOut ::= (pos: Integer, cmp: out.Cmp).	
+	CConcatOut(-1, NIL).
+	CConcatOut(m', cmp) :- co is COut(_, nxt), CConcatOut(m, before), m' = toOrdinal(co, 0, { co' | co' is COut }), cmp = Section(before, nxt), m' = m + 1. 		
+		
+	out.File("program.c", body) :- CConcatOut(count({co | co is COut}) - 1, cmp), 
+									body = Section(PpInclude("program.h", FALSE), cmp).
+								   
     /*************************************************************/
     /**********     Create C Enums for P Decls         ***********/
     /*************************************************************/
-	DeclId ::= (decl: PDecl, id: Natural, cname: String).
+	EventDeclExt ::= EventDecl + { DEFAULT, HALT }.
+	DeclId ::= (decl: PDecl + { DEFAULT, HALT, PUSH }, id: Natural, cname: String).
 	
 	//// (1) EventDecls - Id 0, 1 are reserved for default, hault event, which can appear in transition tables.
+	DeclId(DEFAULT, 0, "_P_EVENT_DEFAULT").
+	DeclId(HALT, 1, "_P_EVENT_HALT").
 	DeclId(d, id, cn) :- d is EventDecl, id = 2 + toOrdinal(d, 0, { d' | d' is EventDecl }), cn = strJoin("P_EVENT_", d.name).
 	
 	HOut(0, out.EnmDef(NIL, "P_EVENTS", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
-									   enumMember = Element(IntLit(0, DEC, NIL), "_P_EVENT_DEFAULT");
-									   enumMember = Element(IntLit(1, DEC, NIL), "_P_EVENT_HALT");
-									   DeclId(d, id, cn), d : EventDecl, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   DeclId(d, id, cn), d : EventDeclExt, enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTS_COUNT"), size = 2 + count({d | d is EventDecl}) }).  
 
-	//// (2) MachineDecls - Start at Id 0.
-	DeclId(d, id, cn) :- d is MachineDecl, id = toOrdinal(d, 0, { d' | d' is MachineDecl }), cn = strJoin("P_MACHINE_", d.name).
+	//// (2) Real machine decls - Start at Id 0.
+	DeclId(d, id, cn) :- d is MachineDecl, d.kind = REAL, 
+	                     id = toOrdinal(d, 0, { d' | d' is MachineDecl, d'.kind = REAL }), cn = strJoin("P_MACHINE_", d.name).
 	
 	HOut(0, out.EnmDef(NIL, "P_MACHINES", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
-									   DeclId(d, id, cn), d : MachineDecl, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   DeclId(d, id, _), d : MachineDecl, d.isMain = TRUE, enumMember = Element(IntLit(id, DEC, NIL), "_P_MACHINE_MAIN"); 
-									   enumMember = Element(IntLit(size, DEC, NIL), "_P_MACHINES_COUNT"), size = count({d | d is MachineDecl}) }).  
+									   DeclId(d, id, cn), d : MachineDecl, d.kind = REAL, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   DeclId(d, id, _), d : MachineDecl, d.kind = REAL, d.isMain = TRUE, enumMember = Element(IntLit(id, DEC, NIL), "_P_MACHINE_MAIN"); 
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_MACHINES_COUNT"), size = count({d | d is MachineDecl, d.kind = REAL}) }).  
 
-	//// (3) VarDecls - Start at Id 0.
-	DeclId(d, id, cn) :- d is VarDecl, id = toOrdinal(d, 0, { d' | d' is VarDecl, d'.owner = d.owner }), 
-									   cn = strJoin("P_VAR_", strJoin(d.owner.name, strJoin("_", d.name))).
+	//// (3) Model machine decls - Start at Id 0.
+	DeclId(d, id, cn) :- d is MachineDecl, d.kind = MODEL, 
+	                     id = toOrdinal(d, 0, { d' | d' is MachineDecl, d'.kind = MODEL }), cn = strJoin("P_MODEL_", d.name).
+	
+	HOut(0, out.EnmDef(NIL, "P_MODELS", list)) :- 
+	   list = toList(#Elements, NIL, { enumMember | 
+									   DeclId(d, id, cn), d : MachineDecl, d.kind = MODEL, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   DeclId(d, id, _), d : MachineDecl, d.kind = MODEL, d.isMain = TRUE, enumMember = Element(IntLit(id, DEC, NIL), "_P_MACHINE_MAIN"); 
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_MODELS_COUNT"), size = count({d | d is MachineDecl, d.kind = MODEL}) }).  
+
+	//// (4) VarDecls - Start at Id 0.
+	DeclId(d, id, cn) :- d is VarDecl, d.owner.kind = REAL, 
+	                     id = toOrdinal(d, 0, { d' | d' is VarDecl, d'.owner = d.owner }), 
+						 cn = strJoin("P_VAR_", strJoin(d.owner.name, strJoin("_", d.name))).
 	
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
 	   m is MachineDecl,
@@ -57,32 +92,30 @@ transform P2CProgram (in:: P) returns (out:: C)
 									   DeclId(d, id, cn), d : VarDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_VARS_", strJoin(m.name, "_COUNT"))), size = count({d | d is VarDecl, d.owner = m}) }).  
 
-	//// (4) FunDecls - Start at Id 0.
-	DeclId(d, id, cn) :- d is FunDecl, id = toOrdinal(d, 0, { d' | d' is FunDecl, d'.owner = d.owner }), 
-									   cn = strJoin("P_FUN_", strJoin(d.owner.name, strJoin("_", d.name))).
+	//// (5) (Anon)FunDecls - Start at Id 1. The id 0 is reserved for the PUSH action.
+	AnonOrNamedFun ::= FunDecl + AnonFunDecl.
+
+	DeclId(PUSH, 0) :- m is MachineDecl
+
+	DeclId(d, id, cn) :- d is FunDecl, d.owner.kind = REAL, 
+	                     id = 1 + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun, d'.owner = d.owner }), 
+	                     cn = strJoin("P_FUN_", strJoin(d.owner.name, strJoin("_", d.name))).
+
+	DeclId(d, id, cn) :- d is AnonFunDecl, d.owner.kind = REAL, 
+	                     id = 1 + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun, d'.owner = d.owner }), 
+	                     num = toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.owner = d.owner }),
+						 cn = strJoin("P_FUN_", strJoin(d.owner.name, strJoin("_ANON", toString(num)))).
 	
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
 	   m is MachineDecl,
 	   enumName = strJoin("P_FUNS_", m.name),
 	   list = toList(#Elements, NIL, { enumMember | 
-									   DeclId(d, id, cn), d : FunDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(m.name, "_COUNT"))), size = count({d | d is FunDecl, d.owner = m}) }).  
+									   DeclId(d, id, cn), d : AnonOrNamedFun, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(m.name, "_COUNT"))), size = count({d | d is AnonOrNamedFun, d.owner = m}) }).  
 
-	//// (5) AnonFunDecl - Start at Id 0.
-	AnonFunDeclSub ::= sub (AnonFunDecl).
-
-	DeclId(d, id, cn) :- AnonFunDeclSub(d), id = toOrdinal(d, 0, { d' | AnonFunDeclSub(d'), d'.owner = d.owner }), 
-									   cn = strJoin("P_ANONFUN_", strJoin(d.owner.name, strJoin("_", toString(id)))).
-	
-	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
-	   m is MachineDecl,
-	   enumName = strJoin("P_ANONFUNS_", m.name),
-	   list = toList(#Elements, NIL, { enumMember | 
-									   DeclId(d, id, cn), d : AnonFunDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_ANONFUNS_", strJoin(m.name, "_COUNT"))), size = count({d | AnonFunDeclSub(d), d.owner = m}) }).  
-
-	//// (6) StateDecls - Start at Id 0. Need to encode qualified names.
-	DeclId(d, id, cn) :- d is StateDecl, QualName2CStr(d.name, name), 
+	//// (7) StateDecls - Start at Id 0. Need to encode qualified names.
+	DeclId(d, id, cn) :- d is StateDecl, d.owner.kind = REAL, 
+	                     QualName2CStr(d.name, name), 
 					     id = toOrdinal(d, 0, { d' | d' is StateDecl, d'.owner = d.owner }), 
 						 cn = strJoin("P_STATE_", strJoin(d.owner.name, strJoin("_", name))).
 	
@@ -93,7 +126,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 									   DeclId(d, id, cn), d : StateDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_STATES_", strJoin(m.name, "_COUNT"))), size = count({d | d is StateDecl, d.owner = m}) }).  
 
-	//// (7) Convert qualified names to C strings
+	//// (8) Convert qualified names to C strings
 	QualNameSub ::= sub (QualifiedName).
 	QualName2CStr ::= (QualifiedName, String).
 	QualName2CStr(q, s) :- QualNameSub(q), q = QualifiedName(s, NIL).
@@ -188,8 +221,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 										      typeNameMap = strJoin("P_GEND_TYPE_MAP_", toString(m)).
 	//// Complex type Tuple 
 	Tup2ArrayInit ::= (type: TupType, arr: out.Expr). 
-	Tup2ArrayInit(t, init) :- TypeExprSub(t), t = TupType(t', NIL), TypeConstant(t', _, id'), init = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), NIL)). 
-	Tup2ArrayInit(t, init) :- TypeExprSub(t), t = TupType(t', t''), TypeConstant(t', _, id'), Tup2ArrayInit(t'', Init(ts'')), 
+	Tup2ArrayInit(t, init) :- TypeExprSub(t), t = TupType(t', NIL), TypeConstant(t', id', _), init = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), NIL)). 
+	Tup2ArrayInit(t, init) :- TypeExprSub(t), t = TupType(t', t''), TypeConstant(t', id', _), Tup2ArrayInit(t'', Init(ts'')), 
 	                          init = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), ts'')). 
 
 	TypeConstant(t, m, defs) :- 
@@ -213,59 +246,59 @@ transform P2CProgram (in:: P) returns (out:: C)
 													   NmdType(NIL, "PRT_TYPE"), 
 													   strJoin("P_GEND_TYPE_", toString(m)), 
 													   typeStruct),
-							           typeStruct = out.Init(
-										          Args(Ident("PRT_KIND_TUPLE"), 
-											        Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameTup))), 
-											        NIL))),
+										    typeStruct = out.Init(
+													  Args(Ident("PRT_KIND_TUPLE"), 
+													  Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameTup))), 
+													  NIL))),
 										     typeNameTupArr = strJoin("P_GEND_TYPE_TUP_ARR_", toString(m)),
 										     typeNameTup = strJoin("P_GEND_TYPE_TUP_", toString(m)).
 
 	//// Complex type NmdTuple 
-	/*
 	NmdTup2ArrayInit ::= (type: NmdTupType, narr: out.Expr, tarr: out.Expr). 
-	NmdTup2ArrayInit(t, narr, tarr) :- TypeExprSub(t), t = NmdTupType(NmdTupTypeField(n', t'), NIL), TypeConstant(t', _, _, ts'), 
-	                                   narr = Init(Args(StringLit(n', NIL), NIL)), 
-	                                   tarr = Init(Args(ts', NIL)).
+	NmdTup2ArrayInit(t, narr, tarr) :- TypeExprSub(t), t = NmdTupType(NmdTupTypeField(n', t'), NIL), TypeConstant(t', id', _), 
+	                                   tarr = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), NIL)), 
+	                                   narr = Init(Args(StringLit(n', NIL), NIL)).
 									    
-	NmdTup2ArrayInit(t, narr, tarr) :- TypeExprSub(t), t = NmdTupType(NmdTupTypeField(n', t'), t''), TypeConstant(t', _, _, ts'), NmdTup2ArrayInit(t'', Init(n''), Init(ts'')), 
-	                                   narr = Init(Args(StringLit(n', NIL), n'')), 
-	                                   tarr = Init(Args(ts', ts'')). 
+	NmdTup2ArrayInit(t, narr, tarr) :- TypeExprSub(t), t = NmdTupType(NmdTupTypeField(n', t'), t''), TypeConstant(t', id', _), NmdTup2ArrayInit(t'', Init(n''), Init(ts'')), 
+	                                   tarr = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), ts'')),
+	                                   narr = Init(Args(StringLit(n', NIL), n'')).
 
-	TypeConstant(t, m, defs, typeStatic) :- TypeId(m, t), TypeConstant(_, m - 1, before, _), NmdTup2ArrayInit(t, narr, tarr), t : in.NmdTupType, 
-								         defs = out.Section(before, Section(defNmdTupNArr, Section(defNmdTupTArr, Section(defNmdTup, def)))),
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), NmdTup2ArrayInit(t, narr, tarr), t : in.NmdTupType, 
+								     defs = out.Section(before, Section(defNmdTupNArr, Section(defNmdTupTArr, Section(defNmdTup, def)))),
 										 defNmdTupNArr = out.VarDef(
-										                        NIL, 
+										              NIL, 
 															    ArrType(NmdType(NIL, "PRT_STRING"), NIL), 
 															    typeNameNmdTupNArr, 
 															    narr),
 										 defNmdTupTArr = out.VarDef(
-										                        NIL, 
-															    ArrType(NmdType(NIL, "PRT_TYPE"), NIL), 
+										              NIL, 
+															    ArrType(PtrType(NmdType(NIL, "PRT_TYPE")), NIL), 
 															    typeNameNmdTupTArr, 
 															    tarr),
 										 defNmdTup = out.VarDef(
-										                  NIL, 
+										          NIL, 
 														  NmdType(NIL, "PRT_NMDTUPTYPE"), 
 														  typeNameNmdTup, 
 														  Init(
-														    Args(IntLit(lstLength(#NmdTupType, t), DEC, NIL), 
+														  Args(IntLit(lstLength(#NmdTupType, t), DEC, NIL), 
 															Args(Ident(typeNameNmdTupNArr), 
 															Args(Ident(typeNameNmdTupTArr), 
 															NIL))))),
 										 def = out.VarDef(
-										               NIL, 
+										         NIL, 
 													   NmdType(NIL, "PRT_TYPE"), 
 													   strJoin("P_GEND_TYPE_", toString(m)), 
 													   typeStatic),
-							             typeStatic = out.Init(
+							       typeStatic = out.Init(
 										      Args(Ident("PRT_KIND_NMDTUP"), 
-											  Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameNmdTup))), 
-											  NIL))),
+											    Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameNmdTup))), 
+											    NIL))),
 										 typeNameNmdTupTArr = strJoin("P_GEND_TYPE_NMDTUP_TARR_", toString(m)),
 										 typeNameNmdTupNArr = strJoin("P_GEND_TYPE_NMDTUP_NARR_", toString(m)),
 										 typeNameNmdTup = strJoin("P_GEND_TYPE_NMDTUP_", toString(m)).
-    HOut(1, defs) :- TypeConstant(_, c, defs, _), defs : out.Section, c = count({ td | td is TypeId}) - 1.
-    */    
+
+    COut(0, defs) :- TypeConstant(_, c, defs), defs : out.Section, c = count({ td | td is TypeId}) - 1.
+    
     /*************************************************************/
     /******            Generate event decls                 ******/
     /*************************************************************/	
@@ -292,8 +325,10 @@ transform P2CProgram (in:: P) returns (out:: C)
 							   Args(Ident(cn),
 							   Args(StringLit(d.name, NIL),
 							   Args(card,
-							   Args(type,
-							   NIL))))).
+							   Args(UnApp(ADDR, type),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))).
 
 	//// Define the halt event
 	EvDeclConcat(1, arr) :- EvDeclConcat(2, after), arr = out.Args(def, after), TypeConstant(in.BaseType(ANY), typeId, _),
@@ -301,8 +336,10 @@ transform P2CProgram (in:: P) returns (out:: C)
 							   Args(Ident("_P_EVENT_HALT"),
 							   Args(StringLit("halt", NIL),
 							   Args(IntLit(4294967295, DEC, U),
-							   Args(Ident(strJoin("P_GEND_TYPE_", toString(typeId))),
-							   NIL))))).
+							   Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(typeId)))),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))).
 
 	//// Define the default event
 	EvDeclConcat(0, arr) :- EvDeclConcat(1, after), arr = out.Args(def, after), TypeConstant(in.BaseType(NULL), typeId, _),
@@ -310,11 +347,13 @@ transform P2CProgram (in:: P) returns (out:: C)
 							   Args(Ident("_P_EVENT_DEFAULT"),
 							   Args(StringLit("default", NIL),
 							   Args(IntLit(0, DEC, U),
-							   Args(Ident(strJoin("P_GEND_TYPE_", toString(typeId))),
-							   NIL))))).
+							   Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(typeId)))),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))).
 
     //// Emit the event decl array.
-	HOut(2, def) :- EvDeclConcat(0, arr), 
+	COut(1, def) :- EvDeclConcat(0, arr), 
 	                def = out.VarDef(
 							      NIL, 
 								  ArrType(NmdType(NIL, "PRT_EVENTDECL"), NIL), 
@@ -327,7 +366,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	VarDeclConcat ::= (pos: Natural, mach: MachineDecl, arr: out.Args + {NIL}).
 
 	//// Base case
-	VarDeclConcat(c, m, NIL) :- m is MachineDecl, c = count({v | v is VarDecl, v.owner = m}).
+	VarDeclConcat(c, m, NIL) :- m is MachineDecl, m.kind = REAL, c = count({v | v is VarDecl, v.owner = m}).
 
     //// Build every variable array in reverse order
 	VarDeclConcat(m, d.owner, arr) :- 
@@ -337,10 +376,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 							   Args(Ident(cmach),
 							   Args(Ident(cvar),
 							   Args(StringLit(d.name, NIL),
-							   Args(Ident(strJoin("P_GEND_TYPE_", toString(typeId))),
-							   NIL))))).
+							   Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(typeId)))),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))).
 
-	HOut(3, def) :- VarDeclConcat(0, mach, arr),
+	COut(2, def) :- VarDeclConcat(0, mach, arr),
 	                def = out.VarDef(
 							      NIL, 
 								  ArrType(NmdType(NIL, "PRT_VARDECL"), NIL), 
@@ -351,24 +392,40 @@ transform P2CProgram (in:: P) returns (out:: C)
     /******          Generate Transition Decl Arrays        ******/
     /*************************************************************/	
 	TransDeclConcat ::= (pos: Natural, context: StateDecl, arr: out.Args + {NIL}).
-	TransDeclId     ::= (decl: TransDecl, id: Natural).
-	TransDeclId(t, id) :- t is TransDecl, id = toOrdinal(t, 0, { t' | t' is TransDecl, t'.src = t.src }).
+	TransDeclId     ::= (decl: TransDecl, id: Natural, srcName: String, dstName: String, machName: String).
 
+	//// Transition Id also contains source, destination, and owner machine ids
+	TransDeclId(t, id, srcname, dstname, machname) :- 
+	                t is TransDecl, 
+					id = toOrdinal(t, 0, { t' | t' is TransDecl, t'.src = t.src }),
+					DeclId(t.src, _, srcname), 
+					DeclId(t.src.owner, _, machname),
+					DeclId(dst, _, dstname), dst is StateDecl, dst.owner = t.src.owner, dst.name = t.dst.
+
+    //// Transition event Id depends on whether the transition is a user event, default, or halt.
+    TransDeclEvnt  ::= (decl: TransDecl, evName: String).
+	DefaultOrHalt  ::= { DEFAULT, HALT }.
+	TransDeclEvnt(t, evname) :- t is TransDecl, ev is EventDecl, ev.name = t.trig, DeclId(ev, _, evname).
+	TransDeclEvnt(t, evname) :- t is TransDecl, trig = t.trig, trig : DefaultOrHalt, DeclId(trig, _, evname).
+
+	//// Transition action index depends on whether the transition is a push transition or not.
+
+    /*
 	//// Base case
 	TransDeclConcat(c, s, NIL) :- s is StateDecl, c = count({t | t is TransDecl, t.src = s}).
 
     //// Build every transition list in reverse order
-    /*
 	TransDeclConcat(m, d.owner, arr) :- 
-							TransDeclId(d, m, cvar), TransDeclConcat(m + 1, d.owner, after), 
+							TransDeclId(d, m), TransDeclConcat(m + 1, d.owner, after), 
 							DeclId(d.src, _, srcname), DeclId(d.src.owner, _, machname), 
-							sdst is StateDecl, sdst.owner = d.src.owner, sdst.name = d.dst							  
+							dst is StateDecl, dst.owner = d.src.owner, dst.name = d.dst, DeclId(dst, _, dstname), 	
+							ev is EventDecl, ev.name = d.trig, DeclId(ev, _, evname),						  
 							arr = out.Args(def, after), 
 	                        def = Init(
-							   Args(Ident(cmach),
-							   Args(Ident(cvar),
-							   Args(StringLit(d.name, NIL),
-							   Args(Ident(strJoin("P_GEND_TYPE_", toString(typeId))),
-							   NIL))))).
-*/
+							   Args(IntLit(m, DEC, NIL),
+							   Args(Ident(srcname),
+							   Args(Ident(machname),
+							   Args(Ident(evname),
+							   Args(Ident(dstname),
+    */
 }	

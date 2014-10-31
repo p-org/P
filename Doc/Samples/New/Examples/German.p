@@ -19,7 +19,7 @@ event sharer_id assert 3 : machine;
 main machine Host {
 	var curr_client : machine;
 	var clients : (machine, machine, machine);
-	var curr_cpu : model;
+	var curr_cpu : machine;
 	var sharer_list : seq[machine];
 	var is_curr_req_excl : bool;
 	var is_excl_granted : bool;

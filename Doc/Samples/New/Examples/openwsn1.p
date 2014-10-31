@@ -38,12 +38,12 @@ event Rx;
 event Sleep;
 event Data assert 4 : (machine,int);
 event Ack assert 1 : (machine,int);
-event Initialize assert 1 : (model,seq[machine]);
+event Initialize assert 1 : (machine,seq[machine]);
 
 main model GodMachine {
 	var N1:machine;var N2:machine;var N3:machine;var N4:machine;
 	var templ:seq[machine];
-	var slotT : model;
+	var slotT : machine;
 	start state init {
 		entry {
 			N1 = new OpenWSN_Mote(0);
@@ -86,7 +86,7 @@ machine OpenWSN_Mote {
 	//current slot
 	var currentSlot: (bool, (machine, machine)); //(isshared, machine)
 	//slot timer
-	var slotTimer:model;
+	var slotTimer:machine;
 	//local
 	var i:int;
 	
@@ -102,8 +102,8 @@ machine OpenWSN_Mote {
 		}
 		on Initialize goto WaitForNewSlot with
 		{ 
-		slotTimer = (payload as (model,seq[machine])).0;
-		myNeighbours = (payload as (model,seq[machine])).1;
+		slotTimer = (payload as (machine,seq[machine])).0;
+		myNeighbours = (payload as (machine,seq[machine])).1;
 		};
 	}
 

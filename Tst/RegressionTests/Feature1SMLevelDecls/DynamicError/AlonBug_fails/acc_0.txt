@@ -53,8 +53,8 @@ Zing Assertion failed:
 Microsoft.Zing.ZingAssertionFailureException: Exception of type 'Microsoft.Zing.ZingAssertionFailureException' was thrown.
 
 Stack trace:
-    Program.AnonFun2 (AlonBug_fails.zing, Line 615)
-    Program.ReentrancyHelper (AlonBug_fails.zing, Line 406)
+    Program.AnonFun2 (AlonBug_fails.zing, Line 630)
+    Program.ReentrancyHelper (AlonBug_fails.zing, Line 415)
     Program.RunHelper (AlonBug_fails.zing, Line 151)
     Program.Run (AlonBug_fails.zing, Line 64)
     Program.Start (AlonBug_fails.zing, Line 42)

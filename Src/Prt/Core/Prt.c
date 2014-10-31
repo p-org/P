@@ -31,8 +31,12 @@ void PrtStopProcess(_Inout_ PRT_PROCESS* process)
 	PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
 	for (PRT_UINT32 i = 0; i < privateProcess->numMachines; i++)
 	{
-		PrtCleanupSMContext((PRT_SM_CONTEXT_PRIV *) privateProcess->machines[i]);
-		PrtFree(privateProcess->machines[i]);
+		PRT_SM_CONTEXT *context = privateProcess->machines[i];
+		if (context->isModel)
+			PrtCleanupModel(context);
+		else 
+			PrtCleanupMachine((PRT_SM_CONTEXT_PRIV *)context);
+		PrtFree(context);
 	}
 	PrtFree(privateProcess->machines);
 	PrtDestroyMutex(privateProcess->processLock);
@@ -70,7 +74,7 @@ __in  PRT_VALUE					*payload
 	PRT_UINT32 machineCount = privateProcess->machineCount;
 	PRT_SM_CONTEXT **machines = privateProcess->machines;
 	if (machineCount == numMachines) {
-		PRT_SM_CONTEXT **newMachines = (PRT_SM_CONTEXT **)PrtCalloc(2 * machineCount, sizeof(PRT_SM_CONTEXT_PRIV *));
+		PRT_SM_CONTEXT **newMachines = (PRT_SM_CONTEXT **)PrtCalloc(2 * machineCount, sizeof(PRT_SM_CONTEXT *));
 		for (PRT_UINT32 i = 0; i < machineCount; i++)
 		{
 			newMachines[i] = machines[i];
@@ -183,8 +187,7 @@ PRT_SM_CONTEXT * PrtMkModel(
 	__in  PRT_VALUE					*payload
 	)
 {
-	PRT_SM_CONTEXT_PRIV *context;
-	PRT_SM_CONTEXT *publicContext;
+	PRT_SM_CONTEXT *context;
 	PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
 
 	PrtLockMutex(privateProcess->processLock);
@@ -192,7 +195,7 @@ PRT_SM_CONTEXT * PrtMkModel(
 	//
 	// Allocate memory for state machine context
 	//
-	context = (PRT_SM_CONTEXT_PRIV*)PrtMalloc(sizeof(PRT_SM_CONTEXT_PRIV));
+	context = (PRT_SM_CONTEXT*)PrtMalloc(sizeof(PRT_SM_CONTEXT));
 
 	//
 	// Add it to the array of machines in the process
@@ -201,7 +204,7 @@ PRT_SM_CONTEXT * PrtMkModel(
 	PRT_UINT32 machineCount = privateProcess->machineCount;
 	PRT_SM_CONTEXT **machines = privateProcess->machines;
 	if (machineCount == numMachines) {
-		PRT_SM_CONTEXT **newMachines = (PRT_SM_CONTEXT **)PrtCalloc(2 * machineCount, sizeof(PRT_SM_CONTEXT_PRIV *));
+		PRT_SM_CONTEXT **newMachines = (PRT_SM_CONTEXT **)PrtCalloc(2 * machineCount, sizeof(PRT_SM_CONTEXT *));
 		for (PRT_UINT32 i = 0; i < machineCount; i++)
 		{
 			newMachines[i] = machines[i];
@@ -213,47 +216,17 @@ PRT_SM_CONTEXT * PrtMkModel(
 	machines[numMachines] = (PRT_SM_CONTEXT *)context;
 	privateProcess->numMachines++;
 
-	publicContext = &context->context;
-
-	//
-	// Initialize Machine Identity
-	//
-	publicContext->process = process;
-	publicContext->instanceOf = instanceOf;
+	context->process = process;
+	context->instanceOf = instanceOf;
 	PRT_MACHINEID id;
 	id.machineId = privateProcess->numMachines; // index begins with 1 since 0 is reserved
 	id.processId = process->guid;
-	publicContext->id = PrtMkModelValue(id);
-	publicContext->extContext = NULL;
+	context->id = PrtMkMachineValue(id);
+	process->program->modelImpls[context->instanceOf].newFun(context, payload);
 
-	context->currentState = 0;
-	context->isRunning = PRT_FALSE;
-	context->isHalted = PRT_FALSE;
-	context->lastOperation = ReturnStatement;
+	PrtUnlockMutex(privateProcess->processLock);
 
-	context->trigger.event = NULL;
-	context->trigger.payload = NULL;
-	context->returnTo = 0;
-	context->stateExecFun = PrtStateEntry;
-
-	context->varValues = NULL;
-
-	context->callStack.length = 0;
-
-	context->eventQueue.eventsSize = 0;
-	context->eventQueue.events = NULL;
-	context->eventQueue.headIndex = 0;
-	context->eventQueue.tailIndex = 0;
-	context->eventQueue.size = 0;
-
-	context->inheritedDeferredSetCompact = NULL;
-	context->currentDeferredSetCompact = NULL;
-	context->inheritedActionsSetCompact = NULL;
-	context->currentActionsSetCompact = NULL;
-
-	context->stateMachineLock = NULL;
-
-	return publicContext;
+	return context;
 }
 
 PRT_BOOLEAN AreGuidsEqual(PRT_GUID guid1, PRT_GUID guid2)
@@ -348,8 +321,8 @@ __in PRT_UINT32				maxInstances
 }
 
 void
-PrtEnqueueEvent(
-__in PRT_SM_CONTEXT_PRIV		*context,
+PrtSend(
+__in PRT_SM_CONTEXT				*machine,
 __in PRT_VALUE					*event,
 __in PRT_VALUE					*payload
 )
@@ -359,7 +332,16 @@ __in PRT_VALUE					*payload
 	PRT_UINT32 eventMaxInstances;
 	PRT_UINT32 maxQueueSize;
 	PRT_UINT32 eventIndex;
-	
+	PRT_SM_CONTEXT_PRIV *context;
+
+	if (machine->isModel)
+	{
+		machine->process->program->modelImpls[machine->instanceOf].sendFun(machine->process, machine->id, event, payload);
+		return;
+	}
+
+	context = (PRT_SM_CONTEXT_PRIV *)machine;
+
 	//check that the enqueued message is event type
 	PrtAssert(event->type->typeKind == PRT_KIND_EVENT, "Parameter event is not of type EVENT");
 	PrtAssert(PrtIsSubtype(payload->type, PrtGetPayloadType(context, event)), "Payload type mismatch");
@@ -723,7 +705,8 @@ PrtHaltMachine(
 __inout PRT_SM_CONTEXT_PRIV			*context
 )
 {
-	PrtCleanupSMContext(context);
+	PRT_DBG_ASSERT(!context->context.isModel, "Must be a real machine");
+	PrtCleanupMachine(context);
 	context->isHalted = PRT_TRUE;
 	PrtLog(PRT_STEP_HALT, context);
 }
@@ -1280,7 +1263,7 @@ __in PRT_SM_CONTEXT_PRIV *context
 }
 
 void
-PrtCleanupSMContext(
+PrtCleanupMachine(
 PRT_SM_CONTEXT_PRIV			*context
 )
 {
@@ -1329,6 +1312,17 @@ PRT_SM_CONTEXT_PRIV			*context
 
 	if (publicContext->extContext != NULL)
 		publicContext->process->program->machines[publicContext->instanceOf].extDtor(publicContext);
+	PrtFreeValue(publicContext->id);
+}
+
+void
+PrtCleanupModel(
+PRT_SM_CONTEXT			*context
+)
+{
+	if (context->extContext != NULL)
+		context->process->program->modelImpls[context->instanceOf].shutFun(context);
+	PrtFreeValue(context->id);
 }
 
 void

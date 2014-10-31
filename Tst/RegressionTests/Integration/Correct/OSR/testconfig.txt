@@ -3,4 +3,4 @@ argPc: OSR.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 acc: .\
-dsc: Feature Integration: syntax only
+dsc: Feature Integration: protocol sample, syntax only

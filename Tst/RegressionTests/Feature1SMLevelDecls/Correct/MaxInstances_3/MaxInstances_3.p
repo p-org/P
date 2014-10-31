@@ -4,7 +4,7 @@ event E0;
 event E1 assume 0;
 
 main machine Real {
-    var ghost_machine: model;
+    var ghost_machine: machine;
 	var x: int;
     start state Real_Init {
         entry {

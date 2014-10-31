@@ -508,7 +508,11 @@ PRT_SM_CONTEXT_PRIV			*context
 );
 
 void
-PrtCleanupSMContext(
+PrtCleanupMachine(
 PRT_SM_CONTEXT_PRIV			*context
 );
 
+void
+PrtCleanupModel(
+PRT_SM_CONTEXT			*context
+);

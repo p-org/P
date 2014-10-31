@@ -315,7 +315,7 @@ class StateStack {
     }
 };
 
-enum ContinuationReason { Return, Nondet, Pop, Raise, Call, Send, NewMachine };
+enum ContinuationReason { Return, Nondet, Pop, Raise, Push, Send, NewMachine };
 
 class StackFrame {
     int pc;
@@ -413,9 +413,9 @@ class Continuation {
 	this.PushReturnTo(ret);
     }
 
-    void Call(int ret, State state) {
+    void Push(int ret, State state) {
         this.returnTo = null;
-	this.reason = ContinuationReason.Call;
+	this.reason = ContinuationReason.Push;
 	this.state = state;
 	this.id = null;
 	this.retVal = null;

@@ -4,9 +4,9 @@
 OUT: Writing Actions_4_p_.h ...
 OUT: Writing Actions_4.zing ...
 OUT: Compiling Actions_4.zing to Actions_4.dll ...
-OUT: actions_4.p (13, 4): inferred type:  BaseType(MODEL)
+OUT: actions_4.p (13, 4): inferred type:  BaseType(REAL)
 OUT: actions_4.p (13, 4): inferred type:  NIL
-OUT: actions_4.p (13, 20): inferred type:  BaseType(MODEL)
+OUT: actions_4.p (13, 20): inferred type:  BaseType(REAL)
 OUT: actions_4.p (13, 30): inferred type:  BaseType(REAL)
 OUT: actions_4.p (14, 4): inferred type:  NIL
 OUT: actions_4.p (14, 10): inferred type:  BaseType(EVENT)
@@ -14,7 +14,7 @@ OUT: actions_4.p (19, 4): inferred type:  BaseType(BOOL)
 OUT: actions_4.p (19, 4): inferred type:  NIL
 OUT: actions_4.p (19, 11): inferred type:  BaseType(BOOL)
 OUT: actions_4.p (26, 9): inferred type:  NIL
-OUT: actions_4.p (26, 14): inferred type:  BaseType(MODEL)
+OUT: actions_4.p (26, 14): inferred type:  BaseType(REAL)
 OUT: actions_4.p (26, 29): inferred type:  BaseType(EVENT)
 OUT: actions_4.p (27, 6): inferred type:  NIL
 OUT: actions_4.p (27, 12): inferred type:  BaseType(EVENT)
@@ -24,7 +24,7 @@ OUT: actions_4.p (34, 21): inferred type:  BaseType(BOOL)
 OUT: actions_4.p (34, 24): inferred type:  BaseType(BOOL)
 OUT: actions_4.p (39, 9): inferred type:  NIL
 OUT: actions_4.p (40, 9): inferred type:  NIL
-OUT: actions_4.p (40, 14): inferred type:  BaseType(MODEL)
+OUT: actions_4.p (40, 14): inferred type:  BaseType(REAL)
 OUT: actions_4.p (40, 29): inferred type:  BaseType(EVENT)
 OUT: actions_4.p (44, 3): inferred type:  NIL
 OUT: actions_4.p (52, 8): inferred type:  BaseType(REAL)
@@ -82,8 +82,8 @@ Zing Assertion failed:
 Microsoft.Zing.ZingAssertionFailureException: Exception of type 'Microsoft.Zing.ZingAssertionFailureException' was thrown.
 
 Stack trace:
-    Real.AnonFun4 (Actions_4.zing, Line 1028)
-    Real.ReentrancyHelper (Actions_4.zing, Line 713)
+    Real.AnonFun4 (Actions_4.zing, Line 1052)
+    Real.ReentrancyHelper (Actions_4.zing, Line 734)
     Real.RunHelper (Actions_4.zing, Line 243)
     Real.Run (Actions_4.zing, Line 99)
     Real.Start (Actions_4.zing, Line 64)

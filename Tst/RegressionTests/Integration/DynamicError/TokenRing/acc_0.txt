@@ -4,16 +4,16 @@
 OUT: Writing TokenRing_p_.h ...
 OUT: Writing TokenRing.zing ...
 OUT: Compiling TokenRing.zing to TokenRing.dll ...
-OUT: tokenring.p (16, 12): inferred type:  BaseType(MODEL)
+OUT: tokenring.p (16, 12): inferred type:  BaseType(REAL)
 OUT: tokenring.p (16, 12): inferred type:  NIL
 OUT: tokenring.p (16, 21): inferred type:  BaseType(ANY)
-OUT: tokenring.p (16, 29): inferred type:  BaseType(MODEL)
+OUT: tokenring.p (16, 29): inferred type:  BaseType(REAL)
 OUT: tokenring.p (29, 2): inferred type:  BaseType(REAL)
 OUT: tokenring.p (29, 2): inferred type:  NIL
 OUT: tokenring.p (29, 16): inferred type:  BaseType(REAL)
 OUT: tokenring.p (29, 24): inferred type:  BaseType(REAL)
 OUT: tokenring.p (30, 9): inferred type:  NIL
-OUT: tokenring.p (30, 14): inferred type:  BaseType(MODEL)
+OUT: tokenring.p (30, 14): inferred type:  BaseType(REAL)
 OUT: tokenring.p (30, 22): inferred type:  BaseType(EVENT)
 OUT: tokenring.p (31, 9): inferred type:  NIL
 OUT: tokenring.p (31, 15): inferred type:  BaseType(EVENT)
@@ -61,19 +61,19 @@ OUT: tokenring.p (74, 15): inferred type:  BaseType(EVENT)
 OUT: tokenring.p (95, 9): inferred type:  BaseType(REAL)
 OUT: tokenring.p (95, 9): inferred type:  NIL
 OUT: tokenring.p (95, 14): inferred type:  BaseType(REAL)
-OUT: tokenring.p (95, 23): inferred type:  BaseType(MODEL)
+OUT: tokenring.p (95, 23): inferred type:  BaseType(REAL)
 OUT: tokenring.p (96, 9): inferred type:  BaseType(REAL)
 OUT: tokenring.p (96, 9): inferred type:  NIL
 OUT: tokenring.p (96, 14): inferred type:  BaseType(REAL)
-OUT: tokenring.p (96, 23): inferred type:  BaseType(MODEL)
+OUT: tokenring.p (96, 23): inferred type:  BaseType(REAL)
 OUT: tokenring.p (97, 9): inferred type:  BaseType(REAL)
 OUT: tokenring.p (97, 9): inferred type:  NIL
 OUT: tokenring.p (97, 14): inferred type:  BaseType(REAL)
-OUT: tokenring.p (97, 23): inferred type:  BaseType(MODEL)
+OUT: tokenring.p (97, 23): inferred type:  BaseType(REAL)
 OUT: tokenring.p (98, 9): inferred type:  BaseType(REAL)
 OUT: tokenring.p (98, 9): inferred type:  NIL
 OUT: tokenring.p (98, 14): inferred type:  BaseType(REAL)
-OUT: tokenring.p (98, 23): inferred type:  BaseType(MODEL)
+OUT: tokenring.p (98, 23): inferred type:  BaseType(REAL)
 OUT: tokenring.p (99, 9): inferred type:  NIL
 OUT: tokenring.p (99, 14): inferred type:  BaseType(REAL)
 OUT: tokenring.p (99, 18): inferred type:  BaseType(EVENT)
@@ -295,10 +295,10 @@ Zing Assertion failed:
 Microsoft.Zing.ZingAssertionFailureException: Exception of type 'Microsoft.Zing.ZingAssertionFailureException' was thrown.
 
 Stack trace:
-    EVENT_BUFFER.EnqueueEvent (TokenRing.zing, Line 3103)
-    SM_HANDLE.EnqueueEvent (TokenRing.zing, Line 2988)
-    Node.AnonFun4 (TokenRing.zing, Line 1302)
-    Node.ReentrancyHelper (TokenRing.zing, Line 925)
+    EVENT_BUFFER.EnqueueEvent (TokenRing.zing, Line 3140)
+    SM_HANDLE.EnqueueEvent (TokenRing.zing, Line 3025)
+    Node.AnonFun4 (TokenRing.zing, Line 1326)
+    Node.ReentrancyHelper (TokenRing.zing, Line 940)
     Node.RunHelper (TokenRing.zing, Line 460)
     Node.Run (TokenRing.zing, Line 162)
     Node.Start (TokenRing.zing, Line 127)

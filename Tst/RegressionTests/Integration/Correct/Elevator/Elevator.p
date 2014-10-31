@@ -19,7 +19,7 @@ event eStopTimerReturned assert 1;
 event eObjectEncountered assert 1;
 
 machine Elevator {
-    var TimerV, DoorV: model;
+    var TimerV, DoorV: machine;
 
     start state Init {
         entry {

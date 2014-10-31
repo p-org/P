@@ -161,13 +161,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 	TypeConstant(NIL, -1, NIL).
 
 	//// Base types
-	BaseType2Kind ::= ({ NULL, BOOL, INT, EVENT, REAL, MODEL, FOREIGN, ANY }, String).
+	BaseType2Kind ::= ({ NULL, BOOL, INT, EVENT, REAL, FOREIGN, ANY }, String).
 	BaseType2Kind(NULL, "PRT_KIND_NULL").
 	BaseType2Kind(BOOL, "PRT_KIND_BOOL").
 	BaseType2Kind(INT, "PRT_KIND_INT").
 	BaseType2Kind(EVENT, "PRT_KIND_EVENT").
 	BaseType2Kind(REAL, "PRT_KIND_MACHINE").
-	BaseType2Kind(MODEL, "PRT_KIND_MODEL").
 	BaseType2Kind(FOREIGN, "PRT_KIND_FORGN").
 	BaseType2Kind(ANY, "PRT_KIND_ANY").
 	

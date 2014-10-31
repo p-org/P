@@ -199,7 +199,6 @@ namespace Microsoft.Pc
         public static AST<FuncTerm> PTypeInt = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("BaseType")), Factory.Instance.MkId("INT"));
         public static AST<FuncTerm> PTypeEvent = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("BaseType")), Factory.Instance.MkId("EVENT"));
         public static AST<FuncTerm> PTypeReal = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("BaseType")), Factory.Instance.MkId("REAL"));
-        public static AST<FuncTerm> PTypeModel = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("BaseType")), Factory.Instance.MkId("MODEL"));
         public static AST<FuncTerm> PTypeAny = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("BaseType")), Factory.Instance.MkId("ANY"));
 
         public const string SM_EVENT = "SM_EVENT";
@@ -1418,18 +1417,12 @@ namespace Microsoft.Pc
             var savedDeferredSet = MkZingIdentifier("savedDeferredSet");
             var cont = MkZingIdentifier("cont");
 
-            var restoreCurrentEvent = MkZingAssign(currentEvent, savedCurrentEvent);
-            var restoreCurrentArg = MkZingAssign(currentArg, savedCurrentArg);
-            var restoreDeferredSet = MkZingAssign(MkZingDot("myHandle", "stack", "deferredSet"), savedDeferredSet);
-            var gotoStmt = MkZingGoto("transition_" + entityName);
-            string errorTraceString = string.Format("\"<StateLog> Call statement terminated due to unhandled event by machine {0}-{{0}}\\n\"", machineName);
-            var errorTraceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(errorTraceString), MkZingDot("myHandle", "instance")));
             var body = new List<AST<Node>>();
             body.Add(MkZingBlock("reentry_" + name, MkZingCallStmt(MkZingCall(MkZingIdentifier(name), cont))));
             body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Return")), MkZingReturn(cont)));
             body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Pop")), MkZingReturn(cont)));
             body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Raise")), MkZingReturn(cont)));
-            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Call")),
+            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Push")),
                 MkZingSeq(
                     MkZingAssign(savedCurrentEvent, currentEvent),
                     MkZingAssign(savedCurrentArg, currentArg),
@@ -1439,10 +1432,10 @@ namespace Microsoft.Pc
                     MkZingAssign(MkZingDot("myHandle", "stack", "deferredSet"), MkZingCall(MkZingDot("Main", "CalculateComplementOfEventSet"), MkZingDot("myHandle", "stack", "actionSet"))),
                     MkZingCallStmt(MkZingCall(MkZingIdentifier("Run"), MkZingDot("cont", "state"))),
                     MkZingAssign(MkZingDot("cont", "state"), MkZingState("default")),
-                    MkZingIfThenElse(MkZingApply(ZingData.Cnst_Eq, currentEvent, MkZingIdentifier("null")),
-                              MkZingSeq(restoreCurrentEvent, restoreCurrentArg, restoreDeferredSet),
-                              MkZingSeq(errorTraceStmt, MkZingAssert(ZingData.Cnst_False))),
-                    MkZingGoto("reentry_" + name))));
+                    MkZingIfThenElse(
+                              MkZingApply(ZingData.Cnst_Eq, currentEvent, MkZingIdentifier("null")),
+                              MkZingSeq(MkZingAssign(currentEvent, savedCurrentEvent), MkZingAssign(currentArg, savedCurrentArg), MkZingAssign(MkZingDot("myHandle", "stack", "deferredSet"), savedDeferredSet), MkZingGoto("reentry_" + name)),
+                              MkZingSeq(MkZingAssign(currentEvent, savedCurrentEvent), MkZingAssign(currentArg, savedCurrentArg), MkZingAssign(MkZingDot("myHandle", "stack", "deferredSet"), savedDeferredSet), MkZingCallStmt(MkZingCall(MkZingDot(cont, "Raise"))), MkZingReturn(cont))))));
             AST<Node> atChooseLivenessStmt = ZingData.Cnst_Nil;
             AST<Node> atYieldLivenessStmt = ZingData.Cnst_Nil;
             if (compiler.Options.liveness == LivenessOption.Standard)
@@ -2159,7 +2152,7 @@ namespace Microsoft.Pc
             }
             else if (op == PData.Cnst_This.Node.Name)
             {
-                var machineType = allMachines[ctxt.machineName].IsModel ? PTypeModel : PTypeReal;
+                var machineType = PTypeReal;
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmp");
                 ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(machineType.Node))));
                 ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetMachine"), tmpVar, MkZingIdentifier("myHandle"))));
@@ -2496,7 +2489,7 @@ namespace Microsoft.Pc
             var stateName = GetNameFromQualifiedName(ctxt.machineName, qualifiedName);
             var afterLabel = ctxt.GetFreshLabel();
             var res = MkZingSeq(
-                MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Call"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingState(stateName))),
+                MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Push"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingState(stateName))),
                 MkZingReturn(ZingData.Cnst_Nil),
                 MkZingBlock(afterLabel, ZingData.Cnst_Nil));
             return new ZingTranslationInfo(res);
@@ -3064,12 +3057,6 @@ namespace Microsoft.Pc
                     {
                         var tmpVar = GetType();
                         AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_REAL"))));
-                        return tmpVar;
-                    }
-                    else if (primitiveType == "MODEL")
-                    {
-                        var tmpVar = GetType();
-                        AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_MODEL"))));
                         return tmpVar;
                     }
                     else if (primitiveType == "ANY")

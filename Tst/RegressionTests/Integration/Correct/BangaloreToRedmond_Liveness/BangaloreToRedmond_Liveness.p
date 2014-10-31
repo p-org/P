@@ -10,8 +10,8 @@ event TookFlight assert 2;
 event Unit assert 2;
 
 main machine Employee {
-    var TravelAgentId: model;
-    var CityCabId: model;
+    var TravelAgentId: machine;
+    var CityCabId: machine;
     var Check: bool;
     var RemoteCheckIn: bool;
 

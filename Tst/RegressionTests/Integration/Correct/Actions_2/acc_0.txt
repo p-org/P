@@ -4,18 +4,18 @@
 OUT: Writing Actions_2_p_.h ...
 OUT: Writing Actions_2.zing ...
 OUT: Compiling Actions_2.zing to Actions_2.dll ...
-OUT: actions_2.p (14, 3): inferred type:  BaseType(MODEL)
+OUT: actions_2.p (14, 3): inferred type:  BaseType(REAL)
 OUT: actions_2.p (14, 3): inferred type:  NIL
-OUT: actions_2.p (14, 19): inferred type:  BaseType(MODEL)
+OUT: actions_2.p (14, 19): inferred type:  BaseType(REAL)
 OUT: actions_2.p (14, 29): inferred type:  BaseType(REAL)
 OUT: actions_2.p (16, 10): inferred type:  NIL
 OUT: actions_2.p (27, 13): inferred type:  NIL
-OUT: actions_2.p (27, 18): inferred type:  BaseType(MODEL)
+OUT: actions_2.p (27, 18): inferred type:  BaseType(REAL)
 OUT: actions_2.p (27, 33): inferred type:  BaseType(EVENT)
 OUT: actions_2.p (37, 6): inferred type:  NIL
 OUT: actions_2.p (37, 13): inferred type:  BaseType(BOOL)
 OUT: actions_2.p (44, 9): inferred type:  NIL
-OUT: actions_2.p (44, 14): inferred type:  BaseType(MODEL)
+OUT: actions_2.p (44, 14): inferred type:  BaseType(REAL)
 OUT: actions_2.p (44, 29): inferred type:  BaseType(EVENT)
 OUT: actions_2.p (53, 8): inferred type:  BaseType(REAL)
 OUT: actions_2.p (53, 8): inferred type:  NIL

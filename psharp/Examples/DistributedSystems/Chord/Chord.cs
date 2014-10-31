@@ -142,7 +142,7 @@ namespace Chord
                     machine.Nodes.Add(Machine.Factory.CreateMachine<ChordNode>(new Tuple<Machine, int, int>(
                         machine, machine.NodeIds[idx], machine.M)));
                 }
-
+                
                 var nodeKeys = new Dictionary<int, List<int>>();
                 for (int i = machine.Keys.Count - 1; i >= 0; i--)
                 {

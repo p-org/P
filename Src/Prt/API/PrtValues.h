@@ -21,6 +21,10 @@
 extern "C"{
 #endif
 
+#ifdef PRT_USE_IDL
+	#include "PrtValues_IDL.h"
+#else
+
 typedef enum PRT_SPECIAL_EVENT
 {
 	PRT_SPECIAL_EVENT_DEFAULT_OR_NULL = 0,  /**< The id of the default / null event */
@@ -110,6 +114,7 @@ typedef struct PRT_MAPNODE
 	struct PRT_MAPNODE *insertPrev;   /**< The previous node in insertion order. */
 } PRT_MAPNODE;
 
+#endif
 /** Makes a default value of an abitrary type. The defaults (def) are as follows:
 * 1.  def(null)                = `null : null`.
 * 2.  def(any)                 = `null : null`.

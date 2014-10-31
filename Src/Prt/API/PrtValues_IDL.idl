@@ -3,10 +3,10 @@ uuid(0b531b5c-81a2-4710-a356-4fceb6d36a47),
 version(1.0),
 pointer_default(ptr)
 ]
-interface PrtDistValues
+interface PrtValues_IDL
 {
 
-	import "PrtDistTypes.idl";
+	import "PrtTypes_IDL.idl";
 
 	typedef enum PRT_SPECIAL_EVENT
 	{
@@ -60,7 +60,7 @@ interface PrtDistValues
 	/** A foreign value is foreign type paired with a void *. */
 	typedef struct PRT_FORGNVALUE
 	{
-		int    *value;   /**< A pointer to the foreign value. */
+		void    *value;   /**< A pointer to the foreign value. */
 	} PRT_FORGNVALUE;
 
 	/** A struct to store linked list of values for RPC */

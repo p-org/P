@@ -1,0 +1,41 @@
+[
+uuid(a44ebb31-6600-4c90-82eb-0b9ef6794262),
+version(1.0),
+pointer_default(ptr)
+]
+interface PrtBaseTypes_IDL
+{
+	/** PRT uses these definitions for boolean values */
+	/** Declare all the platform dependent types */
+	typedef enum PRT_BOOLEAN
+	{
+		PRT_FALSE = 0,   /**< 0 means false */
+		PRT_TRUE = 1    /**< 1 means true  */
+	} PRT_BOOLEAN;
+
+	/** PRT_UINT8 is always an 8-bit unsigned integer. */
+	typedef unsigned small  PRT_UINT8;
+	/** PRT_UINT16 is always a 16-bit unsigned integer. */
+	typedef unsigned short PRT_UINT16;
+	/** PRT_UINT32 is always a 32-bit unsigned integer. */
+	typedef unsigned long PRT_UINT32;
+	/** PRT_UINT64 is always a 64-bit unsigned integer. */
+	typedef unsigned long long PRT_UINT64;
+
+	/** PRT_INT8 is always an 8-bit signed integer. */
+	typedef signed small  PRT_INT8;
+	/** PRT_INT16 is always a 16-bit signed integer. */
+	typedef signed short PRT_INT16;
+	/** PRT_INT32 is always a 32-bit signed integer. */
+	typedef signed long PRT_INT32;
+	/** PRT_INT64 is always a 64-bit signed integer. */
+	typedef signed long long PRT_INT64;
+
+	/** PRT_CHAR is always an ASCII character. */
+	typedef char PRT_CHAR;
+	/** PRT_STRING is always an array of ASCII characters. */
+	typedef [string] char * PRT_STRING;
+	/** PRT_CSTRING is always a constant array of ASCII characters. */
+	typedef [string] char const * PRT_CSTRING;
+
+}

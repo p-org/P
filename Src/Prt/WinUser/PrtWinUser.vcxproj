@@ -35,6 +35,11 @@
     <ClCompile Include="PrtWinUser.c" />
     <ClCompile Include="PrtWinUserConfig.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\IDL\PrtIDL.vcxproj">
+      <Project>{13dcfb0e-a18a-4e6b-ae2e-f46a7b89a145}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F8C72C0E-450C-4AE1-9885-31B8565C1D63}</ProjectGuid>
     <RootNamespace>PrtWinUser</RootNamespace>
@@ -100,8 +105,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>PRT_API_IMPL;PRT_PLAT_WINUSER;PRT_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>
-      </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../IDL/</AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>

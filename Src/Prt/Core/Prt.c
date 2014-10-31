@@ -1219,11 +1219,11 @@ __in PRT_SM_CONTEXT_PRIV *context
 )
 {
 	PRT_INT32 maxEventQueueSize = context->context.process->program->machines[context->context.instanceOf].maxQueueSize;
-	PRT_INT16 currEventQueueSize = context->eventQueue.eventsSize;
+	PRT_INT32 currEventQueueSize = context->eventQueue.eventsSize;
 	PRT_INT32 newQueueSize = (maxEventQueueSize != 0xffffffff && currEventQueueSize * 2 > maxEventQueueSize) ? maxEventQueueSize : currEventQueueSize * 2;
 	PRT_TRIGGER* oldQueue = context->eventQueue.events;
-	PRT_INT16 oldHead = context->eventQueue.headIndex;
-	PRT_INT16 oldTail = context->eventQueue.tailIndex;
+	PRT_INT32 oldHead = context->eventQueue.headIndex;
+	PRT_INT32 oldTail = context->eventQueue.tailIndex;
 	PRT_TRIGGER *newQueue = (PRT_TRIGGER*)PrtCalloc(newQueueSize, sizeof(PRT_TRIGGER));
 	PRT_INT16 newHead = 0;
 	PRT_INT16 newTail = 0;

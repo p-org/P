@@ -18,32 +18,40 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Prt.acf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="..\API\PrtBaseTypes_IDL.idl" />
+    <Midl Include="..\API\PrtTypes_IDL.idl" />
+    <Midl Include="..\API\PrtValues_IDL.idl" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{88589011-C704-470A-8A39-05DC0C816DA8}</ProjectGuid>
-    <RootNamespace>PrtDist</RootNamespace>
+    <ProjectGuid>{13DCFB0E-A18A-4E6B-AE2E-F46A7B89A145}</ProjectGuid>
+    <RootNamespace>PrtDistIDL</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -65,41 +73,41 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
-  </PropertyGroup>
+  <PropertyGroup />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../../Prt/WinUser/;../PrtDistIDL/;../../../Prt/Core/;../../../Prt/API/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;PRT_DEBUG</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Midl>
+      <PreprocessorDefinitions>
+      </PreprocessorDefinitions>
+      <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <AdditionalIncludeDirectories>../API/</AdditionalIncludeDirectories>
+    </Midl>
+    <PostBuildEvent>
+      <Command>"C:\Windows\System32\WindowsPowerShell\v1.0 \powershell.exe" -file "./patchFrgType.ps1"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Prt/;../PrtDistIDL/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINDIST;IGNORE_FRG;_CRT_SECURE_NO_WARNINGS;PRT_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Midl>
+      <PreprocessorDefinitions>IGNORE_FRG</PreprocessorDefinitions>
+      <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+    </Midl>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -108,14 +116,17 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Prt/;../PrtDistIDL/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>;PRT_PLAT_WINDIST;IGNORE_FRG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <Midl>
+      <PreprocessorDefinitions>IGNORE_FRG</PreprocessorDefinitions>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
+    </Midl>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -124,28 +135,18 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_PLAT_WINDIST;IGNORE_FRG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../Prt/;../PrtDistIDL/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <Midl>
+      <PreprocessorDefinitions>IGNORE_FRG</PreprocessorDefinitions>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
+    </Midl>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="PrtDist.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\Prt\WinUser\PrtWinUser.vcxproj">
-      <Project>{f8c72c0e-450c-4ae1-9885-31b8565c1d63}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="PrtDist.h" />
-    <ClInclude Include="PrtDistHeader.h" />
-    <ClInclude Include="PrtTypes.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -35,18 +35,6 @@ namespace Microsoft.PSharp.Scheduling
         /// </summary>
         internal static List<ScheduleStep> Schedule = new List<ScheduleStep>();
 
-        /// <summary>
-        /// List containing the recently scheduled machine IDs.
-        /// </summary>
-        internal static List<int> ScheduledMachineIDs = new List<int>();
-
-        internal static List<List<int>> CachedSchedule = new List<List<int>>();
-
-        /// <summary>
-        /// True if all possible schedules have been explored.
-        /// </summary>
-        internal static bool AllPossibleSchedulesExplored = false;
-
         #endregion
 
         #region internal API
@@ -63,51 +51,21 @@ namespace Microsoft.PSharp.Scheduling
         }
 
         /// <summary>
-        /// Tries to add a new scheduled machine ID to the explored
-        /// schedule. If schedule caching is enabled and the sequence
-        /// of scheduled machine IDs has been already explored then it
-        /// does not add the machine ID and returns false.
+        /// Pushes a new scheduling decision to the cache.
         /// </summary>
-        /// <param name="machineID">Machine ID</param>
-        /// <returns>Boolean value</returns>
-        internal static bool TryAdd(int machineID)
+        /// <param name="chosenID">Chosen ID</param>
+        /// <param name="enabledIDs">Enabled IDs</param>
+        internal static void Push(int chosenID, int enabledIDs)
         {
-            var result = true;
 
-            ScheduleExplorer.ScheduledMachineIDs.Add(machineID);
-            if (Runtime.Options.CacheExploredSchedules)
-            {
-                foreach (var schedule in ScheduleExplorer.CachedSchedule)
-                {
-                    var scheduleLength = ScheduleExplorer.ScheduledMachineIDs.Count;
-                    var subSchedule = schedule.Take(scheduleLength);
-                    result = !ScheduleExplorer.ScheduledMachineIDs.SequenceEqual(subSchedule);
-                    if (!result)
-                    {
-                        ScheduleExplorer.ScheduledMachineIDs.RemoveAt(scheduleLength - 1);
-                        break;
-                    }
-                }
-
-                return result;
-            }
-
-            return result;
         }
 
         /// <summary>
-        /// Caches and resets the explored schedule. The caching
-        /// happens only if schedule caching is enabled.
+        /// Resets the explored schedule.
         /// </summary>
-        internal static void CacheAndResetExploredSchedule()
+        internal static void ResetExploredSchedule()
         {
-            if (Runtime.Options.CacheExploredSchedules)
-            {
-                CachedSchedule.Add(new List<int>(ScheduleExplorer.ScheduledMachineIDs));
-            }
-
             ScheduleExplorer.Schedule.Clear();
-            ScheduleExplorer.ScheduledMachineIDs.Clear();
         }
 
         /// <summary>

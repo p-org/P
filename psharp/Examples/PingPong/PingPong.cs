@@ -197,9 +197,9 @@ namespace PingPong
                     Console.WriteLine("Performing cleanup.\n");
                     Runtime.Dispose();
                 },
-                10,
+                1000,
                 true,
-                true);
+                Runtime.SchedulingType.DFS);
         }
     }
 }

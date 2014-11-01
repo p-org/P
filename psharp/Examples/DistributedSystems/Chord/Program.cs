@@ -55,7 +55,7 @@ namespace Chord
                 },
                 10000,
                 true,
-                false);
+                Runtime.SchedulingType.Random);
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------
-// <copyright file="IScheduler.cs" company="Microsoft">
+// <copyright file="SChoice.cs" company="Microsoft">
 //      Copyright (c) Microsoft Corporation. All rights reserved.
 // 
 //      THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, 
@@ -17,36 +17,37 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using Microsoft.PSharp.IO;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Microsoft.PSharp.Scheduling
 {
     /// <summary>
-    /// Interface of a generic state machine scheduler.
+    /// A scheduling choice. Contains an integer that represents
+    /// a machine ID and a boolean that is true if the choice has
+    /// been previously explored.
     /// </summary>
-    public interface IScheduler
+    internal class SChoice
     {
-        /// <summary>
-        /// This is called by the P# runtime to find the next
-        /// machine ID to schedule. It accepts the list of all
-        /// enabled machine ID in the program.
-        /// </summary>
-        /// <param name="nextId">Next machine ID</param>
-        /// <param name="machineIDs">Machine IDs</param>
-        /// <returns>Boolean value</returns>
-        bool TryGetNext(out int nextId, List<int> machineIDs);
+        public int Value;
+        public bool IsDone;
 
         /// <summary>
-        /// This is called by the P# runtime to check if the
-        /// scheduler has finished.
+        /// Constructor.
         /// </summary>
-        /// <returns>Boolean value</returns>
-        bool HasFinished();
+        /// <param name="value">Value</param>
+        public SChoice(int value)
+        {
+            this.Value = value;
+            this.IsDone = false;
+        }
 
         /// <summary>
-        /// This is called by the P# runtime to reset the scheduler.
+        /// Marks the choice as done.
         /// </summary>
-        void Reset();
+        public void Done()
+        {
+            this.IsDone = true;
+        }
     }
 }

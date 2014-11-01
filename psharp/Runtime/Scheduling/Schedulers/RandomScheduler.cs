@@ -46,12 +46,31 @@ namespace Microsoft.PSharp.Scheduling
         /// <summary>
         /// Returns the next machine ID to be scheduled.
         /// </summary>
-        /// <param name="machineIDs">List<int></param>
-        /// <returns>machineID</returns>
-        int IScheduler.Next(List<int> machineIDs)
+        /// <param name="nextId">Next machine ID</param>
+        /// <param name="machineIDs">Machine IDs</param>
+        /// <returns>Boolean value</returns>
+        bool IScheduler.TryGetNext(out int nextId, List<int> machineIDs)
         {
-            int index = this.Randomizer.Next(0, machineIDs.Count);
-            return machineIDs[index];
+            var index = this.Randomizer.Next(0, machineIDs.Count);
+            nextId = machineIDs[index];
+            return true;
+        }
+
+        /// <summary>
+        /// Returns true if the scheduler has finished.
+        /// </summary>
+        /// <returns>Boolean value</returns>
+        bool IScheduler.HasFinished()
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// Resets the scheduler.
+        /// </summary>
+        void IScheduler.Reset()
+        {
+            this.Randomizer = new Random(DateTime.Now.Second);
         }
     }
 }

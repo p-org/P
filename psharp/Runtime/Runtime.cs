@@ -224,9 +224,9 @@ namespace Microsoft.PSharp
         /// <param name="runtimeAction">Runtime action</param>
         /// <param name="iterations">Iterations</param>
         /// <param name="enableBugFindMode">Enable bug find mode</param>
-        /// <param name="enableBugFindMode">Enable schedule caching</param>
+        /// <param name="schedulingType">Type of scheduling</param>
         public static void Test(Action runtimeAction, int iterations,
-            bool enableBugFindMode, bool enableScheduleCaching)
+            bool enableBugFindMode, SchedulingType schedulingType)
         {
             Runtime.Options.CountAssertions = true;
 
@@ -235,9 +235,17 @@ namespace Microsoft.PSharp
                 Runtime.Options.Mode = Runtime.Mode.BugFinding;
             }
 
-            if (enableScheduleCaching)
+            if (schedulingType == Runtime.SchedulingType.Random)
             {
-                Runtime.Options.CacheExploredSchedules = true;
+                Runtime.Options.Scheduler = new RandomScheduler();
+            }
+            else if (schedulingType == Runtime.SchedulingType.RoundRobin)
+            {
+                Runtime.Options.Scheduler = new RoundRobinScheduler();
+            }
+            else if (schedulingType == Runtime.SchedulingType.DFS)
+            {
+                Runtime.Options.Scheduler = new DFSScheduler();
             }
 
             Profiler.StartMeasuringExecutionTime();
@@ -247,7 +255,7 @@ namespace Microsoft.PSharp
                 Console.WriteLine("Starting iteration: {0}", iteration + 1);
 
                 runtimeAction();
-                if (ScheduleExplorer.AllPossibleSchedulesExplored)
+                if (Runtime.Options.Scheduler.HasFinished())
                 {
                     break;
                 }
@@ -549,21 +557,11 @@ namespace Microsoft.PSharp
                 }
 
                 // 3. Get the next available machine ID to schedule.
-                var nextMachineId = Runtime.Options.Scheduler.Next(enabledIds);
-                if (Runtime.Options.CacheExploredSchedules)
+                var nextMachineId = -1;
+                if (!Runtime.Options.Scheduler.TryGetNext(out nextMachineId, enabledIds))
                 {
-                    while (!ScheduleExplorer.TryAdd(nextMachineId))
-                    {
-                        enabledIds.Remove(nextMachineId);
-                        if (enabledIds.Count == 0)
-                        {
-                            ScheduleExplorer.AllPossibleSchedulesExplored = true;
-                            Runtime.IsRunning = false;
-                            break;
-                        }
-
-                        nextMachineId = Runtime.Options.Scheduler.Next(enabledIds);
-                    }
+                    Runtime.IsRunning = false;
+                    break;
                 }
 
                 // 4. Loop through the machines and schedule the next enabled machine.
@@ -647,8 +645,9 @@ namespace Microsoft.PSharp
             Runtime.RegisteredMonitorTypes.Clear();
             Runtime.RegisteredEventTypes.Clear();
 
-            Runtime.Options.Scheduler = new RandomScheduler();
-            ScheduleExplorer.CacheAndResetExploredSchedule();
+            Machine.ResetMachineIDCounter();
+            Runtime.Options.Scheduler.Reset();
+            ScheduleExplorer.ResetExploredSchedule();
 
             if (Runtime.Options.MonitorExecutions)
             {
@@ -688,13 +687,6 @@ namespace Microsoft.PSharp
             /// in bug finding mode. This behaviour is disabled by default.
             /// </summary>
             public static bool MonitorExecutions = false;
-
-            /// <summary>
-            /// The runtime will cache already explored schedules, and not
-            /// repeat them. Works only in bug finding mode. This behaviour
-            /// is disabled by default.
-            /// </summary>
-            public static bool CacheExploredSchedules = false;
 
             /// <summary>
             /// When the runtime stops after running in bug finding mode
@@ -753,6 +745,25 @@ namespace Microsoft.PSharp
             /// P# executes the previously explored schedule.
             /// </summary>
             Replay = 2
+        }
+
+        /// <summary>
+        /// P# runtime scheduling type.
+        /// </summary>
+        public enum SchedulingType
+        {
+            /// <summary>
+            /// Enables the random scheduler.
+            /// </summary>
+            Random = 0,
+            /// <summary>
+            /// Enables the round robin scheduler.
+            /// </summary>
+            RoundRobin = 1,
+            /// <summary>
+            /// Enables the depth first search scheduler.
+            /// </summary>
+            DFS = 2
         }
 
         #endregion

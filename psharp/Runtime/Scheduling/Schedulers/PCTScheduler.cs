@@ -61,9 +61,10 @@ namespace Microsoft.PSharp.Scheduling
         /// <summary>
         /// Returns the next machine ID to be scheduled.
         /// </summary>
-        /// <param name="machineIDs">List<int></param>
-        /// <returns>machineID</returns>
-        int IScheduler.Next(List<int> machineIDs)
+        /// <param name="nextId">Next machine ID</param>
+        /// <param name="machineIDs">Machine IDs</param>
+        /// <returns>Boolean value</returns>
+        bool IScheduler.TryGetNext(out int nextId, List<int> machineIDs)
         {
             var maxPriorityKey = this.PriorityMap.Aggregate(
                     (l, r) => l.Value > r.Value ? l : r).Key;
@@ -76,7 +77,25 @@ namespace Microsoft.PSharp.Scheduling
                     (l, r) => l.Value > r.Value ? l : r).Key;
             }
 
-            return maxPriorityKey;
+            nextId = maxPriorityKey;
+            return true;
+        }
+
+        /// <summary>
+        /// Returns true if the scheduler has finished.
+        /// </summary>
+        /// <returns>Boolean value</returns>
+        bool IScheduler.HasFinished()
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// Resets the scheduler.
+        /// </summary>
+        void IScheduler.Reset()
+        {
+
         }
     }
 }

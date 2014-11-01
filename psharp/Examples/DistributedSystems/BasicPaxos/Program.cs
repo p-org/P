@@ -94,7 +94,7 @@ namespace BasicPaxos
                 },
                 10000,
                 true,
-                false);
+                Runtime.SchedulingType.Random);
         }
     }
 }

@@ -131,7 +131,6 @@ namespace Microsoft.PSharp
         protected Machine()
         {
             this.Id = Machine.IdCounter++;
-            Console.WriteLine("machine id: " + this.Id);
             this.Inbox = new BlockingCollection<Event>();
             this.RaisedEvent = null;
             this.StateStack = new Stack<State>();
@@ -434,6 +433,14 @@ namespace Microsoft.PSharp
         {
             this.IsActive = false;
             this.CTS.Cancel();
+        }
+
+        /// <summary>
+        /// Resets the machine ID counter.
+        /// </summary>
+        internal static void ResetMachineIDCounter()
+        {
+            Machine.IdCounter = 0;
         }
 
         #endregion

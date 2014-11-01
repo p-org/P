@@ -75,7 +75,7 @@ interface PrtTypes_IDL
 	*  node in a linked list of prt_types
 	*/
 	typedef struct PRT_TYPE_NODE {
-		PRT_TYPE type;
+		PRT_TYPE* type;
 		struct PRT_TYPE_NODE *nextNode;
 	} PRT_TYPE_NODE;
 

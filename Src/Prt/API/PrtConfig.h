@@ -35,7 +35,7 @@ extern "C"{
 #endif
 
 #if defined(PRT_PLAT_WINUSER)	
-#include "../WinUser/PrtWinUserConfig.h"
+#include "PrtWinUserConfig.h"
 #else
 #error An invalid platform was specified (see PrtConfig.h for details)
 #endif

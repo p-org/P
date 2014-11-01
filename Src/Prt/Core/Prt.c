@@ -556,7 +556,7 @@ DoEntryOrAction:
 	if (context->stateExecFun == PrtStateEntry)
 	{
 		if (context->returnTo == 0)
-			PrtLog(PRT_STEP_MOVE, context);
+			PrtLog(PRT_STEP_ENTRY, context);
 		context->lastOperation = ReturnStatement;
 		PRT_UINT32 entryFunIndex = publicContext->process->program->machines[publicContext->instanceOf].states[context->currentState].entryFunIndex;
 		PrtGetEntryFunction(context)(publicContext, entryFunIndex, NULL);

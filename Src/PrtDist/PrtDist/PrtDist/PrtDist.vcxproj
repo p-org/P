@@ -82,8 +82,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../../Prt/WinUser/;../PrtDistIDL/;../../../Prt/Core/;../../../Prt/API/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;PRT_DEBUG</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../../Prt/WinUser/;../../../Prt/IDL/;../../../Prt/Core/;../../../Prt/API/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_PLAT_WINUSER;_CRT_SECURE_NO_WARNINGS;PRT_DEBUG;PRT_USE_IDL</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -143,7 +143,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrtDist.h" />
-    <ClInclude Include="PrtDistHeader.h" />
     <ClInclude Include="PrtTypes.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

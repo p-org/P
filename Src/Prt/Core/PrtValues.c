@@ -1,4 +1,4 @@
-#include "../API/PrtValues.h"
+#include "PrtValues.h"
 
 /** Maximum load factor before hashtable is resized. */
 #define PRT_MAXHASHLOAD 0.75

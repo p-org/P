@@ -60,7 +60,7 @@ interface PrtValues_IDL
 	/** A foreign value is foreign type paired with a void *. */
 	typedef struct PRT_FORGNVALUE
 	{
-		void    *value;   /**< A pointer to the foreign value. */
+		int __dummy;
 	} PRT_FORGNVALUE;
 
 	/** A struct to store linked list of values for RPC */

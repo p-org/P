@@ -11,11 +11,11 @@ interface PrtDist {
 	/******************************/
 	//		Functions
 	/*****************************/
-	/*
+	
 	PRT_BOOLEAN PrtDistSend(
 		[in] handle_t handleSM,
 		[in, ptr] PRT_VALUE* event,
 		[in, ptr] PRT_VALUE* payload
 	);
-	*/
+	
 }

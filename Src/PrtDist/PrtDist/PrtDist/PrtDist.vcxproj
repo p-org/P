@@ -140,6 +140,9 @@
     <ProjectReference Include="..\..\..\Prt\WinUser\PrtWinUser.vcxproj">
       <Project>{f8c72c0e-450c-4ae1-9885-31b8565c1d63}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\PrtDistIDL\PrtDistIDL.vcxproj">
+      <Project>{149b3fb2-4585-4c8d-abac-0de8ae7e9985}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrtDist.h" />

@@ -56,6 +56,9 @@ extern "C"{
 
 #endif
 
+#ifdef PRT_USE_IDL
+#include "PrtBaseTypes_IDL.h"
+#else
 /** PRT uses these definitions for boolean values */
 typedef enum PRT_BOOLEAN
 {
@@ -88,6 +91,7 @@ typedef char * PRT_STRING;
 /** PRT_CSTRING is always a constant array of ASCII characters. */
 typedef char const * PRT_CSTRING;
 
+#endif
 /** PRT_RECURSIVE_MUTEX identifies a recursive mutex. */
 typedef HANDLE PRT_RECURSIVE_MUTEX;
 

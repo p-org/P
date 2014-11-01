@@ -1,13 +1,13 @@
 event unit;
-event init:(model, model);
+event init:(machine, machine);
 event myCount:int;
 event Req;
 event Resp;
 
 main model Scheduler {
-	var p1:model;
-	var p2:model;
-	var p3:model;
+	var p1:machine;
+	var p2:machine;
+	var p3:machine;
 	var count:int;
     start state inits {
         
@@ -46,13 +46,13 @@ main model Scheduler {
 
 model Process {
 	var count:int;
-	var parent:model;
-	var other1:model;
-	var other2:model;
+	var parent:machine;
+	var other1:machine;
+	var other2:machine;
 	
         start state _init {
 			entry { 
-				  parent = payload as model; 
+				  parent = payload as machine; 
 				  raise unit;
 			}
             on unit goto inits;
@@ -67,8 +67,8 @@ model Process {
 		on Resp goto SendCount;
 	}
 	fun initaction() {
-		other1 = (payload as (model, model)).0;
-		other2 = (payload as (model, model)).1;
+		other1 = (payload as (machine, machine)).0;
+		other2 = (payload as (machine, machine)).1;
 		send parent, Req;
 		
 	}

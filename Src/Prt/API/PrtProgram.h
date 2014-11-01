@@ -17,7 +17,7 @@ extern "C"{
 */
 typedef enum PRT_SPECIAL_ACTIONS
 {
-	PRT_SPECIAL_ACTION_PUSH = 0 /**< The index of push action. */
+	PRT_SPECIAL_ACTION_PUSH_OR_IGN = 0 /**< The index of push action. */
 } PRT_SPECIAL_ACTION;
 
 /** A PRT_SM_FUN function is a pointer to a P function.
@@ -108,7 +108,6 @@ typedef struct PRT_TRANSDECL
 	PRT_UINT32  triggerEventIndex; /**< The index of the trigger event in program       */
 	PRT_UINT32  destStateIndex;    /**< The index of destination state in owner machine */
 	PRT_UINT32  transFunIndex;     /**< The index of function to execute when this transition is triggered */
-	PRT_BOOLEAN isPush;            /**< True if owner state is pushed onto state stack  */
 
 	PRT_UINT32  nAnnotations;      /**< Number of annotations                         */
 	void        **annotations;     /**< An array of annotations                       */
@@ -120,7 +119,6 @@ typedef struct PRT_DODECL
 	PRT_UINT32      declIndex;         /**< The index of this decl in owner state                  */
 	PRT_UINT32      ownerStateIndex;   /**< The index of owner state in owner machine              */
 	PRT_UINT32      ownerMachIndex;    /**< The index of owner machine in program                  */
-	PRT_STRING      name;              /**< The name of this action                                */
 	PRT_UINT32      triggerEventIndex; /**< The index of the trigger event in program              */
 	PRT_UINT32      doFunIndex;        /**< The index of function to execute when this do is triggered  */
 

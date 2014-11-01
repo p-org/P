@@ -1,0 +1,21 @@
+[
+	uuid(6f15af3b-0784-4fe4-a512-02e9006cf660),
+	version(1.0),
+	pointer_default(ptr)
+]
+
+interface PrtDist {
+
+	import "PrtValues_IDL.idl";
+
+	/******************************/
+	//		Functions
+	/*****************************/
+	
+	PRT_BOOLEAN PrtDistSend(
+		[in] handle_t handleSM,
+		[in, ptr] PRT_VALUE* event,
+		[in, ptr] PRT_VALUE* payload
+	);
+	
+}

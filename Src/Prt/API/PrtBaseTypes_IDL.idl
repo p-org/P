@@ -1,11 +1,18 @@
 [
-	uuid(289f8570-abdb-4efa-b495-8f5e8b7a7672),
-	version(1.0),
-	pointer_default(ptr)
+uuid(a44ebb31-6600-4c90-82eb-0b9ef6794262),
+version(1.0),
+pointer_default(ptr)
 ]
-interface PrtDistPrimitiveTypes {
-
+interface PrtBaseTypes_IDL
+{
+	/** PRT uses these definitions for boolean values */
 	/** Declare all the platform dependent types */
+	typedef enum PRT_BOOLEAN
+	{
+		PRT_FALSE = 0,   /**< 0 means false */
+		PRT_TRUE = 1    /**< 1 means true  */
+	} PRT_BOOLEAN;
+
 	/** PRT_UINT8 is always an 8-bit unsigned integer. */
 	typedef unsigned small  PRT_UINT8;
 	/** PRT_UINT16 is always a 16-bit unsigned integer. */
@@ -31,12 +38,4 @@ interface PrtDistPrimitiveTypes {
 	/** PRT_CSTRING is always a constant array of ASCII characters. */
 	typedef [string] char const * PRT_CSTRING;
 
-	/** PRT uses these definitions for boolean values */
-	typedef enum _PRT_BOOLEAN PRT_BOOLEAN;
-	enum _PRT_BOOLEAN
-	{
-		PRT_FALSE = 0,   /**< 0 means false */
-		PRT_TRUE = 1    /**< 1 means true  */
-	};
-
-};
+}

@@ -26,22 +26,21 @@ namespace Microsoft.Pc
     internal class TransitionInfo
     {
         public string target;
-        public bool isPush;
-        public string exitFunName;
+        public string transFunName;
 
-        public TransitionInfo(string target, bool isPush)
+        public TransitionInfo(string target)
         {
             this.target = target;
-            this.isPush = isPush;
-            this.exitFunName = null;
+            this.transFunName = null;
         }
 
-        public TransitionInfo(string target, string exitFunName)
+        public TransitionInfo(string target, string transFunName)
         {
             this.target = target;
-            this.isPush = false;
-            this.exitFunName = exitFunName;
+            this.transFunName = transFunName;
         }
+
+        public bool IsPush { get { return transFunName == null; } }
     }
 
     enum StateTemperature { COLD, WARM, HOT }
@@ -500,7 +499,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     if (it.Current.NodeKind == NodeKind.Id)
                     {
-                        stateTable.transitions[eventName] = new TransitionInfo(targetStateName, ((Id)it.Current).Name == "PUSH");
+                        stateTable.transitions[eventName] = new TransitionInfo(targetStateName);
                     }
                     else
                     {
@@ -1475,7 +1474,6 @@ namespace Microsoft.Pc
             locals.Add(MkZingVarDecl("state", Factory.Instance.MkCnst("State")));
             locals.Add(MkZingVarDecl("cont", Factory.Instance.MkCnst("Continuation")));
             locals.Add(MkZingVarDecl("actionFun", Factory.Instance.MkCnst("ActionOrFun")));
-            locals.Add(MkZingVarDecl("exitFun", Factory.Instance.MkCnst("ActionOrFun")));
 
             var state = MkZingIdentifier("state");
             // Initial block
@@ -1556,7 +1554,7 @@ namespace Microsoft.Pc
                 var transitions = allMachines[machineName].stateNameToStateInfo[stateName].transitions;
                 foreach (var eventName in transitions.Keys)
                 {
-                    if (transitions[eventName].isPush)
+                    if (transitions[eventName].IsPush)
                     {
                         callTransitions[eventName] = transitions[eventName];
                     }
@@ -1592,23 +1590,22 @@ namespace Microsoft.Pc
                     callTransitionStmt = MkZingIfThenElse(condExpr, MkZingSeq(callStmt, ite), callTransitionStmt);
                 }
 
-                AST<Node> exitFunStmt = MkZingAssign(MkZingIdentifier("exitFun"), MkZingActionOrFun(machineName, allMachines[machineName].stateNameToStateInfo[stateName].exitFunName));
+                AST<Node> exitFunStmt =
+                MkZingSeq(
+                    MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(exitTraceString), MkZingDot("myHandle", "instance"))),
+                    MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingActionOrFun(machineName, allMachines[machineName].stateNameToStateInfo[stateName].exitFunName)))
+                );
                 AST<Node> ordinaryTransitionStmt = MkZingReturn(ZingData.Cnst_True);
                 foreach (var eventName in ordinaryTransitions.Keys)
                 {
-                    var targetStateName = ordinaryTransitions[eventName].target;
                     var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingDot("myHandle", "currentEvent"), MkZingEvent(eventName));
-                    AST<Node> jumpStmt = MkZingGoto("execute_" + targetStateName);
+                    AST<Node> jumpStmt = 
+                        MkZingSeq(
+                        MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingActionOrFun(machineName, ordinaryTransitions[eventName].transFunName))),
+                        MkZingGoto("execute_" + ordinaryTransitions[eventName].target)
+                        );
                     ordinaryTransitionStmt = MkZingIfThenElse(condExpr, jumpStmt, ordinaryTransitionStmt);
-                    string exitFunName = ordinaryTransitions[eventName].exitFunName;
-                    if (exitFunName != null)
-                    {
-                        exitFunStmt = MkZingIfThenElse(condExpr, MkZingAssign(MkZingIdentifier("exitFun"), MkZingActionOrFun(machineName, exitFunName)), exitFunStmt);
-                    }
                 }
-                exitFunStmt = MkZingSeq(exitFunStmt,
-                                        MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(exitTraceString), MkZingDot("myHandle", "instance"))), 
-                                        MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingIdentifier("exitFun"))));
                 blocks.Add(MkZingBlock("transition_" + stateName, MkZingSeq(actionStmt, callTransitionStmt, exitFunStmt, ordinaryTransitionStmt)));
             }
             return MkZingMethodDecl("RunHelper", parameters, ZingData.Cnst_Bool, MkZingVarDecls(locals), MkZingBlocks(blocks));

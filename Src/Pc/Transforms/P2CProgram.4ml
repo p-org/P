@@ -109,7 +109,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	   enumName = strJoin("P_FUNS_", m.name),
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : AnonOrNamedFun, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(0, DEC, NIL), strJoin("_P_FUN_", strJoin(m.name, "_PUSH")));
+									   enumMember = Element(IntLit(0, DEC, NIL), strJoin("_P_FUN_", strJoin(m.name, "_PUSH_OR_IGN")));
 									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(m.name, "_COUNT"))), size = 1 + count({d | d is AnonOrNamedFun, d.owner = m}) }).  
 
 	//// (7) StateDecls - Start at Id 0. Need to encode qualified names.
@@ -395,6 +395,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// Transition Id also contains source, destination, and owner machine ids
 	TransDeclId(t, id, srcname, dstname, machname) :- 
 	                t is TransDecl, 
+					t.src.owner.kind = REAL,
 					id = toOrdinal(t, 0, { t' | t' is TransDecl, t'.src = t.src }),
 					DeclId(t.src, _, srcname), 
 					DeclId(t.src.owner, _, machname),
@@ -403,16 +404,17 @@ transform P2CProgram (in:: P) returns (out:: C)
     //// Transition event Id depends on whether the transition is a user event, default, or halt.
     TransDeclEvnt  ::= (decl: TransDecl, evName: String).
 	DefaultOrHalt  ::= { DEFAULT, HALT }.
-	TransDeclEvnt(t, evname) :- t is TransDecl, ev is EventDecl, ev.name = t.trig, DeclId(ev, _, evname).
-	TransDeclEvnt(t, evname) :- t is TransDecl, trig = t.trig, trig : DefaultOrHalt, DeclId(trig, _, evname).
+	TransDeclEvnt(t, evname) :- t is TransDecl, t.src.owner.kind = REAL, ev is EventDecl, ev.name = t.trig, DeclId(ev, _, evname).
+	TransDeclEvnt(t, evname) :- t is TransDecl, t.src.owner.kind = REAL, trig = t.trig, trig : DefaultOrHalt, DeclId(trig, _, evname).
 
 	//// Transition action index depends on whether the transition is a push transition or not.
     TransDeclAction  ::= (decl: TransDecl, funName: String).
-	TransDeclAction(t, funname) :- t is TransDecl, t.action = PUSH, funname = strJoin("_P_FUN_", strJoin(t.src.owner.name, "_PUSH")). 
-	TransDeclAction(t, funname) :- t is TransDecl, act = t.action, act : AnonOrNamedFun, DeclId(act, _, funname). 
+	TransDeclAction(t, funname) :- t is TransDecl, t.src.owner.kind = REAL, t.action = PUSH, funname = strJoin("_P_FUN_", strJoin(t.src.owner.name, "_PUSH_OR_IGN")). 
+	TransDeclAction(t, funname) :- t is TransDecl, t.src.owner.kind = REAL, act = t.action, act : AnonFunDecl, DeclId(act, _, funname). 
+	TransDeclAction(t, funname) :- t is TransDecl, t.src.owner.kind = REAL, act = t.action, act : String, f is FunDecl, f.owner = t.src.owner, f.name = act, DeclId(f, _, funname). 
 
 	//// Base case
-	TransDeclConcat(c, s, NIL) :- s is StateDecl, c = count({t | t is TransDecl, t.src = s}).
+	TransDeclConcat(c, s, NIL) :- s is StateDecl, s.owner.kind = REAL, c = count({t | t is TransDecl, t.src = s}).
 
     //// Build every transition list in reverse order
 	TransDeclConcat(m, d.src, arr) :- 
@@ -442,10 +444,62 @@ transform P2CProgram (in:: P) returns (out:: C)
 								  Init(arr)).
 
     /*************************************************************/
+    /******             Generate Do Decl Arrays             ******/
+    /*************************************************************/	
+	DoDeclConcat ::= (pos: Natural, context: StateDecl, arr: out.Args + {NIL}).
+	DoDeclId     ::= (decl: DoDecl, id: Natural, srcName: String, machName: String).
+
+	//// DoDeclId Id also contains source and owner machine ids
+	DoDeclId(d, id, srcname, machname) :- 
+	                d is DoDecl, d.action != DEFER, d.src.owner.kind = REAL,
+					id = toOrdinal(d, 0, { d' | d' is DoDecl, d'.src = d.src, d'.action != DEFER }),
+					DeclId(d.src, _, srcname), 
+					DeclId(d.src.owner, _, machname).
+
+    //// Do event Id depends on whether the do is a user event, default, or halt.
+    DoDeclEvnt  ::= (decl: DoDecl, evName: String).
+	DoDeclEvnt(d, evname) :- d is DoDecl, d.src.owner.kind = REAL, d.action != DEFER, ev is EventDecl, ev.name = d.trig, DeclId(ev, _, evname).
+	DoDeclEvnt(d, evname) :- d is DoDecl, d.src.owner.kind = REAL, d.action != DEFER, trig = d.trig, trig : DefaultOrHalt, DeclId(trig, _, evname).
+
+	//// Do action index depends on whether the do is an ignore or not.
+    DoDeclAction  ::= (decl: DoDecl, funName: String).
+	DoDeclAction(d, funname) :- d is DoDecl, d.src.owner.kind = REAL, d.action = IGNORE, funname = strJoin("_P_FUN_", strJoin(d.src.owner.name, "_PUSH_OR_IGN")). 
+	DoDeclAction(d, funname) :- d is DoDecl, d.src.owner.kind = REAL, act = d.action, act : AnonOrNamedFun, DeclId(act, _, funname). 
+	DoDeclAction(d, funname) :- d is DoDecl, d.src.owner.kind = REAL, act = d.action, act : String, f is FunDecl, f.owner = d.src.owner, f.name = act, DeclId(f, _, funname). 
+
+	//// Base case
+	DoDeclConcat(c, s, NIL) :- s is StateDecl, s.owner.kind = REAL, c = count({d | d is DoDecl, d.src = s, d.action != DEFER}).
+
+    //// Build every transition list in reverse order
+	DoDeclConcat(m, d.src, arr) :- 
+							DoDeclId(d, m, srcname, machname),
+							DoDeclEvnt(d, evname),
+							DoDeclAction(d, funname),
+							DoDeclConcat(m + 1, d.src, after), 
+							arr = out.Args(def, after), 
+	                        def = Init(
+							   Args(IntLit(m, DEC, NIL),
+							   Args(Ident(srcname),
+							   Args(Ident(machname),
+							   Args(Ident(evname),
+							   Args(Ident(funname),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL)))))))).
+
+	COut(4, def) :- DoDeclConcat(0, state, arr),
+	                QualName2CStr(state.name, statename),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_DODECL"), NIL), 
+								  strJoin("P_GEND_DOS_", strJoin(state.owner.name, strJoin("_", statename))), 
+								  Init(arr)).
+
+    /*************************************************************/
     /******            Generate Fun Implementations         ******/
     /*************************************************************/	
 
-	COut(4, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = REAL, f.owner.kind = REAL,
+	COut(5, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = REAL, f.owner.kind = REAL,
 	                params = Params(Param(NIL, "context"), 
 						     Params(Param(NIL, "funIndex"), 
 							 Params(Param(NIL, "value"), NIL))),
@@ -460,7 +514,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 					  params,
 					  NIL).
 
-	COut(4, def) :- DeclId(f, id, name), id > 0, f : AnonFunDecl, f.owner.kind = REAL,
+	COut(5, def) :- DeclId(f, id, name), id > 0, f : AnonFunDecl, f.owner.kind = REAL,
 	                params = Params(Param(NIL, "context"), 
 						     Params(Param(NIL, "funIndex"), 
 							 Params(Param(NIL, "value"), NIL))),
@@ -526,7 +580,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// Reserve the zeroth decl for the push transition
 	FunDeclConcat(0, m, arr) :- FunDeclConcat(1, m, after), DeclId(m, _, cmach), arr = out.Args(def, after),
 	                        def = Init(
-							   Args(Ident(strJoin("_P_FUN_", strJoin(m.name, "_PUSH"))),
+							   Args(Ident(strJoin("_P_FUN_", strJoin(m.name, "_PUSH_OR_IGN"))),
 							   Args(Ident(cmach),
 							   Args(Ident("NULL"),
 							   Args(Ident("NULL"),
@@ -534,7 +588,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 							   Args(Ident("NULL"),
 							   NIL))))))).
 
-	COut(5, def) :- FunDeclConcat(0, mach, arr),
+	COut(6, def) :- FunDeclConcat(0, mach, arr),
 	                def = out.VarDef(
 							      NIL, 
 								  ArrType(NmdType(NIL, "PRT_FUNDECL"), NIL), 

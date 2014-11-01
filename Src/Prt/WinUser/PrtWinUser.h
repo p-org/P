@@ -6,7 +6,7 @@
 #ifndef PRTWINUSER_H
 #define PRTWINUSER_H
 
-#include "../API/Prt.h"
+#include "Prt.h"
 
 #ifdef __cplusplus
 extern "C"{

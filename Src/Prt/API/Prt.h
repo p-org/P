@@ -24,12 +24,11 @@ typedef enum PRT_STEP
 	PRT_STEP_ENTRY = 4,       /**< Occurs when an entry function is invoked.                    */
 	PRT_STEP_EXIT = 5,        /**< Occurs when an exit function is invoked.                     */
 	PRT_STEP_HALT = 6,        /**< Occurs when a machine halts.                                 */
-	PRT_STEP_MOVE = 7,        /**< Occurs when a machine changes state via non-push transition. */
-	PRT_STEP_POP = 8,         /**< Occurs when a state is popped.                               */
-	PRT_STEP_PUSH = 9,        /**< Occurs when a state is pushed.                               */
-	PRT_STEP_RAISE = 10,      /**< Occurs when an event is raised.                              */
-	PRT_STEP_UNHANDLED = 11,  /**< Occurs when an event is unhandled.                           */
-	PRT_STEP_COUNT = 12,      /**< The number of valid step members.                            */
+	PRT_STEP_POP = 7,         /**< Occurs when a state is popped.                               */
+	PRT_STEP_PUSH = 8,        /**< Occurs when a state is pushed.                               */
+	PRT_STEP_RAISE = 9,      /**< Occurs when an event is raised.                              */
+	PRT_STEP_UNHANDLED = 10,  /**< Occurs when an event is unhandled.                           */
+	PRT_STEP_COUNT = 11,      /**< The number of valid step members.                            */
 } PRT_STEP;
 
 /** Status codes for normal and error conditions. Used for error reporting and indicating success/failure of API operations.

@@ -25,6 +25,9 @@ extern "C"{
 #define PRT_MAXFLDNAME_LENGTH 256
 #include "PrtConfig.h"
 
+#ifdef PRT_USE_IDL
+#include "PrtTypes_IDL.h"
+#else
 /** Structure for representing a standard GUID */
 typedef struct PRT_GUID
 {
@@ -111,6 +114,8 @@ typedef struct PRT_TUPTYPE
 	PRT_TYPE      **fieldTypes;   /**< Array of field types; length = arity */
 } PRT_TUPTYPE;
 
+
+#endif
 /** The PRT_FORGN_CLONE function is called whenever a foreign value needs to be cloned.
 *   The cloning semantics depends on the memory management strategy of the client.
 *   @see PRT_FORGN_FREE
@@ -141,9 +146,9 @@ typedef PRT_BOOLEAN(PRT_CALL_CONV *PRT_FORGN_ISEQUAL)(
 	_In_ PRT_GUID typeTag2,
 	_In_ void *frgnVal2);
 
-/** 
-* \struct 
-* The layout for foreign types 
+/**
+* \struct
+* The layout for foreign types
 */
 typedef struct PRT_FORGNTYPE
 {
@@ -153,6 +158,7 @@ typedef struct PRT_FORGNTYPE
 	PRT_FORGN_GETHASHCODE hasher;     /**< Hashes foreign values */
 	PRT_FORGN_ISEQUAL     eqTester;   /**< Tests foreign values for equality */
 } PRT_FORGNTYPE;
+
 
 /** Makes a foreign type.
 * @param[in] typeTag The type tag for this type.

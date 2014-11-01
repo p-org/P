@@ -18,8 +18,21 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Prt.acf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="..\API\PrtBaseTypes_IDL.idl" />
+    <Midl Include="..\API\PrtTypes_IDL.idl" />
+    <Midl Include="..\API\PrtValues_IDL.idl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Utilities\PatchIDL\PatchIDL.csproj">
+      <Project>{0202103a-7da0-4e05-b106-f8bbe28711dc}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{149B3FB2-4585-4C8D-ABAC-0DE8AE7E9985}</ProjectGuid>
+    <ProjectGuid>{13DCFB0E-A18A-4E6B-AE2E-F46A7B89A145}</ProjectGuid>
     <RootNamespace>PrtDistIDL</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -80,8 +93,11 @@
       </PreprocessorDefinitions>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
       <HeaderFileName>%(Filename).h</HeaderFileName>
-      <AdditionalIncludeDirectories>../../../Prt/API/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../API/</AdditionalIncludeDirectories>
     </Midl>
+    <PostBuildEvent>
+      <Command>"..\Utilities\PatchIDL\bin\PatchIDL.exe"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -136,12 +152,6 @@
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
     </Midl>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <None Include="PrtDist.acf" />
-  </ItemGroup>
-  <ItemGroup>
-    <Midl Include="PrtDist.idl" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

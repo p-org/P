@@ -30,10 +30,8 @@ __in PRT_TYPE* type
 		return PrtMkPrimitiveType(kind);
 	case PRT_KIND_FORGN:
 	{
-#if !defined(IGNORE_FRG)
-		PRT_FORGNTYPE *ftype = type->typeUnion.forgn;
-		return PrtMkForgnType(ftype->typeTag, ftype->cloner, ftype->freer, ftype->hasher, ftype->eqTester);
-#endif
+		PrtAssert(PRT_FALSE, "Invalid type : Foreign Type not expected");
+		return PrtMkPrimitiveType(PRT_KIND_NULL);
 	}
 	case PRT_KIND_MAP:
 	{
@@ -113,7 +111,7 @@ __in PRT_VALUE* value
 	case PRT_KIND_FORGN:
 	{
 		PrtAssert(PRT_FALSE, "Foreign Type not Expected");
-
+		return NULL;
 	}
 	case PRT_KIND_MAP:
 	{

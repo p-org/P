@@ -23,24 +23,17 @@ using Microsoft.PSharp.IO;
 namespace Microsoft.PSharp.Scheduling
 {
     /// <summary>
-    /// Interface of a generic delay scheduler.
+    /// Interface of a generic state machine scheduler.
     /// </summary>
     public interface IScheduler
     {
         /// <summary>
-        /// This is called by the P# runtime scheduler to register
-        /// the newly created operation with the scheduler.
-        /// </summary>
-        /// <param name="operation"></param>
-        void Register(Operation operation);
-
-        /// <summary>
         /// This is called by the P# runtime scheduler to find
-        /// the next operation to schedule. It accepts the list
-        /// of all available operations in the system.
+        /// the next machine ID to schedule. It accepts the list
+        /// of all enabled machine ID in the program.
         /// </summary>
-        /// <param name="operations">List<Operation></param>
-        /// <returns>Operation</returns>
-        Operation Next(List<Operation> operations);
+        /// <param name="machineIDs">List<int></param>
+        /// <returns>machineID</returns>
+        int Next(List<int> machineIDs);
     }
 }

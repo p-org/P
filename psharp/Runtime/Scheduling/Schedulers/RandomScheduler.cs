@@ -44,24 +44,14 @@ namespace Microsoft.PSharp.Scheduling
         }
 
         /// <summary>
-        /// Does nothing.
+        /// Returns the next machine ID to be scheduled.
         /// </summary>
-        /// <param name="operation">Operation</param>
-        void IScheduler.Register(Operation operation)
+        /// <param name="machineIDs">List<int></param>
+        /// <returns>machineID</returns>
+        int IScheduler.Next(List<int> machineIDs)
         {
-
-        }
-
-        /// <summary>
-        /// Returns the next operation to be scheduled.
-        /// </summary>
-        /// <param name="operations">List<Operation></param>
-        /// <returns>Operation</returns>
-        Operation IScheduler.Next(List<Operation> operations)
-        {
-            int index = this.Randomizer.Next(0, operations.Count);
-            Operation op = operations[index];
-            return op;
+            int index = this.Randomizer.Next(0, machineIDs.Count);
+            return machineIDs[index];
         }
     }
 }

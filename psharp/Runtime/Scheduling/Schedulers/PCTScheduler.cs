@@ -59,20 +59,11 @@ namespace Microsoft.PSharp.Scheduling
         }
 
         /// <summary>
-        /// Registers an operation with the scheduler.
+        /// Returns the next machine ID to be scheduled.
         /// </summary>
-        /// <param name="operation"></param>
-        void IScheduler.Register(Operation operation)
-        {
-            this.PriorityMap.Add(operation.Id, this.PriorityCounter--);
-        }
-
-        /// <summary>
-        /// Returns the next operation to be scheduled.
-        /// </summary>
-        /// <param name="operations">List<Operation></param>
-        /// <returns>Operation</returns>
-        Operation IScheduler.Next(List<Operation> operations)
+        /// <param name="machineIDs">List<int></param>
+        /// <returns>machineID</returns>
+        int IScheduler.Next(List<int> machineIDs)
         {
             var maxPriorityKey = this.PriorityMap.Aggregate(
                     (l, r) => l.Value > r.Value ? l : r).Key;
@@ -85,7 +76,7 @@ namespace Microsoft.PSharp.Scheduling
                     (l, r) => l.Value > r.Value ? l : r).Key;
             }
 
-            return operations.First(val => val.Id == maxPriorityKey);
+            return maxPriorityKey;
         }
     }
 }

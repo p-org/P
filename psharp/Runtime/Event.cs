@@ -26,11 +26,6 @@ namespace Microsoft.PSharp
     public abstract class Event
     {
         /// <summary>
-        /// The operation associated with the event.
-        /// </summary>
-        internal Operation Operation;
-
-        /// <summary>
         /// Payload of the event.
         /// </summary>
         protected internal readonly Object Payload;

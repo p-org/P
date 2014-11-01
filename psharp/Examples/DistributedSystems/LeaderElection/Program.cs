@@ -46,7 +46,9 @@ namespace LeaderElection
                     Runtime.Wait();
                     Runtime.Dispose();
                 },
-                10000);
+                10000,
+                true,
+                false);
         }
     }
 }

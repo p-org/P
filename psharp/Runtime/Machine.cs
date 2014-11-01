@@ -108,12 +108,6 @@ namespace Microsoft.PSharp
         internal Event RaisedEvent;
 
         /// <summary>
-        /// Queue of the available machine operations. The machine
-        /// is always associated with the head operation.
-        /// </summary>
-        internal Queue<Operation> OperationQueue;
-
-        /// <summary>
         /// Handle to the latest received event type.
         /// If there was no event received yet the returned
         /// value is null.
@@ -137,13 +131,13 @@ namespace Microsoft.PSharp
         protected Machine()
         {
             this.Id = Machine.IdCounter++;
+            Console.WriteLine("machine id: " + this.Id);
             this.Inbox = new BlockingCollection<Event>();
             this.RaisedEvent = null;
             this.StateStack = new Stack<State>();
             this.Wrapper = null;
             this.IsActive = true;
 
-            this.OperationQueue = new Queue<Operation>();
             this.CTS = new CancellationTokenSource();
 
             this.StepTransitions = this.DefineStepStateTransitions();
@@ -506,13 +500,6 @@ namespace Microsoft.PSharp
         protected internal void Raise(Event e)
         {
             Utilities.Verbose("Machine {0} raised event {1}.\n", this, e);
-            
-            if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
-            {
-                e.Operation = new Operation();
-                this.OperationQueue.Enqueue(e.Operation);
-            }
-
             throw new EventRaisedException(e);
         }
 

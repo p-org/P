@@ -23,8 +23,5 @@
     <ClInclude Include="PrtDist.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PrtTypes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

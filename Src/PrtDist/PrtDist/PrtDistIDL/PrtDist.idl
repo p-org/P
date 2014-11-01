@@ -6,16 +6,16 @@
 
 interface PrtDist {
 
-	import "PrtDistValues.idl";
+	import "PrtValues_IDL.idl";
 
 	/******************************/
 	//		Functions
 	/*****************************/
-	
+	/*
 	PRT_BOOLEAN PrtDistSend(
 		[in] handle_t handleSM,
 		[in, ptr] PRT_VALUE* event,
 		[in, ptr] PRT_VALUE* payload
 	);
-
+	*/
 }

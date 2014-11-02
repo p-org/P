@@ -199,7 +199,8 @@ namespace PingPong
                 },
                 1000,
                 true,
-                Runtime.SchedulingType.DFS);
+                Runtime.SchedulingType.DFS,
+                false);
         }
     }
 }

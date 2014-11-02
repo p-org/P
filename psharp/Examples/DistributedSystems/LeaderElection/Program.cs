@@ -48,7 +48,8 @@ namespace LeaderElection
                 },
                 10000,
                 true,
-                Runtime.SchedulingType.Random);
+                Runtime.SchedulingType.Random,
+                false);
         }
     }
 }

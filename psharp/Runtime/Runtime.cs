@@ -225,8 +225,9 @@ namespace Microsoft.PSharp
         /// <param name="iterations">Iterations</param>
         /// <param name="enableBugFindMode">Enable bug find mode</param>
         /// <param name="schedulingType">Type of scheduling</param>
-        public static void Test(Action runtimeAction, int iterations,
-            bool enableBugFindMode, SchedulingType schedulingType)
+        /// <param name="untilBugFound">Runs until a bug is found</param>
+        public static void Test(Action runtimeAction, int iterations, bool enableBugFindMode,
+            SchedulingType schedulingType, bool untilBugFound)
         {
             Runtime.Options.CountAssertions = true;
 
@@ -262,6 +263,11 @@ namespace Microsoft.PSharp
 
                 Console.WriteLine("Finished iteration: {0}", iteration + 1);
                 iteration++;
+
+                if (untilBugFound && Runtime.AssertionCount > 0)
+                {
+                    break;
+                }
             }
 
             Profiler.StopMeasuringExecutionTime();

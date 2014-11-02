@@ -92,7 +92,9 @@ namespace BasicPaxos
                     Console.WriteLine("Performing cleanup.\n");
                     Runtime.Dispose();
                 },
-                10000);
+                10000,
+                true,
+                Runtime.SchedulingType.Random);
         }
     }
 }

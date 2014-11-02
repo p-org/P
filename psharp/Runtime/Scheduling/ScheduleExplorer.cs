@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------
-// <copyright file="PathExplorer.cs" company="Microsoft">
+// <copyright file="ScheduleExplorer.cs" company="Microsoft">
 //      Copyright (c) Microsoft Corporation. All rights reserved.
 // 
 //      THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, 
@@ -23,53 +23,71 @@ using Microsoft.PSharp.IO;
 namespace Microsoft.PSharp.Scheduling
 {
     /// <summary>
-    /// Static class implementing path exploration methods
+    /// Static class implementing schedule exploration methods
     /// for the P# runtime scheduler.
     /// </summary>
-    internal static class PathExplorer
+    internal static class ScheduleExplorer
     {
         #region fields
 
         /// <summary>
-        /// List containing the explored path.
+        /// List containing the recently explored schedule steps.
         /// </summary>
-        internal static List<PathStep> Path = new List<PathStep>();
+        internal static List<ScheduleStep> Schedule = new List<ScheduleStep>();
 
         #endregion
 
         #region internal API
 
         /// <summary>
-        /// Adds a new path step to the explored path.
+        /// Adds a new schedule step to the explored schedule.
         /// </summary>
         /// <param name="sender">Sender machine</param>
         /// <param name="receiver">Receiver machine</param>
         /// <param name="e">Sent event</param>
         internal static void Add(string sender, string receiver, string e)
         {
-            PathExplorer.Path.Add(new PathStep(sender, receiver, e));
+            ScheduleExplorer.Schedule.Add(new ScheduleStep(sender, receiver, e));
         }
 
         /// <summary>
-        /// Prints the explored execution path.
+        /// Pushes a new scheduling decision to the cache.
+        /// </summary>
+        /// <param name="chosenID">Chosen ID</param>
+        /// <param name="enabledIDs">Enabled IDs</param>
+        internal static void Push(int chosenID, int enabledIDs)
+        {
+
+        }
+
+        /// <summary>
+        /// Resets the explored schedule.
+        /// </summary>
+        internal static void ResetExploredSchedule()
+        {
+            ScheduleExplorer.Schedule.Clear();
+        }
+
+        /// <summary>
+        /// Prints the explored schedule.
         /// </summary>
         internal static void Print()
         {
             Utilities.WriteLine("Printing the explored schedule.\n");
 
-            foreach (var path in PathExplorer.Path)
+            foreach (var schedule in ScheduleExplorer.Schedule)
             {
                 ConsoleColor previous = Console.ForegroundColor;
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.Write(path.Sender);
+                Console.Write(schedule.Sender);
                 Console.ForegroundColor = previous;
                 Console.Write(" sent ");
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.Write(path.Event);
+                Console.Write(schedule.Event);
                 Console.ForegroundColor = previous;
                 Console.Write(" to ");
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine(path.Receiver);
+                Console.WriteLine(schedule.Receiver);
                 Console.ForegroundColor = previous;
             }
 

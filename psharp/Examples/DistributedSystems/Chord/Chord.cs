@@ -127,7 +127,7 @@ namespace Chord
             {
                 var machine = this.Machine as Cluster;
 
-                //Console.WriteLine("[Cluster] Initializing ...\n");
+                Console.WriteLine("[Cluster] Initializing ...\n");
 
                 machine.M = ((Tuple<int, List<int>, List<int>>)this.Payload).Item1;
                 machine.NodeIds = ((Tuple<int, List<int>, List<int>>)this.Payload).Item2;
@@ -210,7 +210,7 @@ namespace Chord
 
                 if (machine.QueryCounter < 10)
                 {
-                    //Console.WriteLine("[Cluster] Query {0} ...\n", machine.QueryCounter);
+                    Console.WriteLine("[Cluster] Query {0} ...\n", machine.QueryCounter);
 
                     machine.CreateNewNode();
 
@@ -218,7 +218,7 @@ namespace Chord
                 }
                 else
                 {
-                    //Console.WriteLine("[Cluster] Notifying client ...\n");
+                    Console.WriteLine("[Cluster] Notifying client ...\n");
                     this.Send(machine.Client, new eNotifyClient());
                 }
 
@@ -232,7 +232,7 @@ namespace Chord
             {
                 var machine = this.Machine as Cluster;
 
-                //Console.WriteLine("[Cluster] Waiting ...\n");
+                Console.WriteLine("[Cluster] Waiting ...\n");
 
                 if (machine.QueryCounter == 10)
                 {
@@ -267,7 +267,7 @@ namespace Chord
                 }
             }
 
-            //Console.WriteLine("[Cluster] Creating new node with Id {0} ...\n", newId);
+            Console.WriteLine("[Cluster] Creating new node with Id {0} ...\n", newId);
 
             var newNode = Machine.Factory.CreateMachine<ChordNode>(
                 new Tuple<Machine, int, int>(this, newId, this.M));
@@ -289,10 +289,10 @@ namespace Chord
 
         private void TriggerFailure()
         {
-            //Console.WriteLine("[Cluster] Triggering a failure ...\n");
+            Console.WriteLine("[Cluster] Triggering a failure ...\n");
 
             int failId = -1;
-            Random random = new Random();
+            Random random = new Random(0);
             while ((failId < 0 || !this.NodeIds.Contains(failId)) &&
                 this.NodeIds.Count > 0)
             {
@@ -314,7 +314,7 @@ namespace Chord
 
         private void TriggerStop()
         {
-            //Console.WriteLine("[Cluster] Stopping ...\n");
+            Console.WriteLine("[Cluster] Stopping ...\n");
 
             this.Send(this.Client, new eStop());
 
@@ -328,7 +328,7 @@ namespace Chord
 
         private void FindSuccessor()
         {
-            //Console.WriteLine("[Cluster] Propagating: eFindSuccessor ...\n");
+            Console.WriteLine("[Cluster] Propagating: eFindSuccessor ...\n");
             this.Send(this.Nodes[0], new eFindSuccessor(this.Payload));
         }
 
@@ -389,7 +389,7 @@ namespace Chord
                 machine.Id = ((Tuple<Machine, int, int>)this.Payload).Item2;
                 machine.M = ((Tuple<Machine, int, int>)this.Payload).Item3;
 
-                //Console.WriteLine("[ChordNode-{0}] Initializing ...\n", machine.Id);
+                Console.WriteLine("[ChordNode-{0}] Initializing ...\n", machine.Id);
 
                 machine.NumOfId = (int)Math.Pow(2, machine.M);
                 machine.Keys = new List<int>();
@@ -415,7 +415,7 @@ namespace Chord
             {
                 var machine = this.Machine as ChordNode;
 
-                //Console.WriteLine("[ChordNode-{0}] Configuring ...\n", machine.Id);
+                Console.WriteLine("[ChordNode-{0}] Configuring ...\n", machine.Id);
 
                 var nodeIds = ((Tuple<List<int>, List<Machine>, List<int>>)this.Payload).Item1;
                 var nodes = ((Tuple<List<int>, List<Machine>, List<int>>)this.Payload).Item2;
@@ -467,7 +467,7 @@ namespace Chord
             {
                 var machine = this.Machine as ChordNode;
 
-                //Console.WriteLine("[ChordNode-{0}] Joining ...\n", machine.Id);
+                Console.WriteLine("[ChordNode-{0}] Joining ...\n", machine.Id);
 
                 var nodeIds = ((Tuple<List<int>, List<Machine>>)this.Payload).Item1;
                 var nodes = ((Tuple<List<int>, List<Machine>>)this.Payload).Item2;
@@ -508,13 +508,13 @@ namespace Chord
             {
                 var machine = this.Machine as ChordNode;
 
-                //Console.WriteLine("[ChordNode-{0}] Waiting ...\n", machine.Id);
+                Console.WriteLine("[ChordNode-{0}] Waiting ...\n", machine.Id);
             }
         }
 
         private void SendId()
         {
-            //Console.WriteLine("[ChordNode-{0}] Sending Id ...\n", this.Id);
+            Console.WriteLine("[ChordNode-{0}] Sending Id ...\n", this.Id);
 
             var sender = (Machine)this.Payload;
             this.Send(sender, new eQueryIdResp(this.Id));
@@ -526,7 +526,7 @@ namespace Chord
             var id = ((Tuple<Machine, int, int>)this.Payload).Item2;
             var timeout = ((Tuple<Machine, int, int>)this.Payload).Item3;
 
-            //Console.WriteLine("[ChordNode-{0}] Finding successor of {1} ...\n", this.Id, id);
+            Console.WriteLine("[ChordNode-{0}] Finding successor of {1} ...\n", this.Id, id);
 
             if (this.Keys.Contains(id))
             {
@@ -590,7 +590,7 @@ namespace Chord
 
         private void Stabilize()
         {
-            //Console.WriteLine("[ChordNode-{0}] Stabilizing ...\n", this.Id);
+            Console.WriteLine("[ChordNode-{0}] Stabilizing ...\n", this.Id);
 
             var successor = this.FingerTable[(this.Id + 1) % this.NumOfId].Item3;
             this.Send(successor, new eFindPredecessor(this));
@@ -607,7 +607,7 @@ namespace Chord
 
         private void UpdatePredecessor()
         {
-            //Console.WriteLine("[ChordNode-{0}] Updating predecessor ...\n", this.Id);
+            Console.WriteLine("[ChordNode-{0}] Updating predecessor ...\n", this.Id);
 
             var predecessor = (Machine)this.Payload;
             if (predecessor.Equals(this))
@@ -620,7 +620,7 @@ namespace Chord
 
         private void UpdateSuccessor()
         {
-            //Console.WriteLine("[ChordNode-{0}] Updating successor ...\n", this.Id);
+            Console.WriteLine("[ChordNode-{0}] Updating successor ...\n", this.Id);
 
             var successor = (Machine)this.Payload;
             if (successor.Equals(this))
@@ -639,12 +639,12 @@ namespace Chord
 
         private void SuccessorFound()
         {
-            //Console.WriteLine("[ChordNode-{0}] Successor found ...\n", this.Id);
+            Console.WriteLine("[ChordNode-{0}] Successor found ...\n", this.Id);
 
             var successor = ((Tuple<Machine, int>)this.Payload).Item1;
             var id = ((Tuple<Machine, int>)this.Payload).Item2;
 
-            Runtime.Assert(this.FingerTable.ContainsKey(id), "Finger table does not contain {0}.", id);
+            //Runtime.Assert(this.FingerTable.ContainsKey(id), "Finger table does not contain {0}.", id);
             this.FingerTable[id] = new Tuple<int, int, Machine>(
                 this.FingerTable[id].Item1,
                 this.FingerTable[id].Item2,
@@ -653,7 +653,7 @@ namespace Chord
 
         private void UpdateKeys()
         {
-            //Console.WriteLine("[ChordNode-{0}] Updating keys ...\n", this.Id);
+            Console.WriteLine("[ChordNode-{0}] Updating keys ...\n", this.Id);
 
             var keys = (List<int>)this.Payload;
             foreach (var key in keys)
@@ -664,7 +664,7 @@ namespace Chord
 
         private void SendPredecessor()
         {
-            //Console.WriteLine("[ChordNode-{0}] Sending predecessor ...\n", this.Id);
+            Console.WriteLine("[ChordNode-{0}] Sending predecessor ...\n", this.Id);
 
             var sender = (Machine)this.Payload;
             if (this.Predecessor != null)
@@ -677,8 +677,8 @@ namespace Chord
         {
             var sender = ((Tuple<Machine, int>)this.Payload).Item1;
             var senderId = ((Tuple<Machine, int>)this.Payload).Item2;
-            //Console.WriteLine("[ChordNode-{0}] Sending keys to predecessor {1} ...\n", this.Id, senderId);
-            Runtime.Assert(this.Predecessor.Equals(sender), "Predecessor is corrupted.");
+            Console.WriteLine("[ChordNode-{0}] Sending keys to predecessor {1} ...\n", this.Id, senderId);
+            //Runtime.Assert(this.Predecessor.Equals(sender), "Predecessor is corrupted.");
 
             List<int> keysToSend = new List<int>();
             foreach (var key in this.Keys)
@@ -704,13 +704,13 @@ namespace Chord
 
         private void Failing()
         {
-            //Console.WriteLine("[ChordNode-{0}] Failing ...\n", this.Id);
+            Console.WriteLine("[ChordNode-{0}] Failing ...\n", this.Id);
             this.Delete();
         }
 
         private void Stopping()
         {
-            //Console.WriteLine("[ChordNode-{0}] Stopping ...\n", this.Id);
+            Console.WriteLine("[ChordNode-{0}] Stopping ...\n", this.Id);
             this.Delete();
         }
 
@@ -851,7 +851,7 @@ namespace Chord
             {
                 var machine = this.Machine as Client;
 
-                //Console.WriteLine("[Client] Initializing ...\n");
+                Console.WriteLine("[Client] Initializing ...\n");
 
                 machine.Cluster = ((Tuple<Machine, List<int>>)this.Payload).Item1;
                 machine.Keys = ((Tuple<Machine, List<int>>)this.Payload).Item2;
@@ -867,7 +867,7 @@ namespace Chord
             {
                 var machine = this.Machine as Client;
 
-                //Console.WriteLine("[Client] Waiting ...\n");
+                Console.WriteLine("[Client] Waiting ...\n");
             }
         }
 
@@ -879,9 +879,9 @@ namespace Chord
 
                 if (machine.QueryCounter < 3)
                 {
-                    //Console.WriteLine("[Client] Querying ...\n");
+                    Console.WriteLine("[Client] Querying ...\n");
 
-                    Random random = new Random();
+                    Random random = new Random(0);
                     var randomValue = random.Next(machine.Keys.Count);
                     machine.QueryKey = machine.Keys[randomValue];
 
@@ -899,15 +899,15 @@ namespace Chord
         {
             var id = (int)this.Payload;
 
-            //Console.WriteLine("[Client] Received successor with Id {0} for Key {1}  ...\n",
-            //    id, this.QueryKey);
+            Console.WriteLine("[Client] Received successor with Id {0} for Key {1}  ...\n",
+                id, this.QueryKey);
 
             this.Raise(new eLocal());
         }
 
         private void SuccessorFound()
         {
-            //Console.WriteLine("[Client] Successor found  ...\n");
+            Console.WriteLine("[Client] Successor found  ...\n");
 
             var successor = ((Tuple<Machine, int>)this.Payload).Item1;
             var id = ((Tuple<Machine, int>)this.Payload).Item2;
@@ -916,7 +916,7 @@ namespace Chord
 
         private void Stopping()
         {
-            //Console.WriteLine("[Client] Stopping ...\n");
+            Console.WriteLine("[Client] Stopping ...\n");
             this.Delete();
         }
 

@@ -23,24 +23,30 @@ using Microsoft.PSharp.IO;
 namespace Microsoft.PSharp.Scheduling
 {
     /// <summary>
-    /// Interface of a generic delay scheduler.
+    /// Interface of a generic state machine scheduler.
     /// </summary>
     public interface IScheduler
     {
         /// <summary>
-        /// This is called by the P# runtime scheduler to register
-        /// the newly created operation with the scheduler.
+        /// This is called by the P# runtime to find the next
+        /// machine ID to schedule. It accepts the list of all
+        /// enabled machine ID in the program.
         /// </summary>
-        /// <param name="operation"></param>
-        void Register(Operation operation);
+        /// <param name="nextId">Next machine ID</param>
+        /// <param name="machineIDs">Machine IDs</param>
+        /// <returns>Boolean value</returns>
+        bool TryGetNext(out int nextId, List<int> machineIDs);
 
         /// <summary>
-        /// This is called by the P# runtime scheduler to find
-        /// the next operation to schedule. It accepts the list
-        /// of all available operations in the system.
+        /// This is called by the P# runtime to check if the
+        /// scheduler has finished.
         /// </summary>
-        /// <param name="operations">List<Operation></param>
-        /// <returns>Operation</returns>
-        Operation Next(List<Operation> operations);
+        /// <returns>Boolean value</returns>
+        bool HasFinished();
+
+        /// <summary>
+        /// This is called by the P# runtime to reset the scheduler.
+        /// </summary>
+        void Reset();
     }
 }

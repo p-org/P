@@ -44,26 +44,35 @@ namespace Microsoft.PSharp.Scheduling
         }
 
         /// <summary>
-        /// Does nothing.
+        /// Returns the next machine ID to be scheduled.
         /// </summary>
-        /// <param name="operation">Operation</param>
-        void IScheduler.Register(Operation operation)
+        /// <param name="nextId">Next machine ID</param>
+        /// <param name="machineIDs">Machine IDs</param>
+        /// <returns>Boolean value</returns>
+        bool IScheduler.TryGetNext(out int nextId, List<int> machineIDs)
         {
-
+            this.Index++;
+            if (this.Index >= machineIDs.Count)
+                this.Index = 0;
+            nextId = machineIDs[this.Index];
+            return true;
         }
 
         /// <summary>
-        /// Returns the next operation to be scheduled.
+        /// Returns true if the scheduler has finished.
         /// </summary>
-        /// <param name="operations">List<Operation></param>
-        /// <returns>Operation</returns>
-        Operation IScheduler.Next(List<Operation> operations)
+        /// <returns>Boolean value</returns>
+        bool IScheduler.HasFinished()
         {
-            this.Index++;
-            if (this.Index >= operations.Count)
-                this.Index = 0;
-            Operation op = operations[this.Index];
-            return op;
+            return false;
+        }
+
+        /// <summary>
+        /// Resets the scheduler.
+        /// </summary>
+        void IScheduler.Reset()
+        {
+            this.Index = 0;
         }
     }
 }

@@ -74,12 +74,6 @@ namespace Microsoft.PSharp
         /// </summary>
         internal static bool IsRunning = false;
 
-        /// <summary>
-        /// Currently active operation. Used only during
-        /// bug finding mode.
-        /// </summary>
-        internal static Operation Operation = new Operation();
-
         #endregion
 
         #region P# API methods
@@ -202,9 +196,9 @@ namespace Microsoft.PSharp
         public static void Stop()
         {
             if (Runtime.Options.Mode == Runtime.Mode.BugFinding &&
-                Runtime.Options.PrintExploredPath)
+                Runtime.Options.PrintExploredSchedule)
             {
-                Runtime.PrintExploredPath();
+                Runtime.PrintExploredSchedule();
             }
             else if (Runtime.Options.Mode == Runtime.Mode.Replay &&
                 Runtime.Options.CompareExecutions)
@@ -230,8 +224,10 @@ namespace Microsoft.PSharp
         /// <param name="runtimeAction">Runtime action</param>
         /// <param name="iterations">Iterations</param>
         /// <param name="enableBugFindMode">Enable bug find mode</param>
-        public static void Test(Action runtimeAction, int iterations,
-            bool enableBugFindMode = true)
+        /// <param name="schedulingType">Type of scheduling</param>
+        /// <param name="untilBugFound">Runs until a bug is found</param>
+        public static void Test(Action runtimeAction, int iterations, bool enableBugFindMode,
+            SchedulingType schedulingType, bool untilBugFound)
         {
             Runtime.Options.CountAssertions = true;
 
@@ -240,21 +236,48 @@ namespace Microsoft.PSharp
                 Runtime.Options.Mode = Runtime.Mode.BugFinding;
             }
 
-            Profiler.StartMeasuringExecutionTime();
-            for (int idx = 0; idx < iterations; idx++)
+            if (schedulingType == Runtime.SchedulingType.Random)
             {
-                Console.WriteLine("Starting iteration: {0}", idx + 1);
+                Runtime.Options.Scheduler = new RandomScheduler();
+            }
+            else if (schedulingType == Runtime.SchedulingType.RoundRobin)
+            {
+                Runtime.Options.Scheduler = new RoundRobinScheduler();
+            }
+            else if (schedulingType == Runtime.SchedulingType.DFS)
+            {
+                Runtime.Options.Scheduler = new DFSScheduler();
+            }
+
+            Profiler.StartMeasuringExecutionTime();
+            var iteration = 0;
+            while (iteration < iterations)
+            {
+                Console.WriteLine("Starting iteration: {0}", iteration + 1);
+
                 runtimeAction();
-                Console.WriteLine("Finished iteration: {0}", idx + 1);
+                if (Runtime.Options.Scheduler.HasFinished())
+                {
+                    break;
+                }
+
+                Console.WriteLine("Finished iteration: {0}", iteration + 1);
+                iteration++;
+
+                if (untilBugFound && Runtime.AssertionCount > 0)
+                {
+                    break;
+                }
             }
 
             Profiler.StopMeasuringExecutionTime();
-            Console.WriteLine("Found {0} assertion failures.", Runtime.AssertionCount);
+            Console.Error.WriteLine("Explored {0} schedules.", iteration);
+            Console.Error.WriteLine("Found {0} assertion failures.", Runtime.AssertionCount);
             Profiler.PrintResults();
         }
 
         /// <summary>
-        /// Replays the previously explored execution path. The
+        /// Replays the previously explored execution schedule. The
         /// main machine is constructed with an optional payload.
         /// The input payload must be the same as the one in the
         /// previous execution to achieve deterministic replaying.
@@ -262,8 +285,8 @@ namespace Microsoft.PSharp
         /// <param name="payload">Payload</param>
         public static void Replay(Object payload = null)
         {
-            Runtime.Assert(PathExplorer.Path.Count > 0,
-                "A previously executed path was not detected.\n");
+            Runtime.Assert(ScheduleExplorer.Schedule.Count > 0,
+                "A previously executed schedule was not detected.\n");
             Runtime.Options.Mode = Runtime.Mode.Replay;
             Type m = Runtime.RegisteredMachineTypes.First(val =>
                     val.IsDefined(typeof(Main), false));
@@ -437,11 +460,7 @@ namespace Microsoft.PSharp
 
                 if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
                 {
-                    Runtime.Operation = new Operation();
-                    Runtime.Options.Scheduler.Register(Runtime.Operation);
-                    e.Operation = Runtime.Operation;
-                    receiver.OperationQueue.Enqueue(e.Operation);
-                    PathExplorer.Add(sender, receiver.GetType().Name, e.GetType().Name);
+                    ScheduleExplorer.Add(sender, receiver.GetType().Name, e.GetType().Name);
                 }
                 else if (Runtime.Options.Mode == Runtime.Mode.Replay)
                 {
@@ -476,9 +495,9 @@ namespace Microsoft.PSharp
         }
 
         /// <summary>
-        /// Prints the explored execution path.
+        /// Prints the explored execution schedule.
         /// </summary>
-        internal static void PrintExploredPath()
+        internal static void PrintExploredSchedule()
         {
             if (Runtime.Options.Mode == Runtime.Mode.Execution)
             {
@@ -487,7 +506,7 @@ namespace Microsoft.PSharp
             }
             else
             {
-                PathExplorer.Print();
+                ScheduleExplorer.Print();
             }
         }
 
@@ -534,25 +553,30 @@ namespace Microsoft.PSharp
                     }
                 }
                 
-                // 2. Get a list of all available operations and exit
+                // 2. Get a list of all enabled machine IDs and exit
                 // runtime if there are none.
-                List<Operation> availableOps = Runtime.GetMachineOperations();
-                if (availableOps.Count == 0)
+                List<int> enabledIds = Runtime.GetEnabledMachineIDs();
+                if (enabledIds.Count == 0)
                 {
                     Runtime.IsRunning = false;
                     break;
                 }
 
-                // 3. Get the next available operation to schedule.
-                Runtime.Operation = Runtime.Options.Scheduler.Next(availableOps);
+                // 3. Get the next available machine ID to schedule.
+                var nextMachineId = -1;
+                if (!Runtime.Options.Scheduler.TryGetNext(out nextMachineId, enabledIds))
+                {
+                    Runtime.IsRunning = false;
+                    break;
+                }
 
-                // 4. Loop through the machines and schedule the operation.
+                // 4. Loop through the machines and schedule the next enabled machine.
                 foreach (Machine m in Runtime.Machines)
                 {
-                    if (m.OperationQueue.Count > 0 && m.OperationQueue.Peek().Id == Runtime.Operation.Id)
+                    if (m.Id == nextMachineId &&
+                        (m.Inbox.Count > 0 || m.RaisedEvent != null))
                     {
                         m.HandleNextEvent();
-                        m.OperationQueue.Dequeue();
                         break;
                     }
                 }
@@ -560,29 +584,24 @@ namespace Microsoft.PSharp
         }
 
         /// <summary>
-        /// Gets list of available machine operations in
-        /// the system.
+        /// Gets list of enabled machine IDs in the program.
         /// </summary>
-        /// <returns>List<Operation></returns>
-        private static List<Operation> GetMachineOperations()
+        /// <returns>List<int></returns>
+        private static List<int> GetEnabledMachineIDs()
         {
-            List<Operation> ops = new List<Operation>();
+            List<int> enabledMachineIDs = new List<int>();
             
             foreach (Machine m in Runtime.Machines)
             {
-                if ((m.Inbox.Count == 0 && m.RaisedEvent == null) ||
-                    m.OperationQueue.Count == 0)
+                if (m.Inbox.Count == 0 && m.RaisedEvent == null)
                 {
                     continue;
                 }
 
-                if (ops.All(val => val.Id != m.OperationQueue.Peek().Id))
-                {
-                    ops.Add(m.OperationQueue.Peek());
-                }
+                enabledMachineIDs.Add(m.Id);
             }
 
-            return ops;
+            return enabledMachineIDs;
         }
 
         #endregion
@@ -627,9 +646,14 @@ namespace Microsoft.PSharp
                 m.StopListener();
             Runtime.Monitors.Clear();
             Runtime.MachineTasks.Clear();
+
             Runtime.RegisteredMachineTypes.Clear();
             Runtime.RegisteredMonitorTypes.Clear();
             Runtime.RegisteredEventTypes.Clear();
+
+            Machine.ResetMachineIDCounter();
+            Runtime.Options.Scheduler.Reset();
+            ScheduleExplorer.ResetExploredSchedule();
 
             if (Runtime.Options.MonitorExecutions)
             {
@@ -672,10 +696,10 @@ namespace Microsoft.PSharp
 
             /// <summary>
             /// When the runtime stops after running in bug finding mode
-            /// it will print the explored execution path. This behaviour
-            /// is enabled by default.
+            /// it will print the explored execution schedule. This
+            /// behaviour is enabled by default.
             /// </summary>
-            public static bool PrintExploredPath = true;
+            public static bool PrintExploredSchedule = true;
 
             /// <summary>
             /// True to switch verbose mode on. False by default.
@@ -724,9 +748,28 @@ namespace Microsoft.PSharp
             /// </summary>
             BugFinding = 1,
             /// <summary>
-            /// P# executes the previously explored path.
+            /// P# executes the previously explored schedule.
             /// </summary>
             Replay = 2
+        }
+
+        /// <summary>
+        /// P# runtime scheduling type.
+        /// </summary>
+        public enum SchedulingType
+        {
+            /// <summary>
+            /// Enables the random scheduler.
+            /// </summary>
+            Random = 0,
+            /// <summary>
+            /// Enables the round robin scheduler.
+            /// </summary>
+            RoundRobin = 1,
+            /// <summary>
+            /// Enables the depth first search scheduler.
+            /// </summary>
+            DFS = 2
         }
 
         #endregion

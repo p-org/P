@@ -127,7 +127,7 @@ void PRT_CALL_CONV PrtDestroyMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 * @see PrtCreateMutex
 * @see PrtDestroyMutex
 */
-void PRT_CALL_CONV PrtLockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
+PRT_API void PRT_CALL_CONV PrtLockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 
 /**
 * Unlocks a locked mutex. Should not be called more times than the mutex has been locked.
@@ -136,7 +136,7 @@ void PRT_CALL_CONV PrtLockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 * @see PrtCreateMutex
 * @see PrtDestroyMutex
 */
-void PRT_CALL_CONV PrtUnlockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
+PRT_API void PRT_CALL_CONV PrtUnlockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 
 /**
 * Calls system-specific implementation of malloc. 
@@ -145,7 +145,7 @@ void PRT_CALL_CONV PrtUnlockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 * @returns A pointer to a memory location
 * @see PrtFree
 */
-void * PRT_CALL_CONV PrtMalloc(_In_ size_t size);
+PRT_API void * PRT_CALL_CONV PrtMalloc(_In_ size_t size);
 
 /**
 * Calls system-specific implementation of free.
@@ -154,7 +154,7 @@ void * PRT_CALL_CONV PrtMalloc(_In_ size_t size);
 * @see PrtCalloc
 * @see PrtRealloc
 */
-void PRT_CALL_CONV PrtFree(void * ptr);
+PRT_API void PRT_CALL_CONV PrtFree(void * ptr);
 
 /**
 * Calls system-specific implementation of calloc.
@@ -164,7 +164,7 @@ void PRT_CALL_CONV PrtFree(void * ptr);
 * @returns A pointer to a memory location
 * @see PrtFree
 */
-void * PRT_CALL_CONV PrtCalloc(_In_ size_t nmemb, _In_ size_t size);
+PRT_API void * PRT_CALL_CONV PrtCalloc(_In_ size_t nmemb, _In_ size_t size);
 
 /**
 * Calls system-specific implementation of realloc.

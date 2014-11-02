@@ -730,3 +730,12 @@ PRT_STRING PrtValueToString(_In_ PRT_VALUE *value)
 
 	return retString;
 }
+
+void main()
+{
+	
+	PRT_VALUE * temp = PrtMkBoolValue(PRT_FALSE);
+	PRT_STRING t = PrtValueToString(temp);
+	printf("%s", t);
+	getchar();
+}

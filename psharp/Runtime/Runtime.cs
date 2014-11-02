@@ -862,6 +862,7 @@ namespace Microsoft.PSharp
             if (!predicate)
             {
                 Utilities.ReportError("Assertion failure.\n");
+                Runtime.IsRunning = false;
 
                 if (Runtime.Options.Mode == Runtime.Mode.BugFinding &&
                     Runtime.Options.MonitorExecutions)

@@ -53,10 +53,10 @@ namespace Chord
                     Console.WriteLine("Performing cleanup.\n");
                     Runtime.Dispose();
                 },
-                10000,
+                100000,
                 true,
                 Runtime.SchedulingType.Random,
-                true);
+                false);
         }
     }
 }

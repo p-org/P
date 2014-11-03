@@ -364,8 +364,8 @@ int main()
 	CreateRPCTestServer();
 	//Test Cases
 	//TestPrimitiveType();
-	//MapTest1();
-	//MapTest2();
+	MapTest1();
+	MapTest2();
 	//SeqAppendTest();
 	//SeqNestedTest();
 	//TupleTest();

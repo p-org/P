@@ -517,13 +517,13 @@ __in void* vcontext
 {
 	static FILE *logfile = NULL;
 	PRT_SM_CONTEXT_PRIV *c = (PRT_SM_CONTEXT_PRIV*) vcontext;
-	PRT_STRING MachineName = c->context.process->program->machines[c->context.instanceOf].name;
-	PRT_UINT32 MachineId = c->context.id->valueUnion.mid->machineId;
-	PRT_STRING eventName = c->context.process->program->events[PrtPrimGetEvent(c->trigger.event)].name;
+	PRT_STRING MachineName = c->process->program->machines[c->instanceOf].name;
+	PRT_UINT32 MachineId = c->id->valueUnion.mid->machineId;
+	PRT_STRING eventName = c->process->program->events[PrtPrimGetEvent(c->currEvent.trigger)].name;
 	PRT_VALUE* payloadValue;
 	char fileName[100] = "PRT_PPROCESS_LOG_";
 	char processId[100];
-	_itoa(c->context.id->valueUnion.mid->processId.data1, processId, 10);
+	_itoa(c->id->valueUnion.mid->processId.data1, processId, 10);
 	strcat_s(fileName, 100, processId);
 	strcat_s(fileName, 100, ".txt");
 	if (logfile == NULL)
@@ -544,15 +544,15 @@ __in void* vcontext
 	}
 	case PRT_STEP_ENQUEUE:
 	{
-		PRT_UINT32 eventIndex = PrtPrimGetEvent(c->eventQueue.events[c->eventQueue.tailIndex == 0 ? (c->eventQueue.eventsSize - 1) : (c->eventQueue.tailIndex - 1)].event);
-		PRT_STRING eventName = c->context.process->program->events[eventIndex].name;
+		PRT_UINT32 eventIndex = PrtPrimGetEvent(c->eventQueue.events[c->eventQueue.tailIndex == 0 ? (c->eventQueue.eventsSize - 1) : (c->eventQueue.tailIndex - 1)].trigger);
+		PRT_STRING eventName = c->process->program->events[eventIndex].name;
 		payloadValue = (c->eventQueue.events[c->eventQueue.tailIndex == 0 ? (c->eventQueue.eventsSize - 1) : (c->eventQueue.tailIndex - 1)].payload);
 		sprintf_s(log, 1000, "<EnqueueLog> Enqueued Event < %s, %s > on Machine %s(0x%lu) \n", eventName, PrtValueToString(payloadValue), MachineName, MachineId);
 		break;
 	}
 	case PRT_STEP_DEQUEUE:
 	{
-		payloadValue = (c->trigger.payload);
+		payloadValue = (c->currEvent.payload);
 		sprintf_s(log, 1000, "<DequeueLog> Dequeued Event < %s, %s > by Machine %s(0x%lu) \n", eventName, PrtValueToString(payloadValue), MachineName, MachineId);
 		break;
 	}
@@ -563,7 +563,7 @@ __in void* vcontext
 		sprintf_s(log, 1000, "<CreateLog> Machine %s(0x%lu) is created\n", MachineName, MachineId);
 		break;
 	case PRT_STEP_RAISE:
-		payloadValue = (c->trigger.payload);
+		payloadValue = (c->currEvent.payload);
 		sprintf_s(log, 1000, "<RaiseLog> Machine %s(0x%lu) raised event < %s, %s >\n", MachineName, MachineId, eventName, PrtValueToString(payloadValue));
 		break;
 	case PRT_STEP_POP:
@@ -586,10 +586,10 @@ __in void* vcontext
 		break;
 	}
 
-	PrtLockMutex(((PRT_PROCESS_PRIV*)c->context.process)->processLock);
+	PrtLockMutex(((PRT_PROCESS_PRIV*)c->process)->processLock);
 	fputs(log, logfile);
 	fflush(logfile);
-	PrtUnlockMutex(((PRT_PROCESS_PRIV*)c->context.process)->processLock);
+	PrtUnlockMutex(((PRT_PROCESS_PRIV*)c->process)->processLock);
 }
 
 

@@ -23,34 +23,34 @@ using Microsoft.PSharp.IO;
 namespace Microsoft.PSharp.Scheduling
 {
     /// <summary>
-    /// Static class implementing execution path replay methods.
+    /// Static class implementing execution schedule replay methods.
     /// </summary>
     internal static class Replayer
     {
         #region fields
 
         /// <summary>
-        /// List containing the explored path.
+        /// List containing the replayed schedule.
         /// </summary>
-        internal static List<PathStep> ReplayPath = new List<PathStep>();
+        internal static List<ScheduleStep> ReplayedSchedule = new List<ScheduleStep>();
 
         #endregion
 
         #region internal API
 
         /// <summary>
-        /// Adds a new path step to the replayed path.
+        /// Adds a new schedule step to the replayed schedule.
         /// </summary>
         /// <param name="sender">Sender machine</param>
         /// <param name="receiver">Receiver machine</param>
         /// <param name="e">Sent event</param>
         internal static void Add(string sender, string receiver, string e)
         {
-            Replayer.ReplayPath.Add(new PathStep(sender, receiver, e));
+            Replayer.ReplayedSchedule.Add(new ScheduleStep(sender, receiver, e));
         }
 
         /// <summary>
-        /// Replays the previously explored execution path. The
+        /// Replays the previously explored execution schedule. The
         /// main machine is constructed with an optional payload.
         /// The input payload must be the same as the one in the
         /// previous execution to achieve deterministic replaying.
@@ -64,55 +64,55 @@ namespace Microsoft.PSharp.Scheduling
         }
 
         /// <summary>
-        /// Compares the original execution path with the replayed
-        /// execution path to check for non deterministic behaviour.
+        /// Compares the original execution schedule with the replayed
+        /// execution schedule to check for non deterministic behaviour.
         /// </summary>
         internal static void CompareExecutions()
         {
             Utilities.WriteLine("Comparing the original and the " +
-                    "replayed execution paths.\n");
+                    "replayed execution schedules.\n");
 
-            if (PathExplorer.Path.Count != Replayer.ReplayPath.Count)
+            if (ScheduleExplorer.Schedule.Count != Replayer.ReplayedSchedule.Count)
             {
-                Utilities.ReportError("The replayed execution path [length {0}] " +
-                    "differs from the originally explored execution path " +
-                    "[length {1}].\n", Replayer.ReplayPath.Count,
-                    PathExplorer.Path.Count);
+                Utilities.ReportError("The replayed schedule [length {0}] " +
+                    "differs from the originally explored schedule " +
+                    "[length {1}].\n", Replayer.ReplayedSchedule.Count,
+                    ScheduleExplorer.Schedule.Count);
                 Utilities.WriteLine("... investigating further ...\n");
             }
 
-            for (int idx = 0; idx < Replayer.ReplayPath.Count; idx++)
+            for (int idx = 0; idx < Replayer.ReplayedSchedule.Count; idx++)
             {
-                if (PathExplorer.Path.Count == idx)
+                if (ScheduleExplorer.Schedule.Count == idx)
                     break;
 
-                string originalSender = PathExplorer.Path[idx].Sender;
-                string replaySender = Replayer.ReplayPath[idx].Sender;
+                string originalSender = ScheduleExplorer.Schedule[idx].Sender;
+                string replaySender = Replayer.ReplayedSchedule[idx].Sender;
 
                 Runtime.Assert(originalSender.Equals(replaySender),
-                    "The replayed execution path differs " +
-                    "from the originally explored execution path: " +
-                    "Path Index [{0}] :: Original Sender [{1}] :: " +
+                    "The replayed execution schedule differs " +
+                    "from the originally explored execution schedule: " +
+                    "Schedule Index [{0}] :: Original Sender [{1}] :: " +
                     "Replay Sender [{2}].\n", idx, originalSender,
                     replaySender);
 
-                string originalReceiver = PathExplorer.Path[idx].Receiver;
-                string replayReceiver = Replayer.ReplayPath[idx].Receiver;
+                string originalReceiver = ScheduleExplorer.Schedule[idx].Receiver;
+                string replayReceiver = Replayer.ReplayedSchedule[idx].Receiver;
 
                 Runtime.Assert(originalReceiver.Equals(replayReceiver),
-                    "The replayed execution path differs " +
-                    "from the originally explored execution path: " +
-                    "Path Index [{0}] :: Original Receiver [{1}] :: " +
+                    "The replayed execution schedule differs " +
+                    "from the originally explored execution schedule: " +
+                    "Schedule Index [{0}] :: Original Receiver [{1}] :: " +
                     "Replay Receiver [{2}].\n", idx, originalReceiver,
                     originalReceiver);
 
-                string originalEvent = PathExplorer.Path[idx].Event;
-                string replayEvent = Replayer.ReplayPath[idx].Event;
+                string originalEvent = ScheduleExplorer.Schedule[idx].Event;
+                string replayEvent = Replayer.ReplayedSchedule[idx].Event;
 
                 Runtime.Assert(originalEvent.Equals(replayEvent),
-                    "The replayed execution path differs " +
-                    "from the originally explored execution path: " +
-                    "Path Index [{0}] :: Original Event [{1}] :: " +
+                    "The replayed execution schedule differs " +
+                    "from the originally explored execution schedule: " +
+                    "Schedule Index [{0}] :: Original Event [{1}] :: " +
                     "Replay Event [{2}].\n", idx, originalEvent,
                     originalEvent);
             }

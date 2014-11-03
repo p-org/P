@@ -21,9 +21,6 @@
     <ClCompile Include="TestRPC.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\PrtCmd\PrtCmdPrinting.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrtRPC.h">

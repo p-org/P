@@ -21,6 +21,10 @@
 extern "C"{
 #endif
 
+#ifdef PRT_USE_IDL
+	#include "PrtValues_IDL.h"
+#else
+
 typedef enum PRT_SPECIAL_EVENT
 {
 	PRT_SPECIAL_EVENT_DEFAULT_OR_NULL = 0,  /**< The id of the default / null event */
@@ -70,12 +74,6 @@ typedef struct PRT_MACHINEID
 	PRT_UINT32 machineId;
 } PRT_MACHINEID;
 
-/** A foreign value is foreign type paired with a void *. */
-typedef struct PRT_FORGNVALUE
-{
-	void    *value;   /**< A pointer to the foreign value. */
-} PRT_FORGNVALUE;
-
 /** A tuple value is a (named) tuple represented as an array. */
 typedef struct PRT_TUPVALUE
 {
@@ -109,6 +107,15 @@ typedef struct PRT_MAPNODE
 	struct PRT_MAPNODE *insertNext;   /**< The next node in insertion order.     */
 	struct PRT_MAPNODE *insertPrev;   /**< The previous node in insertion order. */
 } PRT_MAPNODE;
+
+#endif
+
+/** A foreign value is foreign type paired with a void *. */
+typedef struct PRT_FORGNVALUE
+{
+	void    *value;   /**< A pointer to the foreign value. */
+} PRT_FORGNVALUE;
+
 
 /** Makes a default value of an abitrary type. The defaults (def) are as follows:
 * 1.  def(null)                = `null : null`.

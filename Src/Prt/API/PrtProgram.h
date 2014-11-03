@@ -109,7 +109,6 @@ typedef struct PRT_TRANSDECL
 	PRT_UINT32  triggerEventIndex; /**< The index of the trigger event in program       */
 	PRT_UINT32  destStateIndex;    /**< The index of destination state in owner machine */
 	PRT_UINT32  transFunIndex;     /**< The index of function to execute when this transition is triggered */
-	PRT_BOOLEAN isPush;            /**< True if owner state is pushed onto state stack  */
 
 	PRT_UINT32  nAnnotations;      /**< Number of annotations                         */
 	void        **annotations;     /**< An array of annotations                       */

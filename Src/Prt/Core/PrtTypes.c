@@ -1,4 +1,4 @@
-#include "../API/PrtTypes.h"
+#include "PrtTypes.h"
 
 PRT_TYPE * PRT_CALL_CONV PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType)
 {

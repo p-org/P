@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------
-// <copyright file="Operation.cs" company="Microsoft">
+// <copyright file="ScheduleStep.cs" company="Microsoft">
 //      Copyright (c) Microsoft Corporation. All rights reserved.
 // 
 //      THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, 
@@ -18,32 +18,39 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using Microsoft.PSharp.IO;
-
 namespace Microsoft.PSharp.Scheduling
 {
     /// <summary>
-    /// Class representing a scheduling operation.
+    /// Class representing a single path step.
     /// </summary>
-    public sealed class Operation
+    internal sealed class ScheduleStep
     {
         /// <summary>
-        /// Monotonically increasing operation counter.
+        /// Sender machine.
         /// </summary>
-        private static int IdCounter = 0;
+        internal readonly string Sender;
 
         /// <summary>
-        /// Unique operation ID.
+        /// Receiver machine.
         /// </summary>
-        public readonly int Id;
+        internal readonly string Receiver;
 
         /// <summary>
-        /// Constructor of the Operation class. The operation
-        /// is assigned a monotonically increasing ID.
+        /// Sent event.
         /// </summary>
-        public Operation()
+        internal readonly string Event;
+
+        /// <summary>
+        /// Constructor of the PathStep class.
+        /// </summary>
+        /// <param name="sender">Sender machine</param>
+        /// <param name="receiver">Receiver machine</param>
+        /// <param name="e">Sent event</param>
+        public ScheduleStep(string sender, string receiver, string e)
         {
-            this.Id = Operation.IdCounter++;
+            this.Sender = sender;
+            this.Receiver = receiver;
+            this.Event = e;
         }
     }
 }

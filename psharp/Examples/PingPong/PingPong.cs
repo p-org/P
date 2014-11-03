@@ -177,25 +177,30 @@ namespace PingPong
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Registering events to the runtime.\n");
-            Runtime.RegisterNewEvent(typeof(Ping));
-            Runtime.RegisterNewEvent(typeof(Pong));
-            Runtime.RegisterNewEvent(typeof(Stop));
-            Runtime.RegisterNewEvent(typeof(Unit));
+            Runtime.Test(
+                () =>
+                {
+                    Console.WriteLine("Registering events to the runtime.\n");
+                    Runtime.RegisterNewEvent(typeof(Ping));
+                    Runtime.RegisterNewEvent(typeof(Pong));
+                    Runtime.RegisterNewEvent(typeof(Stop));
+                    Runtime.RegisterNewEvent(typeof(Unit));
 
-            Console.WriteLine("Registering state machines to the runtime.\n");
-            Runtime.RegisterNewMachine(typeof(Server));
-            Runtime.RegisterNewMachine(typeof(Client));
+                    Console.WriteLine("Registering state machines to the runtime.\n");
+                    Runtime.RegisterNewMachine(typeof(Server));
+                    Runtime.RegisterNewMachine(typeof(Client));
 
-            Console.WriteLine("Configuring the runtime.\n");
-            Runtime.Options.Mode = Runtime.Mode.BugFinding;
+                    Console.WriteLine("Starting the runtime.\n");
+                    Runtime.Start();
+                    Runtime.Wait();
 
-            Console.WriteLine("Starting the runtime.\n");
-            Runtime.Start();
-            Runtime.Wait();
-
-            Console.WriteLine("Performing cleanup.\n");
-            Runtime.Dispose();
+                    Console.WriteLine("Performing cleanup.\n");
+                    Runtime.Dispose();
+                },
+                100000,
+                true,
+                Runtime.SchedulingType.DFS,
+                false);
         }
     }
 }

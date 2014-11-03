@@ -15,38 +15,28 @@ namespace LeaderElection
     {
         static void Main(string[] args)
         {
-            //Console.WriteLine("Registering events to the runtime.\n");
-            //Runtime.RegisterNewEvent(typeof(eStart));
-            //Runtime.RegisterNewEvent(typeof(eNotify));
-            //Runtime.RegisterNewEvent(typeof(eCheckAck));
-
-            //Console.WriteLine("Registering state machines to the runtime.\n");
-            //Runtime.RegisterNewMachine(typeof(Master));
-            //Runtime.RegisterNewMachine(typeof(LProcess));
-
-            //Console.WriteLine("Configuring the runtime.\n");
-            //Runtime.Options.Mode = Runtime.Mode.BugFinding;
-            ////Runtime.Options.MonitorExecutions = true;
-
-            //Console.WriteLine("Starting the runtime.\n");
-            //Runtime.Start(3);
-            //Runtime.Wait();
-
-            //Console.WriteLine("Performing cleanup.\n");
-            //Runtime.Dispose();
-
             Runtime.Test(
                 () => {
+                    Console.WriteLine("Registering events to the runtime.\n");
                     Runtime.RegisterNewEvent(typeof(eStart));
                     Runtime.RegisterNewEvent(typeof(eNotify));
                     Runtime.RegisterNewEvent(typeof(eCheckAck));
+
+                    Console.WriteLine("Registering state machines to the runtime.\n");
                     Runtime.RegisterNewMachine(typeof(Master));
                     Runtime.RegisterNewMachine(typeof(LProcess));
+
+                    Console.WriteLine("Starting the runtime.\n");
                     Runtime.Start(3);
                     Runtime.Wait();
+
+                    Console.WriteLine("Performing cleanup.\n");
                     Runtime.Dispose();
                 },
-                10000);
+                100000,
+                true,
+                Runtime.SchedulingType.DFS,
+                true);
         }
     }
 }

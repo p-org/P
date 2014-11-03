@@ -336,7 +336,7 @@ __in PRT_VALUE					*payload
 
 	if (machine->isModel)
 	{
-		machine->process->program->modelImpls[machine->instanceOf].sendFun(machine->process, machine->id, event, payload);
+		machine->process->program->modelImpls[machine->instanceOf].sendFun(machine, event, payload);
 		return;
 	}
 

@@ -402,10 +402,10 @@ transform P2CProgram (in:: P) returns (out:: C)
 					DeclId(dst, _, dstname), dst is StateDecl, dst.owner = t.src.owner, dst.name = t.dst.
 
     //// Transition event Id depends on whether the transition is a user event, default, or halt.
-    TransDeclEvnt  ::= (decl: TransDecl, evName: String).
+    TransDeclEvnt  ::= (decl: TransDecl, evName: String, id: Natural).
 	DefaultOrHalt  ::= { DEFAULT, HALT }.
-	TransDeclEvnt(t, evname) :- t is TransDecl, t.src.owner.kind = REAL, ev is EventDecl, ev.name = t.trig, DeclId(ev, _, evname).
-	TransDeclEvnt(t, evname) :- t is TransDecl, t.src.owner.kind = REAL, trig = t.trig, trig : DefaultOrHalt, DeclId(trig, _, evname).
+	TransDeclEvnt(t, evname, id) :- t is TransDecl, t.src.owner.kind = REAL, ev is EventDecl, ev.name = t.trig, DeclId(ev, id, evname).
+	TransDeclEvnt(t, evname, id) :- t is TransDecl, t.src.owner.kind = REAL, trig = t.trig, trig : DefaultOrHalt, DeclId(trig, id, evname).
 
 	//// Transition action index depends on whether the transition is a push transition or not.
     TransDeclAction  ::= (decl: TransDecl, funName: String).
@@ -419,7 +419,7 @@ transform P2CProgram (in:: P) returns (out:: C)
     //// Build every transition list in reverse order
 	TransDeclConcat(m, d.src, arr) :- 
 							TransDeclId(d, m, srcname, dstname, machname),
-							TransDeclEvnt(d, evname),
+							TransDeclEvnt(d, evname, _),
 							TransDeclAction(d, funname),
 							TransDeclConcat(m + 1, d.src, after), 
 							arr = out.Args(def, after), 
@@ -430,10 +430,9 @@ transform P2CProgram (in:: P) returns (out:: C)
 							   Args(Ident(evname),
 							   Args(Ident(dstname),
 							   Args(Ident(funname),
-							   Args(IntLit(0, DEC, NIL),
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL)))))))))).
+							   NIL))))))))).
 
 	COut(3, def) :- TransDeclConcat(0, state, arr),
 	                QualName2CStr(state.name, statename),
@@ -457,9 +456,14 @@ transform P2CProgram (in:: P) returns (out:: C)
 					DeclId(d.src.owner, _, machname).
 
     //// Do event Id depends on whether the do is a user event, default, or halt.
-    DoDeclEvnt  ::= (decl: DoDecl, evName: String).
-	DoDeclEvnt(d, evname) :- d is DoDecl, d.src.owner.kind = REAL, d.action != DEFER, ev is EventDecl, ev.name = d.trig, DeclId(ev, _, evname).
-	DoDeclEvnt(d, evname) :- d is DoDecl, d.src.owner.kind = REAL, d.action != DEFER, trig = d.trig, trig : DefaultOrHalt, DeclId(trig, _, evname).
+    DoDeclEvnt  ::= (decl: DoDecl, evName: String, id: Natural).
+	DoDeclEvnt(d, evname, id) :- d is DoDecl, d.src.owner.kind = REAL, d.action != DEFER, ev is EventDecl, ev.name = d.trig, DeclId(ev, id, evname).
+	DoDeclEvnt(d, evname, id) :- d is DoDecl, d.src.owner.kind = REAL, d.action != DEFER, trig = d.trig, trig : DefaultOrHalt, DeclId(trig, id, evname).
+
+    //// Defer event Id depends on whether the do is a user event, default, or halt.
+    DeferEvnt  ::= (decl: DoDecl, evName: String, id: Natural).
+	DeferEvnt(d, evname, id) :- d is DoDecl, d.src.owner.kind = REAL, d.action = DEFER, ev is EventDecl, ev.name = d.trig, DeclId(ev, id, evname).
+	DeferEvnt(d, evname, id) :- d is DoDecl, d.src.owner.kind = REAL, d.action = DEFER, trig = d.trig, trig : DefaultOrHalt, DeclId(trig, id, evname).
 
 	//// Do action index depends on whether the do is an ignore or not.
     DoDeclAction  ::= (decl: DoDecl, funName: String).
@@ -473,7 +477,7 @@ transform P2CProgram (in:: P) returns (out:: C)
     //// Build every transition list in reverse order
 	DoDeclConcat(m, d.src, arr) :- 
 							DoDeclId(d, m, srcname, machname),
-							DoDeclEvnt(d, evname),
+							DoDeclEvnt(d, evname, _),
 							DoDeclAction(d, funname),
 							DoDeclConcat(m + 1, d.src, after), 
 							arr = out.Args(def, after), 
@@ -594,4 +598,402 @@ transform P2CProgram (in:: P) returns (out:: C)
 								  ArrType(NmdType(NIL, "PRT_FUNDECL"), NIL), 
 								  strJoin("P_GEND_FUNS_", mach.name), 
 								  Init(arr)).
+
+    /*************************************************************/
+    /******         Generate EventSet Decl Arrays           ******/
+    /*************************************************************/	
+	EventPackList ::= (dat: EventPackData, tl: EventPackList + { NIL }).
+	EventPackData ::= (arrIndex: Natural, events: Natural). 
+	EventPacking  ::= (list: EventPackList + { NIL }, rem: EventPackList + { NIL }, arrIndex: Natural, packArr: out.Args + { NIL }).
+	EventsPacked  ::= (state: StateDecl, cntxt : { #TransDecl, #DoDecl, DEFER }, list: EventPackList + { NIL }).
+
+	//// Generate event sets for transitions
+	EventsPacked(s, #TransDecl, list),
+	EventPacking(list, list, size, NIL) :- 
+	     s is StateDecl, s.owner.kind = REAL, 
+	     list = toList(
+		           #EventPackList, 
+				   NIL, 
+				   { EventPackData(i, n) | 
+				        TransDeclEvnt(t, _, j), t.src = s, i = qtnt(j / 32, 1), 
+				        n = sum(0, { m | TransDeclEvnt(t', _, k), t'.src = s, i = qtnt(k / 32, 1), PowOf2(k % 32, m) }), n : Natural 
+	               }),
+		 size = 1 + maxAll(0, { i | TransDeclEvnt(t, _, j), t.src = s, i = qtnt(j / 32, 1) }), size : Natural.	
+
+	//// Generate event sets for non-defer do's
+	EventsPacked(s, #DoDecl, list),
+	EventPacking(list, list, size, NIL) :- 
+	     s is StateDecl, s.owner.kind = REAL, 
+	     list = toList(
+		           #EventPackList, 
+				   NIL, 
+				   { EventPackData(i, n) | 
+				        DoDeclEvnt(d, _, j), d.action != DEFER, d.src = s, i = qtnt(j / 32, 1), 
+				        n = sum(0, { m | DoDeclEvnt(d', _, k), d'.action != DEFER, d'.src = s, i = qtnt(k / 32, 1), PowOf2(k % 32, m) }), n : Natural 
+	               }),
+		 size = 1 + maxAll(0, { i | DoDeclEvnt(d, _, j), d.action != DEFER, d.src = s, i = qtnt(j / 32, 1) }), size : Natural.	
+
+	//// Generate event sets for defer do's
+	EventsPacked(s, DEFER, list),
+	EventPacking(list, list, size, NIL) :- 
+	     s is StateDecl, s.owner.kind = REAL, 
+	     list = toList(
+		           #EventPackList, 
+				   NIL, 
+				   { EventPackData(i, n) | 
+				        DeferEvnt(d, _, j), d.action = DEFER, d.src = s, i = qtnt(j / 32, 1), 
+				        n = sum(0, { m | DeferEvnt(d', _, k), d'.action = DEFER, d'.src = s, i = qtnt(k / 32, 1), PowOf2(k % 32, m) }), n : Natural 
+	               }),
+		 size = 1 + maxAll(0, { i | DeferEvnt(d, _, j), d.action = DEFER, d.src = s, i = qtnt(j / 32, 1) }), size : Natural.	
+
+    //// Build up pack array.
+	EventPacking(l, NIL,  i',  a') :- EventPacking(l, NIL, i, a), i > 0, i' = i - 1, i' : Natural, a' = Args(IntLit(0, HEX, U), a).
+	EventPacking(l, r.tl, i',  a') :- EventPacking(l, r,   i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex < i', a' = Args(IntLit(0, HEX, U), a).
+	EventPacking(l, r.tl, i',  a') :- EventPacking(l, r,   i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex = i', a' = Args(IntLit(r.dat.events, HEX, U), a).
+
+	COut(7, def) :- EventPacking(l, _, 0, a),
+	                id = toOrdinal(l, 0, { l' | EventsPacked(_, _, l') }),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_UINT32"), NIL), 
+								  strJoin("P_GEND_EVENTSET_", toString(id)), 
+								  Init(a)).
+
+    //// Build up event sets.
+	EvSetDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
+
+	//// Base case
+	EvSetDeclConcat(c, NIL) :- c = count({l | EventsPacked(_, _, l) }).
+
+    //// Build every event set array in reverse order
+	EvSetDeclConcat(m, arr) :- 
+	                        EventPacking(l, _, size, NIL),
+	                        m = toOrdinal(l, 0, { l' | EventsPacked(_, _, l') }),
+							EvSetDeclConcat(m + 1, after),							  
+							arr = out.Args(def, after), 
+	                        def = Init(
+							   Args(IntLit(m, DEC, NIL),
+							   Args(IntLit(size, DEC, NIL),
+							   Args(Ident(strJoin("P_GEND_EVENTSET_", toString(m))),
+							   NIL)))).
+
+	COut(8, def) :- EvSetDeclConcat(0, arr),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_EVENTSETDECL"), NIL), 
+								  "P_GEND_EVENTSETS", 
+								  Init(arr)).
+
+    /*************************************************************/
+    /******            Generate State Decl Arrays           ******/
+    /*************************************************************/	
+	StateDeclConcat      ::= (pos: Natural, mach: MachineDecl, arr: out.Args + {NIL}).
+
+	StateEventSetIndices ::= (state: StateDecl, transIndex: Natural, doIndex: Natural, deferIndex: Natural).
+	StateEventSetIndices(s, ti, doi, dfi) :- 
+	                     s.owner.kind = REAL,
+	                     EventsPacked(s, #TransDecl, tlist),
+						 ti = toOrdinal(tlist, 0, { l | EventsPacked(_, _, l) }), 
+	                     EventsPacked(s, #DoDecl, dolist),
+						 doi = toOrdinal(dolist, 0, { l | EventsPacked(_, _, l) }), 
+	                     EventsPacked(s, DEFER, dflist),
+						 dfi = toOrdinal(dflist, 0, { l | EventsPacked(_, _, l) }).
+
+    StateEntryAction  ::= (decl: StateDecl, funName: String).
+	StateEntryAction(s, funname) :- s is StateDecl, s.owner.kind = REAL, act = s.entryAction, act : AnonFunDecl, DeclId(act, _, funname). 
+	StateEntryAction(s, funname) :- s is StateDecl, s.owner.kind = REAL, act = s.entryAction, act : String, f is FunDecl, f.owner = s.owner, f.name = act, DeclId(f, _, funname). 
+
+    StateExitFun  ::= (decl: StateDecl, funName: String).
+	StateExitFun(s, funname) :- s is StateDecl, s.owner.kind = REAL, act = s.exitFun, act : AnonFunDecl, DeclId(act, _, funname). 
+	StateExitFun(s, funname) :- s is StateDecl, s.owner.kind = REAL, act = s.exitFun, act : String, f is FunDecl, f.owner = s.owner, f.name = act, DeclId(f, _, funname). 
+
+    StateHandlerArrays ::= (decl: StateDecl, transArrSize: Natural, transArr: out.Ident, doArrSize: Natural, doArr: out.Ident).
+
+	StateHandlerArrays(s, transArrSize, transArr, doArrSize, doArr) :-
+		s is StateDecl, s.owner.kind = REAL, 
+		transArrSize = 0, transArr = out.Ident("NULL"),
+		doArrSize = 0, doArr = out.Ident("NULL"),
+		transArrSize = count({ t  | t is TransDecl, t.src = s }),
+		doArrSize = count({ do | do is DoDecl, do.src = s, do.action != DEFER }). 
+
+	StateHandlerArrays(s, transArrSize, transArr, doArrSize, doArr) :-
+		s is StateDecl, s.owner.kind = REAL,
+		QualName2CStr(s.name, sname),
+		transArrSize > 0, transArr = out.Ident(strJoin("P_GEND_TRANS_", strJoin(s.owner.name, strJoin("_", sname)))),
+		doArrSize = 0, doArr = out.Ident("NULL"),
+		transArrSize = count({ t  | t is TransDecl, t.src = s }),
+		doArrSize = count({ do | do is DoDecl, do.src = s, do.action != DEFER }). 
+
+	StateHandlerArrays(s, transArrSize, transArr, doArrSize, doArr) :-
+		s is StateDecl, s.owner.kind = REAL,
+		QualName2CStr(s.name, sname),
+		transArrSize = 0, transArr = out.Ident("NULL"),
+		doArrSize > 0, doArr = out.Ident(strJoin("P_GEND_DOS_", strJoin(s.owner.name, strJoin("_", sname)))),
+		transArrSize = count({ t  | t is TransDecl, t.src = s }),
+		doArrSize = count({ do | do is DoDecl, do.src = s, do.action != DEFER }). 
+
+	StateHandlerArrays(s, transArrSize, transArr, doArrSize, doArr) :-
+		s is StateDecl, s.owner.kind = REAL,
+		QualName2CStr(s.name, sname),
+		transArrSize > 0, transArr = out.Ident(strJoin("P_GEND_TRANS_", strJoin(s.owner.name, strJoin("_", sname)))),
+		doArrSize > 0, doArr = out.Ident(strJoin("P_GEND_DOS_", strJoin(s.owner.name, strJoin("_", sname)))),
+		transArrSize = count({ t | t is TransDecl, t.src = s }),
+		doArrSize = count({ do | do is DoDecl, do.src = s, do.action != DEFER }). 
+    
+	//// Base case
+	StateDeclConcat(c, m, NIL) :- m is MachineDecl, m.kind = REAL, c = count({s | s is StateDecl, s.owner = m}).
+
+    //// Build every variable array in reverse order
+	StateDeclConcat(m, d.owner, arr) :- 
+							DeclId(d, m, cstate), 
+							DeclId(d.owner, _, cmach), 
+							StateDeclConcat(m + 1, d.owner, after), d : StateDecl, 
+							QualName2CStr(d.name, sname),
+							StateEventSetIndices(d, ti, doi, dfi),
+							StateEntryAction(d, entryname),
+							StateExitFun(d, exitname),
+							StateHandlerArrays(d, transArrSize, transArr, doArrSize, doArr),
+							arr = out.Args(def, after), 
+	                        def = Init(
+							   Args(Ident(cstate),
+							   Args(Ident(cmach),
+							   Args(StringLit(sname, NIL),
+							   Args(IntLit(transArrSize, DEC, NIL),
+							   Args(IntLit(doArrSize, DEC, NIL),
+							   Args(IntLit(dfi, DEC, NIL),
+							   Args(IntLit(ti, DEC, NIL),
+							   Args(IntLit(doi, DEC, NIL),
+							   Args(transArr,
+							   Args(doArr,
+							   Args(Ident(entryname),
+							   Args(Ident(exitname),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))))))))))).
+
+	COut(9, def) :- StateDeclConcat(0, mach, arr),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_STATEDECL"), NIL), 
+								  strJoin("P_GEND_STATES_", mach.name), 
+								  Init(arr)).
+
+    /*************************************************************/
+    /******          Generate Machine Decl Arrays           ******/
+    /*************************************************************/	
+	MachineDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
+
+	MachVarArr ::= (decl: MachineDecl, size: Natural, arr: out.Ident).
+	MachVarArr(m, size, arr) :- m is MachineDecl, m.kind = REAL, 
+	                size = 0, arr = out.Ident("NULL"),
+	                size = count({ v | v is VarDecl, v.owner = m }).
+
+	MachVarArr(m, size, arr) :- m is MachineDecl, m.kind = REAL, 
+	                size > 0, arr = out.Ident(strJoin("P_GEND_VARS_", m.name)),
+	                size = count({ v | v is VarDecl, v.owner = m }).
+
+	MachStateArr ::= (decl: MachineDecl, size: Natural, arr: out.Ident).
+	MachStateArr(m, size, arr) :- m is MachineDecl, m.kind = REAL, 
+	                size > 0, arr = out.Ident(strJoin("P_GEND_STATES_", m.name)),
+	                size = count({ s | s is StateDecl, s.owner = m }).
+
+	MachFunArr ::= (decl: MachineDecl, size: Natural, arr: out.Ident).
+	MachFunArr(m, size, arr) :- m is MachineDecl, m.kind = REAL, 
+	                arr = out.Ident(strJoin("P_GEND_FUNS_", m.name)),
+	                size = 1 + count({ f | f is AnonOrNamedFun, f.owner = m }).
+
+	MachQueueSize ::= (decl: MachineDecl, size: Natural).
+	MachQueueSize(m, size) :- m is MachineDecl, m.kind = REAL, m.card = NIL, size = 4294967295. 
+	MachQueueSize(m, size) :- m is MachineDecl, m.kind = REAL, size = m.card.bound.
+
+	//// Base case
+	MachineDeclConcat(c, NIL) :- c = count({m | m is MachineDecl, m.kind = REAL}).
+
+	MachineDeclConcat(m, arr) :- 
+							DeclId(d, m, cmach), d.kind = REAL, d : MachineDecl,
+							MachineDeclConcat(m + 1, after),  
+							MachVarArr(d, varArrSize, varArrName),
+							MachStateArr(d, stateArrSize, stateArrName),
+							MachFunArr(d, funArrSize, funArrName),
+							MachQueueSize(d, queueSize),
+							QualName2CStr(d.start, sname),
+							arr = out.Args(def, after), 
+	                        def = Init(
+							   Args(Ident(cmach),
+							   Args(StringLit(d.name, NIL),
+							   Args(IntLit(varArrSize, DEC, NIL),
+							   Args(IntLit(stateArrSize, DEC, NIL),
+							   Args(IntLit(funArrSize, DEC, NIL),
+							   Args(IntLit(queueSize, DEC, NIL),
+							   Args(Ident(strJoin("P_STATE_", strJoin(d.name, strJoin("_", sname)))),
+							   Args(varArrName,
+							   Args(stateArrName,
+							   Args(funArrName,
+							   Args(UnApp(ADDR, Ident(strJoin("P_CTOR_", strJoin(d.name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("P_DTOR_", strJoin(d.name, "_IMPL")))),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))))))))))).
+
+	COut(10, def) :- MachineDeclConcat(0, arr),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_MACHINEDECL"), NIL), 
+								  "P_GEND_MACHINES", 
+								  Init(arr)).
+
+	HOut(10, def) :- m is MachineDecl, m.kind = REAL,
+	                params = Params(Param(NIL, "context"), 
+							 Params(Param(NIL, "value"), NIL)),
+				    funType = FunType(BaseType(VOID), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_SM_CONTEXT")),
+							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL)),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("P_CTOR_", strJoin(m.name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(10, def) :- m is MachineDecl, m.kind = REAL,
+	                params = Params(Param(NIL, "context"), NIL),
+				    funType = FunType(BaseType(VOID), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_SM_CONTEXT")), NIL),
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("P_DTOR_", strJoin(m.name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+    /*************************************************************/
+    /******     Generate Model Machine Decl Arrays          ******/
+    /*************************************************************/	
+	ModelDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
+
+	//// Base case
+	ModelDeclConcat(c, NIL) :- c = count({m | m is MachineDecl, m.kind = MODEL}).
+
+	ModelDeclConcat(m, arr) :- 
+							DeclId(d, m, cmach), d.kind = MODEL, d : MachineDecl,
+							ModelDeclConcat(m + 1, after),  
+							arr = out.Args(def, after), 
+	                        def = Init(
+							   Args(Ident(cmach),
+							   Args(StringLit(d.name, NIL),
+							   Args(UnApp(ADDR, Ident(strJoin("P_CTOR_", strJoin(d.name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("P_SEND_", strJoin(d.name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("P_DTOR_", strJoin(d.name, "_IMPL")))),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL)))))))).
+
+	COut(11, def) :- ModelDeclConcat(0, arr),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_MODELIMPLDECL"), NIL), 
+								  "P_GEND_MODELS", 
+								  Init(arr)).
+
+	HOut(11, def) :- m is MachineDecl, m.kind = MODEL,
+	                params = Params(Param(NIL, "context"), 
+							 Params(Param(NIL, "value"), NIL)),
+				    funType = FunType(BaseType(VOID), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_SM_CONTEXT")),
+							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL)),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("P_CTOR_", strJoin(m.name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(11, def) :- m is MachineDecl, m.kind = MODEL,
+	                params = Params(Param(NIL, "context"), NIL),
+				    funType = FunType(BaseType(VOID), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_SM_CONTEXT")), NIL),
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("P_DTOR_", strJoin(m.name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(11, def) :- m is MachineDecl, m.kind = MODEL,
+	                params = Params(Param(NIL, "context"), 
+						     Params(Param(NIL, "evnt"), 
+							 Params(Param(NIL, "payload"), NIL))),
+				    funType = FunType(BaseType(VOID), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_SM_CONTEXT")),
+					           PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")),
+							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("P_SEND_", strJoin(m.name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+    /*************************************************************/
+    /******            Generate Program Decl                ******/
+    /*************************************************************/	
+
+	ProgEvntArray ::= (size: Natural, arr: out.Ident).
+	ProgEvntArray(size, arr) :- size = 2 + count({ e | e is EventDecl }), arr = out.Ident("P_GEND_EVENTS").
+
+	ProgEvntSetArray ::= (size: Natural, arr: out.Ident).
+	ProgEvntSetArray(size, arr) :- size = count({ l | EventsPacked(_, _, l) }), size = 0, arr = out.Ident("NULL").
+	ProgEvntSetArray(size, arr) :- size = count({ l | EventsPacked(_, _, l) }), size > 0, arr = out.Ident("P_GEND_EVENTSETS").
+
+	ProgMachArray ::= (size: Natural, arr: out.Ident).
+	ProgMachArray(size, arr) :- size = count({ m | m is MachineDecl, m.kind = REAL }), size = 0, arr = out.Ident("NULL").
+	ProgMachArray(size, arr) :- size = count({ m | m is MachineDecl, m.kind = REAL }), size > 0, arr = out.Ident("P_GEND_MACHINES").
+
+	ProgModelArray ::= (size: Natural, arr: out.Ident).
+	ProgModelArray(size, arr) :- size = count({ m | m is MachineDecl, m.kind = MODEL }), size = 0, arr = out.Ident("NULL").
+	ProgModelArray(size, arr) :- size = count({ m | m is MachineDecl, m.kind = MODEL }), size > 0, arr = out.Ident("P_GEND_MODELS").
+
+	HOut(12, def) :- def = out.VarDef(
+							      NIL, 
+								  NmdType(NIL, "PRT_PROGRAMDECL"), 
+								  "P_GEND_PROGRAM", 
+								  NIL).
+
+	COut(12, def) :- ProgEvntArray(evArrSize, evArrName),
+	                 ProgEvntSetArray(evSetArrSize, evSetArrName),
+					 ProgMachArray(machArrSize, machArrName),
+					 ProgModelArray(modelArrSize, modelArrName),
+	                 def = out.VarDef(
+							      NIL, 
+								  NmdType(NIL, "PRT_PROGRAMDECL"), 
+								  "P_GEND_PROGRAM", 
+								  init),
+				     init = Init(
+							   Args(IntLit(evArrSize, DEC, U),
+							   Args(IntLit(evSetArrSize, DEC, U),
+							   Args(IntLit(machArrSize, DEC, U),
+							   Args(IntLit(modelArrSize, DEC, U),
+							   Args(evArrName,
+							   Args(evSetArrName,
+							   Args(machArrName,
+							   Args(modelArrName,
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))))))).
+
+    /*************************************************************/
+    /******                 Powers of two                   ******/
+    /*************************************************************/	
+
+	PowOf2 ::= (exp: {0..31}, val: Natural).
+
+	PowOf2(0, 1).          PowOf2(1, 2).          PowOf2(2, 4).           PowOf2(3, 8).
+	PowOf2(4, 16).         PowOf2(5, 32).         PowOf2(6, 64).          PowOf2(7, 128).
+	PowOf2(8, 256).        PowOf2(9, 512).        PowOf2(10, 1024).       PowOf2(11, 2048).
+	PowOf2(12, 4096).      PowOf2(13, 8192).      PowOf2(14, 16384).      PowOf2(15, 32768).
+	PowOf2(16, 65536).     PowOf2(17, 131072).    PowOf2(18, 262144).     PowOf2(19, 524288).
+	PowOf2(20, 1048576).   PowOf2(21, 2097152).   PowOf2(22, 4194304).    PowOf2(23, 8388608).
+	PowOf2(24, 16777216).  PowOf2(25, 33554432).  PowOf2(26, 67108864).   PowOf2(27, 134217728).
+	PowOf2(28, 268435456). PowOf2(29, 536870912). PowOf2(30, 1073741824). PowOf2(31, 2147483648).
+
 }	

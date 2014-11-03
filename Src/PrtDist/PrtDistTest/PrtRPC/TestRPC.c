@@ -1,8 +1,5 @@
-#include "../PrtCmd/PrtCmdPrinting.h"
-#include "PrtHeaders.h"
-#include "PrtDistributed.h"
-#include "PrtDistributed_c.c"
-#include "../PrtDist/PrtDist/PrtDistSerializer.h"
+#include "PrtDist.h"
+#include "PrtDist_c.c"
 
 extern void CreateRPCTestServer();
 
@@ -53,36 +50,26 @@ void TestOverRPC(PRT_VALUE* value)
 	handle_t testHandle = CreateRPCClient();
 
 	PRT_VALUE *serialized = PrtDistSerializeValue(value);
+	PRT_VALUE* nullType = PrtMkEventValue(0);
 	RpcTryExcept
 	{
-		c_SendValue1(testHandle, serialized);
+		c_PrtDistSend(testHandle, nullType,serialized);
 	}
 	RpcExcept(1)
 	{
 		unsigned long ulCode;
 		ulCode = RpcExceptionCode();
-		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
+		printf("Runtime reported exception in SendValue 0x%lx = %ld\n", ulCode, ulCode);
 	}
 	RpcEndExcept
 
-		RpcTryExcept
-	{
-		c_SendValue2(testHandle, PrtDistSerializeValue(value));
-	}
-	RpcExcept(1)
-	{
-		unsigned long ulCode;
-		ulCode = RpcExceptionCode();
-		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
-	}
-	RpcEndExcept
 
 }
 
 void TupleTest()
 {
-	PRT_TYPE anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
-	PRT_TYPE anyPairType = PrtMkTupType(2);
+	PRT_TYPE* anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
+	PRT_TYPE* anyPairType = PrtMkTupType(2);
 
 	PrtSetFieldType(anyPairType, 0, anyType);
 	PrtSetFieldType(anyPairType, 1, anyType);
@@ -91,12 +78,12 @@ void TupleTest()
 	PRT_VALUE *boolVal = PrtMkBoolValue(PRT_TRUE);
 	PRT_VALUE *anyPair = PrtMkDefaultValue(anyPairType);
 
-	PrtCmdPrintValueAndType(anyPair);
+	PrtPrintValue(anyPair);
 	printf_s("\n");
 
 	PrtTupleSet(anyPair, 0, oneVal);
 
-	PrtCmdPrintValueAndType(anyPair);
+	PrtPrintValue(anyPair);
 	printf_s("\n");
 
 	PrtTupleSet(anyPair, 1, boolVal);
@@ -107,8 +94,8 @@ void TupleTest()
 
 void NamedTupleTest()
 {
-	PRT_TYPE anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
-	PRT_TYPE anyPairType = PrtMkNmdTupType(2);
+	PRT_TYPE* anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
+	PRT_TYPE* anyPairType = PrtMkNmdTupType(2);
 
 	PrtSetFieldName(anyPairType, 0, "foo");
 	PrtSetFieldType(anyPairType, 0, anyType);
@@ -119,23 +106,23 @@ void NamedTupleTest()
 	PRT_VALUE *boolVal = PrtMkBoolValue(PRT_TRUE);
 	PRT_VALUE *anyPair = PrtMkDefaultValue(anyPairType);
 
-	PrtCmdPrintValueAndType(anyPair);
+	PrtPrintValue(anyPair);
 	printf_s("\n");
 
 	PrtNmdTupleSet(anyPair, "foo", oneVal);
 
-	PrtCmdPrintValueAndType(anyPair);
+	PrtPrintValue(anyPair);
 	printf_s("\n");
 
 	PrtNmdTupleSet(anyPair, "bar", boolVal);
 
-	PrtCmdPrintValueAndType(anyPair);
+	PrtPrintValue(anyPair);
 	printf_s("\n");
 
-	PrtCmdPrintValueAndType(PrtNmdTupleGet(anyPair, "foo"));
+	PrtPrintValue(PrtNmdTupleGet(anyPair, "foo"));
 	printf_s("\n");
 
-	PrtCmdPrintValueAndType(PrtNmdTupleGet(anyPair, "bar"));
+	PrtPrintValue(PrtNmdTupleGet(anyPair, "bar"));
 	printf_s("\n");
 
 	TestOverRPC(anyPair);
@@ -147,87 +134,44 @@ void TestPrimitiveType()
 	handle_t testHandle = CreateRPCClient();
 
 	/// Make the integer type
-	PRT_TYPE intType = PrtMkPrimitiveType(PRT_KIND_INT);
+	PRT_TYPE* intType = PrtMkPrimitiveType(PRT_KIND_INT);
 
 	PRT_VALUE *intVal = PrtMkDefaultValue(intType);
 	PrtPrimSetInt(intVal, 100);
 	printf("Value Sent is : \n");
-	PrtCmdPrintValueAndType(intVal);
+	PrtPrintValue(intVal);
 	printf("\n");
-	RpcTryExcept
-	{
-		c_SendValue1(testHandle, intVal);
-	}
-		RpcExcept(1)
-	{
-		unsigned long ulCode;
-		ulCode = RpcExceptionCode();
-		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
-	}
-	RpcEndExcept
-	RpcTryExcept
-	{
-		c_SendValue2(testHandle, intVal);
-	}
-		RpcExcept(1)
-	{
-		unsigned long ulCode;
-		ulCode = RpcExceptionCode();
-		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
-	}
-	RpcEndExcept
+	TestOverRPC(intVal);
 
 }
 
 void SeqNestedTest()
 {
 	PRT_INT32 i;
-	PRT_TYPE anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
-	PRT_TYPE aseqType = PrtMkSeqType(anyType);
+	PRT_TYPE* anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
+	PRT_TYPE* aseqType = PrtMkSeqType(anyType);
 	PRT_VALUE *seq = PrtMkDefaultValue(aseqType);
 
 	for (i = 0; i < 10; ++i)
 	{
 		PrtSeqInsert(seq, seq->valueUnion.seq->size, seq);
 	}
-	PrtCmdPrintValueAndType(seq);
+	PrtPrintValue(seq);
 	printf_s("\n");
 
 	handle_t testHandle = CreateRPCClient();
 
-	RpcTryExcept
-	{
-		c_SendValue1(testHandle, PrtDistSerializeValue(seq));
-	}
-		RpcExcept(1)
-	{
-		unsigned long ulCode;
-		ulCode = RpcExceptionCode();
-		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
-	}
-	RpcEndExcept
-
-		RpcTryExcept
-	{
-		c_SendValue2(testHandle, PrtDistSerializeValue(seq));
-	}
-		RpcExcept(1)
-	{
-		unsigned long ulCode;
-		ulCode = RpcExceptionCode();
-		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
-	}
-	RpcEndExcept
+	TestOverRPC(seq);
 
 }
 
 void MapTest1()
 {
-	PRT_TYPE anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
-	PRT_TYPE any2anyType = PrtMkMapType(anyType, anyType);
+	PRT_TYPE* anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
+	PRT_TYPE* any2anyType = PrtMkMapType(anyType, anyType);
 	PRT_VALUE *a2aMap = PrtMkDefaultValue(any2anyType);
 
-	PrtCmdPrintValueAndType(a2aMap);
+	PrtPrintValue(a2aMap);
 	printf_s("\n");
 
 	PRT_VALUE *falseVal = PrtMkBoolValue(PRT_FALSE);
@@ -237,45 +181,23 @@ void MapTest1()
 	for (i = 0; i < 5; ++i)
 	{
 		PrtMapUpdate(a2aMap, PrtMkIntValue(i), PrtMkIntValue(i));
-		PrtCmdPrintValueAndType(a2aMap);
+		PrtPrintValue(a2aMap);
 		printf_s("\n");
 	}
 
 	PrtMapUpdate(a2aMap, falseVal, PrtMkIntValue(10));
-	PrtCmdPrintValueAndType(a2aMap);
+	PrtPrintValue(a2aMap);
 	printf_s("\n");
 	handle_t testHandle = CreateRPCClient();
-	RpcTryExcept
-	{
-		c_SendValue1(testHandle, PrtDistSerializeValue(a2aMap));
-	}
-		RpcExcept(1)
-	{
-		unsigned long ulCode;
-		ulCode = RpcExceptionCode();
-		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
-	}
-	RpcEndExcept
-
-		RpcTryExcept
-	{
-		c_SendValue2(testHandle, PrtDistSerializeValue(a2aMap));
-	}
-		RpcExcept(1)
-	{
-		unsigned long ulCode;
-		ulCode = RpcExceptionCode();
-		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
-	}
-	RpcEndExcept
+	TestOverRPC(a2aMap);
 
 }
 
 void SeqAppendTest()
 {
 	PRT_INT32 i;
-	PRT_TYPE intType = PrtMkPrimitiveType(PRT_KIND_INT);
-	PRT_TYPE iseqType = PrtMkSeqType(intType);
+	PRT_TYPE* intType = PrtMkPrimitiveType(PRT_KIND_INT);
+	PRT_TYPE* iseqType = PrtMkSeqType(intType);
 	PRT_VALUE *seq = PrtMkDefaultValue(iseqType);
 
 	for (i = 0; i <= 10; ++i)
@@ -288,42 +210,21 @@ void SeqAppendTest()
 		PrtSeqInsert(seq, seq->valueUnion.seq->size, PrtMkIntValue(i));
 	}
 
-	PrtCmdPrintValueAndType(seq);
+	PrtPrintValue(seq);
 	printf_s("\n");
 	handle_t testHandle = CreateRPCClient();
-	RpcTryExcept
-	{
-		c_SendValue1(testHandle, PrtDistSerializeValue(seq));
-	}
-		RpcExcept(1)
-	{
-		unsigned long ulCode;
-		ulCode = RpcExceptionCode();
-		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
-	}
-	RpcEndExcept
+	TestOverRPC(seq);
 
-	RpcTryExcept
-	{
-		c_SendValue2(testHandle, PrtDistSerializeValue(seq));
-	}
-		RpcExcept(1)
-	{
-		unsigned long ulCode;
-		ulCode = RpcExceptionCode();
-		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
-	}
-	RpcEndExcept
 }
 
 void SeqPrependTest()
 {
 	PRT_INT32 i;
-	PRT_TYPE intType = PrtMkPrimitiveType(PRT_KIND_INT);
-	PRT_TYPE iseqType = PrtMkSeqType(intType);
+	PRT_TYPE* intType = PrtMkPrimitiveType(PRT_KIND_INT);
+	PRT_TYPE* iseqType = PrtMkSeqType(intType);
 	PRT_VALUE *seq = (PRT_VALUE *)PrtMkDefaultValue(iseqType);
 
-	PrtCmdPrintValueAndType(seq);
+	PrtPrintValue(seq);
 	printf_s("\n");
 
 	for (i = 0; i <= 10; ++i)
@@ -331,7 +232,7 @@ void SeqPrependTest()
 		PrtSeqInsert(seq, 0, PrtMkIntValue(i));
 	}
 
-	PrtCmdPrintValueAndType(seq);
+	PrtPrintValue(seq);
 	printf_s("\n");
 
 	for (i = 10; i >= 0; --i)
@@ -339,7 +240,7 @@ void SeqPrependTest()
 		PrtSeqInsert(seq, 0, PrtMkIntValue(i));
 	}
 
-	PrtCmdPrintValueAndType(seq);
+	PrtPrintValue(seq);
 	printf_s("\n");
 
 	TestOverRPC(seq);
@@ -347,8 +248,8 @@ void SeqPrependTest()
 
 void MapTest2()
 {
-	PRT_TYPE anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
-	PRT_TYPE any2anyType = PrtMkMapType(anyType, anyType);
+	PRT_TYPE* anyType = PrtMkPrimitiveType(PRT_KIND_ANY);
+	PRT_TYPE* any2anyType = PrtMkMapType(anyType, anyType);
 	PRT_VALUE *a2aMap = PrtMkDefaultValue(any2anyType);
 
 	PRT_VALUE *zeroVal = PrtMkIntValue(0);
@@ -356,51 +257,29 @@ void MapTest2()
 
 	PrtMapUpdate(a2aMap, zeroVal, zeroVal);
 	PrtMapUpdate(a2aMap, falseVal, falseVal);
-	PrtCmdPrintValueAndType(a2aMap);
+	PrtPrintValue(a2aMap);
 	printf_s("Before Call to Server \n");
 
 	handle_t testHandle = CreateRPCClient();
-	RpcTryExcept
-	{
-		c_SendValue1(testHandle, PrtDistSerializeValue(a2aMap));
-	}
-		RpcExcept(1)
-	{
-		unsigned long ulCode;
-		ulCode = RpcExceptionCode();
-		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
-	}
-	RpcEndExcept
-
-	RpcTryExcept
-	{
-		c_SendValue2(testHandle, PrtDistSerializeValue(a2aMap));
-	}
-	RpcExcept(1)
-	{
-		unsigned long ulCode;
-		ulCode = RpcExceptionCode();
-		printf("Runtime reported exception in SendValue1 0x%lx = %ld\n", ulCode, ulCode);
-	}
-	RpcEndExcept
+	TestOverRPC(a2aMap);
 }
 
 void BinaryBoolFunTest()
 {
-	PRT_TYPE boolType = PrtMkPrimitiveType(PRT_KIND_BOOL);
-	PRT_TYPE intType = PrtMkPrimitiveType(PRT_KIND_INT);
-	PRT_TYPE boolTupType = PrtMkTupType(2);
+	PRT_TYPE* boolType = PrtMkPrimitiveType(PRT_KIND_BOOL);
+	PRT_TYPE* intType = PrtMkPrimitiveType(PRT_KIND_INT);
+	PRT_TYPE* boolTupType = PrtMkTupType(2);
 	PrtSetFieldType(boolTupType, 0, boolType);
 	PrtSetFieldType(boolTupType, 1, boolType);
-	PRT_TYPE binFunType = PrtMkMapType(boolTupType, boolType);
-	PRT_TYPE popFunType = PrtMkMapType(binFunType, intType);
+	PRT_TYPE* binFunType = PrtMkMapType(boolTupType, boolType);
+	PRT_TYPE* popFunType = PrtMkMapType(binFunType, intType);
 
 	printf_s("Bool fun type = ");
-	PrtCmdPrintType(binFunType);
+	PrtPrintType(binFunType);
 	printf_s("\n");
 
 	printf_s("Population fun type = ");
-	PrtCmdPrintType(popFunType);
+	PrtPrintType(popFunType);
 	printf_s("\n");
 
 	PRT_UINT32 funImg;
@@ -437,7 +316,7 @@ void BinaryBoolFunTest()
 			(0x00000001 & (funImg >> 2)) +
 			(0x00000001 & (funImg >> 3)));
 
-		PrtCmdPrintValue(fun);
+		PrtPrintValue(fun);
 		printf_s("\n");
 
 		PrtMapUpdate(popFun, fun, popCntVal);
@@ -446,7 +325,7 @@ void BinaryBoolFunTest()
 		PrtFreeValue(fun);
 	}
 
-	PrtCmdPrintValue(popFun);
+	PrtPrintValue(popFun);
 	printf_s("\n");
 
 	//// Build the population function in reverse.
@@ -462,7 +341,7 @@ void BinaryBoolFunTest()
 	}
 
 	PrtFreeValue(popKeys);
-	PrtCmdPrintValue(revPopFun);
+	PrtPrintValue(revPopFun);
 	printf_s("\n");
 
 	PrtAssert(PrtGetHashCodeValue(popFun) == PrtGetHashCodeValue(revPopFun), "Equivalent maps should have equivalent hash codes");
@@ -491,8 +370,8 @@ int main()
 	//SeqNestedTest();
 	//TupleTest();
 	//NamedTupleTest();
-	//SeqPrependTest();
-	BinaryBoolFunTest();
+	SeqPrependTest();
+	//BinaryBoolFunTest();
 	//wait
 	getchar();
 

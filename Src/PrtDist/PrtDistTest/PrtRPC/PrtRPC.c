@@ -1,9 +1,7 @@
 
-#include "../PrtCmd/PrtCmdPrinting.h"
-#include "PrtHeaders.h"
+#include "PrtDist.h"
 #include<pthread.h>
-#include"PrtDistributed_s.c"
-#include "../PrtDist/PrtDist/PrtDistSerializer.h"
+#include"PrtDist_s.c"
 
 PRT_VALUE *ReceivedValue;
 
@@ -44,33 +42,22 @@ void* __cdecl WaitThreadForRPCListen(void* i)
 }
 
 
-void s_SendValue1(
+PRT_BOOLEAN s_PrtDistSend(
 	handle_t handleM,
-	PRT_VALUE* value
+	PRT_VALUE* event,
+	PRT_VALUE* payload
 	)
 {
 	printf("\n");
-	PRT_VALUE* x = PrtDistDeserializeValue(value);
-	PrtCmdPrintValue(x);
-	printf("\n");
+	PRT_VALUE* x = PrtDistDeserializeValue(payload);
 	ReceivedValue = PrtCloneValue(x);
 	printf("In SendValue1 Value Received :");
-	PrtCmdPrintValue(ReceivedValue);
+	PrtPrintValue(ReceivedValue);
 	printf("\n");
+
+	return PRT_TRUE;
 }
 
-void s_SendValue2(
-	handle_t handleM,
-	PRT_VALUE* value
-	)
-{
-	//ReceivedValue = PrtCloneValue((PRT_VALUE)value);
-	printf("\n");
-	PRT_VALUE* curr = PrtDistDeserializeValue(value);
-	PrtCmdPrintValue(curr);
-	PrtAssert(PrtIsEqualValue(curr, ReceivedValue), "Values Received are not Equal");
-	printf("\nReceived the same Value\n");
-}
 
 
 void CreateRPCTestServer()
@@ -92,7 +79,7 @@ void CreateRPCTestServer()
 	}
 
 	status = RpcServerRegisterIf2(
-		s_PrtDistributed_v1_0_s_ifspec, // Interface to register.
+		s_PrtDist_v1_0_s_ifspec, // Interface to register.
 		NULL, // Use the MIDL generated entry-point vector.
 		NULL, // Use the MIDL generated entry-point vector.
 		RPC_IF_ALLOW_CALLBACKS_WITH_NO_AUTH, // Forces use of security callback.

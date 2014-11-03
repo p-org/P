@@ -1,6 +1,5 @@
-#include "PrtWinUser.h"
 #include "PrtDist.h"
-#include "PrtExecution.h"
+
 
 /** Array of prime hash table capacities. */
 const PRT_UINT32 PrtHashtableCapacities[] =
@@ -729,13 +728,4 @@ PRT_STRING PrtValueToString(_In_ PRT_VALUE *value)
 	}
 
 	return retString;
-}
-
-void main()
-{
-	
-	PRT_VALUE * temp = PrtMkBoolValue(PRT_FALSE);
-	PRT_STRING t = PrtValueToString(temp);
-	printf("%s", t);
-	getchar();
 }

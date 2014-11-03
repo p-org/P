@@ -26,22 +26,22 @@ typedef enum PRT_SPECIAL_ACTIONS
 *   value is the argument to this function. It will be the P null value if this function is nullary.
 *   Function frees value.
 */
-typedef void(PRT_CALL_CONV *PRT_SM_FUN)(
+typedef void(PRT_CALL_CONV * PRT_SM_FUN)(
 	_Inout_ struct PRT_SM_CONTEXT * context, 
 	_In_    PRT_UINT32 funIndex, 
-	_Inout_ PRT_VALUE *value);
+	_Inout_ PRT_VALUE * value);
 
 /** A PRT_SM_EXTCTOR function constructs the external blob attached to a machine.
 *   context is the machine context to construct.
 *   value is the value passed to the new M(...) operation. It will be the P null value if no value was passed.
 *   Function frees value.
 */
-typedef void(PRT_CALL_CONV *PRT_SM_EXTCTOR)(_Inout_ struct PRT_SM_CONTEXT * context, _Inout_ PRT_VALUE *value);
+typedef void(PRT_CALL_CONV * PRT_SM_EXTCTOR)(_Inout_ struct PRT_SM_CONTEXT * context, _Inout_ PRT_VALUE * value);
 
 /** A PRT_SM_EXTDTOR function destructs the external blob attached to a machine.
 *   context is the machine context to destruct.
 */
-typedef void(PRT_CALL_CONV *PRT_SM_EXTDTOR)(_Inout_ struct PRT_SM_CONTEXT * context);
+typedef void(PRT_CALL_CONV * PRT_SM_EXTDTOR)(_Inout_ struct PRT_SM_CONTEXT * context);
 
 /** A PRT_SM_MODELSEND function sends an event to a model machine.
 *  process is the calling process.
@@ -50,11 +50,10 @@ typedef void(PRT_CALL_CONV *PRT_SM_EXTDTOR)(_Inout_ struct PRT_SM_CONTEXT * cont
 *  payload is the data being sent.
 *  Function frees id, event, payload.
 */
-typedef void(PRT_CALL_CONV *PRT_SM_MODELSEND)(
-	_In_ struct PRT_PROCESS * process, 
-	_Inout_ PRT_VALUE *id, 
-	_Inout_ PRT_VALUE *evnt, 
-	_Inout_ PRT_VALUE *payload);
+typedef void(PRT_CALL_CONV * PRT_SM_MODELSEND)(
+	_Inout_ struct PRT_SM_CONTEXT * context,
+	_Inout_ PRT_VALUE * evnt, 
+	_Inout_ PRT_VALUE * payload);
 
 /** Represents a P event declaration */
 typedef struct PRT_EVENTDECL

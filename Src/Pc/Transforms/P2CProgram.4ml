@@ -430,10 +430,9 @@ transform P2CProgram (in:: P) returns (out:: C)
 							   Args(Ident(evname),
 							   Args(Ident(dstname),
 							   Args(Ident(funname),
-							   Args(IntLit(0, DEC, NIL),
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL)))))))))).
+							   NIL))))))))).
 
 	COut(3, def) :- TransDeclConcat(0, state, arr),
 	                QualName2CStr(state.name, statename),
@@ -826,7 +825,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 							   Args(IntLit(stateArrSize, DEC, NIL),
 							   Args(IntLit(funArrSize, DEC, NIL),
 							   Args(IntLit(queueSize, DEC, NIL),
-							   Args(StringLit(strJoin("P_STATE_", strJoin(d.name, strJoin("_", sname))), NIL),
+							   Args(Ident(strJoin("P_STATE_", strJoin(d.name, strJoin("_", sname)))),
 							   Args(varArrName,
 							   Args(stateArrName,
 							   Args(funArrName,
@@ -920,6 +919,67 @@ transform P2CProgram (in:: P) returns (out:: C)
 					  params,
 					  UNKNOWN).
 
+	HOut(11, def) :- m is MachineDecl, m.kind = MODEL,
+	                params = Params(Param(NIL, "context"), 
+						     Params(Param(NIL, "evnt"), 
+							 Params(Param(NIL, "payload"), NIL))),
+				    funType = FunType(BaseType(VOID), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_SM_CONTEXT")),
+					           PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")),
+							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("P_SEND_", strJoin(m.name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+    /*************************************************************/
+    /******            Generate Program Decl                ******/
+    /*************************************************************/	
+
+	ProgEvntArray ::= (size: Natural, arr: out.Ident).
+	ProgEvntArray(size, arr) :- size = 2 + count({ e | e is EventDecl }), arr = out.Ident("P_GEND_EVENTS").
+
+	ProgEvntSetArray ::= (size: Natural, arr: out.Ident).
+	ProgEvntSetArray(size, arr) :- size = count({ l | EventsPacked(_, _, l) }), size = 0, arr = out.Ident("NULL").
+	ProgEvntSetArray(size, arr) :- size = count({ l | EventsPacked(_, _, l) }), size > 0, arr = out.Ident("P_GEND_EVENTSETS").
+
+	ProgMachArray ::= (size: Natural, arr: out.Ident).
+	ProgMachArray(size, arr) :- size = count({ m | m is MachineDecl, m.kind = REAL }), size = 0, arr = out.Ident("NULL").
+	ProgMachArray(size, arr) :- size = count({ m | m is MachineDecl, m.kind = REAL }), size > 0, arr = out.Ident("P_GEND_MACHINES").
+
+	ProgModelArray ::= (size: Natural, arr: out.Ident).
+	ProgModelArray(size, arr) :- size = count({ m | m is MachineDecl, m.kind = MODEL }), size = 0, arr = out.Ident("NULL").
+	ProgModelArray(size, arr) :- size = count({ m | m is MachineDecl, m.kind = MODEL }), size > 0, arr = out.Ident("P_GEND_MODELS").
+
+	HOut(12, def) :- def = out.VarDef(
+							      NIL, 
+								  NmdType(NIL, "PRT_PROGRAMDECL"), 
+								  "P_GEND_PROGRAM", 
+								  NIL).
+
+	COut(12, def) :- ProgEvntArray(evArrSize, evArrName),
+	                 ProgEvntSetArray(evSetArrSize, evSetArrName),
+					 ProgMachArray(machArrSize, machArrName),
+					 ProgModelArray(modelArrSize, modelArrName),
+	                 def = out.VarDef(
+							      NIL, 
+								  NmdType(NIL, "PRT_PROGRAMDECL"), 
+								  "P_GEND_PROGRAM", 
+								  init),
+				     init = Init(
+							   Args(IntLit(evArrSize, DEC, U),
+							   Args(IntLit(evSetArrSize, DEC, U),
+							   Args(IntLit(machArrSize, DEC, U),
+							   Args(IntLit(modelArrSize, DEC, U),
+							   Args(evArrName,
+							   Args(evSetArrName,
+							   Args(machArrName,
+							   Args(modelArrName,
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))))))).
 
     /*************************************************************/
     /******                 Powers of two                   ******/

@@ -30,6 +30,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Core\Prt.c" />
+    <ClCompile Include="..\Core\PrtExecution.c" />
     <ClCompile Include="..\Core\PrtTypes.c" />
     <ClCompile Include="..\Core\PrtValues.c" />
     <ClCompile Include="PrtWinUser.c" />

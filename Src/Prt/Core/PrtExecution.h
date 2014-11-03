@@ -1,7 +1,8 @@
 #include "Prt.h"
 
 typedef struct PRT_PROCESS_PRIV {
-	PRT_PROCESS			    process;
+	PRT_GUID				guid;
+	PRT_PROGRAMDECL			*program;
 	PRT_ERROR_FUN	        errorHandler;
 	PRT_LOG_FUN				logHandler;
 	PRT_RECURSIVE_MUTEX		processLock;
@@ -59,7 +60,7 @@ Macros Constants
 
 /*********************************************************************************
 
-Type Name : PRT_TRIGGER
+Type Name : PRT_EVENT
 
 Description :
 Structure to store Trigger value for a state-machine,
@@ -76,11 +77,11 @@ Payload value corresponding to event
 
 *********************************************************************************/
 
-typedef struct PRT_TRIGGER
+typedef struct PRT_EVENT
 {
-	PRT_VALUE *event;
+	PRT_VALUE *trigger;
 	PRT_VALUE *payload;
-} PRT_TRIGGER;
+} PRT_EVENT;
 
 
 /*********************************************************************************
@@ -105,7 +106,7 @@ Tail of the Event Queue, pointing to las event
 typedef struct PRT_EVENTQUEUE
 {
 	PRT_UINT32		 eventsSize;
-	PRT_TRIGGER		*events;
+	PRT_EVENT		*events;
 	PRT_UINT32		 headIndex;
 	PRT_UINT32		 tailIndex;
 	PRT_UINT32		 size;
@@ -138,7 +139,7 @@ of the current state.
 typedef struct PRT_STACKSTATE_INFO
 {
 	PRT_UINT32			stateIndex;
-	PRT_TRIGGER			trigger;
+	PRT_EVENT			currEvent;
 	PRT_UINT16			returnTo;
 	PRT_STATE_EXECFUN	stateExecFun;
 	PRT_UINT32*			inheritedDeferredSetCompact;
@@ -170,15 +171,19 @@ typedef struct PRT_STATESTACK
 } PRT_STATESTACK;
 
 typedef struct PRT_SM_CONTEXT_PRIV {
-	PRT_SM_CONTEXT		context;
+	PRT_PROCESS		    *process;
+	PRT_UINT32			instanceOf;
+	PRT_VALUE			*id;  
+	void				*extContext;
+	PRT_BOOLEAN			isModel;
+	PRT_VALUE			**varValues;
+	PRT_EVENT			currEvent;
 	PRT_RECURSIVE_MUTEX stateMachineLock;
 	PRT_BOOLEAN			isRunning;
 	PRT_BOOLEAN			isHalted;
-	PRT_VALUE			**varValues;
 	PRT_UINT32			currentState;
 	PRT_STATESTACK		callStack;
 	PRT_EVENTQUEUE		eventQueue;
-	PRT_TRIGGER			trigger;
 	PRT_LASTOPERATION	lastOperation;
 	PRT_STATE_EXECFUN	stateExecFun;
 	PRT_UINT16			returnTo;
@@ -188,20 +193,40 @@ typedef struct PRT_SM_CONTEXT_PRIV {
 	PRT_UINT32*			currentActionsSetCompact;
 } PRT_SM_CONTEXT_PRIV;
 
+
+PRT_SM_CONTEXT_PRIV *
+PrtMkMachinePrivate(
+	__in  PRT_PROCESS_PRIV			*process,
+	__in  PRT_UINT32				instanceOf,
+	__in  PRT_VALUE					*payload
+);
+
+PRT_BOOLEAN 
+AreGuidsEqual(
+	__in PRT_GUID guid1, 
+	__in PRT_GUID guid2
+);
+
+void
+PrtSendPrivate(
+__in PRT_SM_CONTEXT_PRIV		*context,
+__in PRT_VALUE					*event,
+__in PRT_VALUE					*payload
+);
+
 //
-//Enqueue a private event 
+// Enqueue a private event 
 //
 void
 PrtRaise(
 __inout PRT_SM_CONTEXT_PRIV		*context,
-__in PRT_VALUE	*event,
-__in PRT_VALUE	*payload
+__in PRT_VALUE					*event,
+__in PRT_VALUE					*payload
 );
 
 //
 // Pop Current state and return to the caller state
 //
-
 void
 PrtPop(
 __inout PRT_SM_CONTEXT_PRIV		*context
@@ -213,14 +238,13 @@ __inout PRT_SM_CONTEXT_PRIV		*context
 void
 PrtPush(
 __inout PRT_SM_CONTEXT_PRIV		*context,
-__in PRT_UINT32				stateIndex
+__in PRT_UINT32					stateIndex
 );
 
 //
 // Run the machine until no further work can be done.
 // DoEntry is true if called and entry function should be executed
 //
-
 void
 PrtRunStateMachine(
 __inout

@@ -1,0 +1,621 @@
+=================================
+         Console output          
+=================================
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing LinearTopology_5.zing ...
+OUT: Compiling LinearTopology_5.zing to LinearTopology_5.dll ...
+OUT: lineartopology_5.p (50, 41): inferred type:  NIL
+OUT: lineartopology_5.p (51, 45): inferred type:  NIL
+OUT: lineartopology_5.p (56, 4): inferred type:  NIL
+OUT: lineartopology_5.p (57, 4): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (57, 4): inferred type:  NIL
+OUT: lineartopology_5.p (57, 10): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (58, 4): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (58, 4): inferred type:  NIL
+OUT: lineartopology_5.p (58, 10): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (59, 4): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (59, 4): inferred type:  NIL
+OUT: lineartopology_5.p (59, 10): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (60, 4): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (60, 4): inferred type:  NIL
+OUT: lineartopology_5.p (60, 10): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (61, 4): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (61, 4): inferred type:  NIL
+OUT: lineartopology_5.p (61, 10): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (62, 4): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (62, 4): inferred type:  NIL
+OUT: lineartopology_5.p (62, 10): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (63, 4): inferred type:  NIL
+OUT: lineartopology_5.p (65, 4): inferred type:  NIL
+OUT: lineartopology_5.p (65, 4): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (65, 13): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (65, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(REAL), NIL))
+OUT: lineartopology_5.p (65, 15): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (65, 15): inferred type:  TupType(BaseType(REAL), NIL)
+OUT: lineartopology_5.p (66, 4): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (66, 4): inferred type:  NIL
+OUT: lineartopology_5.p (66, 10): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (66, 21): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (66, 21): inferred type:  TupType(SeqType(BaseType(REAL)), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (66, 27): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (66, 27): inferred type:  TupType(BaseType(INT), NIL)
+OUT: lineartopology_5.p (67, 4): inferred type:  NIL
+OUT: lineartopology_5.p (67, 4): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (67, 12): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (68, 4): inferred type:  NIL
+OUT: lineartopology_5.p (68, 11): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (68, 18): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (68, 24): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (68, 27): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (69, 4): inferred type:  NIL
+OUT: lineartopology_5.p (69, 4): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (69, 13): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (69, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(REAL), NIL))
+OUT: lineartopology_5.p (69, 16): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (69, 16): inferred type:  TupType(BaseType(REAL), NIL)
+OUT: lineartopology_5.p (70, 4): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (70, 4): inferred type:  NIL
+OUT: lineartopology_5.p (70, 10): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (70, 21): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (70, 21): inferred type:  TupType(SeqType(BaseType(REAL)), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (70, 27): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (70, 27): inferred type:  TupType(BaseType(INT), NIL)
+OUT: lineartopology_5.p (71, 4): inferred type:  NIL
+OUT: lineartopology_5.p (71, 4): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (71, 12): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (72, 4): inferred type:  NIL
+OUT: lineartopology_5.p (72, 11): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (72, 18): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (72, 24): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (72, 27): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (74, 4): inferred type:  NIL
+OUT: lineartopology_5.p (74, 4): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (74, 13): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (74, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(REAL), NIL))
+OUT: lineartopology_5.p (74, 16): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (74, 16): inferred type:  TupType(BaseType(REAL), NIL)
+OUT: lineartopology_5.p (74, 22): inferred type:  NIL
+OUT: lineartopology_5.p (74, 22): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (74, 31): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (74, 31): inferred type:  TupType(BaseType(INT), TupType(BaseType(REAL), NIL))
+OUT: lineartopology_5.p (74, 34): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (74, 34): inferred type:  TupType(BaseType(REAL), NIL)
+OUT: lineartopology_5.p (75, 4): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (75, 4): inferred type:  NIL
+OUT: lineartopology_5.p (75, 10): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (75, 21): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (75, 21): inferred type:  TupType(SeqType(BaseType(REAL)), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (75, 27): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (75, 27): inferred type:  TupType(BaseType(INT), NIL)
+OUT: lineartopology_5.p (76, 4): inferred type:  NIL
+OUT: lineartopology_5.p (76, 4): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (76, 12): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (76, 15): inferred type:  NIL
+OUT: lineartopology_5.p (76, 15): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (76, 23): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (77, 4): inferred type:  NIL
+OUT: lineartopology_5.p (77, 11): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (77, 18): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (77, 24): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (77, 27): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (78, 4): inferred type:  NIL
+OUT: lineartopology_5.p (78, 4): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (78, 13): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (78, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(REAL), NIL))
+OUT: lineartopology_5.p (78, 16): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (78, 16): inferred type:  TupType(BaseType(REAL), NIL)
+OUT: lineartopology_5.p (78, 22): inferred type:  NIL
+OUT: lineartopology_5.p (78, 22): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (78, 31): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (78, 31): inferred type:  TupType(BaseType(INT), TupType(BaseType(REAL), NIL))
+OUT: lineartopology_5.p (78, 33): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (78, 33): inferred type:  TupType(BaseType(REAL), NIL)
+OUT: lineartopology_5.p (79, 4): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (79, 4): inferred type:  NIL
+OUT: lineartopology_5.p (79, 10): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (79, 21): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (79, 21): inferred type:  TupType(SeqType(BaseType(REAL)), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (79, 27): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (79, 27): inferred type:  TupType(BaseType(INT), NIL)
+OUT: lineartopology_5.p (80, 4): inferred type:  NIL
+OUT: lineartopology_5.p (80, 4): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (80, 12): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (80, 15): inferred type:  NIL
+OUT: lineartopology_5.p (80, 15): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (80, 23): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (81, 4): inferred type:  NIL
+OUT: lineartopology_5.p (81, 11): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (81, 18): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (81, 24): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (81, 27): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (82, 4): inferred type:  NIL
+OUT: lineartopology_5.p (84, 4): inferred type:  NIL
+OUT: lineartopology_5.p (84, 9): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (84, 14): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (84, 27): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (84, 27): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), NIL))
+OUT: lineartopology_5.p (84, 32): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (84, 32): inferred type:  TupType(BaseType(REAL), NIL)
+OUT: lineartopology_5.p (85, 4): inferred type:  NIL
+OUT: lineartopology_5.p (85, 9): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (85, 14): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (85, 27): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (85, 27): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), NIL))
+OUT: lineartopology_5.p (85, 32): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (85, 32): inferred type:  TupType(BaseType(REAL), NIL)
+OUT: lineartopology_5.p (86, 4): inferred type:  NIL
+OUT: lineartopology_5.p (86, 9): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (86, 14): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (86, 27): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (86, 27): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), NIL))
+OUT: lineartopology_5.p (86, 32): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (86, 32): inferred type:  TupType(BaseType(REAL), NIL)
+OUT: lineartopology_5.p (87, 4): inferred type:  NIL
+OUT: lineartopology_5.p (87, 9): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (87, 14): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (87, 27): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (87, 27): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), NIL))
+OUT: lineartopology_5.p (87, 32): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (87, 32): inferred type:  TupType(BaseType(REAL), NIL)
+OUT: lineartopology_5.p (88, 4): inferred type:  NIL
+OUT: lineartopology_5.p (88, 9): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (88, 14): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (88, 27): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (88, 27): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), NIL))
+OUT: lineartopology_5.p (88, 32): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (88, 32): inferred type:  TupType(BaseType(REAL), NIL)
+OUT: lineartopology_5.p (89, 4): inferred type:  NIL
+OUT: lineartopology_5.p (89, 9): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (89, 14): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (89, 27): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (89, 27): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), NIL))
+OUT: lineartopology_5.p (89, 32): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (89, 32): inferred type:  TupType(BaseType(REAL), NIL)
+OUT: lineartopology_5.p (90, 4): inferred type:  NIL
+OUT: lineartopology_5.p (92, 4): inferred type:  NIL
+OUT: lineartopology_5.p (92, 10): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (114, 41): inferred type:  NIL
+OUT: lineartopology_5.p (115, 45): inferred type:  NIL
+OUT: lineartopology_5.p (119, 4): inferred type:  NIL
+OUT: lineartopology_5.p (121, 9): inferred type:  NIL
+OUT: lineartopology_5.p (121, 9): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (121, 18): inferred type:  BaseType(ANY)
+OUT: lineartopology_5.p (121, 26): inferred type:  TupType(SeqType(BaseType(REAL)), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (121, 50): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (122, 9): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (122, 9): inferred type:  NIL
+OUT: lineartopology_5.p (122, 15): inferred type:  BaseType(ANY)
+OUT: lineartopology_5.p (122, 23): inferred type:  TupType(SeqType(BaseType(REAL)), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (122, 47): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (123, 4): inferred type:  NIL
+OUT: lineartopology_5.p (123, 4): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (123, 16): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (123, 16): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (123, 22): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (123, 22): inferred type:  TupType(BaseType(INT), NIL)
+OUT: lineartopology_5.p (124, 4): inferred type:  NIL
+OUT: lineartopology_5.p (124, 4): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (124, 13): inferred type:  BaseType(NULL)
+OUT: lineartopology_5.p (124, 13): inferred type:  TupType(BaseType(NULL), TupType(TupType(BaseType(NULL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (124, 20): inferred type:  BaseType(NULL)
+OUT: lineartopology_5.p (124, 20): inferred type:  TupType(BaseType(NULL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (124, 20): inferred type:  TupType(TupType(BaseType(NULL), TupType(BaseType(INT), NIL)), NIL)
+OUT: lineartopology_5.p (124, 26): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (124, 26): inferred type:  TupType(BaseType(INT), NIL)
+OUT: lineartopology_5.p (125, 4): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (125, 4): inferred type:  NIL
+OUT: lineartopology_5.p (125, 15): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (126, 4): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (126, 4): inferred type:  NIL
+OUT: lineartopology_5.p (126, 8): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (126, 15): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (126, 22): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (126, 24): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (127, 4): inferred type:  NIL
+OUT: lineartopology_5.p (127, 10): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (127, 11): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (127, 13): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (129, 5): inferred type:  NIL
+OUT: lineartopology_5.p (129, 10): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (129, 15): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (129, 16): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (129, 20): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (129, 29): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (130, 5): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (130, 5): inferred type:  NIL
+OUT: lineartopology_5.p (130, 9): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (130, 11): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (130, 13): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (132, 4): inferred type:  NIL
+OUT: lineartopology_5.p (133, 4): inferred type:  NIL
+OUT: lineartopology_5.p (133, 10): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (141, 3): inferred type:  NIL
+OUT: lineartopology_5.p (141, 3): inferred type:  SeqType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)))
+OUT: lineartopology_5.p (141, 17): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (141, 17): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)), NIL))
+OUT: lineartopology_5.p (141, 20): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (141, 28): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (141, 28): inferred type:  TupType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)), NIL)
+OUT: lineartopology_5.p (143, 3): inferred type:  NIL
+OUT: lineartopology_5.p (143, 6): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (143, 13): inferred type:  SeqType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)))
+OUT: lineartopology_5.p (143, 24): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (143, 27): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (143, 34): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (146, 4): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (146, 4): inferred type:  NIL
+OUT: lineartopology_5.p (146, 8): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (146, 15): inferred type:  SeqType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)))
+OUT: lineartopology_5.p (146, 26): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (146, 28): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (147, 4): inferred type:  NIL
+OUT: lineartopology_5.p (147, 10): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (147, 12): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (147, 15): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (149, 4): inferred type:  NIL
+OUT: lineartopology_5.p (149, 7): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (149, 13): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (149, 15): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (149, 17): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (149, 19): inferred type:  SeqType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)))
+OUT: lineartopology_5.p (149, 28): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (149, 29): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (149, 32): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (149, 34): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (151, 6): inferred type:  NIL
+OUT: lineartopology_5.p (151, 6): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (151, 14): inferred type:  SeqType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)))
+OUT: lineartopology_5.p (151, 23): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (151, 24): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (153, 5): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (153, 5): inferred type:  NIL
+OUT: lineartopology_5.p (153, 9): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (153, 11): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (153, 13): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (155, 4): inferred type:  NIL
+OUT: lineartopology_5.p (155, 10): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (160, 3): inferred type:  NIL
+OUT: lineartopology_5.p (160, 6): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (161, 4): inferred type:  NIL
+OUT: lineartopology_5.p (161, 11): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (163, 4): inferred type:  NIL
+OUT: lineartopology_5.p (163, 11): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (171, 4): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (171, 4): inferred type:  NIL
+OUT: lineartopology_5.p (171, 12): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (172, 4): inferred type:  NIL
+OUT: lineartopology_5.p (172, 7): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (174, 5): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (174, 5): inferred type:  NIL
+OUT: lineartopology_5.p (174, 9): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (174, 16): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (174, 23): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (174, 25): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (175, 5): inferred type:  NIL
+OUT: lineartopology_5.p (176, 5): inferred type:  NIL
+OUT: lineartopology_5.p (176, 11): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (176, 12): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (176, 14): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (179, 6): inferred type:  NIL
+OUT: lineartopology_5.p (179, 11): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (179, 16): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (179, 17): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (179, 21): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (180, 6): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (180, 6): inferred type:  NIL
+OUT: lineartopology_5.p (180, 10): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (180, 12): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (180, 14): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (182, 5): inferred type:  NIL
+OUT: lineartopology_5.p (184, 5): inferred type:  NIL
+OUT: lineartopology_5.p (196, 3): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (196, 3): inferred type:  NIL
+OUT: lineartopology_5.p (196, 14): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (196, 23): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (196, 25): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (197, 3): inferred type:  NIL
+OUT: lineartopology_5.p (197, 6): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (197, 15): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (197, 18): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (197, 25): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (199, 4): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (199, 4): inferred type:  NIL
+OUT: lineartopology_5.p (199, 15): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (200, 4): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (200, 4): inferred type:  NIL
+OUT: lineartopology_5.p (200, 8): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (200, 15): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (200, 22): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (200, 24): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (201, 4): inferred type:  NIL
+OUT: lineartopology_5.p (201, 10): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (201, 12): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (201, 15): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (203, 5): inferred type:  NIL
+OUT: lineartopology_5.p (203, 10): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (203, 15): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (203, 16): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (203, 20): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (204, 5): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (204, 5): inferred type:  NIL
+OUT: lineartopology_5.p (204, 9): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (204, 11): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (204, 13): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (206, 4): inferred type:  NIL
+OUT: lineartopology_5.p (212, 3): inferred type:  NIL
+OUT: lineartopology_5.p (214, 4): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (214, 4): inferred type:  NIL
+OUT: lineartopology_5.p (214, 8): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (214, 15): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (214, 22): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (214, 24): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (215, 4): inferred type:  NIL
+OUT: lineartopology_5.p (217, 4): inferred type:  NIL
+OUT: lineartopology_5.p (217, 10): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (217, 12): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (217, 15): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (220, 5): inferred type:  NIL
+OUT: lineartopology_5.p (220, 8): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (220, 11): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (220, 14): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (222, 5): inferred type:  NIL
+OUT: lineartopology_5.p (222, 8): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (222, 11): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (222, 13): inferred type:  SeqType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)))
+OUT: lineartopology_5.p (222, 22): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (222, 23): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (222, 26): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (222, 28): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (225, 7): inferred type:  NIL
+OUT: lineartopology_5.p (225, 7): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (225, 19): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (225, 19): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (225, 25): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (225, 25): inferred type:  TupType(BaseType(INT), NIL)
+OUT: lineartopology_5.p (226, 6): inferred type:  NIL
+OUT: lineartopology_5.p (226, 11): inferred type:  SeqType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)))
+OUT: lineartopology_5.p (226, 20): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (226, 21): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (226, 24): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (226, 27): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (231, 6): inferred type:  NIL
+OUT: lineartopology_5.p (231, 11): inferred type:  SeqType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)))
+OUT: lineartopology_5.p (231, 20): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (231, 21): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (231, 24): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (231, 27): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (236, 5): inferred type:  NIL
+OUT: lineartopology_5.p (236, 8): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (236, 11): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (236, 13): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (236, 19): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (236, 21): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (239, 7): inferred type:  NIL
+OUT: lineartopology_5.p (239, 7): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (239, 19): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (239, 19): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (239, 25): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (239, 25): inferred type:  TupType(BaseType(INT), NIL)
+OUT: lineartopology_5.p (240, 6): inferred type:  NIL
+OUT: lineartopology_5.p (240, 11): inferred type:  SeqType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)))
+OUT: lineartopology_5.p (240, 20): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (240, 21): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (240, 24): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (240, 27): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (245, 6): inferred type:  NIL
+OUT: lineartopology_5.p (245, 9): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (245, 15): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (245, 17): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (245, 20): inferred type:  SeqType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)))
+OUT: lineartopology_5.p (245, 29): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (245, 30): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (245, 33): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (247, 7): inferred type:  NIL
+OUT: lineartopology_5.p (247, 7): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (247, 18): inferred type:  SeqType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)))
+OUT: lineartopology_5.p (247, 27): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (247, 28): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (247, 31): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (248, 7): inferred type:  NIL
+OUT: lineartopology_5.p (248, 12): inferred type:  SeqType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)))
+OUT: lineartopology_5.p (248, 21): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (248, 22): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (248, 25): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (248, 28): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (252, 7): inferred type:  NIL
+OUT: lineartopology_5.p (252, 10): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (252, 16): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (252, 18): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (252, 20): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (252, 22): inferred type:  SeqType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)))
+OUT: lineartopology_5.p (252, 31): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (252, 32): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (252, 35): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (252, 37): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (254, 8): inferred type:  NIL
+OUT: lineartopology_5.p (254, 13): inferred type:  SeqType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)))
+OUT: lineartopology_5.p (254, 22): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (254, 23): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (254, 26): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (254, 29): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (258, 8): inferred type:  NIL
+OUT: lineartopology_5.p (258, 8): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (258, 19): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (258, 25): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (259, 8): inferred type:  NIL
+OUT: lineartopology_5.p (259, 13): inferred type:  SeqType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)))
+OUT: lineartopology_5.p (259, 22): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (259, 23): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (259, 26): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (259, 29): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (264, 5): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (264, 5): inferred type:  NIL
+OUT: lineartopology_5.p (264, 9): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (264, 11): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (264, 13): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (268, 4): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (268, 4): inferred type:  NIL
+OUT: lineartopology_5.p (268, 8): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (268, 15): inferred type:  SeqType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)))
+OUT: lineartopology_5.p (268, 26): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (268, 28): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (269, 4): inferred type:  NIL
+OUT: lineartopology_5.p (269, 10): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (269, 11): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (269, 13): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (271, 5): inferred type:  NIL
+OUT: lineartopology_5.p (271, 5): inferred type:  SeqType(TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)))
+OUT: lineartopology_5.p (271, 18): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (272, 5): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (272, 5): inferred type:  NIL
+OUT: lineartopology_5.p (272, 9): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (272, 11): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (272, 13): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (277, 4): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (277, 4): inferred type:  NIL
+OUT: lineartopology_5.p (277, 8): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (277, 15): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (277, 22): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (277, 24): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (278, 4): inferred type:  NIL
+OUT: lineartopology_5.p (278, 10): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (278, 11): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (278, 13): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (280, 5): inferred type:  NIL
+OUT: lineartopology_5.p (280, 10): inferred type:  SeqType(BaseType(REAL))
+OUT: lineartopology_5.p (280, 15): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (280, 16): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (280, 20): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (280, 36): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (281, 5): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (281, 5): inferred type:  NIL
+OUT: lineartopology_5.p (281, 9): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (281, 11): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (281, 13): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (283, 4): inferred type:  NIL
+OUT: lineartopology_5.p (307, 3): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (307, 3): inferred type:  NIL
+OUT: lineartopology_5.p (307, 18): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), NIL))
+OUT: lineartopology_5.p (307, 26): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), NIL))
+OUT: lineartopology_5.p (307, 49): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (308, 3): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (308, 3): inferred type:  NIL
+OUT: lineartopology_5.p (308, 14): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), NIL))
+OUT: lineartopology_5.p (308, 22): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), NIL))
+OUT: lineartopology_5.p (308, 45): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (309, 3): inferred type:  NIL
+OUT: lineartopology_5.p (309, 3): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (309, 13): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (309, 17): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (310, 3): inferred type:  NIL
+OUT: lineartopology_5.p (310, 3): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (310, 13): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (310, 17): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (318, 4): inferred type:  NIL
+OUT: lineartopology_5.p (318, 4): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (318, 15): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (318, 23): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (323, 3): inferred type:  NIL
+OUT: lineartopology_5.p (323, 6): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (324, 4): inferred type:  NIL
+OUT: lineartopology_5.p (324, 11): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (326, 4): inferred type:  NIL
+OUT: lineartopology_5.p (326, 11): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (331, 3): inferred type:  NIL
+OUT: lineartopology_5.p (331, 6): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (332, 4): inferred type:  NIL
+OUT: lineartopology_5.p (332, 11): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (334, 4): inferred type:  NIL
+OUT: lineartopology_5.p (334, 11): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (342, 4): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (342, 4): inferred type:  NIL
+OUT: lineartopology_5.p (342, 12): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (343, 4): inferred type:  NIL
+OUT: lineartopology_5.p (343, 7): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (345, 5): inferred type:  NIL
+OUT: lineartopology_5.p (345, 11): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (354, 9): inferred type:  NIL
+OUT: lineartopology_5.p (354, 12): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (354, 22): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (354, 24): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (354, 26): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (354, 34): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (356, 3): inferred type:  NIL
+OUT: lineartopology_5.p (356, 3): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (356, 15): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (356, 23): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (376, 4): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (376, 4): inferred type:  NIL
+OUT: lineartopology_5.p (376, 12): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (377, 4): inferred type:  NIL
+OUT: lineartopology_5.p (377, 7): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (378, 5): inferred type:  NIL
+OUT: lineartopology_5.p (378, 10): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (378, 23): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (378, 33): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (388, 4): inferred type:  NIL
+OUT: lineartopology_5.p (389, 4): inferred type:  NIL
+OUT: lineartopology_5.p (389, 7): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (389, 16): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (389, 19): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (390, 5): inferred type:  NIL
+OUT: lineartopology_5.p (390, 11): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (391, 4): inferred type:  NIL
+OUT: lineartopology_5.p (391, 7): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (391, 16): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (391, 19): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (392, 5): inferred type:  NIL
+OUT: lineartopology_5.p (392, 11): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (393, 4): inferred type:  NIL
+OUT: lineartopology_5.p (393, 7): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (393, 16): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (393, 19): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (394, 5): inferred type:  NIL
+OUT: lineartopology_5.p (394, 11): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (402, 3): inferred type:  NIL
+OUT: lineartopology_5.p (402, 6): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (402, 14): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (402, 17): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (403, 4): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (403, 4): inferred type:  NIL
+OUT: lineartopology_5.p (403, 15): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (404, 3): inferred type:  NIL
+OUT: lineartopology_5.p (404, 6): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (404, 14): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (404, 17): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (405, 4): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (405, 4): inferred type:  NIL
+OUT: lineartopology_5.p (405, 15): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (406, 3): inferred type:  NIL
+OUT: lineartopology_5.p (406, 6): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (406, 14): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (406, 17): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (407, 4): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (407, 4): inferred type:  NIL
+OUT: lineartopology_5.p (407, 15): inferred type:  BaseType(INT)
+OUT: lineartopology_5.p (411, 4): inferred type:  NIL
+OUT: lineartopology_5.p (411, 9): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (411, 18): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (411, 27): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (411, 27): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL))
+OUT: lineartopology_5.p (411, 33): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (411, 33): inferred type:  TupType(TupType(BaseType(REAL), TupType(BaseType(INT), NIL)), NIL)
+OUT: lineartopology_5.p (418, 4): inferred type:  NIL
+OUT: lineartopology_5.p (418, 4): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (418, 15): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (418, 23): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: lineartopology_5.p (419, 4): inferred type:  NIL
+OUT: lineartopology_5.p (419, 9): inferred type:  BaseType(REAL)
+OUT: lineartopology_5.p (419, 18): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (424, 3): inferred type:  NIL
+OUT: lineartopology_5.p (447, 4): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (447, 4): inferred type:  NIL
+OUT: lineartopology_5.p (447, 12): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (448, 4): inferred type:  NIL
+OUT: lineartopology_5.p (448, 7): inferred type:  BaseType(BOOL)
+OUT: lineartopology_5.p (450, 5): inferred type:  NIL
+OUT: lineartopology_5.p (450, 11): inferred type:  BaseType(EVENT)
+OUT: lineartopology_5.p (455, 3): inferred type:  NIL
+OUT: 
+EXIT: 0

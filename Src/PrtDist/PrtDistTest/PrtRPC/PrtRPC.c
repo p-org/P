@@ -1,6 +1,5 @@
-
+#include<process.h>
 #include "PrtDist.h"
-#include<pthread.h>
 #include"PrtDist_s.c"
 
 PRT_VALUE *ReceivedValue;
@@ -29,7 +28,7 @@ int main(int argc, char *argv[])
 	return 0;
 }
 */
-void* __cdecl WaitThreadForRPCListen(void* i)
+DWORD WINAPI WaitThreadForRPCListen(LPVOID lpParam)
 {
 	printf("Thread - WaitThreadForRPCListen listening ...\n");
 	RPC_STATUS status;
@@ -37,8 +36,8 @@ void* __cdecl WaitThreadForRPCListen(void* i)
 	if (status)
 		exit(status);
 	printf("In WaitThreadForRPCListen - Wait Server Listen Stopped");
-	pthread_exit(NULL);
-	return NULL;
+	ExitThread(0);
+	return 0;
 }
 
 
@@ -99,10 +98,9 @@ void CreateRPCTestServer()
 		1, // Recommended minimum number of threads.
 		RPC_C_LISTEN_MAX_CALLS_DEFAULT, // Recommended maximum number of threads.
 		1);
-
-	pthread_t workerThread;
-	int s = pthread_create(&workerThread, NULL, WaitThreadForRPCListen, NULL);
-	if (s)
+	DWORD hThreadId;
+	HANDLE workerThread = CreateThread(NULL, 0, WaitThreadForRPCListen, NULL, 0, &hThreadId);
+	if (workerThread == NULL)
 	{
 		printf(stderr, "Runtime reported exception in pthread_create");
 		exit(status);

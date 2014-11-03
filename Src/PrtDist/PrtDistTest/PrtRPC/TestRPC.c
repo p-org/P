@@ -258,7 +258,6 @@ void MapTest2()
 	PrtMapUpdate(a2aMap, zeroVal, zeroVal);
 	PrtMapUpdate(a2aMap, falseVal, falseVal);
 	PrtPrintValue(a2aMap);
-	printf_s("Before Call to Server \n");
 
 	handle_t testHandle = CreateRPCClient();
 	TestOverRPC(a2aMap);
@@ -365,12 +364,12 @@ int main()
 	//Test Cases
 	//TestPrimitiveType();
 	MapTest1();
-	MapTest2();
+	//MapTest2();
 	//SeqAppendTest();
 	//SeqNestedTest();
 	//TupleTest();
 	//NamedTupleTest();
-	SeqPrependTest();
+	//SeqPrependTest();
 	//BinaryBoolFunTest();
 	//wait
 	getchar();

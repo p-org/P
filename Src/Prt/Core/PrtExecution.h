@@ -1,4 +1,11 @@
+#ifndef PRT_EXECUTION_H
+#define PRT_EXECUTION_H
+
 #include "Prt.h"
+
+#ifdef __cplusplus
+extern "C"{
+#endif
 
 typedef struct PRT_PROCESS_PRIV {
 	PRT_GUID				guid;
@@ -194,6 +201,33 @@ typedef struct PRT_SM_CONTEXT_PRIV {
 } PRT_SM_CONTEXT_PRIV;
 
 
+//
+// Raise event 
+//
+PRT_API void PRT_CALL_CONV
+PrtRaise(
+__inout PRT_SM_CONTEXT_PRIV		*context,
+__in PRT_VALUE					*event,
+__in PRT_VALUE					*payload
+);
+
+//
+// Pop current state and return to the caller state
+//
+PRT_API void PRT_CALL_CONV
+PrtPop(
+__inout PRT_SM_CONTEXT_PRIV		*context
+);
+
+//
+// Execute push statement
+//
+PRT_API void PRT_CALL_CONV
+PrtPush(
+__inout PRT_SM_CONTEXT_PRIV		*context,
+__in PRT_UINT32					stateIndex
+);
+
 PRT_SM_CONTEXT_PRIV *
 PrtMkMachinePrivate(
 	__in  PRT_PROCESS_PRIV			*process,
@@ -212,33 +246,6 @@ PrtSendPrivate(
 __in PRT_SM_CONTEXT_PRIV		*context,
 __in PRT_VALUE					*event,
 __in PRT_VALUE					*payload
-);
-
-//
-// Enqueue a private event 
-//
-void
-PrtRaise(
-__inout PRT_SM_CONTEXT_PRIV		*context,
-__in PRT_VALUE					*event,
-__in PRT_VALUE					*payload
-);
-
-//
-// Pop Current state and return to the caller state
-//
-void
-PrtPop(
-__inout PRT_SM_CONTEXT_PRIV		*context
-);
-
-//
-// Execute Call Statement
-//
-void
-PrtPush(
-__inout PRT_SM_CONTEXT_PRIV		*context,
-__in PRT_UINT32					stateIndex
 );
 
 //
@@ -295,21 +302,6 @@ __in PRT_BOOLEAN			restoreTrigger
 );
 
 
-
-/*********************************************************************************
-
-Functions used for Life Time Management of the statemachine.
-
-*********************************************************************************/
-//
-//Remove State Machine Free all the memory allocated to this statemachine
-//
-void
-PrtRemoveMachine(
-__in PRT_SM_CONTEXT			*context
-);
-
-
 /*********************************************************************************
 
 Helper Functions.
@@ -336,7 +328,6 @@ __in PRT_STATUS ex,
 __in PRT_SM_CONTEXT_PRIV *context
 );
 
-
 //
 // Call external logging call back
 //
@@ -345,7 +336,6 @@ PrtLog(
 __in PRT_STEP step,
 __in PRT_SM_CONTEXT_PRIV *context
 );
-
 
 //
 // Dynamically resize the queue
@@ -412,7 +402,6 @@ PrtIsTransitionPresent(
 __in PRT_SM_CONTEXT_PRIV	*context,
 __in PRT_UINT32				eventIndex
 );
-
 
 FORCEINLINE
 PRT_BOOLEAN
@@ -496,7 +485,6 @@ PrtGetPackSize(
 __in PRT_SM_CONTEXT_PRIV			*context
 );
 
-
 //
 // Check if the transition on event is a call transition
 //
@@ -505,7 +493,6 @@ PrtIsPushTransition(
 PRT_SM_CONTEXT_PRIV		*context,
 PRT_UINT32				event
 );
-
 
 //
 // Create a clone of packed set
@@ -541,3 +528,8 @@ void
 PrtCleanupModel(
 PRT_SM_CONTEXT			*context
 );
+
+#ifdef __cplusplus
+}
+#endif
+#endif

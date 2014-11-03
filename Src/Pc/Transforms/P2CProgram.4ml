@@ -29,7 +29,10 @@ transform P2CProgram (in:: P) returns (out:: C)
 									   Section(
 										   Section(
 											  PpDefine(Ident("P_PROGRAM_H"), NIL),
-											  PpInclude("PrtWinUser.h", FALSE)),
+											  Section(
+											     PpInclude("PrtWinUser.h", FALSE),
+											     PpInclude("PrtExecution.h", FALSE)											  
+											  )),
 										   cmp),
 									   NIL).
 

@@ -72,6 +72,7 @@ typedef struct PRT_EVENTDECL
 typedef struct PRT_EVENTSETDECL
 {
 	PRT_UINT32 declIndex;      /**< The index of event set in the program  */
+	PRT_UINT32 nPacked;        /**< Size of packedEvents array              */
 	PRT_UINT32 *packedEvents;  /**< The events packed into an array of ints */
 } PRT_EVENTSETDECL;
 

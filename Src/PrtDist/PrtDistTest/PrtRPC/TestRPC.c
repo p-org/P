@@ -363,11 +363,11 @@ int main()
 	CreateRPCTestServer();
 	//Test Cases
 	//TestPrimitiveType();
-	MapTest1();
+	//MapTest1();
 	//MapTest2();
 	//SeqAppendTest();
 	//SeqNestedTest();
-	//TupleTest();
+	TupleTest();
 	//NamedTupleTest();
 	//SeqPrependTest();
 	//BinaryBoolFunTest();

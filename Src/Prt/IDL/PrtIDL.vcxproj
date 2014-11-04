@@ -99,7 +99,7 @@
       <Command>"..\Utilities\PatchIDL\bin\PatchIDL.exe"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>rm -f *_IDL.h</Command>
+      <Command>del /F *_IDL.h</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -122,7 +122,7 @@
       <Command>"..\Utilities\PatchIDL\bin\PatchIDL.exe"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>rm -f *_IDL.h</Command>
+      <Command>del /F *_IDL.h</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -149,7 +149,7 @@
       <Command>"..\Utilities\PatchIDL\bin\PatchIDL.exe"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>rm -f *_IDL.h</Command>
+      <Command>del /F *_IDL.h</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -176,7 +176,7 @@
       <Command>"..\Utilities\PatchIDL\bin\PatchIDL.exe"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>rm -f *_IDL.h</Command>
+      <Command>del /F *_IDL.h</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

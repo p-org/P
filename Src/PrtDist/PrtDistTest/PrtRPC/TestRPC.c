@@ -50,6 +50,9 @@ void TestOverRPC(PRT_VALUE* value)
 	handle_t testHandle = CreateRPCClient();
 
 	PRT_VALUE *serialized = PrtDistSerializeValue(value);
+	printf("Before Serialization : \n");
+	PrtPrintValue(value);
+	printf("\n");
 	PRT_VALUE* nullType = PrtMkEventValue(0);
 	RpcTryExcept
 	{
@@ -62,8 +65,7 @@ void TestOverRPC(PRT_VALUE* value)
 		printf("Runtime reported exception in SendValue 0x%lx = %ld\n", ulCode, ulCode);
 	}
 	RpcEndExcept
-
-
+  
 }
 
 void TupleTest()
@@ -367,10 +369,10 @@ int main()
 	//MapTest2();
 	//SeqAppendTest();
 	//SeqNestedTest();
-	TupleTest();
+	//TupleTest();
 	//NamedTupleTest();
 	//SeqPrependTest();
-	//BinaryBoolFunTest();
+	BinaryBoolFunTest();
 	//wait
 	getchar();
 

@@ -73,7 +73,8 @@ __in PRT_TYPE* type
 
 		while (currT != NULL)
 		{
-			PrtSetFieldType(clone, i, PrtDistDeserializeType(currT->type));
+			PRT_TYPE* temp = PrtCloneType(PrtDistDeserializeType(currT->type));
+			PrtSetFieldType(clone, i, temp);
 			i = i + 1;
 			currT = currT->nextNode;
 		}
@@ -308,18 +309,23 @@ __in PRT_TYPE* type
 	}
 	case PRT_KIND_MAP:
 	{
-		PRT_MAPTYPE *mtype = type->typeUnion.map;
-		return PrtMkMapType(PrtDistSerializeType(mtype->domType), PrtDistSerializeType(mtype->codType));
+		PRT_TYPE* clone = PrtCloneType(type);
+		PrtFreeType(clone->typeUnion.map->codType);
+		PrtFreeType(clone->typeUnion.map->domType);
+		clone->typeUnion.map->codType = PrtDistSerializeType(type->typeUnion.map->codType);
+		clone->typeUnion.map->domType = PrtDistSerializeType(type->typeUnion.map->domType);
+		return clone;
 	}
 	case PRT_KIND_NMDTUP:
 	{
 		PRT_UINT32 i;
-		PRT_NMDTUPTYPE *ntype = type->typeUnion.nmTuple;
-		PRT_TYPE* clone = PrtMkNmdTupType(ntype->arity);
-		for (i = 0; i < ntype->arity; ++i)
+		PRT_TYPE* clone = PrtCloneType(type);
+		clone->typeUnion.nmTuple->fieldTypesSerialized = NULL;
+		clone->typeUnion.nmTuple->fieldNamesSerialized = NULL;
+		for (i = 0; i < clone->typeUnion.nmTuple->arity; ++i)
 		{
-			InsertStringNode(&clone->typeUnion.nmTuple->fieldNamesSerialized, ntype->fieldNames[i]);
-			InsertTypeNode(&clone->typeUnion.nmTuple->fieldTypesSerialized, PrtDistSerializeType(ntype->fieldTypes[i]));
+			InsertStringNode(&clone->typeUnion.nmTuple->fieldNamesSerialized, type->typeUnion.nmTuple->fieldNames[i]);
+			InsertTypeNode(&clone->typeUnion.nmTuple->fieldTypesSerialized, PrtDistSerializeType(type->typeUnion.nmTuple->fieldTypes[i]));
 		}
 
 
@@ -327,19 +333,19 @@ __in PRT_TYPE* type
 	}
 	case PRT_KIND_SEQ:
 	{
-		PRT_SEQTYPE *stype = type->typeUnion.seq;
-		return PrtMkSeqType(PrtDistSerializeType(stype->innerType));
+		PRT_TYPE* clone = PrtCloneType(type);
+		clone->typeUnion.seq->innerType = PrtDistSerializeType(type->typeUnion.seq->innerType);
+		return clone;
 	}
 	case PRT_KIND_TUPLE:
 	{
 		PRT_UINT32 i;
-		PRT_TUPTYPE *ttype = type->typeUnion.tuple;
-		PRT_TYPE* clone = PrtMkTupType(ttype->arity);
-		for (i = 0; i < ttype->arity; ++i)
+		PRT_TYPE* clone = PrtCloneType(type);
+		clone->typeUnion.tuple->fieldTypesSerialized = NULL;
+		for (i = 0; i < type->typeUnion.tuple->arity; ++i)
 		{
-			InsertTypeNode(&clone->typeUnion.tuple->fieldTypesSerialized, PrtDistSerializeType(ttype->fieldTypes[i]));
+			InsertTypeNode(&clone->typeUnion.tuple->fieldTypesSerialized, PrtDistSerializeType(type->typeUnion.tuple->fieldTypes[i]));
 		}
-
 		return clone;
 	}
 	default:
@@ -416,22 +422,16 @@ __in PRT_VALUE* value
 	}
 	case PRT_KIND_TUPLE:
 	{
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
+		PRT_UINT32 i;
+		PRT_VALUE *retVal = PrtCloneValue(value);
 		retVal->type = PrtDistSerializeType(value->type);
 		retVal->discriminator = PRT_VALKIND_TUPLE;
-		PRT_UINT32 i;
-		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
-		PRT_UINT32 arity = value->type->typeUnion.tuple->arity;
-		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtCalloc(1, sizeof(PRT_TUPVALUE));
-		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE*));
-		cVal->valuesSerialized = NULL;
-		for (i = 0; i < arity; ++i)
+		retVal->valueUnion.tuple->valuesSerialized = NULL;
+		for (i = 0; i < retVal->type->typeUnion.tuple->arity; ++i)
 		{
-			cVal->values[i] = PrtCloneValue(tVal->values[i]);
-			InsertValueNode(&cVal->valuesSerialized, PrtDistSerializeValue(tVal->values[i]));
+			InsertValueNode(&retVal->valueUnion.tuple->valuesSerialized, PrtDistSerializeValue(value->valueUnion.tuple->values[i]));
 		}
 
-		retVal->valueUnion.tuple = cVal;
 		return retVal;
 	}
 	case PRT_KIND_SEQ:

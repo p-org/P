@@ -62,7 +62,21 @@ PRT_BOOLEAN s_PrtDistSend(
 	return PRT_TRUE;
 }
 
+PRT_BOOLEAN s_PrtDistSendType(
+	handle_t handleM,
+	PRT_TYPE * type
+)
+{
+	printf("\n");
+	PRT_TYPE* x = PrtDistDeserializeType(type);
 
+	printf("In Send Type Received :");
+	printf("Type : ");
+	PrtPrintType(x);
+	printf("\n");
+
+	return PRT_TRUE;
+}
 
 void CreateRPCTestServer()
 {

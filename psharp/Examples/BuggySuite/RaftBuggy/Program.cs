@@ -13,9 +13,11 @@ namespace RaftBuggy
     {
         static void Main(string[] args)
         {
+            int count = 0;
             Runtime.Test(
                 () =>
                 {
+                    Console.Error.WriteLine("iteration: " + count++);
                     Console.WriteLine("Registering events to the runtime.\n");
                     Runtime.RegisterNewEvent(typeof(eLocal));
                     Runtime.RegisterNewEvent(typeof(eStop));
@@ -46,7 +48,7 @@ namespace RaftBuggy
                     Runtime.RegisterNewMachine(typeof(Client));
 
                     Console.WriteLine("Starting the runtime.\n");
-                    Runtime.Start(new Tuple<int, int, int>(5, 1, 15));
+                    Runtime.Start(new Tuple<int, int, int>(5, 1, 5));
                     Runtime.Wait();
 
                     Console.WriteLine("Performing cleanup.\n");

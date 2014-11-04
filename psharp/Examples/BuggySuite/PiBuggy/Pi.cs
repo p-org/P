@@ -134,7 +134,7 @@ namespace PiBuggy
                 }
 
                 Console.WriteLine("[Master] Result: {0}\n", this.Result);
-                Runtime.Assert(this.Result >= 3.14);
+                Runtime.Assert(this.Result >= 3.14 && this.Result < 3.15);
 
                 this.Delete();
             }
@@ -221,7 +221,7 @@ namespace PiBuggy
             for (int idx = this.Id; idx <= n; idx += this.NumOfWorkers)
             {
                 double x = h * (idx - 0.5);
-                sum += (4.0 / (1.0 + x*x));
+                sum += (3.0 / (1.0 + x*x));
             }
 
             this.Send(master, new eSum(h * sum));

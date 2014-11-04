@@ -74,6 +74,16 @@ namespace Microsoft.PSharp
         /// </summary>
         internal static bool IsRunning = false;
 
+        /// <summary>
+        /// Assertion failure counter.
+        /// </summary>
+        private static int AssertionFailureCount = 0;
+
+        /// <summary>
+        /// Transitions explored counter.
+        /// </summary>
+        private static int TransitionsExploredCount = 0;
+
         #endregion
 
         #region P# API methods
@@ -251,6 +261,7 @@ namespace Microsoft.PSharp
             }
 
             Profiler.StartMeasuringExecutionTime();
+            var averageTransitions = 0;
             var iteration = 0;
             while (iteration < iterations)
             {
@@ -262,18 +273,40 @@ namespace Microsoft.PSharp
                     break;
                 }
 
+                if (schedulingType == Runtime.SchedulingType.DFS)
+                {
+                    if (iteration == 0)
+                    {
+                        averageTransitions = Runtime.TransitionsExploredCount;
+                    }
+                }
+                else
+                {
+                    averageTransitions += Runtime.TransitionsExploredCount;
+                }
+
                 Console.WriteLine("Finished iteration: {0}", iteration + 1);
                 iteration++;
 
-                if (untilBugFound && Runtime.AssertionCount > 0)
+                if (untilBugFound && Runtime.AssertionFailureCount > 0)
                 {
                     break;
                 }
             }
 
             Profiler.StopMeasuringExecutionTime();
+
+            Console.Error.WriteLine("Found {0} assertion failures.", Runtime.AssertionFailureCount);
             Console.Error.WriteLine("Explored {0} schedules.", iteration);
-            Console.Error.WriteLine("Found {0} assertion failures.", Runtime.AssertionCount);
+            if (schedulingType == Runtime.SchedulingType.DFS)
+            {
+                Console.Error.WriteLine("Average transitions per schedule: {0}.", averageTransitions);
+            }
+            else
+            {
+                Console.Error.WriteLine("Average transitions per schedule: {0}.", averageTransitions / iterations);
+            }
+
             Profiler.PrintResults();
         }
 
@@ -577,6 +610,7 @@ namespace Microsoft.PSharp
                     if (m.Id == nextMachineId &&
                         (m.Inbox.Count > 0 || m.RaisedEvent != null))
                     {
+                        Runtime.TransitionsExploredCount++;
                         m.HandleNextEvent();
                         break;
                     }
@@ -844,11 +878,6 @@ namespace Microsoft.PSharp
         #region error checking
 
         /// <summary>
-        /// Assertion counter.
-        /// </summary>
-        private static int AssertionCount = 0;
-
-        /// <summary>
         /// Assertion caching.
         /// </summary>
         private static Tuple<object, Func<object, bool>, string, object[]> AssertionCache = null;
@@ -877,7 +906,7 @@ namespace Microsoft.PSharp
                 }
                 else
                 {
-                    Runtime.AssertionCount++;
+                    Runtime.AssertionFailureCount++;
                 }
             }
         }
@@ -909,7 +938,7 @@ namespace Microsoft.PSharp
                 }
                 else
                 {
-                    Runtime.AssertionCount++;
+                    Runtime.AssertionFailureCount++;
                 }
             }
         }

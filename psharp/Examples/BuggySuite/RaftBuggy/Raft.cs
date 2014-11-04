@@ -1001,7 +1001,7 @@ namespace RaftBuggy
 
                 Console.WriteLine("[Clock-{0}] is in ElectionTimeout ...\n", machine.Id);
 
-                machine.Timer = 20000;
+                machine.Timer = 5000;
 
                 this.Raise(new eQueryElectionTimeout(false));
             }
@@ -1015,7 +1015,7 @@ namespace RaftBuggy
 
                 Console.WriteLine("[Clock-{0}] is HeartBeating ...\n", machine.Id);
 
-                machine.Timer = 5000;
+                machine.Timer = 2000;
 
                 this.Raise(new eQueryHeartBeating());
             }
@@ -1029,7 +1029,7 @@ namespace RaftBuggy
 
                 Console.WriteLine("[Clock-{0}] is in ClientTimeout ...\n", machine.Id);
 
-                machine.Timer = 2500;
+                machine.Timer = 500;
 
                 this.Raise(new eQueryClientTimeout());
             }
@@ -1041,7 +1041,7 @@ namespace RaftBuggy
 
             if (resetTimer)
             {
-                this.Timer = 20000;
+                this.Timer = 5000;
             }
             else if (this.Timer > 0)
             {
@@ -1062,7 +1062,7 @@ namespace RaftBuggy
             }
             else if (this.Timer == 0)
             {
-                this.Timer = 20000;
+                this.Timer = 5000;
                 this.Send(this.Owner, new eElectionTimedOut());
             }
             else
@@ -1092,7 +1092,7 @@ namespace RaftBuggy
             }
             else if (this.Timer == 0)
             {
-                this.Timer = 5000;
+                this.Timer = 2000;
                 this.Send(this.Owner, new eSendHeartBeat());
             }
             else
@@ -1122,7 +1122,7 @@ namespace RaftBuggy
             }
             else if (this.Timer == 0)
             {
-                this.Timer = 2500;
+                this.Timer = 500;
                 this.Send(this.Owner, new eClientTimedOut());
             }
             else

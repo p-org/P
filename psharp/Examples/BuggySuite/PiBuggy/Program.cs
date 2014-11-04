@@ -31,15 +31,15 @@ namespace PiBuggy
                     Runtime.RegisterNewMachine(typeof(Worker));
 
                     Console.WriteLine("Starting the runtime.\n");
-                    Runtime.Start(10);
+                    Runtime.Start(5);
                     Runtime.Wait();
 
                     Console.WriteLine("Performing cleanup.\n");
                     Runtime.Dispose();
                 },
-                10000,
+                100000,
                 true,
-                Runtime.SchedulingType.Random,
+                Runtime.SchedulingType.DFS,
                 false);
         }
     }

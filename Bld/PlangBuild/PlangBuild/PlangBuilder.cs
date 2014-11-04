@@ -591,7 +591,7 @@ namespace PlangBuild
 
             // win32 
             new Tuple<string, string>(
-            "..\\..\\..\\..\\..\\Src\\Prt\\PrtDist\\PrtDist\\PrtDist\\Release\\Win32\\PrtDist.lib", 
+            "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\Release\\Win32\\PrtDist.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtDist.lib"),
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\Win32\\PrtWinUser.lib", 

@@ -33,7 +33,13 @@ __in  PRT_VALUE					*payload
 	PRT_UINT32 numMachines = process->numMachines;
 	PRT_UINT32 machineCount = process->machineCount;
 	PRT_SM_CONTEXT **machines = process->machines;
-	if (machineCount == numMachines) {
+	if (machineCount == 0)
+	{
+		machines = (PRT_SM_CONTEXT **)PrtCalloc(1, sizeof(PRT_SM_CONTEXT *));
+		process->machines = machines;
+		process->machineCount = 1;
+	}
+	else if (machineCount == numMachines) {
 		PRT_SM_CONTEXT **newMachines = (PRT_SM_CONTEXT **)PrtCalloc(2 * machineCount, sizeof(PRT_SM_CONTEXT *));
 		for (PRT_UINT32 i = 0; i < machineCount; i++)
 		{
@@ -55,6 +61,8 @@ __in  PRT_VALUE					*payload
 	id.machineId = process->numMachines; // index begins with 1 since 0 is reserved
 	id.processId = process->guid;
 	context->id = PrtMkMachineValue(id);
+	context->extContext = NULL;
+	context->isModel = PRT_FALSE;
 
 	//
 	// Initialize Machine Internal Variables

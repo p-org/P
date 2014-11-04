@@ -93,6 +93,8 @@ PRT_SM_CONTEXT *PrtMkModel(
 	id.machineId = privateProcess->numMachines; // index begins with 1 since 0 is reserved
 	id.processId = process->guid;
 	context->id = PrtMkMachineValue(id);
+	context->extContext = NULL;
+	context->isModel = PRT_TRUE;
 	process->program->modelImpls[context->instanceOf].newFun(context, payload);
 
 	PrtUnlockMutex(privateProcess->processLock);

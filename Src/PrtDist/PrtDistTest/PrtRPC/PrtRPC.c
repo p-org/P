@@ -50,6 +50,7 @@ PRT_BOOLEAN s_PrtDistSend(
 	printf("\n");
 	PRT_VALUE* x = PrtDistDeserializeValue(payload);
 	ReceivedValue = PrtCloneValue(x);
+	
 	printf("In SendValue1 Value Received :");
 	PrtPrintValue(ReceivedValue);
 	printf("\n");

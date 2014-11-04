@@ -19,8 +19,8 @@ namespace PatchIDL
                 StreamReader sr = new StreamReader(File.Open(typesFile, FileMode.Open));
                 string fileContent = sr.ReadToEnd();
                 sr.Close();
-                fileContent = fileContent.Replace("typedef struct PRT_FORGNTYPE", "/*typedef struct PRT_FORGNTYPE");
-                fileContent = fileContent.Replace("PRT_FORGNTYPE;", "PRT_FORGNTYPE;*/");
+                fileContent = fileContent.Replace("typedef struct PRT_FORGNTYPE", "/*");
+                fileContent = fileContent.Replace("PRT_FORGNTYPE;", "*/");
                 StreamWriter sw = new StreamWriter(File.Open(typesFile, FileMode.Create));
                 sw.WriteLine(fileContent);
                 sw.Close();
@@ -37,8 +37,8 @@ namespace PatchIDL
                 StreamReader sr = new StreamReader(File.Open(valuesFile, FileMode.Open));
                 string fileContent = sr.ReadToEnd();
                 sr.Close();
-                fileContent = fileContent.Replace("typedef struct PRT_FORGNVALUE", "/*typedef struct PRT_FORGNVALUE");
-                fileContent = fileContent.Replace("PRT_FORGNVALUE;", "PRT_FORGNVALUE;*/");
+                fileContent = fileContent.Replace("typedef struct PRT_FORGNVALUE", "/*");
+                fileContent = fileContent.Replace("PRT_FORGNVALUE;", "*/");
                 StreamWriter sw = new StreamWriter(File.Open(valuesFile, FileMode.Create));
                 sw.WriteLine(fileContent);
                 sw.Close();

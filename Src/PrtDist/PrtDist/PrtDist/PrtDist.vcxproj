@@ -67,9 +67,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
@@ -94,8 +96,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Prt/;../PrtDistIDL/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINDIST;IGNORE_FRG;_CRT_SECURE_NO_WARNINGS;PRT_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../../Prt/WinUser/;../../../Prt/IDL/;../../../Prt/Core/;../../../Prt/API/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -108,8 +110,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Prt/;../PrtDistIDL/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>;PRT_PLAT_WINDIST;IGNORE_FRG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../../Prt/WinUser/;../../../Prt/IDL/;../../../Prt/Core/;../../../Prt/API/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -124,8 +126,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_PLAT_WINDIST;IGNORE_FRG;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../Prt/;../PrtDistIDL/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../../Prt/WinUser/;../../../Prt/IDL/;../../../Prt/Core/;../../../Prt/API/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

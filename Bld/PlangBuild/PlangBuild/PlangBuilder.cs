@@ -29,10 +29,11 @@ namespace PlangBuild
         {
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\Pcx64.csproj", PlatformX64),
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\Pc.csproj", PlatformX86),
-            //new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\PrtDist\\PrtDist\\PrtDist.vcxproj", PlatformX64),
-            //new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\PrtDist\\PrtDist\\PrtDist.vcxproj", PlatformX86),
-            //new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\PrtWinUser\\PrtWinUser.vcxproj", PlatformX64),
-            //new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\PrtWinUser\\PrtWinUser.vcxproj", PlatformX86),
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUser.vcxproj", PlatformX64),
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUser.vcxproj", PlatformX86),
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\PrtDist.vcxproj", PlatformX64),
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\PrtDist.vcxproj", PlatformX86),
+            
         };
         
         private static readonly Tuple<string, string>[] DebugMoveMap = new Tuple<string, string>[]
@@ -224,126 +225,117 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x64\\Debug\\ZingParser.pdb", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\ZingParser.pdb"),
 
-            /*
+            
             // x86
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtHeaders.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtHeaders.h"),
-                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfig.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtConfig.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinDist.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtWinDist.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinDriver.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtWinDriver.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinUser.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtWinUser.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtDTTypeDefs.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtDTTypeDefs.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtDTTypes.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtDTTypes.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtDTValues.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtDTValues.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtProcess.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtProcess.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMPrivate.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtSMPrivate.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMProtected.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtSMProtected.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMProtectedTypes.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtSMProtectedTypes.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtInterface.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtInterface.h"),
-
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMTypeDefs.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtSMTypeDefs.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtToString.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtToString.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtExternalHandlers.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtExternalHandlers.h"),
-
-            // x64
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\Prt.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\Prt.h"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtHeaders.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtHeaders.h"),
-                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfig.h", 
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtBaseTypes_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtBaseTypes_IDL.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtConfig.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtConfig.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtProgram.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtProgram.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtTypes.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtTypes.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtTypes_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtTypes_IDL.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtValues.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtValues.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtValues_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtValues_IDL.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\Core\\PrtExecution.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtExecution.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUser.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtWinUser.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUserConfig.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtWinUserConfig.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\PrtDist.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtDist.h"),
+    
+            // x64
+             new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\Prt.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\Prt.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtBaseTypes_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtBaseTypes_IDL.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtConfig.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinDist.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtWinDist.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinDriver.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtWinDriver.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinUser.h", 
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtProgram.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtProgram.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtTypes.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtTypes.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtTypes_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtTypes_IDL.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtValues.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtValues.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtValues_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtValues_IDL.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\Core\\PrtExecution.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtExecution.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUser.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtWinUser.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtDTTypeDefs.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtDTTypeDefs.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtDTTypes.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtDTTypes.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtDTValues.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtDTValues.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtProcess.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtProcess.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMPrivate.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtSMPrivate.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMProtected.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtSMProtected.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMProtectedTypes.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtSMProtectedTypes.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtInterface.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtInterface.h"),
-
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMTypeDefs.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtSMTypeDefs.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtToString.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtToString.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtExternalHandlers.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtExternalHandlers.h"),
-
-
-                // win32 lib
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\PrtDist\\PrtDist\\Debug\\Win32\\PrtDist.lib", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Lib\\PrtDist.lib"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\PrtWinUser\\Debug\\Win32\\PrtWinUser.lib", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Lib\\PrtWinUser.lib"),
-
-                // x64 lib
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\PrtDist\\PrtDist\\Debug\\x64\\PrtDist.lib", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Lib\\PrtDist.lib"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\PrtWinUser\\Debug\\x64\\PrtWinUser.lib", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Lib\\PrtWinUser.lib"),
-            */
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUserConfig.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtWinUserConfig.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\PrtDist.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtDist.h"),
+                
+            
+            // win32 
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\Debug\\Win32\\PrtDist.lib", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Lib\\PrtDist.lib"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\Win32\\PrtWinUser.lib", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Lib\\PrtWinUser.lib"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\Win32\\PrtWinUser.exp", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Lib\\PrtWinUser.exp"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\Win32\\PrtWinUser.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Lib\\PrtWinUser.dll"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\Win32\\PrtWinUser.pdb", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Lib\\PrtWinUser.pdb"),
+            // x64 lib
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\Debug\\x64\\PrtDist.lib", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Lib\\PrtDist.lib"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\x64\\PrtWinUser.lib", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Lib\\PrtWinUser.lib"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\x64\\PrtWinUser.exp", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Lib\\PrtWinUser.exp"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\x64\\PrtWinUser.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Lib\\PrtWinUser.dll"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\x64\\PrtWinUser.pdb", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Lib\\PrtWinUser.pdb"),  
+            
                 
         };
 
@@ -521,124 +513,114 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x64\\Release\\ZingParser.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\ZingParser.dll"),
 
-           /*
-            // x86  Runtime
+           // x86
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtHeaders.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtHeaders.h"),
-                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfig.h", 
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\Prt.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\Prt.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtBaseTypes_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtBaseTypes_IDL.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtConfig.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinDist.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtWinDist.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinDriver.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtWinDriver.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinUser.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtWinUser.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtDTTypeDefs.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtDTTypeDefs.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtDTTypes.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtDTTypes.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtDTValues.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtDTValues.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtProcess.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtProcess.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMPrivate.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtSMPrivate.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMProtected.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtSMProtected.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMProtectedTypes.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtSMProtectedTypes.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtInterface.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtInterface.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMTypeDefs.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtSMTypeDefs.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtToString.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtToString.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtExternalHandlers.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtExternalHandlers.h"),
-
-            // x64  Runtime
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtHeaders.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtHeaders.h"),
-                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtConfig.h", 
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtProgram.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtProgram.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtTypes.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtTypes.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtTypes_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtTypes_IDL.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtValues.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtValues.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtValues_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtValues_IDL.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\Core\\PrtExecution.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtExecution.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUser.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtWinUser.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUserConfig.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtWinUserConfig.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\PrtDist.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtDist.h"),
+    
+            // x64
+             new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\Prt.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\Prt.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtBaseTypes_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtBaseTypes_IDL.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtConfig.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinDist.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtWinDist.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinDriver.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtWinDriver.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtWinUser.h", 
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtProgram.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtProgram.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtTypes.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtTypes.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtTypes_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtTypes_IDL.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtValues.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtValues.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtValues_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtValues_IDL.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\Core\\PrtExecution.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtExecution.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUser.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtWinUser.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtDTTypeDefs.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtDTTypeDefs.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtDTTypes.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtDTTypes.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtDTValues.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtDTValues.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtProcess.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtProcess.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMPrivate.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtSMPrivate.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMProtected.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtSMProtected.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMProtectedTypes.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtSMProtectedTypes.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtInterface.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtInterface.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUserConfig.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtWinUserConfig.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\PrtDist.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtDist.h"),
 
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtSMTypeDefs.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtSMTypeDefs.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtToString.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtToString.h"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\Prt\\PrtExternalHandlers.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtExternalHandlers.h"),
-
-                // win32 lib
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\PrtDist\\PrtDist\\Release\\Win32\\PrtDist.lib", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtDist.lib"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\PrtWinUser\\Release\\Win32\\PrtWinUser.lib", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtWinUser.lib"),
-
-                // x64 lib
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\PrtDist\\PrtDist\\Release\\x64\\PrtDist.lib", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtDist.lib"),
-                new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\PrtWinUser\\Release\\x64\\PrtWinUser.lib", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtWinUser.lib"),
-            */
+            // win32 
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\Prt\\PrtDist\\PrtDist\\PrtDist\\Release\\Win32\\PrtDist.lib", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtDist.lib"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\Win32\\PrtWinUser.lib", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtWinUser.lib"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\Win32\\PrtWinUser.exp", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtWinUser.exp"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\Win32\\PrtWinUser.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtWinUser.dll"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\Win32\\PrtWinUser.pdb", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtWinUser.pdb"),
+            // x64 lib
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\Release\\x64\\PrtDist.lib", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtDist.lib"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\x64\\PrtWinUser.lib", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtWinUser.lib"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\x64\\PrtWinUser.exp", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtWinUser.exp"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\x64\\PrtWinUser.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtWinUser.dll"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\x64\\PrtWinUser.pdb", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtWinUser.pdb"), 
         };
 
         public static bool Build(bool isBldDebug)

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.PSharp;
 
-namespace Chord
+namespace ChordBuggy
 {
     #region Events
 
@@ -244,7 +244,7 @@ namespace Chord
         private void CreateNewNode()
         {
             int newId = -1;
-            Random random = new Random(0);
+            Random random = new Random();
             while ((newId < 0 || this.NodeIds.Contains(newId)) &&
                 this.NodeIds.Count < this.NumOfId)
             {
@@ -271,8 +271,8 @@ namespace Chord
 
             var newNode = Machine.Factory.CreateMachine<ChordNode>(
                 new Tuple<Machine, int, int>(this, newId, this.M));
-            this.NodeIds.Add(newId);
-            this.Nodes.Add(newNode);
+            this.NodeIds.Insert(index, newId);
+            this.Nodes.Insert(index, newNode);
 
             this.Send(newNode, new eJoin(new Tuple<List<int>, List<Machine>>(this.NodeIds, this.Nodes)));
         }

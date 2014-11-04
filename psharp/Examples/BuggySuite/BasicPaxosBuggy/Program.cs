@@ -2,11 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-//using BasicPaxos_1;
-//using BasicPaxos_2;
-using BasicPaxos_3;
-
-namespace BasicPaxos
+namespace BasicPaxosBuggy
 {
     /// <summary>
     /// This is an example of usign P#.
@@ -55,7 +51,7 @@ namespace BasicPaxos
                 10000,
                 true,
                 Runtime.SchedulingType.Random,
-                false);
+                true);
         }
     }
 }

@@ -226,6 +226,7 @@ namespace Microsoft.PSharp
         /// <param name="enableBugFindMode">Enable bug find mode</param>
         /// <param name="schedulingType">Type of scheduling</param>
         /// <param name="untilBugFound">Runs until a bug is found</param>
+        /// <param name="showProgress">Shows current progress</param>
         public static void Test(Action runtimeAction, int iterations, bool enableBugFindMode,
             SchedulingType schedulingType, bool untilBugFound)
         {

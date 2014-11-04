@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace Chord
+namespace ChordBuggy
 {
     /// <summary>
     /// This is an example of usign P#.

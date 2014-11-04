@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace Raft
+namespace RaftBuggy
 {
     #region Events
 
@@ -404,7 +404,6 @@ namespace Raft
                 return new HashSet<Type>
                 {
                     typeof(eChangeRoleToFollower),
-                    typeof(eRequestVoteAck),
                     typeof(eDoNotSendHeartBeat)
                 };
             }

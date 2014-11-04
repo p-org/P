@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace LeaderElection
+namespace LeaderElectionBuggy
 {
     #region Events
 
@@ -171,7 +171,7 @@ namespace LeaderElection
             if (type == 0)
             {
                 this.Number = id;
-                if (this.IsActive && this.Number != this.MaxId)
+                if (this.IsActive && this.Number > this.MaxId)
                 {
                     this.Send(this.Right, new eNotify(new Tuple<int, int>(1, this.Number)));
                     this.NeighborR = this.Number;
@@ -179,6 +179,9 @@ namespace LeaderElection
                 else if (!this.IsActive)
                 {
                     this.Send(this.Right, new eNotify(new Tuple<int, int>(0, this.Number)));
+                }
+                else
+                {
                     return;
                 }
             }

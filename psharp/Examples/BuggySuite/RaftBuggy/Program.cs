@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace Raft
+namespace RaftBuggy
 {
     /// <summary>
     /// This is an example of usign P#.
@@ -48,7 +48,7 @@ namespace Raft
                     Console.WriteLine("Starting the runtime.\n");
                     Runtime.Start(new Tuple<int, int, int>(5, 1, 15));
                     Runtime.Wait();
-                    
+
                     Console.WriteLine("Performing cleanup.\n");
                     Runtime.Dispose();
                 },

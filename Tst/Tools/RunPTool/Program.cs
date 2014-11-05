@@ -11,6 +11,9 @@
     {
         private const int FailCode = 1;
         private const string TestFilePattern = "testconfig*.txt";
+        private const string failedDirsFile = "failed-tests.txt";
+        private const string displayDiffsFile = "display-diffs.bat";
+        private const string diffTool = "kdiff3";
 
         static void Main(string[] args)
         {
@@ -36,12 +39,42 @@
                 bool reset = args.Length == 2
                     ? (args[1] == "reset") ? true : false
                     : false;
-                Test(di, reset, ref testCount, ref failCount);
+
+                //Replace old "failed-tests.txt" and "display-diffs.bat" with newly created files:
+                File.Delete(Path.Combine(Environment.CurrentDirectory, failedDirsFile));
+                StreamWriter failedDirsWriter;
+                if (!OpenSummaryStream(failedDirsFile, out failedDirsWriter))
+                {
+                    throw new Exception("Cannot open failed-tests.txt for writing");
+                }
+
+                File.Delete(Path.Combine(Environment.CurrentDirectory, displayDiffsFile));
+                StreamWriter displayDiffsWriter;
+                if (!OpenSummaryStream(displayDiffsFile, out displayDiffsWriter))
+                {
+                    throw new Exception("Cannot open display-diffs.bat for writing");
+                }
+
+                Test(di, reset, ref testCount, ref failCount, failedDirsWriter, displayDiffsWriter);
 
                 Console.WriteLine();
                 Console.WriteLine("Total tests: {0}, Passed tests: {1}. Failed tests: {2}", testCount, testCount - failCount, failCount);
+               
                 if (failCount > 0)
                 {
+                    Console.WriteLine("Test directories with failed tests: failed-tests.txt");
+                  
+                    Console.WriteLine("To run kdiff3 on outputs for all failed tests: run display-diffs.bat");
+                    
+                    if (!CloseSummaryStream(failedDirsFile, failedDirsWriter))
+                    {
+                        throw new Exception("Cannot close failed-tests.txt");
+                    }
+                    if (!CloseSummaryStream(displayDiffsFile, displayDiffsWriter))
+                    {
+                        throw new Exception("Cannot close display-diffs.bat");
+                    }
+
                     Environment.ExitCode = FailCode;
                 }
             }
@@ -52,7 +85,7 @@
             }
         }
 
-        private static void Test(DirectoryInfo di, bool reset, ref int testCount, ref int failCount)
+        private static void Test(DirectoryInfo di, bool reset, ref int testCount, ref int failCount, StreamWriter failedDirsWriter, StreamWriter displayDiffsWriter)
         {
             //TODO: try{} at the top level
             //enumerating files in the top dor only
@@ -63,13 +96,52 @@
                 if (!checker.Check(fi.Name))
                 {
                     ++failCount;
-                }
+                    //add directory of the failing test to "failed_tests.txt": 
+                    failedDirsWriter.WriteLine("{0}", di.FullName);
+                    //add diffing command to "display_diff.bat":
+                    displayDiffsWriter.WriteLine("{0} {1}\\acc_0.txt {1}\\check-output.log", diffTool, di.FullName);
+                }            
             }
 
             foreach (var dp in di.EnumerateDirectories())
             {
-                Test(dp, reset, ref testCount, ref failCount);
+                Test(dp, reset, ref testCount, ref failCount, failedDirsWriter, displayDiffsWriter);
             }
+        }
+        private static bool OpenSummaryStream(string fileName, out StreamWriter wr)
+        {
+            wr = null;
+            try
+            {
+                wr = new StreamWriter(Path.Combine(Environment.CurrentDirectory, fileName));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(
+                    "ERROR: Could not open summary file {0} - {1}",
+                    fileName,
+                    e.Message);
+                return false;
+            }
+
+            return true;
+        }
+        private static bool CloseSummaryStream(string fileName, StreamWriter wr)
+        {
+            try
+            {
+                wr.Close();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(
+                    "ERROR: Could not close summary file {0} - {1}",
+                    fileName,
+                    e.Message);
+                return false;
+            }
+
+            return true;
         }
     }
     

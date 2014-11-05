@@ -135,7 +135,7 @@ __in  PRT_VALUE					*payload
 	//
 	// Allocate External context Structure
 	//
-	process->program->machines[context->instanceOf].extCtor((PRT_SM_CONTEXT *)context, payload);
+	process->program->machines[context->instanceOf].extCtorFun((PRT_SM_CONTEXT *)context, payload);
 
 	PrtUnlockMutex(process->processLock);
 
@@ -145,86 +145,6 @@ __in  PRT_VALUE					*payload
 	PrtRunStateMachine(context, PRT_FALSE);
 
 	return context;
-}
-
-PRT_BOOLEAN AreGuidsEqual(
-	__in PRT_GUID guid1, 
-	__in PRT_GUID guid2
-)
-{
-	return guid1.data1 == guid2.data1 && guid1.data2 == guid2.data2 && guid1.data3 == guid2.data3 && guid1.data4 == guid2.data4;
-}
-
-PRT_BOOLEAN
-PrtIsEventMaxInstanceExceeded(
-__in PRT_EVENTQUEUE			*queue,
-__in PRT_UINT32				eventIndex,
-__in PRT_UINT32				maxInstances
-)
-{
-	//
-	// Declarations
-	//
-	PRT_UINT32 queueSize;
-	PRT_UINT32 head;
-	PRT_UINT32 tail;
-	PRT_UINT16 currMaxInstance;
-	PRT_BOOLEAN isMaxInstancesExceeded;
-	//
-	// Code
-	//
-	queueSize = queue->eventsSize;
-	head = queue->headIndex;
-	tail = queue->tailIndex;
-	currMaxInstance = 0;
-	isMaxInstancesExceeded = PRT_FALSE;
-	//
-	// head is ahead of tail
-	//
-	if (head > tail)
-	{
-		//
-		// Check from head to end of Array
-		//
-		while (head < queueSize)
-		{
-			if (PrtPrimGetEvent(queue->events[head].trigger) == eventIndex)
-			{
-				currMaxInstance = currMaxInstance + 1;
-				head++;
-			}
-			else
-			{
-				head++;
-			}
-		}
-		//
-		// Reset Head to the start of Array
-		head = 0;
-	}
-
-	// 
-	// Check from start of Array till head
-	//
-	while (head < tail)
-	{
-		if (PrtPrimGetEvent(queue->events[head].trigger) == eventIndex)
-		{
-			currMaxInstance = currMaxInstance + 1;
-			head++;
-		}
-		else
-		{
-			head++;
-		}
-	}
-
-	if (currMaxInstance >= maxInstances)
-	{
-		isMaxInstancesExceeded = PRT_TRUE;
-	}
-
-	return isMaxInstancesExceeded;
 }
 
 void
@@ -375,18 +295,6 @@ __in PRT_UINT32				stateIndex
 	context->lastOperation = PushStatement;
 	PrtLog(PRT_STEP_PUSH, context);
 	return;
-}
-
-FORCEINLINE
-PRT_BOOLEAN
-PrtStateHasDefaultTransitionOrAction(
-__in PRT_SM_CONTEXT_PRIV			*context
-)
-{
-	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
-	PRT_BOOLEAN hasDefaultTransition = (context->process->program->eventSets[stateDecl->transSetIndex].packedEvents[0] & 0x1) == 1;
-	PRT_BOOLEAN hasDefaultAction = (context->currentActionsSetCompact[0] & 0x1) == 1;
-	return hasDefaultTransition || hasDefaultAction;
 }
 
 FORCEINLINE
@@ -572,7 +480,7 @@ __in PRT_UINT32				eventIndex
 )
 {
 	PRT_UINT32 nTransitions;
-	PRT_TRANSDECL *transTable = PrtGetTransTable(context, context->currentState, &nTransitions);
+	PRT_TRANSDECL *transTable = PrtGetTransitionTable(context, context->currentState, &nTransitions);
 	PRT_UINT32 transIndex = PrtFindTransition(context, eventIndex);
 	if (transTable[transIndex].transFunIndex == PRT_SPECIAL_ACTION_PUSH_OR_IGN)
 	{
@@ -596,7 +504,7 @@ __in PRT_UINT32					eventIndex
 	PRT_UINT32 nTransitions;
 	PRT_TRANSDECL* transTable;
 
-	transTable = PrtGetTransTable(context, context->currentState, &nTransitions);
+	transTable = PrtGetTransitionTable(context, context->currentState, &nTransitions);
 
 	for (i = 0; i < nTransitions; ++i)
 	{
@@ -647,8 +555,8 @@ __in	PRT_BOOLEAN			isPushStatement
 	context->callStack.statesStack[length].currEvent.payload = context->currEvent.payload;
 	context->callStack.statesStack[length].stateExecFun = context->stateExecFun;
 	context->callStack.statesStack[length].returnTo = context->returnTo;
-	context->callStack.statesStack[length].inheritedDeferredSetCompact = (PRT_UINT32*)PrtClonePackedSet(context->inheritedDeferredSetCompact, packSize);
-	context->callStack.statesStack[length].inheritedActionsSetCompact = (PRT_UINT32*)PrtClonePackedSet(context->inheritedActionsSetCompact, packSize);
+	context->callStack.statesStack[length].inheritedDeferredSetCompact = PrtClonePackedSet(context->inheritedDeferredSetCompact, packSize);
+	context->callStack.statesStack[length].inheritedActionsSetCompact = PrtClonePackedSet(context->inheritedActionsSetCompact, packSize);
 
 	context->callStack.length = length + 1;
 
@@ -804,15 +712,6 @@ __inout PRT_SM_CONTEXT_PRIV	*context
 }
 
 FORCEINLINE
-PRT_BOOLEAN
-PrtIsSpecialEvent(
-PRT_VALUE * event
-)
-{
-	return (PrtIsNullValue(event) || PrtPrimGetEvent(event) == PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
-}
-
-FORCEINLINE
 PRT_TYPE*
 PrtGetPayloadType(
 PRT_SM_CONTEXT_PRIV *context,
@@ -820,48 +719,6 @@ PRT_VALUE	  *event
 )
 {
 	return context->process->program->events[PrtPrimGetEvent(event)].type;
-}
-
-FORCEINLINE
-PRT_BOOLEAN
-PrtIsEventDeferred(
-__in PRT_UINT32		eventIndex,
-__in PRT_UINT32*		defSet
-)
-{
-	PRT_BOOLEAN isDeferred;
-
-	isDeferred = PRT_FALSE;
-	if
-		(
-		((defSet[eventIndex / (sizeof(PRT_UINT32)* 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32)* 8)))) != 0)
-		)
-	{
-		isDeferred = PRT_TRUE;
-	}
-
-	return isDeferred;
-}
-
-FORCEINLINE
-PRT_BOOLEAN
-PrtIsActionInstalled(
-__in PRT_UINT32		eventIndex,
-__in PRT_UINT32*		actionSet
-)
-{
-	PRT_BOOLEAN isActionInstalled;
-
-	isActionInstalled = PRT_FALSE;
-	if
-		(
-		((actionSet[eventIndex / (sizeof(PRT_UINT32)* 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32)* 8)))) != 0)
-		)
-	{
-		isActionInstalled = PRT_TRUE;
-	}
-
-	return isActionInstalled;
 }
 
 FORCEINLINE
@@ -960,7 +817,6 @@ __in PRT_SM_CONTEXT_PRIV		*context
 	return actionDecl;
 }
 
-
 FORCEINLINE
 PRT_UINT32*
 PrtGetDeferredPacked(
@@ -999,7 +855,7 @@ __in PRT_UINT32				stateIndex
 
 FORCEINLINE
 PRT_TRANSDECL*
-PrtGetTransTable(
+PrtGetTransitionTable(
 __in PRT_SM_CONTEXT_PRIV	*context,
 __in PRT_UINT32				stateIndex,
 __out PRT_UINT32			*nTransitions
@@ -1007,6 +863,128 @@ __out PRT_UINT32			*nTransitions
 {
 	*nTransitions = context->process->program->machines[context->instanceOf].states[stateIndex].nTransitions;
 	return context->process->program->machines[context->instanceOf].states[stateIndex].transitions;
+}
+
+PRT_BOOLEAN 
+PrtAreGuidsEqual(
+	__in PRT_GUID guid1,
+	__in PRT_GUID guid2
+	)
+{
+	return guid1.data1 == guid2.data1 && guid1.data2 == guid2.data2 && guid1.data3 == guid2.data3 && guid1.data4 == guid2.data4;
+}
+
+PRT_BOOLEAN
+PrtIsEventMaxInstanceExceeded(
+__in PRT_EVENTQUEUE			*queue,
+__in PRT_UINT32				eventIndex,
+__in PRT_UINT32				maxInstances
+)
+{
+	//
+	// Declarations
+	//
+	PRT_UINT32 queueSize;
+	PRT_UINT32 head;
+	PRT_UINT32 tail;
+	PRT_UINT16 currMaxInstance;
+	PRT_BOOLEAN isMaxInstancesExceeded;
+	//
+	// Code
+	//
+	queueSize = queue->eventsSize;
+	head = queue->headIndex;
+	tail = queue->tailIndex;
+	currMaxInstance = 0;
+	isMaxInstancesExceeded = PRT_FALSE;
+	//
+	// head is ahead of tail
+	//
+	if (head > tail)
+	{
+		//
+		// Check from head to end of Array
+		//
+		while (head < queueSize)
+		{
+			if (PrtPrimGetEvent(queue->events[head].trigger) == eventIndex)
+			{
+				currMaxInstance = currMaxInstance + 1;
+				head++;
+			}
+			else
+			{
+				head++;
+			}
+		}
+		//
+		// Reset Head to the start of Array
+		head = 0;
+	}
+
+	// 
+	// Check from start of Array till head
+	//
+	while (head < tail)
+	{
+		if (PrtPrimGetEvent(queue->events[head].trigger) == eventIndex)
+		{
+			currMaxInstance = currMaxInstance + 1;
+			head++;
+		}
+		else
+		{
+			head++;
+		}
+	}
+
+	if (currMaxInstance >= maxInstances)
+	{
+		isMaxInstancesExceeded = PRT_TRUE;
+	}
+
+	return isMaxInstancesExceeded;
+}
+
+FORCEINLINE
+PRT_BOOLEAN
+PrtStateHasDefaultTransitionOrAction(
+__in PRT_SM_CONTEXT_PRIV			*context
+)
+{
+	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
+	PRT_BOOLEAN hasDefaultTransition = (context->process->program->eventSets[stateDecl->transSetIndex].packedEvents[0] & 0x1) == 1;
+	PRT_BOOLEAN hasDefaultAction = (context->currentActionsSetCompact[0] & 0x1) == 1;
+	return hasDefaultTransition || hasDefaultAction;
+}
+
+FORCEINLINE
+PRT_BOOLEAN
+PrtIsSpecialEvent(
+PRT_VALUE * event
+)
+{
+	return (PrtIsNullValue(event) || PrtPrimGetEvent(event) == PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
+}
+
+FORCEINLINE
+PRT_BOOLEAN
+PrtIsEventDeferred(
+__in PRT_UINT32		eventIndex,
+__in PRT_UINT32*		defSet
+)
+{
+	return (defSet[eventIndex / (sizeof(PRT_UINT32)* 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32)* 8)))) != 0;
+}
+
+FORCEINLINE
+PRT_BOOLEAN
+PrtIsActionInstalled(
+__in PRT_UINT32		eventIndex,
+__in PRT_UINT32*		actionSet
+)
+{
+	return (actionSet[eventIndex / (sizeof(PRT_UINT32)* 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32)* 8)))) != 0;
 }
 
 PRT_BOOLEAN
@@ -1018,20 +996,16 @@ PRT_UINT32				event
 	PRT_UINT16 i;
 	PRT_UINT32 nTransitions;
 	PRT_TRANSDECL* transTable;
-	PRT_BOOLEAN isPushTransition;
 
-	transTable = PrtGetTransTable(context, context->currentState, &nTransitions);
-	isPushTransition = PRT_FALSE;
+	transTable = PrtGetTransitionTable(context, context->currentState, &nTransitions);
 	for (i = 0; i < nTransitions; ++i)
 	{
-		//check if transition is Push
 		if (transTable[i].transFunIndex == PRT_SPECIAL_ACTION_PUSH_OR_IGN && transTable[i].triggerEventIndex == event)
 		{
-			isPushTransition = PRT_TRUE;
+			return PRT_TRUE;
 		}
 	}
-
-	return isPushTransition;
+	return PRT_FALSE;
 }
 
 FORCEINLINE
@@ -1042,17 +1016,12 @@ __in PRT_UINT32				eventIndex
 )
 {
 	PRT_UINT32* transitionsPacked = PrtGetTransitionsPacked(context, context->currentState);
-	if ((transitionsPacked[eventIndex / (sizeof(PRT_UINT32)* 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32)* 8)))) != 0)
-	{
-		return PRT_TRUE;
-	}
-
-	return PRT_FALSE;
+	return (transitionsPacked[eventIndex / (sizeof(PRT_UINT32)* 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32)* 8)))) != 0;
 }
 
-void*
+PRT_UINT32 *
 PrtClonePackedSet(
-void*					packedSet,
+PRT_UINT32 *				packedSet,
 PRT_UINT32					size
 )
 {
@@ -1062,9 +1031,8 @@ PRT_UINT32					size
 	clone = (PRT_UINT32 *)PrtCalloc(size, sizeof(PRT_UINT32));
 	for (i = 0; i<size; i++)
 	{
-		clone[i] = ((PRT_UINT32*)packedSet)[i];
+		clone[i] = packedSet[i];
 	}
-
 	return clone;
 }
 
@@ -1217,7 +1185,7 @@ PRT_SM_CONTEXT_PRIV			*context
 	}
 
 	if (context->extContext != NULL)
-		context->process->program->machines[context->instanceOf].extDtor((PRT_SM_CONTEXT *)context);
+		context->process->program->machines[context->instanceOf].extDtorFun((PRT_SM_CONTEXT *)context);
 	PrtFreeValue(context->id);
 }
 
@@ -1227,7 +1195,7 @@ PRT_SM_CONTEXT			*context
 )
 {
 	if (context->extContext != NULL)
-		context->process->program->modelImpls[context->instanceOf].shutFun(context);
+		context->process->program->modelImpls[context->instanceOf].dtorFun(context);
 	PrtFreeValue(context->id);
 }
 

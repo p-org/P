@@ -95,7 +95,7 @@ PRT_SM_CONTEXT *PrtMkModel(
 	context->id = PrtMkMachineValue(id);
 	context->extContext = NULL;
 	context->isModel = PRT_TRUE;
-	process->program->modelImpls[context->instanceOf].newFun(context, payload);
+	process->program->modelImpls[context->instanceOf].ctorFun(context, payload);
 
 	PrtUnlockMutex(privateProcess->processLock);
 
@@ -110,7 +110,7 @@ PRT_SM_CONTEXT * PrtGetMachine(
 	PRT_PROCESS_PRIV *privateProcess;
 	PrtAssert(id->discriminator == PRT_VALKIND_MID, "id is not legal PRT_MACHINEID");
 	machineId = id->valueUnion.mid;
-	PrtAssert(AreGuidsEqual(process->guid, machineId->processId), "id does not belong to process");
+	PrtAssert(PrtAreGuidsEqual(process->guid, machineId->processId), "id does not belong to process");
 	privateProcess = (PRT_PROCESS_PRIV *)process;
 	PrtAssert(0 < machineId->machineId && machineId->machineId <= privateProcess->numMachines, "id out of bounds");
 	return privateProcess->machines[machineId->machineId - 1];

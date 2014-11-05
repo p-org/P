@@ -161,8 +161,8 @@ typedef struct PRT_MACHINEDECL
 	PRT_VARDECL      *vars;             /**< The array of variable declarations  */
 	PRT_STATEDECL    *states;           /**< The array of state declarations     */
 	PRT_FUNDECL      *funs;             /**< The array of fun declarations       */
-	PRT_SM_EXTCTOR   extCtor;           /**< external blob constructor           */
-	PRT_SM_EXTDTOR   extDtor;           /**< external blob destructor            */
+	PRT_SM_EXTCTOR   extCtorFun;        /**< external blob constructor           */
+	PRT_SM_EXTDTOR   extDtorFun;        /**< external blob destructor            */
 
 	PRT_UINT32      nAnnotations;   /**< Number of annotations                              */
 	void            **annotations;  /**< An array of annotations                            */
@@ -174,9 +174,9 @@ typedef struct PRT_MODELIMPLDECL
 	PRT_UINT32       declIndex;     /**< The index of model implementation in program       */
 	PRT_STRING       name;          /**< The name of this machine                           */
 
-	PRT_SM_EXTCTOR      newFun;     /**< Function that creates instances of this machine    */
+	PRT_SM_EXTCTOR      ctorFun;    /**< Function that creates instances of this machine    */
 	PRT_SM_MODELSEND    sendFun;    /**< Function that sends to instances of this machine   */
-	PRT_SM_EXTDTOR		shutFun;    /**< Function that shuts down instances of this machine */
+	PRT_SM_EXTDTOR		dtorFun;    /**< Function that destroys instances of this machine   */
 
 	PRT_UINT32      nAnnotations;   /**< Number of annotations                              */
 	void            **annotations;  /**< An array of annotations                            */

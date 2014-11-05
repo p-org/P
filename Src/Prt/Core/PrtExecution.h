@@ -236,7 +236,7 @@ PrtMkMachinePrivate(
 );
 
 PRT_BOOLEAN 
-AreGuidsEqual(
+PrtAreGuidsEqual(
 	__in PRT_GUID guid1, 
 	__in PRT_GUID guid2
 );
@@ -469,7 +469,7 @@ __in PRT_UINT32				stateIndex
 //
 FORCEINLINE
 PRT_TRANSDECL*
-PrtGetTransTable(
+PrtGetTransitionTable(
 __in PRT_SM_CONTEXT_PRIV	*context,
 __in PRT_UINT32				stateIndex,
 __out PRT_UINT32			*nTransitions
@@ -493,12 +493,18 @@ PRT_SM_CONTEXT_PRIV		*context,
 PRT_UINT32				event
 );
 
+FORCEINLINE
+PRT_BOOLEAN
+PrtStateHasDefaultTransitionOrAction(
+__in PRT_SM_CONTEXT_PRIV			*context
+);
+
 //
 // Create a clone of packed set
 //
-void*
+PRT_UINT32 *
 PrtClonePackedSet(
-void*					packedSet,
+PRT_UINT32 *				packedSet,
 PRT_UINT32					size
 );
 

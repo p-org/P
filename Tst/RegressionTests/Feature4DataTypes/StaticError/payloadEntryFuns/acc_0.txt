@@ -1,0 +1,62 @@
+=================================
+         Console output          
+=================================
+OUT: payloadentryfuns.p (12, 4): inferred type:  BaseType(INT)
+OUT: payloadentryfuns.p (12, 4): inferred type:  NIL
+OUT: payloadentryfuns.p (12, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
+OUT: payloadentryfuns.p (12, 18): inferred type:  BaseType(INT)
+OUT: payloadentryfuns.p (13, 4): inferred type:  BaseType(BOOL)
+OUT: payloadentryfuns.p (13, 4): inferred type:  NIL
+OUT: payloadentryfuns.p (13, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
+OUT: payloadentryfuns.p (13, 19): inferred type:  BaseType(BOOL)
+OUT: payloadentryfuns.p (17, 4): inferred type:  BaseType(REAL)
+OUT: payloadentryfuns.p (17, 4): inferred type:  NIL
+OUT: payloadentryfuns.p (17, 11): inferred type:  BaseType(NULL)
+OUT: payloadentryfuns.p (18, 4): inferred type:  BaseType(INT)
+OUT: payloadentryfuns.p (18, 4): inferred type:  ERROR
+OUT: payloadentryfuns.p (18, 10): inferred type:  BaseType(NULL)
+OUT: payloadentryfuns.p (30, 4): inferred type:  BaseType(INT)
+OUT: payloadentryfuns.p (30, 4): inferred type:  NIL
+OUT: payloadentryfuns.p (30, 10): inferred type:  SeqType(BaseType(INT))
+OUT: payloadentryfuns.p (30, 17): inferred type:  BaseType(INT)
+OUT: payloadentryfuns.p (30, 18): inferred type:  BaseType(INT)
+OUT: payloadentryfuns.p (34, 4): inferred type:  BaseType(INT)
+OUT: payloadentryfuns.p (34, 4): inferred type:  NIL
+OUT: payloadentryfuns.p (34, 10): inferred type:  NmdTupType(NmdTupTypeField("first", MapType(BaseType(INT), BaseType(INT))), NmdTupType(NmdTupTypeField("sec", SeqType(BaseType(BOOL))), NIL))
+OUT: payloadentryfuns.p (34, 18): inferred type:  MapType(BaseType(INT), BaseType(INT))
+OUT: payloadentryfuns.p (34, 23): inferred type:  BaseType(INT)
+OUT: payloadentryfuns.p (34, 24): inferred type:  BaseType(INT)
+OUT: payloadentryfuns.p (35, 4): inferred type:  BaseType(BOOL)
+OUT: payloadentryfuns.p (35, 4): inferred type:  NIL
+OUT: payloadentryfuns.p (35, 11): inferred type:  NmdTupType(NmdTupTypeField("first", MapType(BaseType(INT), BaseType(INT))), NmdTupType(NmdTupTypeField("sec", SeqType(BaseType(BOOL))), NIL))
+OUT: payloadentryfuns.p (35, 19): inferred type:  SeqType(BaseType(BOOL))
+OUT: payloadentryfuns.p (35, 22): inferred type:  BaseType(BOOL)
+OUT: payloadentryfuns.p (35, 23): inferred type:  BaseType(INT)
+OUT: payloadentryfuns.p (53, 4): inferred type:  BaseType(INT)
+OUT: payloadentryfuns.p (53, 4): inferred type:  NIL
+OUT: payloadentryfuns.p (53, 10): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("sec", BaseType(BOOL)), NIL))
+OUT: payloadentryfuns.p (53, 18): inferred type:  BaseType(INT)
+OUT: payloadentryfuns.p (54, 4): inferred type:  BaseType(BOOL)
+OUT: payloadentryfuns.p (54, 4): inferred type:  NIL
+OUT: payloadentryfuns.p (54, 11): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("sec", BaseType(BOOL)), NIL))
+OUT: payloadentryfuns.p (54, 19): inferred type:  BaseType(BOOL)
+OUT: payloadentryfuns.p (59, 9): inferred type:  NIL
+OUT: payloadentryfuns.p (64, 4): inferred type:  BaseType(INT)
+OUT: payloadentryfuns.p (64, 4): inferred type:  ERROR
+OUT: payloadentryfuns.p (64, 4): inferred type:  NIL
+OUT: payloadentryfuns.p (64, 10): inferred type:  NmdTupType(NmdTupTypeField("first", MapType(BaseType(INT), BaseType(INT))), NmdTupType(NmdTupTypeField("sec", SeqType(BaseType(BOOL))), NIL))
+OUT: payloadentryfuns.p (64, 18): inferred type:  MapType(BaseType(INT), BaseType(INT))
+OUT: payloadentryfuns.p (64, 23): inferred type:  ERROR
+OUT: payloadentryfuns.p (64, 24): inferred type:  BaseType(BOOL)
+OUT: payloadentryfuns.p (65, 4): inferred type:  BaseType(BOOL)
+OUT: payloadentryfuns.p (65, 4): inferred type:  NIL
+OUT: payloadentryfuns.p (65, 11): inferred type:  NmdTupType(NmdTupTypeField("first", MapType(BaseType(INT), BaseType(INT))), NmdTupType(NmdTupTypeField("sec", SeqType(BaseType(BOOL))), NIL))
+OUT: payloadentryfuns.p (65, 19): inferred type:  SeqType(BaseType(BOOL))
+OUT: payloadentryfuns.p (65, 22): inferred type:  BaseType(BOOL)
+OUT: payloadentryfuns.p (65, 23): inferred type:  BaseType(INT)
+OUT: payloadentryfuns.p (18, 4): invalid assignment. right hand side is not a subtype of left hand side
+OUT: payloadentryfuns.p (64, 4): invalid assignment. right hand side is not a subtype of left hand side
+OUT: payloadentryfuns.p (64, 23): Index may not be in the domain of the map
+OUT: Compilation failed
+OUT: 
+EXIT: -1

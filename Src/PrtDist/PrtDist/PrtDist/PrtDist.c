@@ -509,17 +509,17 @@ __in void* vcontext
 
 }
 
-void
-PrtDistLogHandler(
-__in PRT_STEP step,
-__in void* vcontext
-)
+PRT_STATEDECL *GetCurrentStateDecl(PRT_SM_CONTEXT_PRIV *context)
+{
+	return &(context->process->program->machines[context->instanceOf].states[context->currentState]);
+}
+
+void PrtDistLogHandler(PRT_STEP step, void *vcontext)
 {
 	static FILE *logfile = NULL;
-	PRT_SM_CONTEXT_PRIV *c = (PRT_SM_CONTEXT_PRIV*) vcontext;
+	PRT_SM_CONTEXT_PRIV *c = (PRT_SM_CONTEXT_PRIV*)vcontext;
 	PRT_STRING MachineName = c->process->program->machines[c->instanceOf].name;
 	PRT_UINT32 MachineId = c->id->valueUnion.mid->machineId;
-	PRT_STRING eventName = c->process->program->events[PrtPrimGetEvent(c->currEvent.trigger)].name;
 	PRT_VALUE* payloadValue;
 	char fileName[100] = "PRT_PPROCESS_LOG_";
 	char processId[100];
@@ -533,56 +533,64 @@ __in void* vcontext
 
 	char log[1000];
 
-
 	switch (step)
 	{
 	case PRT_STEP_HALT:
 	{
-		PRT_STRING stateName = PrtGetCurrentStateDecl(c)->name;
-		sprintf_s(log, 1000, "<DeleteLog> Machine %s(0x%lu) Deleted in State %s \n", MachineName, MachineId, stateName);
-		break;
+						  sprintf_s(log, 1000, "<HaltLog> Machine %s(0x%lu) halted in state %s\n", MachineName, MachineId, GetCurrentStateDecl(c)->name);
+						  break;
 	}
 	case PRT_STEP_ENQUEUE:
 	{
-		PRT_UINT32 eventIndex = PrtPrimGetEvent(c->eventQueue.events[c->eventQueue.tailIndex == 0 ? (c->eventQueue.eventsSize - 1) : (c->eventQueue.tailIndex - 1)].trigger);
-		PRT_STRING eventName = c->process->program->events[eventIndex].name;
-		payloadValue = (c->eventQueue.events[c->eventQueue.tailIndex == 0 ? (c->eventQueue.eventsSize - 1) : (c->eventQueue.tailIndex - 1)].payload);
-		sprintf_s(log, 1000, "<EnqueueLog> Enqueued Event < %s, %s > on Machine %s(0x%lu) \n", eventName, PrtValueToString(payloadValue), MachineName, MachineId);
-		break;
+							 PRT_UINT32 eventIndex = PrtPrimGetEvent(c->eventQueue.events[c->eventQueue.tailIndex == 0 ? (c->eventQueue.eventsSize - 1) : (c->eventQueue.tailIndex - 1)].trigger);
+							 PRT_STRING eventName = c->process->program->events[eventIndex].name;
+							 payloadValue = (c->eventQueue.events[c->eventQueue.tailIndex == 0 ? (c->eventQueue.eventsSize - 1) : (c->eventQueue.tailIndex - 1)].payload);
+							 sprintf_s(log, 1000, "<EnqueueLog> enqueued event <%s, %s> on Machine %s(0x%lu)\n", eventName, PrtValueToString(payloadValue), MachineName, MachineId);
+							 break;
 	}
 	case PRT_STEP_DEQUEUE:
 	{
-		payloadValue = (c->currEvent.payload);
-		sprintf_s(log, 1000, "<DequeueLog> Dequeued Event < %s, %s > by Machine %s(0x%lu) \n", eventName, PrtValueToString(payloadValue), MachineName, MachineId);
-		break;
+							 PRT_STRING eventName = c->process->program->events[PrtPrimGetEvent(c->currEvent.trigger)].name;
+							 payloadValue = (c->currEvent.payload);
+							 sprintf_s(log, 1000, "<DequeueLog> dequeued event <%s, %s> by Machine %s(0x%lu)\n", eventName, PrtValueToString(payloadValue), MachineName, MachineId);
+							 break;
 	}
 	case PRT_STEP_ENTRY:
-		sprintf_s(log, 1000, "<StateLog> Machine %s(0x%lu) entered state %s\n", MachineName, MachineId, PrtGetCurrentStateDecl(c)->name);
+		sprintf_s(log, 1000, "<StateLog> Machine %s(0x%lu) entered state %s\n", MachineName, MachineId, GetCurrentStateDecl(c)->name);
 		break;
 	case PRT_STEP_CREATE:
 		sprintf_s(log, 1000, "<CreateLog> Machine %s(0x%lu) is created\n", MachineName, MachineId);
 		break;
 	case PRT_STEP_RAISE:
-		payloadValue = (c->currEvent.payload);
-		sprintf_s(log, 1000, "<RaiseLog> Machine %s(0x%lu) raised event < %s, %s >\n", MachineName, MachineId, eventName, PrtValueToString(payloadValue));
-		break;
+	{
+						   PRT_STRING eventName = c->process->program->events[PrtPrimGetEvent(c->currEvent.trigger)].name;
+						   payloadValue = (c->currEvent.payload);
+						   sprintf_s(log, 1000, "<RaiseLog> Machine %s(0x%lu) raised event <%s, %s>\n", MachineName, MachineId, eventName, PrtValueToString(payloadValue));
+						   break;
+	}
 	case PRT_STEP_POP:
-		sprintf_s(log, 1000, "<PopLog> Machine %ws(0x%lu) executed POP and entered state %ws\n", MachineName, MachineId, PrtGetCurrentStateDecl(c)->name);
+		sprintf_s(log, 1000, "<PopLog> Machine %s(0x%lu) popped and reentered state %s\n", MachineName, MachineId, GetCurrentStateDecl(c)->name);
 		break;
 	case PRT_STEP_PUSH:
-		sprintf_s(log, 1000, "<CallLog> Machine %s(0x%lu) did push and entered state %s\n", MachineName, MachineId, PrtGetCurrentStateDecl(c)->name);
+		sprintf_s(log, 1000, "<CallLog> Machine %s(0x%lu) pushed\n", MachineName, MachineId);
 		break;
 	case PRT_STEP_UNHANDLED:
-		sprintf_s(log, 1000, "<PopLog> Machine %s(0x%lu) executed POP because of unhandled event %s and entered state %ws\n", MachineName, MachineId, PrtGetCurrentStateDecl(c)->name);
-		break;
+	{
+							   PRT_STRING eventName = c->process->program->events[PrtPrimGetEvent(c->currEvent.trigger)].name;
+							   sprintf_s(log, 1000, "<PopLog> Machine %s(0x%lu) popped with unhandled event %s and reentered state %s\n", MachineName, MachineId, eventName, GetCurrentStateDecl(c)->name);
+							   break;
+	}
 	case PRT_STEP_DO:
-		sprintf_s(log, 1000, "<ActionLog> Machine %s(0x%lu) Executed Action - %s \n", MachineName, MachineId, PrtGetCurrentStateDecl(c)->name);
+		sprintf_s(log, 1000, "<ActionLog> Machine %s(0x%lu) executed action in %s\n", MachineName, MachineId, GetCurrentStateDecl(c)->name);
 		break;
 	case PRT_STEP_EXIT:
-		sprintf_s(log, 1000, "<ExitLog> Machine %s(0x%lu) exited state %ws and executing its exit function\n", MachineName, MachineId, PrtGetCurrentStateDecl(c)->name);
+		sprintf_s(log, 1000, "<ExitLog> Machine %s(0x%lu) exited state %s\n", MachineName, MachineId, GetCurrentStateDecl(c)->name);
+		break;
+	case PRT_STEP_IGNORE:
+		sprintf_s(log, 1000, "<ActionLog> Machine %s(0x%lu) ignored event in %s\n", MachineName, MachineId, GetCurrentStateDecl(c)->name);
 		break;
 	default:
-		sprintf_s(log, 1000, (PRT_STRING) vcontext);
+		PRT_DBG_ASSERT(PRT_FALSE, "Must not get here");
 		break;
 	}
 
@@ -591,8 +599,6 @@ __in void* vcontext
 	fflush(logfile);
 	PrtUnlockMutex(((PRT_PROCESS_PRIV*)c->process)->processLock);
 }
-
-
 
 PRT_STRING PrtValueToString(_In_ PRT_VALUE *value)
 {

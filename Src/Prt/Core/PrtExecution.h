@@ -376,7 +376,6 @@ __in PRT_VALUE * event
 //
 // Get the Current State Decl
 //
-PRT_API
 FORCEINLINE
 PRT_STATEDECL *
 PrtGetCurrentStateDecl(

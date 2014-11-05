@@ -461,12 +461,16 @@ DoEntryOrAction:
 	{
 		PRT_DBG_ASSERT(context->stateExecFun == PrtStateAction, "stateExecFun must be PrtStateAction");
 		currActionDecl = PrtGetAction(context);
-		if (context->returnTo == 0)
-			PrtLog(PRT_STEP_DO, context);
-		context->lastOperation = ReturnStatement;
 		PRT_UINT32 doFunIndex = currActionDecl->doFunIndex;
-		if (doFunIndex != PRT_SPECIAL_ACTION_PUSH_OR_IGN)
+		context->lastOperation = ReturnStatement;
+		if (doFunIndex == PRT_SPECIAL_ACTION_PUSH_OR_IGN)
 		{
+			PrtLog(PRT_STEP_IGNORE, context);
+		}
+		else
+		{
+			if (context->returnTo == 0)
+				PrtLog(PRT_STEP_DO, context);
 			context->process->program->machines[context->instanceOf].funs[doFunIndex].implementation((PRT_SM_CONTEXT *)context, doFunIndex, NULL);
 		}
 	}
@@ -474,8 +478,8 @@ DoEntryOrAction:
 	{
 	case PopStatement:
 		PrtRunExitFunction(context, PrtGetCurrentStateDecl(context)->nTransitions);
-		PrtLog(PRT_STEP_POP, context);
 		PrtPopState(context, PRT_TRUE);
+		PrtLog(PRT_STEP_POP, context);
 		if (context->stateExecFun == PrtDequeue)
 		{
 			goto DoDequeue;
@@ -550,8 +554,8 @@ DoHandleEvent:
 	else
 	{
 		PrtRunExitFunction(context, PrtGetCurrentStateDecl(context)->nTransitions);
-		PrtLog(PRT_STEP_UNHANDLED, context);
 		PrtPopState(context, PRT_FALSE);
+		PrtLog(PRT_STEP_UNHANDLED, context);
 		PrtUpdateCurrentActionsSet(context);
 		PrtUpdateCurrentDeferredSet(context);
 		goto DoHandleEvent;
@@ -573,9 +577,13 @@ __in PRT_UINT32				eventIndex
 	if (transTable[transIndex].transFunIndex == PRT_SPECIAL_ACTION_PUSH_OR_IGN)
 	{
 		PrtPushState(context, PRT_FALSE);
+		context->currentState = transTable[transIndex].destStateIndex;
 		PrtLog(PRT_STEP_PUSH, context);
 	}
-	context->currentState = transTable[transIndex].destStateIndex;
+	else 
+	{
+		context->currentState = transTable[transIndex].destStateIndex;
+	}
 }
 
 PRT_UINT32

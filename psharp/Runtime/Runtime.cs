@@ -182,7 +182,7 @@ namespace Microsoft.PSharp
                     taskArray = Runtime.MachineTasks.ToArray();
                 }
 
-                Task.WaitAll(Runtime.MachineTasks.ToArray());
+                Task.WaitAll(taskArray);
 
                 bool moreTasksExist = false;
                 lock (Runtime.Lock)
@@ -197,33 +197,6 @@ namespace Microsoft.PSharp
             }
 
             Runtime.ProcessAssertionCache();
-        }
-
-        /// <summary>
-        /// Stops the P# runtime. Also prints additional runtime
-        /// results depending on the enabled runtime options.
-        /// </summary>
-        public static void Stop()
-        {
-            if (Runtime.Options.Mode == Runtime.Mode.BugFinding &&
-                Runtime.Options.PrintExploredSchedule)
-            {
-                Runtime.PrintExploredSchedule();
-            }
-            else if (Runtime.Options.Mode == Runtime.Mode.Replay &&
-                Runtime.Options.CompareExecutions)
-            {
-                Replayer.CompareExecutions();
-            }
-
-            Runtime.IsRunning = false;
-            foreach (var m in Runtime.Machines)
-                m.StopListener();
-            foreach (var m in Runtime.Monitors)
-                m.StopListener();
-            Runtime.Machines.Clear();
-            Runtime.Monitors.Clear();
-            Runtime.MachineTasks.Clear();
         }
 
         /// <summary>
@@ -261,7 +234,7 @@ namespace Microsoft.PSharp
             }
 
             Profiler.StartMeasuringExecutionTime();
-            var averageTransitions = 0;
+            var transitions = 0;
             var iteration = 0;
             while (iteration < iterations)
             {
@@ -273,16 +246,9 @@ namespace Microsoft.PSharp
                     break;
                 }
 
-                if (schedulingType == Runtime.SchedulingType.DFS)
+                if (iteration == 0)
                 {
-                    if (iteration == 0)
-                    {
-                        averageTransitions = Runtime.TransitionsExploredCount;
-                    }
-                }
-                else
-                {
-                    averageTransitions += Runtime.TransitionsExploredCount;
+                    transitions = Runtime.TransitionsExploredCount;
                 }
 
                 Console.WriteLine("Finished iteration: {0}", iteration + 1);
@@ -296,16 +262,9 @@ namespace Microsoft.PSharp
 
             Profiler.StopMeasuringExecutionTime();
 
-            Console.Error.WriteLine("Found {0} assertion failures.", Runtime.AssertionFailureCount);
             Console.Error.WriteLine("Explored {0} schedules.", iteration);
-            if (schedulingType == Runtime.SchedulingType.DFS)
-            {
-                Console.Error.WriteLine("Average transitions per schedule: {0}.", averageTransitions);
-            }
-            else
-            {
-                Console.Error.WriteLine("Average transitions per schedule: {0}.", averageTransitions / iterations);
-            }
+            Console.Error.WriteLine("Scheduled {0} transitions per schedule.", transitions);
+            Console.Error.WriteLine("Found {0} assertion failures.", Runtime.AssertionFailureCount);
 
             Profiler.PrintResults();
         }
@@ -639,6 +598,18 @@ namespace Microsoft.PSharp
             return enabledMachineIDs;
         }
 
+        /// <summary>
+        /// Forces the P# runtime to stop.
+        /// </summary>
+        private static void Stop()
+        {
+            Runtime.IsRunning = false;
+            foreach (var m in Runtime.Machines)
+                m.StopListener();
+            foreach (var m in Runtime.Monitors)
+                m.StopListener();
+        }
+
         #endregion
 
         #region cleanup methods
@@ -891,8 +862,16 @@ namespace Microsoft.PSharp
         {
             if (!predicate)
             {
+                if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
+                {
+                    Runtime.IsRunning = false;
+                }
+                else
+                {
+                    Runtime.Stop();
+                }
+
                 Utilities.ReportError("Assertion failure.\n");
-                Runtime.IsRunning = false;
 
                 if (Runtime.Options.Mode == Runtime.Mode.BugFinding &&
                     Runtime.Options.MonitorExecutions)
@@ -901,7 +880,6 @@ namespace Microsoft.PSharp
                 }
                 else if (!Runtime.Options.CountAssertions)
                 {
-                    Console.ReadLine();
                     Environment.Exit(1);
                 }
                 else
@@ -922,7 +900,15 @@ namespace Microsoft.PSharp
         {
             if (!predicate)
             {
-                Runtime.IsRunning = false;
+                if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
+                {
+                    Runtime.IsRunning = false;
+                }
+                else
+                {
+                    Runtime.Stop();
+                }
+
                 string message = Utilities.Format(s, args);
                 Utilities.ReportError(message);
 
@@ -933,7 +919,6 @@ namespace Microsoft.PSharp
                 }
                 else if (!Runtime.Options.CountAssertions)
                 {
-                    Console.ReadLine();
                     Environment.Exit(1);
                 }
                 else

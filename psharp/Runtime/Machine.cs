@@ -387,7 +387,16 @@ namespace Microsoft.PSharp
                         // dequeue an event will block if there is no available
                         // event in the mailbox. The operation will unblock when
                         // the next event arrives.
-                        Event nextEvent = this.Inbox.Take(this.CTS.Token);
+                        Event nextEvent = null;
+                        try
+                        {
+                            nextEvent = this.Inbox.Take(this.CTS.Token);
+                        }
+                        catch
+                        {
+                            return;
+                        }
+
                         if (this.CTS.Token.IsCancellationRequested)
                             return;
                         this.HandleEvent(nextEvent);

@@ -722,7 +722,7 @@ namespace RaftBuggy
 
                     var nextIndex = this.NextIndex[idx];
 
-                    if (this.Log.Count - 1 >= nextIndex)
+                    if (this.Log.Count - 1 >= nextIndex && nextIndex >= 0)
                     {
                         for (int i = nextIndex; i < this.Log.Count; i++)
                         {

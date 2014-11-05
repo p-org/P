@@ -70,11 +70,6 @@ namespace Microsoft.PSharp
         private static List<Task> MachineTasks = new List<Task>();
 
         /// <summary>
-        /// Cancellation token source for the runtime.
-        /// </summary>
-        private static CancellationTokenSource CTS = new CancellationTokenSource();
-
-        /// <summary>
         /// True if runtime is running. False otherwise.
         /// </summary>
         internal static bool IsRunning = false;
@@ -187,27 +182,17 @@ namespace Microsoft.PSharp
                     taskArray = Runtime.MachineTasks.ToArray();
                 }
 
-                try
+                Task.WaitAll(taskArray);
+
+                bool moreTasksExist = false;
+                lock (Runtime.Lock)
                 {
-                    Task.WaitAll(taskArray, Runtime.CTS.Token);
-                }
-                catch
-                {
-                    Utilities.Verbose("The runtime was forced to stop.\n");
+                    moreTasksExist = taskArray.Length != Runtime.MachineTasks.Count;
                 }
 
-                if (!Runtime.CTS.IsCancellationRequested)
+                if (moreTasksExist)
                 {
-                    bool moreTasksExist = false;
-                    lock (Runtime.Lock)
-                    {
-                        moreTasksExist = taskArray.Length != Runtime.MachineTasks.Count;
-                    }
-
-                    if (moreTasksExist)
-                    {
-                        Runtime.Wait();
-                    }
+                    Runtime.Wait();
                 }
             }
 
@@ -623,7 +608,6 @@ namespace Microsoft.PSharp
                 m.StopListener();
             foreach (var m in Runtime.Monitors)
                 m.StopListener();
-            Runtime.CTS.Cancel();
         }
 
         #endregion
@@ -676,8 +660,6 @@ namespace Microsoft.PSharp
             Machine.ResetMachineIDCounter();
             Runtime.Options.Scheduler.Reset();
             ScheduleExplorer.ResetExploredSchedule();
-
-            Runtime.CTS = new CancellationTokenSource();
 
             if (Runtime.Options.MonitorExecutions)
             {
@@ -898,7 +880,6 @@ namespace Microsoft.PSharp
                 }
                 else if (!Runtime.Options.CountAssertions)
                 {
-                    Console.ReadLine();
                     Environment.Exit(1);
                 }
                 else
@@ -938,7 +919,6 @@ namespace Microsoft.PSharp
                 }
                 else if (!Runtime.Options.CountAssertions)
                 {
-                    Console.ReadLine();
                     Environment.Exit(1);
                 }
                 else

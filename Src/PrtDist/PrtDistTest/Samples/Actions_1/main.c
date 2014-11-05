@@ -1,12 +1,12 @@
 #include "program.h"
 
-void P_DTOR_PING_IMPL(PRT_SM_CONTEXT *context) { }
+void P_DTOR_Ghost_IMPL(PRT_SM_CONTEXT *context) { }
 
-void P_DTOR_PONG_IMPL(PRT_SM_CONTEXT *context) { }
+void P_DTOR_Real_IMPL(PRT_SM_CONTEXT *context) { }
 
-void P_CTOR_PING_IMPL(PRT_SM_CONTEXT *context, PRT_VALUE *value) { }
+void P_CTOR_Ghost_IMPL(PRT_SM_CONTEXT *context, PRT_VALUE *value) { }
 
-void P_CTOR_PONG_IMPL(PRT_SM_CONTEXT *context, PRT_VALUE *value) { }
+void P_CTOR_Real_IMPL(PRT_SM_CONTEXT *context, PRT_VALUE *value) { }
 
 PRT_STRING PrtValueToString(_In_ PRT_VALUE *value)
 {

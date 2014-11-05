@@ -279,11 +279,13 @@ namespace RaftBuggy
 
             foreach (var client in this.Clients)
             {
+                Console.WriteLine("killing client ...\n");
                 this.Send(client, new eStop());
             }
 
             foreach (var server in this.Servers)
             {
+                Console.WriteLine("killing server ...\n");
                 this.Send(server, new eStop());
             }
 
@@ -791,6 +793,8 @@ namespace RaftBuggy
             Console.WriteLine("[Server-{0} :: {1}] is stopping ...\n",
                 this.Id, this.CurrentTerm);
 
+            this.Send(this.Clock, new eStop());
+
             this.Delete();
         }
 
@@ -932,6 +936,8 @@ namespace RaftBuggy
         {
             Console.WriteLine("[Client-{0}] is stopping ...\n", this.Id);
 
+            this.Send(this.Clock, new eStop());
+
             this.Delete();
         }
 
@@ -1001,7 +1007,7 @@ namespace RaftBuggy
 
                 Console.WriteLine("[Clock-{0}] is in ElectionTimeout ...\n", machine.Id);
 
-                machine.Timer = 5000;
+                machine.Timer = 2500;
 
                 this.Raise(new eQueryElectionTimeout(false));
             }
@@ -1015,7 +1021,7 @@ namespace RaftBuggy
 
                 Console.WriteLine("[Clock-{0}] is HeartBeating ...\n", machine.Id);
 
-                machine.Timer = 2000;
+                machine.Timer = 1000;
 
                 this.Raise(new eQueryHeartBeating());
             }
@@ -1041,7 +1047,7 @@ namespace RaftBuggy
 
             if (resetTimer)
             {
-                this.Timer = 5000;
+                this.Timer = 2500;
             }
             else if (this.Timer > 0)
             {
@@ -1062,7 +1068,7 @@ namespace RaftBuggy
             }
             else if (this.Timer == 0)
             {
-                this.Timer = 5000;
+                this.Timer = 2500;
                 this.Send(this.Owner, new eElectionTimedOut());
             }
             else
@@ -1092,7 +1098,7 @@ namespace RaftBuggy
             }
             else if (this.Timer == 0)
             {
-                this.Timer = 2000;
+                this.Timer = 1000;
                 this.Send(this.Owner, new eSendHeartBeat());
             }
             else

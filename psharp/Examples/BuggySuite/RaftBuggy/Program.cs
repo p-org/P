@@ -13,11 +13,9 @@ namespace RaftBuggy
     {
         static void Main(string[] args)
         {
-            int count = 0;
             Runtime.Test(
                 () =>
                 {
-                    Console.Error.WriteLine("iteration: " + count++);
                     Console.WriteLine("Registering events to the runtime.\n");
                     Runtime.RegisterNewEvent(typeof(eLocal));
                     Runtime.RegisterNewEvent(typeof(eStop));

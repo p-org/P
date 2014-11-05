@@ -550,8 +550,8 @@ void PrtDistLogHandler(PRT_STEP step, void *vcontext)
 	}
 	case PRT_STEP_DEQUEUE:
 	{
-							 PRT_STRING eventName = c->process->program->events[PrtPrimGetEvent(c->currEvent.trigger)].name;
-							 payloadValue = (c->currEvent.payload);
+							 PRT_STRING eventName = c->process->program->events[PrtPrimGetEvent(c->currentEvent.trigger)].name;
+							 payloadValue = (c->currentEvent.payload);
 							 sprintf_s(log, 1000, "<DequeueLog> dequeued event <%s, %s> by Machine %s(0x%lu)\n", eventName, PrtValueToString(payloadValue), MachineName, MachineId);
 							 break;
 	}
@@ -563,8 +563,8 @@ void PrtDistLogHandler(PRT_STEP step, void *vcontext)
 		break;
 	case PRT_STEP_RAISE:
 	{
-						   PRT_STRING eventName = c->process->program->events[PrtPrimGetEvent(c->currEvent.trigger)].name;
-						   payloadValue = (c->currEvent.payload);
+						   PRT_STRING eventName = c->process->program->events[PrtPrimGetEvent(c->currentEvent.trigger)].name;
+						   payloadValue = (c->currentEvent.payload);
 						   sprintf_s(log, 1000, "<RaiseLog> Machine %s(0x%lu) raised event <%s, %s>\n", MachineName, MachineId, eventName, PrtValueToString(payloadValue));
 						   break;
 	}
@@ -576,7 +576,7 @@ void PrtDistLogHandler(PRT_STEP step, void *vcontext)
 		break;
 	case PRT_STEP_UNHANDLED:
 	{
-							   PRT_STRING eventName = c->process->program->events[PrtPrimGetEvent(c->currEvent.trigger)].name;
+							   PRT_STRING eventName = c->process->program->events[PrtPrimGetEvent(c->currentEvent.trigger)].name;
 							   sprintf_s(log, 1000, "<PopLog> Machine %s(0x%lu) popped with unhandled event %s and reentered state %s\n", MachineName, MachineId, eventName, GetCurrentStateDecl(c)->name);
 							   break;
 	}

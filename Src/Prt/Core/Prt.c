@@ -5,12 +5,13 @@
 Public Functions
 
 *********************************************************************************/
-PRT_PROCESS * PrtStartProcess(
+PRT_PROCESS * 
+PrtStartProcess(
 	_In_ PRT_GUID guid,
 	_In_ PRT_PROGRAMDECL *program,
 	_In_ PRT_ERROR_FUN errorFun,
 	_In_ PRT_LOG_FUN logFun
-	)
+)
 {
 	PRT_PROCESS_PRIV *process;
 
@@ -26,7 +27,10 @@ PRT_PROCESS * PrtStartProcess(
 	return (PRT_PROCESS *)process;
 }
 
-void PrtStopProcess(_Inout_ PRT_PROCESS* process)
+void 
+PrtStopProcess(
+	_Inout_ PRT_PROCESS* process
+)
 {
 	PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
 	for (PRT_UINT32 i = 0; i < privateProcess->numMachines; i++)
@@ -43,34 +47,30 @@ void PrtStopProcess(_Inout_ PRT_PROCESS* process)
 	PrtFree(process);
 }
 
-PRT_SM_CONTEXT *PrtMkMachine(
-__in  PRT_PROCESS				*process,
-__in  PRT_UINT32				instanceOf,
-__in  PRT_VALUE					*payload
+PRT_SM_CONTEXT *
+PrtMkMachine(
+	_Inout_  PRT_PROCESS			*process,
+	_In_  PRT_UINT32				instanceOf,
+	_In_  PRT_VALUE					*payload
 )
 {
 	return (PRT_SM_CONTEXT *)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)process, instanceOf, payload);
 }
 
-PRT_SM_CONTEXT *PrtMkModel(
-	__in  PRT_PROCESS				*process,
-	__in  PRT_UINT32				instanceOf,
-	__in  PRT_VALUE					*payload
-	)
+PRT_SM_CONTEXT *
+PrtMkModel(
+	_Inout_  PRT_PROCESS			*process,
+	_In_  PRT_UINT32				instanceOf,
+	_In_  PRT_VALUE					*payload
+)
 {
 	PRT_SM_CONTEXT *context;
 	PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
 
 	PrtLockMutex(privateProcess->processLock);
 
-	//
-	// Allocate memory for state machine context
-	//
 	context = (PRT_SM_CONTEXT *)PrtMalloc(sizeof(PRT_SM_CONTEXT));
 
-	//
-	// Add it to the array of machines in the process
-	//
 	PRT_UINT32 numMachines = privateProcess->numMachines;
 	PRT_UINT32 machineCount = privateProcess->machineCount;
 	PRT_SM_CONTEXT **machines = privateProcess->machines;
@@ -102,9 +102,11 @@ PRT_SM_CONTEXT *PrtMkModel(
 	return context;
 }
 
-PRT_SM_CONTEXT * PrtGetMachine(
+PRT_SM_CONTEXT * 
+PrtGetMachine(
 	_In_ PRT_PROCESS *process,
-	_In_ PRT_VALUE *id)
+	_In_ PRT_VALUE *id
+)
 {
 	PRT_MACHINEID *machineId;
 	PRT_PROCESS_PRIV *privateProcess;
@@ -118,15 +120,15 @@ PRT_SM_CONTEXT * PrtGetMachine(
 
 void
 PrtSend(
-__in PRT_SM_CONTEXT				*machine,
-__in PRT_VALUE					*event,
-__in PRT_VALUE					*payload
+	_Inout_ PRT_SM_CONTEXT			*context,
+	_In_ PRT_VALUE					*event,
+	_In_ PRT_VALUE					*payload
 )
 {
-	if (machine->isModel)
+	if (context->isModel)
 	{
-		machine->process->program->modelImpls[machine->instanceOf].sendFun(machine, event, payload);
+		context->process->program->modelImpls[context->instanceOf].sendFun(context, event, payload);
 		return;
 	}
-	PrtSendPrivate((PRT_SM_CONTEXT_PRIV *)machine, event, payload);
+	PrtSendPrivate((PRT_SM_CONTEXT_PRIV *)context, event, payload);
 }

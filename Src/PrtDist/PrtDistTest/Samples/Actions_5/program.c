@@ -175,7 +175,7 @@
   {
     // entry function of Ghost_Init
     PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
-    privContext->varValues[P_VAR_Ghost_real_machine] = PrtCloneValue(privContext->currEvent.payload);
+    privContext->varValues[P_VAR_Ghost_real_machine] = PrtCloneValue(privContext->currentEvent.payload);
   }
 
   void P_FUN_Ghost_ANON1_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
@@ -221,7 +221,7 @@
   {
     // entry function of Real_S2
     PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
-    PrtAssert(PRT_FALSE, "bar");
+    PrtAssert(PRT_FALSE, "Test succeeded");
   }
 
   void P_FUN_Real_Action1_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)

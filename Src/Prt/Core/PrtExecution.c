@@ -1,14 +1,10 @@
 #include "PrtExecution.h"
 
-/*********************************************************************************
-
-Private Functions
-
-*********************************************************************************/
-PRT_SM_CONTEXT_PRIV *PrtMkMachinePrivate(
-__in  PRT_PROCESS_PRIV			*process,
-__in  PRT_UINT32				instanceOf,
-__in  PRT_VALUE					*payload
+PRT_SM_CONTEXT_PRIV *
+PrtMkMachinePrivate(
+	_Inout_  PRT_PROCESS_PRIV		*process,
+	_In_  PRT_UINT32				instanceOf,
+	_In_  PRT_VALUE					*payload
 )
 {
 	PRT_UINT32 packSize;
@@ -72,9 +68,9 @@ __in  PRT_VALUE					*payload
 	context->isHalted = PRT_FALSE;
 	context->lastOperation = ReturnStatement;
 
-	context->currEvent.trigger = PrtMkNullValue();
-	context->currEvent.payload = PrtCloneValue(payload);
-	context->stateExecFun = PrtStateEntry;
+	context->currentEvent.trigger = PrtMkEventValue(PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
+	context->currentEvent.payload = PrtCloneValue(payload);
+	context->stateControl = PrtStateEntry;
 	context->returnTo = 0;
 
 	//
@@ -149,9 +145,9 @@ __in  PRT_VALUE					*payload
 
 void
 PrtSendPrivate(
-__in PRT_SM_CONTEXT_PRIV		*context,
-__in PRT_VALUE					*event,
-__in PRT_VALUE					*payload
+	_Inout_ PRT_SM_CONTEXT_PRIV		*context,
+	_In_ PRT_VALUE					*event,
+	_In_ PRT_VALUE					*payload
 )
 {
 	PRT_EVENTQUEUE *queue;
@@ -160,15 +156,12 @@ __in PRT_VALUE					*payload
 	PRT_UINT32 maxQueueSize;
 	PRT_UINT32 eventIndex;
 
-	//check that the enqueued message is event type
-	PrtAssert(event->type->typeKind == PRT_KIND_EVENT, "Parameter event is not of type EVENT");
-	PrtAssert(PrtIsSubtype(payload->type, PrtGetPayloadType(context, event)), "Payload type mismatch");
-	PrtAssert(!PrtIsSpecialEvent(event), "Enqueued event cannot be null");
+	PrtAssert(!PrtIsSpecialEvent(event), "Enqueued event must not be null");
+	PrtAssert(PrtIsSubtype(payload->type, PrtGetPayloadType(context, event)), "Actual payload type must be subtype of event payload type");
 	
-	//check if the machine is still alive or halted
 	if (context->isHalted)
 	{
-		//drop the event silently
+		// drop the event silently
 		return;
 	}
 
@@ -224,7 +217,7 @@ __in PRT_VALUE					*payload
 	}
 	else
 	{
-		context->stateExecFun = PrtDequeue;
+		context->stateControl = PrtDequeue;
 		context->returnTo = 0;
 		PrtRunStateMachine(context, PRT_TRUE);
 	}
@@ -232,85 +225,185 @@ __in PRT_VALUE					*payload
 	return;
 }
 
-
-/*********************************************************************************
-
-Protected Functions
-
-*********************************************************************************/
-
-void
-PrtPop(
-__inout PRT_SM_CONTEXT_PRIV		*context
-)
-{
-	context->lastOperation = PopStatement;
-	PrtFreeValue(context->currEvent.trigger);
-	PrtFreeValue(context->currEvent.payload);
-	context->currEvent.trigger = PrtMkNullValue();
-	context->currEvent.payload = PrtMkNullValue();
-}
-
 void
 PrtRaise(
-__inout PRT_SM_CONTEXT_PRIV		*context,
-__in PRT_VALUE	*event,
-__in PRT_VALUE	*payload
+	_Inout_ PRT_SM_CONTEXT_PRIV		*context,
+	_In_ PRT_VALUE					*event,
+	_In_ PRT_VALUE					*payload
 )
 {
-	//check that the enqueued message is event type
-	PrtAssert(event->type->typeKind == PRT_KIND_EVENT, "Parameter event is not of type EVENT");
-	PrtAssert(PrtIsSubtype(payload->type, PrtGetPayloadType(context, event)), "Payload type mismatch");
-	PrtAssert(!PrtIsSpecialEvent(event), "Raised event cannot be null");
-	//
-	// Set operation to raiseStatement
-	//
+	PrtAssert(!PrtIsSpecialEvent(event), "Raised event must not be null");
+	PrtAssert(PrtIsSubtype(payload->type, PrtGetPayloadType(context, event)), "Actual payload type must be subtype of event payload type");
+	
 	context->lastOperation = RaiseStatement;
 
-	// Free the memory associated with trigger
-	PrtFreeValue(context->currEvent.trigger);
-	PrtFreeValue(context->currEvent.payload);
+	PrtFreeValue(context->currentEvent.trigger);
+	PrtFreeValue(context->currentEvent.payload);
+	context->currentEvent.payload = PrtCloneValue(payload);
+	context->currentEvent.trigger = PrtCloneValue(event);
 
-	context->currEvent.payload = PrtCloneValue(payload);
-	context->currEvent.trigger = PrtCloneValue(event);
-
-	//
-	//Log
-	//
 	PrtLog(PRT_STEP_RAISE, context);
 }
 
 void
 PrtPush(
-__inout PRT_SM_CONTEXT_PRIV		*context,
-__in PRT_UINT32				stateIndex
+	_Inout_ PRT_SM_CONTEXT_PRIV		*context,
+	_In_ PRT_UINT32					stateIndex
 )
 {
-	PrtPushState(context, PRT_TRUE);
-	PrtFreeValue(context->currEvent.trigger);
-	PrtFreeValue(context->currEvent.payload);
-	context->currEvent.trigger = PrtMkNullValue();
-	context->currEvent.payload = PrtMkNullValue();
-	context->currentState = stateIndex;
 	context->lastOperation = PushStatement;
-	PrtLog(PRT_STEP_PUSH, context);
-	return;
+
+	PrtPushState(context, stateIndex, PRT_TRUE);
 }
 
-FORCEINLINE
-PRT_STATEDECL *
-PrtGetCurrentStateDecl(
-__in PRT_SM_CONTEXT_PRIV			*context
+void
+PrtPushState(
+_Inout_ PRT_SM_CONTEXT_PRIV		*context,
+_In_	PRT_UINT32				stateIndex,
+_In_	PRT_BOOLEAN				isPushStatement
 )
 {
-	return &(context->process->program->machines[context->instanceOf].states[context->currentState]);
+	PRT_UINT16 i;
+	PRT_UINT16 packSize;
+	PRT_UINT16 length;
+	PRT_UINT32 *currDef;
+	PRT_UINT32 *currActions;
+	PRT_UINT32 *currTransitions;
+
+	packSize = PrtGetPackSize(context);
+	length = context->callStack.length;
+	currDef = PrtGetDeferredPacked(context, context->currentState);
+	currActions = PrtGetActionsPacked(context, context->currentState);
+	currTransitions = PrtGetTransitionsPacked(context, context->currentState);
+
+	PrtAssert(length < PRT_MAX_CALL_DEPTH, "Call stack overflow");
+
+	if (isPushStatement)
+	{
+		context->callStack.statesStack[length].currEvent = context->currentEvent;
+		context->currentEvent.trigger = PrtMkEventValue(PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
+		context->currentEvent.payload = PrtMkNullValue();
+	}
+	else
+	{
+		context->callStack.statesStack[length].currEvent.trigger = NULL;
+		context->callStack.statesStack[length].currEvent.payload = NULL;
+	}
+	context->callStack.statesStack[length].stateIndex = context->currentState;
+	context->callStack.statesStack[length].stateControl = context->stateControl;
+	context->callStack.statesStack[length].returnTo = context->returnTo;
+	context->callStack.statesStack[length].inheritedDeferredSetCompact = PrtClonePackedSet(context->inheritedDeferredSetCompact, packSize);
+	context->callStack.statesStack[length].inheritedActionsSetCompact = PrtClonePackedSet(context->inheritedActionsSetCompact, packSize);
+
+	context->callStack.length = length + 1;
+
+	// Update the defered set inherited by state-machine
+	// D = (D + d) - a - e
+	for (i = 0; i < packSize; ++i)
+	{
+		// Update the actions set inherited by state-machine
+		// A = (A - d) + a - e
+		context->inheritedActionsSetCompact[i] &= ~currDef[i]; // A - d
+		context->inheritedActionsSetCompact[i] |= currActions[i]; // + a
+		context->inheritedActionsSetCompact[i] &= ~currTransitions[i]; // -e
+
+		if (isPushStatement)
+		{
+			context->inheritedDeferredSetCompact[i] = ~context->inheritedActionsSetCompact[i]; // !a
+		}
+		else
+		{
+			context->inheritedDeferredSetCompact[i] |= currDef[i]; // D + d
+			context->inheritedDeferredSetCompact[i] &= ~currActions[i]; // - a 
+			context->inheritedDeferredSetCompact[i] &= ~currTransitions[i]; // - e
+		}
+	}
+
+	context->currentState = stateIndex;
+	PrtLog(PRT_STEP_PUSH, context);
+}
+
+void
+PrtPop(
+	_Inout_ PRT_SM_CONTEXT_PRIV		*context
+)
+{
+	context->lastOperation = PopStatement;
+
+	PrtFreeValue(context->currentEvent.trigger);
+	PrtFreeValue(context->currentEvent.payload);
+	context->currentEvent.trigger = PrtMkEventValue(PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
+	context->currentEvent.payload = PrtMkNullValue();
+	// Actual pop happens in PrtPopState; the entry function must be executed first.
+	// The above assignment to context->currentEvent is only for the benefit of the exit function.
+}
+
+void
+PrtPopState(
+	_Inout_ PRT_SM_CONTEXT_PRIV		*context,
+	_In_ PRT_BOOLEAN				isPopStatement
+)
+{
+	PRT_UINT16 i;
+	PRT_UINT16 packSize;
+	PRT_UINT16 length;
+	PRT_STACKSTATE_INFO poppedState;
+	i = 0;
+	packSize = PrtGetPackSize(context);
+	length = context->callStack.length;
+
+	if (length == 0)
+	{
+		if (PrtPrimGetEvent(context->currentEvent.trigger) == PRT_SPECIAL_EVENT_HALT)
+		{
+			PrtHaltMachine(context);
+		}
+		else
+		{
+			PrtHandleError(PRT_STATUS_EVENT_UNHANDLED, context);
+		}
+		return;
+	}
+
+	context->callStack.length = length - 1;
+	poppedState = context->callStack.statesStack[length - 1];
+	context->currentState = poppedState.stateIndex;
+
+	for (i = 0; i < packSize; i++)
+	{
+		context->inheritedDeferredSetCompact[i] = poppedState.inheritedDeferredSetCompact[i];
+		context->inheritedActionsSetCompact[i] = poppedState.inheritedActionsSetCompact[i];
+	}
+	PrtFree(poppedState.inheritedDeferredSetCompact);
+	PrtFree(poppedState.inheritedActionsSetCompact);
+
+	context->stateControl = poppedState.stateControl;
+	context->returnTo = poppedState.returnTo;
+
+	if (isPopStatement)
+	{
+		PrtFreeValue(context->currentEvent.trigger);
+		PrtFreeValue(context->currentEvent.payload);
+		context->currentEvent = poppedState.currEvent;
+		PrtLog(PRT_STEP_POP, context);
+	}
+	else
+	{
+		// unhandled event
+		if (context->stateControl != PrtDequeue)
+		{
+			PrtFreeValue(poppedState.currEvent.trigger);
+			PrtFreeValue(poppedState.currEvent.payload);
+		}
+		PrtLog(PRT_STEP_UNHANDLED, context);
+	}
 }
 
 FORCEINLINE
 void
 PrtRunExitFunction(
-__in PRT_SM_CONTEXT_PRIV			*context,
-__in PRT_UINT32						transIndex
+	_In_ PRT_SM_CONTEXT_PRIV			*context,
+	_In_ PRT_UINT32						transIndex
 )
 {
 	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
@@ -330,8 +423,8 @@ __in PRT_UINT32						transIndex
 
 void
 PrtRunStateMachine(
-__inout PRT_SM_CONTEXT_PRIV	    *context,
-__in PRT_BOOLEAN				doDequeue
+	_Inout_ PRT_SM_CONTEXT_PRIV	    *context,
+	_In_ PRT_BOOLEAN				doDequeue
 )
 {
 	PRT_BOOLEAN lockHeld;
@@ -356,8 +449,8 @@ DoEntryOrAction:
 	PrtUpdateCurrentActionsSet(context);
 	PrtUpdateCurrentDeferredSet(context);
 
-	PRT_DBG_ASSERT(context->stateExecFun != PrtDequeue, "stateExecFun must not be PrtDequeue");
-	if (context->stateExecFun == PrtStateEntry)
+	PRT_DBG_ASSERT(context->stateControl != PrtDequeue, "stateControl must not be PrtDequeue");
+	if (context->stateControl == PrtStateEntry)
 	{
 		if (context->returnTo == 0)
 			PrtLog(PRT_STEP_ENTRY, context);
@@ -367,7 +460,7 @@ DoEntryOrAction:
 	}
 	else
 	{
-		PRT_DBG_ASSERT(context->stateExecFun == PrtStateAction, "stateExecFun must be PrtStateAction");
+		PRT_DBG_ASSERT(context->stateControl == PrtStateAction, "stateControl must be PrtStateAction");
 		currActionDecl = PrtGetAction(context);
 		PRT_UINT32 doFunIndex = currActionDecl->doFunIndex;
 		context->lastOperation = ReturnStatement;
@@ -387,8 +480,7 @@ DoEntryOrAction:
 	case PopStatement:
 		PrtRunExitFunction(context, PrtGetCurrentStateDecl(context)->nTransitions);
 		PrtPopState(context, PRT_TRUE);
-		PrtLog(PRT_STEP_POP, context);
-		if (context->stateExecFun == PrtDequeue)
+		if (context->stateControl == PrtDequeue)
 		{
 			goto DoDequeue;
 		}
@@ -398,16 +490,20 @@ DoEntryOrAction:
 		}
 		break;
 	case RaiseStatement:
+		context->stateControl = PrtDequeue;
+		context->returnTo = 0;
 		goto DoHandleEvent;
 		break;
 	case PushStatement:
-		context->stateExecFun = PrtStateEntry;
+		context->stateControl = PrtStateEntry;
 		context->returnTo = 0;
 		goto DoEntryOrAction;
 		break;
 	case ReturnStatement:
-		context->stateExecFun = PrtDequeue;
+		context->stateControl = PrtDequeue;
 		context->returnTo = 0;
+		context->currentEvent.trigger = NULL;
+		context->currentEvent.payload = NULL;
 		goto DoDequeue;
 		break;
 	default:
@@ -437,11 +533,11 @@ DoDequeue:
 	}
 
 DoHandleEvent:
-	eventValue = PrtPrimGetEvent(context->currEvent.trigger);
+	eventValue = PrtPrimGetEvent(context->currentEvent.trigger);
 	if (PrtIsPushTransition(context, eventValue))
 	{
 		PrtTakeTransition(context, eventValue);
-		context->stateExecFun = PrtStateEntry;
+		context->stateControl = PrtStateEntry;
 		context->returnTo = 0;
 		goto DoEntryOrAction;
 	}
@@ -449,13 +545,13 @@ DoHandleEvent:
 	{
 		PrtRunExitFunction(context, PrtFindTransition(context, eventValue));
 		PrtTakeTransition(context, eventValue);
-		context->stateExecFun = PrtStateEntry;
+		context->stateControl = PrtStateEntry;
 		context->returnTo = 0;
 		goto DoEntryOrAction;
 	}
 	else if (PrtIsActionInstalled(eventValue, context->currentActionsSetCompact))
 	{
-		context->stateExecFun = PrtStateAction;
+		context->stateControl = PrtStateAction;
 		context->returnTo = 0;
 		goto DoEntryOrAction;
 	}
@@ -463,7 +559,6 @@ DoHandleEvent:
 	{
 		PrtRunExitFunction(context, PrtGetCurrentStateDecl(context)->nTransitions);
 		PrtPopState(context, PRT_FALSE);
-		PrtLog(PRT_STEP_UNHANDLED, context);
 		PrtUpdateCurrentActionsSet(context);
 		PrtUpdateCurrentDeferredSet(context);
 		goto DoHandleEvent;
@@ -473,31 +568,10 @@ DoHandleEvent:
 	return;
 }
 
-void
-PrtTakeTransition(
-__inout PRT_SM_CONTEXT_PRIV		*context,
-__in PRT_UINT32				eventIndex
-)
-{
-	PRT_UINT32 nTransitions;
-	PRT_TRANSDECL *transTable = PrtGetTransitionTable(context, context->currentState, &nTransitions);
-	PRT_UINT32 transIndex = PrtFindTransition(context, eventIndex);
-	if (transTable[transIndex].transFunIndex == PRT_SPECIAL_ACTION_PUSH_OR_IGN)
-	{
-		PrtPushState(context, PRT_FALSE);
-		context->currentState = transTable[transIndex].destStateIndex;
-		PrtLog(PRT_STEP_PUSH, context);
-	}
-	else 
-	{
-		context->currentState = transTable[transIndex].destStateIndex;
-	}
-}
-
 PRT_UINT32
 PrtFindTransition(
-__inout PRT_SM_CONTEXT_PRIV		*context,
-__in PRT_UINT32					eventIndex
+	_In_ PRT_SM_CONTEXT_PRIV		*context,
+	_In_ PRT_UINT32					eventIndex
 )
 {
 	PRT_UINT32 i;
@@ -517,128 +591,27 @@ __in PRT_UINT32					eventIndex
 }
 
 void
-PrtHaltMachine(
-__inout PRT_SM_CONTEXT_PRIV			*context
+PrtTakeTransition(
+	_Inout_ PRT_SM_CONTEXT_PRIV		*context,
+	_In_ PRT_UINT32					eventIndex
 )
 {
-	PRT_DBG_ASSERT(!context->isModel, "Must be a real machine");
-	PrtCleanupMachine(context);
-	context->isHalted = PRT_TRUE;
-	PrtLog(PRT_STEP_HALT, context);
-}
-
-void
-PrtPushState(
-__inout PRT_SM_CONTEXT_PRIV		*context,
-__in	PRT_BOOLEAN			isPushStatement
-)
-{
-	PRT_UINT16 i;
-	PRT_UINT16 packSize;
-	PRT_UINT16 length;
-	PRT_UINT32 *currDef;
-	PRT_UINT32 *currActions;
-	PRT_UINT32 *currTransitions;
-
-	packSize = PrtGetPackSize(context);
-	length = context->callStack.length;
-	currDef = PrtGetDeferredPacked(context, context->currentState);
-	currActions = PrtGetActionsPacked(context, context->currentState);
-	currTransitions = PrtGetTransitionsPacked(context, context->currentState);
-
-	PrtAssert(length < PRT_MAX_CALL_DEPTH, "Call Stack Overflow");
-	//
-	// push <state, trigger, stateExecFun, returnTo, defSet, actSet>
-	//
-	context->callStack.statesStack[length].stateIndex = context->currentState;
-	context->callStack.statesStack[length].currEvent.trigger = context->currEvent.trigger;
-	context->callStack.statesStack[length].currEvent.payload = context->currEvent.payload;
-	context->callStack.statesStack[length].stateExecFun = context->stateExecFun;
-	context->callStack.statesStack[length].returnTo = context->returnTo;
-	context->callStack.statesStack[length].inheritedDeferredSetCompact = PrtClonePackedSet(context->inheritedDeferredSetCompact, packSize);
-	context->callStack.statesStack[length].inheritedActionsSetCompact = PrtClonePackedSet(context->inheritedActionsSetCompact, packSize);
-
-	context->callStack.length = length + 1;
-
-	// Update the defered set inherited by state-machine
-	// D = (D + d) - a - e
-	for (i = 0; i < packSize; ++i)
+	PRT_UINT32 nTransitions;
+	PRT_TRANSDECL *transTable = PrtGetTransitionTable(context, context->currentState, &nTransitions);
+	PRT_UINT32 transIndex = PrtFindTransition(context, eventIndex);
+	if (transTable[transIndex].transFunIndex == PRT_SPECIAL_ACTION_PUSH_OR_IGN)
 	{
-		// Update the actions set inherited by state-machine
-		// A = (A - d) + a - e
-		context->inheritedActionsSetCompact[i] &= ~currDef[i]; // A - d
-		context->inheritedActionsSetCompact[i] |= currActions[i]; // + a
-		context->inheritedActionsSetCompact[i] &= ~currTransitions[i]; // -e
-
-		if (isPushStatement)
-		{
-			context->inheritedDeferredSetCompact[i] = ~context->inheritedActionsSetCompact[i]; // !a
-		}
-		else
-		{
-			context->inheritedDeferredSetCompact[i] |= currDef[i]; // D + d
-			context->inheritedDeferredSetCompact[i] &= ~currActions[i]; // - a 
-			context->inheritedDeferredSetCompact[i] &= ~currTransitions[i]; // - e
-		}
+		PrtPushState(context, transTable[transIndex].destStateIndex, PRT_FALSE);
 	}
-}
-
-void
-PrtPopState(
-__inout PRT_SM_CONTEXT_PRIV		*context,
-__in PRT_BOOLEAN			restoreTrigger
-)
-{
-	PRT_UINT16 i;
-	PRT_UINT16 packSize;
-	PRT_UINT16 length;
-	PRT_STACKSTATE_INFO poppedState;
-	i = 0;
-	packSize = PrtGetPackSize(context);
-	length = context->callStack.length;
-
-	if (length == 0)
+	else 
 	{
-		if (PrtPrimGetEvent(context->currEvent.trigger) == PRT_SPECIAL_EVENT_HALT)
-		{
-			PrtHaltMachine(context);
-		}
-		else 
-		{
-			PrtHandleError(PRT_STATUS_EVENT_UNHANDLED, context);
-		}
-		return;
+		context->currentState = transTable[transIndex].destStateIndex;
 	}
-
-	context->callStack.length = length - 1;
-	poppedState = context->callStack.statesStack[length - 1];
-	context->currentState = poppedState.stateIndex;
-
-	for (i = 0; i < packSize; i++)
-	{
-		context->inheritedDeferredSetCompact[i] = poppedState.inheritedDeferredSetCompact[i];
-		context->inheritedActionsSetCompact[i] = poppedState.inheritedActionsSetCompact[i];
-	}
-	PrtFree(poppedState.inheritedDeferredSetCompact);
-	PrtFree(poppedState.inheritedActionsSetCompact);
-
-	context->stateExecFun = poppedState.stateExecFun;
-	context->returnTo = poppedState.returnTo;
-
-	if (restoreTrigger)
-	{
-		PrtFreeValue(context->currEvent.trigger);
-		PrtFreeValue(context->currEvent.payload);
-		context->currEvent.trigger = poppedState.currEvent.trigger;
-		context->currEvent.payload = poppedState.currEvent.payload;
-	}
-	
-	return;
 }
 
 PRT_BOOLEAN
 PrtDequeueEvent(
-__inout PRT_SM_CONTEXT_PRIV	*context
+	_Inout_ PRT_SM_CONTEXT_PRIV	*context
 )
 {
 	PRT_UINT32 queueLength;
@@ -646,11 +619,7 @@ __inout PRT_SM_CONTEXT_PRIV	*context
 	PRT_UINT32* deferPacked;
 	PRT_UINT32 i, head;
 
-	//
-	// Free old trigger
-	//
-	PrtFreeValue(context->currEvent.trigger);
-	PrtFreeValue(context->currEvent.payload);
+	PRT_DBG_ASSERT(context->currentEvent.trigger == NULL && context->currentEvent.payload == NULL, "Precondition of PrtDequeue failed");
 
 	queue = &context->eventQueue;
 	queueLength = queue->eventsSize;
@@ -669,7 +638,7 @@ __inout PRT_SM_CONTEXT_PRIV	*context
 		PRT_UINT32 index = (head + i) % queueLength;
 		PRT_EVENT e = queue->events[index];
 		if (!PrtIsEventDeferred(PrtPrimGetEvent(e.trigger), context->currentDeferredSetCompact)) {
-			context->currEvent = e;
+			context->currentEvent = e;
 			break;
 		}
 	}
@@ -678,9 +647,16 @@ __inout PRT_SM_CONTEXT_PRIV	*context
 	// Check if not found
 	//
 	if (i == queue->size) {
-		context->currEvent.trigger = PrtMkEventValue(PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
-		context->currEvent.payload = PrtMkNullValue();
-		return PrtStateHasDefaultTransitionOrAction(context);
+		if (PrtStateHasDefaultTransitionOrAction(context))
+		{
+			context->currentEvent.trigger = PrtMkEventValue(PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
+			context->currentEvent.payload = PrtMkNullValue();
+			return PRT_TRUE;
+		}
+		else 
+		{
+			return PRT_FALSE;
+		}
 	}
 
 	//
@@ -712,10 +688,19 @@ __inout PRT_SM_CONTEXT_PRIV	*context
 }
 
 FORCEINLINE
+PRT_STATEDECL *
+PrtGetCurrentStateDecl(
+_In_ PRT_SM_CONTEXT_PRIV			*context
+)
+{
+	return &(context->process->program->machines[context->instanceOf].states[context->currentState]);
+}
+
+FORCEINLINE
 PRT_TYPE*
 PrtGetPayloadType(
-PRT_SM_CONTEXT_PRIV *context,
-PRT_VALUE	  *event
+	_In_ PRT_SM_CONTEXT_PRIV *context,
+	_In_ PRT_VALUE	  *event
 )
 {
 	return context->process->program->events[PrtPrimGetEvent(event)].type;
@@ -724,7 +709,7 @@ PRT_VALUE	  *event
 FORCEINLINE
 PRT_UINT16
 PrtGetPackSize(
-__in PRT_SM_CONTEXT_PRIV			*context
+	_In_ PRT_SM_CONTEXT_PRIV			*context
 )
 {
 	ULONG32 nEvents = context->process->program->nEvents;
@@ -736,7 +721,7 @@ __in PRT_SM_CONTEXT_PRIV			*context
 FORCEINLINE
 PRT_SM_FUN
 PrtGetEntryFunction(
-__in PRT_SM_CONTEXT_PRIV		*context
+	_In_ PRT_SM_CONTEXT_PRIV		*context
 )
 {
 	PRT_UINT32 entryFunIndex = context->process->program->machines[context->instanceOf].states[context->currentState].entryFunIndex;
@@ -746,7 +731,7 @@ __in PRT_SM_CONTEXT_PRIV		*context
 FORCEINLINE
 PRT_SM_FUN
 PrtGetExitFunction(
-__in PRT_SM_CONTEXT_PRIV		*context
+	_In_ PRT_SM_CONTEXT_PRIV		*context
 )
 {
 	PRT_UINT32 exitFunIndex = context->process->program->machines[context->instanceOf].states[context->currentState].exitFunIndex;
@@ -756,10 +741,10 @@ __in PRT_SM_CONTEXT_PRIV		*context
 FORCEINLINE
 PRT_DODECL*
 PrtGetAction(
-__in PRT_SM_CONTEXT_PRIV		*context
+	_In_ PRT_SM_CONTEXT_PRIV		*context
 )
 {
-	PRT_UINT32 currEvent = PrtPrimGetEvent(context->currEvent.trigger);
+	PRT_UINT32 currEvent = PrtPrimGetEvent(context->currentEvent.trigger);
 	PRT_BOOLEAN isActionInstalled = PRT_FALSE;
 	PRT_UINT32 i, nActions;
 	PRT_STATESTACK currStack;
@@ -813,15 +798,15 @@ __in PRT_SM_CONTEXT_PRIV		*context
 		}
 	}
 
-	PrtAssert(actionDecl != NULL, "Action cannot be NULL");
+	PRT_DBG_ASSERT(actionDecl != NULL, "Action must not be NULL");
 	return actionDecl;
 }
 
 FORCEINLINE
 PRT_UINT32*
 PrtGetDeferredPacked(
-__in PRT_SM_CONTEXT_PRIV	*context,
-__in PRT_UINT32				stateIndex
+	_In_ PRT_SM_CONTEXT_PRIV	*context,
+	_In_ PRT_UINT32				stateIndex
 )
 {
 	PRT_EVENTSETDECL* evSets = context->process->program->eventSets;
@@ -832,8 +817,8 @@ __in PRT_UINT32				stateIndex
 FORCEINLINE
 PRT_UINT32*
 PrtGetActionsPacked(
-__in PRT_SM_CONTEXT_PRIV	*context,
-__in PRT_UINT32				stateIndex
+	_In_ PRT_SM_CONTEXT_PRIV	*context,
+	_In_ PRT_UINT32				stateIndex
 )
 {
 	PRT_EVENTSETDECL* evSets = context->process->program->eventSets;
@@ -844,8 +829,8 @@ __in PRT_UINT32				stateIndex
 FORCEINLINE
 PRT_UINT32*
 PrtGetTransitionsPacked(
-__in PRT_SM_CONTEXT_PRIV	*context,
-__in PRT_UINT32				stateIndex
+	_In_ PRT_SM_CONTEXT_PRIV	*context,
+	_In_ PRT_UINT32				stateIndex
 )
 {
 	PRT_EVENTSETDECL* evSets = context->process->program->eventSets;
@@ -856,9 +841,9 @@ __in PRT_UINT32				stateIndex
 FORCEINLINE
 PRT_TRANSDECL*
 PrtGetTransitionTable(
-__in PRT_SM_CONTEXT_PRIV	*context,
-__in PRT_UINT32				stateIndex,
-__out PRT_UINT32			*nTransitions
+	_In_ PRT_SM_CONTEXT_PRIV	*context,
+	_In_ PRT_UINT32				stateIndex,
+	_Out_ PRT_UINT32			*nTransitions
 )
 {
 	*nTransitions = context->process->program->machines[context->instanceOf].states[stateIndex].nTransitions;
@@ -867,31 +852,26 @@ __out PRT_UINT32			*nTransitions
 
 PRT_BOOLEAN 
 PrtAreGuidsEqual(
-	__in PRT_GUID guid1,
-	__in PRT_GUID guid2
-	)
+	_In_ PRT_GUID guid1,
+	_In_ PRT_GUID guid2
+)
 {
 	return guid1.data1 == guid2.data1 && guid1.data2 == guid2.data2 && guid1.data3 == guid2.data3 && guid1.data4 == guid2.data4;
 }
 
 PRT_BOOLEAN
 PrtIsEventMaxInstanceExceeded(
-__in PRT_EVENTQUEUE			*queue,
-__in PRT_UINT32				eventIndex,
-__in PRT_UINT32				maxInstances
+	_In_ PRT_EVENTQUEUE			*queue,
+	_In_ PRT_UINT32				eventIndex,
+	_In_ PRT_UINT32				maxInstances
 )
 {
-	//
-	// Declarations
-	//
 	PRT_UINT32 queueSize;
 	PRT_UINT32 head;
 	PRT_UINT32 tail;
 	PRT_UINT16 currMaxInstance;
 	PRT_BOOLEAN isMaxInstancesExceeded;
-	//
-	// Code
-	//
+	
 	queueSize = queue->eventsSize;
 	head = queue->headIndex;
 	tail = queue->tailIndex;
@@ -949,7 +929,7 @@ __in PRT_UINT32				maxInstances
 FORCEINLINE
 PRT_BOOLEAN
 PrtStateHasDefaultTransitionOrAction(
-__in PRT_SM_CONTEXT_PRIV			*context
+	_In_ PRT_SM_CONTEXT_PRIV			*context
 )
 {
 	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
@@ -961,7 +941,7 @@ __in PRT_SM_CONTEXT_PRIV			*context
 FORCEINLINE
 PRT_BOOLEAN
 PrtIsSpecialEvent(
-PRT_VALUE * event
+	_In_ PRT_VALUE *event
 )
 {
 	return (PrtIsNullValue(event) || PrtPrimGetEvent(event) == PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
@@ -970,8 +950,8 @@ PRT_VALUE * event
 FORCEINLINE
 PRT_BOOLEAN
 PrtIsEventDeferred(
-__in PRT_UINT32		eventIndex,
-__in PRT_UINT32*		defSet
+	_In_ PRT_UINT32		eventIndex,
+	_In_ PRT_UINT32*	defSet
 )
 {
 	return (defSet[eventIndex / (sizeof(PRT_UINT32)* 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32)* 8)))) != 0;
@@ -980,17 +960,28 @@ __in PRT_UINT32*		defSet
 FORCEINLINE
 PRT_BOOLEAN
 PrtIsActionInstalled(
-__in PRT_UINT32		eventIndex,
-__in PRT_UINT32*		actionSet
+	_In_ PRT_UINT32		eventIndex,
+	_In_ PRT_UINT32*		actionSet
 )
 {
 	return (actionSet[eventIndex / (sizeof(PRT_UINT32)* 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32)* 8)))) != 0;
 }
 
+FORCEINLINE
+PRT_BOOLEAN
+PrtIsTransitionPresent(
+	_In_ PRT_SM_CONTEXT_PRIV	*context,
+	_In_ PRT_UINT32				eventIndex
+)
+{
+	PRT_UINT32* transitionsPacked = PrtGetTransitionsPacked(context, context->currentState);
+	return (transitionsPacked[eventIndex / (sizeof(PRT_UINT32)* 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32)* 8)))) != 0;
+}
+
 PRT_BOOLEAN
 PrtIsPushTransition(
-PRT_SM_CONTEXT_PRIV		*context,
-PRT_UINT32				event
+	_In_ PRT_SM_CONTEXT_PRIV		*context,
+	_In_ PRT_UINT32					event
 )
 {
 	PRT_UINT16 i;
@@ -1008,21 +999,10 @@ PRT_UINT32				event
 	return PRT_FALSE;
 }
 
-FORCEINLINE
-PRT_BOOLEAN
-PrtIsTransitionPresent(
-__in PRT_SM_CONTEXT_PRIV	*context,
-__in PRT_UINT32				eventIndex
-)
-{
-	PRT_UINT32* transitionsPacked = PrtGetTransitionsPacked(context, context->currentState);
-	return (transitionsPacked[eventIndex / (sizeof(PRT_UINT32)* 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32)* 8)))) != 0;
-}
-
 PRT_UINT32 *
 PrtClonePackedSet(
-PRT_UINT32 *				packedSet,
-PRT_UINT32					size
+	_In_ PRT_UINT32 *				packedSet,
+	_In_ PRT_UINT32					size
 )
 {
 	PRT_UINT32 *clone;
@@ -1038,7 +1018,7 @@ PRT_UINT32					size
 
 void
 PrtUpdateCurrentActionsSet(
-PRT_SM_CONTEXT_PRIV			*context
+	_Inout_ PRT_SM_CONTEXT_PRIV			*context
 )
 {
 	PRT_UINT16 i;
@@ -1064,7 +1044,7 @@ PRT_SM_CONTEXT_PRIV			*context
 
 void
 PrtUpdateCurrentDeferredSet(
-PRT_SM_CONTEXT_PRIV			*context
+	_Inout_ PRT_SM_CONTEXT_PRIV			*context
 )
 {
 	PRT_UINT16 i;
@@ -1091,7 +1071,7 @@ PRT_SM_CONTEXT_PRIV			*context
 
 void
 PrtResizeEventQueue(
-__in PRT_SM_CONTEXT_PRIV *context
+	_Inout_ PRT_SM_CONTEXT_PRIV *context
 )
 {
 	PRT_INT32 maxEventQueueSize = context->process->program->machines[context->instanceOf].maxQueueSize;
@@ -1139,8 +1119,19 @@ __in PRT_SM_CONTEXT_PRIV *context
 }
 
 void
+PrtHaltMachine(
+	_Inout_ PRT_SM_CONTEXT_PRIV			*context
+)
+{
+	PRT_DBG_ASSERT(!context->isModel, "Must be a real machine");
+	PrtCleanupMachine(context);
+	context->isHalted = PRT_TRUE;
+	PrtLog(PRT_STEP_HALT, context);
+}
+
+void
 PrtCleanupMachine(
-PRT_SM_CONTEXT_PRIV			*context
+	_Inout_ PRT_SM_CONTEXT_PRIV			*context
 )
 {
 	if (context->currentActionsSetCompact != NULL)
@@ -1191,7 +1182,7 @@ PRT_SM_CONTEXT_PRIV			*context
 
 void
 PrtCleanupModel(
-PRT_SM_CONTEXT			*context
+	_Inout_ PRT_SM_CONTEXT			*context
 )
 {
 	if (context->extContext != NULL)
@@ -1201,8 +1192,8 @@ PRT_SM_CONTEXT			*context
 
 void
 PrtHandleError(
-__in PRT_STATUS ex,
-__in PRT_SM_CONTEXT_PRIV *context
+	_In_ PRT_STATUS ex,
+	_In_ PRT_SM_CONTEXT_PRIV *context
 )
 {
 	((PRT_PROCESS_PRIV *)context->process)->errorHandler(ex, context);
@@ -1210,8 +1201,8 @@ __in PRT_SM_CONTEXT_PRIV *context
 
 void
 PrtLog(
-__in PRT_STEP step,
-__in PRT_SM_CONTEXT_PRIV *context
+	_In_ PRT_STEP step,
+	_In_ PRT_SM_CONTEXT_PRIV *context
 )
 {
 	((PRT_PROCESS_PRIV *)context->process)->logHandler(step, context);

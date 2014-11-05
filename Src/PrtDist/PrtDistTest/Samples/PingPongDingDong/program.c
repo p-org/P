@@ -260,7 +260,7 @@
   {
     // entry function for _Init
     PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
-    privContext->varValues[P_VAR_PONG_pingid] = PrtCloneValue(privContext->currEvent.payload);
+    privContext->varValues[P_VAR_PONG_pingid] = PrtCloneValue(privContext->currentEvent.payload);
     PrtRaise(privContext, PrtMkEventValue(P_EVENT_Success), PrtMkNullValue());
   }
 

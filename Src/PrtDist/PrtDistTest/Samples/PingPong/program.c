@@ -173,7 +173,7 @@
   {
     // entry function in state Pong_SendPong
     PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
-    PrtSend(PrtGetMachine(privContext->process, privContext->currEvent.payload), PrtMkEventValue(P_EVENT_Pong), PrtMkNullValue());
+    PrtSend(PrtGetMachine(privContext->process, privContext->currentEvent.payload), PrtMkEventValue(P_EVENT_Pong), PrtMkNullValue());
     PrtRaise(privContext, PrtMkEventValue(P_EVENT_Success), PrtMkNullValue());
   }
 

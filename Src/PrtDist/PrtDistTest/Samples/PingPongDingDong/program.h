@@ -79,13 +79,13 @@
       _P_VARS_PONG_COUNT = 1
     };
 
-    void P_DTOR_PING_IMPL(PRT_SM_CONTEXT *context);
+    void P_DTOR_PING_IMPL(PRT_MACHINEINST *context);
 
-    void P_DTOR_PONG_IMPL(PRT_SM_CONTEXT *context);
+    void P_DTOR_PONG_IMPL(PRT_MACHINEINST *context);
 
-    void P_CTOR_PING_IMPL(PRT_SM_CONTEXT *context, PRT_VALUE *value);
+    void P_CTOR_PING_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value);
 
-    void P_CTOR_PONG_IMPL(PRT_SM_CONTEXT *context, PRT_VALUE *value);
+    void P_CTOR_PONG_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value);
 
     PRT_PROGRAMDECL P_GEND_PROGRAM;
   #endif

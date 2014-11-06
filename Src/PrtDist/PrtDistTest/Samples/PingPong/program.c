@@ -145,34 +145,34 @@
         NULL
     }
   };
-  void P_FUN_PING_ANON0_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_PING_ANON0_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
   }
 
-  void P_FUN_PING_ANON1_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_PING_ANON1_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
     // entry function in state Ping_Init
-    PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
+    PRT_MACHINEINST_PRIV *privContext = (PRT_MACHINEINST_PRIV *)context;
     privContext->varValues[P_VAR_PING_pongId] = PrtCloneValue(PrtMkMachine(privContext->process, P_MACHINE_PONG, PrtMkNullValue())->id);
     PrtRaise(privContext, PrtMkEventValue(P_EVENT_Success), PrtMkNullValue());
   }
 
-  void P_FUN_PING_ANON2_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_PING_ANON2_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
     // entry function in state Ping_SendPing
-    PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
+    PRT_MACHINEINST_PRIV *privContext = (PRT_MACHINEINST_PRIV *)context;
     PrtSend(PrtGetMachine(privContext->process, privContext->varValues[P_VAR_PING_pongId]), PrtMkEventValue(P_EVENT_Ping), context->id);
     PrtRaise(privContext, PrtMkEventValue(P_EVENT_Success), PrtMkNullValue());
   }
 
-  void P_FUN_PONG_ANON0_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_PONG_ANON0_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
   }
 
-  void P_FUN_PONG_ANON1_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_PONG_ANON1_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
     // entry function in state Pong_SendPong
-    PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
+    PRT_MACHINEINST_PRIV *privContext = (PRT_MACHINEINST_PRIV *)context;
     PrtSend(PrtGetMachine(privContext->process, privContext->currentEvent.payload), PrtMkEventValue(P_EVENT_Pong), PrtMkNullValue());
     PrtRaise(privContext, PrtMkEventValue(P_EVENT_Success), PrtMkNullValue());
   }

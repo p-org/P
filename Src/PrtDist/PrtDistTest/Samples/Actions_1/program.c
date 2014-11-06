@@ -188,65 +188,65 @@
         NULL
     }
   };
-  void P_FUN_Ghost_ANON0_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_Ghost_ANON0_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
     // entry function of Ghost_Init
-    PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
+    PRT_MACHINEINST_PRIV *privContext = (PRT_MACHINEINST_PRIV *)context;
     privContext->varValues[P_VAR_Ghost_real_machine] = PrtCloneValue(privContext->currentEvent.payload);
   }
 
-  void P_FUN_Ghost_ANON1_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_Ghost_ANON1_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
     // entry function of Ghost_S2
     // exit function of Ghost_Init/Ghost_S1/Ghost_S2
   }
 
-  void P_FUN_Ghost_ANON2_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_Ghost_ANON2_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
     // entry function of Ghost_S1
-    PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
+    PRT_MACHINEINST_PRIV *privContext = (PRT_MACHINEINST_PRIV *)context;
     PrtSend(PrtGetMachine(privContext->process, privContext->varValues[P_VAR_Ghost_real_machine]), PrtMkEventValue(P_EVENT_E4), PrtMkNullValue());
     PrtSend(PrtGetMachine(privContext->process, privContext->varValues[P_VAR_Ghost_real_machine]), PrtMkEventValue(P_EVENT_E2), PrtMkNullValue());
   }
 
-  void P_FUN_Real_ANON0_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_Real_ANON0_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
     // exit function of Real_Init
-    PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
+    PRT_MACHINEINST_PRIV *privContext = (PRT_MACHINEINST_PRIV *)context;
     privContext->varValues[P_VAR_Real_test] = PrtMkBoolValue(PRT_TRUE);
   }
 
-  void P_FUN_Real_ANON1_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_Real_ANON1_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
     // exit function of Real_S1/Real_S2
   }
 
-  void P_FUN_Real_ANON2_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_Real_ANON2_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
     // entry function of Real_Init
-    PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
+    PRT_MACHINEINST_PRIV *privContext = (PRT_MACHINEINST_PRIV *)context;
     privContext->varValues[P_VAR_Real_ghost_machine] = PrtCloneValue(PrtMkMachine(privContext->process, P_MACHINE_Ghost, context->id)->id);
     PrtSend(PrtGetMachine(privContext->process, privContext->varValues[P_VAR_Real_ghost_machine]), PrtMkEventValue(P_EVENT_E1), PrtMkNullValue());
   }
 
-  void P_FUN_Real_ANON3_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_Real_ANON3_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
     // entry function of Real_S1
-    PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
+    PRT_MACHINEINST_PRIV *privContext = (PRT_MACHINEINST_PRIV *)context;
     PrtAssert(privContext->varValues[P_VAR_Real_test]->valueUnion.bl, "Test failed");
     PrtRaise(privContext, PrtMkEventValue(P_EVENT_unit), PrtMkNullValue());
   }
 
-  void P_FUN_Real_ANON4_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_Real_ANON4_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
     // entry function of Real_S2
-    PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
+    PRT_MACHINEINST_PRIV *privContext = (PRT_MACHINEINST_PRIV *)context;
     PrtAssert(PRT_FALSE, "Test succeeded");
   }
 
-  void P_FUN_Real_Action1_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_Real_Action1_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
-    PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
+    PRT_MACHINEINST_PRIV *privContext = (PRT_MACHINEINST_PRIV *)context;
     PrtSend(PrtGetMachine(privContext->process, privContext->varValues[P_VAR_Real_ghost_machine]), PrtMkEventValue(P_EVENT_E3), PrtMkNullValue());
   }
 

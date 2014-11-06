@@ -25,7 +25,7 @@ typedef struct PRT_PROCESS_PRIV {
 	PRT_RECURSIVE_MUTEX		processLock;
 	PRT_UINT32				numMachines;
 	PRT_UINT32				machineCount;
-	PRT_SM_CONTEXT			**machines;
+	PRT_MACHINEINST			**machines;
 } PRT_PROCESS_PRIV;
 
 typedef enum PRT_STATECONTROL
@@ -83,7 +83,7 @@ typedef struct PRT_STATESTACK
 	PRT_UINT16			length;
 } PRT_STATESTACK;
 
-typedef struct PRT_SM_CONTEXT_PRIV {
+typedef struct PRT_MACHINEINST_PRIV {
 	PRT_PROCESS		    *process;
 	PRT_UINT32			instanceOf;
 	PRT_VALUE			*id;  
@@ -104,9 +104,9 @@ typedef struct PRT_SM_CONTEXT_PRIV {
 	PRT_UINT32*			currentDeferredSetCompact;
 	PRT_UINT32*			inheritedActionsSetCompact;
 	PRT_UINT32*			currentActionsSetCompact;
-} PRT_SM_CONTEXT_PRIV;
+} PRT_MACHINEINST_PRIV;
 
-PRT_SM_CONTEXT_PRIV *
+PRT_MACHINEINST_PRIV *
 PrtMkMachinePrivate(
 _Inout_  PRT_PROCESS_PRIV		*process,
 _In_  PRT_UINT32				instanceOf,
@@ -115,133 +115,133 @@ _In_  PRT_VALUE					*payload
 
 void
 PrtSendPrivate(
-_Inout_ PRT_SM_CONTEXT_PRIV		*context,
+_Inout_ PRT_MACHINEINST_PRIV		*context,
 _In_ PRT_VALUE					*event,
 _In_ PRT_VALUE					*payload
 );
 
 PRT_API void PRT_CALL_CONV
 PrtRaise(
-_Inout_ PRT_SM_CONTEXT_PRIV		*context,
+_Inout_ PRT_MACHINEINST_PRIV		*context,
 _In_ PRT_VALUE					*event,
 _In_ PRT_VALUE					*payload
 );
 
 PRT_API void PRT_CALL_CONV
 PrtPush(
-_Inout_ PRT_SM_CONTEXT_PRIV		*context,
+_Inout_ PRT_MACHINEINST_PRIV		*context,
 _In_ PRT_UINT32					stateIndex
 );
 
 void
 PrtPushState(
-_Inout_ PRT_SM_CONTEXT_PRIV	*context,
+_Inout_ PRT_MACHINEINST_PRIV	*context,
 _In_	PRT_UINT32			stateIndex,
 _In_	PRT_BOOLEAN			isPushStatement
 );
 
 PRT_API void PRT_CALL_CONV
 PrtPop(
-_Inout_ PRT_SM_CONTEXT_PRIV		*context
+_Inout_ PRT_MACHINEINST_PRIV		*context
 );
 
 void
 PrtPopState(
-_Inout_ PRT_SM_CONTEXT_PRIV		*context,
+_Inout_ PRT_MACHINEINST_PRIV		*context,
 _In_ PRT_BOOLEAN				isPopStatement
 );
 
 FORCEINLINE
 void
 PrtRunExitFunction(
-_In_ PRT_SM_CONTEXT_PRIV			*context,
+_In_ PRT_MACHINEINST_PRIV			*context,
 _In_ PRT_UINT32						transIndex
 );
 
 void
 PrtRunStateMachine(
-_Inout_ PRT_SM_CONTEXT_PRIV	    *context,
+_Inout_ PRT_MACHINEINST_PRIV	    *context,
 _In_ PRT_BOOLEAN				doDequeue
 );
 
 PRT_UINT32
 PrtFindTransition(
-_In_ PRT_SM_CONTEXT_PRIV		*context,
+_In_ PRT_MACHINEINST_PRIV		*context,
 _In_ PRT_UINT32					eventIndex
 );
 
 void
 PrtTakeTransition(
-_Inout_ PRT_SM_CONTEXT_PRIV		*context,
+_Inout_ PRT_MACHINEINST_PRIV		*context,
 _In_ PRT_UINT32					eventIndex
 );
 
 PRT_BOOLEAN
 PrtDequeueEvent(
-_Inout_ PRT_SM_CONTEXT_PRIV	*context
+_Inout_ PRT_MACHINEINST_PRIV	*context
 );
 
 FORCEINLINE
 PRT_STATEDECL *
 PrtGetCurrentStateDecl(
-_In_ PRT_SM_CONTEXT_PRIV			*context
+_In_ PRT_MACHINEINST_PRIV			*context
 );
 
 PRT_TYPE*
 PrtGetPayloadType(
-_In_ PRT_SM_CONTEXT_PRIV	*context,
+_In_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_VALUE				*event
 );
 
 FORCEINLINE
 PRT_UINT16
 PrtGetPackSize(
-_In_ PRT_SM_CONTEXT_PRIV			*context
+_In_ PRT_MACHINEINST_PRIV			*context
 );
 
 FORCEINLINE
 PRT_SM_FUN
 PrtGetEntryFunction(
-_In_ PRT_SM_CONTEXT_PRIV		*context
+_In_ PRT_MACHINEINST_PRIV		*context
 );
 
 FORCEINLINE
 PRT_SM_FUN
 PrtGetExitFunction(
-_In_ PRT_SM_CONTEXT_PRIV		*context
+_In_ PRT_MACHINEINST_PRIV		*context
 );
 
 FORCEINLINE
 PRT_DODECL*
 PrtGetAction(
-_In_ PRT_SM_CONTEXT_PRIV		*context
+_In_ PRT_MACHINEINST_PRIV		*context
 );
 
 FORCEINLINE
 PRT_UINT32*
 PrtGetDeferredPacked(
-_In_ PRT_SM_CONTEXT_PRIV	*context,
+_In_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_UINT32				stateIndex
 );
 
 FORCEINLINE
 PRT_UINT32*
 PrtGetActionsPacked(
-_In_ PRT_SM_CONTEXT_PRIV	*context,
+_In_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_UINT32				stateIndex
 );
 
 FORCEINLINE
 PRT_UINT32*
 PrtGetTransitionsPacked(
-_In_ PRT_SM_CONTEXT_PRIV	*context,
+_In_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_UINT32				stateIndex
 );
 
 FORCEINLINE
 PRT_TRANSDECL*
 PrtGetTransitionTable(
-_In_ PRT_SM_CONTEXT_PRIV	*context,
+_In_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_UINT32				stateIndex,
 _Out_ PRT_UINT32			*nTransitions
 );
@@ -262,7 +262,7 @@ _In_ PRT_UINT32				maxInstances
 FORCEINLINE
 PRT_BOOLEAN
 PrtStateHasDefaultTransitionOrAction(
-_In_ PRT_SM_CONTEXT_PRIV			*context
+_In_ PRT_MACHINEINST_PRIV			*context
 );
 
 FORCEINLINE
@@ -288,13 +288,13 @@ _In_ PRT_UINT32*	actionSet
 FORCEINLINE
 PRT_BOOLEAN
 PrtIsTransitionPresent(
-_In_ PRT_SM_CONTEXT_PRIV	*context,
+_In_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_UINT32				eventIndex
 );
 
 PRT_BOOLEAN
 PrtIsPushTransition(
-_In_ PRT_SM_CONTEXT_PRIV		*context,
+_In_ PRT_MACHINEINST_PRIV		*context,
 _In_ PRT_UINT32					event
 );
 
@@ -306,44 +306,44 @@ _In_ PRT_UINT32					size
 
 void
 PrtUpdateCurrentActionsSet(
-_Inout_ PRT_SM_CONTEXT_PRIV			*context
+_Inout_ PRT_MACHINEINST_PRIV			*context
 );
 
 void
 PrtUpdateCurrentDeferredSet(
-_Inout_ PRT_SM_CONTEXT_PRIV			*context
+_Inout_ PRT_MACHINEINST_PRIV			*context
 );
 
 void
 PrtResizeEventQueue(
-_Inout_ PRT_SM_CONTEXT_PRIV *context
+_Inout_ PRT_MACHINEINST_PRIV *context
 );
 
 void
 PrtHaltMachine(
-_Inout_ PRT_SM_CONTEXT_PRIV			*context
+_Inout_ PRT_MACHINEINST_PRIV			*context
 );
 
 void
 PrtCleanupMachine(
-_Inout_ PRT_SM_CONTEXT_PRIV			*context
+_Inout_ PRT_MACHINEINST_PRIV			*context
 );
 
 void
 PrtCleanupModel(
-_Inout_ PRT_SM_CONTEXT			*context
+_Inout_ PRT_MACHINEINST			*context
 );
 
 void
 PrtHandleError(
 _In_ PRT_STATUS ex,
-_In_ PRT_SM_CONTEXT_PRIV *context
+_In_ PRT_MACHINEINST_PRIV *context
 );
 
 void
 PrtLog(
 _In_ PRT_STEP step,
-_In_ PRT_SM_CONTEXT_PRIV *context
+_In_ PRT_MACHINEINST_PRIV *context
 );
 
 #ifdef __cplusplus

@@ -60,14 +60,14 @@ typedef struct PRT_PROCESS {
 /** The state of running machine in a process. 
 *   @see PrtMkMachine
 */
-typedef struct PRT_SM_CONTEXT
+typedef struct PRT_MACHINEINST
 {
 	PRT_PROCESS		    *process;     /**< The process that owns this machine.             */
 	PRT_UINT32			instanceOf;   /**< Index of machine type in PRT_PROGRAMDECL.       */
 	PRT_VALUE			*id;          /**< The id of this machine.                         */
 	void				*extContext;  /**< Pointer to an external context owned by client. */
 	PRT_BOOLEAN			isModel;	  /**< Indicates whether this is a model machine. */
-} PRT_SM_CONTEXT;
+} PRT_MACHINEINST;
 
 /** An error function that will be called whenever an error arises. */
 typedef void(PRT_CALL_CONV * PRT_ERROR_FUN)(PRT_STATUS, void *);
@@ -105,11 +105,11 @@ PRT_API void PRT_CALL_CONV PrtStopProcess(_Inout_ PRT_PROCESS* process);
 * @param[in,out] process    The process that will own this machine.
 * @param[in]     instanceOf An index of a machine type in process' program.
 * @param[in]     payload The payload to pass to the start state of machine instance (cloned, user frees).
-* @returns       A pointer to a PRT_SM_CONTEXT.
+* @returns       A pointer to a PRT_MACHINEINST.
 * @see PrtSend
-* @see PRT_SM_CONTEXT
+* @see PRT_MACHINEINST
 */
-PRT_API PRT_SM_CONTEXT * PRT_CALL_CONV PrtMkMachine(
+PRT_API PRT_MACHINEINST * PRT_CALL_CONV PrtMkMachine(
 	_Inout_ PRT_PROCESS *process,
 	_In_ PRT_UINT32 instanceOf,
 	_In_ PRT_VALUE *payload);
@@ -118,22 +118,22 @@ PRT_API PRT_SM_CONTEXT * PRT_CALL_CONV PrtMkMachine(
 * @param[in,out] process    The process that will own this machine.
 * @param[in]     instanceOf An index of a machine type in process' program.
 * @param[in]     payload The payload to pass to the start state of machine instance (cloned, user frees).
-* @returns       A pointer to a PRT_SM_CONTEXT.
+* @returns       A pointer to a PRT_MACHINEINST.
 * @see PrtSend
-* @see PRT_SM_CONTEXT
+* @see PRT_MACHINEINST
 */
-PRT_API PRT_SM_CONTEXT * PRT_CALL_CONV PrtMkModel(
+PRT_API PRT_MACHINEINST * PRT_CALL_CONV PrtMkModel(
 	_Inout_ PRT_PROCESS *process,
 	_In_ PRT_UINT32 instanceOf,
 	_In_ PRT_VALUE *payload);
 
 /** Gets machine instance corresponding to id in process. 
 * @param[in] process    The process containing the machine id.
-* @returns       A pointer to a PRT_SM_CONTEXT or NULL if id is not valid for process.
+* @returns       A pointer to a PRT_MACHINEINST or NULL if id is not valid for process.
 * @see PrtMkMachine
-* @see PRT_SM_CONTEXT
+* @see PRT_MACHINEINST
 */
-PRT_API PRT_SM_CONTEXT * PRT_CALL_CONV PrtGetMachine(
+PRT_API PRT_MACHINEINST * PRT_CALL_CONV PrtGetMachine(
 	_In_ PRT_PROCESS *process,
 	_In_ PRT_VALUE *id);
 
@@ -143,7 +143,7 @@ PRT_API PRT_SM_CONTEXT * PRT_CALL_CONV PrtGetMachine(
 * @param[in] payload The payload to send with this message (cloned, user frees).
 */
 PRT_API void PRT_CALL_CONV PrtSend(
-	_Inout_ PRT_SM_CONTEXT *machine, 
+	_Inout_ PRT_MACHINEINST *machine, 
 	_In_ PRT_VALUE *evt, 
 	_In_ PRT_VALUE *payload);
 

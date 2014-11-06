@@ -473,7 +473,7 @@ __in PRT_STATUS exception,
 __in void* vcontext
 )
 {
-	PRT_SM_CONTEXT *context = (PRT_SM_CONTEXT*)vcontext;
+	PRT_MACHINEINST *context = (PRT_MACHINEINST*)vcontext;
 	PRT_STRING MachineName = context->process->program->machines[context->instanceOf].name;
 	PRT_UINT32 MachineId = context->id->valueUnion.mid->machineId;
 
@@ -509,7 +509,7 @@ __in void* vcontext
 
 }
 
-PRT_STATEDECL *GetCurrentStateDecl(PRT_SM_CONTEXT_PRIV *context)
+PRT_STATEDECL *GetCurrentStateDecl(PRT_MACHINEINST_PRIV *context)
 {
 	return &(context->process->program->machines[context->instanceOf].states[context->currentState]);
 }
@@ -517,7 +517,7 @@ PRT_STATEDECL *GetCurrentStateDecl(PRT_SM_CONTEXT_PRIV *context)
 void PrtDistLogHandler(PRT_STEP step, void *vcontext)
 {
 	static FILE *logfile = NULL;
-	PRT_SM_CONTEXT_PRIV *c = (PRT_SM_CONTEXT_PRIV*)vcontext;
+	PRT_MACHINEINST_PRIV *c = (PRT_MACHINEINST_PRIV*)vcontext;
 	PRT_STRING MachineName = c->process->program->machines[c->instanceOf].name;
 	PRT_UINT32 MachineId = c->id->valueUnion.mid->machineId;
 	PRT_VALUE* payloadValue;

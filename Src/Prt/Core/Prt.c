@@ -35,11 +35,11 @@ PrtStopProcess(
 	PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
 	for (PRT_UINT32 i = 0; i < privateProcess->numMachines; i++)
 	{
-		PRT_SM_CONTEXT *context = privateProcess->machines[i];
+		PRT_MACHINEINST *context = privateProcess->machines[i];
 		if (context->isModel)
 			PrtCleanupModel(context);
 		else 
-			PrtCleanupMachine((PRT_SM_CONTEXT_PRIV *)context);
+			PrtCleanupMachine((PRT_MACHINEINST_PRIV *)context);
 		PrtFree(context);
 	}
 	PrtFree(privateProcess->machines);
@@ -47,35 +47,35 @@ PrtStopProcess(
 	PrtFree(process);
 }
 
-PRT_SM_CONTEXT *
+PRT_MACHINEINST *
 PrtMkMachine(
 	_Inout_  PRT_PROCESS			*process,
 	_In_  PRT_UINT32				instanceOf,
 	_In_  PRT_VALUE					*payload
 )
 {
-	return (PRT_SM_CONTEXT *)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)process, instanceOf, payload);
+	return (PRT_MACHINEINST *)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)process, instanceOf, payload);
 }
 
-PRT_SM_CONTEXT *
+PRT_MACHINEINST *
 PrtMkModel(
 	_Inout_  PRT_PROCESS			*process,
 	_In_  PRT_UINT32				instanceOf,
 	_In_  PRT_VALUE					*payload
 )
 {
-	PRT_SM_CONTEXT *context;
+	PRT_MACHINEINST *context;
 	PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
 
 	PrtLockMutex(privateProcess->processLock);
 
-	context = (PRT_SM_CONTEXT *)PrtMalloc(sizeof(PRT_SM_CONTEXT));
+	context = (PRT_MACHINEINST *)PrtMalloc(sizeof(PRT_MACHINEINST));
 
 	PRT_UINT32 numMachines = privateProcess->numMachines;
 	PRT_UINT32 machineCount = privateProcess->machineCount;
-	PRT_SM_CONTEXT **machines = privateProcess->machines;
+	PRT_MACHINEINST **machines = privateProcess->machines;
 	if (machineCount == numMachines) {
-		PRT_SM_CONTEXT **newMachines = (PRT_SM_CONTEXT **)PrtCalloc(2 * machineCount, sizeof(PRT_SM_CONTEXT *));
+		PRT_MACHINEINST **newMachines = (PRT_MACHINEINST **)PrtCalloc(2 * machineCount, sizeof(PRT_MACHINEINST *));
 		for (PRT_UINT32 i = 0; i < machineCount; i++)
 		{
 			newMachines[i] = machines[i];
@@ -84,7 +84,7 @@ PrtMkModel(
 		privateProcess->machines = newMachines;
 		privateProcess->machineCount = 2 * machineCount;
 	}
-	machines[numMachines] = (PRT_SM_CONTEXT *)context;
+	machines[numMachines] = (PRT_MACHINEINST *)context;
 	privateProcess->numMachines++;
 
 	context->process = process;
@@ -102,7 +102,7 @@ PrtMkModel(
 	return context;
 }
 
-PRT_SM_CONTEXT * 
+PRT_MACHINEINST * 
 PrtGetMachine(
 	_In_ PRT_PROCESS *process,
 	_In_ PRT_VALUE *id
@@ -120,7 +120,7 @@ PrtGetMachine(
 
 void
 PrtSend(
-	_Inout_ PRT_SM_CONTEXT			*context,
+	_Inout_ PRT_MACHINEINST			*context,
 	_In_ PRT_VALUE					*event,
 	_In_ PRT_VALUE					*payload
 )
@@ -130,5 +130,5 @@ PrtSend(
 		context->process->program->modelImpls[context->instanceOf].sendFun(context, event, payload);
 		return;
 	}
-	PrtSendPrivate((PRT_SM_CONTEXT_PRIV *)context, event, payload);
+	PrtSendPrivate((PRT_MACHINEINST_PRIV *)context, event, payload);
 }

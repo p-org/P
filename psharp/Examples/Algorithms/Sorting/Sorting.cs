@@ -263,8 +263,6 @@ namespace Sorting
             var v = ((Tuple<int, int>)this.Payload).Item2;
 
             this.Values[id] = v;
-
-            Runtime.AssertWhenStable(this.Values, AssertionCheck, "Assertion Failed.");
         }
 
         private bool AssertionCheck(Object obj)

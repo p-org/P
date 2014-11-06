@@ -120,7 +120,18 @@ namespace Microsoft.PSharp
         /// a null value is returned.
         /// </summary>
         protected internal Object Payload;
-        
+
+        /// <summary>
+        /// Machine lock used only during bug-finding mode.
+        /// </summary>
+        internal Object Lock;
+
+        /// <summary>
+        /// True if the machine yielded after a send operation.
+        /// Used only during bug-finding mode.
+        /// </summary>
+        internal bool IsYieldAtSend;
+
         #endregion
 
         #region machine constructors
@@ -138,6 +149,8 @@ namespace Microsoft.PSharp
             this.IsActive = true;
 
             this.CTS = new CancellationTokenSource();
+            this.Lock = new Object();
+            this.IsYieldAtSend = false;
 
             this.StepTransitions = this.DefineStepStateTransitions();
             this.CallTransitions = this.DefineCallStateTransitions();
@@ -406,6 +419,40 @@ namespace Microsoft.PSharp
         }
 
         /// <summary>
+        /// Schedules the machine to start concurrently with an optional payload.
+        /// Used only during bug-finding mode.
+        /// </summary>
+        /// /// <param name="payload">Optional payload</param>
+        /// <returns>Task</returns>
+        internal Task Schedule(Object payload = null)
+        {
+            return Task.Factory.StartNew((Object pl) =>
+            {
+                this.IsYieldAtSend = true;
+                this.Yield();
+                this.GotoInitialState(pl);
+                this.IsYieldAtSend = false;
+
+                while (this.IsActive)
+                {
+                    if (this.RaisedEvent != null)
+                    {
+                        Event nextEvent = this.RaisedEvent;
+                        this.RaisedEvent = null;
+                        this.HandleEvent(nextEvent);
+                    }
+                    else if (this.Inbox.Count > 0)
+                    {
+                        Event nextEvent = this.Inbox.Take(this.CTS.Token);
+                        this.HandleEvent(nextEvent);
+                    }
+
+                    this.Yield();
+                }
+            }, payload, TaskCreationOptions.LongRunning);
+        }
+
+        /// <summary>
         /// Starts the machine at the initial state with an
         /// optional payload.
         /// </summary>
@@ -497,6 +544,14 @@ namespace Microsoft.PSharp
         protected internal void Send(Machine m, Event e)
         {
             Runtime.Send(this.GetType().Name, m, e);
+
+            if (Runtime.Options.Mode != Runtime.Mode.Execution &&
+                !Runtime.Options.UnsoundScheduling)
+            {
+                this.IsYieldAtSend = true;
+                this.Yield();
+                this.IsYieldAtSend = false;
+            }
         }
 
         /// <summary>
@@ -739,6 +794,19 @@ namespace Microsoft.PSharp
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Locks the machine and yields execution to the runtime.
+        /// Used only during bug-finding mode.
+        /// </summary>
+        private void Yield()
+        {
+            lock (this.Lock)
+            {
+                System.Threading.Monitor.Pulse(this.Lock);
+                System.Threading.Monitor.Wait(this.Lock);
+            }
         }
 
         #endregion

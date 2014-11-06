@@ -44,15 +44,11 @@ namespace RaftBuggy
                     Runtime.RegisterNewMachine(typeof(Server));
                     Runtime.RegisterNewMachine(typeof(Clock));
                     Runtime.RegisterNewMachine(typeof(Client));
-
+                    
                     Console.WriteLine("Starting the runtime.\n");
                     Runtime.Start(new Tuple<int, int, int>(5, 1, 5));
-                    Runtime.Wait();
-
-                    Console.WriteLine("Performing cleanup.\n");
-                    Runtime.Dispose();
                 },
-                10000,
+                100,
                 true,
                 Runtime.SchedulingType.Random,
                 false);

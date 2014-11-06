@@ -449,7 +449,7 @@ namespace Microsoft.PSharp
 
                     this.Yield();
                 }
-            }, payload, TaskCreationOptions.LongRunning);
+            }, payload);
         }
 
         /// <summary>

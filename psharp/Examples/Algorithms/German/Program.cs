@@ -13,42 +13,34 @@ namespace German
     {
         static void Main(string[] args)
         {
-            Runtime.Test(
-                () =>
-                {
-                    Console.WriteLine("Registering events to the runtime.\n");
-                    Runtime.RegisterNewEvent(typeof(eLocal));
-                    Runtime.RegisterNewEvent(typeof(eStop));
-                    Runtime.RegisterNewEvent(typeof(eWait));
-                    Runtime.RegisterNewEvent(typeof(eNormal));
-                    Runtime.RegisterNewEvent(typeof(eNeedInvalidate));
-                    Runtime.RegisterNewEvent(typeof(eInvalidate));
-                    Runtime.RegisterNewEvent(typeof(eInvalidateAck));
-                    Runtime.RegisterNewEvent(typeof(eGrant));
-                    Runtime.RegisterNewEvent(typeof(eAck));
-                    Runtime.RegisterNewEvent(typeof(eGrantExcl));
-                    Runtime.RegisterNewEvent(typeof(eGrantShare));
-                    Runtime.RegisterNewEvent(typeof(eAskShare));
-                    Runtime.RegisterNewEvent(typeof(eAskExcl));
-                    Runtime.RegisterNewEvent(typeof(eShareReq));
-                    Runtime.RegisterNewEvent(typeof(eExclReq));
+            Console.WriteLine("Registering events to the runtime.\n");
+            Runtime.RegisterNewEvent(typeof(eLocal));
+            Runtime.RegisterNewEvent(typeof(eStop));
+            Runtime.RegisterNewEvent(typeof(eWait));
+            Runtime.RegisterNewEvent(typeof(eNormal));
+            Runtime.RegisterNewEvent(typeof(eNeedInvalidate));
+            Runtime.RegisterNewEvent(typeof(eInvalidate));
+            Runtime.RegisterNewEvent(typeof(eInvalidateAck));
+            Runtime.RegisterNewEvent(typeof(eGrant));
+            Runtime.RegisterNewEvent(typeof(eAck));
+            Runtime.RegisterNewEvent(typeof(eGrantExcl));
+            Runtime.RegisterNewEvent(typeof(eGrantShare));
+            Runtime.RegisterNewEvent(typeof(eAskShare));
+            Runtime.RegisterNewEvent(typeof(eAskExcl));
+            Runtime.RegisterNewEvent(typeof(eShareReq));
+            Runtime.RegisterNewEvent(typeof(eExclReq));
 
-                    Console.WriteLine("Registering state machines to the runtime.\n");
-                    Runtime.RegisterNewMachine(typeof(Host));
-                    Runtime.RegisterNewMachine(typeof(Client));
-                    Runtime.RegisterNewMachine(typeof(CPU));
+            Console.WriteLine("Registering state machines to the runtime.\n");
+            Runtime.RegisterNewMachine(typeof(Host));
+            Runtime.RegisterNewMachine(typeof(Client));
+            Runtime.RegisterNewMachine(typeof(CPU));
 
-                    Console.WriteLine("Starting the runtime.\n");
-                    Runtime.Start(3);
-                    Runtime.Wait();
+            Console.WriteLine("Starting the runtime.\n");
+            Runtime.Start(3);
+            Runtime.Wait();
 
-                    Console.WriteLine("Performing cleanup.\n");
-                    Runtime.Dispose();
-                },
-                1000,
-                true,
-                Runtime.SchedulingType.Random,
-                false);
+            Console.WriteLine("Performing cleanup.\n");
+            Runtime.Dispose();
         }
     }
 }

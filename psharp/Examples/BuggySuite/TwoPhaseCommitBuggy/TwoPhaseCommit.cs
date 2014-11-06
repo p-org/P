@@ -296,7 +296,7 @@ namespace TwoPhaseCommitBuggy
                     }
 
                     this.Send(machine.Monitor, new eMONITOR_WRITE(new Tuple<int, int>(
-                        machine.PendingWriteReq.Item2, machine.PendingWriteReq.Item3)));
+                        machine.PendingWriteReq.Item2,  machine.PendingWriteReq.Item3)));
 
                     this.Send(machine.PendingWriteReq.Item1, new eWRITE_SUCCESS());
 
@@ -803,7 +803,7 @@ namespace TwoPhaseCommitBuggy
         {
             Console.WriteLine("[Monitor] CheckReadUnavailable ...\n");
 
-            var item = (int)this.Payload;
+            var item = ((Tuple<Machine, int>)this.Payload).Item2;
 
             Runtime.Assert(!this.Data.ContainsKey(item));
         }

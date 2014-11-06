@@ -27,6 +27,7 @@ namespace TwoPhaseCommit
             Runtime.RegisterNewEvent(typeof(eREAD_UNAVAILABLE));
             Runtime.RegisterNewEvent(typeof(eREAD_SUCCESS));
             Runtime.RegisterNewEvent(typeof(eUnit));
+            Runtime.RegisterNewEvent(typeof(eUpdate));
             Runtime.RegisterNewEvent(typeof(eStop));
             Runtime.RegisterNewEvent(typeof(eTimeout));
             Runtime.RegisterNewEvent(typeof(eStartTimer));

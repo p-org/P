@@ -243,7 +243,7 @@ namespace Microsoft.PSharp
             var iteration = 0;
             while (iteration < iterations)
             {
-                Console.WriteLine("Starting iteration: {0}", iteration + 1);
+                Console.Error.WriteLine("Starting iteration: {0}", iteration + 1);
 
                 runtimeAction();
                 Runtime.Dispose();

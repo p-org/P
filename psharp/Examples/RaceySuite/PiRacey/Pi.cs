@@ -59,7 +59,31 @@ namespace PiRacey
                 machine.Master = Machine.Factory.CreateMachine<Master>(machine.N);
 
                 this.Send(machine.Master, new eStart());
+
+                this.Raise(new eLocal());
             }
+        }
+
+        private class End : State
+        {
+            protected override void OnEntry()
+            {
+                Console.WriteLine("[Driver] Ending ...\n");
+
+                this.Delete();
+            }
+        }
+
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
+        {
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
+
+            StepStateTransitions initDict = new StepStateTransitions();
+            initDict.Add(typeof(eLocal), typeof(End));
+
+            dict.Add(typeof(Init), initDict);
+
+            return dict;
         }
     }
 

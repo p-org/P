@@ -187,6 +187,7 @@ namespace LeaderElection
                 {
                     this.Send(this.Right, new eNotify(new Tuple<int, int>(1, this.Number)));
                     this.NeighborR = this.Number;
+                    return;
                 }
                 else if (!this.IsActive)
                 {

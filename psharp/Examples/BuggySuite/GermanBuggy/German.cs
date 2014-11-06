@@ -435,7 +435,6 @@ namespace GermanBuggy
             {
                 return new HashSet<Type>
                 {
-                    typeof(eAskShare),
                     typeof(eAskExcl)
                 };
             }

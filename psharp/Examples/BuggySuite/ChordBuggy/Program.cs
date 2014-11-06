@@ -48,12 +48,8 @@ namespace ChordBuggy
                         3,
                         new List<int> { 0, 1, 3 },
                         new List<int> { 1, 2, 6 }));
-                    Runtime.Wait();
-
-                    Console.WriteLine("Performing cleanup.\n");
-                    Runtime.Dispose();
                 },
-                10000,
+                100,
                 true,
                 Runtime.SchedulingType.Random,
                 false);

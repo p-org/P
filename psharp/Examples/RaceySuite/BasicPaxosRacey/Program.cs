@@ -34,12 +34,7 @@ namespace BasicPaxosRacey
             Runtime.RegisterNewMachine(typeof(Acceptor));
             Runtime.RegisterNewMachine(typeof(Proposer));
             Runtime.RegisterNewMachine(typeof(Timer));
-
-            Console.WriteLine("Registering monitors to the runtime.\n");
-            Runtime.RegisterNewMonitor(typeof(PaxosInvariantMonitor));
-
-            Console.WriteLine("Configuring the runtime.\n");
-            Runtime.Options.Mode = Runtime.Mode.BugFinding;
+            Runtime.RegisterNewMachine(typeof(PaxosInvariantMonitor));
 
             Console.WriteLine("Starting the runtime.\n");
             Runtime.Start();

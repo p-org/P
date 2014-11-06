@@ -2,9 +2,6 @@
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-//using MultiPaxos_1;
-using MultiPaxos_2;
-
 namespace MultiPaxos
 {
     /// <summary>

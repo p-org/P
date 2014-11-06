@@ -18,7 +18,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace TwoPhaseCommit
+namespace TwoPhaseCommitBuggy
 {
     #region Events
     internal class eREQ_REPLICA : Event
@@ -105,214 +105,76 @@ namespace TwoPhaseCommit
         { }
     }
 
+    internal class eUpdate : Event
+    {
+        public eUpdate(Object payload)
+            : base(payload)
+        { }
+    }
+
     internal class eWRITE_FAIL : Event { }
+
     internal class eWRITE_SUCCESS : Event { }
+
     internal class eREAD_FAIL : Event { }
+
     internal class eREAD_UNAVAILABLE : Event { }
+
     internal class eUnit : Event { }
+
+    internal class eStop : Event { }
+
     internal class eTimeout : Event { }
+
     internal class eCancelTimer : Event { }
+
     internal class eCancelTimerFailure : Event { }
+
     internal class eCancelTimerSuccess : Event { }
 
     #endregion
 
     #region Machines
 
-    [Ghost]
-    internal class Timer : Machine
-    {
-        private Machine Target;
-
-        [Initial]
-        private class Init : State
-        {
-            protected override void OnEntry()
-            {
-                Console.WriteLine("Initializing Timer ...");
-
-                (this.Machine as Timer).Target = (Machine)this.Payload;
-                this.Raise(new eUnit());
-            }
-
-            protected override HashSet<Type> DefineIgnoredEvents()
-            {
-                return new HashSet<Type>
-                {
-                    typeof(eCancelTimer)
-                };
-            }
-
-            protected override HashSet<Type> DefineDeferredEvents()
-            {
-                return new HashSet<Type>
-                {
-                    typeof(eStartTimer)
-                };
-            }
-        }
-
-        private class Loop : State
-        {
-            protected override void OnEntry()
-            {
-                if (this.Message == typeof(eCancelTimer))
-                {
-                    if (Model.Havoc.Boolean)
-                    {
-                        Console.WriteLine("{0} sending event {1} to {2}", this.Machine, typeof(eCancelTimerFailure),
-                            (this.Machine as Timer).Target);
-                        this.Send((this.Machine as Timer).Target, new eCancelTimerFailure());
-
-                        Console.WriteLine("{0} sending event {1} to {2}", this.Machine, typeof(eTimeout),
-                            (this.Machine as Timer).Target);
-                        this.Send((this.Machine as Timer).Target, new eTimeout());
-                    }
-                    else
-                    {
-                        Console.WriteLine("{0} sending event {1} to {2}", this.Machine, typeof(eCancelTimerSuccess),
-                            (this.Machine as Timer).Target);
-                        this.Send((this.Machine as Timer).Target, new eCancelTimerSuccess());
-                    }
-                }
-            }
-
-            protected override HashSet<Type> DefineIgnoredEvents()
-            {
-                return new HashSet<Type>
-                {
-                    typeof(eCancelTimer)
-                };
-            }
-        }
-
-        private class TimerStarted : State
-        {
-            protected override void OnEntry()
-            {
-                if (Model.Havoc.Boolean)
-                {
-                    Console.WriteLine("{0} sending event {1} to {2}", this.Machine, typeof(eTimeout),
-                        (this.Machine as Timer).Target);
-                    this.Send((this.Machine as Timer).Target, new eTimeout());
-                    this.Raise(new eUnit());
-                }
-            }
-        }
-
-        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
-        {
-            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
-
-            StepStateTransitions initDict = new StepStateTransitions();
-            initDict.Add(typeof(eUnit), typeof(Loop));
-
-            StepStateTransitions loopDict = new StepStateTransitions();
-            loopDict.Add(typeof(eStartTimer), typeof(TimerStarted));
-
-            StepStateTransitions timerStartedDict = new StepStateTransitions();
-            timerStartedDict.Add(typeof(eUnit), typeof(Loop));
-            timerStartedDict.Add(typeof(eCancelTimer), typeof(Loop));
-
-            dict.Add(typeof(Init), initDict);
-            dict.Add(typeof(Loop), loopDict);
-            dict.Add(typeof(TimerStarted), timerStartedDict);
-
-            return dict;
-        }
-    }
-
-    internal class Replica : Machine
+    [Main]
+    internal class Master : Machine
     {
         private Machine Coordinator;
-        private Dictionary<int, int> Data;
-        private Tuple<int, int, int> PendingWriteReq;
-        private bool ShouldCommit;
-        private int LastSeqNum;
+        private Machine Client;
+        private Machine Monitor;
 
         [Initial]
         private class Init : State
         {
             protected override void OnEntry()
             {
-                Console.WriteLine("Initializing Replica ...");
+                var machine = this.Machine as Master;
 
-                (this.Machine as Replica).Data = new Dictionary<int, int>();
+                Console.WriteLine("[Master] Initializing ...\n");
 
-                (this.Machine as Replica).Coordinator = (Machine)this.Payload;
-                (this.Machine as Replica).LastSeqNum = 0;
+                machine.Monitor = Machine.Factory.CreateMachine<Monitor>();
+
+                machine.Coordinator = Machine.Factory.CreateMachine<Coordinator>(
+                    new Tuple<int, Machine>(2, machine.Monitor));
+
+                machine.Client = Machine.Factory.CreateMachine<Client>(machine.Coordinator);
 
                 this.Raise(new eUnit());
             }
-
-            protected override HashSet<Type> DefineDeferredEvents()
-            {
-                return new HashSet<Type>
-                {
-                    typeof(eGLOBAL_ABORT),
-                    typeof(eREQ_REPLICA)
-                };
-            }
         }
 
-        private class Loop : State
+        private class Stopping : State
         {
-
-        }
-
-        private void HandleReqReplica()
-        {
-            Console.WriteLine("Replica: HandleReqReplica");
-
-            this.PendingWriteReq = (Tuple<int, int, int>)this.Payload;
-
-            Runtime.Assert(this.PendingWriteReq.Item1 > this.LastSeqNum);
-
-            this.ShouldCommit = ShouldCommitWrite();
-            if (this.ShouldCommit)
+            protected override void OnEntry()
             {
-                Console.WriteLine("{0} sending event {1} to {2}", this, typeof(eRESP_REPLICA_COMMIT),
-                    this.Coordinator);
-                this.Send(this.Coordinator, new eRESP_REPLICA_COMMIT(this.PendingWriteReq.Item1));
+                var machine = this.Machine as Master;
+
+                Console.WriteLine("[Master] Stopping ...\n");
+
+                //this.Send(machine.Client, new eStop());
+
+                this.Delete();
             }
-            else
-            {
-                Console.WriteLine("{0} sending event {1} to {2}", this, typeof(eRESP_REPLICA_ABORT),
-                    this.Coordinator);
-                this.Send(this.Coordinator, new eRESP_REPLICA_ABORT(this.PendingWriteReq.Item1));
-            }
-        }
-
-        private void HandleGlobalAbort()
-        {
-            Console.WriteLine("Replica: HandleGlobalAbort");
-
-            Runtime.Assert(this.PendingWriteReq.Item1 >= (int)this.Payload);
-            if (this.PendingWriteReq.Item1 == (int)this.Payload)
-            {
-                this.LastSeqNum = (int)this.Payload;
-            }
-        }
-
-        private void HandleGlobalCommit()
-        {
-            Console.WriteLine("Replica: HandleGlobalCommit");
-
-            Runtime.Assert(this.PendingWriteReq.Item1 >= (int)this.Payload);
-            if (this.PendingWriteReq.Item1 == (int)this.Payload)
-            {
-                if (this.Data.ContainsKey(this.PendingWriteReq.Item2))
-                    this.Data[this.PendingWriteReq.Item2] = this.PendingWriteReq.Item3;
-                else
-                    this.Data.Add(this.PendingWriteReq.Item2, this.PendingWriteReq.Item3);
-                this.LastSeqNum = (int)this.Payload;
-            }
-        }
-
-        [Ghost]
-        private bool ShouldCommitWrite()
-        {
-            return Model.Havoc.Boolean;
         }
 
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
@@ -320,23 +182,9 @@ namespace TwoPhaseCommit
             Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
 
             StepStateTransitions initDict = new StepStateTransitions();
-            initDict.Add(typeof(eUnit), typeof(Loop));
+            initDict.Add(typeof(eUnit), typeof(Stopping));
 
             dict.Add(typeof(Init), initDict);
-
-            return dict;
-        }
-
-        protected override Dictionary<Type, ActionBindings> DefineActionBindings()
-        {
-            Dictionary<Type, ActionBindings> dict = new Dictionary<Type, ActionBindings>();
-
-            ActionBindings loopDict = new ActionBindings();
-            loopDict.Add(typeof(eGLOBAL_ABORT), new Action(HandleGlobalAbort));
-            loopDict.Add(typeof(eGLOBAL_COMMIT), new Action(HandleGlobalCommit));
-            loopDict.Add(typeof(eREQ_REPLICA), new Action(HandleReqReplica));
-
-            dict.Add(typeof(Loop), loopDict);
 
             return dict;
         }
@@ -344,41 +192,45 @@ namespace TwoPhaseCommit
 
     internal class Coordinator : Machine
     {
-        private Dictionary<int, int> Data;
         private List<Machine> Replicas;
-        private int NumReplicas;
-        private int I;
-        private Tuple<Machine, int, int> PendingWriteReq;
+        private Machine Client;
+        private Machine Monitor;
         private Machine Replica;
-        private int CurrSeqNum;
         private Machine Timer;
+
+        private Dictionary<int, int> Data;
+        private Tuple<Machine, int, int> PendingWriteReq;
+
+        private int CurrSeqNum;
+        private int I;
 
         [Initial]
         private class Init : State
         {
             protected override void OnEntry()
             {
-                Console.WriteLine("Initializing Coordinator ...");
+                var machine = this.Machine as Coordinator;
 
-                (this.Machine as Coordinator).Data = new Dictionary<int, int>();
-                (this.Machine as Coordinator).Replicas = new List<Machine>();
+                Console.WriteLine("[Coordinator] Initializing ...\n");
 
-                (this.Machine as Coordinator).NumReplicas = (int)this.Payload;
-                Runtime.Assert((this.Machine as Coordinator).NumReplicas > 0);
+                var numReplicas = ((Tuple<int, Machine>)this.Payload).Item1;
+                machine.Monitor = ((Tuple<int, Machine>)this.Payload).Item2;
 
-                (this.Machine as Coordinator).I = 0;
-                while ((this.Machine as Coordinator).I < (this.Machine as Coordinator).NumReplicas)
+                machine.Data = new Dictionary<int, int>();
+                machine.Replicas = new List<Machine>();
+
+                Runtime.Assert(numReplicas > 0);
+
+                machine.I = 0;
+                while (machine.I < numReplicas)
                 {
-                    (this.Machine as Coordinator).Replica =
-                        Machine.Factory.CreateMachine<Replica>(this.Machine);
-                    (this.Machine as Coordinator).Replicas.Insert(
-                        (this.Machine as Coordinator).I, (this.Machine as Coordinator).Replica);
-                    (this.Machine as Coordinator).I++;
+                    machine.Replica = Machine.Factory.CreateMachine<Replica>(this.Machine);
+                    machine.Replicas.Insert(machine.I, machine.Replica);
+                    machine.I++;
                 }
 
-                (this.Machine as Coordinator).CurrSeqNum = 0;
-                (this.Machine as Coordinator).Timer =
-                    Machine.Factory.CreateMachine<Timer>(this.Machine);
+                machine.CurrSeqNum = 0;
+                machine.Timer = Machine.Factory.CreateMachine<Timer>(this.Machine);
 
                 this.Raise(new eUnit());
             }
@@ -388,9 +240,11 @@ namespace TwoPhaseCommit
         {
             protected override void OnEntry()
             {
+                var machine = this.Machine as Coordinator;
+
                 if (this.Message == typeof(eTimeout))
                 {
-                    (this.Machine as Coordinator).DoGlobalAbort();
+                    machine.DoGlobalAbort();
                 }
             }
 
@@ -408,52 +262,45 @@ namespace TwoPhaseCommit
         {
             protected override void OnEntry()
             {
+                var machine = this.Machine as Coordinator;
+
+                Console.WriteLine("[Coordinator] CountVote ...\n");
+
                 if (this.Message == typeof(eRESP_REPLICA_COMMIT))
                 {
-                    if ((this.Machine as Coordinator).CurrSeqNum == (int)this.Payload)
+                    if (machine.CurrSeqNum == (int)this.Payload)
                     {
-                        (this.Machine as Coordinator).I--;
+                        machine.I--;
                     }
                 }
 
-                if ((this.Machine as Coordinator).I == 0)
+                if (machine.I == 0)
                 {
-                    while ((this.Machine as Coordinator).I < (this.Machine as Coordinator).Replicas.Count)
+                    while (machine.I < machine.Replicas.Count)
                     {
-                        Console.WriteLine("{0} sending event {1} to {2}", this.Machine, typeof(eGLOBAL_COMMIT),
-                            (this.Machine as Coordinator).Replicas[(this.Machine as Coordinator).I]);
-                        this.Send((this.Machine as Coordinator).Replicas[(this.Machine as Coordinator).I],
-                            new eGLOBAL_COMMIT((this.Machine as Coordinator).CurrSeqNum));
-                        (this.Machine as Coordinator).I++;
+                        this.Send(machine.Replicas[machine.I],
+                            new eGLOBAL_COMMIT(machine.CurrSeqNum));
+                        machine.I++;
                     }
 
-                    if ((this.Machine as Coordinator).Data.ContainsKey(
-                        (this.Machine as Coordinator).PendingWriteReq.Item2))
+                    if (machine.Data.ContainsKey(
+                        machine.PendingWriteReq.Item2))
                     {
-                        (this.Machine as Coordinator).Data[(this.Machine as Coordinator).PendingWriteReq.Item2] =
-                            (this.Machine as Coordinator).PendingWriteReq.Item3;
+                        machine.Data[machine.PendingWriteReq.Item2] =
+                            machine.PendingWriteReq.Item3;
                     }
                     else
                     {
-                        (this.Machine as Coordinator).Data.Add((this.Machine as Coordinator).PendingWriteReq.Item2,
-                            (this.Machine as Coordinator).PendingWriteReq.Item3);
+                        machine.Data.Add(machine.PendingWriteReq.Item2,
+                            machine.PendingWriteReq.Item3);
                     }
 
-                    Console.WriteLine("{0} sending event {1} to monitor {2}", this,
-                        typeof(eMONITOR_WRITE), typeof(M));
-                    this.Invoke<M>(new eMONITOR_WRITE(new Tuple<int, int>(
-                        (this.Machine as Coordinator).PendingWriteReq.Item2,
-                        (this.Machine as Coordinator).PendingWriteReq.Item3)));
+                    this.Send(machine.Monitor, new eMONITOR_WRITE(new Tuple<int, int>(
+                        machine.PendingWriteReq.Item2, machine.PendingWriteReq.Item3)));
 
-                    Console.WriteLine("{0} sending event {1} to {2}", this.Machine, typeof(eWRITE_SUCCESS),
-                        (this.Machine as Coordinator).PendingWriteReq.Item1);
-                    this.Send((this.Machine as Coordinator).PendingWriteReq.Item1,
-                        new eWRITE_SUCCESS());
+                    this.Send(machine.PendingWriteReq.Item1, new eWRITE_SUCCESS());
 
-                    Console.WriteLine("{0} sending event {1} to {2}", this.Machine, typeof(eCancelTimer),
-                        (this.Machine as Coordinator).Timer);
-                    this.Send((this.Machine as Coordinator).Timer,
-                        new eCancelTimer());
+                    this.Send(machine.Timer, new eCancelTimer());
 
                     this.Raise(new eUnit());
                 }
@@ -512,38 +359,32 @@ namespace TwoPhaseCommit
 
         private void DoRead()
         {
-            Console.WriteLine("Coordinator: DoRead");
+            Console.WriteLine("[Coordinator] DoRead ...\n");
 
             if (this.Data.ContainsKey(((Tuple<Machine, int>)this.Payload).Item2))
             {
-                Console.WriteLine("{0} sending event {1} to monitor {2}", this,
-                    typeof(eMONITOR_READ_SUCCESS), typeof(M));
-                this.Invoke<M>(new eMONITOR_READ_SUCCESS(new Tuple<int, int>(
+                this.Send(this.Monitor, new eMONITOR_READ_SUCCESS(new Tuple<int, int>(
                     ((Tuple<Machine, int>)this.Payload).Item2,
                     this.Data[((Tuple<Machine, int>)this.Payload).Item2])));
 
-                Console.WriteLine("{0} sending event {1} to {2}", this, typeof(eREAD_SUCCESS),
-                    ((Tuple<Machine, int>)this.Payload).Item1);
                 this.Send(((Tuple<Machine, int>)this.Payload).Item1,
                     new eREAD_SUCCESS(this.Data[((Tuple<Machine, int>)this.Payload).Item2]));
             }
             else
             {
-                Console.WriteLine("{0} sending event {1} to monitor {2}", this,
-                    typeof(eMONITOR_READ_UNAVAILABLE), typeof(M));
-                this.Invoke<M>(new eMONITOR_READ_UNAVAILABLE(
+                this.Send(this.Monitor, new eMONITOR_READ_UNAVAILABLE(
                     ((Tuple<Machine, int>)this.Payload).Item2));
 
-                Console.WriteLine("{0} sending event {1} to {2}", this, typeof(eREAD_UNAVAILABLE),
-                    ((Tuple<Machine, int>)this.Payload).Item1);
                 this.Send(((Tuple<Machine, int>)this.Payload).Item1,
                     new eREAD_UNAVAILABLE());
+
+                this.DoGlobalAbort();
             }
         }
 
         private void DoWrite()
         {
-            Console.WriteLine("Coordinator: DoWrite");
+            Console.WriteLine("[Coordinator] DoWrite ...\n");
 
             this.PendingWriteReq = (Tuple<Machine, int, int>)this.Payload;
             this.CurrSeqNum++;
@@ -551,46 +392,50 @@ namespace TwoPhaseCommit
             this.I = 0;
             while (this.I < this.Replicas.Count)
             {
-                Console.WriteLine("{0} sending event {1} to {2}", this, typeof(eREQ_REPLICA),
-                    this.Replicas[this.I]);
                 this.Send(this.Replicas[this.I],
                     new eREQ_REPLICA(new Tuple<int, int, int>(
                         this.CurrSeqNum, this.PendingWriteReq.Item2, this.PendingWriteReq.Item3)));
                 this.I++;
             }
 
-            Console.WriteLine("{0} sending event {1} to {2}", this, typeof(eStartTimer), this.Timer);
             this.Send(this.Timer, new eStartTimer(100));
 
             this.Raise(new eUnit());
         }
 
+        private void HandleAbort()
+        {
+            Console.WriteLine("[Coordinator] HandleAbort ...\n");
+
+            if (this.CurrSeqNum == (int)this.Payload)
+            {
+                this.DoGlobalAbort();
+                this.Send(this.Timer, new eCancelTimer());
+                this.Raise(new eUnit());
+            }
+        }
+
         private void DoGlobalAbort()
         {
+            Console.WriteLine("[Coordinator] GlobalAbort ...\n");
+
             this.I = 0;
             while (this.I < this.Replicas.Count)
             {
-                Console.WriteLine("{0} sending event {1} to {2}", this, typeof(eGLOBAL_ABORT),
-                    this.Replicas[this.I]);
                 this.Send(this.Replicas[this.I], new eGLOBAL_ABORT(this.CurrSeqNum));
                 this.I++;
             }
 
-            Console.WriteLine("{0} sending event {1} to {2}", this, typeof(eWRITE_FAIL),
-                    this.PendingWriteReq.Item1);
-            this.Send(this.PendingWriteReq.Item1, new eWRITE_FAIL());
+            this.Send(this.Client, new eStop());
+            this.Send(this.Timer, new eStop());
+            this.Send(this.Monitor, new eStop());
+
+            this.Delete();
         }
 
-        private void HandleAbort()
+        private void Update()
         {
-            if (this.CurrSeqNum == (int)this.Payload)
-            {
-                this.DoGlobalAbort();
-                Console.WriteLine("{0} sending event {1} to {2}", this, typeof(eCancelTimer),
-                    this.Timer);
-                this.Send(this.Timer, new eCancelTimer());
-                this.Raise(new eUnit());
-            }
+            this.Client = (Machine)this.Payload;
         }
 
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
@@ -632,6 +477,8 @@ namespace TwoPhaseCommit
             ActionBindings loopDict = new ActionBindings();
             loopDict.Add(typeof(eWRITE_REQ), new Action(DoWrite));
             loopDict.Add(typeof(eREAD_REQ), new Action(DoRead));
+            loopDict.Add(typeof(eUpdate), new Action(Update));
+            loopDict.Add(typeof(eStop), new Action(DoGlobalAbort));
 
             ActionBindings countVoteDict = new ActionBindings();
             countVoteDict.Add(typeof(eREAD_REQ), new Action(DoRead));
@@ -644,10 +491,131 @@ namespace TwoPhaseCommit
         }
     }
 
-    [Ghost]
+    internal class Replica : Machine
+    {
+        private Machine Coordinator;
+
+        private Dictionary<int, int> Data;
+        private Tuple<int, int, int> PendingWriteReq;
+
+        private bool ShouldCommit;
+        private int LastSeqNum;
+
+        [Initial]
+        private class Init : State
+        {
+            protected override void OnEntry()
+            {
+                var machine = this.Machine as Replica;
+
+                Console.WriteLine("[Replica] Initializing ...\n");
+
+                machine.Data = new Dictionary<int, int>();
+
+                machine.Coordinator = (Machine)this.Payload;
+                machine.LastSeqNum = 0;
+
+                this.Raise(new eUnit());
+            }
+
+            protected override HashSet<Type> DefineDeferredEvents()
+            {
+                return new HashSet<Type>
+                {
+                    typeof(eGLOBAL_ABORT),
+                    typeof(eREQ_REPLICA)
+                };
+            }
+        }
+
+        private class Loop : State
+        {
+
+        }
+
+        private void HandleReqReplica()
+        {
+            Console.WriteLine("[Replica] HandleReqReplica ...\n");
+
+            this.PendingWriteReq = (Tuple<int, int, int>)this.Payload;
+
+            Runtime.Assert(this.PendingWriteReq.Item1 > this.LastSeqNum);
+
+            this.ShouldCommit = ShouldCommitWrite();
+            if (this.ShouldCommit)
+            {
+                this.Send(this.Coordinator, new eRESP_REPLICA_COMMIT(this.PendingWriteReq.Item1));
+            }
+            else
+            {
+                this.Send(this.Coordinator, new eRESP_REPLICA_ABORT(this.PendingWriteReq.Item1));
+            }
+        }
+
+        private void HandleGlobalAbort()
+        {
+            Console.WriteLine("[Replica] Stopping ...\n");
+
+            Runtime.Assert(this.PendingWriteReq.Item1 >= (int)this.Payload);
+            if (this.PendingWriteReq.Item1 == (int)this.Payload)
+            {
+                this.LastSeqNum = (int)this.Payload;
+            }
+
+            this.Delete();
+        }
+
+        private void HandleGlobalCommit()
+        {
+            Console.WriteLine("[Replica] HandleGlobalCommit ...\n");
+
+            Runtime.Assert(this.PendingWriteReq.Item1 >= (int)this.Payload);
+            if (this.PendingWriteReq.Item1 == (int)this.Payload)
+            {
+                if (this.Data.ContainsKey(this.PendingWriteReq.Item2))
+                    this.Data[this.PendingWriteReq.Item2] = this.PendingWriteReq.Item3;
+                else
+                    this.Data.Add(this.PendingWriteReq.Item2, this.PendingWriteReq.Item3);
+                this.LastSeqNum = (int)this.Payload;
+            }
+        }
+
+        private bool ShouldCommitWrite()
+        {
+            return Model.Havoc.Boolean;
+        }
+
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
+        {
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
+
+            StepStateTransitions initDict = new StepStateTransitions();
+            initDict.Add(typeof(eUnit), typeof(Loop));
+
+            dict.Add(typeof(Init), initDict);
+
+            return dict;
+        }
+
+        protected override Dictionary<Type, ActionBindings> DefineActionBindings()
+        {
+            Dictionary<Type, ActionBindings> dict = new Dictionary<Type, ActionBindings>();
+
+            ActionBindings loopDict = new ActionBindings();
+            loopDict.Add(typeof(eGLOBAL_ABORT), new Action(HandleGlobalAbort));
+            loopDict.Add(typeof(eGLOBAL_COMMIT), new Action(HandleGlobalCommit));
+            loopDict.Add(typeof(eREQ_REPLICA), new Action(HandleReqReplica));
+
+            dict.Add(typeof(Loop), loopDict);
+
+            return dict;
+        }
+    }
+
     internal class Client : Machine
     {
         private Machine Coordinator;
+
         private int Idx;
         private int Val;
 
@@ -656,9 +624,12 @@ namespace TwoPhaseCommit
         {
             protected override void OnEntry()
             {
-                Console.WriteLine("Initializing Client ...");
+                var machine = this.Machine as Client;
 
-                (this.Machine as Client).Coordinator = (Machine)this.Payload;
+                Console.WriteLine("[Client] Initializing ...\n");
+
+                machine.Coordinator = (Machine)this.Payload;
+                this.Send(machine.Coordinator, new eUpdate(machine));
 
                 this.Raise(new eUnit());
             }
@@ -668,18 +639,18 @@ namespace TwoPhaseCommit
         {
             protected override void OnEntry()
             {
-                Console.WriteLine("Client: DoWrite");
+                var machine = this.Machine as Client;
 
-                (this.Machine as Client).Idx = (this.Machine as Client).ChooseIndex();
-                (this.Machine as Client).Val = (this.Machine as Client).ChooseValue();
+                Console.WriteLine("[Client] DoWrite ...\n");
 
-                Console.WriteLine("{0} sending event {1} to {2}", this, typeof(eWRITE_REQ),
-                    (this.Machine as Client).Coordinator);
-                this.Send((this.Machine as Client).Coordinator, new eWRITE_REQ(
+                machine.Idx = machine.ChooseIndex();
+                machine.Val = machine.ChooseValue();
+
+                this.Send(machine.Coordinator, new eWRITE_REQ(
                     new Tuple<Machine, int, int>(
                         this.Machine,
-                        (this.Machine as Client).Idx,
-                        (this.Machine as Client).Val)));
+                        machine.Idx,
+                        machine.Val)));
             }
         }
 
@@ -687,16 +658,16 @@ namespace TwoPhaseCommit
         {
             protected override void OnEntry()
             {
-                Console.WriteLine("Client: DoRead");
+                var machine = this.Machine as Client;
 
-                (this.Machine as Client).Idx = (this.Machine as Client).ChooseIndex();
+                Console.WriteLine("[Client] DoRead ...\n");
 
-                Console.WriteLine("{0} sending event {1} to {2}", this, typeof(eREAD_REQ),
-                    (this.Machine as Client).Coordinator);
-                this.Send((this.Machine as Client).Coordinator, new eREAD_REQ(
+                machine.Idx = machine.ChooseIndex();
+
+                this.Send(machine.Coordinator, new eREAD_REQ(
                     new Tuple<Machine, int>(
                         this.Machine,
-                        (this.Machine as Client).Idx)));
+                        machine.Idx)));
             }
 
             protected override HashSet<Type> DefineDeferredEvents()
@@ -720,7 +691,13 @@ namespace TwoPhaseCommit
         {
             protected override void OnEntry()
             {
-                Console.WriteLine("Client: Finished");
+                var machine = this.Machine as Client;
+
+                Console.WriteLine("[Client] Stopping ...\n");
+
+                this.Send(machine.Coordinator, new eStop());
+
+                this.Delete();
             }
 
             protected override HashSet<Type> DefineIgnoredEvents()
@@ -737,12 +714,12 @@ namespace TwoPhaseCommit
         {
             if (Model.Havoc.Boolean)
             {
-                Console.WriteLine("Client: ChooseIndex: 0");
+                Console.WriteLine("[Client] ChooseIndex: 0 ...\n");
                 return 0;
             }
             else
             {
-                Console.WriteLine("Client: ChooseIndex: 1");
+                Console.WriteLine("[Client] ChooseIndex: 1 ...\n");
                 return 1;
             }
         }
@@ -751,12 +728,12 @@ namespace TwoPhaseCommit
         {
             if (Model.Havoc.Boolean)
             {
-                Console.WriteLine("Client: ChooseValue: 0");
+                Console.WriteLine("[Client] ChooseValue: 0 ...\n");
                 return 0;
             }
             else
             {
-                Console.WriteLine("Client: ChooseValue: 1");
+                Console.WriteLine("[Client] ChooseValue: 1 ...\n");
                 return 1;
             }
         }
@@ -771,10 +748,12 @@ namespace TwoPhaseCommit
             StepStateTransitions doWriteDict = new StepStateTransitions();
             doWriteDict.Add(typeof(eWRITE_FAIL), typeof(End));
             doWriteDict.Add(typeof(eWRITE_SUCCESS), typeof(DoRead));
+            doWriteDict.Add(typeof(eStop), typeof(End));
 
             StepStateTransitions doReadDict = new StepStateTransitions();
             doReadDict.Add(typeof(eREAD_FAIL), typeof(End));
             doReadDict.Add(typeof(eREAD_SUCCESS), typeof(End));
+            doReadDict.Add(typeof(eStop), typeof(End));
 
             dict.Add(typeof(Init), initDict);
             dict.Add(typeof(DoWrite), doWriteDict);
@@ -784,8 +763,7 @@ namespace TwoPhaseCommit
         }
     }
 
-    [Monitor]
-    internal class M : Machine
+    internal class Monitor : Machine
     {
         private Dictionary<int, int> Data;
 
@@ -794,14 +772,17 @@ namespace TwoPhaseCommit
         {
             protected override void OnEntry()
             {
-                Console.WriteLine("Initializing Monitor ...");
-                (this.Machine as M).Data = new Dictionary<int, int>();
+                var machine = this.Machine as Monitor;
+
+                Console.WriteLine("[Monitor] Initializing ...\n");
+
+                machine.Data = new Dictionary<int, int>();
             }
         }
 
         private void DoWrite()
         {
-            Console.WriteLine("Monitor: DoWrite");
+            Console.WriteLine("[Monitor] DoWrite ...\n");
 
             if (this.Data.ContainsKey(((Tuple<int, int>)this.Payload).Item1))
                 this.Data[((Tuple<int, int>)this.Payload).Item1] = ((Tuple<int, int>)this.Payload).Item2;
@@ -811,7 +792,7 @@ namespace TwoPhaseCommit
 
         private void CheckReadSuccess()
         {
-            Console.WriteLine("Monitor: CheckReadSuccess");
+            Console.WriteLine("[Monitor] CheckReadSuccess ...\n");
 
             Runtime.Assert(this.Data.ContainsKey(((Tuple<int, int>)this.Payload).Item1));
             Runtime.Assert(this.Data[((Tuple<int, int>)this.Payload).Item1]
@@ -820,9 +801,18 @@ namespace TwoPhaseCommit
 
         private void CheckReadUnavailable()
         {
-            Console.WriteLine("Monitor: CheckReadUnavailable");
+            Console.WriteLine("[Monitor] CheckReadUnavailable ...\n");
 
-            Runtime.Assert(!this.Data.ContainsKey(((Tuple<int, int>)this.Payload).Item1));
+            var item = (int)this.Payload;
+
+            Runtime.Assert(!this.Data.ContainsKey(item));
+        }
+
+        private void Stop()
+        {
+            Console.WriteLine("[Monitor] Stopping ...\n");
+
+            this.Delete();
         }
 
         protected override Dictionary<Type, ActionBindings> DefineActionBindings()
@@ -833,6 +823,7 @@ namespace TwoPhaseCommit
             initDict.Add(typeof(eMONITOR_WRITE), new Action(DoWrite));
             initDict.Add(typeof(eMONITOR_READ_SUCCESS), new Action(CheckReadSuccess));
             initDict.Add(typeof(eMONITOR_READ_UNAVAILABLE), new Action(CheckReadUnavailable));
+            initDict.Add(typeof(eStop), new Action(Stop));
 
             dict.Add(typeof(Init), initDict);
 
@@ -840,87 +831,132 @@ namespace TwoPhaseCommit
         }
     }
 
-    [Main]
     [Ghost]
-    internal class TwoPhaseCommit : Machine
+    internal class Timer : Machine
     {
-        private Machine Coordinator;
-        private Machine Client;
+        private Machine Target;
 
         [Initial]
         private class Init : State
         {
             protected override void OnEntry()
             {
-                Machine.Factory.CreateMonitor<M>();
+                var machine = this.Machine as Timer;
 
-                (this.Machine as TwoPhaseCommit).Coordinator =
-                    Machine.Factory.CreateMachine<Coordinator>(2);
+                Console.WriteLine("[Timer] Initializing ...\n");
 
-                (this.Machine as TwoPhaseCommit).Client =
-                    Machine.Factory.CreateMachine<Client>(
-                    (this.Machine as TwoPhaseCommit).Coordinator);
+                machine.Target = (Machine)this.Payload;
 
-                (this.Machine as TwoPhaseCommit).Client =
-                    Machine.Factory.CreateMachine<Client>(
-                    (this.Machine as TwoPhaseCommit).Coordinator);
+                this.Raise(new eUnit());
             }
+
+            protected override HashSet<Type> DefineIgnoredEvents()
+            {
+                return new HashSet<Type>
+                {
+                    typeof(eCancelTimer)
+                };
+            }
+
+            protected override HashSet<Type> DefineDeferredEvents()
+            {
+                return new HashSet<Type>
+                {
+                    typeof(eStartTimer)
+                };
+            }
+        }
+
+        private class Loop : State
+        {
+            protected override void OnEntry()
+            {
+                var machine = this.Machine as Timer;
+
+                if (this.Message == typeof(eCancelTimer))
+                {
+                    if (Model.Havoc.Boolean)
+                    {
+                        this.Send(machine.Target, new eCancelTimerFailure());
+
+                        this.Send(machine.Target, new eTimeout());
+                    }
+                    else
+                    {
+                        this.Send(machine.Target, new eCancelTimerSuccess());
+                    }
+                }
+            }
+
+            protected override HashSet<Type> DefineIgnoredEvents()
+            {
+                return new HashSet<Type>
+                {
+                    typeof(eCancelTimer)
+                };
+            }
+        }
+
+        private class TimerStarted : State
+        {
+            protected override void OnEntry()
+            {
+                var machine = this.Machine as Timer;
+
+                Console.WriteLine("[Timer] Started ...\n");
+
+                if (Model.Havoc.Boolean)
+                {
+                    this.Send(machine.Target, new eTimeout());
+                    this.Raise(new eUnit());
+                }
+            }
+        }
+
+        private void Stop()
+        {
+            Console.WriteLine("[Timer] Stopping ...\n");
+
+            this.Delete();
+        }
+
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
+        {
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
+
+            StepStateTransitions initDict = new StepStateTransitions();
+            initDict.Add(typeof(eUnit), typeof(Loop));
+
+            StepStateTransitions loopDict = new StepStateTransitions();
+            loopDict.Add(typeof(eStartTimer), typeof(TimerStarted));
+
+            StepStateTransitions timerStartedDict = new StepStateTransitions();
+            timerStartedDict.Add(typeof(eUnit), typeof(Loop));
+            timerStartedDict.Add(typeof(eCancelTimer), typeof(Loop));
+
+            dict.Add(typeof(Init), initDict);
+            dict.Add(typeof(Loop), loopDict);
+            dict.Add(typeof(TimerStarted), timerStartedDict);
+
+            return dict;
+        }
+
+        protected override Dictionary<Type, ActionBindings> DefineActionBindings()
+        {
+            Dictionary<Type, ActionBindings> dict = new Dictionary<Type, ActionBindings>();
+
+            ActionBindings loopDict = new ActionBindings();
+            loopDict.Add(typeof(eStop), new Action(Stop));
+
+            ActionBindings timerStartedDict = new ActionBindings();
+            timerStartedDict.Add(typeof(eStop), new Action(Stop));
+
+            dict.Add(typeof(Loop), loopDict);
+            dict.Add(typeof(TimerStarted), timerStartedDict);
+
+            return dict;
         }
     }
 
     #endregion
-
-    /// <summary>
-    /// This is an example of usign P#.
-    /// 
-    /// This example implements a replication system.
-    /// </summary>
-    class TwoPhaseCommitExample
-    {
-        static void Main(string[] args)
-        {
-            Console.WriteLine("Registering events to the runtime.\n");
-            Runtime.RegisterNewEvent(typeof(eREQ_REPLICA));
-            Runtime.RegisterNewEvent(typeof(eRESP_REPLICA_COMMIT));
-            Runtime.RegisterNewEvent(typeof(eRESP_REPLICA_ABORT));
-            Runtime.RegisterNewEvent(typeof(eGLOBAL_ABORT));
-            Runtime.RegisterNewEvent(typeof(eGLOBAL_COMMIT));
-            Runtime.RegisterNewEvent(typeof(eWRITE_REQ));
-            Runtime.RegisterNewEvent(typeof(eWRITE_FAIL));
-            Runtime.RegisterNewEvent(typeof(eWRITE_SUCCESS));
-            Runtime.RegisterNewEvent(typeof(eREAD_REQ));
-            Runtime.RegisterNewEvent(typeof(eREAD_FAIL));
-            Runtime.RegisterNewEvent(typeof(eREAD_UNAVAILABLE));
-            Runtime.RegisterNewEvent(typeof(eREAD_SUCCESS));
-            Runtime.RegisterNewEvent(typeof(eUnit));
-            Runtime.RegisterNewEvent(typeof(eTimeout));
-            Runtime.RegisterNewEvent(typeof(eStartTimer));
-            Runtime.RegisterNewEvent(typeof(eCancelTimer));
-            Runtime.RegisterNewEvent(typeof(eCancelTimerFailure));
-            Runtime.RegisterNewEvent(typeof(eCancelTimerSuccess));
-            Runtime.RegisterNewEvent(typeof(eMONITOR_WRITE));
-            Runtime.RegisterNewEvent(typeof(eMONITOR_READ_SUCCESS));
-            Runtime.RegisterNewEvent(typeof(eMONITOR_READ_UNAVAILABLE));
-
-            Console.WriteLine("Registering state machines to the runtime.\n");
-            Runtime.RegisterNewMachine(typeof(Timer));
-            Runtime.RegisterNewMachine(typeof(Replica));
-            Runtime.RegisterNewMachine(typeof(Coordinator));
-            Runtime.RegisterNewMachine(typeof(Client));
-            Runtime.RegisterNewMachine(typeof(TwoPhaseCommit));
-
-            Console.WriteLine("Registering monitors to the runtime.\n");
-            Runtime.RegisterNewMonitor(typeof(M));
-
-            Console.WriteLine("Configuring the runtime.\n");
-            Runtime.Options.Mode = Runtime.Mode.BugFinding;
-
-            Console.WriteLine("Starting the runtime.\n");
-            Runtime.Start();
-            Runtime.Wait();
-
-            Console.WriteLine("Performing cleanup.\n");
-            Runtime.Dispose();
-        }
-    }
 }

@@ -51,6 +51,7 @@ namespace Sorting
     internal class Master : Machine
     {
         private List<Machine> SProcesses;
+        private Machine Monitor;
 
         [Initial]
         private class Init : State
@@ -66,12 +67,12 @@ namespace Sorting
                 var list = (List<int>)this.Payload;
                 var n = list.Count;
 
-                Machine.Factory.CreateMonitor<SortingMonitor>(n);
+                machine.Monitor = Machine.Factory.CreateMachine<SortingMonitor>(n);
 
                 for (int idx = 0; idx < n; idx++)
                 {
                     machine.SProcesses.Add(Machine.Factory.CreateMachine<SProcess>(
-                        new Tuple<int, Machine>(idx + 1, machine)));
+                        new Tuple<int, Machine, Machine>(idx + 1, machine, machine.Monitor)));
                 }
 
                 for (int idx = 0; idx < n; idx++)
@@ -92,6 +93,8 @@ namespace Sorting
                             machine.SProcesses[idx - 1], machine.SProcesses[idx + 1], list[idx])));
                     }
                 }
+
+                this.Delete();
             }
         }
     }
@@ -104,6 +107,8 @@ namespace Sorting
         private Machine Left;
         private Machine Right;
 
+        private Machine Monitor;
+
         private int Value;
 
         [Initial]
@@ -113,8 +118,9 @@ namespace Sorting
             {
                 var machine = this.Machine as SProcess;
 
-                machine.Id = ((Tuple<int, Machine>)this.Payload).Item1;
-                machine.Master = ((Tuple<int, Machine>)this.Payload).Item2;
+                machine.Id = ((Tuple<int, Machine, Machine>)this.Payload).Item1;
+                machine.Master = ((Tuple<int, Machine, Machine>)this.Payload).Item2;
+                machine.Monitor = ((Tuple<int, Machine, Machine>)this.Payload).Item3;
 
                 Console.WriteLine("[SProcess-{0}] Initializing ...\n", machine.Id);
             }
@@ -132,7 +138,7 @@ namespace Sorting
                 machine.Right = ((Tuple<Machine, Machine, int>)this.Payload).Item2;
                 machine.Value = ((Tuple<Machine, Machine, int>)this.Payload).Item3;
 
-                this.Invoke<SortingMonitor>(new eNotifyMonitor(new Tuple<int, int>(
+                this.Send(machine.Monitor, new eNotifyMonitor(new Tuple<int, int>(
                     machine.Id, machine.Value)));
 
                 if (machine.Left != null)
@@ -153,8 +159,8 @@ namespace Sorting
 
             this.Value = (int)this.Payload;
 
-            this.Invoke<SortingMonitor>(new eNotifyMonitor(new Tuple<int, int>(
-                this.Id, this.Value)));
+            this.Send(this.Monitor, new eNotifyMonitor(new Tuple<int, int>(
+                    this.Id, this.Value)));
 
             if (this.Left != null)
             {
@@ -220,7 +226,6 @@ namespace Sorting
         }
     }
 
-    [Monitor]
     internal class SortingMonitor : Machine
     {
         private int[] Values;
@@ -258,8 +263,6 @@ namespace Sorting
             var v = ((Tuple<int, int>)this.Payload).Item2;
 
             this.Values[id] = v;
-
-            Runtime.AssertWhenStable(this.Values, AssertionCheck, "Assertion Failed.");
         }
 
         private bool AssertionCheck(Object obj)

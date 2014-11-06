@@ -29,12 +29,8 @@ namespace ChandyMisraBuggy
 
                     Console.WriteLine("Starting the runtime.\n");
                     Runtime.Start(4);
-                    Runtime.Wait();
-
-                    Console.WriteLine("Performing cleanup.\n");
-                    Runtime.Dispose();
                 },
-                10000,
+                100,
                 true,
                 Runtime.SchedulingType.Random,
                 false);

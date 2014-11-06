@@ -706,7 +706,7 @@ namespace Raft
             appendEntries.Term = this.CurrentTerm;
             appendEntries.LeaderId = this.Id;
             appendEntries.LeaderCommit = this.CommitIndex;
-            
+
 
             if (this.Servers != null)
             {
@@ -721,7 +721,7 @@ namespace Raft
 
                     var nextIndex = this.NextIndex[idx];
 
-                    if (this.Log.Count - 1 >= nextIndex)
+                    if (this.Log.Count - 1 >= nextIndex && nextIndex >= 0)
                     {
                         for (int i = nextIndex; i < this.Log.Count; i++)
                         {
@@ -791,6 +791,8 @@ namespace Raft
         {
             Console.WriteLine("[Server-{0} :: {1}] is stopping ...\n",
                 this.Id, this.CurrentTerm);
+
+            this.Send(this.Clock, new eStop());
 
             this.Delete();
         }
@@ -933,6 +935,8 @@ namespace Raft
         {
             Console.WriteLine("[Client-{0}] is stopping ...\n", this.Id);
 
+            this.Send(this.Clock, new eStop());
+
             this.Delete();
         }
 
@@ -1002,7 +1006,7 @@ namespace Raft
 
                 Console.WriteLine("[Clock-{0}] is in ElectionTimeout ...\n", machine.Id);
 
-                machine.Timer = 20000;
+                machine.Timer = 2500;
 
                 this.Raise(new eQueryElectionTimeout(false));
             }
@@ -1016,7 +1020,7 @@ namespace Raft
 
                 Console.WriteLine("[Clock-{0}] is HeartBeating ...\n", machine.Id);
 
-                machine.Timer = 5000;
+                machine.Timer = 1000;
 
                 this.Raise(new eQueryHeartBeating());
             }
@@ -1030,7 +1034,7 @@ namespace Raft
 
                 Console.WriteLine("[Clock-{0}] is in ClientTimeout ...\n", machine.Id);
 
-                machine.Timer = 2500;
+                machine.Timer = 500;
 
                 this.Raise(new eQueryClientTimeout());
             }
@@ -1042,7 +1046,7 @@ namespace Raft
 
             if (resetTimer)
             {
-                this.Timer = 20000;
+                this.Timer = 2500;
             }
             else if (this.Timer > 0)
             {
@@ -1063,7 +1067,7 @@ namespace Raft
             }
             else if (this.Timer == 0)
             {
-                this.Timer = 20000;
+                this.Timer = 2500;
                 this.Send(this.Owner, new eElectionTimedOut());
             }
             else
@@ -1093,7 +1097,7 @@ namespace Raft
             }
             else if (this.Timer == 0)
             {
-                this.Timer = 5000;
+                this.Timer = 1000;
                 this.Send(this.Owner, new eSendHeartBeat());
             }
             else
@@ -1123,7 +1127,7 @@ namespace Raft
             }
             else if (this.Timer == 0)
             {
-                this.Timer = 2500;
+                this.Timer = 500;
                 this.Send(this.Owner, new eClientTimedOut());
             }
             else

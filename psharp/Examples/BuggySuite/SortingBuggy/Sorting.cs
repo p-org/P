@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace Sorting
+namespace SortingBuggy
 {
     #region Events
 
@@ -63,11 +63,13 @@ namespace Sorting
                 Console.WriteLine("[Master] Initializing ...\n");
 
                 machine.SProcesses = new List<Machine>();
-                
-                var list = (List<int>)this.Payload;
+
+                var list = ((Tuple<List<int>, int>)this.Payload).Item1;
+                var counter = ((Tuple<List<int>, int>)this.Payload).Item2;
                 var n = list.Count;
 
-                machine.Monitor = Machine.Factory.CreateMachine<SortingMonitor>(n);
+                machine.Monitor = Machine.Factory.CreateMachine<SortingMonitor>(
+                    new Tuple<int, int>(n, counter));
 
                 for (int idx = 0; idx < n; idx++)
                 {
@@ -159,9 +161,6 @@ namespace Sorting
 
             this.Value = (int)this.Payload;
 
-            this.Send(this.Monitor, new eNotifyMonitor(new Tuple<int, int>(
-                    this.Id, this.Value)));
-
             if (this.Left != null)
             {
                 this.Send(this.Left, new eNotifyLeft(this.Value));
@@ -183,6 +182,11 @@ namespace Sorting
             {
                 this.Send(this.Right, new eUpdate(this.Value));
                 this.Raise(new eUpdate(v));
+            }
+            else
+            {
+                this.Send(this.Monitor, new eNotifyMonitor(new Tuple<int, int>(
+                    this.Id, this.Value)));
             }
         }
 
@@ -229,6 +233,7 @@ namespace Sorting
     internal class SortingMonitor : Machine
     {
         private int[] Values;
+        private int Counter;
 
         [Initial]
         private class Init : State
@@ -237,7 +242,8 @@ namespace Sorting
             {
                 var machine = this.Machine as SortingMonitor;
 
-                var n = (int)this.Payload;
+                var n = ((Tuple<int, int>)this.Payload).Item1;
+                machine.Counter = ((Tuple<int, int>)this.Payload).Item2;
 
                 Console.WriteLine("[SortingMonitor] Initializing ...\n");
 
@@ -257,31 +263,21 @@ namespace Sorting
 
         private void Check()
         {
-            Console.WriteLine("[SortingMonitor] Checking ...\n");
+            Console.WriteLine("[SortingMonitor] Checking step {0} ...\n", this.Counter);
 
             var id = ((Tuple<int, int>)this.Payload).Item1 - 1;
             var v = ((Tuple<int, int>)this.Payload).Item2;
 
             this.Values[id] = v;
+            this.Counter = this.Counter - 1;
 
-            Runtime.AssertWhenStable(this.Values, AssertionCheck, "Assertion Failed.");
-        }
-
-        private bool AssertionCheck(Object obj)
-        {
-            Console.WriteLine("[SortingMonitor] AssertionCheck ...\n");
-
-            var array = (int[])obj;
-            bool result = true;
-            for (int idx = 0; idx < array.Length - 1; idx++)
+            if (this.Counter == 0)
             {
-                if (array[idx] > array[idx + 1])
+                for (int idx = 0; idx < this.Values.Length - 1; idx++)
                 {
-                    result = false;
+                    Runtime.Assert(this.Values[idx] > this.Values[idx + 1], "Assertion failed.");
                 }
             }
-
-            return result;
         }
 
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()

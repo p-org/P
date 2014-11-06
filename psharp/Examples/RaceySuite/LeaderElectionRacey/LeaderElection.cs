@@ -27,6 +27,8 @@ namespace LeaderElectionRacey
         { }
     }
 
+    internal class eStop : Event { }
+
     #endregion
 
     internal class Message
@@ -99,6 +101,20 @@ namespace LeaderElectionRacey
             }
 
             this.Counter = 0;
+
+            this.Stop();
+        }
+
+        private void Stop()
+        {
+            Console.WriteLine("[Master] Stopping ...\n");
+
+            foreach (var p in this.LProcesses)
+            {
+                this.Send(p, new eStop());
+            }
+
+            this.Delete();
         }
 
         protected override Dictionary<Type, ActionBindings> DefineActionBindings()
@@ -224,6 +240,13 @@ namespace LeaderElectionRacey
             this.Send(this.Master, new eCheckAck(new Tuple<int, bool>(this.Id, this.IsActive)));
         }
 
+        private void Stop()
+        {
+            Console.WriteLine("[LProcess-{0}] Stopping ...\n", this.Id);
+
+            this.Delete();
+        }
+
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
             Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
@@ -242,6 +265,7 @@ namespace LeaderElectionRacey
 
             ActionBindings runningDict = new ActionBindings();
             runningDict.Add(typeof(eNotify), new Action(Process));
+            runningDict.Add(typeof(eStop), new Action(Stop));
 
             dict.Add(typeof(Running), runningDict);
 

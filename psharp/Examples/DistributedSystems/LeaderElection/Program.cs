@@ -21,6 +21,7 @@ namespace LeaderElection
                     Runtime.RegisterNewEvent(typeof(eStart));
                     Runtime.RegisterNewEvent(typeof(eNotify));
                     Runtime.RegisterNewEvent(typeof(eCheckAck));
+                    Runtime.RegisterNewEvent(typeof(eStop));
 
                     Console.WriteLine("Registering state machines to the runtime.\n");
                     Runtime.RegisterNewMachine(typeof(Master));

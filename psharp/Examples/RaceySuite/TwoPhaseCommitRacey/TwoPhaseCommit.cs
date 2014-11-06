@@ -1,24 +1,8 @@
-﻿//-----------------------------------------------------------------------
-// <copyright file="TwoPhaseCommit.cs" company="Microsoft">
-//      Copyright (c) Microsoft Corporation. All rights reserved.
-// 
-//      THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, 
-//      EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES 
-//      OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
-// ----------------------------------------------------------------------------------
-//      The example companies, organizations, products, domain names,
-//      e-mail addresses, logos, people, places, and events depicted
-//      herein are fictitious.  No association with any real company,
-//      organization, product, domain name, email address, logo, person,
-//      places, or events is intended or should be inferred.
-// </copyright>
-//-----------------------------------------------------------------------
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace TwoPhaseCommit
+namespace TwoPhaseCommitRacey
 {
     #region Events
     internal class eREQ_REPLICA : Event
@@ -127,6 +111,13 @@ namespace TwoPhaseCommit
 
     #endregion
 
+    internal class Message
+    {
+        internal Machine Machine;
+        internal int Item1;
+        internal int Item2;
+    }
+
     #region Machines
 
     [Main]
@@ -187,7 +178,7 @@ namespace TwoPhaseCommit
         private Machine Timer;
 
         private Dictionary<int, int> Data;
-        private Tuple<Machine, int, int> PendingWriteReq;
+        private Message PendingWriteReq;
 
         private int CurrSeqNum;
         private int I;
@@ -271,22 +262,20 @@ namespace TwoPhaseCommit
                         machine.I++;
                     }
 
-                    if (machine.Data.ContainsKey(
-                        machine.PendingWriteReq.Item2))
+                    if (machine.Data.ContainsKey(machine.PendingWriteReq.Item1))
                     {
-                        machine.Data[machine.PendingWriteReq.Item2] =
-                            machine.PendingWriteReq.Item3;
+                        machine.Data[machine.PendingWriteReq.Item1] =
+                            machine.PendingWriteReq.Item2;
                     }
                     else
                     {
-                        machine.Data.Add(machine.PendingWriteReq.Item2,
-                            machine.PendingWriteReq.Item3);
+                        machine.Data.Add(machine.PendingWriteReq.Item1,
+                            machine.PendingWriteReq.Item2);
                     }
 
-                    this.Send(machine.Monitor, new eMONITOR_WRITE(new Tuple<int, int>(
-                        machine.PendingWriteReq.Item2,  machine.PendingWriteReq.Item3)));
-
-                    this.Send(machine.PendingWriteReq.Item1, new eWRITE_SUCCESS());
+                    this.Send(machine.Monitor, new eMONITOR_WRITE(machine.PendingWriteReq));
+                    machine.PendingWriteReq.Item1 = 10;
+                    this.Send(machine.PendingWriteReq.Machine, new eWRITE_SUCCESS());
 
                     this.Send(machine.Timer, new eCancelTimer());
 
@@ -372,15 +361,15 @@ namespace TwoPhaseCommit
         {
             Console.WriteLine("[Coordinator] DoWrite ...\n");
 
-            this.PendingWriteReq = (Tuple<Machine, int, int>)this.Payload;
+            this.PendingWriteReq = (Message)this.Payload;
             this.CurrSeqNum++;
 
             this.I = 0;
             while (this.I < this.Replicas.Count)
             {
                 this.Send(this.Replicas[this.I],
-                    new eREQ_REPLICA(new Tuple<int, int, int>(
-                        this.CurrSeqNum, this.PendingWriteReq.Item2, this.PendingWriteReq.Item3)));
+                    new eREQ_REPLICA(new Tuple<int, int, int>(this.CurrSeqNum,
+                    this.PendingWriteReq.Item1, this.PendingWriteReq.Item2)));
                 this.I++;
             }
 
@@ -412,7 +401,7 @@ namespace TwoPhaseCommit
                 this.I++;
             }
 
-            this.Send(this.PendingWriteReq.Item1, new eWRITE_FAIL());
+            this.Send(this.PendingWriteReq.Machine, new eWRITE_FAIL());
             this.Send(this.Timer, new eStop());
             this.Send(this.Monitor, new eStop());
 
@@ -595,8 +584,7 @@ namespace TwoPhaseCommit
     {
         private Machine Coordinator;
 
-        private int Idx;
-        private int Val;
+        private Message Msg;
 
         [Initial]
         private class Init : State
@@ -608,6 +596,7 @@ namespace TwoPhaseCommit
                 Console.WriteLine("[Client] Initializing ...\n");
 
                 machine.Coordinator = (Machine)this.Payload;
+                machine.Msg = new Message();
 
                 this.Raise(new eUnit());
             }
@@ -621,14 +610,11 @@ namespace TwoPhaseCommit
 
                 Console.WriteLine("[Client] DoWrite ...\n");
 
-                machine.Idx = machine.ChooseIndex();
-                machine.Val = machine.ChooseValue();
+                machine.Msg.Machine = machine.Coordinator;
+                machine.Msg.Item1 = machine.ChooseIndex();
+                machine.Msg.Item2 = machine.ChooseValue();
 
-                this.Send(machine.Coordinator, new eWRITE_REQ(
-                    new Tuple<Machine, int, int>(
-                        this.Machine,
-                        machine.Idx,
-                        machine.Val)));
+                this.Send(machine.Coordinator, new eWRITE_REQ(machine.Msg));
             }
         }
 
@@ -640,12 +626,11 @@ namespace TwoPhaseCommit
 
                 Console.WriteLine("[Client] DoRead ...\n");
 
-                machine.Idx = machine.ChooseIndex();
+                machine.Msg.Item1 = machine.ChooseIndex();
 
                 this.Send(machine.Coordinator, new eREAD_REQ(
                     new Tuple<Machine, int>(
-                        this.Machine,
-                        machine.Idx)));
+                        this.Machine, machine.Msg.Item1)));
             }
 
             protected override HashSet<Type> DefineDeferredEvents()
@@ -755,10 +740,12 @@ namespace TwoPhaseCommit
         {
             Console.WriteLine("[Monitor] DoWrite ...\n");
 
-            if (this.Data.ContainsKey(((Tuple<int, int>)this.Payload).Item1))
-                this.Data[((Tuple<int, int>)this.Payload).Item1] = ((Tuple<int, int>)this.Payload).Item2;
+            var message = (Message)this.Payload;
+
+            if (this.Data.ContainsKey(message.Item1))
+                this.Data[message.Item1] = message.Item2;
             else
-                this.Data.Add(((Tuple<int, int>)this.Payload).Item1, ((Tuple<int, int>)this.Payload).Item2);
+                this.Data.Add(message.Item1, message.Item2);
         }
 
         private void CheckReadSuccess()

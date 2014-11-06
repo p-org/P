@@ -27,6 +27,8 @@ namespace LeaderElectionBuggy
         { }
     }
 
+    internal class eStop : Event { }
+
     #endregion
 
     #region Machines
@@ -39,6 +41,7 @@ namespace LeaderElectionBuggy
 
         private List<bool> ActiveProcs;
         private int Counter;
+        private int QueryCounter;
 
         [Initial]
         private class Init : State
@@ -53,6 +56,7 @@ namespace LeaderElectionBuggy
                 machine.N = (int)this.Payload;
                 machine.ActiveProcs = new List<bool>();
                 machine.Counter = 0;
+                machine.QueryCounter = 1;
 
                 for (int idx = 0; idx < machine.N; idx++)
                 {
@@ -70,6 +74,20 @@ namespace LeaderElectionBuggy
 
         private void Check()
         {
+            if (this.QueryCounter == 0)
+            {
+                Console.WriteLine("[Master] Stopping ...\n");
+
+                foreach (var p in this.LProcesses)
+                {
+                    this.Send(p, new eStop());
+                }
+
+                this.Delete();
+
+                return;
+            }
+
             Console.WriteLine("[Master] Checking ...\n");
 
             int id = ((Tuple<int, bool>)this.Payload).Item1;
@@ -94,6 +112,7 @@ namespace LeaderElectionBuggy
 
             Runtime.Assert(count == 1);
             this.Counter = 0;
+            this.QueryCounter = this.QueryCounter - 1;
         }
 
         protected override Dictionary<Type, ActionBindings> DefineActionBindings()
@@ -209,6 +228,13 @@ namespace LeaderElectionBuggy
             this.Send(this.Master, new eCheckAck(new Tuple<int, bool>(this.Id, this.IsActive)));
         }
 
+        private void Stop()
+        {
+            Console.WriteLine("[LProcess-{0}] Stopping ...\n", this.Id);
+
+            this.Delete();
+        }
+
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
             Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
@@ -227,6 +253,7 @@ namespace LeaderElectionBuggy
 
             ActionBindings runningDict = new ActionBindings();
             runningDict.Add(typeof(eNotify), new Action(Process));
+            runningDict.Add(typeof(eStop), new Action(Stop));
 
             dict.Add(typeof(Running), runningDict);
 

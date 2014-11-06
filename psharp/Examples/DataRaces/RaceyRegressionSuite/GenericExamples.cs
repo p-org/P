@@ -206,7 +206,7 @@ namespace GenericExamples
         private Envelope Envelope;
 
         [Initial]
-        private class Init : State
+        private class First : State
         {
             protected override void OnEntry()
             {
@@ -217,6 +217,24 @@ namespace GenericExamples
 
                 // ERROR
                 this.Send(machine.Target, new eUnit(machine.Envelope));
+
+                int k = machine.Envelope.Id;             // ERROR
+                machine.Envelope.Address = "Hong-Kong";  // ERROR
+            }
+        }
+
+        private class Second : State
+        {
+            protected override void OnEntry()
+            {
+                var machine = this.Machine as G;
+
+                machine.Target = Machine.Factory.CreateMachine<G>();
+                machine.Envelope = new Envelope("London", 0);
+
+                // ERROR
+                this.Send(machine.Target, new eUnit(new Tuple<Machine, Envelope>(
+                    machine, machine.Envelope)));
 
                 int k = machine.Envelope.Id;             // ERROR
                 machine.Envelope.Address = "Hong-Kong";  // ERROR

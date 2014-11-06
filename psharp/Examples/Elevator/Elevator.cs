@@ -23,23 +23,41 @@ namespace Elevator
     #region Events
 
     internal class eOpenDoor : Event { }
+
     internal class eCloseDoor : Event { }
+
     internal class eResetDoor : Event { }
+
     internal class eDoorOpened : Event { }
+
     internal class eDoorClosed : Event { }
+
     internal class eDoorStopped : Event { }
+
     internal class eObjectDetected : Event { }
+
     internal class eTimerFired : Event { }
+
     internal class eOperationSuccess : Event { }
+
     internal class eOperationFailure : Event { }
+
     internal class eSendCommandToOpenDoor : Event { }
+
     internal class eSendCommandToCloseDoor : Event { }
+
     internal class eSendCommandToStopDoor : Event { }
+
     internal class eSendCommandToResetDoor : Event { }
+
     internal class eStartDoorCloseTimer : Event { }
+
     internal class eStopDoorCloseTimer : Event { }
+
     internal class eUnit : Event { }
+
     internal class eStopTimerReturned : Event { }
+
     internal class eObjectEncountered : Event { }
 
     #endregion
@@ -56,15 +74,13 @@ namespace Elevator
         {
             protected override void OnEntry()
             {
+                var machine = this.Machine as Elevator;
+
                 Console.WriteLine("Initializing Elevator");
-                (this.Machine as Elevator).Timer =
-                    Machine.Factory.CreateMachine<Timer>(this.Machine);
+                machine.Timer = Machine.Factory.CreateMachine<Timer>(this.Machine);
 
-                (this.Machine as Elevator).Door =
-                    Machine.Factory.CreateMachine<Door>(this.Machine);
+                machine.Door = Machine.Factory.CreateMachine<Door>(this.Machine);
 
-                Console.WriteLine("{0} raising event {1} from state {2}\n", this.Machine,
-                    typeof(eSendCommandToResetDoor), this);
                 this.Raise(new eUnit());
             }
         }
@@ -73,9 +89,11 @@ namespace Elevator
         {
             protected override void OnEntry()
             {
-                Console.WriteLine("{0} sending event {1} to {2}\n", this.Machine,
-                    typeof(eSendCommandToResetDoor), (this.Machine as Elevator).Door);
-                this.Send((this.Machine as Elevator).Door, new eSendCommandToResetDoor());
+                var machine = this.Machine as Elevator;
+
+                Console.WriteLine("{0} sending event {1} to {2}\n", machine,
+                    typeof(eSendCommandToResetDoor), machine.Door);
+                this.Send(machine.Door, new eSendCommandToResetDoor());
             }
 
             protected override HashSet<Type> DefineIgnoredEvents()
@@ -91,9 +109,11 @@ namespace Elevator
         {
             protected override void OnEntry()
             {
-                Console.WriteLine("{0} sending event {1} to {2}\n", this.Machine,
-                    typeof(eSendCommandToOpenDoor), (this.Machine as Elevator).Door);
-                this.Send((this.Machine as Elevator).Door, new eSendCommandToOpenDoor());
+                var machine = this.Machine as Elevator;
+
+                Console.WriteLine("{0} sending event {1} to {2}\n", machine,
+                    typeof(eSendCommandToOpenDoor), machine.Door);
+                this.Send(machine.Door, new eSendCommandToOpenDoor());
             }
 
             protected override HashSet<Type> DefineIgnoredEvents()
@@ -117,13 +137,15 @@ namespace Elevator
         {
             protected override void OnEntry()
             {
-                Console.WriteLine("{0} sending event {1} to {2}\n", this.Machine,
-                    typeof(eSendCommandToResetDoor), (this.Machine as Elevator).Door);
-                this.Send((this.Machine as Elevator).Door, new eSendCommandToResetDoor());
+                var machine = this.Machine as Elevator;
+
+                Console.WriteLine("{0} sending event {1} to {2}\n", machine,
+                    typeof(eSendCommandToResetDoor), machine.Door);
+                this.Send(machine.Door, new eSendCommandToResetDoor());
 
                 Console.WriteLine("{0} sending event {1} to {2}\n", this.Machine,
                     typeof(eStartDoorCloseTimer), (this.Machine as Elevator).Timer);
-                this.Send((this.Machine as Elevator).Timer, new eStartDoorCloseTimer());
+                this.Send(machine.Timer, new eStartDoorCloseTimer());
             }
 
             protected override HashSet<Type> DefineDeferredEvents()
@@ -139,6 +161,8 @@ namespace Elevator
         {
             protected override void OnEntry()
             {
+                var machine = this.Machine as Elevator;
+
                 Console.WriteLine("{0} sending event {1} to {2}\n", this.Machine,
                     typeof(eStartDoorCloseTimer), (this.Machine as Elevator).Timer);
                 this.Send((this.Machine as Elevator).Timer, new eStartDoorCloseTimer());
@@ -235,8 +259,6 @@ namespace Elevator
         {
             protected override void OnEntry()
             {
-                Console.WriteLine("{0} raising event {1} from state {2}\n", this.Machine,
-                    typeof(eStopTimerReturned), this);
                 this.Raise(new eStopTimerReturned());
             }
         }
@@ -324,8 +346,6 @@ namespace Elevator
                 (this.Machine as User).Elevator =
                     Machine.Factory.CreateMachine<Elevator>(this.Machine);
 
-                Console.WriteLine("{0} raising event {1} from state {2}\n", this.Machine,
-                    typeof(eUnit), this);
                 this.Raise(new eUnit());
             }
         }
@@ -335,7 +355,6 @@ namespace Elevator
             protected override void OnEntry()
             {
                 // We don't want the user to make an action too often ...
-                Model.Sleep(5000);
 
                 if (Model.Havoc.Boolean)
                 {
@@ -350,8 +369,6 @@ namespace Elevator
                     this.Send((this.Machine as User).Elevator, new eCloseDoor());
                 }
 
-                Console.WriteLine("{0} raising event {1} from state {2}\n", this.Machine,
-                    typeof(eUnit), this);
                 this.Raise(new eUnit());
             }
         }
@@ -386,8 +403,6 @@ namespace Elevator
                 Console.WriteLine("Initializing Door");
                 (this.Machine as Door).Elevator = (Machine) this.Payload;
 
-                Console.WriteLine("{0} raising event {1} from state {2}\n", this.Machine,
-                    typeof(eUnit), this);
                 this.Raise(new eUnit());
             }
 
@@ -421,8 +436,6 @@ namespace Elevator
                         typeof(eDoorOpened), (this.Machine as Door).Elevator);
                 this.Send((this.Machine as Door).Elevator, new eDoorOpened());
 
-                Console.WriteLine("{0} raising event {1} from state {2}\n", this.Machine,
-                    typeof(eUnit), this);
                 this.Raise(new eUnit());
             }
         }
@@ -433,14 +446,10 @@ namespace Elevator
             {
                 if (Model.Havoc.Boolean)
                 {
-                    Console.WriteLine("{0} raising event {1} from state {2}\n", this.Machine,
-                        typeof(eUnit), this);
                     this.Raise(new eUnit());
                 }
                 else if (Model.Havoc.Boolean)
                 {
-                    Console.WriteLine("{0} raising event {1} from state {2}\n", this.Machine,
-                        typeof(eUnit), this);
                     this.Raise(new eObjectEncountered());
                 }
             }
@@ -454,8 +463,6 @@ namespace Elevator
                         typeof(eObjectDetected), (this.Machine as Door).Elevator);
                 this.Send((this.Machine as Door).Elevator, new eObjectDetected());
 
-                Console.WriteLine("{0} raising event {1} from state {2}\n", this.Machine,
-                    typeof(eUnit), this);
                 this.Raise(new eUnit());
             }
 
@@ -476,8 +483,6 @@ namespace Elevator
                         typeof(eDoorClosed), (this.Machine as Door).Elevator);
                 this.Send((this.Machine as Door).Elevator, new eDoorClosed());
 
-                Console.WriteLine("{0} raising event {1} from state {2}\n", this.Machine,
-                    typeof(eUnit), this);
                 this.Raise(new eUnit());
             }
         }
@@ -490,8 +495,6 @@ namespace Elevator
                         typeof(eDoorStopped), (this.Machine as Door).Elevator);
                 this.Send((this.Machine as Door).Elevator, new eDoorStopped());
 
-                Console.WriteLine("{0} raising event {1} from state {2}\n", this.Machine,
-                    typeof(eUnit), this);
                 this.Raise(new eUnit());
             }
 
@@ -574,8 +577,6 @@ namespace Elevator
                 Console.WriteLine("Initializing Timer");
                 (this.Machine as Timer).Elevator = (Machine) this.Payload;
 
-                Console.WriteLine("{0} raising event {1} from state {2}\n", this.Machine,
-                    typeof(eUnit), this);
                 this.Raise(new eUnit());
             }
         }
@@ -597,8 +598,6 @@ namespace Elevator
             {
                 if (Model.Havoc.Boolean)
                 {
-                    Console.WriteLine("{0} raising event {1} from state {2}\n", this.Machine,
-                        typeof(eUnit), this);
                     this.Raise(new eUnit());
                 }
             }
@@ -620,8 +619,6 @@ namespace Elevator
                         typeof(eTimerFired), (this.Machine as Timer).Elevator);
                 this.Send((this.Machine as Timer).Elevator, new eTimerFired());
 
-                Console.WriteLine("{0} raising event {1} from state {2}\n", this.Machine,
-                    typeof(eUnit), this);
                 this.Raise(new eUnit());
             }
 
@@ -655,9 +652,6 @@ namespace Elevator
                     this.Send((this.Machine as Timer).Elevator, new eOperationSuccess());
                 }
 
-
-                Console.WriteLine("{0} raising event {1} from state {2}\n", this.Machine,
-                    typeof(eUnit), this);
                 this.Raise(new eUnit());
             }
 
@@ -701,52 +695,4 @@ namespace Elevator
     }
 
     #endregion
-
-    /// <summary>
-    /// This is an example of usign P#.
-    /// 
-    /// This example implements an elevator and its environment.
-    /// </summary>
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            Console.WriteLine("Registering events to the runtime.\n");
-            Runtime.RegisterNewEvent(typeof(eOpenDoor));
-            Runtime.RegisterNewEvent(typeof(eCloseDoor));
-            Runtime.RegisterNewEvent(typeof(eResetDoor));
-            Runtime.RegisterNewEvent(typeof(eDoorOpened));
-            Runtime.RegisterNewEvent(typeof(eDoorClosed));
-            Runtime.RegisterNewEvent(typeof(eDoorStopped));
-            Runtime.RegisterNewEvent(typeof(eObjectDetected));
-            Runtime.RegisterNewEvent(typeof(eTimerFired));
-            Runtime.RegisterNewEvent(typeof(eOperationSuccess));
-            Runtime.RegisterNewEvent(typeof(eOperationFailure));
-            Runtime.RegisterNewEvent(typeof(eSendCommandToOpenDoor));
-            Runtime.RegisterNewEvent(typeof(eSendCommandToCloseDoor));
-            Runtime.RegisterNewEvent(typeof(eSendCommandToStopDoor));
-            Runtime.RegisterNewEvent(typeof(eSendCommandToResetDoor));
-            Runtime.RegisterNewEvent(typeof(eStartDoorCloseTimer));
-            Runtime.RegisterNewEvent(typeof(eStopDoorCloseTimer));
-            Runtime.RegisterNewEvent(typeof(eUnit));
-            Runtime.RegisterNewEvent(typeof(eStopTimerReturned));
-            Runtime.RegisterNewEvent(typeof(eObjectEncountered));
-
-            Console.WriteLine("Registering state machines to the runtime.\n");
-            Runtime.RegisterNewMachine(typeof(Elevator));
-            Runtime.RegisterNewMachine(typeof(User));
-            Runtime.RegisterNewMachine(typeof(Door));
-            Runtime.RegisterNewMachine(typeof(Timer));
-
-            Console.WriteLine("Configuring the runtime.\n");
-            Runtime.Options.Mode = Runtime.Mode.BugFinding;
-
-            Console.WriteLine("Starting the runtime.\n");
-            Runtime.Start();
-            Runtime.Wait();
-
-            Console.WriteLine("Performing cleanup.\n");
-            Runtime.Dispose();
-        }
-    }
 }

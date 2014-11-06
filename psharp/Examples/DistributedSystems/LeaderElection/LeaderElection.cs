@@ -27,6 +27,8 @@ namespace LeaderElection
         { }
     }
 
+    internal class eStop : Event { }
+
     #endregion
 
     #region Machines
@@ -39,6 +41,7 @@ namespace LeaderElection
 
         private List<bool> ActiveProcs;
         private int Counter;
+        private int QueryCounter;
 
         [Initial]
         private class Init : State
@@ -94,6 +97,15 @@ namespace LeaderElection
 
             Runtime.Assert(count == 1);
             this.Counter = 0;
+
+            Console.WriteLine("[Master] Stopping ...\n");
+
+            foreach (var p in this.LProcesses)
+            {
+                this.Send(p, new eStop());
+            }
+
+            this.Delete();
         }
 
         protected override Dictionary<Type, ActionBindings> DefineActionBindings()
@@ -206,6 +218,13 @@ namespace LeaderElection
             this.Send(this.Master, new eCheckAck(new Tuple<int, bool>(this.Id, this.IsActive)));
         }
 
+        private void Stop()
+        {
+            Console.WriteLine("[LProcess-{0}] Stopping ...\n", this.Id);
+
+            this.Delete();
+        }
+
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
             Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
@@ -224,6 +243,7 @@ namespace LeaderElection
 
             ActionBindings runningDict = new ActionBindings();
             runningDict.Add(typeof(eNotify), new Action(Process));
+            runningDict.Add(typeof(eStop), new Action(Stop));
 
             dict.Add(typeof(Running), runningDict);
 

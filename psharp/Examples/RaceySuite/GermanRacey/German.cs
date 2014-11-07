@@ -396,8 +396,7 @@ namespace GermanRacey
                 return new HashSet<Type>
                 {
                     typeof(eAskShare),
-                    typeof(eAskExcl),
-                    typeof(eStop)
+                    typeof(eAskExcl)
                 };
             }
         }
@@ -489,7 +488,7 @@ namespace GermanRacey
 
         private void Stop()
         {
-            Console.WriteLine("[Host] Stopping ...\n");
+            Console.WriteLine("[Client] Stopping ...\n");
 
             this.Delete();
         }
@@ -563,15 +562,23 @@ namespace GermanRacey
             ActionBindings invalidDict = new ActionBindings();
             invalidDict.Add(typeof(eStop), new Action(Stop));
 
+            ActionBindings invalidWaitingDict = new ActionBindings();
+            invalidWaitingDict.Add(typeof(eStop), new Action(Stop));
+
             ActionBindings sharingDict = new ActionBindings();
             sharingDict.Add(typeof(eStop), new Action(Stop));
             sharingDict.Add(typeof(eAskShare), new Action(Ack));
+
+            ActionBindings shareWaitingDict = new ActionBindings();
+            shareWaitingDict.Add(typeof(eStop), new Action(Stop));
 
             ActionBindings exclusiveDict = new ActionBindings();
             exclusiveDict.Add(typeof(eStop), new Action(Stop));
 
             dict.Add(typeof(Invalid), invalidDict);
+            dict.Add(typeof(InvalidWaiting), invalidWaitingDict);
             dict.Add(typeof(Sharing), sharingDict);
+            dict.Add(typeof(ShareWaiting), shareWaitingDict);
             dict.Add(typeof(Exclusive), exclusiveDict);
 
             return dict;
@@ -607,20 +614,6 @@ namespace GermanRacey
             protected override void OnEntry()
             {
                 var machine = this.Machine as CPU;
-
-                if (machine.QueryCounter > 9)
-                {
-                    Console.WriteLine("[CPU] Stopping ...\n");
-
-                    this.Send(machine.Host, new eStop());
-
-                    foreach (var c in machine.Cache)
-                    {
-                        this.Send(c, new eStop());
-                    }
-
-                    this.Delete();
-                }
 
                 Console.WriteLine("[CPU] Sending request {0} ...\n", machine.QueryCounter);
 
@@ -659,6 +652,20 @@ namespace GermanRacey
                 }
 
                 machine.QueryCounter++;
+
+                if (machine.QueryCounter == 2)
+                {
+                    Console.WriteLine("[CPU] Stopping ...\n");
+
+                    this.Send(machine.Host, new eStop());
+
+                    foreach (var c in machine.Cache)
+                    {
+                        this.Send(c, new eStop());
+                    }
+
+                    this.Delete();
+                }
             }
         }
 

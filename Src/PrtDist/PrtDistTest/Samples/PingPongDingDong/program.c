@@ -225,57 +225,57 @@
         NULL
     }
   };
-  void P_FUN_PING_ANON0_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_PING_ANON0_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
   }
 
-  void P_FUN_PING_ANON1_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_PING_ANON1_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
     // entry function for Ping_ding1
-    PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
+    PRT_MACHINEINST_PRIV *privContext = (PRT_MACHINEINST_PRIV *)context;
     PrtSend(PrtGetMachine(privContext->process, privContext->varValues[P_VAR_PING_pongId]), PrtMkEventValue(P_EVENT_Ding), PrtMkNullValue());
   }
 
-  void P_FUN_PING_ANON2_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_PING_ANON2_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
     // entry function for Ping_start
-    PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
+    PRT_MACHINEINST_PRIV *privContext = (PRT_MACHINEINST_PRIV *)context;
     privContext->varValues[P_VAR_PING_pongId] = PrtCloneValue(PrtMkMachine(privContext->process, P_MACHINE_PONG, context->id)->id);
     PrtRaise(privContext, PrtMkEventValue(P_EVENT_Success), PrtMkNullValue());
   }
 
-  void P_FUN_PING_ANON3_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_PING_ANON3_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
     // entry function for Ping_ping1
-    PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
+    PRT_MACHINEINST_PRIV *privContext = (PRT_MACHINEINST_PRIV *)context;
     PrtSend(PrtGetMachine(privContext->process, privContext->varValues[P_VAR_PING_pongId]), PrtMkEventValue(P_EVENT_Ping), context->id);
     PrtRaise(privContext, PrtMkEventValue(P_EVENT_Success), PrtMkNullValue());
   }
 
-  void P_FUN_PONG_ANON0_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_PONG_ANON0_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
   }
 
-  void P_FUN_PONG_ANON1_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_PONG_ANON1_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
     // entry function for _Init
-    PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
+    PRT_MACHINEINST_PRIV *privContext = (PRT_MACHINEINST_PRIV *)context;
     privContext->varValues[P_VAR_PONG_pingid] = PrtCloneValue(privContext->currentEvent.payload);
     PrtRaise(privContext, PrtMkEventValue(P_EVENT_Success), PrtMkNullValue());
   }
 
-  void P_FUN_PONG_ANON2_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_PONG_ANON2_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
     // entry function for Pong_dong2
-    PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
+    PRT_MACHINEINST_PRIV *privContext = (PRT_MACHINEINST_PRIV *)context;
     PrtSend(PrtGetMachine(privContext->process, privContext->varValues[P_VAR_PONG_pingid]), PrtMkEventValue(P_EVENT_Dong), PrtMkNullValue());
     PrtRaise(privContext, PrtMkEventValue(P_EVENT_Success), PrtMkNullValue());
   }
 
-  void P_FUN_PONG_ANON3_IMPL(PRT_SM_CONTEXT *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  void P_FUN_PONG_ANON3_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
   {
     // entry function for Pong_pong1
-    PRT_SM_CONTEXT_PRIV *privContext = (PRT_SM_CONTEXT_PRIV *)context;
+    PRT_MACHINEINST_PRIV *privContext = (PRT_MACHINEINST_PRIV *)context;
     PrtSend(PrtGetMachine(privContext->process, privContext->varValues[P_VAR_PONG_pingid]), PrtMkEventValue(P_EVENT_Pong), PrtMkNullValue());
     PrtRaise(privContext, PrtMkEventValue(P_EVENT_Success), PrtMkNullValue());
   }

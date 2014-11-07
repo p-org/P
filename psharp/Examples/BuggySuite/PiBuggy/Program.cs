@@ -32,14 +32,10 @@ namespace PiBuggy
 
                     Console.WriteLine("Starting the runtime.\n");
                     Runtime.Start(5);
-                    Runtime.Wait();
-
-                    Console.WriteLine("Performing cleanup.\n");
-                    Runtime.Dispose();
                 },
-                100000,
+                100,
                 true,
-                Runtime.SchedulingType.DFS,
+                Runtime.SchedulingType.Random,
                 false);
         }
     }

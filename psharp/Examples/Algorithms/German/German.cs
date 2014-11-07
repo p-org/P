@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace German
+namespace GermanBuggy
 {
     #region Events
 
@@ -90,7 +90,7 @@ namespace German
                 for (int idx = 0; idx < n; idx++)
                 {
                     machine.Clients.Add(Machine.Factory.CreateMachine<Client>(
-                        new Tuple<Machine, bool>(machine, false)));
+                        new Tuple<int, Machine, bool>(idx, machine, false)));
                 }
 
                 machine.CPU = Machine.Factory.CreateMachine<CPU>(new Tuple<Machine, List<Machine>>(
@@ -301,6 +301,8 @@ namespace German
 
     internal class Client : Machine
     {
+        private int Id;
+
         private Machine Host;
 
         private bool Pending;
@@ -312,10 +314,11 @@ namespace German
             {
                 var machine = this.Machine as Client;
 
-                Console.WriteLine("[Client] Initializing ...\n");
+                machine.Id = ((Tuple<int, Machine, bool>)this.Payload).Item1;
+                machine.Host = ((Tuple<int, Machine, bool>)this.Payload).Item2;
+                machine.Pending = ((Tuple<int, Machine, bool>)this.Payload).Item3;
 
-                machine.Host = ((Tuple<Machine, bool>)this.Payload).Item1;
-                machine.Pending = ((Tuple<Machine, bool>)this.Payload).Item2;
+                Console.WriteLine("[Client-{0}] Initializing ...\n", machine.Id);
 
                 this.Raise(new eLocal());
             }
@@ -327,7 +330,7 @@ namespace German
             {
                 var machine = this.Machine as Client;
 
-                Console.WriteLine("[Client] Invalid ...\n");
+                Console.WriteLine("[Client-{0}] Invalid ...\n", machine.Id);
             }
         }
 
@@ -337,7 +340,7 @@ namespace German
             {
                 var machine = this.Machine as Client;
 
-                Console.WriteLine("[Client] AskedShare ...\n");
+                Console.WriteLine("[Client-{0}] AskedShare ...\n", machine.Id);
 
                 this.Send(machine.Host, new eShareReq(machine));
                 machine.Pending = true;
@@ -352,7 +355,7 @@ namespace German
             {
                 var machine = this.Machine as Client;
 
-                Console.WriteLine("[Client] AskedExcl ...\n");
+                Console.WriteLine("[Client-{0}] AskedExcl ...\n", machine.Id);
 
                 this.Send(machine.Host, new eExclReq(machine));
                 machine.Pending = true;
@@ -367,7 +370,7 @@ namespace German
             {
                 var machine = this.Machine as Client;
 
-                Console.WriteLine("[Client] InvalidWaiting ...\n");
+                Console.WriteLine("[Client-{0}] InvalidWaiting ...\n", machine.Id);
             }
 
             protected override HashSet<Type> DefineDeferredEvents()
@@ -375,8 +378,7 @@ namespace German
                 return new HashSet<Type>
                 {
                     typeof(eAskShare),
-                    typeof(eAskExcl),
-                    typeof(eStop)
+                    typeof(eAskExcl)
                 };
             }
         }
@@ -387,7 +389,7 @@ namespace German
             {
                 var machine = this.Machine as Client;
 
-                Console.WriteLine("[Client] AskedEx2 ...\n");
+                Console.WriteLine("[Client-{0}] AskedEx2 ...\n", machine.Id);
 
                 this.Send(machine.Host, new eExclReq(machine));
                 machine.Pending = true;
@@ -402,7 +404,7 @@ namespace German
             {
                 var machine = this.Machine as Client;
 
-                Console.WriteLine("[Client] Sharing ...\n");
+                Console.WriteLine("[Client-{0}] Sharing ...\n", machine.Id);
 
                 machine.Pending = false;
             }
@@ -414,7 +416,7 @@ namespace German
             {
                 var machine = this.Machine as Client;
 
-                Console.WriteLine("[Client] ShareWaiting ...\n");
+                Console.WriteLine("[Client-{0}] ShareWaiting ...\n", machine.Id);
             }
         }
 
@@ -424,7 +426,7 @@ namespace German
             {
                 var machine = this.Machine as Client;
 
-                Console.WriteLine("[Client] Exclusive ...\n");
+                Console.WriteLine("[Client-{0}] Exclusive ...\n", machine.Id);
 
                 machine.Pending = false;
             }
@@ -445,7 +447,7 @@ namespace German
             {
                 var machine = this.Machine as Client;
 
-                Console.WriteLine("[Client] Invalidating ...\n");
+                Console.WriteLine("[Client-{0}] Invalidating ...\n", machine.Id);
 
                 if (machine.Pending)
                 {
@@ -467,7 +469,7 @@ namespace German
 
         private void Stop()
         {
-            Console.WriteLine("[Host] Stopping ...\n");
+            Console.WriteLine("[Client-{0}] Stopping ...\n", this.Id);
 
             this.Delete();
         }
@@ -541,15 +543,23 @@ namespace German
             ActionBindings invalidDict = new ActionBindings();
             invalidDict.Add(typeof(eStop), new Action(Stop));
 
+            ActionBindings invalidWaitingDict = new ActionBindings();
+            invalidWaitingDict.Add(typeof(eStop), new Action(Stop));
+
             ActionBindings sharingDict = new ActionBindings();
             sharingDict.Add(typeof(eStop), new Action(Stop));
             sharingDict.Add(typeof(eAskShare), new Action(Ack));
+
+            ActionBindings shareWaitingDict = new ActionBindings();
+            shareWaitingDict.Add(typeof(eStop), new Action(Stop));
 
             ActionBindings exclusiveDict = new ActionBindings();
             exclusiveDict.Add(typeof(eStop), new Action(Stop));
 
             dict.Add(typeof(Invalid), invalidDict);
+            dict.Add(typeof(InvalidWaiting), invalidWaitingDict);
             dict.Add(typeof(Sharing), sharingDict);
+            dict.Add(typeof(ShareWaiting), shareWaitingDict);
             dict.Add(typeof(Exclusive), exclusiveDict);
 
             return dict;
@@ -585,20 +595,6 @@ namespace German
             protected override void OnEntry()
             {
                 var machine = this.Machine as CPU;
-
-                if (machine.QueryCounter > 9)
-                {
-                    Console.WriteLine("[CPU] Stopping ...\n");
-
-                    this.Send(machine.Host, new eStop());
-
-                    foreach (var c in machine.Cache)
-                    {
-                        this.Send(c, new eStop());
-                    }
-
-                    this.Delete();
-                }
 
                 Console.WriteLine("[CPU] Sending request {0} ...\n", machine.QueryCounter);
 
@@ -637,6 +633,20 @@ namespace German
                 }
 
                 machine.QueryCounter++;
+
+                if (machine.QueryCounter == 2)
+                {
+                    Console.WriteLine("[CPU] Stopping ...\n");
+
+                    this.Send(machine.Host, new eStop());
+
+                    foreach (var c in machine.Cache)
+                    {
+                        this.Send(c, new eStop());
+                    }
+
+                    this.Delete();
+                }
             }
         }
 

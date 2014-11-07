@@ -31,15 +31,14 @@ namespace BasicPaxosBuggy
                     Runtime.RegisterNewEvent(typeof(eSuccess));
                     Runtime.RegisterNewEvent(typeof(eMonitorValueChosen));
                     Runtime.RegisterNewEvent(typeof(eMonitorValueProposed));
+                    Runtime.RegisterNewEvent(typeof(eStop));
 
                     Console.WriteLine("Registering state machines to the runtime.\n");
                     Runtime.RegisterNewMachine(typeof(GodMachine));
                     Runtime.RegisterNewMachine(typeof(Acceptor));
                     Runtime.RegisterNewMachine(typeof(Proposer));
                     Runtime.RegisterNewMachine(typeof(Timer));
-
-                    Console.WriteLine("Registering monitors to the runtime.\n");
-                    Runtime.RegisterNewMonitor(typeof(PaxosInvariantMonitor));
+                    Runtime.RegisterNewMachine(typeof(PaxosInvariantMonitor));
 
                     Console.WriteLine("Starting the runtime.\n");
                     Runtime.Start();
@@ -48,10 +47,10 @@ namespace BasicPaxosBuggy
                     Console.WriteLine("Performing cleanup.\n");
                     Runtime.Dispose();
                 },
-                10000,
+                1000,
                 true,
                 Runtime.SchedulingType.Random,
-                true);
+                false);
         }
     }
 }

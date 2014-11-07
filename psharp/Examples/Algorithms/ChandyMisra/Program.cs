@@ -24,10 +24,6 @@ namespace ChandyMisra
             Runtime.RegisterNewMachine(typeof(Master));
             Runtime.RegisterNewMachine(typeof(SPProcess));
 
-            Console.WriteLine("Configuring the runtime.\n");
-            Runtime.Options.Mode = Runtime.Mode.BugFinding;
-            //Runtime.Options.MonitorExecutions = true;
-
             Console.WriteLine("Starting the runtime.\n");
             Runtime.Start(4);
             Runtime.Wait();

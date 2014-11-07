@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace BasicPaxos_3
+namespace BasicPaxos
 {
     #region Events
 
@@ -61,6 +61,7 @@ namespace BasicPaxos_3
     internal class eCancelTimerSuccess : Event { }
     internal class eLocal : Event { }
     internal class eSuccess : Event { }
+    internal class eStop : Event { }
 
     #endregion
 
@@ -87,6 +88,7 @@ namespace BasicPaxos_3
     {
         private List<Machine> Proposers;
         private List<Machine> Acceptors;
+        private Machine PaxosInvariantMonitor;
 
         [Initial]
         private class Init : State
@@ -97,7 +99,7 @@ namespace BasicPaxos_3
 
                 Console.WriteLine("[GodMachine] Initializing ...\n");
 
-                Machine.Factory.CreateMonitor<PaxosInvariantMonitor>();
+                machine.PaxosInvariantMonitor = Machine.Factory.CreateMachine<PaxosInvariantMonitor>();
 
                 machine.Proposers = new List<Machine>();
                 machine.Acceptors = new List<Machine>();
@@ -108,11 +110,37 @@ namespace BasicPaxos_3
                 }
 
                 machine.Proposers.Insert(0, Machine.Factory.CreateMachine<Proposer>(
-                        new Tuple<List<Machine>, int, int>(machine.Acceptors, 1, 1)));
+                        new Tuple<Machine, List<Machine>, List<Machine>, int, int>(
+                            machine.PaxosInvariantMonitor, machine.Proposers, machine.Acceptors, 1, 1)));
 
                 machine.Proposers.Insert(0, Machine.Factory.CreateMachine<Proposer>(
-                        new Tuple<List<Machine>, int, int>(machine.Acceptors, 2, 100)));
+                        new Tuple<Machine, List<Machine>, List<Machine>, int, int>(
+                            machine.PaxosInvariantMonitor, machine.Proposers, machine.Acceptors, 2, 100)));
+
+                this.Raise(new eLocal());
             }
+        }
+
+        private class End : State
+        {
+            protected override void OnEntry()
+            {
+                Console.WriteLine("[GodMachine] Stopping ...\n");
+
+                this.Delete();
+            }
+        }
+
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
+        {
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
+
+            StepStateTransitions initDict = new StepStateTransitions();
+            initDict.Add(typeof(eLocal), typeof(End));
+
+            dict.Add(typeof(Init), initDict);
+
+            return dict;
         }
     }
 
@@ -143,7 +171,12 @@ namespace BasicPaxos_3
 
         private class Wait : State
         {
+            protected override void OnEntry()
+            {
+                var machine = this.Machine as Acceptor;
 
+                Console.WriteLine("[Acceptor-{0}] Waiting ...\n", machine.Id);
+            }
         }
 
         private void Prepare()
@@ -207,6 +240,13 @@ namespace BasicPaxos_3
             }
         }
 
+        private void Stop()
+        {
+            Console.WriteLine("[Acceptor-{0}] Initializing ...\n", this.Id);
+
+            this.Delete();
+        }
+
         private bool AreProposalsEqual(Proposal p1, Proposal p2)
         {
             if (p1.Round == p2.Round && p1.ServerId == p2.ServerId)
@@ -261,6 +301,7 @@ namespace BasicPaxos_3
             ActionBindings waitDict = new ActionBindings();
             waitDict.Add(typeof(ePrepare), new Action(Prepare));
             waitDict.Add(typeof(eAccept), new Action(Accept));
+            waitDict.Add(typeof(eStop), new Action(Stop));
 
             dict.Add(typeof(Wait), waitDict);
 
@@ -270,6 +311,9 @@ namespace BasicPaxos_3
 
     internal class Proposer : Machine
     {
+        private Machine PaxosInvariantMonitor;
+
+        private List<Machine> Proposers;
         private List<Machine> Acceptors;
         private Machine Timer;
 
@@ -289,9 +333,11 @@ namespace BasicPaxos_3
             {
                 var machine = this.Machine as Proposer;
 
-                machine.Acceptors = ((Tuple<List<Machine>, int, int>)this.Payload).Item1;
-                machine.Id = ((Tuple<List<Machine>, int, int>)this.Payload).Item2;
-                machine.ProposeVal = ((Tuple<List<Machine>, int, int>)this.Payload).Item3;
+                machine.PaxosInvariantMonitor = ((Tuple<Machine, List<Machine>, List<Machine>, int, int>)this.Payload).Item1;
+                machine.Proposers = ((Tuple<Machine, List<Machine>, List<Machine>, int, int>)this.Payload).Item2;
+                machine.Acceptors = ((Tuple<Machine, List<Machine>, List<Machine>, int, int>)this.Payload).Item3;
+                machine.Id = ((Tuple<Machine, List<Machine>, List<Machine>, int, int>)this.Payload).Item4;
+                machine.ProposeVal = ((Tuple<Machine, List<Machine>, List<Machine>, int, int>)this.Payload).Item5;
 
                 Console.WriteLine("[Proposer-{0}] Initializing ...\n", machine.Id);
 
@@ -348,9 +394,9 @@ namespace BasicPaxos_3
                 Console.WriteLine("[Proposer-{0}] Propose 2: round {1}, value {2}\n",
                     machine.Id, machine.NextProposal.Round, machine.ProposeVal);
 
-                Console.WriteLine("{0}-{1} sending event {2} to monitor {3}\n", machine, machine.Id,
+                Console.WriteLine("{0}-{1} sending event {2} to {3}\n", machine, machine.Id,
                         typeof(eMonitorValueProposed), typeof(PaxosInvariantMonitor));
-                this.Invoke<PaxosInvariantMonitor>(new eMonitorValueProposed(
+                this.Send(machine.PaxosInvariantMonitor, new eMonitorValueProposed(
                     new Tuple<Proposal, int>(new Proposal(
                         machine.NextProposal.Round, machine.NextProposal.ServerId),
                         machine.ProposeVal)));
@@ -378,7 +424,25 @@ namespace BasicPaxos_3
             {
                 var machine = this.Machine as Proposer;
 
-                Console.WriteLine("[Proposer-{0}] Done ...\n", machine.Id);
+                Console.WriteLine("[Proposer-{0}] Stopping ...\n", machine.Id);
+
+                foreach (var acceptor in machine.Acceptors)
+                {
+                    this.Send(acceptor, new eStop());
+                }
+
+                foreach (var proposer in machine.Proposers)
+                {
+                    if (!proposer.Equals(machine))
+                    {
+                        this.Send(proposer, new eStop());
+                    }
+                }
+
+                this.Send(machine.Timer, new eStop());
+                this.Send(machine.PaxosInvariantMonitor, new eStop());
+
+                this.Delete();
             }
 
             protected override HashSet<Type> DefineIgnoredEvents()
@@ -419,6 +483,13 @@ namespace BasicPaxos_3
             {
                 this.Raise(new eSuccess());
             }
+        }
+
+        private void Stop()
+        {
+            Console.WriteLine("[Proposer-{0}] Stopping ...\n", this.Id);
+
+            this.Delete();
         }
 
         private void BroadcastAcceptors(Type e, Tuple<Machine, Proposal, int> pay)
@@ -530,6 +601,7 @@ namespace BasicPaxos_3
                 });
             
             proposeValuePhase1Dict.Add(typeof(eTimeout), typeof(ProposeValuePhase1));
+            proposeValuePhase1Dict.Add(typeof(eStop), typeof(Done));
 
             // Transitions for ProposeValuePhase2
             StepStateTransitions proposeValuePhase2Dict = new StepStateTransitions();
@@ -555,9 +627,9 @@ namespace BasicPaxos_3
             {
                 Console.WriteLine("[Proposer-{0}] ProposeValuePhase2 (SUCCESS) ...\n", this.Id);
 
-                Console.WriteLine("{0}-{1} sending event {2} to monitor {3}\n", this, this.Id,
+                Console.WriteLine("{0}-{1} sending event {2} to {3}\n", this, this.Id,
                         typeof(eMonitorValueChosen), typeof(PaxosInvariantMonitor));
-                this.Invoke<PaxosInvariantMonitor>(new eMonitorValueChosen(
+                this.Send(this.PaxosInvariantMonitor, new eMonitorValueChosen(
                     new Tuple<Proposal, int>(this.NextProposal, this.ProposeVal)));
 
                 Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
@@ -569,6 +641,7 @@ namespace BasicPaxos_3
                 {
                     this.ReceivedAgreeList.Clear();
                 });
+            proposeValuePhase2Dict.Add(typeof(eStop), typeof(Done));
 
             dict.Add(typeof(Init), initDict);
             dict.Add(typeof(ProposeValuePhase1), proposeValuePhase1Dict);
@@ -667,6 +740,13 @@ namespace BasicPaxos_3
             }
         }
 
+        private void Stop()
+        {
+            Console.WriteLine("[Timer] Stopping ...\n");
+
+            this.Delete();
+        }
+
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
             Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
@@ -687,6 +767,22 @@ namespace BasicPaxos_3
 
             return dict;
         }
+
+        protected override Dictionary<Type, ActionBindings> DefineActionBindings()
+        {
+            Dictionary<Type, ActionBindings> dict = new Dictionary<Type, ActionBindings>();
+
+            ActionBindings loopDict = new ActionBindings();
+            loopDict.Add(typeof(eStop), new Action(Stop));
+
+            ActionBindings startedDict = new ActionBindings();
+            startedDict.Add(typeof(eStop), new Action(Stop));
+
+            dict.Add(typeof(Loop), loopDict);
+            dict.Add(typeof(Started), startedDict);
+
+            return dict;
+        }
     }
 
     /// <summary>
@@ -695,7 +791,6 @@ namespace BasicPaxos_3
     /// If the chosen proposal has value v, then every higher numbered
     /// proposal issued by any proposer has value v.
     /// </summary>
-    [Monitor]
     internal class PaxosInvariantMonitor : Machine
     {
         private Tuple<Proposal, int> LastValueChosen;
@@ -727,6 +822,13 @@ namespace BasicPaxos_3
             {
                 Console.WriteLine("[Monitor] CheckValueProposed ...\n");
             }
+        }
+
+        private void Stop()
+        {
+            Console.WriteLine("[Monitor] Stopping ...\n");
+
+            this.Delete();
         }
 
         private bool IsProposalLessThan(Proposal p1, Proposal p2)
@@ -798,6 +900,18 @@ namespace BasicPaxos_3
 
             dict.Add(typeof(Init), initDict);
             dict.Add(typeof(WaitForValueChosen), waitForValueChosenDict);
+            dict.Add(typeof(CheckValueProposed), checkValueProposedDict);
+
+            return dict;
+        }
+
+        protected override Dictionary<Type, ActionBindings> DefineActionBindings()
+        {
+            Dictionary<Type, ActionBindings> dict = new Dictionary<Type, ActionBindings>();
+
+            ActionBindings checkValueProposedDict = new ActionBindings();
+            checkValueProposedDict.Add(typeof(eStop), new Action(Stop));
+
             dict.Add(typeof(CheckValueProposed), checkValueProposedDict);
 
             return dict;

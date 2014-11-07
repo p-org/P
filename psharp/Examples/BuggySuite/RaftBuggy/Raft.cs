@@ -279,13 +279,11 @@ namespace RaftBuggy
 
             foreach (var client in this.Clients)
             {
-                Console.WriteLine("killing client ...\n");
                 this.Send(client, new eStop());
             }
 
             foreach (var server in this.Servers)
             {
-                Console.WriteLine("killing server ...\n");
                 this.Send(server, new eStop());
             }
 

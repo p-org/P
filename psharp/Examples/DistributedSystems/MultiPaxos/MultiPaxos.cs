@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace MultiPaxos_2
+namespace MultiPaxos
 {
     #region Events
 

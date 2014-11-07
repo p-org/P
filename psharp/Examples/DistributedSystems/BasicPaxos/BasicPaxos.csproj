@@ -35,9 +35,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BasicPaxos_3.cs" />
-    <Compile Include="BasicPaxos_2.cs" />
-    <Compile Include="BasicPaxos_1.cs" />
+    <Compile Include="BasicPaxos.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

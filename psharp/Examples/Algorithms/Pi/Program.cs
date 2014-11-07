@@ -27,10 +27,6 @@ namespace Pi
             Runtime.RegisterNewMachine(typeof(Master));
             Runtime.RegisterNewMachine(typeof(Worker));
 
-            Console.WriteLine("Configuring the runtime.\n");
-            Runtime.Options.Mode = Runtime.Mode.BugFinding;
-            //Runtime.Options.MonitorExecutions = true;
-
             Console.WriteLine("Starting the runtime.\n");
             Runtime.Start(10);
             Runtime.Wait();

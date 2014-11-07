@@ -30,10 +30,6 @@ namespace LeaderElectionBuggy
 
                     Console.WriteLine("Starting the runtime.\n");
                     Runtime.Start(3);
-                    Runtime.Wait();
-
-                    Console.WriteLine("Performing cleanup.\n");
-                    Runtime.Dispose();
                 },
                 10000,
                 true,

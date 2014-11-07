@@ -78,13 +78,13 @@
       _P_VARS_Real_COUNT = 2
     };
 
-    void P_DTOR_Ghost_IMPL(PRT_SM_CONTEXT *context);
+    void P_DTOR_Ghost_IMPL(PRT_MACHINEINST *context);
 
-    void P_DTOR_Real_IMPL(PRT_SM_CONTEXT *context);
+    void P_DTOR_Real_IMPL(PRT_MACHINEINST *context);
 
-    void P_CTOR_Ghost_IMPL(PRT_SM_CONTEXT *context, PRT_VALUE *value);
+    void P_CTOR_Ghost_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value);
 
-    void P_CTOR_Real_IMPL(PRT_SM_CONTEXT *context, PRT_VALUE *value);
+    void P_CTOR_Real_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value);
 
     PRT_PROGRAMDECL P_GEND_PROGRAM;
   #endif

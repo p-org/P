@@ -30,7 +30,7 @@ namespace ChandyMisraBuggy
                     Console.WriteLine("Starting the runtime.\n");
                     Runtime.Start(4);
                 },
-                1,
+                100,
                 true,
                 Runtime.SchedulingType.Random,
                 false);

@@ -18,7 +18,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace TwoPhaseCommit
+namespace TwoPhaseCommitBuggy
 {
     #region Events
     internal class eREQ_REPLICA : Event
@@ -105,6 +105,13 @@ namespace TwoPhaseCommit
         { }
     }
 
+    internal class eUpdate : Event
+    {
+        public eUpdate(Object payload)
+            : base(payload)
+        { }
+    }
+
     internal class eWRITE_FAIL : Event { }
 
     internal class eWRITE_SUCCESS : Event { }
@@ -160,7 +167,11 @@ namespace TwoPhaseCommit
         {
             protected override void OnEntry()
             {
+                var machine = this.Machine as Master;
+
                 Console.WriteLine("[Master] Stopping ...\n");
+
+                //this.Send(machine.Client, new eStop());
 
                 this.Delete();
             }
@@ -182,6 +193,7 @@ namespace TwoPhaseCommit
     internal class Coordinator : Machine
     {
         private List<Machine> Replicas;
+        private Machine Client;
         private Machine Monitor;
         private Machine Replica;
         private Machine Timer;
@@ -284,7 +296,7 @@ namespace TwoPhaseCommit
                     }
 
                     this.Send(machine.Monitor, new eMONITOR_WRITE(new Tuple<int, int>(
-                        machine.PendingWriteReq.Item2,  machine.PendingWriteReq.Item3)));
+                        machine.PendingWriteReq.Item2, machine.PendingWriteReq.Item3)));
 
                     this.Send(machine.PendingWriteReq.Item1, new eWRITE_SUCCESS());
 
@@ -365,6 +377,8 @@ namespace TwoPhaseCommit
 
                 this.Send(((Tuple<Machine, int>)this.Payload).Item1,
                     new eREAD_UNAVAILABLE());
+
+                this.DoGlobalAbort();
             }
         }
 
@@ -403,7 +417,7 @@ namespace TwoPhaseCommit
 
         private void DoGlobalAbort()
         {
-            Console.WriteLine("[Coordinator] DoGlobalAbort ...\n");
+            Console.WriteLine("[Coordinator] GlobalAbort ...\n");
 
             this.I = 0;
             while (this.I < this.Replicas.Count)
@@ -412,11 +426,16 @@ namespace TwoPhaseCommit
                 this.I++;
             }
 
-            this.Send(this.PendingWriteReq.Item1, new eWRITE_FAIL());
+            this.Send(this.Client, new eStop());
             this.Send(this.Timer, new eStop());
             this.Send(this.Monitor, new eStop());
 
             this.Delete();
+        }
+
+        private void Update()
+        {
+            this.Client = (Machine)this.Payload;
         }
 
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
@@ -458,6 +477,8 @@ namespace TwoPhaseCommit
             ActionBindings loopDict = new ActionBindings();
             loopDict.Add(typeof(eWRITE_REQ), new Action(DoWrite));
             loopDict.Add(typeof(eREAD_REQ), new Action(DoRead));
+            loopDict.Add(typeof(eUpdate), new Action(Update));
+            loopDict.Add(typeof(eStop), new Action(DoGlobalAbort));
 
             ActionBindings countVoteDict = new ActionBindings();
             countVoteDict.Add(typeof(eREAD_REQ), new Action(DoRead));
@@ -608,6 +629,7 @@ namespace TwoPhaseCommit
                 Console.WriteLine("[Client] Initializing ...\n");
 
                 machine.Coordinator = (Machine)this.Payload;
+                this.Send(machine.Coordinator, new eUpdate(machine));
 
                 this.Raise(new eUnit());
             }
@@ -669,7 +691,12 @@ namespace TwoPhaseCommit
         {
             protected override void OnEntry()
             {
+                var machine = this.Machine as Client;
+
                 Console.WriteLine("[Client] Stopping ...\n");
+
+                this.Send(machine.Coordinator, new eStop());
+
                 this.Delete();
             }
 
@@ -721,10 +748,12 @@ namespace TwoPhaseCommit
             StepStateTransitions doWriteDict = new StepStateTransitions();
             doWriteDict.Add(typeof(eWRITE_FAIL), typeof(End));
             doWriteDict.Add(typeof(eWRITE_SUCCESS), typeof(DoRead));
+            doWriteDict.Add(typeof(eStop), typeof(End));
 
             StepStateTransitions doReadDict = new StepStateTransitions();
             doReadDict.Add(typeof(eREAD_FAIL), typeof(End));
             doReadDict.Add(typeof(eREAD_SUCCESS), typeof(End));
+            doReadDict.Add(typeof(eStop), typeof(End));
 
             dict.Add(typeof(Init), initDict);
             dict.Add(typeof(DoWrite), doWriteDict);
@@ -774,7 +803,9 @@ namespace TwoPhaseCommit
         {
             Console.WriteLine("[Monitor] CheckReadUnavailable ...\n");
 
-            Runtime.Assert(!this.Data.ContainsKey(((Tuple<int, int>)this.Payload).Item1));
+            var item = (int)this.Payload;
+
+            Runtime.Assert(!this.Data.ContainsKey(item));
         }
 
         private void Stop()
@@ -914,9 +945,13 @@ namespace TwoPhaseCommit
         {
             Dictionary<Type, ActionBindings> dict = new Dictionary<Type, ActionBindings>();
 
+            ActionBindings loopDict = new ActionBindings();
+            loopDict.Add(typeof(eStop), new Action(Stop));
+
             ActionBindings timerStartedDict = new ActionBindings();
             timerStartedDict.Add(typeof(eStop), new Action(Stop));
 
+            dict.Add(typeof(Loop), loopDict);
             dict.Add(typeof(TimerStarted), timerStartedDict);
 
             return dict;

@@ -1,8 +1,10 @@
 runPc: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
-argPc: German.p
+argPc: boundedasync.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 runZing: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: German.dll
+argZing: boundedasync.dll
+argZing: -sched:..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\RunToCompletionDBSched.dll
+argZing: -delayc:4
 acc: .\
-dsc: Feature Integration: protocol sample
+dsc: Feature Integration

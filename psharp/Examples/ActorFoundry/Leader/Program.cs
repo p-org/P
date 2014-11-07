@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace Chameneos
+namespace Leader
 {
     /// <summary>
     /// This is an example of usign P#.
     /// 
-    /// This example implements a replication system.
+    /// This example implements a leader election protocol.
+    /// It attempts to be a faithful port from the SOTER
+    /// actor version.
     /// </summary>
     class Program
     {

@@ -18,7 +18,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace TwoPhaseCommitBuggy
+namespace TwoPhaseCommit
 {
     #region Events
     internal class eREQ_REPLICA : Event

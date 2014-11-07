@@ -12,11 +12,10 @@ namespace ChainReplication
     /// This example implements the Chain Replication protocol
     /// from OSDI'04.
     /// </summary>
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static void Go()
         {
-            Console.WriteLine("Registering events to the runtime.\n");
             Runtime.RegisterNewEvent(typeof(ePredSucc));
             Runtime.RegisterNewEvent(typeof(eUpdate));
             Runtime.RegisterNewEvent(typeof(eQuery));
@@ -58,7 +57,6 @@ namespace ChainReplication
             Runtime.RegisterNewEvent(typeof(eCRPong));
             Runtime.RegisterNewEvent(typeof(eMonitorSuccess));
 
-            Console.WriteLine("Registering state machines to the runtime.\n");
             Runtime.RegisterNewMachine(typeof(GodMachine));
             Runtime.RegisterNewMachine(typeof(Client));
             Runtime.RegisterNewMachine(typeof(ChainReplicationMaster));
@@ -66,22 +64,26 @@ namespace ChainReplication
             Runtime.RegisterNewMachine(typeof(ChainReplicationFaultDetection));
             Runtime.RegisterNewMachine(typeof(Timer));
 
-            Console.WriteLine("Registering monitors to the runtime.\n");
             Runtime.RegisterNewMonitor(typeof(UpdatePropagationInvariantMonitor));
             Runtime.RegisterNewMonitor(typeof(UpdateResponseQueryResponseSeqMonitor));
             Runtime.RegisterNewMonitor(typeof(LivenessUpdatetoResponseMonitor));
             Runtime.RegisterNewMonitor(typeof(LivenessQuerytoResponseMonitor));
 
-            Console.WriteLine("Configuring the runtime.\n");
-            Runtime.Options.Mode = Runtime.Mode.BugFinding;
-            //Runtime.Options.MonitorExecutions = true;
-
-            Console.WriteLine("Starting the runtime.\n");
             Runtime.Start();
             Runtime.Wait();
-
-            Console.WriteLine("Performing cleanup.\n");
             Runtime.Dispose();
+        }
+        static void Main(string[] args)
+        {
+            Go();
+        }
+    }
+    public class ChessTest
+    {
+        public static bool Run()
+        {
+            Program.Go();
+            return true;
         }
     }
 }

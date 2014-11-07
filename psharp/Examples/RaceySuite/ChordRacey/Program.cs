@@ -11,8 +11,11 @@ namespace ChordRacey
     /// the [Chord: A Scalable Peer-to-peer Lookup Service for Internet
     /// Applications] SIGCOMM'01 paper.
     /// </summary>
-    class Program
+    public class Program
     {
+        public static void Go()
+        {
+        }
         static void Main(string[] args)
         {
             Console.WriteLine("Registering events to the runtime.\n");

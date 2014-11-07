@@ -10,8 +10,11 @@ namespace ChainReplicationRacey
     /// This example implements the Chain Replication protocol
     /// from OSDI'04.
     /// </summary>
-    class Program
+    public class Program
     {
+        public static void Go()
+        {
+        }
         static void Main(string[] args)
         {
             Console.WriteLine("Registering events to the runtime.\n");

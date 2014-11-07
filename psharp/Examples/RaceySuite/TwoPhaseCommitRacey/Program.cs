@@ -9,8 +9,11 @@ namespace TwoPhaseCommitRacey
     /// 
     /// This example implements a replication system.
     /// </summary>
-    class Program
+    public class Program
     {
+        public static void Go()
+        {
+        }
         static void Main(string[] args)
         {
             Console.WriteLine("Registering events to the runtime.\n");

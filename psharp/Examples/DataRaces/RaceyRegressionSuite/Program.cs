@@ -14,7 +14,7 @@ namespace RaceyRegressionSuite
     /// 
     /// Is not to be used for normal execution.
     /// </summary>
-    class Program
+    public class Program
     {
         static void Main(string[] args)
         {

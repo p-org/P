@@ -10,11 +10,10 @@ namespace BasicPaxosRacey
     /// This example implements Lamport's Paxos distributed
     /// concencus algorithm.
     /// </summary>
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static void Go()
         {
-            Console.WriteLine("Registering events to the runtime.\n");
             Runtime.RegisterNewEvent(typeof(ePrepare));
             Runtime.RegisterNewEvent(typeof(eAccept));
             Runtime.RegisterNewEvent(typeof(eAgree));
@@ -29,19 +28,19 @@ namespace BasicPaxosRacey
             Runtime.RegisterNewEvent(typeof(eMonitorValueChosen));
             Runtime.RegisterNewEvent(typeof(eMonitorValueProposed));
 
-            Console.WriteLine("Registering state machines to the runtime.\n");
             Runtime.RegisterNewMachine(typeof(GodMachine));
             Runtime.RegisterNewMachine(typeof(Acceptor));
             Runtime.RegisterNewMachine(typeof(Proposer));
             Runtime.RegisterNewMachine(typeof(Timer));
             Runtime.RegisterNewMachine(typeof(PaxosInvariantMonitor));
 
-            Console.WriteLine("Starting the runtime.\n");
             Runtime.Start();
             Runtime.Wait();
-
-            Console.WriteLine("Performing cleanup.\n");
             Runtime.Dispose();
+        }
+        static void Main(string[] args)
+        {
+            
         }
     }
 }

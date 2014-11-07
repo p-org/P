@@ -11,8 +11,11 @@ namespace ChandyMisraRacey
     /// algorithm taken from the [Automated systematic testing
     /// of open distributed programs] study.
     /// </summary>
-    class Program
+    public class Program
     {
+        public static void Go()
+        {
+        }
         static void Main(string[] args)
         {
             Console.WriteLine("Registering events to the runtime.\n");

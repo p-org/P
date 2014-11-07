@@ -11,8 +11,11 @@ namespace PiRacey
     /// approximation of Pi taken from the [Evaluating Ordering Heuristics
     /// for Dynamic Partial-order Reduction Techniques] study.
     /// </summary>
-    class Program
+    public class Program
     {
+        public static void Go()
+        {
+        }
         static void Main(string[] args)
         {
             Console.WriteLine("Registering events to the runtime.\n");

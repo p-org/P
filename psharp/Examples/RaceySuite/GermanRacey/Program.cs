@@ -9,8 +9,11 @@ namespace GermanRacey
     /// 
     /// This example implements German's cache coherence protocol.
     /// </summary>
-    class Program
+    public class Program
     {
+        public static void Go()
+        {
+        }
         static void Main(string[] args)
         {
             Console.WriteLine("Registering events to the runtime.\n");

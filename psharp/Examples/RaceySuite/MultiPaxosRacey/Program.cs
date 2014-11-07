@@ -10,8 +10,11 @@ namespace MultiPaxosRacey
     /// This example implements the MultiPaxos distributed
     /// concencus algorithm.
     /// </summary>
-    class Program
+    public class Program
     {
+        public static void Go()
+        {
+        }
         static void Main(string[] args)
         {
             Console.WriteLine("Registering events to the runtime.\n");

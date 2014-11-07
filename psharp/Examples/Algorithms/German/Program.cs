@@ -9,11 +9,10 @@ namespace German
     /// 
     /// This example implements German's cache coherence protocol.
     /// </summary>
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static void Go()
         {
-            Console.WriteLine("Registering events to the runtime.\n");
             Runtime.RegisterNewEvent(typeof(eLocal));
             Runtime.RegisterNewEvent(typeof(eStop));
             Runtime.RegisterNewEvent(typeof(eWait));
@@ -29,18 +28,24 @@ namespace German
             Runtime.RegisterNewEvent(typeof(eAskExcl));
             Runtime.RegisterNewEvent(typeof(eShareReq));
             Runtime.RegisterNewEvent(typeof(eExclReq));
-
-            Console.WriteLine("Registering state machines to the runtime.\n");
             Runtime.RegisterNewMachine(typeof(Host));
             Runtime.RegisterNewMachine(typeof(Client));
             Runtime.RegisterNewMachine(typeof(CPU));
-
-            Console.WriteLine("Starting the runtime.\n");
             Runtime.Start(3);
             Runtime.Wait();
-
-            Console.WriteLine("Performing cleanup.\n");
             Runtime.Dispose();
+        }
+        static void Main(string[] args)
+        {
+            Go();
+        }
+    }
+    public class ChessTest
+    {
+        public static bool Run()
+        {
+            Program.Go();
+            return true;
         }
     }
 }

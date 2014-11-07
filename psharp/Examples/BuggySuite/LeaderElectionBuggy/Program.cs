@@ -11,30 +11,39 @@ namespace LeaderElectionBuggy
     /// taken from the [Automated systematic testing of open
     /// distributed programs] study.
     /// </summary>
-    class Program
+    public class Program
     {
+        public static void Go()
+        {
+            Runtime.RegisterNewEvent(typeof(eStart));
+            Runtime.RegisterNewEvent(typeof(eNotify));
+            Runtime.RegisterNewEvent(typeof(eCheckAck));
+            Runtime.RegisterNewEvent(typeof(eStop));
+            Runtime.RegisterNewMachine(typeof(Master));
+            Runtime.RegisterNewMachine(typeof(LProcess));
+            Runtime.Start(3);
+            Runtime.Wait();
+            Runtime.Dispose();
+        }
         static void Main(string[] args)
         {
             Runtime.Test(
                 () =>
                 {
-                    Console.WriteLine("Registering events to the runtime.\n");
-                    Runtime.RegisterNewEvent(typeof(eStart));
-                    Runtime.RegisterNewEvent(typeof(eNotify));
-                    Runtime.RegisterNewEvent(typeof(eCheckAck));
-                    Runtime.RegisterNewEvent(typeof(eStop));
-
-                    Console.WriteLine("Registering state machines to the runtime.\n");
-                    Runtime.RegisterNewMachine(typeof(Master));
-                    Runtime.RegisterNewMachine(typeof(LProcess));
-
-                    Console.WriteLine("Starting the runtime.\n");
-                    Runtime.Start(3);
+                    Go();
                 },
                 10000,
                 true,
                 Runtime.SchedulingType.Random,
                 false);
+        }
+    }
+    public class ChessTest
+    {
+        public static bool Run()
+        {
+            Program.Go();
+            return true;
         }
     }
 }

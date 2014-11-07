@@ -173,34 +173,42 @@ namespace PingPong
     /// This example implements a Ping Pong game between
     /// a server and a client.
     /// </summary>
-    class PingPong
+    public class PingPong
     {
+        
+        public static void Go()
+        {
+            Runtime.RegisterNewEvent(typeof(Ping));
+            Runtime.RegisterNewEvent(typeof(Pong));
+            Runtime.RegisterNewEvent(typeof(Stop));
+            Runtime.RegisterNewEvent(typeof(Unit));
+
+            Runtime.RegisterNewMachine(typeof(Server));
+            Runtime.RegisterNewMachine(typeof(Client));
+            Runtime.Start();
+            Runtime.Wait();
+            Runtime.Dispose();
+        }
         static void Main(string[] args)
         {
+
             Runtime.Test(
                 () =>
                 {
-                    Console.WriteLine("Registering events to the runtime.\n");
-                    Runtime.RegisterNewEvent(typeof(Ping));
-                    Runtime.RegisterNewEvent(typeof(Pong));
-                    Runtime.RegisterNewEvent(typeof(Stop));
-                    Runtime.RegisterNewEvent(typeof(Unit));
-
-                    Console.WriteLine("Registering state machines to the runtime.\n");
-                    Runtime.RegisterNewMachine(typeof(Server));
-                    Runtime.RegisterNewMachine(typeof(Client));
-
-                    Console.WriteLine("Starting the runtime.\n");
-                    Runtime.Start();
-                    Runtime.Wait();
-
-                    Console.WriteLine("Performing cleanup.\n");
-                    Runtime.Dispose();
+                    Go();
                 },
-                100000,
+                10,
                 true,
                 Runtime.SchedulingType.DFS,
                 false);
+        }
+    }
+    public class ChessTest
+    {
+        public static bool Run()
+        {
+            PingPong.Go();
+            return true;
         }
     }
 }

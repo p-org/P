@@ -11,28 +11,34 @@ namespace Pi
     /// approximation of Pi taken from the [Evaluating Ordering Heuristics
     /// for Dynamic Partial-order Reduction Techniques] study.
     /// </summary>
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static void Go()
         {
-            Console.WriteLine("Registering events to the runtime.\n");
+            
             Runtime.RegisterNewEvent(typeof(eLocal));
             Runtime.RegisterNewEvent(typeof(eStart));
             Runtime.RegisterNewEvent(typeof(eStop));
             Runtime.RegisterNewEvent(typeof(eWork));
             Runtime.RegisterNewEvent(typeof(eSum));
-
-            Console.WriteLine("Registering state machines to the runtime.\n");
             Runtime.RegisterNewMachine(typeof(Driver));
             Runtime.RegisterNewMachine(typeof(Master));
             Runtime.RegisterNewMachine(typeof(Worker));
-
-            Console.WriteLine("Starting the runtime.\n");
             Runtime.Start(10);
             Runtime.Wait();
-
-            Console.WriteLine("Performing cleanup.\n");
             Runtime.Dispose();
+        }
+        static void Main(string[] args)
+        {
+            Go();
+        }
+    }
+    public class ChessTest
+    {
+        public static bool Run()
+        {
+            Program.Go();
+            return true;
         }
     }
 }

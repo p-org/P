@@ -46,6 +46,7 @@ namespace BoundedAsync
     #region Machines
 
     [Main]
+    [Ghost]
     internal class Scheduler : Machine
     {
         private Machine Process1;
@@ -193,6 +194,7 @@ namespace BoundedAsync
         }
     }
 
+    [Ghost]
     internal class Process : Machine
     {
         private int Count;

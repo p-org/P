@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace GermanBuggy
+namespace German
 {
     #region Events
 

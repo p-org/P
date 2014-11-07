@@ -11,29 +11,38 @@ namespace ChandyMisraBuggy
     /// algorithm taken from the [Automated systematic testing
     /// of open distributed programs] study.
     /// </summary>
-    class Program
+    public class Program
     {
+        public static void Go()
+        {
+            Runtime.RegisterNewEvent(typeof(eLocal));
+            Runtime.RegisterNewEvent(typeof(eAddNeighbour));
+            Runtime.RegisterNewEvent(typeof(eNotify));
+            Runtime.RegisterNewMachine(typeof(Master));
+            Runtime.RegisterNewMachine(typeof(SPProcess));
+            Runtime.Start(4);
+            Runtime.Wait();
+            Runtime.Dispose();
+        }
         static void Main(string[] args)
         {
             Runtime.Test(
                 () =>
                 {
-                    Console.WriteLine("Registering events to the runtime.\n");
-                    Runtime.RegisterNewEvent(typeof(eLocal));
-                    Runtime.RegisterNewEvent(typeof(eAddNeighbour));
-                    Runtime.RegisterNewEvent(typeof(eNotify));
-
-                    Console.WriteLine("Registering state machines to the runtime.\n");
-                    Runtime.RegisterNewMachine(typeof(Master));
-                    Runtime.RegisterNewMachine(typeof(SPProcess));
-
-                    Console.WriteLine("Starting the runtime.\n");
-                    Runtime.Start(4);
+                    Go();
                 },
                 100,
                 true,
                 Runtime.SchedulingType.Random,
                 false);
+        }
+    }
+    public class ChessTest
+    {
+        public static bool Run()
+        {
+            Program.Go();
+            return true;
         }
     }
 }

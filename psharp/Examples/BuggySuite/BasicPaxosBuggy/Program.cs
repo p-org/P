@@ -10,47 +10,52 @@ namespace BasicPaxosBuggy
     /// This example implements Lamport's Paxos distributed
     /// concencus algorithm.
     /// </summary>
-    class Program
+    public class Program
     {
+        public static void Go()
+        {
+            Runtime.RegisterNewEvent(typeof(ePrepare));
+            Runtime.RegisterNewEvent(typeof(eAccept));
+            Runtime.RegisterNewEvent(typeof(eAgree));
+            Runtime.RegisterNewEvent(typeof(eReject));
+            Runtime.RegisterNewEvent(typeof(eAccepted));
+            Runtime.RegisterNewEvent(typeof(eTimeout));
+            Runtime.RegisterNewEvent(typeof(eStartTimer));
+            Runtime.RegisterNewEvent(typeof(eCancelTimer));
+            Runtime.RegisterNewEvent(typeof(eCancelTimerSuccess));
+            Runtime.RegisterNewEvent(typeof(eLocal));
+            Runtime.RegisterNewEvent(typeof(eSuccess));
+            Runtime.RegisterNewEvent(typeof(eMonitorValueChosen));
+            Runtime.RegisterNewEvent(typeof(eMonitorValueProposed));
+            Runtime.RegisterNewEvent(typeof(eStop));
+            Runtime.RegisterNewMachine(typeof(GodMachine));
+            Runtime.RegisterNewMachine(typeof(Acceptor));
+            Runtime.RegisterNewMachine(typeof(Proposer));
+            Runtime.RegisterNewMachine(typeof(Timer));
+            Runtime.RegisterNewMachine(typeof(PaxosInvariantMonitor));
+            Runtime.Start();
+            Runtime.Wait();
+            Runtime.Dispose();
+        }
         static void Main(string[] args)
         {
             Runtime.Test(
                 () =>
                 {
-                    Console.WriteLine("Registering events to the runtime.\n");
-                    Runtime.RegisterNewEvent(typeof(ePrepare));
-                    Runtime.RegisterNewEvent(typeof(eAccept));
-                    Runtime.RegisterNewEvent(typeof(eAgree));
-                    Runtime.RegisterNewEvent(typeof(eReject));
-                    Runtime.RegisterNewEvent(typeof(eAccepted));
-                    Runtime.RegisterNewEvent(typeof(eTimeout));
-                    Runtime.RegisterNewEvent(typeof(eStartTimer));
-                    Runtime.RegisterNewEvent(typeof(eCancelTimer));
-                    Runtime.RegisterNewEvent(typeof(eCancelTimerSuccess));
-                    Runtime.RegisterNewEvent(typeof(eLocal));
-                    Runtime.RegisterNewEvent(typeof(eSuccess));
-                    Runtime.RegisterNewEvent(typeof(eMonitorValueChosen));
-                    Runtime.RegisterNewEvent(typeof(eMonitorValueProposed));
-                    Runtime.RegisterNewEvent(typeof(eStop));
-
-                    Console.WriteLine("Registering state machines to the runtime.\n");
-                    Runtime.RegisterNewMachine(typeof(GodMachine));
-                    Runtime.RegisterNewMachine(typeof(Acceptor));
-                    Runtime.RegisterNewMachine(typeof(Proposer));
-                    Runtime.RegisterNewMachine(typeof(Timer));
-                    Runtime.RegisterNewMachine(typeof(PaxosInvariantMonitor));
-
-                    Console.WriteLine("Starting the runtime.\n");
-                    Runtime.Start();
-                    Runtime.Wait();
-
-                    Console.WriteLine("Performing cleanup.\n");
-                    Runtime.Dispose();
+                    Go();
                 },
                 1000,
                 true,
                 Runtime.SchedulingType.Random,
                 false);
+        }
+    }
+    public class ChessTest
+    {
+        public static bool Run()
+        {
+            Program.Go();
+            return true;
         }
     }
 }

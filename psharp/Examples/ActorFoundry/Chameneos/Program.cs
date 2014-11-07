@@ -34,11 +34,13 @@ namespace Chameneos
             Runtime.Wait();
             Runtime.Dispose();
         }
+
         static void Main(string[] args)
         {
             Go();
         }
     }
+
     public class ChessTest
     {
         public static bool Run()

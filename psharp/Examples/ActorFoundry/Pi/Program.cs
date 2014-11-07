@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace Leader
+namespace Pi
 {
     /// <summary>
     /// This is an example of usign P#.
     /// 
-    /// This example implements the leader election benchmark.
+    /// This example implements the compute Pi benchmark.
     /// It attempts to be a faithful port from the SOTER
     /// actor version.
     /// </summary>
@@ -16,12 +16,14 @@ namespace Leader
         public static void Go()
         {
             Runtime.RegisterNewEvent(typeof(eLocal));
-            Runtime.RegisterNewEvent(typeof(eStart));
-            Runtime.RegisterNewEvent(typeof(eInit));
-            Runtime.RegisterNewEvent(typeof(eReceive));
+            Runtime.RegisterNewEvent(typeof(eBoot));
+            Runtime.RegisterNewEvent(typeof(eStop));
+            Runtime.RegisterNewEvent(typeof(eIntervals));
+            Runtime.RegisterNewEvent(typeof(eSum));
 
             Runtime.RegisterNewMachine(typeof(Driver));
-            Runtime.RegisterNewMachine(typeof(LProcess));
+            Runtime.RegisterNewMachine(typeof(Master));
+            Runtime.RegisterNewMachine(typeof(Worker));
 
             Runtime.Start(30);
             Runtime.Wait();

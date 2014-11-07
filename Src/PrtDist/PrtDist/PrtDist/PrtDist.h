@@ -32,8 +32,3 @@ PrtDistLogHandler(
 __in PRT_STEP step,
 __in void* vcontext
 );
-
-PRT_STRING
-PrtValueToString(
-_In_ PRT_VALUE *value
-);

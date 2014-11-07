@@ -93,9 +93,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwoPhaseCommitBuggy", "Exam
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GermanBuggy", "Examples\BuggySuite\GermanBuggy\GermanBuggy.csproj", "{41C236B1-E041-4E98-82CC-F67F2BBF7F64}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SOTER", "SOTER", "{5363F714-E5AD-4005-9BDA-B555BCBC694F}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ActorFoundry", "ActorFoundry", "{5363F714-E5AD-4005-9BDA-B555BCBC694F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chameneos", "Examples\SOTER\Chameneos\Chameneos.csproj", "{FDC91696-DC12-4599-9B69-A37BA216DA5E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chameneos", "Examples\ActorFoundry\Chameneos\Chameneos.csproj", "{FDC91696-DC12-4599-9B69-A37BA216DA5E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

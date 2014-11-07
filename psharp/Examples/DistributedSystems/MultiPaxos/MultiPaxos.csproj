@@ -35,8 +35,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MultiPaxos_2.cs" />
-    <Compile Include="MultiPaxos_1.cs" />
+    <Compile Include="MultiPaxos.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

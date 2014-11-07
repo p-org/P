@@ -121,12 +121,12 @@ machine OpenWSN_Mote {
 	}
 	
 	model fun OperationTxorRxorSleep() : int {
-		if($)
+		//if($)
 			return 0; // Tx
-		else if ($)
-			return 1; // Rx
-		else
-			return 2; // Sleep
+		//else if ($)
+		//	return 1; // Rx
+		//else
+		//	return 2; // Sleep
 	}
 	
 	state WaitForNewSlot {
@@ -150,13 +150,13 @@ machine OpenWSN_Mote {
 			i = sizeof(myNeighbours) - 1;
 			while(i>= 0)
 			{
-				if($)
-				{
+				//if($)
+				//{
 					send myNeighbours[i], Data, (this, myRank);
 					return;
-				}
-				else
-					i = i - 1;
+				//}
+				//else
+				//	i = i - 1;
 			}
 		}
 		else
@@ -166,12 +166,12 @@ machine OpenWSN_Mote {
 	}
 	
 	model fun CSMA_CA() : bool {
-		if($)
-		{
+		//if($)
+		//{
 			return true;
-		}
-		else
-			return false;
+		//}
+		//else
+		//	return false;
 	}
 	
 	state DataTransmissionMode {

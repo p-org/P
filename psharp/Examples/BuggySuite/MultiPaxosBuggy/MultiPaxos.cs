@@ -375,8 +375,13 @@ namespace MultiPaxosBuggy
                 machine.NextProposal = machine.GetNextProposal(machine.MaxRound);
                 machine.ReceivedAgree = new Tuple<Proposal, int>(new Proposal(-1, -1), -1);
 
-                machine.BroadcastAcceptors(typeof(ePrepare), new Tuple<Machine, Proposal>(
-                    machine, machine.NextProposal));
+                for (int i = 0; i < machine.Acceptors.Count; i++)
+                {
+                    Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
+                        this, machine.Rank, typeof(ePrepare), machine.Acceptors[i]);
+                    this.Send(machine.Acceptors[i], new ePrepare(new Tuple<Machine, Proposal>(
+                    machine, machine.NextProposal)));
+                }
 
                 Console.WriteLine("{0}-{1} sending event {2} to {3}\n", machine, machine.Rank,
                         typeof(eMonitorProposerSent), typeof(ValidityCheckMonitor));
@@ -412,12 +417,22 @@ namespace MultiPaxosBuggy
                 this.Send(machine.PaxosMonitor, new eMonitorValueProposed(new Tuple<Proposal, int>(
                     machine.NextProposal, machine.ProposeValue)));
 
-                Console.WriteLine("{0}-{1} sending event {2} to {3}\n", machine, machine.Rank,
+                Console.WriteLine("{0}-{1} TEST 1sending event {2} to {3}\n", machine, machine.Rank,
                         typeof(eMonitorProposerSent), typeof(ValidityCheckMonitor));
                 this.Send(machine.ValidityMonitor, new eMonitorProposerSent(machine.ProposeValue));
 
-                machine.BroadcastAcceptors(typeof(eAccept), new Tuple<Machine, Proposal, int>(
-                    machine, machine.NextProposal, machine.ProposeValue));
+                for (int i = 0; i < machine.Acceptors.Count; i++)
+                {
+                    Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
+                        this, machine.Rank, typeof(eAccept), machine.Acceptors[i]);
+                    this.Send(machine.Acceptors[i], new eAccept(new Tuple<Machine, Proposal, int>(
+                    machine, machine.NextProposal, machine.ProposeValue)));
+                }
+
+                Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
+                        this, machine.Rank, typeof(eAccept), machine.Acceptors[0]);
+                this.Send(machine.Acceptors[0], new eAccept(new Tuple<Machine, Proposal, int>(
+                machine, machine.NextProposal, machine.ProposeValue)));
 
                 Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
                     machine, machine.Rank, typeof(eStartTimer), machine.Timer);
@@ -617,16 +632,6 @@ namespace MultiPaxosBuggy
             if (this.CountAccept == this.Majority)
             {
                 this.Raise(new eSuccess());
-            }
-        }
-
-        private void BroadcastAcceptors(Type e, Object pay)
-        {
-            for (int i = 0; i < this.Acceptors.Count; i++)
-            {
-                Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
-                    this, this.Rank, e, this.Acceptors[i]);
-                this.Send(this.Acceptors[i], Activator.CreateInstance(e, pay) as Event);
             }
         }
 

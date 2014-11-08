@@ -97,6 +97,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Leader", "Examples\ActorFou
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pi", "Examples\ActorFoundry\Pi\Pi.csproj", "{64724E22-3E16-433F-806A-0C49D401E28C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Swordfish", "Examples\ActorFoundry\Swordfish\Swordfish.csproj", "{74815341-0821-4897-AA68-C424AE62BAA2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -255,6 +257,10 @@ Global
 		{64724E22-3E16-433F-806A-0C49D401E28C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{64724E22-3E16-433F-806A-0C49D401E28C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{64724E22-3E16-433F-806A-0C49D401E28C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74815341-0821-4897-AA68-C424AE62BAA2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74815341-0821-4897-AA68-C424AE62BAA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74815341-0821-4897-AA68-C424AE62BAA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74815341-0821-4897-AA68-C424AE62BAA2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -304,5 +310,6 @@ Global
 		{FDC91696-DC12-4599-9B69-A37BA216DA5E} = {5363F714-E5AD-4005-9BDA-B555BCBC694F}
 		{576A7859-1774-4242-ACDB-2468A7CB2A67} = {5363F714-E5AD-4005-9BDA-B555BCBC694F}
 		{64724E22-3E16-433F-806A-0C49D401E28C} = {5363F714-E5AD-4005-9BDA-B555BCBC694F}
+		{74815341-0821-4897-AA68-C424AE62BAA2} = {5363F714-E5AD-4005-9BDA-B555BCBC694F}
 	EndGlobalSection
 EndGlobal

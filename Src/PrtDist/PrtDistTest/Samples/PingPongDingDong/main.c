@@ -10,11 +10,6 @@ void P_CTOR_PONG_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) { }
 
 void ErrorHandler(PRT_STATUS status, void *ptr) { }
 
-PRT_STATEDECL *GetCurrentStateDecl(PRT_MACHINEINST_PRIV *context)
-{
-	return &(context->process->program->machines[context->instanceOf].states[context->currentState]);
-}
-
 void Log(PRT_STEP step, void *vcontext)
 {
 	static FILE *logfile = NULL;

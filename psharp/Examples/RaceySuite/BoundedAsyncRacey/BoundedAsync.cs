@@ -18,7 +18,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace BoundedAsync
+namespace BoundedAsyncRacey
 {
     #region Events
 
@@ -262,16 +262,15 @@ namespace BoundedAsync
                 machine.CountMessage.Count = machine.CountMessage.Count + 1;
                 Console.WriteLine("Process: Count: {0}", machine.CountMessage.Count);
 
-                var msg1 = machine.CountMessage;
-                var msg2 = new CountMessage(machine.CountMessage.Count);
-
                 Console.WriteLine("{0} sending event {1} to {2}",
                     this.Machine, typeof(eMyCount), machine.LeftProcess);
-                this.Send(machine.LeftProcess, new eMyCount(msg1));
+                this.Send(machine.LeftProcess, new eMyCount(machine.CountMessage));
+
+                machine.CountMessage.Count = machine.CountMessage.Count + 1;
 
                 Console.WriteLine("{0} sending event {1} to {2}",
                     this.Machine, typeof(eMyCount), machine.RightProcess);
-                this.Send(machine.RightProcess, new eMyCount(msg2));
+                this.Send(machine.RightProcess, new eMyCount(machine.CountMessage));
 
                 Console.WriteLine("{0} sending event {1} to {2}",
                     this.Machine, typeof(eReq), machine.Scheduler);

@@ -157,6 +157,9 @@ namespace MultiPaxos
         private List<Machine> PaxosNodes;
         private Machine Client;
 
+        private Machine PaxosMonitor;
+        private Machine ValidityMonitor;
+
         [Initial]
         private class Init : State
         {
@@ -166,13 +169,15 @@ namespace MultiPaxos
 
                 Console.WriteLine("[GodMachine] Initializing ...\n");
 
-                Machine.Factory.CreateMonitor<PaxosInvariantMonitor>();
+                machine.PaxosMonitor = Machine.Factory.CreateMachine<PaxosInvariantMonitor>();
+                machine.ValidityMonitor = Machine.Factory.CreateMachine<ValidityCheckMonitor>();
 
                 // Create the paxos nodes.
                 machine.PaxosNodes = new List<Machine>();
                 for (int i = 0; i < 3; i++)
                 {
-                    machine.PaxosNodes.Insert(0, Machine.Factory.CreateMachine<PaxosNode>(i + 1));
+                    machine.PaxosNodes.Insert(0, Machine.Factory.CreateMachine<PaxosNode>(
+                        new Tuple<int, Machine, Machine>(i + 1, machine.PaxosMonitor, machine.ValidityMonitor)));
                 }
 
                 // Send all paxos nodes the other machines.
@@ -184,7 +189,8 @@ namespace MultiPaxos
                 }
 
                 // Create the client node.
-                machine.Client = Machine.Factory.CreateMachine<Client>(machine.PaxosNodes);
+                machine.Client = Machine.Factory.CreateMachine<Client>(new Tuple<List<Machine>, Machine>(
+                    machine.PaxosNodes, machine.ValidityMonitor));
             }
         }
     }
@@ -193,6 +199,8 @@ namespace MultiPaxos
     internal class Client : Machine
     {
         private List<Machine> Servers;
+
+        private Machine ValidityMonitor;
 
         [Initial]
         private class Init : State
@@ -203,9 +211,8 @@ namespace MultiPaxos
 
                 Console.WriteLine("[Client] Initializing ...\n");
 
-                Machine.Factory.CreateMonitor<ValidityCheckMonitor>();
-
-                machine.Servers = (List<Machine>)this.Payload;
+                machine.Servers = ((Tuple<List<Machine>, Machine>)this.Payload).Item1;
+                machine.ValidityMonitor = ((Tuple<List<Machine>, Machine>)this.Payload).Item2;
 
                 this.Raise(new eLocal());
             }
@@ -219,9 +226,9 @@ namespace MultiPaxos
 
                 Console.WriteLine("[Client] Pumping first request ...\n");
 
-                Console.WriteLine("{0} sending event {1} to monitor {2}\n", machine,
+                Console.WriteLine("{0} sending event {1} to {2}\n", machine,
                         typeof(eMonitorClientSent), typeof(ValidityCheckMonitor));
-                this.Invoke<ValidityCheckMonitor>(new eMonitorClientSent(1));
+                this.Send(machine.ValidityMonitor, new eMonitorClientSent(1));
 
                 if (Model.Havoc.Boolean)
                 {
@@ -255,6 +262,9 @@ namespace MultiPaxos
     {
         private Leader CurrentLeader;
         private Machine LeaderElectionService;
+
+        private Machine PaxosMonitor;
+        private Machine ValidityMonitor;
 
         // Proposer fields
         private List<Machine> Acceptors;
@@ -323,9 +333,9 @@ namespace MultiPaxos
                 machine.BroadcastAcceptors(typeof(ePrepare), new Tuple<Machine, Proposal>(
                     machine, machine.NextProposal));
 
-                Console.WriteLine("{0}-{1} sending event {2} to monitor {3}\n", machine, machine.Rank,
+                Console.WriteLine("{0}-{1} sending event {2} to {3}\n", machine, machine.Rank,
                         typeof(eMonitorProposerSent), typeof(ValidityCheckMonitor));
-                this.Invoke<ValidityCheckMonitor>(new eMonitorProposerSent(machine.ProposeValue));
+                this.Send(machine.ValidityMonitor, new eMonitorProposerSent(machine.ProposeValue));
 
                 Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
                     machine, machine.Rank, typeof(eStartTimer), machine.Timer);
@@ -352,14 +362,14 @@ namespace MultiPaxos
                 machine.CountAccept = 0;
                 machine.ProposeValue = machine.GetHighestProposedValue();
 
-                Console.WriteLine("{0}-{1} sending event {2} to monitor {3}\n", machine, machine.Rank,
+                Console.WriteLine("{0}-{1} sending event {2} to {3}\n", machine, machine.Rank,
                         typeof(eMonitorValueProposed), typeof(PaxosInvariantMonitor));
-                this.Invoke<PaxosInvariantMonitor>(new eMonitorValueProposed(new Tuple<Proposal, int>(
+                this.Send(machine.PaxosMonitor, new eMonitorValueProposed(new Tuple<Proposal, int>(
                     machine.NextProposal, machine.ProposeValue)));
 
-                Console.WriteLine("{0}-{1} sending event {2} to monitor {3}\n", machine, machine.Rank,
+                Console.WriteLine("{0}-{1} sending event {2} to {3}\n", machine, machine.Rank,
                         typeof(eMonitorProposerSent), typeof(ValidityCheckMonitor));
-                this.Invoke<ValidityCheckMonitor>(new eMonitorProposerSent(machine.ProposeValue));
+                this.Send(machine.ValidityMonitor, new eMonitorProposerSent(machine.ProposeValue));
 
                 machine.BroadcastAcceptors(typeof(eAccept), new Tuple<Machine, Proposal, int>(
                     machine, machine.NextProposal, machine.ProposeValue));
@@ -386,9 +396,9 @@ namespace MultiPaxos
 
                 Console.WriteLine("[PaxosNode-{0}] DoneProposal ...\n", machine.Rank);
 
-                Console.WriteLine("{0}-{1} sending event {2} to monitor {3}\n", machine, machine.Rank,
+                Console.WriteLine("{0}-{1} sending event {2} to {3}\n", machine, machine.Rank,
                     typeof(eMonitorProposerChosen), typeof(ValidityCheckMonitor));
-                this.Invoke<ValidityCheckMonitor>(new eMonitorProposerChosen(machine.ProposeValue));
+                this.Send(machine.ValidityMonitor, new eMonitorProposerChosen(machine.ProposeValue));
 
                 this.Raise(new eChosen(machine.ProposeValue));
             }
@@ -686,9 +696,9 @@ namespace MultiPaxos
                 {
                     Console.WriteLine("[PaxosNode-{0}] ProposeValuePhase2 (SUCCESS) ...\n", this.Rank);
 
-                    Console.WriteLine("{0}-{1} sending event {2} to monitor {3}\n", this, this.Rank,
+                    Console.WriteLine("{0}-{1} sending event {2} to {3}\n", this, this.Rank,
                             typeof(eMonitorValueChosen), typeof(PaxosInvariantMonitor));
-                    this.Invoke<PaxosInvariantMonitor>(new eMonitorValueChosen(new Tuple<Proposal, int>(
+                    this.Send(this.PaxosMonitor, new eMonitorValueChosen(new Tuple<Proposal, int>(
                         this.NextProposal, this.ProposeValue)));
 
                     Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
@@ -906,7 +916,6 @@ namespace MultiPaxos
     /// If the chosen proposal has value v, then every higher numbered
     /// proposal issued by any proposer has value v.
     /// </summary>
-    [Monitor]
     internal class PaxosInvariantMonitor : Machine
     {
         private Tuple<Proposal, int> LastValueChosen;
@@ -1022,7 +1031,6 @@ namespace MultiPaxos
     /// If the proposed value is from the set send by the client (accept), then
     /// the chosen value is the one proposed by at least one proposer (chosen).
     /// </summary>
-    [Monitor]
     internal class ValidityCheckMonitor : Machine
     {
         private HashSet<int> ClientSet;

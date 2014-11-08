@@ -47,10 +47,8 @@ namespace MultiPaxosRacey
             Runtime.RegisterNewMachine(typeof(PaxosNode));
             Runtime.RegisterNewMachine(typeof(LeaderElection));
             Runtime.RegisterNewMachine(typeof(Timer));
-
-            Console.WriteLine("Registering monitors to the runtime.\n");
-            Runtime.RegisterNewMonitor(typeof(PaxosInvariantMonitor));
-            Runtime.RegisterNewMonitor(typeof(ValidityCheckMonitor));
+            Runtime.RegisterNewMachine(typeof(PaxosInvariantMonitor));
+            Runtime.RegisterNewMachine(typeof(ValidityCheckMonitor));
 
             Console.WriteLine("Configuring the runtime.\n");
             Runtime.Options.Mode = Runtime.Mode.BugFinding;

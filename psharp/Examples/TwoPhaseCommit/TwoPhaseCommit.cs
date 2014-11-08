@@ -134,6 +134,13 @@ namespace TwoPhaseCommit
 
     #endregion
 
+    internal class Message
+    {
+        internal Machine Machine;
+        internal int Item1;
+        internal int Item2;
+    }
+
     #region Machines
 
     [Main]
@@ -199,7 +206,7 @@ namespace TwoPhaseCommit
         private Machine Timer;
 
         private Dictionary<int, int> Data;
-        private Tuple<Machine, int, int> PendingWriteReq;
+        private Message PendingWriteReq;
 
         private int CurrSeqNum;
         private int I;
@@ -283,22 +290,20 @@ namespace TwoPhaseCommit
                         machine.I++;
                     }
 
-                    if (machine.Data.ContainsKey(
-                        machine.PendingWriteReq.Item2))
+                    if (machine.Data.ContainsKey(machine.PendingWriteReq.Item1))
                     {
-                        machine.Data[machine.PendingWriteReq.Item2] =
-                            machine.PendingWriteReq.Item3;
+                        machine.Data[machine.PendingWriteReq.Item1] =
+                            machine.PendingWriteReq.Item2;
                     }
                     else
                     {
-                        machine.Data.Add(machine.PendingWriteReq.Item2,
-                            machine.PendingWriteReq.Item3);
+                        machine.Data.Add(machine.PendingWriteReq.Item1,
+                            machine.PendingWriteReq.Item2);
                     }
 
-                    this.Send(machine.Monitor, new eMONITOR_WRITE(new Tuple<int, int>(
-                        machine.PendingWriteReq.Item2, machine.PendingWriteReq.Item3)));
+                    this.Send(machine.Monitor, new eMONITOR_WRITE(machine.PendingWriteReq));
 
-                    this.Send(machine.PendingWriteReq.Item1, new eWRITE_SUCCESS());
+                    this.Send(machine.PendingWriteReq.Machine, new eWRITE_SUCCESS());
 
                     this.Send(machine.Timer, new eCancelTimer());
 
@@ -386,15 +391,15 @@ namespace TwoPhaseCommit
         {
             Console.WriteLine("[Coordinator] DoWrite ...\n");
 
-            this.PendingWriteReq = (Tuple<Machine, int, int>)this.Payload;
+            this.PendingWriteReq = (Message)this.Payload;
             this.CurrSeqNum++;
 
             this.I = 0;
             while (this.I < this.Replicas.Count)
             {
                 this.Send(this.Replicas[this.I],
-                    new eREQ_REPLICA(new Tuple<int, int, int>(
-                        this.CurrSeqNum, this.PendingWriteReq.Item2, this.PendingWriteReq.Item3)));
+                    new eREQ_REPLICA(new Tuple<int, int, int>(this.CurrSeqNum,
+                    this.PendingWriteReq.Item1, this.PendingWriteReq.Item2)));
                 this.I++;
             }
 

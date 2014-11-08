@@ -42,19 +42,20 @@ namespace MultiPaxos
             Runtime.RegisterNewMachine(typeof(PaxosNode));
             Runtime.RegisterNewMachine(typeof(LeaderElection));
             Runtime.RegisterNewMachine(typeof(Timer));
-
-            Runtime.RegisterNewMonitor(typeof(PaxosInvariantMonitor));
-            Runtime.RegisterNewMonitor(typeof(ValidityCheckMonitor));
+            Runtime.RegisterNewMachine(typeof(PaxosInvariantMonitor));
+            Runtime.RegisterNewMachine(typeof(ValidityCheckMonitor));
 
             Runtime.Start();
             Runtime.Wait();
             Runtime.Dispose();
         }
+
         static void Main(string[] args)
         {
             Go();
         }
     }
+
     public class ChessTest
     {
         public static bool Run()

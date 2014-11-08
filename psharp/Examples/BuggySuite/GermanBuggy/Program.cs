@@ -35,6 +35,7 @@ namespace GermanBuggy
             Runtime.Wait();
             Runtime.Dispose();
         }
+
         static void Main(string[] args)
         {
             Runtime.Test(
@@ -45,9 +46,10 @@ namespace GermanBuggy
                 100,
                 true,
                 Runtime.SchedulingType.Random,
-                false);
+                true);
         }
     }
+
     public class ChessTest
     {
         public static bool Run()

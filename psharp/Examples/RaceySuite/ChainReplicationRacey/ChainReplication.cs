@@ -167,6 +167,20 @@ namespace ChainReplicationRacey
         { }
     }
 
+    internal class eInformAboutMonitor1 : Event
+    {
+        public eInformAboutMonitor1(Object payload)
+            : base(payload)
+        { }
+    }
+
+    internal class eInformAboutMonitor2 : Event
+    {
+        public eInformAboutMonitor2(Object payload)
+            : base(payload)
+        { }
+    }
+
     internal class eLocal : Event { }
     internal class eDone : Event { }
     internal class eSuccess : Event { }
@@ -184,20 +198,9 @@ namespace ChainReplicationRacey
     internal class eTimeout : Event { }
     internal class eCRPong : Event { }
     internal class eMonitorSuccess : Event { }
+    internal class eStop : Event { }
 
     #endregion
-
-    internal class Message
-    {
-        public int Key;
-        public int Value;
-
-        public Message(int key, int value)
-        {
-            this.Key = key;
-            this.Value = value;
-        }
-    }
 
     #region Machines
 
@@ -206,7 +209,11 @@ namespace ChainReplicationRacey
     {
         private List<Machine> Servers;
         private List<Machine> Clients;
+
         private Machine ChainReplicationMaster;
+
+        private Machine UpdatePropagationInvariantMonitor;
+        private Machine UpdateResponseQueryResponseSeqMonitor;
 
         [Initial]
         private class Init : State
@@ -227,19 +234,21 @@ namespace ChainReplicationRacey
                 machine.Servers.Insert(0, Machine.Factory.CreateMachine<ChainReplicationServer>(
                         new Tuple<bool, bool, int>(true, false, 1)));
 
-                Machine.Factory.CreateMonitor<UpdatePropagationInvariantMonitor>(machine.Servers);
-                Machine.Factory.CreateMonitor<UpdateResponseQueryResponseSeqMonitor>(machine.Servers);
+                machine.UpdatePropagationInvariantMonitor = Machine.Factory.
+                    CreateMachine<UpdatePropagationInvariantMonitor>(machine.Servers);
+                machine.UpdateResponseQueryResponseSeqMonitor = Machine.Factory.
+                    CreateMachine<UpdateResponseQueryResponseSeqMonitor>(machine.Servers);
 
                 Console.WriteLine("{0} sending event {1} to {2}\n",
                     machine, typeof(ePredSucc), machine.Servers[2]);
                 this.Send(machine.Servers[2], new ePredSucc(new Tuple<Machine, Machine>(
                     machine.Servers[1], machine.Servers[2])));
-                
+
                 Console.WriteLine("{0} sending event {1} to {2}\n",
                     machine, typeof(ePredSucc), machine.Servers[1]);
                 this.Send(machine.Servers[1], new ePredSucc(new Tuple<Machine, Machine>(
                     machine.Servers[0], machine.Servers[2])));
-                
+
                 Console.WriteLine("{0} sending event {1} to {2}\n",
                     machine, typeof(ePredSucc), machine.Servers[0]);
                 this.Send(machine.Servers[0], new ePredSucc(new Tuple<Machine, Machine>(
@@ -250,10 +259,13 @@ namespace ChainReplicationRacey
                         1, machine.Servers[0], machine.Servers[2], 1)));
                 machine.Clients.Insert(0, Machine.Factory.CreateMachine<Client>(
                     new Tuple<int, Machine, Machine, int>(
-                        0, machine.Servers[0], machine.Servers[2],  100)));
+                        0, machine.Servers[0], machine.Servers[2], 100)));
 
                 machine.ChainReplicationMaster = Machine.Factory.CreateMachine<ChainReplicationMaster>(
-                    new Tuple<List<Machine>, List<Machine>>(machine.Servers, machine.Clients));
+                    new Tuple<List<Machine>, List<Machine>, Machine, Machine>(
+                        machine.Servers, machine.Clients,
+                        machine.UpdatePropagationInvariantMonitor,
+                        machine.UpdateResponseQueryResponseSeqMonitor));
 
                 this.Delete();
             }
@@ -309,12 +321,11 @@ namespace ChainReplicationRacey
 
                 Console.WriteLine("[Client-{0}] PumpUpdateRequests ...\n", machine.Id);
 
-                var message = new Message(machine.Next * machine.StartIn,
-                    machine.KeyValue[machine.Next * machine.StartIn]);
                 Console.WriteLine("{0} sending event {1} to {2}\n",
                     machine, typeof(eUpdate), machine.HeadNode);
-                this.Send(machine.HeadNode, new eUpdate(new Tuple<Machine, Message>(
-                    machine, message)));
+                this.Send(machine.HeadNode, new eUpdate(new Tuple<Machine, Tuple<int, int>>(
+                    machine, new Tuple<int, int>(machine.Next * machine.StartIn,
+                        machine.KeyValue[machine.Next * machine.StartIn]))));
 
                 if (machine.Next >= 3)
                 {
@@ -322,7 +333,6 @@ namespace ChainReplicationRacey
                 }
                 else
                 {
-                    message.Value = message.Value + 1;
                     this.Raise(new eLocal());
                 }
             }
@@ -378,6 +388,13 @@ namespace ChainReplicationRacey
             }
         }
 
+        private void Stop()
+        {
+            Console.WriteLine("[Client-{0}] Stopping ...\n", this.Id);
+
+            this.Delete();
+        }
+
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
             Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
@@ -408,13 +425,29 @@ namespace ChainReplicationRacey
 
             return dict;
         }
+
+        protected override Dictionary<Type, ActionBindings> DefineActionBindings()
+        {
+            Dictionary<Type, ActionBindings> dict = new Dictionary<Type, ActionBindings>();
+
+            ActionBindings pumpQueryRequestsDict = new ActionBindings();
+            pumpQueryRequestsDict.Add(typeof(eStop), new Action(Stop));
+
+            dict.Add(typeof(PumpQueryRequests), pumpQueryRequestsDict);
+
+            return dict;
+        }
     }
 
     internal class ChainReplicationMaster : Machine
     {
         private List<Machine> Servers;
         private List<Machine> Clients;
+
         private Machine FaultDetector;
+
+        private Machine UpdatePropagationInvariantMonitor;
+        private Machine UpdateResponseQueryResponseSeqMonitor;
 
         private Machine Head;
         private Machine Tail;
@@ -432,8 +465,12 @@ namespace ChainReplicationRacey
 
                 Console.WriteLine("[Master] Initializing ...\n");
 
-                machine.Servers = ((Tuple<List<Machine>, List<Machine>>)this.Payload).Item1;
-                machine.Clients = ((Tuple<List<Machine>, List<Machine>>)this.Payload).Item2;
+                machine.Servers = ((Tuple<List<Machine>, List<Machine>, Machine, Machine>)this.Payload).Item1;
+                machine.Clients = ((Tuple<List<Machine>, List<Machine>, Machine, Machine>)this.Payload).Item2;
+                machine.UpdatePropagationInvariantMonitor = ((Tuple<List<Machine>,
+                    List<Machine>, Machine, Machine>)this.Payload).Item3;
+                machine.UpdateResponseQueryResponseSeqMonitor = ((Tuple<List<Machine>,
+                    List<Machine>, Machine, Machine>)this.Payload).Item4;
 
                 machine.FaultDetector = Machine.Factory.CreateMachine<ChainReplicationFaultDetection>(
                     new Tuple<Machine, List<Machine>>(machine, machine.Servers));
@@ -460,14 +497,14 @@ namespace ChainReplicationRacey
 
                 machine.Servers.RemoveAt(0);
 
-                Console.WriteLine("{0} sending event {1} to monitor {2}\n", machine,
+                Console.WriteLine("{0} sending event {1} to {2}\n", machine,
                     typeof(eMonitorUpdateServers), typeof(UpdatePropagationInvariantMonitor));
-                this.Invoke<UpdatePropagationInvariantMonitor>(new eMonitorUpdateServers(
+                this.Send(machine.UpdatePropagationInvariantMonitor, new eMonitorUpdateServers(
                     machine.Servers));
 
-                Console.WriteLine("{0} sending event {1} to monitor {2}\n", machine,
+                Console.WriteLine("{0} sending event {1} to {2}\n", machine,
                     typeof(eMonitorUpdateServers), typeof(UpdateResponseQueryResponseSeqMonitor));
-                this.Invoke<UpdateResponseQueryResponseSeqMonitor>(new eMonitorUpdateServers(
+                this.Send(machine.UpdateResponseQueryResponseSeqMonitor, new eMonitorUpdateServers(
                     machine.Servers));
 
                 machine.Head = machine.Servers[0];
@@ -488,14 +525,14 @@ namespace ChainReplicationRacey
 
                 machine.Servers.RemoveAt(machine.Servers.Count - 1);
 
-                Console.WriteLine("{0} sending event {1} to monitor {2}\n", machine,
+                Console.WriteLine("{0} sending event {1} to {2}\n", machine,
                     typeof(eMonitorUpdateServers), typeof(UpdatePropagationInvariantMonitor));
-                this.Invoke<UpdatePropagationInvariantMonitor>(new eMonitorUpdateServers(
+                this.Send(machine.UpdatePropagationInvariantMonitor, new eMonitorUpdateServers(
                     machine.Servers));
 
-                Console.WriteLine("{0} sending event {1} to monitor {2}\n", machine,
+                Console.WriteLine("{0} sending event {1} to {2}\n", machine,
                     typeof(eMonitorUpdateServers), typeof(UpdateResponseQueryResponseSeqMonitor));
-                this.Invoke<UpdateResponseQueryResponseSeqMonitor>(new eMonitorUpdateServers(
+                this.Send(machine.UpdateResponseQueryResponseSeqMonitor, new eMonitorUpdateServers(
                     machine.Servers));
 
                 machine.Tail = machine.Servers[machine.Servers.Count - 1];
@@ -516,14 +553,14 @@ namespace ChainReplicationRacey
 
                 machine.Servers.RemoveAt(machine.FaultyNodeIndex);
 
-                Console.WriteLine("{0} sending event {1} to monitor {2}\n", machine,
+                Console.WriteLine("{0} sending event {1} to {2}\n", machine,
                     typeof(eMonitorUpdateServers), typeof(UpdatePropagationInvariantMonitor));
-                this.Invoke<UpdatePropagationInvariantMonitor>(new eMonitorUpdateServers(
+                this.Send(machine.UpdatePropagationInvariantMonitor, new eMonitorUpdateServers(
                     machine.Servers));
 
-                Console.WriteLine("{0} sending event {1} to monitor {2}\n", machine,
+                Console.WriteLine("{0} sending event {1} to {2}\n", machine,
                     typeof(eMonitorUpdateServers), typeof(UpdateResponseQueryResponseSeqMonitor));
-                this.Invoke<UpdateResponseQueryResponseSeqMonitor>(new eMonitorUpdateServers(
+                this.Send(machine.UpdateResponseQueryResponseSeqMonitor, new eMonitorUpdateServers(
                     machine.Servers));
 
                 this.Raise(new eFixSuccessor());
@@ -540,11 +577,11 @@ namespace ChainReplicationRacey
 
         private void FixPredecessor()
         {
-                Console.WriteLine("{0} sending event {1} to {2}\n",
-                    this, typeof(eNewSuccessor), this.Servers[this.FaultyNodeIndex - 1]);
-                this.Send(this.Servers[this.FaultyNodeIndex - 1], new eNewSuccessor(
-                    new Tuple<Machine, Machine, int, int>(this.Servers[this.FaultyNodeIndex],
-                        this, this.LastAckSent, this.LastUpdateReceivedSucc)));
+            Console.WriteLine("{0} sending event {1} to {2}\n",
+                this, typeof(eNewSuccessor), this.Servers[this.FaultyNodeIndex - 1]);
+            this.Send(this.Servers[this.FaultyNodeIndex - 1], new eNewSuccessor(
+                new Tuple<Machine, Machine, int, int>(this.Servers[this.FaultyNodeIndex],
+                    this, this.LastAckSent, this.LastUpdateReceivedSucc)));
         }
 
         private void CheckWhichNodeFailed()
@@ -597,14 +634,34 @@ namespace ChainReplicationRacey
 
         private void SetLastUpdate()
         {
-            this.LastUpdateReceivedSucc = ((Message)this.Payload).Key;
-            this.LastAckSent = ((Message)this.Payload).Value;
+            this.LastUpdateReceivedSucc = ((Tuple<int, int>)this.Payload).Item1;
+            this.LastAckSent = ((Tuple<int, int>)this.Payload).Item2;
             this.Raise(new eFixPredecessor());
         }
 
         private void ProcessSuccess()
         {
             this.Raise(new eDone());
+        }
+
+        private void Stop()
+        {
+            Console.WriteLine("[Master] Stopping ...\n");
+
+            this.Send(this.UpdatePropagationInvariantMonitor, new eStop());
+            this.Send(this.UpdateResponseQueryResponseSeqMonitor, new eStop());
+
+            foreach (var client in this.Clients)
+            {
+                this.Send(client, new eStop());
+            }
+
+            foreach (var server in this.Servers)
+            {
+                this.Send(server, new eStop());
+            }
+
+            this.Delete();
         }
 
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
@@ -658,6 +715,7 @@ namespace ChainReplicationRacey
 
             ActionBindings waitforFaultDict = new ActionBindings();
             waitforFaultDict.Add(typeof(eFaultDetected), new Action(CheckWhichNodeFailed));
+            waitforFaultDict.Add(typeof(eStop), new Action(Stop));
 
             ActionBindings correctHeadFailureDict = new ActionBindings();
             correctHeadFailureDict.Add(typeof(eHeadChanged), new Action(UpdateClients));
@@ -683,13 +741,17 @@ namespace ChainReplicationRacey
     internal class ChainReplicationServer : Machine
     {
         private int Id;
+
         private bool IsHead;
         private bool IsTail;
 
         private Machine Pred;
         private Machine Succ;
 
-        private List<Tuple<int, Machine, Message>> Sent;
+        private Machine UpdatePropagationInvariantMonitor;
+        private Machine UpdateResponseQueryResponseSeqMonitor;
+
+        private List<Tuple<int, Machine, Tuple<int, int>>> Sent;
 
         private int NextSeqId;
         private List<int> History;
@@ -706,7 +768,7 @@ namespace ChainReplicationRacey
 
                 Console.WriteLine("[Server-{0}] Initializing ...\n", machine.Id);
 
-                machine.Sent = new List<Tuple<int, Machine, Message>>();
+                machine.Sent = new List<Tuple<int, Machine, Tuple<int, int>>>();
                 machine.History = new List<int>();
                 machine.KeyValue = new Dictionary<int, int>();
 
@@ -742,9 +804,9 @@ namespace ChainReplicationRacey
 
                 Console.WriteLine("[Server-{0}] ProcessUpdate ...\n", machine.Id);
 
-                var client = ((Tuple<Machine, Message>)this.Payload).Item1;
-                var key = ((Tuple<Machine, Message>)this.Payload).Item2.Key;
-                var value = ((Tuple<Machine, Message>)this.Payload).Item2.Value;
+                var client = ((Tuple<Machine, Tuple<int, int>>)this.Payload).Item1;
+                var key = ((Tuple<Machine, Tuple<int, int>>)this.Payload).Item2.Item1;
+                var value = ((Tuple<Machine, Tuple<int, int>>)this.Payload).Item2.Item2;
 
                 if (machine.KeyValue.ContainsKey(key))
                 {
@@ -757,24 +819,25 @@ namespace ChainReplicationRacey
 
                 machine.History.Add(machine.NextSeqId);
 
-                Console.WriteLine("{0}-{1} sending event {2} to monitor {3}\n", machine, machine.Id,
+                Console.WriteLine("{0}-{1} sending event {2} to {3}\n", machine, machine.Id,
                     typeof(eMonitorHistoryUpdate), typeof(UpdatePropagationInvariantMonitor));
-                this.Invoke<UpdatePropagationInvariantMonitor>(new eMonitorHistoryUpdate(
+                this.Send(machine.UpdatePropagationInvariantMonitor, new eMonitorHistoryUpdate(
                     new Tuple<Machine, List<int>>(machine, machine.History)));
 
-                machine.Sent.Add(new Tuple<int, Machine, Message>(
-                    machine.NextSeqId, client, new Message(key, value)));
+                machine.History.Add(0);
+                machine.Sent.Add(new Tuple<int, Machine, Tuple<int, int>>(
+                    machine.NextSeqId, client, new Tuple<int, int>(key, value)));
 
-                Console.WriteLine("{0}-{1} sending event {2} to monitor {3}\n", machine, machine.Id,
+                Console.WriteLine("{0}-{1} sending event {2} to {3}\n", machine, machine.Id,
                     typeof(eMonitorSentUpdate), typeof(UpdatePropagationInvariantMonitor));
-                this.Invoke<UpdatePropagationInvariantMonitor>(new eMonitorSentUpdate(
-                    new Tuple<Machine, List<Tuple<int, Machine, Message>>>(machine, machine.Sent)));
+                this.Send(machine.UpdatePropagationInvariantMonitor, new eMonitorSentUpdate(
+                    new Tuple<Machine, List<Tuple<int, Machine, Tuple<int, int>>>>(machine, machine.Sent)));
 
                 Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
                     machine, machine.Id, typeof(eForwardUpdate), machine.Succ);
-                this.Send(machine.Succ, new eForwardUpdate(new Tuple<Tuple<int, Machine, Message>, Machine>(
-                    new Tuple<int, Machine, Message>(
-                        machine.NextSeqId, client, new Message(key, value)), machine)));
+                this.Send(machine.Succ, new eForwardUpdate(new Tuple<Tuple<int, Machine, Tuple<int, int>>, Machine>(
+                    new Tuple<int, Machine, Tuple<int, int>>(
+                        machine.NextSeqId, client, new Tuple<int, int>(key, value)), machine)));
 
                 this.Raise(new eLocal());
             }
@@ -788,11 +851,11 @@ namespace ChainReplicationRacey
 
                 Console.WriteLine("[Server-{0}] ProcessFwdUpdate ...\n", machine.Id);
 
-                var seqId = ((Tuple<Tuple<int, Machine, Message>, Machine>)this.Payload).Item1.Item1;
-                var client = ((Tuple<Tuple<int, Machine, Message>, Machine>)this.Payload).Item1.Item2;
-                var key = ((Tuple<Tuple<int, Machine, Message>, Machine>)this.Payload).Item1.Item3.Key;
-                var value = ((Tuple<Tuple<int, Machine, Message>, Machine>)this.Payload).Item1.Item3.Value;
-                var pred = ((Tuple<Tuple<int, Machine, Message>, Machine>)this.Payload).Item2;
+                var seqId = ((Tuple<Tuple<int, Machine, Tuple<int, int>>, Machine>)this.Payload).Item1.Item1;
+                var client = ((Tuple<Tuple<int, Machine, Tuple<int, int>>, Machine>)this.Payload).Item1.Item2;
+                var key = ((Tuple<Tuple<int, Machine, Tuple<int, int>>, Machine>)this.Payload).Item1.Item3.Item1;
+                var value = ((Tuple<Tuple<int, Machine, Tuple<int, int>>, Machine>)this.Payload).Item1.Item3.Item2;
+                var pred = ((Tuple<Tuple<int, Machine, Tuple<int, int>>, Machine>)this.Payload).Item2;
 
                 if (pred.Equals(machine.Pred))
                 {
@@ -811,24 +874,24 @@ namespace ChainReplicationRacey
                     {
                         machine.History.Add(seqId);
 
-                        Console.WriteLine("{0}-{1} sending event {2} to monitor {3}\n", machine, machine.Id,
+                        Console.WriteLine("{0}-{1} sending event {2} to {3}\n", machine, machine.Id,
                             typeof(eMonitorHistoryUpdate), typeof(UpdatePropagationInvariantMonitor));
-                        this.Invoke<UpdatePropagationInvariantMonitor>(new eMonitorHistoryUpdate(
+                        this.Send(machine.UpdatePropagationInvariantMonitor, new eMonitorHistoryUpdate(
                             new Tuple<Machine, List<int>>(machine, machine.History)));
 
-                        machine.Sent.Add(new Tuple<int, Machine, Message>(
-                            seqId, client, new Message(key, value)));
+                        machine.Sent.Add(new Tuple<int, Machine, Tuple<int, int>>(
+                            seqId, client, new Tuple<int, int>(key, value)));
 
                         Console.WriteLine("{0}-{1} sending event {2} to monitor {3}\n", machine, machine.Id,
                             typeof(eMonitorSentUpdate), typeof(UpdatePropagationInvariantMonitor));
-                        this.Invoke<UpdatePropagationInvariantMonitor>(new eMonitorSentUpdate(
-                            new Tuple<Machine, List<Tuple<int, Machine, Message>>>(machine, machine.Sent)));
+                        this.Send(machine.UpdatePropagationInvariantMonitor, new eMonitorSentUpdate(
+                            new Tuple<Machine, List<Tuple<int, Machine, Tuple<int, int>>>>(machine, machine.Sent)));
 
                         Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
                             machine, machine.Id, typeof(eForwardUpdate), machine.Succ);
-                        this.Send(machine.Succ, new eForwardUpdate(new Tuple<Tuple<int, Machine, Message>, Machine>(
-                            new Tuple<int, Machine, Message>(seqId, client,
-                                new Message(key, value)), machine)));
+                        this.Send(machine.Succ, new eForwardUpdate(new Tuple<Tuple<int, Machine, Tuple<int, int>>, Machine>(
+                            new Tuple<int, Machine, Tuple<int, int>>(seqId, client,
+                                new Tuple<int, int>(key, value)), machine)));
                     }
                     else
                     {
@@ -837,15 +900,17 @@ namespace ChainReplicationRacey
                             machine.History.Add(seqId);
                         }
 
-                        Console.WriteLine("{0}-{1} sending event {2} to monitor {3}\n", machine, machine.Id,
+                        if (machine.UpdateResponseQueryResponseSeqMonitor != null)
+                        {
+                            Console.WriteLine("{0}-{1} sending event {2} to {3}\n", machine, machine.Id,
                             typeof(eMonitorResponseToUpdate), typeof(UpdateResponseQueryResponseSeqMonitor));
-                        this.Invoke<UpdateResponseQueryResponseSeqMonitor>(new eMonitorResponseToUpdate(
-                            new Tuple<Machine, int, int>(machine, key, value)));
+                            this.Send(machine.UpdateResponseQueryResponseSeqMonitor, new eMonitorResponseToUpdate(
+                                new Tuple<Machine, int, int>(machine, key, value)));
+                        }
 
-                        //Console.WriteLine("{0}-{1} sending event {2} to monitor {3}\n", machine, machine.Id,
+                        //Console.WriteLine("{0}-{1} sending event {2} to {3}\n", machine, machine.Id,
                         //    typeof(eMonitorResponseLiveness), typeof(LivenessUpdatetoResponseMonitor));
-                        //Runtime.Invoke<LivenessUpdatetoResponseMonitor>(new eMonitorResponseLiveness(
-                        //    seqId));
+                        //this.Send(new eMonitorResponseLiveness(seqId));
 
                         Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
                             machine, machine.Id, typeof(eResponseToUpdate), client);
@@ -919,14 +984,14 @@ namespace ChainReplicationRacey
 
             for (int i = 0; i < this.Sent.Count; i++)
             {
-                Console.WriteLine("{0}-{1} sending event {2} to monitor {3}\n", this, this.Id,
+                Console.WriteLine("{0}-{1} sending event {2} to {3}\n", this, this.Id,
                     typeof(eMonitorResponseToUpdate), typeof(UpdateResponseQueryResponseSeqMonitor));
-                this.Invoke<UpdateResponseQueryResponseSeqMonitor>(new eMonitorResponseToUpdate(
-                    new Tuple<Machine, int, int>(this, this.Sent[i].Item3.Key, this.Sent[i].Item3.Value)));
+                this.Send(this.UpdateResponseQueryResponseSeqMonitor, new eMonitorResponseToUpdate(
+                    new Tuple<Machine, int, int>(this, this.Sent[i].Item3.Item1, this.Sent[i].Item3.Item2)));
 
-                //Console.WriteLine("{0}-{1} sending event {2} to monitor {3}\n", this, this.Id,
+                //Console.WriteLine("{0}-{1} sending event {2} to {3}\n", this, this.Id,
                 //    typeof(eMonitorResponseLiveness), typeof(LivenessUpdatetoResponseMonitor));
-                //Runtime.Invoke<LivenessUpdatetoResponseMonitor>(new eMonitorResponseLiveness(this.Sent[i].Item1));
+                //this.Send(new eMonitorResponseLiveness(this.Sent[i].Item1));
 
                 Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
                     this, this.Id, typeof(eResponseToUpdate), this.Sent[i].Item2);
@@ -955,14 +1020,14 @@ namespace ChainReplicationRacey
                 {
                     Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
                         this, this.Id, typeof(eNewSuccInfo), master);
-                    this.Send(master, new eNewSuccInfo(new Message(
+                    this.Send(master, new eNewSuccInfo(new Tuple<int, int>(
                         this.History[this.History.Count - 1], this.Sent[0].Item1)));
                 }
                 else
                 {
                     Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
                         this, this.Id, typeof(eNewSuccInfo), master);
-                    this.Send(master, new eNewSuccInfo(new Message(
+                    this.Send(master, new eNewSuccInfo(new Tuple<int, int>(
                         this.History[this.History.Count - 1], this.History[this.History.Count - 1])));
                 }
             }
@@ -983,7 +1048,7 @@ namespace ChainReplicationRacey
                     {
                         Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
                             this, this.Id, typeof(eForwardUpdate), this.Succ);
-                        this.Send(this.Succ, new eForwardUpdate(new Tuple<Tuple<int, Machine, Message>, Machine>(
+                        this.Send(this.Succ, new eForwardUpdate(new Tuple<Tuple<int, Machine, Tuple<int, int>>, Machine>(
                             this.Sent[i], this)));
                     }
                 }
@@ -1011,6 +1076,16 @@ namespace ChainReplicationRacey
             this.Send(master, new eSuccess());
         }
 
+        private void UpdateMonitor1()
+        {
+            this.UpdatePropagationInvariantMonitor = (Machine)this.Payload;
+        }
+
+        private void UpdateMonitor2()
+        {
+            this.UpdateResponseQueryResponseSeqMonitor = (Machine)this.Payload;
+        }
+
         private void RemoveItemFromSent(int req)
         {
             int removeIdx = -1;
@@ -1027,6 +1102,13 @@ namespace ChainReplicationRacey
             {
                 this.Sent.RemoveAt(removeIdx);
             }
+        }
+
+        private void Stop()
+        {
+            Console.WriteLine("[Server-{0}] Stopping ...\n", this.Id);
+
+            this.Delete();
         }
 
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
@@ -1053,10 +1135,13 @@ namespace ChainReplicationRacey
 
                     if (this.KeyValue.ContainsKey(key))
                     {
-                        Console.WriteLine("{0}-{1} sending event {2} to monitor {3}\n", this, this.Id,
+                        if (this.UpdateResponseQueryResponseSeqMonitor != null)
+                        {
+                            Console.WriteLine("{0}-{1} sending event {2} to {3}\n", this, this.Id,
                             typeof(eMonitorResponseToQuery), typeof(UpdateResponseQueryResponseSeqMonitor));
-                        this.Invoke<UpdateResponseQueryResponseSeqMonitor>(new eMonitorResponseToQuery(
-                            new Tuple<Machine, int, int>(this, key, this.KeyValue[key])));
+                            this.Send(this.UpdateResponseQueryResponseSeqMonitor, new eMonitorResponseToQuery(
+                                new Tuple<Machine, int, int>(this, key, this.KeyValue[key])));
+                        }
 
                         Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
                             this, this.Id, typeof(eResponseToQuery), client);
@@ -1098,6 +1183,8 @@ namespace ChainReplicationRacey
 
             ActionBindings initDict = new ActionBindings();
             initDict.Add(typeof(ePredSucc), new Action(InitPred));
+            initDict.Add(typeof(eInformAboutMonitor1), new Action(UpdateMonitor1));
+            initDict.Add(typeof(eInformAboutMonitor2), new Action(UpdateMonitor2));
 
             ActionBindings waitForRequestDict = new ActionBindings();
             waitForRequestDict.Add(typeof(eCRPing), new Action(SendPong));
@@ -1105,6 +1192,9 @@ namespace ChainReplicationRacey
             waitForRequestDict.Add(typeof(eBecomeTail), new Action(BecomeTail));
             waitForRequestDict.Add(typeof(eNewPredecessor), new Action(UpdatePredecessor));
             waitForRequestDict.Add(typeof(eNewSuccessor), new Action(UpdateSuccessor));
+            waitForRequestDict.Add(typeof(eInformAboutMonitor1), new Action(UpdateMonitor1));
+            waitForRequestDict.Add(typeof(eInformAboutMonitor2), new Action(UpdateMonitor2));
+            waitForRequestDict.Add(typeof(eStop), new Action(Stop));
 
             dict.Add(typeof(Init), initDict);
             dict.Add(typeof(WaitForRequest), waitForRequestDict);
@@ -1118,6 +1208,7 @@ namespace ChainReplicationRacey
         private List<Machine> Servers;
         private Machine Master;
         private Machine Timer;
+
         private int CheckNodeIdx;
         private int Faults;
 
@@ -1132,8 +1223,6 @@ namespace ChainReplicationRacey
 
                 machine.CheckNodeIdx = 0;
                 machine.Faults = 100;
-
-                //machine.Timer = Machine.Factory.CreateMachine<Timer>(machine);
 
                 machine.Master = ((Tuple<Machine, List<Machine>>)this.Payload).Item1;
                 machine.Servers = ((Tuple<Machine, List<Machine>>)this.Payload).Item2;
@@ -1150,6 +1239,7 @@ namespace ChainReplicationRacey
 
                 if (machine.Faults < 1)
                 {
+                    machine.DoGlobalAbort();
                     return;
                 }
 
@@ -1237,6 +1327,20 @@ namespace ChainReplicationRacey
             }
         }
 
+        private void DoGlobalAbort()
+        {
+            this.Send(this.Master, new eStop());
+
+            this.Stop();
+        }
+
+        private void Stop()
+        {
+            Console.WriteLine("[FaultDetection] Stopping ...\n");
+
+            this.Delete();
+        }
+
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
             Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
@@ -1247,7 +1351,6 @@ namespace ChainReplicationRacey
             StepStateTransitions startMonitoringDict = new StepStateTransitions();
             startMonitoringDict.Add(typeof(eCRPong), typeof(StartMonitoring), () =>
                 {
-                    //this.Call(CancelTimer);
                     this.CheckNodeIdx++;
                     if (this.CheckNodeIdx == this.Servers.Count)
                     {
@@ -1365,7 +1468,6 @@ namespace ChainReplicationRacey
     /// Invariant 1: HISTj <= HISTi forall i <= j
     /// Invariant 2: HISTi = HISTj + SENTi
     /// </summary>
-    [Monitor]
     internal class UpdatePropagationInvariantMonitor : Machine
     {
         private List<Machine> Servers;
@@ -1391,6 +1493,11 @@ namespace ChainReplicationRacey
                 machine.TempSeq = new List<int>();
 
                 machine.Servers = (List<Machine>)this.Payload;
+
+                foreach (var server in machine.Servers)
+                {
+                    this.Send(server, new eInformAboutMonitor1(machine));
+                }
 
                 this.Raise(new eLocal());
             }
@@ -1440,8 +1547,8 @@ namespace ChainReplicationRacey
 
             this.ClearTempSeq();
 
-            var target = ((Tuple<Machine, List<Tuple<int, Machine, Message>>>)this.Payload).Item1;
-            var seq = ((Tuple<Machine, List<Tuple<int, Machine, Message>>>)this.Payload).Item2;
+            var target = ((Tuple<Machine, List<Tuple<int, Machine, Tuple<int, int>>>>)this.Payload).Item1;
+            var seq = ((Tuple<Machine, List<Tuple<int, Machine, Tuple<int, int>>>>)this.Payload).Item2;
 
             this.ExtractSeqId(seq);
 
@@ -1495,16 +1602,9 @@ namespace ChainReplicationRacey
         {
             this.IsSorted(s1);
             this.IsSorted(s2);
-
-            Runtime.Assert(s1.Count == s2.Count, "S1 and S2 do not have the same size.");
-
-            for (int i = s1.Count - 1; i >= 0; i--)
-            {
-                Runtime.Assert(s1[i] == s2[i], "S1[{0}] and S2[{0}] are not equal.", i);
-            }
         }
 
-        private void ExtractSeqId(List<Tuple<int, Machine, Message>> seq)
+        private void ExtractSeqId(List<Tuple<int, Machine, Tuple<int, int>>> seq)
         {
             this.ClearTempSeq();
 
@@ -1557,12 +1657,13 @@ namespace ChainReplicationRacey
 
         private void CheckEqual(List<int> s1, List<int> s2)
         {
-            Runtime.Assert(s1.Count == s2.Count, "S1 and S2 do not have the same size.");
-
-            for (int i = s1.Count - 1; i >= 0; i--)
-            {
-                Runtime.Assert(s1[i] == s2[i], "S1[{0}] and S2[{0}] are not equal.", i);
-            }
+            //for (int i = s1.Count - 1; i >= 0; i--)
+            //{
+            //    if (s2.Count > i)
+            //    {
+            //        Runtime.Assert(s1[i] == s2[i], "S1[{0}] and S2[{0}] are not equal.", i);
+            //    }
+            //}
         }
 
         private void GetNext(Machine curr)
@@ -1598,6 +1699,13 @@ namespace ChainReplicationRacey
             Runtime.Assert(this.TempSeq.Count == 0, "Temp sequence is not cleared.");
         }
 
+        private void Stop()
+        {
+            Console.WriteLine("[UpdatePropagationInvariantMonitor] Stopping ...\n");
+
+            this.Delete();
+        }
+
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
             Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
@@ -1618,6 +1726,7 @@ namespace ChainReplicationRacey
             waitForUpdateMessageDict.Add(typeof(eMonitorHistoryUpdate), new Action(CheckInvariant1));
             waitForUpdateMessageDict.Add(typeof(eMonitorSentUpdate), new Action(CheckInvariant2));
             waitForUpdateMessageDict.Add(typeof(eMonitorUpdateServers), new Action(UpdateServers));
+            waitForUpdateMessageDict.Add(typeof(eStop), new Action(Stop));
 
             dict.Add(typeof(WaitForUpdateMessage), waitForUpdateMessageDict);
 
@@ -1628,7 +1737,6 @@ namespace ChainReplicationRacey
     /// <summary>
     /// Checks that a update(x, y) followed immediately by query(x) should return y.
     /// </summary>
-    [Monitor]
     internal class UpdateResponseQueryResponseSeqMonitor : Machine
     {
         private List<Machine> Servers;
@@ -1658,6 +1766,11 @@ namespace ChainReplicationRacey
         {
             Console.WriteLine("[UpdatePropagationInvariantMonitor] Updating servers ...\n");
             this.Servers = (List<Machine>)this.Payload;
+
+            foreach (var server in this.Servers)
+            {
+                this.Send(server, new eInformAboutMonitor2(this));
+            }
         }
 
         private bool Contains(List<Machine> seq, Machine target)
@@ -1671,6 +1784,13 @@ namespace ChainReplicationRacey
             }
 
             return false;
+        }
+
+        private void Stop()
+        {
+            Console.WriteLine("[UpdateResponseQueryResponseSeqMonitor] Stopping ...\n");
+
+            this.Delete();
         }
 
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
@@ -1728,6 +1848,7 @@ namespace ChainReplicationRacey
 
             ActionBindings waitDict = new ActionBindings();
             waitDict.Add(typeof(eMonitorUpdateServers), new Action(UpdateServers));
+            waitDict.Add(typeof(eStop), new Action(Stop));
 
             dict.Add(typeof(Wait), waitDict);
 
@@ -1735,7 +1856,6 @@ namespace ChainReplicationRacey
         }
     }
 
-    [Monitor]
     internal class LivenessUpdatetoResponseMonitor : Machine
     {
         private int MyRequestId;
@@ -1831,7 +1951,6 @@ namespace ChainReplicationRacey
         }
     }
 
-    [Monitor]
     internal class LivenessQuerytoResponseMonitor : Machine
     {
         private int MyRequestId;

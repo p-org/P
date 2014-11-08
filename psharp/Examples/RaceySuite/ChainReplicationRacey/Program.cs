@@ -58,6 +58,7 @@ namespace ChainReplicationRacey
             Runtime.RegisterNewEvent(typeof(eTimeout));
             Runtime.RegisterNewEvent(typeof(eCRPong));
             Runtime.RegisterNewEvent(typeof(eMonitorSuccess));
+            Runtime.RegisterNewEvent(typeof(eStop));
 
             Console.WriteLine("Registering state machines to the runtime.\n");
             Runtime.RegisterNewMachine(typeof(GodMachine));

@@ -54,6 +54,7 @@ namespace ChordBuggy
             Runtime.Test(
                 () =>
                 {
+                    Runtime.Options.UnsoundScheduling = true;
                     Go();
                 },
                 100,

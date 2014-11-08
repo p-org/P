@@ -183,12 +183,38 @@ namespace ChordBuggy
 
                 for (int idx = 0; idx < machine.Nodes.Count; idx++)
                 {
+                    Dictionary<int, List<int>> copiedNodeKeys = new Dictionary<int, List<int>>();
+                    foreach (var nodeKey in nodeKeys)
+                    {
+                        List<int> copiedKeys = new List<int>();
+                        foreach (var key in machine.Keys)
+                        {
+                            copiedKeys.Add(key);
+                        }
+
+                        copiedNodeKeys.Add(nodeKey.Key, copiedKeys);
+                    }
+
+                    var keys = copiedNodeKeys[machine.NodeIds[idx]];
+
+                    List<int> copiedIds = new List<int>();
+                    foreach (var id in machine.NodeIds)
+                    {
+                        copiedIds.Add(id);
+                    }
+
                     this.Send(machine.Nodes[idx], new eConfigure(new Tuple<List<int>, List<Machine>, List<int>>(
-                        machine.NodeIds, machine.Nodes, nodeKeys[machine.NodeIds[idx]])));
+                        copiedIds, machine.Nodes, keys)));
+                }
+
+                List<int> copiedKeys2 = new List<int>();
+                foreach (var key in machine.Keys)
+                {
+                    copiedKeys2.Add(key);
                 }
 
                 machine.Client = Machine.Factory.CreateMachine<Client>(new Tuple<Machine, List<int>>(
-                    machine, machine.Keys));
+                    machine, copiedKeys2));
 
                 this.Raise(new eLocal());
             }

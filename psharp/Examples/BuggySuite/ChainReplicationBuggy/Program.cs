@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace ChainReplication
+namespace ChainReplicationBuggy
 {
     /// <summary>
     /// This is an example of usign P#.

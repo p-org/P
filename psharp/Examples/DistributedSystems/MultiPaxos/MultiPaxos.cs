@@ -118,6 +118,7 @@ namespace MultiPaxos
     internal class eCancelTimer : Event { }
     internal class eCancelTimerSuccess : Event { }
     internal class eTimeout : Event { }
+    internal class eStop : Event { }
 
     #endregion
 
@@ -191,7 +192,31 @@ namespace MultiPaxos
                 // Create the client node.
                 machine.Client = Machine.Factory.CreateMachine<Client>(new Tuple<List<Machine>, Machine>(
                     machine.PaxosNodes, machine.ValidityMonitor));
+
+                this.Raise(new eLocal());
             }
+        }
+
+        private class End : State
+        {
+            protected override void OnEntry()
+            {
+                Console.WriteLine("[GodMachine] Ending ...\n");
+
+                this.Delete();
+            }
+        }
+
+        protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
+        {
+            Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
+
+            StepStateTransitions initDict = new StepStateTransitions();
+            initDict.Add(typeof(eLocal), typeof(End));
+
+            dict.Add(typeof(Init), initDict);
+
+            return dict;
         }
     }
 
@@ -242,6 +267,18 @@ namespace MultiPaxos
                         machine.Servers[machine.Servers.Count - 1], machine.Servers.Count - 1);
                     this.Send(machine.Servers[machine.Servers.Count - 1], new eUpdate(new Tuple<int, int>(0, 1)));
                 }
+
+                this.Raise(new eLocal());
+            }
+        }
+
+        private class End : State
+        {
+            protected override void OnEntry()
+            {
+                Console.WriteLine("[Client] Stopping ...\n");
+
+                this.Delete();
             }
         }
 
@@ -252,7 +289,11 @@ namespace MultiPaxos
             StepStateTransitions initDict = new StepStateTransitions();
             initDict.Add(typeof(eLocal), typeof(PumpRequestOne));
 
+            StepStateTransitions pumpRequestOneDict = new StepStateTransitions();
+            pumpRequestOneDict.Add(typeof(eLocal), typeof(End));
+
             dict.Add(typeof(Init), initDict);
+            dict.Add(typeof(PumpRequestOne), pumpRequestOneDict);
 
             return dict;
         }
@@ -270,7 +311,9 @@ namespace MultiPaxos
         private List<Machine> Acceptors;
         private Machine Timer;
         private Proposal NextProposal;
+
         private Tuple<Proposal, int> ReceivedAgree;
+
         private int Rank;
         private int ProposeValue;
         private int Majority;
@@ -288,7 +331,9 @@ namespace MultiPaxos
             {
                 var machine = this.Machine as PaxosNode;
 
-                machine.Rank = (int)this.Payload;
+                machine.Rank = ((Tuple<int, Machine, Machine>)this.Payload).Item1;
+                machine.PaxosMonitor = ((Tuple<int, Machine, Machine>)this.Payload).Item2;
+                machine.ValidityMonitor = ((Tuple<int, Machine, Machine>)this.Payload).Item3;
 
                 Console.WriteLine("[PaxosNode-{0}] Initializing ...\n", machine.Rank);
 
@@ -330,8 +375,13 @@ namespace MultiPaxos
                 machine.NextProposal = machine.GetNextProposal(machine.MaxRound);
                 machine.ReceivedAgree = new Tuple<Proposal, int>(new Proposal(-1, -1), -1);
 
-                machine.BroadcastAcceptors(typeof(ePrepare), new Tuple<Machine, Proposal>(
-                    machine, machine.NextProposal));
+                for (int i = 0; i < machine.Acceptors.Count; i++)
+                {
+                    Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
+                        this, machine.Rank, typeof(ePrepare), machine.Acceptors[i]);
+                    this.Send(machine.Acceptors[i], new ePrepare(new Tuple<Machine, Proposal>(
+                    machine, machine.NextProposal)));
+                }
 
                 Console.WriteLine("{0}-{1} sending event {2} to {3}\n", machine, machine.Rank,
                         typeof(eMonitorProposerSent), typeof(ValidityCheckMonitor));
@@ -367,12 +417,22 @@ namespace MultiPaxos
                 this.Send(machine.PaxosMonitor, new eMonitorValueProposed(new Tuple<Proposal, int>(
                     machine.NextProposal, machine.ProposeValue)));
 
-                Console.WriteLine("{0}-{1} sending event {2} to {3}\n", machine, machine.Rank,
+                Console.WriteLine("{0}-{1} TEST 1sending event {2} to {3}\n", machine, machine.Rank,
                         typeof(eMonitorProposerSent), typeof(ValidityCheckMonitor));
                 this.Send(machine.ValidityMonitor, new eMonitorProposerSent(machine.ProposeValue));
 
-                machine.BroadcastAcceptors(typeof(eAccept), new Tuple<Machine, Proposal, int>(
-                    machine, machine.NextProposal, machine.ProposeValue));
+                for (int i = 0; i < machine.Acceptors.Count; i++)
+                {
+                    Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
+                        this, machine.Rank, typeof(eAccept), machine.Acceptors[i]);
+                    this.Send(machine.Acceptors[i], new eAccept(new Tuple<Machine, Proposal, int>(
+                    machine, machine.NextProposal, machine.ProposeValue)));
+                }
+
+                Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
+                        this, machine.Rank, typeof(eAccept), machine.Acceptors[0]);
+                this.Send(machine.Acceptors[0], new eAccept(new Tuple<Machine, Proposal, int>(
+                machine, machine.NextProposal, machine.ProposeValue)));
 
                 Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
                     machine, machine.Rank, typeof(eStartTimer), machine.Timer);
@@ -410,7 +470,9 @@ namespace MultiPaxos
             {
                 var machine = this.Machine as PaxosNode;
 
-                Console.WriteLine("[PaxosNode-{0}] RunLearner (doing nothing) ...\n", machine.Rank);
+                Console.WriteLine("[PaxosNode-{0}] RunLearner ...\n", machine.Rank);
+
+                machine.DoGlobalStop();
             }
 
             protected override HashSet<Type> DefineIgnoredEvents()
@@ -573,16 +635,6 @@ namespace MultiPaxos
             }
         }
 
-        private void BroadcastAcceptors(Type e, Object pay)
-        {
-            for (int i = 0; i < this.Acceptors.Count; i++)
-            {
-                Console.WriteLine("{0}-{1} sending event {2} to {3}\n",
-                    this, this.Rank, e, this.Acceptors[i]);
-                this.Send(this.Acceptors[i], Activator.CreateInstance(e, pay) as Event);
-            }
-        }
-
         private int GetHighestProposedValue()
         {
             if (this.ReceivedAgree.Item2 != -1)
@@ -635,6 +687,29 @@ namespace MultiPaxos
             }
         }
 
+        private void DoGlobalStop()
+        {
+            foreach (var acceptor in this.Acceptors)
+            {
+                this.Send(acceptor, new eStop());
+            }
+
+            this.Send(this.PaxosMonitor, new eStop());
+            this.Send(this.ValidityMonitor, new eStop());
+
+            this.Stop();
+        }
+
+        private void Stop()
+        {
+            Console.WriteLine("[PaxosNode-{0}] Stopping ...\n", this.Rank);
+
+            this.Send(this.Timer, new eStop());
+            this.Send(this.LeaderElectionService, new eStop());
+
+            this.Delete();
+        }
+
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
             Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
@@ -643,7 +718,7 @@ namespace MultiPaxos
             initDict.Add(typeof(eLocal), typeof(PerformOperation));
 
             StepStateTransitions performOperationDict = new StepStateTransitions();
-            performOperationDict.Add(typeof(eChosen), typeof(RunLearner));
+            performOperationDict.Add(typeof(eGoPropose), typeof(ProposeValuePhase1));
 
             // Step transitions for ProposeValuePhase1
             StepStateTransitions proposeValuePhase1Dict = new StepStateTransitions();
@@ -708,24 +783,14 @@ namespace MultiPaxos
 
             proposeValuePhase2Dict.Add(typeof(eTimeout), typeof(ProposeValuePhase1));
 
+            StepStateTransitions doneProposalDict = new StepStateTransitions();
+            doneProposalDict.Add(typeof(eChosen), typeof(RunLearner));
+
             dict.Add(typeof(Init), initDict);
             dict.Add(typeof(PerformOperation), performOperationDict);
             dict.Add(typeof(ProposeValuePhase1), proposeValuePhase1Dict);
             dict.Add(typeof(ProposeValuePhase2), proposeValuePhase2Dict);
-
-            return dict;
-        }
-
-        protected override Dictionary<Type, CallStateTransitions> DefineCallStateTransitions()
-        {
-            Dictionary<Type, CallStateTransitions> dict = new Dictionary<Type, CallStateTransitions>();
-
-            // Call transitions for PerformOperation
-            CallStateTransitions performOperationDict = new CallStateTransitions();
-            // Proposer
-            performOperationDict.Add(typeof(eGoPropose), typeof(ProposeValuePhase1));
-
-            dict.Add(typeof(PerformOperation), performOperationDict);
+            dict.Add(typeof(DoneProposal), doneProposalDict);
 
             return dict;
         }
@@ -747,14 +812,17 @@ namespace MultiPaxos
             // Leader Election
             performOperationDict.Add(typeof(ePing), new Action(ForwardToLE));
             performOperationDict.Add(typeof(eNewLeader), new Action(UpdateLeader));
+            performOperationDict.Add(typeof(eStop), new Action(Stop));
 
             // Action bindings for ProposeValuePhase1
             ActionBindings proposeValuePhase1Dict = new ActionBindings();
             proposeValuePhase1Dict.Add(typeof(eAgree), new Action(CheckCountAgree));
+            proposeValuePhase1Dict.Add(typeof(ePrepare), new Action(Prepare));
 
             // Action bindings for ProposeValuePhase2
             ActionBindings proposeValuePhase2Dict = new ActionBindings();
             proposeValuePhase2Dict.Add(typeof(eAccepted), new Action(CheckCountAccepted));
+            proposeValuePhase2Dict.Add(typeof(eAccept), new Action(Accept));
 
             dict.Add(typeof(Init), initDict);
             dict.Add(typeof(PerformOperation), performOperationDict);
@@ -816,6 +884,13 @@ namespace MultiPaxos
             return new Leader(1, this.Servers[0]);
         }
 
+        private void Stop()
+        {
+            Console.WriteLine("[LeaderElection-{0}] Stopping ...\n", this.Rank);
+
+            this.Delete();
+        }
+
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
             Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
@@ -824,6 +899,18 @@ namespace MultiPaxos
             initDict.Add(typeof(eLocal), typeof(SendLeader));
 
             dict.Add(typeof(Init), initDict);
+
+            return dict;
+        }
+
+        protected override Dictionary<Type, ActionBindings> DefineActionBindings()
+        {
+            Dictionary<Type, ActionBindings> dict = new Dictionary<Type, ActionBindings>();
+
+            ActionBindings sendLeaderDict = new ActionBindings();
+            sendLeaderDict.Add(typeof(eStop), new Action(Stop));
+
+            dict.Add(typeof(SendLeader), sendLeaderDict);
 
             return dict;
         }
@@ -888,6 +975,13 @@ namespace MultiPaxos
             }
         }
 
+        private void Stop()
+        {
+            Console.WriteLine("[Timer] Stopping ...\n");
+
+            this.Delete();
+        }
+
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
             Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
@@ -903,6 +997,22 @@ namespace MultiPaxos
             startedDict.Add(typeof(eCancelTimer), typeof(Loop));
 
             dict.Add(typeof(Init), initDict);
+            dict.Add(typeof(Loop), loopDict);
+            dict.Add(typeof(Started), startedDict);
+
+            return dict;
+        }
+
+        protected override Dictionary<Type, ActionBindings> DefineActionBindings()
+        {
+            Dictionary<Type, ActionBindings> dict = new Dictionary<Type, ActionBindings>();
+
+            ActionBindings loopDict = new ActionBindings();
+            loopDict.Add(typeof(eStop), new Action(Stop));
+
+            ActionBindings startedDict = new ActionBindings();
+            startedDict.Add(typeof(eStop), new Action(Stop));
+
             dict.Add(typeof(Loop), loopDict);
             dict.Add(typeof(Started), startedDict);
 
@@ -973,6 +1083,13 @@ namespace MultiPaxos
             }
         }
 
+        private void Stop()
+        {
+            Console.WriteLine("[PaxosInvariantMonitor] Stopping ...\n");
+
+            this.Delete();
+        }
+
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
             Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
@@ -1018,6 +1135,22 @@ namespace MultiPaxos
             });
 
             dict.Add(typeof(Init), initDict);
+            dict.Add(typeof(WaitForValueChosen), waitForValueChosenDict);
+            dict.Add(typeof(CheckValueProposed), checkValueProposedDict);
+
+            return dict;
+        }
+
+        protected override Dictionary<Type, ActionBindings> DefineActionBindings()
+        {
+            Dictionary<Type, ActionBindings> dict = new Dictionary<Type, ActionBindings>();
+
+            ActionBindings waitForValueChosenDict = new ActionBindings();
+            waitForValueChosenDict.Add(typeof(eStop), new Action(Stop));
+
+            ActionBindings checkValueProposedDict = new ActionBindings();
+            checkValueProposedDict.Add(typeof(eStop), new Action(Stop));
+
             dict.Add(typeof(WaitForValueChosen), waitForValueChosenDict);
             dict.Add(typeof(CheckValueProposed), checkValueProposedDict);
 
@@ -1076,6 +1209,13 @@ namespace MultiPaxos
             Runtime.Assert(this.ProposedSet.Contains(value), "{0} does not exist in Proposed Set", value);
         }
 
+        private void Stop()
+        {
+            Console.WriteLine("[ValidityCheckMonitor] Stopping ...\n");
+
+            this.Delete();
+        }
+
         protected override Dictionary<Type, StepStateTransitions> DefineStepStateTransitions()
         {
             Dictionary<Type, StepStateTransitions> dict = new Dictionary<Type, StepStateTransitions>();
@@ -1096,6 +1236,7 @@ namespace MultiPaxos
             waitDict.Add(typeof(eMonitorClientSent), new Action(AddClientSet));
             waitDict.Add(typeof(eMonitorProposerSent), new Action(AddProposerSet));
             waitDict.Add(typeof(eMonitorProposerChosen), new Action(CheckChosenValidity));
+            waitDict.Add(typeof(eStop), new Action(Stop));
 
             dict.Add(typeof(Wait), waitDict);
 

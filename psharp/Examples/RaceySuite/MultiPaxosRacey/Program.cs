@@ -40,6 +40,7 @@ namespace MultiPaxosRacey
             Runtime.RegisterNewEvent(typeof(eCancelTimer));
             Runtime.RegisterNewEvent(typeof(eCancelTimerSuccess));
             Runtime.RegisterNewEvent(typeof(eTimeout));
+            Runtime.RegisterNewEvent(typeof(eStop));
 
             Console.WriteLine("Registering state machines to the runtime.\n");
             Runtime.RegisterNewMachine(typeof(GodMachine));

@@ -58,7 +58,7 @@ namespace MultiPaxosBuggy
                 {
                     Go();
                 },
-                10,
+                100,
                 true,
                 Runtime.SchedulingType.Random,
                 false);

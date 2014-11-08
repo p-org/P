@@ -36,6 +36,7 @@ namespace MultiPaxos
             Runtime.RegisterNewEvent(typeof(eCancelTimer));
             Runtime.RegisterNewEvent(typeof(eCancelTimerSuccess));
             Runtime.RegisterNewEvent(typeof(eTimeout));
+            Runtime.RegisterNewEvent(typeof(eStop));
 
             Runtime.RegisterNewMachine(typeof(GodMachine));
             Runtime.RegisterNewMachine(typeof(Client));

@@ -25,6 +25,7 @@ namespace LeaderElectionBuggy
             Runtime.Wait();
             Runtime.Dispose();
         }
+
         static void Main(string[] args)
         {
             Runtime.Test(
@@ -38,6 +39,7 @@ namespace LeaderElectionBuggy
                 false);
         }
     }
+
     public class ChessTest
     {
         public static bool Run()

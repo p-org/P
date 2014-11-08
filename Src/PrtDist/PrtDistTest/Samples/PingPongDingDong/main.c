@@ -42,10 +42,13 @@ void Log(PRT_STEP step, void *vcontext)
 
 void main()
 {
+        PRT_PROCESS *process;
 	PRT_GUID processGuid;
 	processGuid.data1 = 1;
 	processGuid.data2 = 0;
 	processGuid.data3 = 0;
 	processGuid.data4 = 0;
-	PrtMkMachine(PrtStartProcess(processGuid, &P_GEND_PROGRAM, ErrorHandler, Log), _P_MACHINE_MAIN, PrtMkNullValue());
+	process = PrtStartProcess(processGuid, &P_GEND_PROGRAM, ErrorHandler, Log);
+	PrtMkMachine(process, _P_MACHINE_MAIN, PrtMkNullValue());
+	PrtStopProcess(process);
 }

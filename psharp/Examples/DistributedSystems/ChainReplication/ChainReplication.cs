@@ -983,10 +983,13 @@ namespace ChainReplication
 
             for (int i = 0; i < this.Sent.Count; i++)
             {
-                Console.WriteLine("{0}-{1} sending event {2} to {3}\n", this, this.Id,
+                if (this.UpdateResponseQueryResponseSeqMonitor != null)
+                {
+                    Console.WriteLine("{0}-{1} sending event {2} to {3}\n", this, this.Id,
                     typeof(eMonitorResponseToUpdate), typeof(UpdateResponseQueryResponseSeqMonitor));
-                this.Send(this.UpdateResponseQueryResponseSeqMonitor, new eMonitorResponseToUpdate(
-                    new Tuple<Machine, int, int>(this, this.Sent[i].Item3.Item1, this.Sent[i].Item3.Item2)));
+                    this.Send(this.UpdateResponseQueryResponseSeqMonitor, new eMonitorResponseToUpdate(
+                        new Tuple<Machine, int, int>(this, this.Sent[i].Item3.Item1, this.Sent[i].Item3.Item2)));
+                }
 
                 //Console.WriteLine("{0}-{1} sending event {2} to {3}\n", this, this.Id,
                 //    typeof(eMonitorResponseLiveness), typeof(LivenessUpdatetoResponseMonitor));

@@ -1874,7 +1874,7 @@ namespace Microsoft.Pc
 
         private ZingTranslationInfo ZingFold(ZingFoldContext ctxt, Node n, IEnumerable<ZingTranslationInfo> children)
         {
-            if (n.NodeKind == NodeKind.Id)
+            if (n.NodeKind == NodeKind.Id || n.NodeKind == NodeKind.Cnst)
                 return new ZingTranslationInfo(ZingData.Cnst_Nil);
 
             var ft = (FuncTerm)n;

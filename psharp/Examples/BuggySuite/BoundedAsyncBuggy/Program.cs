@@ -31,15 +31,15 @@ namespace BoundedAsyncBuggy
 
         static void Main(string[] args)
         {
-            Runtime.Test(
-                () =>
-                {
+            //Runtime.Test(
+            //    () =>
+            //    {
                     Go();
-                },
-                100,
-                true,
-                Runtime.SchedulingType.Random,
-                false);
+                //},
+                //100,
+                //true,
+                //Runtime.SchedulingType.Random,
+                //false);
         }
     }
 

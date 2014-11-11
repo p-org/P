@@ -80,16 +80,21 @@ namespace Microsoft.PSharp
             {
                 bool result = false;
 
-                if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
+                if (Runtime.Options.Mode == Runtime.Mode.Replay)
+                {
+                    result = Model.NDBooleanChoices[0];
+                    Model.NDBooleanChoices.RemoveAt(0);
+                }
+                else if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
                 {
                     if (Havoc.UnsignedInteger(2) == 1)
                         result = true;
                     Model.NDBooleanChoices.Add(result);
                 }
-                else if (Runtime.Options.Mode == Runtime.Mode.Replay)
+                else
                 {
-                    result = Model.NDBooleanChoices[0];
-                    Model.NDBooleanChoices.RemoveAt(0);
+                    if (Havoc.UnsignedInteger(2) == 1)
+                        result = true;
                 }
 
                 return result;

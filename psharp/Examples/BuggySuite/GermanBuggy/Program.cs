@@ -41,6 +41,7 @@ namespace GermanBuggy
             Runtime.Test(
                 () =>
                 {
+                    Runtime.Options.UnsoundScheduling = true;
                     Go();
                 },
                 100,

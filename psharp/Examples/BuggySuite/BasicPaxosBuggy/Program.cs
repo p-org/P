@@ -37,6 +37,7 @@ namespace BasicPaxosBuggy
             Runtime.Wait();
             Runtime.Dispose();
         }
+
         static void Main(string[] args)
         {
             Runtime.Test(
@@ -45,11 +46,12 @@ namespace BasicPaxosBuggy
                     Go();
                 },
                 1000,
-                true,
+                false,
                 Runtime.SchedulingType.Random,
-                false);
+                true);
         }
     }
+
     public class ChessTest
     {
         public static bool Run()

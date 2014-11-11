@@ -53,11 +53,10 @@ namespace TwoPhaseCommitBuggy
             Runtime.Test(
                 () =>
                 {
-                    //Runtime.Options.UnsoundScheduling = true;
                     Go();
                 },
                 100,
-                true,
+                false,
                 Runtime.SchedulingType.Random,
                 true);
         }

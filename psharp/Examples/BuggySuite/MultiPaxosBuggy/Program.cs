@@ -53,15 +53,15 @@ namespace MultiPaxosBuggy
 
         static void Main(string[] args)
         {
-            Runtime.Test(
-                () =>
-                {
+            //Runtime.Test(
+            //    () =>
+            //    {
                     Go();
-                },
-                10,
-                true,
-                Runtime.SchedulingType.Random,
-                false);
+                //},
+                //10,
+                //true,
+                //Runtime.SchedulingType.Random,
+                //false);
         }
     }
 

@@ -51,9 +51,9 @@ namespace RaftBuggy
                     Go();
                 },
                 100,
-                true,
+                false,
                 Runtime.SchedulingType.Random,
-                false);
+                true);
         }
     }
     public class ChessTest

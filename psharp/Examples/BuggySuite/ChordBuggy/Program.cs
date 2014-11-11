@@ -58,7 +58,7 @@ namespace ChordBuggy
                     Go();
                 },
                 100,
-                true,
+                false,
                 Runtime.SchedulingType.Random,
                 false);
         }

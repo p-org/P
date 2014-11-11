@@ -270,11 +270,12 @@ namespace ChordBuggy
         private void CreateNewNode()
         {
             int newId = -1;
-            Random random = new Random();
+            //Random random = new Random();
             while ((newId < 0 || this.NodeIds.Contains(newId)) &&
                 this.NodeIds.Count < this.NumOfId)
             {
-                newId = random.Next(this.NumOfId);
+                //newId = random.Next(this.NumOfId);
+                newId = Model.Havoc.Integer(this.NumOfId);
             }
 
             if (newId < 0)
@@ -318,11 +319,12 @@ namespace ChordBuggy
             Console.WriteLine("[Cluster] Triggering a failure ...\n");
 
             int failId = -1;
-            Random random = new Random(0);
+            //Random random = new Random(0);
             while ((failId < 0 || !this.NodeIds.Contains(failId)) &&
                 this.NodeIds.Count > 0)
             {
-                failId = random.Next(this.NumOfId);
+                failId = Model.Havoc.Integer(this.NumOfId);
+                //failId = random.Next(this.NumOfId);
             }
 
             if (failId < 0)
@@ -907,8 +909,9 @@ namespace ChordBuggy
                 {
                     Console.WriteLine("[Client] Querying ...\n");
 
-                    Random random = new Random(0);
-                    var randomValue = random.Next(machine.Keys.Count);
+                    //Random random = new Random(0);
+                    var randomValue = Model.Havoc.Integer(machine.Keys.Count);
+                    //var randomValue = random.Next(machine.Keys.Count);
                     machine.QueryKey = machine.Keys[randomValue];
 
                     this.Send(machine.Cluster, new eFindSuccessor(new Tuple<Machine, int>(

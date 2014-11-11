@@ -518,7 +518,7 @@ namespace MultiPaxosBuggy
                 this.ProposeValue = ((Tuple<int, int>)this.Payload).Item2;
                 this.Raise(new eGoPropose());
             }
-            else
+            else if (this.CurrentLeader.Server != null)
             {
                 Console.WriteLine("{0}-{1} sending event {2} to {3}\n", this, this.Rank,
                     typeof(eUpdate), this.CurrentLeader.Server);

@@ -651,11 +651,12 @@ namespace TwoPhaseCommit
                 machine.Idx = machine.ChooseIndex();
                 machine.Val = machine.ChooseValue();
 
-                this.Send(machine.Coordinator, new eWRITE_REQ(
-                    new Tuple<Machine, int, int>(
-                        this.Machine,
-                        machine.Idx,
-                        machine.Val)));
+                var msg = new Message();
+                msg.Machine = this.Machine;
+                msg.Item1 = machine.Idx;
+                msg.Item2 = machine.Val;
+
+                this.Send(machine.Coordinator, new eWRITE_REQ(msg));
             }
         }
 
@@ -789,10 +790,12 @@ namespace TwoPhaseCommit
         {
             Console.WriteLine("[Monitor] DoWrite ...\n");
 
-            if (this.Data.ContainsKey(((Tuple<int, int>)this.Payload).Item1))
-                this.Data[((Tuple<int, int>)this.Payload).Item1] = ((Tuple<int, int>)this.Payload).Item2;
+            var msg = (Message)this.Payload;
+
+            if (this.Data.ContainsKey(msg.Item1))
+                this.Data[msg.Item1] = msg.Item2;
             else
-                this.Data.Add(((Tuple<int, int>)this.Payload).Item1, ((Tuple<int, int>)this.Payload).Item2);
+                this.Data.Add(msg.Item1, msg.Item2);
         }
 
         private void CheckReadSuccess()

@@ -1,7 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: Writing twophasecommit_p_.h ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
 OUT: Writing two-phase-commit.zing ...
 OUT: Compiling two-phase-commit.zing to two-phase-commit.dll ...
 OUT: two-phase-commit.p (27, 4): inferred type:  BaseType(REAL)
@@ -17,6 +18,7 @@ OUT: two-phase-commit.p (41, 10): inferred type:  BaseType(REAL)
 OUT: two-phase-commit.p (41, 18): inferred type:  BaseType(EVENT)
 OUT: two-phase-commit.p (42, 5): inferred type:  NIL
 OUT: two-phase-commit.p (42, 11): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit.p (45, 3): inferred type:  NIL
 OUT: two-phase-commit.p (47, 4): inferred type:  NIL
 OUT: two-phase-commit.p (47, 8): inferred type:  BaseType(BOOL)
 OUT: two-phase-commit.p (48, 5): inferred type:  NIL
@@ -294,7 +296,7 @@ OUT: two-phase-commit.p (207, 9): inferred type:  BaseType(REAL)
 OUT: two-phase-commit.p (207, 16): inferred type:  BaseType(EVENT)
 OUT: two-phase-commit.p (208, 4): inferred type:  NIL
 OUT: two-phase-commit.p (208, 10): inferred type:  BaseType(EVENT)
-OUT: two-phase-commit.p (220, 3): inferred type:  NIL
+OUT: two-phase-commit.p (222, 3): inferred type:  NIL
 OUT: two-phase-commit.p (230, 10): inferred type:  BaseType(REAL)
 OUT: two-phase-commit.p (230, 10): inferred type:  NIL
 OUT: two-phase-commit.p (230, 24): inferred type:  BaseType(ANY)

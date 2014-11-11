@@ -40,7 +40,7 @@ domain PData
     ExprsExt   ::= Expr + Exprs + NamedExprs.
 
     //// Statements
-    Push     ::= new (name: any QualifiedName).
+    Push     ::= new (name: any QualifiedName, label: Natural).
     NewStmt  ::= new (name: String, arg: any Expr + { NIL }).
     Raise    ::= new (ev: any Expr, arg: any Expr + { NIL }).
     Send     ::= new (dest: any Expr, ev: any Expr, arg: any Expr + { NIL }).
@@ -187,6 +187,7 @@ domain PStaticTyping extends PData
 	conforms no DupNmdSubE(_, _, _, _).
 	conforms no PurityError(_, _).
 	conforms no LValueError(_, _).
+	conforms no BadPushLabelError(_).
     /*************************************************************/
 
     //// The declarations that may contain expressions or statements that should be typed.
@@ -389,9 +390,9 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: "while (...)" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = While(e', _), TypeOf(c, e', t'), t' != BaseType(BOOL).
                
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Push(name), StateDecl(name, c.owner, _, _, _). 
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Push(name, _), StateDecl(name, c.owner, _, _, _). 
 	[ rule_Classes = '"error, msg: Undeclared state name"']
-	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Push(name), no StateDecl(name, c.owner, _, _, _). 
+	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Push(name, _), no StateDecl(name, c.owner, _, _, _). 
     
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _), MachineDecl(n, _, _, _, _).   
 	[ rule_Classes = '"error, msg: Undeclared machine"']
@@ -639,6 +640,30 @@ domain PStaticTyping extends PData
 	       c is TransDecl(src, _, _, called), called = AnonFunDecl(src.owner, _), ControlImpure(called).
 
     /*************************************************************/
+    /*                         Push Labels                       */
+    /*************************************************************/
+    BadPushLabelError ::= (TypingContext).
+
+	//// Every push statement must have a label that is unique within a context.
+	//// This constraint simplifies P compilers.
+	
+	//// A term path describes how to reach a term.
+	//// 0 means this term is reached by following the 1st child stmt of the parent term.
+	//// 1 means this term is reached by following the 2nd child stmt of the parent term.
+	TermPath    ::= (child: { 0, 1 }, prev: TermPath + { NIL }).
+	ReachedPush ::= (cntxt: TypingContext, stmt: Stmt, path: TermPath + { NIL }).
+	ReachedPush(c, c.body, NIL) :- c is TypingContext.
+	ReachedPush(c, s', p')  :- ReachedPush(c, s, p), s = While(_, s'),  p' = TermPath(0, p).
+	ReachedPush(c, s', p')  :- ReachedPush(c, s, p), s = Ite(_, s', _), p' = TermPath(0, p).
+	ReachedPush(c, s', p')  :- ReachedPush(c, s, p), s = Ite(_, _, s'), p' = TermPath(1, p).
+	ReachedPush(c, s', p')  :- ReachedPush(c, s, p), s = Seq(s', _),    p' = TermPath(0, p).
+	ReachedPush(c, s', p')  :- ReachedPush(c, s, p), s = Seq(_, s'),    p' = TermPath(1, p).
+
+    [ rule_Classes = '"error, msg: function contains bad labeling of push statements"']
+	BadPushLabelError(c) :-
+	    ReachedPush(c, s, p), ReachedPush(c, s', p'), s : Push, s' : Push, s.label = s'.label, p != p'.
+	
+    /*************************************************************/
     /*                         Data Impurity                     */
     /*************************************************************/
 	DataImpure ::= (FunDecl).
@@ -875,7 +900,7 @@ domain PStaticTyping extends PData
 	TriggerSet(s, NEW) :- m is MachineDecl, s is StateDecl, m.start = s.name, s.owner = m.
 
 	//// This state is reached by a push statement, so give it the DEFAULT pseudo-event.
-	TriggerSet(s, DEFAULT) :- SubSE(c, x), x = Push(name), s is StateDecl, s.owner = c.owner, s.name = name.
+	TriggerSet(s, DEFAULT) :- SubSE(c, x), x = Push(name, _), s is StateDecl, s.owner = c.owner, s.name = name.
 
 	//// This state can be reached by a transition, so give it the trigger of this transition.
 	TriggerSet(s, t.trig) :- t is TransDecl, s is StateDecl, s.name = t.dst, s.owner = t.src.owner. 

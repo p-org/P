@@ -38,6 +38,7 @@
         private Stack<P_Root.TypeExpr> typeExprStack = new Stack<P_Root.TypeExpr>();
         private Stack<P_Root.Stmt> stmtStack = new Stack<P_Root.Stmt>();
         private Stack<P_Root.QualifiedName> groupStack = new Stack<P_Root.QualifiedName>();
+        private int nextPushLabel = 0;
 
         public P_Root.TypeExpr Debug_PeekTypeStack
         {
@@ -220,6 +221,8 @@
         {
             Contract.Assert(crntQualName != null);
             var pushStmt = P_Root.MkPush(crntQualName);
+            pushStmt.label = P_Root.MkNumeric(GetNextPushLabel());
+            pushStmt.label.Span = span;
             pushStmt.Span = span;
             stmtStack.Push(pushStmt);
             crntQualName = null;
@@ -851,7 +854,8 @@
                 entry = (P_Root.IArgType_StateDecl__2)MkString(actionName, actionSpan);
                 state = GetCurrentStateDecl(actionSpan);
             }
-           
+
+            ResetPushLabels();           
             if (IsSkipFun((P_Root.GroundTerm)state.entryAction))            
             {
                 state.entryAction = (P_Root.IArgType_StateDecl__2)entry;
@@ -889,6 +893,7 @@
                 state = GetCurrentStateDecl(functionSpan);
             }
 
+            ResetPushLabels();
             if (IsSkipFun((P_Root.GroundTerm)state.exitFun))
             {
                 state.exitFun = (P_Root.IArgType_StateDecl__3)exit;
@@ -1015,6 +1020,7 @@
                 action = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, stmt);
                 action.Span = stmt.Span;
                 parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)action);
+                ResetPushLabels();
             }
 
             foreach (var e in crntEventList)
@@ -1147,6 +1153,8 @@
             var anonAction = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, stmt);
             anonAction.Span = stmt.Span;
             parseProgram.AnonFunctions.Add(anonAction);
+            ResetPushLabels();
+
             foreach (var e in crntEventList)
             {
                 var action = P_Root.MkDoDecl(state, (P_Root.IArgType_DoDecl__1)e, anonAction);
@@ -1364,6 +1372,7 @@
             funDecl.body = (P_Root.IArgType_FunDecl__5)stmtStack.Pop();
             parseProgram.Functions.Add(funDecl);
             crntFunDecl = null;
+            ResetPushLabels();
         }
         #endregion
 
@@ -1454,6 +1463,16 @@
             }
         }
 
+        private int GetNextPushLabel()
+        {
+            return nextPushLabel++;
+        }
+
+        private void ResetPushLabels()
+        {
+            nextPushLabel = 0;
+        }
+
         private P_Root.AnonFunDecl MkSkipFun(P_Root.MachineDecl owner, Span span)
         {
             var stmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
@@ -1520,6 +1539,7 @@
             crntEventDecl = null;
             crntMachDecl = null;
             crntQualName = null;
+            nextPushLabel = 0;
         }
         #endregion
     }

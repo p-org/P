@@ -1,7 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: Writing Actions_6_p_.h ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
 OUT: Writing Actions_6.zing ...
 OUT: Compiling Actions_6.zing to Actions_6.dll ...
 OUT: actions_6.p (13, 4): inferred type:  BaseType(REAL)
@@ -74,16 +75,6 @@ Trace-Log 0:
 <StateLog> Machine Real-0 entering State Real_S2
 
 Error:
-Zing Assertion failed:
-    Expression: tmp_6.bl,
-    Comment: (32, 6): Assert failed
-
-Microsoft.Zing.ZingAssertionFailureException: Exception of type 'Microsoft.Zing.ZingAssertionFailureException' was thrown.
-
-Stack trace:
-    Real.AnonFun3 (Actions_6.zing, Line 874)
-    Real.ReentrancyHelper (Actions_6.zing, Line 618)
-    Real.RunHelper (Actions_6.zing, Line 250)
-    Real.Run (Actions_6.zing, Line 83)
-    Real.Start (Actions_6.zing, Line 61)
-
+P Assertion failed:
+Expression: assert(tmp_6.bl,)
+Comment: (32, 6): Assert failed

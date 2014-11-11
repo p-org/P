@@ -1,7 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: Writing Push_Pop_1_p_.h ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
 OUT: Writing Push_Pop_1.zing ...
 OUT: Compiling Push_Pop_1.zing to Push_Pop_1.dll ...
 OUT: push_pop_1.p (20, 13): inferred type:  BaseType(REAL)
@@ -88,6 +89,7 @@ OUT: push_pop_1.p (121, 60): inferred type:  BaseType(EVENT)
 OUT: push_pop_1.p (121, 75): inferred type:  NIL
 OUT: push_pop_1.p (121, 80): inferred type:  BaseType(REAL)
 OUT: push_pop_1.p (121, 97): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (124, 9): inferred type:  NIL
 OUT: push_pop_1.p (133, 6): inferred type:  BaseType(REAL)
 OUT: push_pop_1.p (133, 6): inferred type:  NIL
 OUT: push_pop_1.p (133, 24): inferred type:  BaseType(ANY)
@@ -101,6 +103,7 @@ OUT: push_pop_1.p (145, 28): inferred type:  BaseType(EVENT)
 OUT: push_pop_1.p (145, 42): inferred type:  NIL
 OUT: push_pop_1.p (145, 47): inferred type:  BaseType(REAL)
 OUT: push_pop_1.p (145, 64): inferred type:  BaseType(EVENT)
+OUT: push_pop_1.p (148, 9): inferred type:  NIL
 OUT: 
 EXIT: 0
 =================================
@@ -152,16 +155,6 @@ Trace-Log 0:
 <StateLog> Machine Employee-0 entering State ReachedRedmond
 
 Error:
-Zing Assertion failed:
-    Expression: tmp_24.bl,
-    Comment: (93, 17): Assert failed
-
-Microsoft.Zing.ZingAssertionFailureException: Exception of type 'Microsoft.Zing.ZingAssertionFailureException' was thrown.
-
-Stack trace:
-    Employee.AnonFun11 (Push_Pop_1.zing, Line 2152)
-    Employee.ReentrancyHelper (Push_Pop_1.zing, Line 1496)
-    Employee.RunHelper (Push_Pop_1.zing, Line 640)
-    Employee.Run (Push_Pop_1.zing, Line 174)
-    Employee.Start (Push_Pop_1.zing, Line 139)
-
+P Assertion failed:
+Expression: assert(tmp_24.bl,)
+Comment: (93, 17): Assert failed

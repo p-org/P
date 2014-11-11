@@ -47,7 +47,7 @@ OUT: payloadexit.p (61, 11): inferred type:  BaseType(ANY)
 OUT: payloadexit.p (61, 19): inferred type:  ERROR
 OUT: payloadexit.p (61, 22): inferred type:  ERROR
 OUT: payloadexit.p (61, 23): inferred type:  BaseType(INT)
-OUT: payloadexit.p (67, 3): inferred type:  NIL
+OUT: payloadexit.p (68, 3): inferred type:  NIL
 OUT: payloadexit.p (70, 4): inferred type:  BaseType(INT)
 OUT: payloadexit.p (70, 4): inferred type:  ERROR
 OUT: payloadexit.p (70, 4): inferred type:  NIL

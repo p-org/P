@@ -1,7 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: Writing TokenRing_p_.h ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
 OUT: Writing TokenRing.zing ...
 OUT: Compiling TokenRing.zing to TokenRing.dll ...
 OUT: tokenring.p (16, 12): inferred type:  BaseType(REAL)
@@ -58,6 +59,7 @@ OUT: tokenring.p (73, 29): inferred type:  BaseType(EVENT)
 OUT: tokenring.p (73, 35): inferred type:  BaseType(REAL)
 OUT: tokenring.p (74, 9): inferred type:  NIL
 OUT: tokenring.p (74, 15): inferred type:  BaseType(EVENT)
+OUT: tokenring.p (77, 7): inferred type:  NIL
 OUT: tokenring.p (95, 9): inferred type:  BaseType(REAL)
 OUT: tokenring.p (95, 9): inferred type:  NIL
 OUT: tokenring.p (95, 14): inferred type:  BaseType(REAL)
@@ -201,6 +203,7 @@ OUT: tokenring.p (158, 31): inferred type:  BaseType(EVENT)
 OUT: tokenring.p (158, 37): inferred type:  BaseType(REAL)
 OUT: tokenring.p (159, 17): inferred type:  NIL
 OUT: tokenring.p (159, 23): inferred type:  BaseType(EVENT)
+OUT: tokenring.p (162, 7): inferred type:  NIL
 OUT: 
 EXIT: 0
 =================================
@@ -288,18 +291,6 @@ Trace-Log 0:
 <Exception> Attempting to enqueue event ____Sending more than max instance of 1
 
 Error:
-Zing Assertion failed:
-    Expression: false
-    Comment: 
-
-Microsoft.Zing.ZingAssertionFailureException: Exception of type 'Microsoft.Zing.ZingAssertionFailureException' was thrown.
-
-Stack trace:
-    EVENT_BUFFER.EnqueueEvent (TokenRing.zing, Line 3140)
-    SM_HANDLE.EnqueueEvent (TokenRing.zing, Line 3025)
-    Node.AnonFun4 (TokenRing.zing, Line 1326)
-    Node.ReentrancyHelper (TokenRing.zing, Line 940)
-    Node.RunHelper (TokenRing.zing, Line 460)
-    Node.Run (TokenRing.zing, Line 162)
-    Node.Start (TokenRing.zing, Line 127)
-
+P Assertion failed:
+Expression: assert(false)
+Comment: 

@@ -5,7 +5,6 @@ OUT: monitors.p (5, 3): inferred type:  NIL
 OUT: monitors.p (15, 4): inferred type:  ERROR
 OUT: monitors.p (15, 10): inferred type:  BaseType(EVENT)
 OUT: monitors.p (19, 19): inferred type:  NIL
-OUT: monitors.p (24, 3): inferred type:  NIL
 OUT: monitors.p (27, 4): inferred type:  ERROR
 OUT: monitors.p (27, 4): inferred type:  NIL
 OUT: monitors.p (28, 4): inferred type:  ERROR
@@ -22,6 +21,7 @@ OUT: monitors.p (31, 4): inferred type:  NIL
 OUT: monitors.p (31, 9): inferred type:  BaseType(REAL)
 OUT: monitors.p (31, 12): inferred type:  BaseType(EVENT)
 OUT: monitors.p (31, 15): inferred type:  BaseType(INT)
+OUT: monitors.p (33, 3): inferred type:  NIL
 OUT: monitors.p (5, 3): Multiple actions over the same event
 OUT: monitors.p (6, 3): Multiple actions over the same event
 OUT: monitors.p (15, 4): invalid payload type in raise (cannot send null value)

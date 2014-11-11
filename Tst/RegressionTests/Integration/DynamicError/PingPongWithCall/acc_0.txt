@@ -1,7 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: Writing PingPongWithCall_p_.h ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
 OUT: Writing PingPongWithCall.zing ...
 OUT: Compiling PingPongWithCall.zing to PingPongWithCall.dll ...
 OUT: pingpongwithcall.p (14, 8): inferred type:  BaseType(REAL)
@@ -22,5 +23,6 @@ OUT: pingpongwithcall.p (42, 20): inferred type:  BaseType(REAL)
 OUT: pingpongwithcall.p (42, 32): inferred type:  BaseType(EVENT)
 OUT: pingpongwithcall.p (43, 7): inferred type:  NIL
 OUT: pingpongwithcall.p (43, 13): inferred type:  BaseType(EVENT)
+OUT: pingpongwithcall.p (45, 9): inferred type:  NIL
 OUT: 
 EXIT: 0

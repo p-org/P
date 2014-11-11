@@ -1,7 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: Writing MaxInstances_2_p_.h ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
 OUT: Writing MaxInstances_2.zing ...
 OUT: Compiling MaxInstances_2.zing to MaxInstances_2.dll ...
 OUT: maxinstances_2.p (13, 4): inferred type:  BaseType(REAL)
@@ -18,7 +19,7 @@ OUT: maxinstances_2.p (26, 18): inferred type:  BaseType(REAL)
 OUT: maxinstances_2.p (26, 33): inferred type:  BaseType(EVENT)
 OUT: maxinstances_2.p (32, 4): inferred type:  NIL
 OUT: maxinstances_2.p (32, 10): inferred type:  BaseType(EVENT)
-OUT: maxinstances_2.p (38, 9): inferred type:  NIL
+OUT: maxinstances_2.p (39, 3): inferred type:  NIL
 OUT: maxinstances_2.p (42, 3): inferred type:  NIL
 OUT: maxinstances_2.p (42, 10): inferred type:  BaseType(INT)
 OUT: maxinstances_2.p (42, 18): inferred type:  BaseType(BOOL)
@@ -48,6 +49,7 @@ OUT: maxinstances_2.p (73, 22): inferred type:  BaseType(EVENT)
 OUT: maxinstances_2.p (74, 3): inferred type:  NIL
 OUT: maxinstances_2.p (74, 8): inferred type:  BaseType(REAL)
 OUT: maxinstances_2.p (74, 22): inferred type:  BaseType(EVENT)
+OUT: maxinstances_2.p (77, 3): inferred type:  NIL
 OUT: 
 EXIT: 0
 =================================

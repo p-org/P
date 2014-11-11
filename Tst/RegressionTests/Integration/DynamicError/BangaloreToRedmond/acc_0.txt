@@ -1,7 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: Writing BangaloreToRedmond_p_.h ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
 OUT: Writing BangaloreToRedmond.zing ...
 OUT: Compiling BangaloreToRedmond.zing to BangaloreToRedmond.dll ...
 OUT: bangaloretoredmond.p (20, 13): inferred type:  BaseType(REAL)
@@ -88,6 +89,7 @@ OUT: bangaloretoredmond.p (122, 60): inferred type:  BaseType(EVENT)
 OUT: bangaloretoredmond.p (122, 75): inferred type:  NIL
 OUT: bangaloretoredmond.p (122, 80): inferred type:  BaseType(REAL)
 OUT: bangaloretoredmond.p (122, 97): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond.p (125, 9): inferred type:  NIL
 OUT: bangaloretoredmond.p (134, 6): inferred type:  BaseType(REAL)
 OUT: bangaloretoredmond.p (134, 6): inferred type:  NIL
 OUT: bangaloretoredmond.p (134, 24): inferred type:  BaseType(ANY)
@@ -101,6 +103,7 @@ OUT: bangaloretoredmond.p (146, 28): inferred type:  BaseType(EVENT)
 OUT: bangaloretoredmond.p (146, 42): inferred type:  NIL
 OUT: bangaloretoredmond.p (146, 47): inferred type:  BaseType(REAL)
 OUT: bangaloretoredmond.p (146, 64): inferred type:  BaseType(EVENT)
+OUT: bangaloretoredmond.p (149, 9): inferred type:  NIL
 OUT: 
 EXIT: 0
 =================================
@@ -152,16 +155,6 @@ Trace-Log 0:
 <StateLog> Machine Employee-0 entering State ReachedRedmond
 
 Error:
-Zing Assertion failed:
-    Expression: tmp_24.bl,
-    Comment: (95, 17): Assert failed
-
-Microsoft.Zing.ZingAssertionFailureException: Exception of type 'Microsoft.Zing.ZingAssertionFailureException' was thrown.
-
-Stack trace:
-    Employee.AnonFun10 (BangaloreToRedmond.zing, Line 2060)
-    Employee.ReentrancyHelper (BangaloreToRedmond.zing, Line 1423)
-    Employee.RunHelper (BangaloreToRedmond.zing, Line 628)
-    Employee.Run (BangaloreToRedmond.zing, Line 174)
-    Employee.Start (BangaloreToRedmond.zing, Line 139)
-
+P Assertion failed:
+Expression: assert(tmp_24.bl,)
+Comment: (95, 17): Assert failed

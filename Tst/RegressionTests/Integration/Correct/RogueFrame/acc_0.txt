@@ -1,7 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: Writing RogueFrame_p_.h ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
 OUT: Writing RogueFrame.zing ...
 OUT: Compiling RogueFrame.zing to RogueFrame.dll ...
 OUT: rogueframe.p (45, 41): inferred type:  NIL
@@ -741,7 +742,6 @@ OUT: rogueframe.p (476, 4): inferred type:  NIL
 OUT: rogueframe.p (476, 9): inferred type:  BaseType(REAL)
 OUT: rogueframe.p (476, 18): inferred type:  BaseType(EVENT)
 OUT: rogueframe.p (481, 3): inferred type:  NIL
-OUT: rogueframe.p (502, 3): inferred type:  NIL
 OUT: rogueframe.p (504, 4): inferred type:  BaseType(BOOL)
 OUT: rogueframe.p (504, 4): inferred type:  NIL
 OUT: rogueframe.p (504, 12): inferred type:  BaseType(BOOL)
@@ -749,6 +749,7 @@ OUT: rogueframe.p (505, 4): inferred type:  NIL
 OUT: rogueframe.p (505, 7): inferred type:  BaseType(BOOL)
 OUT: rogueframe.p (507, 5): inferred type:  NIL
 OUT: rogueframe.p (507, 11): inferred type:  BaseType(EVENT)
+OUT: rogueframe.p (512, 3): inferred type:  NIL
 OUT: rogueframe.p (517, 41): inferred type:  NIL
 OUT: rogueframe.p (518, 45): inferred type:  NIL
 OUT: rogueframe.p (524, 9): inferred type:  NIL
@@ -841,5 +842,6 @@ OUT: rogueframe.p (585, 24): inferred type:  BaseType(BOOL)
 OUT: rogueframe.p (585, 26): inferred type:  BaseType(INT)
 OUT: rogueframe.p (586, 5): inferred type:  NIL
 OUT: rogueframe.p (586, 12): inferred type:  BaseType(BOOL)
+OUT: rogueframe.p (588, 3): inferred type:  NIL
 OUT: 
 EXIT: 0

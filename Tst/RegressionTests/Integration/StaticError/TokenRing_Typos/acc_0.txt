@@ -54,6 +54,7 @@ OUT: tokenring_typos.p (73, 29): inferred type:  BaseType(EVENT)
 OUT: tokenring_typos.p (73, 35): inferred type:  BaseType(REAL)
 OUT: tokenring_typos.p (74, 9): inferred type:  NIL
 OUT: tokenring_typos.p (74, 15): inferred type:  BaseType(EVENT)
+OUT: tokenring_typos.p (77, 7): inferred type:  NIL
 OUT: tokenring_typos.p (95, 9): inferred type:  BaseType(REAL)
 OUT: tokenring_typos.p (95, 9): inferred type:  NIL
 OUT: tokenring_typos.p (95, 14): inferred type:  BaseType(REAL)
@@ -201,6 +202,7 @@ OUT: tokenring_typos.p (158, 31): inferred type:  BaseType(EVENT)
 OUT: tokenring_typos.p (158, 37): inferred type:  BaseType(REAL)
 OUT: tokenring_typos.p (159, 17): inferred type:  ERROR
 OUT: tokenring_typos.p (159, 23): inferred type:  ERROR
+OUT: tokenring_typos.p (162, 7): inferred type:  NIL
 OUT: tokenring_typos.p (99, 9): argument 2 of "send" expects an event value
 OUT: tokenring_typos.p (137, 17): "if (...)" expects a boolean value
 OUT: tokenring_typos.p (137, 39): Values cannot be compared because their types are incompatible

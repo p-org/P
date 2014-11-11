@@ -73,7 +73,7 @@ OUT: payloadexitfuns.p (75, 4): inferred type:  BaseType(BOOL)
 OUT: payloadexitfuns.p (75, 4): inferred type:  ERROR
 OUT: payloadexitfuns.p (75, 11): inferred type:  BaseType(ANY)
 OUT: payloadexitfuns.p (75, 19): inferred type:  ERROR
-OUT: payloadexitfuns.p (79, 3): inferred type:  NIL
+OUT: payloadexitfuns.p (80, 3): inferred type:  NIL
 OUT: payloadexitfuns.p (31, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: payloadexitfuns.p (31, 18): Operator expected a (named) tuple value
 OUT: payloadexitfuns.p (32, 4): invalid assignment. right hand side is not a subtype of left hand side

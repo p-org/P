@@ -1,7 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: Writing OSR_p_.h ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
 OUT: Writing OSR.zing ...
 OUT: Compiling OSR.zing to OSR.dll ...
 OUT: osr.p (29, 4): inferred type:  BaseType(REAL)
@@ -19,6 +20,7 @@ OUT: osr.p (45, 9): inferred type:  BaseType(REAL)
 OUT: osr.p (45, 17): inferred type:  BaseType(EVENT)
 OUT: osr.p (46, 4): inferred type:  NIL
 OUT: osr.p (46, 10): inferred type:  BaseType(EVENT)
+OUT: osr.p (48, 3): inferred type:  NIL
 OUT: osr.p (56, 10): inferred type:  BaseType(REAL)
 OUT: osr.p (56, 10): inferred type:  NIL
 OUT: osr.p (56, 19): inferred type:  BaseType(ANY)
@@ -32,6 +34,7 @@ OUT: osr.p (69, 12): inferred type:  BaseType(REAL)
 OUT: osr.p (69, 20): inferred type:  BaseType(EVENT)
 OUT: osr.p (70, 7): inferred type:  NIL
 OUT: osr.p (70, 14): inferred type:  BaseType(EVENT)
+OUT: osr.p (72, 9): inferred type:  NIL
 OUT: osr.p (80, 10): inferred type:  BaseType(REAL)
 OUT: osr.p (80, 10): inferred type:  NIL
 OUT: osr.p (80, 19): inferred type:  BaseType(ANY)
@@ -56,6 +59,7 @@ OUT: osr.p (118, 9): inferred type:  BaseType(REAL)
 OUT: osr.p (118, 17): inferred type:  BaseType(EVENT)
 OUT: osr.p (119, 4): inferred type:  NIL
 OUT: osr.p (119, 10): inferred type:  BaseType(EVENT)
+OUT: osr.p (122, 3): inferred type:  NIL
 OUT: osr.p (130, 10): inferred type:  BaseType(REAL)
 OUT: osr.p (130, 10): inferred type:  NIL
 OUT: osr.p (130, 19): inferred type:  BaseType(ANY)
@@ -71,7 +75,6 @@ OUT: osr.p (155, 9): inferred type:  BaseType(REAL)
 OUT: osr.p (155, 17): inferred type:  BaseType(EVENT)
 OUT: osr.p (156, 4): inferred type:  NIL
 OUT: osr.p (156, 10): inferred type:  BaseType(EVENT)
-OUT: osr.p (163, 3): inferred type:  NIL
 OUT: osr.p (165, 4): inferred type:  NIL
 OUT: osr.p (165, 7): inferred type:  BaseType(BOOL)
 OUT: osr.p (167, 5): inferred type:  NIL
@@ -85,6 +88,7 @@ OUT: osr.p (172, 10): inferred type:  BaseType(REAL)
 OUT: osr.p (172, 18): inferred type:  BaseType(EVENT)
 OUT: osr.p (174, 4): inferred type:  NIL
 OUT: osr.p (174, 10): inferred type:  BaseType(EVENT)
+OUT: osr.p (178, 3): inferred type:  NIL
 OUT: osr.p (192, 4): inferred type:  BaseType(REAL)
 OUT: osr.p (192, 4): inferred type:  NIL
 OUT: osr.p (192, 13): inferred type:  BaseType(REAL)

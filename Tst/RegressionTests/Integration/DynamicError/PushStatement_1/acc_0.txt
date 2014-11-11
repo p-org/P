@@ -1,7 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: Writing PushStatement_1_p_.h ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
 OUT: Writing PushStatement_1.zing ...
 OUT: Compiling PushStatement_1.zing to PushStatement_1.dll ...
 OUT: pushstatement_1.p (13, 4): inferred type:  BaseType(INT)
@@ -106,16 +107,6 @@ Trace-Log 0:
 <StateLog> Machine Real-0 exiting State Real_S1
 
 Error:
-Zing Assertion failed:
-    Expression: tmpVar_5.bl,
-    Comment: (43, 9): Assert failed
-
-Microsoft.Zing.ZingAssertionFailureException: Exception of type 'Microsoft.Zing.ZingAssertionFailureException' was thrown.
-
-Stack trace:
-    Real.AnonFun3 (PushStatement_1.zing, Line 944)
-    Real.ReentrancyHelper (PushStatement_1.zing, Line 607)
-    Real.RunHelper (PushStatement_1.zing, Line 239)
-    Real.Run (PushStatement_1.zing, Line 95)
-    Real.Start (PushStatement_1.zing, Line 60)
-
+P Assertion failed:
+Expression: assert(tmpVar_5.bl,)
+Comment: (43, 9): Assert failed

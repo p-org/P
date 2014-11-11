@@ -1,7 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: Writing PingPongDingDong_p_.h ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
 OUT: Writing PingPongDingDong.zing ...
 OUT: Compiling PingPongDingDong.zing to PingPongDingDong.dll ...
 OUT: pingpongdingdong.p (13, 8): inferred type:  BaseType(REAL)
@@ -19,7 +20,7 @@ OUT: pingpongdingdong.p (22, 12): inferred type:  BaseType(EVENT)
 OUT: pingpongdingdong.p (30, 4): inferred type:  NIL
 OUT: pingpongdingdong.p (30, 9): inferred type:  BaseType(REAL)
 OUT: pingpongdingdong.p (30, 17): inferred type:  BaseType(EVENT)
-OUT: pingpongdingdong.p (36, 9): inferred type:  NIL
+OUT: pingpongdingdong.p (38, 3): inferred type:  NIL
 OUT: pingpongdingdong.p (47, 10): inferred type:  BaseType(REAL)
 OUT: pingpongdingdong.p (47, 10): inferred type:  NIL
 OUT: pingpongdingdong.p (47, 19): inferred type:  BaseType(ANY)
@@ -36,6 +37,7 @@ OUT: pingpongdingdong.p (73, 9): inferred type:  BaseType(REAL)
 OUT: pingpongdingdong.p (73, 17): inferred type:  BaseType(EVENT)
 OUT: pingpongdingdong.p (74, 4): inferred type:  NIL
 OUT: pingpongdingdong.p (74, 10): inferred type:  BaseType(EVENT)
+OUT: pingpongdingdong.p (76, 3): inferred type:  NIL
 OUT: 
 EXIT: 0
 =================================

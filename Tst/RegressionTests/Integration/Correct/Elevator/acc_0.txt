@@ -1,7 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: Writing Elevator_p_.h ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
 OUT: Writing Elevator.zing ...
 OUT: Compiling Elevator.zing to Elevator.dll ...
 OUT: elevator.p (26, 13): inferred type:  BaseType(REAL)
@@ -59,6 +60,7 @@ OUT: elevator.p (147, 21): inferred type:  BaseType(REAL)
 OUT: elevator.p (147, 31): inferred type:  BaseType(EVENT)
 OUT: elevator.p (149, 13): inferred type:  NIL
 OUT: elevator.p (149, 19): inferred type:  BaseType(EVENT)
+OUT: elevator.p (152, 9): inferred type:  NIL
 OUT: elevator.p (160, 10): inferred type:  BaseType(REAL)
 OUT: elevator.p (160, 10): inferred type:  NIL
 OUT: elevator.p (160, 22): inferred type:  BaseType(ANY)
@@ -95,7 +97,7 @@ OUT: elevator.p (215, 18): inferred type:  BaseType(REAL)
 OUT: elevator.p (215, 28): inferred type:  BaseType(EVENT)
 OUT: elevator.p (215, 42): inferred type:  NIL
 OUT: elevator.p (215, 48): inferred type:  BaseType(EVENT)
-OUT: elevator.p (224, 15): inferred type:  NIL
+OUT: elevator.p (226, 9): inferred type:  NIL
 OUT: elevator.p (234, 10): inferred type:  BaseType(REAL)
 OUT: elevator.p (234, 10): inferred type:  NIL
 OUT: elevator.p (234, 22): inferred type:  BaseType(ANY)
@@ -111,7 +113,6 @@ OUT: elevator.p (256, 18): inferred type:  BaseType(REAL)
 OUT: elevator.p (256, 28): inferred type:  BaseType(EVENT)
 OUT: elevator.p (256, 41): inferred type:  NIL
 OUT: elevator.p (256, 47): inferred type:  BaseType(EVENT)
-OUT: elevator.p (262, 9): inferred type:  NIL
 OUT: elevator.p (264, 13): inferred type:  NIL
 OUT: elevator.p (264, 17): inferred type:  BaseType(BOOL)
 OUT: elevator.p (265, 17): inferred type:  NIL
@@ -125,7 +126,8 @@ OUT: elevator.p (268, 22): inferred type:  BaseType(REAL)
 OUT: elevator.p (268, 32): inferred type:  BaseType(EVENT)
 OUT: elevator.p (270, 13): inferred type:  NIL
 OUT: elevator.p (270, 19): inferred type:  BaseType(EVENT)
-OUT: elevator.p (281, 5): inferred type:  NIL
+OUT: elevator.p (272, 9): inferred type:  NIL
+OUT: elevator.p (282, 9): inferred type:  NIL
 OUT: 
 EXIT: 0
 =================================

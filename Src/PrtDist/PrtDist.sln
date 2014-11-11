@@ -26,6 +26,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PrtDistTest", "PrtDistTest"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PrtRPC", "PrtDistTest\PrtRPC\PrtRPC.vcxproj", "{F8A5BB72-9666-45CC-81CC-97A978B81DA2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PrtDistManager", "PrtDistManager", "{40767271-14C6-44A6-A96A-D462BD55251D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

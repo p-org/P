@@ -31,9 +31,8 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=19c3ad36eba97133, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Ext\Formula\Core.dll</HintPath>
+    <Reference Include="Core">
+      <HintPath>..\..\Ext\Formula\x86\Core.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

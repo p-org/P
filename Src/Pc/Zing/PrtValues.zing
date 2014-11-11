@@ -55,7 +55,7 @@ class PRT_VALUE {
 		if (tkind == PRT_TYPE_KIND.PRT_KIND_MAP)
 		{
 			i = 0;
-			trace("map : {");
+			trace("map : (");
 			while (i < value.map.size) {
 				trace("(");
 				Print(value.map.keys[i]);
@@ -64,7 +64,7 @@ class PRT_VALUE {
 				trace(")");
 				i = i + 1;
 			}
-			trace("}");
+			trace(")");
 		}
 		
 		if(tkind ==  PRT_TYPE_KIND.PRT_KIND_NULL)
@@ -75,13 +75,13 @@ class PRT_VALUE {
 		if(tkind == PRT_TYPE_KIND.PRT_KIND_SEQ)
 		{
 			i = 0;
-			trace("seq : {");
+			trace("seq : (");
 			while(i < value.seq.size) {
 				Print(value.seq.contents[i]);
 				trace(",");
 				i = i + 1;
 			}
-			trace("}");
+			trace(")");
 		}
 		
 		if(tkind == PRT_TYPE_KIND.PRT_KIND_TUPLE)

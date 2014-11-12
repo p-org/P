@@ -1,0 +1,10 @@
+runPc: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: LinearTopology_5.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+runZing: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: LinearTopology_5.dll
+argZing: -sched:..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\RunToCompletionDBSched.dll
+argZing: -delayc:1
+acc: .\
+dsc: Feature Integration: : protocol sample

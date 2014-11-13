@@ -1,0 +1,7 @@
+runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: ..\Actions_2_fails.dll
+argZing: -et:Actions_2_fails.trace
+incZing: Actions_2_fails.trace
+del: Actions_2_fails.trace
+acc: .\
+dsc: Feature Integration: deferred-by-default semantics of push statement

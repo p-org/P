@@ -1,0 +1,6 @@
+runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: ..\MaxInstances_3.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+acc: .\
+dsc: 1.10. assume max instances of event: max number of instances exceeded

@@ -88,7 +88,7 @@
         private static void Test(DirectoryInfo di, bool reset, ref int testCount, ref int failCount, StreamWriter failedDirsWriter, StreamWriter displayDiffsWriter)
         {
             //TODO: try{} at the top level
-            //enumerating files in the top dor only
+            //enumerating files in the top dir only
             foreach (var fi in di.EnumerateFiles(TestFilePattern))
             {
                 ++testCount;
@@ -103,7 +103,18 @@
                 }            
             }
 
-            foreach (var dp in di.EnumerateDirectories())
+            //Since order of directory processing is significant (Pc should be processed before
+            //Zc and Prt), order enumerated directories alphabetically:
+            var dirs = (from dir in di.EnumerateDirectories()
+                        orderby dir.FullName ascending
+                        select dir);
+            //debug only:
+            //foreach (var dp in dirs)
+            //{
+                //Console.WriteLine("{0}", dp.FullName);
+            //}
+            //foreach (var dp in di.EnumerateDirectories())
+            foreach (var dp in dirs)
             {
                 Test(dp, reset, ref testCount, ref failCount, failedDirsWriter, displayDiffsWriter);
             }

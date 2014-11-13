@@ -1,0 +1,33 @@
+=================================
+         Console output          
+=================================
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing Actions_2_fails.zing ...
+OUT: Compiling Actions_2_fails.zing to Actions_2_fails.dll ...
+OUT: actions_2_fails.p (14, 3): inferred type:  BaseType(REAL)
+OUT: actions_2_fails.p (14, 3): inferred type:  NIL
+OUT: actions_2_fails.p (14, 19): inferred type:  BaseType(REAL)
+OUT: actions_2_fails.p (14, 29): inferred type:  BaseType(REAL)
+OUT: actions_2_fails.p (17, 10): inferred type:  NIL
+OUT: actions_2_fails.p (26, 13): inferred type:  NIL
+OUT: actions_2_fails.p (26, 18): inferred type:  BaseType(REAL)
+OUT: actions_2_fails.p (26, 33): inferred type:  BaseType(EVENT)
+OUT: actions_2_fails.p (29, 4): inferred type:  NIL
+OUT: actions_2_fails.p (35, 6): inferred type:  NIL
+OUT: actions_2_fails.p (35, 13): inferred type:  BaseType(BOOL)
+OUT: actions_2_fails.p (40, 9): inferred type:  NIL
+OUT: actions_2_fails.p (40, 14): inferred type:  BaseType(REAL)
+OUT: actions_2_fails.p (40, 29): inferred type:  BaseType(EVENT)
+OUT: actions_2_fails.p (49, 8): inferred type:  BaseType(REAL)
+OUT: actions_2_fails.p (49, 8): inferred type:  NIL
+OUT: actions_2_fails.p (49, 23): inferred type:  BaseType(ANY)
+OUT: actions_2_fails.p (49, 31): inferred type:  BaseType(REAL)
+OUT: actions_2_fails.p (56, 4): inferred type:  NIL
+OUT: actions_2_fails.p (56, 9): inferred type:  BaseType(REAL)
+OUT: actions_2_fails.p (56, 23): inferred type:  BaseType(EVENT)
+OUT: actions_2_fails.p (63, 6): inferred type:  NIL
+OUT: actions_2_fails.p (63, 11): inferred type:  BaseType(REAL)
+OUT: actions_2_fails.p (63, 25): inferred type:  BaseType(EVENT)
+OUT: 
+EXIT: 0

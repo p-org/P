@@ -1,0 +1,6 @@
+runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: ..\function_Typos.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+acc: .\
+dsc: 4.1.1. Tuples: duplicate names

@@ -13,8 +13,7 @@
 //		  (supports iteration through the collection, in addition to indexed access). 
 //--------------------------------------------------------------------------------
 
-#include "stdafx.h"
-#include"ParsingXML.h"
+#include"XMLParser.h"
 #include <stdio.h>
 #include <comutil.h>
 #import <msxml3.dll>
@@ -34,7 +33,7 @@ inline void TESTHR (HRESULT _hr)
 //The following code gets all elements found in XML file,  
 //and displays their names, text, and attributes:
 
-XMLNODE** XMLDOMParsingNodes(const char *szFileName)
+XMLNODE** XMLDOMParseNodes(const char *szFileName)
 {
    XMLNODE** returnList = NULL;
    try 

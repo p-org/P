@@ -389,3 +389,38 @@ OUT: openwsn1.p (273, 4): inferred type:  NIL
 OUT: openwsn1.p (273, 10): inferred type:  BaseType(INT)
 OUT: openwsn1.p (273, 11): inferred type:  BaseType(BOOL)
 OUT: openwsn1.p (273, 13): inferred type:  BaseType(INT)
+OUT: openwsn1.p (275, 5): inferred type:  NIL
+OUT: openwsn1.p (275, 10): inferred type:  SeqType(BaseType(REAL))
+OUT: openwsn1.p (275, 18): inferred type:  BaseType(REAL)
+OUT: openwsn1.p (275, 19): inferred type:  BaseType(INT)
+OUT: openwsn1.p (275, 23): inferred type:  BaseType(EVENT)
+OUT: openwsn1.p (275, 33): inferred type:  BaseType(BOOL)
+OUT: openwsn1.p (275, 33): inferred type:  TupType(BaseType(BOOL), TupType(TupType(BaseType(NULL), TupType(BaseType(NULL), NIL)), NIL))
+OUT: openwsn1.p (275, 40): inferred type:  BaseType(NULL)
+OUT: openwsn1.p (275, 40): inferred type:  TupType(BaseType(NULL), TupType(BaseType(NULL), NIL))
+OUT: openwsn1.p (275, 40): inferred type:  TupType(TupType(BaseType(NULL), TupType(BaseType(NULL), NIL)), NIL)
+OUT: openwsn1.p (275, 46): inferred type:  BaseType(NULL)
+OUT: openwsn1.p (275, 46): inferred type:  TupType(BaseType(NULL), NIL)
+OUT: openwsn1.p (276, 5): inferred type:  BaseType(INT)
+OUT: openwsn1.p (276, 5): inferred type:  NIL
+OUT: openwsn1.p (276, 9): inferred type:  BaseType(INT)
+OUT: openwsn1.p (276, 11): inferred type:  BaseType(INT)
+OUT: openwsn1.p (276, 13): inferred type:  BaseType(INT)
+OUT: openwsn1.p (280, 3): inferred type:  NIL
+OUT: openwsn1.p (284, 3): inferred type:  BaseType(INT)
+OUT: openwsn1.p (284, 3): inferred type:  NIL
+OUT: openwsn1.p (284, 13): inferred type:  BaseType(INT)
+OUT: openwsn1.p (284, 21): inferred type:  BaseType(INT)
+OUT: openwsn1.p (284, 23): inferred type:  BaseType(INT)
+OUT: openwsn1.p (285, 3): inferred type:  NIL
+OUT: openwsn1.p (285, 6): inferred type:  BaseType(INT)
+OUT: openwsn1.p (285, 14): inferred type:  BaseType(BOOL)
+OUT: openwsn1.p (285, 17): inferred type:  BaseType(INT)
+OUT: openwsn1.p (285, 24): inferred type:  SeqType(BaseType(REAL))
+OUT: openwsn1.p (287, 4): inferred type:  BaseType(INT)
+OUT: openwsn1.p (287, 4): inferred type:  NIL
+OUT: openwsn1.p (287, 14): inferred type:  BaseType(INT)
+OUT: openwsn1.p (288, 4): inferred type:  NIL
+OUT: openwsn1.p (288, 10): inferred type:  BaseType(EVENT)
+OUT: 
+EXIT: 0

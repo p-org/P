@@ -126,12 +126,3 @@ OUT: boundedasync.p (86, 11): inferred type:  BaseType(EVENT)
 OUT: boundedasync.p (94, 2): inferred type:  NIL
 OUT: 
 EXIT: 0
-=================================
-         Console output          
-=================================
-OUT: ##################
-OUT: Check Passed
-OUT: ##################
-OUT: 30114 distinct states, 81109 total transitions, 254 steps max depth
-OUT: 
-EXIT: 0

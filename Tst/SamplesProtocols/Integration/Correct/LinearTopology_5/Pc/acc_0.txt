@@ -619,12 +619,3 @@ OUT: lineartopology_5.p (450, 11): inferred type:  BaseType(EVENT)
 OUT: lineartopology_5.p (455, 3): inferred type:  NIL
 OUT: 
 EXIT: 0
-=================================
-         Console output          
-=================================
-OUT: ##################
-OUT: Check Passed
-OUT: ##################
-OUT: 235817 distinct states, 376901 total transitions, 143 steps max depth
-OUT: 
-EXIT: 0

@@ -488,12 +488,3 @@ OUT: two-phase-commit_1.p (449, 29): inferred type:  BaseType(INT)
 OUT: two-phase-commit_1.p (449, 29): inferred type:  TupType(BaseType(INT), NIL)
 OUT: 
 EXIT: 0
-=================================
-         Console output          
-=================================
-OUT: ##################
-OUT: Check Passed
-OUT: ##################
-OUT: 47591 distinct states, 96766 total transitions, 65 steps max depth
-OUT: 
-EXIT: 0

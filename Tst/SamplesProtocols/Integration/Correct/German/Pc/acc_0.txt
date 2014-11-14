@@ -217,12 +217,3 @@ OUT: german.p (267, 10): inferred type:  BaseType(EVENT)
 OUT: german.p (269, 3): inferred type:  NIL
 OUT: 
 EXIT: 0
-=================================
-         Console output          
-=================================
-OUT: ##################
-OUT: Check Passed
-OUT: ##################
-OUT: 320804 distinct states, 551168 total transitions, 123 steps max depth
-OUT: 
-EXIT: 0

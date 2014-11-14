@@ -150,12 +150,3 @@ OUT: osr.p (375, 4): inferred type:  NIL
 OUT: osr.p (375, 10): inferred type:  BaseType(EVENT)
 OUT: 
 EXIT: 0
-=================================
-         Console output          
-=================================
-OUT: ##################
-OUT: Check Passed
-OUT: ##################
-OUT: 17934 distinct states, 75212 total transitions, 72 steps max depth
-OUT: 
-EXIT: 0

@@ -74,13 +74,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Prt/;../../PrtDist/PrtDistIDL/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_ARCH_X86;PRT_PLAT_WINDIST</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../../Prt/API;../../PrtDist/PrtDist/;../../../Prt/Core;../../../Prt/WinUser/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_PLAT_WINUSER;_CRT_SECURE_NO_WARNINGS;PRT_ARCH_X86</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>PrtDist.lib;PrtDLogger.lib;ParsingXML.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>XMLParser.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -88,13 +88,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Prt/;../../PrtDist/PrtDistIDL/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINDIST</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../../Prt/API;../../PrtDist/PrtDist/;../../../Prt/Core;../../../Prt/WinUser/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_PLAT_WINUSER;_CRT_SECURE_NO_WARNINGS;PRT_ARCH_X64</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>PrtDist.lib;PrtDistLogger.lib;ParsingXML.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>XMlParser.dll;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -126,16 +126,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="PrtDDeployer.h" />
+    <ClCompile Include="PrtDistDeployer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="PrtDDeployer.cpp" />
+    <ClInclude Include="PrtDistDeployer.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PrtDService\PrtDService.vcxproj">
-      <Project>{2c375a16-2c95-45c6-96a7-2ea71c4a6471}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\Utilities\ParsingXML\ParsingXML12.vcxproj">
+    <ProjectReference Include="..\..\PrtDistUtilities\XMLParser\XMLParser.vcxproj">
       <Project>{e8936605-6f7c-4298-aa4c-9d9d7a349cd9}</Project>
     </ProjectReference>
   </ItemGroup>

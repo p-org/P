@@ -3,13 +3,13 @@
 	version(1.0),
 	pointer_default(ptr)
 ]
-interface PrtDService
+interface PrtDistService
 {
-	void PrtDPingService(
+	void PrtDistServicePing(
 		[in] handle_t myHandle,
 		[out] boolean* status);
 
-	void PrtDCreateNodeManagerForJob(
+	void PrtDistServiceCreateNodeManager(
 		[in] handle_t myHandle,
 		[in, string] char* JobID,
 		[out] boolean *status

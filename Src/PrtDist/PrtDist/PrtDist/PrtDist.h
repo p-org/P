@@ -22,13 +22,13 @@ __in PRT_VALUE* value
 );
 
 void
-PrtDistExceptionHandler(
+PrtDistSMExceptionHandler(
 __in PRT_STATUS exception,
 __in void* vcontext
 );
 
 void
-PrtDistLogHandler(
+PrtDistSMLogHandler(
 __in PRT_STEP step,
 __in void* vcontext
 );

@@ -1,17 +1,23 @@
-#include "PrtDDeployer.h"
+#include "PrtDistDeployer.h"
 
 /* GLobal Variables */
-string configurationFile = "..\\PrtDistManagement\\Commons\\PrtDMConfiguration.xml";
+string configurationFile = "..\\PrtDistManager\\PrtDistManConfiguration.xml";
 string allBinaries = ".\\";
 string localDeploymentFolder = "..\\DeploymentFolder\\";
-string pThreadsFolder = "..\\Resources\\PThreads\\";
 string vsdllsFolder = "..\\Resources\\VS2013\\";
 string pstoolsFolder = "..\\Resources\\PsTools\\";
 string scriptsFolder = "..\\Resources\\ScriptsForAzure\\";
+#ifdef PRT_ARCH_X86
+string prtWinUserDll = "..\\Debug\\Win32\\";
+#else
+string prtWinUserDll = "..\\Debug\\x64\\";
+#endif
+char* logFileName = "PRTDIST_DEPLOYER.txt";
+FILE* logFile;
 
 char* PrtDGetPathToPHome(char* nodeAddress)
 {
-	char* path = (char*)PrtMalloc(sizeof(char) * 1000);
+	char* path = (char*)malloc(sizeof(char) * 1000);
 	strcpy_s(path, 1000, "");
 	strcat_s(path, 1000, "\\\\");
 	strcat_s(path, 1000, nodeAddress);
@@ -22,7 +28,7 @@ char* PrtDGetPathToPHome(char* nodeAddress)
 string PrtDDeployPProgram()
 {
 
-	string remoteDeploymentFolder = PrtDGetDeploymentFolder();
+	string remoteNetworkShare = PrtDistGetNetworkShare();
 	string copycommand;
 	//create the folder to be deployed in 
 	DWORD ftyp = GetFileAttributesA(localDeploymentFolder.c_str());
@@ -31,51 +37,52 @@ string PrtDDeployPProgram()
 
 
 	//copy the configuration file
-	string configFile = "PrtDMConfiguration.xml";
+	string configFile = "PrtDistManConfiguration.xml";
 	string newFilePath = localDeploymentFolder + configFile;
 	CopyFile(configurationFile.c_str(), newFilePath.c_str(), FALSE);
 	//copy all resources into the deployment package
-	copycommand = "robocopy " + pThreadsFolder + " " + localDeploymentFolder + " > " + localDeploymentFolder + "ROBOCOPY_LOG.txt";
-	if (system(copycommand.c_str()) == -1)
-	{
-		cerr << "Failed to Copy Phreads in " << localDeploymentFolder << endl;
-		exit(-1);
-	}
 
-	copycommand = "robocopy " + vsdllsFolder + " " + localDeploymentFolder + " > " + localDeploymentFolder + "ROBOCOPY_LOG.txt";
+	copycommand = "robocopy " + vsdllsFolder + " " + localDeploymentFolder + " > " + localDeploymentFolder + "PRTDIST_DEPLOYER_ROBO.txt";
 	if (system(copycommand.c_str()) == -1)
 	{
 		cerr << "Failed to Copy VS2013 in " << localDeploymentFolder << endl;
 		exit(-1);
 	}
 
-	
-	copycommand = "robocopy " + allBinaries + " " + localDeploymentFolder + " >> " + localDeploymentFolder + "ROBOCOPY_LOG.txt";
+	copycommand = "robocopy /XF PRTDIST_DEPLOYER.txt" + allBinaries + " " + localDeploymentFolder + " >> " + localDeploymentFolder + "PRTDIST_DEPLOYER_ROBO.txt";
 	if (system(copycommand.c_str()) == -1)
 	{
 		cerr << "Failed to Copy All Binaries in " << localDeploymentFolder << endl;
 		exit(-1);
 	}
 
-	copycommand = "robocopy " + pstoolsFolder + " " + localDeploymentFolder + " >> " + localDeploymentFolder + "ROBOCOPY_LOG.txt";
+	copycommand = "robocopy " + pstoolsFolder + " " + localDeploymentFolder + " >> " + localDeploymentFolder + "PRTDIST_DEPLOYER_ROBO.txt";
 	if (system(copycommand.c_str()) == -1)
 	{
 		cerr << "Failed to Copy PsTools in " << localDeploymentFolder << endl;
 		exit(-1);
 	}
 
-	copycommand = "robocopy " + scriptsFolder + " " + localDeploymentFolder + " >> " + localDeploymentFolder + "ROBOCOPY_LOG.txt";
+	copycommand = "robocopy " + scriptsFolder + " " + localDeploymentFolder + " >> " + localDeploymentFolder + "PRTDIST_DEPLOYER_ROBO.txt";
 	if (system(copycommand.c_str()) == -1)
 	{
 		cerr << "Failed to Copy PsTools in " << localDeploymentFolder << endl;
 		exit(-1);
 	}
+
+	copycommand = "robocopy " + prtWinUserDll + " " + localDeploymentFolder + " PrtWinUser.dll >> " + localDeploymentFolder + "PRTDIST_DEPLOYER_ROBO.txt";
+	if (system(copycommand.c_str()) == -1)
+	{
+		cerr << "Failed to Copy PrtWinUser.dll in " << localDeploymentFolder << endl;
+		exit(-1);
+	}
+
 
 	SYSTEMTIME time;
 	GetLocalTime(&time);
 	string jobName = to_string(time.wMonth) + "-" + to_string(time.wDay) + "-" + to_string(time.wYear) + "--" + to_string(time.wHour) + "-" + to_string(time.wMinute) + "-" + to_string(time.wSecond);
 
-	string jobFolder = (remoteDeploymentFolder + jobName);
+	string jobFolder = (remoteNetworkShare + jobName);
 	//dump the jobname and folder in job.txt
 	ofstream tempout;
 	tempout.open(localDeploymentFolder + "job.txt");
@@ -86,7 +93,7 @@ string PrtDDeployPProgram()
 	//copy all files
 
 	CreateDirectory(jobFolder.c_str(), NULL);
-	copycommand = "robocopy " + localDeploymentFolder + " " + jobFolder + " >> " + localDeploymentFolder + "ROBOCOPY_LOG.txt";
+	copycommand = "robocopy " + localDeploymentFolder + " " + jobFolder + " >> " + localDeploymentFolder + "PRTDIST_DEPLOYER.txt";
 	if (system(copycommand.c_str()) == -1)
 	{
 		cerr << "Failed to Copy " << localDeploymentFolder << " to the destination folder " << jobFolder << endl;
@@ -95,14 +102,14 @@ string PrtDDeployPProgram()
 	return jobFolder;
 }
 
-string PrtDGetDeploymentFolder() {
+string PrtDistGetNetworkShare() {
 	int i = 0;
 	char DM[200];
 	XMLNODE** listofNodes;
 	XMLNODE* currNode;
-	string DeploymentFolder;
-	strcpy_s(DM, 200, "DeploymentFolder");
-	listofNodes = XMLDOMParsingNodes(configurationFile.c_str());
+	string DeploymentFolder = "";
+	strcpy_s(DM, 200, "NetworkShare");
+	listofNodes = XMLDOMParseNodes(configurationFile.c_str());
 	currNode = listofNodes[i];
 	while (currNode != NULL)
 	{
@@ -113,21 +120,43 @@ string PrtDGetDeploymentFolder() {
 		currNode = listofNodes[i];
 		i++;
 	}
-	PrtDLog(PRTD_DEPLOYER, (char*)("Deployment Folder = " + DeploymentFolder).c_str());
+	PrtDistDeployerLog((char*)("Network Share = " + DeploymentFolder).c_str());
 	return DeploymentFolder;
 }
 
 int main(int argc, char * argv[])
 {
-	char* log = (char*)PrtCalloc(100, sizeof(char));
+	char* log = (char*)calloc(100, sizeof(char));
 	//create the Log File
-	PrtDCreateLogFile(PRTD_DEPLOYER);
-	sprintf_s(log, 100,"Starting the Deployment Operation for P Program \n");
-	PrtDLog(PRTD_DEPLOYER, log);
+	PrtDistDeployerCreateLogFile();
 	string jobFolder = PrtDDeployPProgram();
 	cout << "Deployed the P program at :" << endl << jobFolder << endl;
-	PrtDCloseLogFile();
+	PrtDistDeployerCloseLogFile();
 	cout << "Press Key to Continue ....";
 	getchar();
 
+}
+
+///
+///PrtDist Deployer Logging
+///
+void PrtDistDeployerCreateLogFile()
+{
+	logFile = fopen(logFileName, "w+");
+	fputs("Starting PrtDistDeployment ..... \n", logFile);
+	fflush(logFile);
+}
+
+void PrtDistDeployerCloseLogFile()
+{
+	fputs("Done with Deployment ...... \n", logFile);
+	fflush(logFile);
+	fclose(logFile);
+}
+
+void PrtDistDeployerLog(char* log)
+{
+	fputs(log, logFile);
+	fputs("\n", logFile);
+	fflush(logFile);
 }

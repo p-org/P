@@ -9,7 +9,7 @@ typedef	struct _XMLNODE {
 	char NodeParent[100];
 } XMLNODE;
 
-XMLNODE** XMLDOMParsingNodes(const char*);
+XMLNODE** XMLDOMParseNodes(const char*);
 
 #ifdef __cplusplus
 }

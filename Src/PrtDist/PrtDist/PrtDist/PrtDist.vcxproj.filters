@@ -18,6 +18,9 @@
     <ClCompile Include="PrtDist.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PrtDistSerializer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrtDist.h">

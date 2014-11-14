@@ -18,6 +18,12 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="PrtDistService.acf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="PrtDistService.idl" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A5BDE8E1-31D4-45AA-9C1A-EC496F5ED9B5}</ProjectGuid>
     <RootNamespace>PrtDServiceIDL</RootNamespace>
@@ -130,12 +136,6 @@
       <HeaderFileName>%(Filename)_h.h</HeaderFileName>
     </Midl>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <Midl Include="PrtDService.idl" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="PrtDService.acf" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

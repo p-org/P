@@ -2,7 +2,7 @@
 explicit_handle
 ]
 
-interface PrtDService
+interface PrtDistService
 {
 
 }

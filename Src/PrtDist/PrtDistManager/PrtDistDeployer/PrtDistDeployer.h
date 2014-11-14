@@ -10,10 +10,10 @@
 using namespace std;
 
 //Helper Functions
-PRT_STRING PrtDistGetNetworkShare();
+string PrtDistGetNetworkShare();
 void PrtDistDeployerCreateLogFile();
 void PrtDistDeployerCloseLogFile();
 void PrtDistDeployerLog(char* log);
 
 //Deploy
-PRT_STRING PrtDistDeployPProgram();
+string PrtDistDeployPProgram();

@@ -12,7 +12,7 @@ void ResizeBuffer(_Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_
 	{
 		PRT_UINT32 newBufferSize = numCharsWritten + resizeNum + 1 + padding;
 		char *newBuffer = (char *)PrtCalloc(newBufferSize, sizeof(char));
-		strcpy_s(newBuffer, numCharsWritten, *buffer);
+		strcpy_s(newBuffer, newBufferSize, *buffer);
 		PrtFree(*buffer);
 		*buffer = newBuffer;
 		*bufferSize = newBufferSize;

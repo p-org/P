@@ -70,6 +70,13 @@ PRT_STRING PrtDDeployPProgram()
 		exit(-1);
 	}
 
+	copycommand = "robocopy " + prtWinUserDll + " " + localDeploymentFolder + " >> " + localDeploymentFolder + "PRTDIST_DEPLOYER.txt";
+	if (system(copycommand.c_str()) == -1)
+	{
+		cerr << "Failed to Copy PrtWinUser.dll in " << localDeploymentFolder << endl;
+		exit(-1);
+	}
+
 	SYSTEMTIME time;
 	GetLocalTime(&time);
 	string jobName = to_string(time.wMonth) + "-" + to_string(time.wDay) + "-" + to_string(time.wYear) + "--" + to_string(time.wHour) + "-" + to_string(time.wMinute) + "-" + to_string(time.wSecond);

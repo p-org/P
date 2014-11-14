@@ -80,7 +80,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>PrtDist.lib;XMLParser.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>XMLParser.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -88,13 +88,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Prt/;../../PrtDist/PrtDistIDL/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../Prt/API;../../PrtDist/PrtDist/;../../../Prt/Core;../../../Prt/WinUser/</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>PRT_PLAT_WINDIST</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>PrtDist.lib;PrtDistLogger.lib;ParsingXML.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>XMlParser.dll;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -126,18 +126,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PrtDService\PrtDService.vcxproj">
-      <Project>{2c375a16-2c95-45c6-96a7-2ea71c4a6471}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\Utilities\ParsingXML\ParsingXML12.vcxproj">
-      <Project>{e8936605-6f7c-4298-aa4c-9d9d7a349cd9}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="PrtDistDeployer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrtDistDeployer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\PrtDistUtilities\XMLParser\XMLParser.vcxproj">
+      <Project>{e8936605-6f7c-4298-aa4c-9d9d7a349cd9}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

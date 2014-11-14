@@ -120,7 +120,7 @@ string PrtDistGetNetworkShare() {
 		currNode = listofNodes[i];
 		i++;
 	}
-	PrtDistDeployerLog((char*)("Deployment Folder = " + DeploymentFolder).c_str());
+	PrtDistDeployerLog((char*)("Network Share = " + DeploymentFolder).c_str());
 	return DeploymentFolder;
 }
 
@@ -157,5 +157,6 @@ void PrtDistDeployerCloseLogFile()
 void PrtDistDeployerLog(char* log)
 {
 	fputs(log, logFile);
+	fputs("\n", logFile);
 	fflush(logFile);
 }

@@ -1,0 +1,35 @@
+=================================
+         Console output          
+=================================
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing PingPongMonitor.zing ...
+OUT: Compiling PingPongMonitor.zing to PingPongMonitor.dll ...
+OUT: pingpongmonitor.p (10, 8): inferred type:  NIL
+OUT: pingpongmonitor.p (11, 8): inferred type:  BaseType(REAL)
+OUT: pingpongmonitor.p (11, 8): inferred type:  NIL
+OUT: pingpongmonitor.p (11, 17): inferred type:  BaseType(REAL)
+OUT: pingpongmonitor.p (12, 6): inferred type:  NIL
+OUT: pingpongmonitor.p (12, 12): inferred type:  BaseType(EVENT)
+OUT: pingpongmonitor.p (19, 8): inferred type:  NIL
+OUT: pingpongmonitor.p (19, 19): inferred type:  BaseType(EVENT)
+OUT: pingpongmonitor.p (19, 25): inferred type:  BaseType(REAL)
+OUT: pingpongmonitor.p (20, 6): inferred type:  NIL
+OUT: pingpongmonitor.p (20, 11): inferred type:  BaseType(REAL)
+OUT: pingpongmonitor.p (20, 19): inferred type:  BaseType(EVENT)
+OUT: pingpongmonitor.p (20, 25): inferred type:  BaseType(REAL)
+OUT: pingpongmonitor.p (21, 6): inferred type:  NIL
+OUT: pingpongmonitor.p (21, 12): inferred type:  BaseType(EVENT)
+OUT: pingpongmonitor.p (30, 5): inferred type:  NIL
+OUT: pingpongmonitor.p (41, 8): inferred type:  NIL
+OUT: pingpongmonitor.p (41, 19): inferred type:  BaseType(EVENT)
+OUT: pingpongmonitor.p (42, 7): inferred type:  NIL
+OUT: pingpongmonitor.p (42, 12): inferred type:  BaseType(REAL)
+OUT: pingpongmonitor.p (42, 20): inferred type:  BaseType(REAL)
+OUT: pingpongmonitor.p (42, 32): inferred type:  BaseType(EVENT)
+OUT: pingpongmonitor.p (43, 7): inferred type:  NIL
+OUT: pingpongmonitor.p (43, 13): inferred type:  BaseType(EVENT)
+OUT: pingpongmonitor.p (45, 9): inferred type:  NIL
+OUT: pingpongmonitor.p (55, 4): inferred type:  NIL
+OUT: 
+EXIT: 0

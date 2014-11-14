@@ -156,8 +156,9 @@
         private bool Check(Options opts)
         {
             bool isSet, result = true;
+            bool isSetExePc;
             Tuple<OptValueKind, object>[] exePc;
-            result = ValidateOption(opts, RunPcOption, false, 1, 1, out isSet, out exePc) && result;
+            result = ValidateOption(opts, RunPcOption, true, 1, 1, out isSetExePc, out exePc) && result;
 
             //TODO: Do I need a separate isSetXX for each of pc, zinger, prt? 
             //Why was the same isSet used for for "exe" and "acc" options?
@@ -273,37 +274,58 @@
                 return false;
             }
 
-            //Trying to run P tool chain until the next tool returns an error:
-            bool pcResult = Run(tmpWriter, isIgnPrmpt, exePc[0].Item2.ToString(), pcArgs);
-            //if (pcResult)
-            //{
-                
-            //}
-            if (!pcResult)
+            try
             {
-                result = false;
-            }
-            else if (isInclPc && !AppendIncludes(tmpWriter, includesPc))
-            {
-                result = false;
-            }
-            else if (isSetExeZinger)
-            {
-                bool zingerResult = Run(tmpWriter, isIgnPrmpt, exeZinger[0].Item2.ToString(), zingerArgs);
-                if (!zingerResult) { result = false; }
-                else if (isInclZinger && !AppendIncludes(tmpWriter, includesZinger))
+                //Run components of the P tool chain specified in options,
+                //until the next tool returns an error:
+                //bool pcResult = Run(tmpWriter, isIgnPrmpt, exePc[0].Item2.ToString(), pcArgs);
+                if (isSetExePc)
                 {
-                    result = false; 
-                }
-                else if (isSetExePrt)
-                {
-                    bool prtResult = Run(tmpWriter, isIgnPrmpt, exePrt[0].Item2.ToString(), prtArgs);
-                    if (!prtResult) { result = false; }
-                    else if (isInclPrt && !AppendIncludes(tmpWriter, includesPrt))
+                    bool pcResult = Run(tmpWriter, isIgnPrmpt, exePc[0].Item2.ToString(), pcArgs);
+                    if (!pcResult)
                     {
-                        result = false; 
+                        result = false;
+                    }
+                    else if (isInclPc && !AppendIncludes(tmpWriter, includesPc))
+                    {
+                        result = false;
                     }
                 }
+                //Run Zinger if isSetExeZinger and: (a) pc.exe run and no errors from pc.exe; or (b) pc.exe was not set to run
+                if (isSetExeZinger && result || !isSetExePc)
+                {
+                    //TODO: since Zinger returns "true" when *.dll file is missing, catch this case by explicitly 
+                    //checking if files specified as  zinger arguments are present (unless Zinger is fixed
+                    //and returns "false" for such errors).
+                    //The error message should give a tip: "Make sure pc.exe was called and run successfully"
+                    bool zingerResult = Run(tmpWriter, isIgnPrmpt, exeZinger[0].Item2.ToString(), zingerArgs);
+
+                    //debug:
+                    //Console.WriteLine("Zinger returned: {0}", zingerResult);
+
+                    if (!zingerResult) { result = false; }
+                    else if (isInclZinger && !AppendIncludes(tmpWriter, includesZinger))
+                    {
+                        result = false;
+                    }
+                    
+                    //TODO: Run runtime similar to zinger:
+                    //if (isSetExePrt && result || !isSetExePc)
+                    //{
+                    //    bool prtResult = Run(tmpWriter, isIgnPrmpt, exePrt[0].Item2.ToString(), prtArgs);
+                    //    if (!prtResult) { result = false; }
+                    //    else if (isInclPrt && !AppendIncludes(tmpWriter, includesPrt))
+                    //    {
+                    //        result = false;
+                    //    }
+                    //}
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(
+                    "ERROR running P tool: {0}", e.Message);
+                return false;
             }
 
             if (!CloseTmpStream(tmpWriter))

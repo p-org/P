@@ -1,0 +1,7 @@
+runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: ..\Push_Pop_2.dll
+argZing: -et:Push_Pop_2.trace
+incZing: Push_Pop_2.trace
+del: Push_Pop_2.trace
+acc: .\
+dsc: Feature Integration

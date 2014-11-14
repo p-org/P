@@ -1,0 +1,41 @@
+=================================
+         Console output          
+=================================
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing Actions_1.zing ...
+OUT: Compiling Actions_1.zing to Actions_1.dll ...
+OUT: actions_1.p (13, 4): inferred type:  BaseType(REAL)
+OUT: actions_1.p (13, 4): inferred type:  NIL
+OUT: actions_1.p (13, 20): inferred type:  BaseType(REAL)
+OUT: actions_1.p (13, 30): inferred type:  BaseType(REAL)
+OUT: actions_1.p (14, 13): inferred type:  NIL
+OUT: actions_1.p (14, 18): inferred type:  BaseType(REAL)
+OUT: actions_1.p (14, 33): inferred type:  BaseType(EVENT)
+OUT: actions_1.p (20, 6): inferred type:  BaseType(BOOL)
+OUT: actions_1.p (20, 6): inferred type:  NIL
+OUT: actions_1.p (20, 13): inferred type:  BaseType(BOOL)
+OUT: actions_1.p (27, 4): inferred type:  NIL
+OUT: actions_1.p (27, 11): inferred type:  BaseType(BOOL)
+OUT: actions_1.p (27, 16): inferred type:  BaseType(BOOL)
+OUT: actions_1.p (27, 19): inferred type:  BaseType(BOOL)
+OUT: actions_1.p (28, 4): inferred type:  NIL
+OUT: actions_1.p (28, 10): inferred type:  BaseType(EVENT)
+OUT: actions_1.p (37, 6): inferred type:  NIL
+OUT: actions_1.p (37, 13): inferred type:  BaseType(BOOL)
+OUT: actions_1.p (42, 9): inferred type:  NIL
+OUT: actions_1.p (42, 14): inferred type:  BaseType(REAL)
+OUT: actions_1.p (42, 29): inferred type:  BaseType(EVENT)
+OUT: actions_1.p (51, 8): inferred type:  BaseType(REAL)
+OUT: actions_1.p (51, 8): inferred type:  NIL
+OUT: actions_1.p (51, 23): inferred type:  BaseType(ANY)
+OUT: actions_1.p (51, 31): inferred type:  BaseType(REAL)
+OUT: actions_1.p (58, 4): inferred type:  NIL
+OUT: actions_1.p (58, 9): inferred type:  BaseType(REAL)
+OUT: actions_1.p (58, 23): inferred type:  BaseType(EVENT)
+OUT: actions_1.p (59, 4): inferred type:  NIL
+OUT: actions_1.p (59, 9): inferred type:  BaseType(REAL)
+OUT: actions_1.p (59, 23): inferred type:  BaseType(EVENT)
+OUT: actions_1.p (65, 15): inferred type:  NIL
+OUT: 
+EXIT: 0

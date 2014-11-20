@@ -1,0 +1,6 @@
+runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: ..\PushImplicitPop.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+acc: .\
+dsc: P semantics test: "push" with implicit "pop"

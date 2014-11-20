@@ -1,0 +1,22 @@
+=================================
+         Console output          
+=================================
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing SendInExitUnhandledEvent.zing ...
+OUT: Compiling SendInExitUnhandledEvent.zing to SendInExitUnhandledEvent.dll ...
+OUT: sendinexitunhandledevent.p (14, 4): inferred type:  NIL
+OUT: sendinexitunhandledevent.p (14, 9): inferred type:  BaseType(REAL)
+OUT: sendinexitunhandledevent.p (14, 15): inferred type:  BaseType(EVENT)
+OUT: sendinexitunhandledevent.p (18, 17): inferred type:  NIL
+OUT: sendinexitunhandledevent.p (18, 22): inferred type:  BaseType(REAL)
+OUT: sendinexitunhandledevent.p (18, 28): inferred type:  BaseType(EVENT)
+OUT: sendinexitunhandledevent.p (22, 4): inferred type:  BaseType(BOOL)
+OUT: sendinexitunhandledevent.p (22, 4): inferred type:  NIL
+OUT: sendinexitunhandledevent.p (22, 11): inferred type:  BaseType(BOOL)
+OUT: sendinexitunhandledevent.p (26, 3): inferred type:  NIL
+OUT: sendinexitunhandledevent.p (26, 10): inferred type:  BaseType(BOOL)
+OUT: sendinexitunhandledevent.p (26, 15): inferred type:  BaseType(BOOL)
+OUT: sendinexitunhandledevent.p (26, 18): inferred type:  BaseType(BOOL)
+OUT: 
+EXIT: 0

@@ -1,4 +1,41 @@
-#include "../WinUser/PrtWinUser.h"
+#include "PrtWinUser.h"
+
+
+
+
+void PrtPrintType(PRT_TYPE *type)
+{
+	char *buffer = NULL;
+	PRT_UINT32 bufferSize = 0;
+	PRT_UINT32 nChars = 0;
+	
+	PrtWinUserPrintType(type, &buffer, &bufferSize, &nChars);
+	for (PRT_UINT32 i = 0; i < nChars; ++i)
+	{
+		putchar(buffer[i]);
+	}
+
+	if (bufferSize > 0)
+	{
+		PrtFree(buffer);
+	}
+}
+
+void PrtPrintValue(PRT_VALUE *value)
+{
+	char *buffer = NULL;
+	PRT_UINT32 bufferSize = 0;
+	PRT_UINT32 nChars = 0;
+
+	PrtWinUserPrintValue(value, &buffer, &bufferSize, &nChars);
+	printf_s("%s", buffer);
+	
+
+	if (bufferSize > 0)
+	{
+		PrtFree(buffer);
+	}
+}
 
 void BinaryBoolFunTest()
 {
@@ -97,11 +134,30 @@ void BinaryBoolFunTest()
 	PrtFreeType(popFunType);
 }
 
+#define P_EXPR1(x1) (p_expr1 = (x1), p_expr1)
+#define P_EXPR2(x2, x1) (p_expr1 = (x1), p_expr2 = (x2), PrtFreeValue(p_expr1), p_expr2)
+
+#define P_TUP2(t, x2, x1) = (p_expr1 = PrtMkDefaultValue(t), PrtTupleSet(p_expr1, 0, x1), PrtTupleSet(p_expr1, 1, x2), p_expr1)
+
 int main(int argc, char *argv[])
 {
+	/*
 	PRT_DBG_START_MEM_BALANCED_REGION
 	{
 		BinaryBoolFunTest();
+	}
+	PRT_DBG_END_MEM_BALANCED_REGION
+	*/
+
+	PRT_VALUE * p_expr1 = NULL, *p_expr2 = NULL;
+	PRT_DBG_START_MEM_BALANCED_REGION
+	{
+		PRT_VALUE * result = P_EXPR2(
+		PrtMkIntValue(PrtPrimGetInt(p_expr1) + PrtPrimGetInt(p_expr1)),
+		PrtMkIntValue(1));
+
+		PrtPrintValue(result);
+		PrtFreeValue(result);
 	}
 	PRT_DBG_END_MEM_BALANCED_REGION
 

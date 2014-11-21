@@ -68,6 +68,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>..\WinUser\$(Configuration)\$(Platform)\</OutDir>
     <RunCodeAnalysis>false</RunCodeAnalysis>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\WinUser;..\Core;..\API</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <RunCodeAnalysis>false</RunCodeAnalysis>

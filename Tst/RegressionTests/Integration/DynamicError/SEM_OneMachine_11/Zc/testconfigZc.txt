@@ -1,7 +1,7 @@
 runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\PushImplicitPop.dll
-argZing: -et:PushImplicitPop.trace
-incZing: PushImplicitPop.trace
-del: PushImplicitPop.trace
+argZing: ..\PushImplicitPopWithSend.dll
+argZing: -et:PushImplicitPopWithSend.trace
+incZing: PushImplicitPopWithSend.trace
+del: PushImplicitPopWithSend.trace
 acc: .\
-dsc: P semantics test: "push" with implicit "pop"
+dsc: P semantics test: one machine, "push" with implicit "pop", unhandled event was sent

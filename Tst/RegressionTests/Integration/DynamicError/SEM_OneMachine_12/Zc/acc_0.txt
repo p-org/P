@@ -4,12 +4,12 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 8 distinct states, 7 total transitions, 7 steps max depth
+OUT: 4 distinct states, 3 total transitions, 3 steps max depth
 OUT: 
 EXIT: 0
 
 =================================
-PushImplicitPopWithSend.trace
+PushExplicitPop.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
@@ -17,23 +17,13 @@ Trace-Log 0:
 <StateLog> Machine Real1-0 entering State Real1_Init
 <EnqueueLog> Enqueued Event < ____E1, null > in Machine ____Real1-0 by ____Real1-0
 <DequeueLog> Dequeued Event < ____E1, null > at Machine ____Real1-0
-<StateLog> Machine Real1-0 exiting State Real1_Init
-<EnqueueLog> Enqueued Event < ____E2, null > in Machine ____Real1-0 by ____Real1-0
-<StateLog> Machine Real1-0 entering State Real1_Init
-<EnqueueLog> Enqueued Event < ____E1, null > in Machine ____Real1-0 by ____Real1-0
-<DequeueLog> Dequeued Event < ____E2, null > at Machine ____Real1-0
 <StateLog> Machine Real1-0 entering State Real1_S1
 <EnqueueLog> Enqueued Event < ____E3, null > in Machine ____Real1-0 by ____Real1-0
-<DequeueLog> Dequeued Event < ____E1, null > at Machine ____Real1-0
 <StateLog> Machine Real1-0 exiting State Real1_S1
-<StateLog> Machine Real1-0 exiting State Real1_Init
-<EnqueueLog> Enqueued Event < ____E2, null > in Machine ____Real1-0 by ____Real1-0
-<StateLog> Machine Real1-0 entering State Real1_Init
-<EnqueueLog> Enqueued Event < ____E1, null > in Machine ____Real1-0 by ____Real1-0
 <DequeueLog> Dequeued Event < ____E3, null > at Machine ____Real1-0
 <FunctionLog> Machine Real1-0 executing Function Action1
 
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_1.bl,)
-Comment: (27, 3): Assert failed
+Comment: (28, 3): Assert failed

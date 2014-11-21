@@ -137,6 +137,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="PrtDist.c" />
+    <ClCompile Include="PrtDistSerializer.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Prt\WinUser\PrtWinUser.vcxproj">

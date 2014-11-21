@@ -1,0 +1,4 @@
+runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: ..\MaxInstances_3.dll
+acc: .\
+dsc: 1.10. assume max instances of event: max number of instances exceeded

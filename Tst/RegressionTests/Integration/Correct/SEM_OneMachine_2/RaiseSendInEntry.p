@@ -1,0 +1,24 @@
+// P semantics test: one machine, "raise" and "send" to itself in entry actions
+// Action2 is never executed after raising E1; test passes
+event E1 assert 1;
+event E2 assert 1;
+
+main machine Real1 {
+    var test: bool;  //init with "false"
+    start state Real1_Init {
+        entry { 	 
+			raise E1;
+			send this, E2;
+        }
+		
+        on E1 do Action1;   // checking "raise"
+        on E2 do Action2;   // checking "send"
+        exit {   }
+	}
+    fun Action1() {
+		test = true;
+    }
+	fun Action2() {
+		assert(test == false); //unreachable
+    }
+}

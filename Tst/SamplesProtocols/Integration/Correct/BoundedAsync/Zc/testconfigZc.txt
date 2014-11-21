@@ -1,0 +1,6 @@
+runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: ..\boundedasync.dll
+argZing: -sched:..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\RunToCompletionDBSched.dll
+argZing: -delayc:4
+acc: .\
+dsc: Feature Integration

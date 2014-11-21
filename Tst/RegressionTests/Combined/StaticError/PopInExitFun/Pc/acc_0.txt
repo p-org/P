@@ -1,0 +1,15 @@
+=================================
+         Console output          
+=================================
+OUT: popinexitfun.p (15, 4): inferred type:  NIL
+OUT: popinexitfun.p (20, 4): inferred type:  NIL
+OUT: popinexitfun.p (20, 11): inferred type:  BaseType(BOOL)
+OUT: popinexitfun.p (20, 16): inferred type:  BaseType(BOOL)
+OUT: popinexitfun.p (20, 19): inferred type:  BaseType(BOOL)
+OUT: popinexitfun.p (24, 3): inferred type:  BaseType(BOOL)
+OUT: popinexitfun.p (24, 3): inferred type:  NIL
+OUT: popinexitfun.p (24, 10): inferred type:  BaseType(BOOL)
+OUT: popinexitfun.p (15, 4): function may cause a change in current state; this is not allowed here
+OUT: Compilation failed
+OUT: 
+EXIT: -1

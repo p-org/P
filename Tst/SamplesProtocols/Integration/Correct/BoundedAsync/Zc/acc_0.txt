@@ -1,0 +1,9 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Passed
+OUT: ##################
+OUT: 30114 distinct states, 81109 total transitions, 254 steps max depth
+OUT: 
+EXIT: 0

@@ -1,0 +1,7 @@
+runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: ..\PushImplicitPop.dll
+argZing: -et:PushImplicitPop.trace
+incZing: PushImplicitPop.trace
+del: PushImplicitPop.trace
+acc: .\
+dsc: P semantics test: "push" with implicit "pop"

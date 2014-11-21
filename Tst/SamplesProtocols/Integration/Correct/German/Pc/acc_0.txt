@@ -1,0 +1,219 @@
+=================================
+         Console output          
+=================================
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing German.zing ...
+OUT: Compiling German.zing to German.dll ...
+OUT: german.p (29, 11): inferred type:  NIL
+OUT: german.p (29, 11): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)))
+OUT: german.p (29, 19): inferred type:  BaseType(REAL)
+OUT: german.p (29, 23): inferred type:  BaseType(REAL)
+OUT: german.p (29, 34): inferred type:  BaseType(REAL)
+OUT: german.p (29, 34): inferred type:  TupType(BaseType(REAL), TupType(BaseType(BOOL), NIL))
+OUT: german.p (29, 40): inferred type:  BaseType(BOOL)
+OUT: german.p (29, 40): inferred type:  TupType(BaseType(BOOL), NIL)
+OUT: german.p (30, 11): inferred type:  NIL
+OUT: german.p (30, 11): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)))
+OUT: german.p (30, 19): inferred type:  BaseType(REAL)
+OUT: german.p (30, 23): inferred type:  BaseType(REAL)
+OUT: german.p (30, 34): inferred type:  BaseType(REAL)
+OUT: german.p (30, 34): inferred type:  TupType(BaseType(REAL), TupType(BaseType(BOOL), NIL))
+OUT: german.p (30, 40): inferred type:  BaseType(BOOL)
+OUT: german.p (30, 40): inferred type:  TupType(BaseType(BOOL), NIL)
+OUT: german.p (31, 11): inferred type:  NIL
+OUT: german.p (31, 11): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)))
+OUT: german.p (31, 19): inferred type:  BaseType(REAL)
+OUT: german.p (31, 23): inferred type:  BaseType(REAL)
+OUT: german.p (31, 34): inferred type:  BaseType(REAL)
+OUT: german.p (31, 34): inferred type:  TupType(BaseType(REAL), TupType(BaseType(BOOL), NIL))
+OUT: german.p (31, 40): inferred type:  BaseType(BOOL)
+OUT: german.p (31, 40): inferred type:  TupType(BaseType(BOOL), NIL)
+OUT: german.p (32, 4): inferred type:  BaseType(REAL)
+OUT: german.p (32, 4): inferred type:  NIL
+OUT: german.p (32, 18): inferred type:  BaseType(NULL)
+OUT: german.p (33, 4): inferred type:  BaseType(REAL)
+OUT: german.p (33, 4): inferred type:  NIL
+OUT: german.p (33, 15): inferred type:  BaseType(REAL)
+OUT: german.p (33, 23): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)))
+OUT: german.p (34, 4): inferred type:  NIL
+OUT: german.p (34, 11): inferred type:  BaseType(INT)
+OUT: german.p (34, 18): inferred type:  SeqType(BaseType(REAL))
+OUT: german.p (34, 31): inferred type:  BaseType(BOOL)
+OUT: german.p (34, 34): inferred type:  BaseType(INT)
+OUT: german.p (35, 4): inferred type:  NIL
+OUT: german.p (35, 10): inferred type:  BaseType(EVENT)
+OUT: german.p (50, 4): inferred type:  BaseType(REAL)
+OUT: german.p (50, 4): inferred type:  NIL
+OUT: german.p (50, 18): inferred type:  BaseType(REAL)
+OUT: german.p (50, 26): inferred type:  BaseType(REAL)
+OUT: german.p (51, 4): inferred type:  BaseType(BOOL)
+OUT: german.p (51, 4): inferred type:  NIL
+OUT: german.p (51, 23): inferred type:  BaseType(BOOL)
+OUT: german.p (52, 4): inferred type:  NIL
+OUT: german.p (52, 10): inferred type:  BaseType(EVENT)
+OUT: german.p (60, 11): inferred type:  BaseType(REAL)
+OUT: german.p (60, 11): inferred type:  NIL
+OUT: german.p (60, 25): inferred type:  BaseType(REAL)
+OUT: german.p (60, 33): inferred type:  BaseType(REAL)
+OUT: german.p (61, 4): inferred type:  BaseType(BOOL)
+OUT: german.p (61, 4): inferred type:  NIL
+OUT: german.p (61, 23): inferred type:  BaseType(BOOL)
+OUT: german.p (62, 4): inferred type:  NIL
+OUT: german.p (62, 10): inferred type:  BaseType(EVENT)
+OUT: german.p (70, 4): inferred type:  NIL
+OUT: german.p (70, 8): inferred type:  BaseType(BOOL)
+OUT: german.p (70, 25): inferred type:  BaseType(BOOL)
+OUT: german.p (70, 28): inferred type:  BaseType(BOOL)
+OUT: german.p (73, 5): inferred type:  NIL
+OUT: german.p (73, 11): inferred type:  BaseType(EVENT)
+OUT: german.p (76, 5): inferred type:  NIL
+OUT: german.p (76, 11): inferred type:  BaseType(EVENT)
+OUT: german.p (85, 4): inferred type:  BaseType(INT)
+OUT: german.p (85, 4): inferred type:  NIL
+OUT: german.p (85, 8): inferred type:  BaseType(INT)
+OUT: german.p (86, 4): inferred type:  BaseType(INT)
+OUT: german.p (86, 4): inferred type:  NIL
+OUT: german.p (86, 8): inferred type:  BaseType(INT)
+OUT: german.p (86, 15): inferred type:  SeqType(BaseType(REAL))
+OUT: german.p (87, 4): inferred type:  NIL
+OUT: german.p (87, 8): inferred type:  BaseType(INT)
+OUT: german.p (87, 10): inferred type:  BaseType(BOOL)
+OUT: german.p (87, 13): inferred type:  BaseType(INT)
+OUT: german.p (88, 5): inferred type:  NIL
+OUT: german.p (88, 11): inferred type:  BaseType(EVENT)
+OUT: german.p (89, 4): inferred type:  NIL
+OUT: german.p (89, 11): inferred type:  BaseType(INT)
+OUT: german.p (89, 13): inferred type:  BaseType(BOOL)
+OUT: german.p (89, 15): inferred type:  BaseType(INT)
+OUT: german.p (91, 5): inferred type:  NIL
+OUT: german.p (91, 10): inferred type:  SeqType(BaseType(REAL))
+OUT: german.p (91, 21): inferred type:  BaseType(REAL)
+OUT: german.p (91, 22): inferred type:  BaseType(INT)
+OUT: german.p (91, 26): inferred type:  BaseType(EVENT)
+OUT: german.p (92, 5): inferred type:  BaseType(INT)
+OUT: german.p (92, 5): inferred type:  NIL
+OUT: german.p (92, 9): inferred type:  BaseType(INT)
+OUT: german.p (92, 11): inferred type:  BaseType(INT)
+OUT: german.p (92, 13): inferred type:  BaseType(INT)
+OUT: german.p (100, 3): inferred type:  NIL
+OUT: german.p (100, 3): inferred type:  SeqType(BaseType(REAL))
+OUT: german.p (100, 18): inferred type:  BaseType(INT)
+OUT: german.p (101, 3): inferred type:  BaseType(INT)
+OUT: german.p (101, 3): inferred type:  NIL
+OUT: german.p (101, 7): inferred type:  BaseType(INT)
+OUT: german.p (101, 14): inferred type:  SeqType(BaseType(REAL))
+OUT: german.p (102, 3): inferred type:  NIL
+OUT: german.p (102, 7): inferred type:  BaseType(INT)
+OUT: german.p (102, 9): inferred type:  BaseType(BOOL)
+OUT: german.p (102, 12): inferred type:  BaseType(INT)
+OUT: german.p (103, 4): inferred type:  NIL
+OUT: german.p (103, 10): inferred type:  BaseType(EVENT)
+OUT: german.p (108, 4): inferred type:  NIL
+OUT: german.p (108, 8): inferred type:  BaseType(BOOL)
+OUT: german.p (110, 5): inferred type:  BaseType(BOOL)
+OUT: german.p (110, 5): inferred type:  NIL
+OUT: german.p (110, 23): inferred type:  BaseType(BOOL)
+OUT: german.p (111, 5): inferred type:  NIL
+OUT: german.p (111, 10): inferred type:  BaseType(REAL)
+OUT: german.p (111, 23): inferred type:  BaseType(EVENT)
+OUT: german.p (115, 5): inferred type:  NIL
+OUT: german.p (115, 10): inferred type:  BaseType(REAL)
+OUT: german.p (115, 23): inferred type:  BaseType(EVENT)
+OUT: german.p (117, 4): inferred type:  NIL
+OUT: german.p (117, 4): inferred type:  SeqType(BaseType(REAL))
+OUT: german.p (117, 20): inferred type:  BaseType(INT)
+OUT: german.p (117, 20): inferred type:  TupType(BaseType(INT), TupType(BaseType(REAL), NIL))
+OUT: german.p (117, 23): inferred type:  BaseType(REAL)
+OUT: german.p (117, 23): inferred type:  TupType(BaseType(REAL), NIL)
+OUT: german.p (118, 4): inferred type:  NIL
+OUT: german.p (118, 10): inferred type:  BaseType(EVENT)
+OUT: german.p (120, 3): inferred type:  NIL
+OUT: german.p (130, 11): inferred type:  BaseType(REAL)
+OUT: german.p (130, 11): inferred type:  NIL
+OUT: german.p (130, 19): inferred type:  BaseType(ANY)
+OUT: german.p (130, 27): inferred type:  TupType(BaseType(REAL), TupType(BaseType(BOOL), NIL))
+OUT: german.p (130, 47): inferred type:  BaseType(REAL)
+OUT: german.p (131, 11): inferred type:  BaseType(BOOL)
+OUT: german.p (131, 11): inferred type:  NIL
+OUT: german.p (131, 22): inferred type:  BaseType(ANY)
+OUT: german.p (131, 30): inferred type:  TupType(BaseType(REAL), TupType(BaseType(BOOL), NIL))
+OUT: german.p (131, 50): inferred type:  BaseType(BOOL)
+OUT: german.p (132, 4): inferred type:  NIL
+OUT: german.p (132, 10): inferred type:  BaseType(EVENT)
+OUT: german.p (150, 4): inferred type:  NIL
+OUT: german.p (150, 9): inferred type:  BaseType(REAL)
+OUT: german.p (150, 15): inferred type:  BaseType(EVENT)
+OUT: german.p (150, 26): inferred type:  BaseType(REAL)
+OUT: german.p (151, 4): inferred type:  BaseType(BOOL)
+OUT: german.p (151, 4): inferred type:  NIL
+OUT: german.p (151, 14): inferred type:  BaseType(BOOL)
+OUT: german.p (152, 4): inferred type:  NIL
+OUT: german.p (152, 10): inferred type:  BaseType(EVENT)
+OUT: german.p (175, 4): inferred type:  NIL
+OUT: german.p (175, 9): inferred type:  BaseType(REAL)
+OUT: german.p (175, 15): inferred type:  BaseType(EVENT)
+OUT: german.p (175, 25): inferred type:  BaseType(REAL)
+OUT: german.p (176, 4): inferred type:  BaseType(BOOL)
+OUT: german.p (176, 4): inferred type:  NIL
+OUT: german.p (176, 14): inferred type:  BaseType(BOOL)
+OUT: german.p (177, 4): inferred type:  NIL
+OUT: german.p (177, 10): inferred type:  BaseType(EVENT)
+OUT: german.p (205, 4): inferred type:  BaseType(BOOL)
+OUT: german.p (205, 4): inferred type:  NIL
+OUT: german.p (205, 14): inferred type:  BaseType(BOOL)
+OUT: german.p (214, 4): inferred type:  NIL
+OUT: german.p (214, 9): inferred type:  BaseType(REAL)
+OUT: german.p (214, 15): inferred type:  BaseType(EVENT)
+OUT: german.p (215, 4): inferred type:  NIL
+OUT: german.p (215, 8): inferred type:  BaseType(BOOL)
+OUT: german.p (217, 5): inferred type:  NIL
+OUT: german.p (217, 11): inferred type:  BaseType(EVENT)
+OUT: german.p (220, 5): inferred type:  NIL
+OUT: german.p (220, 11): inferred type:  BaseType(EVENT)
+OUT: german.p (223, 3): inferred type:  NIL
+OUT: german.p (234, 4): inferred type:  NIL
+OUT: german.p (234, 4): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)))
+OUT: german.p (234, 12): inferred type:  BaseType(ANY)
+OUT: german.p (234, 20): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)))
+OUT: german.p (235, 4): inferred type:  NIL
+OUT: german.p (235, 10): inferred type:  BaseType(EVENT)
+OUT: german.p (242, 4): inferred type:  NIL
+OUT: german.p (242, 8): inferred type:  BaseType(BOOL)
+OUT: german.p (244, 5): inferred type:  NIL
+OUT: german.p (244, 9): inferred type:  BaseType(BOOL)
+OUT: german.p (245, 18): inferred type:  NIL
+OUT: german.p (245, 23): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)))
+OUT: german.p (245, 29): inferred type:  BaseType(REAL)
+OUT: german.p (245, 32): inferred type:  BaseType(EVENT)
+OUT: german.p (247, 18): inferred type:  NIL
+OUT: german.p (247, 23): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)))
+OUT: german.p (247, 29): inferred type:  BaseType(REAL)
+OUT: german.p (247, 32): inferred type:  BaseType(EVENT)
+OUT: german.p (249, 9): inferred type:  NIL
+OUT: german.p (249, 13): inferred type:  BaseType(BOOL)
+OUT: german.p (251, 5): inferred type:  NIL
+OUT: german.p (251, 9): inferred type:  BaseType(BOOL)
+OUT: german.p (252, 18): inferred type:  NIL
+OUT: german.p (252, 23): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)))
+OUT: german.p (252, 29): inferred type:  BaseType(REAL)
+OUT: german.p (252, 32): inferred type:  BaseType(EVENT)
+OUT: german.p (254, 18): inferred type:  NIL
+OUT: german.p (254, 23): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)))
+OUT: german.p (254, 29): inferred type:  BaseType(REAL)
+OUT: german.p (254, 32): inferred type:  BaseType(EVENT)
+OUT: german.p (258, 5): inferred type:  NIL
+OUT: german.p (258, 9): inferred type:  BaseType(BOOL)
+OUT: german.p (260, 9): inferred type:  NIL
+OUT: german.p (260, 14): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)))
+OUT: german.p (260, 20): inferred type:  BaseType(REAL)
+OUT: german.p (260, 23): inferred type:  BaseType(EVENT)
+OUT: german.p (264, 9): inferred type:  NIL
+OUT: german.p (264, 14): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)))
+OUT: german.p (264, 20): inferred type:  BaseType(REAL)
+OUT: german.p (264, 23): inferred type:  BaseType(EVENT)
+OUT: german.p (267, 4): inferred type:  NIL
+OUT: german.p (267, 10): inferred type:  BaseType(EVENT)
+OUT: german.p (269, 3): inferred type:  NIL
+OUT: 
+EXIT: 0

@@ -1,0 +1,6 @@
+runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: ..\German.dll
+argZing: -sched:..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\RunToCompletionDBSched.dll
+argZing: -delayc:2
+acc: .\
+dsc: Feature Integration: protocol sample

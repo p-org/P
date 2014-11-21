@@ -1,8 +1,0 @@
-runPc: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
-argPc: PingPongDingDong.p
-argPc: /printTypeInference
-argPc: /shortFileNames
-runZing: ..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: PingPongDingDong.dll
-acc: .\
-dsc: Feature Integration: protocol sample

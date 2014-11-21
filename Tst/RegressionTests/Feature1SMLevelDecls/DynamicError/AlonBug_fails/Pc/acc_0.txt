@@ -1,0 +1,28 @@
+=================================
+         Console output          
+=================================
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing AlonBug_fails.zing ...
+OUT: Compiling AlonBug_fails.zing to AlonBug_fails.dll ...
+OUT: alonbug_fails.p (8, 13): inferred type:  BaseType(INT)
+OUT: alonbug_fails.p (8, 13): inferred type:  NIL
+OUT: alonbug_fails.p (8, 17): inferred type:  BaseType(INT)
+OUT: alonbug_fails.p (8, 20): inferred type:  NIL
+OUT: alonbug_fails.p (8, 26): inferred type:  BaseType(EVENT)
+OUT: alonbug_fails.p (10, 10): inferred type:  NIL
+OUT: alonbug_fails.p (10, 18): inferred type:  BaseType(BOOL)
+OUT: alonbug_fails.p (16, 5): inferred type:  NIL
+OUT: alonbug_fails.p (16, 9): inferred type:  BaseType(INT)
+OUT: alonbug_fails.p (16, 11): inferred type:  BaseType(BOOL)
+OUT: alonbug_fails.p (16, 14): inferred type:  BaseType(INT)
+OUT: alonbug_fails.p (17, 9): inferred type:  NIL
+OUT: alonbug_fails.p (21, 6): inferred type:  BaseType(INT)
+OUT: alonbug_fails.p (21, 6): inferred type:  NIL
+OUT: alonbug_fails.p (21, 10): inferred type:  BaseType(INT)
+OUT: alonbug_fails.p (21, 12): inferred type:  BaseType(INT)
+OUT: alonbug_fails.p (21, 14): inferred type:  BaseType(INT)
+OUT: alonbug_fails.p (23, 9): inferred type:  NIL
+OUT: alonbug_fails.p (23, 15): inferred type:  BaseType(EVENT)
+OUT: 
+EXIT: 0

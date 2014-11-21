@@ -1,0 +1,6 @@
+runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: ..\function.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+acc: .\
+dsc: 1.4.2. Wrong function parameters/return value

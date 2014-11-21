@@ -1,0 +1,18 @@
+=================================
+         Console output          
+=================================
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing functionAny.zing ...
+OUT: Compiling functionAny.zing to functionAny.dll ...
+OUT: functionany.p (6, 3): inferred type:  NIL
+OUT: functionany.p (6, 7): inferred type:  BaseType(INT)
+OUT: functionany.p (6, 7): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), TupType(BaseType(EVENT), NIL)))
+OUT: functionany.p (6, 10): inferred type:  BaseType(INT)
+OUT: functionany.p (6, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
+OUT: functionany.p (6, 13): inferred type:  BaseType(EVENT)
+OUT: functionany.p (6, 13): inferred type:  TupType(BaseType(EVENT), NIL)
+OUT: functionany.p (11, 5): inferred type:  NIL
+OUT: functionany.p (11, 12): inferred type:  BaseType(INT)
+OUT: 
+EXIT: 0

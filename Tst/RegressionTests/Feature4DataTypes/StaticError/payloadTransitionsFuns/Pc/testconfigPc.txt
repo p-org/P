@@ -1,0 +1,6 @@
+runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: ..\payloadTransitionsFuns.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+acc: .\
+dsc: 4.3. Paylod type inference

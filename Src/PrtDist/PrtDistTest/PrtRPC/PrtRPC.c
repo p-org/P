@@ -53,28 +53,19 @@ PRT_BOOLEAN s_PrtDistSend(
 	
 	printf("In Send Value Received :");
 	printf("Type : ");
-	PrtPrintType(ReceivedValue->type);
+	PRT_CHAR *log = NULL;
+	PRT_UINT32 bufferSize = 0;
+	PRT_UINT32 size = 0;
+	PrtWinUserPrintType(ReceivedValue->type, &log, &bufferSize, &size);
+	printf(log);
 	printf("\n");
 	printf("Value :");
-	PrtPrintValue(ReceivedValue);
+	log = NULL;
+	bufferSize = 0;
+	size = 0;
+	PrtWinUserPrintValue(ReceivedValue, &log, &bufferSize, &size);
+	printf(log);
 	printf("\n");
-
-	return PRT_TRUE;
-}
-
-PRT_BOOLEAN s_PrtDistSendType(
-	handle_t handleM,
-	PRT_TYPE * type
-)
-{
-	printf("\n");
-	PRT_TYPE* x = PrtDistDeserializeType(type);
-
-	printf("In Send Type Received :");
-	printf("Type : ");
-	PrtPrintType(x);
-	printf("\n");
-
 	return PRT_TRUE;
 }
 

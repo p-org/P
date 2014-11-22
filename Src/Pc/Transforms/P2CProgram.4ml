@@ -6,7 +6,7 @@
 transform P2CProgram (in:: P) returns (out:: C)
 /*
 [
-    compiler_ProductivityCheck = "TypeConstant[0]"
+    compiler_ProductivityCheck = "TypeConstant[0], ExprDepNum[1]"
 ]
 */
 {
@@ -115,7 +115,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 									   enumMember = Element(IntLit(0, DEC, NIL), strJoin("_P_FUN_", strJoin(m.name, "_PUSH_OR_IGN")));
 									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(m.name, "_COUNT"))), size = 1 + count({d | d is AnonOrNamedFun, d.owner = m}) }).  
 
-	//// (7) StateDecls - Start at Id 0. Need to encode qualified names.
+	//// (6) StateDecls - Start at Id 0. Need to encode qualified names.
 	DeclId(d, id, cn) :- d is StateDecl, d.owner.kind = REAL, 
 	                     QualName2CStr(d.name, name), 
 					     id = toOrdinal(d, 0, { d' | d' is StateDecl, d'.owner = d.owner }), 
@@ -127,12 +127,6 @@ transform P2CProgram (in:: P) returns (out:: C)
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : StateDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_STATES_", strJoin(m.name, "_COUNT"))), size = count({d | d is StateDecl, d.owner = m}) }).  
-
-	//// (8) Convert qualified names to C strings
-	QualNameSub ::= sub (QualifiedName).
-	QualName2CStr ::= (QualifiedName, String).
-	QualName2CStr(q, s) :- QualNameSub(q), q = QualifiedName(s, NIL).
-	QualName2CStr(q, sj) :- QualNameSub(q), QualName2CStr(q', s'), q = QualifiedName(s, q'), sj = strJoin(s', strJoin("_", s)).
 
     /*************************************************************/
     /******     Generate C statics for types in program     ******/
@@ -985,6 +979,118 @@ transform P2CProgram (in:: P) returns (out:: C)
 							   NIL))))))))))).
 
     /*************************************************************/
+    /******                RHS Translation                  ******/
+    /*************************************************************/	
+
+	//// Translates in context the ith expression appearing in stmt into a list of C args.
+	//// The number subId indicates the id of the subexpression currently at the head of the trans list.
+	RhsTrans ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, subId: Natural + { -1 }, trans: out.Args + { NIL }).
+
+	//// Base case: Initially, the translation is the empty list.
+	RhsTrans(c, s, i, -1, NIL) :- SubSE(c, s), s : in.Stmt, RhsCntxt(s, i, _).
+
+	//// Nullary expressions
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = NulApp(n), n : Integer,
+									ec = out.FunApp(Ident("PrtMkIntValue"), Args(IntLit(n, DEC, U), NIL)).
+
+    //// Unary expressions
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.UnApp(NEG, e1), RhsEvalOrder(s, i, e1, tmp1),
+									getInt = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), NIL)),
+									ec = out.FunApp(Ident("PrtMkIntValue"), Args(UnApp(NEG, getInt), NIL)).
+
+    //// Just for debugging
+	COut(0, PpPragma(e)) :- RhsTrans(_, s, i, last, trans), e = out.FunApp(Ident("Foo"), trans),
+	                        last = maxAll(-1, { j |  RhsEvalOrder(s, i, _, j) }). 
+
+    /*************************************************************/
+    /******            Expression dependencies              ******/
+    /*************************************************************/	
+
+	//// ExprDepNum labels the each expression in the global expression DAG with a number 
+	//// greater than the labels of all its sub-expressions.
+	ExprDepNum ::= (id: Natural, expr: in.Expr + in.Exprs + in.NamedExprs).
+
+	//// These expressions have no dependencies.
+	ExprDepNum(0, e) :- SubSE(_, e), e : in.Name.
+	ExprDepNum(0, e) :- SubSE(_, e), e : in.NulApp. 
+	ExprDepNum(0, e) :- SubSE(_, e), e : in.Default.
+
+	//// These expressions have zero or one depenencies.
+	ExprDepNum(0, e) :- SubSE(_, e), e = in.New(_, NIL). 
+	ExprDepNum(0, e) :- SubSE(_, e), e = in.FunApp(_, NIL). 
+
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.New(_, e'), ExprDepNum(j, e'), i = j + 1. 
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.FunApp(_, e'), ExprDepNum(j, e'), i = j + 1.
+
+	//// These expressions have one depenency.
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.UnApp(_, e'), ExprDepNum(j, e'), i = j + 1. 
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.Field(e', _), ExprDepNum(j, e'), i = j + 1. 
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.Cast(e', _), ExprDepNum(j, e'), i = j + 1. 
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.Tuple(e'), ExprDepNum(j, e'), i = j + 1. 
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.NamedTuple(e'), ExprDepNum(j, e'), i = j + 1. 
+
+	//// These expressions have one or two depenencies.
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.Exprs(e', NIL), ExprDepNum(j, e'), i = j + 1. 
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.NamedExprs(_, e', NIL), ExprDepNum(j, e'), i = j + 1. 
+
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.Exprs(e', e''), ExprDepNum(j, e'), ExprDepNum(k, e''), i = j + k + 1. 
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.NamedExprs(_, e', e''), ExprDepNum(j, e'), ExprDepNum(k, e''), i = j + k + 1.
+
+	//// These expressions have two depenencies.
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.BinApp(_, e', e''), ExprDepNum(j, e'), ExprDepNum(k, e''), i = j + k + 1.
+
+    /*************************************************************/
+    /******                 RHS Eval Order                  ******/
+    /*************************************************************/	
+	
+	//// Marks the expressions that appear in statements. RhsCntxt(s, i, e) means
+	//// e is a sub-expression of the ith expression appearing in statement s. 
+	RhsCntxt ::= (stmt: in.Stmt, pos: Natural, expr: in.Expr + in.Exprs + in.NamedExprs). 
+
+	//// Rhs eval order tells the order in which subexpressions of a statement are evaluated in C. 
+	RhsEvalOrder ::= (stmt: in.Stmt, pos: Natural, expr: in.Expr + in.Exprs + in.NamedExprs, order: Natural).
+
+	RhsEvalOrder(s, i, e, k) :- RhsCntxt(s, i, e), dn is ExprDepNum(j, e), 
+	                            k = toOrdinal(dn, 0, { dn' | RhsCntxt(s, i, e'), dn' is ExprDepNum(l, e') }). 
+
+	RhsCntxt(s, 0, e) :- SubSE(_, s), s = in.NewStmt(_, e), e : in.Expr.
+	RhsCntxt(s, 0, e) :- SubSE(_, s), s = in.FunStmt(_, e), e : in.Exprs.
+	RhsCntxt(s, 0, e) :- SubSE(_, s), s = in.Return(e), e : in.Expr.
+
+	RhsCntxt(s, 0, e) :- SubSE(_, s), s = in.While(e, _).
+	RhsCntxt(s, 0, e) :- SubSE(_, s), s = in.Ite(e, _, _).
+	RhsCntxt(s, 0, e) :- SubSE(_, s), s = in.UnStmt(_, e).
+
+	RhsCntxt(s, 0, e) :- SubSE(_, s), s = in.Raise(e, _).
+	RhsCntxt(s, 1, e) :- SubSE(_, s), s = in.Raise(_, e), e : in.Expr.
+	RhsCntxt(s, 0, e) :- SubSE(_, s), s = in.Monitor(_, e, _).
+	RhsCntxt(s, 1, e) :- SubSE(_, s), s = in.Monitor(_, _, e), e : in.Expr.
+
+	RhsCntxt(s, 1, e) :- SubSE(_, s), s = in.BinStmt(_, _, e).
+
+	RhsCntxt(s, 0, e) :- SubSE(_, s), s = in.Send(e, _, _).
+	RhsCntxt(s, 1, e) :- SubSE(_, s), s = in.Send(_, e, _).
+	RhsCntxt(s, 2, e) :- SubSE(_, s), s = in.Send(_, _, e), e : in.Expr.
+
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, e'), e' : in.Expr. 
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.FunApp(_, e'), e' : in.Exprs.
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.UnApp(_, e').
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.Field(e', _).
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.Cast(e', _).
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.Tuple(e').
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.NamedTuple(e').
+	
+	RhsCntxt(s, i, e) :- RhsCntxt(s, i, e), e = in.Exprs(e', _). 
+	RhsCntxt(s, i, e) :- RhsCntxt(s, i, e), e = in.NamedExprs(_, e', _). 
+	RhsCntxt(s, i, e) :- RhsCntxt(s, i, e), e = in.Exprs(_, e'), e' : in.Exprs. 
+	RhsCntxt(s, i, e) :- RhsCntxt(s, i, e), e = in.NamedExprs(_, _, e'), e' : in.NamedExprs. 
+	 
+	RhsCntxt(s, i, e) :- RhsCntxt(s, i, e), e = in.BinApp(_, e', _). 
+	RhsCntxt(s, i, e) :- RhsCntxt(s, i, e), e = in.BinApp(_, _, e'). 
+
+    /*************************************************************/
     /******                 Powers of two                   ******/
     /*************************************************************/	
 
@@ -999,4 +1105,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 	PowOf2(24, 16777216).  PowOf2(25, 33554432).  PowOf2(26, 67108864).   PowOf2(27, 134217728).
 	PowOf2(28, 268435456). PowOf2(29, 536870912). PowOf2(30, 1073741824). PowOf2(31, 2147483648).
 
+    /*************************************************************/
+    /******                 String conversions              ******/
+    /*************************************************************/
+
+	QualNameSub ::= sub (QualifiedName).
+	QualName2CStr ::= (QualifiedName, String).
+	QualName2CStr(q, s) :- QualNameSub(q), q = QualifiedName(s, NIL).
+	QualName2CStr(q, sj) :- QualNameSub(q), QualName2CStr(q', s'), q = QualifiedName(s, q'), sj = strJoin(s', strJoin("_", s)).
 }	

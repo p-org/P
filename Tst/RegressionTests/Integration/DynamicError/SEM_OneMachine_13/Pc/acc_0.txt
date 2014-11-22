@@ -1,0 +1,25 @@
+=================================
+         Console output          
+=================================
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing PushTransInheritance.zing ...
+OUT: Compiling PushTransInheritance.zing to PushTransInheritance.dll ...
+OUT: pushtransinheritance.p (13, 4): inferred type:  NIL
+OUT: pushtransinheritance.p (13, 9): inferred type:  BaseType(REAL)
+OUT: pushtransinheritance.p (13, 15): inferred type:  BaseType(EVENT)
+OUT: pushtransinheritance.p (18, 17): inferred type:  NIL
+OUT: pushtransinheritance.p (18, 22): inferred type:  BaseType(REAL)
+OUT: pushtransinheritance.p (18, 28): inferred type:  BaseType(EVENT)
+OUT: pushtransinheritance.p (22, 4): inferred type:  BaseType(BOOL)
+OUT: pushtransinheritance.p (22, 4): inferred type:  NIL
+OUT: pushtransinheritance.p (22, 12): inferred type:  BaseType(BOOL)
+OUT: pushtransinheritance.p (23, 4): inferred type:  NIL
+OUT: pushtransinheritance.p (23, 9): inferred type:  BaseType(REAL)
+OUT: pushtransinheritance.p (23, 15): inferred type:  BaseType(EVENT)
+OUT: pushtransinheritance.p (27, 3): inferred type:  NIL
+OUT: pushtransinheritance.p (27, 10): inferred type:  BaseType(BOOL)
+OUT: pushtransinheritance.p (27, 15): inferred type:  BaseType(BOOL)
+OUT: pushtransinheritance.p (27, 18): inferred type:  BaseType(BOOL)
+OUT: 
+EXIT: 0

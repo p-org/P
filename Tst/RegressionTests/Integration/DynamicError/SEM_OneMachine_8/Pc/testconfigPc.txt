@@ -3,4 +3,4 @@ argPc: ..\GotoToItself.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 acc: .\
-dsc: P semantics test: "goto" to the same state; "send" in entry and exit
+dsc: P semantics test: one machine, "goto" to the same state; "send" in entry and exit

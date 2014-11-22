@@ -3,4 +3,4 @@ argPc: ..\Push.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 acc: .\
-dsc: P semantics test: "push", "send" in entry and exit
+dsc: P semantics test: one machine, "push", "send" in entry and exit

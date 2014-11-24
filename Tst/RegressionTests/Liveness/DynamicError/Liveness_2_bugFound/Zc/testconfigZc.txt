@@ -1,0 +1,8 @@
+runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: ..\Liveness_2_bugFound.dll
+argZing: -liveness
+argZing: -et:Liveness_2_bugFound.trace
+incZing: Liveness_2_bugFound.trace
+del: Liveness_2_bugFound.trace
+acc: .\
+dsc: Liveness: simplest sample demonstrating liveness error found; Attention!!! current Zinger acceptor will change after the bug is fixed

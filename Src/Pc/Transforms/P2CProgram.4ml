@@ -1196,37 +1196,99 @@ transform P2CProgram (in:: P) returns (out:: C)
     /******             Statement translation               ******/
     /*************************************************************/	
 	
-/*
-    Raise    ::= new (ev: any Expr, arg: any Expr + { NIL }).
-    Send     ::= new (dest: any Expr, ev: any Expr, arg: any Expr + { NIL }).
-    Monitor  ::= new (name: String, ev: any Expr, arg: any Expr + { NIL }).
-    FunStmt  ::= new (name: String, args: any Exprs + { NIL }).
-    NulStmt  ::= new (op: { SKIP, POP }).
-    UnStmt   ::= new (op: { ASSERT }, arg1: any Expr).
-    BinStmt  ::= new (op: { REMOVE, ASSIGN, INSERT }, arg1: any Expr, arg2: any Expr).
-    Return   ::= new (expr: any Expr + { NIL }).
-    While    ::= new (cond: any Expr, body: any Stmt).
-    Ite      ::= new (cond: any Expr, true: any Stmt, false: any Stmt).
-    Seq      ::= new (s1: any Stmt, s2: any Stmt).
-*/
     StmtTrans ::= (cntxt: TypingContext, stmt: in.Stmt, trans: out.Stmt + { NIL }).
 
+	//// Push
 	StmtTrans(c, s, cs) :- SubSE(c, s), DeclId(c.owner, _, machineName), context = Ident("privContext"),
 						   s = in.Push(name, label),  
 						   DeclId(StateDecl(name, c.owner, _, _, _), stateIndex, _),
 						   cs = out.Seq(out.FunApp(Ident("PrtPush"), Args(Ident("privContext"), Args(IntLit(stateIndex, DEC, NIL), NIL))), 
 						                out.Seq(out.Return(NIL), out.Lbl(strJoin("L", toString(label)), NIL))).
+	
+	//// New
 	StmtTrans(c, s, cs) :- SubSE(c, s), DeclId(c.owner, _, machineName), context = Ident("privContext"),
 	                       s = in.NewStmt(name, NIL),  
 						   cs = out.FunApp(Ident("StmtMacro"), 
 										   Args(out.FunApp(Ident("PrtMkNullValue"), NIL), 
 										        Args(out.FunApp(Ident("PrtMkMachine"), Args(context, Args(Ident(machineName), Args(Ident("p_stmt_tmp_0"), NIL)))), NIL))).
 	StmtTrans(c, s, cs) :- SubSE(c, s), DeclId(c.owner, _, machineName), context = Ident("privContext"),
-	                       s = in.NewStmt(name, arg),  RhsTrans(c, s, 0, last, trans),
+	                       s = in.NewStmt(name, arg),  RhsTrans(c, s, 0, _, trans),
 						   cs = out.FunApp(Ident("StmtMacro"), 
 										   Args(out.FunApp(Ident("ExprMacro"), trans), 
 										        Args(out.FunApp(Ident("PrtMkMachine"), Args(context, Args(Ident(machineName), Args(Ident("p_stmt_tmp_0"), NIL)))), NIL))).
-												
+
+	//// Raise
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("privContext"),
+	                       s = in.Raise(ev, NIL), RhsTrans(c, s, 0, _, evTrans),
+						   cs = out.FunApp(Ident("StmtMacro"), 
+										   Args(out.FunApp(Ident("ExprMacro"), evTrans), Args(out.FunApp(Ident("PrtMkNullValue"), NIL),
+										        Args(out.FunApp(Ident("PrtRaise"), Args(context, Args(Ident("p_stmt_tmp_0"), Args(Ident("p_stmt_tmp_1"), Args(Ident("p_stmt_tmp_2"), NIL))))), NIL)))).
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("privContext"),
+	                       s = in.Raise(ev, arg), arg != NIL, RhsTrans(c, s, 0, _, evTrans), RhsTrans(c, s, 1, _, argTrans), 
+						   cs = out.FunApp(Ident("StmtMacro"), 
+										   Args(out.FunApp(Ident("ExprMacro"), evTrans), Args(out.FunApp(Ident("ExprMacro"), argTrans),
+										        Args(out.FunApp(Ident("PrtRaise"), Args(context, Args(Ident("p_stmt_tmp_0"), Args(Ident("p_stmt_tmp_1"), Args(Ident("p_stmt_tmp_2"), NIL))))), NIL)))).
+
+	//// Send										
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("privContext"),
+	                       s = in.Send(dest, ev, NIL), RhsTrans(c, s, 0, _, destTrans), RhsTrans(c, s, 1, _, evTrans),
+						   cs = out.FunApp(Ident("StmtMacro"), 
+										   Args(out.FunApp(Ident("ExprMacro"), destTrans), Args(out.FunApp(Ident("ExprMacro"), evTrans), Args(out.FunApp(Ident("PrtMkNullValue"), NIL),
+										        Args(out.FunApp(Ident("PrtSend"), Args(context, Args(Ident("p_stmt_tmp_0"), Args(Ident("p_stmt_tmp_1"), Args(Ident("p_stmt_tmp_2"), NIL))))), NIL))))).
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("privContext"),
+	                       s = in.Send(dest, ev, arg), arg != NIL, RhsTrans(c, s, 0, _, destTrans), RhsTrans(c, s, 1, _, evTrans), RhsTrans(c, s, 2, _, argTrans), 
+						   cs = out.FunApp(Ident("StmtMacro"), 
+										   Args(out.FunApp(Ident("ExprMacro"), destTrans), Args(out.FunApp(Ident("ExprMacro"), evTrans), Args(out.FunApp(Ident("ExprMacro"), argTrans),
+										        Args(out.FunApp(Ident("PrtSend"), Args(context, Args(Ident("p_stmt_tmp_0"), Args(Ident("p_stmt_tmp_1"), Args(Ident("p_stmt_tmp_2"), NIL))))), NIL))))).
+
+	//// Monitor
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Monitor(_, _, _), cs = NIL.
+
+	//// FunStmt
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("context"),
+						   s = in.FunStmt(name, NIL), funDecl = FunDecl(name, c.owner, _, _, _, _), DeclId(funDecl, funIndex, funName),
+						   cs = out.FunApp(Ident(funName), Args(context, Args(IntLit(funIndex, DEC, U), Args(Ident("NULL"), NIL)))).
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("context"),
+						   s = in.FunStmt(name, args), args != NIL, funDecl = FunDecl(name, c.owner, _, type, _, _), DeclId(funDecl, funIndex, funName),
+						   TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupleArgs(c, s, 0, args, ecs), 
+						   cs = out.FunApp(Ident(funName), Args(context, Args(IntLit(funIndex, DEC, U), Args(out.FunApp(Ident("TupleMacro"), Args(Ident(typeName), ecs)), NIL)))).
+	
+	//// NulStmt
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NulStmt(SKIP), cs = NIL.
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("privContext"),
+	                       s = in.NulStmt(POP),
+						   cs = out.Seq(out.FunApp(Ident("PrtPop"), Args(context, NIL)), out.Return(NIL)).
+
+	//// UnStmt
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("privContext"),
+	                       s = in.UnStmt(ASSERT, arg), RhsTrans(c, s, 0, _, argTrans),
+						   cs = out.FunApp(Ident("StmtMacro"), 
+										   Args(out.FunApp(Ident("ExprMacro"), argTrans), 
+										        Args(out.FunApp(Ident("PrtAssert"), Args(context, Args(Ident("p_stmt_tmp_0"), NIL))), NIL))).
+
+	//// BinStmt
+    // BinStmt  ::= new (op: { REMOVE, ASSIGN, INSERT }, arg1: any Expr, arg2: any Expr).
+	
+	//// Return
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Return(NIL), cs = out.Return(NIL).
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.Return(expr), expr != NIL, RhsTrans(c, s, 0, _, exprTrans),
+						   cs = out.Return(out.FunApp(Ident("ExprMacro"), exprTrans)).
+
+	//// While
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.While(cond, s1), RhsTrans(c, s, 0, _, condTrans), StmtTrans(c, s1, cs1),
+						   cs = out.Loop(WHILE, out.FunApp(Ident("CondMacro"), condTrans), cs1).
+
+	//// Ite
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.Ite(cond, s1, s2), RhsTrans(c, s, 0, _, condTrans), StmtTrans(c, s1, cs1), StmtTrans(c, s2, cs2),
+						   cs = out.ITE(out.FunApp(Ident("CondMacro"), condTrans), cs1, cs2).
+
+	//// Seq
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.Seq(s1, s2), StmtTrans(c, s1, cs1), StmtTrans(c, s2, cs2),
+						   cs = out.Seq(cs1, cs2).
 
 	//// Just for debugging
 	COut(0, PpPragma(e)) :- RhsTrans(_, s, i, last, trans), e = out.FunApp(Ident("Foo"), trans),

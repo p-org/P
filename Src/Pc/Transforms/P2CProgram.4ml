@@ -993,17 +993,35 @@ transform P2CProgram (in:: P) returns (out:: C)
 	IndexOf(t, name, 0, tail)  :- TypeOf(_, _, t), t = NmdTupType(NmdTupTypeField(name, _), tail).
 	IndexOf(t, name, i', tail) :- IndexOf(t, _, i, tail'), tail' = NmdTupType(NmdTupTypeField(name, _), tail), i' = i + 1.
 
+	TupleArgs  ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, es': Exprs, e: in.Expr, es: Exprs + {NIL}).
+	TupleTrans ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, es: Exprs + {NIL}, ecs: out.Args + {NIL}).
+	TupleArgs(c, s, i, es', e, es) :- SubSE(c, s), RhsEvalOrder(s, i, es', _), es' = Exprs(e, es).
+	TupleTrans(c, s, i, NIL, NIL)  :- SubSE(c, s), RhsEvalOrder(s, i, _, _).
+	TupleTrans(c, s, i, es', ecs') :- TupleArgs(c, s, i, es', e, es), TupleTrans(c, s, i, es, ecs),
+									  RhsEvalOrder(s, i, e, j), ecs' = out.Args(Ident(strJoin("p_tmp_", toString(j))), ecs).
+
+	NamedTupleArgs  ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, es': NamedExprs, e: in.Expr, es: NamedExprs + {NIL}).
+	NamedTupleTrans ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, es: NamedExprs + {NIL}, ecs: out.Args + {NIL}).
+	NamedTupleArgs(c, s, i, es', e, es) :- SubSE(c, s), RhsEvalOrder(s, i, es', _), es' = NamedExprs(_, e, es).
+	NamedTupleTrans(c, s, i, NIL, NIL)  :- SubSE(c, s), RhsEvalOrder(s, i, _, _).
+	NamedTupleTrans(c, s, i, es', ecs') :- NamedTupleArgs(c, s, i, es', e, es), NamedTupleTrans(c, s, i, es, ecs),
+										   RhsEvalOrder(s, i, e, j), ecs' = out.Args(Ident(strJoin("p_tmp_", toString(j))), ecs).
+
 	//// Identifier
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 									e = Name(n), TypeOfFormalParam(c, n, _), c is FunDecl, IndexOf(c.params, n, formalIndex, _),
 									ec = out.FunApp(Ident("PrtTupleGet"), Args(Ident("value"), Args(IntLit(formalIndex, DEC, U), NIL))).
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
-									e = Name(n), varDecl = VarDecl(n, c.owner, t), /*no TypeOfFormalParam(c, n, _),*/ DeclId(varDecl, _, varName),
+									e = Name(n), varDecl = VarDecl(n, c.owner, t), 
+									// no TypeOfFormalParam(c, n, _),
+									DeclId(varDecl, _, varName),
 									ec = out.FunApp(Ident("PrtCloneValue"), Args(BinApp(AAC, BinApp(PFLD, Ident("privContext"), Ident("varValues")), Ident(varName)), NIL)).
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
-									e = Name(n), eventDecl = EventDecl(n, _, _), /*no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _),*/ DeclId(eventDecl, _, eventName), 
+									e = Name(n), eventDecl = EventDecl(n, _, _), 
+									// no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _),
+									DeclId(eventDecl, _, eventName), 
 									ec = out.FunApp(Ident("PrtMkEventValue"), Args(Ident(eventName), NIL)).
-	
+
 	//// Machine creation
 	RhsTrans(c, s, i, 1, trans)  :- RhsTrans(c, s, i, -1, NIL), RhsEvalOrder(s, i, e, _), trans = out.Args(ec, out.Args(out.FunApp(Ident("PrtMkNullValue"), NIL), NIL)), 
 									e = New(name, NIL), DeclId(c.owner, _, machineName), context = Ident("privContext"),
@@ -1020,7 +1038,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 									ec = out.FunApp(Ident(funName), Args(Ident("context"), Args(IntLit(funIndex, DEC, U), Args(Ident("NULL"), NIL)))).
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 									e = in.FunApp(name, args), args != NIL, funDecl = FunDecl(name, c.owner, _, type, _, _), DeclId(funDecl, funIndex, funName),
-									TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupleArgs(c, s, i, args, ecs), 
+									TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupleTrans(c, s, i, args, ecs), 
 									ec = out.FunApp(Ident(funName), Args(Ident("context"), Args(IntLit(funIndex, DEC, U), Args(out.FunApp(Ident("TupleMacro"), Args(Ident(typeName), ecs)), NIL)))).
 
 	//// Nullary expressions
@@ -1176,20 +1194,14 @@ transform P2CProgram (in:: P) returns (out:: C)
 									getArg = Ident(strJoin("p_tmp_", toString(tmp1))),
 									ec = out.FunApp(Ident("PrtCastValue"), Args(getArg, Args(Ident(typeName), NIL))).
 	
-	TupleArgs ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, es: Exprs + {NIL}, ecs: out.Args + {NIL}).
-	TupleArgs(c, s, i, NIL, NIL) :- RhsTrans(c, s, i, _, _).
-	TupleArgs(c, s, i, es', ecs') :- TupleArgs(c, s, i, es, ecs), RhsEvalOrder(s, i, e, j), es' = Exprs(e, es), ecs' = out.Args(Ident(strJoin("p_tmp_", toString(j))), ecs).
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 									e = in.Tuple(es), TypeOf(c, e, type), TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),
-									TupleArgs(c, s, i, es, ecs), 
+									TupleTrans(c, s, i, es, ecs), 
 									ec = out.FunApp(Ident("TupleMacro"), Args(Ident(typeName), ecs)).
 
-	NamedTupleArgs ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, es: NamedExprs + {NIL}, ecs: out.Args + {NIL}).
-	NamedTupleArgs(c, s, i, NIL, NIL) :- RhsTrans(c, s, i, _, _).
-	NamedTupleArgs(c, s, i, es', ecs') :- NamedTupleArgs(c, s, i, es, ecs), RhsEvalOrder(s, i, e, j), es' = NamedExprs(_, e, es), RhsEvalOrder(s, i, es', _), ecs' = out.Args(Ident(strJoin("p_tmp_", toString(j))), ecs).
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 									e = in.NamedTuple(es), TypeOf(c, e, type), TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),
-									NamedTupleArgs(c, s, i, es, ecs), 
+									NamedTupleTrans(c, s, i, es, ecs), 
 									ec = out.FunApp(Ident("TupleMacro"), Args(Ident(typeName), ecs)).
 
     /*************************************************************/
@@ -1250,7 +1262,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   cs = out.FunApp(Ident(funName), Args(context, Args(IntLit(funIndex, DEC, U), Args(Ident("NULL"), NIL)))).
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("context"),
 						   s = in.FunStmt(name, args), args != NIL, funDecl = FunDecl(name, c.owner, _, type, _, _), DeclId(funDecl, funIndex, funName),
-						   TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupleArgs(c, s, 0, args, ecs), 
+						   TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupleTrans(c, s, 0, args, ecs), 
 						   cs = out.FunApp(Ident(funName), Args(context, Args(IntLit(funIndex, DEC, U), Args(out.FunApp(Ident("TupleMacro"), Args(Ident(typeName), ecs)), NIL)))).
 	
 	//// NulStmt

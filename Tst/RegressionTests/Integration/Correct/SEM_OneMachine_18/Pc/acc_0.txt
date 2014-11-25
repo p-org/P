@@ -1,0 +1,22 @@
+=================================
+         Console output          
+=================================
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing UnhandledEventDeferred.zing ...
+OUT: Compiling UnhandledEventDeferred.zing to UnhandledEventDeferred.dll ...
+OUT: unhandledeventdeferred.p (11, 4): inferred type:  NIL
+OUT: unhandledeventdeferred.p (11, 9): inferred type:  BaseType(REAL)
+OUT: unhandledeventdeferred.p (11, 15): inferred type:  BaseType(EVENT)
+OUT: unhandledeventdeferred.p (16, 17): inferred type:  NIL
+OUT: unhandledeventdeferred.p (16, 22): inferred type:  BaseType(REAL)
+OUT: unhandledeventdeferred.p (16, 28): inferred type:  BaseType(EVENT)
+OUT: unhandledeventdeferred.p (20, 4): inferred type:  BaseType(BOOL)
+OUT: unhandledeventdeferred.p (20, 4): inferred type:  NIL
+OUT: unhandledeventdeferred.p (20, 11): inferred type:  BaseType(BOOL)
+OUT: unhandledeventdeferred.p (26, 3): inferred type:  NIL
+OUT: unhandledeventdeferred.p (26, 10): inferred type:  BaseType(BOOL)
+OUT: unhandledeventdeferred.p (26, 15): inferred type:  BaseType(BOOL)
+OUT: unhandledeventdeferred.p (26, 18): inferred type:  BaseType(BOOL)
+OUT: 
+EXIT: 0

@@ -1,0 +1,42 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 10 distinct states, 11 total transitions, 8 steps max depth
+OUT: 
+EXIT: 0
+
+=================================
+Liveness_2.trace
+=================================
+Liveness Error Trace --- 
+Trace-Log 0:
+<CreateLog> Created Machine EventHandler-0
+<StateLog> Machine EventHandler-0 entering State WaitForUser
+<CreateLog> Created Machine WatchDog-0
+<StateLog> Machine WatchDog-0 entering State CanGetUserInput
+<StateLog> Machine WatchDog-0 exiting State CanGetUserInput
+<StateLog> Machine WatchDog-0 entering State CanGetUserInput
+<EnqueueLog> Enqueued Event < ____UserEvent, null > in Machine ____EventHandler-0 by ____EventHandler-0
+<DequeueLog> Dequeued Event < ____UserEvent, null > at Machine ____EventHandler-0
+<StateLog> Machine EventHandler-0 exiting State WaitForUser
+<StateLog> Machine EventHandler-0 entering State HandleEvent
+<StateLog> Machine WatchDog-0 exiting State CanGetUserInput
+<StateLog> Machine WatchDog-0 entering State CannotGetUserInput
+<EnqueueLog> Enqueued Event < ____Done, null > in Machine ____EventHandler-0 by ____EventHandler-0
+<DequeueLog> Dequeued Event < ____Done, null > at Machine ____EventHandler-0
+<StateLog> Machine EventHandler-0 exiting State HandleEvent
+<StateLog> Machine EventHandler-0 entering State HandleEvent
+<StateLog> Machine WatchDog-0 exiting State CannotGetUserInput
+<StateLog> Machine WatchDog-0 entering State CannotGetUserInput
+<EnqueueLog> Enqueued Event < ____Done, null > in Machine ____EventHandler-0 by ____EventHandler-0
+Accepting transition
+<DequeueLog> Dequeued Event < ____Done, null > at Machine ____EventHandler-0
+<StateLog> Machine EventHandler-0 exiting State HandleEvent
+<StateLog> Machine EventHandler-0 entering State HandleEvent
+<StateLog> Machine WatchDog-0 exiting State CannotGetUserInput
+<StateLog> Machine WatchDog-0 entering State CannotGetUserInput
+<EnqueueLog> Enqueued Event < ____Done, null > in Machine ____EventHandler-0 by ____EventHandler-0
+Accepting transition

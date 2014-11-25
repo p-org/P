@@ -1,0 +1,40 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 13 distinct states, 14 total transitions, 11 steps max depth
+OUT: 
+EXIT: 0
+
+=================================
+Liveness_3.trace
+=================================
+Liveness Error Trace --- 
+Trace-Log 0:
+<CreateLog> Created Machine EventHandler-0
+<StateLog> Machine EventHandler-0 entering State WaitForUser
+<CreateLog> Created Machine WatchDog-0
+<StateLog> Machine WatchDog-0 entering State CanGetUserInput
+<CreateLog> Created Machine Loop-0
+<StateLog> Machine WatchDog-0 exiting State CanGetUserInput
+<StateLog> Machine WatchDog-0 entering State CanGetUserInput
+<EnqueueLog> Enqueued Event < ____UserEvent, null > in Machine ____EventHandler-0 by ____EventHandler-0
+<DequeueLog> Dequeued Event < ____UserEvent, null > at Machine ____EventHandler-0
+<StateLog> Machine EventHandler-0 exiting State WaitForUser
+<StateLog> Machine EventHandler-0 entering State HandleEvent
+<StateLog> Machine WatchDog-0 exiting State CanGetUserInput
+<StateLog> Machine WatchDog-0 entering State CannotGetUserInput
+<StateLog> Machine Loop-0 entering State Looping
+<EnqueueLog> Enqueued Event < ____Done, null > in Machine ____Loop-0 by ____Loop-0
+<DequeueLog> Dequeued Event < ____Done, null > at Machine ____Loop-0
+<StateLog> Machine Loop-0 exiting State Looping
+<StateLog> Machine Loop-0 entering State Looping
+<EnqueueLog> Enqueued Event < ____Done, null > in Machine ____Loop-0 by ____Loop-0
+Accepting transition
+<DequeueLog> Dequeued Event < ____Done, null > at Machine ____Loop-0
+<StateLog> Machine Loop-0 exiting State Looping
+<StateLog> Machine Loop-0 entering State Looping
+<EnqueueLog> Enqueued Event < ____Done, null > in Machine ____Loop-0 by ____Loop-0
+Accepting transition

@@ -532,7 +532,7 @@ class FairCycle {
 	    sizeof(FairChoice.accepted) == sizeof(FairChoice.all) && 
        	    sizeof(FairScheduler.accepted) == sizeof(FairScheduler.all))
 	{
-	    trace("Accepting transition");
+	    trace("Accepting transition\n");
 	    accept(true);
       	    FairChoice.accepted = new FairChoices;
 	    FairScheduler.accepted = new FairSchedulers;

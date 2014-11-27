@@ -1011,14 +1011,15 @@ transform P2CProgram (in:: P) returns (out:: C)
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 									e = Name(n), TypeOfFormalParam(c, n, _), c is FunDecl, IndexOf(c.params, n, formalIndex, _),
 									ec = out.FunApp(Ident("PrtTupleGet"), Args(Ident("value"), Args(IntLit(formalIndex, DEC, U), NIL))).
-	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
-									e = Name(n), varDecl = VarDecl(n, c.owner, t), 
-									// no TypeOfFormalParam(c, n, _),
-									DeclId(varDecl, _, varName),
+
+	RhsTrans(c, s, i, j', trans) :- c is TypingContext, varDecl is VarDecl(n, c.owner, t),  
+									RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = Name(n), no TypeOfFormalParam(c, n, _), DeclId(varDecl, _, varName),
 									ec = out.FunApp(Ident("PrtCloneValue"), Args(BinApp(AAC, BinApp(PFLD, Ident("privContext"), Ident("varValues")), Ident(varName)), NIL)).
-	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
-									e = Name(n), eventDecl = EventDecl(n, _, _), 
-									// no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _),
+
+	RhsTrans(c, s, i, j', trans) :- c is TypingContext, eventDecl is EventDecl(n, _, _), 
+	                                RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), e = Name(n),  
+									no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _),
 									DeclId(eventDecl, _, eventName), 
 									ec = out.FunApp(Ident("PrtMkEventValue"), Args(Ident(eventName), NIL)).
 

@@ -507,13 +507,14 @@ transform P2CProgram (in:: P) returns (out:: C)
 				    funType = FunType(BaseType(VOID), argTypes),
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_SM_CONTEXT")),
 					           PrmTypes(NmdType(NIL, "PRT_UINT32"),
-							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),					  
+							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),		
+				    StmtTrans(f, f.body, cbody),			  
 	                def = FunDef(
 					  NIL,
 					  funType,
 					  strJoin(name, "_IMPL"),
 					  params,
-					  NIL).
+					  cbody).
 
 	COut(5, def) :- DeclId(f, id, name), id > 0, f : AnonFunDecl, f.owner.kind = REAL,
 	                params = Params(Param(NIL, "context"), 
@@ -523,12 +524,13 @@ transform P2CProgram (in:: P) returns (out:: C)
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_SM_CONTEXT")),
 					           PrmTypes(NmdType(NIL, "PRT_UINT32"),
 							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),					  
+				    StmtTrans(f, f.body, cbody),			  
 	                def = FunDef(
 					  NIL,
 					  funType,
 					  strJoin(name, "_IMPL"),
 					  params,
-					  NIL).
+					  cbody).
 
 	HOut(1, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = MODEL, f.owner.kind = REAL,
 	                params = Params(Param(NIL, "context"), 
@@ -1302,10 +1304,6 @@ transform P2CProgram (in:: P) returns (out:: C)
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
 	                       s = in.Seq(s1, s2), StmtTrans(c, s1, cs1), StmtTrans(c, s2, cs2),
 						   cs = out.Seq(cs1, cs2).
-
-	//// Just for debugging
-	COut(0, PpPragma(e)) :- RhsTrans(_, s, i, last, trans), e = out.FunApp(Ident("Foo"), trans),
-	                        last = maxAll(-1, { j |  RhsEvalOrder(s, i, _, j) }). 
 
     /*************************************************************/
     /******            Expression dependencies              ******/

@@ -111,7 +111,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CData.cs" />
     <Compile Include="Compiler.cs" />
     <Compile Include="Domains\P.4ml.g.cs">
       <AutoGen>True</AutoGen>

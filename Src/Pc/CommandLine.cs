@@ -11,8 +11,9 @@
     using Microsoft.Formula.API.Generators;
     using Microsoft.Formula.API.Nodes;
 
-    class CommandLineOptions
+    public class CommandLineOptions
     {
+        public bool parseOnly;
         public LivenessOption liveness;
         public string outputDir;
         public bool outputFormula;
@@ -24,6 +25,7 @@
 
         public CommandLineOptions()
         {
+            this.parseOnly = false;
             this.liveness = LivenessOption.None;
             this.outputDir = null;
             this.outputFormula = false;
@@ -35,7 +37,7 @@
         }
     }
 
-    class CommandLine
+    public class CommandLine
     {
         static int Main(string[] args)
         {
@@ -151,7 +153,7 @@
             }
         }
 
-        private static void WriteFlags(List<Flag> flags, CommandLineOptions options)
+        public static void WriteFlags(List<Flag> flags, CommandLineOptions options)
         {
             if (options.shortFilenames)
             {
@@ -181,7 +183,7 @@
             }
         }
 
-        private static void WriteMessageLine(string msg, SeverityKind severity)
+        public static void WriteMessageLine(string msg, SeverityKind severity)
         {
             switch (severity)
             {

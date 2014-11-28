@@ -16,7 +16,7 @@
 
     public enum LivenessOption { None, Standard, Mace };
 
-    internal class Compiler
+    public class Compiler
     {
         private const string PDomain = "P";
         private const string CDomain = "C";
@@ -128,6 +128,11 @@
             if (!result)
             {
                 return false;
+            }
+
+            if (Options.parseOnly)
+            {
+                return true;
             }
 
             //// Step 2. Serialize the parsed object graph into a Formula model and install it. Should not fail.

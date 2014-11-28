@@ -4,6 +4,10 @@ using System.IO;
 using System.Windows.Forms;
 using Microsoft.Msagl.Drawing;
 using Microsoft.Msagl.GraphViewerGdi;
+using Microsoft.Pc;
+using Microsoft.Pc.Parser;
+using Microsoft.Formula.API;
+using System.Collections.Generic;
 
 namespace Microsoft.PVisualizer
 {
@@ -70,7 +74,7 @@ namespace Microsoft.PVisualizer
         {
             if (lastFileName != null)
             {
-             //   ReadGraphFromFile(lastFileName, GViewer, false);
+                ReadFile(lastFileName, GViewer);
             }
         }
 
@@ -88,16 +92,32 @@ namespace Microsoft.PVisualizer
             var openFileDialog = new OpenFileDialog
             {
                 RestoreDirectory = true,
-                Filter = " dot files (*.dot)|*.dot|All files (*.*)|*.*"
+                Filter = " P files (*.p)|*.p|All files (*.*)|*.*"
             };
 
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-             //   ReadGraphFromFile(openFileDialog.FileName, GViewer, false);
+                ReadFile(openFileDialog.FileName, GViewer);
             }
             var drawingGraph = new Graph();
             drawingGraph.AddEdge("a", "b");
             GViewer.Graph = drawingGraph;
+        }
+
+        static void ReadFile(string inputFileName, GViewer gViewer)
+        {
+            var options = new CommandLineOptions();
+            options.parseOnly = true;
+            var compiler = new Compiler(inputFileName, options);
+            List<Flag> flags;
+            var result = compiler.Compile(out flags);
+            CommandLine.WriteFlags(flags, options);
+
+            if (!result)
+            {
+                CommandLine.WriteMessageLine("Compilation failed", SeverityKind.Error);
+            }
+            lastFileName = inputFileName;
         }
     }
 }

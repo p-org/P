@@ -29,32 +29,6 @@ namespace Microsoft.PVisualizer
 {
     internal class Program
     {
-        static bool bundling;
-        const string QuietOption = "-quiet";
-        const string FileOption = "-file";
-        const string BundlingOption = "-bundling";
-        const string ListOfFilesOption = "-listoffiles";
-        const string TestCdtOption = "-tcdt";
-        const string TestCdtOption2 = "-tcdt2";
-        const string TestCdtOption0 = "-tcdt0";
-        const string TestCdtOption1 = "-tcdt1";
-        const string ReverseXOption = "-rx";
-        const string MdsOption = "-mds";
-        const string FdOption = "-fd";
-        const string EdgeSeparationOption = "-es";
-        const string RecoverSugiyamaTestOption = "-rst";
-        const string InkImportanceOption = "-ink";
-        const string ConstraintsTestOption = "-tcnstr";
-        const string TightPaddingOption = "-tpad";
-        const string LoosePaddingOption = "-lpad";
-        const string CapacityCoeffOption = "-cc";
-        const string PolygonDistanceTestOption = "-pd";
-        const string PolygonDistanceTestOption3 = "-pd3";
-        const string RandomBundlingTest = "-rbt";
-        const string TestCdtThreaderOption = "-tth";
-        const string AsyncLayoutOption = "-async";
-
-
         [STAThread]
         static void Main(string[] args)
         {
@@ -66,8 +40,6 @@ namespace Microsoft.PVisualizer
             Application.Run(form);
 
         }
-
-       
 
         static void RouteEdges(GeometryGraph graph, FastIncrementalLayoutSettings settings)
         {
@@ -129,7 +101,6 @@ namespace Microsoft.PVisualizer
 
             return CurveFactory.CreateRectangleWithRoundedCorners(size, size, size / 10, size / 10, new Point(x, y));
         }
-
        
         static Form CreateForm(Graph graph, GViewer gviewer)
         {
@@ -144,6 +115,7 @@ namespace Microsoft.PVisualizer
             return form;
         }
 
+        static bool bundling = false;
         static void GviewerGraphChanged(object sender, EventArgs e)
         {
             var gviewer = (GViewer)sender;

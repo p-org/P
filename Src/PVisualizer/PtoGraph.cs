@@ -23,18 +23,29 @@ namespace Microsoft.PVisualizer
 
         public static Graph GenerateGraph(PProgram program)
         {
-            Dictionary<string, Subgraph> machineNameToSubgraph = new Dictionary<string, Subgraph>();
             Graph graph = new Graph();
+            Dictionary<string, Subgraph> machineNameToSubgraph = new Dictionary<string, Subgraph>();
+            Dictionary<string, string> machineNameToStartStateName = new Dictionary<string, string>();
+            foreach (var machine in program.Machines)
+            {
+                var machineName = (machine.name as P_Root.StringCnst).Value;
+                var subgraph = new Subgraph(machineName);
+                graph.RootSubgraph.AddSubgraph(subgraph);
+                machineNameToSubgraph[machineName] = subgraph;
+                machineNameToStartStateName[machineName] = QualifiedNameToString(machine.start as P_Root.QualifiedName);
+            }
+            
             foreach (var state in program.States)
             {
-                Node node = new Node(QualifiedNameToString(state.name as P_Root.QualifiedName));
+                var stateName = QualifiedNameToString(state.name as P_Root.QualifiedName);
+                Node node = new Node(stateName);
                 string ownerName = ((state.owner as P_Root.MachineDecl).name as P_Root.StringCnst).Value;
-                if (!machineNameToSubgraph.ContainsKey(ownerName))
-                {
-                    machineNameToSubgraph[ownerName] = new Subgraph(ownerName);
-                }
                 machineNameToSubgraph[ownerName].AddNode(node);
                 graph.AddNode(node);
+                if (machineNameToStartStateName[ownerName] == stateName)
+                {
+                    node.Attr.LineWidth *= 2;
+                }
             }
             
             foreach (var trans in program.Transitions)
@@ -60,8 +71,11 @@ namespace Microsoft.PVisualizer
                 {
                     trigger = (trans.trig as P_Root.StringCnst).Value;
                 }
-                var isPush = trans.action is P_Root.UserCnst;
-                graph.AddEdge(srcStateName, trigger, dstStateName);
+                var edge = graph.AddEdge(srcStateName, trigger, dstStateName);
+                if (trans.action is P_Root.UserCnst)
+                {
+                    edge.Attr.LineWidth *= 2;
+                }
             }
             return graph;
         }

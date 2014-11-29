@@ -5,7 +5,6 @@ using System.Windows.Forms;
 using Microsoft.Msagl.Drawing;
 using Microsoft.Msagl.GraphViewerGdi;
 using Microsoft.Pc;
-using Microsoft.Pc.Parser;
 using Microsoft.Formula.API;
 using System.Collections.Generic;
 
@@ -99,9 +98,6 @@ namespace Microsoft.PVisualizer
             {
                 ReadFile(openFileDialog.FileName, GViewer);
             }
-            var drawingGraph = new Graph();
-            drawingGraph.AddEdge("a", "b");
-            GViewer.Graph = drawingGraph;
         }
 
         static void ReadFile(string inputFileName, GViewer gViewer)
@@ -118,6 +114,7 @@ namespace Microsoft.PVisualizer
                 CommandLine.WriteMessageLine("Compilation failed", SeverityKind.Error);
             }
             lastFileName = inputFileName;
+            GViewer.Graph = PtoGraph.GenerateGraph(compiler.ParsedProgram);
         }
     }
 }

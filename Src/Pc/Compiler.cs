@@ -130,6 +130,7 @@
                 return false;
             }
 
+            ParsedProgram = prog;
             if (Options.parseOnly)
             {
                 return true;
@@ -137,7 +138,6 @@
 
             //// Step 2. Serialize the parsed object graph into a Formula model and install it. Should not fail.
             AST<Model> model;
-            ParsedProgram = prog;
             var inputModule = MkSafeModuleName(InputFileName);
             result = Factory.Instance.MkModel(
                 inputModule, 

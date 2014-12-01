@@ -507,13 +507,14 @@ transform P2CProgram (in:: P) returns (out:: C)
 				    funType = FunType(BaseType(VOID), argTypes),
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_SM_CONTEXT")),
 					           PrmTypes(NmdType(NIL, "PRT_UINT32"),
-							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),					  
+							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),		
+				    StmtTrans(f, f.body, cbody),			  
 	                def = FunDef(
 					  NIL,
 					  funType,
 					  strJoin(name, "_IMPL"),
 					  params,
-					  NIL).
+					  cbody).
 
 	COut(5, def) :- DeclId(f, id, name), id > 0, f : AnonFunDecl, f.owner.kind = REAL,
 	                params = Params(Param(NIL, "context"), 
@@ -523,12 +524,13 @@ transform P2CProgram (in:: P) returns (out:: C)
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_SM_CONTEXT")),
 					           PrmTypes(NmdType(NIL, "PRT_UINT32"),
 							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),					  
+				    StmtTrans(f, f.body, cbody),			  
 	                def = FunDef(
 					  NIL,
 					  funType,
 					  strJoin(name, "_IMPL"),
 					  params,
-					  NIL).
+					  cbody).
 
 	HOut(1, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = MODEL, f.owner.kind = REAL,
 	                params = Params(Param(NIL, "context"), 
@@ -989,20 +991,323 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// Base case: Initially, the translation is the empty list.
 	RhsTrans(c, s, i, -1, NIL) :- SubSE(c, s), s : in.Stmt, RhsCntxt(s, i, _).
 
+	IndexOf ::= (t: NmdTupType, name: String, offset: Natural, tail: NmdTupType + {NIL}).
+	IndexOf(t, name, 0, tail)  :- TypeOf(_, _, t), t = NmdTupType(NmdTupTypeField(name, _), tail).
+	IndexOf(t, name, i', tail) :- IndexOf(t, _, i, tail'), tail' = NmdTupType(NmdTupTypeField(name, _), tail), i' = i + 1.
+
+	TupleArgs  ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, es': Exprs, e: in.Expr, es: Exprs + {NIL}).
+	TupleTrans ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, es: Exprs + {NIL}, ecs: out.Args + {NIL}).
+	TupleArgs(c, s, i, es', e, es) :- SubSE(c, s), RhsEvalOrder(s, i, es', _), es' = Exprs(e, es).
+	TupleTrans(c, s, i, NIL, NIL)  :- SubSE(c, s), RhsEvalOrder(s, i, _, _).
+	TupleTrans(c, s, i, es', ecs') :- TupleArgs(c, s, i, es', e, es), TupleTrans(c, s, i, es, ecs),
+									  RhsEvalOrder(s, i, e, j), ecs' = out.Args(Ident(strJoin("p_tmp_", toString(j))), ecs).
+
+	NamedTupleArgs  ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, es': NamedExprs, e: in.Expr, es: NamedExprs + {NIL}).
+	NamedTupleTrans ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, es: NamedExprs + {NIL}, ecs: out.Args + {NIL}).
+	NamedTupleArgs(c, s, i, es', e, es) :- SubSE(c, s), RhsEvalOrder(s, i, es', _), es' = NamedExprs(_, e, es).
+	NamedTupleTrans(c, s, i, NIL, NIL)  :- SubSE(c, s), RhsEvalOrder(s, i, _, _).
+	NamedTupleTrans(c, s, i, es', ecs') :- NamedTupleArgs(c, s, i, es', e, es), NamedTupleTrans(c, s, i, es, ecs),
+										   RhsEvalOrder(s, i, e, j), ecs' = out.Args(Ident(strJoin("p_tmp_", toString(j))), ecs).
+
+	//// Identifier
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = Name(n), TypeOfFormalParam(c, n, _), c is FunDecl, IndexOf(c.params, n, formalIndex, _),
+									ec = out.FunApp(Ident("PrtTupleGet"), Args(Ident("value"), Args(IntLit(formalIndex, DEC, U), NIL))).
+
+	RhsTrans(c, s, i, j', trans) :- c is TypingContext, varDecl is VarDecl(n, c.owner, t),  
+									RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = Name(n), no TypeOfFormalParam(c, n, _), DeclId(varDecl, _, varName),
+									ec = out.FunApp(Ident("PrtCloneValue"), Args(BinApp(AAC, BinApp(PFLD, Ident("privContext"), Ident("varValues")), Ident(varName)), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- c is TypingContext, eventDecl is EventDecl(n, _, _), 
+	                                RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), e = Name(n),  
+									no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _),
+									DeclId(eventDecl, _, eventName), 
+									ec = out.FunApp(Ident("PrtMkEventValue"), Args(Ident(eventName), NIL)).
+
+	//// Machine creation
+	RhsTrans(c, s, i, 1, trans)  :- RhsTrans(c, s, i, -1, NIL), RhsEvalOrder(s, i, e, _), trans = out.Args(ec, out.Args(out.FunApp(Ident("PrtMkNullValue"), NIL), NIL)), 
+									e = New(name, NIL), DeclId(c.owner, _, machineName), context = Ident("privContext"),
+									newMachine = out.FunApp(Ident("PrtMkMachine"), Args(context, Args(Ident(machineName), Args(Ident("p_tmp_0"), NIL)))), 
+									ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(PFLD, newMachine, Ident("id")), NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = New(name, arg), RhsEvalOrder(s, i, arg, tmp1), DeclId(c.owner, _, machineName), context = Ident("privContext"),
+									newMachine = out.FunApp(Ident("PrtMkMachine"), Args(context, Args(Ident(machineName), Args(Ident(strJoin("p_tmp_", toString(tmp1))), NIL)))), 
+									ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(PFLD, newMachine, Ident("id")), NIL)).
+
+	//// Function application
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = in.FunApp(name, NIL), funDecl = FunDecl(name, c.owner, _, _, _, _), DeclId(funDecl, funIndex, funName),
+									ec = out.FunApp(Ident(funName), Args(Ident("context"), Args(IntLit(funIndex, DEC, U), Args(Ident("NULL"), NIL)))).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = in.FunApp(name, args), args != NIL, funDecl = FunDecl(name, c.owner, _, type, _, _), DeclId(funDecl, funIndex, funName),
+									TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupleTrans(c, s, i, args, ecs), 
+									ec = out.FunApp(Ident(funName), Args(Ident("context"), Args(IntLit(funIndex, DEC, U), Args(out.FunApp(Ident("TupleMacro"), Args(Ident(typeName), ecs)), NIL)))).
+
 	//// Nullary expressions
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 							        e = NulApp(n), n : Integer,
 									ec = out.FunApp(Ident("PrtMkIntValue"), Args(IntLit(n, DEC, U), NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = NulApp(FALSE), 
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(Ident("PRT_FALSE"), NIL)).
+    RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = NulApp(TRUE), 
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(Ident("PRT_TRUE"), NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = NulApp(THIS),
+									ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(PFLD, Ident("privContext"), Ident("id")), NIL)). 
+    RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = NulApp(TRIGGER),
+									ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(FLD, out.BinApp(PFLD, Ident("privContext"), Ident("currentEvent")), Ident("trigger")), NIL)). 
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = NulApp(PAYLOAD),
+									ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(FLD, out.BinApp(PFLD, Ident("privContext"), Ident("currentEvent")), Ident("payload")), NIL)). 
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = NulApp(NONDET),
+									ec = out.FunApp(Ident("PrtChoose"), NIL). 
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = NulApp(FAIRNONDET),
+									ec = out.FunApp(Ident("PrtChoose"), NIL). 
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = NulApp(NULL),
+									ec = out.FunApp(Ident("PrtMkNullValue"), NIL).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = NulApp(HALT),
+									ec = out.FunApp(Ident("PrtMkEventValue"), out.Args(Ident("PRT_SPECIAL_EVENT_HALT"), NIL)). 
 
-    //// Unary expressions
+	//// Unary expressions
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.UnApp(NOT, e1), RhsEvalOrder(s, i, e1, tmp1),
+									getBool = out.FunApp(Ident("PrtPrimGetBool"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), NIL)),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(UnApp(BNOT, getBool), NIL)).
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 							        e = in.UnApp(NEG, e1), RhsEvalOrder(s, i, e1, tmp1),
 									getInt = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), NIL)),
 									ec = out.FunApp(Ident("PrtMkIntValue"), Args(UnApp(NEG, getInt), NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.UnApp(KEYS, e1), RhsEvalOrder(s, i, e1, tmp1),
+									ec = out.FunApp(Ident("PrtMapGetKeys"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.UnApp(VALUES, e1), RhsEvalOrder(s, i, e1, tmp1),
+									ec = out.FunApp(Ident("PrtMapGetValues"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.UnApp(SIZEOF, e1), RhsEvalOrder(s, i, e1, tmp1),
+									TypeOf(c, e1, MapType(_, _)),
+									ec = out.FunApp(Ident("PrtMapSizeOf"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.UnApp(SIZEOF, e1), RhsEvalOrder(s, i, e1, tmp1),
+									TypeOf(c, e1, SeqType(_)),
+									ec = out.FunApp(Ident("PrtSeqSizeOf"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), NIL)).
 
-    //// Just for debugging
-	COut(0, PpPragma(e)) :- RhsTrans(_, s, i, last, trans), e = out.FunApp(Ident("Foo"), trans),
-	                        last = maxAll(-1, { j |  RhsEvalOrder(s, i, _, j) }). 
+	//// Binary expressions
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.BinApp(ADD, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									getInt1 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), NIL)),
+									getInt2 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkIntValue"), Args(BinApp(ADD, getInt1, getInt2), NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.BinApp(SUB, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									getInt1 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), NIL)),
+									getInt2 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkIntValue"), Args(BinApp(SUB, getInt1, getInt2), NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.BinApp(MUL, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									getInt1 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), NIL)),
+									getInt2 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkIntValue"), Args(BinApp(MUL, getInt1, getInt2), NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.BinApp(INTDIV, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									getInt1 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), NIL)),
+									getInt2 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkIntValue"), Args(BinApp(DIV, getInt1, getInt2), NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.BinApp(AND, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									getBool1 = out.FunApp(Ident("PrtPrimGetBool"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), NIL)),
+									getBool2 = out.FunApp(Ident("PrtPrimGetBool"), Args(Ident(strJoin("p_tmp_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(BAND, getBool1, getBool2), NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.BinApp(OR, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									getBool1 = out.FunApp(Ident("PrtPrimGetBool"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), NIL)),
+									getBool2 = out.FunApp(Ident("PrtPrimGetBool"), Args(Ident(strJoin("p_tmp_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(BOR, getBool1, getBool2), NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.BinApp(EQ, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									getBool = out.FunApp(Ident("PrtIsEqualValue"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), Args(Ident(strJoin("p_tmp_", toString(tmp2))), NIL))),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(getBool, NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.BinApp(NEQ, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									getBool = out.FunApp(Ident("PrtIsEqualValue"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), Args(Ident(strJoin("p_tmp_", toString(tmp2))), NIL))),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(UnApp(BNOT, getBool), NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.BinApp(LT, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									getInt1 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), NIL)),
+									getInt2 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(LT, getInt1, getInt2), NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.BinApp(LE, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									getInt1 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), NIL)),
+									getInt2 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(LE, getInt1, getInt2), NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.BinApp(GT, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									getInt1 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), NIL)),
+									getInt2 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(GT, getInt1, getInt2), NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.BinApp(GE, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									getInt1 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_", toString(tmp1))), NIL)),
+									getInt2 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(GE, getInt1, getInt2), NIL)).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.BinApp(IDX, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									TypeOf(c, e1, MapType(_, _)),
+									getMap = Ident(strJoin("p_tmp_", toString(tmp1))),
+									getIndex = Ident(strJoin("p_tmp_", toString(tmp2))),
+									ec = out.FunApp(Ident("PrtMapGet"), Args(getMap, Args(getIndex, NIL))).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.BinApp(IDX, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									TypeOf(c, e1, SeqType(_)),
+									getMap = Ident(strJoin("p_tmp_", toString(tmp1))),
+									getIndex = Ident(strJoin("p_tmp_", toString(tmp2))),
+									ec = out.FunApp(Ident("PrtSeqGet"), Args(getMap, Args(getIndex, NIL))).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.BinApp(IN, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									getKey = Ident(strJoin("p_tmp_", toString(tmp1))),
+									getMap = Ident(strJoin("p_tmp_", toString(tmp2))),
+									ec = out.FunApp(Ident("PrtMapExists"), Args(getMap, Args(getKey, NIL))).
+
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.Field(e1, f), RhsEvalOrder(s, i, e1, tmp1),
+									f : String, TypeOf(c, e1, nmdTupleType), IndexOf(nmdTupleType, f, offset, _),
+									getNmdTuple = Ident(strJoin("p_tmp_", toString(tmp1))), 
+									ec = out.FunApp(Ident("PrtNmdTupleGet"), Args(getNmdTuple, Args(IntLit(offset, DEC, NIL), NIL))).
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+							        e = in.Field(e1, f), RhsEvalOrder(s, i, e1, tmp1),
+									f : Natural,
+									getTuple = Ident(strJoin("p_tmp_", toString(tmp1))),
+									ec = out.FunApp(Ident("PrtTupleGet"), Args(getTuple, Args(IntLit(f, DEC, NIL), NIL))).
+
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = in.Default(type), TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),
+									ec = out.FunApp(Ident("PrtMkDefaultValue"), Args(Ident(typeName), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = in.Cast(arg, type), RhsEvalOrder(s, i, arg, tmp1), TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),
+									getArg = Ident(strJoin("p_tmp_", toString(tmp1))),
+									ec = out.FunApp(Ident("PrtCastValue"), Args(getArg, Args(Ident(typeName), NIL))).
+	
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = in.Tuple(es), TypeOf(c, e, type), TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),
+									TupleTrans(c, s, i, es, ecs), 
+									ec = out.FunApp(Ident("TupleMacro"), Args(Ident(typeName), ecs)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = in.NamedTuple(es), TypeOf(c, e, type), TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),
+									NamedTupleTrans(c, s, i, es, ecs), 
+									ec = out.FunApp(Ident("TupleMacro"), Args(Ident(typeName), ecs)).
+
+    /*************************************************************/
+    /******             Statement translation               ******/
+    /*************************************************************/	
+	
+    StmtTrans ::= (cntxt: TypingContext, stmt: in.Stmt, trans: out.Stmt + { NIL }).
+
+	//// Push
+	StmtTrans(c, s, cs) :- SubSE(c, s), DeclId(c.owner, _, machineName), context = Ident("privContext"),
+						   s = in.Push(name, label),  
+						   DeclId(StateDecl(name, c.owner, _, _, _), stateIndex, _),
+						   cs = out.Seq(out.FunApp(Ident("PrtPush"), Args(Ident("privContext"), Args(IntLit(stateIndex, DEC, NIL), NIL))), 
+						                out.Seq(out.Return(NIL), out.Lbl(strJoin("L", toString(label)), NIL))).
+	
+	//// New
+	StmtTrans(c, s, cs) :- SubSE(c, s), DeclId(c.owner, _, machineName), context = Ident("privContext"),
+	                       s = in.NewStmt(name, NIL),  
+						   cs = out.FunApp(Ident("StmtMacro"), 
+										   Args(out.FunApp(Ident("PrtMkNullValue"), NIL), 
+										        Args(out.FunApp(Ident("PrtMkMachine"), Args(context, Args(Ident(machineName), Args(Ident("p_stmt_tmp_0"), NIL)))), NIL))).
+	StmtTrans(c, s, cs) :- SubSE(c, s), DeclId(c.owner, _, machineName), context = Ident("privContext"),
+	                       s = in.NewStmt(name, arg),  arg != NIL, RhsTrans(c, s, 0, argIndex, argTrans), RhsEvalOrder(s, 0, arg, argIndex),
+						   cs = out.FunApp(Ident("StmtMacro"), 
+										   Args(out.FunApp(Ident("ExprMacro"), argTrans), 
+										        Args(out.FunApp(Ident("PrtMkMachine"), Args(context, Args(Ident(machineName), Args(Ident("p_stmt_tmp_0"), NIL)))), NIL))).
+
+	//// Raise
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("privContext"),
+	                       s = in.Raise(ev, NIL), 
+						   RhsTrans(c, s, 0, evIndex, evTrans), RhsEvalOrder(s, 0, ev, evIndex),
+						   cs = out.FunApp(Ident("StmtMacro"), 
+										   Args(out.FunApp(Ident("ExprMacro"), evTrans), Args(out.FunApp(Ident("PrtMkNullValue"), NIL),
+										        Args(out.FunApp(Ident("PrtRaise"), Args(context, Args(Ident("p_stmt_tmp_0"), Args(Ident("p_stmt_tmp_1"), NIL)))), NIL)))).
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("privContext"),
+	                       s = in.Raise(ev, arg), arg != NIL, 
+						   RhsTrans(c, s, 0, evIndex, evTrans), RhsEvalOrder(s, 0, ev, evIndex), RhsTrans(c, s, 1, argIndex, argTrans), RhsEvalOrder(s, 1, arg, argIndex),
+						   cs = out.FunApp(Ident("StmtMacro"), 
+										   Args(out.FunApp(Ident("ExprMacro"), evTrans), Args(out.FunApp(Ident("ExprMacro"), argTrans),
+										        Args(out.FunApp(Ident("PrtRaise"), Args(context, Args(Ident("p_stmt_tmp_0"), Args(Ident("p_stmt_tmp_1"), NIL)))), NIL)))).
+
+	//// Send										
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("privContext"),
+	                       s = in.Send(dest, ev, NIL), 
+						   RhsTrans(c, s, 0, destIndex, destTrans), RhsEvalOrder(s, 0, dest, destIndex), RhsTrans(c, s, 1, evIndex, evTrans), RhsEvalOrder(s, 1, ev, evIndex), 
+						   cs = out.FunApp(Ident("StmtMacro"), 
+										   Args(out.FunApp(Ident("ExprMacro"), destTrans), Args(out.FunApp(Ident("ExprMacro"), evTrans), Args(out.FunApp(Ident("PrtMkNullValue"), NIL),
+										        Args(out.FunApp(Ident("PrtSend"), Args(context, Args(Ident("p_stmt_tmp_0"), Args(Ident("p_stmt_tmp_1"), Args(Ident("p_stmt_tmp_2"), NIL))))), NIL))))).
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("privContext"),
+	                       s = in.Send(dest, ev, arg), arg != NIL, 
+						   RhsTrans(c, s, 0, destIndex, destTrans), RhsEvalOrder(s, 0, dest, destIndex), RhsTrans(c, s, 1, evIndex, evTrans), RhsEvalOrder(s, 1, ev, evIndex), RhsTrans(c, s, 2, argIndex, argTrans), RhsEvalOrder(s, 2, arg, argIndex), 
+						   cs = out.FunApp(Ident("StmtMacro"), 
+										   Args(out.FunApp(Ident("ExprMacro"), destTrans), Args(out.FunApp(Ident("ExprMacro"), evTrans), Args(out.FunApp(Ident("ExprMacro"), argTrans),
+										        Args(out.FunApp(Ident("PrtSend"), Args(context, Args(Ident("p_stmt_tmp_0"), Args(Ident("p_stmt_tmp_1"), Args(Ident("p_stmt_tmp_2"), NIL))))), NIL))))).
+
+	//// Monitor
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Monitor(_, _, _), cs = NIL.
+
+	//// FunStmt
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("context"),
+						   s = in.FunStmt(name, NIL), funDecl = FunDecl(name, c.owner, _, _, _, _), DeclId(funDecl, funIndex, funName),
+						   cs = out.FunApp(Ident(funName), Args(context, Args(IntLit(funIndex, DEC, U), Args(Ident("NULL"), NIL)))).
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("context"),
+						   s = in.FunStmt(name, args), args != NIL, funDecl = FunDecl(name, c.owner, _, type, _, _), DeclId(funDecl, funIndex, funName),
+						   TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupleTrans(c, s, 0, args, ecs), 
+						   cs = out.FunApp(Ident(funName), Args(context, Args(IntLit(funIndex, DEC, U), Args(out.FunApp(Ident("TupleMacro"), Args(Ident(typeName), ecs)), NIL)))).
+	
+	//// NulStmt
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NulStmt(SKIP), cs = NIL.
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("privContext"),
+	                       s = in.NulStmt(POP),
+						   cs = out.Seq(out.FunApp(Ident("PrtPop"), Args(context, NIL)), out.Return(NIL)).
+
+	//// UnStmt
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("privContext"),
+	                       s = in.UnStmt(ASSERT, arg), RhsTrans(c, s, 0, argIndex, argTrans), RhsEvalOrder(s, 0, arg, argIndex),
+						   cs = out.FunApp(Ident("StmtMacro"), 
+										   Args(out.FunApp(Ident("ExprMacro"), argTrans), 
+										        Args(out.FunApp(Ident("PrtAssert"), Args(context, Args(Ident("p_stmt_tmp_0"), NIL))), NIL))).
+
+	//// BinStmt
+    // BinStmt  ::= new (op: { REMOVE, ASSIGN, INSERT }, arg1: any Expr, arg2: any Expr).
+	
+	//// Return
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Return(NIL), cs = out.Return(NIL).
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.Return(expr), expr != NIL, RhsTrans(c, s, 0, exprIndex, exprTrans), RhsEvalOrder(s, 0, expr, exprIndex),
+						   cs = out.Return(out.FunApp(Ident("ExprMacro"), exprTrans)).
+
+	//// While
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.While(cond, s1), RhsTrans(c, s, 0, condIndex, condTrans), RhsEvalOrder(s, 0, cond, condIndex), StmtTrans(c, s1, cs1),
+						   cs = out.Loop(WHILE, out.FunApp(Ident("CondMacro"), condTrans), cs1).
+
+	//// Ite
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.Ite(cond, s1, s2), RhsTrans(c, s, 0, condIndex, condTrans), RhsEvalOrder(s, 0, cond, condIndex), StmtTrans(c, s1, cs1), StmtTrans(c, s2, cs2),
+						   cs = out.ITE(out.FunApp(Ident("CondMacro"), condTrans), cs1, cs2).
+
+	//// Seq
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.Seq(s1, s2), StmtTrans(c, s1, cs1), StmtTrans(c, s2, cs2),
+						   cs = out.Seq(cs1, cs2).
 
     /*************************************************************/
     /******            Expression dependencies              ******/

@@ -38,14 +38,17 @@
     <Reference Include="Core">
       <HintPath>..\..\Ext\Formula\x86\Core.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Msagl">
-      <HintPath>..\..\..\..\codebox\agl\GraphLayout\Samples\WindowsApplicationSample\bin\Release\Microsoft.Msagl.dll</HintPath>
+    <Reference Include="Microsoft.Msagl, Version=1.0.0.0, Culture=neutral, PublicKeyToken=640c57aa40e7ae7d, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\PrivatePlang\Ext\AGL\Microsoft.Msagl.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Msagl.Drawing">
-      <HintPath>..\..\..\..\codebox\agl\GraphLayout\Samples\WindowsApplicationSample\bin\Release\Microsoft.Msagl.Drawing.dll</HintPath>
+    <Reference Include="Microsoft.Msagl.Drawing, Version=3.0.0.0, Culture=neutral, PublicKeyToken=8a3d7c21d5fa1306, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\PrivatePlang\Ext\AGL\Microsoft.Msagl.Drawing.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Msagl.GraphViewerGdi">
-      <HintPath>..\..\..\..\codebox\agl\GraphLayout\Samples\WindowsApplicationSample\bin\Release\Microsoft.Msagl.GraphViewerGdi.dll</HintPath>
+    <Reference Include="Microsoft.Msagl.GraphViewerGdi, Version=3.0.0.0, Culture=neutral, PublicKeyToken=fffc27ea4058b3a1, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\PrivatePlang\Ext\AGL\Microsoft.Msagl.GraphViewerGdi.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

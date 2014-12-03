@@ -1205,6 +1205,6 @@ PrtLog(
 	_In_ PRT_MACHINEINST_PRIV *context
 )
 {
-	((PRT_PROCESS_PRIV *)context->process)->logHandler(step, context);
+	((PRT_PROCESS_PRIV *)context->process)->logHandler(step, (PRT_MACHINEINST *)context);
 }
 

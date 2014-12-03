@@ -12,29 +12,40 @@
 extern "C"{
 #endif
 
-PRT_API void PRT_CALL_CONV PrtWinUserPrintUint16(_In_ PRT_UINT16 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten);
+/** Prints a value to the output stream
+* @param[in] value The non-null value to print.
+*/
+PRT_API void PRT_CALL_CONV PrtPrintValue(_In_ PRT_VALUE *value);
 
-PRT_API void PRT_CALL_CONV PrtWinUserPrintUint32(_In_ PRT_UINT32 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten);
-
-PRT_API void PRT_CALL_CONV PrtWinUserPrintUint64(_In_ PRT_UINT64 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten);
-
-PRT_API void PRT_CALL_CONV PrtWinUserPrintInt32(_In_ PRT_INT32 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten);
-
-PRT_API void PRT_CALL_CONV PrtWinUserPrintString(_In_ PRT_STRING s, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten);
-
-PRT_API void PRT_CALL_CONV PrtWinUserPrintMachineId(_In_ PRT_MACHINEID id, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten);
+/** Converts a value to a string.
+* @param[in] value The non-null value to print.
+* @returns a string representing value.
+*/
+PRT_API PRT_STRING PRT_CALL_CONV PrtToStringValue(_In_ PRT_VALUE *value);
 
 /** Prints a type to the output stream
-* @param[in] type The type to print.
+* @param[in] type The non-null type to print.
 */
-PRT_API	void PRT_CALL_CONV PrtWinUserPrintType(_In_ PRT_TYPE *type, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten);
+PRT_API void PRT_CALL_CONV PrtPrintType(_In_ PRT_TYPE *type);
 
-/** Prints a value to the output stream
-* @param[in] value The value to print.
+/** Converts a type to a string.
+* @param[in] type The non-null value to print.
+* @returns a string representing type.
 */
-PRT_API	void PRT_CALL_CONV PrtWinUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten);
+PRT_API PRT_STRING PRT_CALL_CONV PrtToStringType(_In_ PRT_TYPE *type);
 
-PRT_API void PRT_CALL_CONV PrtWinUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST_PRIV *c, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten);
+/** Prints a step to the output stream
+* @param[in] step The step to print.
+* @param[in] machine The machine that made the step.
+*/
+PRT_API void PRT_CALL_CONV PrtPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine);
+
+/** Converts a step to a string.
+* @param[in] step The step to print.
+* @param[in] machine The machine that made the step.
+* @returns a string representing the step.
+*/
+PRT_API PRT_STRING PRT_CALL_CONV PrtToStringStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine);
 
 #ifdef __cplusplus
 }

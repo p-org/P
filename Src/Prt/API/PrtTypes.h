@@ -159,7 +159,6 @@ typedef struct PRT_FORGNTYPE
 	PRT_FORGN_ISEQUAL     eqTester;   /**< Tests foreign values for equality */
 } PRT_FORGNTYPE;
 
-
 /** Makes a foreign type.
 * @param[in] typeTag The type tag for this type.
 * @param[in] cloner The cloner for this type.

@@ -4,9 +4,9 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 59 distinct states, 122 total transitions, 11 steps max depth
+OUT: 56 distinct states explored
 OUT: 
-EXIT: 0
+EXIT: 3
 
 =================================
 BangaloreToRedmond.trace

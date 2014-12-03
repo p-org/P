@@ -1535,7 +1535,6 @@ namespace Microsoft.Pc
                     }
                 }
                 executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(enterTraceString), MkZingDot("myHandle", "instance"))));
-                executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("invokeplugin"), Factory.Instance.MkCnst("\"StateCoveragePlugin.dll\""), Factory.Instance.MkCnst(string.Format("\"{0}\"", machineName)), Factory.Instance.MkCnst(string.Format("\"{0}\"", stateName)))));
                 executeStmts.Add(MkZingAssign(MkZingDot("myHandle", "stack", "state"), MkZingState(stateName)));
                 executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier(string.Format("{0}_CalculateDeferredAndActionSet", stateName)))));
                 executeStmts.Add(MkZingAssign(cont, MkZingCall(MkZingIdentifier("ReentrancyHelper"), entryAction)));

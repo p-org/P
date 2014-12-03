@@ -84,46 +84,23 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\System.Compiler.Runtime.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\System.Compiler.Runtime.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingDelayingScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingDelayingScheduler.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingOptions.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingOptions.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingPlugin.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingPlugin.dll"),
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingExplorer.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingExplorer.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\Zinger.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Zinger.exe"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\FrontierTree.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\FrontierTree.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ParallelExplorer.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ParallelExplorer.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingDelayingScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingDelayingScheduler.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingStateSpaceTraversal.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingStateSpaceTraversal.dll"),
-            new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RandomDelayingScheduler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\RandomDelayingScheduler.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RoundRobinScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\RoundRobinScheduler.dll"),
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RoundRobinDelayingScheduler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\RoundRobinDelayingScheduler.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RunToCompletionDBSched.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\RunToCompletionDBSched.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\StateCoveragePlugin.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\StateCoveragePlugin.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\StateVisitCount.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\StateVisitCount.dll"),
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RunToCompletionDelayingScheduler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\RunToCompletionDelayingScheduler.dll"),
+
             //Zing x64
-            new Tuple<string, string>(
+           new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\zc.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\zc.exe"),
             new Tuple<string, string>(
@@ -148,44 +125,20 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\System.Compiler.Runtime.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\System.Compiler.Runtime.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingDelayingScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\ZingDelayingScheduler.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingOptions.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\ZingOptions.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingPlugin.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\ZingPlugin.dll"),
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingExplorer.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\ZingExplorer.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\Zinger.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\Zinger.exe"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\FrontierTree.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\FrontierTree.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ParallelExplorer.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\ParallelExplorer.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingDelayingScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\ZingDelayingScheduler.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingStateSpaceTraversal.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\ZingStateSpaceTraversal.dll"),
-            new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RandomDelayingScheduler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\RandomDelayingScheduler.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RoundRobinScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\RoundRobinScheduler.dll"),
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RoundRobinDelayingScheduler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\RoundRobinDelayingScheduler.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RunToCompletionDBSched.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\RunToCompletionDBSched.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\StateCoveragePlugin.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\StateCoveragePlugin.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\StateVisitCount.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\StateVisitCount.dll"),
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RunToCompletionDelayingScheduler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\RunToCompletionDelayingScheduler.dll"),
             //Pc x86
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x86\\Debug\\Pc.exe", 
@@ -362,7 +315,7 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Ext\\Formula\\x64\\libz3.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\libz3.dll"),
 
-            //zing    x86
+            //Zing x86
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\zc.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\zc.exe"),
@@ -388,48 +341,23 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\System.Compiler.Runtime.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\System.Compiler.Runtime.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingDelayingScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\ZingDelayingScheduler.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingOptions.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\ZingOptions.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingPlugin.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\ZingPlugin.dll"),
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingExplorer.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\ZingExplorer.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\Zinger.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\Zinger.exe"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\FrontierTree.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\FrontierTree.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ParallelExplorer.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\ParallelExplorer.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingDelayingScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\ZingDelayingScheduler.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingStateSpaceTraversal.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\ZingStateSpaceTraversal.dll"),
-            new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RandomDelayingScheduler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\RandomDelayingScheduler.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RoundRobinScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\RoundRobinScheduler.dll"),
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RoundRobinDelayingScheduler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\RoundRobinDelayingScheduler.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RunToCompletionDBSched.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\RunToCompletionDBSched.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\StateCoveragePlugin.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\StateCoveragePlugin.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\StateVisitCount.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\StateVisitCount.dll"),
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RunToCompletionDelayingScheduler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\RunToCompletionDelayingScheduler.dll"),
 
-
-            //zing x64
-            new Tuple<string, string>(
+            //Zing x64
+           new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\zc.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\zc.exe"),
             new Tuple<string, string>(
@@ -454,44 +382,20 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\System.Compiler.Runtime.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\System.Compiler.Runtime.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingDelayingScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\ZingDelayingScheduler.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingOptions.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\ZingOptions.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingPlugin.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\ZingPlugin.dll"),
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingExplorer.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\ZingExplorer.dll"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\Zinger.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\Zinger.exe"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\FrontierTree.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\FrontierTree.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ParallelExplorer.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\ParallelExplorer.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingDelayingScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\ZingDelayingScheduler.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingStateSpaceTraversal.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\ZingStateSpaceTraversal.dll"),
-            new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RandomDelayingScheduler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\RandomDelayingScheduler.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RoundRobinScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\RoundRobinScheduler.dll"),
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RoundRobinDelayingScheduler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\RoundRobinDelayingScheduler.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RunToCompletionDBSched.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\RunToCompletionDBSched.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\StateCoveragePlugin.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\StateCoveragePlugin.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\StateVisitCount.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\StateVisitCount.dll"),
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RunToCompletionDelayingScheduler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\RunToCompletionDelayingScheduler.dll"),
             //Pc x86
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x86\\Release\\Pc.exe", 

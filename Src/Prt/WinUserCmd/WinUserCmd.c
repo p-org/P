@@ -134,10 +134,11 @@ void BinaryBoolFunTest()
 	PrtFreeType(popFunType);
 }
 
-#define P_EXPR1(x1) (p_expr1 = (x1), p_expr1)
-#define P_EXPR2(x2, x1) (p_expr1 = (x1), p_expr2 = (x2), PrtFreeValue(p_expr1), p_expr2)
+#define P_SEQ
+#define P_EXPR1(x1) P_SEQ(p_expr1 = (x1), p_expr1)
+#define P_EXPR2(x2, x1) P_SEQ(p_expr1 = (x1), p_expr2 = (x2), PrtFreeValue(p_expr1), p_expr2)
 
-#define P_TUP2(t, x2, x1) = (p_expr1 = PrtMkDefaultValue(t), PrtTupleSet(p_expr1, 0, x1), PrtTupleSet(p_expr1, 1, x2), p_expr1)
+#define P_TUP2(t, x2, x1) P_SEQ(p_expr1 = PrtMkDefaultValue(t), PrtTupleSet(p_expr1, 0, x1), PrtTupleSet(p_expr1, 1, x2), p_expr1)
 
 int main(int argc, char *argv[])
 {
@@ -160,6 +161,5 @@ int main(int argc, char *argv[])
 		PrtFreeValue(result);
 	}
 	PRT_DBG_END_MEM_BALANCED_REGION
-
 	return 0;
 }

@@ -73,7 +73,7 @@ typedef struct PRT_MACHINEINST
 typedef void(PRT_CALL_CONV * PRT_ERROR_FUN)(PRT_STATUS, void *);
 
 /** An log function that will be called whenever a step occurs. */
-typedef void(PRT_CALL_CONV * PRT_LOG_FUN)(PRT_STEP, void *);
+typedef void(PRT_CALL_CONV * PRT_LOG_FUN)(PRT_STEP, PRT_MACHINEINST *);
 
 /** Starts a new Process running program. 
 *   @param[in] guid Id for process; client must guarantee uniqueness for processes that may communicate. Cannot be 0-0-0-0.

@@ -19,36 +19,36 @@ void ResizeBuffer(_Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_
 	}
 }
 
-void PRT_CALL_CONV PrtWinUserPrintUint16(_In_ PRT_UINT16 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+void PrtWinUserPrintUint16(_In_ PRT_UINT16 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	ResizeBuffer(buffer, bufferSize, *numCharsWritten, 16);
 	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%lu", i);
 }
-void PRT_CALL_CONV PrtWinUserPrintUint32(_In_ PRT_UINT32 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+void PrtWinUserPrintUint32(_In_ PRT_UINT32 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	ResizeBuffer(buffer, bufferSize, *numCharsWritten, 32);
 	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%lu", i);
 }
 
-void PRT_CALL_CONV PrtWinUserPrintUint64(_In_ PRT_UINT64 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+void PrtWinUserPrintUint64(_In_ PRT_UINT64 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	ResizeBuffer(buffer, bufferSize, *numCharsWritten, 64);
 	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%lu", i);
 }
 
-void PRT_CALL_CONV PrtWinUserPrintInt32(_In_ PRT_INT32 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+void PrtWinUserPrintInt32(_In_ PRT_INT32 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	ResizeBuffer(buffer, bufferSize, *numCharsWritten, 32);
 	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%d", i);
 }
 
-void PRT_CALL_CONV PrtWinUserPrintString(_In_ PRT_STRING s, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+void PrtWinUserPrintString(_In_ PRT_STRING s, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	ResizeBuffer(buffer, bufferSize, *numCharsWritten, strlen(s));
 	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%s", s);
 }
 
-void PRT_CALL_CONV PrtWinUserPrintMachineId(_In_ PRT_MACHINEID id, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+void PrtWinUserPrintMachineId(_In_ PRT_MACHINEID id, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	PrtWinUserPrintString("< (", buffer, bufferSize, numCharsWritten);
 	PrtWinUserPrintUint32(id.processId.data1, buffer, bufferSize, numCharsWritten);
@@ -63,7 +63,7 @@ void PRT_CALL_CONV PrtWinUserPrintMachineId(_In_ PRT_MACHINEID id, _Inout_ char 
 	PrtWinUserPrintString(">", buffer, bufferSize, numCharsWritten);
 }
 
-void PRT_CALL_CONV PrtWinUserPrintType(_In_ PRT_TYPE *type, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+void PrtWinUserPrintType(_In_ PRT_TYPE *type, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	PRT_TYPE_KIND kind = type->typeKind;
 	switch (kind)
@@ -161,7 +161,7 @@ void PRT_CALL_CONV PrtWinUserPrintType(_In_ PRT_TYPE *type, _Inout_ char **buffe
 	}
 }
 
-void PRT_CALL_CONV PrtWinUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+void PrtWinUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	PRT_TYPE_KIND kind = value->type->typeKind;
 	switch (kind)
@@ -293,8 +293,9 @@ void PRT_CALL_CONV PrtWinUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **bu
 	}
 }
 
-void PRT_CALL_CONV PrtWinUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST_PRIV *c, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+void PrtWinUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
+	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)machine;
 	PRT_STRING machineName = c->process->program->machines[c->instanceOf].name;
 	PRT_UINT32 machineId = c->id->valueUnion.mid->machineId;
 	PRT_STRING stateName = PrtGetCurrentStateDecl(c)->name;
@@ -425,7 +426,76 @@ void PRT_CALL_CONV PrtWinUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST_
 		PrtWinUserPrintString("\n", buffer, bufferSize, numCharsWritten); 
 		break;
 	default:
-		PRT_DBG_ASSERT(PRT_FALSE, "Illegal PRT_STEP value");
+		PrtAssert(PRT_FALSE, "Illegal PRT_STEP value");
 		break;
 	}
+}
+
+void PRT_CALL_CONV PrtPrintValue(_In_ PRT_VALUE *value)
+{
+	char *buffer = NULL;
+	PRT_UINT32 bufferSize = 0;
+	PRT_UINT32 nChars = 0;
+
+	PrtWinUserPrintValue(value, &buffer, &bufferSize, &nChars);
+	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
+	printf_s("%s", buffer);
+    PrtFree(buffer);
+}
+
+PRT_STRING PRT_CALL_CONV PrtToStringValue(_In_ PRT_VALUE *value)
+{
+	char *buffer = NULL;
+	PRT_UINT32 bufferSize = 0;
+	PRT_UINT32 nChars = 0;
+
+	PrtWinUserPrintValue(value, &buffer, &bufferSize, &nChars);
+	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
+	return buffer;
+}
+
+void PRT_CALL_CONV PrtPrintType(_In_ PRT_TYPE *type)
+{
+	char *buffer = NULL;
+	PRT_UINT32 bufferSize = 0;
+	PRT_UINT32 nChars = 0;
+
+	PrtWinUserPrintType(type, &buffer, &bufferSize, &nChars);
+	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
+	printf_s("%s", buffer);
+	PrtFree(buffer);
+}
+
+PRT_STRING PRT_CALL_CONV PrtToStringType(_In_ PRT_TYPE *type)
+{
+	char *buffer = NULL;
+	PRT_UINT32 bufferSize = 0;
+	PRT_UINT32 nChars = 0;
+
+	PrtWinUserPrintType(type, &buffer, &bufferSize, &nChars);
+	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
+	return buffer;
+}
+
+void PRT_CALL_CONV PrtPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine)
+{
+	char *buffer = NULL;
+	PRT_UINT32 bufferSize = 0;
+	PRT_UINT32 nChars = 0;
+
+	PrtWinUserPrintStep(step, machine, &buffer, &bufferSize, &nChars);
+	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
+	printf_s("%s", buffer);
+	PrtFree(buffer);
+}
+
+PRT_STRING PRT_CALL_CONV PrtToStringStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine)
+{
+	char *buffer = NULL;
+	PRT_UINT32 bufferSize = 0;
+	PRT_UINT32 nChars = 0;
+
+	PrtWinUserPrintStep(step, machine, &buffer, &bufferSize, &nChars);
+	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
+	return buffer;
 }

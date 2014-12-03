@@ -198,6 +198,9 @@ domain PStaticTyping extends PData
     
     //// The type judgement. NIL is a placeholder for untyped constructs.
     TypeOf ::= (cntxt: TypingContext, expr: Typeable, type: TypeExpr + { ERROR, NIL }).
+
+    //// All typing contexts anywhere in the input program.
+	SubCntxt ::= sub (cntxt: TypingContext).
     
     //// All typeable subexpressions / substatements and the declarations in which they appear.
     SubSE ::= sub (cntxt: TypingContext, typeable: Typeable).
@@ -652,7 +655,7 @@ domain PStaticTyping extends PData
 	//// 1 means this term is reached by following the 2nd child stmt of the parent term.
 	TermPath    ::= (child: { 0, 1 }, prev: TermPath + { NIL }).
 	ReachedPush ::= (cntxt: TypingContext, stmt: Stmt, path: TermPath + { NIL }).
-	ReachedPush(c, c.body, NIL) :- c is TypingContext.
+	ReachedPush(c, c.body, NIL) :- SubCntxt(c).
 	ReachedPush(c, s', p')  :- ReachedPush(c, s, p), s = While(_, s'),  p' = TermPath(0, p).
 	ReachedPush(c, s', p')  :- ReachedPush(c, s, p), s = Ite(_, s', _), p' = TermPath(0, p).
 	ReachedPush(c, s', p')  :- ReachedPush(c, s, p), s = Ite(_, _, s'), p' = TermPath(1, p).

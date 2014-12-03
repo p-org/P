@@ -9,7 +9,7 @@
     using Domains;
     using Microsoft.Formula.API.Generators;
 
-    internal class PProgram
+    public class PProgram
     {
         public List<P_Root.EventDecl> Events
         {

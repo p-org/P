@@ -111,7 +111,7 @@ class SM_HANDLE {
 			   	isBlocked = buffer.IsBlocked(this);
 			}
 			if (!isBlocked) {
-			   	invokescheduler("push", machineId);
+			   	invokescheduler("enabled", machineId, source.machineId);
 			}
 		}
     }
@@ -139,7 +139,6 @@ class SM_HANDLE {
 			} 
 			else 
 			{
-  				invokescheduler("pop");
 				assume (!isBlocked);
 				isBlocked = true;
 				FairScheduler.AtYieldStatic(this);

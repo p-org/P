@@ -16,7 +16,7 @@
 
     public enum LivenessOption { None, Standard, Mace };
 
-    internal class Compiler
+    public class Compiler
     {
         private const string PDomain = "P";
         private const string CDomain = "C";
@@ -130,9 +130,14 @@
                 return false;
             }
 
+            ParsedProgram = prog;
+            if (Options.parseOnly)
+            {
+                return true;
+            }
+
             //// Step 2. Serialize the parsed object graph into a Formula model and install it. Should not fail.
             AST<Model> model;
-            ParsedProgram = prog;
             var inputModule = MkSafeModuleName(InputFileName);
             result = Factory.Instance.MkModel(
                 inputModule, 

@@ -1,0 +1,33 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 8 distinct states explored
+OUT: 
+EXIT: 3
+
+=================================
+boundedchoice_1.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine TestMachine-0
+<StateLog> Machine TestMachine-0 entering State Init
+<RaiseLog> Machine TestMachine-0 raised Event ____unit
+<StateLog> Machine TestMachine-0 exiting State Init
+<StateLog> Machine TestMachine-0 entering State test
+<EnqueueLog> Enqueued Event < ____unit, null > in Machine ____TestMachine-0 by ____TestMachine-0
+<DequeueLog> Dequeued Event < ____unit, null > at Machine ____TestMachine-0
+<StateLog> Machine TestMachine-0 exiting State test
+<StateLog> Machine TestMachine-0 entering State test
+<EnqueueLog> Enqueued Event < ____unit, null > in Machine ____TestMachine-0 by ____TestMachine-0
+<DequeueLog> Dequeued Event < ____unit, null > at Machine ____TestMachine-0
+<StateLog> Machine TestMachine-0 exiting State test
+<StateLog> Machine TestMachine-0 entering State test
+
+Error:
+P Assertion failed:
+Expression: assert(tmpVar_1.bl,)
+Comment: (22, 4): Assert failed

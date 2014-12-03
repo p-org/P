@@ -4,6 +4,6 @@
 OUT: ##################
 OUT: Check Passed
 OUT: ##################
-OUT: 4 distinct states, 3 total transitions, 3 steps max depth
+OUT: 4 distinct states explored
 OUT: 
 EXIT: 0

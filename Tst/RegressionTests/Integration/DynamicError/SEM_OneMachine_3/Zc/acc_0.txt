@@ -4,9 +4,9 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 3 distinct states, 2 total transitions, 2 steps max depth
+OUT: 3 distinct states explored
 OUT: 
-EXIT: 0
+EXIT: 3
 
 =================================
 SendInEntry.trace

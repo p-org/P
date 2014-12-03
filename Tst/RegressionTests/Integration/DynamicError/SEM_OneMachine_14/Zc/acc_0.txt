@@ -4,9 +4,9 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 6 distinct states, 5 total transitions, 5 steps max depth
+OUT: 6 distinct states explored
 OUT: 
-EXIT: 0
+EXIT: 3
 
 =================================
 GotoTransInheritance.trace

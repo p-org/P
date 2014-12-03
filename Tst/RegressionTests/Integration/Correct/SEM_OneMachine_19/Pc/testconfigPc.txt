@@ -1,0 +1,6 @@
+runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: ..\UnhandledEventIgnored.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+acc: .\
+dsc: P semantics test: one machine, "ignore" of an unhandled event

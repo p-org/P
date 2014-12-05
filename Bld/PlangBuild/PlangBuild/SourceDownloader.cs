@@ -37,7 +37,7 @@
 
         private static readonly Tuple<string, string, string, string>[] Versions = new Tuple<string, string, string, string>[] 
         {
-            new Tuple<string, string, string, string>("zing", "0b9c2e1ce485fedcfc766fe4c17eb983521df418", "..\\..\\..\\..\\..\\Ext\\Zing\\Zing_.zip", "..\\..\\..\\..\\..\\Ext\\Zing\\Zing_\\"),
+            new Tuple<string, string, string, string>("zing", "ac0723917c8363525c389e6a768597a68d8ac587", "..\\..\\..\\..\\..\\Ext\\Zing\\Zing_.zip", "..\\..\\..\\..\\..\\Ext\\Zing\\Zing_\\"),
             new Tuple<string, string, string, string>("formula", "aa4cf15c2670c57d0f7ac86888aa17dbe6e47cd0", "..\\..\\..\\..\\..\\Ext\\Formula\\Formula_.zip", "..\\..\\..\\..\\..\\Ext\\Formula\\Formula_\\"),
         };
        

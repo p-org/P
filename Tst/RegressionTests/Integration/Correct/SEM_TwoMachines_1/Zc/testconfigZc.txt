@@ -1,0 +1,4 @@
+runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: ..\EventSentAfterSentHalt.dll
+acc: .\
+dsc: P semantics test: event sent after machine is halted

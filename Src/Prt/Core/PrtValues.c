@@ -440,6 +440,32 @@ PRT_VALUE * PRT_CALL_CONV PrtTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 ind
 	return PrtCloneValue(tuple->valueUnion.tuple->values[index]);
 }
 
+PRT_VALUE * PRT_CALL_CONV PrtTupleGetTmp(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index)
+{
+	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
+	PrtAssert(tuple->type->typeKind == PRT_KIND_TUPLE || tuple->type->typeKind == PRT_KIND_NMDTUP, "Cannot perform tuple set on this value");
+
+	PRT_UINT32 arity;
+	if (tuple->type->typeKind == PRT_KIND_TUPLE)
+	{
+		PRT_TUPTYPE *ttype = tuple->type->typeUnion.tuple;
+		arity = ttype->arity;
+	}
+	else if (tuple->type->typeKind == PRT_KIND_NMDTUP)
+	{
+		PRT_NMDTUPTYPE *ntype = tuple->type->typeUnion.nmTuple;
+		arity = ntype->arity;
+	}
+	else
+	{
+		PRT_DBG_ASSERT(PRT_FALSE, "impossible");
+		return NULL;
+	}
+
+	PrtAssert(index < arity, "Invalid tuple index");
+	return tuple->valueUnion.tuple->values[index];
+}
+
 void PRT_CALL_CONV PrtNmdTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_STRING name, _In_ PRT_VALUE *value)
 {
 	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
@@ -490,6 +516,29 @@ PRT_VALUE * PRT_CALL_CONV PrtNmdTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_STRING 
 
 	PrtAssert(index < arity, "Invalid tuple field name");
 	return PrtCloneValue(tuple->valueUnion.tuple->values[index]);
+}
+
+PRT_VALUE * PRT_CALL_CONV PrtNmdTupleGetTmp(_In_ PRT_VALUE *tuple, _In_ PRT_STRING name)
+{
+	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
+	PrtAssert(name != NULL && name[0] != '\0', "Invalid field name");
+	PrtAssert(tuple->type->typeKind == PRT_KIND_NMDTUP, "Cannot perform tuple get on this value");
+
+	PRT_NMDTUPTYPE *type = tuple->type->typeUnion.nmTuple;
+	PRT_UINT32 arity = type->arity;
+	PRT_STRING *fieldNames = type->fieldNames;
+	PRT_UINT32 index;
+
+	for (index = 0; index < arity; ++index)
+	{
+		if (strncmp(fieldNames[index], name, PRT_MAXFLDNAME_LENGTH) == 0)
+		{
+			break;
+		}
+	}
+
+	PrtAssert(index < arity, "Invalid tuple field name");
+	return tuple->valueUnion.tuple->values[index];
 }
 
 void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index, _In_ PRT_VALUE *value)
@@ -593,6 +642,15 @@ PRT_VALUE * PRT_CALL_CONV PrtSeqGet(_In_ PRT_VALUE *seq, _In_ PRT_UINT32 index)
 	PrtAssert(index >= 0 && index < seq->valueUnion.seq->size, "Invalid index");
 
 	return PrtCloneValue(seq->valueUnion.seq->values[index]);
+}
+
+PRT_VALUE * PRT_CALL_CONV PrtSeqGetTmp(_In_ PRT_VALUE *seq, _In_ PRT_UINT32 index)
+{
+	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
+	PrtAssert(seq->type->typeKind == PRT_KIND_SEQ, "Invalid value");
+	PrtAssert(index >= 0 && index < seq->valueUnion.seq->size, "Invalid index");
+
+	return seq->valueUnion.seq->values[index];
 }
 
 PRT_UINT32 PRT_CALL_CONV PrtSeqSizeOf(_In_ PRT_VALUE *seq)
@@ -822,6 +880,35 @@ PRT_VALUE * PRT_CALL_CONV PrtMapGet(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key)
 		if (PrtIsEqualValue(next->key, key))
 		{
 			return PrtCloneValue(next->value);
+		}
+
+		next = next->bucketNext;
+	}
+
+	PrtAssert(PRT_FALSE, "Invalid map get; key not found");
+	return NULL;
+}
+
+PRT_VALUE * PRT_CALL_CONV PrtMapGetTmp(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key)
+{
+	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
+	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
+	PrtAssert(map->type->typeKind == PRT_KIND_MAP, "Invalid value");
+
+	PRT_MAPTYPE *mapType = map->type->typeUnion.map;
+	PrtAssert(PrtIsSubtype(key->type, mapType->domType), "Invalid map get; key has bad type");
+
+	PRT_UINT32 bucketNum;
+	PRT_MAPNODE *bucket;
+	bucketNum = PrtGetHashCodeValue(key) % PrtHashtableCapacities[map->valueUnion.map->capNum];
+	bucket = map->valueUnion.map->buckets[bucketNum];
+	PrtAssert(bucket != NULL, "Invalid map get; key not found");
+	PRT_MAPNODE *next = bucket;
+	while (next != NULL)
+	{
+		if (PrtIsEqualValue(next->key, key))
+		{
+			return next->value;
 		}
 
 		next = next->bucketNext;

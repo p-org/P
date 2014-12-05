@@ -1,0 +1,6 @@
+runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: ..\BugReproIdenticalTerms.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+acc: .\
+dsc: P semantics test: exit function performed while explicitly popping the state

@@ -4,3 +4,5 @@
 *.log
 *.dll
 *.trace
+*display-diffs.bat
+*failed-tests.txt

@@ -19,11 +19,15 @@ extern "C"{
 #ifdef PRT_API_IMPL
 #define PRT_API __declspec(dllexport)
 #else
-#ifdef _DLL
-#define PRT_API __declspec(dllimport)
-#else
-#define PRT_API
-#endif  
+ #ifdef PRT_STATIC
+ #define PRT_API
+ #else
+   #ifdef _DLL
+   #define PRT_API __declspec(dllimport)
+   #else
+     #define PRT_API
+   #endif  
+ #endif
 #endif
 
 #ifdef PRT_DEBUG

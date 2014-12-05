@@ -2,11 +2,11 @@
          Console output          
 =================================
 OUT: ##################
-OUT: Check Failed
+OUT: Liveness Check Failed
 OUT: ##################
-OUT: 13 distinct states, 14 total transitions, 11 steps max depth
+OUT: 13 distinct states explored
 OUT: 
-EXIT: 0
+EXIT: 6
 
 =================================
 Liveness_3.trace

@@ -2,11 +2,11 @@
          Console output          
 =================================
 OUT: ##################
-OUT: Check Failed
+OUT: Liveness Check Failed
 OUT: ##################
-OUT: 13 distinct states, 14 total transitions, 11 steps max depth
+OUT: 13 distinct states explored
 OUT: 
-EXIT: 0
+EXIT: 6
 
 =================================
 Liveness_2_LoopMachineAdded.trace
@@ -32,7 +32,8 @@ Trace-Log 0:
 <StateLog> Machine Loop-0 exiting State Looping
 <StateLog> Machine Loop-0 entering State Looping
 <EnqueueLog> Enqueued Event < ____Done, null > in Machine ____Loop-0 by ____Loop-0
-Accepting transition<DequeueLog> Dequeued Event < ____Done, null > at Machine ____Loop-0
+Accepting transition
+<DequeueLog> Dequeued Event < ____Done, null > at Machine ____Loop-0
 <StateLog> Machine Loop-0 exiting State Looping
 <StateLog> Machine Loop-0 entering State Looping
 <EnqueueLog> Enqueued Event < ____Done, null > in Machine ____Loop-0 by ____Loop-0

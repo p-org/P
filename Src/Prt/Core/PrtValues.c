@@ -738,6 +738,12 @@ void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _
 		{
 			if (PrtIsEqualValue(next->key, key))
 			{
+				//// Then need to free the unused key.
+				if (cloneKeyVals != PRT_TRUE)
+				{
+					PrtFreeValue(key);
+				}
+
 				PrtFreeValue(next->value);
 				next->value = valueClone;
 				isNewKey = PRT_FALSE;

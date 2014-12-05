@@ -1352,35 +1352,45 @@ transform P2CProgram (in:: P) returns (out:: C)
     */
 
 	//// Raise
-	/*
-	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
 	                       s = in.Raise(ev, NIL), RhsExpr(c, s, 0, evTrans),
-						   cs = out.FunApp(Ident("StmtMacro"), 
-										   Args(out.FunApp(Ident("ExprMacro"), evTrans), 
-										   Args(out.FunApp(Ident("PrtMkNullValue"), NIL),
-										   Args(out.FunApp(Ident("PrtRaise"), 
-										   Args(context, Args(Ident("p_stmt_tmp_0"), Args(Ident("p_stmt_tmp_1"), Args(Ident("p_stmt_tmp_2"), NIL))))), NIL)))).
+						   cs = out.FunApp(Ident("P_STMT_1"), Args(raiseCall, Args(mkNull, Args(evTrans, NIL)))),
+						   raiseCall = out.FunApp(Ident("PrtRaise"),
+						                 Args(context,
+										 Args(Ident("p_tmp_stmt_0"),
+										 Args(Ident("p_tmp_stmt_1"), NIL)))),
+						   mkNull = out.FunApp(Ident("PrtMkNullValue"), NIL),
+						   context = Ident("p_tmp_mach_priv").
 
-	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
-	                       s = in.Raise(ev, arg), arg != NIL, RhsTrans(c, s, 0, _, evTrans), RhsTrans(c, s, 1, _, argTrans), 
-						   cs = out.FunApp(Ident("StmtMacro"), 
-										   Args(out.FunApp(Ident("ExprMacro"), evTrans), Args(out.FunApp(Ident("ExprMacro"), argTrans),
-										        Args(out.FunApp(Ident("PrtRaise"), Args(context, Args(Ident("p_stmt_tmp_0"), Args(Ident("p_stmt_tmp_1"), Args(Ident("p_stmt_tmp_2"), NIL))))), NIL)))).
-    */
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.Raise(ev, pay), pay : in.Expr, 
+						   RhsExpr(c, s, 0, evTrans), RhsExpr(c, s, 1, payTrans),
+						   cs = out.FunApp(Ident("P_STMT_1"), Args(raiseCall, Args(payTrans, Args(evTrans, NIL)))),
+						   raiseCall = out.FunApp(Ident("PrtRaise"),
+						                 Args(context,
+										 Args(Ident("p_tmp_stmt_0"),
+										 Args(Ident("p_tmp_stmt_1"), NIL)))),
+						   context = Ident("p_tmp_mach_priv").
 
 	//// Send										
-	/*
-	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
-	                       s = in.Send(dest, ev, NIL), RhsTrans(c, s, 0, _, destTrans), RhsTrans(c, s, 1, _, evTrans),
-						   cs = out.FunApp(Ident("StmtMacro"), 
-										   Args(out.FunApp(Ident("ExprMacro"), destTrans), Args(out.FunApp(Ident("ExprMacro"), evTrans), Args(out.FunApp(Ident("PrtMkNullValue"), NIL),
-										        Args(out.FunApp(Ident("PrtSend"), Args(context, Args(Ident("p_stmt_tmp_0"), Args(Ident("p_stmt_tmp_1"), Args(Ident("p_stmt_tmp_2"), NIL))))), NIL))))).
-	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
-	                       s = in.Send(dest, ev, arg), arg != NIL, RhsTrans(c, s, 0, _, destTrans), RhsTrans(c, s, 1, _, evTrans), RhsTrans(c, s, 2, _, argTrans), 
-						   cs = out.FunApp(Ident("StmtMacro"), 
-										   Args(out.FunApp(Ident("ExprMacro"), destTrans), Args(out.FunApp(Ident("ExprMacro"), evTrans), Args(out.FunApp(Ident("ExprMacro"), argTrans),
-										        Args(out.FunApp(Ident("PrtSend"), Args(context, Args(Ident("p_stmt_tmp_0"), Args(Ident("p_stmt_tmp_1"), Args(Ident("p_stmt_tmp_2"), NIL))))), NIL))))).
-    */
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.Send(dest, ev, NIL), RhsExpr(c, s, 0, destTrans), RhsExpr(c, s, 1, evTrans),
+						   cs = out.FunApp(Ident("P_STMT_2"), Args(sendCall, Args(mkNull, Args(evTrans, Args(destTrans, NIL))))),
+						   sendCall = out.FunApp(Ident("PrtSend"),
+						                 Args(FunApp(Ident("PrtGetMachine"), Args(BinApp(PFLD, Ident("context"), Ident("process")), Args(Ident("p_tmp_stmt_0"), NIL))),
+										 Args(Ident("p_tmp_stmt_1"),
+										 Args(Ident("p_tmp_stmt_2"), NIL)))),
+						   mkNull = out.FunApp(Ident("PrtMkNullValue"), NIL). 
+
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.Send(dest, ev, pay), pay : in.Expr, 
+						   RhsExpr(c, s, 0, destTrans), RhsExpr(c, s, 1, evTrans), RhsExpr(c, s, 2, payTrans),
+						   cs = out.FunApp(Ident("P_STMT_2"), Args(sendCall, Args(payTrans, Args(evTrans, Args(destTrans, NIL))))),
+						   sendCall = out.FunApp(Ident("PrtSend"),
+						                 Args(FunApp(Ident("PrtGetMachine"), Args(BinApp(PFLD, Ident("context"), Ident("process")), Args(Ident("p_tmp_stmt_0"), NIL))),
+										 Args(Ident("p_tmp_stmt_1"),
+										 Args(Ident("p_tmp_stmt_2"), NIL)))).
+
 	//// Monitor
 	/*
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Monitor(_, _, _), cs = NIL.

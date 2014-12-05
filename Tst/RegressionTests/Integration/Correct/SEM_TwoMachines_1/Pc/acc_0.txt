@@ -1,0 +1,49 @@
+=================================
+         Console output          
+=================================
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing EventSentAfterSentHalt.zing ...
+OUT: Compiling EventSentAfterSentHalt.zing to EventSentAfterSentHalt.dll ...
+OUT: eventsentaftersenthalt.p (13, 4): inferred type:  BaseType(REAL)
+OUT: eventsentaftersenthalt.p (13, 4): inferred type:  NIL
+OUT: eventsentaftersenthalt.p (13, 13): inferred type:  BaseType(REAL)
+OUT: eventsentaftersenthalt.p (14, 4): inferred type:  NIL
+OUT: eventsentaftersenthalt.p (14, 10): inferred type:  BaseType(EVENT)
+OUT: eventsentaftersenthalt.p (21, 4): inferred type:  BaseType(INT)
+OUT: eventsentaftersenthalt.p (21, 4): inferred type:  NIL
+OUT: eventsentaftersenthalt.p (21, 12): inferred type:  BaseType(INT)
+OUT: eventsentaftersenthalt.p (21, 18): inferred type:  BaseType(INT)
+OUT: eventsentaftersenthalt.p (21, 20): inferred type:  BaseType(INT)
+OUT: eventsentaftersenthalt.p (22, 4): inferred type:  NIL
+OUT: eventsentaftersenthalt.p (22, 8): inferred type:  BaseType(INT)
+OUT: eventsentaftersenthalt.p (22, 14): inferred type:  BaseType(BOOL)
+OUT: eventsentaftersenthalt.p (22, 17): inferred type:  BaseType(INT)
+OUT: eventsentaftersenthalt.p (23, 5): inferred type:  NIL
+OUT: eventsentaftersenthalt.p (23, 10): inferred type:  BaseType(REAL)
+OUT: eventsentaftersenthalt.p (23, 18): inferred type:  BaseType(EVENT)
+OUT: eventsentaftersenthalt.p (23, 24): inferred type:  BaseType(REAL)
+OUT: eventsentaftersenthalt.p (25, 4): inferred type:  NIL
+OUT: eventsentaftersenthalt.p (25, 8): inferred type:  BaseType(INT)
+OUT: eventsentaftersenthalt.p (25, 14): inferred type:  BaseType(BOOL)
+OUT: eventsentaftersenthalt.p (25, 17): inferred type:  BaseType(INT)
+OUT: eventsentaftersenthalt.p (26, 5): inferred type:  NIL
+OUT: eventsentaftersenthalt.p (26, 10): inferred type:  BaseType(REAL)
+OUT: eventsentaftersenthalt.p (26, 18): inferred type:  BaseType(EVENT)
+OUT: eventsentaftersenthalt.p (27, 5): inferred type:  NIL
+OUT: eventsentaftersenthalt.p (27, 10): inferred type:  BaseType(REAL)
+OUT: eventsentaftersenthalt.p (27, 18): inferred type:  BaseType(EVENT)
+OUT: eventsentaftersenthalt.p (30, 4): inferred type:  NIL
+OUT: eventsentaftersenthalt.p (30, 10): inferred type:  BaseType(EVENT)
+OUT: eventsentaftersenthalt.p (40, 5): inferred type:  NIL
+OUT: eventsentaftersenthalt.p (47, 23): inferred type:  NIL
+OUT: eventsentaftersenthalt.p (47, 30): inferred type:  BaseType(BOOL)
+OUT: eventsentaftersenthalt.p (52, 7): inferred type:  NIL
+OUT: eventsentaftersenthalt.p (52, 12): inferred type:  BaseType(REAL)
+OUT: eventsentaftersenthalt.p (52, 20): inferred type:  BaseType(REAL)
+OUT: eventsentaftersenthalt.p (52, 32): inferred type:  BaseType(EVENT)
+OUT: eventsentaftersenthalt.p (53, 7): inferred type:  NIL
+OUT: eventsentaftersenthalt.p (53, 13): inferred type:  BaseType(EVENT)
+OUT: eventsentaftersenthalt.p (55, 9): inferred type:  NIL
+OUT: 
+EXIT: 0

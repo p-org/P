@@ -1,0 +1,7 @@
+runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: ..\DFSStackBound.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+acc: .\
+dsc: Zinger: Testing the DFS stack bound option in Zing
+

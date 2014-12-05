@@ -1,6 +1,6 @@
 runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
 argZing: ..\LinearTopology_5.dll
-argZing: -sched:..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\RunToCompletionDBSched.dll
-argZing: -delayc:1
+argZing: -delayb:..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\RunToCompletionDelayingScheduler.dll
+argZing: -fbound:2
 acc: .\
 dsc: Feature Integration: : protocol sample

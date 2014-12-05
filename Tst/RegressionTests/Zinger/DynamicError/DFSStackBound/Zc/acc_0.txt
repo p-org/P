@@ -1,0 +1,51 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: DFS Stack Size Exceeded 10
+OUT: 11 distinct states explored
+OUT: 
+EXIT: 8
+
+=================================
+DFSStackBound.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine TestMachine-0
+<StateLog> Machine TestMachine-0 entering State Init
+<CreateLog> Created Machine Other-0
+<RaiseLog> Machine TestMachine-0 raised Event ____unit
+<StateLog> Machine TestMachine-0 exiting State Init
+<StateLog> Machine TestMachine-0 entering State test
+<EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____TestMachine-0
+<RaiseLog> Machine TestMachine-0 raised Event ____unit
+<StateLog> Machine TestMachine-0 exiting State test
+<StateLog> Machine TestMachine-0 entering State test
+<EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____TestMachine-0
+<RaiseLog> Machine TestMachine-0 raised Event ____unit
+<StateLog> Machine TestMachine-0 exiting State test
+<StateLog> Machine TestMachine-0 entering State test
+<EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____TestMachine-0
+<RaiseLog> Machine TestMachine-0 raised Event ____unit
+<StateLog> Machine TestMachine-0 exiting State test
+<StateLog> Machine TestMachine-0 entering State test
+<EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____TestMachine-0
+<RaiseLog> Machine TestMachine-0 raised Event ____unit
+<StateLog> Machine TestMachine-0 exiting State test
+<StateLog> Machine TestMachine-0 entering State test
+<EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____TestMachine-0
+<RaiseLog> Machine TestMachine-0 raised Event ____unit
+<StateLog> Machine TestMachine-0 exiting State test
+<StateLog> Machine TestMachine-0 entering State test
+<EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____TestMachine-0
+<RaiseLog> Machine TestMachine-0 raised Event ____unit
+<StateLog> Machine TestMachine-0 exiting State test
+<StateLog> Machine TestMachine-0 entering State test
+<EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____TestMachine-0
+<RaiseLog> Machine TestMachine-0 raised Event ____unit
+<StateLog> Machine TestMachine-0 exiting State test
+<StateLog> Machine TestMachine-0 entering State test
+<EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____TestMachine-0

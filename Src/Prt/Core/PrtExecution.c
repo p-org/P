@@ -502,6 +502,8 @@ DoEntryOrAction:
 	case ReturnStatement:
 		context->stateControl = PrtDequeue;
 		context->returnTo = 0;
+		PrtFreeValue(context->currentEvent.trigger);
+		PrtFreeValue(context->currentEvent.payload);
 		context->currentEvent.trigger = NULL;
 		context->currentEvent.payload = NULL;
 		goto DoDequeue;
@@ -1178,6 +1180,14 @@ PrtCleanupMachine(
 	if (context->extContext != NULL)
 		context->process->program->machines[context->instanceOf].extDtorFun((PRT_MACHINEINST *)context);
 	PrtFreeValue(context->id);
+	if (context->currentEvent.payload != NULL)
+	{
+		PrtFreeValue(context->currentEvent.payload);
+	}
+	if (context->currentEvent.trigger != NULL)
+	{
+		PrtFreeValue(context->currentEvent.trigger);
+	}
 }
 
 void

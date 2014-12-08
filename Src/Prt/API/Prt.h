@@ -70,7 +70,7 @@ typedef struct PRT_MACHINEINST
 } PRT_MACHINEINST;
 
 /** An error function that will be called whenever an error arises. */
-typedef void(PRT_CALL_CONV * PRT_ERROR_FUN)(PRT_STATUS, void *);
+typedef void(PRT_CALL_CONV * PRT_ERROR_FUN)(PRT_STATUS, PRT_MACHINEINST *);
 
 /** An log function that will be called whenever a step occurs. */
 typedef void(PRT_CALL_CONV * PRT_LOG_FUN)(PRT_STEP, PRT_MACHINEINST *);

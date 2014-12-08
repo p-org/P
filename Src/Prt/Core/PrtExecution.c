@@ -1206,7 +1206,7 @@ PrtHandleError(
 	_In_ PRT_MACHINEINST_PRIV *context
 )
 {
-	((PRT_PROCESS_PRIV *)context->process)->errorHandler(ex, context);
+	((PRT_PROCESS_PRIV *)context->process)->errorHandler(ex, (PRT_MACHINEINST *)context);
 }
 
 void

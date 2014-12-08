@@ -582,7 +582,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	
 	BodyTmpVars(c, nExprs, nStmts, NIL) :- SubCntxt(c), 
 	                                       nExprs = maxAll(-1, { k | SubSE(c, s), s : in.Stmt, RhsEvalOrder(s, _, _, k) }), nExprs : Integer,
-	                                       nStmts = maxAll(-1, { k | SubSE(c, s), s : in.Stmt, RhsEvalOrder(s, k, _, _) }), nStmts : Integer.
+	                                       nStmts = maxAll(0,  { k | StmtExprSize(s, k) }) - 1, nStmts : Integer.
 
     BodyTmpVars(c, i', n, defs)  :- BodyTmpVars(c, i, n, tl), i : Natural, i' = i - 1, defs = out.Defs(def, tl),
 	                                def = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), strJoin("p_tmp_expr_", toString(i)), NIL).
@@ -1537,6 +1537,9 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// e is a sub-expression of the ith expression appearing in statement s. 
 	RhsCntxt ::= (stmt: in.Stmt, pos: Natural, expr: in.Expr + in.Exprs + in.NamedExprs). 
 
+	//// The number of top-level expressions in a statement (possibly including hidden null expressions).
+	StmtExprSize ::= (stmt: in.Stmt, pos: Natural). 
+
 	//// Rhs eval order tells the order in which subexpressions of a statement are evaluated in C. 
 	RhsEvalOrder ::= (stmt: in.Stmt, pos: Natural, expr: in.Expr + in.Exprs + in.NamedExprs, order: Natural).
 
@@ -1545,31 +1548,39 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.NewStmt(_, e), e : in.Expr.
 	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.NewStmt(_, e), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.NewStmt.
 
 	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.FunStmt(_, e), e : in.Exprs.
 	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.FunStmt(_, e), e : in.Exprs, RhsEvalOrder(s, 0, e, k).
-	
+	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.FunStmt.
+
 	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Return(e), e : in.Expr.
 	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Return(e), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.Return.
 
 	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.While(e, _).
 	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.While(e, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.While.
 
 	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Ite(e, _, _).
 	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Ite(e, _, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.Ite.
 
 	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.UnStmt(_, e).
 	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.UnStmt(_, e), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.UnStmt.
 
 	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Raise(e, _).
 	RhsCntxt(s, 1, e)    :- SubSE(_, s), s = in.Raise(_, e), e : in.Expr.
 	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Raise(e, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
 	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.Raise(_, e), e : in.Expr, RhsEvalOrder(s, 1, e, k).
+	StmtExprSize(s, 2)   :- SubSE(_, s), s : in.Raise.
 
 	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Monitor(_, e, _).
 	RhsCntxt(s, 1, e)    :- SubSE(_, s), s = in.Monitor(_, _, e), e : in.Expr.
 	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Monitor(_, e, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
 	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.Monitor(_, _, e), e : in.Expr, RhsEvalOrder(s, 1, e, k).
+	StmtExprSize(s, 2)   :- SubSE(_, s), s : in.Monitor.
 
 	RhsCntxt(s, 1, e)    :- SubSE(_, s), s = in.BinStmt(_, _, e).
 	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.BinStmt(_, _, e), e : in.Expr, RhsEvalOrder(s, 1, e, k).
@@ -1580,6 +1591,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Send(e, _, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
 	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.Send(_, e, _), e : in.Expr, RhsEvalOrder(s, 1, e, k).
 	RhsMaxOrder(s, 2, k) :- SubSE(_, s), s = in.Send(_, _, e), e : in.Expr, RhsEvalOrder(s, 2, e, k).
+	StmtExprSize(s, 3)   :- SubSE(_, s), s : in.Send.
 
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, e'), e' : in.Expr. 
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.FunApp(_, e'), e' : in.Exprs.

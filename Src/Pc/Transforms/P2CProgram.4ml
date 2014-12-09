@@ -1145,11 +1145,14 @@ transform P2CProgram (in:: P) returns (out:: C)
 									ec = out.FunApp(Ident("PrtMkEventValue"), Args(Ident(eventName), NIL)).
 
 	//// Machine creation
-	RhsTrans(c, s, i, 1, trans)  :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, out.Args(out.FunApp(Ident("PrtMkNullValue"), NIL), tail)), 
-									e = New(name, NIL), DeclId(c.owner, _, machineName), 
-									process = out.BinApp(PFLD, Ident("context"), Ident("process")),
-									newMachine = out.FunApp(Ident("PrtMkMachine"), Args(process, Args(Ident(machineName), Args(Ident(strJoin("p_tmp_expr_", toString(j'))), NIL)))), 
-									ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(PFLD, newMachine, Ident("id")), NIL)).
+	RhsTrans(c, s, i, j', trans)  :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									 e = New(name, NIL), 
+									 ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(PFLD, mkMach, Ident("id")), NIL)),
+									 DeclId(c.owner, _, machineName), 
+									 RhsEvalOrder(s, i, in.NulApp(NULL), h),
+									 mkMach = out.FunApp(Ident("PrtMkMachine"), Args(process, Args(Ident(machineName), Args(Ident(strJoin("p_tmp_expr_", toString(h))), NIL)))), 
+									 process = out.BinApp(PFLD, Ident("context"), Ident("process")).
+
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 									e = New(name, arg), RhsEvalOrder(s, i, arg, tmp1), DeclId(c.owner, _, machineName), 
 									process = out.BinApp(PFLD, Ident("context"), Ident("process")),
@@ -1515,11 +1518,13 @@ transform P2CProgram (in:: P) returns (out:: C)
 	ExprDepNum(0, e) :- SubSE(_, e), e : in.NulApp. 
 	ExprDepNum(0, e) :- SubSE(_, e), e : in.Default.
 
-	//// These expressions have zero or one depenencies.
-	ExprDepNum(0, e) :- SubSE(_, e), e = in.New(_, NIL). 
-	ExprDepNum(0, e) :- SubSE(_, e), e = in.FunApp(_, NIL). 
-
+	//// New app has a hidden dependency on NULL if it is an nullary app.
+	ExprDepNum(0, h),
+	ExprDepNum(1, e) :- SubSE(_, e), e = in.New(_, NIL), h = in.NulApp(NULL). 
 	ExprDepNum(i, e) :- SubSE(_, e), e = in.New(_, e'), ExprDepNum(j, e'), i = j + 1. 
+
+	//// Fun app has zero or one depenencies.
+	ExprDepNum(0, e) :- SubSE(_, e), e = in.FunApp(_, NIL). 
 	ExprDepNum(i, e) :- SubSE(_, e), e = in.FunApp(_, e'), ExprDepNum(j, e'), i = j + 1.
 
 	//// These expressions have one depenency.
@@ -1606,6 +1611,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 	StmtExprSize(s, 3)   :- SubSE(_, s), s : in.Send.
 
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, e'), e' : in.Expr. 
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, NIL), e' = in.NulApp(NULL). 
+
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.FunApp(_, e'), e' : in.Exprs.
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.UnApp(_, e').
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.Field(e', _).

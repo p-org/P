@@ -699,7 +699,32 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Ite(e', _, _),        e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);
        SubSE(c, e), e = BinStmt(_, e', _),    e' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called);
        SubSE(c, e), e = BinStmt(_, e', e''),  e'' = FunApp(n, _), called is FunDecl(n, c.owner, _, _, _, _), DataImpure(called), toSymbol(e') != #Name.
-							                                          
+
+    [ rule_Classes = '"error, msg: new M(...) can only be called like "new M(...);" or "x = new M(...);" "']
+    PurityError(c, e') :- 
+       SubSE(c, e), e = New(_, e'),           e' : New;
+       SubSE(c, e), e = UnApp(_, e'),         e' : New;
+       SubSE(c, e), e = BinApp(_, e', _),     e' : New;
+       SubSE(c, e), e = BinApp(_, _, e'),     e' : New;    
+       SubSE(c, e), e = Field(e', _),         e' : New;
+       SubSE(c, e), e = Cast(e', _),          e' : New;    
+       SubSE(c, e), e = Exprs(e', _),         e' : New;              
+       SubSE(c, e), e = NamedExprs(_, e', _), e' : New;
+       SubSE(c, e), e = NewStmt(_, e'),       e' : New;
+       SubSE(c, e), e = Raise(e', _),         e' : New;
+       SubSE(c, e), e = Raise(_, e'),         e' : New;        
+       SubSE(c, e), e = Send(e', _, _),       e' : New;
+       SubSE(c, e), e = Send(_, e', _),       e' : New;
+       SubSE(c, e), e = Send(_, _, e'),       e' : New;    
+       SubSE(c, e), e = Monitor(_, e', _),    e' : New;
+       SubSE(c, e), e = Monitor(_, _, e'),    e' : New;    
+       SubSE(c, e), e = UnStmt(_, e'),        e' : New;
+       SubSE(c, e), e = Return (e'),          e' : New;
+       SubSE(c, e), e = While(e', _),         e' : New;
+       SubSE(c, e), e = Ite(e', _, _),        e' : New;
+       SubSE(c, e), e = BinStmt(_, e', _),    e' : New;
+       SubSE(c, e), e = BinStmt(_, e', e''),  e'' : New, toSymbol(e') != #Name.
+						 	                                          
     /*************************************************************/
     /*                      Type Comparability                   */
     /*************************************************************/

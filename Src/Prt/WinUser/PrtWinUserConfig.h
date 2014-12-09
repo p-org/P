@@ -45,6 +45,8 @@ extern "C"{
 #include <windows.h>
 #include <stdio.h>
 
+//#define PrtMalloc(size) malloc(size)
+//#define PrtCalloc(nmemb, size) calloc(nmemb, size)
 #define PRT_DBG_ASSERT(condition, message) PrtAssert((condition), (message))
 #define PRT_DBG_START_MEM_BALANCED_REGION { _CrtMemState prtDbgMemStateInitial, prtDbgMemStateFinal, prtDbgMemStateDiff; _CrtMemCheckpoint(&prtDbgMemStateInitial);
 #define PRT_DBG_END_MEM_BALANCED_REGION _CrtMemCheckpoint(&prtDbgMemStateFinal); PrtAssert(!_CrtMemDifference(&prtDbgMemStateDiff, &prtDbgMemStateInitial, &prtDbgMemStateFinal), "Memory leak"); }
@@ -152,15 +154,6 @@ PRT_API void PRT_CALL_CONV PrtUnlockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 PRT_API void * PRT_CALL_CONV PrtMalloc(_In_ size_t size);
 
 /**
-* Calls system-specific implementation of free.
-* @param[in,out] ptr A pointer to a memory block to be freed.
-* @see PrtMalloc
-* @see PrtCalloc
-* @see PrtRealloc
-*/
-PRT_API void PRT_CALL_CONV PrtFree(void * ptr);
-
-/**
 * Calls system-specific implementation of calloc.
 * Fails eagerly if memory cannot be allocated.
 * @param[in] nmemb Number of bytes to allocate per member.
@@ -179,6 +172,15 @@ PRT_API void * PRT_CALL_CONV PrtCalloc(_In_ size_t nmemb, _In_ size_t size);
 * @see PrtFree
 */
 void * PRT_CALL_CONV PrtRealloc(_Inout_ void * ptr, _In_ size_t size);
+
+/**
+* Calls system-specific implementation of free.
+* @param[in,out] ptr A pointer to a memory block to be freed.
+* @see PrtMalloc
+* @see PrtCalloc
+* @see PrtRealloc
+*/
+PRT_API void PRT_CALL_CONV PrtFree(void * ptr);
 
 #ifdef __cplusplus
 }

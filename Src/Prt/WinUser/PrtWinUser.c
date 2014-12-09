@@ -364,11 +364,11 @@ void PrtWinUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, _Ino
 		PrtWinUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten); 
 		PrtWinUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString(") raised event <", buffer, bufferSize, numCharsWritten);
+		PrtWinUserPrintString(") raised event ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString(", ", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten); 
 		PrtWinUserPrintValue(payloadValue, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString(">\n", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("\n", buffer, bufferSize, numCharsWritten); 
 		break;
 	case PRT_STEP_POP:
 		PrtWinUserPrintString("<PopLog> Machine ", buffer, bufferSize, numCharsWritten);

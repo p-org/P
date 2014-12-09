@@ -451,6 +451,11 @@ PRT_API void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE *value);
 */
 PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtIsValidValue(_In_ PRT_VALUE *value);
 
+/** Nondeterministic Boolean choice
+* @returns A nondeterministic Boolean value.  Caller is responsible for freeing.
+*/
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkNondetBoolValue();
+
 #ifdef __cplusplus
 }
 #endif

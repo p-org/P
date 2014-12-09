@@ -1973,3 +1973,8 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsValidValue(_In_ PRT_VALUE *value)
 		return PRT_FALSE;
 	}
 }
+
+PRT_VALUE * PRT_CALL_CONV PrtMkNondetBoolValue()
+{
+	return PrtMkBoolValue(PrtChoose());
+}

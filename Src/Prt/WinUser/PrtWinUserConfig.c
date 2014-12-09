@@ -51,11 +51,6 @@ void * PRT_CALL_CONV PrtMalloc(_In_ size_t size)
 	return ptr;
 }
 
-void PRT_CALL_CONV PrtFree(void *ptr)
-{
-	free(ptr);
-}
-
 void * PRT_CALL_CONV PrtCalloc(_In_ size_t nmemb, _In_ size_t size)
 {
 	PrtAssert(size > 0, "Size must be positive to avoid platform-specific behavior");
@@ -74,4 +69,18 @@ void * PRT_CALL_CONV PrtRealloc(_Inout_ void *ptr, _In_ size_t size)
 	ptr = realloc(ptr, size);
 	PrtAssert(ptr != NULL, "Memory allocation error");
 	return ptr;
+}
+
+void PRT_CALL_CONV PrtFree(void *ptr)
+{
+	free(ptr);
+}
+
+PRT_BOOLEAN PRT_CALL_CONV PrtChoose()
+{
+	PRT_UINT32 value = rand();
+	if (value < RAND_MAX / 2)
+		return PRT_FALSE;
+	else
+		return PRT_TRUE;
 }

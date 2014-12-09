@@ -1599,9 +1599,6 @@ transform P2CProgram (in:: P) returns (out:: C)
 	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.Monitor(_, _, e), e : in.Expr, RhsEvalOrder(s, 1, e, k).
 	StmtExprSize(s, 2)   :- SubSE(_, s), s : in.Monitor.
 
-	RhsCntxt(s, 1, e)    :- SubSE(_, s), s = in.BinStmt(_, _, e).
-	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.BinStmt(_, _, e), e : in.Expr, RhsEvalOrder(s, 1, e, k).
-
 	RhsCntxt(s, 0, e) :- SubSE(_, s), s = in.Send(e, _, _).
 	RhsCntxt(s, 1, e) :- SubSE(_, s), s = in.Send(_, e, _).
 	RhsCntxt(s, 2, e) :- SubSE(_, s), s = in.Send(_, _, e), e : in.Expr.
@@ -1627,6 +1624,30 @@ transform P2CProgram (in:: P) returns (out:: C)
 	 
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.BinApp(_, e', _). 
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.BinApp(_, _, e'). 
+
+    /*************************************************************/
+    /******         Translation of BinStmt                  ******/
+    /*************************************************************/
+	
+	//// Records the sequence of getters in an LHS expression.
+	//// Numbers each getter involving a key expression.	
+	LhsPath ::= (stmt: in.BinStmt, getter: in.Expr, keyNum: Integer).
+
+	LhsPath(s, e, 1)   :- SubSE(_, s), s = in.BinStmt(_, e, _), e = BinApp(IDX, _, _).
+	LhsPath(s, e, 0)   :- SubSE(_, s), s = in.BinStmt(_, e, _), toSymbol(e) != #BinApp.
+
+	LhsPath(s, e', i') :- LhsPath(s, e, i), e = BinApp(IDX, e', _), e' = BinApp(IDX, _, _), i' = i + 1.
+	LhsPath(s, e', i)  :- LhsPath(s, e, i), e = BinApp(IDX, e', _), toSymbol(e') != #BinApp.
+
+	LhsPath(s, e', i') :- LhsPath(s, e, i), e = Field(e', _), e' = BinApp(IDX, _, _), i' = i + 1.
+	LhsPath(s, e', i)  :- LhsPath(s, e, i), e = Field(e', _), toSymbol(e') != #BinApp.
+
+	RhsCntxt(s, 0, e)  :- SubSE(_, s), s = in.BinStmt(_, _, e).
+	RhsCntxt(s, i, e)  :- LhsPath(s, g, i), g = BinApp(IDX, _, e).
+	StmtExprSize(s, n) :- LhsPath(s, Name(_), i), n = i + 1.
+
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.BinStmt(_, _, e), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	RhsMaxOrder(s, i, k) :- LhsPath(s, g, i), g = BinApp(IDX, _, e), RhsEvalOrder(s, i, e, k).
 
     /*************************************************************/
     /******                 Powers of two                   ******/

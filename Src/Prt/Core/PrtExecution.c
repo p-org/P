@@ -41,6 +41,7 @@ PrtMkMachinePrivate(
 		{
 			newMachines[i] = machines[i];
 		}
+		PrtFree(machines);
 		machines = newMachines;
 		process->machines = newMachines;
 		process->machineCount = 2 * machineCount;

@@ -1461,6 +1461,11 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// BinStmt
     // BinStmt  ::= new (op: { REMOVE, ASSIGN, INSERT }, arg1: any Expr, arg2: any Expr).
     */
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
+						   s = in.BinStmt(ASSIGN, Name(n), rhs), RhsExpr(c, s, 1, rhsTrans),
+						   varDecl is VarDecl(n, c.owner, t),  no TypeOfFormalParam(c, n, _), DeclId(varDecl, _, varName),
+						   lhs = out.BinApp(AAC, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("varValues")), Ident(varName)),
+						   cs = out.Seq(out.FunApp(Ident("PrtFreeValue"), Args(lhs, NIL)), out.BinApp(ASN, lhs, rhsTrans)).
 
 	//// Skip 
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NulStmt(SKIP), cs = NIL.

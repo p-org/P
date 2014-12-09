@@ -1146,17 +1146,29 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	//// Machine creation
 	RhsTrans(c, s, i, j', trans)  :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
-									 e = New(name, NIL), 
+									 e = New(name, NIL), machineDecl is MachineDecl(name, REAL, _, _, _), DeclId(machineDecl, _, machineName), 
 									 ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(PFLD, mkMach, Ident("id")), NIL)),
-									 DeclId(c.owner, _, machineName), 
 									 RhsEvalOrder(s, i, in.NulApp(NULL), h),
 									 mkMach = out.FunApp(Ident("PrtMkMachine"), Args(process, Args(Ident(machineName), Args(Ident(strJoin("p_tmp_expr_", toString(h))), NIL)))), 
 									 process = out.BinApp(PFLD, Ident("context"), Ident("process")).
 
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
-									e = New(name, arg), RhsEvalOrder(s, i, arg, tmp1), DeclId(c.owner, _, machineName), 
+									e = New(name, arg), RhsEvalOrder(s, i, arg, tmp1), machineDecl is MachineDecl(name, REAL, _, _, _), DeclId(machineDecl, _, machineName), 
 									process = out.BinApp(PFLD, Ident("context"), Ident("process")),
 									newMachine = out.FunApp(Ident("PrtMkMachine"), Args(process, Args(Ident(machineName), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)))), 
+									ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(PFLD, newMachine, Ident("id")), NIL)).
+
+	RhsTrans(c, s, i, j', trans)  :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									 e = New(name, NIL), machineDecl is MachineDecl(name, MODEL, _, _, _), DeclId(machineDecl, _, machineName), 
+									 ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(PFLD, mkMach, Ident("id")), NIL)),
+									 RhsEvalOrder(s, i, in.NulApp(NULL), h),
+									 mkMach = out.FunApp(Ident("PrtMkModel"), Args(process, Args(Ident(machineName), Args(Ident(strJoin("p_tmp_expr_", toString(h))), NIL)))), 
+									 process = out.BinApp(PFLD, Ident("context"), Ident("process")).
+
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = New(name, arg), RhsEvalOrder(s, i, arg, tmp1), machineDecl is MachineDecl(name, MODEL, _, _, _), DeclId(machineDecl, _, machineName), 
+									process = out.BinApp(PFLD, Ident("context"), Ident("process")),
+									newMachine = out.FunApp(Ident("PrtMkModel"), Args(process, Args(Ident(machineName), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)))), 
 									ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(PFLD, newMachine, Ident("id")), NIL)).
 
 	//// Function application
@@ -1364,8 +1376,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 						                out.Seq(out.Goto("P_EXIT_FUN"), out.Lbl(strJoin("L", toString(label')), NIL))).
 		
 	//// New Machine
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(machineName, NIL),
-	                       DeclId(c.owner, _, machineName), c.owner.kind = REAL, 	                        
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, NIL), machineDecl is MachineDecl(name, REAL, _, _, _), DeclId(machineDecl, _, machineName),
 						   cs = out.FunApp(Ident("P_STMT_0"), Args(newCall, Args(mkNull, NIL))),
 						   newCall = out.FunApp(Ident("PrtMkMachine"),
 						                 Args(BinApp(PFLD, Ident("context"), Ident("process")),
@@ -1373,9 +1384,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 										 Args(Ident("p_tmp_stmt_0"), NIL)))),
 						   mkNull = out.FunApp(Ident("PrtMkNullValue"), NIL). 
 
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(machineName, pay), pay : in.Expr,
-	                       DeclId(c.owner, _, machineName), c.owner.kind = REAL, 	
-						   RhsExpr(c, s, 0, payTrans),
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, pay), machineDecl is MachineDecl(name, REAL, _, _, _), DeclId(machineDecl, _, machineName),
+						   pay : in.Expr, RhsExpr(c, s, 0, payTrans),
 						   cs = out.FunApp(Ident("P_STMT_0"), Args(newCall, Args(payTrans, NIL))),
 						   newCall = out.FunApp(Ident("PrtMkMachine"),
 						                 Args(BinApp(PFLD, Ident("context"), Ident("process")),
@@ -1383,8 +1393,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 										 Args(Ident("p_tmp_stmt_0"), NIL)))).
 
 	//// New Model
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(machineName, NIL),
-	                       DeclId(c.owner, _, machineName), c.owner.kind = MODEL, 	                        
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, NIL), machineDecl is MachineDecl(name, MODEL, _, _, _), DeclId(machineDecl, _, machineName),
 						   cs = out.FunApp(Ident("P_STMT_0"), Args(newCall, Args(mkNull, NIL))),
 						   newCall = out.FunApp(Ident("PrtMkModel"),
 						                 Args(BinApp(PFLD, Ident("context"), Ident("process")),
@@ -1392,9 +1401,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 										 Args(Ident("p_tmp_stmt_0"), NIL)))),
 						   mkNull = out.FunApp(Ident("PrtMkNullValue"), NIL). 
 
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(machineName, pay), pay : in.Expr,
-	                       DeclId(c.owner, _, machineName), c.owner.kind = MODEL, 	
-						   RhsExpr(c, s, 0, payTrans),
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, pay), machineDecl is MachineDecl(name, MODEL, _, _, _), DeclId(machineDecl, _, machineName),
+						   pay : in.Expr, RhsExpr(c, s, 0, payTrans),
 						   cs = out.FunApp(Ident("P_STMT_0"), Args(newCall, Args(payTrans, NIL))),
 						   newCall = out.FunApp(Ident("PrtMkModel"),
 						                 Args(BinApp(PFLD, Ident("context"), Ident("process")),
@@ -1402,7 +1410,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 										 Args(Ident("p_tmp_stmt_0"), NIL)))).
 
 	//// New Monitor (erased)
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(machineName, _), DeclId(c.owner, _, machineName), c.owner.kind = MONITOR, cs = NIL.
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, _), machineDecl is MachineDecl(name, MONITOR, _, _, _), cs = NIL.
 
 	//// Raise
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
@@ -1458,7 +1466,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   cs = out.ITE(out.FunApp(Ident("P_BOOL_EXPR"), Args(argTrans, NIL)), NIL, assertCall),
 						   assertCall = out.FunApp(Ident("PrtHandleError"), 
 											Args(Ident("PRT_STATUS_ASSERT"), 
-											Args(Ident("context"), NIL))).
+											Args(context, NIL))).
 
 	/*
 	//// BinStmt

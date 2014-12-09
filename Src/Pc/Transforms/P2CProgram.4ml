@@ -1350,7 +1350,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	Trampoline ::= (cntxt: TypingContext, stmt: in.Stmt, trans: out.Stmt + { NIL }).
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Push(name, label), label' = label + 1,
 							cs = out.ITE(out.BinApp(EQ, out.BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("returnTo")),
-														out.IntLit(label, DEC, U)), 
+														out.IntLit(label', DEC, U)), 
 										 out.Goto(strJoin("L", toString(label'))),
 										 NIL).
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NewStmt(_, _), cs = NIL.
@@ -1369,11 +1369,12 @@ transform P2CProgram (in:: P) returns (out:: C)
     StmtTrans ::= (cntxt: TypingContext, stmt: in.Stmt, trans: out.Stmt + { NIL }).
 
 	//// Push
-	StmtTrans(c, s, cs) :- SubSE(c, s), DeclId(c.owner, _, machineName), context = Ident("p_tmp_mach_priv"),
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
 						   s = in.Push(name, label), label' = label + 1,
-						   DeclId(StateDecl(name, c.owner, _, _, _), stateIndex, _), 
-						   cs = out.Seq(out.FunApp(Ident("PrtPush"), Args(Ident("p_tmp_mach_priv"), Args(IntLit(stateIndex, DEC, NIL), NIL))), 
-						                out.Seq(out.Goto("P_EXIT_FUN"), out.Lbl(strJoin("L", toString(label')), NIL))).
+						   DeclId(StateDecl(name, c.owner, _, _, _), _, stateName), 
+						   cs = out.Seq(out.BinApp(ASN, out.BinApp(PFLD, context, Ident("returnTo")), IntLit(label', DEC, U)),
+										out.Seq(out.FunApp(Ident("PrtPush"), Args(Ident("p_tmp_mach_priv"), Args(Ident(stateName), NIL))), 
+												out.Seq(out.Goto("P_EXIT_FUN"), out.Lbl(strJoin("L", toString(label')), NIL)))).
 		
 	//// New Machine
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, NIL), machineDecl is MachineDecl(name, REAL, _, _, _), DeclId(machineDecl, _, machineName),

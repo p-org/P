@@ -1174,11 +1174,11 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// Function application
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 									e = in.FunApp(name, NIL), funDecl = FunDecl(name, c.owner, _, _, _, _), DeclId(funDecl, funIndex, funName),
-									ec = out.FunApp(Ident(funName), Args(Ident("context"), Args(IntLit(funIndex, DEC, U), Args(Ident("NULL"), NIL)))).
+									ec = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(Ident("context"), Args(IntLit(funIndex, DEC, U), Args(Ident("NULL"), NIL)))).
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 									e = in.FunApp(name, args), args != NIL, funDecl = FunDecl(name, c.owner, _, type, _, _), DeclId(funDecl, funIndex, funName),
 									TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupleTrans(c, s, i, args, ecs), 
-									ec = out.FunApp(Ident(funName), Args(Ident("context"), Args(IntLit(funIndex, DEC, U), Args(out.FunApp(Ident("TupleMacro"), Args(Ident(typeName), ecs)), NIL)))).
+									ec = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(Ident("context"), Args(IntLit(funIndex, DEC, U), Args(out.FunApp(Ident("TupleMacro"), Args(Ident(typeName), ecs)), NIL)))).
 
 	//// Nullary expressions
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 

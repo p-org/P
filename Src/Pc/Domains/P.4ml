@@ -224,13 +224,13 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Monitors cannot refer to "this""']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = MONITOR.
     
-    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind = MODEL; SubSE(c, e), e = NulApp(NONDET), c is FunDecl(_, _, MODEL, _, _, _).
-	[ rule_Classes = '"error, msg: Nondeterminitistic choice can be used only in model machine and model functions"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind != MODEL, toSymbol(c) != #FunDecl; SubSE(c, e), e = NulApp(NONDET), c.owner.kind != MODEL, c is FunDecl, c.kind != MODEL.
+    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind != MONITOR.
+	[ rule_Classes = '"error, msg: Nondeterministic choice can not be used in monitor machine"']
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind == MONITOR.
 
-    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind = MODEL; SubSE(c, e), e = NulApp(FAIRNONDET), c is FunDecl(_, _, MODEL, _, _, _).
-	[ rule_Classes = '"error, msg: Nondeterminitistic choice can be used only in model machine and model functions"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind != MODEL, toSymbol(c) != #FunDecl; SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind != MODEL, c is FunDecl, c.kind != MODEL.
+    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind != MONITOR.
+	[ rule_Classes = '"error, msg: Nondeterministic choice can not be used in monitor machine"']
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind == MONITOR.
 	    
     TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = NulApp(v), v : Integer.
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(v), v : Boolean.          

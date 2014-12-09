@@ -1201,10 +1201,10 @@ transform P2CProgram (in:: P) returns (out:: C)
 									ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(FLD, out.BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("currentEvent")), Ident("payload")), NIL)). 
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 									e = NulApp(NONDET),
-									ec = out.FunApp(Ident("PrtChoose"), NIL). 
+									ec = out.FunApp(Ident("PrtMkNondetBoolValue"), NIL). 
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 									e = NulApp(FAIRNONDET),
-									ec = out.FunApp(Ident("PrtChoose"), NIL). 
+									ec = out.FunApp(Ident("PrtMkNondetBoolValue"), NIL). 
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 									e = NulApp(NULL),
 									ec = out.FunApp(Ident("PrtMkNullValue"), NIL).

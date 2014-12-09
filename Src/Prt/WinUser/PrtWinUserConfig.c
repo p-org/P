@@ -75,3 +75,12 @@ void PRT_CALL_CONV PrtFree(void *ptr)
 {
 	free(ptr);
 }
+
+PRT_BOOLEAN PRT_CALL_CONV PrtChoose()
+{
+	PRT_UINT32 value = rand();
+	if (value < RAND_MAX / 2)
+		return PRT_FALSE;
+	else
+		return PRT_TRUE;
+}

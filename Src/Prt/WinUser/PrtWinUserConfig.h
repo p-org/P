@@ -182,6 +182,11 @@ void * PRT_CALL_CONV PrtRealloc(_Inout_ void * ptr, _In_ size_t size);
 */
 PRT_API void PRT_CALL_CONV PrtFree(void * ptr);
 
+/** Nondeterministic Boolean choice
+* @returns A nondeterministic Boolean value.  
+*/
+PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtChoose();
+
 #ifdef __cplusplus
 }
 #endif

@@ -116,8 +116,8 @@ PrtMkMachinePrivate(
 	//
 	// Initialize actions
 	//
-	context->inheritedActionsSetCompact = (PRT_UINT32*)PrtCalloc(packSize, sizeof(PRT_UINT32));
-	context->currentActionsSetCompact = (PRT_UINT32*)PrtCalloc(packSize, sizeof(PRT_UINT32));
+	context->inheritedActionSetCompact = (PRT_UINT32*)PrtCalloc(packSize, sizeof(PRT_UINT32));
+	context->currentActionSetCompact = (PRT_UINT32*)PrtCalloc(packSize, sizeof(PRT_UINT32));
 
 	//
 	//Initialize state machine lock
@@ -281,20 +281,20 @@ _In_	PRT_BOOLEAN				isPushStatement
 
 	if (isPushStatement)
 	{
-		context->callStack.statesStack[length].currEvent = context->currentEvent;
+		context->callStack.stateStack[length].currEvent = context->currentEvent;
 		context->currentEvent.trigger = PrtMkEventValue(PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
 		context->currentEvent.payload = PrtMkNullValue();
 	}
 	else
 	{
-		context->callStack.statesStack[length].currEvent.trigger = NULL;
-		context->callStack.statesStack[length].currEvent.payload = NULL;
+		context->callStack.stateStack[length].currEvent.trigger = NULL;
+		context->callStack.stateStack[length].currEvent.payload = NULL;
 	}
-	context->callStack.statesStack[length].stateIndex = context->currentState;
-	context->callStack.statesStack[length].stateControl = context->stateControl;
-	context->callStack.statesStack[length].returnTo = context->returnTo;
-	context->callStack.statesStack[length].inheritedDeferredSetCompact = PrtClonePackedSet(context->inheritedDeferredSetCompact, packSize);
-	context->callStack.statesStack[length].inheritedActionsSetCompact = PrtClonePackedSet(context->inheritedActionsSetCompact, packSize);
+	context->callStack.stateStack[length].stateIndex = context->currentState;
+	context->callStack.stateStack[length].stateControl = context->stateControl;
+	context->callStack.stateStack[length].returnTo = context->returnTo;
+	context->callStack.stateStack[length].inheritedDeferredSetCompact = PrtClonePackedSet(context->inheritedDeferredSetCompact, packSize);
+	context->callStack.stateStack[length].inheritedActionSetCompact = PrtClonePackedSet(context->inheritedActionSetCompact, packSize);
 
 	context->callStack.length = length + 1;
 
@@ -304,13 +304,13 @@ _In_	PRT_BOOLEAN				isPushStatement
 	{
 		// Update the actions set inherited by state-machine
 		// A = (A - d) + a - e
-		context->inheritedActionsSetCompact[i] &= ~currDef[i]; // A - d
-		context->inheritedActionsSetCompact[i] |= currActions[i]; // + a
-		context->inheritedActionsSetCompact[i] &= ~currTransitions[i]; // -e
+		context->inheritedActionSetCompact[i] &= ~currDef[i]; // A - d
+		context->inheritedActionSetCompact[i] |= currActions[i]; // + a
+		context->inheritedActionSetCompact[i] &= ~currTransitions[i]; // -e
 
 		if (isPushStatement)
 		{
-			context->inheritedDeferredSetCompact[i] = ~context->inheritedActionsSetCompact[i]; // !a
+			context->inheritedDeferredSetCompact[i] = ~context->inheritedActionSetCompact[i]; // !a
 		}
 		else
 		{
@@ -348,7 +348,7 @@ PrtPopState(
 	PRT_UINT16 i;
 	PRT_UINT16 packSize;
 	PRT_UINT16 length;
-	PRT_STACKSTATE_INFO poppedState;
+	PRT_STATESTACK_INFO poppedState;
 	i = 0;
 	packSize = PrtGetPackSize(context);
 	length = context->callStack.length;
@@ -367,16 +367,16 @@ PrtPopState(
 	}
 
 	context->callStack.length = length - 1;
-	poppedState = context->callStack.statesStack[length - 1];
+	poppedState = context->callStack.stateStack[length - 1];
 	context->currentState = poppedState.stateIndex;
 
 	for (i = 0; i < packSize; i++)
 	{
 		context->inheritedDeferredSetCompact[i] = poppedState.inheritedDeferredSetCompact[i];
-		context->inheritedActionsSetCompact[i] = poppedState.inheritedActionsSetCompact[i];
+		context->inheritedActionSetCompact[i] = poppedState.inheritedActionSetCompact[i];
 	}
 	PrtFree(poppedState.inheritedDeferredSetCompact);
-	PrtFree(poppedState.inheritedActionsSetCompact);
+	PrtFree(poppedState.inheritedActionSetCompact);
 
 	context->stateControl = poppedState.stateControl;
 	context->returnTo = poppedState.returnTo;
@@ -552,7 +552,7 @@ DoHandleEvent:
 		context->returnTo = 0;
 		goto DoEntryOrAction;
 	}
-	else if (PrtIsActionInstalled(eventValue, context->currentActionsSetCompact))
+	else if (PrtIsActionInstalled(eventValue, context->currentActionSetCompact))
 	{
 		context->stateControl = PrtStateAction;
 		context->returnTo = 0;
@@ -782,7 +782,7 @@ PrtGetAction(
 	stateTable = context->process->program->machines[context->instanceOf].states;
 	for (i = currStack.length - 1; i >= 0; i--)
 	{
-		topOfStackState = currStack.statesStack[i].stateIndex;
+		topOfStackState = currStack.stateStack[i].stateIndex;
 		isActionInstalled = PrtIsActionInstalled(currEvent, PrtGetActionsPacked(context, topOfStackState));
 		if (isActionInstalled)
 		{
@@ -937,7 +937,7 @@ PrtStateHasDefaultTransitionOrAction(
 {
 	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
 	PRT_BOOLEAN hasDefaultTransition = (context->process->program->eventSets[stateDecl->transSetIndex].packedEvents[0] & 0x1) == 1;
-	PRT_BOOLEAN hasDefaultAction = (context->currentActionsSetCompact[0] & 0x1) == 1;
+	PRT_BOOLEAN hasDefaultAction = (context->currentActionSetCompact[0] & 0x1) == 1;
 	return hasDefaultTransition || hasDefaultAction;
 }
 
@@ -1039,9 +1039,9 @@ PrtUpdateCurrentActionsSet(
 	//
 	for (i = 0; i < packSize; i++)
 	{
-		context->currentActionsSetCompact[i] = context->inheritedActionsSetCompact[i] & ~currDefSetPacked[i]; // A - d
-		context->currentActionsSetCompact[i] |= currActionsPacked[i];
-		context->currentActionsSetCompact[i] &= ~currTransitionsPacked[i];
+		context->currentActionSetCompact[i] = context->inheritedActionSetCompact[i] & ~currDefSetPacked[i]; // A - d
+		context->currentActionSetCompact[i] |= currActionsPacked[i];
+		context->currentActionSetCompact[i] &= ~currTransitionsPacked[i];
 	}
 }
 
@@ -1077,15 +1077,15 @@ PrtResizeEventQueue(
 	_Inout_ PRT_MACHINEINST_PRIV *context
 )
 {
-	PRT_INT32 maxEventQueueSize = context->process->program->machines[context->instanceOf].maxQueueSize;
-	PRT_INT32 currEventQueueSize = context->eventQueue.eventsSize;
-	PRT_INT32 newQueueSize = (maxEventQueueSize != 0xffffffff && currEventQueueSize * 2 > maxEventQueueSize) ? maxEventQueueSize : currEventQueueSize * 2;
+	PRT_UINT32 maxEventQueueSize = context->process->program->machines[context->instanceOf].maxQueueSize;
+	PRT_UINT32 currEventQueueSize = context->eventQueue.eventsSize;
+	PRT_UINT32 newQueueSize = (maxEventQueueSize != 0xffffffff && currEventQueueSize * 2 > maxEventQueueSize) ? maxEventQueueSize : currEventQueueSize * 2;
 	PRT_EVENT* oldQueue = context->eventQueue.events;
-	PRT_INT32 oldHead = context->eventQueue.headIndex;
-	PRT_INT32 oldTail = context->eventQueue.tailIndex;
+	PRT_UINT32 oldHead = context->eventQueue.headIndex;
+	PRT_UINT32 oldTail = context->eventQueue.tailIndex;
 	PRT_EVENT *newQueue = (PRT_EVENT*)PrtCalloc(newQueueSize, sizeof(PRT_EVENT));
-	PRT_INT16 newHead = 0;
-	PRT_INT16 newTail = 0;
+	PRT_UINT32 newHead = 0;
+	PRT_UINT32 newTail = 0;
 
 	//
 	// Check from head to end of Array
@@ -1137,9 +1137,66 @@ PrtCleanupMachine(
 	_Inout_ PRT_MACHINEINST_PRIV			*context
 )
 {
-	if (context->currentActionsSetCompact != NULL)
+	if (context->eventQueue.events != NULL)
 	{
-		PrtFree(context->currentActionsSetCompact);
+		PRT_EVENT *queue = context->eventQueue.events;
+		PRT_UINT32 head = context->eventQueue.headIndex;
+		PRT_UINT32 tail = context->eventQueue.tailIndex;
+		PRT_UINT32 count = 0;
+
+		while (count < context->eventQueue.size && head < context->eventQueue.eventsSize)
+		{
+			if (queue[head].payload != NULL)
+			{
+				PrtFreeValue(queue[head].payload);
+			}
+			if (queue[head].trigger != NULL) {
+				PrtFreeValue(queue[head].trigger);
+			}
+			head++;
+			count++;
+		}
+		head = 0;
+		while (count < context->eventQueue.size)
+		{
+			if (queue[head].payload != NULL)
+			{
+				PrtFreeValue(queue[head].payload);
+			}
+			if (queue[head].trigger != NULL) {
+				PrtFreeValue(queue[head].trigger);
+			}
+			head++;
+			count++;
+		}
+
+		PrtFree(context->eventQueue.events);
+	}
+	
+	for (int i = 0; i < context->callStack.length; i++)
+	{
+		PRT_STATESTACK_INFO *info = &context->callStack.stateStack[i];
+		if (info->currEvent.payload != NULL)
+		{
+			PrtFreeValue(info->currEvent.payload);
+		}
+		if (info->currEvent.trigger != NULL)
+		{
+			PrtFreeValue(info->currEvent.trigger);
+		}
+		if (info->inheritedActionSetCompact != NULL)
+		{
+			PrtFree(info->inheritedActionSetCompact);
+		}
+		if (info->inheritedDeferredSetCompact != NULL)
+		{
+			PrtFree(info->inheritedDeferredSetCompact);
+		}
+	}
+
+	if (context->currentActionSetCompact != NULL)
+	{
+		PrtFree(context->currentActionSetCompact);
 	}
 
 	if (context->currentDeferredSetCompact != NULL)
@@ -1147,14 +1204,9 @@ PrtCleanupMachine(
 		PrtFree(context->currentDeferredSetCompact);
 	}
 
-	if (context->eventQueue.events != NULL)
+	if (context->inheritedActionSetCompact != NULL)
 	{
-		PrtFree(context->eventQueue.events);
-	}
-
-	if (context->inheritedActionsSetCompact != NULL)
-	{
-		PrtFree(context->inheritedActionsSetCompact);
+		PrtFree(context->inheritedActionSetCompact);
 	}
 
 	if (context->inheritedDeferredSetCompact != NULL)

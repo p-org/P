@@ -67,19 +67,19 @@ typedef struct PRT_EVENTQUEUE
 	PRT_UINT32		 size;
 } PRT_EVENTQUEUE;
 
-typedef struct PRT_STACKSTATE_INFO
+typedef struct PRT_STATESTACK_INFO
 {
 	PRT_UINT32			stateIndex;
 	PRT_EVENT			currEvent;
 	PRT_UINT16			returnTo;
 	PRT_STATECONTROL	stateControl;
 	PRT_UINT32*			inheritedDeferredSetCompact;
-	PRT_UINT32*			inheritedActionsSetCompact;
-} PRT_STACKSTATE_INFO;
+	PRT_UINT32*			inheritedActionSetCompact;
+} PRT_STATESTACK_INFO;
 
 typedef struct PRT_STATESTACK
 {
-	PRT_STACKSTATE_INFO statesStack[PRT_MAX_CALL_DEPTH];
+	PRT_STATESTACK_INFO stateStack[PRT_MAX_CALL_DEPTH];
 	PRT_UINT16			length;
 } PRT_STATESTACK;
 
@@ -102,8 +102,8 @@ typedef struct PRT_MACHINEINST_PRIV {
 	PRT_UINT16			returnTo;
 	PRT_UINT32*			inheritedDeferredSetCompact;
 	PRT_UINT32*			currentDeferredSetCompact;
-	PRT_UINT32*			inheritedActionsSetCompact;
-	PRT_UINT32*			currentActionsSetCompact;
+	PRT_UINT32*			inheritedActionSetCompact;
+	PRT_UINT32*			currentActionSetCompact;
 } PRT_MACHINEINST_PRIV;
 
 PRT_MACHINEINST_PRIV *

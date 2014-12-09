@@ -226,11 +226,11 @@ domain PStaticTyping extends PData
     
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind != MONITOR.
 	[ rule_Classes = '"error, msg: Nondeterministic choice can not be used in monitor machine"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind == MONITOR.
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind = MONITOR.
 
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind != MONITOR.
 	[ rule_Classes = '"error, msg: Nondeterministic choice can not be used in monitor machine"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind == MONITOR.
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind = MONITOR.
 	    
     TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = NulApp(v), v : Integer.
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(v), v : Boolean.          

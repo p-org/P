@@ -331,7 +331,7 @@ void PrtWinUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, _Ino
 	case PRT_STEP_DEQUEUE:
 		eventName = c->process->program->events[PrtPrimGetEvent(c->currentEvent.trigger)].name;
 		payloadValue = c->currentEvent.payload;
-		PrtWinUserPrintString("<DequeueLog> Dequeued event <", buffer, bufferSize, numCharsWritten);
+		PrtWinUserPrintString("<DequeueLog> Dequeued event ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintValue(payloadValue, buffer, bufferSize, numCharsWritten);

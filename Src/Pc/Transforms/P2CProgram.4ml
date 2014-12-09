@@ -605,14 +605,15 @@ transform P2CProgram (in:: P) returns (out:: C)
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")),
 					           PrmTypes(NmdType(NIL, "PRT_UINT32"),
-							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),		
+							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),
+					Trampoline(f, f.body, header),
 					footer = out.Lbl("P_EXIT_FUN", 
 					                   Seq(
 									     ITE(BinApp(NEQ, Ident("value"), Ident("NULL")), 
 										     FunApp(Ident("PrtFreeValue"), Args(Ident("value"), NIL)), 
 											 NIL),
 									     Return(Ident("p_tmp_ret")))),
-					body = out.Block(tmpVars, Seq(ctrans, footer)),					  
+					body = out.Block(tmpVars, Seq(header, Seq(ctrans, footer))),					  
 	                def = FunDef(
 					  NIL,
 					  funType,
@@ -630,13 +631,14 @@ transform P2CProgram (in:: P) returns (out:: C)
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")),
 					           PrmTypes(NmdType(NIL, "PRT_UINT32"),
 							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),	
+					Trampoline(f, f.body, header),
 					footer = out.Lbl("P_EXIT_FUN", 
 					                   Seq(
 									     ITE(BinApp(NEQ, Ident("value"), Ident("NULL")), 
 										     FunApp(Ident("PrtFreeValue"), Args(Ident("value"), NIL)), 
 											 NIL),
 									     Return(Ident("p_tmp_ret")))),
-					body = out.Block(tmpVars, Seq(ctrans, footer)),					  
+					body = out.Block(tmpVars, Seq(header, Seq(ctrans, footer))),					  
 	                def = FunDef(
 					  NIL,
 					  funType,
@@ -1330,16 +1332,33 @@ transform P2CProgram (in:: P) returns (out:: C)
     /******             Statement translation               ******/
     /*************************************************************/	
 	
+	Trampoline ::= (cntxt: TypingContext, stmt: in.Stmt, trans: out.Stmt + { NIL }).
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Push(name, label), label' = label + 1,
+							cs = out.ITE(out.BinApp(EQ, out.BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("returnTo")),
+														out.IntLit(label, DEC, U)), 
+										 out.Goto(strJoin("L", toString(label'))),
+										 NIL).
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NewStmt(_, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Raise(_, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Send(_, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Monitor(_, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.FunStmt(_, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NulStmt(_), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.UnStmt(_, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.BinStmt(_, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Return(_), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.While(_, s1), Trampoline(c, s1, cs1), cs = cs1.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Ite(_, s1, s2), Trampoline(c, s1, cs1), Trampoline(c, s2, cs2), cs = out.Seq(cs1, cs2).
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Seq(s1, s2), Trampoline(c, s1, cs1), Trampoline(c, s2, cs2), cs = out.Seq(cs1, cs2).
+
     StmtTrans ::= (cntxt: TypingContext, stmt: in.Stmt, trans: out.Stmt + { NIL }).
 
-	/*
 	//// Push
 	StmtTrans(c, s, cs) :- SubSE(c, s), DeclId(c.owner, _, machineName), context = Ident("p_tmp_mach_priv"),
-						   s = in.Push(name, label),  
-						   DeclId(StateDecl(name, c.owner, _, _, _), stateIndex, _),
+						   s = in.Push(name, label), label' = label + 1,
+						   DeclId(StateDecl(name, c.owner, _, _, _), stateIndex, _), 
 						   cs = out.Seq(out.FunApp(Ident("PrtPush"), Args(Ident("p_tmp_mach_priv"), Args(IntLit(stateIndex, DEC, NIL), NIL))), 
-						                out.Seq(out.Return(NIL), out.Lbl(strJoin("L", toString(label)), NIL))).
-    */
+						                out.Seq(out.Goto("P_EXIT_FUN"), out.Lbl(strJoin("L", toString(label')), NIL))).
 		
 	//// New Machine
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(machineName, NIL),

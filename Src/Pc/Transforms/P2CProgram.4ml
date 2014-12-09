@@ -596,6 +596,21 @@ transform P2CProgram (in:: P) returns (out:: C)
 									defpc = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), "p_tmp_mach_priv", 
 									                   Cast(PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), Ident("context"))).
 
+	COut(7, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = REAL, f.owner.kind = REAL,
+	                params = Params(Param(NIL, "context"), 
+						     Params(Param(NIL, "funIndex"), 
+							 Params(Param(NIL, "value"), NIL))),
+				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")),
+					           PrmTypes(NmdType(NIL, "PRT_UINT32"),
+							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin(name, "_IMPL"),
+					  params,
+					  UNKNOWN).
+
 	COut(8, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = REAL, f.owner.kind = REAL,
 				    BodyTmpVars(f, -1, -2, tmpVars),			  
 				    StmtTrans(f, f.body, ctrans),			  
@@ -1474,7 +1489,7 @@ transform P2CProgram (in:: P) returns (out:: C)
     // BinStmt  ::= new (op: { REMOVE, ASSIGN, INSERT }, arg1: any Expr, arg2: any Expr).
     */
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
-						   s = in.BinStmt(ASSIGN, Name(n), rhs), RhsExpr(c, s, 1, rhsTrans),
+						   s = in.BinStmt(ASSIGN, Name(n), rhs), RhsExpr(c, s, 0, rhsTrans),
 						   varDecl is VarDecl(n, c.owner, t),  no TypeOfFormalParam(c, n, _), DeclId(varDecl, _, varName),
 						   lhs = out.BinApp(AAC, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("varValues")), Ident(varName)),
 						   cs = out.Seq(out.FunApp(Ident("PrtFreeValue"), Args(lhs, NIL)), out.BinApp(ASN, lhs, rhsTrans)).
@@ -1608,9 +1623,6 @@ transform P2CProgram (in:: P) returns (out:: C)
 	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.Monitor(_, _, e), e : in.Expr, RhsEvalOrder(s, 1, e, k).
 	StmtExprSize(s, 2)   :- SubSE(_, s), s : in.Monitor.
 
-	RhsCntxt(s, 1, e)    :- SubSE(_, s), s = in.BinStmt(_, _, e).
-	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.BinStmt(_, _, e), e : in.Expr, RhsEvalOrder(s, 1, e, k).
-
 	RhsCntxt(s, 0, e) :- SubSE(_, s), s = in.Send(e, _, _).
 	RhsCntxt(s, 1, e) :- SubSE(_, s), s = in.Send(_, e, _).
 	RhsCntxt(s, 2, e) :- SubSE(_, s), s = in.Send(_, _, e), e : in.Expr.
@@ -1636,6 +1648,30 @@ transform P2CProgram (in:: P) returns (out:: C)
 	 
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.BinApp(_, e', _). 
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.BinApp(_, _, e'). 
+
+    /*************************************************************/
+    /******         Translation of BinStmt                  ******/
+    /*************************************************************/
+	
+	//// Records the sequence of getters in an LHS expression.
+	//// Numbers each getter involving a key expression.	
+	LhsPath ::= (stmt: in.BinStmt, getter: in.Expr, keyNum: Natural).
+
+	LhsPath(s, e, 1)   :- SubSE(_, s), s = in.BinStmt(_, e, _), e = in.BinApp(IDX, _, _).
+	LhsPath(s, e, 0)   :- SubSE(_, s), s = in.BinStmt(_, e, _), toSymbol(e) != in.#BinApp.
+
+	LhsPath(s, e', i') :- LhsPath(s, e, i), e = in.BinApp(IDX, e', _), e' = in.BinApp(IDX, _, _), i' = i + 1.
+	LhsPath(s, e', i)  :- LhsPath(s, e, i), e = in.BinApp(IDX, e', _), toSymbol(e') != in.#BinApp.
+
+	LhsPath(s, e', i') :- LhsPath(s, e, i), e = in.Field(e', _), e' = in.BinApp(IDX, _, _), i' = i + 1.
+	LhsPath(s, e', i)  :- LhsPath(s, e, i), e = in.Field(e', _), toSymbol(e') != in.#BinApp.
+
+	RhsCntxt(s, 0, e)  :- SubSE(_, s), s = in.BinStmt(_, _, e).
+	RhsCntxt(s, i, e)  :- LhsPath(s, g, i), g = in.BinApp(IDX, _, e).
+	StmtExprSize(s, n) :- LhsPath(s, Name(_), i), n = i + 1.
+
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.BinStmt(_, _, e), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	RhsMaxOrder(s, i, k) :- LhsPath(s, g, i), g = in.BinApp(IDX, _, e), RhsEvalOrder(s, i, e, k).
 
     /*************************************************************/
     /******                 Powers of two                   ******/

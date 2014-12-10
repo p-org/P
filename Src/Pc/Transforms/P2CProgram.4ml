@@ -1289,7 +1289,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 							        e = in.BinApp(NEQ, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
 									getBool = out.FunApp(Ident("PrtIsEqualValue"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL))),
-									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(UnApp(BNOT, getBool), NIL)).
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(UnApp(LNOT, getBool), NIL)).
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 							        e = in.BinApp(LT, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
 									getInt1 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),

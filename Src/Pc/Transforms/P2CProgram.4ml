@@ -159,17 +159,20 @@ transform P2CProgram (in:: P) returns (out:: C)
 							      asn = out.BinApp(ASN, Ident(strJoin("p_tmp_expr_", toString(i))), Paren(Ident(strJoin("x", toString(i))))).
 
 	//// Generate the bodies for P_TUPLE_n
-	TupTypeArity ::= (type: TupType + NmdTupType + {NIL}, size: Natural).
-	TupTypeArity(NIL, 0).
-	TupTypeArity(t, n) :- TypeId(_, t), t = TupType(_, t'), TupTypeArity(t', n'), n = n' + 1.
-	TupTypeArity(t, n) :- TypeId(_, t), t = NmdTupType(_, t'), TupTypeArity(t', n'), n = n' + 1.
+	TupTypeArity ::= (type: TupType + NmdTupType, tail: TupType + NmdTupType + {NIL}, size: Natural).
+	TupTypeArity(x, x, 0) :- TypeId(_, x), x = TupType(_, _).
+	TupTypeArity(x, x, 0) :- TypeId(_, x), x = NmdTupType(_, _).
+	TupTypeArity(x, t', n') :- t = TupType(_, t'), TupTypeArity(x, t, n), n' = n + 1.
+	TupTypeArity(x, t', n') :- t = NmdTupType(_, t'), TupTypeArity(x, t, n), n' = n + 1.
 
 	PTupleBodyArgs ::= (args: out.Args, size: Natural, asnNum: Integer).
+	PTupleBodyArgs(a, n, n) :- TupTypeArity(_, NIL, n), a = out.Args(Ident("p_tmp_tuple"), NIL).
+	PTupleBodyArgs(a, n, i') :- PTupleBodyArgs(tl, n, i), i' : Natural, i' = i - 1, a = out.Args(asn, tl), 
+							    asn = out.FunApp(Ident("PrtTupleSet"), Args(Ident("p_tmp_tuple"), Args(IntLit(i', DEC, U), Args(Paren(Ident(strJoin("x", toString(i')))), NIL)))).
 
-	PTupleBodyArgs(a, n, n) :- TupTypeArity(_, n), a = out.Args(Ident("p_tmp_tuple"), NIL).
-
-	PTupleBodyArgs(a, n, i') :- PTupleBodyArgs(tl, n, i), i : Natural, i' = i - 1, a = out.Args(asn, tl), 
-							    asn = out.FunApp(Ident("PrtTupleSet"), Args(Ident("p_tmp_tuple"), Args(IntLit(i, DEC, U), Args(Paren(Ident(strJoin("x", toString(i)))), NIL)))).
+	TupMacroArgList ::= (args: out.Args, len: Natural, aux: Natural).
+	TupMacroArgList(args, n', n) :- TupTypeArity(x, NIL, n'), n = n' - 1, n: Natural, args = out.Args(Ident(strJoin("x", toString(n))), NIL).
+	TupMacroArgList(args, x, n) :- TupMacroArgList(args', x, n'), n = n' - 1, n: Natural, args = out.Args(Ident(strJoin("x", toString(n))), args').
 
 	//// Generate fixed macros
 	COut(0, def) :- def = out.PpDefine(Ident("P_SEQ"), NIL). 
@@ -218,9 +221,9 @@ transform P2CProgram (in:: P) returns (out:: C)
 					         FunApp(Ident(strJoin("P_EXPR_", toString(n))), paramArgs),
 					         FunApp(Ident("P_SEQ"), bodyArgs)).
 
- 	COut(2, def) :- PTupleBodyArgs(bodyArgs, n, -1), MacroArgList(paramArgs, n, _), n' = n + 1,
+ 	COut(2, def) :- PTupleBodyArgs(bodyArgs, n, 0), TupMacroArgList(paramArgs, n, 0),
 	                def = out.PpDefine(
-					         FunApp(Ident(strJoin("P_TUPLE_", toString(n'))), Args(Ident("t"), paramArgs)),
+					         FunApp(Ident(strJoin("P_TUPLE_", toString(n))), Args(Ident("t"), paramArgs)),
 					         FunApp(Ident("P_SEQ"), Args(out.BinApp(ASN, Ident("p_tmp_tuple"), Paren(Ident("t"))), bodyArgs))).
 
     /*************************************************************/
@@ -608,9 +611,10 @@ transform P2CProgram (in:: P) returns (out:: C)
     BodyTmpVars(c, -1, i', defs) :- BodyTmpVars(c, -1, i, tl), i : Natural, i' = i - 1, defs = out.Defs(def, tl),
 	                                def = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), strJoin("p_tmp_stmt_", toString(i)), NIL).
 
-    BodyTmpVars(c, -1, -2, defs) :- BodyTmpVars(c, -1, -1, tl), defs = out.Defs(defpc, Defs(defb, Defs(defr, tl))),
-	                                defb = out.VarDef(NIL, NmdType(NIL, "PRT_BOOLEAN"), "p_tmp_bool", NIL),
+    BodyTmpVars(c, -1, -2, defs) :- BodyTmpVars(c, -1, -1, tl), defs = out.Defs(defpc, Defs(defb, Defs(defr, Defs(deft, tl)))),
+									deft = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_tuple", Ident("NULL")),
 	                                defr = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_ret", Ident("NULL")),
+	                                defb = out.VarDef(NIL, NmdType(NIL, "PRT_BOOLEAN"), "p_tmp_bool", NIL),
 									defpc = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), "p_tmp_mach_priv", 
 									                   Cast(PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), Ident("context"))).
 
@@ -1211,8 +1215,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 									e = in.FunApp(name, args), args != NIL, funDecl = FunDecl(name, c.owner, _, type, _, _), DeclId(funDecl, funIndex, funName),
 									TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupleTrans(c, s, i, args, ecs), 
-									defaultValue = out.FunApp(Ident("PrtMkDefaultValue"), Args(out.UnApp(ADDR, Ident(typeName)), NIL)), TupTypeArity(type, arity),
-									ec = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(Ident("context"), Args(IntLit(funIndex, DEC, U), Args(out.FunApp(Ident(strJoin("P_Tuple_", toString(arity))), Args(defaultValue, ecs)), NIL)))).
+									defaultValue = out.FunApp(Ident("PrtMkDefaultValue"), Args(out.UnApp(ADDR, Ident(typeName)), NIL)), TupTypeArity(type, NIL, arity),
+									ec = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(Ident("context"), Args(IntLit(funIndex, DEC, U), Args(out.FunApp(Ident(strJoin("P_TUPLE_", toString(arity))), Args(defaultValue, ecs)), NIL)))).
 
 	//// Nullary expressions
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
@@ -1368,17 +1372,25 @@ transform P2CProgram (in:: P) returns (out:: C)
 									ec = out.FunApp(Ident("PrtCastValue"), Args(getArg, Args(out.UnApp(ADDR, Ident(typeName)), NIL))).
 	
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
-									e = in.Tuple(es), TypeOf(c, e, type), TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupTypeArity(type, arity),
-									TupleTrans(c, s, i, es, ecs), 
-									defaultValue = out.FunApp(Ident("PrtMkDefaultValue"), Args(out.UnApp(ADDR, Ident(typeName)), NIL)), 
-									ec = out.FunApp(Ident(strJoin("P_Tuple_", toString(arity))), Args(defaultValue, ecs)).
+									e = in.Exprs(_, _),
+									ec = out.FunApp(Ident("PrtMkNullValue"), NIL).
 
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
-									e = in.NamedTuple(es), TypeOf(c, e, type), TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupTypeArity(type, arity),
-									NamedTupleTrans(c, s, i, es, ecs), 
+									e = in.Tuple(es), TypeOf(c, e, type), TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupTypeArity(type, NIL, arity),
+									TupleTrans(c, s, i, es, ecs), 
 									defaultValue = out.FunApp(Ident("PrtMkDefaultValue"), Args(out.UnApp(ADDR, Ident(typeName)), NIL)), 
-									ec = out.FunApp(Ident(strJoin("P_Tuple_", toString(arity))), Args(defaultValue, ecs)).
+									ec = out.FunApp(Ident(strJoin("P_TUPLE_", toString(arity))), Args(defaultValue, ecs)).
 
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = in.NamedExprs(_, _, _),
+									ec = out.FunApp(Ident("PrtMkNullValue"), NIL).
+
+	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
+									e = in.NamedTuple(es), TypeOf(c, e, type), TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupTypeArity(type, NIL, arity),
+									NamedTupleTrans(c, s, i, es, ecs),
+									defaultValue = out.FunApp(Ident("PrtMkDefaultValue"), Args(out.UnApp(ADDR, Ident(typeName)), NIL)), 
+									ec = out.FunApp(Ident(strJoin("P_TUPLE_", toString(arity))), Args(defaultValue, ecs)).
+	
     /*************************************************************/
     /******             Statement translation               ******/
     /*************************************************************/	
@@ -1545,9 +1557,9 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("context"),
 						   s = in.FunStmt(name, args), args != NIL, funDecl = FunDecl(name, c.owner, _, type, _, _), DeclId(funDecl, funIndex, funName),
-						   TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupleTrans(c, s, 0, args, ecs), TupTypeArity(type, arity),
+						   TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupleTrans(c, s, 0, args, ecs), TupTypeArity(type, NIL, arity),
 						   defaultValue = out.FunApp(Ident("PrtMkDefaultValue"), Args(UnApp(ADDR, Ident(typeName)), NIL)),
-						   cs = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(context, Args(IntLit(funIndex, DEC, U), Args(out.FunApp(Ident(strJoin("P_Tuple_", toString(arity))), Args(defaultValue, ecs)), NIL)))).
+						   cs = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(context, Args(IntLit(funIndex, DEC, U), Args(out.FunApp(Ident(strJoin("P_TUPLE_", toString(arity))), Args(defaultValue, ecs)), NIL)))).
 
     /*************************************************************/
     /******            Expression dependencies              ******/

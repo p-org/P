@@ -611,8 +611,9 @@ transform P2CProgram (in:: P) returns (out:: C)
     BodyTmpVars(c, -1, i', defs) :- BodyTmpVars(c, -1, i, tl), i : Natural, i' = i - 1, defs = out.Defs(def, tl),
 	                                def = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), strJoin("p_tmp_stmt_", toString(i)), NIL).
 
-    BodyTmpVars(c, -1, -2, defs) :- BodyTmpVars(c, -1, -1, tl), defs = out.Defs(defpc, Defs(defb, Defs(defr, Defs(deft, tl)))),
-									deft = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_tuple", Ident("NULL")),
+    BodyTmpVars(c, -1, -2, defs) :- BodyTmpVars(c, -1, -1, tl), defs = out.Defs(defpc, Defs(defb, Defs(defr, Defs(deft, Defs(deff, tl))))),
+									deff = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_funstmt_ret", NIL),
+									deft = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_tuple", NIL),
 	                                defr = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_ret", Ident("NULL")),
 	                                defb = out.VarDef(NIL, NmdType(NIL, "PRT_BOOLEAN"), "p_tmp_bool", NIL),
 									defpc = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), "p_tmp_mach_priv", 
@@ -633,6 +634,13 @@ transform P2CProgram (in:: P) returns (out:: C)
 					  params,
 					  UNKNOWN).
 
+	PatchReturn ::= (f: in.FunDecl, e: out.Stmt).
+	PatchReturn(f, cs) :- DeclId(f, _, _), f = FunDecl(_, _, _, _, NIL, _), cs = out.Return(Ident("p_tmp_ret")).
+	PatchReturn(f, cs) :- DeclId(f, _, _), f = FunDecl(_, _, _, _, type, _), type : TypeExpr, TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),  
+						  cs = out.ITE(BinApp(EQ, Ident("p_tmp_ret"), Ident("NULL")), 
+									   Return(FunApp(Ident("PrtMkDefaultValue"), Args(out.UnApp(ADDR, Ident(typeName)), NIL))),
+									   Return(Ident("p_tmp_ret"))).
+
 	COut(8, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = REAL, f.owner.kind = REAL,
 				    BodyTmpVars(f, -1, -2, tmpVars),			  
 				    StmtTrans(f, f.body, ctrans),			  
@@ -644,12 +652,13 @@ transform P2CProgram (in:: P) returns (out:: C)
 					           PrmTypes(NmdType(NIL, "PRT_UINT32"),
 							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),
 					Trampoline(f, f.body, header),
+					PatchReturn(f, patchReturn),
 					footer = out.Lbl("P_EXIT_FUN", 
 					                   Seq(
 									     ITE(BinApp(NEQ, Ident("value"), Ident("NULL")), 
 										     FunApp(Ident("PrtFreeValue"), Args(Ident("value"), NIL)), 
 											 NIL),
-									     Return(Ident("p_tmp_ret")))),
+									     patchReturn)),
 					body = out.Block(tmpVars, Seq(header, Seq(ctrans, footer))),					  
 	                def = FunDef(
 					  NIL,
@@ -1553,7 +1562,10 @@ transform P2CProgram (in:: P) returns (out:: C)
     //// Fun
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("context"),
 						   s = in.FunStmt(name, NIL), funDecl = FunDecl(name, c.owner, _, _, _, _), DeclId(funDecl, funIndex, funName),
-						   cs = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(context, Args(IntLit(funIndex, DEC, U), Args(Ident("NULL"), NIL)))).
+						   ret = Ident("p_tmp_funstmt_ret"),
+						   funcall = out.BinApp(ASN, ret, FunApp(Ident(strJoin(funName, "_IMPL")), Args(context, Args(IntLit(funIndex, DEC, U), Args(Ident("NULL"), NIL))))),
+						   cleanup = out.ITE(BinApp(EQ, ret, Ident("NULL")), NIL, FunApp(Ident("PrtFreeValue"), Args(ret, NIL))),
+						   cs = out.Seq(funcall, cleanup).
 
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("context"),
 						   RhsTrans(c, s, 0, j, tail), RhsEvalOrder(s, 0, args, j), j' = j + 1, trans = out.Args(ec, tail), 
@@ -1561,7 +1573,10 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupleTrans(c, s, 0, args, ecs), TupTypeArity(type, NIL, arity),
 						   defaultValue = out.FunApp(Ident("PrtMkDefaultValue"), Args(UnApp(ADDR, Ident(typeName)), NIL)),
 						   ec = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(context, Args(IntLit(funIndex, DEC, U), Args(out.FunApp(Ident(strJoin("P_TUPLE_", toString(arity))), Args(defaultValue, ecs)), NIL)))),
-						   cs = out.FunApp(Ident(strJoin("P_EXPR_", toString(j'))), trans).
+						   ret = Ident("p_tmp_funstmt_ret"),
+						   funcall = out.BinApp(ASN, ret, FunApp(Ident(strJoin("P_EXPR_", toString(j'))), trans)),
+						   cleanup = out.ITE(BinApp(EQ, ret, Ident("NULL")), NIL, FunApp(Ident("PrtFreeValue"), Args(ret, NIL))),
+						   cs = out.Seq(funcall, cleanup).
 
     /*************************************************************/
     /******            Expression dependencies              ******/

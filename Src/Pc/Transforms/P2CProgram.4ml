@@ -602,7 +602,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	BodyTmpVars ::= (context: TypingContext, nExprVars: Integer, nStmtVars: Integer, defs: out.Defs + { NIL }).
 	
 	BodyTmpVars(c, nExprs, nStmts, NIL) :- SubCntxt(c), 
-	                                       nExprs = maxAll(-1, { k | SubSE(c, s), s : in.Stmt, RhsEvalOrder(s, _, _, k) }), nExprs : Integer,
+	                                       nExprs = maxAll(-1, { k | SubSE(c, s), s : in.Stmt, RhsEvalOrder(s, _, _, k); SubSE(c, s), s : in.FunStmt, RhsEvalOrder(s, _, _, k'), k = k' + 1}), nExprs : Integer,
 	                                       nStmts = maxAll(0,  { k | StmtExprSize(s, k) }) - 1, nStmts : Integer.
 
     BodyTmpVars(c, i', n, defs)  :- BodyTmpVars(c, i, n, tl), i : Natural, i' = i - 1, defs = out.Defs(def, tl),
@@ -1355,7 +1355,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 							        e = in.Field(e1, f), RhsEvalOrder(s, i, e1, tmp1),
 									f : String, TypeOf(c, e1, nmdTupleType), IndexOf(nmdTupleType, f, offset, _),
 									getNmdTuple = Ident(strJoin("p_tmp_expr_", toString(tmp1))), 
-									ec = out.FunApp(Ident("PrtNmdTupleGet"), Args(getNmdTuple, Args(IntLit(offset, DEC, NIL), NIL))).
+									ec = out.FunApp(Ident("PrtTupleGet"), Args(getNmdTuple, Args(IntLit(offset, DEC, NIL), NIL))).
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 							        e = in.Field(e1, f), RhsEvalOrder(s, i, e1, tmp1),
 									f : Natural,
@@ -1556,10 +1556,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   cs = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(context, Args(IntLit(funIndex, DEC, U), Args(Ident("NULL"), NIL)))).
 
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("context"),
+						   RhsTrans(c, s, 0, j, tail), RhsEvalOrder(s, 0, args, j), j' = j + 1, trans = out.Args(ec, tail), 
 						   s = in.FunStmt(name, args), args != NIL, funDecl = FunDecl(name, c.owner, _, type, _, _), DeclId(funDecl, funIndex, funName),
 						   TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupleTrans(c, s, 0, args, ecs), TupTypeArity(type, NIL, arity),
 						   defaultValue = out.FunApp(Ident("PrtMkDefaultValue"), Args(UnApp(ADDR, Ident(typeName)), NIL)),
-						   cs = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(context, Args(IntLit(funIndex, DEC, U), Args(out.FunApp(Ident(strJoin("P_TUPLE_", toString(arity))), Args(defaultValue, ecs)), NIL)))).
+						   ec = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(context, Args(IntLit(funIndex, DEC, U), Args(out.FunApp(Ident(strJoin("P_TUPLE_", toString(arity))), Args(defaultValue, ecs)), NIL)))),
+						   cs = out.FunApp(Ident(strJoin("P_EXPR_", toString(j'))), trans).
 
     /*************************************************************/
     /******            Expression dependencies              ******/

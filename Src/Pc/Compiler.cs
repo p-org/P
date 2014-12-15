@@ -131,10 +131,6 @@
             }
 
             ParsedProgram = prog;
-            if (Options.parseOnly)
-            {
-                return true;
-            }
 
             //// Step 2. Serialize the parsed object graph into a Formula model and install it. Should not fail.
             AST<Model> model;
@@ -164,6 +160,11 @@
             if (!Check(inputModule, inputFile, flags))
             {
                 return false;
+            }
+
+            if (Options.analyzeOnly)
+            {
+                return true;
             }
 
             //// Step 4. Generate outputs

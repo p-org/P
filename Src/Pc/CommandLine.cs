@@ -13,7 +13,7 @@
 
     public class CommandLineOptions
     {
-        public bool parseOnly;
+        public bool analyzeOnly;
         public LivenessOption liveness;
         public string outputDir;
         public bool outputFormula;
@@ -25,7 +25,7 @@
 
         public CommandLineOptions()
         {
-            this.parseOnly = false;
+            this.analyzeOnly = false;
             this.liveness = LivenessOption.None;
             this.outputDir = null;
             this.outputFormula = false;

@@ -1210,14 +1210,14 @@ transform P2CProgram (in:: P) returns (out:: C)
 									e = in.FunApp(name, NIL), funDecl = FunDecl(name, c.owner, _, _, _, _), DeclId(funDecl, funIndex, funName),
 									ec = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(Ident("context"), Args(IntLit(funIndex, DEC, U), Args(Ident("NULL"), NIL)))).
 
-    /*
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
-									e = in.FunApp(name, args), args != NIL, funDecl = FunDecl(name, c.owner, _, type, _, _), DeclId(funDecl, funIndex, funName),
-									TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupleTrans(c, s, i, args, ecs), 
-									defaultValue = out.FunApp(Ident("PrtMkDefaultValue"), Args(out.UnApp(ADDR, Ident(typeName)), NIL)), TupTypeArity(type, NIL, arity),
-									ec = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(Ident("context"), Args(IntLit(funIndex, DEC, U), Args(out.FunApp(Ident(strJoin("P_TUPLE_", toString(arity))), Args(defaultValue, ecs)), NIL)))).
-	*/
-
+									e = in.FunApp(name, args), args != NIL, 
+									funDecl = FunDecl(name, c.owner, _, type, _, _), DeclId(funDecl, funIndex, funName),
+									TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), 
+									ExprsTrans(c, s, i, args, ecs),
+									argsTuple = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#Exprs, args) - 1))), Args(out.UnApp(ADDR, Ident(typeName)), ecs)),
+									ec = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(Ident("context"), Args(IntLit(funIndex, DEC, U), Args(argsTuple, NIL)))).
+	
 	//// Nullary expressions
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 							        e = NulApp(n), n : Integer,
@@ -1538,18 +1538,18 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   cleanup = out.ITE(BinApp(EQ, ret, Ident("NULL")), NIL, FunApp(Ident("PrtFreeValue"), Args(ret, NIL))),
 						   cs = out.Seq(funcall, cleanup).
 
-	/*
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("context"),
-						   RhsTrans(c, s, 0, j, tail), RhsEvalOrder(s, 0, args, j), j' = j + 1, trans = out.Args(ec, tail), 
+						   RhsTrans(c, s, 0, j, tail), RhsMaxOrder(s, 0, j), j' = j + 1, trans = out.Args(ec, tail), 
 						   s = in.FunStmt(name, args), args != NIL, funDecl = FunDecl(name, c.owner, _, type, _, _), DeclId(funDecl, funIndex, funName),
-						   TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), TupleTrans(c, s, 0, args, ecs), TupTypeArity(type, NIL, arity),
-						   defaultValue = out.FunApp(Ident("PrtMkDefaultValue"), Args(UnApp(ADDR, Ident(typeName)), NIL)),
-						   ec = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(context, Args(IntLit(funIndex, DEC, U), Args(out.FunApp(Ident(strJoin("P_TUPLE_", toString(arity))), Args(defaultValue, ecs)), NIL)))),
+						   TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), 
+						   ExprsTrans(c, s, 0, args, ecs),
+						   argsTuple = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#Exprs, args) - 1))), Args(UnApp(ADDR, Ident(typeName)), ecs)),
+						   ec = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(context, Args(IntLit(funIndex, DEC, U), Args(argsTuple, NIL)))),
 						   ret = Ident("p_tmp_funstmt_ret"),
 						   funcall = out.BinApp(ASN, ret, FunApp(Ident(strJoin("P_EXPR_", toString(j'))), trans)),
 						   cleanup = out.ITE(BinApp(EQ, ret, Ident("NULL")), NIL, FunApp(Ident("PrtFreeValue"), Args(ret, NIL))),
 						   cs = out.Seq(funcall, cleanup).
-     */
+    
     /*************************************************************/
     /******            Expression dependencies              ******/
     /*************************************************************/	
@@ -1611,13 +1611,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.NewStmt(_, e), e : in.Expr.
 	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.NewStmt(_, e), e : in.Expr, RhsEvalOrder(s, 0, e, k).
 	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.NewStmt.
-
-	/*
+	
 	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.FunStmt(_, e), e : in.Exprs.
-	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.FunStmt(_, e), e : in.Exprs, RhsEvalOrder(s, 0, e, k).
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.FunStmt(_, e), e : in.Exprs,
+							k = maxAll(0, { k' | RhsEvalOrder(s, 0, _, k') }), k: Natural.
 	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.FunStmt.
-	*/
-
+	
 	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Return(e), e : in.Expr.
 	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Return(e), e : in.Expr, RhsEvalOrder(s, 0, e, k).
 	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.Return.

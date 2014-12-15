@@ -243,13 +243,6 @@ PRT_API void PRT_CALL_CONV PrtTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32
 */
 PRT_API PRT_VALUE * PRT_CALL_CONV PrtTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index);
 
-/** Gets an element in a (named) tuple by index for a temporary non-mutating computation.
-* @param[in] tuple A (named) tuple, must not be freed or mutated until after client is finished with result.
-* @param[in] index A 0-based element index.
-* @returns The element at index i. Caller must not free, mutate, or persist result.
-*/
-PRT_API PRT_VALUE * PRT_CALL_CONV PrtTupleGetTmp(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index);
-
 /** Sets an element in a named tuple by name.
 * @param[in,out] tuple A named tuple to mutate.
 * @param[in]     name  The name of the element to set.
@@ -263,13 +256,6 @@ PRT_API void PRT_CALL_CONV PrtNmdTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_STR
 * @returns The element named name. Caller is responsible for freeing.
 */
 PRT_API PRT_VALUE* PRT_CALL_CONV PrtNmdTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_STRING name);
-
-/** Gets an element in a named tuple by name for a temporary non-mutating computation.
-* @param[in] tuple A named tuple, must not be freed or mutated until after client is finished with result.
-* @param[in] name  The name of the element to set.
-* @returns The element named name. Caller must not free, mutate, or persist result.
-*/
-PRT_API PRT_VALUE* PRT_CALL_CONV PrtNmdTupleGetTmp(_In_ PRT_VALUE *tuple, _In_ PRT_STRING name);
 
 /** Updates the sequence at index.
 * @param[in,out] seq   A sequence to mutate.
@@ -304,14 +290,6 @@ PRT_API void PRT_CALL_CONV PrtSeqRemove(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 
 * @returns The value at index. Caller is responsible for freeing.
 */
 PRT_API PRT_VALUE * PRT_CALL_CONV PrtSeqGet(_In_ PRT_VALUE *seq, _In_ PRT_UINT32 index);
-
-/** Gets the sequence at index for a temporary non-mutating computation.
-* If the result must be persisted, then it should be cloned. 
-* @param[in] seq   A sequence, must not be freed or mutated until after client is finished with result.
-* @param[in] index A 0-based index s.t. 0 <= index < size(seq).
-* @returns The value at index. Caller must not free, mutate, or persist result. 
-*/
-PRT_API PRT_VALUE * PRT_CALL_CONV PrtSeqGetTmp(_In_ PRT_VALUE *seq, _In_ PRT_UINT32 index);
 
 /** Gets the size of a sequence.
 * @param[in] seq A sequence.
@@ -360,14 +338,6 @@ PRT_API void PRT_CALL_CONV PrtMapRemove(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *
 * @returns The value to which the key maps. Caller is responsible for freeing.
 */
 PRT_API PRT_VALUE * PRT_CALL_CONV PrtMapGet(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key);
-
-/** Gets the value to which this key maps for a temporary non-mutating computation.
-* The key must be present the map. If the result must be persisted, then it should be cloned. 
-* @param[in] map A map, must not be freed or mutated until after client is finished with result.
-* @param[in] key The key to lookup.
-* @returns The value to which the key maps. Caller must not free, mutate, or persist result.
-*/
-PRT_API PRT_VALUE * PRT_CALL_CONV PrtMapGetTmp(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key);
 
 /** Converts a map to sequence of keys. Keys are returned in insertion order.
 * @param[in] map A map.

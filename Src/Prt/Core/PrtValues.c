@@ -440,7 +440,7 @@ PRT_VALUE * PRT_CALL_CONV PrtTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 ind
 	return PrtCloneValue(tuple->valueUnion.tuple->values[index]);
 }
 
-PRT_VALUE * PRT_CALL_CONV PrtTupleGetTmp(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index)
+PRT_VALUE * PRT_CALL_CONV PrtTupleGetNC(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index)
 {
 	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
 	PrtAssert(tuple->type->typeKind == PRT_KIND_TUPLE || tuple->type->typeKind == PRT_KIND_NMDTUP, "Cannot perform tuple set on this value");
@@ -518,7 +518,7 @@ PRT_VALUE * PRT_CALL_CONV PrtNmdTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_STRING 
 	return PrtCloneValue(tuple->valueUnion.tuple->values[index]);
 }
 
-PRT_VALUE * PRT_CALL_CONV PrtNmdTupleGetTmp(_In_ PRT_VALUE *tuple, _In_ PRT_STRING name)
+PRT_VALUE * PRT_CALL_CONV PrtNmdTupleGetNC(_In_ PRT_VALUE *tuple, _In_ PRT_STRING name)
 {
 	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
 	PrtAssert(name != NULL && name[0] != '\0', "Invalid field name");
@@ -644,7 +644,7 @@ PRT_VALUE * PRT_CALL_CONV PrtSeqGet(_In_ PRT_VALUE *seq, _In_ PRT_UINT32 index)
 	return PrtCloneValue(seq->valueUnion.seq->values[index]);
 }
 
-PRT_VALUE * PRT_CALL_CONV PrtSeqGetTmp(_In_ PRT_VALUE *seq, _In_ PRT_UINT32 index)
+PRT_VALUE * PRT_CALL_CONV PrtSeqGetNC(_In_ PRT_VALUE *seq, _In_ PRT_UINT32 index)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(seq->type->typeKind == PRT_KIND_SEQ, "Invalid value");
@@ -895,7 +895,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMapGet(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key)
 	return NULL;
 }
 
-PRT_VALUE * PRT_CALL_CONV PrtMapGetTmp(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key)
+PRT_VALUE * PRT_CALL_CONV PrtMapGetNC(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");

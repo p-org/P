@@ -1484,16 +1484,6 @@ transform P2CProgram (in:: P) returns (out:: C)
 											Args(Ident("PRT_STATUS_ASSERT"), 
 											Args(context, NIL))).
 
-	/*
-	//// BinStmt
-    // BinStmt  ::= new (op: { REMOVE, ASSIGN, INSERT }, arg1: any Expr, arg2: any Expr).
-    */
-	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
-						   s = in.BinStmt(ASSIGN, Name(n), rhs), RhsExpr(c, s, 0, rhsTrans),
-						   varDecl is VarDecl(n, c.owner, t),  no TypeOfFormalParam(c, n, _), DeclId(varDecl, _, varName),
-						   lhs = out.BinApp(AAC, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("varValues")), Ident(varName)),
-						   cs = out.Seq(out.FunApp(Ident("PrtFreeValue"), Args(lhs, NIL)), out.BinApp(ASN, lhs, rhsTrans)).
-
 	//// Skip 
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NulStmt(SKIP), cs = NIL.
 	
@@ -1672,6 +1662,132 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.BinStmt(_, _, e), e : in.Expr, RhsEvalOrder(s, 0, e, k).
 	RhsMaxOrder(s, i, k) :- LhsPath(s, g, i), g = in.BinApp(IDX, _, e), RhsEvalOrder(s, i, e, k).
+
+	//// Translates the entire access path
+	LhsTrans ::= (cntxt: TypingContext, path: LhsPath, trans: out.Expr).
+
+    LhsTrans(c, lp, trans) :- SubSE(c, s), lp is LhsPath(s, Name(n), _), c : FunDecl, IndexOf(c.params, n, i, _),
+	                           trans = out.FunApp(Ident("PrtTupleGetNC"), Args(Ident("value"), Args(IntLit(i, DEC, U), NIL))). 
+
+	LhsTrans(c, lp, trans) :- SubSE(c, s), lp is LhsPath(s, Name(n), _),   
+							   no TypeOfFormalParam(c, n, _), varDecl is VarDecl(n, c.owner, _), DeclId(varDecl, _, varName),
+							   trans = out.BinApp(AAC, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("varValues")), Ident(varName)).
+
+	LhsTrans(c, lp, trans) :- LhsTrans(c, LhsPath(s, g, _), e), lp is LhsPath(s, in.Field(g, n), _), n : Natural,
+	                          trans = out.FunApp(Ident("PrtTupleGetNC"), Args(e, Args(IntLit(n, DEC, U), NIL))).   
+
+	LhsTrans(c, lp, trans) :- LhsTrans(c, LhsPath(s, g, _), e), lp is LhsPath(s, in.Field(g, n), _), n : String,
+	                          TypeOf(c, g, t), IndexOf(t, n, i, _),
+	                          trans = out.FunApp(Ident("PrtTupleGetNC"), Args(e, Args(IntLit(i, DEC, U), NIL))).   
+
+	LhsTrans(c, lp, trans) :- LhsTrans(c, LhsPath(s, g, _), e), lp is LhsPath(s, in.BinApp(IDX, g, k), i),
+	                          TypeOf(c, g, t), toSymbol(t) = #SeqType, tmpVar = strJoin("p_tmp_stmt_", toString(i)),
+	                          trans = out.FunApp(Ident("PrtSeqGetNC"), 
+							                     Args(e, 
+												 Args(FunApp(Ident("PrtPrimGetInt"), 
+												      Args(Ident(tmpVar), NIL)), 
+											     NIL))).   
+
+	LhsTrans(c, lp, trans) :- LhsTrans(c, LhsPath(s, g, _), e), lp is LhsPath(s, in.BinApp(IDX, g, k), i),
+	                          TypeOf(c, g, t), toSymbol(t) = #MapType, tmpVar = strJoin("p_tmp_stmt_", toString(i)),
+	                          trans = out.FunApp(Ident("PrtMapGetNC"), Args(e, Args(Ident(tmpVar), NIL))).
+
+    //// Concat all statement-level expressions
+	LhsExprs ::= (cntxt: TypingContext, stmt: in.BinStmt, indx: Natural, args: out.Args). 
+	LhsExprs(c, s, 0, args)  :- SubSE(c, s), s : in.BinStmt, RhsExpr(c, s, 0, trans), args = out.Args(trans, NIL).
+	LhsExprs(c, s, i', args) :- LhsExprs(c, s, i, a), i' = i + 1, RhsExpr(c, s, i', trans), args = out.Args(trans, a). 
+
+    //// ASSIGN / UPDATE
+	//// Case 1: Assign global variable
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = Name(glbl), 
+	                       varDecl is VarDecl(glbl, c.owner, _), DeclId(varDecl, _, varName), no TypeOfFormalParam(c, glbl, _),   
+	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
+						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs)),
+						   asgn = out.FunApp(Ident("PrtSetGlobalVar"),
+						                     Args(Ident("p_tmp_mach_priv"),
+											 Args(Ident(varName),
+											 Args(Ident("p_tmp_stmt_0"),
+											      NIL)))).
+
+	//// Case 2: Assign a formal parameter
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = Name(lcl), 
+                           c : FunDecl, IndexOf(c.params, lcl, i, _),	                       
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
+						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs)),
+						   asgn = out.FunApp(Ident("PrtTupleSet"),
+						                     Args(Ident("value"),
+											 Args(IntLit(i, DEC, U),
+											 Args(Ident("p_tmp_stmt_0"),
+											      NIL)))).
+
+	//// Case 3: Assign a tuple by int index
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = in.Field(getter, i), i : Natural, 	                       
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   LhsTrans(c, LhsPath(s, getter, _), egetter), 
+						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs)),
+						   asgn = out.FunApp(Ident("PrtTupleSet"),
+						                     Args(egetter,
+											 Args(IntLit(i, DEC, U),
+											 Args(Ident("p_tmp_stmt_0"),
+											      NIL)))).
+
+	//// Case 4: Assign a tuple by name
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = in.Field(getter, field), field : String, 	                       
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   TypeOf(c, getter, t), IndexOf(t, field, i, _), LhsTrans(c, LhsPath(s, getter, _), egetter), 
+						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs)),
+						   asgn = out.FunApp(Ident("PrtTupleSet"),
+						                     Args(egetter,
+											 Args(IntLit(i, DEC, U),
+											 Args(Ident("p_tmp_stmt_0"),
+											      NIL)))).
+
+	//// Case 5: Assign a sequence (rewrite the reading version of the translation)
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = in.BinApp(IDX, _, _), 	                       
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   LhsTrans(c, LhsPath(s, e, _), egetter), 
+						   egetter = out.FunApp(Ident("PrtSeqGetNC"), Args(seq, Args(ndex, NIL))),   
+						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs)),
+						   asgn = out.FunApp(Ident("PrtSeqUpdate"),
+						                     Args(seq,
+											 Args(ndex,
+											 Args(Ident("p_tmp_stmt_0"),
+											      NIL)))).
+
+	//// Case 6: Assign a map (rewrite the reading version of the translation)
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = in.BinApp(IDX, _, _), 	                       
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   LhsTrans(c, LhsPath(s, e, _), egetter), 
+						   egetter = out.FunApp(Ident("PrtMapGetNC"), Args(map, Args(key, NIL))),   
+						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs)),
+						   asgn = out.FunApp(Ident("PrtMapUpdate"),
+						                     Args(map,
+											 Args(key,
+											 Args(Ident("p_tmp_stmt_0"),
+											      NIL)))).
+
+    //// INSERT
+	//// Case 1: Insert into a sequence
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(INSERT, e, _), 
+	                       TypeOf(c, e, t), toSymbol(t) = #SeqType, LhsTrans(c, LhsPath(s, e, _), egetter), 
+	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
+						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(insert, exprs)),
+						   insert = out.FunApp(Ident("PrtSeqInsert"),
+						                     Args(egetter,
+											 Args(key,
+											 Args(val,
+											      NIL)))),
+						   key = out.FunApp(Ident("PrtPrimGetInt"),
+						                    Args(
+											     FunApp(Ident("PrtTupleGetNC"),
+												        Args(Ident("p_tmp_stmt_0"),
+												        Args(IntLit(0, DEC, U),
+												        NIL))),
+										    NIL)),
+				   		   val = out.FunApp(Ident("PrtTupleGetNC"),
+									                    Args(Ident("p_tmp_stmt_0"),
+									                    Args(IntLit(1, DEC, U),
+									                    NIL))).
 
     /*************************************************************/
     /******                 Powers of two                   ******/

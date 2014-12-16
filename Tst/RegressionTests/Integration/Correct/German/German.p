@@ -24,11 +24,16 @@ main machine Host {
 	var is_curr_req_excl : bool;
 	var is_excl_granted : bool;
 	var i, s :int;
+	var temp: machine;
 	start state init {
 		entry {
-		        clients.0 = new Client(this, false);
-		        clients.1 = new Client(this, false);
-		        clients.2 = new Client(this, false);
+			
+			temp = new Client(this, false);
+			clients.0 = temp;
+			temp = new Client(this, false);
+			clients.1 = temp;
+			temp = new Client(this, false);
+			clients.2 = temp;
 			curr_client = null;
 			curr_cpu = new CPU(clients);
 			assert(sizeof(sharer_list) == 0);

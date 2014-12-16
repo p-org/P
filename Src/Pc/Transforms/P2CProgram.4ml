@@ -36,6 +36,9 @@ transform P2CProgram (in:: P) returns (out:: C)
 										   cmp),
 									   NIL).
 
+    /*************************************************************/
+    /**********         Create Code File               ***********/
+    /*************************************************************/
     //// Elements will be output to c file in order of position.
     COut ::= (pos: Natural, cmp: out.Cmp).
 
@@ -46,6 +49,29 @@ transform P2CProgram (in:: P) returns (out:: C)
 		
 	out.File("program.c", body) :- CConcatOut(count({co | co is COut}) - 1, cmp), 
 									body = Section(PpInclude("program.h", FALSE), cmp).
+
+    /*************************************************************/
+    /**********         Create Stubs File              ***********/
+    /*************************************************************/
+	SOut ::= (cmp: out.Cmp).
+	SConcatOut ::= (pos: Integer, cmp: out.Cmp).	
+	SConcatOut(-1, NIL).
+	SConcatOut(m', cmp) :- so is SOut(nxt), SConcatOut(m, before), m' = toOrdinal(so, 0, { so' | so' is SOut }), cmp = Section(before, nxt), m' = m + 1.
+	
+	SOut(def') :- HOut(10, def), def = FunDef(a, b, c, d, _), def' = FunDef(a, b, c, d, NIL).
+	out.File("stubs.c", body) :- SConcatOut(count({so | so is SOut}) - 1, cmp), 
+								 body = PpITE(
+									   IFNDEF,
+									   Ident("P_PROGRAM_H"),
+									   Section(
+										   Section(
+											  PpDefine(Ident("P_PROGRAM_H"), NIL),
+											  Section(
+											     PpInclude("PrtWinUser.h", FALSE),
+											     PpInclude("PrtExecution.h", FALSE)											  
+											  )),
+										   cmp),
+									   NIL).
 								   
     /*************************************************************/
     /**********     Create C Enums for P Decls         ***********/

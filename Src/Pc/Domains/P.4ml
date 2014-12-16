@@ -335,8 +335,8 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = SeqType(inner), TypeRel(t', inner, EMPTY).
 	[ rule_Classes = '"error, msg: Value can never be in the map"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = MapType(dom, _), TypeRel(t', dom, EMPTY).        
-	[ rule_Classes = '"error, msg: "in" expects a sequence or map"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, _, e''),  TypeOf(c, e'', t''), toSymbol(t'') != #SeqType, toSymbol(t'') != #MapType.
+	[ rule_Classes = '"error, msg: "in" expects a map"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, _, e''),  TypeOf(c, e'', t''), toSymbol(t'') != #MapType.
     
 	///// (4) Exprs produces a tuple type
 	TypeOf(c, e, t) :- SubSE(c, e), e = Exprs(e', NIL), TypeOf(c, e', t'), t = TupType(t', NIL).

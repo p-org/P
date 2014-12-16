@@ -139,6 +139,7 @@ class SM_HANDLE {
 			} 
 			else 
 			{
+				invokescheduler("blocked", machineId);
 				assume (!isBlocked);
 				isBlocked = true;
 				FairScheduler.AtYieldStatic(this);

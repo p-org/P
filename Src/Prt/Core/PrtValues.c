@@ -541,27 +541,29 @@ PRT_VALUE * PRT_CALL_CONV PrtNmdTupleGetNC(_In_ PRT_VALUE *tuple, _In_ PRT_STRIN
 	return tuple->valueUnion.tuple->values[index];
 }
 
-void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index, _In_ PRT_VALUE *value)
+void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE *value)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
 	PrtAssert(seq->type->typeKind == PRT_KIND_SEQ, "Invalid value");
-	PrtAssert(index >= 0 && index < seq->valueUnion.seq->size, "Invalid index");
+	PrtAssert(index->type->typeKind == PRT_KIND_INT, "Invalid value");
+	PrtAssert(index->valueUnion.nt >= 0 && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
 
 	PRT_VALUE *clone;
 	PRT_SEQTYPE *seqType = seq->type->typeUnion.seq;
 	PrtAssert(PrtIsSubtype(value->type, seqType->innerType), "Invalid type on sequence update");
 	clone = PrtCloneValue(value);
-	PrtFreeValue(seq->valueUnion.seq->values[index]);
-	seq->valueUnion.seq->values[index] = clone;
+	PrtFreeValue(seq->valueUnion.seq->values[index->valueUnion.nt]);
+	seq->valueUnion.seq->values[index->valueUnion.nt] = clone;
 }
 
-void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index, _In_ PRT_VALUE* value)
+void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE* value)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
 	PrtAssert(seq->type->typeKind == PRT_KIND_SEQ, "Invalid value");
-	PrtAssert(index >= 0 && index <= seq->valueUnion.seq->size, "Invalid index");
+	PrtAssert(index->type->typeKind == PRT_KIND_INT, "Invalid value");
+	PrtAssert(index->valueUnion.nt >= 0 && (PRT_UINT32)index->valueUnion.nt <= seq->valueUnion.seq->size, "Invalid index");
 
 	PRT_VALUE *clone;
 	PRT_SEQTYPE *seqType = seq->type->typeUnion.seq;
@@ -579,7 +581,7 @@ void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index, _
 		PRT_VALUE **values = seq->valueUnion.seq->values;
 		if (seq->valueUnion.seq->size > 0)
 		{
-			for (i = seq->valueUnion.seq->size - 1; i >= index; --i)
+			for (i = seq->valueUnion.seq->size - 1; i >= (PRT_UINT32)index->valueUnion.nt; --i)
 			{
 				values[i + 1] = values[i];
 				if (i == 0)
@@ -589,7 +591,7 @@ void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index, _
 			}
 		}
 
-		values[index] = clone;
+		values[index->valueUnion.nt] = clone;
 	}
 	else
 	{
@@ -599,7 +601,7 @@ void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index, _
 		values = (PRT_VALUE **)PrtCalloc(seq->valueUnion.seq->capacity, sizeof(PRT_VALUE*));
 		for (i = 0; i < seq->valueUnion.seq->size; ++i)
 		{
-			if (i < index)
+			if (i < (PRT_UINT32)index->valueUnion.nt)
 			{
 				values[i] = seq->valueUnion.seq->values[i];
 			}
@@ -609,7 +611,7 @@ void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index, _
 			}
 		}
 
-		values[index] = clone;
+		values[index->valueUnion.nt] = clone;
 		PrtFree(seq->valueUnion.seq->values);
 		seq->valueUnion.seq->values = values;
 	}
@@ -617,17 +619,18 @@ void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index, _
 	seq->valueUnion.seq->size = seq->valueUnion.seq->size + 1;
 }
 
-void PRT_CALL_CONV PrtSeqRemove(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index)
+void PRT_CALL_CONV PrtSeqRemove(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(seq->type->typeKind == PRT_KIND_SEQ, "Invalid value");
-	PrtAssert(index >= 0 && index < seq->valueUnion.seq->size, "Invalid index");
+	PrtAssert(index->type->typeKind == PRT_KIND_INT, "Invalid value");
+	PrtAssert(index->valueUnion.nt >= 0 && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
 
 	PRT_UINT32 i;
 	PRT_VALUE **values = seq->valueUnion.seq->values;
 	PRT_UINT32 seqSize = seq->valueUnion.seq->size;
-	PrtFreeValue(values[index]);
-	for (i = index; i < seqSize - 1; ++i)
+	PrtFreeValue(values[index->valueUnion.nt]);
+	for (i = index->valueUnion.nt; i < seqSize - 1; ++i)
 	{
 		values[i] = values[i + 1];
 	}
@@ -635,22 +638,24 @@ void PRT_CALL_CONV PrtSeqRemove(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index)
 	seq->valueUnion.seq->size = seq->valueUnion.seq->size - 1;
 }
 
-PRT_VALUE * PRT_CALL_CONV PrtSeqGet(_In_ PRT_VALUE *seq, _In_ PRT_UINT32 index)
+PRT_VALUE * PRT_CALL_CONV PrtSeqGet(_In_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(seq->type->typeKind == PRT_KIND_SEQ, "Invalid value");
-	PrtAssert(index >= 0 && index < seq->valueUnion.seq->size, "Invalid index");
+	PrtAssert(index->type->typeKind == PRT_KIND_INT, "Invalid value");
+	PrtAssert(index->valueUnion.nt >= 0 && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
 
-	return PrtCloneValue(seq->valueUnion.seq->values[index]);
+	return PrtCloneValue(seq->valueUnion.seq->values[index->valueUnion.nt]);
 }
 
-PRT_VALUE * PRT_CALL_CONV PrtSeqGetNC(_In_ PRT_VALUE *seq, _In_ PRT_UINT32 index)
+PRT_VALUE * PRT_CALL_CONV PrtSeqGetNC(_In_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(seq->type->typeKind == PRT_KIND_SEQ, "Invalid value");
-	PrtAssert(index >= 0 && index < seq->valueUnion.seq->size, "Invalid index");
+	PrtAssert(index->type->typeKind == PRT_KIND_INT, "Invalid value");
+	PrtAssert(index->valueUnion.nt >= 0 && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
 
-	return seq->valueUnion.seq->values[index];
+	return seq->valueUnion.seq->values[index->valueUnion.nt];
 }
 
 PRT_UINT32 PRT_CALL_CONV PrtSeqSizeOf(_In_ PRT_VALUE *seq)

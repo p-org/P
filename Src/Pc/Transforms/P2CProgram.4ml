@@ -1273,11 +1273,11 @@ transform P2CProgram (in:: P) returns (out:: C)
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 							        e = in.UnApp(SIZEOF, e1), RhsEvalOrder(s, i, e1, tmp1),
 									TypeOf(c, e1, MapType(_, _)),
-									ec = out.FunApp(Ident("PrtMapSizeOf"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)).
+									ec = out.FunApp(Ident("PrtMkIntValue"), Args(FunApp(Ident("PrtMapSizeOf"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)), NIL)).
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 							        e = in.UnApp(SIZEOF, e1), RhsEvalOrder(s, i, e1, tmp1),
 									TypeOf(c, e1, SeqType(_)),
-									ec = out.FunApp(Ident("PrtSeqSizeOf"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)).
+									ec = out.FunApp(Ident("PrtMkIntValue"), Args(FunApp(Ident("PrtSeqSizeOf"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)), NIL)).
 
 	//// Binary expressions
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
@@ -1354,7 +1354,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 							        e = in.BinApp(IN, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
 									getKey = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
 									getMap = Ident(strJoin("p_tmp_expr_", toString(tmp2))),
-									ec = out.FunApp(Ident("PrtMapExists"), Args(getMap, Args(getKey, NIL))).
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(FunApp(Ident("PrtMapExists"), Args(getMap, Args(getKey, NIL))), NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, trans = out.Args(ec, tail), 
 							        e = in.Field(e1, f), RhsEvalOrder(s, i, e1, tmp1),
@@ -1720,10 +1720,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	LhsTrans(c, lp, trans) :- LhsTrans(c, LhsPath(s, g, _), e), lp is LhsPath(s, in.BinApp(IDX, g, k), i),
 	                          TypeOf(c, g, t), toSymbol(t) = #SeqType, tmpVar = strJoin("p_tmp_stmt_", toString(i)),
 	                          trans = out.FunApp(Ident("PrtSeqGetNC"), 
-							                     Args(e, 
-												 Args(FunApp(Ident("PrtPrimGetInt"), 
-												      Args(Ident(tmpVar), NIL)), 
-											     NIL))).   
+							                     Args(e, Args(Ident(tmpVar), NIL))).
 
 	LhsTrans(c, lp, trans) :- LhsTrans(c, LhsPath(s, g, _), e), lp is LhsPath(s, in.BinApp(IDX, g, k), i),
 	                          TypeOf(c, g, t), toSymbol(t) = #MapType, tmpVar = strJoin("p_tmp_stmt_", toString(i)),
@@ -1814,13 +1811,10 @@ transform P2CProgram (in:: P) returns (out:: C)
 											 Args(key,
 											 Args(val,
 											      NIL)))),
-						   key = out.FunApp(Ident("PrtPrimGetInt"),
-						                    Args(
-											     FunApp(Ident("PrtTupleGetNC"),
+						   key = out.FunApp(Ident("PrtTupleGetNC"),
 												        Args(Ident("p_tmp_stmt_0"),
 												        Args(IntLit(0, DEC, U),
 												        NIL))),
-										    NIL)),
 				   		   val = out.FunApp(Ident("PrtTupleGetNC"),
 									                    Args(Ident("p_tmp_stmt_0"),
 									                    Args(IntLit(1, DEC, U),
@@ -1853,9 +1847,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(remove, exprs)),
 						   remove = out.FunApp(Ident("PrtSeqRemove"),
 						                     Args(egetter,
-											 Args(key,
-											      NIL))),
-						   key = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident("p_tmp_stmt_0"), NIL)).
+											 Args(Ident("p_tmp_stmt_0"),
+											      NIL))).
 
 	//// Case 2: Remove from a map
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(REMOVE, e, _), 

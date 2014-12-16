@@ -262,7 +262,7 @@ PRT_API PRT_VALUE* PRT_CALL_CONV PrtNmdTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_
 * @param[in]     index The name of the element to set. A value must already exist at this index.
 * @param[in]     value The value to store at index (will be cloned).
 */
-PRT_API void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index, _In_ PRT_VALUE *value);
+PRT_API void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE *value);
 
 /** Inserts value into the sequence at index.
 * Index cannot be larger than the size of the sequence. Insertion causes:
@@ -273,7 +273,7 @@ PRT_API void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 
 * @param[in]     index An 0-based index s.t. 0 <= index <= size(seq).
 * @param[in]     value The value to store at index (will be cloned).
 */
-PRT_API void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index, _In_ PRT_VALUE* value);
+PRT_API void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE* value);
 
 /** Removes the value at index from the sequence, and shortens the sequence by one.
 * seq[index] must be defined. Removal causes:
@@ -282,14 +282,14 @@ PRT_API void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 
 * @param[in,out] seq   A sequence to mutate.
 * @param[in]     index An 0-based index s.t. 0 <= index < size(seq).
 */
-PRT_API void PRT_CALL_CONV PrtSeqRemove(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index);
+PRT_API void PRT_CALL_CONV PrtSeqRemove(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index);
 
 /** Gets the sequence at index.
 * @param[in] seq   A sequence.
 * @param[in] index A 0-based index s.t. 0 <= index < size(seq).
 * @returns The value at index. Caller is responsible for freeing.
 */
-PRT_API PRT_VALUE * PRT_CALL_CONV PrtSeqGet(_In_ PRT_VALUE *seq, _In_ PRT_UINT32 index);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtSeqGet(_In_ PRT_VALUE *seq, _In_ PRT_VALUE *index);
 
 /** Gets the size of a sequence.
 * @param[in] seq A sequence.

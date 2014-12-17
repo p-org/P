@@ -98,6 +98,12 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RunToCompletionDelayingScheduler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\RunToCompletionDelayingScheduler.dll"),
+                new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\PriorityDelayingScheduler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\PriorityDelayingScheduler.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\PCTDelayingScheduler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\PCTDelayingScheduler.dll"),
 
             //Zing x64
            new Tuple<string, string>(
@@ -139,6 +145,13 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RunToCompletionDelayingScheduler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\RunToCompletionDelayingScheduler.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\PriorityDelayingScheduler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\PriorityDelayingScheduler.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\PCTDelayingScheduler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\PCTDelayingScheduler.dll"),
+
             //Pc x86
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x86\\Debug\\Pc.exe", 
@@ -355,6 +368,12 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RunToCompletionDelayingScheduler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\RunToCompletionDelayingScheduler.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\PriorityDelayingScheduler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\PriorityDelayingScheduler.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\PCTDelayingScheduler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\PCTDelayingScheduler.dll"),
 
             //Zing x64
            new Tuple<string, string>(
@@ -396,6 +415,13 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RunToCompletionDelayingScheduler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\RunToCompletionDelayingScheduler.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\PriorityDelayingScheduler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\PriorityDelayingScheduler.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\PCTDelayingScheduler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\PCTDelayingScheduler.dll"),
+
             //Pc x86
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x86\\Release\\Pc.exe", 

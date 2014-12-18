@@ -123,7 +123,7 @@
             PProgram prog;
             List<Flag> parserFlags;
             var parser = new Parser.Parser();
-            var result = parser.ParseFile(inputFile, out parserFlags, out prog);
+            var result = parser.ParseFile(inputFile, Options, out parserFlags, out prog);
             flags.AddRange(parserFlags);
             if (!result)
             {

@@ -50,14 +50,18 @@
         {
         }
 
+        CommandLineOptions Options;
+
         internal bool ParseFile(
             ProgramName file,
+            CommandLineOptions options,
             out List<Flag> flags,
             out PProgram program)
         {
             flags = parseFlags = new List<Flag>();
             program = parseProgram = new PProgram();
             parseSource = file;
+            Options = options;
             bool result;
             try
             {
@@ -926,6 +930,7 @@
 
         private void SetFunKind(P_Root.UserCnstKind kind, Span span)
         {
+            if (!Options.erase) return;
             var funDecl = GetCurrentFunDecl(span);
             funDecl.kind = MkUserCnst(kind, span);
         }
@@ -1293,6 +1298,10 @@
             var machDecl = GetCurrentMachineDecl(span);
             machDecl.Span = span;
             machDecl.name = MkString(name, nameSpan);
+            if (!Options.erase && kind == P_Root.UserCnstKind.MODEL)
+            {
+                kind = P_Root.UserCnstKind.REAL;
+            }
             machDecl.kind = MkUserCnst(kind, span);
             parseProgram.Machines.Add(machDecl);
             crntMachDecl = null;

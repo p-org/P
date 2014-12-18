@@ -89,12 +89,12 @@
                         case "/emitLineDirectives":
                             if (colonArg != null)
                                 goto error;
-                            options.emitLineDirectives = true;
+                            options.emitLineDirectives = true; // not implemented yet
                             break;
                         case "/emitHeaderComment":
                             if (colonArg != null)
                                 goto error;
-                            options.emitHeaderComment = true;
+                            options.emitHeaderComment = true;  // not implemented yet
                             break;
                         case "/liveness":
                             if (colonArg == null)

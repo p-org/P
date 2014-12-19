@@ -348,7 +348,7 @@ domain PStaticTyping extends PData
 	
 	//// (6) FunApps must refer to a defined function that has a non-NIL return type and args must be sub-types of function signature. 
 	TypeOf(c, e, t)     :- SubSE(c, e), e = FunApp(n, NIL), FunDecl(n, c.owner, _, NIL, t, _), t != NIL.
-	TypeOf(c, e, t)     :- SubSE(c, e), e = FunApp(n, e'), TypeOf(c, e', argt), decl is FunDecl(n, c.owner, _, _, t, _), FuncSigTupleType(decl, inpt), TypeRel(argt, inpt, SUB), t != NIL.
+	TypeOf(c, e, t)     :- SubSE(c, e), e = FunApp(n, e'), TypeOf(c, e', argt), FuncSigTupleType(decl, inpt), decl = FunDecl(n, c.owner, _, _, t, _), TypeRel(argt, inpt, SUB), t != NIL.
 
 	[ rule_Classes = '"error, msg: function not defined"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _), no FunDecl(n, c.owner, _, _, _, _).	
@@ -357,7 +357,7 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: function requires arguments"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, NIL), FunDecl(n, c.owner, _, params, _, _), params != NIL.
 	[ rule_Classes = '"error, msg: function arguments have incorrect types"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, e'), TypeOf(c, e', argt), decl is FunDecl(n, c.owner, _, _, _, _), FuncSigTupleType(decl, inpt), TypeRel(argt, inpt, k), argt != inpt, k != SUB.
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, e'), TypeOf(c, e', argt), FuncSigTupleType(decl, inpt), decl = FunDecl(n, c.owner, _, _, _, _), TypeRel(argt, inpt, k), argt != inpt, k != SUB.
 	
     /*************************************************************/
     /*                      Types of Statements                  */
@@ -524,13 +524,13 @@ domain PStaticTyping extends PData
 	
 	//// (5) Function statements
 	TypeOf(c, e, NIL)   :- SubSE(c, e), e = FunStmt(n, NIL), FunDecl(n, c.owner, _, NIL, _, _).
-	TypeOf(c, e, NIL)   :- SubSE(c, e), e = FunStmt(n, e'), TypeOf(c, e', argt), decl is FunDecl(n, c.owner, _, _, _, _), FuncSigTupleType(decl, inpt), TypeRel(argt, inpt, SUB).
+	TypeOf(c, e, NIL)   :- SubSE(c, e), e = FunStmt(n, e'), TypeOf(c, e', argt), FuncSigTupleType(decl, inpt), decl = FunDecl(n, c.owner, _, _, _, _), TypeRel(argt, inpt, SUB).
 	[ rule_Classes = '"error, msg: function not defined"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _), no FunDecl(n, c.owner, _, _, _, _).	
 	[ rule_Classes = '"error, msg: function requires arguments"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, NIL), FunDecl(n, c.owner, _, params, _, _), params != NIL.
 	[ rule_Classes = '"error, msg: function arguments have incorrect types"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, e'), TypeOf(c, e', argt), decl is FunDecl(n, c.owner, _, _, _, _), FuncSigTupleType(decl, inpt), TypeRel(argt, inpt, k), argt != inpt, k != SUB.
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, e'), TypeOf(c, e', argt), FuncSigTupleType(decl, inpt), decl = FunDecl(n, c.owner, _, _, _, _), TypeRel(argt, inpt, k), argt != inpt, k != SUB.
 
     /*************************************************************/
     /*                      Field helpers                        */
@@ -740,7 +740,7 @@ domain PStaticTyping extends PData
     CompTypeRel(t'', dom)     :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = MapType(dom, _).
     CompTypeRel(t', inner)    :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = SeqType(inner).
     CompTypeRel(t', dom)      :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = MapType(dom, _).
-    CompTypeRel(argt, inpt)   :- SubSE(c, e), e = FunApp(n, e'), TypeOf(c, e', argt), decl is FunDecl(n, c.owner, _, _, t, _), FuncSigTupleType(decl, inpt), t != NIL.
+    CompTypeRel(argt, inpt)   :- SubSE(c, e), e = FunApp(n, e'), TypeOf(c, e', argt), FuncSigTupleType(decl, inpt), decl = FunDecl(n, c.owner, _, _, t, _), t != NIL.
     CompTypeRel(t', t)        :- SubSE(c, e), e = Return(e'), c = FunDecl(_, _, _, _, t, _), TypeOf(c, e', t').
     CompTypeRel(null, evt)    :- SubSE(c, e), e = Send(_, ev, NIL), IsEventCnst(c, ev, evt), null = BaseType(NULL).
     CompTypeRel(pt, evt)      :- SubSE(c, e), e = Send(_, ev, p), p != NIL, IsEventCnst(c, ev, evt), TypeOf(c, p, pt).    
@@ -753,7 +753,7 @@ domain PStaticTyping extends PData
     CompTypeRel(value, inner) :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = SeqType(inner), t2 = TupType(BaseType(INT), TupType(value, NIL)).
     CompTypeRel(value, cod)   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)).	
     CompTypeRel(key, dom)     :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)).	
-    CompTypeRel(argt, inpt)   :- SubSE(c, e), e = FunStmt(n, e'), TypeOf(c, e', argt), decl is FunDecl(n, c.owner, _, _, _, _), FuncSigTupleType(decl, inpt).
+    CompTypeRel(argt, inpt)   :- SubSE(c, e), e = FunStmt(n, e'), TypeOf(c, e', argt), FuncSigTupleType(decl, inpt), decl = FunDecl(n, c.owner, _, _, _, _).
     
     //// TypeRel determines the relationship type expressions ta and tb.
     //// If types are not subtype related, then they can

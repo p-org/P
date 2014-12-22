@@ -198,7 +198,8 @@
             string dllFileName = fileName + ".dll";
             string outputDirName = Options.outputDir == null ? directoryName : Options.outputDir;
             new PToZing(this, (AST<Model>)model, (AST<Model>)modelWithTypes).GenerateZing(zingFileName, ref zingModel);
-            PrintZingFile(zingModel, CompilerEnv, outputDirName);
+            if (!PrintZingFile(zingModel, CompilerEnv, outputDirName))
+                return false;
             var binPath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
             var zcProcessInfo = new System.Diagnostics.ProcessStartInfo(Path.Combine(binPath.FullName, "zc.exe"));
             string zingFileNameFull = Path.Combine(directoryName, zingFileName);

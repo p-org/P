@@ -2,23 +2,25 @@
          Console output          
 =================================
 OUT: ##################
-OUT: Liveness Check Failed
+OUT: Check Failed
 OUT: ##################
-OUT: 13 distinct states explored
+OUT: 3 distinct states explored
 OUT: 
-EXIT: 6
+EXIT: 3
 
 =================================
-Liveness_3.trace
+Liveness_2_bugFound.trace
 =================================
-Liveness Error Trace --- 
+Safety Error Trace
 Trace-Log 0:
 <CreateLog> Created Machine EventHandler-0
-<StateLog> Machine EventHandler-0 entering State WaitForUser
+<StateLog> Machine EventHandler-0 entering State Init
 <CreateLog> Created Machine WatchDog-0
 <StateLog> Machine WatchDog-0 entering State CanGetUserInput
-<CreateLog> Created Machine Loop-0
-<MonitorLog> Enqueued Event < ____Waiting > to 1 WatchDog monitors in Machine EventHandler-0
+<RaiseLog> Machine EventHandler-0 raised Event ____Unit
+<StateLog> Machine EventHandler-0 exiting State Init
+<StateLog> Machine EventHandler-0 entering State WaitForUser
+<MonitorLog> Enqueued Event < {0}, 0 > to 1 WatchDog monitors in Machine EventHandler-0
 <StateLog> Machine WatchDog-0 exiting State CanGetUserInput
 <StateLog> Machine WatchDog-0 entering State CanGetUserInput
 <EnqueueLog> Enqueued Event < ____UserEvent, null > in Machine ____EventHandler-0 by ____EventHandler-0
@@ -28,15 +30,8 @@ Trace-Log 0:
 <MonitorLog> Enqueued Event < ____Computing > to 1 WatchDog monitors in Machine EventHandler-0
 <StateLog> Machine WatchDog-0 exiting State CanGetUserInput
 <StateLog> Machine WatchDog-0 entering State CannotGetUserInput
-<StateLog> Machine Loop-0 entering State Looping
-<EnqueueLog> Enqueued Event < ____Done, null > in Machine ____Loop-0 by ____Loop-0
-<DequeueLog> Dequeued Event < ____Done, null > at Machine ____Loop-0
-<StateLog> Machine Loop-0 exiting State Looping
-<StateLog> Machine Loop-0 entering State Looping
-<EnqueueLog> Enqueued Event < ____Done, null > in Machine ____Loop-0 by ____Loop-0
-Accepting transition
-<DequeueLog> Dequeued Event < ____Done, null > at Machine ____Loop-0
-<StateLog> Machine Loop-0 exiting State Looping
-<StateLog> Machine Loop-0 entering State Looping
-<EnqueueLog> Enqueued Event < ____Done, null > in Machine ____Loop-0 by ____Loop-0
-Accepting transition
+
+Error:
+P Assertion failed:
+Expression: assert(sizeof(SM_HANDLE.enabled) != 0 || sizeof(SM_HANDLE.hot) == 0)
+Comment: Deadlock

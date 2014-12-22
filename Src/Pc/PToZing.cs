@@ -442,21 +442,14 @@ namespace Microsoft.Pc
                                             : anonFunToName[Factory.Instance.ToAST(it.Current)];
                     it.MoveNext();
                     var temperature = StateTemperature.WARM;
-                    if (compiler.Options.liveness != LivenessOption.None)
+                    var t = ((Id)it.Current).Name;
+                    if (t == "HOT")
                     {
-                        var t = ((Id)it.Current).Name;
-                        if (t == "HOT")
-                        {
-                            temperature = StateTemperature.HOT;
-                        }
-                        else if (t == "COLD")
-                        {
-                            temperature = StateTemperature.COLD;
-                        }
-                        else
-                        {
-                            temperature = StateTemperature.WARM;
-                        }
+                        temperature = StateTemperature.HOT;
+                    }
+                    else if (t == "COLD")
+                    {
+                        temperature = StateTemperature.COLD;
                     }
                     var stateTable = allMachines[ownerName].stateNameToStateInfo;
                     stateTable[stateName] = new StateInfo(ownerName, entryActionName, exitFunName, temperature, GetPrintedNameFromQualifiedName(qualifiedStateName));
@@ -577,30 +570,33 @@ namespace Microsoft.Pc
                 }
             }
 
-            foreach (var machineName in allMachines.Keys)
+            if (compiler.Options.liveness != LivenessOption.None)
             {
-                if (!allMachines[machineName].IsMonitor) continue;
-                var machineInfo = allMachines[machineName];
-                List<string> initialSet = new List<string>();
-                foreach (var stateName in ComputeReachableStates(machineInfo, new string[] { machineInfo.initStateName }))
+                foreach (var machineName in allMachines.Keys)
                 {
-                    if (machineInfo.stateNameToStateInfo[stateName].IsWarm)
-                    { 
-                        continue; 
-                    }
-                    if (machineInfo.stateNameToStateInfo[stateName].IsHot)
+                    if (!allMachines[machineName].IsMonitor) continue;
+                    var machineInfo = allMachines[machineName];
+                    List<string> initialSet = new List<string>();
+                    foreach (var stateName in ComputeReachableStates(machineInfo, new string[] { machineInfo.initStateName }))
                     {
-                        machineInfo.monitorType = MonitorType.FINALLY;
-                        continue;
+                        if (machineInfo.stateNameToStateInfo[stateName].IsWarm)
+                        {
+                            continue;
+                        }
+                        if (machineInfo.stateNameToStateInfo[stateName].IsHot)
+                        {
+                            machineInfo.monitorType = MonitorType.FINALLY;
+                            continue;
+                        }
+                        initialSet.Add(stateName);
                     }
-                    initialSet.Add(stateName);
-                }
-                foreach (var stateName in ComputeReachableStates(machineInfo, initialSet))
-                {
-                    if (machineInfo.stateNameToStateInfo[stateName].IsHot)
+                    foreach (var stateName in ComputeReachableStates(machineInfo, initialSet))
                     {
-                        machineInfo.monitorType = MonitorType.REPEATEDLY;
-                        break;
+                        if (machineInfo.stateNameToStateInfo[stateName].IsHot)
+                        {
+                            machineInfo.monitorType = MonitorType.REPEATEDLY;
+                            break;
+                        }
                     }
                 }
             }
@@ -1317,7 +1313,8 @@ namespace Microsoft.Pc
                                         MkZingAssign(MkZingDot("myHandle", "stack"), MkZingIdentifier("null")),
                                         MkZingAssign(MkZingDot("myHandle", "buffer"), MkZingIdentifier("null")),
                                         MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingIdentifier("null")),
-                                        MkZingAssign(MkZingDot("myHandle", "isDeleted"), ZingData.Cnst_True),
+                                        MkZingAssign(MkZingDot("SM_HANDLE", "halted"), MkZingAdd(MkZingDot("SM_HANDLE", "halted"), MkZingIdentifier("myHandle"))),
+                                        MkZingAssign(MkZingDot("SM_HANDLE", "enabled"), MkZingSub(MkZingDot("SM_HANDLE", "enabled"), MkZingIdentifier("myHandle"))),
                                         MkZingReturn(ZingData.Cnst_Nil))
                                         );
             string traceString = string.Format("\"<StateLog> Unhandled event exception by machine {0}-{{0}}\\n\"", machineName);
@@ -1503,9 +1500,20 @@ namespace Microsoft.Pc
                 string enterTraceString = string.Format("\"<StateLog> Machine {0}-{{0}} entering State {1}\\n\"", machineName, stateInfo.printedName);
                 string exitTraceString = string.Format("\"<StateLog> Machine {0}-{{0}} exiting State {1}\\n\"", machineName, stateInfo.printedName);
                 List<AST<Node>> executeStmts = new List<AST<Node>>();
-                if (compiler.Options.liveness != LivenessOption.None && allMachines[machineName].IsMonitor)
+                if (allMachines[machineName].IsMonitor)
                 {
-                    if (compiler.Options.liveness == LivenessOption.Standard)
+                    if (compiler.Options.liveness == LivenessOption.None)
+                    {
+                        if (allMachines[machineName].stateNameToStateInfo[stateName].IsHot)
+                        {
+                            executeStmts.Add(MkZingAssign(MkZingDot("SM_HANDLE", "hot"), MkZingAdd(MkZingDot("SM_HANDLE", "hot"), MkZingIdentifier("myHandle"))));
+                        }
+                        else
+                        {
+                            executeStmts.Add(MkZingAssign(MkZingDot("SM_HANDLE", "hot"), MkZingSub(MkZingDot("SM_HANDLE", "hot"), MkZingIdentifier("myHandle"))));
+                        }
+                    }
+                    else if (compiler.Options.liveness == LivenessOption.Standard)
                     {
                         if (allMachines[machineName].stateNameToStateInfo[stateName].IsHot)
                         {
@@ -2556,20 +2564,29 @@ namespace Microsoft.Pc
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
-                AST<Node> evt = it.Current.node;
+                AST<Node> evt = MkZingDot(it.Current.node, "ev");
                 it.MoveNext();
                 AST<Node> arg = it.Current.node;
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpSendPayload");
                 if (arg == ZingData.Cnst_Nil)
                 {
                     ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
+                    string traceString = 
+                        string.Format("\"<MonitorLog> Enqueued Event < {{0}} > to {{1}} {0} monitors in Machine {1}-{{2}}\\n\"", typeName, ctxt.machineName);
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), 
+                        MkZingDot(evt, "name"), MkZingCall(MkZingIdentifier("sizeof"), MkZingDot("Main", string.Format("{0}_handles", typeName))), MkZingDot("myHandle", "instance"))));
                 }
                 else
                 {
                     ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, arg));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst("\"<MonitorLog> Enqueued Event < {{0}}, \""), MkZingDot(evt, "name"))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "Print"), tmpVar)));
+                    string traceString = string.Format("\" > to {{0}} {0} monitors in Machine {1}-{{1}}\\n\"", typeName, ctxt.machineName);
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString),
+                        MkZingCall(MkZingIdentifier("sizeof"), MkZingDot("Main", string.Format("{0}_handles", typeName))), MkZingDot("myHandle", "instance"))));
                 }
                 MachineInfo machineInfo = allMachines[typeName];
-                return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", typeName)), MkZingDot(evt, "ev"), tmpVar)));
+                return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", typeName)), evt, tmpVar)));
             }
         }
 
@@ -2903,6 +2920,7 @@ namespace Microsoft.Pc
                     MkInitializers(machineName, objectName),
                     MkZingAssign(MkZingDot(objectName, "myHandle"),
                                  MkZingCall(MkZingDot("SM_HANDLE", "Construct"), MkZingDot("Machine", string.Format("_{0}", machineName)), machineInstance, Factory.Instance.MkCnst(allMachines[machineName].maxQueueSize))),
+                    MkZingAssign(MkZingDot("SM_HANDLE", "enabled"), MkZingAdd(MkZingDot("SM_HANDLE", "enabled"), MkZingDot(objectName, "myHandle"))),
                     MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(createTraceString), machineInstance)),
                     MkZingAssign(MkZingDot(objectName, "myHandle", "currentArg"), MkZingIdentifier("arg")),
                     MkZingAssign(machineInstance, MkZingApply(ZingData.Cnst_Add, machineInstance, Factory.Instance.MkCnst(1)))

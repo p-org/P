@@ -1,20 +1,24 @@
 // Liveness test: simplest sample demonstrating liveness error found:
-// "check passed", but expected to fail
-// TODO: bug in liveness checking in Zing
 
+event Unit;
 event UserEvent;
 event Done;
-event Waiting;
+event Waiting : int;
 event Computing;
 
 main machine EventHandler
 {
-       start state WaitForUser
+       start state Init {
+			entry { new WatchDog(); raise Unit; }
+			on Unit goto WaitForUser;
+       }
+
+       state WaitForUser
        {
             entry { 
-				monitor WatchDog, Waiting;
+				monitor WatchDog, Waiting, 0;
 				send this, UserEvent;
-				}
+			}
             on UserEvent goto HandleEvent;
        }
   
@@ -22,9 +26,9 @@ main machine EventHandler
        {
             entry { 
 				monitor WatchDog, Computing;
-				//send this, Done;
-				}			
-            //on Done goto WaitForUser;
+				// send this, Done;
+			}			
+            on Done goto WaitForUser;
        }
 }
 
@@ -41,4 +45,3 @@ monitor WatchDog
              on Computing goto CannotGetUserInput;
      }
 }
-

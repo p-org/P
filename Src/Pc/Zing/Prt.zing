@@ -28,21 +28,24 @@ class SM_EVENT {
 
 set SM_EVENT_SET SM_EVENT;
 
+set SM_HANDLE_SET SM_HANDLE;
+
 class SM_HANDLE {
+	static SM_HANDLE_SET halted = new SM_HANDLE_SET;
+	static SM_HANDLE_SET enabled = new SM_HANDLE_SET;
+	static SM_HANDLE_SET hot = new SM_HANDLE_SET;
 	StateStack stack;
-       	EVENT_BUFFER buffer;
+	EVENT_BUFFER buffer;
 	int maxBufferSize;
 	Machine machineName;
 	int machineId;
 	int instance;
-    	bool isBlocked;
-	bool isDeleted;
 	SM_EVENT currentEvent;
-    	PRT_VALUE currentArg;
+    PRT_VALUE currentArg;
 	
     static SM_HANDLE Construct(Machine mName, int inst, int maxBSize) {
     	SM_HANDLE handle;
-	PRT_TYPE prtType;
+		PRT_TYPE prtType;
 		handle = new SM_HANDLE;
 		handle.stack = null;
 		handle.buffer = EVENT_BUFFER.Construct();
@@ -50,8 +53,6 @@ class SM_HANDLE {
 		handle.machineName = mName;
 		handle.machineId = MachineId.GetNextId();
 		handle.instance = inst;
-		handle.isBlocked = false;
-		handle.isDeleted = false;
 		handle.currentEvent = null;
 		prtType = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL);
 		handle.currentArg = PRT_VALUE.PrtMkDefaultValue(prtType);
@@ -59,23 +60,25 @@ class SM_HANDLE {
     }
 
     void Push() {
-           	StateStack s;
+		StateStack s;
 		s = new StateStack;
 		s.next = stack;
 		stack = s;
     }
     
     void Pop() {
-    	   	stack = stack.next;
+		stack = stack.next;
     }
 
     void EnqueueEvent(SM_EVENT e, PRT_VALUE arg, SM_HANDLE source) {
         bool b;
+		bool isEnabled;
 		PRT_TYPE prtType;
     	assert(e != null, "Enqueued event must be non-null");
 		//assertion to check if argument passed inhabits the payload type.
 		prtType = Main.PayloadOf(e);
-		if(prtType.typeKind != PRT_TYPE_KIND.PRT_KIND_NULL) {
+		if (prtType.typeKind != PRT_TYPE_KIND.PRT_KIND_NULL) 
+		{
 			b = PRT_VALUE.PrtInhabitsType(arg, prtType);
 			assert(b, "Type of payload does not match the expected type with event");
 		}
@@ -83,10 +86,9 @@ class SM_HANDLE {
 		{
 			assert(arg.type.typeKind == PRT_TYPE_KIND.PRT_KIND_NULL, "Type of payload does not match the expected type with event");
 		}
-		if(isDeleted)
+		if (this in halted)
 		{
-			trace("<EnqueueLog> {0}-{1} Machine has been deleted and  Event {2} is dropped\n", machineName, instance, e.name);
-			
+			trace("<EnqueueLog> {0}-{1} Machine has been halted and Event {2} is dropped\n", machineName, instance, e.name);
 		}
 		else
 		{
@@ -105,10 +107,19 @@ class SM_HANDLE {
 				trace("<EXCEPTION> Event Buffer Size Exceeded {0} in Machine {1}-{2}\n", maxBufferSize, machineName, instance);
 				assert(false);
 			}
-			if (isBlocked) {
-			   	isBlocked = buffer.IsBlocked(this);
+			if (this in SM_HANDLE.enabled) 
+			{
+			    // do nothing because cannot change the status
+			} 
+			else 
+			{
+			   	isEnabled = buffer.IsEnabled(this);
+				if (isEnabled) {
+					SM_HANDLE.enabled = SM_HANDLE.enabled + this;
+				}
 			}
-			if (!isBlocked) {
+			if (this in SM_HANDLE.enabled) 
+			{
 			   	invokescheduler("enabled", machineId, source.machineId);
 			}
 		}
@@ -121,15 +132,15 @@ class SM_HANDLE {
 			buffer.DequeueEvent(this);
 			if (currentEvent != null) 
 			{
-				assert(currentArg != null, "Internal error");
+				assert (currentArg != null, "Internal error");
+				assert (this in SM_HANDLE.enabled, "Internal error");
 				trace("<DequeueLog> Dequeued Event < {0}, ", currentEvent.name); PRT_VALUE.Print(currentArg); trace(" > at Machine {0}-{1}\n", machineName, instance);
-				isBlocked = false;
 				return;
 			} 
 			else if (hasDefault) 
 			{
+				assert (this in SM_HANDLE.enabled, "Internal error");
 				trace("<DefaultTransLog> Default transition taken by Machine {0}-{1}\n", machineName, instance);
-				isBlocked = false;
 				FairScheduler.AtYieldStatic(this);
 				FairChoice.AtYieldOrChooseStatic();
 				yield;
@@ -138,8 +149,9 @@ class SM_HANDLE {
 			else 
 			{
 				invokescheduler("blocked", machineId);
-				assume (!isBlocked);
-				isBlocked = true;
+				assume (this in SM_HANDLE.enabled);
+				SM_HANDLE.enabled = SM_HANDLE.enabled - this;
+				assert (sizeof(SM_HANDLE.enabled) != 0 || sizeof(SM_HANDLE.hot) == 0, "Deadlock");
 				FairScheduler.AtYieldStatic(this);
 				FairChoice.AtYieldOrChooseStatic();
 				yield;
@@ -235,7 +247,7 @@ class EVENT_BUFFER {
     	SM_EVENT_SET deferredSet;
         EVENT_NODE iter;
 	
-	deferredSet = owner.stack.deferredSet;
+		deferredSet = owner.stack.deferredSet;
         iter = head.next;
         while (iter != head) {
 			if (iter.e in deferredSet)
@@ -255,11 +267,11 @@ class EVENT_BUFFER {
 		return;
     }
 
-    bool IsBlocked(SM_HANDLE owner) {
+    bool IsEnabled(SM_HANDLE owner) {
         EVENT_NODE iter;
-	SM_EVENT_SET deferredSet;
+		SM_EVENT_SET deferredSet;
 	
-	deferredSet = owner.stack.deferredSet;
+		deferredSet = owner.stack.deferredSet;
         iter = head.next;
         while (iter != head) {
 			if (iter.e in deferredSet)
@@ -268,10 +280,10 @@ class EVENT_BUFFER {
 			}
 			else 
 			{
-				return false;
+				return true;
 			} 
         }
-	return true;
+		return false;
     }
 };
 
@@ -448,7 +460,7 @@ class FairScheduler {
 
     void AtYield(SM_HANDLE running) {
 		assume (!noYieldFromNowOn);
-		if (running == handle || handle.isBlocked || handle.isDeleted) {
+		if (running == handle || !(handle in SM_HANDLE.enabled)) {
 		   FairScheduler.accepted = FairScheduler.accepted + this;
 		   FairCycle.Accept();
 		}

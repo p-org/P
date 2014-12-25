@@ -14,10 +14,8 @@ OUT: monitors.p (29, 4): inferred type:  NIL
 OUT: monitors.p (30, 4): inferred type:  BaseType(REAL)
 OUT: monitors.p (30, 4): inferred type:  ERROR
 OUT: monitors.p (30, 4): inferred type:  NIL
-OUT: monitors.p (30, 8): inferred type:  BaseType(REAL)
 OUT: monitors.p (30, 8): inferred type:  ERROR
 OUT: monitors.p (31, 4): inferred type:  ERROR
-OUT: monitors.p (31, 4): inferred type:  NIL
 OUT: monitors.p (31, 9): inferred type:  BaseType(REAL)
 OUT: monitors.p (31, 12): inferred type:  BaseType(EVENT)
 OUT: monitors.p (31, 15): inferred type:  BaseType(INT)
@@ -29,12 +27,12 @@ OUT: monitors.p (19, 2): model functions can be declared only in real machines
 OUT: monitors.p (24, 3): defer not allowed in monitor
 OUT: monitors.p (24, 3): Multiple actions over the same event
 OUT: monitors.p (25, 3): Multiple actions over the same event
-OUT: monitors.p (27, 4): monitors cannot have : new | send | monitor | push | pop
-OUT: monitors.p (28, 4): monitors cannot have : new | send | monitor | push | pop
-OUT: monitors.p (29, 4): monitors cannot have : new | send | monitor | push | pop
+OUT: monitors.p (27, 4): Monitors cannot have "push"
+OUT: monitors.p (28, 4): Monitors cannot have "pop"
+OUT: monitors.p (29, 4): Monitors cannot have "new"
 OUT: monitors.p (30, 4): invalid assignment. right hand side is not a subtype of left hand side
-OUT: monitors.p (30, 8): monitors cannot have : new | send | monitor | push | pop
-OUT: monitors.p (31, 4): monitors cannot have : new | send | monitor | push | pop
+OUT: monitors.p (30, 8): Monitors cannot have "new"
+OUT: monitors.p (31, 4): Monitors cannot have "send"
 OUT: monitors.p (33, 3): default transitions not allowed in monitors
 OUT: Compilation failed
 OUT: 

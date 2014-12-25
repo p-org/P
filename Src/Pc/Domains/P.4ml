@@ -220,7 +220,7 @@ domain PStaticTyping extends PData
 	TypeOf(c, e, t) :- SubSE(c, e), e = NulApp(PAYLOAD), PayloadType(c, t).
 	
     TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = REAL.
-    TypeOf(c, e, BaseType(REAL)) :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = MODEL.
+    TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = MODEL.
 	[ rule_Classes = '"error, msg: Monitors cannot refer to "this""']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = MONITOR.
     
@@ -237,10 +237,10 @@ domain PStaticTyping extends PData
     
     //// (2) The types of unary expressions
     TypeOf(c, e, t)               :- SubSE(c, e), e = Default(t). 
-    
-    TypeOf(c, e, t)               :- SubSE(c, e), e = Tuple(e'), TypeOf(c, e', t).
-     
-    TypeOf(c, e, t)               :- SubSE(c, e), e = NamedTuple(e'), TypeOf(c, e', t).     
+	    
+    TypeOf(c, e, t1)              :- TypeOfArg1(c, e, t1), e : Tuple.     
+
+    TypeOf(c, e, t1)              :- TypeOfArg1(c, e, t1), e : NamedTuple.
 
     // Variables hide the names of events, in case both have the same name.
 	TypeOf(c, e, t)	              :- SubSE(c, e), e = Name(n), TypeOfFormalParam(c, n, t).
@@ -253,102 +253,102 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Undefined symbol"']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n), no EventDecl(n, _, _), no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _). 
     
-    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = UnApp(NOT, e'), TypeOf(c, e', BaseType(b)), b = BOOL. 
+    TypeOf(c, e, BaseType(BOOL))  :- TypeOfArg1(c, e, t1), e = UnApp(NOT, _), t1 = BaseType(BOOL). 
 	[ rule_Classes = '"error, msg: Operator expected a boolean value"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(NOT, e'), TypeOf(c, e', BaseType(b)), b != BOOL. 
+    TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(NOT, _), t1 != BaseType(BOOL). 
     
-    TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = UnApp(NEG, e'), TypeOf(c, e', BaseType(b)), b = INT. 
+    TypeOf(c, e, BaseType(INT))   :- TypeOfArg1(c, e, t1), e = UnApp(NEG, _), t1 = BaseType(INT). 
 	[ rule_Classes = '"error, msg: Operator expected an integer value"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(NEG, e'), TypeOf(c, e', BaseType(b)), b != INT. 
+    TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(NEG, _), t1 != BaseType(INT). 
     
-    TypeOf(c, e, SeqType(dom))    :- SubSE(c, e), e = UnApp(KEYS, e'), TypeOf(c, e', t), t = MapType(dom, cod). 
+    TypeOf(c, e, SeqType(dom))    :- TypeOfArg1(c, e, t1), e = UnApp(KEYS, _), t1 = MapType(dom, _). 
 	[ rule_Classes = '"error, msg: Operator expected a map value"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(KEYS, e'), TypeOf(c, e', t), toSymbol(t) != #MapType. 
+    TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(KEYS, _), toSymbol(t1) != #MapType. 
 
-    TypeOf(c, e, SeqType(cod))    :- SubSE(c, e), e = UnApp(VALUES, e'), TypeOf(c, e', t), t = MapType(dom, cod). 
+    TypeOf(c, e, SeqType(cod))    :- TypeOfArg1(c, e, t1), e = UnApp(VALUES, _), t1 = MapType(_, cod). 
 	[ rule_Classes = '"error, msg: Operator expected a map value"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(VALUES, e'), TypeOf(c, e', t), toSymbol(t) != #MapType. 
+    TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(VALUES, _), toSymbol(t1) != #MapType. 
 
-    TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = UnApp(SIZEOF, e'), TypeOf(c, e', t), t : MapType. 
-    TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = UnApp(SIZEOF, e'), TypeOf(c, e', t), t : SeqType. 
+    TypeOf(c, e, BaseType(INT))   :- TypeOfArg1(c, e, t1), e = UnApp(SIZEOF, _), t1 : MapType. 
+    TypeOf(c, e, BaseType(INT))   :- TypeOfArg1(c, e, t1), e = UnApp(SIZEOF, _), t1 : SeqType. 
 	[ rule_Classes = '"error, msg: Operator expected a map or sequence value"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = UnApp(SIZEOF, e'), TypeOf(c, e', t), toSymbol(t) != #MapType, toSymbol(t) != #SeqType. 
+    TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(SIZEOF, _), toSymbol(t1) != #MapType, toSymbol(t1) != #SeqType. 
     
     //// (3) The types of binary expressions
-    TypeOf(c, e, t)                :- SubSE(c, e), e = Cast(e', t), TypeOf(c, e', t'), TypeRel(t, t', k), k != EMPTY.
+    TypeOf(c, e, t2)               :- TypeOfArg1(c, e, t1), e = Cast(_, t2), TypeRel(t1, t2, k), k != EMPTY.
 	[ rule_Classes = '"error, msg: Cast can never succeed"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Cast(e', t), TypeOf(c, e', t'), TypeRel(t, t', k), k = EMPTY.
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2), TypeRel(t1, t2, k), k = EMPTY.
 
-    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _), MachineDecl(n, REAL, _, _, _).
-    TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = New(n, _), MachineDecl(n, MODEL, _, _, _).
+    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _), MachineDecl(n, REAL, _, _, _), c.owner.kind != MONITOR.
+    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _), MachineDecl(n, MODEL, _, _, _), c.owner.kind != MONITOR.
 	[ rule_Classes = '"error, msg: Monitors cannot be created with "new""']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), MachineDecl(n, MONITOR, _, _, _).
 	[ rule_Classes = '"error, msg: Undefined machine type"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), no MachineDecl(n, _, _, _, _).   
-    [ rule_Classes = '"error, msg: monitors cannot have : new | send | monitor | push | pop"']
-	TypeOf(c, e, ERROR)			   :- SubSE(c, e), c.owner.kind = MONITOR, toSymbol(e) = #Send; SubSE(c, e), c.owner.kind = MONITOR, toSymbol(e) = #NewStmt; SubSE(c, e), c.owner.kind = MONITOR, toSymbol(e) = #New; SubSE(c, e), c.owner.kind = MONITOR, toSymbol(e) = #Monitor; SubSE(c, e), c.owner.kind = MONITOR, toSymbol(e) = #Push; SubSE(c, e), c.owner.kind = MONITOR, e.op = POP.
+    [ rule_Classes = '"error, msg: Monitors cannot have "new""']
+	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e : New, c.owner.kind = MONITOR.
 	
-    TypeOf(c, e, ft)               :- SubSE(c, e), e = Field(e', n), TypeOf(c, e', t), TypeOfField(t, n, ft), ft != ERROR.
+    TypeOf(c, e, t2)               :- TypeOfArg2(c, e, _, t2), e : Field, t2 != ERROR.
 	[ rule_Classes = '"error, msg: Bad field name"']
-    TypeOf(c, e, ft)               :- SubSE(c, e), e = Field(e', n), TypeOf(c, e', t), TypeOfField(t, n, ft), ft = ERROR.
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, _, t2), e : Field, t2 = ERROR.
 	[ rule_Classes = '"error, msg: Operator expected a (named) tuple value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Field(e', n), TypeOf(c, e', t), toSymbol(t) != #TupType, toSymbol(t) != #NmdTupType.
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Field, toSymbol(t1) != #TupType, toSymbol(t1) != #NmdTupType.
     
     PureIntOp ::= { ADD, SUB, MUL, INTDIV }.
-    TypeOf(c, e, bint)             :- SubSE(c, e), e = BinApp(op, e', e''), TypeOf(c, e', bint), TypeOf(c, e'', bint), op : PureIntOp, bint = BaseType(INT).
+    TypeOf(c, e, bint)             :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _), op : PureIntOp, t1 = bint, t2 = bint, bint = BaseType(INT).
 	[ rule_Classes = '"error, msg: Operator expected first argument to be an integer value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, e', _), TypeOf(c, e', t), op : PureIntOp, t != BaseType(INT).    
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _), op : PureIntOp, t1 != BaseType(INT).    
 	[ rule_Classes = '"error, msg: Operator expected second argument to be an integer value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e''), TypeOf(c, e'', t), op : PureIntOp, t != BaseType(INT).    
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2), op : PureIntOp, TypeOf(c, e2, t2), t2 != BaseType(INT).     
     
     PureIntRel ::= { LT, LE, GT, GE }.
-    TypeOf(c, e, BaseType(BOOL))   :- SubSE(c, e), e = BinApp(op, e', e''), TypeOf(c, e', bint), TypeOf(c, e'', bint), op : PureIntRel, bint = BaseType(INT).
+    TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, e', e''), op : PureIntRel, t1 = bint, t2 = bint, bint = BaseType(INT).
 	[ rule_Classes = '"error, msg: Operator expected first argument to be an integer value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, e', _), TypeOf(c, e', t), op : PureIntRel, t != BaseType(INT).    
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _), op : PureIntRel, t1 != BaseType(INT).    
 	[ rule_Classes = '"error, msg: Operator expected second argument to be an integer value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e''), TypeOf(c, e'', t), op : PureIntRel, t != BaseType(INT).    
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2), TypeOf(c, e2, t2), op : PureIntRel, t2 != BaseType(INT).    
     
     PureBoolOp ::= { AND, OR }.
-    TypeOf(c, e, BaseType(BOOL))   :- SubSE(c, e), e = BinApp(op, e', e''), TypeOf(c, e', bbool), TypeOf(c, e'', bbool), op : PureBoolOp, bbool = BaseType(BOOL).
+    TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _), op : PureBoolOp, t1 = bbool, t2 = bbool, bbool = BaseType(BOOL).
 	[ rule_Classes = '"error, msg: Operator expected first argument to be a boolean value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, e', _), TypeOf(c, e', t), op : PureBoolOp, t != BaseType(BOOL).    
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _), op : PureBoolOp, t1 != BaseType(BOOL).    
 	[ rule_Classes = '"error, msg: Operator expected second argument to be a boolean value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e''), TypeOf(c, e'', t), op : PureBoolOp, t != BaseType(BOOL).    
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2), TypeOf(c, e2, t2), op : PureBoolOp, t2 != BaseType(BOOL).    
     
     PolyRel ::= { EQ, NEQ }.
-    TypeOf(c, e, BaseType(BOOL))   :- SubSE(c, e), e = BinApp(op, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), op : PolyRel, TypeRel(t', t'', k), k != EMPTY.
+    TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _), op : PolyRel, TypeRel(t1, t2, k), k != EMPTY.
 	[ rule_Classes = '"error, msg: Values cannot be compared because their types are incompatible"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), op : PolyRel, TypeRel(t', t'', k), k = EMPTY.
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _), op : PolyRel, TypeRel(t1, t2, k), k = EMPTY.
     
-    TypeOf(c, e, inner)            :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = SeqType(inner), t'' = BaseType(INT).
-    TypeOf(c, e, cod)              :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = MapType(dom, cod), TypeRel(t'', dom, SUB).
+    TypeOf(c, e, inner)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _), t1 = SeqType(inner), t2 = BaseType(INT).
+    TypeOf(c, e, cod)              :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _), t1 = MapType(dom, cod), TypeRel(t2, dom, SUB).
 	[ rule_Classes = '"error, msg: Indexer must be applied to a sequence or map"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IDX, e', _), TypeOf(c, e', t'), toSymbol(t') != #SeqType, toSymbol(t') != #MapType.
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(IDX, _, _), toSymbol(t1) != #SeqType, toSymbol(t1) != #MapType.
 	[ rule_Classes = '"error, msg: Index must be an integer"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' : SeqType, t'' != BaseType(INT).
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _), t1 : SeqType, t2 != BaseType(INT).
 	[ rule_Classes = '"error, msg: Index may not be in the domain of the map"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = MapType(dom, _), TypeRel(t'', dom, k), t'' != dom, k != SUB.
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _), t1 = MapType(dom, _), TypeRel(t2, dom, k), t2 != dom, k != SUB.
     
-    TypeOf(c, e, BaseType(BOOL))   :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = SeqType(inner), TypeRel(t', inner, k), k != EMPTY.
-    TypeOf(c, e, BaseType(BOOL))   :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = MapType(dom, _), TypeRel(t', dom, k), k != EMPTY.        
+    TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = SeqType(inner), TypeRel(t1, inner, k), k != EMPTY.
+    TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = MapType(dom, _), TypeRel(t1, dom, k), k != EMPTY.        
 	[ rule_Classes = '"error, msg: Value can never be in the sequence"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = SeqType(inner), TypeRel(t', inner, EMPTY).
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = SeqType(inner), TypeRel(t1, inner, EMPTY).
 	[ rule_Classes = '"error, msg: Value can never be in the map"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = MapType(dom, _), TypeRel(t', dom, EMPTY).        
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _),  t2 = MapType(dom, _), TypeRel(t1, dom, EMPTY).        
 	[ rule_Classes = '"error, msg: "in" expects a map"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, _, e''),  TypeOf(c, e'', t''), toSymbol(t'') != #MapType.
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, _, e2),  TypeOf(c, e2, t2), toSymbol(t2) != #MapType.
     
 	///// (4) Exprs produces a tuple type
-	TypeOf(c, e, t) :- SubSE(c, e), e = Exprs(e', NIL), TypeOf(c, e', t'), t = TupType(t', NIL).
-	TypeOf(c, e, t) :- SubSE(c, e), e = Exprs(e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' : TupType, t = TupType(t', t'').
+	TypeOf(c, e, t) :- TypeOfArg1(c, e, t1), e = Exprs(_, NIL), t = TupType(t1, NIL).
+	TypeOf(c, e, t) :- TypeOfArg2(c, e, t1, t2), e : Exprs, t2 : TupType, t = TupType(t1, t2).
 		
 	//// (5) NamedExprs produces a named tuple type.
-	TypeOf(c, e, t) :- SubSE(c, e), e = NamedExprs(n', e', NIL), TypeOf(c, e', t'), t = NmdTupType(NmdTupTypeField(n', t'), NIL).
-	TypeOf(c, e, t) :- SubSE(c, e), e = NamedExprs(n', e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' : NmdTupType, t = NmdTupType(NmdTupTypeField(n', t'), t'').
+	TypeOf(c, e, t) :- TypeOfArg1(c, e, t1), e = NamedExprs(n, _, NIL), t = NmdTupType(NmdTupTypeField(n, t1), NIL).
+	TypeOf(c, e, t) :- TypeOfArg2(c, e, t1, t2), e = NamedExprs(n, _, _), t2 : NmdTupType, t = NmdTupType(NmdTupTypeField(n, t1), t2).
 	
 	//// (6) FunApps must refer to a defined function that has a non-NIL return type and args must be sub-types of function signature. 
-	TypeOf(c, e, t)     :- SubSE(c, e), e = FunApp(n, NIL), FunDecl(n, c.owner, _, NIL, t, _), t != NIL.
-	TypeOf(c, e, t)     :- SubSE(c, e), e = FunApp(n, e'), TypeOf(c, e', argt), FuncSigTupleType(decl, inpt), decl = FunDecl(n, c.owner, _, _, t, _), TypeRel(argt, inpt, SUB), t != NIL.
+	TypeOf(c, e, t) :- SubSE(c, e), e = FunApp(n, NIL), FunDecl(n, c.owner, _, NIL, t, _), t != NIL.
+	TypeOf(c, e, t) :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FuncSigTupleType(decl, inpt), decl = FunDecl(n, c.owner, _, _, t, _), TypeRel(t1, inpt, SUB), t != NIL.
 
 	[ rule_Classes = '"error, msg: function not defined"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _), no FunDecl(n, c.owner, _, _, _, _).	
@@ -357,7 +357,7 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: function requires arguments"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, NIL), FunDecl(n, c.owner, _, params, _, _), params != NIL.
 	[ rule_Classes = '"error, msg: function arguments have incorrect types"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, e'), TypeOf(c, e', argt), FuncSigTupleType(decl, inpt), decl = FunDecl(n, c.owner, _, _, _, _), TypeRel(argt, inpt, k), argt != inpt, k != SUB.
+	TypeOf(c, e, ERROR) :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FuncSigTupleType(decl, inpt), decl = FunDecl(n, c.owner, _, _, _, _), TypeRel(t1, inpt, k), t1 != inpt, k != SUB.
 	
     /*************************************************************/
     /*                      Types of Statements                  */
@@ -365,172 +365,227 @@ domain PStaticTyping extends PData
 
 	//// (1) Nullary statements
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(SKIP).
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(POP).
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(POP), c.owner.kind != MONITOR.
+    [ rule_Classes = '"error, msg: Monitors cannot have "pop""']
+	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NulStmt(POP), c.owner.kind = MONITOR. 
 
 	//// (2) Return statement
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL), c = FunDecl(_, _, _, _, NIL, _). 
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL), c : AnonFunDecl.
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(e'), c = FunDecl(_, _, _, _, t, _), TypeOf(c, e', t'), TypeRel(t', t, SUB).
+    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : Return, c = FunDecl(_, _, _, _, t, _), TypeRel(t1, t, SUB).
 	[ rule_Classes = '"error, msg: function must return a value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(NIL), c = FunDecl(_, _, _, _, t, _), t != NIL. 
 	[ rule_Classes = '"error, msg: return value has incorrect type"' ]
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(e'), c = FunDecl(_, _, _, _, t, _), TypeOf(c, e', t'), TypeRel(t', t, k), t' != t, k != SUB.
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Return, c = FunDecl(_, _, _, _, t, _), TypeRel(t1, t, k), t1 != t, k != SUB.
 	[ rule_Classes = '"error, msg: anonymous function cannot return a value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(t), c : AnonFunDecl, t != NIL. 
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(e1), c : AnonFunDecl, e1 != NIL. 
 
 	//// (3) Non-mutating statements
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Seq(_, _).
     
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = UnStmt(ASSERT, e'), TypeOf(c, e', t'), t' = BaseType(BOOL).
+    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e = UnStmt(ASSERT, _), t1 = BaseType(BOOL).
 	[ rule_Classes = '"error, msg: "assert" expects a boolean value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = UnStmt(ASSERT, e'), TypeOf(c, e', t'), t' != BaseType(BOOL).
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = UnStmt(ASSERT, _), t1 != BaseType(BOOL).
     
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Ite(e', _, _), TypeOf(c, e', t'), t' = BaseType(BOOL).
+    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : Ite, t1 = BaseType(BOOL).
 	[ rule_Classes                                   = '"error, msg: "if (...)" expects a boolean value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Ite(e', _, _), TypeOf(c, e', t'), t' != BaseType(BOOL).
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Ite, t1 != BaseType(BOOL).
     
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = While(e', _), TypeOf(c, e', t'), t' = BaseType(BOOL).
+    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : While, t1 = BaseType(BOOL).
 	[ rule_Classes = '"error, msg: "while (...)" expects a boolean value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = While(e', _), TypeOf(c, e', t'), t' != BaseType(BOOL).
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : While, t1 != BaseType(BOOL).
                
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Push(name, _), StateDecl(name, c.owner, _, _, _). 
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Push(name, _), StateDecl(name, c.owner, _, _, _), c.owner.kind != MONITOR. 
 	[ rule_Classes = '"error, msg: Undeclared state name"']
 	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Push(name, _), no StateDecl(name, c.owner, _, _, _). 
+    [ rule_Classes = '"error, msg: Monitors cannot have "push""']
+	TypeOf(c, e, ERROR)            :- SubSE(c, e), e : Push, c.owner.kind = MONITOR. 
     
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _), MachineDecl(n, _, _, _, _).   
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _), MachineDecl(n, _, _, _, _), c.owner.kind != MONITOR.   
 	[ rule_Classes = '"error, msg: Undeclared machine"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _), no MachineDecl(n, _, _, _, _).   
-    
-	//// Rules for raise with non-constant event expression.
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Raise(ev, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), no IsEventCnst(c, ev, _).
+    [ rule_Classes = '"error, msg: Monitors cannot have "new""']
+	TypeOf(c, e, ERROR)            :- SubSE(c, e), e : NewStmt, c.owner.kind = MONITOR. 
 
-	//// Rules for raise with constant event expression.
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Raise(ev, NIL),                            ///// < raise has NIL payload,
-	                                  IsEventCnst(c, ev, evt), TypeRel(BaseType(NULL), evt, SUB). ///// < event type contains null.
+	//// Rules for raise.
+    TypeOf(c, e, NIL)              :- CommStmtPLType(c, e, plt), e = Raise(_, NIL),              ///// < raise has NIL payload,
+	                                  TypeRel(BaseType(NULL), plt, SUB).                          ///// < event type contains null.
 
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Raise(ev, p), p != NIL,                          ///// < raise has non-NIL payload,             
-	                                  IsEventCnst(c, ev, evt), TypeOf(c, p, pt), TypeRel(pt, evt, SUB). ///// < and pt is a subtype of evt.
+    TypeOf(c, e, NIL)              :- CommStmtPLType(c, e, plt), e = Raise(_, p), p != NIL,      ///// < raise has non-NIL payload,             
+	                                  TypeOf(c, p, pt), TypeRel(pt, plt, SUB).                    ///// < and pt is a subtype of evt.
 
 	//// Error rules for raise.
 	[ rule_Classes = '"error, msg: argument 1 of "raise" expects an event value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Raise(ev, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
-
-	//// Error rules for raise with constant event expression. 	
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Raise, t1 != BaseType(EVENT).
+	
     [ rule_Classes = '"error, msg: invalid payload type in raise (cannot send null value)"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Raise(ev, NIL), null = BaseType(NULL),   ///// < raise has NIL payload,
-	                                  IsEventCnst(c, ev, evt),                                  ///// < constant event expression
-									  TypeRel(null, evt, k), k != SUB, null != evt.             ///// < and null not in event type.
+    TypeOf(c, e, ERROR)            :- CommStmtPLType(c, e, plt), e = Raise(_, NIL), null = BaseType(NULL),  ///// < raise has NIL payload,
+									  TypeRel(null, plt, k), k != SUB, null != plt.                         ///// < and null not in event type.
 
     [ rule_Classes = '"error, msg: invalid payload type in raise"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Raise(ev, p), p != NIL,                    ///// < p has non-NIL payload,             
-	                                  IsEventCnst(c, ev, evt),                                    ///// < constant event expression
-									  TypeOf(c, p, pt), TypeRel(pt, evt, k), k != SUB, pt != evt. ///// < and pt is not a subtype of evt.
+    TypeOf(c, e, ERROR)            :- CommStmtPLType(c, e, plt), e = Raise(_, p), p != NIL,       ///// < p has non-NIL payload,             
+									  TypeOf(c, p, pt), TypeRel(pt, plt, k), k != SUB, pt != plt. ///// < and pt is not a subtype of plt.
 
-	//// Rules for send with non-constant event expression.
-	RealOrModel ::= { REAL, MODEL }.  
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Send(m, ev, _),  
-	                                  TypeOf(c, m, mt), mt = BaseType(mk), mk : RealOrModel,                ///// < m is a machine type,
-	                                  TypeOf(c, ev, evt), evt = BaseType(EVENT), no IsEventCnst(c, ev, _).  ///// < ev is a non-constant event type.
+	//// Rules for send.
+    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e = Send(_, _, NIL), c.owner.kind != MONITOR,  ///// < send has NIL payload,
+	                                  t1 = BaseType(REAL),                                                 ///// < arg1 is a machine type,
+	                                  CommStmtPLType(c, e, plt), TypeRel(BaseType(NULL), plt, SUB).        ///// < arg2 event type contains null.
 
-	//// Rules for send with constant event expression.
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Send(m, ev, NIL),                          ///// < send has NIL payload,
-	                                  TypeOf(c, m, mt), mt = BaseType(mk), mk : RealOrModel,      ///// < m is a machine type,
-	                                  IsEventCnst(c, ev, evt), TypeRel(BaseType(NULL), evt, SUB). ///// < event type contains null.
-
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Send(m, ev, p), p != NIL,                        ///// < send has non-NIL payload,             
-	                                  TypeOf(c, m, mt), mt = BaseType(mk), mk : RealOrModel,            ///// < m is a machine type,
-	                                  IsEventCnst(c, ev, evt), TypeOf(c, p, pt), TypeRel(pt, evt, SUB). ///// < and pt is a subtype of evt.
+    TypeOf(c, e, NIL)              :- TypeOfArg3(c, e, t1, t2, t3), e : Send, c.owner.kind != MONITOR,    ///// < send has non-NIL payload,             
+	                                  t1 = BaseType(REAL),                                                ///// < arg1 is a machine type,
+	                                  CommStmtPLType(c, e, plt), TypeRel(t3, evt, SUB).                   ///// < and t3 is a subtype of plt.
 
 	//// Error rules for send.
 	[ rule_Classes = '"error, msg: argument 1 of "send" expects a machine value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(m, _, _), TypeOf(c, m, mt), mt != BaseType(REAL).
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Send, t1 != BaseType(REAL).
 
 	[ rule_Classes = '"error, msg: argument 2 of "send" expects an event value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, ev, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, e2, _), TypeOf(c, e2, t2), t2 != BaseType(EVENT).
+
+    [ rule_Classes = '"error, msg: Monitors cannot have "send""']
+	TypeOf(c, e, ERROR)            :- SubSE(c, e), e : Send, c.owner.kind = MONITOR. 
 
 	//// Error rules for send with constant event expression. 	
     [ rule_Classes = '"error, msg: invalid payload type in send (cannot send null value)"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, ev, NIL), null = BaseType(NULL),   ///// < send has NIL payload,
-	                                  IsEventCnst(c, ev, evt),                                    ///// < constant event expression
-									  TypeRel(null, evt, k), k != SUB, null != evt.               ///// < and null not in event type.
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, _, NIL), null = BaseType(NULL),   ///// < send has NIL payload,
+	                                  CommStmtPLType(c, e, plt),                                  ///// < constant event expression
+									  TypeRel(null, plt, k), k != SUB, null != plt.               ///// < and null not in event type.
 
     [ rule_Classes = '"error, msg: invalid payload type in send"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, ev, p), p != NIL,                  ///// < p has non-NIL payload,             
-	                                  IsEventCnst(c, ev, evt),                                    ///// < constant event expression
-									  TypeOf(c, p, pt), TypeRel(pt, evt, k), k != SUB, pt != evt. ///// < and pt is not a subtype of evt.
+    TypeOf(c, e, ERROR)            :- TypeOfArg3(c, e, t1, t2, t3), e : Send,                     ///// < p has non-NIL payload,             
+	                                  CommStmtPLType(c, e, plt),                                  ///// < constant event expression
+									  TypeRel(t3, plt, k), k != SUB, t3 != plt.                   ///// < and pt is not a subtype of plt.
 
-	//// Rules for monitor with non-constant event expression.
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Monitor(m, ev, _),  
-	                                  MachineDecl(m, MONITOR, _, _, _),                                     ///// < m is a monitor type,
-	                                  TypeOf(c, ev, evt), evt = BaseType(EVENT), no IsEventCnst(c, ev, _).  ///// < ev is a non-constant event type.
+	//// Rules for monitor.
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Monitor(m, _, NIL), c.owner.kind != MONITOR,  ///// < monitor has NIL payload,
+	                                  MachineDecl(m, MONITOR, _, _, _),                              ///// < m is a monitor type,
+	                                  CommStmtPLType(c, e, plt), TypeRel(BaseType(NULL), plt, SUB).  ///// < event type contains null.
 
-	//// Rules for monitor with constant event expression.
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Monitor(m, ev, NIL),                       ///// < monitor has NIL payload,
-	                                  MachineDecl(m, MONITOR, _, _, _),                           ///// < m is a monitor type,
-	                                  IsEventCnst(c, ev, evt), TypeRel(BaseType(NULL), evt, SUB). ///// < event type contains null.
-
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Monitor(m, ev, p), p != NIL,                     ///// < monitor has non-NIL payload,             
-	                                  MachineDecl(m, MONITOR, _, _, _),                                 ///// < m is a monitor type,
-	                                  IsEventCnst(c, ev, evt), TypeOf(c, p, pt), TypeRel(pt, evt, SUB). ///// < and pt is a subtype of evt.
+    TypeOf(c, e, NIL)              :- TypeOfArg2(c, e, t1, t2), e = Monitor(m, _, _), c.owner.kind != MONITOR, ///// < monitor has non-NIL payload,             
+	                                  MachineDecl(m, MONITOR, _, _, _),                                        ///// < m is a monitor type,
+	                                  CommStmtPLType(c, e, plt), TypeRel(t2, plt, SUB).                        ///// < and pt is a subtype of plt.
 
 	//// Error rules for monitor.
 	[ rule_Classes = '"error, msg: Undeclared monitor"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(m, _, _), no MachineDecl(m, MONITOR, _, _, _).
 
 	[ rule_Classes = '"error, msg: argument 2 of "monitor" expects an event value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(_, ev, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Monitor, t1 != BaseType(EVENT).
 
-	//// Error rules for monitor with constant event expression. 	
+	//// Error rules for monitor. 	
     [ rule_Classes = '"error, msg: invalid payload type in monitor (cannot send null value)"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(_, ev, NIL), null = BaseType(NULL), ///// < monitor has NIL payload,
-	                                  IsEventCnst(c, ev, evt),                                     ///// < constant event expression
-									  TypeRel(null, evt, k), k != SUB, null != evt.                ///// < and null not in event type.
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(_, _, NIL), null = BaseType(NULL), ///// < monitor has NIL payload,
+	                                  CommStmtPLType(c, e, plt),                                  ///// < constant event expression
+									  TypeRel(null, plt, k), k != SUB, null != plt.               ///// < and null not in event type.
 
     [ rule_Classes = '"error, msg: invalid payload type in monitor"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(_, ev, p), p != NIL,               ///// < p has non-NIL payload,             
-	                                  IsEventCnst(c, ev, evt),                                    ///// < constant event expression
-									  TypeOf(c, p, pt), TypeRel(pt, evt, k), k != SUB, pt != evt. ///// < and pt is not a subtype of evt.
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e : Monitor,    ///// < p has non-NIL payload,             
+	                                  CommStmtPLType(c, e, plt),                ///// < constant event expression
+									  TypeRel(t2, plt, k), k != SUB, t2 != plt. ///// < and pt is not a subtype of evt.
 
 	//// (4) Mutating statements		
-	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = BinStmt(ASSIGN, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), TypeRel(t2, t1, SUB).
+	TypeOf(c, e, NIL)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(ASSIGN, _, _), TypeRel(t2, t1, SUB).
 	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
-	TypeOf(c, e , ERROR)		   :- SubSE(c, e), e = BinStmt(ASSIGN, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), TypeRel(t2, t1, k), k!= SUB, t1 != t2.
+	TypeOf(c, e , ERROR)		   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(ASSIGN, _, _), TypeRel(t2, t1, k), k!= SUB, t1 != t2.
 		
-	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = BinStmt(REMOVE, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 : SeqType, t2 = BaseType(INT).
-	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = BinStmt(REMOVE, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), TypeRel(t2, dom, SUB).	
+	TypeOf(c, e, NIL)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(REMOVE, _, _), t1 : SeqType, t2 = BaseType(INT).
+	TypeOf(c, e, NIL)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(REMOVE, _, _), t1 = MapType(dom, cod), TypeRel(t2, dom, SUB).	
 	[ rule_Classes = '"error, msg: remove must be applied to a sequence or map"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinStmt(REMOVE, e', _), TypeOf(c, e', t'), toSymbol(t') != #SeqType, toSymbol(t') != #MapType.
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinStmt(REMOVE, _, _), toSymbol(t1) != #SeqType, toSymbol(t1) != #MapType.
     [ rule_Classes = '"error, msg: index must be an integer"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinStmt(REMOVE, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' : SeqType, t'' != BaseType(INT).
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinStmt(REMOVE, _, _), t1 : SeqType, t2 != BaseType(INT).
 	[ rule_Classes = '"error, msg: Index may not be in the domain of the map"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinStmt(REMOVE, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = MapType(dom, _), TypeRel(t'', dom, k), t'' != dom, k != SUB.
-	
-	
-	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = SeqType(inner), t2 = TupType(BaseType(INT), TupType(value, NIL)), TypeRel(value, inner, SUB).
-	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)), TypeRel(value, cod, SUB), TypeRel(key, dom, SUB).	
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinStmt(REMOVE, _, _), t1 = MapType(dom, _), TypeRel(t2, dom, k), t2 != dom, k != SUB.
+		
+	TypeOf(c, e, NIL)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _), t1 = SeqType(inner), t2 = TupType(BaseType(INT), TupType(value, NIL)), TypeRel(value, inner, SUB).
+	TypeOf(c, e, NIL)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)), TypeRel(value, cod, SUB), TypeRel(key, dom, SUB).	
 	[ rule_Classes = '"error, msg: insert must be applied to a sequence or a map"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinStmt(INSERT, e', _), TypeOf(c, e', t'), toSymbol(t') != #SeqType, toSymbol(t') != #MapType.
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinStmt(INSERT, _, _), toSymbol(t1) != #SeqType, toSymbol(t1) != #MapType.
 	[ rule_Classes = '"error, msg: for insert right syntax is seq += (index value) or map += (key value)"']
 	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = BinStmt(INSERT, _, arg2), TypeOf(c, arg2, t2), toSymbol(t2) != #TupType; 
 	                                  SubSE(c, e), e = BinStmt(INSERT, _, arg2), TypeOf(c, arg2, t2), t2 : TupType, lstLength(#TupType, t2) != 2.
     [ rule_Classes = '"error, msg: key must be an integer"']
-    TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)), idx != BaseType(INT).	
+    TypeOf(c, e, ERROR)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)), idx != BaseType(INT).	
     [ rule_Classes = '"error, msg: value must be a subtype of sequence type"']
-    TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)), TypeRel(value, inner, k), k != SUB, value != inner.	
+    TypeOf(c, e, ERROR)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)), TypeRel(value, inner, k), k != SUB, value != inner.	
 	[ rule_Classes = '"error, msg: key not in the domain of the map"']
-    TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)), TypeRel(key, dom, k), k != SUB, key != dom.	
+    TypeOf(c, e, ERROR)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)), TypeRel(key, dom, k), k != SUB, key != dom.	
 	[ rule_Classes = '"error, msg: value not in the codomain of the map"']
-    TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)), TypeRel(value, cod, k), k != SUB, value != cod.
+    TypeOf(c, e, ERROR)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)), TypeRel(value, cod, k), k != SUB, value != cod.
 	
 	//// (5) Function statements
 	TypeOf(c, e, NIL)   :- SubSE(c, e), e = FunStmt(n, NIL), FunDecl(n, c.owner, _, NIL, _, _).
-	TypeOf(c, e, NIL)   :- SubSE(c, e), e = FunStmt(n, e'), TypeOf(c, e', argt), FuncSigTupleType(decl, inpt), decl = FunDecl(n, c.owner, _, _, _, _), TypeRel(argt, inpt, SUB).
+	TypeOf(c, e, NIL)   :- TypeOfArg1(c, e, t1), e = FunStmt(n, _), FuncSigTupleType(decl, inpt), decl = FunDecl(n, c.owner, _, _, _, _), TypeRel(t1, inpt, SUB).
 	[ rule_Classes = '"error, msg: function not defined"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _), no FunDecl(n, c.owner, _, _, _, _).	
 	[ rule_Classes = '"error, msg: function requires arguments"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, NIL), FunDecl(n, c.owner, _, params, _, _), params != NIL.
 	[ rule_Classes = '"error, msg: function arguments have incorrect types"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, e'), TypeOf(c, e', argt), FuncSigTupleType(decl, inpt), decl = FunDecl(n, c.owner, _, _, _, _), TypeRel(argt, inpt, k), argt != inpt, k != SUB.
+	TypeOf(c, e, ERROR) :- TypeOfArg1(c, e, t1), e = FunStmt(n, _), FuncSigTupleType(decl, inpt), decl = FunDecl(n, c.owner, _, _, _, _), TypeRel(t1, inpt, k), t1 != inpt, k != SUB.
+
+    /*************************************************************/
+    /*                     Types of arguments                    */
+    /*************************************************************/
+
+	//// The type of the first sub-expression in a Typeable with at least one sub-expression.
+    TypeOfArg1 ::= (cntxt: TypingContext, expr: Typeable, type1: TypeExpr + { ERROR, NIL }).
+
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = New(_, e1), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = FunApp(_, e1), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = UnApp(_, e1), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Cast(e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Tuple(e1), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NamedTuple(e1), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NewStmt(_, e1), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = FunStmt(_, e1), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = UnStmt(_, e1), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Return(e1), TypeOf(c, e1, t1).
+
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Field(e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = While(e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = BinStmt(_, e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = BinApp(_, e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Exprs(e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NamedExprs(_, e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Raise(e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Monitor(_, e1, _), TypeOf(c, e1, t1).
+
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Send(e1, _, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Ite(e1, _, _), TypeOf(c, e1, t1).
+
+	//// The type of the first two sub-expression in a Typeable with at least two sub-expression.
+    TypeOfArg2::= (cntxt: TypingContext, expr: Typeable, type1: TypeExpr + { ERROR, NIL }, type2: TypeExpr + { ERROR, NIL }).
+
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Field(_, n), TypeOfField(t1, n, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = BinStmt(_, _, e2), TypeOf(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = BinApp(_, _, e2), TypeOf(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Exprs(_, e2), TypeOf(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = NamedExprs(_, _, e2), TypeOf(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Raise(_, e2), TypeOf(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Monitor(_, _, e2), TypeOf(c, e2, t2).
+
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Send(_, e2, _), TypeOf(c, e2, t2).
+
+	//// The type of the first three sub-expression in a Typeable with at least three sub-expression.
+    TypeOfArg3::= (cntxt: TypingContext, expr: Typeable, type1: TypeExpr + { ERROR, NIL }, type2: TypeExpr + { ERROR, NIL }, type3: TypeExpr + { ERROR, NIL }).
+
+	TypeOfArg3(c, e, t1, t2, t3) :- TypeOfArg2(c, e, t1, t2), e = Send(_, _, e3), TypeOf(c, e3, t3).
+
+	//// Determines the payload type of the event mentioned in a communication statement.
+	//// If the event expression is not an constant, then this payload type is ANY.
+	CommStmtPLType ::= (cntxt: TypingContext, comm: Raise + Send + Monitor, type: TypeExpr + { ERROR }).
+
+	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Raise(ev, _), TypeOf(c, ev, evt), evt != BaseType(EVENT), no IsEventCnst(c, ev, _).
+	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Raise(ev, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), no IsEventCnst(c, ev, _).
+	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Raise(ev, _), IsEventCnst(c, ev, plt).
+
+	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Send(_, ev, _), TypeOf(c, ev, evt), evt != BaseType(EVENT), no IsEventCnst(c, ev, _).
+	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Send(_, ev, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), no IsEventCnst(c, ev, _).
+	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Send(_, ev, _), IsEventCnst(c, ev, plt).
+
+	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Monitor(_, ev, _), TypeOf(c, ev, evt), evt != BaseType(EVENT), no IsEventCnst(c, ev, _).
+	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Monitor(_, ev, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), no IsEventCnst(c, ev, _).
+	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Monitor(_, ev, _), IsEventCnst(c, ev, plt).
 
     /*************************************************************/
     /*                      Field helpers                        */
@@ -735,26 +790,27 @@ domain PStaticTyping extends PData
     CompTypeRel(la, lb), CompTypeRel(ra, rb) :- CompTypeRel(ta, tb), ta = TupType(la, ra), tb = TupType(lb, rb).
     CompTypeRel(la, lb), CompTypeRel(ra, rb) :- CompTypeRel(ta, tb), ta = NmdTupType(lfa, ra), tb = NmdTupType(lfb, rb), la = lfa.type, lb = lfb.type.
     
-    CompTypeRel(t, t')        :- SubSE(c, e), e = Cast(e', t), TypeOf(c, e', t').
-    CompTypeRel(t', t'')      :- SubSE(c, e), e = BinApp(op, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), op : PolyRel.
-    CompTypeRel(t'', dom)     :- SubSE(c, e), e = BinApp(IDX, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t' = MapType(dom, _).
-    CompTypeRel(t', inner)    :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = SeqType(inner).
-    CompTypeRel(t', dom)      :- SubSE(c, e), e = BinApp(IN, e', e''), TypeOf(c, e', t'), TypeOf(c, e'', t''), t'' = MapType(dom, _).
-    CompTypeRel(argt, inpt)   :- SubSE(c, e), e = FunApp(n, e'), TypeOf(c, e', argt), FuncSigTupleType(decl, inpt), decl = FunDecl(n, c.owner, _, _, t, _), t != NIL.
-    CompTypeRel(t', t)        :- SubSE(c, e), e = Return(e'), c = FunDecl(_, _, _, _, t, _), TypeOf(c, e', t').
-    CompTypeRel(null, evt)    :- SubSE(c, e), e = Send(_, ev, NIL), IsEventCnst(c, ev, evt), null = BaseType(NULL).
-    CompTypeRel(pt, evt)      :- SubSE(c, e), e = Send(_, ev, p), p != NIL, IsEventCnst(c, ev, evt), TypeOf(c, p, pt).    
-    CompTypeRel(null, evt)    :- SubSE(c, e), e = Raise(ev, NIL), null = BaseType(NULL), IsEventCnst(c, ev, evt).
-    CompTypeRel(pt, evt)      :- SubSE(c, e), e = Raise(ev, p), p != NIL, IsEventCnst(c, ev, evt), TypeOf(c, p, pt).
-    CompTypeRel(null, evt)    :- SubSE(c, e), e = Monitor(_, ev, NIL), null = BaseType(NULL), IsEventCnst(c, ev, evt).
-    CompTypeRel(pt, evt)      :- SubSE(c, e), e = Monitor(_, ev, p), p != NIL, IsEventCnst(c, ev, evt), TypeOf(c, p, pt).
-    CompTypeRel(t2, t1)       :- SubSE(c, e), e = BinStmt(ASSIGN, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2).
-    CompTypeRel(t2, dom)      :- SubSE(c, e), e = BinStmt(REMOVE, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, _).
-    CompTypeRel(value, inner) :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = SeqType(inner), t2 = TupType(BaseType(INT), TupType(value, NIL)).
-    CompTypeRel(value, cod)   :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)).	
-    CompTypeRel(key, dom)     :- SubSE(c, e), e = BinStmt(INSERT, arg1, arg2), TypeOf(c, arg1, t1), TypeOf(c, arg2, t2), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)).	
-    CompTypeRel(argt, inpt)   :- SubSE(c, e), e = FunStmt(n, e'), TypeOf(c, e', argt), FuncSigTupleType(decl, inpt), decl = FunDecl(n, c.owner, _, _, _, _).
-    
+	CompTypeRel(t1, t2)       :- TypeOfArg1(c, e, t1), e = Cast(_, t2).
+	CompTypeRel(t1, t2)       :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _), op : PolyRel.
+	CompTypeRel(t2, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _), t1 = MapType(dom, cod).
+	CompTypeRel(t1, inner)    :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = SeqType(inner).
+	CompTypeRel(t1, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = MapType(dom, _).      
+	CompTypeRel(t1, inpt)     :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FuncSigTupleType(decl, inpt), decl = FunDecl(n, c.owner, _, _, _, _).
+	CompTypeRel(t1, t)        :- TypeOfArg1(c, e, t1), e : Return, c = FunDecl(_, _, _, _, t, _).
+	CompTypeRel(null, plt)    :- CommStmtPLType(c, e, plt), e = Raise(_, NIL), null = BaseType(NULL).
+	CompTypeRel(pt, plt)      :- CommStmtPLType(c, e, plt), e = Raise(_, p), p != NIL, TypeOf(c, p, pt).
+	CompTypeRel(null, plt)    :- SubSE(c, e), e = Send(_, _, NIL), null = BaseType(NULL), CommStmtPLType(c, e, plt).
+	CompTypeRel(t3, plt)      :- TypeOfArg3(c, e, t1, t2, t3), e : Send, CommStmtPLType(c, e, plt).
+	CompTypeRel(null, plt)    :- SubSE(c, e), e = Monitor(m, _, NIL), null = BaseType(NULL), CommStmtPLType(c, e, plt).
+	CompTypeRel(t2, plt)      :- TypeOfArg2(c, e, t1, t2), e : Monitor, CommStmtPLType(c, e, plt).
+	CompTypeRel(t2, plt)      :- TypeOfArg2(c, e, t1, t2), e = Monitor(m, _, _), CommStmtPLType(c, e, plt).
+	CompTypeRel(t2, t1)       :- TypeOfArg2(c, e, t1, t2), e = BinStmt(ASSIGN, _, _).	
+	CompTypeRel(t2, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinStmt(REMOVE, _, _), t1 = MapType(dom, cod).	
+	CompTypeRel(key, dom)     :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)).
+	CompTypeRel(value, cod)   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)).
+	CompTypeRel(value, inner) :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)).
+	CompTypeRel(t1, inpt)     :- TypeOfArg1(c, e, t1), e = FunStmt(n, _), FuncSigTupleType(decl, inpt), decl = FunDecl(n, c.owner, _, _, _, _).
+
     //// TypeRel determines the relationship type expressions ta and tb.
     //// If types are not subtype related, then they can
     //// either have an empty (EMPTY) or nonempty (NONEMPTY) intersection. 

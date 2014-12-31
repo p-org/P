@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.PSharp;
+using Microsoft.PSharp.Scheduling;
 
 namespace BasicPaxosBuggy
 {
@@ -12,7 +13,30 @@ namespace BasicPaxosBuggy
     /// </summary>
     public class Program
     {
-        public static void Go()
+        static void Main(string[] args)
+        {
+            new CommandLineOptions(args).Parse();
+
+            if (Runtime.Options.Mode == Runtime.Mode.Execution)
+            {
+                Program.Run();
+            }
+            else if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
+            {
+                TestConfiguration test = new TestConfiguration(
+                    "BasicPaxosBuggy",
+                    Program.Run,
+                    new RandomSchedulingStrategy(0),
+                    100);
+
+                //test.UntilBugFound = true;
+                test.SoftTimeLimit = 600;
+                Runtime.Test(test);
+                Console.WriteLine(test.Result());
+            }
+        }
+
+        public static void Run()
         {
             Runtime.RegisterNewEvent(typeof(ePrepare));
             Runtime.RegisterNewEvent(typeof(eAccept));
@@ -36,28 +60,6 @@ namespace BasicPaxosBuggy
             Runtime.Start();
             Runtime.Wait();
             Runtime.Dispose();
-        }
-
-        static void Main(string[] args)
-        {
-            Runtime.Test(
-                () =>
-                {
-                    Go();
-                },
-                1000,
-                false,
-                Runtime.SchedulingType.Random,
-                true);
-        }
-    }
-
-    public class ChessTest
-    {
-        public static bool Run()
-        {
-            Program.Go();
-            return true;
         }
     }
 }

@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.PSharp;
+using Microsoft.PSharp.Scheduling;
 
 namespace PingPongFarm
 {
@@ -373,7 +374,30 @@ namespace PingPongFarm
     /// </summary>
     class PingPongFarm
     {
-        public static void Go()
+        static void Main(string[] args)
+        {
+            new CommandLineOptions(args).Parse();
+
+            if (Runtime.Options.Mode == Runtime.Mode.Execution)
+            {
+                PingPongFarm.Run();
+            }
+            else if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
+            {
+                TestConfiguration test = new TestConfiguration(
+                    "PingPongFarm",
+                    PingPongFarm.Run,
+                    new RandomSchedulingStrategy(0),
+                    100);
+
+                //test.UntilBugFound = true;
+                test.SoftTimeLimit = 600;
+                Runtime.Test(test);
+                Console.WriteLine(test.Result());
+            }
+        }
+
+        public static void Run()
         {
             Runtime.RegisterNewEvent(typeof(Ping));
             Runtime.RegisterNewEvent(typeof(Pong));
@@ -385,22 +409,9 @@ namespace PingPongFarm
             Runtime.RegisterNewMachine(typeof(Client));
             Runtime.RegisterNewMachine(typeof(Master));
 
-
             Runtime.Start();
             Runtime.Wait();
             Runtime.Dispose();
-        }
-        static void Main(string[] args)
-        {
-            Go();
-        }
-    }
-    public class ChessTest
-    {
-        public static bool Run()
-        {
-            PingPongFarm.Go();
-            return true;
         }
     }
 }

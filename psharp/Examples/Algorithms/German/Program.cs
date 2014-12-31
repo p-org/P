@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.PSharp;
+using Microsoft.PSharp.Scheduling;
 
 namespace German
 {
@@ -11,7 +12,30 @@ namespace German
     /// </summary>
     public class Program
     {
-        public static void Go()
+        static void Main(string[] args)
+        {
+            new CommandLineOptions(args).Parse();
+
+            if (Runtime.Options.Mode == Runtime.Mode.Execution)
+            {
+                Program.Run();
+            }
+            else if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
+            {
+                TestConfiguration test = new TestConfiguration(
+                    "German",
+                    Program.Run,
+                    new RandomSchedulingStrategy(0),
+                    100);
+
+                //test.UntilBugFound = true;
+                test.SoftTimeLimit = 600;
+                Runtime.Test(test);
+                Console.WriteLine(test.Result());
+            }
+        }
+
+        public static void Run()
         {
             Runtime.RegisterNewEvent(typeof(eLocal));
             Runtime.RegisterNewEvent(typeof(eStop));
@@ -28,24 +52,14 @@ namespace German
             Runtime.RegisterNewEvent(typeof(eAskExcl));
             Runtime.RegisterNewEvent(typeof(eShareReq));
             Runtime.RegisterNewEvent(typeof(eExclReq));
+
             Runtime.RegisterNewMachine(typeof(Host));
             Runtime.RegisterNewMachine(typeof(Client));
             Runtime.RegisterNewMachine(typeof(CPU));
+
             Runtime.Start(3);
             Runtime.Wait();
             Runtime.Dispose();
-        }
-        static void Main(string[] args)
-        {
-            Go();
-        }
-    }
-    public class ChessTest
-    {
-        public static bool Run()
-        {
-            Program.Go();
-            return true;
         }
     }
 }

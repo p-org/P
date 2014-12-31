@@ -58,4 +58,13 @@ namespace Microsoft.PSharp
             this.ReturningState = s;
         }
     }
+
+    /// <summary>
+    /// This exception is thrown whenever the scheduler detects
+    /// non-deterministic behaviour.
+    /// </summary>
+    internal class NondeterminismException : Exception
+    {
+
+    }
 }

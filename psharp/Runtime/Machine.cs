@@ -23,7 +23,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.PSharp.IO;
-using Microsoft.PSharp.Scheduling;
 
 namespace Microsoft.PSharp
 {
@@ -47,7 +46,7 @@ namespace Microsoft.PSharp
         /// Unique machine ID.
         /// </summary>
         internal readonly int Id;
-        
+
         /// <summary>
         /// Set of all possible states.
         /// </summary>
@@ -102,6 +101,13 @@ namespace Microsoft.PSharp
         internal BlockingCollection<Event> Inbox;
 
         /// <summary>
+        /// Inbox of the state machine (used during bug-finding mode).
+        /// Incoming events are queued here. Events are dequeued to be
+        /// processed. A thread-safe blocking collection is used.
+        /// </summary>
+        internal SystematicBlockingQueue<Event> ScheduledInbox;
+
+        /// <summary>
         /// The raised event if one exists. This has higher priority
         /// over any other events in the inbox queue.
         /// </summary>
@@ -121,17 +127,6 @@ namespace Microsoft.PSharp
         /// </summary>
         protected internal Object Payload;
 
-        /// <summary>
-        /// Machine lock used only during bug-finding mode.
-        /// </summary>
-        internal Object Lock;
-
-        /// <summary>
-        /// True if the machine yielded after a send operation.
-        /// Used only during bug-finding mode.
-        /// </summary>
-        internal bool IsYieldAtSend;
-
         #endregion
 
         #region machine constructors
@@ -142,15 +137,18 @@ namespace Microsoft.PSharp
         protected Machine()
         {
             this.Id = Machine.IdCounter++;
-            this.Inbox = new BlockingCollection<Event>();
+
+            if (Runtime.Options.Mode == Runtime.Mode.Execution)
+                this.Inbox = new BlockingCollection<Event>();
+            else if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
+                this.ScheduledInbox = new SystematicBlockingQueue<Event>();
+
             this.RaisedEvent = null;
             this.StateStack = new Stack<State>();
             this.Wrapper = null;
             this.IsActive = true;
 
             this.CTS = new CancellationTokenSource();
-            this.Lock = new Object();
-            this.IsYieldAtSend = false;
 
             this.StepTransitions = this.DefineStepStateTransitions();
             this.CallTransitions = this.DefineCallStateTransitions();
@@ -171,7 +169,7 @@ namespace Microsoft.PSharp
         {
             this.States = new HashSet<State>();
             HashSet<Type> stateTypes = new HashSet<Type>();
-            
+
             Type machineType = this.GetType();
             Type initialState = null;
 
@@ -284,6 +282,10 @@ namespace Microsoft.PSharp
                 // Handles the returning state.
                 this.AssertReturnStatementValidity(ex.ReturningState);
             }
+            catch (TaskCanceledException ex)
+            {
+                throw ex;
+            }
             catch (Exception ex)
             {
                 // Handles generic exception.
@@ -333,7 +335,10 @@ namespace Microsoft.PSharp
                     // to process the next event in the inbox queue.
                     else if (currentState.DeferredEvents.Contains(e.GetType()))
                     {
-                        this.Inbox.Add(e);
+                        if (Runtime.Options.Mode == Runtime.Mode.Execution)
+                            this.Inbox.Add(e);
+                        else if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
+                            this.ScheduledInbox.Add(e);
                         return;
                     }
                 }
@@ -380,76 +385,96 @@ namespace Microsoft.PSharp
         /// </summary>
         /// /// <param name="payload">Optional payload</param>
         /// <returns>Task</returns>
-        internal Task Start(Object payload = null)
+        internal Thread Start(Object payload = null)
         {
-            return Task.Factory.StartNew((Object pl) =>
+            Thread thread = new Thread((Object pl) =>
             {
-                this.GotoInitialState(pl);
-
-                while (this.IsActive)
+                try
                 {
-                    if (this.RaisedEvent != null)
-                    {
-                        Event nextEvent = this.RaisedEvent;
-                        this.RaisedEvent = null;
-                        this.HandleEvent(nextEvent);
-                    }
-                    else
-                    {
-                        // We are using a blocking collection so the attempt to
-                        // dequeue an event will block if there is no available
-                        // event in the mailbox. The operation will unblock when
-                        // the next event arrives.
-                        Event nextEvent = null;
-                        try
-                        {
-                            nextEvent = this.Inbox.Take(this.CTS.Token);
-                        }
-                        catch
-                        {
-                            return;
-                        }
+                    this.GotoInitialState(pl);
 
-                        if (this.CTS.Token.IsCancellationRequested)
-                            return;
-                        this.HandleEvent(nextEvent);
+                    while (this.IsActive)
+                    {
+                        if (this.RaisedEvent != null)
+                        {
+                            Event nextEvent = this.RaisedEvent;
+                            this.RaisedEvent = null;
+                            this.HandleEvent(nextEvent);
+                        }
+                        else
+                        {
+                            // We are using a blocking collection so the attempt to
+                            // dequeue an event will block if there is no available
+                            // event in the mailbox. The operation will unblock when
+                            // the next event arrives.
+                            Event nextEvent = this.Inbox.Take(this.CTS.Token);
+                            if (this.CTS.Token.IsCancellationRequested)
+                                break;
+                            this.HandleEvent(nextEvent);
+                        }
                     }
                 }
-            }, payload, TaskCreationOptions.LongRunning);
+                catch (TaskCanceledException) { }
+            });
+
+            thread.Start(payload);
+
+            return thread;
         }
 
         /// <summary>
-        /// Schedules the machine to start concurrently with an optional payload.
-        /// Used only during bug-finding mode.
+        /// Starts the machine concurrently with an optional payload and
+        /// the scheduler enabled.
         /// </summary>
         /// /// <param name="payload">Optional payload</param>
         /// <returns>Task</returns>
-        internal Task Schedule(Object payload = null)
+        internal Thread ScheduledStart(Object payload = null)
         {
-            return Task.Factory.StartNew((Object pl) =>
+            Thread thread = new Thread((Object pl) =>
             {
-                this.IsYieldAtSend = true;
-                this.Yield();
-                this.GotoInitialState(pl);
-                this.IsYieldAtSend = false;
+                ThreadInfo currThread = Runtime.Scheduler.GetCurrentThreadInfo();
+                Runtime.Scheduler.ThreadStarted(currThread);
 
-                while (this.IsActive)
+                try
                 {
-                    if (this.RaisedEvent != null)
+                    if (Runtime.Scheduler.DeadlockHasOccurred)
                     {
-                        Event nextEvent = this.RaisedEvent;
-                        this.RaisedEvent = null;
-                        this.HandleEvent(nextEvent);
-                    }
-                    else if (this.Inbox.Count > 0)
-                    {
-                        Event nextEvent = this.Inbox.Take(this.CTS.Token);
-                        this.HandleEvent(nextEvent);
+                        throw new TaskCanceledException();
                     }
 
-                    this.Yield();
+                    this.GotoInitialState(pl);
+
+                    while (this.IsActive)
+                    {
+                        if (this.RaisedEvent != null)
+                        {
+                            Event nextEvent = this.RaisedEvent;
+                            this.RaisedEvent = null;
+                            this.HandleEvent(nextEvent);
+                        }
+                        else
+                        {
+                            // We are using a blocking collection so the attempt to
+                            // dequeue an event will block if there is no available
+                            // event in the mailbox. The operation will unblock when
+                            // the next event arrives.
+                            Event nextEvent = this.ScheduledInbox.Take();
+                            this.HandleEvent(nextEvent);
+                        }
+                    }
                 }
-            }, payload);
+                catch (TaskCanceledException) { }
+
+                Runtime.Scheduler.ThreadEnded(currThread);
+            });
+
+            ThreadInfo threadInfo = Runtime.Scheduler.AddNewThreadInfo(thread);
+
+            thread.Start(payload);
+
+            Runtime.Scheduler.WaitForThreadToStart(threadInfo);
+
+            return thread;
         }
 
         /// <summary>
@@ -469,6 +494,8 @@ namespace Microsoft.PSharp
         /// </summary>
         internal void HandleNextEvent()
         {
+            System.Diagnostics.Debug.Assert(false);
+
             if (this.RaisedEvent != null)
             {
                 Event nextEvent = this.RaisedEvent;
@@ -477,8 +504,8 @@ namespace Microsoft.PSharp
             }
             else
             {
-                Event nextEvent = this.Inbox.Take(this.CTS.Token);
-                this.HandleEvent(nextEvent);
+                //Event nextEvent = this.Inbox.Take(this.CTS.Token);
+                //this.HandleEvent(nextEvent);
             }
         }
 
@@ -488,7 +515,11 @@ namespace Microsoft.PSharp
         internal void StopListener()
         {
             this.IsActive = false;
-            this.CTS.Cancel();
+
+            if (Runtime.Options.Mode == Runtime.Mode.Execution)
+                this.CTS.Cancel();
+            else if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
+                this.ScheduledInbox.Cancel();
         }
 
         /// <summary>
@@ -544,14 +575,6 @@ namespace Microsoft.PSharp
         protected internal void Send(Machine m, Event e)
         {
             Runtime.Send(this.GetType().Name, m, e);
-
-            if (Runtime.Options.Mode != Runtime.Mode.Execution &&
-                !Runtime.Options.UnsoundScheduling)
-            {
-                this.IsYieldAtSend = true;
-                this.Yield();
-                this.IsYieldAtSend = false;
-            }
         }
 
         /// <summary>
@@ -706,6 +729,10 @@ namespace Microsoft.PSharp
                 // Handles the returning state.
                 this.AssertReturnStatementValidity(ex.ReturningState);
             }
+            catch (TaskCanceledException ex)
+            {
+                throw ex;
+            }
             catch (Exception ex)
             {
                 // Handles generic exception.
@@ -741,6 +768,10 @@ namespace Microsoft.PSharp
             {
                 // Handles the returning state.
                 this.AssertReturnStatementValidity(ex.ReturningState);
+            }
+            catch (TaskCanceledException ex)
+            {
+                throw ex;
             }
             catch (Exception ex)
             {
@@ -794,19 +825,6 @@ namespace Microsoft.PSharp
             }
 
             return result;
-        }
-
-        /// <summary>
-        /// Locks the machine and yields execution to the runtime.
-        /// Used only during bug-finding mode.
-        /// </summary>
-        private void Yield()
-        {
-            lock (this.Lock)
-            {
-                System.Threading.Monitor.Pulse(this.Lock);
-                System.Threading.Monitor.Wait(this.Lock);
-            }
         }
 
         #endregion

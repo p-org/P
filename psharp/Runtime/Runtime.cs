@@ -16,10 +16,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.IO.Pipes;
 using System.Threading;
-using System.Threading.Tasks;
 
 using Microsoft.PSharp.Compilation;
 using Microsoft.PSharp.IO;
@@ -67,7 +67,12 @@ namespace Microsoft.PSharp
         /// <summary>
         /// List of machine tasks.
         /// </summary>
-        private static List<Task> MachineTasks = new List<Task>();
+        private static List<Thread> MachineTasks = new List<Thread>();
+
+        /// <summary>
+        /// The bug-finding scheduler.
+        /// </summary>
+        internal static Scheduler Scheduler = new Scheduler();
 
         /// <summary>
         /// True if runtime is running. False otherwise.
@@ -78,11 +83,6 @@ namespace Microsoft.PSharp
         /// Assertion failure counter.
         /// </summary>
         private static int AssertionFailureCount = 0;
-
-        /// <summary>
-        /// Transitions explored counter.
-        /// </summary>
-        private static int TransitionsExploredCount = 0;
 
         #endregion
 
@@ -160,19 +160,10 @@ namespace Microsoft.PSharp
             }
             else if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
             {
-                if (Runtime.Options.MonitorExecutions)
-                {
-                    Runtime.ReceiveConfigurationFromPSharpMonitor();
-                }
-
-                if (!Runtime.Options.UnsoundScheduling)
-                {
-                    Runtime.StartSchedulingLoop(payload);
-                }
-                else
-                {
-                    Runtime.StartUnsoundSchedulingLoop(payload);
-                }
+                // Start the main machine.
+                Type mainMachine = Runtime.RegisteredMachineTypes.First(val =>
+                    val.IsDefined(typeof(Main), false));
+                Machine.Factory.CreateMachine(mainMachine, payload);
             }
         }
 
@@ -181,27 +172,63 @@ namespace Microsoft.PSharp
         /// </summary>
         public static void Wait()
         {
-            if (Runtime.Options.Mode == Runtime.Mode.Execution)
+            Thread[] taskArray = null;
+            lock (Runtime.Lock)
             {
-                Task[] taskArray = null;
-                lock (Runtime.Lock)
-                {
-                    taskArray = Runtime.MachineTasks.ToArray();
-                }
-
-                Task.WaitAll(taskArray);
-
-                bool moreTasksExist = false;
-                lock (Runtime.Lock)
-                {
-                    moreTasksExist = taskArray.Length != Runtime.MachineTasks.Count;
-                }
-
-                if (moreTasksExist)
-                {
-                    Runtime.Wait();
-                }
+                taskArray = Runtime.MachineTasks.ToArray();
             }
+
+            foreach (Thread thread in taskArray)
+            {
+                thread.Join();
+            }
+
+            bool moreTasksExist = false;
+            lock (Runtime.Lock)
+            {
+                moreTasksExist = taskArray.Length != Runtime.MachineTasks.Count;
+            }
+
+            if (moreTasksExist)
+            {
+                Runtime.Wait();
+            }
+        }
+
+        /// <summary>
+        /// Stops the P# runtime. Also prints additional runtime
+        /// results depending on the enabled runtime options.
+        /// </summary>
+        public static void Stop()
+        {
+            if (Runtime.Options.Mode == Runtime.Mode.BugFinding &&
+                Runtime.Options.PrintExploredSchedule)
+            {
+                Runtime.PrintExploredSchedule();
+            }
+            else if (Runtime.Options.Mode == Runtime.Mode.Replay &&
+                Runtime.Options.CompareExecutions)
+            {
+                Replayer.CompareExecutions();
+            }
+
+            Runtime.IsRunning = false;
+            foreach (var m in Runtime.Machines)
+                m.StopListener();
+            foreach (var m in Runtime.Monitors)
+                m.StopListener();
+
+            //foreach(ThreadInfo threadInfo in threadMap.Values)
+            //{
+            //    lock(threadInfo)
+            //    {
+            //        System.Threading.Monitor.PulseAll(threadInfo);
+            //    }
+            //}
+
+            Runtime.Machines.Clear();
+            Runtime.Monitors.Clear();
+            Runtime.MachineTasks.Clear();
         }
 
         /// <summary>
@@ -209,71 +236,95 @@ namespace Microsoft.PSharp
         /// tested a used-defined number of times. It enables bug-finding mode
         /// by default, and measures assertion failures and the testing runtime.
         /// </summary>
-        /// <param name="runtimeAction">Runtime action</param>
-        /// <param name="iterations">Iterations</param>
-        /// <param name="enableBugFindMode">Enable bug find mode</param>
-        /// <param name="schedulingType">Type of scheduling</param>
-        /// <param name="untilBugFound">Runs until a bug is found</param>
-        /// <param name="showProgress">Shows current progress</param>
-        public static void Test(Action runtimeAction, int iterations, bool enableBugFindMode,
-            SchedulingType schedulingType, bool untilBugFound)
+        /// <param name="testConfig">Test configuration</param>
+        public static void Test(TestConfiguration testConfig)
         {
+            Runtime.Scheduler.SchedulingStrategy = testConfig.SchedulingStrategy;
+            Runtime.Options.Mode = Runtime.Mode.BugFinding;
             Runtime.Options.CountAssertions = true;
 
-            if (enableBugFindMode)
-            {
-                Runtime.Options.Mode = Runtime.Mode.BugFinding;
-            }
+            Console.WriteLine("Starting: " + testConfig.Name);
 
-            if (schedulingType == Runtime.SchedulingType.Random)
-            {
-                Runtime.Options.Scheduler = new RandomScheduler();
-            }
-            else if (schedulingType == Runtime.SchedulingType.RoundRobin)
-            {
-                Runtime.Options.Scheduler = new RoundRobinScheduler();
-            }
-            else if (schedulingType == Runtime.SchedulingType.DFS)
-            {
-                Runtime.Options.Scheduler = new DFSScheduler();
-            }
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
 
-            Profiler.StartMeasuringExecutionTime();
-            var transitions = 0;
-            var iteration = 0;
-            while (iteration < iterations)
+            while (testConfig.NumSchedules < testConfig.ScheduleLimit)
             {
-                Console.Error.WriteLine("Starting iteration: {0}", iteration + 1);
+                //Console.WriteLine("Starting iteration: {0}", iteration + 1);
 
-                runtimeAction();
-                Runtime.Dispose();
+                bool cont = Runtime.Scheduler.Reset();
 
-                if (Runtime.Options.Scheduler.HasFinished())
+                if (testConfig.SoftTimeLimit > 1 &&
+                    stopWatch.Elapsed.TotalSeconds > testConfig.SoftTimeLimit)
                 {
                     break;
                 }
 
-                if (iteration == 0)
+                if (!cont)
                 {
-                    transitions = Runtime.TransitionsExploredCount;
+                    testConfig.Completed = true;
+                    break;
                 }
 
-                Console.WriteLine("Finished iteration: {0}", iteration + 1);
-                iteration++;
+                testConfig.EntryPoint();
 
-                if (untilBugFound && Runtime.AssertionFailureCount > 0)
+                if (testConfig.NumSchedules == 0)
+                {
+                    testConfig.NumSteps = Runtime.Scheduler.SchedulingStrategy.GetNumSchedPoints();
+                }
+
+                testConfig.NumSchedules++;
+
+                // If it is a "real" deadlock (not due to e.g. an assertion failure)
+                // then we record this.
+                if (Runtime.Scheduler.DeadlockHasOccurred &&
+                    !Runtime.Scheduler.ErrorHasOccurred)
+                {
+                    testConfig.NumDeadlocks++;
+                    Console.WriteLine("Terminated due to DEADLOCK!");
+                }
+
+                if (Runtime.Scheduler.ErrorHasOccurred)
+                {
+                    Console.WriteLine("Terminated due to ERROR!");
+                }
+
+                // If it is an error or a deadlock then deadlockHasOccurred will be set.
+                if (Runtime.Scheduler.DeadlockHasOccurred)
+                {
+                    testConfig.NumBuggy++;
+                    if (testConfig.NumSchedulesToFirstBug == -1)
+                    {
+                        testConfig.NumSchedulesToFirstBug = testConfig.NumSchedules;
+                        testConfig.TimeToFirstBug = stopWatch.Elapsed.TotalSeconds;
+                    }
+                }
+
+                if (Runtime.Scheduler.HitDepthBound)
+                {
+                    testConfig.NumHitDepthBound++;
+                }
+
+                //Console.WriteLine("Finished iteration: {0}", iteration + 1);
+                if (testConfig.NumSchedules % 500 == 0)
+                {
+                    Console.Error.WriteLine("Finished schedule {0}", testConfig.NumSchedules);
+                }
+
+                if (testConfig.UntilBugFound && testConfig.NumBuggy > 0)
                 {
                     break;
                 }
             }
 
-            Profiler.StopMeasuringExecutionTime();
+            stopWatch.Stop();
+            testConfig.Time = stopWatch.Elapsed.TotalSeconds;
 
-            Console.Error.WriteLine("Explored {0} schedules.", iteration);
-            Console.Error.WriteLine("Scheduled {0} transitions per schedule.", transitions);
-            Console.Error.WriteLine("Found {0} assertion failures.", Runtime.AssertionFailureCount);
-
-            Profiler.PrintResults();
+            Console.Error.WriteLine("Found {0} buggy schedules.", testConfig.NumBuggy);
+            Console.Error.WriteLine("  ({0} of them were deadlocks.)", testConfig.NumDeadlocks);
+            Console.Error.WriteLine("Explored {0} schedules.", testConfig.NumSchedules);
+            Console.Error.WriteLine("There were {0} steps on the first schedule.", testConfig.NumSteps);
+            Console.Error.WriteLine("Elapsed: {0} seconds.", testConfig.Time);
         }
 
         /// <summary>
@@ -326,18 +377,7 @@ namespace Microsoft.PSharp
         {
             Machine machine;
 
-            if (Runtime.Options.Mode == Runtime.Mode.Execution)
-            {
-                lock (Runtime.Lock)
-                {
-                    Utilities.Verbose("Creating new machine: {0}\n", m);
-                    Runtime.Assert(Runtime.RegisteredMachineTypes.Any(val => val == m),
-                        "Machine '{0}' has not been registered with the P# runtime.\n", m.Name);
-                    machine = Activator.CreateInstance(m) as Machine;
-                    Runtime.Machines.Add(machine);
-                }
-            }
-            else
+            lock (Runtime.Lock)
             {
                 Utilities.Verbose("Creating new machine: {0}\n", m);
                 Runtime.Assert(Runtime.RegisteredMachineTypes.Any(val => val == m),
@@ -348,15 +388,17 @@ namespace Microsoft.PSharp
 
             if (Runtime.Options.Mode == Runtime.Mode.Execution)
             {
-                Runtime.MachineTasks.Add(machine.Start(payload));
+                lock (Runtime.Lock)
+                {
+                    Runtime.MachineTasks.Add(machine.Start(payload));
+                }
             }
-            else if (!Runtime.Options.UnsoundScheduling)
+            else if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
             {
-                Runtime.MachineTasks.Add(machine.Schedule(payload));
-            }
-            else
-            {
-                machine.GotoInitialState(payload);
+                lock (Runtime.Lock)
+                {
+                    Runtime.MachineTasks.Add(machine.ScheduledStart(payload));
+                }
             }
 
             return machine;
@@ -373,18 +415,7 @@ namespace Microsoft.PSharp
         {
             Object machine;
 
-            if (Runtime.Options.Mode == Runtime.Mode.Execution)
-            {
-                lock (Runtime.Lock)
-                {
-                    Utilities.Verbose("Creating new machine: {0}\n", typeof(T));
-                    Runtime.Assert(Runtime.RegisteredMachineTypes.Any(val => val == typeof(T)),
-                        "Machine '{0}' has not been registered with the P# runtime.\n", typeof(T).Name);
-                    machine = Activator.CreateInstance(typeof(T));
-                    Runtime.Machines.Add(machine as Machine);
-                }
-            }
-            else
+            lock (Runtime.Lock)
             {
                 Utilities.Verbose("Creating new machine: {0}\n", typeof(T));
                 Runtime.Assert(Runtime.RegisteredMachineTypes.Any(val => val == typeof(T)),
@@ -395,18 +426,20 @@ namespace Microsoft.PSharp
 
             if (Runtime.Options.Mode == Runtime.Mode.Execution)
             {
-                Runtime.MachineTasks.Add((machine as Machine).Start(payload));
+                lock (Runtime.Lock)
+                {
+                    Runtime.MachineTasks.Add((machine as Machine).Start(payload));
+                }
             }
-            else if (!Runtime.Options.UnsoundScheduling)
+            else if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
             {
-                Runtime.MachineTasks.Add((machine as Machine).Schedule(payload));
-            }
-            else
-            {
-                (machine as Machine).GotoInitialState(payload);
+                lock (Runtime.Lock)
+                {
+                    Runtime.MachineTasks.Add((machine as Machine).ScheduledStart(payload));
+                }
             }
 
-            return (T) machine;
+            return (T)machine;
         }
 
         /// <summary>
@@ -424,17 +457,25 @@ namespace Microsoft.PSharp
                 "Monitor '{0}' has not been registered with the P# runtime.\n", m.Name);
             Runtime.Assert(!Runtime.Monitors.Any(val => val.GetType() == m),
                 "A monitor of type '{0}' already exists.\n", m.Name);
-            
+
             Machine machine = Activator.CreateInstance(m) as Machine;
+
             Runtime.Monitors.Add(machine);
+
 
             if (Runtime.Options.Mode == Runtime.Mode.Execution)
             {
-                Runtime.MachineTasks.Add(machine.Start(payload));
+                lock (Runtime.Lock)
+                {
+                    Runtime.MachineTasks.Add(machine.Start(payload));
+                }
             }
-            else
+            else if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
             {
-                machine.GotoInitialState(payload);
+                lock (Runtime.Lock)
+                {
+                    Runtime.MachineTasks.Add(machine.ScheduledStart(payload));
+                }
             }
 
             return machine;
@@ -455,17 +496,23 @@ namespace Microsoft.PSharp
                 "Monitor '{0}' has not been registered with the P# runtime.\n", typeof(T).Name);
             Runtime.Assert(!Runtime.Monitors.Any(val => val.GetType() == typeof(T)),
                 "A monitor of type '{0}' already exists.\n", typeof(T).Name);
-            
+
             Object machine = Activator.CreateInstance(typeof(T));
             Runtime.Monitors.Add(machine as Machine);
 
             if (Runtime.Options.Mode == Runtime.Mode.Execution)
             {
-                Runtime.MachineTasks.Add((machine as Machine).Start(payload));
+                lock (Runtime.Lock)
+                {
+                    Runtime.MachineTasks.Add((machine as Machine).Start(payload));
+                }
             }
-            else
+            else if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
             {
-                (machine as Machine).GotoInitialState(payload);
+                lock (Runtime.Lock)
+                {
+                    Runtime.MachineTasks.Add((machine as Machine).ScheduledStart(payload));
+                }
             }
 
             return (T)machine;
@@ -479,48 +526,26 @@ namespace Microsoft.PSharp
         /// <param name="e">Event</param>
         internal static void Send(string sender, Machine receiver, Event e)
         {
+            Utilities.Verbose("Sending event {0} to machine {1}\n", e, receiver);
+            Runtime.Assert(Runtime.RegisteredEventTypes.Any(val => val == e.GetType()),
+                "Event '{0}' has not been registered with the P# runtime.\n", e);
+            Runtime.Assert(!receiver.GetType().IsDefined(typeof(Monitor), false),
+                "Cannot use Runtime.Send() to directly send an event to a monitor. " +
+                "Use Runtime.Invoke() instead.\n");
+
             if (Runtime.Options.Mode == Runtime.Mode.Execution)
             {
-                lock (Runtime.Lock)
-                {
-                    Utilities.Verbose("Sending event {0} to machine {1}\n", e, receiver);
-                    Runtime.Assert(Runtime.RegisteredEventTypes.Any(val => val == e.GetType()),
-                        "Event '{0}' has not been registered with the P# runtime.\n", e);
-                    Runtime.Assert(!receiver.GetType().IsDefined(typeof(Monitor), false),
-                        "Cannot use Runtime.Send() to directly send an event to a monitor. " +
-                        "Use Runtime.Invoke() instead.\n");
-
-                    if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
-                    {
-                        ScheduleExplorer.Add(sender, receiver.GetType().Name, e.GetType().Name);
-                    }
-                    else if (Runtime.Options.Mode == Runtime.Mode.Replay)
-                    {
-                        Replayer.Add(sender, receiver.GetType().Name, e.GetType().Name);
-                    }
-
-                    receiver.Inbox.Add(e);
-                }
-            }
-            else
-            {
-                Utilities.Verbose("Sending event {0} to machine {1}\n", e, receiver);
-                Runtime.Assert(Runtime.RegisteredEventTypes.Any(val => val == e.GetType()),
-                    "Event '{0}' has not been registered with the P# runtime.\n", e);
-                Runtime.Assert(!receiver.GetType().IsDefined(typeof(Monitor), false),
-                    "Cannot use Runtime.Send() to directly send an event to a monitor. " +
-                    "Use Runtime.Invoke() instead.\n");
-
-                if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
-                {
-                    ScheduleExplorer.Add(sender, receiver.GetType().Name, e.GetType().Name);
-                }
-                else if (Runtime.Options.Mode == Runtime.Mode.Replay)
-                {
-                    Replayer.Add(sender, receiver.GetType().Name, e.GetType().Name);
-                }
-
                 receiver.Inbox.Add(e);
+            }
+            else if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
+            {
+                receiver.ScheduledInbox.Add(e);
+                ScheduleExplorer.Add(sender, receiver.GetType().Name, e.GetType().Name);
+            }
+            else if (Runtime.Options.Mode == Runtime.Mode.Replay)
+            {
+                receiver.ScheduledInbox.Add(e);
+                Replayer.Add(sender, receiver.GetType().Name, e.GetType().Name);
             }
         }
 
@@ -541,7 +566,15 @@ namespace Microsoft.PSharp
             {
                 if (m.GetType() == typeof(T))
                 {
-                    m.Inbox.Add(e);
+                    if (Runtime.Options.Mode == Runtime.Mode.Execution)
+                    {
+                        m.Inbox.Add(e);
+                    }
+                    else if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
+                    {
+                        m.ScheduledInbox.Add(e);
+                    }
+
                     return;
                 }
             }
@@ -577,149 +610,6 @@ namespace Microsoft.PSharp
 
         #endregion
 
-        #region P# runtime private methods
-
-        /// <summary>
-        /// Starts a scheduling loop. This is only used during
-        /// bug-finding mode for serialized machine scheduling and
-        /// execution. The main machine is constructed with the
-        /// given payload.
-        /// </summary>
-        /// <param name="payload">Payload</param>
-        private static void StartSchedulingLoop(Object payload)
-        {
-            // Create and start the main machine.
-            Type mainMachineType = Runtime.RegisteredMachineTypes.First(val =>
-                val.IsDefined(typeof(Main), false));
-            var mainMachine = Machine.Factory.CreateMachine(mainMachineType, payload);
-
-            // Schedule the main machine.
-            Runtime.ScheduleMachine(mainMachine);
-
-            // Loop through the available machines and handle events
-            // respecting the P# scheduler.
-            while (Runtime.IsRunning)
-            {
-                // 1. Get a list of all enabled machine IDs and exit the
-                // runtime if there are none.
-                List<int> enabledIds = Runtime.GetEnabledMachineIDs();
-                if (enabledIds.Count == 0)
-                {
-                    break;
-                }
-
-                // 2. Get the next available machine ID to schedule.
-                var nextMachineId = -1;
-                if (!Runtime.Options.Scheduler.TryGetNext(out nextMachineId, enabledIds))
-                {
-                    Runtime.IsRunning = false;
-                    break;
-                }
-
-                // 3. Loop through the machines and schedule the next enabled machine.
-                var nextMachine = Runtime.Machines.First(v => v.Id == nextMachineId);
-                Runtime.TransitionsExploredCount++;
-                Runtime.ScheduleMachine(nextMachine);
-            }
-        }
-
-        /// <summary>
-        /// Starts an unsound scheduling loop. This is only used during
-        /// bug-finding mode for serialized machine scheduling and
-        /// execution. The main machine is constructed with the
-        /// given payload.
-        /// </summary>
-        /// <param name="payload">Payload</param>
-        private static void StartUnsoundSchedulingLoop(Object payload)
-        {
-            // Start the main machine.
-            Type mainMachine = Runtime.RegisteredMachineTypes.First(val =>
-                val.IsDefined(typeof(Main), false));
-            Machine.Factory.CreateMachine(mainMachine, payload);
-
-            // Loop through the available machines and handle events
-            // respecting the P# scheduler.
-            while (Runtime.IsRunning)
-            {
-                // 1. Get a list of all enabled machine IDs and exit the
-                // runtime if there are none.
-                List<int> enabledIds = Runtime.GetEnabledMachineIDs();
-                if (enabledIds.Count == 0)
-                {
-                    continue;
-                }
-
-                // 2. Get the next available machine ID to schedule.
-                var nextMachineId = -1;
-                if (!Runtime.Options.Scheduler.TryGetNext(out nextMachineId, enabledIds))
-                {
-                    Runtime.IsRunning = false;
-                    break;
-                }
-
-                // 3. Loop through the machines and schedule the next enabled machine.
-                foreach (Machine m in Runtime.Machines)
-                {
-                    if (m.Id == nextMachineId &&
-                        (m.Inbox.Count > 0 || m.RaisedEvent != null))
-                    {
-                        Runtime.TransitionsExploredCount++;
-                        m.HandleNextEvent();
-                        break;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Schedules the given machine for execution. Used only
-        /// during bug-finding mode.
-        /// </summary>
-        /// <param name="machine">Machine</param>
-        private static void ScheduleMachine(Machine machine)
-        {
-            lock (machine.Lock)
-            {
-                System.Threading.Monitor.Pulse(machine.Lock);
-                System.Threading.Monitor.Wait(machine.Lock);
-            }
-        }
-
-        /// <summary>
-        /// Gets list of enabled machine IDs in the program.
-        /// </summary>
-        /// <returns>List<int></returns>
-        private static List<int> GetEnabledMachineIDs()
-        {
-            List<int> enabledMachineIDs = new List<int>();
-            
-            foreach (Machine m in Runtime.Machines)
-            {
-                if (m.Inbox.Count == 0 && m.RaisedEvent == null && !m.IsYieldAtSend)
-                {
-                    continue;
-                }
-
-                enabledMachineIDs.Add(m.Id);
-            }
-
-            return enabledMachineIDs;
-        }
-
-        /// <summary>
-        /// Forces the P# runtime to stop.
-        /// </summary>
-        private static void Stop()
-        {
-            Runtime.IsRunning = false;
-            foreach (var m in Runtime.Machines)
-                m.StopListener();
-            foreach (var m in Runtime.Monitors)
-                m.StopListener();
-        }
-
-        #endregion
-
         #region cleanup methods
 
         /// <summary>
@@ -728,43 +618,25 @@ namespace Microsoft.PSharp
         /// <param name="m">Machine</param>
         internal static void Delete(Machine m)
         {
-            if (Runtime.Options.Mode == Runtime.Mode.Execution)
-            {
-                lock (Runtime.Lock)
-                {
-                    if (Runtime.Monitors.Contains(m))
-                    {
-                        Runtime.Monitors.Remove(m);
-                    }
-                    else
-                    {
-                        Runtime.Machines.Remove(m);
-                    }
+            //System.Diagnostics.Debug.Assert(false);
+            return;
+            //lock (Runtime.Lock)
+            //{
+            //    if (Runtime.Monitors.Contains(m))
+            //    {
+            //        Runtime.Monitors.Remove(m);
+            //    }
+            //    else
+            //    {
+            //        Runtime.Machines.Remove(m);
+            //    }
 
-                    if (Runtime.Machines.Count == 0 &&
-                        Runtime.Monitors.Count == 0)
-                    {
-                        Runtime.IsRunning = false;
-                    }
-                }
-            }
-            else
-            {
-                if (Runtime.Monitors.Contains(m))
-                {
-                    Runtime.Monitors.Remove(m);
-                }
-                else
-                {
-                    Runtime.Machines.Remove(m);
-                }
-
-                if (Runtime.Machines.Count == 0 &&
-                    Runtime.Monitors.Count == 0)
-                {
-                    Runtime.IsRunning = false;
-                }
-            }
+            //    if (Runtime.Machines.Count == 0 &&
+            //        Runtime.Monitors.Count == 0)
+            //    {
+            //        Runtime.IsRunning = false;
+            //    }
+            //}
         }
 
         /// <summary>
@@ -773,20 +645,24 @@ namespace Microsoft.PSharp
         public static void Dispose()
         {
             Runtime.IsRunning = false;
-            foreach (var m in Runtime.Machines)
-                m.StopListener();
+
+            //foreach (var m in Runtime.Machines)
+            //    m.StopListener();
+            //Runtime.Machines.Clear();
+            //foreach (var m in Runtime.Monitors)
+            //    m.StopListener();
+
             Runtime.Machines.Clear();
-            foreach (var m in Runtime.Monitors)
-                m.StopListener();
             Runtime.Monitors.Clear();
-            Runtime.MachineTasks.Clear();
 
             Runtime.RegisteredMachineTypes.Clear();
             Runtime.RegisteredMonitorTypes.Clear();
             Runtime.RegisteredEventTypes.Clear();
 
+            Runtime.MachineTasks.Clear();
+
             Machine.ResetMachineIDCounter();
-            Runtime.Options.Scheduler.Reset();
+            Runtime.Options.SchedulingStrategy.Reset();
             ScheduleExplorer.ResetExploredSchedule();
 
             if (Runtime.Options.MonitorExecutions)
@@ -811,9 +687,11 @@ namespace Microsoft.PSharp
             public static Mode Mode = Runtime.Mode.Execution;
 
             /// <summary>
-            /// The scheduler to be used. The default is the random scheduler.
+            /// The scheduling strategy to be used. The default is the random
+            /// scheduling strategy.
             /// </summary>
-            public static IScheduler Scheduler = new RandomScheduler();
+            public static ISchedulingStrategy SchedulingStrategy =
+                new RandomSchedulingStrategy(0);
 
             /// <summary>
             /// When the runtime stops after running in replay mode
@@ -836,11 +714,6 @@ namespace Microsoft.PSharp
             public static bool PrintExploredSchedule = true;
 
             /// <summary>
-            /// True to switch sound scheduling off. False by default.
-            /// </summary>
-            public static bool UnsoundScheduling = false;
-
-            /// <summary>
             /// True to switch verbose mode on. False by default.
             /// </summary>
             public static bool Verbose = false;
@@ -850,7 +723,7 @@ namespace Microsoft.PSharp
             /// when runtime is in testing mode. When enabled, assertions
             /// do not cause the environment to exit.
             /// </summary>
-            internal static bool CountAssertions = false;
+            public static bool CountAssertions = false;
 
             /// <summary>
             /// Static class implementing monitoring options for the P# runtime.
@@ -990,15 +863,6 @@ namespace Microsoft.PSharp
         {
             if (!predicate)
             {
-                if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
-                {
-                    Runtime.IsRunning = false;
-                }
-                else
-                {
-                    Runtime.Stop();
-                }
-
                 Utilities.ReportError("Assertion failure.\n");
 
                 if (Runtime.Options.Mode == Runtime.Mode.BugFinding &&
@@ -1008,12 +872,16 @@ namespace Microsoft.PSharp
                 }
                 else if (!Runtime.Options.CountAssertions)
                 {
-                    Environment.Exit(1);
+                    //Console.ReadLine();
+                    //Environment.Exit(1);
                 }
                 else
                 {
                     Runtime.AssertionFailureCount++;
                 }
+
+                //Runtime.Stop();
+                Runtime.Scheduler.ErrorOccurred();
             }
         }
 
@@ -1028,15 +896,6 @@ namespace Microsoft.PSharp
         {
             if (!predicate)
             {
-                if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
-                {
-                    Runtime.IsRunning = false;
-                }
-                else
-                {
-                    Runtime.Stop();
-                }
-
                 string message = Utilities.Format(s, args);
                 Utilities.ReportError(message);
 
@@ -1047,12 +906,17 @@ namespace Microsoft.PSharp
                 }
                 else if (!Runtime.Options.CountAssertions)
                 {
+                    Console.ReadLine();
                     Environment.Exit(1);
                 }
                 else
                 {
                     Runtime.AssertionFailureCount++;
                 }
+
+                //Runtime.Stop();
+                //throw new TaskCanceledException();
+                Runtime.Scheduler.ErrorOccurred();
             }
         }
 

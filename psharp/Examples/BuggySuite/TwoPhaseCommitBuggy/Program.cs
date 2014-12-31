@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.PSharp;
+using Microsoft.PSharp.Scheduling;
 
 namespace TwoPhaseCommitBuggy
 {
@@ -11,7 +12,30 @@ namespace TwoPhaseCommitBuggy
     /// </summary>
     public class Program
     {
-        public static void Go()
+        static void Main(string[] args)
+        {
+            new CommandLineOptions(args).Parse();
+
+            if (Runtime.Options.Mode == Runtime.Mode.Execution)
+            {
+                Program.Run();
+            }
+            else if (Runtime.Options.Mode == Runtime.Mode.BugFinding)
+            {
+                TestConfiguration test = new TestConfiguration(
+                    "TwoPhaseCommitBuggy",
+                    Program.Run,
+                    new RandomSchedulingStrategy(0),
+                    100);
+
+                //test.UntilBugFound = true;
+                test.SoftTimeLimit = 600;
+                Runtime.Test(test);
+                Console.WriteLine(test.Result());
+            }
+        }
+
+        public static void Run()
         {
             Runtime.RegisterNewEvent(typeof(eREQ_REPLICA));
             Runtime.RegisterNewEvent(typeof(eRESP_REPLICA_COMMIT));
@@ -43,31 +67,10 @@ namespace TwoPhaseCommitBuggy
             Runtime.RegisterNewMachine(typeof(Coordinator));
             Runtime.RegisterNewMachine(typeof(Client));
             Runtime.RegisterNewMachine(typeof(Monitor));
+
             Runtime.Start();
             Runtime.Wait();
             Runtime.Dispose();
-        }
-
-        static void Main(string[] args)
-        {
-            Runtime.Test(
-                () =>
-                {
-                    Go();
-                },
-                100,
-                false,
-                Runtime.SchedulingType.Random,
-                true);
-        }
-    }
-
-    public class ChessTest
-    {
-        public static bool Run()
-        {
-            Program.Go();
-            return true;
         }
     }
 }

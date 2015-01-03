@@ -175,15 +175,19 @@
 
             bool isInclPc;
             Tuple<OptValueKind, object>[] includesPc;
-            result = ValidateOption(opts, IncludePcOption, true, 1, int.MaxValue, out isInclPc, out includesPc) && result;
+            result = ValidateOption(opts, IncludePcOption, true, 1, int.MaxValue, out isInclPc, out includesPc) &&
+                     result;
 
             bool isInclZinger;
             Tuple<OptValueKind, object>[] includesZinger;
-            result = ValidateOption(opts, IncludeZingerOption, true, 1, int.MaxValue, out isInclZinger, out includesZinger) && result;
+            result =
+                ValidateOption(opts, IncludeZingerOption, true, 1, int.MaxValue, out isInclZinger, out includesZinger) &&
+                result;
 
             bool isInclPrt;
             Tuple<OptValueKind, object>[] includesPrt;
-            result = ValidateOption(opts, IncludePrtOption, true, 1, int.MaxValue, out isInclPrt, out includesPrt) && result;
+            result = ValidateOption(opts, IncludePrtOption, true, 1, int.MaxValue, out isInclPrt, out includesPrt) &&
+                     result;
 
             bool isArgsPc;
             Tuple<OptValueKind, object>[] pcArgs;
@@ -191,7 +195,8 @@
 
             bool isArgsZinger;
             Tuple<OptValueKind, object>[] zingerArgs;
-            result = ValidateOption(opts, ArgsZingerOption, true, 1, int.MaxValue, out isArgsZinger, out zingerArgs) && result;
+            result = ValidateOption(opts, ArgsZingerOption, true, 1, int.MaxValue, out isArgsZinger, out zingerArgs) &&
+                     result;
 
             bool isArgsPrt;
             Tuple<OptValueKind, object>[] prtArgs;
@@ -273,6 +278,24 @@
             {
                 return false;
             }
+
+            //debudding only?
+            Console.WriteLine("Running test under {0}...", activeDirectory);
+
+            //If isAdd is true, remove old acceptor NUMBER 0 ONLY ("acc_0.txt"), if it is present
+            //Note: this will break the logic of multiple acceptors;
+            //if in the future multiple acceptors are needed, re-implement this feature
+            const string acceptor0FileName = "acc_0.txt";
+            //bool acceptorExists = File.Exists(Path.Combine(activeDirectory, acceptor0FileName));
+            //Console.WriteLine("activeDirectory is: {0}, full path to acceptor is: {3}, isAdd is: {1}, acceptorExists is: {2}",
+               // activeDirectory, isAdd, acceptorExists, Path.Combine(activeDirectory, acceptor0FileName));
+            if (isAdd && File.Exists(Path.Combine(activeDirectory, acceptor0FileName)))
+            //if (isAdd)
+            {
+                File.Delete(Path.Combine(activeDirectory, acceptor0FileName));
+                //Console.WriteLine("activeDirectory is: {0}", activeDirectory);
+                //File.Delete(acceptor0FileName);
+            }       
 
             try
             {

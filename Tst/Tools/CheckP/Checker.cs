@@ -282,19 +282,21 @@
             //debudding only?
             Console.WriteLine("Running test under {0}...", activeDirectory);
 
-            //If isAdd is true, remove old acceptor NUMBER 0 ONLY ("acc_0.txt"), if it is present
+            //If isAdd is true, remove old acceptor files
             //Note: this will break the logic of multiple acceptors;
-            //if in the future multiple acceptors are needed, re-implement this feature
-            const string acceptor0FileName = "acc_0.txt";
-            //bool acceptorExists = File.Exists(Path.Combine(activeDirectory, acceptor0FileName));
-            //Console.WriteLine("activeDirectory is: {0}, full path to acceptor is: {3}, isAdd is: {1}, acceptorExists is: {2}",
-               // activeDirectory, isAdd, acceptorExists, Path.Combine(activeDirectory, acceptor0FileName));
-            if (isAdd && File.Exists(Path.Combine(activeDirectory, acceptor0FileName)))
-            //if (isAdd)
+            //if in the future multiple acceptors are needed, re-implement this feature, for example:
+            //in adition to the "add" option, add option "reset" for CheckP;
+            //testP.bat will also have two alternative options: "reset" and "add";
+            //only delete acceptors for "reset" option, but not for "add" option
+            
+            const string acceptorFilePattern = "acc_*.txt";
+            DirectoryInfo di = new DirectoryInfo(activeDirectory);
+            if (isAdd)
             {
-                File.Delete(Path.Combine(activeDirectory, acceptor0FileName));
-                //Console.WriteLine("activeDirectory is: {0}", activeDirectory);
-                //File.Delete(acceptor0FileName);
+                foreach (var acci in di.EnumerateFiles(acceptorFilePattern))
+                {
+                    File.Delete(Path.Combine(activeDirectory, acci.FullName));                 
+                }
             }       
 
             try

@@ -2,5 +2,6 @@ runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
 argPc: ..\variableType.p
 argPc: /printTypeInference
 argPc: /shortFileNames
+argPc: /doNotErase
 acc: .\
 dsc: Integration: various syntax checks

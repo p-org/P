@@ -2,5 +2,6 @@ runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
 argPc: ..\Actions_2_fails.p
 argPc: /printTypeInference
 argPc: /shortFileNames
+argPc: /doNotErase
 acc: .\
 dsc: Feature Integration: deferred-by-default semantics of push statement

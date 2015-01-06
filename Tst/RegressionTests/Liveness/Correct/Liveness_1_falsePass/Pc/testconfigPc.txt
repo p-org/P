@@ -3,5 +3,6 @@ argPc: ..\Liveness_1_falsePass.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /liveness
+argPc: /doNotErase
 acc: .\
 dsc: Liveness: sample demonstrating "false" pass in liveness checking

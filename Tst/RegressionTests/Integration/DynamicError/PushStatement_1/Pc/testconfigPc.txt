@@ -3,5 +3,6 @@ argPc: ..\PushStatement_1.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 del: PushStatement_1.trace
+argPc: /doNotErase
 acc: .\
 dsc: Feature Integration: push and pop statements with if-while control flow

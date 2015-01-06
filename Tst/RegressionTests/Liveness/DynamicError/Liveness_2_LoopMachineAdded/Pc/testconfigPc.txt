@@ -3,5 +3,6 @@ argPc: ..\Liveness_2_LoopMachineAdded.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /liveness
+argPc: /doNotErase
 acc: .\
 dsc: Liveness: simplest sample demonstrating liveness error found

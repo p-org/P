@@ -2,5 +2,6 @@ runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
 argPc: ..\Push.p
 argPc: /printTypeInference
 argPc: /shortFileNames
+argPc: /doNotErase
 acc: .\
 dsc: P semantics test: one machine, "push", "send" in entry and exit

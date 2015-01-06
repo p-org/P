@@ -2,5 +2,6 @@ runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
 argPc: ..\EventSentAfterSentHalt.p
 argPc: /printTypeInference
 argPc: /shortFileNames
+argPc: /doNotErase
 acc: .\
 dsc: P semantics test: event sent after machine is halted

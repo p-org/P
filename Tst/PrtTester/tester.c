@@ -1,6 +1,20 @@
 #include "program.h"
 
-void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr) { exit(1); }
+void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr) 
+{
+	if (status == PRT_STATUS_ASSERT)
+	{
+		fprintf_s(stderr, "exiting with PRT_STATUS_ASSERT (assertion failure)\n");
+		exit(1);
+	}
+	else
+	{
+		fprintf_s(stderr, "unexpected PRT_STATUS in ErrorHandler: %d\n", status);
+		exit(2);
+	}
+	
+	
+}
 
 void Log(PRT_STEP step, PRT_MACHINEINST *context) { PrtPrintStep(step, context);  }
 

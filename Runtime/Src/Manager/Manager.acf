@@ -1,6 +1,0 @@
-[
-    implicit_handle (handle_t manager_IfHandle)
-] 
-interface Manager
-{
-}

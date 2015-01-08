@@ -4,4 +4,4 @@ argZing: -et:GotoTransInheritance.trace
 incZing: GotoTransInheritance.trace
 del: GotoTransInheritance.trace
 acc: .\
-dsc: P semantics test: one machine, "goto" transition, action is not inherited by the destination state
+dsc: zinger.exe, P semantics test: one machine, "goto" transition, action is not inherited by the destination state

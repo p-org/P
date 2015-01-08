@@ -4,4 +4,4 @@ argZing: -et:Push.trace
 incZing: Push.trace
 del: Push.trace
 acc: .\
-dsc: P semantics test: one machine, "push", "send" in entry and exit
+dsc: zinger.exe, P semantics test: one machine, "push", "send" in entry and exit

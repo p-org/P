@@ -4,4 +4,4 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
 acc: .\
-dsc: Feature Integration: case when exit actions are not executed
+dsc: pc.exe, Feature Integration: case when exit actions are not executed

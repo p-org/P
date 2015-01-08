@@ -4,4 +4,4 @@ argZing: -et:GotoToItself.trace
 incZing: GotoToItself.trace
 del: GotoToItself.trace
 acc: .\
-dsc: P semantics test: one machine, "goto" to the same state; "send" in entry and exit
+dsc: zinger.exe, P semantics test: one machine, "goto" to the same state; "send" in entry and exit

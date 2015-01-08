@@ -4,4 +4,4 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
 acc: .\
-dsc: Feature Integration: basic semantics of actions and goto transitions
+dsc: pc.exe, Feature Integration: basic semantics of actions and goto transitions

@@ -1,4 +1,4 @@
 runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
 argZing: ..\PingPongMonitor.dll
 acc: .\
-dsc: Feature Integration: monitor with hot/cold states
+dsc: zinger.exe, Feature Integration: monitor with hot/cold states

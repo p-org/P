@@ -4,4 +4,4 @@ argZing: -et:TokenRing.trace
 incZing: TokenRing.trace
 del: TokenRing.trace
 acc: .\
-dsc: Feature Integration: Attempting to enqueue event more than max instance of 1
+dsc: zinger.exe, Feature Integration: Attempting to enqueue event more than max instance of 1

@@ -4,4 +4,4 @@ argZing: -et:Actions_2_fails.trace
 incZing: Actions_2_fails.trace
 del: Actions_2_fails.trace
 acc: .\
-dsc: Feature Integration: deferred-by-default semantics of push statement
+dsc: zinger.exe, Feature Integration: deferred-by-default semantics of push statement

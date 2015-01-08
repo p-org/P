@@ -5,4 +5,4 @@ argPc: /shortFileNames
 argPc: /liveness
 argPc: /doNotErase
 acc: .\
-dsc: Liveness: sample demonstrating "false" pass in liveness checking
+dsc: pc.exe, Liveness: sample demonstrating "false" pass in liveness checking

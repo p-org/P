@@ -4,4 +4,4 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
 acc: .\
-dsc: P semantics test: one machine, "push" with implicit "pop", unhandled event was sent
+dsc: pc.exe, P semantics test: one machine, "push" with implicit "pop", unhandled event was sent

@@ -4,4 +4,4 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
 acc: .\
-dsc: Feature Integration: monitor with hot/cold states
+dsc: pc.exe, Feature Integration: monitor with hot/cold states

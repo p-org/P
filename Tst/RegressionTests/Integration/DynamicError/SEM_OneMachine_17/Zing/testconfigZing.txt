@@ -4,4 +4,4 @@ argZing: -et:PushImplicitPopWithRaise.trace
 incZing: PushImplicitPopWithRaise.trace
 del: PushImplicitPopWithRaise.trace
 acc: .\
-dsc: P semantics test: one machine, "push" with implicit "pop" when the unhandled event was raised
+dsc: zinger.exe, P semantics test: one machine, "push" with implicit "pop" when the unhandled event was raised

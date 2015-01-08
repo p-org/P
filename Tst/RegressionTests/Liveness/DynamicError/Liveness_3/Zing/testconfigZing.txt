@@ -5,4 +5,4 @@ argZing: -et:Liveness_3.trace
 incZing: Liveness_3.trace
 del: Liveness_3.trace
 acc: .\
-dsc: Liveness Bug : Liveness bug detected with the target thread blocked (no deadlock)
+dsc: zinger.exe, Liveness Bug : Liveness bug detected with the target thread blocked (no deadlock)

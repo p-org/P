@@ -3,4 +3,4 @@ argZing: ..\OSR.dll
 argZing: -delayb:..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\RunToCompletionDelayingScheduler.dll
 argZing: -p
 acc: .\
-dsc: Feature Integration: about 4 min zing run
+dsc: zinger.exe, Feature Integration: about 4 min zing run

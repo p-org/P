@@ -3,4 +3,4 @@ argZing: ..\LinearTopology_5.dll
 argZing: -delayb:..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\RunToCompletionDelayingScheduler.dll
 argZing: -fbound:2
 acc: .\
-dsc: Feature Integration: : protocol sample
+dsc: zinger.exe, Feature Integration: : protocol sample

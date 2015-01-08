@@ -5,4 +5,4 @@ argPc: /shortFileNames
 del: PushStatement_1.trace
 argPc: /doNotErase
 acc: .\
-dsc: Feature Integration: push and pop statements with if-while control flow
+dsc: pc.exe, Feature Integration: push and pop statements with if-while control flow

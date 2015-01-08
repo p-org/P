@@ -4,4 +4,4 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
 acc: .\
-dsc: 1.9/1.10. assert/assume max instances of event
+dsc: pc.exe, 1.9/1.10. assert/assume max instances of event

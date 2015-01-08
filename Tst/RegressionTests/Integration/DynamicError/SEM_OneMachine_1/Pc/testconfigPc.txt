@@ -4,4 +4,4 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
 acc: .\
-dsc: P semantics test: one machine, "send" to itself and "raise" in entry actions
+dsc: pc.exe, P semantics test: one machine, "send" to itself and "raise" in entry actions

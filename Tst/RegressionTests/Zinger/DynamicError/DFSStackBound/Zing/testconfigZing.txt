@@ -6,4 +6,4 @@ argZing: -ibound:100
 incZing: DFSStackBound.trace
 del: DFSStackBound.trace
 acc: .\
-dsc: Testing Bounded Choice Operator in Zing
+dsc: zinger.exe, Testing the DFS stack bound option in Zing

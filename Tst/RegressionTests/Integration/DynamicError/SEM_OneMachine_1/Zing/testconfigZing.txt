@@ -4,4 +4,4 @@ argZing: -et:SendRaiseInEntry.trace
 incZing: SendRaiseInEntry.trace
 del: SendRaiseInEntry.trace
 acc: .\
-dsc: P semantics test: one machine, "send" to itself and "raise" in entry actions
+dsc: zinger.exe, P semantics test: one machine, "send" to itself and "raise" in entry actions

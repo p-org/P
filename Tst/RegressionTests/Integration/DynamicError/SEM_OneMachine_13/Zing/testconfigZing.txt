@@ -4,4 +4,4 @@ argZing: -et:PushTransInheritance.trace
 incZing: PushTransInheritance.trace
 del: PushTransInheritance.trace
 acc: .\
-dsc: P semantics test: one machine, "push" transition, action inherited by the pushed state
+dsc: zinger.exe, P semantics test: one machine, "push" transition, action inherited by the pushed state

@@ -4,4 +4,4 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
 acc: .\
-dsc: Feature Integration: about 4 min zing run
+dsc: pc.exe, Feature Integration: about 4 min zing run

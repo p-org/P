@@ -4,4 +4,4 @@ argZing: -et:AlonBug_fail.trace
 incZing: AlonBug_fail.trace
 del: AlonBug_fail.trace
 acc: .\
-dsc: Feature Integration: case when exit actions are not executed
+dsc: zinger.exe, Feature Integration: case when exit actions are not executed

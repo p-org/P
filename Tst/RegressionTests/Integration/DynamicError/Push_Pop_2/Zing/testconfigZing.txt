@@ -4,4 +4,4 @@ argZing: -et:Push_Pop_2.trace
 incZing: Push_Pop_2.trace
 del: Push_Pop_2.trace
 acc: .\
-dsc: Feature Integration
+dsc: zinger.exe, Feature Integration

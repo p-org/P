@@ -3,4 +3,4 @@ argZing: ..\two-phase-commit_1.dll
 argZing: -delayb:..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\RunToCompletionDBSched.dll
 argZing: -fbound:5
 acc: .\
-dsc: Feature Integration: protocol sample
+dsc: zinger.exe, Feature Integration: protocol sample

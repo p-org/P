@@ -4,4 +4,4 @@ argZing: -et:Actions_6.trace
 incZing: Actions_6.trace
 del: Actions_6.trace
 acc: .\
-dsc: Feature Integration: payload with push transition
+dsc: zinger.exe, Feature Integration: payload with push transition

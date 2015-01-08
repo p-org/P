@@ -4,4 +4,4 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
 acc: .\
-dsc: Integration: various syntax checks
+dsc: pc.exe, Integration: various syntax checks

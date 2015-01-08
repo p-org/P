@@ -4,4 +4,4 @@ argZing: -et:BugReproIdenticalTerms.trace
 incZing: BugReproIdenticalTerms.trace
 del: BugReproIdenticalTerms.trace
 acc: .\
-dsc: P semantics test: exit function performed while explicitly popping the state
+dsc: zinger.exe, P semantics test: exit function performed while explicitly popping the state

@@ -4,4 +4,4 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
 acc: .\
-dsc: P semantics test: event sent after machine is halted: validating test
+dsc: pc.exe, P semantics test: event sent after machine is halted: validating test

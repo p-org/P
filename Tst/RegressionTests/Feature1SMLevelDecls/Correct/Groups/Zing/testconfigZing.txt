@@ -1,4 +1,4 @@
 runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
 argZing: ..\Groups.dll
 acc: .\
-dsc: 1.6.4. Groups of states
+dsc: zinger.exe, 1.6.4. Groups of states

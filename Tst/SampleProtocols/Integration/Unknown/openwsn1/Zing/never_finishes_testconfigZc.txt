@@ -4,4 +4,4 @@ argZing: -sched:..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\RoundRobinD
 argZing: -delayc:5
 argZing: -bc:1 
 acc: .\
-dsc: Feature Integration: : protocol sample; zinger.exe takes an unknown time to finish
+dsc: zinger.exe, Feature Integration: : protocol sample; zinger.exe takes an unknown time to finish

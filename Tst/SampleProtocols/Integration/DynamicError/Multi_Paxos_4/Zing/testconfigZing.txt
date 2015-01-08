@@ -5,4 +5,4 @@ argZing: -et:Multi_Paxos_4.trace
 incZing: Multi_Paxos_4.trace
 del: Multi_Paxos_4.trace
 acc: .\
-dsc: Feature Integration: protocol sample
+dsc: zinger.exe, Feature Integration: protocol sample

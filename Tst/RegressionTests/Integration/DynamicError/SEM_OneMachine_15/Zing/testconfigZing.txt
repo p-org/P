@@ -4,4 +4,4 @@ argZing: -et:ImplicitPopExit.trace
 incZing: ImplicitPopExit.trace
 del: ImplicitPopExit.trace
 acc: .\
-dsc: P semantics test: one machine, exit actions executed upon implicit "pop"
+dsc: zinger.exe, P semantics test: one machine, exit actions executed upon implicit "pop"

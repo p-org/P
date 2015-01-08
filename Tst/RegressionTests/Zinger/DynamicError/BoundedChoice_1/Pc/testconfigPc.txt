@@ -4,5 +4,5 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
 acc: .\
-dsc: Zinger: Test case for testing the bounded choice in zing.
+dsc: pc.exe, Testing Bounded Choice Operator in Zing
 

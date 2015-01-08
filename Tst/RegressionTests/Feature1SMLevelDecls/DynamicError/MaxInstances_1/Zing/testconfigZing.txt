@@ -4,4 +4,4 @@ argZing: -et:MaxInstances_1.trace
 incZing: MaxInstances_1.trace
 del: MaxInstances_1.trace
 acc: .\
-dsc: 1.10. assert max instances of event: max number of instances exceeded
+dsc: zinger.exe, 1.10. assert max instances of event: max number of instances exceeded

@@ -4,4 +4,4 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
 acc: .\
-dsc: P semantics test: one machine, exit actions executed upon explicit "pop"
+dsc: pc.exe, P semantics test: one machine, exit actions executed upon explicit "pop"

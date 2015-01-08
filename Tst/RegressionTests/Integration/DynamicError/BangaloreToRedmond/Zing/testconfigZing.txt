@@ -4,4 +4,4 @@ argZing: -et:BangaloreToRedmond.trace
 incZing: BangaloreToRedmond.trace
 del: BangaloreToRedmond.trace
 acc: .\
-dsc: Feature Integration: protocol sample
+dsc: zinger.exe, Feature Integration: protocol sample

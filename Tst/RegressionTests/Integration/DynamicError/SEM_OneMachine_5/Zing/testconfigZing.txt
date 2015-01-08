@@ -4,4 +4,4 @@ argZing: -et:SendInExitUnhandledEvent.trace
 incZing: SendInExitUnhandledEvent.trace
 del: SendInExitUnhandledEvent.trace
 acc: .\
-dsc: P semantics test: one machine, "send" to itself in entry actions
+dsc: zinger.exe, P semantics test: one machine, "send" to itself in entry actions

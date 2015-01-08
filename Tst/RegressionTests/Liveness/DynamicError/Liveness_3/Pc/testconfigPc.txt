@@ -5,4 +5,4 @@ argPc: /shortFileNames
 argPc: /liveness
 argPc: /doNotErase
 acc: .\
-dsc: Liveness Bug : Liveness bug detected with the target thread blocked (no deadlock)
+dsc: pc.exe, Liveness Bug : Liveness bug detected with the target thread blocked (no deadlock)

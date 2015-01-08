@@ -4,4 +4,4 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
 acc: .\
-dsc: Feature Integration: inheritance of actions and not transitions by "push" transition
+dsc: pc.exe, Feature Integration: inheritance of actions and not transitions by "push" transition

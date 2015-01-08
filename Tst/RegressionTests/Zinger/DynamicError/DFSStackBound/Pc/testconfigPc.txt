@@ -4,5 +4,5 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
 acc: .\
-dsc: Zinger: Testing the DFS stack bound option in Zing
+dsc: pc.exe, Testing the DFS stack bound option in Zing
 

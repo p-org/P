@@ -4,4 +4,4 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
 acc: .\
-dsc: P semantics test: exit function performed while explicitly popping the state
+dsc: pc.exe, P semantics test: exit function performed while explicitly popping the state

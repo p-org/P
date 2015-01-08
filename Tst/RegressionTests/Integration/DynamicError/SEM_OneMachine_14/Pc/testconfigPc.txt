@@ -4,4 +4,4 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
 acc: .\
-dsc: P semantics test: one machine, "goto" transition, action is not inherited by the destination state
+dsc: pc.exe, P semantics test: one machine, "goto" transition, action is not inherited by the destination state

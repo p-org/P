@@ -4,4 +4,4 @@ argZing: -et:Liveness_2_bugFound.trace
 incZing: Liveness_2_bugFound.trace
 del: Liveness_2_bugFound.trace
 acc: .\
-dsc: Liveness: simplest sample demonstrating liveness error found
+dsc: zinger.exe, Liveness: simplest sample demonstrating liveness error found

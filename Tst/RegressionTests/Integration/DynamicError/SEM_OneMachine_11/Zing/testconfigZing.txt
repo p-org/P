@@ -4,4 +4,4 @@ argZing: -et:PushImplicitPopWithSend.trace
 incZing: PushImplicitPopWithSend.trace
 del: PushImplicitPopWithSend.trace
 acc: .\
-dsc: P semantics test: one machine, "push" with implicit "pop", unhandled event was sent
+dsc: zinger.exe, P semantics test: one machine, "push" with implicit "pop", unhandled event was sent

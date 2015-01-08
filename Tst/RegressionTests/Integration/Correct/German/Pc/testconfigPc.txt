@@ -4,4 +4,4 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
 acc: .\
-dsc: Feature Integration: : protocol sample, syntax only
+dsc: pc.exe, Feature Integration: : protocol sample, syntax only

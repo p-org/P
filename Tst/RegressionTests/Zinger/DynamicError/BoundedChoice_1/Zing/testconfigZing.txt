@@ -4,4 +4,4 @@ argZing: -et:boundedchoice_1.trace
 incZing: boundedchoice_1.trace
 del: boundedchoice_1.trace
 acc: .\
-dsc: Testing Bounded Choice Operator in Zing
+dsc: zinger.exe, Testing Bounded Choice Operator in Zing

@@ -4,4 +4,4 @@ argZing: -et:Actions_4.trace
 incZing: Actions_4.trace
 del: Actions_4.trace
 acc: .\
-dsc: Feature Integration: overriding of action handlers by a pushed state
+dsc: zinger.exe, Feature Integration: overriding of action handlers by a pushed state

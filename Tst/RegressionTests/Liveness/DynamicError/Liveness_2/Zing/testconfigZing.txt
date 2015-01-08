@@ -5,4 +5,4 @@ argZing: -et:Liveness_2.trace
 incZing: Liveness_2.trace
 del: Liveness_2.trace
 acc: .\
-dsc: Liveness: simplest sample demonstrating liveness error found
+dsc: zinger.exe, Liveness: simplest sample demonstrating liveness error found

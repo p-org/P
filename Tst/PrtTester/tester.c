@@ -4,27 +4,27 @@ void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr)
 {
 	if (status == PRT_STATUS_ASSERT)
 	{
-		fprintf_s(stderr, "exiting with PRT_STATUS_ASSERT (assertion failure)\n");
+		fprintf_s(stdout, "exiting with PRT_STATUS_ASSERT (assertion failure)\n");
 		exit(1);
 	}
 	else if (status == PRT_STATUS_EVENT_OVERFLOW)
 	{
-		fprintf_s(stderr, "exiting with PRT_STATUS_EVENT_OVERFLOW\n");
+		fprintf_s(stdout, "exiting with PRT_STATUS_EVENT_OVERFLOW\n");
 		exit(1);
 	}
 	else if (status == PRT_STATUS_EVENT_UNHANDLED)
 	{
-		fprintf_s(stderr, "exiting with PRT_STATUS_EVENT_UNHANDLED\n");
+		fprintf_s(stdout, "exiting with PRT_STATUS_EVENT_UNHANDLED\n");
 		exit(1);
 	}
 	else if (status == PRT_STATUS_QUEUE_OVERFLOW)
 	{
-		fprintf_s(stderr, "exiting with PRT_STATUS_QUEUE_OVERFLOW \n");
+		fprintf_s(stdout, "exiting with PRT_STATUS_QUEUE_OVERFLOW \n");
 		exit(1);
 	}
 	else
 	{
-		fprintf_s(stderr, "unexpected PRT_STATUS in ErrorHandler: %d\n", status);
+		fprintf_s(stdout, "unexpected PRT_STATUS in ErrorHandler: %d\n", status);
 		exit(2);
 	}
 	

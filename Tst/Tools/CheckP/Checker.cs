@@ -33,6 +33,9 @@
         private const string AccPrefix = "acc";
         private const string AccExt = ".txt";
         private const string LogFile = "check-output.log";
+        private const string RuntimeFile1 = "program.c";
+        private const string RuntimeFile2 = "program.h";
+        private const string RuntimeFile3 = "stubs.c";
 
         private static readonly string[] AllOptions = new string[]
         {
@@ -96,8 +99,7 @@
             Console.WriteLine("-{0}\tA directory containing acceptable outputs", AcceptOption);
             Console.WriteLine("-{0}\tA list of arguments to pc.exe", ArgsPcOption);
             Console.WriteLine("-{0}\tA list of arguments to zinger.exe", ArgsZingerOption);
-            //TODO: prtMain is a temp name for runtime exe file
-            Console.WriteLine("-{0}\tA list of arguments to prtMain.exe", ArgsPrtOption);
+            Console.WriteLine("-{0}\tA list of arguments to tester.exe", ArgsPrtOption);
             Console.WriteLine("-{0}\tA list of files that should be included as output for pc.exe", IncludePcOption);
             Console.WriteLine("-{0}\tA list of files that should be included as output for zinger.exe", IncludeZingerOption);
             Console.WriteLine("-{0}\tA list of files that should be included as output for prt.exe", IncludePrtOption);
@@ -301,9 +303,7 @@
 
             try
             {
-                //Run components of the P tool chain specified in options,
-                //until the next tool returns an error:
-                //bool pcResult = Run(tmpWriter, isIgnPrmpt, exePc[0].Item2.ToString(), pcArgs);
+                //Run components of the P tool chain specified in options:
                 if (isSetExePc)
                 {
                     bool pcResult = Run(tmpWriter, isIgnPrmpt, exePc[0].Item2.ToString(), pcArgs);
@@ -317,7 +317,8 @@
                     }
                 }
                 //Run Zinger if isSetExeZinger and: (a) pc.exe run and no errors from pc.exe; or (b) pc.exe was not set to run
-                if (isSetExeZinger && result || !isSetExePc)
+                //if (isSetExeZinger && result || !isSetExePc)
+                if (isSetExeZinger)
                 {
                     //TODO: since Zinger returns "true" when *.dll file is missing, catch this case by explicitly 
                     //checking if files specified as  zinger arguments are present (unless Zinger is fixed
@@ -328,23 +329,73 @@
                     //debug:
                     //Console.WriteLine("Zinger returned: {0}", zingerResult);
 
-                    if (!zingerResult) { result = false; }
+                    if (!zingerResult)
+                    {
+                        result = false;
+                    }
                     else if (isInclZinger && !AppendIncludes(tmpWriter, includesZinger))
                     {
                         result = false;
                     }
-                    
-                    //TODO: Run runtime similar to zinger:
-                    //if (isSetExePrt && result || !isSetExePc)
-                    //{
-                    //    bool prtResult = Run(tmpWriter, isIgnPrmpt, exePrt[0].Item2.ToString(), prtArgs);
-                    //    if (!prtResult) { result = false; }
-                    //    else if (isInclPrt && !AppendIncludes(tmpWriter, includesPrt))
-                    //    {
-                    //        result = false;
-                    //    }
-                    //}
                 }
+
+                //Run runtime:
+                //Console.WriteLine("isSetExePrt is {0}", isSetExePrt);
+                if (isSetExePrt)
+                {
+                    //Console.WriteLine("activeDirectory is: {0}", activeDirectory);
+                    //activeDirectory is "...\Prt", but runtime files are under
+                    //"..\\Pc" (pcDirectory):
+                    var temp = new DirectoryInfo(activeDirectory);
+                    string parentFolder = temp.Parent.FullName;
+                    var pcDirectory = String.Concat(parentFolder, "\\");
+                    pcDirectory = String.Concat(pcDirectory, "Pc");
+                    //Console.WriteLine("pcDirectory is: {0}", pcDirectory);
+
+                    //Compute "TesterDirectory" (Tst\PrtTester):
+                    //path to ...PrtTester\Debug\tester.exe:
+                    var testerExePath = exePrt[0].Item2.ToString();
+                    //Console.WriteLine("testerExePath is: {0}", testerExePath);
+                    var testerExeAbsPath = Path.GetFullPath(testerExePath);
+                    //This is the correct full path if the relative path to tester.exe in testconfigPrt.exe is:
+                    //runPrt: ..\..\..\..\..\..\..\PLanguage\Plang\Tst\PrtTester\Debug\Tester.exe
+                    //Console.WriteLine("abs path name for tester.exe: {0}", testerExeAbsPath);
+                    var testerExeDirectoryInfo = (new FileInfo(testerExeAbsPath)).Directory;
+                    //Console.WriteLine("testerExe directory is: {0}", testerExeDirectoryInfo.FullName);
+                    var testerDirectory = testerExeDirectoryInfo.Parent.FullName;
+                    //Console.WriteLine("testerDirectory is: {0}", testerDirectory);
+
+                    //Remove previous runtime files from Tst\PrtTester:
+                    File.Delete(Path.Combine(testerDirectory, RuntimeFile1));
+                    File.Delete(Path.Combine(testerDirectory, RuntimeFile2));
+                    File.Delete(Path.Combine(testerDirectory, RuntimeFile3));
+
+                    //Copy current runtime files generated by Pc.exe to Tst\PrtTester:
+                    File.Copy(
+                        Path.Combine(pcDirectory, RuntimeFile1),
+                        Path.Combine(testerDirectory, RuntimeFile1)
+                        );
+                    File.Copy(
+                        Path.Combine(pcDirectory, RuntimeFile2),
+                        Path.Combine(testerDirectory, RuntimeFile2)
+                        );
+                    File.Copy(
+                        Path.Combine(pcDirectory, RuntimeFile3),
+                        Path.Combine(testerDirectory, RuntimeFile3)
+                        );
+
+                    bool prtResult = Run(tmpWriter, isIgnPrmpt, exePrt[0].Item2.ToString(), prtArgs);
+                    if (!prtResult)
+                    {
+                        result = false;
+                    }
+                    else if (isInclPrt && !AppendIncludes(tmpWriter, includesPrt))
+                    {
+                        result = false;
+                    }
+                    
+                }
+
             }
             catch (Exception e)
             {

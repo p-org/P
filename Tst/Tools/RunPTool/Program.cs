@@ -125,7 +125,7 @@ namespace RunPTool
                 }
 
                 //Since order of directory processing is significant (Pc should be processed before
-                //Zc and Prt), order enumerated directories alphabetically:
+                //Zing and Prt), order enumerated directories alphabetically:
                 var dirs = (from dir in diArray[i].EnumerateDirectories()
                     orderby dir.FullName ascending
                     select dir);

@@ -32,6 +32,7 @@ namespace RunPTool
                 //Case 2: Running from testP.bat:
                 //Environment.CurrentDirectory is Tst
                 var tstDir = new DirectoryInfo(Environment.CurrentDirectory);
+                //Console.WriteLine("tstDir is {0}", tstDir.FullName);
                 int activeDirsCount = 0;
                 DirectoryInfo[] activeDirs = args.Length == 0
                     ? new DirectoryInfo[] { tstDir }
@@ -178,7 +179,7 @@ namespace RunPTool
         {
             DirectoryInfo[] result = new DirectoryInfo[200];
             count = 0;
-            var fileExists = File.Exists(Path.Combine(tstDir.FullName, fileName));
+            //var fileExists = File.Exists(Path.Combine(tstDir.FullName, fileName));
   
             try
             {
@@ -187,7 +188,8 @@ namespace RunPTool
                     while (!sr.EndOfStream)
                     {
                         var dir = sr.ReadLine();
-                        result[count] = new DirectoryInfo(dir);
+                        //result[count] = new DirectoryInfo(dir);
+                        result[count] = new DirectoryInfo(Path.Combine(tstDir.FullName, dir));
                         count = count + 1;
                     }
                 }

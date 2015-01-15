@@ -1,4 +1,11 @@
-﻿namespace CheckP
+﻿using System.Threading;
+using Microsoft.Build.Evaluation;
+using Microsoft.Build.Exceptions;
+using Microsoft.Build.Execution;
+using Microsoft.Build.Framework;
+using Microsoft.Build.Logging;
+
+namespace CheckP
 {
     using System;
     using System.Collections.Generic;
@@ -36,6 +43,7 @@
         private const string RuntimeFile1 = "program.c";
         private const string RuntimeFile2 = "program.h";
         private const string RuntimeFile3 = "stubs.c";
+        private const string buildLogFileName = "testerBuildLogFile.txt";
 
         private static readonly string[] AllOptions = new string[]
         {
@@ -341,6 +349,11 @@
 
                 //Run runtime:
                 //Console.WriteLine("isSetExePrt is {0}", isSetExePrt);
+                //StreamWriter tmpWriterBuild;
+                //if (!OpenTmpStream(out tmpWriterBuild))
+                //{
+                //    return false;
+                //}
                 if (isSetExePrt)
                 {
                     //Console.WriteLine("activeDirectory is: {0}", activeDirectory);
@@ -384,6 +397,58 @@
                         Path.Combine(testerDirectory, RuntimeFile3)
                         );
 
+                    //TODO: build tester.exe for the updated runtime files.
+                    //Remove Tester bootstrapping in testP.bat, if not needed there.
+                    //Check that Tester.vcxproj exists under PrtTester:
+                    //Case 1 (debugging only): Running from VS Debugger:
+                    //string prtTesterProj = "..\\..\\..\\..\\PrtTester\\Tester.vcxproj";
+                    //var prtTesterWorkingDir = "..\\..\\..\\..\\PrtTester";
+                    //Case 2:  Running from testP.bat:
+                    var prtTesterProj = @"PrtTester\Tester.vcxproj";
+                    
+                    //1. Define msbuildPath for msbuild.exe: borrow from testP.bat (including the check for .NET availability, since
+                    //   CheckP can be called on its own, not from testP.bat)
+                    var windir = Environment.GetEnvironmentVariable("windir");
+                    //Console.WriteLine("windir: {0}", windir);
+                    var msbuildPath = Path.Combine(windir, "Microsoft.NET", "Framework", "v4.0.30319", "MSBuild.exe");
+                    //Console.WriteLine("msbuildPath: {0}", msbuildPath);
+ 
+                    if (!File.Exists(msbuildPath))
+                    {
+                        Console.WriteLine("Error: Microsoft.NET framework version 4.0 or greater is required. Cannot build.");
+                        return false;
+                    }
+
+                    //2. Build Tester: "msbuildDir  .\PrtTester\Tester.vcxproj /p:Configuration=Debug /verbosity:quiet /nologo"
+                    var msbuildArgs = "";
+                    
+                    if (!File.Exists(prtTesterProj))
+                    {
+                        Console.WriteLine("Error: Tester.vcxproj is not located under PrtTester");
+                        return false;
+                    }
+                    //Case 1 (debugging only): Running from VS Debugger:
+                    //var curDirTemp = new DirectoryInfo(Environment.CurrentDirectory);
+                    //Console.WriteLine("Current Dir: {0}", curDirTemp.FullName);
+                    //msbuildArgs = "..\\..\\..\\..\\..\\..\\..\\..\\PrtTester\\Tester.vcxproj ";
+                    //Case 2:  Running from testP.bat:
+                    msbuildArgs += @".\PrtTester\Tester.vcxproj ";
+                    msbuildArgs += @"/p:Configuration=Debug ";
+                    msbuildArgs += @"/verbosity:quiet ";
+                    msbuildArgs += @"/nologo";
+                    //Console.WriteLine("msbuildArgs: {0}", msbuildArgs);
+
+                    ProcessStartInfo startInfo = new ProcessStartInfo(msbuildPath);
+                    startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                    startInfo.Arguments = msbuildArgs;
+                    startInfo.UseShellExecute = false;
+                    var buildProcess = new Process();
+                    buildProcess.StartInfo = startInfo;
+                    buildProcess.Start();
+                    buildProcess.WaitForExit();
+ 
+                    //Run tester.exe:
+                    //Console.WriteLine("Running {0}", exePrt[0].Item2.ToString());
                     bool prtResult = Run(tmpWriter, isIgnPrmpt, exePrt[0].Item2.ToString(), prtArgs);
                     if (!prtResult)
                     {

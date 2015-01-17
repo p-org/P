@@ -638,7 +638,7 @@ namespace PlangBuild
                 psi.FileName = msbuild.FullName;
                 psi.Arguments = string.Format(MsBuildCommand, projFile.Name, config, platform);
                 psi.CreateNoWindow = true;
-                psi.EnvironmentVariables.Add("MSBUILDTREATHIGHERTOOLSVERSIONASCURRENT", "");
+                psi.EnvironmentVariables.Add("MSBUILDTREATHIGHERTOOLSVERSIONASCURRENT", "TRUE");
 
                 var process = new Process();
                 process.StartInfo = psi;

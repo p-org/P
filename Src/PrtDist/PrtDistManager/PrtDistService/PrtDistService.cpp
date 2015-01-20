@@ -195,7 +195,7 @@ MIDL_user_free(void* object)
 ///
 void PrtDistServiceCreateLogFile()
 {
-	logFile = fopen(logFileName, "w+");
+	fopen_s(&logFile, logFileName, "w+");
 	fputs("Starting PrtDistService ..... \n", logFile);
 	fflush(logFile);
 }

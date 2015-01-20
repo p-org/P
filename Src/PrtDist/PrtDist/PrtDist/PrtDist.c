@@ -74,9 +74,7 @@ void PrtDistSMLogHandler(PRT_STEP step, void *vcontext)
 	}
 
 	PRT_STRING log = NULL;
-	PRT_UINT32 logLength = 0;
-	PRT_UINT32 printLength = 0;
-	PrtWinUserPrintStep(step, c, &log, &logLength, &printLength);
+	log = PrtToStringStep(step, vcontext);
 	PrtLockMutex(((PRT_PROCESS_PRIV*)c->process)->processLock);
 	fputs(log, logfile);
 	fflush(logfile);

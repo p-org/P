@@ -162,10 +162,6 @@ domain PStructuralTyping extends PData
 	[rule_Classes = '"error, msg: function cannot take arguments"']
 	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _), eF : String , FunDecl(eF, s.owner, _, p, _, _), p != NIL.
 	
-	//model only in real
-	[rule_Classes = '"error, msg: model functions can be declared only in real machines"']
-	OneDeclError(f) :- f is FunDecl, f.owner.kind != REAL, f.kind = MODEL.
-	
 	//cannot have default in Monitors
 	[rule_Classes = '"error, msg: default transitions not allowed in monitors"']
 	OneDeclError(t) :- t is TransDecl(s, DEFAULT, _, _), s.owner.kind = MONITOR, t.trig = DEFAULT.

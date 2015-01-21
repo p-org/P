@@ -105,6 +105,10 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\PCTDelayingScheduler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\PCTDelayingScheduler.dll"),
 
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\PCT.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\PCT.dll"),
+
             //Zing x64
            new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\zc.exe", 
@@ -151,6 +155,9 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\PCTDelayingScheduler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\PCTDelayingScheduler.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\PCT.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\PCT.dll"),
 
             //Pc x86
             new Tuple<string, string>(
@@ -374,6 +381,9 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\PCTDelayingScheduler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\PCTDelayingScheduler.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\PCT.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\PCT.dll"),
 
             //Zing x64
            new Tuple<string, string>(
@@ -421,6 +431,9 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\PCTDelayingScheduler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\PCTDelayingScheduler.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\PCT.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\PCT.dll"),
 
             //Pc x86
             new Tuple<string, string>(

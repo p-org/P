@@ -412,7 +412,7 @@ void PrtWinUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, _Ino
 		PrtWinUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString(") exited state ", buffer, bufferSize, numCharsWritten);
+		PrtWinUserPrintString(") exiting state ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(stateName, buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString("\n", buffer, bufferSize, numCharsWritten); 
 		break;

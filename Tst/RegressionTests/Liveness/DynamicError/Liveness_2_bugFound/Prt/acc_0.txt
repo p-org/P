@@ -1,0 +1,14 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine EventHandler(1) is created
+OUT: <StateLog> Machine EventHandler(1) entered state Init
+OUT: <RaiseLog> Machine EventHandler(1) raised event Unit with payload null
+OUT: <ExitLog> Machine EventHandler(1) exiting state Init
+OUT: <StateLog> Machine EventHandler(1) entered state WaitForUser
+OUT: <EnqueueLog> Enqueued event UserEvent with payload null on Machine EventHandler(1)
+OUT: <DequeueLog> Dequeued event UserEvent with payload null by Machine EventHandler(1)
+OUT: <ExitLog> Machine EventHandler(1) exiting state WaitForUser
+OUT: <StateLog> Machine EventHandler(1) entered state HandleEvent
+OUT: 
+EXIT: 0

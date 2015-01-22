@@ -1,4 +1,5 @@
 // Liveness test: simplest sample demonstrating liveness error found
+// This is non-terminating program
 
 event UserEvent;
 event Done;

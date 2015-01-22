@@ -37,7 +37,13 @@ namespace RunPTool
                 DirectoryInfo[] activeDirs = args.Length == 0
                     ? new DirectoryInfo[] { tstDir }
                     : ExtractActiveDirsFromFile(args[0], tstDir, out activeDirsCount);
-         
+
+                //if (activeDirs == null)
+                //{
+                //    Console.WriteLine("Failed to run tests; directory name(s) in the test directory file are in a wrong format");
+                //    Environment.ExitCode = FailCode;
+                //    return;
+                //}
                 for (int i = 0; i < activeDirsCount; ++i)
                 {
                     if (!activeDirs[i].Exists)
@@ -114,6 +120,7 @@ namespace RunPTool
                 foreach (var fi in diArray[i].EnumerateFiles(TestFilePattern))
                 {
                     ++testCount;
+                    //Console.WriteLine("Running CheckP under dir {0}", diArray[i].FullName);
                     var checker = new CheckP.Checker(diArray[i].FullName, reset);
                     if (!checker.Check(fi.Name))
                     {
@@ -188,7 +195,15 @@ namespace RunPTool
                     while (!sr.EndOfStream)
                     {
                         var dir = sr.ReadLine();
-                        //result[count] = new DirectoryInfo(dir);
+                        //Skip the line if it is blank:
+                        //if ((dir.Trim() == "")) break;
+                        
+                        //if (dir.StartsWith("\\") || dir.StartsWith("//"))
+                        //{
+                        //    Console.WriteLine("Failed to run tests: directory name in the test directory file cannot start with \"\\\" or \"//\"");
+                        //    return null;
+                        //}
+                      
                         result[count] = new DirectoryInfo(Path.Combine(tstDir.FullName, dir));
                         count = count + 1;
                     }

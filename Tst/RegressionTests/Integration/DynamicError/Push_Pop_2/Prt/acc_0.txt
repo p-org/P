@@ -1,0 +1,50 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine Employee(1) is created
+OUT: <StateLog> Machine Employee(1) entered state Init
+OUT: <CreateLog> Machine TravelAgent(2) is created
+OUT: <StateLog> Machine TravelAgent(2) entered state _Init
+OUT: <RaiseLog> Machine TravelAgent(2) raised event Unit with payload null
+OUT: <ExitLog> Machine TravelAgent(2) exiting state _Init
+OUT: <StateLog> Machine TravelAgent(2) entered state Init
+OUT: <CreateLog> Machine CityCab(3) is created
+OUT: <StateLog> Machine CityCab(3) entered state _Init
+OUT: <RaiseLog> Machine CityCab(3) raised event Unit with payload null
+OUT: <ExitLog> Machine CityCab(3) exiting state _Init
+OUT: <StateLog> Machine CityCab(3) entered state Init
+OUT: <RaiseLog> Machine Employee(1) raised event Unit with payload null
+OUT: <ExitLog> Machine Employee(1) exiting state Init
+OUT: <StateLog> Machine Employee(1) entered state BangaloreOffice
+OUT: <PushLog> Machine Employee(1) pushed
+OUT: <StateLog> Machine Employee(1) entered state SBookFlight
+OUT: <EnqueueLog> Enqueued event BookFlight with payload null on Machine TravelAgent(2)
+OUT: <DequeueLog> Dequeued event BookFlight with payload null by Machine TravelAgent(2)
+OUT: <ExitLog> Machine TravelAgent(2) exiting state Init
+OUT: <StateLog> Machine TravelAgent(2) entered state SBookFlight
+OUT: <EnqueueLog> Enqueued event FlightBooked with payload null on Machine Employee(1)
+OUT: <ExitLog> Machine Employee(1) exiting state SBookFlight
+OUT: <PopLog> Machine Employee(1) popped and reentered state BangaloreOffice
+OUT: <DequeueLog> Dequeued event FlightBooked with payload null by Machine Employee(1)
+OUT: <ExitLog> Machine Employee(1) exiting state BangaloreOffice
+OUT: <EnqueueLog> Enqueued event Thanks with payload null on Machine TravelAgent(2)
+OUT: <DequeueLog> Dequeued event Thanks with payload null by Machine TravelAgent(2)
+OUT: <ExitLog> Machine TravelAgent(2) exiting state SBookFlight
+OUT: <StateLog> Machine TravelAgent(2) entered state Init
+OUT: <StateLog> Machine Employee(1) entered state SBookCab
+OUT: <EnqueueLog> Enqueued event BookCab with payload null on Machine CityCab(3)
+OUT: <DequeueLog> Dequeued event BookCab with payload null by Machine CityCab(3)
+OUT: <ExitLog> Machine CityCab(3) exiting state Init
+OUT: <StateLog> Machine CityCab(3) entered state SBookCab
+OUT: <RaiseLog> Machine CityCab(3) raised event Unit with payload null
+OUT: <ExitLog> Machine CityCab(3) exiting state SBookCab
+OUT: <StateLog> Machine CityCab(3) entered state Init
+OUT: <PushLog> Machine Employee(1) pushed
+OUT: <StateLog> Machine Employee(1) entered state dummyState
+OUT: <RaiseLog> Machine Employee(1) raised event CabBooked with payload null
+OUT: <ExitLog> Machine Employee(1) exiting state dummyState
+OUT: <PopLog> Machine Employee(1) popped with unhandled event CabBooked and reentered state SBookCab
+OUT: <ExitLog> Machine Employee(1) exiting state SBookCab
+OUT: exiting with PRT_STATUS_ASSERT (assertion failure)
+OUT: 
+EXIT: 1

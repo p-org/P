@@ -1,0 +1,28 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing Liveness_4.zing ...
+OUT: Compiling Liveness_4.zing to Liveness_4.dll ...
+OUT: liveness_4.p (14, 5): inferred type:  NIL
+OUT: liveness_4.p (15, 5): inferred type:  NIL
+OUT: liveness_4.p (16, 5): inferred type:  NIL
+OUT: liveness_4.p (16, 23): inferred type:  BaseType(EVENT)
+OUT: liveness_4.p (17, 5): inferred type:  NIL
+OUT: liveness_4.p (17, 10): inferred type:  BaseType(REAL)
+OUT: liveness_4.p (17, 16): inferred type:  BaseType(EVENT)
+OUT: liveness_4.p (25, 5): inferred type:  NIL
+OUT: liveness_4.p (25, 23): inferred type:  BaseType(EVENT)
+OUT: liveness_4.p (26, 5): inferred type:  NIL
+OUT: liveness_4.p (26, 10): inferred type:  BaseType(REAL)
+OUT: liveness_4.p (26, 16): inferred type:  BaseType(EVENT)
+OUT: liveness_4.p (28, 13): inferred type:  NIL
+OUT: liveness_4.p (36, 4): inferred type:  NIL
+OUT: liveness_4.p (36, 9): inferred type:  BaseType(REAL)
+OUT: liveness_4.p (36, 15): inferred type:  BaseType(EVENT)
+OUT: liveness_4.p (38, 3): inferred type:  NIL
+OUT: liveness_4.p (54, 14): inferred type:  NIL
+OUT: 
+EXIT: 0

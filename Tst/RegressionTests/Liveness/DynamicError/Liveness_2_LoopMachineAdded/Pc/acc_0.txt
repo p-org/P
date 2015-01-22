@@ -6,19 +6,19 @@ OUT: Writing program.h ...
 OUT: Writing program.c ...
 OUT: Writing Liveness_2_LoopMachineAdded.zing ...
 OUT: Compiling Liveness_2_LoopMachineAdded.zing to Liveness_2_LoopMachineAdded.dll ...
-OUT: liveness_2_loopmachineadded.p (13, 5): inferred type:  NIL
 OUT: liveness_2_loopmachineadded.p (14, 5): inferred type:  NIL
 OUT: liveness_2_loopmachineadded.p (15, 5): inferred type:  NIL
-OUT: liveness_2_loopmachineadded.p (15, 23): inferred type:  BaseType(EVENT)
 OUT: liveness_2_loopmachineadded.p (16, 5): inferred type:  NIL
-OUT: liveness_2_loopmachineadded.p (16, 10): inferred type:  BaseType(REAL)
-OUT: liveness_2_loopmachineadded.p (16, 16): inferred type:  BaseType(EVENT)
-OUT: liveness_2_loopmachineadded.p (24, 5): inferred type:  NIL
-OUT: liveness_2_loopmachineadded.p (24, 23): inferred type:  BaseType(EVENT)
-OUT: liveness_2_loopmachineadded.p (35, 4): inferred type:  NIL
-OUT: liveness_2_loopmachineadded.p (35, 9): inferred type:  BaseType(REAL)
-OUT: liveness_2_loopmachineadded.p (35, 15): inferred type:  BaseType(EVENT)
-OUT: liveness_2_loopmachineadded.p (37, 3): inferred type:  NIL
-OUT: liveness_2_loopmachineadded.p (53, 14): inferred type:  NIL
+OUT: liveness_2_loopmachineadded.p (16, 23): inferred type:  BaseType(EVENT)
+OUT: liveness_2_loopmachineadded.p (17, 5): inferred type:  NIL
+OUT: liveness_2_loopmachineadded.p (17, 10): inferred type:  BaseType(REAL)
+OUT: liveness_2_loopmachineadded.p (17, 16): inferred type:  BaseType(EVENT)
+OUT: liveness_2_loopmachineadded.p (25, 5): inferred type:  NIL
+OUT: liveness_2_loopmachineadded.p (25, 23): inferred type:  BaseType(EVENT)
+OUT: liveness_2_loopmachineadded.p (36, 4): inferred type:  NIL
+OUT: liveness_2_loopmachineadded.p (36, 9): inferred type:  BaseType(REAL)
+OUT: liveness_2_loopmachineadded.p (36, 15): inferred type:  BaseType(EVENT)
+OUT: liveness_2_loopmachineadded.p (38, 3): inferred type:  NIL
+OUT: liveness_2_loopmachineadded.p (54, 14): inferred type:  NIL
 OUT: 
 EXIT: 0

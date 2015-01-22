@@ -6,21 +6,21 @@ OUT: Writing program.h ...
 OUT: Writing program.c ...
 OUT: Writing PushImplicitPopWithSend.zing ...
 OUT: Compiling PushImplicitPopWithSend.zing to PushImplicitPopWithSend.dll ...
-OUT: pushimplicitpopwithsend.p (12, 4): inferred type:  NIL
-OUT: pushimplicitpopwithsend.p (12, 9): inferred type:  BaseType(REAL)
-OUT: pushimplicitpopwithsend.p (12, 15): inferred type:  BaseType(EVENT)
-OUT: pushimplicitpopwithsend.p (18, 17): inferred type:  NIL
-OUT: pushimplicitpopwithsend.p (18, 22): inferred type:  BaseType(REAL)
-OUT: pushimplicitpopwithsend.p (18, 28): inferred type:  BaseType(EVENT)
-OUT: pushimplicitpopwithsend.p (22, 4): inferred type:  BaseType(BOOL)
-OUT: pushimplicitpopwithsend.p (22, 4): inferred type:  NIL
-OUT: pushimplicitpopwithsend.p (22, 12): inferred type:  BaseType(BOOL)
-OUT: pushimplicitpopwithsend.p (23, 4): inferred type:  NIL
-OUT: pushimplicitpopwithsend.p (23, 9): inferred type:  BaseType(REAL)
-OUT: pushimplicitpopwithsend.p (23, 15): inferred type:  BaseType(EVENT)
-OUT: pushimplicitpopwithsend.p (27, 3): inferred type:  NIL
-OUT: pushimplicitpopwithsend.p (27, 10): inferred type:  BaseType(BOOL)
-OUT: pushimplicitpopwithsend.p (27, 15): inferred type:  BaseType(BOOL)
-OUT: pushimplicitpopwithsend.p (27, 18): inferred type:  BaseType(BOOL)
+OUT: pushimplicitpopwithsend.p (14, 4): inferred type:  NIL
+OUT: pushimplicitpopwithsend.p (14, 9): inferred type:  BaseType(REAL)
+OUT: pushimplicitpopwithsend.p (14, 15): inferred type:  BaseType(EVENT)
+OUT: pushimplicitpopwithsend.p (20, 17): inferred type:  NIL
+OUT: pushimplicitpopwithsend.p (20, 22): inferred type:  BaseType(REAL)
+OUT: pushimplicitpopwithsend.p (20, 28): inferred type:  BaseType(EVENT)
+OUT: pushimplicitpopwithsend.p (24, 4): inferred type:  BaseType(BOOL)
+OUT: pushimplicitpopwithsend.p (24, 4): inferred type:  NIL
+OUT: pushimplicitpopwithsend.p (24, 12): inferred type:  BaseType(BOOL)
+OUT: pushimplicitpopwithsend.p (25, 4): inferred type:  NIL
+OUT: pushimplicitpopwithsend.p (25, 9): inferred type:  BaseType(REAL)
+OUT: pushimplicitpopwithsend.p (25, 15): inferred type:  BaseType(EVENT)
+OUT: pushimplicitpopwithsend.p (29, 3): inferred type:  NIL
+OUT: pushimplicitpopwithsend.p (29, 10): inferred type:  BaseType(BOOL)
+OUT: pushimplicitpopwithsend.p (29, 15): inferred type:  BaseType(BOOL)
+OUT: pushimplicitpopwithsend.p (29, 18): inferred type:  BaseType(BOOL)
 OUT: 
 EXIT: 0

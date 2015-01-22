@@ -348,12 +348,6 @@ namespace CheckP
                 }
 
                 //Run runtime:
-                //Console.WriteLine("isSetExePrt is {0}", isSetExePrt);
-                //StreamWriter tmpWriterBuild;
-                //if (!OpenTmpStream(out tmpWriterBuild))
-                //{
-                //    return false;
-                //}
                 if (isSetExePrt)
                 {
                     //Console.WriteLine("activeDirectory is: {0}", activeDirectory);
@@ -362,20 +356,16 @@ namespace CheckP
                     var temp = new DirectoryInfo(activeDirectory);
                     string parentFolder = temp.Parent.FullName;
                     var pcDirectory = String.Concat(parentFolder, "\\");
-                    pcDirectory = String.Concat(pcDirectory, "Pc");
+                    pcDirectory = String.Concat(pcDirectory, "Pc");                 
                     //Console.WriteLine("pcDirectory is: {0}", pcDirectory);
 
                     //Compute "TesterDirectory" (Tst\PrtTester):
                     //path to ...PrtTester\Debug\tester.exe:
-                    var testerExePath = exePrt[0].Item2.ToString();
-                    //Console.WriteLine("testerExePath is: {0}", testerExePath);
-                    var testerExeAbsPath = Path.GetFullPath(testerExePath);
-                    //This is the correct full path if the relative path to tester.exe in testconfigPrt.exe is:
-                    //runPrt: ..\..\..\..\..\..\..\PLanguage\Plang\Tst\PrtTester\Debug\Tester.exe
-                    //Console.WriteLine("abs path name for tester.exe: {0}", testerExeAbsPath);
-                    var testerExeDirectoryInfo = (new FileInfo(testerExeAbsPath)).Directory;
-                    //Console.WriteLine("testerExe directory is: {0}", testerExeDirectoryInfo.FullName);
-                    var testerDirectory = testerExeDirectoryInfo.Parent.FullName;
+                    //var testerExePath = exePrt[0].Item2.ToString();
+                    var testerExeDir = Path.Combine(Environment.CurrentDirectory, "PrtTester\\Debug");
+                    //Console.WriteLine("testerExePath is: {0}", testerExeDir);
+                    var testerExePath = Path.Combine(testerExeDir, "tester.exe");
+                    var testerDirectory = Path.Combine(Environment.CurrentDirectory, "PrtTester");
                     //Console.WriteLine("testerDirectory is: {0}", testerDirectory);
 
                     //Remove previous runtime files from Tst\PrtTester:
@@ -397,9 +387,8 @@ namespace CheckP
                         Path.Combine(testerDirectory, RuntimeFile3)
                         );
 
-                    //TODO: build tester.exe for the updated runtime files.
-                    //Remove Tester bootstrapping in testP.bat, if not needed there.
-                    //Check that Tester.vcxproj exists under PrtTester:
+                    //Build tester.exe for the updated runtime files.
+
                     //Case 1 (debugging only): Running from VS Debugger:
                     //string prtTesterProj = "..\\..\\..\\..\\PrtTester\\Tester.vcxproj";
                     //var prtTesterWorkingDir = "..\\..\\..\\..\\PrtTester";
@@ -420,11 +409,18 @@ namespace CheckP
                     }
 
                     //2. Build Tester: "msbuildDir  .\PrtTester\Tester.vcxproj /p:Configuration=Debug /verbosity:quiet /nologo"
-                    var msbuildArgs = "";
-                    
+                    //Check that Tester.vcxproj exists under PrtTester:
                     if (!File.Exists(prtTesterProj))
                     {
-                        Console.WriteLine("Error: Tester.vcxproj is not located under PrtTester");
+                        Console.WriteLine("Error: Tester.vcxproj is not found under PrtTester\\");
+                        return false;
+                    }
+                    //Checking that program.c, program.h and stubs.c have been copied into testerDirectory:
+                    if (!File.Exists(Path.Combine(testerDirectory, "program.c")) ||
+                        !File.Exists(Path.Combine(testerDirectory, "program.h")) ||
+                        !File.Exists(Path.Combine(testerDirectory, "stubs.c")))
+                    {
+                        Console.WriteLine("Error: runtime file(s) are not found under PrtTester\\");
                         return false;
                     }
                     //Case 1 (debugging only): Running from VS Debugger:
@@ -432,24 +428,26 @@ namespace CheckP
                     //Console.WriteLine("Current Dir: {0}", curDirTemp.FullName);
                     //msbuildArgs = "..\\..\\..\\..\\..\\..\\..\\..\\PrtTester\\Tester.vcxproj ";
                     //Case 2:  Running from testP.bat:
-                    msbuildArgs += @".\PrtTester\Tester.vcxproj ";
-                    msbuildArgs += @"/p:Configuration=Debug ";
-                    msbuildArgs += @"/verbosity:quiet ";
-                    msbuildArgs += @"/nologo";
-                    //Console.WriteLine("msbuildArgs: {0}", msbuildArgs);
-
-                    ProcessStartInfo startInfo = new ProcessStartInfo(msbuildPath);
-                    startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                    startInfo.Arguments = msbuildArgs;
-                    startInfo.UseShellExecute = false;
-                    var buildProcess = new Process();
-                    buildProcess.StartInfo = startInfo;
-                    buildProcess.Start();
-                    buildProcess.WaitForExit();
+                    //Cleaning tester.exe:
+                    bool buildRes = RunBuildTester(msbuildPath, true);
+                    if (!buildRes)
+                    {
+                        Console.WriteLine("Error cleaning Tester project");
+                        return false;
+                    }
+                    //Building tester.exe:
+                    buildRes = RunBuildTester(msbuildPath, false);
+                    if (!buildRes)
+                    {
+                        Console.WriteLine("Error building Tester project");
+                        return false;
+                    }
  
                     //Run tester.exe:
                     //Console.WriteLine("Running {0}", exePrt[0].Item2.ToString());
-                    bool prtResult = Run(tmpWriter, isIgnPrmpt, exePrt[0].Item2.ToString(), prtArgs);
+                    //bool prtResult = Run(tmpWriter, isIgnPrmpt, exePrt[0].Item2.ToString(), prtArgs);
+                    //Console.WriteLine("Running {0}", testerExePath);
+                    bool prtResult = Run(tmpWriter, isIgnPrmpt, testerExePath, prtArgs);
                     if (!prtResult)
                     {
                         result = false;
@@ -711,6 +709,43 @@ namespace CheckP
                 return false;
             }
 
+            return true;
+        }
+
+
+        private bool RunBuildTester(string buildExe, bool clean)
+        {
+            try
+            {
+                var msbuildArgs = "";
+                msbuildArgs += @".\PrtTester\Tester.vcxproj ";
+                msbuildArgs += clean ? @"/t:Clean " : @"/t:Build ";
+                //if (clean)
+                //{
+                //    msbuildArgs += @"/t:Clean ";
+                //}
+                //else
+                //{
+                //    msbuildArgs += @"/t:Build ";
+                //}
+                msbuildArgs += @"/p:Configuration=Debug ";
+                msbuildArgs += @"/verbosity:quiet ";
+                msbuildArgs += @"/nologo";
+                //Console.WriteLine("msbuildArgs: {0}", msbuildArgs);
+                ProcessStartInfo startInfo = new ProcessStartInfo(buildExe);
+                startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                startInfo.Arguments = msbuildArgs;
+                startInfo.UseShellExecute = false;
+                var buildProcess = new Process();
+                buildProcess.StartInfo = startInfo;
+                buildProcess.Start();
+                buildProcess.WaitForExit();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("ERROR: Build/Clean of Tester failed: {0}", e.Message);
+                return false;
+            }
             return true;
         }
 

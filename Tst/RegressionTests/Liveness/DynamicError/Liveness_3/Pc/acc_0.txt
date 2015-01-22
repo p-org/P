@@ -16,10 +16,10 @@ OUT: liveness_3.p (16, 16): inferred type:  BaseType(EVENT)
 OUT: liveness_3.p (24, 5): inferred type:  NIL
 OUT: liveness_3.p (24, 23): inferred type:  BaseType(EVENT)
 OUT: liveness_3.p (27, 13): inferred type:  NIL
-OUT: liveness_3.p (35, 4): inferred type:  NIL
-OUT: liveness_3.p (35, 9): inferred type:  BaseType(REAL)
-OUT: liveness_3.p (35, 15): inferred type:  BaseType(EVENT)
-OUT: liveness_3.p (37, 3): inferred type:  NIL
-OUT: liveness_3.p (53, 14): inferred type:  NIL
+OUT: liveness_3.p (36, 4): inferred type:  NIL
+OUT: liveness_3.p (36, 9): inferred type:  BaseType(REAL)
+OUT: liveness_3.p (36, 15): inferred type:  BaseType(EVENT)
+OUT: liveness_3.p (38, 3): inferred type:  NIL
+OUT: liveness_3.p (54, 14): inferred type:  NIL
 OUT: 
 EXIT: 0

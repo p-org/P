@@ -24,7 +24,8 @@ main machine EventHandler
 				monitor WatchDog, Computing;
 				//send this, Done;
 				}			
-            on Done goto HandleEvent;
+            on Done goto HandleEvent;  //if Loop machine keeps processing Done,
+			                           //liveness is violated
        }
 }
 

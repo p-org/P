@@ -73,10 +73,8 @@ OUT: entryexit_1.p (98, 4): inferred type:  NIL
 OUT: entryexit_1.p (98, 8): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (98, 10): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (98, 12): inferred type:  BaseType(INT)
-OUT: entryexit_1.p (54, 2): model functions can be declared only in real machines
 OUT: entryexit_1.p (83, 4): "if (...)" expects a boolean value
 OUT: entryexit_1.p (83, 7): Nondeterministic choice can not be used in monitor machine
-OUT: entryexit_1.p (90, 2): model functions can be declared only in real machines
 OUT: entryexit_1.p (91, 3): "if (...)" expects a boolean value
 OUT: entryexit_1.p (91, 6): Nondeterministic choice can not be used in monitor machine
 OUT: entryexit_1.p (97, 3): "if (...)" expects a boolean value

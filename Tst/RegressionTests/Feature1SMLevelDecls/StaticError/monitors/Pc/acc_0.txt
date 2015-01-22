@@ -23,7 +23,6 @@ OUT: monitors.p (33, 3): inferred type:  NIL
 OUT: monitors.p (5, 3): Multiple actions over the same event
 OUT: monitors.p (6, 3): Multiple actions over the same event
 OUT: monitors.p (15, 4): invalid payload type in raise (cannot send null value)
-OUT: monitors.p (19, 2): model functions can be declared only in real machines
 OUT: monitors.p (24, 3): defer not allowed in monitor
 OUT: monitors.p (24, 3): Multiple actions over the same event
 OUT: monitors.p (25, 3): Multiple actions over the same event

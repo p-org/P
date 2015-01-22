@@ -1,3 +1,3 @@
-runPrt: ..\..\..\..\..\..\..\..\Planguage\Plang\Tst\PrtTester\Debug\Tester.exe
+runPrt: ..\..\..\..\..\..\Tst\PrtTester\Debug\Tester.exe
 acc: .\
 dsc: runtime, Feature Integration: overriding of action handlers by a pushed state

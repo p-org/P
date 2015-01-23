@@ -34,21 +34,33 @@ namespace RunPTool
                 var tstDir = new DirectoryInfo(Environment.CurrentDirectory);
                 //Console.WriteLine("tstDir is {0}", tstDir.FullName);
                 int activeDirsCount = 0;
-                DirectoryInfo[] activeDirs = args.Length == 0
-                    ? new DirectoryInfo[] { tstDir }
-                    : ExtractActiveDirsFromFile(args[0], tstDir, out activeDirsCount);
+                DirectoryInfo[] activeDirs = new DirectoryInfo[200];
+                if (args.Length == 0)
+                {
+                    Console.WriteLine("Warning: no test directories file provided; running all tests under \\Tst");
+                    activeDirsCount = 1;
+                    activeDirs[0] = tstDir;
 
-                //if (activeDirs == null)
-                //{
-                //    Console.WriteLine("Failed to run tests; directory name(s) in the test directory file are in a wrong format");
-                //    Environment.ExitCode = FailCode;
-                //    return;
-                //}
+                }
+                else activeDirs = ExtractActiveDirsFromFile(args[0], tstDir, out activeDirsCount);
+               
+                if (activeDirs == null)
+                {
+                    Console.WriteLine("Failed to run tests: directory name(s) in the test directories file are in a wrong format");
+                    Environment.ExitCode = FailCode;
+                    return;
+                }
+                if (activeDirsCount == 0)
+                {
+                    Console.WriteLine("Failed to run tests: test directories file is blank");
+                    Environment.ExitCode = FailCode;
+                    return;
+                }
                 for (int i = 0; i < activeDirsCount; ++i)
                 {
                     if (!activeDirs[i].Exists)
                     {
-                        Console.WriteLine("Failed to run tests; directory {0} does not exist", activeDirs[i].FullName);
+                        Console.WriteLine("Failed to run tests: directory {0} does not exist", activeDirs[i].FullName);
                         Environment.ExitCode = FailCode;
                         return;
                     }
@@ -196,13 +208,13 @@ namespace RunPTool
                     {
                         var dir = sr.ReadLine();
                         //Skip the line if it is blank:
-                        //if ((dir.Trim() == "")) break;
-                        
-                        //if (dir.StartsWith("\\") || dir.StartsWith("//"))
-                        //{
-                        //    Console.WriteLine("Failed to run tests: directory name in the test directory file cannot start with \"\\\" or \"//\"");
-                        //    return null;
-                        //}
+                        if ((dir.Trim() == "")) break;
+
+                        if (dir.StartsWith("\\") || dir.StartsWith("/") || dir.StartsWith("\\\\"))
+                        {
+                            Console.WriteLine("Failed to run tests: directory name in the test directory file cannot start with \"\\\" or \"/\" or \"\\\\\"");
+                            return null;
+                        }
                       
                         result[count] = new DirectoryInfo(Path.Combine(tstDir.FullName, dir));
                         count = count + 1;

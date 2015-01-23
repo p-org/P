@@ -4,3 +4,6 @@
 *.trace
 *display-diffs.bat
 *failed-tests.txt
+program.c
+program.h
+stubs.c

@@ -20,15 +20,20 @@ main machine Host {
 	var curr_client : machine;
 	var clients : (machine, machine, machine);
 	var curr_cpu : machine;
+	var tmp : machine;
 	var sharer_list : seq[machine];
 	var is_curr_req_excl : bool;
 	var is_excl_granted : bool;
 	var i, s :int;
 	start state init {
 		entry {
-		        clients.0 = new Client(this, false);
-		        clients.1 = new Client(this, false);
-		        clients.2 = new Client(this, false);
+				//tmp is needed to avoid compiler error:
+		        tmp = new Client(this, false);
+				clients.0 = tmp; 
+				tmp= new Client(this, false);
+				clients.1 = tmp;
+				tmp = new Client(this, false);
+				clients.2 = tmp;
 			curr_client = null;
 			curr_cpu = new CPU(clients);
 			assert(sizeof(sharer_list) == 0);

@@ -1,6 +1,7 @@
 =================================
          Console output          
 =================================
+OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...
 OUT: Writing openwsn1.zing ...
@@ -243,8 +244,16 @@ OUT: openwsn1.p (119, 11): inferred type:  BaseType(BOOL)
 OUT: openwsn1.p (119, 14): inferred type:  BaseType(INT)
 OUT: openwsn1.p (120, 4): inferred type:  NIL
 OUT: openwsn1.p (120, 10): inferred type:  BaseType(EVENT)
+OUT: openwsn1.p (124, 3): inferred type:  NIL
+OUT: openwsn1.p (124, 6): inferred type:  BaseType(BOOL)
 OUT: openwsn1.p (125, 4): inferred type:  NIL
 OUT: openwsn1.p (125, 11): inferred type:  BaseType(INT)
+OUT: openwsn1.p (126, 8): inferred type:  NIL
+OUT: openwsn1.p (126, 12): inferred type:  BaseType(BOOL)
+OUT: openwsn1.p (127, 4): inferred type:  NIL
+OUT: openwsn1.p (127, 11): inferred type:  BaseType(INT)
+OUT: openwsn1.p (129, 4): inferred type:  NIL
+OUT: openwsn1.p (129, 11): inferred type:  BaseType(INT)
 OUT: openwsn1.p (147, 3): inferred type:  NIL
 OUT: openwsn1.p (147, 6): inferred type:  BaseType(REAL)
 OUT: openwsn1.p (147, 13): inferred type:  BaseType(BOOL)
@@ -259,6 +268,8 @@ OUT: openwsn1.p (151, 4): inferred type:  NIL
 OUT: openwsn1.p (151, 10): inferred type:  BaseType(INT)
 OUT: openwsn1.p (151, 11): inferred type:  BaseType(BOOL)
 OUT: openwsn1.p (151, 14): inferred type:  BaseType(INT)
+OUT: openwsn1.p (153, 5): inferred type:  NIL
+OUT: openwsn1.p (153, 8): inferred type:  BaseType(BOOL)
 OUT: openwsn1.p (155, 6): inferred type:  NIL
 OUT: openwsn1.p (155, 11): inferred type:  SeqType(BaseType(REAL))
 OUT: openwsn1.p (155, 23): inferred type:  BaseType(REAL)
@@ -269,6 +280,11 @@ OUT: openwsn1.p (155, 35): inferred type:  TupType(BaseType(REAL), TupType(BaseT
 OUT: openwsn1.p (155, 41): inferred type:  BaseType(INT)
 OUT: openwsn1.p (155, 41): inferred type:  TupType(BaseType(INT), NIL)
 OUT: openwsn1.p (156, 6): inferred type:  NIL
+OUT: openwsn1.p (159, 6): inferred type:  BaseType(INT)
+OUT: openwsn1.p (159, 6): inferred type:  NIL
+OUT: openwsn1.p (159, 10): inferred type:  BaseType(INT)
+OUT: openwsn1.p (159, 12): inferred type:  BaseType(INT)
+OUT: openwsn1.p (159, 14): inferred type:  BaseType(INT)
 OUT: openwsn1.p (164, 4): inferred type:  NIL
 OUT: openwsn1.p (164, 9): inferred type:  BaseType(REAL)
 OUT: openwsn1.p (164, 17): inferred type:  BaseType(EVENT)
@@ -276,8 +292,12 @@ OUT: openwsn1.p (164, 24): inferred type:  BaseType(REAL)
 OUT: openwsn1.p (164, 24): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
 OUT: openwsn1.p (164, 30): inferred type:  BaseType(INT)
 OUT: openwsn1.p (164, 30): inferred type:  TupType(BaseType(INT), NIL)
+OUT: openwsn1.p (169, 3): inferred type:  NIL
+OUT: openwsn1.p (169, 6): inferred type:  BaseType(BOOL)
 OUT: openwsn1.p (171, 4): inferred type:  NIL
 OUT: openwsn1.p (171, 11): inferred type:  BaseType(BOOL)
+OUT: openwsn1.p (174, 4): inferred type:  NIL
+OUT: openwsn1.p (174, 11): inferred type:  BaseType(BOOL)
 OUT: openwsn1.p (179, 9): inferred type:  NIL
 OUT: openwsn1.p (179, 12): inferred type:  BaseType(BOOL)
 OUT: openwsn1.p (179, 13): inferred type:  TupType(BaseType(BOOL), TupType(TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)), NIL))

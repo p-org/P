@@ -1,7 +1,7 @@
 // P semantics test: one machine, "send" to itself in exit function
 // This test checks that "unhandled event" exception is not raised by Zing 
 // for "halt" event
-// "halt" is sent upon executing goto; however, 
+// "halt" is sent while executing goto; however, 
 // "halt" is not handled, since state Real1_Init is removed once goto is executed
 // Compare this test to SendInExitUnhandledEvent.p
 
@@ -18,6 +18,7 @@ main machine Real1 {
 	}
 	state Real1_S1 {
 		entry {
+			assert(false);
 			test = true;
 		}
     }

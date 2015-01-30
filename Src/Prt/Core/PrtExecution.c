@@ -571,6 +571,8 @@ DoHandleEvent:
 	{
 		PrtRunExitFunction(context, PrtGetCurrentStateDecl(context)->nTransitions);
 		PrtPopState(context, PRT_FALSE);
+		if (context->isHalted)
+			return;
 		PrtUpdateCurrentActionsSet(context);
 		PrtUpdateCurrentDeferredSet(context);
 		goto DoHandleEvent;
@@ -1136,9 +1138,9 @@ PrtHaltMachine(
 )
 {
 	PRT_DBG_ASSERT(!context->isModel, "Must be a real machine");
+	PrtLog(PRT_STEP_HALT, context);
 	PrtCleanupMachine(context);
 	context->isHalted = PRT_TRUE;
-	PrtLog(PRT_STEP_HALT, context);
 }
 
 void
@@ -1146,6 +1148,9 @@ PrtCleanupMachine(
 	_Inout_ PRT_MACHINEINST_PRIV			*context
 )
 {
+	if (context->isHalted)
+		return;
+
 	if (context->eventQueue.events != NULL)
 	{
 		PRT_EVENT *queue = context->eventQueue.events;

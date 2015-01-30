@@ -1524,7 +1524,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// Raise
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
 	                       s = in.Raise(ev, NIL), RhsExpr(c, s, 0, evTrans),
-						   cs = out.FunApp(Ident("P_STMT_1"), Args(raiseCall, Args(mkNull, Args(evTrans, NIL)))),
+						   cs = out.Seq(FunApp(Ident("P_STMT_1"), Args(raiseCall, Args(mkNull, Args(evTrans, NIL)))), Goto("P_EXIT_FUN")),
 						   raiseCall = out.FunApp(Ident("PrtRaise"),
 						                 Args(context,
 										 Args(Ident("p_tmp_stmt_0"),
@@ -1567,7 +1567,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// NulStmt
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
 	                       s = in.NulStmt(POP),
-						   cs = out.Seq(out.FunApp(Ident("PrtPop"), Args(context, NIL)), out.Goto("P_EXIT_FUN")).
+						   cs = out.Seq(FunApp(Ident("PrtPop"), Args(context, NIL)), Goto("P_EXIT_FUN")).
 
 	//// UnStmt
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),

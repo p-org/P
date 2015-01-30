@@ -14,8 +14,7 @@ void PRT_CALL_CONV PrtAssert(_In_ int condition, _In_opt_z_ PRT_CSTRING message)
 	{
 		fprintf_s(stderr, "ASSERT: %s", message);
 	}
-
-	abort();
+	exit(1);
 }
 
 PRT_RECURSIVE_MUTEX PRT_CALL_CONV PrtCreateMutex()

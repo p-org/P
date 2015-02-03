@@ -18,7 +18,7 @@ main machine Real1 {
 	}
 	state Real1_S1 {
 		entry {
-			assert(false);
+			//assert(false);
 			test = true;
 		}
     }

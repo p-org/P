@@ -1,0 +1,7 @@
+runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: ..\DeferIgnore3.dll 
+argZing: -et:DeferIgnore3.trace
+incZing: DeferIgnore3.trace
+del: DeferIgnore3.trace
+acc: .\
+dsc: zinger.exe, P semantics test: one machine: "defer" semantics and the state stack

@@ -1,0 +1,23 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing Liveness_1_WarmState.zing ...
+OUT: Compiling Liveness_1_WarmState.zing to Liveness_1_WarmState.dll ...
+OUT: liveness_1_warmstate.p (13, 5): inferred type:  NIL
+OUT: liveness_1_warmstate.p (14, 5): inferred type:  NIL
+OUT: liveness_1_warmstate.p (14, 23): inferred type:  BaseType(EVENT)
+OUT: liveness_1_warmstate.p (15, 5): inferred type:  NIL
+OUT: liveness_1_warmstate.p (15, 10): inferred type:  BaseType(REAL)
+OUT: liveness_1_warmstate.p (15, 16): inferred type:  BaseType(EVENT)
+OUT: liveness_1_warmstate.p (23, 5): inferred type:  NIL
+OUT: liveness_1_warmstate.p (23, 23): inferred type:  BaseType(EVENT)
+OUT: liveness_1_warmstate.p (24, 5): inferred type:  NIL
+OUT: liveness_1_warmstate.p (24, 10): inferred type:  BaseType(REAL)
+OUT: liveness_1_warmstate.p (24, 16): inferred type:  BaseType(EVENT)
+OUT: liveness_1_warmstate.p (26, 13): inferred type:  NIL
+OUT: liveness_1_warmstate.p (42, 14): inferred type:  NIL
+OUT: 
+EXIT: 0

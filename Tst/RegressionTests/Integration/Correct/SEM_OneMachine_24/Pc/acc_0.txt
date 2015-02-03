@@ -1,0 +1,26 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing TopHandlerOverridesInherited.zing ...
+OUT: Compiling TopHandlerOverridesInherited.zing to TopHandlerOverridesInherited.dll ...
+OUT: tophandleroverridesinherited.p (11, 4): inferred type:  NIL
+OUT: tophandleroverridesinherited.p (11, 10): inferred type:  BaseType(EVENT)
+OUT: tophandleroverridesinherited.p (14, 15): inferred type:  NIL
+OUT: tophandleroverridesinherited.p (14, 20): inferred type:  BaseType(REAL)
+OUT: tophandleroverridesinherited.p (14, 26): inferred type:  BaseType(EVENT)
+OUT: tophandleroverridesinherited.p (14, 30): inferred type:  NIL
+OUT: tophandleroverridesinherited.p (16, 16): inferred type:  NIL
+OUT: tophandleroverridesinherited.p (16, 21): inferred type:  BaseType(REAL)
+OUT: tophandleroverridesinherited.p (16, 27): inferred type:  BaseType(EVENT)
+OUT: tophandleroverridesinherited.p (20, 4): inferred type:  BaseType(BOOL)
+OUT: tophandleroverridesinherited.p (20, 4): inferred type:  NIL
+OUT: tophandleroverridesinherited.p (20, 11): inferred type:  BaseType(BOOL)
+OUT: tophandleroverridesinherited.p (26, 3): inferred type:  NIL
+OUT: tophandleroverridesinherited.p (26, 10): inferred type:  BaseType(BOOL)
+OUT: tophandleroverridesinherited.p (26, 15): inferred type:  BaseType(BOOL)
+OUT: tophandleroverridesinherited.p (26, 18): inferred type:  BaseType(BOOL)
+OUT: 
+EXIT: 0

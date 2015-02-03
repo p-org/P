@@ -1,4 +1,5 @@
 // Tests that event sent to a machine after it received the "halt" event is ignored by the halted machine
+// Case when "halt" is not explicitly handled, hence, PONG instance should be "halted"
 event Ping assert 1 : machine;
 event Pong assert 1;
 event Success;
@@ -24,7 +25,7 @@ main machine PING {
 			// halt PONG after one exchange:
 			if (count == 2) {
 				send pongId, halt;
-				send pongId, PingIgnored;
+				send pongId, PingIgnored;  //dequeuing of PingIgnored will not be in the runtime trace
 				//raise PongHalted;
 			}
 			raise Success;

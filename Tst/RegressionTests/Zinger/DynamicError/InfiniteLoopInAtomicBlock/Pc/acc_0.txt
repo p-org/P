@@ -1,0 +1,69 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing InfiniteLoopInAtomicBlock.zing ...
+OUT: Compiling InfiniteLoopInAtomicBlock.zing to InfiniteLoopInAtomicBlock.dll ...
+OUT: infiniteloopinatomicblock.p (14, 4): inferred type:  BaseType(REAL)
+OUT: infiniteloopinatomicblock.p (14, 4): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (14, 13): inferred type:  BaseType(REAL)
+OUT: infiniteloopinatomicblock.p (15, 4): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (15, 10): inferred type:  BaseType(EVENT)
+OUT: infiniteloopinatomicblock.p (22, 4): inferred type:  BaseType(INT)
+OUT: infiniteloopinatomicblock.p (22, 4): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (22, 13): inferred type:  BaseType(INT)
+OUT: infiniteloopinatomicblock.p (22, 20): inferred type:  BaseType(INT)
+OUT: infiniteloopinatomicblock.p (22, 22): inferred type:  BaseType(INT)
+OUT: infiniteloopinatomicblock.p (23, 4): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (23, 8): inferred type:  BaseType(INT)
+OUT: infiniteloopinatomicblock.p (23, 15): inferred type:  BaseType(BOOL)
+OUT: infiniteloopinatomicblock.p (23, 18): inferred type:  BaseType(INT)
+OUT: infiniteloopinatomicblock.p (24, 5): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (24, 10): inferred type:  BaseType(REAL)
+OUT: infiniteloopinatomicblock.p (24, 18): inferred type:  BaseType(EVENT)
+OUT: infiniteloopinatomicblock.p (24, 24): inferred type:  BaseType(REAL)
+OUT: infiniteloopinatomicblock.p (25, 5): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (25, 11): inferred type:  BaseType(EVENT)
+OUT: infiniteloopinatomicblock.p (27, 4): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (27, 8): inferred type:  BaseType(INT)
+OUT: infiniteloopinatomicblock.p (27, 15): inferred type:  BaseType(BOOL)
+OUT: infiniteloopinatomicblock.p (27, 18): inferred type:  BaseType(INT)
+OUT: infiniteloopinatomicblock.p (28, 5): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (28, 10): inferred type:  BaseType(REAL)
+OUT: infiniteloopinatomicblock.p (28, 18): inferred type:  BaseType(EVENT)
+OUT: infiniteloopinatomicblock.p (28, 24): inferred type:  BaseType(REAL)
+OUT: infiniteloopinatomicblock.p (29, 8): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (29, 14): inferred type:  BaseType(EVENT)
+OUT: infiniteloopinatomicblock.p (42, 4): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (42, 10): inferred type:  BaseType(EVENT)
+OUT: infiniteloopinatomicblock.p (45, 3): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (46, 23): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (46, 30): inferred type:  BaseType(BOOL)
+OUT: infiniteloopinatomicblock.p (59, 3): inferred type:  BaseType(INT)
+OUT: infiniteloopinatomicblock.p (59, 3): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (59, 12): inferred type:  BaseType(INT)
+OUT: infiniteloopinatomicblock.p (59, 19): inferred type:  BaseType(INT)
+OUT: infiniteloopinatomicblock.p (59, 21): inferred type:  BaseType(INT)
+OUT: infiniteloopinatomicblock.p (60, 3): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (60, 7): inferred type:  BaseType(INT)
+OUT: infiniteloopinatomicblock.p (60, 14): inferred type:  BaseType(BOOL)
+OUT: infiniteloopinatomicblock.p (60, 17): inferred type:  BaseType(INT)
+OUT: infiniteloopinatomicblock.p (61, 5): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (61, 10): inferred type:  BaseType(REAL)
+OUT: infiniteloopinatomicblock.p (61, 18): inferred type:  BaseType(REAL)
+OUT: infiniteloopinatomicblock.p (61, 30): inferred type:  BaseType(EVENT)
+OUT: infiniteloopinatomicblock.p (63, 3): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (63, 7): inferred type:  BaseType(INT)
+OUT: infiniteloopinatomicblock.p (63, 14): inferred type:  BaseType(BOOL)
+OUT: infiniteloopinatomicblock.p (63, 17): inferred type:  BaseType(INT)
+OUT: infiniteloopinatomicblock.p (64, 4): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (64, 9): inferred type:  BaseType(REAL)
+OUT: infiniteloopinatomicblock.p (64, 17): inferred type:  BaseType(REAL)
+OUT: infiniteloopinatomicblock.p (64, 29): inferred type:  BaseType(EVENT)
+OUT: infiniteloopinatomicblock.p (66, 3): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (66, 9): inferred type:  BaseType(EVENT)
+OUT: infiniteloopinatomicblock.p (68, 9): inferred type:  NIL
+OUT: 
+EXIT: 0

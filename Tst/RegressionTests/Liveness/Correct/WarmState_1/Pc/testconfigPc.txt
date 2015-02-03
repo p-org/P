@@ -1,0 +1,8 @@
+runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: ..\Liveness_2_WarmState.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+argPc: /liveness
+argPc: /doNotErase
+acc: .\
+dsc: pc.exe, Liveness: "warm" state instead of "hot"

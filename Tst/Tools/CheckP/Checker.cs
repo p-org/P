@@ -695,6 +695,7 @@ namespace CheckP
                 var process = new Process();
                 process.StartInfo = psi;
                 process.OutputDataReceived += (s, e) => OutputReceived(outStream, ignorePrompt, s, e);
+                process.ErrorDataReceived += (s, e) => ErrorReceived(outStream, ignorePrompt, s, e);
                 process.Start();
                 process.BeginErrorReadLine();
                 process.BeginOutputReadLine();
@@ -762,6 +763,26 @@ namespace CheckP
             else
             {
                 outStream.WriteLine("OUT: {0}", e.Data);
+            }
+        }
+
+        private static void ErrorReceived(
+            StreamWriter outStream,
+            bool ignorePrompt,
+            object sender,
+            DataReceivedEventArgs e)
+        {
+            if (!String.IsNullOrEmpty(e.Data))
+            {
+                if (ignorePrompt)
+                {
+                     Console.WriteLine("ERROR: {0}", e.Data);
+                }
+                else
+                {
+
+                     outStream.WriteLine("ERROR: {0}", e.Data);
+                }
             }
         }
 

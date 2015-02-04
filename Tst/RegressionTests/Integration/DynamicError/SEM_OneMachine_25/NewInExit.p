@@ -1,4 +1,4 @@
-// This sample tests basic semantics of actions and goto transitions
+// P semantics test: one machine, "new" in exit function
 event E1 assert 1;
 event E2 assert 1;
 event E3 assert 1;

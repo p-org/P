@@ -4,6 +4,6 @@
 OUT: ##################
 OUT: Check Passed
 OUT: ##################
-OUT: 17934 distinct states, 75212 total transitions, 72 steps max depth
+OUT: 26764 distinct states explored
 OUT: 
 EXIT: 0

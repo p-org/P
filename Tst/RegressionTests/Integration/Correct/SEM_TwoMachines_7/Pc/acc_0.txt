@@ -1,0 +1,67 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing RaisedHalt_bugFound.zing ...
+OUT: Compiling RaisedHalt_bugFound.zing to RaisedHalt_bugFound.dll ...
+OUT: raisedhalt_bugfound.p (12, 4): inferred type:  BaseType(REAL)
+OUT: raisedhalt_bugfound.p (12, 4): inferred type:  NIL
+OUT: raisedhalt_bugfound.p (12, 13): inferred type:  BaseType(REAL)
+OUT: raisedhalt_bugfound.p (13, 4): inferred type:  NIL
+OUT: raisedhalt_bugfound.p (13, 10): inferred type:  BaseType(EVENT)
+OUT: raisedhalt_bugfound.p (20, 4): inferred type:  BaseType(INT)
+OUT: raisedhalt_bugfound.p (20, 4): inferred type:  NIL
+OUT: raisedhalt_bugfound.p (20, 13): inferred type:  BaseType(INT)
+OUT: raisedhalt_bugfound.p (20, 20): inferred type:  BaseType(INT)
+OUT: raisedhalt_bugfound.p (20, 22): inferred type:  BaseType(INT)
+OUT: raisedhalt_bugfound.p (21, 4): inferred type:  NIL
+OUT: raisedhalt_bugfound.p (21, 8): inferred type:  BaseType(INT)
+OUT: raisedhalt_bugfound.p (21, 15): inferred type:  BaseType(BOOL)
+OUT: raisedhalt_bugfound.p (21, 18): inferred type:  BaseType(INT)
+OUT: raisedhalt_bugfound.p (22, 5): inferred type:  NIL
+OUT: raisedhalt_bugfound.p (22, 10): inferred type:  BaseType(REAL)
+OUT: raisedhalt_bugfound.p (22, 18): inferred type:  BaseType(EVENT)
+OUT: raisedhalt_bugfound.p (22, 24): inferred type:  BaseType(REAL)
+OUT: raisedhalt_bugfound.p (24, 4): inferred type:  NIL
+OUT: raisedhalt_bugfound.p (24, 8): inferred type:  BaseType(INT)
+OUT: raisedhalt_bugfound.p (24, 15): inferred type:  BaseType(BOOL)
+OUT: raisedhalt_bugfound.p (24, 18): inferred type:  BaseType(INT)
+OUT: raisedhalt_bugfound.p (25, 5): inferred type:  NIL
+OUT: raisedhalt_bugfound.p (25, 10): inferred type:  BaseType(REAL)
+OUT: raisedhalt_bugfound.p (25, 18): inferred type:  BaseType(EVENT)
+OUT: raisedhalt_bugfound.p (25, 24): inferred type:  BaseType(REAL)
+OUT: raisedhalt_bugfound.p (26, 8): inferred type:  NIL
+OUT: raisedhalt_bugfound.p (26, 14): inferred type:  BaseType(EVENT)
+OUT: raisedhalt_bugfound.p (28, 4): inferred type:  NIL
+OUT: raisedhalt_bugfound.p (28, 10): inferred type:  BaseType(EVENT)
+OUT: raisedhalt_bugfound.p (34, 3): inferred type:  NIL
+OUT: raisedhalt_bugfound.p (35, 23): inferred type:  NIL
+OUT: raisedhalt_bugfound.p (35, 30): inferred type:  BaseType(BOOL)
+OUT: raisedhalt_bugfound.p (48, 3): inferred type:  BaseType(INT)
+OUT: raisedhalt_bugfound.p (48, 3): inferred type:  NIL
+OUT: raisedhalt_bugfound.p (48, 12): inferred type:  BaseType(INT)
+OUT: raisedhalt_bugfound.p (48, 19): inferred type:  BaseType(INT)
+OUT: raisedhalt_bugfound.p (48, 21): inferred type:  BaseType(INT)
+OUT: raisedhalt_bugfound.p (49, 3): inferred type:  NIL
+OUT: raisedhalt_bugfound.p (49, 7): inferred type:  BaseType(INT)
+OUT: raisedhalt_bugfound.p (49, 14): inferred type:  BaseType(BOOL)
+OUT: raisedhalt_bugfound.p (49, 17): inferred type:  BaseType(INT)
+OUT: raisedhalt_bugfound.p (50, 5): inferred type:  NIL
+OUT: raisedhalt_bugfound.p (50, 10): inferred type:  BaseType(REAL)
+OUT: raisedhalt_bugfound.p (50, 18): inferred type:  BaseType(REAL)
+OUT: raisedhalt_bugfound.p (50, 30): inferred type:  BaseType(EVENT)
+OUT: raisedhalt_bugfound.p (52, 3): inferred type:  NIL
+OUT: raisedhalt_bugfound.p (52, 7): inferred type:  BaseType(INT)
+OUT: raisedhalt_bugfound.p (52, 14): inferred type:  BaseType(BOOL)
+OUT: raisedhalt_bugfound.p (52, 17): inferred type:  BaseType(INT)
+OUT: raisedhalt_bugfound.p (53, 4): inferred type:  NIL
+OUT: raisedhalt_bugfound.p (53, 9): inferred type:  BaseType(REAL)
+OUT: raisedhalt_bugfound.p (53, 17): inferred type:  BaseType(REAL)
+OUT: raisedhalt_bugfound.p (53, 29): inferred type:  BaseType(EVENT)
+OUT: raisedhalt_bugfound.p (55, 3): inferred type:  NIL
+OUT: raisedhalt_bugfound.p (55, 9): inferred type:  BaseType(EVENT)
+OUT: raisedhalt_bugfound.p (57, 9): inferred type:  NIL
+OUT: 
+EXIT: 0

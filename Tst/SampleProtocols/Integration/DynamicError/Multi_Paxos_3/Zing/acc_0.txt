@@ -4,9 +4,9 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 41534 distinct states, 87182 total transitions, 162 steps max depth
+OUT: 9681 distinct states explored
 OUT: 
-EXIT: 0
+EXIT: 3
 
 =================================
 Multi_Paxos_3.trace
@@ -81,6 +81,7 @@ Trace-Log 0:
 <RaiseLog> Machine Client-0 raised Event ____local
 <StateLog> Machine Client-0 exiting State Init
 <StateLog> Machine Client-0 entering State PumpRequestOne
+<MonitorLog> Enqueued Event < {0}, 1 > to 1 ValmachineityCheck monitors in Machine Client-0
 <FunctionLog> Machine ValmachineityCheck-0 executing Function addClientSet
 <EnqueueLog> Enqueued Event < ____update, namedTup : (field_0: 0,field_1: 1,) > in Machine ____PaxosNode-0 by ____Client-0
 <DequeueLog> Dequeued Event < ____update, namedTup : (field_0: 0,field_1: 1,) > at Machine ____PaxosNode-0
@@ -98,6 +99,7 @@ Trace-Log 0:
 <EnqueueLog> Enqueued Event < ____agree, namedTup : (field_0: 0,field_1: namedTup : (field_0: -1,field_1: -1,),field_2: -1,) > in Machine ____PaxosNode-0 by ____PaxosNode-1
 <EnqueueLog> Enqueued Event < ____agree, namedTup : (field_0: 0,field_1: namedTup : (field_0: 1,field_1: 3,),field_2: -1,) > in Machine ____PaxosNode-0 by ____PaxosNode-1
 <EnqueueLog> Enqueued Event < ____prepare, namedTup : (field_0: ____PaxosNode-0,field_1: 0,field_2: namedTup : (field_0: 1,field_1: 3,),) > in Machine ____PaxosNode-0 by ____PaxosNode-0
+<MonitorLog> Enqueued Event < {0}, 1 > to 1 ValmachineityCheck monitors in Machine PaxosNode-0
 <FunctionLog> Machine ValmachineityCheck-0 executing Function addProposerSet
 <EnqueueLog> Enqueued Event < ____startTimer, null > in Machine ____Timer-0 by ____PaxosNode-0
 <DequeueLog> Dequeued Event < ____startTimer, null > at Machine ____Timer-0
@@ -114,6 +116,8 @@ Trace-Log 0:
 <StateLog> Machine Timer-0 exiting State TimerStarted
 <StateLog> Machine Timer-0 entering State Loop
 <StateLog> Machine PaxosNode-0 entering State ProposeValuePhase2
+<MonitorLog> Enqueued Event < {0}, namedTup : (field_0: ____PaxosNode-0,field_1: 0,field_2: namedTup : (field_0: 1,field_1: 3,),field_3: 1,) > to 0 BasicPaxosInvariant_P2b monitors in Machine PaxosNode-0
+<MonitorLog> Enqueued Event < {0}, 1 > to 1 ValmachineityCheck monitors in Machine PaxosNode-0
 <FunctionLog> Machine ValmachineityCheck-0 executing Function addProposerSet
 <EnqueueLog> Enqueued Event < ____accept, namedTup : (field_0: ____PaxosNode-0,field_1: 0,field_2: namedTup : (field_0: 1,field_1: 3,),field_3: 1,) > in Machine ____PaxosNode-2 by ____PaxosNode-0
 <DequeueLog> Dequeued Event < ____accept, namedTup : (field_0: ____PaxosNode-0,field_1: 0,field_2: namedTup : (field_0: 1,field_1: 3,),field_3: 1,) > at Machine ____PaxosNode-2
@@ -142,10 +146,12 @@ Trace-Log 0:
 <FunctionLog> Machine PaxosNode-0 executing Function CountAccepted
 <RaiseLog> Machine PaxosNode-0 raised Event ____chosen
 <StateLog> Machine PaxosNode-0 exiting State ProposeValuePhase2
+<MonitorLog> Enqueued Event < {0}, namedTup : (field_0: ____PaxosNode-0,field_1: 0,field_2: namedTup : (field_0: 1,field_1: 3,),field_3: 1,) > to 0 BasicPaxosInvariant_P2b monitors in Machine PaxosNode-0
 <EnqueueLog> Enqueued Event < ____cancelTimer, null > in Machine ____Timer-0 by ____PaxosNode-0
 <DequeueLog> Dequeued Event < ____cancelTimer, null > at Machine ____Timer-0
 <StateLog> Machine Timer-0 exiting State TimerStarted
 <StateLog> Machine Timer-0 entering State Loop
+<MonitorLog> Enqueued Event < {0}, 1 > to 1 ValmachineityCheck monitors in Machine PaxosNode-0
 <FunctionLog> Machine ValmachineityCheck-0 executing Function checkChosenValmachineity
 <StateLog> Machine PaxosNode-0 entering State RunLearner
 <StateLog> Machine PaxosNode-0 exiting State RunLearner
@@ -158,11 +164,22 @@ Trace-Log 0:
 <FunctionLog> Machine PaxosNode-0 executing Function ignore
 <DequeueLog> Dequeued Event < ____accepted, namedTup : (field_0: 0,field_1: namedTup : (field_0: 1,field_1: 3,),field_2: 1,) > at Machine ____PaxosNode-0
 <FunctionLog> Machine PaxosNode-0 executing Function ignore
+<StateLog> Machine LeaderElection-2 entering State Init
+<RaiseLog> Machine LeaderElection-2 raised Event ____local
+<StateLog> Machine LeaderElection-2 exiting State Init
+<StateLog> Machine LeaderElection-2 entering State SendLeader
+<EnqueueLog> Enqueued Event < ____newLeader, namedTup : (field_0: 1,field_1: ____PaxosNode-2,) > in Machine ____PaxosNode-0 by ____LeaderElection-2
+<DequeueLog> Dequeued Event < ____newLeader, namedTup : (field_0: 1,field_1: ____PaxosNode-2,) > at Machine ____PaxosNode-0
+<FunctionLog> Machine PaxosNode-0 executing Function UpdateLeader
 <RaiseLog> Machine Client-0 raised Event ____response
 <StateLog> Machine Client-0 exiting State PumpRequestOne
 <StateLog> Machine Client-0 entering State PumpRequestTwo
+<MonitorLog> Enqueued Event < {0}, 2 > to 1 ValmachineityCheck monitors in Machine Client-0
 <FunctionLog> Machine ValmachineityCheck-0 executing Function addClientSet
-<EnqueueLog> Enqueued Event < ____update, namedTup : (field_0: 0,field_1: 2,) > in Machine ____PaxosNode-2 by ____Client-0
+<EnqueueLog> Enqueued Event < ____update, namedTup : (field_0: 0,field_1: 2,) > in Machine ____PaxosNode-0 by ____Client-0
+<DequeueLog> Dequeued Event < ____update, namedTup : (field_0: 0,field_1: 2,) > at Machine ____PaxosNode-0
+<FunctionLog> Machine PaxosNode-0 executing Function CheckIfLeader
+<EnqueueLog> Enqueued Event < ____update, namedTup : (field_0: 0,field_1: 2,) > in Machine ____PaxosNode-2 by ____PaxosNode-0
 <DequeueLog> Dequeued Event < ____update, namedTup : (field_0: 0,field_1: 2,) > at Machine ____PaxosNode-2
 <FunctionLog> Machine PaxosNode-2 executing Function CheckIfLeader
 <RaiseLog> Machine PaxosNode-2 raised Event ____goPropose
@@ -173,6 +190,7 @@ Trace-Log 0:
 <FunctionLog> Machine PaxosNode-1 executing Function preparefun
 <EnqueueLog> Enqueued Event < ____reject, namedTup : (field_0: 0,field_1: namedTup : (field_0: 1,field_1: 3,),) > in Machine ____PaxosNode-2 by ____PaxosNode-1
 <EnqueueLog> Enqueued Event < ____prepare, namedTup : (field_0: ____PaxosNode-2,field_1: 0,field_2: namedTup : (field_0: 1,field_1: 1,),) > in Machine ____PaxosNode-0 by ____PaxosNode-2
+<MonitorLog> Enqueued Event < {0}, 2 > to 1 ValmachineityCheck monitors in Machine PaxosNode-2
 <FunctionLog> Machine ValmachineityCheck-0 executing Function addProposerSet
 <EnqueueLog> Enqueued Event < ____startTimer, null > in Machine ____Timer-2 by ____PaxosNode-2
 <DequeueLog> Dequeued Event < ____startTimer, null > at Machine ____Timer-2
@@ -194,6 +212,7 @@ Trace-Log 0:
 <FunctionLog> Machine PaxosNode-1 executing Function preparefun
 <EnqueueLog> Enqueued Event < ____agree, namedTup : (field_0: 0,field_1: namedTup : (field_0: 1,field_1: 3,),field_2: 1,) > in Machine ____PaxosNode-2 by ____PaxosNode-1
 <EnqueueLog> Enqueued Event < ____prepare, namedTup : (field_0: ____PaxosNode-2,field_1: 0,field_2: namedTup : (field_0: 2,field_1: 1,),) > in Machine ____PaxosNode-0 by ____PaxosNode-2
+<MonitorLog> Enqueued Event < {0}, 2 > to 1 ValmachineityCheck monitors in Machine PaxosNode-2
 <FunctionLog> Machine ValmachineityCheck-0 executing Function addProposerSet
 <EnqueueLog> Enqueued Event < ____startTimer, null > in Machine ____Timer-2 by ____PaxosNode-2
 <DequeueLog> Dequeued Event < ____startTimer, null > at Machine ____Timer-2
@@ -212,6 +231,7 @@ Trace-Log 0:
 <FunctionLog> Machine PaxosNode-1 executing Function preparefun
 <EnqueueLog> Enqueued Event < ____agree, namedTup : (field_0: 0,field_1: namedTup : (field_0: 2,field_1: 1,),field_2: -1,) > in Machine ____PaxosNode-2 by ____PaxosNode-1
 <EnqueueLog> Enqueued Event < ____prepare, namedTup : (field_0: ____PaxosNode-2,field_1: 0,field_2: namedTup : (field_0: 2,field_1: 1,),) > in Machine ____PaxosNode-0 by ____PaxosNode-2
+<MonitorLog> Enqueued Event < {0}, 2 > to 1 ValmachineityCheck monitors in Machine PaxosNode-2
 <FunctionLog> Machine ValmachineityCheck-0 executing Function addProposerSet
 <EnqueueLog> Enqueued Event < ____startTimer, null > in Machine ____Timer-2 by ____PaxosNode-2
 <DequeueLog> Dequeued Event < ____startTimer, null > at Machine ____Timer-2
@@ -234,6 +254,8 @@ Trace-Log 0:
 <StateLog> Machine Timer-2 exiting State TimerStarted
 <StateLog> Machine Timer-2 entering State Loop
 <StateLog> Machine PaxosNode-2 entering State ProposeValuePhase2
+<MonitorLog> Enqueued Event < {0}, namedTup : (field_0: ____PaxosNode-2,field_1: 0,field_2: namedTup : (field_0: 2,field_1: 1,),field_3: 2,) > to 0 BasicPaxosInvariant_P2b monitors in Machine PaxosNode-2
+<MonitorLog> Enqueued Event < {0}, 2 > to 1 ValmachineityCheck monitors in Machine PaxosNode-2
 <FunctionLog> Machine ValmachineityCheck-0 executing Function addProposerSet
 <EnqueueLog> Enqueued Event < ____accept, namedTup : (field_0: ____PaxosNode-2,field_1: 0,field_2: namedTup : (field_0: 2,field_1: 1,),field_3: 2,) > in Machine ____PaxosNode-2 by ____PaxosNode-2
 <EnqueueLog> Enqueued Event < ____accept, namedTup : (field_0: ____PaxosNode-2,field_1: 0,field_2: namedTup : (field_0: 2,field_1: 1,),field_3: 2,) > in Machine ____PaxosNode-1 by ____PaxosNode-2
@@ -258,21 +280,15 @@ Trace-Log 0:
 <FunctionLog> Machine PaxosNode-2 executing Function CountAccepted
 <RaiseLog> Machine PaxosNode-2 raised Event ____chosen
 <StateLog> Machine PaxosNode-2 exiting State ProposeValuePhase2
+<MonitorLog> Enqueued Event < {0}, namedTup : (field_0: ____PaxosNode-2,field_1: 0,field_2: namedTup : (field_0: 2,field_1: 1,),field_3: 2,) > to 0 BasicPaxosInvariant_P2b monitors in Machine PaxosNode-2
 <EnqueueLog> Enqueued Event < ____cancelTimer, null > in Machine ____Timer-2 by ____PaxosNode-2
 <DequeueLog> Dequeued Event < ____cancelTimer, null > at Machine ____Timer-2
 <StateLog> Machine Timer-2 exiting State TimerStarted
 <StateLog> Machine Timer-2 entering State Loop
+<MonitorLog> Enqueued Event < {0}, 2 > to 1 ValmachineityCheck monitors in Machine PaxosNode-2
 <FunctionLog> Machine ValmachineityCheck-0 executing Function checkChosenValmachineity
 <StateLog> Machine PaxosNode-2 entering State RunLearner
 <StateLog> Machine PaxosNode-2 exiting State RunLearner
-<RaiseLog> Machine Client-0 raised Event ____response
-<StateLog> Machine Client-0 exiting State PumpRequestTwo
-<StateLog> Machine Client-0 entering State Done
-<StateLog> Machine LeaderElection-2 entering State Init
-<RaiseLog> Machine LeaderElection-2 raised Event ____local
-<StateLog> Machine LeaderElection-2 exiting State Init
-<StateLog> Machine LeaderElection-2 entering State SendLeader
-<EnqueueLog> Enqueued Event < ____newLeader, namedTup : (field_0: 1,field_1: ____PaxosNode-2,) > in Machine ____PaxosNode-0 by ____LeaderElection-2
 <DequeueLog> Dequeued Event < ____prepare, namedTup : (field_0: ____PaxosNode-2,field_1: 0,field_2: namedTup : (field_0: 1,field_1: 1,),) > at Machine ____PaxosNode-0
 <FunctionLog> Machine PaxosNode-0 executing Function preparefun
 <EnqueueLog> Enqueued Event < ____reject, namedTup : (field_0: 0,field_1: namedTup : (field_0: 1,field_1: 3,),) > in Machine ____PaxosNode-2 by ____PaxosNode-0
@@ -283,4 +299,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(false)
-Comment: Internal error
+Comment: Unhandled event exception by machine PaxosNode

@@ -1,0 +1,58 @@
+// P semantics test: two machines, machine is halted with "raise halt" (unhandled)
+// This test is for the case when "halt" is not explicitly handled - hence, default semantics of "halt" is engaged.
+// The program finishes in the deadlock in Ping_WaitPong after 2nd Pong is sent
+event Ping assert 1 : machine;
+event Pong assert 1;
+event Success;
+event PongIgnored;
+//event PongHalted;
+
+main machine PING {
+    var pongId: machine;
+	var count1: int;
+    start state Ping_Init {
+        entry {
+			pongId = new PONG();
+			raise Success;   	   
+        }
+        on Success goto Ping_SendPing;
+    }
+
+    state Ping_SendPing {
+        entry {
+			send pongId, Ping, this; 
+			raise Success;
+	}
+        on Success goto Ping_WaitPong;
+     }
+
+     state Ping_WaitPong {
+		on Pong goto Ping_SendPing; 
+     }
+
+    state Done { }
+}
+
+machine PONG {
+	var count2: int;
+    start state Pong_WaitPing {
+        entry { }
+			on Ping goto Pong_SendPong;
+    }
+
+    state Pong_SendPong {
+	entry {
+		count2 = count2 + 1;
+		if (count2 == 1) {
+			 send payload as machine, Pong;
+			 	
+			}
+		if (count2 == 2) {
+			send payload as machine, Pong;
+			raise halt;			
+			}
+		raise Success;	
+	}
+        on Success goto Pong_WaitPing;
+    }
+}

@@ -1,3 +1,7 @@
 batch.bat
 display-diffs.bat
 failed-tests.txt
+check
+check-tmp.txt
+out*
+stat

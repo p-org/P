@@ -1,0 +1,25 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing RaisedHalt.zing ...
+OUT: Compiling RaisedHalt.zing to RaisedHalt.dll ...
+OUT: raisedhalt.p (10, 7): inferred type:  NIL
+OUT: raisedhalt.p (10, 12): inferred type:  BaseType(REAL)
+OUT: raisedhalt.p (10, 18): inferred type:  BaseType(EVENT)
+OUT: raisedhalt.p (11, 4): inferred type:  NIL
+OUT: raisedhalt.p (11, 10): inferred type:  BaseType(EVENT)
+OUT: raisedhalt.p (15, 17): inferred type:  NIL
+OUT: raisedhalt.p (15, 22): inferred type:  BaseType(REAL)
+OUT: raisedhalt.p (15, 28): inferred type:  BaseType(EVENT)
+OUT: raisedhalt.p (19, 4): inferred type:  BaseType(BOOL)
+OUT: raisedhalt.p (19, 4): inferred type:  NIL
+OUT: raisedhalt.p (19, 11): inferred type:  BaseType(BOOL)
+OUT: raisedhalt.p (23, 3): inferred type:  NIL
+OUT: raisedhalt.p (23, 10): inferred type:  BaseType(BOOL)
+OUT: raisedhalt.p (23, 15): inferred type:  BaseType(BOOL)
+OUT: raisedhalt.p (23, 18): inferred type:  BaseType(BOOL)
+OUT: 
+EXIT: 0

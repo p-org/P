@@ -332,6 +332,9 @@ namespace CheckP
                     //checking if files specified as  zinger arguments are present (unless Zinger is fixed
                     //and returns "false" for such errors).
                     //The error message should give a tip: "Make sure pc.exe was called and run successfully"
+                    // zingerResult will be false only if zinger command line call didn't work;
+                    // otherwise, it will be "true", even if Zinger's exit value is non-zero
+                    // TODO: catch Zinger's exit code 7 (wrong parameters) and report it to cmd window
                     bool zingerResult = Run(tmpWriter, isIgnPrmpt, exeZinger[0].Item2.ToString(), zingerArgs);
 
                     //debug:

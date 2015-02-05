@@ -1,4 +1,4 @@
-// P semantics test: one machine, "raise" and "send" to itself in entry actions
+// P semantics test: two machines, machine is halted with "raise halt" (unhandled)
 // Action2 is never executed after raising E1; test passes
 event E1 assert 1;
 event E2 assert 1;
@@ -19,6 +19,6 @@ main machine Real1 {
 		test = true;
     }
 	fun Action2() {
-		assert(test == false); //does not hold
+		assert(test == false); //unreachable
     }
 }

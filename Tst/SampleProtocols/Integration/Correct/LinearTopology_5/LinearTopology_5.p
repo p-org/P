@@ -47,20 +47,17 @@ main model GodMachine {
 	//temp variable 
 	var link:seq[machine];
 
-    fun seal() [invokescheduler = seal] {}
-    fun unseal() [invokescheduler = unseal] {}
-
 	start state GodMachine_Init {		
 		entry {
 			// create all the post machines
-			seal();
+			//;
 			pt1 = new PortMachine();
 			pt2 = new PortMachine();
 			pt3 = new PortMachine();
 			pt4 = new PortMachine();
 			pt5 = new PortMachine();
 			pt6 = new PortMachine();
-			unseal();
+			//;
 			// create the ordinary clock machines
 			link += (0,pt1);
 			OC1 = new Clock((link, 1));
@@ -79,7 +76,7 @@ main model GodMachine {
 			BC2 = new Clock((link, 4));
 			link -= 0; link -= 0;
 			assert(sizeof(link) == 0);
-			seal();
+			;
 			//initialize all the ports appropriately with the connections and power them up
 			send pt1, Initialise, (pt2, OC1);
 			send pt2, Initialise, (pt1, BC1);
@@ -87,7 +84,7 @@ main model GodMachine {
 			send pt4, Initialise, (pt3, BC2);
 			send pt5, Initialise, (pt6, BC2);
 			send pt6, Initialise, (pt5, OC2);
-			unseal();
+			;
 			//delete the machine Gods job is done
 			raise halt;
 		}
@@ -110,13 +107,11 @@ machine Clock {
 	var check : bool;
 	var i:int;
 	var countAck:int;
-	
-    fun seal() [invokescheduler = seal] {}
-    fun unseal() [invokescheduler = unseal] {}
+
 
 	start state Init {
 		entry {
-			seal();
+			;
 			//initialize the EBest value to random
 		      Ports = (payload as (seq[machine], int)).0;
 		      D0 = (payload as (seq[machine], int)).1;
@@ -129,7 +124,7 @@ machine Clock {
 				send Ports[i], PowerUp, ParentGM;
 				i = i - 1;
 			}
-			unseal();
+			;
 			raise Local;
 		}
 			
@@ -172,14 +167,14 @@ machine Clock {
 			if(check)
 			{
 				i = sizeof(Ports) - 1;
-				seal();
+				;
 				while(i>=0)
 				{
 					//send state decision event to all the ports so that we can evaluate new state
 					send Ports[i], StateDecisionEvent;
 					i = i - 1;
 				}
-				unseal();
+				;
 				//go to atomic transaction mode
 				push WaitForErBest;
 			}
@@ -212,7 +207,7 @@ machine Clock {
 		on Ack do ReceiveAck;
 		entry {
 			i = sizeof(Ports) - 1;
-			seal();
+			;
 			//for each port calculate the recommended state
 			while(i >= 0)
 			{
@@ -280,7 +275,7 @@ machine Clock {
 				send Ports[i], UpdateParentGM, ParentGM;
 				i = i - 1;
 			}
-			unseal();
+			;
 		}
 	}
 }

@@ -1,0 +1,65 @@
+=================================
+         Console output          
+=================================
+OUT: controlimpureinexit.p (18, 16): inferred type:  NIL
+OUT: controlimpureinexit.p (18, 21): inferred type:  BaseType(REAL)
+OUT: controlimpureinexit.p (18, 27): inferred type:  BaseType(EVENT)
+OUT: controlimpureinexit.p (19, 16): inferred type:  NIL
+OUT: controlimpureinexit.p (19, 21): inferred type:  BaseType(REAL)
+OUT: controlimpureinexit.p (19, 27): inferred type:  BaseType(EVENT)
+OUT: controlimpureinexit.p (20, 16): inferred type:  NIL
+OUT: controlimpureinexit.p (20, 21): inferred type:  BaseType(REAL)
+OUT: controlimpureinexit.p (20, 27): inferred type:  BaseType(EVENT)
+OUT: controlimpureinexit.p (21, 7): inferred type:  NIL
+OUT: controlimpureinexit.p (23, 20): inferred type:  NIL
+OUT: controlimpureinexit.p (26, 4): inferred type:  NIL
+OUT: controlimpureinexit.p (27, 4): inferred type:  NIL
+OUT: controlimpureinexit.p (28, 4): inferred type:  NIL
+OUT: controlimpureinexit.p (28, 10): inferred type:  BaseType(EVENT)
+OUT: controlimpureinexit.p (29, 4): inferred type:  NIL
+OUT: controlimpureinexit.p (29, 8): inferred type:  BaseType(INT)
+OUT: controlimpureinexit.p (29, 10): inferred type:  BaseType(BOOL)
+OUT: controlimpureinexit.p (29, 13): inferred type:  BaseType(INT)
+OUT: controlimpureinexit.p (30, 9): inferred type:  NIL
+OUT: controlimpureinexit.p (34, 6): inferred type:  BaseType(INT)
+OUT: controlimpureinexit.p (34, 6): inferred type:  NIL
+OUT: controlimpureinexit.p (34, 10): inferred type:  BaseType(INT)
+OUT: controlimpureinexit.p (34, 12): inferred type:  BaseType(INT)
+OUT: controlimpureinexit.p (34, 14): inferred type:  BaseType(INT)
+OUT: controlimpureinexit.p (34, 24): inferred type:  BaseType(INT)
+OUT: controlimpureinexit.p (35, 8): inferred type:  BaseType(INT)
+OUT: controlimpureinexit.p (35, 18): inferred type:  BaseType(INT)
+OUT: controlimpureinexit.p (36, 8): inferred type:  BaseType(INT)
+OUT: controlimpureinexit.p (49, 10): inferred type:  NIL
+OUT: controlimpureinexit.p (57, 10): inferred type:  NIL
+OUT: controlimpureinexit.p (57, 16): inferred type:  BaseType(EVENT)
+OUT: controlimpureinexit.p (60, 9): inferred type:  NIL
+OUT: controlimpureinexit.p (64, 3): inferred type:  NIL
+OUT: controlimpureinexit.p (67, 3): inferred type:  NIL
+OUT: controlimpureinexit.p (70, 3): inferred type:  NIL
+OUT: controlimpureinexit.p (70, 9): inferred type:  BaseType(EVENT)
+OUT: controlimpureinexit.p (73, 3): inferred type:  NIL
+OUT: controlimpureinexit.p (74, 3): inferred type:  NIL
+OUT: controlimpureinexit.p (74, 10): inferred type:  BaseType(INT)
+OUT: controlimpureinexit.p (77, 3): inferred type:  NIL
+OUT: controlimpureinexit.p (78, 3): inferred type:  NIL
+OUT: controlimpureinexit.p (78, 10): inferred type:  BaseType(INT)
+OUT: controlimpureinexit.p (81, 3): inferred type:  NIL
+OUT: controlimpureinexit.p (81, 9): inferred type:  BaseType(EVENT)
+OUT: controlimpureinexit.p (82, 3): inferred type:  NIL
+OUT: controlimpureinexit.p (82, 10): inferred type:  BaseType(INT)
+OUT: controlimpureinexit.p (26, 4): function may cause a change in current state; this is not allowed here
+OUT: controlimpureinexit.p (34, 14): function may cause a change in current state; this is not allowed here
+OUT: controlimpureinexit.p (35, 8): function may cause a change in current state; this is not allowed here
+OUT: controlimpureinexit.p (36, 8): function may cause a change in current state; this is not allowed here
+OUT: controlimpureinexit.p (45, 8): function may cause a change in current state; this is not allowed here
+OUT: controlimpureinexit.p (49, 10): function may cause a change in current state; this is not allowed here
+OUT: controlimpureinexit.p (53, 8): function may cause a change in current state; this is not allowed here
+OUT: controlimpureinexit.p (57, 10): function may cause a change in current state; this is not allowed here
+OUT: controlimpureinexit.p (61, 8): function may cause a change in current state; this is not allowed here
+OUT: controlimpureinexit.p (63, 6): function may cause a change in current state; this is not allowed here
+OUT: controlimpureinexit.p (66, 6): function may cause a change in current state; this is not allowed here
+OUT: controlimpureinexit.p (69, 6): function may cause a change in current state; this is not allowed here
+OUT: Compilation failed
+OUT: 
+EXIT: -1

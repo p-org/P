@@ -1,7 +1,7 @@
 =================================
          Console output          
 =================================
-OUT: Model Internal Runtime Error
+OUT: Program Runtime Error
 OUT: 
 OUT: Error:
 OUT: The Zing model appears to have encountered an infinite loop within an atomic block

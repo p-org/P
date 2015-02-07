@@ -1,0 +1,53 @@
+=================================
+         Console output          
+=================================
+OUT: controlimpureinentry.p (13, 13): inferred type:  BaseType(INT)
+OUT: controlimpureinentry.p (13, 13): inferred type:  NIL
+OUT: controlimpureinentry.p (13, 17): inferred type:  BaseType(INT)
+OUT: controlimpureinentry.p (13, 20): inferred type:  NIL
+OUT: controlimpureinentry.p (13, 26): inferred type:  BaseType(EVENT)
+OUT: controlimpureinentry.p (20, 5): inferred type:  NIL
+OUT: controlimpureinentry.p (20, 9): inferred type:  BaseType(INT)
+OUT: controlimpureinentry.p (20, 11): inferred type:  BaseType(BOOL)
+OUT: controlimpureinentry.p (20, 14): inferred type:  BaseType(INT)
+OUT: controlimpureinentry.p (21, 9): inferred type:  NIL
+OUT: controlimpureinentry.p (22, 6): inferred type:  NIL
+OUT: controlimpureinentry.p (23, 6): inferred type:  NIL
+OUT: controlimpureinentry.p (23, 12): inferred type:  BaseType(EVENT)
+OUT: controlimpureinentry.p (24, 6): inferred type:  NIL
+OUT: controlimpureinentry.p (25, 6): inferred type:  NIL
+OUT: controlimpureinentry.p (26, 6): inferred type:  ERROR
+OUT: controlimpureinentry.p (30, 6): inferred type:  BaseType(INT)
+OUT: controlimpureinentry.p (30, 6): inferred type:  NIL
+OUT: controlimpureinentry.p (30, 10): inferred type:  BaseType(INT)
+OUT: controlimpureinentry.p (30, 12): inferred type:  BaseType(INT)
+OUT: controlimpureinentry.p (30, 14): inferred type:  BaseType(INT)
+OUT: controlimpureinentry.p (30, 24): inferred type:  BaseType(INT)
+OUT: controlimpureinentry.p (31, 8): inferred type:  BaseType(INT)
+OUT: controlimpureinentry.p (31, 18): inferred type:  BaseType(INT)
+OUT: controlimpureinentry.p (32, 8): inferred type:  BaseType(INT)
+OUT: controlimpureinentry.p (34, 9): inferred type:  NIL
+OUT: controlimpureinentry.p (34, 15): inferred type:  BaseType(EVENT)
+OUT: controlimpureinentry.p (38, 3): inferred type:  NIL
+OUT: controlimpureinentry.p (39, 3): inferred type:  NIL
+OUT: controlimpureinentry.p (39, 10): inferred type:  BaseType(INT)
+OUT: controlimpureinentry.p (42, 3): inferred type:  NIL
+OUT: controlimpureinentry.p (43, 3): inferred type:  NIL
+OUT: controlimpureinentry.p (43, 10): inferred type:  BaseType(INT)
+OUT: controlimpureinentry.p (46, 3): inferred type:  NIL
+OUT: controlimpureinentry.p (46, 9): inferred type:  BaseType(EVENT)
+OUT: controlimpureinentry.p (47, 3): inferred type:  NIL
+OUT: controlimpureinentry.p (47, 10): inferred type:  BaseType(INT)
+OUT: controlimpureinentry.p (50, 3): inferred type:  NIL
+OUT: controlimpureinentry.p (54, 3): inferred type:  NIL
+OUT: controlimpureinentry.p (54, 9): inferred type:  BaseType(EVENT)
+OUT: controlimpureinentry.p (57, 3): inferred type:  NIL
+OUT: controlimpureinentry.p (22, 6): function may cause a change in current state; this is not allowed here
+OUT: controlimpureinentry.p (24, 6): function may cause a change in current state; this is not allowed here
+OUT: controlimpureinentry.p (26, 6): function not defined
+OUT: controlimpureinentry.p (30, 14): function may cause a change in current state; this is not allowed here
+OUT: controlimpureinentry.p (31, 8): function may cause a change in current state; this is not allowed here
+OUT: controlimpureinentry.p (32, 8): function may cause a change in current state; this is not allowed here
+OUT: Compilation failed
+OUT: 
+EXIT: -1

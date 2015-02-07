@@ -1,0 +1,61 @@
+=================================
+         Console output          
+=================================
+OUT: controlimpureerrorsgoto.p (17, 16): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (17, 21): inferred type:  BaseType(REAL)
+OUT: controlimpureerrorsgoto.p (17, 27): inferred type:  BaseType(EVENT)
+OUT: controlimpureerrorsgoto.p (18, 16): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (18, 21): inferred type:  BaseType(REAL)
+OUT: controlimpureerrorsgoto.p (18, 27): inferred type:  BaseType(EVENT)
+OUT: controlimpureerrorsgoto.p (19, 16): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (19, 21): inferred type:  BaseType(REAL)
+OUT: controlimpureerrorsgoto.p (19, 27): inferred type:  BaseType(EVENT)
+OUT: controlimpureerrorsgoto.p (20, 7): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (22, 36): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (22, 42): inferred type:  BaseType(EVENT)
+OUT: controlimpureerrorsgoto.p (23, 30): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (25, 4): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (25, 8): inferred type:  BaseType(INT)
+OUT: controlimpureerrorsgoto.p (25, 10): inferred type:  BaseType(BOOL)
+OUT: controlimpureerrorsgoto.p (25, 13): inferred type:  BaseType(INT)
+OUT: controlimpureerrorsgoto.p (26, 9): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (30, 6): inferred type:  BaseType(INT)
+OUT: controlimpureerrorsgoto.p (30, 6): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (30, 10): inferred type:  BaseType(INT)
+OUT: controlimpureerrorsgoto.p (30, 12): inferred type:  BaseType(INT)
+OUT: controlimpureerrorsgoto.p (30, 14): inferred type:  BaseType(INT)
+OUT: controlimpureerrorsgoto.p (30, 24): inferred type:  BaseType(INT)
+OUT: controlimpureerrorsgoto.p (31, 8): inferred type:  BaseType(INT)
+OUT: controlimpureerrorsgoto.p (31, 18): inferred type:  BaseType(INT)
+OUT: controlimpureerrorsgoto.p (32, 8): inferred type:  BaseType(INT)
+OUT: controlimpureerrorsgoto.p (53, 9): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (56, 3): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (59, 3): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (62, 3): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (62, 9): inferred type:  BaseType(EVENT)
+OUT: controlimpureerrorsgoto.p (65, 3): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (66, 3): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (66, 10): inferred type:  BaseType(INT)
+OUT: controlimpureerrorsgoto.p (69, 3): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (70, 3): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (70, 10): inferred type:  BaseType(INT)
+OUT: controlimpureerrorsgoto.p (73, 3): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (73, 9): inferred type:  BaseType(EVENT)
+OUT: controlimpureerrorsgoto.p (74, 3): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (74, 10): inferred type:  BaseType(INT)
+OUT: controlimpureerrorsgoto.p (22, 36): function may cause a change in current state; this is not allowed here
+OUT: controlimpureerrorsgoto.p (23, 30): function may cause a change in current state; this is not allowed here
+OUT: controlimpureerrorsgoto.p (24, 3): transition on an undefined event
+OUT: controlimpureerrorsgoto.p (25, 4): function may cause a change in current state; this is not allowed here
+OUT: controlimpureerrorsgoto.p (30, 14): function may cause a change in current state; this is not allowed here
+OUT: controlimpureerrorsgoto.p (31, 8): function may cause a change in current state; this is not allowed here
+OUT: controlimpureerrorsgoto.p (32, 8): function may cause a change in current state; this is not allowed here
+OUT: controlimpureerrorsgoto.p (39, 28): function may cause a change in current state; this is not allowed here
+OUT: controlimpureerrorsgoto.p (40, 31): function may cause a change in current state; this is not allowed here
+OUT: controlimpureerrorsgoto.p (41, 28): function may cause a change in current state; this is not allowed here
+OUT: controlimpureerrorsgoto.p (55, 6): function may cause a change in current state; this is not allowed here
+OUT: controlimpureerrorsgoto.p (58, 6): function may cause a change in current state; this is not allowed here
+OUT: controlimpureerrorsgoto.p (61, 6): function may cause a change in current state; this is not allowed here
+OUT: Compilation failed
+OUT: 
+EXIT: -1

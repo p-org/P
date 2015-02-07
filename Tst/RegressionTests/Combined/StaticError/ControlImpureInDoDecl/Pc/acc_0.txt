@@ -1,0 +1,67 @@
+=================================
+         Console output          
+=================================
+OUT: controlimpuredodecl.p (15, 4): inferred type:  NIL
+OUT: controlimpuredodecl.p (15, 10): inferred type:  BaseType(EVENT)
+OUT: controlimpuredodecl.p (17, 16): inferred type:  NIL
+OUT: controlimpuredodecl.p (17, 21): inferred type:  BaseType(REAL)
+OUT: controlimpuredodecl.p (17, 27): inferred type:  BaseType(EVENT)
+OUT: controlimpuredodecl.p (18, 16): inferred type:  NIL
+OUT: controlimpuredodecl.p (18, 21): inferred type:  BaseType(REAL)
+OUT: controlimpuredodecl.p (18, 27): inferred type:  BaseType(EVENT)
+OUT: controlimpuredodecl.p (19, 16): inferred type:  NIL
+OUT: controlimpuredodecl.p (19, 21): inferred type:  BaseType(REAL)
+OUT: controlimpuredodecl.p (19, 27): inferred type:  BaseType(EVENT)
+OUT: controlimpuredodecl.p (20, 7): inferred type:  NIL
+OUT: controlimpuredodecl.p (21, 7): inferred type:  NIL
+OUT: controlimpuredodecl.p (21, 13): inferred type:  BaseType(EVENT)
+OUT: controlimpuredodecl.p (26, 4): inferred type:  NIL
+OUT: controlimpuredodecl.p (27, 4): inferred type:  NIL
+OUT: controlimpuredodecl.p (30, 4): inferred type:  NIL
+OUT: controlimpuredodecl.p (30, 8): inferred type:  BaseType(INT)
+OUT: controlimpuredodecl.p (30, 10): inferred type:  BaseType(BOOL)
+OUT: controlimpuredodecl.p (30, 13): inferred type:  BaseType(INT)
+OUT: controlimpuredodecl.p (31, 9): inferred type:  NIL
+OUT: controlimpuredodecl.p (35, 6): inferred type:  BaseType(INT)
+OUT: controlimpuredodecl.p (35, 6): inferred type:  NIL
+OUT: controlimpuredodecl.p (35, 10): inferred type:  BaseType(INT)
+OUT: controlimpuredodecl.p (35, 12): inferred type:  BaseType(INT)
+OUT: controlimpuredodecl.p (35, 14): inferred type:  BaseType(INT)
+OUT: controlimpuredodecl.p (35, 24): inferred type:  BaseType(INT)
+OUT: controlimpuredodecl.p (36, 8): inferred type:  BaseType(INT)
+OUT: controlimpuredodecl.p (36, 18): inferred type:  BaseType(INT)
+OUT: controlimpuredodecl.p (37, 8): inferred type:  BaseType(INT)
+OUT: controlimpuredodecl.p (45, 4): inferred type:  NIL
+OUT: controlimpuredodecl.p (47, 14): inferred type:  NIL
+OUT: controlimpuredodecl.p (48, 17): inferred type:  NIL
+OUT: controlimpuredodecl.p (49, 14): inferred type:  NIL
+OUT: controlimpuredodecl.p (61, 9): inferred type:  NIL
+OUT: controlimpuredodecl.p (64, 3): inferred type:  NIL
+OUT: controlimpuredodecl.p (67, 3): inferred type:  NIL
+OUT: controlimpuredodecl.p (70, 3): inferred type:  NIL
+OUT: controlimpuredodecl.p (70, 9): inferred type:  BaseType(EVENT)
+OUT: controlimpuredodecl.p (73, 3): inferred type:  NIL
+OUT: controlimpuredodecl.p (74, 3): inferred type:  NIL
+OUT: controlimpuredodecl.p (74, 10): inferred type:  BaseType(INT)
+OUT: controlimpuredodecl.p (77, 3): inferred type:  NIL
+OUT: controlimpuredodecl.p (78, 3): inferred type:  NIL
+OUT: controlimpuredodecl.p (78, 10): inferred type:  BaseType(INT)
+OUT: controlimpuredodecl.p (81, 3): inferred type:  NIL
+OUT: controlimpuredodecl.p (81, 9): inferred type:  BaseType(EVENT)
+OUT: controlimpuredodecl.p (82, 3): inferred type:  NIL
+OUT: controlimpuredodecl.p (82, 10): inferred type:  BaseType(INT)
+OUT: controlimpuredodecl.p (17, 3): Multiple actions over the same event
+OUT: controlimpuredodecl.p (25, 3): Multiple actions over the same event
+OUT: controlimpuredodecl.p (26, 4): function may cause a change in current state; this is not allowed here
+OUT: controlimpuredodecl.p (27, 4): function may cause a change in current state; this is not allowed here
+OUT: controlimpuredodecl.p (35, 14): function may cause a change in current state; this is not allowed here
+OUT: controlimpuredodecl.p (36, 8): function may cause a change in current state; this is not allowed here
+OUT: controlimpuredodecl.p (37, 8): function may cause a change in current state; this is not allowed here
+OUT: controlimpuredodecl.p (44, 3): Multiple actions over the same event
+OUT: controlimpuredodecl.p (47, 3): Multiple actions over the same event
+OUT: controlimpuredodecl.p (47, 14): function may cause a change in current state; this is not allowed here
+OUT: controlimpuredodecl.p (48, 17): function may cause a change in current state; this is not allowed here
+OUT: controlimpuredodecl.p (49, 14): function may cause a change in current state; this is not allowed here
+OUT: Compilation failed
+OUT: 
+EXIT: -1

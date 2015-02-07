@@ -4,4 +4,4 @@ argZing: -et:InfiniteLoopInAtomicBlock.trace
 incZing: InfiniteLoopInAtomicBlock.trace
 del: InfiniteLoopInAtomicBlock.trace
 acc: .\
-dsc: zinger.exe, Zinger test: infinite loop in atomic block
+dsc: zinger.exe, Zinger: infinite loop in atomic block

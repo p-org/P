@@ -1,0 +1,40 @@
+=================================
+         Console output          
+=================================
+OUT: controlimpureinexpr.p (11, 13): inferred type:  BaseType(INT)
+OUT: controlimpureinexpr.p (11, 13): inferred type:  NIL
+OUT: controlimpureinexpr.p (11, 17): inferred type:  BaseType(INT)
+OUT: controlimpureinexpr.p (11, 20): inferred type:  NIL
+OUT: controlimpureinexpr.p (11, 26): inferred type:  BaseType(EVENT)
+OUT: controlimpureinexpr.p (18, 5): inferred type:  NIL
+OUT: controlimpureinexpr.p (18, 9): inferred type:  BaseType(INT)
+OUT: controlimpureinexpr.p (18, 11): inferred type:  BaseType(BOOL)
+OUT: controlimpureinexpr.p (18, 14): inferred type:  BaseType(INT)
+OUT: controlimpureinexpr.p (19, 9): inferred type:  NIL
+OUT: controlimpureinexpr.p (23, 6): inferred type:  BaseType(INT)
+OUT: controlimpureinexpr.p (23, 6): inferred type:  NIL
+OUT: controlimpureinexpr.p (23, 10): inferred type:  BaseType(INT)
+OUT: controlimpureinexpr.p (23, 12): inferred type:  BaseType(INT)
+OUT: controlimpureinexpr.p (23, 14): inferred type:  BaseType(INT)
+OUT: controlimpureinexpr.p (23, 24): inferred type:  BaseType(INT)
+OUT: controlimpureinexpr.p (24, 8): inferred type:  BaseType(INT)
+OUT: controlimpureinexpr.p (24, 18): inferred type:  BaseType(INT)
+OUT: controlimpureinexpr.p (25, 8): inferred type:  BaseType(INT)
+OUT: controlimpureinexpr.p (27, 9): inferred type:  NIL
+OUT: controlimpureinexpr.p (27, 15): inferred type:  BaseType(EVENT)
+OUT: controlimpureinexpr.p (31, 3): inferred type:  NIL
+OUT: controlimpureinexpr.p (32, 3): inferred type:  NIL
+OUT: controlimpureinexpr.p (32, 10): inferred type:  BaseType(INT)
+OUT: controlimpureinexpr.p (35, 3): inferred type:  NIL
+OUT: controlimpureinexpr.p (36, 3): inferred type:  NIL
+OUT: controlimpureinexpr.p (36, 10): inferred type:  BaseType(INT)
+OUT: controlimpureinexpr.p (39, 3): inferred type:  NIL
+OUT: controlimpureinexpr.p (39, 9): inferred type:  BaseType(EVENT)
+OUT: controlimpureinexpr.p (40, 3): inferred type:  NIL
+OUT: controlimpureinexpr.p (40, 10): inferred type:  BaseType(INT)
+OUT: controlimpureinexpr.p (23, 14): function may cause a change in current state; this is not allowed here
+OUT: controlimpureinexpr.p (24, 8): function may cause a change in current state; this is not allowed here
+OUT: controlimpureinexpr.p (25, 8): function may cause a change in current state; this is not allowed here
+OUT: Compilation failed
+OUT: 
+EXIT: -1

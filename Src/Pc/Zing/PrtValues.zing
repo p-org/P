@@ -450,11 +450,17 @@ class PRT_VALUE {
 
     static PRT_VALUE PrtSeqGet(PRT_VALUE seq, PRT_VALUE index) {
         PRT_VALUE retVal;
-	retVal = seq.seq.Get(index.nt);
-	return retVal;
+		retVal = seq.seq.Get(index.nt);
+		return retVal;
     }
 
-    static int PrtSeqSizeOf(PRT_VALUE seq) {
+    static PRT_VALUE PrtSeqGetNoClone(PRT_VALUE seq, PRT_VALUE index) {
+        PRT_VALUE retVal;
+		retVal = seq.seq.GetNoClone(index.nt);
+		return retVal;
+    }
+
+	static int PrtSeqSizeOf(PRT_VALUE seq) {
         int retVal;
 	retVal = seq.seq.SizeOf();
 	return retVal;
@@ -478,6 +484,12 @@ class PRT_VALUE {
     static PRT_VALUE PrtMapGet(PRT_VALUE map, PRT_VALUE key) {
         PRT_VALUE retVal;
 		retVal = map.map.Get(key);
+		return retVal;
+    }
+
+    static PRT_VALUE PrtMapGetNoClone(PRT_VALUE map, PRT_VALUE key) {
+        PRT_VALUE retVal;
+		retVal = map.map.GetNoClone(key);
 		return retVal;
     }
 
@@ -570,9 +582,15 @@ class PRT_SEQ {
 
     PRT_VALUE Get(int index) {
         PRT_VALUE retVal;
-	assert (0 <= index && index < size);
+		assert (0 <= index && index < size);
         retVal = PRT_VALUE.PrtCloneValue(contents[index]);
-	return retVal;
+		return retVal;
+    }
+
+	PRT_VALUE GetNoClone(int index) {
+        PRT_VALUE retVal;
+		assert (0 <= index && index < size);
+        return contents[index];
     }
 
     int SizeOf() {
@@ -717,7 +735,7 @@ class PRT_MAP {
     }
 
     PRT_VALUE Get(PRT_VALUE key) {
-        int i;
+    int i;
 	bool b;
 	PRT_VALUE retVal;
 
@@ -731,7 +749,25 @@ class PRT_MAP {
 	        i = i + 1;
 	    }
 	}
-        assert (false);
+    assert (false);
+	return null;
+    }
+
+	PRT_VALUE GetNoClone(PRT_VALUE key) {
+    int i;
+	bool b;
+	PRT_VALUE retVal;
+
+	i = 0;
+	while (i < size) {
+	    b = PRT_VALUE.PrtIsEqualValue(keys[i], key);
+	    if (b) {
+	        return values[i];
+	    } else {
+	        i = i + 1;
+	    }
+	}
+    assert (false);
 	return null;
     }
 

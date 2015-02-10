@@ -801,10 +801,10 @@ namespace Microsoft.Pc
             return Factory.Instance.AddArg(ZingData.App_Identifier, Factory.Instance.MkCnst(name));
         }
 
-        private static AST<FuncTerm> MkZingDot(params string[] names)
+        private static AST<FuncTerm> MkZingDot(string first, params string[] names)
         {
-            AST<FuncTerm> lhs = MkZingIdentifier(names[0]);
-            for (int i = 1; i < names.Length; i++)
+            AST<FuncTerm> lhs = MkZingIdentifier(first);
+            for (int i = 0; i < names.Length; i++)
             {
                 AST<FuncTerm> rhs = MkZingIdentifier(names[i]);
                 lhs = MkZingApply(ZingData.Cnst_Dot, lhs, rhs);
@@ -812,9 +812,15 @@ namespace Microsoft.Pc
             return lhs;
         }
 
-        private static AST<Node> MkZingDot(AST<Node> lhs, string member)
+        private static AST<FuncTerm> MkZingDot(AST<Node> n, string first, params string[] names)
         {
-            return MkZingApply(ZingData.Cnst_Dot, lhs, MkZingIdentifier(member));
+            AST<FuncTerm> lhs = MkZingApply(ZingData.Cnst_Dot, n, MkZingIdentifier(first));
+            for (int i = 0; i < names.Length; i++)
+            {
+                AST<FuncTerm> rhs = MkZingIdentifier(names[i]);
+                lhs = MkZingApply(ZingData.Cnst_Dot, lhs, rhs);
+            }
+            return lhs;
         }
 
         private static AST<Node> MkZingEvent(string eventName)
@@ -1626,6 +1632,7 @@ namespace Microsoft.Pc
             public FunInfo entityInfo;
             public Stack<List<AST<Node>>> sideEffectsStack;
             public List<Tuple<AST<Node>, string>> locals;
+            public Stack<bool> lhsStack;
             private Dictionary<string, int> labels;
 
             public ZingFoldContext(PToZing comp, string machineName, string entityName, FunInfo entityInfo)
@@ -1638,6 +1645,7 @@ namespace Microsoft.Pc
                 PushSideEffectStack();
                 this.locals = new List<Tuple<AST<Node>, string>>();
                 this.labels = new Dictionary<string, int>();
+                this.lhsStack = new Stack<bool>();
             }
 
             public int LabelToId(string l)
@@ -1743,10 +1751,26 @@ namespace Microsoft.Pc
                     }
                 }
             }
+            else if (funName == PData.Con_BinApp.Node.Name)
+            {
+                if (((Id)GetArgByIndex(ft, 0)).Name == PData.Cnst_Idx.Node.Name && ctxt.lhsStack.Count > 0 && ctxt.lhsStack.Peek())
+                {
+                    ctxt.lhsStack.Push(true);
+                    yield return GetArgByIndex(ft, 1);
+                    ctxt.lhsStack.Pop();
+                    ctxt.lhsStack.Push(false);
+                    yield return GetArgByIndex(ft, 2);
+                    ctxt.lhsStack.Pop();
+                }
+                else
+                {
+                    yield return GetArgByIndex(ft, 1);
+                    yield return GetArgByIndex(ft, 2);
+                }
+            }
             else if (funName == PData.Con_Name.Node.Name ||
                      funName == PData.Con_NulApp.Node.Name ||
                      funName == PData.Con_UnApp.Node.Name ||
-                     funName == PData.Con_BinApp.Node.Name ||
                      funName == PData.Con_Default.Node.Name ||
                      funName == PData.Con_Push.Node.Name ||
                      funName == PData.Con_Monitor.Node.Name ||
@@ -1773,22 +1797,30 @@ namespace Microsoft.Pc
                     var lhsName = ((Id)lhs.Function).Name;
                     if (lhsName == PData.Con_BinApp.Node.Name && ((Id)GetArgByIndex(lhs, 0)).Name == PData.Cnst_Idx.Node.Name)
                     {
+                        ctxt.lhsStack.Push(true);
                         yield return GetArgByIndex(lhs, 1);
+                        ctxt.lhsStack.Pop();
                         yield return GetArgByIndex(lhs, 2);
                     }
                     else if (lhsName == PData.Con_Field.Node.Name)
                     {
+                        ctxt.lhsStack.Push(true);
                         yield return GetArgByIndex(lhs, 0);
+                        ctxt.lhsStack.Pop();
                     }
                     else
                     {
+                        ctxt.lhsStack.Push(true);
                         yield return lhs;
+                        ctxt.lhsStack.Pop();
                     }
                     yield return GetArgByIndex(ft, 2);
                 }
                 else
                 {
+                    ctxt.lhsStack.Push(true);
                     yield return GetArgByIndex(ft, 1);
+                    ctxt.lhsStack.Pop();
                     yield return GetArgByIndex(ft, 2);
                 }
             }
@@ -2366,23 +2398,31 @@ namespace Microsoft.Pc
                 {
                     var type = LookupType(ctxt, GetArgByIndex(ft, 1));
                     var typeOp = ((Id)type.Function).Name;
-                    if (typeOp == PData.Con_TupType.Node.Name)
+                    if (typeOp == PData.Con_SeqType.Node.Name)
                     {
                         var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
-                        ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtTupleGet"), arg1, arg2)));
-                        return new ZingTranslationInfo(tmpVar);
-                    }
-                    else if (typeOp == PData.Con_SeqType.Node.Name)
-                    {
-                        var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
-                        ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtSeqGet"), arg1, arg2)));
+                        if (ctxt.lhsStack.Count > 0 && ctxt.lhsStack.Peek())
+                        {
+                            ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtSeqGetNoClone"), arg1, arg2)));
+                        }
+                        else
+                        {
+                            ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtSeqGet"), arg1, arg2)));
+                        }
                         return new ZingTranslationInfo(tmpVar);
                     }
                     else
                     {
                         // op == PData.Con_MapType.Node.Name
                         var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
-                        ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapGet"), arg1, arg2)));
+                        if (ctxt.lhsStack.Count > 0 && ctxt.lhsStack.Peek())
+                        {
+                            ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapGetNoClone"), arg1, arg2)));
+                        }
+                        else
+                        {
+                            ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtMapGet"), arg1, arg2)));
+                        }
                         return new ZingTranslationInfo(tmpVar);
                     }
                 }
@@ -2433,7 +2473,14 @@ namespace Microsoft.Pc
                 it.MoveNext();
                 var arg = it.Current.node;
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVal");
-                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtTupleGet"), arg, Factory.Instance.MkCnst(fieldIndex))));
+                if (ctxt.lhsStack.Count > 0 && ctxt.lhsStack.Peek())
+                {
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingIndex(MkZingDot(arg, "tuple"), Factory.Instance.MkCnst(fieldIndex))));
+                }
+                else
+                {
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(MkZingDot(PRT_VALUE, "PrtTupleGet"), arg, Factory.Instance.MkCnst(fieldIndex))));
+                }
                 return new ZingTranslationInfo(tmpVar);
             }
         }
@@ -2675,8 +2722,7 @@ namespace Microsoft.Pc
                         }
                     }
                 }
-
-                if (op == PData.Cnst_Remove.Node.Name)
+                else if (op == PData.Cnst_Remove.Node.Name)
                 {
                     if (typeName == PData.Con_SeqType.Node.Name)
                     {

@@ -75,6 +75,7 @@
 			 keywords.Add("seq", (int)Tokens.SEQ);
 			 keywords.Add("map", (int)Tokens.MAP);
 
+			 keywords.Add("include", (int)Tokens.INCLUDE);
 			 keywords.Add("main", (int)Tokens.MAIN);
 			 keywords.Add("event", (int)Tokens.EVENT);
 			 keywords.Add("machine", (int)Tokens.MACHINE);
@@ -151,6 +152,7 @@ Id              [A-Za-z_]([A-Za-z_0-9]*)
 
 [A-Za-z_][A-Za-z_0-9]*  			       { return GetIdToken(yytext);  }
 [0-9]+									   { return (int)Tokens.INT;     }
+[\"][^\"\n\r]*[\"]						   { return (int)Tokens.STR; }
 
 [\.]                                       { return (int)Tokens.DOT;     }
 [:]                                        { return (int)Tokens.COLON;   }

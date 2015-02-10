@@ -99,53 +99,76 @@
         public bool Compile(out List<Flag> flags)
         {
             Contract.Requires(!AttemptedCompile);
+            List<string> includedFileNames;
+            HashSet<string> parsedFileNames = new HashSet<string>();
+            Queue<string> parserWorkQueue = new Queue<string>();
+            List<PProgram> parsedPrograms = new List<PProgram>();
+            ProgramName rootFile = null;
             AttemptedCompile = true;
             flags = new List<Flag>();
 
-            //// Step 0. Make sure the filename is meaningful.
-            ProgramName inputFile = null;
-            try
+            parserWorkQueue.Enqueue(InputFileName);
+            while (parserWorkQueue.Count > 0)
             {
-                inputFile = new ProgramName(Path.Combine(Environment.CurrentDirectory, InputFileName));
-            }
-            catch (Exception e)
-            {
-                flags.Add(
-                    new Flag(
-                        SeverityKind.Error,
-                        default(Span),
-                        Constants.BadFile.ToString(string.Format("{0} : {1}", InputFileName, e.Message)),
-                        Constants.BadFile.Code));
-                return false;
+                string fileName = parserWorkQueue.Dequeue();
+                if (parsedFileNames.Contains(fileName)) continue;
+
+                //// Step 0. Make sure the filename is meaningful.
+                ProgramName inputFile = null;
+                try
+                {
+                    inputFile = new ProgramName(Path.Combine(Environment.CurrentDirectory, fileName));
+                }
+                catch (Exception e)
+                {
+                    flags.Add(
+                        new Flag(
+                            SeverityKind.Error,
+                            default(Span),
+                            Constants.BadFile.ToString(string.Format("{0} : {1}", fileName, e.Message)),
+                            Constants.BadFile.Code));
+                    return false;
+                }
+                if (rootFile == null)
+                {
+                    rootFile = inputFile;
+                }
+
+                //// Step 1. Attempt to parse the P program, and stop if parse fails.
+                PProgram prog;
+                List<Flag> parserFlags;
+                var parser = new Parser.Parser();
+                var result = parser.ParseFile(inputFile, Options, out parserFlags, out prog, out includedFileNames);
+                flags.AddRange(parserFlags);
+                if (!result)
+                {
+                    return false;
+                }
+
+                parsedFileNames.Add(fileName);
+                parsedPrograms.Add(prog);
+                foreach (var name in includedFileNames)
+                {
+                    parserWorkQueue.Enqueue(name);
+                }
             }
 
-            //// Step 1. Attempt to parse the P program, and stop if parse fails.
-            PProgram prog;
-            List<Flag> parserFlags;
-            var parser = new Parser.Parser();
-            var result = parser.ParseFile(inputFile, Options, out parserFlags, out prog);
-            flags.AddRange(parserFlags);
-            if (!result)
-            {
-                return false;
-            }
-
-            ParsedProgram = prog;
+            ParsedProgram = null;
 
             //// Step 2. Serialize the parsed object graph into a Formula model and install it. Should not fail.
             AST<Model> model;
             var inputModule = MkSafeModuleName(InputFileName);
-            result = Factory.Instance.MkModel(
+            var mkModelResult = Factory.Instance.MkModel(
                 inputModule, 
                 PDomain, 
-                prog.Terms, 
+                ParsedProgram.Terms, 
                 out model,
                 null, //MkDeclAliases(ParsedProgram),
                 MkReservedModuleLocation(PDomain));
-            Contract.Assert(result);
+            Contract.Assert(mkModelResult);
 
             InstallResult instResult;
-            var modelProgram = MkProgWithSettings(inputFile, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
+            var modelProgram = MkProgWithSettings(rootFile, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
             var progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, model), out instResult);
             Contract.Assert(progressed && instResult.Succeeded);
 
@@ -157,7 +180,7 @@
             }
 
             //// Step 3. Perform static analysis.
-            if (!Check(inputModule, inputFile, flags))
+            if (!Check(inputModule, rootFile, flags))
             {
                 return false;
             }
@@ -168,8 +191,8 @@
             }
 
             //// Step 4. Generate outputs
-            return GenerateC(inputModule, inputFile, flags) & 
-                   GenerateZing(inputModule, inputFile, model, flags);
+            return GenerateC(inputModule, rootFile, flags) & 
+                   GenerateZing(inputModule, rootFile, model, flags);
         }
 
         private bool GenerateZing(string inputModule, ProgramName inputFile, AST<Model> model, List<Flag> flags)

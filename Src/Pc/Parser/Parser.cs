@@ -18,6 +18,7 @@
         private ProgramName parseSource;
         private List<Flag> parseFlags;
         private PProgram parseProgram;
+        private List<string> parseIncludedFileNames;
 
         private bool parseFailed = false;
 
@@ -56,10 +57,12 @@
             ProgramName file,
             CommandLineOptions options,
             out List<Flag> flags,
-            out PProgram program)
+            out PProgram program,
+            out List<string> includedFileNames)
         {
             flags = parseFlags = new List<Flag>();
             program = parseProgram = new PProgram();
+            includedFileNames = parseIncludedFileNames = new List<string>();
             parseSource = file;
             Options = options;
             bool result;

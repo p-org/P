@@ -9,7 +9,7 @@
 }
 
 %token INT BOOL FOREIGN ANY SEQ MAP ID
-%token MAIN EVENT MACHINE MONITOR ASSUME
+%token INCLUDE MAIN EVENT MACHINE MONITOR ASSUME
 
 %token VAR START HOT COLD MODEL STATE FUN ACTION GROUP
 
@@ -27,7 +27,7 @@
 %token DOT COLON COMMA
 %left  SEMICOLON
 
-%token INT BOOL
+%token INT BOOL STR
 
 %left  PLUS MINUS
 %left  DIV
@@ -52,7 +52,8 @@ TopDeclList
 	;
 
 TopDecl
-    : EventDecl
+    : IncludeDecl
+	| EventDecl
 	| MachineDecl
 	;
 
@@ -73,6 +74,11 @@ Annotation
 	| ID ASSIGN FALSE   { AddAnnotUsrCnstVal($1.str, P_Root.UserCnstKind.FALSE, ToSpan(@1), ToSpan(@3)); }
 	| ID ASSIGN ID      { AddAnnotStringVal($1.str, $3.str, ToSpan(@1), ToSpan(@3));                     }
 	| ID ASSIGN INT     { AddAnnotIntVal($1.str, $3.str, ToSpan(@1), ToSpan(@3));                        }
+	;
+
+/******************* Include Declarations *******************/ 
+IncludeDecl
+	: INCLUDE STR { parseIncludedFileNames.Add($2.str.Substring(1,$2.str.Length-2)); }
 	;
 
 /******************* Event Declarations *******************/ 

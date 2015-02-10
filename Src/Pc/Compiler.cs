@@ -153,7 +153,7 @@
                 }
             }
 
-            ParsedProgram = null;
+            ParsedProgram = parsedPrograms[0];
 
             //// Step 2. Serialize the parsed object graph into a Formula model and install it. Should not fail.
             AST<Model> model;

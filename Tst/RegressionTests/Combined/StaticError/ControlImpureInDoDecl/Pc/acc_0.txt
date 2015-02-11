@@ -50,15 +50,11 @@ OUT: controlimpuredodecl.p (81, 3): inferred type:  NIL
 OUT: controlimpuredodecl.p (81, 9): inferred type:  BaseType(EVENT)
 OUT: controlimpuredodecl.p (82, 3): inferred type:  NIL
 OUT: controlimpuredodecl.p (82, 10): inferred type:  BaseType(INT)
-OUT: controlimpuredodecl.p (17, 3): Multiple actions over the same event
-OUT: controlimpuredodecl.p (25, 3): Multiple actions over the same event
 OUT: controlimpuredodecl.p (26, 4): function may cause a change in current state; this is not allowed here
 OUT: controlimpuredodecl.p (27, 4): function may cause a change in current state; this is not allowed here
 OUT: controlimpuredodecl.p (35, 14): function may cause a change in current state; this is not allowed here
 OUT: controlimpuredodecl.p (36, 8): function may cause a change in current state; this is not allowed here
 OUT: controlimpuredodecl.p (37, 8): function may cause a change in current state; this is not allowed here
-OUT: controlimpuredodecl.p (44, 3): Multiple actions over the same event
-OUT: controlimpuredodecl.p (47, 3): Multiple actions over the same event
 OUT: controlimpuredodecl.p (47, 14): function may cause a change in current state; this is not allowed here
 OUT: controlimpuredodecl.p (48, 17): function may cause a change in current state; this is not allowed here
 OUT: controlimpuredodecl.p (49, 14): function may cause a change in current state; this is not allowed here

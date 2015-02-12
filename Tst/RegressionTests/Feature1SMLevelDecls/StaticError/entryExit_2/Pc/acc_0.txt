@@ -16,6 +16,7 @@ OUT: entryexit_2.p (31, 25): inferred type:  NIL
 OUT: entryexit_2.p (47, 9): inferred type:  NIL
 OUT: entryexit_2.p (31, 6): function cannot take arguments
 OUT: entryexit_2.p (37, 9): function cannot take arguments
+OUT: entryexit_2.p (42, 9): undefined function for entry
 OUT: entryexit_2.p (43, 8): function cannot take arguments
 OUT: entryexit_2.p (48, 8): undefined function for exit
 OUT: Compilation failed

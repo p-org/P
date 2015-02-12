@@ -24,8 +24,8 @@ main machine Real1 {
 		
         exit { 
 			push Real1_S2;                  //error
-			pop;                            //no error???
-			raise unit;                     //no error???
+			pop;                            //no error - OK, only first one is reported
+			raise unit;                     //no error - OK
 			if (i == 3) {
 				    pop;                   //no error
 			}

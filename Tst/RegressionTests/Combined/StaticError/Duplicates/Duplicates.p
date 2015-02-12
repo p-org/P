@@ -43,6 +43,7 @@ machine m2 {
 	on a goto S2;
 	on b goto S1;
 	on a goto S1;
+	on x do { foo(); };
 	
 	}
 	
@@ -52,7 +53,8 @@ machine m2 {
 		on a do { assert(false); };
 	
 	}
-	
+	fun foo() {}
+	fun foo() :int { return 1; }
 	
 
 }

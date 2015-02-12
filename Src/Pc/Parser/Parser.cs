@@ -22,6 +22,9 @@
 
         private bool parseFailed = false;
 
+        private P_Root.New crntNewExprDecl = null;
+        private P_Root.NewStmt crntNewStmtDecl = null;
+
         private Span crntAnnotSpan;
         private bool isTrigAnnotated = false;
         private P_Root.FunDecl crntFunDecl = null;
@@ -336,6 +339,7 @@
             Contract.Assert(!hasArgs || exprsStack.Count > 0);
             var newStmt = P_Root.MkNewStmt();
             newStmt.name = MkString(name, nameSpan);
+            newStmt.subst = MkString(name, nameSpan);
             newStmt.Span = span;
             if (hasArgs)
             {
@@ -354,7 +358,7 @@
             {
                 newStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
-
+            crntNewStmtDecl = newStmt;
             stmtStack.Push(newStmt);
         }
 
@@ -363,6 +367,7 @@
             Contract.Assert(!hasArgs || exprsStack.Count > 0);
             var newExpr = P_Root.MkNew();
             newExpr.name = MkString(name, nameSpan);
+            newExpr.subst = MkString(name, nameSpan);
             newExpr.Span = span;
             if (hasArgs)
             {
@@ -381,7 +386,7 @@
             {
                 newExpr.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
-
+            crntNewExprDecl = newExpr;
             valueExprStack.Push(newExpr);
         }
 
@@ -1551,6 +1556,8 @@
             crntEventDecl = null;
             crntMachDecl = null;
             crntQualName = null;
+            crntNewExprDecl = null;
+            crntNewStmtDecl = null;
             nextPushLabel = 0;
         }
         #endregion

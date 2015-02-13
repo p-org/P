@@ -31,6 +31,7 @@
         private P_Root.EventDecl crntEventDecl = null;
         private P_Root.MachineDecl crntMachDecl = null;
         private P_Root.QualifiedName crntQualName = null;
+        private P_Root.QualifiedName crntStateTargetName = null;
         private P_Root.StateDecl crntState = null;
         private List<P_Root.VarDecl> crntVarList = new List<P_Root.VarDecl>();
         private List<P_Root.EventLabel> crntEventList = new List<P_Root.EventLabel>();
@@ -765,6 +766,26 @@
             crntQualName.Span = span;
         }
 
+
+        private void QualifyStateTarget(string name, Span span)
+        {
+            if (crntStateTargetName == null)
+            {
+                crntStateTargetName = P_Root.MkQualifiedName(
+                    MkString(name, span),
+                    MkUserCnst(P_Root.UserCnstKind.NIL, span));
+            }
+            else
+            {
+                crntStateTargetName = P_Root.MkQualifiedName(
+                    MkString(name, span),
+                    crntStateTargetName);
+
+            }
+
+            crntStateTargetName.Span = span;
+        }
+
         #endregion
 
         #region Node setters
@@ -1016,7 +1037,7 @@
         private void AddTransitionWithAction (bool isAnonymous, string actName, Span actNameSpan, Span span)
         {
             Contract.Assert(crntEventList.Count > 0);
-            Contract.Assert(crntQualName != null);
+            Contract.Assert(crntStateTargetName != null);
             Contract.Assert(!isTrigAnnotated || crntAnnotStack.Count > 0);
             Contract.Assert(!isAnonymous || stmtStack.Count > 0);
 
@@ -1038,7 +1059,7 @@
 
             foreach (var e in crntEventList)
             {
-                var trans = P_Root.MkTransDecl(state, (P_Root.IArgType_TransDecl__1)e, crntQualName, action);
+                var trans = P_Root.MkTransDecl(state, (P_Root.IArgType_TransDecl__1)e, crntStateTargetName, action);
                 trans.Span = span;
                 parseProgram.Transitions.Add(trans);
                 if (isTrigAnnotated)
@@ -1056,14 +1077,14 @@
             }
 
             isTrigAnnotated = false;
-            crntQualName = null;
+            crntStateTargetName = null;
             crntEventList.Clear();
         }
 
         private void AddTransition(bool isPush, Span span)
         {
             Contract.Assert(crntEventList.Count > 0);
-            Contract.Assert(crntQualName != null);
+            Contract.Assert(crntStateTargetName != null);
             Contract.Assert(!isTrigAnnotated || crntAnnotStack.Count > 0);
 
             var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
@@ -1080,7 +1101,7 @@
 
             foreach (var e in crntEventList)
             {
-                var trans = P_Root.MkTransDecl(state, (P_Root.IArgType_TransDecl__1)e, crntQualName, action);
+                var trans = P_Root.MkTransDecl(state, (P_Root.IArgType_TransDecl__1)e, crntStateTargetName, action);
                 trans.Span = span;
                 parseProgram.Transitions.Add(trans);
                 if (isTrigAnnotated)
@@ -1098,7 +1119,7 @@
             }
 
             isTrigAnnotated = false;
-            crntQualName = null;
+            crntStateTargetName = null;
             crntEventList.Clear();
         }
 
@@ -1556,6 +1577,7 @@
             crntEventDecl = null;
             crntMachDecl = null;
             crntQualName = null;
+            crntStateTargetName = null;
             crntNewExprDecl = null;
             crntNewStmtDecl = null;
             nextPushLabel = 0;

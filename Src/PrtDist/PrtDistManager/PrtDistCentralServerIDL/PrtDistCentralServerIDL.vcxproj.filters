@@ -15,19 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="PrtDist.c">
+    <Midl Include="PrtDistCentralServer.idl">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PrtDistSerializer.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PrtDist.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PrtDistGlobals.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <None Include="PrtDistCentralServer.acf">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

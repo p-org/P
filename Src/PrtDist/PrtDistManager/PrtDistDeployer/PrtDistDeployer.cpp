@@ -15,20 +15,11 @@ string prtWinUserDll = "..\\Debug\\x64\\";
 char* logFileName = "PRTDIST_DEPLOYER.txt";
 FILE* logFile;
 
-char* PrtDGetPathToPHome(char* nodeAddress)
-{
-	char* path = (char*)malloc(sizeof(char) * 1000);
-	strcpy_s(path, 1000, "");
-	strcat_s(path, 1000, "\\\\");
-	strcat_s(path, 1000, nodeAddress);
-	strcat_s(path, 1000, "\\Plang_Shared\\");
-	return path;
-}
-
 string PrtDDeployPProgram()
 {
 
-	string remoteNetworkShare = PrtDistGetNetworkShare();
+	string remoteNetworkShare = PrtDistConfigGetNetworkShare(configurationFile);
+	PrtDistDeployerLog((char*)("Network Share = " + remoteNetworkShare).c_str());
 	string copycommand;
 	//create the folder to be deployed in 
 	DWORD ftyp = GetFileAttributesA(localDeploymentFolder.c_str());
@@ -49,7 +40,7 @@ string PrtDDeployPProgram()
 		exit(-1);
 	}
 
-	copycommand = "robocopy /XF PRTDIST_DEPLOYER.txt" + allBinaries + " " + localDeploymentFolder + " >> " + localDeploymentFolder + "PRTDIST_DEPLOYER_ROBO.txt";
+	copycommand = "robocopy " + allBinaries + " " + localDeploymentFolder + " /XF *.txt *Deployer.exe >> " + localDeploymentFolder + "PRTDIST_DEPLOYER_ROBO.txt";
 	if (system(copycommand.c_str()) == -1)
 	{
 		cerr << "Failed to Copy All Binaries in " << localDeploymentFolder << endl;
@@ -102,27 +93,6 @@ string PrtDDeployPProgram()
 	return jobFolder;
 }
 
-string PrtDistGetNetworkShare() {
-	int i = 0;
-	char DM[200];
-	XMLNODE** listofNodes;
-	XMLNODE* currNode;
-	string DeploymentFolder = "";
-	strcpy_s(DM, 200, "NetworkShare");
-	listofNodes = XMLDOMParseNodes(configurationFile.c_str());
-	currNode = listofNodes[i];
-	while (currNode != NULL)
-	{
-		if (strcmp(currNode->NodeName, DM) == 0)
-		{
-			DeploymentFolder = currNode->NodeValue;
-		}
-		currNode = listofNodes[i];
-		i++;
-	}
-	PrtDistDeployerLog((char*)("Network Share = " + DeploymentFolder).c_str());
-	return DeploymentFolder;
-}
 
 int main(int argc, char * argv[])
 {

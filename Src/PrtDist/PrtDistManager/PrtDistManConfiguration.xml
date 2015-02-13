@@ -4,13 +4,8 @@
 <configuration>
   <NetworkShare>\\plangdist1\Users\planguser\Documents\PlangShared\</NetworkShare>
   <localFolder>C:\Plang\</localFolder>
-  <CentralServer>plangdist1</CentralServer>
-  <NNodes>3</NNodes>
-  <AllNodes>
-    <Node>plangdist2</Node>
-    <Node>plangdist3</Node>
-    <Node>plangdist4</Node>
-  </AllNodes>
+  <CentralServer>1</CentralServer>
+  <NNodes>4</NNodes>
 </configuration>
 -->
 
@@ -20,10 +15,6 @@
   <NetworkShare>.\Deployer\</NetworkShare>
   <localFolder>.\Deployer\Local\</localFolder>
   <CentralServer>LOCALHOST</CentralServer>
-  <NNodes>1</NNodes>
-  <AllNodes>
-    <Node>LOCALHOST</Node>
-  </AllNodes>
-  
+  <NNodes>0</NNodes>
 </configuration>
 

@@ -10,18 +10,14 @@ extern void CreateRPCTestServer();
 
 void PrtPrintValue(PRT_VALUE * value) {
 	PRT_CHAR* log = NULL;
-	PRT_UINT32 bufferSize = 0;
-	PRT_UINT32 size = 0;
-	PrtWinUserPrintValue(value, &log, &bufferSize, &size);
+	log = PrtToStringValue(value);
 	printf(log);
 	printf("\n");
 }
 
 void PrtPrintType(PRT_TYPE* type) {
 	PRT_CHAR *log = NULL;
-	PRT_UINT32 bufferSize = 0;
-	PRT_UINT32 size = 0;
-	PrtWinUserPrintType(type, &log, &bufferSize, &size);
+	log = PrtToStringType(type);
 	printf(log);
 	printf("\n");
 }

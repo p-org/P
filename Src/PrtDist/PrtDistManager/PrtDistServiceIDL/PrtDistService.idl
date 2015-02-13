@@ -7,6 +7,7 @@ interface PrtDistService
 {
 	void PrtDistServicePing(
 		[in] handle_t myHandle,
+		[in] int server,
 		[out] boolean* status);
 
 	void PrtDistServiceCreateNodeManager(

@@ -1,0 +1,18 @@
+[
+	uuid(88df514e-2ccf-41c3-af0a-8c921c5e8526),
+	version(1.0),
+	pointer_default(ptr)
+]
+interface PrtDistCentralServer
+{
+	void PrtDistCentralServerPing(
+		[in] handle_t myHandle,
+		[in] int server,
+		[out] boolean* status);
+
+	void PrtDistCentralServerGetNodeId(
+		[in] handle_t myHandle,
+		[in] int sourceServer,
+		[out] int *nodeId
+		);
+}

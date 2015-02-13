@@ -29,6 +29,7 @@ monitor M {
 			new Dummy();
 			x = new Dummy();
 			send x, a, 1;
+			send this, a, 1;
 		}
 		on default goto next;
 	}

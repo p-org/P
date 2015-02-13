@@ -16,10 +16,15 @@ OUT: monitors.p (30, 4): inferred type:  ERROR
 OUT: monitors.p (30, 4): inferred type:  NIL
 OUT: monitors.p (30, 8): inferred type:  ERROR
 OUT: monitors.p (31, 4): inferred type:  ERROR
+OUT: monitors.p (31, 4): inferred type:  NIL
 OUT: monitors.p (31, 9): inferred type:  BaseType(REAL)
 OUT: monitors.p (31, 12): inferred type:  BaseType(EVENT)
 OUT: monitors.p (31, 15): inferred type:  BaseType(INT)
-OUT: monitors.p (33, 3): inferred type:  NIL
+OUT: monitors.p (32, 4): inferred type:  ERROR
+OUT: monitors.p (32, 9): inferred type:  ERROR
+OUT: monitors.p (32, 15): inferred type:  BaseType(EVENT)
+OUT: monitors.p (32, 18): inferred type:  BaseType(INT)
+OUT: monitors.p (34, 3): inferred type:  NIL
 OUT: monitors.p (5, 3): Multiple actions over the same event
 OUT: monitors.p (6, 3): Multiple actions over the same event
 OUT: monitors.p (15, 4): invalid payload type in raise (cannot send null value)
@@ -32,7 +37,9 @@ OUT: monitors.p (29, 4): Monitors cannot have "new"
 OUT: monitors.p (30, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: monitors.p (30, 8): Monitors cannot have "new"
 OUT: monitors.p (31, 4): Monitors cannot have "send"
-OUT: monitors.p (33, 3): default transitions not allowed in monitors
+OUT: monitors.p (32, 4): argument 1 of "send" expects a machine value
+OUT: monitors.p (32, 9): Monitors cannot refer to "this"
+OUT: monitors.p (34, 3): default transitions not allowed in monitors
 OUT: Compilation failed
 OUT: 
 EXIT: -1

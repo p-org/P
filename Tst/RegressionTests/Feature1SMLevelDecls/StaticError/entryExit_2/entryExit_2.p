@@ -39,7 +39,7 @@ main machine Node {
 	}
 	
 	state abc {
-		entry {}
+		entry y;
 		exit football;
 	}
 	

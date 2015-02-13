@@ -15,18 +15,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="PrtDist.c">
+    <ClCompile Include="PrtDistConfigPartser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PrtDistSerializer.c">
+    <ClCompile Include="PrtDistHelperFuncs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PrtDist.h">
+    <ClInclude Include="PrtDistConfigParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PrtDistGlobals.h">
+    <ClInclude Include="PrtDistHelperFuncs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

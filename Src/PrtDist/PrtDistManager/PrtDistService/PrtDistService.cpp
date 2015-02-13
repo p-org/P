@@ -1,65 +1,19 @@
 #include "PrtDistService.h"
 
 /* GLobal Variables */
-string configurationFile = "PrtDMConfiguration.xml";
-char* logFileName = "PRTDIST_DEPLOYER.txt";
+string configurationFile = "PrtDistManConfiguration.xml";
+char* logFileName = "PRTDIST_SERVICE.txt";
 FILE* logFile;
 
 //
 // Helper Functions
 //
-string PrtDistServiceGetNetworkShare() {
-	int i = 0;
-	char DM[200];
-	XMLNODE** listofNodes;
-	XMLNODE* currNode;
-	string DeploymentFolder = "";
-	strcpy_s(DM, 200, "NetworkShare");
-	listofNodes = XMLDOMParseNodes(configurationFile.c_str());
-	currNode = listofNodes[i];
-	while (currNode != NULL)
-	{
-		if (strcmp(currNode->NodeName, DM) == 0)
-		{
-			DeploymentFolder = currNode->NodeValue;
-		}
-		currNode = listofNodes[i];
-		i++;
-	}
-	PrtDistServiceLog((char*)("Network Share = " + DeploymentFolder).c_str());
-	return DeploymentFolder;
-}
-
-boolean _ROBOCOPY(string source, string dest)
-{
-	string copycommand = "robocopy " + source + " " + dest + " > " + "ROBOCOPY_PSERVICE_LOG.txt";
-	if (system(copycommand.c_str()) == -1)
-	{
-		cerr << "Failed to Copy Files from " << source << "in " << dest << endl;
-		return false;
-	}
-	else
-		PrtDistServiceLog((char*)("Robocopy Successful from " + source + " to " + dest).c_str());
-
-	return true;
-}
-
-void PrtDistServiceGetJobNameAndJobFolder(string* jobName, string* jobFolder)
-{
-	ifstream read;
-	read.open("job.txt");
-	read >> *jobName;
-	read >> *jobFolder;
-
-	PrtDistServiceLog((char*)("Job Folder : " + *jobFolder).c_str());
-	PrtDistServiceLog((char*)("Job Name : " + *jobName).c_str());
-}
 
 
 string PrtDistServiceNextNodeManagerPort()
 {
 	static int counter;
-	int nextPort = START_NODEMANAGER_TCPPORT + counter;
+	int nextPort = PRTD_START_NODEMANAGER_TCPPORT + counter;
 	counter = counter + 1;
 	return to_string(nextPort);
 }
@@ -119,16 +73,16 @@ void PrtDistServiceCreateRPCServer()
 //
 
 // Ping service
-void s_PrtDistServicePing(handle_t mHandle, boolean* amAlive)
+void s_PrtDistServicePing(handle_t mHandle, int server,  boolean* amAlive)
 {
 	*amAlive = !(*amAlive);
-	PrtDistServiceLog("Pinged by External Server");
+	PrtDistServiceLog(_CONCAT("Pinged by External Server : ", AZUREMACHINE_NAMES[server]));
 }
 
 // Create NodeManager
 void s_PrtDistServiceCreateNodeManager(handle_t mHandle, unsigned char* jobName, boolean *status)
 {
-	string networkShare = PrtDistServiceGetNetworkShare();
+	string networkShare = PrtDistConfigGetNetworkShare(configurationFile);
 	string jobS(reinterpret_cast<char*>(jobName));
 	string jobFolder = networkShare + jobS;
 	string newLocalJobFolder = "F:\\PLang_Shared\\Jobs\\" + jobS;
@@ -136,6 +90,7 @@ void s_PrtDistServiceCreateNodeManager(handle_t mHandle, unsigned char* jobName,
 	if (!st)
 	{
 		*status = st;
+		PrtDistServiceLog("CreateProcess for Node Manager failed in ROBOCOPY\n");
 		return;
 	}
 

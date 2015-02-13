@@ -7,10 +7,11 @@
 #include<fstream>
 #include"PrtDist.h"
 #include "../../PrtDistUtilities/XMLParser/XMLParser.h"
+#include"../../PrtDistUtilities/PrtDistHelper/PrtDistConfigParser.h"
+
 using namespace std;
 
-//Helper Functions
-string PrtDistGetNetworkShare();
+//Logger Functions
 void PrtDistDeployerCreateLogFile();
 void PrtDistDeployerCloseLogFile();
 void PrtDistDeployerLog(char* log);

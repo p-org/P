@@ -39,6 +39,7 @@
 
         private HashSet<string> crntStateNames = new HashSet<string>();
         private HashSet<string> crntFunNames = new HashSet<string>();
+        private HashSet<string> crntVarNames = new HashSet<string>();
         private HashSet<string> crntEventNames = new HashSet<string>();
         private HashSet<string> crntMachineNames = new HashSet<string>();
 
@@ -994,6 +995,21 @@
             varDecl.owner = GetCurrentMachineDecl(span);
             varDecl.Span = span;
             crntVarList.Add(varDecl);
+            if (crntVarNames.Contains(name))
+            {
+                var errFlag = new Flag(
+                                     SeverityKind.Error,
+                                     span,
+                                     Constants.BadSyntax.ToString(string.Format("A variable with name {0} already declared", name)),
+                                     Constants.BadSyntax.Code,
+                                     parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+            else
+            {
+                crntVarNames.Add(name);
+            }
         }
 
         private void AddToEventList(string name, Span span)
@@ -1394,6 +1410,7 @@
             crntMachDecl = null;
             crntStateNames.Clear();
             crntFunNames.Clear();
+            crntVarNames.Clear();
         }
 
         private void AddMachineAnnots(Span span)
@@ -1657,6 +1674,9 @@
             nextPushLabel = 0;
             crntStateNames.Clear();
             crntFunNames.Clear();
+            crntVarNames.Clear();
+            crntMachineNames.Clear();
+            crntEventNames.Clear();
         }
         #endregion
     }

@@ -102,16 +102,6 @@ domain PStructuralTyping extends PData
     TwoDeclError ::= (PDecl, PDecl).
     DeclFunError ::= (PDecl, String).
 	
-	[ rule_Classes = '"error, msg: An event has multiple definitions"']
-	TwoDeclError(e1, e2) :- e1 is EventDecl, e2 is EventDecl, e1.name = e2.name, e1 != e2.
-	[ rule_Classes = '"error, msg: Multiple states with the same name"']
-	TwoDeclError(s1, s2) :- s1 != s2, s1 is StateDecl, s2 is StateDecl, s1.name = s2.name, s1.owner = s2.owner.
-	[ rule_Classes = '"error, msg: Multiple Functions with the same name"']
-	TwoDeclError(f1, f2) :- f1 != f2, f1 is FunDecl, f2 is FunDecl, f1.name = f2.name, f1.owner = f2.owner.
-	[ rule_Classes = '"error, msg: Multiple variables with the same name"']
-	TwoDeclError(v1, v2) :- v1 != v2, v1 is VarDecl, v2 is VarDecl, v1.name = v2.name, v1.owner = v2.owner.
-	[ rule_Classes = '"error, msg: Multiple machines with the same name"']
-	TwoDeclError(m1, m2) :- m1 != m2, m1 is MachineDecl, m2 is MachineDecl, m1.name = m2.name.
 	[ rule_Classes = '"error, msg: Multiple Transitions over the same event"']
 	TwoDeclError(t1, t2) :- t1 != t2, t1 is TransDecl, t2 is TransDecl, t1.src = t2.src, t1.trig = t2.trig.
 	[ rule_Classes = '"error, msg: Multiple actions over the same event"']

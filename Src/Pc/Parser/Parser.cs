@@ -11,6 +11,8 @@
     using Microsoft.Formula.API.Generators;
     using Microsoft.Formula.API.Nodes;
 
+   
+
     internal partial class Parser : ShiftReduceParser<LexValue, LexLocation>
     {
         private static readonly P_Root.Exprs TheDefaultExprs = new P_Root.Exprs();
@@ -21,9 +23,6 @@
         private List<string> parseIncludedFileNames;
 
         private bool parseFailed = false;
-
-        private P_Root.New crntNewExprDecl = null;
-        private P_Root.NewStmt crntNewStmtDecl = null;
 
         private Span crntAnnotSpan;
         private bool isTrigAnnotated = false;
@@ -37,6 +36,11 @@
         private List<P_Root.EventLabel> crntEventList = new List<P_Root.EventLabel>();
         private List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>> crntAnnotList = new List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>();
         private Stack<List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>> crntAnnotStack = new Stack<List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>>();
+
+        private HashSet<string> crntStateNames = new HashSet<string>();
+        private HashSet<string> crntFunNames = new HashSet<string>();
+        private HashSet<string> crntEventNames = new HashSet<string>();
+        private HashSet<string> crntMachineNames = new HashSet<string>();
 
         private Stack<P_Root.Expr> valueExprStack = new Stack<P_Root.Expr>();
         private Stack<P_Root.ExprsExt> exprsStack = new Stack<P_Root.ExprsExt>();
@@ -359,7 +363,6 @@
             {
                 newStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
-            crntNewStmtDecl = newStmt;
             stmtStack.Push(newStmt);
         }
 
@@ -387,7 +390,6 @@
             {
                 newExpr.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
-            crntNewExprDecl = newExpr;
             valueExprStack.Push(newExpr);
         }
 
@@ -1243,6 +1245,15 @@
             crntEventList.Clear();
         }
 
+        private string QualifiedNameToString(P_Root.QualifiedName qualifiedName)
+        {
+            if (qualifiedName == null)
+            {
+                return "";
+            }
+            return QualifiedNameToString(qualifiedName.qualifier as P_Root.QualifiedName) + (qualifiedName.name as P_Root.StringCnst).Value;
+        }
+
         private void AddState(string name, bool isStart, Span nameSpan, Span span)
         {
             var state = GetCurrentStateDecl(span);
@@ -1260,7 +1271,7 @@
                 state.name = P_Root.MkQualifiedName(MkString(name, nameSpan), groupStack.Peek());
                 state.name.Span = nameSpan;
             }
-
+            
             if (isStart)
             {
                 var machDecl = GetCurrentMachineDecl(span);
@@ -1281,6 +1292,23 @@
                 }
             }
 
+            var stateName = QualifiedNameToString(state.name as P_Root.QualifiedName);
+            if (crntStateNames.Contains(stateName))
+            {
+                var errFlag = new Flag(
+                                     SeverityKind.Error,
+                                     span,
+                                     Constants.BadSyntax.ToString(string.Format("A state with name {0} already declared", stateName)),
+                                     Constants.BadSyntax.Code,
+                                     parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+            else
+            {
+                crntStateNames.Add(stateName);
+            }
+            
             crntState = null;
         }
 
@@ -1319,6 +1347,21 @@
             evDecl.Span = span;
             evDecl.name = MkString(name, nameSpan);
             parseProgram.Events.Add(evDecl);
+            if (crntEventNames.Contains(name))
+            {
+                var errFlag = new Flag(
+                                     SeverityKind.Error,
+                                     span,
+                                     Constants.BadSyntax.ToString(string.Format("An event with name {0} already declared", name)),
+                                     Constants.BadSyntax.Code,
+                                     parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+            else
+            {
+                crntEventNames.Add(name);
+            }
             crntEventDecl = null;
         }
 
@@ -1333,7 +1376,24 @@
             }
             machDecl.kind = MkUserCnst(kind, span);
             parseProgram.Machines.Add(machDecl);
+            if (crntMachineNames.Contains(name))
+            {
+                var errFlag = new Flag(
+                                     SeverityKind.Error,
+                                     span,
+                                     Constants.BadSyntax.ToString(string.Format("A machine with name {0} already declared", name)),
+                                     Constants.BadSyntax.Code,
+                                     parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+            else
+            {
+                crntMachineNames.Add(name);
+            }
             crntMachDecl = null;
+            crntStateNames.Clear();
+            crntFunNames.Clear();
         }
 
         private void AddMachineAnnots(Span span)
@@ -1403,12 +1463,28 @@
         private void AddFunction(string name, Span nameSpan, Span span)
         {
             Contract.Assert(stmtStack.Count > 0);
+            
             var funDecl = GetCurrentFunDecl(span);
             funDecl.Span = span;
             funDecl.name = MkString(name, nameSpan);
             funDecl.owner = GetCurrentMachineDecl(span);
             funDecl.body = (P_Root.IArgType_FunDecl__5)stmtStack.Pop();
             parseProgram.Functions.Add(funDecl);
+            if (crntFunNames.Contains(name))
+            {
+                var errFlag = new Flag(
+                                     SeverityKind.Error,
+                                     span,
+                                     Constants.BadSyntax.ToString(string.Format("A function with name {0} already declared", name)),
+                                     Constants.BadSyntax.Code,
+                                     parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+            else
+            {
+                crntFunNames.Add(name);
+            }
             crntFunDecl = null;
             ResetPushLabels();
         }
@@ -1578,9 +1654,9 @@
             crntMachDecl = null;
             crntQualName = null;
             crntStateTargetName = null;
-            crntNewExprDecl = null;
-            crntNewStmtDecl = null;
             nextPushLabel = 0;
+            crntStateNames.Clear();
+            crntFunNames.Clear();
         }
         #endregion
     }

@@ -288,14 +288,9 @@ NmdTupTypeList
 
 /******************* Statements *******************/
 
-NewStmtAsOrNone
-	: AS ID { crntNewStmtDecl.subst = MkString($2.str, ToSpan(@2)); }
-	| 
-	;
-
 NewStmt
-	: NEW ID LPAREN RPAREN SEMICOLON					{ PushNewStmt($2.str, false, ToSpan(@2), ToSpan(@1));      }
-	| NEW ID LPAREN SingleExprArgList RPAREN SEMICOLON	{ PushNewStmt($2.str, true,  ToSpan(@2), ToSpan(@1));      }
+	: NEW ID LPAREN RPAREN						{ PushNewStmt($2.str, false, ToSpan(@2), ToSpan(@1));      }
+	| NEW ID LPAREN SingleExprArgList RPAREN	{ PushNewStmt($2.str, true,  ToSpan(@2), ToSpan(@1));      }
 	;
 
 Stmt
@@ -313,7 +308,8 @@ Stmt
 	| WHILE LPAREN Exp RPAREN Stmt                            { PushWhile(ToSpan(@1));                                   }
 	| IF LPAREN Exp RPAREN Stmt ELSE Stmt %prec ELSE          { PushIte(true, ToSpan(@1));                               }					
 	| IF LPAREN Exp RPAREN Stmt		                          { PushIte(false, ToSpan(@1));                              }
-	| NewStmt NewStmtAsOrNone								  
+	| NewStmt SEMICOLON								  
+	| NewStmt AS ID SEMICOLON								  { ((P_Root.NewStmt) stmtStack.Peek()).subst = MkString($3.str, ToSpan(@3)); }				  
 	| ID LPAREN RPAREN SEMICOLON                              { PushFunStmt($1.str, false, ToSpan(@1));                  }
 	| ID LPAREN ExprArgList RPAREN SEMICOLON                  { PushFunStmt($1.str, true,  ToSpan(@1));                  }						
 	| RAISE Exp SEMICOLON                                     { PushRaise(false, ToSpan(@1));                            }
@@ -345,10 +341,6 @@ StateTarget
 	;
 
 /******************* Value Expressions *******************/
-NewExprAsOrNone
-	: AS ID { crntNewExprDecl.subst = MkString($2.str, ToSpan(@2)); }
-	| 
-	;
 
 NewExpr
 	: NEW ID LPAREN RPAREN						{ PushNewExpr($2.str, false, ToSpan(@2), ToSpan(@1));      }
@@ -427,7 +419,8 @@ Exp_0
     | VALUES  LPAREN Exp RPAREN              { PushUnExpr(P_Root.UserCnstKind.VALUES, ToSpan(@1));      }
     | SIZEOF  LPAREN Exp RPAREN              { PushUnExpr(P_Root.UserCnstKind.SIZEOF, ToSpan(@1));      }
     | DEFAULT LPAREN Type RPAREN             { PushDefaultExpr(ToSpan(@1));                             }
-	| NewExpr NewExprAsOrNone
+	| NewExpr
+	| NewExpr AS ID							 { ((P_Root.New) valueExprStack.Peek()).subst = MkString($3.str, ToSpan(@3)); }
 	| LPAREN Exp COMMA             RPAREN    { PushTupleExpr(true);                                     }
 	| LPAREN Exp COMMA ExprArgList RPAREN    { PushTupleExpr(false);                                    }
 	| ID LPAREN RPAREN                       { PushFunExpr($1.str, false, ToSpan(@1));                  }

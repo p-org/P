@@ -38,7 +38,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>..\..\Binaries\</OutDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -73,6 +75,12 @@
     <ClInclude Include="PrtDistCentralServer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\PrtDistUtilities\PrtDistHelper\PrtDistHelper.vcxproj">
+      <Project>{f9e759b9-4473-4db2-a20d-3e0cb6d5c134}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\PrtDistUtilities\XMLParser\XMLParser.vcxproj">
+      <Project>{e8936605-6f7c-4298-aa4c-9d9d7a349cd9}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\PrtDistCentralServerIDL\PrtDistCentralServerIDL.vcxproj">
       <Project>{b934b5a8-9ca3-4585-8e2f-927350f9c9d7}</Project>
     </ProjectReference>

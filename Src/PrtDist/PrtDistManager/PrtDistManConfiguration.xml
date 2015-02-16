@@ -14,7 +14,7 @@
 <configuration>
   <NetworkShare>.\Deployer\</NetworkShare>
   <localFolder>.\Deployer\Local\</localFolder>
-  <CentralServer>LOCALHOST</CentralServer>
+  <CentralServer>1</CentralServer>
   <NNodes>0</NNodes>
 </configuration>
 

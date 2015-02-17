@@ -7,7 +7,7 @@ $psExec = "./PsExec.exe"
 $nodes = $xdox.configuration.AllNodes.ChildNodes
 $jobid = (Get-Content "job.txt")[0]
 [string]$deploymentFolder = (Get-Content "job.txt")[1]
-[string]$localFolder = $xdox.configuration.localFolder
+[string]$localFolder = $xdox.configuration.localFolder + $jobid
 foreach($n in $xdox.configuration.AllNodes.ChildNodes)
 {
      [string]$nn = $n.InnerText

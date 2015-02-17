@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Configuration for Windows Azure -->
-
+<!--
 <configuration>
   <NetworkShare>\\plangdist1\Users\planguser\Documents\PlangShared\</NetworkShare>
   <localFolder>C:\Plang\</localFolder>
@@ -13,15 +13,15 @@
     <Node>plangdist4</Node>
   </AllNodes>
 </configuration>
-
+-->
 
 <!-- Configuration for Single Server Debugging -->
-<!--
+
 <configuration>
   <NetworkShare>.\Deployer\</NetworkShare>
   <localFolder>.\Deployer\Local\</localFolder>
-  <CentralServer>1</CentralServer>
+  <CentralServer>0</CentralServer>
   <NNodes>0</NNodes>
 </configuration>
--->
+
 

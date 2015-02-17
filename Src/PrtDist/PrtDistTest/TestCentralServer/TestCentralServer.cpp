@@ -31,7 +31,7 @@ void InitializeHandle()
 	//get centralserverID
 	int centralServerID = PrtDistConfigGetCentralServerNode(configurationFile);
 	char buffPort[100];
-
+	_itoa_s(PRTD_CENTRALSERVER_PORT, buffPort, 10);
 	// Creates a string binding handle.
 	// This function is nothing more than a printf.
 	// Connection is not done here.

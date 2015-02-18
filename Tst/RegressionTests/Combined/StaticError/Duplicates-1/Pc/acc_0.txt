@@ -1,0 +1,20 @@
+=================================
+         Console output          
+=================================
+OUT: duplicates-1.p (11, 2): inferred type:  NIL
+OUT: duplicates-1.p (24, 12): inferred type:  NIL
+OUT: duplicates-1.p (27, 11): inferred type:  NIL
+OUT: duplicates-1.p (28, 13): inferred type:  NIL
+OUT: duplicates-1.p (28, 20): inferred type:  BaseType(BOOL)
+OUT: duplicates-1.p (30, 12): inferred type:  NIL
+OUT: duplicates-1.p (10, 1): Multiple machines are declared as main machines
+OUT: duplicates-1.p (15, 1): Multiple machines are declared as main machines
+OUT: duplicates-1.p (15, 1): no start state in machine
+OUT: duplicates-1.p (19, 1): no start state in machine
+OUT: duplicates-1.p (21, 2): Multiple Transitions over the same event
+OUT: duplicates-1.p (23, 2): Multiple Transitions over the same event
+OUT: duplicates-1.p (27, 3): Multiple actions over the same event
+OUT: duplicates-1.p (28, 3): Multiple actions over the same event
+OUT: Compilation failed
+OUT: 
+EXIT: -1

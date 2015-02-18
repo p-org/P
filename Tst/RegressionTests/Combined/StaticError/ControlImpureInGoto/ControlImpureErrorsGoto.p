@@ -20,12 +20,12 @@ main machine Real1 {
 		             send this, E3; 
 					 send this, E4;
 					 push Real1_S1; };   //push stmt; explicit pop is needed
-		//on E2 goto Real1_S1 with { push Real1_S2;};               //+  !!!!causes pc.exe exception
+		on E2 goto Real1_S1 with { push Real1_S2;};               //error
         on E1 goto Real1_S2 with { raise unit;};  	              //error
 		on E3 goto Real1_S3 with { pop;};                         //error
 		on E4 goto Real1_S3 with {
 			if (i == 3) {                   //error at a wrong line number (should be 28!)
-				    pop;                    //no error here?
+				    pop;                    //no error here: line 27 reported instead
 			}
             else
 			    {

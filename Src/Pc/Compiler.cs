@@ -111,7 +111,10 @@
             while (parserWorkQueue.Count > 0)
             {
                 string fileName = parserWorkQueue.Dequeue();
-                if (parsedFileNames.Contains(fileName)) continue;
+                if (parsedFileNames.Contains(fileName))
+                {
+                    continue;
+                }
 
                 //// Step 0. Make sure the filename is meaningful.
                 ProgramName inputFile = null;
@@ -129,6 +132,7 @@
                             Constants.BadFile.Code));
                     return false;
                 }
+
                 if (rootFile == null)
                 {
                     rootFile = inputFile;

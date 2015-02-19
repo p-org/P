@@ -7,5 +7,7 @@
 
 using namespace std;
 
+#define _CRT_SECURE_NO_WARNINGS
+
 boolean _ROBOCOPY(string source, string dest);
-char* _CONCAT(char* string1, char* string2);
+void _CONCAT(char* dest, char* string1, char* string2);

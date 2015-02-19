@@ -11,10 +11,8 @@ boolean _ROBOCOPY(string source, string dest)
 		return true;
 }
 
-char* _CONCAT(char* string1, char* string2)
+void _CONCAT(char* dest, char* string1, char* string2)
 {
-	char ret[100];
-	strcat_s(ret, string1);
-	strcat_s(ret, string2);
-	return ret;
+	strcat(dest, string1);
+	strcat(dest, string2);
 }

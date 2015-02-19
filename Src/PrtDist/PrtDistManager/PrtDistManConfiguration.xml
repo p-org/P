@@ -6,6 +6,12 @@
   <localFolder>C:\Plang\</localFolder>
   <CentralServer>1</CentralServer>
   <NNodes>4</NNodes>
+  <AllNodes>
+    <Node>plangdist1</Node>
+    <Node>plangdist2</Node>
+    <Node>plangdist3</Node>
+    <Node>plangdist4</Node>
+  </AllNodes>
 </configuration>
 -->
 
@@ -14,7 +20,8 @@
 <configuration>
   <NetworkShare>.\Deployer\</NetworkShare>
   <localFolder>.\Deployer\Local\</localFolder>
-  <CentralServer>LOCALHOST</CentralServer>
+  <CentralServer>0</CentralServer>
   <NNodes>0</NNodes>
 </configuration>
+
 

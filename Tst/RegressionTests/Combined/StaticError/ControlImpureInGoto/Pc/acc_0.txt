@@ -14,6 +14,7 @@ OUT: controlimpureerrorsgoto.p (21, 7): inferred type:  NIL
 OUT: controlimpureerrorsgoto.p (21, 12): inferred type:  BaseType(REAL)
 OUT: controlimpureerrorsgoto.p (21, 18): inferred type:  BaseType(EVENT)
 OUT: controlimpureerrorsgoto.p (22, 7): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (23, 30): inferred type:  NIL
 OUT: controlimpureerrorsgoto.p (24, 36): inferred type:  NIL
 OUT: controlimpureerrorsgoto.p (24, 42): inferred type:  BaseType(EVENT)
 OUT: controlimpureerrorsgoto.p (25, 30): inferred type:  NIL
@@ -50,6 +51,7 @@ OUT: controlimpureerrorsgoto.p (77, 3): inferred type:  NIL
 OUT: controlimpureerrorsgoto.p (77, 10): inferred type:  BaseType(INT)
 OUT: controlimpureerrorsgoto.p (80, 3): inferred type:  NIL
 OUT: controlimpureerrorsgoto.p (80, 10): inferred type:  BaseType(INT)
+OUT: controlimpureerrorsgoto.p (23, 30): function may cause a change in current state; this is not allowed here
 OUT: controlimpureerrorsgoto.p (24, 36): function may cause a change in current state; this is not allowed here
 OUT: controlimpureerrorsgoto.p (25, 30): function may cause a change in current state; this is not allowed here
 OUT: controlimpureerrorsgoto.p (27, 4): function may cause a change in current state; this is not allowed here

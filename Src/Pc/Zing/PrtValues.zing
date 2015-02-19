@@ -355,16 +355,16 @@ class PRT_VALUE {
 	    i = 0;
 	    while (i < type1.arity)
 	    {
-		if (type1.fieldNames[i] != type2.fieldNames[i])
-		{
-		    return false;
-		}
-		b = PrtIsEqualValue(value1.tuple[i], value2.tuple[i]);
-		if (!b)
-		{
-		    return false;
-		}
-		i = i + 1;
+			if (type1.fieldNames[i] != type2.fieldNames[i])
+			{
+				return false;
+			}
+			b = PrtIsEqualValue(value1.tuple[i], value2.tuple[i]);
+			if (!b)
+			{
+				return false;
+			}
+			i = i + 1;
 	    }
 	    return true;
 	}
@@ -372,23 +372,24 @@ class PRT_VALUE {
 	if (kind1 == PRT_TYPE_KIND.PRT_KIND_SEQ)
 	{
 	    retVal = value1.seq.Equals(value2.seq);
+	    return retVal;
 	}
 
 	if (kind1 == PRT_TYPE_KIND.PRT_KIND_TUPLE)
 	{
 	    if (type1.arity != type2.arity)
 	    {
-		return false;
+			return false;
 	    }
 	    i = 0;
 	    while (i < type1.arity)
 	    {
  	        b = PrtIsEqualValue(value1.tuple[i], value2.tuple[i]);
-		if (!b)
-		{
-		    return false;
-		}
-		i = i + 1;
+			if (!b)
+			{
+				return false;
+			}
+			i = i + 1;
 	    }
 	    return true;
 	}

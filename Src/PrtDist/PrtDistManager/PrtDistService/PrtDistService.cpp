@@ -75,8 +75,10 @@ void PrtDistServiceCreateRPCServer()
 // Ping service
 void s_PrtDistServicePing(handle_t mHandle, int server,  boolean* amAlive)
 {
+	char log[100] = "";
+	_CONCAT(log, "Pinged by External Server :", AZUREMACHINE_NAMES[server]);
 	*amAlive = !(*amAlive);
-	PrtDistServiceLog(_CONCAT("Pinged by External Server : ", AZUREMACHINE_NAMES[server]));
+	PrtDistServiceLog(log);
 }
 
 // Create NodeManager
@@ -85,7 +87,8 @@ void s_PrtDistServiceCreateNodeManager(handle_t mHandle, unsigned char* jobName,
 	string networkShare = PrtDistConfigGetNetworkShare(configurationFile);
 	string jobS(reinterpret_cast<char*>(jobName));
 	string jobFolder = networkShare + jobS;
-	string newLocalJobFolder = "F:\\PLang_Shared\\Jobs\\" + jobS;
+	string localJobFolder = PrtDistConfigGetLocalJobFolder(configurationFile);
+	string newLocalJobFolder = localJobFolder + jobS;
 	boolean st = _ROBOCOPY(jobFolder, newLocalJobFolder);
 	if (!st)
 	{
@@ -151,22 +154,19 @@ MIDL_user_free(void* object)
 void PrtDistServiceCreateLogFile()
 {
 	fopen_s(&logFile, logFileName, "w+");
-	fputs("Starting PrtDistService ..... \n", logFile);
-	fflush(logFile);
-}
-
-void PrtDistServieCloseLogFile()
-{
-	fputs("Done with PrtDistService ...... \n", logFile);
+	fputs("Starting P Service ..... \n", logFile);
 	fflush(logFile);
 	fclose(logFile);
 }
 
+
 void PrtDistServiceLog(char* log)
 {
+	fopen_s(&logFile, logFileName, "a+");
 	fputs(log, logFile);
 	fputs("\n", logFile);
 	fflush(logFile);
+	fclose(logFile);
 }
 
 ///
@@ -176,5 +176,5 @@ int main(int argc, char* argv[])
 {
 	PrtDistServiceCreateLogFile();
 	PrtDistServiceCreateRPCServer();
-	PrtDistServieCloseLogFile();
+	
 }

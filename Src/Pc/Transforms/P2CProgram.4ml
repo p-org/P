@@ -185,7 +185,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// Generate the bodies for P_EXPR_n
 	PExprBodyArgs ::= (args: out.Args, size: Natural, freeNum: Integer, asnNum: Integer).
 
-	PExprBodyArgs(a, n, n', n) :- RhsMaxOrder(_, _, n), a = out.Args(Ident(strJoin("p_tmp_expr_", toString(n))), NIL), n' = n - 1.
+	PExprBodyArgs(a, n, n', n) :- RhsMaxOrder(_, _, n), a = out.Args(Ident(strJoin("p_tmp_expr_", toString(n))), NIL), n' = n - 1;
+								  FunStmtRhs(_, _, n, _), a = out.Args(Ident(strJoin("p_tmp_expr_", toString(n))), NIL), n' = n - 1.
 
 	PExprBodyArgs(a, n, n', n) :- FunStmtRhs(_, _, n, _), a = out.Args(Ident(strJoin("p_tmp_expr_", toString(n))), NIL), n' = n - 1.
 

@@ -20,11 +20,8 @@ class PRT_VALUE {
 		bool isNullValue;
 		int i;
 
-		tkind = value.type.typeKind;
 		isNullValue = PrtIsNullValue(value);
-		if (tkind == PRT_TYPE_KIND.PRT_KIND_ANY)
-			assert(false, "Value must have a more concrete type");
-
+		tkind = value.type.typeKind;
 		if (tkind == PRT_TYPE_KIND.PRT_KIND_BOOL)
 		{
 			if(value.bl == true)
@@ -276,7 +273,7 @@ class PRT_VALUE {
     static bool PrtIsNullValue(PRT_VALUE value) {
 	PRT_TYPE_KIND kind;
 	kind = value.type.typeKind;
-	assert (kind != PRT_TYPE_KIND.PRT_KIND_ANY);
+	assert (kind != PRT_TYPE_KIND.PRT_KIND_ANY, "Value must have a concrete type");
 
 	if (kind == PRT_TYPE_KIND.PRT_KIND_EVENT)
 		return value.ev == null;
@@ -292,12 +289,12 @@ class PRT_VALUE {
 
     static PRT_VALUE PrtCastValue(PRT_VALUE value, PRT_TYPE type) {
         bool b;
-	PRT_VALUE newValue;
-	b = PrtInhabitsType(value, type);
-        assert (b);
-	newValue = PrtCloneValue(value);
-	value.type = type;
-	return newValue;
+		PRT_VALUE newValue;
+		b = PrtInhabitsType(value, type);
+        assert (b, "value must be a member of type");
+		newValue = PrtCloneValue(value);
+		value.type = type;
+		return newValue;
     }
 
     static bool PrtIsEqualValue(PRT_VALUE value1, PRT_VALUE value2)
@@ -474,7 +471,7 @@ class PRT_VALUE {
 	static void PrtMapInsert(PRT_VALUE map, PRT_VALUE key, PRT_VALUE value) {
 	    bool b;
 		b = map.map.Exists(key);
-		assert(!b);
+		assert(!b, "key must exist in map");
 	    map.map.Set(key, value);
 	}
 
@@ -546,51 +543,51 @@ class PRT_SEQ {
     }
 
     void Set(int index, PRT_VALUE value) {
-	assert (0 <= index && index < size);
+		assert (0 <= index && index < size, "index out of bound");
         contents[index] = PRT_VALUE.PrtCloneValue(value);
     }
 
     void Insert(int index, PRT_VALUE value) {
     	PRT_VALUE_ARRAY newContents;
-	int i;
-	assert (0 <= index && index <= size);
-	newContents = new PRT_VALUE_ARRAY[size+1];
-	i = 0;
-	while (i < size + 1) {
-	    if (i < index) {
-	        newContents[i] = contents[i];
-	    } else if (i == index) {
-	        newContents[i] = PRT_VALUE.PrtCloneValue(value);
-	    } else {
-	        newContents[i] = contents[i-1];
-	    }
-	    i = i + 1;
-	}
-	contents = newContents;
-	size = size + 1;	
+		int i;
+		assert (0 <= index && index <= size, "index out of bound");
+		newContents = new PRT_VALUE_ARRAY[size+1];
+		i = 0;
+		while (i < size + 1) {
+			if (i < index) {
+				newContents[i] = contents[i];
+			} else if (i == index) {
+				newContents[i] = PRT_VALUE.PrtCloneValue(value);
+			} else {
+				newContents[i] = contents[i-1];
+			}
+			i = i + 1;
+		}
+		contents = newContents;
+		size = size + 1;	
     }
 
     void Remove(int index) {
-	int i;
-	assert (0 <= index && index < size);
-	i = index;
-	while (i < size - 1) {
-	    contents[i] = contents[i+1];
-	    i = i + 1;
-	}
-	size = size - 1;	
+		int i;
+		assert (0 <= index && index < size, "index out of bound");
+		i = index;
+		while (i < size - 1) {
+			contents[i] = contents[i+1];
+			i = i + 1;
+		}
+		size = size - 1;	
     }
 
     PRT_VALUE Get(int index) {
         PRT_VALUE retVal;
-		assert (0 <= index && index < size);
+		assert (0 <= index && index < size, "index out of bound");
         retVal = PRT_VALUE.PrtCloneValue(contents[index]);
 		return retVal;
     }
 
 	PRT_VALUE GetNoClone(int index) {
         PRT_VALUE retVal;
-		assert (0 <= index && index < size);
+		assert (0 <= index && index < size, "index out of bound");
         return contents[index];
     }
 
@@ -701,75 +698,75 @@ class PRT_MAP {
 
     void Remove(PRT_VALUE key) {
         int i;
-	bool b;
-	PRT_VALUE_ARRAY newKeys;
-	PRT_VALUE_ARRAY newValues;
-	int j;
+		bool b;
+		PRT_VALUE_ARRAY newKeys;
+		PRT_VALUE_ARRAY newValues;
+		int j;
 
-	i = 0;
-	while (i < size) {
-	    b = PRT_VALUE.PrtIsEqualValue(keys[i], key);
-	    if (b) {
-	        newKeys = new PRT_VALUE_ARRAY[size - 1];
-		newValues = new PRT_VALUE_ARRAY[size - 1];
-		j = 0;
-		while (j < size) {
-		    if (j < i) {
-	    	        newKeys[j] = keys[j];
-	    	    	newValues[j] = values[j];
-		    } else if (j > i) {
-	    	        newKeys[j-1] = keys[j];
-	    	    	newValues[j-1] = values[j];		        
-		    }
-	    	    j = j + 1;
+		i = 0;
+		while (i < size) {
+			b = PRT_VALUE.PrtIsEqualValue(keys[i], key);
+			if (b) {
+				newKeys = new PRT_VALUE_ARRAY[size - 1];
+				newValues = new PRT_VALUE_ARRAY[size - 1];
+				j = 0;
+				while (j < size) {
+					if (j < i) {
+	    				newKeys[j] = keys[j];
+	    	    		newValues[j] = values[j];
+					} else if (j > i) {
+	    				newKeys[j-1] = keys[j];
+	    	    		newValues[j-1] = values[j];		        
+					}
+	    			j = j + 1;
+				}
+
+				keys = newKeys;
+				values = newValues;
+				size = size - 1;
+				return;	        
+			} else {
+				i = i + 1;
+			}
 		}
-
-		keys = newKeys;
-		values = newValues;
-		size = size - 1;
-		return;	        
-	    } else {
-	        i = i + 1;
-	    }
-	}
-        assert (false);
+        assert (false, "key not found");
     }
 
     PRT_VALUE Get(PRT_VALUE key) {
-    int i;
-	bool b;
-	PRT_VALUE retVal;
+		int i;
+		bool b;
+		PRT_VALUE retVal;
 
-	i = 0;
-	while (i < size) {
-	    b = PRT_VALUE.PrtIsEqualValue(keys[i], key);
-	    if (b) {
-	        retVal = PRT_VALUE.PrtCloneValue(values[i]);
-		return retVal;
-	    } else {
-	        i = i + 1;
-	    }
-	}
-    assert (false);
-	return null;
+		i = 0;
+		while (i < size) {
+			b = PRT_VALUE.PrtIsEqualValue(keys[i], key);
+			if (b) {
+				retVal = PRT_VALUE.PrtCloneValue(values[i]);
+				return retVal;
+			} else {
+				i = i + 1;
+			}
+		}
+		assert (false, "key not found");
+		return null;
     }
 
 	PRT_VALUE GetNoClone(PRT_VALUE key) {
-    int i;
-	bool b;
-	PRT_VALUE retVal;
+		int i;
+		bool b;
+		PRT_VALUE retVal;
 
-	i = 0;
-	while (i < size) {
-	    b = PRT_VALUE.PrtIsEqualValue(keys[i], key);
-	    if (b) {
-	        return values[i];
-	    } else {
-	        i = i + 1;
-	    }
-	}
-    assert (false);
-	return null;
+		i = 0;
+		while (i < size) {
+			b = PRT_VALUE.PrtIsEqualValue(keys[i], key);
+			if (b) {
+				return values[i];
+			} else {
+				i = i + 1;
+			}
+		}
+		assert (false, "key not found");
+		return null;
     }
 
     PRT_VALUE GetKeys(PRT_TYPE domType) {

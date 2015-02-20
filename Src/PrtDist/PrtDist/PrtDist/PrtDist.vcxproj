@@ -90,6 +90,12 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Lib>
+      <AdditionalDependencies>PrtWinUser.lib</AdditionalDependencies>
+    </Lib>
+    <Lib>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -136,7 +142,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="PrtDist.c" />
+    <ClCompile Include="PrtDistHelperFuntions.c" />
+    <ClCompile Include="PrtDistLogging.c" />
+    <ClCompile Include="PrtDistEnqueue.c" />
     <ClCompile Include="PrtDistSerializer.c" />
   </ItemGroup>
   <ItemGroup>

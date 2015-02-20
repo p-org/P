@@ -112,9 +112,10 @@ PrtGetMachine(
 	PRT_PROCESS_PRIV *privateProcess;
 	PrtAssert(id->discriminator == PRT_VALKIND_MID, "id is not legal PRT_MACHINEID");
 	machineId = id->valueUnion.mid;
-	PrtAssert(PrtAreGuidsEqual(process->guid, machineId->processId), "id does not belong to process");
+	//Comented out by Ankush Desai.
+	//PrtAssert(PrtAreGuidsEqual(process->guid, machineId->processId), "id does not belong to process");
 	privateProcess = (PRT_PROCESS_PRIV *)process;
-	PrtAssert(0 < machineId->machineId && machineId->machineId <= privateProcess->numMachines, "id out of bounds");
+	PrtAssert((0 < machineId->machineId) && (machineId->machineId <= privateProcess->numMachines), "id out of bounds");
 	return privateProcess->machines[machineId->machineId - 1];
 }
 

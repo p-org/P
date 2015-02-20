@@ -115,7 +115,7 @@ PRT_API void PRT_CALL_CONV PrtAssert(_In_ int condition, _In_opt_z_ PRT_CSTRING 
 * @see PrtLockMutex
 * @see PrtUnlockMutex
 */
-PRT_RECURSIVE_MUTEX PRT_CALL_CONV PrtCreateMutex();
+PRT_API PRT_RECURSIVE_MUTEX PRT_CALL_CONV PrtCreateMutex();
 
 /**
 * Allows the system to dispose of this mutex. Destroy must be called at most once per mutex, and a destroyed mutex never be used again.
@@ -124,7 +124,7 @@ PRT_RECURSIVE_MUTEX PRT_CALL_CONV PrtCreateMutex();
 * @see PrtLockMutex
 * @see PrtUnlockMutex
 */
-void PRT_CALL_CONV PrtDestroyMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
+PRT_API void PRT_CALL_CONV PrtDestroyMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
 
 /**
 * Blocks until the mutex is locked. If the locking thread already owns the mutex, then succeeds and increments the lock count. 

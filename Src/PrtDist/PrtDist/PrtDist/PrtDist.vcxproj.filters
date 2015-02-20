@@ -15,10 +15,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="PrtDist.c">
+    <ClCompile Include="PrtDistSerializer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PrtDistSerializer.c">
+    <ClCompile Include="PrtDistEnqueue.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrtDistLogging.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrtDistHelperFuntions.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

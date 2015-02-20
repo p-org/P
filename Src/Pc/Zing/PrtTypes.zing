@@ -34,53 +34,53 @@ class PRT_TYPE {
 
     static PRT_TYPE BuildDefault(PRT_TYPE_KIND typeKind) {
         PRT_TYPE type;
-	type = new PRT_TYPE;
-	type.typeKind = typeKind;
-	type.arity = 0;
-	type.fieldNames = null;
-	type.fieldTypes = null;
-	type.innerType = null;
-	type.domType = null;
-	type.codType = null;
-	return type;
+		type = new PRT_TYPE;
+		type.typeKind = typeKind;
+		type.arity = 0;
+		type.fieldNames = null;
+		type.fieldTypes = null;
+		type.innerType = null;
+		type.domType = null;
+		type.codType = null;
+		return type;
     }
 
     static PRT_TYPE PrtMkPrimitiveType(PRT_TYPE_KIND primType) {
         PRT_TYPE type;
-	type = BuildDefault(primType);
-	return type;
+		type = BuildDefault(primType);
+		return type;
     }
 
     static PRT_TYPE PrtMkMapType(PRT_TYPE domType, PRT_TYPE codType) {
         PRT_TYPE type;
-	type = BuildDefault(PRT_TYPE_KIND.PRT_KIND_MAP);
-	type.domType = domType;
-	type.codType = codType;
-	return type;
+		type = BuildDefault(PRT_TYPE_KIND.PRT_KIND_MAP);
+		type.domType = domType;
+		type.codType = codType;
+		return type;
     }
 
     static PRT_TYPE PrtMkNmdTupType(int arity) {
         PRT_TYPE type;
-	type = BuildDefault(PRT_TYPE_KIND.PRT_KIND_NMDTUP);
-	type.arity = arity;
-	type.fieldNames = new PRT_FIELD_NAME_ARRAY[arity];
-	type.fieldTypes = new PRT_TYPE_ARRAY[arity];
-	return type;
+		type = BuildDefault(PRT_TYPE_KIND.PRT_KIND_NMDTUP);
+		type.arity = arity;
+		type.fieldNames = new PRT_FIELD_NAME_ARRAY[arity];
+		type.fieldTypes = new PRT_TYPE_ARRAY[arity];
+		return type;
     }
 
     static PRT_TYPE PrtMkSeqType(PRT_TYPE innerType) {
         PRT_TYPE type;
-	type = BuildDefault(PRT_TYPE_KIND.PRT_KIND_SEQ);
-	type.innerType = innerType;
-	return type;
+		type = BuildDefault(PRT_TYPE_KIND.PRT_KIND_SEQ);
+		type.innerType = innerType;
+		return type;
     }
 
     static PRT_TYPE PrtMkTupType(int arity) {
         PRT_TYPE type;
-	type = BuildDefault(PRT_TYPE_KIND.PRT_KIND_TUPLE);
-	type.arity = arity;
-	type.fieldTypes = new PRT_TYPE_ARRAY[arity];
-	return type;
+		type = BuildDefault(PRT_TYPE_KIND.PRT_KIND_TUPLE);
+		type.arity = arity;
+		type.fieldTypes = new PRT_TYPE_ARRAY[arity];
+		return type;
     }
 
     static void PrtSetFieldType(PRT_TYPE tupleType, int index, PRT_TYPE fieldType) {

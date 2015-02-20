@@ -174,7 +174,9 @@ transform P2CProgram (in:: P) returns (out:: C)
 									  maxAll(0, { k | TypeOf(_, _, t), t : NmdTupType, k = lstLength(#NmdTupType, t) - 1 }),
 									max(
 									  maxAll(0, { k | StmtExprSize(_, k'), k = k' - 1 }),
-									  2)))),									  
+									max(
+									  maxAll(0, { k | FunStmtRhs(_, _, k, _) }),
+									  2))))),									  
 	                            m : Natural, 
 								args = out.Args(Ident("x0"), NIL).
 
@@ -185,6 +187,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	PExprBodyArgs(a, n, n', n) :- RhsMaxOrder(_, _, n), a = out.Args(Ident(strJoin("p_tmp_expr_", toString(n))), NIL), n' = n - 1;
 								  FunStmtRhs(_, _, n, _), a = out.Args(Ident(strJoin("p_tmp_expr_", toString(n))), NIL), n' = n - 1.
+
+	PExprBodyArgs(a, n, n', n) :- FunStmtRhs(_, _, n, _), a = out.Args(Ident(strJoin("p_tmp_expr_", toString(n))), NIL), n' = n - 1.
 
 	PExprBodyArgs(a, n, i', n) :- PExprBodyArgs(tl, n, i, n), i : Natural, i' = i - 1, a = out.Args(free, tl), 
 							      free = out.FunApp(Ident("PrtFreeValue"), Args(Ident(strJoin("p_tmp_expr_", toString(i))), NIL)).

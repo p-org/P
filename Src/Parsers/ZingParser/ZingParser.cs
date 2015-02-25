@@ -508,14 +508,34 @@
             }
             else if (functionName == "Seq")
             {
-                using (var enumerator = ft.Args.GetEnumerator())
+                string retval = "";
+                Stack<Node> dfsStack = new Stack<Node>();
+                dfsStack.Push(node);
+                while (dfsStack.Count > 0)
                 {
-                    enumerator.MoveNext();
-                    var first = RenderStmt(enumerator.Current);
-                    enumerator.MoveNext();
-                    var second = RenderStmt(enumerator.Current);
-                    return string.Format("{0}{1}", first, second);
+                    Node x = dfsStack.Pop();
+                    FuncTerm f = x as FuncTerm;
+                    if (f == null)
+                    {
+                        retval += RenderStmt(x);
+                        continue;
+                    }
+                    if (((Id)f.Function).Name != "Seq")
+                    {
+                        retval += RenderStmt(x);
+                        continue;
+                    }
+                    using (var enumerator = f.Args.GetEnumerator())
+                    {
+                        enumerator.MoveNext();
+                        var first = enumerator.Current;
+                        enumerator.MoveNext();
+                        var second = enumerator.Current;
+                        dfsStack.Push(second);
+                        dfsStack.Push(first);
+                    }
                 }
+                return retval;
             }
             else if (functionName == "Goto")
             {

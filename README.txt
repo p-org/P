@@ -10,10 +10,9 @@ Non-Codeplex Dependencies
 You must acquire and install these yourself.
 
 1. Microsoft .NET 4.5 (http://www.microsoft.com/en-us/download/details.aspx?id=30653)
-2. Visual Studio 2012 or 2013 (The free "Express" version is acceptable http://www.visualstudio.com/downloads/download-visual-studio-vs#d-express-windows-desktop)
+2. Visual Studio 2012 (Update 4) or Visual Studio 2013
 3a. Python 2.7.5 - to build dependencies (http://www.python.org/download/releases/2.7.5/)
 3b. "python" must be in PATH
-4.  OPTIONAL: Visual Studio SDK to enable VS-integrated code generation. Not available for VS Express.  
 
 Codeplex Dependencies
 ----------------------------------------------------------

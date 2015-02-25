@@ -44,30 +44,12 @@ PrtDistLog(
 char* log
 );
 
-//others
-
-void
-PrtDistAddElementToPortMap
-(
-__in PRT_INT32 portNumber,
-__in PRT_MACHINEINST* machineInst
-);
-
-PRT_MACHINEINST*
-PrtDistGetMachineInstForPort
-(
-__in PRT_INT32 portNumber
-);
-
 //RPC helpers
 
 handle_t
 PrtDistCreateRPCClient(
-PRT_INT32 nodeId,
-PRT_INT32 portNumber
+PRT_VALUE* target
 );
-
-void PrtDistRegisterReceiverService(PRT_MACHINEINST* machineInst);
 
 DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(LPVOID portNumber
 );
@@ -76,10 +58,12 @@ PRT_INT32
 PrtDistGetRecvPortNumber();
 
 PRT_BOOLEAN PrtDistSend(
-	handle_t*	handle,
-	PRT_INT32 portNumber,
+	handle_t  handle,
+	PRT_VALUE* target,
 	PRT_VALUE* event,
 	PRT_VALUE* payload
 );
+
+extern PRT_PROCESS* NodeProcess;
 
 

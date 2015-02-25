@@ -13,7 +13,7 @@ FILE* logFile;
 string PrtDistServiceNextNodeManagerPort()
 {
 	static int counter;
-	int nextPort = PRTD_START_NODEMANAGER_TCPPORT + counter;
+	int nextPort = PRTD_RECV_PORT + counter;
 	counter = counter + 1;
 	return to_string(nextPort);
 }

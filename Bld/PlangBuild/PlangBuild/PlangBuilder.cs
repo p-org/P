@@ -284,9 +284,6 @@ namespace PlangBuild
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\Win32\\PrtWinUser.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Lib\\PrtWinUser.lib"),
             new Tuple<string, string>(
-            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\Win32\\PrtWinUser.exp", 
-            "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Lib\\PrtWinUser.exp"),
-            new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\Win32\\PrtWinUser.dll", 
             "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Lib\\PrtWinUser.dll"),
             new Tuple<string, string>(
@@ -299,9 +296,6 @@ namespace PlangBuild
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\x64\\PrtWinUser.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Lib\\PrtWinUser.lib"),
-            new Tuple<string, string>(
-            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\x64\\PrtWinUser.exp", 
-            "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Lib\\PrtWinUser.exp"),
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\x64\\PrtWinUser.dll", 
             "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Lib\\PrtWinUser.dll"),
@@ -540,9 +534,6 @@ namespace PlangBuild
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\Win32\\PrtWinUser.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtWinUser.lib"),
             new Tuple<string, string>(
-            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\Win32\\PrtWinUser.exp", 
-            "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtWinUser.exp"),
-            new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\Win32\\PrtWinUser.dll", 
             "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtWinUser.dll"),
             new Tuple<string, string>(
@@ -555,9 +546,6 @@ namespace PlangBuild
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\x64\\PrtWinUser.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtWinUser.lib"),
-            new Tuple<string, string>(
-            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\x64\\PrtWinUser.exp", 
-            "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtWinUser.exp"),
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\x64\\PrtWinUser.dll", 
             "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtWinUser.dll"),

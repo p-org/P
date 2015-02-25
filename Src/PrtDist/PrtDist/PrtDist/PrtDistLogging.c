@@ -89,17 +89,13 @@ void PrtDistSMLogHandler(PRT_STEP step, void *vcontext)
 //Note that this function is not safe for calling concurrently (in the current implementation and may crash).
 
 void PrtDistLog(
-	PRT_PROCESS* process,
 	char* log
 )
 {
 	static FILE *logfile = NULL;
 	if (logfile == NULL)
 	{
-		PRT_CHAR fileName[100] = "PRT_PPROCESS_LOG_";
-		PRT_CHAR processId[100];
-		_itoa(process->guid.data1, processId, 10);
-		strcat_s(fileName, 100, processId);
+		PRT_CHAR fileName[100] = "PRT_PPROCESS_LOG_OTHER";
 		strcat_s(fileName, 100, ".txt");
 		logfile = fopen(fileName, "a+");
 	}

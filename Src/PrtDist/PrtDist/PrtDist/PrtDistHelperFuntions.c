@@ -2,16 +2,11 @@
 #include "PrtDistGlobals.h"
 #include "../PrtDistIDL/PrtDist.h"
 #include "../PrtDistIDL/PrtDist_c.c"
-// Get a new receiver port 
-PRT_INT32 ReceiverPort = PRTD_RECV_PORT;
-PRT_RECURSIVE_MUTEX* recPortLock = NULL;
 
-PRT_INT32 PrtDistGetRecvPortNumber()
+
+PRT_INT32 PrtDistGetRecvPortNumber(PRT_VALUE* target)
 {
-	PRT_INT32 ret;
-	ReceiverPort++;
-	ret = ReceiverPort;
-	return ret;
+	return PRTD_RECV_PORT + target->valueUnion.mid->processId.data1;
 }
 
 
@@ -21,7 +16,7 @@ DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(LPVOID portNumber)
 	PrtDistLog("Creating RPC server for Enqueue at Port ....");
 	RPC_STATUS status;
 	char buffPort[100];
-	_itoa((PRT_INT32*)portNumber, buffPort, 10);
+	_itoa(*((PRT_INT32*)portNumber), buffPort, 10);
 	status = RpcServerUseProtseqEp(
 		(unsigned char*)("ncacn_ip_tcp"), // Use TCP/IP protocol.
 		RPC_C_PROTSEQ_MAX_REQS_DEFAULT, // Backlog queue length for TCP/IP.
@@ -65,42 +60,10 @@ DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(LPVOID portNumber)
 
 }
 
-// Foreign function, Used to registering the receiver machine and waiting for messages.
-void PrtDistRegisterReceiverService(PRT_MACHINEINST* machineInst)
-{
-	if (recPortLock == NULL)
-	{
-		recPortLock = PrtCreateMutex();
-	}
-	PrtLockMutex(recPortLock);
-	//get a receiver port
-	PRT_INT32 portNumber = PrtDistGetRecvPortNumber();
-	//update the GUID information with the port number
-	machineInst->process->guid.data3 = portNumber;
-	//register the receiver machine
-	PrtDistAddElementToPortMap(portNumber, machineInst);
-	PrtUnlockMutex(recPortLock);
-	//create a thread that waits on the RPC server
-
-	HANDLE handleToServer = NULL;
-	handleToServer = CreateThread(NULL, 0, PrtDistCreateRPCServerForEnqueueAndWait, &portNumber, 0, NULL);
-	if (handleToServer == NULL)
-	{
-		PrtDistLog("Error Creating RPC server in PrtDistRegisterReceiverService");
-	}
-	else
-	{
-		PrtDistLog("Receiver listening at port ");
-		char log[10];
-		_itoa(portNumber, log, 10);
-		PrtDistLog(log);
-	}
-}
-
 // function to send the event
 PRT_BOOLEAN PrtDistSend(
-	handle_t*	handle,
-	PRT_INT32 portNumber,
+	handle_t  handle,
+	PRT_VALUE* target,
 	PRT_VALUE* event,
 	PRT_VALUE* payload
 )
@@ -108,15 +71,16 @@ PRT_BOOLEAN PrtDistSend(
 	PRT_BOOLEAN status;
 	RpcTryExcept
 	{
-		c_PrtDistEnqueue(*handle, portNumber, event, payload, &status);
+		c_PrtDistEnqueue(handle, target, event, payload, &status);
 
 	}
-		RpcExcept(1)
+	RpcExcept(1)
 	{
 		unsigned long ulCode;
 		ulCode = RpcExceptionCode();
 		PrtDistLog("Runtime reported exception in RPC");
-		char log[10];
+		printf("Runtime reported exception 0x%lx = %ld\n", ulCode, ulCode);
+		char log[100];
 		_itoa(ulCode, log, 10);
 		PrtDistLog(log);
 		return PRT_FALSE;
@@ -129,9 +93,46 @@ PRT_BOOLEAN PrtDistSend(
 
 handle_t
 PrtDistCreateRPCClient(
-PRT_INT32 nodeId,
-PRT_INT32 portNumber
+PRT_VALUE* target
 )
 {
+	PRT_INT32 nodeId = target->valueUnion.mid->processId.data2;
+	PRT_INT32 portNumber = PrtDistGetRecvPortNumber(target);
+	RPC_STATUS status;
+	unsigned char* szStringBinding = NULL;
+	handle_t handle;
+	//get centralserverID
+	char buffPort[100];
+	_itoa(portNumber, buffPort, 10);
+	// Creates a string binding handle.
+	// This function is nothing more than a printf.
+	// Connection is not done here.
+	status = RpcStringBindingCompose(
+		NULL, // UUID to bind to.
+		(unsigned char*)("ncacn_ip_tcp"), // Use TCP/IP
+		// protocol.
+		(unsigned char*)(AZUREMACHINE_NAMES[nodeId]), // TCP/IP network
+		// address to use.
+		(unsigned char*)buffPort, // TCP/IP port to use.
+		NULL, // Protocol dependent network options to use.
+		&szStringBinding); // String binding output.
 
+	if (status)
+		exit(status);
+
+
+
+	// Validates the format of the string binding handle and converts
+	// it to a binding handle.
+	// Connection is not done here either.
+	status = RpcBindingFromStringBinding(
+		szStringBinding, // The string binding to validate.
+		&handle); // Put the result in the implicit binding
+	// handle defined in the IDL file.
+
+	if (status)
+	{
+		PrtAssert(PRT_FALSE, "Failed to create an RPC Client");
+	}
+	return handle;
 }

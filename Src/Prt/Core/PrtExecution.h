@@ -370,13 +370,13 @@ PrtCleanupModel(
 _Inout_ PRT_MACHINEINST			*context
 );
 
-void
+PRT_API void
 PrtHandleError(
 _In_ PRT_STATUS ex,
 _In_ PRT_MACHINEINST_PRIV *context
 );
 
-void
+PRT_API void
 PrtLog(
 _In_ PRT_STEP step,
 _In_ PRT_MACHINEINST_PRIV *context

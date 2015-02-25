@@ -407,9 +407,7 @@ void PRT_CALL_CONV PrtTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, 
 	}
 
 	PrtAssert(index < arity, "Invalid tuple index");
-	PrtAssert(PrtIsSubtype(value->type, fieldTypes[index]), "Invalid type on tuple set");
-
-	clone = PrtCloneValue(value);
+	clone = PrtCastValue(value, fieldTypes[index]);
 	PrtFreeValue(tuple->valueUnion.tuple->values[index]);
 	tuple->valueUnion.tuple->values[index] = clone;
 }
@@ -489,8 +487,7 @@ void PRT_CALL_CONV PrtNmdTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_STRING name
 	}
 
 	PrtAssert(index < arity, "Invalid tuple field name");
-	PrtAssert(PrtIsSubtype(value->type, fieldTypes[index]), "Invalid type on tuple set");
-	clone = PrtCloneValue(value);
+	clone = PrtCastValue(value, fieldTypes[index]);
 	PrtFreeValue(tuple->valueUnion.tuple->values[index]);
 	tuple->valueUnion.tuple->values[index] = clone;
 }
@@ -551,8 +548,7 @@ void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _
 
 	PRT_VALUE *clone;
 	PRT_SEQTYPE *seqType = seq->type->typeUnion.seq;
-	PrtAssert(PrtIsSubtype(value->type, seqType->innerType), "Invalid type on sequence update");
-	clone = PrtCloneValue(value);
+	clone = PrtCastValue(value, seqType->innerType);
 	PrtFreeValue(seq->valueUnion.seq->values[index->valueUnion.nt]);
 	seq->valueUnion.seq->values[index->valueUnion.nt] = clone;
 }
@@ -567,8 +563,7 @@ void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _
 
 	PRT_VALUE *clone;
 	PRT_SEQTYPE *seqType = seq->type->typeUnion.seq;
-	PrtAssert(PrtIsSubtype(value->type, seqType->innerType), "Invalid type on sequence update");
-	clone = PrtCloneValue(value);
+	clone = PrtCastValue(value, seqType->innerType);
 	if (seq->valueUnion.seq->capacity == 0)
 	{
 		seq->valueUnion.seq->values = (PRT_VALUE **)PrtMalloc(sizeof(PRT_VALUE*));
@@ -714,9 +709,6 @@ void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _
 	PrtAssert(map->type->typeKind == PRT_KIND_MAP, "Invalid value");
 
 	PRT_MAPTYPE *mapType = map->type->typeUnion.map;
-	PrtAssert(PrtIsSubtype(key->type, mapType->domType), "Invalid map update; key has bad type");
-	PrtAssert(PrtIsSubtype(value->type, mapType->codType), "Invalid map update; value has bad type");
-
 	PRT_UINT32 bucketNum;
 	PRT_MAPNODE *bucket;
 	PRT_MAPNODE *node = NULL;
@@ -728,15 +720,15 @@ void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _
 	{
 		isNewKey = PRT_TRUE;
 		node = (PRT_MAPNODE *)PrtMalloc(sizeof(PRT_MAPNODE));
-		node->key = cloneKeyVals == PRT_TRUE ? PrtCloneValue(key) : key;
-		node->value = cloneKeyVals == PRT_TRUE ? PrtCloneValue(value) : value;
+		node->key = cloneKeyVals == PRT_TRUE ? PrtCastValue(key, mapType->domType) : key;
+		node->value = cloneKeyVals == PRT_TRUE ? PrtCastValue(value, mapType->codType) : value;
 		node->bucketNext = NULL;
 		node->insertNext = NULL;
 		map->valueUnion.map->buckets[bucketNum] = node;
 	}
 	else
 	{
-		PRT_VALUE *valueClone = cloneKeyVals == PRT_TRUE ? PrtCloneValue(value) : value;
+		PRT_VALUE *valueClone = cloneKeyVals == PRT_TRUE ? PrtCastValue(value, mapType->codType) : value;
 		PRT_MAPNODE *next = bucket;
 		isNewKey = PRT_TRUE;
 		while (next != NULL)
@@ -761,7 +753,7 @@ void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _
 		if (isNewKey == PRT_TRUE)
 		{
 			node = (PRT_MAPNODE *)PrtMalloc(sizeof(PRT_MAPNODE));
-			node->key = cloneKeyVals == PRT_TRUE ? PrtCloneValue(key) : key;
+			node->key = cloneKeyVals == PRT_TRUE ? PrtCastValue(key, mapType->domType) : key;
 			node->value = valueClone;
 			node->bucketNext = bucket;
 			node->insertNext = NULL;

@@ -40,8 +40,8 @@
         private HashSet<string> crntStateNames = new HashSet<string>();
         private HashSet<string> crntFunNames = new HashSet<string>();
         private HashSet<string> crntVarNames = new HashSet<string>();
-        private HashSet<string> crntEventNames = new HashSet<string>();
-        private HashSet<string> crntMachineNames = new HashSet<string>();
+        private HashSet<string> crntEventNames;
+        private HashSet<string> crntMachineNames;
 
         private Stack<P_Root.Expr> valueExprStack = new Stack<P_Root.Expr>();
         private Stack<P_Root.ExprsExt> exprsStack = new Stack<P_Root.ExprsExt>();
@@ -65,11 +65,15 @@
         internal bool ParseFile(
             ProgramName file,
             CommandLineOptions options,
+            HashSet<string> crntEventNames,
+            HashSet<string> crntMachineNames,
             out List<Flag> flags,
             out PProgram program,
             out List<string> includedFileNames)
         {
             flags = parseFlags = new List<Flag>();
+            this.crntEventNames = crntEventNames;
+            this.crntMachineNames = crntMachineNames;
             program = parseProgram = new PProgram();
             includedFileNames = parseIncludedFileNames = new List<string>();
             parseSource = file;
@@ -1675,8 +1679,6 @@
             crntStateNames.Clear();
             crntFunNames.Clear();
             crntVarNames.Clear();
-            crntMachineNames.Clear();
-            crntEventNames.Clear();
         }
         #endregion
     }

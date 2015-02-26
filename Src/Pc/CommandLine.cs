@@ -122,9 +122,9 @@
             }
             if (inputFileName.Length > 2 && inputFileName.EndsWith(".p"))
             {
-                var comp = new Compiler(inputFileName, options);
+                var comp = new Compiler(options);
                 List<Flag> flags;
-                var result = comp.Compile(out flags);
+                var result = comp.Compile(inputFileName, out flags);
                 WriteFlags(flags, options);
 
                 if (!result)

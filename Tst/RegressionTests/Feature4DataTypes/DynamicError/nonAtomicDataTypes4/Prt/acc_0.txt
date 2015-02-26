@@ -3,6 +3,6 @@
 =================================
 OUT: <CreateLog> Machine M(1) is created
 OUT: <StateLog> Machine M(1) entered state S
-ERROR: ASSERT: Invalid index
 OUT: 
+ERROR: ASSERT: Invalid index
 EXIT: 1

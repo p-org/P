@@ -4,17 +4,18 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 2 distinct states explored
+OUT: 3 distinct states explored
 OUT: 
 EXIT: 3
 
 =================================
-nonAtomicDataTypes.trace
+StackOverflowException.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
 <CreateLog> Created Machine M-0
 <StateLog> Machine M-0 entering State S
+<CreateLog> Created Machine Test-0
 
 Error:
 P Assertion failed:

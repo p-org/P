@@ -3,7 +3,8 @@
 event E assert 1; 
 main machine M
 {    
-     var t : (a: seq [int], b: map[int, seq[int]]);
+    var t : (a: seq [int], b: map[int, seq[int]]);
+	var t1 : (a: seq [int], b: map[int, seq[int]]);
 	var ts: (a: int, b: int);
 	var tt: (int, int);
     var y : int;
@@ -15,15 +16,19 @@ main machine M
     var s1: seq[any];
     var s2: seq[int];
     var s3: seq[seq[any]];           
-	var s4: seq[(int,int)];              
+	var s4, s8: seq[(int,int)];              
 	var s5: seq[bool];
 	var s6: seq[map[int,any]];
+	var s7: seq[int];
     var i: int;
 	var mac: machine;
 	var m1: map[int,int];
+	var m4: map[int,int];
 	var m3: map[int,bool];
 	//TODO: write asgns for m2
+	var m5, m6: map[int,any];
 	var m2: map[int,map[int,any]];
+	var m7: map[bool,seq[(a: int, b: int)]];
 	
     start state S
     {
@@ -44,17 +49,25 @@ main machine M
 		  tt += (2,3);             //error
 		  tt -= (2,3);             //error
 		  
+		  i = 1;
+		  tt.i = 5;             //error
+		  ts.i = 5;              //error
+		  
+		  tt = ts;                //error
+		  ts = tt;                //error
+		  
 	      /////////////////////////sequences:
 		  s += (0, 1);
           s += (1, 2);
           s1 = s;
           s -= (1);
 		  
-		  //Stopped here:
+		  
 		  s += (0,5);
 		  s += (0,6);
-		  s -= (1);                 //Why: what does it do?
+		  s -= (1);                 //removes 1st element
 		  assert (sizeof(s) == 1);   //holds
+		  assert (6 in s);           //error: ""in" expects a map"
 		  //Removal of 5th element from sequence of size 1:
 		  s -= (5,7);               //static error: "index must be an integer"
 		  
@@ -88,6 +101,7 @@ main machine M
 		  m3[0] = true;
 		  m3[2] = false;
 		  assert (sizeof(m3) == 2);  //holds
+		  assert (true in m3);        //error: “Value can never be in the map" 
 		  
 		  /////////////////////////sequence of non-atomic types:
 		  s3 += (0,s5);
@@ -116,22 +130,34 @@ main machine M
 		  assert ( t.a[0] == 3 );         //holds
 		  assert ( t.a[1] == 2 );         //holds
 		  
-          // Why: fails
-		  assert ( sizeof(t.a) == 2 );
-		  //TODO: uncomment below
-          //t.a[foo()] = 2;  
+		  ////////////////////////map: [bool, seq[(a: int, b: int)]]
+		  //var s4, s8: seq[(int,int)];
+		  s4 += (0,(0,0));
+		  s4 += (1,(1,1));
+		  s4 += (2, (2,2));
 		  
-          //GetX().a[foo()] = 1;  
-		  //tmp = foo();
-		  //tmp2 = GetT();
+		  s8 += (0,(1,1));
+		  s8 += (1,(2,2));
+		  s8 += (2,(3,3));
+		  
+		  m7[true] = s4;      //error
+		  m7[false] = s8;     //error
+		  
+		  //TODO: uncomment below
+          t.a[foo()] = 2;  
+		  
+          GetT().a[foo()] = 1;       //error
+		  tmp = foo();
+		  GetT().a[tmp] = 1;       //error
+		  tmp2 = GetT();
 		  //assert ( tmp2 == t) ;
-		  //tmp2.a[foo()] = 1;
+		  tmp2.a[foo()] = 1;
 		  //assert ( tmp2 != t);
-		  //tmp1 = IncY();
+		  tmp1 = IncY();
 		  //assert ( tmp1 == y + 1);
-		  //t.a[foo()] = tmp1;
-          //t.a[tmp] = tmp1;          
-          //y = IncY();
+		  t.a[foo()] = tmp1;
+          t.a[tmp] = tmp1;          
+          y = IncY();
 		  //assert ( y == 2 );
 		  ////////////////////////tuple with sequence and map:
 		  raise halt;

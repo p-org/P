@@ -97,11 +97,11 @@
         {
             Contract.Requires(!AttemptedCompile);
             AttemptedCompile = true;
-            flags = new List<Flag>(); 
-            InputFileName = inputFileName;
+            flags = new List<Flag>();
+            InputFileName = Path.Combine(Environment.CurrentDirectory, inputFileName);
             try
             {
-                InputProgramName = new ProgramName(Path.Combine(Environment.CurrentDirectory, inputFileName));
+                InputProgramName = new ProgramName(InputFileName);
             }
             catch (Exception e)
             {
@@ -114,31 +114,34 @@
                 return false;
             }
 
-            HashSet<string> seenFileNames = new HashSet<string>();
-            Queue<ProgramName> parserWorkQueue = new Queue<ProgramName>();
+            Dictionary<string, ProgramName> seenFileNames = new Dictionary<string, ProgramName>();
+            Queue<string> parserWorkQueue = new Queue<string>();
             List<PProgram> parsedPrograms = new List<PProgram>();
-            seenFileNames.Add(InputFileName);
-            parserWorkQueue.Enqueue(InputProgramName);
+            seenFileNames[InputFileName] = InputProgramName;
+            parserWorkQueue.Enqueue(InputFileName);
             while (parserWorkQueue.Count > 0)
             {
                 PProgram prog;
                 List<string> includedFileNames;
                 List<Flag> parserFlags;
+                string currFileName = parserWorkQueue.Dequeue();
                 var parser = new Parser.Parser();
-                var result = parser.ParseFile(parserWorkQueue.Dequeue(), Options, out parserFlags, out prog, out includedFileNames);
+                var result = parser.ParseFile(seenFileNames[currFileName], Options, out parserFlags, out prog, out includedFileNames);
                 flags.AddRange(parserFlags);
                 if (!result)
                 {
                     return false;
                 }
                 parsedPrograms.Add(prog);
+                string currDirectoryName = Path.GetDirectoryName(Path.GetFullPath(currFileName));
                 foreach (var fileName in includedFileNames)
                 {
+                    string fullFileName = Path.Combine(currDirectoryName, fileName);
                     ProgramName programName;
-                    if (seenFileNames.Contains(fileName)) continue;
+                    if (seenFileNames.ContainsKey(fullFileName)) continue;
                     try
                     {
-                        programName = new ProgramName(Path.Combine(Environment.CurrentDirectory, fileName));
+                        programName = new ProgramName(fullFileName);
                     }
                     catch (Exception e)
                     {
@@ -146,12 +149,12 @@
                             new Flag(
                                 SeverityKind.Error,
                                 default(Span),
-                                Constants.BadFile.ToString(string.Format("{0} : {1}", fileName, e.Message)),
+                                Constants.BadFile.ToString(string.Format("{0} : {1}", fullFileName, e.Message)),
                                 Constants.BadFile.Code));
                         return false;
                     }
-                    seenFileNames.Add(fileName);
-                    parserWorkQueue.Enqueue(programName);
+                    seenFileNames[fullFileName] = programName;
+                    parserWorkQueue.Enqueue(fullFileName);
                 }
             }
 

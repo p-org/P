@@ -2,22 +2,8 @@
          Console output          
 =================================
 OUT: ##################
-OUT: Check Failed
+OUT: Check Passed
 OUT: ##################
-OUT: 3 distinct states explored
+OUT: 6 distinct states explored
 OUT: 
-EXIT: 3
-
-=================================
-nonAtomicDataTypes.trace
-=================================
-Safety Error Trace
-Trace-Log 0:
-<CreateLog> Created Machine M-0
-<StateLog> Machine M-0 entering State S
-<CreateLog> Created Machine Test-0
-
-Error:
-P Assertion failed:
-Expression: assert(tmpVar_54.bl,)
-Comment: (95, 5): Assert failed
+EXIT: 0

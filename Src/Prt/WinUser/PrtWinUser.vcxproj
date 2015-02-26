@@ -36,14 +36,6 @@
     <ClCompile Include="PrtWinUser.c" />
     <ClCompile Include="PrtWinUserConfig.c" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\IDL\PrtIDL.vcxproj">
-      <Project>{13dcfb0e-a18a-4e6b-ae2e-f46a7b89a145}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\Utilities\PatchIDL\PatchIDL.csproj">
-      <Project>{0202103a-7da0-4e05-b106-f8bbe28711dc}</Project>
-    </ProjectReference>
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F8C72C0E-450C-4AE1-9885-31B8565C1D63}</ProjectGuid>
     <RootNamespace>PrtWinUser</RootNamespace>

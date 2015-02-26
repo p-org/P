@@ -61,7 +61,7 @@
             private set;
         }
 
-        public PProgram ParsedProgram
+        public ProgramName InputProgramName
         {
             get;
             private set;
@@ -79,12 +79,9 @@
             private set;
         }
 
-        public Compiler(string inputFileName, CommandLineOptions options)
+        public Compiler(CommandLineOptions options)
         {
-            Contract.Assert(!string.IsNullOrEmpty(inputFileName));
-            InputFileName = inputFileName;
             Options = options;
-
             EnvParams envParams = null;
             if (options.shortFilenames)
             {
@@ -96,83 +93,82 @@
             InitEnv(CompilerEnv);
         }
 
-        public bool Compile(out List<Flag> flags)
+        public bool Compile(string inputFileName, out List<Flag> flags)
         {
             Contract.Requires(!AttemptedCompile);
-            List<string> includedFileNames;
-            HashSet<string> parsedFileNames = new HashSet<string>();
-            Queue<string> parserWorkQueue = new Queue<string>();
-            List<PProgram> parsedPrograms = new List<PProgram>();
-            ProgramName rootFile = null;
             AttemptedCompile = true;
-            flags = new List<Flag>();
+            flags = new List<Flag>(); 
+            InputFileName = inputFileName;
+            try
+            {
+                InputProgramName = new ProgramName(Path.Combine(Environment.CurrentDirectory, inputFileName));
+            }
+            catch (Exception e)
+            {
+                flags.Add(
+                    new Flag(
+                        SeverityKind.Error,
+                        default(Span),
+                        Constants.BadFile.ToString(string.Format("{0} : {1}", inputFileName, e.Message)),
+                        Constants.BadFile.Code));
+                return false;
+            }
 
-            parserWorkQueue.Enqueue(InputFileName);
+            HashSet<string> seenFileNames = new HashSet<string>();
+            Queue<ProgramName> parserWorkQueue = new Queue<ProgramName>();
+            List<PProgram> parsedPrograms = new List<PProgram>();
+            seenFileNames.Add(InputFileName);
+            parserWorkQueue.Enqueue(InputProgramName);
             while (parserWorkQueue.Count > 0)
             {
-                string fileName = parserWorkQueue.Dequeue();
-                if (parsedFileNames.Contains(fileName))
-                {
-                    continue;
-                }
-
-                //// Step 0. Make sure the filename is meaningful.
-                ProgramName inputFile = null;
-                try
-                {
-                    inputFile = new ProgramName(Path.Combine(Environment.CurrentDirectory, fileName));
-                }
-                catch (Exception e)
-                {
-                    flags.Add(
-                        new Flag(
-                            SeverityKind.Error,
-                            default(Span),
-                            Constants.BadFile.ToString(string.Format("{0} : {1}", fileName, e.Message)),
-                            Constants.BadFile.Code));
-                    return false;
-                }
-
-                if (rootFile == null)
-                {
-                    rootFile = inputFile;
-                }
-
-                //// Step 1. Attempt to parse the P program, and stop if parse fails.
                 PProgram prog;
+                List<string> includedFileNames;
                 List<Flag> parserFlags;
                 var parser = new Parser.Parser();
-                var result = parser.ParseFile(inputFile, Options, out parserFlags, out prog, out includedFileNames);
+                var result = parser.ParseFile(parserWorkQueue.Dequeue(), Options, out parserFlags, out prog, out includedFileNames);
                 flags.AddRange(parserFlags);
                 if (!result)
                 {
                     return false;
                 }
-
-                parsedFileNames.Add(fileName);
                 parsedPrograms.Add(prog);
-                foreach (var name in includedFileNames)
+                foreach (var fileName in includedFileNames)
                 {
-                    parserWorkQueue.Enqueue(name);
+                    ProgramName programName;
+                    if (seenFileNames.Contains(fileName)) continue;
+                    try
+                    {
+                        programName = new ProgramName(Path.Combine(Environment.CurrentDirectory, fileName));
+                    }
+                    catch (Exception e)
+                    {
+                        flags.Add(
+                            new Flag(
+                                SeverityKind.Error,
+                                default(Span),
+                                Constants.BadFile.ToString(string.Format("{0} : {1}", fileName, e.Message)),
+                                Constants.BadFile.Code));
+                        return false;
+                    }
+                    seenFileNames.Add(fileName);
+                    parserWorkQueue.Enqueue(programName);
                 }
             }
 
-            ParsedProgram = parsedPrograms[0];
-
-            //// Step 2. Serialize the parsed object graph into a Formula model and install it. Should not fail.
+            //// Step 1. Serialize the parsed object graph into a Formula model and install it. Should not fail.
             AST<Model> model;
             var inputModule = MkSafeModuleName(InputFileName);
             var mkModelResult = Factory.Instance.MkModel(
                 inputModule, 
                 PDomain, 
-                ParsedProgram.Terms, 
+                parsedPrograms[0].Terms, 
                 out model,
-                null, //MkDeclAliases(ParsedProgram),
+                null, 
                 MkReservedModuleLocation(PDomain));
             Contract.Assert(mkModelResult);
 
             InstallResult instResult;
-            var modelProgram = MkProgWithSettings(rootFile, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
+            var modelProgram = MkProgWithSettings(InputProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
             var progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, model), out instResult);
             Contract.Assert(progressed && instResult.Succeeded);
 
@@ -183,8 +179,8 @@
                 wr.Close();
             }
 
-            //// Step 3. Perform static analysis.
-            if (!Check(inputModule, rootFile, flags))
+            //// Step 2. Perform static analysis.
+            if (!Check(inputModule, flags))
             {
                 return false;
             }
@@ -194,15 +190,15 @@
                 return true;
             }
 
-            //// Step 4. Generate outputs
-            return GenerateC(inputModule, rootFile, flags) & 
-                   GenerateZing(inputModule, rootFile, model, flags);
+            //// Step 3. Generate outputs
+            return GenerateC(inputModule, flags) & 
+                   GenerateZing(inputModule, model, flags);
         }
 
-        private bool GenerateZing(string inputModule, ProgramName inputFile, AST<Model> model, List<Flag> flags)
+        private bool GenerateZing(string inputModule, AST<Model> model, List<Flag> flags)
         {
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
-            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(inputModule, null, inputFile.ToString()));
+            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(inputModule, null, InputProgramName.ToString()));
             var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(inputModule + "_WithTypes"));
             Task<ApplyResult> apply;
             Formula.Common.Rules.ExecuterStatistics stats;
@@ -378,14 +374,14 @@
         /// <summary>
         /// Run static analysis on the program.
         /// </summary>
-        private bool Check(string inputModule, ProgramName inputProgram, List<Flag> flags)
+        private bool Check(string inputModule, List<Flag> flags)
         {
             //// Run static analysis on input program.
             List<Flag> queryFlags;
             Task<QueryResult> task;
             Formula.Common.Rules.ExecuterStatistics stats;
             var canStart = CompilerEnv.Query(
-                inputProgram,
+                InputProgramName,
                 inputModule,
                 new AST<Body>[] { Factory.Instance.AddConjunct(Factory.Instance.MkBody(), Factory.Instance.MkFind(null, Factory.Instance.MkId(inputModule + ".requires"))) },
                 true,
@@ -400,20 +396,20 @@
 
             var errors = new SortedSet<Flag>(default(FlagSorter));
             //// Enumerate typing errors
-            AddErrors(task.Result, "TypeOf(_, _, ERROR)", inputProgram, errors, 1);
-            AddErrors(task.Result, "DupNmdSubE(_, _, _, _)", inputProgram, errors, 1);
-            AddErrors(task.Result, "PurityError(_, _)", inputProgram, errors, 1);
-            AddErrors(task.Result, "LValueError(_, _)", inputProgram, errors, 1);
+            AddErrors(task.Result, "TypeOf(_, _, ERROR)", errors, 1);
+            AddErrors(task.Result, "DupNmdSubE(_, _, _, _)", errors, 1);
+            AddErrors(task.Result, "PurityError(_, _)", errors, 1);
+            AddErrors(task.Result, "LValueError(_, _)", errors, 1);
 
             //// Enumerate structural errors
-            AddErrors(task.Result, "missingDecl", inputProgram, errors);
-            AddErrors(task.Result, "OneDeclError(_)", inputProgram, errors, 0);
-            AddErrors(task.Result, "TwoDeclError(_, _)", inputProgram, errors, 1);
-            AddErrors(task.Result, "DeclFunError(_, _)", inputProgram, errors, 1);
+            AddErrors(task.Result, "missingDecl", errors);
+            AddErrors(task.Result, "OneDeclError(_)", errors, 0);
+            AddErrors(task.Result, "TwoDeclError(_, _)", errors, 1);
+            AddErrors(task.Result, "DeclFunError(_, _)", errors, 1);
 
             if (Options.printTypeInference)
             {
-                AddTerms(task.Result, "TypeOf(_, _, _)", inputProgram, errors, SeverityKind.Info, 0, "inferred type: ", 1, 2);
+                AddTerms(task.Result, "TypeOf(_, _, _)", errors, SeverityKind.Info, 0, "inferred type: ", 1, 2);
             }
 
             flags.AddRange(errors);
@@ -421,7 +417,7 @@
             return task.Result.Conclusion == LiftedBool.True;
         }
 
-        private void AddErrors(QueryResult result, string errorPattern, ProgramName inputProgram, SortedSet<Flag> errors, int locationIndex = -1)
+        private void AddErrors(QueryResult result, string errorPattern, SortedSet<Flag> errors, int locationIndex = -1)
         {
             List<Flag> queryFlags;
             foreach (var p in result.EnumerateProofs(errorPattern, out queryFlags, 1))
@@ -442,7 +438,7 @@
                             exprLoc.Span,
                             errorMsg,
                             TypeErrorCode,
-                            ProgramName.Compare(inputProgram, exprLoc.Program) != 0 ? null : exprLoc.Program));
+                            ProgramName.Compare(InputProgramName, exprLoc.Program) != 0 ? null : exprLoc.Program));
                     }
                 }
                 else
@@ -452,7 +448,7 @@
                         default(Span),
                         errorMsg,
                         TypeErrorCode,
-                        inputProgram));
+                        InputProgramName));
                 }
             }
 
@@ -465,7 +461,6 @@
         private void AddTerms(
             QueryResult result, 
             string termPattern, 
-            ProgramName inputProgram, 
             SortedSet<Flag> flags, 
             SeverityKind severity,
             int msgCode,
@@ -498,7 +493,7 @@
                             exprLoc.Span,
                             sw.ToString(),
                             msgCode,
-                            ProgramName.Compare(inputProgram, exprLoc.Program) != 0 ? null : exprLoc.Program));
+                            ProgramName.Compare(InputProgramName, exprLoc.Program) != 0 ? null : exprLoc.Program));
                     }
                 }
                 else
@@ -520,7 +515,7 @@
                         default(Span),
                         sw.ToString(),
                         msgCode,
-                        inputProgram));
+                        InputProgramName));
                 }
             }
 
@@ -748,11 +743,11 @@
             return aliases;
         }
 
-        private bool GenerateC(string inputModelName, ProgramName inputProgram, List<Flag> flags)
+        private bool GenerateC(string inputModelName, List<Flag> flags)
         {
             //// Apply the P2C transform.
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2CTransform, null, MkReservedModuleLocation(P2CTransform)));
-            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(inputModelName, null, inputProgram.ToString()));
+            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(inputModelName, null, InputProgramName.ToString()));
             var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(inputModelName + "_CModel"));
 
             List<Flag> appFlags;

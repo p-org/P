@@ -319,8 +319,6 @@ domain PStaticTyping extends PData
     
     TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = SeqType(inner), TypeRel(t1, inner, k), k != EMPTY.
     TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = MapType(dom, _), TypeRel(t1, dom, k), k != EMPTY.        
-	[ rule_Classes = '"error, msg: Value can never be in the sequence"']
-    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = SeqType(inner), TypeRel(t1, inner, EMPTY).
 	[ rule_Classes = '"error, msg: Value can never be in the map"']
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _),  t2 = MapType(dom, _), TypeRel(t1, dom, EMPTY).        
 	[ rule_Classes = '"error, msg: "in" expects a map"']

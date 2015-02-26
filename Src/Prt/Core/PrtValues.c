@@ -1570,12 +1570,9 @@ PRT_VALUE * PRT_CALL_CONV PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE *typ
 	case PRT_KIND_MAP:
 	{
 		PrtAssert(frmKind == PRT_KIND_MAP, "Invalid type cast");
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
-		retVal->type = PrtCloneType(type);
-		retVal->discriminator = PRT_VALKIND_MAP;
+		PRT_VALUE *retVal = PrtMkDefaultValue(type);
+		PRT_MAPVALUE *cVal = retVal->valueUnion.map;
 		PRT_MAPVALUE *mVal = value->valueUnion.map;
-		PRT_MAPTYPE *mType = type->typeUnion.map;
-		PRT_MAPVALUE *cVal = (PRT_MAPVALUE *)PrtMkDefaultValue(type);
 		if (mVal->capNum > 0)
 		{
 			//// Eagerly allocate capacity in the clone to avoid intermediate rehashings.
@@ -1584,7 +1581,7 @@ PRT_VALUE * PRT_CALL_CONV PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE *typ
 			cVal->capNum = mVal->capNum;
 		}
 
-		retVal->valueUnion.map = cVal;
+		PRT_MAPTYPE *mType = type->typeUnion.map;
 		PRT_MAPNODE *next = mVal->first;
 		while (next != NULL)
 		{
@@ -1597,23 +1594,20 @@ PRT_VALUE * PRT_CALL_CONV PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE *typ
 	case PRT_KIND_NMDTUP:
 	{
 		PrtAssert(frmKind == PRT_KIND_NMDTUP, "Invalid type cast");
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
-		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
-		retVal->type = PrtCloneType(type);
-		retVal->discriminator = PRT_VALKIND_TUPLE;
-		retVal->valueUnion.tuple = cVal;
-
-		PRT_UINT32 i;
-		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
 		PRT_NMDTUPTYPE *toTupType = type->typeUnion.nmTuple;
 		PRT_NMDTUPTYPE *frmTupType = value->type->typeUnion.nmTuple;
 		PrtAssert(toTupType->arity == frmTupType->arity, "Invalid type cast");
-
-		PRT_UINT32 arity = toTupType->arity;
-		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE *));
-		for (i = 0; i < arity; ++i)
+		PRT_UINT32 i;
+		for (i = 0; i < toTupType->arity; ++i)
 		{
 			PrtAssert(strncmp(toTupType->fieldNames[i], frmTupType->fieldNames[i], PRT_MAXFLDNAME_LENGTH) == 0, "Invalid type cast");
+		}
+		PRT_VALUE *retVal = PrtMkDefaultValue(type);
+		PRT_TUPVALUE *cVal = retVal->valueUnion.tuple;
+		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
+		for (i = 0; i < toTupType->arity; ++i)
+		{
+			PrtFreeValue(cVal->values[i]);
 			cVal->values[i] = PrtCastValue(tVal->values[i], toTupType->fieldTypes[i]);
 		}
 
@@ -1622,22 +1616,15 @@ PRT_VALUE * PRT_CALL_CONV PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE *typ
 	case PRT_KIND_TUPLE:
 	{
 		PrtAssert(frmKind == PRT_KIND_TUPLE, "Invalid type cast");
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
-		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
-		retVal->type = PrtCloneType(type);
-		retVal->discriminator = PRT_VALKIND_TUPLE;
-		retVal->valueUnion.tuple = cVal;
-
-		PRT_UINT32 i;
+		PrtAssert(type->typeUnion.tuple->arity == value->type->typeUnion.tuple->arity, "Invalid type cast");
 		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
-		PRT_TUPTYPE *toTupType = type->typeUnion.tuple;
-		PRT_TUPTYPE *frmTupType = value->type->typeUnion.tuple;
-		PrtAssert(toTupType->arity == frmTupType->arity, "Invalid type cast");
-
-		PRT_UINT32 arity = toTupType->arity;
-		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE *));
-		for (i = 0; i < arity; ++i)
+		PRT_VALUE *retVal = PrtMkDefaultValue(type);
+		PRT_TUPVALUE *cVal = retVal->valueUnion.tuple;
+		PRT_TUPTYPE *toTupType = type->typeUnion.tuple; 
+		PRT_UINT32 i;
+		for (i = 0; i < toTupType->arity; ++i)
 		{
+			PrtFreeValue(cVal->values[i]);
 			cVal->values[i] = PrtCastValue(tVal->values[i], toTupType->fieldTypes[i]);
 		}
 
@@ -1646,14 +1633,9 @@ PRT_VALUE * PRT_CALL_CONV PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE *typ
 	case PRT_KIND_SEQ:
 	{
 		PrtAssert(frmKind == PRT_KIND_SEQ, "Invalid type cast");
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
-		PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
-		retVal->type = PrtCloneType(type);
-		retVal->discriminator = PRT_VALKIND_SEQ;
-		retVal->valueUnion.seq = cVal;
-
+		PRT_VALUE *retVal = PrtMkDefaultValue(type);
+		PRT_SEQVALUE *cVal = retVal->valueUnion.seq;
 		PRT_SEQVALUE *sVal = value->valueUnion.seq;
-		PRT_SEQTYPE *sType = type->typeUnion.seq;
 		cVal->capacity = sVal->capacity;
 		cVal->size = sVal->size;
 		if (sVal->capacity == 0)
@@ -1662,15 +1644,15 @@ PRT_VALUE * PRT_CALL_CONV PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE *typ
 		}
 		else
 		{
-			PRT_UINT32 i;
 			cVal->values = (PRT_VALUE **)PrtCalloc(sVal->capacity, sizeof(PRT_VALUE*));
+			PRT_SEQTYPE *sType = type->typeUnion.seq;
+			PRT_UINT32 i;
 			for (i = 0; i < sVal->size; ++i)
 			{
 				cVal->values[i] = PrtCastValue(sVal->values[i], sType->innerType);
 			}
 		}
 		return retVal;
-
 	}
 	default:
 		PrtAssert(PRT_FALSE, "Invalid type");

@@ -105,7 +105,7 @@
             InputProgramNames = new HashSet<ProgramName>();
             AttemptedCompile = true;
             flags = new List<Flag>();
-            RootFileName = Path.Combine(Environment.CurrentDirectory, inputFileName);
+            RootFileName = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, inputFileName));
             try
             {
                 RootProgramName = new ProgramName(RootFileName);
@@ -121,8 +121,10 @@
                 return false;
             }
 
-            Dictionary<string, ProgramName> seenFileNames = new Dictionary<string, ProgramName>();
-            Dictionary<string, PProgram> parsedPrograms = new Dictionary<string, PProgram>();
+            HashSet<string> crntEventNames = new HashSet<string>();
+            HashSet<string> crntMachineNames = new HashSet<string>();
+            Dictionary<string, ProgramName> seenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, PProgram> parsedPrograms = new Dictionary<string, PProgram>(StringComparer.OrdinalIgnoreCase);
             Queue<string> parserWorkQueue = new Queue<string>();
             seenFileNames[RootFileName] = RootProgramName;
             InputProgramNames.Add(RootProgramName);
@@ -134,7 +136,7 @@
                 List<Flag> parserFlags;
                 string currFileName = parserWorkQueue.Dequeue();
                 var parser = new Parser.Parser();
-                var result = parser.ParseFile(seenFileNames[currFileName], Options, out parserFlags, out prog, out includedFileNames);
+                var result = parser.ParseFile(seenFileNames[currFileName], Options, crntEventNames, crntMachineNames, out parserFlags, out prog, out includedFileNames);
                 flags.AddRange(parserFlags);
                 if (!result)
                 {
@@ -146,7 +148,7 @@
                 string currDirectoryName = Path.GetDirectoryName(Path.GetFullPath(currFileName));
                 foreach (var fileName in includedFileNames)
                 {
-                    string fullFileName = Path.Combine(currDirectoryName, fileName);
+                    string fullFileName = Path.GetFullPath(Path.Combine(currDirectoryName, fileName));
                     ProgramName programName;
                     if (seenFileNames.ContainsKey(fullFileName)) continue;
                     try
@@ -276,7 +278,7 @@
 
             AST<Model> zingModel = MkZingOutputModel();
 
-            string directoryName = Path.GetDirectoryName(Path.GetFullPath(RootFileName));
+            string directoryName = Path.GetDirectoryName(RootFileName);
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
             string zingFileName = fileName + ".zing";
             string dllFileName = fileName + ".dll";           
@@ -298,7 +300,7 @@
             zcProcess.WaitForExit();
             if(zcProcess.ExitCode != 0)
             {
-                Console.WriteLine("Zc failed to Compile the generated code :");
+                Console.WriteLine("Zc failed to compile the generated code :");
                 Console.WriteLine(zcProcess.StandardOutput.ReadToEnd());
                 return false;
             }

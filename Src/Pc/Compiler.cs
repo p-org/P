@@ -55,13 +55,19 @@
             private set;
         }
 
-        public string InputFileName
+        public string RootFileName
         {
             get;
             private set;
         }
 
-        public ProgramName InputProgramName
+        public HashSet<ProgramName> InputProgramNames
+        {
+            get;
+            private set;
+        }
+
+        public ProgramName RootProgramName
         {
             get;
             private set;
@@ -96,12 +102,13 @@
         public bool Compile(string inputFileName, out List<Flag> flags)
         {
             Contract.Requires(!AttemptedCompile);
+            InputProgramNames = new HashSet<ProgramName>();
             AttemptedCompile = true;
             flags = new List<Flag>();
-            InputFileName = Path.Combine(Environment.CurrentDirectory, inputFileName);
+            RootFileName = Path.Combine(Environment.CurrentDirectory, inputFileName);
             try
             {
-                InputProgramName = new ProgramName(InputFileName);
+                RootProgramName = new ProgramName(RootFileName);
             }
             catch (Exception e)
             {
@@ -115,10 +122,11 @@
             }
 
             Dictionary<string, ProgramName> seenFileNames = new Dictionary<string, ProgramName>();
+            Dictionary<string, PProgram> parsedPrograms = new Dictionary<string, PProgram>();
             Queue<string> parserWorkQueue = new Queue<string>();
-            List<PProgram> parsedPrograms = new List<PProgram>();
-            seenFileNames[InputFileName] = InputProgramName;
-            parserWorkQueue.Enqueue(InputFileName);
+            seenFileNames[RootFileName] = RootProgramName;
+            InputProgramNames.Add(RootProgramName);
+            parserWorkQueue.Enqueue(RootFileName);
             while (parserWorkQueue.Count > 0)
             {
                 PProgram prog;
@@ -132,7 +140,9 @@
                 {
                     return false;
                 }
-                parsedPrograms.Add(prog);
+
+                parsedPrograms.Add(currFileName, prog);
+
                 string currDirectoryName = Path.GetDirectoryName(Path.GetFullPath(currFileName));
                 foreach (var fileName in includedFileNames)
                 {
@@ -154,36 +164,83 @@
                         return false;
                     }
                     seenFileNames[fullFileName] = programName;
+                    InputProgramNames.Add(programName);
                     parserWorkQueue.Enqueue(fullFileName);
                 }
             }
 
             //// Step 1. Serialize the parsed object graph into a Formula model and install it. Should not fail.
-            AST<Model> model;
-            var inputModule = MkSafeModuleName(InputFileName);
-            var mkModelResult = Factory.Instance.MkModel(
-                inputModule, 
-                PDomain, 
-                parsedPrograms[0].Terms, 
-                out model,
-                null, 
-                MkReservedModuleLocation(PDomain));
-            Contract.Assert(mkModelResult);
-
             InstallResult instResult;
-            var modelProgram = MkProgWithSettings(InputProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
-            var progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, model), out instResult);
+            AST<Program> modelProgram;
+            bool progressed;
+            AST<Model> rootModel = null;
+            string rootModule = null;
+            List<AST<Model>> allModels = new List<AST<Model>>();
+            foreach (var kv in parsedPrograms)
+            {
+                AST<Model> model;
+                var inputModule = MkSafeModuleName(kv.Key);
+                var mkModelResult = Factory.Instance.MkModel(
+                    inputModule,
+                    PDomain,
+                    kv.Value.Terms,
+                    out model,
+                    null,
+                    MkReservedModuleLocation(PDomain),
+                    kv.Key == RootFileName && parsedPrograms.Count > 1 ? ComposeKind.Includes : ComposeKind.None);
+
+                Contract.Assert(mkModelResult);
+                if (kv.Key == RootFileName)
+                {
+                    Contract.Assert(rootModel == null);
+                    rootModel = model;
+                    rootModule = inputModule;
+                    if (seenFileNames.Count > 1)
+                    {
+                        foreach (var kvp in seenFileNames)
+                        {
+                            if (kvp.Key == RootFileName)
+                            {
+                                continue;
+                            }
+
+                            rootModel = Formula.API.Factory.Instance.AddModelCompose(
+                                            rootModel,
+                                            Formula.API.Factory.Instance.MkModRef(
+                                                MkSafeModuleName(kvp.Key),
+                                                null,
+                                                kvp.Value.ToString()));                                              
+                        }
+                    }
+
+                    allModels.Add(rootModel);
+                }
+                else
+                {
+                    modelProgram = MkProgWithSettings(seenFileNames[kv.Key], new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
+                    progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, model), out instResult);
+                    Contract.Assert(progressed && instResult.Succeeded);
+                    allModels.Add(model);
+                }
+            }
+
+            modelProgram = MkProgWithSettings(RootProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
+            progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, rootModel), out instResult);
             Contract.Assert(progressed && instResult.Succeeded);
 
             if (Options.outputFormula)
             {
                 StreamWriter wr = new StreamWriter(File.Create("output.4ml"));
-                model.Print(wr);
+                foreach (var model in allModels)
+                {
+                    model.Print(wr);
+                }
+
                 wr.Close();
             }
 
             //// Step 2. Perform static analysis.
-            if (!Check(inputModule, flags))
+            if (!Check(rootModule, flags))
             {
                 return false;
             }
@@ -194,23 +251,23 @@
             }
 
             //// Step 3. Generate outputs
-            return GenerateC(inputModule, flags) & 
-                   GenerateZing(inputModule, model, flags);
+            return GenerateC(rootModule, flags) &
+                   GenerateZing(rootModule, rootModel, allModels, flags); 
         }
 
-        private bool GenerateZing(string inputModule, AST<Model> model, List<Flag> flags)
+        private bool GenerateZing(string rootModule, AST<Model> rootModel, List<AST<Model>> allModels, List<Flag> flags)
         {
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
-            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(inputModule, null, InputProgramName.ToString()));
-            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(inputModule + "_WithTypes"));
+            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(rootModule, null, RootProgramName.ToString()));
+            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(rootModule + "_WithTypes"));
             Task<ApplyResult> apply;
             Formula.Common.Rules.ExecuterStatistics stats;
             List<Flag> applyFlags;
             CompilerEnv.Apply(transStep, false, false, out applyFlags, out apply, out stats);
             apply.RunSynchronously();
             var extractTask = apply.Result.GetOutputModel(
-                inputModule + "_WithTypes",
-                new ProgramName(Path.Combine(Environment.CurrentDirectory, inputModule + "_WithTypes.4ml")),
+                rootModule + "_WithTypes",
+                new ProgramName(Path.Combine(Environment.CurrentDirectory, rootModule + "_WithTypes.4ml")),
                 null);
             extractTask.Wait();
             var modelWithTypes = extractTask.Result.FindAny(
@@ -218,12 +275,15 @@
             Contract.Assert(modelWithTypes != null);
 
             AST<Model> zingModel = MkZingOutputModel();
-            string directoryName = Path.GetDirectoryName(Path.GetFullPath(InputFileName));
-            string fileName = Path.GetFileNameWithoutExtension(InputFileName);
+
+            string directoryName = Path.GetDirectoryName(Path.GetFullPath(RootFileName));
+            string fileName = Path.GetFileNameWithoutExtension(RootFileName);
             string zingFileName = fileName + ".zing";
-            string dllFileName = fileName + ".dll";
+            string dllFileName = fileName + ".dll";           
             string outputDirName = Options.outputDir == null ? directoryName : Options.outputDir;
-            new PToZing(this, (AST<Model>)model, (AST<Model>)modelWithTypes).GenerateZing(zingFileName, ref zingModel);
+
+            new PToZing(this, allModels, (AST<Model>)modelWithTypes).GenerateZing(zingFileName, ref zingModel);
+
             if (!PrintZingFile(zingModel, CompilerEnv, outputDirName))
                 return false;
             var binPath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
@@ -384,7 +444,7 @@
             Task<QueryResult> task;
             Formula.Common.Rules.ExecuterStatistics stats;
             var canStart = CompilerEnv.Query(
-                InputProgramName,
+                RootProgramName,
                 inputModule,
                 new AST<Body>[] { Factory.Instance.AddConjunct(Factory.Instance.MkBody(), Factory.Instance.MkFind(null, Factory.Instance.MkId(inputModule + ".requires"))) },
                 true,
@@ -441,7 +501,7 @@
                             exprLoc.Span,
                             errorMsg,
                             TypeErrorCode,
-                            ProgramName.Compare(InputProgramName, exprLoc.Program) != 0 ? null : exprLoc.Program));
+                            InputProgramNames.Contains(exprLoc.Program) ? exprLoc.Program : null));
                     }
                 }
                 else
@@ -451,7 +511,7 @@
                         default(Span),
                         errorMsg,
                         TypeErrorCode,
-                        InputProgramName));
+                        RootProgramName));
                 }
             }
 
@@ -496,7 +556,7 @@
                             exprLoc.Span,
                             sw.ToString(),
                             msgCode,
-                            ProgramName.Compare(InputProgramName, exprLoc.Program) != 0 ? null : exprLoc.Program));
+                            InputProgramNames.Contains(exprLoc.Program) ? exprLoc.Program : null));
                     }
                 }
                 else
@@ -518,7 +578,7 @@
                         default(Span),
                         sw.ToString(),
                         msgCode,
-                        InputProgramName));
+                        RootProgramName));
                 }
             }
 
@@ -633,6 +693,7 @@
         /// <summary>
         /// Makes a legal formula module name that does not clash with other modules installed
         /// by the compiler. Module name is based on the input filename.
+        /// NOTE: Expected to be a function from filename -> safe module name
         /// </summary>
         /// <param name="filename"></param>
         /// <returns></returns>
@@ -750,7 +811,7 @@
         {
             //// Apply the P2C transform.
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2CTransform, null, MkReservedModuleLocation(P2CTransform)));
-            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(inputModelName, null, InputProgramName.ToString()));
+            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(inputModelName, null, RootProgramName.ToString()));
             var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(inputModelName + "_CModel"));
 
             List<Flag> appFlags;

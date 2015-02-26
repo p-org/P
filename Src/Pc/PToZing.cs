@@ -259,30 +259,34 @@ namespace Microsoft.Pc
         }
 
         Compiler compiler;
-        public PToZing(Compiler compiler, AST<Model> model, AST<Model> modelWithTypes)
+        public PToZing(Compiler compiler, List<AST<Model>> allModels, AST<Model> modelWithTypes)
         {
             this.compiler = compiler;
             this.typeContext = new TypeTranslationContext();
-            GenerateProgramData(model);
+            GenerateProgramData(allModels);
             GenerateTypeInfo(modelWithTypes);
         }
 
-        private void GenerateProgramData(AST<Model> model)
+        private void GenerateProgramData(List<AST<Model>> allModels)
         {
             var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
-            model.FindAll(
-                new NodePred[]
-                {
-                    NodePredFactory.Instance.Star,
-                    NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
-                },
 
-                (path, n) =>
-                {
-                    var mf = (ModelFact)n;
-                    FuncTerm ft = (FuncTerm)mf.Match;
-                    GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
-                });
+            foreach (var model in allModels)
+            {
+                model.FindAll(
+                    new NodePred[]
+                    {
+                        NodePredFactory.Instance.Star,
+                        NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
+                    },
+                    (path, n) =>
+                    {
+                        var mf = (ModelFact)n;
+                        FuncTerm ft = (FuncTerm)mf.Match;
+                        GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
+                    });
+            }
+
             allEvents = new Dictionary<string, EventInfo>();
             allEvents[HaltEvent] = new EventInfo(1, false, PTypeNull.Node);
             allEvents[NullEvent] = new EventInfo(1, false, PTypeNull.Node);

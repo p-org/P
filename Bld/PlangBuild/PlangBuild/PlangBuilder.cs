@@ -31,8 +31,10 @@ namespace PlangBuild
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\Pc.csproj", PlatformX86),
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUser.vcxproj", PlatformX64),
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUser.vcxproj", PlatformX86),
+            /*
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\PrtDist.vcxproj", PlatformX64),
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\PrtDist.vcxproj", PlatformX86),
+             */ 
             
         };
         
@@ -203,9 +205,11 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\Prt.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\Prt.h"),
+                /*
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtBaseTypes_IDL.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtBaseTypes_IDL.h"),
+                 */ 
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtConfig.h"),
@@ -215,15 +219,19 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtTypes.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtTypes.h"),
+                /*
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtTypes_IDL.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtTypes_IDL.h"),
+                 */
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtValues.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtValues.h"),
+                /*
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtValues_IDL.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtValues_IDL.h"),
+                 */ 
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Core\\PrtExecution.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtExecution.h"),
@@ -233,17 +241,21 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUserConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtWinUserConfig.h"),
+            /*
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\PrtDist.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtDist.h"),
-    
+            */
+
             // x64
              new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\Prt.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\Prt.h"),
+                /*
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtBaseTypes_IDL.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtBaseTypes_IDL.h"),
+                 */ 
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtConfig.h"),
@@ -253,15 +265,19 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtTypes.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtTypes.h"),
+                /*
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtTypes_IDL.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtTypes_IDL.h"),
+                 */ 
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtValues.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtValues.h"),
+                /*
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtValues_IDL.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtValues_IDL.h"),
+                 */ 
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Core\\PrtExecution.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtExecution.h"),
@@ -271,21 +287,21 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUserConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtWinUserConfig.h"),
+                /*
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\PrtDist.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtDist.h"),
-                
+                */
             
             // win32 
+            /*
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\Debug\\Win32\\PrtDist.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Lib\\PrtDist.lib"),
+             */ 
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\Win32\\PrtWinUser.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Lib\\PrtWinUser.lib"),
-            new Tuple<string, string>(
-            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\Win32\\PrtWinUser.exp", 
-            "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Lib\\PrtWinUser.exp"),
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\Win32\\PrtWinUser.dll", 
             "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Lib\\PrtWinUser.dll"),
@@ -293,15 +309,14 @@ namespace PlangBuild
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\Win32\\PrtWinUser.pdb", 
             "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Lib\\PrtWinUser.pdb"),
             // x64 lib
+            /*
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\Debug\\x64\\PrtDist.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Lib\\PrtDist.lib"),
+             */ 
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\x64\\PrtWinUser.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Lib\\PrtWinUser.lib"),
-            new Tuple<string, string>(
-            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\x64\\PrtWinUser.exp", 
-            "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Lib\\PrtWinUser.exp"),
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\x64\\PrtWinUser.dll", 
             "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Lib\\PrtWinUser.dll"),
@@ -460,9 +475,11 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\Prt.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\Prt.h"),
+                /*
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtBaseTypes_IDL.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtBaseTypes_IDL.h"),
+                 */ 
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtConfig.h"),
@@ -472,15 +489,19 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtTypes.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtTypes.h"),
+                /*
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtTypes_IDL.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtTypes_IDL.h"),
+                 */
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtValues.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtValues.h"),
+                /*
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtValues_IDL.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtValues_IDL.h"),
+                 */ 
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Core\\PrtExecution.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtExecution.h"),
@@ -490,17 +511,21 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUserConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtWinUserConfig.h"),
+                /*
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\PrtDist.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtDist.h"),
-    
+                */
+
             // x64
              new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\Prt.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\Prt.h"),
+                /*
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtBaseTypes_IDL.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtBaseTypes_IDL.h"),
+                 */ 
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtConfig.h"),
@@ -510,15 +535,19 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtTypes.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtTypes.h"),
+                /*
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtTypes_IDL.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtTypes_IDL.h"),
+                 */ 
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtValues.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtValues.h"),
+                /*
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtValues_IDL.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtValues_IDL.h"),
+                 */ 
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Core\\PrtExecution.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtExecution.h"),
@@ -528,20 +557,21 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUserConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtWinUserConfig.h"),
+                /*
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\PrtDist.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtDist.h"),
+                */
 
             // win32 
+            /*
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\Release\\Win32\\PrtDist.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtDist.lib"),
+             */
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\Win32\\PrtWinUser.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtWinUser.lib"),
-            new Tuple<string, string>(
-            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\Win32\\PrtWinUser.exp", 
-            "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtWinUser.exp"),
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\Win32\\PrtWinUser.dll", 
             "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtWinUser.dll"),
@@ -549,15 +579,14 @@ namespace PlangBuild
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\Win32\\PrtWinUser.pdb", 
             "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtWinUser.pdb"),
             // x64 lib
+            /*
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\Release\\x64\\PrtDist.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtDist.lib"),
+             */ 
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\x64\\PrtWinUser.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtWinUser.lib"),
-            new Tuple<string, string>(
-            "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\x64\\PrtWinUser.exp", 
-            "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtWinUser.exp"),
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\x64\\PrtWinUser.dll", 
             "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtWinUser.dll"),

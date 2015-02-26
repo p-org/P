@@ -4,7 +4,7 @@ void PRT_CALL_CONV PrtSetGlobalVar(_Inout_ PRT_MACHINEINST_PRIV * context, _In_ 
 {
 	PRT_DBG_ASSERT(PrtIsValidValue(value), "value is not valid");
 	PRT_DBG_ASSERT(PrtIsValidValue(context->varValues[varIndex]), "Variable must contain a valid value");
-	PRT_VALUE * clone = PrtCloneValue(value);
+	PRT_VALUE * clone = PrtCastValue(value, context->process->program->machines[context->instanceOf].vars[varIndex].type);
 	PrtFreeValue(context->varValues[varIndex]);
 	context->varValues[varIndex] = clone;
 }

@@ -252,8 +252,11 @@ transform P2CProgram (in:: P) returns (out:: C)
 	TypeExprSub ::= sub (TypeExpr).
 	
 	TypeExprSub(t) :- TypeOf(c, Tuple(_), t), t : TypeExpr.
+	TypeExprSub(t) :- TypeExprSub(TupType(t, _)), t : TypeExpr.
 	TypeExprSub(t) :- TypeExprSub(TupType(_, t)), t : TypeExpr.
+
 	TypeExprSub(t) :- TypeOf(c, NamedTuple(_), t), t : TypeExpr.
+	TypeExprSub(t) :- TypeExprSub(NmdTupType(f, _)), t = f.type.
 	TypeExprSub(t) :- TypeExprSub(NmdTupType(_, t)), t : TypeExpr.
 
 	//// Always encode NULL and ANY types.

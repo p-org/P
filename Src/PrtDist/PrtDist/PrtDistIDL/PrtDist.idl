@@ -12,10 +12,13 @@ interface PrtDist {
 	//		Functions
 	/*****************************/
 	
-	PRT_BOOLEAN PrtDistSend(
+	void PrtDistEnqueue(
 		[in] handle_t handleSM,
+		[in] PRT_VALUE* target,
 		[in, ptr] PRT_VALUE* event,
-		[in, ptr] PRT_VALUE* payload
+		[in, ptr] PRT_VALUE* payload,
+		[out] PRT_BOOLEAN* status
 	);
 	
 }
+

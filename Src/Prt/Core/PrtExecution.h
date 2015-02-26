@@ -125,7 +125,7 @@ PRT_API PRT_VALUE* PRT_CALL_CONV PrtNmdTupleGetNC(_In_ PRT_VALUE *tuple, _In_ PR
 * @param[in] index A 0-based index s.t. 0 <= index < size(seq).
 * @returns The value at index.
 */
-PRT_API PRT_VALUE * PRT_CALL_CONV PrtSeqGetNC(_In_ PRT_VALUE *seq, _In_ PRT_UINT32 index);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtSeqGetNC(_In_ PRT_VALUE *seq, _In_ PRT_VALUE *index);
 
 /** Gets a value from a map without cloning. Only used for internal manipulation of state variables.
 * The key must be present the map. 
@@ -370,13 +370,13 @@ PrtCleanupModel(
 _Inout_ PRT_MACHINEINST			*context
 );
 
-void
+PRT_API void
 PrtHandleError(
 _In_ PRT_STATUS ex,
 _In_ PRT_MACHINEINST_PRIV *context
 );
 
-void
+PRT_API void
 PrtLog(
 _In_ PRT_STEP step,
 _In_ PRT_MACHINEINST_PRIV *context

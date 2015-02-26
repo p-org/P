@@ -317,7 +317,6 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Index may not be in the domain of the map"']
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _), t1 = MapType(dom, _), TypeRel(t2, dom, k), t2 != dom, k != SUB.
     
-    TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = SeqType(inner), TypeRel(t1, inner, k), k != EMPTY.
     TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = MapType(dom, _), TypeRel(t1, dom, k), k != EMPTY.        
 	[ rule_Classes = '"error, msg: Value can never be in the map"']
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _),  t2 = MapType(dom, _), TypeRel(t1, dom, EMPTY).        

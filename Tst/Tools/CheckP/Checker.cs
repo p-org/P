@@ -695,17 +695,27 @@ namespace CheckP
                 psi.Arguments = args.Trim();
                 psi.CreateNoWindow = true;
 
+                string outString = "";
+                string errorString = "";
                 var process = new Process();
                 process.StartInfo = psi;
-                process.OutputDataReceived += (s, e) => OutputReceived(outStream, ignorePrompt, s, e);
-                process.ErrorDataReceived += (s, e) => ErrorReceived(outStream, ignorePrompt, s, e);
+                process.OutputDataReceived += (s, e) => OutputReceived(ref outString, ignorePrompt, s, e);
+                process.ErrorDataReceived += (s, e) => ErrorReceived(ref errorString, ignorePrompt, s, e);
                 process.Start();
                 process.BeginErrorReadLine();
                 process.BeginOutputReadLine();
                 process.WaitForExit();
 
-                Console.WriteLine("EXIT: {0}", process.ExitCode);
-                outStream.WriteLine("EXIT: {0}", process.ExitCode);
+                if (ignorePrompt)
+                {
+                    Console.WriteLine("EXIT: {0}", process.ExitCode);
+                }
+                else
+                {
+                    outStream.Write(outString);
+                    outStream.Write(errorString);
+                    outStream.WriteLine("EXIT: {0}", process.ExitCode);
+                }
             }
             catch (Exception e)
             {
@@ -754,7 +764,7 @@ namespace CheckP
         }
 
         private static void OutputReceived(
-            StreamWriter outStream,
+            ref string outString,
             bool ignorePrompt,
             object sender,
             DataReceivedEventArgs e)
@@ -765,12 +775,12 @@ namespace CheckP
             }
             else
             {
-                outStream.WriteLine("OUT: {0}", e.Data);
+                outString += string.Format("OUT: {0}\r\n", e.Data);
             }
         }
 
         private static void ErrorReceived(
-            StreamWriter outStream,
+            ref string errorString,
             bool ignorePrompt,
             object sender,
             DataReceivedEventArgs e)
@@ -783,8 +793,7 @@ namespace CheckP
                 }
                 else
                 {
-
-                     outStream.WriteLine("ERROR: {0}", e.Data);
+                     errorString += string.Format("ERROR: {0}\r\n", e.Data);
                 }
             }
         }

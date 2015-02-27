@@ -5,6 +5,6 @@ OUT: <CreateLog> Machine M(1) is created
 OUT: <StateLog> Machine M(1) entered state S
 OUT: <CreateLog> Machine Test(2) is created
 OUT: <StateLog> Machine Test(2) entered state init
-ERROR: ASSERT: Invalid index
 OUT: 
+ERROR: ASSERT: Invalid index
 EXIT: 1

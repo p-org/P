@@ -51,6 +51,8 @@ main machine Dummy {
 			send rec, IAEvent, AIvar;
 			send rec, ev, seqA;
 			
+			send A, ev, seqA;
+			
 			monitor M, seqE, seqInt;
 			monitor M, seqAny, tempbool;
 			monitor M, seqAny;

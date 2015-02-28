@@ -4,6 +4,7 @@ main machine Sample {
 	start state X1 {
 		entry {
 			foo(5);
+			push X2;
 		}
 		
 		exit {
@@ -15,6 +16,9 @@ main machine Sample {
 		on c do {};
 		on a do bar;
 		on b do foo;
+		on b push X3;
+		on c push X4;
+		on d goto X2;
 	}
 
 	fun foo(x : int) {

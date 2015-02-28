@@ -117,16 +117,21 @@ OUT: sends.p (52, 4): inferred type:  NIL
 OUT: sends.p (52, 9): inferred type:  BaseType(REAL)
 OUT: sends.p (52, 14): inferred type:  BaseType(EVENT)
 OUT: sends.p (52, 18): inferred type:  SeqType(BaseType(ANY))
+OUT: sends.p (54, 4): inferred type:  ERROR
 OUT: sends.p (54, 4): inferred type:  NIL
-OUT: sends.p (54, 15): inferred type:  BaseType(EVENT)
-OUT: sends.p (54, 21): inferred type:  SeqType(BaseType(INT))
-OUT: sends.p (55, 4): inferred type:  ERROR
-OUT: sends.p (55, 4): inferred type:  NIL
-OUT: sends.p (55, 15): inferred type:  BaseType(EVENT)
-OUT: sends.p (55, 23): inferred type:  TupType(BaseType(ANY), TupType(BaseType(BOOL), NIL))
-OUT: sends.p (56, 4): inferred type:  ERROR
+OUT: sends.p (54, 9): inferred type:  BaseType(ANY)
+OUT: sends.p (54, 12): inferred type:  BaseType(EVENT)
+OUT: sends.p (54, 16): inferred type:  SeqType(BaseType(ANY))
+OUT: sends.p (56, 4): inferred type:  NIL
 OUT: sends.p (56, 15): inferred type:  BaseType(EVENT)
-OUT: sends.p (67, 2): inferred type:  NIL
+OUT: sends.p (56, 21): inferred type:  SeqType(BaseType(INT))
+OUT: sends.p (57, 4): inferred type:  ERROR
+OUT: sends.p (57, 4): inferred type:  NIL
+OUT: sends.p (57, 15): inferred type:  BaseType(EVENT)
+OUT: sends.p (57, 23): inferred type:  TupType(BaseType(ANY), TupType(BaseType(BOOL), NIL))
+OUT: sends.p (58, 4): inferred type:  ERROR
+OUT: sends.p (58, 15): inferred type:  BaseType(EVENT)
+OUT: sends.p (69, 2): inferred type:  NIL
 OUT: sends.p (28, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: sends.p (31, 4): invalid payload type in send
 OUT: sends.p (32, 4): invalid payload type in send
@@ -142,8 +147,9 @@ OUT: sends.p (45, 4): invalid payload type in send
 OUT: sends.p (49, 4): invalid payload type in send
 OUT: sends.p (50, 4): invalid payload type in send
 OUT: sends.p (51, 4): invalid payload type in send
-OUT: sends.p (55, 4): invalid payload type in monitor
-OUT: sends.p (56, 4): invalid payload type in monitor (cannot send null value)
+OUT: sends.p (54, 4): argument 1 of "send" expects a machine value
+OUT: sends.p (57, 4): invalid payload type in monitor
+OUT: sends.p (58, 4): invalid payload type in monitor (cannot send null value)
 OUT: Compilation failed
 OUT: 
 EXIT: -1

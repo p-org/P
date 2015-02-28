@@ -2,6 +2,7 @@ machine M
 {    
     var x : (a: seq [int], b: map[int, seq[int]]);
     var y : int;
+	var b: bool;
     
     state S
     {
@@ -12,6 +13,8 @@ machine M
           GetX().a[foo()] = 1;                 
           x.a[foo()] = IncY();          
           y = IncY();
+		  y = FArg();
+		  y = FArg(b);
        }      
     }
     
@@ -29,5 +32,9 @@ machine M
     { 
        y = y + 1;
        return y;    
-    }           
+    } 
+    fun FArg(x: int) : int
+	{
+		x = x + 1;
+	}
 }

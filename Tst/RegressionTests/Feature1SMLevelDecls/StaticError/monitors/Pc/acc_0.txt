@@ -1,45 +1,62 @@
 =================================
          Console output          
 =================================
-OUT: monitors.p (5, 3): inferred type:  NIL
-OUT: monitors.p (15, 4): inferred type:  ERROR
-OUT: monitors.p (15, 10): inferred type:  BaseType(EVENT)
-OUT: monitors.p (19, 19): inferred type:  NIL
-OUT: monitors.p (27, 4): inferred type:  ERROR
-OUT: monitors.p (27, 4): inferred type:  NIL
-OUT: monitors.p (28, 4): inferred type:  ERROR
-OUT: monitors.p (28, 4): inferred type:  NIL
-OUT: monitors.p (29, 4): inferred type:  ERROR
-OUT: monitors.p (29, 4): inferred type:  NIL
-OUT: monitors.p (30, 4): inferred type:  BaseType(REAL)
-OUT: monitors.p (30, 4): inferred type:  ERROR
-OUT: monitors.p (30, 4): inferred type:  NIL
-OUT: monitors.p (30, 8): inferred type:  ERROR
-OUT: monitors.p (31, 4): inferred type:  ERROR
-OUT: monitors.p (31, 4): inferred type:  NIL
-OUT: monitors.p (31, 9): inferred type:  BaseType(REAL)
-OUT: monitors.p (31, 12): inferred type:  BaseType(EVENT)
-OUT: monitors.p (31, 15): inferred type:  BaseType(INT)
-OUT: monitors.p (32, 4): inferred type:  ERROR
-OUT: monitors.p (32, 9): inferred type:  ERROR
-OUT: monitors.p (32, 15): inferred type:  BaseType(EVENT)
-OUT: monitors.p (32, 18): inferred type:  BaseType(INT)
-OUT: monitors.p (34, 3): inferred type:  NIL
-OUT: monitors.p (5, 3): Multiple actions over the same event
-OUT: monitors.p (6, 3): Multiple actions over the same event
-OUT: monitors.p (15, 4): invalid payload type in raise (cannot send null value)
-OUT: monitors.p (24, 3): defer not allowed in monitor
-OUT: monitors.p (24, 3): Multiple actions over the same event
-OUT: monitors.p (25, 3): Multiple actions over the same event
-OUT: monitors.p (27, 4): Monitors cannot have "push"
-OUT: monitors.p (28, 4): Monitors cannot have "pop"
-OUT: monitors.p (29, 4): Monitors cannot have "new"
-OUT: monitors.p (30, 4): invalid assignment. right hand side is not a subtype of left hand side
-OUT: monitors.p (30, 8): Monitors cannot have "new"
-OUT: monitors.p (31, 4): Monitors cannot have "send"
-OUT: monitors.p (32, 4): argument 1 of "send" expects a machine value
-OUT: monitors.p (32, 9): Monitors cannot refer to "this"
-OUT: monitors.p (34, 3): default transitions not allowed in monitors
+OUT: monitors.p (8, 3): inferred type:  BaseType(REAL)
+OUT: monitors.p (8, 3): inferred type:  ERROR
+OUT: monitors.p (8, 3): inferred type:  NIL
+OUT: monitors.p (8, 19): inferred type:  ERROR
+OUT: monitors.p (8, 25): inferred type:  BaseType(REAL)
+OUT: monitors.p (9, 3): inferred type:  BaseType(REAL)
+OUT: monitors.p (9, 3): inferred type:  ERROR
+OUT: monitors.p (9, 19): inferred type:  ERROR
+OUT: monitors.p (9, 31): inferred type:  BaseType(REAL)
+OUT: monitors.p (22, 4): inferred type:  ERROR
+OUT: monitors.p (22, 4): inferred type:  NIL
+OUT: monitors.p (22, 10): inferred type:  BaseType(EVENT)
+OUT: monitors.p (23, 4): inferred type:  ERROR
+OUT: monitors.p (23, 10): inferred type:  BaseType(EVENT)
+OUT: monitors.p (23, 13): inferred type:  BaseType(INT)
+OUT: monitors.p (27, 19): inferred type:  NIL
+OUT: monitors.p (35, 4): inferred type:  ERROR
+OUT: monitors.p (35, 4): inferred type:  NIL
+OUT: monitors.p (36, 4): inferred type:  ERROR
+OUT: monitors.p (36, 4): inferred type:  NIL
+OUT: monitors.p (37, 4): inferred type:  ERROR
+OUT: monitors.p (37, 4): inferred type:  NIL
+OUT: monitors.p (38, 4): inferred type:  BaseType(REAL)
+OUT: monitors.p (38, 4): inferred type:  ERROR
+OUT: monitors.p (38, 4): inferred type:  NIL
+OUT: monitors.p (38, 8): inferred type:  ERROR
+OUT: monitors.p (39, 4): inferred type:  ERROR
+OUT: monitors.p (39, 4): inferred type:  NIL
+OUT: monitors.p (39, 9): inferred type:  BaseType(REAL)
+OUT: monitors.p (39, 12): inferred type:  BaseType(EVENT)
+OUT: monitors.p (39, 15): inferred type:  BaseType(INT)
+OUT: monitors.p (40, 4): inferred type:  ERROR
+OUT: monitors.p (40, 9): inferred type:  ERROR
+OUT: monitors.p (40, 15): inferred type:  BaseType(EVENT)
+OUT: monitors.p (40, 18): inferred type:  BaseType(INT)
+OUT: monitors.p (42, 3): inferred type:  NIL
+OUT: monitors.p (8, 3): invalid assignment. right hand side is not a subtype of left hand side
+OUT: monitors.p (8, 19): Monitors cannot be created with "new"
+OUT: monitors.p (9, 3): invalid assignment. right hand side is not a subtype of left hand side
+OUT: monitors.p (9, 19): Undefined machine type
+OUT: monitors.p (12, 3): Multiple actions over the same event
+OUT: monitors.p (13, 3): Multiple actions over the same event
+OUT: monitors.p (22, 4): invalid payload type in raise (cannot send null value)
+OUT: monitors.p (23, 4): invalid payload type in raise
+OUT: monitors.p (32, 3): defer not allowed in monitor
+OUT: monitors.p (32, 3): Multiple actions over the same event
+OUT: monitors.p (33, 3): Multiple actions over the same event
+OUT: monitors.p (35, 4): Monitors cannot have "push"
+OUT: monitors.p (36, 4): Monitors cannot have "pop"
+OUT: monitors.p (37, 4): Monitors cannot have "new"
+OUT: monitors.p (38, 4): invalid assignment. right hand side is not a subtype of left hand side
+OUT: monitors.p (38, 8): Monitors cannot have "new"
+OUT: monitors.p (39, 4): Monitors cannot have "send"
+OUT: monitors.p (40, 4): argument 1 of "send" expects a machine value
+OUT: monitors.p (40, 9): Monitors cannot refer to "this"
+OUT: monitors.p (42, 3): default transitions not allowed in monitors
 OUT: Compilation failed
 OUT: 
 EXIT: -1

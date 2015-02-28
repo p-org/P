@@ -4,6 +4,7 @@ main machine TestMachine {
 	start state Init {
 		entry {
       x = foo();
+	  x1 = foo3();
 			
 		}
 	}
@@ -18,6 +19,10 @@ main machine TestMachine {
 
 	fun foo2 (x : any, y : int) : int {
     return;
+	}
+	
+	fun foo3 (x : any, y : int) {
+    //return;
 	}
 }
 

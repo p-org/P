@@ -189,7 +189,8 @@ main machine M
 		  ////////////////////////map: [int,map[int,any]]
 		  m5[0] = 1;
 		  m5[1] = false;
-		  m5[2] = 2;
+		  //Alternative way for "m5[2] = 2;":
+		  m5 += (2,2);
 		  m5[3] = true;
 		  i = keys(m5)[0];
 		  assert (i == 0);           //holds
@@ -211,6 +212,10 @@ main machine M
 		  	  else { assert(m2[0][i] != m2[1][i]); }        //holds
 			  i = i + 1;
 		  }
+		  
+		  assert (sizeof(m2) == 2);     //holds?
+		  m2 -= (1);
+		  assert (sizeof(m2) == 1);     //holds?
 		  
 		  ////////////////////////map: [bool, seq[(a: int, b: int)]]
 		  //var s4, s8: seq[(int,int)];

@@ -74,6 +74,7 @@ main machine M
 		  s += (0,1);
 		  assert(s[0] == 1);       //holds
 		  s[0] = 2;
+		  s[true] = 9;             //error
 		  assert(s[0] ==2);        //holds
 		  i = 0;
 		  assert(s[i] == 2);       //holds
@@ -103,6 +104,14 @@ main machine M
 		  assert (sizeof(m3) == 2);  //holds
 		  assert (true in m3);        //error: “Value can never be in the map" 
 		  
+		  m3[true] = false;         //error
+		  
+		  m3 += 1;                  //error
+		  m3 += (1);                //error
+		  m3[2] += true;            //error
+		  
+		  m3[false] = true;         //error
+		  
 		  /////////////////////////sequence of non-atomic types:
 		  s3 += (0,s5);
 		  s3 += (1,s1);
@@ -112,6 +121,11 @@ main machine M
 		  s3 -= (1);
 		  s3 -= 0;
 		  assert (sizeof(s3) == 0);   //holds
+		  
+		  s3 += 1;             //error
+		  s3 += (1);           //error
+		  s3[0] += 1;          //error
+		  tmp += (0,1);        //error
 		  
 		  //tests for s6: seq[map[int,any]];
 		  
@@ -159,6 +173,15 @@ main machine M
           t.a[tmp] = tmp1;          
           y = IncY();
 		  //assert ( y == 2 );
+		  //////////////////////// IDX:
+		  tmp[0] = 0;         //error
+		  ////////////////////// WHILE:
+		  while (4)
+		  {
+		      if (i != 3) { assert(m2[0][i] == m2[1][i]); }   //holds
+		  	  else { assert(m2[0][i] != m2[1][i]); }        //holds
+			  i = i + 1;
+		  }
 		  ////////////////////////tuple with sequence and map:
 		  raise halt;
        }    

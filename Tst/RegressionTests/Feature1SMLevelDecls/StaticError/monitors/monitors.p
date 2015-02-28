@@ -1,7 +1,14 @@
 event a : int;
+event b: bool;
 
 main machine Dummy {
+	var model_machine: machine;
 	start state Init {
+		entry {
+		model_machine = new M(this); 
+		model_machine = new M_undef(this); 
+		}
+		
 		defer a;
 		ignore a;
 	}
@@ -13,6 +20,7 @@ monitor M {
 	start state Init {
 		entry {
 			raise a;
+			raise b, 0;
 		}
 		on a goto next;
 	}

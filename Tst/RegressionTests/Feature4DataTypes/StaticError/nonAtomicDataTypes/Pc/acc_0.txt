@@ -612,14 +612,14 @@ OUT: nonatomicdatatypes.p (105, 5): "assert" expects a boolean value
 OUT: nonatomicdatatypes.p (105, 18): Value can never be in the map
 OUT: nonatomicdatatypes.p (107, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: nonatomicdatatypes.p (107, 7): Index may not be in the domain of the map
-OUT: nonatomicdatatypes.p (109, 5): for insert right syntax is seq += (index
-OUT: nonatomicdatatypes.p (110, 5): for insert right syntax is seq += (index
+OUT: nonatomicdatatypes.p (109, 5): for insert right syntax is seq += (index value) or map += (key value)
+OUT: nonatomicdatatypes.p (110, 5): for insert right syntax is seq += (index value) or map += (key value)
 OUT: nonatomicdatatypes.p (111, 5): insert must be applied to a sequence or a map
 OUT: nonatomicdatatypes.p (113, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: nonatomicdatatypes.p (113, 7): Index may not be in the domain of the map
-OUT: nonatomicdatatypes.p (125, 5): for insert right syntax is seq += (index
-OUT: nonatomicdatatypes.p (126, 5): for insert right syntax is seq += (index
-OUT: nonatomicdatatypes.p (127, 5): for insert right syntax is seq += (index
+OUT: nonatomicdatatypes.p (125, 5): for insert right syntax is seq += (index value) or map += (key value)
+OUT: nonatomicdatatypes.p (126, 5): for insert right syntax is seq += (index value) or map += (key value)
+OUT: nonatomicdatatypes.p (127, 5): for insert right syntax is seq += (index value) or map += (key value)
 OUT: nonatomicdatatypes.p (128, 5): insert must be applied to a sequence or a map
 OUT: nonatomicdatatypes.p (157, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: nonatomicdatatypes.p (158, 5): invalid assignment. right hand side is not a subtype of left hand side

@@ -1441,7 +1441,7 @@ namespace Microsoft.Pc
                     MkZingIfThenElse(
                               MkZingApply(ZingData.Cnst_Eq, currentEvent, MkZingIdentifier("null")),
                               MkZingSeq(MkZingAssign(currentEvent, savedCurrentEvent), MkZingAssign(currentArg, savedCurrentArg), MkZingAssign(MkZingDot("myHandle", "stack", "deferredSet"), savedDeferredSet), MkZingGoto("reentry_" + name)),
-                              MkZingSeq(MkZingAssign(currentEvent, savedCurrentEvent), MkZingAssign(currentArg, savedCurrentArg), MkZingAssign(MkZingDot("myHandle", "stack", "deferredSet"), savedDeferredSet), MkZingCallStmt(MkZingCall(MkZingDot(cont, "Raise"))), MkZingReturn(cont))))));
+                              MkZingSeq(MkZingAssign(MkZingDot("myHandle", "stack", "deferredSet"), savedDeferredSet), MkZingCallStmt(MkZingCall(MkZingDot(cont, "Raise"))), MkZingReturn(cont))))));
             AST<Node> atChooseLivenessStmt = ZingData.Cnst_Nil;
             AST<Node> atYieldLivenessStmt = ZingData.Cnst_Nil;
             if (compiler.Options.liveness == LivenessOption.Standard)

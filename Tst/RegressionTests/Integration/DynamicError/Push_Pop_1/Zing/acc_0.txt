@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 65 distinct states explored
+OUT: 68 distinct states explored
 OUT: 
 EXIT: 3
 
@@ -26,11 +26,11 @@ Trace-Log 0:
 <StateLog> Machine Employee-0 entering State BangaloreOffice
 <StateLog> Machine Employee-0 entering State SBookFlight
 <EnqueueLog> Enqueued Event < ____BookFlight, null > in Machine ____TravelAgent-0 by ____Employee-0
-<StateLog> Machine Employee-0 exiting State SBookFlight
 <DequeueLog> Dequeued Event < ____BookFlight, null > at Machine ____TravelAgent-0
 <StateLog> Machine TravelAgent-0 exiting State Init
 <StateLog> Machine TravelAgent-0 entering State SBookFlight
 <EnqueueLog> Enqueued Event < ____FlightBooked, null > in Machine ____Employee-0 by ____TravelAgent-0
+<StateLog> Machine Employee-0 exiting State SBookFlight
 <DequeueLog> Dequeued Event < ____FlightBooked, null > at Machine ____Employee-0
 <StateLog> Machine Employee-0 exiting State BangaloreOffice
 <EnqueueLog> Enqueued Event < ____Thanks, null > in Machine ____TravelAgent-0 by ____Employee-0

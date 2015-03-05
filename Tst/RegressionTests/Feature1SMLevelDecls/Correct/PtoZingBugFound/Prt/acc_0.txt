@@ -1,0 +1,17 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine M1(1) is created
+OUT: <StateLog> Machine M1(1) entered state Init
+OUT: <RaiseLog> Machine M1(1) raised event ready with payload null
+OUT: <ExitLog> Machine M1(1) exiting state Init
+OUT: <StateLog> Machine M1(1) entered state pushstate
+OUT: <PushLog> Machine M1(1) pushed
+OUT: <StateLog> Machine M1(1) entered state endState
+OUT: <RaiseLog> Machine M1(1) raised event local with payload null
+OUT: <ExitLog> Machine M1(1) exiting state endState
+OUT: <PopLog> Machine M1(1) popped with unhandled event local and reentered state pushstate
+OUT: <ExitLog> Machine M1(1) exiting state pushstate
+OUT: <StateLog> Machine M1(1) entered state done
+OUT: 
+EXIT: 0

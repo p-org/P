@@ -1,0 +1,27 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 3 distinct states explored
+OUT: 
+EXIT: 3
+
+=================================
+DefaultHandlerInheritedByPushTr.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine Program-0
+<StateLog> Machine Program-0 entering State Init
+<RaiseLog> Machine Program-0 raised Event ____E
+<StateLog> Machine Program-0 entering State Call
+<RaiseLog> Machine Program-0 raised Event ____E
+<FunctionLog> Machine Program-0 executing Function ignore
+<DefaultTransLog> Default transition taken by Machine ____Program-0
+
+Error:
+P Assertion failed:
+Expression: assert(tmp_3.bl,)
+Comment: (14, 18): Assert failed

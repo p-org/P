@@ -162,6 +162,7 @@ main machine M
 		  
           GetT().a[foo()] = 1;       //error
 		  tmp = foo();
+
 		  GetT().a[tmp] = 1;       //error
 		  tmp2 = GetT();
 		  //assert ( tmp2 == t) ;

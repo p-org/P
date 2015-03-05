@@ -17,7 +17,7 @@ main machine M
 	var mac: machine;
 	var m1, m4: map[int,int];
 	var m3: map[int,bool];
-	//TODO: write asgns for m2
+	
 	var m5, m6: map[int,any];
 	var m2: map[int,map[int,any]];
 	var m7: map[bool,seq[(a: int, b: int)]];
@@ -213,9 +213,9 @@ main machine M
 			  i = i + 1;
 		  }
 		  
-		  assert (sizeof(m2) == 2);     //holds?
+		  assert (sizeof(m2) == 2);     //holds
 		  m2 -= (1);
-		  assert (sizeof(m2) == 1);     //holds?
+		  assert (sizeof(m2) == 1);     //holds
 		  
 		  ////////////////////////map: [bool, seq[(a: int, b: int)]]
 		  //var s4, s8: seq[(int,int)];

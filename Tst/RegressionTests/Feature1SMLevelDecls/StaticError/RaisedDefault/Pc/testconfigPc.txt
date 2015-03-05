@@ -1,0 +1,7 @@
+runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: ..\RaisedDefault.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+argPc: /doNotErase
+acc: .\
+dsc: 1.7.7. "default" event cannot be raised

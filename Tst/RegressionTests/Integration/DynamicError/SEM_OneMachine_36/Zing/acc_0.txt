@@ -1,0 +1,29 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 4 distinct states explored
+OUT: 
+EXIT: 3
+
+=================================
+DefaultHandler1.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine Real1-0
+<StateLog> Machine Real1-0 entering State Real1_Init
+<RaiseLog> Machine Real1-0 raised Event ____unit
+<EnqueueLog> Enqueued Event < ____E1, null > in Machine ____Real1-0 by ____Real1-0
+<DequeueLog> Dequeued Event < ____E1, null > at Machine ____Real1-0
+<FunctionLog> Machine Real1-0 executing Function Action2
+<DefaultTransLog> Default transition taken by Machine ____Real1-0
+<StateLog> Machine Real1-0 exiting State Real1_Init
+<StateLog> Machine Real1-0 entering State Real1_S2
+
+Error:
+P Assertion failed:
+Expression: assert(tmpVar_3.bl,)
+Comment: (20, 11): Assert failed

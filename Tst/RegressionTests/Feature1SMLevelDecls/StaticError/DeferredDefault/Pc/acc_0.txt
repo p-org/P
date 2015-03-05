@@ -1,0 +1,7 @@
+=================================
+         Console output          
+=================================
+OUT: deferreddefault.p (23, 8): Syntax error - Syntax error, unexpected DEFAULT, expecting ID, or HALT
+OUT: Compilation failed
+OUT: 
+EXIT: -1

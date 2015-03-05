@@ -1,0 +1,41 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing DefaultHandlerInLoop.zing ...
+OUT: Compiling DefaultHandlerInLoop.zing to DefaultHandlerInLoop.dll ...
+OUT: defaulthandlerinloop.p (13, 4): inferred type:  NIL
+OUT: defaulthandlerinloop.p (13, 10): inferred type:  BaseType(EVENT)
+OUT: defaulthandlerinloop.p (15, 15): inferred type:  NIL
+OUT: defaulthandlerinloop.p (15, 20): inferred type:  BaseType(REAL)
+OUT: defaulthandlerinloop.p (15, 26): inferred type:  BaseType(EVENT)
+OUT: defaulthandlerinloop.p (15, 30): inferred type:  NIL
+OUT: defaulthandlerinloop.p (17, 16): inferred type:  NIL
+OUT: defaulthandlerinloop.p (17, 21): inferred type:  BaseType(REAL)
+OUT: defaulthandlerinloop.p (17, 27): inferred type:  BaseType(EVENT)
+OUT: defaulthandlerinloop.p (21, 4): inferred type:  BaseType(BOOL)
+OUT: defaulthandlerinloop.p (21, 4): inferred type:  NIL
+OUT: defaulthandlerinloop.p (21, 11): inferred type:  BaseType(BOOL)
+OUT: defaulthandlerinloop.p (22, 4): inferred type:  BaseType(INT)
+OUT: defaulthandlerinloop.p (22, 4): inferred type:  NIL
+OUT: defaulthandlerinloop.p (22, 8): inferred type:  BaseType(INT)
+OUT: defaulthandlerinloop.p (29, 3): inferred type:  BaseType(BOOL)
+OUT: defaulthandlerinloop.p (29, 3): inferred type:  NIL
+OUT: defaulthandlerinloop.p (29, 10): inferred type:  BaseType(BOOL)
+OUT: defaulthandlerinloop.p (32, 3): inferred type:  NIL
+OUT: defaulthandlerinloop.p (32, 7): inferred type:  BaseType(INT)
+OUT: defaulthandlerinloop.p (32, 9): inferred type:  BaseType(BOOL)
+OUT: defaulthandlerinloop.p (32, 11): inferred type:  BaseType(INT)
+OUT: defaulthandlerinloop.p (34, 4): inferred type:  BaseType(INT)
+OUT: defaulthandlerinloop.p (34, 4): inferred type:  NIL
+OUT: defaulthandlerinloop.p (34, 8): inferred type:  BaseType(INT)
+OUT: defaulthandlerinloop.p (34, 10): inferred type:  BaseType(INT)
+OUT: defaulthandlerinloop.p (34, 12): inferred type:  BaseType(INT)
+OUT: defaulthandlerinloop.p (36, 9): inferred type:  NIL
+OUT: defaulthandlerinloop.p (36, 17): inferred type:  BaseType(INT)
+OUT: defaulthandlerinloop.p (36, 19): inferred type:  BaseType(BOOL)
+OUT: defaulthandlerinloop.p (36, 22): inferred type:  BaseType(INT)
+OUT: 
+EXIT: 0

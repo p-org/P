@@ -1,0 +1,7 @@
+=================================
+         Console output          
+=================================
+OUT: sentdefault.p (12, 30): Syntax error - Syntax error, unexpected SEMICOLON, expecting LPAREN
+OUT: Compilation failed
+OUT: 
+EXIT: -1

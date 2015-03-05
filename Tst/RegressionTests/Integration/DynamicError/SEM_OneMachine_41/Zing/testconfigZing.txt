@@ -1,0 +1,7 @@
+runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: ..\DefaultHandlerInLoop.dll
+argZing: -et:DefaultHandlerInLoop.trace
+incZing: DefaultHandlerInLoop.trace
+del: DefaultHandlerInLoop.trace
+acc: .\
+dsc: zinger.exe, P semantics test, one machine: "default" handler semantics

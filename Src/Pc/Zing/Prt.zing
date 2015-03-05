@@ -313,16 +313,23 @@ class StateStack {
     }
 
     void AddStackDeferredSet(SM_EVENT_SET localDeferredSet) {
-         if (next == null)
-	     return;
-	 localDeferredSet = localDeferredSet + next.deferredSet;
+        if (next == null)
+			return;
+		localDeferredSet = localDeferredSet + next.deferredSet;
     }
 
     void AddStackActionSet(SM_EVENT_SET localActionSet) {
-         if (next == null)
-	     return;
-	 localActionSet = localActionSet + next.actionSet;
+        if (next == null)
+			return;
+		localActionSet = localActionSet + next.actionSet;
     }
+
+	bool HasDefaultTransitionOrAction() {
+	    bool b;
+		b = Main.HasDefaultTransition(state);
+		if (b) return true;
+		return (Main.null_SM_EVENT in actionSet);
+	}
 };
 
 enum ContinuationReason { Return, Nondet, Pop, Raise, Push, Send, NewMachine };

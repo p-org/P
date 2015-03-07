@@ -247,7 +247,8 @@ EventList
 EventId
 	: ID        { AddToEventList($1.str, ToSpan(@1));                      }
 	| HALT      { AddToEventList(P_Root.UserCnstKind.HALT, ToSpan(@1));    }
-	| DEFAULT   { AddToEventList(P_Root.UserCnstKind.DEFAULT, ToSpan(@1)); }
+	| DEFAULT   { AddToEventList(P_Root.UserCnstKind.NULL, ToSpan(@1)); }
+	| NULL      { AddToEventList(P_Root.UserCnstKind.NULL, ToSpan(@1)); }
 	;
 
 NonDefaultEventId

@@ -82,11 +82,11 @@ transform P2CProgram (in:: P) returns (out:: C)
     /*************************************************************/
     /**********     Create C Enums for P Decls         ***********/
     /*************************************************************/
-	EventDeclExt ::= EventDecl + { DEFAULT, HALT }.
-	DeclId ::= (decl: PDecl + { DEFAULT, HALT, PUSH }, id: Natural, cname: String).
+	EventDeclExt ::= EventDecl + { NULL, HALT }.
+	DeclId ::= (decl: PDecl + { NULL, HALT, PUSH }, id: Natural, cname: String).
 	
-	//// (1) EventDecls - Id 0, 1 are reserved for default, hault event, which can appear in transition tables.
-	DeclId(DEFAULT, 0, "_P_EVENT_DEFAULT").
+	//// (1) EventDecls - Id 0, 1 are reserved for null, halt event, which can appear in transition tables.
+	DeclId(NULL, 0, "_P_EVENT_NULL").
 	DeclId(HALT, 1, "_P_EVENT_HALT").
 	DeclId(d, id, cn) :- d is EventDecl, id = 2 + toOrdinal(d, 0, { d' | d' is EventDecl }), cn = strJoin("P_EVENT_", d.name).
 	
@@ -465,8 +465,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// Define the default event
 	EvDeclConcat(0, arr) :- EvDeclConcat(1, after), arr = out.Args(def, after), TypeConstant(in.BaseType(NULL), typeId, _),
 	                        def = Init(
-							   Args(Ident("_P_EVENT_DEFAULT"),
-							   Args(StringLit("default", NIL),
+							   Args(Ident("_P_EVENT_NULL"),
+							   Args(StringLit("null", NIL),
 							   Args(IntLit(0, DEC, U),
 							   Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(typeId)))),
 							   Args(IntLit(0, DEC, U),
@@ -526,9 +526,9 @@ transform P2CProgram (in:: P) returns (out:: C)
 
     //// Transition event Id depends on whether the transition is a user event, default, or halt.
     TransDeclEvnt  ::= (decl: TransDecl, evName: String, id: Natural).
-	DefaultOrHalt  ::= { DEFAULT, HALT }.
+	NullOrHalt     ::= { NULL, HALT }.
 	TransDeclEvnt(t, evname, id) :- t is TransDecl, t.src.owner.kind = REAL, ev is EventDecl, ev.name = t.trig, DeclId(ev, id, evname).
-	TransDeclEvnt(t, evname, id) :- t is TransDecl, t.src.owner.kind = REAL, trig = t.trig, trig : DefaultOrHalt, DeclId(trig, id, evname).
+	TransDeclEvnt(t, evname, id) :- t is TransDecl, t.src.owner.kind = REAL, trig = t.trig, trig : NullOrHalt, DeclId(trig, id, evname).
 
 	//// Transition action index depends on whether the transition is a push transition or not.
     TransDeclAction  ::= (decl: TransDecl, funName: String).
@@ -581,12 +581,12 @@ transform P2CProgram (in:: P) returns (out:: C)
     //// Do event Id depends on whether the do is a user event, default, or halt.
     DoDeclEvnt  ::= (decl: DoDecl, evName: String, id: Natural).
 	DoDeclEvnt(d, evname, id) :- d is DoDecl, d.src.owner.kind = REAL, d.action != DEFER, ev is EventDecl, ev.name = d.trig, DeclId(ev, id, evname).
-	DoDeclEvnt(d, evname, id) :- d is DoDecl, d.src.owner.kind = REAL, d.action != DEFER, trig = d.trig, trig : DefaultOrHalt, DeclId(trig, id, evname).
+	DoDeclEvnt(d, evname, id) :- d is DoDecl, d.src.owner.kind = REAL, d.action != DEFER, trig = d.trig, trig : NullOrHalt, DeclId(trig, id, evname).
 
     //// Defer event Id depends on whether the do is a user event, default, or halt.
     DeferEvnt  ::= (decl: DoDecl, evName: String, id: Natural).
 	DeferEvnt(d, evname, id) :- d is DoDecl, d.src.owner.kind = REAL, d.action = DEFER, ev is EventDecl, ev.name = d.trig, DeclId(ev, id, evname).
-	DeferEvnt(d, evname, id) :- d is DoDecl, d.src.owner.kind = REAL, d.action = DEFER, trig = d.trig, trig : DefaultOrHalt, DeclId(trig, id, evname).
+	DeferEvnt(d, evname, id) :- d is DoDecl, d.src.owner.kind = REAL, d.action = DEFER, trig = d.trig, trig : NullOrHalt, DeclId(trig, id, evname).
 
 	//// Do action index depends on whether the do is an ignore or not.
     DoDeclAction  ::= (decl: DoDecl, funName: String).

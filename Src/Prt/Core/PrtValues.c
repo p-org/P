@@ -18,7 +18,7 @@ const PRT_UINT32 PrtHashtableCapacities[] =
 };
 
 /** The null machine id */
-const PRT_MACHINEID PrtNullMachineId = { { 0, 0, 0, 0 }, PRT_SPECIAL_EVENT_DEFAULT_OR_NULL };
+const PRT_MACHINEID PrtNullMachineId = { { 0, 0, 0, 0 }, PRT_SPECIAL_EVENT_NULL };
 
 PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeFieldName(_In_ PRT_STRING name)
 {
@@ -187,7 +187,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkNullValue()
 	PRT_TYPE *type = PrtMkPrimitiveType(PRT_KIND_NULL);
 	retVal->type = type;
 	retVal->discriminator = PRT_VALKIND_NULL;
-	retVal->valueUnion.ev = PRT_SPECIAL_EVENT_DEFAULT_OR_NULL;
+	retVal->valueUnion.ev = PRT_SPECIAL_EVENT_NULL;
 	return retVal;
 }
 
@@ -232,7 +232,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 	case PRT_KIND_BOOL:
 		return PrtMkBoolValue(PRT_FALSE);
 	case PRT_KIND_EVENT:
-		return PrtMkEventValue(PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
+		return PrtMkEventValue(PRT_SPECIAL_EVENT_NULL);
 	case PRT_KIND_MACHINE:
 		return PrtMkMachineValue(PrtNullMachineId);
 	case PRT_KIND_INT:
@@ -1503,7 +1503,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsNullValue(_In_ PRT_VALUE *value)
 	case PRT_KIND_NULL:
 		return PRT_TRUE;
 	case PRT_KIND_EVENT:
-		return value->valueUnion.ev == PRT_SPECIAL_EVENT_DEFAULT_OR_NULL ? PRT_TRUE : PRT_FALSE;
+		return value->valueUnion.ev == PRT_SPECIAL_EVENT_NULL ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_MACHINE:
 	{
 		PRT_MACHINEID *id = value->valueUnion.mid;
@@ -1932,7 +1932,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsValidValue(_In_ PRT_VALUE *value)
 		return value->discriminator == PRT_VALKIND_INT;
 	case PRT_KIND_NULL:
 		return value->discriminator == PRT_VALKIND_NULL &&
-			value->valueUnion.ev == PRT_SPECIAL_EVENT_DEFAULT_OR_NULL;
+			value->valueUnion.ev == PRT_SPECIAL_EVENT_NULL;
 	case PRT_KIND_FORGN:
 		return value->discriminator == PRT_VALKIND_FORGN &&
 			value->valueUnion.frgn != NULL;

@@ -27,8 +27,8 @@ extern "C"{
 
 typedef enum PRT_SPECIAL_EVENT
 {
-	PRT_SPECIAL_EVENT_DEFAULT_OR_NULL = 0,  /**< The id of the default / null event */
-	PRT_SPECIAL_EVENT_HALT = 1              /**< The id of the halt event           */
+	PRT_SPECIAL_EVENT_NULL = 0,  /**< The id of the null event */
+	PRT_SPECIAL_EVENT_HALT = 1   /**< The id of the halt event */
 } PRT_SPECIAL_EVENT;
 
 /**
@@ -159,8 +159,8 @@ PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkIntValue(_In_ PRT_INT32 value);
 
 /** Makes null value. 
 * The types null, event, machine, and model all share the null value.
-* The null value projected onto event is the id PRT_SPECIAL_EVENT_DEFAULT_OR_NULL.
-* The null value projected onto model / machine is the processId 0-0-0-0 with machineId PRT_SPECIAL_EVENT_DEFAULT_OR_NULL. 
+* The null value projected onto event is the id PRT_SPECIAL_EVENT_NULL.
+* The null value projected onto model / machine is the processId 0-0-0-0 with machineId PRT_SPECIAL_EVENT_NULL. 
 * @returns A proper null value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */

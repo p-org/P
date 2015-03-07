@@ -78,7 +78,7 @@ PrtMkMachinePrivate(
 	context->isHalted = PRT_FALSE;
 	context->lastOperation = ReturnStatement;
 
-	context->currentEvent.trigger = PrtMkEventValue(PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
+	context->currentEvent.trigger = PrtMkEventValue(PRT_SPECIAL_EVENT_NULL);
 	context->currentEvent.payload = PrtCloneValue(payload);
 	context->stateControl = PrtStateEntry;
 	context->returnTo = 0;
@@ -291,7 +291,7 @@ _In_	PRT_BOOLEAN				isPushStatement
 	if (isPushStatement)
 	{
 		context->callStack.stateStack[length].currEvent = context->currentEvent;
-		context->currentEvent.trigger = PrtMkEventValue(PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
+		context->currentEvent.trigger = PrtMkEventValue(PRT_SPECIAL_EVENT_NULL);
 		context->currentEvent.payload = PrtMkNullValue();
 	}
 	else
@@ -342,7 +342,7 @@ PrtPop(
 
 	PrtFreeValue(context->currentEvent.trigger);
 	PrtFreeValue(context->currentEvent.payload);
-	context->currentEvent.trigger = PrtMkEventValue(PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
+	context->currentEvent.trigger = PrtMkEventValue(PRT_SPECIAL_EVENT_NULL);
 	context->currentEvent.payload = PrtMkNullValue();
 	// Actual pop happens in PrtPopState; the exit function must be executed first.
 	// The above assignment to context->currentEvent is only for the benefit of the exit function.
@@ -663,7 +663,7 @@ PrtDequeueEvent(
 	if (i == queue->size) {
 		if (PrtStateHasDefaultTransitionOrAction(context))
 		{
-			context->currentEvent.trigger = PrtMkEventValue(PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
+			context->currentEvent.trigger = PrtMkEventValue(PRT_SPECIAL_EVENT_NULL);
 			context->currentEvent.payload = PrtMkNullValue();
 			return PRT_TRUE;
 		}
@@ -958,7 +958,7 @@ PrtIsSpecialEvent(
 	_In_ PRT_VALUE *event
 )
 {
-	return (PrtIsNullValue(event) || PrtPrimGetEvent(event) == PRT_SPECIAL_EVENT_DEFAULT_OR_NULL);
+	return (PrtIsNullValue(event) || PrtPrimGetEvent(event) == PRT_SPECIAL_EVENT_NULL);
 }
 
 FORCEINLINE

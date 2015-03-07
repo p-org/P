@@ -126,6 +126,7 @@ class SM_HANDLE {
     }
 	
     void DequeueEvent(bool hasDefault) {
+	    PRT_TYPE nullType;
 		currentEvent = null;
 		currentArg = null;
 		while (true) {
@@ -141,6 +142,8 @@ class SM_HANDLE {
 			{
 				assert (this in SM_HANDLE.enabled, "Internal error");
 				trace("<DefaultTransLog> Default transition taken by Machine {0}-{1}\n", machineName, instance);
+				nullType = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL);
+				currentArg = PRT_VALUE.PrtMkDefaultValue(nullType);
 				FairScheduler.AtYieldStatic(this);
 				FairChoice.AtYieldOrChooseStatic();
 				yield;

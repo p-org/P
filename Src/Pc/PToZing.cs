@@ -476,7 +476,7 @@ namespace Microsoft.Pc
                     if (it.Current.NodeKind == NodeKind.Id)
                     {
                         var name = ((Id)it.Current).Name;
-                        if (name == "DEFAULT")
+                        if (name == "NULL")
                         {
                             eventName = NullEvent;
                             stateTable.hasDefaultTransition = true;
@@ -524,7 +524,7 @@ namespace Microsoft.Pc
                     if (it.Current.NodeKind == NodeKind.Id)
                     {
                         var name = ((Id)it.Current).Name;
-                        if (name == "DEFAULT")
+                        if (name == "NULL")
                         {
                             eventName = NullEvent;
                         }

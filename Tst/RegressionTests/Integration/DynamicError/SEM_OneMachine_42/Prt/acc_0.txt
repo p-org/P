@@ -1,0 +1,10 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine Real1(1) is created
+OUT: <StateLog> Machine Real1(1) entered state Real1_Init
+OUT: <ExitLog> Machine Real1(1) exiting state Real1_Init
+OUT: <StateLog> Machine Real1(1) entered state Real1_S1
+OUT: exiting with PRT_STATUS_ASSERT (assertion failure)
+OUT: 
+EXIT: 1

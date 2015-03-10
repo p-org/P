@@ -56,7 +56,7 @@ OUT: monitors.p (38, 8): Monitors cannot have "new"
 OUT: monitors.p (39, 4): Monitors cannot have "send"
 OUT: monitors.p (40, 4): argument 1 of "send" expects a machine value
 OUT: monitors.p (40, 9): Monitors cannot refer to "this"
-OUT: monitors.p (42, 3): default transitions not allowed in monitors
+OUT: monitors.p (42, 3): null transitions not allowed in monitors
 OUT: Compilation failed
 OUT: 
 EXIT: -1

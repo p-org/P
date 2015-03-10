@@ -1,7 +1,0 @@
-=================================
-         Console output          
-=================================
-OUT: defaulteventdecl.p (3, 6): Syntax error - Syntax error, unexpected DEFAULT, expecting ID
-OUT: Compilation failed
-OUT: 
-EXIT: -1

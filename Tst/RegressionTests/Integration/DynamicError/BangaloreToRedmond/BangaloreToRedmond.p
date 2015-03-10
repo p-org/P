@@ -54,7 +54,7 @@ main machine Employee {
 				send CityCabmachine, Thanks;
         }
 
-        on default goto TakeBus;
+        on null goto TakeBus;
         on CabBooked goto TakeCab;
     }
 

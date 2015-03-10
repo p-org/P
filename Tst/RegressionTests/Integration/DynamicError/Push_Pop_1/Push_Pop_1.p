@@ -52,7 +52,7 @@ main machine Employee {
             if (trigger != null) send CityCabmachine, Thanks;
         }
 
-        on default goto TakeBus with { RemoteCheckIn = true; };
+        on null goto TakeBus with { RemoteCheckIn = true; };
         on CabBooked goto TakeCab with { RemoteCheckIn = true; };
     }
 	

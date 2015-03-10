@@ -179,7 +179,7 @@ machine Clock {
 				push WaitForErBest;
 			}
 		}
-		on default goto PeriodicStateDecision;
+		on null goto PeriodicStateDecision;
 	}
 	
 	state WaitForErBest {
@@ -341,7 +341,7 @@ machine PortMachine {
 			}
 		}
 		
-		on default goto Initializing;
+		on null goto Initializing;
 		on Local goto Listening;
 	}
 	
@@ -373,7 +373,7 @@ machine PortMachine {
 				send ConnectedTo, Announce, ParentGM;
 		}
 		
-		on default goto Master;
+		on null goto Master;
 		on StateDecisionEvent goto DeferAll;
 	}
 	
@@ -433,7 +433,7 @@ machine PortMachine {
 		}
 		on StateDecisionEvent goto DeferAll;
 		on goMaster goto Master;
-		on default goto Slave;
+		on null goto Slave;
 	}
 	
 	state Passive {
@@ -446,7 +446,7 @@ machine PortMachine {
 			}
 		}
 		on goMaster goto Master;
-		on default goto Passive;
+		on null goto Passive;
 		on StateDecisionEvent goto DeferAll;
 	}
 }

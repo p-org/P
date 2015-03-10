@@ -37,7 +37,7 @@ main machine MachOS {
 	}
 	
 	state State2 {
-		on default goto State2;
+		on null goto State2;
 		exit {
 			MACH = payload;
 			INT = payload;

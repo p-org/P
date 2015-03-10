@@ -9,7 +9,7 @@ OUT:
 EXIT: 3
 
 =================================
-DefaultHandler2.trace
+NullEventHandler2.trace
 =================================
 Safety Error Trace
 Trace-Log 0:

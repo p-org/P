@@ -45,7 +45,7 @@ OUT: payloadtransitionsfuns.p (35, 11): inferred type:  BaseType(ANY)
 OUT: payloadtransitionsfuns.p (36, 4): inferred type:  BaseType(INT)
 OUT: payloadtransitionsfuns.p (36, 4): inferred type:  ERROR
 OUT: payloadtransitionsfuns.p (36, 10): inferred type:  BaseType(ANY)
-OUT: payloadtransitionsfuns.p (57, 2): inferred type:  NIL
+OUT: payloadtransitionsfuns.p (59, 2): inferred type:  NIL
 OUT: payloadtransitionsfuns.p (26, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: payloadtransitionsfuns.p (30, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: payloadtransitionsfuns.p (30, 23): Index may not be in the domain of the map

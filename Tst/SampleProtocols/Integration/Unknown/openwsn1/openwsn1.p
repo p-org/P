@@ -227,7 +227,7 @@ machine OpenWSN_Mote {
 				
 			send slotTimer, endSlot;
 		};
-		on default goto WaitForNewSlot with
+		on null goto WaitForNewSlot with
 		{
 			send slotTimer, endSlot;
 		};

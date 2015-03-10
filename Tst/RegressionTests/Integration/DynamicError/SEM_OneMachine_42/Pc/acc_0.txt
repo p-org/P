@@ -1,0 +1,18 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing NullTriggerPayload.zing ...
+OUT: Compiling NullTriggerPayload.zing to NullTriggerPayload.dll ...
+OUT: nulltriggerpayload.p (18, 4): inferred type:  NIL
+OUT: nulltriggerpayload.p (18, 11): inferred type:  BaseType(NULL)
+OUT: nulltriggerpayload.p (18, 19): inferred type:  BaseType(BOOL)
+OUT: nulltriggerpayload.p (18, 22): inferred type:  BaseType(NULL)
+OUT: nulltriggerpayload.p (18, 27): inferred type:  BaseType(BOOL)
+OUT: nulltriggerpayload.p (18, 30): inferred type:  BaseType(EVENT)
+OUT: nulltriggerpayload.p (18, 38): inferred type:  BaseType(BOOL)
+OUT: nulltriggerpayload.p (18, 41): inferred type:  BaseType(NULL)
+OUT: 
+EXIT: 0

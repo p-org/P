@@ -65,7 +65,7 @@ model xx {
 				x = x + 1;
 		}
 		
-		on default goto init with {
+		on null goto init with {
 			if($)
 			{
 				x = x + 1;

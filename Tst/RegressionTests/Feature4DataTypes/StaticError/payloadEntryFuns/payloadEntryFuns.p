@@ -35,7 +35,7 @@ main machine MachOS {
 			BOOL = payload.sec[2];
 		};
 		
-		on default goto State2;
+		on null goto State2;
 	}
 	
 	state State1 {

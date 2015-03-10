@@ -1,0 +1,25 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 3 distinct states explored
+OUT: 
+EXIT: 3
+
+=================================
+NullTriggerPayload.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine Real1-0
+<StateLog> Machine Real1-0 entering State Real1_Init
+<DefaultTransLog> Default transition taken by Machine ____Real1-0
+<StateLog> Machine Real1-0 exiting State Real1_Init
+<StateLog> Machine Real1-0 entering State Real1_S1
+
+Error:
+P Assertion failed:
+Expression: assert(tmpVar_4.bl,)
+Comment: (18, 4): Assert failed

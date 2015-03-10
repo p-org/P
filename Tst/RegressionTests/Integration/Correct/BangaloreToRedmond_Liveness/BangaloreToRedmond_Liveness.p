@@ -57,7 +57,7 @@ main machine Employee {
             if (trigger != null) send CityCabId, Thanks;
         }
 		on CabBooked goto TakeCab;
-        on default goto TakeBus;
+        on null goto TakeBus;
     }
 
     state TakeCab {

@@ -232,7 +232,7 @@ machine Clock {
 				push WaitForErBest;
 			}
 		}
-		on default goto PeriodicStateDecision;
+		on null goto PeriodicStateDecision;
 	}
 	
 	state WaitForErBest {
@@ -400,7 +400,7 @@ machine PortMachine {
 			}
 		}
 		
-		on default goto Initializing;
+		on null goto Initializing;
 		on Local goto Listening;
 	}
 	
@@ -435,7 +435,7 @@ machine PortMachine {
 			}
 		}
 		
-		on default goto Master;
+		on null goto Master;
 		on StateDecisionEvent goto DeferAll;
 	}
 	
@@ -495,7 +495,7 @@ machine PortMachine {
 		}
 		on StateDecisionEvent goto DeferAll;
 		on goMaster goto Master; // Doubt : What should be the value of ParentGM ??
-		on default goto Slave;
+		on null goto Slave;
 	}
 	
 	state Passive {
@@ -508,7 +508,7 @@ machine PortMachine {
 			}
 		}
 		on goMaster goto Master;
-		on default goto Passive;
+		on null goto Passive;
 		on StateDecisionEvent goto DeferAll;
 	}
 }
@@ -545,7 +545,7 @@ model scenariotester {
 				raise(Local);
 			}
 		}
-		on default goto breaklink;
+		on null goto breaklink;
 		on Local goto joinlink;
 	}
 	
@@ -567,7 +567,7 @@ model scenariotester {
 				raise(Local);
 			}
 		}
-		on default goto joinlink;
+		on null goto joinlink;
 		on Local goto Done;
 	}
 	

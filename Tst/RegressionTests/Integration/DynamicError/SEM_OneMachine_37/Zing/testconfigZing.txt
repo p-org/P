@@ -1,7 +1,7 @@
 runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\DefaultHandler2.dll
-argZing: -et:DefaultHandler2.trace
-incZing: DefaultHandler2.trace
-del: DefaultHandler2.trace
+argZing: ..\NullEventHandler2.dll
+argZing: -et:NullEventHandler2.trace
+incZing: NullEventHandler2.trace
+del: NullEventHandler2.trace
 acc: .\
-dsc: zinger.exe, P semantics test, one machine: "default" handler semantics
+dsc: zinger.exe, P semantics test, one machine: "null" handler semantics

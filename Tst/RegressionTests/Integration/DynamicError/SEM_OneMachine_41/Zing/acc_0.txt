@@ -9,7 +9,7 @@ OUT:
 EXIT: 3
 
 =================================
-DefaultHandlerInLoop.trace
+NullHandlerInLoop.trace
 =================================
 Safety Error Trace
 Trace-Log 0:

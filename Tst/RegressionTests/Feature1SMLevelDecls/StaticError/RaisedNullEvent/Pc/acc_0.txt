@@ -1,0 +1,21 @@
+=================================
+         Console output          
+=================================
+OUT: raisednullevent.p (8, 4): inferred type:  ERROR
+OUT: raisednullevent.p (8, 4): inferred type:  NIL
+OUT: raisednullevent.p (8, 10): inferred type:  BaseType(NULL)
+OUT: raisednullevent.p (9, 4): inferred type:  NIL
+OUT: raisednullevent.p (9, 10): inferred type:  BaseType(EVENT)
+OUT: raisednullevent.p (11, 8): inferred type:  NIL
+OUT: raisednullevent.p (13, 13): inferred type:  ERROR
+OUT: raisednullevent.p (13, 18): inferred type:  BaseType(REAL)
+OUT: raisednullevent.p (13, 24): inferred type:  BaseType(NULL)
+OUT: raisednullevent.p (14, 15): inferred type:  NIL
+OUT: raisednullevent.p (14, 22): inferred type:  BaseType(BOOL)
+OUT: raisednullevent.p (17, 3): inferred type:  NIL
+OUT: raisednullevent.p (17, 10): inferred type:  BaseType(BOOL)
+OUT: raisednullevent.p (8, 4): argument 1 of "raise" expects an event value
+OUT: raisednullevent.p (13, 13): argument 2 of "send" expects an event value
+OUT: Compilation failed
+OUT: 
+EXIT: -1

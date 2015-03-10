@@ -38,19 +38,19 @@ OUT: payloadtransitions.p (36, 11): inferred type:  NmdTupType(NmdTupTypeField("
 OUT: payloadtransitions.p (36, 19): inferred type:  SeqType(BaseType(BOOL))
 OUT: payloadtransitions.p (36, 22): inferred type:  BaseType(BOOL)
 OUT: payloadtransitions.p (36, 23): inferred type:  BaseType(INT)
-OUT: payloadtransitions.p (40, 4): inferred type:  BaseType(REAL)
-OUT: payloadtransitions.p (40, 4): inferred type:  ERROR
-OUT: payloadtransitions.p (40, 4): inferred type:  NIL
-OUT: payloadtransitions.p (40, 11): inferred type:  BaseType(ANY)
-OUT: payloadtransitions.p (41, 4): inferred type:  BaseType(INT)
-OUT: payloadtransitions.p (41, 4): inferred type:  ERROR
-OUT: payloadtransitions.p (41, 10): inferred type:  BaseType(ANY)
-OUT: payloadtransitions.p (45, 2): inferred type:  NIL
+OUT: payloadtransitions.p (45, 4): inferred type:  BaseType(REAL)
+OUT: payloadtransitions.p (45, 4): inferred type:  ERROR
+OUT: payloadtransitions.p (45, 4): inferred type:  NIL
+OUT: payloadtransitions.p (45, 11): inferred type:  BaseType(ANY)
+OUT: payloadtransitions.p (46, 4): inferred type:  BaseType(INT)
+OUT: payloadtransitions.p (46, 4): inferred type:  ERROR
+OUT: payloadtransitions.p (46, 10): inferred type:  BaseType(ANY)
+OUT: payloadtransitions.p (50, 2): inferred type:  NIL
 OUT: payloadtransitions.p (31, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: payloadtransitions.p (35, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: payloadtransitions.p (35, 23): Index may not be in the domain of the map
-OUT: payloadtransitions.p (40, 4): invalid assignment. right hand side is not a subtype of left hand side
-OUT: payloadtransitions.p (41, 4): invalid assignment. right hand side is not a subtype of left hand side
+OUT: payloadtransitions.p (45, 4): invalid assignment. right hand side is not a subtype of left hand side
+OUT: payloadtransitions.p (46, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: Compilation failed
 OUT: 
 EXIT: -1

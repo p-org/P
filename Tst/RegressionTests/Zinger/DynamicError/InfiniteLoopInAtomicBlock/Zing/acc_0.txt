@@ -8,7 +8,7 @@ OUT: The Zing model appears to have encountered an infinite loop within an atomi
 OUT: 
 OUT: 
 OUT: Stack trace:
-OUT:     PING.AnonFun0 (InfiniteLoopInAtomicBlock.zing, Line 800)
+OUT:     PING.AnonFun0 (InfiniteLoopInAtomicBlock.zing, Line 776)
 OUT:     PING.ReentrancyHelper (InfiniteLoopInAtomicBlock.zing, Line 476)
 OUT:     PING.RunHelper (InfiniteLoopInAtomicBlock.zing, Line 372)
 OUT:     PING.Run (InfiniteLoopInAtomicBlock.zing, Line 123)

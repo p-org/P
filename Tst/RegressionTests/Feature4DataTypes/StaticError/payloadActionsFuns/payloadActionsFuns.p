@@ -43,6 +43,12 @@ main machine MachOS {
 			MACH = payload;
 			INT = payload;
 		};
+		
+		on null do {
+			MACH = payload;  
+			INT = payload;
+		};
+		
 	}
 
 }

@@ -9,7 +9,7 @@ main machine Sample {
 		exit {
 
 		}
-		on default goto X2 with { };
+		on null goto X2 with { };
 		on a goto X1 with { };
 	}
 
@@ -21,7 +21,7 @@ main machine Sample {
 machine Sample2 {
 	start state X1 {
 		
-		on default do {};
+		on null do {};
 	
 	}
 

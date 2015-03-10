@@ -9,7 +9,7 @@ OUT:
 EXIT: 3
 
 =================================
-DefaultHandlerInheritedByPushTr.trace
+NullHandlerInheritedByPushTr.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
@@ -24,4 +24,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmp_3.bl,)
-Comment: (14, 18): Assert failed
+Comment: (14, 15): Assert failed

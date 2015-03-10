@@ -1,7 +1,7 @@
 runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\TopDefaultHandlerOverridesInherited.dll
-argZing: -et:TopDefaultHandlerOverridesInherited.trace
-incZing: TopDefaultHandlerOverridesInherited.trace
-del: TopDefaultHandlerOverridesInherited.trace
+argZing: ..\TopNullHandlerOverridesInherited.dll
+argZing: -et:TopNullHandlerOverridesInherited.trace
+incZing: TopNullHandlerOverridesInherited.trace
+del: TopNullHandlerOverridesInherited.trace
 acc: .\
-dsc: zinger.exe, P semantics test, one machine: "default" handler semantics
+dsc: zinger.exe, P semantics test, one machine: "null" handler semantics

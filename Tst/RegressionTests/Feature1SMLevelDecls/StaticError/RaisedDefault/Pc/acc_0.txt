@@ -1,7 +1,0 @@
-=================================
-         Console output          
-=================================
-OUT: raiseddefault.p (8, 16): Syntax error - Syntax error, unexpected SEMICOLON, expecting LPAREN
-OUT: Compilation failed
-OUT: 
-EXIT: -1

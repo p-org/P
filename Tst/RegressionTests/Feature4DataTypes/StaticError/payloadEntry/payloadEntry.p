@@ -25,7 +25,7 @@ main machine MachOS {
 			BOOL = payload.sec[2];
 		};
 		
-		on default goto State2;
+		on null goto State2;
 	}
 	
 	state State1 {
@@ -37,8 +37,9 @@ main machine MachOS {
 	
 	state State2 {
 		entry {
-			MACH = payload;
-			INT = payload;
+			//entered upon "null" event
+			MACH = payload;    //no subtype error???
+			INT = payload;     //subtype error
 		}
 		on myNmTuple goto State3;
 		on myMapSeq goto State4;

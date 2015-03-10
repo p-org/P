@@ -40,6 +40,11 @@ main machine MachOS {
 			MACH = payload;
 			INT = payload;
 		};
+		
+		on null goto State1 with {
+			MACH = payload;
+			INT = payload;
+		};
 	}
 	
 	state State1 {

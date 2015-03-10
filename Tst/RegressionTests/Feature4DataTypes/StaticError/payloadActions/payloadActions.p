@@ -35,6 +35,10 @@ main machine MachOS {
 			MACH = payload;
 			INT = payload;
 		};
+		on null do {
+			MACH = payload;  //subtype error
+			INT = payload;   //subtype error
+		};
 	}
 
 }

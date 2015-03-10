@@ -9,7 +9,7 @@ OUT:
 EXIT: 3
 
 =================================
-TopDefaultHandlerOverridesInherited.trace
+TopNullHandlerOverridesInherited.trace
 =================================
 Safety Error Trace
 Trace-Log 0:

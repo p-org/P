@@ -52,6 +52,8 @@ main machine MachOS {
 		on myMapSeq goto State1 with foo_5;
 		
 		on halt goto State1 with foo_6;
+		
+		on null goto State1 with foo_6;
 	}
 	
 	state State1 {

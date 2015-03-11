@@ -1,0 +1,28 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing Liveness_NONDET.zing ...
+OUT: Compiling Liveness_NONDET.zing to Liveness_NONDET.dll ...
+OUT: liveness_nondet.p (16, 5): inferred type:  NIL
+OUT: liveness_nondet.p (17, 5): inferred type:  NIL
+OUT: liveness_nondet.p (17, 23): inferred type:  BaseType(EVENT)
+OUT: liveness_nondet.p (18, 5): inferred type:  NIL
+OUT: liveness_nondet.p (18, 10): inferred type:  BaseType(REAL)
+OUT: liveness_nondet.p (18, 16): inferred type:  BaseType(EVENT)
+OUT: liveness_nondet.p (26, 5): inferred type:  NIL
+OUT: liveness_nondet.p (26, 23): inferred type:  BaseType(EVENT)
+OUT: liveness_nondet.p (27, 5): inferred type:  NIL
+OUT: liveness_nondet.p (27, 9): inferred type:  BaseType(BOOL)
+OUT: liveness_nondet.p (28, 6): inferred type:  NIL
+OUT: liveness_nondet.p (28, 11): inferred type:  BaseType(REAL)
+OUT: liveness_nondet.p (28, 17): inferred type:  BaseType(EVENT)
+OUT: liveness_nondet.p (31, 6): inferred type:  NIL
+OUT: liveness_nondet.p (31, 11): inferred type:  BaseType(REAL)
+OUT: liveness_nondet.p (31, 17): inferred type:  BaseType(EVENT)
+OUT: liveness_nondet.p (35, 4): inferred type:  NIL
+OUT: liveness_nondet.p (49, 14): inferred type:  NIL
+OUT: 
+EXIT: 0

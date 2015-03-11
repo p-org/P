@@ -1,0 +1,8 @@
+runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
+argPc: ..\Liveness_FAIRNONDET.p
+argPc: /printTypeInference
+argPc: /shortFileNames
+argPc: /liveness
+argPc: /doNotErase
+acc: .\
+dsc: pc.exe, Liveness: simplest sample demonstrating FAIRNONDET in liveness

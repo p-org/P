@@ -2576,7 +2576,7 @@ namespace Microsoft.Pc
                 var eventExpr = MkZingDot(it.Current.node, "ev");
                 it.MoveNext();
                 var payloadExpr = it.Current.node;
-                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0}: Raised null", SpanToString(ft.Span)));
+                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0}: Raised event must be non-null", SpanToString(ft.Span)));
                 string traceString = string.Format("\"<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\\n\"", ctxt.machineName);
                 var traceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"), MkZingDot(eventExpr, "name")));
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpPayload");
@@ -2628,29 +2628,31 @@ namespace Microsoft.Pc
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
-                AST<Node> evt = MkZingDot(it.Current.node, "ev");
+                AST<Node> eventExpr = MkZingDot(it.Current.node, "ev");
                 it.MoveNext();
                 AST<Node> arg = it.Current.node;
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpSendPayload");
+                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0}: Enqueued event must be non-null", SpanToString(ft.Span)));
+                ctxt.AddSideEffect(assertStmt);
                 if (arg == ZingData.Cnst_Nil)
                 {
                     ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
                     string traceString = 
                         string.Format("\"<MonitorLog> Enqueued Event < {{0}} > to {{1}} {0} monitors in Machine {1}-{{2}}\\n\"", typeName, ctxt.machineName);
                     ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), 
-                        MkZingDot(evt, "name"), MkZingCall(MkZingIdentifier("sizeof"), MkZingDot("Main", string.Format("{0}_handles", typeName))), MkZingDot("myHandle", "instance"))));
+                        MkZingDot(eventExpr, "name"), MkZingCall(MkZingIdentifier("sizeof"), MkZingDot("Main", string.Format("{0}_handles", typeName))), MkZingDot("myHandle", "instance"))));
                 }
                 else
                 {
                     ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, arg));
-                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst("\"<MonitorLog> Enqueued Event < {{0}}, \""), MkZingDot(evt, "name"))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst("\"<MonitorLog> Enqueued Event < {{0}}, \""), MkZingDot(eventExpr, "name"))));
                     ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "Print"), tmpVar)));
                     string traceString = string.Format("\" > to {{0}} {0} monitors in Machine {1}-{{1}}\\n\"", typeName, ctxt.machineName);
                     ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString),
                         MkZingCall(MkZingIdentifier("sizeof"), MkZingDot("Main", string.Format("{0}_handles", typeName))), MkZingDot("myHandle", "instance"))));
                 }
                 MachineInfo machineInfo = allMachines[typeName];
-                return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", typeName)), evt, tmpVar)));
+                return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", typeName)), eventExpr, tmpVar)));
             }
         }
 

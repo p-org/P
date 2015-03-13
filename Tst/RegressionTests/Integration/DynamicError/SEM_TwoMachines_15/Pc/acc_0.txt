@@ -1,0 +1,22 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing MonitorInvocationEventExprPayload.zing ...
+OUT: Compiling MonitorInvocationEventExprPayload.zing to MonitorInvocationEventExprPayload.dll ...
+OUT: monitorinvocationeventexprpayload.p (11, 4): inferred type:  NIL
+OUT: monitorinvocationeventexprpayload.p (12, 4): inferred type:  BaseType(EVENT)
+OUT: monitorinvocationeventexprpayload.p (12, 4): inferred type:  NIL
+OUT: monitorinvocationeventexprpayload.p (12, 10): inferred type:  BaseType(EVENT)
+OUT: monitorinvocationeventexprpayload.p (13, 4): inferred type:  NIL
+OUT: monitorinvocationeventexprpayload.p (13, 15): inferred type:  BaseType(EVENT)
+OUT: monitorinvocationeventexprpayload.p (13, 20): inferred type:  BaseType(BOOL)
+OUT: monitorinvocationeventexprpayload.p (19, 9): inferred type:  NIL
+OUT: monitorinvocationeventexprpayload.p (21, 14): inferred type:  NIL
+OUT: monitorinvocationeventexprpayload.p (21, 22): inferred type:  BaseType(BOOL)
+OUT: monitorinvocationeventexprpayload.p (21, 30): inferred type:  BaseType(BOOL)
+OUT: monitorinvocationeventexprpayload.p (21, 33): inferred type:  BaseType(BOOL)
+OUT: 
+EXIT: 0

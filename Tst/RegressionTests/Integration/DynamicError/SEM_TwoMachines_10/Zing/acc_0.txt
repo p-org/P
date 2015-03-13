@@ -1,0 +1,30 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 6 distinct states explored
+OUT: 
+EXIT: 3
+
+=================================
+NonConstantEventExpr1.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine Real1-0
+<StateLog> Machine Real1-0 entering State Real1_Init
+<CreateLog> Created Machine Real2-0
+<RaiseLog> Machine Real1-0 raised Event ____E1
+<FunctionLog> Machine Real1-0 executing Function Action1
+<DefaultTransLog> Default transition taken by Machine ____Real1-0
+<StateLog> Machine Real1-0 exiting State Real1_Init
+<EnqueueLog> Enqueued Event < ____E2, true > in Machine ____Real2-0 by ____Real1-0
+<StateLog> Machine Real2-0 entering State Real2_Init
+<DequeueLog> Dequeued Event < ____E2, true > at Machine ____Real2-0
+
+Error:
+P Assertion failed:
+Expression: assert(tmpVar_1.bl,)
+Comment: (49, 3): Assert failed

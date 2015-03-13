@@ -1,0 +1,51 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing NonConstantEventExpr.zing ...
+OUT: Compiling NonConstantEventExpr.zing to NonConstantEventExpr.dll ...
+OUT: nonconstanteventexpr.p (14, 4): inferred type:  BaseType(REAL)
+OUT: nonconstanteventexpr.p (14, 4): inferred type:  NIL
+OUT: nonconstanteventexpr.p (14, 10): inferred type:  BaseType(REAL)
+OUT: nonconstanteventexpr.p (14, 20): inferred type:  BaseType(REAL)
+OUT: nonconstanteventexpr.p (15, 4): inferred type:  NIL
+OUT: nonconstanteventexpr.p (15, 15): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexpr.p (15, 20): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexpr.p (16, 4): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexpr.p (16, 4): inferred type:  NIL
+OUT: nonconstanteventexpr.p (16, 10): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexpr.p (17, 4): inferred type:  NIL
+OUT: nonconstanteventexpr.p (17, 10): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexpr.p (23, 4): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexpr.p (23, 4): inferred type:  NIL
+OUT: nonconstanteventexpr.p (23, 10): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexpr.p (24, 13): inferred type:  NIL
+OUT: nonconstanteventexpr.p (24, 18): inferred type:  BaseType(REAL)
+OUT: nonconstanteventexpr.p (24, 23): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexpr.p (24, 28): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexpr.p (27, 2): inferred type:  NIL
+OUT: nonconstanteventexpr.p (30, 3): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexpr.p (30, 3): inferred type:  NIL
+OUT: nonconstanteventexpr.p (30, 10): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexpr.p (37, 9): inferred type:  NIL
+OUT: nonconstanteventexpr.p (40, 4): inferred type:  NIL
+OUT: nonconstanteventexpr.p (40, 8): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexpr.p (40, 16): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexpr.p (40, 19): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexpr.p (42, 5): inferred type:  NIL
+OUT: nonconstanteventexpr.p (45, 6): inferred type:  NIL
+OUT: nonconstanteventexpr.p (45, 13): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexpr.p (45, 20): inferred type:  NIL
+OUT: nonconstanteventexpr.p (45, 22): inferred type:  NIL
+OUT: nonconstanteventexpr.p (49, 3): inferred type:  NIL
+OUT: nonconstanteventexpr.p (49, 10): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexpr.p (49, 18): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexpr.p (49, 21): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexpr.p (55, 4): inferred type:  NIL
+OUT: nonconstanteventexpr.p (55, 12): inferred type:  BaseType(ANY)
+OUT: nonconstanteventexpr.p (55, 20): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexpr.p (55, 23): inferred type:  BaseType(BOOL)
+OUT: 
+EXIT: 0

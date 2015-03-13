@@ -1,0 +1,40 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing RaisedNullDetected.zing ...
+OUT: Compiling RaisedNullDetected.zing to RaisedNullDetected.dll ...
+OUT: raisednulldetected.p (14, 4): inferred type:  BaseType(REAL)
+OUT: raisednulldetected.p (14, 4): inferred type:  NIL
+OUT: raisednulldetected.p (14, 10): inferred type:  BaseType(REAL)
+OUT: raisednulldetected.p (14, 20): inferred type:  BaseType(REAL)
+OUT: raisednulldetected.p (15, 4): inferred type:  BaseType(EVENT)
+OUT: raisednulldetected.p (15, 4): inferred type:  NIL
+OUT: raisednulldetected.p (15, 10): inferred type:  BaseType(EVENT)
+OUT: raisednulldetected.p (16, 13): inferred type:  NIL
+OUT: raisednulldetected.p (16, 18): inferred type:  BaseType(REAL)
+OUT: raisednulldetected.p (16, 23): inferred type:  BaseType(EVENT)
+OUT: raisednulldetected.p (16, 28): inferred type:  BaseType(BOOL)
+OUT: raisednulldetected.p (17, 4): inferred type:  NIL
+OUT: raisednulldetected.p (17, 10): inferred type:  BaseType(EVENT)
+OUT: raisednulldetected.p (18, 4): inferred type:  NIL
+OUT: raisednulldetected.p (18, 15): inferred type:  BaseType(EVENT)
+OUT: raisednulldetected.p (24, 14): inferred type:  NIL
+OUT: raisednulldetected.p (27, 3): inferred type:  BaseType(BOOL)
+OUT: raisednulldetected.p (27, 3): inferred type:  NIL
+OUT: raisednulldetected.p (27, 10): inferred type:  BaseType(BOOL)
+OUT: raisednulldetected.p (34, 9): inferred type:  NIL
+OUT: raisednulldetected.p (37, 4): inferred type:  NIL
+OUT: raisednulldetected.p (37, 8): inferred type:  BaseType(EVENT)
+OUT: raisednulldetected.p (37, 16): inferred type:  BaseType(BOOL)
+OUT: raisednulldetected.p (37, 19): inferred type:  BaseType(EVENT)
+OUT: raisednulldetected.p (39, 5): inferred type:  NIL
+OUT: raisednulldetected.p (46, 3): inferred type:  NIL
+OUT: raisednulldetected.p (46, 10): inferred type:  BaseType(BOOL)
+OUT: raisednulldetected.p (46, 18): inferred type:  BaseType(BOOL)
+OUT: raisednulldetected.p (46, 21): inferred type:  BaseType(BOOL)
+OUT: raisednulldetected.p (50, 2): inferred type:  NIL
+OUT: 
+EXIT: 0

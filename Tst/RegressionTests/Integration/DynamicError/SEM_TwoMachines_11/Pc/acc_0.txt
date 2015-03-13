@@ -1,0 +1,41 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing NonConstantEventExprMonitor.zing ...
+OUT: Compiling NonConstantEventExprMonitor.zing to NonConstantEventExprMonitor.dll ...
+OUT: nonconstanteventexprmonitor.p (15, 4): inferred type:  NIL
+OUT: nonconstanteventexprmonitor.p (16, 4): inferred type:  NIL
+OUT: nonconstanteventexprmonitor.p (16, 15): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexprmonitor.p (16, 20): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexprmonitor.p (17, 4): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexprmonitor.p (17, 4): inferred type:  NIL
+OUT: nonconstanteventexprmonitor.p (17, 10): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexprmonitor.p (18, 4): inferred type:  NIL
+OUT: nonconstanteventexprmonitor.p (18, 10): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexprmonitor.p (23, 4): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexprmonitor.p (23, 4): inferred type:  NIL
+OUT: nonconstanteventexprmonitor.p (23, 10): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexprmonitor.p (26, 13): inferred type:  NIL
+OUT: nonconstanteventexprmonitor.p (26, 18): inferred type:  BaseType(REAL)
+OUT: nonconstanteventexprmonitor.p (26, 23): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexprmonitor.p (26, 28): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexprmonitor.p (29, 2): inferred type:  NIL
+OUT: nonconstanteventexprmonitor.p (32, 3): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexprmonitor.p (32, 3): inferred type:  NIL
+OUT: nonconstanteventexprmonitor.p (32, 10): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexprmonitor.p (39, 9): inferred type:  NIL
+OUT: nonconstanteventexprmonitor.p (42, 4): inferred type:  NIL
+OUT: nonconstanteventexprmonitor.p (42, 8): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexprmonitor.p (42, 16): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexprmonitor.p (42, 19): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexprmonitor.p (44, 5): inferred type:  NIL
+OUT: nonconstanteventexprmonitor.p (50, 16): inferred type:  NIL
+OUT: nonconstanteventexprmonitor.p (57, 4): inferred type:  NIL
+OUT: nonconstanteventexprmonitor.p (57, 12): inferred type:  BaseType(ANY)
+OUT: nonconstanteventexprmonitor.p (57, 20): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexprmonitor.p (57, 23): inferred type:  BaseType(BOOL)
+OUT: 
+EXIT: 0

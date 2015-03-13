@@ -57,6 +57,12 @@ main machine Dummy {
 			monitor M, seqAny, tempbool;
 			monitor M, seqAny;
 			
+			monitor M, ev, seqE, seqInt;
+			
+			monitor M, A;
+			
+			monitor M1, seqAny;
+			
 		}
 	
 	}

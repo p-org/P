@@ -1,0 +1,3 @@
+runPrt: ..\..\..\..\..\..\Tst\PrtTester\Debug\Tester.exe
+acc: .\
+dsc: runtime, two machines, monitor invocation with null event

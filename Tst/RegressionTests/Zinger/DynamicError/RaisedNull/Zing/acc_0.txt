@@ -1,0 +1,24 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 5 distinct states explored
+OUT: 
+EXIT: 3
+
+=================================
+RaisedNullDetected.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine Real1-0
+<StateLog> Machine Real1-0 entering State Real1_Init
+<CreateLog> Created Machine Real2-0
+<EnqueueLog> Enqueued Event < ____E2, false > in Machine ____Real2-0 by ____Real1-0
+
+Error:
+P Assertion failed:
+Expression: assert(ev1.ev != null)
+Comment: (17, 4): Raised event must be non-null

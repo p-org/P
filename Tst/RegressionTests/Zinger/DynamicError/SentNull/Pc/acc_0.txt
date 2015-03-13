@@ -1,0 +1,40 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing SentNullDetected.zing ...
+OUT: Compiling SentNullDetected.zing to SentNullDetected.dll ...
+OUT: sentnulldetected.p (14, 4): inferred type:  BaseType(REAL)
+OUT: sentnulldetected.p (14, 4): inferred type:  NIL
+OUT: sentnulldetected.p (14, 10): inferred type:  BaseType(REAL)
+OUT: sentnulldetected.p (14, 20): inferred type:  BaseType(REAL)
+OUT: sentnulldetected.p (16, 13): inferred type:  NIL
+OUT: sentnulldetected.p (16, 18): inferred type:  BaseType(REAL)
+OUT: sentnulldetected.p (16, 23): inferred type:  BaseType(EVENT)
+OUT: sentnulldetected.p (16, 28): inferred type:  BaseType(BOOL)
+OUT: sentnulldetected.p (17, 4): inferred type:  NIL
+OUT: sentnulldetected.p (17, 10): inferred type:  BaseType(EVENT)
+OUT: sentnulldetected.p (18, 4): inferred type:  NIL
+OUT: sentnulldetected.p (18, 15): inferred type:  BaseType(EVENT)
+OUT: sentnulldetected.p (24, 14): inferred type:  NIL
+OUT: sentnulldetected.p (27, 3): inferred type:  BaseType(BOOL)
+OUT: sentnulldetected.p (27, 3): inferred type:  NIL
+OUT: sentnulldetected.p (27, 10): inferred type:  BaseType(BOOL)
+OUT: sentnulldetected.p (34, 9): inferred type:  NIL
+OUT: sentnulldetected.p (37, 4): inferred type:  NIL
+OUT: sentnulldetected.p (37, 8): inferred type:  BaseType(EVENT)
+OUT: sentnulldetected.p (37, 16): inferred type:  BaseType(BOOL)
+OUT: sentnulldetected.p (37, 19): inferred type:  BaseType(EVENT)
+OUT: sentnulldetected.p (39, 5): inferred type:  NIL
+OUT: sentnulldetected.p (42, 6): inferred type:  NIL
+OUT: sentnulldetected.p (42, 13): inferred type:  BaseType(BOOL)
+OUT: sentnulldetected.p (42, 21): inferred type:  NIL
+OUT: sentnulldetected.p (46, 3): inferred type:  NIL
+OUT: sentnulldetected.p (46, 10): inferred type:  BaseType(BOOL)
+OUT: sentnulldetected.p (46, 18): inferred type:  BaseType(BOOL)
+OUT: sentnulldetected.p (46, 21): inferred type:  BaseType(BOOL)
+OUT: sentnulldetected.p (50, 2): inferred type:  NIL
+OUT: 
+EXIT: 0

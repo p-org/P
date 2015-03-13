@@ -1,0 +1,26 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 3 distinct states explored
+OUT: 
+EXIT: 3
+
+=================================
+NonConstantEventExpr2.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine Real1-0
+<StateLog> Machine Real1-0 entering State Real1_Init
+<CreateLog> Created Machine Real2-0
+<MonitorLog> Enqueued Event < {0}, true > to 0 M monitors in Machine Real1-0
+<RaiseLog> Machine Real1-0 raised Event ____E1
+<FunctionLog> Machine Real1-0 executing Function Action1
+
+Error:
+P Assertion failed:
+Expression: assert(tmpVar_1.bl,)
+Comment: (31, 3): Assert failed

@@ -85,6 +85,12 @@
             private set;
         }
 
+        public Dictionary<string, PProgram> ParsedPrograms // used only by PVisualizer
+        {
+            get;
+            private set;
+        }
+
         public Compiler(CommandLineOptions options)
         {
             Options = options;
@@ -170,6 +176,8 @@
                     parserWorkQueue.Enqueue(fullFileName);
                 }
             }
+
+            ParsedPrograms = parsedPrograms;
 
             //// Step 1. Serialize the parsed object graph into a Formula model and install it. Should not fail.
             InstallResult instResult;

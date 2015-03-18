@@ -278,11 +278,10 @@
 
             AST<Model> zingModel = MkZingOutputModel();
 
-            string directoryName = Path.GetDirectoryName(RootFileName);
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
             string zingFileName = fileName + ".zing";
             string dllFileName = fileName + ".dll";           
-            string outputDirName = Options.outputDir == null ? directoryName : Options.outputDir;
+            string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
 
             new PToZing(this, allModels, (AST<Model>)modelWithTypes).GenerateZing(zingFileName, ref zingModel);
 
@@ -290,7 +289,7 @@
                 return false;
             var binPath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
             var zcProcessInfo = new System.Diagnostics.ProcessStartInfo(Path.Combine(binPath.FullName, "zc.exe"));
-            string zingFileNameFull = Path.Combine(directoryName, zingFileName);
+            string zingFileNameFull = Path.Combine(outputDirName, zingFileName);
             zcProcessInfo.Arguments = string.Format("/nowarn:292 /out:{0}\\{1} {2}", outputDirName, dllFileName, zingFileNameFull);
             zcProcessInfo.UseShellExecute = false;
             zcProcessInfo.CreateNoWindow = true;
@@ -309,7 +308,7 @@
 
         private bool PrintZingFile(AST<Model> m, Env env, string outputDirName)
         {
-            var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, m.Node.Name + "_ZingModel.4ml"));
+            var progName = new ProgramName(Path.Combine(outputDirName, m.Node.Name + "_ZingModel.4ml"));
             var zingProgram = Factory.Instance.MkProgram(progName);
             //// Set the renderer of the Zing program so terms can be converted to text.
             var zingProgramConfig = (AST<Config>)zingProgram.FindAny(new NodePred[]
@@ -895,7 +894,7 @@
             {
                 it.MoveNext();
                 shortFileName = filePrefix + ((Cnst)it.Current).GetStringValue();
-                fileName = Path.Combine(Environment.CurrentDirectory, shortFileName);
+                fileName = Path.Combine(Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir, shortFileName);
                 it.MoveNext();
                 fileBody = (Quote)it.Current;
             }

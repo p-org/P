@@ -18,8 +18,6 @@
         public string outputDir;
         public bool outputFormula;
         public bool erase;
-        public bool emitLineDirectives;
-        public bool emitHeaderComment;
         public bool shortFilenames;
         public bool printTypeInference;
 
@@ -30,8 +28,6 @@
             this.outputDir = null;
             this.outputFormula = false;
             this.erase = true;
-            this.emitLineDirectives = false;
-            this.emitHeaderComment = false;
             this.shortFilenames = false;
             this.printTypeInference = false;
         }
@@ -86,16 +82,6 @@
                                 goto error;
                             options.printTypeInference = true;
                             break;
-                        case "/emitLineDirectives":
-                            if (colonArg != null)
-                                goto error;
-                            options.emitLineDirectives = true; // not implemented yet
-                            break;
-                        case "/emitHeaderComment":
-                            if (colonArg != null)
-                                goto error;
-                            options.emitHeaderComment = true;  // not implemented yet
-                            break;
                         case "/liveness":
                             if (colonArg == null)
                                 options.liveness = LivenessOption.Standard;
@@ -143,8 +129,6 @@
                 Console.WriteLine("USAGE: Pc.exe file.p [options]");
                 Console.WriteLine("/outputDir:path");
                 Console.WriteLine("/doNotErase");
-                Console.WriteLine("/emitLineDirectives");
-                Console.WriteLine("/emitHeaderComment");
                 Console.WriteLine("/liveness[:mace]");
                 Console.WriteLine("/shortFileNames");
                 Console.WriteLine("/printTypeInference");

@@ -2645,7 +2645,7 @@ namespace Microsoft.Pc
                 else
                 {
                     ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, arg));
-                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst("\"<MonitorLog> Enqueued Event < {{0}}, \""), MkZingDot(eventExpr, "name"))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst("\"<MonitorLog> Enqueued Event < {0}, \""), MkZingDot(eventExpr, "name"))));
                     ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "Print"), tmpVar)));
                     string traceString = string.Format("\" > to {{0}} {0} monitors in Machine {1}-{{1}}\\n\"", typeName, ctxt.machineName);
                     ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString),

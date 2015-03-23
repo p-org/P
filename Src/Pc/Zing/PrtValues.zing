@@ -471,7 +471,7 @@ class PRT_VALUE {
 	static void PrtMapInsert(PRT_VALUE map, PRT_VALUE key, PRT_VALUE value) {
 	    bool b;
 		b = map.map.Exists(key);
-		assert(!b, "key must exist in map");
+		assert(!b, "key must not exist in map");
 	    map.map.Set(key, value);
 	}
 

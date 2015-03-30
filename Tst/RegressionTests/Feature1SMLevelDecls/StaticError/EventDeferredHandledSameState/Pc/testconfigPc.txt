@@ -3,5 +3,6 @@ argPc: ..\EventDeferredHandledSameState.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, 1.8.2.2: event both deferred and handled in the same state

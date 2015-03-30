@@ -3,5 +3,6 @@ argPc: ..\lvalues.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: 2.9.2.  Assign: invalid LHS, impure functions in LHS

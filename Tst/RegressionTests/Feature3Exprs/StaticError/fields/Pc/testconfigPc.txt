@@ -3,5 +3,6 @@ argPc: ..\fields.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: 3.3.4.2. bad field name

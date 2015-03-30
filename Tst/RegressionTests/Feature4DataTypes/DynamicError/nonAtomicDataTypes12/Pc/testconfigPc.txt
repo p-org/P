@@ -3,5 +3,6 @@ argPc: ..\StackOverflowException.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, complex data types in assignments: sequences, tuples, maps

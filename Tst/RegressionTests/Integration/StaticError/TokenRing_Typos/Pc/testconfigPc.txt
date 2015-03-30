@@ -3,5 +3,6 @@ argPc: ..\TokenRing_Typos.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: Integration: various syntax checks

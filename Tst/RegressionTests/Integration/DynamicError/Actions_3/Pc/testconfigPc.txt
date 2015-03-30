@@ -3,5 +3,6 @@ argPc: ..\Actions_3.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, Feature Integration: deferred-by-default semantics of push with pop

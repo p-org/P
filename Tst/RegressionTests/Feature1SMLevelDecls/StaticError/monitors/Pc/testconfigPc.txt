@@ -3,5 +3,6 @@ argPc: ..\monitors.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: 1.2.4. Monitors: not allowed constructs

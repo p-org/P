@@ -1,0 +1,61 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine Real(1) is created
+OUT: <StateLog> Machine Real(1) entered state Real_Init
+OUT: <CreateLog> Machine Ghost(2) is created
+OUT: <StateLog> Machine Ghost(2) entered state _Init
+OUT: <RaiseLog> Machine Ghost(2) raised event unit with payload null
+OUT: <ExitLog> Machine Ghost(2) exiting state _Init
+
+OUT: <StateLog> Machine Ghost(2) entered state Ghost_Init
+
+OUT: <RaiseLog> Machine Real(1) raised event unit with payload null
+OUT: <PushLog> Machine Real(1) pushed
+
+OUT: <StateLog> Machine Real(1) entered state Real_S1
+OUT: <EnqueueLog> Enqueued event E1 with payload null on Machine Ghost(2)
+
+OUT: <DequeueLog> Dequeued event E1 with payload null by Machine Ghost(2)
+OUT: <ExitLog> Machine Ghost(2) exiting state Ghost_Init
+OUT: <StateLog> Machine Ghost(2) entered state Ghost_S1
+
+OUT: <EnqueueLog> Enqueued event E2 with payload 100 on Machine Real(1)
+
+OUT: <EnqueueLog> Enqueued event E1 with payload null on Machine Ghost(2)
+
+OUT: <DequeueLog> Dequeued event E1 with payload null by Machine Ghost(2)
+OUT: <ActionLog> Machine Ghost(2) ignored event in state Ghost_S1
+
+OUT: <DequeueLog> Dequeued event E2 with payload 100 by Machine Real(1)
+
+OUT: <ActionLog> Machine Real(1) executed action in state Real_S1
+OUT: <EnqueueLog> Enqueued event E3 with payload null on Machine Ghost(2)
+OUT: <DequeueLog> Dequeued event E3 with payload null by Machine Ghost(2)
+OUT: <ExitLog> Machine Ghost(2) exiting state Ghost_S1
+OUT: <StateLog> Machine Ghost(2) entered state Ghost_S2
+OUT: <EnqueueLog> Enqueued event E4 with payload null on Machine Real(1)
+OUT: <EnqueueLog> Enqueued event E4 with payload null on Machine Real(1)
+OUT: <EnqueueLog> Enqueued event E4 with payload null on Machine Real(1)
+
+OUT: <EnqueueLog> Enqueued event E3 with payload null on Machine Ghost(2)
+
+OUT: <DequeueLog> Dequeued event E3 with payload null by Machine Ghost(2)
+OUT: <ExitLog> Machine Ghost(2) exiting state Ghost_S2
+OUT: <StateLog> Machine Ghost(2) entered state Ghost_Init
+OUT: <DequeueLog> Dequeued event E4 with payload null by Machine Real(1)
+OUT: <ExitLog> Machine Real(1) exiting state Real_S1
+OUT: <PopLog> Machine Real(1) popped with unhandled event E4 and reentered state Real_Init
+OUT: <ExitLog> Machine Real(1) exiting state Real_Init
+OUT: <StateLog> Machine Real(1) entered state Real_S2
+OUT: <RaiseLog> Machine Real(1) raised event unit with payload null
+OUT: <ExitLog> Machine Real(1) exiting state Real_S2
+OUT: <StateLog> Machine Real(1) entered state Real_S3
+OUT: <DequeueLog> Dequeued event E4 with payload null by Machine Real(1)
+OUT: <ExitLog> Machine Real(1) exiting state Real_S3
+OUT: <StateLog> Machine Real(1) entered state Real_S3
+OUT: <DequeueLog> Dequeued event E4 with payload null by Machine Real(1)
+OUT: <ExitLog> Machine Real(1) exiting state Real_S3
+OUT: <StateLog> Machine Real(1) entered state Real_S3
+OUT: 
+EXIT: 0

@@ -3,5 +3,6 @@ argPc: ..\RaisedNullDetected.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, Zinger: "raised null event" exception

@@ -3,5 +3,6 @@ argPc: ..\variableType.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, Integration: various syntax checks

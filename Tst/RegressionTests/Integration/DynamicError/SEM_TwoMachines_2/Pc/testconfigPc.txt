@@ -3,5 +3,6 @@ argPc: ..\EventSentAfterSentHalt_v.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, P semantics test: event sent after machine is halted: validating test

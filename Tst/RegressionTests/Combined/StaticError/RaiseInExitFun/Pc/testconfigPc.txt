@@ -3,5 +3,6 @@ argPc: ..\RaiseInExitFun.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: Control Impurity: error when "raise" in exit function

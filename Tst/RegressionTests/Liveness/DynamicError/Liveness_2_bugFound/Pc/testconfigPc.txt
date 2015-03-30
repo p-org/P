@@ -3,5 +3,6 @@ argPc: ..\Liveness_2_bugFound.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, Liveness: simplest sample demonstrating liveness error found

@@ -3,5 +3,6 @@ argPc: ..\MonitorNullDetected.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, P semantics test: two machines, monitor invocation for non-constant event expressions

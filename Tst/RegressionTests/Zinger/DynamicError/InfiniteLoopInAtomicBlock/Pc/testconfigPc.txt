@@ -3,5 +3,6 @@ argPc: ..\InfiniteLoopInAtomicBlock.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, Zinger test: infinite loop in atomic block

@@ -3,5 +3,6 @@ argPc: ..\functionAnyAnon.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, 1.5: anonymous function cannot return a value

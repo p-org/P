@@ -12,8 +12,8 @@ sub wanted
 
        if ($lines[0] eq "acc")
        {
-          print OUT "argPc: /doNotErase\n";
-          print OUT "acc: .\\\n";
+          print OUT "argPc: /outputDir:..\\.\n";
+          print OUT "acc: .\\.\n";
        }
        else
        {
@@ -24,7 +24,7 @@ sub wanted
     close IN;
     close OUT;
     system("move testconfigPc.out testconfigPc.txt"); 
-   }    
+   } 
 
 }
 

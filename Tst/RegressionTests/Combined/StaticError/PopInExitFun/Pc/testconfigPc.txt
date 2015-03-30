@@ -3,5 +3,6 @@ argPc: ..\PopInExitFun.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: Control Impurity: error when "pop" in exit function

@@ -3,5 +3,6 @@ argPc: ..\anonFunction.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: 1.7. Transition to undefined states

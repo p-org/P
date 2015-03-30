@@ -3,5 +3,6 @@ argPc: ..\SendInExitUnhandledHalt.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, P semantics test: one machine, "halt" event is unhandled

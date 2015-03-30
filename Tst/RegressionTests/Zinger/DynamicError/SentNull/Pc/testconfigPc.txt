@@ -3,5 +3,6 @@ argPc: ..\SentNullDetected.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, Zinger: "sent null event" exception

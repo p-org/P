@@ -3,5 +3,6 @@ argPc: ..\purity.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: 1.4.4. Data impure functions

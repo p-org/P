@@ -3,5 +3,6 @@ argPc: ..\PingPongWithCall.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, Feature Integration

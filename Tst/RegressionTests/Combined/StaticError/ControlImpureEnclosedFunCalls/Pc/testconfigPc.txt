@@ -3,5 +3,6 @@ argPc: ..\EnclosedFunCalls.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, enclosed function calls in "do" and "goto"

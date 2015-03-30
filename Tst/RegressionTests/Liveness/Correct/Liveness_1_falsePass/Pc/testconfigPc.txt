@@ -4,5 +4,6 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /liveness
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, Liveness: sample demonstrating "false" pass in liveness checking

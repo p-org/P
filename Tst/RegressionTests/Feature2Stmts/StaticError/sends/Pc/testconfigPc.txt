@@ -3,5 +3,6 @@ argPc: ..\sends.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: 2.4. Send statement: type checking

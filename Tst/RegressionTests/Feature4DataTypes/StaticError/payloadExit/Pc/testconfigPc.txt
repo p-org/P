@@ -3,5 +3,6 @@ argPc: ..\payloadExit.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: 4.3. Paylod type inference

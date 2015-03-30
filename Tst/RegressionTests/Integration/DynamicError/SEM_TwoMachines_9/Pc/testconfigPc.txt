@@ -3,5 +3,6 @@ argPc: ..\NonConstantEventExpr.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, P semantics test, two machines, "send", "raise", monitor invocation for non-constant event expressions

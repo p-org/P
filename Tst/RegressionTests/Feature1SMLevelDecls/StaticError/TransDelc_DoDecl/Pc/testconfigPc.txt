@@ -3,5 +3,6 @@ argPc: ..\TransDecl_DoDecl.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: 1.7/1.8 Transition/Do declarations

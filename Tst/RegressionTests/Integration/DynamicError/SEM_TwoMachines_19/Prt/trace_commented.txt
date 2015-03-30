@@ -1,0 +1,34 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine Real1(1) is created
+OUT: <StateLog> Machine Real1(1) entered state Real1_Init
+OUT: <CreateLog> Machine Real2(2) is created
+OUT: <StateLog> Machine Real2(2) entered state Real2_Init
+OUT: <ExitLog> Machine Real2(2) exiting state Real2_Init
+OUT: <EnqueueLog> Enqueued event E4 with payload null on Machine Real1(1)
+OUT: <StateLog> Machine Real2(2) entered state Real2_S1
+
+OUT: <RaiseLog> Machine Real1(1) raised event E2 with payload <3>
+OUT: <ActionLog> Machine Real1(1) executed action in state Real1_Init
+OUT: <DequeueLog> Dequeued event E4 with payload null by Machine Real1(1)
+-- where is Action2 execution?
+OUT: <ExitLog> Machine Real1(1) exiting state Real1_Init
+OUT: <EnqueueLog> Enqueued event E2 with payload <3> on Machine Real2(2)
+OUT: <DequeueLog> Dequeued event E2 with payload <3> by Machine Real2(2)
+OUT: <ActionLog> Machine Real2(2) executed action in state Real2_S1
+OUT: <EnqueueLog> Enqueued event E0 with payload 100 on Machine Real2(2)
+OUT: <DequeueLog> Dequeued event E0 with payload 100 by Machine Real2(2)
+OUT: <ActionLog> Machine Real2(2) executed action in state Real2_S1
+OUT: <EnqueueLog> Enqueued event E2 with payload null on Machine Real2(2)
+OUT: <DequeueLog> Dequeued event E2 with payload null by Machine Real2(2)
+OUT: <ActionLog> Machine Real2(2) executed action in state Real2_S1
+OUT: <EnqueueLog> Enqueued event E2 with payload <2> on Machine Real2(2)
+OUT: <DequeueLog> Dequeued event E2 with payload <2> by Machine Real2(2)
+OUT: <ActionLog> Machine Real2(2) executed action in state Real2_S1
+OUT: <EnqueueLog> Enqueued event E3 with payload true on Machine Real2(2)
+OUT: <DequeueLog> Dequeued event E3 with payload true by Machine Real2(2)
+OUT: <ActionLog> Machine Real2(2) executed action in state Real2_S1
+OUT: exiting with PRT_STATUS_EVENT_UNHANDLED
+OUT: 
+EXIT: 1

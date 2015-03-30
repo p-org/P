@@ -4,5 +4,6 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /liveness
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, Liveness: "warm" state instead of "hot"

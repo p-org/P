@@ -3,5 +3,6 @@ argPc: ..\entryExit_1.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: 2.12. ITE statements: nondet choice

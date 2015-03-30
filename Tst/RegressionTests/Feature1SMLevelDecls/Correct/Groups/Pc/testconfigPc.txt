@@ -3,5 +3,6 @@ argPc: ..\Groups.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, 1.6.4. Groups of states

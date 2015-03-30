@@ -3,5 +3,6 @@ argPc: ..\RaisedHalt.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, P semantics test: two machines, machine is halted with "raise halt" (unhandled)

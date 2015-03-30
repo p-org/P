@@ -3,5 +3,6 @@ argPc: ..\entryExit_2.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: 1.6.1. entry/exit actions: functions with arguments

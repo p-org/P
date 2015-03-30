@@ -20,7 +20,7 @@ Trace-Log 0:
 <RaiseLog> Machine EventHandler-0 raised Event ____Unit
 <StateLog> Machine EventHandler-0 exiting State Init
 <StateLog> Machine EventHandler-0 entering State WaitForUser
-<MonitorLog> Enqueued Event < {0}, 0 > to 1 WatchDog monitors in Machine EventHandler-0
+<MonitorLog> Enqueued Event < ____Waiting, 0 > to 1 WatchDog monitors in Machine EventHandler-0
 <StateLog> Machine WatchDog-0 exiting State CanGetUserInput
 <StateLog> Machine WatchDog-0 entering State CanGetUserInput
 <EnqueueLog> Enqueued Event < ____UserEvent, null > in Machine ____EventHandler-0 by ____EventHandler-0

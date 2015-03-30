@@ -3,5 +3,6 @@ argPc: ..\Actions_4.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, Feature Integration: overriding of action handlers by a pushed state

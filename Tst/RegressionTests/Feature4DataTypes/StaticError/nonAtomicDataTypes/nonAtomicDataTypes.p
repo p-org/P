@@ -1,12 +1,19 @@
 //Tests complex data types in assign/remove/insert errors): sequences, tuples, maps
 //Tests static errors
+//Basic types: int, bool, event
+
 event E assert 1; 
+event E1 assert 1;
+event E2 assert 1;
+event E3 assert 1;
+
 main machine M
 {    
     var t : (a: seq [int], b: map[int, seq[int]]);
 	var t1 : (a: seq [int], b: map[int, seq[int]]);
 	var ts: (a: int, b: int);
 	var tt: (int, int);
+	var te: (int, event);       ///////////////////////////////////////////////////////////
     var y : int;
 	var tmp: int;
 	var tmp1: int;
@@ -20,6 +27,9 @@ main machine M
 	var s5: seq[bool];
 	var s6: seq[map[int,any]];
 	var s7: seq[int];
+	var s9: seq[event];        /////////////////////////////////////////////////////////
+	var s10: seq[any];
+	var s11, s12, tmp4: seq[int];
     var i: int;
 	var mac: machine;
 	var m1: map[int,int];
@@ -29,6 +39,9 @@ main machine M
 	var m5, m6: map[int,any];
 	var m2: map[int,map[int,any]];
 	var m7: map[bool,seq[(a: int, b: int)]];
+	var m8: map[int,event];                    //////////////////////////////////////
+	var m9, m10: map[int,any];
+	var m11: map[any,any];
 	
     start state S
     {
@@ -41,8 +54,7 @@ main machine M
 		  ts = (1,2);               //error 
 		  ts += (1,2);              //error
 		  ts -= (1,2);              //error
-		  ts.a = ts.b + 1;
-		  //assert (ts.a == 3);     //holds
+		  ts.a = ts.b + 1;	  
 		  
 		  tt = (1,2);              //OK
 		  tt = (5);                //error
@@ -55,6 +67,12 @@ main machine M
 		  
 		  tt = ts;                //error
 		  ts = tt;                //error
+		  
+		  te = (1,1);             //error
+		  te = (2,E2);            //OK
+		  te = (3,null);          //OK
+		  
+		  te = (null,E2);         //error
 		  
 	      /////////////////////////sequences:
 		  s += (0, 1);
@@ -78,6 +96,16 @@ main machine M
 		  assert(s[0] ==2);        //holds
 		  i = 0;
 		  assert(s[i] == 2);       //holds
+		  s += (1,null);           //error
+		  
+		  s9 += (0,E);
+		  s9 += (1,E1);
+		  s9 += (2,E2);
+		  s9 += (3,null);
+		  assert (sizeof(s9) == 4);   //holds
+		  s9 += (4,15);               //error
+		  s10 += (0,E);                //OK
+		  s11 += (0,E1);              //error
 		  
 		  /////////////////////////sequence as payload:
 		  s2 += (0,1);
@@ -89,6 +117,7 @@ main machine M
 		  assert (0 in m1);      //holds
 		  i = keys(m1)[0];
 		  assert(i == 0);        //holds
+		  assert( values(m1)[0] == 1);  //holds
 		  assert(m1[0] == 1);    //holds
 		  m1[0] = 2;
 		  assert(m1[0] == 2);    //holds
@@ -103,6 +132,7 @@ main machine M
 		  m3[2] = false;
 		  assert (sizeof(m3) == 2);  //holds
 		  assert (true in m3);        //error: “Value can never be in the map" 
+		  assert(values(m3)[0] == 1); //fails
 		  
 		  m3[true] = false;         //error
 		  
@@ -111,6 +141,14 @@ main machine M
 		  m3[2] += true;            //error
 		  
 		  m3[false] = true;         //error
+		  
+		  m8[0] = E;                 //OK
+		  m8[1] = E1;                //OK
+		  m8[2] = null;              //OK
+		  m8[3] = 5;                 //error
+		  
+		  m9[0] = E;                  //OK
+		  m9[1] = null;               //OK
 		  
 		  /////////////////////////sequence of non-atomic types:
 		  s3 += (0,s5);
@@ -127,7 +165,29 @@ main machine M
 		  s3[0] += 1;          //error
 		  tmp += (0,1);        //error
 		  
-		  //tests for s6: seq[map[int,any]];
+		  s1 += (0,null);     //OK
+		  
+		  
+		  ////////////////////////sequence of maps (casting any => seq[int] is involved)
+		  //s6: seq[map[int,any]];
+		  m9[0] = E;                  //OK
+		  m9[1] = null;               //OK
+		  s6 += (0,m9);   
+		  s12 += (0,1);
+		  s12 += (1,2);
+		  m10 += (1, 100);
+		  m10 += (5, true);
+		  m10 += (10, s12);   //seq type used as "any"
+		  s6 += (1,m10);
+		  assert(s6[0][0] == E);    //holds
+		  assert(s6[0][1] == null);  //holds
+		  assert(s6[1][5] == true);  //holds
+		  assert(s6[1][10] == s12);  //holds
+		  tmp4 = s6[1][10];                      //error: "invalid assignment. right hand side is not a subtype of left hand side"
+		  tmp4 = s6[1][10] as seq[int];          //OK
+		  assert(tmp4[0] == 1);                  //holds
+		  assert(s6[1][10][0] == 1);             // error for s6[1][10][0]: "Indexer must be applied to a sequence or map"
+		  assert((s6[1][10] as seq[int])[0] == 1);   //OK
 		  
 		  ////////////////////////tuple with sequence and map:
 		  s += (0,1);
@@ -157,7 +217,6 @@ main machine M
 		  m7[true] = s4;      //error
 		  m7[false] = s8;     //error
 		  
-		  //TODO: uncomment below
           t.a[foo()] = 2;  
 		  
           GetT().a[foo()] = 1;       //error
@@ -168,6 +227,17 @@ main machine M
 		  //assert ( tmp2 == t) ;
 		  tmp2.a[foo()] = 1;
 		  //assert ( tmp2 != t);
+		  
+		  tmp2.b = null;                //error
+		  tmp2 = (a = s, b = null);     //error?
+		  tmp2 = (a = null, b = null);    //error?
+		  tmp2 = (a = s1, b = null);      //error?
+		  tmp3 += (0,null);      //error?
+		  tmp3 += (null,s);      //error		  
+		  m11 += (null,null);   //OK
+		  m11 += (1,null);      //OK?
+		  m11 += (null,1);      //OK?
+		  
 		  tmp1 = IncY();
 		  //assert ( tmp1 == y + 1);
 		  t.a[foo()] = tmp1;
@@ -183,7 +253,6 @@ main machine M
 		  	  else { assert(m2[0][i] != m2[1][i]); }        //holds
 			  i = i + 1;
 		  }
-		  ////////////////////////tuple with sequence and map:
 		  raise halt;
        }    
     }

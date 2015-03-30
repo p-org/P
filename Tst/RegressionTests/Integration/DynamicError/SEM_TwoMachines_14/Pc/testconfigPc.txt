@@ -3,5 +3,6 @@ argPc: ..\NewMonitor_v.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, two machines, monitor invocation with null event

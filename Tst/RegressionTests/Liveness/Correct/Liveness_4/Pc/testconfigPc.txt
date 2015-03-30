@@ -4,5 +4,6 @@ argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /liveness
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: pc.exe, Liveness Bug : Liveness bug detected with the target thread blocked (no deadlock)

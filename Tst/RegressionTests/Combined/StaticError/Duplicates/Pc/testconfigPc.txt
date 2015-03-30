@@ -3,5 +3,6 @@ argPc: ..\Duplicates.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
-acc: .\
+argPc: /outputDir:..\.
+acc: .\.
 dsc: Combined: duplicates: static errors

@@ -63,10 +63,11 @@ main machine Real1 {
 	}
 	state Real1_S1 {
 		entry {
+		    //assert (trigger != null);   //fails
 			sev1 += (0,trigger);
 			sev1 += (1, null);
 			if (sev1[0] == sev1[1]) {
-				assert(false);                  //fails (Zing, not runtime)
+				assert(false);                  //fails 
 			}
 		}
 		ignore E4;

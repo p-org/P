@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 87 distinct states explored
+OUT: 86 distinct states explored
 OUT: 
 EXIT: 3
 
@@ -32,4 +32,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmp_41.bl,)
-Comment: (69, 5): Assert failed
+Comment: (70, 5): Assert failed

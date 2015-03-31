@@ -155,7 +155,9 @@ domain PStructuralTyping extends PData
 	//cannot have null in Monitors
 	[rule_Classes = '"error, msg: null transitions not allowed in monitors"']
 	OneDeclError(t) :- t is TransDecl(s, NULL, _, _), s.owner.kind = MONITOR.
-	
+	[rule_Classes = '"error, msg: push transitions not allowed in monitors"']
+	OneDeclError(t) :- t is TransDecl(s, _, _, PUSH), s.owner.kind = MONITOR.
+
 	//no defer in monitors
 	[rule_Classes = '"error, msg: defer not allowed in monitor"']
 	OneDeclError(d) :- d is DoDecl(s, _, DEFER), s.owner.kind = MONITOR.	

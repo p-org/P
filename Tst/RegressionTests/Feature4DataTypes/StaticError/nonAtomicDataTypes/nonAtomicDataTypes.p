@@ -229,14 +229,14 @@ main machine M
 		  //assert ( tmp2 != t);
 		  
 		  tmp2.b = null;                //error
-		  tmp2 = (a = s, b = null);     //error?
-		  tmp2 = (a = null, b = null);    //error?
-		  tmp2 = (a = s1, b = null);      //error?
-		  tmp3 += (0,null);      //error?
+		  tmp2 = (a = s, b = null);     //error
+		  tmp2 = (a = null, b = null);    //error
+		  tmp2 = (a = s1, b = null);      //error
+		  tmp3 += (0,null);      //error
 		  tmp3 += (null,s);      //error		  
 		  m11 += (null,null);   //OK
-		  m11 += (1,null);      //OK?
-		  m11 += (null,1);      //OK?
+		  m11 += (1,null);      //OK
+		  m11 += (null,1);      //OK
 		  
 		  tmp1 = IncY();
 		  //assert ( tmp1 == y + 1);

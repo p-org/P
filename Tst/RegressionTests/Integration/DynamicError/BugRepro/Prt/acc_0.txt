@@ -1,0 +1,109 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine Driver(1) is created
+OUT: <StateLog> Machine Driver(1) entered state Init
+OUT: <CreateLog> Machine Node(2) is created
+OUT: <StateLog> Machine Node(2) entered state WaitPing
+OUT: <CreateLog> Machine Node(3) is created
+OUT: <StateLog> Machine Node(3) entered state WaitPing
+OUT: <CreateLog> Machine FailureDetector(4) is created
+OUT: <StateLog> Machine FailureDetector(4) entered state Init
+OUT: <CreateLog> Machine Timer(5) is created
+OUT: <StateLog> Machine Timer(5) entered state Init
+OUT: <RaiseLog> Machine Timer(5) raised event UNIT with payload null
+OUT: <ExitLog> Machine Timer(5) exiting state Init
+OUT: <StateLog> Machine Timer(5) entered state WaitForReq
+OUT: <RaiseLog> Machine FailureDetector(4) raised event UNIT with payload null
+OUT: <PushLog> Machine FailureDetector(4) pushed
+OUT: <StateLog> Machine FailureDetector(4) entered state SendPing
+OUT: <EnqueueLog> Enqueued event PING with payload < (1, 0, 0, 0), 4> on Machine Node(2)
+OUT: <DequeueLog> Dequeued event PING with payload < (1, 0, 0, 0), 4> by Machine Node(2)
+OUT: <ActionLog> Machine Node(2) executed action in state WaitPing
+OUT: <EnqueueLog> Enqueued event PONG with payload < (1, 0, 0, 0), 2> on Machine FailureDetector(4)
+OUT: <EnqueueLog> Enqueued event PING with payload < (1, 0, 0, 0), 4> on Machine Node(3)
+OUT: <DequeueLog> Dequeued event PING with payload < (1, 0, 0, 0), 4> by Machine Node(3)
+OUT: <ActionLog> Machine Node(3) executed action in state WaitPing
+OUT: <EnqueueLog> Enqueued event PONG with payload < (1, 0, 0, 0), 3> on Machine FailureDetector(4)
+OUT: <EnqueueLog> Enqueued event START with payload 100 on Machine Timer(5)
+OUT: <DequeueLog> Dequeued event START with payload 100 by Machine Timer(5)
+OUT: <ExitLog> Machine Timer(5) exiting state WaitForReq
+OUT: <StateLog> Machine Timer(5) entered state WaitForCancel
+OUT: <ExitLog> Machine Timer(5) exiting state WaitForCancel
+OUT: <EnqueueLog> Enqueued event TIMEOUT with payload < (1, 0, 0, 0), 5> on Machine FailureDetector(4)
+OUT: <StateLog> Machine Timer(5) entered state WaitForReq
+OUT: <DequeueLog> Dequeued event PONG with payload < (1, 0, 0, 0), 2> by Machine FailureDetector(4)
+OUT: <ActionLog> Machine FailureDetector(4) executed action in state SendPing
+OUT: <DequeueLog> Dequeued event PONG with payload < (1, 0, 0, 0), 3> by Machine FailureDetector(4)
+OUT: <ActionLog> Machine FailureDetector(4) executed action in state SendPing
+OUT: <EnqueueLog> Enqueued event CANCEL with payload null on Machine Timer(5)
+OUT: <DequeueLog> Dequeued event CANCEL with payload null by Machine Timer(5)
+OUT: <ExitLog> Machine Timer(5) exiting state WaitForReq
+OUT: <EnqueueLog> Enqueued event CANCEL_FAILURE with payload < (1, 0, 0, 0), 5> on Machine FailureDetector(4)
+OUT: <StateLog> Machine Timer(5) entered state WaitForReq
+OUT: <RaiseLog> Machine FailureDetector(4) raised event TIMER_CANCELED with payload null
+OUT: <PushLog> Machine FailureDetector(4) pushed
+OUT: <StateLog> Machine FailureDetector(4) entered state WaitForCancelResponse
+OUT: <DequeueLog> Dequeued event CANCEL_FAILURE with payload < (1, 0, 0, 0), 5> by Machine FailureDetector(4)
+OUT: <ActionLog> Machine FailureDetector(4) executed action in state WaitForCancelResponse
+OUT: <ExitLog> Machine FailureDetector(4) exiting state WaitForCancelResponse
+OUT: <PopLog> Machine FailureDetector(4) popped and reentered state SendPing
+OUT: <EnqueueLog> Enqueued event REGISTER_CLIENT with payload < (1, 0, 0, 0), 1> on Machine FailureDetector(4)
+OUT: <DequeueLog> Dequeued event REGISTER_CLIENT with payload < (1, 0, 0, 0), 1> by Machine FailureDetector(4)
+OUT: <ActionLog> Machine FailureDetector(4) executed action in state SendPing
+OUT: <DequeueLog> Dequeued event TIMEOUT with payload < (1, 0, 0, 0), 5> by Machine FailureDetector(4)
+OUT: <ActionLog> Machine FailureDetector(4) executed action in state SendPing
+OUT: <RaiseLog> Machine FailureDetector(4) raised event ROUND_DONE with payload null
+OUT: <ExitLog> Machine FailureDetector(4) exiting state SendPing
+OUT: <StateLog> Machine FailureDetector(4) entered state Reset
+OUT: <EnqueueLog> Enqueued event START with payload 1000 on Machine Timer(5)
+OUT: <DequeueLog> Dequeued event START with payload 1000 by Machine Timer(5)
+OUT: <ExitLog> Machine Timer(5) exiting state WaitForReq
+OUT: <StateLog> Machine Timer(5) entered state WaitForCancel
+OUT: <ExitLog> Machine Timer(5) exiting state WaitForCancel
+OUT: <EnqueueLog> Enqueued event TIMEOUT with payload < (1, 0, 0, 0), 5> on Machine FailureDetector(4)
+OUT: <StateLog> Machine Timer(5) entered state WaitForReq
+OUT: <DequeueLog> Dequeued event TIMEOUT with payload < (1, 0, 0, 0), 5> by Machine FailureDetector(4)
+OUT: <ExitLog> Machine FailureDetector(4) exiting state Reset
+OUT: <StateLog> Machine FailureDetector(4) entered state SendPing
+OUT: <EnqueueLog> Enqueued event PING with payload < (1, 0, 0, 0), 4> on Machine Node(2)
+OUT: <DequeueLog> Dequeued event PING with payload < (1, 0, 0, 0), 4> by Machine Node(2)
+OUT: <ActionLog> Machine Node(2) executed action in state WaitPing
+OUT: <EnqueueLog> Enqueued event PONG with payload < (1, 0, 0, 0), 2> on Machine FailureDetector(4)
+OUT: <EnqueueLog> Enqueued event PING with payload < (1, 0, 0, 0), 4> on Machine Node(3)
+OUT: <DequeueLog> Dequeued event PING with payload < (1, 0, 0, 0), 4> by Machine Node(3)
+OUT: <ActionLog> Machine Node(3) executed action in state WaitPing
+OUT: <EnqueueLog> Enqueued event PONG with payload < (1, 0, 0, 0), 3> on Machine FailureDetector(4)
+OUT: <EnqueueLog> Enqueued event START with payload 100 on Machine Timer(5)
+OUT: <DequeueLog> Dequeued event START with payload 100 by Machine Timer(5)
+OUT: <ExitLog> Machine Timer(5) exiting state WaitForReq
+OUT: <StateLog> Machine Timer(5) entered state WaitForCancel
+OUT: <ExitLog> Machine Timer(5) exiting state WaitForCancel
+OUT: <EnqueueLog> Enqueued event TIMEOUT with payload < (1, 0, 0, 0), 5> on Machine FailureDetector(4)
+OUT: <StateLog> Machine Timer(5) entered state WaitForReq
+OUT: <DequeueLog> Dequeued event PONG with payload < (1, 0, 0, 0), 2> by Machine FailureDetector(4)
+OUT: <ActionLog> Machine FailureDetector(4) executed action in state SendPing
+OUT: <DequeueLog> Dequeued event PONG with payload < (1, 0, 0, 0), 3> by Machine FailureDetector(4)
+OUT: <ActionLog> Machine FailureDetector(4) executed action in state SendPing
+OUT: <EnqueueLog> Enqueued event CANCEL with payload null on Machine Timer(5)
+OUT: <DequeueLog> Dequeued event CANCEL with payload null by Machine Timer(5)
+OUT: <ExitLog> Machine Timer(5) exiting state WaitForReq
+OUT: <EnqueueLog> Enqueued event CANCEL_FAILURE with payload < (1, 0, 0, 0), 5> on Machine FailureDetector(4)
+OUT: <StateLog> Machine Timer(5) entered state WaitForReq
+OUT: <RaiseLog> Machine FailureDetector(4) raised event TIMER_CANCELED with payload null
+OUT: <PushLog> Machine FailureDetector(4) pushed
+OUT: <StateLog> Machine FailureDetector(4) entered state WaitForCancelResponse
+OUT: <DequeueLog> Dequeued event CANCEL_FAILURE with payload < (1, 0, 0, 0), 5> by Machine FailureDetector(4)
+OUT: <ActionLog> Machine FailureDetector(4) executed action in state WaitForCancelResponse
+OUT: <ExitLog> Machine FailureDetector(4) exiting state WaitForCancelResponse
+OUT: <PopLog> Machine FailureDetector(4) popped and reentered state SendPing
+OUT: <EnqueueLog> Enqueued event halt with payload null on Machine Node(2)
+OUT: <DequeueLog> Dequeued event halt with payload null by Machine Node(2)
+OUT: <ExitLog> Machine Node(2) exiting state WaitPing
+OUT: <HaltLog> Machine Node(2) halted in state WaitPing
+OUT: <EnqueueLog> Enqueued event halt with payload null on Machine Node(3)
+OUT: <DequeueLog> Dequeued event halt with payload null by Machine Node(3)
+OUT: <ExitLog> Machine Node(3) exiting state WaitPing
+OUT: <HaltLog> Machine Node(3) halted in state WaitPing
+OUT: 
+EXIT: 0

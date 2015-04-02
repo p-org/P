@@ -1,0 +1,29 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing PingPong.zing ...
+OUT: Compiling PingPong.zing to PingPong.dll ...
+OUT: pingpong.p (10, 8): inferred type:  BaseType(REAL)
+OUT: pingpong.p (10, 8): inferred type:  NIL
+OUT: pingpong.p (10, 17): inferred type:  BaseType(REAL)
+OUT: pingpong.p (11, 6): inferred type:  NIL
+OUT: pingpong.p (11, 12): inferred type:  BaseType(EVENT)
+OUT: pingpong.p (18, 6): inferred type:  NIL
+OUT: pingpong.p (18, 11): inferred type:  BaseType(REAL)
+OUT: pingpong.p (18, 19): inferred type:  BaseType(EVENT)
+OUT: pingpong.p (18, 25): inferred type:  BaseType(REAL)
+OUT: pingpong.p (19, 6): inferred type:  NIL
+OUT: pingpong.p (19, 12): inferred type:  BaseType(EVENT)
+OUT: pingpong.p (28, 5): inferred type:  NIL
+OUT: pingpong.p (39, 7): inferred type:  NIL
+OUT: pingpong.p (39, 12): inferred type:  BaseType(REAL)
+OUT: pingpong.p (39, 20): inferred type:  BaseType(REAL)
+OUT: pingpong.p (39, 32): inferred type:  BaseType(EVENT)
+OUT: pingpong.p (40, 7): inferred type:  NIL
+OUT: pingpong.p (40, 13): inferred type:  BaseType(EVENT)
+OUT: pingpong.p (42, 9): inferred type:  NIL
+OUT: 
+EXIT: 0

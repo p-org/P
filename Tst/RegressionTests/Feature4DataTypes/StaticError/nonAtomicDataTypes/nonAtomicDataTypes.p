@@ -15,6 +15,9 @@ main machine M
 	var tt: (int, int);
 	var te: (int, event);       ///////////////////////////////////////////////////////////
     var y : int;
+	var b: bool;
+	var e: event;
+	var a: any;
 	var tmp: int;
 	var tmp1: int;
 	var tmp2: (a: seq [any], b: map[int, seq[any]]);
@@ -47,6 +50,40 @@ main machine M
     {
        entry
        {
+	      /////////////////////////default expression:
+		  y = 2;
+		  assert(y == 2);
+		  y = default(int);    
+          assert(y == 0);	
+		  
+		  b = true;
+		  assert(b == true);
+		  y = default(bool);    //error
+          b = default(bool);	  
+          assert(b == false);
+
+		  e = E;
+		  assert(e == E);
+		  b = default(event);    //error
+          e = default(event);	  
+          assert(e == null);
+		  
+		  mac = this;
+		  e = default(machine);    //error
+          mac = default(machine);	  
+          assert(mac == null);
+		  
+		  a = true;
+		  a = default(any);
+		  assert (a == null);
+		  
+		  m5 += (1,true);
+		  assert (m5[1] == true);
+		  m5 = default(map[int,any]);
+		  assert (m5[1] == null);
+		  m5 += (1,E);
+		  assert (m5[1] == E);
+		    
 		  /////////////////////////tuples:
 		  //ts = (a = 1, b = 2);
 		  //ts = (a = 1);           //parsing error
@@ -54,7 +91,11 @@ main machine M
 		  ts = (1,2);               //error 
 		  ts += (1,2);              //error
 		  ts -= (1,2);              //error
-		  ts.a = ts.b + 1;	  
+		  ts.b = 1;
+		  ts.a = ts.b + 1;	 
+		  assert(ts.a == 2 && ts.b == 1);
+		  ts = default((a: int, b: int));
+		  assert(ts.a == 0 && ts.b == 0);
 		  
 		  tt = (1,2);              //OK
 		  tt = (5);                //error
@@ -67,6 +108,10 @@ main machine M
 		  
 		  tt = ts;                //error
 		  ts = tt;                //error
+		  
+		  assert(tt.0 == 1 && tt.1 == 2);
+		  tt = default((int, int));
+		  assert(tt.0 == 0 && tt.1 == 0);
 		  
 		  te = (1,1);             //error
 		  te = (2,E2);            //OK
@@ -167,6 +212,14 @@ main machine M
 		  
 		  s1 += (0,null);     //OK
 		  
+		  s1 += (0,true);
+		  s3 += (0,s5);
+		  s3 += (1,s1);
+		  assert (s3[0] == s5);                   //holds
+		  assert (s3[1][0] == true);              //holds?
+		  s3 = default(seq[seq[any]]);
+		  assert(s3[1][0] == null);
+		  assert(s3[0][0] == null);
 		  
 		  ////////////////////////sequence of maps (casting any => seq[int] is involved)
 		  //s6: seq[map[int,any]];

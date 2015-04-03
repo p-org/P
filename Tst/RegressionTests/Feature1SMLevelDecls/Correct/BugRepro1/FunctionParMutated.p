@@ -30,7 +30,7 @@ main machine PING {
 			return i;
 		};
 		if (j == 2) {
-			assert(i == 3);   //fails
+			assert(i == 3);  
 			i = i + 1;
 			assert (i == 4);
 			send this, Ping, i;

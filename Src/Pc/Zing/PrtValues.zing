@@ -122,7 +122,9 @@ class PRT_VALUE {
 		value.seq = null;
 		value.map = null;
 
-		if (type.typeKind == PRT_TYPE_KIND.PRT_KIND_TUPLE || type.typeKind == PRT_TYPE_KIND.PRT_KIND_NMDTUP) {
+		if (type.typeKind == PRT_TYPE_KIND.PRT_KIND_ANY) {
+		  value.type =  PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL); 
+		} else if (type.typeKind == PRT_TYPE_KIND.PRT_KIND_TUPLE || type.typeKind == PRT_TYPE_KIND.PRT_KIND_NMDTUP) {
 			value.tuple = new PRT_VALUE_ARRAY[type.arity];
 			i = 0;
 			while (i < type.arity) {

@@ -15,6 +15,9 @@ main machine M
 	var tt: (int, int);
 	var te: (int, event);       ///////////////////////////////////////////////////////////
     var y : int;
+	var b: bool;
+	var e: event;
+	var a: any;
 	var tmp: int;
 	var tmp1: int;
 	var tmp2: (a: seq [any], b: map[int, seq[any]]);
@@ -45,6 +48,37 @@ main machine M
     {
        entry
        {
+	      /////////////////////////default expression:
+		  y = 2;
+		  assert(y == 2);      //holds
+		  y = default(int);    
+          assert(y == 0);	   //holds
+		  
+		  b = true;
+		  assert(b == true);   //holds
+          b = default(bool);	  
+          assert(b == false);  //holds
+		  
+		  e = E;
+		  assert(e == E);       //holds
+          e = default(event);	  
+          assert(e == null);    //holds
+		  
+		  mac = this;
+          mac = default(machine);	  
+          assert(mac == null);    //holds
+		  
+		  a = true;
+		  a = default(any);
+		  //assert (a == null);   //error: "Value must have a concrete type"
+		  
+		  m5 += (1,true);
+		  assert (m5[1] == true);  //holds
+		  m5 = default(map[int,any]);
+		  //assert (m5[1] == null);  //error: "key not found"
+		  m5 += (1,E);
+		  assert (m5[1] == E);     //holds
+		  
 	      ////////////////////////machine type:
 		  mac = null;                //OK
 		  assert (mac == null);      //holds
@@ -52,12 +86,15 @@ main machine M
 		  /////////////////////////tuples:
 		  ts.a = ts.b + 1;
 		  assert (ts.a == 1 && ts.b == 0);    //holds
-		  ts = (a = 0, b = 1);                 //OK
-		  assert (ts.a == 0 && ts.b == 1);    //holds
+		  ts = (a = 1, b = 2);                 //OK
+		  assert (ts.a == 1 && ts.b == 2);    //holds
+		  ts = default((a: int, b: int));
+		  assert(ts.a == 0 && ts.b == 0);     //holds
 		  
 		  tt = (1,2);              //OK
-		  
-		  i = 1;
+		  assert(tt.0 == 1 && tt.1 == 2);   //holds
+		  tt = default((int, int));
+		  assert(tt.0 == 0 && tt.1 == 0);   //holds
 		  
 		  te = (2,E2);            //OK
 		  te = (3,null);          //OK
@@ -140,6 +177,23 @@ main machine M
 		  s3 -= 0;
 		  assert (sizeof(s3) == 0);   //holds
 		  assert (sizeof(s5) == 2);
+		  
+		  s1 += (0,true);
+		  s3 += (0,s5);
+		  s3 += (1,s1);
+		  assert (s3[0] == s5);                   //holds
+		  assert (s3[1][0] == true);              //holds
+		  s3 = default(seq[seq[any]]);
+		  //assert (s3[0] == default(seq[any]);       //parse error
+		  assert (s3 == default(seq[seq[any]]));  //holds
+		  //assert(s3[1][0] == null);             //index out-of-bounds
+		  //assert(s3[0][0] == null);              //index out-of-bounds
+		  
+		  s1 = default(seq[any]);
+		  s3 += (0,s1);
+		  assert (s3[0] == default(seq[any]));     //holds
+		  //assert (s3[0][0] == null);              //index out-of-bounds
+		  assert (s3[0] == s1);                  //holds
 		  
 		  ////////////////////////sequence of maps (casting any => seq[int] is involved)
 		  //s6: seq[map[int,any]];

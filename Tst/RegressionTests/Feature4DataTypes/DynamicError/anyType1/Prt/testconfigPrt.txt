@@ -1,0 +1,3 @@
+runPrt: ..\..\..\..\..\..\Tst\PrtTester\Debug\Tester.exe
+acc: .\
+dsc: runtime, 4. "any" type in EQ and NE

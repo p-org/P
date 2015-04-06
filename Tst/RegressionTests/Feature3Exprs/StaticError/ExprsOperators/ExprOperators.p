@@ -21,6 +21,7 @@ main machine M
 	var tmp: int;
 	var tmp1: int;
 	var ev: event;
+	var a: any;
 	var tmp2: (a: seq [any], b: map[int, seq[any]]);
 	var tmp3: map[int, seq[int]];
 	var s: seq[int];
@@ -76,9 +77,52 @@ main machine M
 		  assert(tt.0 * 5 / 2 == 2);  //holds: 5/2=2
 		  assert(tt.0 != tt.1);       //holds
 		  
+		  tt.0 = tt.1 + tbool.1;    //error
+		  tt.1 = tbool.0 - tt.1;    //error
+		  tt.1 = tt.1 * tbool.0;    //error
+		  tt.1 = tt.1 / tbool.0;    //error
+		  
+		  assert (tt.0 < tbool.1);  //error
+		  assert (tt.0 <= tbool.1);  //error
+		  assert (tt.0 > tbool.1);  //error
+		  assert (tt.0 >= tbool.1);  //error
+		  
+		  assert(tt.0 && tbool.1);   //error
+		  assert(tt.0 || tbool.1);   //error
+		  assert(tbool.1 && ev);     //error
+		  
 		  assert(tt.0 / tbool.0);    //error: "Operator expected second argument to be an integer value"
 		  tt.1 = - tbool.0;         //error: "Operator expected an integer value"
 		  assert(tt.0 == ev);       //error
+		  
+		  tbool.0 = !tt.1;       //error
+		  tbool.1 = !ev;         //error
+		  tt.1 = -tbool.0;       //error
+		  tt.0 = -ev;            //error
+		  
+		  assert (tt.0 == ev);   //error
+		  assert (ev == a);       //OK
+		
+		  assert(tt.1 == -a);     //error
+		  assert(a * (-1) == -1);  //error
+		  assert(a + 1 != a);      //error
+		  
+		  assert(a > tt.1);       //error
+		  assert(a <= tt.0);      //error
+		  
+		  a = 1;
+
+		  assert (ev == a);       //OK?????????
+		
+		  assert(tt.1 == -a);     //error
+		  assert(a * (-1) == -1);  //error
+		  assert(a + 1 != a);      //error
+		  
+		  assert(a > tt.1);       //error
+		  assert(a <= tt.0);      //error
+		  
+		  a = false;
+		  assert(a && tbool.1 == false);  //error
 		  
 	      /////////////////////////sequences:
 		  

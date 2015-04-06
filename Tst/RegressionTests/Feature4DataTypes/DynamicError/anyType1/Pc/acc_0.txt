@@ -1,0 +1,42 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing anyType1.zing ...
+OUT: Compiling anyType1.zing to anyType1.dll ...
+OUT: anytype1.p (15, 4): inferred type:  BaseType(ANY)
+OUT: anytype1.p (15, 4): inferred type:  NIL
+OUT: anytype1.p (15, 11): inferred type:  BaseType(INT)
+OUT: anytype1.p (17, 4): inferred type:  BaseType(INT)
+OUT: anytype1.p (17, 4): inferred type:  NIL
+OUT: anytype1.p (17, 11): inferred type:  BaseType(INT)
+OUT: anytype1.p (18, 4): inferred type:  NIL
+OUT: anytype1.p (18, 11): inferred type:  BaseType(ANY)
+OUT: anytype1.p (18, 16): inferred type:  BaseType(BOOL)
+OUT: anytype1.p (18, 19): inferred type:  BaseType(INT)
+OUT: anytype1.p (20, 4): inferred type:  BaseType(EVENT)
+OUT: anytype1.p (20, 4): inferred type:  NIL
+OUT: anytype1.p (20, 13): inferred type:  BaseType(EVENT)
+OUT: anytype1.p (21, 4): inferred type:  BaseType(ANY)
+OUT: anytype1.p (21, 4): inferred type:  NIL
+OUT: anytype1.p (21, 11): inferred type:  BaseType(EVENT)
+OUT: anytype1.p (22, 4): inferred type:  NIL
+OUT: anytype1.p (22, 11): inferred type:  BaseType(ANY)
+OUT: anytype1.p (22, 16): inferred type:  BaseType(BOOL)
+OUT: anytype1.p (22, 19): inferred type:  BaseType(EVENT)
+OUT: anytype1.p (24, 4): inferred type:  BaseType(ANY)
+OUT: anytype1.p (24, 4): inferred type:  NIL
+OUT: anytype1.p (24, 11): inferred type:  BaseType(BOOL)
+OUT: anytype1.p (25, 4): inferred type:  BaseType(INT)
+OUT: anytype1.p (25, 4): inferred type:  NIL
+OUT: anytype1.p (25, 11): inferred type:  BaseType(INT)
+OUT: anytype1.p (30, 4): inferred type:  BaseType(ANY)
+OUT: anytype1.p (30, 4): inferred type:  NIL
+OUT: anytype1.p (30, 11): inferred type:  BaseType(NULL)
+OUT: anytype1.p (32, 4): inferred type:  BaseType(EVENT)
+OUT: anytype1.p (32, 4): inferred type:  NIL
+OUT: anytype1.p (32, 13): inferred type:  BaseType(EVENT)
+OUT: 
+EXIT: 0

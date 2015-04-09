@@ -1,0 +1,72 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine M(1) is created
+OUT: <StateLog> Machine M(1) entered state S
+OUT: <CreateLog> Machine Test(2) is created
+OUT: <StateLog> Machine Test(2) entered state init
+OUT: <EnqueueLog> Enqueued event EI1 with payload 1 on Machine Test(2)
+OUT: <DequeueLog> Dequeued event EI1 with payload 1 by Machine Test(2)
+OUT: <PushLog> Machine Test(2) pushed
+OUT: <StateLog> Machine Test(2) entered state testEI1
+OUT: <ExitLog> Machine Test(2) exiting state testEI1
+OUT: <PopLog> Machine Test(2) popped and reentered state init
+OUT: <EnqueueLog> Enqueued event EI6 with payload 1 on Machine Test(2)
+OUT: <DequeueLog> Dequeued event EI6 with payload 1 by Machine Test(2)
+OUT: <PushLog> Machine Test(2) pushed
+OUT: <StateLog> Machine Test(2) entered state testEI6
+OUT: <ExitLog> Machine Test(2) exiting state testEI6
+OUT: <PopLog> Machine Test(2) popped and reentered state init
+OUT: <EnqueueLog> Enqueued event ET1 with payload (a = 1, b = true) on Machine Test(2)
+OUT: <DequeueLog> Dequeued event ET1 with payload (a = 1, b = true) by Machine Test(2)
+OUT: <PushLog> Machine Test(2) pushed
+OUT: <StateLog> Machine Test(2) entered state testET1
+OUT: <ExitLog> Machine Test(2) exiting state testET1
+OUT: <PopLog> Machine Test(2) popped and reentered state init
+OUT: <EnqueueLog> Enqueued event ET2 with payload (a = 2, b = false) on Machine Test(2)
+OUT: <DequeueLog> Dequeued event ET2 with payload (a = 2, b = false) by Machine Test(2)
+OUT: <PushLog> Machine Test(2) pushed
+OUT: <StateLog> Machine Test(2) entered state testET2
+OUT: <ExitLog> Machine Test(2) exiting state testET2
+OUT: <PopLog> Machine Test(2) popped and reentered state init
+OUT: <EnqueueLog> Enqueued event ESEQ1 with payload [1, 2] on Machine Test(2)
+OUT: <DequeueLog> Dequeued event ESEQ1 with payload [1, 2] by Machine Test(2)
+OUT: <PushLog> Machine Test(2) pushed
+OUT: <StateLog> Machine Test(2) entered state testESEQ1
+OUT: <ExitLog> Machine Test(2) exiting state testESEQ1
+OUT: <PopLog> Machine Test(2) popped and reentered state init
+OUT: <EnqueueLog> Enqueued event ESEQ2 with payload [1, 2] on Machine Test(2)
+OUT: <DequeueLog> Dequeued event ESEQ2 with payload [1, 2] by Machine Test(2)
+OUT: <PushLog> Machine Test(2) pushed
+OUT: <StateLog> Machine Test(2) entered state testESEQ2
+OUT: <ExitLog> Machine Test(2) exiting state testESEQ2
+OUT: <PopLog> Machine Test(2) popped and reentered state init
+OUT: <EnqueueLog> Enqueued event EMAP1 with payload {} (0 / 3) on Machine Test(2)
+OUT: <DequeueLog> Dequeued event EMAP1 with payload {} (0 / 3) by Machine Test(2)
+OUT: <PushLog> Machine Test(2) pushed
+OUT: <StateLog> Machine Test(2) entered state testEMAP1
+OUT: <ExitLog> Machine Test(2) exiting state testEMAP1
+OUT: <PopLog> Machine Test(2) popped and reentered state init
+OUT: <EnqueueLog> Enqueued event EMAP11 with payload {0 --> 1, 3 --> 3*} (2 / 3) on Machine Test(2)
+OUT: <DequeueLog> Dequeued event EMAP11 with payload {0 --> 1, 3 --> 3*} (2 / 3) by Machine Test(2)
+OUT: <PushLog> Machine Test(2) pushed
+OUT: <StateLog> Machine Test(2) entered state testEMAP11
+OUT: <ExitLog> Machine Test(2) exiting state testEMAP11
+OUT: <PopLog> Machine Test(2) popped and reentered state init
+OUT: <EnqueueLog> Enqueued event EMAP2 with payload {} (0 / 3) on Machine Test(2)
+OUT: <DequeueLog> Dequeued event EMAP2 with payload {} (0 / 3) by Machine Test(2)
+OUT: <PushLog> Machine Test(2) pushed
+OUT: <StateLog> Machine Test(2) entered state testEMAP2
+OUT: <ExitLog> Machine Test(2) exiting state testEMAP2
+OUT: <PopLog> Machine Test(2) popped and reentered state init
+OUT: <EnqueueLog> Enqueued event EMAP3 with payload {0 --> 1, 3 --> 3*} (2 / 3) on Machine Test(2)
+OUT: <DequeueLog> Dequeued event EMAP3 with payload {0 --> 1, 3 --> 3*} (2 / 3) by Machine Test(2)
+OUT: <PushLog> Machine Test(2) pushed
+OUT: <StateLog> Machine Test(2) entered state testEMAP3
+OUT: <ExitLog> Machine Test(2) exiting state testEMAP3
+OUT: <PopLog> Machine Test(2) popped and reentered state init
+OUT: <RaiseLog> Machine M(1) raised event halt with payload null
+OUT: <ExitLog> Machine M(1) exiting state S
+OUT: <HaltLog> Machine M(1) halted in state S
+OUT: 
+EXIT: 0

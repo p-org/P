@@ -45,6 +45,7 @@ machine M
        {
           return 1;
        }
+	   y = 1 + new M();
    }
    
    fun foo6() : int

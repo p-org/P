@@ -1,5 +1,6 @@
-//Tests "Value must have a concrete type" error
-//Basic types: int, bool, event
+//Tests complex data types in assign/remove/insert errors): sequences, tuples, maps
+//Tests that comparison of "any" type var with "null" is allowed
+//This test found a bug in Zinger
 
 event E assert 1; 
 event E1 assert 1;
@@ -40,8 +41,8 @@ main machine M
 		  
 		  a = true;
 		  a = default(any);
-		  //assert (a == null);   //Zing error: "Value must have a concrete type"
-		  if (a == null) { a = 1;};  //Zing error: "Value must have a concrete type"; runtime: no error
+		  assert (a == null);   //(before fix) Zing error: "Value must have a concrete type"
+		  if (a == null) { a = 1;};  //(before fix) Zing error: "Value must have a concrete type"
 		  
 		  raise halt;
        }    

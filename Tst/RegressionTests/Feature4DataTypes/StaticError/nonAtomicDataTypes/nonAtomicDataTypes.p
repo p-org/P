@@ -11,6 +11,7 @@ main machine M
 {    
     var t : (a: seq [int], b: map[int, seq[int]]);
 	var t1 : (a: seq [int], b: map[int, seq[int]]);
+	var t2: (a: seq [int], a: map[int, seq[int]]);
 	var ts: (a: int, b: int);
 	var tt: (int, int);
 	var te: (int, event);       ///////////////////////////////////////////////////////////

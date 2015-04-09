@@ -1,5 +1,5 @@
-//Tests cast operator in expressions
-//Tests static errors
+//Tests cast operator in expressions 
+//Tests dynamic error
 //Basic types: int, bool, event
 
 event E assert 1: int;
@@ -9,8 +9,8 @@ event EI3: int;
 event EI4: int;
 event EI5: int;
 event EI6: int;
-event E1: seq[int];
-event E2: map[int,int];
+event E1 assert 1;
+event E2 assert 1;
 event ET1: (a: int, b: bool);
 event ET2: (a: int, b: bool);
 event ESEQ1: seq[int];
@@ -65,55 +65,27 @@ main machine M
     {
        entry
        {
-		  //////////////////////////cast for base types:
-		  //////////////////////////int vs bool:
-		  y = b as int;         //error: "Cast can never succeed"		  
-		  b = true;      
-		  y = b as int;         //error
-		  
-		  b = y as bool;         //error
-		  y = 1;
-		  b = y as bool;         //error
-		  //////////////////////////int vs event:
-		  y = E as int;         //error
-		  y = ev as int;        //error; ev is null
-		  
-		  ev = E;
-		  y = ev as int;        //error; ev is E
-		  
-		  y = default(int);
-		  ev = y as event;      //error
-		  
-		  y = 3;
-		  ev = y as event;      //error
-		  
-		  //////////////////////////bool vs event:
-		  b = E as bool;         //error
-		  b = ev as bool;        //error; ev is null
-		  
-		  ev = E;
-		  b = ev as bool;        //error; ev is E
-		  
-		  b = default(bool);
-		  ev = b as event;      //error
-		  
-		  b= true;
-		  ev = b as event;      //error
-		  
 		  ////////////////////////// int vs any:
+		  a = default(any);
+		  y = a as int;             //dynamic error: "value must be a member of type"
+		  
 		  a = 1;
 		  y = a as int;             //OK
-		  assert (y == a);           //holds
+		  assert (y == a);           //holds	  
 		  ////////////////////////// bool vs any:
+		  a = default(any);
+		  //b = a as bool;             //dynamic error: "value must be a member of type" (other tests)
 		  a = true;
 		  b = a as bool;             //OK
 		  assert (b == a);           //holds
 		  ////////////////////////// event vs any:
 		  a = default(any);
+		  assert (a == null);        //holds
 		  ev = a as event;           //OK
+		  assert(a == ev);           //holds
 		  a = E;
 		  ev = a as event;             //OK
-		  assert (ev == a);           //holds
+		  assert (ev == E);           //holds
 		  ////////////////////////// machine vs any:
 		  a = default(any);
 		  assert (a == null);        //holds
@@ -124,90 +96,45 @@ main machine M
 		  a = new Test();
 		  mac = a as machine;           //OK
 		  assert (mac == a);           //holds
-		
-		  ////////////////////////// map vs seq:
-		  s += (0, 1);
-          s += (1, 2);
-		  m1 = s as map[int,int];   //error	  
-		  m1[0] = 1;
-		  m1[1] = 2;
-		  s = m1 as seq[int];      //error
-		  ////////////////////////// any vs map:
+		  ////////////////////////// map vs any:
 		  a = default(any);
-		  m1 = a as map[int,int];    //dynamic error: "value must be a member of type" 
-		  a[0] = 1;                  //error
-		  a += (0,1);                 //error
+		  //m1 = a as map[int,int];    //dynamic error: "value must be a member of type" (other tests)
 		  m1[0] = 1;
 		  m1[1] = 2;
 		  a = m1;                      //OK
-		  a[0] = 2;                   //error
+		  assert (a == m1);            //holds
 		  ////////////////////////// seq vs any:
 		  a = default(any);
-		  s = a as seq[int];         //dynamic error: "value must be a member of type" 
-		  a[0] = 1;                  //error
-		  a += (0,1);                 //error
+		  //s = a as seq[int];         //dynamic error: "value must be a member of type" (other tests)
 		  s += (0, 1);
           s += (1, 2);
 		  a = s;                      //OK
-		  a += (0,2);                   //error
+		  assert (a == s);            //holds
 		  ////////////////////////// tuple vs any:
 		  a = default(any);
-		  ts = a as (a: int, b: int);    //dynamic error: "value must be a member of type" 
+		  //ts = a as (a: int, b: int);    //dynamic error: "value must be a member of type" (other tests)
 		  ts.a = 1;
 		  ts.b = 2;
 		  a = ts;
-		  a.a = 0;                  //error
+		  assert (a == ts);             //holds
 		  
 		  a = default(any);
-		  tt = a as (int, int);    //dynamic error: "value must be a member of type" ?
+		  //tt = a as (int, int);    //dynamic error: "value must be a member of type" (other tests)
 		  tt.0 = 1;
 		  tt.1 = 2;
 		  a = tt;
-		  a.1 = 0;                  //error
-		  
-		  ////////////////////////// tuple vs map:
-		  ts.b = 1;
-		  ts.a = ts.b + 1;
-		  m1 = ts as map[int,int];   //error
-		  tt = (0,0);             
-		  tt = (1,1);              
-		  m1 = tt as map[int,int];   //error
-		  m1[0] = 1;
-		  m1[1] = 2;
-		  tt = m1 as (int, int);     //error
-		  ts = m1 as (int, int);     //error		  
-		  ////////////////////////// tuple vs seq:
-		  ts.b = 1;
-		  ts.a = ts.b + 1;
-		  s = ts as seq[int];   //error
-		  tt = (0,0);              
-		  tt = (1,1);              
-		  s = tt as seq[int];   //error
-		  s = default(seq[int]);
-		  s += (0, 1);
-          s += (1, 2);
-		  tt = s as (int, int);     //error
-		  ts = s as (int, int);     //error
+		  assert (a == tt);         //holds
 		  ////////////////////////// Casts in event payload:
 		  /////////////////////////////////////// int payload:
 		  y = 1;
 		  send mac, EI1, y;   //OK
-		  send mac, EI2, b;   //error
-		  send mac, EI2, b as int;   //error
-		  send mac, EI3, ev;   //error
-		  send mac, EI3, ev as int;   //error
-		  send mac, EI4, mac;   //error
-		  send mac, EI4, mac as int;   //error
-		  a = null;
-		  send mac, EI5, a;    //error
-		  a = 1; 
-          send mac, EI6, a;    //error
+		  a = 1;
 		  send mac, EI6, a as int;  //OK
 		  /////////////////////////////////////// tuple payload:
 		  ts1.a = 1;
 		  ts1.b = true;
-		  send mac, ET1, ts1;         //OK
-		  send mac, ET2, (a = 2, b = false);  //OK
+		  send mac, ET1, ts1;
+		  send mac, ET2, (a = 2, b = false);
 		  /////////////////////////////////////// seq payload:
 		  s = default(seq[int]);
 		  s += (0, 1);
@@ -215,9 +142,8 @@ main machine M
 		  send mac, ESEQ1, s;                 //OK
 		  
 		  s1 = s;
-		  send mac, ESEQ2, s1;               //error
 		  send mac, ESEQ2, s1 as seq[int];  //OK
-		  
+
 		  /////////////////////////////////////// map payload:
 		  m1 = default(map[int,int]);
 		  send mac, EMAP1, m1;       //OK
@@ -226,24 +152,21 @@ main machine M
 		  send mac, EMAP11, m1;       //OK
 		  
 		  m9 = default(map[int,any]);
-		  send mac, EMAP2, m9;   //error
 		  send mac, EMAP2, m9 as map[int,int];   //OK, but dynamic error will follow
 		  m9 = m1;
-		  send mac, EMAP2, m9;   //error
 		  send mac, EMAP3, m9 as map[int,int];   //OK
 		  
 		  raise halt;
        }    
-    }
+    }       
 }
 
 machine Test {
 	var ss: seq[int];
-	var yt: int;
-	var bt: bool;
-	var ta: any;
+    var yt: int;
 	var tts1: (a: int, b: bool);
 	var tts: (a: int, b: int);
+	var ta: any;
 	var s: seq[int];
 	var s1: seq[any];
 	var mi: map[int,int];
@@ -254,7 +177,7 @@ machine Test {
 			//assert(ss[0] == 3);            //holds
 		}
 		on EI1 push testEI1;
-        on EI6 push testEI6;		
+		on EI6 push testEI6;
 		on ET1 push testET1;
 		on ET2 push testET2;
 		on ESEQ1 push testESEQ1;
@@ -267,9 +190,10 @@ machine Test {
 	// int is sent
 	state testEI1 {
 		entry {
-			yt = payload as int;
-			assert(yt == 1);        //holds
-			bt = payload as bool;   //error
+			ta = payload as any;
+			assert(ta == 1);           //holds
+			//yt = payload as int;       //dynamic error: "value must have a concrete type" (TODO: add Sent\Test.p) (no error in runtime!)
+			//assert(yt == 1);           //holds?
 			pop;
 		}
 	}
@@ -279,7 +203,7 @@ machine Test {
 			yt = payload as int;        //OK
 			assert(yt == 1);           //holds
 			yt = payload;               //OK
-			assert(yt == 1);           //holds	
+			assert(yt == 1);           //holds
 			ta = payload as any;       //OK
 			assert(yt == 1);           //holds
 			pop;
@@ -292,14 +216,12 @@ machine Test {
 			assert (tts1.a == 1 && tts1.b == true);   //holds
 			tts1 = payload;                          //OK
 			assert (tts1.a == 1 && tts1.b == true);   //holds
-			tts = payload as (a: int, b: int);    //error
 			pop;
 		}
 	}
 	// tuple is sent via literal
 	state testET2 {
-		entry {	
-			tts1 = payload as (a: int, b: int);    //error
+		entry {
 			tts1 = payload as (a: int, b: bool);    //OK
 			assert (tts1.a == 2 && tts1.b == false);   //holds
 			pop;
@@ -310,19 +232,17 @@ machine Test {
 		entry {	
 			s = payload as seq[int];    //OK
 			assert (s[0] == 1);          //holds
-			s = default(seq[int]);
 			s = payload;                //OK
 			assert (s[0] == 1);          //holds
 			
 			s1 = payload as seq[int];    //OK
 			assert (s1[0] == 1);          //holds
-			s1 = default(seq[any]);
 			s1 = payload;                //OK
 			assert (s1[0] == 1);          //holds
 			
-			s1 = default(seq[any]);
 			s1 = payload as seq[any];    //OK
 			assert (s1[0] == 1);          //holds
+			pop;
 		}
 	}
 	// "seq[any] as seq[int]" is sent
@@ -330,51 +250,48 @@ machine Test {
 		entry {	
 			s = payload as seq[int];    //OK
 			assert (s[0] == 1);          //holds
-			s = default(seq[int]);
 			s = payload;                //OK
 			assert (s[0] == 1);          //holds
 			
 			s1 = payload as seq[int];    //OK
 			assert (s1[0] == 1);          //holds
-			s1 = default(seq[int]);
 			s1 = payload;                //OK
 			assert (s1[0] == 1);          //holds
 			
-			s1 = default(seq[int]);
 			s1 = payload as seq[any];    //OK
 			assert (s1[0] == 1);          //holds
-			
-			s1 = default(seq[int]);
-			s1 = payload as seq[bool];    //error
+			pop;
 		}
 	}
 	// default(map[int,int]) is sent
 	state testEMAP1 {
 		entry {
-			mi = payload;
-			assert (mi[0] == 0);  //dynamic error: "key not found"
+			mi = payload;     
+			//assert (mi[0] == 0);  //dynamic error: "key not found" (other tests)
 			mi[0] = 0;
 			mi[3] = 3;
 			assert (mi[0] == 0 && mi[3] == 3);                  //holds
 			
 			mi = default(map[int,int]);
 			mi = payload as map[int,int];
-			assert (mi[0] == 0);  //dynamic error: "key not found" 
+			//assert (mi[0] == 0);  //dynamic error: "key not found" (other tests)
 			
 			ma = payload as map[int,int];
-			assert (ma[0] == 0);  //dynamic error: "key not found" 
+			//assert (ma[0] == 0);  //dynamic error: "key not found" (other tests)
 			ma = default(map[int,any]);
 			ma = payload;
-			assert (ma[0] == 0);  //dynamic error: "key not found"
+			//assert (ma[0] == 0);  //dynamic error: "key not found" (other tests)
 			ma = default(map[int,any]);
 			
 			ma = payload as map[int,any];
-			assert (ma[0] == 0);  //dynamic error: "key not found" 		
+			//assert (ma[0] == 0);  //dynamic error: "key not found" (other tests)	
+			pop;
 		}
 	}
-	// map[int,int] is sent
+	// map[int,int] is sent (0,1) (3,3)
 	state testEMAP11 {
 		entry {
+			mi = default(map[int,int]);
 			mi = payload;     
 			assert (mi[0] == 1 && mi[3] == 3);  //holds
 			
@@ -391,26 +308,31 @@ machine Test {
 			
 			ma = payload as map[int,any];
 			assert (ma[0] == 1 && ma[3] == 3);  //holds
+			pop;
 		}
 	}
 	// default(map[int,any]) is sent as map[int,int]
 	state testEMAP2 {
 		entry {
 			mi = payload;             //OK
-			assert (mi[0] == 1 && mi[3] == 3);  ////dynamic error: "key not found"
+			//assert (mi[0] == 1 && mi[3] == 3);  //dynamic error: "key not found" (other tests)
+			
 			mi = default(map[int,int]);
 			mi = payload as map[int,int];  //OK
-			assert (mi[0] == 1 && mi[3] == 3);  ////dynamic error: "key not found"
+			//assert (mi[0] == 1 && mi[3] == 3);  //dynamic error: "key not found" (other tests)
 			
 			ma = payload as map[int,int];   //ok
-			assert (ma[0] == 1 && ma[3] == 3);  ////dynamic error: "key not found"
+			//assert (ma[0] == 1 && ma[3] == 3);  //dynamic error: "key not found" (other tests)
+			
 			ma = default(map[int,any]);
 			ma = payload;                     //OK
-			assert (ma[0] == 1 && ma[3] == 3);  ////dynamic error: "key not found"
+			//assert (ma[0] == 1 && ma[3] == 3);  //dynamic error: "key not found" (other tests)
 			ma = default(map[int,any]);
-			
+		
 			ma = payload as map[int,any];     //OK
-			assert (ma[0] == 1 && ma[3] == 3);  ////dynamic error: "key not found"		
+			//assert (ma[0] == 1 && ma[3] == 3);  //dynamic error: "key not found" (other tests)
+            			
+			pop;			
 		}
 	}
 	// map[int,any] assigned a value of  map[int,int] type is sent as map[int,int]
@@ -420,7 +342,7 @@ machine Test {
 			assert (mi[0] == 1 && mi[3] == 3);  //holds
 			mi = default(map[int,int]);
 			mi = payload as map[int,int];  //OK
-			assert (mi[0] == 1 && mi[3] == 3);  //holds?
+			assert (mi[0] == 1 && mi[3] == 3);  //holds
 			
 			ma = payload as map[int,int];   //ok
 			assert (ma[0] == 1 && ma[3] == 3);  //holds
@@ -430,7 +352,8 @@ machine Test {
 			ma = default(map[int,any]);
 			
 			ma = payload as map[int,any];     //OK
-			assert (ma[0] == 1 && ma[3] == 3);  //holds		
+			assert (ma[0] == 1 && ma[3] == 3);  //holds
+			pop;
 		}
 	}
 }

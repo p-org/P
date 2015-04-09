@@ -1,0 +1,3 @@
+runPrt: ..\..\..\..\..\..\Tst\PrtTester\Debug\Tester.exe
+acc: .\
+dsc: runtime, complex data types in assign/remove/insert: sequences, tuples, maps

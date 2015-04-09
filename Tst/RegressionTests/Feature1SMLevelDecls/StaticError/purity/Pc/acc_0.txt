@@ -28,38 +28,46 @@ OUT: purity.p (42, 11): inferred type:  NIL
 OUT: purity.p (42, 18): inferred type:  BaseType(INT)
 OUT: purity.p (46, 11): inferred type:  NIL
 OUT: purity.p (46, 18): inferred type:  BaseType(INT)
-OUT: purity.p (52, 8): inferred type:  BaseType(BOOL)
-OUT: purity.p (52, 8): inferred type:  NIL
-OUT: purity.p (52, 12): inferred type:  BaseType(BOOL)
-OUT: purity.p (52, 19): inferred type:  BaseType(BOOL)
-OUT: purity.p (52, 23): inferred type:  BaseType(INT)
-OUT: purity.p (52, 30): inferred type:  BaseType(BOOL)
-OUT: purity.p (52, 32): inferred type:  BaseType(INT)
+OUT: purity.p (48, 5): inferred type:  BaseType(BOOL)
+OUT: purity.p (48, 5): inferred type:  ERROR
+OUT: purity.p (48, 9): inferred type:  BaseType(INT)
+OUT: purity.p (48, 11): inferred type:  ERROR
+OUT: purity.p (48, 13): inferred type:  BaseType(REAL)
+OUT: purity.p (53, 8): inferred type:  BaseType(BOOL)
 OUT: purity.p (53, 8): inferred type:  NIL
 OUT: purity.p (53, 12): inferred type:  BaseType(BOOL)
-OUT: purity.p (55, 11): inferred type:  NIL
-OUT: purity.p (55, 18): inferred type:  BaseType(INT)
-OUT: purity.p (59, 11): inferred type:  NIL
-OUT: purity.p (59, 18): inferred type:  BaseType(INT)
-OUT: purity.p (65, 7): inferred type:  BaseType(INT)
-OUT: purity.p (65, 7): inferred type:  NIL
-OUT: purity.p (65, 11): inferred type:  BaseType(INT)
-OUT: purity.p (65, 13): inferred type:  BaseType(INT)
-OUT: purity.p (65, 15): inferred type:  BaseType(INT)
+OUT: purity.p (53, 19): inferred type:  BaseType(BOOL)
+OUT: purity.p (53, 23): inferred type:  BaseType(INT)
+OUT: purity.p (53, 30): inferred type:  BaseType(BOOL)
+OUT: purity.p (53, 32): inferred type:  BaseType(INT)
+OUT: purity.p (54, 8): inferred type:  NIL
+OUT: purity.p (54, 12): inferred type:  BaseType(BOOL)
+OUT: purity.p (56, 11): inferred type:  NIL
+OUT: purity.p (56, 18): inferred type:  BaseType(INT)
+OUT: purity.p (60, 11): inferred type:  NIL
+OUT: purity.p (60, 18): inferred type:  BaseType(INT)
+OUT: purity.p (66, 7): inferred type:  BaseType(INT)
 OUT: purity.p (66, 7): inferred type:  NIL
 OUT: purity.p (66, 11): inferred type:  BaseType(INT)
-OUT: purity.p (66, 13): inferred type:  BaseType(BOOL)
+OUT: purity.p (66, 13): inferred type:  BaseType(INT)
 OUT: purity.p (66, 15): inferred type:  BaseType(INT)
-OUT: purity.p (68, 10): inferred type:  NIL
-OUT: purity.p (68, 17): inferred type:  BaseType(BOOL)
-OUT: purity.p (72, 10): inferred type:  NIL
-OUT: purity.p (72, 17): inferred type:  BaseType(BOOL)
+OUT: purity.p (67, 7): inferred type:  NIL
+OUT: purity.p (67, 11): inferred type:  BaseType(INT)
+OUT: purity.p (67, 13): inferred type:  BaseType(BOOL)
+OUT: purity.p (67, 15): inferred type:  BaseType(INT)
+OUT: purity.p (69, 10): inferred type:  NIL
+OUT: purity.p (69, 17): inferred type:  BaseType(BOOL)
+OUT: purity.p (73, 10): inferred type:  NIL
+OUT: purity.p (73, 17): inferred type:  BaseType(BOOL)
 OUT: purity.p (0, 0): No Main Machine
 OUT: purity.p (2, 1): no start state in machine
 OUT: purity.p (9, 12): this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);"
 OUT: purity.p (27, 12): this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: purity.p (52, 12): this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: purity.p (52, 23): this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: purity.p (48, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: purity.p (48, 11): Operator expected second argument to be an integer value
+OUT: purity.p (48, 13): new M(...) can only be called like "new M(...);" or "x = new M(...);"
+OUT: purity.p (53, 12): this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: purity.p (53, 23): this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);"
 OUT: Compilation failed
 OUT: 
 EXIT: -1

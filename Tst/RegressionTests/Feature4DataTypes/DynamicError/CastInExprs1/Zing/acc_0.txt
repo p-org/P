@@ -9,7 +9,7 @@ OUT:
 EXIT: 3
 
 =================================
-nonAtomicDataTypes.trace
+CastInExprsDynError.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
@@ -18,5 +18,5 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(kind != PRT_TYPE_KIND.PRT_KIND_ANY,)
-Comment: Value must have a concrete type
+Expression: assert(b)
+Comment: value must be a member of type

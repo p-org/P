@@ -1,0 +1,7 @@
+runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: ..\ExprOperatorsAsserts.dll
+argZing: -et:ExprOperatorsAsserts.trace
+incZing: ExprOperatorsAsserts.trace
+del: ExprOperatorsAsserts.trace
+acc: .\
+dsc: zinger.exe, 3.4. P expressions and operators

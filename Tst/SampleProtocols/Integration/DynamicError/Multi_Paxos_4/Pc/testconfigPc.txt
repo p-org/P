@@ -3,5 +3,6 @@ argPc: ..\Multi_Paxos_4.p
 argPc: /printTypeInference
 argPc: /shortFileNames
 argPc: /doNotErase
+argPc: /outputDir:..\.
 acc: .\
 dsc: pc.exe, Feature Integration: protocol sample

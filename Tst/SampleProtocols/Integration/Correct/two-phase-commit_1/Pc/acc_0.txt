@@ -473,19 +473,19 @@ OUT: two-phase-commit_1.p (363, 4): inferred type:  BaseType(REAL)
 OUT: two-phase-commit_1.p (363, 4): inferred type:  NIL
 OUT: two-phase-commit_1.p (363, 13): inferred type:  BaseType(ANY)
 OUT: two-phase-commit_1.p (363, 21): inferred type:  BaseType(REAL)
-OUT: two-phase-commit_1.p (447, 10): inferred type:  BaseType(REAL)
-OUT: two-phase-commit_1.p (447, 10): inferred type:  NIL
-OUT: two-phase-commit_1.p (447, 24): inferred type:  BaseType(REAL)
-OUT: two-phase-commit_1.p (447, 40): inferred type:  BaseType(INT)
-OUT: two-phase-commit_1.p (448, 4): inferred type:  NIL
-OUT: two-phase-commit_1.p (448, 16): inferred type:  BaseType(REAL)
-OUT: two-phase-commit_1.p (448, 16): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
-OUT: two-phase-commit_1.p (448, 29): inferred type:  BaseType(INT)
-OUT: two-phase-commit_1.p (448, 29): inferred type:  TupType(BaseType(INT), NIL)
-OUT: two-phase-commit_1.p (449, 4): inferred type:  NIL
-OUT: two-phase-commit_1.p (449, 16): inferred type:  BaseType(REAL)
-OUT: two-phase-commit_1.p (449, 16): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
-OUT: two-phase-commit_1.p (449, 29): inferred type:  BaseType(INT)
-OUT: two-phase-commit_1.p (449, 29): inferred type:  TupType(BaseType(INT), NIL)
+OUT: two-phase-commit_1.p (376, 10): inferred type:  BaseType(REAL)
+OUT: two-phase-commit_1.p (376, 10): inferred type:  NIL
+OUT: two-phase-commit_1.p (376, 24): inferred type:  BaseType(REAL)
+OUT: two-phase-commit_1.p (376, 40): inferred type:  BaseType(INT)
+OUT: two-phase-commit_1.p (377, 4): inferred type:  NIL
+OUT: two-phase-commit_1.p (377, 16): inferred type:  BaseType(REAL)
+OUT: two-phase-commit_1.p (377, 16): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: two-phase-commit_1.p (377, 29): inferred type:  BaseType(INT)
+OUT: two-phase-commit_1.p (377, 29): inferred type:  TupType(BaseType(INT), NIL)
+OUT: two-phase-commit_1.p (378, 4): inferred type:  NIL
+OUT: two-phase-commit_1.p (378, 16): inferred type:  BaseType(REAL)
+OUT: two-phase-commit_1.p (378, 16): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: two-phase-commit_1.p (378, 29): inferred type:  BaseType(INT)
+OUT: two-phase-commit_1.p (378, 29): inferred type:  TupType(BaseType(INT), NIL)
 OUT: 
 EXIT: 0

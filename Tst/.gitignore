@@ -5,3 +5,10 @@ check
 check-tmp.txt
 out*
 stat
+*.dll
+*.zing
+stubs.c
+program.c
+program.h
+trace
+*.trace

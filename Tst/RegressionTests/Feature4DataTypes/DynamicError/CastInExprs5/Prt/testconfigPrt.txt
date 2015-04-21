@@ -1,0 +1,3 @@
+runPrt: ..\..\..\..\..\..\Tst\PrtTester\Debug\Tester.exe
+acc: .\
+dsc: runtime, 3.4. cast operator in expressions

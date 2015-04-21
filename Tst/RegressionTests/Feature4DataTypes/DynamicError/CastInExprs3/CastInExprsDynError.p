@@ -1,4 +1,4 @@
-//Tests cast operator in expressions 
+//Tests cast operator in expressions (valid casts)
 //Tests dynamic error
 //Basic types: int, bool, event
 
@@ -67,7 +67,38 @@ main machine M
        {
 		  ////////////////////////// int vs any:
 		  a = default(any);
-		  y = a as int;             //dynamic error: "value must be a member of type"
+		  //y = a as int;             //dynamic error: "value must be a member of type" (other test)
+		  
+		  a = 1;
+		  y = a as int;             //OK
+		  assert (y == a);           //holds	  
+		  ////////////////////////// bool vs any:
+		  a = default(any);
+		  //b = a as bool;             //dynamic error: "value must be a member of type" (other test)
+		  a = true;
+		  b = a as bool;             //OK
+		  assert (b == a);           //holds
+		  ////////////////////////// event vs any:
+		  a = default(any);
+		  assert (a == null);        //holds
+		  ev = a as event;           //OK
+		  assert(a == ev);           //holds
+		  a = E;
+		  ev = a as event;             //OK
+		  assert (ev == E);           //holds
+		  ////////////////////////// machine vs any:
+		  a = default(any);
+		  assert (a == null);        //holds
+		  mac = default(machine);
+		  assert (mac == null);        //holds
+		  mac = a as machine;           //OK
+		  assert (mac == a);            //holds
+		  a = new Test();
+		  mac = a as machine;           //OK
+		  assert (mac == a);           //holds
+		  ////////////////////////// map vs any:
+		  a = default(any);
+		  m1 = a as map[int,int];    //dynamic error: "value must be a member of type" (this test)
 		  
 		  raise halt;
        }    
@@ -180,24 +211,24 @@ machine Test {
 	state testEMAP1 {
 		entry {
 			mi = payload;     
-			//assert (mi[0] == 0);  //dynamic error: "key not found" (other tests)
+			//assert (mi[0] == 0);  //dynamic error: "key not found" (TODO)
 			mi[0] = 0;
 			mi[3] = 3;
 			assert (mi[0] == 0 && mi[3] == 3);                  //holds
 			
 			mi = default(map[int,int]);
 			mi = payload as map[int,int];
-			//assert (mi[0] == 0);  //dynamic error: "key not found" (other tests)
+			//assert (mi[0] == 0);  //dynamic error: "key not found" (TODO)
 			
 			ma = payload as map[int,int];
-			//assert (ma[0] == 0);  //dynamic error: "key not found" (other tests)
+			//assert (ma[0] == 0);  //dynamic error: "key not found" (TODO)
 			ma = default(map[int,any]);
 			ma = payload;
-			//assert (ma[0] == 0);  //dynamic error: "key not found" (other tests)
+			//assert (ma[0] == 0);  //dynamic error: "key not found" (TODO)
 			ma = default(map[int,any]);
 			
 			ma = payload as map[int,any];
-			//assert (ma[0] == 0);  //dynamic error: "key not found" (other tests)	
+			//assert (ma[0] == 0);  //dynamic error: "key not found" (TODO)	
 			pop;
 		}
 	}
@@ -228,22 +259,22 @@ machine Test {
 	state testEMAP2 {
 		entry {
 			mi = payload;             //OK
-			//assert (mi[0] == 1 && mi[3] == 3);  //dynamic error: "key not found" (other tests)
+			//assert (mi[0] == 1 && mi[3] == 3);  //dynamic error: "key not found" (TODO)
 			
 			mi = default(map[int,int]);
 			mi = payload as map[int,int];  //OK
-			//assert (mi[0] == 1 && mi[3] == 3);  //dynamic error: "key not found" (other tests)
+			//assert (mi[0] == 1 && mi[3] == 3);  //dynamic error: "key not found" (TODO)
 			
 			ma = payload as map[int,int];   //ok
-			//assert (ma[0] == 1 && ma[3] == 3);  //dynamic error: "key not found" (other tests)
+			//assert (ma[0] == 1 && ma[3] == 3);  //dynamic error: "key not found" (TODO)
 			
 			ma = default(map[int,any]);
 			ma = payload;                     //OK
-			//assert (ma[0] == 1 && ma[3] == 3);  //dynamic error: "key not found" (other tests)
+			//assert (ma[0] == 1 && ma[3] == 3);  //dynamic error: "key not found" (TODO)
 			ma = default(map[int,any]);
 		
 			ma = payload as map[int,any];     //OK
-			//assert (ma[0] == 1 && ma[3] == 3);  //dynamic error: "key not found" (other tests)
+			//assert (ma[0] == 1 && ma[3] == 3);  //dynamic error: "key not found" (TODO)
             			
 			pop;			
 		}

@@ -67,14 +67,14 @@ main machine M
        {
 		  ////////////////////////// int vs any:
 		  a = default(any);
-		  //y = a as int;             //dynamic error: "value must be a member of type" (TODO)
+		  //y = a as int;             //dynamic error: "value must be a member of type" (other test)
 		  
 		  a = 1;
 		  y = a as int;             //OK
 		  assert (y == a);           //holds	  
 		  ////////////////////////// bool vs any:
 		  a = default(any);
-		  //b = a as bool;             //dynamic error: "value must be a member of type" (TODO)
+		  //b = a as bool;             //dynamic error: "value must be a member of type" (other test)
 		  a = true;
 		  b = a as bool;             //OK
 		  assert (b == a);           //holds
@@ -98,28 +98,28 @@ main machine M
 		  assert (mac == a);           //holds
 		  ////////////////////////// map vs any:
 		  a = default(any);
-		  //m1 = a as map[int,int];    //dynamic error: "value must be a member of type" (TODO)
+		  //m1 = a as map[int,int];    //dynamic error: "value must be a member of type" (other test)
 		  m1[0] = 1;
 		  m1[1] = 2;
 		  a = m1;                      //OK
 		  assert (a == m1);            //holds
 		  ////////////////////////// seq vs any:
 		  a = default(any);
-		  //s = a as seq[int];         //dynamic error: "value must be a member of type" (TODO)
+		  //s = a as seq[int];         //dynamic error: "value must be a member of type" (other test)
 		  s += (0, 1);
           s += (1, 2);
 		  a = s;                      //OK
 		  assert (a == s);            //holds
 		  ////////////////////////// tuple vs any:
 		  a = default(any);
-		  //ts = a as (a: int, b: int);    //dynamic error: "value must be a member of type" (TODO)
+		  //ts = a as (a: int, b: int);    //dynamic error: "value must be a member of type" (other test)
 		  ts.a = 1;
 		  ts.b = 2;
 		  a = ts;
 		  assert (a == ts);             //holds
 		  
 		  a = default(any);
-		  //tt = a as (int, int);    //dynamic error: "value must be a member of type" (TODO)
+		  //tt = a as (int, int);    //dynamic error: "value must be a member of type" (other test)
 		  tt.0 = 1;
 		  tt.1 = 2;
 		  a = tt;

@@ -8,11 +8,10 @@ OUT: The Zing model appears to have encountered an infinite loop within an atomi
 OUT: 
 OUT: 
 OUT: Stack trace:
-OUT:     PING.AnonFun4 (InfiniteLoopInAtomicBlock.zing, Line 1014)
-OUT:     PING.ReentrancyHelper (InfiniteLoopInAtomicBlock.zing, Line 700)
-OUT:     PING.RunHelper (InfiniteLoopInAtomicBlock.zing, Line 332)
-OUT:     PING.Run (InfiniteLoopInAtomicBlock.zing, Line 123)
-OUT:     PING.Start (InfiniteLoopInAtomicBlock.zing, Line 87)
+OUT:     MACHINE_PING.ReentrancyHelper (InfiniteLoopInAtomicBlock.zing, Line 704)
+OUT:     MACHINE_PING.RunHelper (InfiniteLoopInAtomicBlock.zing, Line 332)
+OUT:     MACHINE_PING.Run (InfiniteLoopInAtomicBlock.zing, Line 123)
+OUT:     MACHINE_PING.Start (InfiniteLoopInAtomicBlock.zing, Line 87)
 OUT: 
 OUT: 
 OUT: 11 distinct states explored
@@ -1085,17 +1084,3 @@ Trace-Log 0:
 <StateLog> Machine PING-0 exiting State Ping_Halt
 <StateLog> Machine PING-0 entering State Ping_Halt
 <RaiseLog> Machine PING-0 raised Event ____halt
-<StateLog> Machine PING-0 exiting State Ping_Halt
-<StateLog> Machine PING-0 entering State Ping_Halt
-<RaiseLog> Machine PING-0 raised Event ____halt
-<StateLog> Machine PING-0 exiting State Ping_Halt
-<StateLog> Machine PING-0 entering State Ping_Halt
-<RaiseLog> Machine PING-0 raised Event ____halt
-<StateLog> Machine PING-0 exiting State Ping_Halt
-<StateLog> Machine PING-0 entering State Ping_Halt
-<RaiseLog> Machine PING-0 raised Event ____halt
-<StateLog> Machine PING-0 exiting State Ping_Halt
-<StateLog> Machine PING-0 entering State Ping_Halt
-<RaiseLog> Machine PING-0 raised Event ____halt
-<StateLog> Machine PING-0 exiting State Ping_Halt
-<StateLog> Machine PING-0 entering State Ping_Halt

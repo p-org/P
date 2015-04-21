@@ -1,7 +1,7 @@
 =================================
          Console output          
 =================================
-OUT: nullteventdecl.p (0, 0): File access error - The file file:///d:/planguage/plang/tst/regressiontests/feature1smleveldecls/staticerror/nulleventdecl/nullteventdecl.p does not exist
+OUT: nulleventdecl.p (3, 6): Syntax error - Syntax error, unexpected NULL, expecting ID
 OUT: Compilation failed
 OUT: 
 EXIT: -1

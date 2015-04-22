@@ -1,5 +1,5 @@
 //Tests P expressions and operators
-//Tests static errors
+//Tests static errors; test Correct\ExprOperatorsAsserts tests all asserts
 //Basic types: int, bool, event
 //This test can be further extended for combined non-atomic types
 

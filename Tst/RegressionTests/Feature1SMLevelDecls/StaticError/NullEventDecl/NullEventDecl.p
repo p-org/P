@@ -1,6 +1,6 @@
 // 1.7.7.  "null" event cannot be declared (parse error)
 
-event null assert 1;
+event null assert 1;  //error
 main machine Real1 {
     var test: bool;  //init with "false"
     start state Real1_Init {
@@ -11,9 +11,9 @@ main machine Real1 {
 		exit {   }
 
 		on E1 do {send this, null; };
-		on null do {assert(false);};      
+		on null do {assert(false);};      //unreachable 
 	}
 	fun Action2() {
-		assert(false);
+		assert(false);   //unreachable
     }
 }

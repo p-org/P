@@ -1,0 +1,3 @@
+runPrt: ..\..\..\..\..\..\..\..\Planguage\Plang\Tst\PrtTester\Debug\Tester.exe
+acc: .\
+dsc: runtime, Testing Bounded Choice Operator in Zing

@@ -17,7 +17,6 @@ main machine M
 	var mac: machine;
 	var m1, m4: map[int,int];
 	var m3: map[int,bool];
-	
 	var m5, m6: map[int,any];
 	var m2: map[int,map[int,any]];
 	var m7: map[bool,seq[(a: int, b: int)]];

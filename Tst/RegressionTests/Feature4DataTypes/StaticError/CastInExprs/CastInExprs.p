@@ -1,5 +1,5 @@
 //Tests cast operator in expressions
-//Tests static errors
+//Tests static errors; test Correct\CastInExprsAsserts tests all asserts
 //Basic types: int, bool, event
 
 event E assert 1: int;

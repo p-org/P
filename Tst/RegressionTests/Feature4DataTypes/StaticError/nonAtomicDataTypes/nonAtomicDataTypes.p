@@ -1,5 +1,5 @@
 //Tests complex data types in assign/remove/insert errors): sequences, tuples, maps
-//Tests static errors
+//Tests static errors; test Correct\nonAtomicDataTypes tests all asserts
 //Basic types: int, bool, event
 
 event E assert 1; 
@@ -271,6 +271,24 @@ main machine M
 		  m7[true] = s4;      //error
 		  m7[false] = s8;     //error
 		  
+		  ////////////////////////map: var m2: map[int,map[int,any]];
+		  m5 = default(map[int,any]);
+		  m5 += (1,true);
+		  m5 += (2,E);
+		  m5 += (5,5);
+		  
+		  m6 = default(map[int,any]);
+		  m6 += (0,0);
+		  m6 += (2,2);
+		  m6 += (4,4);
+		  m6 += (6,E);
+		  
+		  m2 += (1,m5);
+		  m2 += (2,m6);
+		  
+		  m2[true] = m5;   //error
+		  
+		  ////////////////////////////////////////////
           t.a[foo()] = 2;  
 		  
           GetT().a[foo()] = 1;       //error

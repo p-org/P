@@ -17,7 +17,7 @@ main machine Real1 {
 	}
 	state Real1_S1 {   
 		entry {
-			assert(test == true); 
+			assert(test == true); //unreachable
 		}
     }
     fun Action1() {

@@ -1,0 +1,37 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing BoundedChoice_1.zing ...
+OUT: Compiling BoundedChoice_1.zing to BoundedChoice_1.dll ...
+OUT: boundedchoice_1.p (6, 4): inferred type:  BaseType(INT)
+OUT: boundedchoice_1.p (6, 4): inferred type:  NIL
+OUT: boundedchoice_1.p (6, 8): inferred type:  BaseType(INT)
+OUT: boundedchoice_1.p (7, 4): inferred type:  NIL
+OUT: boundedchoice_1.p (7, 10): inferred type:  BaseType(EVENT)
+OUT: boundedchoice_1.p (14, 4): inferred type:  NIL
+OUT: boundedchoice_1.p (14, 7): inferred type:  BaseType(BOOL)
+OUT: boundedchoice_1.p (16, 5): inferred type:  BaseType(INT)
+OUT: boundedchoice_1.p (16, 5): inferred type:  NIL
+OUT: boundedchoice_1.p (16, 9): inferred type:  BaseType(INT)
+OUT: boundedchoice_1.p (16, 11): inferred type:  BaseType(INT)
+OUT: boundedchoice_1.p (16, 13): inferred type:  BaseType(INT)
+OUT: boundedchoice_1.p (20, 5): inferred type:  BaseType(INT)
+OUT: boundedchoice_1.p (20, 5): inferred type:  NIL
+OUT: boundedchoice_1.p (20, 9): inferred type:  BaseType(INT)
+OUT: boundedchoice_1.p (22, 4): inferred type:  NIL
+OUT: boundedchoice_1.p (22, 11): inferred type:  BaseType(INT)
+OUT: boundedchoice_1.p (22, 13): inferred type:  BaseType(BOOL)
+OUT: boundedchoice_1.p (22, 15): inferred type:  BaseType(INT)
+OUT: boundedchoice_1.p (23, 4): inferred type:  NIL
+OUT: boundedchoice_1.p (23, 7): inferred type:  BaseType(INT)
+OUT: boundedchoice_1.p (23, 9): inferred type:  BaseType(BOOL)
+OUT: boundedchoice_1.p (23, 11): inferred type:  BaseType(INT)
+OUT: boundedchoice_1.p (24, 5): inferred type:  NIL
+OUT: boundedchoice_1.p (24, 10): inferred type:  BaseType(REAL)
+OUT: boundedchoice_1.p (24, 16): inferred type:  BaseType(EVENT)
+OUT: boundedchoice_1.p (28, 3): inferred type:  NIL
+OUT: 
+EXIT: 0

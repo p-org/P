@@ -21,7 +21,7 @@ main machine Real1 {
 		}
 		//to prevent "unhandled event" exception for E2
 		defer E2;
-		on E2 do { assert(false); ;};
+		on E2 do { assert(false); ;};  //unreachable
     }
 	fun Action2() {
 		assert(test == false);  //unreachable

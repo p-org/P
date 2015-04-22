@@ -26,7 +26,7 @@ main machine Real1 {
 		test = true;
     }
 	fun Action2() {
-		assert(test == false);  
+		assert(test == false);  //unreachable
     }
 }
 monitor M {

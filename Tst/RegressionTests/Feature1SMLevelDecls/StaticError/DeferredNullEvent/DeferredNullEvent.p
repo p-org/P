@@ -26,6 +26,6 @@ main machine Real1 {
 		test = true;   //unreachable
     }
 	fun Action3() {
-		assert(test == true);  //reachable, fails
+		assert(test == true);  //unreachable
     }
 }

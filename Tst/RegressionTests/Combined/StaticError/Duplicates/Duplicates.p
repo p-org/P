@@ -29,7 +29,7 @@ machine m2 {
 	}
 	state S2 {	
 		on a do {};
-		on a do { assert(false); };	
+		on a do { assert(false); };	//unreachable
 	}
 	state S2 {	
 		on a do {};	

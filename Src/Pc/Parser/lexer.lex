@@ -91,6 +91,8 @@
 			 keywords.Add("action", (int)Tokens.ACTION);
 			 keywords.Add("state", (int)Tokens.STATE);
 			 keywords.Add("group", (int)Tokens.GROUP);
+			 keywords.Add("static", (int)Tokens.STATIC);
+			 keywords.Add("models", (int)Tokens.MODELS);
 
 			 keywords.Add("entry", (int)Tokens.ENTRY);
 			 keywords.Add("exit", (int)Tokens.EXIT);

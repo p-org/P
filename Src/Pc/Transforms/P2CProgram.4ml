@@ -130,6 +130,10 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// (5) (Anon)FunDecls - Start at Id 1. The id 0 is reserved for the PUSH action.
 	AnonOrNamedFun ::= FunDecl + AnonFunDecl.
 
+	DeclId(d, id, cn) :- d is FunDecl, d.owner = NIL, 
+	                     id = 1 + toOrdinal(d, 0, { d' | d' is FunDecl, d'.owner = NIL }), 
+	                     cn = strJoin("P_FUN_", d.name).
+
 	DeclId(d, id, cn) :- d is FunDecl, d.owner.kind = REAL, 
 	                     id = 1 + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun, d'.owner = d.owner }), 
 	                     cn = strJoin("P_FUN_", strJoin(d.owner.name, strJoin("_", d.name))).
@@ -534,7 +538,7 @@ transform P2CProgram (in:: P) returns (out:: C)
     TransDeclAction  ::= (decl: TransDecl, funName: String).
 	TransDeclAction(t, funname) :- t is TransDecl, t.src.owner.kind = REAL, t.action = PUSH, funname = strJoin("_P_FUN_", strJoin(t.src.owner.name, "_PUSH_OR_IGN")). 
 	TransDeclAction(t, funname) :- t is TransDecl, t.src.owner.kind = REAL, act = t.action, act : AnonFunDecl, DeclId(act, _, funname). 
-	TransDeclAction(t, funname) :- t is TransDecl, t.src.owner.kind = REAL, act = t.action, act : String, f is FunDecl, f.owner = t.src.owner, f.name = act, DeclId(f, _, funname). 
+	TransDeclAction(t, funname) :- t is TransDecl, t.src.owner.kind = REAL, act = t.action, act : String, f is FunDecl, FunAvailable(f, t.src.owner), f.name = act, DeclId(f, _, funname). 
 
 	//// Base case
 	TransDeclConcat(c, s, NIL) :- s is StateDecl, s.owner.kind = REAL, c = count({t | t is TransDecl, t.src = s}).
@@ -592,7 +596,7 @@ transform P2CProgram (in:: P) returns (out:: C)
     DoDeclAction  ::= (decl: DoDecl, funName: String).
 	DoDeclAction(d, funname) :- d is DoDecl, d.src.owner.kind = REAL, d.action = IGNORE, funname = strJoin("_P_FUN_", strJoin(d.src.owner.name, "_PUSH_OR_IGN")). 
 	DoDeclAction(d, funname) :- d is DoDecl, d.src.owner.kind = REAL, act = d.action, act : AnonOrNamedFun, DeclId(act, _, funname). 
-	DoDeclAction(d, funname) :- d is DoDecl, d.src.owner.kind = REAL, act = d.action, act : String, f is FunDecl, f.owner = d.src.owner, f.name = act, DeclId(f, _, funname). 
+	DoDeclAction(d, funname) :- d is DoDecl, d.src.owner.kind = REAL, act = d.action, act : String, f is FunDecl, FunAvailable(f, d.src.owner), f.name = act, DeclId(f, _, funname). 
 
 	//// Base case
 	DoDeclConcat(c, s, NIL) :- s is StateDecl, s.owner.kind = REAL, c = count({d | d is DoDecl, d.src = s, d.action != DEFER}).
@@ -648,7 +652,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 									defpc = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), "p_tmp_mach_priv", 
 									                   Cast(PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), Ident("context"))).
 
-	COut(7, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = REAL, f.owner.kind = REAL,
+	COut(7, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = REAL, RealOwner(f),
 	                params = Params(Param(NIL, "context"), 
 						     Params(Param(NIL, "funIndex"), 
 							 Params(Param(NIL, "value"), NIL))),
@@ -670,7 +674,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 									   Return(FunApp(Ident("PrtMkDefaultValue"), Args(out.UnApp(ADDR, Ident(typeName)), NIL))),
 									   Return(Ident("p_tmp_ret"))).
 
-	COut(8, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = REAL, f.owner.kind = REAL,
+	COut(8, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = REAL, RealOwner(f),
 				    BodyTmpVars(f, -1, -2, tmpVars),			  
 				    StmtTrans(f, f.body, ctrans),			  
 	                params = Params(Param(NIL, "context"), 
@@ -721,7 +725,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 					  params,
 					  body).
 
-	HOut(1, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = MODEL, f.owner.kind = REAL,
+	HOut(1, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = MODEL, RealOwner(f),
 	                params = Params(Param(NIL, "context"), 
 						     Params(Param(NIL, "funIndex"), 
 							 Params(Param(NIL, "value"), NIL))),
@@ -889,11 +893,11 @@ transform P2CProgram (in:: P) returns (out:: C)
 
     StateEntryAction  ::= (decl: StateDecl, funName: String).
 	StateEntryAction(s, funname) :- s is StateDecl, s.owner.kind = REAL, act = s.entryAction, act : AnonFunDecl, DeclId(act, _, funname). 
-	StateEntryAction(s, funname) :- s is StateDecl, s.owner.kind = REAL, act = s.entryAction, act : String, f is FunDecl, f.owner = s.owner, f.name = act, DeclId(f, _, funname). 
+	StateEntryAction(s, funname) :- s is StateDecl, s.owner.kind = REAL, act = s.entryAction, act : String, f is FunDecl, FunAvailable(f, s.owner), f.name = act, DeclId(f, _, funname). 
 
     StateExitFun  ::= (decl: StateDecl, funName: String).
 	StateExitFun(s, funname) :- s is StateDecl, s.owner.kind = REAL, act = s.exitFun, act : AnonFunDecl, DeclId(act, _, funname). 
-	StateExitFun(s, funname) :- s is StateDecl, s.owner.kind = REAL, act = s.exitFun, act : String, f is FunDecl, f.owner = s.owner, f.name = act, DeclId(f, _, funname). 
+	StateExitFun(s, funname) :- s is StateDecl, s.owner.kind = REAL, act = s.exitFun, act : String, f is FunDecl, FunAvailable(f, s.owner), f.name = act, DeclId(f, _, funname). 
 
     StateHandlerArrays ::= (decl: StateDecl, transArrSize: Natural, transArr: out.Ident, doArrSize: Natural, doArr: out.Ident).
 
@@ -1255,12 +1259,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	//// Function application
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = in.FunApp(name, NIL), funDecl = FunDecl(name, c.owner, _, _, _, _), DeclId(funDecl, funIndex, funName),
+									e = in.FunApp(name, NIL), DeclId(funDecl, funIndex, funName), FunAvailable(funDecl, c.owner), funDecl.name = name, 
 									ec = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(Ident("context"), Args(IntLit(funIndex, DEC, U), Args(Ident("NULL"), NIL)))).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = in.FunApp(name, args), args != NIL, 
-									funDecl = FunDecl(name, c.owner, _, type, _, _), DeclId(funDecl, funIndex, funName),
+									DeclId(funDecl, funIndex, funName), funDecl.name = name, funDecl.params = type, FunAvailable(funDecl, c.owner),
 									TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), 
 									ExprsTrans(c, s, i, args, ecs),
 									argsTuple = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#Exprs, args) - 1))), Args(out.UnApp(ADDR, Ident(typeName)), ecs)),
@@ -1609,14 +1613,14 @@ transform P2CProgram (in:: P) returns (out:: C)
 
     //// Fun
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("context"),
-						   s = in.FunStmt(name, NIL), funDecl = FunDecl(name, c.owner, _, _, _, _), DeclId(funDecl, funIndex, funName),
+						   s = in.FunStmt(name, NIL), DeclId(funDecl, funIndex, funName), FunAvailable(funDecl, c.owner), funDecl.name = name,
 						   ret = Ident("p_tmp_funstmt_ret"),
 						   funcall = out.BinApp(ASN, ret, FunApp(Ident(strJoin(funName, "_IMPL")), Args(context, Args(IntLit(funIndex, DEC, U), Args(Ident("NULL"), NIL))))),
 						   cleanup = out.ITE(BinApp(EQ, ret, Ident("NULL")), NIL, FunApp(Ident("PrtFreeValue"), Args(ret, NIL))),
 						   cs = out.Seq(funcall, cleanup).
 
 	StmtTrans(c, s, cs) :- FunStmtRhs(c, s, size, tail), s = in.FunStmt(name, args), args != NIL, 
-	                       FunDeclNames(fn, funIndex, funName, prmsTypeName), fn.owner = c.owner, fn.name = name, 
+	                       FunDeclNames(fn, funIndex, funName, prmsTypeName), FunAvailable(fn, c.owner), fn.name = name, 
 						   ExprsTrans(c, s, 0, args, ecs),
 						   cs = out.Seq(funcall, cleanup),
 						   funcall = out.BinApp(ASN, ret, FunApp(Ident(strJoin("P_EXPR_", toString(size))), trans)),

@@ -11,7 +11,7 @@
 %token INT BOOL FOREIGN ANY SEQ MAP ID
 %token INCLUDE MAIN EVENT MACHINE MONITOR ASSUME
 
-%token VAR START HOT COLD MODEL STATE FUN ACTION GROUP
+%token VAR START HOT COLD MODEL STATE FUN ACTION GROUP STATIC MODELS
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH AS WITH
 
@@ -55,6 +55,7 @@ TopDecl
     : IncludeDecl
 	| EventDecl
 	| MachineDecl
+	| StaticFunDecl
 	;
 
 /******************* Annotations *******************/ 
@@ -150,9 +151,12 @@ VarList
 	;
 
 /******************* Function Declarations *******************/
+StaticFunDecl
+	: STATIC IsModel FUN ID ParamsOrNone RetTypeOrNone FunAnnotOrNone StmtBlock { AddFunction($4.str, ToSpan(@4), ToSpan(@1), true); }
+	;
 
 FunDecl
-	: IsModel FUN ID ParamsOrNone RetTypeOrNone FunAnnotOrNone StmtBlock { AddFunction($3.str, ToSpan(@3), ToSpan(@1)); }
+	: IsModel FUN ID ParamsOrNone RetTypeOrNone FunAnnotOrNone StmtBlock { AddFunction($3.str, ToSpan(@3), ToSpan(@1), false); }
 	;
 
 IsModel
@@ -289,11 +293,6 @@ NmdTupTypeList
 
 /******************* Statements *******************/
 
-NewStmt
-	: NEW ID LPAREN RPAREN						{ PushNewStmt($2.str, false, ToSpan(@2), ToSpan(@1));      }
-	| NEW ID LPAREN SingleExprArgList RPAREN	{ PushNewStmt($2.str, true,  ToSpan(@2), ToSpan(@1));      }
-	;
-
 Stmt
 	: SEMICOLON                                               { PushNulStmt(P_Root.UserCnstKind.SKIP,  ToSpan(@1));      }
 	| LCBRACE RCBRACE                                         { PushNulStmt(P_Root.UserCnstKind.SKIP,  ToSpan(@1));      }
@@ -309,8 +308,10 @@ Stmt
 	| WHILE LPAREN Exp RPAREN Stmt                            { PushWhile(ToSpan(@1));                                   }
 	| IF LPAREN Exp RPAREN Stmt ELSE Stmt %prec ELSE          { PushIte(true, ToSpan(@1));                               }					
 	| IF LPAREN Exp RPAREN Stmt		                          { PushIte(false, ToSpan(@1));                              }
-	| NewStmt SEMICOLON								  
-	| NewStmt AS ID SEMICOLON								  { ((P_Root.NewStmt) stmtStack.Peek()).subst = MkString($3.str, ToSpan(@3)); }				  
+	| NEW ID LPAREN RPAREN SEMICOLON								{ PushNewStmt($2.str, ToSpan(@2), $2.str, ToSpan(@2), false, ToSpan(@1)); }
+	| NEW ID LPAREN SingleExprArgList RPAREN SEMICOLON 				{ PushNewStmt($2.str, ToSpan(@2), $2.str, ToSpan(@2), true, ToSpan(@1)); }
+	| NEW ID MODELS ID LPAREN RPAREN SEMICOLON						{ PushNewStmt($4.str, ToSpan(@4), $2.str, ToSpan(@2), false, ToSpan(@1)); }				  
+    | NEW ID MODELS ID LPAREN SingleExprArgList RPAREN SEMICOLON	{ PushNewStmt($4.str, ToSpan(@4), $2.str, ToSpan(@2), true, ToSpan(@1)); }
 	| ID LPAREN RPAREN SEMICOLON                              { PushFunStmt($1.str, false, ToSpan(@1));                  }
 	| ID LPAREN ExprArgList RPAREN SEMICOLON                  { PushFunStmt($1.str, true,  ToSpan(@1));                  }						
 	| RAISE Exp SEMICOLON                                     { PushRaise(false, ToSpan(@1));                            }
@@ -342,11 +343,6 @@ StateTarget
 	;
 
 /******************* Value Expressions *******************/
-
-NewExpr
-	: NEW ID LPAREN RPAREN						{ PushNewExpr($2.str, false, ToSpan(@2), ToSpan(@1));      }
-	| NEW ID LPAREN SingleExprArgList RPAREN	{ PushNewExpr($2.str, true, ToSpan(@2), ToSpan(@1));       }
-	;
 
 Exp
   : Exp_8
@@ -420,8 +416,10 @@ Exp_0
     | VALUES  LPAREN Exp RPAREN              { PushUnExpr(P_Root.UserCnstKind.VALUES, ToSpan(@1));      }
     | SIZEOF  LPAREN Exp RPAREN              { PushUnExpr(P_Root.UserCnstKind.SIZEOF, ToSpan(@1));      }
     | DEFAULT LPAREN Type RPAREN             { PushDefaultExpr(ToSpan(@1));                             }
-	| NewExpr
-	| NewExpr AS ID							 { ((P_Root.New) valueExprStack.Peek()).subst = MkString($3.str, ToSpan(@3)); }
+	| NEW ID LPAREN RPAREN								{ PushNewExpr($2.str, ToSpan(@2), $2.str, ToSpan(@2), false, ToSpan(@1)); }
+	| NEW ID LPAREN SingleExprArgList RPAREN			{ PushNewExpr($2.str, ToSpan(@2), $2.str, ToSpan(@2), true, ToSpan(@1)); }
+	| NEW ID MODELS ID LPAREN RPAREN					{ PushNewExpr($4.str, ToSpan(@4), $2.str, ToSpan(@2), false, ToSpan(@1)); }
+	| NEW ID MODELS ID LPAREN SingleExprArgList RPAREN	{ PushNewExpr($4.str, ToSpan(@4), $2.str, ToSpan(@2),false, ToSpan(@1)); }
 	| LPAREN Exp COMMA             RPAREN    { PushTupleExpr(true);                                     }
 	| LPAREN Exp COMMA ExprArgList RPAREN    { PushTupleExpr(false);                                    }
 	| ID LPAREN RPAREN                       { PushFunExpr($1.str, false, ToSpan(@1));                  }

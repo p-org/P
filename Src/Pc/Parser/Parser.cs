@@ -344,12 +344,12 @@
             stmtStack.Push(raiseStmt);
         }
 
-        private void PushNewStmt(string name, bool hasArgs, Span nameSpan, Span span)
+        private void PushNewStmt(string name, Span nameSpan, string substName, Span substNameSpan, bool hasArgs, Span span)
         {
             Contract.Assert(!hasArgs || exprsStack.Count > 0);
             var newStmt = P_Root.MkNewStmt();
             newStmt.name = MkString(name, nameSpan);
-            newStmt.subst = MkString(name, nameSpan);
+            newStmt.subst = MkString(substName, substNameSpan);
             newStmt.Span = span;
             if (hasArgs)
             {
@@ -371,12 +371,12 @@
             stmtStack.Push(newStmt);
         }
 
-        private void PushNewExpr(string name, bool hasArgs, Span nameSpan, Span span)
+        private void PushNewExpr(string name, Span nameSpan, string substName, Span substNameSpan, bool hasArgs, Span span)
         {
             Contract.Assert(!hasArgs || exprsStack.Count > 0);
             var newExpr = P_Root.MkNew();
             newExpr.name = MkString(name, nameSpan);
-            newExpr.subst = MkString(name, nameSpan);
+            newExpr.subst = MkString(substName, substNameSpan);
             newExpr.Span = span;
             if (hasArgs)
             {
@@ -1481,14 +1481,15 @@
             }
         }
 
-        private void AddFunction(string name, Span nameSpan, Span span)
+        private void AddFunction(string name, Span nameSpan, Span span, bool isGlobal)
         {
             Contract.Assert(stmtStack.Count > 0);
             
             var funDecl = GetCurrentFunDecl(span);
             funDecl.Span = span;
             funDecl.name = MkString(name, nameSpan);
-            funDecl.owner = GetCurrentMachineDecl(span);
+            funDecl.owner = isGlobal ? (P_Root.IArgType_FunDecl__1) MkUserCnst(P_Root.UserCnstKind.NIL, span) 
+                                     : (P_Root.IArgType_FunDecl__1) GetCurrentMachineDecl(span);
             funDecl.body = (P_Root.IArgType_FunDecl__5)stmtStack.Pop();
             parseProgram.Functions.Add(funDecl);
             if (crntFunNames.Contains(name))

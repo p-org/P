@@ -61,9 +61,6 @@ OUT: controlimpureerrorsgoto.p (35, 8): function may cause a change in current s
 OUT: controlimpureerrorsgoto.p (42, 28): function may cause a change in current state; this is not allowed here
 OUT: controlimpureerrorsgoto.p (43, 31): function may cause a change in current state; this is not allowed here
 OUT: controlimpureerrorsgoto.p (44, 28): function may cause a change in current state; this is not allowed here
-OUT: controlimpureerrorsgoto.p (58, 6): function may cause a change in current state; this is not allowed here
-OUT: controlimpureerrorsgoto.p (61, 6): function may cause a change in current state; this is not allowed here
-OUT: controlimpureerrorsgoto.p (64, 6): function may cause a change in current state; this is not allowed here
 OUT: controlimpureerrorsgoto.p (80, 10): function may cause a change in current state; this is not allowed here
 OUT: Compilation failed
 OUT: 

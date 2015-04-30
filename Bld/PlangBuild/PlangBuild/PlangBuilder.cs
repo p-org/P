@@ -101,15 +101,8 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RunToCompletionDelayingScheduler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\RunToCompletionDelayingScheduler.dll"),
                 new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\PriorityDelayingScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\PriorityDelayingScheduler.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\PCTDelayingScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\PCTDelayingScheduler.dll"),
-
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\PCT.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\PCT.dll"),
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\CustomDelayingScheduler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\CustomDelayingScheduler.dll"),
 
             //Zing x64
            new Tuple<string, string>(
@@ -152,14 +145,8 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RunToCompletionDelayingScheduler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\RunToCompletionDelayingScheduler.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\PriorityDelayingScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\PriorityDelayingScheduler.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\PCTDelayingScheduler.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\PCTDelayingScheduler.dll"),
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\PCT.dll", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\PCT.dll"),
+                "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\CustomDelayingScheduler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\CustomDelayingScheduler.dll"),
 
             //Pc x86
             new Tuple<string, string>(

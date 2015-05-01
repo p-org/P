@@ -41,7 +41,7 @@ namespace PlangBuild
             "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RandomDelayingScheduler.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RoundRobinDelayingScheduler.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RunToCompletionDelayingScheduler.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\PriorityDelayingScheduler.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\CustomDelayingScheduler.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\PCTDelayingScheduler.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\PCT.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingExplorer.dll",
@@ -58,7 +58,7 @@ namespace PlangBuild
             "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RandomDelayingScheduler.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RoundRobinDelayingScheduler.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RunToCompletionDelayingScheduler.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\PriorityDelayingScheduler.dll",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\CustomDelayingScheduler.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\PCTDelayingScheduler.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\PCT.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingExplorer.dll",
@@ -84,9 +84,7 @@ namespace PlangBuild
             new Tuple<string, string>("DelayingSchedulers\\RandomDelayingScheduler\\bin\\x64\\Release\\RandomDelayingScheduler.dll", "..\\x64\\RandomDelayingScheduler.dll"),
             new Tuple<string, string>("DelayingSchedulers\\RoundRobinDelayingScheduler\\bin\\x64\\Release\\RoundRobinDelayingScheduler.dll", "..\\x64\\RoundRobinDelayingScheduler.dll"),
             new Tuple<string, string>("DelayingSchedulers\\RunToCompletionDelayingScheduler\\bin\\x64\\Release\\RunToCompletionDelayingScheduler.dll", "..\\x64\\RunToCompletionDelayingScheduler.dll"),
-            new Tuple<string, string>("DelayingSchedulers\\PCTDelayingScheduler\\bin\\x64\\Release\\PCTDelayingScheduler.dll", "..\\x64\\PCTDelayingScheduler.dll"),
-            new Tuple<string, string>("DelayingSchedulers\\PCT\\bin\\x64\\Release\\PCT.dll", "..\\x64\\PCT.dll"),
-            new Tuple<string, string>("DelayingSchedulers\\PriorityScheduler\\bin\\x64\\Release\\PriorityDelayingScheduler.dll", "..\\x64\\PriorityDelayingScheduler.dll"),
+            new Tuple<string, string>("DelayingSchedulers\\CustomDelayingScheduler\\bin\\x64\\Release\\CustomDelayingScheduler.dll", "..\\x64\\CustomDelayingScheduler.dll"),
 
             new Tuple<string, string>("zc\\bin\\x86\\Release\\zc.exe", "..\\x86\\zc.exe"),
             new Tuple<string, string>("zc\\bin\\x86\\Release\\Microsoft.Comega.dll", "..\\x86\\Microsoft.Comega.dll"),
@@ -101,9 +99,7 @@ namespace PlangBuild
             new Tuple<string, string>("DelayingSchedulers\\RandomDelayingScheduler\\bin\\x86\\Release\\RandomDelayingScheduler.dll", "..\\x86\\RandomDelayingScheduler.dll"),
             new Tuple<string, string>("DelayingSchedulers\\RoundRobinDelayingScheduler\\bin\\x86\\Release\\RoundRobinDelayingScheduler.dll", "..\\x86\\RoundRobinDelayingScheduler.dll"),
             new Tuple<string, string>("DelayingSchedulers\\RunToCompletionDelayingScheduler\\bin\\x86\\Release\\RunToCompletionDelayingScheduler.dll", "..\\x86\\RunToCompletionDelayingScheduler.dll"),
-            new Tuple<string, string>("DelayingSchedulers\\PCTDelayingScheduler\\bin\\x86\\Release\\PCTDelayingScheduler.dll", "..\\x86\\PCTDelayingScheduler.dll"),
-            new Tuple<string, string>("DelayingSchedulers\\PCT\\bin\\x86\\Release\\PCT.dll", "..\\x86\\PCT.dll"),
-            new Tuple<string, string>("DelayingSchedulers\\PriorityScheduler\\bin\\x86\\Release\\PriorityDelayingScheduler.dll", "..\\x86\\PriorityDelayingScheduler.dll"),
+            new Tuple<string, string>("DelayingSchedulers\\CustomDelayingScheduler\\bin\\x86\\Release\\CustomDelayingScheduler.dll", "..\\x86\\CustomDelayingScheduler.dll"),
         };
 
         public static bool Build(bool isRebuildForced)

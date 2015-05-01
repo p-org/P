@@ -51,7 +51,6 @@ typedef enum PRT_VALUE_KIND
 
 /** A Union type to discriminate the Prt value */
 typedef struct PRT_VALUE {
-	PRT_TYPE *type;               /**< the type of this value */
 	PRT_VALUE_KIND discriminator; /**< A value kind to discriminate the union */
 	union
 	{
@@ -77,6 +76,7 @@ typedef struct PRT_MACHINEID
 /** A tuple value is a (named) tuple represented as an array. */
 typedef struct PRT_TUPVALUE
 {
+	PRT_UINT32 size;
 	PRT_VALUE **values;   /**< Is an array of tuple args.    */
 } PRT_TUPVALUE;
 
@@ -113,7 +113,12 @@ typedef struct PRT_MAPNODE
 /** A foreign value is foreign type paired with a void *. */
 typedef struct PRT_FORGNVALUE
 {
-	void    *value;   /**< A pointer to the foreign value. */
+	void				  *value;     /**< A pointer to the foreign value. */
+	PRT_GUID              typeTag;    /**< A non-zero GUID used by the client to tag the foreign types of values */
+	PRT_FORGN_CLONE       cloner;     /**< Clones foreign values */
+	PRT_FORGN_FREE        freer;      /**< Frees foreign values */
+	PRT_FORGN_GETHASHCODE hasher;     /**< Hashes foreign values */
+	PRT_FORGN_ISEQUAL     eqTester;   /**< Tests foreign values for equality */
 } PRT_FORGNVALUE;
 
 
@@ -174,12 +179,22 @@ PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkNullValue();
 PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkMachineValue(_In_ PRT_MACHINEID value);
 
 /** Makes a foreign value.
-* @param[in] type A foreign type (will be cloned).
 * @param[in] value A pointer to foreign data (will be cloned).
+* @param[in] typeTag The type tag for this type.
+* @param[in] cloner The cloner for this type.
+* @param[in] freer The freer for this type.
+* @param[in] hasher The hasher for this type.
+* @param[in] eqTester The equality tester for this type.
 * @returns A proper foreign value. Caller is responsible for freeing.
 * @see PrtFreeValue
 */
-PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(_In_ PRT_TYPE *type, _In_ void *value);
+PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(
+	_In_ void				   *value,
+	_In_ PRT_GUID              typeTag,
+	_In_ PRT_FORGN_CLONE       cloner,
+	_In_ PRT_FORGN_FREE        freer,
+	_In_ PRT_FORGN_GETHASHCODE hasher,
+	_In_ PRT_FORGN_ISEQUAL     eqTester);
 
 /** Sets the value of a boolean.
 * @param[in,out] prmVal A primitive boolean value to mutate.
@@ -242,20 +257,6 @@ PRT_API void PRT_CALL_CONV PrtTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32
 * @returns The element at index i. Caller is responsible for freeing.
 */
 PRT_API PRT_VALUE * PRT_CALL_CONV PrtTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index);
-
-/** Sets an element in a named tuple by name.
-* @param[in,out] tuple A named tuple to mutate.
-* @param[in]     name  The name of the element to set.
-* @param[in]     value The value to set (will be cloned).
-*/
-PRT_API void PRT_CALL_CONV PrtNmdTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_STRING name, _In_ PRT_VALUE *value);
-
-/** Gets an element in a named tuple by name.
-* @param[in] tuple A named tuple.
-* @param[in] name  The name of the element to set.
-* @returns The element named name. Caller is responsible for freeing.
-*/
-PRT_API PRT_VALUE* PRT_CALL_CONV PrtNmdTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_STRING name);
 
 /** Updates the sequence at index.
 * @param[in,out] seq   A sequence to mutate.

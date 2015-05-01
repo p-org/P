@@ -154,8 +154,6 @@ PRT_VALUE * PRT_CALL_CONV PrtMkBoolValue(_In_ PRT_BOOLEAN value)
 	PrtAssert(value == PRT_TRUE || value == PRT_FALSE, "Expected a bool value");
 
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-	PRT_TYPE *type = PrtMkPrimitiveType(PRT_KIND_BOOL);
-	retVal->type = type;
 	retVal->discriminator = PRT_VALKIND_BOOL;
 	retVal->valueUnion.bl = value;
 	return retVal;
@@ -164,8 +162,6 @@ PRT_VALUE * PRT_CALL_CONV PrtMkBoolValue(_In_ PRT_BOOLEAN value)
 PRT_VALUE * PRT_CALL_CONV PrtMkEventValue(_In_ PRT_UINT32 value)
 {
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-	PRT_TYPE *type = PrtMkPrimitiveType(PRT_KIND_EVENT);
-	retVal->type = type;
 	retVal->discriminator = PRT_VALKIND_EVENT;
 	retVal->valueUnion.ev = value;
 	return retVal;
@@ -174,8 +170,6 @@ PRT_VALUE * PRT_CALL_CONV PrtMkEventValue(_In_ PRT_UINT32 value)
 PRT_VALUE * PRT_CALL_CONV PrtMkIntValue(_In_ PRT_INT32 value)
 {
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-	PRT_TYPE *type = PrtMkPrimitiveType(PRT_KIND_INT);
-	retVal->type = type;
 	retVal->discriminator = PRT_VALKIND_INT;
 	retVal->valueUnion.nt = value;
 	return retVal;
@@ -184,8 +178,6 @@ PRT_VALUE * PRT_CALL_CONV PrtMkIntValue(_In_ PRT_INT32 value)
 PRT_VALUE * PRT_CALL_CONV PrtMkNullValue()
 {
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-	PRT_TYPE *type = PrtMkPrimitiveType(PRT_KIND_NULL);
-	retVal->type = type;
 	retVal->discriminator = PRT_VALKIND_NULL;
 	retVal->valueUnion.ev = PRT_SPECIAL_EVENT_NULL;
 	return retVal;
@@ -194,9 +186,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkNullValue()
 PRT_VALUE * PRT_CALL_CONV PrtMkMachineValue(_In_ PRT_MACHINEID value)
 {
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-	PRT_TYPE *type = PrtMkPrimitiveType(PRT_KIND_MACHINE);
 	PRT_MACHINEID *id = (PRT_MACHINEID *)PrtMalloc(sizeof(PRT_MACHINEID));
-	retVal->type = type;
 	retVal->discriminator = PRT_VALKIND_MID;
 	retVal->valueUnion.mid = id;
 	id->machineId = value.machineId;
@@ -207,17 +197,29 @@ PRT_VALUE * PRT_CALL_CONV PrtMkMachineValue(_In_ PRT_MACHINEID value)
 	return retVal;
 }
 
-PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(_In_ PRT_TYPE *type, _In_ void *value)
+PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(
+	_In_ void *value, 
+	_In_ PRT_GUID typeTag,
+	_In_ PRT_FORGN_CLONE       cloner,
+	_In_ PRT_FORGN_FREE        freer,
+	_In_ PRT_FORGN_GETHASHCODE hasher,
+	_In_ PRT_FORGN_ISEQUAL     eqTester)
 {
-	PrtAssert(PrtIsValidType(type), "Invalid type expression.");
-	PrtAssert(type->typeKind == PRT_KIND_FORGN, "Did not receive foreign type.");
+	PrtAssert(cloner != NULL, "Bad cloner");
+	PrtAssert(freer != NULL, "Bad freer");
+	PrtAssert(hasher != NULL, "Bad hasher");
+	PrtAssert(eqTester != NULL, "Bad equality tester");
 
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 	PRT_FORGNVALUE *frgn = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
-	retVal->type = PrtCloneType(type);
 	retVal->discriminator = PRT_VALKIND_FORGN;
 	retVal->valueUnion.frgn = frgn;
-	frgn->value = type->typeUnion.forgn->cloner(type->typeUnion.forgn->typeTag, value);
+	frgn->value = cloner(typeTag, value);
+	frgn->typeTag = typeTag;
+	frgn->cloner = cloner;
+	frgn->freer = freer;
+	frgn->hasher = hasher;
+	frgn->eqTester = eqTester;
 	return retVal;
 }
 
@@ -243,17 +245,23 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 	{
 		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 		PRT_FORGNVALUE *frgn = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
-		retVal->type = PrtMkAbsentType();
 		retVal->discriminator = PRT_VALKIND_FORGN;
 		retVal->valueUnion.frgn = frgn;
 		frgn->value = NULL;
+		frgn->typeTag.data1 = 0;
+		frgn->typeTag.data2 = 0;
+		frgn->typeTag.data3 = 0;
+		frgn->typeTag.data4 = 0;
+		frgn->cloner = NULL;
+		frgn->freer = NULL;
+		frgn->hasher = NULL;
+		frgn->eqTester = NULL;
 		return retVal;
 	}
 	case PRT_KIND_MAP:
 	{
 		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 		PRT_MAPVALUE *map = (PRT_MAPVALUE *)PrtMalloc(sizeof(PRT_MAPVALUE));
-		retVal->type = PrtCloneType(type);
 		retVal->discriminator = PRT_VALKIND_MAP;
 		retVal->valueUnion.map = map;
 
@@ -268,11 +276,11 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 	{
 		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 		PRT_TUPVALUE *tup = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
-		retVal->type = PrtCloneType(type);
 		retVal->discriminator = PRT_VALKIND_TUPLE;
 		retVal->valueUnion.tuple = tup;
 		PRT_UINT32 i;
 		PRT_NMDTUPTYPE *ntype = type->typeUnion.nmTuple;
+		tup->size = ntype->arity;
 		tup->values = (PRT_VALUE **)PrtCalloc(ntype->arity, sizeof(PRT_VALUE*));
 		for (i = 0; i < ntype->arity; ++i)
 		{
@@ -285,7 +293,6 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 	{
 		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 		PRT_SEQVALUE *seq = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
-		retVal->type = PrtCloneType(type);
 		retVal->discriminator = PRT_VALKIND_SEQ;
 		retVal->valueUnion.seq = seq;
 
@@ -298,11 +305,11 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 	{
 		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 		PRT_TUPVALUE *tup = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
-		retVal->type = PrtCloneType(type);
 		retVal->discriminator = PRT_VALKIND_TUPLE;
 		retVal->valueUnion.tuple = tup;
 		PRT_UINT32 i;
 		PRT_TUPTYPE *ttype = type->typeUnion.tuple;
+		tup->size = ttype->arity; 
 		tup->values = (PRT_VALUE **)PrtCalloc(ttype->arity, sizeof(PRT_VALUE*));
 		for (i = 0; i < ttype->arity; ++i)
 		{
@@ -312,7 +319,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 		return retVal;
 	}
 	default:
-		PrtAssert(PRT_FALSE, "Invalid type");
+		PrtAssert(PRT_FALSE, "PrtMkDefaultValue: Invalid type");
 		return NULL;
 	}
 }
@@ -321,49 +328,49 @@ void PRT_CALL_CONV PrtPrimSetBool(_Inout_ PRT_VALUE *prmVal, _In_ PRT_BOOLEAN va
 {
 	PrtAssert(value == PRT_TRUE || value == PRT_FALSE, "Expected a bool value");
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
-	PrtAssert(prmVal->type->typeKind == PRT_KIND_BOOL, "Invalid type on primitive set");
+	PrtAssert(prmVal->discriminator == PRT_VALKIND_BOOL, "Invalid type on primitive set");
 	prmVal->valueUnion.bl = value;
 }
 
 PRT_BOOLEAN PRT_CALL_CONV PrtPrimGetBool(_In_ PRT_VALUE *prmVal)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
-	PrtAssert(prmVal->type->typeKind == PRT_KIND_BOOL, "Invalid type on primitive get");
+	PrtAssert(prmVal->discriminator == PRT_VALKIND_BOOL, "Invalid type on primitive get");
 	return prmVal->valueUnion.bl;
 }
 
 void PRT_CALL_CONV PrtPrimSetEvent(_Inout_ PRT_VALUE *prmVal, _In_ PRT_UINT32 value)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
-	PrtAssert(prmVal->type->typeKind == PRT_KIND_EVENT, "Invalid type on primitive set");
+	PrtAssert(prmVal->discriminator == PRT_VALKIND_EVENT, "Invalid type on primitive set");
 	prmVal->valueUnion.ev = value;
 }
 
 PRT_UINT32 PRT_CALL_CONV PrtPrimGetEvent(_In_ PRT_VALUE *prmVal)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
-	PrtAssert(prmVal->type->typeKind == PRT_KIND_EVENT, "Invalid type on primitive get");
+	PrtAssert(prmVal->discriminator == PRT_VALKIND_EVENT, "Invalid type on primitive get");
 	return prmVal->valueUnion.ev;
 }
 
 void PRT_CALL_CONV PrtPrimSetInt(_Inout_ PRT_VALUE *prmVal, _In_ PRT_INT32 value)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
-	PrtAssert(prmVal->type->typeKind == PRT_KIND_INT, "Invalid type on primitive set");
+	PrtAssert(prmVal->discriminator == PRT_VALKIND_INT, "Invalid type on primitive set");
 	prmVal->valueUnion.nt = value;
 }
 
 PRT_INT32 PRT_CALL_CONV PrtPrimGetInt(_In_ PRT_VALUE *prmVal)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
-	PrtAssert(prmVal->type->typeKind == PRT_KIND_INT, "Invalid type on primitive get");
+	PrtAssert(prmVal->discriminator == PRT_VALKIND_INT, "Invalid type on primitive get");
 	return prmVal->valueUnion.nt;
 }
 
 void PRT_CALL_CONV PrtPrimSetMachine(_Inout_ PRT_VALUE *prmVal, _In_ PRT_MACHINEID value)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
-	PrtAssert(prmVal->type->typeKind == PRT_KIND_MACHINE, "Invalid type on primitive set");
+	PrtAssert(prmVal->discriminator == PRT_VALKIND_MID, "Invalid type on primitive set");
 	PRT_MACHINEID *id = prmVal->valueUnion.mid;
 	id->machineId = value.machineId;
 	id->processId.data1 = value.processId.data1;
@@ -375,7 +382,7 @@ void PRT_CALL_CONV PrtPrimSetMachine(_Inout_ PRT_VALUE *prmVal, _In_ PRT_MACHINE
 PRT_MACHINEID PRT_CALL_CONV PrtPrimGetMachine(_In_ PRT_VALUE *prmVal)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
-	PrtAssert(prmVal->type->typeKind == PRT_KIND_MACHINE, "Invalid type on primitive get");
+	PrtAssert(prmVal->discriminator == PRT_VALKIND_MID, "Invalid type on primitive get");
 	return *prmVal->valueUnion.mid;
 }
 
@@ -383,158 +390,28 @@ void PRT_CALL_CONV PrtTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, 
 {
 	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
-	PrtAssert(tuple->type->typeKind == PRT_KIND_TUPLE || tuple->type->typeKind == PRT_KIND_NMDTUP, "Cannot perform tuple set on this value");
-
-	PRT_UINT32 arity;
-	PRT_TYPE **fieldTypes;
-	PRT_VALUE* clone;
-	if (tuple->type->typeKind == PRT_KIND_TUPLE)
-	{
-		PRT_TUPTYPE *ttype = tuple->type->typeUnion.tuple;
-		arity = ttype->arity;
-		fieldTypes = ttype->fieldTypes;
-	}
-	else if (tuple->type->typeKind == PRT_KIND_NMDTUP)
-	{
-		PRT_NMDTUPTYPE *ntype = tuple->type->typeUnion.nmTuple;
-		arity = ntype->arity;
-		fieldTypes = ntype->fieldTypes;
-	}
-	else
-	{
-		PRT_DBG_ASSERT(PRT_FALSE, "impossible");
-		return;
-	}
-
-	PrtAssert(index < arity, "Invalid tuple index");
-	clone = PrtCastValue(value, fieldTypes[index]);
+	PrtAssert(tuple->discriminator == PRT_VALKIND_TUPLE, "Cannot perform tuple set on this value");
+	PrtAssert(0 <= index && index < tuple->valueUnion.tuple->size, "Invalid tuple index");
+	
 	PrtFreeValue(tuple->valueUnion.tuple->values[index]);
-	tuple->valueUnion.tuple->values[index] = clone;
+	tuple->valueUnion.tuple->values[index] = PrtCloneValue(value);
 }
 
 PRT_VALUE * PRT_CALL_CONV PrtTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index)
 {
 	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
-	PrtAssert(tuple->type->typeKind == PRT_KIND_TUPLE || tuple->type->typeKind == PRT_KIND_NMDTUP, "Cannot perform tuple set on this value");
+	PrtAssert(tuple->discriminator == PRT_VALKIND_TUPLE, "Cannot perform tuple set on this value");
+	PrtAssert(0 <= index && index < tuple->valueUnion.tuple->size, "Invalid tuple index");
 
-	PRT_UINT32 arity;
-	if (tuple->type->typeKind == PRT_KIND_TUPLE)
-	{
-		PRT_TUPTYPE *ttype = tuple->type->typeUnion.tuple;
-		arity = ttype->arity;
-	}
-	else if (tuple->type->typeKind == PRT_KIND_NMDTUP)
-	{
-		PRT_NMDTUPTYPE *ntype = tuple->type->typeUnion.nmTuple;
-		arity = ntype->arity;
-	}
-	else
-	{
-		PRT_DBG_ASSERT(PRT_FALSE, "impossible");
-		return NULL;
-	}
-
-	PrtAssert(index < arity, "Invalid tuple index");
 	return PrtCloneValue(tuple->valueUnion.tuple->values[index]);
 }
 
 PRT_VALUE * PRT_CALL_CONV PrtTupleGetNC(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index)
 {
 	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
-	PrtAssert(tuple->type->typeKind == PRT_KIND_TUPLE || tuple->type->typeKind == PRT_KIND_NMDTUP, "Cannot perform tuple set on this value");
-
-	PRT_UINT32 arity;
-	if (tuple->type->typeKind == PRT_KIND_TUPLE)
-	{
-		PRT_TUPTYPE *ttype = tuple->type->typeUnion.tuple;
-		arity = ttype->arity;
-	}
-	else if (tuple->type->typeKind == PRT_KIND_NMDTUP)
-	{
-		PRT_NMDTUPTYPE *ntype = tuple->type->typeUnion.nmTuple;
-		arity = ntype->arity;
-	}
-	else
-	{
-		PRT_DBG_ASSERT(PRT_FALSE, "impossible");
-		return NULL;
-	}
-
-	PrtAssert(index < arity, "Invalid tuple index");
-	return tuple->valueUnion.tuple->values[index];
-}
-
-void PRT_CALL_CONV PrtNmdTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_STRING name, _In_ PRT_VALUE *value)
-{
-	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
-	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
-	PrtAssert(name != NULL && name[0] != '\0', "Invalid field name");
-	PrtAssert(tuple->type->typeKind == PRT_KIND_NMDTUP, "Cannot perform tuple set on this value");
-
-	PRT_NMDTUPTYPE *type = tuple->type->typeUnion.nmTuple;
-	PRT_UINT32 arity = type->arity;
-	PRT_TYPE **fieldTypes = type->fieldTypes;
-	PRT_STRING *fieldNames = type->fieldNames;
-	PRT_VALUE *clone;
-
-	PRT_UINT32 index;
-	for (index = 0; index < arity; ++index)
-	{
-		if (strncmp(fieldNames[index], name, PRT_MAXFLDNAME_LENGTH) == 0)
-		{
-			break;
-		}
-	}
-
-	PrtAssert(index < arity, "Invalid tuple field name");
-	clone = PrtCastValue(value, fieldTypes[index]);
-	PrtFreeValue(tuple->valueUnion.tuple->values[index]);
-	tuple->valueUnion.tuple->values[index] = clone;
-}
-
-PRT_VALUE * PRT_CALL_CONV PrtNmdTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_STRING name)
-{
-	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
-	PrtAssert(name != NULL && name[0] != '\0', "Invalid field name");
-	PrtAssert(tuple->type->typeKind == PRT_KIND_NMDTUP, "Cannot perform tuple get on this value");
-
-	PRT_NMDTUPTYPE *type = tuple->type->typeUnion.nmTuple;
-	PRT_UINT32 arity = type->arity;
-	PRT_STRING *fieldNames = type->fieldNames;
-	PRT_UINT32 index;
-
-	for (index = 0; index < arity; ++index)
-	{
-		if (strncmp(fieldNames[index], name, PRT_MAXFLDNAME_LENGTH) == 0)
-		{
-			break;
-		}
-	}
-
-	PrtAssert(index < arity, "Invalid tuple field name");
-	return PrtCloneValue(tuple->valueUnion.tuple->values[index]);
-}
-
-PRT_VALUE * PRT_CALL_CONV PrtNmdTupleGetNC(_In_ PRT_VALUE *tuple, _In_ PRT_STRING name)
-{
-	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
-	PrtAssert(name != NULL && name[0] != '\0', "Invalid field name");
-	PrtAssert(tuple->type->typeKind == PRT_KIND_NMDTUP, "Cannot perform tuple get on this value");
-
-	PRT_NMDTUPTYPE *type = tuple->type->typeUnion.nmTuple;
-	PRT_UINT32 arity = type->arity;
-	PRT_STRING *fieldNames = type->fieldNames;
-	PRT_UINT32 index;
-
-	for (index = 0; index < arity; ++index)
-	{
-		if (strncmp(fieldNames[index], name, PRT_MAXFLDNAME_LENGTH) == 0)
-		{
-			break;
-		}
-	}
-
-	PrtAssert(index < arity, "Invalid tuple field name");
+	PrtAssert(tuple->discriminator == PRT_VALKIND_TUPLE, "Cannot perform tuple set on this value");
+	PrtAssert(0 <= index && index < tuple->valueUnion.tuple->size, "Invalid tuple index");
+	
 	return tuple->valueUnion.tuple->values[index];
 }
 
@@ -542,28 +419,24 @@ void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
-	PrtAssert(seq->type->typeKind == PRT_KIND_SEQ, "Invalid value");
-	PrtAssert(index->type->typeKind == PRT_KIND_INT, "Invalid value");
-	PrtAssert(index->valueUnion.nt >= 0 && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
+	PrtAssert(seq->discriminator == PRT_VALKIND_SEQ, "Invalid value");
+	PrtAssert(index->discriminator == PRT_VALKIND_INT, "Invalid value");
+	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
 
-	PRT_VALUE *clone;
-	PRT_SEQTYPE *seqType = seq->type->typeUnion.seq;
-	clone = PrtCastValue(value, seqType->innerType);
 	PrtFreeValue(seq->valueUnion.seq->values[index->valueUnion.nt]);
-	seq->valueUnion.seq->values[index->valueUnion.nt] = clone;
+	seq->valueUnion.seq->values[index->valueUnion.nt] = PrtCloneValue(value);
 }
 
 void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE* value)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
-	PrtAssert(seq->type->typeKind == PRT_KIND_SEQ, "Invalid value");
-	PrtAssert(index->type->typeKind == PRT_KIND_INT, "Invalid value");
-	PrtAssert(index->valueUnion.nt >= 0 && (PRT_UINT32)index->valueUnion.nt <= seq->valueUnion.seq->size, "Invalid index");
+	PrtAssert(seq->discriminator == PRT_VALKIND_SEQ, "Invalid value");
+	PrtAssert(index->discriminator == PRT_VALKIND_INT, "Invalid value");
+	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt <= seq->valueUnion.seq->size, "Invalid index");
 
 	PRT_VALUE *clone;
-	PRT_SEQTYPE *seqType = seq->type->typeUnion.seq;
-	clone = PrtCastValue(value, seqType->innerType);
+	clone = PrtCloneValue(value);
 	if (seq->valueUnion.seq->capacity == 0)
 	{
 		seq->valueUnion.seq->values = (PRT_VALUE **)PrtMalloc(sizeof(PRT_VALUE*));
@@ -617,9 +490,9 @@ void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _
 void PRT_CALL_CONV PrtSeqRemove(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
-	PrtAssert(seq->type->typeKind == PRT_KIND_SEQ, "Invalid value");
-	PrtAssert(index->type->typeKind == PRT_KIND_INT, "Invalid value");
-	PrtAssert(index->valueUnion.nt >= 0 && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
+	PrtAssert(seq->discriminator == PRT_VALKIND_SEQ, "Invalid value");
+	PrtAssert(index->discriminator == PRT_VALKIND_INT, "Invalid value");
+	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
 
 	PRT_UINT32 i;
 	PRT_VALUE **values = seq->valueUnion.seq->values;
@@ -636,9 +509,9 @@ void PRT_CALL_CONV PrtSeqRemove(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
 PRT_VALUE * PRT_CALL_CONV PrtSeqGet(_In_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
-	PrtAssert(seq->type->typeKind == PRT_KIND_SEQ, "Invalid value");
-	PrtAssert(index->type->typeKind == PRT_KIND_INT, "Invalid value");
-	PrtAssert(index->valueUnion.nt >= 0 && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
+	PrtAssert(seq->discriminator == PRT_VALKIND_SEQ, "Invalid value");
+	PrtAssert(index->discriminator == PRT_VALKIND_INT, "Invalid value");
+	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
 
 	return PrtCloneValue(seq->valueUnion.seq->values[index->valueUnion.nt]);
 }
@@ -646,9 +519,9 @@ PRT_VALUE * PRT_CALL_CONV PrtSeqGet(_In_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
 PRT_VALUE * PRT_CALL_CONV PrtSeqGetNC(_In_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
-	PrtAssert(seq->type->typeKind == PRT_KIND_SEQ, "Invalid value");
-	PrtAssert(index->type->typeKind == PRT_KIND_INT, "Invalid value");
-	PrtAssert(index->valueUnion.nt >= 0 && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
+	PrtAssert(seq->discriminator == PRT_VALKIND_SEQ, "Invalid value");
+	PrtAssert(index->discriminator == PRT_VALKIND_INT, "Invalid value");
+	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
 
 	return seq->valueUnion.seq->values[index->valueUnion.nt];
 }
@@ -656,7 +529,7 @@ PRT_VALUE * PRT_CALL_CONV PrtSeqGetNC(_In_ PRT_VALUE *seq, _In_ PRT_VALUE *index
 PRT_UINT32 PRT_CALL_CONV PrtSeqSizeOf(_In_ PRT_VALUE *seq)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
-	PrtAssert(seq->type->typeKind == PRT_KIND_SEQ, "Invalid value");
+	PrtAssert(seq->discriminator == PRT_VALKIND_SEQ, "Invalid value");
 
 	return seq->valueUnion.seq->size;
 }
@@ -706,9 +579,8 @@ void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
-	PrtAssert(map->type->typeKind == PRT_KIND_MAP, "Invalid value");
+	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
 
-	PRT_MAPTYPE *mapType = map->type->typeUnion.map;
 	PRT_UINT32 bucketNum;
 	PRT_MAPNODE *bucket;
 	PRT_MAPNODE *node = NULL;
@@ -720,15 +592,15 @@ void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _
 	{
 		isNewKey = PRT_TRUE;
 		node = (PRT_MAPNODE *)PrtMalloc(sizeof(PRT_MAPNODE));
-		node->key = cloneKeyVals == PRT_TRUE ? PrtCastValue(key, mapType->domType) : key;
-		node->value = cloneKeyVals == PRT_TRUE ? PrtCastValue(value, mapType->codType) : value;
+		node->key = cloneKeyVals == PRT_TRUE ? PrtCloneValue(key) : key;
+		node->value = cloneKeyVals == PRT_TRUE ? PrtCloneValue(value) : value;
 		node->bucketNext = NULL;
 		node->insertNext = NULL;
 		map->valueUnion.map->buckets[bucketNum] = node;
 	}
 	else
 	{
-		PRT_VALUE *valueClone = cloneKeyVals == PRT_TRUE ? PrtCastValue(value, mapType->codType) : value;
+		PRT_VALUE *valueClone = cloneKeyVals == PRT_TRUE ? PrtCloneValue(value) : value;
 		PRT_MAPNODE *next = bucket;
 		isNewKey = PRT_TRUE;
 		while (next != NULL)
@@ -753,7 +625,7 @@ void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _
 		if (isNewKey == PRT_TRUE)
 		{
 			node = (PRT_MAPNODE *)PrtMalloc(sizeof(PRT_MAPNODE));
-			node->key = cloneKeyVals == PRT_TRUE ? PrtCastValue(key, mapType->domType) : key;
+			node->key = cloneKeyVals == PRT_TRUE ? PrtCloneValue(key) : key;
 			node->value = valueClone;
 			node->bucketNext = bucket;
 			node->insertNext = NULL;
@@ -793,6 +665,7 @@ void PRT_CALL_CONV PrtMapUpdate(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In
 void PRT_CALL_CONV PrtMapInsert(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_VALUE *value)
 {
 	PrtAssert(!PrtMapExists(map, key), "key must not be in map");
+
 	PrtMapUpdate(map, key, value);
 }
 
@@ -800,10 +673,7 @@ void PRT_CALL_CONV PrtMapRemove(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
-	PrtAssert(map->type->typeKind == PRT_KIND_MAP, "Invalid value");
-
-	PRT_MAPTYPE *mapType = map->type->typeUnion.map;
-	PrtAssert(PrtIsSubtype(key->type, mapType->domType), "Invalid map remove; key has bad type");
+	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
 
 	PRT_UINT32 bucketNum;
 	PRT_MAPNODE *bucket;
@@ -867,10 +737,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMapGet(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
-	PrtAssert(map->type->typeKind == PRT_KIND_MAP, "Invalid value");
-
-	PRT_MAPTYPE *mapType = map->type->typeUnion.map;
-	PrtAssert(PrtIsSubtype(key->type, mapType->domType), "Invalid map get; key has bad type");
+	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
 
 	PRT_UINT32 bucketNum;
 	PRT_MAPNODE *bucket;
@@ -896,10 +763,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMapGetNC(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
-	PrtAssert(map->type->typeKind == PRT_KIND_MAP, "Invalid value");
-
-	PRT_MAPTYPE *mapType = map->type->typeUnion.map;
-	PrtAssert(PrtIsSubtype(key->type, mapType->domType), "Invalid map get; key has bad type");
+	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
 
 	PRT_UINT32 bucketNum;
 	PRT_MAPNODE *bucket;
@@ -924,12 +788,10 @@ PRT_VALUE * PRT_CALL_CONV PrtMapGetNC(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key)
 PRT_VALUE * PRT_CALL_CONV PrtMapGetKeys(_In_ PRT_VALUE *map)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
-	PrtAssert(map->type->typeKind == PRT_KIND_MAP, "Invalid value");
+	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
 
-	PRT_MAPTYPE *mapType = map->type->typeUnion.map;
 	PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
 	PRT_SEQVALUE *seqVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
-	retVal->type = PrtMkSeqType(mapType->domType);
 	retVal->discriminator = PRT_VALKIND_SEQ;
 	retVal->valueUnion.seq = seqVal;
 
@@ -959,12 +821,10 @@ PRT_VALUE * PRT_CALL_CONV PrtMapGetKeys(_In_ PRT_VALUE *map)
 PRT_VALUE * PRT_CALL_CONV PrtMapGetValues(_In_ PRT_VALUE *map)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
-	PrtAssert(map->type->typeKind == PRT_KIND_MAP, "Invalid value");
+	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
 
-	PRT_MAPTYPE *mapType = map->type->typeUnion.map;
 	PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
 	PRT_SEQVALUE *seqVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
-	retVal->type = PrtMkSeqType(mapType->codType);
 	retVal->discriminator = PRT_VALKIND_SEQ;
 	retVal->valueUnion.seq = seqVal;
 
@@ -996,10 +856,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtMapExists(_In_ PRT_VALUE *map, _In_ PRT_VALUE *key)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
-	PrtAssert(map->type->typeKind == PRT_KIND_MAP, "Invalid value");
-
-	PRT_MAPTYPE *mapType = map->type->typeUnion.map;
-	PrtAssert(PrtIsSubtype(key->type, mapType->domType), "Invalid map get; key has bad type");
+	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
 
 	PRT_UINT32 bucketNum;
 	PRT_MAPNODE *bucket;
@@ -1029,10 +886,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtMapIsSameMapping(_In_ PRT_VALUE *map, _In_ PRT_VALU
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
-	PrtAssert(map->type->typeKind == PRT_KIND_MAP, "Invalid value");
-
-	PRT_MAPTYPE *mapType = map->type->typeUnion.map;
-	PrtAssert(PrtIsSubtype(key->type, mapType->domType), "Invalid map get; key has bad type");
+	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
 
 	PRT_UINT32 bucketNum;
 	PRT_MAPNODE *bucket;
@@ -1060,7 +914,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtMapIsSameMapping(_In_ PRT_VALUE *map, _In_ PRT_VALU
 PRT_UINT32 PRT_CALL_CONV PrtMapSizeOf(_In_ PRT_VALUE *map)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
-	PrtAssert(map->type->typeKind == PRT_KIND_MAP, "Invalid value");
+	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
 
 	return map->valueUnion.map->size;
 }
@@ -1068,7 +922,7 @@ PRT_UINT32 PRT_CALL_CONV PrtMapSizeOf(_In_ PRT_VALUE *map)
 PRT_UINT32 PRT_CALL_CONV PrtMapCapacity(_In_ PRT_VALUE *map)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
-	PrtAssert(map->type->typeKind == PRT_KIND_MAP, "Invalid value");
+	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
 
 	return PrtHashtableCapacities[map->valueUnion.map->capNum];
 }
@@ -1081,26 +935,22 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE* inputValue)
 		return PrtGetHashCodeUInt32(0);
 	}
 
-	PRT_TYPE_KIND kind = inputValue->type->typeKind;
+	PRT_VALUE_KIND kind = inputValue->discriminator;
 	switch (kind)
 	{
-	case PRT_KIND_ANY:
-		PRT_DBG_ASSERT(PRT_FALSE, "Value must have a more concrete type");
-		return 0;
-	case PRT_KIND_BOOL:
+	case PRT_VALKIND_BOOL:
 		return PrtGetHashCodeUInt32(0x00400000 ^ ((PRT_UINT32)inputValue->valueUnion.bl));
-	case PRT_KIND_EVENT:
+	case PRT_VALKIND_EVENT:
 		return PrtGetHashCodeUInt32(0x00800000 ^ (inputValue->valueUnion.ev));
-	case PRT_KIND_MACHINE:
+	case PRT_VALKIND_MID:
 		return PrtGetHashCodeUInt32(0x01000000 ^ PrtGetHashCodeMachineId(*inputValue->valueUnion.mid));
-	case PRT_KIND_INT:
+	case PRT_VALKIND_INT:
 		return PrtGetHashCodeUInt32(0x02000000 ^ ((PRT_UINT32)inputValue->valueUnion.nt));
-	case PRT_KIND_FORGN:
+	case PRT_VALKIND_FORGN:
 	{
-		PRT_FORGNTYPE* fType = inputValue->type->typeUnion.forgn;
-		return 0x08000000 ^ fType->hasher(fType->typeTag, ((PRT_FORGNVALUE*)inputValue)->value);
+		return 0x08000000 ^ inputValue->valueUnion.frgn->hasher(inputValue->valueUnion.frgn->typeTag, ((PRT_FORGNVALUE*)inputValue)->value);
 	}
-	case PRT_KIND_MAP:
+	case PRT_VALKIND_MAP:
 	{
 		//// Hash function designed so two maps with same key-value pairs are hashed equally (independently of order).
 		//// Hash codes are added on the finite field Z_{PRT_HASH_AC_COMPOSEMOD}.
@@ -1122,42 +972,7 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE* inputValue)
 
 		return 0x10000000 ^ (PRT_UINT32)code;
 	}
-	case PRT_KIND_NMDTUP:
-	{
-		PRT_UINT32 i;
-		PRT_UINT32 j;
-		PRT_UINT32 code = 0;
-		PRT_UINT32 pointCode;
-		PRT_TUPVALUE *tVal = inputValue->valueUnion.tuple;
-		PRT_UINT32 arity = (inputValue->type->typeUnion.nmTuple)->arity;
-		PRT_STRING *fnames = (inputValue->type->typeUnion.nmTuple)->fieldNames;
-		for (i = 0; i < arity; ++i)
-		{
-			pointCode = PrtGetHashCodeFieldName(fnames[i]);
-			for (j = 0; j < 4; ++j)
-			{
-				code += (pointCode & 0x000000FF);
-				code += (code << 10);
-				code ^= (code >> 6);
-				pointCode = (pointCode >> 8);
-			}
-
-			pointCode = PrtGetHashCodeValue(tVal->values[i]);
-			for (j = 0; j < 4; ++j)
-			{
-				code += (pointCode & 0x000000FF);
-				code += (code << 10);
-				code ^= (code >> 6);
-				pointCode = (pointCode >> 8);
-			}
-		}
-
-		code += (code << 3);
-		code ^= (code >> 11);
-		code += (code << 15);
-		return 0x80000000 ^ code;
-	}
-	case PRT_KIND_SEQ:
+	case PRT_VALKIND_SEQ:
 	{
 		PRT_UINT32 i;
 		PRT_UINT32 j;
@@ -1181,15 +996,14 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE* inputValue)
 		code += (code << 15);
 		return 0x40000000 ^ code;
 	}
-	case PRT_KIND_TUPLE:
+	case PRT_VALKIND_TUPLE:
 	{
 		PRT_UINT32 i;
 		PRT_UINT32 j;
 		PRT_UINT32 code = 0;
 		PRT_UINT32 pointCode;
 		PRT_TUPVALUE *tVal = inputValue->valueUnion.tuple;
-		PRT_UINT32 arity = (inputValue->type->typeUnion.tuple)->arity;
-		for (i = 0; i < arity; ++i)
+		for (i = 0; i < tVal->size; ++i)
 		{
 			pointCode = PrtGetHashCodeValue(tVal->values[i]);
 			for (j = 0; j < 4; ++j)
@@ -1207,7 +1021,7 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE* inputValue)
 		return 0x80000000 ^ code;
 	}
 	default:
-		PrtAssert(PRT_FALSE, "Invalid type");
+		PrtAssert(PRT_FALSE, "PrtGetHashCodeValue: Invalid value");
 		return 0;
 	}
 }
@@ -1217,10 +1031,8 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE *value1, _In_ PRT_VALUE
 	PrtAssert(PrtIsValidValue(value1), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value2), "Invalid value expression.");
 
-	PRT_TYPE_KIND kind1 = value1->type->typeKind;
-	PRT_TYPE_KIND kind2 = value2->type->typeKind;
-	PRT_DBG_ASSERT(kind1 != PRT_KIND_ANY, "Value must have a more concrete type");
-	PRT_DBG_ASSERT(kind2 != PRT_KIND_ANY, "Value must have a more concrete type");
+	PRT_VALUE_KIND kind1 = value1->discriminator;
+	PRT_VALUE_KIND kind2 = value2->discriminator;
 
 	if (PrtIsNullValue(value1) && PrtIsNullValue(value2))
 	{
@@ -1237,16 +1049,16 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE *value1, _In_ PRT_VALUE
 
 	switch (kind1)
 	{
-	case PRT_KIND_NULL:
+	case PRT_VALKIND_NULL:
 		//// Checked for equality with null earlier.
 		return PRT_FALSE;
-	case PRT_KIND_BOOL:
+	case PRT_VALKIND_BOOL:
 		return
 			value1->valueUnion.bl == value2->valueUnion.bl ? PRT_TRUE : PRT_FALSE;
-	case PRT_KIND_EVENT:
+	case PRT_VALKIND_EVENT:
 		return
 			value1->valueUnion.ev == value2->valueUnion.ev ? PRT_TRUE : PRT_FALSE;
-	case PRT_KIND_MACHINE:
+	case PRT_VALKIND_MID:
 	{
 		PRT_MACHINEID *id1 = value1->valueUnion.mid;
 		PRT_MACHINEID *id2 = value2->valueUnion.mid;
@@ -1257,18 +1069,16 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE *value1, _In_ PRT_VALUE
 			id1->processId.data4 == id2->processId.data4 &&
 			id1->machineId == id2->machineId ? PRT_TRUE : PRT_FALSE;
 	}
-	case PRT_KIND_INT:
+	case PRT_VALKIND_INT:
 		return
 			value1->valueUnion.nt == value2->valueUnion.nt ? PRT_TRUE : PRT_FALSE;
-	case PRT_KIND_FORGN:
+	case PRT_VALKIND_FORGN:
 	{
 		PRT_FORGNVALUE *fVal1 = value1->valueUnion.frgn;
 		PRT_FORGNVALUE *fVal2 = value2->valueUnion.frgn;
-		PRT_FORGNTYPE *fType1 = value1->type->typeUnion.forgn;
-		PRT_FORGNTYPE *fType2 = value2->type->typeUnion.forgn;
-		return fType1->eqTester(fType1->typeTag, fVal1->value, fType2->typeTag, fVal2->value);
+		return fVal1->eqTester(fVal1->typeTag, fVal1->value, fVal2->typeTag, fVal2->value);
 	}
-	case PRT_KIND_MAP:
+	case PRT_VALKIND_MAP:
 	{
 		PRT_MAPVALUE *mVal1 = value1->valueUnion.map;
 		PRT_MAPVALUE *mVal2 = value2->valueUnion.map;
@@ -1291,35 +1101,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE *value1, _In_ PRT_VALUE
 
 		return PRT_TRUE;
 	}
-	case PRT_KIND_NMDTUP:
-	{
-		PRT_UINT32 i;
-		PRT_TUPVALUE *tVal1 = value1->valueUnion.tuple;
-		PRT_TUPVALUE *tVal2 = value2->valueUnion.tuple;
-		PRT_NMDTUPTYPE *tType1 = value1->type->typeUnion.nmTuple;
-		PRT_NMDTUPTYPE *tType2 = value2->type->typeUnion.nmTuple;
-
-		if (tType1->arity != tType2->arity)
-		{
-			return PRT_FALSE;
-		}
-
-		for (i = 0; i < tType1->arity; ++i)
-		{
-			if (strncmp(tType1->fieldNames[i], tType2->fieldNames[i], PRT_MAXFLDNAME_LENGTH) != 0)
-			{
-				return PRT_FALSE;
-			}
-
-			if (!PrtIsEqualValue(tVal1->values[i], tVal2->values[i]))
-			{
-				return PRT_FALSE;
-			}
-		}
-
-		return PRT_TRUE;
-	}
-	case PRT_KIND_SEQ:
+	case PRT_VALKIND_SEQ:
 	{
 		PRT_UINT32 i;
 		PRT_SEQVALUE *sVal1 = value1->valueUnion.seq;
@@ -1340,20 +1122,18 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE *value1, _In_ PRT_VALUE
 
 		return PRT_TRUE;
 	}
-	case PRT_KIND_TUPLE:
+	case PRT_VALKIND_TUPLE:
 	{
 		PRT_UINT32 i;
 		PRT_TUPVALUE *tVal1 = value1->valueUnion.tuple;
 		PRT_TUPVALUE *tVal2 = value2->valueUnion.tuple;
-		PRT_TUPTYPE *tType1 = value1->type->typeUnion.tuple;
-		PRT_TUPTYPE *tType2 = value2->type->typeUnion.tuple;
 
-		if (tType1->arity != tType2->arity)
+		if (tVal1->size != tVal2->size)
 		{
 			return PRT_FALSE;
 		}
 
-		for (i = 0; i < tType1->arity; ++i)
+		for (i = 0; i < tVal1->size; ++i)
 		{
 			if (!PrtIsEqualValue(tVal1->values[i], tVal2->values[i]))
 			{
@@ -1364,7 +1144,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE *value1, _In_ PRT_VALUE
 		return PRT_TRUE;
 	}
 	default:
-		PrtAssert(PRT_FALSE, "Invalid type");
+		PrtAssert(PRT_FALSE, "PrtIsEqualValue: Invalid value");
 		return PRT_FALSE;
 	}
 }
@@ -1373,46 +1153,46 @@ PRT_VALUE * PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE *value)
 {
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
 
-	PRT_TYPE_KIND kind = value->type->typeKind;
+	PRT_VALUE_KIND kind = value->discriminator;
 	switch (kind)
 	{
-	case PRT_KIND_ANY:
-		PRT_DBG_ASSERT(PRT_FALSE, "Value must have a more concrete type");
-		return NULL;
-	case PRT_KIND_NULL:
+	case PRT_VALKIND_NULL:
 		return PrtMkNullValue();
-	case PRT_KIND_BOOL:
+	case PRT_VALKIND_BOOL:
 		return PrtMkBoolValue(value->valueUnion.bl);
-	case PRT_KIND_EVENT:
+	case PRT_VALKIND_EVENT:
 		return PrtMkEventValue(value->valueUnion.ev);
-	case PRT_KIND_MACHINE:
+	case PRT_VALKIND_MID:
 		return PrtMkMachineValue(*value->valueUnion.mid);
-	case PRT_KIND_INT:
+	case PRT_VALKIND_INT:
 		return PrtMkIntValue(value->valueUnion.nt);
-	case PRT_KIND_FORGN:
+	case PRT_VALKIND_FORGN:
 	{
 		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
 		PRT_FORGNVALUE *fVal = value->valueUnion.frgn;
-		PRT_FORGNTYPE *fType = value->type->typeUnion.forgn;
 		PRT_FORGNVALUE *cVal = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
-		retVal->type = PrtCloneType(value->type);
 		retVal->discriminator = PRT_VALKIND_FORGN;
 		retVal->valueUnion.frgn = cVal;
-		cVal->value = fType->cloner(fType->typeTag, fVal->value);
+		cVal->value = fVal->cloner(fVal->typeTag, fVal->value);
+		cVal->typeTag = fVal->typeTag;
+		cVal->cloner = fVal->cloner;
+		cVal->freer = fVal->freer;
+		cVal->hasher = fVal->hasher;
+		cVal->eqTester = fVal->eqTester;
 		return retVal;
 	}
-	case PRT_KIND_MAP:
+	case PRT_VALKIND_MAP:
 	{
-		PRT_VALUE *retVal = PrtMkDefaultValue(value->type);
+		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+		PRT_MAPVALUE *map = (PRT_MAPVALUE *)PrtMalloc(sizeof(PRT_MAPVALUE));
+		retVal->discriminator = PRT_VALKIND_MAP;
+		retVal->valueUnion.map = map;
 		PRT_MAPVALUE *mVal = value->valueUnion.map;
-		PRT_MAPVALUE *cVal = retVal->valueUnion.map;
-		if (mVal->capNum > 0)
-		{
-			//// Eagerly allocate capacity in the clone to avoid intermediate rehashings.
-			PrtFree(cVal->buckets);
-			cVal->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[mVal->capNum], sizeof(PRT_MAPNODE *));
-			cVal->capNum = mVal->capNum;
-		}
+		map->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[mVal->capNum], sizeof(PRT_MAPNODE *));
+		map->capNum = mVal->capNum;
+		map->size = 0;
+		map->first = NULL;
+		map->last = NULL;
 		PRT_MAPNODE *next = mVal->first;
 		while (next != NULL)
 		{
@@ -1422,17 +1202,17 @@ PRT_VALUE * PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE *value)
 
 		return retVal;
 	}
-	case PRT_KIND_NMDTUP:
+	case PRT_VALKIND_TUPLE:
 	{
 		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
 		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
-		retVal->type = PrtCloneType(value->type);
 		retVal->discriminator = PRT_VALKIND_TUPLE;
 		retVal->valueUnion.tuple = cVal;
 
 		PRT_UINT32 i;
 		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
-		PRT_UINT32 arity = value->type->typeUnion.nmTuple->arity;
+		PRT_UINT32 arity = value->valueUnion.tuple->size;
+		cVal->size = arity;
 		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE *));
 		for (i = 0; i < arity; ++i)
 		{
@@ -1441,30 +1221,10 @@ PRT_VALUE * PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE *value)
 
 		return retVal;
 	}
-	case PRT_KIND_TUPLE:
-	{
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
-		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
-		retVal->type = PrtCloneType(value->type);
-		retVal->discriminator = PRT_VALKIND_TUPLE;
-		retVal->valueUnion.tuple = cVal;
-
-		PRT_UINT32 i;
-		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
-		PRT_UINT32 arity = value->type->typeUnion.tuple->arity;
-		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE *));
-		for (i = 0; i < arity; ++i)
-		{
-			cVal->values[i] = PrtCloneValue(tVal->values[i]);
-		}
-
-		return retVal;
-	}
-	case PRT_KIND_SEQ:
+	case PRT_VALKIND_SEQ:
 	{
 		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
 		PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
-		retVal->type = PrtCloneType(value->type);
 		retVal->discriminator = PRT_VALKIND_SEQ;
 		retVal->valueUnion.seq = cVal;
 
@@ -1488,7 +1248,7 @@ PRT_VALUE * PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE *value)
 		return retVal;
 	}
 	default:
-		PrtAssert(PRT_FALSE, "Invalid type");
+		PrtAssert(PRT_FALSE, "PrtCloneValue: Invalid value");
 		return NULL;
 	}
 }
@@ -1497,14 +1257,14 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsNullValue(_In_ PRT_VALUE *value)
 {
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
 
-	PRT_TYPE_KIND kind = value->type->typeKind;
+	PRT_VALUE_KIND kind = value->discriminator;
 	switch (kind)
 	{
-	case PRT_KIND_NULL:
+	case PRT_VALKIND_NULL:
 		return PRT_TRUE;
-	case PRT_KIND_EVENT:
+	case PRT_VALKIND_EVENT:
 		return value->valueUnion.ev == PRT_SPECIAL_EVENT_NULL ? PRT_TRUE : PRT_FALSE;
-	case PRT_KIND_MACHINE:
+	case PRT_VALKIND_MID:
 	{
 		PRT_MACHINEID *id = value->valueUnion.mid;
 		return 
@@ -1514,16 +1274,15 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsNullValue(_In_ PRT_VALUE *value)
 			id->processId.data4 == PrtNullMachineId.processId.data4 &&
 			id->machineId == PrtNullMachineId.machineId ? PRT_TRUE : PRT_FALSE;
 	}
-	case PRT_KIND_BOOL:
-	case PRT_KIND_INT:
-	case PRT_KIND_FORGN:
-	case PRT_KIND_MAP:
-	case PRT_KIND_NMDTUP:
-	case PRT_KIND_TUPLE:
-	case PRT_KIND_SEQ:
+	case PRT_VALKIND_BOOL:
+	case PRT_VALKIND_INT:
+	case PRT_VALKIND_FORGN:
+	case PRT_VALKIND_MAP:
+	case PRT_VALKIND_TUPLE:
+	case PRT_VALKIND_SEQ:
 		return PRT_FALSE;
 	default:
-		PrtAssert(PRT_FALSE, "Invalid type");
+		PrtAssert(PRT_FALSE, "PrtIsNullValue: Invalid value");
 		return PRT_FALSE;
 	}
 }
@@ -1532,132 +1291,8 @@ PRT_VALUE * PRT_CALL_CONV PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE *typ
 {
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
 	PrtAssert(PrtIsValidType(type), "Invalid type expression.");
-
-	PRT_TYPE_KIND toKind = type->typeKind;
-	PRT_TYPE_KIND frmKind = value->type->typeKind;
-	if (toKind == PRT_KIND_ANY)
-	{
-		return PrtCloneValue(value);
-	}
-
-	switch (toKind)
-	{
-	case PRT_KIND_BOOL:
-	case PRT_KIND_INT :
-	{
-		PrtAssert(frmKind == toKind, "Invalid type cast");
-		return PrtCloneValue(value);
-	}
-	case PRT_KIND_EVENT:
-	case PRT_KIND_MACHINE:
-	case PRT_KIND_NULL:
-	{
-		if (PrtIsNullValue(value))
-		{
-			//// If the type is nullable and the value is null,
-			//// then use MkDefaultValue(type) because it returns the null value for that type.
-			return PrtMkDefaultValue(type);
-		}
-
-		PrtAssert(frmKind == toKind, "Invalid type cast");
-		return PrtCloneValue(value);
-	}
-	case PRT_KIND_FORGN:
-	{
-		PrtAssert(frmKind == PRT_KIND_FORGN, "Invalid type cast");
-		return PrtMkForeignValue(type, value->valueUnion.frgn->value);
-	}
-	case PRT_KIND_MAP:
-	{
-		PrtAssert(frmKind == PRT_KIND_MAP, "Invalid type cast");
-		PRT_VALUE *retVal = PrtMkDefaultValue(type);
-		PRT_MAPVALUE *cVal = retVal->valueUnion.map;
-		PRT_MAPVALUE *mVal = value->valueUnion.map;
-		if (mVal->capNum > 0)
-		{
-			//// Eagerly allocate capacity in the clone to avoid intermediate rehashings.
-			PrtFree(cVal->buckets);
-			cVal->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[mVal->capNum], sizeof(PRT_MAPNODE *));
-			cVal->capNum = mVal->capNum;
-		}
-
-		PRT_MAPTYPE *mType = type->typeUnion.map;
-		PRT_MAPNODE *next = mVal->first;
-		while (next != NULL)
-		{
-			PrtMapUpdateEx(retVal, PrtCastValue(next->key, mType->domType), PrtCastValue(next->value, mType->codType), PRT_FALSE);
-			next = next->insertNext;
-		}
-
-		return retVal;
-	}
-	case PRT_KIND_NMDTUP:
-	{
-		PrtAssert(frmKind == PRT_KIND_NMDTUP, "Invalid type cast");
-		PRT_NMDTUPTYPE *toTupType = type->typeUnion.nmTuple;
-		PRT_NMDTUPTYPE *frmTupType = value->type->typeUnion.nmTuple;
-		PrtAssert(toTupType->arity == frmTupType->arity, "Invalid type cast");
-		PRT_UINT32 i;
-		for (i = 0; i < toTupType->arity; ++i)
-		{
-			PrtAssert(strncmp(toTupType->fieldNames[i], frmTupType->fieldNames[i], PRT_MAXFLDNAME_LENGTH) == 0, "Invalid type cast");
-		}
-		PRT_VALUE *retVal = PrtMkDefaultValue(type);
-		PRT_TUPVALUE *cVal = retVal->valueUnion.tuple;
-		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
-		for (i = 0; i < toTupType->arity; ++i)
-		{
-			PrtFreeValue(cVal->values[i]);
-			cVal->values[i] = PrtCastValue(tVal->values[i], toTupType->fieldTypes[i]);
-		}
-
-		return retVal;
-	}
-	case PRT_KIND_TUPLE:
-	{
-		PrtAssert(frmKind == PRT_KIND_TUPLE, "Invalid type cast");
-		PrtAssert(type->typeUnion.tuple->arity == value->type->typeUnion.tuple->arity, "Invalid type cast");
-		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
-		PRT_VALUE *retVal = PrtMkDefaultValue(type);
-		PRT_TUPVALUE *cVal = retVal->valueUnion.tuple;
-		PRT_TUPTYPE *toTupType = type->typeUnion.tuple; 
-		PRT_UINT32 i;
-		for (i = 0; i < toTupType->arity; ++i)
-		{
-			PrtFreeValue(cVal->values[i]);
-			cVal->values[i] = PrtCastValue(tVal->values[i], toTupType->fieldTypes[i]);
-		}
-
-		return retVal;
-	}
-	case PRT_KIND_SEQ:
-	{
-		PrtAssert(frmKind == PRT_KIND_SEQ, "Invalid type cast");
-		PRT_VALUE *retVal = PrtMkDefaultValue(type);
-		PRT_SEQVALUE *cVal = retVal->valueUnion.seq;
-		PRT_SEQVALUE *sVal = value->valueUnion.seq;
-		cVal->capacity = sVal->capacity;
-		cVal->size = sVal->size;
-		if (sVal->capacity == 0)
-		{
-			cVal->values = NULL;
-		}
-		else
-		{
-			cVal->values = (PRT_VALUE **)PrtCalloc(sVal->capacity, sizeof(PRT_VALUE*));
-			PRT_SEQTYPE *sType = type->typeUnion.seq;
-			PRT_UINT32 i;
-			for (i = 0; i < sVal->size; ++i)
-			{
-				cVal->values[i] = PrtCastValue(sVal->values[i], sType->innerType);
-			}
-		}
-		return retVal;
-	}
-	default:
-		PrtAssert(PRT_FALSE, "Invalid type");
-		return NULL;
-	}
+	PrtAssert(PrtInhabitsType(value, type), "Invalid type cast");
+	return PrtCloneValue(value);
 }
 
 PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE *value, _In_ PRT_TYPE *type)
@@ -1666,9 +1301,8 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE *value, _In_ PRT_TYPE *
 	PrtAssert(PrtIsValidType(type), "Invalid type expression.");
 
 	PRT_TYPE_KIND tkind = type->typeKind;
-	PRT_TYPE_KIND vkind = value->type->typeKind;
+	PRT_VALUE_KIND vkind = value->discriminator;
 
-	PrtAssert(vkind != PRT_KIND_ANY, "Value must have a more concrete type");
 	if (tkind == PRT_KIND_ANY)
 	{
 		return PRT_TRUE;
@@ -1676,19 +1310,21 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE *value, _In_ PRT_TYPE *
 
 	switch (tkind)
 	{
+	case PRT_KIND_NULL:
+		return PrtIsNullValue(value);
 	case PRT_KIND_BOOL:
-		return vkind == PRT_KIND_BOOL ? PRT_TRUE : PRT_FALSE;
+		return vkind == PRT_VALKIND_BOOL ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_EVENT:
-		return (vkind == PRT_KIND_EVENT || PrtIsNullValue(value)) ? PRT_TRUE : PRT_FALSE;
+		return (vkind == PRT_VALKIND_EVENT || PrtIsNullValue(value)) ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_MACHINE:
-		return (vkind == PRT_KIND_MACHINE || PrtIsNullValue(value)) ? PRT_TRUE : PRT_FALSE;
+		return (vkind == PRT_VALKIND_MID || PrtIsNullValue(value)) ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_INT:
-		return vkind == PRT_KIND_INT ? PRT_TRUE : PRT_FALSE;
+		return vkind == PRT_VALKIND_INT ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_FORGN:
-		return vkind == PRT_KIND_FORGN ? PRT_TRUE : PRT_FALSE;
+		return vkind == PRT_VALKIND_FORGN ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_MAP:
 	{
-		if (vkind != PRT_KIND_MAP)
+		if (vkind != PRT_VALKIND_MAP)
 		{
 			return PRT_FALSE;
 		}
@@ -1710,28 +1346,21 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE *value, _In_ PRT_TYPE *
 	}
 	case PRT_KIND_NMDTUP:
 	{
-		if (vkind != PRT_KIND_NMDTUP)
+		if (vkind != PRT_VALKIND_TUPLE)
 		{
 			return PRT_FALSE;
 		}
 
-		PRT_UINT32 i;
 		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
 		PRT_NMDTUPTYPE *tType = type->typeUnion.nmTuple;
-		PRT_NMDTUPTYPE *srcType = value->type->typeUnion.nmTuple;
-		PRT_UINT32 arity = tType->arity;
-		if (arity != srcType->arity)
+		if (tType->arity != tVal->size)
 		{
 			return PRT_FALSE;
 		}
 
-		for (i = 0; i < arity; ++i)
+		for (PRT_UINT32 i = 0; i < tType->arity; ++i)
 		{
-			if (strncmp(tType->fieldNames[i], srcType->fieldNames[i], PRT_MAXFLDNAME_LENGTH) != 0)
-			{
-				return PRT_FALSE;
-			}
-			else if (!PrtInhabitsType(tVal->values[i], tType->fieldTypes[i]))
+			if (!PrtInhabitsType(tVal->values[i], tType->fieldTypes[i]))
 			{
 				return PRT_FALSE;
 			}
@@ -1741,22 +1370,19 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE *value, _In_ PRT_TYPE *
 	}
 	case PRT_KIND_TUPLE:
 	{
-		if (vkind != PRT_KIND_TUPLE)
+		if (vkind != PRT_VALKIND_TUPLE)
 		{
 			return PRT_FALSE;
 		}
 
-		PRT_UINT32 i;
 		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
 		PRT_TUPTYPE *tType = type->typeUnion.tuple;
-		PRT_TUPTYPE *srcType = value->type->typeUnion.tuple;
-		PRT_UINT32 arity = tType->arity;
-		if (arity != srcType->arity)
+		if (tType->arity != tVal->size)
 		{
 			return PRT_FALSE;
 		}
 
-		for (i = 0; i < arity; ++i)
+		for (PRT_UINT32 i = 0; i < tType->arity; ++i)
 		{
 			if (!PrtInhabitsType(tVal->values[i], tType->fieldTypes[i]))
 			{
@@ -1768,7 +1394,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE *value, _In_ PRT_TYPE *
 	}
 	case PRT_KIND_SEQ:
 	{
-		if (vkind != PRT_KIND_SEQ)
+		if (vkind != PRT_VALKIND_SEQ)
 		{
 			return PRT_FALSE;
 		}
@@ -1794,47 +1420,40 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE *value, _In_ PRT_TYPE *
 		return PRT_TRUE;
 	}
 	default:
-		PrtAssert(PRT_FALSE, "Invalid type");
+		PrtAssert(PRT_FALSE, "PrtInhabitsType: Invalid type");
 		return PRT_FALSE;
 	}
 }
 
 void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE *value)
 {
-	PRT_TYPE_KIND kind = value->type->typeKind;
+	PRT_VALUE_KIND kind = value->discriminator;
 	switch (kind)
 	{
-	case PRT_KIND_ANY:
-		PRT_DBG_ASSERT(PRT_FALSE, "Value must have a more concrete type");
-		break;
-	case PRT_KIND_BOOL:
-	case PRT_KIND_EVENT:
-	case PRT_KIND_INT:
-	case PRT_KIND_NULL:
+	case PRT_VALKIND_BOOL:
+	case PRT_VALKIND_EVENT:
+	case PRT_VALKIND_INT:
+	case PRT_VALKIND_NULL:
 	{
-		PrtFreeType(value->type);
 		PrtFree(value);
 		break;
 	}
-	case PRT_KIND_MACHINE:
+	case PRT_VALKIND_MID:
 	{
 		PRT_MACHINEID *id = value->valueUnion.mid;
-		PrtFreeType(value->type);
 		PrtFree(id);
 		PrtFree(value);
 		break;
 	}
-	case PRT_KIND_FORGN:
+	case PRT_VALKIND_FORGN:
 	{
 		PRT_FORGNVALUE *fVal = value->valueUnion.frgn;
-		PRT_FORGNTYPE *fType = value->type->typeUnion.forgn;
-		fType->freer(fType->typeTag, fVal->value);
-		PrtFreeType(value->type);
+		fVal->freer(fVal->typeTag, fVal->value);
 		PrtFree(fVal);
 		PrtFree(value);
 		break;
 	}
-	case PRT_KIND_MAP:
+	case PRT_VALKIND_MAP:
 	{
 		PRT_MAPVALUE *mVal = value->valueUnion.map;
 		PRT_MAPNODE *next = mVal->first;
@@ -1848,45 +1467,27 @@ void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE *value)
 			next = tmp;
 		}
 
-		PrtFreeType(value->type);
 		PrtFree(mVal->buckets);
 		PrtFree(mVal);
 		PrtFree(value);
 		break;
 	}
-	case PRT_KIND_NMDTUP:
+	case PRT_VALKIND_TUPLE:
 	{
 		PRT_UINT32 i;
 		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
-		PRT_UINT32 arity = (value->type->typeUnion.nmTuple)->arity;
+		PRT_UINT32 arity = tVal->size;
 		for (i = 0; i < arity; ++i)
 		{
 			PrtFreeValue(tVal->values[i]);
 		}
 
-		PrtFreeType(value->type);
 		PrtFree(tVal->values);
 		PrtFree(tVal);
 		PrtFree(value);
 		break;
 	}
-	case PRT_KIND_TUPLE:
-	{
-		PRT_UINT32 i;
-		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
-		PRT_UINT32 arity = (value->type->typeUnion.tuple)->arity;
-		for (i = 0; i < arity; ++i)
-		{
-			PrtFreeValue(tVal->values[i]);
-		}
-
-		PrtFreeType(value->type);
-		PrtFree(tVal->values);
-		PrtFree(tVal);
-		PrtFree(value);
-		break;
-	}
-	case PRT_KIND_SEQ:
+	case PRT_VALKIND_SEQ:
 	{
 		PRT_SEQVALUE *sVal = value->valueUnion.seq;
 		if (sVal->values != NULL)
@@ -1900,55 +1501,53 @@ void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE *value)
 			PrtFree(sVal->values);
 		}
 
-		PrtFreeType(value->type);
 		PrtFree(sVal);
 		PrtFree(value);
 		break;
 	}
 	default:
-		PrtAssert(PRT_FALSE, "Invalid type");
+		PrtAssert(PRT_FALSE, "PrtFreeValue: Invalid value");
 		break;
 	}
 }
 
 PRT_BOOLEAN PRT_CALL_CONV PrtIsValidValue(_In_ PRT_VALUE *value)
 {
-	if (value == NULL || !PrtIsValidType(value->type))
+	if (value == NULL)
 	{
 		return PRT_FALSE;
 	}
 
-	PRT_TYPE_KIND kind = value->type->typeKind;
+	PRT_VALUE_KIND kind = value->discriminator;
 	switch (kind)
 	{
-	case PRT_KIND_BOOL:
+	case PRT_VALKIND_BOOL:
 		return value->discriminator == PRT_VALKIND_BOOL &&
 			(value->valueUnion.bl == PRT_TRUE || value->valueUnion.bl == PRT_FALSE);
-	case PRT_KIND_EVENT:
+	case PRT_VALKIND_EVENT:
 		return value->discriminator == PRT_VALKIND_EVENT;	
-	case PRT_KIND_MACHINE:
+	case PRT_VALKIND_MID:
 		return value->discriminator == PRT_VALKIND_MID;
-	case PRT_KIND_INT:
+	case PRT_VALKIND_INT:
 		return value->discriminator == PRT_VALKIND_INT;
-	case PRT_KIND_NULL:
+	case PRT_VALKIND_NULL:
 		return value->discriminator == PRT_VALKIND_NULL &&
 			value->valueUnion.ev == PRT_SPECIAL_EVENT_NULL;
-	case PRT_KIND_FORGN:
+	case PRT_VALKIND_FORGN:
 		return value->discriminator == PRT_VALKIND_FORGN &&
 			value->valueUnion.frgn != NULL;
-	case PRT_KIND_MAP:
+	case PRT_VALKIND_MAP:
 		return value->discriminator == PRT_VALKIND_MAP &&
 			value->valueUnion.map != NULL;
-	case PRT_KIND_SEQ:
+	case PRT_VALKIND_SEQ:
 		return value->discriminator == PRT_VALKIND_SEQ &&
 			value->valueUnion.seq != NULL;
-	case PRT_KIND_TUPLE:
-	case PRT_KIND_NMDTUP:
+	case PRT_VALKIND_TUPLE:
 		return value->discriminator == PRT_VALKIND_TUPLE &&
 			value->valueUnion.tuple != NULL &&
 			value->valueUnion.tuple->values != NULL;
 	default:
-		//// PRT_KIND_ANY should not be the type of a value.
+		PrtAssert(PRT_FALSE, "Invalid value");
 		return PRT_FALSE;
 	}
 }

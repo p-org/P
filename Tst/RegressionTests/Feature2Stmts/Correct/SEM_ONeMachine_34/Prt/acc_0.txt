@@ -4,13 +4,13 @@
 OUT: <CreateLog> Machine MachOS(1) is created
 OUT: <StateLog> Machine MachOS(1) entered state Init
 OUT: <EnqueueLog> Enqueued event myTuple with payload (1, true) on Machine MachOS(1)
-OUT: <EnqueueLog> Enqueued event myNmTuple with payload (first = 0, sec = false) on Machine MachOS(1)
-OUT: <EnqueueLog> Enqueued event myMapSeq with payload (first = {0 --> 1, 1 --> 2} (2 / 3), sec = [true, false, true]) on Machine MachOS(1)
+OUT: <EnqueueLog> Enqueued event myNmTuple with payload (0, false) on Machine MachOS(1)
+OUT: <EnqueueLog> Enqueued event myMapSeq with payload ({0 --> 1, 1 --> 2} (2 / 3), [true, false, true]) on Machine MachOS(1)
 OUT: <DequeueLog> Dequeued event myTuple with payload (1, true) by Machine MachOS(1)
 OUT: <ActionLog> Machine MachOS(1) executed action in state Init
-OUT: <DequeueLog> Dequeued event myNmTuple with payload (first = 0, sec = false) by Machine MachOS(1)
+OUT: <DequeueLog> Dequeued event myNmTuple with payload (0, false) by Machine MachOS(1)
 OUT: <ActionLog> Machine MachOS(1) executed action in state Init
-OUT: <DequeueLog> Dequeued event myMapSeq with payload (first = {0 --> 1, 1 --> 2} (2 / 3), sec = [true, false, true]) by Machine MachOS(1)
+OUT: <DequeueLog> Dequeued event myMapSeq with payload ({0 --> 1, 1 --> 2} (2 / 3), [true, false, true]) by Machine MachOS(1)
 OUT: <ActionLog> Machine MachOS(1) executed action in state Init
 OUT: 
 EXIT: 0

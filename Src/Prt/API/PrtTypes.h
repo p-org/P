@@ -70,7 +70,6 @@ typedef struct PRT_TYPE {
 		struct PRT_NMDTUPTYPE *nmTuple;	/**< Named Tuple type	*/
 		struct PRT_SEQTYPE *seq;		/**< Sequence type		*/
 		struct PRT_TUPTYPE *tuple;		/**< Tuple type		    */
-		struct PRT_FORGNTYPE *forgn;	/**< Foreign type	    */
 	} typeUnion;
 } PRT_TYPE;
 
@@ -146,48 +145,12 @@ typedef PRT_BOOLEAN(PRT_CALL_CONV *PRT_FORGN_ISEQUAL)(
 	_In_ PRT_GUID typeTag2,
 	_In_ void *frgnVal2);
 
-/**
-* \struct
-* The layout for foreign types
-*/
-typedef struct PRT_FORGNTYPE
-{
-	PRT_GUID              typeTag;    /**< A non-zero GUID used by the client to tag the foreign types of values */
-	PRT_FORGN_CLONE       cloner;     /**< Clones foreign values */
-	PRT_FORGN_FREE        freer;      /**< Frees foreign values */
-	PRT_FORGN_GETHASHCODE hasher;     /**< Hashes foreign values */
-	PRT_FORGN_ISEQUAL     eqTester;   /**< Tests foreign values for equality */
-} PRT_FORGNTYPE;
-
-/** Makes a foreign type.
-* @param[in] typeTag The type tag for this type.
-* @param[in] cloner The cloner for this type.
-* @param[in] freer The freer for this type.
-* @param[in] hasher The hasher for this type.
-* @param[in] eqTester The equality tester for this type.
-* @returns An instance of the foreign type. Caller is responsible for freeing.
-* @see PrtFreeType
-*/
-PRT_API PRT_TYPE * PRT_CALL_CONV PrtMkForgnType(
-	_In_ PRT_GUID              typeTag,
-	_In_ PRT_FORGN_CLONE       cloner,
-	_In_ PRT_FORGN_FREE        freer,
-	_In_ PRT_FORGN_GETHASHCODE hasher,
-	_In_ PRT_FORGN_ISEQUAL     eqTester);
-
 /** Makes an instance of a primitive type.
 * @param[in] primType Any primitive type; cannot be a foreign type.
 * @returns An instance of a primitive. Caller is responsible for freeing.
 * @see PrtFreeType
 */
 PRT_API PRT_TYPE * PRT_CALL_CONV PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType);
-
-/** Makes the absent type. 
-* The absent type is a foreign type that represents the absence of a foreign value.
-* It has a single foreign value, NULL, and is the default value of `foreign`.
-* @returns An instance of the absent type. Caller is responsible for freeing.
-*/
-PRT_API PRT_TYPE * PRT_CALL_CONV PrtMkAbsentType();
 
 /** Makes a map type. 
 * @param domType The domain type (will be deeply cloned).

@@ -113,13 +113,6 @@ typedef struct PRT_MACHINEINST_PRIV {
 */
 PRT_API PRT_VALUE * PRT_CALL_CONV PrtTupleGetNC(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index);
 
-/** Gets an element in a named tuple without cloning. Only used for internal manipulation of state variables.
-* @param[in] tuple A named tuple.
-* @param[in] name  The name of the element to get.
-* @returns The element named name.
-*/
-PRT_API PRT_VALUE* PRT_CALL_CONV PrtNmdTupleGetNC(_In_ PRT_VALUE *tuple, _In_ PRT_STRING name);
-
 /** Gets an element in a sequence without cloning. Only used for internal manipulation of state variables.
 * @param[in] seq   A sequence.
 * @param[in] index A 0-based index s.t. 0 <= index < size(seq).

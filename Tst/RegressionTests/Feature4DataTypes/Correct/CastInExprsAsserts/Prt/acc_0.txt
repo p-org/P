@@ -17,14 +17,14 @@ OUT: <PushLog> Machine Test(2) pushed
 OUT: <StateLog> Machine Test(2) entered state testEI6
 OUT: <ExitLog> Machine Test(2) exiting state testEI6
 OUT: <PopLog> Machine Test(2) popped and reentered state init
-OUT: <EnqueueLog> Enqueued event ET1 with payload (a = 1, b = true) on Machine Test(2)
-OUT: <DequeueLog> Dequeued event ET1 with payload (a = 1, b = true) by Machine Test(2)
+OUT: <EnqueueLog> Enqueued event ET1 with payload (1, true) on Machine Test(2)
+OUT: <DequeueLog> Dequeued event ET1 with payload (1, true) by Machine Test(2)
 OUT: <PushLog> Machine Test(2) pushed
 OUT: <StateLog> Machine Test(2) entered state testET1
 OUT: <ExitLog> Machine Test(2) exiting state testET1
 OUT: <PopLog> Machine Test(2) popped and reentered state init
-OUT: <EnqueueLog> Enqueued event ET2 with payload (a = 2, b = false) on Machine Test(2)
-OUT: <DequeueLog> Dequeued event ET2 with payload (a = 2, b = false) by Machine Test(2)
+OUT: <EnqueueLog> Enqueued event ET2 with payload (2, false) on Machine Test(2)
+OUT: <DequeueLog> Dequeued event ET2 with payload (2, false) by Machine Test(2)
 OUT: <PushLog> Machine Test(2) pushed
 OUT: <StateLog> Machine Test(2) entered state testET2
 OUT: <ExitLog> Machine Test(2) exiting state testET2

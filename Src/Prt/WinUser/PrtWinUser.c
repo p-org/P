@@ -156,40 +156,37 @@ void PrtWinUserPrintType(_In_ PRT_TYPE *type, _Inout_ char **buffer, _Inout_ PRT
 		break;
 	}
 	default:
-		PrtAssert(PRT_FALSE, "Invalid type");
+		PrtAssert(PRT_FALSE, "PrtWinUserPrintType: Invalid type");
 		break;
 	}
 }
 
 void PrtWinUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
-	PRT_TYPE_KIND kind = value->type->typeKind;
+	PRT_VALUE_KIND kind = value->discriminator;
 	switch (kind)
 	{
-	case PRT_KIND_ANY:
-		PRT_DBG_ASSERT(PRT_FALSE, "Value must have a more concrete type");
-		break;
-	case PRT_KIND_NULL:
+	case PRT_VALKIND_NULL:
 		PrtWinUserPrintString("null", buffer, bufferSize, numCharsWritten);
 		break;
-	case PRT_KIND_BOOL:
+	case PRT_VALKIND_BOOL:
 		PrtWinUserPrintString(PrtPrimGetBool(value) == PRT_TRUE ? "true" : "false", buffer, bufferSize, numCharsWritten);
 		break;
-	case PRT_KIND_INT:
+	case PRT_VALKIND_INT:
 		PrtWinUserPrintInt32(PrtPrimGetInt(value), buffer, bufferSize, numCharsWritten);
 		break;
-	case PRT_KIND_EVENT:
+	case PRT_VALKIND_EVENT:
 		PrtWinUserPrintString("<", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintUint32(PrtPrimGetEvent(value), buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(">", buffer, bufferSize, numCharsWritten);
 		break;
-	case PRT_KIND_MACHINE:
+	case PRT_VALKIND_MID:
 		PrtWinUserPrintMachineId(PrtPrimGetMachine(value), buffer, bufferSize, numCharsWritten);
 		break;
-	case PRT_KIND_FORGN:
+	case PRT_VALKIND_FORGN:
 		PrtWinUserPrintString("foreign", buffer, bufferSize, numCharsWritten);
 		break;
-	case PRT_KIND_MAP:
+	case PRT_VALKIND_MAP:
 	{
 		PRT_MAPVALUE *mval = value->valueUnion.map;
 		PRT_MAPNODE *next = mval->first;
@@ -219,30 +216,7 @@ void PrtWinUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Inout_ 
 		PrtWinUserPrintString(")", buffer, bufferSize, numCharsWritten);
 		break;
 	}
-	case PRT_KIND_NMDTUP:
-	{
-		PRT_UINT32 i;
-		PRT_TUPVALUE *tval = value->valueUnion.tuple;
-		PRT_NMDTUPTYPE *ntype = value->type->typeUnion.nmTuple;
-		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten); 
-		for (i = 0; i < ntype->arity; ++i)
-		{
-			PrtWinUserPrintString(ntype->fieldNames[i], buffer, bufferSize, numCharsWritten);
-			PrtWinUserPrintString(" = ", buffer, bufferSize, numCharsWritten);
-			PrtWinUserPrintValue(tval->values[i], buffer, bufferSize, numCharsWritten);
-			if (i < ntype->arity - 1)
-			{
-				PrtWinUserPrintString(", ", buffer, bufferSize, numCharsWritten);
-			}
-			else
-			{
-				PrtWinUserPrintString(")", buffer, bufferSize, numCharsWritten); 
-			}
-		}
-
-		break;
-	}
-	case PRT_KIND_SEQ:
+	case PRT_VALKIND_SEQ:
 	{
 		PRT_UINT32 i;
 		PRT_SEQVALUE *sVal = value->valueUnion.seq;
@@ -259,23 +233,22 @@ void PrtWinUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Inout_ 
 		PrtWinUserPrintString("]", buffer, bufferSize, numCharsWritten); 
 		break;
 	}
-	case PRT_KIND_TUPLE:
+	case PRT_VALKIND_TUPLE:
 	{
 		PRT_UINT32 i;
 		PRT_TUPVALUE *tval = value->valueUnion.tuple;
-		PRT_TUPTYPE *ttype = value->type->typeUnion.tuple;
 		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten); 
-		if (ttype->arity == 1)
+		if (tval->size == 1)
 		{
 			PrtWinUserPrintValue(tval->values[0], buffer, bufferSize, numCharsWritten);
 			PrtWinUserPrintString(",)", buffer, bufferSize, numCharsWritten);
 		}
 		else
 		{
-			for (i = 0; i < ttype->arity; ++i)
+			for (i = 0; i < tval->size; ++i)
 			{
 				PrtWinUserPrintValue(tval->values[i], buffer, bufferSize, numCharsWritten);
-				if (i < ttype->arity - 1)
+				if (i < tval->size - 1)
 				{
 					PrtWinUserPrintString(", ", buffer, bufferSize, numCharsWritten);
 				}
@@ -288,7 +261,7 @@ void PrtWinUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Inout_ 
 		break;
 	}
 	default:
-		PrtAssert(PRT_FALSE, "Invalid type");
+		PrtAssert(PRT_FALSE, "PrtWinUserPrintValue: Invalid value");
 		break;
 	}
 }

@@ -1885,6 +1885,7 @@ namespace Microsoft.Pc
                     ctxt.PushSideEffectStack();
                     yield return GetArgByIndex(ft, 2);
                     var right = ctxt.EmitZingSideEffects(ZingData.Cnst_Nil);
+                    // short-circuit evaluation
                     if (opName == PData.Cnst_And.Node.Name)
                     {
                         ctxt.AddSideEffect(MkZingSeq(left, MkZingIfThenElse(MkZingDot(leftEval, "bl"), right, ZingData.Cnst_Nil)));

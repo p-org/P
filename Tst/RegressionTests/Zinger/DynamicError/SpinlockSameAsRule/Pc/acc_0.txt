@@ -1,0 +1,137 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing SpinlockSameAsRule.zing ...
+OUT: Compiling SpinlockSameAsRule.zing to SpinlockSameAsRule.dll ...
+OUT: spinlocksameasrule.p (21, 4): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (21, 4): inferred type:  NIL
+OUT: spinlocksameasrule.p (21, 9): inferred type:  BaseType(ANY)
+OUT: spinlocksameasrule.p (21, 17): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (28, 4): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (28, 4): inferred type:  NIL
+OUT: spinlocksameasrule.p (28, 15): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (29, 4): inferred type:  NIL
+OUT: spinlocksameasrule.p (29, 8): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (29, 17): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (29, 20): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (31, 5): inferred type:  NIL
+OUT: spinlocksameasrule.p (31, 9): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (31, 11): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (31, 14): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (31, 17): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
+OUT: spinlocksameasrule.p (31, 29): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
+OUT: spinlocksameasrule.p (31, 29): inferred type:  NIL
+OUT: spinlocksameasrule.p (31, 36): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (31, 37): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (31, 43): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (31, 51): inferred type:  NIL
+OUT: spinlocksameasrule.p (33, 5): inferred type:  NIL
+OUT: spinlocksameasrule.p (33, 9): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
+OUT: spinlocksameasrule.p (33, 16): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (33, 17): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (33, 21): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (33, 24): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (33, 32): inferred type:  NIL
+OUT: spinlocksameasrule.p (33, 38): inferred type:  BaseType(EVENT)
+OUT: spinlocksameasrule.p (34, 13): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
+OUT: spinlocksameasrule.p (34, 13): inferred type:  NIL
+OUT: spinlocksameasrule.p (34, 20): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (34, 21): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (34, 27): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (34, 34): inferred type:  NIL
+OUT: spinlocksameasrule.p (38, 4): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (38, 4): inferred type:  NIL
+OUT: spinlocksameasrule.p (38, 15): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (40, 4): inferred type:  NIL
+OUT: spinlocksameasrule.p (40, 8): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (40, 11): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (40, 14): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
+OUT: spinlocksameasrule.p (40, 22): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (40, 25): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (40, 34): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (40, 37): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (41, 5): inferred type:  NIL
+OUT: spinlocksameasrule.p (41, 9): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
+OUT: spinlocksameasrule.p (41, 16): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (41, 17): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (41, 21): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (41, 24): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (41, 32): inferred type:  NIL
+OUT: spinlocksameasrule.p (41, 38): inferred type:  BaseType(EVENT)
+OUT: spinlocksameasrule.p (42, 12): inferred type:  NIL
+OUT: spinlocksameasrule.p (42, 18): inferred type:  BaseType(EVENT)
+OUT: spinlocksameasrule.p (42, 25): inferred type:  NIL
+OUT: spinlocksameasrule.p (47, 4): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (47, 4): inferred type:  NIL
+OUT: spinlocksameasrule.p (47, 8): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (48, 4): inferred type:  NIL
+OUT: spinlocksameasrule.p (48, 11): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (48, 13): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (48, 15): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (48, 22): inferred type:  SeqType(BaseType(INT))
+OUT: spinlocksameasrule.p (48, 27): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
+OUT: spinlocksameasrule.p (49, 5): inferred type:  NIL
+OUT: spinlocksameasrule.p (49, 9): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
+OUT: spinlocksameasrule.p (49, 16): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (49, 17): inferred type:  SeqType(BaseType(INT))
+OUT: spinlocksameasrule.p (49, 22): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
+OUT: spinlocksameasrule.p (49, 30): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (49, 31): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (49, 35): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (49, 38): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (49, 46): inferred type:  NIL
+OUT: spinlocksameasrule.p (49, 52): inferred type:  BaseType(EVENT)
+OUT: spinlocksameasrule.p (49, 61): inferred type:  NIL
+OUT: spinlocksameasrule.p (50, 5): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (50, 5): inferred type:  NIL
+OUT: spinlocksameasrule.p (50, 9): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (50, 11): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (50, 13): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (52, 4): inferred type:  NIL
+OUT: spinlocksameasrule.p (52, 10): inferred type:  BaseType(EVENT)
+OUT: spinlocksameasrule.p (68, 4): inferred type:  NIL
+OUT: spinlocksameasrule.p (68, 11): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (77, 4): inferred type:  NIL
+OUT: spinlocksameasrule.p (77, 11): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (77, 18): inferred type:  NIL
+OUT: spinlocksameasrule.p (86, 4): inferred type:  NIL
+OUT: spinlocksameasrule.p (86, 11): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (86, 18): inferred type:  NIL
+OUT: spinlocksameasrule.p (86, 19): inferred type:  NIL
+OUT: spinlocksameasrule.p (98, 7): inferred type:  NIL
+OUT: spinlocksameasrule.p (98, 20): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (117, 4): inferred type:  NIL
+OUT: spinlocksameasrule.p (117, 17): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (119, 4): inferred type:  NIL
+OUT: spinlocksameasrule.p (119, 11): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (120, 5): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (120, 5): inferred type:  NIL
+OUT: spinlocksameasrule.p (120, 11): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (121, 5): inferred type:  BaseType(EVENT)
+OUT: spinlocksameasrule.p (121, 5): inferred type:  NIL
+OUT: spinlocksameasrule.p (121, 10): inferred type:  BaseType(EVENT)
+OUT: spinlocksameasrule.p (122, 5): inferred type:  NIL
+OUT: spinlocksameasrule.p (122, 23): inferred type:  BaseType(EVENT)
+OUT: spinlocksameasrule.p (122, 27): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (128, 3): inferred type:  NIL
+OUT: spinlocksameasrule.p (128, 7): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (128, 12): inferred type:  NIL
+OUT: spinlocksameasrule.p (128, 19): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (129, 10): inferred type:  NIL
+OUT: spinlocksameasrule.p (129, 17): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (132, 3): inferred type:  NIL
+OUT: spinlocksameasrule.p (132, 7): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (132, 12): inferred type:  NIL
+OUT: spinlocksameasrule.p (132, 19): inferred type:  BaseType(EVENT)
+OUT: spinlocksameasrule.p (133, 8): inferred type:  NIL
+OUT: spinlocksameasrule.p (133, 12): inferred type:  BaseType(BOOL)
+OUT: spinlocksameasrule.p (133, 17): inferred type:  NIL
+OUT: spinlocksameasrule.p (133, 24): inferred type:  BaseType(EVENT)
+OUT: spinlocksameasrule.p (134, 10): inferred type:  NIL
+OUT: spinlocksameasrule.p (134, 17): inferred type:  BaseType(EVENT)
+OUT: spinlocksameasrule.p (134, 23): inferred type:  NIL
+OUT: 
+EXIT: 0

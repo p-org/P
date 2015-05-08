@@ -38,13 +38,11 @@ namespace PlangBuild
             "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\System.Compiler.Framework.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\System.Compiler.Runtime.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\Zinger.exe",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingExplorer.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RandomDelayingScheduler.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RoundRobinDelayingScheduler.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\RunToCompletionDelayingScheduler.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\CustomDelayingScheduler.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\PCTDelayingScheduler.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\PCT.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\ZingExplorer.dll",
 
             "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\zc.exe",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\Microsoft.Comega.dll",
@@ -55,13 +53,11 @@ namespace PlangBuild
             "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\System.Compiler.Framework.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\System.Compiler.Runtime.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\Zinger.exe",
+            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingExplorer.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RandomDelayingScheduler.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RoundRobinDelayingScheduler.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\RunToCompletionDelayingScheduler.dll",
             "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\CustomDelayingScheduler.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\PCTDelayingScheduler.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\PCT.dll",
-            "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\ZingExplorer.dll",
         };
 
         private static void OutputReceived(object sender, DataReceivedEventArgs e)

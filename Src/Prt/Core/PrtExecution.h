@@ -135,6 +135,14 @@ PRT_API PRT_VALUE * PRT_CALL_CONV PrtMapGetNC(_In_ PRT_VALUE *map, _In_ PRT_VALU
 */
 PRT_API void PRT_CALL_CONV PrtSetGlobalVar(_Inout_ PRT_MACHINEINST_PRIV * context, _In_ UINT32 varIndex, _In_ PRT_VALUE * value);
 
+/** Sets a global variable to variable
+* @param[in,out] context The context to modify.
+* @param[in] varIndex The index of the variable to modify.
+* @param[in] value The value to set. (Will be cloned if cloneValue is PRT_TRUE)
+* @param[in] cloneValue Only set to PRT_FALSE if value will be forever owned by this machine.
+*/
+PRT_API void PRT_CALL_CONV PrtSetGlobalVarEx(_Inout_ PRT_MACHINEINST_PRIV * context, _In_ UINT32 varIndex, _In_ PRT_VALUE * value, _In_ PRT_BOOLEAN cloneValue);
+
 PRT_MACHINEINST_PRIV *
 PrtMkMachinePrivate(
 _Inout_  PRT_PROCESS_PRIV		*process,

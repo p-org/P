@@ -1,11 +1,16 @@
 #include "PrtExecution.h"
 
-void PRT_CALL_CONV PrtSetGlobalVar(_Inout_ PRT_MACHINEINST_PRIV * context, _In_ UINT32 varIndex, _In_ PRT_VALUE * value)
+void PRT_CALL_CONV PrtSetGlobalVarEx(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ UINT32 varIndex, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
 {
 	PRT_DBG_ASSERT(PrtIsValidValue(value), "value is not valid");
 	PRT_DBG_ASSERT(PrtIsValidValue(context->varValues[varIndex]), "Variable must contain a valid value");
 	PrtFreeValue(context->varValues[varIndex]);
-	context->varValues[varIndex] = PrtCloneValue(value);
+	context->varValues[varIndex] = cloneValue ? PrtCloneValue(value) : value;
+}
+
+void PRT_CALL_CONV PrtSetGlobalVar(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ UINT32 varIndex, _In_ PRT_VALUE *value)
+{
+	PrtSetGlobalVarEx(context, varIndex, value, PRT_TRUE);
 }
 
 PRT_MACHINEINST_PRIV *

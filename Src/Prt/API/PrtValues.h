@@ -251,6 +251,14 @@ PRT_API PRT_MACHINEID PRT_CALL_CONV PrtPrimGetMachine(_In_ PRT_VALUE *prmVal);
 */
 PRT_API void PRT_CALL_CONV PrtTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VALUE *value);
 
+/** Sets an element in a (named) tuple by index.
+* @param[in,out] tuple A (named) tuple to mutate.
+* @param[in]     index A 0-based element index.
+* @param[in]     value The value to set (will be cloned if cloneValue is PRT_TRUE).
+* @param[in]     cloneValue Only set to PRT_FALSE if value will be forever owned by this tuple.
+*/
+PRT_API void PRT_CALL_CONV PrtTupleSetEx(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue);
+
 /** Gets an element in a (named) tuple by index.
 * @param[in] tuple A (named) tuple.
 * @param[in] index A 0-based element index.
@@ -265,6 +273,14 @@ PRT_API PRT_VALUE * PRT_CALL_CONV PrtTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_UI
 */
 PRT_API void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE *value);
 
+/** Updates the sequence at index.
+* @param[in,out] seq   A sequence to mutate.
+* @param[in]     index The name of the element to set. A value must already exist at this index.
+* @param[in]     value The value to store at index (will be cloned if cloneValue is PRT_TRUE).
+* @param[in]     cloneValue Only set to PRT_FALSE if value will be forever owned by this seq.
+*/
+PRT_API void PRT_CALL_CONV PrtSeqUpdateEx(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue);
+
 /** Inserts value into the sequence at index.
 * Index cannot be larger than the size of the sequence. Insertion causes:
 * seq'[index] = value.
@@ -275,6 +291,18 @@ PRT_API void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *
 * @param[in]     value The value to store at index (will be cloned).
 */
 PRT_API void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE* value);
+
+/** Inserts value into the sequence at index.
+* Index cannot be larger than the size of the sequence. Insertion causes:
+* seq'[index] = value.
+* For all i >= index, if seq[i] is defined, then seq'[i + 1] = seq[i].
+* For all i < index, if seq[i] is defined, then seq'[i] = seq[i].
+* @param[in,out] seq   A sequence to mutate.
+* @param[in]     index An 0-based index s.t. 0 <= index <= size(seq).
+* @param[in]     value The value to store at index (will be cloned if cloneValue is PRT_TRUE).
+* @param[in]     cloneValue Only set to PRT_FALSE if value will be forever owned by this seq.
+*/
+PRT_API void PRT_CALL_CONV PrtSeqInsertEx(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE* value, _In_ PRT_BOOLEAN cloneValue);
 
 /** Removes the value at index from the sequence, and shortens the sequence by one.
 * seq[index] must be defined. Removal causes:
@@ -302,6 +330,17 @@ PRT_API PRT_UINT32 PRT_CALL_CONV PrtSeqSizeOf(_In_ PRT_VALUE *seq);
 * If key is not in the map, then adds it.
 * If key is already in the map, then changes its mapping.
 * @param[in,out] map   A map to mutate.
+* @param[in]     key   The key to update (will be cloned if cloneKey is PRT_TRUE).
+* @param[in]     cloneKey Only set to false if key will be forever owned by this map.
+* @param[in]     value The value to which the key maps (will be cloned if cloneValue is PRT_TRUE).
+* @param[in]     cloneValue Only set to PRT_FALSE if value will be forever owned by this map.
+*/
+PRT_API void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue);
+
+/** Updates the map at key.
+* If key is not in the map, then adds it.
+* If key is already in the map, then changes its mapping.
+* @param[in,out] map   A map to mutate.
 * @param[in]     key   The key to update (will be cloned).
 * @param[in]     value The value to which the key maps (will be cloned).
 */
@@ -310,20 +349,20 @@ PRT_API void PRT_CALL_CONV PrtMapUpdate(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE* 
 /** Inserts (key, value) in map.
 * requires that key is not already in the map
 * @param[in,out] map   A map to mutate.
+* @param[in]     key   The key to update (will be cloned if cloneKey is PRT_TRUE).
+* @param[in]     cloneKey Only set to false if key will be forever owned by this map.
+* @param[in]     value The value to which the key maps (will be cloned if cloneValue is PRT_TRUE).
+* @param[in]     cloneValue Only set to PRT_FALSE if value will be forever owned by this map.
+*/
+PRT_API void PRT_CALL_CONV PrtMapInsertEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE* key, _In_ PRT_BOOLEAN cloneKey, _In_ PRT_VALUE* value, _In_ PRT_BOOLEAN cloneValue);
+
+/** Inserts (key, value) in map.
+* requires that key is not already in the map
+* @param[in,out] map   A map to mutate.
 * @param[in]     key   The key to update (will be cloned).
 * @param[in]     value The value to which the key maps (will be cloned).
 */
 PRT_API void PRT_CALL_CONV PrtMapInsert(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE* key, _In_ PRT_VALUE* value);
-
-/** Updates the map at key.
-* If key is not in the map, then adds it.
-* If key is already in the map, then changes its mapping.
-* @param[in,out] map   A map to mutate.
-* @param[in]     key   The key to update (will be cloned if cloneKeyVals is true).
-* @param[in]     value The value to which the key maps (will be cloned if cloneKeyVals is true).
-* @param[in]     cloneKeyVals Only set to false if key/value will be forever owned by this map.
-*/
-PRT_API void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneKeyVals);
 
 /** Remove the key from the map.
 * If the key is not in then map, then the map is unchanged.

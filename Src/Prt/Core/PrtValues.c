@@ -386,7 +386,7 @@ PRT_MACHINEID PRT_CALL_CONV PrtPrimGetMachine(_In_ PRT_VALUE *prmVal)
 	return *prmVal->valueUnion.mid;
 }
 
-void PRT_CALL_CONV PrtTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VALUE *value)
+void PRT_CALL_CONV PrtTupleSetEx(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VALUE *value, PRT_BOOLEAN cloneValue)
 {
 	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
@@ -394,7 +394,12 @@ void PRT_CALL_CONV PrtTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, 
 	PrtAssert(0 <= index && index < tuple->valueUnion.tuple->size, "Invalid tuple index");
 	
 	PrtFreeValue(tuple->valueUnion.tuple->values[index]);
-	tuple->valueUnion.tuple->values[index] = PrtCloneValue(value);
+	tuple->valueUnion.tuple->values[index] = cloneValue == PRT_TRUE ? PrtCloneValue(value) : value;
+}
+
+void PRT_CALL_CONV PrtTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VALUE *value)
+{
+	PrtTupleSetEx(tuple, index, value, PRT_TRUE);
 }
 
 PRT_VALUE * PRT_CALL_CONV PrtTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index)
@@ -415,7 +420,7 @@ PRT_VALUE * PRT_CALL_CONV PrtTupleGetNC(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 i
 	return tuple->valueUnion.tuple->values[index];
 }
 
-void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE *value)
+void PRT_CALL_CONV PrtSeqUpdateEx(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE *value, PRT_BOOLEAN cloneValue)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
@@ -424,10 +429,15 @@ void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _
 	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
 
 	PrtFreeValue(seq->valueUnion.seq->values[index->valueUnion.nt]);
-	seq->valueUnion.seq->values[index->valueUnion.nt] = PrtCloneValue(value);
+	seq->valueUnion.seq->values[index->valueUnion.nt] = cloneValue == PRT_TRUE ? PrtCloneValue(value) : value;
 }
 
-void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE* value)
+void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE *value)
+{
+	PrtSeqUpdateEx(seq, index, value, PRT_TRUE);
+}
+
+void PRT_CALL_CONV PrtSeqInsertEx(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE* value, PRT_BOOLEAN cloneValue)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
@@ -436,7 +446,7 @@ void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _
 	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt <= seq->valueUnion.seq->size, "Invalid index");
 
 	PRT_VALUE *clone;
-	clone = PrtCloneValue(value);
+	clone = cloneValue == PRT_TRUE ? PrtCloneValue(value) : value;
 	if (seq->valueUnion.seq->capacity == 0)
 	{
 		seq->valueUnion.seq->values = (PRT_VALUE **)PrtMalloc(sizeof(PRT_VALUE*));
@@ -485,6 +495,11 @@ void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _
 	}
 
 	seq->valueUnion.seq->size = seq->valueUnion.seq->size + 1;
+}
+
+void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE* value)
+{
+	PrtSeqInsertEx(seq, index, value, PRT_TRUE);
 }
 
 void PRT_CALL_CONV PrtSeqRemove(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
@@ -574,7 +589,7 @@ void PRT_CALL_CONV PrtMapExpand(_Inout_ PRT_VALUE *map)
 	}
 }
 
-void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneKeyVals)
+void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
@@ -592,15 +607,15 @@ void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _
 	{
 		isNewKey = PRT_TRUE;
 		node = (PRT_MAPNODE *)PrtMalloc(sizeof(PRT_MAPNODE));
-		node->key = cloneKeyVals == PRT_TRUE ? PrtCloneValue(key) : key;
-		node->value = cloneKeyVals == PRT_TRUE ? PrtCloneValue(value) : value;
+		node->key = cloneKey == PRT_TRUE ? PrtCloneValue(key) : key;
+		node->value = cloneValue == PRT_TRUE ? PrtCloneValue(value) : value;
 		node->bucketNext = NULL;
 		node->insertNext = NULL;
 		map->valueUnion.map->buckets[bucketNum] = node;
 	}
 	else
 	{
-		PRT_VALUE *valueClone = cloneKeyVals == PRT_TRUE ? PrtCloneValue(value) : value;
+		PRT_VALUE *valueClone = cloneValue == PRT_TRUE ? PrtCloneValue(value) : value;
 		PRT_MAPNODE *next = bucket;
 		isNewKey = PRT_TRUE;
 		while (next != NULL)
@@ -608,7 +623,7 @@ void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _
 			if (PrtIsEqualValue(next->key, key))
 			{
 				//// Then need to free the unused key.
-				if (cloneKeyVals != PRT_TRUE)
+				if (cloneKey != PRT_TRUE)
 				{
 					PrtFreeValue(key);
 				}
@@ -625,7 +640,7 @@ void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _
 		if (isNewKey == PRT_TRUE)
 		{
 			node = (PRT_MAPNODE *)PrtMalloc(sizeof(PRT_MAPNODE));
-			node->key = cloneKeyVals == PRT_TRUE ? PrtCloneValue(key) : key;
+			node->key = cloneKey == PRT_TRUE ? PrtCloneValue(key) : key;
 			node->value = valueClone;
 			node->bucketNext = bucket;
 			node->insertNext = NULL;
@@ -659,14 +674,19 @@ void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _
 
 void PRT_CALL_CONV PrtMapUpdate(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_VALUE *value)
 {
-	PrtMapUpdateEx(map, key, value, PRT_TRUE);
+	PrtMapUpdateEx(map, key, PRT_TRUE, value, PRT_TRUE);
+}
+
+void PRT_CALL_CONV PrtMapInsertEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
+{
+	PrtAssert(!PrtMapExists(map, key), "key must not be in map");
+
+	PrtMapUpdateEx(map, key, cloneKey, value, cloneValue);
 }
 
 void PRT_CALL_CONV PrtMapInsert(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_VALUE *value)
 {
-	PrtAssert(!PrtMapExists(map, key), "key must not be in map");
-
-	PrtMapUpdate(map, key, value);
+	PrtMapInsertEx(map, key, PRT_TRUE, value, PRT_TRUE);
 }
 
 void PRT_CALL_CONV PrtMapRemove(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key)
@@ -1292,7 +1312,7 @@ PRT_VALUE * PRT_CALL_CONV PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE *typ
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
 	PrtAssert(PrtIsValidType(type), "Invalid type expression.");
 	PrtAssert(PrtInhabitsType(value, type), "Invalid type cast");
-	return PrtCloneValue(value);
+	return value;
 }
 
 PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE *value, _In_ PRT_TYPE *type)

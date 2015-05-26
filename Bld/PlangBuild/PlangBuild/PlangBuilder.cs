@@ -27,8 +27,10 @@ namespace PlangBuild
         /// </summary>
         private static readonly Tuple<bool, string, string>[] Projects = new Tuple<bool, string, string>[]
         {
-            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\Pcx64.csproj", PlatformX64),
-            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\Pc.csproj", PlatformX86),
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\Compiler\\Compilerx64.csproj", PlatformX64),
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\Compiler\\Compiler.csproj", PlatformX86),
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\CommandLinex64.csproj", PlatformX64),
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\CommandLine.csproj", PlatformX86),
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUser.vcxproj", PlatformX64),
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUser.vcxproj", PlatformX86),
             /*
@@ -150,41 +152,53 @@ namespace PlangBuild
 
             //Pc x86
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x86\\Debug\\Pc.exe", 
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Debug\\Pc.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Pc.exe"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x86\\Debug\\CParser.dll", 
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Debug\\Compiler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Compiler.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Debug\\CParser.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\CParser.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x86\\Debug\\ZingParser.dll", 
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Debug\\ZingParser.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingParser.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x86\\Debug\\Pc.pdb", 
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Debug\\Pc.pdb", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Pc.pdb"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x86\\Debug\\CParser.pdb", 
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Debug\\Compiler.pdb", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Compiler.pdb"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Debug\\CParser.pdb", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\CParser.pdb"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x86\\Debug\\ZingParser.pdb", 
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Debug\\ZingParser.pdb", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingParser.pdb"),
             //Pc x64
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x64\\Debug\\Pc.exe", 
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Debug\\Pc.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\Pc.exe"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x64\\Debug\\CParser.dll", 
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Debug\\Compiler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\Compiler.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Debug\\CParser.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\CParser.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x64\\Debug\\ZingParser.dll", 
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Debug\\ZingParser.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\ZingParser.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x64\\Debug\\Pc.pdb", 
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Debug\\Pc.pdb", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\Pc.pdb"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x64\\Debug\\CParser.pdb", 
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Debug\\Compiler.pdb", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\Compiler.pdb"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Debug\\CParser.pdb", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\CParser.pdb"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x64\\Debug\\ZingParser.pdb", 
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Debug\\ZingParser.pdb", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\ZingParser.pdb"),
 
             
@@ -429,23 +443,29 @@ namespace PlangBuild
 
             //Pc x86
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x86\\Release\\Pc.exe", 
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Release\\Pc.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\Pc.exe"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x86\\Release\\CParser.dll", 
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Release\\Compiler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\Compiler.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Release\\CParser.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\CParser.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x86\\Release\\ZingParser.dll", 
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Release\\ZingParser.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\ZingParser.dll"),
             //Pc x64
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x64\\Release\\Pc.exe", 
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Release\\Pc.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\Pc.exe"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x64\\Release\\CParser.dll", 
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Release\\Compiler.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\Compiler.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Release\\CParser.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\CParser.dll"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Pc\\bin\\x64\\Release\\ZingParser.dll", 
+                "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Release\\ZingParser.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\ZingParser.dll"),
 
            // x86

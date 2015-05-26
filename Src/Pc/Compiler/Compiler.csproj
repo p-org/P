@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -7,16 +7,16 @@
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{ED76217F-2452-4A35-90F6-6EB6CCF2D882}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Pc</RootNamespace>
-    <AssemblyName>Pc</AssemblyName>
+    <AssemblyName>Compiler</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
     <CodeContractsAssemblyMode>1</CodeContractsAssemblyMode>
-    <GPToolsPath>..\..\Ext\Formula\x86\</GPToolsPath>
+    <GPToolsPath>..\..\..\Ext\Formula\x86\</GPToolsPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
@@ -72,30 +72,32 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x64\Debug\</OutputPath>
+    <OutputPath>bin\x86\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>bin\x64\Release\</OutputPath>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <OutputPath>bin\x86\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Core, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Ext\Formula\x64\Core.dll</HintPath>
+    <Reference Include="Core">
+      <HintPath>..\..\..\Ext\Formula\x86\Core.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -107,7 +109,7 @@
     <Reference Include="System.Xml" />
     <Reference Include="zc, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Ext\Zing\x64\zc.exe</HintPath>
+      <HintPath>..\..\..\Ext\Zing\x86\zc.exe</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -117,9 +119,9 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>P.4ml</DependentUpon>
     </Compile>
+    <Compile Include="CommandLineOptions.cs" />
     <Compile Include="Parser\Parser.cs" />
     <Compile Include="Parser\ShiftReduceParserCode.cs" />
-    <Compile Include="CommandLine.cs" />
     <Compile Include="PData.cs" />
     <Compile Include="PProgram.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -146,11 +148,11 @@
     <MPPGCompile Include="Parser\parser.y" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Parsers\CParser\CParserx64.csproj">
+    <ProjectReference Include="..\..\Parsers\CParser\CParser.csproj">
       <Project>{55afea71-da6d-4258-9193-29942ebbbe48}</Project>
       <Name>CParser</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Parsers\ZingParser\ZingParserx64.csproj">
+    <ProjectReference Include="..\..\Parsers\ZingParser\ZingParser.csproj">
       <Project>{09a73016-0395-4014-8f26-0dd25ed81d12}</Project>
       <Name>ZingParser</Name>
     </ProjectReference>
@@ -198,7 +200,7 @@
     </CreateItem>
   </Target>
   <!-- Start Formula code generator MSBuild integration -->
-  <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="..\..\Ext\Formula\x86\FormulaCodeGeneratorTask.dll" />
+  <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="..\..\..\Ext\Formula\x86\FormulaCodeGeneratorTask.dll" />
   <Target Name="BeforeBuild" Condition="'$(BuildingInsideVisualStudio)' != 'true'">
     <ItemGroup>
       <FormulaGenFiles Include="@(EmbeddedResource->'%(FullPath)')" Condition="%(EmbeddedResource.Generator) == 'FormulaCodeGenerator'" />

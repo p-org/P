@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZingParserx64", "..\Parsers
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandLinex64", "CommandLine\CommandLinex64.csproj", "{48B4C337-CD13-4826-B6A1-DA97CE71511B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InteractiveCommandLinex64", "InteractiveCommandLine\InteractiveCommandLinex64.csproj", "{2AC6C51F-C987-477D-9A70-B71B7EE5323E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,16 @@ Global
 		{48B4C337-CD13-4826-B6A1-DA97CE71511B}.Release|Mixed Platforms.Build.0 = Release|x64
 		{48B4C337-CD13-4826-B6A1-DA97CE71511B}.Release|x64.ActiveCfg = Release|x64
 		{48B4C337-CD13-4826-B6A1-DA97CE71511B}.Release|x64.Build.0 = Release|x64
+		{2AC6C51F-C987-477D-9A70-B71B7EE5323E}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{2AC6C51F-C987-477D-9A70-B71B7EE5323E}.Debug|Mixed Platforms.ActiveCfg = Debug|x64
+		{2AC6C51F-C987-477D-9A70-B71B7EE5323E}.Debug|Mixed Platforms.Build.0 = Debug|x64
+		{2AC6C51F-C987-477D-9A70-B71B7EE5323E}.Debug|x64.ActiveCfg = Debug|x64
+		{2AC6C51F-C987-477D-9A70-B71B7EE5323E}.Debug|x64.Build.0 = Debug|x64
+		{2AC6C51F-C987-477D-9A70-B71B7EE5323E}.Release|Any CPU.ActiveCfg = Release|x64
+		{2AC6C51F-C987-477D-9A70-B71B7EE5323E}.Release|Mixed Platforms.ActiveCfg = Release|x64
+		{2AC6C51F-C987-477D-9A70-B71B7EE5323E}.Release|Mixed Platforms.Build.0 = Release|x64
+		{2AC6C51F-C987-477D-9A70-B71B7EE5323E}.Release|x64.ActiveCfg = Release|x64
+		{2AC6C51F-C987-477D-9A70-B71B7EE5323E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -18,7 +18,7 @@
         public string outputDir;
         public bool outputFormula;
         public bool erase;
-        public bool shortFilenames;
+        public bool shortFileNames;
         public bool printTypeInference;
 
         public CommandLineOptions()
@@ -28,7 +28,7 @@
             this.outputDir = null;
             this.outputFormula = false;
             this.erase = true;
-            this.shortFilenames = false;
+            this.shortFileNames = false;
             this.printTypeInference = false;
         }
     }

@@ -50,7 +50,7 @@ namespace Microsoft.Pc
                         case "/shortFileNames":
                             if (colonArg != null)
                                 goto error;
-                            options.shortFilenames = true;
+                            options.shortFileNames = true;
                             break;
                         case "/printTypeInference":
                             if (colonArg != null)
@@ -114,7 +114,7 @@ namespace Microsoft.Pc
 
         public static void WriteFlags(List<Flag> flags, CommandLineOptions options)
         {
-            if (options.shortFilenames)
+            if (options.shortFileNames)
             {
                 var envParams = new EnvParams(
                     new Tuple<EnvParamKind, object>(EnvParamKind.Msgs_SuppressPaths, true));

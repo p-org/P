@@ -73,13 +73,25 @@
             private set;
         }
 
-        public bool AttemptedCompile
+        public CommandLineOptions Options
+        {
+            get;
+            set;
+        }
+
+        public string RootModule
         {
             get;
             private set;
         }
 
-        public CommandLineOptions Options
+        public List<AST<Model>> AllModels
+        {
+            get;
+            private set;
+        }
+
+        public Dictionary<string, ProgramName> SeenFileNames
         {
             get;
             private set;
@@ -94,8 +106,9 @@
         public Compiler(CommandLineOptions options)
         {
             Options = options;
+            SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
             EnvParams envParams = null;
-            if (options.shortFilenames)
+            if (options.shortFileNames)
             {
                 envParams = new EnvParams(
                     new Tuple<EnvParamKind, object>(EnvParamKind.Msgs_SuppressPaths, true));    
@@ -105,11 +118,21 @@
             InitEnv(CompilerEnv);
         }
 
+        public Compiler(bool shortFileNames)
+        {
+            SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
+            EnvParams envParams = null;
+            if (shortFileNames)
+            {
+                envParams = new EnvParams(new Tuple<EnvParamKind, object>(EnvParamKind.Msgs_SuppressPaths, true));    
+            }
+            CompilerEnv = new Env(envParams);
+            InitEnv(CompilerEnv);
+        }
+
         public bool Compile(string inputFileName, out List<Flag> flags)
         {
-            Contract.Requires(!AttemptedCompile);
             InputProgramNames = new HashSet<ProgramName>();
-            AttemptedCompile = true;
             flags = new List<Flag>();
             RootFileName = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, inputFileName));
             try
@@ -129,10 +152,15 @@
 
             HashSet<string> crntEventNames = new HashSet<string>();
             HashSet<string> crntMachineNames = new HashSet<string>();
-            Dictionary<string, ProgramName> seenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
+
+            InstallResult uninstallResult;
+            var uninstallDidStart = CompilerEnv.Uninstall(SeenFileNames.Values, out uninstallResult);
+            // Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
+
+            SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
             Dictionary<string, PProgram> parsedPrograms = new Dictionary<string, PProgram>(StringComparer.OrdinalIgnoreCase);
             Queue<string> parserWorkQueue = new Queue<string>();
-            seenFileNames[RootFileName] = RootProgramName;
+            SeenFileNames[RootFileName] = RootProgramName;
             InputProgramNames.Add(RootProgramName);
             parserWorkQueue.Enqueue(RootFileName);
             while (parserWorkQueue.Count > 0)
@@ -142,7 +170,7 @@
                 List<Flag> parserFlags;
                 string currFileName = parserWorkQueue.Dequeue();
                 var parser = new Parser.Parser();
-                var result = parser.ParseFile(seenFileNames[currFileName], Options, crntEventNames, crntMachineNames, out parserFlags, out prog, out includedFileNames);
+                var result = parser.ParseFile(SeenFileNames[currFileName], Options, crntEventNames, crntMachineNames, out parserFlags, out prog, out includedFileNames);
                 flags.AddRange(parserFlags);
                 if (!result)
                 {
@@ -156,7 +184,7 @@
                 {
                     string fullFileName = Path.GetFullPath(Path.Combine(currDirectoryName, fileName));
                     ProgramName programName;
-                    if (seenFileNames.ContainsKey(fullFileName)) continue;
+                    if (SeenFileNames.ContainsKey(fullFileName)) continue;
                     try
                     {
                         programName = new ProgramName(fullFileName);
@@ -171,7 +199,7 @@
                                 Constants.BadFile.Code));
                         return false;
                     }
-                    seenFileNames[fullFileName] = programName;
+                    SeenFileNames[fullFileName] = programName;
                     InputProgramNames.Add(programName);
                     parserWorkQueue.Enqueue(fullFileName);
                 }
@@ -184,8 +212,8 @@
             AST<Program> modelProgram;
             bool progressed;
             AST<Model> rootModel = null;
-            string rootModule = null;
-            List<AST<Model>> allModels = new List<AST<Model>>();
+            RootModule = null;
+            AllModels = new List<AST<Model>>();
             foreach (var kv in parsedPrograms)
             {
                 AST<Model> model;
@@ -204,10 +232,10 @@
                 {
                     Contract.Assert(rootModel == null);
                     rootModel = model;
-                    rootModule = inputModule;
-                    if (seenFileNames.Count > 1)
+                    RootModule = inputModule;
+                    if (SeenFileNames.Count > 1)
                     {
-                        foreach (var kvp in seenFileNames)
+                        foreach (var kvp in SeenFileNames)
                         {
                             if (kvp.Key == RootFileName)
                             {
@@ -223,14 +251,14 @@
                         }
                     }
 
-                    allModels.Add(rootModel);
+                    AllModels.Add(rootModel);
                 }
                 else
                 {
-                    modelProgram = MkProgWithSettings(seenFileNames[kv.Key], new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
+                    modelProgram = MkProgWithSettings(SeenFileNames[kv.Key], new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
                     progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, model), out instResult);
                     Contract.Assert(progressed && instResult.Succeeded);
-                    allModels.Add(model);
+                    AllModels.Add(model);
                 }
             }
 
@@ -240,8 +268,9 @@
 
             if (Options.outputFormula)
             {
-                StreamWriter wr = new StreamWriter(File.Create("output.4ml"));
-                foreach (var model in allModels)
+                string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+                StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, "output.4ml")));
+                foreach (var model in AllModels)
                 {
                     model.Print(wr);
                 }
@@ -250,7 +279,7 @@
             }
 
             //// Step 2. Perform static analysis.
-            if (!Check(rootModule, flags))
+            if (!Check(RootModule, flags))
             {
                 return false;
             }
@@ -261,23 +290,23 @@
             }
 
             //// Step 3. Generate outputs
-            return GenerateC(rootModule, flags) &
-                   GenerateZing(rootModule, rootModel, allModels, flags); 
+            return GenerateC(flags) &
+                   GenerateZing(flags); 
         }
 
-        private bool GenerateZing(string rootModule, AST<Model> rootModel, List<AST<Model>> allModels, List<Flag> flags)
+        public bool GenerateZing(List<Flag> flags)
         {
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
-            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(rootModule, null, RootProgramName.ToString()));
-            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(rootModule + "_WithTypes"));
+            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModule, null, RootProgramName.ToString()));
+            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModule + "_WithTypes"));
             Task<ApplyResult> apply;
             Formula.Common.Rules.ExecuterStatistics stats;
             List<Flag> applyFlags;
             CompilerEnv.Apply(transStep, false, false, out applyFlags, out apply, out stats);
             apply.RunSynchronously();
             var extractTask = apply.Result.GetOutputModel(
-                rootModule + "_WithTypes",
-                new ProgramName(Path.Combine(Environment.CurrentDirectory, rootModule + "_WithTypes.4ml")),
+                RootModule + "_WithTypes",
+                new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModule + "_WithTypes.4ml")),
                 null);
             extractTask.Wait();
             var modelWithTypes = extractTask.Result.FindAny(
@@ -291,7 +320,7 @@
             string dllFileName = fileName + ".dll";           
             string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
 
-            new PToZing(this, allModels, (AST<Model>)modelWithTypes).GenerateZing(zingFileName, ref zingModel);
+            new PToZing(this, AllModels, (AST<Model>)modelWithTypes).GenerateZing(zingFileName, ref zingModel);
 
             if (!PrintZingFile(zingModel, CompilerEnv, outputDirName))
                 return false;
@@ -366,6 +395,11 @@
                 {
                     success = PrintZingFile(n, outputDirName) && success;
                 });
+
+
+            InstallResult uninstallResult;
+            var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { progName }, out uninstallResult);
+            // Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
 
             return success;
         }
@@ -816,12 +850,12 @@
             return aliases;
         }
 
-        private bool GenerateC(string inputModelName, List<Flag> flags)
+        public bool GenerateC(List<Flag> flags)
         {
             //// Apply the P2C transform.
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2CTransform, null, MkReservedModuleLocation(P2CTransform)));
-            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(inputModelName, null, RootProgramName.ToString()));
-            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(inputModelName + "_CModel"));
+            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModule, null, RootProgramName.ToString()));
+            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModule + "_CModel"));
 
             List<Flag> appFlags;
             Task<ApplyResult> apply;
@@ -831,10 +865,8 @@
 
             flags.AddRange(appFlags);
             //// Extract the result
-            var extractTask = apply.Result.GetOutputModel(
-                inputModelName + "_CModel",
-                new ProgramName(Path.Combine(Environment.CurrentDirectory, inputModelName + "_CModel.4ml")),
-                AliasPrefix);
+            var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModule + "_CModel.4ml"));
+            var extractTask = apply.Result.GetOutputModel(RootModule + "_CModel", progName, AliasPrefix);
             extractTask.Wait();
 
             var cProgram = extractTask.Result;
@@ -868,7 +900,7 @@
             Task<RenderResult> renderTask;
             var didStart = CompilerEnv.Install(cProgram, out instResult);
             Contract.Assert(didStart && instResult.Succeeded);
-            didStart = CompilerEnv.Render(cProgram.Node.Name, inputModelName + "_CModel", out renderTask);
+            didStart = CompilerEnv.Render(cProgram.Node.Name, RootModule + "_CModel", out renderTask);
             Contract.Assert(didStart);
             renderTask.Wait();
             Contract.Assert(renderTask.Result.Succeeded);
@@ -888,6 +920,10 @@
                 {
                     success = PrintFile(string.Empty, n, flags) && success;
                 });
+
+            InstallResult uninstallResult; 
+            var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { progName }, out uninstallResult);
+            // Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
 
             return success;
         }

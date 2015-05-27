@@ -27,8 +27,8 @@ namespace PlangBuild
         /// </summary>
         private static readonly Tuple<bool, string, string>[] Projects = new Tuple<bool, string, string>[]
         {
-            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\Compiler\\Compilerx64.csproj", PlatformX64),
-            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\Compiler\\Compiler.csproj", PlatformX86),
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\InteractiveCommandLine\\InteractiveCommandLinex64.csproj", PlatformX64),
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\InteractiveCommandLine\\InteractiveCommandLine.csproj", PlatformX86),
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\CommandLinex64.csproj", PlatformX64),
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\CommandLine.csproj", PlatformX86),
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUser.vcxproj", PlatformX64),
@@ -152,6 +152,9 @@ namespace PlangBuild
 
             //Pc x86
             new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Pc\\InteractiveCommandLine\\bin\\x86\\Debug\\Pci.exe", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Pci.exe"),
+            new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Debug\\Pc.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Pc.exe"),
             new Tuple<string, string>(
@@ -176,6 +179,9 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Debug\\ZingParser.pdb", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingParser.pdb"),
             //Pc x64
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Pc\\InteractiveCommandLine\\bin\\x64\\Debug\\Pci.exe", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\Pci.exe"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Debug\\Pc.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\Pc.exe"),
@@ -443,6 +449,9 @@ namespace PlangBuild
 
             //Pc x86
             new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Pc\\InteractiveCommandLine\\bin\\x86\\Release\\Pci.exe", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\Pci.exe"),
+            new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Release\\Pc.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\Pc.exe"),
             new Tuple<string, string>(
@@ -455,6 +464,9 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Release\\ZingParser.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\ZingParser.dll"),
             //Pc x64
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Pc\\InteractiveCommandLine\\bin\\x64\\Release\\Pci.exe", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\Pci.exe"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Release\\Pc.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\Pc.exe"),

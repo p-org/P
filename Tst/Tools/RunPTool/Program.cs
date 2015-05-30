@@ -8,6 +8,7 @@ namespace RunPTool
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
+    using CheckP;
 
     class Program
     {
@@ -17,50 +18,69 @@ namespace RunPTool
         private const string DisplayDiffsFile = "display-diffs.bat";
         private const string DiffTool = "kdiff3";
 
+        private static PciProcess pciProcess;
+
         static void Main(string[] args)
         {
             try
             {
-                if (args.Length > 2)
+                bool reset = false;
+                string testFilePath = null;
+                string pciFilePath = null;
+                for (int i = 0; i < args.Length; i++)
                 {
-                    Console.WriteLine("USAGE: RunPTool.exe [root dir] [reset]");
+                    string arg = args[i];
+                    if (arg == "/reset")
+                    {
+                        reset = true;
+                    }
+                    else if (testFilePath == null && !arg.StartsWith("/"))
+                    {
+                        testFilePath = arg;
+                    }
+                    else if (pciFilePath == null && arg.StartsWith("/pciPath:"))
+                    {
+                        var colonIndex = arg.IndexOf(':');
+                        pciFilePath = arg.Substring(colonIndex + 1);
+                    }
+                    else
+                    {
+                        Console.WriteLine("USAGE: RunPTool.exe [file with test dirs] [/reset] [/pciPath:<path to Pci.exe>]");
+                        return;
+                    }
                 }
+
                 //tstDir is where testP.bat is located
-                //Case 1 (debugging only): Running from VS Debugger:
-                //Environment.CurrentDirectory is Tst\Tools\RunPTool\bin\Debug
-                //var tstDir = new DirectoryInfo("..\\..\\..\\..\\..\\Tst");
-                //Case 2: Running from testP.bat:
-                //Environment.CurrentDirectory is Tst
                 var tstDir = new DirectoryInfo(Environment.CurrentDirectory);
-                //Console.WriteLine("tstDir is {0}", tstDir.FullName);
-                int activeDirsCount = 0;
-                DirectoryInfo[] activeDirs = new DirectoryInfo[200];
-                if (args.Length == 0)
+                List<DirectoryInfo> activeDirs;
+                if (testFilePath == null)
                 {
                     Console.WriteLine("Warning: no test directories file provided; running all tests under \\Tst");
-                    activeDirsCount = 1;
-                    activeDirs[0] = tstDir;
-
+                    activeDirs = new List<DirectoryInfo>();
+                    activeDirs.Add(tstDir);
                 }
-                else activeDirs = ExtractActiveDirsFromFile(args[0], tstDir, out activeDirsCount);
-               
-                if (activeDirs == null)
+                else
                 {
-                    Console.WriteLine("Failed to run tests: directory name(s) in the test directories file are in a wrong format");
-                    Environment.ExitCode = FailCode;
-                    return;
-                }
-                if (activeDirsCount == 0)
-                {
-                    Console.WriteLine("Failed to run tests: test directories file is blank");
-                    Environment.ExitCode = FailCode;
-                    return;
-                }
-                for (int i = 0; i < activeDirsCount; ++i)
-                {
-                    if (!activeDirs[i].Exists)
+                    activeDirs = ExtractActiveDirsFromFile(testFilePath, tstDir);
+                    if (activeDirs == null)
                     {
-                        Console.WriteLine("Failed to run tests: directory {0} does not exist", activeDirs[i].FullName);
+                        Console.WriteLine("Failed to run tests: directory name(s) in the test directories file are in a wrong format");
+                        Environment.ExitCode = FailCode;
+                        return;
+                    }
+                    if (activeDirs.Count == 0)
+                    {
+                        Console.WriteLine("Failed to run tests: test directories file is blank");
+                        Environment.ExitCode = FailCode;
+                        return;
+                    }
+                }
+                
+                foreach (DirectoryInfo di in activeDirs)
+                {
+                    if (!di.Exists)
+                    {
+                        Console.WriteLine("Failed to run tests: directory {0} does not exist", di.FullName);
                         Environment.ExitCode = FailCode;
                         return;
                     }
@@ -68,10 +88,6 @@ namespace RunPTool
 
                 Console.WriteLine("Running tests");
                 int testCount = 0, failCount = 0;
-                bool reset = args.Length == 2
-                    ? (args[1] == "reset") ? true : false
-                    : false;
-
                 StreamWriter failedTestsWriter = null;
                 StreamWriter displayDiffsWriter = null;
                 //If reset = false, replace old "failed-tests.txt" and "display-diffs.bat" with newly created files:
@@ -91,17 +107,27 @@ namespace RunPTool
 
                 }
 
-                Test(activeDirs, activeDirsCount, reset, ref testCount, ref failCount, failedTestsWriter, displayDiffsWriter);
+                if (pciFilePath != null)
+                {
+                    pciProcess = new PciProcess(pciFilePath);
+                }
+
+                Test(activeDirs, reset, ref testCount, ref failCount, failedTestsWriter, displayDiffsWriter);
+
+                if (pciFilePath != null)
+                {
+                    pciProcess.Shutdown();
+                }
 
                 Console.WriteLine();
                 Console.WriteLine("Total tests: {0}, Passed tests: {1}. Failed tests: {2}", testCount, testCount - failCount, failCount);
-               
+
                 if (failCount > 0)
                 {
                     Console.WriteLine("List of all failed tests: failed-tests.txt");
-                  
+
                     Console.WriteLine("To run kdiff3 on outputs for all failed tests: run display-diffs.bat");
-                    
+
                     if (!CloseSummaryStream(FailedTestsFile, failedTestsWriter))
                     {
                         throw new Exception("Cannot close failed-tests.txt");
@@ -122,38 +148,39 @@ namespace RunPTool
         }
 
         //If reset = true, failedDirsWriter and displayDiffsWriter are "null"
-        private static void Test(DirectoryInfo[] diArray, int diArrayCount, bool reset, ref int testCount, ref int failCount,
+        private static void Test(List<DirectoryInfo> diArray, bool reset, ref int testCount, ref int failCount,
             StreamWriter failedTestsWriter, StreamWriter displayDiffsWriter)
         {
             //TODO: try{} at the top level
-            for (int i = 0; i < diArrayCount; ++i)
+            foreach (DirectoryInfo di in diArray)
             {
                 //enumerating files in the top dir only
-                foreach (var fi in diArray[i].EnumerateFiles(TestFilePattern))
+                foreach (var fi in di.EnumerateFiles(TestFilePattern))
                 {
                     ++testCount;
                     //Console.WriteLine("Running CheckP under dir {0}", diArray[i].FullName);
-                    var checker = new CheckP.Checker(diArray[i].FullName, reset);
+                    var checker = new Checker(di.FullName, reset, pciProcess);
                     if (!checker.Check(fi.Name))
                     {
                         ++failCount;
                         //add directory of the failing test to "failed_tests.txt": 
-                        failedTestsWriter.WriteLine("{0}", diArray[i].FullName);
+                        failedTestsWriter.WriteLine("{0}", di.FullName);
                         //add diffing command to "display_diff.bat":
-                        displayDiffsWriter.WriteLine("{0} {1}\\acc_0.txt {1}\\check-output.log", DiffTool, diArray[i].FullName);
+                        displayDiffsWriter.WriteLine("{0} {1}\\acc_0.txt {1}\\check-output.log", DiffTool, di.FullName);
                     }
                 }
 
                 //Since order of directory processing is significant (Pc should be processed before
                 //Zing and Prt), order enumerated directories alphabetically:
-                var dirs = (from dir in diArray[i].EnumerateDirectories()
-                    orderby dir.FullName ascending
-                    select dir);
- 
+                var dirs = (from dir in di.EnumerateDirectories()
+                            orderby dir.FullName ascending
+                            select dir);
+
                 foreach (var dp in dirs)
                 {
-                    DirectoryInfo[] dpArray = new DirectoryInfo[] {dp};
-                    Test(dpArray, 1, reset, ref testCount, ref failCount, failedTestsWriter, displayDiffsWriter);
+                    List<DirectoryInfo> dpArray = new List<DirectoryInfo>();
+                    dpArray.Add(dp);
+                    Test(dpArray, reset, ref testCount, ref failCount, failedTestsWriter, displayDiffsWriter);
                 }
             }
         }
@@ -194,12 +221,9 @@ namespace RunPTool
         }
 
         //generate list of directories for running regression from the input file (1st argument of testP.bat)
-        private static DirectoryInfo[] ExtractActiveDirsFromFile(string fileName, DirectoryInfo tstDir, out int count)
+        private static List<DirectoryInfo> ExtractActiveDirsFromFile(string fileName, DirectoryInfo tstDir)
         {
-            DirectoryInfo[] result = new DirectoryInfo[200];
-            count = 0;
-            //var fileExists = File.Exists(Path.Combine(tstDir.FullName, fileName));
-  
+            List<DirectoryInfo> result = new List<DirectoryInfo>();
             try
             {
                 using (var sr = new StreamReader(Path.Combine(tstDir.FullName, fileName)))
@@ -215,9 +239,8 @@ namespace RunPTool
                             Console.WriteLine("Failed to run tests: directory name in the test directory file cannot start with \"\\\" or \"/\" or \"\\\\\"");
                             return null;
                         }
-                      
-                        result[count] = new DirectoryInfo(Path.Combine(tstDir.FullName, dir));
-                        count = count + 1;
+
+                        result.Add(new DirectoryInfo(Path.Combine(tstDir.FullName, dir)));
                     }
                 }
 
@@ -226,11 +249,11 @@ namespace RunPTool
             {
                 {
                     Console.WriteLine("Failed to read regression dirs from input file - {0}", e.Message);
-                    Environment.ExitCode = FailCode;                   
+                    Environment.ExitCode = FailCode;
                 }
             }
             return result;
         }
     }
-    
+
 }

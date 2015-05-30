@@ -15,19 +15,45 @@ namespace Microsoft.Pc
 
         static void Main(string[] args)
         {
-            if (args.Length > 1)
+            bool shortFileNames = false;
+            bool doNotErase = false;
+            bool server = false;
+            for (int i = 0; i < args.Length; i++)
             {
-                goto error;
+                var arg = args[i];
+                if (arg == "/shortFileNames")
+                {
+                    shortFileNames = true;
+                }
+                else if (arg == "/doNotErase")
+                {
+                    doNotErase = true;
+                }
+                else if (arg == "/server")
+                {
+                    server = true;
+                }
+                else
+                {
+                    goto error;
+                }
             }
             Compiler compiler;
-            if (args.Length == 1 && args[0] == "/shortFileNames")
+            if (shortFileNames)
                 compiler = new Compiler(true);
             else 
                 compiler = new Compiler(false);
             List<Flag> flags;
+            CommandLineOptions compilerOptions = new CommandLineOptions();
+            compilerOptions.shortFileNames = shortFileNames;
+            compilerOptions.erase = !doNotErase;
+            compilerOptions.analyzeOnly = true;
             while (true)
             {
-                Console.Write(">> ");
+                if (server)
+                    Console.WriteLine("Pci: Command done");
+                else
+                    Console.Write(">> ");
                 var input = Console.ReadLine();
                 var inputArgs = input.Split(' ');
                 if (inputArgs.Length == 0) continue;
@@ -37,11 +63,11 @@ namespace Microsoft.Pc
                 } 
                 else if (inputArgs[0] == "load")
                 {
-                    var compilerOptions = ParseLoadString(inputArgs);
-                    if (compilerOptions == null) continue;
+                    var success = ParseLoadString(inputArgs, compilerOptions);
+                    if (!success) continue;
                     compiler.Options = compilerOptions;
                     var result = compiler.Compile(inputFileName, out flags);
-                    WriteFlags(flags, false);
+                    WriteFlags(flags, shortFileNames);
                     if (!result)
                     {
                         inputFileName = null;
@@ -49,16 +75,16 @@ namespace Microsoft.Pc
                 }
                 else if (inputArgs[0] == "test")
                 {
-                    var compilerOptions = ParseTestString(inputArgs);
-                    if (compilerOptions == null) continue;
+                    var success = ParseTestString(inputArgs, compilerOptions);
+                    if (!success) continue;
                     compiler.Options = compilerOptions;
                     var b = compiler.GenerateZing(new List<Flag>());
                     Debug.Assert(b);
                 }
                 else if (inputArgs[0] == "compile")
                 {
-                    var compilerOptions = ParseCompileString(inputArgs);
-                    if (compilerOptions == null) continue;
+                    var success = ParseCompileString(inputArgs, compilerOptions);
+                    if (!success) continue;
                     compiler.Options = compilerOptions;
                     var b = compiler.GenerateC(new List<Flag>());
                     Debug.Assert(b);
@@ -72,47 +98,33 @@ namespace Microsoft.Pc
 
             error:
             {
-                Console.WriteLine("USAGE: Pci.exe [/shortFileNames]");
+                Console.WriteLine("USAGE: Pci.exe [/shortFileNames] [/doNotErase] [/server]");
                 return;
             }
 
         }
 
-        static CommandLineOptions ParseLoadString(string[] args)
+        static bool ParseLoadString(string[] args, CommandLineOptions compilerOptions)
         {
             string fileName = null;
-            var options = new CommandLineOptions();
+            bool outputFormula = false;
+            bool printTypeInference = false;
+            string outputDir = null;
             for (int i = 1; i < args.Length; i++)
             {
                 string arg = args[i];
-                string colonArg = null;
-                if (arg.StartsWith("/"))
+                if (arg == "/dumpFormulaModel")
+                {
+                    outputFormula = true;
+                }
+                else if (arg == "/printTypeInference")
+                {
+                    printTypeInference = true;
+                }
+                else if (outputDir == null && arg.StartsWith("/outputDir:"))
                 {
                     var colonIndex = arg.IndexOf(':');
-                    if (colonIndex >= 0)
-                    {
-                        arg = args[i].Substring(0, colonIndex);
-                        colonArg = args[i].Substring(colonIndex + 1);
-                    }
-
-                    switch (arg)
-                    {
-                        case "/dumpFormulaModel":
-                            if (colonArg != null)
-                                goto error;
-                            options.outputFormula = true;
-                            break;
-                        case "/outputDir":
-                            options.outputDir = colonArg;
-                            break;
-                        case "/printTypeInference":
-                            if (colonArg != null)
-                                goto error;
-                            options.printTypeInference = true;
-                            break;
-                        default:
-                            goto error;
-                    }
+                    outputDir = arg.Substring(colonIndex + 1);
                 }
                 else if (fileName == null && arg.Length > 2 && arg.EndsWith(".p"))
                 {
@@ -123,113 +135,91 @@ namespace Microsoft.Pc
                     goto error;
                 }
             }
-
-            options.analyzeOnly = true;
+            if (fileName == null) goto error;
             inputFileName = fileName;
-            return options;
+            compilerOptions.outputFormula = outputFormula;
+            compilerOptions.printTypeInference = printTypeInference;
+            compilerOptions.outputDir = outputDir;
+            return true;
 
         error:
             {
-                Console.WriteLine("USAGE: load file.p [options]");
-                Console.WriteLine("/outputDir:path");
-                Console.WriteLine("/printTypeInference");
-                Console.WriteLine("/dumpFormulaModel");
-                return null;
+                Console.WriteLine("USAGE: load file.p [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>]");
+                return false;
             }
         }
 
-        static CommandLineOptions ParseCompileString(string[] args)
+        static bool ParseCompileString(string[] args, CommandLineOptions compilerOptions)
         {
-            var options = new CommandLineOptions();
+            string outputDir = null;
             for (int i = 1; i < args.Length; i++)
             {
                 string arg = args[i];
-                string colonArg = null;
-                if (arg.StartsWith("/"))
+                if (outputDir == null && arg.StartsWith("/outputDir:"))
                 {
                     var colonIndex = arg.IndexOf(':');
-                    if (colonIndex >= 0)
-                    {
-                        arg = args[i].Substring(0, colonIndex);
-                        colonArg = args[i].Substring(colonIndex + 1);
-                    }
-
-                    switch (arg)
-                    {
-                        case "/outputDir":
-                            options.outputDir = colonArg;
-                            break;
-                        case "/doNotErase":
-                            if (colonArg != null)
-                                goto error;
-                            options.erase = false;
-                            break;
-                        default:
-                            goto error;
-                    }
-                }
-                else
-                {
-                        goto error;
-                }
-            }
-            return options;
-
-        error:
-            {
-                Console.WriteLine("USAGE: compile [options]");
-                Console.WriteLine("/outputDir:path");
-                Console.WriteLine("/doNotErase");
-                return null;
-            }
-        }
-
-        static CommandLineOptions ParseTestString(string[] args)
-        {
-            var options = new CommandLineOptions();
-            for (int i = 1; i < args.Length; i++)
-            {
-                string arg = args[i];
-                string colonArg = null;
-                if (arg.StartsWith("/"))
-                {
-                    var colonIndex = arg.IndexOf(':');
-                    if (colonIndex >= 0)
-                    {
-                        arg = args[i].Substring(0, colonIndex);
-                        colonArg = args[i].Substring(colonIndex + 1);
-                    }
-
-                    switch (arg)
-                    {
-                        case "/outputDir":
-                            options.outputDir = colonArg;
-                            break;
-                        case "/liveness":
-                            if (colonArg == null)
-                                options.liveness = LivenessOption.Standard;
-                            else if (colonArg == "mace")
-                                options.liveness = LivenessOption.Mace;
-                            else
-                                goto error;
-                            break;
-                        default:
-                            goto error;
-                    }
+                    outputDir = arg.Substring(colonIndex + 1);
                 }
                 else
                 {
                     goto error;
                 }
             }
-            return options;
+            compilerOptions.outputDir = outputDir;
+            return true;
 
         error:
             {
-                Console.WriteLine("USAGE: test [options]");
-                Console.WriteLine("/outputDir:path");
-                Console.WriteLine("/liveness[:mace]");
-                return null;
+                Console.WriteLine("USAGE: compile [/outputDir:<dir>]");
+                return false;
+            }
+        }
+
+        static bool ParseTestString(string[] args, CommandLineOptions compilerOptions)
+        {
+            LivenessOption liveness = LivenessOption.None;
+            string outputDir = null;
+            for (int i = 1; i < args.Length; i++)
+            {
+                string arg = args[i];
+                if (liveness == LivenessOption.None && arg.StartsWith("/liveness"))
+                {
+                    if (arg == "/liveness")
+                    {
+                        liveness = LivenessOption.Standard;
+                    }
+                    else if (arg.StartsWith("/liveness:"))
+                    {
+                        var colonIndex = arg.IndexOf(':');
+                        var colonArg = arg.Substring(colonIndex + 1);
+                        if (colonArg == "mace")
+                            liveness = LivenessOption.Mace;
+                        else
+                            goto error;
+                    }
+                    else
+                    {
+                        goto error;
+                    }
+                }
+                else if (outputDir == null && arg.StartsWith("/outputDir:"))
+                {
+                    var colonIndex = arg.IndexOf(':');
+                    outputDir = arg.Substring(colonIndex + 1);
+                }
+                else
+                {
+                    goto error;
+                }
+            }
+            compilerOptions.liveness = liveness;
+            compilerOptions.outputDir = outputDir;
+            return true;
+
+        error:
+            {
+                Console.WriteLine("USAGE: test [/liveness[:mace]] [/outputDir:<dir>]");
+                return false;
             }
         }
 

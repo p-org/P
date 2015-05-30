@@ -13,7 +13,91 @@ namespace CheckP
     using System.IO;
     using System.Linq;
     using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
+
+    public class PciProcess
+    {
+        Process pciProcess;
+        AutoResetEvent evt;
+        string outputString;
+        string errorString;
+
+        public string AllOutputString
+        {
+            get { return outputString + errorString; }
+        }
+
+        public PciProcess(string pciPath)
+        {
+            try
+            {
+                outputString = "";
+                errorString = "";
+                evt = new AutoResetEvent(false);
+                pciProcess = new Process();
+                pciProcess.StartInfo = new ProcessStartInfo(pciPath, "/shortFileNames /server /doNotErase")
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
+                pciProcess.ErrorDataReceived += pciProcess_ErrorDataReceived;
+                pciProcess.OutputDataReceived += pciProcess_OutputDataReceived;
+                pciProcess.Start();
+                pciProcess.BeginErrorReadLine();
+                pciProcess.BeginOutputReadLine();
+                evt.WaitOne();
+            }
+            catch (System.ComponentModel.Win32Exception e)
+            {
+                throw new Exception(string.Format("Unable to start the Pci process {0}: {1}", pciProcess.StartInfo.FileName, e.Message));
+            }
+        }
+
+        private void pciProcess_OutputDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (e.Data == "Pci: Command done")
+                evt.Set();
+            else
+                outputString += string.Format("OUT: {0}\r\n", e.Data);
+        }
+
+        private void pciProcess_ErrorDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (e.Data == "Pci: Command done")
+                evt.Set();
+            else
+                errorString += string.Format("ERROR: {0}\r\n", e.Data);
+        }
+
+                     
+        public void Run(string command, IEnumerable<string> args)
+        {
+            string str = command;
+            foreach (string arg in args)
+            {
+                str += " ";
+                str += arg;
+            }
+            evt.Reset();
+            pciProcess.StandardInput.WriteLine(str);
+            evt.WaitOne();
+        }
+
+        public void Reset()
+        {
+            outputString = "";
+            errorString = "";
+        }
+        public void Shutdown()
+        {
+            evt.Dispose();
+            pciProcess.StandardInput.WriteLine("exit");
+        }
+    }
 
     public class Checker
     {
@@ -66,6 +150,7 @@ namespace CheckP
 
         private string activeDirectory;
         private bool reset = false;
+        private PciProcess pciProcess;
 
         public string Description
         {
@@ -77,6 +162,14 @@ namespace CheckP
         {
             this.activeDirectory = activeDirectory;
             this.reset = reset;
+            this.pciProcess = null;
+        }
+
+        public Checker(string activeDirectory, bool reset, PciProcess pciProcess)
+        {
+            this.activeDirectory = activeDirectory;
+            this.reset = reset;
+            this.pciProcess = pciProcess;
         }
 
         public static void PrintUsage()
@@ -150,6 +243,44 @@ namespace CheckP
             }
 
             return result && Check(opts);
+        }
+
+        void SplitPcArgs(IEnumerable<object> pcArgs, out List<string> loadArgs, out List<string> compileArgs, out List<string> testArgs)
+        { 
+            loadArgs = new List<string>();
+            compileArgs = new List<string>();
+            testArgs = new List<string>();
+            foreach (string pcArg in pcArgs)
+            {
+                if (pcArg.EndsWith(".p"))
+                {
+                    loadArgs.Add(Path.GetFullPath(Path.Combine(activeDirectory, pcArg)));
+                }
+                else if (pcArg == "/dumpFormulaModel" || pcArg == "/printTypeInference")
+                { 
+                    loadArgs.Add(pcArg); 
+                }
+                else if (pcArg.StartsWith("/outputDir"))
+                {
+                    var splitArgs = pcArg.Split(':');
+                    var fullPcArg = splitArgs[0] + ":" + Path.GetFullPath(Path.Combine(activeDirectory, splitArgs[1]));
+                    loadArgs.Add(fullPcArg);
+                    compileArgs.Add(fullPcArg);
+                    testArgs.Add(fullPcArg);
+                }
+                else if (pcArg == "/liveness")
+                {
+                    testArgs.Add(pcArg);
+                }
+                else if (pcArg == "/shortFileNames" || pcArg == "/doNotErase")
+                {
+                    // ignore
+                }
+                else
+                {
+                    throw new Exception("Unknown argument to pc encountered");
+                }
+            }
         }
 
         public bool Check(string testfile)
@@ -314,14 +445,37 @@ namespace CheckP
                 //Run components of the P tool chain specified in options:
                 if (isSetExePc)
                 {
-                    bool pcResult = Run(tmpWriter, isIgnPrmpt, exePc[0].Item2.ToString(), pcArgs);
-                    if (!pcResult)
+                    if (pciProcess == null)
                     {
-                        result = false;
+                        bool pcResult = Run(tmpWriter, isIgnPrmpt, exePc[0].Item2.ToString(), pcArgs);
+                        if (!pcResult)
+                        {
+                            result = false;
+                        }
+                        else if (isInclPc && !AppendIncludes(tmpWriter, includesPc))
+                        {
+                            result = false;
+                        }
                     }
-                    else if (isInclPc && !AppendIncludes(tmpWriter, includesPc))
+                    else
                     {
-                        result = false;
+                        List<string> loadArgs, compileArgs, testArgs;
+                        SplitPcArgs(pcArgs.Select(x => x.Item2), out loadArgs, out compileArgs, out testArgs);
+                        pciProcess.Reset();
+                        pciProcess.Run("load", loadArgs);
+                        var loadString = pciProcess.AllOutputString;
+                        pciProcess.Reset();
+                        pciProcess.Run("compile", compileArgs);
+                        var compileString = pciProcess.AllOutputString;
+                        pciProcess.Reset();
+                        pciProcess.Run("test", testArgs);
+                        var testString = pciProcess.AllOutputString;
+                        tmpWriter.WriteLine("=================================");
+                        tmpWriter.WriteLine("         Console output          ");
+                        tmpWriter.WriteLine("=================================");
+                        tmpWriter.Write(compileString);
+                        tmpWriter.Write(testString);
+                        tmpWriter.Write(loadString);
                     }
                 }
                 //Run Zinger if isSetExeZinger and: (a) pc.exe run and no errors from pc.exe; or (b) pc.exe was not set to run

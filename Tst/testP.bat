@@ -24,7 +24,7 @@ if %ERRORLEVEL% neq 0 (
   exit /B 1
 )
 
-.\Tools\RunPTool\bin\Debug\RunPTool.exe %1 %2
+.\Tools\RunPTool\bin\Debug\RunPTool.exe %1 %2 %3
 if %ERRORLEVEL% neq 0 (
   echo Tests failed.
   exit /B 1

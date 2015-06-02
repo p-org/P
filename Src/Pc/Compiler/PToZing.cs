@@ -1316,6 +1316,10 @@ namespace Microsoft.Pc
             methods.Add(runMethod);
             AST<Node> runHelperMethod = GenerateRunHelperMethodDecl(machineName);
             methods.Add(runHelperMethod);
+            AST<Node> pushMethod = GeneratePushMethodDecl(machineName);
+            methods.Add(pushMethod);
+            AST<Node> processContinuationMethod = GenerateProcessContinuationMethodDecl();
+            methods.Add(processContinuationMethod);
             AST<Node> actionHelperMethod = GenerateReentrancyHelperMethodDecl(machineName);
             methods.Add(actionHelperMethod);
             foreach (var funName in allMachines[machineName].funNameToFunInfo.Keys)
@@ -1453,16 +1457,47 @@ namespace Microsoft.Pc
             return MkZingMethodDecl("Run", MkZingVarDecls(parameters), ZingData.Cnst_Void, MkZingVarDecls(locals), MkZingBlocks(initBlock, dequeueBlock));
         }
 
+        private AST<Node> GeneratePushMethodDecl(string machineName)
+        {
+            AST<Node> parameters = MkZingVarDecls(MkZingVarDecl("cont", Factory.Instance.MkCnst("Continuation")));
+            List<AST<Node>> locals = new List<AST<Node>>();
+            locals.Add(MkZingVarDecl("savedDeferredSet", SmEventSet));
+            locals.Add(MkZingVarDecl("savedCurrentEvent", SmEvent));
+            locals.Add(MkZingVarDecl("savedCurrentArg", PrtValue));
+
+            var currentEvent = MkZingDot("myHandle", "currentEvent");
+            var currentArg = MkZingDot("myHandle", "currentArg");
+            var savedCurrentEvent = MkZingIdentifier("savedCurrentEvent");
+            var savedCurrentArg = MkZingIdentifier("savedCurrentArg");
+            var savedDeferredSet = MkZingIdentifier("savedDeferredSet");
+            var cont = MkZingIdentifier("cont");
+
+            List<AST<Node>> body = new List<AST<Node>>();
+            body.Add(MkZingAssign(savedCurrentEvent, currentEvent));
+            body.Add(MkZingAssign(savedCurrentArg, currentArg));
+            body.Add(MkZingAssign(savedDeferredSet, MkZingDot("myHandle", "stack", "deferredSet")));
+            body.Add(MkZingAssign(currentEvent, MkZingIdentifier("null")));
+            body.Add(MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
+            body.Add(MkZingAssign(MkZingDot("myHandle", "stack", "deferredSet"), MkZingCall(MkZingDot("Main", "CalculateComplementOfEventSet"), MkZingDot("myHandle", "stack", "actionSet"))));
+            body.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("Run"), MkZingDot("cont", "state"))));
+            body.Add(MkZingAssign(MkZingDot("cont", "state"), MkZingState("default")));
+            body.Add(MkZingIfThenElse(
+                      MkZingApply(ZingData.Cnst_Eq, currentEvent, MkZingIdentifier("null")),
+                      MkZingSeq(MkZingAssign(currentEvent, savedCurrentEvent), MkZingAssign(currentArg, savedCurrentArg), MkZingAssign(MkZingDot("myHandle", "stack", "deferredSet"), savedDeferredSet), MkZingReturn(ZingData.Cnst_False)),
+                      MkZingSeq(MkZingAssign(MkZingDot("myHandle", "stack", "deferredSet"), savedDeferredSet), MkZingCallStmt(MkZingCall(MkZingDot(cont, "Raise"))), MkZingReturn(ZingData.Cnst_True))));
+
+            return MkZingMethodDecl("Push", parameters, ZingData.Cnst_Bool, MkZingVarDecls(locals), MkZingBlocks(MkZingBlock("init", MkZingSeq(body))));
+        }
+
         private AST<Node> GenerateReentrancyHelperMethodDecl(string machineName)
         {
             AST<Node> parameters = MkZingVarDecls(MkZingVarDecl("actionFun", Factory.Instance.MkCnst("ActionOrFun")));
             List<AST<Node>> locals = new List<AST<Node>>();
             locals.Add(MkZingVarDecl("cont", Factory.Instance.MkCnst("Continuation")));
-            locals.Add(MkZingVarDecl("savedDeferredSet", SmEventSet));
-            locals.Add(MkZingVarDecl("savedCurrentEvent", SmEvent));
-            locals.Add(MkZingVarDecl("savedCurrentArg", PrtValue));
+            locals.Add(MkZingVarDecl("doPop", ZingData.Cnst_Bool));
 
             var cont = MkZingIdentifier("cont");
+            var doPop = MkZingIdentifier("doPop");
 
             List<AST<Node>> initStmts = new List<AST<Node>>();
             initStmts.Add(MkZingAssign(cont, MkZingCall(MkZingDot(Factory.Instance.MkCnst("Continuation"), "Construct_Default"))));
@@ -1506,50 +1541,46 @@ namespace Microsoft.Pc
             {
                 if (allStaticFuns[funName].parameterNames.Count > 0) continue;
                 var callStmt = MkZingCallStmt(MkZingCall(MkZingDot("Main", funName), MkZingIdentifier("myHandle"), cont));
-                var executeStmt = MkZingFunInvokeWrapper(funName, callStmt);
+                var reentryBlockName = string.Format("reentry_{0}", funName);
+                List<AST<Node>> executeStmtBody = new List<AST<Node>>();
+                executeStmtBody.Add(MkZingBlock(reentryBlockName, callStmt));
+                executeStmtBody.Add(MkZingAssign(doPop, MkZingCall(MkZingIdentifier("ProcessContinuation"), cont)));
+                executeStmtBody.Add(MkZingIfThenElse(doPop, MkZingReturn(cont), MkZingGoto(reentryBlockName)));
+                var executeStmt = MkZingSeq(executeStmtBody);
                 executeStmt = MkZingBlock("execute_" + funName, executeStmt);
                 blocks.Add(executeStmt);
             }
             foreach (var funName in allMachines[machineName].funNameToFunInfo.Keys)
             {
                 if (allMachines[machineName].funNameToFunInfo[funName].parameterNames.Count > 0) continue;
-                var callStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier(funName), cont)); 
-                var executeStmt = MkZingFunInvokeWrapper(funName, callStmt);
+                var callStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier(funName), cont));
+                var reentryBlockName = string.Format("reentry_{0}", funName);
+                List<AST<Node>> executeStmtBody = new List<AST<Node>>();
+                executeStmtBody.Add(MkZingBlock(reentryBlockName, callStmt));
+                executeStmtBody.Add(MkZingAssign(doPop, MkZingCall(MkZingIdentifier("ProcessContinuation"), cont)));
+                executeStmtBody.Add(MkZingIfThenElse(doPop, MkZingReturn(cont), MkZingGoto(reentryBlockName)));
+                var executeStmt = MkZingSeq(executeStmtBody);
                 executeStmt = MkZingBlock("execute_" + funName, executeStmt);
                 blocks.Add(executeStmt);
             }
             return MkZingMethodDecl("ReentrancyHelper", parameters, Factory.Instance.MkCnst("Continuation"), MkZingVarDecls(locals), MkZingBlocks(blocks));
         }
-
-        private AST<Node> MkZingFunInvokeWrapper(string funName, AST<FuncTerm> callStmt)
+        
+        private AST<Node> GenerateProcessContinuationMethodDecl()
         {
-            var currentEvent = MkZingDot("myHandle", "currentEvent");
-            var currentArg = MkZingDot("myHandle", "currentArg");
-            var savedCurrentEvent = MkZingIdentifier("savedCurrentEvent");
-            var savedCurrentArg = MkZingIdentifier("savedCurrentArg");
-            var savedDeferredSet = MkZingIdentifier("savedDeferredSet");
+            AST<Node> parameters = MkZingVarDecls(MkZingVarDecl("cont", Factory.Instance.MkCnst("Continuation")));
+            List<AST<Node>> locals = new List<AST<Node>>();
+            locals.Add(MkZingVarDecl("doPop", ZingData.Cnst_Bool));
+
             var cont = MkZingIdentifier("cont");
-            var reentryBlockName = string.Format("reentry_{0}", funName);
+            var doPop = MkZingIdentifier("doPop");
 
             var body = new List<AST<Node>>();
-            body.Add(MkZingBlock(reentryBlockName, callStmt));
-            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Return")), MkZingReturn(cont)));
-            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Pop")), MkZingReturn(cont)));
-            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Raise")), MkZingReturn(cont)));
+            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Return")), MkZingReturn(ZingData.Cnst_True)));
+            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Pop")), MkZingReturn(ZingData.Cnst_True)));
+            body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Raise")), MkZingReturn(ZingData.Cnst_True)));
             body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Push")),
-                MkZingSeq(
-                    MkZingAssign(savedCurrentEvent, currentEvent),
-                    MkZingAssign(savedCurrentArg, currentArg),
-                    MkZingAssign(savedDeferredSet, MkZingDot("myHandle", "stack", "deferredSet")),
-                    MkZingAssign(currentEvent, MkZingIdentifier("null")),
-                    MkZingAssign(MkZingDot("myHandle", "currentArg"), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))),
-                    MkZingAssign(MkZingDot("myHandle", "stack", "deferredSet"), MkZingCall(MkZingDot("Main", "CalculateComplementOfEventSet"), MkZingDot("myHandle", "stack", "actionSet"))),
-                    MkZingCallStmt(MkZingCall(MkZingIdentifier("Run"), MkZingDot("cont", "state"))),
-                    MkZingAssign(MkZingDot("cont", "state"), MkZingState("default")),
-                    MkZingIfThenElse(
-                              MkZingApply(ZingData.Cnst_Eq, currentEvent, MkZingIdentifier("null")),
-                              MkZingSeq(MkZingAssign(currentEvent, savedCurrentEvent), MkZingAssign(currentArg, savedCurrentArg), MkZingAssign(MkZingDot("myHandle", "stack", "deferredSet"), savedDeferredSet), MkZingGoto(reentryBlockName)),
-                              MkZingSeq(MkZingAssign(MkZingDot("myHandle", "stack", "deferredSet"), savedDeferredSet), MkZingCallStmt(MkZingCall(MkZingDot(cont, "Raise"))), MkZingReturn(cont))))));
+                                  MkZingSeq(MkZingAssign(doPop, MkZingCall(MkZingIdentifier("Push"), cont)), MkZingReturn(doPop))));
             AST<Node> atChooseLivenessStmt = ZingData.Cnst_Nil;
             AST<Node> atYieldLivenessStmt = ZingData.Cnst_Nil;
             if (compiler.Options.liveness == LivenessOption.Standard)
@@ -1567,21 +1598,21 @@ namespace Microsoft.Pc
                 MkZingSeq(
                     atChooseLivenessStmt,
                     MkZingAssign(MkZingDot(cont, "nondet"), MkZingCall(Factory.Instance.MkCnst("choose"), Factory.Instance.MkCnst("bool"))),
-                    MkZingGoto(reentryBlockName))));
+                    MkZingReturn(ZingData.Cnst_False))));
             body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "NewMachine")),
                 MkZingSeq(
                     atYieldLivenessStmt,
                     ZingData.Cnst_Yield,
-                    MkZingGoto(reentryBlockName))));
+                    MkZingReturn(ZingData.Cnst_False))));
             body.Add(MkZingIfThen(MkZingEq(MkZingDot("cont", "reason"), MkZingDot("ContinuationReason", "Send")),
                 MkZingSeq(
                     atYieldLivenessStmt,
                     ZingData.Cnst_Yield,
-                    MkZingGoto(reentryBlockName))));
+                    MkZingReturn(ZingData.Cnst_False))));
 
-            return MkZingSeq(body);
+            return MkZingMethodDecl("ProcessContinuation", parameters, ZingData.Cnst_Bool, MkZingVarDecls(locals), MkZingBlocks(MkZingBlock("init", MkZingSeq(body))));
         }
-
+        
         private AST<Node> GenerateRunHelperMethodDecl(string machineName)
         {
             AST<Node> parameters = MkZingVarDecls(MkZingVarDecl("start", ZingData.Cnst_Bool));

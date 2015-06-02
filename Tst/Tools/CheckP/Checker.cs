@@ -20,13 +20,9 @@ namespace CheckP
     {
         Process pciProcess;
         AutoResetEvent evt;
-        string outputString;
-        string errorString;
-
-        public string AllOutputString
-        {
-            get { return outputString + errorString; }
-        }
+        public string outputString;
+        public string errorString;
+        public bool loadSucceeded = true;
 
         public PciProcess(string pciPath)
         {
@@ -60,9 +56,18 @@ namespace CheckP
         private void pciProcess_OutputDataReceived(object sender, DataReceivedEventArgs e)
         {
             if (e.Data == "Pci: Command done")
+            {
                 evt.Set();
+            }
+            else if (e.Data == "Pci: Load failed")
+            {
+                loadSucceeded = false;
+                evt.Set();
+            }
             else
+            {
                 outputString += string.Format("OUT: {0}\r\n", e.Data);
+            }
         }
 
         private void pciProcess_ErrorDataReceived(object sender, DataReceivedEventArgs e)
@@ -89,6 +94,7 @@ namespace CheckP
 
         public void Reset()
         {
+            loadSucceeded = true;
             outputString = "";
             errorString = "";
         }
@@ -459,23 +465,28 @@ namespace CheckP
                     }
                     else
                     {
+                        tmpWriter.WriteLine("=================================");
+                        tmpWriter.WriteLine("         Console output          ");
+                        tmpWriter.WriteLine("=================================");
                         List<string> loadArgs, compileArgs, testArgs;
                         SplitPcArgs(pcArgs.Select(x => x.Item2), out loadArgs, out compileArgs, out testArgs);
                         pciProcess.Reset();
                         pciProcess.Run("load", loadArgs);
-                        var loadString = pciProcess.AllOutputString;
-                        pciProcess.Reset();
-                        pciProcess.Run("compile", compileArgs);
-                        var compileString = pciProcess.AllOutputString;
-                        pciProcess.Reset();
-                        pciProcess.Run("test", testArgs);
-                        var testString = pciProcess.AllOutputString;
-                        tmpWriter.WriteLine("=================================");
-                        tmpWriter.WriteLine("         Console output          ");
-                        tmpWriter.WriteLine("=================================");
-                        tmpWriter.Write(compileString);
-                        tmpWriter.Write(testString);
-                        tmpWriter.Write(loadString);
+                        if (pciProcess.loadSucceeded)
+                        {
+                            pciProcess.Run("compile", compileArgs);
+                            pciProcess.Run("test", testArgs);
+                        }
+                        tmpWriter.Write(pciProcess.outputString);
+                        tmpWriter.Write(pciProcess.errorString);
+                        if (pciProcess.loadSucceeded)
+                        {
+                            tmpWriter.WriteLine("EXIT: 0");
+                        }
+                        else
+                        {
+                            tmpWriter.WriteLine("EXIT: -1");
+                        }
                     }
                 }
                 //Run Zinger if isSetExeZinger and: (a) pc.exe run and no errors from pc.exe; or (b) pc.exe was not set to run

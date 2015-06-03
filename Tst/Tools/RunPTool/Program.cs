@@ -9,6 +9,8 @@ namespace RunPTool
     using System.Text;
     using System.Threading.Tasks;
     using CheckP;
+    using Microsoft.Pc;
+    using System.Diagnostics;
 
     class Program
     {
@@ -86,6 +88,16 @@ namespace RunPTool
                     }
                 }
 
+                Compiler compiler = new Compiler(true);
+                CommandLineOptions compilerOptions = new CommandLineOptions();
+                compilerOptions.analyzeOnly = true;
+                compilerOptions.shortFileNames = true;
+                compilerOptions.printTypeInference = true;
+                compilerOptions.erase = false;
+                compiler.Options = compilerOptions;
+                Compile(compiler, activeDirs);
+                return;
+
                 Console.WriteLine("Running tests");
                 int testCount = 0, failCount = 0;
                 StreamWriter failedTestsWriter = null;
@@ -147,11 +159,30 @@ namespace RunPTool
             }
         }
 
+        private static void Compile(Compiler compiler, List<DirectoryInfo> dis)
+        {
+            foreach (DirectoryInfo di in dis)
+            {
+                foreach (var fi in di.EnumerateFiles("*.p"))
+                {
+                    compiler.Options.outputDir = fi.DirectoryName;
+                    Console.WriteLine("Compiling {0}", fi.FullName);
+                    var result = compiler.Compile(fi.FullName);
+                    if (!result) continue;
+                    var zingSuccess = compiler.GenerateZing();
+                    Debug.Assert(zingSuccess);
+                    var cSuccess = compiler.GenerateC();
+                    Debug.Assert(cSuccess);
+                }
+
+                Compile(compiler, new List<DirectoryInfo>(di.EnumerateDirectories()));
+            }
+        }
+
         //If reset = true, failedDirsWriter and displayDiffsWriter are "null"
         private static void Test(List<DirectoryInfo> diArray, bool reset, ref int testCount, ref int failCount,
             StreamWriter failedTestsWriter, StreamWriter displayDiffsWriter)
         {
-            //TODO: try{} at the top level
             foreach (DirectoryInfo di in diArray)
             {
                 //enumerating files in the top dir only

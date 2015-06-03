@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Pc
 {
-    using Microsoft.Formula.API;
-
     public class CommandLine
     {
         static int Main(string[] args)
@@ -83,14 +81,10 @@ namespace Microsoft.Pc
             }
             if (inputFileName.Length > 2 && inputFileName.EndsWith(".p"))
             {
-                var comp = new Compiler(options);
-                List<Flag> flags;
-                var result = comp.Compile(inputFileName, out flags);
-                WriteFlags(flags, options);
-
+                var compiler = new Compiler(options);
+                var result = compiler.Compile(inputFileName);
                 if (!result)
                 {
-                    WriteMessageLine("Compilation failed", SeverityKind.Error);
                     return -1;
                 }
                 return 0;
@@ -110,58 +104,6 @@ namespace Microsoft.Pc
                 Console.WriteLine("/dumpFormulaModel");
                 return 0;
             }
-        }
-
-        public static void WriteFlags(List<Flag> flags, CommandLineOptions options)
-        {
-            if (options.shortFileNames)
-            {
-                var envParams = new EnvParams(
-                    new Tuple<EnvParamKind, object>(EnvParamKind.Msgs_SuppressPaths, true));
-                foreach (var f in flags)
-                {
-                    WriteMessageLine(
-                        string.Format("{0} ({1}, {2}): {3}",
-                        f.ProgramName == null ? "?" : f.ProgramName.ToString(envParams),
-                        f.Span.StartLine,
-                        f.Span.StartCol,
-                        f.Message), f.Severity);
-                }
-            }
-            else
-            {
-                foreach (var f in flags)
-                {
-                    WriteMessageLine(
-                        string.Format("{0} ({1}, {2}): {3}",
-                        f.ProgramName == null ? "?" : (f.ProgramName.Uri.IsFile ? f.ProgramName.Uri.AbsolutePath : f.ProgramName.ToString()),
-                        f.Span.StartLine,
-                        f.Span.StartCol,
-                        f.Message), f.Severity);
-                }
-            }
-        }
-
-        public static void WriteMessageLine(string msg, SeverityKind severity)
-        {
-            switch (severity)
-            {
-                case SeverityKind.Info:
-                    Console.ForegroundColor = ConsoleColor.Cyan;
-                    break;
-                case SeverityKind.Warning:
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    break;
-                case SeverityKind.Error:
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    break;
-                default:
-                    Console.ForegroundColor = ConsoleColor.White;
-                    break;
-            }
-
-            Console.WriteLine(msg);
-            Console.ForegroundColor = ConsoleColor.Gray;
         }
     }
 }

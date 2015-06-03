@@ -18,6 +18,70 @@
 
     public class Compiler
     {
+        public bool Compile(string inputFileName)
+        {
+            List<Flag> flags;
+            var result = Compile(inputFileName, out flags);
+            Compiler.WriteFlags(flags, Options.shortFileNames);
+            if (!result)
+            {
+                Console.WriteLine("Compilation failed");
+            }
+            return result;
+        }
+
+        public static void WriteFlags(List<Flag> flags, bool shortFileNames)
+        {
+            if (shortFileNames)
+            {
+                var envParams = new EnvParams(
+                    new Tuple<EnvParamKind, object>(EnvParamKind.Msgs_SuppressPaths, true));
+                foreach (var f in flags)
+                {
+                    WriteMessageLine(
+                        string.Format("{0} ({1}, {2}): {3}",
+                        f.ProgramName == null ? "?" : f.ProgramName.ToString(envParams),
+                        f.Span.StartLine,
+                        f.Span.StartCol,
+                        f.Message), f.Severity);
+                }
+            }
+            else
+            {
+                foreach (var f in flags)
+                {
+                    WriteMessageLine(
+                        string.Format("{0} ({1}, {2}): {3}",
+                        f.ProgramName == null ? "?" : (f.ProgramName.Uri.IsFile ? f.ProgramName.Uri.AbsolutePath : f.ProgramName.ToString()),
+                        f.Span.StartLine,
+                        f.Span.StartCol,
+                        f.Message), f.Severity);
+                }
+            }
+        }
+
+        public static void WriteMessageLine(string msg, SeverityKind severity)
+        {
+            switch (severity)
+            {
+                case SeverityKind.Info:
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    break;
+                case SeverityKind.Warning:
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    break;
+                case SeverityKind.Error:
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    break;
+                default:
+                    Console.ForegroundColor = ConsoleColor.White;
+                    break;
+            }
+
+            Console.WriteLine(msg);
+            Console.ForegroundColor = ConsoleColor.Gray;
+        }
+
         private const string PDomain = "P";
         private const string CDomain = "C";
         private const string ZingDomain = "Zing";
@@ -292,6 +356,11 @@
             //// Step 3. Generate outputs
             return GenerateC(flags) &
                    GenerateZing(flags); 
+        }
+
+        public bool GenerateZing()
+        {
+            return GenerateZing(new List<Flag>());
         }
 
         public bool GenerateZing(List<Flag> flags)
@@ -848,6 +917,11 @@
             }
 
             return aliases;
+        }
+
+        public bool GenerateC()
+        {
+            return GenerateC(new List<Flag>());
         }
 
         public bool GenerateC(List<Flag> flags)

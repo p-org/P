@@ -48,19 +48,19 @@ namespace Microsoft.Pc
             compilerOptions.shortFileNames = shortFileNames;
             compilerOptions.erase = !doNotErase;
             compilerOptions.analyzeOnly = true;
+            if (server)
+                Console.WriteLine("Pci: Command done");
+            else
+                Console.Write(">> ");
             while (true)
             {
-                if (server)
-                    Console.WriteLine("Pci: Command done");
-                else
-                    Console.Write(">> ");
                 var input = Console.ReadLine();
                 var inputArgs = input.Split(' ');
                 if (inputArgs.Length == 0) continue;
                 if (inputArgs[0] == "exit")
                 {
                     return;
-                } 
+                }
                 else if (inputArgs[0] == "load")
                 {
                     var success = ParseLoadString(inputArgs, compilerOptions);
@@ -71,6 +71,7 @@ namespace Microsoft.Pc
                     if (!result)
                     {
                         inputFileName = null;
+                        Console.WriteLine("Compilation failed");
                     }
                 }
                 else if (inputArgs[0] == "test")
@@ -92,7 +93,17 @@ namespace Microsoft.Pc
                 else
                 {
                     Console.WriteLine("Unexpected input");
-                    continue;
+                }
+                if (server)
+                {
+                    if (inputFileName == null)
+                        Console.WriteLine("Pci: Load failed");
+                    else
+                        Console.WriteLine("Pci: Command done");
+                }
+                else
+                {
+                    Console.Write(">> ");
                 }
             }
 

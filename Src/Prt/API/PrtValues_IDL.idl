@@ -28,7 +28,7 @@ interface PrtValues_IDL
 		PRT_VALKIND_BOOL = 1,    /**< The kind of bool values                 */
 		PRT_VALKIND_INT = 2,    /**< The kind of int values                  */
 		PRT_VALKIND_EVENT = 3,    /**< The kind of event id values             */
-		PRT_VALKIND_MID = 4,    /**< The kind of (model) machine id values   */
+		PRT_VALKIND_MACHINE = 4,    /**< The kind of (model) machine id values   */
 		PRT_VALKIND_FORGN = 5,    /**< The kind of all foreign values          */
 		PRT_VALKIND_TUPLE = 6,    /**< The kind of all (named) tuple values    */
 		PRT_VALKIND_SEQ = 7,    /**< The kind of all sequence values         */
@@ -44,7 +44,7 @@ interface PrtValues_IDL
 			case PRT_VALKIND_BOOL: PRT_BOOLEAN bl;							/**< A boolean value            */
 			case PRT_VALKIND_INT: PRT_INT32   nt;							/**< An integer value           */
 			case PRT_VALKIND_EVENT: PRT_UINT32  ev;							/**< An event id value          */
-			case PRT_VALKIND_MID: [unique] struct PRT_MACHINEID *mid;		/**< A (model) machine id value */
+			case PRT_VALKIND_MACHINE: [unique] struct PRT_MACHINEID *mid;		/**< A (model) machine id value */
 			case PRT_VALKIND_FORGN: [unique] struct PRT_FORGNVALUE *frgn;	/**< A foreign value            */
 			case PRT_VALKIND_TUPLE:[unique] struct PRT_TUPVALUE *tuple;		/**< A (named) tuple value      */
 			case PRT_VALKIND_SEQ:[unique] struct PRT_SEQVALUE *seq;			/**< A sequence value	        */
@@ -76,6 +76,7 @@ interface PrtValues_IDL
 	/** A tuple value is a (named) tuple represented as an array. */
 	typedef struct PRT_TUPVALUE
 	{
+		PRT_UINT32 size;
 		PRT_VALUE **values;					/**< Is an array of tuple args.    */
 		PRT_VALUE_NODE *valuesSerialized;	/**< linked list of serialized values */
 	} PRT_TUPVALUE;

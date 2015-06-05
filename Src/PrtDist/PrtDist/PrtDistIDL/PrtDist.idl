@@ -9,7 +9,7 @@ interface PrtDist {
 	import "PrtValues_IDL.idl";
 
 	/******************************/
-	//		Functions
+	//		RPC Functions
 	/*****************************/
 	
 	void PrtDistEnqueue(

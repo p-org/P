@@ -3,7 +3,6 @@
 
 extern void CreateRPCTestServer();
 
-
 /***************************************************************************
 * Test cases 
 ****************************************************************************/
@@ -70,7 +69,7 @@ void TestOverRPC(PRT_VALUE* value)
 	PRT_VALUE* nullType = PrtMkEventValue(0);
 	RpcTryExcept
 	{
-		c_PrtDistSend(testHandle, nullType,serialized);
+		c_PrtDistSend(testHandle, nullType, serialized);
 	}
 	RpcExcept(1)
 	{

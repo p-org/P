@@ -1,4 +1,9 @@
-#include "PrtDist.h"
+/**
+* This file has the functions that implement the serialization and deserialization of PrtValues
+*  for RPC.
+*/
+
+#include "PrtDistSerializer.h"
 
 ///
 /// Helper functions and Data
@@ -36,7 +41,6 @@ void InsertValueNode(PRT_VALUE_NODE** head, PRT_VALUE *value){
 		curr->nextNode->value = value;
 		curr->nextNode->nextNode = NULL;
 	}
-
 }
 
 void InsertStringNode(PRT_STRING_NODE** head, PRT_STRING value){
@@ -82,9 +86,7 @@ void InsertTypeNode(PRT_TYPE_NODE** head, PRT_TYPE* value){
 	}
 }
 
-///
-/// Serialization functions for Types and Values
-///
+
 PRT_TYPE*
 PrtDistSerializeType(
 __in PRT_TYPE* type
@@ -157,112 +159,96 @@ PrtDistSerializeValue(
 __in PRT_VALUE* value
 )
 {
-	PRT_TYPE_KIND kind = value->type->typeKind;
+	PRT_VALUE_KIND kind = value->discriminator;
 	switch (kind)
 	{
-	case PRT_KIND_ANY:
-		PRT_DBG_ASSERT(PRT_FALSE, "Value must have a more concrete type");
-		return NULL;
-	case PRT_KIND_BOOL:
-
-	case PRT_KIND_EVENT:
-
-	case PRT_KIND_MACHINE:
-
-	case PRT_KIND_INT:
-		return PrtCloneValue(value);
-	case PRT_KIND_FORGN:
-	{
-		PrtAssert(PRT_FALSE, "Invalid type");
-		return NULL;
-	}
-	case PRT_KIND_MAP:
-	{
-		PRT_VALUE *retVal = PrtMkDefaultValue(value->type);
-		retVal->type = PrtDistSerializeType(value->type);
-		PRT_MAPVALUE *mVal = value->valueUnion.map;
-		PRT_MAPVALUE *cVal = retVal->valueUnion.map;
-		if (mVal->capNum > 0)
+		case PRT_VALKIND_NULL:
+		case PRT_VALKIND_BOOL:
+		case PRT_VALKIND_EVENT:
+		case PRT_VALKIND_MACHINE:
+		case PRT_VALKIND_INT:
+			return PrtCloneValue(value);
+		case PRT_VALKIND_FORGN:
 		{
-			//// Eagerly allocate capacity in the clone to avoid intermediate rehashings.
-			PrtFree(cVal->buckets);
-			cVal->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[mVal->capNum], sizeof(PRT_MAPNODE *));
-			cVal->capNum = mVal->capNum;
+			PrtAssert(PRT_FALSE, "Invalid type");
+			return NULL;
 		}
-		PRT_MAPNODE *next = mVal->first;
-		while (next != NULL)
+		case PRT_VALKIND_MAP:
 		{
-			PrtMapUpdateEx(retVal, PrtDistSerializeValue(next->key), PrtDistSerializeValue(next->value), PRT_FALSE);
-			next = next->insertNext;
-		}
-
-		return retVal;
-	}
-	case PRT_KIND_NMDTUP:
-	{
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
-		retVal->type = PrtDistSerializeType(value->type);
-		retVal->discriminator = PRT_VALKIND_TUPLE;
-		PRT_UINT32 i;
-		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
-		PRT_UINT32 arity = value->type->typeUnion.nmTuple->arity;
-		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtCalloc(1, sizeof(PRT_TUPVALUE));
-		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE*));
-		cVal->valuesSerialized = NULL;
-		for (i = 0; i < arity; ++i)
-		{
-			cVal->values[i] = PrtCloneValue(tVal->values[i]);
-			InsertValueNode(&cVal->valuesSerialized, PrtDistSerializeValue(tVal->values[i]));
-		}
-
-		retVal->valueUnion.tuple = cVal;
-		return retVal;
-	}
-	case PRT_KIND_TUPLE:
-	{
-		PRT_UINT32 i;
-		PRT_VALUE *retVal = PrtCloneValue(value);
-		retVal->type = PrtDistSerializeType(value->type);
-		retVal->discriminator = PRT_VALKIND_TUPLE;
-		retVal->valueUnion.tuple->valuesSerialized = NULL;
-		for (i = 0; i < retVal->type->typeUnion.tuple->arity; ++i)
-		{
-			InsertValueNode(&retVal->valueUnion.tuple->valuesSerialized, PrtDistSerializeValue(value->valueUnion.tuple->values[i]));
-		}
-
-		return retVal;
-	}
-	case PRT_KIND_SEQ:
-	{
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
-		retVal->type = PrtDistSerializeType(value->type);
-		retVal->discriminator = PRT_VALKIND_SEQ;
-		PRT_SEQVALUE *sVal = value->valueUnion.seq;
-		PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtCalloc(1, sizeof(PRT_SEQVALUE));
-		cVal->capacity = sVal->capacity;
-		cVal->size = sVal->size;
-		if (sVal->capacity == 0)
-		{
-			cVal->values = NULL;
-		}
-		else
-		{
-			PRT_UINT32 i;
-			cVal->valuesSerialized = NULL;
-			cVal->values = (PRT_VALUE **)PrtCalloc(sVal->capacity, sizeof(PRT_VALUE*));
-			for (i = 0; i < sVal->size; ++i)
+			PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+			PRT_MAPVALUE *map = (PRT_MAPVALUE *)PrtMalloc(sizeof(PRT_MAPVALUE));
+			retVal->discriminator = PRT_VALKIND_MAP;
+			retVal->valueUnion.map = map;
+			PRT_MAPVALUE *mVal = value->valueUnion.map;
+			map->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[mVal->capNum], sizeof(PRT_MAPNODE *));
+			map->capNum = mVal->capNum;
+			map->size = 0;
+			map->first = NULL;
+			map->last = NULL;
+			PRT_MAPNODE *next = mVal->first;
+			while (next != NULL)
 			{
-				cVal->values[i] = PrtCloneValue(sVal->values[i]);
-				InsertValueNode(&cVal->valuesSerialized, PrtDistSerializeValue(sVal->values[i]));
+				PrtMapUpdateEx(retVal, PrtDistSerializeValue(next->key), PRT_FALSE, PrtDistSerializeValue(next->value), PRT_FALSE);
+				next = next->insertNext;
 			}
+
+			return retVal;
 		}
-		retVal->valueUnion.seq = cVal;
-		return retVal;
-	}
-	default:
-		PrtAssert(PRT_FALSE, "Invalid type");
-		return NULL;
-	}
+		case PRT_VALKIND_TUPLE:
+		{
+			PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
+			retVal->discriminator = PRT_VALKIND_TUPLE;
+			
+			PRT_UINT32 i;
+			PRT_TUPVALUE *tVal = value->valueUnion.tuple;
+			PRT_UINT32 arity = value->valueUnion.tuple->size;
+			
+			PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtCalloc(1, sizeof(PRT_TUPVALUE));
+			cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE*));
+			cVal->size = arity;
+			cVal->valuesSerialized = NULL;
+			for (i = 0; i < arity; ++i)
+			{
+				cVal->values[i] = PrtCloneValue(tVal->values[i]);
+				InsertValueNode(&cVal->valuesSerialized, PrtDistSerializeValue(tVal->values[i]));
+			}
+
+			retVal->valueUnion.tuple = cVal;
+			return retVal;
+		}
+		
+		case PRT_KIND_SEQ:
+		{
+			PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
+			PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtCalloc(1, sizeof(PRT_SEQVALUE));
+			retVal->discriminator = PRT_VALKIND_SEQ;
+			PRT_SEQVALUE *sVal = value->valueUnion.seq;
+			
+			
+			cVal->capacity = sVal->capacity;
+			cVal->size = sVal->size;
+			if (sVal->capacity == 0)
+			{
+				cVal->values = NULL;
+			}
+			else
+			{
+				PRT_UINT32 i;
+				cVal->valuesSerialized = NULL;
+				cVal->values = (PRT_VALUE **)PrtCalloc(sVal->capacity, sizeof(PRT_VALUE*));
+				for (i = 0; i < sVal->size; ++i)
+				{
+					cVal->values[i] = PrtCloneValue(sVal->values[i]);
+					InsertValueNode(&cVal->valuesSerialized, PrtDistSerializeValue(sVal->values[i]));
+				}
+			}
+			retVal->valueUnion.seq = cVal;
+			return retVal;
+		}
+		default:
+			PrtAssert(PRT_FALSE, "Invalid Operation");
+			return NULL;
+		}
 }
 
 
@@ -351,130 +337,98 @@ __in PRT_VALUE* value
 )
 
 {
-	PRT_TYPE_KIND kind = value->type->typeKind;
+	PRT_VALUE_KIND kind = value->discriminator;
 	switch (kind)
 	{
-	case PRT_KIND_ANY:
-		PRT_DBG_ASSERT(PRT_FALSE, "Value must have a more concrete type");
-		return NULL;
-	case PRT_KIND_BOOL:
-
-	case PRT_KIND_EVENT:
-
-	case PRT_KIND_MACHINE:
-
-	case PRT_KIND_INT:
-		return PrtCloneValue(value);
-	case PRT_KIND_FORGN:
-	{
-		PrtAssert(PRT_FALSE, "Foreign Type not Expected");
-		return NULL;
-	}
-	case PRT_KIND_MAP:
-	{
-		PRT_TYPE* tt = PrtDistDeserializeType(value->type);
-		PRT_VALUE *retVal = PrtMkDefaultValue(tt);
-		PRT_MAPVALUE *mVal = value->valueUnion.map;
-		PRT_MAPVALUE *cVal = retVal->valueUnion.map;
-		if (mVal->capNum > 0)
+		case PRT_VALKIND_NULL:
+		case PRT_VALKIND_BOOL:
+		case PRT_VALKIND_EVENT:
+		case PRT_VALKIND_MACHINE:
+		case PRT_VALKIND_INT:
+			return PrtCloneValue(value);
+		case PRT_VALKIND_FORGN:
 		{
-			//// Eagerly allocate capacity in the clone to avoid intermediate rehashings.
-			PrtFree(cVal->buckets);
-			cVal->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[mVal->capNum], sizeof(PRT_MAPNODE *));
-			cVal->capNum = mVal->capNum;
-
+			PrtAssert(PRT_FALSE, "Foreign Type not Expected");
+			return NULL;
 		}
-		PRT_MAPNODE *next = mVal->first;
-		while (next != NULL)
+		case PRT_VALKIND_MAP:
 		{
-			PrtMapUpdate(retVal, PrtDistDeserializeValue(next->key), PrtDistDeserializeValue(next->value));
-			next = next->insertNext;
+			PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+			PRT_MAPVALUE *map = (PRT_MAPVALUE *)PrtMalloc(sizeof(PRT_MAPVALUE));
+			retVal->discriminator = PRT_VALKIND_MAP;
+			retVal->valueUnion.map = map;
+			PRT_MAPVALUE *mVal = value->valueUnion.map;
+			PRT_MAPVALUE *cVal = retVal->valueUnion.map;
+			if (mVal->capNum > 0)
+			{
+				cVal->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[mVal->capNum], sizeof(PRT_MAPNODE *));
+				cVal->capNum = mVal->capNum;
+			}
+			PRT_MAPNODE *next = mVal->first;
+			while (next != NULL)
+			{
+				PrtMapUpdate(retVal, PrtDistDeserializeValue(next->key), PrtDistDeserializeValue(next->value));
+				next = next->insertNext;
+			}
+
+			return retVal;
 		}
-
-		return retVal;
-	}
-	case PRT_KIND_NMDTUP:
-	{
-		PRT_TYPE* tt = PrtDistDeserializeType(value->type);
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
-		retVal->type = PrtCloneType(tt);
-		retVal->discriminator = PRT_VALKIND_TUPLE;
-
-		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
-		PRT_UINT32 arity = value->type->typeUnion.nmTuple->arity;
-		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtCalloc(1, sizeof(PRT_TUPVALUE));
-		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE*));
-
-		PRT_VALUE_NODE *curr = tVal->valuesSerialized;
-		PRT_UINT32 i = 0;
-		while (curr != NULL)
+		case PRT_VALKIND_TUPLE:
 		{
-			cVal->values[i] = PrtDistDeserializeValue(curr->value);
-			curr = curr->nextNode;
-			i = i + 1;
-		}
-		cVal->valuesSerialized = NULL;
+			PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
+			retVal->discriminator = PRT_VALKIND_TUPLE;
 
-		retVal->valueUnion.tuple = cVal;
-		return retVal;
-	}
-	case PRT_KIND_TUPLE:
-	{
-		PRT_TYPE* tt = PrtDistDeserializeType(value->type);
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
-		retVal->type = PrtCloneType(tt);
-		retVal->discriminator = PRT_VALKIND_TUPLE;
+			PRT_TUPVALUE *tVal = value->valueUnion.tuple;
+			PRT_UINT32 arity = value->valueUnion.tuple->size;
+			PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtCalloc(1, sizeof(PRT_TUPVALUE));
+			cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE*));
+			cVal->size = arity;
 
-		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
-		PRT_UINT32 arity = value->type->typeUnion.tuple->arity;
-		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtCalloc(1, sizeof(PRT_TUPVALUE));
-		cVal->values = (PRT_VALUE **)PrtCalloc(arity, sizeof(PRT_VALUE*));
-
-		PRT_VALUE_NODE *curr = tVal->valuesSerialized;
-		PRT_UINT32 i = 0;
-		while (curr != NULL)
-		{
-			cVal->values[i] = PrtDistDeserializeValue(curr->value);
-			curr = curr->nextNode;
-			i = i + 1;
-		}
-		cVal->valuesSerialized = NULL;
-		retVal->valueUnion.tuple = cVal;
-		return retVal;
-	}
-	case PRT_KIND_SEQ:
-	{
-		PRT_TYPE* tt = PrtDistDeserializeType(value->type);
-		PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
-		retVal->type = PrtCloneType(tt);
-		retVal->discriminator = PRT_VALKIND_SEQ;
-		PRT_SEQVALUE *sVal = value->valueUnion.seq;
-		PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtCalloc(1, sizeof(PRT_SEQVALUE));
-		cVal->capacity = sVal->capacity;
-		cVal->size = sVal->size;
-		if (sVal->capacity == 0)
-		{
-			cVal->values = NULL;
-		}
-		else
-		{
+			PRT_VALUE_NODE *curr = tVal->valuesSerialized;
 			PRT_UINT32 i = 0;
-			cVal->values = (PRT_VALUE **)PrtCalloc(sVal->capacity, sizeof(PRT_VALUE*));
-			PRT_VALUE_NODE *curr = sVal->valuesSerialized;
 			while (curr != NULL)
 			{
 				cVal->values[i] = PrtDistDeserializeValue(curr->value);
 				curr = curr->nextNode;
 				i = i + 1;
 			}
+			cVal->valuesSerialized = NULL;
 
+			retVal->valueUnion.tuple = cVal;
+			return retVal;
 		}
-		cVal->valuesSerialized = NULL;
-		retVal->valueUnion.seq = cVal;
-		return retVal;
-	}
-	default:
-		PrtAssert(PRT_FALSE, "Invalid type");
-		return NULL;
-	}
+	
+		case PRT_VALKIND_SEQ:
+		{
+			PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
+			retVal->discriminator = PRT_VALKIND_SEQ;
+			PRT_SEQVALUE *sVal = value->valueUnion.seq;
+			PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtCalloc(1, sizeof(PRT_SEQVALUE));
+			cVal->capacity = sVal->capacity;
+			cVal->size = sVal->size;
+			if (sVal->capacity == 0)
+			{
+				cVal->values = NULL;
+			}
+			else
+			{
+				PRT_UINT32 i = 0;
+				cVal->values = (PRT_VALUE **)PrtCalloc(sVal->capacity, sizeof(PRT_VALUE*));
+				PRT_VALUE_NODE *curr = sVal->valuesSerialized;
+				while (curr != NULL)
+				{
+					cVal->values[i] = PrtDistDeserializeValue(curr->value);
+					curr = curr->nextNode;
+					i = i + 1;
+				}
+
+			}
+			cVal->valuesSerialized = NULL;
+			retVal->valueUnion.seq = cVal;
+			return retVal;
+		}
+		default:
+			PrtAssert(PRT_FALSE, "Invalid type");
+			return NULL;
+		}
 }

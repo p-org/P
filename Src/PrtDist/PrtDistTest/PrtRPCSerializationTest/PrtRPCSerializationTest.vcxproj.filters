@@ -15,13 +15,11 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="TestCentralServer.cpp">
+    <ClCompile Include="PrtRPC.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="TestCentralServer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <ClCompile Include="TestRPC.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

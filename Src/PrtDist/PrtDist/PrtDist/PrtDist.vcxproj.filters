@@ -18,21 +18,9 @@
     <ClCompile Include="PrtDistSerializer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PrtDistEnqueue.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PrtDistLogging.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PrtDistHelperFuntions.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PrtDist.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PrtDistGlobals.h">
+    <ClInclude Include="PrtDistSerializer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

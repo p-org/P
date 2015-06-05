@@ -15,13 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="PrtDistCentralServer.cpp">
+    <Midl Include="PrtRPCTest.idl">
       <Filter>Source Files</Filter>
-    </ClCompile>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PrtDistCentralServer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <None Include="PrtRPCTest.acf">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -5,6 +5,8 @@
 
 interface PrtRPCSerializationTest
 {
+	import "C:\WorkSpace\plang\Src\Prt\API\PrtValues_IDL.idl";
+
 	//Test function send prtvalues
 	void PrtRPCTestSend(
 		[in] handle_t handleM,

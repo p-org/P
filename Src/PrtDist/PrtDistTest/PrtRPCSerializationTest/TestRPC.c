@@ -1,5 +1,7 @@
-#include "PrtDist.h"
-#include "PrtDist_c.c"
+#include "PrtWinUser.h"
+#include "PrtExecution.h"
+#include "PrtRPCSerializationTestIDL\PrtRPCTest_c.c"
+#include "PrtRPCSerializationTestIDL\PrtRPCTest_h.h"
 
 extern void CreateRPCTestServer();
 
@@ -69,7 +71,7 @@ void TestOverRPC(PRT_VALUE* value)
 	PRT_VALUE* nullType = PrtMkEventValue(0);
 	RpcTryExcept
 	{
-		c_PrtDistSend(testHandle, nullType, serialized);
+		c_PrtRPCTestSend(testHandle, serialized);
 	}
 	RpcExcept(1)
 	{
@@ -124,20 +126,20 @@ void NamedTupleTest()
 	PrtPrintValue(anyPair);
 	printf_s("\n");
 
-	PrtNmdTupleSet(anyPair, "foo", oneVal);
+	PrtTupleSet(anyPair, 0, oneVal);
 
 	PrtPrintValue(anyPair);
 	printf_s("\n");
 
-	PrtNmdTupleSet(anyPair, "bar", boolVal);
+	PrtTupleSet(anyPair, 1, boolVal);
 
 	PrtPrintValue(anyPair);
 	printf_s("\n");
 
-	PrtPrintValue(PrtNmdTupleGet(anyPair, "foo"));
+	PrtPrintValue(PrtTupleGet(anyPair, 0));
 	printf_s("\n");
 
-	PrtPrintValue(PrtNmdTupleGet(anyPair, "bar"));
+	PrtPrintValue(PrtTupleGet(anyPair, 1));
 	printf_s("\n");
 
 	TestOverRPC(anyPair);
@@ -169,7 +171,7 @@ void SeqNestedTest()
 
 	for (i = 0; i < 10; ++i)
 	{
-		PrtSeqInsert(seq, seq->valueUnion.seq->size, seq);
+		PrtSeqInsert(seq, PrtMkIntValue(seq->valueUnion.seq->size), seq);
 	}
 	PrtPrintValue(seq);
 	printf_s("\n");
@@ -217,12 +219,12 @@ void SeqAppendTest()
 
 	for (i = 0; i <= 10; ++i)
 	{
-		PrtSeqInsert(seq, seq->valueUnion.seq->size, PrtMkIntValue(i));
+		PrtSeqInsert(seq, PrtMkIntValue(seq->valueUnion.seq->size), PrtMkIntValue(i));
 	}
 
 	for (i = 10; i >= 0; --i)
 	{
-		PrtSeqInsert(seq, seq->valueUnion.seq->size, PrtMkIntValue(i));
+		PrtSeqInsert(seq, PrtMkIntValue(seq->valueUnion.seq->size), PrtMkIntValue(i));
 	}
 
 	PrtPrintValue(seq);
@@ -244,7 +246,7 @@ void SeqPrependTest()
 
 	for (i = 0; i <= 10; ++i)
 	{
-		PrtSeqInsert(seq, 0, PrtMkIntValue(i));
+		PrtSeqInsert(seq, PrtMkIntValue(0), PrtMkIntValue(i));
 	}
 
 	PrtPrintValue(seq);
@@ -252,7 +254,7 @@ void SeqPrependTest()
 
 	for (i = 10; i >= 0; --i)
 	{
-		PrtSeqInsert(seq, 0, PrtMkIntValue(i));
+		PrtSeqInsert(seq, PrtMkIntValue(0), PrtMkIntValue(i));
 	}
 
 	PrtPrintValue(seq);

@@ -63,7 +63,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Midl>
-      <AdditionalIncludeDirectories>../../../Prt/API/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\Prt\API</AdditionalIncludeDirectories>
+      <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
     </Midl>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -80,17 +81,20 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Midl>
-      <AdditionalIncludeDirectories>../../../Prt/API/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\Prt\API</AdditionalIncludeDirectories>
+      <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
     </Midl>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
-      <AdditionalIncludeDirectories>../../../Prt/API/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\Prt\API</AdditionalIncludeDirectories>
+      <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
     </Midl>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
-      <AdditionalIncludeDirectories>../../../Prt/API/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\Prt\API</AdditionalIncludeDirectories>
+      <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
     </Midl>
   </ItemDefinitionGroup>
   <ItemGroup>

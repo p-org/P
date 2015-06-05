@@ -1,33 +1,13 @@
 #include<process.h>
-#include "PrtDist.h"
-#include"PrtDist_s.c"
+#include "PrtDistSerializer.h"
+#include "PrtWinUser.h"
+#include "PrtExecution.h"
+#include "PrtRPCSerializationTestIDL\PrtRPCTest_h.h"
+#include "PrtRPCSerializationTestIDL\PrtRPCTest_s.c"
 
 PRT_VALUE *ReceivedValue;
 
 
-/*
-int main(int argc, char *argv[])
-{
-	PRT_DBG_START_MEM_BALANCED_REGION
-	{
-		BinaryBoolFunTest();
-	}
-	PRT_DBG_END_MEM_BALANCED_REGION
-
-	/*
-	TupleTest();
-	NamedTupleTest();
-	SeqAppendTest();
-	SeqPrependTest();
-	SeqAppendRemoveTest();
-	SeqNestedTest();
-	MapTest1();
-	MapTest2();
-	
-
-	return 0;
-}
-*/
 DWORD WINAPI WaitThreadForRPCListen(LPVOID lpParam)
 {
 	printf("Thread - WaitThreadForRPCListen listening ...\n");
@@ -41,28 +21,22 @@ DWORD WINAPI WaitThreadForRPCListen(LPVOID lpParam)
 }
 
 
-PRT_BOOLEAN s_PrtDistSend(
+void s_PrtRPCTestSend(
 	handle_t handleM,
-	PRT_VALUE* event,
-	PRT_VALUE* payload
-	)
+	PRT_VALUE* value
+)
 {
 	printf("\n");
-	PRT_VALUE* x = PrtDistDeserializeValue(payload);
+	PRT_STRING log;
+	PRT_VALUE* x = PrtDistDeserializeValue(value);
 	ReceivedValue = PrtCloneValue(x);
 	
-	printf("In Send Value Received :");
-	printf("Type : ");
-	PRT_CHAR *log = NULL;
-	log = PrtToStringType(ReceivedValue->type);
-	printf(log);
-	printf("\n");
+	printf("In Send Value Received :\n");
 	printf("Value :");
 	log = NULL;
 	log = PrtToStringValue(ReceivedValue);
 	printf(log);
 	printf("\n");
-	return PRT_TRUE;
 }
 
 void CreateRPCTestServer()
@@ -84,7 +58,7 @@ void CreateRPCTestServer()
 	}
 
 	status = RpcServerRegisterIf2(
-		s_PrtDist_v1_0_s_ifspec, // Interface to register.
+		s_PrtRPCSerializationTest_v1_0_s_ifspec, // Interface to register.
 		NULL, // Use the MIDL generated entry-point vector.
 		NULL, // Use the MIDL generated entry-point vector.
 		RPC_IF_ALLOW_CALLBACKS_WITH_NO_AUTH, // Forces use of security callback.

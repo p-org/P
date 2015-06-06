@@ -68,7 +68,7 @@ void TestOverRPC(PRT_VALUE* value)
 	printf("Before Serialization : \n");
 	PrtPrintValue(value);
 	printf("\n");
-	PRT_VALUE* nullType = PrtMkEventValue(0);
+
 	RpcTryExcept
 	{
 		c_PrtRPCTestSend(testHandle, serialized);
@@ -176,8 +176,6 @@ void SeqNestedTest()
 	PrtPrintValue(seq);
 	printf_s("\n");
 
-	handle_t testHandle = CreateRPCClient();
-
 	TestOverRPC(seq);
 
 }
@@ -229,7 +227,6 @@ void SeqAppendTest()
 
 	PrtPrintValue(seq);
 	printf_s("\n");
-	handle_t testHandle = CreateRPCClient();
 	TestOverRPC(seq);
 
 }
@@ -276,7 +273,6 @@ void MapTest2()
 	PrtMapUpdate(a2aMap, falseVal, falseVal);
 	PrtPrintValue(a2aMap);
 
-	handle_t testHandle = CreateRPCClient();
 	TestOverRPC(a2aMap);
 }
 
@@ -383,11 +379,11 @@ int main()
 	//MapTest1();
 	//MapTest2();
 	//SeqAppendTest();
-	//SeqNestedTest();
+	SeqNestedTest();
 	//TupleTest();
 	//NamedTupleTest();
 	//SeqPrependTest();
-	BinaryBoolFunTest();
+	//BinaryBoolFunTest();
 	//wait
 	getchar();
 

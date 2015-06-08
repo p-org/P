@@ -15,16 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="PrtDistSerializer.c">
+    <Midl Include="Interface.idl">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PrtDistSend.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PrtDistSerializer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <None Include="Interface.acf">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

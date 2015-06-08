@@ -209,7 +209,7 @@ __in PRT_VALUE* value
 			cVal->valuesSerialized = NULL;
 			for (i = 0; i < arity; ++i)
 			{
-				cVal->values[i] = PrtCloneValue(tVal->values[i]);
+				cVal->values[i] = PrtDistSerializeValue(tVal->values[i]);
 				InsertValueNode(&cVal->valuesSerialized, PrtDistSerializeValue(tVal->values[i]));
 			}
 
@@ -217,10 +217,10 @@ __in PRT_VALUE* value
 			return retVal;
 		}
 		
-		case PRT_KIND_SEQ:
+		case PRT_VALKIND_SEQ:
 		{
-			PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
-			PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtCalloc(1, sizeof(PRT_SEQVALUE));
+			PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
+			PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
 			retVal->discriminator = PRT_VALKIND_SEQ;
 			PRT_SEQVALUE *sVal = value->valueUnion.seq;
 			
@@ -238,7 +238,7 @@ __in PRT_VALUE* value
 				cVal->values = (PRT_VALUE **)PrtCalloc(sVal->capacity, sizeof(PRT_VALUE*));
 				for (i = 0; i < sVal->size; ++i)
 				{
-					cVal->values[i] = PrtCloneValue(sVal->values[i]);
+					cVal->values[i] = PrtDistSerializeValue(sVal->values[i]);
 					InsertValueNode(&cVal->valuesSerialized, PrtDistSerializeValue(sVal->values[i]));
 				}
 			}
@@ -358,16 +358,15 @@ __in PRT_VALUE* value
 			retVal->discriminator = PRT_VALKIND_MAP;
 			retVal->valueUnion.map = map;
 			PRT_MAPVALUE *mVal = value->valueUnion.map;
-			PRT_MAPVALUE *cVal = retVal->valueUnion.map;
-			if (mVal->capNum > 0)
-			{
-				cVal->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[mVal->capNum], sizeof(PRT_MAPNODE *));
-				cVal->capNum = mVal->capNum;
-			}
+			map->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[mVal->capNum], sizeof(PRT_MAPNODE *));
+			map->capNum = mVal->capNum;
+			map->size = 0;
+			map->first = NULL;
+			map->last = NULL;
 			PRT_MAPNODE *next = mVal->first;
 			while (next != NULL)
 			{
-				PrtMapUpdate(retVal, PrtDistDeserializeValue(next->key), PrtDistDeserializeValue(next->value));
+				PrtMapUpdateEx(retVal, PrtDistDeserializeValue(next->key), PRT_FALSE, PrtDistDeserializeValue(next->value), PRT_FALSE);
 				next = next->insertNext;
 			}
 

@@ -1,0 +1,21 @@
+[
+	uuid(6f15af3b-0784-4fe4-a512-02e9006cf660),
+	version(1.0),
+	pointer_default(ptr)
+]
+
+interface Example1 {
+
+	const long ARRAY_SIZE = 100; //sending 1000 bytes
+	//function to test
+	void SyncPingServer(
+		[in] handle_t handleM,
+		[in] char payload[ARRAY_SIZE]
+	);
+
+	void AsyncPingServer(
+		[in] handle_t handleM,
+		[in] char payload[ARRAY_SIZE]
+		);
+
+}

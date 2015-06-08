@@ -35,6 +35,6 @@ __in PRT_VALUE* value
 * @see PrtDistSerializeValue
 */
 PRT_VALUE*
-PrtDistDeserializeValue(
+PrtDistSerializeValue(
 __in PRT_VALUE* value
 );

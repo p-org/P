@@ -9,7 +9,6 @@ namespace RunPTool
     using System.Text;
     using System.Threading.Tasks;
     using CheckP;
-    using Microsoft.Pc;
     using System.Diagnostics;
 
     class Program
@@ -88,6 +87,7 @@ namespace RunPTool
                     }
                 }
 
+                /*
                 Compiler compiler = new Compiler(true);
                 CommandLineOptions compilerOptions = new CommandLineOptions();
                 compilerOptions.analyzeOnly = true;
@@ -97,6 +97,7 @@ namespace RunPTool
                 compiler.Options = compilerOptions;
                 Compile(compiler, activeDirs);
                 return;
+                */
 
                 Console.WriteLine("Running tests");
                 int testCount = 0, failCount = 0;
@@ -159,6 +160,7 @@ namespace RunPTool
             }
         }
 
+        /*
         private static void Compile(Compiler compiler, List<DirectoryInfo> dis)
         {
             foreach (DirectoryInfo di in dis)
@@ -178,6 +180,7 @@ namespace RunPTool
                 Compile(compiler, new List<DirectoryInfo>(di.EnumerateDirectories()));
             }
         }
+        */
 
         //If reset = true, failedDirsWriter and displayDiffsWriter are "null"
         private static void Test(List<DirectoryInfo> diArray, bool reset, ref int testCount, ref int failCount,

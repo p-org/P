@@ -12,6 +12,8 @@ class MachineId
 	}
 };
 
+set SM_EVENT_SET SM_EVENT;
+
 class SM_EVENT {    
     Event name;
     int maxInstances;
@@ -26,7 +28,67 @@ class SM_EVENT {
     }
 };
 
-set SM_EVENT_SET SM_EVENT;
+array SM_TRANSITION_ARRAY[] SM_TRANSITION;
+
+class SM_TRANSITION {
+    SM_EVENT evt;
+	ActionOrFun fun; // isPush <==> fun == ActionOrFun._default
+	SM_STATE to;
+
+	static SM_TRANSITION Construct(SM_EVENT evt, ActionOrFun fun, SM_STATE to) {
+	    SM_TRANSITION transition;
+		transition = new SM_TRANSITION;
+		transition.evt = evt;
+		transition.fun = fun;
+		transition.to = to;
+		return transition;
+	}
+};
+
+class SM_STATE {
+    State name;
+	ActionOrFun entryFun;
+	ActionOrFun exitFun;
+	SM_TRANSITION_ARRAY transitions;
+	bool hasNullTransition;
+	StateTemperature temperature;
+
+	static SM_STATE Construct(State name, ActionOrFun entryFun, ActionOrFun exitFun, int numTransitions, bool hasNullTransition, StateTemperature temperature) {
+	    SM_STATE state;
+		state = new SM_STATE;
+		state.name = name;
+		state.entryFun = entryFun;
+		state.exitFun = exitFun;
+		state.transitions = new SM_TRANSITION_ARRAY[numTransitions];
+		state.hasNullTransition = hasNullTransition;
+		state.temperature = temperature;
+		return state;
+	}
+
+	SM_TRANSITION FindPushTransition(SM_EVENT evt) {
+	    int i;
+		i = 0;
+		while (i < sizeof(transitions)) {
+		    if (transitions[i].evt == evt && transitions[i].fun == ActionOrFun._default) {
+			    return transitions[i];
+			}
+		    i = i + 1;
+		}
+		return null;
+	}
+
+	SM_TRANSITION FindTransition(SM_EVENT evt) {
+	    int i;
+		i = 0;
+		while (i < sizeof(transitions)) {
+		    if (transitions[i].evt == evt) {
+			    return transitions[i];
+			}
+		    i = i + 1;
+		}
+		return null;
+	}
+};
 
 set SM_HANDLE_SET SM_HANDLE;
 
@@ -125,7 +187,7 @@ class SM_HANDLE {
 		}
     }
 	
-    void DequeueEvent(bool hasDefault) {
+    void DequeueEvent(bool hasNullTransition) {
 	    PRT_TYPE nullType;
 		currentEvent = null;
 		currentArg = null;
@@ -138,10 +200,10 @@ class SM_HANDLE {
 				trace("<DequeueLog> Dequeued Event < {0}, ", currentEvent.name); PRT_VALUE.Print(currentArg); trace(" > at Machine {0}-{1}\n", machineName, instance);
 				return;
 			} 
-			else if (hasDefault) 
+			else if (hasNullTransition) 
 			{
 				assert (this in SM_HANDLE.enabled, "Internal error");
-				trace("<DefaultTransLog> Default transition taken by Machine {0}-{1}\n", machineName, instance);
+				trace("<NullTransLog> Null transition taken by Machine {0}-{1}\n", machineName, instance);
 				nullType = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL);
 				currentArg = PRT_VALUE.PrtMkDefaultValue(nullType);
 				FairScheduler.AtYieldStatic(this);
@@ -294,7 +356,7 @@ array SM_EVENT_ARRAY[] SM_EVENT;
 array ActionOrFun_ARRAY[] ActionOrFun;
 
 class StateStack {
-    State state;
+    SM_STATE state;
     SM_EVENT_SET deferredSet;
     SM_EVENT_SET actionSet;
     SM_EVENT_ARRAY es;
@@ -327,10 +389,8 @@ class StateStack {
 		localActionSet = localActionSet + next.actionSet;
     }
 
-	bool HasDefaultTransitionOrAction() {
-	    bool b;
-		b = Main.HasDefaultTransition(state);
-		if (b) return true;
+	bool HasNullTransitionOrAction() {
+		if (state.hasNullTransition) return true;
 		return (Main.null_SM_EVENT in actionSet);
 	}
 };
@@ -346,7 +406,7 @@ class StackFrame {
 class Continuation {
     StackFrame returnTo;
     ContinuationReason reason;
-    State state;
+    SM_STATE state;
     SM_HANDLE id;
     PRT_VALUE retVal;
 
@@ -360,7 +420,7 @@ class Continuation {
 		res = new Continuation;
 		res.returnTo = null;
 		res.reason = ContinuationReason.Return;
-		res.state = State._default;
+		res.state = null;
 		res.id = null;
 		res.retVal = null;
 		res.nondet = false;
@@ -389,7 +449,7 @@ class Continuation {
 		nullType = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL);
         this.returnTo = null;
 		this.reason = ContinuationReason.Return;
-		this.state = State._default;
+		this.state = null;
 		this.id = null;
 		this.retVal = PRT_VALUE.PrtMkDefaultValue(nullType);
     }
@@ -397,7 +457,7 @@ class Continuation {
     void ReturnVal(PRT_VALUE val) {
         this.returnTo = null;
 		this.reason = ContinuationReason.Return;
-		this.state = State._default;
+		this.state = null;
 		this.id = null;
 		this.retVal = val;
     }
@@ -405,7 +465,7 @@ class Continuation {
     void Pop() {
         this.returnTo = null;
 		this.reason = ContinuationReason.Pop;
-		this.state = State._default;
+		this.state = null;
 		this.id = null;
 		this.retVal = null;
     }
@@ -413,7 +473,7 @@ class Continuation {
     void Raise() {
         this.returnTo = null;
 		this.reason = ContinuationReason.Raise;
-		this.state = State._default;
+		this.state = null;
 		this.id = null;
 		this.retVal = null;
     }
@@ -421,7 +481,7 @@ class Continuation {
     void Send(int ret, PRT_VALUE_ARRAY vars) {
         this.returnTo = null;
 		this.reason = ContinuationReason.Send;
-		this.state = State._default;
+		this.state = null;
 		this.id = null;
 		this.retVal = null;
 		this.PushReturnTo(ret, vars);
@@ -430,13 +490,13 @@ class Continuation {
     void NewMachine(int ret, PRT_VALUE_ARRAY vars, SM_HANDLE o) {
         this.returnTo = null;
 		this.reason = ContinuationReason.NewMachine;
-		this.state = State._default;
+		this.state = null;
 		this.id = o;
 		this.retVal = null;
 		this.PushReturnTo(ret, vars);
     }
 
-    void Push(int ret, PRT_VALUE_ARRAY vars, State state) {
+    void Push(int ret, PRT_VALUE_ARRAY vars, SM_STATE state) {
         this.returnTo = null;
 		this.reason = ContinuationReason.Push;
 		this.state = state;
@@ -448,7 +508,7 @@ class Continuation {
     void Nondet(int ret, PRT_VALUE_ARRAY vars) {
         this.returnTo = null;
 		this.reason = ContinuationReason.Nondet;
-		this.state = State._default;
+		this.state = null;
 		this.id = null;
 		this.retVal = null;
 		this.PushReturnTo(ret, vars);

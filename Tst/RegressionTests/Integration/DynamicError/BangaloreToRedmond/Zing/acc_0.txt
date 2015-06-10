@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 56 distinct states explored
+OUT: 60 distinct states explored
 OUT: 
 EXIT: 3
 
@@ -36,7 +36,7 @@ Trace-Log 0:
 <EnqueueLog> Enqueued Event < ____Thanks, null > in Machine ____TravelAgent-0 by ____Employee-0
 <StateLog> Machine Employee-0 entering State SBookCab
 <EnqueueLog> Enqueued Event < ____BookCab, null > in Machine ____CityCab-0 by ____Employee-0
-<DefaultTransLog> Default transition taken by Machine ____Employee-0
+<NullTransLog> Null transition taken by Machine ____Employee-0
 <StateLog> Machine Employee-0 exiting State SBookCab
 <StateLog> Machine Employee-0 entering State TakeBus
 <RaiseLog> Machine Employee-0 raised Event ____ReachedAirport

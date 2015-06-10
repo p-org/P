@@ -20,10 +20,10 @@ Trace-Log 0:
 <CreateLog> Created Machine Spinlock-1
 <StateLog> Machine Spinlock-1 entering State Init
 <MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-0 raised Event ____Error2
-<StateLog> Machine Spinlock-0 exiting State Init
-<StateLog> Machine Spinlock-0 entering State Abort2
+<MonitorLog> Enqueued Event < ____REL, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-1 raised Event ____Error2
+<StateLog> Machine Spinlock-1 exiting State Init
+<StateLog> Machine Spinlock-1 entering State Abort2
 
 Error:
 P Assertion failed:
@@ -38,10 +38,10 @@ Trace-Log 1:
 <CreateLog> Created Machine Spinlock-1
 <StateLog> Machine Spinlock-1 entering State Init
 <MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____REL, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-1 raised Event ____Error2
-<StateLog> Machine Spinlock-1 exiting State Init
-<StateLog> Machine Spinlock-1 entering State Abort2
+<MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-0 raised Event ____Error2
+<StateLog> Machine Spinlock-0 exiting State Init
+<StateLog> Machine Spinlock-0 entering State Abort2
 
 Error:
 P Assertion failed:
@@ -94,6 +94,28 @@ Trace-Log 4:
 <CreateLog> Created Machine Spinlock-1
 <StateLog> Machine Spinlock-1 entering State Init
 <MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____FIN, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-0 raised Event ____Halt
+<StateLog> Machine Spinlock-0 exiting State Init
+<StateLog> Machine Spinlock-0 entering State HaltState
+<RaiseLog> Machine Spinlock-1 raised Event ____Error3
+<StateLog> Machine Spinlock-1 exiting State Init
+<StateLog> Machine Spinlock-1 entering State Abort3
+
+Error:
+P Assertion failed:
+Expression: assert(tmp_14.bl,)
+Comment: (84, 4): Assert failed
+Safety Error Trace
+Trace-Log 5:
+<CreateLog> Created Machine TestDriver-0
+<StateLog> Machine TestDriver-0 entering State Init
+<CreateLog> Created Machine Spinlock-0
+<StateLog> Machine Spinlock-0 entering State Init
+<CreateLog> Created Machine Spinlock-1
+<StateLog> Machine Spinlock-1 entering State Init
+<MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____FIN, 1 > to 2 Spinlock monitors in Machine TestDriver-0
 <RaiseLog> Machine Spinlock-0 raised Event ____Error3
@@ -105,7 +127,7 @@ P Assertion failed:
 Expression: assert(tmp_14.bl,)
 Comment: (84, 4): Assert failed
 Safety Error Trace
-Trace-Log 5:
+Trace-Log 6:
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
 <CreateLog> Created Machine Spinlock-0
@@ -123,25 +145,6 @@ Error:
 P Assertion failed:
 Expression: assert(tmp_13.bl,)
 Comment: (75, 4): Assert failed
-Safety Error Trace
-Trace-Log 6:
-<CreateLog> Created Machine TestDriver-0
-<StateLog> Machine TestDriver-0 entering State Init
-<CreateLog> Created Machine Spinlock-0
-<StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine Spinlock-1
-<StateLog> Machine Spinlock-1 entering State Init
-<MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____FIN, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-0 raised Event ____Error3
-<StateLog> Machine Spinlock-0 exiting State Init
-<StateLog> Machine Spinlock-0 entering State Abort3
-
-Error:
-P Assertion failed:
-Expression: assert(tmp_14.bl,)
-Comment: (84, 4): Assert failed
 Safety Error Trace
 Trace-Log 7:
 <CreateLog> Created Machine TestDriver-0
@@ -192,14 +195,11 @@ Trace-Log 9:
 <CreateLog> Created Machine Spinlock-1
 <StateLog> Machine Spinlock-1 entering State Init
 <MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____FIN, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-0 raised Event ____Halt
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____FIN, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-0 raised Event ____Error3
 <StateLog> Machine Spinlock-0 exiting State Init
-<StateLog> Machine Spinlock-0 entering State HaltState
-<RaiseLog> Machine Spinlock-1 raised Event ____Error3
-<StateLog> Machine Spinlock-1 exiting State Init
-<StateLog> Machine Spinlock-1 entering State Abort3
+<StateLog> Machine Spinlock-0 entering State Abort3
 
 Error:
 P Assertion failed:
@@ -234,12 +234,12 @@ Trace-Log 11:
 <CreateLog> Created Machine Spinlock-1
 <StateLog> Machine Spinlock-1 entering State Init
 <MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-1 raised Event ____Error1
-<StateLog> Machine Spinlock-1 exiting State Init
-<StateLog> Machine Spinlock-1 entering State Abort1
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-0 raised Event ____Error1
+<StateLog> Machine Spinlock-0 exiting State Init
+<StateLog> Machine Spinlock-0 entering State Abort1
 
 Error:
 P Assertion failed:
@@ -254,12 +254,12 @@ Trace-Log 12:
 <CreateLog> Created Machine Spinlock-1
 <StateLog> Machine Spinlock-1 entering State Init
 <MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-0 raised Event ____Error1
-<StateLog> Machine Spinlock-0 exiting State Init
-<StateLog> Machine Spinlock-0 entering State Abort1
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-1 raised Event ____Error1
+<StateLog> Machine Spinlock-1 exiting State Init
+<StateLog> Machine Spinlock-1 entering State Abort1
 
 Error:
 P Assertion failed:
@@ -296,7 +296,7 @@ Trace-Log 14:
 <MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____FIN, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____FIN, 1 > to 2 Spinlock monitors in Machine TestDriver-0
 <RaiseLog> Machine Spinlock-0 raised Event ____Error3
 <StateLog> Machine Spinlock-0 exiting State Init
 <StateLog> Machine Spinlock-0 entering State Abort3
@@ -314,8 +314,8 @@ Trace-Log 15:
 <CreateLog> Created Machine Spinlock-1
 <StateLog> Machine Spinlock-1 entering State Init
 <MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____FIN, 1 > to 2 Spinlock monitors in Machine TestDriver-0
 <RaiseLog> Machine Spinlock-0 raised Event ____Error3
 <StateLog> Machine Spinlock-0 exiting State Init
@@ -334,8 +334,8 @@ Trace-Log 16:
 <CreateLog> Created Machine Spinlock-1
 <StateLog> Machine Spinlock-1 entering State Init
 <MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____FIN, 0 > to 2 Spinlock monitors in Machine TestDriver-0
 <RaiseLog> Machine Spinlock-0 raised Event ____Error3
 <StateLog> Machine Spinlock-0 exiting State Init
@@ -356,7 +356,7 @@ Trace-Log 17:
 <MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____FIN, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____FIN, 0 > to 2 Spinlock monitors in Machine TestDriver-0
 <RaiseLog> Machine Spinlock-0 raised Event ____Error3
 <StateLog> Machine Spinlock-0 exiting State Init
 <StateLog> Machine Spinlock-0 entering State Abort3
@@ -422,15 +422,17 @@ Trace-Log 20:
 <StateLog> Machine Spinlock-1 entering State Init
 <MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____REL, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-1 raised Event ____Halt
-<StateLog> Machine Spinlock-1 exiting State Init
-<StateLog> Machine Spinlock-1 entering State HaltState
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-0 raised Event ____Error1
+<MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-0 raised Event ____Halt
 <StateLog> Machine Spinlock-0 exiting State Init
-<StateLog> Machine Spinlock-0 entering State Abort1
+<StateLog> Machine Spinlock-0 entering State HaltState
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<FunctionLog> Machine Spinlock-0 executing Function ignore
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<FunctionLog> Machine Spinlock-0 executing Function ignore
+<RaiseLog> Machine Spinlock-1 raised Event ____Error1
+<StateLog> Machine Spinlock-1 exiting State Init
+<StateLog> Machine Spinlock-1 entering State Abort1
 
 Error:
 P Assertion failed:
@@ -438,57 +440,6 @@ Expression: assert(tmp_12.bl,)
 Comment: (65, 4): Assert failed
 Safety Error Trace
 Trace-Log 21:
-<CreateLog> Created Machine TestDriver-0
-<StateLog> Machine TestDriver-0 entering State Init
-<CreateLog> Created Machine Spinlock-0
-<StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine Spinlock-1
-<StateLog> Machine Spinlock-1 entering State Init
-<MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-0 raised Event ____Halt
-<StateLog> Machine Spinlock-0 exiting State Init
-<StateLog> Machine Spinlock-0 entering State HaltState
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<FunctionLog> Machine Spinlock-0 executing Function ignore
-<RaiseLog> Machine Spinlock-1 raised Event ____Error1
-<StateLog> Machine Spinlock-1 exiting State Init
-<StateLog> Machine Spinlock-1 entering State Abort1
-
-Error:
-P Assertion failed:
-Expression: assert(tmp_12.bl,)
-Comment: (65, 4): Assert failed
-Safety Error Trace
-Trace-Log 22:
-<CreateLog> Created Machine TestDriver-0
-<StateLog> Machine TestDriver-0 entering State Init
-<CreateLog> Created Machine Spinlock-0
-<StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine Spinlock-1
-<StateLog> Machine Spinlock-1 entering State Init
-<MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-0 raised Event ____Halt
-<StateLog> Machine Spinlock-0 exiting State Init
-<StateLog> Machine Spinlock-0 entering State HaltState
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<FunctionLog> Machine Spinlock-0 executing Function ignore
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<FunctionLog> Machine Spinlock-0 executing Function ignore
-<RaiseLog> Machine Spinlock-1 raised Event ____Error1
-<StateLog> Machine Spinlock-1 exiting State Init
-<StateLog> Machine Spinlock-1 entering State Abort1
-
-Error:
-P Assertion failed:
-Expression: assert(tmp_12.bl,)
-Comment: (65, 4): Assert failed
-Safety Error Trace
-Trace-Log 23:
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
 <CreateLog> Created Machine Spinlock-0
@@ -513,7 +464,105 @@ P Assertion failed:
 Expression: assert(tmp_12.bl,)
 Comment: (65, 4): Assert failed
 Safety Error Trace
+Trace-Log 22:
+<CreateLog> Created Machine TestDriver-0
+<StateLog> Machine TestDriver-0 entering State Init
+<CreateLog> Created Machine Spinlock-0
+<StateLog> Machine Spinlock-0 entering State Init
+<CreateLog> Created Machine Spinlock-1
+<StateLog> Machine Spinlock-1 entering State Init
+<MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-0 raised Event ____Halt
+<StateLog> Machine Spinlock-0 exiting State Init
+<StateLog> Machine Spinlock-0 entering State HaltState
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<FunctionLog> Machine Spinlock-0 executing Function ignore
+<RaiseLog> Machine Spinlock-1 raised Event ____Error1
+<StateLog> Machine Spinlock-1 exiting State Init
+<StateLog> Machine Spinlock-1 entering State Abort1
+
+Error:
+P Assertion failed:
+Expression: assert(tmp_12.bl,)
+Comment: (65, 4): Assert failed
+Safety Error Trace
+Trace-Log 23:
+<CreateLog> Created Machine TestDriver-0
+<StateLog> Machine TestDriver-0 entering State Init
+<CreateLog> Created Machine Spinlock-0
+<StateLog> Machine Spinlock-0 entering State Init
+<CreateLog> Created Machine Spinlock-1
+<StateLog> Machine Spinlock-1 entering State Init
+<MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____REL, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-1 raised Event ____Halt
+<StateLog> Machine Spinlock-1 exiting State Init
+<StateLog> Machine Spinlock-1 entering State HaltState
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-0 raised Event ____Error1
+<StateLog> Machine Spinlock-0 exiting State Init
+<StateLog> Machine Spinlock-0 entering State Abort1
+
+Error:
+P Assertion failed:
+Expression: assert(tmp_12.bl,)
+Comment: (65, 4): Assert failed
+Safety Error Trace
 Trace-Log 24:
+<CreateLog> Created Machine TestDriver-0
+<StateLog> Machine TestDriver-0 entering State Init
+<CreateLog> Created Machine Spinlock-0
+<StateLog> Machine Spinlock-0 entering State Init
+<CreateLog> Created Machine Spinlock-1
+<StateLog> Machine Spinlock-1 entering State Init
+<MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-0 raised Event ____Halt
+<StateLog> Machine Spinlock-0 exiting State Init
+<StateLog> Machine Spinlock-0 entering State HaltState
+<MonitorLog> Enqueued Event < ____FIN, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<FunctionLog> Machine Spinlock-0 executing Function ignore
+<RaiseLog> Machine Spinlock-1 raised Event ____Error3
+<StateLog> Machine Spinlock-1 exiting State Init
+<StateLog> Machine Spinlock-1 entering State Abort3
+
+Error:
+P Assertion failed:
+Expression: assert(tmp_14.bl,)
+Comment: (84, 4): Assert failed
+Safety Error Trace
+Trace-Log 25:
+<CreateLog> Created Machine TestDriver-0
+<StateLog> Machine TestDriver-0 entering State Init
+<CreateLog> Created Machine Spinlock-0
+<StateLog> Machine Spinlock-0 entering State Init
+<CreateLog> Created Machine Spinlock-1
+<StateLog> Machine Spinlock-1 entering State Init
+<MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____REL, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-1 raised Event ____Halt
+<StateLog> Machine Spinlock-1 exiting State Init
+<StateLog> Machine Spinlock-1 entering State HaltState
+<MonitorLog> Enqueued Event < ____FIN, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-0 raised Event ____Error3
+<StateLog> Machine Spinlock-0 exiting State Init
+<StateLog> Machine Spinlock-0 entering State Abort3
+
+Error:
+P Assertion failed:
+Expression: assert(tmp_14.bl,)
+Comment: (84, 4): Assert failed
+Safety Error Trace
+Trace-Log 26:
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
 <CreateLog> Created Machine Spinlock-0
@@ -538,55 +587,6 @@ P Assertion failed:
 Expression: assert(tmp_13.bl,)
 Comment: (75, 4): Assert failed
 Safety Error Trace
-Trace-Log 25:
-<CreateLog> Created Machine TestDriver-0
-<StateLog> Machine TestDriver-0 entering State Init
-<CreateLog> Created Machine Spinlock-0
-<StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine Spinlock-1
-<StateLog> Machine Spinlock-1 entering State Init
-<MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-0 raised Event ____Halt
-<StateLog> Machine Spinlock-0 exiting State Init
-<StateLog> Machine Spinlock-0 entering State HaltState
-<MonitorLog> Enqueued Event < ____FIN, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<FunctionLog> Machine Spinlock-0 executing Function ignore
-<RaiseLog> Machine Spinlock-1 raised Event ____Error3
-<StateLog> Machine Spinlock-1 exiting State Init
-<StateLog> Machine Spinlock-1 entering State Abort3
-
-Error:
-P Assertion failed:
-Expression: assert(tmp_14.bl,)
-Comment: (84, 4): Assert failed
-Safety Error Trace
-Trace-Log 26:
-<CreateLog> Created Machine TestDriver-0
-<StateLog> Machine TestDriver-0 entering State Init
-<CreateLog> Created Machine Spinlock-0
-<StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine Spinlock-1
-<StateLog> Machine Spinlock-1 entering State Init
-<MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____REL, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-1 raised Event ____Halt
-<StateLog> Machine Spinlock-1 exiting State Init
-<StateLog> Machine Spinlock-1 entering State HaltState
-<MonitorLog> Enqueued Event < ____FIN, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-0 raised Event ____Error3
-<StateLog> Machine Spinlock-0 exiting State Init
-<StateLog> Machine Spinlock-0 entering State Abort3
-
-Error:
-P Assertion failed:
-Expression: assert(tmp_14.bl,)
-Comment: (84, 4): Assert failed
-Safety Error Trace
 Trace-Log 27:
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
@@ -595,17 +595,17 @@ Trace-Log 27:
 <CreateLog> Created Machine Spinlock-1
 <StateLog> Machine Spinlock-1 entering State Init
 <MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-0 raised Event ____Halt
-<StateLog> Machine Spinlock-0 exiting State Init
-<StateLog> Machine Spinlock-0 entering State HaltState
-<MonitorLog> Enqueued Event < ____FIN, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<FunctionLog> Machine Spinlock-0 executing Function ignore
-<RaiseLog> Machine Spinlock-1 raised Event ____Error3
+<MonitorLog> Enqueued Event < ____REL, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-1 raised Event ____Halt
 <StateLog> Machine Spinlock-1 exiting State Init
-<StateLog> Machine Spinlock-1 entering State Abort3
+<StateLog> Machine Spinlock-1 entering State HaltState
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<FunctionLog> Machine Spinlock-1 executing Function ignore
+<MonitorLog> Enqueued Event < ____FIN, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-0 raised Event ____Error3
+<StateLog> Machine Spinlock-0 exiting State Init
+<StateLog> Machine Spinlock-0 entering State Abort3
 
 Error:
 P Assertion failed:
@@ -621,15 +621,17 @@ Trace-Log 28:
 <StateLog> Machine Spinlock-1 entering State Init
 <MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____REL, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-1 raised Event ____Halt
-<StateLog> Machine Spinlock-1 exiting State Init
-<StateLog> Machine Spinlock-1 entering State HaltState
-<MonitorLog> Enqueued Event < ____FIN, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-0 raised Event ____Error3
+<MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-0 raised Event ____Halt
 <StateLog> Machine Spinlock-0 exiting State Init
-<StateLog> Machine Spinlock-0 entering State Abort3
+<StateLog> Machine Spinlock-0 entering State HaltState
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<FunctionLog> Machine Spinlock-0 executing Function ignore
+<MonitorLog> Enqueued Event < ____FIN, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<FunctionLog> Machine Spinlock-0 executing Function ignore
+<RaiseLog> Machine Spinlock-1 raised Event ____Error3
+<StateLog> Machine Spinlock-1 exiting State Init
+<StateLog> Machine Spinlock-1 entering State Abort3
 
 Error:
 P Assertion failed:
@@ -637,108 +639,6 @@ Expression: assert(tmp_14.bl,)
 Comment: (84, 4): Assert failed
 Safety Error Trace
 Trace-Log 29:
-<CreateLog> Created Machine TestDriver-0
-<StateLog> Machine TestDriver-0 entering State Init
-<CreateLog> Created Machine Spinlock-0
-<StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine Spinlock-1
-<StateLog> Machine Spinlock-1 entering State Init
-<MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-0 raised Event ____Halt
-<StateLog> Machine Spinlock-0 exiting State Init
-<StateLog> Machine Spinlock-0 entering State HaltState
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<FunctionLog> Machine Spinlock-0 executing Function ignore
-<MonitorLog> Enqueued Event < ____FIN, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<FunctionLog> Machine Spinlock-0 executing Function ignore
-<RaiseLog> Machine Spinlock-1 raised Event ____Error3
-<StateLog> Machine Spinlock-1 exiting State Init
-<StateLog> Machine Spinlock-1 entering State Abort3
-
-Error:
-P Assertion failed:
-Expression: assert(tmp_14.bl,)
-Comment: (84, 4): Assert failed
-Safety Error Trace
-Trace-Log 30:
-<CreateLog> Created Machine TestDriver-0
-<StateLog> Machine TestDriver-0 entering State Init
-<CreateLog> Created Machine Spinlock-0
-<StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine Spinlock-1
-<StateLog> Machine Spinlock-1 entering State Init
-<MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-0 raised Event ____Halt
-<StateLog> Machine Spinlock-0 exiting State Init
-<StateLog> Machine Spinlock-0 entering State HaltState
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<FunctionLog> Machine Spinlock-0 executing Function ignore
-<MonitorLog> Enqueued Event < ____FIN, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<FunctionLog> Machine Spinlock-0 executing Function ignore
-<RaiseLog> Machine Spinlock-1 raised Event ____Error3
-<StateLog> Machine Spinlock-1 exiting State Init
-<StateLog> Machine Spinlock-1 entering State Abort3
-
-Error:
-P Assertion failed:
-Expression: assert(tmp_14.bl,)
-Comment: (84, 4): Assert failed
-Safety Error Trace
-Trace-Log 31:
-<CreateLog> Created Machine TestDriver-0
-<StateLog> Machine TestDriver-0 entering State Init
-<CreateLog> Created Machine Spinlock-0
-<StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine Spinlock-1
-<StateLog> Machine Spinlock-1 entering State Init
-<MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____REL, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-1 raised Event ____Halt
-<StateLog> Machine Spinlock-1 exiting State Init
-<StateLog> Machine Spinlock-1 entering State HaltState
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<FunctionLog> Machine Spinlock-1 executing Function ignore
-<MonitorLog> Enqueued Event < ____FIN, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-0 raised Event ____Error3
-<StateLog> Machine Spinlock-0 exiting State Init
-<StateLog> Machine Spinlock-0 entering State Abort3
-
-Error:
-P Assertion failed:
-Expression: assert(tmp_14.bl,)
-Comment: (84, 4): Assert failed
-Safety Error Trace
-Trace-Log 32:
-<CreateLog> Created Machine TestDriver-0
-<StateLog> Machine TestDriver-0 entering State Init
-<CreateLog> Created Machine Spinlock-0
-<StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine Spinlock-1
-<StateLog> Machine Spinlock-1 entering State Init
-<MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____REL, 1 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-1 raised Event ____Halt
-<StateLog> Machine Spinlock-1 exiting State Init
-<StateLog> Machine Spinlock-1 entering State HaltState
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<FunctionLog> Machine Spinlock-1 executing Function ignore
-<MonitorLog> Enqueued Event < ____FIN, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<RaiseLog> Machine Spinlock-0 raised Event ____Error3
-<StateLog> Machine Spinlock-0 exiting State Init
-<StateLog> Machine Spinlock-0 entering State Abort3
-
-Error:
-P Assertion failed:
-Expression: assert(tmp_14.bl,)
-Comment: (84, 4): Assert failed
-Safety Error Trace
-Trace-Log 33:
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
 <CreateLog> Created Machine Spinlock-0
@@ -764,7 +664,32 @@ P Assertion failed:
 Expression: assert(tmp_13.bl,)
 Comment: (75, 4): Assert failed
 Safety Error Trace
-Trace-Log 34:
+Trace-Log 30:
+<CreateLog> Created Machine TestDriver-0
+<StateLog> Machine TestDriver-0 entering State Init
+<CreateLog> Created Machine Spinlock-0
+<StateLog> Machine Spinlock-0 entering State Init
+<CreateLog> Created Machine Spinlock-1
+<StateLog> Machine Spinlock-1 entering State Init
+<MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-0 raised Event ____Halt
+<StateLog> Machine Spinlock-0 exiting State Init
+<StateLog> Machine Spinlock-0 entering State HaltState
+<MonitorLog> Enqueued Event < ____FIN, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<FunctionLog> Machine Spinlock-0 executing Function ignore
+<RaiseLog> Machine Spinlock-1 raised Event ____Error3
+<StateLog> Machine Spinlock-1 exiting State Init
+<StateLog> Machine Spinlock-1 entering State Abort3
+
+Error:
+P Assertion failed:
+Expression: assert(tmp_14.bl,)
+Comment: (84, 4): Assert failed
+Safety Error Trace
+Trace-Log 31:
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
 <CreateLog> Created Machine Spinlock-0
@@ -778,6 +703,82 @@ Trace-Log 34:
 <RaiseLog> Machine Spinlock-1 raised Event ____Halt
 <StateLog> Machine Spinlock-1 exiting State Init
 <StateLog> Machine Spinlock-1 entering State HaltState
+<MonitorLog> Enqueued Event < ____FIN, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-0 raised Event ____Error3
+<StateLog> Machine Spinlock-0 exiting State Init
+<StateLog> Machine Spinlock-0 entering State Abort3
+
+Error:
+P Assertion failed:
+Expression: assert(tmp_14.bl,)
+Comment: (84, 4): Assert failed
+Safety Error Trace
+Trace-Log 32:
+<CreateLog> Created Machine TestDriver-0
+<StateLog> Machine TestDriver-0 entering State Init
+<CreateLog> Created Machine Spinlock-0
+<StateLog> Machine Spinlock-0 entering State Init
+<CreateLog> Created Machine Spinlock-1
+<StateLog> Machine Spinlock-1 entering State Init
+<MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____REL, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-1 raised Event ____Halt
+<StateLog> Machine Spinlock-1 exiting State Init
+<StateLog> Machine Spinlock-1 entering State HaltState
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<FunctionLog> Machine Spinlock-1 executing Function ignore
+<MonitorLog> Enqueued Event < ____FIN, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-0 raised Event ____Error3
+<StateLog> Machine Spinlock-0 exiting State Init
+<StateLog> Machine Spinlock-0 entering State Abort3
+
+Error:
+P Assertion failed:
+Expression: assert(tmp_14.bl,)
+Comment: (84, 4): Assert failed
+Safety Error Trace
+Trace-Log 33:
+<CreateLog> Created Machine TestDriver-0
+<StateLog> Machine TestDriver-0 entering State Init
+<CreateLog> Created Machine Spinlock-0
+<StateLog> Machine Spinlock-0 entering State Init
+<CreateLog> Created Machine Spinlock-1
+<StateLog> Machine Spinlock-1 entering State Init
+<MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-0 raised Event ____Halt
+<StateLog> Machine Spinlock-0 exiting State Init
+<StateLog> Machine Spinlock-0 entering State HaltState
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<FunctionLog> Machine Spinlock-0 executing Function ignore
+<MonitorLog> Enqueued Event < ____FIN, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<FunctionLog> Machine Spinlock-0 executing Function ignore
+<RaiseLog> Machine Spinlock-1 raised Event ____Error3
+<StateLog> Machine Spinlock-1 exiting State Init
+<StateLog> Machine Spinlock-1 entering State Abort3
+
+Error:
+P Assertion failed:
+Expression: assert(tmp_14.bl,)
+Comment: (84, 4): Assert failed
+Safety Error Trace
+Trace-Log 34:
+<CreateLog> Created Machine TestDriver-0
+<StateLog> Machine TestDriver-0 entering State Init
+<CreateLog> Created Machine Spinlock-0
+<StateLog> Machine Spinlock-0 entering State Init
+<CreateLog> Created Machine Spinlock-1
+<StateLog> Machine Spinlock-1 entering State Init
+<MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____REL, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<RaiseLog> Machine Spinlock-1 raised Event ____Halt
+<StateLog> Machine Spinlock-1 exiting State Init
+<StateLog> Machine Spinlock-1 entering State HaltState
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<FunctionLog> Machine Spinlock-1 executing Function ignore
 <MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
 <FunctionLog> Machine Spinlock-1 executing Function ignore
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
@@ -799,11 +800,12 @@ Trace-Log 35:
 <StateLog> Machine Spinlock-1 entering State Init
 <MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors in Machine TestDriver-0
 <RaiseLog> Machine Spinlock-0 raised Event ____Halt
 <StateLog> Machine Spinlock-0 exiting State Init
 <StateLog> Machine Spinlock-0 entering State HaltState
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<FunctionLog> Machine Spinlock-0 executing Function ignore
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
 <FunctionLog> Machine Spinlock-0 executing Function ignore
 <MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
@@ -825,15 +827,16 @@ Trace-Log 36:
 <CreateLog> Created Machine Spinlock-1
 <StateLog> Machine Spinlock-1 entering State Init
 <MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____REL, 1 > to 2 Spinlock monitors in Machine TestDriver-0
 <RaiseLog> Machine Spinlock-1 raised Event ____Halt
 <StateLog> Machine Spinlock-1 exiting State Init
 <StateLog> Machine Spinlock-1 entering State HaltState
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<FunctionLog> Machine Spinlock-1 executing Function ignore
 <MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
 <FunctionLog> Machine Spinlock-1 executing Function ignore
-<MonitorLog> Enqueued Event < ____FIN, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____FIN, 1 > to 2 Spinlock monitors in Machine TestDriver-0
 <RaiseLog> Machine Spinlock-0 raised Event ____Error3
 <StateLog> Machine Spinlock-0 exiting State Init
 <StateLog> Machine Spinlock-0 entering State Abort3
@@ -852,11 +855,12 @@ Trace-Log 37:
 <StateLog> Machine Spinlock-1 entering State Init
 <MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors in Machine TestDriver-0
 <RaiseLog> Machine Spinlock-0 raised Event ____Halt
 <StateLog> Machine Spinlock-0 exiting State Init
 <StateLog> Machine Spinlock-0 entering State HaltState
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<FunctionLog> Machine Spinlock-0 executing Function ignore
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
 <FunctionLog> Machine Spinlock-0 executing Function ignore
 <MonitorLog> Enqueued Event < ____FIN, 0 > to 2 Spinlock monitors in Machine TestDriver-0
@@ -878,15 +882,16 @@ Trace-Log 38:
 <CreateLog> Created Machine Spinlock-1
 <StateLog> Machine Spinlock-1 entering State Init
 <MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____REL, 1 > to 2 Spinlock monitors in Machine TestDriver-0
 <RaiseLog> Machine Spinlock-1 raised Event ____Halt
 <StateLog> Machine Spinlock-1 exiting State Init
 <StateLog> Machine Spinlock-1 entering State HaltState
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
+<FunctionLog> Machine Spinlock-1 executing Function ignore
 <MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
 <FunctionLog> Machine Spinlock-1 executing Function ignore
-<MonitorLog> Enqueued Event < ____FIN, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<MonitorLog> Enqueued Event < ____FIN, 0 > to 2 Spinlock monitors in Machine TestDriver-0
 <RaiseLog> Machine Spinlock-0 raised Event ____Error3
 <StateLog> Machine Spinlock-0 exiting State Init
 <StateLog> Machine Spinlock-0 entering State Abort3
@@ -905,11 +910,12 @@ Trace-Log 39:
 <StateLog> Machine Spinlock-1 entering State Init
 <MonitorLog> Enqueued Event < ____START > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
 <MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors in Machine TestDriver-0
 <RaiseLog> Machine Spinlock-0 raised Event ____Halt
 <StateLog> Machine Spinlock-0 exiting State Init
 <StateLog> Machine Spinlock-0 entering State HaltState
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors in Machine TestDriver-0
+<FunctionLog> Machine Spinlock-0 executing Function ignore
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors in Machine TestDriver-0
 <FunctionLog> Machine Spinlock-0 executing Function ignore
 <MonitorLog> Enqueued Event < ____FIN, 1 > to 2 Spinlock monitors in Machine TestDriver-0

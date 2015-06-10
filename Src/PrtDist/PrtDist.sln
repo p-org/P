@@ -30,6 +30,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PrtRPCSerializationTestIDL"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PrtWinUser", "..\Prt\WinUser\PrtWinUser.vcxproj", "{F8C72C0E-450C-4AE1-9885-31B8565C1D63}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CommonFiles", "CommonFiles", "{D67D9C52-C337-49F7-A8E2-07B9D14BC148}"
+	ProjectSection(SolutionItems) = preProject
+		PrtDist\CommonFiles\MainFunction.c = PrtDist\CommonFiles\MainFunction.c
+		PrtDist\CommonFiles\PrtDistGlobalInfo.h = PrtDist\CommonFiles\PrtDistGlobalInfo.h
+		PrtDist\CommonFiles\PrtDistLogging.c = PrtDist\CommonFiles\PrtDistLogging.c
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -200,5 +207,6 @@ Global
 		{F8A5BB72-9666-45CC-81CC-97A978B81DA2} = {01958221-19D6-4968-9108-5E69643A230F}
 		{6EA10AF0-E923-44F6-9588-2F8BBA331CE8} = {01958221-19D6-4968-9108-5E69643A230F}
 		{F8C72C0E-450C-4AE1-9885-31B8565C1D63} = {FB0BADD8-FA3F-4904-9848-D80F08EA134C}
+		{D67D9C52-C337-49F7-A8E2-07B9D14BC148} = {B8C8FCF2-C6E7-455E-A39A-091324466A6C}
 	EndGlobalSection
 EndGlobal

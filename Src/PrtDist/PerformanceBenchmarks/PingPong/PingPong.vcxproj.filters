@@ -15,13 +15,22 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="PrtDistIDL.idl">
+    <ClCompile Include="program.c">
       <Filter>Source Files</Filter>
-    </Midl>
+    </ClCompile>
+    <ClCompile Include="stubs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PrtDist\CommonFiles\PrtDistLogging.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\PrtDist\CommonFiles\MainFunction.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="PrtDistIDL.acf">
-      <Filter>Source Files</Filter>
-    </None>
+    <ClInclude Include="program.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

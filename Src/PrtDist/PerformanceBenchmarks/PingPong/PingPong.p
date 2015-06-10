@@ -8,6 +8,21 @@ event Ping assert 1: machine;
 event Pong assert 2: machine;
 event Success;
 
+//unreliable send 
+static model fun _SEND(target:machine, e:event, p:any) {
+	if($)
+		send target, e, p;
+}
+
+//perform a reliable send
+static model fun _SENDRELIABLE(target:machine, e:event, p:any) {
+	send target, e, p;
+}
+
+static model fun _CREATENODE(model_h: machine) : machine {
+	model_h = new NodeManager();
+	return model_h;
+}
 machine PING 
 {
 
@@ -40,23 +55,6 @@ machine PING
      }
     state Done {}
 
-	//unreliable send 
-	model fun _SEND(target:machine, e:event, p:any) {
-		if($)
-			send target, e, p;
-	}
-
-	//perform a reliable send
-    model fun _SENDRELIABLE(target:machine, e:event, p:any) {
-        send target, e, p;
-    }
-	
-	var model_h: machine;
-	model fun _CREATENODE() : machine {
-        model_h = new NodeManager();
-		return model_h;
-	}
-	
 	var createmachine_return:machine;
 	var createmachine_param:(nodeManager:machine, typeofmachine:int, param:any);
 	state _CREATEMACHINE {
@@ -100,23 +98,6 @@ machine PONG
 		entry {
 			raise(halt);
 		}
-	}
-
-	//unreliable send 
-	model fun _SEND(target:machine, e:event, p:any) {
-		if($)
-			send target, e, p;
-	}
-
-	//perform a reliable send
-    model fun _SENDRELIABLE(target:machine, e:event, p:any) {
-        send target, e, p;
-    }
-	
-	var model_h: machine;
-	model fun _CREATENODE() : machine {
-        model_h = new NodeManager();
-		return model_h;
 	}
 	
 	var createmachine_return:machine;
@@ -166,7 +147,7 @@ main machine GodMachine
 	    entry {
 			new M();
 			
-			temp_NM = _CREATENODE();
+			temp_NM = _CREATENODE(null);
 			createmachine_param = (nodeManager = temp_NM, typeofmachine = 1, param = null);
 			push _CREATEMACHINE;
 			
@@ -174,27 +155,10 @@ main machine GodMachine
 			createmachine_param = (nodeManager = temp_NM, typeofmachine = 1, param = null);
 			push _CREATEMACHINE;
 			PongMachine_2 = createmachine_return;
-			temp_NM = _CREATENODE();
+			temp_NM = _CREATENODE(null);
 			createmachine_param = (nodeManager = temp_NM, typeofmachine = 2, param = (PongMachine_1, PongMachine_2));
 			push _CREATEMACHINE;
 	    }
-	}
-
-	//unreliable send 
-	model fun _SEND(target:machine, e:event, p:any) {
-		if($)
-			send target, e, p;
-	}
-
-	//perform a reliable send
-    model fun _SENDRELIABLE(target:machine, e:event, p:any) {
-        send target, e, p;
-    }
-	
-	var model_h: machine;
-	model fun _CREATENODE() : machine {
-        model_h = new NodeManager();
-		return model_h;
 	}
 	
 	var createmachine_return:machine;
@@ -257,22 +221,6 @@ machine NodeManager
 		}
 	}
 
-	//unreliable send 
-	model fun _SEND(target:machine, e:event, p:any) {
-		if($)
-			send target, e, p;
-	}
-
-	//perform a reliable send
-    model fun _SENDRELIABLE(target:machine, e:event, p:any) {
-        send target, e, p;
-    }
-	
-	var model_h: machine;
-	model fun _CREATENODE() : machine {
-        model_h = new NodeManager();
-		return model_h;
-	}
 	
 	var createmachine_return:machine;
 	var createmachine_param:(nodeManager:machine, typeofmachine:int, param:any);

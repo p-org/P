@@ -22,10 +22,7 @@
       P_FUN_GodMachine_ANON1 = 2,
       P_FUN_GodMachine_ANON2 = 3,
       P_FUN_GodMachine_PopState = 4,
-      P_FUN_GodMachine__CREATENODE = 5,
-      P_FUN_GodMachine__SEND = 6,
-      P_FUN_GodMachine__SENDRELIABLE = 7,
-      _P_FUNS_GodMachine_COUNT = 8
+      _P_FUNS_GodMachine_COUNT = 5
     };
 
     enum P_FUNS_NodeManager
@@ -36,10 +33,7 @@
       P_FUN_NodeManager_ANON2 = 3,
       P_FUN_NodeManager_PopState = 4,
       P_FUN_NodeManager__CREATELOCALMACHINE = 5,
-      P_FUN_NodeManager__CREATENODE = 6,
-      P_FUN_NodeManager__SEND = 7,
-      P_FUN_NodeManager__SENDRELIABLE = 8,
-      _P_FUNS_NodeManager_COUNT = 9
+      _P_FUNS_NodeManager_COUNT = 6
     };
 
     enum P_FUNS_PING
@@ -50,10 +44,7 @@
       P_FUN_PING_ANON2 = 3,
       P_FUN_PING_ANON3 = 4,
       P_FUN_PING_PopState = 5,
-      P_FUN_PING__CREATENODE = 6,
-      P_FUN_PING__SEND = 7,
-      P_FUN_PING__SENDRELIABLE = 8,
-      _P_FUNS_PING_COUNT = 9
+      _P_FUNS_PING_COUNT = 6
     };
 
     enum P_FUNS_PONG
@@ -64,10 +55,7 @@
       P_FUN_PONG_ANON2 = 3,
       P_FUN_PONG_ANON3 = 4,
       P_FUN_PONG_PopState = 5,
-      P_FUN_PONG__CREATENODE = 6,
-      P_FUN_PONG__SEND = 7,
-      P_FUN_PONG__SENDRELIABLE = 8,
-      _P_FUNS_PONG_COUNT = 9
+      _P_FUNS_PONG_COUNT = 6
     };
 
     enum P_MACHINES
@@ -131,9 +119,8 @@
       P_VAR_GodMachine_PongMachine_2 = 1,
       P_VAR_GodMachine_createmachine_param = 2,
       P_VAR_GodMachine_createmachine_return = 3,
-      P_VAR_GodMachine_model_h = 4,
-      P_VAR_GodMachine_temp_NM = 5,
-      _P_VARS_GodMachine_COUNT = 6
+      P_VAR_GodMachine_temp_NM = 4,
+      _P_VARS_GodMachine_COUNT = 5
     };
 
     enum P_VARS_M
@@ -145,51 +132,30 @@
     {
       P_VAR_NodeManager_createmachine_param = 0,
       P_VAR_NodeManager_createmachine_return = 1,
-      P_VAR_NodeManager_model_h = 2,
-      P_VAR_NodeManager_newMachine = 3,
-      _P_VARS_NodeManager_COUNT = 4
+      P_VAR_NodeManager_newMachine = 2,
+      _P_VARS_NodeManager_COUNT = 3
     };
 
     enum P_VARS_PING
     {
       P_VAR_PING_createmachine_param = 0,
       P_VAR_PING_createmachine_return = 1,
-      P_VAR_PING_model_h = 2,
-      P_VAR_PING_pongmachine = 3,
-      _P_VARS_PING_COUNT = 4
+      P_VAR_PING_pongmachine = 2,
+      _P_VARS_PING_COUNT = 3
     };
 
     enum P_VARS_PONG
     {
       P_VAR_PONG_createmachine_param = 0,
       P_VAR_PONG_createmachine_return = 1,
-      P_VAR_PONG_model_h = 2,
-      _P_VARS_PONG_COUNT = 3
+      _P_VARS_PONG_COUNT = 2
     };
 
-    PRT_VALUE *P_FUN_GodMachine__CREATENODE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
+    PRT_VALUE *P_FUN__CREATENODE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
 
-    PRT_VALUE *P_FUN_GodMachine__SENDRELIABLE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
+    PRT_VALUE *P_FUN__SENDRELIABLE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
 
-    PRT_VALUE *P_FUN_GodMachine__SEND_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
-
-    PRT_VALUE *P_FUN_NodeManager__CREATENODE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
-
-    PRT_VALUE *P_FUN_NodeManager__SENDRELIABLE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
-
-    PRT_VALUE *P_FUN_NodeManager__SEND_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
-
-    PRT_VALUE *P_FUN_PING__CREATENODE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
-
-    PRT_VALUE *P_FUN_PING__SENDRELIABLE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
-
-    PRT_VALUE *P_FUN_PING__SEND_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
-
-    PRT_VALUE *P_FUN_PONG__CREATENODE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
-
-    PRT_VALUE *P_FUN_PONG__SENDRELIABLE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
-
-    PRT_VALUE *P_FUN_PONG__SEND_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
+    PRT_VALUE *P_FUN__SEND_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
 
     void P_DTOR_GodMachine_IMPL(PRT_MACHINEINST *context);
 

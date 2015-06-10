@@ -62,11 +62,11 @@
   };
   PRT_STRING P_GEND_TYPE_NMDTUP_NARR_6[] = 
   {
-    "p"
+    "model_h"
   };
   PRT_TYPE *P_GEND_TYPE_NMDTUP_TARR_6[] = 
   {
-    &P_GEND_TYPE_0
+    &P_GEND_TYPE_4
   };
   PRT_NMDTUPTYPE P_GEND_TYPE_NMDTUP_6 = 
   {
@@ -81,7 +81,7 @@
   };
   PRT_STRING P_GEND_TYPE_NMDTUP_NARR_7[] = 
   {
-    "param"
+    "p"
   };
   PRT_TYPE *P_GEND_TYPE_NMDTUP_TARR_7[] = 
   {
@@ -104,7 +104,7 @@
   };
   PRT_TYPE *P_GEND_TYPE_NMDTUP_TARR_8[] = 
   {
-    &P_GEND_TYPE_3
+    &P_GEND_TYPE_0
   };
   PRT_NMDTUPTYPE P_GEND_TYPE_NMDTUP_8 = 
   {
@@ -117,49 +117,47 @@
     PRT_KIND_NMDTUP,
     (PRT_MAPTYPE *)&P_GEND_TYPE_NMDTUP_8
   };
-  PRT_TYPE *P_GEND_TYPE_TUP_ARR_9[] = 
+  PRT_STRING P_GEND_TYPE_NMDTUP_NARR_9[] = 
   {
-    &P_GEND_TYPE_4
+    "param"
   };
-  PRT_TUPTYPE P_GEND_TYPE_TUP_9 = 
+  PRT_TYPE *P_GEND_TYPE_NMDTUP_TARR_9[] = 
+  {
+    &P_GEND_TYPE_3
+  };
+  PRT_NMDTUPTYPE P_GEND_TYPE_NMDTUP_9 = 
   {
     1,
-    P_GEND_TYPE_TUP_ARR_9
+    P_GEND_TYPE_NMDTUP_NARR_9,
+    P_GEND_TYPE_NMDTUP_TARR_9
   };
   PRT_TYPE P_GEND_TYPE_9 = 
   {
-    PRT_KIND_TUPLE,
-    (PRT_MAPTYPE *)&P_GEND_TYPE_TUP_9
+    PRT_KIND_NMDTUP,
+    (PRT_MAPTYPE *)&P_GEND_TYPE_NMDTUP_9
   };
-  PRT_STRING P_GEND_TYPE_NMDTUP_NARR_10[] = 
+  PRT_TYPE *P_GEND_TYPE_TUP_ARR_10[] = 
+  {
+    &P_GEND_TYPE_4
+  };
+  PRT_TUPTYPE P_GEND_TYPE_TUP_10 = 
+  {
+    1,
+    P_GEND_TYPE_TUP_ARR_10
+  };
+  PRT_TYPE P_GEND_TYPE_10 = 
+  {
+    PRT_KIND_TUPLE,
+    (PRT_MAPTYPE *)&P_GEND_TYPE_TUP_10
+  };
+  PRT_STRING P_GEND_TYPE_NMDTUP_NARR_11[] = 
   {
     "e",
     "p"
   };
-  PRT_TYPE *P_GEND_TYPE_NMDTUP_TARR_10[] = 
-  {
-    &P_GEND_TYPE_1,
-    &P_GEND_TYPE_0
-  };
-  PRT_NMDTUPTYPE P_GEND_TYPE_NMDTUP_10 = 
-  {
-    2,
-    P_GEND_TYPE_NMDTUP_NARR_10,
-    P_GEND_TYPE_NMDTUP_TARR_10
-  };
-  PRT_TYPE P_GEND_TYPE_10 = 
-  {
-    PRT_KIND_NMDTUP,
-    (PRT_MAPTYPE *)&P_GEND_TYPE_NMDTUP_10
-  };
-  PRT_STRING P_GEND_TYPE_NMDTUP_NARR_11[] = 
-  {
-    "typeofmachine",
-    "constructorparam"
-  };
   PRT_TYPE *P_GEND_TYPE_NMDTUP_TARR_11[] = 
   {
-    &P_GEND_TYPE_2,
+    &P_GEND_TYPE_1,
     &P_GEND_TYPE_0
   };
   PRT_NMDTUPTYPE P_GEND_TYPE_NMDTUP_11 = 
@@ -176,7 +174,7 @@
   PRT_STRING P_GEND_TYPE_NMDTUP_NARR_12[] = 
   {
     "typeofmachine",
-    "param"
+    "constructorparam"
   };
   PRT_TYPE *P_GEND_TYPE_NMDTUP_TARR_12[] = 
   {
@@ -202,7 +200,7 @@
   PRT_TYPE *P_GEND_TYPE_NMDTUP_TARR_13[] = 
   {
     &P_GEND_TYPE_2,
-    &P_GEND_TYPE_3
+    &P_GEND_TYPE_0
   };
   PRT_NMDTUPTYPE P_GEND_TYPE_NMDTUP_13 = 
   {
@@ -215,49 +213,47 @@
     PRT_KIND_NMDTUP,
     (PRT_MAPTYPE *)&P_GEND_TYPE_NMDTUP_13
   };
-  PRT_TYPE *P_GEND_TYPE_TUP_ARR_14[] = 
+  PRT_STRING P_GEND_TYPE_NMDTUP_NARR_14[] = 
+  {
+    "typeofmachine",
+    "param"
+  };
+  PRT_TYPE *P_GEND_TYPE_NMDTUP_TARR_14[] = 
+  {
+    &P_GEND_TYPE_2,
+    &P_GEND_TYPE_3
+  };
+  PRT_NMDTUPTYPE P_GEND_TYPE_NMDTUP_14 = 
+  {
+    2,
+    P_GEND_TYPE_NMDTUP_NARR_14,
+    P_GEND_TYPE_NMDTUP_TARR_14
+  };
+  PRT_TYPE P_GEND_TYPE_14 = 
+  {
+    PRT_KIND_NMDTUP,
+    (PRT_MAPTYPE *)&P_GEND_TYPE_NMDTUP_14
+  };
+  PRT_TYPE *P_GEND_TYPE_TUP_ARR_15[] = 
   {
     &P_GEND_TYPE_4,
     &P_GEND_TYPE_4
   };
-  PRT_TUPTYPE P_GEND_TYPE_TUP_14 = 
+  PRT_TUPTYPE P_GEND_TYPE_TUP_15 = 
   {
     2,
-    P_GEND_TYPE_TUP_ARR_14
+    P_GEND_TYPE_TUP_ARR_15
   };
-  PRT_TYPE P_GEND_TYPE_14 = 
+  PRT_TYPE P_GEND_TYPE_15 = 
   {
     PRT_KIND_TUPLE,
-    (PRT_MAPTYPE *)&P_GEND_TYPE_TUP_14
+    (PRT_MAPTYPE *)&P_GEND_TYPE_TUP_15
   };
-  PRT_STRING P_GEND_TYPE_NMDTUP_NARR_15[] = 
+  PRT_STRING P_GEND_TYPE_NMDTUP_NARR_16[] = 
   {
     "creator",
     "typeofmachine",
     "constructorparam"
-  };
-  PRT_TYPE *P_GEND_TYPE_NMDTUP_TARR_15[] = 
-  {
-    &P_GEND_TYPE_4,
-    &P_GEND_TYPE_2,
-    &P_GEND_TYPE_0
-  };
-  PRT_NMDTUPTYPE P_GEND_TYPE_NMDTUP_15 = 
-  {
-    3,
-    P_GEND_TYPE_NMDTUP_NARR_15,
-    P_GEND_TYPE_NMDTUP_TARR_15
-  };
-  PRT_TYPE P_GEND_TYPE_15 = 
-  {
-    PRT_KIND_NMDTUP,
-    (PRT_MAPTYPE *)&P_GEND_TYPE_NMDTUP_15
-  };
-  PRT_STRING P_GEND_TYPE_NMDTUP_NARR_16[] = 
-  {
-    "nodeManager",
-    "typeofmachine",
-    "param"
   };
   PRT_TYPE *P_GEND_TYPE_NMDTUP_TARR_16[] = 
   {
@@ -286,7 +282,7 @@
   {
     &P_GEND_TYPE_4,
     &P_GEND_TYPE_2,
-    &P_GEND_TYPE_3
+    &P_GEND_TYPE_0
   };
   PRT_NMDTUPTYPE P_GEND_TYPE_NMDTUP_17 = 
   {
@@ -301,15 +297,19 @@
   };
   PRT_STRING P_GEND_TYPE_NMDTUP_NARR_18[] = 
   {
+    "nodeManager",
+    "typeofmachine",
     "param"
   };
   PRT_TYPE *P_GEND_TYPE_NMDTUP_TARR_18[] = 
   {
-    &P_GEND_TYPE_14
+    &P_GEND_TYPE_4,
+    &P_GEND_TYPE_2,
+    &P_GEND_TYPE_3
   };
   PRT_NMDTUPTYPE P_GEND_TYPE_NMDTUP_18 = 
   {
-    1,
+    3,
     P_GEND_TYPE_NMDTUP_NARR_18,
     P_GEND_TYPE_NMDTUP_TARR_18
   };
@@ -320,19 +320,15 @@
   };
   PRT_STRING P_GEND_TYPE_NMDTUP_NARR_19[] = 
   {
-    "target",
-    "e",
-    "p"
+    "param"
   };
   PRT_TYPE *P_GEND_TYPE_NMDTUP_TARR_19[] = 
   {
-    &P_GEND_TYPE_4,
-    &P_GEND_TYPE_1,
-    &P_GEND_TYPE_0
+    &P_GEND_TYPE_15
   };
   PRT_NMDTUPTYPE P_GEND_TYPE_NMDTUP_19 = 
   {
-    3,
+    1,
     P_GEND_TYPE_NMDTUP_NARR_19,
     P_GEND_TYPE_NMDTUP_TARR_19
   };
@@ -343,17 +339,19 @@
   };
   PRT_STRING P_GEND_TYPE_NMDTUP_NARR_20[] = 
   {
-    "typeofmachine",
-    "param"
+    "target",
+    "e",
+    "p"
   };
   PRT_TYPE *P_GEND_TYPE_NMDTUP_TARR_20[] = 
   {
-    &P_GEND_TYPE_2,
-    &P_GEND_TYPE_14
+    &P_GEND_TYPE_4,
+    &P_GEND_TYPE_1,
+    &P_GEND_TYPE_0
   };
   PRT_NMDTUPTYPE P_GEND_TYPE_NMDTUP_20 = 
   {
-    2,
+    3,
     P_GEND_TYPE_NMDTUP_NARR_20,
     P_GEND_TYPE_NMDTUP_TARR_20
   };
@@ -364,19 +362,17 @@
   };
   PRT_STRING P_GEND_TYPE_NMDTUP_NARR_21[] = 
   {
-    "nodeManager",
     "typeofmachine",
     "param"
   };
   PRT_TYPE *P_GEND_TYPE_NMDTUP_TARR_21[] = 
   {
-    &P_GEND_TYPE_4,
     &P_GEND_TYPE_2,
-    &P_GEND_TYPE_14
+    &P_GEND_TYPE_15
   };
   PRT_NMDTUPTYPE P_GEND_TYPE_NMDTUP_21 = 
   {
-    3,
+    2,
     P_GEND_TYPE_NMDTUP_NARR_21,
     P_GEND_TYPE_NMDTUP_TARR_21
   };
@@ -384,6 +380,29 @@
   {
     PRT_KIND_NMDTUP,
     (PRT_MAPTYPE *)&P_GEND_TYPE_NMDTUP_21
+  };
+  PRT_STRING P_GEND_TYPE_NMDTUP_NARR_22[] = 
+  {
+    "nodeManager",
+    "typeofmachine",
+    "param"
+  };
+  PRT_TYPE *P_GEND_TYPE_NMDTUP_TARR_22[] = 
+  {
+    &P_GEND_TYPE_4,
+    &P_GEND_TYPE_2,
+    &P_GEND_TYPE_15
+  };
+  PRT_NMDTUPTYPE P_GEND_TYPE_NMDTUP_22 = 
+  {
+    3,
+    P_GEND_TYPE_NMDTUP_NARR_22,
+    P_GEND_TYPE_NMDTUP_TARR_22
+  };
+  PRT_TYPE P_GEND_TYPE_22 = 
+  {
+    PRT_KIND_NMDTUP,
+    (PRT_MAPTYPE *)&P_GEND_TYPE_NMDTUP_22
   };
   PRT_VALUE P_GEND_VALUE_0 = 
   {
@@ -478,7 +497,7 @@
         P_EVENT_Req_CreateMachine,
         "Req_CreateMachine",
         4294967295U,
-        &P_GEND_TYPE_15,
+        &P_GEND_TYPE_16,
         0U,
         NULL
     },
@@ -526,7 +545,7 @@
         P_VAR_GodMachine_createmachine_param,
         P_MACHINE_GodMachine,
         "createmachine_param",
-        &P_GEND_TYPE_16,
+        &P_GEND_TYPE_17,
         0U,
         NULL
     },
@@ -535,15 +554,6 @@
         P_VAR_GodMachine_createmachine_return,
         P_MACHINE_GodMachine,
         "createmachine_return",
-        &P_GEND_TYPE_4,
-        0U,
-        NULL
-    },
-    
-    {
-        P_VAR_GodMachine_model_h,
-        P_MACHINE_GodMachine,
-        "model_h",
         &P_GEND_TYPE_4,
         0U,
         NULL
@@ -565,7 +575,7 @@
         P_VAR_NodeManager_createmachine_param,
         P_MACHINE_NodeManager,
         "createmachine_param",
-        &P_GEND_TYPE_16,
+        &P_GEND_TYPE_17,
         0U,
         NULL
     },
@@ -574,15 +584,6 @@
         P_VAR_NodeManager_createmachine_return,
         P_MACHINE_NodeManager,
         "createmachine_return",
-        &P_GEND_TYPE_4,
-        0U,
-        NULL
-    },
-    
-    {
-        P_VAR_NodeManager_model_h,
-        P_MACHINE_NodeManager,
-        "model_h",
         &P_GEND_TYPE_4,
         0U,
         NULL
@@ -604,7 +605,7 @@
         P_VAR_PING_createmachine_param,
         P_MACHINE_PING,
         "createmachine_param",
-        &P_GEND_TYPE_16,
+        &P_GEND_TYPE_17,
         0U,
         NULL
     },
@@ -619,19 +620,10 @@
     },
     
     {
-        P_VAR_PING_model_h,
-        P_MACHINE_PING,
-        "model_h",
-        &P_GEND_TYPE_4,
-        0U,
-        NULL
-    },
-    
-    {
         P_VAR_PING_pongmachine,
         P_MACHINE_PING,
         "pongmachine",
-        &P_GEND_TYPE_14,
+        &P_GEND_TYPE_15,
         0U,
         NULL
     }
@@ -643,7 +635,7 @@
         P_VAR_PONG_createmachine_param,
         P_MACHINE_PONG,
         "createmachine_param",
-        &P_GEND_TYPE_16,
+        &P_GEND_TYPE_17,
         0U,
         NULL
     },
@@ -652,15 +644,6 @@
         P_VAR_PONG_createmachine_return,
         P_MACHINE_PONG,
         "createmachine_return",
-        &P_GEND_TYPE_4,
-        0U,
-        NULL
-    },
-    
-    {
-        P_VAR_PONG_model_h,
-        P_MACHINE_PONG,
-        "model_h",
         &P_GEND_TYPE_4,
         0U,
         NULL
@@ -856,7 +839,7 @@
     PRT_VALUE *p_tmp_expr_5;
     PRT_VALUE *p_tmp_expr_6;
     PRT_VALUE *p_tmp_expr_7;
-    p_tmp_funstmt_ret = P_EXPR_7(P_FUN_GodMachine__SENDRELIABLE_IMPL(context, 7U, P_TUPLE_2(&P_GEND_TYPE_19, p_tmp_expr_3, p_tmp_expr_0, p_tmp_expr_6)), PRT_FALSE, P_TUPLE_2(&P_GEND_TYPE_15, p_tmp_expr_2, p_tmp_expr_5, p_tmp_expr_4), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 1), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 2), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 0), PRT_FALSE, p_tmp_mach_priv->id, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_GodMachine_createmachine_param], PRT_FALSE, &P_GEND_VALUE_2, PRT_FALSE);
+    p_tmp_funstmt_ret = P_EXPR_7(P_FUN__SENDRELIABLE_IMPL(context, 3U, P_TUPLE_2(&P_GEND_TYPE_20, p_tmp_expr_3, p_tmp_expr_0, p_tmp_expr_6)), PRT_FALSE, P_TUPLE_2(&P_GEND_TYPE_16, p_tmp_expr_2, p_tmp_expr_5, p_tmp_expr_4), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 1), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 2), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 0), PRT_FALSE, p_tmp_mach_priv->id, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_GodMachine_createmachine_param], PRT_FALSE, &P_GEND_VALUE_2, PRT_FALSE);
     if (p_tmp_funstmt_ret == NULL)
     {
     }
@@ -913,21 +896,21 @@
     {
       goto L3;
     }
-    P_STMT_0(PrtSetGlobalVarEx(p_tmp_mach_priv, P_VAR_GodMachine_temp_NM, p_tmp_stmt_0, !PRT_TRUE), P_EXPR_0(P_FUN_GodMachine__CREATENODE_IMPL(context, 5U, NULL), PRT_FALSE), PRT_FALSE);
-    P_STMT_0(PrtSetGlobalVarEx(p_tmp_mach_priv, P_VAR_GodMachine_createmachine_param, p_tmp_stmt_0, !PRT_TRUE), P_EXPR_3(P_TUPLE_2(&P_GEND_TYPE_17, p_tmp_expr_0, p_tmp_expr_1, p_tmp_expr_2), PRT_FALSE, &P_GEND_VALUE_9, PRT_FALSE, &P_GEND_VALUE_5, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_GodMachine_temp_NM], PRT_FALSE), PRT_FALSE);
+    P_STMT_0(PrtSetGlobalVarEx(p_tmp_mach_priv, P_VAR_GodMachine_temp_NM, p_tmp_stmt_0, !PRT_TRUE), P_EXPR_1(P_FUN__CREATENODE_IMPL(context, 1U, P_TUPLE_0(&P_GEND_TYPE_6, p_tmp_expr_0)), PRT_FALSE, &P_GEND_VALUE_9, PRT_FALSE), PRT_FALSE);
+    P_STMT_0(PrtSetGlobalVarEx(p_tmp_mach_priv, P_VAR_GodMachine_createmachine_param, p_tmp_stmt_0, !PRT_TRUE), P_EXPR_3(P_TUPLE_2(&P_GEND_TYPE_18, p_tmp_expr_0, p_tmp_expr_1, p_tmp_expr_2), PRT_FALSE, &P_GEND_VALUE_9, PRT_FALSE, &P_GEND_VALUE_5, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_GodMachine_temp_NM], PRT_FALSE), PRT_FALSE);
     p_tmp_mach_priv->returnTo = 1U;
     PrtPush(p_tmp_mach_priv, P_STATE_GodMachine__CREATEMACHINE);
     goto P_EXIT_FUN;
     L1: ;
     P_STMT_0(PrtSetGlobalVarEx(p_tmp_mach_priv, P_VAR_GodMachine_PongMachine_1, p_tmp_stmt_0, !PRT_FALSE), P_EXPR_0(p_tmp_mach_priv->varValues[P_VAR_GodMachine_createmachine_return], PRT_FALSE), PRT_FALSE);
-    P_STMT_0(PrtSetGlobalVarEx(p_tmp_mach_priv, P_VAR_GodMachine_createmachine_param, p_tmp_stmt_0, !PRT_TRUE), P_EXPR_3(P_TUPLE_2(&P_GEND_TYPE_17, p_tmp_expr_0, p_tmp_expr_1, p_tmp_expr_2), PRT_FALSE, &P_GEND_VALUE_9, PRT_FALSE, &P_GEND_VALUE_5, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_GodMachine_temp_NM], PRT_FALSE), PRT_FALSE);
+    P_STMT_0(PrtSetGlobalVarEx(p_tmp_mach_priv, P_VAR_GodMachine_createmachine_param, p_tmp_stmt_0, !PRT_TRUE), P_EXPR_3(P_TUPLE_2(&P_GEND_TYPE_18, p_tmp_expr_0, p_tmp_expr_1, p_tmp_expr_2), PRT_FALSE, &P_GEND_VALUE_9, PRT_FALSE, &P_GEND_VALUE_5, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_GodMachine_temp_NM], PRT_FALSE), PRT_FALSE);
     p_tmp_mach_priv->returnTo = 2U;
     PrtPush(p_tmp_mach_priv, P_STATE_GodMachine__CREATEMACHINE);
     goto P_EXIT_FUN;
     L2: ;
     P_STMT_0(PrtSetGlobalVarEx(p_tmp_mach_priv, P_VAR_GodMachine_PongMachine_2, p_tmp_stmt_0, !PRT_FALSE), P_EXPR_0(p_tmp_mach_priv->varValues[P_VAR_GodMachine_createmachine_return], PRT_FALSE), PRT_FALSE);
-    P_STMT_0(PrtSetGlobalVarEx(p_tmp_mach_priv, P_VAR_GodMachine_temp_NM, p_tmp_stmt_0, !PRT_TRUE), P_EXPR_0(P_FUN_GodMachine__CREATENODE_IMPL(context, 5U, NULL), PRT_FALSE), PRT_FALSE);
-    P_STMT_0(PrtSetGlobalVarEx(p_tmp_mach_priv, P_VAR_GodMachine_createmachine_param, p_tmp_stmt_0, !PRT_TRUE), P_EXPR_5(P_TUPLE_2(&P_GEND_TYPE_21, p_tmp_expr_2, p_tmp_expr_3, p_tmp_expr_4), PRT_FALSE, P_TUPLE_1(&P_GEND_TYPE_14, p_tmp_expr_0, p_tmp_expr_1), PRT_TRUE, &P_GEND_VALUE_6, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_GodMachine_temp_NM], PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_GodMachine_PongMachine_2], PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_GodMachine_PongMachine_1], PRT_FALSE), PRT_FALSE);
+    P_STMT_0(PrtSetGlobalVarEx(p_tmp_mach_priv, P_VAR_GodMachine_temp_NM, p_tmp_stmt_0, !PRT_TRUE), P_EXPR_1(P_FUN__CREATENODE_IMPL(context, 1U, P_TUPLE_0(&P_GEND_TYPE_6, p_tmp_expr_0)), PRT_FALSE, &P_GEND_VALUE_9, PRT_FALSE), PRT_FALSE);
+    P_STMT_0(PrtSetGlobalVarEx(p_tmp_mach_priv, P_VAR_GodMachine_createmachine_param, p_tmp_stmt_0, !PRT_TRUE), P_EXPR_5(P_TUPLE_2(&P_GEND_TYPE_22, p_tmp_expr_2, p_tmp_expr_3, p_tmp_expr_4), PRT_FALSE, P_TUPLE_1(&P_GEND_TYPE_15, p_tmp_expr_0, p_tmp_expr_1), PRT_TRUE, &P_GEND_VALUE_6, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_GodMachine_temp_NM], PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_GodMachine_PongMachine_2], PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_GodMachine_PongMachine_1], PRT_FALSE), PRT_FALSE);
     p_tmp_mach_priv->returnTo = 3U;
     PrtPush(p_tmp_mach_priv, P_STATE_GodMachine__CREATEMACHINE);
     goto P_EXIT_FUN;
@@ -976,7 +959,7 @@
     PRT_VALUE *p_tmp_expr_5;
     PRT_VALUE *p_tmp_expr_6;
     PRT_VALUE *p_tmp_expr_7;
-    p_tmp_funstmt_ret = P_EXPR_7(P_FUN_NodeManager__SENDRELIABLE_IMPL(context, 8U, P_TUPLE_2(&P_GEND_TYPE_19, p_tmp_expr_3, p_tmp_expr_0, p_tmp_expr_6)), PRT_FALSE, P_TUPLE_2(&P_GEND_TYPE_15, p_tmp_expr_2, p_tmp_expr_5, p_tmp_expr_4), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 1), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 2), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 0), PRT_FALSE, p_tmp_mach_priv->id, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_NodeManager_createmachine_param], PRT_FALSE, &P_GEND_VALUE_2, PRT_FALSE);
+    p_tmp_funstmt_ret = P_EXPR_7(P_FUN__SENDRELIABLE_IMPL(context, 3U, P_TUPLE_2(&P_GEND_TYPE_20, p_tmp_expr_3, p_tmp_expr_0, p_tmp_expr_6)), PRT_FALSE, P_TUPLE_2(&P_GEND_TYPE_16, p_tmp_expr_2, p_tmp_expr_5, p_tmp_expr_4), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 1), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 2), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 0), PRT_FALSE, p_tmp_mach_priv->id, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_NodeManager_createmachine_param], PRT_FALSE, &P_GEND_VALUE_2, PRT_FALSE);
     if (p_tmp_funstmt_ret == NULL)
     {
     }
@@ -1020,7 +1003,7 @@
     PRT_VALUE *p_tmp_expr_2;
     PRT_VALUE *p_tmp_expr_3;
     PRT_VALUE *p_tmp_expr_4;
-    p_tmp_funstmt_ret = P_EXPR_3(P_FUN_NodeManager__CREATELOCALMACHINE_IMPL(context, 5U, P_TUPLE_1(&P_GEND_TYPE_12, p_tmp_expr_2, p_tmp_expr_1)), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_0, 1), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_0, 2), PRT_FALSE, p_tmp_mach_priv->currentEvent.payload, PRT_FALSE);
+    p_tmp_funstmt_ret = P_EXPR_3(P_FUN_NodeManager__CREATELOCALMACHINE_IMPL(context, 5U, P_TUPLE_1(&P_GEND_TYPE_13, p_tmp_expr_2, p_tmp_expr_1)), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_0, 1), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_0, 2), PRT_FALSE, p_tmp_mach_priv->currentEvent.payload, PRT_FALSE);
     if (p_tmp_funstmt_ret == NULL)
     {
     }
@@ -1028,7 +1011,7 @@
     {
       PrtFreeValue(p_tmp_funstmt_ret);
     }
-    p_tmp_funstmt_ret = P_EXPR_4(P_FUN_NodeManager__SENDRELIABLE_IMPL(context, 8U, P_TUPLE_2(&P_GEND_TYPE_19, p_tmp_expr_3, p_tmp_expr_0, p_tmp_expr_1)), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_2, 0), PRT_FALSE, p_tmp_mach_priv->currentEvent.payload, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_NodeManager_newMachine], PRT_FALSE, &P_GEND_VALUE_3, PRT_FALSE);
+    p_tmp_funstmt_ret = P_EXPR_4(P_FUN__SENDRELIABLE_IMPL(context, 3U, P_TUPLE_2(&P_GEND_TYPE_20, p_tmp_expr_3, p_tmp_expr_0, p_tmp_expr_1)), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_2, 0), PRT_FALSE, p_tmp_mach_priv->currentEvent.payload, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_NodeManager_newMachine], PRT_FALSE, &P_GEND_VALUE_3, PRT_FALSE);
     if (p_tmp_funstmt_ret == NULL)
     {
     }
@@ -1114,7 +1097,7 @@
     PRT_VALUE *p_tmp_expr_5;
     PRT_VALUE *p_tmp_expr_6;
     PRT_VALUE *p_tmp_expr_7;
-    p_tmp_funstmt_ret = P_EXPR_7(P_FUN_PING__SENDRELIABLE_IMPL(context, 8U, P_TUPLE_2(&P_GEND_TYPE_19, p_tmp_expr_3, p_tmp_expr_0, p_tmp_expr_6)), PRT_FALSE, P_TUPLE_2(&P_GEND_TYPE_15, p_tmp_expr_2, p_tmp_expr_5, p_tmp_expr_4), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 1), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 2), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 0), PRT_FALSE, p_tmp_mach_priv->id, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_PING_createmachine_param], PRT_FALSE, &P_GEND_VALUE_2, PRT_FALSE);
+    p_tmp_funstmt_ret = P_EXPR_7(P_FUN__SENDRELIABLE_IMPL(context, 3U, P_TUPLE_2(&P_GEND_TYPE_20, p_tmp_expr_3, p_tmp_expr_0, p_tmp_expr_6)), PRT_FALSE, P_TUPLE_2(&P_GEND_TYPE_16, p_tmp_expr_2, p_tmp_expr_5, p_tmp_expr_4), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 1), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 2), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 0), PRT_FALSE, p_tmp_mach_priv->id, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_PING_createmachine_param], PRT_FALSE, &P_GEND_VALUE_2, PRT_FALSE);
     if (p_tmp_funstmt_ret == NULL)
     {
     }
@@ -1156,7 +1139,7 @@
     PRT_VALUE *p_tmp_stmt_1;
     PRT_VALUE *p_tmp_expr_0;
     PRT_VALUE *p_tmp_expr_1;
-    P_STMT_0(PrtSetGlobalVarEx(p_tmp_mach_priv, P_VAR_PING_pongmachine, p_tmp_stmt_0, !PRT_FALSE), P_EXPR_1(PrtCastValue(p_tmp_expr_0, &P_GEND_TYPE_14), PRT_FALSE, p_tmp_mach_priv->currentEvent.payload, PRT_FALSE), PRT_FALSE);
+    P_STMT_0(PrtSetGlobalVarEx(p_tmp_mach_priv, P_VAR_PING_pongmachine, p_tmp_stmt_0, !PRT_FALSE), P_EXPR_1(PrtCastValue(p_tmp_expr_0, &P_GEND_TYPE_15), PRT_FALSE, p_tmp_mach_priv->currentEvent.payload, PRT_FALSE), PRT_FALSE);
     P_STMT_1(PrtRaise(p_tmp_mach_priv, p_tmp_stmt_0, p_tmp_stmt_1), &P_GEND_VALUE_9, PRT_FALSE, P_EXPR_0(&P_GEND_VALUE_4, PRT_FALSE), PRT_FALSE);
     goto P_EXIT_FUN;
     P_EXIT_FUN:
@@ -1181,7 +1164,7 @@
     PRT_VALUE *p_tmp_expr_2;
     PRT_VALUE *p_tmp_expr_3;
     PRT_VALUE *p_tmp_expr_4;
-    p_tmp_funstmt_ret = P_EXPR_4(P_FUN_PING__SEND_IMPL(context, 7U, P_TUPLE_2(&P_GEND_TYPE_19, p_tmp_expr_3, p_tmp_expr_0, p_tmp_expr_2)), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 0), PRT_FALSE, p_tmp_mach_priv->id, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_PING_pongmachine], PRT_FALSE, &P_GEND_VALUE_0, PRT_FALSE);
+    p_tmp_funstmt_ret = P_EXPR_4(P_FUN__SEND_IMPL(context, 2U, P_TUPLE_2(&P_GEND_TYPE_20, p_tmp_expr_3, p_tmp_expr_0, p_tmp_expr_2)), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 0), PRT_FALSE, p_tmp_mach_priv->id, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_PING_pongmachine], PRT_FALSE, &P_GEND_VALUE_0, PRT_FALSE);
     if (p_tmp_funstmt_ret == NULL)
     {
     }
@@ -1189,7 +1172,7 @@
     {
       PrtFreeValue(p_tmp_funstmt_ret);
     }
-    p_tmp_funstmt_ret = P_EXPR_4(P_FUN_PING__SEND_IMPL(context, 7U, P_TUPLE_2(&P_GEND_TYPE_19, p_tmp_expr_3, p_tmp_expr_0, p_tmp_expr_2)), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 1), PRT_FALSE, p_tmp_mach_priv->id, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_PING_pongmachine], PRT_FALSE, &P_GEND_VALUE_0, PRT_FALSE);
+    p_tmp_funstmt_ret = P_EXPR_4(P_FUN__SEND_IMPL(context, 2U, P_TUPLE_2(&P_GEND_TYPE_20, p_tmp_expr_3, p_tmp_expr_0, p_tmp_expr_2)), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 1), PRT_FALSE, p_tmp_mach_priv->id, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_PING_pongmachine], PRT_FALSE, &P_GEND_VALUE_0, PRT_FALSE);
     if (p_tmp_funstmt_ret == NULL)
     {
     }
@@ -1243,7 +1226,7 @@
     PRT_VALUE *p_tmp_expr_5;
     PRT_VALUE *p_tmp_expr_6;
     PRT_VALUE *p_tmp_expr_7;
-    p_tmp_funstmt_ret = P_EXPR_7(P_FUN_PONG__SENDRELIABLE_IMPL(context, 8U, P_TUPLE_2(&P_GEND_TYPE_19, p_tmp_expr_3, p_tmp_expr_0, p_tmp_expr_6)), PRT_FALSE, P_TUPLE_2(&P_GEND_TYPE_15, p_tmp_expr_2, p_tmp_expr_5, p_tmp_expr_4), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 1), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 2), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 0), PRT_FALSE, p_tmp_mach_priv->id, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_PONG_createmachine_param], PRT_FALSE, &P_GEND_VALUE_2, PRT_FALSE);
+    p_tmp_funstmt_ret = P_EXPR_7(P_FUN__SENDRELIABLE_IMPL(context, 3U, P_TUPLE_2(&P_GEND_TYPE_20, p_tmp_expr_3, p_tmp_expr_0, p_tmp_expr_6)), PRT_FALSE, P_TUPLE_2(&P_GEND_TYPE_16, p_tmp_expr_2, p_tmp_expr_5, p_tmp_expr_4), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 1), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 2), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 0), PRT_FALSE, p_tmp_mach_priv->id, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_PONG_createmachine_param], PRT_FALSE, &P_GEND_VALUE_2, PRT_FALSE);
     if (p_tmp_funstmt_ret == NULL)
     {
     }
@@ -1307,7 +1290,7 @@
     PRT_VALUE *p_tmp_expr_1;
     PRT_VALUE *p_tmp_expr_2;
     PRT_VALUE *p_tmp_expr_3;
-    p_tmp_funstmt_ret = P_EXPR_3(P_FUN_PONG__SEND_IMPL(context, 7U, P_TUPLE_2(&P_GEND_TYPE_19, p_tmp_expr_1, p_tmp_expr_0, p_tmp_expr_2)), PRT_FALSE, p_tmp_mach_priv->id, PRT_FALSE, p_tmp_mach_priv->currentEvent.payload, PRT_FALSE, &P_GEND_VALUE_1, PRT_FALSE);
+    p_tmp_funstmt_ret = P_EXPR_3(P_FUN__SEND_IMPL(context, 2U, P_TUPLE_2(&P_GEND_TYPE_20, p_tmp_expr_1, p_tmp_expr_0, p_tmp_expr_2)), PRT_FALSE, p_tmp_mach_priv->id, PRT_FALSE, p_tmp_mach_priv->currentEvent.payload, PRT_FALSE, &P_GEND_VALUE_1, PRT_FALSE);
     if (p_tmp_funstmt_ret == NULL)
     {
     }
@@ -1391,33 +1374,6 @@
         &P_FUN_GodMachine_PopState_IMPL,
         0U,
         NULL
-    },
-    
-    {
-        P_FUN_GodMachine__CREATENODE,
-        P_MACHINE_GodMachine,
-        "_CREATENODE",
-        &P_FUN_GodMachine__CREATENODE_IMPL,
-        0U,
-        NULL
-    },
-    
-    {
-        P_FUN_GodMachine__SEND,
-        P_MACHINE_GodMachine,
-        "_SEND",
-        &P_FUN_GodMachine__SEND_IMPL,
-        0U,
-        NULL
-    },
-    
-    {
-        P_FUN_GodMachine__SENDRELIABLE,
-        P_MACHINE_GodMachine,
-        "_SENDRELIABLE",
-        &P_FUN_GodMachine__SENDRELIABLE_IMPL,
-        0U,
-        NULL
     }
   };
   PRT_FUNDECL P_GEND_FUNS_NodeManager[] = 
@@ -1473,33 +1429,6 @@
         P_MACHINE_NodeManager,
         "_CREATELOCALMACHINE",
         &P_FUN_NodeManager__CREATELOCALMACHINE_IMPL,
-        0U,
-        NULL
-    },
-    
-    {
-        P_FUN_NodeManager__CREATENODE,
-        P_MACHINE_NodeManager,
-        "_CREATENODE",
-        &P_FUN_NodeManager__CREATENODE_IMPL,
-        0U,
-        NULL
-    },
-    
-    {
-        P_FUN_NodeManager__SEND,
-        P_MACHINE_NodeManager,
-        "_SEND",
-        &P_FUN_NodeManager__SEND_IMPL,
-        0U,
-        NULL
-    },
-    
-    {
-        P_FUN_NodeManager__SENDRELIABLE,
-        P_MACHINE_NodeManager,
-        "_SENDRELIABLE",
-        &P_FUN_NodeManager__SENDRELIABLE_IMPL,
         0U,
         NULL
     }
@@ -1559,33 +1488,6 @@
         &P_FUN_PING_PopState_IMPL,
         0U,
         NULL
-    },
-    
-    {
-        P_FUN_PING__CREATENODE,
-        P_MACHINE_PING,
-        "_CREATENODE",
-        &P_FUN_PING__CREATENODE_IMPL,
-        0U,
-        NULL
-    },
-    
-    {
-        P_FUN_PING__SEND,
-        P_MACHINE_PING,
-        "_SEND",
-        &P_FUN_PING__SEND_IMPL,
-        0U,
-        NULL
-    },
-    
-    {
-        P_FUN_PING__SENDRELIABLE,
-        P_MACHINE_PING,
-        "_SENDRELIABLE",
-        &P_FUN_PING__SENDRELIABLE_IMPL,
-        0U,
-        NULL
     }
   };
   PRT_FUNDECL P_GEND_FUNS_PONG[] = 
@@ -1641,33 +1543,6 @@
         P_MACHINE_PONG,
         "PopState",
         &P_FUN_PONG_PopState_IMPL,
-        0U,
-        NULL
-    },
-    
-    {
-        P_FUN_PONG__CREATENODE,
-        P_MACHINE_PONG,
-        "_CREATENODE",
-        &P_FUN_PONG__CREATENODE_IMPL,
-        0U,
-        NULL
-    },
-    
-    {
-        P_FUN_PONG__SEND,
-        P_MACHINE_PONG,
-        "_SEND",
-        &P_FUN_PONG__SEND_IMPL,
-        0U,
-        NULL
-    },
-    
-    {
-        P_FUN_PONG__SENDRELIABLE,
-        P_MACHINE_PONG,
-        "_SENDRELIABLE",
-        &P_FUN_PONG__SENDRELIABLE_IMPL,
         0U,
         NULL
     }
@@ -2008,9 +1883,9 @@
     {
         P_MACHINE_GodMachine,
         "GodMachine",
-        6,
+        5,
         2,
-        8,
+        5,
         4294967295,
         P_STATE_GodMachine_Init,
         P_GEND_VARS_GodMachine,
@@ -2025,9 +1900,9 @@
     {
         P_MACHINE_NodeManager,
         "NodeManager",
-        4,
         3,
-        9,
+        3,
+        6,
         4294967295,
         P_STATE_NodeManager_Init,
         P_GEND_VARS_NodeManager,
@@ -2042,9 +1917,9 @@
     {
         P_MACHINE_PING,
         "PING",
-        4,
+        3,
         6,
-        9,
+        6,
         4294967295,
         P_STATE_PING_Init,
         P_GEND_VARS_PING,
@@ -2059,9 +1934,9 @@
     {
         P_MACHINE_PONG,
         "PONG",
-        3,
+        2,
         4,
-        9,
+        6,
         4294967295,
         P_STATE_PONG_Init,
         P_GEND_VARS_PONG,

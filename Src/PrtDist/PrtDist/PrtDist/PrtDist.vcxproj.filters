@@ -29,9 +29,6 @@
     <ClInclude Include="PrtDist.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PrtDistInternal.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PrtDistSend.h">
       <Filter>Header Files</Filter>
     </ClInclude>

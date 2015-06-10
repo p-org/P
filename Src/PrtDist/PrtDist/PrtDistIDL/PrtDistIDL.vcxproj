@@ -143,10 +143,10 @@
     </Midl>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="PrtDist.acf" />
+    <None Include="PrtDistIDL.acf" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="PrtDist.idl" />
+    <Midl Include="PrtDistIDL.idl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

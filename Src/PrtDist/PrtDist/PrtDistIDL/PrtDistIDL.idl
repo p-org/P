@@ -11,13 +11,16 @@ interface PrtDist {
 	/******************************/
 	//		RPC Functions
 	/*****************************/
-	
+	//this function sends the event asynchronously.
 	void PrtDistSendEx(
 		[in] handle_t handleSM,
 		[in] PRT_VALUE* target,
 		[in, ptr] PRT_VALUE* event,
-		[in, ptr] PRT_VALUE* payload,
-		[out] PRT_BOOLEAN* status
+		[in, ptr] PRT_VALUE* payload
+	);
+
+	void PrtDistPing(
+		[in] handle_t handleSM
 	);
 	
 }

@@ -574,6 +574,7 @@
             AddErrors(task.Result, "TypeOf(_, _, ERROR)", errors, 1);
             AddErrors(task.Result, "DupNmdSubE(_, _, _, _)", errors, 1);
             AddErrors(task.Result, "PurityError(_, _)", errors, 1);
+            AddErrors(task.Result, "MonitorError(_, _)", errors, 1);
             AddErrors(task.Result, "LValueError(_, _)", errors, 1);
 
             //// Enumerate structural errors

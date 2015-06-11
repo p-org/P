@@ -190,6 +190,7 @@ domain PStaticTyping extends PData
 	conforms no TypeOf(_, _, ERROR). 
 	conforms no DupNmdSubE(_, _, _, _).
 	conforms no PurityError(_, _).
+	conforms no MonitorError(_, _).
 	conforms no LValueError(_, _).
 	conforms no BadPushLabelError(_).
     /*************************************************************/
@@ -223,18 +224,11 @@ domain PStaticTyping extends PData
 	
 	TypeOf(c, e, t) :- SubSE(c, e), e = NulApp(PAYLOAD), PayloadType(c, t).
 	
-    TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = REAL.
-    TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = MODEL.
-	[ rule_Classes = '"error, msg: Monitors cannot refer to "this""']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(THIS), c.owner.kind = MONITOR.
+    TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = NulApp(THIS).
     
-    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind != MONITOR.
-	[ rule_Classes = '"error, msg: Nondeterministic choice can not be used in monitor machine"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(NONDET), c.owner.kind = MONITOR.
+	TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(NONDET).
 
-    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind != MONITOR.
-	[ rule_Classes = '"error, msg: Nondeterministic choice can not be used in monitor machine"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(FAIRNONDET), c.owner.kind = MONITOR.
+    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(FAIRNONDET).
 	    
     TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = NulApp(v), v : Integer.
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(v), v : Boolean.          
@@ -283,16 +277,14 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Cast can never succeed"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2), TypeRel(t1, t2, k), k = EMPTY.
 
-    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, REAL, _, _, _), c.owner.kind != MONITOR.
-    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, MODEL, _, _, _), c.owner.kind != MONITOR.
+    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, REAL, _, _, _).
+    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, MODEL, _, _, _).
 	[ rule_Classes = '"error, msg: Monitors cannot be created with "new""']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, MONITOR, _, _, _);
 									  SubSE(c, e), e = New(_, _, n'), MachineDecl(n', MONITOR, _, _, _).
 	[ rule_Classes = '"error, msg: Undefined machine type"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _);
 									  SubSE(c, e), e = New(_, _, n'), no MachineDecl(n', _, _, _, _).
-    [ rule_Classes = '"error, msg: Monitors cannot have "new""']
-	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e : New, c.owner.kind = MONITOR.
 	
     TypeOf(c, e, t2)               :- TypeOfArg2(c, e, _, t2), e : Field, t2 != ERROR.
 	[ rule_Classes = '"error, msg: Bad field name"']
@@ -374,9 +366,7 @@ domain PStaticTyping extends PData
 
 	//// (1) Nullary statements
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(SKIP).
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(POP), c.owner.kind != MONITOR.
-    [ rule_Classes = '"error, msg: Monitors cannot have "pop""']
-	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NulStmt(POP), c.owner.kind = MONITOR. 
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(POP).
 
 	//// (2) Return statement
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL), c = FunDecl(_, _, _, _, NIL, _). 
@@ -404,13 +394,11 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: "while (...)" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : While, t1 != BaseType(BOOL).
                
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Push(name, _), StateDecl(name, c.owner, _, _, _), c.owner.kind != MONITOR. 
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Push(name, _), StateDecl(name, c.owner, _, _, _). 
 	[ rule_Classes = '"error, msg: Undeclared state name"']
 	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Push(name, _), no StateDecl(name, c.owner, _, _, _). 
-    [ rule_Classes = '"error, msg: Monitors cannot have "push""']
-	TypeOf(c, e, ERROR)            :- SubSE(c, e), e : Push, c.owner.kind = MONITOR. 
     
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), MachineDecl(n, _, _, _, _), c.owner.kind != MONITOR.   
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), MachineDecl(n, _, _, _, _).   
 	[ rule_Classes = '"error, msg: Undeclared machine"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, _, _, _, _);
 									  SubSE(c, e), e = NewStmt(_, _, n'), no MachineDecl(n', _, _, _, _).
@@ -418,8 +406,6 @@ domain PStaticTyping extends PData
 	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, n'), n != n', MachineDecl(n', MONITOR, _, _, _).   
 	[ rule_Classes = '"error, msg: Monitor machine cannot be substituted"']
 	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, n'), n != n', MachineDecl(n, MONITOR, _, _, _).   
-    [ rule_Classes = '"error, msg: Monitors cannot have "new""']
-	TypeOf(c, e, ERROR)            :- SubSE(c, e), e : NewStmt, c.owner.kind = MONITOR. 
 
 	//// Rules for raise.
     TypeOf(c, e, NIL)              :- CommStmtPLType(c, e, plt), e = Raise(_, NIL),              ///// < raise has NIL payload,
@@ -441,11 +427,11 @@ domain PStaticTyping extends PData
 									  TypeOf(c, p, pt), TypeRel(pt, plt, k), k != SUB, pt != plt. ///// < and pt is not a subtype of plt.
 
 	//// Rules for send.
-    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e = Send(_, _, NIL), c.owner.kind != MONITOR,  ///// < send has NIL payload,
+    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e = Send(_, _, NIL),                           ///// < send has NIL payload,
 	                                  t1 = BaseType(REAL),                                                 ///// < arg1 is a machine type,
 	                                  CommStmtPLType(c, e, plt), TypeRel(BaseType(NULL), plt, SUB).        ///// < arg2 event type contains null.
 
-    TypeOf(c, e, NIL)              :- TypeOfArg3(c, e, t1, t2, t3), e : Send, c.owner.kind != MONITOR,    ///// < send has non-NIL payload,             
+    TypeOf(c, e, NIL)              :- TypeOfArg3(c, e, t1, t2, t3), e : Send,                             ///// < send has non-NIL payload,             
 	                                  t1 = BaseType(REAL),                                                ///// < arg1 is a machine type,
 	                                  CommStmtPLType(c, e, plt), TypeRel(t3, evt, SUB).                   ///// < and t3 is a subtype of plt.
 
@@ -455,9 +441,6 @@ domain PStaticTyping extends PData
 
 	[ rule_Classes = '"error, msg: argument 2 of "send" expects an event value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, e2, _), TypeOf(c, e2, t2), t2 != BaseType(EVENT).
-
-    [ rule_Classes = '"error, msg: Monitors cannot have "send""']
-	TypeOf(c, e, ERROR)            :- SubSE(c, e), e : Send, c.owner.kind = MONITOR. 
 
 	//// Error rules for send with constant event expression. 	
     [ rule_Classes = '"error, msg: invalid payload type in send (cannot send null value)"']
@@ -471,11 +454,11 @@ domain PStaticTyping extends PData
 									  TypeRel(t3, plt, k), k != SUB, t3 != plt.                   ///// < and pt is not a subtype of plt.
 
 	//// Rules for monitor.
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Monitor(m, _, NIL), c.owner.kind != MONITOR,  ///// < monitor has NIL payload,
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Monitor(m, _, NIL),                           ///// < monitor has NIL payload,
 	                                  MachineDecl(m, MONITOR, _, _, _),                              ///// < m is a monitor type,
 	                                  CommStmtPLType(c, e, plt), TypeRel(BaseType(NULL), plt, SUB).  ///// < event type contains null.
 
-    TypeOf(c, e, NIL)              :- TypeOfArg2(c, e, t1, t2), e = Monitor(m, _, _), c.owner.kind != MONITOR, ///// < monitor has non-NIL payload,             
+    TypeOf(c, e, NIL)              :- TypeOfArg2(c, e, t1, t2), e = Monitor(m, _, _),                          ///// < monitor has non-NIL payload,             
 	                                  MachineDecl(m, MONITOR, _, _, _),                                        ///// < m is a monitor type,
 	                                  CommStmtPLType(c, e, plt), TypeRel(t2, plt, SUB).                        ///// < and pt is a subtype of plt.
 
@@ -679,7 +662,7 @@ domain PStaticTyping extends PData
 	LValueError(c, e) :- SubSE(c, e), e = BinStmt(_, e', _), no IsLValue(c, e', _).
 
     /*************************************************************/
-    /*                      Control Impurity                     */
+    /*                      Control and Monitor Impurity                     */
     /*************************************************************/
     PurityError ::= (cntxt: TypingContext + StateDecl + TransDecl, expr: Typeable + String + AnonFunDecl).
 
@@ -711,6 +694,46 @@ domain PStaticTyping extends PData
     [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
     PurityError(c, called) :- 
 	       c is TransDecl(src, _, _, called), called = AnonFunDecl(src.owner, _), ControlImpure(called).
+
+	MonitorError ::= (cntxt: TypingContext + StateDecl + TransDecl + DoDecl, expr: Typeable + String + AnonFunDecl).
+	MonitorImpure ::= (TypingContext).
+	MonitorImpure(c) :- SubSE(c, e), e = NulApp(NONDET).
+	MonitorImpure(c) :- SubSE(c, e), e = NulApp(FAIRNONDET).
+	MonitorImpure(c) :- SubSE(c, e), e = NulApp(THIS).
+	MonitorImpure(c) :- SubSE(c, e), e : New.
+	MonitorImpure(c) :- SubSE(c, e), e : Send.
+	MonitorImpure(c) :- SubSE(c, e), e : NewStmt.
+	MonitorImpure(c) :- SubSE(c, e), e : Monitor.
+	MonitorImpure(c) :- SubSE(c, e), e : Push.
+	MonitorImpure(c) :- SubSE(c, e), e = NulStmt(POP).
+    MonitorImpure(c) :- SubSE(c, e), e = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), MonitorImpure(called).
+    MonitorImpure(c) :- SubSE(c, e), e = FunStmt(n, _), called.name = n, FunAvailable(called, c.owner), MonitorImpure(called).
+
+	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, push and pop statements"']
+    MonitorError(c, n) :- 
+	       c is StateDecl(_, owner, n, _, _), owner.kind = MONITOR, called.name = n, MonitorImpure(called);
+		   c is StateDecl(_, owner, _, n, _), owner.kind = MONITOR, called.name = n, MonitorImpure(called).
+
+	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, push and pop statements"']
+    MonitorError(c, called) :- 
+	       c is StateDecl(_, owner, called, _, _), owner.kind = MONITOR, called = AnonFunDecl(_, _), MonitorImpure(called);
+		   c is StateDecl(_, owner, _, called, _), owner.kind = MONITOR, called = AnonFunDecl(_, _), MonitorImpure(called).
+
+	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, push and pop statements"']
+    MonitorError(c, n) :- 
+	       c is TransDecl(src, _, _, n), src.owner.kind = MONITOR, called.name = n, MonitorImpure(called).
+
+	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, push and pop statements"']
+    MonitorError(c, called) :- 
+	       c is TransDecl(src, _, _, called), src.owner.kind = MONITOR, called = AnonFunDecl(_, _), MonitorImpure(called).
+
+	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, push and pop statements"']
+	MonitorError(c, n) :-	
+		   c is DoDecl(src, _, n), src.owner.kind = MONITOR, called.name = n, MonitorImpure(called).
+
+	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, push and pop statements"']
+	MonitorError(c, called) :- 
+		   c is DoDecl(src, _, called), src.owner.kind = MONITOR, MonitorImpure(called).
 
     /*************************************************************/
     /*                         Push Labels                       */

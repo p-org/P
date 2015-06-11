@@ -151,12 +151,6 @@
       _P_VARS_PONG_COUNT = 2
     };
 
-    PRT_VALUE *P_FUN__CREATENODE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
-
-    PRT_VALUE *P_FUN__SENDRELIABLE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
-
-    PRT_VALUE *P_FUN__SEND_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
-
     void P_DTOR_GodMachine_IMPL(PRT_MACHINEINST *context);
 
     void P_DTOR_NodeManager_IMPL(PRT_MACHINEINST *context);

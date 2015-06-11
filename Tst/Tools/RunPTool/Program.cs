@@ -10,6 +10,7 @@ namespace RunPTool
     using System.Threading.Tasks;
     using CheckP;
     using System.Diagnostics;
+    using Microsoft.Pc;
 
     class Program
     {
@@ -160,7 +161,6 @@ namespace RunPTool
             }
         }
 
-        /*
         private static void Compile(Compiler compiler, List<DirectoryInfo> dis)
         {
             foreach (DirectoryInfo di in dis)
@@ -180,7 +180,6 @@ namespace RunPTool
                 Compile(compiler, new List<DirectoryInfo>(di.EnumerateDirectories()));
             }
         }
-        */
 
         //If reset = true, failedDirsWriter and displayDiffsWriter are "null"
         private static void Test(List<DirectoryInfo> diArray, bool reset, ref int testCount, ref int failCount,

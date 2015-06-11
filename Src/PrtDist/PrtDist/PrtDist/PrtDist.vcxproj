@@ -163,7 +163,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrtDist.h" />
-    <ClInclude Include="PrtDistInternal.h" />
     <ClInclude Include="PrtDistSend.h" />
     <ClInclude Include="PrtDistSerializer.h" />
   </ItemGroup>

@@ -662,7 +662,7 @@ domain PStaticTyping extends PData
 	LValueError(c, e) :- SubSE(c, e), e = BinStmt(_, e', _), no IsLValue(c, e', _).
 
     /*************************************************************/
-    /*                      Control and Monitor Impurity                     */
+    /*                      Control Impurity                     */
     /*************************************************************/
     PurityError ::= (cntxt: TypingContext + StateDecl + TransDecl, expr: Typeable + String + AnonFunDecl).
 
@@ -695,6 +695,10 @@ domain PStaticTyping extends PData
     PurityError(c, called) :- 
 	       c is TransDecl(src, _, _, called), called = AnonFunDecl(src.owner, _), ControlImpure(called).
 
+
+    /*************************************************************/
+    /*                      Monitor Checking                     */
+    /*************************************************************/
 	MonitorError ::= (cntxt: TypingContext + StateDecl + TransDecl + DoDecl, expr: Typeable + String + AnonFunDecl).
 	MonitorImpure ::= (TypingContext).
 	MonitorImpure(c) :- SubSE(c, e), e = NulApp(NONDET).

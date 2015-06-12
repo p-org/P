@@ -49,36 +49,28 @@ OUT: entryexit_1.p (71, 5): inferred type:  NIL
 OUT: entryexit_1.p (71, 9): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (71, 11): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (71, 13): inferred type:  BaseType(INT)
-OUT: entryexit_1.p (83, 4): inferred type:  ERROR
 OUT: entryexit_1.p (83, 4): inferred type:  NIL
-OUT: entryexit_1.p (83, 7): inferred type:  ERROR
+OUT: entryexit_1.p (83, 7): inferred type:  BaseType(BOOL)
 OUT: entryexit_1.p (85, 5): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (85, 5): inferred type:  NIL
 OUT: entryexit_1.p (85, 9): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (85, 11): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (85, 13): inferred type:  BaseType(INT)
-OUT: entryexit_1.p (91, 3): inferred type:  ERROR
 OUT: entryexit_1.p (91, 3): inferred type:  NIL
-OUT: entryexit_1.p (91, 6): inferred type:  ERROR
+OUT: entryexit_1.p (91, 6): inferred type:  BaseType(BOOL)
 OUT: entryexit_1.p (92, 4): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (92, 4): inferred type:  NIL
 OUT: entryexit_1.p (92, 8): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (92, 10): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (92, 12): inferred type:  BaseType(INT)
-OUT: entryexit_1.p (97, 3): inferred type:  ERROR
 OUT: entryexit_1.p (97, 3): inferred type:  NIL
-OUT: entryexit_1.p (97, 6): inferred type:  ERROR
+OUT: entryexit_1.p (97, 6): inferred type:  BaseType(BOOL)
 OUT: entryexit_1.p (98, 4): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (98, 4): inferred type:  NIL
 OUT: entryexit_1.p (98, 8): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (98, 10): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (98, 12): inferred type:  BaseType(INT)
-OUT: entryexit_1.p (83, 4): "if (...)" expects a boolean value
-OUT: entryexit_1.p (83, 7): Nondeterministic choice can not be used in monitor machine
-OUT: entryexit_1.p (91, 3): "if (...)" expects a boolean value
-OUT: entryexit_1.p (91, 6): Nondeterministic choice can not be used in monitor machine
-OUT: entryexit_1.p (97, 3): "if (...)" expects a boolean value
-OUT: entryexit_1.p (97, 6): Nondeterministic choice can not be used in monitor machine
+OUT: entryexit_1.p (83, 4): monitor may not use this keyword or perform nondeterministic choice or create machines or execute send
 OUT: Compilation failed
 OUT: 
 EXIT: -1

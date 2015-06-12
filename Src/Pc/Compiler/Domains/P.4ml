@@ -699,7 +699,7 @@ domain PStaticTyping extends PData
     /*************************************************************/
     /*                      Monitor Checking                     */
     /*************************************************************/
-	MonitorError ::= (cntxt: TypingContext + StateDecl + TransDecl + DoDecl, expr: Typeable + String + AnonFunDecl).
+	MonitorError ::= (cntxt: StateDecl + TransDecl + DoDecl, expr: String + AnonFunDecl).
 	MonitorImpure ::= (TypingContext).
 	MonitorImpure(c) :- SubSE(c, e), e = NulApp(NONDET).
 	MonitorImpure(c) :- SubSE(c, e), e = NulApp(FAIRNONDET).
@@ -715,8 +715,8 @@ domain PStaticTyping extends PData
 
 	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, push and pop statements"']
     MonitorError(c, n) :- 
-	       c is StateDecl(_, owner, n, _, _), owner.kind = MONITOR, called.name = n, MonitorImpure(called);
-		   c is StateDecl(_, owner, _, n, _), owner.kind = MONITOR, called.name = n, MonitorImpure(called).
+	       c is StateDecl(_, owner, n, _, _), owner.kind = MONITOR, called.name = n, FunAvailable(called, owner), MonitorImpure(called);
+		   c is StateDecl(_, owner, _, n, _), owner.kind = MONITOR, called.name = n, FunAvailable(called, owner), MonitorImpure(called).
 
 	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, push and pop statements"']
     MonitorError(c, called) :- 
@@ -725,7 +725,7 @@ domain PStaticTyping extends PData
 
 	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, push and pop statements"']
     MonitorError(c, n) :- 
-	       c is TransDecl(src, _, _, n), src.owner.kind = MONITOR, called.name = n, MonitorImpure(called).
+	       c is TransDecl(src, _, _, n), src.owner.kind = MONITOR, called.name = n, FunAvailable(called, src.owner), MonitorImpure(called).
 
 	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, push and pop statements"']
     MonitorError(c, called) :- 
@@ -733,11 +733,11 @@ domain PStaticTyping extends PData
 
 	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, push and pop statements"']
 	MonitorError(c, n) :-	
-		   c is DoDecl(src, _, n), src.owner.kind = MONITOR, called.name = n, MonitorImpure(called).
+		   c is DoDecl(src, _, n), src.owner.kind = MONITOR, called.name = n, FunAvailable(called, src.owner), MonitorImpure(called).
 
 	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, push and pop statements"']
 	MonitorError(c, called) :- 
-		   c is DoDecl(src, _, called), src.owner.kind = MONITOR, MonitorImpure(called).
+		   c is DoDecl(src, _, called), src.owner.kind = MONITOR, called = AnonFunDecl(_, _), MonitorImpure(called).
 
     /*************************************************************/
     /*                         Push Labels                       */

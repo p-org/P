@@ -2,8 +2,8 @@
 #define PRTDIST_H
 
 #include "PrtDistSerializer.h"
-#include "..\CommonFiles\PrtDistGlobalInfo.h"
-#include "..\PrtDistIDL\PrtDistIDL.h"
+#include "CommonFiles\PrtDistGlobalInfo.h"
+#include "PrtDistIDL\PrtDistIDL.h"
 
 
 //pointer to the container process

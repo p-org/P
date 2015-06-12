@@ -1,0 +1,8 @@
+[
+explicit_handle
+]
+
+interface PrtDistNodeManager
+{
+
+}

@@ -66,8 +66,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>..\Lib\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(ProjectDir)$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
@@ -84,7 +84,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../../Prt/WinUser/;../../../Prt/IDL/;../../../Prt/Core/;../../../Prt/API/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -154,17 +154,14 @@
     <ClCompile Include="PrtDistSerializer.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Prt\IDL\PrtIDL.vcxproj">
-      <Project>{13dcfb0e-a18a-4e6b-ae2e-f46a7b89a145}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\PrtDistIDL\PrtDistIDL.vcxproj">
-      <Project>{149b3fb2-4585-4c8d-abac-0de8ae7e9985}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="PrtDist.h" />
     <ClInclude Include="PrtDistSend.h" />
     <ClInclude Include="PrtDistSerializer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="PrtDistIDL\PrtDistIDL.vcxproj">
+      <Project>{149b3fb2-4585-4c8d-abac-0de8ae7e9985}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

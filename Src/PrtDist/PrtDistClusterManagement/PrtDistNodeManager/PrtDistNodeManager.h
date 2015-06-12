@@ -2,13 +2,11 @@
 #include<iostream>
 #include <windows.h>
 #include <thread>
-#include "PrtDistGlobals.h"
-#include "../../PrtDistUtilities/XMLParser/XMLParser.h"
-#include "../../PrtDistUtilities/PrtDistHelper/PrtDistHelperFuncs.h"
-#include "../../PrtDistUtilities/PrtDistHelper/PrtDistConfigParser.h"
 #include<fstream>
-#include"../PrtDistServiceIDL/PrtDistService_h.h"
-#include"../PrtDistServiceIDL/PrtDistService_s.c"
+#include "../../PrtDist/CommonFiles/PrtDistGlobalInfo.h"
+#include"PrtDistNodeManagerIDL\PrtDistNodeManager_h.h"
+#include"PrtDistNodeManagerIDL\PrtDistNodeManager_s.c"
+#include "..\..\PrtDistHelper\PrtDistHelper.h"
 using namespace std;
 
 #define _CRT_SECURE_NO_WARNINGS

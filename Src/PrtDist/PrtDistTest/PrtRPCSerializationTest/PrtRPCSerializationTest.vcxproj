@@ -66,7 +66,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
+    <OutDir>\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -84,13 +84,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../PrtDist/PrtDist/;../../PrtDist/PrtDistIDL/;../../../Prt/API/;../../../Prt/Core/;../../../Prt/WinUser/;../../../Prt/IDL/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../PrtDist/;../../PrtDistIDL/;../../../Prt/API/;../../../Prt/Core/;../../../Prt/WinUser/;../../../Prt/IDL/</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_USE_IDL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>PrtDist.lib;PrtWinUser.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\Lib\$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

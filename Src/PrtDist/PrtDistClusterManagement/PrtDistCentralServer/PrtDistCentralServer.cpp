@@ -70,7 +70,7 @@ MIDL_user_free(void* object)
 void s_PrtDistCentralServerPing(handle_t handle, int server, boolean * amAlive)
 {
 	char log[100] = "";
-	_CONCAT(log, "Pinged by External Server :", AZUREMACHINE_NAMES[server]);
+	_CONCAT(log, "Pinged by External Server :", AZUREMACHINEREF[server]);
 	*amAlive = !(*amAlive);
 	PrtDistCentralServerLog(log);
 }
@@ -79,8 +79,8 @@ void s_PrtDistCentralServerGetNodeId(handle_t handle, int server, int *nodeId)
 {
 	char log[100] = "";
 	*nodeId = PrtDistCentralServerGetNextID();
-	_CONCAT(log, "Received Request for a Node Id from ", AZUREMACHINE_NAMES[server]);
-	_CONCAT(log, " and returned node ID : ", AZUREMACHINE_NAMES[*nodeId]);
+	_CONCAT(log, "Received Request for a Node Id from ", AZUREMACHINEREF[server]);
+	_CONCAT(log, " and returned node ID : ", AZUREMACHINEREF[*nodeId]);
 	PrtDistCentralServerLog(log);
 }
 
@@ -149,7 +149,7 @@ int main()
 	myServerID = PrtDistConfigGetCentralServerNode(configurationFile);
 	
 	log[0] = '\0';
-	_CONCAT(log, "Started The Central Server on ", AZUREMACHINE_NAMES[myServerID]);
+	_CONCAT(log, "Started The Central Server on ", AZUREMACHINEREF[myServerID]);
 	PrtDistCentralServerLog(log);
 	PrtDistCentralServerLog("Setting up RPC connection .... \n");
 

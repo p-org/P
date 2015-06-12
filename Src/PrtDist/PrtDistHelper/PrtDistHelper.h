@@ -4,6 +4,9 @@
 #include <windows.h>
 #include <thread>
 #include<fstream>
+#include <stdio.h>
+#include <comutil.h>
+#import <msxml3.dll>
 
 using namespace std;
 

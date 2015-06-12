@@ -1,4 +1,4 @@
-#include "PrtDistService.h"
+#include "PrtDistNodeManager.h"
 
 /* GLobal Variables */
 string configurationFile = "PrtDistManConfiguration.xml";
@@ -9,18 +9,35 @@ FILE* logFile;
 // Helper Functions
 //
 
+void PrtDistNodeManagerCreateLogFile()
+{
+	fopen_s(&logFile, logFileName, "w+");
+	fputs("Starting P Service ..... \n", logFile);
+	fflush(logFile);
+	fclose(logFile);
+}
 
-string PrtDistServiceNextNodeManagerPort()
+
+void PrtDistNodeManagerLog(char* log)
+{
+	fopen_s(&logFile, logFileName, "a+");
+	fputs(log, logFile);
+	fputs("\n", logFile);
+	fflush(logFile);
+	fclose(logFile);
+}
+
+string PrtDistNodeManagerNextContainerPort()
 {
 	static int counter;
-	int nextPort = PRTD_RECV_PORT + counter;
+	int nextPort = PRTD_CONTAINER_RECV_PORT+ counter;
 	counter = counter + 1;
 	return to_string(nextPort);
 }
 
-void PrtDistServiceCreateRPCServer()
+void PrtDistNodeManagerCreateRPCServer()
 {
-	PrtDistServiceLog("Creating RPC server for PrtDService ....");
+	PrtDistNodeManagerLog("Creating RPC server for PrtDService ....");
 	RPC_STATUS status;
 	char buffPort[100];
 	_itoa_s(PRTD_SERVICE_PORT, buffPort, 10);
@@ -37,7 +54,7 @@ void PrtDistServiceCreateRPCServer()
 	}
 
 	status = RpcServerRegisterIf2(
-		s_PrtDistService_v1_0_s_ifspec, // Interface to register.
+		s_PrtDistNodeManager_v1_0_s_ifspec, // Interface to register.
 		NULL, // Use the MIDL generated entry-point vector.
 		NULL, // Use the MIDL generated entry-point vector.
 		RPC_IF_ALLOW_CALLBACKS_WITH_NO_AUTH, // Forces use of security callback.
@@ -51,7 +68,7 @@ void PrtDistServiceCreateRPCServer()
 		exit(status);
 	}
 
-	PrtDistServiceLog("PrtDService listening ...");
+	PrtDistNodeManagerLog("PrtDService listening ...");
 	// Start to listen for remote procedure calls for all registered interfaces.
 	// This call will not return until RpcMgmtStopServerListening is called.
 	status = RpcServerListen(
@@ -73,16 +90,16 @@ void PrtDistServiceCreateRPCServer()
 //
 
 // Ping service
-void s_PrtDistServicePing(handle_t mHandle, int server,  boolean* amAlive)
+void s_PrtDistNMPing(handle_t mHandle, int server,  boolean* amAlive)
 {
 	char log[100] = "";
-	_CONCAT(log, "Pinged by External Server :", AZUREMACHINE_NAMES[server]);
+	_CONCAT(log, "Pinged by External Server :", AZUREMACHINEREF[server]);
 	*amAlive = !(*amAlive);
-	PrtDistServiceLog(log);
+	PrtDistNodeManagerLog(log);
 }
 
 // Create NodeManager
-void s_PrtDistServiceCreateNodeManager(handle_t mHandle, unsigned char* jobName, boolean *status)
+void s_PrtDistNMCreateContainer(handle_t mHandle, unsigned char* jobName, boolean *status)
 {
 	string networkShare = PrtDistConfigGetNetworkShare(configurationFile);
 	string jobS(reinterpret_cast<char*>(jobName));
@@ -93,7 +110,7 @@ void s_PrtDistServiceCreateNodeManager(handle_t mHandle, unsigned char* jobName,
 	if (!st)
 	{
 		*status = st;
-		PrtDistServiceLog("CreateProcess for Node Manager failed in ROBOCOPY\n");
+		PrtDistNodeManagerLog("CreateProcess for Node Manager failed in ROBOCOPY\n");
 		return;
 	}
 
@@ -108,8 +125,8 @@ void s_PrtDistServiceCreateNodeManager(handle_t mHandle, unsigned char* jobName,
 	char currDir[100];
 	GetCurrentDirectory(100, currDir);
 	SetCurrentDirectory(newLocalJobFolder.c_str());
-	string nextport = PrtDistServiceNextNodeManagerPort();
-	PrtDistServiceLog((char*)("New Node Manager created listening at Port : " + nextport).c_str());
+	string nextport = PrtDistNodeManagerNextContainerPort();
+	PrtDistNodeManagerLog((char*)("New Node Manager created listening at Port : " + nextport).c_str());
 	// Start the child process. 
 	if (!CreateProcess("NodeManager.exe",   // No module name (use command line)
 		(LPTSTR)nextport.c_str(),        // Command line
@@ -123,7 +140,7 @@ void s_PrtDistServiceCreateNodeManager(handle_t mHandle, unsigned char* jobName,
 		&pi)           // Pointer to PROCESS_INFORMATION structure
 		)
 	{
-		PrtDistServiceLog("CreateProcess for Node Manager failed\n");
+		PrtDistNodeManagerLog("CreateProcess for Node Manager failed\n");
 		*status = false;
 		return;
 	}
@@ -151,30 +168,14 @@ MIDL_user_free(void* object)
 ///
 ///PrtDist Deployer Logging
 ///
-void PrtDistServiceCreateLogFile()
-{
-	fopen_s(&logFile, logFileName, "w+");
-	fputs("Starting P Service ..... \n", logFile);
-	fflush(logFile);
-	fclose(logFile);
-}
 
-
-void PrtDistServiceLog(char* log)
-{
-	fopen_s(&logFile, logFileName, "a+");
-	fputs(log, logFile);
-	fputs("\n", logFile);
-	fflush(logFile);
-	fclose(logFile);
-}
 
 ///
 /// Main
 ///
 int main(int argc, char* argv[])
 {
-	PrtDistServiceCreateLogFile();
-	PrtDistServiceCreateRPCServer();
+	PrtDistNodeManagerCreateLogFile();
+	PrtDistNodeManagerCreateRPCServer();
 	
 }

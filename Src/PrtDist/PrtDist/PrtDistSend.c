@@ -1,5 +1,5 @@
 #include "PrtDist.h"
-#include "../PrtDistIDL/PrtDistIDL_s.c"
+#include "PrtDistIDL/PrtDistIDL_s.c"
 
 
 

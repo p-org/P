@@ -18,22 +18,28 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="PrtDistNodeManager.acf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="PrtDistNodeManager.idl" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{2C375A16-2C95-45C6-96A7-2EA71C4A6471}</ProjectGuid>
-    <RootNamespace>PrtDService</RootNamespace>
+    <ProjectGuid>{A5BDE8E1-31D4-45AA-9C1A-EC496F5ED9B5}</ProjectGuid>
+    <RootNamespace>PrtDServiceIDL</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
-    <CharacterSet>NotSet</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
-    <CharacterSet>NotSet</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -65,38 +71,34 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>..\..\Binaries\</OutDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+  <PropertyGroup />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>../../../Prt/API;../../PrtDist/PrtDist/;../../../Prt/Core;../../../Prt/WinUser/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>
-      </PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\Resources\PThreads\;$(SolutionDir)$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>XMLParser.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;PrtDIstHelper.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <Midl>
+      <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
+      <HeaderFileName>%(Filename)_h.h</HeaderFileName>
+    </Midl>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>../../../Prt/API;../../PrtDist/PrtDist/;../../../Prt/Core;../../../Prt/WinUser/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;_CRT_SECURE_NO_WARNINGS;PRT_ARCH_X64</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\Resources\PThreads\;$(SolutionDir)$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>XMLParser.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <Midl>
+      <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
+      <HeaderFileName>%(Filename)_h.h</HeaderFileName>
+    </Midl>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -105,15 +107,16 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Prt/;../../PrtDist/PrtDistIDL/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_ARCH_X86;PRT_PLAT_WINDIST</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>PrtDistLogger.lib;ParsingXML.lib;pthreadVC2.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <Midl>
+      <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
+      <HeaderFileName>%(Filename)_h.h</HeaderFileName>
+    </Midl>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -122,33 +125,17 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Prt/;../../PrtDist/PrtDistIDL/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_ARCH_X86;PRT_PLAT_WINDIST</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>PrtDistLogger.lib;ParsingXML.lib;pthreadVC2.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <Midl>
+      <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
+      <HeaderFileName>%(Filename)_h.h</HeaderFileName>
+    </Midl>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="PrtDistService.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="PrtDistService.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\PrtDistUtilities\PrtDistHelper\PrtDistHelper.vcxproj">
-      <Project>{f9e759b9-4473-4db2-a20d-3e0cb6d5c134}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\PrtDistUtilities\XMLParser\XMLParser.vcxproj">
-      <Project>{e8936605-6f7c-4298-aa4c-9d9d7a349cd9}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\PrtDistServiceIDL\PrtDistServiceIDL.vcxproj">
-      <Project>{a5bde8e1-31d4-45aa-9c1a-ec496f5ed9b5}</Project>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

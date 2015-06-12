@@ -19,31 +19,31 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{88589011-C704-470A-8A39-05DC0C816DA8}</ProjectGuid>
-    <RootNamespace>PrtDist</RootNamespace>
+    <ProjectGuid>{2C375A16-2C95-45C6-96A7-2EA71C4A6471}</ProjectGuid>
+    <RootNamespace>PrtDService</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -66,56 +66,37 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>..\..\Binaries\</OutDir>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)$(Configuration)\$(Platform)\</IntDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
-  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../../Prt/WinUser/;../../../Prt/IDL/;../../../Prt/Core/;../../../Prt/API/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL</PreprocessorDefinitions>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>../../../Prt/API;../../PrtDist/PrtDist/;../../../Prt/Core;../../../Prt/WinUser/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>
+      </PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>..\..\Resources\PThreads\;$(SolutionDir)$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;PrtDIstHelper.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <Lib>
-      <AdditionalDependencies>
-      </AdditionalDependencies>
-    </Lib>
-    <Lib>
-      <AdditionalLibraryDirectories>
-      </AdditionalLibraryDirectories>
-    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../../Prt/WinUser/;../../../Prt/IDL/;../../../Prt/Core/;../../../Prt/API/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>../../../Prt/API;../../PrtDist/PrtDist/;../../../Prt/Core;../../../Prt/WinUser/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_PLAT_WINUSER;_CRT_SECURE_NO_WARNINGS;PRT_ARCH_X64</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>..\..\Resources\PThreads\;$(SolutionDir)$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>XMLParser.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <Lib>
-      <AdditionalDependencies>
-      </AdditionalDependencies>
-      <AdditionalLibraryDirectories>
-      </AdditionalLibraryDirectories>
-    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -124,13 +105,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../../Prt/WinUser/;../../../Prt/IDL/;../../../Prt/Core/;../../../Prt/API/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../Prt/;../../PrtDist/PrtDistIDL/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_ARCH_X86;PRT_PLAT_WINDIST</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>PrtDistLogger.lib;ParsingXML.lib;pthreadVC2.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -140,31 +122,29 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../../Prt/WinUser/;../../../Prt/IDL/;../../../Prt/Core/;../../../Prt/API/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../Prt/;../../PrtDist/PrtDistIDL/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_ARCH_X86;PRT_PLAT_WINDIST</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>PrtDistLogger.lib;ParsingXML.lib;pthreadVC2.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="PrtDistSend.c" />
-    <ClCompile Include="PrtDistSerializer.c" />
+    <ClInclude Include="PrtDistNodeManager.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Prt\IDL\PrtIDL.vcxproj">
-      <Project>{13dcfb0e-a18a-4e6b-ae2e-f46a7b89a145}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\PrtDistIDL\PrtDistIDL.vcxproj">
-      <Project>{149b3fb2-4585-4c8d-abac-0de8ae7e9985}</Project>
-    </ProjectReference>
+    <ClCompile Include="PrtDistNodeManger.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PrtDist.h" />
-    <ClInclude Include="PrtDistSend.h" />
-    <ClInclude Include="PrtDistSerializer.h" />
+    <ProjectReference Include="..\..\PrtDistHelper\PrtDistHelper.vcxproj">
+      <Project>{f9e759b9-4473-4db2-a20d-3e0cb6d5c134}</Project>
+    </ProjectReference>
+    <ProjectReference Include="PrtDistNodeManagerIDL\PrtDistNodeManagerIDL.vcxproj">
+      <Project>{a5bde8e1-31d4-45aa-9c1a-ec496f5ed9b5}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

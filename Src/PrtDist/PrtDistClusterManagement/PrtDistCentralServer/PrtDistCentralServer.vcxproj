@@ -50,7 +50,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>XMLParser.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;PrtDistHelper.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;PrtDistHelper.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -75,13 +75,10 @@
     <ClInclude Include="PrtDistCentralServer.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\PrtDistUtilities\PrtDistHelper\PrtDistHelper.vcxproj">
+    <ProjectReference Include="..\..\PrtDistHelper\PrtDistHelper.vcxproj">
       <Project>{f9e759b9-4473-4db2-a20d-3e0cb6d5c134}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\PrtDistUtilities\XMLParser\XMLParser.vcxproj">
-      <Project>{e8936605-6f7c-4298-aa4c-9d9d7a349cd9}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\PrtDistCentralServerIDL\PrtDistCentralServerIDL.vcxproj">
+    <ProjectReference Include="PrtDistCentralServerIDL\PrtDistCentralServerIDL.vcxproj">
       <Project>{b934b5a8-9ca3-4585-8e2f-927350f9c9d7}</Project>
     </ProjectReference>
   </ItemGroup>

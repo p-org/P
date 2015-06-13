@@ -1,7 +1,7 @@
 #include "PrtDistNodeManager.h"
 
 /* GLobal Variables */
-string configurationFile = "PrtDistManConfiguration.xml";
+string configurationFile = "PrtDistClusterConfiguration.xml";
 char* logFileName = "PRTDIST_SERVICE.txt";
 FILE* logFile;
 

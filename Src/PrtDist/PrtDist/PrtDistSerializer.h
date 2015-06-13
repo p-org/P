@@ -2,8 +2,6 @@
 #include "PrtWinUser.h"
 #include "PrtExecution.h"
 
-
-
 /**
 We do not serialize types anymore as they are removed from the PrtValues
 

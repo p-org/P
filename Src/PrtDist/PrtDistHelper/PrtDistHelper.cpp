@@ -19,8 +19,6 @@ void _CONCAT(char* dest, char* string1, char* string2)
 	strcat(dest, string2);
 }
 
-
-
 string PrtDistConfigGetNetworkShare(string configFilePath) {
 	int i = 0;
 	char DM[200];
@@ -119,22 +117,20 @@ string PrtDistConfigGetLocalJobFolder(string configFilePath)
 	return localFolder;
 }
 
-
-//Function to throw an exception when creating COM object: 
+//Function to throw an exception when creating COM object:
 inline void TESTHR(HRESULT _hr)
 {
 	if FAILED(_hr)
 		throw(_hr);
 }
 
-//The following code gets all elements found in XML file,  
+//The following code gets all elements found in XML file,
 
 XMLNODE** XMLDOMParseNodes(const char *szFileName)
 {
 	XMLNODE** returnList = NULL;
 	try
 	{
-
 		//Qualify namespase explicitly to avoid Compiler Error C2872 "ambiguous symbol" during linking.
 		//Now Msxml2.dll use the "MSXML2" namespace
 		//(see http://support.microsoft.com/default.aspx?scid=kb;en-us;316317):
@@ -148,21 +144,19 @@ XMLNODE** XMLDOMParseNodes(const char *szFileName)
 		MSXML2::IXMLDOMNamedNodeMapPtr DOMNamedNodeMapPtr;//iteration through the collection of attribute nodes
 		MSXML2::IXMLDOMNodeList *childList = NULL;//node list containing the child nodes
 
-
-		//Variable with the name of node to find: 
+		//Variable with the name of node to find:
 		BSTR strFindText = L" ";//" " means to output every node
 
 		//Variables to store item's name, parent, text and node type:
 		BSTR bstrItemText, bstrItemNode, bstrItemParent, bstrNodeType;
 
-		//Variables to store attribute's name,type and text:	 
+		//Variables to store attribute's name,type and text:
 		BSTR bstrAttrName, bstrAttrType, bstrAttrText;
 
 		HRESULT hResult;
 
 		int i = 0;//loop-index variable
 		int n = 0;//lines counter
-
 
 		//Initialize COM Library:
 		CoInitialize(NULL);
@@ -172,7 +166,7 @@ XMLNODE** XMLDOMParseNodes(const char *szFileName)
 
 		// Load a document:
 		_variant_t varXml(szFileName);//XML file to load
-		_variant_t varResult((bool)TRUE);//result 
+		_variant_t varResult((bool)TRUE);//result
 
 		varResult = docPtr->load(varXml);
 
@@ -193,24 +187,20 @@ XMLNODE** XMLDOMParseNodes(const char *szFileName)
 		//Output root node:
 		docPtr->documentElement->get_nodeName(&bstrItemText);
 		//%ls formatting is for wchar_t* parameter's type (%s for char* type):
-		//printf("\nRoot: %ls\n", bstrItemText);	
-
+		//printf("\nRoot: %ls\n", bstrItemText);
 
 		returnList = (XMLNODE**)malloc(sizeof(XMLNODE*)*NodeListPtr->length);
 
 		for (i = 0; i < (NodeListPtr->length); i++)
 		{
-
 			if (pIDOMNode) pIDOMNode->Release();
 			NodeListPtr->get_item(i, &pIDOMNode);
 
-
 			if (pIDOMNode)
 			{
-
 				pIDOMNode->get_nodeTypeString(&bstrNodeType);
 
-				//We process only elements (nodes of "element" type): 
+				//We process only elements (nodes of "element" type):
 				BSTR temp = L"element";
 
 				if (lstrcmp((LPCTSTR)bstrNodeType, (LPCTSTR)temp) == 0)
@@ -219,12 +209,11 @@ XMLNODE** XMLDOMParseNodes(const char *szFileName)
 					n++;//element node's number
 					//printf("\n\n%d\n", n);//element node's number
 
-
 					sprintf(currNode->NodeType, "%ls", (LPCTSTR)bstrNodeType);
 					//printf("Type: %ls\n", bstrNodeType);
 
 					pIDOMNode->get_nodeName(&bstrItemNode);
-					//printf("Node: %ls\n", bstrItemNode);				
+					//printf("Node: %ls\n", bstrItemNode);
 					sprintf(currNode->NodeName, "%ls", (LPCTSTR)bstrItemNode);
 
 					pIDOMNode->get_text(&bstrItemText);
@@ -235,7 +224,6 @@ XMLNODE** XMLDOMParseNodes(const char *szFileName)
 					pIParentNode->get_nodeName(&bstrItemParent);
 					//printf("Parent: %ls\n",bstrItemParent);
 					sprintf(currNode->NodeParent, "%ls", ((LPCTSTR)bstrItemParent));
-
 
 					pIDOMNode->get_childNodes(&childList);
 					//printf("Child nodes: %d\n", (childList->length));
@@ -255,7 +243,7 @@ XMLNODE** XMLDOMParseNodes(const char *szFileName)
 						//Loop through the number of attributes:
 						for (j = 0; j < length; j++)
 						{
-							//get attribute node:							
+							//get attribute node:
 							DOMNamedNodeMapPtr->get_item(j, &pIAttrNode);
 
 							pIAttrNode->get_nodeTypeString(&bstrAttrType);//type as string
@@ -265,11 +253,9 @@ XMLNODE** XMLDOMParseNodes(const char *szFileName)
 							pIAttrNode->get_nodeName(&bstrAttrName);
 							//printf("Attribute name: %ls\n", bstrAttrName);
 							pIAttrNode->get_text(&bstrAttrText);
-							//printf("Attribute value: %ls\n", bstrAttrText);						
-
+							//printf("Attribute value: %ls\n", bstrAttrText);
 						}
 					}
-					
 				}
 			}
 		}
@@ -279,7 +265,6 @@ XMLNODE** XMLDOMParseNodes(const char *szFileName)
 		pIDOMNode = NULL;
 		pIParentNode->Release();
 		pIParentNode = NULL;
-
 	}
 
 	catch (...)
@@ -287,8 +272,6 @@ XMLNODE** XMLDOMParseNodes(const char *szFileName)
 		MessageBox(NULL, ("*** Exception occurred ***"), ("Error message"), MB_OK);
 	}
 
-
 	CoUninitialize();
 	return returnList;
-
 }

@@ -11,5 +11,5 @@ interface PrtRPCSerializationTest
 	void PrtRPCTestSend(
 		[in] handle_t handleM,
 		[in, ptr] PRT_VALUE* value
-	);
+		);
 }

@@ -1,7 +1,7 @@
 #include "PrtDistCentralServer.h"
 
 /* GLobal Variables */
-string configurationFile = "PrtDistManConfiguration.xml";
+string configurationFile = "PrtDistClusterConfiguration.xml";
 int myServerID = 0;
 char* logFileName = "PRTDIST_CENTRALSERVER.txt";
 FILE* logFile;
@@ -16,7 +16,6 @@ int PrtDistCentralServerGetNextID()
 	{
 		//local node execution
 		retValue = 0;
-
 	}
 	else
 	{
@@ -48,7 +47,6 @@ void PrtDistCentralServerLog(char* log)
 	fclose(logFile);
 }
 
-
 //rpc related functions
 
 void* __RPC_API
@@ -65,7 +63,6 @@ MIDL_user_free(void* object)
 {
 	free(object);
 }
-
 
 void s_PrtDistCentralServerPing(handle_t handle, int server, boolean * amAlive)
 {
@@ -133,7 +130,6 @@ void PrtDistCentralServerCreateRPCServer()
 		std::cerr << "Runtime reported exception in RpcServerListen" << std::endl;
 		exit(status);
 	}
-
 }
 
 int main()
@@ -147,7 +143,7 @@ int main()
 
 	//get my server ID
 	myServerID = PrtDistConfigGetCentralServerNode(configurationFile);
-	
+
 	log[0] = '\0';
 	_CONCAT(log, "Started The Central Server on ", AZUREMACHINEREF[myServerID]);
 	PrtDistCentralServerLog(log);
@@ -155,5 +151,4 @@ int main()
 
 	//set up the RPC connection
 	PrtDistCentralServerCreateRPCServer();
-
 }

@@ -41,7 +41,7 @@ PRT_BOOLEAN PrtDistSend(
 	{
 
 		c_PrtDistSendEx(&Async, handle, serial_target, serial_event, serial_payload);
-
+		//c_PrtDistSendEx(handle, serial_target, serial_event, serial_payload);
 	}
 		RpcExcept(1)
 	{

@@ -32,14 +32,14 @@ PRT_BOOLEAN PrtDistSend(
 //logging function
 void PrtDistLog(PRT_STRING log);
 
-handle_t
-PrtDistCreateRPCClient(
-PRT_VALUE* target
-);
-
 DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(
 LPVOID portNumber
 );
 
-void PrtDistStartContainerListerner(PRT_PROCESS* process, PRT_INT32 portNumber, HANDLE* listener);
+
+PRT_VALUE *P_FUN__CREATENODE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
+
+PRT_VALUE *P_FUN__SENDRELIABLE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
+
+PRT_VALUE *P_FUN__SEND_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
 #endif

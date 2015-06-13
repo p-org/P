@@ -87,6 +87,7 @@ void PrtDistSMLogHandler(PRT_STEP step, void *vcontext)
 		log = PrtToStringStep(step, vcontext);
 	}
 	fputs(log, logfile);
+	fputs("\n", logfile);
 	fflush(logfile);
 	PrtUnlockMutex(((PRT_PROCESS_PRIV*)ContainerProcess)->processLock);
 }

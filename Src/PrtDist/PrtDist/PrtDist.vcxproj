@@ -91,12 +91,10 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>
-      </AdditionalDependencies>
+      <AdditionalDependencies>PrtWinUser.lib</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>
-      </AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\Lib\$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
     </Lib>
     <ProjectReference>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>

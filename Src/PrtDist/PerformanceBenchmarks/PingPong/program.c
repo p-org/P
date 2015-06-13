@@ -771,12 +771,6 @@
 
   PRT_VALUE *P_FUN_PONG_PopState_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
 
-  PRT_VALUE *P_FUN__CREATENODE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
-
-  PRT_VALUE *P_FUN__SENDRELIABLE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
-
-  PRT_VALUE *P_FUN__SEND_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value);
-
   PRT_DODECL P_GEND_DOS_GodMachine__CREATEMACHINE[] = 
   {
     
@@ -845,7 +839,8 @@
     PRT_VALUE *p_tmp_expr_5;
     PRT_VALUE *p_tmp_expr_6;
     PRT_VALUE *p_tmp_expr_7;
-    p_tmp_funstmt_ret = P_EXPR_7(P_FUN__SENDRELIABLE_IMPL(context, 3U, P_TUPLE_2(&P_GEND_TYPE_20, p_tmp_expr_3, p_tmp_expr_0, p_tmp_expr_6)), PRT_FALSE, P_TUPLE_2(&P_GEND_TYPE_16, p_tmp_expr_2, p_tmp_expr_5, p_tmp_expr_4), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 1), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 2), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 0), PRT_FALSE, p_tmp_mach_priv->id, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_GodMachine_createmachine_param], PRT_FALSE, &P_GEND_VALUE_2, PRT_FALSE);
+
+	p_tmp_funstmt_ret = P_EXPR_7(P_FUN__SENDRELIABLE_IMPL(context, 3U, P_TUPLE_2(&P_GEND_TYPE_20, p_tmp_expr_3, p_tmp_expr_0, p_tmp_expr_6)), PRT_FALSE, P_TUPLE_2(&P_GEND_TYPE_16, p_tmp_expr_2, p_tmp_expr_5, p_tmp_expr_4), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 1), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 2), PRT_FALSE, PrtTupleGetNC(p_tmp_expr_1, 0), PRT_FALSE, p_tmp_mach_priv->id, PRT_FALSE, p_tmp_mach_priv->varValues[P_VAR_GodMachine_createmachine_param], PRT_FALSE, &P_GEND_VALUE_2, PRT_FALSE);
     if (p_tmp_funstmt_ret == NULL)
     {
     }
@@ -1326,77 +1321,6 @@
     P_STMT_0(PrtSetGlobalVarEx(p_tmp_mach_priv, P_VAR_PONG_createmachine_return, p_tmp_stmt_0, !PRT_FALSE), P_EXPR_0(p_tmp_mach_priv->currentEvent.payload, PRT_FALSE), PRT_FALSE);
     PrtPop(p_tmp_mach_priv);
     goto P_EXIT_FUN;
-    P_EXIT_FUN:
-    if (value != NULL)
-    {
-      PrtFreeValue(value);
-    }
-    return p_tmp_ret;
-  }
-
-  PRT_VALUE *P_FUN__CREATENODE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
-  {
-    PRT_MACHINEINST_PRIV *p_tmp_mach_priv = (PRT_MACHINEINST_PRIV *)context;
-    PRT_BOOLEAN p_tmp_bool;
-    PRT_VALUE *p_tmp_ret = NULL;
-    PRT_VALUE *p_tmp_tuple;
-    PRT_VALUE *p_tmp_funstmt_ret;
-    PRT_VALUE *p_tmp_stmt_0;
-    PRT_VALUE *p_tmp_expr_0;
-    PRT_VALUE *p_tmp_expr_1;
-    P_STMT_0(PrtTupleSetEx(value, 0U, p_tmp_stmt_0, !PRT_TRUE), P_EXPR_1(PrtCloneValue(PrtMkMachine(context->process, P_MACHINE_NodeManager, p_tmp_expr_0)->id), PRT_FALSE, &P_GEND_VALUE_9, PRT_FALSE), PRT_FALSE);
-    p_tmp_ret = PrtCloneValue(P_EXPR_0(PrtTupleGetNC(value, 0U), PRT_FALSE));
-    goto P_EXIT_FUN;
-    P_EXIT_FUN:
-    if (value != NULL)
-    {
-      PrtFreeValue(value);
-    }
-    if (p_tmp_ret == NULL)
-    {
-      return PrtMkDefaultValue(&P_GEND_TYPE_4);
-    }
-    else
-    {
-      return p_tmp_ret;
-    }
-  }
-
-  PRT_VALUE *P_FUN__SENDRELIABLE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
-  {
-    PRT_MACHINEINST_PRIV *p_tmp_mach_priv = (PRT_MACHINEINST_PRIV *)context;
-    PRT_BOOLEAN p_tmp_bool;
-    PRT_VALUE *p_tmp_ret = NULL;
-    PRT_VALUE *p_tmp_tuple;
-    PRT_VALUE *p_tmp_funstmt_ret;
-    PRT_VALUE *p_tmp_stmt_0;
-    PRT_VALUE *p_tmp_stmt_1;
-    PRT_VALUE *p_tmp_stmt_2;
-    PRT_VALUE *p_tmp_expr_0;
-    P_STMT_2(PrtSend(PrtGetMachine(context->process, p_tmp_stmt_0), p_tmp_stmt_1, p_tmp_stmt_2), P_EXPR_0(PrtTupleGetNC(value, 2U), PRT_FALSE), PRT_FALSE, P_EXPR_0(PrtTupleGetNC(value, 1U), PRT_FALSE), PRT_FALSE, P_EXPR_0(PrtTupleGetNC(value, 0U), PRT_FALSE), PRT_FALSE);
-    P_EXIT_FUN:
-    if (value != NULL)
-    {
-      PrtFreeValue(value);
-    }
-    return p_tmp_ret;
-  }
-
-  PRT_VALUE *P_FUN__SEND_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
-  {
-    PRT_MACHINEINST_PRIV *p_tmp_mach_priv = (PRT_MACHINEINST_PRIV *)context;
-    PRT_BOOLEAN p_tmp_bool;
-    PRT_VALUE *p_tmp_ret = NULL;
-    PRT_VALUE *p_tmp_tuple;
-    PRT_VALUE *p_tmp_funstmt_ret;
-    PRT_VALUE *p_tmp_stmt_0;
-    PRT_VALUE *p_tmp_stmt_1;
-    PRT_VALUE *p_tmp_stmt_2;
-    PRT_VALUE *p_tmp_expr_0;
-    if (P_BOOL_EXPR(P_EXPR_0(PrtMkNondetBoolValue(), PRT_FALSE), PRT_TRUE))
-    {
-      P_STMT_2(PrtSend(PrtGetMachine(context->process, p_tmp_stmt_0), p_tmp_stmt_1, p_tmp_stmt_2), P_EXPR_0(PrtTupleGetNC(value, 2U), PRT_FALSE), PRT_FALSE, P_EXPR_0(PrtTupleGetNC(value, 1U), PRT_FALSE), PRT_FALSE, P_EXPR_0(PrtTupleGetNC(value, 0U), PRT_FALSE), PRT_FALSE);
-    }
     P_EXIT_FUN:
     if (value != NULL)
     {
@@ -2039,3 +1963,30 @@
     NULL
   };
   
+  PRT_VALUE *P_FUN__CREATENODE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+  {
+	  PRT_MACHINEINST_PRIV *p_tmp_mach_priv = (PRT_MACHINEINST_PRIV *)context;
+	  PRT_BOOLEAN p_tmp_bool;
+	  PRT_VALUE *p_tmp_ret = NULL;
+	  PRT_VALUE *p_tmp_tuple;
+	  PRT_VALUE *p_tmp_funstmt_ret;
+	  PRT_VALUE *p_tmp_stmt_0;
+	  PRT_VALUE *p_tmp_expr_0;
+	  PRT_VALUE *p_tmp_expr_1;
+	  P_STMT_0(PrtTupleSetEx(value, 0U, p_tmp_stmt_0, !PRT_TRUE), P_EXPR_1(PrtCloneValue(PrtMkMachine(context->process, P_MACHINE_NodeManager, p_tmp_expr_0)->id), PRT_FALSE, &P_GEND_VALUE_9, PRT_FALSE), PRT_FALSE);
+	  p_tmp_ret = PrtCloneValue(P_EXPR_0(PrtTupleGetNC(value, 0U), PRT_FALSE));
+	  goto P_EXIT_FUN;
+  P_EXIT_FUN:
+	  if (value != NULL)
+	  {
+		  PrtFreeValue(value);
+	  }
+	  if (p_tmp_ret == NULL)
+	  {
+		  return PrtMkDefaultValue(&P_GEND_TYPE_4);
+	  }
+	  else
+	  {
+		  return p_tmp_ret;
+	  }
+  }

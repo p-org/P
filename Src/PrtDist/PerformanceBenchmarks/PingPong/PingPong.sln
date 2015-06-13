@@ -5,16 +5,30 @@ VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PingPong", "PingPong.vcxproj", "{A57EA5EE-934D-41ED-9670-18AF76C52A96}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PrtDist", "..\..\PrtDist\PrtDist.vcxproj", "{88589011-C704-470A-8A39-05DC0C816DA8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
 		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{A57EA5EE-934D-41ED-9670-18AF76C52A96}.Debug|Win32.ActiveCfg = Debug|Win32
 		{A57EA5EE-934D-41ED-9670-18AF76C52A96}.Debug|Win32.Build.0 = Debug|Win32
+		{A57EA5EE-934D-41ED-9670-18AF76C52A96}.Debug|x64.ActiveCfg = Debug|Win32
 		{A57EA5EE-934D-41ED-9670-18AF76C52A96}.Release|Win32.ActiveCfg = Release|Win32
 		{A57EA5EE-934D-41ED-9670-18AF76C52A96}.Release|Win32.Build.0 = Release|Win32
+		{A57EA5EE-934D-41ED-9670-18AF76C52A96}.Release|x64.ActiveCfg = Release|Win32
+		{88589011-C704-470A-8A39-05DC0C816DA8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{88589011-C704-470A-8A39-05DC0C816DA8}.Debug|Win32.Build.0 = Debug|Win32
+		{88589011-C704-470A-8A39-05DC0C816DA8}.Debug|x64.ActiveCfg = Debug|x64
+		{88589011-C704-470A-8A39-05DC0C816DA8}.Debug|x64.Build.0 = Debug|x64
+		{88589011-C704-470A-8A39-05DC0C816DA8}.Release|Win32.ActiveCfg = Release|Win32
+		{88589011-C704-470A-8A39-05DC0C816DA8}.Release|Win32.Build.0 = Release|Win32
+		{88589011-C704-470A-8A39-05DC0C816DA8}.Release|x64.ActiveCfg = Release|x64
+		{88589011-C704-470A-8A39-05DC0C816DA8}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

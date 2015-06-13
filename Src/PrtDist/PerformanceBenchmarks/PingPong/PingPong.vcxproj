@@ -50,7 +50,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\WorkSpace\plang\Src\PrtDist\Lib\Debug\Win32\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>PrtDist.lib;PrtWinUser.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>PrtDist.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

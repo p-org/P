@@ -35,8 +35,28 @@ int main(int argc, char *argv[])
 		processGuid.data3 = 0;
 		processGuid.data4 = 0;
 		ContainerProcess = PrtStartProcess(processGuid, &P_GEND_PROGRAM, PrtDistSMExceptionHandler, PrtDistSMLogHandler);
-		HANDLE listener;
-		PrtDistStartContainerListerner(ContainerProcess, PRTD_CONTAINER_RECV_PORT + processId, &listener);
+		HANDLE listener = NULL;
+		//PrtDistStartContainerListerner(ContainerProcess, PRTD_CONTAINER_RECV_PORT + processId, listener);
+		PRT_INT32 portNumber = PRTD_CONTAINER_RECV_PORT + processId;
+		listener = CreateThread(NULL, 0, PrtDistCreateRPCServerForEnqueueAndWait, &portNumber, 0, NULL);
+		if (listener == NULL)
+		{
+			PrtDistLog("Error Creating RPC server in PrtDistStartNodeManagerMachine");
+		}
+		else
+		{
+			DWORD status;
+			//Sleep(3000);
+			//check if the thread is all ok
+			GetExitCodeThread(listener, &status);
+			if (status != STILL_ACTIVE)
+				PrtDistLog("ERROR : Thread terminated");
+
+			PrtDistLog("Receiver listening at port ");
+			char log[10];
+			_itoa(portNumber, log, 10);
+			PrtDistLog(log);
+		}
 
 		if (createMain)
 		{

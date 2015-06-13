@@ -219,9 +219,10 @@ __in PRT_VALUE* value
 		
 		case PRT_VALKIND_SEQ:
 		{
-			PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
-			PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
+			PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
+			PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtCalloc(1, sizeof(PRT_SEQVALUE));
 			retVal->discriminator = PRT_VALKIND_SEQ;
+			retVal->valueUnion.seq = cVal;
 			PRT_SEQVALUE *sVal = value->valueUnion.seq;
 			
 			
@@ -242,7 +243,7 @@ __in PRT_VALUE* value
 					InsertValueNode(&cVal->valuesSerialized, PrtDistSerializeValue(sVal->values[i]));
 				}
 			}
-			retVal->valueUnion.seq = cVal;
+			
 			return retVal;
 		}
 		default:

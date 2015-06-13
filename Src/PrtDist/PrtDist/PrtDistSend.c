@@ -191,6 +191,8 @@ DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(LPVOID portNumber)
 		exit(status);
 	}
 
+	return -1;
+
 }
 
 void PrtDistStartContainerRPCListener(PRT_PROCESS* process, PRT_INT32 portNumber)

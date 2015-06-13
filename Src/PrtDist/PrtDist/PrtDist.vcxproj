@@ -162,6 +162,14 @@
     <ProjectReference Include="PrtDistIDL\PrtDistIDL.vcxproj">
       <Project>{149b3fb2-4585-4c8d-abac-0de8ae7e9985}</Project>
     </ProjectReference>
+    <ProjectReference Include="PrtWinUser.vcxproj">
+      <Project>{f8c72c0e-450c-4ae1-9885-31b8565c1d63}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

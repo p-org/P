@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 		processGuid.data3 = 0;
 		processGuid.data4 = 0;
 		ContainerProcess = PrtStartProcess(processGuid, &P_GEND_PROGRAM, PrtDistSMExceptionHandler, PrtDistSMLogHandler);
-		PrtDistStartNodeManagerMachine(ContainerProcess, PRTD_RECV_PORT + 1, PRT_TRUE);
+		PrtDistStartNodeManagerMachine(ContainerProcess, PRTD_CONTAINER_RECV_PORT + 1, PRT_TRUE);
 		PrtStopProcess(ContainerProcess);
 	}
 	PRT_DBG_END_MEM_BALANCED_REGION

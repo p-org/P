@@ -156,12 +156,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="PrtDist.c" />
     <ClCompile Include="PrtDistSend.c" />
     <ClCompile Include="PrtDistSerializer.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrtDist.h" />
-    <ClInclude Include="PrtDistSend.h" />
     <ClInclude Include="PrtDistSerializer.h" />
   </ItemGroup>
   <ItemGroup>

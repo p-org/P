@@ -66,24 +66,29 @@ void PrtDistSMLogHandler(PRT_STEP step, void *vcontext)
 {
 	static FILE *logfile = NULL;
 	PRT_MACHINEINST_PRIV *c = (PRT_MACHINEINST_PRIV*)vcontext;
-	PrtLockMutex(((PRT_PROCESS_PRIV*)c->process)->processLock);
+	PrtLockMutex(((PRT_PROCESS_PRIV*)ContainerProcess)->processLock);
 	if (logfile == NULL)
 	{
 		PRT_CHAR fileName[100] = "PRT_PPROCESS_LOG_";
 		PRT_CHAR processId[100];
-		_itoa(c->id->valueUnion.mid->processId.data1, processId, 10);
+		_itoa(ContainerProcess->guid.data1, processId, 10);
 		strcat_s(fileName, 100, processId);
 		strcat_s(fileName, 100, ".txt");
 		logfile = fopen(fileName, "a+");
 	}
 
 	PRT_STRING log = NULL;
-	log = PrtToStringStep(step, vcontext);
-
+	if (step == PRT_STEP_COUNT) //special logging
+	{
+		log = (PRT_STRING)vcontext;
+	}
+	else
+	{
+		log = PrtToStringStep(step, vcontext);
+	}
 	fputs(log, logfile);
 	fflush(logfile);
-	PrtFree(log);
-	PrtUnlockMutex(((PRT_PROCESS_PRIV*)c->process)->processLock);
+	PrtUnlockMutex(((PRT_PROCESS_PRIV*)ContainerProcess)->processLock);
 }
 
 

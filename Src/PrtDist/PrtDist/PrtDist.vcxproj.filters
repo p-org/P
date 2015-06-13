@@ -18,6 +18,9 @@
     <ClCompile Include="PrtDistSerializer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PrtDist.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="PrtDistSend.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -27,9 +30,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PrtDist.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PrtDistSend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

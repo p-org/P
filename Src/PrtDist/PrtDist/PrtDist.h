@@ -2,9 +2,9 @@
 #define PRTDIST_H
 
 #include "PrtDistSerializer.h"
-#include "CommonFiles\PrtDistGlobalInfo.h"
 #include "PrtDistIDL\PrtDistIDL.h"
 
+extern char* AZUREMACHINEREF[];
 
 //pointer to the container process
 extern PRT_PROCESS* ContainerProcess;
@@ -28,4 +28,18 @@ PRT_BOOLEAN PrtDistSend(
 	PRT_VALUE* event,
 	PRT_VALUE* payload
 	);
+
+//logging function
+void PrtDistLog(PRT_STRING log);
+
+handle_t
+PrtDistCreateRPCClient(
+PRT_VALUE* target
+);
+
+DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(
+LPVOID portNumber
+);
+
+void PrtDistStartContainerListerner(PRT_PROCESS* process, PRT_INT32 portNumber, HANDLE* listener);
 #endif

@@ -10,7 +10,7 @@
 ///
 /** Array of prime hash table capacities. */
 
-const PRT_UINT32 PrtHashtableCapacities[] =
+const PRT_UINT32 PrtHashtableCapacitiesDist[] =
 {
 	3, 13, 31, 61, 127,
 	251, 509, 1021, 2039, 4093,
@@ -165,7 +165,7 @@ __in PRT_VALUE* value
 		case PRT_VALKIND_NULL:
 		case PRT_VALKIND_BOOL:
 		case PRT_VALKIND_EVENT:
-		case PRT_VALKIND_MACHINE:
+		case PRT_VALKIND_MID:
 		case PRT_VALKIND_INT:
 			return PrtCloneValue(value);
 		case PRT_VALKIND_FORGN:
@@ -180,7 +180,7 @@ __in PRT_VALUE* value
 			retVal->discriminator = PRT_VALKIND_MAP;
 			retVal->valueUnion.map = map;
 			PRT_MAPVALUE *mVal = value->valueUnion.map;
-			map->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[mVal->capNum], sizeof(PRT_MAPNODE *));
+			map->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacitiesDist[mVal->capNum], sizeof(PRT_MAPNODE *));
 			map->capNum = mVal->capNum;
 			map->size = 0;
 			map->first = NULL;
@@ -344,7 +344,7 @@ __in PRT_VALUE* value
 		case PRT_VALKIND_NULL:
 		case PRT_VALKIND_BOOL:
 		case PRT_VALKIND_EVENT:
-		case PRT_VALKIND_MACHINE:
+		case PRT_VALKIND_MID:
 		case PRT_VALKIND_INT:
 			return PrtCloneValue(value);
 		case PRT_VALKIND_FORGN:
@@ -359,7 +359,7 @@ __in PRT_VALUE* value
 			retVal->discriminator = PRT_VALKIND_MAP;
 			retVal->valueUnion.map = map;
 			PRT_MAPVALUE *mVal = value->valueUnion.map;
-			map->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[mVal->capNum], sizeof(PRT_MAPNODE *));
+			map->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacitiesDist[mVal->capNum], sizeof(PRT_MAPNODE *));
 			map->capNum = mVal->capNum;
 			map->size = 0;
 			map->first = NULL;

@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <thread>
 #include<fstream>
+#include"..\PrtDist.h"
 #include "../../PrtDist/CommonFiles/PrtDistGlobalInfo.h"
 #include"PrtDistNodeManagerIDL\PrtDistNodeManager_h.h"
 #include"PrtDistNodeManagerIDL\PrtDistNodeManager_s.c"

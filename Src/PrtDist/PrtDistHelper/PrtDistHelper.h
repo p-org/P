@@ -4,9 +4,12 @@
 #ifndef PRTDISTHELPER_H
 #define PRTDISTHELPER_H
 
-
+#include<string>
 #include<stdio.h>
+#include<fstream>
+#import <msxml3.dll>
 
+using namespace std;
 
 typedef	struct _XMLNODE {
 	char NodeType[100];
@@ -18,31 +21,30 @@ typedef	struct _XMLNODE {
 XMLNODE** XMLDOMParseNodes(const char*);
 
 //enum for the fields in cluster configuration file
-typedef enum ClusterConfiguration
+enum ClusterConfiguration
 {
 	MainExe = 0,
 	NetworkShare,
 	localFolder,
 	CentralServer,
 	TotalNodes
-} PRT_ClusterConfiguration;
-
-
+};
+#ifdef __cplusplus
+extern "C"{
+#endif
 
 //Helper functions used across PrtDistManager projects.
-void _ROBOCOPY(char* source, char* dest);
+boolean _ROBOCOPY(string source, string dest);
 
 //For concatenating two strings
 void _CONCAT(char* dest, char* string1, char* string2);
 
 //Helper functions used for parsing information from the XML.
-char* PrtDistClusterConfigGet(PRT_ClusterConfiguration field);
+char* PrtDistClusterConfigGet(ClusterConfiguration field);
 
-//get the job name and job folder from which to fetch the binaries on the network share
-void PrtDistConfigGetJobNameAndJobFolder(char* jobName, char* jobFolder);
-
-//copies all the files locally from the network share.
-void PrtDistConfigGetJobFilesLocally(char* configFilePath, char* jobName, char* jobFolder);
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

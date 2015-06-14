@@ -24,6 +24,9 @@
     <ClCompile Include="PrtDistSend.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PrtDistNMClient.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrtDistSerializer.h">

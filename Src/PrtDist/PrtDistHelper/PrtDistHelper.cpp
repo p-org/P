@@ -1,12 +1,16 @@
 #include "PrtDistHelper.h"
-#import <msxml3.dll>
 
 using namespace MSXML2;
 
-void _ROBOCOPY(char* source, char* dest)
+boolean _ROBOCOPY(string source, string dest)
 {
-	char copycommand[100];
-	sprintf(copycommand, "robocopy %s %s >> ROBOCOPY_LOG.txt", source, dest);
+	string copycommand = "robocopy " + source + " " + dest + " > " + "ROBOCOPY_PSERVICE_LOG.txt";
+	if (system(copycommand.c_str()) == -1)
+	{
+		return false;
+	}
+	else
+		return true;
 }
 
 void _CONCAT(char* dest, char* string1, char* string2)
@@ -57,16 +61,6 @@ char* PrtDistClusterConfigGet(ClusterConfiguration fld)
 		i++;
 	}
 	return returnValue;
-}
-
-
-void PrtDistConfigGetJobNameAndJobFolder(char* jobName, char* jobFolder)
-{
-	/*
-	ifstream read;
-	read.open("job.txt");
-	read >> *jobName;
-	read >> *jobFolder;*/
 }
 
 

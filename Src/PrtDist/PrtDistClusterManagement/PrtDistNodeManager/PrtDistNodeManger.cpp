@@ -1,7 +1,8 @@
 #include "PrtDistNodeManager.h"
 
 /* GLobal Variables */
-char* logFileName = "PRTDIST_SERVICE.txt";
+char* logFileName = "PRTDIST_NODEMANAGER.txt";
+int CurrentNodeID = 1;
 int myNodeId;
 FILE* logFile;
 std::mutex g_lock;
@@ -104,14 +105,13 @@ void s_PrtDistNMPing(handle_t mHandle, int server,  boolean* amAlive)
 }
 
 // Create NodeManager
-void s_PrtDistNMCreateContainer(handle_t mHandle, unsigned char* jobName, boolean createMain, boolean *status)
+void s_PrtDistNMCreateContainer(handle_t mHandle, boolean createMain, int* containerId, boolean *status)
 {
 	string networkShare = PrtDistClusterConfigGet(NetworkShare);
-	string jobS(reinterpret_cast<char*>(jobName));
-	string jobFolder = networkShare + jobS;
+	string jobFolder = networkShare;
 	string localJobFolder = PrtDistClusterConfigGet(localFolder);
-	string newLocalJobFolder = localJobFolder + jobS;
-	boolean st = _ROBOCOPY(jobFolder, newLocalJobFolder);
+	string newLocalJobFolder = localJobFolder;
+	bool st = _ROBOCOPY(jobFolder, newLocalJobFolder);
 	if (!st)
 	{
 		*status = st;
@@ -121,8 +121,9 @@ void s_PrtDistNMCreateContainer(handle_t mHandle, unsigned char* jobName, boolea
 
 	//get the exe name
 	string exeName = PrtDistClusterConfigGet(MainExe);
+	*containerId = PrtDistNodeManagerNextContainerId();
 	char commandLine[100];
-	sprintf_s(commandLine, 100, " %d %d %d", createMain, PrtDistNodeManagerNextContainerId(), myNodeId);
+	sprintf_s(commandLine, 100, "%s %d %d %d", exeName.c_str(), createMain, *containerId, myNodeId);
 	//create the node manager process
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
@@ -137,7 +138,7 @@ void s_PrtDistNMCreateContainer(handle_t mHandle, unsigned char* jobName, boolea
 	
 	// Start the child process. 
 	if (!CreateProcess(NULL,   // No module name (use command line)
-		"PingPong.exe 1 1 0",        // Command line
+		const_cast<LPSTR>(commandLine),        // Command line
 		NULL,           // Process handle not inheritable
 		NULL,           // Thread handle not inheritable
 		FALSE,          // Set handle inheritance to FALSE
@@ -156,6 +157,38 @@ void s_PrtDistNMCreateContainer(handle_t mHandle, unsigned char* jobName, boolea
 	*status = true;
 }
 
+
+
+//Helper Functions
+int PrtDistCentralServerGetNextID()
+{
+	g_lock.lock();
+	int retValue = CurrentNodeID;
+	int totalNodes = atoi(PrtDistClusterConfigGet(TotalNodes));
+	if (totalNodes == 0)
+	{
+		//local node execution
+		retValue = 0;
+	}
+	else
+	{
+		if (CurrentNodeID == totalNodes)
+			CurrentNodeID = 1;
+		else
+			CurrentNodeID = CurrentNodeID + 1;
+	}
+	g_lock.unlock();
+	return retValue;
+}
+
+void s_PrtDistCentralServerGetNodeId(handle_t handle, int server, int *nodeId)
+{
+	char log[100] = "";
+	*nodeId = PrtDistCentralServerGetNextID();
+	_CONCAT(log, "Received Request for a new NodeId from ", AZUREMACHINEREF[server]);
+	_CONCAT(log, " and returned node ID : ", AZUREMACHINEREF[*nodeId]);
+	PrtDistNodeManagerLog(log);
+}
 
 void* __RPC_API
 MIDL_user_allocate(size_t size)

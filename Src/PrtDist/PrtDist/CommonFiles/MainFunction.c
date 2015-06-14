@@ -36,7 +36,6 @@ int main(int argc, char *argv[])
 		processGuid.data4 = 0;
 		ContainerProcess = PrtStartProcess(processGuid, &P_GEND_PROGRAM, PrtDistSMExceptionHandler, PrtDistSMLogHandler);
 		HANDLE listener = NULL;
-		//PrtDistStartContainerListerner(ContainerProcess, PRTD_CONTAINER_RECV_PORT + processId, listener);
 		PRT_INT32 portNumber = PRTD_CONTAINER_RECV_PORT + processId;
 		listener = CreateThread(NULL, 0, PrtDistCreateRPCServerForEnqueueAndWait, &portNumber, 0, NULL);
 		if (listener == NULL)
@@ -68,6 +67,10 @@ int main(int argc, char *argv[])
 		else
 		{
 			//create container machine
+			PrtDistLog("Creating Container Machine");
+			PRT_VALUE* payload = PrtMkNullValue();
+			PrtMkMachine(ContainerProcess, P_MACHINE_NodeManager, payload);
+			PrtFreeValue(payload);
 
 		}
 

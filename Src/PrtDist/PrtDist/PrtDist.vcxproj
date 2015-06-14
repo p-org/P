@@ -91,7 +91,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>PrtWinUser.lib;PrtDistHelper.lib</AdditionalDependencies>
+      <AdditionalDependencies>PrtWinUser.lib</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>..\Lib\$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
@@ -155,6 +155,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="PrtDist.c" />
+    <ClCompile Include="PrtDistNMClient.c" />
     <ClCompile Include="PrtDistSend.c" />
     <ClCompile Include="PrtDistSerializer.c" />
   </ItemGroup>
@@ -163,8 +164,8 @@
     <ClInclude Include="PrtDistSerializer.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PrtDistHelper\PrtDistHelper.vcxproj">
-      <Project>{f9e759b9-4473-4db2-a20d-3e0cb6d5c134}</Project>
+    <ProjectReference Include="..\PrtDistClusterManagement\PrtDistNodeManager\PrtDistNodeManager.vcxproj">
+      <Project>{2c375a16-2c95-45c6-96a7-2ea71c4a6471}</Project>
     </ProjectReference>
     <ProjectReference Include="PrtDistIDL\PrtDistIDL.vcxproj">
       <Project>{149b3fb2-4585-4c8d-abac-0de8ae7e9985}</Project>

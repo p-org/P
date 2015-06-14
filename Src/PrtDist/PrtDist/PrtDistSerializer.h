@@ -1,4 +1,3 @@
-#pragma once
 #include "PrtWinUser.h"
 #include "PrtExecution.h"
 

@@ -3,6 +3,8 @@
 #include <windows.h>
 #include <thread>
 #include<fstream>
+#include <mutex>
+#include <chrono>
 #include "..\CommonFiles\PrtDistMachines.h"
 #include "..\CommonFiles\PrtDistPorts.h"
 #include"PrtDistNodeManagerIDL\PrtDistNodeManager_h.h"

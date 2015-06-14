@@ -2,6 +2,7 @@
 <!-- Configuration for Windows Azure -->
 <!--
 <configuration>
+  <MainExe>PingPong.exe</MainExe>
   <NetworkShare>\\plangdist1\Users\planguser\Documents\PlangShared\</NetworkShare>
   <localFolder>C:\Plang\</localFolder>
   <CentralServer>1</CentralServer>
@@ -18,6 +19,7 @@
 <!-- Configuration for Single Server Debugging -->
 
 <configuration>
+  <MainExe>PingPong.exe</MainExe>
   <NetworkShare>.\Deployer\</NetworkShare>
   <localFolder>.\Deployer\Local\</localFolder>
   <CentralServer>0</CentralServer>

@@ -1,43 +1,48 @@
 #include "PrtDistNodeManager.h"
 
 /* GLobal Variables */
-string configurationFile = "PrtDistClusterConfiguration.xml";
 char* logFileName = "PRTDIST_SERVICE.txt";
+int myNodeId;
 FILE* logFile;
-
+std::mutex g_lock;
 //
 // Helper Functions
 //
 
 void PrtDistNodeManagerCreateLogFile()
 {
+	g_lock.lock();
 	fopen_s(&logFile, logFileName, "w+");
-	fputs("Starting P Service ..... \n", logFile);
+	fputs("Starting NodeManager Service ..... \n", logFile);
 	fflush(logFile);
 	fclose(logFile);
+	g_lock.unlock();
 }
 
 
 void PrtDistNodeManagerLog(char* log)
 {
+	g_lock.lock();
 	fopen_s(&logFile, logFileName, "a+");
 	fputs(log, logFile);
 	fputs("\n", logFile);
 	fflush(logFile);
 	fclose(logFile);
+	g_lock.unlock();
 }
 
-string PrtDistNodeManagerNextContainerPort()
+int PrtDistNodeManagerNextContainerId()
 {
-	static int counter;
-	int nextPort = PRTD_CONTAINER_RECV_PORT+ counter;
+	static int counter = 0;
+	g_lock.lock();
 	counter = counter + 1;
-	return to_string(nextPort);
+	g_lock.unlock();
+	return (counter);
 }
 
 void PrtDistNodeManagerCreateRPCServer()
 {
-	PrtDistNodeManagerLog("Creating RPC server for PrtDService ....");
+	PrtDistNodeManagerLog("Creating RPC server for NodeManager ....");
 	RPC_STATUS status;
 	char buffPort[100];
 	_itoa_s(PRTD_SERVICE_PORT, buffPort, 10);
@@ -49,7 +54,7 @@ void PrtDistNodeManagerCreateRPCServer()
 
 	if (status)
 	{
-		std::cerr << "Runtime reported exception in RpcServerUseProtseqEp" << std::endl;
+		PrtDistNodeManagerLog("Runtime reported exception in RpcServerUseProtseqEp");
 		exit(status);
 	}
 
@@ -64,11 +69,11 @@ void PrtDistNodeManagerCreateRPCServer()
 
 	if (status)
 	{
-		std::cerr << "Runtime reported exception in RpcServerRegisterIf2" << std::endl;
+		PrtDistNodeManagerLog("Runtime reported exception in RpcServerRegisterIf2");
 		exit(status);
 	}
 
-	PrtDistNodeManagerLog("PrtDService listening ...");
+	PrtDistNodeManagerLog("Node Manager is listening ...");
 	// Start to listen for remote procedure calls for all registered interfaces.
 	// This call will not return until RpcMgmtStopServerListening is called.
 	status = RpcServerListen(
@@ -78,7 +83,7 @@ void PrtDistNodeManagerCreateRPCServer()
 
 	if (status)
 	{
-		std::cerr << "Runtime reported exception in RpcServerListen" << std::endl;
+		PrtDistNodeManagerLog("Runtime reported exception in RpcServerListen");
 		exit(status);
 	}
 
@@ -99,12 +104,12 @@ void s_PrtDistNMPing(handle_t mHandle, int server,  boolean* amAlive)
 }
 
 // Create NodeManager
-void s_PrtDistNMCreateContainer(handle_t mHandle, unsigned char* jobName, boolean *status)
+void s_PrtDistNMCreateContainer(handle_t mHandle, unsigned char* jobName, boolean createMain, boolean *status)
 {
-	string networkShare = PrtDistConfigGetNetworkShare(configurationFile);
+	string networkShare = PrtDistClusterConfigGet(NetworkShare);
 	string jobS(reinterpret_cast<char*>(jobName));
 	string jobFolder = networkShare + jobS;
-	string localJobFolder = PrtDistConfigGetLocalJobFolder(configurationFile);
+	string localJobFolder = PrtDistClusterConfigGet(localFolder);
 	string newLocalJobFolder = localJobFolder + jobS;
 	boolean st = _ROBOCOPY(jobFolder, newLocalJobFolder);
 	if (!st)
@@ -114,6 +119,10 @@ void s_PrtDistNMCreateContainer(handle_t mHandle, unsigned char* jobName, boolea
 		return;
 	}
 
+	//get the exe name
+	string exeName = PrtDistClusterConfigGet(MainExe);
+	char commandLine[100];
+	sprintf_s(commandLine, 100, " %d %d %d", createMain, PrtDistNodeManagerNextContainerId(), myNodeId);
 	//create the node manager process
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
@@ -125,11 +134,10 @@ void s_PrtDistNMCreateContainer(handle_t mHandle, unsigned char* jobName, boolea
 	char currDir[100];
 	GetCurrentDirectory(100, currDir);
 	SetCurrentDirectory(newLocalJobFolder.c_str());
-	string nextport = PrtDistNodeManagerNextContainerPort();
-	PrtDistNodeManagerLog((char*)("New Node Manager created listening at Port : " + nextport).c_str());
+	
 	// Start the child process. 
-	if (!CreateProcess("NodeManager.exe",   // No module name (use command line)
-		(LPTSTR)nextport.c_str(),        // Command line
+	if (!CreateProcess(NULL,   // No module name (use command line)
+		"PingPong.exe 1 1 0",        // Command line
 		NULL,           // Process handle not inheritable
 		NULL,           // Thread handle not inheritable
 		FALSE,          // Set handle inheritance to FALSE
@@ -176,6 +184,21 @@ MIDL_user_free(void* object)
 int main(int argc, char* argv[])
 {
 	PrtDistNodeManagerCreateLogFile();
+	if (argc != 2)
+	{
+		PrtDistNodeManagerLog("ERROR : Wrong number of commandline arguments passed\n");
+		exit(-1);
+	}
+	else
+	{
+
+		myNodeId = atoi(argv[1]);
+		if (myNodeId >= TOTAL_NODES)
+		{
+			PrtDistNodeManagerLog("ERROR : Wrong nodeId passed as commandline argument\n");
+		}
+	}
+
 	PrtDistNodeManagerCreateRPCServer();
 	
 }

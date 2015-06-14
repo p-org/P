@@ -1,16 +1,12 @@
 #include "PrtDistHelper.h"
+#import <msxml3.dll>
 
 using namespace MSXML2;
 
-boolean _ROBOCOPY(string source, string dest)
+void _ROBOCOPY(char* source, char* dest)
 {
-	string copycommand = "robocopy " + source + " " + dest + " > " + "ROBOCOPY_PSERVICE_LOG.txt";
-	if (system(copycommand.c_str()) == -1)
-	{
-		return false;
-	}
-	else
-		return true;
+	char copycommand[100];
+	sprintf(copycommand, "robocopy %s %s >> ROBOCOPY_LOG.txt", source, dest);
 }
 
 void _CONCAT(char* dest, char* string1, char* string2)
@@ -19,103 +15,60 @@ void _CONCAT(char* dest, char* string1, char* string2)
 	strcat(dest, string2);
 }
 
-string PrtDistConfigGetNetworkShare(string configFilePath) {
+char* PrtDistClusterConfigGet(ClusterConfiguration fld)
+{
 	int i = 0;
-	char DM[200];
+	char field[200];
 	XMLNODE** listofNodes;
 	XMLNODE* currNode;
-	string DeploymentFolder = "";
-	strcpy_s(DM, 200, "NetworkShare");
-	listofNodes = XMLDOMParseNodes(configFilePath.c_str());
+	char* returnValue;
+	char* configurationFile = "PrtDistClusterConfiguration.xml";
+
+	switch (fld)
+	{
+	case MainExe:
+		strcpy_s(field, 200, "MainExe");
+		break;
+	case NetworkShare:
+		strcpy_s(field, 200, "NetworkShare");
+		break;
+	case localFolder:
+		strcpy_s(field, 200, "localFolder");
+		break;
+	case CentralServer:
+		strcpy_s(field, 200, "CentralServer");
+		break;
+	case TotalNodes:
+		strcpy_s(field, 200, "NNodes");
+		break;
+	default:
+		break;
+	}
+	
+	listofNodes = XMLDOMParseNodes(configurationFile);
 	currNode = listofNodes[i];
 	while (currNode != NULL)
 	{
-		if (strcmp(currNode->NodeName, DM) == 0)
+		if (strcmp(currNode->NodeName, field) == 0)
 		{
-			DeploymentFolder = currNode->NodeValue;
+			returnValue = currNode->NodeValue;
 		}
 		currNode = listofNodes[i];
 		i++;
 	}
-	return DeploymentFolder;
+	return returnValue;
 }
 
-void PrtDistConfigGetJobNameAndJobFolder(string configFilePath, string* jobName, string* jobFolder)
+
+void PrtDistConfigGetJobNameAndJobFolder(char* jobName, char* jobFolder)
 {
+	/*
 	ifstream read;
 	read.open("job.txt");
 	read >> *jobName;
-	read >> *jobFolder;
+	read >> *jobFolder;*/
 }
 
-int PrtDistConfigGetCentralServerNode(string configFilePath)
-{
-	int i = 0;
-	char DM[200];
-	XMLNODE** listofNodes;
-	XMLNODE* currNode;
-	string centralserver = "";
-	strcpy_s(DM, 200, "CentralServer");
-	listofNodes = XMLDOMParseNodes(configFilePath.c_str());
-	currNode = listofNodes[i];
-	while (currNode != NULL)
-	{
-		if (strcmp(currNode->NodeName, DM) == 0)
-		{
-			centralserver = currNode->NodeValue;
-		}
-		currNode = listofNodes[i];
-		i++;
-	}
-	int cs = atoi(centralserver.c_str());
-	return cs;
-}
-
-int PrtDistConfigGetTotalNodes(string configFilePath)
-{
-	int i = 0;
-	char DM[200];
-	XMLNODE** listofNodes;
-	XMLNODE* currNode;
-	string totalNodes = "";
-	strcpy_s(DM, 200, "NNodes");
-	listofNodes = XMLDOMParseNodes(configFilePath.c_str());
-	currNode = listofNodes[i];
-	while (currNode != NULL)
-	{
-		if (strcmp(currNode->NodeName, DM) == 0)
-		{
-			totalNodes = currNode->NodeValue;
-		}
-		currNode = listofNodes[i];
-		i++;
-	}
-	int cs = atoi(totalNodes.c_str());
-	return cs;
-}
-
-string PrtDistConfigGetLocalJobFolder(string configFilePath)
-{
-	int i = 0;
-	char DM[200];
-	XMLNODE** listofNodes;
-	XMLNODE* currNode;
-	string localFolder = "";
-	strcpy_s(DM, 200, "localFolder");
-	listofNodes = XMLDOMParseNodes(configFilePath.c_str());
-	currNode = listofNodes[i];
-	while (currNode != NULL)
-	{
-		if (strcmp(currNode->NodeName, DM) == 0)
-		{
-			localFolder = currNode->NodeValue;
-		}
-		currNode = listofNodes[i];
-		i++;
-	}
-
-	return localFolder;
-}
 
 //Function to throw an exception when creating COM object:
 inline void TESTHR(HRESULT _hr)

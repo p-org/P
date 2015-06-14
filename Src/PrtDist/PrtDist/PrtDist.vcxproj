@@ -85,13 +85,13 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;PRT_STATIC</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>PrtWinUser.lib</AdditionalDependencies>
+      <AdditionalDependencies>PrtWinUser.lib;PrtDistHelper.lib</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>..\Lib\$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
@@ -163,6 +163,9 @@
     <ClInclude Include="PrtDistSerializer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\PrtDistHelper\PrtDistHelper.vcxproj">
+      <Project>{f9e759b9-4473-4db2-a20d-3e0cb6d5c134}</Project>
+    </ProjectReference>
     <ProjectReference Include="PrtDistIDL\PrtDistIDL.vcxproj">
       <Project>{149b3fb2-4585-4c8d-abac-0de8ae7e9985}</Project>
     </ProjectReference>

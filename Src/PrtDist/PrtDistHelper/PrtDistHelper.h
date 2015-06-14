@@ -1,16 +1,11 @@
-#pragma once
-#include<string>
-#include<iostream>
-#include <windows.h>
-#include <thread>
-#include<fstream>
-#include <stdio.h>
-#include <comutil.h>
-#import <msxml3.dll>
 
-using namespace std;
 
-#pragma once
+
+#ifndef PRTDISTHELPER_H
+#define PRTDISTHELPER_H
+
+
+#include<stdio.h>
 
 
 typedef	struct _XMLNODE {
@@ -22,29 +17,33 @@ typedef	struct _XMLNODE {
 
 XMLNODE** XMLDOMParseNodes(const char*);
 
+//enum for the fields in cluster configuration file
+typedef enum ClusterConfiguration
+{
+	MainExe = 0,
+	NetworkShare,
+	localFolder,
+	CentralServer,
+	TotalNodes
+} PRT_ClusterConfiguration;
+
+
+
 //Helper functions used across PrtDistManager projects.
-boolean _ROBOCOPY(string source, string dest);
+void _ROBOCOPY(char* source, char* dest);
+
+//For concatenating two strings
 void _CONCAT(char* dest, char* string1, char* string2);
 
 //Helper functions used for parsing information from the XML.
-
-//get the network share path from which to fetch the binary files.
-string PrtDistConfigGetNetworkShare(string configFilePath);
+char* PrtDistClusterConfigGet(PRT_ClusterConfiguration field);
 
 //get the job name and job folder from which to fetch the binaries on the network share
-void PrtDistConfigGetJobNameAndJobFolder(string configFilePath, string* jobName, string* jobFolder);
+void PrtDistConfigGetJobNameAndJobFolder(char* jobName, char* jobFolder);
 
 //copies all the files locally from the network share.
-void PrtDistConfigGetJobFilesLocally(string configFilePath, string jobName, string jobFolder);
+void PrtDistConfigGetJobFilesLocally(char* configFilePath, char* jobName, char* jobFolder);
 
-//get the central server node name/ip from the config file.
-int PrtDistConfigGetCentralServerNode(string configFilePath);
-
-//get the total number nodes (0 -> localhost (debug mode))
-int PrtDistConfigGetTotalNodes(string configFilePath);
-
-//Get path to the local folder where the files are copied.
-string PrtDistConfigGetLocalJobFolder(string configFilePath);
-
+#endif
 
 

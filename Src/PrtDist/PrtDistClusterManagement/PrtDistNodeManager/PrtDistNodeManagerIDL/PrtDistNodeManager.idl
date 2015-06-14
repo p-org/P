@@ -13,6 +13,7 @@ interface PrtDistNodeManager
 	void PrtDistNMCreateContainer(
 		[in] handle_t myHandle,
 		[in, string] char* JobID,
+		[in] boolean createMain,
 		[out] boolean *status
 		);
 }

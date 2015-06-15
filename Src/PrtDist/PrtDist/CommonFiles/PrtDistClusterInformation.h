@@ -1,25 +1,12 @@
 #ifndef PRTDISTGLOBALINFO_H
 #define PRTDISTGLOBALINFO_H
 
-#define PRTD_CENTRALSERVER_NODEID 0
-
-enum AzureMachines {
-	LOCALHOST = 0,
-	PLANGDIST_1,
-	PLANGDIST_2,
-	PLANGDIST_3,
-	PLANGDIST_4,
-	PLANGDIST_5,
-	PLANGDIST_6,
-	PLANGDIST_7,
-	PLANGDIST_8,
-	PLANGDIST_9,
-	PLANGDIST_10,
-	TOTAL_NODES = 10
-};
+int PRTD_SERVICE_PORT = 5300;
+int PRTD_CONTAINER_RECV_PORT = 5600;
+int PRTD_CENTRALSERVER_NODEID = 0;
 
 //this array stores the computer-name or ipaddress using which the machines can be addressed.
-char* AZUREMACHINEREF[] =
+char* PRTD_CLUSTERMACHINES[] =
 {
 	"LOCALHOST",
 	"PLANGDIST1",

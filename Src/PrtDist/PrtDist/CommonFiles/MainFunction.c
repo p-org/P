@@ -1,6 +1,6 @@
 #include "PrtDist.h"
 #include "program.h"
-#include "CommonFiles\PrtDistPorts.h"
+#include "CommonFiles\PrtDistClusterInformation.h"
 
 PRT_PROCESS* ContainerProcess;
 
@@ -51,10 +51,6 @@ int main(int argc, char *argv[])
 			if (status != STILL_ACTIVE)
 				PrtDistLog("ERROR : Thread terminated");
 
-			PrtDistLog("Receiver listening at port ");
-			char log[10];
-			_itoa(portNumber, log, 10);
-			PrtDistLog(log);
 		}
 
 		if (createMain)
@@ -69,7 +65,7 @@ int main(int argc, char *argv[])
 			//create container machine
 			PrtDistLog("Creating Container Machine");
 			PRT_VALUE* payload = PrtMkNullValue();
-			PrtMkMachine(ContainerProcess, P_MACHINE_NodeManager, payload);
+			PrtMkMachine(ContainerProcess, P_MACHINE_Container, payload);
 			PrtFreeValue(payload);
 
 		}

@@ -99,7 +99,7 @@ void PrtDistNodeManagerCreateRPCServer()
 void s_PrtDistNMPing(handle_t mHandle, int server,  boolean* amAlive)
 {
 	char log[100] = "";
-	_CONCAT(log, "Pinged by External Server :", AZUREMACHINEREF[server]);
+	_CONCAT(log, "Pinged by External Server :", PRTD_CLUSTERMACHINES[server]);
 	*amAlive = !(*amAlive);
 	PrtDistNodeManagerLog(log);
 }
@@ -185,8 +185,8 @@ void s_PrtDistCentralServerGetNodeId(handle_t handle, int server, int *nodeId)
 {
 	char log[100] = "";
 	*nodeId = PrtDistCentralServerGetNextID();
-	_CONCAT(log, "Received Request for a new NodeId from ", AZUREMACHINEREF[server]);
-	_CONCAT(log, " and returned node ID : ", AZUREMACHINEREF[*nodeId]);
+	_CONCAT(log, "Received Request for a new NodeId from ", PRTD_CLUSTERMACHINES[server]);
+	_CONCAT(log, " and returned node ID : ", PRTD_CLUSTERMACHINES[*nodeId]);
 	PrtDistNodeManagerLog(log);
 }
 
@@ -216,6 +216,7 @@ MIDL_user_free(void* object)
 ///
 int main(int argc, char* argv[])
 {
+
 	PrtDistNodeManagerCreateLogFile();
 	if (argc != 2)
 	{
@@ -226,10 +227,17 @@ int main(int argc, char* argv[])
 	{
 
 		myNodeId = atoi(argv[1]);
-		if (myNodeId >= TOTAL_NODES)
+		int totalNodes = atoi(PrtDistClusterConfigGet(TotalNodes));
+		if (myNodeId >= totalNodes)
 		{
 			PrtDistNodeManagerLog("ERROR : Wrong nodeId passed as commandline argument\n");
 		}
+
+		char log[100];
+		sprintf(log, "Started NodeManager at : %d", myNodeId);
+		PrtDistNodeManagerLog(log);
+		
+
 	}
 
 	PrtDistNodeManagerCreateRPCServer();

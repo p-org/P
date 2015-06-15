@@ -5,11 +5,10 @@
 #include<fstream>
 #include <mutex>
 #include <chrono>
-#include "..\CommonFiles\PrtDistMachines.h"
-#include "..\CommonFiles\PrtDistPorts.h"
 #include"PrtDistNodeManagerIDL\PrtDistNodeManager_h.h"
 #include"PrtDistNodeManagerIDL\PrtDistNodeManager_s.c"
 #include "..\..\PrtDistHelper\PrtDistHelper.h"
+#include "../CommonFiles/PrtDistClusterInformation.h"
 using namespace std;
 
 #define _CRT_SECURE_NO_WARNINGS

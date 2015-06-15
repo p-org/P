@@ -1,6 +1,11 @@
 #include "PrtDist.h"
 #include "PrtDistIDL/PrtDistIDL_c.c"
 
+extern handle_t
+PrtDistCreateRPCClient(
+PRT_VALUE* target
+);
+
 // function to send the event
 PRT_BOOLEAN PrtDistSend(
 	PRT_VALUE* target,
@@ -14,7 +19,6 @@ PRT_BOOLEAN PrtDistSend(
 	PRT_VALUE* serial_target, *serial_event, *serial_payload;
 	serial_target = PrtDistSerializeValue(target);
 	serial_event = PrtDistSerializeValue(event);
-	//PrtPrintValue(payload);
 	serial_payload = PrtDistSerializeValue(payload);
 
 	//initialize the asynchronous rpc
@@ -47,14 +51,11 @@ PRT_BOOLEAN PrtDistSend(
 	{
 		unsigned long ulCode;
 		ulCode = RpcExceptionCode();
-		PrtDistLog("Runtime reported exception in RPC");
-		printf("Runtime reported exception 0x%lx = %ld\n", ulCode, ulCode);
 		char log[100];
-		_itoa(ulCode, log, 10);
+		sprintf(log, "Runtime reported exception in RPC 0x%lx = %ld\n", ulCode, ulCode);
 		PrtDistLog(log);
 		return PRT_FALSE;
 	}
 	RpcEndExcept
-
-		return PRT_TRUE;
+	return PRT_TRUE;
 }

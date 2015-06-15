@@ -4,7 +4,13 @@
 #include "PrtDistSerializer.h"
 #include "PrtDistIDL\PrtDistIDL.h"
 
-extern char* AZUREMACHINEREF[];
+//cluster information
+extern char* PRTD_CLUSTERMACHINES[];
+
+extern int PRTD_SERVICE_PORT;
+extern int PRTD_CONTAINER_RECV_PORT;
+extern int PRTD_CENTRALSERVER_NODEID;
+
 
 //pointer to the container process
 extern PRT_PROCESS* ContainerProcess;

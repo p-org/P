@@ -22,9 +22,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CommonFiles", "CommonFiles", "{D67D9C52-C337-49F7-A8E2-07B9D14BC148}"
 	ProjectSection(SolutionItems) = preProject
 		PrtDist\CommonFiles\MainFunction.c = PrtDist\CommonFiles\MainFunction.c
+		PrtDist\CommonFiles\PrtDistClusterInformation.h = PrtDist\CommonFiles\PrtDistClusterInformation.h
 		PrtDist\CommonFiles\PrtDistLogging.c = PrtDist\CommonFiles\PrtDistLogging.c
-		PrtDist\CommonFiles\PrtDistMachines.h = PrtDist\CommonFiles\PrtDistMachines.h
-		PrtDist\CommonFiles\PrtDistPorts.h = PrtDist\CommonFiles\PrtDistPorts.h
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PrtDistHelper", "PrtDistHelper", "{BA08D645-F216-4CE8-B52E-D9A1D533DD53}"

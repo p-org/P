@@ -1,8 +1,6 @@
 #include "..\PrtDistClusterManagement\PrtDistNodeManager\PrtDistNodeManagerIDL\PrtDistNodeManager_h.h"
 #include "..\PrtDistClusterManagement\PrtDistNodeManager\PrtDistNodeManagerIDL\PrtDistNodeManager_c.c"
 #include "PrtDist.h"
-#include "CommonFiles/PrtDistMachines.h"
-#include "CommonFiles/PrtDistPorts.h"
 
 //central server interaction.
 int PrtDistGetNextNodeId()
@@ -10,7 +8,7 @@ int PrtDistGetNextNodeId()
 	RPC_STATUS status;
 	unsigned char* szStringBinding = NULL;
 	handle_t handle;
-
+	char log[100];
 	//get centralserverID
 	int centralServerID = PRTD_CENTRALSERVER_NODEID;
 
@@ -23,7 +21,7 @@ int PrtDistGetNextNodeId()
 		NULL, // UUID to bind to.
 		(unsigned char*)("ncacn_ip_tcp"), // Use TCP/IP
 		// protocol.
-		(unsigned char*)(AZUREMACHINEREF[centralServerID]), // TCP/IP network
+		(unsigned char*)(PRTD_CLUSTERMACHINES[centralServerID]), // TCP/IP network
 		// address to use.
 		(unsigned char*)buffPort, // TCP/IP port to use.
 		NULL, // Protocol dependent network options to use.
@@ -55,10 +53,13 @@ int PrtDistGetNextNodeId()
 	{
 		unsigned long ulCode;
 		ulCode = RpcExceptionCode();
-		printf("Runtime reported exception 0x%lx = %ld\n", ulCode, ulCode);
+		sprintf_s(log, 100, "Runtime reported exception 0x%lx = %ld\n", ulCode, ulCode);
+		PrtDistLog(log);
 	}
 	RpcEndExcept
-		printf("Central Server Returned Node %s\n", AZUREMACHINEREF[nextNodeId]);
+	
+	sprintf_s(log, 100, "Central Server Returned Node %s\n", PRTD_CLUSTERMACHINES[nextNodeId]);
+	PrtDistLog(log);
 
 	return nextNodeId;
 
@@ -83,7 +84,7 @@ int PrtDistCreateContainer(int nodeId)
 		NULL, // UUID to bind to.
 		(unsigned char*)("ncacn_ip_tcp"), // Use TCP/IP
 		// protocol.
-		(unsigned char*)(AZUREMACHINEREF[nodeId]), // TCP/IP network
+		(unsigned char*)(PRTD_CLUSTERMACHINES[nodeId]), // TCP/IP network
 		// address to use.
 		(unsigned char*)buffPort, // TCP/IP port to use.
 		NULL, // Protocol dependent network options to use.
@@ -106,12 +107,13 @@ int PrtDistCreateContainer(int nodeId)
 		exit(status);
 
 	char log[100];
-	sprintf_s(log, 100, "Creating container on %s", AZUREMACHINEREF[nodeId]);
+	sprintf_s(log, 100, "Creating container on %s", PRTD_CLUSTERMACHINES[nodeId]);
 	PrtDistLog(log);
 
+	boolean statusCC = FALSE;
 	RpcTryExcept
 	{
-		c_PrtDistNMCreateContainer(handle, 0, &newContainerId, &status);
+		c_PrtDistNMCreateContainer(handle, 0, &newContainerId, &statusCC);
 
 	}
 		RpcExcept(1)
@@ -122,8 +124,15 @@ int PrtDistCreateContainer(int nodeId)
 		PrtDistLog(log);
 	}
 	RpcEndExcept
-		if (status)
-			PrtDistLog("Successfully created the Container");
+	if (statusCC)
+		PrtDistLog("Successfully created the Container");
+	else
+	{ 
+		PrtDistLog("Failed to Create Container");
+		exit(-1);
+		//TODO : Think about a logic for machine CreateContainer Robust.
+	}
+		
 
 	return newContainerId;
 

@@ -32,5 +32,8 @@
     <ClInclude Include="program.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\PrtDist\CommonFiles\PrtDistClusterInformation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

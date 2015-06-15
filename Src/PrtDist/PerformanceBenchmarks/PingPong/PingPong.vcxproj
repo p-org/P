@@ -39,7 +39,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)\Binaries\</OutDir>
+    <OutDir>..\..\Binaries\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -51,7 +51,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\WorkSpace\plang\Src\PrtDist\Lib\Debug\Win32\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\Lib\Debug\Win32\</AdditionalLibraryDirectories>
       <AdditionalDependencies>PrtDist.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -76,6 +76,7 @@
     <ClCompile Include="stubs.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\PrtDist\CommonFiles\PrtDistClusterInformation.h" />
     <ClInclude Include="program.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

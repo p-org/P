@@ -82,6 +82,9 @@
       <AdditionalLibraryDirectories>..\..\Resources\PThreads\;$(SolutionDir)$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
       <AdditionalDependencies>rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;PrtDistHelper.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>copy /Y ..\PrtDistClusterConfiguration.xml ..\..\Binaries\PrtDistClusterConfiguration.xml</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

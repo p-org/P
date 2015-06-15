@@ -3,6 +3,7 @@
 <!--
 <configuration>
   <MainExe>PingPong.exe</MainExe>
+  <MainMachineNodeId>plangdist1</MainMachineNodeId>
   <NetworkShare>\\plangdist1\Users\planguser\Documents\PlangShared\</NetworkShare>
   <localFolder>C:\Plang\</localFolder>
   <CentralServer>1</CentralServer>
@@ -20,6 +21,7 @@
 
 <configuration>
   <MainExe>PingPong.exe</MainExe>
+  <MainMachineNodeId>0</MainMachineNodeId>
   <NetworkShare>.\Deployer\</NetworkShare>
   <localFolder>.\Deployer\Local\</localFolder>
   <CentralServer>0</CentralServer>

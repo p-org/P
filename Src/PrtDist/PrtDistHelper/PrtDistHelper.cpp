@@ -45,6 +45,9 @@ char* PrtDistClusterConfigGet(ClusterConfiguration fld)
 	case TotalNodes:
 		strcpy_s(field, 200, "NNodes");
 		break;
+	case MainMachineNodeId:
+		strcpy_s(field, 200, "MainMachineNodeId");
+		break;
 	default:
 		break;
 	}

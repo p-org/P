@@ -27,6 +27,7 @@ enum ClusterConfiguration
 	NetworkShare,
 	localFolder,
 	CentralServer,
+	MainMachineNodeId,
 	TotalNodes
 };
 #ifdef __cplusplus

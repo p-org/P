@@ -69,7 +69,7 @@ void PrtDistSMLogHandler(PRT_STEP step, void *vcontext)
 	PrtLockMutex(((PRT_PROCESS_PRIV*)ContainerProcess)->processLock);
 	if (logfile == NULL)
 	{
-		PRT_CHAR fileName[100] = "PRT_PPROCESS_LOG_";
+		PRT_CHAR fileName[100] = "PRT_CONTAINER_LOG_";
 		PRT_CHAR processId[100];
 		_itoa(ContainerProcess->guid.data1, processId, 10);
 		strcat_s(fileName, 100, processId);

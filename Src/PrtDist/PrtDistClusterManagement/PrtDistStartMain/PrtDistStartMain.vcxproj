@@ -16,6 +16,11 @@
   <ItemGroup>
     <ClInclude Include="PrtDistStartMain.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\PrtDistHelper\PrtDistHelper.vcxproj">
+      <Project>{f9e759b9-4473-4db2-a20d-3e0cb6d5c134}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{990C5A6A-97AD-4BBC-BABC-574C8AA938ED}</ProjectGuid>
     <RootNamespace>TestPrtService</RootNamespace>

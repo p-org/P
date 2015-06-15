@@ -111,7 +111,7 @@ void s_PrtDistNMCreateContainer(handle_t mHandle, boolean createMain, int* conta
 	string jobFolder = networkShare;
 	string localJobFolder = PrtDistClusterConfigGet(localFolder);
 	string newLocalJobFolder = localJobFolder;
-	bool st = _ROBOCOPY(jobFolder, newLocalJobFolder);
+	boolean st = _ROBOCOPY(jobFolder, newLocalJobFolder);
 	if (!st)
 	{
 		*status = st;
@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
 		}
 
 		char log[100];
-		sprintf(log, "Started NodeManager at : %d", myNodeId);
+		sprintf_s(log, 100, "Started NodeManager at : %d", myNodeId);
 		PrtDistNodeManagerLog(log);
 		
 

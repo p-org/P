@@ -30,7 +30,7 @@ void s_PrtDistPing(
 	handle_t handle
 )
 {
-	((PRT_PROCESS_PRIV*)ContainerProcess)->logHandler(PRT_STEP_COUNT, "Ping Successful");
+	PrtDistLog("Ping Successful");
 }
 
 PRT_INT32 PrtDistGetRecvPortNumber(PRT_VALUE* target)

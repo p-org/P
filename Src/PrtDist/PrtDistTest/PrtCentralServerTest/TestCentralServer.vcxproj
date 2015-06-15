@@ -74,6 +74,11 @@
   <ItemGroup>
     <ClInclude Include="TestCentralServer.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\PrtDistHelper\PrtDistHelper.vcxproj">
+      <Project>{f9e759b9-4473-4db2-a20d-3e0cb6d5c134}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

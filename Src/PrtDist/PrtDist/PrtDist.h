@@ -14,8 +14,6 @@ extern int PRTD_CENTRALSERVER_NODEID;
 
 //pointer to the container process
 extern PRT_PROCESS* ContainerProcess;
-//pointer to the P Program
-extern PRT_PROGRAMDECL P_GEND_PROGRAM;
 
 //Functions to help logging
 void

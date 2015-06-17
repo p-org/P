@@ -19,44 +19,37 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Prt.acf" />
+    <None Include="NodeManager.acf" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="..\API\PrtBaseTypes_IDL.idl" />
-    <Midl Include="..\API\PrtTypes_IDL.idl" />
-    <Midl Include="..\API\PrtValues_IDL.idl" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Utilities\PatchIDL\PatchIDL.csproj">
-      <Project>{0202103a-7da0-4e05-b106-f8bbe28711dc}</Project>
-    </ProjectReference>
+    <Midl Include="NodeManager.idl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{13DCFB0E-A18A-4E6B-AE2E-F46A7B89A145}</ProjectGuid>
-    <RootNamespace>PrtDistIDL</RootNamespace>
+    <ProjectGuid>{A5BDE8E1-31D4-45AA-9C1A-EC496F5ED9B5}</ProjectGuid>
+    <RootNamespace>PrtDServiceIDL</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
-    <CharacterSet>NotSet</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Utility</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
-    <CharacterSet>NotSet</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Utility</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Utility</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -89,19 +82,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Midl>
-      <PreprocessorDefinitions>
-      </PreprocessorDefinitions>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
-      <HeaderFileName>%(Filename).h</HeaderFileName>
-      <AdditionalIncludeDirectories>../API/</AdditionalIncludeDirectories>
+      <HeaderFileName>%(Filename)_h.h</HeaderFileName>
     </Midl>
-    <PostBuildEvent>
-      <Command>"..\Utilities\PatchIDL\bin\PatchIDL.exe"</Command>
-    </PostBuildEvent>
-    <PreBuildEvent>
-      <Command>
-      </Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -113,18 +96,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Midl>
-      <PreprocessorDefinitions>
-      </PreprocessorDefinitions>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
-      <HeaderFileName>%(Filename).h</HeaderFileName>
-      <AdditionalIncludeDirectories>../API/</AdditionalIncludeDirectories>
+      <HeaderFileName>%(Filename)_h.h</HeaderFileName>
     </Midl>
-    <PostBuildEvent>
-      <Command>"..\Utilities\PatchIDL\bin\PatchIDL.exe"</Command>
-    </PostBuildEvent>
-    <PreBuildEvent>
-      <Command>del /F *_IDL.h</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -140,18 +114,9 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Midl>
-      <PreprocessorDefinitions>
-      </PreprocessorDefinitions>
-      <HeaderFileName>%(Filename).h</HeaderFileName>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>../API/</AdditionalIncludeDirectories>
+      <HeaderFileName>%(Filename)_h.h</HeaderFileName>
     </Midl>
-    <PostBuildEvent>
-      <Command>"..\Utilities\PatchIDL\bin\PatchIDL.exe"</Command>
-    </PostBuildEvent>
-    <PreBuildEvent>
-      <Command>del /F *_IDL.h</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -167,18 +132,9 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Midl>
-      <PreprocessorDefinitions>
-      </PreprocessorDefinitions>
-      <HeaderFileName>%(Filename).h</HeaderFileName>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>../API/</AdditionalIncludeDirectories>
+      <HeaderFileName>%(Filename)_h.h</HeaderFileName>
     </Midl>
-    <PostBuildEvent>
-      <Command>"..\Utilities\PatchIDL\bin\PatchIDL.exe"</Command>
-    </PostBuildEvent>
-    <PreBuildEvent>
-      <Command>del /F *_IDL.h</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -20,9 +20,6 @@
     <ProjectReference Include="..\Helper\Helper.vcxproj">
       <Project>{2be4843c-9307-43f8-90fb-b8cc9b77c9c3}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\NodeManager\NodeManagerIDL\NodeManagerIDL.vcxproj">
-      <Project>{a5bde8e1-31d4-45aa-9c1a-ec496f5ed9b5}</Project>
-    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{990C5A6A-97AD-4BBC-BABC-574C8AA938ED}</ProjectGuid>

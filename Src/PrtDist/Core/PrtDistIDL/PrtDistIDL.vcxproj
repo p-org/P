@@ -148,6 +148,11 @@
   <ItemGroup>
     <Midl Include="PrtDistIDL.idl" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Prt\IDL\PrtIDL.vcxproj">
+      <Project>{13dcfb0e-a18a-4e6b-ae2e-f46a7b89a145}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

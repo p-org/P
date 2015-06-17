@@ -24,6 +24,11 @@
   <ItemGroup>
     <Midl Include="NodeManager.idl" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Core\PrtDistIDL\PrtDistIDL.vcxproj">
+      <Project>{149b3fb2-4585-4c8d-abac-0de8ae7e9985}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A5BDE8E1-31D4-45AA-9C1A-EC496F5ED9B5}</ProjectGuid>
     <RootNamespace>PrtDServiceIDL</RootNamespace>

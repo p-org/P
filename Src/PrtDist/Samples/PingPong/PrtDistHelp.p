@@ -1,11 +1,10 @@
-
-//unreliable send 
+// unreliable send 
 static model fun _SEND(target:machine, e:event, p:any) {
-	if($)
+	if ($)
 		send target, e, p;
 }
 
-//perform a reliable send
+// reliable send
 static model fun _SENDRELIABLE(target:machine, e:event, p:any) {
 	send target, e, p;
 }
@@ -15,34 +14,26 @@ static model fun _CREATECONTAINER(model_h: machine) : machine {
 	return model_h;
 }
 
-//Events
-event Req_CreateMachine:(creator:machine, typeofmachine: int, constructorparam: any);
-event Resp_CreateMachine : machine;
+// events
+event Req_CreateMachine: (creator:machine, machineType: int, param: any);
+event Resp_CreateMachine: machine;
 
 machine Container
 {
 	var newMachine: machine;
 	start state Init {
-        on Req_CreateMachine goto CreateNewMachine;
-    }
-	state CreateNewMachine {
-		entry {
-			
-			_CREATELOCALMACHINE(payload.typeofmachine, payload.constructorparam);
+        on Req_CreateMachine do {
+		    CreateLocalMachine(payload.machineType, payload.param);
 			_SENDRELIABLE(payload.creator, Resp_CreateMachine, newMachine);
-			
 		}
-		
-		on Req_CreateMachine goto CreateNewMachine;
-	}
+    }
 	
-	fun _CREATELOCALMACHINE(typeofmachine:int, param:any) {
-		
-		if(typeofmachine == 1)
+	fun CreateLocalMachine(machineType:int, param:any) {
+		if (machineType == 1)
 		{
 			newMachine = new PONG(param);
 		}
-		else if(typeofmachine == 2)
+		else if (machineType == 2)
 		{
 			newMachine = new PING(param);
 		}

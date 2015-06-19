@@ -39,4 +39,14 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <Midl Include="PrtDistIDL.idl">
+      <Filter>Source Files</Filter>
+    </Midl>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PrtDistIDL.acf">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>

@@ -101,6 +101,9 @@
     <ProjectReference>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
+    <Midl>
+      <AdditionalIncludeDirectories>..\..\Prt\API</AdditionalIncludeDirectories>
+    </Midl>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -173,9 +176,12 @@
     <ProjectReference Include="..\PrtWinUser.vcxproj">
       <Project>{f8c72c0e-450c-4ae1-9885-31b8565c1d63}</Project>
     </ProjectReference>
-    <ProjectReference Include="PrtDistIDL\PrtDistIDL.vcxproj">
-      <Project>{149b3fb2-4585-4c8d-abac-0de8ae7e9985}</Project>
-    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PrtDistIDL.acf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="PrtDistIDL.idl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

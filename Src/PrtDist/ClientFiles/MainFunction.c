@@ -1,6 +1,6 @@
 #include "PrtDist.h"
 #include "program.h"
-#include "CommonFiles\PrtDistClusterInformation.h"
+
 
 PRT_PROCESS* ContainerProcess;
 
@@ -29,6 +29,8 @@ int main(int argc, char *argv[])
 	
 	PRT_DBG_START_MEM_BALANCED_REGION
 	{
+		//Initialize the cluster configuration.
+		PrtDistClusterConfigInitialize();
 		PRT_GUID processGuid;
 		processGuid.data1 = processId;
 		processGuid.data2 = nodeId; //nodeId

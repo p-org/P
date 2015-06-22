@@ -1,5 +1,5 @@
 #include "PrtDist.h"
-#include "PrtDistIDL_s.c"
+#include ".\PrtDistIDL_s.c"
 
 extern int PrtDistGetNextNodeId();
 extern int PrtDistCreateContainer(int nodeId);
@@ -35,7 +35,7 @@ void s_PrtDistPing(
 
 PRT_INT32 PrtDistGetRecvPortNumber(PRT_VALUE* target)
 {
-	return PRTD_CONTAINER_RECV_PORT + target->valueUnion.mid->processId.data1;
+	return atoi(ClusterConfiguration.ContainerPortStart) + target->valueUnion.mid->processId.data1;
 }
 
 handle_t
@@ -58,7 +58,7 @@ PRT_VALUE* target
 		NULL, // UUID to bind to.
 		(unsigned char*)("ncacn_ip_tcp"), // Use TCP/IP
 		// protocol.
-		(unsigned char*)(PRTD_CLUSTERMACHINES[nodeId]), // TCP/IP network
+		(unsigned char*)(ClusterConfiguration.ClusterMachines[nodeId]), // TCP/IP network
 		// address to use.
 		(unsigned char*)buffPort, // TCP/IP port to use.
 		NULL, // Protocol dependent network options to use.

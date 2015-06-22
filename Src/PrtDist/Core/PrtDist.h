@@ -3,15 +3,9 @@
 
 #include "PrtDistSerializer.h"
 #include "PrtDistIDL_h.h"
+#include "ConfigParser.h"
 
-//cluster information
-extern char* PRTD_CLUSTERMACHINES[];
-
-extern int PRTD_SERVICE_PORT;
-extern int PRTD_CONTAINER_RECV_PORT;
-extern int PRTD_CENTRALSERVER_NODEID;
-
-
+ClusterConfig ClusterConfiguration;
 //pointer to the container process
 extern PRT_PROCESS* ContainerProcess;
 
@@ -31,7 +25,7 @@ PRT_BOOLEAN PrtDistSend(
 	PRT_VALUE* target,
 	PRT_VALUE* event,
 	PRT_VALUE* payload
-	);
+);
 
 //logging function
 void PrtDistLog(PRT_STRING log);

@@ -20,12 +20,24 @@
 <!-- Configuration for Single Server Debugging -->
 
 <configuration>
+  <!-- Main Executable -->
   <MainExe>PingPong.exe</MainExe>
-  <MainMachineNodeId>0</MainMachineNodeId>
-  <NetworkShare>.\Deployer\</NetworkShare>
-  <localFolder>.\Deployer\Local\</localFolder>
-  <CentralServer>0</CentralServer>
-  <NNodes>0</NNodes>
+  
+  <!-- Ports -->
+  <NodeManagerPort>5600</NodeManagerPort>
+  <CentralServerPort>5800</CentralServerPort>
+  <ContainerPortStart>5900</ContainerPortStart>
+  <!-- Deployment Binaries-->
+  <NetworkShare>.\</NetworkShare>
+  <LocalFolder>.\Local\</LocalFolder>
+  
+  <!-- Machines -->
+  <MainMachineNode>localhost</MainMachineNode>
+  <CentralServer>localhost</CentralServer>
+  <TotalNodes>1</TotalNodes>
+  <AllNodes>
+    <Node>localhost</Node>
+  </AllNodes>
 </configuration>
 
 

@@ -74,16 +74,17 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>../../../Prt/API;../../PrtDist/PrtDist/;../../../Prt/Core;../../../Prt/WinUser/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../../Prt/API;../../Core/;../../../Prt/Core;../../../Prt/WinUser/;../../../Prt/IDL/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\Resources\PThreads\;$(SolutionDir)$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\Lib\$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;PrtDist.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y ..\ClusterConfiguration.xml ..\..\Binaries\ClusterConfiguration.xml</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <Midl>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
@@ -138,18 +139,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Helper.cpp" />
     <ClCompile Include="NodeManager.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Helper.h" />
     <ClInclude Include="NodeManager.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="NodeManager.acf" />
-  </ItemGroup>
-  <ItemGroup>
-    <Midl Include="NodeManager.idl" />
+    <ProjectReference Include="..\Core\PrtDist.vcxproj">
+      <Project>{88589011-c704-470a-8a39-05dc0c816da8}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

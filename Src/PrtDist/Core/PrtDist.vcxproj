@@ -160,6 +160,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ConfigParser.cpp" />
     <ClCompile Include="PrtDist.c" />
     <ClCompile Include="PrtDistLogging.c" />
     <ClCompile Include="PrtDistNMClient.c" />
@@ -167,19 +168,25 @@
     <ClCompile Include="PrtDistSerializer.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ConfigParser.h" />
     <ClInclude Include="PrtDist.h" />
     <ClInclude Include="PrtDistSerializer.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ClusterManagement\NodeManager\NodeManager.vcxproj">
-      <Project>{2c375a16-2c95-45c6-96a7-2ea71c4a6471}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
+    <None Include="NodeManager.acf" />
     <None Include="PrtDistIDL.acf" />
   </ItemGroup>
   <ItemGroup>
+    <Midl Include="NodeManager.idl" />
     <Midl Include="PrtDistIDL.idl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Prt\IDL\PrtIDL.vcxproj">
+      <Project>{13dcfb0e-a18a-4e6b-ae2e-f46a7b89a145}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\PrtWinUser.vcxproj">
+      <Project>{f8c72c0e-450c-4ae1-9885-31b8565c1d63}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

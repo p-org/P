@@ -25,7 +25,7 @@ machine Container
         on Req_CreateMachine do {
 		    CreateLocalMachine(payload.machineType, payload.param);
 			_SENDRELIABLE(payload.creator, Resp_CreateMachine, newMachine);
-		}
+		};
     }
 	
 	fun CreateLocalMachine(machineType:int, param:any) {

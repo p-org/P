@@ -103,6 +103,7 @@
     </ProjectReference>
     <Midl>
       <AdditionalIncludeDirectories>..\..\Prt\API</AdditionalIncludeDirectories>
+      <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
     </Midl>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

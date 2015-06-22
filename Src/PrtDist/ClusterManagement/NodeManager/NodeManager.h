@@ -5,8 +5,8 @@
 #include<fstream>
 #include <mutex>
 #include <chrono>
-#include"NodeManagerIDL\NodeManager_h.h"
-#include"NodeManagerIDL\NodeManager_s.c"
+#include"NodeManager_h.h"
+#include"NodeManager_s.c"
 #include "..\..\ClusterManagement\Helper\Helper.h"
 #include "..\..\Core\CommonFiles\PrtDistClusterInformation.h"
 

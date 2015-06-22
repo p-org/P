@@ -2,7 +2,7 @@
 #define PRTDIST_H
 
 #include "PrtDistSerializer.h"
-#include "PrtDistIDL\PrtDistIDL.h"
+#include "PrtDistIDL_h.h"
 
 //cluster information
 extern char* PRTD_CLUSTERMACHINES[];

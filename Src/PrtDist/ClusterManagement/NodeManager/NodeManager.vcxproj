@@ -85,6 +85,9 @@
     <PostBuildEvent>
       <Command>copy /Y ..\ClusterConfiguration.xml ..\..\Binaries\ClusterConfiguration.xml</Command>
     </PostBuildEvent>
+    <Midl>
+      <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
+    </Midl>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

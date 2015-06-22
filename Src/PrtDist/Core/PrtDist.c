@@ -1,5 +1,5 @@
 #include "PrtDist.h"
-#include "PrtDistIDL/PrtDistIDL_s.c"
+#include "PrtDistIDL_s.c"
 
 extern int PrtDistGetNextNodeId();
 extern int PrtDistCreateContainer(int nodeId);

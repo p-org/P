@@ -70,7 +70,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="MainFunction.c" />
+    <ClCompile Include="..\..\ClientFiles\MainFunction.c" />
     <ClCompile Include="program.c" />
     <ClCompile Include="stubs.c" />
   </ItemGroup>

@@ -21,7 +21,7 @@
     <ClCompile Include="stubs.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MainFunction.c">
+    <ClCompile Include="..\..\ClientFiles\MainFunction.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

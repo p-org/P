@@ -28,7 +28,7 @@
   <CentralServerPort>5800</CentralServerPort>
   <ContainerPortStart>5900</ContainerPortStart>
   <!-- Deployment Binaries-->
-  <NetworkShare>.\</NetworkShare>
+  <NetworkShare>.\Job\</NetworkShare>
   <LocalFolder>.\Local\</LocalFolder>
   
   <!-- Machines -->

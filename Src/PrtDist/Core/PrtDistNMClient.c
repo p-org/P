@@ -104,10 +104,10 @@ int PrtDistCreateContainer(int nodeId)
 	boolean statusCC = FALSE;
 	RpcTryExcept
 	{
-		c_PrtDistNMCreateContainer(handle, 0, &newContainerId, &statusCC);
+		c_PrtDistNMCreateContainer(handle, &newContainerId, &statusCC);
 
 	}
-		RpcExcept(1)
+	RpcExcept(1)
 	{
 		unsigned long ulCode;
 		ulCode = RpcExceptionCode();
@@ -115,6 +115,7 @@ int PrtDistCreateContainer(int nodeId)
 		PrtDistLog(log);
 	}
 	RpcEndExcept
+
 	if (statusCC)
 		PrtDistLog("Successfully created the Container");
 	else

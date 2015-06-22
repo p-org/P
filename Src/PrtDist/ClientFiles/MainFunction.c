@@ -5,6 +5,7 @@
 PRT_PROCESS* ContainerProcess;
 
 struct ClusterConfig ClusterConfiguration;
+
 /**
 * The main function performs the following steps
 * 1) If the createMain option is true then it create the main machine.

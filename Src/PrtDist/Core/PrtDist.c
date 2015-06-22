@@ -140,30 +140,6 @@ DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(LPVOID portNumber)
 
 }
 
-void PrtDistStartContainerListerner(PRT_PROCESS* process, PRT_INT32 portNumber, HANDLE listener)
-{
-
-	listener = CreateThread(NULL, 0, PrtDistCreateRPCServerForEnqueueAndWait, &portNumber, 0, NULL);
-	if (listener == NULL)
-	{
-		PrtDistLog("Error Creating RPC server in PrtDistStartNodeManagerMachine");
-	}
-	else
-	{
-		DWORD status;
-		//Sleep(3000);
-		//check if the thread is all ok
-		GetExitCodeThread(listener, &status);
-		if (status != STILL_ACTIVE)
-			PrtDistLog("ERROR : Thread terminated");
-
-		PrtDistLog("Receiver listening at port ");
-		char log[10];
-		_itoa(portNumber, log, 10);
-		PrtDistLog(log);
-	}
-
-}
 
 PRT_VALUE *P_FUN__SENDRELIABLE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
 {

@@ -7,12 +7,11 @@
 #include <chrono>
 #include"NodeManager_h.h"
 #include"NodeManager_s.c"
-#include "..\..\ClusterManagement\Helper\Helper.h"
+#include "Helper.h"
 #include "..\..\Core\CommonFiles\PrtDistClusterInformation.h"
 
 using namespace std;
 
-#define _CRT_SECURE_NO_WARNINGS
 void PrtDistServiceCreateLogFile();
 void PrtDistServiceCloseLogFile();
 void PrtDistServiceLog(char* log);

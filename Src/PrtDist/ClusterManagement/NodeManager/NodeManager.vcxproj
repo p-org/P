@@ -75,7 +75,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>../../../Prt/API;../../PrtDist/PrtDist/;../../../Prt/Core;../../../Prt/WinUser/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PRT_PLAT_WINUSER;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -138,15 +138,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Helper.cpp" />
     <ClCompile Include="NodeManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Helper.h" />
     <ClInclude Include="NodeManager.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Helper\Helper.vcxproj">
-      <Project>{2be4843c-9307-43f8-90fb-b8cc9b77c9c3}</Project>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="NodeManager.acf" />

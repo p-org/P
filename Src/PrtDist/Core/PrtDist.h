@@ -5,7 +5,6 @@
 #include "PrtDistIDL_h.h"
 #include "ConfigParser.h"
 
-ClusterConfig ClusterConfiguration;
 //pointer to the container process
 extern PRT_PROCESS* ContainerProcess;
 

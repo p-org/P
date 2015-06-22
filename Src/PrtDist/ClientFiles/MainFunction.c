@@ -4,6 +4,7 @@
 
 PRT_PROCESS* ContainerProcess;
 
+struct ClusterConfig ClusterConfiguration;
 /**
 * The main function performs the following steps
 * 1) If the createMain option is true then it create the main machine.
@@ -38,7 +39,7 @@ int main(int argc, char *argv[])
 		processGuid.data4 = 0;
 		ContainerProcess = PrtStartProcess(processGuid, &P_GEND_PROGRAM, PrtDistSMExceptionHandler, PrtDistSMLogHandler);
 		HANDLE listener = NULL;
-		PRT_INT32 portNumber = PRTD_CONTAINER_RECV_PORT + processId;
+		PRT_INT32 portNumber = atoi(ClusterConfiguration.ContainerPortStart) + processId;
 		listener = CreateThread(NULL, 0, PrtDistCreateRPCServerForEnqueueAndWait, &portNumber, 0, NULL);
 		if (listener == NULL)
 		{

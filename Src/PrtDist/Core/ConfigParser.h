@@ -7,7 +7,7 @@
 #include<stdio.h>
 
 //enum for the fields in cluster configuration file
-typedef struct _ClusterConfig {
+struct ClusterConfig {
 	char* MainExe;
 	char* NodeManagerPort;
 	char* CentralServerPort;
@@ -18,9 +18,11 @@ typedef struct _ClusterConfig {
 	char* MainMachineNode;
 	int TotalNodes;
 	char** ClusterMachines;
-} ClusterConfig;
+};
 
-extern ClusterConfig ClusterConfiguration;
+//extern ClusterConfig ClusterConfiguration;
+
+extern struct ClusterConfig ClusterConfiguration;
 
 #ifdef __cplusplus
 extern "C"{

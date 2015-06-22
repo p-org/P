@@ -19,7 +19,7 @@ int myNodeId;
 FILE* logFile;
 std::mutex g_lock;
 
-ClusterConfig ClusterConfiguration;
+struct ClusterConfig ClusterConfiguration;
 
 void PrtDistServiceCreateLogFile();
 void PrtDistServiceCloseLogFile();

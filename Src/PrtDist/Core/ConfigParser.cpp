@@ -1,5 +1,4 @@
 #include "ConfigParser.h"
-#include<fstream>
 #import <msxml3.dll>
 using namespace MSXML2;
 

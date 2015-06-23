@@ -383,6 +383,12 @@ _In_ PRT_STEP step,
 _In_ PRT_MACHINEINST_PRIV *context
 );
 
+void
+PrtAssertIllegalSend(
+_In_ PRT_MACHINEINST *sourceContext,
+_In_ PRT_MACHINEINST *targetContext
+);
+
 #ifdef __cplusplus
 }
 #endif

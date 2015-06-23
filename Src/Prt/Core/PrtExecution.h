@@ -384,9 +384,9 @@ _In_ PRT_MACHINEINST_PRIV *context
 );
 
 void
-PrtAssertLegalSend(
-_In_ PRT_MACHINEINST_PRIV *sourceContext,
-_In_ PRT_MACHINEINST *targetContext
+PrtCheckIsLocalMachineId(
+_In_ PRT_MACHINEINST *context,
+_In_ PRT_VALUE *id
 );
 
 #ifdef __cplusplus

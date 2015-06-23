@@ -1290,15 +1290,14 @@ PrtLog(
 }
 
 void
-PrtAssertLegalSend(
-_In_ PRT_MACHINEINST_PRIV *sourceContext,
-_In_ PRT_MACHINEINST *targetContext
+PrtCheckIsLocalMachineId(
+_In_ PRT_MACHINEINST *context,
+_In_ PRT_VALUE *id
 )
 {
-	if (sourceContext->process->guid.data1 != targetContext->process->guid.data1 ||
-		sourceContext->process->guid.data2 != targetContext->process->guid.data2)
-	{
-		PrtHandleError(PRT_STATUS_ILLEGAL_SEND, sourceContext);
-	}
+	if (context->process->guid.data1 == id->valueUnion.mid->processId.data1 &&
+		context->process->guid.data2 == id->valueUnion.mid->processId.data2)
+		return;
+	PrtHandleError(PRT_STATUS_ILLEGAL_SEND, (PRT_MACHINEINST_PRIV *)context);
 }
 

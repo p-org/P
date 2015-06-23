@@ -1289,3 +1289,16 @@ PrtLog(
 	((PRT_PROCESS_PRIV *)context->process)->logHandler(step, (PRT_MACHINEINST *)context);
 }
 
+void
+PrtAssertIllegalSend(
+_In_ PRT_MACHINEINST_PRIV *sourceContext,
+_In_ PRT_MACHINEINST *targetContext
+)
+{
+	if (sourceContext->process->guid.data1 != targetContext->process->guid.data1 ||
+		sourceContext->process->guid.data2 != targetContext->process->guid.data2)
+	{
+		PrtHandleError(PRT_STATUS_ILLEGAL_SEND, sourceContext);
+	}
+}
+

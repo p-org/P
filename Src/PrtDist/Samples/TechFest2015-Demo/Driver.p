@@ -26,7 +26,7 @@ main machine Driver {
 			send fd, REGISTER_CLIENT, this;
 			i = 0;
 			while (i < 2) {
-				send nodeseq[i], halt;
+				_SENDRELIABLE(nodeseq[i], halt, null);
 				i = i + 1;
 			}
 		}

@@ -81,7 +81,7 @@ machine FailureDetector {
 		while (i < sizeof(nodes)) {
 		    if (nodes[i] in alive && !(nodes[i] in responses)) {
 				monitor Safety, M_PING, nodes[i];
-				send nodes[i], PING, this;
+				_SEND(nodes[i], PING, this);
 			}
 		    i = i + 1;
 		}
@@ -93,7 +93,7 @@ machine FailureDetector {
 		         alive -= nodes[i];
 				 j = 0;
 				 while (j < sizeof(clients)) {
-				     send keys(clients)[j], NODE_DOWN, nodes[i];
+				     _SENDRELIABLE(keys(clients)[j], NODE_DOWN, nodes[i]);
 				     j = j + 1;
 				 }
 			 }
@@ -106,7 +106,7 @@ machine Node {
 	start state WaitPing {
         on PING do {
 			monitor Safety, M_PONG, this;
-		    send payload as machine, PONG, this;
+		    _SEND(payload as machine, PONG, this);
 		};
     }
 }

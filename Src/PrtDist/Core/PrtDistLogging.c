@@ -17,7 +17,7 @@ __in void* vcontext
 	PRT_MACHINEINST_PRIV *c = (PRT_MACHINEINST_PRIV*)vcontext;
 
 	PrtLockMutex(((PRT_PROCESS_PRIV*)c->process)->processLock);
-	PRT_CHAR fileName[100] = "PRT_PPROCESS_LOG_";
+	PRT_CHAR fileName[100] = "PRT_CONTAINER_LOG_";
 	PRT_CHAR processId[100];
 	_itoa(c->id->valueUnion.mid->processId.data1, processId, 10);
 	strcat_s(fileName, 100, processId);
@@ -55,7 +55,7 @@ __in void* vcontext
 
 	fputs(log, logFile);
 	fflush(logFile);
-	PrtFree(log);
+	//PrtFree(log);
 	PrtUnlockMutex(((PRT_PROCESS_PRIV*)c->process)->processLock);
 
 	exit(-1);

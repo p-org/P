@@ -25,7 +25,6 @@
   
   <!-- Ports -->
   <NodeManagerPort>5600</NodeManagerPort>
-  <CentralServerPort>5800</CentralServerPort>
   <ContainerPortStart>5900</ContainerPortStart>
   <!-- Deployment Binaries-->
   <NetworkShare>.\Job\</NetworkShare>

@@ -204,19 +204,16 @@ void PrtDistNMCreateMain()
 //Helper Functions
 int PrtDistCentralServerGetNextID()
 {
+	int retValue = 0;
 	g_lock.lock();
-	int retValue = CurrentNodeID;
-	if (ClusterConfiguration.TotalNodes == 0)
+	if (CurrentNodeID < ClusterConfiguration.TotalNodes)
 	{
-		//local node execution
-		retValue = 0;
+		retValue = CurrentNodeID;
+		CurrentNodeID++;
 	}
 	else
 	{
-		if (CurrentNodeID == ClusterConfiguration.TotalNodes)
-			CurrentNodeID = 1;
-		else
-			CurrentNodeID = CurrentNodeID + 1;
+		CurrentNodeID = 0;
 	}
 	g_lock.unlock();
 	return retValue;
@@ -224,7 +221,7 @@ int PrtDistCentralServerGetNextID()
 
 void s_PrtDistCentralServerGetNodeId(handle_t handle, int server, int *nodeId)
 {
-	char log[100] = "";
+	char log[1000] = "";
 	*nodeId = PrtDistCentralServerGetNextID();
 	_CONCAT(log, "Received Request for a new NodeId from ", ClusterConfiguration.ClusterMachines[server]);
 	_CONCAT(log, " and returned node ID : ", ClusterConfiguration.ClusterMachines[*nodeId]);

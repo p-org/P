@@ -14,7 +14,7 @@ using namespace std;
 
 /* GLobal Variables */
 char* logFileName = "PRTDIST_NODEMANAGER.txt";
-int CurrentNodeID = 1;
+int CurrentNodeID = 0;
 int myNodeId;
 FILE* logFile;
 std::mutex g_lock;

@@ -43,7 +43,8 @@ typedef enum PRT_STATUS
 	PRT_STATUS_EVENT_OVERFLOW  = 2,  /**< Indicates too many occurrences of the same event in a queue.  */
 	PRT_STATUS_EVENT_UNHANDLED = 3,  /**< Indicates failure of a machine to handle an event.            */
 	PRT_STATUS_QUEUE_OVERFLOW = 4,   /**< Indicates that a queue has grown too large.                   */
-	PRT_STATUS_COUNT = 5,            /**< The valid number of status codes.                             */
+	PRT_STATUS_ILLEGAL_SEND = 5,	 /**< Indicates illegal use of send primitive for sending message across process */
+	PRT_STATUS_COUNT = 6,            /**< The valid number of status codes.                             */
 } PRT_STATUS;
 
 /** Represents a running P program. Every process has a GUID and client is responsible

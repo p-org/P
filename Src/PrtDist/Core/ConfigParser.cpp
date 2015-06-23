@@ -35,10 +35,6 @@ void PrtDistClusterConfigInitialize()
 		{
 			ClusterConfiguration.NodeManagerPort = currNode->NodeValue;
 		}
-		else if (strcmp(currNode->NodeName, "CentralServerPort") == 0)
-		{
-			ClusterConfiguration.CentralServerPort = currNode->NodeValue;
-		}
 		else if (strcmp(currNode->NodeName, "ContainerPortStart") == 0)
 		{
 			ClusterConfiguration.ContainerPortStart = currNode->NodeValue;

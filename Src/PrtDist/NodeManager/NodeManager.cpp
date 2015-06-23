@@ -83,6 +83,8 @@ DWORD WINAPI PrtDistNodeManagerCreateRPCServerAndWait(
 		exit(status);
 	}
 
+	return NULL;
+
 }
 
 
@@ -310,7 +312,4 @@ int main(int argc, char* argv[])
 		WaitForSingleObject(listener, INFINITE);
 
 	}
-
-	
-	
 }

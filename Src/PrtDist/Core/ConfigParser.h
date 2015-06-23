@@ -19,7 +19,6 @@ extern "C"{
 	struct ClusterConfig {
 		char* MainExe;
 		char* NodeManagerPort;
-		char* CentralServerPort;
 		char* ContainerPortStart;
 		char* NetworkShare;
 		char* LocalFolder;

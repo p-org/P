@@ -19,7 +19,7 @@ int PrtDistGetNextNodeId()
 		// protocol.
 		(unsigned char*)ClusterConfiguration.CentralServer, // TCP/IP network
 		// address to use.
-		(unsigned char*)ClusterConfiguration.CentralServerPort, // TCP/IP port to use.
+		(unsigned char*)ClusterConfiguration.NodeManagerPort, // TCP/IP port to use.
 		NULL, // Protocol dependent network options to use.
 		&szStringBinding); // String binding output.
 

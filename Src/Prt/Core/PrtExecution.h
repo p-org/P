@@ -384,7 +384,7 @@ _In_ PRT_MACHINEINST_PRIV *context
 );
 
 void
-PrtAssertIllegalSend(
+PrtAssertLegalSend(
 _In_ PRT_MACHINEINST_PRIV *sourceContext,
 _In_ PRT_MACHINEINST *targetContext
 );

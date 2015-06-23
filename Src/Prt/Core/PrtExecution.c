@@ -1290,7 +1290,7 @@ PrtLog(
 }
 
 void
-PrtAssertIllegalSend(
+PrtAssertLegalSend(
 _In_ PRT_MACHINEINST_PRIV *sourceContext,
 _In_ PRT_MACHINEINST *targetContext
 )

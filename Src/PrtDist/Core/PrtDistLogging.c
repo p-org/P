@@ -45,6 +45,12 @@ __in void* vcontext
 			MachineName,
 			MachineId);
 		break;
+	case PRT_STATUS_ILLEGAL_SEND:
+		sprintf(log,
+			"<EXCEPTION> Machine %s(%d) : Illegal use of send for sending message across process (source and target machines are in different process) ", 
+			MachineName,
+			MachineId);
+		break;
 	default:
 		sprintf(log,
 			"<EXCEPTION> Machine %s(%d) : Unknown Exception\n",
@@ -55,9 +61,25 @@ __in void* vcontext
 
 	fputs(log, logFile);
 	fflush(logFile);
-	//PrtFree(log);
 	PrtUnlockMutex(((PRT_PROCESS_PRIV*)c->process)->processLock);
 
+#ifdef PRT_DEBUG
+	int msgboxID = MessageBoxEx(
+		NULL,
+		log,
+		fileName,
+		MB_OK,
+		LANG_NEUTRAL
+		);
+
+	switch (msgboxID)
+	{
+	case IDOK:
+		exit(0);
+	default:
+		exit(-1);
+	}
+#endif
 	exit(-1);
 
 }

@@ -111,8 +111,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../../Prt/WinUser/;../../../Prt/IDL/;../../../Prt/Core/;../../../Prt/API/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;PRT_STATIC</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -126,6 +126,10 @@
     <ProjectReference>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
+    <Midl>
+      <AdditionalIncludeDirectories>..\..\Prt\API</AdditionalIncludeDirectories>
+      <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
+    </Midl>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>

@@ -94,8 +94,8 @@
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>.\Lib\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(ProjectDir)\InterWin\$(Configuration)\$(Platform)\</IntDir>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -124,8 +124,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_API_IMPL;PRT_PLAT_WINUSER;PRT_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../IDL/;../API/;../WinUser/;../Core/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/IDL/;../Prt/Core/;../Prt/API/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

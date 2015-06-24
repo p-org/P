@@ -123,7 +123,8 @@
       <Command>"..\Utilities\PatchIDL\bin\PatchIDL.exe"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>del /F *_IDL.h</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

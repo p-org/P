@@ -5,9 +5,9 @@
 #include<fstream>
 #include <mutex>
 #include <chrono>
-#include"..\Core\NodeManager_h.h"
-#include"..\Core\NodeManager_s.c"
-#include "..\Core\ConfigParser.h"
+#include"NodeManager_h.h"
+#include"NodeManager_s.c"
+#include "ConfigParser.h"
 using namespace std;
 
 

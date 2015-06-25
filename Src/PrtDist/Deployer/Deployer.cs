@@ -77,7 +77,7 @@ namespace PrtDistDeployer
 
             //depending on config file infer whether we are performing debug-only
             string lh = "localhost";
-            if(NetworkShare == lh && MainMachineNode == lh && TotalNodes == 1 && AllNodes.Where(n => n.Value != lh).Count() == 0)
+            if (CentralServerNode == lh && MainMachineNode == lh && TotalNodes == 1 && AllNodes.Where(n => n.Value != lh).Count() == 0)
             {
                 CommandLineOptions.debugLocally = true;
                 PrintHelper.Normal("||Debugging Locally||");

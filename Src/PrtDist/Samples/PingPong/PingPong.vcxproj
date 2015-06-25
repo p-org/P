@@ -40,6 +40,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>..\..\Binaries\Pingpong\</OutDir>
+    <IntDir>..\..\Binaries\Pingpong\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -70,7 +71,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\ClientFiles\MainFunction.c" />
+    <ClCompile Include="..\..\..\..\Bld\Drops\Plang_Debug_x86\Runtime\ClientFiles\MainFunction.c" />
     <ClCompile Include="program.c" />
     <ClCompile Include="stubs.c" />
   </ItemGroup>

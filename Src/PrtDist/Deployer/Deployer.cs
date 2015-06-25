@@ -39,8 +39,8 @@ namespace PrtDistDeployer
     class ClusterConfiguration
     {
         //This can be made more secured in the future
-        public static string username;
-        public static string password;
+        public static string username = "planguser";
+        public static string password = "Pldi2015";
         public static string MainExe;
         public static string NodeManagerPort;
         public static string ContainerPortStart;
@@ -75,6 +75,19 @@ namespace PrtDistDeployer
                 index++;
             }
 
+            //depending on config file infer whether we are performing debug-only
+            string lh = "localhost";
+            if(NetworkShare == lh && MainMachineNode == lh && TotalNodes == 1 && AllNodes.Where(n => n.Value != lh).Count() == 0)
+            {
+                CommandLineOptions.debugLocally = true;
+                PrintHelper.Normal("||Debugging Locally||");
+            }
+            else
+            {
+                CommandLineOptions.debugLocally = false;
+                PrintHelper.Normal("||Deploying on cluster as username: " + ClusterConfiguration.username + "||");
+            }
+
         }
     }
     class PrtDistDeployer
@@ -86,10 +99,10 @@ namespace PrtDistDeployer
 
             Console.WriteLine("-----------------------------------------");
             Console.WriteLine("1 : Deploy the service");
-            Console.WriteLine("2 : Kill Deployed Service and NodeManagers on all machines");
+            Console.WriteLine("2 : Kill deployed service and NodeManagers on all machines");
             Console.WriteLine("3 : Exit");
             Console.WriteLine();
-            Console.Write("Enter the Option: ");
+            Console.Write("Option: ");
             Console.ForegroundColor = oldColor;
         }
 

@@ -21,20 +21,17 @@ namespace PrtDistDeployer
 
         static void PrintArguments()
         {
-            PrintHelper.Red("Please Provide all the required commandline arguments");
+            PrintHelper.Red("Please provide all the required commandline arguments");
             PrintHelper.Red("--------------------------");
             PrintHelper.Red("-config:<path_to_xml_config_file>");
             PrintHelper.Red("-pbin:<path_to_p_binaries>");
             PrintHelper.Red("-clientbin:<path_to_the_client_binaries>");
             PrintHelper.Red("-pstools:<path_to_folder_containing_psexec_and_pskill");
-            PrintHelper.Red("-debuglocally:<true or false>");
             PrintHelper.Red("--------------------------");
-
-
         }
         public static void ParseCommandline(string[] args)
         {
-            if(args.Count() != 5)
+            if(args.Count() != 4)
             {
                 PrintArguments();
                 Environment.Exit(1);
@@ -117,26 +114,6 @@ namespace PrtDistDeployer
                                 {
                                     PrintHelper.Red("Directory : " + param + " not found");
                                     Environment.Exit(1);
-                                }
-                                break;
-                            case "debuglocally":
-                                bool input; 
-                                if (!bool.TryParse(param, out input))
-                                {
-                                    PrintHelper.Red("Invalid Parameter to debugLocally option");
-                                    Environment.Exit(1);
-                                }
-                                else
-                                {
-                                    debugLocally = input;
-                                    if(!debugLocally)
-                                    {
-                                        Console.WriteLine("Please enter the username and Password for remote execution");
-                                        PrintHelper.Red("Username:");
-                                        ClusterConfiguration.username = Console.ReadLine();
-                                        PrintHelper.Red("Password:");
-                                        ClusterConfiguration.password = Console.ReadLine();
-                                    }
                                 }
                                 break;
                             default:

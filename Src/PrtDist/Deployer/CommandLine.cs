@@ -17,6 +17,8 @@ namespace PrtDistDeployer
 
         public static string pathToPstools = ".\\";
 
+        public static bool debugLocally = true;
+
         static void PrintArguments()
         {
             PrintHelper.Red("Please Provide all the required commandline arguments");
@@ -25,13 +27,14 @@ namespace PrtDistDeployer
             PrintHelper.Red("-pbin:<path_to_p_binaries>");
             PrintHelper.Red("-clientbin:<path_to_the_client_binaries>");
             PrintHelper.Red("-pstools:<path_to_folder_containing_psexec_and_pskill");
+            PrintHelper.Red("-debuglocally:<true or false>");
             PrintHelper.Red("--------------------------");
 
 
         }
         public static void ParseCommandline(string[] args)
         {
-            if(args.Count() != 4)
+            if(args.Count() != 5)
             {
                 PrintArguments();
                 Environment.Exit(1);
@@ -114,6 +117,18 @@ namespace PrtDistDeployer
                                 {
                                     PrintHelper.Red("Directory : " + param + " not found");
                                     Environment.Exit(1);
+                                }
+                                break;
+                            case "debuglocally":
+                                bool input; 
+                                if (!bool.TryParse(param, out input))
+                                {
+                                    PrintHelper.Red("Invalid Parameter to debugLocally option");
+                                    Environment.Exit(1);
+                                }
+                                else
+                                {
+                                    debugLocally = input;
                                 }
                                 break;
                             default:

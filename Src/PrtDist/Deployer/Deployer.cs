@@ -5,7 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.IO;
-
+using System.Threading;
+using System.Diagnostics;
 
 namespace PrtDistDeployer
 {
@@ -157,6 +158,17 @@ namespace PrtDistDeployer
                     PrintHelper.Green("Started NodeManager on " + node.Value);
                     //start the NodeManager in listening mode.
                     //Nodemanager.exe nodeId 0
+                    string psExec = CommandLineOptions.pathToPstools + "\\psexec.exe";
+                    string quotedArgs = "";
+                    ProcessStartInfo startInfo = new ProcessStartInfo(psExec, quotedArgs);
+                    Process proc = new Process();
+                    proc.StartInfo = startInfo;
+
+                    proc.Start();
+                    int timeoutInMilliSecs = 5 * 60 * 1000; // 5 minutes
+                    bool didExitbeforeTimeout = proc.WaitForExit(timeoutInMilliSecs);
+                    int errorCode = proc.ExitCode;
+                    proc.Close();
                 }
             }
 

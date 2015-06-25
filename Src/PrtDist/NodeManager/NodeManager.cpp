@@ -104,16 +104,6 @@ void s_PrtDistNMPing(handle_t mHandle, int server,  boolean* amAlive)
 // Create Container.
 void s_PrtDistNMCreateContainer(handle_t mHandle, int* containerId, boolean *status)
 {
-	string jobFolder = ClusterConfiguration.NetworkShare;
-	string newLocalJobFolder = ClusterConfiguration.LocalFolder;
-	boolean st = _ROBOCOPY(jobFolder, newLocalJobFolder);
-	if (!st)
-	{
-		*status = st;
-		PrtDistNodeManagerLog("CreateProcess for Node Manager failed in ROBOCOPY\n");
-		return;
-	}
-
 	//get the exe name
 	string exeName = ClusterConfiguration.MainExe;
 	*containerId = PrtDistNodeManagerNextContainerId();
@@ -126,10 +116,6 @@ void s_PrtDistNMCreateContainer(handle_t mHandle, int* containerId, boolean *sta
 	ZeroMemory(&si, sizeof(si));
 	si.cb = sizeof(si);
 	ZeroMemory(&pi, sizeof(pi));
-
-	char currDir[100];
-	GetCurrentDirectory(100, currDir);
-	SetCurrentDirectory(newLocalJobFolder.c_str());
 	
 	// Start the child process. 
 	if (!CreateProcess(NULL,   // No module name (use command line)

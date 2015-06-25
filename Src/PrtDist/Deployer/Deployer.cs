@@ -150,7 +150,7 @@ namespace PrtDistDeployer
                     //start the NodeManager in listening mode.
                     //Nodemanager.exe nodeId 0
                     string psExec = CommandLineOptions.pathToPstools + "\\psexec.exe";
-                    string quotedArgs
+                    string quotedArgs = "";
                     ProcessStartInfo startInfo = new ProcessStartInfo(psExec, quotedArgs);
                     Process proc = new Process();
                     proc.StartInfo = startInfo;

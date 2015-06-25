@@ -1,69 +1,78 @@
-#include "Helper.h"
-
+#include "ConfigParser.h"
+#import <msxml3.dll>
 using namespace MSXML2;
 
-boolean _ROBOCOPY(string source, string dest)
-{
-	string copycommand = "robocopy " + source + " " + dest + " > " + "ROBOCOPY_PSERVICE_LOG.txt";
-	if (system(copycommand.c_str()) == -1)
-	{
-		return false;
-	}
-	else
-		return true;
-}
+#define _CRT_SECURE_NO_WARNINGS
 
-void _CONCAT(char* dest, char* string1, char* string2)
-{
-	strcat(dest, string1);
-	strcat(dest, string2);
-}
+typedef	struct _XMLNODE {
+	char NodeType[100];
+	char NodeName[100];
+	char NodeValue[100];
+	char NodeParent[100];
+} XMLNODE;
 
-char* PrtDistClusterConfigGet(ClusterConfiguration fld)
+XMLNODE** XMLDOMParseNodes(const char*);
+
+
+
+void PrtDistClusterConfigInitialize()
 {
 	int i = 0;
-	char field[200];
+	int j = 0;
 	XMLNODE** listofNodes;
 	XMLNODE* currNode;
-	char* returnValue;
-	char* configurationFile = "PrtDistClusterConfiguration.xml";
-
-	switch (fld)
-	{
-	case MainExe:
-		strcpy_s(field, 200, "MainExe");
-		break;
-	case NetworkShare:
-		strcpy_s(field, 200, "NetworkShare");
-		break;
-	case localFolder:
-		strcpy_s(field, 200, "localFolder");
-		break;
-	case CentralServer:
-		strcpy_s(field, 200, "CentralServer");
-		break;
-	case TotalNodes:
-		strcpy_s(field, 200, "NNodes");
-		break;
-	case MainMachineNodeId:
-		strcpy_s(field, 200, "MainMachineNodeId");
-		break;
-	default:
-		break;
-	}
+	char* configurationFile = "ClusterConfiguration.xml";
 	
 	listofNodes = XMLDOMParseNodes(configurationFile);
-	currNode = listofNodes[i];
+	currNode = listofNodes[0];
 	while (currNode != NULL)
 	{
-		if (strcmp(currNode->NodeName, field) == 0)
+		if (strcmp(currNode->NodeName, "MainExe") == 0)
 		{
-			returnValue = currNode->NodeValue;
+			ClusterConfiguration.MainExe = currNode->NodeValue;
+		}
+		else if (strcmp(currNode->NodeName, "NodeManagerPort") == 0)
+		{
+			ClusterConfiguration.NodeManagerPort = currNode->NodeValue;
+		}
+		else if (strcmp(currNode->NodeName, "ContainerPortStart") == 0)
+		{
+			ClusterConfiguration.ContainerPortStart = currNode->NodeValue;
+		}
+		else if (strcmp(currNode->NodeName, "NetworkShare") == 0)
+		{
+			ClusterConfiguration.NetworkShare = currNode->NodeValue;
+		}
+		else if (strcmp(currNode->NodeName, "LocalFolder") == 0)
+		{
+			ClusterConfiguration.LocalFolder = currNode->NodeValue;
+		}
+		else if (strcmp(currNode->NodeName, "CentralServer") == 0)
+		{
+			ClusterConfiguration.CentralServer = currNode->NodeValue;
+		}
+		else if (strcmp(currNode->NodeName, "TotalNodes") == 0)
+		{
+			ClusterConfiguration.TotalNodes = atoi(currNode->NodeValue);
+		}
+		else if (strcmp(currNode->NodeName, "MainMachineNode") == 0)
+		{
+			ClusterConfiguration.MainMachineNode = currNode->NodeValue;
+		}
+		else if (strcmp(currNode->NodeName, "Node") == 0)
+		{
+			ClusterConfiguration.ClusterMachines = (char**)malloc((ClusterConfiguration.TotalNodes)*sizeof(char*));
+			if (j < ClusterConfiguration.TotalNodes)
+				ClusterConfiguration.ClusterMachines[j] = currNode->NodeValue;
+			else
+			{
+				continue;
+			}
+			j++;
 		}
 		currNode = listofNodes[i];
 		i++;
 	}
-	return returnValue;
 }
 
 
@@ -159,21 +168,21 @@ XMLNODE** XMLDOMParseNodes(const char *szFileName)
 					n++;//element node's number
 					//printf("\n\n%d\n", n);//element node's number
 
-					sprintf(currNode->NodeType, "%ls", (LPCTSTR)bstrNodeType);
+					sprintf_s(currNode->NodeType, 100, "%ls", (LPCTSTR)bstrNodeType);
 					//printf("Type: %ls\n", bstrNodeType);
 
 					pIDOMNode->get_nodeName(&bstrItemNode);
 					//printf("Node: %ls\n", bstrItemNode);
-					sprintf(currNode->NodeName, "%ls", (LPCTSTR)bstrItemNode);
+					sprintf_s(currNode->NodeName, 100, "%ls", (LPCTSTR)bstrItemNode);
 
 					pIDOMNode->get_text(&bstrItemText);
 					//printf("Text: %ls\n", bstrItemText);
-					sprintf(currNode->NodeValue, "%ls", ((LPCTSTR)bstrItemText));
+					sprintf_s(currNode->NodeValue, 100, "%ls", ((LPCTSTR)bstrItemText));
 
 					pIDOMNode->get_parentNode(&pIParentNode);
 					pIParentNode->get_nodeName(&bstrItemParent);
 					//printf("Parent: %ls\n",bstrItemParent);
-					sprintf(currNode->NodeParent, "%ls", ((LPCTSTR)bstrItemParent));
+					sprintf_s(currNode->NodeParent, 100, "%ls", ((LPCTSTR)bstrItemParent));
 
 					pIDOMNode->get_childNodes(&childList);
 					//printf("Child nodes: %d\n", (childList->length));

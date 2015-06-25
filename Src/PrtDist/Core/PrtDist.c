@@ -1,5 +1,5 @@
 #include "PrtDist.h"
-#include "PrtDistIDL/PrtDistIDL_s.c"
+#include ".\PrtDistIDL_s.c"
 
 extern int PrtDistGetNextNodeId();
 extern int PrtDistCreateContainer(int nodeId);
@@ -35,7 +35,7 @@ void s_PrtDistPing(
 
 PRT_INT32 PrtDistGetRecvPortNumber(PRT_VALUE* target)
 {
-	return PRTD_CONTAINER_RECV_PORT + target->valueUnion.mid->processId.data1;
+	return atoi(ClusterConfiguration.ContainerPortStart) + target->valueUnion.mid->processId.data1;
 }
 
 handle_t
@@ -58,7 +58,7 @@ PRT_VALUE* target
 		NULL, // UUID to bind to.
 		(unsigned char*)("ncacn_ip_tcp"), // Use TCP/IP
 		// protocol.
-		(unsigned char*)(PRTD_CLUSTERMACHINES[nodeId]), // TCP/IP network
+		(unsigned char*)(ClusterConfiguration.ClusterMachines[nodeId]), // TCP/IP network
 		// address to use.
 		(unsigned char*)buffPort, // TCP/IP port to use.
 		NULL, // Protocol dependent network options to use.
@@ -140,30 +140,6 @@ DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(LPVOID portNumber)
 
 }
 
-void PrtDistStartContainerListerner(PRT_PROCESS* process, PRT_INT32 portNumber, HANDLE listener)
-{
-
-	listener = CreateThread(NULL, 0, PrtDistCreateRPCServerForEnqueueAndWait, &portNumber, 0, NULL);
-	if (listener == NULL)
-	{
-		PrtDistLog("Error Creating RPC server in PrtDistStartNodeManagerMachine");
-	}
-	else
-	{
-		DWORD status;
-		//Sleep(3000);
-		//check if the thread is all ok
-		GetExitCodeThread(listener, &status);
-		if (status != STILL_ACTIVE)
-			PrtDistLog("ERROR : Thread terminated");
-
-		PrtDistLog("Receiver listening at port ");
-		char log[10];
-		_itoa(portNumber, log, 10);
-		PrtDistLog(log);
-	}
-
-}
 
 PRT_VALUE *P_FUN__SENDRELIABLE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
 {

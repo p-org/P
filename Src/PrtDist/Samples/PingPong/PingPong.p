@@ -90,7 +90,7 @@ main machine GodMachine
 			push CreateMachine;
 			pongMachine_1 = createMachine_return;
 			createMachine_param = (container = container, machineType = 1, param = null);
-			push _CreateMachine;
+			push CreateMachine;
 			pongMachine_2 = createMachine_return;
 			
 			container = _CREATECONTAINER(null);
@@ -110,7 +110,7 @@ main machine GodMachine
 	}
 
 	fun PopState() {
-		createmachine_return = payload;
+		createMachine_return = payload;
 		pop;
 	}
 }

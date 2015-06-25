@@ -1,5 +1,5 @@
-#include "..\ClusterManagement\NodeManager\NodeManagerIDL\NodeManager_h.h"
-#include "..\ClusterManagement\NodeManager\NodeManagerIDL\NodeManager_c.c"
+#include "NodeManager_h.h"
+#include "NodeManager_c.c"
 #include "PrtDist.h"
 
 //central server interaction.
@@ -9,11 +9,7 @@ int PrtDistGetNextNodeId()
 	unsigned char* szStringBinding = NULL;
 	handle_t handle;
 	char log[100];
-	//get centralserverID
-	int centralServerID = PRTD_CENTRALSERVER_NODEID;
 
-	char buffPort[100];
-	_itoa_s(PRTD_SERVICE_PORT, buffPort, 100, 10);
 	// Creates a string binding handle.
 	// This function is nothing more than a printf.
 	// Connection is not done here.
@@ -21,9 +17,9 @@ int PrtDistGetNextNodeId()
 		NULL, // UUID to bind to.
 		(unsigned char*)("ncacn_ip_tcp"), // Use TCP/IP
 		// protocol.
-		(unsigned char*)(PRTD_CLUSTERMACHINES[centralServerID]), // TCP/IP network
+		(unsigned char*)ClusterConfiguration.CentralServer, // TCP/IP network
 		// address to use.
-		(unsigned char*)buffPort, // TCP/IP port to use.
+		(unsigned char*)ClusterConfiguration.NodeManagerPort, // TCP/IP port to use.
 		NULL, // Protocol dependent network options to use.
 		&szStringBinding); // String binding output.
 
@@ -58,7 +54,7 @@ int PrtDistGetNextNodeId()
 	}
 	RpcEndExcept
 	
-	sprintf_s(log, 100, "Central Server Returned Node %s\n", PRTD_CLUSTERMACHINES[nextNodeId]);
+	sprintf_s(log, 100, "Central Server Returned Node %s\n", ClusterConfiguration.ClusterMachines[nextNodeId]);
 	PrtDistLog(log);
 
 	return nextNodeId;
@@ -72,11 +68,6 @@ int PrtDistCreateContainer(int nodeId)
 	unsigned char* szStringBinding = NULL;
 	handle_t handle;
 
-	char buffPort[100];
-
-	_itoa_s(PRTD_SERVICE_PORT, buffPort, 100, 10);
-
-
 	// Creates a string binding handle.
 	// This function is nothing more than a printf.
 	// Connection is not done here.
@@ -84,9 +75,9 @@ int PrtDistCreateContainer(int nodeId)
 		NULL, // UUID to bind to.
 		(unsigned char*)("ncacn_ip_tcp"), // Use TCP/IP
 		// protocol.
-		(unsigned char*)(PRTD_CLUSTERMACHINES[nodeId]), // TCP/IP network
+		(unsigned char*)(ClusterConfiguration.ClusterMachines[nodeId]), // TCP/IP network
 		// address to use.
-		(unsigned char*)buffPort, // TCP/IP port to use.
+		(unsigned char*)ClusterConfiguration.NodeManagerPort, // TCP/IP port to use.
 		NULL, // Protocol dependent network options to use.
 		&szStringBinding); // String binding output.
 
@@ -107,16 +98,16 @@ int PrtDistCreateContainer(int nodeId)
 		exit(status);
 
 	char log[100];
-	sprintf_s(log, 100, "Creating container on %s", PRTD_CLUSTERMACHINES[nodeId]);
+	sprintf_s(log, 100, "Creating container on %s", ClusterConfiguration.ClusterMachines[nodeId]);
 	PrtDistLog(log);
 
 	boolean statusCC = FALSE;
 	RpcTryExcept
 	{
-		c_PrtDistNMCreateContainer(handle, 0, &newContainerId, &statusCC);
+		c_PrtDistNMCreateContainer(handle, &newContainerId, &statusCC);
 
 	}
-		RpcExcept(1)
+	RpcExcept(1)
 	{
 		unsigned long ulCode;
 		ulCode = RpcExceptionCode();
@@ -124,6 +115,7 @@ int PrtDistCreateContainer(int nodeId)
 		PrtDistLog(log);
 	}
 	RpcEndExcept
+
 	if (statusCC)
 		PrtDistLog("Successfully created the Container");
 	else

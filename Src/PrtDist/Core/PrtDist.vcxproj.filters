@@ -30,6 +30,9 @@
     <ClCompile Include="PrtDistLogging.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ConfigParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrtDistSerializer.h">
@@ -38,9 +41,15 @@
     <ClInclude Include="PrtDist.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ConfigParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="PrtDistIDL.idl">
+      <Filter>Source Files</Filter>
+    </Midl>
+    <Midl Include="NodeManager.idl">
       <Filter>Source Files</Filter>
     </Midl>
   </ItemGroup>
@@ -48,5 +57,6 @@
     <None Include="PrtDistIDL.acf">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="NodeManager.acf" />
   </ItemGroup>
 </Project>

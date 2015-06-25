@@ -1,11 +1,5 @@
 #include "NodeManager.h"
 
-/* GLobal Variables */
-char* logFileName = "PRTDIST_NODEMANAGER.txt";
-int CurrentNodeID = 1;
-int myNodeId;
-FILE* logFile;
-std::mutex g_lock;
 //
 // Helper Functions
 //
@@ -41,16 +35,17 @@ int PrtDistNodeManagerNextContainerId()
 	return (counter);
 }
 
-void PrtDistNodeManagerCreateRPCServer()
+DWORD WINAPI PrtDistNodeManagerCreateRPCServerAndWait(
+	LPVOID portNumber
+)
 {
 	PrtDistNodeManagerLog("Creating RPC server for NodeManager ....");
 	RPC_STATUS status;
-	char buffPort[100];
-	_itoa_s(PRTD_SERVICE_PORT, buffPort, 10);
+
 	status = RpcServerUseProtseqEp(
 		reinterpret_cast<unsigned char*>("ncacn_ip_tcp"), // Use TCP/IP protocol.
 		RPC_C_PROTSEQ_MAX_REQS_DEFAULT, // Backlog queue length for TCP/IP.
-		(RPC_CSTR)buffPort, // TCP/IP port to use.
+		(RPC_CSTR)ClusterConfiguration.NodeManagerPort, // TCP/IP port to use.
 		NULL);
 
 	if (status)
@@ -88,6 +83,8 @@ void PrtDistNodeManagerCreateRPCServer()
 		exit(status);
 	}
 
+	return NULL;
+
 }
 
 
@@ -99,31 +96,19 @@ void PrtDistNodeManagerCreateRPCServer()
 void s_PrtDistNMPing(handle_t mHandle, int server,  boolean* amAlive)
 {
 	char log[100] = "";
-	_CONCAT(log, "Pinged by External Server :", PRTD_CLUSTERMACHINES[server]);
+	_CONCAT(log, "Pinged by External Server :", ClusterConfiguration.ClusterMachines[server]);
 	*amAlive = !(*amAlive);
 	PrtDistNodeManagerLog(log);
 }
 
-// Create NodeManager
-void s_PrtDistNMCreateContainer(handle_t mHandle, boolean createMain, int* containerId, boolean *status)
+// Create Container.
+void s_PrtDistNMCreateContainer(handle_t mHandle, int* containerId, boolean *status)
 {
-	string networkShare = PrtDistClusterConfigGet(NetworkShare);
-	string jobFolder = networkShare;
-	string localJobFolder = PrtDistClusterConfigGet(localFolder);
-	string newLocalJobFolder = localJobFolder;
-	boolean st = _ROBOCOPY(jobFolder, newLocalJobFolder);
-	if (!st)
-	{
-		*status = st;
-		PrtDistNodeManagerLog("CreateProcess for Node Manager failed in ROBOCOPY\n");
-		return;
-	}
-
 	//get the exe name
-	string exeName = PrtDistClusterConfigGet(MainExe);
+	string exeName = ClusterConfiguration.MainExe;
 	*containerId = PrtDistNodeManagerNextContainerId();
 	char commandLine[100];
-	sprintf_s(commandLine, 100, "%s %d %d %d", exeName.c_str(), createMain, *containerId, myNodeId);
+	sprintf_s(commandLine, 100, "%s %d %d %d", exeName.c_str(), 0, *containerId, myNodeId);
 	//create the node manager process
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
@@ -131,10 +116,6 @@ void s_PrtDistNMCreateContainer(handle_t mHandle, boolean createMain, int* conta
 	ZeroMemory(&si, sizeof(si));
 	si.cb = sizeof(si);
 	ZeroMemory(&pi, sizeof(pi));
-
-	char currDir[100];
-	GetCurrentDirectory(100, currDir);
-	SetCurrentDirectory(newLocalJobFolder.c_str());
 	
 	// Start the child process. 
 	if (!CreateProcess(NULL,   // No module name (use command line)
@@ -157,25 +138,68 @@ void s_PrtDistNMCreateContainer(handle_t mHandle, boolean createMain, int* conta
 	*status = true;
 }
 
+// Create Container.
+void PrtDistNMCreateMain()
+{
+	string jobFolder = ClusterConfiguration.NetworkShare;
+	string newLocalJobFolder = ClusterConfiguration.LocalFolder;
+	/*boolean st = _ROBOCOPY(jobFolder, newLocalJobFolder);
+	if (!st)
+	{
+		PrtDistNodeManagerLog("CreateProcess for Node Manager failed in ROBOCOPY\n");
+		return;
+	}*/
 
+	//get the exe name
+	string exeName = ClusterConfiguration.MainExe;
+	int containerId = PrtDistNodeManagerNextContainerId();
+	char commandLine[100];
+	sprintf_s(commandLine, 100, "%s %d %d %d", exeName.c_str(), 1, containerId, myNodeId);
+	//create the node manager process
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+
+	ZeroMemory(&si, sizeof(si));
+	si.cb = sizeof(si);
+	ZeroMemory(&pi, sizeof(pi));
+
+	/*
+	char currDir[100];
+	GetCurrentDirectory(100, currDir);
+	SetCurrentDirectory(newLocalJobFolder.c_str());
+	*/
+
+	// Start the child process. 
+	if (!CreateProcess(NULL,   // No module name (use command line)
+		const_cast<LPSTR>(commandLine),        // Command line
+		NULL,           // Process handle not inheritable
+		NULL,           // Thread handle not inheritable
+		FALSE,          // Set handle inheritance to FALSE
+		0,              // No creation flags
+		NULL,           // Use parent's environment block
+		NULL,           // Use parent's starting directory 
+		&si,            // Pointer to STARTUPINFO structure
+		&pi)           // Pointer to PROCESS_INFORMATION structure
+		)
+	{
+		PrtDistNodeManagerLog("CreateProcess for Node Manager failed\n");
+		return;
+	}
+}
 
 //Helper Functions
 int PrtDistCentralServerGetNextID()
 {
+	int retValue = 0;
 	g_lock.lock();
-	int retValue = CurrentNodeID;
-	int totalNodes = atoi(PrtDistClusterConfigGet(TotalNodes));
-	if (totalNodes == 0)
+	if (CurrentNodeID < ClusterConfiguration.TotalNodes)
 	{
-		//local node execution
-		retValue = 0;
+		retValue = CurrentNodeID;
+		CurrentNodeID++;
 	}
 	else
 	{
-		if (CurrentNodeID == totalNodes)
-			CurrentNodeID = 1;
-		else
-			CurrentNodeID = CurrentNodeID + 1;
+		CurrentNodeID = 0;
 	}
 	g_lock.unlock();
 	return retValue;
@@ -183,10 +207,10 @@ int PrtDistCentralServerGetNextID()
 
 void s_PrtDistCentralServerGetNodeId(handle_t handle, int server, int *nodeId)
 {
-	char log[100] = "";
+	char log[1000] = "";
 	*nodeId = PrtDistCentralServerGetNextID();
-	_CONCAT(log, "Received Request for a new NodeId from ", PRTD_CLUSTERMACHINES[server]);
-	_CONCAT(log, " and returned node ID : ", PRTD_CLUSTERMACHINES[*nodeId]);
+	_CONCAT(log, "Received Request for a new NodeId from ", ClusterConfiguration.ClusterMachines[server]);
+	_CONCAT(log, " and returned node ID : ", ClusterConfiguration.ClusterMachines[*nodeId]);
 	PrtDistNodeManagerLog(log);
 }
 
@@ -206,9 +230,23 @@ MIDL_user_free(void* object)
 }
 
 
-///
-///PrtDist Deployer Logging
-///
+
+boolean _ROBOCOPY(string source, string dest)
+{
+	string copycommand = "robocopy " + source + " " + dest + " > " + "ROBOCOPY_PSERVICE_LOG.txt";
+	if (system(copycommand.c_str()) == -1)
+	{
+		return false;
+	}
+	else
+		return true;
+}
+
+void _CONCAT(char* dest, char* string1, char* string2)
+{
+	strcat(dest, string1);
+	strcat(dest, string2);
+}
 
 
 ///
@@ -216,30 +254,49 @@ MIDL_user_free(void* object)
 ///
 int main(int argc, char* argv[])
 {
-
+	int createMain = 0;
 	PrtDistNodeManagerCreateLogFile();
-	if (argc != 2)
+	PrtDistClusterConfigInitialize();
+
+	//set the local directory
+	SetCurrentDirectory(ClusterConfiguration.LocalFolder);
+
+	if (argc != 3)
 	{
 		PrtDistNodeManagerLog("ERROR : Wrong number of commandline arguments passed\n");
 		exit(-1);
 	}
 	else
 	{
-
 		myNodeId = atoi(argv[1]);
-		int totalNodes = atoi(PrtDistClusterConfigGet(TotalNodes));
-		if (myNodeId >= totalNodes)
+		createMain = atoi(argv[2]);
+		if (myNodeId <= ClusterConfiguration.TotalNodes)
 		{
 			PrtDistNodeManagerLog("ERROR : Wrong nodeId passed as commandline argument\n");
 		}
-
+		
 		char log[100];
 		sprintf_s(log, 100, "Started NodeManager at : %d", myNodeId);
 		PrtDistNodeManagerLog(log);
-		
+
+		HANDLE listener = NULL;
+		listener = CreateThread(NULL, 0, PrtDistNodeManagerCreateRPCServerAndWait, NULL, 0, NULL);
+		if (listener == NULL)
+		{
+			PrtDistNodeManagerLog("Error Creating RPC server in PrtDistStartNodeManagerMachine");
+		}
+		else
+		{
+			DWORD status;
+			GetExitCodeThread(listener, &status);
+			if (status != STILL_ACTIVE)
+				PrtDistNodeManagerLog("ERROR : Thread terminated");
+		}
+		if (createMain)
+			PrtDistNMCreateMain();
+
+		//after performing all operations block and wait
+		WaitForSingleObject(listener, INFINITE);
 
 	}
-
-	PrtDistNodeManagerCreateRPCServer();
-	
 }

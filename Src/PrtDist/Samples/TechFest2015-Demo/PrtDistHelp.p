@@ -31,11 +31,7 @@ machine Container
 	fun CreateLocalMachine(machineType:int, param:any) {
 		if (machineType == 1)
 		{
-			newMachine = new PONG(param);
-		}
-		else if (machineType == 2)
-		{
-			newMachine = new PING(param);
+			newMachine = new Node(param);
 		}
 		else
 		{

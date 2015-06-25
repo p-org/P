@@ -33,15 +33,20 @@ namespace PlangBuild
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\CommandLine.csproj", PlatformX86),
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUser.vcxproj", PlatformX64),
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUser.vcxproj", PlatformX86),
-            /*
-            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\PrtDist.vcxproj", PlatformX64),
-            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\PrtDist.vcxproj", PlatformX86),
-             */ 
             
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDist.vcxproj", PlatformX64),
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\PrtDist\\NodeManager\\NodeManager.vcxproj", PlatformX64),
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDist.vcxproj", PlatformX86),
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\PrtDist\\NodeManager\\NodeManager.vcxproj", PlatformX86),
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\PrtDist\\Deployer\\Deployer.csproj", PlatformX64),
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\PrtDist\\Deployer\\Deployer.csproj", PlatformX86),
+             
+
         };
         
         private static readonly Tuple<string, string>[] DebugMoveMap = new Tuple<string, string>[]
         {
+            #region Formula
             //Formula x86
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Formula\\x86\\Core.dll", 
@@ -62,6 +67,9 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Formula\\x64\\libz3.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\libz3.dll"),
+#endregion
+
+            #region Zing
             //Zing x86
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\zc.exe", 
@@ -149,7 +157,9 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\CustomDelayingScheduler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\CustomDelayingScheduler.dll"),
+#endregion
 
+            #region Pc
             //Pc x86
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\InteractiveCommandLine\\bin\\x86\\Debug\\Pci.exe", 
@@ -206,17 +216,32 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Debug\\ZingParser.pdb", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\ZingParser.pdb"),
-
+#endregion
             
+            #region Headers
             // x86
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\Prt.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\Prt.h"),
-                /*
+
+             //all IDLs    
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtBaseTypes_IDL.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtBaseTypes_IDL.h"),
-                 */ 
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtTypes_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtTypes_IDL.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtValues_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtValues_IDL.h"),
+
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\NodeManager_h.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\NodeManager_h.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDistIDL_h.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtDistIDL_h.h"),
+
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtConfig.h"),
@@ -226,19 +251,13 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtTypes.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtTypes.h"),
-                /*
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtTypes_IDL.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtTypes_IDL.h"),
-                 */
+  
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtValues.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtValues.h"),
-                /*
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtValues_IDL.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtValues_IDL.h"),
-                 */ 
+                
+           
+                
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Core\\PrtExecution.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtExecution.h"),
@@ -248,21 +267,39 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUserConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtWinUserConfig.h"),
-            /*
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\PrtDist.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtDist.h"),
-            */
 
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDist.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtDist.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDistSerializer.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtDistSerializer.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\ConfigParser.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\ConfigParser.h"),
+            
             // x64
              new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\Prt.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\Prt.h"),
-                /*
+            
+            //all IDLs
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtBaseTypes_IDL.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtBaseTypes_IDL.h"),
-                 */ 
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtTypes_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtTypes_IDL.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtValues_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtValues_IDL.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\NodeManager_h.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\NodeManager_h.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDistIDL_h.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtDistIDL_h.h"),
+
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtConfig.h"),
@@ -272,19 +309,15 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtTypes.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtTypes.h"),
-                /*
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtTypes_IDL.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtTypes_IDL.h"),
-                 */ 
+
+            
+ 
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtValues.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtValues.h"),
-                /*
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtValues_IDL.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtValues_IDL.h"),
-                 */ 
+
+            
+ 
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Core\\PrtExecution.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtExecution.h"),
@@ -294,18 +327,25 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUserConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtWinUserConfig.h"),
-                /*
+
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\PrtDist.h", 
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDist.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtDist.h"),
-                */
-            
-            // win32 
-            /*
             new Tuple<string, string>(
-            "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\Debug\\Win32\\PrtDist.lib", 
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDistSerializer.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtDistSerializer.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\ConfigParser.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\ConfigParser.h"),
+
+            #endregion
+
+            #region Libraries
+            // win32 
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\PrtDist\\Lib\\Debug\\Win32\\PrtDist.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Lib\\PrtDist.lib"),
-             */ 
+            
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\Win32\\PrtWinUser.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Lib\\PrtWinUser.lib"),
@@ -315,12 +355,12 @@ namespace PlangBuild
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\Win32\\PrtWinUser.pdb", 
             "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Lib\\PrtWinUser.pdb"),
+           
             // x64 lib
-            /*
             new Tuple<string, string>(
-            "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\Debug\\x64\\PrtDist.lib", 
+            "..\\..\\..\\..\\..\\Src\\PrtDist\\Lib\\Debug\\x64\\PrtDist.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Lib\\PrtDist.lib"),
-             */ 
+            
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\x64\\PrtWinUser.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Lib\\PrtWinUser.lib"),
@@ -331,11 +371,80 @@ namespace PlangBuild
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Debug\\x64\\PrtWinUser.pdb", 
             "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Lib\\PrtWinUser.pdb"),  
             
-                
+            #endregion
+            
+            #region Binaries
+            //x86
+             new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\PrtDist\\Binaries\\Debug\\Win32\\NodeManager.exe", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Binaries\\NodeManager.exe"),
+
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\PrtDist\\Binaries\\Debug\\x86\\Deployer.exe", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Binaries\\Deployer.exe"),
+
+            //x64
+             new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\PrtDist\\Binaries\\Debug\\x64\\NodeManager.exe", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Binaries\\NodeManager.exe"),
+
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\PrtDist\\Binaries\\Debug\\x64\\Deployer.exe", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Binaries\\Deployer.exe"),
+
+            //copy the dependencies
+            //x86
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Ext\\VS2013\\msvcp120.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Binaries\\msvcp120.dll"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Ext\\VS2013\\msvcp120d.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Binaries\\msvcp120d.dll"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Ext\\VS2013\\msvcr120.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Binaries\\msvcr120.dll"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Ext\\VS2013\\msvcr120d.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Binaries\\msvcr120d.dll"),
+
+            //x64
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Ext\\VS2013\\msvcp120.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Binaries\\msvcp120.dll"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Ext\\VS2013\\msvcp120d.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Binaries\\msvcp120d.dll"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Ext\\VS2013\\msvcr120.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Binaries\\msvcr120.dll"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Ext\\VS2013\\msvcr120d.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Binaries\\msvcr120d.dll"),
+            #endregion
+
+             #region Client files
+           //x86
+             
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\ClusterConfiguration.xml", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\ClientFiles\\ClusterConfiguration.xml"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\MainFunction.c", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\ClientFiles\\MainFunction.c"),
+            
+            //x64
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\ClusterConfiguration.xml", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\ClientFiles\\ClusterConfiguration.xml"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\MainFunction.c", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\ClientFiles\\MainFunction.c"),
+            #endregion
         };
 
         private static readonly Tuple<string, string>[] ReleaseMoveMap = new Tuple<string, string>[]
         {
+            #region Formula
             //formula  x86
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Formula\\x86\\Core.dll", 
@@ -356,7 +465,9 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Formula\\x64\\libz3.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\libz3.dll"),
+            #endregion
 
+            #region Zing
             //Zing x86
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x86\\zc.exe", 
@@ -446,7 +557,9 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Ext\\Zing\\x64\\CustomDelayingScheduler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\CustomDelayingScheduler.dll"),
       
+            #endregion 
 
+            #region PC
             //Pc x86
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\InteractiveCommandLine\\bin\\x86\\Release\\Pci.exe", 
@@ -480,15 +593,32 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Release\\ZingParser.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\ZingParser.dll"),
 
-           // x86
+            #endregion
+
+            #region Headers
+            // x86
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\Prt.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\Prt.h"),
-                /*
+
+             //all IDLs    
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtBaseTypes_IDL.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtBaseTypes_IDL.h"),
-                 */ 
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtTypes_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtTypes_IDL.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtValues_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtValues_IDL.h"),
+
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\NodeManager_h.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\NodeManager_h.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDistIDL_h.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtDistIDL_h.h"),
+
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtConfig.h"),
@@ -498,19 +628,13 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtTypes.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtTypes.h"),
-                /*
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtTypes_IDL.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtTypes_IDL.h"),
-                 */
+  
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtValues.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtValues.h"),
-                /*
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtValues_IDL.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtValues_IDL.h"),
-                 */ 
+                
+           
+                
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Core\\PrtExecution.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtExecution.h"),
@@ -520,21 +644,39 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUserConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtWinUserConfig.h"),
-                /*
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\PrtDist.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtDist.h"),
-                */
 
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDist.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtDist.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDistSerializer.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\PrtDistSerializer.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\ConfigParser.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Headers\\ConfigParser.h"),
+            
             // x64
              new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\Prt.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\Prt.h"),
-                /*
+            
+            //all IDLs
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtBaseTypes_IDL.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtBaseTypes_IDL.h"),
-                 */ 
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtTypes_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtTypes_IDL.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtValues_IDL.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtValues_IDL.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\NodeManager_h.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\NodeManager_h.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDistIDL_h.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtDistIDL_h.h"),
+
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtConfig.h"),
@@ -544,19 +686,15 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtTypes.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtTypes.h"),
-                /*
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtTypes_IDL.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtTypes_IDL.h"),
-                 */ 
+
+            
+ 
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\API\\PrtValues.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtValues.h"),
-                /*
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\Prt\\IDL\\PrtValues_IDL.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtValues_IDL.h"),
-                 */ 
+
+            
+ 
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\Core\\PrtExecution.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtExecution.h"),
@@ -566,18 +704,25 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\PrtWinUserConfig.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtWinUserConfig.h"),
-                /*
-            new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\PrtDist.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtDist.h"),
-                */
 
-            // win32 
-            /*
             new Tuple<string, string>(
-            "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\Release\\Win32\\PrtDist.lib", 
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDist.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtDist.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDistSerializer.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\PrtDistSerializer.h"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\ConfigParser.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Headers\\ConfigParser.h"),
+
+            #endregion
+
+            #region Libraries
+            // win32 
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\PrtDist\\Lib\\Release\\Win32\\PrtDist.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtDist.lib"),
-             */
+            
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\Win32\\PrtWinUser.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtWinUser.lib"),
@@ -587,12 +732,12 @@ namespace PlangBuild
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\Win32\\PrtWinUser.pdb", 
             "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Lib\\PrtWinUser.pdb"),
+           
             // x64 lib
-            /*
             new Tuple<string, string>(
-            "..\\..\\..\\..\\..\\Src\\PrtDist\\PrtDist\\PrtDist\\Release\\x64\\PrtDist.lib", 
+            "..\\..\\..\\..\\..\\Src\\PrtDist\\Lib\\Release\\x64\\PrtDist.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtDist.lib"),
-             */ 
+            
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\x64\\PrtWinUser.lib", 
             "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtWinUser.lib"),
@@ -601,7 +746,78 @@ namespace PlangBuild
             "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtWinUser.dll"),
             new Tuple<string, string>(
             "..\\..\\..\\..\\..\\Src\\Prt\\WinUser\\Release\\x64\\PrtWinUser.pdb", 
-            "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtWinUser.pdb"), 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Lib\\PrtWinUser.pdb"),  
+            
+            #endregion
+            
+            #region Binaries
+            //x86
+             new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\PrtDist\\Binaries\\Release\\Win32\\NodeManager.exe", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Binaries\\NodeManager.exe"),
+
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\PrtDist\\Binaries\\Release\\x86\\Deployer.exe", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Binaries\\Deployer.exe"),
+
+            //x64
+             new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\PrtDist\\Binaries\\Release\\x64\\NodeManager.exe", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Binaries\\NodeManager.exe"),
+
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Src\\PrtDist\\Binaries\\Release\\x64\\Deployer.exe", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Binaries\\Deployer.exe"),
+
+            //copy the dependencies
+            //x86
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Ext\\VS2013\\msvcp120.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Binaries\\msvcp120.dll"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Ext\\VS2013\\msvcp120d.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Binaries\\msvcp120d.dll"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Ext\\VS2013\\msvcr120.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Binaries\\msvcr120.dll"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Ext\\VS2013\\msvcr120d.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\Binaries\\msvcr120d.dll"),
+
+            //x64
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Ext\\VS2013\\msvcp120.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Binaries\\msvcp120.dll"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Ext\\VS2013\\msvcp120d.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Binaries\\msvcp120d.dll"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Ext\\VS2013\\msvcr120.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Binaries\\msvcr120.dll"),
+            new Tuple<string, string>(
+            "..\\..\\..\\..\\..\\Ext\\VS2013\\msvcr120d.dll", 
+            "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Binaries\\msvcr120d.dll"),
+            #endregion
+
+            #region Client files
+            //x86
+             
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\ClusterConfiguration.xml", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\ClientFiles\\ClusterConfiguration.xml"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\MainFunction.c", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\ClientFiles\\MainFunction.c"),
+            
+            //x64
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\ClusterConfiguration.xml", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\ClientFiles\\ClusterConfiguration.xml"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\MainFunction.c", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\ClientFiles\\MainFunction.c"),
+            #endregion
+            
         };
 
         public static bool Build(bool isBldDebug)

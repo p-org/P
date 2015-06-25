@@ -1,8 +1,10 @@
 #include "PrtDist.h"
 #include "program.h"
-#include "CommonFiles\PrtDistClusterInformation.h"
+
 
 PRT_PROCESS* ContainerProcess;
+
+struct ClusterConfig ClusterConfiguration;
 
 /**
 * The main function performs the following steps
@@ -29,6 +31,8 @@ int main(int argc, char *argv[])
 	
 	PRT_DBG_START_MEM_BALANCED_REGION
 	{
+		//Initialize the cluster configuration.
+		PrtDistClusterConfigInitialize();
 		PRT_GUID processGuid;
 		processGuid.data1 = processId;
 		processGuid.data2 = nodeId; //nodeId
@@ -36,7 +40,7 @@ int main(int argc, char *argv[])
 		processGuid.data4 = 0;
 		ContainerProcess = PrtStartProcess(processGuid, &P_GEND_PROGRAM, PrtDistSMExceptionHandler, PrtDistSMLogHandler);
 		HANDLE listener = NULL;
-		PRT_INT32 portNumber = PRTD_CONTAINER_RECV_PORT + processId;
+		PRT_INT32 portNumber = atoi(ClusterConfiguration.ContainerPortStart) + processId;
 		listener = CreateThread(NULL, 0, PrtDistCreateRPCServerForEnqueueAndWait, &portNumber, 0, NULL);
 		if (listener == NULL)
 		{

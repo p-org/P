@@ -1289,3 +1289,15 @@ PrtLog(
 	((PRT_PROCESS_PRIV *)context->process)->logHandler(step, (PRT_MACHINEINST *)context);
 }
 
+void
+PrtCheckIsLocalMachineId(
+_In_ PRT_MACHINEINST *context,
+_In_ PRT_VALUE *id
+)
+{
+	if (context->process->guid.data1 == id->valueUnion.mid->processId.data1 &&
+		context->process->guid.data2 == id->valueUnion.mid->processId.data2)
+		return;
+	PrtHandleError(PRT_STATUS_ILLEGAL_SEND, (PRT_MACHINEINST_PRIV *)context);
+}
+

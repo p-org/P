@@ -1,5 +1,5 @@
 #include "PrtDist.h"
-#include "PrtDistIDL/PrtDistIDL_c.c"
+#include "PrtDistIDL_c.c"
 
 extern handle_t
 PrtDistCreateRPCClient(

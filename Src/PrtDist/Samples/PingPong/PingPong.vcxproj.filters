@@ -21,18 +21,12 @@
     <ClCompile Include="stubs.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\PrtDist\CommonFiles\PrtDistLogging.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\PrtDist\CommonFiles\MainFunction.c">
+    <ClCompile Include="..\..\..\..\Bld\Drops\Plang_Debug_x86\Runtime\ClientFiles\MainFunction.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="program.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\PrtDist\CommonFiles\PrtDistClusterInformation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

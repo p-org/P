@@ -383,6 +383,12 @@ _In_ PRT_STEP step,
 _In_ PRT_MACHINEINST_PRIV *context
 );
 
+void
+PrtCheckIsLocalMachineId(
+_In_ PRT_MACHINEINST *context,
+_In_ PRT_VALUE *id
+);
+
 #ifdef __cplusplus
 }
 #endif

@@ -255,12 +255,14 @@ void _CONCAT(char* dest, char* string1, char* string2)
 int main(int argc, char* argv[])
 {
 	int createMain = 0;
-	PrtDistNodeManagerCreateLogFile();
 	PrtDistClusterConfigInitialize();
-
 	//set the local directory
 	SetCurrentDirectory(ClusterConfiguration.LocalFolder);
 
+	PrtDistNodeManagerCreateLogFile();
+	
+
+	
 	if (argc != 3)
 	{
 		PrtDistNodeManagerLog("ERROR : Wrong number of commandline arguments passed\n");
@@ -270,7 +272,7 @@ int main(int argc, char* argv[])
 	{
 		myNodeId = atoi(argv[1]);
 		createMain = atoi(argv[2]);
-		if (myNodeId <= ClusterConfiguration.TotalNodes)
+		if (myNodeId >= ClusterConfiguration.TotalNodes)
 		{
 			PrtDistNodeManagerLog("ERROR : Wrong nodeId passed as commandline argument\n");
 		}

@@ -39,8 +39,8 @@ namespace PrtDistDeployer
     class ClusterConfiguration
     {
         //This can be made more secured in the future
-        public static string username = "planguser";
-        public static string password = "Pldi2015";
+        public static string username;
+        public static string password;
         public static string MainExe;
         public static string NodeManagerPort;
         public static string ContainerPortStart;
@@ -95,11 +95,72 @@ namespace PrtDistDeployer
 
         public static void KillService()
         {
+            //$psKill + " -t -u planguser -p Pldi2015 \\$nn PrtDistService.exe"
             foreach (var node in ClusterConfiguration.AllNodes)
             {
-                //kill all the nodemanagers
-                //$psKill + " -t -u planguser -p Pldi2015 \\$nn PrtDistService.exe"
-                //kill all the MainExe
+                PrintHelper.Green("Killing " + ClusterConfiguration.MainExe + " on " + node.Value);
+                string kill_MainExe;
+                if (CommandLineOptions.debugLocally)
+                {
+                    kill_MainExe = String.Format(@" -t {0}", ClusterConfiguration.MainExe);
+                }
+                else
+                {
+                    kill_MainExe = String.Format(@" -t -u {0} -p {1} \\{2} {3}", ClusterConfiguration.username, ClusterConfiguration.password, node.Value, ClusterConfiguration.MainExe);
+                }
+
+                {
+                    string psExec = CommandLineOptions.pathToPstools + "\\pskill.exe";
+                    ProcessStartInfo startInfo = new ProcessStartInfo(psExec, kill_MainExe);
+                    Process proc = new Process();
+                    proc.StartInfo = startInfo;
+                    proc.StartInfo.UseShellExecute = false;
+                    proc.StartInfo.RedirectStandardOutput = true;
+                    proc.StartInfo.RedirectStandardError = true;
+                    proc.Start();
+                    int timeoutInMilliSecs = 5 * 1000; // 5 seconds
+                    string error = proc.StandardError.ReadToEnd();
+                    string output = proc.StandardOutput.ReadToEnd();
+                    bool didExitbeforeTimeout = proc.WaitForExit(timeoutInMilliSecs);
+                    int errorCode = proc.ExitCode;
+                    proc.Close();
+                    Console.WriteLine("PsKill return value :{0}", errorCode);
+                    Console.WriteLine("{0}", error);
+                }
+
+
+                PrintHelper.Green("Killing NodeManager on " + node.Value);
+                string kill_nodemanager;
+                if (CommandLineOptions.debugLocally)
+                {
+                    kill_nodemanager = String.Format(@" -t NodeManager.exe");
+                }
+                else
+                {
+                    kill_nodemanager = String.Format(@" -t -u {0} -p {1} \\{2} NodeManager.exe", ClusterConfiguration.username, ClusterConfiguration.password, node.Value);
+                }
+                {
+                    string psExec = CommandLineOptions.pathToPstools + "\\pskill.exe";
+                    ProcessStartInfo startInfo = new ProcessStartInfo(psExec, kill_nodemanager);
+                    Process proc = new Process();
+                    proc.StartInfo = startInfo;
+                    proc.StartInfo.UseShellExecute = false;
+                    proc.StartInfo.RedirectStandardOutput = true;
+                    proc.StartInfo.RedirectStandardError = true;
+                    proc.Start();
+                    int timeoutInMilliSecs = 5 * 1000; // 5 seconds
+                    string error = proc.StandardError.ReadToEnd();
+                    string output = proc.StandardOutput.ReadToEnd();
+                    bool didExitbeforeTimeout = proc.WaitForExit(timeoutInMilliSecs);
+                    int errorCode = proc.ExitCode;
+                    proc.Close();
+                    Console.WriteLine("PsKill return value :{0}", errorCode);
+                    Console.WriteLine("{0}", error);
+
+                }
+
+                
+
             }
         }
 
@@ -111,7 +172,7 @@ namespace PrtDistDeployer
             //delete all the existing files.
             if (!Directory.Exists(ClusterConfiguration.NetworkShare))
             {
-                PrintHelper.Red("Network share in config file doesnot exist");
+                PrintHelper.Red("Network share doesnot exist : " + ClusterConfiguration.NetworkShare);
                 Environment.Exit(1);
             }
             DirectoryInfo nS = new DirectoryInfo(ClusterConfiguration.NetworkShare);
@@ -147,24 +208,29 @@ namespace PrtDistDeployer
                 string robocopy_command;
                 if(CommandLineOptions.debugLocally)
                 {
-                    robocopy_command = String.Format(" -d \\localhost Robocopy {0} {1} /E /PURGE", ClusterConfiguration.NetworkShare, ClusterConfiguration.LocalFolder);
+                    robocopy_command = String.Format(@" -d Robocopy {0} {1} /E /PURGE", ClusterConfiguration.NetworkShare, ClusterConfiguration.LocalFolder);
                 }
                 else
                 {
-                    robocopy_command = String.Format(" -d -u {0} -p {1} \\{2} Robocopy {3} {4} /E /PURGE", ClusterConfiguration.username, ClusterConfiguration.password, node.Value, ClusterConfiguration.NetworkShare, ClusterConfiguration.LocalFolder);
+                    robocopy_command = String.Format(@" -d -u {0} -p {1} \\{2} Robocopy {3} {4} /E /PURGE", ClusterConfiguration.username, ClusterConfiguration.password, node.Value, ClusterConfiguration.NetworkShare, ClusterConfiguration.LocalFolder);
                 }
                 
                 string psExec = CommandLineOptions.pathToPstools + "\\psexec.exe";
                 ProcessStartInfo startInfo = new ProcessStartInfo(psExec, robocopy_command);
                 Process proc = new Process();
                 proc.StartInfo = startInfo;
-
+                proc.StartInfo.UseShellExecute = false;
+                proc.StartInfo.RedirectStandardOutput = true;
+                proc.StartInfo.RedirectStandardError = true;
                 proc.Start();
                 int timeoutInMilliSecs = 5 * 1000; // 5 seconds
+                string error = proc.StandardError.ReadToEnd();
+                string output = proc.StandardOutput.ReadToEnd();
                 bool didExitbeforeTimeout = proc.WaitForExit(timeoutInMilliSecs);
                 int errorCode = proc.ExitCode;
                 proc.Close();
-                Console.WriteLine("Error Code :{0}", errorCode);
+                Console.WriteLine("PsExec return value :{0}", errorCode);
+                Console.WriteLine("{0}", error);
             }
 
             #endregion
@@ -187,23 +253,29 @@ namespace PrtDistDeployer
                     string start_nodemanager;
                     if(CommandLineOptions.debugLocally)
                     {
-                        start_nodemanager = String.Format(" -d \\localhost {0}\\NodeManager.exe {1} 0", node.Value, ClusterConfiguration.LocalFolder, node.Key);
+                        start_nodemanager = String.Format(@" -d {0}\NodeManager.exe {1} 0", node.Value, ClusterConfiguration.LocalFolder, node.Key);
                     }
                     else
                     {
-                        start_nodemanager = String.Format(" -d -u {0} -p {1} \\{2} {3}\\NodeManager.exe {4} 0", ClusterConfiguration.username, ClusterConfiguration.password, node.Value, ClusterConfiguration.LocalFolder, node.Key);
+                        start_nodemanager = String.Format(@" -d -u {0} -p {1} \\{2} {3}\NodeManager.exe {4} 0", ClusterConfiguration.username, ClusterConfiguration.password, node.Value, ClusterConfiguration.LocalFolder, node.Key);
                     }
                     
                     string psExec = CommandLineOptions.pathToPstools + "\\psexec.exe";
                     ProcessStartInfo startInfo = new ProcessStartInfo(psExec, start_nodemanager);
                     Process proc = new Process();
                     proc.StartInfo = startInfo;
-
+                    proc.StartInfo.UseShellExecute = false;
+                    proc.StartInfo.RedirectStandardOutput = true;
+                    proc.StartInfo.RedirectStandardError = true;
                     proc.Start();
                     int timeoutInMilliSecs = 5 * 1000; // 5 seconds
+                    string error = proc.StandardError.ReadToEnd();
+                    string output = proc.StandardOutput.ReadToEnd();
                     bool didExitbeforeTimeout = proc.WaitForExit(timeoutInMilliSecs);
                     int errorCode = proc.ExitCode;
                     proc.Close();
+                    Console.WriteLine("PsExec return value :{0}", errorCode);
+                    Console.WriteLine("{0}", error);
                 }
             }
 
@@ -214,11 +286,11 @@ namespace PrtDistDeployer
             string start_main;
             if(CommandLineOptions.debugLocally)
             {
-                start_main = String.Format(" -d \\localhost {0}\\NodeManager.exe {1} 0", ClusterConfiguration.LocalFolder, ClusterConfiguration.AllNodes.Where(n => n.Value == ClusterConfiguration.MainMachineNode).First().Key);
+                start_main = String.Format(@" -d {0}\NodeManager.exe {1} 1", ClusterConfiguration.LocalFolder, ClusterConfiguration.AllNodes.Where(n => n.Value == ClusterConfiguration.MainMachineNode).First().Key);
             }
             else
             {
-                start_main = String.Format(" -d -u {0} -p {1} \\{2} {3}\\NodeManager.exe {4} 0", ClusterConfiguration.username, ClusterConfiguration.password, ClusterConfiguration.MainMachineNode,ClusterConfiguration.LocalFolder, ClusterConfiguration.AllNodes.Where(n => n.Value == ClusterConfiguration.MainMachineNode).First().Key);
+                start_main = String.Format(@" -d -u {0} -p {1} \\{2} {3}\NodeManager.exe {4} 1", ClusterConfiguration.username, ClusterConfiguration.password, ClusterConfiguration.MainMachineNode,ClusterConfiguration.LocalFolder, ClusterConfiguration.AllNodes.Where(n => n.Value == ClusterConfiguration.MainMachineNode).First().Key);
             }
             
             {
@@ -226,12 +298,18 @@ namespace PrtDistDeployer
                 ProcessStartInfo startInfo = new ProcessStartInfo(psExec, start_main);
                 Process proc = new Process();
                 proc.StartInfo = startInfo;
-
+                proc.StartInfo.UseShellExecute = false;
+                proc.StartInfo.RedirectStandardOutput = true;
+                proc.StartInfo.RedirectStandardError = true;
                 proc.Start();
                 int timeoutInMilliSecs = 5 * 1000; // 5 seconds
+                string error = proc.StandardError.ReadToEnd();
+                string output = proc.StandardOutput.ReadToEnd();
                 bool didExitbeforeTimeout = proc.WaitForExit(timeoutInMilliSecs);
                 int errorCode = proc.ExitCode;
                 proc.Close();
+                Console.WriteLine("PsExec return value :{0}", errorCode);
+                Console.WriteLine("{0}", error);
             }
             #endregion
 

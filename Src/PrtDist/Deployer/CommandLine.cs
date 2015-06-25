@@ -129,6 +129,14 @@ namespace PrtDistDeployer
                                 else
                                 {
                                     debugLocally = input;
+                                    if(!debugLocally)
+                                    {
+                                        Console.WriteLine("Please enter the username and Password for remote execution");
+                                        PrintHelper.Red("Username:");
+                                        ClusterConfiguration.username = Console.ReadLine();
+                                        PrintHelper.Red("Password:");
+                                        ClusterConfiguration.password = Console.ReadLine();
+                                    }
                                 }
                                 break;
                             default:

@@ -257,6 +257,10 @@ int main(int argc, char* argv[])
 	int createMain = 0;
 	PrtDistNodeManagerCreateLogFile();
 	PrtDistClusterConfigInitialize();
+
+	//set the local directory
+	SetCurrentDirectory(ClusterConfiguration.LocalFolder);
+
 	if (argc != 3)
 	{
 		PrtDistNodeManagerLog("ERROR : Wrong number of commandline arguments passed\n");

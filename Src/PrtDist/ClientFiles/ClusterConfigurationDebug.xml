@@ -2,21 +2,4 @@
 <!-- Configuration for Windows Azure -->
 
 
-<!-- Configuration for Single Server Debugging -->
 
-<configuration>
-  <!-- only change the name of exe to be debugged -->
-  <MainExe>PingPong.exe</MainExe>
-  
-  
-  <NodeManagerPort>5600</NodeManagerPort>
-  <ContainerPortStart>5900</ContainerPortStart>
-  <NetworkShare>.\DebugLocal\</NetworkShare>
-  <LocalFolder>.\DebugLocal\</LocalFolder>
-  <MainMachineNode>localhost</MainMachineNode>
-  <CentralServer>localhost</CentralServer>
-  <TotalNodes>1</TotalNodes>
-  <AllNodes>
-    <Node>localhost</Node>
-  </AllNodes>
-</configuration>

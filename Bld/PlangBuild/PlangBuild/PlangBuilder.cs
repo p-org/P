@@ -422,7 +422,24 @@ namespace PlangBuild
             "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Binaries\\msvcr120d.dll"),
             #endregion
 
-
+             #region Client files
+           //x86
+             
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\ClusterConfiguration.xml", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\ClientFiles\\ClusterConfiguration.xml"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\MainFunction.c", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\ClientFiles\\MainFunction.c"),
+            
+            //x64
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\ClusterConfiguration.xml", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\ClientFiles\\ClusterConfiguration.xml"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\MainFunction.c", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\ClientFiles\\MainFunction.c"),
+            #endregion
         };
 
         private static readonly Tuple<string, string>[] ReleaseMoveMap = new Tuple<string, string>[]
@@ -782,6 +799,24 @@ namespace PlangBuild
             "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\Binaries\\msvcr120d.dll"),
             #endregion
 
+            #region Client files
+            //x86
+             
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\ClusterConfiguration.xml", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\ClientFiles\\ClusterConfiguration.xml"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\MainFunction.c", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\ClientFiles\\MainFunction.c"),
+            
+            //x64
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\ClusterConfiguration.xml", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\ClientFiles\\ClusterConfiguration.xml"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\MainFunction.c", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\ClientFiles\\MainFunction.c"),
+            #endregion
             
         };
 

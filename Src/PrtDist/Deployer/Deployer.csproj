@@ -76,8 +76,10 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CommandLine.cs" />
     <Compile Include="Deployer.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

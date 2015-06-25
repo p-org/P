@@ -72,15 +72,13 @@ namespace PrtDistDeployer
     }
     class PrtDistDeployer
     {
-        
-
         public static void PrintOptions()
         {
             var oldColor = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Green;
 
             Console.WriteLine("-----------------------------------------");
-            Console.WriteLine("1: Deploy the service");
+            Console.WriteLine("1 : Deploy the service");
             Console.WriteLine("2 : Kill Deployed Service and NodeManagers on all machines");
             Console.WriteLine("3 : Exit");
             Console.WriteLine();
@@ -134,7 +132,18 @@ namespace PrtDistDeployer
 
             #endregion
 
-            #region Start NodeManager 
+            #region Copy all binaries in local folder
+
+            //$psExec + " -d -u planguser -p Pldi2015 \\$nn Robocopy $deploymentFolder $localFolder /E /PURGE"
+            foreach(var node in ClusterConfiguration.AllNodes)
+            {
+                string robocopy_command = String.Format(" -d -u planguser -p Pldi2015 \\{0} Robocopy {1} {2} /E /PURGE", node.Value, ClusterConfiguration.NetworkShare, ClusterConfiguration.LocalFolder);
+
+            }
+            
+            #endregion
+
+            #region Start NodeManager
             //start node manager at all the nodes except the main
 
             foreach(var node in ClusterConfiguration.AllNodes)

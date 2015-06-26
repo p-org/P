@@ -22,7 +22,7 @@ void PrtDistClusterConfigInitialize()
 	XMLNODE** listofNodes;
 	XMLNODE* currNode;
 	char* configurationFile = "ClusterConfiguration.xml";
-	
+	ClusterConfiguration.ClusterMachines = (char**)malloc((ClusterConfiguration.TotalNodes)*sizeof(char*));
 	listofNodes = XMLDOMParseNodes(configurationFile);
 	currNode = listofNodes[0];
 	while (currNode != NULL)
@@ -61,7 +61,7 @@ void PrtDistClusterConfigInitialize()
 		}
 		else if (strcmp(currNode->NodeName, "Node") == 0)
 		{
-			ClusterConfiguration.ClusterMachines = (char**)malloc((ClusterConfiguration.TotalNodes)*sizeof(char*));
+			
 			if (j < ClusterConfiguration.TotalNodes)
 				ClusterConfiguration.ClusterMachines[j] = currNode->NodeValue;
 			else

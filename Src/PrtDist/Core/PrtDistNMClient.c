@@ -8,9 +8,9 @@ int PrtDistGetNextNodeId()
 	RPC_STATUS status;
 	unsigned char* szStringBinding = NULL;
 	handle_t handle;
-	char log[100];
+	char log[1000];
 
-	sprintf_s(log, 100, "Trying to connect to central server on %s\n", ClusterConfiguration.CentralServer);
+	sprintf_s(log, 1000, "Trying to connect to central server on %s\n", ClusterConfiguration.CentralServer);
 	PrtDistLog(log);
 
 	// Creates a string binding handle.
@@ -46,18 +46,20 @@ int PrtDistGetNextNodeId()
 	RpcTryExcept
 	{
 		c_PrtDistCentralServerGetNodeId(handle, ContainerProcess->guid.data2, &nextNodeId);
+		sprintf_s(log, 1000, "Central Server Returned Node %d\n", nextNodeId);
+		PrtDistLog(log);
 
 	}
 	RpcExcept(1)
 	{
 		unsigned long ulCode;
 		ulCode = RpcExceptionCode();
-		sprintf_s(log, 100, "Runtime reported exception 0x%lx = %ld\n", ulCode, ulCode);
+		sprintf_s(log, 1000, "Runtime reported exception 0x%lx = %ld\n", ulCode, ulCode);
 		PrtDistLog(log);
 	}
 	RpcEndExcept
 	
-	sprintf_s(log, 100, "Central Server Returned Node %s\n", ClusterConfiguration.ClusterMachines[nextNodeId]);
+	sprintf_s(log, 1000, "Central Server Returned Node %d\n",nextNodeId);
 	PrtDistLog(log);
 
 	return nextNodeId;

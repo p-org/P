@@ -52,7 +52,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\Lib\Debug\Win32</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\Lib\Debug\Win32\</AdditionalLibraryDirectories>
       <AdditionalDependencies>PrtDist.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -71,7 +71,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\Bld\Drops\Plang_Debug_x86\Runtime\ClientFiles\MainFunction.c" />
+    <ClCompile Include="..\..\ClientFiles\MainFunction.c" />
     <ClCompile Include="program.c" />
     <ClCompile Include="stubs.c" />
   </ItemGroup>
@@ -79,7 +79,9 @@
     <ClInclude Include="program.h" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="..\..\ClientFiles\ClusterConfiguration.xml" />
+    <Xml Include="..\..\ClientFiles\ClusterConfiguration.xml">
+      <SubType>Designer</SubType>
+    </Xml>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

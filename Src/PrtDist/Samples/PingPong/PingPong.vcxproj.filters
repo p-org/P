@@ -21,7 +21,7 @@
     <ClCompile Include="stubs.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\Bld\Drops\Plang_Debug_x86\Runtime\ClientFiles\MainFunction.c">
+    <ClCompile Include="..\..\ClientFiles\MainFunction.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -2,7 +2,7 @@
 <!-- Configuration for Windows Azure -->
 
 <configuration>
-  <MainExe>PingPong.exe</MainExe>
+  <MainExe>FailureDetector.exe</MainExe>
   <NodeManagerPort>5600</NodeManagerPort>
   <ContainerPortStart>5900</ContainerPortStart>
   <NetworkShare>\\Plangdist1\plangshared\</NetworkShare>

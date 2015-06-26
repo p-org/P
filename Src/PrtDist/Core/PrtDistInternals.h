@@ -1,7 +1,7 @@
 #include "PrtWinUser.h"
 #include "PrtExecution.h"
 
-#define MAX_LOG_SIZE 100
+#define MAX_LOG_SIZE 1000
 /**
 We do not serialize types anymore as they are removed from the PrtValues
 

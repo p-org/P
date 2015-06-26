@@ -95,7 +95,7 @@ DWORD WINAPI PrtDistNodeManagerCreateRPCServerAndWait(
 // Ping service
 void s_PrtDistNMPing(handle_t mHandle, int server,  boolean* amAlive)
 {
-	char log[100] = "";
+	char log[1000] = "";
 	_CONCAT(log, "Pinged by External Server :", ClusterConfiguration.ClusterMachines[server]);
 	*amAlive = !(*amAlive);
 	PrtDistNodeManagerLog(log);
@@ -107,8 +107,8 @@ void s_PrtDistNMCreateContainer(handle_t mHandle, int* containerId, boolean *sta
 	//get the exe name
 	string exeName = ClusterConfiguration.MainExe;
 	*containerId = PrtDistNodeManagerNextContainerId();
-	char commandLine[100];
-	sprintf_s(commandLine, 100, "%s %d %d %d", exeName.c_str(), 0, *containerId, myNodeId);
+	char commandLine[1000];
+	sprintf_s(commandLine, 1000, "%s %d %d %d", exeName.c_str(), 0, *containerId, myNodeId);
 	//create the node manager process
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
@@ -144,8 +144,8 @@ void PrtDistNMCreateMain()
 	//get the exe name
 	string exeName = ClusterConfiguration.MainExe;
 	int containerId = PrtDistNodeManagerNextContainerId();
-	char commandLine[100];
-	sprintf_s(commandLine, 100, "%s %d %d %d", exeName.c_str(), 1, containerId, myNodeId);
+	char commandLine[1000];
+	sprintf_s(commandLine, 1000, "%s %d %d %d", exeName.c_str(), 1, containerId, myNodeId);
 	//create the node manager process
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
@@ -193,7 +193,7 @@ int PrtDistCentralServerGetNextID()
 
 void s_PrtDistCentralServerGetNodeId(handle_t handle, int server, int *nodeId)
 {
-	char log[100] = "";
+	char log[1000] = "";
 	*nodeId = PrtDistCentralServerGetNextID();
 	_CONCAT(log, "Received Request for a new NodeId from ", ClusterConfiguration.ClusterMachines[server]);
 	_CONCAT(log, " and returned node ID : ", ClusterConfiguration.ClusterMachines[*nodeId]);
@@ -251,8 +251,8 @@ int main(int argc, char* argv[])
 			exit(1);
 		}
 		
-		char log[100];
-		sprintf_s(log, 100, "Started NodeManager at : %d", myNodeId);
+		char log[1000];
+		sprintf_s(log, 1000, "Started NodeManager at : %d", myNodeId);
 		PrtDistNodeManagerLog(log);
 
 		HANDLE listener = NULL;

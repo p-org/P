@@ -11,15 +11,10 @@ boolean PrtDistGetNextNodeId(int *nextNodeId)
 	RPC_STATUS status;
 	unsigned char* szStringBinding = NULL;
 	handle_t handle;
-<<<<<<< HEAD
+
 	char log[MAX_LOG_SIZE];
 
 	sprintf_s(log, MAX_LOG_SIZE, "Trying to connect to central server at %s\n", ClusterConfiguration.CentralServer);
-=======
-	char log[1000];
-
-	sprintf_s(log, 1000, "Trying to connect to central server on %s\n", ClusterConfiguration.CentralServer);
->>>>>>> 0ef7ecabc5d783e44c1c6801e28aee620826023d
 	PrtDistLog(log);
 
 	// Creates a string binding handle.
@@ -60,29 +55,19 @@ boolean PrtDistGetNextNodeId(int *nextNodeId)
 	int nodeId = -1;
 	RpcTryExcept
 	{
-<<<<<<< HEAD
 		c_PrtDistCentralServerGetNodeId(handle, ContainerProcess->guid.data2, &nodeId);
-=======
-		c_PrtDistCentralServerGetNodeId(handle, ContainerProcess->guid.data2, &nextNodeId);
-		sprintf_s(log, 1000, "Central Server Returned Node %d\n", nextNodeId);
-		PrtDistLog(log);
->>>>>>> 0ef7ecabc5d783e44c1c6801e28aee620826023d
 
 	}
 	RpcExcept(1)
 	{
 		unsigned long ulCode;
 		ulCode = RpcExceptionCode();
-<<<<<<< HEAD
 		sprintf_s(log, MAX_LOG_SIZE, "Runtime reported exception 0x%lx = %ld\n when executing c_PrtDistCentralServerGetNodeId", ulCode, ulCode);
-=======
-		sprintf_s(log, 1000, "Runtime reported exception 0x%lx = %ld\n", ulCode, ulCode);
->>>>>>> 0ef7ecabc5d783e44c1c6801e28aee620826023d
 		PrtDistLog(log);
 	}
 	RpcEndExcept
 	
-<<<<<<< HEAD
+
 		if (nodeId != -1)
 		{
 			sprintf_s(log, MAX_LOG_SIZE, "Central Server Returned Node %s\n", ClusterConfiguration.ClusterMachines[nodeId]);
@@ -91,10 +76,7 @@ boolean PrtDistGetNextNodeId(int *nextNodeId)
 			return TRUE;
 		}
 			
-=======
-	sprintf_s(log, 1000, "Central Server Returned Node %d\n",nextNodeId);
-	PrtDistLog(log);
->>>>>>> 0ef7ecabc5d783e44c1c6801e28aee620826023d
+
 
 	return FALSE;
 

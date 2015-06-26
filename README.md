@@ -2,6 +2,11 @@ P is a language for asynchronous event-driven programming. P allows the programm
 
 P has been used to implement and validate the USB device driver stack that ships with Microsoft Windows 8 and Windows Phone. We are currently investigating the applicability of P to the design and implementation of embedded and distributed systems.
 
+Manual
+=========
+
+Check the [P manual](https://cdn.rawgit.com/p-org/P/master/Doc/Manual/pmanual.pdf) !
+
 Publications
 ==========================================================
 

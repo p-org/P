@@ -3,6 +3,7 @@
 //
 // Helper Functions
 //
+int counter = 0;
 
 void PrtDistNodeManagerCreateLogFile()
 {
@@ -28,7 +29,6 @@ void PrtDistNodeManagerLog(char* log)
 
 int PrtDistNodeManagerNextContainerId()
 {
-	static int counter = 0;
 	g_lock.lock();
 	counter = counter + 1;
 	g_lock.unlock();

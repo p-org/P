@@ -1,30 +1,29 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Configuration for Windows Azure -->
-<!--
+
 <configuration>
   <MainExe>PingPong.exe</MainExe>
   <NodeManagerPort>5600</NodeManagerPort>
   <ContainerPortStart>5900</ContainerPortStart>
   <NetworkShare>\\Plangdist1\plangshared\</NetworkShare>
   <LocalFolder>C:\PlangLocal\</LocalFolder>
-  <MainMachineNode>plangdist1</MainMachineNode>
-  <CentralServer>plangdist1</CentralServer>
-  <TotalNodes>1</TotalNodes>
+  <MainMachineNode>plangdist2</MainMachineNode>
+  <CentralServer>plangdist2</CentralServer>
+  <TotalNodes>2</TotalNodes>
   <AllNodes>
     <Node>plangdist1</Node>
+    <Node>plangdist2</Node>
   </AllNodes>
 </configuration>
 
--->
+
 <!-- Configuration for Single Server Debugging -->
 <!-- only change the name of exe to be debugged -->
 
-
+<!--
 <configuration>
 
   <MainExe>PingPong.exe</MainExe>
-  
-  
   <NodeManagerPort>5600</NodeManagerPort>
   <ContainerPortStart>5900</ContainerPortStart>
   <NetworkShare>.\DebugLocal\</NetworkShare>
@@ -36,3 +35,4 @@
     <Node>localhost</Node>
   </AllNodes>
 </configuration>
+-->

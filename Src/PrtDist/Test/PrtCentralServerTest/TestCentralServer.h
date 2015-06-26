@@ -1,12 +1,13 @@
 #pragma once
 #include<iostream>
 #include<stdlib.h>
-#include "../../ClusterManagement/NodeManager/NodeManagerIDL/NodeManager_c.c"
-#include "../../ClusterManagement/NodeManager/NodeManagerIDL/NodeManager_h.h"
-#include "../../ClusterManagement/Helper/Helper.h"
-#include "../../Core/CommonFiles/PrtDistClusterInformation.h"
+#include "NodeManager_c.c"
+#include "NodeManager_h.h"
+#include "PrtDist.h"
+
 using namespace std;
 
+struct ClusterConfig ClusterConfiguration;
 
 void Test_CentralServerPing();
 void Test_CentralServerGetNodeId();

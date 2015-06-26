@@ -10,6 +10,9 @@ int PrtDistGetNextNodeId()
 	handle_t handle;
 	char log[100];
 
+	sprintf_s(log, 100, "Trying to connect to central server on %s\n", ClusterConfiguration.CentralServer);
+	PrtDistLog(log);
+
 	// Creates a string binding handle.
 	// This function is nothing more than a printf.
 	// Connection is not done here.

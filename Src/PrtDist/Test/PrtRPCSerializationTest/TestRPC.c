@@ -1,8 +1,8 @@
 #include "PrtWinUser.h"
 #include "PrtExecution.h"
-#include "PrtRPCSerializationTestIDL\PrtRPCTest_c.c"
-#include "PrtRPCSerializationTestIDL\PrtRPCTest_h.h"
-
+#include "PrtRPCTest_c.c"
+#include "PrtRPCTest_h.h"
+#include "PrtDistSerializer.h"
 extern void CreateRPCTestServer();
 
 /***************************************************************************

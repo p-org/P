@@ -28,8 +28,5 @@ void PrtDistServiceLog(char* log);
 string PrtDistServiceNextNodeManagerPort();
 void PrtDistServiceCreateRPCServer();
 
-//Helper functions used across PrtDistManager projects.
-boolean _ROBOCOPY(string source, string dest);
-
 //For concatenating two strings
 void _CONCAT(char* dest, char* string1, char* string2);

@@ -2,8 +2,8 @@
 #include "PrtDistSerializer.h"
 #include "PrtWinUser.h"
 #include "PrtExecution.h"
-#include "PrtRPCSerializationTestIDL\PrtRPCTest_h.h"
-#include "PrtRPCSerializationTestIDL\PrtRPCTest_s.c"
+#include "PrtRPCTest_h.h"
+#include "PrtRPCTest_s.c"
 
 PRT_VALUE *ReceivedValue;
 

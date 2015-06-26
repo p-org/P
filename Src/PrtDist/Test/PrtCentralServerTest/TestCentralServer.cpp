@@ -1,6 +1,6 @@
 #include"TestCentralServer.h"
 
-string configurationFile = "PrtDistClusterConfiguration.xml";
+string configurationFile = "ClusterConfiguration.xml";
 handle_t testme_handle = NULL;
 
 
@@ -9,10 +9,6 @@ void InitializeHandle()
 	RPC_STATUS status;
 	unsigned char* szStringBinding = NULL;
 
-	//get centralserverID
-	int centralServerID = atoi(PrtDistClusterConfigGet(CentralServer));
-	char buffPort[100];
-	_itoa_s(PRTD_SERVICE_PORT, buffPort, 10);
 	// Creates a string binding handle.
 	// This function is nothing more than a printf.
 	// Connection is not done here.
@@ -20,9 +16,9 @@ void InitializeHandle()
 		NULL, // UUID to bind to.
 		(unsigned char*)("ncacn_ip_tcp"), // Use TCP/IP
 		// protocol.
-		(unsigned char*)(PRTD_CLUSTERMACHINES[centralServerID]), // TCP/IP network
+		(unsigned char*)(ClusterConfiguration.CentralServer), // TCP/IP network
 		// address to use.
-		(unsigned char*)buffPort, // TCP/IP port to use.
+		(unsigned char*)ClusterConfiguration.NodeManagerPort, // TCP/IP port to use.
 		NULL, // Protocol dependent network options to use.
 		&szStringBinding); // String binding output.
 
@@ -59,15 +55,13 @@ void CallGetNodeIDFuntion()
 		printf("Runtime reported exception 0x%lx = %ld\n", ulCode, ulCode);
 	}
 	RpcEndExcept
-		cout << "Central Server Returned Node " << PRTD_CLUSTERMACHINES[nextNodeId] << endl;
+		cout << "Central Server Returned Node " << ClusterConfiguration.ClusterMachines[nextNodeId] << endl;
 }
 
 void Test_CentralServerGetNodeId()
 {
 	unsigned char* szStringBinding = NULL;
 
-	//get centralserverID
-	int centralServerID = atoi(PrtDistClusterConfigGet(CentralServer));
 	for (int i = 0; i < 3; i++)
 	{
 		CallGetNodeIDFuntion();

@@ -16,14 +16,6 @@
   <ItemGroup>
     <ClInclude Include="TestPrtNodeManager.h" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\ClusterManagement\NodeManager\NodeManager.vcxproj">
-      <Project>{2c375a16-2c95-45c6-96a7-2ea71c4a6471}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ClusterManagement\NodeManager\NodeManagerIDL\NodeManagerIDL.vcxproj">
-      <Project>{a5bde8e1-31d4-45aa-9c1a-ec496f5ed9b5}</Project>
-    </ProjectReference>
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{6795DBED-69A7-400E-A421-D903D32F88EF}</ProjectGuid>
     <RootNamespace>TestPrtService</RootNamespace>
@@ -60,12 +52,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../../Prt/API;../../PrtDist/PrtDist/;../../../Prt/Core;../../../Prt/WinUser/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../Core/;../../Core/PrtDistIDL/;../../../Prt/API/;../../../Prt/Core/;../../../Prt/WinUser/;../../../Prt/IDL/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_USE_IDL;PRT_STATIC%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\..\Resources\PThreads\;$(SolutionDir)$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;Helper.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

@@ -141,15 +141,6 @@ void s_PrtDistNMCreateContainer(handle_t mHandle, int* containerId, boolean *sta
 // Create Container.
 void PrtDistNMCreateMain()
 {
-	string jobFolder = ClusterConfiguration.NetworkShare;
-	string newLocalJobFolder = ClusterConfiguration.LocalFolder;
-	/*boolean st = _ROBOCOPY(jobFolder, newLocalJobFolder);
-	if (!st)
-	{
-		PrtDistNodeManagerLog("CreateProcess for Node Manager failed in ROBOCOPY\n");
-		return;
-	}*/
-
 	//get the exe name
 	string exeName = ClusterConfiguration.MainExe;
 	int containerId = PrtDistNodeManagerNextContainerId();
@@ -163,11 +154,6 @@ void PrtDistNMCreateMain()
 	si.cb = sizeof(si);
 	ZeroMemory(&pi, sizeof(pi));
 
-	/*
-	char currDir[100];
-	GetCurrentDirectory(100, currDir);
-	SetCurrentDirectory(newLocalJobFolder.c_str());
-	*/
 
 	// Start the child process. 
 	if (!CreateProcess(NULL,   // No module name (use command line)
@@ -229,18 +215,6 @@ MIDL_user_free(void* object)
 	free(object);
 }
 
-
-
-boolean _ROBOCOPY(string source, string dest)
-{
-	string copycommand = "robocopy " + source + " " + dest + " > " + "ROBOCOPY_PSERVICE_LOG.txt";
-	if (system(copycommand.c_str()) == -1)
-	{
-		return false;
-	}
-	else
-		return true;
-}
 
 void _CONCAT(char* dest, char* string1, char* string2)
 {

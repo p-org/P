@@ -22,4 +22,14 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Midl Include="PrtRPCTest.idl">
+      <Filter>Source Files</Filter>
+    </Midl>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PrtRPCTest.acf">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>

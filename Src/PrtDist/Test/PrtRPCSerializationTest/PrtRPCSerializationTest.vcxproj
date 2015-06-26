@@ -92,6 +92,10 @@
       <AdditionalDependencies>PrtDist.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\Lib\Debug\Win32</AdditionalLibraryDirectories>
     </Link>
+    <Midl>
+      <AdditionalIncludeDirectories>..\..\..\Prt\API</AdditionalIncludeDirectories>
+      <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
+    </Midl>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -103,9 +107,12 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>PrtDist.lib;PrtWinUser.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>;../../Resources/PThreads/;$(SolutionDir)$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>PrtDist.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\Lib\Debug\Win32</AdditionalLibraryDirectories>
     </Link>
+    <Midl>
+      <AdditionalIncludeDirectories>..\..\..\Prt\API\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </Midl>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -144,12 +151,10 @@
     <ClCompile Include="TestRPC.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Core\PrtDist.vcxproj">
-      <Project>{88589011-c704-470a-8a39-05dc0c816da8}</Project>
-    </ProjectReference>
-    <ProjectReference Include="PrtRPCSerializationTestIDL\PrtRPCSerializationTestIDL.vcxproj">
-      <Project>{6ea10af0-e923-44f6-9588-2f8bba331ce8}</Project>
-    </ProjectReference>
+    <None Include="PrtRPCTest.acf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="PrtRPCTest.idl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

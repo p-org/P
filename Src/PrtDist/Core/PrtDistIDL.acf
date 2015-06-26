@@ -4,5 +4,4 @@ explicit_handle
 interface PrtDist
 {
 	[async] PrtDistSendEx();
-	[async] PrtDistPing();
 }

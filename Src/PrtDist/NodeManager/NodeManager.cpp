@@ -193,7 +193,7 @@ int PrtDistCentralServerGetNextID()
 
 void s_PrtDistCentralServerGetNodeId(handle_t handle, int server, int *nodeId)
 {
-	char log[1000] = "";
+	char log[100] = "";
 	*nodeId = PrtDistCentralServerGetNextID();
 	_CONCAT(log, "Received Request for a new NodeId from ", ClusterConfiguration.ClusterMachines[server]);
 	_CONCAT(log, " and returned node ID : ", ClusterConfiguration.ClusterMachines[*nodeId]);

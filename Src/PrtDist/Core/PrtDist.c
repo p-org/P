@@ -1,8 +1,6 @@
 #include "PrtDist.h"
 #include ".\PrtDistIDL_s.c"
-
-extern int PrtDistGetNextNodeId();
-extern int PrtDistCreateContainer(int nodeId);
+#include "PrtDistInternals.h"
 
 // Function for enqueueing message into the remote machine
 void s_PrtDistSendEx(
@@ -25,18 +23,9 @@ void s_PrtDistSendEx(
 
 }
 
-void s_PrtDistPing(
-	PRPC_ASYNC_STATE asyncState,
-	handle_t handle
-)
-{
-	PrtDistLog("Ping Successful");
-}
-
-PRT_INT32 PrtDistGetRecvPortNumber(PRT_VALUE* target)
-{
-	return atoi(ClusterConfiguration.ContainerPortStart) + target->valueUnion.mid->processId.data1;
-}
+/***********************************************************************************************************
+* Functions for creation of RPC client and Server
+*/
 
 handle_t
 PrtDistCreateRPCClient(
@@ -44,15 +33,15 @@ PRT_VALUE* target
 )
 {
 	PRT_INT32 nodeId = target->valueUnion.mid->processId.data2;
-	PRT_INT32 portNumber = PrtDistGetRecvPortNumber(target);
+	PRT_INT32 portNumber = atoi(ClusterConfiguration.ContainerPortStart) + target->valueUnion.mid->processId.data1;
+
 	RPC_STATUS status;
 	unsigned char* szStringBinding = NULL;
 	handle_t handle;
-	//get centralserverID
+
 	char buffPort[100];
 	_itoa(portNumber, buffPort, 10);
-	// Creates a string binding handle.
-	// This function is nothing more than a printf.
+
 	// Connection is not done here.
 	status = RpcStringBindingCompose(
 		NULL, // UUID to bind to.
@@ -79,7 +68,7 @@ PRT_VALUE* target
 
 	if (status)
 	{
-		PrtAssert(PRT_FALSE, "Failed to create an RPC Client");
+		PrtAssert(PRT_FALSE, "Failed to create an RPC Client (function : PrtDistCreateRPCClient)");
 	}
 	return handle;
 }
@@ -103,7 +92,7 @@ DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(LPVOID portNumber)
 
 	if (status)
 	{
-		PrtDistLog("Runtime reported exception in RpcServerUseProtseqEp");
+		PrtDistLog("Runtime reported exception in RpcServerUseProtseqEp (function : PrtDistCreateRPCServerForEnqueueAndWait)");
 		exit(status);
 	}
 
@@ -118,11 +107,11 @@ DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(LPVOID portNumber)
 
 	if (status)
 	{
-		PrtDistLog("Runtime reported exception in RpcServerRegisterIf2");
+		PrtDistLog("Runtime reported exception in RpcServerRegisterIf2 (function : PrtDistCreateRPCServerForEnqueueAndWait)");
 		exit(status);
 	}
 
-	PrtDistLog("Receiver listening ...");
+	PrtDistLog("RPC Receiver listening ...");
 	// Start to listen for remote procedure calls for all registered interfaces.
 	// This call will not return until RpcMgmtStopServerListening is called.
 	status = RpcServerListen(
@@ -132,7 +121,7 @@ DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(LPVOID portNumber)
 
 	if (status)
 	{
-		PrtDistLog("Runtime reported exception in RpcServerListen");
+		PrtDistLog("Runtime reported exception in RpcServerListen (function : PrtDistCreateRPCServerForEnqueueAndWait)");
 		exit(status);
 	}
 
@@ -140,6 +129,13 @@ DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(LPVOID portNumber)
 
 }
 
+/***********************************************************************************************************/
+
+
+
+/***********************************************************************************************************
+* Implementation of all the model functions
+**/
 
 PRT_VALUE *P_FUN__SENDRELIABLE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
 {
@@ -159,10 +155,13 @@ PRT_VALUE *P_FUN__SEND_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_V
 PRT_VALUE *P_FUN__CREATECONTAINER_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
 {
 	//first step is to get the nodeId from central node.
-	int newNodeId = PrtDistGetNextNodeId();
+	int newNodeId;
+	while (TRUE != PrtDistGetNextNodeId(&newNodeId));
 
 	//send message to the node manager on the new node to create container.
-	int newContainerId = PrtDistCreateContainer(newNodeId);
+
+	int newContainerId;
+	while(TRUE != PrtDistCreateContainer(newNodeId, &newContainerId));
 
 	PRT_VALUE* containerMachine = PrtMkDefaultValue(PrtMkPrimitiveType(PRT_KIND_MACHINE));
 	containerMachine->valueUnion.mid->machineId = 1; //the first machine.
@@ -172,12 +171,12 @@ PRT_VALUE *P_FUN__CREATECONTAINER_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funI
 	return containerMachine;
 }
 
+/***********************************************************************************************************/
 
-//logging function
-void PrtDistLog(PRT_STRING log)
-{
-	PrtDistSMLogHandler(PRT_STEP_COUNT, log);
-}
+
+/***********************************************************************************************************
+* RPC Related Functions
+*/
 
 //rpc related functions
 
@@ -195,3 +194,5 @@ MIDL_user_free(void* object)
 {
 	free(object);
 }
+
+/************************************************************************************************************/

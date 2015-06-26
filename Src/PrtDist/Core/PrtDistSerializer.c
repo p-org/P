@@ -3,7 +3,7 @@
 *  for RPC.
 */
 
-#include "PrtDistSerializer.h"
+#include "PrtDistInternals.h"
 
 ///
 /// Helper functions and Data

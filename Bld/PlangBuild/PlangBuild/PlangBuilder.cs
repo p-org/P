@@ -272,11 +272,11 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDist.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtDist.h"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDistSerializer.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtDistSerializer.h"),
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDistInternals.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtDistInternals.h"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\ConfigParser.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\ConfigParser.h"),
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDistConfigParser.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\Headers\\PrtDistConfigParser.h"),
             
             // x64
              new Tuple<string, string>(
@@ -332,11 +332,11 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDist.h", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtDist.h"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDistSerializer.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtDistSerializer.h"),
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDistInternals.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtDistInternals.h"),
             new Tuple<string, string>(
-                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\ConfigParser.h", 
-                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\ConfigParser.h"),
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\Core\\PrtDistConfigParser.h", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Headers\\PrtDistConfigParser.h"),
 
             #endregion
 

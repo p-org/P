@@ -1,14 +1,15 @@
-#include "ConfigParser.h"
+#include "PrtDistConfigParser.h"
+#include "PrtDistInternals.h"
 #import <msxml3.dll>
 using namespace MSXML2;
 
 #define _CRT_SECURE_NO_WARNINGS
 
 typedef	struct _XMLNODE {
-	char NodeType[1000];
-	char NodeName[1000];
-	char NodeValue[1000];
-	char NodeParent[1000];
+	char NodeType[MAX_LOG_SIZE];
+	char NodeName[MAX_LOG_SIZE];
+	char NodeValue[MAX_LOG_SIZE];
+	char NodeParent[MAX_LOG_SIZE];
 } XMLNODE;
 
 XMLNODE** XMLDOMParseNodes(const char*);
@@ -168,21 +169,21 @@ XMLNODE** XMLDOMParseNodes(const char *szFileName)
 					n++;//element node's number
 					//printf("\n\n%d\n", n);//element node's number
 
-					sprintf_s(currNode->NodeType, 1000, "%ls", (LPCTSTR)bstrNodeType);
+					sprintf_s(currNode->NodeType, MAX_LOG_SIZE, "%ls", (LPCTSTR)bstrNodeType);
 					//printf("Type: %ls\n", bstrNodeType);
 
 					pIDOMNode->get_nodeName(&bstrItemNode);
 					//printf("Node: %ls\n", bstrItemNode);
-					sprintf_s(currNode->NodeName, 1000, "%ls", (LPCTSTR)bstrItemNode);
+					sprintf_s(currNode->NodeName, MAX_LOG_SIZE, "%ls", (LPCTSTR)bstrItemNode);
 
 					pIDOMNode->get_text(&bstrItemText);
 					//printf("Text: %ls\n", bstrItemText);
-					sprintf_s(currNode->NodeValue, 1000, "%ls", ((LPCTSTR)bstrItemText));
+					sprintf_s(currNode->NodeValue, MAX_LOG_SIZE, "%ls", ((LPCTSTR)bstrItemText));
 
 					pIDOMNode->get_parentNode(&pIParentNode);
 					pIParentNode->get_nodeName(&bstrItemParent);
 					//printf("Parent: %ls\n",bstrItemParent);
-					sprintf_s(currNode->NodeParent, 1000, "%ls", ((LPCTSTR)bstrItemParent));
+					sprintf_s(currNode->NodeParent, MAX_LOG_SIZE, "%ls", ((LPCTSTR)bstrItemParent));
 
 					pIDOMNode->get_childNodes(&childList);
 					//printf("Child nodes: %d\n", (childList->length));

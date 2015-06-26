@@ -51,8 +51,8 @@ PRT_BOOLEAN PrtDistSend(
 	{
 		unsigned long ulCode;
 		ulCode = RpcExceptionCode();
-		char log[100];
-		sprintf(log, "Runtime reported exception in RPC 0x%lx = %ld\n", ulCode, ulCode);
+		char log[MAX_LOG_SIZE];
+		sprintf_s(log, MAX_LOG_SIZE, "Runtime reported RPC exception 0x%lx = %ld\n when executing function c_PrtDistSendEx", ulCode, ulCode);
 		PrtDistLog(log);
 		return PRT_FALSE;
 	}

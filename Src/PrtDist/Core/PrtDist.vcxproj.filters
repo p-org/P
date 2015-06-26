@@ -21,27 +21,27 @@
     <ClCompile Include="PrtDist.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PrtDistSend.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="PrtDistNMClient.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PrtDistLogging.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ConfigParser.cpp">
+    <ClCompile Include="PrtDistConfigParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrtDistSendClient.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PrtDistSerializer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PrtDist.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ConfigParser.h">
+    <ClInclude Include="PrtDistConfigParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PrtDistInternals.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -57,6 +57,8 @@
     <None Include="PrtDistIDL.acf">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="NodeManager.acf" />
+    <None Include="NodeManager.acf">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

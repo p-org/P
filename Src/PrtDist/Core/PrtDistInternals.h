@@ -1,6 +1,7 @@
 #include "PrtWinUser.h"
 #include "PrtExecution.h"
 
+#define MAX_LOG_SIZE 100
 /**
 We do not serialize types anymore as they are removed from the PrtValues
 
@@ -35,3 +36,7 @@ PRT_VALUE*
 PrtDistSerializeValue(
 __in PRT_VALUE* value
 );
+
+boolean PrtDistGetNextNodeId(int *nextNodeId);
+
+boolean PrtDistCreateContainer(int nodeId, int* newContainerId);

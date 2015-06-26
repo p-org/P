@@ -19,9 +19,6 @@ interface PrtDist {
 		[in, ptr] PRT_VALUE* payload
 	);
 
-	void PrtDistPing(
-		[in] handle_t handleSM
-	);
 	
 }
 

@@ -1,9 +1,9 @@
 #ifndef PRTDIST_H
 #define PRTDIST_H
 
-#include "PrtDistSerializer.h"
+#include "PrtDistInternals.h"
 #include "PrtDistIDL_h.h"
-#include "ConfigParser.h"
+#include "PrtDistConfigParser.h"
 
 //pointer to the container process
 extern PRT_PROCESS* ContainerProcess;

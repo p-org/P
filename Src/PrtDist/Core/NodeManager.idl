@@ -10,11 +10,13 @@ interface PrtDistNodeManager
 		[in] int server,
 		[out] boolean* status);
 
+
 	void PrtDistNMCreateContainer(
 		[in] handle_t myHandle,
 		[out] int* containerId,
 		[out] boolean *status
 		);
+
 
 	void PrtDistCentralServerGetNodeId(
 		[in] handle_t myHandle,

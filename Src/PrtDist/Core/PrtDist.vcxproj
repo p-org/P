@@ -202,17 +202,17 @@ del NodeManager_*</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ConfigParser.cpp" />
     <ClCompile Include="PrtDist.c" />
+    <ClCompile Include="PrtDistConfigParser.cpp" />
     <ClCompile Include="PrtDistLogging.c" />
     <ClCompile Include="PrtDistNMClient.c" />
-    <ClCompile Include="PrtDistSend.c" />
+    <ClCompile Include="PrtDistSendClient.c" />
     <ClCompile Include="PrtDistSerializer.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ConfigParser.h" />
     <ClInclude Include="PrtDist.h" />
-    <ClInclude Include="PrtDistSerializer.h" />
+    <ClInclude Include="PrtDistConfigParser.h" />
+    <ClInclude Include="PrtDistInternals.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="NodeManager.acf" />

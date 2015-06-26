@@ -7,7 +7,7 @@
 #include <chrono>
 #include"NodeManager_h.h"
 #include"NodeManager_s.c"
-#include "ConfigParser.h"
+#include "PrtDistConfigParser.h"
 using namespace std;
 
 

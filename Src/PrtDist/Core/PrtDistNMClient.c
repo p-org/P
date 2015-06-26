@@ -2,15 +2,18 @@
 #include "NodeManager_c.c"
 #include "PrtDist.h"
 
-//central server interaction.
-int PrtDistGetNextNodeId()
+
+/******************************************************************************************
+* Functions that interact with the NodeManager for creation of container
+*/
+boolean PrtDistGetNextNodeId(int *nextNodeId)
 {
 	RPC_STATUS status;
 	unsigned char* szStringBinding = NULL;
 	handle_t handle;
-	char log[100];
+	char log[MAX_LOG_SIZE];
 
-	sprintf_s(log, 100, "Trying to connect to central server on %s\n", ClusterConfiguration.CentralServer);
+	sprintf_s(log, MAX_LOG_SIZE, "Trying to connect to central server at %s\n", ClusterConfiguration.CentralServer);
 	PrtDistLog(log);
 
 	// Creates a string binding handle.
@@ -27,7 +30,10 @@ int PrtDistGetNextNodeId()
 		&szStringBinding); // String binding output.
 
 	if (status)
-		exit(status);
+	{
+		PrtDistLog("Failed to RpcStringBindingCompose in PrtDistGetNextNodeId");
+		return FALSE;
+	}
 
 
 
@@ -40,34 +46,43 @@ int PrtDistGetNextNodeId()
 	// handle defined in the IDL file.
 
 	if (status)
-		exit(status);
+	{
+		PrtDistLog("Failed to RpcBindingFromStringBinding in PrtDistGetNextNodeId");
+		return FALSE;
+	}
 
-	int nextNodeId = 0;
+	int nodeId = -1;
 	RpcTryExcept
 	{
-		c_PrtDistCentralServerGetNodeId(handle, ContainerProcess->guid.data2, &nextNodeId);
+		c_PrtDistCentralServerGetNodeId(handle, ContainerProcess->guid.data2, &nodeId);
 
 	}
 	RpcExcept(1)
 	{
 		unsigned long ulCode;
 		ulCode = RpcExceptionCode();
-		sprintf_s(log, 100, "Runtime reported exception 0x%lx = %ld\n", ulCode, ulCode);
+		sprintf_s(log, MAX_LOG_SIZE, "Runtime reported exception 0x%lx = %ld\n when executing c_PrtDistCentralServerGetNodeId", ulCode, ulCode);
 		PrtDistLog(log);
 	}
 	RpcEndExcept
 	
-	sprintf_s(log, 100, "Central Server Returned Node %s\n", ClusterConfiguration.ClusterMachines[nextNodeId]);
-	PrtDistLog(log);
+		if (nodeId != -1)
+		{
+			sprintf_s(log, MAX_LOG_SIZE, "Central Server Returned Node %s\n", ClusterConfiguration.ClusterMachines[nodeId]);
+			PrtDistLog(log);
+			*nextNodeId = nodeId;
+			return TRUE;
+		}
+			
 
-	return nextNodeId;
+	return FALSE;
 
 }
 
-int PrtDistCreateContainer(int nodeId)
+boolean PrtDistCreateContainer(int nodeId, int* newContainerId)
 {
 	RPC_STATUS status;
-	int newContainerId;
+	int id_param;
 	unsigned char* szStringBinding = NULL;
 	handle_t handle;
 
@@ -85,7 +100,10 @@ int PrtDistCreateContainer(int nodeId)
 		&szStringBinding); // String binding output.
 
 	if (status)
-		exit(status);
+	{
+		PrtDistLog("Failed to RpcStringBindingCompose in PrtDistCreateContainer");
+		return FALSE;
+	}
 
 
 
@@ -98,37 +116,42 @@ int PrtDistCreateContainer(int nodeId)
 	// handle defined in the IDL file.
 
 	if (status)
-		exit(status);
+	{
+		PrtDistLog("Failed to RpcBindingFromStringBinding in PrtDistCreateContainer");
+		return FALSE;
+	}
 
-	char log[100];
-	sprintf_s(log, 100, "Creating container on %s", ClusterConfiguration.ClusterMachines[nodeId]);
+	char log[MAX_LOG_SIZE];
+	sprintf_s(log, MAX_LOG_SIZE, "Creating container on %s", ClusterConfiguration.ClusterMachines[nodeId]);
 	PrtDistLog(log);
 
 	boolean statusCC = FALSE;
 	RpcTryExcept
 	{
-		c_PrtDistNMCreateContainer(handle, &newContainerId, &statusCC);
+		c_PrtDistNMCreateContainer(handle, &id_param, &statusCC);
 
 	}
-	RpcExcept(1)
+		RpcExcept(1)
 	{
 		unsigned long ulCode;
 		ulCode = RpcExceptionCode();
-		sprintf_s(log, 100, "Runtime reported exception 0x%lx = %ld\n", ulCode, ulCode);
+		sprintf_s(log, MAX_LOG_SIZE, "Runtime reported exception 0x%lx = %ld\n when executing c_PrtDistNMCreateContainer", ulCode, ulCode);
 		PrtDistLog(log);
 	}
 	RpcEndExcept
 
 	if (statusCC)
+	{
 		PrtDistLog("Successfully created the Container");
+		*newContainerId = id_param;
+		return TRUE;
+	}
 	else
 	{ 
 		PrtDistLog("Failed to Create Container");
-		exit(-1);
-		//TODO : Think about a logic for machine CreateContainer Robust.
+		return FALSE;
 	}
-		
-
-	return newContainerId;
 
 }
+
+/****************************************************************************************************************/

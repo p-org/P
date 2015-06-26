@@ -9,10 +9,11 @@
   <LocalFolder>C:\PlangLocal\</LocalFolder>
   <MainMachineNode>plangdist2</MainMachineNode>
   <CentralServer>plangdist2</CentralServer>
-  <TotalNodes>2</TotalNodes>
+  <TotalNodes>3</TotalNodes>
   <AllNodes>
     <Node>plangdist1</Node>
     <Node>plangdist2</Node>
+    <Node>plangdist3</Node>
   </AllNodes>
 </configuration>
 

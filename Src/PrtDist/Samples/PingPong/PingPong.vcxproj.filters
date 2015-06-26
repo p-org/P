@@ -30,4 +30,7 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\..\ClientFiles\ClusterConfiguration.xml" />
+  </ItemGroup>
 </Project>

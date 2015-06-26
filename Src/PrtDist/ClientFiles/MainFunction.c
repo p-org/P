@@ -33,6 +33,7 @@ int main(int argc, char *argv[])
 	{
 		//Initialize the cluster configuration.
 		PrtDistClusterConfigInitialize();
+		SetCurrentDirectory(ClusterConfiguration.LocalFolder);
 		PRT_GUID processGuid;
 		processGuid.data1 = processId;
 		processGuid.data2 = nodeId; //nodeId

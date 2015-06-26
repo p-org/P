@@ -48,7 +48,7 @@ int PrtDistGetNextNodeId()
 		c_PrtDistCentralServerGetNodeId(handle, ContainerProcess->guid.data2, &nextNodeId);
 
 	}
-		RpcExcept(1)
+	RpcExcept(1)
 	{
 		unsigned long ulCode;
 		ulCode = RpcExceptionCode();

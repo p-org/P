@@ -228,11 +228,13 @@ void _CONCAT(char* dest, char* string1, char* string2)
 ///
 int main(int argc, char* argv[])
 {
-	PrtDistNodeManagerCreateLogFile();
-	int createMain = 0;
 	PrtDistClusterConfigInitialize();
 	//set the local directory
 	SetCurrentDirectory(ClusterConfiguration.LocalFolder);
+
+	PrtDistNodeManagerCreateLogFile();
+	int createMain = 0;
+	
 	
 	if (argc != 3)
 	{

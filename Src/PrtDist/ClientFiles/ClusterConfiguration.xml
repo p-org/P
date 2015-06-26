@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Configuration for Windows Azure -->
-
+<!--
 <configuration>
   <MainExe>PingPong.exe</MainExe>
   <NodeManagerPort>5600</NodeManagerPort>
@@ -15,10 +15,11 @@
   </AllNodes>
 </configuration>
 
+-->
 <!-- Configuration for Single Server Debugging -->
 <!-- only change the name of exe to be debugged -->
 
-<!--
+
 <configuration>
 
   <MainExe>PingPong.exe</MainExe>
@@ -35,4 +36,3 @@
     <Node>localhost</Node>
   </AllNodes>
 </configuration>
--->

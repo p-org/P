@@ -19,7 +19,7 @@ void callPingFunction(int ServerID)
 	RpcEndExcept
 
 		if (amIAlive)
-			cout << "Pservice is Alive at " << ClusterConfiguration.ClusterMachines[ServerID] << endl;
+			cout << "NodeManager is Alive at " << ClusterConfiguration.ClusterMachines[ServerID] << endl;
 }
 
 void Test_PServicePing()
@@ -30,7 +30,7 @@ void Test_PServicePing()
 	//get centralserverID
 	int numOfNodes = ClusterConfiguration.TotalNodes;
 
-	for (int i = 0; i <= numOfNodes; i++)
+	for (int i = 0; i < numOfNodes; i++)
 	{
 		// Creates a string binding handle.
 		// This function is nothing more than a printf.
@@ -84,6 +84,7 @@ MIDL_user_free(void* object)
 
 int main()
 {
+	PrtDistClusterConfigInitialize();
 	cout << "Testing Ping Operation" << endl;
 	Test_PServicePing();
 

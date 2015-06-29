@@ -30,7 +30,10 @@ void PrtDistClusterConfigInitialize()
 	{
 		if (strcmp(currNode->NodeName, "MainExe") == 0)
 		{
-			ClusterConfiguration.MainExe = currNode->NodeValue;
+			char* buffer = (char*)malloc(sizeof(char) * 100);
+			GetFileTitle(currNode->NodeValue, buffer, 100);
+			strcat_s(buffer, 100, ".exe");
+			ClusterConfiguration.MainExe = buffer;
 		}
 		else if (strcmp(currNode->NodeName, "NodeManagerPort") == 0)
 		{

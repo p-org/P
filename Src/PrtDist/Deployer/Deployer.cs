@@ -49,6 +49,9 @@ namespace PrtDistDeployer
         public static string MainMachineNode;
         public static string CentralServerNode;
         public static int TotalNodes;
+        public static string psToolsPath;
+        public static string pBinPath;
+        public static string clientBinPath;
         public static Dictionary<int, string> AllNodes = new Dictionary<int, string>();
 
         public static void Initialize()
@@ -58,7 +61,10 @@ namespace PrtDistDeployer
             XmlNodeList nodes;
             config.Load(CommandLineOptions.pathToClusterConfig);
 
+            psToolsPath = config.GetElementsByTagName("PSTools")[0].InnerText;
+            pBinPath = config.GetElementsByTagName("PBinaries")[0].InnerText;
             MainExe = config.GetElementsByTagName("MainExe")[0].InnerText;
+            clientBinPath = System.IO.Path.GetDirectoryName(MainExe);
             NodeManagerPort = config.GetElementsByTagName("NodeManagerPort")[0].InnerText;
             ContainerPortStart = config.GetElementsByTagName("ContainerPortStart")[0].InnerText;
             
@@ -74,6 +80,41 @@ namespace PrtDistDeployer
                 AllNodes.Add(index, n.InnerText);
                 index++;
             }
+
+            //check if the config file is correct.
+            if (!Directory.Exists(psToolsPath))
+            {
+                PrintHelper.Red("Directory : " + psToolsPath + " not found");
+                Environment.Exit(1);
+            }
+            if (!Directory.Exists(clientBinPath))
+            {
+                PrintHelper.Red("Directory : " + clientBinPath + " not found");
+                Environment.Exit(1);
+            }
+            else
+            {
+                if(!File.Exists(clientBinPath + "\\" + MainExe))
+                {
+                    PrintHelper.Red(" MainExe not found in " + clientBinPath);
+                    Environment.Exit(1);
+                }
+            }
+            if (Directory.Exists(psToolsPath))
+            {
+                if (!(File.Exists(psToolsPath + "\\PsExec.exe") && File.Exists(psToolsPath + "\\pskill.exe")))
+                {
+                    PrintHelper.Red("File : PsExec or PsKill not found");
+                    Environment.Exit(1);
+                }
+            }
+            else
+            {
+                PrintHelper.Red("Directory : " + psToolsPath + " not found");
+                Environment.Exit(1);
+            }
+
+
 
             //depending on config file infer whether we are performing debug-only
             string lh = "localhost";
@@ -123,7 +164,7 @@ namespace PrtDistDeployer
                 }
 
                 {
-                    string psExec = CommandLineOptions.pathToPstools + "\\pskill.exe";
+                    string psExec = ClusterConfiguration.psToolsPath + "\\pskill.exe";
                     ProcessStartInfo startInfo = new ProcessStartInfo(psExec, kill_MainExe);
                     Process proc = new Process();
                     proc.StartInfo = startInfo;
@@ -153,7 +194,7 @@ namespace PrtDistDeployer
                     kill_nodemanager = String.Format(@" -t -u {0} -p {1} \\{2} NodeManager.exe", ClusterConfiguration.username, ClusterConfiguration.password, node.Value);
                 }
                 {
-                    string psExec = CommandLineOptions.pathToPstools + "\\pskill.exe";
+                    string psExec = ClusterConfiguration.psToolsPath + "\\pskill.exe";
                     ProcessStartInfo startInfo = new ProcessStartInfo(psExec, kill_nodemanager);
                     Process proc = new Process();
                     proc.StartInfo = startInfo;
@@ -199,13 +240,13 @@ namespace PrtDistDeployer
             //copy the xml file
             File.Copy(CommandLineOptions.pathToClusterConfig, ClusterConfiguration.NetworkShare + "\\" + Path.GetFileName(CommandLineOptions.pathToClusterConfig));
             //copy all the pbinaries
-            nS = new DirectoryInfo(CommandLineOptions.pathToPBinaries);
+            nS = new DirectoryInfo(ClusterConfiguration.pBinPath);
             foreach (var file in nS.GetFiles())
             {
                 file.CopyTo(ClusterConfiguration.NetworkShare + "\\" + file.Name, true);
             }
             //copy all the service binaries
-            nS = new DirectoryInfo(CommandLineOptions.pathToNewServiceFolder);
+            nS = new DirectoryInfo(ClusterConfiguration.clientBinPath);
             foreach (var file in nS.GetFiles())
             {
                 file.CopyTo(ClusterConfiguration.NetworkShare + "\\" + file.Name, true);
@@ -228,7 +269,7 @@ namespace PrtDistDeployer
                     robocopy_command = String.Format(@" -d -u {0} -p {1} \\{2} Robocopy {3} {4} /E /PURGE", ClusterConfiguration.username, ClusterConfiguration.password, node.Value, ClusterConfiguration.NetworkShare, ClusterConfiguration.LocalFolder);
                 }
                 
-                string psExec = CommandLineOptions.pathToPstools + "\\psexec.exe";
+                string psExec = ClusterConfiguration.psToolsPath + "\\psexec.exe";
                 ProcessStartInfo startInfo = new ProcessStartInfo(psExec, robocopy_command);
                 Process proc = new Process();
                 proc.StartInfo = startInfo;
@@ -273,7 +314,7 @@ namespace PrtDistDeployer
                         start_nodemanager = String.Format(@" -d -u {0} -p {1} \\{2} {3}\NodeManager.exe {4} 0", ClusterConfiguration.username, ClusterConfiguration.password, node.Value, ClusterConfiguration.LocalFolder, node.Key);
                     }
                     
-                    string psExec = CommandLineOptions.pathToPstools + "\\psexec.exe";
+                    string psExec = ClusterConfiguration.psToolsPath + "\\psexec.exe";
                     ProcessStartInfo startInfo = new ProcessStartInfo(psExec, start_nodemanager);
                     Process proc = new Process();
                     proc.StartInfo = startInfo;
@@ -307,7 +348,7 @@ namespace PrtDistDeployer
             }
             
             {
-                string psExec = CommandLineOptions.pathToPstools + "\\psexec.exe";
+                string psExec = ClusterConfiguration.psToolsPath + "\\psexec.exe";
                 ProcessStartInfo startInfo = new ProcessStartInfo(psExec, start_main);
                 Process proc = new Process();
                 proc.StartInfo = startInfo;

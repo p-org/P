@@ -61,24 +61,32 @@ namespace PrtDistDeployer
             XmlNodeList nodes;
             config.Load(CommandLineOptions.pathToClusterConfig);
 
-            psToolsPath = config.GetElementsByTagName("PSTools")[0].InnerText;
-            pBinPath = config.GetElementsByTagName("PBinaries")[0].InnerText;
-            MainExe = config.GetElementsByTagName("MainExe")[0].InnerText;
-            clientBinPath = System.IO.Path.GetDirectoryName(MainExe);
-            NodeManagerPort = config.GetElementsByTagName("NodeManagerPort")[0].InnerText;
-            ContainerPortStart = config.GetElementsByTagName("ContainerPortStart")[0].InnerText;
-            
-            NetworkShare = config.GetElementsByTagName("NetworkShare")[0].InnerText;
-            LocalFolder = config.GetElementsByTagName("LocalFolder")[0].InnerText;
-            MainMachineNode = config.GetElementsByTagName("MainMachineNode")[0].InnerText;
-            CentralServerNode = config.GetElementsByTagName("CentralServer")[0].InnerText;
-            TotalNodes = int.Parse(config.GetElementsByTagName("TotalNodes")[0].InnerText);
-            nodes = config.GetElementsByTagName("Node");
-            int index = 0;
-            foreach (XmlNode n in nodes)
+            try
             {
-                AllNodes.Add(index, n.InnerText);
-                index++;
+                psToolsPath = config.GetElementsByTagName("PSTools")[0].InnerText;
+                pBinPath = config.GetElementsByTagName("PBinaries")[0].InnerText;
+                MainExe = config.GetElementsByTagName("MainExe")[0].InnerText;
+                clientBinPath = System.IO.Path.GetDirectoryName(MainExe);
+                NodeManagerPort = config.GetElementsByTagName("NodeManagerPort")[0].InnerText;
+                ContainerPortStart = config.GetElementsByTagName("ContainerPortStart")[0].InnerText;
+
+                NetworkShare = config.GetElementsByTagName("NetworkShare")[0].InnerText;
+                LocalFolder = config.GetElementsByTagName("LocalFolder")[0].InnerText;
+                MainMachineNode = config.GetElementsByTagName("MainMachineNode")[0].InnerText;
+                CentralServerNode = config.GetElementsByTagName("CentralServer")[0].InnerText;
+                TotalNodes = int.Parse(config.GetElementsByTagName("TotalNodes")[0].InnerText);
+                nodes = config.GetElementsByTagName("Node");
+                int index = 0;
+                foreach (XmlNode n in nodes)
+                {
+                    AllNodes.Add(index, n.InnerText);
+                    index++;
+                }
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("Failed to parse the XML");
+                Console.WriteLine(ex.ToString());
             }
 
             //check if the config file is correct.
@@ -94,7 +102,7 @@ namespace PrtDistDeployer
             }
             else
             {
-                if(!File.Exists(clientBinPath + "\\" + MainExe))
+                if(!File.Exists(MainExe))
                 {
                     PrintHelper.Red(" MainExe not found in " + clientBinPath);
                     Environment.Exit(1);

@@ -28,7 +28,9 @@ namespace PrtDistDeployer
                 pathToClusterConfig = args[0];
                 if (!File.Exists(pathToClusterConfig))
                 {
+                    PrintArguments();
                     PrintHelper.Red("Failed to find the config file : " + pathToClusterConfig);
+                    Environment.Exit(1);
                 }
                             
             }

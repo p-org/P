@@ -5,6 +5,8 @@ Manual
 
 Check the [P manual](https://cdn.rawgit.com/p-org/P/master/Doc/Manual/pmanual.pdf) !
 
+Information for building P framework is available [here](https://github.com/p-org/P/wiki).
+
 Publications
 ==========================================================
 

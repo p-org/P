@@ -37,7 +37,7 @@
         
         private static readonly Tuple<string, string, string, string>[] Versions = new Tuple<string, string, string, string>[] 
         {
-            new Tuple<string, string, string, string>("zing", "ea61714c044f008dd27af28aae905ecb6c379680", "..\\..\\..\\..\\..\\Ext\\Zing\\Zing_.zip", "..\\..\\..\\..\\..\\Ext\\Zing\\Zing_\\"),
+            new Tuple<string, string, string, string>("zing", "https://github.com/ZingModelChecker/Zing/archive/master.zip", "..\\..\\..\\..\\..\\Ext\\Zing\\Zing_.zip", "..\\..\\..\\..\\..\\Ext\\Zing\\Zing-master\\"),
             new Tuple<string, string, string, string>("formula", "fae5147888eab4c520839e1a5f89ece364a6eb63", "..\\..\\..\\..\\..\\Ext\\Formula\\Formula_.zip", "..\\..\\..\\..\\..\\Ext\\Formula\\Formula_\\"),
         };
 
@@ -168,21 +168,38 @@
                 {
                     outputDir.Delete(true);
                 }
-
                 // Create a New HttpClient object.
                 Program.WriteInfo("Downloading dependency {0} to {1}...", projVersion.Item1, outputFile.FullName);
                 HttpClient client = new HttpClient();
-                client.DefaultRequestHeaders.Referrer = new Uri(string.Format(ReferrerString, projVersion.Item1));                
-                using (var strm = client.GetStreamAsync(string.Format(DownloadString, projVersion.Item1, projVersion.Item2)).Result)
-                {
-                    using (var sw = new System.IO.StreamWriter(outputFile.FullName))
-                    {
-                        strm.CopyTo(sw.BaseStream);
-                    }
-                }
+                client.DefaultRequestHeaders.Referrer = new Uri(projVersion.Item2);
 
-                Program.WriteInfo("Extracting dependency {0} to {1}...", projVersion.Item1, outputDir.FullName);
-                ZipFile.ExtractToDirectory(outputFile.FullName, outputDir.FullName);                
+                if (dep == DependencyKind.ZING)
+                {
+                   
+                    using (var strm = client.GetStreamAsync(projVersion.Item2).Result)
+                    {
+                        using (var sw = new System.IO.StreamWriter(outputFile.FullName))
+                        {
+                            strm.CopyTo(sw.BaseStream);
+                        }
+                    }
+
+                    Program.WriteInfo("Extracting dependency {0} to {1}...", projVersion.Item1, outputDir.FullName);
+                    ZipFile.ExtractToDirectory(outputFile.FullName, outputDir.FullName + "..\\");
+                }
+                else
+                {
+                    using (var strm = client.GetStreamAsync(string.Format(DownloadString, projVersion.Item1, projVersion.Item2)).Result)
+                    {
+                        using (var sw = new System.IO.StreamWriter(outputFile.FullName))
+                        {
+                            strm.CopyTo(sw.BaseStream);
+                        }
+                    }
+
+                    Program.WriteInfo("Extracting dependency {0} to {1}...", projVersion.Item1, outputDir.FullName);
+                    ZipFile.ExtractToDirectory(outputFile.FullName, outputDir.FullName);
+                }
             }
             catch (Exception e)
             {

@@ -106,9 +106,7 @@
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
     </Midl>
     <PreBuildEvent>
-      <Command>cd .\$(ProjectDir)
-
-del NodeManager_*</Command>
+      <Command>del /q NodeManager_*</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

@@ -84,7 +84,6 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>../../../Prt/API;../../PrtDist/Core/;../../../Prt/Core;../../../Prt/WinUser/</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
-      <AdditionalOptions>/nodeReuse:false %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -106,7 +105,6 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>../../../Prt/API;../../PrtDist/Core/;../../../Prt/Core;../../../Prt/WinUser/</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>PRT_PLAT_WINUSER;_CRT_SECURE_NO_WARNINGS;PRT_DEBUG</PreprocessorDefinitions>
-      <AdditionalOptions>/nodeReuse:false %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -123,7 +121,6 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>../../../Prt/API;../../PrtDist/Core/;../../../Prt/Core;../../../Prt/WinUser/</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>PRT_PLAT_WINUSER;_CRT_SECURE_NO_WARNINGS;PRT_DEBUG</PreprocessorDefinitions>
-      <AdditionalOptions>/nodeReuse:false %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -142,7 +139,6 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>../../../Prt/API;../../PrtDist/Core/;../../../Prt/Core;../../../Prt/WinUser/</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>PRT_PLAT_WINUSER;_CRT_SECURE_NO_WARNINGS;PRT_DEBUG</PreprocessorDefinitions>
-      <AdditionalOptions>/nodeReuse:false %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

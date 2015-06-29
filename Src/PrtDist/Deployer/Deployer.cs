@@ -134,7 +134,7 @@ namespace PrtDistDeployer
             else
             {
                 CommandLineOptions.debugLocally = false;
-                PrintHelper.Normal("||Deploying on cluster as username: " + ClusterConfiguration.username + "||");
+                PrintHelper.Normal("||Deploying on cluster, username: " + ClusterConfiguration.username + "||");
             }
 
         }
@@ -186,8 +186,8 @@ namespace PrtDistDeployer
                     bool didExitbeforeTimeout = proc.WaitForExit(timeoutInMilliSecs);
                     int errorCode = proc.ExitCode;
                     proc.Close();
-                    Console.WriteLine("PsKill return value :{0}", errorCode);
-                    Console.WriteLine("{0}", error);
+                    //Console.WriteLine("PsKill return value :{0}", errorCode);
+                    //Console.WriteLine("{0}", error);
                 }
 
 
@@ -216,8 +216,8 @@ namespace PrtDistDeployer
                     bool didExitbeforeTimeout = proc.WaitForExit(timeoutInMilliSecs);
                     int errorCode = proc.ExitCode;
                     proc.Close();
-                    Console.WriteLine("PsKill return value :{0}", errorCode);
-                    Console.WriteLine("{0}", error);
+                    //Console.WriteLine("PsKill return value :{0}", errorCode);
+                    //Console.WriteLine("{0}", error);
 
                 }
 

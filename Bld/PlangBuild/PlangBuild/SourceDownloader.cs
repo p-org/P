@@ -171,11 +171,11 @@
                 // Create a New HttpClient object.
                 Program.WriteInfo("Downloading dependency {0} to {1}...", projVersion.Item1, outputFile.FullName);
                 HttpClient client = new HttpClient();
-                client.DefaultRequestHeaders.Referrer = new Uri(projVersion.Item2);
+                
 
                 if (dep == DependencyKind.ZING)
                 {
-                   
+                    client.DefaultRequestHeaders.Referrer = new Uri(projVersion.Item2);
                     using (var strm = client.GetStreamAsync(projVersion.Item2).Result)
                     {
                         using (var sw = new System.IO.StreamWriter(outputFile.FullName))
@@ -189,6 +189,7 @@
                 }
                 else
                 {
+                    client.DefaultRequestHeaders.Referrer = new Uri(string.Format(ReferrerString, projVersion.Item1));
                     using (var strm = client.GetStreamAsync(string.Format(DownloadString, projVersion.Item1, projVersion.Item2)).Result)
                     {
                         using (var sw = new System.IO.StreamWriter(outputFile.FullName))

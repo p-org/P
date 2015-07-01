@@ -43,6 +43,7 @@ build/
 *.rsp
 *.sbr
 *.tlb
+*.tlog
 *.tli
 *.tlh
 *.tmp
@@ -206,3 +207,9 @@ $RECYCLE.BIN/
 # Mac
 .DS_Store
 
+Src/PrtDist/Samples/PingPong/program.c
+Src/PrtDist/Binaries/clusterconfiguration.xml
+*.idb
+Src/PrtDist/Samples/PingPong/PingPong.zing
+Src/PrtDist/Samples/PingPong/stubs.c
+Src/PrtDist/Samples/PingPong/program.h

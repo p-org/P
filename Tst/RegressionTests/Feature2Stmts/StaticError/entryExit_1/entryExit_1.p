@@ -75,7 +75,7 @@ model xx {
 
 }
 
-monitor MonitorMe {
+MonitorMe monitors null {
 	var x : int;
 	
 	start state init {

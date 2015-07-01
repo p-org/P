@@ -148,7 +148,7 @@ machine Node {
 
 event M_PING: machine;
 event M_PONG: machine;
-monitor Safety {
+Safety monitors M_PING, M_Pong {
 	var pending: map[machine, int];
     start state Init {
 	    on M_PING do { 
@@ -165,7 +165,7 @@ monitor Safety {
 	}
 }
 
-monitor Liveness {
+Liveness monitors NODE_DOWN {
 	var nodes: map[machine, bool];
 	start hot state Init {
 		entry {

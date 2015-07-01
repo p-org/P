@@ -17,7 +17,7 @@ main machine Dummy {
 
 }
 
-monitor M {
+M monitors null {
 	var x : machine;
 	start state Init {
 		entry {

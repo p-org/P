@@ -29,7 +29,7 @@ main machine Real1 {
 		assert(test == false);  //unreachable
     }
 }
-monitor M {
+M monitors null {
 	start state x {
 	}
 }

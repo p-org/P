@@ -71,7 +71,7 @@ main machine Dummy {
 }
 
 
-monitor M {
+M monitors null {
 	start state x {
 	
 	

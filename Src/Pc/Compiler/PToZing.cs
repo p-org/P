@@ -119,7 +119,7 @@ namespace Microsoft.Pc
         public bool isAnonymous;
         public Dictionary<AST<Node>, FuncTerm> typeInfo;
         public HashSet<Node> invokeSchedulerFuns;
-
+        public HashSet<int> printArgs;
 
         public FunInfo(bool isModel, AST<FuncTerm> returnType, Node body)
         {
@@ -132,6 +132,7 @@ namespace Microsoft.Pc
             this.isAnonymous = false;
             this.typeInfo = new Dictionary<AST<Node>, FuncTerm>();
             this.invokeSchedulerFuns = new HashSet<Node>();
+            this.printArgs = new HashSet<int>();
         }
 
         public FunInfo(Node body, bool isAnonymous)
@@ -145,6 +146,7 @@ namespace Microsoft.Pc
             this.isAnonymous = isAnonymous;
             this.typeInfo = new Dictionary<AST<Node>, FuncTerm>();
             this.invokeSchedulerFuns = new HashSet<Node>();
+            this.printArgs = new HashSet<int>();
         }
     }
 
@@ -619,15 +621,33 @@ namespace Microsoft.Pc
                     string funName = GetName(annotationContext, 0);
                     it.MoveNext();
                     string annotation = ((Cnst)it.Current).GetStringValue();
-                    if (annotation != "invokescheduler") continue;
                     it.MoveNext();
-                    if (ownerName == null)
+                    if (annotation == "invokescheduler")
                     {
-                        allStaticFuns[funName].invokeSchedulerFuns.Add(it.Current);
+                        if (ownerName == null)
+                        {
+                            allStaticFuns[funName].invokeSchedulerFuns.Add(it.Current);
+                        }
+                        else
+                        {
+                            allMachines[ownerName].funNameToFunInfo[funName].invokeSchedulerFuns.Add(it.Current);
+                        }
                     }
-                    else
+                    else if (annotation == "print")
                     {
-                        allMachines[ownerName].funNameToFunInfo[funName].invokeSchedulerFuns.Add(it.Current);
+                        Cnst indexCnst = it.Current as Cnst;
+                        if (indexCnst != null)
+                        {
+                            int index = (int) indexCnst.GetNumericValue().Numerator;
+                            if (ownerName == null)
+                            {
+                                allStaticFuns[funName].printArgs.Add(index);
+                            }
+                            else
+                            {
+                                allMachines[ownerName].funNameToFunInfo[funName].printArgs.Add(index);
+                            }
+                        }
                     }
                 }
             }
@@ -2332,6 +2352,10 @@ namespace Microsoft.Pc
                 var lhsInfo = calleeInfo.parameterNameToInfo[calleeInfo.parameterNames[count]];
                 var rhsInfo = child;
                 ctxt.AddSideEffect(MkZingAssignWithClone(MkZingIndex(argCloneVar, Factory.Instance.MkCnst(count)), child.node));
+                if (calleeInfo.printArgs.Contains(count))
+                {
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "Print"), MkZingIndex(argCloneVar, Factory.Instance.MkCnst(count)))));
+                }
                 count++;
             }
             

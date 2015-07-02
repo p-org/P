@@ -2,7 +2,7 @@
 event local;
 event global : int;
 
-machine First monitors local {
+spec First monitors local {
 	var x : int;
 	start state Init {
 	

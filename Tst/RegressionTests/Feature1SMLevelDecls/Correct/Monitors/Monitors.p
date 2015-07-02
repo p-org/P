@@ -12,6 +12,7 @@ spec First monitors local {
 main machine MAIN {
 	start state Init {
 		entry {
+			new First();
 			send this, local;
 			monitor local;
 			monitor global, 5;

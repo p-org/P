@@ -107,7 +107,11 @@ EventAnnotOrNone
 MachineDecl
 	: IsMain MACHINE ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1));    }
 	| IsMain MODEL ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE   { AddMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1));   }
-	| SPEC ID MONITORS NonDefaultEventId MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE  { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
+	| SPEC ID Foo MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE  { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
+	;
+	
+Foo
+	: MONITORS EventList { crntObservesList = new List<P_Root.EventLabel>(crntEventList); crntEventList.Clear(); }
 	;
 
 IsMain

@@ -37,6 +37,8 @@
         private List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>> crntAnnotList = new List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>();
         private Stack<List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>> crntAnnotStack = new Stack<List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>>();
 
+        private List<P_Root.EventLabel> crntObservesList = new List<P_Root.EventLabel>();
+
         private HashSet<string> crntStateNames = new HashSet<string>();
         private HashSet<string> crntFunNames = new HashSet<string>();
         private HashSet<string> crntVarNames = new HashSet<string>();
@@ -1396,11 +1398,12 @@
             machDecl.kind = MkUserCnst(kind, span);
             if (kind == P_Root.UserCnstKind.MONITOR)
             {
-                foreach (var e in crntEventList)
+                foreach (var e in crntObservesList)
                 {
                     var observes = P_Root.MkObservesDecl(machDecl, (P_Root.IArgType_ObservesDecl__1)e);
                     parseProgram.Observes.Add(observes);
                 }
+                crntObservesList.Clear();
             }
             parseProgram.Machines.Add(machDecl);
             if (crntMachineNames.Contains(name))

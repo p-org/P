@@ -164,7 +164,7 @@ namespace Microsoft.Pc
         public string initStateName;
         public Dictionary<string, StateInfo> stateNameToStateInfo;
         public Dictionary<string, VariableInfo> localVariableToVarInfo;
-        public Dictionary<string, List<string>> eventSetNameToEvents;
+        public List<string> observesEvents;
         public Dictionary<string, FunInfo> funNameToFunInfo;
         public MonitorType monitorType;
 
@@ -176,7 +176,7 @@ namespace Microsoft.Pc
             initStateName = null;
             stateNameToStateInfo = new Dictionary<string, StateInfo>();
             localVariableToVarInfo = new Dictionary<string, VariableInfo>();
-            eventSetNameToEvents = new Dictionary<string, List<string>>();
+            observesEvents = new List<string>();
             funNameToFunInfo = new Dictionary<string, FunInfo>();
             monitorType = MonitorType.SAFETY;
             funNameToFunInfo["ignore"] = new FunInfo(Factory.Instance.AddArg(Factory.Instance.MkFuncTerm(PData.Con_NulStmt), PData.Cnst_Skip).Node, false);
@@ -378,6 +378,19 @@ namespace Microsoft.Pc
                     {
                         mainMachineName = machineName;
                     }
+                }
+            }
+
+            terms = GetBin(factBins, "ObservesDecl");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var machineDecl = (FuncTerm)it.Current;
+                    var machineName = GetName(machineDecl, 0);
+                    it.MoveNext();
+                    allMachines[machineName].observesEvents.Add(((Cnst)it.Current).GetStringValue());
                 }
             }
 
@@ -1242,7 +1255,7 @@ namespace Microsoft.Pc
             {
                 if (!allMachines[machineName].IsMonitor) continue;
                 fields.Add(MkZingVarDecl(GetMonitorMachineName(machineName), Factory.Instance.MkCnst(ZingMachineClassSetTypeName(machineName)), ZingData.Cnst_Static));
-                fields.Add(MkZingVarDecl(GetObservesSetName(machineName), Factory.Instance.MkCnst("SM_EVENT_SET"), ZingData.Cnst_Static));
+                fields.Add(MkZingVarDecl(GetObservesSetName(machineName), Factory.Instance.MkCnst(PToZing.SM_EVENT_SET), ZingData.Cnst_Static));
             }
 
             List<AST<Node>> methods = new List<AST<Node>>();
@@ -3224,7 +3237,17 @@ namespace Microsoft.Pc
             localVars.Add(MkZingVarDecl("doPop", ZingData.Cnst_Bool));
 
             var machineInfo = allMachines[machineName];
+
             AST<Node> body = ZingData.Cnst_Nil;
+            //Populate the observes set for monitor
+            {
+                List<AST<FuncTerm>> stmts = new List<AST<FuncTerm>>();
+                var currentObservesSet = MkZingDot("Main", GetObservesSetName(machineName));
+                AddEventSet(stmts, machineInfo.observesEvents, currentObservesSet);
+                body = MkZingSeq(body, MkZingSeq(stmts.ToArray()));
+            }
+
+            
             if (machineInfo.monitorType != MonitorType.SAFETY)
             {
                 List<AST<Node>> stmts = new List<AST<Node>>();
@@ -3247,7 +3270,7 @@ namespace Microsoft.Pc
             var machineHandles = MkZingDot("Main", GetMonitorMachineName(machineName));
             string createTraceString = string.Format("\"<CreateLog> Created Machine {0}-{{0}}\\n\"", machineName);
             string errorTraceString = string.Format("\"<StateLog> Unhandled event exception by machine {0}-{{0}}\\n\"", machineName);
-            
+
             body = MkZingSeq(body,
                     MkZingAssign(MkZingIdentifier(objectName), MkZingNew(Factory.Instance.MkCnst(ZingMachineClassName(machineName)), ZingData.Cnst_Nil)),
                     MkInitializers(machineName, objectName),
@@ -3260,7 +3283,7 @@ namespace Microsoft.Pc
                     MkZingAssign(MkZingDot(objectName, "myHandle", "stack", "state"), MkZingState(machineInfo.initStateName)),
                     MkZingAssign(machineHandles, MkZingAdd(machineHandles, MkZingIdentifier(objectName))),
                     MkZingAssign(doPop, MkZingCall(MkZingDot(objectName, "RunHelper"), ZingData.Cnst_True)),
-                    MkZingIfThen(doPop, 
+                    MkZingIfThen(doPop,
                                  MkZingSeq(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(errorTraceString), MkZingDot(objectName, "myHandle", "instance"))),
                                            MkZingAssert(ZingData.Cnst_False)))
                     );

@@ -355,7 +355,7 @@ P2b : If a proposal is chosen with value v , then every higher numbered proposal
 event monitor_valueChosen : (proposer: machine, slot: int, proposal : (round: int, servermachine : int), value : int);
 event monitor_valueProposed : (proposer: machine, slot:int, proposal : (round: int, servermachine : int), value : int);
 
-monitor BasicPaxosInvariant_P2b {
+BasicPaxosInvariant_P2b monitors monitor_valueChosen, monitor_valueProposed {
 	var lastValueChosen : map[int, (proposal : (round: int, servermachine : int), value : int)];
 	var returnVal : bool;
 	var receivedValue : (proposer: machine, slot: int, proposal : (round: int, servermachine : int), value : int);
@@ -423,7 +423,7 @@ event monitor_client_sent : int;
 event monitor_proposer_sent : int;
 event monitor_proposer_chosen : int;
 
-monitor ValmachineityCheck {
+ValmachineityCheck monitors monitor_client_sent, monitor_proposer_sent, monitor_proposer_chosen {
 	var clientSet : map[int, int];
 	var ProposedSet : map[int, int];
 	

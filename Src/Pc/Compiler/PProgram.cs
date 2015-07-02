@@ -22,6 +22,12 @@
             get;
             private set;
         }
+        
+        public List<P_Root.ObservesDecl> Observes
+        {
+            get;
+            private set;
+        }
 
         public List<P_Root.StateDecl> States
         {
@@ -113,6 +119,11 @@
                 {
                     yield return ann;
                 }
+
+                foreach (var obs in Observes)
+                {
+                    yield return obs;
+                }
             }
         }
 
@@ -124,6 +135,7 @@
             Variables = new List<P_Root.VarDecl>();
             Transitions = new List<P_Root.TransDecl>();
             Functions = new List<P_Root.FunDecl>();
+            Observes = new List<P_Root.ObservesDecl>();
             AnonFunctions = new List<P_Root.AnonFunDecl>();
             Dos = new List<P_Root.DoDecl>();
             Annotations = new List<P_Root.Annotation>();

@@ -11,7 +11,7 @@
 %token INT BOOL FOREIGN ANY SEQ MAP ID
 %token INCLUDE MAIN EVENT MACHINE MONITOR ASSUME
 
-%token VAR START HOT COLD MODEL STATE FUN ACTION GROUP STATIC MODELS
+%token VAR START HOT COLD MODEL STATE FUN ACTION GROUP STATIC MODELS MONITORS
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH AS WITH
 
@@ -107,7 +107,7 @@ EventAnnotOrNone
 MachineDecl
 	: IsMain MACHINE ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1));    }
 	| IsMain MODEL ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE   { AddMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1));   }
-	| MONITOR ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE        { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
+	| MACHINE ID MONITORS NonDefaultEventId MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE  { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 
 IsMain
@@ -318,8 +318,8 @@ Stmt
 	| RAISE Exp COMMA SingleExprArgList SEMICOLON             { PushRaise(true,  ToSpan(@1));                            }
 	| SEND Exp COMMA Exp SEMICOLON                            { PushSend(false, ToSpan(@1));                             }
 	| SEND Exp COMMA Exp COMMA SingleExprArgList SEMICOLON    { PushSend(true,  ToSpan(@1));                             }
-	| MONITOR ID COMMA Exp SEMICOLON                          { PushMonitor(false, $2.str, ToSpan(@2), ToSpan(@1));      }
-	| MONITOR ID COMMA Exp COMMA SingleExprArgList SEMICOLON  { PushMonitor(true, $2.str, ToSpan(@2), ToSpan(@1));       }
+	| MONITOR Exp SEMICOLON									  { PushMonitor(false, $2.str, ToSpan(@2), ToSpan(@1));      }
+	| MONITOR Exp COMMA SingleExprArgList SEMICOLON           { PushMonitor(true, $2.str, ToSpan(@2), ToSpan(@1));       }
 	;
 
 StmtBlock

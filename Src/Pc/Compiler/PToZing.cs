@@ -119,7 +119,7 @@ namespace Microsoft.Pc
         public bool isAnonymous;
         public Dictionary<AST<Node>, FuncTerm> typeInfo;
         public HashSet<Node> invokeSchedulerFuns;
-        public HashSet<int> printArgs;
+        public HashSet<string> printArgs;
 
         public FunInfo(bool isModel, AST<FuncTerm> returnType, Node body)
         {
@@ -132,7 +132,7 @@ namespace Microsoft.Pc
             this.isAnonymous = false;
             this.typeInfo = new Dictionary<AST<Node>, FuncTerm>();
             this.invokeSchedulerFuns = new HashSet<Node>();
-            this.printArgs = new HashSet<int>();
+            this.printArgs = new HashSet<string>();
         }
 
         public FunInfo(Node body, bool isAnonymous)
@@ -146,7 +146,7 @@ namespace Microsoft.Pc
             this.isAnonymous = isAnonymous;
             this.typeInfo = new Dictionary<AST<Node>, FuncTerm>();
             this.invokeSchedulerFuns = new HashSet<Node>();
-            this.printArgs = new HashSet<int>();
+            this.printArgs = new HashSet<string>();
         }
     }
 
@@ -638,14 +638,14 @@ namespace Microsoft.Pc
                         Cnst indexCnst = it.Current as Cnst;
                         if (indexCnst != null)
                         {
-                            int index = (int) indexCnst.GetNumericValue().Numerator;
+                            string arg = indexCnst.GetStringValue();
                             if (ownerName == null)
                             {
-                                allStaticFuns[funName].printArgs.Add(index);
+                                allStaticFuns[funName].printArgs.Add(arg);
                             }
                             else
                             {
-                                allMachines[ownerName].funNameToFunInfo[funName].printArgs.Add(index);
+                                allMachines[ownerName].funNameToFunInfo[funName].printArgs.Add(arg);
                             }
                         }
                     }
@@ -2349,10 +2349,11 @@ namespace Microsoft.Pc
             int count = 0;
             foreach (var child in children)
             {
-                var lhsInfo = calleeInfo.parameterNameToInfo[calleeInfo.parameterNames[count]];
+                var calleeArg = calleeInfo.parameterNames[count];
+                var lhsInfo = calleeInfo.parameterNameToInfo[calleeArg];
                 var rhsInfo = child;
                 ctxt.AddSideEffect(MkZingAssignWithClone(MkZingIndex(argCloneVar, Factory.Instance.MkCnst(count)), child.node));
-                if (calleeInfo.printArgs.Contains(count))
+                if (calleeInfo.printArgs.Contains(calleeArg))
                 {
                     ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "Print"), MkZingIndex(argCloneVar, Factory.Instance.MkCnst(count)))));
                 }

@@ -180,7 +180,7 @@
 
             CompilerEnv = new Env(envParams);
             InitEnv(CompilerEnv);
-        }
+         }
 
         public Compiler(bool shortFileNames)
         {

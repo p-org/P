@@ -1209,6 +1209,11 @@ namespace Microsoft.Pc
             return string.Format("{0}_handles", machineName);
         }
 
+        private string GetObservesSetName(string machineName)
+        {
+            return string.Format("{0}_observes", machineName);
+        }
+
         private string GetFairChoice(string entityName, int i)
         {
             return string.Format("FairChoice_{0}_{1}", entityName, i);
@@ -1237,6 +1242,7 @@ namespace Microsoft.Pc
             {
                 if (!allMachines[machineName].IsMonitor) continue;
                 fields.Add(MkZingVarDecl(GetMonitorMachineName(machineName), Factory.Instance.MkCnst(ZingMachineClassSetTypeName(machineName)), ZingData.Cnst_Static));
+                fields.Add(MkZingVarDecl(GetObservesSetName(machineName), Factory.Instance.MkCnst("SM_EVENT_SET"), ZingData.Cnst_Static));
             }
 
             List<AST<Node>> methods = new List<AST<Node>>();
@@ -2870,6 +2876,7 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldMonitor(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
+            /*
             var typeName = GetName(ft, 0);
             using (var it = children.GetEnumerator())
             {
@@ -2899,7 +2906,9 @@ namespace Microsoft.Pc
                 }
                 MachineInfo machineInfo = allMachines[typeName];
                 return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", typeName)), eventExpr, tmpVar)));
-            }
+             */
+                return new ZingTranslationInfo(ZingData.Cnst_Nil);
+            
         }
 
         ZingTranslationInfo FoldFunStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)

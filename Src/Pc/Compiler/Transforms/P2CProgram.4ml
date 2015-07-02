@@ -1550,7 +1550,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NewStmt(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Raise(_, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Send(_, _, _), cs = NIL.
-	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Monitor(_, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Monitor(_, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.FunStmt(_, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NulStmt(_), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.UnStmt(_, _), cs = NIL.
@@ -1650,7 +1650,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 										 Args(Ident("p_tmp_stmt_2"), NIL)))).
 
 	//// Monitor (erased)
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Monitor(_, _, _), cs = NIL.
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Monitor(_, _), cs = NIL.
 
 	//// NulStmt
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
@@ -1833,10 +1833,10 @@ transform P2CProgram (in:: P) returns (out:: C)
 	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.Raise(_, e), e : in.Expr, RhsEvalOrder(s, 1, e, k).
 	StmtExprSize(s, 2)   :- SubSE(_, s), s : in.Raise.
 
-	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Monitor(_, e, _).
-	RhsCntxt(s, 1, e)    :- SubSE(_, s), s = in.Monitor(_, _, e), e : in.Expr.
-	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Monitor(_, e, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
-	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.Monitor(_, _, e), e : in.Expr, RhsEvalOrder(s, 1, e, k).
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Monitor(e, _).
+	RhsCntxt(s, 1, e)    :- SubSE(_, s), s = in.Monitor(_, e), e : in.Expr.
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Monitor(e, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.Monitor(_, e), e : in.Expr, RhsEvalOrder(s, 1, e, k).
 	StmtExprSize(s, 2)   :- SubSE(_, s), s : in.Monitor.
 
 	RhsCntxt(s, 0, e) :- SubSE(_, s), s = in.Send(e, _, _).

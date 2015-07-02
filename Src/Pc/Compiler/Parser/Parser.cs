@@ -287,7 +287,6 @@
             Contract.Assert(valueExprStack.Count > 0);
 
             var monitorStmt = P_Root.MkMonitor();
-            monitorStmt.name = MkString(name, nameSpan);
             monitorStmt.Span = span;
             if (hasArgs)
             {
@@ -299,14 +298,14 @@
                 }
                 else
                 {
-                    monitorStmt.arg = (P_Root.IArgType_Monitor__2)arg;
+                    monitorStmt.arg = (P_Root.IArgType_Monitor__1)arg;
                 }
 
-                monitorStmt.ev = (P_Root.IArgType_Monitor__1)valueExprStack.Pop();
+                monitorStmt.ev = (P_Root.IArgType_Monitor__0)valueExprStack.Pop();
             }
             else
             {
-                monitorStmt.ev = (P_Root.IArgType_Monitor__1)valueExprStack.Pop();
+                monitorStmt.ev = (P_Root.IArgType_Monitor__0)valueExprStack.Pop();
                 monitorStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
 
@@ -1395,6 +1394,14 @@
                 kind = P_Root.UserCnstKind.REAL;
             }
             machDecl.kind = MkUserCnst(kind, span);
+            if (kind == P_Root.UserCnstKind.MONITOR)
+            {
+                foreach (var e in crntEventList)
+                {
+                    var observes = P_Root.MkObservesDecl(machDecl, (P_Root.IArgType_ObservesDecl__1)e);
+                    parseProgram.Observes.Add(observes);
+                }
+            }
             parseProgram.Machines.Add(machDecl);
             if (crntMachineNames.Contains(name))
             {
@@ -1415,6 +1422,7 @@
             crntStateNames.Clear();
             crntFunNames.Clear();
             crntVarNames.Clear();
+            crntEventList.Clear();
         }
 
         private void AddMachineAnnots(Span span)

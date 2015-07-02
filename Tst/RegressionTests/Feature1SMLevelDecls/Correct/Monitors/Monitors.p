@@ -1,8 +1,8 @@
 //this sample tests the new syntax for monitors.
 event local;
-event global;
+event global : int;
 
-First monitors a {
+machine First monitors local {
 	var x : int;
 	start state Init {
 	
@@ -10,5 +10,10 @@ First monitors a {
 }
 
 main machine MAIN {
-	start state Init {}
+	start state Init {
+		entry {
+			monitor local;
+			monitor global, 5;
+		}
+	}
 }

@@ -974,7 +974,7 @@ namespace Microsoft.Pc
             return MkZingApply(ZingData.Cnst_In, e1, e2);
         }
 
-        private static void AddEventSet(List<AST<FuncTerm>> stmts, IEnumerable<string> eventNames, AST<FuncTerm> set)
+        private static void AddEventSet(List<AST<Node>> stmts, IEnumerable<string> eventNames, AST<Node> set)
         {
             foreach (var eventName in eventNames)
             {
@@ -984,7 +984,7 @@ namespace Microsoft.Pc
             }
         }
 
-        private static void SubtractEventSet(List<AST<FuncTerm>> stmts, IEnumerable<string> eventNames, AST<FuncTerm> actionSet)
+        private static void SubtractEventSet(List<AST<Node>> stmts, IEnumerable<string> eventNames, AST<Node> actionSet)
         {
             foreach (var eventName in eventNames)
             {
@@ -993,6 +993,7 @@ namespace Microsoft.Pc
                 stmts.Add(subStmt);
             }
         }
+
         private static AST<FuncTerm> MkZingCall(AST<Node> methodExpr, params AST<Node>[] args)
         {
             List<AST<Node>> argList = new List<AST<Node>>();
@@ -1234,7 +1235,6 @@ namespace Microsoft.Pc
 
         private AST<FuncTerm> GenerateMainClass()
         {
-            // Generate Main
             List<AST<Node>> fields = new List<AST<Node>>();
             foreach (var eventName in allEvents.Keys)
             {
@@ -1389,12 +1389,20 @@ namespace Microsoft.Pc
             }
             foreach (var machineName in allMachines.Keys)
             {
-                if (allMachines[machineName].IsMonitor)
-                {
-                    var assignStmt = MkZingAssign(MkZingIdentifier(GetMonitorMachineName(machineName)), 
-                                                  MkZingNew(Factory.Instance.MkCnst(ZingMachineClassSetTypeName(machineName)), ZingData.Cnst_Nil));
-                    runBodyStmts.Add(assignStmt);
-                }
+                if (!allMachines[machineName].IsMonitor) continue;
+                var assignStmt = MkZingAssign(MkZingIdentifier(GetMonitorMachineName(machineName)),
+                                              MkZingNew(Factory.Instance.MkCnst(ZingMachineClassSetTypeName(machineName)), ZingData.Cnst_Nil));
+                runBodyStmts.Add(assignStmt);
+            }
+            foreach (var machineName in allMachines.Keys)
+            {
+                if (!allMachines[machineName].IsMonitor) continue;
+                MachineInfo machineInfo = allMachines[machineName];
+                var currentObservesSet = MkZingDot("Main", GetObservesSetName(machineName));
+                runBodyStmts.Add(MkZingAssign(currentObservesSet, MkZingNew(SmEventSet, ZingData.Cnst_Nil)));
+                List<AST<Node>> stmts = new List<AST<Node>>();
+                AddEventSet(stmts, machineInfo.observesEvents, currentObservesSet);
+                runBodyStmts.Add(MkZingSeq(stmts));
             }
             runBodyStmts.Add(typeContext.InitializeFieldNamesAndTypes());
             runBodyStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", mainMachineName)), MkZingIdentifier("null"))));
@@ -1469,7 +1477,7 @@ namespace Microsoft.Pc
             var actions = stateInfo.actions;
             var transitions = stateInfo.transitions;
 
-            List<AST<FuncTerm>> stmts = new List<AST<FuncTerm>>();
+            List<AST<Node>> stmts = new List<AST<Node>>();
             stmts.Add(MkZingAssign(currentDeferredSet, MkZingNew(smEventSetType, ZingData.Cnst_Nil)));
             stmts.Add(MkZingAssign(currentActionSet, MkZingNew(smEventSetType, ZingData.Cnst_Nil)));
             stmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("myHandle", "stack", "AddStackDeferredSet"), currentDeferredSet)));
@@ -2034,7 +2042,6 @@ namespace Microsoft.Pc
                      funName == PData.Con_UnApp.Node.Name ||
                      funName == PData.Con_Default.Node.Name ||
                      funName == PData.Con_Push.Node.Name ||
-                     funName == PData.Con_Monitor.Node.Name ||
                      funName == PData.Con_NulStmt.Node.Name ||
                      funName == PData.Con_UnStmt.Node.Name)
             {
@@ -3192,12 +3199,11 @@ namespace Microsoft.Pc
                 MkZingIfThen(
                     MkZingNot(MkZingIn(evt, MkZingDot("Main", GetObservesSetName(machineName)))),
                     MkZingReturn(ZingData.Cnst_Nil)));
-
             stmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst("\"<MonitorLog> Enqueued Event < {0}, \""), MkZingDot(evt, "name"))));
             stmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "Print"), arg)));
             string traceString = string.Format("\" > to {{0}} {0} monitors\\n\"", machineName);
             stmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString),
-                MkZingCall(MkZingIdentifier("sizeof"), MkZingDot("Main", GetMonitorMachineName(machineName))), MkZingDot("myHandle", "instance"))));
+                MkZingCall(MkZingIdentifier("sizeof"), MkZingDot("Main", GetMonitorMachineName(machineName))))));
 
             AST<Node> loopBody =
                MkZingSeq(
@@ -3208,8 +3214,7 @@ namespace Microsoft.Pc
                                 MkZingSeq(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(errorTraceString), MkZingDot("iter", "myHandle", "instance"))),
                                           MkZingAssert(ZingData.Cnst_False))));
 
-            stmts.Add(MkZingForeach(Factory.Instance.MkCnst(ZingMachineClassName(machineName)), MkZingIdentifier("iter"), MkZingDot("Main", GetMonitorMachineName(machineName)), loopBody));
-
+            stmts.Add(MkZingForeach(Factory.Instance.MkCnst(ZingMachineClassName(machineName)), Factory.Instance.MkCnst("iter"), MkZingDot("Main", GetMonitorMachineName(machineName)), loopBody));
             AST<Node> body = MkZingBlock("dummy", MkZingSeq(stmts));
             return MkZingMethodDecl(string.Format("InvokeMachine_{0}", machineName), MkZingVarDecls(parameters), ZingData.Cnst_Void, MkZingVarDecls(localVars), MkZingBlocks(body), ZingData.Cnst_Static);
         }
@@ -3239,14 +3244,6 @@ namespace Microsoft.Pc
             var machineInfo = allMachines[machineName];
 
             AST<Node> body = ZingData.Cnst_Nil;
-            //Populate the observes set for monitor
-            {
-                List<AST<FuncTerm>> stmts = new List<AST<FuncTerm>>();
-                var currentObservesSet = MkZingDot("Main", GetObservesSetName(machineName));
-                AddEventSet(stmts, machineInfo.observesEvents, currentObservesSet);
-                body = MkZingSeq(body, MkZingSeq(stmts.ToArray()));
-            }
-
             
             if (machineInfo.monitorType != MonitorType.SAFETY)
             {

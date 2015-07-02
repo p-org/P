@@ -5,13 +5,14 @@ event global : int;
 spec First monitors local {
 	var x : int;
 	start state Init {
-	
+		on local do { assert (false); };
 	}
 }
 
 main machine MAIN {
 	start state Init {
 		entry {
+			send this, local;
 			monitor local;
 			monitor global, 5;
 		}

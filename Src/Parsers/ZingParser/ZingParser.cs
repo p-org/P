@@ -652,7 +652,7 @@
                             case "GT": return string.Format("({0} > {1})", args[0], args[1]);
                             case "GE": return string.Format("({0} >= {1})", args[0], args[1]);
                             case "DOT": return string.Format("{0}.{1}", args[0], args[1]);
-                            case "IN": return string.Format("{0} in {1}", args[0], args[1]);
+                            case "IN": return string.Format("({0} in {1})", args[0], args[1]);
                             case "INDEX": return string.Format("{0}[{1}]", args[0], args[1]);
                             default: throw new NotImplementedException();
                         }

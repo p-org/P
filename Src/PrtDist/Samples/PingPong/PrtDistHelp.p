@@ -9,40 +9,11 @@ static model fun _SENDRELIABLE(target:machine, e:event, p:any) {
 	send target, e, p;
 }
 
-static model fun _CREATECONTAINER(model_h: machine) : machine {
-	model_h = new Container();
-	return model_h;
+static model fun _CREATECONTAINER() : machine {
+	return default(machine);
 }
 
-// events
-event Req_CreateMachine: (creator:machine, machineType: int, param: any);
-event Resp_CreateMachine: machine;
 
-machine Container
-{
-	var newMachine: machine;
-	start state Init {
-        on Req_CreateMachine do {
-		    CreateLocalMachine(payload.machineType, payload.param);
-			_SENDRELIABLE(payload.creator, Resp_CreateMachine, newMachine);
-		};
-    }
-	
-	fun CreateLocalMachine(machineType:int, param:any) {
-		if (machineType == 1)
-		{
-			newMachine = new PONG(param);
-		}
-		else if (machineType == 2)
-		{
-			newMachine = new PING(param);
-		}
-		else
-		{
-			assert(false);
-		}
-	}
-}
 
 
 

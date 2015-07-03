@@ -18,7 +18,7 @@ machine PING
 
     state SendPing {
         entry {
-	        monitor M, Ping;
+	        monitor Ping;
 			_SEND(pongMachine.0, Ping, this);
 			_SEND(pongMachine.1, Ping, this);
 			raise (Success);
@@ -45,7 +45,7 @@ machine PONG
 
     state SendPong {
 	    entry {
-	        monitor M, Pong;
+	        monitor Pong;
 			_SEND(payload, Pong, this);
 			raise (Success);		 	  
 	    }
@@ -60,7 +60,7 @@ machine PONG
 }
 
 
-monitor M {
+spec M monitors Ping, Pong {
     start state ExpectPing {
         on Ping goto ExpectPong_1;
     }
@@ -75,6 +75,22 @@ monitor M {
     }
 }
 
+static fun _CREATEMACHINE(cner: machine, typeOfMachine: int, param : any, newMachine: machine) : machine
+[container = cner]
+{
+	if(typeOfMachine == 1)
+	{
+		newMachine = new PING();
+	}
+	else if(typeOfMachine == 2)
+	{
+		newMachine = new PONG();
+	}
+	else
+	{
+		assert(false);
+	}
+}
 main machine GodMachine 
 {
 	var container : machine;
@@ -85,32 +101,12 @@ main machine GodMachine
 	    entry {
 			new M();
 			
-			container = _CREATECONTAINER(null);
-			createMachine_param = (container = container, machineType = 1, param = null);
-			push CreateMachine;
-			pongMachine_1 = createMachine_return;
-			createMachine_param = (container = container, machineType = 1, param = null);
-			push CreateMachine;
-			pongMachine_2 = createMachine_return;
-			
-			container = _CREATECONTAINER(null);
-			createMachine_param = (container = container, machineType = 2, param = (pongMachine_1, pongMachine_2));
-			push CreateMachine;
+			container = _CREATECONTAINER();
+			pongMachine_1 = _CREATEMACHINE(container, 2, null, null);
+			container = _CREATECONTAINER();
+			pongMachine_2 = _CREATEMACHINE(container, 2, null, null);
+			container = _CREATECONTAINER();
+			_CREATEMACHINE(container, 1, null, null);
 	    }
-	}
-	
-	var createMachine_param: (container: machine, machineType:int, param:any);
-	var createMachine_return:machine;
-	state CreateMachine {
-		entry {
-			_SENDRELIABLE(createMachine_param.container, Req_CreateMachine, 
-			              (creator = this, machineType = createMachine_param.machineType, param = createMachine_param.param));
-		}
-        on Resp_CreateMachine do PopState;
-	}
-
-	fun PopState() {
-		createMachine_return = payload;
-		pop;
 	}
 }

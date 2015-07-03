@@ -469,7 +469,7 @@ domain PStaticTyping extends PData
 
 	//// Error rules for monitor.
 
-	[ rule_Classes = '"error, msg: argument 2 of "monitor" expects an event value"']
+	[ rule_Classes = '"error, msg: argument 1 of "monitor" expects an event value"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Monitor, t1 != BaseType(EVENT).
 
 	//// Error rules for monitor. 	

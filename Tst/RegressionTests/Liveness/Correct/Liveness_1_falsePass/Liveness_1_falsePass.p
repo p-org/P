@@ -15,7 +15,7 @@ main machine EventHandler
        {
             entry { 
 				//new WatchDog();
-				monitor WatchDog, Waiting;
+				monitor Waiting;
 				send this, UserEvent;
 				}
             on UserEvent goto HandleEvent;
@@ -24,14 +24,14 @@ main machine EventHandler
        state HandleEvent
        {
             entry { 
-				monitor WatchDog, Computing;
+				monitor Computing;
 				send this, Done;
 				}			
             on Done goto WaitForUser;
        }
 }
 
-monitor WatchDog
+spec WatchDog monitors Waiting, Computing
 {
       start cold state CanGetUserInput
       {

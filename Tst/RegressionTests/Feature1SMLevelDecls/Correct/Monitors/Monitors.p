@@ -5,7 +5,8 @@ event global : int;
 spec First monitors local {
 	var x : int;
 	start state Init {
-		on local do { assert (false); };
+		on local do { x = x + 1; };
+		on global do { assert(x == 2); };
 	}
 }
 
@@ -17,5 +18,6 @@ main machine MAIN {
 			monitor local;
 			monitor global, 5;
 		}
+		ignore local;
 	}
 }

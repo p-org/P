@@ -17,7 +17,7 @@ main machine Dummy {
 
 }
 
-M monitors null {
+spec M monitors a {
 	var x : machine;
 	start state Init {
 		entry {

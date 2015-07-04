@@ -32,9 +32,7 @@ main machine Driver {
 				i = i + 1;
 			}
 		}
-		on NODE_DOWN do {
-			monitor Liveness, NODE_DOWN, payload;
-		};
+		ignore NODE_DOWN;
 	}
 }
 
@@ -115,7 +113,7 @@ machine FailureDetector {
 		i = 0;
 		while (i < sizeof(nodes)) {
 		    if (nodes[i] in alive && !(nodes[i] in responses)) {
-				monitor Safety, M_PING, nodes[i];
+				monitor M_PING, nodes[i];
 				send nodes[i], PING, this;
 			}
 		    i = i + 1;
@@ -140,7 +138,7 @@ machine FailureDetector {
 machine Node {
 	start state WaitPing {
         on PING do {
-			monitor Safety, M_PONG, this;
+			monitor M_PONG, this;
 		    send payload as machine, PONG, this;
 		};
     }
@@ -148,7 +146,7 @@ machine Node {
 
 event M_PING: machine;
 event M_PONG: machine;
-Safety monitors M_PING, M_Pong {
+spec Safety monitors M_PING, M_PONG {
 	var pending: map[machine, int];
     start state Init {
 	    on M_PING do { 
@@ -165,7 +163,7 @@ Safety monitors M_PING, M_Pong {
 	}
 }
 
-Liveness monitors NODE_DOWN {
+spec Liveness monitors NODE_DOWN {
 	var nodes: map[machine, bool];
 	start hot state Init {
 		entry {

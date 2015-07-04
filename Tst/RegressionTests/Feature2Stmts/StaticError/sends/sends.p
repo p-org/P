@@ -53,15 +53,15 @@ main machine Dummy {
 			
 			send A, ev, seqA;
 			
-			monitor M, seqE, seqInt;
-			monitor M, seqAny, tempbool;
-			monitor M, seqAny;
+			monitor seqE, seqInt;
+			monitor seqAny, tempbool;
+			monitor seqAny;
 			
-			monitor M, ev, seqE, seqInt;
+			monitor ev, seqE, seqInt;
 			
-			monitor M, A;
+			monitor A;
 			
-			monitor M1, seqAny;
+			monitor seqAny;
 			
 		}
 	
@@ -71,7 +71,7 @@ main machine Dummy {
 }
 
 
-M monitors null {
+spec M monitors seqE {
 	start state x {
 	
 	

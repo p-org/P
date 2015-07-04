@@ -215,7 +215,7 @@ machine PaxosNode {
 			nextProposal = GetNextProposal(maxRound);
 			receivedAgree = (proposal = (round = -1, servermachine = -1), value = -1);
 			BroadCastAcceptors(prepare, (proposer = this, slot = nextSlotForProposer, proposal = (round = nextProposal.round, servermachine = myRank)));
-			monitor ValmachineityCheck, monitor_proposer_sent, proposeVal;
+			monitor monitor_proposer_sent, proposeVal;
 			send timer, startTimer;
 		}
 		
@@ -270,8 +270,8 @@ machine PaxosNode {
 			countAccept = 0;
 			proposeVal = getHighestProposedValue();
 			//monitor the monitor on proposal event
-			monitor BasicPaxosInvariant_P2b, monitor_valueProposed, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal);
-			monitor ValmachineityCheck, monitor_proposer_sent, proposeVal;
+			monitor monitor_valueProposed, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal);
+			monitor monitor_proposer_sent, proposeVal;
 			
 			BroadCastAcceptors(accept, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal));
 			send timer, startTimer;
@@ -281,11 +281,11 @@ machine PaxosNode {
 			if(trigger == chosen)
 			{
 				//the value is chosen, hence invoke the monitor on chosen event
-				monitor BasicPaxosInvariant_P2b, monitor_valueChosen, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal);
+				monitor monitor_valueChosen, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal);
 			
 				send timer, cancelTimer;
 				
-				monitor ValmachineityCheck, monitor_proposer_chosen, proposeVal;
+				monitor monitor_proposer_chosen, proposeVal;
 
 				//increment the nextSlotForProposer
 				nextSlotForProposer = nextSlotForProposer + 1;
@@ -352,7 +352,7 @@ P2b : If a proposal is chosen with value v , then every higher numbered proposal
 event monitor_valueChosen : (proposer: machine, slot: int, proposal : (round: int, servermachine : int), value : int);
 event monitor_valueProposed : (proposer: machine, slot:int, proposal : (round: int, servermachine : int), value : int);
 
-BasicPaxosInvariant_P2b monitors monitor_valueChosen, monitor_valueProposed {
+spec BasicPaxosInvariant_P2b monitors monitor_valueChosen, monitor_valueProposed {
 	var lastValueChosen : map[int, (proposal : (round: int, servermachine : int), value : int)];
 	var returnVal : bool;
 	var receivedValue : (proposer: machine, slot: int, proposal : (round: int, servermachine : int), value : int);
@@ -421,7 +421,7 @@ event monitor_client_sent : int;
 event monitor_proposer_sent : int;
 event monitor_proposer_chosen : int;
 
-ValmachineityCheck monitors monitor_client_sent, monitor_proposer_sent, monitor_proposer_chosen {
+spec ValmachineityCheck monitors monitor_client_sent, monitor_proposer_sent, monitor_proposer_chosen {
 	var clientSet : map[int, int];
 	var ProposedSet : map[int, int];
 	
@@ -581,7 +581,7 @@ model Client {
 	state PumpRequestOne {
 		entry {
 			
-			monitor ValmachineityCheck, monitor_client_sent, 1;
+			monitor monitor_client_sent, 1;
 			if($)
 				send servers[0], update, (seqmachine  = 0, command = 1);
 			else
@@ -595,7 +595,7 @@ model Client {
 	state PumpRequestTwo {
 		entry {
 			
-			monitor ValmachineityCheck, monitor_client_sent, 2;
+			monitor monitor_client_sent, 2;
 			if($)
 				send servers[0], update, (seqmachine  = 0, command = 2);
 			else

@@ -74,8 +74,9 @@ model xx {
 	}
 
 }
+event dummy;
 
-MonitorMe monitors null {
+spec MonitorMe monitors dummy {
 	var x : int;
 	
 	start state init {

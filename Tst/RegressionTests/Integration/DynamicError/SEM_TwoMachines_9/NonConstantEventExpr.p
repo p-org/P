@@ -12,7 +12,7 @@ main machine Real1 {
     start state Real1_Init {
         entry { 
 			mac = new Real2(this);
-			monitor M, ev2, true;  //zing error (ev2 is nulll)
+			monitor ev2, true;  //zing error (ev2 is nulll)
 			ev1 = E1;			
 			raise ev1;  		
         } 	
@@ -49,7 +49,7 @@ machine Real2 {
 		assert(payload == false);  //fails in runtime
     }
 }
-monitor M {
+spec M monitors E1 {
 	start state x {
 		entry {
 			assert (payload == true);

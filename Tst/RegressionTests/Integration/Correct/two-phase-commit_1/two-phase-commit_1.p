@@ -303,11 +303,11 @@ model Client {
 		}
 		on WRITE_FAIL goto DoRead with 
 		{
-			monitor ReadWrite, MONITOR_WRITE_FAILURE, (m = this, key=mydata, val = mydata);
+			monitor MONITOR_WRITE_FAILURE, (m = this, key=mydata, val = mydata);
 		};
 		on WRITE_SUCCESS goto DoRead with 
 		{
-			monitor ReadWrite, MONITOR_WRITE_SUCCESS, (m = this, key=mydata, val = mydata);
+			monitor MONITOR_WRITE_SUCCESS, (m = this, key=mydata, val = mydata);
 		};
 		on goEnd goto End;
 	}
@@ -318,11 +318,11 @@ model Client {
 		}
 		on READ_FAIL goto DoWrite with 
 		{
-			monitor ReadWrite, MONITOR_READ_FAILURE, this;
+			monitor MONITOR_READ_FAILURE, this;
 		};
 		on READ_SUCCESS goto DoWrite with 
 		{
-			monitor ReadWrite, MONITOR_READ_SUCCESS, (m = this, key = mydata, val = payload);
+			monitor MONITOR_READ_SUCCESS, (m = this, key = mydata, val = payload);
 		};
 	}
 
@@ -337,7 +337,7 @@ model Client {
 // successful read and failed write should be followed by a failed read.
 // This monitor is created local to each client.
 
-monitor ReadWrite {
+spec ReadWrite monitors MONITOR_WRITE_SUCCESS, MONITOR_WRITE_FAILURE, MONITOR_READ_SUCCESS, MONITOR_READ_FAILURE {
 	var client : machine;
 	var data: (key:int,val:int);
 	fun DoWriteSuccess() {
@@ -374,7 +374,7 @@ monitor ReadWrite {
 // are the same (coordinator, replicas).
 //
 /*
-monitor Termination {
+spec Termination monitors MONITOR_UPDATE {
 	var coordinator: machine;
 	var replicas:seq[machine];
 	var data : map[machine, map[int, int]];

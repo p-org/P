@@ -10,7 +10,7 @@ event Error2 assume 1;
 event Error3 assume 1;
 event Halt assume 1;
 
-monitor Spinlock {
+spec Spinlock monitors ACQ, REL, FIN, Error1, Error2, Error3 {
 //tpstate is a map from guards to stvar s value: false: init, true: locked
 var tpstate: map[int,bool]; 
 var ev_guard: int; 
@@ -119,7 +119,7 @@ var mon, mon0, mon1: machine;
 			while ($) {
 				par = ChooseGuard();
 				ev = ChooseEvent();
-				monitor Spinlock, ev, par;
+				monitor ev, par;
 			}
 			/************************/
 		}

@@ -137,10 +137,10 @@ machine Coordinator {
 
 	fun DoRead() {
 		if (payload.idx in data) {
-			monitor M, MONITOR_READ_SUCCESS, (idx=payload.idx, val=data[payload.idx]);
+			monitor MONITOR_READ_SUCCESS, (idx=payload.idx, val=data[payload.idx]);
 			send payload.client, READ_SUCCESS, data[payload.idx];
 		} else {
-			monitor M, MONITOR_READ_UNAVAILABLE, payload.idx;
+			monitor MONITOR_READ_UNAVAILABLE, payload.idx;
 			send payload.client, READ_UNAVAILABLE;
 		}
 	}
@@ -181,7 +181,7 @@ machine Coordinator {
 					i = i + 1;
 				}
 				data[pendingWriteReq.idx] = pendingWriteReq.val;
-				monitor M, MONITOR_WRITE, (idx=pendingWriteReq.idx, val=pendingWriteReq.val);
+				monitor MONITOR_WRITE, (idx=pendingWriteReq.idx, val=pendingWriteReq.val);
 				send pendingWriteReq.client, WRITE_SUCCESS;
 				send timer, CancelTimer;
 				raise Unit;
@@ -273,7 +273,7 @@ model Client {
 	}
 }
 
-monitor M {
+spec M monitors MONITOR_WRITE, MONITOR_READ_SUCCESS, MONITOR_READ_UNAVAILABLE {
 	var data: map[int,int];
 	fun DoWrite() {
 			data[payload.idx] = payload.val;

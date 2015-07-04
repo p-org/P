@@ -16,7 +16,6 @@ main machine PING {
 
     state Ping_SendPing {
         entry {
-	      monitor M, Ping, this;
 	    send pongId, Ping, this;
 	    raise Success;
 	}
@@ -38,7 +37,6 @@ machine PONG {
 
     state Pong_SendPong {
 	entry {
-	      monitor M, Pong;
 	     send payload as machine, Pong;
 	     raise Success;		 	  
 	}
@@ -46,7 +44,7 @@ machine PONG {
     }
 }
 
-monitor M {
+spec M monitors Ping, Pong{
 start cold state ExpectPing {
 		 on Ping goto ExpectPong;
 }

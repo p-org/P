@@ -427,6 +427,8 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var returnTypeName = it.Current is Id ? PTypeNull : (AST<FuncTerm>)Factory.Instance.ToAST(it.Current);
                     it.MoveNext();
+                    // skipping over locals
+                    it.MoveNext(); 
                     var funInfo = new FunInfo(isModel, returnTypeName, it.Current);
                     int index = 0;
                     while (iter != null)
@@ -474,6 +476,8 @@ namespace Microsoft.Pc
                     var machineDecl = (FuncTerm)it.Current;
                     var machineName = GetName(machineDecl, 0);
                     var machineInfo = allMachines[machineName];
+                    it.MoveNext();
+                    // skipping over locals
                     it.MoveNext();
                     var funName = "AnonFun" + anonFunCounter[machineName];
                     machineInfo.funNameToFunInfo[funName] = new FunInfo(it.Current, true);

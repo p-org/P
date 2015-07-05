@@ -53,8 +53,10 @@ domain PData
     While    ::= new (cond: any Expr, body: any Stmt).
     Ite      ::= new (cond: any Expr, true: any Stmt, false: any Stmt).
     Seq      ::= new (s1: any Stmt, s2: any Stmt).
+	Cases	 ::= new (trig: String + { NULL, HALT }, action: any AnonFunDecl + String, cases: any Cases + { NIL }).
+	Receive  ::= new (cases: any Cases).
 
-    Stmt ::= Push + NewStmt + Raise + Send + Monitor + FunStmt + NulStmt + UnStmt + BinStmt + Return + While + Ite + Seq. 
+    Stmt ::= Push + NewStmt + Raise + Send + Monitor + FunStmt + NulStmt + UnStmt + BinStmt + Return + While + Ite + Seq + Receive. 
 
     /*************************************************************/
     /****************  State Machine Declarations    *************/
@@ -67,8 +69,8 @@ domain PData
 
     VarDecl        ::= fun (name: String, owner: MachineDecl -> type: any TypeExpr).
     
-    FunDecl        ::= fun (name: String, owner: MachineDecl + { NIL } -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL },  return: any TypeExpr + { NIL }, body: any Stmt).
-    AnonFunDecl    ::= new (owner: MachineDecl, body: any Stmt).
+    FunDecl        ::= fun (name: String, owner: MachineDecl + { NIL } -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL },  return: any TypeExpr + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt).
+    AnonFunDecl    ::= new (owner: MachineDecl, locals: any NmdTupType + { NIL }, body: any Stmt).
     
     StateDecl      ::= fun (name: any QualifiedName, owner: MachineDecl -> entryAction: any AnonFunDecl + String, exitFun: any AnonFunDecl + String, temperature: { HOT, WARM, COLD }).
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String).
@@ -139,37 +141,37 @@ domain PStructuralTyping extends PData
 	OneDeclError(trns) :- trns is TransDecl, no StateDecl(trns.dst, trns.src.owner, _, _, _).
 	
 	[rule_Classes = '"error, msg: transition function not defined"'] // disallowing static functions for now
-	OneDeclError(trns) :- trns is TransDecl(_, _, _, act), act : String, no FunDecl(act, trns.src.owner, _, _, _, _).
+	OneDeclError(trns) :- trns is TransDecl(_, _, _, act), act : String, no FunDecl(act, trns.src.owner, _, _, _, _, _).
 	
 	[rule_Classes = '"error, msg: function cannot take arguments"']
-	OneDeclError(trns) :- trns is TransDecl(_, _, _, act), act : String, FunDecl(act, trns.src.owner, _, p, _, _), p != NIL;
-	                      trns is TransDecl(_, _, _, act), act : String, FunDecl(act, NIL, _, p, _, _), p != NIL.
+	OneDeclError(trns) :- trns is TransDecl(_, _, _, act), act : String, FunDecl(act, trns.src.owner, _, p, _, _, _), p != NIL;
+	                      trns is TransDecl(_, _, _, act), act : String, FunDecl(act, NIL, _, p, _, _, _), p != NIL.
 	
 	//valid doDecl
 	[ rule_Classes = '"error, msg: action on an undefined event"']
 	OneDeclError(doD) :- doD is DoDecl, no EventDecl(doD.trig, _, _), doD.trig != HALT, doD.trig != NULL.
 	
 	[rule_Classes = '"error, msg: function not defined"'] // disallowing static functions for now
-	OneDeclError(trns) :- trns is DoDecl(_, _, act), act : String, no FunDecl(act, trns.src.owner, _, _, _, _).
+	OneDeclError(trns) :- trns is DoDecl(_, _, act), act : String, no FunDecl(act, trns.src.owner, _, _, _, _, _).
 	
 	[rule_Classes = '"error, msg: function cannot take arguments"']
-	OneDeclError(trns) :- trns is DoDecl(_, _, act), act : String , FunDecl(act, trns.src.owner, _, p, _, _), p != NIL;
-	                      trns is DoDecl(_, _, act), act : String , FunDecl(act, NIL, _, p, _, _), p != NIL.
+	OneDeclError(trns) :- trns is DoDecl(_, _, act), act : String , FunDecl(act, trns.src.owner, _, p, _, _, _), p != NIL;
+	                      trns is DoDecl(_, _, act), act : String , FunDecl(act, NIL, _, p, _, _, _), p != NIL.
 	
 	//Entry Exit Functions
 	[rule_Classes = '"error, msg: undefined function for entry"'] // disallowing static functions for now
-	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _), eF : String, no FunDecl(eF, s.owner, _, _, _, _). 
+	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _), eF : String, no FunDecl(eF, s.owner, _, _, _, _, _). 
 
 	[rule_Classes = '"error, msg: undefined function for exit"'] // disallowing static functions for now
-	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _), eF : String, no FunDecl(eF, s.owner, _, _, _, _).
+	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _), eF : String, no FunDecl(eF, s.owner, _, _, _, _, _).
 	
 	[rule_Classes = '"error, msg: function cannot take arguments"']
-	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _), eF : String , FunDecl(eF, s.owner, _, p, _, _), p != NIL;
-	                       s is StateDecl(_, _, eF, _, _), eF : String , FunDecl(eF, NIL, _, p, _, _), p != NIL.
+	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _), eF : String , FunDecl(eF, s.owner, _, p, _, _, _), p != NIL;
+	                       s is StateDecl(_, _, eF, _, _), eF : String , FunDecl(eF, NIL, _, p, _, _, _), p != NIL.
 	
 	[rule_Classes = '"error, msg: function cannot take arguments"']
-	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _), eF : String , FunDecl(eF, s.owner, _, p, _, _), p != NIL;
-	                       s is StateDecl(_, _, _, eF, _), eF : String , FunDecl(eF, NIL, _, p, _, _), p != NIL.
+	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _), eF : String , FunDecl(eF, s.owner, _, p, _, _, _), p != NIL;
+	                       s is StateDecl(_, _, _, eF, _), eF : String , FunDecl(eF, NIL, _, p, _, _, _), p != NIL.
 	
 	//cannot have null in Monitors
 	[rule_Classes = '"error, msg: null transitions not allowed in monitors"']
@@ -352,18 +354,18 @@ domain PStaticTyping extends PData
 	TypeOf(c, e, t) :- TypeOfArg2(c, e, t1, t2), e = NamedExprs(n, _, _), t2 : NmdTupType, t = NmdTupType(NmdTupTypeField(n, t1), t2).
 	
 	//// (6) FunApps must refer to a defined function that has a non-NIL return type and args must be sub-types of function signature. 
-	TypeOf(c, e, t) :- SubSE(c, e), e = FunApp(n, NIL), FunDecl(n, c.owner, _, NIL, t, _), t != NIL;
-	                   SubSE(c, e), e = FunApp(n, NIL), FunDecl(n, NIL, _, NIL, t, _), t != NIL.
+	TypeOf(c, e, t) :- SubSE(c, e), e = FunApp(n, NIL), FunDecl(n, c.owner, _, NIL, t, _, _), t != NIL;
+	                   SubSE(c, e), e = FunApp(n, NIL), FunDecl(n, NIL, _, NIL, t, _, _), t != NIL.
 	TypeOf(c, e, t) :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FuncSigTupleType(decl, inpt), decl.name = n, decl.return = t, FunAvailable(decl, c.owner), TypeRel(t1, inpt, SUB), t != NIL.
 
 	[ rule_Classes = '"error, msg: function not defined"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _), no FunDecl(n, c.owner, _, _, _, _), no FunDecl(n, NIL, _, _, _, _).
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _), no FunDecl(n, c.owner, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _).
 	[ rule_Classes = '"error, msg: function does not return a value"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _), FunDecl(n, c.owner, _, _, NIL, _);
-	                       SubSE(c, e), e = FunApp(n, _), FunDecl(n, NIL, _, _, NIL, _).
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _), FunDecl(n, c.owner, _, _, NIL, _, _);
+	                       SubSE(c, e), e = FunApp(n, _), FunDecl(n, NIL, _, _, NIL, _, _).
 	[ rule_Classes = '"error, msg: function requires arguments"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, NIL), FunDecl(n, c.owner, _, params, _, _), params != NIL;
-	                       SubSE(c, e), e = FunApp(n, NIL), FunDecl(n, NIL, _, params, _, _), params != NIL.
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, NIL), FunDecl(n, c.owner, _, params, _, _, _), params != NIL;
+	                       SubSE(c, e), e = FunApp(n, NIL), FunDecl(n, NIL, _, params, _, _, _), params != NIL.
 	[ rule_Classes = '"error, msg: function arguments have incorrect types"']
 	TypeOf(c, e, ERROR) :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FuncSigTupleType(decl, inpt), decl.name = n, FunAvailable(decl, c.owner), TypeRel(t1, inpt, k), t1 != inpt, k != SUB.
 	
@@ -376,13 +378,13 @@ domain PStaticTyping extends PData
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(POP).
 
 	//// (2) Return statement
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL), c = FunDecl(_, _, _, _, NIL, _). 
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL), c = FunDecl(_, _, _, _, NIL, _, _). 
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL), c : AnonFunDecl.
-    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : Return, c = FunDecl(_, _, _, _, t, _), TypeRel(t1, t, SUB).
+    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : Return, c = FunDecl(_, _, _, _, t, _, _), TypeRel(t1, t, SUB).
 	[ rule_Classes = '"error, msg: function must return a value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(NIL), c = FunDecl(_, _, _, _, t, _), t != NIL. 
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(NIL), c = FunDecl(_, _, _, _, t, _, _), t != NIL. 
 	[ rule_Classes = '"error, msg: return value has incorrect type"' ]
-    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Return, c = FunDecl(_, _, _, _, t, _), TypeRel(t1, t, k), t1 != t, k != SUB.
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Return, c = FunDecl(_, _, _, _, t, _, _), TypeRel(t1, t, k), t1 != t, k != SUB.
 	[ rule_Classes = '"error, msg: anonymous function cannot return a value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(e1), c : AnonFunDecl, e1 != NIL. 
 
@@ -514,13 +516,13 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)), TypeRel(value, cod, k), k != SUB, value != cod.
 	
 	//// (5) Function statements
-	TypeOf(c, e, NIL)   :- SubSE(c, e), e = FunStmt(n, NIL), called = FunDecl(n, _, _, NIL, _, _), FunAvailable(called, c.owner).
-	TypeOf(c, e, NIL)   :- TypeOfArg1(c, e, t1), e = FunStmt(n, _), FuncSigTupleType(decl, inpt), decl = FunDecl(n, _, _, _, _, _), FunAvailable(decl, c.owner), TypeRel(t1, inpt, SUB).
+	TypeOf(c, e, NIL)   :- SubSE(c, e), e = FunStmt(n, NIL), called = FunDecl(n, _, _, NIL, _, _, _), FunAvailable(called, c.owner).
+	TypeOf(c, e, NIL)   :- TypeOfArg1(c, e, t1), e = FunStmt(n, _), FuncSigTupleType(decl, inpt), decl = FunDecl(n, _, _, _, _, _, _), FunAvailable(decl, c.owner), TypeRel(t1, inpt, SUB).
 	[ rule_Classes = '"error, msg: function not defined"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _), no FunDecl(n, c.owner, _, _, _, _), no FunDecl(n, NIL, _, _, _, _).	
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _), no FunDecl(n, c.owner, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _).	
 	[ rule_Classes = '"error, msg: function requires arguments"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, NIL), FunDecl(n, c.owner, _, params, _, _), params != NIL;
-	                       SubSE(c, e), e = FunStmt(n, NIL), FunDecl(n, NIL, _, params, _, _), params != NIL.
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, NIL), FunDecl(n, c.owner, _, params, _, _, _), params != NIL;
+	                       SubSE(c, e), e = FunStmt(n, NIL), FunDecl(n, NIL, _, params, _, _, _), params != NIL.
 	[ rule_Classes = '"error, msg: function arguments have incorrect types"']
 	TypeOf(c, e, ERROR) :- TypeOfArg1(c, e, t1), e = FunStmt(n, _), FuncSigTupleType(decl, inpt), decl.name = n, FunAvailable(decl, c.owner), TypeRel(t1, inpt, k), t1 != inpt, k != SUB.
 
@@ -614,7 +616,7 @@ domain PStaticTyping extends PData
     TypeOfFormalParam    ::= (cntxt: FunDecl, name: String, type: TypeExpr + { ERROR }).
     TypeOfFormalParamAux ::= (cntxt: FunDecl, name: String, type: TypeExpr, aux: NmdTupType + { NIL }).
 
-    TypeOfFormalParamAux(cntxt, name, type, tl) :- cntxt is FunDecl(_, _, _, params, _, _), params = NmdTupType(NmdTupTypeField(name, type), tl).  
+    TypeOfFormalParamAux(cntxt, name, type, tl) :- cntxt is FunDecl(_, _, _, params, _, _, _), params = NmdTupType(NmdTupTypeField(name, type), tl).  
     TypeOfFormalParamAux(cntxt, name, type, tl) :- TypeOfFormalParamAux(cntxt, _, _, aux), aux = NmdTupType(NmdTupTypeField(name, type), tl).
     
     TypeOfFormalParam(cntxt, name, type)  :- TypeOfFormalParamAux(cntxt, name, type, aux), no { aux' | TypeOfFormalParamAux(cntxt, name, _, aux'), aux != aux' }.      
@@ -625,8 +627,8 @@ domain PStaticTyping extends PData
 	FuncSigTupleType    ::= (cntxt: FunDecl, type: TupType + { NIL }).
 	FuncSigTupleTypeAux ::= (cntxt: FunDecl, type: TupType + { NIL }, aux: NmdTupType + { NIL }).
 
-	FuncSigTupleTypeAux(cntxt, params, NIL) :- cntxt is FunDecl(_, _, _, params, _, _), params = NIL.
-	FuncSigTupleTypeAux(cntxt, type, tl)    :- cntxt is FunDecl(_, _, _, params, _, _), params = NmdTupType(NmdTupTypeField(_, t), tl), type = TupType(t, NIL).
+	FuncSigTupleTypeAux(cntxt, params, NIL) :- cntxt is FunDecl(_, _, _, params, _, _, _), params = NIL.
+	FuncSigTupleTypeAux(cntxt, type, tl)    :- cntxt is FunDecl(_, _, _, params, _, _, _), params = NmdTupType(NmdTupTypeField(_, t), tl), type = TupType(t, NIL).
 	FuncSigTupleTypeAux(cntxt, type, tl)    :- FuncSigTupleTypeAux(cntxt, t', aux), aux = NmdTupType(NmdTupTypeField(_, t), tl), type = TupType(t, t').
 	FuncSigTupleType(cntxt, type)           :- FuncSigTupleTypeAux(cntxt, t, NIL), type = lstReverse(#TupType, t).
 
@@ -688,7 +690,7 @@ domain PStaticTyping extends PData
 
     [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
     PurityError(c, called) :- 
-	       c is StateDecl(_, owner, _, called, _), called = AnonFunDecl(owner, _), ControlImpure(called).
+	       c is StateDecl(_, owner, _, called, _), called = AnonFunDecl(owner, _, _), ControlImpure(called).
 
     [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
     PurityError(c, n) :- 
@@ -696,7 +698,7 @@ domain PStaticTyping extends PData
 
     [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
     PurityError(c, called) :- 
-	       c is TransDecl(src, _, _, called), called = AnonFunDecl(src.owner, _), ControlImpure(called).
+	       c is TransDecl(src, _, _, called), called = AnonFunDecl(src.owner, _, _), ControlImpure(called).
 
 
     /*************************************************************/
@@ -723,8 +725,8 @@ domain PStaticTyping extends PData
 
 	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, push and pop statements"']
     MonitorError(c, called) :- 
-	       c is StateDecl(_, owner, called, _, _), owner.kind = MONITOR, called = AnonFunDecl(_, _), MonitorImpure(called);
-		   c is StateDecl(_, owner, _, called, _), owner.kind = MONITOR, called = AnonFunDecl(_, _), MonitorImpure(called).
+	       c is StateDecl(_, owner, called, _, _), owner.kind = MONITOR, called = AnonFunDecl(_, _, _), MonitorImpure(called);
+		   c is StateDecl(_, owner, _, called, _), owner.kind = MONITOR, called = AnonFunDecl(_, _, _), MonitorImpure(called).
 
 	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, push and pop statements"']
     MonitorError(c, n) :- 
@@ -732,7 +734,7 @@ domain PStaticTyping extends PData
 
 	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, push and pop statements"']
     MonitorError(c, called) :- 
-	       c is TransDecl(src, _, _, called), src.owner.kind = MONITOR, called = AnonFunDecl(_, _), MonitorImpure(called).
+	       c is TransDecl(src, _, _, called), src.owner.kind = MONITOR, called = AnonFunDecl(_, _, _), MonitorImpure(called).
 
 	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, push and pop statements"']
 	MonitorError(c, n) :-	
@@ -740,7 +742,7 @@ domain PStaticTyping extends PData
 
 	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, push and pop statements"']
 	MonitorError(c, called) :- 
-		   c is DoDecl(src, _, called), src.owner.kind = MONITOR, called = AnonFunDecl(_, _), MonitorImpure(called).
+		   c is DoDecl(src, _, called), src.owner.kind = MONITOR, called = AnonFunDecl(_, _, _), MonitorImpure(called).
 
     /*************************************************************/
     /*                         Push Labels                       */
@@ -841,7 +843,7 @@ domain PStaticTyping extends PData
 	CompTypeRel(t1, inner)    :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = SeqType(inner).
 	CompTypeRel(t1, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = MapType(dom, _).      
 	CompTypeRel(t1, inpt)     :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FuncSigTupleType(decl, inpt), decl.name = n, FunAvailable(decl, c.owner).
-	CompTypeRel(t1, t)        :- TypeOfArg1(c, e, t1), e : Return, c = FunDecl(_, _, _, _, t, _).
+	CompTypeRel(t1, t)        :- TypeOfArg1(c, e, t1), e : Return, c = FunDecl(_, _, _, _, t, _, _).
 	CompTypeRel(null, plt)    :- CommStmtPLType(c, e, plt), e = Raise(_, NIL), null = BaseType(NULL).
 	CompTypeRel(pt, plt)      :- CommStmtPLType(c, e, plt), e = Raise(_, p), p != NIL, TypeOf(c, p, pt).
 	CompTypeRel(null, plt)    :- SubSE(c, e), e = Send(_, _, NIL), null = BaseType(NULL), CommStmtPLType(c, e, plt).

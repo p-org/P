@@ -15,7 +15,7 @@
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH AS WITH
 
-%token IF WHILE THIS TRIGGER PAYLOAD NEW RETURN ID POP ASSERT CALL RAISE SEND DEFAULT HALT NULL 
+%token IF WHILE THIS TRIGGER PAYLOAD NEW RETURN ID POP ASSERT CALL RAISE SEND DEFAULT HALT NULL RECEIVE THEN
 %token LPAREN RPAREN LCBRACE RCBRACE LBRACKET RBRACKET SIZEOF KEYS VALUES
 
 %token TRUE FALSE
@@ -107,11 +107,11 @@ EventAnnotOrNone
 MachineDecl
 	: IsMain MACHINE ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1));    }
 	| IsMain MODEL ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE   { AddMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1));   }
-	| SPEC ID Foo MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE  { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
+	| SPEC ID ObservesList MachAnnotOrNone LCBRACE MachineBody RCBRACE			   { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 	
-Foo
-	: MONITORS EventList { crntObservesList = new List<P_Root.EventLabel>(crntEventList); crntEventList.Clear(); }
+ObservesList
+	: MONITORS EventList { crntObservesList.AddRange(crntEventList); crntEventList.Clear(); }
 	;
 
 IsMain
@@ -152,6 +152,16 @@ VarDecl
 VarList
 	: ID                  { AddVarDecl($1.str, ToSpan(@1)); }									
 	| ID COMMA VarList    { AddVarDecl($1.str, ToSpan(@1)); }
+	;
+
+LocalVarDeclList
+	: VAR LocalVarList COLON Type SEMICOLON LocalVarDeclList            { AddLocalVarDecls(); }
+	|
+	; 
+
+LocalVarList
+	: ID					   { AddLocalVarDecl($1.str, ToSpan(@1)); }									
+	| ID COMMA LocalVarList    { AddLocalVarDecl($1.str, ToSpan(@1)); }
 	;
 
 /******************* Function Declarations *******************/
@@ -324,11 +334,22 @@ Stmt
 	| SEND Exp COMMA Exp COMMA SingleExprArgList SEMICOLON    { PushSend(true,  ToSpan(@1));                             }
 	| MONITOR Exp SEMICOLON									  { PushMonitor(false, $2.str, ToSpan(@2), ToSpan(@1));      }
 	| MONITOR Exp COMMA SingleExprArgList SEMICOLON           { PushMonitor(true, $2.str, ToSpan(@2), ToSpan(@1));       }
+	| RECEIVE LCBRACE ThenList RCBRACE						  { PushReceive(ToSpan(@1)); }
 	;
 
+Then 
+	: EventList THEN ID SEMICOLON				{ AddThenNamedAction($3.str, ToSpan(@3)); }
+	| EventList THEN StmtBlock SEMICOLON		{ AddThenAnonyAction(ToSpan(@3)); }
+	;
+
+ThenList
+	: Then  
+	| ThenList Then
+	;
+	 
 StmtBlock
-	: LCBRACE RCBRACE                                         { PushNulStmt(P_Root.UserCnstKind.SKIP,  ToSpan(@1));      }    
-    | LCBRACE StmtList RCBRACE
+	: LCBRACE LocalVarDeclList RCBRACE                                         { PushNulStmt(P_Root.UserCnstKind.SKIP,  ToSpan(@1));      }    
+    | LCBRACE LocalVarDeclList StmtList RCBRACE
 	;
 
 StmtList

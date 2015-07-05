@@ -39,11 +39,18 @@
 
         private List<P_Root.EventLabel> crntObservesList = new List<P_Root.EventLabel>();
 
+        private P_Root.IArgType_Cases__2 crntCasesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+       
+
         private HashSet<string> crntStateNames = new HashSet<string>();
         private HashSet<string> crntFunNames = new HashSet<string>();
         private HashSet<string> crntVarNames = new HashSet<string>();
         private HashSet<string> crntEventNames;
         private HashSet<string> crntMachineNames;
+
+        private HashSet<string> crntLocalVarList = new HashSet<string>();
+        private HashSet<string> crntLocalVarDeclList = new HashSet<string>();
+        private P_Root.IArgType_NmdTupType__1 crntLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
 
         private Stack<P_Root.Expr> valueExprStack = new Stack<P_Root.Expr>();
         private Stack<P_Root.ExprsExt> exprsStack = new Stack<P_Root.ExprsExt>();
@@ -312,6 +319,15 @@
             }
 
             stmtStack.Push(monitorStmt);
+        }
+
+        private void PushReceive(Span span)
+        {
+            var receiveStmt = P_Root.MkReceive((P_Root.IArgType_Receive__0)crntCasesList);
+            receiveStmt.Span = span;
+            stmtStack.Push(receiveStmt);
+
+            crntCasesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
         }
 
         private void PushRaise(bool hasArgs, Span span)
@@ -884,11 +900,12 @@
             P_Root.StateDecl state;
             if(isStmtBlock)
             {
-                var stmt = (P_Root.IArgType_AnonFunDecl__1)stmtStack.Pop();
+                var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
                 state = GetCurrentStateDecl(stmt.Span);
-                entry = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, stmt);
+                entry = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)crntLocalVarDecl, stmt);
                 entry.Span = stmt.Span;
                 parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)entry);
+                crntLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
             }
             else
             {
@@ -922,11 +939,12 @@
 
             if (isStmtBlock)
             {
-                var stmt = (P_Root.IArgType_AnonFunDecl__1)stmtStack.Pop();
+                var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
                 state = GetCurrentStateDecl(stmt.Span);
-                exit = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, stmt);
+                exit = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)crntLocalVarDecl, stmt);
                 exit.Span = stmt.Span;
                 parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)exit);
+                crntLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
             }
             else
             {
@@ -1017,6 +1035,26 @@
             }
         }
 
+        private void AddLocalVarDecl(string name, Span span)
+        {
+            if (crntLocalVarDeclList.Contains(name))
+            {
+                var errFlag = new Flag(
+                                     SeverityKind.Error,
+                                     span,
+                                     Constants.BadSyntax.ToString(string.Format("A variable with name {0} already declared", name)),
+                                     Constants.BadSyntax.Code,
+                                     parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+            else
+            {
+                crntLocalVarList.Add(name);
+                crntLocalVarDeclList.Add(name);
+            }
+        }
+
         private void AddToEventList(string name, Span span)
         {
             crntEventList.Add(MkString(name, span));
@@ -1073,11 +1111,12 @@
             }
             else
             {
-                var stmt = (P_Root.IArgType_AnonFunDecl__1)stmtStack.Pop();
-                action = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, stmt);
+                var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
+                action = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)crntLocalVarDecl, stmt);
                 action.Span = stmt.Span;
                 parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)action);
                 ResetPushLabels();
+                crntLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
             }
 
             foreach (var e in crntEventList)
@@ -1199,18 +1238,52 @@
                     MkUserCnst(valKind, valSpan)));
         }
 
+        private void AddThenAnonyAction(Span span)
+        {
+            Contract.Assert(crntEventList.Count > 0);
+
+            var state = GetCurrentStateDecl(span);
+            var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
+            var anonAction = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)crntLocalVarDecl, stmt);
+            anonAction.Span = stmt.Span;
+            parseProgram.AnonFunctions.Add(anonAction);
+            ResetPushLabels();
+            crntLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+
+            foreach (var e in crntEventList)
+            {
+                crntCasesList = P_Root.MkCases((P_Root.IArgType_Cases__0)e, anonAction, crntCasesList);
+            }
+
+            crntEventList.Clear();
+        }
+
+        private void AddThenNamedAction(string name, Span nameSpan)
+        {
+            Contract.Assert(crntEventList.Count > 0);
+
+            var actName = MkString(name, nameSpan);
+            foreach (var e in crntEventList)
+            {
+                crntCasesList = P_Root.MkCases((P_Root.IArgType_Cases__0)e, actName, crntCasesList);
+            }
+
+            crntEventList.Clear();
+        }
+
         private void AddDoAnonyAction(Span span)
         {
             Contract.Assert(crntEventList.Count > 0);
             Contract.Assert(!isTrigAnnotated || crntAnnotStack.Count > 0);
 
             var state = GetCurrentStateDecl(span);
-            var stmt = (P_Root.IArgType_AnonFunDecl__1)stmtStack.Pop();
+            var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
             var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
-            var anonAction = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, stmt);
+            var anonAction = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)crntLocalVarDecl, stmt);
             anonAction.Span = stmt.Span;
             parseProgram.AnonFunctions.Add(anonAction);
             ResetPushLabels();
+            crntLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
 
             foreach (var e in crntEventList)
             {
@@ -1362,6 +1435,19 @@
             crntVarList.Clear();
         }
 
+        private void AddLocalVarDecls()
+        {
+            Contract.Assert(typeExprStack.Count > 0);
+            var typeExpr = (P_Root.IArgType_NmdTupTypeField__1)typeExprStack.Pop();
+            foreach (var v in crntLocalVarList)
+            {
+
+                var field = P_Root.MkNmdTupTypeField(P_Root.MkString(v), typeExpr);
+                crntLocalVarDecl = P_Root.MkNmdTupType(field, crntLocalVarDecl);
+            }
+            crntLocalVarList.Clear();
+        }
+
         private void AddEvent(string name, Span nameSpan, Span span)
         {
             var evDecl = GetCurrentEventDecl(span);
@@ -1501,8 +1587,10 @@
             funDecl.name = MkString(name, nameSpan);
             funDecl.owner = isGlobal ? (P_Root.IArgType_FunDecl__1) MkUserCnst(P_Root.UserCnstKind.NIL, span) 
                                      : (P_Root.IArgType_FunDecl__1) GetCurrentMachineDecl(span);
-            funDecl.body = (P_Root.IArgType_FunDecl__5)stmtStack.Pop();
+            funDecl.locals = (P_Root.IArgType_FunDecl__5)crntLocalVarDecl;
+            funDecl.body = (P_Root.IArgType_FunDecl__6)stmtStack.Pop();
             parseProgram.Functions.Add(funDecl);
+            crntLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
             if (crntFunNames.Contains(name))
             {
                 var errFlag = new Flag(
@@ -1624,7 +1712,7 @@
         {
             var stmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
             stmt.Span = span;
-            var decl = P_Root.MkAnonFunDecl(owner, stmt);
+            var decl = P_Root.MkAnonFunDecl(owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), stmt);
             decl.Span = span;
             parseProgram.AnonFunctions.Add(decl);
             return decl;

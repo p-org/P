@@ -724,8 +724,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 					  UNKNOWN).
 
 	PatchReturn ::= (f: in.FunDecl, e: out.Stmt).
-	PatchReturn(f, cs) :- DeclId(f, _, _), f = FunDecl(_, _, _, _, NIL, _), cs = out.Return(Ident("p_tmp_ret")).
-	PatchReturn(f, cs) :- DeclId(f, _, _), f = FunDecl(_, _, _, _, type, _), type : TypeExpr, TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),  
+	PatchReturn(f, cs) :- DeclId(f, _, _), f = FunDecl(_, _, _, _, NIL, _, _), cs = out.Return(Ident("p_tmp_ret")).
+	PatchReturn(f, cs) :- DeclId(f, _, _), f = FunDecl(_, _, _, _, type, _, _), type : TypeExpr, TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),  
 						  cs = out.ITE(BinApp(EQ, Ident("p_tmp_ret"), Ident("NULL")), 
 									   Return(FunApp(Ident("PrtMkDefaultValue"), Args(out.UnApp(ADDR, Ident(typeName)), NIL))),
 									   Return(Ident("p_tmp_ret"))).
@@ -1710,7 +1710,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	FunDeclNames ::= (fn: in.FunDecl, funIndex: Natural, funName: String, prmsTypeName: String).
 	FunDeclNames(fn, funIdex, funName, prmsTypeName) :- DeclId(fn, funIdex, funName), TypeId(typeIndex, type), 
-						                                fn = FunDecl(_, _, _, type, _, _), 
+						                                fn = FunDecl(_, _, _, type, _, _, _), 
 						                                prmsTypeName = strJoin("P_GEND_TYPE_", toString(typeIndex)).  
 
 

@@ -83,6 +83,20 @@ typedef struct PRT_STATESTACK
 	PRT_UINT16			length;
 } PRT_STATESTACK;
 
+typedef struct PRT_FUNSTACK_INFO
+{
+	PRT_UINT32	funIndex;
+	PRT_UINT16	returnTo;
+	PRT_VALUE	*parameters;
+	PRT_VALUE	*locals;
+} PRT_FUNSTACK_INFO;
+
+typedef struct PRT_FUNSTACK
+{
+	PRT_FUNSTACK_INFO	funStack[PRT_MAX_CALL_DEPTH];
+	PRT_UINT16			length;
+} PRT_FUNSTACK;
+
 typedef struct PRT_MACHINEINST_PRIV {
 	PRT_PROCESS		    *process;
 	PRT_UINT32			instanceOf;
@@ -96,6 +110,7 @@ typedef struct PRT_MACHINEINST_PRIV {
 	PRT_BOOLEAN			isHalted;
 	PRT_UINT32			currentState;
 	PRT_STATESTACK		callStack;
+	PRT_FUNSTACK		funStack;
 	PRT_EVENTQUEUE		eventQueue;
 	PRT_LASTOPERATION	lastOperation;
 	PRT_STATECONTROL	stateControl;

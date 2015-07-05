@@ -22,6 +22,11 @@ void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr)
 		fprintf_s(stdout, "exiting with PRT_STATUS_QUEUE_OVERFLOW \n");
 		exit(1);
 	}
+	else if (status == PRT_STATUS_ILLEGAL_SEND)
+	{
+		fprintf_s(stdout, "exiting with PRT_STATUS_ILLEGAL_SEND \n");
+		exit(1);
+	}
 	else
 	{
 		fprintf_s(stdout, "unexpected PRT_STATUS in ErrorHandler: %d\n", status);

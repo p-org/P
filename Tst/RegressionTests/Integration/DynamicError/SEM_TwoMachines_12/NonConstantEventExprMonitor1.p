@@ -13,7 +13,7 @@ main machine Real1 {
 			mac = new Real2(this);
 			new M();
 			ev2 = E2;
-			monitor M, ev2, test;
+			monitor ev2, test;
 			ev1 = E1;			
 			raise ev1;  		
         } 	
@@ -47,7 +47,7 @@ machine Real2 {
 		assert(payload == false);  //fails in runtime
     }
 }
-monitor M {
+spec M monitors E2 {
 	start state x {
 		on E2 do { assert (payload == true); };  //fails in Zinger
 	}

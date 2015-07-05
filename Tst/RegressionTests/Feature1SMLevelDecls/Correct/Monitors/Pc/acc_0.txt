@@ -4,49 +4,26 @@
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...
-OUT: Writing MaxInstances_2.zing ...
-OUT: Compiling MaxInstances_2.zing to MaxInstances_2.dll ...
-OUT: maxinstances_2.p (13, 4): inferred type:  BaseType(REAL)
-OUT: maxinstances_2.p (13, 4): inferred type:  NIL
-OUT: maxinstances_2.p (13, 20): inferred type:  BaseType(REAL)
-OUT: maxinstances_2.p (13, 30): inferred type:  BaseType(REAL)
-OUT: maxinstances_2.p (14, 10): inferred type:  NIL
-OUT: maxinstances_2.p (14, 16): inferred type:  BaseType(EVENT)
-OUT: maxinstances_2.p (23, 13): inferred type:  NIL
-OUT: maxinstances_2.p (23, 18): inferred type:  BaseType(REAL)
-OUT: maxinstances_2.p (23, 33): inferred type:  BaseType(EVENT)
-OUT: maxinstances_2.p (29, 4): inferred type:  NIL
-OUT: maxinstances_2.p (29, 10): inferred type:  BaseType(EVENT)
-OUT: maxinstances_2.p (36, 3): inferred type:  NIL
-OUT: maxinstances_2.p (39, 3): inferred type:  NIL
-OUT: maxinstances_2.p (39, 10): inferred type:  BaseType(INT)
-OUT: maxinstances_2.p (39, 18): inferred type:  BaseType(BOOL)
-OUT: maxinstances_2.p (39, 21): inferred type:  BaseType(INT)
-OUT: maxinstances_2.p (40, 3): inferred type:  NIL
-OUT: maxinstances_2.p (40, 8): inferred type:  BaseType(REAL)
-OUT: maxinstances_2.p (40, 23): inferred type:  BaseType(EVENT)
-OUT: maxinstances_2.p (41, 9): inferred type:  NIL
-OUT: maxinstances_2.p (41, 14): inferred type:  BaseType(REAL)
-OUT: maxinstances_2.p (41, 29): inferred type:  BaseType(EVENT)
-OUT: maxinstances_2.p (49, 10): inferred type:  BaseType(REAL)
-OUT: maxinstances_2.p (49, 10): inferred type:  NIL
-OUT: maxinstances_2.p (49, 25): inferred type:  BaseType(ANY)
-OUT: maxinstances_2.p (49, 33): inferred type:  BaseType(REAL)
-OUT: maxinstances_2.p (49, 45): inferred type:  NIL
-OUT: maxinstances_2.p (49, 51): inferred type:  BaseType(EVENT)
-OUT: maxinstances_2.p (62, 4): inferred type:  NIL
-OUT: maxinstances_2.p (62, 9): inferred type:  BaseType(REAL)
-OUT: maxinstances_2.p (62, 23): inferred type:  BaseType(EVENT)
-OUT: maxinstances_2.p (62, 27): inferred type:  BaseType(INT)
-OUT: maxinstances_2.p (69, 6): inferred type:  NIL
-OUT: maxinstances_2.p (69, 11): inferred type:  BaseType(REAL)
-OUT: maxinstances_2.p (69, 25): inferred type:  BaseType(EVENT)
-OUT: maxinstances_2.p (70, 3): inferred type:  NIL
-OUT: maxinstances_2.p (70, 8): inferred type:  BaseType(REAL)
-OUT: maxinstances_2.p (70, 22): inferred type:  BaseType(EVENT)
-OUT: maxinstances_2.p (71, 3): inferred type:  NIL
-OUT: maxinstances_2.p (71, 8): inferred type:  BaseType(REAL)
-OUT: maxinstances_2.p (71, 22): inferred type:  BaseType(EVENT)
-OUT: maxinstances_2.p (73, 3): inferred type:  NIL
+OUT: Writing Monitors.zing ...
+OUT: Compiling Monitors.zing to Monitors.dll ...
+OUT: monitors.p (8, 3): inferred type:  NIL
+OUT: monitors.p (8, 17): inferred type:  BaseType(INT)
+OUT: monitors.p (8, 17): inferred type:  NIL
+OUT: monitors.p (8, 21): inferred type:  BaseType(INT)
+OUT: monitors.p (8, 23): inferred type:  BaseType(INT)
+OUT: monitors.p (8, 25): inferred type:  BaseType(INT)
+OUT: monitors.p (9, 18): inferred type:  NIL
+OUT: monitors.p (9, 25): inferred type:  BaseType(INT)
+OUT: monitors.p (9, 27): inferred type:  BaseType(BOOL)
+OUT: monitors.p (9, 30): inferred type:  BaseType(INT)
+OUT: monitors.p (16, 4): inferred type:  NIL
+OUT: monitors.p (17, 4): inferred type:  NIL
+OUT: monitors.p (17, 9): inferred type:  BaseType(REAL)
+OUT: monitors.p (17, 15): inferred type:  BaseType(EVENT)
+OUT: monitors.p (18, 4): inferred type:  NIL
+OUT: monitors.p (18, 12): inferred type:  BaseType(EVENT)
+OUT: monitors.p (19, 4): inferred type:  NIL
+OUT: monitors.p (19, 12): inferred type:  BaseType(EVENT)
+OUT: monitors.p (19, 20): inferred type:  BaseType(INT)
 OUT: 
 EXIT: 0

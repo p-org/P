@@ -8,8 +8,8 @@ OUT: Writing NonConstantEventExprMonitor.zing ...
 OUT: Compiling NonConstantEventExprMonitor.zing to NonConstantEventExprMonitor.dll ...
 OUT: nonconstanteventexprmonitor.p (15, 4): inferred type:  NIL
 OUT: nonconstanteventexprmonitor.p (16, 4): inferred type:  NIL
-OUT: nonconstanteventexprmonitor.p (16, 15): inferred type:  BaseType(EVENT)
-OUT: nonconstanteventexprmonitor.p (16, 20): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexprmonitor.p (16, 12): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexprmonitor.p (16, 17): inferred type:  BaseType(BOOL)
 OUT: nonconstanteventexprmonitor.p (17, 4): inferred type:  BaseType(EVENT)
 OUT: nonconstanteventexprmonitor.p (17, 4): inferred type:  NIL
 OUT: nonconstanteventexprmonitor.p (17, 10): inferred type:  BaseType(EVENT)

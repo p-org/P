@@ -7,12 +7,12 @@ OUT: Writing program.c ...
 OUT: Writing Liveness_1_falsePass.zing ...
 OUT: Compiling Liveness_1_falsePass.zing to Liveness_1_falsePass.dll ...
 OUT: liveness_1_falsepass.p (18, 5): inferred type:  NIL
-OUT: liveness_1_falsepass.p (18, 23): inferred type:  BaseType(EVENT)
+OUT: liveness_1_falsepass.p (18, 13): inferred type:  BaseType(EVENT)
 OUT: liveness_1_falsepass.p (19, 5): inferred type:  NIL
 OUT: liveness_1_falsepass.p (19, 10): inferred type:  BaseType(REAL)
 OUT: liveness_1_falsepass.p (19, 16): inferred type:  BaseType(EVENT)
 OUT: liveness_1_falsepass.p (27, 5): inferred type:  NIL
-OUT: liveness_1_falsepass.p (27, 23): inferred type:  BaseType(EVENT)
+OUT: liveness_1_falsepass.p (27, 13): inferred type:  BaseType(EVENT)
 OUT: liveness_1_falsepass.p (28, 5): inferred type:  NIL
 OUT: liveness_1_falsepass.p (28, 10): inferred type:  BaseType(REAL)
 OUT: liveness_1_falsepass.p (28, 16): inferred type:  BaseType(EVENT)

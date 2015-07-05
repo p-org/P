@@ -13,7 +13,7 @@ main machine Real1 {
         entry { 
 			//mac = new Real2(this);
 			new M();
-			monitor M, ev2, test;
+			monitor ev2, test;
 			ev1 = E1;			
 			raise ev1;  		
         } 	
@@ -51,7 +51,7 @@ machine Real2 {
 		//assert(payload == false);  //fails
     }
 }
-monitor M {
+spec M monitors E1 {
 	start state x {
 		entry {
 			assert (payload == true);   //Zinger: fails, since payload is "new M()" parameter in entry

@@ -11,8 +11,8 @@ OUT: nonconstanteventexpr.p (14, 4): inferred type:  NIL
 OUT: nonconstanteventexpr.p (14, 10): inferred type:  BaseType(REAL)
 OUT: nonconstanteventexpr.p (14, 20): inferred type:  BaseType(REAL)
 OUT: nonconstanteventexpr.p (15, 4): inferred type:  NIL
-OUT: nonconstanteventexpr.p (15, 15): inferred type:  BaseType(EVENT)
-OUT: nonconstanteventexpr.p (15, 20): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexpr.p (15, 12): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexpr.p (15, 17): inferred type:  BaseType(BOOL)
 OUT: nonconstanteventexpr.p (16, 4): inferred type:  BaseType(EVENT)
 OUT: nonconstanteventexpr.p (16, 4): inferred type:  NIL
 OUT: nonconstanteventexpr.p (16, 10): inferred type:  BaseType(EVENT)

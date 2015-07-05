@@ -9,8 +9,8 @@ OUT: Compiling NewMonitor_v.zing to NewMonitor_v.dll ...
 OUT: newmonitor_v.p (10, 4): inferred type:  NIL
 OUT: newmonitor_v.p (10, 10): inferred type:  BaseType(BOOL)
 OUT: newmonitor_v.p (11, 4): inferred type:  NIL
-OUT: newmonitor_v.p (11, 15): inferred type:  BaseType(EVENT)
-OUT: newmonitor_v.p (11, 20): inferred type:  BaseType(BOOL)
+OUT: newmonitor_v.p (11, 12): inferred type:  BaseType(EVENT)
+OUT: newmonitor_v.p (11, 17): inferred type:  BaseType(BOOL)
 OUT: newmonitor_v.p (19, 4): inferred type:  NIL
 OUT: newmonitor_v.p (19, 12): inferred type:  BaseType(ANY)
 OUT: newmonitor_v.p (19, 20): inferred type:  BaseType(BOOL)

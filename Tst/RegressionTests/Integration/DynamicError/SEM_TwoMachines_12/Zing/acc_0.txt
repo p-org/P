@@ -18,7 +18,7 @@ Trace-Log 0:
 <CreateLog> Created Machine Real2-0
 <CreateLog> Created Machine M-0
 <StateLog> Machine M-0 entering State x
-<MonitorLog> Enqueued Event < ____E2, false > to 1 M monitors in Machine Real1-0
+<MonitorLog> Enqueued Event < ____E2, false > to 1 M monitors
 
 Error:
 P Assertion failed:

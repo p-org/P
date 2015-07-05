@@ -22,17 +22,17 @@ int main(int argc, char *argv[])
 	//first: createMain (true if 1 and false if 0)
 	//second: processId id
 	//third: nodeid (0 is localhost)
-	PrtAssert(argc == 4, "Number of Parameters passed to Container is Incorrect");
-	int createMain = atoi(argv[1]);
+	PrtAssert(argc == 5, "Number of Parameters passed to Container is Incorrect");
+	int createMain = atoi(argv[2]);
 	PrtAssert(createMain == 0 || createMain == 1, "CreateMain should be either 0 or 1");
-	int processId = atoi(argv[2]);
+	int processId = atoi(argv[3]);
 	PrtAssert(processId >= 0, "Process Id should be positive");
-	int nodeId = atoi(argv[3]);
+	int nodeId = atoi(argv[4]);
 	
 	PRT_DBG_START_MEM_BALANCED_REGION
 	{
 		//Initialize the cluster configuration.
-		PrtDistClusterConfigInitialize();
+		PrtDistClusterConfigInitialize(argv[1]);
 		SetCurrentDirectory(ClusterConfiguration.LocalFolder);
 		PRT_GUID processGuid;
 		processGuid.data1 = processId;

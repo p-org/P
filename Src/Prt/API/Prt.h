@@ -102,6 +102,22 @@ PRT_API PRT_PROCESS * PRT_CALL_CONV PrtStartProcess(
 */
 PRT_API void PRT_CALL_CONV PrtStopProcess(_Inout_ PRT_PROCESS* process);
 
+/** Creates a new machine instance in remote container process. Will be freed when container process is stopped.
+* @param[in,out] process    The process that will own this machine.
+* @param[in]     instanceOf An index of a machine type in process' program.
+* @param[in]     payload The payload to pass to the start state of machine instance (cloned, user frees).
+* @param[in]	 pointer to the container machine where the state-machine should be created
+* @returns       A pointer to a PRT_MACHINEINST.
+* @see PrtSend
+* @see PRT_MACHINEINST
+*/
+PRT_MACHINEINST * PRT_CALL_CONV PrtMkMachineRemote(
+	_Inout_ PRT_PROCESS *process,
+	_In_ PRT_UINT32 instanceOf,
+	_In_ PRT_VALUE *payload,
+	_In_ PRT_VALUE* container);
+
+
 /** Creates a new machine instance in process. Will be freed when process is stopped.
 * @param[in,out] process    The process that will own this machine.
 * @param[in]     instanceOf An index of a machine type in process' program.

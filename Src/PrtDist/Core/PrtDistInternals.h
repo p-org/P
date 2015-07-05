@@ -40,3 +40,9 @@ __in PRT_VALUE* value
 boolean PrtDistGetNextNodeId(int *nextNodeId);
 
 boolean PrtDistCreateContainer(int nodeId, int* newContainerId);
+
+
+handle_t
+PrtDistCreateRPCClient(
+PRT_VALUE* target
+);

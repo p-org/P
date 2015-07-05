@@ -9,8 +9,15 @@ static model fun _SENDRELIABLE(target:machine, e:event, p:any) {
 	send target, e, p;
 }
 
-static model fun _CREATECONTAINER() : machine {
-	return default(machine);
+static model fun _CREATECONTAINER(retVal : machine) : machine {
+	retVal = new Container();
+	return retVal;
+}
+
+machine Container {
+	start state Init {
+		
+	}
 }
 
 

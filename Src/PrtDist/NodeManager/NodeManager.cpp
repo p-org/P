@@ -108,7 +108,7 @@ void s_PrtDistNMCreateContainer(handle_t mHandle, int* containerId, boolean *sta
 	string exeName = ClusterConfiguration.MainExe;
 	*containerId = PrtDistNodeManagerNextContainerId();
 	char commandLine[1000];
-	sprintf_s(commandLine, 1000, "%s %d %d %d", exeName.c_str(), 0, *containerId, myNodeId);
+	sprintf_s(commandLine, 1000, "%s %s %d %d %d", exeName.c_str(),ClusterConfiguration.configFileName,  0, *containerId, myNodeId);
 	//create the node manager process
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
@@ -145,7 +145,7 @@ void PrtDistNMCreateMain()
 	string exeName = ClusterConfiguration.MainExe;
 	int containerId = PrtDistNodeManagerNextContainerId();
 	char commandLine[1000];
-	sprintf_s(commandLine, 1000, "%s %d %d %d", exeName.c_str(), 1, containerId, myNodeId);
+	sprintf_s(commandLine, 1000, "%s %s %d %d %d", exeName.c_str(), ClusterConfiguration.configFileName, 1, containerId, myNodeId);
 	//create the node manager process
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
@@ -228,51 +228,49 @@ void _CONCAT(char* dest, char* string1, char* string2)
 ///
 int main(int argc, char* argv[])
 {
-	PrtDistClusterConfigInitialize();
+	if (argc != 4)
+	{
+		PrtDistNodeManagerLog("ERROR : Wrong number of commandline arguments passed\n");
+		exit(-1);
+	}
+
+	PrtDistClusterConfigInitialize(argv[1]);
 	//set the local directory
 	SetCurrentDirectory(ClusterConfiguration.LocalFolder);
 
 	PrtDistNodeManagerCreateLogFile();
 	int createMain = 0;
 	
-	
-	if (argc != 3)
+	myNodeId = atoi(argv[2]);
+	createMain = atoi(argv[3]);
+	if (myNodeId >= ClusterConfiguration.TotalNodes)
 	{
-		PrtDistNodeManagerLog("ERROR : Wrong number of commandline arguments passed\n");
-		exit(-1);
+		PrtDistNodeManagerLog("ERROR : Wrong nodeId passed as commandline argument\n");
+		exit(1);
+	}
+		
+	char log[1000];
+	sprintf_s(log, 1000, "Started NodeManager at : %d", myNodeId);
+	PrtDistNodeManagerLog(log);
+
+	HANDLE listener = NULL;
+	listener = CreateThread(NULL, 0, PrtDistNodeManagerCreateRPCServerAndWait, NULL, 0, NULL);
+	if (listener == NULL)
+	{
+		PrtDistNodeManagerLog("Error Creating RPC server in PrtDistStartNodeManagerMachine");
 	}
 	else
 	{
-		myNodeId = atoi(argv[1]);
-		createMain = atoi(argv[2]);
-		if (myNodeId >= ClusterConfiguration.TotalNodes)
-		{
-			PrtDistNodeManagerLog("ERROR : Wrong nodeId passed as commandline argument\n");
-			exit(1);
-		}
-		
-		char log[1000];
-		sprintf_s(log, 1000, "Started NodeManager at : %d", myNodeId);
-		PrtDistNodeManagerLog(log);
-
-		HANDLE listener = NULL;
-		listener = CreateThread(NULL, 0, PrtDistNodeManagerCreateRPCServerAndWait, NULL, 0, NULL);
-		if (listener == NULL)
-		{
-			PrtDistNodeManagerLog("Error Creating RPC server in PrtDistStartNodeManagerMachine");
-		}
-		else
-		{
-			DWORD status;
-			GetExitCodeThread(listener, &status);
-			if (status != STILL_ACTIVE)
-				PrtDistNodeManagerLog("ERROR : Thread terminated");
-		}
-		if (createMain)
-			PrtDistNMCreateMain();
-
-		//after performing all operations block and wait
-		WaitForSingleObject(listener, INFINITE);
-
+		DWORD status;
+		GetExitCodeThread(listener, &status);
+		if (status != STILL_ACTIVE)
+			PrtDistNodeManagerLog("ERROR : Thread terminated");
 	}
+	if (createMain)
+		PrtDistNMCreateMain();
+
+	//after performing all operations block and wait
+	WaitForSingleObject(listener, INFINITE);
+
+	
 }

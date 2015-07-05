@@ -52,6 +52,7 @@ namespace PrtDistDeployer
         public static string psToolsPath;
         public static string pBinPath;
         public static string clientBinPath;
+        public static string configFileName;
         public static Dictionary<int, string> AllNodes = new Dictionary<int, string>();
 
         public static void Initialize()
@@ -61,6 +62,8 @@ namespace PrtDistDeployer
             XmlNodeList nodes;
             config.Load(CommandLineOptions.pathToClusterConfig);
 
+            configFileName = Path.GetFileName(CommandLineOptions.pathToClusterConfig);
+            Console.WriteLine("Loaded the config file : {0}", configFileName);
             try
             {
                 psToolsPath = config.GetElementsByTagName("PSTools")[0].InnerText;
@@ -315,11 +318,11 @@ namespace PrtDistDeployer
                     string start_nodemanager;
                     if(CommandLineOptions.debugLocally)
                     {
-                        start_nodemanager = String.Format(@" -d {0}\NodeManager.exe {1} 0", node.Value, ClusterConfiguration.LocalFolder, node.Key);
+                        start_nodemanager = String.Format(@" -d {0}\NodeManager.exe {2} {1} 0", node.Value, ClusterConfiguration.LocalFolder, node.Key, ClusterConfiguration.configFileName);
                     }
                     else
                     {
-                        start_nodemanager = String.Format(@" -d -u {0} -p {1} \\{2} {3}\NodeManager.exe {4} 0", ClusterConfiguration.username, ClusterConfiguration.password, node.Value, ClusterConfiguration.LocalFolder, node.Key);
+                        start_nodemanager = String.Format(@" -d -u {0} -p {1} \\{2} {3}\NodeManager.exe {5} {4} 0", ClusterConfiguration.username, ClusterConfiguration.password, node.Value, ClusterConfiguration.LocalFolder, node.Key, ClusterConfiguration.configFileName);
                     }
                     
                     string psExec = ClusterConfiguration.psToolsPath + "\\psexec.exe";
@@ -348,11 +351,11 @@ namespace PrtDistDeployer
             string start_main;
             if(CommandLineOptions.debugLocally)
             {
-                start_main = String.Format(@" -d {0}\NodeManager.exe {1} 1", ClusterConfiguration.LocalFolder, ClusterConfiguration.AllNodes.Where(n => n.Value == ClusterConfiguration.MainMachineNode).First().Key);
+                start_main = String.Format(@" -d {0}\NodeManager.exe {2} {1} 1", ClusterConfiguration.LocalFolder, ClusterConfiguration.AllNodes.Where(n => n.Value == ClusterConfiguration.MainMachineNode).First().Key, ClusterConfiguration.configFileName);
             }
             else
             {
-                start_main = String.Format(@" -d -u {0} -p {1} \\{2} {3}\NodeManager.exe {4} 1", ClusterConfiguration.username, ClusterConfiguration.password, ClusterConfiguration.MainMachineNode,ClusterConfiguration.LocalFolder, ClusterConfiguration.AllNodes.Where(n => n.Value == ClusterConfiguration.MainMachineNode).First().Key);
+                start_main = String.Format(@" -d -u {0} -p {1} \\{2} {3}\NodeManager.exe {5} {4} 1", ClusterConfiguration.username, ClusterConfiguration.password, ClusterConfiguration.MainMachineNode,ClusterConfiguration.LocalFolder, ClusterConfiguration.AllNodes.Where(n => n.Value == ClusterConfiguration.MainMachineNode).First().Key, ClusterConfiguration.configFileName);
             }
             
             {

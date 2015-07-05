@@ -20,12 +20,13 @@ struct ClusterConfig {
 	char* MainMachineNode;
 	int TotalNodes;
 	char** ClusterMachines;
+	char* configFileName;
 };
 
 extern struct ClusterConfig ClusterConfiguration;
 
 //Helper functions used for parsing information from the XML.
-void PrtDistClusterConfigInitialize();
+void PrtDistClusterConfigInitialize(char* configurationFile);
 
 #ifdef __cplusplus
 }

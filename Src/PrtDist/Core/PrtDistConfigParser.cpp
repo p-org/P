@@ -16,16 +16,17 @@ XMLNODE** XMLDOMParseNodes(const char*);
 
 
 
-void PrtDistClusterConfigInitialize()
+void PrtDistClusterConfigInitialize(char* configurationFile)
 {
 	int i = 0;
 	int j = 0;
 	XMLNODE** listofNodes;
 	XMLNODE* currNode;
-	char* configurationFile = "ClusterConfiguration.xml";
 	ClusterConfiguration.ClusterMachines = (char**)malloc((ClusterConfiguration.TotalNodes)*sizeof(char*));
 	listofNodes = XMLDOMParseNodes(configurationFile);
 	currNode = listofNodes[0];
+
+	ClusterConfiguration.configFileName = configurationFile;
 	while (currNode != NULL)
 	{
 		if (strcmp(currNode->NodeName, "MainExe") == 0)

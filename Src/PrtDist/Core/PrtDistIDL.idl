@@ -19,6 +19,13 @@ interface PrtDist {
 		[in, ptr] PRT_VALUE* payload
 	);
 
+	void PrtDistMkMachine(
+		[in] handle_t handleSM,
+		[in] PRT_INT32 instanceOf,
+		[in, ptr] PRT_VALUE* params,
+		[in, out] PRT_VALUE** retVal
+	);
+
 	
 }
 

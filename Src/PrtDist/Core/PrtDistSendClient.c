@@ -15,7 +15,6 @@ PRT_BOOLEAN PrtDistSend(
 {
 	handle_t handle;
 	handle = PrtDistCreateRPCClient(target);
-	PRT_VALUE* temp = PrtMkNullValue();
 	PRT_VALUE* serial_target, *serial_event, *serial_payload;
 	serial_target = PrtDistSerializeValue(target);
 	serial_event = PrtDistSerializeValue(event);

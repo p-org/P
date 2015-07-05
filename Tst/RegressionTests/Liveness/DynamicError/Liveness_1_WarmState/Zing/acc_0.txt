@@ -17,14 +17,14 @@ Trace-Log 0:
 <StateLog> Machine EventHandler-0 entering State WaitForUser
 <CreateLog> Created Machine WatchDog-0
 <StateLog> Machine WatchDog-0 entering State CanGetUserInput
-<MonitorLog> Enqueued Event < ____Waiting > to 1 WatchDog monitors in Machine EventHandler-0
+<MonitorLog> Enqueued Event < ____Waiting, null > to 1 WatchDog monitors
 <StateLog> Machine WatchDog-0 exiting State CanGetUserInput
 <StateLog> Machine WatchDog-0 entering State CanGetUserInput
 <EnqueueLog> Enqueued Event < ____UserEvent, null > in Machine ____EventHandler-0 by ____EventHandler-0
 <DequeueLog> Dequeued Event < ____UserEvent, null > at Machine ____EventHandler-0
 <StateLog> Machine EventHandler-0 exiting State WaitForUser
 <StateLog> Machine EventHandler-0 entering State HandleEvent
-<MonitorLog> Enqueued Event < ____Computing > to 1 WatchDog monitors in Machine EventHandler-0
+<MonitorLog> Enqueued Event < ____Computing, null > to 1 WatchDog monitors
 <StateLog> Machine WatchDog-0 exiting State CanGetUserInput
 <StateLog> Machine WatchDog-0 entering State CannotGetUserInput
 <EnqueueLog> Enqueued Event < ____Done, null > in Machine ____EventHandler-0 by ____EventHandler-0
@@ -32,14 +32,14 @@ Accepting transition
 <DequeueLog> Dequeued Event < ____Done, null > at Machine ____EventHandler-0
 <StateLog> Machine EventHandler-0 exiting State HandleEvent
 <StateLog> Machine EventHandler-0 entering State WaitForUser
-<MonitorLog> Enqueued Event < ____Waiting > to 1 WatchDog monitors in Machine EventHandler-0
+<MonitorLog> Enqueued Event < ____Waiting, null > to 1 WatchDog monitors
 <StateLog> Machine WatchDog-0 exiting State CannotGetUserInput
 <StateLog> Machine WatchDog-0 entering State CanGetUserInput
 <EnqueueLog> Enqueued Event < ____UserEvent, null > in Machine ____EventHandler-0 by ____EventHandler-0
 <DequeueLog> Dequeued Event < ____UserEvent, null > at Machine ____EventHandler-0
 <StateLog> Machine EventHandler-0 exiting State WaitForUser
 <StateLog> Machine EventHandler-0 entering State HandleEvent
-<MonitorLog> Enqueued Event < ____Computing > to 1 WatchDog monitors in Machine EventHandler-0
+<MonitorLog> Enqueued Event < ____Computing, null > to 1 WatchDog monitors
 <StateLog> Machine WatchDog-0 exiting State CanGetUserInput
 <StateLog> Machine WatchDog-0 entering State CannotGetUserInput
 <EnqueueLog> Enqueued Event < ____Done, null > in Machine ____EventHandler-0 by ____EventHandler-0

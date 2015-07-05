@@ -20,7 +20,7 @@ OUT: raisednulldetected.p (16, 28): inferred type:  BaseType(BOOL)
 OUT: raisednulldetected.p (17, 4): inferred type:  NIL
 OUT: raisednulldetected.p (17, 10): inferred type:  BaseType(EVENT)
 OUT: raisednulldetected.p (18, 4): inferred type:  NIL
-OUT: raisednulldetected.p (18, 15): inferred type:  BaseType(EVENT)
+OUT: raisednulldetected.p (18, 12): inferred type:  BaseType(EVENT)
 OUT: raisednulldetected.p (24, 14): inferred type:  NIL
 OUT: raisednulldetected.p (27, 3): inferred type:  BaseType(BOOL)
 OUT: raisednulldetected.p (27, 3): inferred type:  NIL

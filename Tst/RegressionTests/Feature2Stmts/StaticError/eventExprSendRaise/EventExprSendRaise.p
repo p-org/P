@@ -12,9 +12,9 @@ main machine Real1 {
         entry { 
             send this, ev2;	 
 			raise ev1;   
-			monitor M, ev1;
-			monitor M, E1; 
-			monitor M, ev3;	  // static error		
+			monitor ev1;
+			monitor E1; 
+			monitor ev3;	  // static error		
         } 
 		on ev1 do Action1;  // static error
         on E1 do Action1;   
@@ -29,7 +29,7 @@ main machine Real1 {
 		assert(test == false);  //unreachable
     }
 }
-M monitors null {
+spec M monitors E1 {
 	start state x {
 	}
 }

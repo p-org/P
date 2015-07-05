@@ -10,11 +10,11 @@ main machine Real1 {
         entry { 
 			new M();
 			ev2 = E2;
-			monitor M, ev2, test;  
+			monitor ev2, test;  
 		}
 	}
 }
-monitor M {
+spec M monitors E2 {
 	start state x {
 		entry {
 		}

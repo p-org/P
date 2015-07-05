@@ -8,8 +8,8 @@ OUT: Writing NewMonitor.zing ...
 OUT: Compiling NewMonitor.zing to NewMonitor.dll ...
 OUT: newmonitor.p (10, 4): inferred type:  NIL
 OUT: newmonitor.p (13, 4): inferred type:  NIL
-OUT: newmonitor.p (13, 15): inferred type:  BaseType(EVENT)
-OUT: newmonitor.p (13, 20): inferred type:  BaseType(BOOL)
+OUT: newmonitor.p (13, 12): inferred type:  BaseType(EVENT)
+OUT: newmonitor.p (13, 17): inferred type:  BaseType(BOOL)
 OUT: newmonitor.p (21, 4): inferred type:  NIL
 OUT: newmonitor.p (21, 12): inferred type:  BaseType(ANY)
 OUT: newmonitor.p (21, 20): inferred type:  BaseType(BOOL)

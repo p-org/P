@@ -114,8 +114,8 @@ OUT: spinlocksameasrule.p (121, 5): inferred type:  BaseType(EVENT)
 OUT: spinlocksameasrule.p (121, 5): inferred type:  NIL
 OUT: spinlocksameasrule.p (121, 10): inferred type:  BaseType(EVENT)
 OUT: spinlocksameasrule.p (122, 5): inferred type:  NIL
-OUT: spinlocksameasrule.p (122, 23): inferred type:  BaseType(EVENT)
-OUT: spinlocksameasrule.p (122, 27): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (122, 13): inferred type:  BaseType(EVENT)
+OUT: spinlocksameasrule.p (122, 17): inferred type:  BaseType(INT)
 OUT: spinlocksameasrule.p (128, 3): inferred type:  NIL
 OUT: spinlocksameasrule.p (128, 7): inferred type:  BaseType(BOOL)
 OUT: spinlocksameasrule.p (128, 12): inferred type:  NIL

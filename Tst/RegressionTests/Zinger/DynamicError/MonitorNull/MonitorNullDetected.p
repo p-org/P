@@ -11,7 +11,7 @@ main machine Real1 {
 	var ev3: int;
     start state Real1_Init {
         entry { 
-			monitor M, ev1; //Zing: null event expr in monitor invocation			
+			monitor ev1; //Zing: null event expr in monitor invocation			
         } 	
         exit {   }
 	}
@@ -20,7 +20,7 @@ main machine Real1 {
     }
 	
 }
-monitor M {
+spec M monitors E1 {
 	start state x {
 	}
 }

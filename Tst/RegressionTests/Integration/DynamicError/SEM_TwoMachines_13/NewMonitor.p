@@ -10,11 +10,11 @@ main machine Real1 {
 			new M();
 			//ev2 is null, but action below is not reachable -
 			//hence, no error from Zinger
-			monitor M, ev2, test;  
+			monitor ev2, test;  
 		}
 	}
 }
-monitor M {
+spec M monitors E2 {
 	start state x {
 		entry {
 			// executed upon "new":

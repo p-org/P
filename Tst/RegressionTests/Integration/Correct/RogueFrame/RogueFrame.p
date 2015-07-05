@@ -430,7 +430,7 @@ machine PortMachine {
 			check = IsAnnounceReceiptTimeOut();
 			if(check)
 			{
-				monitor RogueFrame, mAnnounce, ParentGM.2;
+				monitor mAnnounce, ParentGM.2;
 				send ConnectedTo, Announce, ParentGM;
 			}
 		}
@@ -575,7 +575,7 @@ model scenariotester {
 	}
 }		
 		
-monitor RogueFrame {
+spec RogueFrame monitors mAnnounce {
 	start state init {
 		on mAnnounce goto recAnnouce;
 	}

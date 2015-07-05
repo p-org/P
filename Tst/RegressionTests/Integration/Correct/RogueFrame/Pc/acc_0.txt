@@ -681,9 +681,9 @@ OUT: rogueframe.p (430, 12): inferred type:  BaseType(BOOL)
 OUT: rogueframe.p (431, 4): inferred type:  NIL
 OUT: rogueframe.p (431, 7): inferred type:  BaseType(BOOL)
 OUT: rogueframe.p (433, 5): inferred type:  NIL
-OUT: rogueframe.p (433, 25): inferred type:  BaseType(EVENT)
-OUT: rogueframe.p (433, 36): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
-OUT: rogueframe.p (433, 45): inferred type:  BaseType(INT)
+OUT: rogueframe.p (433, 13): inferred type:  BaseType(EVENT)
+OUT: rogueframe.p (433, 24): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
+OUT: rogueframe.p (433, 33): inferred type:  BaseType(INT)
 OUT: rogueframe.p (434, 5): inferred type:  NIL
 OUT: rogueframe.p (434, 10): inferred type:  BaseType(REAL)
 OUT: rogueframe.p (434, 23): inferred type:  BaseType(EVENT)

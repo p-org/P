@@ -8,12 +8,12 @@ OUT: Writing Liveness_FAIRNONDET.zing ...
 OUT: Compiling Liveness_FAIRNONDET.zing to Liveness_FAIRNONDET.dll ...
 OUT: liveness_fairnondet.p (16, 5): inferred type:  NIL
 OUT: liveness_fairnondet.p (17, 5): inferred type:  NIL
-OUT: liveness_fairnondet.p (17, 23): inferred type:  BaseType(EVENT)
+OUT: liveness_fairnondet.p (17, 13): inferred type:  BaseType(EVENT)
 OUT: liveness_fairnondet.p (18, 5): inferred type:  NIL
 OUT: liveness_fairnondet.p (18, 10): inferred type:  BaseType(REAL)
 OUT: liveness_fairnondet.p (18, 16): inferred type:  BaseType(EVENT)
 OUT: liveness_fairnondet.p (26, 5): inferred type:  NIL
-OUT: liveness_fairnondet.p (26, 23): inferred type:  BaseType(EVENT)
+OUT: liveness_fairnondet.p (26, 13): inferred type:  BaseType(EVENT)
 OUT: liveness_fairnondet.p (27, 5): inferred type:  NIL
 OUT: liveness_fairnondet.p (27, 9): inferred type:  BaseType(BOOL)
 OUT: liveness_fairnondet.p (28, 6): inferred type:  NIL

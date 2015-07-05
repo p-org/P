@@ -12,7 +12,7 @@ main machine EventHandler
             entry {
 				new WatchDog();
 				new Loop();
-				monitor WatchDog, Waiting;
+				monitor Waiting;
 				send this, UserEvent;
 				}
             on UserEvent goto HandleEvent;
@@ -21,7 +21,7 @@ main machine EventHandler
        state HandleEvent
        {
             entry { 
-				monitor WatchDog, Computing;
+				monitor Computing;
 				//send this, Done;
 				}			
             on Done goto HandleEvent;  //if Loop machine keeps processing Done,
@@ -39,7 +39,7 @@ machine Loop
 	}
 }
 
-monitor WatchDog
+spec WatchDog monitors Computing, Waiting
 {
       start cold state CanGetUserInput
       {

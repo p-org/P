@@ -15,7 +15,7 @@ main machine Real1 {
 			//ev2 = E2;
             send mac, ev2, test;	 
 			raise ev1;   
-			monitor M, ev1; 
+			monitor ev1; 
 				
         } 	
         on E1 do Action1;   
@@ -46,7 +46,8 @@ machine Real2 {
 		assert(payload == false);  //should fail
     }
 }
-monitor M {
+
+spec M monitors E1 {
 	start state x {
 	}
 }

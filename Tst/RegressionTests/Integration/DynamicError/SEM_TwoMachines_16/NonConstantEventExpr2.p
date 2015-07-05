@@ -13,7 +13,7 @@ main machine Real1 {
         entry { 
 			mac = new Real2(this);
 			ev2 = E2;
-			monitor M, ev2, true;  
+			monitor ev2, true;  
 			ev1 = E1;			
 			raise ev1, 100;  		
         } 	
@@ -50,7 +50,7 @@ machine Real2 {
 		assert(payload == false);  //unreachable
     }
 }
-monitor M {
+spec M monitors E2 {
 	start state x {
 		entry {
 			assert (payload == true); //unreachable

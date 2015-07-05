@@ -110,7 +110,7 @@ OUT: spinlockwithtypestate.p (96, 20): inferred type:  BaseType(INT)
 OUT: spinlockwithtypestate.p (118, 4): inferred type:  NIL
 OUT: spinlockwithtypestate.p (118, 17): inferred type:  BaseType(INT)
 OUT: spinlockwithtypestate.p (119, 4): inferred type:  NIL
-OUT: spinlockwithtypestate.p (119, 22): inferred type:  BaseType(EVENT)
+OUT: spinlockwithtypestate.p (119, 12): inferred type:  BaseType(EVENT)
 OUT: spinlockwithtypestate.p (120, 4): inferred type:  NIL
 OUT: spinlockwithtypestate.p (120, 11): inferred type:  BaseType(BOOL)
 OUT: spinlockwithtypestate.p (121, 5): inferred type:  BaseType(INT)
@@ -120,8 +120,8 @@ OUT: spinlockwithtypestate.p (122, 5): inferred type:  BaseType(EVENT)
 OUT: spinlockwithtypestate.p (122, 5): inferred type:  NIL
 OUT: spinlockwithtypestate.p (122, 10): inferred type:  BaseType(EVENT)
 OUT: spinlockwithtypestate.p (123, 5): inferred type:  NIL
-OUT: spinlockwithtypestate.p (123, 23): inferred type:  BaseType(EVENT)
-OUT: spinlockwithtypestate.p (123, 27): inferred type:  BaseType(INT)
+OUT: spinlockwithtypestate.p (123, 13): inferred type:  BaseType(EVENT)
+OUT: spinlockwithtypestate.p (123, 17): inferred type:  BaseType(INT)
 OUT: spinlockwithtypestate.p (128, 3): inferred type:  NIL
 OUT: spinlockwithtypestate.p (128, 7): inferred type:  BaseType(BOOL)
 OUT: spinlockwithtypestate.p (128, 12): inferred type:  NIL

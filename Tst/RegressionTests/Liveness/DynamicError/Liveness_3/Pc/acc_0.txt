@@ -9,12 +9,12 @@ OUT: Compiling Liveness_3.zing to Liveness_3.dll ...
 OUT: liveness_3.p (13, 5): inferred type:  NIL
 OUT: liveness_3.p (14, 5): inferred type:  NIL
 OUT: liveness_3.p (15, 5): inferred type:  NIL
-OUT: liveness_3.p (15, 23): inferred type:  BaseType(EVENT)
+OUT: liveness_3.p (15, 13): inferred type:  BaseType(EVENT)
 OUT: liveness_3.p (16, 5): inferred type:  NIL
 OUT: liveness_3.p (16, 10): inferred type:  BaseType(REAL)
 OUT: liveness_3.p (16, 16): inferred type:  BaseType(EVENT)
 OUT: liveness_3.p (24, 5): inferred type:  NIL
-OUT: liveness_3.p (24, 23): inferred type:  BaseType(EVENT)
+OUT: liveness_3.p (24, 13): inferred type:  BaseType(EVENT)
 OUT: liveness_3.p (27, 13): inferred type:  NIL
 OUT: liveness_3.p (36, 4): inferred type:  NIL
 OUT: liveness_3.p (36, 9): inferred type:  BaseType(REAL)

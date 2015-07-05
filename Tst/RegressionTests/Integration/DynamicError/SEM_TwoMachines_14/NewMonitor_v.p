@@ -8,11 +8,11 @@ main machine Real1 {
     start state Real1_Init {
         entry { 
 			new M(true);
-			monitor M, ev2, test;  //"null event" error in Zing
+			monitor ev2, test;  //"null event" error in Zing
 		}
 	}
 }
-monitor M {
+spec M monitors E2 {
 	start state x {
 		entry {
 			// executed upon "new":

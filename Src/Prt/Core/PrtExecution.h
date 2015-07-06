@@ -195,12 +195,6 @@ _In_ PRT_MACHINEINST_PRIV			*context,
 _In_ PRT_UINT32						transIndex
 );
 
-void
-PrtRunStateMachine(
-_Inout_ PRT_MACHINEINST_PRIV	    *context,
-_In_ PRT_BOOLEAN				doDequeue
-);
-
 PRT_UINT32
 PrtFindTransition(
 _In_ PRT_MACHINEINST_PRIV		*context,
@@ -388,6 +382,36 @@ PrtCheckIsLocalMachineId(
 _In_ PRT_MACHINEINST *context,
 _In_ PRT_VALUE *id
 );
+
+
+PRT_API void
+PrtRunStateMachine(
+_Inout_ PRT_MACHINEINST_PRIV	    *context,
+_In_ PRT_BOOLEAN				doDequeue
+);
+
+
+#ifdef PRT_USE_IDL
+
+VOID CALLBACK PrtRunStateMachineWorkItem(
+_Inout_     PTP_CALLBACK_INSTANCE Instance,
+_Inout_opt_ PVOID                 Context,
+_Inout_     PTP_WORK              Work
+);
+
+/** Enqueues message in P state machine.
+* @param[in,out] machine The machine that will receive this message.
+* @param[in] event The event to send with this message (cloned, user frees).
+* @param[in] payload The payload to send with this message (cloned, user frees).
+*/
+PRT_API void PRT_CALL_CONV PrtEnqueueWithThreadPool(
+	_Inout_ PRT_MACHINEINST_PRIV *machine,
+	_In_ PRT_VALUE *evt,
+	_In_ PRT_VALUE *payload);
+
+extern PTP_POOL PrtRunStateMachineThreadPool;
+
+#endif
 
 #ifdef __cplusplus
 }

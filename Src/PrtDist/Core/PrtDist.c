@@ -23,7 +23,7 @@ PRT_MACHINEINST * PRT_CALL_CONV PrtMkMachineRemote(
 		c_PrtDistMkMachine(handle, instanceOf, serial_params, &retVal);
 		//c_PrtDistSendEx(handle, serial_target, serial_event, serial_payload);
 	}
-		RpcExcept(1)
+	RpcExcept(1)
 	{
 		unsigned long ulCode;
 		ulCode = RpcExceptionCode();
@@ -71,9 +71,7 @@ void s_PrtDistSendEx(
 
 	PRT_MACHINEINST* context = PrtGetMachine(ContainerProcess, deserial_target);
 	
-	PrtSend(context, deserial_event, deserial_payload);
-
-
+	PrtEnqueueWithThreadPool((PRT_MACHINEINST_PRIV*)context, deserial_event, deserial_payload);
 }
 
 /***********************************************************************************************************
@@ -154,7 +152,7 @@ DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(LPVOID portNumber)
 		NULL, // Use the MIDL generated entry-point vector.
 		NULL, // Use the MIDL generated entry-point vector.
 		RPC_IF_ALLOW_CALLBACKS_WITH_NO_AUTH, // Forces use of security callback.
-		RPC_C_LISTEN_MAX_CALLS_DEFAULT, // Use default number of concurrent calls.
+		RPC_C_LISTEN_MAX_CALLS_DEFAULT, // sequential RPC 
 		(unsigned)-1, // Infinite max size of incoming data blocks.
 		NULL); // Naive security callback.
 

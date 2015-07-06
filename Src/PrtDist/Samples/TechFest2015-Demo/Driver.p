@@ -1,6 +1,20 @@
 include "FailureDetector.p"
 include "PrtDistHelp.p"
 
+static fun _CREATEMACHINE(cner: machine, typeOfMachine: int, param : any, newMachine: machine) : machine
+[container = cner]
+{
+	if(typeOfMachine == 1)
+	{
+		newMachine = new Node();
+	}
+	else
+	{
+		assert(false);
+	}
+	return newMachine;
+}
+
 main machine Driver {
     var fd: machine;
 	var nodeseq: seq[machine];
@@ -14,9 +28,7 @@ main machine Driver {
 			i = 0;
 			while (i < 2) {
 				container = _CREATECONTAINER(null);
-				createMachine_param = (container = container, machineType = 1, param = null);
-				push CreateMachine;
-				n = createMachine_return;
+				n = _CREATEMACHINE(container, 1, null, null);
 				nodeseq += (i, n);
 				nodemap += (n, true);
 				i = i + 1;
@@ -26,34 +38,17 @@ main machine Driver {
 			send fd, REGISTER_CLIENT, this;
 			i = 0;
 			while (i < 2) {
-				_SENDRELIABLE(nodeseq[i], halt, null);
+				_SEND(nodeseq[i], halt, null);
 				i = i + 1;
 			}
 		}
-		on NODE_DOWN do {
-			monitor Liveness, NODE_DOWN, payload;
-		};
-	}
-
-	var createMachine_param: (container: machine, machineType:int, param:any);
-	var createMachine_return:machine;
-	state CreateMachine {
-		entry {
-			_SENDRELIABLE(createMachine_param.container, Req_CreateMachine, 
-			              (creator = this, machineType = createMachine_param.machineType, param = createMachine_param.param));
-		}
-        on Resp_CreateMachine do PopState;
-	}
-
-	fun PopState() {
-		createMachine_return = payload;
-		pop;
+		ignore NODE_DOWN;
 	}
 }
 
 event M_PING: machine;
 event M_PONG: machine;
-monitor Safety {
+spec Safety monitors M_PING, M_PONG {
 	var pending: map[machine, int];
     start state Init {
 	    on M_PING do { 
@@ -70,7 +65,7 @@ monitor Safety {
 	}
 }
 
-monitor Liveness {
+spec Liveness monitors NODE_DOWN {
 	var nodes: map[machine, bool];
 	start hot state Init {
 		entry {

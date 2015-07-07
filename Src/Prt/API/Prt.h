@@ -68,6 +68,7 @@ typedef struct PRT_MACHINEINST
 	PRT_VALUE			*id;          /**< The id of this machine.                         */
 	void				*extContext;  /**< Pointer to an external context owned by client. */
 	PRT_BOOLEAN			isModel;	  /**< Indicates whether this is a model machine. */
+	PRT_VALUE*			recvMessMap; /**<  Stores a map from the sender to the sequence number of the last message received from that sender*/
 } PRT_MACHINEINST;
 
 /** An error function that will be called whenever an error arises. */

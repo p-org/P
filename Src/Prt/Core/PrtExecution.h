@@ -89,6 +89,7 @@ typedef struct PRT_MACHINEINST_PRIV {
 	PRT_VALUE			*id;  
 	void				*extContext;
 	PRT_BOOLEAN			isModel;
+	PRT_VALUE*			recvMessMap;	 /**<  Stores a map from the sender to the sequence number of the last message received from that sender*/
 	PRT_VALUE			**varValues;
 	PRT_EVENT			currentEvent;
 	PRT_RECURSIVE_MUTEX stateMachineLock;
@@ -391,27 +392,20 @@ _In_ PRT_BOOLEAN				doDequeue
 );
 
 
-#ifdef PRT_USE_IDL
-
 VOID CALLBACK PrtRunStateMachineWorkItem(
 _Inout_     PTP_CALLBACK_INSTANCE Instance,
 _Inout_opt_ PVOID                 Context,
 _Inout_     PTP_WORK              Work
 );
 
-/** Enqueues message in P state machine.
-* @param[in,out] machine The machine that will receive this message.
-* @param[in] event The event to send with this message (cloned, user frees).
-* @param[in] payload The payload to send with this message (cloned, user frees).
-*/
-PRT_API void PRT_CALL_CONV PrtEnqueueWithThreadPool(
+extern PTP_POOL PrtRunStateMachineThreadPool;
+
+PRT_API void PRT_CALL_CONV PrtEnqueueWithInorder(
+	_In_ PRT_VALUE* source,
+	_In_ PRT_INT64 seqNum,
 	_Inout_ PRT_MACHINEINST_PRIV *machine,
 	_In_ PRT_VALUE *evt,
 	_In_ PRT_VALUE *payload);
-
-extern PTP_POOL PrtRunStateMachineThreadPool;
-
-#endif
 
 #ifdef __cplusplus
 }

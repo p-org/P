@@ -10,7 +10,7 @@
 PRT_PROCESS* ContainerProcess;
 PTP_POOL PrtRunStateMachineThreadPool;
 struct ClusterConfig ClusterConfiguration;
-
+PRT_INT64 sendMessageSeqNumber = 0;
 
 /**
 * The main function performs the following steps

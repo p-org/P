@@ -8,6 +8,7 @@ PRT_VALUE* target
 
 // function to send the event
 PRT_BOOLEAN PrtDistSend(
+	PRT_VALUE* source,
 	PRT_VALUE* target,
 	PRT_VALUE* event,
 	PRT_VALUE* payload
@@ -15,11 +16,11 @@ PRT_BOOLEAN PrtDistSend(
 {
 	handle_t handle;
 	handle = PrtDistCreateRPCClient(target);
-	PRT_VALUE* serial_target, *serial_event, *serial_payload;
+	PRT_VALUE* serial_target, *serial_event, *serial_payload, *serial_source;
 	serial_target = PrtDistSerializeValue(target);
 	serial_event = PrtDistSerializeValue(event);
 	serial_payload = PrtDistSerializeValue(payload);
-
+	serial_source = PrtDistSerializeValue(source);
 	//initialize the asynchronous rpc
 	RPC_ASYNC_STATE Async;
 	RPC_STATUS status;
@@ -42,8 +43,8 @@ PRT_BOOLEAN PrtDistSend(
 
 	RpcTryExcept
 	{
-
-		c_PrtDistSendEx(&Async, handle, serial_target, serial_event, serial_payload);
+		PRT_INT64 seqNum = InterlockedIncrement64(&sendMessageSeqNumber);
+		c_PrtDistSendEx(&Async, handle, serial_source, seqNum, serial_target, serial_event, serial_payload);
 		//c_PrtDistSendEx(handle, serial_target, serial_event, serial_payload);
 	}
 		RpcExcept(1)

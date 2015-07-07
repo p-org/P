@@ -75,6 +75,11 @@ PrtMkMachinePrivate(
 	context->isModel = PRT_FALSE;
 
 	//
+	// Initialize the map used in PrtDist, map from sender to the last seqnumber received
+	//
+	PRT_TYPE* mapType = PrtMkMapType(PrtMkPrimitiveType(PRT_KIND_MACHINE), PrtMkPrimitiveType(PRT_KIND_INT));
+	context->recvMessMap = PrtMkDefaultValue(mapType);
+
 	// Initialize Machine Internal Variables
 	//
 	context->currentState = process->program->machines[context->instanceOf].initStateIndex;
@@ -256,8 +261,10 @@ PRT_API VOID CALLBACK PrtRunStateMachineWorkItem(
 }
 
 void
-PrtEnqueueWithThreadPool(
-_Inout_ PRT_MACHINEINST_PRIV		*context,
+PrtEnqueueWithInorder(
+_In_ PRT_VALUE* source,
+_In_ PRT_INT64 seqNum,
+_Inout_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_VALUE					*event,
 _In_ PRT_VALUE					*payload
 )
@@ -267,6 +274,21 @@ _In_ PRT_VALUE					*payload
 	PRT_UINT32 eventMaxInstances;
 	PRT_UINT32 maxQueueSize;
 	PRT_UINT32 eventIndex;
+
+	//Check if the enqueued event is in order
+	PrtLockMutex(context->stateMachineLock);
+	if (PrtMapExists(context->recvMessMap, source) && PrtMapGet(context->recvMessMap, source)->valueUnion.nt >= seqNum)
+	{
+		PrtUnlockMutex(context->stateMachineLock);
+		//drop the event
+		return;
+	}
+	else
+	{
+		PrtMapUpdate(context->recvMessMap, source, PrtMkIntValue(seqNum));
+	}
+	PrtUnlockMutex(context->stateMachineLock);
+
 
 	PrtAssert(!PrtIsSpecialEvent(event), "Enqueued event must not be null");
 	PrtAssert(PrtInhabitsType(payload, PrtGetPayloadType(context, event)), "Payload must be member of event payload type");
@@ -331,6 +353,8 @@ _In_ PRT_VALUE					*payload
 	{
 		context->stateControl = PrtDequeue;
 		context->returnTo = 0;
+
+#ifdef  PRT_USE_THREADPOOL
 		context->isRunning = PRT_TRUE; //set true, indicating that a thread will be created to run the state-machine.
 		PrtUnlockMutex(context->stateMachineLock);
 
@@ -348,26 +372,8 @@ _In_ PRT_VALUE					*payload
 		//
 		// Associate the callback environment with our thread pool.
 		//
-		/*SetThreadpoolCallbackPool(&CallBackEnv, PrtRunStateMachineThreadPool);
+		SetThreadpoolCallbackPool(&CallBackEnv, PrtRunStateMachineThreadPool);
 
-		cleanupgroup = CreateThreadpoolCleanupGroup();
-
-		if (NULL == cleanupgroup) {
-			printf("CreateThreadpoolCleanupGroup failed. LastError: %u\n",
-				GetLastError());
-			exit(1);
-		}
-
-		//
-		// Associate the cleanup group with our thread pool.
-		// Objects created with the same callback environment
-		// as the cleanup group become members of the cleanup group.
-		//
-		SetThreadpoolCallbackCleanupGroup(&CallBackEnv,
-			cleanupgroup,
-			NULL);
-
-		*/
 		PTP_WORK runMachine;
 		runMachine = CreateThreadpoolWork(PrtRunStateMachineWorkItem, context, &CallBackEnv);
 		
@@ -377,13 +383,14 @@ _In_ PRT_VALUE					*payload
 			exit(1);
 		}
 
-		
-
 		//
 		// Submit the work to the pool. Because this was a pre-allocated
 		// work item (using CreateThreadpoolWork), it is guaranteed to execute.
 		//
 		SubmitThreadpoolWork(runMachine);
+#else
+		PrtRunStateMachine(context, PRT_TRUE);
+#endif
 	}
 
 	return;
@@ -1408,6 +1415,10 @@ PrtCleanupMachine(
 	if (context->currentEvent.trigger != NULL)
 	{
 		PrtFreeValue(context->currentEvent.trigger);
+	}
+	if (context->recvMessMap != NULL)
+	{
+		PrtFreeValue(context->recvMessMap);
 	}
 }
 

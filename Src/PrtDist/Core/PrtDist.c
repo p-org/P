@@ -59,6 +59,8 @@ void s_PrtDistMkMachine(
 void s_PrtDistSendEx(
 	PRPC_ASYNC_STATE asyncState,
 	handle_t handle,
+	PRT_VALUE* source,
+	PRT_INT64 seqNum,
 	PRT_VALUE* target,
 	PRT_VALUE* event,
 	PRT_VALUE* payload
@@ -68,10 +70,10 @@ void s_PrtDistSendEx(
 	PRT_VALUE* deserial_target = PrtDistDeserializeValue(target);
 	PRT_VALUE* deserial_event = PrtDistDeserializeValue(event);
 	PRT_VALUE* deserial_payload = PrtDistDeserializeValue(payload);
-
+	PRT_VALUE* deserial_source = PrtDistDeserializeValue(source);
 	PRT_MACHINEINST* context = PrtGetMachine(ContainerProcess, deserial_target);
 	
-	PrtEnqueueWithThreadPool((PRT_MACHINEINST_PRIV*)context, deserial_event, deserial_payload);
+	PrtEnqueueWithInorder(source, seqNum, (PRT_MACHINEINST_PRIV*)context, deserial_event, deserial_payload);
 }
 
 /***********************************************************************************************************
@@ -188,18 +190,10 @@ DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(LPVOID portNumber)
 * Implementation of all the model functions
 **/
 
-PRT_VALUE *P_FUN__SENDRELIABLE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
-{
-	PRT_VALUE* target = PrtTupleGet(value, 0);
-	while (PRT_FALSE == PrtDistSend(target, PrtTupleGet(value, 1), PrtTupleGet(value, 2)));
-
-	return PrtMkNullValue();
-}
-
 PRT_VALUE *P_FUN__SEND_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
 {
 	PRT_VALUE* target = PrtTupleGet(value, 0);
-	PrtDistSend(target, PrtTupleGet(value, 1), PrtTupleGet(value, 2));
+	PrtDistSend(context->id, target, PrtTupleGet(value, 1), PrtTupleGet(value, 2));
 	return PrtMkBoolValue(PRT_TRUE);
 }
 

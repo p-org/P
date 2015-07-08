@@ -19,7 +19,7 @@ main model TestMachine {
 			{
 				x = 1;
 			}
-			assert(x < 3);
+			assert(x < 4);
 			if(x < 10)
 				send this, unit;
 				

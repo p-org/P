@@ -4,6 +4,6 @@
 OUT: ##################
 OUT: Check Passed
 OUT: ##################
-OUT: 11803 distinct states explored
+OUT: 51832 distinct states explored
 OUT: 
 EXIT: 0

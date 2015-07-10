@@ -10,7 +10,11 @@ extern "C"{
 //
 // Max call stack size of each machine
 //
-#define PRT_MAX_CALL_DEPTH 16 
+#define PRT_MAX_STATESTACK_DEPTH 16 
+
+#define PRT_MAX_FUNSTACK_DEPTH 16
+
+#define PRT_MAX_EVENTSTACK_DEPTH 10
 
 //
 // Initial length of the event queue for each machine
@@ -48,8 +52,7 @@ typedef enum PRT_LASTOPERATION
 {
 	ReturnStatement,
 	PopStatement,
-	RaiseStatement,
-	PushStatement
+	RaiseStatement
 } PRT_LASTOPERATION;
 
 typedef struct PRT_EVENT
@@ -70,32 +73,37 @@ typedef struct PRT_EVENTQUEUE
 typedef struct PRT_STATESTACK_INFO
 {
 	PRT_UINT32			stateIndex;
-	PRT_EVENT			currEvent;
-	PRT_UINT16			returnTo;
-	PRT_STATECONTROL	stateControl;
 	PRT_UINT32*			inheritedDeferredSetCompact;
 	PRT_UINT32*			inheritedActionSetCompact;
 } PRT_STATESTACK_INFO;
 
 typedef struct PRT_STATESTACK
 {
-	PRT_STATESTACK_INFO stateStack[PRT_MAX_CALL_DEPTH];
+	PRT_STATESTACK_INFO stateStack[PRT_MAX_STATESTACK_DEPTH];
 	PRT_UINT16			length;
 } PRT_STATESTACK;
 
 typedef struct PRT_FUNSTACK_INFO
 {
-	PRT_UINT32	funIndex;
-	PRT_UINT16	returnTo;
-	PRT_VALUE	*parameters;
-	PRT_VALUE	*locals;
+	PRT_UINT32		funIndex;
+	PRT_UINT16		currentEventIndex;
+	PRT_UINT16		returnTo;
+	PRT_VALUE		*parameters;
+	PRT_VALUE		*locals;
+	PRT_THENDECL	*then;
 } PRT_FUNSTACK_INFO;
 
 typedef struct PRT_FUNSTACK
 {
-	PRT_FUNSTACK_INFO	funStack[PRT_MAX_CALL_DEPTH];
+	PRT_FUNSTACK_INFO	funs[PRT_MAX_FUNSTACK_DEPTH];
 	PRT_UINT16			length;
 } PRT_FUNSTACK;
+
+typedef struct PRT_EVENTSTACK
+{
+	PRT_EVENT			events[PRT_MAX_EVENTSTACK_DEPTH];
+	PRT_UINT16			length;
+} PRT_EVENTSTACK;
 
 typedef struct PRT_MACHINEINST_PRIV {
 	PRT_PROCESS		    *process;
@@ -104,17 +112,17 @@ typedef struct PRT_MACHINEINST_PRIV {
 	void				*extContext;
 	PRT_BOOLEAN			isModel;
 	PRT_VALUE			**varValues;
-	PRT_EVENT			currentEvent;
 	PRT_RECURSIVE_MUTEX stateMachineLock;
 	PRT_BOOLEAN			isRunning;
 	PRT_BOOLEAN			isHalted;
 	PRT_UINT32			currentState;
+	PRT_RECEIVEDECL		*receive;
+	PRT_THENDECL		*then;
 	PRT_STATESTACK		callStack;
 	PRT_FUNSTACK		funStack;
+	PRT_EVENTSTACK		eventStack;
 	PRT_EVENTQUEUE		eventQueue;
 	PRT_LASTOPERATION	lastOperation;
-	PRT_STATECONTROL	stateControl;
-	PRT_UINT16			returnTo;
 	PRT_UINT32*			inheritedDeferredSetCompact;
 	PRT_UINT32*			currentDeferredSetCompact;
 	PRT_UINT32*			inheritedActionSetCompact;
@@ -188,8 +196,7 @@ _In_ PRT_UINT32					stateIndex
 void
 PrtPushState(
 _Inout_ PRT_MACHINEINST_PRIV	*context,
-_In_	PRT_UINT32			stateIndex,
-_In_	PRT_BOOLEAN			isPushStatement
+_In_	PRT_UINT32			stateIndex
 );
 
 PRT_API void PRT_CALL_CONV
@@ -325,6 +332,13 @@ _In_ PRT_VALUE * event
 
 FORCEINLINE
 PRT_BOOLEAN
+PrtIsEventReceivable(
+	_In_ PRT_UINT32		eventIndex,
+	_In_ PRT_RECEIVEDECL	*receive
+);
+
+FORCEINLINE
+PRT_BOOLEAN
 PrtIsEventDeferred(
 _In_ PRT_UINT32		eventIndex,
 _In_ PRT_UINT32*		defSet
@@ -404,6 +418,35 @@ _In_ PRT_MACHINEINST *context,
 _In_ PRT_VALUE *id
 );
 
+void
+PrtPushEvent(
+_Inout_ PRT_MACHINEINST_PRIV		*context,
+_In_ PRT_VALUE					*event,
+_In_ PRT_VALUE					*payload
+);
+
+void
+PrtClearEventStack(
+_Inout_ PRT_MACHINEINST_PRIV		*context
+);
+
+PRT_VALUE *
+PrtGetCurrentTrigger(
+_Inout_ PRT_MACHINEINST_PRIV		*context
+);
+
+PRT_VALUE *
+PrtGetCurrentPayload(
+	_Inout_ PRT_MACHINEINST_PRIV		*context
+);
+
+void PrtPushFun(
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_In_ PRT_UINT32					funIndex,
+	_In_ PRT_VALUE					*parameters,
+	_In_ PRT_VALUE					*locals,
+	_In_ PRT_UINT16					returnTo
+);
 #ifdef __cplusplus
 }
 #endif

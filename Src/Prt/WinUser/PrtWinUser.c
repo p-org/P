@@ -302,8 +302,8 @@ void PrtWinUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, _Ino
 		PrtWinUserPrintString(")\n", buffer, bufferSize, numCharsWritten); 
 		break;
 	case PRT_STEP_DEQUEUE:
-		eventName = c->process->program->events[PrtPrimGetEvent(c->currentEvent.trigger)].name;
-		payloadValue = c->currentEvent.payload;
+		eventName = c->process->program->events[PrtPrimGetEvent(PrtGetCurrentTrigger(c))].name;
+		payloadValue = PrtGetCurrentPayload(c);
 		PrtWinUserPrintString("<DequeueLog> Dequeued event ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten);
@@ -331,8 +331,8 @@ void PrtWinUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, _Ino
 		PrtWinUserPrintString(") is created\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_RAISE:
-		eventName = c->process->program->events[PrtPrimGetEvent(c->currentEvent.trigger)].name;
-		payloadValue = c->currentEvent.payload;
+		eventName = c->process->program->events[PrtPrimGetEvent(PrtGetCurrentTrigger(c))].name;
+		payloadValue = PrtGetCurrentPayload(c);
 		PrtWinUserPrintString("<RaiseLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten); 
@@ -360,7 +360,7 @@ void PrtWinUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, _Ino
 		PrtWinUserPrintString(") pushed\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_UNHANDLED:
-		eventName = c->process->program->events[PrtPrimGetEvent(c->currentEvent.trigger)].name;
+		eventName = c->process->program->events[PrtPrimGetEvent(PrtGetCurrentTrigger(c))].name;
 		PrtWinUserPrintString("<PopLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten); 

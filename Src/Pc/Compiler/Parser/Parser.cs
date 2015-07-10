@@ -57,7 +57,7 @@
         private Stack<P_Root.TypeExpr> typeExprStack = new Stack<P_Root.TypeExpr>();
         private Stack<P_Root.Stmt> stmtStack = new Stack<P_Root.Stmt>();
         private Stack<P_Root.QualifiedName> groupStack = new Stack<P_Root.QualifiedName>();
-        private int nextPushLabel = 0;
+        private int nextReceiveLabel = 0;
 
         public P_Root.TypeExpr Debug_PeekTypeStack
         {
@@ -246,17 +246,6 @@
             typeExprStack.Push(mapType);
         }
 
-        private void PushPush(Span span)
-        {
-            Contract.Assert(crntQualName != null);
-            var pushStmt = P_Root.MkPush(crntQualName);
-            pushStmt.label = P_Root.MkNumeric(GetNextPushLabel());
-            pushStmt.label.Span = span;
-            pushStmt.Span = span;
-            stmtStack.Push(pushStmt);
-            crntQualName = null;
-        }
-
         private void PushSend(bool hasArgs, Span span)
         {
             Contract.Assert(!hasArgs || exprsStack.Count > 0);
@@ -325,6 +314,7 @@
         {
             var receiveStmt = P_Root.MkReceive((P_Root.IArgType_Receive__0)crntCasesList);
             receiveStmt.Span = span;
+            receiveStmt.label = P_Root.MkNumeric(GetNextReceiveLabel());
             stmtStack.Push(receiveStmt);
 
             crntCasesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
@@ -913,7 +903,7 @@
                 state = GetCurrentStateDecl(actionSpan);
             }
 
-            ResetPushLabels();           
+            ResetReceiveLabels();           
             if (IsSkipFun((P_Root.GroundTerm)state.entryAction))            
             {
                 state.entryAction = (P_Root.IArgType_StateDecl__2)entry;
@@ -952,7 +942,7 @@
                 state = GetCurrentStateDecl(functionSpan);
             }
 
-            ResetPushLabels();
+            ResetReceiveLabels();
             if (IsSkipFun((P_Root.GroundTerm)state.exitFun))
             {
                 state.exitFun = (P_Root.IArgType_StateDecl__3)exit;
@@ -1115,7 +1105,7 @@
                 action = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)crntLocalVarDecl, stmt);
                 action.Span = stmt.Span;
                 parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)action);
-                ResetPushLabels();
+                ResetReceiveLabels();
                 crntLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
             }
 
@@ -1247,7 +1237,7 @@
             var anonAction = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)crntLocalVarDecl, stmt);
             anonAction.Span = stmt.Span;
             parseProgram.AnonFunctions.Add(anonAction);
-            ResetPushLabels();
+            ResetReceiveLabels();
             crntLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
 
             foreach (var e in crntEventList)
@@ -1282,7 +1272,7 @@
             var anonAction = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)crntLocalVarDecl, stmt);
             anonAction.Span = stmt.Span;
             parseProgram.AnonFunctions.Add(anonAction);
-            ResetPushLabels();
+            ResetReceiveLabels();
             crntLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
 
             foreach (var e in crntEventList)
@@ -1607,7 +1597,7 @@
                 crntFunNames.Add(name);
             }
             crntFunDecl = null;
-            ResetPushLabels();
+            ResetReceiveLabels();
         }
         #endregion
 
@@ -1698,14 +1688,14 @@
             }
         }
 
-        private int GetNextPushLabel()
+        private int GetNextReceiveLabel()
         {
-            return nextPushLabel++;
+            return nextReceiveLabel++;
         }
 
-        private void ResetPushLabels()
+        private void ResetReceiveLabels()
         {
-            nextPushLabel = 0;
+            nextReceiveLabel = 0;
         }
 
         private P_Root.AnonFunDecl MkSkipFun(P_Root.MachineDecl owner, Span span)
@@ -1775,7 +1765,7 @@
             crntMachDecl = null;
             crntQualName = null;
             crntStateTargetName = null;
-            nextPushLabel = 0;
+            nextReceiveLabel = 0;
             crntStateNames.Clear();
             crntFunNames.Clear();
             crntVarNames.Clear();

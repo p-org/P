@@ -15,7 +15,7 @@
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH AS WITH
 
-%token IF WHILE THIS TRIGGER PAYLOAD NEW RETURN ID POP ASSERT CALL RAISE SEND DEFAULT HALT NULL RECEIVE THEN
+%token IF WHILE THIS TRIGGER PAYLOAD NEW RETURN ID POP ASSERT CALL RAISE SEND DEFAULT HALT NULL RECEIVE CASE THEN
 %token LPAREN RPAREN LCBRACE RCBRACE LBRACKET RBRACKET SIZEOF KEYS VALUES
 
 %token TRUE FALSE
@@ -265,7 +265,6 @@ EventList
 EventId
 	: ID        { AddToEventList($1.str, ToSpan(@1));                      }
 	| HALT      { AddToEventList(P_Root.UserCnstKind.HALT, ToSpan(@1));    }
-	| DEFAULT   { AddToEventList(P_Root.UserCnstKind.NULL, ToSpan(@1)); }
 	| NULL      { AddToEventList(P_Root.UserCnstKind.NULL, ToSpan(@1)); }
 	;
 
@@ -312,7 +311,6 @@ Stmt
 	| LCBRACE RCBRACE                                         { PushNulStmt(P_Root.UserCnstKind.SKIP,  ToSpan(@1));      }
 	| POP SEMICOLON                                           { PushNulStmt(P_Root.UserCnstKind.POP,   ToSpan(@1));      }
 	| LCBRACE StmtList RCBRACE                                { }
-	| PUSH QualifiedId SEMICOLON                              { PushPush(ToSpan(@1));                                    }
 	| ASSERT Exp SEMICOLON                                    { PushUnStmt(P_Root.UserCnstKind.ASSERT, ToSpan(@1));      }
 	| RETURN SEMICOLON                                        { PushReturn(false, ToSpan(@1));                           }
 	| RETURN Exp SEMICOLON                                    { PushReturn(true, ToSpan(@1));                            }
@@ -338,8 +336,8 @@ Stmt
 	;
 
 Then 
-	: EventList THEN ID SEMICOLON				{ AddThenNamedAction($3.str, ToSpan(@3)); }
-	| EventList THEN StmtBlock SEMICOLON		{ AddThenAnonyAction(ToSpan(@3)); }
+	: CASE EventList THEN ID SEMICOLON				{ AddThenNamedAction($4.str, ToSpan(@4)); }
+	| CASE EventList THEN StmtBlock SEMICOLON		{ AddThenAnonyAction(ToSpan(@4)); }
 	;
 
 ThenList

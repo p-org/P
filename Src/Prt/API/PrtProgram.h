@@ -87,6 +87,20 @@ typedef struct PRT_VARDECL
 	void       **annotations;  /**< An array of annotations                */
 } PRT_VARDECL;
 
+typedef struct PRT_THENDECL
+{
+	PRT_UINT32 triggerEventIndex;
+	PRT_UINT32 funIndex;
+} PRT_THENDECL;
+
+typedef struct PRT_RECEIVEDECL
+{
+	PRT_UINT16 label;
+	PRT_UINT32* thenSet;
+	PRT_UINT32 nThens;
+	PRT_THENDECL *thens;
+} PRT_RECEIVEDECL;
+
 /** Represents a P function declaration */
 typedef struct PRT_FUNDECL
 {
@@ -94,6 +108,8 @@ typedef struct PRT_FUNDECL
 	PRT_UINT32 ownerMachIndex; /**< The index of owner machine in program         */
 	PRT_STRING name;           /**< The name of this function (NULL is anonymous) */
 	PRT_SM_FUN implementation; /**< The implementation of this function           */
+	PRT_UINT32 nReceives;
+	PRT_RECEIVEDECL *receives;
 
 	PRT_UINT32 nAnnotations;   /**< Number of annotations                         */
 	void       **annotations;  /**< An array of annotations                       */

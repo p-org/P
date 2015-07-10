@@ -7,6 +7,7 @@
 
 //pointer to the container process
 extern PRT_PROCESS* ContainerProcess;
+extern PRT_INT64 sendMessageSeqNumber;
 
 //Functions to help logging
 void
@@ -21,6 +22,7 @@ void PrtDistSMLogHandler(PRT_STEP step, void *vcontext);
 //external function to send messages over RPC
 
 PRT_BOOLEAN PrtDistSend(
+	PRT_VALUE* source,
 	PRT_VALUE* target,
 	PRT_VALUE* event,
 	PRT_VALUE* payload

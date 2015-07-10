@@ -2,10 +2,65 @@
 #include ".\PrtDistIDL_s.c"
 #include "PrtDistInternals.h"
 
+
+/***********************************************************************************************************/
+//Create remote machine 
+PRT_MACHINEINST * PRT_CALL_CONV PrtMkMachineRemote(
+	_Inout_ PRT_PROCESS *process,
+	_In_ PRT_UINT32 instanceOf,
+	_In_ PRT_VALUE *payload,
+	_In_ PRT_VALUE* container)
+{
+	PRT_VALUE* serial_params = PrtDistSerializeValue(payload);
+	PRT_VALUE* retVal = PrtMkNullValue();
+
+	handle_t handle;
+	handle = PrtDistCreateRPCClient(container);
+
+	RpcTryExcept
+	{
+
+		c_PrtDistMkMachine(handle, instanceOf, serial_params, &retVal);
+		//c_PrtDistSendEx(handle, serial_target, serial_event, serial_payload);
+	}
+	RpcExcept(1)
+	{
+		unsigned long ulCode;
+		ulCode = RpcExceptionCode();
+		char log[MAX_LOG_SIZE];
+		sprintf_s(log, MAX_LOG_SIZE, "Runtime reported RPC exception 0x%lx = %ld\n when executing function PrtDistMkMachine", ulCode, ulCode);
+		PrtDistLog(log);
+		sprintf_s(log, MAX_LOG_SIZE, "Terminated the Process as -new- operation failed");
+		PrtDistLog(log);
+		exit(1);
+	}
+	RpcEndExcept
+	
+	PRT_MACHINEINST_PRIV *context;
+	context = (PRT_MACHINEINST_PRIV*)PrtMalloc(sizeof(PRT_MACHINEINST_PRIV));
+	context->id = PrtDistDeserializeValue(retVal);
+	return (PRT_MACHINEINST*)context;
+}
+
+void s_PrtDistMkMachine(
+	handle_t handle,
+	PRT_INT32 instanceOf,
+	PRT_VALUE* params,
+	PRT_VALUE** retVal
+)
+{
+	PRT_VALUE* deserial_params = PrtDistDeserializeValue(params);
+	PRT_MACHINEINST* newContext = PrtMkMachine(ContainerProcess, instanceOf, deserial_params);
+	*retVal = PrtDistSerializeValue(newContext->id);
+}
+
+/***********************************************************************************************************/
 // Function for enqueueing message into the remote machine
 void s_PrtDistSendEx(
 	PRPC_ASYNC_STATE asyncState,
 	handle_t handle,
+	PRT_VALUE* source,
+	PRT_INT64 seqNum,
 	PRT_VALUE* target,
 	PRT_VALUE* event,
 	PRT_VALUE* payload
@@ -15,12 +70,10 @@ void s_PrtDistSendEx(
 	PRT_VALUE* deserial_target = PrtDistDeserializeValue(target);
 	PRT_VALUE* deserial_event = PrtDistDeserializeValue(event);
 	PRT_VALUE* deserial_payload = PrtDistDeserializeValue(payload);
-
+	PRT_VALUE* deserial_source = PrtDistDeserializeValue(source);
 	PRT_MACHINEINST* context = PrtGetMachine(ContainerProcess, deserial_target);
 	
-	PrtSend(context, deserial_event, deserial_payload);
-
-
+	PrtEnqueueWithInorder(source, seqNum, (PRT_MACHINEINST_PRIV*)context, deserial_event, deserial_payload);
 }
 
 /***********************************************************************************************************
@@ -101,7 +154,7 @@ DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(LPVOID portNumber)
 		NULL, // Use the MIDL generated entry-point vector.
 		NULL, // Use the MIDL generated entry-point vector.
 		RPC_IF_ALLOW_CALLBACKS_WITH_NO_AUTH, // Forces use of security callback.
-		RPC_C_LISTEN_MAX_CALLS_DEFAULT, // Use default number of concurrent calls.
+		RPC_C_LISTEN_MAX_CALLS_DEFAULT, // sequential RPC 
 		(unsigned)-1, // Infinite max size of incoming data blocks.
 		NULL); // Naive security callback.
 
@@ -137,18 +190,10 @@ DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(LPVOID portNumber)
 * Implementation of all the model functions
 **/
 
-PRT_VALUE *P_FUN__SENDRELIABLE_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
-{
-	PRT_VALUE* target = PrtTupleGet(value, 0);
-	while (PRT_FALSE == PrtDistSend(target, PrtTupleGet(value, 1), PrtTupleGet(value, 2)));
-
-	return PrtMkNullValue();
-}
-
 PRT_VALUE *P_FUN__SEND_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
 {
 	PRT_VALUE* target = PrtTupleGet(value, 0);
-	PrtDistSend(target, PrtTupleGet(value, 1), PrtTupleGet(value, 2));
+	PrtDistSend(context->id, target, PrtTupleGet(value, 1), PrtTupleGet(value, 2));
 	return PrtMkBoolValue(PRT_TRUE);
 }
 

@@ -1,6 +1,8 @@
 event Ping assert 1: machine;
 event Pong assert 2: machine;
 event Success;
+event M_Ping;
+event M_Pong;
 
 include "PrtDistHelp.p"
 
@@ -18,7 +20,7 @@ machine PING
 
     state SendPing {
         entry {
-	        monitor Ping;
+			monitor M_Ping;
 			_SEND(pongMachine.0, Ping, this);
 			_SEND(pongMachine.1, Ping, this);
 			raise (Success);
@@ -45,7 +47,7 @@ machine PONG
 
     state SendPong {
 	    entry {
-	        monitor Pong;
+	        monitor M_Pong;
 			_SEND(payload, Pong, this);
 			raise (Success);		 	  
 	    }
@@ -60,18 +62,18 @@ machine PONG
 }
 
 
-spec M monitors Ping, Pong {
+spec M monitors M_Ping, M_Pong {
     start state ExpectPing {
-        on Ping goto ExpectPong_1;
+        on M_Ping goto ExpectPong_1;
     }
 
     state ExpectPong_1 {
-        on Pong goto ExpectPong_2;
+        on M_Pong goto ExpectPong_2;
 		
     }
 	
 	state ExpectPong_2 {
-        on Pong goto ExpectPing;
+        on M_Pong goto ExpectPing;
     }
 }
 
@@ -80,7 +82,7 @@ static fun _CREATEMACHINE(cner: machine, typeOfMachine: int, param : any, newMac
 {
 	if(typeOfMachine == 1)
 	{
-		newMachine = new PING();
+		newMachine = new PING(param);
 	}
 	else if(typeOfMachine == 2)
 	{
@@ -90,7 +92,9 @@ static fun _CREATEMACHINE(cner: machine, typeOfMachine: int, param : any, newMac
 	{
 		assert(false);
 	}
+	return newMachine;
 }
+
 main machine GodMachine 
 {
 	var container : machine;
@@ -100,13 +104,12 @@ main machine GodMachine
     start state Init {
 	    entry {
 			new M();
-			
-			container = _CREATECONTAINER();
+			container = _CREATECONTAINER(null);
 			pongMachine_1 = _CREATEMACHINE(container, 2, null, null);
-			container = _CREATECONTAINER();
+			container = _CREATECONTAINER(null);
 			pongMachine_2 = _CREATEMACHINE(container, 2, null, null);
-			container = _CREATECONTAINER();
-			_CREATEMACHINE(container, 1, null, null);
+			container = _CREATECONTAINER(null);
+			_CREATEMACHINE(container, 1, (pongMachine_1, pongMachine_2), null);
 	    }
 	}
 }

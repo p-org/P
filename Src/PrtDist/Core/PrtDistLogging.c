@@ -91,6 +91,7 @@ __in void* vcontext
 
 void PrtDistSMLogHandler(PRT_STEP step, void *vcontext)
 {
+	
 	static FILE *logfile = NULL;
 	PRT_MACHINEINST_PRIV *c = (PRT_MACHINEINST_PRIV*)vcontext;
 	PrtLockMutex(((PRT_PROCESS_PRIV*)ContainerProcess)->processLock);

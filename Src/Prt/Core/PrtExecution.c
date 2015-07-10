@@ -75,6 +75,11 @@ PrtMkMachinePrivate(
 	context->isModel = PRT_FALSE;
 
 	//
+	// Initialize the map used in PrtDist, map from sender to the last seqnumber received
+	//
+	PRT_TYPE* mapType = PrtMkMapType(PrtMkPrimitiveType(PRT_KIND_MACHINE), PrtMkPrimitiveType(PRT_KIND_INT));
+	context->recvMessMap = PrtMkDefaultValue(mapType);
+
 	// Initialize Machine Internal Variables
 	//
 	context->currentState = process->program->machines[context->instanceOf].initStateIndex;
@@ -282,6 +287,158 @@ PrtSendPrivate(
 	return;
 }
 
+#ifdef PRT_USE_IDL
+PRT_API VOID CALLBACK PrtRunStateMachineWorkItem(
+	_Inout_     PTP_CALLBACK_INSTANCE Instance,
+	_Inout_opt_ PVOID                 Context,
+	_Inout_     PTP_WORK              Work
+	)
+{
+	UNREFERENCED_PARAMETER(Instance);
+	UNREFERENCED_PARAMETER(Work);
+
+	//acquire the lock again, this is because PrtRunStateMachine makes an assumption
+	//that the lock is already acquired if second arg is true.
+	PrtLockMutex(((PRT_MACHINEINST_PRIV*)Context)->stateMachineLock);
+	PrtRunStateMachine(Context, PRT_TRUE);
+}
+
+void
+PrtEnqueueWithInorder(
+_In_ PRT_VALUE* source,
+_In_ PRT_INT64 seqNum,
+_Inout_ PRT_MACHINEINST_PRIV	*context,
+_In_ PRT_VALUE					*event,
+_In_ PRT_VALUE					*payload
+)
+{
+	PRT_EVENTQUEUE *queue;
+	PRT_UINT32 tail;
+	PRT_UINT32 eventMaxInstances;
+	PRT_UINT32 maxQueueSize;
+	PRT_UINT32 eventIndex;
+
+	//Check if the enqueued event is in order
+	PrtLockMutex(context->stateMachineLock);
+	if (PrtMapExists(context->recvMessMap, source) && PrtMapGet(context->recvMessMap, source)->valueUnion.nt >= seqNum)
+	{
+		PrtUnlockMutex(context->stateMachineLock);
+		//drop the event
+		return;
+	}
+	else
+	{
+		PrtMapUpdate(context->recvMessMap, source, PrtMkIntValue(seqNum));
+	}
+	PrtUnlockMutex(context->stateMachineLock);
+
+
+	PrtAssert(!PrtIsSpecialEvent(event), "Enqueued event must not be null");
+	PrtAssert(PrtInhabitsType(payload, PrtGetPayloadType(context, event)), "Payload must be member of event payload type");
+
+	if (context->isHalted)
+	{
+		// drop the event silently
+		return;
+	}
+
+	eventIndex = PrtPrimGetEvent(event);
+	eventMaxInstances = context->process->program->events[eventIndex].eventMaxInstances;
+	maxQueueSize = context->process->program->machines[context->instanceOf].maxQueueSize;
+
+	PrtLockMutex(context->stateMachineLock);
+
+	queue = &context->eventQueue;
+
+	// check if maximum allowed instances of event are already present in queue
+	if (eventMaxInstances != 0xffffffff && PrtIsEventMaxInstanceExceeded(queue, eventIndex, eventMaxInstances))
+	{
+		PrtUnlockMutex(context->stateMachineLock);
+		PrtHandleError(PRT_STATUS_EVENT_OVERFLOW, context);
+		return;
+	}
+
+	// if queue is full, resize the queue if possible
+	if (queue->eventsSize == queue->size)
+	{
+		if (maxQueueSize != 0xffffffff && queue->size == maxQueueSize)
+		{
+			PrtUnlockMutex(context->stateMachineLock);
+			PrtHandleError(PRT_STATUS_QUEUE_OVERFLOW, context);
+			return;
+		}
+		PrtResizeEventQueue(context);
+	}
+
+	tail = queue->tailIndex;
+
+	//
+	// Add event to the queue
+	//
+	queue->events[tail].trigger = PrtCloneValue(event);
+	queue->events[tail].payload = PrtCloneValue(payload);
+	queue->size++;
+	queue->tailIndex = (tail + 1) % queue->eventsSize;
+
+	//
+	//Log
+	//
+	PrtLog(PRT_STEP_ENQUEUE, context);
+	//
+	// Now try to run the machine if its not running already
+	//
+	if (context->isRunning)
+	{
+		PrtUnlockMutex(context->stateMachineLock);
+		return;
+	}
+	else
+	{
+		context->stateControl = PrtDequeue;
+		context->returnTo = 0;
+
+#ifdef  PRT_USE_THREADPOOL
+		context->isRunning = PRT_TRUE; //set true, indicating that a thread will be created to run the state-machine.
+		PrtUnlockMutex(context->stateMachineLock);
+
+
+		BOOL bRet = FALSE;
+		PTP_WORK work = NULL;
+		PTP_TIMER timer = NULL;
+		PTP_WORK_CALLBACK workcallback = PrtRunStateMachineWorkItem;
+		PTP_TIMER_CALLBACK timercallback = NULL;
+		PTP_CLEANUP_GROUP cleanupgroup = NULL;
+		TP_CALLBACK_ENVIRON CallBackEnv;
+
+		InitializeThreadpoolEnvironment(&CallBackEnv);
+
+		//
+		// Associate the callback environment with our thread pool.
+		//
+		SetThreadpoolCallbackPool(&CallBackEnv, PrtRunStateMachineThreadPool);
+
+		PTP_WORK runMachine;
+		runMachine = CreateThreadpoolWork(PrtRunStateMachineWorkItem, context, &CallBackEnv);
+		
+		if (NULL == runMachine) {
+			printf("CreateThreadpoolWork failed inside PrtEnqueueWithThreadPool. LastError: %u\n",
+				GetLastError());
+			exit(1);
+		}
+
+		//
+		// Submit the work to the pool. Because this was a pre-allocated
+		// work item (using CreateThreadpoolWork), it is guaranteed to execute.
+		//
+		SubmitThreadpoolWork(runMachine);
+#else
+		PrtRunStateMachine(context, PRT_TRUE);
+#endif
+	}
+
+	return;
+}
+#endif
 void
 PrtRaise(
 	_Inout_ PRT_MACHINEINST_PRIV		*context,
@@ -1296,7 +1453,13 @@ PrtCleanupMachine(
 	if (context->extContext != NULL)
 		context->process->program->machines[context->instanceOf].extDtorFun((PRT_MACHINEINST *)context);
 	PrtFreeValue(context->id);
+	
 	PrtClearEventStack(context);
+	
+	if (context->recvMessMap != NULL)
+	{
+		PrtFreeValue(context->recvMessMap);
+	}
 }
 
 void

@@ -14,9 +14,18 @@ interface PrtDist {
 	//this function sends the event asynchronously.
 	void PrtDistSendEx(
 		[in] handle_t handleSM,
+		[in] PRT_VALUE* source,
+		[in] PRT_INT64 seqNum,
 		[in] PRT_VALUE* target,
 		[in, ptr] PRT_VALUE* event,
 		[in, ptr] PRT_VALUE* payload
+	);
+
+	void PrtDistMkMachine(
+		[in] handle_t handleSM,
+		[in] PRT_INT32 instanceOf,
+		[in, ptr] PRT_VALUE* params,
+		[in, out] PRT_VALUE** retVal
 	);
 
 	

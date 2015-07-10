@@ -111,6 +111,7 @@ typedef struct PRT_MACHINEINST_PRIV {
 	PRT_VALUE			*id;  
 	void				*extContext;
 	PRT_BOOLEAN			isModel;
+	PRT_VALUE*			recvMessMap;	 /**<  Stores a map from the sender to the sequence number of the last message received from that sender*/
 	PRT_VALUE			**varValues;
 	PRT_RECURSIVE_MUTEX stateMachineLock;
 	PRT_BOOLEAN			isRunning;
@@ -215,12 +216,6 @@ void
 PrtRunExitFunction(
 _In_ PRT_MACHINEINST_PRIV			*context,
 _In_ PRT_UINT32						transIndex
-);
-
-void
-PrtRunStateMachine(
-_Inout_ PRT_MACHINEINST_PRIV	    *context,
-_In_ PRT_BOOLEAN				doDequeue
 );
 
 PRT_UINT32
@@ -447,6 +442,28 @@ void PrtPushFun(
 	_In_ PRT_VALUE					*locals,
 	_In_ PRT_UINT16					returnTo
 );
+
+PRT_API void
+PrtRunStateMachine(
+_Inout_ PRT_MACHINEINST_PRIV	    *context,
+_In_ PRT_BOOLEAN				doDequeue
+);
+
+VOID CALLBACK PrtRunStateMachineWorkItem(
+_Inout_     PTP_CALLBACK_INSTANCE Instance,
+_Inout_opt_ PVOID                 Context,
+_Inout_     PTP_WORK              Work
+);
+
+extern PTP_POOL PrtRunStateMachineThreadPool;
+
+PRT_API void PRT_CALL_CONV PrtEnqueueWithInorder(
+	_In_ PRT_VALUE* source,
+	_In_ PRT_INT64 seqNum,
+	_Inout_ PRT_MACHINEINST_PRIV *machine,
+	_In_ PRT_VALUE *evt,
+	_In_ PRT_VALUE *payload);
+
 #ifdef __cplusplus
 }
 #endif

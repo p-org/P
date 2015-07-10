@@ -429,6 +429,9 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\ClusterConfiguration.xml", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\ClientFiles\\ClusterConfiguration.xml"),
             new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\ClusterConfigurationDebug.xml", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\ClientFiles\\ClusterConfigurationDebug.xml"),
+            new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\MainFunction.c", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\ClientFiles\\MainFunction.c"),
             
@@ -436,6 +439,9 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\ClusterConfiguration.xml", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\ClientFiles\\ClusterConfiguration.xml"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\ClusterConfigurationDebug.xml", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\ClientFiles\\ClusterConfigurationDebug.xml"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\MainFunction.c", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\ClientFiles\\MainFunction.c"),
@@ -806,6 +812,9 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\ClusterConfiguration.xml", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\ClientFiles\\ClusterConfiguration.xml"),
             new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\ClusterConfigurationDebug.xml", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\ClientFiles\\ClusterConfigurationDebug.xml"),
+            new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\MainFunction.c", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\ClientFiles\\MainFunction.c"),
             
@@ -813,6 +822,9 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\ClusterConfiguration.xml", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\ClientFiles\\ClusterConfiguration.xml"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\ClusterConfigurationDebug.xml", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\ClientFiles\\ClusterConfigurationDebug.xml"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\MainFunction.c", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\ClientFiles\\MainFunction.c"),

@@ -135,11 +135,11 @@ transform P2CProgram (in:: P) returns (out:: C)
 	                     cn = strJoin("P_FUN_", d.name).
 
 	DeclId(d, id, cn) :- d is FunDecl, d.owner.kind = REAL, 
-	                     id = 1 + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun, d'.owner = d.owner }), 
+	                     id = 1 + count({ d' | d' is FunDecl, d'.owner = NIL }) + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun, d'.owner = d.owner }), 
 	                     cn = strJoin("P_FUN_", strJoin(d.owner.name, strJoin("_", d.name))).
 
 	DeclId(d, id, cn) :- d is AnonFunDecl, d.owner.kind = REAL, 
-	                     id = 1 + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun, d'.owner = d.owner }), 
+	                     id = 1 + count({ d' | d' is FunDecl, d'.owner = NIL }) + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun, d'.owner = d.owner }), 
 	                     num = toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.owner = d.owner }),
 						 cn = strJoin("P_FUN_", strJoin(d.owner.name, strJoin("_ANON", toString(num)))).
 	
@@ -700,22 +700,20 @@ transform P2CProgram (in:: P) returns (out:: C)
     BodyTmpVars(c, -1, i', defs) :- BodyTmpVars(c, -1, i, tl), i : Natural, i' = i - 1, defs = out.Defs(def, tl),
 	                                def = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), strJoin("p_tmp_stmt_", toString(i)), NIL).
 
-    BodyTmpVars(c, -1, -2, defs) :- BodyTmpVars(c, -1, -1, tl), defs = out.Defs(defpc, Defs(defb, Defs(defr, Defs(deft, Defs(deff, tl))))),
-									deff = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_funstmt_ret", NIL),
-									deft = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_tuple", NIL),
-	                                defr = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_ret", Ident("NULL")),
-	                                defb = out.VarDef(NIL, NmdType(NIL, "PRT_BOOLEAN"), "p_tmp_bool", NIL),
-									defpc = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), "p_tmp_mach_priv", 
+    BodyTmpVars(c, -1, -2, defs) :- BodyTmpVars(c, -1, -1, tl), defs = out.Defs(defpc, Defs(defb, Defs(defr, Defs(deft, Defs(deff, Defs(frame, Defs(params, tl))))))),
+									params = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_params", NIL),
+									frame  = out.VarDef(NIL, NmdType(NIL, "PRT_FUNSTACK_INFO"), "p_tmp_frame", NIL),
+									deff   = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_funstmt_ret", NIL),
+									deft   = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_tuple", NIL),
+	                                defr   = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_ret", Ident("NULL")),
+	                                defb   = out.VarDef(NIL, NmdType(NIL, "PRT_BOOLEAN"), "p_tmp_bool", NIL),
+									defpc  = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), "p_tmp_mach_priv", 
 									                   Cast(PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), Ident("context"))).
 
 	COut(7, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = REAL, RealOwner(f),
-	                params = Params(Param(NIL, "context"), 
-						     Params(Param(NIL, "funIndex"), 
-							 Params(Param(NIL, "value"), NIL))),
+	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
-					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")),
-					           PrmTypes(NmdType(NIL, "PRT_UINT32"),
-							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
 	                def = FunDef(
 					  NIL,
 					  funType,
@@ -733,22 +731,17 @@ transform P2CProgram (in:: P) returns (out:: C)
 	COut(8, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = REAL, RealOwner(f),
 				    BodyTmpVars(f, -1, -2, tmpVars),			  
 				    StmtTrans(f, f.body, ctrans),			  
-	                params = Params(Param(NIL, "context"), 
-						     Params(Param(NIL, "funIndex"), 
-							 Params(Param(NIL, "value"), NIL))),
+	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
-					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")),
-					           PrmTypes(NmdType(NIL, "PRT_UINT32"),
-							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),
-					Trampoline(f, f.body, header),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
+					header = out.FunApp(Ident("PrtPopFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))),
+					Trampoline(f, f.body, trampoline),
 					PatchReturn(f, patchReturn),
 					footer = out.Lbl("P_EXIT_FUN", 
 					                   Seq(
-									     ITE(BinApp(NEQ, Ident("value"), Ident("NULL")), 
-										     FunApp(Ident("PrtFreeValue"), Args(Ident("value"), NIL)), 
-											 NIL),
+									     FunApp(Ident("PrtFreeFrameVars"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL)),
 									     patchReturn)),
-					body = out.Block(tmpVars, Seq(header, Seq(ctrans, footer))),					  
+					body = out.Block(tmpVars, Seq(header, Seq(trampoline, Seq(ctrans, footer)))),					  
 	                def = FunDef(
 					  NIL,
 					  funType,
@@ -759,21 +752,16 @@ transform P2CProgram (in:: P) returns (out:: C)
 	COut(8, def) :- DeclId(f, id, name), id > 0, f : AnonFunDecl, f.owner.kind = REAL,
 				    BodyTmpVars(f, -1, -2, tmpVars),			  
 				    StmtTrans(f, f.body, ctrans),			
-	                params = Params(Param(NIL, "context"), 
-						     Params(Param(NIL, "funIndex"), 
-							 Params(Param(NIL, "value"), NIL))),
+	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
-					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")),
-					           PrmTypes(NmdType(NIL, "PRT_UINT32"),
-							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),	
-					Trampoline(f, f.body, header),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
+					header = out.FunApp(Ident("PrtPopFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))),
+					Trampoline(f, f.body, trampoline),
 					footer = out.Lbl("P_EXIT_FUN", 
 					                   Seq(
-									     ITE(BinApp(NEQ, Ident("value"), Ident("NULL")), 
-										     FunApp(Ident("PrtFreeValue"), Args(Ident("value"), NIL)), 
-											 NIL),
+									     FunApp(Ident("PrtFreeFrameVars"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL)),
 									     Return(Ident("p_tmp_ret")))),
-					body = out.Block(tmpVars, Seq(header, Seq(ctrans, footer))),					  
+					body = out.Block(tmpVars, Seq(header, Seq(trampoline, Seq(ctrans, footer)))),					  
 	                def = FunDef(
 					  NIL,
 					  funType,
@@ -782,13 +770,9 @@ transform P2CProgram (in:: P) returns (out:: C)
 					  body).
 
 	HOut(1, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = MODEL, RealOwner(f),
-	                params = Params(Param(NIL, "context"), 
-						     Params(Param(NIL, "funIndex"), 
-							 Params(Param(NIL, "value"), NIL))),
+	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
-					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")),
-					           PrmTypes(NmdType(NIL, "PRT_UINT32"),
-							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),					  
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
 	                def = FunDef(
 					  NIL,
 					  funType,
@@ -802,11 +786,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 	FunDeclConcat ::= (pos: Natural, mach: MachineDecl, arr: out.Args + {NIL}).
 
 	//// Base case
-	FunDeclConcat(c, m, NIL) :- m is MachineDecl, m.kind = REAL, c = 1 + count({f | f is AnonOrNamedFun, f.owner = m}).
+	FunDeclConcat(c, m, NIL) :- m is MachineDecl, m.kind = REAL, c = 1 + count({f | f is FunDecl, f.owner = NIL}) + count({f | f is AnonOrNamedFun, f.owner = m}).
 
     //// Build every fundecl array in reverse order
-	FunDeclConcat(m, d.owner, arr) :- 
-							DeclId(d, m, cfun), DeclId(d.owner, _, cmach), FunDeclConcat(m + 1, d.owner, after), d : FunDecl,							  
+	FunDeclConcat(m, mdecl, arr) :-  
+							DeclId(d, m, cfun), DeclId(d.owner, _, cmach), FunDeclConcat(m + 1, d.owner, after), d : FunDecl,
+							mdecl: MachineDecl, FunAvailable(d, mdecl),
 							arr = out.Args(def, after), 
 	                        def = Init(
 							   Args(Ident(cfun),
@@ -1334,16 +1319,16 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	//// Function application
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = in.FunApp(name, NIL), DeclId(funDecl, funIndex, funName), FunAvailable(funDecl, c.owner), funDecl.name = name, 
-									ec = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(Ident("context"), Args(IntLit(funIndex, DEC, U), Args(Ident("NULL"), NIL)))).
+									e = in.FunApp(name, NIL, label), DeclId(funDecl, funIndex, funName), FunAvailable(funDecl, c.owner), funDecl.name = name, 
+									ec = out.FunApp(Ident("PrtWrapFunCall"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(label, DEC, U), Args(Ident("context"), Args(IntLit(funIndex, DEC, U), Args(Ident("NULL"), NIL)))))).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = in.FunApp(name, args), args != NIL, 
+									e = in.FunApp(name, args,  label), args != NIL, 
 									DeclId(funDecl, funIndex, funName), funDecl.name = name, funDecl.params = type, FunAvailable(funDecl, c.owner),
 									TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), 
 									ExprsTrans(c, s, i, args, ecs),
 									argsTuple = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#Exprs, args) - 1))), Args(out.UnApp(ADDR, Ident(typeName)), ecs)),
-									ec = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(Ident("context"), Args(IntLit(funIndex, DEC, U), Args(argsTuple, NIL)))).
+									ec = out.FunApp(Ident("PrtWrapFunCall"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(label, DEC, U), Args(Ident("context"), Args(IntLit(funIndex, DEC, U), Args(argsTuple, NIL)))))).
 	
 	//// Nullary expressions
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
@@ -1550,21 +1535,39 @@ transform P2CProgram (in:: P) returns (out:: C)
     /*************************************************************/
     /******             Statement translation               ******/
     /*************************************************************/	
+	JumpToLabel ::= (cntxt: TypingContext, stmt: in.Stmt, trans: out.Stmt).
+	JumpToLabel(c, s, cs) :- SubSE(c, s), s = in.Receive(_, label),
+							 cs = out.ITE(out.BinApp(EQ, out.BinApp(FLD, Ident("p_tmp_frame"), Ident("returnTo")),
+														  out.IntLit(label, DEC, U)), 
+										   out.Goto(strJoin("L", toString(label))),
+										   NIL).
+	JumpToLabel(c, s, cs) :- SubSE(c, s), s = in.FunStmt(f, _, label), 
+							 label' = label + count({ x | x: in.Receive, SubSE(c, x) }),
+							 called = FunDecl(f, _, _, _, _, _, _), FunAvailable(called, c.owner), Impure(called),
+							 cs = out.ITE(out.BinApp(EQ, out.BinApp(FLD, Ident("p_tmp_frame"), Ident("returnTo")),
+														  out.IntLit(label', DEC, U)), 
+										   out.Goto(strJoin("L", toString(label'))),
+										   NIL). 
+	JumpToLabel(c, s, cs) :- SubSE(c, s), s = in.BinStmt(_, _, FunApp(f, _, label)), 
+						     label' = label + count({ x | x: in.Receive, SubSE(c, x) }),
+							 called = FunDecl(f, _, _, _, _, _, _), FunAvailable(called, c.owner), Impure(called),
+							 cs = out.ITE(out.BinApp(EQ, out.BinApp(FLD, Ident("p_tmp_frame"), Ident("returnTo")),
+														  out.IntLit(label', DEC, U)), 
+										   out.Goto(strJoin("L", toString(label'))),
+										   NIL). 
 	
 	Trampoline ::= (cntxt: TypingContext, stmt: in.Stmt, trans: out.Stmt + { NIL }).
-	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Push(name, label), label' = label + 1,
-							cs = out.ITE(out.BinApp(EQ, out.BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("returnTo")),
-														out.IntLit(label', DEC, U)), 
-										 out.Goto(strJoin("L", toString(label'))),
-										 NIL).
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Receive(_, _), JumpToLabel(c, s, cs).
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NewStmt(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Raise(_, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Send(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Monitor(_, _), cs = NIL.
-	Trampoline(c, s, cs) :- SubSE(c, s), s = in.FunStmt(_, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.FunStmt(_, _, _), JumpToLabel(c, s, cs).
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.FunStmt(_, _, _), no JumpToLabel(c, s, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NulStmt(_), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.UnStmt(_, _), cs = NIL.
-	Trampoline(c, s, cs) :- SubSE(c, s), s = in.BinStmt(_, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.BinStmt(_, _, _), JumpToLabel(c, s, cs).
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.BinStmt(_, _, _), no JumpToLabel(c, s, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Return(_), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.While(_, s1), Trampoline(c, s1, cs1), cs = cs1.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Ite(_, s1, s2), Trampoline(c, s1, cs1), Trampoline(c, s2, cs2), cs = out.Seq(cs1, cs2).
@@ -1572,13 +1575,11 @@ transform P2CProgram (in:: P) returns (out:: C)
 
     StmtTrans ::= (cntxt: TypingContext, stmt: in.Stmt, trans: out.Stmt + { NIL }).
 
-	//// Push
-	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
-						   s = in.Push(name, label), label' = label + 1,
-						   DeclId(StateDecl(name, c.owner, _, _, _), _, stateName), 
-						   cs = out.Seq(out.BinApp(ASN, out.BinApp(PFLD, context, Ident("returnTo")), IntLit(label', DEC, U)),
-										out.Seq(out.FunApp(Ident("PrtPush"), Args(Ident("p_tmp_mach_priv"), Args(Ident(stateName), NIL))), 
-												out.Seq(out.Goto("P_EXIT_FUN"), out.Lbl(strJoin("L", toString(label')), NIL)))).
+	//// Receive
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Receive(_, label),
+						   cont = out.FunApp(Ident("PrtGetFun"), Args(Ident("p_tmp_mach_priv"), Args(BinApp(PFLD, BinApp(FLD, Ident("p_tmp_frame"), Ident("then")), Ident("funIndex")), NIL))),
+						   cs = out.Seq(out.FunApp(Ident("PrtReceive"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(label, DEC, U), NIL)))), 
+										out.ITE(BinApp(EQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("receive")), Ident("NULL")), Goto("P_EXIT_FUN"), Lbl(strJoin("L", toString(label)), cont))).
 	
 	//// New Machine or Model
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, NIL, _), 
@@ -1687,22 +1688,28 @@ transform P2CProgram (in:: P) returns (out:: C)
 
     //// Fun
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("context"),
-						   s = in.FunStmt(name, NIL), DeclId(funDecl, funIndex, funName), FunAvailable(funDecl, c.owner), funDecl.name = name,
+						   s = in.FunStmt(name, NIL, label), DeclId(funDecl, funIndex, funName), FunAvailable(funDecl, c.owner), funDecl.name = name,
 						   ret = Ident("p_tmp_funstmt_ret"),
-						   funcall = out.BinApp(ASN, ret, FunApp(Ident(strJoin(funName, "_IMPL")), Args(context, Args(IntLit(funIndex, DEC, U), Args(Ident("NULL"), NIL))))),
-						   cleanup = out.ITE(BinApp(EQ, ret, Ident("NULL")), NIL, FunApp(Ident("PrtFreeValue"), Args(ret, NIL))),
-						   cs = out.Seq(funcall, cleanup).
+						   funcall = out.BinApp(ASN, ret, FunApp(Ident("PrtWrapFunCall"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(label, DEC, U), Args(context, Args(IntLit(funIndex, DEC, U), Args(Ident("NULL"), NIL))))))),
+						   blocked = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("receive")), Ident("NULL")), Return(ret), NIL),
+						   exception = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("lastOperation")), Ident("ReturnStatement")), Goto("P_EXIT_FUN"), NIL),
+						   cleanup = out.ITE(BinApp(NEQ, ret, Ident("NULL")), FunApp(Ident("PrtFreeValue"), Args(ret, NIL)), NIL),
+						   label' = label + count({ x | x: in.Receive, SubSE(c, x) }),
+						   cs = out.Lbl(strJoin("L", toString(label')), Seq(funcall, Seq(blocked, Seq(exception, cleanup)))).
 
-	StmtTrans(c, s, cs) :- FunStmtRhs(c, s, size, tail), s = in.FunStmt(name, args), args != NIL, 
+	StmtTrans(c, s, cs) :- FunStmtRhs(c, s, size, tail), s = in.FunStmt(name, args, label), args != NIL, 
 	                       FunDeclNames(fn, funIndex, funName, prmsTypeName), FunAvailable(fn, c.owner), fn.name = name, 
 						   ExprsTrans(c, s, 0, args, ecs),
-						   cs = out.Seq(funcall, cleanup),
-						   funcall = out.BinApp(ASN, ret, FunApp(Ident(strJoin("P_EXPR_", toString(size))), trans)),
-						   ret = Ident("p_tmp_funstmt_ret"),
-						   trans = out.Args(ec, Args(Ident("PRT_FALSE"), tail)), 
-						   ec = out.FunApp(Ident(strJoin(funName, "_IMPL")), Args(context, Args(IntLit(funIndex, DEC, U), Args(argsTuple, NIL)))),
+						   label' = label + count({ x | x: in.Receive, SubSE(c, x) }),
+						   cs = out.Seq(paramAssign, Lbl(strJoin("L", toString(label')), Seq(funCall, Seq(blocked, Seq(exception, cleanup))))),
 						   argsTuple = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#Exprs, args) - 1))), Args(UnApp(ADDR, Ident(prmsTypeName)), ecs)),
-						   cleanup = out.ITE(BinApp(EQ, ret, Ident("NULL")), NIL, FunApp(Ident("PrtFreeValue"), Args(ret, NIL))),
+						   paramAssign = out.BinApp(ASN, params, FunApp(Ident(strJoin("P_EXPR_", toString(size))), Args(argsTuple, Args(Ident("PRT_FALSE"), tail)))),
+						   funCall = out.BinApp(ASN, ret, FunApp(Ident("PrtWrapFunCall"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(label, DEC, U), Args(context, Args(IntLit(funIndex, DEC, U), Args(params, NIL))))))),
+						   blocked = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("receive")), Ident("NULL")), Return(ret), NIL),
+						   exception = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("lastOperation")), Ident("ReturnStatement")), Goto("P_EXIT_FUN"), NIL),
+						   cleanup = out.ITE(BinApp(NEQ, ret, Ident("NULL")), FunApp(Ident("PrtFreeValue"), Args(ret, NIL)), NIL),
+						   ret = Ident("p_tmp_funstmt_ret"),
+						   params = Ident("p_tmp_params"),
 						   context = Ident("context").
     
 	FunStmtRhs ::= (cntxt: TypingContext, stmt: in.FunStmt, exprSize: Natural, args: out.Args).
@@ -1758,8 +1765,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 	ExprDepNum(i, e) :- SubSE(_, e), e = in.New(_, e', _), ExprDepNum(j, e'), i = j + 1. 
 
 	//// Fun app has zero or one depenencies.
-	ExprDepNum(0, e) :- SubSE(_, e), e = in.FunApp(_, NIL). 
-	ExprDepNum(i, e) :- SubSE(_, e), e = in.FunApp(_, e'), ExprDepNum(j, e'), i = j + 1.
+	ExprDepNum(0, e) :- SubSE(_, e), e = in.FunApp(_, NIL, _). 
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.FunApp(_, e', _), ExprDepNum(j, e'), i = j + 1.
 
 	//// These expressions have one depenency.
 	ExprDepNum(i, e) :- SubSE(_, e), e = in.UnApp(_, e'), ExprDepNum(j, e'), i = j + 1. 
@@ -1801,8 +1808,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.NewStmt(_, e, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
 	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.NewStmt.
 	
-	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.FunStmt(_, e), e : in.Exprs.
-	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.FunStmt(_, e), e : in.Exprs,
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.FunStmt(_, e, _), e : in.Exprs.
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.FunStmt(_, e, _), e : in.Exprs,
 							k = maxAll(0, { k' | RhsEvalOrder(s, 0, _, k') }), k: Natural.
 	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.FunStmt.
 	
@@ -1845,7 +1852,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, e', _), e' : in.Expr. 
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, NIL, _), e' = in.NulApp(NULL). 
 
-	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.FunApp(_, e'), e' : in.Exprs.
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.FunApp(_, e', _), e' : in.Exprs.
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.UnApp(_, e').
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.Field(e', _).
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.Cast(e', _).

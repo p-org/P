@@ -22,14 +22,9 @@ typedef enum PRT_SPECIAL_ACTIONS
 
 /** A PRT_SM_FUN function is a pointer to a P function.
 *   context is the current machine context.
-*   funIndex is the function decl index of this function.
-*   value is the argument to this function. It will be the C null value if function is nullary. Function frees value.
 *   Returns a non-null pointer if function has a return type. Otherwise returns C null value. Caller frees return.
 */
-typedef PRT_VALUE *(PRT_CALL_CONV * PRT_SM_FUN)(
-	_Inout_ struct PRT_MACHINEINST * context, 
-	_In_    PRT_UINT32 funIndex, 
-	_Inout_ PRT_VALUE * value);
+typedef PRT_VALUE *(PRT_CALL_CONV * PRT_SM_FUN)(_Inout_ struct PRT_MACHINEINST *context);
 
 /** A PRT_SM_EXTCTOR function constructs the external blob attached to a machine.
 *   context is the machine context to construct.
@@ -95,7 +90,7 @@ typedef struct PRT_THENDECL
 
 typedef struct PRT_RECEIVEDECL
 {
-	PRT_UINT16 label;
+	PRT_UINT16 receiveIndex;
 	PRT_UINT32* thenSet;
 	PRT_UINT32 nThens;
 	PRT_THENDECL *thens;

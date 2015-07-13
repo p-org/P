@@ -87,9 +87,9 @@ typedef struct PRT_FUNSTACK_INFO
 {
 	PRT_UINT32		funIndex;
 	PRT_UINT16		currentEventIndex;
-	PRT_UINT16		returnTo;
 	PRT_VALUE		*parameters;
 	PRT_VALUE		*locals;
+	PRT_UINT16		returnTo;
 	PRT_THENDECL	*then;
 } PRT_FUNSTACK_INFO;
 
@@ -111,14 +111,13 @@ typedef struct PRT_MACHINEINST_PRIV {
 	PRT_VALUE			*id;  
 	void				*extContext;
 	PRT_BOOLEAN			isModel;
-	PRT_VALUE*			recvMessMap;	 /**<  Stores a map from the sender to the sequence number of the last message received from that sender*/
+	PRT_VALUE*			recvMap;	 
 	PRT_VALUE			**varValues;
 	PRT_RECURSIVE_MUTEX stateMachineLock;
 	PRT_BOOLEAN			isRunning;
 	PRT_BOOLEAN			isHalted;
 	PRT_UINT32			currentState;
 	PRT_RECEIVEDECL		*receive;
-	PRT_THENDECL		*then;
 	PRT_STATESTACK		callStack;
 	PRT_FUNSTACK		funStack;
 	PRT_EVENTSTACK		eventStack;
@@ -435,12 +434,49 @@ PrtGetCurrentPayload(
 	_Inout_ PRT_MACHINEINST_PRIV		*context
 );
 
-void PrtPushFun(
+PRT_FUNSTACK_INFO *
+PrtTopOfFunStack(
+	_In_ PRT_MACHINEINST_PRIV	*context
+);
+
+void 
+PrtPushNewFrame(
 	_Inout_ PRT_MACHINEINST_PRIV	*context,
 	_In_ PRT_UINT32					funIndex,
-	_In_ PRT_VALUE					*parameters,
-	_In_ PRT_VALUE					*locals,
-	_In_ PRT_UINT16					returnTo
+	_In_ PRT_VALUE					*parameters
+);
+
+void 
+PrtPushFrame(
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_In_ PRT_FUNSTACK_INFO *funStackInfo
+);
+
+void 
+PrtPopFrame(
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_Inout_ PRT_FUNSTACK_INFO *funStackInfo
+);
+
+void
+PrtFreeFrameVars(
+	_Inout_ PRT_FUNSTACK_INFO		*frame
+);
+
+PRT_VALUE *
+PrtWrapFunCall(
+	_Inout_ PRT_FUNSTACK_INFO		*frame,
+	_In_ PRT_UINT16					funCallIndex,
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_In_ PRT_UINT32					funIndex,
+	_In_ PRT_VALUE					*parameters
+);
+
+void
+PrtReceive(
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_Inout_ PRT_FUNSTACK_INFO		*funStackInfo,
+	_In_ PRT_UINT16					receiveIndex
 );
 
 PRT_API void
@@ -449,20 +485,13 @@ _Inout_ PRT_MACHINEINST_PRIV	    *context,
 _In_ PRT_BOOLEAN				doDequeue
 );
 
-VOID CALLBACK PrtRunStateMachineWorkItem(
-_Inout_     PTP_CALLBACK_INSTANCE Instance,
-_Inout_opt_ PVOID                 Context,
-_Inout_     PTP_WORK              Work
+PRT_API void PRT_CALL_CONV PrtEnqueueInOrder(
+_In_ PRT_VALUE					*source,
+_In_ PRT_INT32					seqNum,
+_Inout_ PRT_MACHINEINST_PRIV	*machine,
+_In_ PRT_VALUE					*evt,
+_In_ PRT_VALUE					*payload
 );
-
-extern PTP_POOL PrtRunStateMachineThreadPool;
-
-PRT_API void PRT_CALL_CONV PrtEnqueueWithInorder(
-	_In_ PRT_VALUE* source,
-	_In_ PRT_INT64 seqNum,
-	_Inout_ PRT_MACHINEINST_PRIV *machine,
-	_In_ PRT_VALUE *evt,
-	_In_ PRT_VALUE *payload);
 
 #ifdef __cplusplus
 }

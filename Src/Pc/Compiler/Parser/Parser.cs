@@ -58,6 +58,7 @@
         private Stack<P_Root.Stmt> stmtStack = new Stack<P_Root.Stmt>();
         private Stack<P_Root.QualifiedName> groupStack = new Stack<P_Root.QualifiedName>();
         private int nextReceiveLabel = 0;
+        private int nextFunCallLabel = 0;
 
         public P_Root.TypeExpr Debug_PeekTypeStack
         {
@@ -411,6 +412,7 @@
             var funStmt = P_Root.MkFunStmt();
             funStmt.name = MkString(name, span);
             funStmt.Span = span;
+            funStmt.label = P_Root.MkNumeric(GetNextFunCallLabel());
             if (hasArgs)
             {
                 funStmt.args = (P_Root.Exprs)exprsStack.Pop();
@@ -429,6 +431,7 @@
             var funExpr = P_Root.MkFunApp();
             funExpr.name = MkString(name, span);
             funExpr.Span = span;
+            funExpr.label = P_Root.MkNumeric(GetNextFunCallLabel());
             if (hasArgs)
             {
                 funExpr.args = (P_Root.Exprs)exprsStack.Pop();
@@ -1698,6 +1701,16 @@
             nextReceiveLabel = 0;
         }
 
+        private int GetNextFunCallLabel()
+        {
+            return nextFunCallLabel++;
+        }
+
+        private void ResetFunCallLabels()
+        {
+            nextFunCallLabel = 0;
+        }
+
         private P_Root.AnonFunDecl MkSkipFun(P_Root.MachineDecl owner, Span span)
         {
             var stmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
@@ -1766,6 +1779,7 @@
             crntQualName = null;
             crntStateTargetName = null;
             nextReceiveLabel = 0;
+            nextFunCallLabel = 0;
             crntStateNames.Clear();
             crntFunNames.Clear();
             crntVarNames.Clear();

@@ -68,7 +68,6 @@
         /// <summary>
         /// Statements
         /// </summary>
-        public static readonly AST<Id> Con_Push = Factory.Instance.MkId("Push");
         public static readonly AST<Id> Con_NewStmt = Factory.Instance.MkId("NewStmt");
         public static readonly AST<Id> Con_Raise = Factory.Instance.MkId("Raise");
         public static readonly AST<Id> Con_Send = Factory.Instance.MkId("Send");

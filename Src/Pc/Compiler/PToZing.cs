@@ -2045,7 +2045,6 @@ namespace Microsoft.Pc
                      funName == PData.Con_NulApp.Node.Name ||
                      funName == PData.Con_UnApp.Node.Name ||
                      funName == PData.Con_Default.Node.Name ||
-                     funName == PData.Con_Push.Node.Name ||
                      funName == PData.Con_NulStmt.Node.Name ||
                      funName == PData.Con_UnStmt.Node.Name)
             {
@@ -2234,10 +2233,6 @@ namespace Microsoft.Pc
             else if (funName == PData.Con_NamedTuple.Node.Name)
             {
                 return FoldNamedTuple(ft, children, ctxt);
-            }
-            else if (funName == PData.Con_Push.Node.Name)
-            {
-                return FoldPush(ft, children, ctxt);
             }
             else if (funName == PData.Con_NewStmt.Node.Name)
             {

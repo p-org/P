@@ -78,7 +78,7 @@ PrtMkMachinePrivate(
 	// Initialize the map used in PrtDist, map from sender to the last seqnumber received
 	//
 	PRT_TYPE* mapType = PrtMkMapType(PrtMkPrimitiveType(PRT_KIND_MACHINE), PrtMkPrimitiveType(PRT_KIND_INT));
-	context->recvMessMap = PrtMkDefaultValue(mapType);
+	context->recvMap = PrtMkDefaultValue(mapType);
 
 	// Initialize Machine Internal Variables
 	//
@@ -287,158 +287,32 @@ PrtSendPrivate(
 	return;
 }
 
-#ifdef PRT_USE_IDL
-PRT_API VOID CALLBACK PrtRunStateMachineWorkItem(
-	_Inout_     PTP_CALLBACK_INSTANCE Instance,
-	_Inout_opt_ PVOID                 Context,
-	_Inout_     PTP_WORK              Work
-	)
-{
-	UNREFERENCED_PARAMETER(Instance);
-	UNREFERENCED_PARAMETER(Work);
-
-	//acquire the lock again, this is because PrtRunStateMachine makes an assumption
-	//that the lock is already acquired if second arg is true.
-	PrtLockMutex(((PRT_MACHINEINST_PRIV*)Context)->stateMachineLock);
-	PrtRunStateMachine(Context, PRT_TRUE);
-}
-
 void
-PrtEnqueueWithInorder(
-_In_ PRT_VALUE* source,
-_In_ PRT_INT64 seqNum,
+PrtEnqueueInOrder(
+_In_ PRT_VALUE					*source,
+_In_ PRT_INT32					seqNum,
 _Inout_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_VALUE					*event,
 _In_ PRT_VALUE					*payload
 )
 {
-	PRT_EVENTQUEUE *queue;
-	PRT_UINT32 tail;
-	PRT_UINT32 eventMaxInstances;
-	PRT_UINT32 maxQueueSize;
-	PRT_UINT32 eventIndex;
-
-	//Check if the enqueued event is in order
+	// Check if the enqueued event is in order
 	PrtLockMutex(context->stateMachineLock);
-	if (PrtMapExists(context->recvMessMap, source) && PrtMapGet(context->recvMessMap, source)->valueUnion.nt >= seqNum)
+	if (PrtMapExists(context->recvMap, source) && PrtMapGet(context->recvMap, source)->valueUnion.nt >= seqNum)
 	{
 		PrtUnlockMutex(context->stateMachineLock);
-		//drop the event
+		// Drop the event
 		return;
 	}
 	else
 	{
-		PrtMapUpdate(context->recvMessMap, source, PrtMkIntValue(seqNum));
+		PrtMapUpdate(context->recvMap, source, PrtMkIntValue(seqNum));
 	}
 	PrtUnlockMutex(context->stateMachineLock);
 
-
-	PrtAssert(!PrtIsSpecialEvent(event), "Enqueued event must not be null");
-	PrtAssert(PrtInhabitsType(payload, PrtGetPayloadType(context, event)), "Payload must be member of event payload type");
-
-	if (context->isHalted)
-	{
-		// drop the event silently
-		return;
-	}
-
-	eventIndex = PrtPrimGetEvent(event);
-	eventMaxInstances = context->process->program->events[eventIndex].eventMaxInstances;
-	maxQueueSize = context->process->program->machines[context->instanceOf].maxQueueSize;
-
-	PrtLockMutex(context->stateMachineLock);
-
-	queue = &context->eventQueue;
-
-	// check if maximum allowed instances of event are already present in queue
-	if (eventMaxInstances != 0xffffffff && PrtIsEventMaxInstanceExceeded(queue, eventIndex, eventMaxInstances))
-	{
-		PrtUnlockMutex(context->stateMachineLock);
-		PrtHandleError(PRT_STATUS_EVENT_OVERFLOW, context);
-		return;
-	}
-
-	// if queue is full, resize the queue if possible
-	if (queue->eventsSize == queue->size)
-	{
-		if (maxQueueSize != 0xffffffff && queue->size == maxQueueSize)
-		{
-			PrtUnlockMutex(context->stateMachineLock);
-			PrtHandleError(PRT_STATUS_QUEUE_OVERFLOW, context);
-			return;
-		}
-		PrtResizeEventQueue(context);
-	}
-
-	tail = queue->tailIndex;
-
-	//
-	// Add event to the queue
-	//
-	queue->events[tail].trigger = PrtCloneValue(event);
-	queue->events[tail].payload = PrtCloneValue(payload);
-	queue->size++;
-	queue->tailIndex = (tail + 1) % queue->eventsSize;
-
-	//
-	//Log
-	//
-	PrtLog(PRT_STEP_ENQUEUE, context);
-	//
-	// Now try to run the machine if its not running already
-	//
-	if (context->isRunning)
-	{
-		PrtUnlockMutex(context->stateMachineLock);
-		return;
-	}
-	else
-	{
-		context->stateControl = PrtDequeue;
-		context->returnTo = 0;
-
-#ifdef  PRT_USE_THREADPOOL
-		context->isRunning = PRT_TRUE; //set true, indicating that a thread will be created to run the state-machine.
-		PrtUnlockMutex(context->stateMachineLock);
-
-
-		BOOL bRet = FALSE;
-		PTP_WORK work = NULL;
-		PTP_TIMER timer = NULL;
-		PTP_WORK_CALLBACK workcallback = PrtRunStateMachineWorkItem;
-		PTP_TIMER_CALLBACK timercallback = NULL;
-		PTP_CLEANUP_GROUP cleanupgroup = NULL;
-		TP_CALLBACK_ENVIRON CallBackEnv;
-
-		InitializeThreadpoolEnvironment(&CallBackEnv);
-
-		//
-		// Associate the callback environment with our thread pool.
-		//
-		SetThreadpoolCallbackPool(&CallBackEnv, PrtRunStateMachineThreadPool);
-
-		PTP_WORK runMachine;
-		runMachine = CreateThreadpoolWork(PrtRunStateMachineWorkItem, context, &CallBackEnv);
-		
-		if (NULL == runMachine) {
-			printf("CreateThreadpoolWork failed inside PrtEnqueueWithThreadPool. LastError: %u\n",
-				GetLastError());
-			exit(1);
-		}
-
-		//
-		// Submit the work to the pool. Because this was a pre-allocated
-		// work item (using CreateThreadpoolWork), it is guaranteed to execute.
-		//
-		SubmitThreadpoolWork(runMachine);
-#else
-		PrtRunStateMachine(context, PRT_TRUE);
-#endif
-	}
-
-	return;
+	PrtSendPrivate(context, event, payload);
 }
-#endif
+
 void
 PrtRaise(
 	_Inout_ PRT_MACHINEINST_PRIV		*context,
@@ -457,35 +331,76 @@ PrtRaise(
 void
 PrtReceive(
 	_Inout_ PRT_MACHINEINST_PRIV	*context,
-	_In_ PRT_UINT32					funIndex,
+	_Inout_ PRT_FUNSTACK_INFO		*funStackInfo,
 	_In_ PRT_UINT16					receiveIndex
-	)
+)
 {
+	PRT_UINT32 funIndex = funStackInfo->funIndex;
 	context->receive = &(context->process->program->machines[context->instanceOf].funs[funIndex].receives[receiveIndex]);
+	funStackInfo->returnTo = receiveIndex;
+	PrtPushFrame(context, funStackInfo);
 	if (PrtDequeueEvent(context))
 	{
-		PrtPushFun(context, context->then->funIndex, NULL, NULL, 0);
-		context->then = NULL;
+		PrtPopFrame(context, funStackInfo);
+		PrtPushNewFrame(context, funStackInfo->then->funIndex, NULL);
 	}
 }
 
-void PrtPushFun(
+PRT_FUNSTACK_INFO *
+PrtTopOfFunStack(
+	_In_ PRT_MACHINEINST_PRIV	*context)
+{
+	PrtAssert(0 < context->funStack.length, "Illegal fun stack access");
+	return &context->funStack.funs[0];
+}
+
+void PrtPushNewFrame(
 	_Inout_ PRT_MACHINEINST_PRIV	*context,
 	_In_ PRT_UINT32					funIndex,
-	_In_ PRT_VALUE					*parameters,
-	_In_ PRT_VALUE					*locals,
-	_In_ PRT_UINT16					returnTo
+	_In_ PRT_VALUE					*parameters
 )
 {
 	PRT_UINT16 length = context->funStack.length;
 	PrtAssert(length < PRT_MAX_FUNSTACK_DEPTH, "Fun stack overflow");
 	context->funStack.length = length + 1;
-	context->funStack.funs[length].currentEventIndex = context->eventStack.length - 1;
 	context->funStack.funs[length].funIndex = funIndex;
+	context->funStack.funs[length].currentEventIndex = context->eventStack.length - 1;
 	context->funStack.funs[length].parameters = parameters;
-	context->funStack.funs[length].locals = locals;
-	context->funStack.funs[length].returnTo = returnTo;
+	context->funStack.funs[length].locals = NULL;
+	context->funStack.funs[length].returnTo = 0xFFFF;
 	context->funStack.funs[length].then = NULL;
+}
+
+void PrtPushFrame(
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_In_ PRT_FUNSTACK_INFO *funStackInfo
+)
+{
+	PRT_UINT16 length = context->funStack.length;
+	PrtAssert(length < PRT_MAX_FUNSTACK_DEPTH, "Fun stack overflow");
+	context->funStack.length = length + 1;
+	context->funStack.funs[length].funIndex = funStackInfo->funIndex;
+	context->funStack.funs[length].currentEventIndex = funStackInfo->currentEventIndex;
+	context->funStack.funs[length].parameters = funStackInfo->parameters;
+	context->funStack.funs[length].locals = funStackInfo->locals;
+	context->funStack.funs[length].returnTo = funStackInfo->returnTo;
+	context->funStack.funs[length].then = funStackInfo->then;
+}
+
+void PrtPopFrame(
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_Inout_ PRT_FUNSTACK_INFO *funStackInfo
+)
+{
+	PRT_UINT16 length = context->funStack.length;
+	PrtAssert(0 < length, "Fun stack underflow");
+	funStackInfo->funIndex = context->funStack.funs[length].funIndex;
+	funStackInfo->currentEventIndex = context->funStack.funs[length].currentEventIndex;
+	funStackInfo->parameters = context->funStack.funs[length].parameters;
+	funStackInfo->locals = context->funStack.funs[length].locals;
+	funStackInfo->returnTo = context->funStack.funs[length].returnTo;
+	funStackInfo->then = context->funStack.funs[length].then;
+	context->funStack.length = length - 1;
 }
 
 void
@@ -728,10 +643,9 @@ DoDequeue:
 
 DoHandleEvent:
 	eventValue = PrtPrimGetEvent(PrtGetCurrentTrigger(context));
-	if (context->then != NULL)
+	if (PrtTopOfFunStack(context)->then != NULL)
 	{
-		PrtPushFun(context, context->then->funIndex, NULL, NULL, 0);
-		context->then = NULL;
+		PrtPushNewFrame(context, PrtTopOfFunStack(context)->then->funIndex, NULL);
 		goto DoEntry;
 	}
 	else if (PrtIsPushTransition(context, eventValue))
@@ -842,7 +756,7 @@ PrtDequeueEvent(
 				PRT_THENDECL *then = &context->receive->thens[i];
 				if (triggerIndex == then->triggerEventIndex)
 				{
-					context->then = then;
+					PrtTopOfFunStack(context)->then = then;
 					break;
 				}
 			}
@@ -928,6 +842,49 @@ PrtGetPackSize(
 	return (UINT16)(((nEvents == 0) || (nEvents % (sizeof(PRT_UINT32) * 8) != 0))
 		? (1 + (nEvents / (sizeof(PRT_UINT32) * 8)))
 		: (nEvents / (sizeof(PRT_UINT32) * 8)));
+}
+
+PRT_VALUE *
+PrtWrapFunCall(
+	_Inout_ PRT_FUNSTACK_INFO		*frame,
+	_In_ PRT_UINT16					funCallIndex,
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_In_ PRT_UINT32					funIndex,
+	_In_ PRT_VALUE					*parameters
+)
+{
+	if (frame->returnTo == 0xFFFF)
+	{
+		PrtPushNewFrame(context, funIndex, parameters);
+	}
+	PRT_SM_FUN fun = context->process->program->machines[context->instanceOf].funs[funIndex].implementation;
+	PRT_VALUE *returnValue = fun(context);
+	PRT_UINT32 callerFunIndex = frame->funIndex;
+	if (context->receive != NULL)
+	{
+		frame->returnTo = funCallIndex + context->process->program->machines[context->instanceOf].funs[callerFunIndex].nReceives;
+		PrtPushFrame(context, frame);
+	}
+	else 
+	{
+		frame->returnTo = 0xFFFF;
+	}
+	return returnValue;
+}
+
+void 
+PrtFreeFrameVars(
+	_Inout_ PRT_FUNSTACK_INFO		*frame
+)
+{
+	if (frame->parameters != NULL)
+	{
+		PrtFreeValue(frame->parameters);
+	}
+	if (frame->locals != NULL)
+	{
+		PrtFreeValue(frame->locals);
+	}
 }
 
 FORCEINLINE
@@ -1456,9 +1413,9 @@ PrtCleanupMachine(
 	
 	PrtClearEventStack(context);
 	
-	if (context->recvMessMap != NULL)
+	if (context->recvMap != NULL)
 	{
-		PrtFreeValue(context->recvMessMap);
+		PrtFreeValue(context->recvMap);
 	}
 }
 

@@ -119,6 +119,7 @@ namespace Microsoft.Pc
         public bool isAnonymous;
         public Dictionary<AST<Node>, FuncTerm> typeInfo;
         public HashSet<Node> invokeSchedulerFuns;
+        public HashSet<Node> invokePluginFuns;
         public HashSet<string> printArgs;
 
         public FunInfo(bool isModel, AST<FuncTerm> returnType, Node body)
@@ -132,6 +133,7 @@ namespace Microsoft.Pc
             this.isAnonymous = false;
             this.typeInfo = new Dictionary<AST<Node>, FuncTerm>();
             this.invokeSchedulerFuns = new HashSet<Node>();
+            this.invokePluginFuns = new HashSet<Node>();
             this.printArgs = new HashSet<string>();
         }
 
@@ -146,6 +148,7 @@ namespace Microsoft.Pc
             this.isAnonymous = isAnonymous;
             this.typeInfo = new Dictionary<AST<Node>, FuncTerm>();
             this.invokeSchedulerFuns = new HashSet<Node>();
+            this.invokePluginFuns = new HashSet<Node>();
             this.printArgs = new HashSet<string>();
         }
     }
@@ -660,6 +663,17 @@ namespace Microsoft.Pc
                             {
                                 allMachines[ownerName].funNameToFunInfo[funName].printArgs.Add(arg);
                             }
+                        }
+                    }
+                    else if (annotation == "invokeplugin")
+                    {
+                        if(ownerName == null)
+                        {
+                            allStaticFuns[funName].invokePluginFuns.Add(it.Current);
+                        }
+                        else
+                        {
+                            allMachines[ownerName].funNameToFunInfo[funName].invokePluginFuns.Add(it.Current);
                         }
                     }
                 }
@@ -2407,6 +2421,29 @@ namespace Microsoft.Pc
                 }
                 ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingIdentifier("invokescheduler"), invokeSchedulerArgs)));
             }
+
+            foreach (var x in calleeInfo.invokePluginFuns)
+            {
+                List<AST<Node>> invokePluginArgs = new List<AST<Node>>();
+                if (x.NodeKind == NodeKind.Cnst)
+                {
+                    Cnst cnst = x as Cnst;
+                    if (cnst.CnstKind == CnstKind.String)
+                    {
+                        invokePluginArgs.Add(Factory.Instance.MkCnst(string.Format("\"{0}\"", cnst.GetStringValue())));
+                    }
+                    else
+                    {
+                        invokePluginArgs.Add(Factory.Instance.ToAST(x));
+                    }
+                }
+                for (int i = 0; i < children.Count(); i++)
+                {
+                    invokePluginArgs.Add(MkZingDot(MkZingIndex(argCloneVar, Factory.Instance.MkCnst(i)), "nt"));
+                }
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingIdentifier("invokeplugin"), invokePluginArgs)));
+            }
+
             ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(0), argCloneVar)));
 
             var beforeLabel = ctxt.GetFreshLabel();

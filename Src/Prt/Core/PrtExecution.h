@@ -327,8 +327,8 @@ _In_ PRT_VALUE * event
 FORCEINLINE
 PRT_BOOLEAN
 PrtIsEventReceivable(
-	_In_ PRT_UINT32		eventIndex,
-	_In_ PRT_RECEIVEDECL	*receive
+	_In_ PRT_MACHINEINST_PRIV *context,
+	_In_ PRT_UINT32		eventIndex
 );
 
 FORCEINLINE

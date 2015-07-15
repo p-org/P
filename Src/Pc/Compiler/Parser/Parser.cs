@@ -58,7 +58,7 @@
         private Stack<P_Root.Stmt> stmtStack = new Stack<P_Root.Stmt>();
         private Stack<P_Root.QualifiedName> groupStack = new Stack<P_Root.QualifiedName>();
         private int nextReceiveLabel = 0;
-        private int nextFunCallLabel = 0;
+        private int nextFunStmtLabel = 0;
 
         public P_Root.TypeExpr Debug_PeekTypeStack
         {
@@ -411,8 +411,9 @@
             Contract.Assert(!hasArgs || exprsStack.Count > 0);
             var funStmt = P_Root.MkFunStmt();
             funStmt.name = MkString(name, span);
+            funStmt.aout = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             funStmt.Span = span;
-            funStmt.label = P_Root.MkNumeric(GetNextFunCallLabel());
+            funStmt.label = P_Root.MkNumeric(GetNextFunStmtLabel());
             if (hasArgs)
             {
                 funStmt.args = (P_Root.Exprs)exprsStack.Pop();
@@ -431,7 +432,6 @@
             var funExpr = P_Root.MkFunApp();
             funExpr.name = MkString(name, span);
             funExpr.Span = span;
-            funExpr.label = P_Root.MkNumeric(GetNextFunCallLabel());
             if (hasArgs)
             {
                 funExpr.args = (P_Root.Exprs)exprsStack.Pop();
@@ -688,12 +688,28 @@
         private void PushBinStmt(P_Root.UserCnstKind op, Span span)
         {
             Contract.Assert(valueExprStack.Count > 1);
-            var binStmt = P_Root.MkBinStmt();
-            binStmt.op = MkUserCnst(op, span);
-            binStmt.arg2 = (P_Root.IArgType_BinStmt__2)valueExprStack.Pop();
-            binStmt.arg1 = (P_Root.IArgType_BinStmt__1)valueExprStack.Pop();
-            binStmt.Span = span;
-            stmtStack.Push(binStmt);
+            P_Root.Expr arg2 = valueExprStack.Pop();
+            P_Root.Expr arg1 = valueExprStack.Pop();
+            if (op == P_Root.UserCnstKind.ASSIGN && arg1 is P_Root.Name && arg2 is P_Root.FunApp)
+            {
+                P_Root.Name aout = arg1 as P_Root.Name;
+                P_Root.FunApp funCall = arg2 as P_Root.FunApp;
+                var funStmt = P_Root.MkFunStmt();
+                funStmt.name = (P_Root.IArgType_FunStmt__0)funCall.name;
+                funStmt.args = (P_Root.IArgType_FunStmt__1)funCall.args;
+                funStmt.aout = (P_Root.IArgType_FunStmt__2)aout;
+                funStmt.label = MkNumeric(GetNextFunStmtLabel(), span);
+                stmtStack.Push(funStmt);
+            }
+            else
+            {
+                var binStmt = P_Root.MkBinStmt();
+                binStmt.op = MkUserCnst(op, span);
+                binStmt.arg2 = (P_Root.IArgType_BinStmt__2)arg2;
+                binStmt.arg1 = (P_Root.IArgType_BinStmt__1)arg1;
+                binStmt.Span = span;
+                stmtStack.Push(binStmt);
+            }
         }
 
         private void PushBinExpr(P_Root.UserCnstKind op, Span span)
@@ -1701,14 +1717,14 @@
             nextReceiveLabel = 0;
         }
 
-        private int GetNextFunCallLabel()
+        private int GetNextFunStmtLabel()
         {
-            return nextFunCallLabel++;
+            return nextFunStmtLabel++;
         }
 
-        private void ResetFunCallLabels()
+        private void ResetFunStmtLabels()
         {
-            nextFunCallLabel = 0;
+            nextFunStmtLabel = 0;
         }
 
         private P_Root.AnonFunDecl MkSkipFun(P_Root.MachineDecl owner, Span span)
@@ -1779,7 +1795,7 @@
             crntQualName = null;
             crntStateTargetName = null;
             nextReceiveLabel = 0;
-            nextFunCallLabel = 0;
+            nextFunStmtLabel = 0;
             crntStateNames.Clear();
             crntFunNames.Clear();
             crntVarNames.Clear();

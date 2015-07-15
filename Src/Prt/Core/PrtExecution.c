@@ -354,7 +354,8 @@ PrtTopOfFunStack(
 	return &context->funStack.funs[0];
 }
 
-void PrtPushNewFrame(
+void 
+PrtPushNewFrame(
 	_Inout_ PRT_MACHINEINST_PRIV	*context,
 	_In_ PRT_UINT32					funIndex,
 	_In_ PRT_VALUE					*parameters
@@ -366,12 +367,14 @@ void PrtPushNewFrame(
 	context->funStack.funs[length].funIndex = funIndex;
 	context->funStack.funs[length].currentEventIndex = context->eventStack.length - 1;
 	context->funStack.funs[length].parameters = parameters;
-	context->funStack.funs[length].locals = NULL;
+	PRT_FUNDECL *funDecl = &(context->process->program->machines[context->instanceOf].funs[funIndex]);
+	context->funStack.funs[length].locals = PrtMkDefaultValue(funDecl->localsTupType);
 	context->funStack.funs[length].returnTo = 0xFFFF;
 	context->funStack.funs[length].then = NULL;
 }
 
-void PrtPushFrame(
+void 
+PrtPushFrame(
 	_Inout_ PRT_MACHINEINST_PRIV	*context,
 	_In_ PRT_FUNSTACK_INFO *funStackInfo
 )
@@ -387,7 +390,8 @@ void PrtPushFrame(
 	context->funStack.funs[length].then = funStackInfo->then;
 }
 
-void PrtPopFrame(
+void 
+PrtPopFrame(
 	_Inout_ PRT_MACHINEINST_PRIV	*context,
 	_Inout_ PRT_FUNSTACK_INFO *funStackInfo
 )
@@ -521,12 +525,14 @@ PrtRunExitFunction(
 	context->lastOperation = ReturnStatement;
 	PrtLog(PRT_STEP_EXIT, context);
 	PRT_UINT32 exitFunIndex = context->process->program->machines[context->instanceOf].states[context->currentState].exitFunIndex;
-	PrtGetExitFunction(context)((PRT_MACHINEINST *)context, exitFunIndex, NULL); 
+	PrtPushNewFrame(context, exitFunIndex, NULL);
+	PrtGetExitFunction(context)((PRT_MACHINEINST *)context); 
 	if (transIndex < stateDecl->nTransitions)
 	{
 		PRT_UINT32 transFunIndex = stateDecl->transitions[transIndex].transFunIndex;
 		PRT_DBG_ASSERT(transFunIndex != PRT_SPECIAL_ACTION_PUSH_OR_IGN, "Must be valid function index");
-		context->process->program->machines[context->instanceOf].funs[transFunIndex].implementation((PRT_MACHINEINST *)context, transFunIndex, NULL);
+		PrtPushNewFrame(context, transFunIndex, NULL);
+		context->process->program->machines[context->instanceOf].funs[transFunIndex].implementation((PRT_MACHINEINST *)context);
 	}
 	PRT_DBG_ASSERT(context->lastOperation == ReturnStatement, "Exit function must terminate with a ReturnStatement");
 }
@@ -572,7 +578,8 @@ DoEntry:
 		context->funStack.funs[0].currentEventIndex = 0;
 	}
 	PRT_UINT32 funIndex = context->funStack.funs[0].funIndex;
-	context->process->program->machines[context->instanceOf].funs[funIndex].implementation((PRT_MACHINEINST *)context, funIndex, NULL);
+	PrtPushNewFrame(context, funIndex, NULL);
+	context->process->program->machines[context->instanceOf].funs[funIndex].implementation((PRT_MACHINEINST *)context);
 	goto CheckLastOperation;
 
 DoAction:
@@ -596,7 +603,8 @@ DoAction:
 			context->funStack.funs[0].currentEventIndex = 0;
 		}
 		PRT_UINT32 funIndex = context->funStack.funs[0].funIndex;
-		context->process->program->machines[context->instanceOf].funs[funIndex].implementation((PRT_MACHINEINST *)context, funIndex, NULL);
+		PrtPushNewFrame(context, funIndex, NULL);
+		context->process->program->machines[context->instanceOf].funs[funIndex].implementation((PRT_MACHINEINST *)context);
 	}
 	goto CheckLastOperation;
 
@@ -748,7 +756,7 @@ PrtDequeueEvent(
 		PRT_UINT32 index = (head + i) % queueLength;
 		PRT_EVENT e = queue->events[index];
 		PRT_UINT32 triggerIndex = PrtPrimGetEvent(e.trigger);
-		if (PrtIsEventReceivable(triggerIndex, context->receive))
+		if (PrtIsEventReceivable(context, triggerIndex))
 		{
 			PrtPushEvent(context, e.trigger, e.payload);
 			for (PRT_UINT32 i = 0; i < context->receive->nThens; i++)
@@ -858,7 +866,7 @@ PrtWrapFunCall(
 		PrtPushNewFrame(context, funIndex, parameters);
 	}
 	PRT_SM_FUN fun = context->process->program->machines[context->instanceOf].funs[funIndex].implementation;
-	PRT_VALUE *returnValue = fun(context);
+	PRT_VALUE *returnValue = fun((PRT_MACHINEINST *)context);
 	PRT_UINT32 callerFunIndex = frame->funIndex;
 	if (context->receive != NULL)
 	{
@@ -1123,13 +1131,18 @@ PrtIsSpecialEvent(
 FORCEINLINE
 PRT_BOOLEAN
 PrtIsEventReceivable(
-	_In_ PRT_UINT32		eventIndex,
-	_In_ PRT_RECEIVEDECL	*receive
+	_In_ PRT_MACHINEINST_PRIV *context,
+	_In_ PRT_UINT32		eventIndex
 	)
 {
+	PRT_RECEIVEDECL	*receive = context->receive;
 	if (receive == NULL)
+	{
 		return PRT_FALSE;
-	return (receive->thenSet[eventIndex / (sizeof(PRT_UINT32) * 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32) * 8)))) != 0;
+	}
+	PRT_EVENTSETDECL *evSets = context->process->program->eventSets;
+	PRT_UINT32 *thenSet = evSets[receive->thenSetIndex].packedEvents;
+	return (thenSet[eventIndex / (sizeof(PRT_UINT32) * 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32) * 8)))) != 0;
 }
 
 FORCEINLINE

@@ -539,7 +539,7 @@ domain PStaticTyping extends PData
 	ValidCaseAction(act) :- act: String, FunDecl(act, _, _, _, _, _, _).
 
 	[ rule_Classes = '"error, msg: event not defined"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e: e = Cases(trig, _, _), trig: String, no EventDecl(trig, _, _).
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Cases(trig, _, _), trig: String, no EventDecl(trig, _, _).
 	[ rule_Classes = '"error, msg: function not defined"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Cases(_, act, _), act: String, no FunDecl(act, _, _, _, _, _, _).
 	TypeOf(c, e, NIL) :- SubSE(c, e), e = Cases(trig, act, _), ValidCaseEvent(trig), ValidCaseAction(act).

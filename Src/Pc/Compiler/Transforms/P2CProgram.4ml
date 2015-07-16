@@ -781,107 +781,31 @@ transform P2CProgram (in:: P) returns (out:: C)
 					  UNKNOWN).
 				
     /*************************************************************/
-    /******            Generate Fun Decl Arrays             ******/
-    /*************************************************************/	
-	LocalsType ::= (decl: AnonOrNamedFun, type: out.Expr).
-	LocalsType(d, t) :- d is AnonOrNamedFun, d.locals = NIL, t = out.Ident("NULL").
-	LocalsType(d, t) :- d is AnonOrNamedFun, type = d.locals, TypeId(typeIndex, type), 
-	                    typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), t = out.UnApp(ADDR, Ident(typeName)).
-
-	ThenEvent ::= (trig: String + { HALT }, name: String).
-	ThenEvent(trig, name) :- trig : String, ev is EventDecl, ev.name = trig, DeclId(ev, _, name).
-	ThenEvent(HALT, name) :- DeclId(HALT, _, name).
-
-	ThenFunIndex ::= (decl: AnonOrNamedFun, act: AnonFunDecl + String, index: Natural).
-	ThenFunIndex(decl, act, index) :- decl is AnonOrNamedFun, act is AnonFunDecl, act.owner = decl.owner, DeclId(act, index, _).
-	ThenFunIndex(decl, act, index) :- decl is AnonOrNamedFun, act: String, f is FunDecl, f.name = act, FunAvailable(f, decl.owner), DeclId(f, index, _). 
-
-	ThenDeclConcat ::= (pos: Natural, decl: AnonOrNamedFun, cases: in.Cases + { NIL }, arr: out.Args + { NIL }).
-	ThenDeclConcat(0, decl, NIL, NIL) :- decl is AnonOrNamedFun.
-	ThenDeclConcat(c, decl, cases, arr) :- SubSE(decl, cases), cases = in.Cases(trig, act, cases'), ThenDeclConcat(c', decl, cases', arr'),
-										   ThenEvent(trig, eventName), ThenFunIndex(decl, act, funIndex),
-										   def = out.Init(Args(Ident(eventName), Args(IntLit(funIndex, DEC, U), NIL))),
-										   arr = out.Args(def, arr'), c = c' + 1.
-
-	ReceiveDeclConcat ::= (pos: Natural, decl: AnonOrNamedFun, arr: out.Args + { NIL }).
-	ReceiveDeclConcat(c, decl, NIL) :- decl is AnonOrNamedFun, c = count({r | r is Receive, SubSE(decl, r)}).
-	ReceiveDeclConcat(c, decl, arr) :- decl is AnonOrNamedFun, SubSE(decl, receive), receive = Receive(cases, c), 
-									   ReceiveDeclConcat(c + 1, decl, arr'), arr = out.Args(def, arr'),
-									   ThenDeclConcat(nThens, decl, cases, thens),
-									   def = out.Init(
-												Args(IntLit(c, DEC, U),
-												Args(Ident("NULL"),
-												Args(IntLit(nThens, DEC, U),
-												Args(Init(thens),
-												NIL))))).
-
-	FunDeclConcat ::= (pos: Natural, mach: MachineDecl, arr: out.Args + {NIL}).
-
-	//// Base case
-	FunDeclConcat(c, m, NIL) :- m is MachineDecl, m.kind = REAL, c = 1 + count({f | f is FunDecl, f.owner = NIL}) + count({f | f is AnonOrNamedFun, f.owner = m}).
-
-    //// Build every fundecl array in reverse order
-	FunDeclConcat(m, mdecl, arr) :-  
-							DeclId(d, m, cfun), DeclId(d.owner, _, cmach), FunDeclConcat(m + 1, d.owner, after), d : FunDecl,
-							LocalsType(d, localsType),
-							mdecl: MachineDecl, FunAvailable(d, mdecl),
-							ReceiveDeclConcat(nReceives, d, NIL),	ReceiveDeclConcat(0, d, receives),
-							arr = out.Args(def, after), 
-	                        def = Init(
-							   Args(Ident(cfun),
-							   Args(Ident(cmach),
-							   Args(StringLit(d.name, NIL),
-							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
-							   Args(localsType,
-							   Args(IntLit(nReceives, DEC, U),
-							   Args(Init(receives),
-							   Args(IntLit(0, DEC, U),
-							   Args(Ident("NULL"),
-							   NIL)))))))))).
-
-	FunDeclConcat(m, d.owner, arr) :- 
-							DeclId(d, m, cfun), DeclId(d.owner, _, cmach), FunDeclConcat(m + 1, d.owner, after), d : AnonFunDecl,
-							LocalsType(d, localsType),	
-							ReceiveDeclConcat(nReceives, d, NIL),	ReceiveDeclConcat(0, d, receives),						  
-							arr = out.Args(def, after), 
-	                        def = Init(
-							   Args(Ident(cfun),
-							   Args(Ident(cmach),
-							   Args(Ident("NULL"),
-							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
-							   Args(localsType,
-							   Args(IntLit(nReceives, DEC, U),
-							   Args(Init(receives),
-							   Args(IntLit(0, DEC, U),
-							   Args(Ident("NULL"),
-							   NIL)))))))))).
-
-	//// Reserve the zeroth decl for the push transition
-	FunDeclConcat(0, m, arr) :- FunDeclConcat(1, m, after), DeclId(m, _, cmach), arr = out.Args(def, after),
-	                        def = Init(
-							   Args(Ident(strJoin("_P_FUN_", strJoin(m.name, "_PUSH_OR_IGN"))),
-							   Args(Ident(cmach),
-							   Args(Ident("NULL"),
-							   Args(Ident("NULL"),
-							   Args(Ident("NULL"),
-							   Args(IntLit(0, DEC, U),
-							   Args(Ident("NULL"),
-							   NIL)))))))).
-
-	COut(9, def) :- FunDeclConcat(0, mach, arr),
-	                def = out.VarDef(
-							      NIL, 
-								  ArrType(NmdType(NIL, "PRT_FUNDECL"), NIL), 
-								  strJoin("P_GEND_FUNS_", mach.name), 
-								  Init(arr)).
-
-    /*************************************************************/
     /******         Generate EventSet Decl Arrays           ******/
     /*************************************************************/	
 	EventPackList ::= (dat: EventPackData, tl: EventPackList + { NIL }).
 	EventPackData ::= (arrIndex: Natural, events: Natural). 
 	EventPacking  ::= (list: EventPackList + { NIL }, rem: EventPackList + { NIL }, arrIndex: Natural, packArr: out.Args + { NIL }).
 	EventsPacked  ::= (state: StateDecl, cntxt : { #TransDecl, #DoDecl, DEFER }, list: EventPackList + { NIL }).
+	ReceiveEventsPacked ::= (c: TypingContext, receive: Receive, list: EventPackList + { NIL }).
+
+	ReceivedId ::= (c: TypingContext, receive: Receive, id: Natural, cases: in.Cases + { NIL }).
+	ReceivedId(c, receive, k, cases) :- c is TypingContext, receive: Receive, SubSE(c, receive), 
+			  						    receive = Receive(cases', _), cases' = in.Cases(e, _, cases), CaseEvent(e, k, _). 
+	ReceivedId(c, receive, k, cases) :- c is TypingContext, receive: Receive, SubSE(c, receive), 
+									    ReceivedId(c, receive, _, cases'), cases' = in.Cases(e, _, cases), CaseEvent(e, k, _).
+
+	ReceiveEventsPacked(c, receive, list),
+	EventPacking(list, list, size, NIL) :- 
+			c is TypingContext, receive: Receive, SubSE(c, receive),
+			list = toList(
+		           #EventPackList, 
+				   NIL, 
+				   { EventPackData(i, n) | 
+				        ReceivedId(c, receive, j, _), i = qtnt(j / 32, 1), 
+				        n = sum(0, { m | ReceivedId(c, receive, k, _), i = qtnt(k / 32, 1), PowOf2(k % 32, m) }), n : Natural 
+	               }),
+		 size = 1 + maxAll(0, { i | ReceivedId(c, receive, j, _), i = qtnt(j / 32, 1) }), size : Natural.	
 
 	//// Generate event sets for transitions
 	EventsPacked(s, #TransDecl, list),
@@ -927,8 +851,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 	EventPacking(l, r.tl, i',  a') :- EventPacking(l, r,   i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex < i', a' = Args(IntLit(0, HEX, U), a).
 	EventPacking(l, r.tl, i',  a') :- EventPacking(l, r,   i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex = i', a' = Args(IntLit(r.dat.events, HEX, U), a).
 
-	COut(10, def) :- EventPacking(l, _, 0, a),
-	                id = toOrdinal(l, 0, { l' | EventsPacked(_, _, l') }),
+	COut(9, def) :- EventPacking(l, _, 0, a),
+	                id = toOrdinal(l, 0, { l' | EventPacking(l', _, 0, _) }),
 	                def = out.VarDef(
 							      NIL, 
 								  ArrType(NmdType(NIL, "PRT_UINT32"), NIL), 
@@ -939,12 +863,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 	EvSetDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
 
 	//// Base case
-	EvSetDeclConcat(c, NIL) :- c = count({l | EventsPacked(_, _, l) }).
+	EvSetDeclConcat(c, NIL) :- c = count({l | EventPacking(l, _, 0, _) }).
 
     //// Build every event set array in reverse order
 	EvSetDeclConcat(m, arr) :- 
 	                        EventPacking(l, _, size, NIL),
-	                        m = toOrdinal(l, 0, { l' | EventsPacked(_, _, l') }),
+	                        m = toOrdinal(l, 0, { l' | EventPacking(l', _, 0, _) }),
 							EvSetDeclConcat(m + 1, after),							  
 							arr = out.Args(def, after), 
 	                        def = Init(
@@ -953,11 +877,113 @@ transform P2CProgram (in:: P) returns (out:: C)
 							   Args(Ident(strJoin("P_GEND_EVENTSET_", toString(m))),
 							   NIL)))).
 
-	COut(11, def) :- EvSetDeclConcat(0, arr),
+	COut(10, def) :- EvSetDeclConcat(0, arr),
 	                def = out.VarDef(
 							      NIL, 
 								  ArrType(NmdType(NIL, "PRT_EVENTSETDECL"), NIL), 
 								  "P_GEND_EVENTSETS", 
+								  Init(arr)).
+
+    /*************************************************************/
+    /******            Generate Fun Decl Arrays             ******/
+    /*************************************************************/	
+	LocalsType ::= (decl: AnonOrNamedFun, type: out.Expr).
+	LocalsType(d, t) :- d is AnonOrNamedFun, d.locals = NIL, t = out.Ident("NULL").
+	LocalsType(d, t) :- d is AnonOrNamedFun, type = d.locals, TypeId(typeIndex, type), 
+	                    typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), t = out.UnApp(ADDR, Ident(typeName)).
+
+	CaseEvent ::= (trig: String + { HALT }, id: Natural, name: String).
+	CaseEvent(trig, id, name) :- trig : String, ev is EventDecl, ev.name = trig, DeclId(ev, id, name).
+	CaseEvent(HALT, id, name) :- DeclId(HALT, id, name).
+
+	CaseFunIndex ::= (decl: AnonOrNamedFun, act: AnonFunDecl + String, index: Natural).
+	CaseFunIndex(decl, act, index) :- decl is AnonOrNamedFun, act is AnonFunDecl, act.owner = decl.owner, DeclId(act, index, _).
+	CaseFunIndex(decl, act, index) :- decl is AnonOrNamedFun, act: String, f is FunDecl, f.name = act, FunAvailable(f, decl.owner), DeclId(f, index, _). 
+
+	CaseDeclConcat ::= (pos: Natural, decl: AnonOrNamedFun, cases: in.Cases + { NIL }, arr: out.Args + { NIL }).
+	CaseDeclConcat(0, decl, NIL, NIL) :- decl is AnonOrNamedFun.
+	CaseDeclConcat(c, decl, cases, arr) :- SubSE(decl, cases), cases = in.Cases(trig, act, cases'), CaseDeclConcat(c', decl, cases', arr'),
+										   CaseEvent(trig, _, eventName), CaseFunIndex(decl, act, funIndex),
+										   def = out.Init(Args(Ident(eventName), Args(IntLit(funIndex, DEC, U), NIL))),
+										   arr = out.Args(def, arr'), c = c' + 1.
+
+	ReceiveDeclConcat ::= (pos: Natural, decl: AnonOrNamedFun, arr: out.Args + { NIL }).
+	ReceiveDeclConcat(c, decl, NIL) :- decl is AnonOrNamedFun, c = count({r | r is Receive, SubSE(decl, r)}).
+	ReceiveDeclConcat(c, decl, arr) :- decl is AnonOrNamedFun, SubSE(decl, receive), receive = Receive(cases, c), 
+									   ReceiveDeclConcat(c + 1, decl, arr'), arr = out.Args(def, arr'),
+									   CaseDeclConcat(nCases, decl, cases, casesInit),
+									   ReceiveEventsPacked(decl, receive, rlist),
+									   index = toOrdinal(rlist, 0, { l | EventPacking(l, _, 0, _) }), 
+									   def = out.Init(
+												Args(IntLit(c, DEC, U),
+												Args(IntLit(index, DEC, U),
+												Args(IntLit(nCases, DEC, U),
+												Args(Init(casesInit),
+												NIL))))).
+
+	ReceiveDeclInit ::= (decl: AnonOrNamedFun, nReceives: Natural, receives: out.Expr).
+	ReceiveDeclInit(decl, 0, Ident("NULL")) :- decl is AnonOrNamedFun, ReceiveDeclConcat(0, decl, NIL).
+	ReceiveDeclInit(decl, nReceives, out.Init(receives)) :- 
+				decl is AnonOrNamedFun, ReceiveDeclConcat(nReceives, decl, NIL), ReceiveDeclConcat(0, decl, receives), receives: out.Args.
+
+	FunDeclConcat ::= (pos: Natural, mach: MachineDecl, arr: out.Args + {NIL}).
+
+	//// Base case
+	FunDeclConcat(c, m, NIL) :- m is MachineDecl, m.kind = REAL, c = 1 + count({f | f is FunDecl, f.owner = NIL}) + count({f | f is AnonOrNamedFun, f.owner = m}).
+
+    //// Build every fundecl array in reverse order
+	FunDeclConcat(m, mdecl, arr) :-  
+							DeclId(d, m, cfun), DeclId(d.owner, _, cmach), FunDeclConcat(m + 1, d.owner, after), d : FunDecl,
+							LocalsType(d, localsType),
+							mdecl: MachineDecl, FunAvailable(d, mdecl),
+							ReceiveDeclInit(d, nReceives, receives),
+							arr = out.Args(def, after), 
+	                        def = Init(
+							   Args(Ident(cfun),
+							   Args(Ident(cmach),
+							   Args(StringLit(d.name, NIL),
+							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
+							   Args(localsType,
+							   Args(IntLit(nReceives, DEC, U),
+							   Args(receives,
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL)))))))))).
+
+	FunDeclConcat(m, d.owner, arr) :- 
+							DeclId(d, m, cfun), DeclId(d.owner, _, cmach), FunDeclConcat(m + 1, d.owner, after), d : AnonFunDecl,
+							LocalsType(d, localsType),
+							ReceiveDeclInit(d, nReceives, receives),	
+							arr = out.Args(def, after), 
+	                        def = Init(
+							   Args(Ident(cfun),
+							   Args(Ident(cmach),
+							   Args(Ident("NULL"),
+							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
+							   Args(localsType,
+							   Args(IntLit(nReceives, DEC, U),
+							   Args(receives,
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL)))))))))).
+
+	//// Reserve the zeroth decl for the push transition
+	FunDeclConcat(0, m, arr) :- FunDeclConcat(1, m, after), DeclId(m, _, cmach), arr = out.Args(def, after),
+	                        def = Init(
+							   Args(Ident(strJoin("_P_FUN_", strJoin(m.name, "_PUSH_OR_IGN"))),
+							   Args(Ident(cmach),
+							   Args(Ident("NULL"),
+							   Args(Ident("NULL"),
+							   Args(Ident("NULL"),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL)))))))).
+
+	COut(11, def) :- FunDeclConcat(0, mach, arr),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_FUNDECL"), NIL), 
+								  strJoin("P_GEND_FUNS_", mach.name), 
 								  Init(arr)).
 
     /*************************************************************/
@@ -969,11 +995,11 @@ transform P2CProgram (in:: P) returns (out:: C)
 	StateEventSetIndices(s, ti, doi, dfi) :- 
 	                     s.owner.kind = REAL,
 	                     EventsPacked(s, #TransDecl, tlist),
-						 ti = toOrdinal(tlist, 0, { l | EventsPacked(_, _, l) }), 
+						 ti = toOrdinal(tlist, 0, { l | EventPacking(l, _, 0, _) }), 
 	                     EventsPacked(s, #DoDecl, dolist),
-						 doi = toOrdinal(dolist, 0, { l | EventsPacked(_, _, l) }), 
+						 doi = toOrdinal(dolist, 0, { l | EventPacking(l, _, 0, _) }), 
 	                     EventsPacked(s, DEFER, dflist),
-						 dfi = toOrdinal(dflist, 0, { l | EventsPacked(_, _, l) }).
+						 dfi = toOrdinal(dflist, 0, { l | EventPacking(l, _, 0, _) }).
 
     StateEntryAction  ::= (decl: StateDecl, funName: String).
 	StateEntryAction(s, funname) :- s is StateDecl, s.owner.kind = REAL, act = s.entryAction, act : AnonFunDecl, DeclId(act, _, funname). 
@@ -1218,8 +1244,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 	ProgEvntArray(size, arr) :- size = 2 + count({ e | e is EventDecl }), arr = out.Ident("P_GEND_EVENTS").
 
 	ProgEvntSetArray ::= (size: Natural, arr: out.Ident).
-	ProgEvntSetArray(size, arr) :- size = count({ l | EventsPacked(_, _, l) }), size = 0, arr = out.Ident("NULL").
-	ProgEvntSetArray(size, arr) :- size = count({ l | EventsPacked(_, _, l) }), size > 0, arr = out.Ident("P_GEND_EVENTSETS").
+	ProgEvntSetArray(size, arr) :- size = count({ l | EventPacking(l, _, 0, _) }), size = 0, arr = out.Ident("NULL").
+	ProgEvntSetArray(size, arr) :- size = count({ l | EventPacking(l, _, 0, _) }), size > 0, arr = out.Ident("P_GEND_EVENTSETS").
 
 	ProgMachArray ::= (size: Natural, arr: out.Ident).
 	ProgMachArray(size, arr) :- size = count({ m | m is MachineDecl, m.kind = REAL }), size = 0, arr = out.Ident("NULL").
@@ -1618,7 +1644,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	//// Receive
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Receive(_, label),
-						   cont = out.FunApp(Ident("PrtGetFun"), Args(Ident("p_tmp_mach_priv"), Args(BinApp(PFLD, BinApp(FLD, Ident("p_tmp_frame"), Ident("then")), Ident("funIndex")), NIL))),
+						   cont = out.FunApp(Ident("PrtGetFun"), Args(Ident("p_tmp_mach_priv"), Args(BinApp(PFLD, BinApp(FLD, Ident("p_tmp_frame"), Ident("rcase")), Ident("funIndex")), NIL))),
 						   cs = out.Seq(out.FunApp(Ident("PrtReceive"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(label, DEC, U), NIL)))), 
 										out.ITE(BinApp(EQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("receive")), Ident("NULL")), Goto("P_EXIT_FUN"), Lbl(strJoin("L", toString(label)), cont))).
 	

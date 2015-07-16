@@ -342,7 +342,7 @@ PrtReceive(
 	if (PrtDequeueEvent(context))
 	{
 		PrtPopFrame(context, funStackInfo);
-		PrtPushNewFrame(context, funStackInfo->then->funIndex, NULL);
+		PrtPushNewFrame(context, funStackInfo->rcase->funIndex, NULL);
 	}
 }
 
@@ -370,7 +370,7 @@ PrtPushNewFrame(
 	PRT_FUNDECL *funDecl = &(context->process->program->machines[context->instanceOf].funs[funIndex]);
 	context->funStack.funs[length].locals = PrtMkDefaultValue(funDecl->localsTupType);
 	context->funStack.funs[length].returnTo = 0xFFFF;
-	context->funStack.funs[length].then = NULL;
+	context->funStack.funs[length].rcase = NULL;
 }
 
 void 
@@ -387,7 +387,7 @@ PrtPushFrame(
 	context->funStack.funs[length].parameters = funStackInfo->parameters;
 	context->funStack.funs[length].locals = funStackInfo->locals;
 	context->funStack.funs[length].returnTo = funStackInfo->returnTo;
-	context->funStack.funs[length].then = funStackInfo->then;
+	context->funStack.funs[length].rcase = funStackInfo->rcase;
 }
 
 void 
@@ -403,7 +403,7 @@ PrtPopFrame(
 	funStackInfo->parameters = context->funStack.funs[length].parameters;
 	funStackInfo->locals = context->funStack.funs[length].locals;
 	funStackInfo->returnTo = context->funStack.funs[length].returnTo;
-	funStackInfo->then = context->funStack.funs[length].then;
+	funStackInfo->rcase = context->funStack.funs[length].rcase;
 	context->funStack.length = length - 1;
 }
 
@@ -651,9 +651,9 @@ DoDequeue:
 
 DoHandleEvent:
 	eventValue = PrtPrimGetEvent(PrtGetCurrentTrigger(context));
-	if (PrtTopOfFunStack(context)->then != NULL)
+	if (PrtTopOfFunStack(context)->rcase != NULL)
 	{
-		PrtPushNewFrame(context, PrtTopOfFunStack(context)->then->funIndex, NULL);
+		PrtPushNewFrame(context, PrtTopOfFunStack(context)->rcase->funIndex, NULL);
 		goto DoEntry;
 	}
 	else if (PrtIsPushTransition(context, eventValue))
@@ -759,12 +759,12 @@ PrtDequeueEvent(
 		if (PrtIsEventReceivable(context, triggerIndex))
 		{
 			PrtPushEvent(context, e.trigger, e.payload);
-			for (PRT_UINT32 i = 0; i < context->receive->nThens; i++)
+			for (PRT_UINT32 i = 0; i < context->receive->nCases; i++)
 			{
-				PRT_THENDECL *then = &context->receive->thens[i];
-				if (triggerIndex == then->triggerEventIndex)
+				PRT_CASEDECL *rcase = &context->receive->cases[i];
+				if (triggerIndex == rcase->triggerEventIndex)
 				{
-					PrtTopOfFunStack(context)->then = then;
+					PrtTopOfFunStack(context)->rcase = rcase;
 					break;
 				}
 			}
@@ -1141,8 +1141,8 @@ PrtIsEventReceivable(
 		return PRT_FALSE;
 	}
 	PRT_EVENTSETDECL *evSets = context->process->program->eventSets;
-	PRT_UINT32 *thenSet = evSets[receive->thenSetIndex].packedEvents;
-	return (thenSet[eventIndex / (sizeof(PRT_UINT32) * 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32) * 8)))) != 0;
+	PRT_UINT32 *caseSet = evSets[receive->caseSetIndex].packedEvents;
+	return (caseSet[eventIndex / (sizeof(PRT_UINT32) * 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32) * 8)))) != 0;
 }
 
 FORCEINLINE

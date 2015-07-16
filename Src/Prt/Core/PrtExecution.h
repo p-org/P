@@ -90,7 +90,7 @@ typedef struct PRT_FUNSTACK_INFO
 	PRT_VALUE		*parameters;
 	PRT_VALUE		*locals;
 	PRT_UINT16		returnTo;
-	PRT_THENDECL	*then;
+	PRT_CASEDECL	*rcase;
 } PRT_FUNSTACK_INFO;
 
 typedef struct PRT_FUNSTACK

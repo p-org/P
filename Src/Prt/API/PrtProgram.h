@@ -82,18 +82,18 @@ typedef struct PRT_VARDECL
 	void       **annotations;  /**< An array of annotations                */
 } PRT_VARDECL;
 
-typedef struct PRT_THENDECL
+typedef struct PRT_CASEDECL
 {
 	PRT_UINT32 triggerEventIndex;
 	PRT_UINT32 funIndex;
-} PRT_THENDECL;
+} PRT_CASEDECL;
 
 typedef struct PRT_RECEIVEDECL
 {
 	PRT_UINT16 receiveIndex;
-	PRT_UINT32 thenSetIndex;
-	PRT_UINT32 nThens;
-	PRT_THENDECL *thens;
+	PRT_UINT32 caseSetIndex;
+	PRT_UINT32 nCases;
+	PRT_CASEDECL *cases;
 } PRT_RECEIVEDECL;
 
 /** Represents a P function declaration */

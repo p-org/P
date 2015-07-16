@@ -108,7 +108,6 @@
 
 			 keywords.Add("receive", (int)Tokens.RECEIVE);
 			 keywords.Add("case", (int)Tokens.CASE);
-			 keywords.Add("then", (int)Tokens.THEN);
 
 			 keywords.Add("in", (int)Tokens.IN);
 			 keywords.Add("as", (int)Tokens.AS);

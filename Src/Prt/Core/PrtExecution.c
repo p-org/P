@@ -853,7 +853,7 @@ PrtGetPackSize(
 }
 
 PRT_VALUE *
-PrtWrapFunCall(
+PrtWrapFunStmt(
 	_Inout_ PRT_FUNSTACK_INFO		*frame,
 	_In_ PRT_UINT16					funCallIndex,
 	_Inout_ PRT_MACHINEINST_PRIV	*context,
@@ -866,7 +866,7 @@ PrtWrapFunCall(
 		PrtPushNewFrame(context, funIndex, parameters);
 	}
 	PRT_SM_FUN fun = context->process->program->machines[context->instanceOf].funs[funIndex].implementation;
-	PRT_VALUE *returnValue = fun((PRT_MACHINEINST *)context);
+	PRT_VALUE *returnValue = fun(context);
 	PRT_UINT32 callerFunIndex = frame->funIndex;
 	if (context->receive != NULL)
 	{

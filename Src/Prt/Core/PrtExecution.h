@@ -464,7 +464,7 @@ PrtFreeFrameVars(
 );
 
 PRT_VALUE *
-PrtWrapFunCall(
+PrtWrapFunStmt(
 	_Inout_ PRT_FUNSTACK_INFO		*frame,
 	_In_ PRT_UINT16					funCallIndex,
 	_Inout_ PRT_MACHINEINST_PRIV	*context,

@@ -9,7 +9,7 @@ domain PWithInferredTypes extends PData
     TypingContext ::= FunDecl + AnonFunDecl.
     
     //// The set of typeable expressions and statements.
-    Typeable ::= Expr + Stmt + Exprs + NamedExprs.
+    Typeable ::= Expr + Stmt + Exprs + NamedExprs + Cases.
     
     //// The type judgement. NIL is a placeholder for untyped constructs.
     TypeOf ::= new (cntxt: any TypingContext, expr: any Typeable, type: any TypeExpr + { ERROR, NIL }).

@@ -2658,12 +2658,12 @@ namespace Microsoft.Pc
             {
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmp");
                 ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeEvent.Node))));
-                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetEvent"), tmpVar, MkZingDot("myHandle", "currentEvent"))));
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetEvent"), tmpVar, MkZingIdentifier("currentEvent"))));
                 retVal = tmpVar;
             }
             else if (op == PData.Cnst_Payload.Node.Name)
             {
-                retVal = MkZingDot("myHandle", "currentArg");
+                retVal = MkZingIdentifier("currentArg");
             }
             else if (op == PData.Cnst_Nondet.Node.Name || op == PData.Cnst_FairNondet.Node.Name)
             {

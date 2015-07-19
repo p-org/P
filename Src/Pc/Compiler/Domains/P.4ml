@@ -791,9 +791,14 @@ domain PStaticTyping extends PData
 	ReachedReceive(c, s', p')  :- ReachedReceive(c, s, p), s = Seq(s', _),    p' = TermPath(0, p).
 	ReachedReceive(c, s', p')  :- ReachedReceive(c, s, p), s = Seq(_, s'),    p' = TermPath(1, p).
 
-    [ rule_Classes = '"error, msg: function contains bad labeling of receive statements"']
+    [ rule_Classes = '"error, msg: function contains bad labeling of Receive"']
 	BadReceiveLabelError(c) :-
 	    ReachedReceive(c, s, p), ReachedReceive(c, s', p'), s : Receive, s' : Receive, s.label = s'.label, p != p'.
+	[ rule_Classes = '"error, msg: function contains bad labeling of Receive"']
+	BadReceiveLabelError(c) :- SubSE(c, s), s: Receive, count({ s' | SubSE(c, s'), s': Receive}) <= s.label.
+	[ rule_Classes = '"error, msg: function contains bad labeling of FunStmt"']
+	BadReceiveLabelError(c) :-
+	    ReachedReceive(c, s, p), ReachedReceive(c, s', p'), s : FunStmt, s' : FunStmt, s.label = s'.label, p != p'.
 	
     /*************************************************************/
     /*                            Impurity                       */
@@ -1071,6 +1076,7 @@ domain PStaticTyping extends PData
     TriggerSet(a, e)    :- TriggerSet(s, e), s : StateDecl, a = s.entryAction, a : AnonFunDecl.
     TriggerSet(a, e)    :- TriggerSet(t, e), t : TransDecl, a = t.action, a : AnonFunDecl.
     TriggerSet(a, e)    :- TriggerSet(d, e), d : DoDecl, a = d.action, a : AnonFunDecl.
+	TriggerSet(a, e)    :- c is FunDecl, SubSE(c, s), s = Cases(e, a, _), a : AnonFunDecl. 
 
 	//// (5) An FunDecl's trigger set is the set of events of its calling contexts.
 	//// payloads in exit functions are unpredictable.
@@ -1081,8 +1087,9 @@ domain PStaticTyping extends PData
 
     TriggerSet(f, e) :- TriggerSet(c, e), SubSE(c, x), x = FunApp(name, _), f is FunDecl, FunAvailable(f, c.owner), f.name = name.
     TriggerSet(f, e) :- TriggerSet(c, e), SubSE(c, x), x = FunStmt(name, _, _, _), f is FunDecl, FunAvailable(f, c.owner), f.name = name.
+    TriggerSet(f, e) :- c is FunDecl, SubSE(c, s), s = Cases(e, name, _), name: String, f is FunDecl, FunAvailable(f, c.owner), f.name = name.
 
-    /*************************************************************/
+	/*************************************************************/
     /*                      Compute type joins                   */
     /*************************************************************/	
 

@@ -80,6 +80,7 @@
         public static readonly AST<Id> Con_While = Factory.Instance.MkId("While");
         public static readonly AST<Id> Con_Ite = Factory.Instance.MkId("Ite");
         public static readonly AST<Id> Con_Seq = Factory.Instance.MkId("Seq");
+        public static readonly AST<Id> Con_Receive = Factory.Instance.MkId("Receive");
 
         //// Types
         public static readonly AST<Id> Cnst_Bool = Factory.Instance.MkId("BOOL");

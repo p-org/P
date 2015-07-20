@@ -1426,11 +1426,11 @@ transform P2CProgram (in:: P) returns (out:: C)
 									 
     RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = NulApp(TRIGGER),
-									ec = out.BinApp(FLD, out.BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("currentEvent")), Ident("trigger")). 
+									ec = out.FunApp(Ident("PrtGetCurrentTrigger"), Args(Ident("p_tmp_mach_priv"), NIL)). 
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = NulApp(PAYLOAD),
-									ec = out.BinApp(FLD, out.BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("currentEvent")), Ident("payload")). 
+									ec = out.FunApp(Ident("PrtGetCurrentPayload"), Args(Ident("p_tmp_mach_priv"), NIL)). 
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = NulApp(NONDET),

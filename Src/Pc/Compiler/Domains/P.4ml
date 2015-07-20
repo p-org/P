@@ -200,7 +200,7 @@ domain PStaticTyping extends PData
 	conforms no PurityError(_, _).
 	conforms no MonitorError(_, _).
 	conforms no LValueError(_, _).
-	conforms no BadReceiveLabelError(_).
+	conforms no BadLabelError(_).
     /*************************************************************/
 
     //// The declarations that may contain expressions or statements that should be typed.
@@ -774,7 +774,7 @@ domain PStaticTyping extends PData
     /*************************************************************/
     /*                         Receive Labels                       */
     /*************************************************************/
-    BadReceiveLabelError ::= (TypingContext).
+    BadLabelError ::= (TypingContext).
 
 	//// Every receive statement must have a label that is unique within a context.
 	//// This constraint simplifies P compilers.
@@ -792,12 +792,12 @@ domain PStaticTyping extends PData
 	ReachedReceive(c, s', p')  :- ReachedReceive(c, s, p), s = Seq(_, s'),    p' = TermPath(1, p).
 
     [ rule_Classes = '"error, msg: function contains bad labeling of Receive"']
-	BadReceiveLabelError(c) :-
+	BadLabelError(c) :-
 	    ReachedReceive(c, s, p), ReachedReceive(c, s', p'), s : Receive, s' : Receive, s.label = s'.label, p != p'.
 	[ rule_Classes = '"error, msg: function contains bad labeling of Receive"']
-	BadReceiveLabelError(c) :- SubSE(c, s), s: Receive, count({ s' | SubSE(c, s'), s': Receive}) <= s.label.
+	BadLabelError(c) :- SubSE(c, s), s: Receive, count({ s' | SubSE(c, s'), s': Receive}) <= s.label.
 	[ rule_Classes = '"error, msg: function contains bad labeling of FunStmt"']
-	BadReceiveLabelError(c) :-
+	BadLabelError(c) :-
 	    ReachedReceive(c, s, p), ReachedReceive(c, s', p'), s : FunStmt, s' : FunStmt, s.label = s'.label, p != p'.
 	
     /*************************************************************/

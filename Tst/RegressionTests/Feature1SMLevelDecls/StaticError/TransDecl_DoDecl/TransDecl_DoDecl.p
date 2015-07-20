@@ -4,7 +4,7 @@ main machine Sample {
 	start state X1 {
 		entry {
 			foo(5);
-			push X2;
+
 		}
 		
 		exit {

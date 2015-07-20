@@ -70,7 +70,6 @@ typedef struct PRT_STATESTACK
 typedef struct PRT_FUNSTACK_INFO
 {
 	PRT_UINT32		funIndex;
-	PRT_UINT16		currentEventIndex;
 	PRT_VALUE		*parameters;
 	PRT_VALUE		*locals;
 	PRT_UINT16		returnTo;
@@ -95,7 +94,6 @@ typedef struct PRT_MACHINEINST_PRIV {
 	PRT_VALUE			*id;  
 	void				*extContext;
 	PRT_BOOLEAN			isModel;
-	PRT_TYPE			*recvMapType;
 	PRT_VALUE           *recvMap;	 
 	PRT_VALUE			**varValues;
 	PRT_RECURSIVE_MUTEX stateMachineLock;
@@ -399,24 +397,29 @@ _In_ PRT_VALUE *id
 
 void
 PrtPushEvent(
-_Inout_ PRT_MACHINEINST_PRIV		*context,
+_Inout_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_VALUE					*event,
 _In_ PRT_VALUE					*payload
 );
 
 void
+PrtPopEvent(
+_Inout_ PRT_MACHINEINST_PRIV	*context
+);
+
+void
 PrtClearEventStack(
-_Inout_ PRT_MACHINEINST_PRIV		*context
+_Inout_ PRT_MACHINEINST_PRIV	*context
 );
 
 PRT_VALUE *
 PrtGetCurrentTrigger(
-_Inout_ PRT_MACHINEINST_PRIV		*context
+_Inout_ PRT_MACHINEINST_PRIV	*context
 );
 
 PRT_VALUE *
 PrtGetCurrentPayload(
-	_Inout_ PRT_MACHINEINST_PRIV		*context
+_Inout_ PRT_MACHINEINST_PRIV		*context
 );
 
 PRT_FUNSTACK_INFO *

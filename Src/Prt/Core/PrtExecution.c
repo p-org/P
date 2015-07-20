@@ -79,10 +79,11 @@ PrtMkMachinePrivate(
 	//
 	PRT_TYPE *domType = PrtMkPrimitiveType(PRT_KIND_MACHINE);
 	PRT_TYPE *codType = PrtMkPrimitiveType(PRT_KIND_INT);
-	context->recvMapType = PrtMkMapType(domType, codType);
-	context->recvMap = PrtMkDefaultValue(context->recvMapType);
+	PRT_TYPE *recvMapType = PrtMkMapType(domType, codType);
+	context->recvMap = PrtMkDefaultValue(recvMapType);
 	PrtFreeType(domType);
 	PrtFreeType(codType);
+	PrtFreeType(recvMapType);
 
 	// Initialize Machine Internal Variables
 	//
@@ -179,6 +180,18 @@ PrtPushEvent(
 	context->eventStack.length = length + 1;
 	context->eventStack.events[length].trigger = event;
 	context->eventStack.events[length].payload = payload;
+}
+
+void
+PrtPopEvent(
+	_Inout_ PRT_MACHINEINST_PRIV	*context
+)
+{
+	PRT_UINT16 length = context->eventStack.length;
+	PrtAssert(0 <  length, "Event stack underflow");
+	PrtFreeValue(context->eventStack.events[length - 1].trigger);
+	PrtFreeValue(context->eventStack.events[length - 1].payload);
+	context->eventStack.length = length - 1;
 }
 
 void
@@ -331,7 +344,7 @@ PrtRaise(
 	PrtAssert(PrtInhabitsType(payload, PrtGetPayloadType(context, event)), "Payload must be member of event payload type");
 	context->lastOperation = RaiseStatement;
 	PrtClearEventStack(context);
-	PrtPushEvent(context, PrtCloneValue(payload), PrtCloneValue(event));
+	PrtPushEvent(context, PrtCloneValue(event), PrtCloneValue(payload));
 	PrtLog(PRT_STEP_RAISE, context);
 }
 
@@ -380,7 +393,6 @@ PrtPushNewFrame(
 	PrtAssert(length < PRT_MAX_FUNSTACK_DEPTH, "Fun stack overflow");
 	context->funStack.length = length + 1;
 	context->funStack.funs[length].funIndex = funIndex;
-	context->funStack.funs[length].currentEventIndex = context->eventStack.length - 1;
 	context->funStack.funs[length].parameters = parameters;
 	PRT_FUNDECL *funDecl = &(context->process->program->machines[context->instanceOf].funs[funIndex]);
 	if (funDecl->localsTupType == NULL)
@@ -405,7 +417,6 @@ PrtPushFrame(
 	PrtAssert(length < PRT_MAX_FUNSTACK_DEPTH, "Fun stack overflow");
 	context->funStack.length = length + 1;
 	context->funStack.funs[length].funIndex = funStackInfo->funIndex;
-	context->funStack.funs[length].currentEventIndex = funStackInfo->currentEventIndex;
 	context->funStack.funs[length].parameters = funStackInfo->parameters;
 	context->funStack.funs[length].locals = funStackInfo->locals;
 	context->funStack.funs[length].returnTo = funStackInfo->returnTo;
@@ -422,7 +433,6 @@ PrtPopFrame(
 	PrtAssert(0 < length, "Fun stack underflow");
 	PRT_UINT16 top = length - 1;
 	funStackInfo->funIndex = context->funStack.funs[top].funIndex;
-	funStackInfo->currentEventIndex = context->funStack.funs[top].currentEventIndex;
 	funStackInfo->parameters = context->funStack.funs[top].parameters;
 	funStackInfo->locals = context->funStack.funs[top].locals;
 	funStackInfo->returnTo = context->funStack.funs[top].returnTo;
@@ -662,7 +672,7 @@ DoDequeue:
 
 DoHandleEvent:
 	eventValue = PrtPrimGetEvent(PrtGetCurrentTrigger(context));
-	if (PrtTopOfFunStack(context)->rcase != NULL)
+	if (0 < context->funStack.length && PrtTopOfFunStack(context)->rcase != NULL)
 	{
 		PrtPushNewFrame(context, PrtTopOfFunStack(context)->rcase->funIndex, NULL);
 		goto DoEntry;
@@ -1452,7 +1462,6 @@ PrtCleanupMachine(
 	
 	if (context->recvMap != NULL)
 	{
-		PrtFreeType(context->recvMapType);
 		PrtFreeValue(context->recvMap);
 	}
 }

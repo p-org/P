@@ -34,7 +34,6 @@ spec M monitors a {
 		defer a;
 		ignore a;
 		entry {
-			push Init;
 			pop;
 			new Dummy();
 			x = new Dummy();

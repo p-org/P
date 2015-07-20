@@ -1,4 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\PtoZingBugFound.dll
-acc: .\
-dsc: zinger.exe, 1.7.2.2. "goto" transition

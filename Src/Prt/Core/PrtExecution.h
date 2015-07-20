@@ -32,22 +32,6 @@ typedef struct PRT_PROCESS_PRIV {
 	PRT_MACHINEINST			**machines;
 } PRT_PROCESS_PRIV;
 
-typedef enum PRT_STATECONTROL
-{
-	//
-	// Execute the entry function
-	//
-	PrtStateEntry,
-	//
-	// Execute the action corresponding to currentEvent
-	//
-	PrtStateAction,
-	//
-	// Dequeue an event
-	//
-	PrtDequeue
-} PRT_STATECONTROL;
-
 typedef enum PRT_LASTOPERATION
 {
 	ReturnStatement,
@@ -436,6 +420,11 @@ PrtGetCurrentPayload(
 
 PRT_FUNSTACK_INFO *
 PrtTopOfFunStack(
+	_In_ PRT_MACHINEINST_PRIV	*context
+);
+
+PRT_FUNSTACK_INFO *
+PrtBottomOfFunStack(
 	_In_ PRT_MACHINEINST_PRIV	*context
 );
 

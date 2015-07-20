@@ -103,10 +103,13 @@ PrtMkMachinePrivate(
 		}
 	}
 
+	context->receive = NULL;
+
 	//
-	// Machine Call State Depth
+	// Initialize various stacks
 	//
 	context->callStack.length = 0;
+	context->funStack.length = 0;
 
 	//
 	// Initialize event queue
@@ -162,7 +165,7 @@ PrtMkMachinePrivate(
 
 void
 PrtPushEvent(
-	_Inout_ PRT_MACHINEINST_PRIV		*context,
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
 	_In_ PRT_VALUE					*event,
 	_In_ PRT_VALUE					*payload
 )
@@ -354,6 +357,14 @@ PrtTopOfFunStack(
 	return &context->funStack.funs[0];
 }
 
+PRT_FUNSTACK_INFO *
+PrtBottomOfFunStack(
+_In_ PRT_MACHINEINST_PRIV	*context)
+{
+	PrtAssert(0 < context->funStack.length, "Illegal fun stack access");
+	return &context->funStack.funs[context->funStack.length - 1];
+}
+
 void 
 PrtPushNewFrame(
 	_Inout_ PRT_MACHINEINST_PRIV	*context,
@@ -368,7 +379,14 @@ PrtPushNewFrame(
 	context->funStack.funs[length].currentEventIndex = context->eventStack.length - 1;
 	context->funStack.funs[length].parameters = parameters;
 	PRT_FUNDECL *funDecl = &(context->process->program->machines[context->instanceOf].funs[funIndex]);
-	context->funStack.funs[length].locals = PrtMkDefaultValue(funDecl->localsTupType);
+	if (funDecl->localsTupType == NULL)
+	{
+		context->funStack.funs[length].locals = NULL;
+	}
+	else
+	{
+		context->funStack.funs[length].locals = PrtMkDefaultValue(funDecl->localsTupType);
+	}
 	context->funStack.funs[length].returnTo = 0xFFFF;
 	context->funStack.funs[length].rcase = NULL;
 }
@@ -376,7 +394,7 @@ PrtPushNewFrame(
 void 
 PrtPushFrame(
 	_Inout_ PRT_MACHINEINST_PRIV	*context,
-	_In_ PRT_FUNSTACK_INFO *funStackInfo
+	_In_ PRT_FUNSTACK_INFO			*funStackInfo
 )
 {
 	PRT_UINT16 length = context->funStack.length;
@@ -398,13 +416,14 @@ PrtPopFrame(
 {
 	PRT_UINT16 length = context->funStack.length;
 	PrtAssert(0 < length, "Fun stack underflow");
-	funStackInfo->funIndex = context->funStack.funs[length].funIndex;
-	funStackInfo->currentEventIndex = context->funStack.funs[length].currentEventIndex;
-	funStackInfo->parameters = context->funStack.funs[length].parameters;
-	funStackInfo->locals = context->funStack.funs[length].locals;
-	funStackInfo->returnTo = context->funStack.funs[length].returnTo;
-	funStackInfo->rcase = context->funStack.funs[length].rcase;
-	context->funStack.length = length - 1;
+	PRT_UINT16 top = length - 1;
+	funStackInfo->funIndex = context->funStack.funs[top].funIndex;
+	funStackInfo->currentEventIndex = context->funStack.funs[top].currentEventIndex;
+	funStackInfo->parameters = context->funStack.funs[top].parameters;
+	funStackInfo->locals = context->funStack.funs[top].locals;
+	funStackInfo->returnTo = context->funStack.funs[top].returnTo;
+	funStackInfo->rcase = context->funStack.funs[top].rcase;
+	context->funStack.length = top;
 }
 
 void
@@ -569,16 +588,10 @@ DoEntry:
 	if (context->funStack.length == 0)
 	{
 		PrtLog(PRT_STEP_ENTRY, context);
-		context->funStack.length = 1;
 		PRT_UINT32 entryFunIndex = context->process->program->machines[context->instanceOf].states[context->currentState].entryFunIndex;
-		context->funStack.funs[0].funIndex = entryFunIndex;
-		// TBD: initialize locals
-		context->funStack.funs[0].parameters = NULL;
-		context->funStack.funs[0].returnTo = 0;
-		context->funStack.funs[0].currentEventIndex = 0;
+		PrtPushNewFrame(context, entryFunIndex, NULL);
 	}
-	PRT_UINT32 funIndex = context->funStack.funs[0].funIndex;
-	PrtPushNewFrame(context, funIndex, NULL);
+	PRT_UINT32 funIndex = PrtBottomOfFunStack(context)->funIndex;
 	context->process->program->machines[context->instanceOf].funs[funIndex].implementation((PRT_MACHINEINST *)context);
 	goto CheckLastOperation;
 
@@ -595,15 +608,9 @@ DoAction:
 		if (context->funStack.length == 0)
 		{
 			PrtLog(PRT_STEP_DO, context);
-			context->funStack.length = 1;
-			context->funStack.funs[0].funIndex = doFunIndex;
-			// TBD: initialize locals
-			context->funStack.funs[0].parameters = NULL;
-			context->funStack.funs[0].returnTo = 0;
-			context->funStack.funs[0].currentEventIndex = 0;
+			PrtPushNewFrame(context, doFunIndex, NULL);
 		}
-		PRT_UINT32 funIndex = context->funStack.funs[0].funIndex;
-		PrtPushNewFrame(context, funIndex, NULL);
+		PRT_UINT32 funIndex = PrtBottomOfFunStack(context)->funIndex;
 		context->process->program->machines[context->instanceOf].funs[funIndex].implementation((PRT_MACHINEINST *)context);
 	}
 	goto CheckLastOperation;
@@ -866,7 +873,7 @@ PrtWrapFunStmt(
 		PrtPushNewFrame(context, funIndex, parameters);
 	}
 	PRT_SM_FUN fun = context->process->program->machines[context->instanceOf].funs[funIndex].implementation;
-	PRT_VALUE *returnValue = fun(context);
+	PRT_VALUE *returnValue = fun((PRT_MACHINEINST *)context);
 	PRT_UINT32 callerFunIndex = frame->funIndex;
 	if (context->receive != NULL)
 	{
@@ -1383,6 +1390,21 @@ PrtCleanupMachine(
 			PrtFree(info->inheritedDeferredSetCompact);
 		}
 	}
+
+	for (int i = 0; i < context->funStack.length; i++)
+	{
+		PRT_FUNSTACK_INFO *info = &context->funStack.funs[i];
+		if (info->locals != NULL)
+		{
+			PrtFreeValue(info->locals);
+		}
+		if (info->parameters != NULL)
+		{
+			PrtFreeValue(info->parameters);
+		}
+	}
+
+	PrtClearEventStack(context);
 
 	if (context->currentActionSetCompact != NULL)
 	{

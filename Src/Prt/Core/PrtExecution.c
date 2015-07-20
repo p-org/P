@@ -77,8 +77,12 @@ PrtMkMachinePrivate(
 	//
 	// Initialize the map used in PrtDist, map from sender to the last seqnumber received
 	//
-	PRT_TYPE* mapType = PrtMkMapType(PrtMkPrimitiveType(PRT_KIND_MACHINE), PrtMkPrimitiveType(PRT_KIND_INT));
-	context->recvMap = PrtMkDefaultValue(mapType);
+	PRT_TYPE *domType = PrtMkPrimitiveType(PRT_KIND_MACHINE);
+	PRT_TYPE *codType = PrtMkPrimitiveType(PRT_KIND_INT);
+	context->recvMapType = PrtMkMapType(domType, codType);
+	context->recvMap = PrtMkDefaultValue(context->recvMapType);
+	PrtFreeType(domType);
+	PrtFreeType(codType);
 
 	// Initialize Machine Internal Variables
 	//
@@ -1404,8 +1408,6 @@ PrtCleanupMachine(
 		}
 	}
 
-	PrtClearEventStack(context);
-
 	if (context->currentActionSetCompact != NULL)
 	{
 		PrtFree(context->currentActionSetCompact);
@@ -1450,6 +1452,7 @@ PrtCleanupMachine(
 	
 	if (context->recvMap != NULL)
 	{
+		PrtFreeType(context->recvMapType);
 		PrtFreeValue(context->recvMap);
 	}
 }

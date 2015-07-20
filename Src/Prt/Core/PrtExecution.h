@@ -95,7 +95,8 @@ typedef struct PRT_MACHINEINST_PRIV {
 	PRT_VALUE			*id;  
 	void				*extContext;
 	PRT_BOOLEAN			isModel;
-	PRT_VALUE*			recvMap;	 
+	PRT_TYPE			*recvMapType;
+	PRT_VALUE           *recvMap;	 
 	PRT_VALUE			**varValues;
 	PRT_RECURSIVE_MUTEX stateMachineLock;
 	PRT_BOOLEAN			isRunning;
@@ -107,10 +108,10 @@ typedef struct PRT_MACHINEINST_PRIV {
 	PRT_EVENTSTACK		eventStack;
 	PRT_EVENTQUEUE		eventQueue;
 	PRT_LASTOPERATION	lastOperation;
-	PRT_UINT32*			inheritedDeferredSetCompact;
-	PRT_UINT32*			currentDeferredSetCompact;
-	PRT_UINT32*			inheritedActionSetCompact;
-	PRT_UINT32*			currentActionSetCompact;
+	PRT_UINT32          *inheritedDeferredSetCompact;
+	PRT_UINT32          *currentDeferredSetCompact;
+	PRT_UINT32          *inheritedActionSetCompact;
+	PRT_UINT32          *currentActionSetCompact;
 } PRT_MACHINEINST_PRIV;
 
 /** Gets an element in a (named) tuple without cloning. Only used for internal manipulation of state variables.

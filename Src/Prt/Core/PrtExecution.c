@@ -77,8 +77,13 @@ PrtMkMachinePrivate(
 	//
 	// Initialize the map used in PrtDist, map from sender to the last seqnumber received
 	//
-	PRT_TYPE* mapType = PrtMkMapType(PrtMkPrimitiveType(PRT_KIND_MACHINE), PrtMkPrimitiveType(PRT_KIND_INT));
+	PRT_TYPE* machineType = PrtMkPrimitiveType(PRT_KIND_MACHINE);
+	PRT_TYPE* IntType = PrtMkPrimitiveType(PRT_KIND_INT);
+	PRT_TYPE* mapType = PrtMkMapType(machineType, IntType);
 	context->recvMessMap = PrtMkDefaultValue(mapType);
+	PrtFreeType(mapType);
+	PrtFreeType(machineType);
+	PrtFreeType(IntType);
 
 	// Initialize Machine Internal Variables
 	//

@@ -166,8 +166,8 @@ namespace Microsoft.Pc
                     var varName = ((Cnst)enumerator.Current).GetStringValue();
                     enumerator.MoveNext();
                     var varType = (FuncTerm)enumerator.Current;
-                    parameterNameToInfo[varName] = new LocalVariableInfo(varType, localIndex);
-                    parameterNames.Add(varName);
+                    localNameToInfo[varName] = new LocalVariableInfo(varType, localIndex);
+                    localNames.Add(varName);
                 }
                 locals = PToZing.GetArgByIndex(locals, 1) as FuncTerm;
                 localIndex++;
@@ -2010,22 +2010,23 @@ namespace Microsoft.Pc
             {
                 yield break;
             }
-            else if (funName == PData.Con_FunApp.Node.Name || funName == PData.Con_FunStmt.Node.Name)
+            else if (funName == PData.Con_FunApp.Node.Name)
             {
-                bool first = true;
-                foreach (var t in ft.Args)
+                foreach (var a in ZingUnfold(ctxt, GetArgByIndex(ft, 1)))
                 {
-                    if (first)
-                    {
-                        first = false;
-                    }
-                    else
-                    {
-                        foreach (var a in ZingUnfold(ctxt, t))
-                        {
-                            yield return a;
-                        }
-                    }
+                    yield return a;
+                }
+            }
+            else if (funName == PData.Con_FunStmt.Node.Name)
+            {
+                foreach (var a in ZingUnfold(ctxt, GetArgByIndex(ft, 1)))
+                {
+                    yield return a;
+                }
+                var node = GetArgByIndex(ft, 2);
+                if (node.NodeKind != NodeKind.Id)
+                {
+                    yield return node;
                 }
             }
             else if (funName == PData.Con_BinApp.Node.Name)
@@ -2317,42 +2318,55 @@ namespace Microsoft.Pc
             }
         }
 
-        private List<AST<Node>> CaseFunCallHelper(ZingFoldContext ctxt, string calleeName)
+        private List<AST<Node>> CaseFunCallHelper(ZingFoldContext ctxt, List<string> eventNames, List<string> funNames, string afterAfterLabel)
         {
+            List<AST<Node>> eventStmts = new List<AST<Node>>();
+            List<AST<Node>> funStmts = new List<AST<Node>>();
+
+            for (int i = 0; i < eventNames.Count; i++)
+            {
+                var beforeLabel = ctxt.GetFreshLabel();
+
+                var eventName = eventNames[i];
+                var funName = funNames[i];
+                var calleeInfo = allStaticFuns.ContainsKey(funName) ? allStaticFuns[funName] : allMachines[ctxt.machineName].funNameToFunInfo[funName];
+                var calleeLocalVar = ctxt.GetTmpVar(Factory.Instance.MkCnst("PRT_VALUE_ARRAY"), "calleeLocalVar");
+                List<AST<Node>> ifStmts = new List<AST<Node>>();
+                if (calleeInfo.localNames.Count == 0)
+                {
+                    ifStmts.Add(MkZingAssign(calleeLocalVar, MkZingIdentifier("null")));
+                }
+                else
+                {
+                    ifStmts.Add(MkZingAssign(calleeLocalVar, MkZingNew(Factory.Instance.MkCnst("PRT_VALUE_ARRAY"), Factory.Instance.MkCnst(calleeInfo.localNames.Count))));
+                }
+                for (int localCount = 0; localCount < calleeInfo.localNames.Count; localCount++)
+                {
+                    var calleeLocal = calleeInfo.localNames[localCount];
+                    ifStmts.Add(MkZingAssign(MkZingIndex(calleeLocalVar, Factory.Instance.MkCnst(localCount)), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(calleeInfo.localNameToInfo[calleeLocal].type))));
+                }
+                ifStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(0), MkZingIdentifier("null"), calleeLocalVar, MkZingDot("myHandle", "currentEvent"), MkZingDot("myHandle", "currentArg"))));
+                ifStmts.Add(MkZingGoto(beforeLabel));
+                eventStmts.Add(MkZingIfThen(MkZingEq(MkZingDot("myHandle", "currentEvent"), MkZingEvent(eventName)), MkZingSeq(ifStmts)));
+
+                if (allStaticFuns.ContainsKey(funName))
+                {
+                    funStmts.Add(MkZingBlock(beforeLabel, MkZingCallStmt(MkZingCall(MkZingDot("Main", funName), MkZingIdentifier("myHandle"), MkZingIdentifier("entryCtxt")))));
+                }
+                else
+                {
+                    funStmts.Add(MkZingBlock(beforeLabel, MkZingCallStmt(MkZingCall(MkZingIdentifier(funName), MkZingIdentifier("entryCtxt")))));
+                }
+                funStmts.Add(MkZingIfThenElse(
+                                     MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "Return")),
+                                     MkZingGoto(afterAfterLabel),
+                                     MkZingSeq(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(ctxt.LabelToId(beforeLabel)), MkZingIdentifier("parameters"), MkZingIdentifier("locals"), MkZingIdentifier("currentEvent"), MkZingIdentifier("currentArg"))),
+                                               MkZingReturn(ZingData.Cnst_Nil))));
+            }
             List<AST<Node>> stmts = new List<AST<Node>>();
-            var calleeInfo = allStaticFuns.ContainsKey(calleeName) ? allStaticFuns[calleeName] : allMachines[ctxt.machineName].funNameToFunInfo[calleeName];
-            var calleeLocalVar = ctxt.GetTmpVar(Factory.Instance.MkCnst("PRT_VALUE_ARRAY"), "calleeLocalVar");
-            if (calleeInfo.localNames.Count == 0)
-            {
-                stmts.Add(MkZingAssign(calleeLocalVar, MkZingIdentifier("null")));
-            }
-            else
-            {
-                stmts.Add(MkZingAssign(calleeLocalVar, MkZingNew(Factory.Instance.MkCnst("PRT_VALUE_ARRAY"), Factory.Instance.MkCnst(calleeInfo.localNames.Count))));
-            }
-            for (int localCount = 0; localCount < calleeInfo.localNames.Count; localCount++)
-            {
-                var calleeLocal = calleeInfo.localNames[localCount];
-                stmts.Add(MkZingAssign(MkZingIndex(calleeLocalVar, Factory.Instance.MkCnst(localCount)), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(calleeInfo.localNameToInfo[calleeLocal].type))));
-            }
-
-            stmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(0), MkZingIdentifier("null"), calleeLocalVar, MkZingDot("myHandle", "currentEvent"), MkZingDot("myHandle", "currentArg"))));
-
-            var beforeLabel = ctxt.GetFreshLabel();
-            if (allStaticFuns.ContainsKey(calleeName))
-            {
-                stmts.Add(MkZingBlock(beforeLabel, MkZingCallStmt(MkZingCall(MkZingDot("Main", calleeName), MkZingIdentifier("myHandle"), MkZingIdentifier("entryCtxt")))));
-            }
-            else
-            {
-                stmts.Add(MkZingBlock(beforeLabel, MkZingCallStmt(MkZingCall(MkZingIdentifier(calleeName), MkZingIdentifier("entryCtxt")))));
-            }
-
-            stmts.Add(MkZingIfThenElse(
-                                 MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "Return")),
-                                 ZingData.Cnst_Nil,
-                                 MkZingSeq(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(ctxt.LabelToId(beforeLabel)), MkZingIdentifier("parameters"), MkZingIdentifier("locals"), MkZingIdentifier("currentEvent"), MkZingIdentifier("currentArg"))),
-                                           MkZingReturn(ZingData.Cnst_Nil))));
+            stmts.AddRange(eventStmts);
+            stmts.Add(MkZingAssert(ZingData.Cnst_False));
+            stmts.AddRange(funStmts);
             return stmts;
         }
 
@@ -2373,7 +2387,7 @@ namespace Microsoft.Pc
                 }
                 eventNames.Add(eventName);
                 stmts.Add(MkZingAssign(MkZingDot("myHandle", "receiveSet"), MkZingAdd(MkZingDot("myHandle", "receiveSet"), MkZingEvent(eventName))));
-                var fun = GetArgByIndex(ft, 1);
+                var fun = GetArgByIndex(cases, 1);
                 string funName;
                 Cnst namedFun = fun as Cnst;
                 if (namedFun != null)
@@ -2392,14 +2406,7 @@ namespace Microsoft.Pc
             stmts.Add(MkZingReturn(ZingData.Cnst_Nil));
             stmts.Add(MkZingBlock(afterLabel, ZingData.Cnst_Nil));
             var afterAfterLabel = ctxt.GetFreshLabel();
-            for (int i = 0; i < eventNames.Count; i++)
-            {
-                var eventName = eventNames[i];
-                var funName = funNames[i];
-                List<AST<Node>> funCallStmts = CaseFunCallHelper(ctxt, funName);
-                funCallStmts.Add(MkZingGoto(afterAfterLabel));
-                stmts.Add(MkZingIfThen(MkZingEq(MkZingDot("myHandle", "currentEvent"), MkZingEvent(eventName)), MkZingSeq(funCallStmts)));
-            }
+            stmts.AddRange(CaseFunCallHelper(ctxt, eventNames, funNames, afterAfterLabel));
             stmts.Add(MkZingBlock(afterAfterLabel, ZingData.Cnst_Nil));
             return new ZingTranslationInfo(MkZingSeq(stmts));
         }

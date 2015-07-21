@@ -358,7 +358,16 @@ PrtReceive(
 	PRT_UINT32 funIndex = funStackInfo->funIndex;
 	context->receive = &(context->process->program->machines[context->instanceOf].funs[funIndex].receives[receiveIndex]);
 	funStackInfo->returnTo = receiveIndex;
-	return PrtDequeueEvent(context, funStackInfo);
+	PRT_BOOLEAN dequeued = PrtDequeueEvent(context, funStackInfo);
+	if (dequeued)
+	{
+		return PRT_TRUE;
+	}
+	else 
+	{
+		PrtPushFrame(context, funStackInfo);
+		return PRT_FALSE;
+	}
 }
 
 PRT_FUNSTACK_INFO *
@@ -756,8 +765,6 @@ PrtDequeueEvent(
 	PRT_EVENTQUEUE *queue;
 	PRT_UINT32* deferPacked;
 	PRT_UINT32 i, head;
-
-	PRT_DBG_ASSERT(context->eventStack.length == 0, "Precondition of PrtDequeue failed");
 
 	queue = &context->eventQueue;
 	queueLength = queue->eventsSize;

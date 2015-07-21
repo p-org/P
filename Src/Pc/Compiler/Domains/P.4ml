@@ -44,7 +44,7 @@ domain PData
     Raise    ::= new (ev: any Expr, arg: any Expr + { NIL }).
     Send     ::= new (dest: any Expr, ev: any Expr, arg: any Expr + { NIL }).
     Monitor  ::= new (ev: any Expr, arg: any Expr + { NIL }).
-    FunStmt  ::= new (name: String, args: any Exprs + { NIL }, aout: Name + { NIL }, label: Natural).
+    FunStmt  ::= new (name: String, args: any Exprs + { NIL }, aout: any Name + { NIL }, label: Natural).
     NulStmt  ::= new (op: { SKIP, POP }).
     UnStmt   ::= new (op: { ASSERT }, arg1: any Expr).
     BinStmt  ::= new (op: { REMOVE, ASSIGN, INSERT }, arg1: any Expr, arg2: any Expr).
@@ -259,7 +259,7 @@ domain PStaticTyping extends PData
     IsEventCnst(c, e, pt)             :- SubSE(c, e), e = Name(n), EventDecl(n, _, pt), pt : TypeExpr, no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _). 
 
 	[ rule_Classes = '"error, msg: Undefined symbol"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n), no EventDecl(n, _, _), no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _). 
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n), no EventDecl(n, _, _), no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _), no TypeOfLocalVar(c, n, _). 
     
     TypeOf(c, e, BaseType(BOOL))  :- TypeOfArg1(c, e, t1), e = UnApp(NOT, _), t1 = BaseType(BOOL). 
 	[ rule_Classes = '"error, msg: Operator expected a boolean value"']

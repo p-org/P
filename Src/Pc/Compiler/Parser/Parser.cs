@@ -29,7 +29,6 @@
         private P_Root.FunDecl crntFunDecl = null;
         private P_Root.EventDecl crntEventDecl = null;
         private P_Root.MachineDecl crntMachDecl = null;
-        private P_Root.QualifiedName crntQualName = null;
         private P_Root.QualifiedName crntStateTargetName = null;
         private P_Root.StateDecl crntState = null;
         private List<P_Root.VarDecl> crntVarList = new List<P_Root.VarDecl>();
@@ -699,6 +698,7 @@
                 funStmt.args = (P_Root.IArgType_FunStmt__1)funCall.args;
                 funStmt.aout = (P_Root.IArgType_FunStmt__2)aout;
                 funStmt.label = MkNumeric(GetNextFunStmtLabel(), span);
+                funStmt.Span = span;
                 stmtStack.Push(funStmt);
             }
             else
@@ -779,26 +779,6 @@
 
             groupStack.Push(groupName);
         }
-
-        private void Qualify(string name, Span span)
-        {
-            if (crntQualName == null)
-            {
-                crntQualName = P_Root.MkQualifiedName(
-                    MkString(name, span),
-                    MkUserCnst(P_Root.UserCnstKind.NIL, span));
-            }
-            else
-            {
-                crntQualName = P_Root.MkQualifiedName(
-                    MkString(name, span),
-                    crntQualName);
-
-            }
-
-            crntQualName.Span = span;
-        }
-
 
         private void QualifyStateTarget(string name, Span span)
         {
@@ -1792,7 +1772,6 @@
             crntState = null;
             crntEventDecl = null;
             crntMachDecl = null;
-            crntQualName = null;
             crntStateTargetName = null;
             nextReceiveLabel = 0;
             nextFunStmtLabel = 0;

@@ -348,7 +348,7 @@ PrtRaise(
 	PrtLog(PRT_STEP_RAISE, context);
 }
 
-void
+PRT_BOOLEAN
 PrtReceive(
 	_Inout_ PRT_MACHINEINST_PRIV	*context,
 	_Inout_ PRT_FUNSTACK_INFO		*funStackInfo,
@@ -358,12 +358,7 @@ PrtReceive(
 	PRT_UINT32 funIndex = funStackInfo->funIndex;
 	context->receive = &(context->process->program->machines[context->instanceOf].funs[funIndex].receives[receiveIndex]);
 	funStackInfo->returnTo = receiveIndex;
-	PrtPushFrame(context, funStackInfo);
-	if (PrtDequeueEvent(context))
-	{
-		PrtPopFrame(context, funStackInfo);
-		PrtPushNewFrame(context, funStackInfo->rcase->funIndex, NULL);
-	}
+	return PrtDequeueEvent(context, funStackInfo);
 }
 
 PRT_FUNSTACK_INFO *
@@ -536,9 +531,13 @@ PrtPopState(
 	PrtFree(poppedState.inheritedDeferredSetCompact);
 	PrtFree(poppedState.inheritedActionSetCompact);
 
+	PrtUpdateCurrentActionsSet(context);
+	PrtUpdateCurrentDeferredSet(context);
+
 	if (isPopStatement)
 	{
 		PrtLog(PRT_STEP_POP, context);
+		PrtPopEvent(context);
 	}
 	else
 	{
@@ -643,6 +642,7 @@ CheckLastOperation:
 	case RaiseStatement:
 		goto DoHandleEvent;
 	case ReturnStatement:
+		PrtPopEvent(context);
 		goto DoDequeue;
 	default:
 		PRT_DBG_ASSERT(0, "Unexpected case in switch");
@@ -656,8 +656,8 @@ DoDequeue:
 		PrtLockMutex(context->stateMachineLock);
 	}
 
-	PrtClearEventStack(context);
-	if (PrtDequeueEvent(context))
+	PRT_FUNSTACK_INFO *frame = context->receive != NULL ? PrtTopOfFunStack(context) : NULL;
+	if (PrtDequeueEvent(context, frame))
 	{
 		lockHeld = PRT_FALSE;
 		PrtUnlockMutex(context->stateMachineLock);
@@ -698,8 +698,6 @@ DoHandleEvent:
 		PrtPopState(context, PRT_FALSE);
 		if (context->isHalted)
 			return;
-		PrtUpdateCurrentActionsSet(context);
-		PrtUpdateCurrentDeferredSet(context);
 		goto DoHandleEvent;
 	}
 
@@ -750,7 +748,8 @@ PrtTakeTransition(
 
 PRT_BOOLEAN
 PrtDequeueEvent(
-	_Inout_ PRT_MACHINEINST_PRIV	*context
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_Inout_ PRT_FUNSTACK_INFO		*frame
 )
 {
 	PRT_UINT32 queueLength;
@@ -785,7 +784,8 @@ PrtDequeueEvent(
 				PRT_CASEDECL *rcase = &context->receive->cases[i];
 				if (triggerIndex == rcase->triggerEventIndex)
 				{
-					PrtTopOfFunStack(context)->rcase = rcase;
+					frame->rcase = rcase;
+					PrtPushNewFrame(context, rcase->funIndex, NULL);
 					break;
 				}
 			}
@@ -914,6 +914,15 @@ PrtFreeFrameVars(
 	{
 		PrtFreeValue(frame->locals);
 	}
+}
+
+PRT_SM_FUN
+PrtGetFunction(
+	_In_ PRT_MACHINEINST_PRIV		*context,
+	_In_ PRT_UINT32 funIndex
+)
+{
+	return context->process->program->machines[context->instanceOf].funs[funIndex].implementation;
 }
 
 FORCEINLINE

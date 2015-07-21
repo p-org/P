@@ -214,7 +214,8 @@ _In_ PRT_UINT32					eventIndex
 
 PRT_BOOLEAN
 PrtDequeueEvent(
-_Inout_ PRT_MACHINEINST_PRIV	*context
+_Inout_ PRT_MACHINEINST_PRIV	*context,
+_Inout_ PRT_FUNSTACK_INFO		*frame
 );
 
 FORCEINLINE
@@ -233,6 +234,12 @@ FORCEINLINE
 PRT_UINT16
 PrtGetPackSize(
 _In_ PRT_MACHINEINST_PRIV			*context
+);
+
+PRT_SM_FUN
+PrtGetFunction(
+_In_ PRT_MACHINEINST_PRIV		*context,
+_In_ PRT_UINT32 funIndex
 );
 
 FORCEINLINE
@@ -465,7 +472,7 @@ PrtWrapFunStmt(
 	_In_ PRT_VALUE					*parameters
 );
 
-void
+PRT_BOOLEAN
 PrtReceive(
 	_Inout_ PRT_MACHINEINST_PRIV	*context,
 	_Inout_ PRT_FUNSTACK_INFO		*funStackInfo,

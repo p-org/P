@@ -355,11 +355,6 @@ StmtList
 	| Stmt StmtList    { PushSeq(); }													
 	;
 
-QualifiedId
-    : ID                  { Qualify($1.str, ToSpan(@1)); }
-	| QualifiedId DOT ID  { Qualify($3.str, ToSpan(@3)); }
-	;
-
 StateTarget
     : ID                  { QualifyStateTarget($1.str, ToSpan(@1)); }
 	| StateTarget DOT ID   { QualifyStateTarget($3.str, ToSpan(@3)); }

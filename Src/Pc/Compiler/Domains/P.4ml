@@ -517,11 +517,14 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: function not defined"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _, _, _), no FunDecl(n, c.owner, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _).	
 	[ rule_Classes = '"error, msg: function requires arguments"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, NIL, _, _), FunDecl(n, c.owner, _, params, _, _, _), params != NIL;
-	                       SubSE(c, e), e = FunStmt(n, NIL, _, _), FunDecl(n, NIL, _, params, _, _, _), params != NIL.
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, NIL, _, _), FunAvailable(decl, c.owner), decl.name = n, decl.params != NIL.
 	[ rule_Classes = '"error, msg: function arguments have incorrect types"']
 	TypeOf(c, e, ERROR) :- TypeOfArg1(c, e, t1), e = FunStmt(n, _, _, _), FuncSigTupleType(decl, inpt), decl.name = n, FunAvailable(decl, c.owner), TypeRel(t1, inpt, k), t1 != inpt, k != SUB.
-	
+	[ rule_Classes = '"error, msg: function does not return a value"']
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _, x, _), x: Name, FunAvailable(decl, c.owner), decl.name = n, decl.return = NIL.
+	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
+	TypeOf(c, e, ERROR) :- TypeOfArg2(c, e, t1, t2), e = FunStmt(n, _, x, _), x: Name, FunAvailable(decl, c.owner), decl.name = n, TypeRel(decl.return, t2, k), k!= SUB, decl.return != t2.
+
 	//// (6) Receive statement
 	ReceiveCases ::= sub(receive: Receive, cases: Cases).
 
@@ -688,16 +691,18 @@ domain PStaticTyping extends PData
     /*************************************************************/
     /*                          L-values                         */
     /*************************************************************/
-	LValueError    ::= (cntxt: TypingContext, stmt: BinStmt).
-	BinStmtSubExpr ::= sub (cntxt: TypingContext, stmt: BinStmt, expr: Expr).
-	IsLValue       ::=     (cntxt: TypingContext, expr: Expr, writesGlobal: Boolean). 		
-    IsLValue(c, e, FALSE)  :- BinStmtSubExpr(c, _, e), e = Name(n), TypeOfFormalParam(c, n, _). 
-    IsLValue(c, e, TRUE)   :- BinStmtSubExpr(c, _, e), e = Name(n), VarDecl(n, c.owner, t), no TypeOfFormalParam(c, n, _). 
-    IsLValue(c, e, wg)     :- BinStmtSubExpr(c, _, e), e = Field(e', _), IsLValue(c, e', wg). 
-    IsLValue(c, e, wg)     :- BinStmtSubExpr(c, _, e), e = BinApp(IDX, e', _), IsLValue(c, e', wg). 
+	LValueError    ::= (cntxt: TypingContext, stmt: BinStmt + FunStmt).
+	ModStmtSubExpr ::= sub (cntxt: TypingContext, stmt: BinStmt + FunStmt, expr: Expr).
+	IsLValue       ::=     (cntxt: TypingContext, expr: Expr, writesGlobal: Boolean). 
+	IsLValue(c, e, FALSE)  :- ModStmtSubExpr(c, _, e), e = Name(n), TypeOfLocalVar(c, n, _).		
+    IsLValue(c, e, FALSE)  :- ModStmtSubExpr(c, _, e), e = Name(n), TypeOfFormalParam(c, n, _), no TypeOfLocalVar(c, n, _). 
+    IsLValue(c, e, TRUE)   :- ModStmtSubExpr(c, _, e), e = Name(n), VarDecl(n, c.owner, t), no TypeOfFormalParam(c, n, _), no TypeOfLocalVar(c, n, _). 
+    IsLValue(c, e, wg)     :- ModStmtSubExpr(c, _, e), e = Field(e', _), IsLValue(c, e', wg). 
+    IsLValue(c, e, wg)     :- ModStmtSubExpr(c, _, e), e = BinApp(IDX, e', _), IsLValue(c, e', wg). 
 
     [ rule_Classes = '"error, msg: invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name"']
-	LValueError(c, e) :- SubSE(c, e), e = BinStmt(_, e', _), no IsLValue(c, e', _).
+	LValueError(c, e) :- SubSE(c, e), e = BinStmt(_, e', _), no IsLValue(c, e', _);
+						 SubSE(c, e), e = FunStmt(_, _, x, _), x: Name, no IsLValue(c, x, _).
 
     /*************************************************************/
     /*                      Control Impurity                     */
@@ -893,6 +898,7 @@ domain PStaticTyping extends PData
 	CompTypeRel(value, cod)   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)).
 	CompTypeRel(value, inner) :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)).
 	CompTypeRel(t1, inpt)     :- TypeOfArg1(c, e, t1), e = FunStmt(n, _, _, _), FuncSigTupleType(decl, inpt), decl.name = n, FunAvailable(decl, c.owner).
+	CompTypeRel(t1, t2)       :- TypeOfArg2(c, e, _, t2), e = FunStmt(n, _, x, _), x: Name, FunAvailable(decl, c.owner), decl.name = n, decl.return = t1.
 
     //// TypeRel determines the relationship type expressions ta and tb.
     //// If types are not subtype related, then they can

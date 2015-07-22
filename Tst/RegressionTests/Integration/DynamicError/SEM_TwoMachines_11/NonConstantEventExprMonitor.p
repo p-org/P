@@ -18,7 +18,7 @@ main machine Real1 {
 			raise ev1;  		
         } 	
         on E1 do Action1;   
-		on default goto Real1_S1;
+		on null goto Real1_S1;
         exit {  
 			ev2 = E2;
 			//mac was not instantiated, hence, runtime reports:

@@ -1,9 +1,0 @@
-runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
-argPc: ..\PushStatement_1.p
-argPc: /printTypeInference
-argPc: /shortFileNames
-del: PushStatement_1.trace
-argPc: /doNotErase
-argPc: /outputDir:..\.
-acc: .\.
-dsc: pc.exe, Feature Integration: push and pop statements with if-while control flow

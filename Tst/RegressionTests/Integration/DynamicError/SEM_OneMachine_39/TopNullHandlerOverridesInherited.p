@@ -3,6 +3,7 @@
 
 event E1 assert 2;
 event unit assert 1;
+event local;
 
 main machine Real1 {
     var test: bool;  //init with "false"
@@ -10,7 +11,8 @@ main machine Real1 {
         entry { 
 			raise unit;
         }
-		on unit do {send this, E1; push Real1_S1; };  
+		on unit do {send this, E1; raise local; };  
+		on local push Real1_S1;
 		on null do Action2;   //Action2 handler for E1 is inherited by Real1_S1
         exit { send this, E1;  }
 	}

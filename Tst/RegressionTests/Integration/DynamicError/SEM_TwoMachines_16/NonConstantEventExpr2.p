@@ -18,7 +18,7 @@ main machine Real1 {
 			raise ev1, 100;  		
         } 	
         on E1 do Action1;   
-		on default goto Real1_S1;  //unreachable
+		on null goto Real1_S1;  //unreachable
 		//on E2 do Action2;
         exit {  
 			ev2 = E2;

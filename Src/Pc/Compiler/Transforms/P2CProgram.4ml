@@ -907,24 +907,41 @@ transform P2CProgram (in:: P) returns (out:: C)
 										   def = out.Init(Args(Ident(eventName), Args(IntLit(funIndex, DEC, U), NIL))),
 										   arr = out.Args(def, arr'), c = c' + 1.
 
+	COut(9, def) :- decl is AnonOrNamedFun, SubSE(decl, receive), receive = Receive(cases, c),
+					CaseDeclConcat(nCases, decl, cases, arr), DeclId(decl, _, declName),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_CASEDECL"), NIL), 
+								  strJoin(strJoin(strJoin("P_GEND_CASES_", declName), "_"), toString(c)), 
+								  Init(arr)).
+
 	ReceiveDeclConcat ::= (pos: Natural, decl: AnonOrNamedFun, arr: out.Args + { NIL }).
 	ReceiveDeclConcat(c, decl, NIL) :- decl is AnonOrNamedFun, c = count({r | r: Receive, SubSE(decl, r)}).
 	ReceiveDeclConcat(c, decl, arr) :- decl is AnonOrNamedFun, SubSE(decl, receive), receive = Receive(cases, c), 
 									   ReceiveDeclConcat(c + 1, decl, arr'), arr = out.Args(def, arr'),
-									   CaseDeclConcat(nCases, decl, cases, casesInit),
+									   CaseDeclConcat(nCases, decl, cases, casesInit), DeclId(decl, _, declName),
 									   ReceiveEventsPacked(decl, receive, rlist),
 									   index = toOrdinal(rlist, 0, { l | EventPacking(l, _, 0, _) }), 
 									   def = out.Init(
 												Args(IntLit(c, DEC, U),
 												Args(IntLit(index, DEC, U),
 												Args(IntLit(nCases, DEC, U),
-												Args(Init(casesInit),
+												Args(Ident(strJoin(strJoin(strJoin("P_GEND_CASES_", declName), "_"), toString(c))),
 												NIL))))).
 
+	COut(10, def) :- decl is AnonOrNamedFun, ReceiveDeclConcat(nReceives, decl, NIL), ReceiveDeclConcat(0, decl, arr), arr: out.Args, 
+					 DeclId(decl, _, declName),
+	                 def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_RECEIVEDECL"), NIL), 
+								  strJoin("P_GEND_RECEIVE_", declName), 
+								  Init(arr)).
+
 	ReceiveDeclInit ::= (decl: AnonOrNamedFun, nReceives: Natural, receives: out.Expr).
-	ReceiveDeclInit(decl, 0, Ident("NULL")) :- decl is AnonOrNamedFun, ReceiveDeclConcat(0, decl, NIL).
-	ReceiveDeclInit(decl, nReceives, out.Init(receives)) :- 
-				decl is AnonOrNamedFun, ReceiveDeclConcat(nReceives, decl, NIL), ReceiveDeclConcat(0, decl, receives), receives: out.Args.
+	ReceiveDeclInit(decl, 0, receives) :- decl is AnonOrNamedFun, ReceiveDeclConcat(0, decl, NIL), receives = Ident("NULL").
+	ReceiveDeclInit(decl, nReceives, receives) :- 
+				decl is AnonOrNamedFun, ReceiveDeclConcat(nReceives, decl, NIL), ReceiveDeclConcat(0, decl, arr), arr: out.Args,
+				DeclId(decl, _, declName), receives = Ident(strJoin("P_GEND_RECEIVE_", declName)).
 
 	FunDeclConcat ::= (pos: Natural, mach: MachineDecl, arr: out.Args + {NIL}).
 
@@ -936,7 +953,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 							DeclId(d, m, cfun), DeclId(d.owner, _, cmach), FunDeclConcat(m + 1, d.owner, after), d : FunDecl,
 							LocalsType(d, localsType),
 							mdecl: MachineDecl, FunAvailable(d, mdecl),
-							ReceiveDeclInit(d, nReceives, receives),
+							ReceiveDeclInit(d, nReceives, receives), 
 							arr = out.Args(def, after), 
 	                        def = Init(
 							   Args(Ident(cfun),
@@ -953,7 +970,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	FunDeclConcat(m, d.owner, arr) :- 
 							DeclId(d, m, cfun), DeclId(d.owner, _, cmach), FunDeclConcat(m + 1, d.owner, after), d : AnonFunDecl,
 							LocalsType(d, localsType),
-							ReceiveDeclInit(d, nReceives, receives),	
+							ReceiveDeclInit(d, nReceives, receives),
 							arr = out.Args(def, after), 
 	                        def = Init(
 							   Args(Ident(cfun),

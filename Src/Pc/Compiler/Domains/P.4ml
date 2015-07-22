@@ -1082,7 +1082,9 @@ domain PStaticTyping extends PData
     TriggerSet(a, e)    :- TriggerSet(s, e), s : StateDecl, a = s.entryAction, a : AnonFunDecl.
     TriggerSet(a, e)    :- TriggerSet(t, e), t : TransDecl, a = t.action, a : AnonFunDecl.
     TriggerSet(a, e)    :- TriggerSet(d, e), d : DoDecl, a = d.action, a : AnonFunDecl.
-	TriggerSet(a, e)    :- c is FunDecl, SubSE(c, s), s = Cases(e, a, _), a : AnonFunDecl. 
+	TriggerSet(a, e)    :- c is FunDecl, SubSE(c, cases), cases = Cases(e, a, _), a : AnonFunDecl. 
+	TriggerSet(a, e)    :- s is StateDecl, SubSE(s.entryAction, cases), cases = Cases(e, a, _), a : AnonFunDecl.
+	TriggerSet(a, e)	:- d is DoDecl, SubSE(d.action, cases), cases = Cases(e, a, _), a : AnonFunDecl.
 
 	//// (5) An FunDecl's trigger set is the set of events of its calling contexts.
 	//// payloads in exit functions are unpredictable.
@@ -1091,9 +1093,11 @@ domain PStaticTyping extends PData
     TriggerSet(f, e)    :- TriggerSet(t, e), t : TransDecl, f is FunDecl, f.name = t.action, FunAvailable(f, t.src.owner).
     TriggerSet(f, e)    :- TriggerSet(d, e), d : DoDecl, f is FunDecl, f.name = d.action, FunAvailable(f, d.src.owner).
 
-    TriggerSet(f, e) :- TriggerSet(c, e), SubSE(c, x), x = FunApp(name, _), f is FunDecl, FunAvailable(f, c.owner), f.name = name.
-    TriggerSet(f, e) :- TriggerSet(c, e), SubSE(c, x), x = FunStmt(name, _, _, _), f is FunDecl, FunAvailable(f, c.owner), f.name = name.
-    TriggerSet(f, e) :- c is FunDecl, SubSE(c, s), s = Cases(e, name, _), name: String, f is FunDecl, FunAvailable(f, c.owner), f.name = name.
+    TriggerSet(f, e)	:- TriggerSet(c, e), SubSE(c, x), x = FunApp(name, _), f is FunDecl, FunAvailable(f, c.owner), f.name = name.
+    TriggerSet(f, e)	:- TriggerSet(c, e), SubSE(c, x), x = FunStmt(name, _, _, _), f is FunDecl, FunAvailable(f, c.owner), f.name = name.
+    TriggerSet(f, e)	:- c is FunDecl, SubSE(c, s), s = Cases(e, name, _), name: String, f is FunDecl, FunAvailable(f, c.owner), f.name = name.
+	TriggerSet(f, e)    :- s is StateDecl, SubSE(s.entryAction, cases), cases = Cases(e, name, _), name: String, FunAvailable(f, s.owner), f.name = name.
+	TriggerSet(f, e)	:- d is DoDecl, SubSE(d.action, cases), cases = Cases(e, name, _), name: String, FunAvailable(f, d.src.owner), f.name = name.
 
 	/*************************************************************/
     /*                      Compute type joins                   */

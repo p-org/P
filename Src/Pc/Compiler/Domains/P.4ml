@@ -216,7 +216,41 @@ domain PStaticTyping extends PData
 	SubCntxt ::= sub (cntxt: TypingContext).
     
     //// All typeable subexpressions / substatements and the declarations in which they appear.
-    SubSE ::= sub (cntxt: TypingContext, typeable: Typeable).
+    //SubSE ::= sub (cntxt: TypingContext, typeable: Typeable).
+
+	//// Comment out the following rules and uncomment the rule above to get the original behavior
+	SubSE ::= (cntxt: TypingContext, typeable: Typeable).
+	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = AnonFunDecl(_, _, typeable).
+	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = FunDecl(_, _, _, _,  _, _, typeable).
+	SubSE(c, e), SubSE(c, s) :- SubSE(c, While(e, s)).
+	SubSE(c, e), SubSE(c, s1), SubSE(c, s2) :- SubSE(c, Ite(e, s1, s2)).
+	SubSE(c, s1), SubSE(c, s2) :- SubSE(c, Seq(s1, s2)).
+	SubSE(c, cases) :- SubSE(c, Receive(cases, _)).
+	SubSE(c, cases) :- SubSE(c, Cases(_, _, cases)), cases: Cases.
+	SubSE(c, e) :- SubSE(c, Return(e)), e: Expr.
+	SubSE(c, e1), SubSE(c, e2) :- SubSE(c, BinStmt(_, e1, e2)).
+	SubSE(c, e) :- SubSE(c, UnStmt(_, e)).
+	SubSE(c, es) :- SubSE(c, FunStmt(_, es, _, _)), es: Exprs.
+	SubSE(c, e) :- SubSE(c, FunStmt(_, _, e, _)), e: Name.
+	SubSE(c, e) :- SubSE(c, Monitor(e, _)).
+	SubSE(c, e) :- SubSE(c, Monitor(_, e)), e: Expr.
+	SubSE(c, e1), SubSE(c, e2) :- SubSE(c, Send(e1, e2, _)).
+	SubSE(c, e) :- SubSE(c, Send(_, _, e)), e: Expr.
+	SubSE(c, e) :- SubSE(c, Raise(e, _)).
+	SubSE(c, e) :- SubSE(c, Raise(_, e)), e: Expr.
+	SubSE(c, e) :- SubSE(c, NewStmt(_, e, _)), e: Expr.
+	SubSE(c, e) :- SubSE(c, New(_, e, _)), e: Expr.
+	SubSE(c, es) :- SubSE(c, FunApp(_, es)), es: Exprs.
+	SubSE(c, e) :- SubSE(c, UnApp(_, e)).
+	SubSE(c, e1), SubSE(c, e2) :- SubSE(c, BinApp(_, e1, e2)).
+	SubSE(c, e) :- SubSE(c, Field(e, _)).
+	SubSE(c, e) :- SubSE(c, Cast(e, _)).
+	SubSE(c, es) :- SubSE(c, Tuple(es)).
+	SubSE(c, es) :- SubSE(c, NamedTuple(es)).
+	SubSE(c, e) :- SubSE(c, Exprs(e, _)).
+	SubSE(c, es) :- SubSE(c, Exprs(_, es)), es: Exprs.
+    SubSE(c, e) :- SubSE(c, NamedExprs(_, e, _)).
+	SubSE(c, es) :- SubSE(c, NamedExprs(_, _, es)), es: NamedExprs.
 
 	//// True if in this context
 	IsEventCnst ::= (cntxt: TypingContext, expr: Typeable, paytype: TypeExpr).

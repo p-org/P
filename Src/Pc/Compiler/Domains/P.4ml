@@ -560,12 +560,14 @@ domain PStaticTyping extends PData
 	TypeOf(c, e, ERROR) :- TypeOfArg2(c, e, t1, t2), e = FunStmt(n, _, x, _), x: Name, FunAvailable(decl, c.owner), decl.name = n, TypeRel(decl.return, t2, k), k!= SUB, decl.return != t2.
 
 	//// (6) Receive statement
-	ReceiveCases ::= sub(receive: Receive, cases: Cases).
+	ReceiveCases ::= (c: TypingContext, receive: Receive, cases: Cases).
+	ReceiveCases(c, receive, cases) :- SubSE(c, receive), receive = Receive(cases, _).
+	ReceiveCases(c, receive, cases) :- ReceiveCases(c, receive, Cases(_, _, cases)), cases : Cases.
 
 	[ rule_Classes = '"error, msg: two cases with the same event not allowed"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e: Receive, ReceiveCases(e, case1), ReceiveCases(receive, case2), case1 != case2, case1.trig = case2.trig.
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e: Receive, ReceiveCases(c, e, case1), ReceiveCases(c, e, case2), case1 != case2, case1.trig = case2.trig.
 	// This error is covered by one of the cases
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e: Receive, ReceiveCases(e, cases), TypeOf(c, cases, ERROR).
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e: Receive, ReceiveCases(c, e, cases), TypeOf(c, cases, ERROR).
 
 	ValidCaseEvent ::= (trig: String + { HALT }).
 	ValidCaseEvent(trig) :- trig = HALT.

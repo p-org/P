@@ -39,10 +39,10 @@ main machine Host {
 			assert(sizeof(sharer_list) == 0);
 			raise unit;
 		}
-		on unit goto receive;
+		on unit goto receiveState;
 	}
 	
-	state receive {
+	state receiveState {
 		defer invalidate_ack;
 		entry {}
 		
@@ -122,7 +122,7 @@ main machine Host {
 			sharer_list += (0, curr_client);
 			raise unit;
 		}
-		on unit goto receive;
+		on unit goto receiveState;
 	}
 }
 

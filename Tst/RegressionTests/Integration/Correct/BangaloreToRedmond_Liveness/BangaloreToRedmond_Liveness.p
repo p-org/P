@@ -29,21 +29,13 @@ main machine Employee {
     state BangaloreOffice {
 	defer CabBooked;
         entry {
-           push SBookFlight;
+           send TravelAgentId, BookFlight; 
         }
         exit {
             if (trigger == FlightBooked) send TravelAgentId, Thanks;
         }
         on TryAgain goto BangaloreOffice;
         on FlightBooked goto SBookCab;
-    }
-
-    state SBookFlight { 
-		defer CabBooked;
-        entry {
-            send TravelAgentId, BookFlight; 
-            return; 
-        }
     }
 
     state SBookCab { 

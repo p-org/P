@@ -158,7 +158,16 @@ machine Coordinator {
 		entry {
 			client = payload.client;
 			key = payload.key;
-			push PerformRead;
+			
+			if($) 
+				send replicas[0], READ_REQ_REPLICA, key;
+			else
+				send replicas[sizeof(replicas) - 1], READ_REQ_REPLICA, key;
+			receive 
+			{
+				case REP_READ_FAIL : ReturnResult();
+				case REP_READ_SUCCESS : ReturnResult();
+			}
 			if(readResult.0)
 				raise(READ_FAIL);
 			else
@@ -173,30 +182,15 @@ machine Coordinator {
 			send client, READ_SUCCESS, payload;
 		};
 	}
-	
-	model fun ChooseReplica()
-	{
-			if($) 
-				send replicas[0], READ_REQ_REPLICA, key;
-			else
-				send replicas[sizeof(replicas) - 1], READ_REQ_REPLICA, key;
-				
-	}
-	
-	state PerformRead {
-		entry{ ChooseReplica(); }
-		on REP_READ_FAIL do ReturnResult;
-		on REP_READ_SUCCESS do ReturnResult;
-		
-	}
+
+
 	
 	fun ReturnResult() {
 		if(trigger == REP_READ_FAIL)
 			readResult = (true, -1);
 		else
 			readResult = (false, payload as int);
-		
-		return;
+
 	}
 	fun DoWrite (){
 		pendingWriteReq = payload;

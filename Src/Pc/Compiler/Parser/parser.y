@@ -154,8 +154,12 @@ VarList
 	| ID COMMA VarList    { AddVarDecl($1.str, ToSpan(@1)); }
 	;
 
+LocalVarDecl
+	: VAR LocalVarList COLON Type SEMICOLON            { AddLocalVarDecls(); }
+	; 
+
 LocalVarDeclList
-	: VAR LocalVarList COLON Type SEMICOLON LocalVarDeclList            { AddLocalVarDecls(); }
+	: LocalVarDecl LocalVarDeclList
 	|
 	; 
 

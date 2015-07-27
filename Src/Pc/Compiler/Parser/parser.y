@@ -155,7 +155,7 @@ VarList
 	;
 
 LocalVarDecl
-	: VAR LocalVarList COLON Type SEMICOLON            { AddLocalVarDecls(); }
+	: VAR LocalVarList COLON Type SEMICOLON            { localVarStack.CompleteCrntLocalVarList(); }
 	; 
 
 LocalVarDeclList
@@ -164,8 +164,8 @@ LocalVarDeclList
 	; 
 
 LocalVarList
-	: ID					   { AddLocalVarDecl($1.str, ToSpan(@1)); }									
-	| ID COMMA LocalVarList    { AddLocalVarDecl($1.str, ToSpan(@1)); }
+	: ID					   { localVarStack.AddLocalVar($1.str, ToSpan(@1)); }									
+	| ID COMMA LocalVarList    { localVarStack.AddLocalVar($1.str, ToSpan(@1)); }
 	;
 
 /******************* Function Declarations *******************/
@@ -336,17 +336,21 @@ Stmt
 	| SEND Exp COMMA Exp COMMA SingleExprArgList SEMICOLON    { PushSend(true,  ToSpan(@1));                             }
 	| MONITOR Exp SEMICOLON									  { PushMonitor(false, $2.str, ToSpan(@2), ToSpan(@1));      }
 	| MONITOR Exp COMMA SingleExprArgList SEMICOLON           { PushMonitor(true, $2.str, ToSpan(@2), ToSpan(@1));       }
-	| RECEIVE LCBRACE ThenList RCBRACE						  { PushReceive(ToSpan(@1)); }
+	| RECEIVE LCBRACE CaseList RCBRACE						  { PushReceive(ToSpan(@1)); }
 	;
 
-Then 
-	: CASE EventList COLON ID SEMICOLON				{ AddThenNamedAction($4.str, ToSpan(@4)); }
-	| CASE EventList COLON StmtBlock SEMICOLON		{ AddThenAnonyAction(ToSpan(@4)); }
+Case 
+	: CaseEventList ID SEMICOLON					{ AddCaseNamedAction($2.str, ToSpan(@2)); }
+	| CaseEventList StmtBlock SEMICOLON				{ AddCaseAnonyAction(ToSpan(@2)); }
 	;
 
-ThenList
-	: Then  
-	| ThenList Then
+CaseEventList
+	: CASE EventList COLON							{ localVarStack.Push(); }
+	;
+
+CaseList
+	: Case	
+	| CaseList Case
 	;
 	 
 StmtBlock

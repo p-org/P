@@ -69,7 +69,7 @@ domain PData
     VarDecl        ::= fun (name: String, owner: MachineDecl -> type: any TypeExpr).
     
     FunDecl        ::= fun (name: String, owner: MachineDecl + { NIL } -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL },  return: any TypeExpr + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt).
-    AnonFunDecl    ::= new (owner: MachineDecl, locals: any NmdTupType + { NIL }, body: any Stmt).
+    AnonFunDecl    ::= new (owner: MachineDecl, locals: any NmdTupType + { NIL }, body: any Stmt, typeContext: any NmdTupType + { NIL }).
     
     StateDecl      ::= fun (name: any QualifiedName, owner: MachineDecl -> entryAction: any AnonFunDecl + String, exitFun: any AnonFunDecl + String, temperature: { HOT, WARM, COLD }).
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String).
@@ -220,7 +220,7 @@ domain PStaticTyping extends PData
 
 	//// Comment out the following rules and uncomment the rule above to get the original behavior
 	SubSE ::= (cntxt: TypingContext, typeable: Typeable).
-	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = AnonFunDecl(_, _, typeable).
+	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = AnonFunDecl(_, _, typeable, _).
 	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = FunDecl(_, _, _, _,  _, _, typeable).
 	SubSE(c, e), SubSE(c, s) :- SubSE(c, While(e, s)).
 	SubSE(c, e), SubSE(c, s1), SubSE(c, s2) :- SubSE(c, Ite(e, s1, s2)).
@@ -675,7 +675,7 @@ domain PStaticTyping extends PData
     TypeOfLocalVarAux ::= (cntxt: FunDecl + AnonFunDecl, name: String, type: TypeExpr, aux: NmdTupType + { NIL }).
 
     TypeOfLocalVarAux(cntxt, name, type, tl) :- cntxt is FunDecl(_, _, _, _, _, locals, _), locals = NmdTupType(NmdTupTypeField(name, type), tl). 
-	TypeOfLocalVarAux(cntxt, name, type, tl) :- cntxt is AnonFunDecl(_, locals, _), locals = NmdTupType(NmdTupTypeField(name, type), tl).   
+	TypeOfLocalVarAux(cntxt, name, type, tl) :- cntxt is AnonFunDecl(_, locals, _, _), locals = NmdTupType(NmdTupTypeField(name, type), tl).   
     TypeOfLocalVarAux(cntxt, name, type, tl) :- TypeOfLocalVarAux(cntxt, _, _, aux), aux = NmdTupType(NmdTupTypeField(name, type), tl).
     
     TypeOfLocalVar(cntxt, name, type)  :- TypeOfLocalVarAux(cntxt, name, type, aux), no { aux' | TypeOfLocalVarAux(cntxt, name, _, aux'), aux != aux' }.      
@@ -758,7 +758,7 @@ domain PStaticTyping extends PData
 
     [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
     PurityError(c, called) :- 
-	       c is StateDecl(_, owner, _, called, _), called = AnonFunDecl(owner, _, _), ControlImpure(called).
+	       c is StateDecl(_, owner, _, called, _), called = AnonFunDecl(owner, _, _, _), ControlImpure(called).
 
     [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
     PurityError(c, n) :- 
@@ -766,7 +766,7 @@ domain PStaticTyping extends PData
 
     [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
     PurityError(c, called) :- 
-	       c is TransDecl(src, _, _, called), called = AnonFunDecl(src.owner, _, _), ControlImpure(called).
+	       c is TransDecl(src, _, _, called), called = AnonFunDecl(src.owner, _, _, _), ControlImpure(called).
 
 
     /*************************************************************/
@@ -793,8 +793,8 @@ domain PStaticTyping extends PData
 
 	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, receive and pop statements"']
     MonitorError(c, called) :- 
-	       c is StateDecl(_, owner, called, _, _), owner.kind = MONITOR, called = AnonFunDecl(_, _, _), MonitorImpure(called);
-		   c is StateDecl(_, owner, _, called, _), owner.kind = MONITOR, called = AnonFunDecl(_, _, _), MonitorImpure(called).
+	       c is StateDecl(_, owner, called, _, _), owner.kind = MONITOR, called = AnonFunDecl(_, _, _, _), MonitorImpure(called);
+		   c is StateDecl(_, owner, _, called, _), owner.kind = MONITOR, called = AnonFunDecl(_, _, _, _), MonitorImpure(called).
 
 	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, receive and pop statements"']
     MonitorError(c, n) :- 
@@ -802,7 +802,7 @@ domain PStaticTyping extends PData
 
 	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, receive and pop statements"']
     MonitorError(c, called) :- 
-	       c is TransDecl(src, _, _, called), src.owner.kind = MONITOR, called = AnonFunDecl(_, _, _), MonitorImpure(called).
+	       c is TransDecl(src, _, _, called), src.owner.kind = MONITOR, called = AnonFunDecl(_, _, _, _), MonitorImpure(called).
 
 	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, receive and pop statements"']
 	MonitorError(c, n) :-	
@@ -810,12 +810,13 @@ domain PStaticTyping extends PData
 
 	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, receive and pop statements"']
 	MonitorError(c, called) :- 
-		   c is DoDecl(src, _, called), src.owner.kind = MONITOR, called = AnonFunDecl(_, _, _), MonitorImpure(called).
+		   c is DoDecl(src, _, called), src.owner.kind = MONITOR, called = AnonFunDecl(_, _, _, _), MonitorImpure(called).
 
     /*************************************************************/
     /*                         Receive Labels                       */
     /*************************************************************/
     BadLabelError ::= (TypingContext).
+	Continuation ::= Receive + FunStmt.
 
 	//// Every receive statement must have a label that is unique within a context.
 	//// This constraint simplifies P compilers.
@@ -824,22 +825,17 @@ domain PStaticTyping extends PData
 	//// 0 means this term is reached by following the 1st child stmt of the parent term.
 	//// 1 means this term is reached by following the 2nd child stmt of the parent term.
 	TermPath    ::= (child: { 0, 1 }, prev: TermPath + { NIL }).
-	ReachedReceive ::= (cntxt: TypingContext, stmt: Stmt, path: TermPath + { NIL }).
-	ReachedReceive(c, c.body, NIL) :- SubCntxt(c).
-	ReachedReceive(c, s', p')  :- ReachedReceive(c, s, p), s = While(_, s'),  p' = TermPath(0, p).
-	ReachedReceive(c, s', p')  :- ReachedReceive(c, s, p), s = Ite(_, s', _), p' = TermPath(0, p).
-	ReachedReceive(c, s', p')  :- ReachedReceive(c, s, p), s = Ite(_, _, s'), p' = TermPath(1, p).
-	ReachedReceive(c, s', p')  :- ReachedReceive(c, s, p), s = Seq(s', _),    p' = TermPath(0, p).
-	ReachedReceive(c, s', p')  :- ReachedReceive(c, s, p), s = Seq(_, s'),    p' = TermPath(1, p).
+	ReachedContinuation ::= (cntxt: TypingContext, stmt: Stmt, path: TermPath + { NIL }).
+	ReachedContinuation(c, c.body, NIL) :- SubCntxt(c).
+	ReachedContinuation(c, s', p')  :- ReachedContinuation(c, s, p), s = While(_, s'),  p' = TermPath(0, p).
+	ReachedContinuation(c, s', p')  :- ReachedContinuation(c, s, p), s = Ite(_, s', _), p' = TermPath(0, p).
+	ReachedContinuation(c, s', p')  :- ReachedContinuation(c, s, p), s = Ite(_, _, s'), p' = TermPath(1, p).
+	ReachedContinuation(c, s', p')  :- ReachedContinuation(c, s, p), s = Seq(s', _),    p' = TermPath(0, p).
+	ReachedContinuation(c, s', p')  :- ReachedContinuation(c, s, p), s = Seq(_, s'),    p' = TermPath(1, p).
 
     [ rule_Classes = '"error, msg: function contains bad labeling of Receive"']
 	BadLabelError(c) :-
-	    ReachedReceive(c, s, p), ReachedReceive(c, s', p'), s : Receive, s' : Receive, s.label = s'.label, p != p'.
-	[ rule_Classes = '"error, msg: function contains bad labeling of Receive"']
-	BadLabelError(c) :- SubSE(c, s), s: Receive, count({ s' | SubSE(c, s'), s': Receive}) <= s.label.
-	[ rule_Classes = '"error, msg: function contains bad labeling of FunStmt"']
-	BadLabelError(c) :-
-	    ReachedReceive(c, s, p), ReachedReceive(c, s', p'), s : FunStmt, s' : FunStmt, s.label = s'.label, p != p'.
+	    ReachedContinuation(c, s, p), ReachedContinuation(c, s', p'), s : Continuation, s' : Continuation, s.label = s'.label, p != p'.
 	
     /*************************************************************/
     /*                            Impurity                       */

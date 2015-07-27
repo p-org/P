@@ -38,18 +38,11 @@
 
         private List<P_Root.EventLabel> crntObservesList = new List<P_Root.EventLabel>();
 
-        private P_Root.IArgType_Cases__2 crntCasesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
-       
-
         private HashSet<string> crntStateNames = new HashSet<string>();
         private HashSet<string> crntFunNames = new HashSet<string>();
         private HashSet<string> crntVarNames = new HashSet<string>();
         private HashSet<string> crntEventNames;
         private HashSet<string> crntMachineNames;
-
-        private HashSet<string> crntLocalVarList = new HashSet<string>();
-        private HashSet<string> crntLocalVarDeclList = new HashSet<string>();
-        private P_Root.IArgType_NmdTupType__1 crntLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
 
         private Stack<P_Root.Expr> valueExprStack = new Stack<P_Root.Expr>();
         private Stack<P_Root.ExprsExt> exprsStack = new Stack<P_Root.ExprsExt>();
@@ -57,7 +50,110 @@
         private Stack<P_Root.Stmt> stmtStack = new Stack<P_Root.Stmt>();
         private Stack<P_Root.QualifiedName> groupStack = new Stack<P_Root.QualifiedName>();
         private int nextReceiveLabel = 0;
-        private int nextFunStmtLabel = 0;
+
+        class LocalVarStack
+        {
+            private Parser parser;
+
+            private P_Root.IArgType_NmdTupType__1 contextLocalVarDecl;
+            public P_Root.IArgType_NmdTupType__1 ContextLocalVarDecl
+            {
+                get
+                {
+                    Contract.Assert(0 < contextStack.Count);
+                    return contextStack.Peek();
+                }
+            }
+            private Stack<P_Root.IArgType_NmdTupType__1> contextStack;
+
+            private List<string> crntLocalVarList;
+            private P_Root.IArgType_NmdTupType__1 localVarDecl;
+            public P_Root.IArgType_NmdTupType__1 LocalVarDecl
+            {
+                get { return localVarDecl; }
+            }
+            private Stack<P_Root.IArgType_NmdTupType__1> localStack;
+
+            private Stack<List<P_Root.EventLabel>> caseEventStack;
+
+            private P_Root.IArgType_Cases__2 casesList;
+            public P_Root.IArgType_Cases__2 CasesList
+            {
+                get { return casesList; }
+            }
+
+            private Stack<P_Root.IArgType_Cases__2> casesListStack;
+
+            public LocalVarStack(Parser parser)
+            {
+                this.parser = parser;
+                this.contextLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+                this.contextStack = new Stack<P_Root.IArgType_NmdTupType__1>();
+                this.crntLocalVarList = new List<string>();
+                this.localVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+                this.localStack = new Stack<P_Root.IArgType_NmdTupType__1>();
+                this.caseEventStack = new Stack<List<P_Root.EventLabel>>();
+                this.casesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+                this.casesListStack = new Stack<P_Root.IArgType_Cases__2>();
+            }
+
+            public LocalVarStack(Parser parser, P_Root.IArgType_NmdTupType__1 parameters)
+            {
+                this.parser = parser;
+                this.contextLocalVarDecl = parameters;
+                this.contextStack = new Stack<P_Root.IArgType_NmdTupType__1>();
+                this.crntLocalVarList = new List<string>();
+                this.localVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+                this.localStack = new Stack<P_Root.IArgType_NmdTupType__1>();
+                this.caseEventStack = new Stack<List<P_Root.EventLabel>>();
+                this.casesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL); 
+                this.casesListStack = new Stack<P_Root.IArgType_Cases__2>();
+            }
+
+            public void Push()
+            {
+                contextStack.Push(contextLocalVarDecl);
+                localStack.Push(localVarDecl);
+                List<P_Root.EventLabel> caseEventList = new List<P_Root.EventLabel>(parser.crntEventList);
+                parser.crntEventList.Clear();
+                caseEventStack.Push(caseEventList);
+                casesListStack.Push(casesList);
+                casesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+                localVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+            }
+
+            public List<P_Root.EventLabel> Pop()
+            {
+                contextLocalVarDecl = contextStack.Pop();
+                localVarDecl = localStack.Pop();
+                casesList = casesListStack.Pop();
+                return caseEventStack.Pop();
+            }
+
+            public void AddCase(P_Root.IArgType_Cases__0 e, P_Root.IArgType_Cases__1 a)
+            {
+                casesList = P_Root.MkCases(e, a, casesList);
+            }
+
+            public void AddLocalVar(string name, Span span)
+            {
+                crntLocalVarList.Add(name);
+            }
+
+            public void CompleteCrntLocalVarList()
+            {
+                Contract.Assert(parser.typeExprStack.Count > 0);
+                var typeExpr = (P_Root.IArgType_NmdTupTypeField__1)parser.typeExprStack.Pop();
+                foreach (var v in crntLocalVarList)
+                {
+                    var field = P_Root.MkNmdTupTypeField(P_Root.MkString(v), typeExpr);
+                    localVarDecl = P_Root.MkNmdTupType(field, localVarDecl);
+                    contextLocalVarDecl = P_Root.MkNmdTupType(field, contextLocalVarDecl);
+                }
+                crntLocalVarList.Clear();
+            }
+        }
+        LocalVarStack localVarStack;
 
         public P_Root.TypeExpr Debug_PeekTypeStack
         {
@@ -67,6 +163,7 @@
         public Parser()
             : base(new Scanner())
         {
+            localVarStack = new LocalVarStack(this);
         }
 
         CommandLineOptions Options;
@@ -312,12 +409,10 @@
 
         private void PushReceive(Span span)
         {
-            var receiveStmt = P_Root.MkReceive((P_Root.IArgType_Receive__0)crntCasesList);
+            var receiveStmt = P_Root.MkReceive((P_Root.IArgType_Receive__0)localVarStack.CasesList);
             receiveStmt.Span = span;
             receiveStmt.label = P_Root.MkNumeric(GetNextReceiveLabel());
             stmtStack.Push(receiveStmt);
-
-            crntCasesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
         }
 
         private void PushRaise(bool hasArgs, Span span)
@@ -412,7 +507,7 @@
             funStmt.name = MkString(name, span);
             funStmt.aout = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             funStmt.Span = span;
-            funStmt.label = P_Root.MkNumeric(GetNextFunStmtLabel());
+            funStmt.label = P_Root.MkNumeric(GetNextReceiveLabel());
             if (hasArgs)
             {
                 funStmt.args = (P_Root.Exprs)exprsStack.Pop();
@@ -697,7 +792,7 @@
                 funStmt.name = (P_Root.IArgType_FunStmt__0)funCall.name;
                 funStmt.args = (P_Root.IArgType_FunStmt__1)funCall.args;
                 funStmt.aout = (P_Root.IArgType_FunStmt__2)aout;
-                funStmt.label = MkNumeric(GetNextFunStmtLabel(), span);
+                funStmt.label = MkNumeric(GetNextReceiveLabel(), span);
                 funStmt.Span = span;
                 stmtStack.Push(funStmt);
             }
@@ -891,10 +986,10 @@
             {
                 var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
                 state = GetCurrentStateDecl(stmt.Span);
-                entry = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)crntLocalVarDecl, stmt);
+                entry = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL));
                 entry.Span = stmt.Span;
                 parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)entry);
-                crntLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+                localVarStack = new LocalVarStack(this);
             }
             else
             {
@@ -902,7 +997,6 @@
                 state = GetCurrentStateDecl(actionSpan);
             }
 
-            ResetReceiveLabels();           
             if (IsSkipFun((P_Root.GroundTerm)state.entryAction))            
             {
                 state.entryAction = (P_Root.IArgType_StateDecl__2)entry;
@@ -930,10 +1024,10 @@
             {
                 var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
                 state = GetCurrentStateDecl(stmt.Span);
-                exit = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)crntLocalVarDecl, stmt);
+                exit = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL));
                 exit.Span = stmt.Span;
                 parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)exit);
-                crntLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+                localVarStack = new LocalVarStack(this);
             }
             else
             {
@@ -941,7 +1035,6 @@
                 state = GetCurrentStateDecl(functionSpan);
             }
 
-            ResetReceiveLabels();
             if (IsSkipFun((P_Root.GroundTerm)state.exitFun))
             {
                 state.exitFun = (P_Root.IArgType_StateDecl__3)exit;
@@ -984,6 +1077,8 @@
             Contract.Assert(typeExprStack.Count > 0);
             var funDecl = GetCurrentFunDecl(span);
             funDecl.@params = (P_Root.IArgType_FunDecl__3)typeExprStack.Pop();
+
+            localVarStack = new LocalVarStack(this, (P_Root.IArgType_NmdTupType__1)funDecl.@params);
         }
 
         private void SetFunReturn(Span span)
@@ -1021,26 +1116,6 @@
             else
             {
                 crntVarNames.Add(name);
-            }
-        }
-
-        private void AddLocalVarDecl(string name, Span span)
-        {
-            if (crntLocalVarDeclList.Contains(name))
-            {
-                var errFlag = new Flag(
-                                     SeverityKind.Error,
-                                     span,
-                                     Constants.BadSyntax.ToString(string.Format("A variable with name {0} already declared", name)),
-                                     Constants.BadSyntax.Code,
-                                     parseSource);
-                parseFailed = true;
-                parseFlags.Add(errFlag);
-            }
-            else
-            {
-                crntLocalVarList.Add(name);
-                crntLocalVarDeclList.Add(name);
             }
         }
 
@@ -1101,11 +1176,10 @@
             else
             {
                 var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
-                action = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)crntLocalVarDecl, stmt);
+                action = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL));
                 action.Span = stmt.Span;
                 parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)action);
-                ResetReceiveLabels();
-                crntLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+                localVarStack = new LocalVarStack(this);
             }
 
             foreach (var e in crntEventList)
@@ -1227,37 +1301,27 @@
                     MkUserCnst(valKind, valSpan)));
         }
 
-        private void AddThenAnonyAction(Span span)
+        private void AddCaseAnonyAction(Span span)
         {
-            Contract.Assert(crntEventList.Count > 0);
-
-            var state = GetCurrentStateDecl(span);
             var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
-            var anonAction = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)crntLocalVarDecl, stmt);
+            var anonAction = P_Root.MkAnonFunDecl(GetCurrentMachineDecl(span), (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)localVarStack.ContextLocalVarDecl);
             anonAction.Span = stmt.Span;
             parseProgram.AnonFunctions.Add(anonAction);
-            ResetReceiveLabels();
-            crntLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
-
-            foreach (var e in crntEventList)
+            var caseEventList = localVarStack.Pop();
+            foreach (var e in caseEventList)
             {
-                crntCasesList = P_Root.MkCases((P_Root.IArgType_Cases__0)e, anonAction, crntCasesList);
+                localVarStack.AddCase((P_Root.IArgType_Cases__0)e, anonAction);
             }
-
-            crntEventList.Clear();
         }
 
-        private void AddThenNamedAction(string name, Span nameSpan)
+        private void AddCaseNamedAction(string name, Span nameSpan)
         {
-            Contract.Assert(crntEventList.Count > 0);
-
             var actName = MkString(name, nameSpan);
-            foreach (var e in crntEventList)
+            var caseEventList = localVarStack.Pop();
+            foreach (var e in caseEventList)
             {
-                crntCasesList = P_Root.MkCases((P_Root.IArgType_Cases__0)e, actName, crntCasesList);
+                localVarStack.AddCase((P_Root.IArgType_Cases__0)e, actName);
             }
-
-            crntEventList.Clear();
         }
 
         private void AddDoAnonyAction(Span span)
@@ -1268,11 +1332,10 @@
             var state = GetCurrentStateDecl(span);
             var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
             var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
-            var anonAction = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)crntLocalVarDecl, stmt);
+            var anonAction = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL));
             anonAction.Span = stmt.Span;
             parseProgram.AnonFunctions.Add(anonAction);
-            ResetReceiveLabels();
-            crntLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+            localVarStack = new LocalVarStack(this);
 
             foreach (var e in crntEventList)
             {
@@ -1424,19 +1487,6 @@
             crntVarList.Clear();
         }
 
-        private void AddLocalVarDecls()
-        {
-            Contract.Assert(typeExprStack.Count > 0);
-            var typeExpr = (P_Root.IArgType_NmdTupTypeField__1)typeExprStack.Pop();
-            foreach (var v in crntLocalVarList)
-            {
-
-                var field = P_Root.MkNmdTupTypeField(P_Root.MkString(v), typeExpr);
-                crntLocalVarDecl = P_Root.MkNmdTupType(field, crntLocalVarDecl);
-            }
-            crntLocalVarList.Clear();
-        }
-
         private void AddEvent(string name, Span nameSpan, Span span)
         {
             var evDecl = GetCurrentEventDecl(span);
@@ -1576,10 +1626,10 @@
             funDecl.name = MkString(name, nameSpan);
             funDecl.owner = isGlobal ? (P_Root.IArgType_FunDecl__1) MkUserCnst(P_Root.UserCnstKind.NIL, span) 
                                      : (P_Root.IArgType_FunDecl__1) GetCurrentMachineDecl(span);
-            funDecl.locals = (P_Root.IArgType_FunDecl__5)crntLocalVarDecl;
+            funDecl.locals = (P_Root.IArgType_FunDecl__5)localVarStack.LocalVarDecl;
             funDecl.body = (P_Root.IArgType_FunDecl__6)stmtStack.Pop();
             parseProgram.Functions.Add(funDecl);
-            crntLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+            localVarStack = new LocalVarStack(this);
             if (crntFunNames.Contains(name))
             {
                 var errFlag = new Flag(
@@ -1596,7 +1646,6 @@
                 crntFunNames.Add(name);
             }
             crntFunDecl = null;
-            ResetReceiveLabels();
         }
         #endregion
 
@@ -1644,7 +1693,6 @@
             crntState.entryAction = MkSkipFun((P_Root.MachineDecl)crntState.owner, span);
             crntState.exitFun = MkSkipFun((P_Root.MachineDecl)crntState.owner, span);
             crntState.temperature = MkUserCnst(P_Root.UserCnstKind.WARM, span);
-
             return crntState;
         }
         
@@ -1692,26 +1740,11 @@
             return nextReceiveLabel++;
         }
 
-        private void ResetReceiveLabels()
-        {
-            nextReceiveLabel = 0;
-        }
-
-        private int GetNextFunStmtLabel()
-        {
-            return nextFunStmtLabel++;
-        }
-
-        private void ResetFunStmtLabels()
-        {
-            nextFunStmtLabel = 0;
-        }
-
         private P_Root.AnonFunDecl MkSkipFun(P_Root.MachineDecl owner, Span span)
         {
             var stmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
             stmt.Span = span;
-            var decl = P_Root.MkAnonFunDecl(owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), stmt);
+            var decl = P_Root.MkAnonFunDecl(owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), stmt, (P_Root.IArgType_AnonFunDecl__3)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL));
             decl.Span = span;
             parseProgram.AnonFunctions.Add(decl);
             return decl;
@@ -1774,7 +1807,6 @@
             crntMachDecl = null;
             crntStateTargetName = null;
             nextReceiveLabel = 0;
-            nextFunStmtLabel = 0;
             crntStateNames.Clear();
             crntFunNames.Clear();
             crntVarNames.Clear();

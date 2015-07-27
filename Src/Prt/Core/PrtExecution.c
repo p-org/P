@@ -163,6 +163,7 @@ PrtMkMachinePrivate(
 	//
 	// Run the state machine
 	//
+	PrtLockMutex(context->stateMachineLock);
 	PrtRunStateMachine(context, PRT_FALSE);
 
 	return context;
@@ -297,13 +298,19 @@ PrtSendPrivate(
 	if (context->isRunning)
 	{
 		PrtUnlockMutex(context->stateMachineLock);
-		return;
 	}
-	else
+	else if (context->receive == NULL)
 	{
 		PrtRunStateMachine(context, PRT_TRUE);
 	}
-
+	else if (PrtIsEventReceivable(context, PrtPrimGetEvent(event)))
+	{
+		PrtRunStateMachine(context, PRT_FALSE);
+	}
+	else 
+	{
+		PrtUnlockMutex(context->stateMachineLock);
+	}
 	return;
 }
 
@@ -358,9 +365,11 @@ PrtReceive(
 	PRT_UINT32 funIndex = funStackInfo->funIndex;
 	context->receive = &(context->process->program->machines[context->instanceOf].funs[funIndex].receives[receiveIndex]);
 	funStackInfo->returnTo = receiveIndex;
-	PRT_BOOLEAN dequeued = PrtDequeueEvent(context, funStackInfo);
-	if (dequeued)
+	PrtLockMutex(context->stateMachineLock);
+	PrtAssert(context->isRunning, "Machine must be running");
+	if (PrtDequeueEvent(context, funStackInfo))
 	{
+		PrtUnlockMutex(context->stateMachineLock);
 		return PRT_TRUE;
 	}
 	else 
@@ -580,8 +589,8 @@ PrtRunExitFunction(
 
 void
 PrtRunStateMachine(
-	_Inout_ PRT_MACHINEINST_PRIV	*context,
-	_In_ PRT_BOOLEAN				doDequeue
+_Inout_ PRT_MACHINEINST_PRIV	*context,
+_In_ PRT_BOOLEAN				doDequeue
 )
 {
 	PRT_BOOLEAN lockHeld;
@@ -590,15 +599,15 @@ PrtRunStateMachine(
 
 	context->isRunning = PRT_TRUE;
 
-	// The state machine lock is held at entry iff an event was just enqueued.
-	lockHeld = doDequeue;
-
 	if (doDequeue)
 	{
+		lockHeld = PRT_TRUE;
 		goto DoDequeue;
 	}
 	else
 	{
+		lockHeld = PRT_FALSE;
+		PrtUnlockMutex(context->stateMachineLock);
 		goto DoEntry;
 	}
 
@@ -640,6 +649,8 @@ DoAction:
 CheckLastOperation:
 	if (context->receive != NULL)
 	{
+		context->isRunning = PRT_FALSE;
+		PrtUnlockMutex(context->stateMachineLock);
 		return;
 	}
 	switch (context->lastOperation)
@@ -664,9 +675,8 @@ DoDequeue:
 		lockHeld = PRT_TRUE;
 		PrtLockMutex(context->stateMachineLock);
 	}
-
-	PRT_FUNSTACK_INFO *frame = context->receive != NULL ? PrtTopOfFunStack(context) : NULL;
-	if (PrtDequeueEvent(context, frame))
+	PrtAssert(context->receive == NULL, "Machine must not be blocked at a receive");
+	if (PrtDequeueEvent(context, NULL))
 	{
 		lockHeld = PRT_FALSE;
 		PrtUnlockMutex(context->stateMachineLock);
@@ -680,13 +690,9 @@ DoDequeue:
 	}
 
 DoHandleEvent:
+	PrtAssert(context->receive == NULL, "Must not be blocked at a receive");
 	eventValue = PrtPrimGetEvent(PrtGetCurrentTrigger(context));
-	if (0 < context->funStack.length && PrtTopOfFunStack(context)->rcase != NULL)
-	{
-		PrtPushNewFrame(context, PrtTopOfFunStack(context)->rcase->funIndex, NULL);
-		goto DoEntry;
-	}
-	else if (PrtIsPushTransition(context, eventValue))
+	if (PrtIsPushTransition(context, eventValue))
 	{
 		PrtTakeTransition(context, eventValue);
 		goto DoEntry;

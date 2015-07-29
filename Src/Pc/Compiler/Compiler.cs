@@ -354,8 +354,7 @@
             }
 
             //// Step 3. Generate outputs
-            return true;
-            //return GenerateC(flags) & GenerateZing(flags); 
+            return GenerateC(flags) & GenerateZing(flags); 
         }
 
         public bool GenerateZing()

@@ -1314,16 +1314,6 @@
             }
         }
 
-        private void AddCaseNamedAction(string name, Span nameSpan)
-        {
-            var actName = MkString(name, nameSpan);
-            var caseEventList = localVarStack.Pop();
-            foreach (var e in caseEventList)
-            {
-                localVarStack.AddCase((P_Root.IArgType_Cases__0)e, actName);
-            }
-        }
-
         private void AddDoAnonyAction(Span span)
         {
             Contract.Assert(crntEventList.Count > 0);

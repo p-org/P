@@ -103,7 +103,9 @@ typedef struct PRT_FUNDECL
 	PRT_UINT32 ownerMachIndex; /**< The index of owner machine in program         */
 	PRT_STRING name;           /**< The name of this function (NULL is anonymous) */
 	PRT_SM_FUN implementation; /**< The implementation of this function           */
-	PRT_TYPE *localsTupType;
+	PRT_UINT32 maxNumLocals;
+	PRT_UINT32 numEnvVars;
+	PRT_TYPE *localsNmdTupType;
 	PRT_UINT32 nReceives;
 	PRT_RECEIVEDECL *receives;
 

@@ -739,7 +739,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 					PatchReturn(f, patchReturn),
 					footer = out.Lbl("P_EXIT_FUN", 
 					                   Seq(
-									     FunApp(Ident("PrtFreeFrameVars"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL)),
+									     FunApp(Ident("PrtFreeLocals"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))),
 									     patchReturn)),
 					body = out.Block(tmpVars, Seq(header, Seq(trampoline, Seq(ctrans, footer)))),					  
 	                def = FunDef(
@@ -759,7 +759,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 					Trampoline(f, f.body, trampoline),
 					footer = out.Lbl("P_EXIT_FUN", 
 					                   Seq(
-									     FunApp(Ident("PrtFreeFrameVars"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL)),
+									     FunApp(Ident("PrtFreeLocals"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))),
 									     Return(Ident("p_tmp_ret")))),
 					body = out.Block(tmpVars, Seq(header, Seq(trampoline, Seq(ctrans, footer)))),					  
 	                def = FunDef(
@@ -887,6 +887,30 @@ transform P2CProgram (in:: P) returns (out:: C)
     /*************************************************************/
     /******            Generate Fun Decl Arrays             ******/
     /*************************************************************/	
+	MaxNumLocals ::= (stmt: AnonOrNamedFun + in.Stmt + in.Cases, n: Natural).
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is AnonOrNamedFun, e: in.NewStmt.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is AnonOrNamedFun, e: in.Raise.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is AnonOrNamedFun, e: in.Send.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is AnonOrNamedFun, e: in.Monitor.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is AnonOrNamedFun, e: in.FunStmt.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is AnonOrNamedFun, e: in.NulStmt.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is AnonOrNamedFun, e: in.UnStmt.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is AnonOrNamedFun, e: in.BinStmt.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is AnonOrNamedFun, e: in.Return.
+	MaxNumLocals(e, n) :- SubSE(c, e), c is AnonOrNamedFun, e = in.While(_, e'), MaxNumLocals(e', n).
+	MaxNumLocals(e, n) :- SubSE(c, e), c is AnonOrNamedFun, e = in.Ite(_, e1, e2), 
+						  MaxNumLocals(e1, n1), MaxNumLocals(e2, n2), n = max(n1, n2).
+    MaxNumLocals(e, n) :- SubSE(c, e), c is AnonOrNamedFun, e = in.Seq(e1, e2), 
+	                      MaxNumLocals(e1, n1), MaxNumLocals(e2, n2), n = max(n1, n2).
+	MaxNumLocals(e, n) :- SubSE(c, receive), c is AnonOrNamedFun, receive: in.Receive, 
+						  ReceiveCases(c, receive, e), e = in.Cases(_, a, NIL), MaxNumLocals(a, n).
+	MaxNumLocals(e, n) :- SubSE(c, receive), c is AnonOrNamedFun, receive: in.Receive, 
+						  ReceiveCases(c, receive, e), e = in.Cases(_, a, e'), e': in.Cases, 
+						  MaxNumLocals(a, n1), MaxNumLocals(e', n2), n =  max(n1, n2).
+	MaxNumLocals(e, n) :- SubSE(c, e), c is AnonOrNamedFun, e = in.Receive(cases, _), MaxNumLocals(cases, n). 
+	MaxNumLocals(a, n) :- a is AnonFunDecl, MaxNumLocals(a.body, n1), n2 = lstLength(#NmdTupType, a.locals), n = n1 + n2.
+	MaxNumLocals(a, n) :- a is FunDecl, MaxNumLocals(a.body, n1), n2 = lstLength(#NmdTupType, a.locals), n3 = lstLength(#NmdTupType, a.params), n = n1 + n2 + n3.
+
 	LocalsType ::= (decl: AnonOrNamedFun, type: out.Expr).
 	LocalsType(d, t) :- d is AnonOrNamedFun, d.locals = NIL, t = out.Ident("NULL").
 	LocalsType(d, t) :- d is AnonOrNamedFun, type = d.locals, TypeId(typeIndex, type), 
@@ -907,26 +931,27 @@ transform P2CProgram (in:: P) returns (out:: C)
 										   def = out.Init(Args(Ident(eventName), Args(IntLit(funIndex, DEC, U), NIL))),
 										   arr = out.Args(def, arr'), c = c' + 1.
 
-	COut(9, def) :- decl is AnonOrNamedFun, SubSE(decl, receive), receive = Receive(cases, c),
+	COut(9, def) :- decl is AnonOrNamedFun, SubSE(decl, receive), receive = Receive(cases, label),
 					CaseDeclConcat(nCases, decl, cases, arr), DeclId(decl, _, declName),
 	                def = out.VarDef(
 							      NIL, 
 								  ArrType(NmdType(NIL, "PRT_CASEDECL"), NIL), 
-								  strJoin(strJoin(strJoin("P_GEND_CASES_", declName), "_"), toString(c)), 
+								  strJoin("P_GEND_CASES_", toString(label)), 
 								  Init(arr)).
 
 	ReceiveDeclConcat ::= (pos: Natural, decl: AnonOrNamedFun, arr: out.Args + { NIL }).
 	ReceiveDeclConcat(c, decl, NIL) :- decl is AnonOrNamedFun, c = count({r | r: Receive, SubSE(decl, r)}).
-	ReceiveDeclConcat(c, decl, arr) :- decl is AnonOrNamedFun, SubSE(decl, receive), receive = Receive(cases, c), 
+	ReceiveDeclConcat(c, decl, arr) :- decl is AnonOrNamedFun, SubSE(decl, receive), receive = Receive(cases, label),
+									   c = toOrdinal(receive, 0, {r | r: Receive, SubSE(decl, r)}), 
 									   ReceiveDeclConcat(c + 1, decl, arr'), arr = out.Args(def, arr'),
 									   CaseDeclConcat(nCases, decl, cases, casesInit), DeclId(decl, _, declName),
 									   ReceiveEventsPacked(decl, receive, rlist),
 									   index = toOrdinal(rlist, 0, { l | EventPacking(l, _, 0, _) }), 
 									   def = out.Init(
-												Args(IntLit(c, DEC, U),
+												Args(IntLit(label, DEC, U),
 												Args(IntLit(index, DEC, U),
 												Args(IntLit(nCases, DEC, U),
-												Args(Ident(strJoin(strJoin(strJoin("P_GEND_CASES_", declName), "_"), toString(c))),
+												Args(Ident(strJoin("P_GEND_CASES_", toString(label))),
 												NIL))))).
 
 	COut(10, def) :- decl is AnonOrNamedFun, ReceiveDeclConcat(nReceives, decl, NIL), ReceiveDeclConcat(0, decl, arr), arr: out.Args, 
@@ -951,6 +976,7 @@ transform P2CProgram (in:: P) returns (out:: C)
     //// Build every fundecl array in reverse order
 	FunDeclConcat(m, mdecl, arr) :-  
 							DeclId(d, m, cfun), DeclId(d.owner, _, cmach), FunDeclConcat(m + 1, d.owner, after), d : FunDecl,
+							MaxNumLocals(d, maxNumLocals), 
 							LocalsType(d, localsType),
 							mdecl: MachineDecl, FunAvailable(d, mdecl),
 							ReceiveDeclInit(d, nReceives, receives), 
@@ -960,15 +986,18 @@ transform P2CProgram (in:: P) returns (out:: C)
 							   Args(Ident(cmach),
 							   Args(StringLit(d.name, NIL),
 							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
+							   Args(IntLit(maxNumLocals, DEC, U),
+							   Args(IntLit(0, DEC, U),
 							   Args(localsType,
 							   Args(IntLit(nReceives, DEC, U),
 							   Args(receives,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL)))))))))).
+							   NIL)))))))))))).
 
 	FunDeclConcat(m, d.owner, arr) :- 
 							DeclId(d, m, cfun), DeclId(d.owner, _, cmach), FunDeclConcat(m + 1, d.owner, after), d : AnonFunDecl,
+							MaxNumLocals(d, maxNumLocals), 
 							LocalsType(d, localsType),
 							ReceiveDeclInit(d, nReceives, receives),
 							arr = out.Args(def, after), 
@@ -977,12 +1006,14 @@ transform P2CProgram (in:: P) returns (out:: C)
 							   Args(Ident(cmach),
 							   Args(Ident("NULL"),
 							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
+							   Args(IntLit(maxNumLocals, DEC, U),
+							   Args(IntLit(lstLength(#NmdTupType, d.envVars), DEC, U),
 							   Args(localsType,
 							   Args(IntLit(nReceives, DEC, U),
 							   Args(receives,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL)))))))))).
+							   NIL)))))))))))).
 
 	//// Reserve the zeroth decl for the push transition
 	FunDeclConcat(0, m, arr) :- FunDeclConcat(1, m, after), DeclId(m, _, cmach), arr = out.Args(def, after),
@@ -991,12 +1022,14 @@ transform P2CProgram (in:: P) returns (out:: C)
 							   Args(Ident(cmach),
 							   Args(Ident("NULL"),
 							   Args(Ident("NULL"),
-							   Args(Ident("NULL"),
+							   Args(IntLit(0, DEC, U),
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL)))))))))).
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL)))))))))))).
 
 	COut(11, def) :- FunDeclConcat(0, mach, arr),
 	                def = out.VarDef(
@@ -1349,37 +1382,29 @@ transform P2CProgram (in:: P) returns (out:: C)
 	RhsTrans(c, s, i, -1, NIL) :- SubSE(c, s), s : in.Stmt, RhsCntxt(s, i, _).
 
 	IndexOf ::= (t: NmdTupType, name: String, offset: Natural, tail: NmdTupType + {NIL}).
-	IndexOf(t, name, 0, tail)  :- f is FunDecl, t = f.params, t = NmdTupType(NmdTupTypeField(name, _), tail).
-	IndexOf(t, name, 0, tail)  :- f is AnonOrNamedFun, t = f.locals, t = NmdTupType(NmdTupTypeField(name, _), tail).
+	IndexOf(t, name, 0, tail)  :- f is AnonOrNamedFun, LocalVars(f, t), t = NmdTupType(NmdTupTypeField(name, _), tail).
 	IndexOf(t, name, 0, tail)  :- TypeOf(_, _, t), t = NmdTupType(NmdTupTypeField(name, _), tail).
 	IndexOf(t, name, i', tail) :- IndexOf(t, _, i, tail'), tail' = NmdTupType(NmdTupTypeField(name, _), tail), i' = i + 1.
 
 	//// Identifier
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = Name(n), TypeOfLocalVar(c, n, _), c : AnonOrNamedFun, IndexOf(c.locals, n, localIndex, _),
-									ec = out.FunApp(Ident("PrtTupleGetNC"), Args(BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), Args(IntLit(localIndex, DEC, U), NIL))).
-
-	// The position of the first three constraints should not be changed because Formula hoists the first two 
-	// into the scope of the final negative constraint.
-	RhsTrans(c, s, i, j', trans) :- c is FunDecl, IndexOf(c.params, n, formalIndex, _), no TypeOfLocalVar(c, n, _),
-									RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = Name(n), TypeOfFormalParam(c, n, _), 
-									ec = out.FunApp(Ident("PrtTupleGetNC"), Args(BinApp(FLD, Ident("p_tmp_frame"), Ident("parameters")), Args(IntLit(formalIndex, DEC, U), NIL))).
+									e = Name(n), TypeOfLocalVar(c, n, _), LocalVars(c, locals), IndexOf(locals, n, localIndex, _),
+									ec = out.BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(localIndex, DEC, U)).
 
 	RhsTrans(c, s, i, j', trans) :- SubCntxt(c), varDecl is VarDecl(n, c.owner, t),  
 									RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = Name(n), no TypeOfFormalParam(c, n, _), no TypeOfLocalVar(c, n, _), DeclId(varDecl, _, varName),
+									e = Name(n), no TypeOfLocalVar(c, n, _), DeclId(varDecl, _, varName),
 									ec = out.BinApp(AAC, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("varValues")), Ident(varName)).
 
 	RhsTrans(c, s, i, j', trans) :- SubCntxt(c), eventDecl is EventDecl(n, _, _), 
 	                                RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), e = Name(n),  
-									no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _), no TypeOfLocalVar(c, n, _),
+									no VarDecl(n, c.owner, _), no TypeOfLocalVar(c, n, _),
 									ConstId(m, e), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
 
 	//// Machine creation
 	FormalTrans ::= (c: FunDecl, f: String, e: out.Args).
-	FormalTrans(c, f, e) :- TypeOfFormalParam(c, f, _), IndexOf(c.params, f, formalIndex, _),
-					        e = out.Args(FunApp(Ident("PrtTupleGetNC"), Args(BinApp(FLD, Ident("p_tmp_frame"), Ident("parameters")), Args(IntLit(formalIndex, DEC, U), NIL))), NIL).
+	FormalTrans(c, f, e) :- TypeOfFormalParam(c, f, _), LocalVars(c, locals), IndexOf(locals, f, formalIndex, _),
+					        e = out.Args(BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(formalIndex, DEC, U)), NIL).
 
 	ContainerInNewCall ::= (c: TypingContext, name: String, funName: String, machineName: String, e: out.Args + { NIL }).
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
@@ -1782,7 +1807,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	FunStmtCleanup(c, s, cs) :- SubSE(c, s), s = FunStmt(_, _, NIL, _), ret = Ident("p_tmp_funstmt_ret"),
 								cs = out.ITE(BinApp(NEQ, ret, Ident("NULL")), FunApp(Ident("PrtFreeValue"), Args(ret, NIL)), NIL).
 	FunStmtCleanup(c, s, cs) :- SubSE(c, s), s = FunStmt(_, _, aout, _), aout: in.Name, ret = Ident("p_tmp_funstmt_ret"),
-								varDecl is VarDecl(aout.name, c.owner, _), DeclId(varDecl, _, varName), no TypeOfFormalParam(c, aout.name, _), no TypeOfLocalVar(c, aout.name, _),
+								varDecl is VarDecl(aout.name, c.owner, _), DeclId(varDecl, _, varName), no TypeOfLocalVar(c, aout.name, _),
 								cs =  out.FunApp(Ident("PrtSetGlobalVarEx"),
 						                     Args(Ident("p_tmp_mach_priv"),
 											 Args(Ident(varName),
@@ -1790,16 +1815,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 											 Args(Ident("PRT_FALSE"),
 											      NIL))))).
 	FunStmtCleanup(c, s, cs) :- SubSE(c, s), s = FunStmt(_, _, aout, _), aout: in.Name, ret = Ident("p_tmp_funstmt_ret"),
-								c: FunDecl, IndexOf(c.params, aout.name, i, _), no TypeOfLocalVar(c, aout.name, _),
-								cs = out.FunApp(Ident("PrtTupleSetEx"),
-						                     Args(BinApp(FLD, Ident("p_tmp_frame"), Ident("parameters")),
-											 Args(IntLit(i, DEC, U),
-											 Args(ret,
-											 Args(Ident("PRT_FALSE"),
-											      NIL))))).
-	FunStmtCleanup(c, s, cs) :- SubSE(c, s), s = FunStmt(_, _, aout, _), aout: Name, ret = Ident("p_tmp_funstmt_ret"),
-								IndexOf(c.locals, aout.name, i, _), 
-								cs = out.FunApp(Ident("PrtTupleSetEx"),
+								TypeOfLocalVar(c, aout.name, _), LocalVars(c, locals), IndexOf(locals, aout.name, i, _),
+								cs = out.FunApp(Ident("PrtSetLocalVarEx"),
 						                     Args(BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")),
 											 Args(IntLit(i, DEC, U),
 											 Args(ret,
@@ -2018,15 +2035,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// Translates the entire access path
 	LhsTrans ::= (cntxt: TypingContext, path: LhsPath, trans: out.Expr).
 
-    LhsTrans(c, lp, trans) :- SubSE(c, s), lp is LhsPath(s, Name(n), _), c : FunDecl, IndexOf(c.locals, n, i, _),
-	                           trans = out.FunApp(Ident("PrtTupleGetNC"), Args(BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), Args(IntLit(i, DEC, U), NIL))). 
-
-    LhsTrans(c, lp, trans) :- SubSE(c, s), lp is LhsPath(s, Name(n), _), c : FunDecl, IndexOf(c.params, n, i, _),
-							   no TypeOfLocalVar(c, n, _),
-	                           trans = out.FunApp(Ident("PrtTupleGetNC"), Args(BinApp(FLD, Ident("p_tmp_frame"), Ident("parameters")), Args(IntLit(i, DEC, U), NIL))). 
+    LhsTrans(c, lp, trans) :- SubSE(c, s), lp is LhsPath(s, Name(n), _), 
+							  TypeOfLocalVar(c, n, _), LocalVars(c, locals), IndexOf(locals, n, i, _),
+	                          trans = out.BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(i, DEC, U)). 
 
 	LhsTrans(c, lp, trans) :- SubSE(c, s), LhsGlobalVar(lp, c.owner, varName), lp = LhsPath(s, Name(n), _),   
-							  no TypeOfLocalVar(c, n, _), no TypeOfFormalParam(c, n, _), 
+							  no TypeOfLocalVar(c, n, _), 
 							  trans = out.BinApp(AAC, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("varValues")), Ident(varName)).
 
 	LhsTrans(c, lp, trans) :- LhsTrans(c, LhsPath(s, g, _), e), lp is LhsPath(s, in.Field(g, n), _), n : Natural,
@@ -2053,7 +2067,7 @@ transform P2CProgram (in:: P) returns (out:: C)
     //// ASSIGN / UPDATE
 	//// Case 1: Assign global variable
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = Name(glbl), 
-	                       varDecl is VarDecl(glbl, c.owner, _), DeclId(varDecl, _, varName), no TypeOfLocalVar(c, glbl, _), no TypeOfFormalParam(c, glbl, _),   
+	                       varDecl is VarDecl(glbl, c.owner, _), DeclId(varDecl, _, varName), no TypeOfLocalVar(c, glbl, _),  
 	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
 						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs)), 
 						   RhsExpr(c, s, 0, _, doFree), doClone = out.UnApp(LNOT, doFree),
@@ -2064,33 +2078,20 @@ transform P2CProgram (in:: P) returns (out:: C)
 											 Args(doClone,
 											      NIL))))).
 
-	//// Case 2: Assign a formal parameter
+	//// Case 2: Assign a local variable
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = Name(lcl), 
-                           c : FunDecl, IndexOf(c.params, lcl, i, _), no TypeOfLocalVar(c, lcl, _),                  
+                           TypeOfLocalVar(c, lcl, _), LocalVars(c, locals), IndexOf(locals, lcl, i, _),                 
                            StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
 						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs)),
 						   RhsExpr(c, s, 0, _, doFree), doClone = out.UnApp(LNOT, doFree),
-						   asgn = out.FunApp(Ident("PrtTupleSetEx"),
-						                     Args(BinApp(FLD, Ident("p_tmp_frame"), Ident("parameters")),
-											 Args(IntLit(i, DEC, U),
-											 Args(Ident("p_tmp_stmt_0"),
-											 Args(doClone,
-											      NIL))))).
-
-	//// Case 3: Assign a local variable
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = Name(lcl), 
-                           IndexOf(c.locals, lcl, i, _),	                       
-                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
-						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs)),
-						   RhsExpr(c, s, 0, _, doFree), doClone = out.UnApp(LNOT, doFree),
-						   asgn = out.FunApp(Ident("PrtTupleSetEx"),
+						   asgn = out.FunApp(Ident("PrtSetLocalVarEx"),
 						                     Args(BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")),
 											 Args(IntLit(i, DEC, U),
 											 Args(Ident("p_tmp_stmt_0"),
 											 Args(doClone,
 											      NIL))))).
 
-	//// Case 4: Assign a tuple by int index
+	//// Case 3: Assign a tuple by int index
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = in.Field(getter, i), i : Natural, 	                       
                            StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
 						   LhsTrans(c, LhsPath(s, getter, _), egetter), 
@@ -2103,7 +2104,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 											 Args(doClone,
 											      NIL))))).
 
-	//// Case 5: Assign a tuple by name
+	//// Case 4: Assign a tuple by name
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = in.Field(getter, field), field : String, 	                       
                            StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
 						   TypeOf(c, getter, t), IndexOf(t, field, i, _), LhsTrans(c, LhsPath(s, getter, _), egetter), 
@@ -2116,7 +2117,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 											 Args(doClone,
 											      NIL))))).
 
-	//// Case 6: Assign a sequence (rewrite the reading version of the translation)
+	//// Case 5: Assign a sequence (rewrite the reading version of the translation)
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = in.BinApp(IDX, _, _), 	                       
                            StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
 						   LhsTrans(c, LhsPath(s, e, _), egetter), 
@@ -2130,7 +2131,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 											 Args(doClone,
 											      NIL))))).
 
-	//// Case 7: Assign a map (rewrite the reading version of the translation)
+	//// Case 6: Assign a map (rewrite the reading version of the translation)
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = in.BinApp(IDX, _, _), 	                       
                            StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
 						   LhsTrans(c, LhsPath(s, e, _), egetter), 

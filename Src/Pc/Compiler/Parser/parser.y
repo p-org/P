@@ -340,12 +340,11 @@ Stmt
 	;
 
 Case 
-	: CaseEventList ID SEMICOLON					{ AddCaseNamedAction($2.str, ToSpan(@2)); }
-	| CaseEventList StmtBlock SEMICOLON				{ AddCaseAnonyAction(ToSpan(@2)); }
+	: CaseEventList StmtBlock 		{ AddCaseAnonyAction(ToSpan(@2)); }
 	;
 
 CaseEventList
-	: CASE EventList COLON							{ localVarStack.Push(); }
+	: CASE EventList COLON			{ localVarStack.Push(); }
 	;
 
 CaseList

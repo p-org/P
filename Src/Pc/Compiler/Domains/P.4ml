@@ -52,7 +52,7 @@ domain PData
     While    ::= new (cond: any Expr, body: any Stmt).
     Ite      ::= new (cond: any Expr, true: any Stmt, false: any Stmt).
     Seq      ::= new (s1: any Stmt, s2: any Stmt).
-	Cases	 ::= new (trig: String + { HALT }, action: any AnonFunDecl + String, cases: any Cases + { NIL }).
+	Cases	 ::= new (trig: String + { HALT }, action: any AnonFunDecl, cases: any Cases + { NIL }).
 	Receive  ::= new (cases: any Cases, label: Natural).
 
     Stmt ::= NewStmt + Raise + Send + Monitor + FunStmt + NulStmt + UnStmt + BinStmt + Return + While + Ite + Seq + Receive. 
@@ -69,7 +69,7 @@ domain PData
     VarDecl        ::= fun (name: String, owner: MachineDecl -> type: any TypeExpr).
     
     FunDecl        ::= fun (name: String, owner: MachineDecl + { NIL } -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL },  return: any TypeExpr + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt).
-    AnonFunDecl    ::= new (owner: MachineDecl, locals: any NmdTupType + { NIL }, body: any Stmt, typeContext: any NmdTupType + { NIL }).
+    AnonFunDecl    ::= new (owner: MachineDecl, locals: any NmdTupType + { NIL }, body: any Stmt, envVars: any NmdTupType + { NIL }).
     
     StateDecl      ::= fun (name: any QualifiedName, owner: MachineDecl -> entryAction: any AnonFunDecl + String, exitFun: any AnonFunDecl + String, temperature: { HOT, WARM, COLD }).
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String).
@@ -282,18 +282,16 @@ domain PStaticTyping extends PData
 
     TypeOf(c, e, t1)              :- TypeOfArg1(c, e, t1), e : NamedTuple.
 
-	// Names can hide other names in the following order:
-	// local variable hides formal parameter hides machine variable hides event
+	// Names can hide other names in the following order: local variable hides machine variable hides event
 	TypeOf(c, e, t)	              :- SubSE(c, e), e = Name(n), TypeOfLocalVar(c, n, t).
-	TypeOf(c, e, t)	              :- SubSE(c, e), e = Name(n), TypeOfFormalParam(c, n, t), no TypeOfLocalVar(c, n, _).
-    TypeOf(c, e, t)               :- SubSE(c, e), e = Name(n), VarDecl(n, c.owner, t), no TypeOfFormalParam(c, n, _), no TypeOfLocalVar(c, n, _). 
-    TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = Name(n), EventDecl(n, _, _), no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _), no TypeOfLocalVar(c, n, _). 
+    TypeOf(c, e, t)               :- SubSE(c, e), e = Name(n), VarDecl(n, c.owner, t), no TypeOfLocalVar(c, n, _). 
+    TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = Name(n), EventDecl(n, _, _), no VarDecl(n, c.owner, _), no TypeOfLocalVar(c, n, _). 
 
-    IsEventCnst(c, e, BaseType(NULL)) :- SubSE(c, e), e = Name(n), EventDecl(n, _, NIL), no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _). 
-    IsEventCnst(c, e, pt)             :- SubSE(c, e), e = Name(n), EventDecl(n, _, pt), pt : TypeExpr, no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _). 
+    IsEventCnst(c, e, BaseType(NULL)) :- SubSE(c, e), e = Name(n), EventDecl(n, _, NIL), no VarDecl(n, c.owner, _), no TypeOfLocalVar(c, n, _). 
+    IsEventCnst(c, e, pt)             :- SubSE(c, e), e = Name(n), EventDecl(n, _, pt), pt : TypeExpr, no VarDecl(n, c.owner, _), no TypeOfLocalVar(c, n, _). 
 
 	[ rule_Classes = '"error, msg: Undefined symbol"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n), no EventDecl(n, _, _), no VarDecl(n, c.owner, _), no TypeOfFormalParam(c, n, _), no TypeOfLocalVar(c, n, _). 
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n), no EventDecl(n, _, _), no VarDecl(n, c.owner, _), no TypeOfLocalVar(c, n, _). 
     
     TypeOf(c, e, BaseType(BOOL))  :- TypeOfArg1(c, e, t1), e = UnApp(NOT, _), t1 = BaseType(BOOL). 
 	[ rule_Classes = '"error, msg: Operator expected a boolean value"']
@@ -573,15 +571,10 @@ domain PStaticTyping extends PData
 	ValidCaseEvent(trig) :- trig = HALT.
 	ValidCaseEvent(trig) :- trig: String, EventDecl(trig, _, _).
 
-	ValidCaseAction ::= (act: String + AnonFunDecl).
-	ValidCaseAction(act) :- act is AnonFunDecl.
-	ValidCaseAction(act) :- act: String, FunDecl(act, _, _, _, _, _, _).
-
 	[ rule_Classes = '"error, msg: event not defined"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Cases(trig, _, _), trig: String, no EventDecl(trig, _, _).
-	[ rule_Classes = '"error, msg: function not defined"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Cases(_, act, _), act: String, no FunDecl(act, _, _, _, _, _, _).
-	TypeOf(c, e, NIL) :- SubSE(c, e), e = Cases(trig, act, _), ValidCaseEvent(trig), ValidCaseAction(act).
+	
+	TypeOf(c, e, NIL) :- SubSE(c, e), e = Cases(trig, _, _), ValidCaseEvent(trig).
 
     /*************************************************************/
     /*                     Types of arguments                    */
@@ -671,15 +664,23 @@ domain PStaticTyping extends PData
 	/*************************************************************/
     /*                  Local Variable Types                   */
     /*************************************************************/
-    TypeOfLocalVar    ::= (cntxt: FunDecl + AnonFunDecl, name: String, type: TypeExpr + { ERROR }).
+    LocalVarsAux ::= (cntxt: FunDecl + AnonFunDecl, vars: NmdTupType + { NIL }, tl: NmdTupType + { NIL }).
+	LocalVarsAux(cntxt, params, rlocals) :- cntxt is FunDecl(_, _, _, params, _, locals, _), rlocals = lstReverse(#NmdTupType, locals).
+	LocalVarsAux(cntxt, envVars, rlocals) :- cntxt is AnonFunDecl(_, locals, _, envVars), rlocals = lstReverse(#NmdTupType, locals).
+	LocalVarsAux(cntxt, locals, tl) :- LocalVarsAux(cntxt, locals', tl'), tl' = NmdTupType(NmdTupTypeField(name, type), tl),
+									   locals = NmdTupType(NmdTupTypeField(name, type), locals').
+
+	LocalVars ::= (cntxt: FunDecl + AnonFunDecl, vars: NmdTupType + { NIL }).
+	LocalVars(cntxt, rlocals) :- LocalVarsAux(cntxt, locals, NIL), rlocals = lstReverse(#NmdTupType, locals).
+
+	TypeOfLocalVar    ::= (cntxt: FunDecl + AnonFunDecl, name: String, type: TypeExpr + { ERROR }).
     TypeOfLocalVarAux ::= (cntxt: FunDecl + AnonFunDecl, name: String, type: TypeExpr, aux: NmdTupType + { NIL }).
 
-    TypeOfLocalVarAux(cntxt, name, type, tl) :- cntxt is FunDecl(_, _, _, _, _, locals, _), locals = NmdTupType(NmdTupTypeField(name, type), tl). 
-	TypeOfLocalVarAux(cntxt, name, type, tl) :- cntxt is AnonFunDecl(_, locals, _, _), locals = NmdTupType(NmdTupTypeField(name, type), tl).   
+    TypeOfLocalVarAux(cntxt, name, type, tl) :- LocalVars(cntxt, locals), locals = NmdTupType(NmdTupTypeField(name, type), tl).
     TypeOfLocalVarAux(cntxt, name, type, tl) :- TypeOfLocalVarAux(cntxt, _, _, aux), aux = NmdTupType(NmdTupTypeField(name, type), tl).
     
     TypeOfLocalVar(cntxt, name, type)  :- TypeOfLocalVarAux(cntxt, name, type, aux), no { aux' | TypeOfLocalVarAux(cntxt, name, _, aux'), aux != aux' }.      
-	//// This error is generated as part of DupNmdSubE
+	[ rule_Classes = '"error, msg: Variable with same name has been declared before"']
     TypeOfLocalVar(cntxt, name, ERROR) :- TypeOfLocalVarAux(cntxt, name, _, aux), TypeOfLocalVarAux(cntxt, name, _, aux'), aux != aux'.
 
     /*************************************************************/
@@ -731,8 +732,7 @@ domain PStaticTyping extends PData
 	ModStmtSubExpr ::= sub (cntxt: TypingContext, stmt: BinStmt + FunStmt, expr: Expr).
 	IsLValue       ::=     (cntxt: TypingContext, expr: Expr, writesGlobal: Boolean). 
 	IsLValue(c, e, FALSE)  :- ModStmtSubExpr(c, _, e), e = Name(n), TypeOfLocalVar(c, n, _).		
-    IsLValue(c, e, FALSE)  :- ModStmtSubExpr(c, _, e), e = Name(n), TypeOfFormalParam(c, n, _), no TypeOfLocalVar(c, n, _). 
-    IsLValue(c, e, TRUE)   :- ModStmtSubExpr(c, _, e), e = Name(n), VarDecl(n, c.owner, t), no TypeOfFormalParam(c, n, _), no TypeOfLocalVar(c, n, _). 
+    IsLValue(c, e, TRUE)   :- ModStmtSubExpr(c, _, e), e = Name(n), VarDecl(n, c.owner, t), no TypeOfLocalVar(c, n, _). 
     IsLValue(c, e, wg)     :- ModStmtSubExpr(c, _, e), e = Field(e', _), IsLValue(c, e', wg). 
     IsLValue(c, e, wg)     :- ModStmtSubExpr(c, _, e), e = BinApp(IDX, e', _), IsLValue(c, e', wg). 
 
@@ -1124,12 +1124,8 @@ domain PStaticTyping extends PData
     TriggerSet(f, e)    :- TriggerSet(s, e), s : StateDecl, f is FunDecl, f.name = s.entryAction, FunAvailable(f, s.owner).
     TriggerSet(f, e)    :- TriggerSet(t, e), t : TransDecl, f is FunDecl, f.name = t.action, FunAvailable(f, t.src.owner).
     TriggerSet(f, e)    :- TriggerSet(d, e), d : DoDecl, f is FunDecl, f.name = d.action, FunAvailable(f, d.src.owner).
-
     TriggerSet(f, e)	:- TriggerSet(c, e), SubSE(c, x), x = FunApp(name, _), f is FunDecl, FunAvailable(f, c.owner), f.name = name.
     TriggerSet(f, e)	:- TriggerSet(c, e), SubSE(c, x), x = FunStmt(name, _, _, _), f is FunDecl, FunAvailable(f, c.owner), f.name = name.
-    TriggerSet(f, e)	:- c is FunDecl, SubSE(c, s), s = Cases(e, name, _), name: String, f is FunDecl, FunAvailable(f, c.owner), f.name = name.
-	TriggerSet(f, e)    :- s is StateDecl, SubSE(s.entryAction, cases), cases = Cases(e, name, _), name: String, FunAvailable(f, s.owner), f.name = name.
-	TriggerSet(f, e)	:- d is DoDecl, SubSE(d.action, cases), cases = Cases(e, name, _), name: String, FunAvailable(f, d.src.owner), f.name = name.
 
 	/*************************************************************/
     /*                      Compute type joins                   */

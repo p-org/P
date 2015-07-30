@@ -1689,13 +1689,14 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// Receive
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Receive(_, label),
 						   receiveCall = out.FunApp(Ident("PrtReceive"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(label, DEC, U), NIL)))),
-						   receive = Lbl(strJoin("L", toString(label)), out.ITE(UnApp(LNOT, receiveCall), Return(Ident("NULL")), NIL)),
+						   receive = Lbl(strJoin("L", toString(label)), out.ITE(BinApp(LAND, BinApp(EQ, BinApp(FLD, Ident("p_tmp_frame"), Ident("rcase")), Ident("NULL")), UnApp(LNOT, receiveCall)), Return(Ident("NULL")), NIL)),
 						   caseFun = out.FunApp(Ident("PrtGetFunction"), Args(Ident("p_tmp_mach_priv"), Args(BinApp(PFLD, BinApp(FLD, Ident("p_tmp_frame"), Ident("rcase")), Ident("funIndex")), NIL))),
 						   case = out.FunApp(caseFun, Args(Ident("context"), NIL)),
-						   blocked = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("receive")), Ident("NULL")), Return(Ident("NULL")), NIL), 
+						   blocked = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("receive")), Ident("NULL")), Seq(FunApp(Ident("PrtPushFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))), Return(Ident("NULL"))), NIL), 
 						   exception = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("lastOperation")), Ident("ReturnStatement")), Goto("P_EXIT_FUN"), NIL),
 						   popEvent = out.FunApp(Ident("PrtPopEvent"), Args(Ident("p_tmp_mach_priv"), NIL)),
-						   cs = out.Seq(receive, Seq(case, Seq(blocked, Seq(exception, popEvent)))).
+						   resetRcase = out.BinApp(ASN, BinApp(FLD, Ident("p_tmp_frame"), Ident("rcase")), Ident("NULL")),
+						   cs = out.Seq(receive, Seq(case, Seq(blocked, Seq(exception, Seq(popEvent, resetRcase))))).
 	
 	//// New Machine or Model
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, NIL, _), 
@@ -1830,14 +1831,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   blocked = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("receive")), Ident("NULL")), Return(ret), NIL),
 						   exception = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("lastOperation")), Ident("ReturnStatement")), Goto("P_EXIT_FUN"), NIL),
 						   FunStmtCleanup(c, s, cleanup),
-						   label' = label + count({ x | x: in.Receive, SubSE(c, x) }),
-						   cs = out.Lbl(strJoin("L", toString(label')), Seq(funcall, Seq(blocked, Seq(exception, cleanup)))).
+						   cs = out.Lbl(strJoin("L", toString(label)), Seq(funcall, Seq(blocked, Seq(exception, cleanup)))).
 
 	StmtTrans(c, s, cs) :- FunStmtRhs(c, s, size, tail), s = in.FunStmt(name, args, _, label), args != NIL, 
 	                       FunDeclNames(fn, funIndex, funName, prmsTypeName), FunAvailable(fn, c.owner), fn.name = name, 
 						   ExprsTrans(c, s, 0, args, ecs),
-						   label' = label + count({ x | x: in.Receive, SubSE(c, x) }),
-						   cs = out.Seq(paramAssign, Lbl(strJoin("L", toString(label')), Seq(funCall, Seq(blocked, Seq(exception, cleanup))))),
+						   cs = out.Seq(paramAssign, Lbl(strJoin("L", toString(label)), Seq(funCall, Seq(blocked, Seq(exception, cleanup))))),
 						   argsTuple = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#Exprs, args) - 1))), Args(UnApp(ADDR, Ident(prmsTypeName)), ecs)),
 						   paramAssign = out.BinApp(ASN, params, FunApp(Ident(strJoin("P_EXPR_", toString(size))), Args(argsTuple, Args(Ident("PRT_FALSE"), tail)))),
 						   funCall = out.BinApp(ASN, ret, FunApp(Ident("PrtWrapFunStmt"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(label, DEC, U), Args(Ident("p_tmp_mach_priv"), Args(IntLit(funIndex, DEC, U), Args(params, NIL))))))),

@@ -1085,7 +1085,7 @@ domain PStaticTyping extends PData
 							  TypeJoins(joins, type).
 
 	//// Need to record the set of events that could lead to the evaluation of a function.
-	//// A null trigger or intial state results in a null event.
+	//// A null trigger or initial state results in a null event.
 
 	//// These are the places where payload can be written or read.
 	PlContext ::= StateDecl + TransDecl + DoDecl + FunDecl + AnonFunDecl.
@@ -1114,9 +1114,7 @@ domain PStaticTyping extends PData
     TriggerSet(a, e)    :- TriggerSet(s, e), s : StateDecl, a = s.entryAction, a : AnonFunDecl.
     TriggerSet(a, e)    :- TriggerSet(t, e), t : TransDecl, a = t.action, a : AnonFunDecl.
     TriggerSet(a, e)    :- TriggerSet(d, e), d : DoDecl, a = d.action, a : AnonFunDecl.
-	TriggerSet(a, e)    :- c is FunDecl, SubSE(c, cases), cases = Cases(e, a, _), a : AnonFunDecl. 
-	TriggerSet(a, e)    :- s is StateDecl, SubSE(s.entryAction, cases), cases = Cases(e, a, _), a : AnonFunDecl.
-	TriggerSet(a, e)	:- d is DoDecl, SubSE(d.action, cases), cases = Cases(e, a, _), a : AnonFunDecl.
+	TriggerSet(a, e)    :- SubSE(c, cases), cases = Cases(e, a, _), a : AnonFunDecl. 
 
 	//// (5) An FunDecl's trigger set is the set of events of its calling contexts.
 	//// payloads in exit functions are unpredictable.

@@ -248,12 +248,12 @@ StateBodyItem
 	| EXIT ID SEMICOLON														{ SetStateExit(false, $2.str, ToSpan(@2));                                 }
 	| DEFER NonDefaultEventList TrigAnnotOrNone SEMICOLON					{ AddDefersOrIgnores(true,  ToSpan(@1));            }		
 	| IGNORE NonDefaultEventList TrigAnnotOrNone SEMICOLON					{ AddDefersOrIgnores(false, ToSpan(@1));            }
-	| OnEventList DO ID TrigAnnotOrNone SEMICOLON							{ AddDoNamedAction($4.str, ToSpan(@4), ToSpan(@1)); }
+	| OnEventList DO ID TrigAnnotOrNone SEMICOLON							{ AddDoNamedAction($3.str, ToSpan(@3), ToSpan(@1)); }
 	| OnEventList DO TrigAnnotOrNone StmtBlock SEMICOLON					{ AddDoAnonyAction(ToSpan(@1)); }
 	| OnEventList PUSH StateTarget TrigAnnotOrNone SEMICOLON				{ AddTransition(true, ToSpan(@1));           }
  	| OnEventList GOTO StateTarget TrigAnnotOrNone SEMICOLON				{ AddTransition(false, ToSpan(@1));          } 
 	| OnEventList GOTO StateTarget TrigAnnotOrNone WITH StmtBlock SEMICOLON { AddTransitionWithAction(true, "", ToSpan(@1), ToSpan(@1));           }
-	| OnEventList GOTO StateTarget TrigAnnotOrNone WITH ID SEMICOLON		{ AddTransitionWithAction(false, $7.str, ToSpan(@7), ToSpan(@1));           }
+	| OnEventList GOTO StateTarget TrigAnnotOrNone WITH ID SEMICOLON		{ AddTransitionWithAction(false, $6.str, ToSpan(@6), ToSpan(@1));           }
 	;
 
 OnEventList

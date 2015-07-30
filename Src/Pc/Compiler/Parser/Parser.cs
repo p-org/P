@@ -33,6 +33,7 @@
         private P_Root.StateDecl crntState = null;
         private List<P_Root.VarDecl> crntVarList = new List<P_Root.VarDecl>();
         private List<P_Root.EventLabel> crntEventList = new List<P_Root.EventLabel>();
+        private List<P_Root.EventLabel> onEventList = new List<P_Root.EventLabel>();
         private List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>> crntAnnotList = new List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>();
         private Stack<List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>> crntAnnotStack = new Stack<List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>>();
 
@@ -1161,7 +1162,7 @@
 
         private void AddTransitionWithAction (bool isAnonymous, string actName, Span actNameSpan, Span span)
         {
-            Contract.Assert(crntEventList.Count > 0);
+            Contract.Assert(onEventList.Count > 0);
             Contract.Assert(crntStateTargetName != null);
             Contract.Assert(!isTrigAnnotated || crntAnnotStack.Count > 0);
             Contract.Assert(!isAnonymous || stmtStack.Count > 0);
@@ -1182,7 +1183,7 @@
                 localVarStack = new LocalVarStack(this);
             }
 
-            foreach (var e in crntEventList)
+            foreach (var e in onEventList)
             {
                 var trans = P_Root.MkTransDecl(state, (P_Root.IArgType_TransDecl__1)e, crntStateTargetName, action);
                 trans.Span = span;
@@ -1203,12 +1204,12 @@
 
             isTrigAnnotated = false;
             crntStateTargetName = null;
-            crntEventList.Clear();
+            onEventList.Clear();
         }
 
         private void AddTransition(bool isPush, Span span)
         {
-            Contract.Assert(crntEventList.Count > 0);
+            Contract.Assert(onEventList.Count > 0);
             Contract.Assert(crntStateTargetName != null);
             Contract.Assert(!isTrigAnnotated || crntAnnotStack.Count > 0);
 
@@ -1224,7 +1225,7 @@
                 action = MkSkipFun((P_Root.MachineDecl)state.owner, span);
             }
 
-            foreach (var e in crntEventList)
+            foreach (var e in onEventList)
             {
                 var trans = P_Root.MkTransDecl(state, (P_Root.IArgType_TransDecl__1)e, crntStateTargetName, action);
                 trans.Span = span;
@@ -1245,7 +1246,7 @@
 
             isTrigAnnotated = false;
             crntStateTargetName = null;
-            crntEventList.Clear();
+            onEventList.Clear();
         }
 
         private void AddProgramAnnots(Span span)
@@ -1316,7 +1317,7 @@
 
         private void AddDoAnonyAction(Span span)
         {
-            Contract.Assert(crntEventList.Count > 0);
+            Contract.Assert(onEventList.Count > 0);
             Contract.Assert(!isTrigAnnotated || crntAnnotStack.Count > 0);
 
             var state = GetCurrentStateDecl(span);
@@ -1327,7 +1328,7 @@
             parseProgram.AnonFunctions.Add(anonAction);
             localVarStack = new LocalVarStack(this);
 
-            foreach (var e in crntEventList)
+            foreach (var e in onEventList)
             {
                 var action = P_Root.MkDoDecl(state, (P_Root.IArgType_DoDecl__1)e, anonAction);
                 action.Span = span;
@@ -1347,18 +1348,18 @@
             }
 
             isTrigAnnotated = false;
-            crntEventList.Clear();
+            onEventList.Clear();
         }
 
         private void AddDoNamedAction(string name, Span nameSpan, Span span)
         {
-            Contract.Assert(crntEventList.Count > 0);
+            Contract.Assert(onEventList.Count > 0);
             Contract.Assert(!isTrigAnnotated || crntAnnotStack.Count > 0);
 
             var state = GetCurrentStateDecl(span);
             var actName = MkString(name, nameSpan);
             var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
-            foreach (var e in crntEventList)
+            foreach (var e in onEventList)
             {
                 var action = P_Root.MkDoDecl(state, (P_Root.IArgType_DoDecl__1)e, actName);
                 action.Span = span;
@@ -1378,7 +1379,7 @@
             }
 
             isTrigAnnotated = false;
-            crntEventList.Clear();
+            onEventList.Clear();
         }
 
         private string QualifiedNameToString(P_Root.QualifiedName qualifiedName)

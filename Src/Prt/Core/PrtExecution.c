@@ -426,15 +426,17 @@ _In_ PRT_VALUE					**locals
 	PRT_FUNDECL *funDecl = &(context->process->program->machines[context->instanceOf].funs[funIndex]);
 	if (funDecl->localsNmdTupType != NULL)
 	{
-		for (PRT_UINT32 i = 0; i < funDecl->localsNmdTupType->typeUnion.nmTuple->arity; i++)
+		PRT_UINT32 size = funDecl->localsNmdTupType->typeUnion.nmTuple->arity;
+		PRT_UINT32 count = funDecl->numEnvVars;
+		for (PRT_UINT32 i = 1; i <= size; i++)
 		{
-			PRT_UINT32 index = funDecl->numEnvVars + i;
-			PRT_TYPE *indexType = funDecl->localsNmdTupType->typeUnion.nmTuple->fieldTypes[i];
-			if (locals[index] != NULL)
+			PRT_TYPE *indexType = funDecl->localsNmdTupType->typeUnion.nmTuple->fieldTypes[size - i];
+			if (locals[count] != NULL)
 			{
-				PrtFreeValue(locals[index]);
+				PrtFreeValue(locals[count]);
 			}
-			locals[index] = PrtMkDefaultValue(indexType);
+			locals[count] = PrtMkDefaultValue(indexType);
+			count++;
 		}
 	}
 	context->funStack.funs[length].locals = locals;
@@ -480,10 +482,12 @@ PrtPushNewFrame(
 		}
 		if (funDecl->localsNmdTupType != NULL)
 		{
-			for (PRT_UINT32 i = 0; i < funDecl->localsNmdTupType->typeUnion.nmTuple->arity; i++)
+			PRT_UINT32 size = funDecl->localsNmdTupType->typeUnion.nmTuple->arity;
+			for (PRT_UINT32 i = 1; i <= size; i++)
 			{
-				PRT_TYPE *indexType = funDecl->localsNmdTupType->typeUnion.nmTuple->fieldTypes[i];
+				PRT_TYPE *indexType = funDecl->localsNmdTupType->typeUnion.nmTuple->fieldTypes[size - i];
 				locals[count] = PrtMkDefaultValue(indexType);
+				count++;
 			}
 		}
 	}

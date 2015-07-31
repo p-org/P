@@ -887,30 +887,6 @@ transform P2CProgram (in:: P) returns (out:: C)
     /*************************************************************/
     /******            Generate Fun Decl Arrays             ******/
     /*************************************************************/	
-	MaxNumLocals ::= (stmt: AnonOrNamedFun + in.Stmt + in.Cases, n: Natural).
-	MaxNumLocals(e, 0) :- SubSE(c, e), c is AnonOrNamedFun, e: in.NewStmt.
-	MaxNumLocals(e, 0) :- SubSE(c, e), c is AnonOrNamedFun, e: in.Raise.
-	MaxNumLocals(e, 0) :- SubSE(c, e), c is AnonOrNamedFun, e: in.Send.
-	MaxNumLocals(e, 0) :- SubSE(c, e), c is AnonOrNamedFun, e: in.Monitor.
-	MaxNumLocals(e, 0) :- SubSE(c, e), c is AnonOrNamedFun, e: in.FunStmt.
-	MaxNumLocals(e, 0) :- SubSE(c, e), c is AnonOrNamedFun, e: in.NulStmt.
-	MaxNumLocals(e, 0) :- SubSE(c, e), c is AnonOrNamedFun, e: in.UnStmt.
-	MaxNumLocals(e, 0) :- SubSE(c, e), c is AnonOrNamedFun, e: in.BinStmt.
-	MaxNumLocals(e, 0) :- SubSE(c, e), c is AnonOrNamedFun, e: in.Return.
-	MaxNumLocals(e, n) :- SubSE(c, e), c is AnonOrNamedFun, e = in.While(_, e'), MaxNumLocals(e', n).
-	MaxNumLocals(e, n) :- SubSE(c, e), c is AnonOrNamedFun, e = in.Ite(_, e1, e2), 
-						  MaxNumLocals(e1, n1), MaxNumLocals(e2, n2), n = max(n1, n2).
-    MaxNumLocals(e, n) :- SubSE(c, e), c is AnonOrNamedFun, e = in.Seq(e1, e2), 
-	                      MaxNumLocals(e1, n1), MaxNumLocals(e2, n2), n = max(n1, n2).
-	MaxNumLocals(e, n) :- SubSE(c, receive), c is AnonOrNamedFun, receive: in.Receive, 
-						  ReceiveCases(c, receive, e), e = in.Cases(_, a, NIL), MaxNumLocals(a, n).
-	MaxNumLocals(e, n) :- SubSE(c, receive), c is AnonOrNamedFun, receive: in.Receive, 
-						  ReceiveCases(c, receive, e), e = in.Cases(_, a, e'), e': in.Cases, 
-						  MaxNumLocals(a, n1), MaxNumLocals(e', n2), n =  max(n1, n2).
-	MaxNumLocals(e, n) :- SubSE(c, e), c is AnonOrNamedFun, e = in.Receive(cases, _), MaxNumLocals(cases, n). 
-	MaxNumLocals(a, n) :- a is AnonFunDecl, MaxNumLocals(a.body, n1), n2 = lstLength(#NmdTupType, a.locals), n = n1 + n2.
-	MaxNumLocals(a, n) :- a is FunDecl, MaxNumLocals(a.body, n1), n2 = lstLength(#NmdTupType, a.locals), n3 = lstLength(#NmdTupType, a.params), n = n1 + n2 + n3.
-
 	LocalsType ::= (decl: AnonOrNamedFun, type: out.Expr).
 	LocalsType(d, t) :- d is AnonOrNamedFun, d.locals = NIL, t = out.Ident("NULL").
 	LocalsType(d, t) :- d is AnonOrNamedFun, type = d.locals, TypeId(typeIndex, type), 

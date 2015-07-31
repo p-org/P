@@ -662,8 +662,32 @@ domain PStaticTyping extends PData
 	TypeOfField(ttup, n, ERROR)              :- TypeOfFieldAux(ttup, n, ERROR, 0, ttup), n : String, ttup : TupType.
 
 	/*************************************************************/
-    /*                  Local Variable Types                   */
+    /*                  Local Variable Types                     */
     /*************************************************************/
+	MaxNumLocals ::= (ctxt: TypingContext + Stmt + Cases, n: Natural).
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: NewStmt.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: Raise.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: Send.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: Monitor.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: FunStmt.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: NulStmt.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: UnStmt.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: BinStmt.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: Return.
+	MaxNumLocals(e, n) :- SubSE(c, e), c is TypingContext, e = While(_, e'), MaxNumLocals(e', n).
+	MaxNumLocals(e, n) :- SubSE(c, e), c is TypingContext, e = Ite(_, e1, e2), 
+						  MaxNumLocals(e1, n1), MaxNumLocals(e2, n2), n = max(n1, n2).
+    MaxNumLocals(e, n) :- SubSE(c, e), c is TypingContext, e = Seq(e1, e2), 
+	                      MaxNumLocals(e1, n1), MaxNumLocals(e2, n2), n = max(n1, n2).
+	MaxNumLocals(e, n) :- SubSE(c, receive), c is TypingContext, receive: Receive, 
+						  ReceiveCases(c, receive, e), e = Cases(_, a, NIL), MaxNumLocals(a, n).
+	MaxNumLocals(e, n) :- SubSE(c, receive), c is TypingContext, receive: Receive, 
+						  ReceiveCases(c, receive, e), e = Cases(_, a, e'), e': Cases, 
+						  MaxNumLocals(a, n1), MaxNumLocals(e', n2), n =  max(n1, n2).
+	MaxNumLocals(e, n) :- SubSE(c, e), c is TypingContext, e = Receive(cases, _), MaxNumLocals(cases, n). 
+	MaxNumLocals(a, n) :- a is AnonFunDecl, MaxNumLocals(a.body, n1), n2 = lstLength(#NmdTupType, a.locals), n = n1 + n2.
+	MaxNumLocals(a, n) :- a is FunDecl, MaxNumLocals(a.body, n1), n2 = lstLength(#NmdTupType, a.locals), n3 = lstLength(#NmdTupType, a.params), n = n1 + n2 + n3.
+
     LocalVarsAux ::= (cntxt: FunDecl + AnonFunDecl, vars: NmdTupType + { NIL }, tl: NmdTupType + { NIL }).
 	LocalVarsAux(cntxt, params, rlocals) :- cntxt is FunDecl(_, _, _, params, _, locals, _), rlocals = lstReverse(#NmdTupType, locals).
 	LocalVarsAux(cntxt, envVars, rlocals) :- cntxt is AnonFunDecl(_, locals, _, envVars), rlocals = lstReverse(#NmdTupType, locals).

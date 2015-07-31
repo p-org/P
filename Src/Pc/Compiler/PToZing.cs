@@ -112,36 +112,50 @@ namespace Microsoft.Pc
     {
         public AST<FuncTerm> returnType;
         public Node body;
-        public Dictionary<string, LocalVariableInfo> parameterNameToInfo;
-        public List<string> parameterNames;
+        public List<string> parameterNames; // if isAnonymous is true, parameterNames is the list of environment variables
         public Dictionary<string, LocalVariableInfo> localNameToInfo;
         public List<string> localNames;
         public int numFairChoices;
         public bool isAnonymous;
         public Dictionary<AST<Node>, FuncTerm> typeInfo;
+        public int maxNumLocals;
         public HashSet<Node> invokeSchedulerFuns;
         public HashSet<Node> invokePluginFuns;
         public HashSet<string> printArgs;
 
+        private int ListLength(FuncTerm ft)
+        {
+            int count = 0;
+            while (ft != null)
+            {
+                count++;
+                ft = PToZing.GetArgByIndex(ft, 1) as FuncTerm;
+            }
+            return count;
+        }
+
+        // if isAnonymous is true, parameters is actually envVars
         public FunInfo(bool isAnonymous, FuncTerm parameters, AST<FuncTerm> returnType, FuncTerm locals, Node body)
         {
             this.isAnonymous = isAnonymous;
             this.returnType = returnType;
             this.body = body;
 
-            this.parameterNameToInfo = new Dictionary<string, LocalVariableInfo>();
             this.parameterNames = new List<string>();
             this.localNameToInfo = new Dictionary<string, LocalVariableInfo>();
             this.localNames = new List<string>();
             this.numFairChoices = 0;
             this.typeInfo = new Dictionary<AST<Node>, FuncTerm>();
+            this.maxNumLocals = 0;
             this.invokeSchedulerFuns = new HashSet<Node>();
             this.invokePluginFuns = new HashSet<Node>();
             this.printArgs = new HashSet<string>();
 
-            int paramIndex = 0;
+            int numParameters = ListLength(parameters);
+            int paramIndex = numParameters;
             while (parameters != null)
             {
+                paramIndex--;
                 var ft = (FuncTerm)PToZing.GetArgByIndex(parameters, 0);
                 using (var enumerator = ft.Args.GetEnumerator())
                 {
@@ -149,16 +163,17 @@ namespace Microsoft.Pc
                     var varName = ((Cnst)enumerator.Current).GetStringValue();
                     enumerator.MoveNext();
                     var varType = (FuncTerm)enumerator.Current;
-                    parameterNameToInfo[varName] = new LocalVariableInfo(varType, paramIndex);
+                    localNameToInfo[varName] = new LocalVariableInfo(varType, paramIndex);
                     parameterNames.Add(varName);
                 }
                 parameters = PToZing.GetArgByIndex(parameters, 1) as FuncTerm;
-                paramIndex++;
-            } 
-
-            int localIndex = 0;
+            }
+            
+            int numLocals = ListLength(locals);
+            int localIndex = numParameters + numLocals;
             while (locals != null)
             {
+                localIndex--;
                 var ft = (FuncTerm)PToZing.GetArgByIndex(locals, 0);
                 using (var enumerator = ft.Args.GetEnumerator())
                 {
@@ -170,7 +185,6 @@ namespace Microsoft.Pc
                     localNames.Add(varName);
                 }
                 locals = PToZing.GetArgByIndex(locals, 1) as FuncTerm;
-                localIndex++;
             }
         }
     }
@@ -490,8 +504,10 @@ namespace Microsoft.Pc
                     var locals = it.Current as FuncTerm;
                     it.MoveNext();
                     var body = it.Current;
+                    it.MoveNext();
+                    var envVars = it.Current as FuncTerm;
                     var funName = "AnonFun" + anonFunCounter[machineName];
-                    machineInfo.funNameToFunInfo[funName] = new FunInfo(true, null, PToZing.PTypeNull, locals, body);
+                    machineInfo.funNameToFunInfo[funName] = new FunInfo(true, envVars, PToZing.PTypeNull, locals, body);
                     anonFunToName[term] = funName;
                     anonFunCounter[machineName]++;
                 }
@@ -763,6 +779,7 @@ namespace Microsoft.Pc
                     FuncTerm ft = (FuncTerm)mf.Match;
                     GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
                 });
+
             var terms = GetBin(factBins, "TypeOf");
             foreach (var term in terms)
             {
@@ -797,6 +814,42 @@ namespace Microsoft.Pc
                         Debug.Assert(ownerName != null);
                         string funName = anonFunToName[Factory.Instance.ToAST(typingContext)];
                         allMachines[ownerName].funNameToFunInfo[funName].typeInfo[expr] = type;
+                    }
+                }
+            }
+
+            terms = GetBin(factBins, "MaxNumLocals");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    FuncTerm typingContext = (FuncTerm)it.Current;
+                    string typingContextKind = ((Id)typingContext.Function).Name;
+                    if (!(typingContextKind == "FunDecl" || typingContextKind == "AnonFunDecl")) continue; 
+                    it.MoveNext();
+                    var maxNumLocals = (int) ((Cnst)it.Current).GetNumericValue().Numerator;
+
+                    if (typingContextKind == "FunDecl")
+                    {
+                        string ownerName = GetOwnerName(typingContext, 1, 0);
+                        string funName = GetName(typingContext, 0);
+                        if (ownerName == null)
+                        {
+                            allStaticFuns[funName].maxNumLocals = maxNumLocals;
+                        }
+                        else
+                        {
+                            allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
+                        }
+                    }
+                    else
+                    {
+                        // typingContextKind == "AnonFunDecl"
+                        string ownerName = GetOwnerName(typingContext, 0, 0);
+                        Debug.Assert(ownerName != null);
+                        string funName = anonFunToName[Factory.Instance.ToAST(typingContext)];
+                        allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
                     }
                 }
             }
@@ -1589,21 +1642,21 @@ namespace Microsoft.Pc
             var locals = MkZingIdentifier("locals");
             var cont = MkZingDot("myHandle", "cont");
             var stmts = new List<AST<Node>>();
-            if (funInfo.localNames.Count == 0)
+            if (funInfo.maxNumLocals == 0)
             {
                 stmts.Add(MkZingAssign(locals, MkZingIdentifier("null")));
             }
             else
             {
-                stmts.Add(MkZingAssign(locals, MkZingNew(Factory.Instance.MkCnst("PRT_VALUE_ARRAY"), Factory.Instance.MkCnst(funInfo.localNames.Count))));
+                stmts.Add(MkZingAssign(locals, MkZingNew(Factory.Instance.MkCnst("PRT_VALUE_ARRAY"), Factory.Instance.MkCnst(funInfo.maxNumLocals))));
             } 
-            for (int localCount = 0; localCount < funInfo.localNames.Count; localCount++)
+            foreach (var localName in funInfo.localNames)
             {
-                var localVar = funInfo.localNames[localCount];
-                stmts.Add(MkZingAssign(MkZingIndex(locals, Factory.Instance.MkCnst(localCount)), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(funInfo.localNameToInfo[localVar].type))));
+                var localVarInfo = funInfo.localNameToInfo[localName];
+                stmts.Add(MkZingAssign(MkZingIndex(locals, Factory.Instance.MkCnst(localVarInfo.index)), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(localVarInfo.type))));
             }
 
-            stmts.Add(MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), Factory.Instance.MkCnst(0), MkZingIdentifier("null"), locals, MkZingDot("myHandle", "currentEvent"), MkZingDot("myHandle", "currentArg"))));
+            stmts.Add(MkZingCallStmt(MkZingCall(MkZingDot(cont, "PushReturnTo"), Factory.Instance.MkCnst(0), locals, MkZingDot("myHandle", "currentEvent"), MkZingDot("myHandle", "currentArg"))));
             return MkZingSeq(stmts);
         }
 
@@ -1937,7 +1990,6 @@ namespace Microsoft.Pc
                 var tmpVar = GetTmpVar(Factory.Instance.MkCnst("StackFrame"), "retTo");
 
                 prelude.Add(PToZing.MkZingAssign(tmpVar, PToZing.MkZingCall(MkZingDot("entryCtxt", "PopReturnTo"))));
-                prelude.Add(PToZing.MkZingAssign(MkZingIdentifier("parameters"), MkZingDot(tmpVar, "parameters")));
                 prelude.Add(PToZing.MkZingAssign(MkZingIdentifier("locals"), MkZingDot(tmpVar, "locals")));
                 prelude.Add(PToZing.MkZingAssign(MkZingIdentifier("currentEvent"), MkZingDot(tmpVar, "currentEvent")));
                 prelude.Add(PToZing.MkZingAssign(MkZingIdentifier("currentArg"), MkZingDot(tmpVar, "currentArg")));
@@ -2331,22 +2383,13 @@ namespace Microsoft.Pc
                 var eventName = eventNames[i];
                 var funName = funNames[i];
                 var calleeInfo = allStaticFuns.ContainsKey(funName) ? allStaticFuns[funName] : allMachines[ctxt.machineName].funNameToFunInfo[funName];
-                var calleeLocalVar = ctxt.GetTmpVar(Factory.Instance.MkCnst("PRT_VALUE_ARRAY"), "calleeLocalVar");
                 List<AST<Node>> ifStmts = new List<AST<Node>>();
-                if (calleeInfo.localNames.Count == 0)
+                foreach (var calleeLocal in calleeInfo.localNames)
                 {
-                    ifStmts.Add(MkZingAssign(calleeLocalVar, MkZingIdentifier("null")));
+                    var calleeLocalInfo = calleeInfo.localNameToInfo[calleeLocal];
+                    ifStmts.Add(MkZingAssign(MkZingIndex(MkZingIdentifier("locals"), Factory.Instance.MkCnst(calleeLocalInfo.index)), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(calleeLocalInfo.type))));
                 }
-                else
-                {
-                    ifStmts.Add(MkZingAssign(calleeLocalVar, MkZingNew(Factory.Instance.MkCnst("PRT_VALUE_ARRAY"), Factory.Instance.MkCnst(calleeInfo.localNames.Count))));
-                }
-                for (int localCount = 0; localCount < calleeInfo.localNames.Count; localCount++)
-                {
-                    var calleeLocal = calleeInfo.localNames[localCount];
-                    ifStmts.Add(MkZingAssign(MkZingIndex(calleeLocalVar, Factory.Instance.MkCnst(localCount)), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(calleeInfo.localNameToInfo[calleeLocal].type))));
-                }
-                ifStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(0), MkZingIdentifier("null"), calleeLocalVar, MkZingDot("myHandle", "currentEvent"), MkZingDot("myHandle", "currentArg"))));
+                ifStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(0), MkZingIdentifier("locals"), MkZingDot("myHandle", "currentEvent"), MkZingDot("myHandle", "currentArg"))));
                 ifStmts.Add(MkZingGoto(beforeLabel));
                 eventStmts.Add(MkZingIfThen(MkZingEq(MkZingDot("myHandle", "currentEvent"), MkZingEvent(eventName)), MkZingSeq(ifStmts)));
 
@@ -2361,7 +2404,7 @@ namespace Microsoft.Pc
                 funStmts.Add(MkZingIfThenElse(
                                      MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "Return")),
                                      MkZingGoto(afterAfterLabel),
-                                     MkZingSeq(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(ctxt.LabelToId(beforeLabel)), MkZingIdentifier("parameters"), MkZingIdentifier("locals"), MkZingIdentifier("currentEvent"), MkZingIdentifier("currentArg"))),
+                                     MkZingSeq(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(ctxt.LabelToId(beforeLabel)), MkZingIdentifier("locals"), MkZingIdentifier("currentEvent"), MkZingIdentifier("currentArg"))),
                                                MkZingReturn(ZingData.Cnst_Nil))));
             }
             List<AST<Node>> stmts = new List<AST<Node>>();
@@ -2403,7 +2446,7 @@ namespace Microsoft.Pc
                 cases = GetArgByIndex(cases, 2) as FuncTerm;
             }
             var afterLabel = ctxt.GetFreshLabel();
-            stmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Receive"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingIdentifier("parameters"), MkZingIdentifier("locals"), MkZingIdentifier("currentEvent"), MkZingIdentifier("currentArg"))));
+            stmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Receive"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingIdentifier("locals"), MkZingIdentifier("currentEvent"), MkZingIdentifier("currentArg"))));
             stmts.Add(MkZingReturn(ZingData.Cnst_Nil));
             stmts.Add(MkZingBlock(afterLabel, ZingData.Cnst_Nil));
             var afterAfterLabel = ctxt.GetFreshLabel();
@@ -2420,10 +2463,6 @@ namespace Microsoft.Pc
             if (funInfo != null && funInfo.localNameToInfo.ContainsKey(name))
             {
                 retVal = MkZingIndex(MkZingIdentifier("locals"), Factory.Instance.MkCnst(funInfo.localNameToInfo[name].index));
-            }
-            else if (funInfo != null && funInfo.parameterNameToInfo.ContainsKey(name))
-            {
-                retVal = MkZingIndex(MkZingIdentifier("parameters"), Factory.Instance.MkCnst(funInfo.parameterNameToInfo[name].index));
             }
             else if (ctxt.machineName != null && allMachines[ctxt.machineName].localVariableToVarInfo.ContainsKey(name))
             {
@@ -2470,7 +2509,7 @@ namespace Microsoft.Pc
                     var newMachine = ctxt.GetTmpVar(SmHandle, "newMachine");
                     ctxt.AddSideEffect(MkZingAssign(newMachine, MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar)));
                     string afterLabel = ctxt.GetFreshLabel();
-                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewMachine"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingIdentifier("parameters"), MkZingIdentifier("locals"), MkZingIdentifier("currentEvent"), MkZingIdentifier("currentArg"), newMachine)));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewMachine"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingIdentifier("locals"), MkZingIdentifier("currentEvent"), MkZingIdentifier("currentArg"), newMachine)));
                     ctxt.AddSideEffect(MkZingReturn(ZingData.Cnst_Nil));
                     ctxt.AddSideEffect(MkZingBlock(afterLabel, MkZingAssign(newMachine, MkZingDot("entryCtxt", "id"))));
                     ctxt.AddSideEffect(MkZingAssign(MkZingDot("entryCtxt", "id"), MkZingIdentifier("null")));
@@ -2499,13 +2538,13 @@ namespace Microsoft.Pc
 
             ZingTranslationInfo outputVarInfo = null;
             var argCloneVar = ctxt.GetTmpVar(Factory.Instance.MkCnst("PRT_VALUE_ARRAY"), "argCloneVar");
-            if (calleeInfo.parameterNames.Count == 0)
+            if (calleeInfo.maxNumLocals == 0)
             {
                 ctxt.AddSideEffect(MkZingAssign(argCloneVar, MkZingIdentifier("null")));
             }
             else
             {
-                ctxt.AddSideEffect(MkZingAssign(argCloneVar, MkZingNew(Factory.Instance.MkCnst("PRT_VALUE_ARRAY"), Factory.Instance.MkCnst(children.Count()))));
+                ctxt.AddSideEffect(MkZingAssign(argCloneVar, MkZingNew(Factory.Instance.MkCnst("PRT_VALUE_ARRAY"), Factory.Instance.MkCnst(calleeInfo.maxNumLocals))));
             }
             int parameterCount = 0;
             foreach (var child in children)
@@ -2517,28 +2556,19 @@ namespace Microsoft.Pc
                     break;
                 }
                 var calleeArg = calleeInfo.parameterNames[parameterCount];
-                var lhsInfo = calleeInfo.parameterNameToInfo[calleeArg];
-                ctxt.AddSideEffect(MkZingAssignWithClone(MkZingIndex(argCloneVar, Factory.Instance.MkCnst(parameterCount)), child.node));
+                var calleeArgInfo = calleeInfo.localNameToInfo[calleeArg];
+                ctxt.AddSideEffect(MkZingAssignWithClone(MkZingIndex(argCloneVar, Factory.Instance.MkCnst(calleeArgInfo.index)), child.node));
                 if (calleeInfo.printArgs.Contains(calleeArg))
                 {
-                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "Print"), MkZingIndex(argCloneVar, Factory.Instance.MkCnst(parameterCount)))));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "Print"), MkZingIndex(argCloneVar, Factory.Instance.MkCnst(calleeArgInfo.index)))));
                 }
                 parameterCount++;
             }
             
-            var calleeLocalVar = ctxt.GetTmpVar(Factory.Instance.MkCnst("PRT_VALUE_ARRAY"), "calleeLocalVar");
-            if (calleeInfo.localNames.Count == 0)
+            foreach (var calleeLocal in calleeInfo.localNames)
             {
-                ctxt.AddSideEffect(MkZingAssign(calleeLocalVar, MkZingIdentifier("null")));
-            }
-            else
-            {
-                ctxt.AddSideEffect(MkZingAssign(calleeLocalVar, MkZingNew(Factory.Instance.MkCnst("PRT_VALUE_ARRAY"), Factory.Instance.MkCnst(calleeInfo.localNames.Count))));
-            }
-            for (int localCount = 0; localCount < calleeInfo.localNames.Count; localCount++)
-            {
-                var calleeLocal = calleeInfo.localNames[localCount];
-                ctxt.AddSideEffect(MkZingAssign(MkZingIndex(calleeLocalVar, Factory.Instance.MkCnst(localCount)), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(calleeInfo.localNameToInfo[calleeLocal].type))));
+                var calleeLocalInfo = calleeInfo.localNameToInfo[calleeLocal];
+                ctxt.AddSideEffect(MkZingAssign(MkZingIndex(argCloneVar, Factory.Instance.MkCnst(calleeLocalInfo.index)), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(calleeLocalInfo.type))));
             }
 
             foreach (var x in calleeInfo.invokeSchedulerFuns)
@@ -2585,7 +2615,7 @@ namespace Microsoft.Pc
                 ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingIdentifier("invokeplugin"), invokePluginArgs)));
             }
 
-            ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(0), argCloneVar, calleeLocalVar, MkZingIdentifier("currentEvent"), MkZingIdentifier("currentArg"))));
+            ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(0), argCloneVar, MkZingIdentifier("currentEvent"), MkZingIdentifier("currentArg"))));
 
             var beforeLabel = ctxt.GetFreshLabel();
             if (allStaticFuns.ContainsKey(calleeName))
@@ -2619,7 +2649,7 @@ namespace Microsoft.Pc
             ctxt.AddSideEffect(MkZingIfThenElse(
                                  MkZingEq(MkZingDot("entryCtxt", "reason"), MkZingDot("ContinuationReason", "Return")),
                                  processOutput,
-                                 MkZingSeq(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(ctxt.LabelToId(beforeLabel)), MkZingIdentifier("parameters"), MkZingIdentifier("locals"), MkZingIdentifier("currentEvent"), MkZingIdentifier("currentArg"))),
+                                 MkZingSeq(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(ctxt.LabelToId(beforeLabel)), MkZingIdentifier("locals"), MkZingIdentifier("currentEvent"), MkZingIdentifier("currentArg"))),
                                            MkZingReturn(ZingData.Cnst_Nil))));
             ctxt.lastEval = retVal;
             return new ZingTranslationInfo(retVal);
@@ -2677,7 +2707,7 @@ namespace Microsoft.Pc
             {
                 var afterLabel = ctxt.GetFreshLabel();
                 var bvar = ctxt.GetTmpVar(ZingData.Cnst_Bool, "nondet");
-                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Nondet"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingIdentifier("parameters"), MkZingIdentifier("locals"), MkZingIdentifier("currentEvent"), MkZingIdentifier("currentArg"))));
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Nondet"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingIdentifier("locals"), MkZingIdentifier("currentEvent"), MkZingIdentifier("currentArg"))));
                 ctxt.AddSideEffect(MkZingReturn(ZingData.Cnst_Nil));
                 ctxt.AddSideEffect(MkZingBlock(afterLabel, MkZingAssign(bvar, MkZingDot("entryCtxt", "nondet"))));
                 ctxt.AddSideEffect(MkZingAssign(MkZingDot("entryCtxt", "nondet"), ZingData.Cnst_False));
@@ -3068,7 +3098,7 @@ namespace Microsoft.Pc
                     ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", machineName)), eventExpr, tmpVar)));
                 }
                 ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(targetExpr, "EnqueueEvent"), eventExpr, tmpVar, Factory.Instance.MkCnst("myHandle"))));
-                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Send"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingIdentifier("parameters"), MkZingIdentifier("locals"), MkZingIdentifier("currentEvent"), MkZingIdentifier("currentArg"))));
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Send"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingIdentifier("locals"), MkZingIdentifier("currentEvent"), MkZingIdentifier("currentArg"))));
                 return new ZingTranslationInfo(MkZingSeq(MkZingReturn(ZingData.Cnst_Nil), MkZingBlock(afterLabel, ZingData.Cnst_Nil)));
             }
         }
@@ -3306,7 +3336,6 @@ namespace Microsoft.Pc
             parameters.Add(MkZingVarDecl("entryCtxt", Factory.Instance.MkCnst("Continuation")));
 
             List<AST<Node>> localVars = new List<AST<Node>>();
-            localVars.Add(MkZingVarDecl("parameters", Factory.Instance.MkCnst("PRT_VALUE_ARRAY")));
             localVars.Add(MkZingVarDecl("locals", Factory.Instance.MkCnst("PRT_VALUE_ARRAY")));
             localVars.Add(MkZingVarDecl("currentEvent", Factory.Instance.MkCnst("SM_EVENT")));
             localVars.Add(MkZingVarDecl("currentArg", Factory.Instance.MkCnst("PRT_VALUE")));
@@ -3332,7 +3361,6 @@ namespace Microsoft.Pc
             parameters.Add(MkZingVarDecl("entryCtxt", Factory.Instance.MkCnst("Continuation")));
 
             List<AST<Node>> localVars = new List<AST<Node>>();
-            localVars.Add(MkZingVarDecl("parameters", Factory.Instance.MkCnst("PRT_VALUE_ARRAY")));
             localVars.Add(MkZingVarDecl("locals", Factory.Instance.MkCnst("PRT_VALUE_ARRAY")));
             localVars.Add(MkZingVarDecl("currentEvent", Factory.Instance.MkCnst("SM_EVENT")));
             localVars.Add(MkZingVarDecl("currentArg", Factory.Instance.MkCnst("PRT_VALUE")));

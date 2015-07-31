@@ -13,10 +13,14 @@ domain PWithInferredTypes extends PData
     
     //// The type judgement. NIL is a placeholder for untyped constructs.
     TypeOf ::= new (cntxt: any TypingContext, expr: any Typeable, type: any TypeExpr + { ERROR, NIL }).
+
+	//// The maximum number of local variables in any context
+	MaxNumLocals ::= new (ctxt: TypingContext + Stmt + Cases, n: Natural).
 }
 
 transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
 {
     out._(x) :- x is in.Data.
 	out.TypeOf(c, e, t) :- in.TypeOf(c, e, t).
+	out.MaxNumLocals(c, n) :- in.MaxNumLocals(c, n).
 }

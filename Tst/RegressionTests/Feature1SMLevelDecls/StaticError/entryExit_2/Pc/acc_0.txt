@@ -3,12 +3,10 @@
 =================================
 OUT: entryexit_2.p (13, 4): inferred type:  BaseType(INT)
 OUT: entryexit_2.p (13, 4): inferred type:  NIL
-OUT: entryexit_2.p (13, 8): inferred type:  BaseType(INT)
 OUT: entryexit_2.p (13, 10): inferred type:  BaseType(INT)
 OUT: entryexit_2.p (13, 12): inferred type:  BaseType(INT)
 OUT: entryexit_2.p (24, 3): inferred type:  BaseType(INT)
 OUT: entryexit_2.p (24, 3): inferred type:  NIL
-OUT: entryexit_2.p (24, 7): inferred type:  BaseType(INT)
 OUT: entryexit_2.p (24, 9): inferred type:  BaseType(INT)
 OUT: entryexit_2.p (24, 11): inferred type:  BaseType(INT)
 OUT: entryexit_2.p (27, 13): inferred type:  NIL

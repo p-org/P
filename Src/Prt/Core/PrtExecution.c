@@ -866,26 +866,32 @@ PrtDequeueEvent(
 		PRT_UINT32 index = (head + i) % queueLength;
 		PRT_EVENT e = queue->events[index];
 		PRT_UINT32 triggerIndex = PrtPrimGetEvent(e.trigger);
-		if (PrtIsEventReceivable(context, triggerIndex))
+		if (context->receive == NULL)
 		{
-			PrtPushEvent(context, e.trigger, e.payload);
-			for (PRT_UINT32 i = 0; i < context->receive->nCases; i++)
+			if (!PrtIsEventDeferred(triggerIndex, context->currentDeferredSetCompact))
 			{
-				PRT_CASEDECL *rcase = &context->receive->cases[i];
-				if (triggerIndex == rcase->triggerEventIndex)
-				{
-					frame->rcase = rcase;
-					PrtPushNewCaseFrame(context, rcase->funIndex, frame->locals);
-					break;
-				}
+				PrtPushEvent(context, e.trigger, e.payload);
+				break;
 			}
-			context->receive = NULL;
-			break;
 		}
-		else if (!PrtIsEventDeferred(triggerIndex, context->currentDeferredSetCompact)) 
+		else 
 		{
-			PrtPushEvent(context, e.trigger, e.payload);
-			break;
+			if (PrtIsEventReceivable(context, triggerIndex))
+			{
+				PrtPushEvent(context, e.trigger, e.payload);
+				for (PRT_UINT32 i = 0; i < context->receive->nCases; i++)
+				{
+					PRT_CASEDECL *rcase = &context->receive->cases[i];
+					if (triggerIndex == rcase->triggerEventIndex)
+					{
+						frame->rcase = rcase;
+						PrtPushNewCaseFrame(context, rcase->funIndex, frame->locals);
+						break;
+					}
+				}
+				context->receive = NULL;
+				break;
+			}
 		}
 	}
 
@@ -1268,10 +1274,7 @@ PrtIsEventReceivable(
 	)
 {
 	PRT_RECEIVEDECL	*receive = context->receive;
-	if (receive == NULL)
-	{
-		return PRT_FALSE;
-	}
+	PrtAssert(receive != NULL, "PrtIsEventReceivable should be called only at a receive");
 	PRT_EVENTSETDECL *evSets = context->process->program->eventSets;
 	PRT_UINT32 *caseSet = evSets[receive->caseSetIndex].packedEvents;
 	return (caseSet[eventIndex / (sizeof(PRT_UINT32) * 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32) * 8)))) != 0;

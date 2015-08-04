@@ -7,197 +7,93 @@ OUT: Writing program.c ...
 OUT: Writing SeqAssgnToAny.zing ...
 OUT: Compiling SeqAssgnToAny.zing to SeqAssgnToAny.dll ...
 OUT: seqassgntoany.p (34, 5): inferred type:  NIL
-OUT: seqassgntoany.p (34, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
 OUT: seqassgntoany.p (34, 8): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (34, 12): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: seqassgntoany.p (34, 15): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (34, 17): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (34, 19): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (35, 5): inferred type:  NIL
-OUT: seqassgntoany.p (35, 13): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: seqassgntoany.p (35, 16): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (35, 18): inferred type:  BaseType(BOOL)
-OUT: seqassgntoany.p (35, 21): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (35, 23): inferred type:  BaseType(BOOL)
-OUT: seqassgntoany.p (35, 26): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: seqassgntoany.p (35, 29): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (35, 31): inferred type:  BaseType(BOOL)
-OUT: seqassgntoany.p (35, 34): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (36, 5): inferred type:  NIL
 OUT: seqassgntoany.p (36, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
 OUT: seqassgntoany.p (36, 11): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: seqassgntoany.p (36, 15): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (36, 18): inferred type:  NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)
-OUT: seqassgntoany.p (36, 22): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (37, 5): inferred type:  NIL
-OUT: seqassgntoany.p (37, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: seqassgntoany.p (37, 8): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (37, 12): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: seqassgntoany.p (37, 15): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (37, 17): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (37, 19): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (38, 5): inferred type:  NIL
-OUT: seqassgntoany.p (38, 13): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: seqassgntoany.p (38, 16): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (38, 18): inferred type:  BaseType(BOOL)
-OUT: seqassgntoany.p (38, 21): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (40, 5): inferred type:  NIL
-OUT: seqassgntoany.p (40, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: seqassgntoany.p (40, 8): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (40, 12): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (41, 5): inferred type:  NIL
-OUT: seqassgntoany.p (41, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
 OUT: seqassgntoany.p (41, 8): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (41, 12): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (42, 5): inferred type:  NIL
-OUT: seqassgntoany.p (42, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: seqassgntoany.p (42, 8): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (42, 12): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: seqassgntoany.p (42, 15): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (42, 17): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (42, 19): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (43, 5): inferred type:  NIL
-OUT: seqassgntoany.p (43, 13): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: seqassgntoany.p (43, 16): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (43, 18): inferred type:  BaseType(BOOL)
 OUT: seqassgntoany.p (43, 21): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (44, 5): inferred type:  NIL
-OUT: seqassgntoany.p (44, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
 OUT: seqassgntoany.p (44, 8): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (44, 12): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: seqassgntoany.p (44, 15): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (44, 17): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (44, 19): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
 OUT: seqassgntoany.p (44, 22): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (45, 5): inferred type:  NIL
-OUT: seqassgntoany.p (45, 13): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: seqassgntoany.p (45, 16): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (45, 18): inferred type:  BaseType(BOOL)
 OUT: seqassgntoany.p (45, 21): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (47, 5): inferred type:  NIL
-OUT: seqassgntoany.p (47, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: seqassgntoany.p (47, 8): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (47, 12): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (48, 5): inferred type:  NIL
-OUT: seqassgntoany.p (48, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: seqassgntoany.p (48, 8): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (48, 12): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (49, 5): inferred type:  NIL
-OUT: seqassgntoany.p (49, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: seqassgntoany.p (49, 8): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (49, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: seqassgntoany.p (49, 15): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (49, 17): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (49, 19): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (50, 5): inferred type:  NIL
-OUT: seqassgntoany.p (50, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: seqassgntoany.p (50, 16): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (50, 18): inferred type:  BaseType(BOOL)
-OUT: seqassgntoany.p (50, 21): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (51, 5): inferred type:  NIL
 OUT: seqassgntoany.p (51, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: seqassgntoany.p (51, 11): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (51, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: seqassgntoany.p (51, 13): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (51, 13): inferred type:  TupType(BaseType(INT), NIL)
 OUT: seqassgntoany.p (54, 5): inferred type:  NIL
 OUT: seqassgntoany.p (54, 5): inferred type:  SeqType(BaseType(INT))
-OUT: seqassgntoany.p (54, 11): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (54, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: seqassgntoany.p (54, 14): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (54, 14): inferred type:  TupType(BaseType(INT), NIL)
 OUT: seqassgntoany.p (55, 11): inferred type:  NIL
-OUT: seqassgntoany.p (55, 11): inferred type:  SeqType(BaseType(INT))
-OUT: seqassgntoany.p (55, 17): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (55, 17): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: seqassgntoany.p (55, 20): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (55, 20): inferred type:  TupType(BaseType(INT), NIL)
 OUT: seqassgntoany.p (57, 11): inferred type:  NIL
-OUT: seqassgntoany.p (57, 11): inferred type:  SeqType(BaseType(INT))
 OUT: seqassgntoany.p (57, 17): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (58, 5): inferred type:  NIL
 OUT: seqassgntoany.p (58, 12): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (58, 19): inferred type:  SeqType(BaseType(INT))
 OUT: seqassgntoany.p (58, 22): inferred type:  BaseType(BOOL)
-OUT: seqassgntoany.p (58, 25): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (60, 11): inferred type:  NIL
-OUT: seqassgntoany.p (60, 11): inferred type:  SeqType(BaseType(INT))
-OUT: seqassgntoany.p (60, 17): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (61, 5): inferred type:  NIL
-OUT: seqassgntoany.p (61, 12): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (61, 19): inferred type:  SeqType(BaseType(INT))
 OUT: seqassgntoany.p (61, 22): inferred type:  BaseType(BOOL)
-OUT: seqassgntoany.p (61, 25): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (64, 5): inferred type:  NIL
-OUT: seqassgntoany.p (64, 5): inferred type:  SeqType(BaseType(INT))
-OUT: seqassgntoany.p (64, 11): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (64, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: seqassgntoany.p (64, 13): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (64, 13): inferred type:  TupType(BaseType(INT), NIL)
 OUT: seqassgntoany.p (65, 5): inferred type:  NIL
-OUT: seqassgntoany.p (65, 5): inferred type:  SeqType(BaseType(INT))
-OUT: seqassgntoany.p (65, 11): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (65, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: seqassgntoany.p (65, 13): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (65, 13): inferred type:  TupType(BaseType(INT), NIL)
 OUT: seqassgntoany.p (66, 5): inferred type:  NIL
-OUT: seqassgntoany.p (66, 13): inferred type:  SeqType(BaseType(INT))
-OUT: seqassgntoany.p (66, 14): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (66, 15): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (66, 18): inferred type:  BaseType(BOOL)
 OUT: seqassgntoany.p (66, 21): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (67, 5): inferred type:  NIL
-OUT: seqassgntoany.p (67, 13): inferred type:  SeqType(BaseType(INT))
 OUT: seqassgntoany.p (67, 14): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (67, 15): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (67, 18): inferred type:  BaseType(BOOL)
 OUT: seqassgntoany.p (67, 21): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (69, 5): inferred type:  NIL
-OUT: seqassgntoany.p (69, 5): inferred type:  SeqType(BaseType(INT))
-OUT: seqassgntoany.p (69, 11): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (70, 5): inferred type:  NIL
-OUT: seqassgntoany.p (70, 13): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (70, 20): inferred type:  SeqType(BaseType(INT))
-OUT: seqassgntoany.p (70, 23): inferred type:  BaseType(BOOL)
-OUT: seqassgntoany.p (70, 26): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (72, 5): inferred type:  NIL
-OUT: seqassgntoany.p (72, 5): inferred type:  SeqType(BaseType(INT))
-OUT: seqassgntoany.p (72, 11): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (72, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: seqassgntoany.p (72, 13): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (72, 13): inferred type:  TupType(BaseType(INT), NIL)
 OUT: seqassgntoany.p (73, 5): inferred type:  NIL
-OUT: seqassgntoany.p (73, 12): inferred type:  SeqType(BaseType(INT))
-OUT: seqassgntoany.p (73, 13): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (73, 14): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (73, 17): inferred type:  BaseType(BOOL)
-OUT: seqassgntoany.p (73, 20): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (74, 5): inferred type:  NIL
-OUT: seqassgntoany.p (74, 5): inferred type:  SeqType(BaseType(INT))
 OUT: seqassgntoany.p (74, 6): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (74, 7): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (74, 12): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (75, 5): inferred type:  NIL
-OUT: seqassgntoany.p (75, 12): inferred type:  SeqType(BaseType(INT))
-OUT: seqassgntoany.p (75, 13): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (75, 14): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (75, 17): inferred type:  BaseType(BOOL)
-OUT: seqassgntoany.p (75, 19): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (76, 5): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (76, 5): inferred type:  NIL
-OUT: seqassgntoany.p (76, 9): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (77, 5): inferred type:  NIL
-OUT: seqassgntoany.p (77, 12): inferred type:  SeqType(BaseType(INT))
 OUT: seqassgntoany.p (77, 13): inferred type:  BaseType(INT)
-OUT: seqassgntoany.p (77, 14): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (77, 17): inferred type:  BaseType(BOOL)
-OUT: seqassgntoany.p (77, 20): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (79, 5): inferred type:  NIL
 OUT: seqassgntoany.p (79, 5): inferred type:  SeqType(BaseType(ANY))
-OUT: seqassgntoany.p (79, 10): inferred type:  SeqType(BaseType(INT))
 OUT: seqassgntoany.p (80, 5): inferred type:  NIL
-OUT: seqassgntoany.p (80, 5): inferred type:  SeqType(BaseType(ANY))
-OUT: seqassgntoany.p (80, 12): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (80, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
 OUT: seqassgntoany.p (80, 14): inferred type:  BaseType(BOOL)
 OUT: seqassgntoany.p (80, 14): inferred type:  TupType(BaseType(BOOL), NIL)
@@ -207,9 +103,7 @@ OUT: seqassgntoany.p (88, 8): inferred type:  NIL
 OUT: seqassgntoany.p (88, 15): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (93, 9): inferred type:  NIL
 OUT: seqassgntoany.p (93, 16): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
-OUT: seqassgntoany.p (98, 8): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (98, 8): inferred type:  NIL
-OUT: seqassgntoany.p (98, 12): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (98, 14): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (98, 16): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (99, 8): inferred type:  NIL
@@ -219,7 +113,6 @@ OUT: seqassgntoany.p (107, 7): inferred type:  SeqType(BaseType(INT))
 OUT: seqassgntoany.p (107, 12): inferred type:  BaseType(ANY)
 OUT: seqassgntoany.p (107, 20): inferred type:  SeqType(BaseType(INT))
 OUT: seqassgntoany.p (108, 4): inferred type:  NIL
-OUT: seqassgntoany.p (108, 11): inferred type:  SeqType(BaseType(INT))
 OUT: seqassgntoany.p (108, 13): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (108, 14): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (108, 17): inferred type:  BaseType(BOOL)

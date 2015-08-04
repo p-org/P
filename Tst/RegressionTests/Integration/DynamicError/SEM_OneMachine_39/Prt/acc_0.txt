@@ -6,6 +6,7 @@ OUT: <StateLog> Machine Real1(1) entered state Real1_Init
 OUT: <RaiseLog> Machine Real1(1) raised event unit with payload null
 OUT: <ActionLog> Machine Real1(1) executed action in state Real1_Init
 OUT: <EnqueueLog> Enqueued event E1 with payload null on Machine Real1(1)
+OUT: <RaiseLog> Machine Real1(1) raised event local with payload null
 OUT: <PushLog> Machine Real1(1) pushed
 OUT: <StateLog> Machine Real1(1) entered state Real1_S1
 OUT: <ActionLog> Machine Real1(1) executed action in state Real1_S1

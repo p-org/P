@@ -14,11 +14,8 @@ OUT: raisednulldetected.p (15, 4): inferred type:  BaseType(EVENT)
 OUT: raisednulldetected.p (15, 4): inferred type:  NIL
 OUT: raisednulldetected.p (15, 10): inferred type:  BaseType(EVENT)
 OUT: raisednulldetected.p (16, 13): inferred type:  NIL
-OUT: raisednulldetected.p (16, 18): inferred type:  BaseType(REAL)
-OUT: raisednulldetected.p (16, 23): inferred type:  BaseType(EVENT)
 OUT: raisednulldetected.p (16, 28): inferred type:  BaseType(BOOL)
 OUT: raisednulldetected.p (17, 4): inferred type:  NIL
-OUT: raisednulldetected.p (17, 10): inferred type:  BaseType(EVENT)
 OUT: raisednulldetected.p (18, 4): inferred type:  NIL
 OUT: raisednulldetected.p (18, 12): inferred type:  BaseType(EVENT)
 OUT: raisednulldetected.p (24, 14): inferred type:  NIL

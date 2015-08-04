@@ -9,7 +9,6 @@ OUT: Compiling Monitors.zing to Monitors.dll ...
 OUT: monitors.p (8, 3): inferred type:  NIL
 OUT: monitors.p (8, 17): inferred type:  BaseType(INT)
 OUT: monitors.p (8, 17): inferred type:  NIL
-OUT: monitors.p (8, 21): inferred type:  BaseType(INT)
 OUT: monitors.p (8, 23): inferred type:  BaseType(INT)
 OUT: monitors.p (8, 25): inferred type:  BaseType(INT)
 OUT: monitors.p (9, 18): inferred type:  NIL
@@ -19,7 +18,6 @@ OUT: monitors.p (9, 30): inferred type:  BaseType(INT)
 OUT: monitors.p (16, 4): inferred type:  NIL
 OUT: monitors.p (17, 4): inferred type:  NIL
 OUT: monitors.p (17, 9): inferred type:  BaseType(REAL)
-OUT: monitors.p (17, 15): inferred type:  BaseType(EVENT)
 OUT: monitors.p (18, 4): inferred type:  NIL
 OUT: monitors.p (18, 12): inferred type:  BaseType(EVENT)
 OUT: monitors.p (19, 4): inferred type:  NIL

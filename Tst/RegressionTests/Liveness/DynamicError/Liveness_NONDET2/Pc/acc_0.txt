@@ -17,7 +17,6 @@ OUT: liveness_nondet.p (26, 13): inferred type:  BaseType(EVENT)
 OUT: liveness_nondet.p (27, 5): inferred type:  NIL
 OUT: liveness_nondet.p (27, 9): inferred type:  BaseType(BOOL)
 OUT: liveness_nondet.p (28, 6): inferred type:  NIL
-OUT: liveness_nondet.p (28, 11): inferred type:  BaseType(REAL)
 OUT: liveness_nondet.p (28, 17): inferred type:  BaseType(EVENT)
 OUT: liveness_nondet.p (31, 6): inferred type:  NIL
 OUT: liveness_nondet.p (31, 11): inferred type:  BaseType(REAL)

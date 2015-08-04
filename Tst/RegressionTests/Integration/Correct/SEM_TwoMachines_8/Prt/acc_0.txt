@@ -24,8 +24,7 @@ OUT: <ExitLog> Machine PING(1) exiting state Ping_WaitPong
 OUT: <StateLog> Machine PING(1) entered state Ping_SendPing
 OUT: <EnqueueLog> Enqueued event halt with payload null on Machine PONG(2)
 OUT: <DequeueLog> Dequeued event halt with payload null by Machine PONG(2)
-OUT: <ActionLog> Machine PONG(2) executed action in state Pong_WaitPing
-OUT: <PushLog> Machine PONG(2) pushed
+OUT: <ExitLog> Machine PONG(2) exiting state Pong_WaitPing
 OUT: <StateLog> Machine PONG(2) entered state Pong_Halt
 OUT: <EnqueueLog> Enqueued event PingIgnored with payload null on Machine PONG(2)
 OUT: <DequeueLog> Dequeued event PingIgnored with payload null by Machine PONG(2)

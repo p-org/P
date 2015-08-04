@@ -11,7 +11,6 @@ OUT: actions_1.p (13, 4): inferred type:  NIL
 OUT: actions_1.p (13, 20): inferred type:  BaseType(REAL)
 OUT: actions_1.p (13, 30): inferred type:  BaseType(REAL)
 OUT: actions_1.p (14, 13): inferred type:  NIL
-OUT: actions_1.p (14, 18): inferred type:  BaseType(REAL)
 OUT: actions_1.p (14, 33): inferred type:  BaseType(EVENT)
 OUT: actions_1.p (20, 6): inferred type:  BaseType(BOOL)
 OUT: actions_1.p (20, 6): inferred type:  NIL
@@ -32,7 +31,6 @@ OUT: actions_1.p (51, 8): inferred type:  NIL
 OUT: actions_1.p (51, 23): inferred type:  BaseType(ANY)
 OUT: actions_1.p (51, 31): inferred type:  BaseType(REAL)
 OUT: actions_1.p (58, 4): inferred type:  NIL
-OUT: actions_1.p (58, 9): inferred type:  BaseType(REAL)
 OUT: actions_1.p (58, 23): inferred type:  BaseType(EVENT)
 OUT: actions_1.p (59, 4): inferred type:  NIL
 OUT: actions_1.p (59, 9): inferred type:  BaseType(REAL)

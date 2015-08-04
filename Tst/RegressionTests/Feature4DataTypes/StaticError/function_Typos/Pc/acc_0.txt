@@ -12,12 +12,7 @@ OUT: function_typos.p (20, 26): inferred type:  BaseType(INT)
 OUT: function_typos.p (20, 29): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NIL)
 OUT: function_typos.p (20, 33): inferred type:  BaseType(INT)
 OUT: function_typos.p (21, 4): inferred type:  ERROR
-OUT: function_typos.p (21, 9): inferred type:  BaseType(REAL)
 OUT: function_typos.p (21, 15): inferred type:  BaseType(EVENT)
-OUT: function_typos.p (21, 19): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("a", BaseType(INT)), NIL))
-OUT: function_typos.p (21, 23): inferred type:  BaseType(INT)
-OUT: function_typos.p (21, 26): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NIL)
-OUT: function_typos.p (21, 30): inferred type:  BaseType(INT)
 OUT: function_typos.p (2, 17): same name appears more than once in name tuple or named tuple type
 OUT: function_typos.p (2, 25): same name appears more than once in name tuple or named tuple type
 OUT: function_typos.p (2, 33): same name appears more than once in name tuple or named tuple type

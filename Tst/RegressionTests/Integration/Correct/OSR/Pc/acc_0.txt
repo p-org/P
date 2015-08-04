@@ -45,7 +45,6 @@ OUT: osr.p (80, 45): inferred type:  BaseType(EVENT)
 OUT: osr.p (94, 4): inferred type:  NIL
 OUT: osr.p (94, 7): inferred type:  BaseType(BOOL)
 OUT: osr.p (96, 5): inferred type:  NIL
-OUT: osr.p (96, 10): inferred type:  BaseType(REAL)
 OUT: osr.p (96, 18): inferred type:  BaseType(EVENT)
 OUT: osr.p (99, 5): inferred type:  NIL
 OUT: osr.p (99, 10): inferred type:  BaseType(REAL)
@@ -79,10 +78,8 @@ OUT: osr.p (156, 10): inferred type:  BaseType(EVENT)
 OUT: osr.p (165, 4): inferred type:  NIL
 OUT: osr.p (165, 7): inferred type:  BaseType(BOOL)
 OUT: osr.p (167, 5): inferred type:  NIL
-OUT: osr.p (167, 10): inferred type:  BaseType(REAL)
 OUT: osr.p (167, 18): inferred type:  BaseType(EVENT)
 OUT: osr.p (168, 5): inferred type:  NIL
-OUT: osr.p (168, 10): inferred type:  BaseType(REAL)
 OUT: osr.p (168, 18): inferred type:  BaseType(EVENT)
 OUT: osr.p (172, 5): inferred type:  NIL
 OUT: osr.p (172, 10): inferred type:  BaseType(REAL)
@@ -97,13 +94,14 @@ OUT: osr.p (192, 23): inferred type:  BaseType(REAL)
 OUT: osr.p (193, 4): inferred type:  BaseType(REAL)
 OUT: osr.p (193, 4): inferred type:  NIL
 OUT: osr.p (193, 11): inferred type:  BaseType(REAL)
-OUT: osr.p (193, 19): inferred type:  BaseType(REAL)
 OUT: osr.p (194, 4): inferred type:  BaseType(REAL)
 OUT: osr.p (194, 4): inferred type:  NIL
 OUT: osr.p (194, 14): inferred type:  BaseType(REAL)
-OUT: osr.p (194, 25): inferred type:  BaseType(REAL)
 OUT: osr.p (195, 4): inferred type:  NIL
 OUT: osr.p (195, 10): inferred type:  BaseType(EVENT)
+OUT: osr.p (213, 4): inferred type:  NIL
+OUT: osr.p (214, 4): inferred type:  NIL
+OUT: osr.p (214, 10): inferred type:  BaseType(EVENT)
 OUT: osr.p (220, 39): inferred type:  NIL
 OUT: osr.p (233, 4): inferred type:  NIL
 OUT: osr.p (234, 4): inferred type:  NIL
@@ -128,9 +126,7 @@ OUT: osr.p (262, 3): inferred type:  NIL
 OUT: osr.p (262, 8): inferred type:  BaseType(REAL)
 OUT: osr.p (262, 16): inferred type:  BaseType(EVENT)
 OUT: osr.p (268, 4): inferred type:  NIL
-OUT: osr.p (269, 4): inferred type:  BaseType(BOOL)
 OUT: osr.p (269, 4): inferred type:  NIL
-OUT: osr.p (269, 12): inferred type:  BaseType(BOOL)
 OUT: osr.p (270, 4): inferred type:  NIL
 OUT: osr.p (270, 7): inferred type:  BaseType(BOOL)
 OUT: osr.p (271, 5): inferred type:  NIL

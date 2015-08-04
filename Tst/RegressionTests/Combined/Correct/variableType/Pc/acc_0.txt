@@ -8,7 +8,6 @@ OUT: Writing variableType.zing ...
 OUT: Compiling variableType.zing to variableType.dll ...
 OUT: variabletype.p (6, 4): inferred type:  BaseType(INT)
 OUT: variabletype.p (6, 4): inferred type:  NIL
-OUT: variabletype.p (6, 8): inferred type:  BaseType(INT)
 OUT: variabletype.p (6, 10): inferred type:  BaseType(INT)
 OUT: variabletype.p (6, 12): inferred type:  BaseType(INT)
 OUT: variabletype.p (11, 3): inferred type:  NIL

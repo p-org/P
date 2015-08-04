@@ -1,6 +1,6 @@
 // Combined tests: "Control Impure" static errors
 // Cases covered:
-// "push", "pop" and "raise" in expressions in functions
+// "pop" and "raise" in expressions in functions
 
 event E;
 event unit;
@@ -21,7 +21,7 @@ main machine Program {
             else
 			    {
 					i = i + Action1() +   //error
-							Action2() -   //error
+							Action2() -
 							Action3();    //error
 			    }
 			     raise E; 
@@ -32,7 +32,7 @@ main machine Program {
 		return 1;
     }
 	fun Action2() : int {
-		push Init;
+
 		return 1;
     }
 	fun Action3() : int {

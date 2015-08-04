@@ -1,5 +1,5 @@
-// This sample tests the deferred-by-default semantics of push statement
-// and inheritance of actions by push statement; new in this sample: pop statement
+
+
 
 event E1 assert 1;
 event E2 assert 1;

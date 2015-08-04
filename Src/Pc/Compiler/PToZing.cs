@@ -2638,7 +2638,7 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    processOutput = MkZingAssign(outputVarInfo.node, MkZingDot("entryCtxt", "retVal"));
+                    processOutput = MkZingAssignWithClone(outputVarInfo.node, MkZingDot("entryCtxt", "retVal"));
                 }
             }
             else

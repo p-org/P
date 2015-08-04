@@ -165,8 +165,8 @@ machine Coordinator {
 				send replicas[sizeof(replicas) - 1], READ_REQ_REPLICA, key;
 			receive 
 			{
-				case REP_READ_FAIL : ReturnResult;
-				case REP_READ_SUCCESS : ReturnResult;
+				case REP_READ_FAIL : { ReturnResult(); }
+				case REP_READ_SUCCESS : { ReturnResult(); }
 			}
 			if(readResult.0)
 				raise(READ_FAIL);

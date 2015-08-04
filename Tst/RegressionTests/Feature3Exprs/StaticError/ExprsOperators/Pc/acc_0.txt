@@ -2,863 +2,374 @@
          Console output          
 =================================
 OUT: exproperators.p (56, 5): inferred type:  NIL
-OUT: exproperators.p (56, 5): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
 OUT: exproperators.p (56, 11): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (56, 15): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (57, 5): inferred type:  NIL
-OUT: exproperators.p (57, 5): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
 OUT: exproperators.p (57, 11): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (57, 15): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (57, 16): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (57, 22): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (58, 5): inferred type:  NIL
-OUT: exproperators.p (58, 12): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (58, 18): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (58, 20): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (58, 23): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (59, 5): inferred type:  NIL
-OUT: exproperators.p (59, 12): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (59, 18): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (59, 20): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (59, 23): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (59, 29): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (59, 31): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (59, 34): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (60, 5): inferred type:  NIL
-OUT: exproperators.p (60, 12): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (60, 18): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (60, 20): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (60, 23): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (60, 29): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (60, 31): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (60, 34): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (61, 5): inferred type:  NIL
-OUT: exproperators.p (61, 12): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (61, 18): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (61, 20): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (61, 23): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (61, 29): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (62, 5): inferred type:  ERROR
 OUT: exproperators.p (62, 5): inferred type:  NIL
-OUT: exproperators.p (62, 12): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (62, 18): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (62, 20): inferred type:  ERROR
-OUT: exproperators.p (62, 22): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (62, 28): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (62, 30): inferred type:  ERROR
-OUT: exproperators.p (62, 33): inferred type:  BaseType(INT)
 OUT: exproperators.p (63, 5): inferred type:  ERROR
 OUT: exproperators.p (63, 5): inferred type:  NIL
-OUT: exproperators.p (63, 5): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (63, 11): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (63, 15): inferred type:  ERROR
 OUT: exproperators.p (63, 16): inferred type:  BaseType(INT)
 OUT: exproperators.p (64, 5): inferred type:  ERROR
 OUT: exproperators.p (64, 5): inferred type:  NIL
-OUT: exproperators.p (64, 12): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (64, 18): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (64, 20): inferred type:  ERROR
-OUT: exproperators.p (64, 22): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (64, 28): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (65, 5): inferred type:  ERROR
 OUT: exproperators.p (65, 5): inferred type:  NIL
-OUT: exproperators.p (65, 12): inferred type:  BaseType(INT)
 OUT: exproperators.p (65, 14): inferred type:  ERROR
-OUT: exproperators.p (65, 16): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (65, 22): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (66, 5): inferred type:  ERROR
 OUT: exproperators.p (66, 5): inferred type:  NIL
-OUT: exproperators.p (66, 12): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (66, 18): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (66, 20): inferred type:  ERROR
-OUT: exproperators.p (66, 23): inferred type:  BaseType(INT)
 OUT: exproperators.p (66, 25): inferred type:  ERROR
-OUT: exproperators.p (66, 28): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (67, 5): inferred type:  ERROR
 OUT: exproperators.p (67, 5): inferred type:  NIL
 OUT: exproperators.p (67, 12): inferred type:  BaseType(INT)
 OUT: exproperators.p (67, 14): inferred type:  ERROR
-OUT: exproperators.p (67, 17): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (67, 23): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (67, 25): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (67, 28): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (68, 5): inferred type:  BaseType(EVENT)
 OUT: exproperators.p (68, 5): inferred type:  NIL
 OUT: exproperators.p (68, 10): inferred type:  BaseType(EVENT)
 OUT: exproperators.p (69, 5): inferred type:  ERROR
 OUT: exproperators.p (69, 5): inferred type:  NIL
-OUT: exproperators.p (69, 12): inferred type:  BaseType(EVENT)
 OUT: exproperators.p (69, 15): inferred type:  ERROR
-OUT: exproperators.p (69, 18): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (69, 24): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (71, 5): inferred type:  NIL
 OUT: exproperators.p (71, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: exproperators.p (71, 8): inferred type:  BaseType(INT)
 OUT: exproperators.p (71, 12): inferred type:  BaseType(INT)
 OUT: exproperators.p (72, 5): inferred type:  NIL
-OUT: exproperators.p (72, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: exproperators.p (72, 8): inferred type:  BaseType(INT)
 OUT: exproperators.p (72, 12): inferred type:  BaseType(INT)
-OUT: exproperators.p (72, 14): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (72, 17): inferred type:  BaseType(INT)
 OUT: exproperators.p (73, 5): inferred type:  NIL
-OUT: exproperators.p (73, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (73, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (73, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (73, 19): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (73, 22): inferred type:  BaseType(INT)
 OUT: exproperators.p (73, 24): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (73, 27): inferred type:  BaseType(INT)
 OUT: exproperators.p (74, 5): inferred type:  NIL
-OUT: exproperators.p (74, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (74, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (74, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (74, 19): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (74, 22): inferred type:  BaseType(INT)
 OUT: exproperators.p (74, 24): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (74, 27): inferred type:  BaseType(INT)
 OUT: exproperators.p (75, 5): inferred type:  NIL
-OUT: exproperators.p (75, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (75, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (75, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (75, 19): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (75, 22): inferred type:  BaseType(INT)
 OUT: exproperators.p (75, 24): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (75, 27): inferred type:  BaseType(INT)
-OUT: exproperators.p (75, 28): inferred type:  BaseType(INT)
 OUT: exproperators.p (76, 5): inferred type:  NIL
-OUT: exproperators.p (76, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (76, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (76, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (76, 19): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (76, 22): inferred type:  BaseType(INT)
 OUT: exproperators.p (76, 24): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (76, 27): inferred type:  BaseType(INT)
-OUT: exproperators.p (76, 28): inferred type:  BaseType(INT)
 OUT: exproperators.p (77, 5): inferred type:  NIL
-OUT: exproperators.p (77, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (77, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (77, 17): inferred type:  BaseType(INT)
 OUT: exproperators.p (77, 19): inferred type:  BaseType(INT)
 OUT: exproperators.p (77, 21): inferred type:  BaseType(INT)
-OUT: exproperators.p (77, 23): inferred type:  BaseType(INT)
 OUT: exproperators.p (77, 25): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (77, 28): inferred type:  BaseType(INT)
 OUT: exproperators.p (78, 5): inferred type:  NIL
-OUT: exproperators.p (78, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (78, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (78, 17): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (78, 20): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (78, 23): inferred type:  BaseType(INT)
 OUT: exproperators.p (80, 5): inferred type:  ERROR
 OUT: exproperators.p (80, 5): inferred type:  NIL
-OUT: exproperators.p (80, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (80, 8): inferred type:  BaseType(INT)
-OUT: exproperators.p (80, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (80, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (80, 17): inferred type:  ERROR
-OUT: exproperators.p (80, 19): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (80, 25): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (81, 5): inferred type:  ERROR
 OUT: exproperators.p (81, 5): inferred type:  NIL
-OUT: exproperators.p (81, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (81, 8): inferred type:  BaseType(INT)
-OUT: exproperators.p (81, 12): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (81, 18): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (81, 20): inferred type:  ERROR
-OUT: exproperators.p (81, 22): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (81, 25): inferred type:  BaseType(INT)
 OUT: exproperators.p (82, 5): inferred type:  ERROR
 OUT: exproperators.p (82, 5): inferred type:  NIL
-OUT: exproperators.p (82, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (82, 8): inferred type:  BaseType(INT)
-OUT: exproperators.p (82, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (82, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (82, 17): inferred type:  ERROR
-OUT: exproperators.p (82, 19): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (82, 25): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (83, 5): inferred type:  ERROR
 OUT: exproperators.p (83, 5): inferred type:  NIL
-OUT: exproperators.p (83, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (83, 8): inferred type:  BaseType(INT)
-OUT: exproperators.p (83, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (83, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (83, 17): inferred type:  ERROR
-OUT: exproperators.p (83, 19): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (83, 25): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (85, 5): inferred type:  ERROR
 OUT: exproperators.p (85, 5): inferred type:  NIL
-OUT: exproperators.p (85, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (85, 16): inferred type:  BaseType(INT)
 OUT: exproperators.p (85, 18): inferred type:  ERROR
-OUT: exproperators.p (85, 20): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (85, 26): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (86, 5): inferred type:  ERROR
 OUT: exproperators.p (86, 5): inferred type:  NIL
-OUT: exproperators.p (86, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (86, 16): inferred type:  BaseType(INT)
 OUT: exproperators.p (86, 18): inferred type:  ERROR
-OUT: exproperators.p (86, 21): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (86, 27): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (87, 5): inferred type:  ERROR
 OUT: exproperators.p (87, 5): inferred type:  NIL
-OUT: exproperators.p (87, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (87, 16): inferred type:  BaseType(INT)
 OUT: exproperators.p (87, 18): inferred type:  ERROR
-OUT: exproperators.p (87, 20): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (87, 26): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (88, 5): inferred type:  ERROR
 OUT: exproperators.p (88, 5): inferred type:  NIL
-OUT: exproperators.p (88, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (88, 16): inferred type:  BaseType(INT)
 OUT: exproperators.p (88, 18): inferred type:  ERROR
-OUT: exproperators.p (88, 21): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (88, 27): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (90, 5): inferred type:  ERROR
 OUT: exproperators.p (90, 5): inferred type:  NIL
-OUT: exproperators.p (90, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (90, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (90, 17): inferred type:  ERROR
-OUT: exproperators.p (90, 20): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (90, 26): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (91, 5): inferred type:  ERROR
 OUT: exproperators.p (91, 5): inferred type:  NIL
-OUT: exproperators.p (91, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (91, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (91, 17): inferred type:  ERROR
-OUT: exproperators.p (91, 20): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (91, 26): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (92, 5): inferred type:  ERROR
 OUT: exproperators.p (92, 5): inferred type:  NIL
-OUT: exproperators.p (92, 12): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (92, 18): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (92, 20): inferred type:  ERROR
-OUT: exproperators.p (92, 23): inferred type:  BaseType(EVENT)
 OUT: exproperators.p (94, 5): inferred type:  ERROR
 OUT: exproperators.p (94, 5): inferred type:  NIL
-OUT: exproperators.p (94, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (94, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (94, 17): inferred type:  ERROR
-OUT: exproperators.p (94, 19): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (94, 25): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (95, 5): inferred type:  ERROR
 OUT: exproperators.p (95, 5): inferred type:  NIL
-OUT: exproperators.p (95, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (95, 8): inferred type:  BaseType(INT)
 OUT: exproperators.p (95, 12): inferred type:  ERROR
-OUT: exproperators.p (95, 14): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (95, 20): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (96, 5): inferred type:  ERROR
 OUT: exproperators.p (96, 5): inferred type:  NIL
-OUT: exproperators.p (96, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (96, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (96, 17): inferred type:  ERROR
-OUT: exproperators.p (96, 20): inferred type:  BaseType(EVENT)
 OUT: exproperators.p (98, 5): inferred type:  ERROR
 OUT: exproperators.p (98, 5): inferred type:  NIL
-OUT: exproperators.p (98, 5): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (98, 11): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (98, 15): inferred type:  ERROR
-OUT: exproperators.p (98, 16): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (98, 19): inferred type:  BaseType(INT)
 OUT: exproperators.p (99, 5): inferred type:  ERROR
 OUT: exproperators.p (99, 5): inferred type:  NIL
-OUT: exproperators.p (99, 5): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (99, 11): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (99, 15): inferred type:  ERROR
-OUT: exproperators.p (99, 16): inferred type:  BaseType(EVENT)
-OUT: exproperators.p (100, 5): inferred type:  ERROR
-OUT: exproperators.p (100, 5): inferred type:  NIL
-OUT: exproperators.p (100, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (100, 8): inferred type:  BaseType(INT)
-OUT: exproperators.p (100, 12): inferred type:  ERROR
-OUT: exproperators.p (100, 13): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (100, 19): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (101, 5): inferred type:  ERROR
 OUT: exproperators.p (101, 5): inferred type:  NIL
-OUT: exproperators.p (101, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (101, 8): inferred type:  BaseType(INT)
 OUT: exproperators.p (101, 12): inferred type:  ERROR
-OUT: exproperators.p (101, 13): inferred type:  BaseType(EVENT)
-OUT: exproperators.p (103, 5): inferred type:  ERROR
-OUT: exproperators.p (103, 5): inferred type:  NIL
-OUT: exproperators.p (103, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (103, 16): inferred type:  BaseType(INT)
-OUT: exproperators.p (103, 18): inferred type:  ERROR
-OUT: exproperators.p (103, 21): inferred type:  BaseType(EVENT)
 OUT: exproperators.p (104, 5): inferred type:  NIL
-OUT: exproperators.p (104, 13): inferred type:  BaseType(EVENT)
 OUT: exproperators.p (104, 16): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (104, 19): inferred type:  BaseType(ANY)
 OUT: exproperators.p (106, 5): inferred type:  ERROR
 OUT: exproperators.p (106, 5): inferred type:  NIL
-OUT: exproperators.p (106, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (106, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (106, 17): inferred type:  ERROR
 OUT: exproperators.p (106, 20): inferred type:  ERROR
-OUT: exproperators.p (106, 21): inferred type:  BaseType(ANY)
 OUT: exproperators.p (107, 5): inferred type:  ERROR
 OUT: exproperators.p (107, 5): inferred type:  NIL
-OUT: exproperators.p (107, 12): inferred type:  BaseType(ANY)
 OUT: exproperators.p (107, 14): inferred type:  ERROR
-OUT: exproperators.p (107, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (107, 18): inferred type:  BaseType(INT)
 OUT: exproperators.p (107, 21): inferred type:  ERROR
-OUT: exproperators.p (107, 24): inferred type:  BaseType(INT)
-OUT: exproperators.p (107, 25): inferred type:  BaseType(INT)
 OUT: exproperators.p (108, 5): inferred type:  ERROR
 OUT: exproperators.p (108, 5): inferred type:  NIL
-OUT: exproperators.p (108, 12): inferred type:  BaseType(ANY)
 OUT: exproperators.p (108, 14): inferred type:  ERROR
-OUT: exproperators.p (108, 16): inferred type:  BaseType(INT)
 OUT: exproperators.p (108, 18): inferred type:  ERROR
-OUT: exproperators.p (108, 21): inferred type:  BaseType(ANY)
 OUT: exproperators.p (110, 5): inferred type:  ERROR
 OUT: exproperators.p (110, 5): inferred type:  NIL
-OUT: exproperators.p (110, 12): inferred type:  BaseType(ANY)
 OUT: exproperators.p (110, 14): inferred type:  ERROR
-OUT: exproperators.p (110, 16): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (110, 19): inferred type:  BaseType(INT)
 OUT: exproperators.p (111, 5): inferred type:  ERROR
 OUT: exproperators.p (111, 5): inferred type:  NIL
-OUT: exproperators.p (111, 12): inferred type:  BaseType(ANY)
 OUT: exproperators.p (111, 14): inferred type:  ERROR
-OUT: exproperators.p (111, 17): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (111, 20): inferred type:  BaseType(INT)
 OUT: exproperators.p (113, 5): inferred type:  BaseType(ANY)
 OUT: exproperators.p (113, 5): inferred type:  NIL
-OUT: exproperators.p (113, 9): inferred type:  BaseType(INT)
 OUT: exproperators.p (115, 5): inferred type:  NIL
-OUT: exproperators.p (115, 13): inferred type:  BaseType(EVENT)
-OUT: exproperators.p (115, 16): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (115, 19): inferred type:  BaseType(ANY)
-OUT: exproperators.p (117, 5): inferred type:  ERROR
-OUT: exproperators.p (117, 5): inferred type:  NIL
-OUT: exproperators.p (117, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (117, 15): inferred type:  BaseType(INT)
-OUT: exproperators.p (117, 17): inferred type:  ERROR
-OUT: exproperators.p (117, 20): inferred type:  ERROR
-OUT: exproperators.p (117, 21): inferred type:  BaseType(ANY)
-OUT: exproperators.p (118, 5): inferred type:  ERROR
-OUT: exproperators.p (118, 5): inferred type:  NIL
-OUT: exproperators.p (118, 12): inferred type:  BaseType(ANY)
-OUT: exproperators.p (118, 14): inferred type:  ERROR
-OUT: exproperators.p (118, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (118, 18): inferred type:  BaseType(INT)
-OUT: exproperators.p (118, 21): inferred type:  ERROR
-OUT: exproperators.p (118, 24): inferred type:  BaseType(INT)
-OUT: exproperators.p (118, 25): inferred type:  BaseType(INT)
-OUT: exproperators.p (119, 5): inferred type:  ERROR
-OUT: exproperators.p (119, 5): inferred type:  NIL
-OUT: exproperators.p (119, 12): inferred type:  BaseType(ANY)
-OUT: exproperators.p (119, 14): inferred type:  ERROR
-OUT: exproperators.p (119, 16): inferred type:  BaseType(INT)
-OUT: exproperators.p (119, 18): inferred type:  ERROR
-OUT: exproperators.p (119, 21): inferred type:  BaseType(ANY)
-OUT: exproperators.p (121, 5): inferred type:  ERROR
-OUT: exproperators.p (121, 5): inferred type:  NIL
-OUT: exproperators.p (121, 12): inferred type:  BaseType(ANY)
-OUT: exproperators.p (121, 14): inferred type:  ERROR
-OUT: exproperators.p (121, 16): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (121, 19): inferred type:  BaseType(INT)
-OUT: exproperators.p (122, 5): inferred type:  ERROR
-OUT: exproperators.p (122, 5): inferred type:  NIL
-OUT: exproperators.p (122, 12): inferred type:  BaseType(ANY)
-OUT: exproperators.p (122, 14): inferred type:  ERROR
-OUT: exproperators.p (122, 17): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (122, 20): inferred type:  BaseType(INT)
-OUT: exproperators.p (124, 5): inferred type:  BaseType(ANY)
 OUT: exproperators.p (124, 5): inferred type:  NIL
 OUT: exproperators.p (124, 9): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (125, 5): inferred type:  ERROR
 OUT: exproperators.p (125, 5): inferred type:  NIL
-OUT: exproperators.p (125, 12): inferred type:  BaseType(ANY)
 OUT: exproperators.p (125, 14): inferred type:  ERROR
-OUT: exproperators.p (125, 17): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (125, 23): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (125, 25): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (125, 28): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (129, 5): inferred type:  NIL
 OUT: exproperators.p (129, 5): inferred type:  SeqType(BaseType(BOOL))
-OUT: exproperators.p (129, 13): inferred type:  BaseType(INT)
 OUT: exproperators.p (129, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (129, 15): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (129, 15): inferred type:  TupType(BaseType(BOOL), NIL)
 OUT: exproperators.p (130, 5): inferred type:  NIL
-OUT: exproperators.p (130, 5): inferred type:  SeqType(BaseType(BOOL))
-OUT: exproperators.p (130, 13): inferred type:  BaseType(INT)
 OUT: exproperators.p (130, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
 OUT: exproperators.p (130, 16): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (130, 16): inferred type:  TupType(BaseType(BOOL), NIL)
-OUT: exproperators.p (130, 17): inferred type:  SeqType(BaseType(BOOL))
 OUT: exproperators.p (130, 20): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (130, 21): inferred type:  BaseType(INT)
 OUT: exproperators.p (131, 5): inferred type:  NIL
-OUT: exproperators.p (131, 12): inferred type:  SeqType(BaseType(BOOL))
 OUT: exproperators.p (131, 15): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (131, 16): inferred type:  BaseType(INT)
 OUT: exproperators.p (131, 19): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (131, 22): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (132, 5): inferred type:  ERROR
 OUT: exproperators.p (132, 5): inferred type:  NIL
-OUT: exproperators.p (132, 5): inferred type:  SeqType(BaseType(BOOL))
-OUT: exproperators.p (132, 13): inferred type:  BaseType(INT)
 OUT: exproperators.p (132, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
-OUT: exproperators.p (132, 16): inferred type:  BaseType(EVENT)
 OUT: exproperators.p (132, 16): inferred type:  TupType(BaseType(EVENT), NIL)
 OUT: exproperators.p (134, 5): inferred type:  NIL
 OUT: exproperators.p (134, 5): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (134, 12): inferred type:  BaseType(INT)
 OUT: exproperators.p (134, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (134, 14): inferred type:  BaseType(INT)
 OUT: exproperators.p (134, 14): inferred type:  TupType(BaseType(INT), NIL)
 OUT: exproperators.p (135, 5): inferred type:  NIL
-OUT: exproperators.p (135, 5): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (135, 12): inferred type:  BaseType(INT)
 OUT: exproperators.p (135, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: exproperators.p (135, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (135, 15): inferred type:  TupType(BaseType(INT), NIL)
-OUT: exproperators.p (135, 17): inferred type:  SeqType(BaseType(INT))
 OUT: exproperators.p (135, 19): inferred type:  BaseType(INT)
-OUT: exproperators.p (135, 20): inferred type:  BaseType(INT)
 OUT: exproperators.p (136, 5): inferred type:  NIL
-OUT: exproperators.p (136, 12): inferred type:  SeqType(BaseType(INT))
 OUT: exproperators.p (136, 14): inferred type:  BaseType(INT)
-OUT: exproperators.p (136, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (136, 18): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (136, 21): inferred type:  BaseType(INT)
-OUT: exproperators.p (136, 22): inferred type:  BaseType(INT)
 OUT: exproperators.p (138, 5): inferred type:  ERROR
 OUT: exproperators.p (138, 5): inferred type:  NIL
 OUT: exproperators.p (138, 5): inferred type:  SeqType(BaseType(BOOL))
-OUT: exproperators.p (138, 12): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (138, 12): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (138, 18): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (138, 18): inferred type:  TupType(BaseType(BOOL), NIL)
-OUT: exproperators.p (141, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: exproperators.p (141, 5): inferred type:  NIL
 OUT: exproperators.p (141, 7): inferred type:  BaseType(INT)
-OUT: exproperators.p (141, 8): inferred type:  BaseType(INT)
-OUT: exproperators.p (141, 13): inferred type:  BaseType(INT)
 OUT: exproperators.p (142, 5): inferred type:  NIL
-OUT: exproperators.p (142, 13): inferred type:  BaseType(INT)
 OUT: exproperators.p (142, 15): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (142, 18): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: exproperators.p (143, 5): inferred type:  BaseType(INT)
 OUT: exproperators.p (143, 5): inferred type:  NIL
 OUT: exproperators.p (143, 9): inferred type:  SeqType(BaseType(INT))
 OUT: exproperators.p (143, 14): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: exproperators.p (143, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (143, 18): inferred type:  BaseType(INT)
 OUT: exproperators.p (144, 5): inferred type:  NIL
-OUT: exproperators.p (144, 12): inferred type:  BaseType(INT)
 OUT: exproperators.p (144, 14): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (144, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (146, 5): inferred type:  BaseType(INT)
 OUT: exproperators.p (146, 5): inferred type:  ERROR
 OUT: exproperators.p (146, 5): inferred type:  NIL
 OUT: exproperators.p (146, 9): inferred type:  ERROR
 OUT: exproperators.p (146, 14): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
 OUT: exproperators.p (146, 20): inferred type:  ERROR
-OUT: exproperators.p (146, 21): inferred type:  BaseType(INT)
-OUT: exproperators.p (147, 5): inferred type:  BaseType(INT)
 OUT: exproperators.p (147, 5): inferred type:  ERROR
 OUT: exproperators.p (147, 5): inferred type:  NIL
 OUT: exproperators.p (147, 9): inferred type:  ERROR
-OUT: exproperators.p (147, 16): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
 OUT: exproperators.p (147, 22): inferred type:  ERROR
-OUT: exproperators.p (147, 23): inferred type:  BaseType(INT)
-OUT: exproperators.p (148, 5): inferred type:  BaseType(INT)
 OUT: exproperators.p (148, 5): inferred type:  ERROR
 OUT: exproperators.p (148, 5): inferred type:  NIL
 OUT: exproperators.p (148, 9): inferred type:  ERROR
-OUT: exproperators.p (148, 16): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(BOOL), NIL))
-OUT: exproperators.p (150, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: exproperators.p (150, 5): inferred type:  NIL
 OUT: exproperators.p (150, 7): inferred type:  BaseType(INT)
-OUT: exproperators.p (150, 8): inferred type:  BaseType(INT)
 OUT: exproperators.p (150, 13): inferred type:  BaseType(INT)
-OUT: exproperators.p (151, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: exproperators.p (151, 5): inferred type:  NIL
 OUT: exproperators.p (151, 7): inferred type:  BaseType(INT)
-OUT: exproperators.p (151, 8): inferred type:  BaseType(INT)
 OUT: exproperators.p (151, 13): inferred type:  BaseType(INT)
-OUT: exproperators.p (151, 15): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: exproperators.p (151, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (151, 18): inferred type:  BaseType(INT)
 OUT: exproperators.p (152, 5): inferred type:  NIL
-OUT: exproperators.p (152, 12): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: exproperators.p (152, 14): inferred type:  BaseType(INT)
-OUT: exproperators.p (152, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (152, 18): inferred type:  BaseType(INT)
-OUT: exproperators.p (152, 20): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: exproperators.p (152, 22): inferred type:  BaseType(INT)
-OUT: exproperators.p (152, 23): inferred type:  BaseType(INT)
 OUT: exproperators.p (152, 26): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (152, 29): inferred type:  BaseType(INT)
 OUT: exproperators.p (154, 5): inferred type:  NIL
-OUT: exproperators.p (154, 12): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: exproperators.p (154, 14): inferred type:  BaseType(INT)
-OUT: exproperators.p (154, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (154, 18): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (154, 20): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: exproperators.p (154, 22): inferred type:  BaseType(INT)
-OUT: exproperators.p (154, 23): inferred type:  BaseType(INT)
-OUT: exproperators.p (155, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: exproperators.p (155, 5): inferred type:  NIL
-OUT: exproperators.p (155, 7): inferred type:  BaseType(INT)
-OUT: exproperators.p (155, 8): inferred type:  BaseType(INT)
-OUT: exproperators.p (155, 13): inferred type:  BaseType(INT)
 OUT: exproperators.p (156, 5): inferred type:  NIL
-OUT: exproperators.p (156, 12): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: exproperators.p (156, 14): inferred type:  BaseType(INT)
-OUT: exproperators.p (156, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (156, 18): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (156, 21): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: exproperators.p (156, 23): inferred type:  BaseType(INT)
-OUT: exproperators.p (156, 24): inferred type:  BaseType(INT)
 OUT: exproperators.p (157, 5): inferred type:  NIL
-OUT: exproperators.p (157, 12): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: exproperators.p (157, 14): inferred type:  BaseType(INT)
-OUT: exproperators.p (157, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (157, 18): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (157, 20): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: exproperators.p (157, 22): inferred type:  BaseType(INT)
-OUT: exproperators.p (157, 23): inferred type:  BaseType(INT)
-OUT: exproperators.p (158, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: exproperators.p (158, 5): inferred type:  NIL
 OUT: exproperators.p (158, 7): inferred type:  BaseType(INT)
 OUT: exproperators.p (158, 8): inferred type:  BaseType(INT)
-OUT: exproperators.p (158, 13): inferred type:  BaseType(INT)
 OUT: exproperators.p (159, 5): inferred type:  NIL
-OUT: exproperators.p (159, 12): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: exproperators.p (159, 14): inferred type:  BaseType(INT)
-OUT: exproperators.p (159, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (159, 18): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (159, 21): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: exproperators.p (159, 23): inferred type:  BaseType(INT)
-OUT: exproperators.p (159, 24): inferred type:  BaseType(INT)
 OUT: exproperators.p (160, 5): inferred type:  NIL
-OUT: exproperators.p (160, 12): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: exproperators.p (160, 14): inferred type:  BaseType(INT)
 OUT: exproperators.p (160, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (160, 18): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (160, 20): inferred type:  BaseType(INT)
-OUT: exproperators.p (161, 5): inferred type:  BaseType(INT)
 OUT: exproperators.p (161, 5): inferred type:  NIL
 OUT: exproperators.p (161, 9): inferred type:  BaseType(INT)
 OUT: exproperators.p (162, 5): inferred type:  NIL
-OUT: exproperators.p (162, 12): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: exproperators.p (162, 14): inferred type:  BaseType(INT)
-OUT: exproperators.p (162, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (162, 18): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (162, 20): inferred type:  BaseType(INT)
-OUT: exproperators.p (165, 5): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
 OUT: exproperators.p (165, 5): inferred type:  NIL
 OUT: exproperators.p (165, 7): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (165, 8): inferred type:  BaseType(INT)
-OUT: exproperators.p (165, 13): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (166, 5): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
 OUT: exproperators.p (166, 5): inferred type:  NIL
 OUT: exproperators.p (166, 7): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (166, 8): inferred type:  BaseType(INT)
-OUT: exproperators.p (166, 13): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (167, 5): inferred type:  NIL
-OUT: exproperators.p (167, 12): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
-OUT: exproperators.p (167, 14): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (167, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (167, 18): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (167, 21): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (167, 22): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
 OUT: exproperators.p (167, 24): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (167, 25): inferred type:  BaseType(INT)
 OUT: exproperators.p (168, 5): inferred type:  NIL
 OUT: exproperators.p (168, 13): inferred type:  BaseType(INT)
-OUT: exproperators.p (168, 20): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
 OUT: exproperators.p (168, 24): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (168, 27): inferred type:  BaseType(INT)
 OUT: exproperators.p (169, 5): inferred type:  ERROR
 OUT: exproperators.p (169, 5): inferred type:  NIL
-OUT: exproperators.p (169, 13): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (169, 18): inferred type:  ERROR
-OUT: exproperators.p (169, 21): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
 OUT: exproperators.p (170, 5): inferred type:  ERROR
 OUT: exproperators.p (170, 5): inferred type:  NIL
 OUT: exproperators.p (170, 12): inferred type:  SeqType(BaseType(BOOL))
-OUT: exproperators.p (170, 19): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
 OUT: exproperators.p (170, 22): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (170, 23): inferred type:  BaseType(INT)
 OUT: exproperators.p (170, 26): inferred type:  ERROR
-OUT: exproperators.p (170, 29): inferred type:  BaseType(INT)
 OUT: exproperators.p (172, 5): inferred type:  ERROR
 OUT: exproperators.p (172, 5): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
 OUT: exproperators.p (172, 5): inferred type:  NIL
-OUT: exproperators.p (172, 12): inferred type:  BaseType(BOOL)
 OUT: exproperators.p (172, 12): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (172, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (172, 17): inferred type:  TupType(BaseType(INT), NIL)
 OUT: exproperators.p (173, 5): inferred type:  ERROR
-OUT: exproperators.p (173, 5): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
 OUT: exproperators.p (173, 5): inferred type:  NIL
-OUT: exproperators.p (173, 12): inferred type:  BaseType(INT)
 OUT: exproperators.p (173, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (173, 15): inferred type:  BaseType(INT)
-OUT: exproperators.p (173, 15): inferred type:  TupType(BaseType(INT), NIL)
 OUT: exproperators.p (179, 5): inferred type:  NIL
 OUT: exproperators.p (179, 5): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (179, 11): inferred type:  BaseType(INT)
-OUT: exproperators.p (179, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (179, 13): inferred type:  BaseType(INT)
-OUT: exproperators.p (179, 13): inferred type:  TupType(BaseType(INT), NIL)
 OUT: exproperators.p (180, 5): inferred type:  MapType(BaseType(INT), SeqType(BaseType(INT)))
 OUT: exproperators.p (180, 5): inferred type:  NIL
 OUT: exproperators.p (180, 9): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (180, 10): inferred type:  BaseType(INT)
-OUT: exproperators.p (180, 15): inferred type:  SeqType(BaseType(INT))
 OUT: exproperators.p (181, 5): inferred type:  NIL
 OUT: exproperators.p (181, 5): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
 OUT: exproperators.p (181, 10): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
-OUT: exproperators.p (181, 14): inferred type:  SeqType(BaseType(INT))
 OUT: exproperators.p (181, 17): inferred type:  NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL)
-OUT: exproperators.p (181, 21): inferred type:  MapType(BaseType(INT), SeqType(BaseType(INT)))
 OUT: exproperators.p (183, 5): inferred type:  NIL
-OUT: exproperators.p (183, 5): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
 OUT: exproperators.p (183, 7): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (183, 13): inferred type:  BaseType(INT)
 OUT: exproperators.p (183, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (183, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (183, 15): inferred type:  TupType(BaseType(INT), NIL)
 OUT: exproperators.p (184, 5): inferred type:  NIL
-OUT: exproperators.p (184, 14): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
-OUT: exproperators.p (184, 16): inferred type:  SeqType(BaseType(INT))
 OUT: exproperators.p (184, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (184, 18): inferred type:  BaseType(INT)
 OUT: exproperators.p (184, 21): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (184, 24): inferred type:  BaseType(INT)
 OUT: exproperators.p (186, 5): inferred type:  NIL
-OUT: exproperators.p (186, 5): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
-OUT: exproperators.p (186, 7): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (186, 13): inferred type:  BaseType(INT)
 OUT: exproperators.p (186, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (186, 15): inferred type:  BaseType(INT)
-OUT: exproperators.p (186, 15): inferred type:  TupType(BaseType(INT), NIL)
 OUT: exproperators.p (187, 5): inferred type:  NIL
-OUT: exproperators.p (187, 14): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
-OUT: exproperators.p (187, 16): inferred type:  SeqType(BaseType(INT))
 OUT: exproperators.p (187, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (187, 18): inferred type:  BaseType(INT)
 OUT: exproperators.p (187, 21): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (187, 24): inferred type:  BaseType(INT)
 OUT: exproperators.p (189, 5): inferred type:  NIL
-OUT: exproperators.p (189, 5): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
-OUT: exproperators.p (189, 7): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (189, 13): inferred type:  BaseType(INT)
 OUT: exproperators.p (189, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (189, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (189, 15): inferred type:  TupType(BaseType(INT), NIL)
 OUT: exproperators.p (190, 5): inferred type:  NIL
-OUT: exproperators.p (190, 14): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
-OUT: exproperators.p (190, 16): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (190, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (190, 18): inferred type:  BaseType(INT)
 OUT: exproperators.p (190, 21): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (190, 24): inferred type:  BaseType(INT)
 OUT: exproperators.p (191, 5): inferred type:  NIL
-OUT: exproperators.p (191, 14): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
-OUT: exproperators.p (191, 16): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (191, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (191, 18): inferred type:  BaseType(INT)
-OUT: exproperators.p (191, 21): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (191, 24): inferred type:  BaseType(INT)
 OUT: exproperators.p (195, 5): inferred type:  NIL
-OUT: exproperators.p (195, 12): inferred type:  SeqType(BaseType(INT))
 OUT: exproperators.p (195, 13): inferred type:  BaseType(INT)
-OUT: exproperators.p (195, 14): inferred type:  BaseType(INT)
 OUT: exproperators.p (195, 17): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (195, 20): inferred type:  BaseType(INT)
 OUT: exproperators.p (196, 5): inferred type:  NIL
-OUT: exproperators.p (196, 12): inferred type:  MapType(BaseType(INT), SeqType(BaseType(INT)))
-OUT: exproperators.p (196, 16): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (196, 17): inferred type:  BaseType(INT)
 OUT: exproperators.p (196, 19): inferred type:  BaseType(INT)
-OUT: exproperators.p (196, 20): inferred type:  BaseType(INT)
 OUT: exproperators.p (196, 23): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (196, 26): inferred type:  BaseType(INT)
 OUT: exproperators.p (197, 5): inferred type:  NIL
-OUT: exproperators.p (197, 12): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
 OUT: exproperators.p (197, 14): inferred type:  MapType(BaseType(INT), SeqType(BaseType(INT)))
 OUT: exproperators.p (197, 15): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (197, 16): inferred type:  BaseType(INT)
 OUT: exproperators.p (197, 18): inferred type:  BaseType(INT)
-OUT: exproperators.p (197, 19): inferred type:  BaseType(INT)
 OUT: exproperators.p (197, 22): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (197, 25): inferred type:  BaseType(INT)
 OUT: exproperators.p (198, 5): inferred type:  NIL
-OUT: exproperators.p (198, 5): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (198, 11): inferred type:  BaseType(INT)
-OUT: exproperators.p (198, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (198, 13): inferred type:  BaseType(INT)
-OUT: exproperators.p (198, 13): inferred type:  TupType(BaseType(INT), NIL)
 OUT: exproperators.p (199, 5): inferred type:  NIL
-OUT: exproperators.p (199, 12): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (199, 13): inferred type:  BaseType(INT)
-OUT: exproperators.p (199, 14): inferred type:  BaseType(INT)
 OUT: exproperators.p (199, 17): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (199, 20): inferred type:  BaseType(INT)
 OUT: exproperators.p (199, 22): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (199, 25): inferred type:  SeqType(BaseType(INT))
 OUT: exproperators.p (199, 26): inferred type:  BaseType(INT)
-OUT: exproperators.p (199, 27): inferred type:  BaseType(INT)
 OUT: exproperators.p (199, 30): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (199, 33): inferred type:  BaseType(INT)
 OUT: exproperators.p (201, 5): inferred type:  NIL
-OUT: exproperators.p (201, 12): inferred type:  MapType(BaseType(INT), SeqType(BaseType(INT)))
-OUT: exproperators.p (201, 16): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (201, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (201, 19): inferred type:  BaseType(INT)
-OUT: exproperators.p (201, 20): inferred type:  BaseType(INT)
-OUT: exproperators.p (201, 23): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (201, 26): inferred type:  BaseType(INT)
 OUT: exproperators.p (202, 5): inferred type:  NIL
-OUT: exproperators.p (202, 12): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
-OUT: exproperators.p (202, 14): inferred type:  MapType(BaseType(INT), SeqType(BaseType(INT)))
-OUT: exproperators.p (202, 15): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (202, 16): inferred type:  BaseType(INT)
-OUT: exproperators.p (202, 18): inferred type:  BaseType(INT)
-OUT: exproperators.p (202, 19): inferred type:  BaseType(INT)
-OUT: exproperators.p (202, 22): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (202, 25): inferred type:  BaseType(INT)
-OUT: exproperators.p (204, 5): inferred type:  MapType(BaseType(INT), SeqType(BaseType(INT)))
 OUT: exproperators.p (204, 5): inferred type:  NIL
-OUT: exproperators.p (204, 9): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (204, 10): inferred type:  BaseType(INT)
-OUT: exproperators.p (204, 15): inferred type:  SeqType(BaseType(INT))
 OUT: exproperators.p (205, 5): inferred type:  NIL
-OUT: exproperators.p (205, 12): inferred type:  MapType(BaseType(INT), SeqType(BaseType(INT)))
-OUT: exproperators.p (205, 16): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (205, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (205, 19): inferred type:  BaseType(INT)
-OUT: exproperators.p (205, 20): inferred type:  BaseType(INT)
 OUT: exproperators.p (205, 23): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (205, 26): inferred type:  BaseType(INT)
 OUT: exproperators.p (207, 5): inferred type:  NIL
-OUT: exproperators.p (207, 12): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
-OUT: exproperators.p (207, 14): inferred type:  MapType(BaseType(INT), SeqType(BaseType(INT)))
-OUT: exproperators.p (207, 15): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (207, 16): inferred type:  BaseType(INT)
-OUT: exproperators.p (207, 18): inferred type:  BaseType(INT)
-OUT: exproperators.p (207, 19): inferred type:  BaseType(INT)
-OUT: exproperators.p (207, 22): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (207, 25): inferred type:  BaseType(INT)
 OUT: exproperators.p (211, 5): inferred type:  NIL
 OUT: exproperators.p (211, 5): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
-OUT: exproperators.p (211, 12): inferred type:  BaseType(INT)
 OUT: exproperators.p (211, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
-OUT: exproperators.p (211, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (211, 15): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: exproperators.p (211, 15): inferred type:  TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL)
-OUT: exproperators.p (211, 17): inferred type:  BaseType(INT)
 OUT: exproperators.p (211, 17): inferred type:  TupType(BaseType(INT), NIL)
 OUT: exproperators.p (212, 5): inferred type:  NIL
-OUT: exproperators.p (212, 5): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
-OUT: exproperators.p (212, 12): inferred type:  BaseType(INT)
 OUT: exproperators.p (212, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
-OUT: exproperators.p (212, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (212, 15): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: exproperators.p (212, 15): inferred type:  TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL)
-OUT: exproperators.p (212, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (212, 17): inferred type:  TupType(BaseType(INT), NIL)
 OUT: exproperators.p (213, 5): inferred type:  NIL
-OUT: exproperators.p (213, 5): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
-OUT: exproperators.p (213, 12): inferred type:  BaseType(INT)
 OUT: exproperators.p (213, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
-OUT: exproperators.p (213, 16): inferred type:  BaseType(INT)
 OUT: exproperators.p (213, 16): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: exproperators.p (213, 16): inferred type:  TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL)
-OUT: exproperators.p (213, 18): inferred type:  BaseType(INT)
-OUT: exproperators.p (213, 18): inferred type:  TupType(BaseType(INT), NIL)
 OUT: exproperators.p (215, 5): inferred type:  NIL
 OUT: exproperators.p (215, 5): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
-OUT: exproperators.p (215, 12): inferred type:  BaseType(INT)
 OUT: exproperators.p (215, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
-OUT: exproperators.p (215, 15): inferred type:  BaseType(INT)
-OUT: exproperators.p (215, 15): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: exproperators.p (215, 15): inferred type:  TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL)
-OUT: exproperators.p (215, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (215, 17): inferred type:  TupType(BaseType(INT), NIL)
 OUT: exproperators.p (216, 5): inferred type:  NIL
-OUT: exproperators.p (216, 5): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
-OUT: exproperators.p (216, 12): inferred type:  BaseType(INT)
 OUT: exproperators.p (216, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
-OUT: exproperators.p (216, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (216, 15): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: exproperators.p (216, 15): inferred type:  TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL)
-OUT: exproperators.p (216, 17): inferred type:  BaseType(INT)
-OUT: exproperators.p (216, 17): inferred type:  TupType(BaseType(INT), NIL)
 OUT: exproperators.p (217, 5): inferred type:  NIL
-OUT: exproperators.p (217, 5): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
-OUT: exproperators.p (217, 12): inferred type:  BaseType(INT)
 OUT: exproperators.p (217, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
-OUT: exproperators.p (217, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (217, 15): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: exproperators.p (217, 15): inferred type:  TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL)
-OUT: exproperators.p (217, 17): inferred type:  BaseType(INT)
 OUT: exproperators.p (217, 17): inferred type:  TupType(BaseType(INT), NIL)
 OUT: exproperators.p (219, 5): inferred type:  ERROR
 OUT: exproperators.p (219, 5): inferred type:  MapType(BaseType(BOOL), SeqType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))))
 OUT: exproperators.p (219, 5): inferred type:  NIL
 OUT: exproperators.p (219, 7): inferred type:  SeqType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)))
-OUT: exproperators.p (219, 8): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (219, 16): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
 OUT: exproperators.p (220, 5): inferred type:  ERROR
-OUT: exproperators.p (220, 5): inferred type:  MapType(BaseType(BOOL), SeqType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))))
 OUT: exproperators.p (220, 5): inferred type:  NIL
 OUT: exproperators.p (220, 7): inferred type:  SeqType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)))
-OUT: exproperators.p (220, 8): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (220, 17): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
 OUT: exproperators.p (222, 5): inferred type:  NIL
-OUT: exproperators.p (222, 12): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
 OUT: exproperators.p (222, 14): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (222, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (222, 18): inferred type:  BaseType(INT)
 OUT: exproperators.p (222, 20): inferred type:  BaseType(INT)
-OUT: exproperators.p (222, 22): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
 OUT: exproperators.p (222, 24): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (222, 25): inferred type:  BaseType(INT)
 OUT: exproperators.p (222, 28): inferred type:  BaseType(INT)
 OUT: exproperators.p (222, 30): inferred type:  BaseType(INT)
-OUT: exproperators.p (222, 32): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
 OUT: exproperators.p (222, 34): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (222, 35): inferred type:  BaseType(INT)
 OUT: exproperators.p (222, 38): inferred type:  BaseType(INT)
 OUT: exproperators.p (222, 40): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (222, 43): inferred type:  BaseType(INT)
 OUT: exproperators.p (223, 5): inferred type:  NIL
-OUT: exproperators.p (223, 12): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
 OUT: exproperators.p (223, 14): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (223, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (223, 18): inferred type:  BaseType(INT)
 OUT: exproperators.p (223, 20): inferred type:  BaseType(INT)
-OUT: exproperators.p (223, 22): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
-OUT: exproperators.p (223, 24): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (223, 25): inferred type:  BaseType(INT)
-OUT: exproperators.p (223, 28): inferred type:  BaseType(INT)
 OUT: exproperators.p (223, 30): inferred type:  BaseType(INT)
-OUT: exproperators.p (223, 32): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
-OUT: exproperators.p (223, 34): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: exproperators.p (223, 35): inferred type:  BaseType(INT)
-OUT: exproperators.p (223, 38): inferred type:  BaseType(INT)
 OUT: exproperators.p (223, 40): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (223, 43): inferred type:  BaseType(INT)
 OUT: exproperators.p (225, 5): inferred type:  NIL
 OUT: exproperators.p (225, 11): inferred type:  BaseType(EVENT)
 OUT: exproperators.p (231, 8): inferred type:  NIL
 OUT: exproperators.p (231, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (236, 9): inferred type:  NIL
 OUT: exproperators.p (236, 16): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
-OUT: exproperators.p (241, 8): inferred type:  BaseType(INT)
 OUT: exproperators.p (241, 8): inferred type:  NIL
-OUT: exproperators.p (241, 12): inferred type:  BaseType(INT)
 OUT: exproperators.p (241, 14): inferred type:  BaseType(INT)
 OUT: exproperators.p (241, 16): inferred type:  BaseType(INT)
 OUT: exproperators.p (242, 8): inferred type:  NIL
@@ -868,7 +379,6 @@ OUT: exproperators.p (250, 7): inferred type:  SeqType(BaseType(INT))
 OUT: exproperators.p (250, 12): inferred type:  BaseType(ANY)
 OUT: exproperators.p (250, 20): inferred type:  SeqType(BaseType(INT))
 OUT: exproperators.p (251, 4): inferred type:  NIL
-OUT: exproperators.p (251, 11): inferred type:  SeqType(BaseType(INT))
 OUT: exproperators.p (251, 13): inferred type:  BaseType(INT)
 OUT: exproperators.p (251, 14): inferred type:  BaseType(INT)
 OUT: exproperators.p (251, 17): inferred type:  BaseType(BOOL)
@@ -921,12 +431,8 @@ OUT: exproperators.p (98, 5): invalid assignment. right hand side is not a subty
 OUT: exproperators.p (98, 15): Operator expected a boolean value
 OUT: exproperators.p (99, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: exproperators.p (99, 15): Operator expected a boolean value
-OUT: exproperators.p (100, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: exproperators.p (100, 12): Operator expected an integer value
 OUT: exproperators.p (101, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: exproperators.p (101, 12): Operator expected an integer value
-OUT: exproperators.p (103, 5): "assert" expects a boolean value
-OUT: exproperators.p (103, 18): Values cannot be compared because their types are incompatible
 OUT: exproperators.p (106, 5): "assert" expects a boolean value
 OUT: exproperators.p (106, 17): Values cannot be compared because their types are incompatible
 OUT: exproperators.p (106, 20): Operator expected an integer value
@@ -940,19 +446,6 @@ OUT: exproperators.p (110, 5): "assert" expects a boolean value
 OUT: exproperators.p (110, 14): Operator expected first argument to be an integer value
 OUT: exproperators.p (111, 5): "assert" expects a boolean value
 OUT: exproperators.p (111, 14): Operator expected first argument to be an integer value
-OUT: exproperators.p (117, 5): "assert" expects a boolean value
-OUT: exproperators.p (117, 17): Values cannot be compared because their types are incompatible
-OUT: exproperators.p (117, 20): Operator expected an integer value
-OUT: exproperators.p (118, 5): "assert" expects a boolean value
-OUT: exproperators.p (118, 14): Operator expected first argument to be an integer value
-OUT: exproperators.p (118, 21): Values cannot be compared because their types are incompatible
-OUT: exproperators.p (119, 5): "assert" expects a boolean value
-OUT: exproperators.p (119, 14): Operator expected first argument to be an integer value
-OUT: exproperators.p (119, 18): Values cannot be compared because their types are incompatible
-OUT: exproperators.p (121, 5): "assert" expects a boolean value
-OUT: exproperators.p (121, 14): Operator expected first argument to be an integer value
-OUT: exproperators.p (122, 5): "assert" expects a boolean value
-OUT: exproperators.p (122, 14): Operator expected first argument to be an integer value
 OUT: exproperators.p (125, 5): "assert" expects a boolean value
 OUT: exproperators.p (125, 14): Operator expected first argument to be a boolean value
 OUT: exproperators.p (132, 5): value must be a subtype of sequence type

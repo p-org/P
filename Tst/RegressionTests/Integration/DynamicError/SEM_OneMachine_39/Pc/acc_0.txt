@@ -6,22 +6,23 @@ OUT: Writing program.h ...
 OUT: Writing program.c ...
 OUT: Writing TopNullHandlerOverridesInherited.zing ...
 OUT: Compiling TopNullHandlerOverridesInherited.zing to TopNullHandlerOverridesInherited.dll ...
-OUT: topnullhandleroverridesinherited.p (11, 4): inferred type:  NIL
-OUT: topnullhandleroverridesinherited.p (11, 10): inferred type:  BaseType(EVENT)
-OUT: topnullhandleroverridesinherited.p (13, 15): inferred type:  NIL
-OUT: topnullhandleroverridesinherited.p (13, 20): inferred type:  BaseType(REAL)
-OUT: topnullhandleroverridesinherited.p (13, 26): inferred type:  BaseType(EVENT)
-OUT: topnullhandleroverridesinherited.p (13, 30): inferred type:  NIL
-OUT: topnullhandleroverridesinherited.p (15, 16): inferred type:  NIL
-OUT: topnullhandleroverridesinherited.p (15, 21): inferred type:  BaseType(REAL)
-OUT: topnullhandleroverridesinherited.p (15, 27): inferred type:  BaseType(EVENT)
-OUT: topnullhandleroverridesinherited.p (18, 9): inferred type:  NIL
-OUT: topnullhandleroverridesinherited.p (25, 3): inferred type:  BaseType(BOOL)
-OUT: topnullhandleroverridesinherited.p (25, 3): inferred type:  NIL
-OUT: topnullhandleroverridesinherited.p (25, 10): inferred type:  BaseType(BOOL)
-OUT: topnullhandleroverridesinherited.p (28, 3): inferred type:  NIL
-OUT: topnullhandleroverridesinherited.p (28, 10): inferred type:  BaseType(BOOL)
-OUT: topnullhandleroverridesinherited.p (28, 15): inferred type:  BaseType(BOOL)
-OUT: topnullhandleroverridesinherited.p (28, 18): inferred type:  BaseType(BOOL)
+OUT: topnullhandleroverridesinherited.p (12, 4): inferred type:  NIL
+OUT: topnullhandleroverridesinherited.p (12, 10): inferred type:  BaseType(EVENT)
+OUT: topnullhandleroverridesinherited.p (14, 15): inferred type:  NIL
+OUT: topnullhandleroverridesinherited.p (14, 20): inferred type:  BaseType(REAL)
+OUT: topnullhandleroverridesinherited.p (14, 26): inferred type:  BaseType(EVENT)
+OUT: topnullhandleroverridesinherited.p (14, 30): inferred type:  NIL
+OUT: topnullhandleroverridesinherited.p (14, 36): inferred type:  BaseType(EVENT)
+OUT: topnullhandleroverridesinherited.p (17, 16): inferred type:  NIL
+OUT: topnullhandleroverridesinherited.p (17, 21): inferred type:  BaseType(REAL)
+OUT: topnullhandleroverridesinherited.p (17, 27): inferred type:  BaseType(EVENT)
+OUT: topnullhandleroverridesinherited.p (20, 9): inferred type:  NIL
+OUT: topnullhandleroverridesinherited.p (27, 3): inferred type:  BaseType(BOOL)
+OUT: topnullhandleroverridesinherited.p (27, 3): inferred type:  NIL
+OUT: topnullhandleroverridesinherited.p (27, 10): inferred type:  BaseType(BOOL)
+OUT: topnullhandleroverridesinherited.p (30, 3): inferred type:  NIL
+OUT: topnullhandleroverridesinherited.p (30, 10): inferred type:  BaseType(BOOL)
+OUT: topnullhandleroverridesinherited.p (30, 15): inferred type:  BaseType(BOOL)
+OUT: topnullhandleroverridesinherited.p (30, 18): inferred type:  BaseType(BOOL)
 OUT: 
 EXIT: 0

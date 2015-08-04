@@ -97,10 +97,10 @@ main machine M
 		  
 		  tbool.0 = !tt.1;       //error
 		  tbool.1 = !ev;         //error
-		  tt.1 = -tbool.0;       //error
+
 		  tt.0 = -ev;            //error
 		  
-		  assert (tt.0 == ev);   //error
+
 		  assert (ev == a);       //OK
 		
 		  assert(tt.1 == -a);     //error
@@ -114,12 +114,12 @@ main machine M
 
 		  assert (ev == a);       //OK?????????
 		
-		  assert(tt.1 == -a);     //error
-		  assert(a * (-1) == -1);  //error
-		  assert(a + 1 != a);      //error
+
+
+
 		  
-		  assert(a > tt.1);       //error
-		  assert(a <= tt.0);      //error
+
+
 		  
 		  a = false;
 		  assert(a && tbool.1 == false);  //error

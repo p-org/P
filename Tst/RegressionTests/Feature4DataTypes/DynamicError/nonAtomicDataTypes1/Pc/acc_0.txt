@@ -8,52 +8,32 @@ OUT: Writing nonAtomicDataTypes.zing ...
 OUT: Compiling nonAtomicDataTypes.zing to nonAtomicDataTypes.dll ...
 OUT: nonatomicdatatypes.p (28, 5): inferred type:  NIL
 OUT: nonatomicdatatypes.p (28, 5): inferred type:  SeqType(BaseType(INT))
-OUT: nonatomicdatatypes.p (28, 11): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (28, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: nonatomicdatatypes.p (28, 14): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (28, 14): inferred type:  TupType(BaseType(INT), NIL)
 OUT: nonatomicdatatypes.p (29, 11): inferred type:  NIL
-OUT: nonatomicdatatypes.p (29, 11): inferred type:  SeqType(BaseType(INT))
-OUT: nonatomicdatatypes.p (29, 17): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (29, 17): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: nonatomicdatatypes.p (29, 20): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (29, 20): inferred type:  TupType(BaseType(INT), NIL)
 OUT: nonatomicdatatypes.p (30, 11): inferred type:  NIL
 OUT: nonatomicdatatypes.p (30, 11): inferred type:  SeqType(BaseType(ANY))
-OUT: nonatomicdatatypes.p (30, 16): inferred type:  SeqType(BaseType(INT))
 OUT: nonatomicdatatypes.p (31, 11): inferred type:  NIL
-OUT: nonatomicdatatypes.p (31, 11): inferred type:  SeqType(BaseType(INT))
 OUT: nonatomicdatatypes.p (31, 17): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (32, 5): inferred type:  NIL
 OUT: nonatomicdatatypes.p (32, 12): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (32, 19): inferred type:  SeqType(BaseType(INT))
 OUT: nonatomicdatatypes.p (32, 22): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (32, 25): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (33, 11): inferred type:  NIL
-OUT: nonatomicdatatypes.p (33, 11): inferred type:  SeqType(BaseType(INT))
-OUT: nonatomicdatatypes.p (33, 17): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (34, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (34, 12): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (34, 19): inferred type:  SeqType(BaseType(INT))
 OUT: nonatomicdatatypes.p (34, 22): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (34, 25): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (36, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (36, 5): inferred type:  SeqType(BaseType(INT))
-OUT: nonatomicdatatypes.p (36, 11): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (37, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (37, 12): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (37, 19): inferred type:  SeqType(BaseType(INT))
-OUT: nonatomicdatatypes.p (37, 22): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (37, 25): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (39, 5): inferred type:  NIL
 OUT: nonatomicdatatypes.p (39, 11): inferred type:  BaseType(EVENT)
 OUT: nonatomicdatatypes.p (45, 8): inferred type:  NIL
 OUT: nonatomicdatatypes.p (45, 15): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (50, 9): inferred type:  NIL
 OUT: nonatomicdatatypes.p (50, 16): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
-OUT: nonatomicdatatypes.p (55, 8): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (55, 8): inferred type:  NIL
-OUT: nonatomicdatatypes.p (55, 12): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (55, 14): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (55, 16): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (56, 8): inferred type:  NIL
@@ -63,7 +43,6 @@ OUT: nonatomicdatatypes.p (64, 7): inferred type:  SeqType(BaseType(INT))
 OUT: nonatomicdatatypes.p (64, 12): inferred type:  BaseType(ANY)
 OUT: nonatomicdatatypes.p (64, 20): inferred type:  SeqType(BaseType(INT))
 OUT: nonatomicdatatypes.p (65, 4): inferred type:  NIL
-OUT: nonatomicdatatypes.p (65, 11): inferred type:  SeqType(BaseType(INT))
 OUT: nonatomicdatatypes.p (65, 13): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (65, 14): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (65, 17): inferred type:  BaseType(BOOL)

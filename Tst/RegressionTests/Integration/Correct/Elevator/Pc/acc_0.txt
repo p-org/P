@@ -13,7 +13,6 @@ OUT: elevator.p (26, 32): inferred type:  BaseType(REAL)
 OUT: elevator.p (27, 13): inferred type:  BaseType(REAL)
 OUT: elevator.p (27, 13): inferred type:  NIL
 OUT: elevator.p (27, 21): inferred type:  BaseType(REAL)
-OUT: elevator.p (27, 30): inferred type:  BaseType(REAL)
 OUT: elevator.p (28, 13): inferred type:  NIL
 OUT: elevator.p (28, 19): inferred type:  BaseType(EVENT)
 OUT: elevator.p (38, 13): inferred type:  NIL
@@ -53,9 +52,7 @@ OUT: elevator.p (144, 5): inferred type:  NIL
 OUT: elevator.p (144, 10): inferred type:  BaseType(REAL)
 OUT: elevator.p (144, 21): inferred type:  BaseType(EVENT)
 OUT: elevator.p (145, 20): inferred type:  NIL
-OUT: elevator.p (145, 24): inferred type:  BaseType(BOOL)
 OUT: elevator.p (146, 16): inferred type:  NIL
-OUT: elevator.p (146, 21): inferred type:  BaseType(REAL)
 OUT: elevator.p (146, 31): inferred type:  BaseType(EVENT)
 OUT: elevator.p (148, 13): inferred type:  NIL
 OUT: elevator.p (148, 19): inferred type:  BaseType(EVENT)
@@ -76,7 +73,6 @@ OUT: elevator.p (182, 17): inferred type:  BaseType(BOOL)
 OUT: elevator.p (183, 17): inferred type:  NIL
 OUT: elevator.p (183, 23): inferred type:  BaseType(EVENT)
 OUT: elevator.p (184, 20): inferred type:  NIL
-OUT: elevator.p (184, 24): inferred type:  BaseType(BOOL)
 OUT: elevator.p (185, 17): inferred type:  NIL
 OUT: elevator.p (185, 23): inferred type:  BaseType(EVENT)
 OUT: elevator.p (196, 13): inferred type:  NIL
@@ -113,10 +109,8 @@ OUT: elevator.p (254, 47): inferred type:  BaseType(EVENT)
 OUT: elevator.p (262, 13): inferred type:  NIL
 OUT: elevator.p (262, 17): inferred type:  BaseType(BOOL)
 OUT: elevator.p (263, 17): inferred type:  NIL
-OUT: elevator.p (263, 22): inferred type:  BaseType(REAL)
 OUT: elevator.p (263, 32): inferred type:  BaseType(EVENT)
 OUT: elevator.p (264, 17): inferred type:  NIL
-OUT: elevator.p (264, 22): inferred type:  BaseType(REAL)
 OUT: elevator.p (264, 32): inferred type:  BaseType(EVENT)
 OUT: elevator.p (266, 17): inferred type:  NIL
 OUT: elevator.p (266, 22): inferred type:  BaseType(REAL)

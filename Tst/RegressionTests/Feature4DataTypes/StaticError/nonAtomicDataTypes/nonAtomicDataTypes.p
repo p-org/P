@@ -26,7 +26,7 @@ main machine M
 	var s: seq[int];
     var s1: seq[any];
     var s2: seq[int];
-    var s3: seq[seq[any]];           
+    var s3, s33: seq[seq[any]];           
 	var s4, s8: seq[(int,int)];              
 	var s5: seq[bool];
 	var s6: seq[map[int,any]];
@@ -183,7 +183,7 @@ main machine M
 		  m3[true] = false;         //error
 		  
 		  m3 += 1;                  //error
-		  m3 += (1);                //error
+		  m4 += (1);                //error
 		  m3[2] += true;            //error
 		  
 		  m3[false] = true;         //error
@@ -207,7 +207,7 @@ main machine M
 		  assert (sizeof(s3) == 0);   //holds
 		  
 		  s3 += 1;             //error
-		  s3 += (1);           //error
+		  s33 += (1);           //error
 		  s3[0] += 1;          //error
 		  tmp += (0,1);        //error
 		  

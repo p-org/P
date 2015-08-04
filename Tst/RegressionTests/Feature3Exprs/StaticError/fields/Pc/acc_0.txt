@@ -3,15 +3,12 @@
 =================================
 OUT: fields.p (8, 4): inferred type:  BaseType(INT)
 OUT: fields.p (8, 4): inferred type:  NIL
-OUT: fields.p (8, 8): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: fields.p (8, 10): inferred type:  BaseType(INT)
 OUT: fields.p (8, 12): inferred type:  BaseType(INT)
 OUT: fields.p (8, 14): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: fields.p (8, 16): inferred type:  BaseType(INT)
-OUT: fields.p (9, 4): inferred type:  BaseType(INT)
 OUT: fields.p (9, 4): inferred type:  ERROR
 OUT: fields.p (9, 4): inferred type:  NIL
-OUT: fields.p (9, 8): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: fields.p (9, 10): inferred type:  ERROR
 OUT: fields.p (9, 12): inferred type:  ERROR
 OUT: fields.p (9, 14): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))

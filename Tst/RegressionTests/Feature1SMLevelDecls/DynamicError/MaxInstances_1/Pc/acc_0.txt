@@ -15,9 +15,6 @@ OUT: maxinstances_1.p (15, 16): inferred type:  BaseType(EVENT)
 OUT: maxinstances_1.p (24, 13): inferred type:  NIL
 OUT: maxinstances_1.p (24, 18): inferred type:  BaseType(REAL)
 OUT: maxinstances_1.p (24, 33): inferred type:  BaseType(EVENT)
-OUT: maxinstances_1.p (26, 4): inferred type:  NIL
-OUT: maxinstances_1.p (26, 9): inferred type:  BaseType(REAL)
-OUT: maxinstances_1.p (26, 24): inferred type:  BaseType(EVENT)
 OUT: maxinstances_1.p (32, 4): inferred type:  NIL
 OUT: maxinstances_1.p (32, 10): inferred type:  BaseType(EVENT)
 OUT: maxinstances_1.p (39, 3): inferred type:  NIL
@@ -28,9 +25,6 @@ OUT: maxinstances_1.p (42, 21): inferred type:  BaseType(INT)
 OUT: maxinstances_1.p (43, 3): inferred type:  NIL
 OUT: maxinstances_1.p (43, 8): inferred type:  BaseType(REAL)
 OUT: maxinstances_1.p (43, 23): inferred type:  BaseType(EVENT)
-OUT: maxinstances_1.p (44, 9): inferred type:  NIL
-OUT: maxinstances_1.p (44, 14): inferred type:  BaseType(REAL)
-OUT: maxinstances_1.p (44, 29): inferred type:  BaseType(EVENT)
 OUT: maxinstances_1.p (52, 10): inferred type:  BaseType(REAL)
 OUT: maxinstances_1.p (52, 10): inferred type:  NIL
 OUT: maxinstances_1.p (52, 25): inferred type:  BaseType(ANY)
@@ -45,11 +39,6 @@ OUT: maxinstances_1.p (72, 6): inferred type:  NIL
 OUT: maxinstances_1.p (72, 11): inferred type:  BaseType(REAL)
 OUT: maxinstances_1.p (72, 25): inferred type:  BaseType(EVENT)
 OUT: maxinstances_1.p (73, 3): inferred type:  NIL
-OUT: maxinstances_1.p (73, 8): inferred type:  BaseType(REAL)
-OUT: maxinstances_1.p (73, 22): inferred type:  BaseType(EVENT)
-OUT: maxinstances_1.p (74, 3): inferred type:  NIL
-OUT: maxinstances_1.p (74, 8): inferred type:  BaseType(REAL)
-OUT: maxinstances_1.p (74, 22): inferred type:  BaseType(EVENT)
 OUT: maxinstances_1.p (76, 3): inferred type:  NIL
 OUT: 
 EXIT: 0

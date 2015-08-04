@@ -22,7 +22,6 @@ OUT: dfsstackbound.p (18, 10): inferred type:  BaseType(EVENT)
 OUT: dfsstackbound.p (20, 3): inferred type:  NIL
 OUT: dfsstackbound.p (30, 4): inferred type:  BaseType(INT)
 OUT: dfsstackbound.p (30, 4): inferred type:  NIL
-OUT: dfsstackbound.p (30, 12): inferred type:  BaseType(INT)
 OUT: dfsstackbound.p (30, 18): inferred type:  BaseType(INT)
 OUT: dfsstackbound.p (30, 20): inferred type:  BaseType(INT)
 OUT: dfsstackbound.p (32, 3): inferred type:  NIL

@@ -5,7 +5,6 @@ OUT: eventexprsendraise.p (13, 13): inferred type:  NIL
 OUT: eventexprsendraise.p (13, 18): inferred type:  BaseType(REAL)
 OUT: eventexprsendraise.p (13, 24): inferred type:  BaseType(EVENT)
 OUT: eventexprsendraise.p (14, 4): inferred type:  NIL
-OUT: eventexprsendraise.p (14, 10): inferred type:  BaseType(EVENT)
 OUT: eventexprsendraise.p (15, 4): inferred type:  NIL
 OUT: eventexprsendraise.p (15, 12): inferred type:  BaseType(EVENT)
 OUT: eventexprsendraise.p (16, 4): inferred type:  NIL

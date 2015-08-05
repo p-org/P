@@ -326,10 +326,10 @@ class EVENT_BUFFER {
 				doDequeue = !(iter.e in deferredSet);
 			} else {
 				doDequeue = iter.e in receiveSet;
-				owner.receiveSet = new SM_EVENT_SET;
 			}
 			if (doDequeue) 
 			{
+				owner.receiveSet = new SM_EVENT_SET;
 				iter.next.prev = iter.prev;
 				iter.prev.next = iter.next;
 				owner.currentEvent = iter.e;

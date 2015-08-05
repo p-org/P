@@ -567,7 +567,8 @@ domain PStaticTyping extends PData
 	// This error is covered by one of the cases
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e: Receive, ReceiveCases(c, e, cases), TypeOf(c, cases, ERROR).
 
-	ValidCaseEvent ::= (trig: String + { HALT }).
+	ValidCaseEvent ::= (trig: String + { NULL, HALT }).
+	ValidCaseEvent(trig) :- trig = NULL.
 	ValidCaseEvent(trig) :- trig = HALT.
 	ValidCaseEvent(trig) :- trig: String, EventDecl(trig, _, _).
 

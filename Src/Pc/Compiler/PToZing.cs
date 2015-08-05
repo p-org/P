@@ -2423,11 +2423,18 @@ namespace Microsoft.Pc
             while (cases != null)
             {
                 Node evt = GetArgByIndex(cases, 0);
-                string eventName = HaltEvent;
-                Cnst userEvt = evt as Cnst;
-                if (userEvt != null)
+                string eventName = null;
+                if (evt is Cnst)
                 {
-                    eventName = userEvt.GetStringValue();
+                    eventName = (evt as Cnst).GetStringValue();
+                } 
+                else if ((evt as Id).Name == "NULL")
+                {
+                    eventName = NullEvent;
+                }
+                else
+                {
+                    eventName = HaltEvent;
                 }
                 eventNames.Add(eventName);
                 stmts.Add(MkZingAssign(MkZingDot("myHandle", "receiveSet"), MkZingAdd(MkZingDot("myHandle", "receiveSet"), MkZingEvent(eventName))));

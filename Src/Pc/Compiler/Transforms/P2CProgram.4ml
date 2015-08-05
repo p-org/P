@@ -892,8 +892,9 @@ transform P2CProgram (in:: P) returns (out:: C)
 	LocalsType(d, t) :- d is AnonOrNamedFun, type = d.locals, TypeId(typeIndex, type), 
 	                    typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), t = out.UnApp(ADDR, Ident(typeName)).
 
-	CaseEvent ::= (trig: String + { HALT }, id: Natural, name: String).
+	CaseEvent ::= (trig: String + { NULL, HALT }, id: Natural, name: String).
 	CaseEvent(trig, id, name) :- trig : String, ev is EventDecl, ev.name = trig, DeclId(ev, id, name).
+	CaseEvent(NULL, id, name) :- DeclId(NULL, id, name).
 	CaseEvent(HALT, id, name) :- DeclId(HALT, id, name).
 
 	CaseFunIndex ::= (decl: AnonOrNamedFun, act: AnonFunDecl + String, index: Natural).

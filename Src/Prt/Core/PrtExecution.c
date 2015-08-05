@@ -1247,14 +1247,18 @@ PrtStateHasDefaultTransitionOrAction(
 	_In_ PRT_MACHINEINST_PRIV			*context
 	)
 {
-	if (context->receive != NULL)
+	if (context->receive == NULL)
 	{
-		return PRT_FALSE;
+		PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
+		PRT_BOOLEAN hasDefaultTransition = (context->process->program->eventSets[stateDecl->transSetIndex].packedEvents[0] & 0x1) == 1;
+		PRT_BOOLEAN hasDefaultAction = (context->currentActionSetCompact[0] & 0x1) == 1;
+		return hasDefaultTransition || hasDefaultAction;
 	}
-	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
-	PRT_BOOLEAN hasDefaultTransition = (context->process->program->eventSets[stateDecl->transSetIndex].packedEvents[0] & 0x1) == 1;
-	PRT_BOOLEAN hasDefaultAction = (context->currentActionSetCompact[0] & 0x1) == 1;
-	return hasDefaultTransition || hasDefaultAction;
+	else
+	{
+		PRT_BOOLEAN hasDefaultCase = (context->process->program->eventSets[context->receive->caseSetIndex].packedEvents[0] & 0x1) == 1;
+		return hasDefaultCase;
+	}
 }
 
 FORCEINLINE

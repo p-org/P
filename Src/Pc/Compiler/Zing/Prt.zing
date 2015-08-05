@@ -195,6 +195,7 @@ class SM_HANDLE {
 	    PRT_TYPE nullType;
 		currentEvent = null;
 		currentArg = null;
+		hasNullTransition = hasNullTransition || (currentEvent in receiveSet); // zc complains if I use (null in receiveSet) 
 		while (true) {
 			buffer.DequeueEvent(this);
 			if (currentEvent != null) 

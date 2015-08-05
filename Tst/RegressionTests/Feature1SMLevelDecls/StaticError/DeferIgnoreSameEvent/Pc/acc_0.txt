@@ -4,7 +4,6 @@
 OUT: deferignore1.p (12, 4): inferred type:  NIL
 OUT: deferignore1.p (12, 10): inferred type:  BaseType(EVENT)
 OUT: deferignore1.p (13, 4): inferred type:  NIL
-OUT: deferignore1.p (13, 9): inferred type:  BaseType(REAL)
 OUT: deferignore1.p (13, 15): inferred type:  BaseType(EVENT)
 OUT: deferignore1.p (14, 4): inferred type:  NIL
 OUT: deferignore1.p (14, 9): inferred type:  BaseType(REAL)

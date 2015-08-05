@@ -43,7 +43,7 @@ machine PONG {
         entry { }
 			on Ping goto Pong_SendPong;
 			//on halt do { push Pong_SendPong; };  //TODO: Zing: "id does not belog to process"?
-			on halt do { push Pong_Halt; };
+			on halt goto  Pong_Halt;
 			
     }
 

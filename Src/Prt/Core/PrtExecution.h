@@ -10,7 +10,11 @@ extern "C"{
 //
 // Max call stack size of each machine
 //
-#define PRT_MAX_CALL_DEPTH 16 
+#define PRT_MAX_STATESTACK_DEPTH 16 
+
+#define PRT_MAX_FUNSTACK_DEPTH 16
+
+#define PRT_MAX_EVENTSTACK_DEPTH 10
 
 //
 // Initial length of the event queue for each machine
@@ -28,28 +32,11 @@ typedef struct PRT_PROCESS_PRIV {
 	PRT_MACHINEINST			**machines;
 } PRT_PROCESS_PRIV;
 
-typedef enum PRT_STATECONTROL
-{
-	//
-	// Execute the entry function
-	//
-	PrtStateEntry,
-	//
-	// Execute the action corresponding to currentEvent
-	//
-	PrtStateAction,
-	//
-	// Dequeue an event
-	//
-	PrtDequeue
-} PRT_STATECONTROL;
-
 typedef enum PRT_LASTOPERATION
 {
 	ReturnStatement,
 	PopStatement,
-	RaiseStatement,
-	PushStatement
+	RaiseStatement
 } PRT_LASTOPERATION;
 
 typedef struct PRT_EVENT
@@ -70,18 +57,36 @@ typedef struct PRT_EVENTQUEUE
 typedef struct PRT_STATESTACK_INFO
 {
 	PRT_UINT32			stateIndex;
-	PRT_EVENT			currEvent;
-	PRT_UINT16			returnTo;
-	PRT_STATECONTROL	stateControl;
 	PRT_UINT32*			inheritedDeferredSetCompact;
 	PRT_UINT32*			inheritedActionSetCompact;
 } PRT_STATESTACK_INFO;
 
 typedef struct PRT_STATESTACK
 {
-	PRT_STATESTACK_INFO stateStack[PRT_MAX_CALL_DEPTH];
+	PRT_STATESTACK_INFO stateStack[PRT_MAX_STATESTACK_DEPTH];
 	PRT_UINT16			length;
 } PRT_STATESTACK;
+
+typedef struct PRT_FUNSTACK_INFO
+{
+	PRT_UINT32		funIndex;
+	PRT_VALUE		**locals;
+	PRT_BOOLEAN		freeLocals;
+	PRT_UINT16		returnTo;
+	PRT_CASEDECL	*rcase;
+} PRT_FUNSTACK_INFO;
+
+typedef struct PRT_FUNSTACK
+{
+	PRT_FUNSTACK_INFO	funs[PRT_MAX_FUNSTACK_DEPTH];
+	PRT_UINT16			length;
+} PRT_FUNSTACK;
+
+typedef struct PRT_EVENTSTACK
+{
+	PRT_EVENT			events[PRT_MAX_EVENTSTACK_DEPTH];
+	PRT_UINT16			length;
+} PRT_EVENTSTACK;
 
 typedef struct PRT_MACHINEINST_PRIV {
 	PRT_PROCESS		    *process;
@@ -89,22 +94,22 @@ typedef struct PRT_MACHINEINST_PRIV {
 	PRT_VALUE			*id;  
 	void				*extContext;
 	PRT_BOOLEAN			isModel;
-	PRT_VALUE*			recvMessMap;	 /**<  Stores a map from the sender to the sequence number of the last message received from that sender*/
+	PRT_VALUE           *recvMap;	 
 	PRT_VALUE			**varValues;
-	PRT_EVENT			currentEvent;
 	PRT_RECURSIVE_MUTEX stateMachineLock;
 	PRT_BOOLEAN			isRunning;
 	PRT_BOOLEAN			isHalted;
 	PRT_UINT32			currentState;
+	PRT_RECEIVEDECL		*receive;
 	PRT_STATESTACK		callStack;
+	PRT_FUNSTACK		funStack;
+	PRT_EVENTSTACK		eventStack;
 	PRT_EVENTQUEUE		eventQueue;
 	PRT_LASTOPERATION	lastOperation;
-	PRT_STATECONTROL	stateControl;
-	PRT_UINT16			returnTo;
-	PRT_UINT32*			inheritedDeferredSetCompact;
-	PRT_UINT32*			currentDeferredSetCompact;
-	PRT_UINT32*			inheritedActionSetCompact;
-	PRT_UINT32*			currentActionSetCompact;
+	PRT_UINT32          *inheritedDeferredSetCompact;
+	PRT_UINT32          *currentDeferredSetCompact;
+	PRT_UINT32          *inheritedActionSetCompact;
+	PRT_UINT32          *currentActionSetCompact;
 } PRT_MACHINEINST_PRIV;
 
 /** Gets an element in a (named) tuple without cloning. Only used for internal manipulation of state variables.
@@ -134,7 +139,7 @@ PRT_API PRT_VALUE * PRT_CALL_CONV PrtMapGetNC(_In_ PRT_VALUE *map, _In_ PRT_VALU
 * @param[in] varIndex The index of the variable to modify.
 * @param[in] value The value to set. (Will be cloned)
 */
-PRT_API void PRT_CALL_CONV PrtSetGlobalVar(_Inout_ PRT_MACHINEINST_PRIV * context, _In_ UINT32 varIndex, _In_ PRT_VALUE * value);
+PRT_API void PRT_CALL_CONV PrtSetGlobalVar(_Inout_ PRT_MACHINEINST_PRIV * context, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE * value);
 
 /** Sets a global variable to variable
 * @param[in,out] context The context to modify.
@@ -142,13 +147,20 @@ PRT_API void PRT_CALL_CONV PrtSetGlobalVar(_Inout_ PRT_MACHINEINST_PRIV * contex
 * @param[in] value The value to set. (Will be cloned if cloneValue is PRT_TRUE)
 * @param[in] cloneValue Only set to PRT_FALSE if value will be forever owned by this machine.
 */
-PRT_API void PRT_CALL_CONV PrtSetGlobalVarEx(_Inout_ PRT_MACHINEINST_PRIV * context, _In_ UINT32 varIndex, _In_ PRT_VALUE * value, _In_ PRT_BOOLEAN cloneValue);
+PRT_API void PRT_CALL_CONV PrtSetGlobalVarEx(_Inout_ PRT_MACHINEINST_PRIV * context, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE * value, _In_ PRT_BOOLEAN cloneValue);
 
 PRT_MACHINEINST_PRIV *
 PrtMkMachinePrivate(
 _Inout_  PRT_PROCESS_PRIV		*process,
 _In_  PRT_UINT32				instanceOf,
 _In_  PRT_VALUE					*payload
+);
+
+void PRT_CALL_CONV PrtSetLocalVarEx(
+	_Inout_ PRT_VALUE **locals,
+	_In_ PRT_UINT32 varIndex,
+	_In_ PRT_VALUE *value,
+	_In_ PRT_BOOLEAN cloneValue
 );
 
 void
@@ -174,8 +186,7 @@ _In_ PRT_UINT32					stateIndex
 void
 PrtPushState(
 _Inout_ PRT_MACHINEINST_PRIV	*context,
-_In_	PRT_UINT32			stateIndex,
-_In_	PRT_BOOLEAN			isPushStatement
+_In_	PRT_UINT32			stateIndex
 );
 
 PRT_API void PRT_CALL_CONV
@@ -210,7 +221,8 @@ _In_ PRT_UINT32					eventIndex
 
 PRT_BOOLEAN
 PrtDequeueEvent(
-_Inout_ PRT_MACHINEINST_PRIV	*context
+_Inout_ PRT_MACHINEINST_PRIV	*context,
+_Inout_ PRT_FUNSTACK_INFO		*frame
 );
 
 FORCEINLINE
@@ -229,6 +241,12 @@ FORCEINLINE
 PRT_UINT16
 PrtGetPackSize(
 _In_ PRT_MACHINEINST_PRIV			*context
+);
+
+PRT_SM_FUN
+PrtGetFunction(
+_In_ PRT_MACHINEINST_PRIV		*context,
+_In_ PRT_UINT32 funIndex
 );
 
 FORCEINLINE
@@ -301,6 +319,13 @@ FORCEINLINE
 PRT_BOOLEAN
 PrtIsSpecialEvent(
 _In_ PRT_VALUE * event
+);
+
+FORCEINLINE
+PRT_BOOLEAN
+PrtIsEventReceivable(
+	_In_ PRT_MACHINEINST_PRIV *context,
+	_In_ PRT_UINT32		eventIndex
 );
 
 FORCEINLINE
@@ -384,6 +409,90 @@ _In_ PRT_MACHINEINST *context,
 _In_ PRT_VALUE *id
 );
 
+void
+PrtPushEvent(
+_Inout_ PRT_MACHINEINST_PRIV	*context,
+_In_ PRT_VALUE					*event,
+_In_ PRT_VALUE					*payload
+);
+
+void
+PrtPopEvent(
+_Inout_ PRT_MACHINEINST_PRIV	*context
+);
+
+void
+PrtClearEventStack(
+_Inout_ PRT_MACHINEINST_PRIV	*context
+);
+
+PRT_VALUE *
+PrtGetCurrentTrigger(
+_Inout_ PRT_MACHINEINST_PRIV	*context
+);
+
+PRT_VALUE *
+PrtGetCurrentPayload(
+_Inout_ PRT_MACHINEINST_PRIV		*context
+);
+
+PRT_FUNSTACK_INFO *
+PrtTopOfFunStack(
+	_In_ PRT_MACHINEINST_PRIV	*context
+);
+
+PRT_FUNSTACK_INFO *
+PrtBottomOfFunStack(
+	_In_ PRT_MACHINEINST_PRIV	*context
+);
+
+void
+PrtPushNewCaseFrame(
+_Inout_ PRT_MACHINEINST_PRIV	*context,
+_In_ PRT_UINT32					funIndex,
+_In_ PRT_VALUE					**locals
+);
+
+void 
+PrtPushNewFrame(
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_In_ PRT_UINT32					funIndex,
+	_In_ PRT_VALUE					*parameters
+);
+
+void 
+PrtPushFrame(
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_In_ PRT_FUNSTACK_INFO *funStackInfo
+);
+
+void 
+PrtPopFrame(
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_Inout_ PRT_FUNSTACK_INFO *funStackInfo
+);
+
+void
+PrtFreeLocals(
+	_In_ PRT_MACHINEINST_PRIV		*context,
+	_Inout_ PRT_FUNSTACK_INFO		*frame
+);
+
+PRT_VALUE *
+PrtWrapFunStmt(
+	_Inout_ PRT_FUNSTACK_INFO		*frame,
+	_In_ PRT_UINT16					funCallIndex,
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_In_ PRT_UINT32					funIndex,
+	_In_ PRT_VALUE					*parameters
+);
+
+PRT_BOOLEAN
+PrtReceive(
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_Inout_ PRT_FUNSTACK_INFO		*funStackInfo,
+	_In_ PRT_UINT16					receiveIndex
+);
 
 PRT_API void
 PrtRunStateMachine(
@@ -391,21 +500,13 @@ _Inout_ PRT_MACHINEINST_PRIV	    *context,
 _In_ PRT_BOOLEAN				doDequeue
 );
 
-
-VOID CALLBACK PrtRunStateMachineWorkItem(
-_Inout_     PTP_CALLBACK_INSTANCE Instance,
-_Inout_opt_ PVOID                 Context,
-_Inout_     PTP_WORK              Work
+PRT_API void PRT_CALL_CONV PrtEnqueueInOrder(
+_In_ PRT_VALUE					*source,
+_In_ PRT_INT32					seqNum,
+_Inout_ PRT_MACHINEINST_PRIV	*machine,
+_In_ PRT_VALUE					*evt,
+_In_ PRT_VALUE					*payload
 );
-
-extern PTP_POOL PrtRunStateMachineThreadPool;
-
-PRT_API void PRT_CALL_CONV PrtEnqueueWithInorder(
-	_In_ PRT_VALUE* source,
-	_In_ PRT_INT64 seqNum,
-	_Inout_ PRT_MACHINEINST_PRIV *machine,
-	_In_ PRT_VALUE *evt,
-	_In_ PRT_VALUE *payload);
 
 #ifdef __cplusplus
 }

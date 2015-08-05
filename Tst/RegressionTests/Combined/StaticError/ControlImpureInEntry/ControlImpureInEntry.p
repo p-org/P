@@ -1,6 +1,6 @@
 // Combined tests: "Control Impure" static errors
 // Cases covered:
-//  "push", "pop" and "raise" in entry action,
+// "pop" and "raise" in entry action,
 // used in anonymous functions (allowed) and  
 // invoked by (named) function calls (error)
 
@@ -19,16 +19,16 @@ main machine Program {
 		   entry { 
 			 if (i == 3) {
 				    pop;           //no error
-					Action4();     //error
+					Action4();
 					raise E;       //no error
-					Action5();     //error
-					push Init;     //no error
+					Action5();
+
 					Actions6();    //error
 			}
             else
 			    {
 					i = i + Action1() +   //error
-							Action2() -   //error
+							Action2() - 
 							Action3();    //error
 			    }
 			     raise E; 
@@ -39,7 +39,7 @@ main machine Program {
 		return 1;
     }
 	fun Action2() : int {
-		push Init;
+
 		return 1;
     }
 	fun Action3() : int {
@@ -54,6 +54,6 @@ main machine Program {
 		raise unit;
     }
 	fun Action6() {
-		push Init;
+
     }
 }

@@ -6,27 +6,24 @@ OUT: Writing program.h ...
 OUT: Writing program.c ...
 OUT: Writing DeferIgnore2.zing ...
 OUT: Compiling DeferIgnore2.zing to DeferIgnore2.dll ...
-OUT: deferignore2.p (13, 4): inferred type:  NIL
-OUT: deferignore2.p (13, 10): inferred type:  BaseType(EVENT)
-OUT: deferignore2.p (15, 16): inferred type:  NIL
-OUT: deferignore2.p (15, 21): inferred type:  BaseType(REAL)
-OUT: deferignore2.p (15, 27): inferred type:  BaseType(EVENT)
+OUT: deferignore2.p (0, 0): inferred type:  NIL
+OUT: deferignore2.p (14, 4): inferred type:  NIL
+OUT: deferignore2.p (14, 10): inferred type:  BaseType(EVENT)
 OUT: deferignore2.p (16, 16): inferred type:  NIL
 OUT: deferignore2.p (16, 21): inferred type:  BaseType(REAL)
 OUT: deferignore2.p (16, 27): inferred type:  BaseType(EVENT)
 OUT: deferignore2.p (17, 16): inferred type:  NIL
-OUT: deferignore2.p (17, 21): inferred type:  BaseType(REAL)
 OUT: deferignore2.p (17, 27): inferred type:  BaseType(EVENT)
-OUT: deferignore2.p (18, 7): inferred type:  NIL
-OUT: deferignore2.p (26, 4): inferred type:  BaseType(BOOL)
-OUT: deferignore2.p (26, 4): inferred type:  NIL
-OUT: deferignore2.p (26, 11): inferred type:  BaseType(BOOL)
-OUT: deferignore2.p (30, 14): inferred type:  NIL
-OUT: deferignore2.p (33, 11): inferred type:  NIL
-OUT: deferignore2.p (33, 18): inferred type:  BaseType(BOOL)
-OUT: deferignore2.p (36, 3): inferred type:  NIL
-OUT: deferignore2.p (36, 10): inferred type:  BaseType(BOOL)
-OUT: deferignore2.p (36, 15): inferred type:  BaseType(BOOL)
-OUT: deferignore2.p (36, 18): inferred type:  BaseType(BOOL)
+OUT: deferignore2.p (18, 16): inferred type:  NIL
+OUT: deferignore2.p (18, 27): inferred type:  BaseType(EVENT)
+OUT: deferignore2.p (19, 29): inferred type:  BaseType(BOOL)
+OUT: deferignore2.p (19, 29): inferred type:  NIL
+OUT: deferignore2.p (19, 36): inferred type:  BaseType(BOOL)
+OUT: deferignore2.p (28, 11): inferred type:  NIL
+OUT: deferignore2.p (28, 18): inferred type:  BaseType(BOOL)
+OUT: deferignore2.p (31, 3): inferred type:  NIL
+OUT: deferignore2.p (31, 10): inferred type:  BaseType(BOOL)
+OUT: deferignore2.p (31, 15): inferred type:  BaseType(BOOL)
+OUT: deferignore2.p (31, 18): inferred type:  BaseType(BOOL)
 OUT: 
 EXIT: 0

@@ -106,6 +106,9 @@
 			 keywords.Add("do", (int)Tokens.DO);
 			 keywords.Add("with", (int)Tokens.WITH);
 
+			 keywords.Add("receive", (int)Tokens.RECEIVE);
+			 keywords.Add("case", (int)Tokens.CASE);
+
 			 keywords.Add("in", (int)Tokens.IN);
 			 keywords.Add("as", (int)Tokens.AS);
 		 }

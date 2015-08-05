@@ -97,6 +97,7 @@ class SM_HANDLE {
 	static SM_HANDLE_SET enabled = new SM_HANDLE_SET;
 	static SM_HANDLE_SET hot = new SM_HANDLE_SET;
 	StateStack stack;
+	Continuation cont;
 	EVENT_BUFFER buffer;
 	int maxBufferSize;
 	Machine machineName;
@@ -104,12 +105,14 @@ class SM_HANDLE {
 	int instance;
 	SM_EVENT currentEvent;
     PRT_VALUE currentArg;
-	
+	SM_EVENT_SET receiveSet;
+
     static SM_HANDLE Construct(Machine mName, int inst, int maxBSize) {
     	SM_HANDLE handle;
 		PRT_TYPE prtType;
 		handle = new SM_HANDLE;
 		handle.stack = null;
+		handle.cont = Continuation.Construct();
 		handle.buffer = EVENT_BUFFER.Construct();
 		handle.maxBufferSize = maxBSize;
 		handle.machineName = mName;
@@ -118,6 +121,7 @@ class SM_HANDLE {
 		handle.currentEvent = null;
 		prtType = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL);
 		handle.currentArg = PRT_VALUE.PrtMkDefaultValue(prtType);
+		handle.receiveSet = new SM_EVENT_SET;
 		return handle;
     }
 
@@ -310,16 +314,21 @@ class EVENT_BUFFER {
 
     void DequeueEvent(SM_HANDLE owner) {
     	SM_EVENT_SET deferredSet;
+		SM_EVENT_SET receiveSet;
         EVENT_NODE iter;
-	
+		bool doDequeue;
+
 		deferredSet = owner.stack.deferredSet;
+		receiveSet = owner.receiveSet;
         iter = head.next;
         while (iter != head) {
-			if (iter.e in deferredSet)
-			{
-				iter = iter.next;
+		    if (sizeof(receiveSet) == 0) {
+				doDequeue = !(iter.e in deferredSet);
+			} else {
+				doDequeue = iter.e in receiveSet;
+				owner.receiveSet = new SM_EVENT_SET;
 			}
-			else 
+			if (doDequeue) 
 			{
 				iter.next.prev = iter.prev;
 				iter.prev.next = iter.next;
@@ -328,6 +337,7 @@ class EVENT_BUFFER {
 				eventBufferSize = eventBufferSize - 1;
 				return;
 			} 
+			iter = iter.next;
         }
 		return;
     }
@@ -395,18 +405,19 @@ class StateStack {
 	}
 };
 
-enum ContinuationReason { Return, Nondet, Pop, Raise, Push, Send, NewMachine };
+enum ContinuationReason { Return, Nondet, Pop, Raise, Receive, Send, NewMachine };
 
 class StackFrame {
     int pc;
-	PRT_VALUE_ARRAY vars;
-    StackFrame next;
+	PRT_VALUE_ARRAY locals;
+    SM_EVENT currentEvent;
+    PRT_VALUE currentArg;
+	StackFrame next;
 };
 
 class Continuation {
     StackFrame returnTo;
     ContinuationReason reason;
-    SM_STATE state;
     SM_HANDLE id;
     PRT_VALUE retVal;
 
@@ -415,16 +426,23 @@ class Continuation {
     // Therefore, nondet should not be reinitialized in this class.
     bool nondet;
 
-    static Continuation Construct_Default() {
+    static Continuation Construct() {
         Continuation res;
 		res = new Continuation;
 		res.returnTo = null;
 		res.reason = ContinuationReason.Return;
-		res.state = null;
 		res.id = null;
 		res.retVal = null;
 		res.nondet = false;
 		return res;
+    }
+
+	void Reset() {
+		this.returnTo = null;
+		this.reason = ContinuationReason.Return;
+		this.id = null;
+		this.retVal = null;
+		this.nondet = false;
     }
 
     StackFrame PopReturnTo() {
@@ -435,29 +453,29 @@ class Continuation {
 		return topOfStack;
     }
 
-    void PushReturnTo(int ret, PRT_VALUE_ARRAY vars) {
+    void PushReturnTo(int ret, PRT_VALUE_ARRAY locals, SM_EVENT currentEvent, PRT_VALUE currentArg) {
         StackFrame tmp;
 		tmp = new StackFrame;
 		tmp.pc = ret;
-		tmp.vars = vars;
+		tmp.locals = locals;
+		tmp.currentEvent = currentEvent;
+		tmp.currentArg = currentArg;
 		tmp.next = this.returnTo;
 		this.returnTo = tmp;
     }
 
     void Return() {
     	PRT_TYPE nullType;
-		nullType = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL);
         this.returnTo = null;
 		this.reason = ContinuationReason.Return;
-		this.state = null;
 		this.id = null;
+		nullType = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL);
 		this.retVal = PRT_VALUE.PrtMkDefaultValue(nullType);
     }
 
     void ReturnVal(PRT_VALUE val) {
         this.returnTo = null;
 		this.reason = ContinuationReason.Return;
-		this.state = null;
 		this.id = null;
 		this.retVal = val;
     }
@@ -465,7 +483,6 @@ class Continuation {
     void Pop() {
         this.returnTo = null;
 		this.reason = ContinuationReason.Pop;
-		this.state = null;
 		this.id = null;
 		this.retVal = null;
     }
@@ -473,45 +490,40 @@ class Continuation {
     void Raise() {
         this.returnTo = null;
 		this.reason = ContinuationReason.Raise;
-		this.state = null;
 		this.id = null;
 		this.retVal = null;
     }
 
-    void Send(int ret, PRT_VALUE_ARRAY vars) {
+    void Send(int ret, PRT_VALUE_ARRAY locals, SM_EVENT currentEvent, PRT_VALUE currentArg) {
         this.returnTo = null;
 		this.reason = ContinuationReason.Send;
-		this.state = null;
 		this.id = null;
 		this.retVal = null;
-		this.PushReturnTo(ret, vars);
+		this.PushReturnTo(ret, locals, currentEvent, currentArg);
     }
 
-    void NewMachine(int ret, PRT_VALUE_ARRAY vars, SM_HANDLE o) {
+    void NewMachine(int ret, PRT_VALUE_ARRAY locals, SM_EVENT currentEvent, PRT_VALUE currentArg, SM_HANDLE o) {
         this.returnTo = null;
 		this.reason = ContinuationReason.NewMachine;
-		this.state = null;
 		this.id = o;
 		this.retVal = null;
-		this.PushReturnTo(ret, vars);
+		this.PushReturnTo(ret, locals, currentEvent, currentArg);
     }
 
-    void Push(int ret, PRT_VALUE_ARRAY vars, SM_STATE state) {
+    void Receive(int ret, PRT_VALUE_ARRAY locals, SM_EVENT currentEvent, PRT_VALUE currentArg) {
         this.returnTo = null;
-		this.reason = ContinuationReason.Push;
-		this.state = state;
+		this.reason = ContinuationReason.Receive;
 		this.id = null;
 		this.retVal = null;
-		this.PushReturnTo(ret, vars);
+		this.PushReturnTo(ret, locals, currentEvent, currentArg);
     }
 
-    void Nondet(int ret, PRT_VALUE_ARRAY vars) {
+    void Nondet(int ret, PRT_VALUE_ARRAY locals, SM_EVENT currentEvent, PRT_VALUE currentArg) {
         this.returnTo = null;
 		this.reason = ContinuationReason.Nondet;
-		this.state = null;
 		this.id = null;
 		this.retVal = null;
-		this.PushReturnTo(ret, vars);
+		this.PushReturnTo(ret, locals, currentEvent, currentArg);
     }
 };
 

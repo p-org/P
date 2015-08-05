@@ -22,14 +22,9 @@ typedef enum PRT_SPECIAL_ACTIONS
 
 /** A PRT_SM_FUN function is a pointer to a P function.
 *   context is the current machine context.
-*   funIndex is the function decl index of this function.
-*   value is the argument to this function. It will be the C null value if function is nullary. Function frees value.
 *   Returns a non-null pointer if function has a return type. Otherwise returns C null value. Caller frees return.
 */
-typedef PRT_VALUE *(PRT_CALL_CONV * PRT_SM_FUN)(
-	_Inout_ struct PRT_MACHINEINST * context, 
-	_In_    PRT_UINT32 funIndex, 
-	_Inout_ PRT_VALUE * value);
+typedef PRT_VALUE *(PRT_CALL_CONV * PRT_SM_FUN)(_Inout_ struct PRT_MACHINEINST *context);
 
 /** A PRT_SM_EXTCTOR function constructs the external blob attached to a machine.
 *   context is the machine context to construct.
@@ -87,6 +82,20 @@ typedef struct PRT_VARDECL
 	void       **annotations;  /**< An array of annotations                */
 } PRT_VARDECL;
 
+typedef struct PRT_CASEDECL
+{
+	PRT_UINT32 triggerEventIndex;
+	PRT_UINT32 funIndex;
+} PRT_CASEDECL;
+
+typedef struct PRT_RECEIVEDECL
+{
+	PRT_UINT16 receiveIndex;
+	PRT_UINT32 caseSetIndex;
+	PRT_UINT32 nCases;
+	PRT_CASEDECL *cases;
+} PRT_RECEIVEDECL;
+
 /** Represents a P function declaration */
 typedef struct PRT_FUNDECL
 {
@@ -94,6 +103,11 @@ typedef struct PRT_FUNDECL
 	PRT_UINT32 ownerMachIndex; /**< The index of owner machine in program         */
 	PRT_STRING name;           /**< The name of this function (NULL is anonymous) */
 	PRT_SM_FUN implementation; /**< The implementation of this function           */
+	PRT_UINT32 maxNumLocals;
+	PRT_UINT32 numEnvVars;
+	PRT_TYPE *localsNmdTupType;
+	PRT_UINT32 nReceives;
+	PRT_RECEIVEDECL *receives;
 
 	PRT_UINT32 nAnnotations;   /**< Number of annotations                         */
 	void       **annotations;  /**< An array of annotations                       */

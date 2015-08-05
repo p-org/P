@@ -4,599 +4,250 @@
 OUT: castinexprs.p (70, 5): inferred type:  BaseType(INT)
 OUT: castinexprs.p (70, 5): inferred type:  ERROR
 OUT: castinexprs.p (70, 5): inferred type:  NIL
-OUT: castinexprs.p (70, 9): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (70, 11): inferred type:  ERROR
 OUT: castinexprs.p (71, 5): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (71, 5): inferred type:  NIL
 OUT: castinexprs.p (71, 9): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (72, 5): inferred type:  BaseType(INT)
-OUT: castinexprs.p (72, 5): inferred type:  ERROR
-OUT: castinexprs.p (72, 5): inferred type:  NIL
-OUT: castinexprs.p (72, 9): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (72, 11): inferred type:  ERROR
-OUT: castinexprs.p (74, 5): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (74, 5): inferred type:  ERROR
 OUT: castinexprs.p (74, 5): inferred type:  NIL
-OUT: castinexprs.p (74, 9): inferred type:  BaseType(INT)
 OUT: castinexprs.p (74, 11): inferred type:  ERROR
-OUT: castinexprs.p (75, 5): inferred type:  BaseType(INT)
 OUT: castinexprs.p (75, 5): inferred type:  NIL
 OUT: castinexprs.p (75, 9): inferred type:  BaseType(INT)
-OUT: castinexprs.p (76, 5): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (76, 5): inferred type:  ERROR
-OUT: castinexprs.p (76, 5): inferred type:  NIL
-OUT: castinexprs.p (76, 9): inferred type:  BaseType(INT)
-OUT: castinexprs.p (76, 11): inferred type:  ERROR
-OUT: castinexprs.p (78, 5): inferred type:  BaseType(INT)
 OUT: castinexprs.p (78, 5): inferred type:  ERROR
 OUT: castinexprs.p (78, 5): inferred type:  NIL
-OUT: castinexprs.p (78, 9): inferred type:  BaseType(EVENT)
 OUT: castinexprs.p (78, 11): inferred type:  ERROR
-OUT: castinexprs.p (79, 5): inferred type:  BaseType(INT)
 OUT: castinexprs.p (79, 5): inferred type:  ERROR
 OUT: castinexprs.p (79, 5): inferred type:  NIL
-OUT: castinexprs.p (79, 9): inferred type:  BaseType(EVENT)
 OUT: castinexprs.p (79, 12): inferred type:  ERROR
 OUT: castinexprs.p (81, 5): inferred type:  BaseType(EVENT)
 OUT: castinexprs.p (81, 5): inferred type:  NIL
 OUT: castinexprs.p (81, 10): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (82, 5): inferred type:  BaseType(INT)
-OUT: castinexprs.p (82, 5): inferred type:  ERROR
-OUT: castinexprs.p (82, 5): inferred type:  NIL
-OUT: castinexprs.p (82, 9): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (82, 12): inferred type:  ERROR
-OUT: castinexprs.p (84, 5): inferred type:  BaseType(INT)
 OUT: castinexprs.p (84, 5): inferred type:  NIL
 OUT: castinexprs.p (84, 9): inferred type:  BaseType(INT)
-OUT: castinexprs.p (85, 5): inferred type:  BaseType(EVENT)
 OUT: castinexprs.p (85, 5): inferred type:  ERROR
 OUT: castinexprs.p (85, 5): inferred type:  NIL
-OUT: castinexprs.p (85, 10): inferred type:  BaseType(INT)
 OUT: castinexprs.p (85, 12): inferred type:  ERROR
-OUT: castinexprs.p (87, 5): inferred type:  BaseType(INT)
 OUT: castinexprs.p (87, 5): inferred type:  NIL
 OUT: castinexprs.p (87, 9): inferred type:  BaseType(INT)
-OUT: castinexprs.p (88, 5): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (88, 5): inferred type:  ERROR
-OUT: castinexprs.p (88, 5): inferred type:  NIL
-OUT: castinexprs.p (88, 10): inferred type:  BaseType(INT)
-OUT: castinexprs.p (88, 12): inferred type:  ERROR
-OUT: castinexprs.p (91, 5): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (91, 5): inferred type:  ERROR
 OUT: castinexprs.p (91, 5): inferred type:  NIL
-OUT: castinexprs.p (91, 9): inferred type:  BaseType(EVENT)
 OUT: castinexprs.p (91, 11): inferred type:  ERROR
-OUT: castinexprs.p (92, 5): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (92, 5): inferred type:  ERROR
 OUT: castinexprs.p (92, 5): inferred type:  NIL
-OUT: castinexprs.p (92, 9): inferred type:  BaseType(EVENT)
 OUT: castinexprs.p (92, 12): inferred type:  ERROR
-OUT: castinexprs.p (94, 5): inferred type:  BaseType(EVENT)
 OUT: castinexprs.p (94, 5): inferred type:  NIL
-OUT: castinexprs.p (94, 10): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (95, 5): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (95, 5): inferred type:  ERROR
-OUT: castinexprs.p (95, 5): inferred type:  NIL
-OUT: castinexprs.p (95, 9): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (95, 12): inferred type:  ERROR
-OUT: castinexprs.p (97, 5): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (97, 5): inferred type:  NIL
 OUT: castinexprs.p (97, 9): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (98, 5): inferred type:  BaseType(EVENT)
 OUT: castinexprs.p (98, 5): inferred type:  ERROR
 OUT: castinexprs.p (98, 5): inferred type:  NIL
-OUT: castinexprs.p (98, 10): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (98, 12): inferred type:  ERROR
-OUT: castinexprs.p (100, 5): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (100, 5): inferred type:  NIL
-OUT: castinexprs.p (100, 8): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (101, 5): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (101, 5): inferred type:  ERROR
-OUT: castinexprs.p (101, 5): inferred type:  NIL
-OUT: castinexprs.p (101, 10): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (101, 12): inferred type:  ERROR
 OUT: castinexprs.p (104, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (104, 5): inferred type:  NIL
-OUT: castinexprs.p (104, 9): inferred type:  BaseType(INT)
-OUT: castinexprs.p (105, 5): inferred type:  BaseType(INT)
 OUT: castinexprs.p (105, 5): inferred type:  NIL
-OUT: castinexprs.p (105, 9): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (105, 11): inferred type:  BaseType(INT)
 OUT: castinexprs.p (106, 5): inferred type:  NIL
-OUT: castinexprs.p (106, 13): inferred type:  BaseType(INT)
 OUT: castinexprs.p (106, 15): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (106, 18): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (108, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (108, 5): inferred type:  NIL
-OUT: castinexprs.p (108, 9): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (109, 5): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (109, 5): inferred type:  NIL
-OUT: castinexprs.p (109, 9): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (109, 11): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (110, 5): inferred type:  NIL
-OUT: castinexprs.p (110, 13): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (110, 15): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (110, 18): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (112, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (112, 5): inferred type:  NIL
 OUT: castinexprs.p (112, 9): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (113, 5): inferred type:  BaseType(EVENT)
 OUT: castinexprs.p (113, 5): inferred type:  NIL
-OUT: castinexprs.p (113, 10): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (113, 12): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (114, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (114, 5): inferred type:  NIL
-OUT: castinexprs.p (114, 9): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (115, 5): inferred type:  BaseType(EVENT)
 OUT: castinexprs.p (115, 5): inferred type:  NIL
-OUT: castinexprs.p (115, 10): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (115, 12): inferred type:  BaseType(EVENT)
 OUT: castinexprs.p (116, 5): inferred type:  NIL
-OUT: castinexprs.p (116, 13): inferred type:  BaseType(EVENT)
 OUT: castinexprs.p (116, 16): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (116, 19): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (118, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (118, 5): inferred type:  NIL
-OUT: castinexprs.p (118, 9): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (119, 5): inferred type:  NIL
-OUT: castinexprs.p (119, 13): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (119, 15): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (119, 18): inferred type:  BaseType(NULL)
 OUT: castinexprs.p (120, 5): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (120, 5): inferred type:  NIL
 OUT: castinexprs.p (120, 11): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (121, 5): inferred type:  NIL
-OUT: castinexprs.p (121, 13): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (121, 17): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (121, 20): inferred type:  BaseType(NULL)
-OUT: castinexprs.p (122, 5): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (122, 5): inferred type:  NIL
-OUT: castinexprs.p (122, 11): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (122, 13): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (123, 5): inferred type:  NIL
-OUT: castinexprs.p (123, 13): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (123, 17): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (123, 20): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (124, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (124, 5): inferred type:  NIL
 OUT: castinexprs.p (124, 9): inferred type:  BaseType(REAL)
-OUT: castinexprs.p (125, 5): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (125, 5): inferred type:  NIL
-OUT: castinexprs.p (125, 11): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (125, 13): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (126, 5): inferred type:  NIL
-OUT: castinexprs.p (126, 13): inferred type:  BaseType(REAL)
-OUT: castinexprs.p (126, 17): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (126, 20): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (129, 5): inferred type:  NIL
 OUT: castinexprs.p (129, 5): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (129, 11): inferred type:  BaseType(INT)
 OUT: castinexprs.p (129, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (129, 14): inferred type:  BaseType(INT)
 OUT: castinexprs.p (129, 14): inferred type:  TupType(BaseType(INT), NIL)
 OUT: castinexprs.p (130, 11): inferred type:  NIL
-OUT: castinexprs.p (130, 11): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (130, 17): inferred type:  BaseType(INT)
 OUT: castinexprs.p (130, 17): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (130, 20): inferred type:  BaseType(INT)
 OUT: castinexprs.p (130, 20): inferred type:  TupType(BaseType(INT), NIL)
 OUT: castinexprs.p (131, 5): inferred type:  ERROR
 OUT: castinexprs.p (131, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (131, 5): inferred type:  NIL
-OUT: castinexprs.p (131, 10): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (131, 12): inferred type:  ERROR
-OUT: castinexprs.p (132, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (132, 5): inferred type:  NIL
 OUT: castinexprs.p (132, 7): inferred type:  BaseType(INT)
-OUT: castinexprs.p (132, 8): inferred type:  BaseType(INT)
-OUT: castinexprs.p (132, 13): inferred type:  BaseType(INT)
-OUT: castinexprs.p (133, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (133, 5): inferred type:  NIL
 OUT: castinexprs.p (133, 7): inferred type:  BaseType(INT)
-OUT: castinexprs.p (133, 8): inferred type:  BaseType(INT)
 OUT: castinexprs.p (133, 13): inferred type:  BaseType(INT)
 OUT: castinexprs.p (134, 5): inferred type:  ERROR
 OUT: castinexprs.p (134, 5): inferred type:  NIL
-OUT: castinexprs.p (134, 5): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (134, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (134, 12): inferred type:  ERROR
-OUT: castinexprs.p (136, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (136, 5): inferred type:  NIL
-OUT: castinexprs.p (136, 9): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (137, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (137, 5): inferred type:  NIL
-OUT: castinexprs.p (137, 10): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (137, 12): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: castinexprs.p (138, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (138, 5): inferred type:  ERROR
 OUT: castinexprs.p (138, 5): inferred type:  NIL
 OUT: castinexprs.p (138, 6): inferred type:  ERROR
-OUT: castinexprs.p (138, 7): inferred type:  BaseType(INT)
-OUT: castinexprs.p (138, 12): inferred type:  BaseType(INT)
-OUT: castinexprs.p (139, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (139, 5): inferred type:  ERROR
 OUT: castinexprs.p (139, 5): inferred type:  NIL
-OUT: castinexprs.p (139, 11): inferred type:  BaseType(INT)
-OUT: castinexprs.p (139, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (139, 13): inferred type:  BaseType(INT)
-OUT: castinexprs.p (139, 13): inferred type:  TupType(BaseType(INT), NIL)
-OUT: castinexprs.p (140, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (140, 5): inferred type:  NIL
-OUT: castinexprs.p (140, 7): inferred type:  BaseType(INT)
-OUT: castinexprs.p (140, 8): inferred type:  BaseType(INT)
-OUT: castinexprs.p (140, 13): inferred type:  BaseType(INT)
-OUT: castinexprs.p (141, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (141, 5): inferred type:  NIL
-OUT: castinexprs.p (141, 7): inferred type:  BaseType(INT)
-OUT: castinexprs.p (141, 8): inferred type:  BaseType(INT)
-OUT: castinexprs.p (141, 13): inferred type:  BaseType(INT)
-OUT: castinexprs.p (142, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (142, 5): inferred type:  NIL
-OUT: castinexprs.p (142, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: castinexprs.p (143, 5): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (143, 5): inferred type:  ERROR
-OUT: castinexprs.p (143, 5): inferred type:  NIL
-OUT: castinexprs.p (143, 6): inferred type:  ERROR
-OUT: castinexprs.p (143, 7): inferred type:  BaseType(INT)
-OUT: castinexprs.p (143, 12): inferred type:  BaseType(INT)
-OUT: castinexprs.p (145, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (145, 5): inferred type:  NIL
-OUT: castinexprs.p (145, 9): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (146, 5): inferred type:  NIL
-OUT: castinexprs.p (146, 5): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (146, 9): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (146, 11): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (147, 5): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (147, 5): inferred type:  ERROR
-OUT: castinexprs.p (147, 5): inferred type:  NIL
-OUT: castinexprs.p (147, 6): inferred type:  ERROR
-OUT: castinexprs.p (147, 7): inferred type:  BaseType(INT)
-OUT: castinexprs.p (147, 12): inferred type:  BaseType(INT)
-OUT: castinexprs.p (148, 5): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (148, 5): inferred type:  ERROR
-OUT: castinexprs.p (148, 5): inferred type:  NIL
-OUT: castinexprs.p (148, 11): inferred type:  BaseType(INT)
-OUT: castinexprs.p (148, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (148, 13): inferred type:  BaseType(INT)
-OUT: castinexprs.p (148, 13): inferred type:  TupType(BaseType(INT), NIL)
 OUT: castinexprs.p (149, 5): inferred type:  NIL
-OUT: castinexprs.p (149, 5): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (149, 11): inferred type:  BaseType(INT)
-OUT: castinexprs.p (149, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (149, 14): inferred type:  BaseType(INT)
-OUT: castinexprs.p (149, 14): inferred type:  TupType(BaseType(INT), NIL)
 OUT: castinexprs.p (150, 11): inferred type:  NIL
-OUT: castinexprs.p (150, 11): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (150, 17): inferred type:  BaseType(INT)
-OUT: castinexprs.p (150, 17): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (150, 20): inferred type:  BaseType(INT)
-OUT: castinexprs.p (150, 20): inferred type:  TupType(BaseType(INT), NIL)
-OUT: castinexprs.p (151, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (151, 5): inferred type:  NIL
-OUT: castinexprs.p (151, 9): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (152, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (152, 5): inferred type:  ERROR
 OUT: castinexprs.p (152, 5): inferred type:  NIL
-OUT: castinexprs.p (152, 11): inferred type:  BaseType(INT)
 OUT: castinexprs.p (152, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (152, 13): inferred type:  BaseType(INT)
-OUT: castinexprs.p (152, 13): inferred type:  TupType(BaseType(INT), NIL)
-OUT: castinexprs.p (154, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (154, 5): inferred type:  NIL
-OUT: castinexprs.p (154, 9): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (155, 5): inferred type:  NIL
 OUT: castinexprs.p (155, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: castinexprs.p (155, 10): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (155, 12): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
 OUT: castinexprs.p (156, 5): inferred type:  NIL
-OUT: castinexprs.p (156, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
 OUT: castinexprs.p (156, 8): inferred type:  BaseType(INT)
-OUT: castinexprs.p (156, 12): inferred type:  BaseType(INT)
 OUT: castinexprs.p (157, 5): inferred type:  NIL
-OUT: castinexprs.p (157, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
 OUT: castinexprs.p (157, 8): inferred type:  BaseType(INT)
-OUT: castinexprs.p (157, 12): inferred type:  BaseType(INT)
-OUT: castinexprs.p (158, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (158, 5): inferred type:  NIL
-OUT: castinexprs.p (158, 9): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: castinexprs.p (159, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (159, 5): inferred type:  ERROR
 OUT: castinexprs.p (159, 5): inferred type:  NIL
 OUT: castinexprs.p (159, 7): inferred type:  ERROR
 OUT: castinexprs.p (159, 11): inferred type:  BaseType(INT)
-OUT: castinexprs.p (161, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (161, 5): inferred type:  NIL
-OUT: castinexprs.p (161, 9): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (162, 5): inferred type:  NIL
 OUT: castinexprs.p (162, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (162, 10): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (162, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: castinexprs.p (163, 5): inferred type:  NIL
-OUT: castinexprs.p (163, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: castinexprs.p (163, 8): inferred type:  BaseType(INT)
-OUT: castinexprs.p (163, 12): inferred type:  BaseType(INT)
 OUT: castinexprs.p (164, 5): inferred type:  NIL
-OUT: castinexprs.p (164, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: castinexprs.p (164, 8): inferred type:  BaseType(INT)
-OUT: castinexprs.p (164, 12): inferred type:  BaseType(INT)
-OUT: castinexprs.p (165, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (165, 5): inferred type:  NIL
-OUT: castinexprs.p (165, 9): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (166, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (166, 5): inferred type:  ERROR
 OUT: castinexprs.p (166, 5): inferred type:  NIL
 OUT: castinexprs.p (166, 7): inferred type:  ERROR
-OUT: castinexprs.p (166, 11): inferred type:  BaseType(INT)
 OUT: castinexprs.p (169, 5): inferred type:  NIL
-OUT: castinexprs.p (169, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: castinexprs.p (169, 8): inferred type:  BaseType(INT)
-OUT: castinexprs.p (169, 12): inferred type:  BaseType(INT)
 OUT: castinexprs.p (170, 5): inferred type:  NIL
-OUT: castinexprs.p (170, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: castinexprs.p (170, 8): inferred type:  BaseType(INT)
-OUT: castinexprs.p (170, 12): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: castinexprs.p (170, 15): inferred type:  BaseType(INT)
 OUT: castinexprs.p (170, 17): inferred type:  BaseType(INT)
-OUT: castinexprs.p (170, 19): inferred type:  BaseType(INT)
 OUT: castinexprs.p (171, 5): inferred type:  ERROR
-OUT: castinexprs.p (171, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (171, 5): inferred type:  NIL
-OUT: castinexprs.p (171, 10): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
 OUT: castinexprs.p (171, 13): inferred type:  ERROR
 OUT: castinexprs.p (172, 5): inferred type:  NIL
-OUT: castinexprs.p (172, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (172, 11): inferred type:  BaseType(INT)
 OUT: castinexprs.p (172, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (172, 13): inferred type:  BaseType(INT)
 OUT: castinexprs.p (172, 13): inferred type:  TupType(BaseType(INT), NIL)
 OUT: castinexprs.p (173, 5): inferred type:  NIL
-OUT: castinexprs.p (173, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (173, 11): inferred type:  BaseType(INT)
 OUT: castinexprs.p (173, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (173, 13): inferred type:  BaseType(INT)
-OUT: castinexprs.p (173, 13): inferred type:  TupType(BaseType(INT), NIL)
 OUT: castinexprs.p (174, 5): inferred type:  ERROR
-OUT: castinexprs.p (174, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (174, 5): inferred type:  NIL
-OUT: castinexprs.p (174, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: castinexprs.p (174, 13): inferred type:  ERROR
-OUT: castinexprs.p (175, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (175, 5): inferred type:  NIL
-OUT: castinexprs.p (175, 7): inferred type:  BaseType(INT)
-OUT: castinexprs.p (175, 8): inferred type:  BaseType(INT)
-OUT: castinexprs.p (175, 13): inferred type:  BaseType(INT)
-OUT: castinexprs.p (176, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (176, 5): inferred type:  NIL
-OUT: castinexprs.p (176, 7): inferred type:  BaseType(INT)
-OUT: castinexprs.p (176, 8): inferred type:  BaseType(INT)
-OUT: castinexprs.p (176, 13): inferred type:  BaseType(INT)
 OUT: castinexprs.p (177, 5): inferred type:  ERROR
 OUT: castinexprs.p (177, 5): inferred type:  NIL
-OUT: castinexprs.p (177, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (177, 10): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (177, 13): inferred type:  ERROR
-OUT: castinexprs.p (178, 5): inferred type:  ERROR
-OUT: castinexprs.p (178, 5): inferred type:  NIL
-OUT: castinexprs.p (178, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: castinexprs.p (178, 10): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: castinexprs.p (178, 13): inferred type:  ERROR
 OUT: castinexprs.p (180, 5): inferred type:  NIL
-OUT: castinexprs.p (180, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: castinexprs.p (180, 8): inferred type:  BaseType(INT)
-OUT: castinexprs.p (180, 12): inferred type:  BaseType(INT)
 OUT: castinexprs.p (181, 5): inferred type:  NIL
-OUT: castinexprs.p (181, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: castinexprs.p (181, 8): inferred type:  BaseType(INT)
-OUT: castinexprs.p (181, 12): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: castinexprs.p (181, 15): inferred type:  BaseType(INT)
-OUT: castinexprs.p (181, 17): inferred type:  BaseType(INT)
-OUT: castinexprs.p (181, 19): inferred type:  BaseType(INT)
 OUT: castinexprs.p (182, 5): inferred type:  ERROR
 OUT: castinexprs.p (182, 5): inferred type:  NIL
-OUT: castinexprs.p (182, 5): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (182, 9): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
 OUT: castinexprs.p (182, 12): inferred type:  ERROR
 OUT: castinexprs.p (183, 5): inferred type:  NIL
-OUT: castinexprs.p (183, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (183, 11): inferred type:  BaseType(INT)
-OUT: castinexprs.p (183, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (183, 13): inferred type:  BaseType(INT)
-OUT: castinexprs.p (183, 13): inferred type:  TupType(BaseType(INT), NIL)
 OUT: castinexprs.p (184, 5): inferred type:  NIL
-OUT: castinexprs.p (184, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (184, 11): inferred type:  BaseType(INT)
-OUT: castinexprs.p (184, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (184, 13): inferred type:  BaseType(INT)
-OUT: castinexprs.p (184, 13): inferred type:  TupType(BaseType(INT), NIL)
 OUT: castinexprs.p (185, 5): inferred type:  ERROR
 OUT: castinexprs.p (185, 5): inferred type:  NIL
-OUT: castinexprs.p (185, 5): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (185, 9): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: castinexprs.p (185, 12): inferred type:  ERROR
 OUT: castinexprs.p (186, 5): inferred type:  NIL
-OUT: castinexprs.p (186, 5): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (186, 9): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (187, 5): inferred type:  NIL
-OUT: castinexprs.p (187, 5): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (187, 11): inferred type:  BaseType(INT)
-OUT: castinexprs.p (187, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (187, 14): inferred type:  BaseType(INT)
-OUT: castinexprs.p (187, 14): inferred type:  TupType(BaseType(INT), NIL)
 OUT: castinexprs.p (188, 11): inferred type:  NIL
-OUT: castinexprs.p (188, 11): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (188, 17): inferred type:  BaseType(INT)
-OUT: castinexprs.p (188, 17): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (188, 20): inferred type:  BaseType(INT)
-OUT: castinexprs.p (188, 20): inferred type:  TupType(BaseType(INT), NIL)
 OUT: castinexprs.p (189, 5): inferred type:  ERROR
 OUT: castinexprs.p (189, 5): inferred type:  NIL
-OUT: castinexprs.p (189, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (189, 10): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (189, 12): inferred type:  ERROR
-OUT: castinexprs.p (190, 5): inferred type:  ERROR
-OUT: castinexprs.p (190, 5): inferred type:  NIL
-OUT: castinexprs.p (190, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: castinexprs.p (190, 10): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (190, 12): inferred type:  ERROR
-OUT: castinexprs.p (193, 5): inferred type:  BaseType(INT)
 OUT: castinexprs.p (193, 5): inferred type:  NIL
-OUT: castinexprs.p (193, 9): inferred type:  BaseType(INT)
 OUT: castinexprs.p (194, 5): inferred type:  NIL
-OUT: castinexprs.p (194, 10): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (194, 15): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (194, 20): inferred type:  BaseType(INT)
 OUT: castinexprs.p (195, 5): inferred type:  ERROR
 OUT: castinexprs.p (195, 5): inferred type:  NIL
-OUT: castinexprs.p (195, 10): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (195, 15): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (195, 20): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (196, 5): inferred type:  ERROR
 OUT: castinexprs.p (196, 5): inferred type:  NIL
-OUT: castinexprs.p (196, 10): inferred type:  BaseType(REAL)
-OUT: castinexprs.p (196, 15): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (196, 20): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (196, 22): inferred type:  ERROR
 OUT: castinexprs.p (197, 5): inferred type:  ERROR
 OUT: castinexprs.p (197, 5): inferred type:  NIL
-OUT: castinexprs.p (197, 10): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (197, 15): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (197, 20): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (198, 5): inferred type:  ERROR
-OUT: castinexprs.p (198, 5): inferred type:  NIL
-OUT: castinexprs.p (198, 10): inferred type:  BaseType(REAL)
-OUT: castinexprs.p (198, 15): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (198, 20): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (198, 23): inferred type:  ERROR
 OUT: castinexprs.p (199, 5): inferred type:  ERROR
 OUT: castinexprs.p (199, 5): inferred type:  NIL
-OUT: castinexprs.p (199, 10): inferred type:  BaseType(REAL)
-OUT: castinexprs.p (199, 15): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (199, 20): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (200, 5): inferred type:  ERROR
 OUT: castinexprs.p (200, 5): inferred type:  NIL
-OUT: castinexprs.p (200, 10): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (200, 15): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (200, 20): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (200, 24): inferred type:  ERROR
-OUT: castinexprs.p (201, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (201, 5): inferred type:  NIL
 OUT: castinexprs.p (201, 9): inferred type:  BaseType(NULL)
 OUT: castinexprs.p (202, 5): inferred type:  ERROR
 OUT: castinexprs.p (202, 5): inferred type:  NIL
-OUT: castinexprs.p (202, 10): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (202, 15): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (202, 20): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (203, 5): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (203, 5): inferred type:  NIL
-OUT: castinexprs.p (203, 9): inferred type:  BaseType(INT)
 OUT: castinexprs.p (204, 11): inferred type:  ERROR
 OUT: castinexprs.p (204, 11): inferred type:  NIL
-OUT: castinexprs.p (204, 16): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (204, 21): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (204, 26): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (205, 5): inferred type:  NIL
-OUT: castinexprs.p (205, 10): inferred type:  BaseType(REAL)
-OUT: castinexprs.p (205, 15): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (205, 20): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (205, 22): inferred type:  BaseType(INT)
 OUT: castinexprs.p (207, 5): inferred type:  NIL
-OUT: castinexprs.p (207, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprs.p (207, 9): inferred type:  BaseType(INT)
-OUT: castinexprs.p (207, 13): inferred type:  BaseType(INT)
 OUT: castinexprs.p (208, 5): inferred type:  NIL
-OUT: castinexprs.p (208, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprs.p (208, 9): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (208, 13): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (209, 5): inferred type:  NIL
-OUT: castinexprs.p (209, 10): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (209, 15): inferred type:  BaseType(EVENT)
 OUT: castinexprs.p (209, 20): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprs.p (210, 5): inferred type:  NIL
-OUT: castinexprs.p (210, 10): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (210, 15): inferred type:  BaseType(EVENT)
 OUT: castinexprs.p (210, 21): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
-OUT: castinexprs.p (210, 25): inferred type:  BaseType(INT)
 OUT: castinexprs.p (210, 28): inferred type:  NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL)
 OUT: castinexprs.p (210, 32): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (212, 5): inferred type:  NIL
-OUT: castinexprs.p (212, 5): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (212, 9): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (213, 5): inferred type:  NIL
-OUT: castinexprs.p (213, 5): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (213, 11): inferred type:  BaseType(INT)
-OUT: castinexprs.p (213, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (213, 14): inferred type:  BaseType(INT)
-OUT: castinexprs.p (213, 14): inferred type:  TupType(BaseType(INT), NIL)
 OUT: castinexprs.p (214, 11): inferred type:  NIL
-OUT: castinexprs.p (214, 11): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (214, 17): inferred type:  BaseType(INT)
-OUT: castinexprs.p (214, 17): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: castinexprs.p (214, 20): inferred type:  BaseType(INT)
-OUT: castinexprs.p (214, 20): inferred type:  TupType(BaseType(INT), NIL)
 OUT: castinexprs.p (215, 5): inferred type:  NIL
-OUT: castinexprs.p (215, 10): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (215, 15): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (215, 22): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (217, 5): inferred type:  NIL
 OUT: castinexprs.p (217, 5): inferred type:  SeqType(BaseType(ANY))
-OUT: castinexprs.p (217, 10): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (218, 5): inferred type:  ERROR
 OUT: castinexprs.p (218, 5): inferred type:  NIL
-OUT: castinexprs.p (218, 10): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (218, 15): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (218, 22): inferred type:  SeqType(BaseType(ANY))
 OUT: castinexprs.p (219, 5): inferred type:  NIL
-OUT: castinexprs.p (219, 10): inferred type:  BaseType(REAL)
-OUT: castinexprs.p (219, 15): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (219, 22): inferred type:  SeqType(BaseType(ANY))
 OUT: castinexprs.p (219, 25): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (222, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (222, 5): inferred type:  NIL
 OUT: castinexprs.p (222, 10): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (223, 5): inferred type:  NIL
-OUT: castinexprs.p (223, 10): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (223, 15): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (223, 22): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: castinexprs.p (224, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (224, 5): inferred type:  NIL
-OUT: castinexprs.p (224, 7): inferred type:  BaseType(INT)
-OUT: castinexprs.p (224, 8): inferred type:  BaseType(INT)
-OUT: castinexprs.p (224, 13): inferred type:  BaseType(INT)
-OUT: castinexprs.p (225, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (225, 5): inferred type:  NIL
 OUT: castinexprs.p (225, 7): inferred type:  BaseType(INT)
-OUT: castinexprs.p (225, 8): inferred type:  BaseType(INT)
-OUT: castinexprs.p (225, 13): inferred type:  BaseType(INT)
 OUT: castinexprs.p (226, 5): inferred type:  NIL
-OUT: castinexprs.p (226, 10): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (226, 15): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (226, 23): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (228, 5): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (228, 5): inferred type:  NIL
 OUT: castinexprs.p (228, 10): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (229, 5): inferred type:  ERROR
 OUT: castinexprs.p (229, 5): inferred type:  NIL
-OUT: castinexprs.p (229, 10): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (229, 15): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (229, 22): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (230, 5): inferred type:  NIL
-OUT: castinexprs.p (230, 10): inferred type:  BaseType(REAL)
-OUT: castinexprs.p (230, 15): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (230, 22): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (230, 25): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: castinexprs.p (231, 5): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (231, 5): inferred type:  NIL
-OUT: castinexprs.p (231, 10): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: castinexprs.p (232, 5): inferred type:  ERROR
-OUT: castinexprs.p (232, 5): inferred type:  NIL
-OUT: castinexprs.p (232, 10): inferred type:  BaseType(REAL)
-OUT: castinexprs.p (232, 15): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (232, 22): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (233, 5): inferred type:  NIL
-OUT: castinexprs.p (233, 10): inferred type:  BaseType(REAL)
 OUT: castinexprs.p (233, 15): inferred type:  BaseType(EVENT)
-OUT: castinexprs.p (233, 22): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: castinexprs.p (233, 25): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (235, 5): inferred type:  NIL
 OUT: castinexprs.p (235, 11): inferred type:  BaseType(EVENT)
 OUT: castinexprs.p (270, 4): inferred type:  BaseType(INT)
@@ -604,70 +255,44 @@ OUT: castinexprs.p (270, 4): inferred type:  NIL
 OUT: castinexprs.p (270, 9): inferred type:  BaseType(INT)
 OUT: castinexprs.p (270, 17): inferred type:  BaseType(INT)
 OUT: castinexprs.p (271, 4): inferred type:  NIL
-OUT: castinexprs.p (271, 11): inferred type:  BaseType(INT)
 OUT: castinexprs.p (271, 14): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (271, 17): inferred type:  BaseType(INT)
 OUT: castinexprs.p (272, 4): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (272, 4): inferred type:  ERROR
 OUT: castinexprs.p (272, 4): inferred type:  NIL
-OUT: castinexprs.p (272, 9): inferred type:  BaseType(INT)
 OUT: castinexprs.p (272, 17): inferred type:  ERROR
 OUT: castinexprs.p (273, 4): inferred type:  NIL
 OUT: castinexprs.p (279, 4): inferred type:  BaseType(INT)
 OUT: castinexprs.p (279, 4): inferred type:  NIL
-OUT: castinexprs.p (279, 9): inferred type:  BaseType(INT)
 OUT: castinexprs.p (279, 17): inferred type:  BaseType(INT)
 OUT: castinexprs.p (280, 4): inferred type:  NIL
-OUT: castinexprs.p (280, 11): inferred type:  BaseType(INT)
 OUT: castinexprs.p (280, 14): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (280, 17): inferred type:  BaseType(INT)
-OUT: castinexprs.p (281, 4): inferred type:  BaseType(INT)
 OUT: castinexprs.p (281, 4): inferred type:  NIL
 OUT: castinexprs.p (281, 9): inferred type:  BaseType(INT)
 OUT: castinexprs.p (282, 4): inferred type:  NIL
-OUT: castinexprs.p (282, 11): inferred type:  BaseType(INT)
-OUT: castinexprs.p (282, 14): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (282, 17): inferred type:  BaseType(INT)
 OUT: castinexprs.p (283, 4): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (283, 4): inferred type:  NIL
-OUT: castinexprs.p (283, 9): inferred type:  BaseType(INT)
 OUT: castinexprs.p (283, 17): inferred type:  BaseType(ANY)
 OUT: castinexprs.p (284, 4): inferred type:  NIL
-OUT: castinexprs.p (284, 11): inferred type:  BaseType(INT)
-OUT: castinexprs.p (284, 14): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (284, 17): inferred type:  BaseType(INT)
 OUT: castinexprs.p (285, 4): inferred type:  NIL
 OUT: castinexprs.p (291, 4): inferred type:  NIL
 OUT: castinexprs.p (291, 4): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
-OUT: castinexprs.p (291, 11): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprs.p (291, 19): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprs.p (292, 4): inferred type:  NIL
-OUT: castinexprs.p (292, 12): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprs.p (292, 17): inferred type:  BaseType(INT)
 OUT: castinexprs.p (292, 19): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (292, 22): inferred type:  BaseType(INT)
 OUT: castinexprs.p (292, 24): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (292, 27): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprs.p (292, 32): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (292, 34): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (292, 37): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (293, 4): inferred type:  NIL
-OUT: castinexprs.p (293, 4): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprs.p (293, 11): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprs.p (294, 4): inferred type:  NIL
-OUT: castinexprs.p (294, 12): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
-OUT: castinexprs.p (294, 17): inferred type:  BaseType(INT)
-OUT: castinexprs.p (294, 19): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (294, 22): inferred type:  BaseType(INT)
-OUT: castinexprs.p (294, 24): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (294, 27): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
-OUT: castinexprs.p (294, 32): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (294, 34): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (294, 37): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (295, 4): inferred type:  ERROR
 OUT: castinexprs.p (295, 4): inferred type:  NIL
 OUT: castinexprs.p (295, 4): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: castinexprs.p (295, 10): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprs.p (295, 18): inferred type:  ERROR
 OUT: castinexprs.p (296, 4): inferred type:  NIL
 OUT: castinexprs.p (302, 4): inferred type:  ERROR
@@ -676,335 +301,148 @@ OUT: castinexprs.p (302, 4): inferred type:  NmdTupType(NmdTupTypeField("a", Bas
 OUT: castinexprs.p (302, 11): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprs.p (302, 19): inferred type:  ERROR
 OUT: castinexprs.p (303, 4): inferred type:  NIL
-OUT: castinexprs.p (303, 4): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
-OUT: castinexprs.p (303, 11): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprs.p (303, 19): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprs.p (304, 4): inferred type:  NIL
-OUT: castinexprs.p (304, 12): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprs.p (304, 17): inferred type:  BaseType(INT)
 OUT: castinexprs.p (304, 19): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (304, 22): inferred type:  BaseType(INT)
 OUT: castinexprs.p (304, 24): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (304, 27): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprs.p (304, 32): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (304, 34): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (304, 37): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (305, 4): inferred type:  NIL
 OUT: castinexprs.p (311, 4): inferred type:  NIL
 OUT: castinexprs.p (311, 4): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (311, 8): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (311, 16): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (312, 4): inferred type:  NIL
-OUT: castinexprs.p (312, 12): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (312, 13): inferred type:  BaseType(INT)
 OUT: castinexprs.p (312, 14): inferred type:  BaseType(INT)
 OUT: castinexprs.p (312, 17): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (312, 20): inferred type:  BaseType(INT)
 OUT: castinexprs.p (313, 4): inferred type:  NIL
-OUT: castinexprs.p (313, 4): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (313, 8): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (314, 4): inferred type:  NIL
-OUT: castinexprs.p (314, 4): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (314, 8): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (315, 4): inferred type:  NIL
-OUT: castinexprs.p (315, 12): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (315, 13): inferred type:  BaseType(INT)
-OUT: castinexprs.p (315, 14): inferred type:  BaseType(INT)
-OUT: castinexprs.p (315, 17): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (315, 20): inferred type:  BaseType(INT)
 OUT: castinexprs.p (317, 4): inferred type:  NIL
 OUT: castinexprs.p (317, 4): inferred type:  SeqType(BaseType(ANY))
-OUT: castinexprs.p (317, 9): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (317, 17): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (318, 4): inferred type:  NIL
-OUT: castinexprs.p (318, 12): inferred type:  SeqType(BaseType(ANY))
 OUT: castinexprs.p (318, 14): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (318, 15): inferred type:  BaseType(INT)
 OUT: castinexprs.p (318, 18): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (318, 21): inferred type:  BaseType(INT)
 OUT: castinexprs.p (319, 4): inferred type:  NIL
-OUT: castinexprs.p (319, 4): inferred type:  SeqType(BaseType(ANY))
 OUT: castinexprs.p (319, 9): inferred type:  SeqType(BaseType(ANY))
 OUT: castinexprs.p (320, 4): inferred type:  NIL
-OUT: castinexprs.p (320, 4): inferred type:  SeqType(BaseType(ANY))
-OUT: castinexprs.p (320, 9): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (321, 4): inferred type:  NIL
-OUT: castinexprs.p (321, 12): inferred type:  SeqType(BaseType(ANY))
-OUT: castinexprs.p (321, 14): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (321, 15): inferred type:  BaseType(INT)
-OUT: castinexprs.p (321, 18): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (321, 21): inferred type:  BaseType(INT)
 OUT: castinexprs.p (323, 4): inferred type:  NIL
-OUT: castinexprs.p (323, 4): inferred type:  SeqType(BaseType(ANY))
-OUT: castinexprs.p (323, 9): inferred type:  SeqType(BaseType(ANY))
 OUT: castinexprs.p (324, 4): inferred type:  NIL
-OUT: castinexprs.p (324, 4): inferred type:  SeqType(BaseType(ANY))
-OUT: castinexprs.p (324, 9): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (324, 17): inferred type:  SeqType(BaseType(ANY))
-OUT: castinexprs.p (325, 4): inferred type:  NIL
-OUT: castinexprs.p (325, 12): inferred type:  SeqType(BaseType(ANY))
-OUT: castinexprs.p (325, 14): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (325, 15): inferred type:  BaseType(INT)
-OUT: castinexprs.p (325, 18): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (325, 21): inferred type:  BaseType(INT)
 OUT: castinexprs.p (331, 4): inferred type:  NIL
 OUT: castinexprs.p (331, 4): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (331, 8): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (331, 16): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (332, 4): inferred type:  NIL
-OUT: castinexprs.p (332, 12): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (332, 13): inferred type:  BaseType(INT)
 OUT: castinexprs.p (332, 14): inferred type:  BaseType(INT)
 OUT: castinexprs.p (332, 17): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (332, 20): inferred type:  BaseType(INT)
 OUT: castinexprs.p (333, 4): inferred type:  NIL
-OUT: castinexprs.p (333, 4): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (333, 8): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (334, 4): inferred type:  NIL
-OUT: castinexprs.p (334, 4): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (334, 8): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (335, 4): inferred type:  NIL
-OUT: castinexprs.p (335, 12): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (335, 13): inferred type:  BaseType(INT)
-OUT: castinexprs.p (335, 14): inferred type:  BaseType(INT)
-OUT: castinexprs.p (335, 17): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (335, 20): inferred type:  BaseType(INT)
 OUT: castinexprs.p (337, 4): inferred type:  NIL
 OUT: castinexprs.p (337, 4): inferred type:  SeqType(BaseType(ANY))
-OUT: castinexprs.p (337, 9): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprs.p (337, 17): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (338, 4): inferred type:  NIL
-OUT: castinexprs.p (338, 12): inferred type:  SeqType(BaseType(ANY))
 OUT: castinexprs.p (338, 14): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (338, 15): inferred type:  BaseType(INT)
 OUT: castinexprs.p (338, 18): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (338, 21): inferred type:  BaseType(INT)
 OUT: castinexprs.p (339, 4): inferred type:  NIL
-OUT: castinexprs.p (339, 4): inferred type:  SeqType(BaseType(ANY))
-OUT: castinexprs.p (339, 9): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (340, 4): inferred type:  NIL
-OUT: castinexprs.p (340, 4): inferred type:  SeqType(BaseType(ANY))
-OUT: castinexprs.p (340, 9): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (341, 4): inferred type:  NIL
-OUT: castinexprs.p (341, 12): inferred type:  SeqType(BaseType(ANY))
-OUT: castinexprs.p (341, 14): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (341, 15): inferred type:  BaseType(INT)
-OUT: castinexprs.p (341, 18): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (341, 21): inferred type:  BaseType(INT)
 OUT: castinexprs.p (343, 4): inferred type:  NIL
-OUT: castinexprs.p (343, 4): inferred type:  SeqType(BaseType(ANY))
-OUT: castinexprs.p (343, 9): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (344, 4): inferred type:  NIL
-OUT: castinexprs.p (344, 4): inferred type:  SeqType(BaseType(ANY))
-OUT: castinexprs.p (344, 9): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (344, 17): inferred type:  SeqType(BaseType(ANY))
 OUT: castinexprs.p (345, 4): inferred type:  NIL
-OUT: castinexprs.p (345, 12): inferred type:  SeqType(BaseType(ANY))
-OUT: castinexprs.p (345, 14): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (345, 15): inferred type:  BaseType(INT)
-OUT: castinexprs.p (345, 18): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (345, 21): inferred type:  BaseType(INT)
 OUT: castinexprs.p (347, 4): inferred type:  NIL
-OUT: castinexprs.p (347, 4): inferred type:  SeqType(BaseType(ANY))
-OUT: castinexprs.p (347, 9): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (348, 4): inferred type:  ERROR
-OUT: castinexprs.p (348, 4): inferred type:  SeqType(BaseType(ANY))
-OUT: castinexprs.p (348, 9): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprs.p (348, 17): inferred type:  ERROR
 OUT: castinexprs.p (354, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (354, 4): inferred type:  NIL
 OUT: castinexprs.p (354, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (355, 4): inferred type:  NIL
-OUT: castinexprs.p (355, 12): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: castinexprs.p (355, 14): inferred type:  BaseType(INT)
-OUT: castinexprs.p (355, 15): inferred type:  BaseType(INT)
 OUT: castinexprs.p (355, 18): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (355, 21): inferred type:  BaseType(INT)
-OUT: castinexprs.p (356, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (356, 4): inferred type:  NIL
 OUT: castinexprs.p (356, 6): inferred type:  BaseType(INT)
-OUT: castinexprs.p (356, 7): inferred type:  BaseType(INT)
 OUT: castinexprs.p (356, 12): inferred type:  BaseType(INT)
-OUT: castinexprs.p (357, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (357, 4): inferred type:  NIL
 OUT: castinexprs.p (357, 6): inferred type:  BaseType(INT)
-OUT: castinexprs.p (357, 7): inferred type:  BaseType(INT)
 OUT: castinexprs.p (357, 12): inferred type:  BaseType(INT)
 OUT: castinexprs.p (358, 4): inferred type:  NIL
-OUT: castinexprs.p (358, 12): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: castinexprs.p (358, 14): inferred type:  BaseType(INT)
-OUT: castinexprs.p (358, 15): inferred type:  BaseType(INT)
-OUT: castinexprs.p (358, 18): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (358, 21): inferred type:  BaseType(INT)
 OUT: castinexprs.p (358, 23): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (358, 26): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: castinexprs.p (358, 28): inferred type:  BaseType(INT)
-OUT: castinexprs.p (358, 29): inferred type:  BaseType(INT)
 OUT: castinexprs.p (358, 32): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (358, 35): inferred type:  BaseType(INT)
-OUT: castinexprs.p (360, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (360, 4): inferred type:  NIL
 OUT: castinexprs.p (360, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: castinexprs.p (361, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (361, 4): inferred type:  NIL
-OUT: castinexprs.p (361, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (361, 17): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (362, 4): inferred type:  NIL
-OUT: castinexprs.p (362, 12): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: castinexprs.p (362, 14): inferred type:  BaseType(INT)
-OUT: castinexprs.p (362, 15): inferred type:  BaseType(INT)
-OUT: castinexprs.p (362, 18): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (362, 21): inferred type:  BaseType(INT)
 OUT: castinexprs.p (364, 4): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (364, 4): inferred type:  NIL
-OUT: castinexprs.p (364, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: castinexprs.p (364, 17): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (365, 4): inferred type:  NIL
-OUT: castinexprs.p (365, 12): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (365, 14): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (365, 15): inferred type:  BaseType(INT)
 OUT: castinexprs.p (365, 18): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (365, 21): inferred type:  BaseType(INT)
-OUT: castinexprs.p (366, 4): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (366, 4): inferred type:  NIL
 OUT: castinexprs.p (366, 9): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: castinexprs.p (367, 4): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (367, 4): inferred type:  NIL
-OUT: castinexprs.p (367, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (368, 4): inferred type:  NIL
-OUT: castinexprs.p (368, 12): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: castinexprs.p (368, 14): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (368, 15): inferred type:  BaseType(INT)
-OUT: castinexprs.p (368, 18): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (368, 21): inferred type:  BaseType(INT)
-OUT: castinexprs.p (369, 4): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (369, 4): inferred type:  NIL
-OUT: castinexprs.p (369, 9): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: castinexprs.p (371, 4): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (371, 4): inferred type:  NIL
-OUT: castinexprs.p (371, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (371, 17): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: castinexprs.p (372, 4): inferred type:  NIL
-OUT: castinexprs.p (372, 12): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: castinexprs.p (372, 14): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (372, 15): inferred type:  BaseType(INT)
-OUT: castinexprs.p (372, 18): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (372, 21): inferred type:  BaseType(INT)
 OUT: castinexprs.p (419, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (419, 4): inferred type:  NIL
 OUT: castinexprs.p (419, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (420, 4): inferred type:  NIL
-OUT: castinexprs.p (420, 12): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (420, 14): inferred type:  BaseType(INT)
 OUT: castinexprs.p (420, 15): inferred type:  BaseType(INT)
 OUT: castinexprs.p (420, 18): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (420, 21): inferred type:  BaseType(INT)
 OUT: castinexprs.p (420, 23): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (420, 26): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (420, 28): inferred type:  BaseType(INT)
-OUT: castinexprs.p (420, 29): inferred type:  BaseType(INT)
 OUT: castinexprs.p (420, 32): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (420, 35): inferred type:  BaseType(INT)
-OUT: castinexprs.p (421, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (421, 4): inferred type:  NIL
 OUT: castinexprs.p (421, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: castinexprs.p (422, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (422, 4): inferred type:  NIL
-OUT: castinexprs.p (422, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (422, 17): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (423, 4): inferred type:  NIL
-OUT: castinexprs.p (423, 12): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: castinexprs.p (423, 14): inferred type:  BaseType(INT)
-OUT: castinexprs.p (423, 15): inferred type:  BaseType(INT)
-OUT: castinexprs.p (423, 18): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (423, 21): inferred type:  BaseType(INT)
-OUT: castinexprs.p (423, 23): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (423, 26): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: castinexprs.p (423, 28): inferred type:  BaseType(INT)
-OUT: castinexprs.p (423, 29): inferred type:  BaseType(INT)
-OUT: castinexprs.p (423, 32): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (423, 35): inferred type:  BaseType(INT)
 OUT: castinexprs.p (425, 4): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (425, 4): inferred type:  NIL
-OUT: castinexprs.p (425, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: castinexprs.p (425, 17): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (426, 4): inferred type:  NIL
-OUT: castinexprs.p (426, 12): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (426, 14): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (426, 15): inferred type:  BaseType(INT)
 OUT: castinexprs.p (426, 18): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (426, 21): inferred type:  BaseType(INT)
 OUT: castinexprs.p (426, 23): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (426, 26): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (426, 28): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (426, 29): inferred type:  BaseType(INT)
 OUT: castinexprs.p (426, 32): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (426, 35): inferred type:  BaseType(INT)
-OUT: castinexprs.p (427, 4): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (427, 4): inferred type:  NIL
 OUT: castinexprs.p (427, 9): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: castinexprs.p (428, 4): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (428, 4): inferred type:  NIL
-OUT: castinexprs.p (428, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (429, 4): inferred type:  NIL
-OUT: castinexprs.p (429, 12): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: castinexprs.p (429, 14): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (429, 15): inferred type:  BaseType(INT)
-OUT: castinexprs.p (429, 18): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (429, 21): inferred type:  BaseType(INT)
-OUT: castinexprs.p (429, 23): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (429, 26): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: castinexprs.p (429, 28): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (429, 29): inferred type:  BaseType(INT)
-OUT: castinexprs.p (429, 32): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (429, 35): inferred type:  BaseType(INT)
-OUT: castinexprs.p (430, 4): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (430, 4): inferred type:  NIL
-OUT: castinexprs.p (430, 9): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: castinexprs.p (432, 4): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprs.p (432, 4): inferred type:  NIL
-OUT: castinexprs.p (432, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (432, 17): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: castinexprs.p (433, 4): inferred type:  NIL
-OUT: castinexprs.p (433, 12): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: castinexprs.p (433, 14): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (433, 15): inferred type:  BaseType(INT)
-OUT: castinexprs.p (433, 18): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (433, 21): inferred type:  BaseType(INT)
-OUT: castinexprs.p (433, 23): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (433, 26): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: castinexprs.p (433, 28): inferred type:  BaseType(ANY)
-OUT: castinexprs.p (433, 29): inferred type:  BaseType(INT)
-OUT: castinexprs.p (433, 32): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (433, 35): inferred type:  BaseType(INT)
 OUT: castinexprs.p (70, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: castinexprs.p (70, 11): Cast can never succeed
-OUT: castinexprs.p (72, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: castinexprs.p (72, 11): Cast can never succeed
 OUT: castinexprs.p (74, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: castinexprs.p (74, 11): Cast can never succeed
-OUT: castinexprs.p (76, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: castinexprs.p (76, 11): Cast can never succeed
 OUT: castinexprs.p (78, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: castinexprs.p (78, 11): Cast can never succeed
 OUT: castinexprs.p (79, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: castinexprs.p (79, 12): Cast can never succeed
-OUT: castinexprs.p (82, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: castinexprs.p (82, 12): Cast can never succeed
 OUT: castinexprs.p (85, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: castinexprs.p (85, 12): Cast can never succeed
-OUT: castinexprs.p (88, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: castinexprs.p (88, 12): Cast can never succeed
 OUT: castinexprs.p (91, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: castinexprs.p (91, 11): Cast can never succeed
 OUT: castinexprs.p (92, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: castinexprs.p (92, 12): Cast can never succeed
-OUT: castinexprs.p (95, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: castinexprs.p (95, 12): Cast can never succeed
 OUT: castinexprs.p (98, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: castinexprs.p (98, 12): Cast can never succeed
-OUT: castinexprs.p (101, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: castinexprs.p (101, 12): Cast can never succeed
 OUT: castinexprs.p (131, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: castinexprs.p (131, 12): Cast can never succeed
 OUT: castinexprs.p (134, 5): invalid assignment. right hand side is not a subtype of left hand side
@@ -1012,11 +450,6 @@ OUT: castinexprs.p (134, 12): Cast can never succeed
 OUT: castinexprs.p (138, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: castinexprs.p (138, 6): Indexer must be applied to a sequence or map
 OUT: castinexprs.p (139, 5): insert must be applied to a sequence or a map
-OUT: castinexprs.p (143, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: castinexprs.p (143, 6): Indexer must be applied to a sequence or map
-OUT: castinexprs.p (147, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: castinexprs.p (147, 6): Indexer must be applied to a sequence or map
-OUT: castinexprs.p (148, 5): insert must be applied to a sequence or a map
 OUT: castinexprs.p (152, 5): insert must be applied to a sequence or a map
 OUT: castinexprs.p (159, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: castinexprs.p (159, 7): Operator expected a (named) tuple value
@@ -1028,22 +461,15 @@ OUT: castinexprs.p (174, 5): invalid assignment. right hand side is not a subtyp
 OUT: castinexprs.p (174, 13): Cast can never succeed
 OUT: castinexprs.p (177, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: castinexprs.p (177, 13): Cast can never succeed
-OUT: castinexprs.p (178, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: castinexprs.p (178, 13): Cast can never succeed
 OUT: castinexprs.p (182, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: castinexprs.p (182, 12): Cast can never succeed
 OUT: castinexprs.p (185, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: castinexprs.p (185, 12): Cast can never succeed
 OUT: castinexprs.p (189, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: castinexprs.p (189, 12): Cast can never succeed
-OUT: castinexprs.p (190, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: castinexprs.p (190, 12): Cast can never succeed
 OUT: castinexprs.p (195, 5): invalid payload type in send
 OUT: castinexprs.p (196, 5): invalid payload type in send
-OUT: castinexprs.p (196, 22): Cast can never succeed
 OUT: castinexprs.p (197, 5): invalid payload type in send
-OUT: castinexprs.p (198, 5): invalid payload type in send
-OUT: castinexprs.p (198, 23): Cast can never succeed
 OUT: castinexprs.p (199, 5): invalid payload type in send
 OUT: castinexprs.p (200, 5): invalid payload type in send
 OUT: castinexprs.p (200, 24): Cast can never succeed
@@ -1051,7 +477,6 @@ OUT: castinexprs.p (202, 5): invalid payload type in send
 OUT: castinexprs.p (204, 11): invalid payload type in send
 OUT: castinexprs.p (218, 5): invalid payload type in send
 OUT: castinexprs.p (229, 5): invalid payload type in send
-OUT: castinexprs.p (232, 5): invalid payload type in send
 OUT: castinexprs.p (272, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: castinexprs.p (272, 17): Cast can never succeed
 OUT: castinexprs.p (295, 4): invalid assignment. right hand side is not a subtype of left hand side

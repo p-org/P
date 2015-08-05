@@ -11,11 +11,9 @@ OUT: sentnulldetected.p (14, 4): inferred type:  NIL
 OUT: sentnulldetected.p (14, 10): inferred type:  BaseType(REAL)
 OUT: sentnulldetected.p (14, 20): inferred type:  BaseType(REAL)
 OUT: sentnulldetected.p (16, 13): inferred type:  NIL
-OUT: sentnulldetected.p (16, 18): inferred type:  BaseType(REAL)
 OUT: sentnulldetected.p (16, 23): inferred type:  BaseType(EVENT)
 OUT: sentnulldetected.p (16, 28): inferred type:  BaseType(BOOL)
 OUT: sentnulldetected.p (17, 4): inferred type:  NIL
-OUT: sentnulldetected.p (17, 10): inferred type:  BaseType(EVENT)
 OUT: sentnulldetected.p (18, 4): inferred type:  NIL
 OUT: sentnulldetected.p (18, 12): inferred type:  BaseType(EVENT)
 OUT: sentnulldetected.p (24, 14): inferred type:  NIL

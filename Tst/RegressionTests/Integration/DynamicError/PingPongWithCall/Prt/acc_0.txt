@@ -245,5 +245,5 @@ OUT: <ExitLog> Machine PING(1) exiting state Ping_SendPing
 OUT: <StateLog> Machine PING(1) entered state Ping_WaitPong
 OUT: <DequeueLog> Dequeued event Pong with payload null by Machine PING(1)
 OUT: 
-ERROR: ASSERT: Call stack overflow
+ERROR: ASSERT: State stack overflow
 EXIT: 1

@@ -69,36 +69,36 @@ main machine M
 		  //////////////////////////int vs bool:
 		  y = b as int;         //error: "Cast can never succeed"		  
 		  b = true;      
-		  y = b as int;         //error
+
 		  
 		  b = y as bool;         //error
 		  y = 1;
-		  b = y as bool;         //error
+
 		  //////////////////////////int vs event:
 		  y = E as int;         //error
 		  y = ev as int;        //error; ev is null
 		  
 		  ev = E;
-		  y = ev as int;        //error; ev is E
+
 		  
 		  y = default(int);
 		  ev = y as event;      //error
 		  
 		  y = 3;
-		  ev = y as event;      //error
+
 		  
 		  //////////////////////////bool vs event:
 		  b = E as bool;         //error
 		  b = ev as bool;        //error; ev is null
 		  
 		  ev = E;
-		  b = ev as bool;        //error; ev is E
+
 		  
 		  b = default(bool);
 		  ev = b as event;      //error
 		  
 		  b= true;
-		  ev = b as event;      //error
+
 		  
 		  ////////////////////////// int vs any:
 		  a = 1;
@@ -140,12 +140,12 @@ main machine M
 		  m1[0] = 1;
 		  m1[1] = 2;
 		  a = m1;                      //OK
-		  a[0] = 2;                   //error
+
 		  ////////////////////////// seq vs any:
 		  a = default(any);
 		  s = a as seq[int];         //dynamic error: "value must be a member of type" 
-		  a[0] = 1;                  //error
-		  a += (0,1);                 //error
+
+
 		  s += (0, 1);
           s += (1, 2);
 		  a = s;                      //OK
@@ -175,7 +175,7 @@ main machine M
 		  m1[0] = 1;
 		  m1[1] = 2;
 		  tt = m1 as (int, int);     //error
-		  ts = m1 as (int, int);     //error		  
+
 		  ////////////////////////// tuple vs seq:
 		  ts.b = 1;
 		  ts.a = ts.b + 1;
@@ -187,7 +187,7 @@ main machine M
 		  s += (0, 1);
           s += (1, 2);
 		  tt = s as (int, int);     //error
-		  ts = s as (int, int);     //error
+
 		  ////////////////////////// Casts in event payload:
 		  /////////////////////////////////////// int payload:
 		  y = 1;
@@ -195,7 +195,7 @@ main machine M
 		  send mac, EI2, b;   //error
 		  send mac, EI2, b as int;   //error
 		  send mac, EI3, ev;   //error
-		  send mac, EI3, ev as int;   //error
+
 		  send mac, EI4, mac;   //error
 		  send mac, EI4, mac as int;   //error
 		  a = null;
@@ -229,7 +229,7 @@ main machine M
 		  send mac, EMAP2, m9;   //error
 		  send mac, EMAP2, m9 as map[int,int];   //OK, but dynamic error will follow
 		  m9 = m1;
-		  send mac, EMAP2, m9;   //error
+
 		  send mac, EMAP3, m9 as map[int,int];   //OK
 		  
 		  raise halt;

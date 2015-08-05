@@ -7,7 +7,6 @@ OUT: payloadexitfuns.p (15, 10): inferred type:  NmdTupType(NmdTupTypeField("fir
 OUT: payloadexitfuns.p (15, 18): inferred type:  BaseType(INT)
 OUT: payloadexitfuns.p (16, 4): inferred type:  BaseType(BOOL)
 OUT: payloadexitfuns.p (16, 4): inferred type:  NIL
-OUT: payloadexitfuns.p (16, 11): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("sec", BaseType(BOOL)), NIL))
 OUT: payloadexitfuns.p (16, 19): inferred type:  BaseType(BOOL)
 OUT: payloadexitfuns.p (20, 4): inferred type:  BaseType(INT)
 OUT: payloadexitfuns.p (20, 4): inferred type:  NIL
@@ -16,7 +15,6 @@ OUT: payloadexitfuns.p (20, 17): inferred type:  BaseType(INT)
 OUT: payloadexitfuns.p (20, 18): inferred type:  BaseType(INT)
 OUT: payloadexitfuns.p (24, 4): inferred type:  BaseType(INT)
 OUT: payloadexitfuns.p (24, 4): inferred type:  NIL
-OUT: payloadexitfuns.p (24, 10): inferred type:  NmdTupType(NmdTupTypeField("first", MapType(BaseType(INT), BaseType(INT))), NmdTupType(NmdTupTypeField("sec", SeqType(BaseType(BOOL))), NIL))
 OUT: payloadexitfuns.p (24, 18): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: payloadexitfuns.p (24, 23): inferred type:  BaseType(INT)
 OUT: payloadexitfuns.p (24, 24): inferred type:  BaseType(INT)
@@ -33,12 +31,10 @@ OUT: payloadexitfuns.p (31, 10): inferred type:  BaseType(ANY)
 OUT: payloadexitfuns.p (31, 18): inferred type:  ERROR
 OUT: payloadexitfuns.p (32, 4): inferred type:  BaseType(BOOL)
 OUT: payloadexitfuns.p (32, 4): inferred type:  ERROR
-OUT: payloadexitfuns.p (32, 11): inferred type:  BaseType(ANY)
 OUT: payloadexitfuns.p (32, 19): inferred type:  ERROR
 OUT: payloadexitfuns.p (41, 4): inferred type:  BaseType(REAL)
 OUT: payloadexitfuns.p (41, 4): inferred type:  ERROR
 OUT: payloadexitfuns.p (41, 4): inferred type:  NIL
-OUT: payloadexitfuns.p (41, 11): inferred type:  BaseType(ANY)
 OUT: payloadexitfuns.p (42, 4): inferred type:  BaseType(INT)
 OUT: payloadexitfuns.p (42, 4): inferred type:  ERROR
 OUT: payloadexitfuns.p (42, 10): inferred type:  BaseType(ANY)
@@ -49,7 +45,6 @@ OUT: payloadexitfuns.p (53, 10): inferred type:  BaseType(ANY)
 OUT: payloadexitfuns.p (53, 18): inferred type:  ERROR
 OUT: payloadexitfuns.p (54, 4): inferred type:  BaseType(BOOL)
 OUT: payloadexitfuns.p (54, 4): inferred type:  ERROR
-OUT: payloadexitfuns.p (54, 11): inferred type:  BaseType(ANY)
 OUT: payloadexitfuns.p (54, 19): inferred type:  ERROR
 OUT: payloadexitfuns.p (63, 4): inferred type:  BaseType(INT)
 OUT: payloadexitfuns.p (63, 4): inferred type:  ERROR
@@ -60,7 +55,6 @@ OUT: payloadexitfuns.p (63, 23): inferred type:  ERROR
 OUT: payloadexitfuns.p (63, 24): inferred type:  BaseType(BOOL)
 OUT: payloadexitfuns.p (64, 4): inferred type:  BaseType(BOOL)
 OUT: payloadexitfuns.p (64, 4): inferred type:  ERROR
-OUT: payloadexitfuns.p (64, 11): inferred type:  BaseType(ANY)
 OUT: payloadexitfuns.p (64, 19): inferred type:  ERROR
 OUT: payloadexitfuns.p (64, 22): inferred type:  ERROR
 OUT: payloadexitfuns.p (64, 23): inferred type:  BaseType(INT)
@@ -71,7 +65,6 @@ OUT: payloadexitfuns.p (74, 10): inferred type:  BaseType(ANY)
 OUT: payloadexitfuns.p (74, 18): inferred type:  ERROR
 OUT: payloadexitfuns.p (75, 4): inferred type:  BaseType(BOOL)
 OUT: payloadexitfuns.p (75, 4): inferred type:  ERROR
-OUT: payloadexitfuns.p (75, 11): inferred type:  BaseType(ANY)
 OUT: payloadexitfuns.p (75, 19): inferred type:  ERROR
 OUT: payloadexitfuns.p (80, 3): inferred type:  NIL
 OUT: payloadexitfuns.p (31, 4): invalid assignment. right hand side is not a subtype of left hand side

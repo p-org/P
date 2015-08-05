@@ -1,6 +1,6 @@
 // Combined tests: "Control Impure" static errors
 // Cases covered:
-// "push", "pop" and "raise" in "do" declaration statements,
+// "pop" and "raise" in "do" declaration statements,
 // used in anonymous functions (allowed) and invoked by (named) function calls (error)
 
 event E1 assert 1;
@@ -17,14 +17,14 @@ main machine Real1 {
 		on unit do { send this, E1; 
 		             send this, E2; 
 		             send this, E3; 
-					 push Real1_S1;                       // no error
+
 					 raise unit;                          // no error
 		};   
-		//on E2 goto Real1_S1 with { push Real1_S2;};               //+  !!!!causes pc.exe exception
+
 		
 		on E2 do {
-			Action2();                                    //error
-			Action3();                                    //error
+			Action2();
+			Action3();
 		};
 		on E3 do {
 			if (i == 3) {
@@ -33,7 +33,7 @@ main machine Real1 {
             else
 			    {
 					i = i + Action4() +   //error
-							Action5() -   //error
+							Action5() - 
 							Action6();    //error
 			    }
 		};
@@ -44,9 +44,9 @@ main machine Real1 {
 		on unit do {
 			pop;                                   //no error
 		};
-		on E1 do { Action2(); };                        //error
-	    on E2 do { Action3(); };                        //error
-		on E3 do { Action1(); };                        //error
+		on E1 do { Action2(); };
+	    on E2 do { Action3(); };
+		on E3 do { Action1(); };
     }
 	state Real1_S2 {
 		entry { }
@@ -61,20 +61,20 @@ main machine Real1 {
 		entry { }
 	}
 	fun Action1() {		                          
-		pop;                                   //error                 
+		pop;                    
     }
 	fun Action2() {
-		push Real1_S1;                          //error
+
     }
 	fun Action3() {
-		raise unit;                             //error
+		raise unit;
     }
 	fun Action4() : int {		                          
 		pop;                                   
 		return 1;
     }
 	fun Action5() : int {
-		push Real1_S1;                           
+
 		return 1;
     }
 	fun Action6() : int {

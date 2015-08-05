@@ -49,7 +49,7 @@ main machine MachOS {
 		entry {
 			INT = payload.first;
 			BOOL = payload.sec;
-			push State5;
+
 		}
 		on myNmTuple goto State5;
 	}

@@ -11,7 +11,6 @@ OUT: monitorinvocationeventexprpayload.p (12, 4): inferred type:  BaseType(EVENT
 OUT: monitorinvocationeventexprpayload.p (12, 4): inferred type:  NIL
 OUT: monitorinvocationeventexprpayload.p (12, 10): inferred type:  BaseType(EVENT)
 OUT: monitorinvocationeventexprpayload.p (13, 4): inferred type:  NIL
-OUT: monitorinvocationeventexprpayload.p (13, 12): inferred type:  BaseType(EVENT)
 OUT: monitorinvocationeventexprpayload.p (13, 17): inferred type:  BaseType(BOOL)
 OUT: monitorinvocationeventexprpayload.p (19, 9): inferred type:  NIL
 OUT: monitorinvocationeventexprpayload.p (21, 14): inferred type:  NIL

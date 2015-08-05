@@ -13,62 +13,32 @@ OUT: seq_tuple.p (12, 10): inferred type:  TupType(BaseType(INT), TupType(BaseTy
 OUT: seq_tuple.p (12, 12): inferred type:  BaseType(INT)
 OUT: seq_tuple.p (12, 12): inferred type:  TupType(BaseType(INT), NIL)
 OUT: seq_tuple.p (13, 4): inferred type:  NIL
-OUT: seq_tuple.p (13, 4): inferred type:  SeqType(BaseType(INT))
-OUT: seq_tuple.p (13, 10): inferred type:  BaseType(INT)
 OUT: seq_tuple.p (13, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: seq_tuple.p (13, 12): inferred type:  BaseType(INT)
 OUT: seq_tuple.p (13, 12): inferred type:  TupType(BaseType(INT), NIL)
 OUT: seq_tuple.p (14, 4): inferred type:  NIL
-OUT: seq_tuple.p (14, 4): inferred type:  SeqType(BaseType(INT))
-OUT: seq_tuple.p (14, 10): inferred type:  BaseType(INT)
-OUT: seq_tuple.p (14, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: seq_tuple.p (14, 12): inferred type:  BaseType(INT)
-OUT: seq_tuple.p (14, 12): inferred type:  TupType(BaseType(INT), NIL)
 OUT: seq_tuple.p (15, 4): inferred type:  NIL
-OUT: seq_tuple.p (15, 4): inferred type:  SeqType(BaseType(INT))
-OUT: seq_tuple.p (15, 10): inferred type:  BaseType(INT)
-OUT: seq_tuple.p (15, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: seq_tuple.p (15, 12): inferred type:  BaseType(INT)
-OUT: seq_tuple.p (15, 12): inferred type:  TupType(BaseType(INT), NIL)
 OUT: seq_tuple.p (16, 4): inferred type:  NIL
-OUT: seq_tuple.p (16, 4): inferred type:  SeqType(BaseType(INT))
-OUT: seq_tuple.p (16, 10): inferred type:  BaseType(INT)
-OUT: seq_tuple.p (16, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: seq_tuple.p (16, 12): inferred type:  BaseType(INT)
-OUT: seq_tuple.p (16, 12): inferred type:  TupType(BaseType(INT), NIL)
 OUT: seq_tuple.p (17, 4): inferred type:  NIL
-OUT: seq_tuple.p (17, 4): inferred type:  SeqType(BaseType(INT))
-OUT: seq_tuple.p (17, 10): inferred type:  BaseType(INT)
-OUT: seq_tuple.p (17, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: seq_tuple.p (17, 12): inferred type:  BaseType(INT)
-OUT: seq_tuple.p (17, 12): inferred type:  TupType(BaseType(INT), NIL)
 OUT: seq_tuple.p (18, 4): inferred type:  BaseType(REAL)
 OUT: seq_tuple.p (18, 4): inferred type:  NIL
 OUT: seq_tuple.p (18, 10): inferred type:  BaseType(REAL)
-OUT: seq_tuple.p (18, 19): inferred type:  SeqType(BaseType(INT))
 OUT: seq_tuple.p (18, 19): inferred type:  TupType(SeqType(BaseType(INT)), TupType(BaseType(INT), NIL))
 OUT: seq_tuple.p (18, 22): inferred type:  BaseType(INT)
 OUT: seq_tuple.p (18, 22): inferred type:  TupType(BaseType(INT), NIL)
 OUT: seq_tuple.p (19, 4): inferred type:  NIL
-OUT: seq_tuple.p (19, 9): inferred type:  BaseType(REAL)
 OUT: seq_tuple.p (19, 14): inferred type:  BaseType(EVENT)
-OUT: seq_tuple.p (19, 26): inferred type:  SeqType(BaseType(INT))
 OUT: seq_tuple.p (30, 9): inferred type:  NIL
 OUT: seq_tuple.p (30, 9): inferred type:  SeqType(BaseType(INT))
 OUT: seq_tuple.p (30, 15): inferred type:  BaseType(ANY)
 OUT: seq_tuple.p (30, 23): inferred type:  TupType(SeqType(BaseType(INT)), TupType(BaseType(INT), NIL))
 OUT: seq_tuple.p (30, 42): inferred type:  SeqType(BaseType(INT))
 OUT: seq_tuple.p (31, 6): inferred type:  NIL
-OUT: seq_tuple.p (31, 15): inferred type:  BaseType(ANY)
-OUT: seq_tuple.p (31, 23): inferred type:  TupType(SeqType(BaseType(INT)), TupType(BaseType(INT), NIL))
-OUT: seq_tuple.p (31, 42): inferred type:  SeqType(BaseType(INT))
 OUT: seq_tuple.p (31, 43): inferred type:  BaseType(INT)
 OUT: seq_tuple.p (31, 44): inferred type:  BaseType(INT)
 OUT: seq_tuple.p (31, 47): inferred type:  BaseType(BOOL)
 OUT: seq_tuple.p (31, 50): inferred type:  BaseType(INT)
 OUT: seq_tuple.p (32, 9): inferred type:  NIL
-OUT: seq_tuple.p (32, 18): inferred type:  BaseType(ANY)
-OUT: seq_tuple.p (32, 26): inferred type:  TupType(SeqType(BaseType(INT)), TupType(BaseType(INT), NIL))
 OUT: seq_tuple.p (32, 45): inferred type:  BaseType(INT)
 OUT: seq_tuple.p (32, 47): inferred type:  BaseType(BOOL)
 OUT: seq_tuple.p (32, 50): inferred type:  BaseType(INT)
@@ -79,25 +49,17 @@ OUT: seq_tuple.p (39, 21): inferred type:  SeqType(BaseType(INT))
 OUT: seq_tuple.p (40, 4): inferred type:  BaseType(INT)
 OUT: seq_tuple.p (40, 4): inferred type:  NIL
 OUT: seq_tuple.p (40, 8): inferred type:  BaseType(INT)
-OUT: seq_tuple.p (40, 15): inferred type:  SeqType(BaseType(INT))
 OUT: seq_tuple.p (40, 20): inferred type:  BaseType(INT)
 OUT: seq_tuple.p (40, 22): inferred type:  BaseType(INT)
 OUT: seq_tuple.p (41, 4): inferred type:  NIL
-OUT: seq_tuple.p (41, 10): inferred type:  BaseType(INT)
 OUT: seq_tuple.p (41, 12): inferred type:  BaseType(BOOL)
 OUT: seq_tuple.p (41, 15): inferred type:  BaseType(INT)
 OUT: seq_tuple.p (43, 5): inferred type:  NIL
-OUT: seq_tuple.p (43, 12): inferred type:  SeqType(BaseType(INT))
 OUT: seq_tuple.p (43, 15): inferred type:  BaseType(INT)
-OUT: seq_tuple.p (43, 16): inferred type:  BaseType(INT)
 OUT: seq_tuple.p (43, 19): inferred type:  BaseType(BOOL)
 OUT: seq_tuple.p (43, 22): inferred type:  SeqType(BaseType(INT))
 OUT: seq_tuple.p (43, 24): inferred type:  BaseType(INT)
-OUT: seq_tuple.p (43, 25): inferred type:  BaseType(INT)
-OUT: seq_tuple.p (44, 5): inferred type:  BaseType(INT)
 OUT: seq_tuple.p (44, 5): inferred type:  NIL
-OUT: seq_tuple.p (44, 9): inferred type:  BaseType(INT)
 OUT: seq_tuple.p (44, 11): inferred type:  BaseType(INT)
-OUT: seq_tuple.p (44, 13): inferred type:  BaseType(INT)
 OUT: 
 EXIT: 0

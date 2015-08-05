@@ -15,7 +15,7 @@
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH AS WITH
 
-%token IF WHILE THIS TRIGGER PAYLOAD NEW RETURN ID POP ASSERT CALL RAISE SEND DEFAULT HALT NULL 
+%token IF WHILE THIS TRIGGER PAYLOAD NEW RETURN ID POP ASSERT CALL RAISE SEND DEFAULT HALT NULL RECEIVE CASE
 %token LPAREN RPAREN LCBRACE RCBRACE LBRACKET RBRACKET SIZEOF KEYS VALUES
 
 %token TRUE FALSE
@@ -107,11 +107,11 @@ EventAnnotOrNone
 MachineDecl
 	: IsMain MACHINE ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1));    }
 	| IsMain MODEL ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE   { AddMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1));   }
-	| SPEC ID Foo MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE  { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
+	| SPEC ID ObservesList MachAnnotOrNone LCBRACE MachineBody RCBRACE			   { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 	
-Foo
-	: MONITORS EventList { crntObservesList = new List<P_Root.EventLabel>(crntEventList); crntEventList.Clear(); }
+ObservesList
+	: MONITORS EventList { crntObservesList.AddRange(crntEventList); crntEventList.Clear(); }
 	;
 
 IsMain
@@ -152,6 +152,20 @@ VarDecl
 VarList
 	: ID                  { AddVarDecl($1.str, ToSpan(@1)); }									
 	| ID COMMA VarList    { AddVarDecl($1.str, ToSpan(@1)); }
+	;
+
+LocalVarDecl
+	: VAR LocalVarList COLON Type SEMICOLON            { localVarStack.CompleteCrntLocalVarList(); }
+	; 
+
+LocalVarDeclList
+	: LocalVarDecl LocalVarDeclList
+	|
+	; 
+
+LocalVarList
+	: ID					   { localVarStack.AddLocalVar($1.str, ToSpan(@1)); }									
+	| ID COMMA LocalVarList    { localVarStack.AddLocalVar($1.str, ToSpan(@1)); }
 	;
 
 /******************* Function Declarations *******************/
@@ -234,12 +248,16 @@ StateBodyItem
 	| EXIT ID SEMICOLON														{ SetStateExit(false, $2.str, ToSpan(@2));                                 }
 	| DEFER NonDefaultEventList TrigAnnotOrNone SEMICOLON					{ AddDefersOrIgnores(true,  ToSpan(@1));            }		
 	| IGNORE NonDefaultEventList TrigAnnotOrNone SEMICOLON					{ AddDefersOrIgnores(false, ToSpan(@1));            }
-	| ON EventList DO ID TrigAnnotOrNone SEMICOLON							{ AddDoNamedAction($4.str, ToSpan(@4), ToSpan(@1)); }
-	| ON EventList DO TrigAnnotOrNone StmtBlock SEMICOLON					{ AddDoAnonyAction(ToSpan(@1)); }
-	| ON EventList PUSH StateTarget TrigAnnotOrNone SEMICOLON				{ AddTransition(true, ToSpan(@1));           }
- 	| ON EventList GOTO StateTarget TrigAnnotOrNone SEMICOLON				{ AddTransition(false, ToSpan(@1));          } 
-	| ON EventList GOTO StateTarget TrigAnnotOrNone WITH StmtBlock SEMICOLON { AddTransitionWithAction(true, "", ToSpan(@1), ToSpan(@1));           }
-	| ON EventList GOTO StateTarget TrigAnnotOrNone WITH ID SEMICOLON		 { AddTransitionWithAction(false, $7.str, ToSpan(@7), ToSpan(@1));           }
+	| OnEventList DO ID TrigAnnotOrNone SEMICOLON							{ AddDoNamedAction($3.str, ToSpan(@3), ToSpan(@1)); }
+	| OnEventList DO TrigAnnotOrNone StmtBlock SEMICOLON					{ AddDoAnonyAction(ToSpan(@1)); }
+	| OnEventList PUSH StateTarget TrigAnnotOrNone SEMICOLON				{ AddTransition(true, ToSpan(@1));           }
+ 	| OnEventList GOTO StateTarget TrigAnnotOrNone SEMICOLON				{ AddTransition(false, ToSpan(@1));          } 
+	| OnEventList GOTO StateTarget TrigAnnotOrNone WITH StmtBlock SEMICOLON { AddTransitionWithAction(true, "", ToSpan(@1), ToSpan(@1));           }
+	| OnEventList GOTO StateTarget TrigAnnotOrNone WITH ID SEMICOLON		{ AddTransitionWithAction(false, $6.str, ToSpan(@6), ToSpan(@1));           }
+	;
+
+OnEventList
+	: ON EventList				{ onEventList = new List<P_Root.EventLabel>(crntEventList); crntEventList.Clear(); }
 	;
 
 NonDefaultEventList
@@ -255,7 +273,6 @@ EventList
 EventId
 	: ID        { AddToEventList($1.str, ToSpan(@1));                      }
 	| HALT      { AddToEventList(P_Root.UserCnstKind.HALT, ToSpan(@1));    }
-	| DEFAULT   { AddToEventList(P_Root.UserCnstKind.NULL, ToSpan(@1)); }
 	| NULL      { AddToEventList(P_Root.UserCnstKind.NULL, ToSpan(@1)); }
 	;
 
@@ -302,7 +319,6 @@ Stmt
 	| LCBRACE RCBRACE                                         { PushNulStmt(P_Root.UserCnstKind.SKIP,  ToSpan(@1));      }
 	| POP SEMICOLON                                           { PushNulStmt(P_Root.UserCnstKind.POP,   ToSpan(@1));      }
 	| LCBRACE StmtList RCBRACE                                { }
-	| PUSH QualifiedId SEMICOLON                              { PushPush(ToSpan(@1));                                    }
 	| ASSERT Exp SEMICOLON                                    { PushUnStmt(P_Root.UserCnstKind.ASSERT, ToSpan(@1));      }
 	| RETURN SEMICOLON                                        { PushReturn(false, ToSpan(@1));                           }
 	| RETURN Exp SEMICOLON                                    { PushReturn(true, ToSpan(@1));                            }
@@ -324,21 +340,30 @@ Stmt
 	| SEND Exp COMMA Exp COMMA SingleExprArgList SEMICOLON    { PushSend(true,  ToSpan(@1));                             }
 	| MONITOR Exp SEMICOLON									  { PushMonitor(false, $2.str, ToSpan(@2), ToSpan(@1));      }
 	| MONITOR Exp COMMA SingleExprArgList SEMICOLON           { PushMonitor(true, $2.str, ToSpan(@2), ToSpan(@1));       }
+	| RECEIVE LCBRACE CaseList RCBRACE						  { PushReceive(ToSpan(@1)); }
 	;
 
+Case 
+	: CaseEventList StmtBlock 		{ AddCaseAnonyAction(ToSpan(@2)); }
+	;
+
+CaseEventList
+	: CASE EventList COLON			{ localVarStack.Push(); }
+	;
+
+CaseList
+	: Case	
+	| CaseList Case
+	;
+	 
 StmtBlock
-	: LCBRACE RCBRACE                                         { PushNulStmt(P_Root.UserCnstKind.SKIP,  ToSpan(@1));      }    
-    | LCBRACE StmtList RCBRACE
+	: LCBRACE LocalVarDeclList RCBRACE                                         { PushNulStmt(P_Root.UserCnstKind.SKIP,  ToSpan(@1));      }    
+    | LCBRACE LocalVarDeclList StmtList RCBRACE
 	;
 
 StmtList
 	: Stmt
 	| Stmt StmtList    { PushSeq(); }													
-	;
-
-QualifiedId
-    : ID                  { Qualify($1.str, ToSpan(@1)); }
-	| QualifiedId DOT ID  { Qualify($3.str, ToSpan(@3)); }
 	;
 
 StateTarget

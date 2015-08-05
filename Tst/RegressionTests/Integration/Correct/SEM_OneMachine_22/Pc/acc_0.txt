@@ -14,14 +14,12 @@ OUT: alonbug_1.p (10, 26): inferred type:  BaseType(EVENT)
 OUT: alonbug_1.p (12, 10): inferred type:  NIL
 OUT: alonbug_1.p (12, 18): inferred type:  BaseType(BOOL)
 OUT: alonbug_1.p (18, 7): inferred type:  NIL
-OUT: alonbug_1.p (18, 11): inferred type:  BaseType(INT)
 OUT: alonbug_1.p (18, 13): inferred type:  BaseType(BOOL)
 OUT: alonbug_1.p (18, 16): inferred type:  BaseType(INT)
 OUT: alonbug_1.p (19, 10): inferred type:  NIL
 OUT: alonbug_1.p (19, 16): inferred type:  BaseType(EVENT)
 OUT: alonbug_1.p (23, 6): inferred type:  BaseType(INT)
 OUT: alonbug_1.p (23, 6): inferred type:  NIL
-OUT: alonbug_1.p (23, 10): inferred type:  BaseType(INT)
 OUT: alonbug_1.p (23, 12): inferred type:  BaseType(INT)
 OUT: alonbug_1.p (23, 14): inferred type:  BaseType(INT)
 OUT: alonbug_1.p (28, 11): inferred type:  NIL

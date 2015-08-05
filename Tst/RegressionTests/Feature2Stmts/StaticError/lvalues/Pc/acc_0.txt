@@ -9,45 +9,30 @@ OUT: lvalues.p (12, 11): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType
 OUT: lvalues.p (12, 13): inferred type:  SeqType(BaseType(INT))
 OUT: lvalues.p (12, 14): inferred type:  BaseType(INT)
 OUT: lvalues.p (12, 15): inferred type:  BaseType(INT)
-OUT: lvalues.p (12, 24): inferred type:  BaseType(INT)
 OUT: lvalues.p (13, 11): inferred type:  NIL
 OUT: lvalues.p (13, 11): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
 OUT: lvalues.p (13, 18): inferred type:  SeqType(BaseType(INT))
 OUT: lvalues.p (13, 19): inferred type:  BaseType(INT)
-OUT: lvalues.p (13, 20): inferred type:  BaseType(INT)
-OUT: lvalues.p (13, 29): inferred type:  BaseType(INT)
 OUT: lvalues.p (14, 11): inferred type:  NIL
-OUT: lvalues.p (14, 11): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
-OUT: lvalues.p (14, 13): inferred type:  SeqType(BaseType(INT))
-OUT: lvalues.p (14, 14): inferred type:  BaseType(INT)
-OUT: lvalues.p (14, 15): inferred type:  BaseType(INT)
 OUT: lvalues.p (14, 24): inferred type:  BaseType(INT)
 OUT: lvalues.p (15, 11): inferred type:  BaseType(INT)
 OUT: lvalues.p (15, 11): inferred type:  NIL
-OUT: lvalues.p (15, 15): inferred type:  BaseType(INT)
-OUT: lvalues.p (16, 5): inferred type:  BaseType(INT)
 OUT: lvalues.p (16, 5): inferred type:  ERROR
 OUT: lvalues.p (16, 5): inferred type:  NIL
-OUT: lvalues.p (16, 9): inferred type:  ERROR
-OUT: lvalues.p (17, 5): inferred type:  BaseType(INT)
 OUT: lvalues.p (17, 5): inferred type:  ERROR
-OUT: lvalues.p (17, 9): inferred type:  ERROR
 OUT: lvalues.p (17, 14): inferred type:  BaseType(BOOL)
 OUT: lvalues.p (17, 14): inferred type:  TupType(BaseType(BOOL), NIL)
 OUT: lvalues.p (23, 8): inferred type:  NIL
 OUT: lvalues.p (23, 15): inferred type:  BaseType(INT)
 OUT: lvalues.p (28, 9): inferred type:  NIL
 OUT: lvalues.p (28, 16): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
-OUT: lvalues.p (33, 8): inferred type:  BaseType(INT)
 OUT: lvalues.p (33, 8): inferred type:  NIL
-OUT: lvalues.p (33, 12): inferred type:  BaseType(INT)
 OUT: lvalues.p (33, 14): inferred type:  BaseType(INT)
 OUT: lvalues.p (33, 16): inferred type:  BaseType(INT)
 OUT: lvalues.p (34, 8): inferred type:  NIL
 OUT: lvalues.p (34, 15): inferred type:  BaseType(INT)
 OUT: lvalues.p (38, 3): inferred type:  BaseType(INT)
 OUT: lvalues.p (38, 3): inferred type:  NIL
-OUT: lvalues.p (38, 7): inferred type:  BaseType(INT)
 OUT: lvalues.p (38, 9): inferred type:  BaseType(INT)
 OUT: lvalues.p (38, 11): inferred type:  BaseType(INT)
 OUT: lvalues.p (0, 0): No Main Machine
@@ -55,10 +40,8 @@ OUT: lvalues.p (1, 1): no start state in machine
 OUT: lvalues.p (11, 11): invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name
 OUT: lvalues.p (13, 11): invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name
 OUT: lvalues.p (14, 14): this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: lvalues.p (16, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: lvalues.p (16, 9): function requires arguments
-OUT: lvalues.p (17, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: lvalues.p (17, 9): function arguments have incorrect types
+OUT: lvalues.p (16, 5): function requires arguments
+OUT: lvalues.p (17, 5): function arguments have incorrect types
 OUT: Compilation failed
 OUT: 
 EXIT: -1

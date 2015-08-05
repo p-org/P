@@ -354,8 +354,7 @@
             }
 
             //// Step 3. Generate outputs
-            return GenerateC(flags) &
-                   GenerateZing(flags); 
+            return GenerateC(flags) & GenerateZing(flags); 
         }
 
         public bool GenerateZing()
@@ -576,6 +575,7 @@
             AddErrors(task.Result, "PurityError(_, _)", errors, 1);
             AddErrors(task.Result, "MonitorError(_, _)", errors, 1);
             AddErrors(task.Result, "LValueError(_, _)", errors, 1);
+            AddErrors(task.Result, "BadLabelError(_)", errors, 1);
 
             //// Enumerate structural errors
             AddErrors(task.Result, "missingDecl", errors);

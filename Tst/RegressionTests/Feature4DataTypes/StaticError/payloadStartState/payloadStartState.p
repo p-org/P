@@ -17,7 +17,7 @@ main machine MachOS {
 	
 	state X {
 		entry {
-			push CalledState;
+
 		}
 	}
 	state CalledState {

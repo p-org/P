@@ -19,8 +19,6 @@ OUT: nulleventhandler1.p (23, 3): inferred type:  BaseType(BOOL)
 OUT: nulleventhandler1.p (23, 3): inferred type:  NIL
 OUT: nulleventhandler1.p (23, 10): inferred type:  BaseType(BOOL)
 OUT: nulleventhandler1.p (24, 3): inferred type:  NIL
-OUT: nulleventhandler1.p (24, 10): inferred type:  BaseType(BOOL)
 OUT: nulleventhandler1.p (24, 15): inferred type:  BaseType(BOOL)
-OUT: nulleventhandler1.p (24, 18): inferred type:  BaseType(BOOL)
 OUT: 
 EXIT: 0

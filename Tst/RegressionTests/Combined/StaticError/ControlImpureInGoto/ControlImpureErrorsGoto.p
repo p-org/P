@@ -1,6 +1,6 @@
 // Combined tests: "Control Impure" static errors
 // Cases covered:
-// "push", "pop" and "raise" in "goto" function,
+// "pop" and "raise" in "goto" function,
 // used in anonymous functions (error) and invoked by (named) function calls (error)
 
 event E1 assert 1;
@@ -19,8 +19,8 @@ main machine Real1 {
 		             send this, E2; 
 		             send this, E3; 
 					 send this, E4;
-					 push Real1_S1; };   //push stmt; explicit pop is needed
-		on E2 goto Real1_S1 with { push Real1_S2;};               //error
+					 };   
+		on E2 goto Real1_S1 with { };
         on E1 goto Real1_S2 with { raise unit;};  	              //error
 		on E3 goto Real1_S3 with { pop;};                         //error
 		on E4 goto Real1_S3 with {
@@ -30,7 +30,7 @@ main machine Real1 {
             else
 			    {
 					i = i + Action4() +   //error
-							Action5() -   //error
+							Action5() - 
 							Action7() +   // no error!!!
 							Action6();    //error
 			    }
@@ -39,7 +39,7 @@ main machine Real1 {
 	state Real1_S1 {
 		entry {
 			}
-		on E1 goto Real1_S1 with Action2;                        //error
+		on E1 goto Real1_S1 with Action2; 
 	    on E2 goto Real1_S2 with Action3;                        //error
 		on E3 goto Real1_S3 with Action1;                        //error
     }
@@ -59,7 +59,7 @@ main machine Real1 {
 		pop;                                   //error                 
     }
 	fun Action2() {
-		push Real1_S1;                          //error
+
     }
 	fun Action3() {
 		raise unit;                             //error
@@ -69,7 +69,7 @@ main machine Real1 {
 		return 1;
     }
 	fun Action5() : int {
-		push Real1_S1;                           
+
 		return 1;
     }
 	fun Action6() : int {
@@ -77,6 +77,6 @@ main machine Real1 {
 		return 1;
     }
 	fun Action7() : int {                                   
-		return Action5();                     //error
+		return Action5();                    
     }
 }

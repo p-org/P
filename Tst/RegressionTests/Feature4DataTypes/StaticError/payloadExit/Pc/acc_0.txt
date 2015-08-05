@@ -14,7 +14,6 @@ OUT: payloadexit.p (24, 23): inferred type:  BaseType(INT)
 OUT: payloadexit.p (24, 24): inferred type:  BaseType(INT)
 OUT: payloadexit.p (25, 4): inferred type:  BaseType(BOOL)
 OUT: payloadexit.p (25, 4): inferred type:  NIL
-OUT: payloadexit.p (25, 11): inferred type:  NmdTupType(NmdTupTypeField("first", MapType(BaseType(INT), BaseType(INT))), NmdTupType(NmdTupTypeField("sec", SeqType(BaseType(BOOL))), NIL))
 OUT: payloadexit.p (25, 19): inferred type:  SeqType(BaseType(BOOL))
 OUT: payloadexit.p (25, 22): inferred type:  BaseType(BOOL)
 OUT: payloadexit.p (25, 23): inferred type:  BaseType(INT)
@@ -25,19 +24,16 @@ OUT: payloadexit.p (34, 10): inferred type:  BaseType(ANY)
 OUT: payloadexit.p (34, 18): inferred type:  ERROR
 OUT: payloadexit.p (35, 4): inferred type:  BaseType(BOOL)
 OUT: payloadexit.p (35, 4): inferred type:  ERROR
-OUT: payloadexit.p (35, 11): inferred type:  BaseType(ANY)
 OUT: payloadexit.p (35, 19): inferred type:  ERROR
 OUT: payloadexit.p (42, 4): inferred type:  BaseType(REAL)
 OUT: payloadexit.p (42, 4): inferred type:  ERROR
 OUT: payloadexit.p (42, 4): inferred type:  NIL
-OUT: payloadexit.p (42, 11): inferred type:  BaseType(ANY)
 OUT: payloadexit.p (43, 4): inferred type:  BaseType(INT)
 OUT: payloadexit.p (43, 4): inferred type:  ERROR
 OUT: payloadexit.p (43, 10): inferred type:  BaseType(ANY)
 OUT: payloadexit.p (60, 4): inferred type:  BaseType(INT)
 OUT: payloadexit.p (60, 4): inferred type:  ERROR
 OUT: payloadexit.p (60, 4): inferred type:  NIL
-OUT: payloadexit.p (60, 10): inferred type:  BaseType(ANY)
 OUT: payloadexit.p (60, 18): inferred type:  ERROR
 OUT: payloadexit.p (60, 23): inferred type:  ERROR
 OUT: payloadexit.p (60, 24): inferred type:  BaseType(BOOL)
@@ -51,7 +47,6 @@ OUT: payloadexit.p (68, 3): inferred type:  NIL
 OUT: payloadexit.p (70, 4): inferred type:  BaseType(INT)
 OUT: payloadexit.p (70, 4): inferred type:  ERROR
 OUT: payloadexit.p (70, 4): inferred type:  NIL
-OUT: payloadexit.p (70, 10): inferred type:  BaseType(ANY)
 OUT: payloadexit.p (70, 18): inferred type:  ERROR
 OUT: payloadexit.p (71, 4): inferred type:  BaseType(BOOL)
 OUT: payloadexit.p (71, 4): inferred type:  ERROR

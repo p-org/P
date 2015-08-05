@@ -2561,6 +2561,8 @@ namespace Microsoft.Pc
                 if (calleeInfo.printArgs.Contains(calleeArg))
                 {
                     ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "Print"), MkZingIndex(argCloneVar, Factory.Instance.MkCnst(calleeArgInfo.index)))));
+                    //add a newline
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst("\"\\n\""))));
                 }
                 parameterCount++;
             }

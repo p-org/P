@@ -4,7 +4,8 @@ static model fun _SEND(target:machine, e:event, p:any) {
 		send target, e, p;
 }
 
-static model fun _CREATECONTAINER(retVal : machine) : machine {
+static model fun _CREATECONTAINER() : machine {
+	var retVal: machine;
 	retVal = new Container();
 	return retVal;
 }

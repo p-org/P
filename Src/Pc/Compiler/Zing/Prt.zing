@@ -193,6 +193,7 @@ class SM_HANDLE {
 	
     void DequeueEvent(bool hasNullTransition) {
 	    PRT_TYPE nullType;
+		hasNullTransition = hasNullTransition || (null in receiveSet);
 		currentEvent = null;
 		currentArg = null;
 		while (true) {

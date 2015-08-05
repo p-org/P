@@ -345,18 +345,26 @@ class EVENT_BUFFER {
     bool IsEnabled(SM_HANDLE owner) {
         EVENT_NODE iter;
 		SM_EVENT_SET deferredSet;
-	
+		SM_EVENT_SET receiveSet;
+		bool enabled;
+
 		deferredSet = owner.stack.deferredSet;
+		receiveSet = owner.receiveSet;
         iter = head.next;
         while (iter != head) {
-			if (iter.e in deferredSet)
+			if (sizeof(receiveSet) == 0)
 			{
-				iter = iter.next;
+				enabled = !(iter.e in deferredSet);
 			}
 			else 
 			{
+				enabled = iter.e in receiveSet; 
+			}
+			if (enabled)
+			{
 				return true;
-			} 
+			}
+			iter = iter.next;
         }
 		return false;
     }

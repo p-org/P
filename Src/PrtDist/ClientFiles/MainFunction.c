@@ -2,13 +2,8 @@
 #include "program.h"
 #include "PrtExecution.h"
 
-/* Macros */
-#define MAX_THREADPOOL_SIZE 100
-#define MIN_THREADPOOL_SIZE 10
-
 /* Global variables */
 PRT_PROCESS* ContainerProcess;
-PTP_POOL PrtRunStateMachineThreadPool;
 struct ClusterConfig ClusterConfiguration;
 PRT_INT64 sendMessageSeqNumber = 0;
 
@@ -37,28 +32,6 @@ int main(int argc, char *argv[])
 	
 	PRT_DBG_START_MEM_BALANCED_REGION
 	{
-		
-		BOOL bRet = FALSE;
-
-		//Create a global thread pool used by all the state-machines
-		PrtRunStateMachineThreadPool = CreateThreadpool(NULL);
-		if (NULL == PrtRunStateMachineThreadPool) {
-			printf("CreateThreadpool failed. LastError: %u\n",
-				GetLastError());
-			exit(1);
-		}
-
-
-		SetThreadpoolThreadMaximum(PrtRunStateMachineThreadPool, MAX_THREADPOOL_SIZE);
-		bRet = SetThreadpoolThreadMinimum(PrtRunStateMachineThreadPool, MIN_THREADPOOL_SIZE);
-
-		if (FALSE == bRet)
-		{
-			PrtDistLog("Setting the Minimum thread pool size failed");
-			exit(1);
-		}
-
-		
 		//Initialize the cluster configuration.
 		PrtDistClusterConfigInitialize(argv[1]);
 		SetCurrentDirectory(ClusterConfiguration.LocalFolder);

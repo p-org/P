@@ -1,0 +1,4 @@
+runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: ..\pop.dll
+acc: .\
+dsc: zinger.exe, complex data types in assignments: sequences, tuples

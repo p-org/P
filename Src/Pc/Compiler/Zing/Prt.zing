@@ -195,7 +195,6 @@ class SM_HANDLE {
 	    PRT_TYPE nullType;
 		currentEvent = null;
 		currentArg = null;
-		hasNullTransition = hasNullTransition || (currentEvent in receiveSet); // zc complains if I use (null in receiveSet) 
 		while (true) {
 			buffer.DequeueEvent(this);
 			if (currentEvent != null) 
@@ -203,9 +202,10 @@ class SM_HANDLE {
 				assert (currentArg != null, "Internal error");
 				assert (this in SM_HANDLE.enabled, "Internal error");
 				trace("<DequeueLog> Dequeued Event < {0}, ", currentEvent.name); PRT_VALUE.Print(currentArg); trace(" > at Machine {0}-{1}\n", machineName, instance);
+				receiveSet = new SM_EVENT_SET;
 				return;
 			} 
-			else if (hasNullTransition) 
+			else if (hasNullTransition || (currentEvent in receiveSet)) 
 			{
 				assert (this in SM_HANDLE.enabled, "Internal error");
 				trace("<NullTransLog> Null transition taken by Machine {0}-{1}\n", machineName, instance);
@@ -213,6 +213,7 @@ class SM_HANDLE {
 				currentArg = PRT_VALUE.PrtMkDefaultValue(nullType);
 				FairScheduler.AtYieldStatic(this);
 				FairChoice.AtYieldOrChooseStatic();
+				receiveSet = new SM_EVENT_SET;
 				yield;
 				return;
 			} 
@@ -330,7 +331,6 @@ class EVENT_BUFFER {
 			}
 			if (doDequeue) 
 			{
-				owner.receiveSet = new SM_EVENT_SET;
 				iter.next.prev = iter.prev;
 				iter.prev.next = iter.next;
 				owner.currentEvent = iter.e;

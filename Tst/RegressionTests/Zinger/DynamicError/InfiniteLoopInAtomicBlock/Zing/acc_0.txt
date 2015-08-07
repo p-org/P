@@ -14,7 +14,7 @@ OUT:     MACHINE_PING.Run (InfiniteLoopInAtomicBlock.zing, Line 114)
 OUT:     MACHINE_PING.Start (InfiniteLoopInAtomicBlock.zing, Line 87)
 OUT: 
 OUT: 
-OUT: 11 distinct states explored
+OUT: 10 distinct states explored
 OUT: 
 EXIT: 4
 

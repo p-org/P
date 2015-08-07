@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 5 distinct states explored
+OUT: 4 distinct states explored
 OUT: 
 EXIT: 3
 

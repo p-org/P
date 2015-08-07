@@ -167,7 +167,6 @@ OUT: nonatomicdatatypesallasserts.p (133, 20): inferred type:  TupType(BaseType(
 OUT: nonatomicdatatypesallasserts.p (134, 8): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (134, 14): inferred type:  BaseType(REAL)
 OUT: nonatomicdatatypesallasserts.p (137, 5): inferred type:  NIL
-OUT: nonatomicdatatypesallasserts.p (137, 7): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypesallasserts.p (138, 5): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (138, 15): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (139, 5): inferred type:  NIL
@@ -181,6 +180,7 @@ OUT: nonatomicdatatypesallasserts.p (141, 27): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (142, 5): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (142, 18): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (143, 5): inferred type:  NIL
+OUT: nonatomicdatatypesallasserts.p (143, 7): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypesallasserts.p (144, 5): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (144, 18): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (145, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))

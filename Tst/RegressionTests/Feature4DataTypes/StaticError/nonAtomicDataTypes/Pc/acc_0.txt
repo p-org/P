@@ -41,8 +41,8 @@ OUT: nonatomicdatatypes.p (73, 9): inferred type:  BaseType(REAL)
 OUT: nonatomicdatatypes.p (74, 11): inferred type:  NIL
 OUT: nonatomicdatatypes.p (75, 11): inferred type:  NIL
 OUT: nonatomicdatatypes.p (75, 22): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (77, 5): inferred type:  BaseType(ANY)
 OUT: nonatomicdatatypes.p (77, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (78, 5): inferred type:  BaseType(ANY)
 OUT: nonatomicdatatypes.p (78, 5): inferred type:  NIL
 OUT: nonatomicdatatypes.p (78, 9): inferred type:  BaseType(ANY)
 OUT: nonatomicdatatypes.p (79, 5): inferred type:  NIL

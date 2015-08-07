@@ -5,4 +5,4 @@ argPc: /shortFileNames
 argPc: /doNotErase
 argPc: /outputDir:..\.
 acc: .\.
-dsc: pc.exe, complex data types in assignments: sequences
+dsc: pc.exe, receive statement

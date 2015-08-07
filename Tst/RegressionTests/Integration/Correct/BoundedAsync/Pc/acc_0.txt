@@ -82,9 +82,9 @@ OUT: boundedasync.p (80, 18): inferred type:  BaseType(INT)
 OUT: boundedasync.p (80, 20): inferred type:  BaseType(INT)
 OUT: boundedasync.p (81, 4): inferred type:  NIL
 OUT: boundedasync.p (81, 9): inferred type:  BaseType(REAL)
-OUT: boundedasync.p (81, 17): inferred type:  BaseType(EVENT)
 OUT: boundedasync.p (82, 4): inferred type:  NIL
 OUT: boundedasync.p (82, 9): inferred type:  BaseType(REAL)
+OUT: boundedasync.p (82, 17): inferred type:  BaseType(EVENT)
 OUT: boundedasync.p (83, 4): inferred type:  NIL
 OUT: boundedasync.p (83, 9): inferred type:  BaseType(REAL)
 OUT: boundedasync.p (83, 17): inferred type:  BaseType(EVENT)

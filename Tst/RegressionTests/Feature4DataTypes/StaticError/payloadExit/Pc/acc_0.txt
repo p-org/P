@@ -20,10 +20,10 @@ OUT: payloadexit.p (25, 23): inferred type:  BaseType(INT)
 OUT: payloadexit.p (34, 4): inferred type:  BaseType(INT)
 OUT: payloadexit.p (34, 4): inferred type:  ERROR
 OUT: payloadexit.p (34, 4): inferred type:  NIL
-OUT: payloadexit.p (34, 10): inferred type:  BaseType(ANY)
 OUT: payloadexit.p (34, 18): inferred type:  ERROR
 OUT: payloadexit.p (35, 4): inferred type:  BaseType(BOOL)
 OUT: payloadexit.p (35, 4): inferred type:  ERROR
+OUT: payloadexit.p (35, 11): inferred type:  BaseType(ANY)
 OUT: payloadexit.p (35, 19): inferred type:  ERROR
 OUT: payloadexit.p (42, 4): inferred type:  BaseType(REAL)
 OUT: payloadexit.p (42, 4): inferred type:  ERROR

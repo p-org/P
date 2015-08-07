@@ -1,0 +1,30 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing receive10.zing ...
+OUT: Compiling receive10.zing to receive10.dll ...
+OUT: receive10.p (0, 0): inferred type:  NIL
+OUT: receive10.p (12, 7): inferred type:  BaseType(REAL)
+OUT: receive10.p (12, 7): inferred type:  NIL
+OUT: receive10.p (12, 11): inferred type:  BaseType(REAL)
+OUT: receive10.p (12, 17): inferred type:  BaseType(REAL)
+OUT: receive10.p (13, 4): inferred type:  NIL
+OUT: receive10.p (13, 12): inferred type:  BaseType(EVENT)
+OUT: receive10.p (22, 4): inferred type:  NIL
+OUT: receive10.p (22, 10): inferred type:  BaseType(EVENT)
+OUT: receive10.p (29, 4): inferred type:  NIL
+OUT: receive10.p (30, 15): inferred type:  NIL
+OUT: receive10.p (30, 20): inferred type:  BaseType(REAL)
+OUT: receive10.p (30, 26): inferred type:  BaseType(EVENT)
+OUT: receive10.p (30, 29): inferred type:  BaseType(INT)
+OUT: receive10.p (30, 33): inferred type:  NIL
+OUT: receive10.p (30, 40): inferred type:  BaseType(BOOL)
+OUT: receive10.p (31, 18): inferred type:  NIL
+OUT: receive10.p (31, 24): inferred type:  BaseType(EVENT)
+OUT: receive10.p (36, 22): inferred type:  NIL
+OUT: receive10.p (36, 29): inferred type:  BaseType(BOOL)
+OUT: 
+EXIT: 0

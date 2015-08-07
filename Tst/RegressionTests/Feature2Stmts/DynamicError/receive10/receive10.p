@@ -1,7 +1,8 @@
 // This sample captures the behavior of null inside receive. This regression should be involved with the -m option in zing.
-// The traces reported should contain only 2 traces assert at line 29 and assert at 35. The unhandled because of send this, E, 10; should not happen.
+// The traces reported should contain only 2 traces assert at line 30 and assert at 36. The unhandled because of send this, E, 10; should not happen.
 event E : int;
 event F;
+event Unit;
 
 main machine A {
 	var x: int;
@@ -27,11 +28,11 @@ machine B {
 		entry {
 			receive {
 				case F: { send this, E, 10; assert(false);}
-				case null : raise F;
+				case null : {raise F;}
 			}
 		
 			
 		}
-		on F goto X with { assert false; // should end here.};
+		on F goto X with { assert false;};
 	}
 }

@@ -20,7 +20,7 @@ machine FailureDetector {
     start state Init {
         entry {
   	        nodes = payload as seq[machine];
-			InitializeAliveSet(0);
+			InitializeAliveSet();
 			timer = new Timer(this);
 	        raise UNIT;   	   
         }
@@ -30,7 +30,7 @@ machine FailureDetector {
     }
     state SendPing {
         entry {
-		    SendPingsToAliveSet(0);
+		    SendPingsToAliveSet();
 			send timer, START, 100;
 	    }
         on PONG do { 
@@ -47,7 +47,7 @@ machine FailureDetector {
 		    if (sizeof(responses) < sizeof(alive) && attempts < 2) {
 				raise UNIT;
 			}
-			Notify(1, 0);
+			Notify();
 			raise ROUND_DONE;
 		};
 		on ROUND_DONE goto Reset;
@@ -69,14 +69,16 @@ machine FailureDetector {
 		 ignore PONG;
 	 }
 
-	 fun InitializeAliveSet(i: int) {
+	 fun InitializeAliveSet() {
+		var i: int;
 		i = 0;
 		while (i < sizeof(nodes)) {
 			alive += (nodes[i], true);
 			i = i + 1;
 		}
 	 }
-	 fun SendPingsToAliveSet(i: int) {
+	 fun SendPingsToAliveSet() {
+		var i: int;
 		i = 0;
 		while (i < sizeof(nodes)) {
 		    if (nodes[i] in alive && !(nodes[i] in responses)) {
@@ -86,8 +88,9 @@ machine FailureDetector {
 		    i = i + 1;
 		}
 	 }
-	fun Notify(i: int, j: int) {
-	     i = 0;
+	fun Notify() {
+	     var i, j: int;
+		 i = 0;
 		 while (i < sizeof(nodes)) {
 		     if (nodes[i] in alive && !(nodes[i] in responses)) {
 		         alive -= nodes[i];

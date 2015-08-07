@@ -59,11 +59,11 @@ OUT: eventexprsemantics2.p (54, 27): inferred type:  BaseType(INT)
 OUT: eventexprsemantics2.p (54, 31): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics2.p (55, 4): inferred type:  NIL
 OUT: eventexprsemantics2.p (55, 17): inferred type:  BaseType(EVENT)
+OUT: eventexprsemantics2.p (55, 18): inferred type:  BaseType(INT)
 OUT: eventexprsemantics2.p (55, 22): inferred type:  BaseType(INT)
 OUT: eventexprsemantics2.p (56, 4): inferred type:  NIL
 OUT: eventexprsemantics2.p (56, 14): inferred type:  SeqType(BaseType(ANY))
 OUT: eventexprsemantics2.p (56, 18): inferred type:  BaseType(ANY)
-OUT: eventexprsemantics2.p (56, 19): inferred type:  BaseType(INT)
 OUT: eventexprsemantics2.p (56, 22): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics2.p (57, 4): inferred type:  NIL
 OUT: eventexprsemantics2.p (57, 14): inferred type:  MapType(BaseType(INT), BaseType(EVENT))

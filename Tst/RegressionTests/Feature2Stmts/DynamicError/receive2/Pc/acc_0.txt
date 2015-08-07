@@ -1,0 +1,59 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing receive2.zing ...
+OUT: Compiling receive2.zing to receive2.dll ...
+OUT: receive2.p (0, 0): inferred type:  NIL
+OUT: receive2.p (11, 7): inferred type:  BaseType(REAL)
+OUT: receive2.p (11, 7): inferred type:  NIL
+OUT: receive2.p (11, 11): inferred type:  BaseType(REAL)
+OUT: receive2.p (11, 17): inferred type:  BaseType(REAL)
+OUT: receive2.p (12, 4): inferred type:  BaseType(INT)
+OUT: receive2.p (12, 4): inferred type:  NIL
+OUT: receive2.p (12, 10): inferred type:  BaseType(INT)
+OUT: receive2.p (12, 12): inferred type:  BaseType(INT)
+OUT: receive2.p (13, 4): inferred type:  NIL
+OUT: receive2.p (13, 13): inferred type:  BaseType(BOOL)
+OUT: receive2.p (14, 4): inferred type:  NIL
+OUT: receive2.p (14, 8): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: receive2.p (14, 11): inferred type:  BaseType(INT)
+OUT: receive2.p (14, 11): inferred type:  TupType(BaseType(INT), NIL)
+OUT: receive2.p (15, 4): inferred type:  NIL
+OUT: receive2.p (15, 13): inferred type:  BaseType(BOOL)
+OUT: receive2.p (15, 16): inferred type:  BaseType(INT)
+OUT: receive2.p (19, 3): inferred type:  NIL
+OUT: receive2.p (19, 8): inferred type:  BaseType(REAL)
+OUT: receive2.p (19, 11): inferred type:  BaseType(EVENT)
+OUT: receive2.p (21, 14): inferred type:  BaseType(INT)
+OUT: receive2.p (21, 14): inferred type:  NIL
+OUT: receive2.p (21, 20): inferred type:  BaseType(INT)
+OUT: receive2.p (21, 22): inferred type:  BaseType(INT)
+OUT: receive2.p (21, 24): inferred type:  BaseType(INT)
+OUT: receive2.p (21, 26): inferred type:  BaseType(INT)
+OUT: receive2.p (22, 14): inferred type:  BaseType(INT)
+OUT: receive2.p (22, 14): inferred type:  NIL
+OUT: receive2.p (22, 20): inferred type:  BaseType(INT)
+OUT: receive2.p (22, 22): inferred type:  BaseType(INT)
+OUT: receive2.p (22, 24): inferred type:  BaseType(INT)
+OUT: receive2.p (22, 26): inferred type:  BaseType(INT)
+OUT: receive2.p (23, 14): inferred type:  BaseType(INT)
+OUT: receive2.p (23, 14): inferred type:  NIL
+OUT: receive2.p (23, 20): inferred type:  BaseType(INT)
+OUT: receive2.p (23, 22): inferred type:  BaseType(INT)
+OUT: receive2.p (23, 24): inferred type:  BaseType(INT)
+OUT: receive2.p (23, 26): inferred type:  BaseType(INT)
+OUT: receive2.p (24, 15): inferred type:  NIL
+OUT: receive2.p (34, 4): inferred type:  BaseType(INT)
+OUT: receive2.p (34, 4): inferred type:  NIL
+OUT: receive2.p (34, 10): inferred type:  BaseType(INT)
+OUT: receive2.p (34, 12): inferred type:  BaseType(INT)
+OUT: receive2.p (35, 4): inferred type:  BaseType(REAL)
+OUT: receive2.p (35, 4): inferred type:  NIL
+OUT: receive2.p (35, 8): inferred type:  BaseType(ANY)
+OUT: receive2.p (35, 16): inferred type:  BaseType(REAL)
+OUT: receive2.p (39, 15): inferred type:  NIL
+OUT: 
+EXIT: 0

@@ -1584,8 +1584,7 @@ namespace Microsoft.Pc
         {
             string initStateName = allMachines[machineName].initStateName;
             var callStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("Run"), MkZingState(initStateName)));
-            var iteStmt = MkZingIfThen(MkZingOr(MkZingEq(MkZingDot("myHandle", "currentEvent"), MkZingEvent("halt")), 
-                                                MkZingEq(MkZingDot("myHandle", "currentEvent"), MkZingEvent("null"))),
+            var iteStmt = MkZingIfThen(MkZingEq(MkZingDot("myHandle", "currentEvent"), MkZingEvent("halt")), 
                                     MkZingSeq(
                                         MkZingAssign(MkZingDot("myHandle", "stack"), MkZingIdentifier("null")),
                                         MkZingAssign(MkZingDot("myHandle", "buffer"), MkZingIdentifier("null")),

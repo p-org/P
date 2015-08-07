@@ -1,0 +1,11 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine A(1) is created
+OUT: <StateLog> Machine A(1) entered state Init
+OUT: <EnqueueLog> Enqueued event E with payload null on Machine A(1)
+OUT: <DequeueLog> Dequeued event E with payload null by Machine A(1)
+OUT: <ExitLog> Machine A(1) exiting state Init
+OUT: exiting with PRT_STATUS_EVENT_UNHANDLED
+OUT: 
+EXIT: 1

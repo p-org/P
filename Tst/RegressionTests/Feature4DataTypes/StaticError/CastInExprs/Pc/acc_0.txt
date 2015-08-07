@@ -190,9 +190,9 @@ OUT: castinexprs.p (197, 5): inferred type:  NIL
 OUT: castinexprs.p (197, 15): inferred type:  BaseType(EVENT)
 OUT: castinexprs.p (199, 5): inferred type:  ERROR
 OUT: castinexprs.p (199, 5): inferred type:  NIL
+OUT: castinexprs.p (199, 15): inferred type:  BaseType(EVENT)
 OUT: castinexprs.p (200, 5): inferred type:  ERROR
 OUT: castinexprs.p (200, 5): inferred type:  NIL
-OUT: castinexprs.p (200, 15): inferred type:  BaseType(EVENT)
 OUT: castinexprs.p (200, 24): inferred type:  ERROR
 OUT: castinexprs.p (201, 5): inferred type:  NIL
 OUT: castinexprs.p (201, 9): inferred type:  BaseType(NULL)

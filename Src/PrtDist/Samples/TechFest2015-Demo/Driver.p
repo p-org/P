@@ -1,17 +1,11 @@
 include "FailureDetector.p"
 include "PrtDistHelp.p"
 
-static fun _CREATEMACHINE(cner: machine, typeOfMachine: int, param : any, newMachine: machine) : machine
-[container = cner]
+static fun CreateNode(container: machine) : machine
+[container = container]
 {
-	if(typeOfMachine == 1)
-	{
-		newMachine = new Node();
-	}
-	else
-	{
-		assert(false);
-	}
+	var newMachine: machine;
+	newMachine = new Node();
 	return newMachine;
 }
 
@@ -19,16 +13,16 @@ main machine Driver {
     var fd: machine;
 	var nodeseq: seq[machine];
     var nodemap: map[machine, bool];
+	var container: machine;
 	var i: int;
 	var n: machine;
-	var container: machine;
     start state Init {
 	    entry {
 			new Safety();
 			i = 0;
 			while (i < 2) {
-				container = _CREATECONTAINER(null);
-				n = _CREATEMACHINE(container, 1, null, null);
+				container = _CREATECONTAINER();
+				n = CreateNode(container);
 				nodeseq += (i, n);
 				nodemap += (n, true);
 				i = i + 1;

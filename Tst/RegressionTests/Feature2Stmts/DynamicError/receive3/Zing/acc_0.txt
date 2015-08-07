@@ -1,0 +1,27 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 3 distinct states explored
+OUT: 
+EXIT: 3
+
+=================================
+receive3.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine A-0
+<StateLog> Machine A-0 entering State Init
+<EnqueueLog> Enqueued Event < ____E, null > in Machine ____A-0 by ____A-0
+<DequeueLog> Dequeued Event < ____E, null > at Machine ____A-0
+<RaiseLog> Machine A-0 raised Event ____F
+<StateLog> Machine A-0 exiting State Init
+<StateLog> Unhandled event exception by machine A-0
+
+Error:
+P Assertion failed:
+Expression: assert(false)
+Comment: Unhandled event exception by machine A

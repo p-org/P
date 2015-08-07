@@ -899,14 +899,41 @@ PrtDequeueEvent(
 	// Check if not found
 	//
 	if (i == queue->size) {
-		if (PrtStateHasDefaultTransitionOrAction(context))
+		if (context->receive == NULL)
 		{
-			PrtPushEvent(context, PrtMkEventValue(PRT_SPECIAL_EVENT_NULL), PrtMkNullValue());
-			return PRT_TRUE;
+			if (PrtStateHasDefaultTransitionOrAction(context))
+			{
+				PrtPushEvent(context, PrtMkEventValue(PRT_SPECIAL_EVENT_NULL), PrtMkNullValue());
+				return PRT_TRUE;
+			}
+			else
+			{
+				return PRT_FALSE;
+			}
 		}
-		else 
+		else
 		{
-			return PRT_FALSE;
+			PRT_BOOLEAN hasDefaultCase = (context->process->program->eventSets[context->receive->caseSetIndex].packedEvents[0] & 0x1) == 1;
+			if (hasDefaultCase)
+			{
+				PrtPushEvent(context, PrtMkEventValue(PRT_SPECIAL_EVENT_NULL), PrtMkNullValue());
+				for (PRT_UINT32 i = 0; i < context->receive->nCases; i++)
+				{
+					PRT_CASEDECL *rcase = &context->receive->cases[i];
+					if (PRT_SPECIAL_EVENT_NULL == rcase->triggerEventIndex)
+					{
+						frame->rcase = rcase;
+						PrtPushNewCaseFrame(context, rcase->funIndex, frame->locals);
+						break;
+					}
+				}
+				context->receive = NULL;
+				return PRT_TRUE;
+			}
+			else
+			{
+				return PRT_FALSE;
+			}
 		}
 	}
 
@@ -1244,21 +1271,14 @@ PrtIsEventMaxInstanceExceeded(
 FORCEINLINE
 PRT_BOOLEAN
 PrtStateHasDefaultTransitionOrAction(
-	_In_ PRT_MACHINEINST_PRIV			*context
-	)
+_In_ PRT_MACHINEINST_PRIV			*context
+)
 {
-	if (context->receive == NULL)
-	{
-		PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
-		PRT_BOOLEAN hasDefaultTransition = (context->process->program->eventSets[stateDecl->transSetIndex].packedEvents[0] & 0x1) == 1;
-		PRT_BOOLEAN hasDefaultAction = (context->currentActionSetCompact[0] & 0x1) == 1;
-		return hasDefaultTransition || hasDefaultAction;
-	}
-	else
-	{
-		PRT_BOOLEAN hasDefaultCase = (context->process->program->eventSets[context->receive->caseSetIndex].packedEvents[0] & 0x1) == 1;
-		return hasDefaultCase;
-	}
+	PrtAssert(context->receive == NULL, "This function should not be called at a receive");
+	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
+	PRT_BOOLEAN hasDefaultTransition = (context->process->program->eventSets[stateDecl->transSetIndex].packedEvents[0] & 0x1) == 1;
+	PRT_BOOLEAN hasDefaultAction = (context->currentActionSetCompact[0] & 0x1) == 1;
+	return hasDefaultTransition || hasDefaultAction;
 }
 
 FORCEINLINE

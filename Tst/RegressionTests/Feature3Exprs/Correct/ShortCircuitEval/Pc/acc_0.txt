@@ -7,10 +7,10 @@ OUT: Writing program.c ...
 OUT: Writing ShortCircuitEval.zing ...
 OUT: Compiling ShortCircuitEval.zing to ShortCircuitEval.dll ...
 OUT: shortcircuiteval.p (28, 5): inferred type:  NIL
+OUT: shortcircuiteval.p (28, 5): inferred type:  SeqType(BaseType(INT))
 OUT: shortcircuiteval.p (28, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: shortcircuiteval.p (28, 14): inferred type:  TupType(BaseType(INT), NIL)
 OUT: shortcircuiteval.p (29, 11): inferred type:  NIL
-OUT: shortcircuiteval.p (29, 11): inferred type:  SeqType(BaseType(INT))
 OUT: shortcircuiteval.p (29, 17): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: shortcircuiteval.p (29, 20): inferred type:  BaseType(INT)
 OUT: shortcircuiteval.p (29, 20): inferred type:  TupType(BaseType(INT), NIL)

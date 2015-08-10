@@ -1,5 +1,5 @@
 // This sample tests local variables and nested receive statements
-event E;
+event E: int;
 event F;
 event G: int;
 
@@ -16,7 +16,7 @@ main machine A {
 		}
 	}
 	fun foo(b: machine, p: int) {
-		send b, E; 
+		send b, E, 0; 
 		send b, G, 1;
 		receive { 
 			case E: { x = x + p + 1; } 
@@ -35,6 +35,7 @@ machine B {
 			y = payload as machine;
 			receive {
 				case E: {
+					assert payload == 0;
 					receive { 
 						case G: { 
 							var x: int;
@@ -48,8 +49,10 @@ machine B {
 							assert b == a + z;
 						} 
 					}
+					assert payload == 0;
 				}
 			}
+			assert y == payload as machine;
 		}
 	}
 }

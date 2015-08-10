@@ -874,6 +874,7 @@ domain PStaticTyping extends PData
 	Impure(c) :- c: FunDecl, ControlImpure(c).
 	Impure(c) :- SubSE(c, e), e = FunApp(n, _), c : FunDecl, called.name = n, FunAvailable(called, c.owner), Impure(called).
 	Impure(c) :- SubSE(c, e), e = FunStmt(n, _, _, _), c : FunDecl, called.name = n, FunAvailable(called, c.owner), Impure(called).
+	Impure(c) :- SubSE(c, e), e = FunStmt(n, _, aout, _), c : FunDecl, aout : Name, IsLValue(c, aout, TRUE).
 
     [ rule_Classes = '"error, msg: this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);" "']
     PurityError(c, e') :- 

@@ -29,6 +29,12 @@
             private set;
         }
 
+        public List<P_Root.InterfaceDecl> Interfaces
+        {
+            get;
+            private set;
+        }
+
         public List<P_Root.StateDecl> States
         {
             get;
@@ -124,6 +130,11 @@
                 {
                     yield return obs;
                 }
+
+                foreach (var inter in Interfaces)
+                {
+                    yield return inter;
+                }
             }
         }
 
@@ -136,6 +147,7 @@
             Transitions = new List<P_Root.TransDecl>();
             Functions = new List<P_Root.FunDecl>();
             Observes = new List<P_Root.ObservesDecl>();
+            Interfaces = new List<P_Root.InterfaceDecl>();
             AnonFunctions = new List<P_Root.AnonFunDecl>();
             Dos = new List<P_Root.DoDecl>();
             Annotations = new List<P_Root.Annotation>();

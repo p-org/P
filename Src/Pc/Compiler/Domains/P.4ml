@@ -16,7 +16,8 @@ domain PData
     SeqType         ::= new (x: any TypeExpr).
     MapType         ::= new (k: any TypeExpr, v: any TypeExpr).
     NmdTupTypeField ::= new (name: any String, type: any TypeExpr). 
-    TypeExpr        ::= BaseType + TupType + NmdTupType + SeqType + MapType.
+	InterfaceType	::= new (name: any String).
+    TypeExpr        ::= BaseType + TupType + NmdTupType + SeqType + MapType + InterfaceType.
         
     /*************************************************************/
     /****************          Action Language        ************/
@@ -57,6 +58,12 @@ domain PData
 
     Stmt ::= NewStmt + Raise + Send + Monitor + FunStmt + NulStmt + UnStmt + BinStmt + Return + While + Ite + Seq + Receive. 
 
+	/*************************************************************/
+    /****************  Module Declarations    *************/
+    /*************************************************************/
+
+	InterfaceDecl ::= new (name: any String, ev: String).
+
     /*************************************************************/
     /****************  State Machine Declarations    *************/
     /*************************************************************/
@@ -75,7 +82,7 @@ domain PData
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String).
     DoDecl         ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String).
 
-    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + ObservesDecl.            
+    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + ObservesDecl + InterfaceDecl.            
 
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
@@ -128,7 +135,7 @@ domain PStructuralTyping extends PData
 	missingDecl :- no MachineDecl(_, _, _, _, TRUE).
 	[ rule_Classes = '"error, msg: Multiple machines are declared as main machines"']
 	TwoDeclError(m1, m2) :- m1 is MachineDecl, m2 is MachineDecl, m1.isMain = TRUE, m2.isMain = TRUE, m1 != m2.
-		
+	
 	//// there should be a start state in each state machine.
 	[ rule_Classes = '"error, msg: no start state in machine"']
 	OneDeclError(m) :- m is MachineDecl, no StateDecl(s, m , _, _, _), m.start = s.
@@ -182,9 +189,17 @@ domain PStructuralTyping extends PData
 	[rule_Classes = '"error, msg: defer not allowed in monitor"']
 	OneDeclError(d) :- d is DoDecl(s, _, DEFER), s.owner.kind = MONITOR.	
 
-	//event in monitors is defined
-	[rule_Classes = '"error, msg: event in monitors is undefined"']
+	//event in monitors is declared
+	[rule_Classes = '"error, msg: event in monitors set is not declared"']
 	OneDeclError(obs) :- obs is ObservesDecl, obs.monitor.kind = MONITOR, no EventDecl(obs.ev, _, _).	
+
+	//event in interface type 
+	[rule_Classes = '"error, msg: unknown event in interface type declaration"']
+	OneDeclError(inter) :- inter is InterfaceDecl(s, e), s: String , no EventDecl(e, _, _).
+
+	//interface type is not declared.
+	[rule_Classes = '"error, msg: unknown type in variable declaration"']
+	OneDeclError(varD) :- varD is VarDecl(_, _, tp), tp : InterfaceType, no InterfaceDecl(tp.name, _).
 }
 
 domain PStaticTyping extends PData
@@ -473,7 +488,7 @@ domain PStaticTyping extends PData
 	                                  CommStmtPLType(c, e, plt), TypeRel(t3, evt, SUB).                   ///// < and t3 is a subtype of plt.
 
 	//// Error rules for send.
-	[ rule_Classes = '"error, msg: argument 1 of "send" expects a machine value"']
+	[ rule_Classes = '"error, msg: argument 1 of "send" expects a machine value or a interface value"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Send, t1 != BaseType(REAL).
 
 	[ rule_Classes = '"error, msg: argument 2 of "send" expects an event value"']

@@ -20,6 +20,8 @@
 
 %token TRUE FALSE
 
+%token INTERFACE
+
 %token ASSIGN REMOVE INSERT
 %token EQ NE LT GT LE GE IN
 %left LAND LNOT LOR NONDET FAIRNONDET
@@ -56,6 +58,7 @@ TopDecl
 	| EventDecl
 	| MachineDecl
 	| StaticFunDecl
+	| InterfaceDecl
 	;
 
 /******************* Annotations *******************/ 
@@ -81,7 +84,10 @@ Annotation
 IncludeDecl
 	: INCLUDE STR { parseIncludedFileNames.Add($2.str.Substring(1,$2.str.Length-2)); }
 	;
-
+/****************** Interface Declarations ******************/
+InterfaceDecl
+	: INTERFACE ID NonDefaultEventList SEMICOLON				{ AddInterface($2.str, ToSpan(@2), ToSpan(@3)); } 
+	;
 /******************* Event Declarations *******************/ 
 EventDecl
 	: EVENT ID EvCardOrNone EvTypeOrNone EventAnnotOrNone SEMICOLON { AddEvent($2.str, ToSpan(@2), ToSpan(@1)); }
@@ -296,6 +302,7 @@ Type
 	| MACHINE                               { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.REAL,    ToSpan(@1))); }						
 	| FOREIGN                               { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.FOREIGN, ToSpan(@1))); }						
 	| ANY                                   { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.ANY,     ToSpan(@1))); }
+	| ID									{ PushInterfaceType($1.str, ToSpan(@1)); }
 	| SEQ LBRACKET Type RBRACKET            { PushSeqType(ToSpan(@1)); }
 	| MAP LBRACKET Type COMMA Type RBRACKET { PushMapType(ToSpan(@1)); }
 	| LPAREN TupTypeList RPAREN	

@@ -111,6 +111,8 @@
 
 			 keywords.Add("in", (int)Tokens.IN);
 			 keywords.Add("as", (int)Tokens.AS);
+
+			 keywords.Add("interface", (int)Tokens.INTERFACE);
 		 }
 
          int GetIdToken(string txt)

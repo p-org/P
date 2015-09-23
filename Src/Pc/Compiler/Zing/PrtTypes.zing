@@ -2,9 +2,9 @@ enum PRT_TYPE_KIND
 {
 	PRT_KIND_ANY, 
 	PRT_KIND_BOOL, 
-	PRT_KIND_EVENT, 
-	PRT_KIND_FORGN, 
-	PRT_KIND_REAL, 
+	PRT_KIND_EVENT,  
+	PRT_KIND_REAL,
+	PRT_KIND_INTERFACE,
 	PRT_KIND_INT, 
 	PRT_KIND_MAP, 
 	PRT_KIND_NMDTUP, 
@@ -28,7 +28,8 @@ class PRT_TYPE {
     PRT_TYPE_ARRAY fieldTypes;
 
     PRT_TYPE innerType;
-
+	SM_EVENT_SET interfaceSet;
+	
     PRT_TYPE domType;
     PRT_TYPE codType;
 
@@ -36,6 +37,7 @@ class PRT_TYPE {
         PRT_TYPE type;
 		type = new PRT_TYPE;
 		type.typeKind = typeKind;
+		type.interfaceSet = null;
 		type.arity = 0;
 		type.fieldNames = null;
 		type.fieldTypes = null;
@@ -51,6 +53,13 @@ class PRT_TYPE {
 		return type;
     }
 
+	static PRT_TYPE PrtMkInterfaceType(SM_EVENT_SET interfaceSet) {
+		PRT_TYPE type;
+		type = BuildDefault(PRT_TYPE_KIND.PRT_KIND_INTERFACE);
+		type.interfaceSet = interfaceSet;
+		return type;
+	}
+	
     static PRT_TYPE PrtMkMapType(PRT_TYPE domType, PRT_TYPE codType) {
         PRT_TYPE type;
 		type = BuildDefault(PRT_TYPE_KIND.PRT_KIND_MAP);

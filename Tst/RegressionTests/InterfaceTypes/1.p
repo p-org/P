@@ -13,6 +13,8 @@ implements K
 	start state M {
 		entry {
 			inter = new L();
+			inter = this;
+			inter1 = this as K2;
 			inter1 = inter as K;
 			send inter, a;
 			send inter1, a;

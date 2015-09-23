@@ -38,7 +38,7 @@ class PRT_VALUE {
 				trace("{0}", value.ev.name);
 		}
 
-		if (tkind == PRT_TYPE_KIND.PRT_KIND_REAL)
+		if (tkind == PRT_TYPE_KIND.PRT_KIND_REAL || tkind == PRT_TYPE_KIND.PRT_KIND_INTERFACE)
 		{
 			if(isNullValue)
 				trace("null");
@@ -181,7 +181,10 @@ class PRT_VALUE {
 
 		if (tkind == PRT_TYPE_KIND.PRT_KIND_ANY)
 			return true;
-
+		if (tkind == PRT_TYPE_KIND.PRT_KIND_INTERFACE)
+		{
+			//write the subset rule
+		}
 		if (tkind == PRT_TYPE_KIND.PRT_KIND_BOOL)
 			return vkind == PRT_TYPE_KIND.PRT_KIND_BOOL;
 	
@@ -189,7 +192,7 @@ class PRT_VALUE {
 			return (vkind == PRT_TYPE_KIND.PRT_KIND_EVENT || isNullValue);
 
 		if (tkind == PRT_TYPE_KIND.PRT_KIND_REAL)
-			return (vkind == PRT_TYPE_KIND.PRT_KIND_REAL || isNullValue);
+			return (vkind == PRT_TYPE_KIND.PRT_KIND_REAL || vkind == PRT_TYPE_KIND.PRT_KIND_INTERFACE || isNullValue);
 
 		if (tkind == PRT_TYPE_KIND.PRT_KIND_INT)
 			return vkind == PRT_TYPE_KIND.PRT_KIND_INT;
@@ -282,7 +285,10 @@ class PRT_VALUE {
 
 		if (kind == PRT_TYPE_KIND.PRT_KIND_REAL)
 			return value.mach == null;
-
+		
+		if (kind == PRT_TYPE_KIND.PRT_KIND_INTERFACE)
+			return values.mach == null;
+			
 		if (kind == PRT_TYPE_KIND.PRT_KIND_NULL)
 			return true;
 
@@ -334,8 +340,19 @@ class PRT_VALUE {
 			return value1.ev == value2.ev;
 
 		if (kind1 == PRT_TYPE_KIND.PRT_KIND_REAL)
-			return value1.mach == value2.mach;
-
+		{
+			trace("Equality over machine-types is not allowed");
+			//return value1.mach == value2.mach;
+			assert(false);
+		}
+			
+		if (kind1 == PRT_TYPE_KIND.PRT_KIND_INTERFACE)
+		{
+			trace("Equality over interface-types is not allowed");
+			//return value1.mach == value2.mach;
+			assert(false);
+		}
+		
 		if (kind1 == PRT_TYPE_KIND.PRT_KIND_INT)
 			return value1.nt == value2.nt;
 

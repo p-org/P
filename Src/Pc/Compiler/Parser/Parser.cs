@@ -1500,15 +1500,33 @@
         }
         private void AddInterface(string name, Span nameSpan, Span span)
         {
+            if (topDeclNames.machineNames.Contains(name) || topDeclNames.interfaceNames.Contains(name))
+            {
+                var errFlag = new Flag(
+                                     SeverityKind.Error,
+                                     span,
+                                     Constants.BadSyntax.ToString(string.Format("A machine or interface with name {0} already declared", name)),
+                                     Constants.BadSyntax.Code,
+                                     parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+            else
+            {
+                topDeclNames.interfaceNames.Add(name);
+            }
+
             foreach(var ev in crntEventList)
             {
                 var interfaceDecl = new P_Root.InterfaceDecl();
-                interfaceDecl.name = (P_Root.IArgType_InterfaceDecl__0)MkString(name, span);
+                interfaceDecl.Span = span;
+                interfaceDecl.name = (P_Root.IArgType_InterfaceDecl__0)MkString(name, nameSpan);
                 interfaceDecl.ev = (P_Root.IArgType_InterfaceDecl__1)ev;
                 parseProgram.Interfaces.Add(interfaceDecl);
             }
             crntEventList.Clear();
         }
+
         private void AddEvent(string name, Span nameSpan, Span span)
         {
             var evDecl = GetCurrentEventDecl(span);
@@ -1533,6 +1551,16 @@
             crntEventDecl = null;
         }
 
+        private void AddMachineInterface(string name, Span nameSpan, Span span)
+        {
+            var machDecl = GetCurrentMachineDecl(span);
+            var machineInterfaceDecl = new P_Root.MachineInterfaceDecl();
+            machineInterfaceDecl.m = machDecl;
+            machineInterfaceDecl.Span = span;
+            machineInterfaceDecl.@interface = MkString(name, nameSpan);
+            parseProgram.MachineInterfaces.Add(machineInterfaceDecl);
+
+        }
         private void AddMachine(P_Root.UserCnstKind kind, string name, Span nameSpan, Span span)
         {
             var machDecl = GetCurrentMachineDecl(span);
@@ -1552,13 +1580,14 @@
                 }
                 crntObservesList.Clear();
             }
+
             parseProgram.Machines.Add(machDecl);
-            if (topDeclNames.machineNames.Contains(name))
+            if (topDeclNames.machineNames.Contains(name) || topDeclNames.interfaceNames.Contains(name))
             {
                 var errFlag = new Flag(
                                      SeverityKind.Error,
                                      span,
-                                     Constants.BadSyntax.ToString(string.Format("A machine with name {0} already declared", name)),
+                                     Constants.BadSyntax.ToString(string.Format("A machine or interface with name {0} already declared", name)),
                                      Constants.BadSyntax.Code,
                                      parseSource);
                 parseFailed = true;

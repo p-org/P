@@ -113,6 +113,7 @@
 			 keywords.Add("as", (int)Tokens.AS);
 
 			 keywords.Add("interface", (int)Tokens.INTERFACE);
+			 keywords.Add("implements", (int)Tokens.IMPLEMENTS);
 		 }
 
          int GetIdToken(string txt)

@@ -35,6 +35,11 @@
             private set;
         }
 
+        public List<P_Root.MachineInterfaceDecl> MachineInterfaces
+        {
+            get;
+            private set;
+        }
         public List<P_Root.StateDecl> States
         {
             get;
@@ -135,6 +140,11 @@
                 {
                     yield return inter;
                 }
+
+                foreach (var inter in MachineInterfaces)
+                {
+                    yield return inter;
+                }
             }
         }
 
@@ -148,6 +158,7 @@
             Functions = new List<P_Root.FunDecl>();
             Observes = new List<P_Root.ObservesDecl>();
             Interfaces = new List<P_Root.InterfaceDecl>();
+            MachineInterfaces = new List<P_Root.MachineInterfaceDecl>();
             AnonFunctions = new List<P_Root.AnonFunDecl>();
             Dos = new List<P_Root.DoDecl>();
             Annotations = new List<P_Root.Annotation>();

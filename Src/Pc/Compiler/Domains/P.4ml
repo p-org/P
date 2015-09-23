@@ -64,6 +64,8 @@ domain PData
 
 	InterfaceDecl ::= new (name: any String, ev: String).
 
+	MachineInterfaceDecl ::= new (m: MachineDecl, interface: any String).
+
     /*************************************************************/
     /****************  State Machine Declarations    *************/
     /*************************************************************/
@@ -82,7 +84,7 @@ domain PData
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String).
     DoDecl         ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String).
 
-    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + ObservesDecl + InterfaceDecl.            
+    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + ObservesDecl + InterfaceDecl + MachineInterfaceDecl.            
 
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
@@ -194,12 +196,15 @@ domain PStructuralTyping extends PData
 	OneDeclError(obs) :- obs is ObservesDecl, obs.monitor.kind = MONITOR, no EventDecl(obs.ev, _, _).	
 
 	//event in interface type 
-	[rule_Classes = '"error, msg: unknown event in interface type declaration"']
+	[rule_Classes = '"error, msg: unknown event in interface declaration or receives set"']
 	OneDeclError(inter) :- inter is InterfaceDecl(s, e), s: String , no EventDecl(e, _, _).
 
 	//interface type is not declared.
 	[rule_Classes = '"error, msg: unknown type in variable declaration"']
 	OneDeclError(varD) :- varD is VarDecl(_, _, tp), tp : InterfaceType, no InterfaceDecl(tp.name, _).
+
+	[rule_Classes = '"error, msg: interface type in implements is not declared"']
+	OneDeclError(machInterface) :- machInterface is MachineInterfaceDecl(_, i), no InterfaceDecl(i, _).
 }
 
 domain PStaticTyping extends PData
@@ -334,8 +339,8 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Cast can never succeed"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2), TypeRel(t1, t2, k), k = EMPTY.
 
-    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, REAL, _, _, _).
-    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, MODEL, _, _, _).
+    TypeOf(c, e, InterfaceType(i))   :- SubSE(c, e), e = New(n, _, _), m is MachineDecl(n, REAL, _, _, _), MachineInterfaceDecl(m, i).
+    TypeOf(c, e, InterfaceType(i))   :- SubSE(c, e), e = New(n, _, _), m is MachineDecl(n, MODEL, _, _, _), MachineInterfaceDecl(m, i).
 	[ rule_Classes = '"error, msg: Monitors cannot be created with "new""']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, MONITOR, _, _, _);
 									  SubSE(c, e), e = New(_, _, n'), MachineDecl(n', MONITOR, _, _, _).
@@ -480,17 +485,17 @@ domain PStaticTyping extends PData
 
 	//// Rules for send.
     TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e = Send(_, _, NIL),                           ///// < send has NIL payload,
-	                                  t1 = BaseType(REAL),                                                 ///// < arg1 is a machine type,
+	                                  t1 : InterfaceType,                                                 ///// < arg1 is a interface type,
 	                                  CommStmtPLType(c, e, plt), TypeRel(BaseType(NULL), plt, SUB).        ///// < arg2 event type contains null.
 
     TypeOf(c, e, NIL)              :- TypeOfArg3(c, e, t1, t2, t3), e : Send,                             ///// < send has non-NIL payload,             
-	                                  t1 = BaseType(REAL),                                                ///// < arg1 is a machine type,
+	                                  t1 : InterfaceType,                                                ///// < arg1 is a interface type,
 	                                  CommStmtPLType(c, e, plt), TypeRel(t3, evt, SUB).                   ///// < and t3 is a subtype of plt.
 
 	//// Error rules for send.
-	[ rule_Classes = '"error, msg: argument 1 of "send" expects a machine value or a interface value"']
-    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Send, t1 != BaseType(REAL).
-
+	[ rule_Classes = '"error, msg: argument 1 of "send" expects an interface value"']
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Send, toSymbol(t1) != #InterfaceType.
+	
 	[ rule_Classes = '"error, msg: argument 2 of "send" expects an event value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, e2, _), TypeOf(c, e2, t2), t2 != BaseType(EVENT).
 
@@ -504,6 +509,12 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)            :- TypeOfArg3(c, e, t1, t2, t3), e : Send,                     ///// < p has non-NIL payload,             
 	                                  CommStmtPLType(c, e, plt),                                  ///// < constant event expression
 									  TypeRel(t3, plt, k), k != SUB, t3 != plt.                   ///// < and pt is not a subtype of plt.
+	
+	EventNotInInterface ::= (interface: String, ev: String).
+	EventNotInInterface(i, e) :- x is InterfaceDecl(i, _), y is EventDecl(e, _, _), no {ev | ev is InterfaceDecl(i, e) }.
+	[ rule_Classes = '"error, msg: event is not in the target interface"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(tar, Name(n), _),								  
+									  TypeOf(c, tar, tt), tt = InterfaceType(i), EventNotInInterface(i, n).
 
 	//// Rules for monitor.
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Monitor(_, NIL),                           ///// < monitor has NIL payload,
@@ -722,7 +733,6 @@ domain PStaticTyping extends PData
     TypeOfLocalVar(cntxt, name, type)  :- TypeOfLocalVarAux(cntxt, name, type, aux), no { aux' | TypeOfLocalVarAux(cntxt, name, _, aux'), aux != aux' }.      
 	[ rule_Classes = '"error, msg: Variable with same name has been declared before"']
     TypeOfLocalVar(cntxt, name, ERROR) :- TypeOfLocalVarAux(cntxt, name, _, aux), TypeOfLocalVarAux(cntxt, name, _, aux'), aux != aux'.
-
     /*************************************************************/
     /*                  Formal Parameter Types                   */
     /*************************************************************/
@@ -1001,7 +1011,7 @@ domain PStaticTyping extends PData
     TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = BaseType(ks), ks : NonNullBase, s != t, t != BaseType(ANY).
 
     // NullBase types have empty intersections with all types, except themselves, ANY, and NULL.
-    NullBase    ::= { EVENT, REAL }.    
+    NullBase    ::= { EVENT, REAL } + InterfaceType.    
     TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), s = BaseType(ks), ks : NullBase, t = BaseType(kt), kt : NonNullBase.
     TypeRel(t, s, EMPTY)    :- CompTypeRel(t, s), s = BaseType(ks), ks : NullBase, t = BaseType(kt), kt : NonNullBase.
     
@@ -1092,6 +1102,20 @@ domain PStaticTyping extends PData
     TypeRel(s, t, SUB) :-  CompTypeRel(s, t), s = BaseType(NULL), t = BaseType(kt), kt : NullBase.
     TypeRel(t, s, SUP) :-  CompTypeRel(t, s), s = BaseType(NULL), t = BaseType(kt), kt : NullBase.
     
+	// Interface type is a subtype of the machine base-type
+	TypeRel(s, t, SUB) :- CompTypeRel(s, t), t = BaseType(REAL), s is InterfaceType. 
+	TypeRel(s, t, SUP) :- CompTypeRel(s, t), s = BaseType(REAL), t is InterfaceType. 
+
+	// Subtype relation between interface types.
+	SubSetRelation ::= (interface1: String, interface2: String).
+	NoSubSetRelation ::= (interface1: String, interface2: String).
+	SubSetRelation(n1, n2) :- x is InterfaceDecl(n1, _), y is InterfaceDecl(n2, _), n1 != n2, no { e | InterfaceDecl(n1, e), no InterfaceDecl(n2, e)}. 
+	NoSubSetRelation(n1, n2) :- x is InterfaceDecl(n1, _), y is InterfaceDecl(n2, _), n1 != n2, count({ e | InterfaceDecl(n1, e), no InterfaceDecl(n2, e), InterfaceDecl(n2, ee), no InterfaceDecl(n1, ee)}) > 0.
+	TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = InterfaceType(ns), t = InterfaceType(nt), ns != nt, SubSetRelation(nt, ns).
+	TypeRel(s, t, SUP) :- CompTypeRel(s, t), t = InterfaceType(nt), s = InterfaceType(ns), ns != nt, SubSetRelation(ns, nt).
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), t = InterfaceType(nt), s = InterfaceType(ns), ns != nt, NoSubSetRelation(ns, nt).
+	
+	 
     // Sequences are subtype related if their inner types are subtype related.
     TypeRel(s, t, SUB)    :- CompTypeRel(s, t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', SUB). 
     TypeRel(s, t, SUP)    :- CompTypeRel(s, t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', SUP). 

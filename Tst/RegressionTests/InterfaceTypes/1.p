@@ -3,21 +3,16 @@ event y;
 event z;
 event a;
 interface K x, y;
-interface K2 x, y, z, a;
 
 main machine L 
 implements K
 {
-	var inter: machine;
-	var inter1: K2;
+	var inter: K;
+	var dumb : event;
 	start state M {
 		entry {
 			inter = new L();
-			inter = this;
-			inter1 = this as K2;
-			inter1 = inter as K;
-			send inter, a;
-			send inter1, a;
+			send inter, x;
 		}
 		on x do {};
 		on y do {};

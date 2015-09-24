@@ -2,8 +2,14 @@ event Ping assert 1 : machine;
 event Pong assert 1;
 event Success;
 
-main machine PING {
-    var pongId: machine;
+
+interface M_PING Pong;
+interface M_PONG Ping;
+
+main machine PING 
+implements M_PING
+{
+    var pongId: M_PONG;
 
     start state Ping_Init {
         entry {
@@ -28,7 +34,9 @@ main machine PING {
     state Done { }
 }
 
-machine PONG {
+machine PONG 
+implements M_PONG
+{
     start state Pong_WaitPing {
         entry { }
         on Ping goto Pong_SendPong;
@@ -36,7 +44,7 @@ machine PONG {
 
     state Pong_SendPong {
 	entry {
-	     send payload as machine, Pong;
+	     send payload as M_PING, Pong;
 	     raise Success;		 	  
 	}
         on Success goto Pong_WaitPing;

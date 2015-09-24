@@ -6,12 +6,16 @@ event Ping assert 1 : machine;
 event Pong assert 1;
 event Success assert 1;
 
-main machine PING {
+interface M_PING Pong;
+interface M_PONG Ping;
+
+main machine PING 
+implements M_PING
+{
     var pongId: machine;
 
     start state Ping_Init {
         entry {
-  	    pongId = new PONG();
 	    raise Success;   	   
         }
         on Success goto Ping_SendPing;
@@ -31,7 +35,9 @@ main machine PING {
 
 }
 
-machine PONG {
+model PONG 
+implements M_PONG 
+{
     start state Pong_WaitPing {
         entry { }
         on Ping goto Pong_SendPong;

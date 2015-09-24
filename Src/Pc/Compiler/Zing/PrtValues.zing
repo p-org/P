@@ -183,7 +183,26 @@ class PRT_VALUE {
 			return true;
 		if (tkind == PRT_TYPE_KIND.PRT_KIND_INTERFACE)
 		{
-			//write the subset rule
+			if(vkind == PRT_TYPE_KIND.PRT_KIND_INTERFACE)
+			{
+				foreach(SM_EVENT e in type.interfaceSet)
+				{
+					if(!(e in  value.type.interfaceSet))
+					{	
+						trace("incorrect interface type cast\n");
+						return false;
+					}
+				}
+				return true;
+			}
+			else if (isNullValue || tkind == PRT_TYPE_KIND.PRT_KIND_REAL)
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
 		}
 		if (tkind == PRT_TYPE_KIND.PRT_KIND_BOOL)
 			return vkind == PRT_TYPE_KIND.PRT_KIND_BOOL;
@@ -287,7 +306,7 @@ class PRT_VALUE {
 			return value.mach == null;
 		
 		if (kind == PRT_TYPE_KIND.PRT_KIND_INTERFACE)
-			return values.mach == null;
+			return value.mach == null;
 			
 		if (kind == PRT_TYPE_KIND.PRT_KIND_NULL)
 			return true;

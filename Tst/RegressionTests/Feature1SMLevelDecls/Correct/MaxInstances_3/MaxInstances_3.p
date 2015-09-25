@@ -3,8 +3,11 @@
 event E0;
 event E1 assume 0;
 
-main machine Real {
-    var ghost_machine: machine;
+interface I_E0 E0;
+interface I_E1 E1;
+
+main machine Real implements I_E1 {
+    var ghost_machine: I_E0;
 	var x: int;
     start state Real_Init {
         entry {
@@ -19,11 +22,11 @@ main machine Real {
     }
 }
 
-model Ghost {
-    var real_machine: machine;
+model Ghost implements I_E0 {
+    var real_machine: I_E1;
     start state _Init {
 	entry { 
-		real_machine = payload as machine; 
+		real_machine = payload as I_E1; 
 		send real_machine, E1;
 		}
     }

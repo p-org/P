@@ -5,7 +5,9 @@ event E3 assume 1;
 event E4;
 event unit assert 1;
 
-main machine Real {
+interface I_Real E1, E2, E3, E4;
+
+main machine Real implements I_Real {
     var ghost_machine: machine;
     start state Real_Init {
 		on E2 do Action1;
@@ -20,7 +22,7 @@ main machine Real {
 
     state Real_S1 {
 	entry {
-            send ghost_machine, E1;
+            send ghost_machine as I_Real, E1;
 	}
     }
 
@@ -37,16 +39,16 @@ main machine Real {
 	}
    fun Action1() {
 		assert(payload == 100);
-		send ghost_machine, E3;
-        send ghost_machine, E3;
+		send ghost_machine as I_Real, E3;
+        send ghost_machine as I_Real, E3;
     }
  
 }
 
-model Ghost {
-    var real_machine: machine;
+model Ghost implements I_Real {
+    var real_machine: I_Real;
     start state _Init {
-	entry { real_machine = payload as machine; raise unit; }
+	entry { real_machine = payload as I_Real; raise unit; }
         on unit goto Ghost_Init;
     }
 

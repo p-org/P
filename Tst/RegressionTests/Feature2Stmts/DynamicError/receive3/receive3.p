@@ -2,7 +2,8 @@
 event E;
 event F;
 
-main machine A {
+interface K E;
+main machine A implements K {
 	var x: int;
 	start state Init {
 		entry {

@@ -8,7 +8,9 @@ event E2 assert 1;
 event E3 assert 1;
 event unit assert 1;
 
-main machine Real1 {
+interface I_Real1 E1, E2, E3;
+
+main machine Real1 implements I_Real1 {
     var i: int;	  
     start state Real1_Init {
         entry { 

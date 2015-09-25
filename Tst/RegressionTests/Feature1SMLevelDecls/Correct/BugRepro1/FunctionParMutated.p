@@ -5,7 +5,9 @@
 event Ping assert 1 : int;
 event Success;
 
-main machine PING {
+interface I_PING Ping;
+
+main machine PING implements I_PING {
     var x: int;
 	var y: int;
     start state Ping_Init {

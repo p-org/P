@@ -37,7 +37,7 @@ class PRT_TYPE {
         PRT_TYPE type;
 		type = new PRT_TYPE;
 		type.typeKind = typeKind;
-		type.interfaceSet = null;
+		type.interfaceSet = new SM_EVENT_SET;
 		type.arity = 0;
 		type.fieldNames = null;
 		type.fieldTypes = null;

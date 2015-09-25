@@ -2,7 +2,7 @@
 event E;
 
 main machine Program {
-		     var i: int;
+	var i: int;
 	start state Init {
 			 entry { i = 0; raise E; }
 		//this assert is unreachable:

@@ -346,6 +346,7 @@
             mapType.k = (P_Root.IArgType_MapType__0)typeExprStack.Pop();
             mapType.Span = span;
             typeExprStack.Push(mapType);
+            
         }
 
         private void PushSend(bool hasArgs, Span span)

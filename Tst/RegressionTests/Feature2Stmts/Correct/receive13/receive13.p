@@ -9,12 +9,13 @@ main machine A {
 		entry {
 			var b: machine;
 		    b = new B(this);
-			send b, F;
+			send b as I_B, F;
 		}
 	}
 }
 
-machine B {
+interface I_B F;
+machine B implements I_B {
 	start state Init {
 		entry {
 			raise Unit;

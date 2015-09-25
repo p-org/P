@@ -20,6 +20,8 @@ event EMAP11: map[int,int];
 event EMAP2: map[int,int];
 event EMAP3: map[int,int];
 
+interface all E, E2, E1, EI1, EI2, EI3, EI4, EI5, EI6, EMAP1, EMAP11, EMAP2, EMAP3, ESEQ1, ESEQ2, ET1, ET2;
+
 main machine M
 {    
     var t : (a: seq [int], b: map[int, seq[int]]);
@@ -50,7 +52,7 @@ main machine M
 	var s11: seq[int];
 	var s12: seq[bool];
     var i: int;
-	var mac: machine;
+	var mac : all;
 	var m1: map[int,int];
 	var m4: map[int,int];
 	var m3: map[int,bool];
@@ -86,16 +88,6 @@ main machine M
 		  a = E;
 		  ev = a as event;             //OK
 		  assert (ev == E);           //holds
-		  ////////////////////////// machine vs any:
-		  a = default(any);
-		  assert (a == null);        //holds
-		  mac = default(machine);
-		  assert (mac == null);        //holds
-		  mac = a as machine;           //OK
-		  assert (mac == a);            //holds
-		  a = new Test();
-		  mac = a as machine;           //OK
-		  assert (mac == a);           //holds
 		  ////////////////////////// map vs any:
 		  a = default(any);
 		  //m1 = a as map[int,int];    //dynamic error: "value must be a member of type" (other test)
@@ -126,6 +118,7 @@ main machine M
 		  assert (a == tt);         //holds
 		  ////////////////////////// Casts in event payload:
 		  /////////////////////////////////////// int payload:
+		  mac = new Test();
 		  y = 1;
 		  send mac, EI1, y;   //OK
 		  a = 1;
@@ -161,7 +154,7 @@ main machine M
     }       
 }
 
-machine Test {
+machine Test implements all {
 	var ss: seq[int];
     var yt: int;
 	var tts1: (a: int, b: bool);

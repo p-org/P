@@ -108,6 +108,7 @@ domain PData
    	RealOwner ::= (f: FunDecl).
 	RealOwner(f) :- f is FunDecl, f.owner = NIL; 
 	                f is FunDecl, f.owner.kind = REAL.
+
 }
 
 domain PStructuralTyping extends PData
@@ -205,6 +206,10 @@ domain PStructuralTyping extends PData
 
 	[rule_Classes = '"error, msg: interface type in implements is not declared"']
 	OneDeclError(machInterface) :- machInterface is MachineInterfaceDecl(_, i), no InterfaceDecl(i, _).
+
+	[rule_Classes = '"error, msg: interface type in implements is not declared"']
+	OneDeclError(machInterface) :- machInterface is MachineInterfaceDecl(_, i), no InterfaceDecl(i, _).
+
 }
 
 domain PStaticTyping extends PData
@@ -221,6 +226,7 @@ domain PStaticTyping extends PData
 	conforms no MonitorError(_, _).
 	conforms no LValueError(_, _).
 	conforms no BadLabelError(_).
+	conforms no DomOfMapUnSafe(_).
     /*************************************************************/
 
     //// The declarations that may contain expressions or statements that should be typed.
@@ -288,7 +294,9 @@ domain PStaticTyping extends PData
 	
 	//Recent change: THIS is not allowed in static functions
 	// Type of THIS is interface type implemented by the machine.
+	// If no interface type is implemented then the type of THIS is machine.
     TypeOf(c, e, InterfaceType(i))  :- SubSE(c, e), e = NulApp(THIS), MachineInterfaceDecl(c.owner, i), c.owner != NIL.
+	TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = NulApp(THIS), no MachineInterfaceDecl(c.owner, _), c.owner != NIL.
 
     [ rule_Classes = '"error, msg: -this- is not allowed inside static functions"']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(THIS), c.owner = NIL.
@@ -346,6 +354,9 @@ domain PStaticTyping extends PData
 
     TypeOf(c, e, InterfaceType(i))   :- SubSE(c, e), e = New(n, _, _), m is MachineDecl(n, REAL, _, _, _), MachineInterfaceDecl(m, i).
     TypeOf(c, e, InterfaceType(i))   :- SubSE(c, e), e = New(n, _, _), m is MachineDecl(n, MODEL, _, _, _), MachineInterfaceDecl(m, i).
+	TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _, _), m is MachineDecl(n, REAL, _, _, _), no MachineInterfaceDecl(m, _).
+    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _, _), m is MachineDecl(n, MODEL, _, _, _), no MachineInterfaceDecl(m, _).
+
 	[ rule_Classes = '"error, msg: Monitors cannot be created with "new""']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, MONITOR, _, _, _);
 									  SubSE(c, e), e = New(_, _, n'), MachineDecl(n', MONITOR, _, _, _).
@@ -1311,4 +1322,22 @@ domain PStaticTyping extends PData
     TypeJoin(s, t, BaseType(ANY)) :- CompTypeJoin(s, t), s : NmdTupType, t : NmdTupType, s.hd.name != t.hd.name.
     TypeJoin(s, t, BaseType(ANY)) :- CompTypeJoin(s, t), s = NmdTupType(_, st), t = NmdTupType(_, tt), TypeJoin(st, tt, jt), 
 						             st: NmdTupType, tt : NmdTupType, toSymbol(jt) != #NmdTupType.
+
+	/***************************************************************************************************************
+	TODO :: static check for map types (this is not done complete)
+	****************************************************************************************************************/
+	DomOfMapUnSafe ::= (map : MapType).
+	ContainsMachOrInterface ::= (type : TypeExpr + {NIL} ).
+	ContainsMachOrInterface(type) :- type : TypeExpr, TypeRel(type, BaseType(REAL), SUB);
+									 type is MapType(_, k), k : TypeExpr, ContainsMachOrInterface(k);
+									 type is SeqType(n), ContainsMachOrInterface(n);
+									 type is TupType(hd, tl), ContainsMachOrInterface(hd); 
+									 type is TupType(hd, tl), ContainsMachOrInterface(tl);
+									 type is NmdTupType(NmdTupTypeField(_, hd), tl), ContainsMachOrInterface(hd); 
+									 type is NmdTupType(hd, tl), ContainsMachOrInterface(tl).
+									
+	
+	[rule_Classes = '"error, msg: dom of the map type cannot have machine or interface type"']						    
+	DomOfMapUnSafe(map) :- map = MapType(dom, _), dom : TypeExpr, VarDecl(_ , _, map), ContainsMachOrInterface(dom);
+						   map = MapType(dom, _), dom : TypeExpr, EventDecl(_ , _, map), ContainsMachOrInterface(dom).
  }

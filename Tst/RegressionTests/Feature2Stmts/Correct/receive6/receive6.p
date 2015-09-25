@@ -7,14 +7,16 @@ main machine A {
 	var x: int;
 	start state Init {
 		entry {
-			var b: machine;
+			var b: I_B;
 		    b = new B(this);
 			send b, F;
 		}
 	}
 }
 
-machine B {
+interface I_B F;
+
+machine B implements I_B {
 	start state Init {
 		entry {
 			raise Unit;

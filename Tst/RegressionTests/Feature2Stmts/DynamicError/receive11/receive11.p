@@ -22,7 +22,8 @@ machine A {
 	}
 }
 
-main machine B {
+interface I E, F, G;
+main machine B implements I {
 	var x : int;
 	var m : machine;
 	start state Init {

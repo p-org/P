@@ -4,11 +4,12 @@ event E;
 event F;
 event Unit;
 
+interface I E, F;
 main machine A {
 	var x: int;
 	start state Init {
 		entry {
-			var b: machine;
+			var b: I;
 		    b = new B(this);
 			send b, F;
 			send b, E;
@@ -17,7 +18,7 @@ main machine A {
 	}
 }
 
-machine B {
+machine B implements I {
 	var x : int;
 	start state Init {
 		entry {

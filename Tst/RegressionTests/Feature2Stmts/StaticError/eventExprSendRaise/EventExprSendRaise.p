@@ -3,7 +3,8 @@
 event E1 assert 1;
 event E2 assert 1;
 
-main machine Real1 {
+interface all E1, E2;
+main machine Real1 implements all {
     var test: bool; 
 	var ev1: event;
 	var ev2: event;

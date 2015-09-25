@@ -6,8 +6,10 @@ event E3 assume 1;
 event E4;
 event unit assert 1;
 
-main machine Real {
-    var ghost_machine: machine;
+interface I_Real E2, E4;
+
+main machine Real implements I_Real {
+    var ghost_machine: I_Ghost;
     start state Real_Init {
 		on E2 do Action1;
         entry {
@@ -46,10 +48,12 @@ main machine Real {
  
 }
 
-model Ghost {
-    var real_machine: machine;
+interface I_Ghost E1, E2, E3;
+
+model Ghost implements I_Ghost {
+    var real_machine: I_Real;
     start state _Init {
-	entry { real_machine = payload as machine; raise unit; }
+	entry { real_machine = payload as I_Real; raise unit; }
         on unit goto Ghost_Init;
     }
 

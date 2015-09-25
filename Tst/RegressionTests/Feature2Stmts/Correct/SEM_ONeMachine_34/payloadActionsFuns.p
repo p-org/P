@@ -4,7 +4,9 @@ event myNmTuple : (first:int, sec:bool);
 event mySeq : seq[int];
 event myMapSeq : (first: map[int, int], sec : seq[bool]);
 
-main machine MachOS {
+interface all myTuple, myMapSeq, myNmTuple, mySeq;
+
+main machine MachOS implements all {
 	var INT : int;
 	var BOOL : bool;
 	var MACH : machine;

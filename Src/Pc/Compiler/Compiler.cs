@@ -591,6 +591,7 @@
             AddErrors(task.Result, "MonitorError(_, _)", errors, 1);
             AddErrors(task.Result, "LValueError(_, _)", errors, 1);
             AddErrors(task.Result, "BadLabelError(_)", errors, 1);
+            AddErrors(task.Result, "DomOfMapUnSafe(_)", errors, 0);
 
             //// Enumerate structural errors
             AddErrors(task.Result, "missingDecl", errors);

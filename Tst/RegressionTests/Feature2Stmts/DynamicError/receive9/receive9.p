@@ -5,7 +5,9 @@ event F : int;
 event G: seq[int];
 event Unit;
 
-main machine B {
+interface all E, F, G;
+
+main machine B implements all {
 	var x : int;
 	start state Init {
 		entry {

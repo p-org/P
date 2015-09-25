@@ -294,6 +294,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	TypeDepNum  ::= (id: Natural, type: TypeExpr).
 
 	TypeDepNum(0, t) :- TypeExprSub(t), t : in.BaseType.
+	TypeDepNum(0, t) :- TypeExprSub(t), t : InterfaceType.
 	TypeDepNum(i, t) :- TypeExprSub(t), t = SeqType(t'), TypeDepNum(j, t'), i = j + 1.  
 	TypeDepNum(i, t) :- TypeExprSub(t), t = MapType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1.  
 	TypeDepNum(i, t) :- TypeExprSub(t), t = TupType(t', NIL), TypeDepNum(j, t'), i = j + 1.  
@@ -321,7 +322,14 @@ transform P2CProgram (in:: P) returns (out:: C)
 								              defs = out.Section(before, def),
 										          def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								              typeName = strJoin("P_GEND_TYPE_", toString(m)),
-                              typeStruct = out.Init(Args(Ident(kind), Args(Ident("NULL"), NIL))).						              
+                              typeStruct = out.Init(Args(Ident(kind), Args(Ident("NULL"), NIL))).	
+	
+	//interface type
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = InterfaceType(s), InterfaceDecl(s, _), BaseType2Kind(REAL, kind),
+								              defs = out.Section(before, def),
+										          def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
+								              typeName = strJoin("P_GEND_TYPE_", toString(m)),
+                              typeStruct = out.Init(Args(Ident(kind), Args(Ident("NULL"), NIL))).					              
 
 	//// Complex type Seq 
 	//// (cast to PRT_MAPTYPE * is used to avoid compiler warnings when initializing union)

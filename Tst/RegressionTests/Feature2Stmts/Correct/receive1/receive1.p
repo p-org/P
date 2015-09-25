@@ -3,11 +3,13 @@ event E: int;
 event F;
 event G: int;
 
-main machine A {
+interface All E, F, G;
+
+main machine A implements All {
 	var x: int;
 	start state Init {
 		entry {
-			var b: machine;
+			var b: I_B;
 		    b = new B(this);
 			x = x + 1;
 			assert x == 1;
@@ -25,14 +27,16 @@ main machine A {
 		}
 	}
 }
+interface I_B E;
 
-machine B {
+machine B implements I_B 
+{
 	start state Init {
 		entry {
 			var y: machine;
 			var z: int;
 			z = z + 1;
-			y = payload as machine;
+			y = payload as All;
 			receive {
 				case E: {
 					assert payload == 0;

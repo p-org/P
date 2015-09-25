@@ -3,7 +3,8 @@ event E;
 event F;
 event G: int;
 
-main machine A {
+interface all E, F, G;
+main machine A implements all {
 	var x: int;
 	start state Init {
 		entry {
@@ -16,7 +17,7 @@ main machine A {
 		}
 	}
 	fun foo(b: machine, p: int) {
-		send b, E; 
+		send b as all, E; 
 		receive { 
 			case E: { x = x + p + 1; } 
 			case F: { x = x + p + 2; }
@@ -26,7 +27,7 @@ main machine A {
 	}
 }
 
-machine B {
+machine B implements all {
 	start state Init {
 		entry {
 			var y: machine;

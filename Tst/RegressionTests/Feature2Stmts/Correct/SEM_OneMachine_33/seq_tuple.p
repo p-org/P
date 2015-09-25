@@ -16,12 +16,13 @@ main machine Entry {
 			l += (0,12);
 			l += (0,23);
 			mac = new test(l, 1);
-			send mac, seqpayload, l;
+			send mac as I_test, seqpayload, l;
 	   }
     }
 }
 
-machine test {
+interface I_test seqpayload;
+machine test implements I_test {
 	var ii:seq[int];
 	var rec:seq[int];
 	var i:int;

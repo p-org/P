@@ -213,6 +213,7 @@ namespace Microsoft.Pc
             type = "REAL";
             maxQueueSize = -1;
             maxQueueSizeAssumed = false;
+            interfaceTypeName = "";
             initStateName = null;
             stateNameToStateInfo = new Dictionary<string, StateInfo>();
             localVariableToVarInfo = new Dictionary<string, VariableInfo>();
@@ -2755,7 +2756,16 @@ namespace Microsoft.Pc
             else if (op == PData.Cnst_This.Node.Name)
             {
                 var interfaceName = allMachines[ctxt.machineName].interfaceTypeName;
-                var interfaceType = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("InterfaceType")), Factory.Instance.MkCnst(interfaceName));
+                AST<FuncTerm> interfaceType;
+                if(interfaceName == "")
+                {
+                    interfaceType = PTypeReal;
+                }
+                else
+                {
+                    interfaceType = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("InterfaceType")), Factory.Instance.MkCnst(interfaceName));
+                }
+                
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmp");
                 ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(interfaceType.Node))));
                 ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetMachine"), tmpVar, MkZingIdentifier("myHandle"))));

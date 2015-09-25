@@ -2,6 +2,7 @@
 event local;
 event global : int;
 
+interface I_MAIN global;
 spec First monitors local {
 	var x : int;
 	start state Init {
@@ -10,7 +11,7 @@ spec First monitors local {
 	}
 }
 
-main machine MAIN {
+main machine MAIN implements I_MAIN {
 	start state Init {
 		entry {
 			new First();

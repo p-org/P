@@ -86,16 +86,6 @@ main machine M
 		  a = E;
 		  ev = a as event;             //OK
 		  assert (ev == E);           //holds
-		  ////////////////////////// machine vs any:
-		  a = default(any);
-		  assert (a == null);        //holds
-		  mac = default(machine);
-		  assert (mac == null);        //holds
-		  mac = a as machine;           //OK
-		  assert (mac == a);            //holds
-		  a = new Test();
-		  mac = a as machine;           //OK
-		  assert (mac == a);           //holds
 		  ////////////////////////// map vs any:
 		  a = default(any);
 		  //m1 = a as map[int,int];    //dynamic error: "value must be a member of type" (other test)

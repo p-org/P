@@ -29,13 +29,13 @@
             private set;
         }
 
-        public List<P_Root.InterfaceDecl> Interfaces
+        public List<P_Root.InterfaceEventDecl> InterfaceEvents
         {
             get;
             private set;
         }
 
-        public List<P_Root.MachineInterfaceDecl> MachineInterfaces
+        public List<P_Root.MachineImpsInterfaceDecl> MachineInterfaces
         {
             get;
             private set;
@@ -136,7 +136,7 @@
                     yield return obs;
                 }
 
-                foreach (var inter in Interfaces)
+                foreach (var inter in InterfaceEvents)
                 {
                     yield return inter;
                 }
@@ -157,8 +157,8 @@
             Transitions = new List<P_Root.TransDecl>();
             Functions = new List<P_Root.FunDecl>();
             Observes = new List<P_Root.ObservesDecl>();
-            Interfaces = new List<P_Root.InterfaceDecl>();
-            MachineInterfaces = new List<P_Root.MachineInterfaceDecl>();
+            InterfaceEvents = new List<P_Root.InterfaceEventDecl>();
+            MachineInterfaces = new List<P_Root.MachineImpsInterfaceDecl>();
             AnonFunctions = new List<P_Root.AnonFunDecl>();
             Dos = new List<P_Root.DoDecl>();
             Annotations = new List<P_Root.Annotation>();

@@ -1519,11 +1519,14 @@
 
             foreach(var ev in crntEventList)
             {
-                var interfaceDecl = new P_Root.InterfaceDecl();
+                var interfaceType = new P_Root.InterfaceType();
+                interfaceType.Span = nameSpan;
+                interfaceType.name = (P_Root.IArgType_InterfaceType__0)MkString(name, nameSpan);
+                var interfaceDecl = new P_Root.InterfaceEventDecl();
                 interfaceDecl.Span = span;
-                interfaceDecl.name = (P_Root.IArgType_InterfaceDecl__0)MkString(name, nameSpan);
-                interfaceDecl.ev = (P_Root.IArgType_InterfaceDecl__1)ev;
-                parseProgram.Interfaces.Add(interfaceDecl);
+                interfaceDecl.@interface = (P_Root.IArgType_InterfaceEventDecl__0)interfaceType;
+                interfaceDecl.ev = (P_Root.IArgType_InterfaceEventDecl__1)ev;
+                parseProgram.InterfaceEvents.Add(interfaceDecl);
             }
             crntEventList.Clear();
         }
@@ -1554,11 +1557,15 @@
 
         private void AddMachineInterface(string name, Span nameSpan, Span span)
         {
+            var interfaceType = new P_Root.InterfaceType();
+            interfaceType.Span = nameSpan;
+            interfaceType.name = (P_Root.IArgType_InterfaceType__0)MkString(name, nameSpan);
+
             var machDecl = GetCurrentMachineDecl(span);
-            var machineInterfaceDecl = new P_Root.MachineInterfaceDecl();
+            var machineInterfaceDecl = new P_Root.MachineImpsInterfaceDecl();
             machineInterfaceDecl.m = machDecl;
             machineInterfaceDecl.Span = span;
-            machineInterfaceDecl.@interface = MkString(name, nameSpan);
+            machineInterfaceDecl.@interface = interfaceType;
             parseProgram.MachineInterfaces.Add(machineInterfaceDecl);
 
         }

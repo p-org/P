@@ -325,7 +325,7 @@ transform P2CProgram (in:: P) returns (out:: C)
                               typeStruct = out.Init(Args(Ident(kind), Args(Ident("NULL"), NIL))).	
 	
 	//interface type
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = InterfaceType(s), InterfaceDecl(s, _), BaseType2Kind(REAL, kind),
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = InterfaceType(s), InterfaceEventDecl(t, _), BaseType2Kind(REAL, kind),
 								              defs = out.Section(before, def),
 										          def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								              typeName = strJoin("P_GEND_TYPE_", toString(m)),

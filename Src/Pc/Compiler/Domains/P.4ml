@@ -61,10 +61,25 @@ domain PData
 	/*************************************************************/
     /****************  Module Declarations    *************/
     /*************************************************************/
-
 	InterfaceEventDecl ::= new (interface: InterfaceType, ev: String).
 
+
+	ModuleDecl ::= new (name : String).
+	ExternMachineDecl ::= (name: String, kind: {REAL, MODEL}).
+	MachineInModuleDecl ::= (machine: MachineDecl + ExternMachineDecl, module: ModuleDecl).
+
+	ModuleSendsInterfaceDecl ::= new (m: ModuleDecl, interface: InterfaceType).
+	ModuleReceivesInterfaceDecl ::= new (m: ModuleDecl, interface: InterfaceType).
 	MachineImpsInterfaceDecl ::= new (m: MachineDecl, interface: InterfaceType).
+	ExternMachineImpsInterfaceDecl ::= new (machineName : ExternMachineDecl, interface: InterfaceType).
+
+	//for compositional 
+	RefinementLemmaDecl ::= new (lhs: ModuleList, refines: ModuleList).
+	MonitorLemmaDecl ::= new (lhs: ModuleList, monitors: String).
+	SafetyLemmaDecl ::= new (imp: ModuleList).
+	
+	ImplementationModules ::= new (imp: ModuleList). //PP set
+	SpecificationModules ::= new (spec: ModuleList). //SS set
 
     /*************************************************************/
     /****************  State Machine Declarations    *************/

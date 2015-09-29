@@ -20,7 +20,7 @@
 
 %token TRUE FALSE
 
-%token INTERFACE IMPLEMENTS
+%token INTERFACE IMPLEMENTS MODULE SENDS RECEIVES PUBLIC EXTERN
 
 %token ASSIGN REMOVE INSERT
 %token EQ NE LT GT LE GE IN
@@ -56,9 +56,10 @@ TopDeclList
 TopDecl
     : IncludeDecl
 	| EventDecl
-	| MachineDecl
 	| StaticFunDecl
 	| InterfaceDecl
+	| ModuleDecl
+	| MonitorDecl
 	;
 
 /******************* Annotations *******************/ 
@@ -88,6 +89,34 @@ IncludeDecl
 InterfaceDecl
 	: INTERFACE ID NonDefaultEventList SEMICOLON				{ AddInterface($2.str, ToSpan(@2), ToSpan(@2)); } 
 	;
+/***************** Module Declarations *********************/
+ModuleDecl
+	: MODULE ID Sends Receives LCBRACE ModuleBody RCBRACE		{ AddModule($2.str, ToSpan(@2), ToSpan(@1));}
+	;
+
+ModuleBody
+	: MachineDecl
+	| ModuleBody MachineDecl
+	;
+
+Sends
+	: SENDS ID			{ AddSendsInterface($2.str, ToSpan(@2), ToSpan(@1));}
+	;
+
+Receives 
+	: RECEIVES ID		{ AddReceivesInterface($2.str, ToSpan(@2), ToSpan(@1)); }
+	;
+
+/***************** Monitor Declaration (special type of machineDecl)  *********************/
+MonitorDecl
+	: SPEC ID ObservesList MachAnnotOrNone LCBRACE MachineBody RCBRACE			   { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
+	;
+
+ObservesList
+	: MONITORS NonDefaultEventList { crntObservesList.AddRange(crntEventList); crntEventList.Clear(); }
+	;
+
+
 /******************* Event Declarations *******************/ 
 EventDecl
 	: EVENT ID EvCardOrNone EvTypeOrNone EventAnnotOrNone SEMICOLON { AddEvent($2.str, ToSpan(@2), ToSpan(@1)); }
@@ -111,15 +140,12 @@ EventAnnotOrNone
 
 /******************* Machine Declarations *******************/
 MachineDecl
-	: IsMain MACHINE ID Implements MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1));    }
-	| IsMain MODEL ID Implements MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE   { AddMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1));   }
-	| SPEC ID ObservesList MachAnnotOrNone LCBRACE MachineBody RCBRACE			   { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
+	: IsPublic IsMain MACHINE ID Implements MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1));    }
+	| IsPublic IsMain MODEL ID Implements MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE   { AddMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1));   }
+	| IsExtern MACHINE ID Implements MachCardOrNone MachAnnotOrNone SEMICOLON						   { AddExternMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1)); }
+	| IsExtern MODEL ID Implements MachCardOrNone MachAnnotOrNone SEMICOLON						   { AddExternMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1)); }
 	;
 	
-ObservesList
-	: MONITORS NonDefaultEventList { crntObservesList.AddRange(crntEventList); crntEventList.Clear(); }
-	;
-
 Implements
 	: IMPLEMENTS ID								{ AddMachineInterface($2.str, ToSpan(@2), ToSpan(@1)); }
 	|											{ }
@@ -128,6 +154,15 @@ Implements
 IsMain
 	: MAIN											{ SetMachineIsMain(ToSpan(@1)); }
 	|												{ }
+	;
+
+IsPublic
+	: PUBLIC										{ SetMachineIsPublic(ToSpan(@1)); }
+	|												{ }
+	;
+
+IsExtern
+	: EXTERN										{ SetMachineIsExtern(ToSpan(@1));}
 	;
 
 MachCardOrNone

@@ -114,6 +114,11 @@
 
 			 keywords.Add("interface", (int)Tokens.INTERFACE);
 			 keywords.Add("implements", (int)Tokens.IMPLEMENTS);
+			 keywords.Add("sends", (int)Tokens.SENDS);
+			 keywords.Add("receives", (int)Tokens.RECEIVES);
+			 keywords.Add("module", (int)Tokens.MODULE);
+			 keywords.Add("public", (int)Tokens.PUBLIC);
+			 keywords.Add("extern", (int)Tokens.EXTERN);
 		 }
 
          int GetIdToken(string txt)

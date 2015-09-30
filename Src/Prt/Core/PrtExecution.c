@@ -332,6 +332,9 @@ _In_ PRT_VALUE					*payload
 )
 {
 	// Check if the enqueued event is in order
+	if (context->isHalted)
+		return;
+
 	PrtLockMutex(context->stateMachineLock);
 	if (PrtMapExists(context->recvMap, source) && PrtMapGet(context->recvMap, source)->valueUnion.nt >= seqNum)
 	{

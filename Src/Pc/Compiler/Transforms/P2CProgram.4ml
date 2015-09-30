@@ -143,13 +143,18 @@ transform P2CProgram (in:: P) returns (out:: C)
 	                     num = toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.owner = d.owner }),
 						 cn = strJoin("P_FUN_", strJoin(d.owner.name, strJoin("_ANON", toString(num)))).
 	
+	
+	HOut(0, out.EnmDef(NIL, "P_FUNS_STATIC", list)) :- 
+	   list = toList(#Elements, NIL, { enumMember | 
+									   enumMember = Element(IntLit(0, DEC, NIL), "_P_FUN_PUSH_OR_IGN");
+									   DeclId(d, id, cn), d : FunDecl, d.owner = NIL, enumMember = Element(IntLit(id, DEC, NIL), cn) }).  
+
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
 	   m is MachineDecl, m.kind = REAL,
 	   enumName = strJoin("P_FUNS_", m.name),
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : AnonOrNamedFun, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(0, DEC, NIL), strJoin("_P_FUN_", strJoin(m.name, "_PUSH_OR_IGN")));
-									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(m.name, "_COUNT"))), size = 1 + count({d | d is AnonOrNamedFun, d.owner = m}) }).  
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(m.name, "_COUNT"))), size = 1 + count({d | d is AnonOrNamedFun, d.owner = m}) + count({d | d is FunDecl, d.owner = NIL}) }).  
 
 	//// (6) StateDecls - Start at Id 0. Need to encode qualified names.
 	DeclId(d, id, cn) :- d is StateDecl, d.owner.kind = REAL, 
@@ -592,7 +597,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	//// Transition action index depends on whether the transition is a push transition or not.
     TransDeclAction  ::= (decl: TransDecl, funName: String).
-	TransDeclAction(t, funname) :- t is TransDecl, t.src.owner.kind = REAL, t.action = PUSH, funname = strJoin("_P_FUN_", strJoin(t.src.owner.name, "_PUSH_OR_IGN")). 
+	TransDeclAction(t, funname) :- t is TransDecl, t.src.owner.kind = REAL, t.action = PUSH, funname = "_P_FUN_PUSH_OR_IGN". 
 	TransDeclAction(t, funname) :- t is TransDecl, t.src.owner.kind = REAL, act = t.action, act : AnonFunDecl, DeclId(act, _, funname). 
 	TransDeclAction(t, funname) :- t is TransDecl, t.src.owner.kind = REAL, act = t.action, act : String, f is FunDecl, FunAvailable(f, t.src.owner), f.name = act, DeclId(f, _, funname). 
 
@@ -650,7 +655,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	//// Do action index depends on whether the do is an ignore or not.
     DoDeclAction  ::= (decl: DoDecl, funName: String).
-	DoDeclAction(d, funname) :- d is DoDecl, d.src.owner.kind = REAL, d.action = IGNORE, funname = strJoin("_P_FUN_", strJoin(d.src.owner.name, "_PUSH_OR_IGN")). 
+	DoDeclAction(d, funname) :- d is DoDecl, d.src.owner.kind = REAL, d.action = IGNORE, funname = "_P_FUN_PUSH_OR_IGN". 
 	DoDeclAction(d, funname) :- d is DoDecl, d.src.owner.kind = REAL, act = d.action, act : AnonOrNamedFun, DeclId(act, _, funname). 
 	DoDeclAction(d, funname) :- d is DoDecl, d.src.owner.kind = REAL, act = d.action, act : String, f is FunDecl, FunAvailable(f, d.src.owner), f.name = act, DeclId(f, _, funname). 
 
@@ -995,7 +1000,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// Reserve the zeroth decl for the push transition
 	FunDeclConcat(0, m, arr) :- FunDeclConcat(1, m, after), DeclId(m, _, cmach), arr = out.Args(def, after),
 	                        def = Init(
-							   Args(Ident(strJoin("_P_FUN_", strJoin(m.name, "_PUSH_OR_IGN"))),
+							   Args(Ident("_P_FUN_PUSH_OR_IGN"),
 							   Args(Ident(cmach),
 							   Args(Ident("NULL"),
 							   Args(Ident("NULL"),

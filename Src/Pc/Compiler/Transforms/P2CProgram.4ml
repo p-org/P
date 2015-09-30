@@ -739,7 +739,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
-					header = out.FunApp(Ident("PrtPopFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))),
+					header = out.Seq(BinApp(ASN, Ident("p_tmp_params"), Ident("NULL")), FunApp(Ident("PrtPopFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL)))),
 					Trampoline(f, f.body, trampoline),
 					PatchReturn(f, patchReturn),
 					footer = out.Lbl("P_EXIT_FUN", 
@@ -760,7 +760,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
-					header = out.FunApp(Ident("PrtPopFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))),
+					header = out.Seq(BinApp(ASN, Ident("p_tmp_params"), Ident("NULL")), FunApp(Ident("PrtPopFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL)))),
 					Trampoline(f, f.body, trampoline),
 					footer = out.Lbl("P_EXIT_FUN", 
 					                   Seq(

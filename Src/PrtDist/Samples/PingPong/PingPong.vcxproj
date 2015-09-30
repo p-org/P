@@ -78,11 +78,6 @@
   <ItemGroup>
     <ClInclude Include="program.h" />
   </ItemGroup>
-  <ItemGroup>
-    <Xml Include="..\..\ClientFiles\ClusterConfiguration.xml">
-      <SubType>Designer</SubType>
-    </Xml>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -952,7 +952,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 
     //// Build every fundecl array in reverse order
 	FunDeclConcat(m, mdecl, arr) :-  
-							DeclId(d, m, cfun), DeclId(d.owner, _, cmach), FunDeclConcat(m + 1, d.owner, after), d : FunDecl,
+							DeclId(d, m, cfun), DeclId(mdecl, _, cmach), FunDeclConcat(m + 1, mdecl, after), d : FunDecl,
 							MaxNumLocals(d, maxNumLocals), 
 							LocalsType(d, localsType),
 							mdecl: MachineDecl, FunAvailable(d, mdecl),

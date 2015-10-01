@@ -52,3 +52,5 @@ OUT: <StateLog> Machine PING(7) entered state Done
 OUT: 
 ERROR: ASSERT: Memory leak
 EXIT: 1
+ -------------------------------
+FIXME !!

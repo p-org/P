@@ -1,0 +1,13 @@
+=================================
+         Console output          
+=================================
+OUT: staticfunctions_2.p (3, 17): inferred type:  NIL
+OUT: staticfunctions_2.p (7, 17): inferred type:  NIL
+OUT: staticfunctions_2.p (22, 9): inferred type:  NIL
+OUT: staticfunctions_2.p (16, 3): function not defined
+OUT: staticfunctions_2.p (17, 3): transition function not defined
+OUT: staticfunctions_2.p (18, 8): undefined function for exit
+OUT: staticfunctions_2.p (22, 9): undefined function for entry
+OUT: Compilation failed
+OUT: 
+EXIT: -1

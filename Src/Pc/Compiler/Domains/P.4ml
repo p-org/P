@@ -140,7 +140,8 @@ domain PStructuralTyping extends PData
 	OneDeclError(trns) :- trns is TransDecl, no StateDecl(trns.dst, trns.src.owner, _, _, _).
 	
 	[rule_Classes = '"error, msg: transition function not defined"'] // disallowing static functions for now
-	OneDeclError(trns) :- trns is TransDecl(_, _, _, act), act : String, no FunDecl(act, trns.src.owner, _, _, _, _, _).
+	OneDeclError(trns) :- trns is TransDecl(_, _, _, act), act : String, 
+	                      no FunDecl(act, trns.src.owner, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _).
 	
 	[rule_Classes = '"error, msg: function cannot take arguments"']
 	OneDeclError(trns) :- trns is TransDecl(_, _, _, act), act : String, FunDecl(act, trns.src.owner, _, p, _, _, _), p != NIL;
@@ -151,7 +152,8 @@ domain PStructuralTyping extends PData
 	OneDeclError(doD) :- doD is DoDecl, no EventDecl(doD.trig, _, _), doD.trig != HALT, doD.trig != NULL.
 	
 	[rule_Classes = '"error, msg: function not defined"'] // disallowing static functions for now
-	OneDeclError(trns) :- trns is DoDecl(_, _, act), act : String, no FunDecl(act, trns.src.owner, _, _, _, _, _).
+	OneDeclError(trns) :- trns is DoDecl(_, _, act), act : String, 
+	                      no FunDecl(act, trns.src.owner, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _).
 	
 	[rule_Classes = '"error, msg: function cannot take arguments"']
 	OneDeclError(trns) :- trns is DoDecl(_, _, act), act : String , FunDecl(act, trns.src.owner, _, p, _, _, _), p != NIL;
@@ -159,10 +161,12 @@ domain PStructuralTyping extends PData
 	
 	//Entry Exit Functions
 	[rule_Classes = '"error, msg: undefined function for entry"'] // disallowing static functions for now
-	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _), eF : String, no FunDecl(eF, s.owner, _, _, _, _, _). 
+	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _), eF : String, 
+	                       no FunDecl(eF, s.owner, _, _, _, _, _), no FunDecl(eF, NIL, _, _, _, _, _). 
 
 	[rule_Classes = '"error, msg: undefined function for exit"'] // disallowing static functions for now
-	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _), eF : String, no FunDecl(eF, s.owner, _, _, _, _, _).
+	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _), eF : String, 
+	                       no FunDecl(eF, s.owner, _, _, _, _, _), no FunDecl(eF, NIL, _, _, _, _, _).
 	
 	[rule_Classes = '"error, msg: function cannot take arguments"']
 	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _), eF : String , FunDecl(eF, s.owner, _, p, _, _, _), p != NIL;

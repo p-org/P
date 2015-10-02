@@ -50,7 +50,4 @@ OUT: <DequeueLog> Dequeued event Pong with payload < (1, 0, 0, 0), 5> by Machine
 OUT: <ExitLog> Machine PING(7) exiting state WaitPong_2
 OUT: <StateLog> Machine PING(7) entered state Done
 OUT: 
-ERROR: ASSERT: Memory leak
-EXIT: 1
- -------------------------------
-FIXME !!
+EXIT: 0

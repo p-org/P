@@ -1337,11 +1337,9 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// The next expression that needs to be translated, given the translation of the previous expression.
 	RhsNext ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, subId: Natural + { -1 }, nxt: in.Expr, prv: out.Args + { NIL }).
 	RhsNext(c, s, i, j', e, trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1,
-									  RhsMaxOrder(s, i, k), k > j', ValueAvailable(e, TRUE), trans = out.Args(Ident("PRT_FALSE"), tail).
+									  ValueAvailable(e, TRUE), trans = out.Args(Ident("PRT_FALSE"), tail).
 	RhsNext(c, s, i, j', e, trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1,
-									  RhsMaxOrder(s, i, k), k > j', ValueAvailable(e, FALSE), trans = out.Args(Ident("PRT_TRUE"), tail).
-	RhsNext(c, s, i, j', e, trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1, 
-									  RhsMaxOrder(s, i, j'), trans = out.Args(Ident("PRT_FALSE"), tail).
+									  ValueAvailable(e, FALSE), trans = out.Args(Ident("PRT_TRUE"), tail).
 									  
 	//// Translates (named) exprs into a list of args that are applied to the P_TUPLE macro.
 	//// The number subId indicates the id of the subexpression currently at the head of the trans list.

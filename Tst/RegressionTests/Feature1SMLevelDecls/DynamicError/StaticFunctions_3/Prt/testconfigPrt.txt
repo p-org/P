@@ -1,0 +1,3 @@
+runPrt: ..\..\..\..\..\..\Tst\PrtTester\Debug\Tester.exe
+acc: .\
+dsc: runtime, static functions used as transition functions, do decls, etc.

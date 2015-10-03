@@ -22,12 +22,12 @@ OUT: castinexprsdynerror.p (107, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (107, 14): inferred type:  BaseType(BOOL)
 OUT: castinexprsdynerror.p (107, 17): inferred type:  BaseType(INT)
 OUT: castinexprsdynerror.p (110, 4): inferred type:  NIL
+OUT: castinexprsdynerror.p (116, 4): inferred type:  BaseType(INT)
 OUT: castinexprsdynerror.p (116, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (116, 17): inferred type:  BaseType(INT)
 OUT: castinexprsdynerror.p (117, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (117, 14): inferred type:  BaseType(BOOL)
 OUT: castinexprsdynerror.p (117, 17): inferred type:  BaseType(INT)
-OUT: castinexprsdynerror.p (118, 4): inferred type:  BaseType(INT)
 OUT: castinexprsdynerror.p (118, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (118, 9): inferred type:  BaseType(INT)
 OUT: castinexprsdynerror.p (119, 4): inferred type:  NIL
@@ -86,6 +86,7 @@ OUT: castinexprsdynerror.p (174, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (174, 17): inferred type:  SeqType(BaseType(ANY))
 OUT: castinexprsdynerror.p (175, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (176, 4): inferred type:  NIL
+OUT: castinexprsdynerror.p (182, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsdynerror.p (182, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (182, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsdynerror.p (184, 4): inferred type:  NIL
@@ -98,7 +99,6 @@ OUT: castinexprsdynerror.p (186, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (186, 18): inferred type:  BaseType(BOOL)
 OUT: castinexprsdynerror.p (186, 23): inferred type:  BaseType(BOOL)
 OUT: castinexprsdynerror.p (186, 32): inferred type:  BaseType(BOOL)
-OUT: castinexprsdynerror.p (188, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsdynerror.p (188, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (188, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsdynerror.p (189, 4): inferred type:  NIL

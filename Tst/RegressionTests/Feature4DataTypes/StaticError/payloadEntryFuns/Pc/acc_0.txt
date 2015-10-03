@@ -3,10 +3,10 @@
 =================================
 OUT: payloadentryfuns.p (12, 4): inferred type:  BaseType(INT)
 OUT: payloadentryfuns.p (12, 4): inferred type:  NIL
-OUT: payloadentryfuns.p (12, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
 OUT: payloadentryfuns.p (12, 18): inferred type:  BaseType(INT)
 OUT: payloadentryfuns.p (13, 4): inferred type:  BaseType(BOOL)
 OUT: payloadentryfuns.p (13, 4): inferred type:  NIL
+OUT: payloadentryfuns.p (13, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
 OUT: payloadentryfuns.p (13, 19): inferred type:  BaseType(BOOL)
 OUT: payloadentryfuns.p (17, 4): inferred type:  BaseType(REAL)
 OUT: payloadentryfuns.p (17, 4): inferred type:  NIL

@@ -110,18 +110,18 @@ OUT: castinexprsdynerror.p (170, 34): inferred type:  BaseType(BOOL)
 OUT: castinexprsdynerror.p (170, 37): inferred type:  BaseType(BOOL)
 OUT: castinexprsdynerror.p (171, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (195, 4): inferred type:  NIL
-OUT: castinexprsdynerror.p (195, 4): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprsdynerror.p (195, 16): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprsdynerror.p (196, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (196, 13): inferred type:  BaseType(INT)
 OUT: castinexprsdynerror.p (196, 14): inferred type:  BaseType(INT)
 OUT: castinexprsdynerror.p (196, 17): inferred type:  BaseType(BOOL)
 OUT: castinexprsdynerror.p (196, 20): inferred type:  BaseType(INT)
 OUT: castinexprsdynerror.p (197, 4): inferred type:  NIL
+OUT: castinexprsdynerror.p (197, 4): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprsdynerror.p (197, 8): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprsdynerror.p (198, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (200, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (200, 4): inferred type:  SeqType(BaseType(ANY))
+OUT: castinexprsdynerror.p (200, 17): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprsdynerror.p (201, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (201, 14): inferred type:  BaseType(ANY)
 OUT: castinexprsdynerror.p (201, 18): inferred type:  BaseType(BOOL)
@@ -131,6 +131,7 @@ OUT: castinexprsdynerror.p (205, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (205, 17): inferred type:  SeqType(BaseType(ANY))
 OUT: castinexprsdynerror.p (206, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (207, 4): inferred type:  NIL
+OUT: castinexprsdynerror.p (213, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsdynerror.p (213, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (213, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsdynerror.p (215, 4): inferred type:  NIL
@@ -143,7 +144,6 @@ OUT: castinexprsdynerror.p (217, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (217, 18): inferred type:  BaseType(BOOL)
 OUT: castinexprsdynerror.p (217, 23): inferred type:  BaseType(BOOL)
 OUT: castinexprsdynerror.p (217, 32): inferred type:  BaseType(BOOL)
-OUT: castinexprsdynerror.p (219, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsdynerror.p (219, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (219, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsdynerror.p (220, 4): inferred type:  NIL

@@ -1,5 +1,7 @@
 #include "program.h"
 
+BOOL inStart = FALSE;
+
 typedef struct TimerContext {
   PRT_VALUE *client;
   HANDLE timer;
@@ -7,6 +9,7 @@ typedef struct TimerContext {
 
 VOID CALLBACK Callback(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue)
 {
+	inStart = FALSE;
   PRT_MACHINEINST *context = (PRT_MACHINEINST *) arg;
   TimerContext *timerContext = (TimerContext *) context->extContext;
   PRT_VALUE *ev = PrtMkEventValue(P_EVENT_TIMEOUT);
@@ -42,12 +45,14 @@ void P_SEND_Timer_IMPL(PRT_MACHINEINST *context, PRT_VALUE *evnt, PRT_VALUE *pay
   TimerContext *timerContext = (TimerContext *) context->extContext;
   LARGE_INTEGER liDueTime;
   liDueTime.QuadPart = -10000 * payload->valueUnion.nt;
-  if (evnt->valueUnion.ev == P_EVENT_START) {
+  if (!inStart && evnt->valueUnion.ev == P_EVENT_START) {
     printf("Timer received START\n");
     success = SetWaitableTimer(timerContext->timer, &liDueTime, 0, Callback, context, FALSE);
+	inStart = TRUE;
     PrtAssert(success, "SetWaitableTimer failed");
   } else if (evnt->valueUnion.ev == P_EVENT_CANCEL) {
     printf("Timer received CANCEL\n");
+	inStart = FALSE;
     success = CancelWaitableTimer(timerContext->timer);
     if (success) {
       ev = PrtMkEventValue(P_EVENT_CANCEL_SUCCESS);

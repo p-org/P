@@ -41,13 +41,13 @@ OUT: infiniteloopinatomicblock.p (60, 21): inferred type:  BaseType(INT)
 OUT: infiniteloopinatomicblock.p (61, 3): inferred type:  NIL
 OUT: infiniteloopinatomicblock.p (61, 14): inferred type:  BaseType(BOOL)
 OUT: infiniteloopinatomicblock.p (62, 5): inferred type:  NIL
-OUT: infiniteloopinatomicblock.p (62, 10): inferred type:  BaseType(REAL)
-OUT: infiniteloopinatomicblock.p (62, 18): inferred type:  BaseType(REAL)
 OUT: infiniteloopinatomicblock.p (62, 30): inferred type:  BaseType(EVENT)
 OUT: infiniteloopinatomicblock.p (64, 3): inferred type:  NIL
 OUT: infiniteloopinatomicblock.p (64, 14): inferred type:  BaseType(BOOL)
 OUT: infiniteloopinatomicblock.p (64, 17): inferred type:  BaseType(INT)
 OUT: infiniteloopinatomicblock.p (65, 4): inferred type:  NIL
+OUT: infiniteloopinatomicblock.p (65, 9): inferred type:  BaseType(REAL)
+OUT: infiniteloopinatomicblock.p (65, 17): inferred type:  BaseType(REAL)
 OUT: infiniteloopinatomicblock.p (65, 29): inferred type:  BaseType(EVENT)
 OUT: infiniteloopinatomicblock.p (67, 3): inferred type:  NIL
 OUT: infiniteloopinatomicblock.p (67, 9): inferred type:  BaseType(EVENT)

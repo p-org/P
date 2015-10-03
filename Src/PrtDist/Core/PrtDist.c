@@ -72,8 +72,7 @@ void s_PrtDistSendEx(
 	PRT_VALUE* deserial_payload = PrtDistDeserializeValue(payload);
 	PRT_VALUE* deserial_source = PrtDistDeserializeValue(source);
 	PRT_MACHINEINST* context = PrtGetMachine(ContainerProcess, deserial_target);
-	
-	PrtEnqueueWithInorder(source, seqNum, (PRT_MACHINEINST_PRIV*)context, deserial_event, deserial_payload);
+	PrtEnqueueInOrder(source, seqNum, (PRT_MACHINEINST_PRIV*)context, deserial_event, deserial_payload);
 }
 
 /***********************************************************************************************************
@@ -190,15 +189,20 @@ DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(LPVOID portNumber)
 * Implementation of all the model functions
 **/
 
-PRT_VALUE *P_FUN__SEND_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+PRT_VALUE *P_FUN__SEND_IMPL(PRT_MACHINEINST *context)
 {
-	PRT_VALUE* target = PrtTupleGet(value, 0);
-	PrtDistSend(context->id, target, PrtTupleGet(value, 1), PrtTupleGet(value, 2));
+	PRT_FUNSTACK_INFO frame;
+	PrtPopFrame((PRT_MACHINEINST_PRIV*)context, &frame);
+	PRT_VALUE* target = frame.locals[2U];
+	PrtDistSend(context->id, target, frame.locals[1U], frame.locals[0U]);
+	PrtFreeLocals((PRT_MACHINEINST_PRIV*)context, &frame);
 	return PrtMkBoolValue(PRT_TRUE);
 }
 
-PRT_VALUE *P_FUN__CREATECONTAINER_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funIndex, PRT_VALUE *value)
+PRT_VALUE *P_FUN__CREATECONTAINER_IMPL(PRT_MACHINEINST *context)
 {
+	PRT_FUNSTACK_INFO frame;
+	PrtPopFrame((PRT_MACHINEINST_PRIV*) context, &frame);
 	//first step is to get the nodeId from central node.
 	int newNodeId;
 	while (TRUE != PrtDistGetNextNodeId(&newNodeId));
@@ -213,6 +217,8 @@ PRT_VALUE *P_FUN__CREATECONTAINER_IMPL(PRT_MACHINEINST *context, PRT_UINT32 funI
 	containerMachine->valueUnion.mid->processId.data1 = newContainerId;
 	containerMachine->valueUnion.mid->processId.data2 = newNodeId;
 
+
+	PrtFreeLocals((PRT_MACHINEINST_PRIV*)context, &frame);
 	return containerMachine;
 }
 

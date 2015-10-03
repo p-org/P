@@ -325,13 +325,16 @@ PrtSendPrivate(
 void
 PrtEnqueueInOrder(
 _In_ PRT_VALUE					*source,
-_In_ PRT_INT32					seqNum,
+_In_ PRT_INT64					seqNum,
 _Inout_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_VALUE					*event,
 _In_ PRT_VALUE					*payload
 )
 {
 	// Check if the enqueued event is in order
+	if (context->isHalted)
+		return;
+
 	PrtLockMutex(context->stateMachineLock);
 	if (PrtMapExists(context->recvMap, source) && PrtMapGet(context->recvMap, source)->valueUnion.nt >= seqNum)
 	{
@@ -341,7 +344,7 @@ _In_ PRT_VALUE					*payload
 	}
 	else
 	{
-		PrtMapUpdate(context->recvMap, source, PrtMkIntValue(seqNum));
+		PrtMapUpdate(context->recvMap, source, PrtMkIntValue((PRT_INT32)seqNum));
 	}
 	PrtUnlockMutex(context->stateMachineLock);
 

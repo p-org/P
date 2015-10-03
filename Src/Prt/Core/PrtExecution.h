@@ -466,13 +466,13 @@ PrtPushFrame(
 	_In_ PRT_FUNSTACK_INFO *funStackInfo
 );
 
-void 
+PRT_API void
 PrtPopFrame(
 	_Inout_ PRT_MACHINEINST_PRIV	*context,
 	_Inout_ PRT_FUNSTACK_INFO *funStackInfo
 );
 
-void
+PRT_API void
 PrtFreeLocals(
 	_In_ PRT_MACHINEINST_PRIV		*context,
 	_Inout_ PRT_FUNSTACK_INFO		*frame
@@ -502,7 +502,7 @@ _In_ PRT_BOOLEAN				doDequeue
 
 PRT_API void PRT_CALL_CONV PrtEnqueueInOrder(
 _In_ PRT_VALUE					*source,
-_In_ PRT_INT32					seqNum,
+_In_ PRT_INT64					seqNum,
 _Inout_ PRT_MACHINEINST_PRIV	*machine,
 _In_ PRT_VALUE					*evt,
 _In_ PRT_VALUE					*payload

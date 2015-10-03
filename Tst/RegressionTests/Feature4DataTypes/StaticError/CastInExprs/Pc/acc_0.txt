@@ -297,10 +297,10 @@ OUT: castinexprs.p (295, 18): inferred type:  ERROR
 OUT: castinexprs.p (296, 4): inferred type:  NIL
 OUT: castinexprs.p (302, 4): inferred type:  ERROR
 OUT: castinexprs.p (302, 4): inferred type:  NIL
-OUT: castinexprs.p (302, 4): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
-OUT: castinexprs.p (302, 11): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprs.p (302, 19): inferred type:  ERROR
 OUT: castinexprs.p (303, 4): inferred type:  NIL
+OUT: castinexprs.p (303, 4): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
+OUT: castinexprs.p (303, 11): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprs.p (303, 19): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprs.p (304, 4): inferred type:  NIL
 OUT: castinexprs.p (304, 17): inferred type:  BaseType(INT)

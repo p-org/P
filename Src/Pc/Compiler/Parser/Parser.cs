@@ -34,11 +34,14 @@
         private P_Root.StateDecl crntState = null;
         private List<P_Root.VarDecl> crntVarList = new List<P_Root.VarDecl>();
         private List<P_Root.EventLabel> crntEventList = new List<P_Root.EventLabel>();
+        private List<P_Root.String> crntInterfaceList = new List<P_Root.String>();
         private List<P_Root.EventLabel> onEventList = new List<P_Root.EventLabel>();
         private List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>> crntAnnotList = new List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>();
         private Stack<List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>> crntAnnotStack = new Stack<List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>>();
 
         private List<P_Root.EventLabel> crntObservesList = new List<P_Root.EventLabel>();
+        private List<P_Root.EventLabel> crntSendsList = new List<P_Root.EventLabel>();
+        private List<P_Root.EventLabel> crntReceivesList = new List<P_Root.EventLabel>();
 
         private HashSet<string> crntStateNames = new HashSet<string>();
         private HashSet<string> crntFunNames = new HashSet<string>();
@@ -1065,6 +1068,12 @@
             machDecl.isMain = MkUserCnst(P_Root.UserCnstKind.TRUE, span);
         }
 
+        private void SetMachineIsPublic(Span span)
+        {
+            var machDecl = GetCurrentMachineDecl(span);
+            machDecl.isPublic = MkUserCnst(P_Root.UserCnstKind.TRUE, span);
+        }
+
         private void SetEventType(Span span)
         {
             var evDecl = GetCurrentEventDecl(span);
@@ -1147,6 +1156,29 @@
             }
             
         }
+
+        private void AddToInterfaceList(string name, Span span)
+        {
+
+            if (crntInterfaceList.Where(e => ((string)e.Symbol == name)).Count() >= 1)
+            {
+
+                var errFlag = new Flag(
+                                     SeverityKind.Error,
+                                     span,
+                                     Constants.BadSyntax.ToString(string.Format("Interface name {0} listed multiple times in the list", name)),
+                                     Constants.BadSyntax.Code,
+                                     parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+            else
+            {
+                crntInterfaceList.Add(MkString(name, span));
+            }
+
+        }
+
 
         private void AddToEventList(P_Root.UserCnstKind kind, Span span)
         {
@@ -1560,6 +1592,13 @@
             crntEventDecl = null;
         }
 
+        private void AddModule(string name, Span nameSpan, Span span)
+        {
+
+            crntInterfaceList.Clear();
+            crntSendsList.Clear();
+            crntReceivesList.Clear();
+        }
         private void AddMachineInterface(string name, Span nameSpan, Span span)
         {
             var interfaceType = new P_Root.InterfaceType();

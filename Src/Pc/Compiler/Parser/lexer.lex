@@ -94,7 +94,6 @@
 			 keywords.Add("state", (int)Tokens.STATE);
 			 keywords.Add("group", (int)Tokens.GROUP);
 			 keywords.Add("static", (int)Tokens.STATIC);
-			 keywords.Add("models", (int)Tokens.MODELS);
 
 			 keywords.Add("entry", (int)Tokens.ENTRY);
 			 keywords.Add("exit", (int)Tokens.EXIT);
@@ -118,7 +117,7 @@
 			 keywords.Add("receives", (int)Tokens.RECEIVES);
 			 keywords.Add("module", (int)Tokens.MODULE);
 			 keywords.Add("public", (int)Tokens.PUBLIC);
-			 keywords.Add("extern", (int)Tokens.EXTERN);
+			 keywords.Add("creates", (int)Tokens.CREATES);
 		 }
 
          int GetIdToken(string txt)

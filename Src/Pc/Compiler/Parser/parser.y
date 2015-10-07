@@ -11,7 +11,7 @@
 %token INT BOOL FOREIGN ANY SEQ MAP ID
 %token INCLUDE MAIN EVENT MACHINE MONITOR ASSUME SPEC
 
-%token VAR START HOT COLD MODEL STATE FUN ACTION GROUP STATIC MODELS MONITORS
+%token VAR START HOT COLD MODEL STATE FUN ACTION GROUP STATIC MONITORS
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH AS WITH
 
@@ -20,7 +20,7 @@
 
 %token TRUE FALSE
 
-%token INTERFACE IMPLEMENTS MODULE SENDS RECEIVES PUBLIC EXTERN
+%token INTERFACE IMPLEMENTS MODULE SENDS RECEIVES PUBLIC CREATES
 
 %token ASSIGN REMOVE INSERT
 %token EQ NE LT GT LE GE IN
@@ -91,7 +91,7 @@ InterfaceDecl
 	;
 /***************** Module Declarations *********************/
 ModuleDecl
-	: MODULE ID Sends Receives LCBRACE ModuleBody RCBRACE		{ AddModule($2.str, ToSpan(@2), ToSpan(@1));}
+	: MODULE ID Receives Sends Creates LCBRACE ModuleBody RCBRACE		{ AddModule($2.str, ToSpan(@2), ToSpan(@1));}
 	;
 
 ModuleBody
@@ -100,13 +100,16 @@ ModuleBody
 	;
 
 Sends
-	: SENDS ID			{ AddSendsInterface($2.str, ToSpan(@2), ToSpan(@1));}
+	: SENDS NonDefaultEventList			{ crntSendsList.AddRange(crntEventList); crntEventList.Clear();}
 	;
 
 Receives 
-	: RECEIVES ID		{ AddReceivesInterface($2.str, ToSpan(@2), ToSpan(@1)); }
+	: RECEIVES NonDefaultEventList		{ crntReceivesList.AddRange(crntEventList); crntEventList.Clear(); }
 	;
 
+Creates
+	: CREATES InterfaceList
+	;		
 /***************** Monitor Declaration (special type of machineDecl)  *********************/
 MonitorDecl
 	: SPEC ID ObservesList MachAnnotOrNone LCBRACE MachineBody RCBRACE			   { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
@@ -140,10 +143,8 @@ EventAnnotOrNone
 
 /******************* Machine Declarations *******************/
 MachineDecl
-	: IsPublic IsMain MACHINE ID Implements MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1));    }
-	| IsPublic IsMain MODEL ID Implements MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE   { AddMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1));   }
-	| IsExtern MACHINE ID Implements MachCardOrNone MachAnnotOrNone SEMICOLON						   { AddExternMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1)); }
-	| IsExtern MODEL ID Implements MachCardOrNone MachAnnotOrNone SEMICOLON						   { AddExternMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1)); }
+	: IsPublic IsMain MACHINE ID Implements MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.REAL, $4.str, ToSpan(@4), ToSpan(@1));    }
+	| IsPublic IsMain MODEL ID Implements MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE   { AddMachine(P_Root.UserCnstKind.MODEL, $4.str, ToSpan(@4), ToSpan(@1));   }
 	;
 	
 Implements
@@ -159,10 +160,6 @@ IsMain
 IsPublic
 	: PUBLIC										{ SetMachineIsPublic(ToSpan(@1)); }
 	|												{ }
-	;
-
-IsExtern
-	: EXTERN										{ SetMachineIsExtern(ToSpan(@1));}
 	;
 
 MachCardOrNone
@@ -331,6 +328,11 @@ NonDefaultEventId
 	| HALT      { AddToEventList(P_Root.UserCnstKind.HALT, ToSpan(@1));    }
 	;
 
+InterfaceList
+	: ID	    { AddToInterfaceList($1.str, ToSpan(@1));}
+	| InterfaceList COMMA ID
+	;
+
 TrigAnnotOrNone
     : AnnotationSet  { SetTrigAnnotated(ToSpan(@1)); }
 	|
@@ -381,8 +383,6 @@ Stmt
 	| IF LPAREN Exp RPAREN Stmt		                          { PushIte(false, ToSpan(@1));                              }
 	| NEW ID LPAREN RPAREN SEMICOLON								{ PushNewStmt($2.str, ToSpan(@2), $2.str, ToSpan(@2), false, ToSpan(@1)); }
 	| NEW ID LPAREN SingleExprArgList RPAREN SEMICOLON 				{ PushNewStmt($2.str, ToSpan(@2), $2.str, ToSpan(@2), true, ToSpan(@1)); }
-	| NEW ID MODELS ID LPAREN RPAREN SEMICOLON						{ PushNewStmt($4.str, ToSpan(@4), $2.str, ToSpan(@2), false, ToSpan(@1)); }				  
-    | NEW ID MODELS ID LPAREN SingleExprArgList RPAREN SEMICOLON	{ PushNewStmt($4.str, ToSpan(@4), $2.str, ToSpan(@2), true, ToSpan(@1)); }
 	| ID LPAREN RPAREN SEMICOLON                              { PushFunStmt($1.str, false, ToSpan(@1));                  }
 	| ID LPAREN ExprArgList RPAREN SEMICOLON                  { PushFunStmt($1.str, true,  ToSpan(@1));                  }						
 	| RAISE Exp SEMICOLON                                     { PushRaise(false, ToSpan(@1));                            }
@@ -498,8 +498,6 @@ Exp_0
     | DEFAULT LPAREN Type RPAREN             { PushDefaultExpr(ToSpan(@1));                             }
 	| NEW ID LPAREN RPAREN								{ PushNewExpr($2.str, ToSpan(@2), $2.str, ToSpan(@2), false, ToSpan(@1)); }
 	| NEW ID LPAREN SingleExprArgList RPAREN			{ PushNewExpr($2.str, ToSpan(@2), $2.str, ToSpan(@2), true, ToSpan(@1)); }
-	| NEW ID MODELS ID LPAREN RPAREN					{ PushNewExpr($4.str, ToSpan(@4), $2.str, ToSpan(@2), false, ToSpan(@1)); }
-	| NEW ID MODELS ID LPAREN SingleExprArgList RPAREN	{ PushNewExpr($4.str, ToSpan(@4), $2.str, ToSpan(@2),false, ToSpan(@1)); }
 	| LPAREN Exp COMMA             RPAREN    { PushTupleExpr(true);                                     }
 	| LPAREN Exp COMMA ExprArgList RPAREN    { PushTupleExpr(false);                                    }
 	| ID LPAREN RPAREN                       { PushFunExpr($1.str, false, ToSpan(@1));                  }

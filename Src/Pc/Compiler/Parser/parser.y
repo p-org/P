@@ -215,8 +215,12 @@ LocalVarList
 	;
 
 /******************* Function Declarations *******************/
+Static 
+	: STATIC { isStaticFun = true; }
+	;
+
 StaticFunDecl
-	: STATIC IsModel FUN ID ParamsOrNone RetTypeOrNone FunAnnotOrNone StmtBlock { AddFunction($4.str, ToSpan(@4), ToSpan(@1), true); }
+	: Static IsModel FUN ID ParamsOrNone RetTypeOrNone FunAnnotOrNone StmtBlock { AddFunction($4.str, ToSpan(@4), ToSpan(@1), true); }
 	;
 
 FunDecl

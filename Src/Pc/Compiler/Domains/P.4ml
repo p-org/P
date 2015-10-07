@@ -93,7 +93,7 @@ domain PData
     VarDecl        ::= fun (name: String, owner: MachineDecl -> type: any TypeExpr).
     
     FunDecl        ::= fun (name: String, owner: MachineDecl + { NIL } -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL },  return: any TypeExpr + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt).
-    AnonFunDecl    ::= new (owner: MachineDecl, locals: any NmdTupType + { NIL }, body: any Stmt, envVars: any NmdTupType + { NIL }).
+    AnonFunDecl    ::= new (owner: MachineDecl + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt, envVars: any NmdTupType + { NIL }).
     
     StateDecl      ::= fun (name: any QualifiedName, owner: MachineDecl -> entryAction: any AnonFunDecl + String, exitFun: any AnonFunDecl + String, temperature: { HOT, WARM, COLD }).
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String).
@@ -845,7 +845,7 @@ domain PStaticTyping extends PData
 
     [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
     PurityError(c, called) :- 
-	       c is StateDecl(_, owner, _, called, _), called = AnonFunDecl(owner, _, _, _), ControlImpure(called).
+	       c is StateDecl(_, owner, _, called, _), called = AnonFunDecl(_, _, _, _), ControlImpure(called).
 
     [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
     PurityError(c, n) :- 
@@ -853,7 +853,7 @@ domain PStaticTyping extends PData
 
     [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
     PurityError(c, called) :- 
-	       c is TransDecl(src, _, _, called), called = AnonFunDecl(src.owner, _, _, _), ControlImpure(called).
+	       c is TransDecl(src, _, _, called), called = AnonFunDecl(_, _, _, _), ControlImpure(called).
 
 
     /*************************************************************/

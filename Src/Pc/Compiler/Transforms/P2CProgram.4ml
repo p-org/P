@@ -130,31 +130,40 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// (5) (Anon)FunDecls - Start at Id 1. The id 0 is reserved for the PUSH action.
 	AnonOrNamedFun ::= FunDecl + AnonFunDecl.
 
+	DeclId(d, id, cn) :- d is AnonFunDecl, d.owner = NIL, 
+	                     id = 1 + toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.owner = NIL }), 
+	                     num = toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.owner = NIL }),
+						 cn = strJoin("P_FUN_ANON", toString(num)).
+
 	DeclId(d, id, cn) :- d is FunDecl, d.owner = NIL, 
-	                     id = 1 + toOrdinal(d, 0, { d' | d' is FunDecl, d'.owner = NIL }), 
+	                     id = 1 + count({ d' | d' is AnonFunDecl, d'.owner = NIL }) 
+						        + toOrdinal(d, 0, { d' | d' is FunDecl, d'.owner = NIL }), 
 	                     cn = strJoin("P_FUN_", d.name).
 
-	DeclId(d, id, cn) :- d is FunDecl, d.owner.kind = REAL, 
-	                     id = 1 + count({ d' | d' is FunDecl, d'.owner = NIL }) + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun, d'.owner = d.owner }), 
-	                     cn = strJoin("P_FUN_", strJoin(d.owner.name, strJoin("_", d.name))).
-
 	DeclId(d, id, cn) :- d is AnonFunDecl, d.owner.kind = REAL, 
-	                     id = 1 + count({ d' | d' is FunDecl, d'.owner = NIL }) + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun, d'.owner = d.owner }), 
+	                     id = 1 + count({ d' | d' is AnonOrNamedFun, d'.owner = NIL }) 
+								+ toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.owner = d.owner }), 
 	                     num = toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.owner = d.owner }),
 						 cn = strJoin("P_FUN_", strJoin(d.owner.name, strJoin("_ANON", toString(num)))).
-	
+
+	DeclId(d, id, cn) :- d is FunDecl, d.owner.kind = REAL, 
+	                     id = 1 + count({ d' | d' is AnonOrNamedFun, d'.owner = NIL }) 
+						        + count({ d' | d' is AnonFunDecl, d'.owner = d.owner }) 
+						        + toOrdinal(d, 0, { d' | d' is FunDecl, d'.owner = d.owner }), 
+	                     cn = strJoin("P_FUN_", strJoin(d.owner.name, strJoin("_", d.name))).
+
 	
 	HOut(0, out.EnmDef(NIL, "P_FUNS_STATIC", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
 									   enumMember = Element(IntLit(0, DEC, NIL), "_P_FUN_PUSH_OR_IGN");
-									   DeclId(d, id, cn), d : FunDecl, d.owner = NIL, enumMember = Element(IntLit(id, DEC, NIL), cn) }).  
+									   DeclId(d, id, cn), d : AnonOrNamedFun, d.owner = NIL, enumMember = Element(IntLit(id, DEC, NIL), cn) }).  
 
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
 	   m is MachineDecl, m.kind = REAL,
 	   enumName = strJoin("P_FUNS_", m.name),
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : AnonOrNamedFun, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(m.name, "_COUNT"))), size = 1 + count({d | d is AnonOrNamedFun, d.owner = m}) + count({d | d is FunDecl, d.owner = NIL}) }).  
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(m.name, "_COUNT"))), size = 1 + count({d | d is AnonOrNamedFun, d.owner = m}) + count({d | d is AnonOrNamedFun, d.owner = NIL}) }).  
 
 	//// (6) StateDecls - Start at Id 0. Need to encode qualified names.
 	DeclId(d, id, cn) :- d is StateDecl, d.owner.kind = REAL, 
@@ -762,7 +771,11 @@ transform P2CProgram (in:: P) returns (out:: C)
 					  params,
 					  body).
 
-	COut(8, def) :- DeclId(f, id, name), id > 0, f : AnonFunDecl, f.owner.kind = REAL,
+	IsRealAnonFunDecl ::= (f: AnonFunDecl).
+	IsRealAnonFunDecl(f) :- DeclId(f, _, _), f: AnonFunDecl, f.owner.kind = REAL; 
+	                        DeclId(f, _, _), f: AnonFunDecl, f.owner = NIL.
+
+	COut(8, def) :- DeclId(f, id, name), id > 0, IsRealAnonFunDecl(f),
 				    BodyTmpVars(f, -1, -2, tmpVars),			  
 				    StmtTrans(f, f.body, ctrans),			
 	                params = Params(Param(NIL, "context"), NIL),
@@ -961,14 +974,13 @@ transform P2CProgram (in:: P) returns (out:: C)
 	FunDeclConcat ::= (pos: Natural, mach: MachineDecl, arr: out.Args + {NIL}).
 
 	//// Base case
-	FunDeclConcat(c, m, NIL) :- m is MachineDecl, m.kind = REAL, c = 1 + count({f | f is FunDecl, f.owner = NIL}) + count({f | f is AnonOrNamedFun, f.owner = m}).
+	FunDeclConcat(c, m, NIL) :- m is MachineDecl, m.kind = REAL, c = 1 + count({f | f is AnonOrNamedFun, f.owner = NIL}) + count({f | f is AnonOrNamedFun, f.owner = m}).
 
     //// Build every fundecl array in reverse order
-	FunDeclConcat(m, mdecl, arr) :-  
-							DeclId(d, m, cfun), DeclId(mdecl, _, cmach), FunDeclConcat(m + 1, mdecl, after), d : FunDecl,
+	FunDeclConcat(m, d.owner, arr) :-  
+							DeclId(d, m, cfun), DeclId(d.owner, _, cmach), FunDeclConcat(m + 1, d.owner, after), d : FunDecl,
 							MaxNumLocals(d, maxNumLocals), 
 							LocalsType(d, localsType),
-							mdecl: MachineDecl, FunAvailable(d, mdecl),
 							ReceiveDeclInit(d, nReceives, receives), 
 							arr = out.Args(def, after), 
 	                        def = Init(
@@ -987,6 +999,46 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	FunDeclConcat(m, d.owner, arr) :- 
 							DeclId(d, m, cfun), DeclId(d.owner, _, cmach), FunDeclConcat(m + 1, d.owner, after), d : AnonFunDecl,
+							MaxNumLocals(d, maxNumLocals), 
+							LocalsType(d, localsType),
+							ReceiveDeclInit(d, nReceives, receives),
+							arr = out.Args(def, after), 
+	                        def = Init(
+							   Args(Ident(cfun),
+							   Args(Ident(cmach),
+							   Args(Ident("NULL"),
+							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
+							   Args(IntLit(maxNumLocals, DEC, U),
+							   Args(IntLit(lstLength(#NmdTupType, d.envVars), DEC, U),
+							   Args(localsType,
+							   Args(IntLit(nReceives, DEC, U),
+							   Args(receives,
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL)))))))))))).
+
+  	FunDeclConcat(m, mdecl, arr) :-  
+							DeclId(d, m, cfun), DeclId(mdecl, _, cmach), FunDeclConcat(m + 1, mdecl, after), d : FunDecl, d.owner = NIL,
+							MaxNumLocals(d, maxNumLocals), 
+							LocalsType(d, localsType),
+							ReceiveDeclInit(d, nReceives, receives), 
+							arr = out.Args(def, after), 
+	                        def = Init(
+							   Args(Ident(cfun),
+							   Args(Ident(cmach),
+							   Args(StringLit(d.name, NIL),
+							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
+							   Args(IntLit(maxNumLocals, DEC, U),
+							   Args(IntLit(0, DEC, U),
+							   Args(localsType,
+							   Args(IntLit(nReceives, DEC, U),
+							   Args(receives,
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL)))))))))))).
+
+	FunDeclConcat(m, mdecl, arr) :- 
+							DeclId(d, m, cfun), DeclId(mdecl, _, cmach), FunDeclConcat(m + 1, mdecl, after), d : AnonFunDecl, d.owner = NIL,
 							MaxNumLocals(d, maxNumLocals), 
 							LocalsType(d, localsType),
 							ReceiveDeclInit(d, nReceives, receives),

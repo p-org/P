@@ -1,0 +1,36 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 6 distinct states explored
+OUT: 
+EXIT: 3
+
+=================================
+staticfunctions_4.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine M-0
+<StateLog> Machine M-0 entering State S
+<RaiseLog> Machine M-0 raised Event ____a
+<StateLog> Machine M-0 exiting State S
+<FunctionLog> Machine M-0 executing Function F2
+<EnqueueLog> Enqueued Event < ____a, null > in Machine ____M-0 by ____M-0
+<EnqueueLog> Enqueued Event < ____b, null > in Machine ____M-0 by ____M-0
+<StateLog> Machine M-0 entering State S1
+<FunctionLog> Machine M-0 executing Function F2
+<EnqueueLog> Enqueued Event < ____a, null > in Machine ____M-0 by ____M-0
+<EnqueueLog> Enqueued Event < ____b, null > in Machine ____M-0 by ____M-0
+<DequeueLog> Dequeued Event < ____a, null > at Machine ____M-0
+<FunctionLog> Machine M-0 executing Function F3
+<DequeueLog> Dequeued Event < ____b, null > at Machine ____M-0
+<DequeueLog> Dequeued Event < ____a, null > at Machine ____M-0
+<DequeueLog> Dequeued Event < ____b, null > at Machine ____M-0
+
+Error:
+P Assertion failed:
+Expression: assert(tmp_10.bl,)
+Comment: (25, 15): Assert failed

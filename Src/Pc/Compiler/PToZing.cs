@@ -524,6 +524,7 @@ namespace Microsoft.Pc
 
             this.anonFunToName = new Dictionary<AST<Node>, string>();
             var anonFunCounter = new Dictionary<string, int>();
+            int anonFunCounterStatic = 0;
             foreach (var x in allMachines.Keys)
             {
                 anonFunCounter[x] = 0;
@@ -535,19 +536,29 @@ namespace Microsoft.Pc
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    var machineDecl = (FuncTerm)it.Current;
-                    var machineName = GetName(machineDecl, 0);
-                    var machineInfo = allMachines[machineName];
+                    var machineDecl = it.Current as FuncTerm;
                     it.MoveNext();
                     var locals = it.Current as FuncTerm;
                     it.MoveNext();
                     var body = it.Current;
                     it.MoveNext();
                     var envVars = it.Current as FuncTerm;
-                    var funName = "AnonFun" + anonFunCounter[machineName];
-                    machineInfo.funNameToFunInfo[funName] = new FunInfo(true, envVars, PToZing.PTypeNull, locals, body);
-                    anonFunToName[term] = funName;
-                    anonFunCounter[machineName]++;
+                    if (machineDecl == null)
+                    {
+                        var funName = "AnonFunStatic" + anonFunCounterStatic;
+                        allStaticFuns[funName] = new FunInfo(true, envVars, PToZing.PTypeNull, locals, body);
+                        anonFunToName[term] = funName;
+                        anonFunCounterStatic++;
+                    }
+                    else
+                    {
+                        var machineName = GetName(machineDecl, 0);
+                        var machineInfo = allMachines[machineName];
+                        var funName = "AnonFun" + anonFunCounter[machineName];
+                        machineInfo.funNameToFunInfo[funName] = new FunInfo(true, envVars, PToZing.PTypeNull, locals, body);
+                        anonFunToName[term] = funName;
+                        anonFunCounter[machineName]++;
+                    }
                 }
             }
 
@@ -849,9 +860,15 @@ namespace Microsoft.Pc
                     {
                         // typingContextKind == "AnonFunDecl"
                         string ownerName = GetOwnerName(typingContext, 0, 0);
-                        Debug.Assert(ownerName != null);
                         string funName = anonFunToName[Factory.Instance.ToAST(typingContext)];
-                        allMachines[ownerName].funNameToFunInfo[funName].typeInfo[expr] = type;
+                        if (ownerName == null)
+                        {
+                            allStaticFuns[funName].typeInfo[expr] = type;
+                        }
+                        else
+                        {
+                            allMachines[ownerName].funNameToFunInfo[funName].typeInfo[expr] = type;
+                        }
                     }
                 }
             }
@@ -885,9 +902,15 @@ namespace Microsoft.Pc
                     {
                         // typingContextKind == "AnonFunDecl"
                         string ownerName = GetOwnerName(typingContext, 0, 0);
-                        Debug.Assert(ownerName != null);
                         string funName = anonFunToName[Factory.Instance.ToAST(typingContext)];
-                        allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
+                        if (ownerName == null)
+                        {
+                            allStaticFuns[funName].maxNumLocals = maxNumLocals;
+                        }
+                        else
+                        {
+                            allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
+                        }
                     }
                 }
             }
@@ -2499,16 +2522,7 @@ namespace Microsoft.Pc
                 eventNames.Add(eventName);
                 stmts.Add(MkZingAssign(MkZingDot("myHandle", "receiveSet"), MkZingAdd(MkZingDot("myHandle", "receiveSet"), MkZingEvent(eventName))));
                 var fun = GetArgByIndex(cases, 1);
-                string funName;
-                Cnst namedFun = fun as Cnst;
-                if (namedFun != null)
-                {
-                    funName = namedFun.GetStringValue();
-                }
-                else
-                {
-                    funName = anonFunToName[Factory.Instance.ToAST(fun)];
-                }
+                string funName = anonFunToName[Factory.Instance.ToAST(fun)];
                 funNames.Add(funName);
                 cases = GetArgByIndex(cases, 2) as FuncTerm;
             }

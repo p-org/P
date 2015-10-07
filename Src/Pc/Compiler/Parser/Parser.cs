@@ -26,6 +26,7 @@
 
         private Span crntAnnotSpan;
         private bool isTrigAnnotated = false;
+        private bool isStaticFun = false;
         private P_Root.FunDecl crntFunDecl = null;
         private P_Root.EventDecl crntEventDecl = null;
         private P_Root.MachineDecl crntMachDecl = null;
@@ -1327,7 +1328,11 @@
         private void AddCaseAnonyAction(Span span)
         {
             var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
-            var anonAction = P_Root.MkAnonFunDecl(GetCurrentMachineDecl(span), (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)localVarStack.ContextLocalVarDecl);
+            P_Root.IArgType_AnonFunDecl__0 owner = 
+                isStaticFun 
+                ? (P_Root.IArgType_AnonFunDecl__0) P_Root.MkUserCnst(P_Root.UserCnstKind.NIL) 
+                : (P_Root.IArgType_AnonFunDecl__0) GetCurrentMachineDecl(span);
+            var anonAction = P_Root.MkAnonFunDecl(owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)localVarStack.ContextLocalVarDecl);
             anonAction.Span = stmt.Span;
             parseProgram.AnonFunctions.Add(anonAction);
             var caseEventList = localVarStack.Pop();
@@ -1725,6 +1730,7 @@
                 
             }
             crntFunDecl = null;
+            isStaticFun = false;
         }
         #endregion
 
@@ -1881,6 +1887,7 @@
             crntAnnotList = new List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>();
             parseFailed = false;
             isTrigAnnotated = false;
+            isStaticFun = false;
             crntState = null;
             crntEventDecl = null;
             crntMachDecl = null;

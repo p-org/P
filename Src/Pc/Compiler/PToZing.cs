@@ -416,6 +416,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     allMachines[machineName].initStateName = GetNameFromQualifiedName(machineName, (FuncTerm)it.Current);
                     it.MoveNext();
+                    it.MoveNext();
                     if (((Id)it.Current).Name == "TRUE")
                     {
                         mainMachineName = machineName;

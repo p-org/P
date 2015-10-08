@@ -61,15 +61,14 @@ domain PData
 	/*************************************************************/
     /****************  Module Declarations    *************/
     /*************************************************************/
-	InterfaceEventDecl ::= new (interface: InterfaceType, ev: String).
+	InterfaceEventDecl ::= new (interface: any InterfaceType, ev: String).
 
-
-	ModuleDecl ::= new (name : String).
+	ModuleDecl ::= new (name : any String).
 	MachineInModuleDecl ::= (mach: MachineDecl, mod: ModuleDecl).
 
-	ModuleSendsInterfaceDecl ::= new (m: ModuleDecl, interface: InterfaceType).
-	ModuleReceivesInterfaceDecl ::= new (m: ModuleDecl, interface: InterfaceType).
-	MachineImpsInterfaceDecl ::= new (m: MachineDecl, interface: InterfaceType).
+	ModuleSendsInterfaceDecl ::= new (m: ModuleDecl, interface: any InterfaceType).
+	ModuleReceivesInterfaceDecl ::= new (m: ModuleDecl, interface: any InterfaceType).
+	MachineImpsInterfaceDecl ::= new (m: MachineDecl, interface: any InterfaceType).
 
     /*************************************************************/
     /****************  State Machine Declarations    *************/

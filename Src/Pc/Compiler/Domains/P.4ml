@@ -89,7 +89,7 @@ domain PData
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String).
     DoDecl         ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String).
 
-    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + ObservesDecl + InterfaceEventDecl + MachineImpsInterfaceDecl.            
+    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + ObservesDecl + InterfaceEventDecl + MachineImpsInterfaceDecl + ModuleDecl + ModuleSendsDecl + ModuleReceivesDecl + ModuleCreatesDecl.            
 
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
@@ -129,7 +129,7 @@ domain PStructuralTyping extends PData
     OneDeclError ::= (PDecl).
     TwoDeclError ::= (PDecl, PDecl).
     DeclFunError ::= (PDecl, String).
-	
+
     [ rule_Classes = '"error, msg: Global function has the same name"']
     TwoDeclError(f1, f2) :- f1 != f2, f1 is FunDecl, f2 is FunDecl, f1.name = f2.name, f1.owner = NIL, f2.owner != NIL.
 
@@ -217,6 +217,19 @@ domain PStructuralTyping extends PData
 	[rule_Classes = '"error, msg: interface type in implements is not declared"']
 	OneDeclError(machInterface) :- machInterface is MachineImpsInterfaceDecl(_, i), no InterfaceEventDecl(i, _).
 
+	//event in sends of a module
+	[rule_Classes = '"error, msg: event in sends is not declared"']
+	OneDeclError(sendsE) :- sendsE is ModuleSendsDecl(_, ev), no EventDecl(ev, _, _).
+
+	//event in receives of a module
+	[rule_Classes = '"error, msg: event in receives is not declared"']
+	OneDeclError(receivesE) :- receivesE is ModuleReceivesDecl(_, ev), no EventDecl(ev, _, _).
+
+	//interface type in machine declaration
+	[rule_Classes = '"error, msg: interface type in creates is not declared"']
+	OneDeclError(creates) :- creates is ModuleCreatesDecl(_, i), no InterfaceEventDecl(i, _).
+	
+
 }
 
 domain PStaticTyping extends PData
@@ -234,8 +247,25 @@ domain PStaticTyping extends PData
 	conforms no LValueError(_, _).
 	conforms no BadLabelError(_).
 	conforms no DomOfMapUnSafe(_).
+	//conforms no PerModuleStructuralChecks(_).
     /*************************************************************/
 
+	/************ Static typing for module system *****************/
+	/************ Per module level static typing  *****************
+	PerModuleStructuralChecks ::= (PDecl).
+	NotDisjointInterface ::= (i1: InterfaceType, i2: InterfaceType).
+	NotDisjointInterface :- i1 : InterfaceType, i2 : InterfaceType, count({e | InterfaceEventDecl(i1, e), InterfaceEventDecl(i2, e) }) > 0.
+
+	//interface sets across machines must be disjoint
+	[rule_Classes = '"error, msg: machines within a modules must have disjoint interfaces"']
+	PerModuleStructuralChecks(mod) :- mod is ModuleDecl, m1 is MachineDecl(_, mod, _, _, _, _), m2 is MachineDecl(_, mod, _, _, _, _), m1 != m2, 
+									  MachineImpsInterfaceDecl(m1, i1), MachineImpsInterfaceDecl(m2, i2), NotDisjointInterface(i1, i2).
+
+	//receive set = union of all interface set - send set.
+	//PerModuleStructuralChecks(mod) :- mod is ModuleDecl, 
+
+	/********* end of static rules for module system ****************/
+	/****************************************************************/
     //// The declarations that may contain expressions or statements that should be typed.
     TypingContext ::= FunDecl + AnonFunDecl.
     
@@ -287,6 +317,13 @@ domain PStaticTyping extends PData
 
 	//// True if in this context
 	IsEventCnst ::= (cntxt: TypingContext, expr: Typeable, paytype: TypeExpr).
+
+	/**************************************************************/
+	/*						Map from interface to machine		  */
+	/*************************************************************/
+	InterfaceToMachineMap ::= (ie: InterfaceType, mach: MachineDecl).
+
+	InterfaceToMachineMap(inter, mach) :-  inter = InterfaceType(n), MachineImpsInterfaceDecl(mach, inter).
 
     /*************************************************************/
     /*                      Types of Expressions                 */
@@ -359,16 +396,14 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Cast can never succeed"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2), TypeRel(t1, t2, k), k = EMPTY.
 
-    TypeOf(c, e, i)   :- SubSE(c, e), e = New(n, _), m is MachineDecl(n, _, REAL, _, _, _), MachineImpsInterfaceDecl(m, i).
-    TypeOf(c, e, i)   :- SubSE(c, e), e = New(n, _), m is MachineDecl(n, _, MODEL, _, _, _), MachineImpsInterfaceDecl(m, i).
-	TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _), m is MachineDecl(n, _, REAL, _, _, _), no MachineImpsInterfaceDecl(m, _).
-    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _), m is MachineDecl(n, _, MODEL, _, _, _), no MachineImpsInterfaceDecl(m, _).
+	[ rule_Classes = '"error, msg: Problem !! "']
+    TypeOf(c, e, t)   :- SubSE(c, e), e = New(n, _), ModuleCreatesDecl(c.owner.mod, t), t = InterfaceType(n), InterfaceToMachineMap(t, m), m is MachineDecl.
 
 	[ rule_Classes = '"error, msg: Monitors cannot be created with "new""']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), MachineDecl(n, _, MONITOR, _, _, _).
 
-	[ rule_Classes = '"error, msg: Undefined machine type"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), no MachineDecl(n, _, _, _, _, _).
+	[ rule_Classes = '"error, msg: Interface is not in the creates set of the module"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), no ModuleCreatesDecl(c.owner.mod, InterfaceType(n)), no MachineDecl(n, _, MONITOR, _, _, _).
 	
     TypeOf(c, e, t2)               :- TypeOfArg2(c, e, _, t2), e : Field, t2 != ERROR.
 	[ rule_Classes = '"error, msg: Bad field name"']
@@ -480,11 +515,13 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: "while (...)" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : While, t1 != BaseType(BOOL).
                
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _), MachineDecl(n, _, _, _, _, _).
-	  
-	[ rule_Classes = '"error, msg: Undeclared machine"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _), no MachineDecl(n, _, _, _, _, _).
-  
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _), ModuleCreatesDecl(c.owner.mod, t), t = InterfaceType(n), InterfaceToMachineMap(t, _).
+	
+	TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _), MachineDecl(n, _, MONITOR, _, _, _).
+
+	[ rule_Classes = '"error, msg: Interface is not in the creates set of the module"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _), no ModuleCreatesDecl(c.owner.mod, InterfaceType(n)), no MachineDecl(n, _, MONITOR, _, _, _).
+
 
 	//// Rules for raise.
     TypeOf(c, e, NIL)              :- CommStmtPLType(c, e, plt), e = Raise(_, NIL),              ///// < raise has NIL payload,

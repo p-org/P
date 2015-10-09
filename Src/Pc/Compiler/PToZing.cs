@@ -877,6 +877,49 @@ namespace Microsoft.Pc
                 }
             }
 
+            terms = GetBin(factBins, "InterfaceToMachineMap");
+            foreach (var term in terms)
+            {
+                Console.WriteLine("Ok generated");
+                /*using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    FuncTerm typingContext = (FuncTerm)it.Current;
+                    string typingContextKind = ((Id)typingContext.Function).Name;
+                    if (!(typingContextKind == "FunDecl" || typingContextKind == "AnonFunDecl")) continue;
+                    it.MoveNext();
+                    var maxNumLocals = (int)((Cnst)it.Current).GetNumericValue().Numerator;
+
+                    if (typingContextKind == "FunDecl")
+                    {
+                        string ownerName = GetOwnerName(typingContext, 1, 0);
+                        string funName = GetName(typingContext, 0);
+                        if (ownerName == null)
+                        {
+                            allStaticFuns[funName].maxNumLocals = maxNumLocals;
+                        }
+                        else
+                        {
+                            allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
+                        }
+                    }
+                    else
+                    {
+                        // typingContextKind == "AnonFunDecl"
+                        string ownerName = GetOwnerName(typingContext, 0, 0);
+                        string funName = anonFunToName[Factory.Instance.ToAST(typingContext)];
+                        if (ownerName == null)
+                        {
+                            allStaticFuns[funName].maxNumLocals = maxNumLocals;
+                        }
+                        else
+                        {
+                            allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
+                        }
+                    }
+                }*/
+            }
+
             terms = GetBin(factBins, "MaxNumLocals");
             foreach (var term in terms)
             {

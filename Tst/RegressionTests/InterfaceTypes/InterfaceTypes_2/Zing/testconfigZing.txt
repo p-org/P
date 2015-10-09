@@ -1,0 +1,7 @@
+runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+argZing: ..\inter_2.dll
+argZing: -et:inter_2.trace
+incZing: inter_2.trace
+del: inter_2.trace
+acc: .\
+dsc: zinger.exe, static functions used as transition functions, do decls, etc.

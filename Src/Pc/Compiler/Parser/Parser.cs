@@ -29,6 +29,7 @@
         private bool isStaticFun = false;
         private P_Root.FunDecl crntFunDecl = null;
         private P_Root.EventDecl crntEventDecl = null;
+        private P_Root.ModuleDecl crntModuleDecl = null;
         private P_Root.MachineDecl crntMachDecl = null;
         private P_Root.QualifiedName crntStateTargetName = null;
         private P_Root.StateDecl crntState = null;
@@ -456,12 +457,11 @@
             stmtStack.Push(raiseStmt);
         }
 
-        private void PushNewStmt(string name, Span nameSpan, string substName, Span substNameSpan, bool hasArgs, Span span)
+        private void PushNewStmt(string name, Span nameSpan, bool hasArgs, Span span)
         {
             Contract.Assert(!hasArgs || exprsStack.Count > 0);
             var newStmt = P_Root.MkNewStmt();
             newStmt.name = MkString(name, nameSpan);
-            newStmt.subst = MkString(substName, substNameSpan);
             newStmt.Span = span;
             if (hasArgs)
             {
@@ -483,12 +483,11 @@
             stmtStack.Push(newStmt);
         }
 
-        private void PushNewExpr(string name, Span nameSpan, string substName, Span substNameSpan, bool hasArgs, Span span)
+        private void PushNewExpr(string name, Span nameSpan, bool hasArgs, Span span)
         {
             Contract.Assert(!hasArgs || exprsStack.Count > 0);
             var newExpr = P_Root.MkNew();
             newExpr.name = MkString(name, nameSpan);
-            newExpr.subst = MkString(substName, substNameSpan);
             newExpr.Span = span;
             if (hasArgs)
             {
@@ -1068,12 +1067,6 @@
             machDecl.isMain = MkUserCnst(P_Root.UserCnstKind.TRUE, span);
         }
 
-        private void SetMachineIsPublic(Span span)
-        {
-            var machDecl = GetCurrentMachineDecl(span);
-            machDecl.isPublic = MkUserCnst(P_Root.UserCnstKind.TRUE, span);
-        }
-
         private void SetEventType(Span span)
         {
             var evDecl = GetCurrentEventDecl(span);
@@ -1594,10 +1587,65 @@
 
         private void AddModule(string name, Span nameSpan, Span span)
         {
+            var moduleDecl = GetCurrentModuleDecl(span);
+            moduleDecl.Span = span;
+            moduleDecl.name = MkString(name, nameSpan);
+            //add the module decl
+            if(topDeclNames.moduleNames.Contains(name))
+            {
+                var errFlag = new Flag(
+                                    SeverityKind.Error,
+                                    span,
+                                    Constants.BadSyntax.ToString(string.Format("A module with name {0} already declared", name)),
+                                    Constants.BadSyntax.Code,
+                                    parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+
+            }
+            else
+            {
+                topDeclNames.moduleNames.Add(name);
+            }
+            parseProgram.ModuleDecl.Add(moduleDecl);
+
+            //initialize the sends set for the module.
+            foreach(var sEvent in crntSendsList)
+            {
+                var sends = new P_Root.ModuleSendsDecl();
+                sends.Span = span;
+                sends.mod = (P_Root.IArgType_ModuleSendsDecl__0)moduleDecl;
+                sends.ev = (P_Root.IArgType_ModuleSendsDecl__1)sEvent;
+                parseProgram.ModuleSendsDecl.Add(sends);
+            }
+
+            //initialize the receives set for the module.
+            foreach (var rEvent in crntReceivesList)
+            {
+                var receives = new P_Root.ModuleReceivesDecl();
+                receives.Span = span;
+                receives.mod = (P_Root.IArgType_ModuleReceivesDecl__0)moduleDecl;
+                receives.ev = (P_Root.IArgType_ModuleReceivesDecl__1)rEvent;
+                parseProgram.ModuleReceivesDecl.Add(receives);
+            }
+
+            //initialize the creates set for the module.
+            foreach (var cI in crntInterfaceList)
+            {
+                var creates = new P_Root.ModuleCreatesDecl();
+                creates.Span = span;
+                creates.mod = (P_Root.IArgType_ModuleCreatesDecl__0)moduleDecl;
+                var interfaceType = new P_Root.InterfaceType();
+                interfaceType.Span = span;
+                interfaceType.name = (P_Root.IArgType_InterfaceType__0)cI;
+                creates.ie = (P_Root.IArgType_ModuleCreatesDecl__1)interfaceType;
+                parseProgram.ModuleCreatesDecl.Add(creates);
+            }
 
             crntInterfaceList.Clear();
             crntSendsList.Clear();
             crntReceivesList.Clear();
+            crntModuleDecl = null;
         }
         private void AddMachineInterface(string name, Span nameSpan, Span span)
         {
@@ -1610,7 +1658,7 @@
             machineInterfaceDecl.m = machDecl;
             machineInterfaceDecl.Span = span;
             machineInterfaceDecl.@interface = interfaceType;
-            parseProgram.MachineInterfaces.Add(machineInterfaceDecl);
+            parseProgram.MachineImpsInterface.Add(machineInterfaceDecl);
 
         }
         private void AddMachine(P_Root.UserCnstKind kind, string name, Span nameSpan, Span span)
@@ -1623,6 +1671,8 @@
                 kind = P_Root.UserCnstKind.REAL;
             }
             machDecl.kind = MkUserCnst(kind, span);
+            machDecl.mod = GetCurrentModuleDecl(span);
+
             if (kind == P_Root.UserCnstKind.MONITOR)
             {
                 foreach (var e in crntObservesList)
@@ -1838,6 +1888,19 @@
             crntMachDecl.start.Span = span;
             return crntMachDecl;
         }
+
+        private P_Root.ModuleDecl GetCurrentModuleDecl(Span span)
+        {
+            if (crntModuleDecl != null)
+            {
+                return crntModuleDecl;
+            }
+
+            crntModuleDecl = P_Root.MkModuleDecl();
+            crntModuleDecl.name = MkString(string.Empty, span);
+            crntModuleDecl.Span = span;
+            return crntModuleDecl;
+        }
         #endregion
 
         #region Helpers
@@ -1930,6 +1993,7 @@
             crntState = null;
             crntEventDecl = null;
             crntMachDecl = null;
+            crntModuleDecl = null;
             crntStateTargetName = null;
             nextReceiveLabel = 0;
             crntStateNames.Clear();

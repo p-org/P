@@ -35,11 +35,36 @@
             private set;
         }
 
-        public List<P_Root.MachineImpsInterfaceDecl> MachineInterfaces
+        public List<P_Root.MachineImpsInterfaceDecl> MachineImpsInterface
         {
             get;
             private set;
         }
+
+        public List<P_Root.ModuleDecl> ModuleDecl
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.ModuleSendsDecl> ModuleSendsDecl
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.ModuleReceivesDecl> ModuleReceivesDecl
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.ModuleCreatesDecl> ModuleCreatesDecl
+        {
+            get;
+            private set;
+        }
+
         public List<P_Root.StateDecl> States
         {
             get;
@@ -141,9 +166,25 @@
                     yield return inter;
                 }
 
-                foreach (var inter in MachineInterfaces)
+                foreach (var inter in MachineImpsInterface)
                 {
                     yield return inter;
+                }
+                foreach(var m in ModuleDecl)
+                {
+                    yield return m;
+                }
+                foreach(var sm in ModuleSendsDecl)
+                {
+                    yield return sm;
+                }
+                foreach(var rm in ModuleReceivesDecl)
+                {
+                    yield return rm;
+                }
+                foreach(var cm in ModuleCreatesDecl)
+                {
+                    yield return cm;
                 }
             }
         }
@@ -158,7 +199,11 @@
             Functions = new List<P_Root.FunDecl>();
             Observes = new List<P_Root.ObservesDecl>();
             InterfaceEvents = new List<P_Root.InterfaceEventDecl>();
-            MachineInterfaces = new List<P_Root.MachineImpsInterfaceDecl>();
+            MachineImpsInterface = new List<P_Root.MachineImpsInterfaceDecl>();
+            ModuleDecl = new List<P_Root.ModuleDecl>();
+            ModuleCreatesDecl = new List<P_Root.ModuleCreatesDecl>();
+            ModuleReceivesDecl = new List<P_Root.ModuleReceivesDecl>();
+            ModuleSendsDecl = new List<P_Root.ModuleSendsDecl>();
             AnonFunctions = new List<P_Root.AnonFunDecl>();
             Dos = new List<P_Root.DoDecl>();
             Annotations = new List<P_Root.Annotation>();

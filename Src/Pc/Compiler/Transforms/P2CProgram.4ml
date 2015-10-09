@@ -1449,22 +1449,22 @@ transform P2CProgram (in:: P) returns (out:: C)
 	ContainerInNewCall ::= (c: TypingContext, name: String, funName: String, machineName: String, e: out.Args + { NIL }).
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
 										 SubSE(c, _), no Annotation(c, "container", _), container = NIL,
-	                                     machineDecl is MachineDecl(name, REAL, _, _, _, _), DeclId(machineDecl, _, machineName), 
+	                                     machineDecl is MachineDecl(name, _, REAL, _, _, _), DeclId(machineDecl, _, machineName), 
 										 funName = "PrtMkMachine".
 	
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
 										 c: FunDecl, Annotation(c, "container", f), FormalTrans(c, f, container),
-	                                     machineDecl is MachineDecl(name, REAL, _, _, _, _), DeclId(machineDecl, _, machineName), 
+	                                     machineDecl is MachineDecl(name, _, REAL, _, _, _), DeclId(machineDecl, _, machineName), 
 										 funName = "PrtMkMachineRemote".
 
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
 										 SubSE(c, _), no Annotation(c, "container", _), container = NIL,
-	                                     machineDecl is MachineDecl(name, MODEL, _, _, _, _), DeclId(machineDecl, _, machineName), 
+	                                     machineDecl is MachineDecl(name, _, MODEL, _, _, _), DeclId(machineDecl, _, machineName), 
 										 funName = "PrtMkModel".
 	
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
 										 c: FunDecl, Annotation(c, "container", f), FormalTrans(c, f, container),
-	                                     machineDecl is MachineDecl(name, MODEL, _, _, _, _), DeclId(machineDecl, _, machineName), 
+	                                     machineDecl is MachineDecl(name, _, MODEL, _, _, _), DeclId(machineDecl, _, machineName), 
 										 funName = "PrtMkModelRemote".
 
 	PayloadEvalOrder ::= (s: in.Stmt, i: Natural, p: in.Expr + { NIL }, h: Natural).
@@ -1472,7 +1472,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	PayloadEvalOrder(s, i, p, h) :- p: in.Expr, RhsEvalOrder(s, i, p, h).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = New(name, arg, _), PayloadEvalOrder(s, i, arg, h),
+									e = New(name, arg), PayloadEvalOrder(s, i, arg, h),
 									ContainerInNewCall(c, name, funName, machineName, container),
 									process = out.BinApp(PFLD, Ident("context"), Ident("process")),
 									newCall = out.FunApp(Ident(funName), Args(process, Args(Ident(machineName), Args(Ident(strJoin("p_tmp_expr_", toString(h))), container)))),
@@ -1711,7 +1711,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	
 	Trampoline ::= (cntxt: TypingContext, stmt: in.Stmt, trans: out.Stmt + { NIL }).
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Receive(_, _), JumpToLabel(c, s, cs).
-	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NewStmt(_, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NewStmt(_, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Raise(_, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Send(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Monitor(_, _), cs = NIL.
@@ -1739,7 +1739,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   cs = out.Seq(receive, Seq(case, Seq(blocked, Seq(exception, Seq(popEvent, resetRcase))))).
 	
 	//// New Machine or Model
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, NIL, _), 
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, NIL), 
 						   ContainerInNewCall(c, name, funName, machineName, container),
 						   newCall = out.FunApp(Ident(funName),
 										Args(BinApp(PFLD, Ident("context"), Ident("process")),
@@ -1748,7 +1748,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   ConstId(m, in.NulApp(NULL)), mkNull = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))),
 						   cs = out.FunApp(Ident("P_STMT_0"), Args(newCall, Args(mkNull, Args(Ident("PRT_FALSE"), NIL)))).
 
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, pay, _), 
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, pay), 
 						   ContainerInNewCall(c, name, funName, machineName, container),
 						   newCall = out.FunApp(Ident(funName),
 										Args(BinApp(PFLD, Ident("context"), Ident("process")),
@@ -1758,7 +1758,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   cs = out.FunApp(Ident("P_STMT_0"), Args(newCall, Args(payTrans, Args(doFree, NIL)))).
 
 	//// New Monitor (erased)
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, _, _), machineDecl is MachineDecl(name, MONITOR, _, _, _, _), cs = NIL.
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, _), machineDecl is MachineDecl(name, _, MONITOR, _, _, _), cs = NIL.
 
 	//// Raise
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
@@ -1936,8 +1936,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	//// New app has a hidden dependency on NULL if it is an nullary app.
 	ExprDepNum(0, h),
-	ExprDepNum(1, e) :- SubSE(_, e), e = in.New(_, NIL, _), h = in.NulApp(NULL). 
-	ExprDepNum(i, e) :- SubSE(_, e), e = in.New(_, e', _), ExprDepNum(j, e'), i = j + 1. 
+	ExprDepNum(1, e) :- SubSE(_, e), e = in.New(_, NIL), h = in.NulApp(NULL). 
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.New(_, e'), ExprDepNum(j, e'), i = j + 1. 
 
 	//// Fun app has zero or one depenencies.
 	ExprDepNum(0, e) :- SubSE(_, e), e = in.FunApp(_, NIL). 
@@ -1979,8 +1979,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 	RhsEvalOrder(s, i, e, k) :- RhsCntxt(s, i, e), dn is ExprDepNum(j, e), e : in.Expr, 
 	                            k = toOrdinal(dn, 0, { dn' | RhsCntxt(s, i, e'), dn' is ExprDepNum(l, e'), e' : in.Expr }). 
 
-	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.NewStmt(_, e, _), e : in.Expr.
-	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.NewStmt(_, e, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.NewStmt(_, e), e : in.Expr.
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.NewStmt(_, e), e : in.Expr, RhsEvalOrder(s, 0, e, k).
 	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.NewStmt.
 	
 	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.FunStmt(_, e, _, _), e : in.Exprs.
@@ -2024,8 +2024,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 	RhsMaxOrder(s, 2, k) :- SubSE(_, s), s = in.Send(_, _, e), e : in.Expr, RhsEvalOrder(s, 2, e, k).
 	StmtExprSize(s, 3)   :- SubSE(_, s), s : in.Send.
 
-	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, e', _), e' : in.Expr. 
-	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, NIL, _), e' = in.NulApp(NULL). 
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, e'), e' : in.Expr. 
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, NIL), e' = in.NulApp(NULL). 
 
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.FunApp(_, e'), e' : in.Exprs.
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.UnApp(_, e').

@@ -116,7 +116,6 @@
 			 keywords.Add("sends", (int)Tokens.SENDS);
 			 keywords.Add("receives", (int)Tokens.RECEIVES);
 			 keywords.Add("module", (int)Tokens.MODULE);
-			 keywords.Add("public", (int)Tokens.PUBLIC);
 			 keywords.Add("creates", (int)Tokens.CREATES);
 		 }
 

@@ -207,6 +207,7 @@ namespace Microsoft.Pc
         public Dictionary<string, FunInfo> funNameToFunInfo;
         public MonitorType monitorType;
         public string interfaceTypeName;
+        public string moduleName;
 
         public MachineInfo()
         {
@@ -404,6 +405,8 @@ namespace Microsoft.Pc
                     var machineName = ((Cnst)it.Current).GetStringValue();
                     allMachines[machineName] = new MachineInfo();
                     it.MoveNext();
+                    allMachines[machineName].moduleName = GetName((FuncTerm)it.Current, 0);
+                    it.MoveNext();
                     allMachines[machineName].type = ((Id)it.Current).Name;
                     it.MoveNext();
                     var bound = it.Current;
@@ -437,13 +440,13 @@ namespace Microsoft.Pc
                 }
             }
 
-            terms = GetBin(factBins, "InterfaceDecl");
+            terms = GetBin(factBins, "InterfaceEventDecl");
             foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    var interfaceName = ((Cnst)it.Current).GetStringValue();
+                    var interfaceName = GetName(((FuncTerm)it.Current), 0);
                     it.MoveNext();
                     var eventName = ((Cnst)it.Current).GetStringValue();
                     it.MoveNext();
@@ -2563,7 +2566,7 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldNew(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
-            var typeName = GetName(ft, 2);
+            var typeName = GetName(ft, 0);
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();

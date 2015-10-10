@@ -62,7 +62,7 @@ domain PData
     /*************************************************************/
 
     EventDecl      ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
-    MachineDecl    ::= fun (name: String -> kind: { REAL, MODEL, MONITOR }, card: any QueueConstraint, start: any QualifiedName, isMain: Boolean).
+    MachineDecl    ::= fun (name: String -> kind: { REAL, MODEL, MONITOR }, card: any QueueConstraint, constType: any TypeExpr + { NIL }, start: any QualifiedName, isMain: Boolean).
 
 	ObservesDecl   ::= new (monitor: MachineDecl, ev: String).
 
@@ -125,7 +125,7 @@ domain PStructuralTyping extends PData
 	
 	//// There should be a main machine
 	[rule_Classes = '"error, msg: No Main Machine"']
-	missingDecl :- no MachineDecl(_, _, _, _, TRUE).
+	missingDecl :- no MachineDecl(_, _, _, _, _, TRUE).
 	[ rule_Classes = '"error, msg: Multiple machines are declared as main machines"']
 	TwoDeclError(m1, m2) :- m1 is MachineDecl, m2 is MachineDecl, m1.isMain = TRUE, m2.isMain = TRUE, m1 != m2.
 		
@@ -323,15 +323,20 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Cast can never succeed"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2), TypeRel(t1, t2, k), k = EMPTY.
 
-    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, REAL, _, _, _).
-    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, MODEL, _, _, _).
+    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, REAL, _, _, _, _).
+    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, MODEL, _, _, _, _).
 	[ rule_Classes = '"error, msg: Monitors cannot be created with "new""']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, MONITOR, _, _, _);
-									  SubSE(c, e), e = New(_, _, n'), MachineDecl(n', MONITOR, _, _, _).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, MONITOR, _, _, _, _);
+									  SubSE(c, e), e = New(_, _, n'), MachineDecl(n', MONITOR, _, _, _, _).
 	[ rule_Classes = '"error, msg: Undefined machine type"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _);
-									  SubSE(c, e), e = New(_, _, n'), no MachineDecl(n', _, _, _, _).
-	
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _, _);
+									  SubSE(c, e), e = New(_, _, n'), no MachineDecl(n', _, _, _, _, _).
+
+	[ rule_Classes = '"error, msg: machine does not expect construtor arguments"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, p, _), MachineDecl(n, _, _, NIL, _, _), p != NIL.
+	[ rule_Classes = '"error, msg: constructor arguments passed are of incorrect type"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, _, _, ft, _, _), ft: TypeExpr, TypeOfArg1(c, e, pt), TypeRel(pt, ft, k), k != SUB, pt != ft.
+									  
     TypeOf(c, e, t2)               :- TypeOfArg2(c, e, _, t2), e : Field, t2 != ERROR.
 	[ rule_Classes = '"error, msg: Bad field name"']
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, _, t2), e : Field, t2 = ERROR.
@@ -439,14 +444,18 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: "while (...)" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : While, t1 != BaseType(BOOL).
                
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), MachineDecl(n, _, _, _, _).   
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), MachineDecl(n, _, _, _, _, _).   
 	[ rule_Classes = '"error, msg: Undeclared machine"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, _, _, _, _);
-									  SubSE(c, e), e = NewStmt(_, _, n'), no MachineDecl(n', _, _, _, _).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, _, _, _, _, _);
+									  SubSE(c, e), e = NewStmt(_, _, n'), no MachineDecl(n', _, _, _, _, _).
 	[ rule_Classes = '"error, msg: Substitution machine cannot be monitor"']
-	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, n'), n != n', MachineDecl(n', MONITOR, _, _, _).   
+	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, n'), n != n', MachineDecl(n', MONITOR, _, _, _, _).   
 	[ rule_Classes = '"error, msg: Monitor machine cannot be substituted"']
-	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, n'), n != n', MachineDecl(n, MONITOR, _, _, _).   
+	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, n'), n != n', MachineDecl(n, MONITOR, _, _, _, _).   
+	[ rule_Classes = '"error, msg: machine does not expect construtor arguments"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, p, _), MachineDecl(n, _, _, NIL, _, _), p != NIL.
+	[ rule_Classes = '"error, msg: constructor argument passed is of incorrect type"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, p, _), MachineDecl(n, _, _, ft, _, _), ft : TypeExpr, TypeOf(c, p, pt), TypeRel(pt, ft, k), k != SUB, pt != ft.
 
 	//// Rules for raise.
     TypeOf(c, e, NIL)              :- CommStmtPLType(c, e, plt), e = Raise(_, NIL),              ///// < raise has NIL payload,

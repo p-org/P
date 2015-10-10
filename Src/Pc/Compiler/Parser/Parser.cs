@@ -1067,6 +1067,13 @@
             evDecl.type = (P_Root.IArgType_EventDecl__2)typeExprStack.Pop();
         }
 
+        private void SetMachineConstType(Span span)
+        {
+            var mDecl = GetCurrentMachineDecl(span);
+            Contract.Assert(typeExprStack.Count > 0);
+            mDecl.constType = (P_Root.IArgType_MachineDecl__3)typeExprStack.Pop();
+        }
+
         private void SetFunKind(P_Root.UserCnstKind kind, Span span)
         {
             if (!Options.erase) return;

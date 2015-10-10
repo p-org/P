@@ -1441,22 +1441,22 @@ transform P2CProgram (in:: P) returns (out:: C)
 	ContainerInNewCall ::= (c: TypingContext, name: String, funName: String, machineName: String, e: out.Args + { NIL }).
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
 										 SubSE(c, _), no Annotation(c, "container", _), container = NIL,
-	                                     machineDecl is MachineDecl(name, REAL, _, _, _, _), DeclId(machineDecl, _, machineName), 
+	                                     machineDecl is MachineDecl(name, REAL, _, _, _), DeclId(machineDecl, _, machineName), 
 										 funName = "PrtMkMachine".
 	
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
 										 c: FunDecl, Annotation(c, "container", f), FormalTrans(c, f, container),
-	                                     machineDecl is MachineDecl(name, REAL, _, _, _, _), DeclId(machineDecl, _, machineName), 
+	                                     machineDecl is MachineDecl(name, REAL, _, _, _), DeclId(machineDecl, _, machineName), 
 										 funName = "PrtMkMachineRemote".
 
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
 										 SubSE(c, _), no Annotation(c, "container", _), container = NIL,
-	                                     machineDecl is MachineDecl(name, MODEL, _, _, _, _), DeclId(machineDecl, _, machineName), 
+	                                     machineDecl is MachineDecl(name, MODEL, _, _, _), DeclId(machineDecl, _, machineName), 
 										 funName = "PrtMkModel".
 	
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
 										 c: FunDecl, Annotation(c, "container", f), FormalTrans(c, f, container),
-	                                     machineDecl is MachineDecl(name, MODEL, _, _, _, _), DeclId(machineDecl, _, machineName), 
+	                                     machineDecl is MachineDecl(name, MODEL, _, _, _), DeclId(machineDecl, _, machineName), 
 										 funName = "PrtMkModelRemote".
 
 	PayloadEvalOrder ::= (s: in.Stmt, i: Natural, p: in.Expr + { NIL }, h: Natural).
@@ -1750,7 +1750,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   cs = out.FunApp(Ident("P_STMT_0"), Args(newCall, Args(payTrans, Args(doFree, NIL)))).
 
 	//// New Monitor (erased)
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, _, _), machineDecl is MachineDecl(name, MONITOR, _, _, _, _), cs = NIL.
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, _, _), machineDecl is MachineDecl(name, MONITOR, _, _, _), cs = NIL.
 
 	//// Raise
 	StmtTrans(c, s, cs) :- SubSE(c, s), 

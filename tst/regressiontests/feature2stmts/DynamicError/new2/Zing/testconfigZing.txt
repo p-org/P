@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\new2.dll
-argZing: -et:new2.trace
-incZing: new2.trace
-del: new2.trace
-acc: .\
-dsc: zinger.exe, machine with constructor type.

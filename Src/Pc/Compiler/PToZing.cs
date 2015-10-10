@@ -204,7 +204,6 @@ namespace Microsoft.Pc
         public Dictionary<string, StateInfo> stateNameToStateInfo;
         public Dictionary<string, VariableInfo> localVariableToVarInfo;
         public List<string> observesEvents;
-        public FuncTerm constType;
         public Dictionary<string, FunInfo> funNameToFunInfo;
         public MonitorType monitorType;
 
@@ -411,8 +410,6 @@ namespace Microsoft.Pc
                         allMachines[machineName].maxQueueSize = (int)((Cnst)GetArgByIndex(ft, 0)).GetNumericValue().Numerator;
                         allMachines[machineName].maxQueueSizeAssumed = ((Id)ft.Function).Name == "AssumeMaxInstances";
                     }
-                    it.MoveNext();
-                    allMachines[machineName].constType = (FuncTerm)(it.Current.NodeKind == NodeKind.Id ? PTypeNull.Node : it.Current);
                     it.MoveNext();
                     allMachines[machineName].initStateName = GetNameFromQualifiedName(machineName, (FuncTerm)it.Current);
                     it.MoveNext();

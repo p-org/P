@@ -114,9 +114,16 @@
 			 keywords.Add("interface", (int)Tokens.INTERFACE);
 			 keywords.Add("implements", (int)Tokens.IMPLEMENTS);
 			 keywords.Add("sends", (int)Tokens.SENDS);
-			 keywords.Add("receives", (int)Tokens.RECEIVES);
 			 keywords.Add("module", (int)Tokens.MODULE);
 			 keywords.Add("creates", (int)Tokens.CREATES);
+			 keywords.Add("private", (int)Tokens.PRIVATE);
+			 keywords.Add("test", (int)Tokens.TEST);
+			 keywords.Add("refines", (int)Tokens.REFINES);
+			 keywords.Add("satisfies", (int)Tokens.SATISFIES);
+			 keywords.Add("implementation", (int)Tokens.IMPLEMENTATION);
+			 keywords.Add("specification", (int)Tokens.SPECIFICATION);
+			 keywords.Add("hide", (int)Tokens.HIDE);
+
 		 }
 
          int GetIdToken(string txt)

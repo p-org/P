@@ -53,7 +53,7 @@
             private set;
         }
 
-        public List<P_Root.ModuleReceivesDecl> ModuleReceivesDecl
+        public List<P_Root.ModulePrivateDecl> ModulePrivateDecl
         {
             get;
             private set;
@@ -178,7 +178,7 @@
                 {
                     yield return sm;
                 }
-                foreach(var rm in ModuleReceivesDecl)
+                foreach(var rm in ModulePrivateDecl)
                 {
                     yield return rm;
                 }
@@ -202,7 +202,7 @@
             MachineImpsInterface = new List<P_Root.MachineImpsInterfaceDecl>();
             ModuleDecl = new List<P_Root.ModuleDecl>();
             ModuleCreatesDecl = new List<P_Root.ModuleCreatesDecl>();
-            ModuleReceivesDecl = new List<P_Root.ModuleReceivesDecl>();
+            ModulePrivateDecl = new List<P_Root.ModulePrivateDecl>();
             ModuleSendsDecl = new List<P_Root.ModuleSendsDecl>();
             AnonFunctions = new List<P_Root.AnonFunDecl>();
             Dos = new List<P_Root.DoDecl>();

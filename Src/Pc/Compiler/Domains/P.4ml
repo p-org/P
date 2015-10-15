@@ -65,11 +65,20 @@ domain PData
 	MachineImpsInterfaceDecl ::= new (m: any MachineDecl, interface: any InterfaceType).
 
 	ModuleDecl ::= new (name : any String).
-	
 	ModuleSendsDecl ::= new (mod: any ModuleDecl, ev: String).
-	ModuleReceivesDecl ::= new (mod: any ModuleDecl, ev: String).
+	ModulePrivateDecl ::= new (mod: any ModuleDecl, ev: String).
 	ModuleCreatesDecl ::= new (mod : any ModuleDecl, ie: any InterfaceType).
 	
+	ImplementationModules ::= new (mL: ModuleList).
+	SpecificationModules ::= new (sL: ModuleList).
+	RefinesTestDecl ::= fun (name: String -> imp: ModuleList, spec: ModuleList).
+	MonitorsTestDecl ::= fun (name: String -> imp: ModuleList, monitors: MonitorList).
+	NoFailureTestDecl ::= fun (name: String -> imp: ModuleList).
+
+	ModuleList ::= new (mod: any ModuleDecl + HideOp, tail: any ModuleList + {NIL}).
+	HideOp ::= new (evL: EventList, tail: any ModuleList).
+	MonitorList ::= new (mon: String, tail: any MonitorList + {NIL}).
+	EventList ::= new (ev: String, tail: any EventList + {NIL}).
 
     /*************************************************************/
     /****************  State Machine Declarations    *************/
@@ -89,7 +98,7 @@ domain PData
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String).
     DoDecl         ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String).
 
-    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + ObservesDecl + InterfaceEventDecl + MachineImpsInterfaceDecl + ModuleDecl + ModuleSendsDecl + ModuleReceivesDecl + ModuleCreatesDecl.            
+    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + ObservesDecl + InterfaceEventDecl + MachineImpsInterfaceDecl + ModuleDecl + ModuleSendsDecl + ModulePrivateDecl + ModuleCreatesDecl + ImplementationModules + SpecificationModules + RefinesTestDecl + MonitorsTestDecl + NoFailureTestDecl.            
 
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
@@ -221,15 +230,49 @@ domain PStructuralTyping extends PData
 	[rule_Classes = '"error, msg: event in sends is not declared"']
 	OneDeclError(sendsE) :- sendsE is ModuleSendsDecl(_, ev), no EventDecl(ev, _, _).
 
-	//event in receives of a module
-	[rule_Classes = '"error, msg: event in receives is not declared"']
-	OneDeclError(receivesE) :- receivesE is ModuleReceivesDecl(_, ev), no EventDecl(ev, _, _).
+	//event in private of a module
+	[rule_Classes = '"error, msg: event in private is not declared"']
+	OneDeclError(private) :- private is ModulePrivateDecl(_, ev), no EventDecl(ev, _, _).
 
-	//interface type in machine declaration
+	//interface type in module declaration
 	[rule_Classes = '"error, msg: interface type in creates is not declared"']
 	OneDeclError(creates) :- creates is ModuleCreatesDecl(_, i), no InterfaceEventDecl(i, _).
 	
+	ModuleNotDeclared ::= (modL : ModuleList).
+	ModuleNotDeclared(modL) :- modL is ModuleList (ModuleDecl(m), NIL), no ModuleDecl(m);
+							   modL is ModuleList (m, _), m = HideOp(_, ml), ModuleNotDeclared(ml);
+							   modL is ModuleList (_ , ml), ml : ModuleList, ModuleNotDeclared(ml).
+	
+	CompDecls ::= ImplementationModules + SpecificationModules + RefinesTestDecl + MonitorsTestDecl.
+	ModuleAndEventList ::= ModuleList + EventList.
 
+	SubME ::= sub (c : CompDecls, me: ModuleAndEventList).
+
+	[rule_Classes = '"error, msg: module in the list is not declared"']
+	OneDeclError(x) :- SubME(x, ml), ml = ModuleList (ModuleDecl(m), NIL), no ModuleDecl(m).
+
+	/*
+	//module in ModuleList not declared
+	[rule_Classes = '"error, msg: module in the list is not declared"']
+	OneDeclError(x) :- x is ImplementationModules(ml), ModuleNotDeclared(ml);
+					   x is SpecificationModules(ml), ModuleNotDeclared(ml);
+					   x is RefinesTestDecl(_, ml, _), ModuleNotDeclared(ml); x is RefinesTestDecl(_, _, ml), ModuleNotDeclared(ml);
+					   x is MonitorsTestDecl(_, ml, _), ModuleNotDeclared(ml); x is NoFailureTestDecl(_, ml), ModuleNotDeclared(ml).
+
+	MonitorNotDeclared ::= (monL : MonitorList).
+	MonitorNotDeclared(monL) :- monL is MonitorList(m, NIL), no MachineDecl(m, _, MONITOR, _, _, _);
+								monL is MonitorList(m, ml), ml : MonitorList, MonitorNotDeclared(ml), MachineDecl(m, _, MONITOR, _, _, _).
+
+	[rule_Classes = '"error, msg: monitor in the list is not declared"']
+	OneDeclError(x) :- x is MonitorsTestDecl(_, _, ml), MonitorNotDeclared(ml).
+
+	
+	//Get all event list
+	SubEL ::= sub (ml: ModuleList, evl: EventList).
+	[rule_Classes = '"error, msg: event in hide operation is not declared"']
+	OneDeclError(x) :- SubEL(ml, el), x is ImplementationModules(ml), el = EventList(ev, _), ev : String, no EventDecl(ev, _, _).
+	*/					  
+	
 }
 
 domain PStaticTyping extends PData
@@ -247,24 +290,8 @@ domain PStaticTyping extends PData
 	conforms no LValueError(_, _).
 	conforms no BadLabelError(_).
 	conforms no DomOfMapUnSafe(_).
-	//conforms no PerModuleStructuralChecks(_).
     /*************************************************************/
 
-	/************ Static typing for module system *****************/
-	/************ Per module level static typing  *****************
-	PerModuleStructuralChecks ::= (PDecl).
-	NotDisjointInterface ::= (i1: InterfaceType, i2: InterfaceType).
-	NotDisjointInterface :- i1 : InterfaceType, i2 : InterfaceType, count({e | InterfaceEventDecl(i1, e), InterfaceEventDecl(i2, e) }) > 0.
-
-	//interface sets across machines must be disjoint
-	[rule_Classes = '"error, msg: machines within a modules must have disjoint interfaces"']
-	PerModuleStructuralChecks(mod) :- mod is ModuleDecl, m1 is MachineDecl(_, mod, _, _, _, _), m2 is MachineDecl(_, mod, _, _, _, _), m1 != m2, 
-									  MachineImpsInterfaceDecl(m1, i1), MachineImpsInterfaceDecl(m2, i2), NotDisjointInterface(i1, i2).
-
-	//receive set = union of all interface set - send set.
-	//PerModuleStructuralChecks(mod) :- mod is ModuleDecl, 
-
-	/********* end of static rules for module system ****************/
 	/****************************************************************/
     //// The declarations that may contain expressions or statements that should be typed.
     TypingContext ::= FunDecl + AnonFunDecl.
@@ -323,7 +350,7 @@ domain PStaticTyping extends PData
 	/*************************************************************/
 	InterfaceToMachineMap ::= (ie: InterfaceType, mach: MachineDecl).
 
-	InterfaceToMachineMap(inter, mach) :-  inter = InterfaceType(n), MachineImpsInterfaceDecl(mach, inter).
+	InterfaceToMachineMap(newI, mach) :-  newI = InterfaceType(_), MachineImpsInterfaceDecl(mach, ImpI), SubSetRelation(newI, ImpI).
 
     /*************************************************************/
     /*                      Types of Expressions                 */

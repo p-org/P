@@ -20,7 +20,8 @@
 
 %token TRUE FALSE
 
-%token INTERFACE IMPLEMENTS MODULE SENDS RECEIVES CREATES
+%token INTERFACE IMPLEMENTS MODULE SENDS CREATES PRIVATE 
+%token TEST REFINES SATISFIES IMPLEMENTATION SPECIFICATION HIDE
 
 %token ASSIGN REMOVE INSERT
 %token EQ NE LT GT LE GE IN
@@ -60,6 +61,9 @@ TopDecl
 	| InterfaceDecl
 	| ModuleDecl
 	| MonitorDecl
+	| TestDecl
+	| ImplementationDecl
+	| SpecificationDecl
 	;
 
 /******************* Annotations *******************/ 
@@ -91,7 +95,7 @@ InterfaceDecl
 	;
 /***************** Module Declarations *********************/
 ModuleDecl
-	: MODULE ID Receives Sends Creates LCBRACE ModuleBody RCBRACE		{ AddModule($2.str, ToSpan(@2), ToSpan(@1));}
+	: MODULE ID Privates Sends Creates LCBRACE ModuleBody RCBRACE		{ AddModule($2.str, ToSpan(@2), ToSpan(@1));}
 	;
 
 ModuleBody
@@ -104,8 +108,8 @@ Sends
 	|
 	;
 
-Receives 
-	: RECEIVES NonDefaultNonHaltEventList		{ crntReceivesList.AddRange(crntEventList); crntEventList.Clear(); }
+Privates
+	: PRIVATE NonDefaultNonHaltEventList		{ crntPrivateList.AddRange(crntEventList); crntEventList.Clear(); }
 	|
 	;
 
@@ -113,7 +117,7 @@ Creates
 	: CREATES InterfaceList
 	|
 	;		
-/***************** Monitor Declaration (special type of machineDecl)  *********************/
+/***************** Monitor Declaration *********************/
 MonitorDecl
 	: SPEC ID ObservesList MachAnnotOrNone LCBRACE MachineBody RCBRACE			   { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
 	;
@@ -142,6 +146,40 @@ EvTypeOrNone
 EventAnnotOrNone
     : AnnotationSet                                 { AddEventAnnots(ToSpan(@1));              }
 	|
+	;
+
+/******************  TEST Declarations **********************/
+TestDecl
+	: TEST ID ModulesList REFINES ModulesList SEMICOLON				{ AddRefinesTest($2.str, ToSpan(@2), ToSpan(@1));   }	
+	| TEST ID ModulesList SATISFIES MonitorsList SEMICOLON			{ AddMonitorsTest($2.str, ToSpan(@2), ToSpan(@1));  }
+	| TEST ID ModulesList SEMICOLON									{ AddSafetyTest($2.str, ToSpan(@2), ToSpan(@1));    }
+	;
+
+HideOp
+	: HIDE NonDefaultNonHaltEventList IN ModulesList					{ PushHideModule(ToSpan(@1)); }
+	;
+
+Module
+	: HideOp
+	| ID															{ PushModule($1.str, ToSpan(@1)); }		
+	;
+ModulesList
+	: Module														{ PushModuleList(ToSpan(@1), true); }
+	| Module COMMA ModulesList										{ PushModuleList(ToSpan(@1), false);}
+	;
+
+MonitorsList
+	: ID															{ AddToCrntMonitorsList($1.str, ToSpan(@1)); }
+	| ID COMMA MonitorsList											{ AddToCrntMonitorsList($1.str, ToSpan(@1)); }
+	;
+
+/***************** Implementation and Specification **********/
+ImplementationDecl
+	:	IMPLEMENTATION ModulesList									{ AddImplementationList(ToSpan(@1)); }
+	;
+
+SpecificationDecl
+	:	SPECIFICATION ModulesList									{ AddSpecificationList(ToSpan(@1));	 }
 	;
 
 /******************* Machine Declarations *******************/
@@ -306,8 +344,8 @@ OnEventList
 	;
 
 NonDefaultNonHaltEventList
-	: ID						{ AddToEventList($1.str, ToSpan(@1)); }
-	| NonDefaultNonHaltEventList COMMA NonDefaultEventId 
+	: ID									 { AddToEventList($1.str, ToSpan(@1)); }
+	| ID COMMA NonDefaultNonHaltEventList    { AddToEventList($1.str, ToSpan(@1)); }
 	;
 
 NonDefaultEventList
@@ -332,8 +370,8 @@ NonDefaultEventId
 	;
 
 InterfaceList
-	: ID	    { AddToInterfaceList($1.str, ToSpan(@1));}
-	| InterfaceList COMMA ID
+	: ID						{ AddToInterfaceList($1.str, ToSpan(@1));}
+	| ID COMMA InterfaceList	{ AddToInterfaceList($1.str, ToSpan(@1));}
 	;
 
 TrigAnnotOrNone

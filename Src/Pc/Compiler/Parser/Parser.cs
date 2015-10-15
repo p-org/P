@@ -42,7 +42,8 @@
 
         private List<P_Root.EventLabel> crntObservesList = new List<P_Root.EventLabel>();
         private List<P_Root.EventLabel> crntSendsList = new List<P_Root.EventLabel>();
-        private List<P_Root.EventLabel> crntReceivesList = new List<P_Root.EventLabel>();
+        private List<P_Root.EventLabel> crntPrivateList = new List<P_Root.EventLabel>();
+        private List<P_Root.String> crntMonitorsList = new List<P_Root.String>();
 
         private HashSet<string> crntStateNames = new HashSet<string>();
         private HashSet<string> crntFunNames = new HashSet<string>();
@@ -54,6 +55,8 @@
         private Stack<P_Root.TypeExpr> typeExprStack = new Stack<P_Root.TypeExpr>();
         private Stack<P_Root.Stmt> stmtStack = new Stack<P_Root.Stmt>();
         private Stack<P_Root.QualifiedName> groupStack = new Stack<P_Root.QualifiedName>();
+        
+        private Stack<P_Root.String> impModulesStack = new Stack<P_Root.String>();
         private int nextReceiveLabel = 0;
 
         class LocalVarStack
@@ -272,6 +275,8 @@
         }
 
         #region Pushers
+
+        private void PushModule()
         private void PushAnnotationSet()
         {
             crntAnnotStack.Push(crntAnnotList);
@@ -1619,14 +1624,14 @@
                 parseProgram.ModuleSendsDecl.Add(sends);
             }
 
-            //initialize the receives set for the module.
-            foreach (var rEvent in crntReceivesList)
+            //initialize the private set for the module.
+            foreach (var rEvent in crntPrivateList)
             {
-                var receives = new P_Root.ModuleReceivesDecl();
-                receives.Span = span;
-                receives.mod = (P_Root.IArgType_ModuleReceivesDecl__0)moduleDecl;
-                receives.ev = (P_Root.IArgType_ModuleReceivesDecl__1)rEvent;
-                parseProgram.ModuleReceivesDecl.Add(receives);
+                var privates = new P_Root.ModulePrivateDecl();
+                privates.Span = span;
+                privates.mod = (P_Root.IArgType_ModulePrivateDecl__0)moduleDecl;
+                privates.ev = (P_Root.IArgType_ModulePrivateDecl__1)rEvent;
+                parseProgram.ModulePrivateDecl.Add(privates);
             }
 
             //initialize the creates set for the module.
@@ -1644,7 +1649,7 @@
 
             crntInterfaceList.Clear();
             crntSendsList.Clear();
-            crntReceivesList.Clear();
+            crntPrivateList.Clear();
             crntModuleDecl = null;
         }
         private void AddMachineInterface(string name, Span nameSpan, Span span)
@@ -1999,6 +2004,13 @@
             crntStateNames.Clear();
             crntFunNames.Clear();
             crntVarNames.Clear();
+            crntObservesList.Clear();
+            crntSendsList.Clear();
+            crntPrivateList.Clear();
+            crntInterfaceList.Clear();
+            crntSpecModulesList.Clear();
+            crntModulesList.Clear();
+            crntMonitorsList.Clear();
         }
         #endregion
     }

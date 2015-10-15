@@ -225,6 +225,18 @@ namespace Microsoft.Pc
         }
     }
 
+    internal class LemmaInfo
+    {
+        public Dictionary<string, string> InterfaceToMachineMap;
+        public List<string> implementationModules;
+
+        public LemmaInfo()
+        {
+            InterfaceToMachineMap = new Dictionary<string, string>();
+            implementationModules = new List<string>();
+
+        }
+    }
     internal class EventInfo
     {
         public int maxInstances;  // -1 represents no bound

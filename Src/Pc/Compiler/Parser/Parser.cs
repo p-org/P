@@ -55,8 +55,9 @@
         private Stack<P_Root.TypeExpr> typeExprStack = new Stack<P_Root.TypeExpr>();
         private Stack<P_Root.Stmt> stmtStack = new Stack<P_Root.Stmt>();
         private Stack<P_Root.QualifiedName> groupStack = new Stack<P_Root.QualifiedName>();
-        
-        private Stack<P_Root.String> impModulesStack = new Stack<P_Root.String>();
+        private Stack<P_Root.ModuleList> moduleListStack = new Stack<P_Root.ModuleList>();
+        private Stack<P_Root.Module> moduleStack = new Stack<P_Root.Module>();
+        private Stack<P_Root.EventList> eventListStack = new Stack<P_Root.EventList>();
         private int nextReceiveLabel = 0;
 
         class LocalVarStack
@@ -276,7 +277,61 @@
 
         #region Pushers
 
-        private void PushModule()
+        private void PushModule(string name, Span nameSpan)
+        {
+            var moduleDecl = new P_Root.ModuleDecl();
+            moduleDecl.name = (P_Root.IArgType_ModuleDecl__0)MkString(name, nameSpan);
+            moduleDecl.Span = nameSpan;
+            moduleStack.Push(moduleDecl);
+        }
+
+        private void PushModuleList(Span span, bool isLast)
+        {
+            var moduleList = P_Root.MkModuleList();
+            moduleList.Span = span;
+            if (isLast)
+            {
+                Contract.Assert(moduleStack.Count > 0);
+                moduleList.mod = (P_Root.IArgType_ModuleList__0)moduleStack.Pop();
+                moduleList.tail = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            }
+            else
+            {
+                Contract.Assert(moduleStack.Count > 0);
+                Contract.Assert(moduleListStack.Count > 0);
+                moduleList.tail = (P_Root.IArgType_ModuleList__1)moduleListStack.Pop();
+                moduleList.mod = (P_Root.IArgType_ModuleList__0)moduleStack.Pop();
+            }
+
+            moduleListStack.Push(moduleList);
+        }
+
+        void PushEventList(Span span)
+        {
+            var evList = P_Root.MkEventList();
+            evList.ev = (P_Root.IArgType_EventList__0)crntEventList[0];
+            evList.tail = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            eventListStack.Push(evList);
+            crntEventList.RemoveAt(0);
+            foreach (var ev in crntEventList)
+            {
+                evList = P_Root.MkEventList();
+                evList.ev = (P_Root.IArgType_EventList__0)ev;
+                evList.tail = eventListStack.Pop();
+                eventListStack.Push(evList);
+            }
+            crntEventList.Clear();
+        }
+        void PushHideModule(Span span)
+        {
+            var hideModule = P_Root.MkHide();
+            hideModule.Span = span;
+            Contract.Assert(eventListStack.Count > 0);
+            hideModule.evL = eventListStack.Pop();
+            hideModule.modL = moduleListStack.Pop();
+            moduleStack.Push(hideModule);
+            
+        }
         private void PushAnnotationSet()
         {
             crntAnnotStack.Push(crntAnnotList);
@@ -1590,6 +1645,135 @@
             crntEventDecl = null;
         }
 
+        private void AddRefinesTest(string name, Span nameSpan, Span span)
+        {
+            if(topDeclNames.testNames.Contains(name))
+            {
+                var errFlag = new Flag(
+                                     SeverityKind.Error,
+                                     span,
+                                     Constants.BadSyntax.ToString(string.Format("A test with name {0} already declared", name)),
+                                     Constants.BadSyntax.Code,
+                                     parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+            else
+            {
+                topDeclNames.testNames.Add(name);
+            }
+
+            Contract.Assert(moduleListStack.Count() == 2);
+            var refinesDecl = P_Root.MkRefinesTestDecl();
+            refinesDecl.name = (P_Root.IArgType_RefinesTestDecl__0)MkString(name, nameSpan);
+            refinesDecl.Span = span;
+            refinesDecl.spec = moduleListStack.Pop();
+            refinesDecl.imp = moduleListStack.Pop();
+            parseProgram.RefinesTestDecl.Add(refinesDecl);
+        }
+
+        private void AddNoFailureTest(string name, Span nameSpan, Span span)
+        {
+            if (topDeclNames.testNames.Contains(name))
+            {
+                var errFlag = new Flag(
+                                     SeverityKind.Error,
+                                     span,
+                                     Constants.BadSyntax.ToString(string.Format("A test with name {0} already declared", name)),
+                                     Constants.BadSyntax.Code,
+                                     parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+            else
+            {
+                topDeclNames.testNames.Add(name);
+            }
+            Contract.Assert(moduleListStack.Count() == 1);
+            var noFailure = P_Root.MkNoFailureTestDecl();
+            noFailure.Span = span;
+            noFailure.name = (P_Root.IArgType_NoFailureTestDecl__0)MkString(name, nameSpan);
+            noFailure.imp = moduleListStack.Pop();
+            parseProgram.NoFailureTestDecl.Add(noFailure);
+        }
+
+        private void AddMonitorsTest(string name, Span nameSpan, Span span)
+        {
+            if (topDeclNames.testNames.Contains(name))
+            {
+                var errFlag = new Flag(
+                                     SeverityKind.Error,
+                                     span,
+                                     Constants.BadSyntax.ToString(string.Format("A test with name {0} already declared", name)),
+                                     Constants.BadSyntax.Code,
+                                     parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+            else
+            {
+                topDeclNames.testNames.Add(name);
+            }
+            Contract.Assert(moduleListStack.Count() == 1);
+            var monitorsTest = P_Root.MkMonitorsTestDecl();
+            monitorsTest.Span = span;
+            monitorsTest.name = (P_Root.IArgType_MonitorsTestDecl__0)MkString(name, nameSpan);
+            monitorsTest.imp = moduleListStack.Pop();
+
+            Stack<P_Root.MonitorList> monitorLStack = new Stack<P_Root.MonitorList>();
+            var monitorList = P_Root.MkMonitorList();
+            monitorList.mon = (P_Root.IArgType_MonitorList__0)crntMonitorsList[0];
+            monitorList.tail = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            monitorLStack.Push(monitorList);
+            crntMonitorsList.RemoveAt(0);
+            foreach (var mon in crntMonitorsList)
+            {
+                monitorList = P_Root.MkMonitorList();
+                monitorList.mon = (P_Root.IArgType_MonitorList__0)mon;
+                monitorList.tail = monitorLStack.Pop();
+                monitorLStack.Push(monitorList);
+            }
+            parseProgram.MonitorsTestDecl.Add(monitorsTest);
+
+            crntMonitorsList.Clear();
+        }
+
+        private void AddSpecificationList(Span span)
+        {
+            Contract.Assert(moduleListStack.Count == 1);
+            var specDecl = P_Root.MkSpecificationModules();
+            specDecl.Span = span;
+            specDecl.sL = moduleListStack.Pop();
+            parseProgram.SpecificationModules.Add(specDecl);
+        }
+
+        private void AddImplementationList(Span span)
+        {
+            Contract.Assert(moduleListStack.Count == 1);
+            var impsDecl = P_Root.MkImplementationModules();
+            impsDecl.Span = span;
+            impsDecl.mL = moduleListStack.Pop();
+            parseProgram.ImplementationModules.Add(impsDecl);
+        }
+
+        private void AddToCrntMonitorsList(string name, Span nameSpan)
+        {
+            if (crntMonitorsList.Where(n => (string)n.Symbol == name).Count() > 0)
+            {
+                var errFlag = new Flag(
+                                     SeverityKind.Error,
+                                     nameSpan,
+                                     Constants.BadSyntax.ToString(string.Format("A monitor with name {0} already in the list", name)),
+                                     Constants.BadSyntax.Code,
+                                     parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+            else
+            {
+                crntMonitorsList.Add(MkString(name, nameSpan));
+            }
+        }
         private void AddModule(string name, Span nameSpan, Span span)
         {
             var moduleDecl = GetCurrentModuleDecl(span);
@@ -2008,9 +2192,10 @@
             crntSendsList.Clear();
             crntPrivateList.Clear();
             crntInterfaceList.Clear();
-            crntSpecModulesList.Clear();
-            crntModulesList.Clear();
             crntMonitorsList.Clear();
+            eventListStack.Clear();
+            moduleListStack.Clear();
+            moduleStack.Clear();
         }
         #endregion
     }

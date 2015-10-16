@@ -75,10 +75,12 @@ domain PData
 	MonitorsTestDecl ::= fun (name: String -> imp: ModuleList, monitors: MonitorList).
 	NoFailureTestDecl ::= fun (name: String -> imp: ModuleList).
 
-	ModuleList ::= new (mod: any ModuleDecl + HideOp, tail: any ModuleList + {NIL}).
-	HideOp ::= new (evL: EventList, tail: any ModuleList).
+	ModuleList ::= new (mod: any ModuleDecl + Hide, tail: any ModuleList + {NIL}).
+	Hide ::= new (evL: EventList, modL: any ModuleList).
 	MonitorList ::= new (mon: String, tail: any MonitorList + {NIL}).
 	EventList ::= new (ev: String, tail: any EventList + {NIL}).
+
+	Module ::= ModuleDecl + Hide.
 
     /*************************************************************/
     /****************  State Machine Declarations    *************/
@@ -240,7 +242,7 @@ domain PStructuralTyping extends PData
 	
 	ModuleNotDeclared ::= (modL : ModuleList).
 	ModuleNotDeclared(modL) :- modL is ModuleList (ModuleDecl(m), NIL), no ModuleDecl(m);
-							   modL is ModuleList (m, _), m = HideOp(_, ml), ModuleNotDeclared(ml);
+							   modL is ModuleList (m, _), m = Hide(_, ml), ModuleNotDeclared(ml);
 							   modL is ModuleList (_ , ml), ml : ModuleList, ModuleNotDeclared(ml).
 	
 	CompDecls ::= ImplementationModules + SpecificationModules + RefinesTestDecl + MonitorsTestDecl.
@@ -249,29 +251,7 @@ domain PStructuralTyping extends PData
 	SubME ::= sub (c : CompDecls, me: ModuleAndEventList).
 
 	[rule_Classes = '"error, msg: module in the list is not declared"']
-	OneDeclError(x) :- SubME(x, ml), ml = ModuleList (ModuleDecl(m), NIL), no ModuleDecl(m).
-
-	/*
-	//module in ModuleList not declared
-	[rule_Classes = '"error, msg: module in the list is not declared"']
-	OneDeclError(x) :- x is ImplementationModules(ml), ModuleNotDeclared(ml);
-					   x is SpecificationModules(ml), ModuleNotDeclared(ml);
-					   x is RefinesTestDecl(_, ml, _), ModuleNotDeclared(ml); x is RefinesTestDecl(_, _, ml), ModuleNotDeclared(ml);
-					   x is MonitorsTestDecl(_, ml, _), ModuleNotDeclared(ml); x is NoFailureTestDecl(_, ml), ModuleNotDeclared(ml).
-
-	MonitorNotDeclared ::= (monL : MonitorList).
-	MonitorNotDeclared(monL) :- monL is MonitorList(m, NIL), no MachineDecl(m, _, MONITOR, _, _, _);
-								monL is MonitorList(m, ml), ml : MonitorList, MonitorNotDeclared(ml), MachineDecl(m, _, MONITOR, _, _, _).
-
-	[rule_Classes = '"error, msg: monitor in the list is not declared"']
-	OneDeclError(x) :- x is MonitorsTestDecl(_, _, ml), MonitorNotDeclared(ml).
-
-	
-	//Get all event list
-	SubEL ::= sub (ml: ModuleList, evl: EventList).
-	[rule_Classes = '"error, msg: event in hide operation is not declared"']
-	OneDeclError(x) :- SubEL(ml, el), x is ImplementationModules(ml), el = EventList(ev, _), ev : String, no EventDecl(ev, _, _).
-	*/					  
+	OneDeclError(x) :- SubME(x, ml), ml = ModuleList (ModuleDecl(m), NIL), no ModuleDecl(m).				  
 	
 }
 

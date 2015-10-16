@@ -152,15 +152,19 @@ EventAnnotOrNone
 TestDecl
 	: TEST ID ModulesList REFINES ModulesList SEMICOLON				{ AddRefinesTest($2.str, ToSpan(@2), ToSpan(@1));   }	
 	| TEST ID ModulesList SATISFIES MonitorsList SEMICOLON			{ AddMonitorsTest($2.str, ToSpan(@2), ToSpan(@1));  }
-	| TEST ID ModulesList SEMICOLON									{ AddSafetyTest($2.str, ToSpan(@2), ToSpan(@1));    }
+	| TEST ID ModulesList SEMICOLON									{ AddNoFailureTest($2.str, ToSpan(@2), ToSpan(@1));    }
 	;
 
-HideOp
-	: HIDE NonDefaultNonHaltEventList IN ModulesList					{ PushHideModule(ToSpan(@1)); }
+Hide
+	: HIDE HiddenEvents IN LPAREN ModulesList	RPAREN	{ PushHideModule(ToSpan(@1)); }
+	;
+
+HiddenEvents
+	: NonDefaultNonHaltEventList						{ PushEventList(ToSpan(@1)); }
 	;
 
 Module
-	: HideOp
+	: Hide
 	| ID															{ PushModule($1.str, ToSpan(@1)); }		
 	;
 ModulesList
@@ -175,11 +179,11 @@ MonitorsList
 
 /***************** Implementation and Specification **********/
 ImplementationDecl
-	:	IMPLEMENTATION ModulesList									{ AddImplementationList(ToSpan(@1)); }
+	:	IMPLEMENTATION ModulesList SEMICOLON								{ AddImplementationList(ToSpan(@1)); }
 	;
 
 SpecificationDecl
-	:	SPECIFICATION ModulesList									{ AddSpecificationList(ToSpan(@1));	 }
+	:	SPECIFICATION ModulesList SEMICOLON									{ AddSpecificationList(ToSpan(@1));	 }
 	;
 
 /******************* Machine Declarations *******************/

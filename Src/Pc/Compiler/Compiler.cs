@@ -23,7 +23,7 @@
         public HashSet<string> interfaceNames;
         public HashSet<string> staticFunNames;
         public HashSet<string> moduleNames;
-
+        public HashSet<string> testNames;
         public TopDeclNames()
         {
             eventNames = new HashSet<string>();
@@ -31,6 +31,7 @@
             interfaceNames = new HashSet<string>();
             staticFunNames = new HashSet<string>();
             moduleNames = new HashSet<string>();
+            testNames = new HashSet<string>();
         }
     }
 

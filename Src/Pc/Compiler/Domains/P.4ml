@@ -240,18 +240,17 @@ domain PStructuralTyping extends PData
 	[rule_Classes = '"error, msg: interface type in creates is not declared"']
 	OneDeclError(creates) :- creates is ModuleCreatesDecl(_, i), no InterfaceEventDecl(i, _).
 	
-	ModuleNotDeclared ::= (modL : ModuleList).
-	ModuleNotDeclared(modL) :- modL is ModuleList (ModuleDecl(m), NIL), no ModuleDecl(m);
-							   modL is ModuleList (m, _), m = Hide(_, ml), ModuleNotDeclared(ml);
-							   modL is ModuleList (_ , ml), ml : ModuleList, ModuleNotDeclared(ml).
-	
 	CompDecls ::= ImplementationModules + SpecificationModules + RefinesTestDecl + MonitorsTestDecl.
 	ModuleAndEventList ::= ModuleList + EventList.
 
+	//module is declared
 	SubME ::= sub (c : CompDecls, me: ModuleAndEventList).
-
 	[rule_Classes = '"error, msg: module in the list is not declared"']
-	OneDeclError(x) :- SubME(x, ml), ml = ModuleList (ModuleDecl(m), NIL), no ModuleDecl(m).				  
+	OneDeclError(c) :- SubME(c, ml), ml = ModuleList (ModuleDecl(m), NIL), no ModuleDecl(m).
+	
+	//event in hide is declared
+	[rule_Classes = '"error, msg: event used in hide operation is not declared"']
+	OneDeclError(c) :- SubME(c, ml), ml = EventList(ev, NIL), no EventDecl(ev, _, _).
 	
 }
 
@@ -270,6 +269,7 @@ domain PStaticTyping extends PData
 	conforms no LValueError(_, _).
 	conforms no BadLabelError(_).
 	conforms no DomOfMapUnSafe(_).
+	conforms no DisjointPermissions(_, _).
     /*************************************************************/
 
 	/****************************************************************/
@@ -326,7 +326,29 @@ domain PStaticTyping extends PData
 	IsEventCnst ::= (cntxt: TypingContext, expr: Typeable, paytype: TypeExpr).
 
 	/**************************************************************/
-	/*						Map from interface to machine		  */
+	/*			  Per module level typing error					*/
+	/**************************************************************/
+	Permissions ::= ModuleCreatesDecl + ModulePrivateDecl + ModuleSendsDecl + MachineImpsInterfaceDecl.
+	DisjointPermissions ::= (p1: Permissions, p2: Permissions).
+
+	
+	//sends and privates of the same module are disjoint
+	[rule_Classes = '"error, msg: sends and private of the module are not disjoint"']
+	DisjointPermissions(s, p) :- m is ModuleDecl, s is ModuleSendsDecl(m, ev), p is ModulePrivateDecl(m, ev).
+
+	//implemented interfaces in the same module are disjoint
+	[rule_Classes = '"error, msg: interface implemented by the machine is not disjoint from other implemented interfaces in the module"']
+	DisjointPermissions(mi1, mi2) :- m is ModuleDecl, id1 is MachineDecl(_, m, _, _, _, _), id2 is MachineDecl(_, m, _, _, _, _),							  id1 != id2, 
+									mi1 is MachineImpsInterfaceDecl(id1, i1), mi2 is MachineImpsInterfaceDecl(id2, i2),
+									InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev).
+
+	//interfaces in create are disjoint
+	[rule_Classes = '"error, msg: interfaces in creates list are not disjoint"']
+	DisjointPermissions(c1, c2) :- m is ModuleDecl, c1 is ModuleCreatesDecl(m, i1), c2 is ModuleCreatesDecl(m, i2),
+								   InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev).
+
+	/*************************************************************/
+	/*				Map from interface to machine		  */
 	/*************************************************************/
 	InterfaceToMachineMap ::= (ie: InterfaceType, mach: MachineDecl).
 

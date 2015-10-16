@@ -95,7 +95,7 @@ InterfaceDecl
 	;
 /***************** Module Declarations *********************/
 ModuleDecl
-	: MODULE ID Privates Sends Creates LCBRACE ModuleBody RCBRACE		{ AddModule($2.str, ToSpan(@2), ToSpan(@1));}
+	: MODULE ID Private Sends Creates LCBRACE ModuleBody RCBRACE		{ AddModule($2.str, ToSpan(@2), ToSpan(@1));}
 	;
 
 ModuleBody
@@ -108,7 +108,7 @@ Sends
 	|
 	;
 
-Privates
+Private
 	: PRIVATE NonDefaultNonHaltEventList		{ crntPrivateList.AddRange(crntEventList); crntEventList.Clear(); }
 	|
 	;

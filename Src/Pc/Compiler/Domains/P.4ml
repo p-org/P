@@ -69,14 +69,14 @@ domain PData
 	ModulePrivateDecl ::= new (mod: any ModuleDecl, ev: String).
 	ModuleCreatesDecl ::= new (mod : any ModuleDecl, ie: any InterfaceType).
 	
-	ImplementationModules ::= new (mL: ModuleList).
-	SpecificationModules ::= new (sL: ModuleList).
+	ImplementationModules ::= new (mL: any ModuleList).
+	SpecificationModules ::= new (sL: any ModuleList).
 	RefinesTestDecl ::= fun (name: String -> imp: ModuleList, spec: ModuleList).
 	MonitorsTestDecl ::= fun (name: String -> imp: ModuleList, monitors: MonitorList).
 	NoFailureTestDecl ::= fun (name: String -> imp: ModuleList).
 
 	ModuleList ::= new (mod: any ModuleDecl + Hide, tail: any ModuleList + {NIL}).
-	Hide ::= new (evL: EventList, modL: any ModuleList).
+	Hide ::= new (evL: any EventList, modL: any ModuleList).
 	MonitorList ::= new (mon: String, tail: any MonitorList + {NIL}).
 	EventList ::= new (ev: String, tail: any EventList + {NIL}).
 
@@ -240,18 +240,21 @@ domain PStructuralTyping extends PData
 	[rule_Classes = '"error, msg: interface type in creates is not declared"']
 	OneDeclError(creates) :- creates is ModuleCreatesDecl(_, i), no InterfaceEventDecl(i, _).
 	
-	CompDecls ::= ImplementationModules + SpecificationModules + RefinesTestDecl + MonitorsTestDecl.
-	ModuleAndEventList ::= ModuleList + EventList.
+	CompDecls ::= ImplementationModules + SpecificationModules + RefinesTestDecl + MonitorsTestDecl + NoFailureTestDecl.
+	ModuleOrEventOrMonitorList ::= ModuleList + EventList + MonitorList.
 
 	//module is declared
-	SubME ::= sub (c : CompDecls, me: ModuleAndEventList).
+	SubME ::= sub (c: CompDecls, mem: ModuleOrEventOrMonitorList).
 	[rule_Classes = '"error, msg: module in the list is not declared"']
-	OneDeclError(c) :- SubME(c, ml), ml = ModuleList (ModuleDecl(m), NIL), no ModuleDecl(m).
+	OneDeclError(c) :- SubME(c, ml), ml = ModuleList(ModuleDecl(m), _), no ModuleDecl(m).
 	
 	//event in hide is declared
 	[rule_Classes = '"error, msg: event used in hide operation is not declared"']
-	OneDeclError(c) :- SubME(c, ml), ml = EventList(ev, NIL), no EventDecl(ev, _, _).
+	OneDeclError(c) :- SubME(c, ml), ml = EventList(ev, _), no EventDecl(ev, _, _).
 	
+	//monitor is declared
+	[rule_Classes = '"error, msg: monitor is undeclared"']
+	OneDeclError(c) :- SubME(c, ml), ml = MonitorList(s, _), no MachineDecl(s, _, MONITOR, _, _, _).
 }
 
 domain PStaticTyping extends PData
@@ -269,7 +272,7 @@ domain PStaticTyping extends PData
 	conforms no LValueError(_, _).
 	conforms no BadLabelError(_).
 	conforms no DomOfMapUnSafe(_).
-	conforms no DisjointPermissions(_, _).
+	conforms no ModuleLevelTypingError(_, _).
     /*************************************************************/
 
 	/****************************************************************/
@@ -329,30 +332,67 @@ domain PStaticTyping extends PData
 	/*			  Per module level typing error					*/
 	/**************************************************************/
 	Permissions ::= ModuleCreatesDecl + ModulePrivateDecl + ModuleSendsDecl + MachineImpsInterfaceDecl.
-	DisjointPermissions ::= (p1: Permissions, p2: Permissions).
+	ModuleLevelTypingError ::= (p1: Permissions, p2: Permissions).
 
 	
 	//sends and privates of the same module are disjoint
 	[rule_Classes = '"error, msg: sends and private of the module are not disjoint"']
-	DisjointPermissions(s, p) :- m is ModuleDecl, s is ModuleSendsDecl(m, ev), p is ModulePrivateDecl(m, ev).
+	ModuleLevelTypingError(s, p) :- m is ModuleDecl, s is ModuleSendsDecl(m, ev), p is ModulePrivateDecl(m, ev).
 
 	//implemented interfaces in the same module are disjoint
-	[rule_Classes = '"error, msg: interface implemented by the machine is not disjoint from other implemented interfaces in the module"']
-	DisjointPermissions(mi1, mi2) :- m is ModuleDecl, id1 is MachineDecl(_, m, _, _, _, _), id2 is MachineDecl(_, m, _, _, _, _),							  id1 != id2, 
+	[rule_Classes = '"error, msg: interface is not disjoint from other implemented interfaces in the module"']
+	ModuleLevelTypingError(mi1, mi2) :- m is ModuleDecl, id1 is MachineDecl(_, m, _, _, _, _), id2 is MachineDecl(_, m, _, _, _, _), id1 != id2, 
 									mi1 is MachineImpsInterfaceDecl(id1, i1), mi2 is MachineImpsInterfaceDecl(id2, i2),
 									InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev).
 
-	//interfaces in create are disjoint
+	//interfaces in creates are disjoint
 	[rule_Classes = '"error, msg: interfaces in creates list are not disjoint"']
-	DisjointPermissions(c1, c2) :- m is ModuleDecl, c1 is ModuleCreatesDecl(m, i1), c2 is ModuleCreatesDecl(m, i2),
-								   InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev).
+	ModuleLevelTypingError(c1, c2) :- m is ModuleDecl, c1 is ModuleCreatesDecl(m, i1), c2 is ModuleCreatesDecl(m, i2),
+								   InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev), i1 != i2.
+
+	//if a create interface is implemented then they are either disjoint or subset related
+	DisjointOrEqualIType  ::= (i1: InterfaceType, i2: InterfaceType).
+	DisjointOrEqualIType(i1, i2) :- InterfaceEventDecl(i1, _), InterfaceEventDecl(i2, _), count({ ev | InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev)}) = 0;
+							   InterfaceEventDecl(i1, _), InterfaceEventDecl(i2, _), count({ ev1 | InterfaceEventDecl(i1, ev1), no InterfaceEventDecl(i2, ev1)}) = 0, 
+							   count({ ev2 | InterfaceEventDecl(i2, ev2), no InterfaceEventDecl(i1, ev2)}) = 0.
+
+	[rule_Classes = '"error, msg: implemented interface type is not equal/disjoint to/from the interface type in creates"']
+	ModuleLevelTypingError(mi1, c) :- m is ModuleDecl, id1 is MachineDecl(_, m, _, _, _, _), mi1 is MachineImpsInterfaceDecl(id1, i1), 
+									  c is ModuleCreatesDecl(m, i2), no DisjointOrEqualIType(i1, i2). 
+
+	//private event should be present in one of the implemented interfaces
+	[rule_Classes = '"error, msg: private event should be present in one of the implemented interfaces"']
+	ModuleLevelTypingError(p, p) :- m is ModuleDecl, p is ModulePrivateDecl(m, ev), count({mi | id1 is MachineDecl(_, m, _, _, _, _),
+								 mi is MachineImpsInterfaceDecl(id1, i1), InterfaceEventDecl(i1, ev)}) = 0.
+	
+	//interface with private event must be present in the creates list.
+	[rule_Classes = '"error, msg: interface with private event must be present in the creates list"']
+	ModuleLevelTypingError(mi, p) :- m is ModuleDecl, p is ModulePrivateDecl(m, ev), mi is MachineImpsInterfaceDecl(id1, i1), 
+								  InterfaceEventDecl(i1, ev), no ModuleCreatesDecl(m, i1).
+
+	//get all the modules list that should be checked for compatibility and composed.
+	//ImplementationModules + SpecificationModules + RefinesTestDecl + MonitorsTestDecl + NoFailureTestDecl.
+	ComposedModules ::= (m: ModuleList).
+	ComposedModules(mL) :- NoFailureTestDecl(_, mL);
+						   MonitorsTestDecl(_, mL, _);
+						   RefinesTestDecl(_, mL, _); RefinesTestDecl(_, _, mL);
+						   SpecificationModules(mL);
+						   ImplementationModules(mL).
 
 	/*************************************************************/
-	/*				Map from interface to machine		  */
+	/*				Map from interface to machine				 */
 	/*************************************************************/
-	InterfaceToMachineMap ::= (ie: InterfaceType, mach: MachineDecl).
+	InterfaceToMachineMap ::= (modL: ModuleList, ie: InterfaceType, mach: MachineDecl).
 
-	InterfaceToMachineMap(newI, mach) :-  newI = InterfaceType(_), MachineImpsInterfaceDecl(mach, ImpI), SubSetRelation(newI, ImpI).
+	//get modules in moduleList 
+	SubModule ::= sub (modL: ModuleList, mod: ModuleDecl).
+	//InterfaceTyoes are equal
+	EqualIType ::= (i1: InterfaceType, i2: InterfaceType).
+	EqualIType(i1, i2) :- InterfaceEventDecl(i1, _), InterfaceEventDecl(i2, _), count({ ev1 | InterfaceEventDecl(i1, ev1), no InterfaceEventDecl(i2, ev1)}) = 0, 
+						  count({ ev2 | InterfaceEventDecl(i2, ev2), no InterfaceEventDecl(i1, ev2)}) = 0.
+	//compute the interface map
+	InterfaceToMachineMap(modL, i1, mach) :-  modL: ModuleList, ComposedModules(modL), SubModule(modL, m1), SubModule(modL, m2), ModuleCreatesDecl(m1, i1),
+											  MachineImpsInterfaceDecl(mach, i2), EqualIType(i1, i2).
 
     /*************************************************************/
     /*                      Types of Expressions                 */
@@ -425,14 +465,13 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Cast can never succeed"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2), TypeRel(t1, t2, k), k = EMPTY.
 
-	[ rule_Classes = '"error, msg: Problem !! "']
-    TypeOf(c, e, t)   :- SubSE(c, e), e = New(n, _), ModuleCreatesDecl(c.owner.mod, t), t = InterfaceType(n), InterfaceToMachineMap(t, m), m is MachineDecl.
+    TypeOf(c, e, t)   :- SubSE(c, e), e = New(n, _), ModuleCreatesDecl(c.owner.mod, t), t = InterfaceType(n).
 
 	[ rule_Classes = '"error, msg: Monitors cannot be created with "new""']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), MachineDecl(n, _, MONITOR, _, _, _).
 
-	[ rule_Classes = '"error, msg: Interface is not in the creates set of the module"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), no ModuleCreatesDecl(c.owner.mod, InterfaceType(n)), no MachineDecl(n, _, MONITOR, _, _, _).
+	[ rule_Classes = '"error, msg: created interface is not in the creates list of the module"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), no ModuleCreatesDecl(c.owner.mod, InterfaceType(n)).
 	
     TypeOf(c, e, t2)               :- TypeOfArg2(c, e, _, t2), e : Field, t2 != ERROR.
 	[ rule_Classes = '"error, msg: Bad field name"']
@@ -544,12 +583,12 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: "while (...)" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : While, t1 != BaseType(BOOL).
                
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _), ModuleCreatesDecl(c.owner.mod, t), t = InterfaceType(n), InterfaceToMachineMap(t, _).
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _), ModuleCreatesDecl(c.owner.mod, t), t = InterfaceType(n).
 	
 	TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _), MachineDecl(n, _, MONITOR, _, _, _).
 
 	[ rule_Classes = '"error, msg: Interface is not in the creates set of the module"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _), no ModuleCreatesDecl(c.owner.mod, InterfaceType(n)), no MachineDecl(n, _, MONITOR, _, _, _).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _), no ModuleCreatesDecl(c.owner.mod, InterfaceType(n)).
 
 
 	//// Rules for raise.

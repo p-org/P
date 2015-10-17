@@ -603,7 +603,7 @@
             AddErrors(task.Result, "DeclFunError(_, _)", errors, 1);
 
             //// Enumerate module system typing errors
-            AddErrors(task.Result, "DisjointPermissions(_, _)", errors, 0);
+            AddErrors(task.Result, "ModuleLevelTypingError(_, _)", errors, 0);
 
             if (Options.printTypeInference)
             {

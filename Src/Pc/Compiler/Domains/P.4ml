@@ -269,7 +269,7 @@ domain PStaticTyping extends PData
 	conforms no LValueError(_, _).
 	conforms no BadLabelError(_).
 	conforms no DomOfMapUnSafe(_).
-	conforms no DisjointPermissions(_, _).
+	conforms no ModuleLevelTypingError(_, _).
     /*************************************************************/
 
 	/****************************************************************/
@@ -329,30 +329,54 @@ domain PStaticTyping extends PData
 	/*			  Per module level typing error					*/
 	/**************************************************************/
 	Permissions ::= ModuleCreatesDecl + ModulePrivateDecl + ModuleSendsDecl + MachineImpsInterfaceDecl.
-	DisjointPermissions ::= (p1: Permissions, p2: Permissions).
+	ModuleLevelTypingError ::= (p1: Permissions, p2: Permissions).
 
 	
 	//sends and privates of the same module are disjoint
 	[rule_Classes = '"error, msg: sends and private of the module are not disjoint"']
-	DisjointPermissions(s, p) :- m is ModuleDecl, s is ModuleSendsDecl(m, ev), p is ModulePrivateDecl(m, ev).
+	ModuleLevelTypingError(s, p) :- m is ModuleDecl, s is ModuleSendsDecl(m, ev), p is ModulePrivateDecl(m, ev).
 
 	//implemented interfaces in the same module are disjoint
 	[rule_Classes = '"error, msg: interface implemented by the machine is not disjoint from other implemented interfaces in the module"']
-	DisjointPermissions(mi1, mi2) :- m is ModuleDecl, id1 is MachineDecl(_, m, _, _, _, _), id2 is MachineDecl(_, m, _, _, _, _),							  id1 != id2, 
+	ModuleLevelTypingError(mi1, mi2) :- m is ModuleDecl, id1 is MachineDecl(_, m, _, _, _, _), id2 is MachineDecl(_, m, _, _, _, _), id1 != id2, 
 									mi1 is MachineImpsInterfaceDecl(id1, i1), mi2 is MachineImpsInterfaceDecl(id2, i2),
 									InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev).
 
 	//interfaces in create are disjoint
 	[rule_Classes = '"error, msg: interfaces in creates list are not disjoint"']
-	DisjointPermissions(c1, c2) :- m is ModuleDecl, c1 is ModuleCreatesDecl(m, i1), c2 is ModuleCreatesDecl(m, i2),
+	ModuleLevelTypingError(c1, c2) :- m is ModuleDecl, c1 is ModuleCreatesDecl(m, i1), c2 is ModuleCreatesDecl(m, i2),
 								   InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev).
 
-	/*************************************************************/
-	/*				Map from interface to machine		  */
-	/*************************************************************/
-	InterfaceToMachineMap ::= (ie: InterfaceType, mach: MachineDecl).
+	//if a create interface is implemented then they are either disjoint or subset related
+	DisjointOrEqual  ::= (i1: InterfaceType, i2: InterfaceType).
+	DisjointOrEqual(i1, i2) :- InterfaceEventDecl(i1, _), InterfaceEventDecl(i2, _), count({ ev | InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev)}) = 0;
+							   InterfaceEventDecl(i1, _), InterfaceEventDecl(i2, _), count({ ev1 | InterfaceEventDecl(i1, ev1), no InterfaceEventDecl(i2, ev1)}) = 0, 
+							   count({ ev2 | InterfaceEventDecl(i2, ev2), no InterfaceEventDecl(i1, ev2)}) = 0.
 
-	InterfaceToMachineMap(newI, mach) :-  newI = InterfaceType(_), MachineImpsInterfaceDecl(mach, ImpI), SubSetRelation(newI, ImpI).
+	[rule_Classes = '"error, msg: implemented interface type is not equal/disjoint to/from the interface type in creates"']
+	ModuleLevelTypingError(mi1, c) :- m is ModuleDecl, id1 is MachineDecl(_, m, _, _, _, _), mi1 is MachineImpsInterfaceDecl(id1, i1), 
+								   c is ModuleCreatesDecl(m, i2), DisjointOrEqual(i1, i2). 
+
+	//private event should be present in one of the implemented interfaces
+	[rule_Classes = '"error, msg: private event should be present in one of the implemented interfaces"']
+	ModuleLevelTypingError(p, p) :- m is ModuleDecl, p is ModulePrivateDecl(m, ev), count({mi | id1 is MachineDecl(_, m, _, _, _, _),
+								 mi is MachineImpsInterfaceDecl(id1, i1), InterfaceEventDecl(i1, ev)}) = 0.
+	
+	//interface with private event must be present in the creates list.
+	[rule_Classes = '"error, msg: interface with private event must be present in the creates list"']
+	ModuleLevelTypingError(mi, p) :- m is ModuleDecl, p is ModulePrivateDecl(m, ev), mi is MachineImpsInterfaceDecl(id1, i1), 
+								  InterfaceEventDecl(i1, ev), no ModuleCreatesDecl(m, i1).
+
+	/*************************************************************/
+	/*				Map from interface to machine				 */
+	/*************************************************************/
+	InterfaceToMachineMap ::= (modL: ModuleList, ie: InterfaceType, mach: MachineDecl).
+
+	//get modules in moduleList 
+	SubModule ::= sub (modL : ModuleList, mod: ModuleDecl).
+
+	//compute the interface map
+	InterfaceToMachineMap(modL, newI, mach) :-  SubModule(modL, m1), SubModule(modL, m2), newI = InterfaceType(_), MachineImpsInterfaceDecl(mach, ImpI), SubSetRelation(newI, ImpI).
 
     /*************************************************************/
     /*                      Types of Expressions                 */

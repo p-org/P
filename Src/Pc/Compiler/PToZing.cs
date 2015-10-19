@@ -191,6 +191,78 @@ namespace Microsoft.Pc
 
     enum MonitorType { SAFETY, FINALLY, REPEATEDLY };
 
+    internal class ModuleListInfo
+    {
+        public Dictionary<string, string> interfaceToMachineMap;
+        public Dictionary<AST<Node>, List<string>> moduleHiddenEvents;
+        public ModuleListInfo()
+        {
+            //interface name to machine name
+            interfaceToMachineMap = new Dictionary<string, string>();
+           //module to hidden events
+            moduleHiddenEvents = new Dictionary<AST<Node>, List<string>>();
+        }
+    }
+
+    internal class ModuleInfo
+    {
+        public Dictionary<AST<Node>, HashSet<string>> modulePrivateEvents;
+        public Dictionary<AST<Node>, HashSet<string>> moduleSendsEvents;
+        public List<string> allMachineNames;
+        public ModuleInfo()
+        {
+            //module to private events
+            modulePrivateEvents = new Dictionary<AST<Node>, HashSet<string>>();
+            //module to sends events
+            moduleSendsEvents = new Dictionary<AST<Node>, HashSet<string>>();
+            //names of all the machines inside the module
+            allMachineNames = new List<string>();
+        }
+    }
+    internal class RefinesTestInfo
+    {
+        public AST<Node> impModList;
+        public AST<Node> specModList;
+        public RefinesTestInfo(AST<Node> imp, AST<Node> spec)
+        {
+            impModList = imp;
+            specModList = spec;
+        }
+    }
+
+    internal class MonitorsTestInfo
+    {
+        public AST<Node> impModList;
+        public List<string> monitorsName;
+        public MonitorsTestInfo(AST<Node> imp, List<string> mon)
+        {
+            impModList = imp;
+            monitorsName = mon;
+        }
+    }
+
+    internal class NoFailuresTestInfo
+    {
+        public AST<Node> impModList;
+        public NoFailuresTestInfo(AST<Node> imp)
+        {
+            impModList = imp;
+        }
+    }
+    
+    internal class AllTestCasesInfo
+    {
+        public Dictionary<string, RefinesTestInfo> allRefinesTests;
+        public Dictionary<string, MonitorsTestInfo> allMonitorsTests;
+        public Dictionary<string, NoFailuresTestInfo> allNoFailureTests;
+
+        public AllTestCasesInfo()
+        {
+            allMonitorsTests = new Dictionary<string, MonitorsTestInfo>();
+            allNoFailureTests = new Dictionary<string, NoFailuresTestInfo>();
+            allRefinesTests = new Dictionary<string, RefinesTestInfo>();
+        }
+    }
     internal class MachineInfo
     {
         public bool IsReal { get { return type == "REAL"; } }
@@ -207,7 +279,7 @@ namespace Microsoft.Pc
         public Dictionary<string, FunInfo> funNameToFunInfo;
         public MonitorType monitorType;
         public string interfaceTypeName;
-        public string moduleName;
+        public FuncTerm module;
 
         public MachineInfo()
         {
@@ -306,6 +378,10 @@ namespace Microsoft.Pc
         public Dictionary<string, MachineInfo> allMachines;
         public Dictionary<string, FunInfo> allStaticFuns;
         public Dictionary<string, List<string>> allInterfaces;
+        public Dictionary<AST<Node>, ModuleListInfo> allModuleLists;
+        public AllTestCasesInfo allTestCasesInfo;
+        public Dictionary<AST<Node>, ModuleInfo> allModules;
+
         public string mainMachineName;
         private Dictionary<AST<Node>, string> anonFunToName;
 
@@ -333,6 +409,44 @@ namespace Microsoft.Pc
             FuncTerm machineDecl = (FuncTerm)GetArgByIndex(ft, index);
             var machineName = GetName(machineDecl, 0);
             return machineName;
+        }
+
+        public List<FuncTerm> GetModulesFromModuleList(FuncTerm ft)
+        {
+            var iter = ft;
+            List<FuncTerm> modules = new List<FuncTerm>();
+            Contract.Assert(((Id)ft.Function).Name == "ModuleList");
+            while (true)
+            {
+                modules.Add(GetArgByIndex(iter, 0) as FuncTerm);
+                var arg2 = GetArgByIndex(iter, 1);
+                if (arg2 is Id && (arg2 as Id).Name == "NIL")
+                {
+                    break;
+                }
+                iter = (FuncTerm)arg2;
+            }
+
+            return modules;
+        }
+
+        public List<string> GetEventsFrom(FuncTerm ft)
+        {
+            var iter = ft;
+            List<string> events = new List<string>();
+            Contract.Assert(((Id)ft.Function).Name == "EventList");
+            while (true)
+            {
+                events.Add(GetName(iter, 0));
+                var arg2 = GetArgByIndex(iter, 1);
+                if (arg2 is Id && (arg2 as Id).Name == "NIL")
+                {
+                    break;
+                }
+                iter = (FuncTerm)arg2;
+            }
+
+            return events;
         }
 
         Dictionary<string, int> uniqIDCounters = new Dictionary<string, int>();
@@ -381,6 +495,10 @@ namespace Microsoft.Pc
             allMachines = new Dictionary<string, MachineInfo>();
             allStaticFuns = new Dictionary<string, FunInfo>();
             allInterfaces = new Dictionary<string, List<string>>();
+            allModuleLists = new Dictionary<AST<Node>, ModuleListInfo>();
+            allTestCasesInfo = new AllTestCasesInfo();
+            allModules = new Dictionary<AST<Node>, ModuleInfo>();
+
             LinkedList<AST<FuncTerm>> terms;
 
             terms = GetBin(factBins, "EventDecl");
@@ -408,6 +526,16 @@ namespace Microsoft.Pc
                 }
             }
 
+            //add module
+            terms = GetBin(factBins, "ModuleDecl");
+            foreach(var term in terms)
+            {
+                allModules[term] = new ModuleInfo();
+            }
+            //initialize sends for each module
+
+            //initialize privates for each module
+
             terms = GetBin(factBins, "MachineDecl");
             foreach (var term in terms)
             {
@@ -417,7 +545,12 @@ namespace Microsoft.Pc
                     var machineName = ((Cnst)it.Current).GetStringValue();
                     allMachines[machineName] = new MachineInfo();
                     it.MoveNext();
-                    allMachines[machineName].moduleName = GetName((FuncTerm)it.Current, 0);
+                    allMachines[machineName].module = (it.Current as FuncTerm);
+                    
+                    //add machine to the module list
+                    var astFuncTerm = Factory.Instance.ToAST(it.Current);
+                    allModules[astFuncTerm].allMachineNames.Add(machineName);
+
                     it.MoveNext();
                     allMachines[machineName].type = ((Id)it.Current).Name;
                     it.MoveNext();
@@ -439,6 +572,7 @@ namespace Microsoft.Pc
                 }
             }
 
+            
             terms = GetBin(factBins, "ObservesDecl");
             foreach (var term in terms)
             {
@@ -486,6 +620,62 @@ namespace Microsoft.Pc
                     allMachines[machineName].interfaceTypeName = ((Cnst)it.Current).GetStringValue();
                 }
             }
+
+            //populate refines test information
+            terms = GetBin(factBins, "RefinesTestDecl");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var testName = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var impList = Factory.Instance.ToAST(it.Current);
+                    //add modulelist
+                    allModuleLists[impList] = new ModuleListInfo();
+                    it.MoveNext();
+                    var specList = Factory.Instance.ToAST(it.Current);
+                    //add modulelist
+                    allModuleLists[specList] = new ModuleListInfo();
+                    allTestCasesInfo.allRefinesTests[testName] = new RefinesTestInfo(impList, specList);
+                }
+            }
+
+            //populate monitors test information
+            terms = GetBin(factBins, "MonitorsTestDecl");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var testName = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var impList = Factory.Instance.ToAST(it.Current);
+                    //add modulelist
+                    allModuleLists[impList] = new ModuleListInfo();
+
+                    it.MoveNext();
+                    var monList = (FuncTerm)it.Current;
+                    allTestCasesInfo.allMonitorsTests[testName] = new MonitorsTestInfo(impList, GetMonitors(monList));
+                }
+            }
+
+            //populate no failures test information
+            terms = GetBin(factBins, "NoFailureTestDecl");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var testName = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var impList = Factory.Instance.ToAST(it.Current);
+                    //add modulelist
+                    allModuleLists[impList] = new ModuleListInfo();
+                    allTestCasesInfo.allNoFailureTests[testName] = new NoFailuresTestInfo(impList);
+                }
+            }
+
 
             terms = GetBin(factBins, "VarDecl");
             foreach (var term in terms)
@@ -892,17 +1082,16 @@ namespace Microsoft.Pc
             terms = GetBin(factBins, "InterfaceToMachineMap");
             foreach (var term in terms)
             {
-                
+
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    FuncTerm moduleList = (FuncTerm)it.Current;
+                    var moduleList = Factory.Instance.ToAST(it.Current);
                     it.MoveNext();
-                    FuncTerm interfaceType = (FuncTerm)it.Current;
-                    Console.WriteLine(GetName(interfaceType, 0));
+                    string interfaceName = GetName(it.Current as FuncTerm, 0);
                     it.MoveNext();
-                    FuncTerm machineDecl = (FuncTerm)it.Current;
-                    Console.WriteLine(GetName(machineDecl, 0));
+                    string machineName = GetName(it.Current as FuncTerm, 0);
+                    allModuleLists[moduleList].interfaceToMachineMap.Add(interfaceName, machineName);
                 }
             }
 
@@ -981,6 +1170,24 @@ namespace Microsoft.Pc
             }
 
             throw new InvalidOperationException();
+        }
+
+        public List<string> GetMonitors(FuncTerm mon)
+        {
+            var monList = mon;
+            List<string> monitors = new List<string>();
+            Contract.Assert(((Id)mon.Function).Name == "MonitorList");
+            while (true)
+            {
+                monitors.Add(GetName(monList, 0));
+                var arg2 = GetArgByIndex(monList, 1);
+                if(arg2 is Id && (arg2 as Id).Name == "NIL")
+                {
+                    break;
+                }
+                monList = (FuncTerm)arg2;
+            }
+            return monitors;
         }
 
         public static string GetName(FuncTerm ft, int nameIndex)
@@ -2595,7 +2802,8 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldNew(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
-            var typeName = GetName(ft, 0);
+            var interfaceName = GetName(ft, 0);
+            var typeName = allModuleLists.First().Value.interfaceToMachineMap[interfaceName];
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();

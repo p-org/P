@@ -71,9 +71,9 @@ domain PData
 	
 	ImplementationModules ::= new (mL: any ModuleList).
 	SpecificationModules ::= new (sL: any ModuleList).
-	RefinesTestDecl ::= fun (name: String -> imp: ModuleList, spec: ModuleList).
-	MonitorsTestDecl ::= fun (name: String -> imp: ModuleList, monitors: MonitorList).
-	NoFailureTestDecl ::= fun (name: String -> imp: ModuleList).
+	RefinesTestDecl ::= fun (name: String -> imp: any ModuleList, spec: any ModuleList).
+	MonitorsTestDecl ::= fun (name: String -> imp: any ModuleList, monitors: any MonitorList).
+	NoFailureTestDecl ::= fun (name: String -> imp: any ModuleList).
 
 	ModuleList ::= new (mod: any ModuleDecl + Hide, tail: any ModuleList + {NIL}).
 	Hide ::= new (evL: any EventList, modL: any ModuleList).
@@ -382,7 +382,7 @@ domain PStaticTyping extends PData
 	/*************************************************************/
 	/*				Map from interface to machine				 */
 	/*************************************************************/
-	InterfaceToMachineMap ::= (modL: ModuleList, ie: InterfaceType, mach: MachineDecl).
+	InterfaceToMachineMap ::= (ml: ModuleList, ie: InterfaceType, mach: MachineDecl).
 
 	//get modules in moduleList 
 	SubModule ::= sub (modL: ModuleList, mod: ModuleDecl).
@@ -391,8 +391,12 @@ domain PStaticTyping extends PData
 	EqualIType(i1, i2) :- InterfaceEventDecl(i1, _), InterfaceEventDecl(i2, _), count({ ev1 | InterfaceEventDecl(i1, ev1), no InterfaceEventDecl(i2, ev1)}) = 0, 
 						  count({ ev2 | InterfaceEventDecl(i2, ev2), no InterfaceEventDecl(i1, ev2)}) = 0.
 	//compute the interface map
-	InterfaceToMachineMap(modL, i1, mach) :-  modL: ModuleList, ComposedModules(modL), SubModule(modL, m1), SubModule(modL, m2), ModuleCreatesDecl(m1, i1),
-											  MachineImpsInterfaceDecl(mach, i2), EqualIType(i1, i2).
+	InterfaceToMachineMap(ml, i1, mach) :-  ComposedModules(ml), SubModule(ml, m1), SubModule(ml, m2), ModuleCreatesDecl(m1, i1), mach is MachineDecl(_, m2, _, _, _, _), MachineImpsInterfaceDecl(mach, i2), EqualIType(i1, i2).
+
+
+
+	/*********  Check if Composed modules are compatible *********/
+	
 
     /*************************************************************/
     /*                      Types of Expressions                 */

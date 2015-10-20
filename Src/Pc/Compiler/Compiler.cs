@@ -401,31 +401,39 @@
 
             AST<Model> zingModel = MkZingOutputModel();
 
+            
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
-            string zingFileName = fileName + ".zing";
-            string dllFileName = fileName + ".dll";           
+            List<string> FileNames = new List<string>();
+                      
             string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
 
-            new PToZing(this, AllModels, (AST<Model>)modelWithTypes).GenerateZing(zingFileName, ref zingModel);
+            new PToZing(this, AllModels, (AST<Model>)modelWithTypes).GenerateZing(ref FileNames, ref zingModel);
 
             if (!PrintZingFile(zingModel, CompilerEnv, outputDirName))
                 return false;
             var binPath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
-            var zcProcessInfo = new System.Diagnostics.ProcessStartInfo(Path.Combine(binPath.FullName, "zc.exe"));
-            string zingFileNameFull = Path.Combine(outputDirName, zingFileName);
-            zcProcessInfo.Arguments = string.Format("/nowarn:292 /out:{0}\\{1} {2}", outputDirName, dllFileName, zingFileNameFull);
-            zcProcessInfo.UseShellExecute = false;
-            zcProcessInfo.CreateNoWindow = true;
-            zcProcessInfo.RedirectStandardOutput = true;
-            Console.WriteLine("Compiling {0} to {1} ...", zingFileName, dllFileName);
-            var zcProcess = System.Diagnostics.Process.Start(zcProcessInfo);
-            zcProcess.WaitForExit();
-            if(zcProcess.ExitCode != 0)
+            foreach (var File in FileNames)
             {
-                Console.WriteLine("Zc failed to compile the generated code :");
-                Console.WriteLine(zcProcess.StandardOutput.ReadToEnd());
-                return false;
+                var zcProcessInfo = new System.Diagnostics.ProcessStartInfo(Path.Combine(binPath.FullName, "zc.exe"));
+                string zFile = File + ".zing";
+                string zingFileNameFull = Path.Combine(outputDirName, zFile);
+                string dllFileName = File + ".dll"; 
+                zcProcessInfo.Arguments = string.Format("/nowarn:292 /out:{0}\\{1} {2}", outputDirName, dllFileName, zingFileNameFull);
+                zcProcessInfo.UseShellExecute = false;
+                zcProcessInfo.CreateNoWindow = true;
+                zcProcessInfo.RedirectStandardOutput = true;
+                Console.WriteLine("Compiling {0} to {1} ...", zFile, dllFileName);
+                var zcProcess = System.Diagnostics.Process.Start(zcProcessInfo);
+                zcProcess.WaitForExit();
+                if (zcProcess.ExitCode != 0)
+                {
+                    Console.WriteLine("Zc failed to compile the generated code :");
+                    Console.WriteLine(zcProcess.StandardOutput.ReadToEnd());
+                    return false;
+                }
             }
+
+
             return true;
         }
 

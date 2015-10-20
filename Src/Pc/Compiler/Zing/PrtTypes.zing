@@ -46,7 +46,51 @@ class PRT_TYPE {
 		type.codType = null;
 		return type;
     }
-
+	static void NoPrivateInterface(PRT_TYPE t, SM_EVENT_SET hp)
+	{
+		PRT_TYPE_KIND kind = t.typeKind;
+		int i;
+		if(
+		kind == PRT_TYPE_KIND.PRT_KIND_BOOL ||
+		kind == PRT_TYPE_KIND.PRT_KIND_EVENT ||
+		kind == PRT_TYPE_KIND.PRT_KIND_REAL ||
+		kind == PRT_TYPE_KIND.PRT_KIND_INT)
+		{
+			return;
+		}
+		
+		if(kind == PRT_TYPE_KIND.PRT_KIND_SEQ)
+		{
+			NoPrivateInterface(t.innerType, hp);
+		}
+		if(kind == PRT_TYPE_KIND.PRT_KIND_TUPLE || kind == PRT_TYPE_KIND.PRT_KIND_NMDTUP)
+		{
+			i = 0;
+			while (i < t.arity)
+			{
+ 				NoPrivateInterface(t.fieldTypes[i], hp);
+				i = i + 1;
+			}
+		}
+		if (kind == PRT_TYPE_KIND.PRT_KIND_MAP)
+		{
+			NoPrivateInterface(t.domType, hp);
+			NoPrivateInterface(t.codType, hp);
+		}
+		if(kind == PRT_TYPE_KIND.PRT_KIND_INTERFACE)
+		{
+			foreach(SM_EVENT e in t.interfaceSet)
+			{
+				if(e in hp)
+				{
+					trace("Payload type has an interface with hidden or private event.\n");
+					trace("Private Event {0}", e.name);
+					assert(false);
+				}
+			}
+		}
+		
+	}
     static PRT_TYPE PrtMkPrimitiveType(PRT_TYPE_KIND primType) {
         PRT_TYPE type;
 		type = BuildDefault(primType);

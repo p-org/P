@@ -360,13 +360,13 @@ domain PStaticTyping extends PData
 	ModuleLevelTypingError(mi1, c) :- m is ModuleDecl, id1 is MachineDecl(_, m, _, _, _, _), mi1 is MachineImpsInterfaceDecl(id1, i1), 
 									  c is ModuleCreatesDecl(m, i2), no DisjointOrEqualIType(i1, i2). 
 
-	//private event should be present in one of the implemented interfaces
-	[rule_Classes = '"error, msg: private event should be present in one of the implemented interfaces"']
+	//private event must be present in one of the implemented interfaces
+	[rule_Classes = '"error, msg: all private events must be present in one of the implemented interfaces"']
 	ModuleLevelTypingError(p, p) :- m is ModuleDecl, p is ModulePrivateDecl(m, ev), count({mi | id1 is MachineDecl(_, m, _, _, _, _),
 								 mi is MachineImpsInterfaceDecl(id1, i1), InterfaceEventDecl(i1, ev)}) = 0.
 	
 	//interface with private event must be present in the creates list.
-	[rule_Classes = '"error, msg: interface with private event must be present in the creates list"']
+	[rule_Classes = '"error, msg: implemented interface with private event must be present in the creates list"']
 	ModuleLevelTypingError(mi, p) :- m is ModuleDecl, p is ModulePrivateDecl(m, ev), mi is MachineImpsInterfaceDecl(id1, i1), 
 								  InterfaceEventDecl(i1, ev), no ModuleCreatesDecl(m, i1).
 
@@ -395,9 +395,13 @@ domain PStaticTyping extends PData
 
 
 
-	/*********  Check if Composed modules are compatible *********/
+	/************************************************************/
+	/*			Compute the hidden events per module			*/
+	/************************************************************/
+	HiddenEvents ::= (mdl: ModuleList, md: ModuleDecl, evl : EventList).
+	SubHide ::= sub (mdl : ModuleList, h: Hide).
+	HiddenEvents(ml, mod, evl) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), SubModule(hml, mod).
 	
-
     /*************************************************************/
     /*                      Types of Expressions                 */
     /*************************************************************/

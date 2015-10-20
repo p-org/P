@@ -108,7 +108,14 @@ class PRT_VALUE {
 			trace(")");
 		}
 	}
-
+	static void PrtAssertIsLegalPayload(SM_EVENT ev, PRT_VALUE p, SM_EVENT_SET hpset)
+	{
+		if(!(ev in hpset))
+		{
+			PRT_TYPE.NoPrivateInterface(p.type, hpset);
+		}
+	}
+	
     static PRT_VALUE PrtMkDefaultValue(PRT_TYPE type) {
         int i;
         PRT_VALUE value;

@@ -87,7 +87,7 @@ domain PData
     /*************************************************************/
 
     EventDecl      ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
-    MachineDecl    ::= fun (name: String, mod: any ModuleDecl -> kind: { REAL, MODEL, MONITOR }, card: any QueueConstraint, start: any QualifiedName, isMain: Boolean).
+    MachineDecl    ::= fun (name: String, mod: any ModuleDecl + {NIL} -> kind: { REAL, MODEL, MONITOR }, card: any QueueConstraint, start: any QualifiedName, isMain: Boolean).
 
 	ObservesDecl   ::= new (monitor: MachineDecl, ev: String).
 
@@ -255,6 +255,11 @@ domain PStructuralTyping extends PData
 	//monitor is declared
 	[rule_Classes = '"error, msg: monitor is undeclared"']
 	OneDeclError(c) :- SubME(c, ml), ml = MonitorList(s, _), no MachineDecl(s, _, MONITOR, _, _, _).
+
+	//only one liveness monitor is allowed per test case
+	[ rule_Classes = '"error, msg: multiple liveness monitors declared in the test-case"']
+	OneDeclError(c) :- SubME(c, ml1), SubME(c, ml2), ml1 = MonitorList(s1, _), ml2 = MonitorList(s2, _), s1 != s2, 
+					   mach1 = MachineDecl(s1, _, MONITOR, _, _, _),  mach2 = MachineDecl(s2, _, MONITOR, _, _, _), StateDecl(_, mach1, _, _, k1), k1 != WARM, StateDecl(_, mach2, _, _, k2), k2 != WARM.
 }
 
 domain PStaticTyping extends PData
@@ -593,10 +598,11 @@ domain PStaticTyping extends PData
                
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _), ModuleCreatesDecl(c.owner.mod, t), t = InterfaceType(n).
 	
-	TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _), MachineDecl(n, _, MONITOR, _, _, _).
-
-	[ rule_Classes = '"error, msg: Interface is not in the creates set of the module"']
+	[ rule_Classes = '"error, msg: interface is not in the creates set of the module"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _), no ModuleCreatesDecl(c.owner.mod, InterfaceType(n)).
+
+	[ rule_Classes = '"error, msg: monitor cannot be created dynamically using new"']
+	TypeOf(c, e, ERROR)              :- SubSE(c, e), e = NewStmt(n, _), MachineDecl(n, _, MONITOR, _, _, _).
 
 
 	//// Rules for raise.

@@ -1733,6 +1733,7 @@
                 monitorList.tail = monitorLStack.Pop();
                 monitorLStack.Push(monitorList);
             }
+            monitorsTest.monitors = monitorLStack.Pop();
             parseProgram.MonitorsTestDecl.Add(monitorsTest);
 
             crntMonitorsList.Clear();
@@ -1860,7 +1861,8 @@
                 kind = P_Root.UserCnstKind.REAL;
             }
             machDecl.kind = MkUserCnst(kind, span);
-            machDecl.mod = GetCurrentModuleDecl(span);
+            if (kind != P_Root.UserCnstKind.MONITOR)
+                machDecl.mod = GetCurrentModuleDecl(span);
 
             if (kind == P_Root.UserCnstKind.MONITOR)
             {
@@ -2075,6 +2077,7 @@
                                         MkString(string.Empty, span),
                                         MkUserCnst(P_Root.UserCnstKind.NIL, span));
             crntMachDecl.start.Span = span;
+            crntMachDecl.mod = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             return crntMachDecl;
         }
 

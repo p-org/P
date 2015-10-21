@@ -6,7 +6,7 @@ interface K1 a;
 interface K2 y, x;
 
 test t1 Mod1, Mod2;
-test t2 Mod2;
+implementation Mod1, Mod2;
 
 module Mod1
 private a

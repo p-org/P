@@ -124,7 +124,11 @@ domain PData
    	RealOwner ::= (f: FunDecl).
 	RealOwner(f) :- f is FunDecl, f.owner = NIL; 
 	                f is FunDecl, f.owner.kind = REAL.
-
+	
+	//all machines in implementation modules list
+	AllImpModules ::= sub (imodL: ImplementationModules, mod: ModuleDecl).
+	ImpMachine ::= (mach: MachineDecl).
+	ImpMachine(m) :- AllImpModules(modl, mod), m is MachineDecl(_, mod, _, _, _, _).
 }
 
 domain PStructuralTyping extends PData
@@ -387,18 +391,20 @@ domain PStaticTyping extends PData
 	/*************************************************************/
 	/*				Map from interface to machine				 */
 	/*************************************************************/
+	EqualIType ::= (i1: InterfaceType, i2: InterfaceType).
 	InterfaceToMachineMap ::= (ml: ModuleList, ie: InterfaceType, mach: MachineDecl).
+	ImpModsInterfaceToMachineMap ::= (ie: InterfaceType, mach: MachineDecl).
 
 	//get modules in moduleList 
 	SubModule ::= sub (modL: ModuleList, mod: ModuleDecl).
 	//InterfaceTyoes are equal
-	EqualIType ::= (i1: InterfaceType, i2: InterfaceType).
 	EqualIType(i1, i2) :- InterfaceEventDecl(i1, _), InterfaceEventDecl(i2, _), count({ ev1 | InterfaceEventDecl(i1, ev1), no InterfaceEventDecl(i2, ev1)}) = 0, 
 						  count({ ev2 | InterfaceEventDecl(i2, ev2), no InterfaceEventDecl(i1, ev2)}) = 0.
 	//compute the interface map
 	InterfaceToMachineMap(ml, i1, mach) :-  ComposedModules(ml), SubModule(ml, m1), SubModule(ml, m2), ModuleCreatesDecl(m1, i1), mach is MachineDecl(_, m2, _, _, _, _), MachineImpsInterfaceDecl(mach, i2), EqualIType(i1, i2).
 
-
+	//map for implementation modules
+	ImpModsInterfaceToMachineMap(i, mc) :- ImplementationModules(ml), InterfaceToMachineMap(ml, i, mc).
 
 	/************************************************************/
 	/*			Compute the hidden events per module			*/

@@ -1,0 +1,24 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 3 distinct states explored
+OUT: 
+EXIT: 3
+
+=================================
+inter_2.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine M1-0
+<StateLog> Machine M1-0 entering State S
+<CreateLog> Created Machine M2-0
+Payload type has an interface with hidden or private event.
+Private Event ____a
+Error:
+P Assertion failed:
+Expression: assert(false)
+Comment: 

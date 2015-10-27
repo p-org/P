@@ -114,6 +114,7 @@
 			 keywords.Add("interface", (int)Tokens.INTERFACE);
 			 keywords.Add("implements", (int)Tokens.IMPLEMENTS);
 			 keywords.Add("sends", (int)Tokens.SENDS);
+			 keywords.Add("receives", (int)Tokens.RECEIVES);
 			 keywords.Add("module", (int)Tokens.MODULE);
 			 keywords.Add("creates", (int)Tokens.CREATES);
 			 keywords.Add("private", (int)Tokens.PRIVATE);

@@ -241,10 +241,12 @@ namespace Microsoft.Pc
 
     internal class MonitorsTestInfo : TestCaseInfo
     {
-        public List<string> monitorsName;
-        public MonitorsTestInfo(AST<Node> imp, List<string> mon) : base(imp)
+        public List<string> globalMonitors;
+        public Dictionary<string, AST<Node>> privateMonitorToModule;
+        public MonitorsTestInfo(AST<Node> imp, Tuple<List<string>, Dictionary<string, AST<Node>>> tup) : base(imp)
         {
-            monitorsName = mon;
+            globalMonitors = tup.Item1;
+            privateMonitorToModule = tup.Item2;
         }
     }
 
@@ -390,6 +392,8 @@ namespace Microsoft.Pc
         public AllTestCasesInfo allTestCasesInfo;
         public TestCaseType crntTestCaseType;
         public List<string> crntAllMachines;
+        public Dictionary<string, List<string>> crntPrivateMonitors;
+        public List<string> crntGlobalMonitors;
         public Dictionary<AST<Node>, ModuleInfo> allModules;
 
         public string mainMachineName;
@@ -425,7 +429,7 @@ namespace Microsoft.Pc
         {
             var iter = ft;
             HashSet<AST<Node>> modules = new HashSet<AST<Node>>();
-            Contract.Assert(((Id)ft.Function).Name == "ModuleList");
+            Contract.Assert(((Id)ft.Function).Name == "ModulesList");
             while (true)
             {
                 var arg1 = GetArgByIndex(iter, 0) as FuncTerm;
@@ -456,7 +460,7 @@ namespace Microsoft.Pc
         {
             var iter = ft;
             List<string> events = new List<string>();
-            Contract.Assert(((Id)ft.Function).Name == "EventList");
+            Contract.Assert(((Id)ft.Function).Name == "EventsList");
             while (true)
             {
                 events.Add(GetName(iter, 0));
@@ -521,6 +525,8 @@ namespace Microsoft.Pc
             allTestCasesInfo = new AllTestCasesInfo();
             allModules = new Dictionary<AST<Node>, ModuleInfo>();
             crntAllMachines = new List<string>();
+            crntPrivateMonitors = new Dictionary<string, List<string>>();
+            crntGlobalMonitors = new List<string>();
 
             LinkedList<AST<FuncTerm>> terms;
 
@@ -1237,14 +1243,23 @@ namespace Microsoft.Pc
             throw new InvalidOperationException();
         }
 
-        public List<string> GetMonitors(FuncTerm mon)
+        public Tuple<List<string>, Dictionary<string, AST<Node>>> GetMonitors(FuncTerm mon)
         {
             var monList = mon;
-            List<string> monitors = new List<string>();
-            Contract.Assert(((Id)mon.Function).Name == "MonitorList");
+            List<string> globaleMonitors = new List<string>();
+            Dictionary<string, AST<Node>> pToMod = new Dictionary<string, AST<Node>>();
+            Contract.Assert(((Id)mon.Function).Name == "MonitorsList");
             while (true)
             {
-                monitors.Add(GetName(monList, 0));
+                var arg1 = GetArgByIndex(monList, 0);
+                if(arg1 is Cnst)
+                    globaleMonitors.Add(GetName(monList, 0));
+                else
+                {
+                    var privateMonName = GetName(arg1 as FuncTerm, 0);
+                    var Module = GetArgByIndex(arg1 as FuncTerm, 1);
+                    pToMod.Add(privateMonName, Factory.Instance.ToAST(Module));
+                }
                 var arg2 = GetArgByIndex(monList, 1);
                 if(arg2 is Id && (arg2 as Id).Name == "NIL")
                 {
@@ -1252,7 +1267,11 @@ namespace Microsoft.Pc
                 }
                 monList = (FuncTerm)arg2;
             }
-            return monitors;
+
+            
+            monList = mon;
+            
+            return new Tuple<List<string>,Dictionary<string,AST<Node>>>(globaleMonitors, pToMod);
         }
 
         public static string GetName(FuncTerm ft, int nameIndex)
@@ -1623,15 +1642,40 @@ namespace Microsoft.Pc
                 {
                     allMachinesInModulesList.AddRange(allModules[module].allMachineNames);
                 }
-                //include monitors
-                allMachinesInModulesList.AddRange(monitorsTestCase.Value.monitorsName);
-                crntAllMachines = allMachinesInModulesList;
+                //include global monitors
+                allMachinesInModulesList.AddRange(monitorsTestCase.Value.globalMonitors);
+                //include all private monitors 
+                allMachinesInModulesList.AddRange(monitorsTestCase.Value.privateMonitorToModule.Keys.ToList());
 
+                crntAllMachines = allMachinesInModulesList;
+                //populate the global monitors
+                crntGlobalMonitors = monitorsTestCase.Value.globalMonitors;
+                //populate the private monitors
+                foreach(var privateMonitor in monitorsTestCase.Value.privateMonitorToModule)
+                {
+                    foreach(var machine in allModules[privateMonitor.Value].allMachineNames)
+                    {
+                        if(crntPrivateMonitors.ContainsKey(machine))
+                        {
+                            crntPrivateMonitors[machine].Add(privateMonitor.Key);
+                        }
+                        else
+                        {
+                            crntPrivateMonitors[machine] = new List<string>();
+                            crntPrivateMonitors[machine].Add(privateMonitor.Key);
+                        }
+                    }
+                }
+                
                 MkZingEnums(elements, allMachinesInModulesList);
 
                 MkZingClasses(elements, allMachinesInModulesList, monitorsTestCase.Value.impModList);
                 outModel = Add(outModel, MkZingFile(zFileName, elements));
                 FileNames.Add(FileName);
+
+                //clear all crntLists
+                crntAllMachines.Clear();
+                crntPrivateMonitors.Clear();
 
             }
             foreach(var noFailureTestCase in allTestCasesInfo.allNoFailureTests)

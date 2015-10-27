@@ -20,7 +20,7 @@
 
 %token TRUE FALSE
 
-%token INTERFACE IMPLEMENTS MODULE SENDS CREATES PRIVATE 
+%token INTERFACE IMPLEMENTS MODULE SENDS CREATES PRIVATE RECEIVES
 %token TEST REFINES SATISFIES IMPLEMENTATION SPECIFICATION HIDE
 
 %token ASSIGN REMOVE INSERT
@@ -156,11 +156,12 @@ TestDecl
 	;
 
 Hide
-	: HIDE HiddenEvents IN LPAREN ModulesList	RPAREN	{ PushHideModule(ToSpan(@1)); }
+	: HIDE EventsOrInterfaces IN LPAREN ModulesList	RPAREN	{ PushHideModule(ToSpan(@1)); }
 	;
 
-HiddenEvents
+EventsOrInterfaces
 	: NonDefaultNonHaltEventList						{ PushEventList(ToSpan(@1)); }
+	| InterfaceList										{ PushInterfaceList(ToSpan(@1)); }
 	;
 
 Module
@@ -168,13 +169,18 @@ Module
 	| ID															{ PushModule($1.str, ToSpan(@1)); }		
 	;
 ModulesList
-	: Module														{ PushModuleList(ToSpan(@1), true); }
-	| Module COMMA ModulesList										{ PushModuleList(ToSpan(@1), false);}
+	: Module														{ PushModulesList(ToSpan(@1), true); }
+	| Module COMMA ModulesList										{ PushModulesList(ToSpan(@1), false);}
 	;
 
 MonitorsList
+	: Monitor															
+	| Monitor COMMA MonitorsList											
+	;
+
+Monitor
 	: ID															{ AddToCrntMonitorsList($1.str, ToSpan(@1)); }
-	| ID COMMA MonitorsList											{ AddToCrntMonitorsList($1.str, ToSpan(@1)); }
+	| ID MONITORS ID												{ AddToCrntMonitorsList($1.str, $3.str, ToSpan(@1), ToSpan(@3)); }
 	;
 
 /***************** Implementation and Specification **********/
@@ -188,13 +194,18 @@ SpecificationDecl
 
 /******************* Machine Declarations *******************/
 MachineDecl
-	: IsMain MACHINE ID Implements MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1));    }
-	| IsMain MODEL ID Implements MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE   { AddMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1));   }
+	: IsMain MACHINE ID Receives Implements MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1));    }
+	| IsMain MODEL ID Receives Implements MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE   { AddMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1));   }
 	;
 	
 Implements
 	: IMPLEMENTS ID								{ AddMachineInterface($2.str, ToSpan(@2), ToSpan(@1)); }
 	|											{ }
+	;
+
+Receives
+	: RECEIVES NonDefaultNonHaltEventList           { crntReceivesList.AddRange(crntEventList); crntEventList.Clear(); }
+	|
 	;
 
 IsMain

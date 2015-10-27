@@ -35,6 +35,12 @@
             private set;
         }
 
+        public List<P_Root.MachineReceivesDecl> MachineReceivesDecl
+        {
+            get;
+            private set;
+        }
+
         public List<P_Root.MachineImpsInterfaceDecl> MachineImpsInterface
         {
             get;
@@ -200,6 +206,10 @@
                 {
                     yield return inter;
                 }
+                foreach(var mRec in MachineReceivesDecl)
+                {
+                    yield return mRec;
+                }
                 foreach(var m in ModuleDecl)
                 {
                     yield return m;
@@ -250,6 +260,7 @@
             Observes = new List<P_Root.ObservesDecl>();
             InterfaceEvents = new List<P_Root.InterfaceEventDecl>();
             MachineImpsInterface = new List<P_Root.MachineImpsInterfaceDecl>();
+            MachineReceivesDecl = new List<P_Root.MachineReceivesDecl>();
             ModuleDecl = new List<P_Root.ModuleDecl>();
             ModuleCreatesDecl = new List<P_Root.ModuleCreatesDecl>();
             ModulePrivateDecl = new List<P_Root.ModulePrivateDecl>();

@@ -1474,7 +1474,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	PayloadEvalOrder(s, i, p, h) :- p: in.Expr, RhsEvalOrder(s, i, p, h).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = New(iName, arg), PayloadEvalOrder(s, i, arg, h), ImpModsInterfaceToMachineMap(InterfaceType(iName), mach), mach is MachineDecl(mName, _, _, _, _, _),
+									e = New(iName, arg), PayloadEvalOrder(s, i, arg, h), ImpInterfaceToMachineMap(InterfaceType(iName), mach), mach is MachineDecl(mName, _, _, _, _, _),
 									ContainerInNewCall(c, mName, funName, machineName, container),
 									process = out.BinApp(PFLD, Ident("context"), Ident("process")),
 									newCall = out.FunApp(Ident(funName), Args(process, Args(Ident(machineName), Args(Ident(strJoin("p_tmp_expr_", toString(h))), container)))),
@@ -1741,7 +1741,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   cs = out.Seq(receive, Seq(case, Seq(blocked, Seq(exception, Seq(popEvent, resetRcase))))).
 	
 	//// New Machine or Model
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iName, NIL), ImpModsInterfaceToMachineMap(InterfaceType(iName), mach), mach is MachineDecl(mName, _, _, _, _, _),
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iName, NIL), ImpInterfaceToMachineMap(InterfaceType(iName), mach), mach is MachineDecl(mName, _, _, _, _, _),
 						   ContainerInNewCall(c, mName, funName, machineName, container),
 						   newCall = out.FunApp(Ident(funName),
 										Args(BinApp(PFLD, Ident("context"), Ident("process")),
@@ -1750,7 +1750,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   ConstId(m, in.NulApp(NULL)), mkNull = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))),
 						   cs = out.FunApp(Ident("P_STMT_0"), Args(newCall, Args(mkNull, Args(Ident("PRT_FALSE"), NIL)))).
 
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iName, pay), ImpModsInterfaceToMachineMap(InterfaceType(iName), mach), mach is MachineDecl(mName, _, _, _, _, _),
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iName, pay), ImpInterfaceToMachineMap(InterfaceType(iName), mach), mach is MachineDecl(mName, _, _, _, _, _),
 						   ContainerInNewCall(c, mName, funName, machineName, container),
 						   newCall = out.FunApp(Ident(funName),
 										Args(BinApp(PFLD, Ident("context"), Ident("process")),

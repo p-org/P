@@ -1,9 +1,7 @@
-event x : K1;
-event y;
-event z;
+event x : MI_1;
 event a;
-interface K1 a;
-interface K2 y, x;
+event y;
+interface MI_1 y;
 
 test t1 Mod1, Mod2;
 implementation Mod1, Mod2;
@@ -11,17 +9,18 @@ implementation Mod1, Mod2;
 module Mod1
 private a
 sends x
-creates K1, K2
+creates M2
 {
 	main machine M1
-	implements K1
+	receives a, y
+	implements MI_1
 	{
 		var id: machine;
 		start state S 
 		{
 			entry {
-				id = new K2();
-				send id as K2, x, this;
+				id = new M2();
+				send id as M2, x, this;
 			}
 		}
 	}
@@ -31,7 +30,7 @@ module Mod2
 sends y
 {
 	machine M2
-	implements K2
+	receives x
 	{
 		var i2 : int;
 		start state S1
@@ -51,10 +50,11 @@ sends y
 }
 
 module Mod3
+private x
 sends a
+
 {
 	machine M3
-	implements K2
 	{
 		var i3: int;
 		start state S1

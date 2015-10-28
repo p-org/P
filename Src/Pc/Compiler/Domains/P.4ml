@@ -71,22 +71,22 @@ domain PData
 	ModulePrivateDecl ::= new (mod: any ModuleDecl, ev: String).
 	ModuleCreatesDecl ::= new (mod : any ModuleDecl, ie: any InterfaceType).
 	
-	ImplementationModules ::= new (mL: any ModulesList).
-	SpecificationModules ::= new (sL: any ModulesList).
-	RefinesTestDecl ::= fun (name: String -> imp: any ModulesList, spec: any ModulesList).
-	MonitorsTestDecl ::= fun (name: String -> imp: any ModulesList, monitors: any MonitorsList).
-	NoFailureTestDecl ::= fun (name: String -> imp: any ModulesList).
+	ImplementationModules ::= new (mL: any ModuleList).
+	SpecificationModules ::= new (sL: any ModuleList).
+	RefinesTestDecl ::= fun (name: String -> imp: any ModuleList, spec: any ModuleList).
+	MonitorsTestDecl ::= fun (name: String -> imp: any ModuleList, monitors: any MonitorList).
+	NoFailureTestDecl ::= fun (name: String -> imp: any ModuleList).
 
-	ModulesList ::= new (mod: any Module, tail: any ModulesList + {NIL}).
-	Hide ::= new (evOrIn: any EventsOrInterfaces, modL: any ModulesList).
+	ModuleList ::= new (mod: any Module, tail: any ModuleList + {NIL}).
+	Hide ::= new (evOrIn: any EventsOrInterfaces, modL: any ModuleList).
 	PrivateMonitor ::= new (mon: String, mod: any ModuleDecl).
-	MonitorsList ::= new (mon: any MonitorKind, tail: any MonitorsList + {NIL}).
-	EventsList ::= new (ev: String, tail: any EventsList + {NIL}).
-	InterfacesList ::= new (inter: any InterfaceType, tail: any InterfacesList + {NIL}).
+	MonitorList ::= new (mon: any MonitorKind, tail: any MonitorList + {NIL}).
+	EventList ::= new (ev: String, tail: any EventList + {NIL}).
+	InterfaceList ::= new (inter: any InterfaceType, tail: any InterfaceList + {NIL}).
 	
 	//combining value types (used in PToZing)
 	Module ::= ModuleDecl + Hide.
-	EventsOrInterfaces ::= EventsList + InterfacesList.
+	EventsOrInterfaces ::= EventList + InterfaceList.
 	MonitorKind ::= String + PrivateMonitor. //String represents the global monitor name
     /*************************************************************/
     /****************  State Machine Declarations    *************/
@@ -227,7 +227,7 @@ domain PStructuralTyping extends PData
 	OneDeclError(obs) :- obs is ObservesDecl, obs.monitor.kind = MONITOR, no EventDecl(obs.ev, _, _).	
 
 	//event in interface type 
-	[rule_Classes = '"error, msg: unknown event in interface declaration or receives set"']
+	[rule_Classes = '"error, msg: unknown event in interface declaration"']
 	OneDeclError(inter) :- inter is InterfaceEventDecl(_, e), no EventDecl(e, _, _).
 
 	//interface type in variable decl.
@@ -255,29 +255,29 @@ domain PStructuralTyping extends PData
 	OneDeclError(creates) :- creates is ModuleCreatesDecl(_, i), no InterfaceEventDecl(i, _).
 	
 	CompDecls ::= ImplementationModules + SpecificationModules + RefinesTestDecl + MonitorsTestDecl + NoFailureTestDecl.
-	ModuleOrEventOrMonitorsList ::= ModulesList + EventsList + MonitorsList.
+	ModuleOrEventOrMonitorList ::= ModuleList + EventList + MonitorList.
 
 	//module is declared
-	SubME ::= sub (c: CompDecls, mem: ModuleOrEventOrMonitorsList).
+	SubME ::= sub (c: CompDecls, mem: ModuleOrEventOrMonitorList).
 	[rule_Classes = '"error, msg: module in the list is not declared"']
-	OneDeclError(c) :- SubME(c, ml), ml = ModulesList(ModuleDecl(m), _), no ModuleDecl(m).
+	OneDeclError(c) :- SubME(c, ml), ml = ModuleList(ModuleDecl(m), _), no ModuleDecl(m).
 	
 	//event in hide is declared
 	[rule_Classes = '"error, msg: event used in hide operation is not declared"']
-	OneDeclError(c) :- SubME(c, ml), ml = EventsList(ev, _), no EventDecl(ev, _, _).
+	OneDeclError(c) :- SubME(c, ml), ml = EventList(ev, _), no EventDecl(ev, _, _).
 	
 	//monitor is declared
 	[rule_Classes = '"error, msg: monitor is undeclared"']
-	OneDeclError(c) :- SubME(c, ml), ml = MonitorsList(s, _), s : String, no MachineDecl(s, _, MONITOR, _, _, _);
-					   SubME(c, ml), ml = MonitorsList(m, _), m = PrivateMonitor(s, _), no MachineDecl(s, _, MONITOR, _, _, _).
+	OneDeclError(c) :- SubME(c, ml), ml = MonitorList(s, _), s : String, no MachineDecl(s, _, MONITOR, _, _, _);
+					   SubME(c, ml), ml = MonitorList(m, _), m = PrivateMonitor(s, _), no MachineDecl(s, _, MONITOR, _, _, _).
 	
 	//module in private monitor is declared
 	[rule_Classes = '"error, msg: undeclared module in private monitor declaration"']
-	OneDeclError(c) :- SubME(c, ml), ml = MonitorsList(m, _), m = PrivateMonitor(_, ModuleDecl(s)), no ModuleDecl(s).
+	OneDeclError(c) :- SubME(c, ml), ml = MonitorList(m, _), m = PrivateMonitor(_, ModuleDecl(s)), no ModuleDecl(s).
 
 	//only one liveness monitor is allowed per test case
 	[ rule_Classes = '"error, msg: multiple liveness monitors declared in the test-case"']
-	OneDeclError(c) :- SubME(c, ml1), SubME(c, ml2), ml1 = MonitorsList(s1, _), ml2 = MonitorsList(s2, _), s1 != s2, 
+	OneDeclError(c) :- SubME(c, ml1), SubME(c, ml2), ml1 = MonitorList(s1, _), ml2 = MonitorList(s2, _), s1 != s2, 
 					   mach1 = MachineDecl(s1, _, MONITOR, _, _, _),  mach2 = MachineDecl(s2, _, MONITOR, _, _, _), StateDecl(_, mach1, _, _, k1), k1 != WARM, StateDecl(_, mach2, _, _, k2), k2 != WARM.
 }
 
@@ -362,64 +362,72 @@ domain PStaticTyping extends PData
 
 	
 	//sends and privates of the same module are disjoint
-	[rule_Classes = '"error, msg: sends and private of the module are not disjoint"']
+	[rule_Classes = '"error, msg: ModuleLevelTypingError: sends and private of the module are not disjoint"']
 	ModuleLevelTypingError(s) :- m is ModuleDecl, s is ModuleSendsDecl(m, ev), p is ModulePrivateDecl(m, ev).
 
 	//implemented interfaces in the same module are disjoint
-	[rule_Classes = '"error, msg: interface is not disjoint from other implemented interfaces in the module"']
+	[rule_Classes = '"error, msg: ModuleLevelTypingError: interface is not disjoint from other implemented interfaces"']
 	ModuleLevelTypingError(mi1) :- m is ModuleDecl, id1 is MachineDecl(_, m, _, _, _, _), id2 is MachineDecl(_, m, _, _, _, _), id1 != id2, 
 									mi1 is MachineImpsInterfaceDecl(id1, i1), mi2 is MachineImpsInterfaceDecl(id2, i2),
 									InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev).
+	
+	//public events in receives of the same module are disjoint
+	[rule_Classes = '"error, msg: ModuleLevelTypingError: public events in receives must be disjoint"']
+	ModuleLevelTypingError(mr1) :- m is ModuleDecl, id1 is MachineDecl(_, m, _, _, _, _), id2 is MachineDecl(_, m, _, _, _, _), id1 != id2, 
+								   mr1 is MachineReceivesDecl(id1, ev), MachineReceivesDecl(id2, ev), no ModulePrivateDecl(m, ev).
 
 	//implemented interface of a machine contains only public events 
-	[rule_Classes = '"error, msg: machine cannot implement an interface with private events"']
+	[rule_Classes = '"error, msg: ModuleLevelTypingError: machine cannot implement an interface with private events"']
 	ModuleLevelTypingError(mi) :- m is ModuleDecl, id is MachineDecl(_, m, _, _, _, _), mi is MachineImpsInterfaceDecl(id, inter), InterfaceEventDecl(inter, ev), ModulePrivateDecl(m, ev).
 
 	//implemented interface = public events in the receives 
-	[rule_Classes = '"error, msg: implemented interface must be same as the public events the machine can receive"']
-	ModuleLevelTypingError(mi) :- mi is MachineImpsInterfaceDecl(id, inter), count({ev | InterfaceEventDecl(inter, ev), no MachineReceivesDecl(id, ev)}) != 0;
-								 mi is MachineImpsInterfaceDecl(id, inter), count({ev | no InterfaceEventDecl(inter, ev), MachineReceivesDecl(id, ev), no ModulePrivateDecl(id.mod, ev)}) != 0.
+	[rule_Classes = '"error, msg: ModuleLevelTypingError: implemented interface must be same as the public events in receives of that machine"']
+	ModuleLevelTypingError(mi) :- mi is MachineImpsInterfaceDecl(id, inter), count({ev | InterfaceEventDecl(inter, ev), no MachineReceivesDecl(id, ev)}) > 0;
+								  mi is MachineImpsInterfaceDecl(id, inter), count({ev | no InterfaceEventDecl(inter, ev), MachineReceivesDecl(id, ev), no ModulePrivateDecl(id.mod, ev)}) > 0.
 
 	//interfaces in creates are disjoint
-	[rule_Classes = '"error, msg: interfaces in creates list are not disjoint"']
+	[rule_Classes = '"error, msg: ModuleLevelTypingError: interfaces in creates list are not disjoint"']
 	ModuleLevelTypingError(c1) :- m is ModuleDecl, c1 is ModuleCreatesDecl(m, i1), c2 is ModuleCreatesDecl(m, i2),
 								   InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev), i1 != i2.
 
-	//if a create interface is implemented then they are either disjoint or equal
-	DisjointOrEqualIType  ::= (i1: InterfaceType, i2: InterfaceType).
-	DisjointOrEqualIType(i1, i2) :- InterfaceEventDecl(i1, _), InterfaceEventDecl(i2, _), count({ ev | InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev)}) = 0;
-							   InterfaceEventDecl(i1, _), InterfaceEventDecl(i2, _), count({ ev1 | InterfaceEventDecl(i1, ev1), no InterfaceEventDecl(i2, ev1)}) = 0, 
-							   count({ ev2 | InterfaceEventDecl(i2, ev2), no InterfaceEventDecl(i1, ev2)}) = 0.
+	//a create interface is either disjoint or equal to the public events in receives
+	//relation between creates interfaces and 
+	NotDisjointOrEqual ::= (m: ModuleDecl, i:InterfaceType, mr: MachineReceivesDecl).
+	NotDisjointOrEqual(m, i, mr) :- m is ModuleDecl, ModuleCreatesDecl(m, i), mach is MachineDecl(_, m, _, _, _, _), mr is MachineReceivesDecl(mach, _),
+									count({ev1 | InterfaceEventDecl(i, ev1), no MachineReceivesDecl(mach, ev1), no ModulePrivateDecl(m, ev1), InterfaceEventDecl(i, ev2), MachineReceivesDecl(mach, ev2), no ModulePrivateDecl(m, ev2)}) > 0;
+									m is ModuleDecl, ModuleCreatesDecl(m, i), mach is MachineDecl(_, m, _, _, _, _), mr is MachineReceivesDecl(mach, _),
+									count({ev1 | no InterfaceEventDecl(i, ev1), MachineReceivesDecl(mach, ev1), no ModulePrivateDecl(m, ev1), InterfaceEventDecl(i, ev2), MachineReceivesDecl(mach, ev2), no ModulePrivateDecl(m, ev2)}) > 0.
 
-	[rule_Classes = '"error, msg: implemented interface type is not equal to or disjoint from the interface type in creates"']
-	ModuleLevelTypingError(mi1) :- m is ModuleDecl, id1 is MachineDecl(_, m, _, _, _, _), mi1 is MachineImpsInterfaceDecl(id1, i1), 
-									  c is ModuleCreatesDecl(m, i2), no DisjointOrEqualIType(i1, i2). 
+
+	[rule_Classes = '"error, msg: ModuleLevelTypingError: public events in receives is not equal to or disjoint from the interface type in creates"']
+	ModuleLevelTypingError(mr) :- m is ModuleDecl, mach is MachineDecl(_, m, _, _, _, _), mr is MachineReceivesDecl(mach, _), 
+								  c is ModuleCreatesDecl(m, i), NotDisjointOrEqual(m, i, mr). 
 
 	//no private event in the creates interfaces
-	[rule_Classes = '"error, msg: interface in creates cannot have private events"']
+	[rule_Classes = '"error, msg: ModuleLevelTypingError: interface in creates cannot have private events"']
 	ModuleLevelTypingError(c) :- m is ModuleDecl, ModulePrivateDecl(m, ev), c is ModuleCreatesDecl(m, i), InterfaceEventDecl(i, ev).
 	
 
 	/***************************************************************/
 	/***********    All the subterm operations ********************/
 	/***************************************************************/
-	//get modules in ModulesList 
-	SubModule ::= sub (modL: ModulesList, mod: ModuleDecl).
+	//get modules in ModuleList 
+	SubModule ::= sub (modL: ModuleList, mod: ModuleDecl).
 	//get all the hidden modules
-	SubHide ::= sub (mdl: ModulesList, h: Hide).
+	SubHide ::= sub (mdl: ModuleList, h: Hide).
 	//get all modulelists
-	SubML ::= sub(mod: ModulesList, mod': ModulesList).
-	//get all events in eventsList
-	SubEvents ::= sub(evl: EventsList, ev : String).
-	//get all interfaces in InterfacesList
-	SubInt ::= sub (il: InterfacesList, i: InterfaceType).
+	SubModList ::= sub(mod: ModuleList, mod': ModuleList).
+	//get all events in EventList
+	SubEvents ::= sub(evl: EventList, ev : String).
+	//get all interfaces in InterfaceList
+	SubInterface ::= sub (il: InterfaceList, i: InterfaceType).
 
 	/**************************************************************/
 	/******* Get all high level module compositions ****************/
 	/**************************************************************/
 	//get all the high level modules list 
 	//ImplementationModules + SpecificationModules + RefinesTestDecl + MonitorsTestDecl + NoFailureTestDecl.
-	ComposedModules ::= (m: ModulesList).
+	ComposedModules ::= (m: ModuleList).
 	ComposedModules(mL) :- NoFailureTestDecl(_, mL);
 						   MonitorsTestDecl(_, mL, _);
 						   RefinesTestDecl(_, mL, _); RefinesTestDecl(_, _, mL);
@@ -429,63 +437,62 @@ domain PStaticTyping extends PData
 	/*************************************************************/
 	/*				Map from interface to machine				 */
 	/*************************************************************/
-	EqualIType ::= (i1: InterfaceType, i2: InterfaceType).
-	InterfaceToMachineMap ::= (ml: ModulesList, ie: InterfaceType, mach: MachineDecl).
-	ImpModsInterfaceToMachineMap ::= (ie: InterfaceType, mach: MachineDecl).
+	InterfaceToMachineMap ::= (ml: ModuleList, ie: InterfaceType, mach: MachineDecl).
+	ImpInterfaceToMachineMap ::= (ie: InterfaceType, mach: MachineDecl).
 
-	//InterfaceTyoes are equal
-	EqualIType(i1, i2) :- InterfaceEventDecl(i1, _), InterfaceEventDecl(i2, _), count({ ev1 | InterfaceEventDecl(i1, ev1), no InterfaceEventDecl(i2, ev1)}) = 0, 
-						  count({ ev2 | InterfaceEventDecl(i2, ev2), no InterfaceEventDecl(i1, ev2)}) = 0.
 	//compute the interface map
-	InterfaceToMachineMap(ml, i1, mach) :-  ComposedModules(ml), SubModule(ml, m1), SubModule(ml, m2), ModuleCreatesDecl(m1, i1), mach is MachineDecl(_, m2, _, _, _, _), MachineImpsInterfaceDecl(mach, i2), EqualIType(i1, i2).
+	InterfaceToMachineMap(ml, i, mach) :-  ComposedModules(ml), SubModule(ml, m1), SubModule(ml, m2), ModuleCreatesDecl(m1, i), mach is MachineDecl(_, m2, _, _, _, _), MachineReceivesDecl(mach, ev), InterfaceEventDecl(i, ev).
 
 	//map for implementation modules
-	ImpModsInterfaceToMachineMap(i, mc) :- ImplementationModules(ml), InterfaceToMachineMap(ml, i, mc).
-
-	//the map calculated above is legal only if all the implements interfaces of the moduleslist are disjoint
-	[rule_Classes = '"error, msg: implemented interfaces of all the machines in the modulelist must be disjoint"']
-	IllegalComposition(ml) :- ComposedModules(ml), SubModule(ml, m1), SubModule(ml, m2), m1 != m2, id1 is MachineDecl(_, m1, _, _, _, _), id2 is MachineDecl(_, m2, _, _, _, _),
-							  mi1 is MachineImpsInterfaceDecl(id1, i1), mi2 is MachineImpsInterfaceDecl(id2, i2), InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev).
+	ImpInterfaceToMachineMap(i, mc) :- ImplementationModules(ml), InterfaceToMachineMap(ml, i, mc).
 
 	/************************************************************/
 	/*			Compute the hidden events per module			*/
 	/************************************************************/
-	HiddenEvents ::= (mdl: ModulesList, md: ModuleDecl, evl : EventsList + {NIL}).
-	HiddenEvents(ml, mod, evl) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), evl : EventsList, SubModule(hml, mod);
-							      ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), inl : InterfacesList, SubModule(hml, mod), evl = toList(#EventsList, NIL, {ev | SubInt(inl, i), InterfaceEventDecl(i, ev)}).
+	HiddenEvents ::= (mdl: ModuleList, md: ModuleDecl, evl : EventList + {NIL}).
+	HiddenEvents(ml, mod, evl) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), evl : EventList, SubModule(hml, mod);
+							      ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), inl : InterfaceList, SubModule(hml, mod), evl = toList(#EventList, NIL, {ev | SubInterface(inl, i), InterfaceEventDecl(i, ev)}).
 	
 	/***************************************************************/
-	/*	Generate sends, private and creates for ModulesList		   */
+	/*	Generate sends, private and creates for ModuleList		   */
 	/***************************************************************/
-	
-	CheckModuleList ::= (modL: ModulesList).
-	SendsForModulesList ::= (ml: ModulesList, sd: ModuleSendsDecl).
-	PrivateForModulesList ::= (ml: ModulesList, pd: ModulePrivateDecl).
-	CreatesForModulesList ::= (ml: ModulesList, cd: ModuleCreatesDecl).
+	/*
+	CheckModuleList ::= (modL: ModuleList).
+	SendsForModuleList ::= (ml: ModuleList, sd: ModuleSendsDecl).
+	PrivateForModuleList ::= (ml: ModuleList, pd: ModulePrivateDecl).
+	CreatesForModuleList ::= (ml: ModuleList, cd: ModuleCreatesDecl).
+	ReceivesForModuleList ::= (ml: ModuleList, rd: MachineReceivesDecl).
 
 	//all the following modulelists must be legally composed.
 	CheckModuleList(ml) :- ComposedModules(ml); ComposedModules(ml'), SubHide(ml', h), h = Hide(_, ml).
 
-	SendsForModulesList(ml, sd) :- CheckModuleList(cml), SubML(cml, ml), ml = ModulesList(m, _), m is ModuleDecl, sd is ModuleSendsDecl(m, _);
-								   CheckModuleList(cml), SubML(cml, ml), ml = ModulesList(_, m2), SendsForModulesList(m2, sd), m2 != NIL;
-								   CheckModuleList(cml), SubML(cml, ml), ml = ModulesList(h, _), h = Hide(evl, hml), evl : EventsList, SendsForModulesList(hml, sd), sd.ev != hev, SubEvents(evl, hev);
-								   CheckModuleList(cml), SubML(cml, ml), ml = ModulesList(h, _), h = Hide(interl, hml), interl : InterfacesList, SendsForModulesList(hml, sd), sd.ev != hev, SubEvents(evl, hev).
+	//get the sends list after removing hidden events and interfaces
+	SendsForModuleList(ml, sd) :- CheckModuleList(cml), SubML(cml, ml), ml = ModuleList(m, _), m is ModuleDecl, sd is ModuleSendsDecl(m, _);
+								   CheckModuleList(cml), SubML(cml, ml), ml = ModuleList(_, m2), SendsForModuleList(m2, sd), m2 != NIL;
+								   CheckModuleList(cml), SubML(cml, ml), ml = ModuleList(h, _), h = Hide(evl, hml), evl : EventList, SendsForModuleList(hml, sd), count({ ev | SubEvents(evl, ev)}) = 0;
+								   CheckModuleList(cml), SubML(cml, ml), ml = ModuleList(h, _), h = Hide(interl, hml), interl : InterfaceList, 
+								   SendsForModuleList(hml, sd), SubInt(interl, i), InterfaceEventDecl(i, sd.ev).
 
+	//get the receives list for the ModuleList, its a simple union of all the receives
+	ReceivesForModuleList(cml, rd) :- CheckModuleList(cml), SubModule(cml, mod), rd is MachineReceivesDecl(mach, _), mach.mod = mod.
 
+	*/								
+
+									  
 	/**************************************************************/
 	/*                      Legal Composition                    */
 	/*************************************************************/
-	IllegalComposition ::= (modL: ModulesList).
+	IllegalComposition ::= (modL: ModuleList).
 
 	/*************************************************************/
 	/*					Legal Hide Operation					*/
 	/*************************************************************/
 	IllegalHideOperation::= (hideOp: Hide).
 	
-	//hide operation must be performed on events in the sends list
+	/*hide operation must be performed on events in the sends list
 	[rule_Classes = '"error, msg: hide operation must be performed on events in the send list of the module"']
-	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), SubEvents(evl, ev), no SendsForModulesList(hml, ModuleSendsDecl(_, ev)).
-
+	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), SubEvents(evl, ev), no SendsForModuleList(hml, ModuleSendsDecl(_, ev)).
+	*/
 	
 
 	/**************************************************************/
@@ -506,7 +513,7 @@ domain PStaticTyping extends PData
 	//Recent change: THIS is not allowed in static functions
 	// Type of THIS is the interface type implemented by the machine.
 	// If no interface type is implemented then the type of THIS is machine.
-    TypeOf(c, e, i)  :- SubSE(c, e), e = NulApp(THIS), MachineImpsInterfaceDecl(c.owner, i), c.owner != NIL.
+    TypeOf(c, e, i)  :- SubSE(c, e), e = NulApp(THIS), i = InterfaceType(c.owner.name), c.owner != NIL.
 	TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = NulApp(THIS), no MachineImpsInterfaceDecl(c.owner, _), c.owner != NIL.
 
     [ rule_Classes = '"error, msg: (this) is not allowed inside static functions"']

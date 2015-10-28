@@ -429,7 +429,7 @@ namespace Microsoft.Pc
         {
             var iter = ft;
             HashSet<AST<Node>> modules = new HashSet<AST<Node>>();
-            Contract.Assert(((Id)ft.Function).Name == "ModulesList");
+            Contract.Assert(((Id)ft.Function).Name == "ModuleList");
             while (true)
             {
                 var arg1 = GetArgByIndex(iter, 0) as FuncTerm;
@@ -460,7 +460,7 @@ namespace Microsoft.Pc
         {
             var iter = ft;
             List<string> events = new List<string>();
-            Contract.Assert(((Id)ft.Function).Name == "EventsList");
+            Contract.Assert(((Id)ft.Function).Name == "EventList");
             while (true)
             {
                 events.Add(GetName(iter, 0));
@@ -1248,7 +1248,7 @@ namespace Microsoft.Pc
             var monList = mon;
             List<string> globaleMonitors = new List<string>();
             Dictionary<string, AST<Node>> pToMod = new Dictionary<string, AST<Node>>();
-            Contract.Assert(((Id)mon.Function).Name == "MonitorsList");
+            Contract.Assert(((Id)mon.Function).Name == "MonitorList");
             while (true)
             {
                 var arg1 = GetArgByIndex(monList, 0);
@@ -1637,17 +1637,17 @@ namespace Microsoft.Pc
                 //generate implementation modules
                 var implementationModules = GetModulesFromModuleList(monitorsTestCase.Value.impModList.Node as FuncTerm);
                 //union of all the machines names in the implementation modules
-                List<string> allMachinesInModulesList = new List<string>();
+                List<string> allMachinesInModuleList = new List<string>();
                 foreach (var module in implementationModules)
                 {
-                    allMachinesInModulesList.AddRange(allModules[module].allMachineNames);
+                    allMachinesInModuleList.AddRange(allModules[module].allMachineNames);
                 }
                 //include global monitors
-                allMachinesInModulesList.AddRange(monitorsTestCase.Value.globalMonitors);
+                allMachinesInModuleList.AddRange(monitorsTestCase.Value.globalMonitors);
                 //include all private monitors 
-                allMachinesInModulesList.AddRange(monitorsTestCase.Value.privateMonitorToModule.Keys.ToList());
+                allMachinesInModuleList.AddRange(monitorsTestCase.Value.privateMonitorToModule.Keys.ToList());
 
-                crntAllMachines = allMachinesInModulesList;
+                crntAllMachines = allMachinesInModuleList;
                 //populate the global monitors
                 crntGlobalMonitors = monitorsTestCase.Value.globalMonitors;
                 //populate the private monitors
@@ -1667,9 +1667,9 @@ namespace Microsoft.Pc
                     }
                 }
                 
-                MkZingEnums(elements, allMachinesInModulesList);
+                MkZingEnums(elements, allMachinesInModuleList);
 
-                MkZingClasses(elements, allMachinesInModulesList, monitorsTestCase.Value.impModList);
+                MkZingClasses(elements, allMachinesInModuleList, monitorsTestCase.Value.impModList);
                 outModel = Add(outModel, MkZingFile(zFileName, elements));
                 FileNames.Add(FileName);
 
@@ -1688,16 +1688,16 @@ namespace Microsoft.Pc
                 //generate implementation modules
                 var implementationModules = GetModulesFromModuleList(noFailureTestCase.Value.impModList.Node as FuncTerm);
                 //union of all the machines names in the implementation modules
-                List<string> allMachinesInModulesList = new List<string>();
+                List<string> allMachinesInModuleList = new List<string>();
                 foreach (var module in implementationModules)
                 {
-                    allMachinesInModulesList.AddRange(allModules[module].allMachineNames);
+                    allMachinesInModuleList.AddRange(allModules[module].allMachineNames);
                 }
-                crntAllMachines = allMachinesInModulesList;
+                crntAllMachines = allMachinesInModuleList;
 
-                MkZingEnums(elements, allMachinesInModulesList);
+                MkZingEnums(elements, allMachinesInModuleList);
 
-                MkZingClasses(elements, allMachinesInModulesList, noFailureTestCase.Value.impModList);
+                MkZingClasses(elements, allMachinesInModuleList, noFailureTestCase.Value.impModList);
                 outModel = Add(outModel, MkZingFile(zFileName, elements));
                 FileNames.Add(FileName);
             }
@@ -1711,16 +1711,16 @@ namespace Microsoft.Pc
                 //generate implementation modules
                 var implementationModules = GetModulesFromModuleList(refinesTestCases.Value.impModList.Node as FuncTerm);
                 //union of all the machines names in the implementation modules
-                List<string> allMachinesInModulesList = new List<string>();
+                List<string> allMachinesInModuleList = new List<string>();
                 foreach (var module in implementationModules)
                 {
-                    allMachinesInModulesList.AddRange(allModules[module].allMachineNames);
+                    allMachinesInModuleList.AddRange(allModules[module].allMachineNames);
                 }
-                crntAllMachines = allMachinesInModulesList;
+                crntAllMachines = allMachinesInModuleList;
 
-                MkZingEnums(elements, allMachinesInModulesList);
+                MkZingEnums(elements, allMachinesInModuleList);
 
-                MkZingClasses(elements, allMachinesInModulesList, refinesTestCases.Value.impModList);
+                MkZingClasses(elements, allMachinesInModuleList, refinesTestCases.Value.impModList);
                 outModel = Add(outModel, MkZingFile(zFileName, elements));
                 FileNames.Add(FileName);
 
@@ -1729,11 +1729,11 @@ namespace Microsoft.Pc
             
         }
 
-        private void MkZingEnums(List<AST<Node>> elements, List<string> allMachinesInModulesList)
+        private void MkZingEnums(List<AST<Node>> elements, List<string> allMachinesInModuleList)
         {
             List<AST<Node>> machineConsts = new List<AST<Node>>();
             machineConsts.Add(Factory.Instance.MkCnst("_default"));
-            foreach (string machineName in allMachinesInModulesList)
+            foreach (string machineName in allMachinesInModuleList)
             {
                 machineConsts.Add(Factory.Instance.MkCnst(string.Format("_{0}", machineName)));
             }
@@ -1749,7 +1749,7 @@ namespace Microsoft.Pc
 
             List<AST<Node>> stateConsts = new List<AST<Node>>();
             stateConsts.Add(Factory.Instance.MkCnst("_default"));
-            foreach (var machine in allMachinesInModulesList)
+            foreach (var machine in allMachinesInModuleList)
             {
                 foreach (var stateName in allMachines[machine].stateNameToStateInfo.Keys)
                 {
@@ -1764,7 +1764,7 @@ namespace Microsoft.Pc
             {
                 actionOrFunConsts.Add(Factory.Instance.MkCnst(string.Format("_{0}", funName)));
             }
-            foreach (string machineName in allMachinesInModulesList)
+            foreach (string machineName in allMachinesInModuleList)
             {
                 foreach (string funName in allMachines[machineName].funNameToFunInfo.Keys)
                 {
@@ -2088,15 +2088,15 @@ namespace Microsoft.Pc
             return AddArgs(ZingData.App_ClassDecl, Factory.Instance.MkCnst(ZingMachineClassName(machineName)), MkZingVarDecls(fields), MkZingMethodDecls(methods));
         }
 
-        private void MkZingClasses(List<AST<Node>> elements, List<string> allMachinesInModulesList, AST<Node> currentModuleList)
+        private void MkZingClasses(List<AST<Node>> elements, List<string> allMachinesInModuleList, AST<Node> currentModuleList)
         {
             //generate machine for all
-            foreach(var machineName in allMachinesInModulesList)
+            foreach(var machineName in allMachinesInModuleList)
             {
                 elements.Add(GenerateMachineClass(machineName));
             }
 
-            elements.Add(GenerateMainClass(allMachinesInModulesList, currentModuleList));
+            elements.Add(GenerateMainClass(allMachinesInModuleList, currentModuleList));
         }
 
         private AST<Node> GenerateCalculateDeferredAndActionSetMethodDecl(string stateName, StateInfo stateInfo)
@@ -3662,10 +3662,15 @@ namespace Microsoft.Pc
                 //generate invoke monitor only in case of monitor test case
                 if (crntTestCaseType == TestCaseType.MONITORS)
                 {
-                    foreach (var machineName in crntAllMachines)
+                    //for all global monitors
+                    foreach (var monitorName in crntGlobalMonitors)
                     {
-                        if (!allMachines[machineName].IsMonitor) continue;
-                        ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", machineName)), eventExpr, tmpVar)));
+                        ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", monitorName)), eventExpr, tmpVar)));
+                    }
+                    //for all private monitors for this machine
+                    foreach(var monitorName in crntPrivateMonitors[ctxt.machineName])
+                    {
+                        ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", monitorName)), eventExpr, tmpVar)));
                     }
                 }
 
@@ -3695,10 +3700,19 @@ namespace Microsoft.Pc
                     ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, arg));
                 }
                 List<AST<Node>> stmts = new List<AST<Node>>();
-                foreach (var machineName in crntAllMachines)
+                //generate invoke monitor only in case of monitor test case
+                if (crntTestCaseType == TestCaseType.MONITORS)
                 {
-                    if (!allMachines[machineName].IsMonitor) continue;
-                    stmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", machineName)), eventExpr, tmpVar)));
+                    //for all global monitors
+                    foreach (var monitorName in crntGlobalMonitors)
+                    {
+                        ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", monitorName)), eventExpr, tmpVar)));
+                    }
+                    //for all private monitors for this machine
+                    foreach (var monitorName in crntPrivateMonitors[ctxt.machineName])
+                    {
+                        ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", monitorName)), eventExpr, tmpVar)));
+                    }
                 }
                 return new ZingTranslationInfo(MkZingSeq(stmts));
             }

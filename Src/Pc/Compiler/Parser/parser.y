@@ -150,13 +150,13 @@ EventAnnotOrNone
 
 /******************  TEST Declarations **********************/
 TestDecl
-	: TEST ID ModulesList REFINES ModulesList SEMICOLON				{ AddRefinesTest($2.str, ToSpan(@2), ToSpan(@1));   }	
-	| TEST ID ModulesList SATISFIES MonitorsList SEMICOLON			{ AddMonitorsTest($2.str, ToSpan(@2), ToSpan(@1));  }
-	| TEST ID ModulesList SEMICOLON									{ AddNoFailureTest($2.str, ToSpan(@2), ToSpan(@1));    }
+	: TEST ID ModuleList REFINES ModuleList SEMICOLON				{ AddRefinesTest($2.str, ToSpan(@2), ToSpan(@1));   }	
+	| TEST ID ModuleList SATISFIES MonitorList SEMICOLON			{ AddMonitorsTest($2.str, ToSpan(@2), ToSpan(@1));  }
+	| TEST ID ModuleList SEMICOLON									{ AddNoFailureTest($2.str, ToSpan(@2), ToSpan(@1));    }
 	;
 
 Hide
-	: HIDE EventsOrInterfaces IN LPAREN ModulesList	RPAREN	{ PushHideModule(ToSpan(@1)); }
+	: HIDE EventsOrInterfaces IN LPAREN ModuleList	RPAREN	{ PushHideModule(ToSpan(@1)); }
 	;
 
 EventsOrInterfaces
@@ -168,28 +168,28 @@ Module
 	: Hide
 	| ID															{ PushModule($1.str, ToSpan(@1)); }		
 	;
-ModulesList
-	: Module														{ PushModulesList(ToSpan(@1), true); }
-	| Module COMMA ModulesList										{ PushModulesList(ToSpan(@1), false);}
+ModuleList
+	: Module														{ PushModuleList(ToSpan(@1), true); }
+	| Module COMMA ModuleList										{ PushModuleList(ToSpan(@1), false);}
 	;
 
-MonitorsList
+MonitorList
 	: Monitor															
-	| Monitor COMMA MonitorsList											
+	| Monitor COMMA MonitorList											
 	;
 
 Monitor
-	: ID															{ AddToCrntMonitorsList($1.str, ToSpan(@1)); }
-	| ID MONITORS ID												{ AddToCrntMonitorsList($1.str, $3.str, ToSpan(@1), ToSpan(@3)); }
+	: ID															{ AddToCrntMonitorList($1.str, ToSpan(@1)); }
+	| ID MONITORS ID												{ AddToCrntMonitorList($1.str, $3.str, ToSpan(@1), ToSpan(@3)); }
 	;
 
 /***************** Implementation and Specification **********/
 ImplementationDecl
-	:	IMPLEMENTATION ModulesList SEMICOLON								{ AddImplementationList(ToSpan(@1)); }
+	:	IMPLEMENTATION ModuleList SEMICOLON								{ AddImplementationList(ToSpan(@1)); }
 	;
 
 SpecificationDecl
-	:	SPECIFICATION ModulesList SEMICOLON									{ AddSpecificationList(ToSpan(@1));	 }
+	:	SPECIFICATION ModuleList SEMICOLON									{ AddSpecificationList(ToSpan(@1));	 }
 	;
 
 /******************* Machine Declarations *******************/

@@ -18,10 +18,10 @@ domain PWithInferredTypes extends PData
 	MaxNumLocals ::= new (ctxt: TypingContext + Stmt + Cases, n: Natural).
 
 	//// The map from interface type to the machine implementing it for a given module-list
-	InterfaceToMachineMap ::= new (ml: ModulesList, i: InterfaceType, m: MachineDecl).
+	InterfaceToMachineMap ::= new (ml: ModuleList, i: InterfaceType, m: MachineDecl).
 
 	//// The map from module to the hidden events in the module for a given module-list
-	HiddenEvents ::= new (mdl: ModulesList, md: ModuleDecl, evl : EventsList + {NIL}).
+	HiddenEvents ::= new (mdl: ModuleList, md: ModuleDecl, evl : EventList + {NIL}).
 }
 
 transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)

@@ -88,6 +88,7 @@ domain PData
 	Module ::= ModuleDecl + Hide.
 	EventsOrInterfaces ::= EventList + InterfaceList.
 	MonitorKind ::= String + PrivateMonitor. //String represents the global monitor name
+
     /*************************************************************/
     /****************  State Machine Declarations    *************/
     /*************************************************************/
@@ -362,45 +363,41 @@ domain PStaticTyping extends PData
 
 	
 	//sends and privates of the same module are disjoint
-	[rule_Classes = '"error, msg: ModuleLevelTypingError: sends and private of the module are not disjoint"']
+	[rule_Classes = '"error, msg: sends and private of the module are not disjoint"']
 	ModuleLevelTypingError(s) :- m is ModuleDecl, s is ModuleSendsDecl(m, ev), p is ModulePrivateDecl(m, ev).
 
 	//implemented interfaces in the same module are disjoint
-	[rule_Classes = '"error, msg: ModuleLevelTypingError: interface is not disjoint from other implemented interfaces"']
-	ModuleLevelTypingError(mi1) :- m is ModuleDecl, id1 is MachineDecl(_, m, _, _, _, _), id2 is MachineDecl(_, m, _, _, _, _), id1 != id2, 
-									mi1 is MachineImpsInterfaceDecl(id1, i1), mi2 is MachineImpsInterfaceDecl(id2, i2),
-									InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev).
+	[rule_Classes = '"error, msg: implemented interface is not disjoint from other implemented interfaces in the module"']
+	ModuleLevelTypingError(mi) :- mi is MachineImpsInterfaceDecl(id1, i1), MachineImpsInterfaceDecl(id2, i2), id1 != id2, id1.mod = id2.mod, InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev).
 	
 	//public events in receives of the same module are disjoint
-	[rule_Classes = '"error, msg: ModuleLevelTypingError: public events in receives must be disjoint"']
-	ModuleLevelTypingError(mr1) :- m is ModuleDecl, id1 is MachineDecl(_, m, _, _, _, _), id2 is MachineDecl(_, m, _, _, _, _), id1 != id2, 
-								   mr1 is MachineReceivesDecl(id1, ev), MachineReceivesDecl(id2, ev), no ModulePrivateDecl(m, ev).
+	[rule_Classes = '"error, msg: public events in all the receives of a module must be disjoint"']
+	ModuleLevelTypingError(mr) :- mr is MachineReceivesDecl(id1, ev), MachineReceivesDecl(id2, ev), id1 != id2, id1.mod = id2.mod, no ModulePrivateDecl(id1.mod, ev).
 
 	//implemented interface of a machine contains only public events 
-	[rule_Classes = '"error, msg: ModuleLevelTypingError: machine cannot implement an interface with private events"']
-	ModuleLevelTypingError(mi) :- m is ModuleDecl, id is MachineDecl(_, m, _, _, _, _), mi is MachineImpsInterfaceDecl(id, inter), InterfaceEventDecl(inter, ev), ModulePrivateDecl(m, ev).
+	[rule_Classes = '"error, msg: machine cannot implement an interface with private events"']
+	ModuleLevelTypingError(mi) :- mi is MachineImpsInterfaceDecl(id, inter), InterfaceEventDecl(inter, ev), ModulePrivateDecl(id.mod, ev).
 
 	//implemented interface = public events in the receives 
-	[rule_Classes = '"error, msg: ModuleLevelTypingError: implemented interface must be same as the public events in receives of that machine"']
+	[rule_Classes = '"error, msg: implemented interface must be same as the public events in receives of that machine"']
 	ModuleLevelTypingError(mi) :- mi is MachineImpsInterfaceDecl(id, inter), count({ev | InterfaceEventDecl(inter, ev), no MachineReceivesDecl(id, ev)}) > 0;
 								  mi is MachineImpsInterfaceDecl(id, inter), count({ev | no InterfaceEventDecl(inter, ev), MachineReceivesDecl(id, ev), no ModulePrivateDecl(id.mod, ev)}) > 0.
 
 	//interfaces in creates are disjoint
-	[rule_Classes = '"error, msg: ModuleLevelTypingError: interfaces in creates list are not disjoint"']
-	ModuleLevelTypingError(c1) :- m is ModuleDecl, c1 is ModuleCreatesDecl(m, i1), c2 is ModuleCreatesDecl(m, i2),
-								   InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev), i1 != i2.
+	[rule_Classes = '"error, msg: interfaces in creates list are not disjoint"']
+	ModuleLevelTypingError(c1) :- m is ModuleDecl, c1 is ModuleCreatesDecl(m, i1), c2 is ModuleCreatesDecl(m, i2), InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev), i1 != i2.
 
 	//a create interface is either disjoint or equal to the public events in receives
 	//relation between creates interfaces and 
 	NotDisjointOrEqual ::= (m: ModuleDecl, i:InterfaceType, mr: MachineReceivesDecl).
-	NotDisjointOrEqual(m, i, mr) :- m is ModuleDecl, ModuleCreatesDecl(m, i), mach is MachineDecl(_, m, _, _, _, _), mr is MachineReceivesDecl(mach, _),
+	NotDisjointOrEqual(m, i, mr) :- ModuleCreatesDecl(m, i), mach is MachineDecl(_, m, _, _, _, _), mr is MachineReceivesDecl(mach, _),
 									count({ev1 | InterfaceEventDecl(i, ev1), no MachineReceivesDecl(mach, ev1), no ModulePrivateDecl(m, ev1), InterfaceEventDecl(i, ev2), MachineReceivesDecl(mach, ev2), no ModulePrivateDecl(m, ev2)}) > 0;
 									m is ModuleDecl, ModuleCreatesDecl(m, i), mach is MachineDecl(_, m, _, _, _, _), mr is MachineReceivesDecl(mach, _),
 									count({ev1 | no InterfaceEventDecl(i, ev1), MachineReceivesDecl(mach, ev1), no ModulePrivateDecl(m, ev1), InterfaceEventDecl(i, ev2), MachineReceivesDecl(mach, ev2), no ModulePrivateDecl(m, ev2)}) > 0.
 
 
-	[rule_Classes = '"error, msg: ModuleLevelTypingError: public events in receives is not equal to or disjoint from the interface type in creates"']
-	ModuleLevelTypingError(mr) :- m is ModuleDecl, mach is MachineDecl(_, m, _, _, _, _), mr is MachineReceivesDecl(mach, _), 
+	[rule_Classes = '"error, msg: interface type in creates is not equal to or disjoint from the public events in receives of the module"']
+	ModuleLevelTypingError(c) :- m is ModuleDecl, mach is MachineDecl(_, m, _, _, _, _), mr is MachineReceivesDecl(mach, _), 
 								  c is ModuleCreatesDecl(m, i), NotDisjointOrEqual(m, i, mr). 
 
 	//no private event in the creates interfaces
@@ -453,32 +450,50 @@ domain PStaticTyping extends PData
 	HiddenEvents(ml, mod, evl) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), evl : EventList, SubModule(hml, mod);
 							      ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), inl : InterfaceList, SubModule(hml, mod), evl = toList(#EventList, NIL, {ev | SubInterface(inl, i), InterfaceEventDecl(i, ev)}).
 	
+	//compute events hidden in an hide operation
+	HiddenEventsInOp ::= (h: Hide, ev: String).
+	HiddenEventsInOp (h, ev) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), evl : EventList, SubEvents(evl, ev);
+								ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), inl : InterfaceList, SubModule(hml, mod), evl = toList(#EventList, NIL, {ev | SubInterface(inl, i), InterfaceEventDecl(i, ev)}), SubEvents(evl, ev).
+
 	/***************************************************************/
 	/*	Generate sends, private and creates for ModuleList		   */
 	/***************************************************************/
-	/*
+	
 	CheckModuleList ::= (modL: ModuleList).
 	SendsForModuleList ::= (ml: ModuleList, sd: ModuleSendsDecl).
 	PrivateForModuleList ::= (ml: ModuleList, pd: ModulePrivateDecl).
 	CreatesForModuleList ::= (ml: ModuleList, cd: ModuleCreatesDecl).
 	ReceivesForModuleList ::= (ml: ModuleList, rd: MachineReceivesDecl).
+	ImplementsForModuleList ::= (ml: ModuleList, id: MachineImpsInterfaceDecl).
 
 	//all the following modulelists must be legally composed.
 	CheckModuleList(ml) :- ComposedModules(ml); ComposedModules(ml'), SubHide(ml', h), h = Hide(_, ml).
 
 	//get the sends list after removing hidden events and interfaces
-	SendsForModuleList(ml, sd) :- CheckModuleList(cml), SubML(cml, ml), ml = ModuleList(m, _), m is ModuleDecl, sd is ModuleSendsDecl(m, _);
-								   CheckModuleList(cml), SubML(cml, ml), ml = ModuleList(_, m2), SendsForModuleList(m2, sd), m2 != NIL;
-								   CheckModuleList(cml), SubML(cml, ml), ml = ModuleList(h, _), h = Hide(evl, hml), evl : EventList, SendsForModuleList(hml, sd), count({ ev | SubEvents(evl, ev)}) = 0;
-								   CheckModuleList(cml), SubML(cml, ml), ml = ModuleList(h, _), h = Hide(interl, hml), interl : InterfaceList, 
-								   SendsForModuleList(hml, sd), SubInt(interl, i), InterfaceEventDecl(i, sd.ev).
+	SendsForModuleList(ml, sd) :-  CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(m, _), m is ModuleDecl, sd is ModuleSendsDecl(m, _);
+								   CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(_, m2), SendsForModuleList(m2, sd), m2 != NIL;
+								   CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(h, _), h = Hide(_, hml), SendsForModuleList(hml, sd), no PrivateForModuleList(ml, pd), pd is ModulePrivateDecl, pd.ev = sd.ev.
 
 	//get the receives list for the ModuleList, its a simple union of all the receives
-	ReceivesForModuleList(cml, rd) :- CheckModuleList(cml), SubModule(cml, mod), rd is MachineReceivesDecl(mach, _), mach.mod = mod.
+	ReceivesForModuleList(ml, rd) :- CheckModuleList(cml), SubModList(cml, ml), SubModule(ml, mod), rd is MachineReceivesDecl(mach, _), mach.mod = mod.
 
-	*/								
+	//get the private list for the moduleList adding the hidden events and interfaces
+	PrivateForModuleList(ml, pd) :- CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(m, _), m is ModuleDecl, pd is ModulePrivateDecl(m, _);						
+									CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(_, m2), PrivateForModuleList(m2, pd), m2 != NIL;
+									CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(h, _), h = Hide(_, hml), PrivateForModuleList(hml, pd).
 
-									  
+	PrivateForModuleList(ml, ModulePrivateDecl(mod, ev)) :- CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(h, _), h = Hide(evl, hml), evl: EventList, SubModule(ml, mod), SubEvents(evl, ev);
+															CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(h, _), h = Hide(inl, hml), inl: InterfaceList, SubModule(ml, mod), SubEvents(evl, ev),  evl = toList(#EventList, NIL, {ev | SubInterface(inl, i), InterfaceEventDecl(i, ev)}).
+	
+	//get the implements list for the ModuleList, its a simple union of all the implements
+	ImplementsForModuleList(ml, id) :- CheckModuleList(cml), SubModList(cml, ml), SubModule(ml, mod), id is MachineImpsInterfaceDecl(mach, _), mach.mod = mod.
+
+	//get the creates list for the ModuleList, remove interfaces that have private events in them
+	CreatesForModuleList(ml, cd) :- CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(m, _), m is ModuleDecl, cd is ModuleCreatesDecl(m, _);						
+									CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(_, m2), CreatesForModuleList(m2, cd), m2 != NIL;
+									CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(h, _), h = Hide(evl, hml), evl: EventList, CreatesForModuleList(hml, cd).
+	CreatesForModuleList(ml, cd) :- CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(h, _), h = Hide(inl, hml), inl: InterfaceList, no PrivateForModuleList(ml, pd), pd is ModulePrivateDecl,												  CreatesForModuleList(hml, cd), cd is ModuleCreatesDecl(_, i), InterfaceEventDecl(i, ev), pd.ev = ev.
+	
 	/**************************************************************/
 	/*                      Legal Composition                    */
 	/*************************************************************/
@@ -489,14 +504,49 @@ domain PStaticTyping extends PData
 	/*************************************************************/
 	IllegalHideOperation::= (hideOp: Hide).
 	
-	/*hide operation must be performed on events in the sends list
-	[rule_Classes = '"error, msg: hide operation must be performed on events in the send list of the module"']
-	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), SubEvents(evl, ev), no SendsForModuleList(hml, ModuleSendsDecl(_, ev)).
+	/*
+	Hide E in P is legal only if :
+	1) E is not a private event of P. 
+	2) E is not present in any of the creates interfaces of P.
+	3) E is in the receives list of one of the implemented machines of P.
 	*/
+
+	[rule_Classes = '"error, msg: hide operation cannot be performed on private event"']
+	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), SubEvents(evl, ev), PrivateForModuleList(hml, pd), pd = ModulePrivateDecl(_, ev).
+
+	[rule_Classes = '"error, msg: hide operation cannot be performed on an event present in the creates interface"']
+	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), SubEvents(evl, ev), CreatesForModuleList(hml, cd), cd = ModuleCreatesDecl(_, i), InterfaceEventDecl(i, ev).
 	
+	[rule_Classes = '"error, msg: hide operation can be performed on an event present in receives of an implemented machine"']
+	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), SubEvents(evl, ev), no ReceivesForModuleList(hml, rd), rd is MachineReceivesDecl(_, ev).
+
+	/*
+	Hide I in P is legal only if:
+	1) I has no private events of P.
+	2) I is equals to implements of one of the machines in P. Implements is the set of public events in the receives set of the machine.
+	*/
+	[rule_Classes = '"error, msg: hide operation cannot be performed on an interface with private event"']
+	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), SubInterface(inl, i), PrivateForModuleList(hml, pd), pd = ModulePrivateDecl(_, ev), InterfaceEventDecl(i, ev).
+
+	[rule_Classes = '"error, msg: hide operation can be performed on an interface that contains all public events of one of the receives"']
+	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), SubInterface(inl, i), 
+							   no ReceivesForModuleList(hml, rd), rd is MachineReceivesDecl, count({ev | InterfaceEventDecl(i, ev), MachineReceivesDecl(rd.m, ev)}) > 0;
+							   ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), SubInterface(inl, i), 
+							   ReceivesForModuleList(hml, rd), count({ev1 | InterfaceEventDecl(i, ev1), MachineReceivesDecl(rd.m, ev1), InterfaceEventDecl(i, ev2), no MachineReceivesDecl(rd.m, ev2)}) > 0;
+							   ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), SubInterface(inl, i), 
+							   ReceivesForModuleList(hml, rd), count({ev1 | InterfaceEventDecl(i, ev1), MachineReceivesDecl(rd.m, ev1), no InterfaceEventDecl(i, ev2), MachineReceivesDecl(rd.m, ev2)}) > 0.
+
 
 	/**************************************************************/
-	/*			Type checking rules for refinement relation		 */
+	/*			Type checking rules for refinement checking		 */
+	/*************************************************************/
+
+	/**************************************************************/
+	/*			Type checking rules for monitor testing			 */
+	/*************************************************************/
+
+	/**************************************************************/
+	/*			 Assert that the ModuleList is Closed			 */
 	/*************************************************************/
 
     /*************************************************************/

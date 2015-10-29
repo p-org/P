@@ -1873,7 +1873,7 @@
                 var interfaceType = new P_Root.InterfaceType();
                 interfaceType.Span = cI.Span;
                 interfaceType.name = (P_Root.IArgType_InterfaceType__0)cI;
-                creates.ie = (P_Root.IArgType_ModuleCreatesDecl__1)interfaceType;
+                creates.inter = (P_Root.IArgType_ModuleCreatesDecl__1)interfaceType;
                 parseProgram.ModuleCreatesDecl.Add(creates);
             }
 
@@ -1890,7 +1890,7 @@
 
             var machDecl = GetCurrentMachineDecl(span);
             var machineInterfaceDecl = new P_Root.MachineImpsInterfaceDecl();
-            machineInterfaceDecl.m = machDecl;
+            machineInterfaceDecl.mach = machDecl;
             machineInterfaceDecl.Span = span;
             machineInterfaceDecl.inter = interfaceType;
             parseProgram.MachineImpsInterface.Add(machineInterfaceDecl);

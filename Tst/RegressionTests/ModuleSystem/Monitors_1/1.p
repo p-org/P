@@ -5,7 +5,7 @@ event a;
 interface K1 a;
 interface K2 y, x;
 
-test t1 Mod1, Mod2 satisfies Mon1, Mon2;
+test t1 Mod1, Mod2 satisfies Mon1, Mon2, Mon1 observes Mod1;
 
 module Mod1
 sends x, a
@@ -25,7 +25,7 @@ creates K1, K2
 	}
 }
 
-spec Mon1 monitors x 
+monitor Mon1 observes x 
 {
 	start state S1
 	{
@@ -36,7 +36,7 @@ spec Mon1 monitors x
 	}
 }
 
-spec Mon2 monitors x 
+monitor Mon2 observes x 
 {
 	start state S1
 	{

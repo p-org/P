@@ -393,7 +393,6 @@ namespace Microsoft.Pc
         public TestCaseType crntTestCaseType;
         public List<string> crntAllMachines;
         public Dictionary<string, List<string>> crntPrivateMonitors;
-        public List<string> crntGlobalMonitors;
         public Dictionary<AST<Node>, ModuleInfo> allModules;
 
         public string mainMachineName;
@@ -526,7 +525,6 @@ namespace Microsoft.Pc
             allModules = new Dictionary<AST<Node>, ModuleInfo>();
             crntAllMachines = new List<string>();
             crntPrivateMonitors = new Dictionary<string, List<string>>();
-            crntGlobalMonitors = new List<string>();
 
             LinkedList<AST<FuncTerm>> terms;
 
@@ -1648,8 +1646,7 @@ namespace Microsoft.Pc
                 allMachinesInModuleList.AddRange(monitorsTestCase.Value.privateMonitorToModule.Keys.ToList());
 
                 crntAllMachines = allMachinesInModuleList;
-                //populate the global monitors
-                crntGlobalMonitors = monitorsTestCase.Value.globalMonitors;
+
                 //populate the private monitors
                 foreach(var privateMonitor in monitorsTestCase.Value.privateMonitorToModule)
                 {
@@ -3663,14 +3660,10 @@ namespace Microsoft.Pc
                 if (crntTestCaseType == TestCaseType.MONITORS)
                 {
                     //for all global monitors
-                    foreach (var monitorName in crntGlobalMonitors)
+                    foreach (var machineName in crntAllMachines)
                     {
-                        ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", monitorName)), eventExpr, tmpVar)));
-                    }
-                    //for all private monitors for this machine
-                    foreach(var monitorName in crntPrivateMonitors[ctxt.machineName])
-                    {
-                        ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", monitorName)), eventExpr, tmpVar)));
+                        if (!allMachines[machineName].IsMonitor) continue;
+                        ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", machineName)), eventExpr, tmpVar)));
                     }
                 }
 
@@ -3699,15 +3692,12 @@ namespace Microsoft.Pc
                 {
                     ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, arg));
                 }
+                //Monitor can be applied on the private event
+                ctxt.AddSideEffect(MkZingAssert(MkZingIn(eventExpr, MkZingIdentifier("HPSet")), "monitored event is not in the private set of the module"));
                 List<AST<Node>> stmts = new List<AST<Node>>();
-                //generate invoke monitor only in case of monitor test case
+                //generate invoke monitor only in case of private monitors
                 if (crntTestCaseType == TestCaseType.MONITORS)
                 {
-                    //for all global monitors
-                    foreach (var monitorName in crntGlobalMonitors)
-                    {
-                        ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", monitorName)), eventExpr, tmpVar)));
-                    }
                     //for all private monitors for this machine
                     foreach (var monitorName in crntPrivateMonitors[ctxt.machineName])
                     {

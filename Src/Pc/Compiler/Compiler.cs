@@ -109,6 +109,7 @@
         private const string AliasPrefix = "p_compiler__";
         private const string MsgPrefix = "msg:";
         private const string ErrorClassName = "error";
+        private const string WarningClassName = "warning";
         private const int TypeErrorCode = 1;
 
         private static readonly Tuple<string, string>[] ManifestPrograms = new Tuple<string, string>[]
@@ -614,6 +615,8 @@
             AddErrors(task.Result, "ModuleLevelTypingError(_)", errors, 0);
             AddErrors(task.Result, "IllegalComposition(_)", errors, 0);
             AddErrors(task.Result, "IllegalHideOperation(_)", errors, 0);
+            AddErrors(task.Result, "IllegalMonitorTestCase(_)", errors, 0);
+            AddErrors(task.Result, "IllegalRefinesTestCase(_)", errors, 0);
 
             if (Options.printTypeInference)
             {
@@ -630,7 +633,12 @@
             List<Flag> queryFlags;
             foreach (var p in result.EnumerateProofs(errorPattern, out queryFlags, 1))
             {
-                if (!p.HasRuleClass(ErrorClassName))
+                bool isError = false;
+                if (p.HasRuleClass(ErrorClassName))
+                {
+                    isError = true;
+                }
+                else if (!p.HasRuleClass(WarningClassName))
                 {
                     continue;
                 }
@@ -642,7 +650,7 @@
                     {
                         var exprLoc = loc[locationIndex];
                         errors.Add(new Flag(
-                            SeverityKind.Error,
+                            isError ? SeverityKind.Error : SeverityKind.Warning,
                             exprLoc.Span,
                             errorMsg,
                             TypeErrorCode,
@@ -652,7 +660,7 @@
                 else
                 {
                     errors.Add(new Flag(
-                        SeverityKind.Error,
+                        isError ? SeverityKind.Error : SeverityKind.Warning,
                         default(Span),
                         errorMsg,
                         TypeErrorCode,

@@ -9,9 +9,9 @@
 }
 
 %token INT BOOL FOREIGN ANY SEQ MAP ID
-%token INCLUDE MAIN EVENT MACHINE MONITOR ASSUME SPEC
+%token INCLUDE MAIN EVENT MACHINE MONITOR ASSUME
 
-%token VAR START HOT COLD MODEL STATE FUN ACTION GROUP STATIC MONITORS
+%token VAR START HOT COLD MODEL STATE FUN ACTION GROUP STATIC OBSERVES
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH AS WITH
 
@@ -119,11 +119,11 @@ Creates
 	;		
 /***************** Monitor Declaration *********************/
 MonitorDecl
-	: SPEC ID ObservesList MachAnnotOrNone LCBRACE MachineBody RCBRACE			   { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
+	: MONITOR ID ObservesList MachAnnotOrNone LCBRACE MachineBody RCBRACE			   { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 
 ObservesList
-	: MONITORS NonDefaultNonHaltEventList { crntObservesList.AddRange(crntEventList); crntEventList.Clear(); }
+	: OBSERVES NonDefaultNonHaltEventList { crntObservesList.AddRange(crntEventList); crntEventList.Clear(); }
 	;
 
 
@@ -180,7 +180,7 @@ MonitorList
 
 Monitor
 	: ID															{ AddToCrntMonitorList($1.str, ToSpan(@1)); }
-	| ID MONITORS ID												{ AddToCrntMonitorList($1.str, $3.str, ToSpan(@1), ToSpan(@3)); }
+	| ID OBSERVES ID												{ AddToCrntMonitorList($1.str, $3.str, ToSpan(@1), ToSpan(@3)); }
 	;
 
 /***************** Implementation and Specification **********/

@@ -14,15 +14,10 @@
 
     internal static class SourceDownloader
     {
-        public enum DependencyKind { ZING, FORMULA };
-        private const string ReferrerString = "http://{0}.codeplex.com/SourceControl/latest";
-        private const string DownloadString = "http://download-codeplex.sec.s-msft.com/Download/SourceControlFileDownload.ashx?ProjectName={0}&changeSetId={1}";
+        public enum DependencyKind { ZING };
         private const string WinDirEnvVar = "WinDir";
         private const string CscName = "csc.exe";
         private const string MSbuildName = "msbuild.exe";
-        private const string RegVS32SubKey = "SOFTWARE\\Microsoft\\VisualStudio\\{0}.0";
-        private const string RegVS64SubKey = "SOFTWARE\\Wow6432Node\\Microsoft\\VisualStudio\\{0}.0";
-        private const string VCVarsAll = "VC\\vcvarsall.bat";
 
         private static readonly string[] FrameworkLocs = new string[]
         {
@@ -37,41 +32,8 @@
         
         private static readonly Tuple<string, string, string, string>[] Versions = new Tuple<string, string, string, string>[] 
         {
-            new Tuple<string, string, string, string>("zing", "https://github.com/ZingModelChecker/Zing/archive/master.zip", "..\\..\\..\\..\\..\\Ext\\Zing\\Zing_.zip", "..\\..\\..\\..\\..\\Ext\\Zing\\Zing-master\\"),
-            new Tuple<string, string, string, string>("formula", "fae5147888eab4c520839e1a5f89ece364a6eb63", "..\\..\\..\\..\\..\\Ext\\Formula\\Formula_.zip", "..\\..\\..\\..\\..\\Ext\\Formula\\Formula_\\"),
+            new Tuple<string, string, string, string>("zing", "https://github.com/ZingModelChecker/Zing/archive/master.zip", "..\\..\\..\\..\\..\\Ext\\Zing\\Zing_.zip", "..\\..\\..\\..\\..\\Ext\\Zing\\Zing-master\\")
         };
-
-        public static bool GetBuildRelDir(string dirname, bool shouldCreate, out DirectoryInfo dir)
-        {
-            try
-            {
-                var runningLoc = new FileInfo(Assembly.GetExecutingAssembly().Location);
-                dir = new DirectoryInfo(Path.Combine(runningLoc.Directory.FullName, dirname));
-                if (!dir.Exists && shouldCreate)
-                {
-                    dir.Create();
-                    return true;
-                }
-                else
-                {
-                    return dir.Exists;
-                }
-            }
-            catch (Exception e)
-            {
-                dir = null;
-                Program.WriteError("Could not locate dir {0} - {1}", dirname, e.Message);
-                return false;
-            }
-        }
-
-        public static void PrintSourceURLs()
-        {
-            foreach (var v in Versions)
-            {
-                Program.WriteInfo("Source code: " + DownloadString, v.Item1, v.Item2);
-            }
-        }
 
         public static bool GetBuildRelFile(string filename, out FileInfo file)
         {
@@ -115,31 +77,6 @@
             }
         }
 
-        /// <summary>
-        /// Gets the location of the latest vcVars on this machine.
-        /// </summary>
-        public static bool GetVCVarsBat(out FileInfo vcVars)
-        {
-            try
-            {
-                DirectoryInfo vsDir;
-                if (!GetVSDir(out vsDir))
-                {
-                    vcVars = null;
-                    return false;
-                }
-
-                vcVars = new FileInfo(Path.Combine(vsDir.FullName, VCVarsAll));
-                return vcVars.Exists;
-            }
-            catch (Exception e)
-            {
-                vcVars = null;
-                Program.WriteError("Could not find a Visual Studio component - {0}", e.Message);
-                return false;
-            }
-        }
-
         public static bool GetMsbuild(out FileInfo msbuild, bool force32Bit = false)
         {
             return GetFrameworkFile(MSbuildName, out msbuild, force32Bit);
@@ -171,36 +108,17 @@
                 // Create a New HttpClient object.
                 Program.WriteInfo("Downloading dependency {0} to {1}...", projVersion.Item1, outputFile.FullName);
                 HttpClient client = new HttpClient();
-                
-
-                if (dep == DependencyKind.ZING)
+                client.DefaultRequestHeaders.Referrer = new Uri(projVersion.Item2);
+                using (var strm = client.GetStreamAsync(projVersion.Item2).Result)
                 {
-                    client.DefaultRequestHeaders.Referrer = new Uri(projVersion.Item2);
-                    using (var strm = client.GetStreamAsync(projVersion.Item2).Result)
+                    using (var sw = new System.IO.StreamWriter(outputFile.FullName))
                     {
-                        using (var sw = new System.IO.StreamWriter(outputFile.FullName))
-                        {
-                            strm.CopyTo(sw.BaseStream);
-                        }
+                        strm.CopyTo(sw.BaseStream);
                     }
-
-                    Program.WriteInfo("Extracting dependency {0} to {1}...", projVersion.Item1, outputDir.FullName);
-                    ZipFile.ExtractToDirectory(outputFile.FullName, outputDir.FullName + "..\\");
                 }
-                else
-                {
-                    client.DefaultRequestHeaders.Referrer = new Uri(string.Format(ReferrerString, projVersion.Item1));
-                    using (var strm = client.GetStreamAsync(string.Format(DownloadString, projVersion.Item1, projVersion.Item2)).Result)
-                    {
-                        using (var sw = new System.IO.StreamWriter(outputFile.FullName))
-                        {
-                            strm.CopyTo(sw.BaseStream);
-                        }
-                    }
 
-                    Program.WriteInfo("Extracting dependency {0} to {1}...", projVersion.Item1, outputDir.FullName);
-                    ZipFile.ExtractToDirectory(outputFile.FullName, outputDir.FullName);
-                }
+                Program.WriteInfo("Extracting dependency {0} to {1}...", projVersion.Item1, outputDir.FullName);
+                ZipFile.ExtractToDirectory(outputFile.FullName, outputDir.FullName + "..\\");
             }
             catch (Exception e)
             {
@@ -210,56 +128,6 @@
             }
 
             return true;
-        }
-
-        private static bool GetVSDir(out DirectoryInfo vsDir)
-        {
-            try
-            {
-                var subKey = Environment.Is64BitOperatingSystem ? RegVS64SubKey : RegVS32SubKey;
-
-                string installDir = null;
-                //// Try to get version 12
-                /*
-                if (installDir == null)
-                {
-                    using (var key = Registry.LocalMachine.OpenSubKey(string.Format(subKey, 12)))
-                    {
-                        if (key != null)
-                        {
-                            installDir = key.GetValue("ShellFolder") as string;
-                        }
-                    }
-                }
-                */
-
-                //// Try to get version 11
-                if (installDir == null)
-                {
-                    using (var key = Registry.LocalMachine.OpenSubKey(string.Format(subKey, 11)))
-                    {
-                        if (key != null)
-                        {
-                            installDir = key.GetValue("ShellFolder") as string;
-                        }
-                    }
-                }
-
-                if (installDir == null)
-                {
-                    vsDir = null;
-                    return false;
-                }
-
-                vsDir = new DirectoryInfo(installDir);
-                return vsDir.Exists;
-            }
-            catch (Exception e)
-            {
-                vsDir = null;
-                Program.WriteError("ERROR: Could not find Visual Studio - {0}", e.Message);
-                return false;
-            }
         }
 
         private static bool GetFrameworkFile(string fileName, out FileInfo file, bool force32Bit = false)

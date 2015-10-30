@@ -451,7 +451,7 @@ namespace PlangBuild
         private static readonly Tuple<string, string>[] ReleaseMoveMap = new Tuple<string, string>[]
         {
             #region Formula
-            //formula  x86
+            //formula x86
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Formula\\x86\\Core.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\Core.dll"),

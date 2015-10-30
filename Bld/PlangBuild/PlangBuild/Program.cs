@@ -33,8 +33,6 @@
 
             if (args.Length == 1 && args[0].Trim() == LayoutFlag)
             {
-                SourceDownloader.PrintSourceURLs();
-                FormulaBuilder.PrintOutputs();
                 ZingBuilder.PrintOutputs();
                 return;
             }
@@ -62,7 +60,7 @@
 
             WriteInfo("Building in {0} configuration", isDebug ? "debug" : "release");
 
-            var result = FormulaBuilder.Build(isForced) && ZingBuilder.Build(isForced) && PlangBuilder.Build(isDebug);
+            var result = ZingBuilder.Build(isForced) && PlangBuilder.Build(isDebug);
 
             if (!result)
             {
@@ -104,8 +102,8 @@
         {
             Program.WriteInfo("USAGE: build.bat [{0} | {1} | {2} | {3}]", HelpFlag, DebugFlag, LayoutFlag, ExtFlag);
             Program.WriteInfo("{0}: Prints this message", HelpFlag);
-            Program.WriteInfo("{0}: Build debug versions for Formula", DebugFlag);
-            Program.WriteInfo("{0}: The expected layout of external dependencies (relative to FormulaBuild.exe)", LayoutFlag);
+            Program.WriteInfo("{0}: Build debug versions for Plang", DebugFlag);
+            Program.WriteInfo("{0}: The expected layout of external dependencies (relative to PlangBuild.exe)", LayoutFlag);
             Program.WriteInfo("{0}: Force rebuild of external dependencies", DebugFlag);
         }
     }

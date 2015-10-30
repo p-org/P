@@ -302,6 +302,7 @@ domain PStaticTyping extends PData
 	conforms no IllegalHideOperation(_).
 	conforms no IllegalMonitorTestCase(_).
 	conforms no IllegalRefinesTestCase(_).
+
     /*************************************************************/
 
 	/****************************************************************/
@@ -597,11 +598,11 @@ domain PStaticTyping extends PData
 
 	//Global monitors can only observe public events
 	[rule_Classes = '"error, msg: global monitor can only observe public events"']
-	IllegalMonitorTestCase(mon) :- tc is MonitorsTestDecl, SubMonitors(tc.monitors, monl), monl = MonitorList(s, _), s : String, m is MachineDecl(s, _, MONITOR, _, _, _), ObservesDecl(m, ev), PrivateForModuleList(tc.imp, pd), pd.ev = ev.
+	IllegalMonitorTestCase(monl) :- tc is MonitorsTestDecl, SubMonitors(tc.monitors, monl), monl = MonitorList(s, _), s : String, m is MachineDecl(s, _, MONITOR, _, _, _), ObservesDecl(m, ev), PrivateForModuleList(tc.imp, pd), pd.ev = ev.
 
 	//Private monitors can only observe private events of only one module
 	[rule_Classes = '"error, msg: private monitor can only observe private event of one module"']
-	IllegalMonitorTestCase(mon) :- tc is MonitorsTestDecl, SubPrivateMonitors(tc.monitors, monl), monl = PrivateMonitor(s, mod), s : String, m is MachineDecl(s, _, MONITOR, _, _, _), ObservesDecl(m, ev), no ModulePrivateDecl(mod, ev), PrivateForModuleList(tc.imp, pd), pc.ev = ev.
+	IllegalMonitorTestCase(monl) :- tc is MonitorsTestDecl, SubPrivateMonitors(tc.monitors, monl), monl = PrivateMonitor(s, mod), s : String, m is MachineDecl(s, _, MONITOR, _, _, _), ObservesDecl(m, ev), no ModulePrivateDecl(mod, ev), PrivateForModuleList(tc.imp, pd), pd.ev = ev.
 
 	/**************************************************************/
 	/*						Sound Composition		 			 */
@@ -610,7 +611,7 @@ domain PStaticTyping extends PData
 
 	//generate a warning that implementations is not closed.
 	[rule_Classes = '"warning, msg: implementation list is not closed with respect to creates interfaces"']
-	SoundCompositionWarning(ml) :- ImplementationModules(ml), CreatesForModuleList(ml, cd), no ReceivesForModuleList(ml, rd), InterfaceEventDecl(cd.inter, ev), rd.ev = ev.
+	SoundCompositionWarning(ml) :- ImplementationModules(ml), CreatesForModuleList(ml, cd), no ReceivesForModuleList(ml, rd), rd is MachineReceivesDecl, InterfaceEventDecl(cd.inter, ev), rd.ev = ev.
 
 	//TODO add other warnings for other modulelists
 

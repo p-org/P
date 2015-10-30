@@ -287,7 +287,6 @@ namespace Microsoft.Pc
         public List<string> observesEvents;
         public Dictionary<string, FunInfo> funNameToFunInfo;
         public MonitorType monitorType;
-        public string interfaceTypeName;
         public FuncTerm module;
 
         public MachineInfo()
@@ -295,7 +294,6 @@ namespace Microsoft.Pc
             type = "REAL";
             maxQueueSize = -1;
             maxQueueSizeAssumed = false;
-            interfaceTypeName = "";
             initStateName = null;
             stateNameToStateInfo = new Dictionary<string, StateInfo>();
             localVariableToVarInfo = new Dictionary<string, VariableInfo>();
@@ -657,19 +655,6 @@ namespace Microsoft.Pc
                         allInterfaces[interfaceName] = new List<string>();
                         allInterfaces[interfaceName].Add(eventName);
                     }
-                }
-            }
-
-            terms = GetBin(factBins, "MachineImpsInterfaceDecl");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var machineDecl = (FuncTerm)it.Current;
-                    var machineName = GetName(machineDecl, 0);
-                    it.MoveNext();
-                    allMachines[machineName].interfaceTypeName = GetName(it.Current as FuncTerm, 0);
                 }
             }
 
@@ -3233,17 +3218,7 @@ namespace Microsoft.Pc
             }
             else if (op == PData.Cnst_This.Node.Name)
             {
-                var interfaceName = allMachines[ctxt.machineName].interfaceTypeName;
-                AST<FuncTerm> interfaceType;
-                if(interfaceName == "")
-                {
-                    interfaceType = PTypeReal;
-                }
-                else
-                {
-                    interfaceType = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("InterfaceType")), Factory.Instance.MkCnst(interfaceName));
-                }
-                
+                var interfaceType = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("InterfaceType")), Factory.Instance.MkCnst(ctxt.machineName));
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmp");
                 ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(interfaceType.Node))));
                 ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetMachine"), tmpVar, MkZingIdentifier("myHandle"))));

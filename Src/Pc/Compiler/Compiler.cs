@@ -617,6 +617,7 @@
             AddErrors(task.Result, "IllegalHideOperation(_)", errors, 0);
             AddErrors(task.Result, "IllegalMonitorTestCase(_)", errors, 0);
             AddErrors(task.Result, "IllegalRefinesTestCase(_)", errors, 0);
+            AddErrors(task.Result, "SoundCompositionWarning(_)", errors, 0);
 
             if (Options.printTypeInference)
             {

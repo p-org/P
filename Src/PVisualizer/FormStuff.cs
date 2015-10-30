@@ -107,14 +107,16 @@ namespace Microsoft.PVisualizer
             var compiler = new Compiler(options);
             List<Flag> flags;
             var result = compiler.Compile(inputFileName, out flags);
-            Compiler.WriteFlags(flags, options.shortFileNames);
 
-            if (!result)
+            if (result)
             {
-                Compiler.WriteMessageLine("Compilation failed", SeverityKind.Error);
+                lastFileName = inputFileName;
+                GViewer.Graph = PtoGraph.GenerateGraph(compiler.ParsedPrograms);
             }
-            lastFileName = inputFileName;
-            GViewer.Graph = PtoGraph.GenerateGraph(compiler.ParsedPrograms);
+            else
+            {
+                MessageBox.Show("Compilation failed. Compile from command line to see detailed error messages.");
+            }
         }
     }
 }

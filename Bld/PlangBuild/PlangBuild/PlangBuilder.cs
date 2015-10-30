@@ -27,6 +27,8 @@ namespace PlangBuild
         /// </summary>
         private static readonly Tuple<bool, string, string>[] Projects = new Tuple<bool, string, string>[]
         {
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\PVisualizer\\PVisualizerx64.csproj", PlatformX64),
+            new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\PVisualizer\\PVisualizer.csproj", PlatformX86),
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\InteractiveCommandLine\\InteractiveCommandLinex64.csproj", PlatformX64),
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\InteractiveCommandLine\\InteractiveCommandLine.csproj", PlatformX86),
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\CommandLinex64.csproj", PlatformX64),
@@ -41,7 +43,6 @@ namespace PlangBuild
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\PrtDist\\Deployer\\Deployer.csproj", PlatformX64),
             new Tuple<bool, string, string>(true, "..\\..\\..\\..\\..\\Src\\PrtDist\\Deployer\\Deployer.csproj", PlatformX86),
              
-
         };
         
         private static readonly Tuple<string, string>[] DebugMoveMap = new Tuple<string, string>[]
@@ -67,7 +68,30 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Formula\\x64\\libz3.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\libz3.dll"),
-#endregion
+            #endregion
+
+            #region AGL
+            //AGL x86
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\AGL\\x86\\Microsoft.Msagl.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Microsoft.Msagl.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\AGL\\x86\\Microsoft.Msagl.Drawing.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Microsoft.Msagl.Drawing.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\AGL\\x86\\Microsoft.Msagl.GraphViewerGdi.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Microsoft.Msagl.GraphViewerGdi.dll"),
+            //AGL x64
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\AGL\\x64\\Microsoft.Msagl.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\Microsoft.Msagl.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\AGL\\x64\\Microsoft.Msagl.Drawing.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\Microsoft.Msagl.Drawing.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\AGL\\x64\\Microsoft.Msagl.GraphViewerGdi.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\Microsoft.Msagl.GraphViewerGdi.dll"),
+            #endregion
 
             #region Zing
             //Zing x86
@@ -168,6 +192,9 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Debug\\Pc.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Pc.exe"),
             new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PVisualizer\\bin\\x86\\Debug\\PVisualizer.exe", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\PVisualizer.exe"),
+            new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Debug\\Compiler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Compiler.dll"),
             new Tuple<string, string>(
@@ -180,6 +207,9 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Debug\\Pc.pdb", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Pc.pdb"),
             new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PVisualizer\\bin\\x86\\Debug\\PVisualizer.pdb", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\PVisualizer.pdb"),
+            new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Debug\\Compiler.pdb", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\Compiler.pdb"),
             new Tuple<string, string>(
@@ -188,6 +218,7 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Debug\\ZingParser.pdb", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Compiler\\ZingParser.pdb"),
+                
             //Pc x64
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\InteractiveCommandLine\\bin\\x64\\Debug\\Pci.exe", 
@@ -195,6 +226,9 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Debug\\Pc.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\Pc.exe"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PVisualizer\\bin\\x64\\Debug\\PVisualizer.exe", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\PVisualizer.exe"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Debug\\Compiler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\Compiler.dll"),
@@ -208,6 +242,9 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Debug\\Pc.pdb", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\Pc.pdb"),
             new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PVisualizer\\bin\\x64\\Debug\\PVisualizer.pdb", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\PVisualizer.pdb"),
+            new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Debug\\Compiler.pdb", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\Compiler.pdb"),
             new Tuple<string, string>(
@@ -216,7 +253,7 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Debug\\ZingParser.pdb", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Compiler\\ZingParser.pdb"),
-#endregion
+            #endregion
             
             #region Headers
             // x86
@@ -451,7 +488,7 @@ namespace PlangBuild
         private static readonly Tuple<string, string>[] ReleaseMoveMap = new Tuple<string, string>[]
         {
             #region Formula
-            //formula x86
+            //Formula x86
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Formula\\x86\\Core.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\Core.dll"),
@@ -461,7 +498,7 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Formula\\x86\\libz3.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\libz3.dll"),
-            //formula x64
+            //Formula x64
              new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Formula\\x64\\Core.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\Core.dll"),
@@ -471,6 +508,29 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Ext\\Formula\\x64\\libz3.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\libz3.dll"),
+            #endregion
+
+            #region AGL
+            //AGL x86
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\AGL\\x86\\Microsoft.Msagl.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\Microsoft.Msagl.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\AGL\\x86\\Microsoft.Msagl.Drawing.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\Microsoft.Msagl.Drawing.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\AGL\\x86\\Microsoft.Msagl.GraphViewerGdi.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\Microsoft.Msagl.GraphViewerGdi.dll"),
+            //AGL x64
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\AGL\\x64\\Microsoft.Msagl.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\Microsoft.Msagl.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\AGL\\x64\\Microsoft.Msagl.Drawing.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\Microsoft.Msagl.Drawing.dll"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Ext\\AGL\\x64\\Microsoft.Msagl.GraphViewerGdi.dll", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\Microsoft.Msagl.GraphViewerGdi.dll"),
             #endregion
 
             #region Zing
@@ -574,6 +634,9 @@ namespace PlangBuild
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Release\\Pc.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\Pc.exe"),
             new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PVisualizer\\bin\\x86\\Release\\PVisualizer.exe", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\PVisualizer.exe"),
+            new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x86\\Release\\Compiler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Compiler\\Compiler.dll"),
             new Tuple<string, string>(
@@ -589,6 +652,9 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Release\\Pc.exe", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\Pc.exe"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PVisualizer\\bin\\x64\\Release\\PVisualizer.exe", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\PVisualizer.exe"),
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\Pc\\CommandLine\\bin\\x64\\Release\\Compiler.dll", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Compiler\\Compiler.dll"),

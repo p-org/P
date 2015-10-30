@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandLinex64", "CommandLi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InteractiveCommandLinex64", "InteractiveCommandLine\InteractiveCommandLinex64.csproj", "{2AC6C51F-C987-477D-9A70-B71B7EE5323E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PVisualizerx64", "..\PVisualizer\PVisualizerx64.csproj", "{9EA5F2E1-7FFA-4A0C-B439-BEAE64B952C5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

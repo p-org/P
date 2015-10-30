@@ -14,7 +14,9 @@
 [Dd]ebug/
 [Rr]elease/
 x64/
+!Ext/Formula/x64/
 x86/
+!Ext/Formula/x86/
 build/
 [Bb]in/
 [Oo]bj/

@@ -498,13 +498,19 @@ domain PStaticTyping extends PData
 	CreatesForModuleList(ml, cd) :- CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(h, _), h = Hide(inl, hml), inl: InterfaceList, no PrivateForModuleList(ml, pd), pd is ModulePrivateDecl,												  CreatesForModuleList(hml, cd), cd is ModuleCreatesDecl(_, i), InterfaceEventDecl(i, ev), pd.ev = ev.
 	
 	/**************************************************************/
-	/*                      Legal Composition                    */
+	/*                      Legal Composition                   */
+	/*************************************************************/
+	//generate legal compositions just so that you can generate better error messages
+	//currently the error messages are generated transitively all the way to the root modulelist.
+
+	/**************************************************************/
+	/*                      Illegal Composition                   */
 	/*************************************************************/
 	IllegalComposition ::= (modL: ModuleList).
 
 	//sends and privates in the modulelist are disjoint
 	[rule_Classes = '"error, msg: sends and private are not disjoint after composition"']
-	IllegalComposition(ml) :- CheckModuleList(cml), SubModList(cml, ml), SendsForModuleList(ml, sd), PrivateForModuleList(ml, pd), sd.ev = pd.ev.
+	IllegalComposition(ml) :- CheckModuleList(cml), SubModList(cml, ml), SendsForModuleList(ml, sd), PrivateForModuleList(ml, pd), sd.ev = pd.ev, SubModList(ml, mml).
 
 	//implemented interfaces must be disjoint
 	[rule_Classes = '"error, msg: implemented interfaces are not disjoint after composition"']
@@ -542,8 +548,12 @@ domain PStaticTyping extends PData
 	[rule_Classes = '"error, msg: interface in creates has private event after composition"']
 	IllegalComposition(ml) :- CheckModuleList(cml), SubModList(cml, ml), PrivateForModuleList(ml, pd), CreatesForModuleList(ml, cd), InterfaceEventDecl(cd.inter, ev), pd.ev = ev.
 
+	//no duplicates in the sends list
+	[rule_Classes = '"error, msg: multiple modules have the same event in the sends list after composition"']
+	IllegalComposition(ml) :- CheckModuleList(cml), SubModList(cml, ml), SendsForModuleList(ml, sd1), SendsForModuleList(ml, sd2), sd1 != sd2, sd1.ev = sd2.ev.
+
 	/*************************************************************/
-	/*					Legal Hide Operation					*/
+	/*					Illegal Hide Operation					*/
 	/*************************************************************/
 	IllegalHideOperation::= (hideOp: Hide).
 	

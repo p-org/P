@@ -21,7 +21,7 @@
 %token TRUE FALSE
 
 %token INTERFACE IMPLEMENTS MODULE SENDS CREATES PRIVATE RECEIVES
-%token TEST REFINES SATISFIES IMPLEMENTATION SPECIFICATION HIDE
+%token TEST REFINES SATISFIES IMPLEMENTATION SPECIFICATION HIDEE HIDEI
 
 %token ASSIGN REMOVE INSERT
 %token EQ NE LT GT LE GE IN
@@ -156,12 +156,12 @@ TestDecl
 	;
 
 Hide
-	: HIDE EventsOrInterfaces IN LPAREN ModuleList	RPAREN	{ PushHideModule(ToSpan(@1)); }
+	: HideEventsOrInterfaces IN LPAREN ModuleList	RPAREN	{ PushHideModule(ToSpan(@1)); }
 	;
 
-EventsOrInterfaces
-	: NonDefaultNonHaltEventList						{ PushEventList(ToSpan(@1)); }
-	| InterfaceList										{ PushInterfaceList(ToSpan(@1)); }
+HideEventsOrInterfaces
+	: HIDEE NonDefaultNonHaltEventList						{ PushEventList(ToSpan(@1)); }
+	| HIDEI InterfaceList									{ PushInterfaceList(ToSpan(@1)); }
 	;
 
 Module

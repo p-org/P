@@ -437,7 +437,6 @@ namespace Microsoft.Pc
                     {
                         modules.Add(m);
                     }
-                    return modules.ToList();
                 }
                 else
                 {
@@ -1127,7 +1126,8 @@ namespace Microsoft.Pc
                     string interfaceName = GetName(it.Current as FuncTerm, 0);
                     it.MoveNext();
                     string machineName = GetName(it.Current as FuncTerm, 0);
-                    allModuleLists[moduleList].interfaceToMachineMap.Add(interfaceName, machineName);
+                    if (allModuleLists.ContainsKey(moduleList))
+                        allModuleLists[moduleList].interfaceToMachineMap.Add(interfaceName, machineName);
                 }
             }
 

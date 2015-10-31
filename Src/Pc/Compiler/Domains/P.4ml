@@ -78,7 +78,7 @@ domain PData
 	NoFailureTestDecl ::= fun (name: String -> imp: any ModuleList).
 
 	ModuleList ::= new (mod: any Module, tail: any ModuleList + {NIL}).
-	Hide ::= new (evOrIn: any EventsOrInterfaces, modL: any ModuleList).
+	Hide ::= new (ei: any EventsOrInterfaces, modL: any ModuleList).
 	PrivateMonitor ::= new (mon: String, mod: any ModuleDecl).
 	MonitorList ::= new (mon: any MonitorKind, tail: any MonitorList + {NIL}).
 	EventList ::= new (ev: String, tail: any EventList + {NIL}).
@@ -256,29 +256,33 @@ domain PStructuralTyping extends PData
 	OneDeclError(creates) :- creates is ModuleCreatesDecl(_, i), no InterfaceEventDecl(i, _).
 	
 	CompDecls ::= ImplementationModules + SpecificationModules + RefinesTestDecl + MonitorsTestDecl + NoFailureTestDecl.
-	ModuleOrEventOrMonitorList ::= ModuleList + EventList + MonitorList.
+	VariousList ::= ModuleList + EventList + MonitorList + InterfaceList.
 
 	//module is declared
-	SubME ::= sub (c: CompDecls, mem: ModuleOrEventOrMonitorList).
+	SubVL ::= sub (c: CompDecls, mem: VariousList).
 	[rule_Classes = '"error, msg: module in the list is not declared"']
-	OneDeclError(c) :- SubME(c, ml), ml = ModuleList(ModuleDecl(m), _), no ModuleDecl(m).
+	OneDeclError(c) :- SubVL(c, ml), ml = ModuleList(ModuleDecl(m), _), no ModuleDecl(m).
 	
 	//event in hide is declared
 	[rule_Classes = '"error, msg: event used in hide operation is not declared"']
-	OneDeclError(c) :- SubME(c, ml), ml = EventList(ev, _), no EventDecl(ev, _, _).
+	OneDeclError(c) :- SubVL(c, ml), ml = EventList(ev, _), no EventDecl(ev, _, _).
+
+	//interface in hide is declared
+	[rule_Classes = '"error, msg: event used in hide operation is not declared"']
+	OneDeclError(c) :- SubVL(c, ml), ml = InterfaceList(i, _), no InterfaceEventDecl(i, _).
 	
 	//monitor is declared
 	[rule_Classes = '"error, msg: monitor is undeclared"']
-	OneDeclError(c) :- SubME(c, ml), ml = MonitorList(s, _), s : String, no MachineDecl(s, _, MONITOR, _, _, _);
-					   SubME(c, ml), ml = MonitorList(m, _), m = PrivateMonitor(s, _), no MachineDecl(s, _, MONITOR, _, _, _).
+	OneDeclError(c) :- SubVL(c, ml), ml = MonitorList(s, _), s : String, no MachineDecl(s, _, MONITOR, _, _, _);
+					   SubVL(c, ml), ml = MonitorList(m, _), m = PrivateMonitor(s, _), no MachineDecl(s, _, MONITOR, _, _, _).
 	
 	//module in private monitor is declared
 	[rule_Classes = '"error, msg: undeclared module in private monitor declaration"']
-	OneDeclError(c) :- SubME(c, ml), ml = MonitorList(m, _), m = PrivateMonitor(_, ModuleDecl(s)), no ModuleDecl(s).
+	OneDeclError(c) :- SubVL(c, ml), ml = MonitorList(m, _), m = PrivateMonitor(_, ModuleDecl(s)), no ModuleDecl(s).
 
 	//only one liveness monitor is allowed per test case
 	[ rule_Classes = '"error, msg: multiple liveness monitors declared in the test-case"']
-	OneDeclError(c) :- SubME(c, ml1), SubME(c, ml2), ml1 = MonitorList(s1, _), ml2 = MonitorList(s2, _), s1 != s2, 
+	OneDeclError(c) :- SubVL(c, ml1), SubVL(c, ml2), ml1 = MonitorList(s1, _), ml2 = MonitorList(s2, _), s1 != s2, 
 					   mach1 = MachineDecl(s1, _, MONITOR, _, _, _),  mach2 = MachineDecl(s2, _, MONITOR, _, _, _), StateDecl(_, mach1, _, _, k1), k1 != WARM, StateDecl(_, mach2, _, _, k2), k2 != WARM.
 }
 
@@ -441,7 +445,7 @@ domain PStaticTyping extends PData
 	ImpInterfaceToMachineMap ::= (ie: InterfaceType, mach: MachineDecl).
 
 	//compute the interface map
-	InterfaceToMachineMap(ml, i, mach) :-  ComposedModules(ml), SubModule(ml, m1), SubModule(ml, m2), ModuleCreatesDecl(m1, i), mach is MachineDecl(_, m2, _, _, _, _), MachineReceivesDecl(mach, ev), InterfaceEventDecl(i, ev).
+	InterfaceToMachineMap(ml, i, mach) :-  ComposedModules(ml), SubModule(ml, m1), SubModule(ml, m2), CreatesForModule(m1, i), ReceivesForModule(m2, rd), InterfaceEventDecl(i, rd.ev), mach = rd.mach.
 
 	//map for implementation modules
 	ImpInterfaceToMachineMap(i, mc) :- ImplementationModules(ml), InterfaceToMachineMap(ml, i, mc).
@@ -462,41 +466,66 @@ domain PStaticTyping extends PData
 	/*	Generate sends, private and creates for ModuleList		   */
 	/***************************************************************/
 	
-	CheckModuleList ::= (modL: ModuleList).
-	SendsForModuleList ::= (ml: ModuleList, sd: ModuleSendsDecl).
-	PrivateForModuleList ::= (ml: ModuleList, pd: ModulePrivateDecl).
-	CreatesForModuleList ::= (ml: ModuleList, cd: ModuleCreatesDecl).
+	AllModList ::= (modL: ModuleList).
+	SendsForModuleList ::= (ml: ModuleList, ev: String).
+	PrivateForModuleList ::= (ml: ModuleList, ev: String).
+	CreatesForModuleList ::= (ml: ModuleList, inter: InterfaceType).
 	ReceivesForModuleList ::= (ml: ModuleList, rd: MachineReceivesDecl).
 	ImplementsForModuleList ::= (ml: ModuleList, id: MachineImpsInterfaceDecl).
 
 	//all the following modulelists must be legally composed.
-	CheckModuleList(ml) :- ComposedModules(ml); ComposedModules(ml'), SubHide(ml', h), h = Hide(_, ml).
+	AllModList(ml) :- ComposedModules(cml), SubModList(cml, ml).
 
 	//get the sends list after removing hidden events and interfaces
-	SendsForModuleList(ml, sd) :-  CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(m, _), m is ModuleDecl, sd is ModuleSendsDecl(m, _);
-								   CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(_, m2), SendsForModuleList(m2, sd), m2 != NIL;
-								   CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(h, _), h = Hide(_, hml), SendsForModuleList(hml, sd), no PrivateForModuleList(ml, pd), pd is ModulePrivateDecl, pd.ev = sd.ev.
+	SendsForModuleList(ml, ev) :-  AllModList(ml), ml = ModuleList(m, _), SendsForModule(m, ev);
+								   AllModList(ml), ml = ModuleList(_, m2), SendsForModuleList(m2, ev), m2 != NIL.
 
 	//get the receives list for the ModuleList, its a simple union of all the receives
-	ReceivesForModuleList(ml, rd) :- CheckModuleList(cml), SubModList(cml, ml), SubModule(ml, mod), rd is MachineReceivesDecl(mach, _), mach.mod = mod.
+	ReceivesForModuleList(ml, rd) :- AllModList(ml), SubModule(ml, mod), rd is MachineReceivesDecl(mach, _), mach.mod = mod.
 
 	//get the private list for the moduleList adding the hidden events and interfaces
-	PrivateForModuleList(ml, pd) :- CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(m, _), m is ModuleDecl, pd is ModulePrivateDecl(m, _);						
-									CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(_, m2), PrivateForModuleList(m2, pd), m2 != NIL;
-									CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(h, _), h = Hide(_, hml), PrivateForModuleList(hml, pd).
-
-	PrivateForModuleList(ml, ModulePrivateDecl(mod, ev)) :- CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(h, _), h = Hide(evl, hml), evl: EventList, SubModule(ml, mod), SubEvents(evl, ev);
-															CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(h, _), h = Hide(inl, hml), inl: InterfaceList, SubModule(ml, mod), SubEvents(evl, ev),  evl = toList(#EventList, NIL, {ev | SubInterface(inl, i), InterfaceEventDecl(i, ev)}).
+	PrivateForModuleList(ml, ev) :- AllModList(ml), ml = ModuleList(m, _), PrivateForModule(m, ev);						
+									AllModList(ml), ml = ModuleList(_, m2), PrivateForModuleList(m2, ev), m2 != NIL.
 	
 	//get the implements list for the ModuleList, its a simple union of all the implements
-	ImplementsForModuleList(ml, id) :- CheckModuleList(cml), SubModList(cml, ml), SubModule(ml, mod), id is MachineImpsInterfaceDecl(mach, _), mach.mod = mod.
+	ImplementsForModuleList(ml, id) :- AllModList(ml), SubModule(ml, mod), id is MachineImpsInterfaceDecl(mach, _), mach.mod = mod.
 
 	//get the creates list for the ModuleList, remove interfaces that have private events in them
-	CreatesForModuleList(ml, cd) :- CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(m, _), m is ModuleDecl, cd is ModuleCreatesDecl(m, _);						
-									CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(_, m2), CreatesForModuleList(m2, cd), m2 != NIL;
-									CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(h, _), h = Hide(evl, hml), evl: EventList, CreatesForModuleList(hml, cd).
-	CreatesForModuleList(ml, cd) :- CheckModuleList(cml), SubModList(cml, ml), ml = ModuleList(h, _), h = Hide(inl, hml), inl: InterfaceList, no PrivateForModuleList(ml, pd), pd is ModulePrivateDecl,												  CreatesForModuleList(hml, cd), cd is ModuleCreatesDecl(_, i), InterfaceEventDecl(i, ev), pd.ev = ev.
+	CreatesForModuleList(ml, i) :- AllModList(ml), ml = ModuleList(m, _), CreatesForModule(m, i);						
+								   AllModList(ml), ml = ModuleList(_, m2), CreatesForModuleList(m2, i), m2 != NIL.
 	
+	//Generate interface for the all modules
+	GenInterfaceForHideMod ::= (h : Hide).
+	GenInterfaceForHideMod(hm) :- ComposedModules(cml), SubHide(cml, hm).
+
+	SendsForModule ::= (mod: Module, ev: String).
+	PrivateForModule ::= (mod: Module, ev: String).
+	CreatesForModule ::= (mod: Module, inter: InterfaceType).
+	ReceivesForModule ::= (mod: Module, rd: MachineReceivesDecl).
+	ImplementsForModule ::= (mod: Module, id: MachineImpsInterfaceDecl).
+
+	//get the sends list for the hide module
+	SendsForModule(hm, ev) :- GenInterfaceForHideMod(hm), SendsForModuleList(hm.modL, ev);
+							  ModuleSendsDecl(hm, ev).
+
+	//get the receives list for the hide module
+	ReceivesForModule(hm, rd) :- GenInterfaceForHideMod(hm), ReceivesForModuleList(hm.modL, rd);
+								 rd is MachineReceivesDecl(mach, _), mach is MachineDecl(_, hm, _, _, _, _), hm is ModuleDecl.
+
+	//get the private list for the hide module
+	PrivateForModule(hm, ev) :-  GenInterfaceForHideMod(hm), PrivateForModuleList(hm.modL, ev);
+							     GenInterfaceForHideMod(hm), hm = Hide(eL, _), eL : EventList, SubEvents(eL, ev);
+								 GenInterfaceForHideMod(hm), hm = Hide(iL, _), iL : InterfaceList, SubInterface(iL, i), InterfaceEventDecl(i, ev);
+								 ModulePrivateDecl(hm, ev).
+
+	//get the implements list for the hide module
+	ImplementsForModule(hm, id) :- GenInterfaceForHideMod(hm), ImplementsForModuleList(hm.modL, id);
+								   id is MachineImpsInterfaceDecl(mach, _), mach is MachineDecl(_, hm, _, _, _, _), hm is ModuleDecl.
+
+	//get the creates list for the hide module
+	CreatesForModule(hm, i) :-  GenInterfaceForHideMod(hm), hm = Hide(eL, modL), eL : EventList, CreatesForModuleList(modL, i);
+								GenInterfaceForHideMod(hm), hm = Hide(iL, modL), iL : InterfaceList, SubInterface(iL, i), CreatesForModuleList(modL, i), no InterfaceEventDecl(i, ev), PrivateForModule(hm, ev);
+								ModuleCreatesDecl(hm, i).
 	/**************************************************************/
 	/*                      Legal Composition                   */
 	/*************************************************************/
@@ -506,24 +535,31 @@ domain PStaticTyping extends PData
 	/**************************************************************/
 	/*                      Illegal Composition                   */
 	/*************************************************************/
+	//Get all modulelist compositions
+	ComposeModWithModList ::= (ml: ModuleList, m1: Module, m2:ModuleList).
+	ComposeModWithModList(ml, m1, m2) :- AllModList(ml), ml = ModuleList(m1, m2), m2 : ModuleList. // add m2 is a legal compositions
+	
 	IllegalComposition ::= (modL: ModuleList).
 
 	//sends and privates in the modulelist are disjoint
 	[rule_Classes = '"error, msg: sends and private are not disjoint after composition"']
-	IllegalComposition(ml) :- CheckModuleList(cml), SubModList(cml, ml), SendsForModuleList(ml, sd), PrivateForModuleList(ml, pd), sd.ev = pd.ev, SubModList(ml, mml).
+	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), SendsForModule(m1, ev), PrivateForModuleList(m2, ev);
+							  ComposeModWithModList(ml, m1, m2), SendsForModuleList(m2, ev), PrivateForModule(m1, ev).
 
 	//implemented interfaces must be disjoint
 	[rule_Classes = '"error, msg: implemented interfaces are not disjoint after composition"']
-	IllegalComposition(ml) :- CheckModuleList(cml), SubModList(cml, ml), ImplementsForModuleList(ml, mid1), ImplementsForModuleList(ml, mid2), mid1 != mid2, InterfaceEventDecl(mid1.inter, ev), InterfaceEventDecl(mid2.inter, ev).
+	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), ImplementsForModule(m1, mid1), ImplementsForModuleList(m2, mid2), InterfaceEventDecl(mid1.inter, ev), InterfaceEventDecl(mid2.inter, ev).
 
 
 	//public events in the receives must be disjoint
 	[rule_Classes = '"error, msg: public events in receives are not disjoint after composition"']
-	IllegalComposition(ml) :- CheckModuleList(cml), SubModList(cml, ml), ReceivesForModuleList(ml, rd1), ReceivesForModuleList(ml, rd2), rd1 != rd2, rd1.ev = rd2.ev, pd is ModulePrivateDecl, no PrivateForModuleList(ml, pd), pd.ev = rd1.ev.
+	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), ReceivesForModule(m1, rd1), ReceivesForModuleList(m2, rd2), rd1.ev = rd2.ev, ml = ModuleList(m1, m2), no PrivateForModuleList(ml, ev), rd1.ev = ev.
 
+	/*
 	//implemented interfaces of a machine contains no private event
 	[rule_Classes = '"error, msg: implemented interface has private events after composition"']
-	IllegalComposition(ml) :- CheckModuleList(cml), SubModList(cml, ml), ImplementsForModuleList(ml, mid), PrivateForModuleList(ml, pd), InterfaceEventDecl(mid.inter, pd.ev).
+	IllegalComposition(m1) :- ComposeModWithModList(m1, m2), ImplementsForModuleList(m1, mid), PrivateForModuleList(m2, pd), InterfaceEventDecl(mid.inter, pd.ev);
+							  ComposeModWithModList(m1, m2), ImplementsForModuleList(m2, mid), PrivateForModuleList(m1, pd), InterfaceEventDecl(mid.inter, pd.ev).
 
 	//implemented interface = public events in the receives 
 	[rule_Classes = '"error, msg: implemented interface is not same as the public events in receives after composition"']
@@ -547,10 +583,10 @@ domain PStaticTyping extends PData
 	//no private event in the creates interfaces
 	[rule_Classes = '"error, msg: interface in creates has private event after composition"']
 	IllegalComposition(ml) :- CheckModuleList(cml), SubModList(cml, ml), PrivateForModuleList(ml, pd), CreatesForModuleList(ml, cd), InterfaceEventDecl(cd.inter, ev), pd.ev = ev.
-
+	*/
 	//no duplicates in the sends list
 	[rule_Classes = '"error, msg: multiple modules have the same event in the sends list after composition"']
-	IllegalComposition(ml) :- CheckModuleList(cml), SubModList(cml, ml), SendsForModuleList(ml, sd1), SendsForModuleList(ml, sd2), sd1 != sd2, sd1.ev = sd2.ev.
+	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), SendsForModule(m1, ev), SendsForModuleList(m2, ev), no PrivateForModuleList(ml, ev).
 
 	/*************************************************************/
 	/*					Illegal Hide Operation					*/
@@ -565,10 +601,10 @@ domain PStaticTyping extends PData
 	*/
 
 	[rule_Classes = '"error, msg: hide operation cannot be performed on private event"']
-	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), SubEvents(evl, ev), PrivateForModuleList(hml, pd), pd = ModulePrivateDecl(_, ev).
+	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), SubEvents(evl, ev), PrivateForModuleList(hml, ev).
 
 	[rule_Classes = '"error, msg: hide operation cannot be performed on an event present in the creates interface"']
-	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), SubEvents(evl, ev), CreatesForModuleList(hml, cd), cd = ModuleCreatesDecl(_, i), InterfaceEventDecl(i, ev).
+	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), SubEvents(evl, ev), CreatesForModuleList(hml, i), InterfaceEventDecl(i, ev).
 	
 	[rule_Classes = '"error, msg: hide operation can be performed on an event present in receives of an implemented machine"']
 	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), SubEvents(evl, ev), no ReceivesForModuleList(hml, rd), rd is MachineReceivesDecl(_, ev).
@@ -579,7 +615,7 @@ domain PStaticTyping extends PData
 	2) I is equals to implements of one of the machines in P. Implements is the set of public events in the receives set of the machine.
 	*/
 	[rule_Classes = '"error, msg: hide operation cannot be performed on an interface with private event"']
-	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), SubInterface(inl, i), PrivateForModuleList(hml, pd), pd = ModulePrivateDecl(_, ev), InterfaceEventDecl(i, ev).
+	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), SubInterface(inl, i), PrivateForModuleList(hml, ev), InterfaceEventDecl(i, ev).
 
 	[rule_Classes = '"error, msg: hide operation can be performed on an interface that contains all public events of one of the receives"']
 	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), SubInterface(inl, i), 
@@ -608,11 +644,11 @@ domain PStaticTyping extends PData
 
 	//Global monitors can only observe public events
 	[rule_Classes = '"error, msg: global monitor can only observe public events"']
-	IllegalMonitorTestCase(monl) :- tc is MonitorsTestDecl, SubMonitors(tc.monitors, monl), monl = MonitorList(s, _), s : String, m is MachineDecl(s, _, MONITOR, _, _, _), ObservesDecl(m, ev), PrivateForModuleList(tc.imp, pd), pd.ev = ev.
+	IllegalMonitorTestCase(monl) :- tc is MonitorsTestDecl, SubMonitors(tc.monitors, monl), monl = MonitorList(s, _), s : String, m is MachineDecl(s, _, MONITOR, _, _, _), ObservesDecl(m, ev), PrivateForModuleList(tc.imp, ev).
 
 	//Private monitors can only observe private events of only one module
 	[rule_Classes = '"error, msg: private monitor can only observe private event of one module"']
-	IllegalMonitorTestCase(monl) :- tc is MonitorsTestDecl, SubPrivateMonitors(tc.monitors, monl), monl = PrivateMonitor(s, mod), s : String, m is MachineDecl(s, _, MONITOR, _, _, _), ObservesDecl(m, ev), no ModulePrivateDecl(mod, ev), PrivateForModuleList(tc.imp, pd), pd.ev = ev.
+	IllegalMonitorTestCase(monl) :- tc is MonitorsTestDecl, SubPrivateMonitors(tc.monitors, monl), monl = PrivateMonitor(s, mod), s : String, m is MachineDecl(s, _, MONITOR, _, _, _), ObservesDecl(m, ev), no ModulePrivateDecl(mod, ev), PrivateForModuleList(tc.imp, ev).
 
 	/**************************************************************/
 	/*						Sound Composition		 			 */
@@ -621,7 +657,7 @@ domain PStaticTyping extends PData
 
 	//generate a warning that implementations is not closed.
 	[rule_Classes = '"warning, msg: implementation list is not closed with respect to creates interfaces"']
-	SoundCompositionWarning(ml) :- ImplementationModules(ml), CreatesForModuleList(ml, cd), no ReceivesForModuleList(ml, rd), rd is MachineReceivesDecl, InterfaceEventDecl(cd.inter, ev), rd.ev = ev.
+	SoundCompositionWarning(ml) :- ImplementationModules(ml), CreatesForModuleList(ml, i), no ReceivesForModuleList(ml, rd), rd is MachineReceivesDecl, InterfaceEventDecl(i, ev), rd.ev = ev.
 
 	//TODO add other warnings for other modulelists
 

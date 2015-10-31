@@ -122,7 +122,8 @@
 			 keywords.Add("satisfies", (int)Tokens.SATISFIES);
 			 keywords.Add("implementation", (int)Tokens.IMPLEMENTATION);
 			 keywords.Add("specification", (int)Tokens.SPECIFICATION);
-			 keywords.Add("hide", (int)Tokens.HIDE);
+			 keywords.Add("hidee", (int)Tokens.HIDEE);
+			 keywords.Add("hidei", (int)Tokens.HIDEI);
 
 		 }
 

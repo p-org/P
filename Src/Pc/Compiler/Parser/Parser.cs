@@ -276,6 +276,58 @@
             return new Span(loc.StartLine, loc.StartColumn + 1, loc.EndLine, loc.EndColumn + 1);
         }
 
+        private bool IsValidName(string name, Span nameSpan)
+        {
+            string errorMessage = "";
+            bool error = false;
+            if(topDeclNames.eventNames.Contains(name))
+            {
+                errorMessage = string.Format("An event with name {0} already declared", name);
+                error = true;
+            }
+            else if(topDeclNames.interfaceNames.Contains(name))
+            {
+                errorMessage = string.Format("An interface with name {0} already declared", name);
+                error = true;
+            }
+            else if(topDeclNames.machineNames.Contains(name))
+            {
+                errorMessage = string.Format("A machine with name {0} already declared", name);
+                error = true;
+            }
+            else if(topDeclNames.moduleNames.Contains(name))
+            {
+                errorMessage = string.Format("A module with name {0} already declared", name);
+                error = true;
+            }
+            else if(topDeclNames.staticFunNames.Contains(name))
+            {
+                errorMessage = string.Format("A static function with name {0} already declared", name);
+                error = true;
+            }
+            else if (topDeclNames.testNames.Contains(name))
+            {
+                errorMessage = string.Format("A test case with name {0} already declared", name);
+                error = true;
+            }
+
+            if (error)
+            {
+                var errFlag = new Flag(
+                                         SeverityKind.Error,
+                                         nameSpan,
+                                         Constants.BadSyntax.ToString(errorMessage),
+                                         Constants.BadSyntax.Code,
+                                         parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+                
+            }
+
+            return !error;
+
+        }
+
         #region Pushers
 
         private void PushModule(string name, Span nameSpan)
@@ -331,7 +383,7 @@
             inList.inter = (P_Root.IArgType_InterfaceList__0)interfaceType;
             inList.tail = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             evtOrInterListStack.Push(inList);
-            crntEventList.RemoveAt(0);
+            crntInterfaceList.RemoveAt(0);
             foreach (var I in crntInterfaceList)
             {
                 inList = P_Root.MkInterfaceList();
@@ -340,7 +392,7 @@
                 inList.tail = (P_Root.IArgType_InterfaceList__1)evtOrInterListStack.Pop();
                 evtOrInterListStack.Push(inList);
             }
-            crntEventList.Clear();
+            crntInterfaceList.Clear();
         }
 
         void PushHideModule(Span span)
@@ -348,7 +400,7 @@
             var hideModule = P_Root.MkHide();
             hideModule.Span = span;
             Contract.Assert(evtOrInterListStack.Count > 0);
-            hideModule.evOrIn = (P_Root.IArgType_Hide__0)evtOrInterListStack.Pop();
+            hideModule.ei = (P_Root.IArgType_Hide__0)evtOrInterListStack.Pop();
             hideModule.modL = ModuleListStack.Pop();
             moduleStack.Push(hideModule);
             
@@ -1612,22 +1664,10 @@
         }
         private void AddInterface(string name, Span nameSpan, Span span)
         {
-            if (topDeclNames.machineNames.Contains(name) || topDeclNames.interfaceNames.Contains(name))
-            {
-                var errFlag = new Flag(
-                                     SeverityKind.Error,
-                                     span,
-                                     Constants.BadSyntax.ToString(string.Format("A machine or interface with name {0} already declared", name)),
-                                     Constants.BadSyntax.Code,
-                                     parseSource);
-                parseFailed = true;
-                parseFlags.Add(errFlag);
-            }
-            else
-            {
-                topDeclNames.interfaceNames.Add(name);
-            }
 
+            if(IsValidName(name, nameSpan))
+                topDeclNames.interfaceNames.Add(name);
+            
             foreach(var ev in crntEventList)
             {
                 var interfaceType = new P_Root.InterfaceType();
@@ -1648,18 +1688,7 @@
             evDecl.Span = span;
             evDecl.name = MkString(name, nameSpan);
             parseProgram.Events.Add(evDecl);
-            if (topDeclNames.eventNames.Contains(name))
-            {
-                var errFlag = new Flag(
-                                     SeverityKind.Error,
-                                     span,
-                                     Constants.BadSyntax.ToString(string.Format("An event with name {0} already declared", name)),
-                                     Constants.BadSyntax.Code,
-                                     parseSource);
-                parseFailed = true;
-                parseFlags.Add(errFlag);
-            }
-            else
+            if (IsValidName(name, nameSpan))
             {
                 topDeclNames.eventNames.Add(name);
             }
@@ -1668,18 +1697,7 @@
 
         private void AddRefinesTest(string name, Span nameSpan, Span span)
         {
-            if(topDeclNames.testNames.Contains(name))
-            {
-                var errFlag = new Flag(
-                                     SeverityKind.Error,
-                                     span,
-                                     Constants.BadSyntax.ToString(string.Format("A test with name {0} already declared", name)),
-                                     Constants.BadSyntax.Code,
-                                     parseSource);
-                parseFailed = true;
-                parseFlags.Add(errFlag);
-            }
-            else
+            if (IsValidName(name, nameSpan))
             {
                 topDeclNames.testNames.Add(name);
             }
@@ -1695,18 +1713,7 @@
 
         private void AddNoFailureTest(string name, Span nameSpan, Span span)
         {
-            if (topDeclNames.testNames.Contains(name))
-            {
-                var errFlag = new Flag(
-                                     SeverityKind.Error,
-                                     span,
-                                     Constants.BadSyntax.ToString(string.Format("A test with name {0} already declared", name)),
-                                     Constants.BadSyntax.Code,
-                                     parseSource);
-                parseFailed = true;
-                parseFlags.Add(errFlag);
-            }
-            else
+            if (IsValidName(name, nameSpan))
             {
                 topDeclNames.testNames.Add(name);
             }
@@ -1720,18 +1727,7 @@
 
         private void AddMonitorsTest(string name, Span nameSpan, Span span)
         {
-            if (topDeclNames.testNames.Contains(name))
-            {
-                var errFlag = new Flag(
-                                     SeverityKind.Error,
-                                     span,
-                                     Constants.BadSyntax.ToString(string.Format("A test with name {0} already declared", name)),
-                                     Constants.BadSyntax.Code,
-                                     parseSource);
-                parseFailed = true;
-                parseFlags.Add(errFlag);
-            }
-            else
+            if (IsValidName(name, nameSpan))
             {
                 topDeclNames.testNames.Add(name);
             }
@@ -1826,19 +1822,7 @@
             moduleDecl.Span = span;
             moduleDecl.name = MkString(name, nameSpan);
             //add the module decl
-            if(topDeclNames.moduleNames.Contains(name))
-            {
-                var errFlag = new Flag(
-                                    SeverityKind.Error,
-                                    span,
-                                    Constants.BadSyntax.ToString(string.Format("A module with name {0} already declared", name)),
-                                    Constants.BadSyntax.Code,
-                                    parseSource);
-                parseFailed = true;
-                parseFlags.Add(errFlag);
-
-            }
-            else
+            if (IsValidName(name, nameSpan))
             {
                 topDeclNames.moduleNames.Add(name);
             }
@@ -1942,18 +1926,7 @@
                 
             }
             parseProgram.Machines.Add(machDecl);
-            if (topDeclNames.machineNames.Contains(name) || topDeclNames.interfaceNames.Contains(name))
-            {
-                var errFlag = new Flag(
-                                     SeverityKind.Error,
-                                     span,
-                                     Constants.BadSyntax.ToString(string.Format("A machine or interface with name {0} already declared", name)),
-                                     Constants.BadSyntax.Code,
-                                     parseSource);
-                parseFailed = true;
-                parseFlags.Add(errFlag);
-            }
-            else
+            if(IsValidName(name, nameSpan))
             {
                 topDeclNames.machineNames.Add(name);
             }
@@ -2043,18 +2016,8 @@
             funDecl.body = (P_Root.IArgType_FunDecl__6)stmtStack.Pop();
             parseProgram.Functions.Add(funDecl);
             localVarStack = new LocalVarStack(this);
-            if(topDeclNames.staticFunNames.Contains(name))
-            {
-                var errFlag = new Flag(
-                                     SeverityKind.Error,
-                                     span,
-                                     Constants.BadSyntax.ToString(string.Format("A static function with name {0} already declared", name)),
-                                     Constants.BadSyntax.Code,
-                                     parseSource);
-                parseFailed = true;
-                parseFlags.Add(errFlag);
-            }
-            else if (crntFunNames.Contains(name))
+            
+            if (crntFunNames.Contains(name))
             {
                 var errFlag = new Flag(
                                      SeverityKind.Error,
@@ -2065,7 +2028,7 @@
                 parseFailed = true;
                 parseFlags.Add(errFlag);
             }
-            else
+            else if (IsValidName(name, nameSpan))
             {
                 if(isGlobal)
                 {

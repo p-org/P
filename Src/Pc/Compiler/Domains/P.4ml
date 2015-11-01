@@ -477,7 +477,7 @@ domain PStaticTyping extends PData
 	AllModList(ml) :- ComposedModules(cml), SubModList(cml, ml).
 
 	//get the sends list after removing hidden events and interfaces
-	SendsForModuleList(ml, ev) :-  AllModList(ml), ml = ModuleList(m, _), SendsForModule(m, ev);
+	SendsForModuleList(ml, ev) :-  AllModList(ml), ml = ModuleList(m1, _), SendsForModule(m1, ev);
 								   AllModList(ml), ml = ModuleList(_, m2), SendsForModuleList(m2, ev), m2 != NIL.
 
 	//get the receives list for the ModuleList, its a simple union of all the receives
@@ -524,7 +524,7 @@ domain PStaticTyping extends PData
 
 	//get the creates list for the hide module
 	CreatesForModule(hm, i) :-  GenInterfaceForHideMod(hm), hm = Hide(eL, modL), eL : EventList, CreatesForModuleList(modL, i);
-								GenInterfaceForHideMod(hm), hm = Hide(iL, modL), iL : InterfaceList, SubInterface(iL, i), CreatesForModuleList(modL, i), no InterfaceEventDecl(i, ev), PrivateForModule(hm, ev);
+								GenInterfaceForHideMod(hm), hm = Hide(iL, modL), iL : InterfaceList, SubInterface(iL, i), CreatesForModuleList(modL, i), count({ev | InterfaceEventDecl(i, ev), PrivateForModule(hm, ev)}) = 0;
 								ModuleCreatesDecl(hm, i).
 	/**************************************************************/
 	/*                      Legal Composition                   */
@@ -543,8 +543,8 @@ domain PStaticTyping extends PData
 
 	//sends and privates in the modulelist are disjoint
 	[rule_Classes = '"error, msg: sends and private are not disjoint after composition"']
-	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), SendsForModule(m1, ev), PrivateForModuleList(m2, ev);
-							  ComposeModWithModList(ml, m1, m2), SendsForModuleList(m2, ev), PrivateForModule(m1, ev).
+	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), SendsForModule(m1, ev), PrivateForModuleList(m2, ev), no PrivateForModule(m1, ev);
+							  ComposeModWithModList(ml, m1, m2), SendsForModuleList(m2, ev), PrivateForModule(m1, ev), no PrivateForModuleList(m2, ev).
 
 	//implemented interfaces must be disjoint
 	[rule_Classes = '"error, msg: implemented interfaces are not disjoint after composition"']
@@ -555,35 +555,35 @@ domain PStaticTyping extends PData
 	[rule_Classes = '"error, msg: public events in receives are not disjoint after composition"']
 	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), ReceivesForModule(m1, rd1), ReceivesForModuleList(m2, rd2), rd1.ev = rd2.ev, ml = ModuleList(m1, m2), no PrivateForModuleList(ml, ev), rd1.ev = ev.
 
-	/*
+	
 	//implemented interfaces of a machine contains no private event
 	[rule_Classes = '"error, msg: implemented interface has private events after composition"']
-	IllegalComposition(m1) :- ComposeModWithModList(m1, m2), ImplementsForModuleList(m1, mid), PrivateForModuleList(m2, pd), InterfaceEventDecl(mid.inter, pd.ev);
-							  ComposeModWithModList(m1, m2), ImplementsForModuleList(m2, mid), PrivateForModuleList(m1, pd), InterfaceEventDecl(mid.inter, pd.ev).
+	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), ImplementsForModule(m1, mid), PrivateForModuleList(m2, ev), InterfaceEventDecl(mid.inter, ev);
+							  ComposeModWithModList(ml, m1, m2), ImplementsForModuleList(m2, mid), PrivateForModule(m1, ev), InterfaceEventDecl(mid.inter, ev).
 
 	//implemented interface = public events in the receives 
 	[rule_Classes = '"error, msg: implemented interface is not same as the public events in receives after composition"']
-	IllegalComposition(ml) :- CheckModuleList(cml), SubModList(cml, ml), ImplementsForModuleList(ml, mid), 
+	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), ImplementsForModuleList(ml, mid), 
 							  count({ev | InterfaceEventDecl(mid.inter, ev), no ReceivesForModuleList(ml, rd), rd.ev = ev, rd.mach = mid.mach}) > 0;
-							  CheckModuleList(cml), SubModList(cml, ml), ImplementsForModuleList(ml, mid), 
-							  count({ev | no InterfaceEventDecl(mid.inter, ev), ReceivesForModuleList(id, rd), no PrivateForModuleList(ml, pd), pd is ModulePrivateDecl, rd.mach = mid.mach, pd.ev = ev, rd.ev = ev}) > 0.
+							  ComposeModWithModList(ml, m1, m2), ImplementsForModuleList(ml, mid), 
+							  count({ev | no InterfaceEventDecl(mid.inter, ev), ReceivesForModuleList(id, rd), no PrivateForModuleList(ml, ev), rd.mach = mid.mach, rd.ev = ev}) > 0.
 
 	//interfaces in creates are disjoint
 	[rule_Classes = '"error, msg: interfaces in creates list are not disjoint after composition"']
-	IllegalComposition(ml) :- CheckModuleList(cml), SubModList(cml, ml), CreatesForModuleList(ml, cd1), CreatesForModuleList(ml, cd2), InterfaceEventDecl(cd1.inter, ev), InterfaceEventDecl(cd2.inter, ev), cd1.inter != cd2.inter.
+	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), CreatesForModule(m1, i1), CreatesForModuleList(m2, i2), InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev).
 
 	//a create interface is either disjoint or equal to the public events in receives
 	[rule_Classes = '"error, msg: interface type in creates is not equal to or disjoint from the public events in receives after composition"']
 	IllegalComposition(ml) :- 
-	CheckModuleList(cml), SubModList(cml, ml), CreatesForModuleList(ml, cd), 
-	count({ev1 | InterfaceEventDecl(cd.inter, ev1), no ReceivesForModuleList(ml, rd1), rd1.ev = ev1, pd1 is ModulePrivateDecl, no PrivateForModuleList(ml, pd1), pd1.ev = ev1, InterfaceEventDecl(cd.inter, ev2), ReceivesForModuleList(ml, rd2), rd2.ev = ev2, no PrivateForModuleList(ml, pd2), pd2 is ModulePrivateDecl, pd2.ev = ev2, rd1.mach = rd2.mach}) > 0;
-	CheckModuleList(cml), SubModList(cml, ml), CreatesForModuleList(ml, cd), 
-	count({ev1 | no InterfaceEventDecl(cd.inter, ev1), ReceivesForModuleList(ml, rd1), rd1.ev = ev1, no PrivateForModuleList(ml, pd1), pd1 is ModulePrivateDecl, pd1.ev = ev1, InterfaceEventDecl(cd.inter, ev2), ReceivesForModuleList(ml, rd2), rd2.ev = ev2, no PrivateForModuleList(ml, pd2), pd2 is ModulePrivateDecl, pd2.ev = ev2, rd1.mach = rd2.mach}) > 0.
+	ComposeModWithModList(ml, m1, m2), CreatesForModuleList(ml, i), 
+	count({ev1 | InterfaceEventDecl(i, ev1), no ReceivesForModuleList(ml, ed1), no PrivateForModuleList(ml, ev1), rd1.ev = ev1, InterfaceEventDecl(i, ev2), ReceivesForModuleList(ml, rd2), no PrivateForModuleList(ml, ev2),rd2.ev = ev2, rd1.mach = rd2.mach}) > 0;
+	ComposeModWithModList(ml, m1, m2), CreatesForModuleList(ml, i), 
+	count({ev1 | no InterfaceEventDecl(i, ev1), ReceivesForModuleList(ml, rd1), rd1.ev = ev1, no PrivateForModuleList(ml, ev1), InterfaceEventDecl(i, ev2), ReceivesForModuleList(ml, rd2), rd2.ev = ev2, no PrivateForModuleList(ml, ev2), rd1.mach = rd2.mach}) > 0.
 
 	//no private event in the creates interfaces
 	[rule_Classes = '"error, msg: interface in creates has private event after composition"']
-	IllegalComposition(ml) :- CheckModuleList(cml), SubModList(cml, ml), PrivateForModuleList(ml, pd), CreatesForModuleList(ml, cd), InterfaceEventDecl(cd.inter, ev), pd.ev = ev.
-	*/
+	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), PrivateForModuleList(ml, ev), CreatesForModuleList(ml, i), InterfaceEventDecl(i, ev).
+	
 	//no duplicates in the sends list
 	[rule_Classes = '"error, msg: multiple modules have the same event in the sends list after composition"']
 	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), SendsForModule(m1, ev), SendsForModuleList(m2, ev), no PrivateForModuleList(ml, ev).

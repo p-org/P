@@ -606,7 +606,6 @@
             AddErrors(task.Result, "DomOfMapUnSafe(_)", errors, 0);
 
             //// Enumerate structural errors
-            AddErrors(task.Result, "missingDecl", errors);
             AddErrors(task.Result, "OneDeclError(_)", errors, 0);
             AddErrors(task.Result, "TwoDeclError(_, _)", errors, 1);
             AddErrors(task.Result, "DeclFunError(_, _)", errors, 1);
@@ -618,6 +617,7 @@
             AddErrors(task.Result, "IllegalMonitorTestCase(_)", errors, 0);
             AddErrors(task.Result, "IllegalRefinesTestCase(_)", errors, 0);
             AddErrors(task.Result, "SoundCompositionWarning(_)", errors, 0);
+            AddErrors(task.Result, "IllegalMainMachine(_)", errors, 0);
 
             if (Options.printTypeInference)
             {

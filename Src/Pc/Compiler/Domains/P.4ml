@@ -141,7 +141,6 @@ domain PData
 domain PStructuralTyping extends PData
 {
     /*************************************************************/
-	conforms no missingDecl. 
 	conforms no OneDeclError(_).
 	conforms no TwoDeclError(_, _).
 	conforms no DeclFunError(_, _).
@@ -159,12 +158,6 @@ domain PStructuralTyping extends PData
 	TwoDeclError(t1, t2) :- t1 != t2, t1 is TransDecl, t2 is TransDecl, t1.src = t2.src, t1.trig = t2.trig.
 	[ rule_Classes = '"error, msg: Multiple actions over the same event"']
 	TwoDeclError(a1, a2) :- a1 != a2, a1 is DoDecl(state, owner, _), a2 is DoDecl(state, owner, _), a1.src = a2.src, a1.trig = a2.trig.
-	
-	//// There should be a main machine
-	[rule_Classes = '"error, msg: No Main Machine"']
-	missingDecl :- no MachineDecl(_, _, _, _, _, TRUE).
-	[ rule_Classes = '"error, msg: Multiple machines are declared as main machines"']
-	TwoDeclError(m1, m2) :- m1 is MachineDecl, m2 is MachineDecl, m1.isMain = TRUE, m2.isMain = TRUE, m1 != m2.
 	
 	//// there should be a start state in each state machine.
 	[ rule_Classes = '"error, msg: no start state in machine"']
@@ -302,6 +295,7 @@ domain PStaticTyping extends PData
 	conforms no BadLabelError(_).
 	conforms no DomOfMapUnSafe(_).
 	conforms no ModuleLevelTypingError(_).
+	conforms no IllegalMainMachine(_).
 	conforms no IllegalComposition(_).
 	conforms no IllegalHideOperation(_).
 	conforms no IllegalMonitorTestCase(_).
@@ -425,6 +419,20 @@ domain PStaticTyping extends PData
 	SubEvents ::= sub(evl: EventList, ev : String).
 	//get all interfaces in InterfaceList
 	SubInterface ::= sub (il: InterfaceList, i: InterfaceType).
+
+	/**************** Illegal Main Machines ************************/
+	IllegalMainMachine ::= (ml: ModuleList).
+	[rule_Classes = '"error, msg: no Main Machine in the ModuleList"']
+	IllegalMainMachine(ml) :- NoFailureTestDecl(_, ml), count({mach | mach is MachineDecl(_, mod, _, _, _, TRUE), SubModule(ml, mod)}) = 0;
+							  MonitorsTestDecl(_, ml, _), count({mach | mach is MachineDecl(_, mod, _, _, _, TRUE), SubModule(ml, mod)}) = 0;
+							  RefinesTestDecl(_, ml, _), count({mach | mach is MachineDecl(_, mod, _, _, _, TRUE), SubModule(ml, mod)}) = 0;
+							  RefinesTestDecl(_, _, ml), count({mach | mach is MachineDecl(_, mod, _, _, _, TRUE), SubModule(ml, mod)}) = 0.
+
+	[rule_Classes = '"error, msg: more than one Main Machine in the ModuleList"']
+	IllegalMainMachine(ml) :- NoFailureTestDecl(_, ml), count({mach | mach is MachineDecl(_, mod, _, _, _, TRUE), SubModule(ml, mod)}) > 1;
+							  MonitorsTestDecl(_, ml, _), count({mach | mach is MachineDecl(_, mod, _, _, _, TRUE), SubModule(ml, mod)}) > 1;
+							  RefinesTestDecl(_, ml, _), count({mach | mach is MachineDecl(_, mod, _, _, _, TRUE), SubModule(ml, mod)}) > 1;
+							  RefinesTestDecl(_, _, ml), count({mach | mach is MachineDecl(_, mod, _, _, _, TRUE), SubModule(ml, mod)}) > 1.
 
 	/**************************************************************/
 	/******* Get all high level module compositions ****************/

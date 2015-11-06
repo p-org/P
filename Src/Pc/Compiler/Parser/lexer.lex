@@ -111,7 +111,6 @@
 			 keywords.Add("as", (int)Tokens.AS);
 
 			 keywords.Add("interface", (int)Tokens.INTERFACE);
-			 keywords.Add("implements", (int)Tokens.IMPLEMENTS);
 			 keywords.Add("sends", (int)Tokens.SENDS);
 			 keywords.Add("receives", (int)Tokens.RECEIVES);
 			 keywords.Add("module", (int)Tokens.MODULE);

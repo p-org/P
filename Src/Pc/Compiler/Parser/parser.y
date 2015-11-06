@@ -20,7 +20,7 @@
 
 %token TRUE FALSE
 
-%token INTERFACE IMPLEMENTS MODULE SENDS CREATES PRIVATE RECEIVES
+%token INTERFACE MODULE SENDS CREATES PRIVATE RECEIVES
 %token TEST REFINES SATISFIES IMPLEMENTATION SPECIFICATION HIDEE HIDEI
 
 %token ASSIGN REMOVE INSERT
@@ -194,14 +194,10 @@ SpecificationDecl
 
 /******************* Machine Declarations *******************/
 MachineDecl
-	: IsMain MACHINE ID Receives Implements MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1));    }
-	| IsMain MODEL ID Receives Implements MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE   { AddMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1));   }
+	: IsMain MACHINE ID Receives MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1));    }
+	| IsMain MODEL ID Receives MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE   { AddMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1));   }
 	;
 	
-Implements
-	: IMPLEMENTS ID								{ AddMachineInterface($2.str, ToSpan(@2), ToSpan(@1)); }
-	|											{ }
-	;
 
 Receives
 	: RECEIVES NonDefaultNonHaltEventList           { crntReceivesList.AddRange(crntEventList); crntEventList.Clear(); }
@@ -447,8 +443,12 @@ Stmt
 	| SEND Exp COMMA Exp COMMA SingleExprArgList SEMICOLON    { PushSend(true,  ToSpan(@1));                             }
 	| MONITOR Exp SEMICOLON									  { PushMonitor(false, $2.str, ToSpan(@2), ToSpan(@1));      }
 	| MONITOR Exp COMMA SingleExprArgList SEMICOLON           { PushMonitor(true, $2.str, ToSpan(@2), ToSpan(@1));       }
-	| RECEIVE LCBRACE CaseList RCBRACE						  { PushReceive(ToSpan(@1)); }
+	| ReceiveStmt LCBRACE CaseList RCBRACE					  { PushReceive(ToSpan(@1)); }
 	;
+
+ReceiveStmt
+ : RECEIVE              { localVarStack.PushCasesList(); }
+ ;
 
 Case 
 	: CaseEventList StmtBlock 		{ AddCaseAnonyAction(ToSpan(@2)); }
@@ -458,8 +458,8 @@ CaseEventList
 	: CASE EventList COLON			{ localVarStack.Push(); }
 	;
 
-CaseList
-	: Case	
+CaseList	
+	: Case							
 	| CaseList Case
 	;
 	 

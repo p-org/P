@@ -64,7 +64,6 @@ domain PData
 	InterfaceEventDecl ::= new (interface: any InterfaceType, ev: String).
 
 	MachineReceivesDecl ::= new (mach: any MachineDecl, ev: String).
-	MachineImpsInterfaceDecl ::= new (mach: any MachineDecl, inter: any InterfaceType).
 
 	ModuleDecl ::= new (name : any String).
 	ModuleSendsDecl ::= new (mod: any ModuleDecl, ev: String).
@@ -107,7 +106,7 @@ domain PData
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String).
     DoDecl         ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String).
 
-    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + ObservesDecl + InterfaceEventDecl + MachineImpsInterfaceDecl + MachineReceivesDecl + ModuleDecl + ModuleSendsDecl + ModulePrivateDecl + ModuleCreatesDecl + ImplementationModules + SpecificationModules + RefinesTestDecl + MonitorsTestDecl + NoFailureTestDecl.            
+    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + ObservesDecl + InterfaceEventDecl + MachineReceivesDecl + ModuleDecl + ModuleSendsDecl + ModulePrivateDecl + ModuleCreatesDecl + ImplementationModules + SpecificationModules + RefinesTestDecl + MonitorsTestDecl + NoFailureTestDecl + InterfaceType.            
 
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
@@ -228,10 +227,6 @@ domain PStructuralTyping extends PData
 	[rule_Classes = '"error, msg: unknown type in variable declaration"']
 	OneDeclError(varD) :- varD is VarDecl(_, _, tp), tp : InterfaceType, no InterfaceEventDecl(tp, _).
 
-	//interface type in machine declaration
-	[rule_Classes = '"error, msg: interface type in implements is not declared"']
-	OneDeclError(machInterface) :- machInterface is MachineImpsInterfaceDecl(_, i), no InterfaceEventDecl(i, _).
-
 	//event in receives of a machine
 	[rule_Classes = '"error, msg: event in receives is not declared"']
 	OneDeclError(receivesE) :- receivesE is MachineReceivesDecl(_, ev), no EventDecl(ev, _, _).
@@ -249,7 +244,7 @@ domain PStructuralTyping extends PData
 	OneDeclError(creates) :- creates is ModuleCreatesDecl(_, i), no InterfaceEventDecl(i, _).
 	
 	CompDecls ::= ImplementationModules + SpecificationModules + RefinesTestDecl + MonitorsTestDecl + NoFailureTestDecl.
-	VariousList ::= ModuleList + EventList + MonitorList + InterfaceList.
+	VariousList ::= ModuleList + EventList + MonitorList.
 
 	//module is declared
 	SubVL ::= sub (c: CompDecls, mem: VariousList).
@@ -260,15 +255,18 @@ domain PStructuralTyping extends PData
 	[rule_Classes = '"error, msg: event used in hide operation is not declared"']
 	OneDeclError(c) :- SubVL(c, ml), ml = EventList(ev, _), no EventDecl(ev, _, _).
 
-	//interface in hide is declared
-	[rule_Classes = '"error, msg: event used in hide operation is not declared"']
-	OneDeclError(c) :- SubVL(c, ml), ml = InterfaceList(i, _), no InterfaceEventDecl(i, _).
+	//interface type not declared
+	allInterfaceTypes ::= sub(i: InterfaceType).
+	[rule_Classes = '"error, msg: undeclared interface type"']
+	OneDeclError(i) :- allInterfaceTypes(i), no InterfaceEventDecl(i, _).
 	
 	//monitor is declared
 	[rule_Classes = '"error, msg: monitor is undeclared"']
 	OneDeclError(c) :- SubVL(c, ml), ml = MonitorList(s, _), s : String, no MachineDecl(s, _, MONITOR, _, _, _);
 					   SubVL(c, ml), ml = MonitorList(m, _), m = PrivateMonitor(s, _), no MachineDecl(s, _, MONITOR, _, _, _).
 	
+	
+
 	//module in private monitor is declared
 	[rule_Classes = '"error, msg: undeclared module in private monitor declaration"']
 	OneDeclError(c) :- SubVL(c, ml), ml = MonitorList(m, _), m = PrivateMonitor(_, ModuleDecl(s)), no ModuleDecl(s).
@@ -359,30 +357,17 @@ domain PStaticTyping extends PData
 	/**************************************************************/
 	/*			  Per module level typing error					*/
 	/**************************************************************/
-	Permissions ::= ModuleCreatesDecl + ModulePrivateDecl + ModuleSendsDecl + MachineImpsInterfaceDecl + MachineReceivesDecl.
+	Permissions ::= ModuleCreatesDecl + ModulePrivateDecl + ModuleSendsDecl + MachineReceivesDecl.
 	ModuleLevelTypingError ::= (p: Permissions).
 
 	
 	//sends and privates of the same module are disjoint
 	[rule_Classes = '"error, msg: sends and private of the module are not disjoint"']
 	ModuleLevelTypingError(s) :- s is ModuleSendsDecl(m, ev), ModulePrivateDecl(m, ev).
-
-	//implemented interfaces in the same module are disjoint
-	[rule_Classes = '"error, msg: implemented interface is not disjoint from other implemented interfaces in the module"']
-	ModuleLevelTypingError(mi) :- mi is MachineImpsInterfaceDecl(id1, i1), MachineImpsInterfaceDecl(id2, i2), id1 != id2, id1.mod = id2.mod, InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev).
 	
 	//public events in receives of the same module are disjoint
 	[rule_Classes = '"error, msg: public events in all the receives of a module must be disjoint"']
 	ModuleLevelTypingError(mr) :- mr is MachineReceivesDecl(id1, ev), MachineReceivesDecl(id2, ev), id1 != id2, id1.mod = id2.mod, no ModulePrivateDecl(id1.mod, ev).
-
-	//implemented interface of a machine contains only public events 
-	[rule_Classes = '"error, msg: machine cannot implement an interface with private events"']
-	ModuleLevelTypingError(mi) :- mi is MachineImpsInterfaceDecl(id, inter), InterfaceEventDecl(inter, ev), ModulePrivateDecl(id.mod, ev).
-
-	//implemented interface = public events in the receives 
-	[rule_Classes = '"error, msg: implemented interface must be same as the public events in receives of that machine"']
-	ModuleLevelTypingError(mi) :- mi is MachineImpsInterfaceDecl(id, inter), count({ev | InterfaceEventDecl(inter, ev), no MachineReceivesDecl(id, ev)}) > 0;
-								  mi is MachineImpsInterfaceDecl(id, inter), count({ev | no InterfaceEventDecl(inter, ev), MachineReceivesDecl(id, ev), no ModulePrivateDecl(id.mod, ev)}) > 0.
 
 	//interfaces in creates are disjoint
 	[rule_Classes = '"error, msg: interfaces in creates list are not disjoint"']
@@ -479,7 +464,6 @@ domain PStaticTyping extends PData
 	PrivateForModuleList ::= (ml: ModuleList, ev: String).
 	CreatesForModuleList ::= (ml: ModuleList, inter: InterfaceType).
 	ReceivesForModuleList ::= (ml: ModuleList, rd: MachineReceivesDecl).
-	ImplementsForModuleList ::= (ml: ModuleList, id: MachineImpsInterfaceDecl).
 
 	//all the following modulelists must be legally composed.
 	AllModList(ml) :- ComposedModules(cml), SubModList(cml, ml).
@@ -494,9 +478,6 @@ domain PStaticTyping extends PData
 	//get the private list for the moduleList adding the hidden events and interfaces
 	PrivateForModuleList(ml, ev) :- AllModList(ml), ml = ModuleList(m, _), PrivateForModule(m, ev);						
 									AllModList(ml), ml = ModuleList(_, m2), PrivateForModuleList(m2, ev), m2 != NIL.
-	
-	//get the implements list for the ModuleList, its a simple union of all the implements
-	ImplementsForModuleList(ml, id) :- AllModList(ml), SubModule(ml, mod), id is MachineImpsInterfaceDecl(mach, _), mach.mod = mod.
 
 	//get the creates list for the ModuleList, remove interfaces that have private events in them
 	CreatesForModuleList(ml, i) :- AllModList(ml), ml = ModuleList(m, _), CreatesForModule(m, i);						
@@ -510,7 +491,6 @@ domain PStaticTyping extends PData
 	PrivateForModule ::= (mod: Module, ev: String).
 	CreatesForModule ::= (mod: Module, inter: InterfaceType).
 	ReceivesForModule ::= (mod: Module, rd: MachineReceivesDecl).
-	ImplementsForModule ::= (mod: Module, id: MachineImpsInterfaceDecl).
 
 	//get the sends list for the hide module
 	SendsForModule(hm, ev) :- GenInterfaceForHideMod(hm), SendsForModuleList(hm.modL, ev);
@@ -525,10 +505,6 @@ domain PStaticTyping extends PData
 							     GenInterfaceForHideMod(hm), hm = Hide(eL, _), eL : EventList, SubEvents(eL, ev);
 								 GenInterfaceForHideMod(hm), hm = Hide(iL, _), iL : InterfaceList, SubInterface(iL, i), InterfaceEventDecl(i, ev);
 								 ModulePrivateDecl(hm, ev).
-
-	//get the implements list for the hide module
-	ImplementsForModule(hm, id) :- GenInterfaceForHideMod(hm), ImplementsForModuleList(hm.modL, id);
-								   id is MachineImpsInterfaceDecl(mach, _), mach is MachineDecl(_, hm, _, _, _, _), hm is ModuleDecl.
 
 	//get the creates list for the hide module
 	CreatesForModule(hm, i) :-  GenInterfaceForHideMod(hm), hm = Hide(eL, modL), eL : EventList, CreatesForModuleList(modL, i);
@@ -554,27 +530,11 @@ domain PStaticTyping extends PData
 	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), SendsForModule(m1, ev), PrivateForModuleList(m2, ev), no PrivateForModule(m1, ev);
 							  ComposeModWithModList(ml, m1, m2), SendsForModuleList(m2, ev), PrivateForModule(m1, ev), no PrivateForModuleList(m2, ev).
 
-	//implemented interfaces must be disjoint
-	[rule_Classes = '"error, msg: implemented interfaces are not disjoint after composition"']
-	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), ImplementsForModule(m1, mid1), ImplementsForModuleList(m2, mid2), InterfaceEventDecl(mid1.inter, ev), InterfaceEventDecl(mid2.inter, ev).
-
 
 	//public events in the receives must be disjoint
 	[rule_Classes = '"error, msg: public events in receives are not disjoint after composition"']
 	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), ReceivesForModule(m1, rd1), ReceivesForModuleList(m2, rd2), rd1.ev = rd2.ev, ml = ModuleList(m1, m2), no PrivateForModuleList(ml, ev), rd1.ev = ev.
 
-	
-	//implemented interfaces of a machine contains no private event
-	[rule_Classes = '"error, msg: implemented interface has private events after composition"']
-	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), ImplementsForModule(m1, mid), PrivateForModuleList(m2, ev), InterfaceEventDecl(mid.inter, ev);
-							  ComposeModWithModList(ml, m1, m2), ImplementsForModuleList(m2, mid), PrivateForModule(m1, ev), InterfaceEventDecl(mid.inter, ev).
-
-	//implemented interface = public events in the receives 
-	[rule_Classes = '"error, msg: implemented interface is not same as the public events in receives after composition"']
-	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), ImplementsForModuleList(ml, mid), 
-							  count({ev | InterfaceEventDecl(mid.inter, ev), no ReceivesForModuleList(ml, rd), rd.ev = ev, rd.mach = mid.mach}) > 0;
-							  ComposeModWithModList(ml, m1, m2), ImplementsForModuleList(ml, mid), 
-							  count({ev | no InterfaceEventDecl(mid.inter, ev), ReceivesForModuleList(id, rd), no PrivateForModuleList(ml, ev), rd.mach = mid.mach, rd.ev = ev}) > 0.
 
 	//interfaces in creates are disjoint
 	[rule_Classes = '"error, msg: interfaces in creates list are not disjoint after composition"']
@@ -614,8 +574,8 @@ domain PStaticTyping extends PData
 	[rule_Classes = '"error, msg: hide operation cannot be performed on an event present in the creates interface"']
 	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), SubEvents(evl, ev), CreatesForModuleList(hml, i), InterfaceEventDecl(i, ev).
 	
-	[rule_Classes = '"error, msg: hide operation can be performed on an event present in receives of an implemented machine"']
-	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), SubEvents(evl, ev), no ReceivesForModuleList(hml, rd), rd is MachineReceivesDecl(_, ev).
+	[rule_Classes = '"error, msg: hide operation can be performed on a public event present in receives of an implemented machine"']
+	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), SubEvents(evl, ev), count({rd | ReceivesForModuleList(hml, rd), rd.ev = ev}) != 1.
 
 	/*
 	Hide I in P is legal only if:
@@ -682,10 +642,8 @@ domain PStaticTyping extends PData
 	TypeOf(c, e, t) :- SubSE(c, e), e = NulApp(PAYLOAD), PayloadType(c, t).
 	
 	//Recent change: THIS is not allowed in static functions
-	// Type of THIS is the interface type implemented by the machine.
-	// If no interface type is implemented then the type of THIS is machine.
+	// Type of THIS is the receive set implemented by the machine.
     TypeOf(c, e, i)  :- SubSE(c, e), e = NulApp(THIS), i = InterfaceType(c.owner.name), c.owner != NIL.
-	TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = NulApp(THIS), no MachineImpsInterfaceDecl(c.owner, _), c.owner != NIL.
 
     [ rule_Classes = '"error, msg: (this) is not allowed inside static functions"']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(THIS), c.owner = NIL.

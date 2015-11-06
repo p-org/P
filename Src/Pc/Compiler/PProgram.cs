@@ -41,12 +41,6 @@
             private set;
         }
 
-        public List<P_Root.MachineImpsInterfaceDecl> MachineImpsInterface
-        {
-            get;
-            private set;
-        }
-
         public List<P_Root.ModuleDecl> ModuleDecl
         {
             get;
@@ -202,10 +196,6 @@
                     yield return inter;
                 }
 
-                foreach (var inter in MachineImpsInterface)
-                {
-                    yield return inter;
-                }
                 foreach(var mRec in MachineReceivesDecl)
                 {
                     yield return mRec;
@@ -259,7 +249,6 @@
             Functions = new List<P_Root.FunDecl>();
             Observes = new List<P_Root.ObservesDecl>();
             InterfaceEvents = new List<P_Root.InterfaceEventDecl>();
-            MachineImpsInterface = new List<P_Root.MachineImpsInterfaceDecl>();
             MachineReceivesDecl = new List<P_Root.MachineReceivesDecl>();
             ModuleDecl = new List<P_Root.ModuleDecl>();
             ModuleCreatesDecl = new List<P_Root.ModuleCreatesDecl>();

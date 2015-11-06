@@ -278,6 +278,7 @@ namespace Microsoft.Pc
         public bool IsModel { get { return type == "MODEL"; } }
         public bool IsMonitor { get { return type == "MONITOR"; } }
 
+        public bool IsMain;
         public string type;
         public int maxQueueSize;
         public bool maxQueueSizeAssumed;
@@ -301,6 +302,7 @@ namespace Microsoft.Pc
             funNameToFunInfo = new Dictionary<string, FunInfo>();
             monitorType = MonitorType.SAFETY;
             funNameToFunInfo["ignore"] = new FunInfo(false, null, PToZing.PTypeNull, null, Factory.Instance.AddArg(Factory.Instance.MkFuncTerm(PData.Con_NulStmt), PData.Cnst_Skip).Node);
+            IsMain = false;
         }
     }
 
@@ -393,7 +395,6 @@ namespace Microsoft.Pc
         public Dictionary<string, List<string>> crntPrivateMonitors;
         public Dictionary<AST<Node>, ModuleInfo> allModules;
 
-        public string mainMachineName;
         private Dictionary<AST<Node>, string> anonFunToName;
 
         public LinkedList<AST<FuncTerm>> GetBin(Dictionary<string, LinkedList<AST<FuncTerm>>> factBins, FuncTerm ft)
@@ -616,7 +617,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     if (((Id)it.Current).Name == "TRUE")
                     {
-                        mainMachineName = machineName;
+                        allMachines[machineName].IsMain = true;
                     }
                 }
             }
@@ -2019,6 +2020,7 @@ namespace Microsoft.Pc
                     runBodyStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", machineName)))));
             }
 
+            var mainMachineName = allMachinesInModuleList.Where(n => allMachines[n].IsMain).First();
             runBodyStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", mainMachineName)), MkZingIdentifier("null"))));
             AST<Node> runMethod = MkZingMethodDecl("Run", ZingData.Cnst_Nil, ZingData.Cnst_Void, ZingData.Cnst_Nil, MkZingBlocks(MkZingBlock("dummy", MkZingSeq(runBodyStmts))), ZingData.Cnst_Static, ZingData.Cnst_Activate);
             methods.Add(runMethod);

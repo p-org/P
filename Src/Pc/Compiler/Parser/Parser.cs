@@ -120,6 +120,17 @@
                 this.casesListStack = new Stack<P_Root.IArgType_Cases__2>();
             }
 
+            public void PushCasesList()
+            {
+                casesListStack.Push(casesList);
+                casesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+            }
+            public P_Root.IArgType_Cases__2 PopCasesList()
+            {
+                var currCasesList = casesList;
+                casesList = casesListStack.Pop();
+                return currCasesList;
+            }
             public void Push()
             {
                 contextStack.Push(contextLocalVarDecl);
@@ -127,8 +138,6 @@
                 List<P_Root.EventLabel> caseEventList = new List<P_Root.EventLabel>(parser.crntEventList);
                 parser.crntEventList.Clear();
                 caseEventStack.Push(caseEventList);
-                casesListStack.Push(casesList);
-                casesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
                 localVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
             }
 
@@ -136,7 +145,6 @@
             {
                 contextLocalVarDecl = contextStack.Pop();
                 localVarDecl = localStack.Pop();
-                casesList = casesListStack.Pop();
                 return caseEventStack.Pop();
             }
 
@@ -473,6 +481,7 @@
         {
             var interfaceType = P_Root.MkInterfaceType();
             interfaceType.name = (P_Root.IArgType_InterfaceType__0)MkString(name, span);
+            interfaceType.Span = span;
             typeExprStack.Push(interfaceType);
         }
 
@@ -553,7 +562,7 @@
 
         private void PushReceive(Span span)
         {
-            var receiveStmt = P_Root.MkReceive((P_Root.IArgType_Receive__0)localVarStack.CasesList);
+            var receiveStmt = P_Root.MkReceive((P_Root.IArgType_Receive__0)localVarStack.PopCasesList());
             receiveStmt.Span = span;
             receiveStmt.label = P_Root.MkNumeric(GetNextReceiveLabel());
             stmtStack.Push(receiveStmt);
@@ -1866,20 +1875,7 @@
             crntPrivateList.Clear();
             crntModuleDecl = null;
         }
-        private void AddMachineInterface(string name, Span nameSpan, Span span)
-        {
-            var interfaceType = new P_Root.InterfaceType();
-            interfaceType.Span = nameSpan;
-            interfaceType.name = (P_Root.IArgType_InterfaceType__0)MkString(name, nameSpan);
 
-            var machDecl = GetCurrentMachineDecl(span);
-            var machineInterfaceDecl = new P_Root.MachineImpsInterfaceDecl();
-            machineInterfaceDecl.mach = machDecl;
-            machineInterfaceDecl.Span = span;
-            machineInterfaceDecl.inter = interfaceType;
-            parseProgram.MachineImpsInterface.Add(machineInterfaceDecl);
-
-        }
         private void AddMachine(P_Root.UserCnstKind kind, string name, Span nameSpan, Span span)
         {
             var machDecl = GetCurrentMachineDecl(span);

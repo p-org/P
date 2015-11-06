@@ -156,7 +156,7 @@ model Door {
     var ElevatorV : machine;
 
     start state _Init {
-	entry { ElevatorV = payload as machine; raise eUnit; }
+	entry (payload: machine) { ElevatorV = payload; raise eUnit; }
         on eUnit goto Init;
     }
 
@@ -229,7 +229,7 @@ model Timer {
     var ElevatorV : machine;
 
     start state _Init {
-	entry { ElevatorV = payload as machine; raise eUnit; }
+	entry (payload: machine) { ElevatorV = payload; raise eUnit; }
         on eUnit goto Init;
     }
 

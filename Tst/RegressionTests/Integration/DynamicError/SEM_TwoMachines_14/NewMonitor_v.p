@@ -14,7 +14,7 @@ main machine Real1 {
 }
 spec M monitors E2 {
 	start state x {
-		entry {
+		entry (payload: bool) {
 			// executed upon "new":
 			assert (payload == true);   //passes
 		}

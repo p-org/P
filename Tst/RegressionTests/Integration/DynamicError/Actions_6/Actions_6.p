@@ -13,7 +13,7 @@ main machine Real {
 			ghost_machine = new Ghost(this);  
             raise unit;	   
         }
-        on E2 do Action1;
+        on E2 do (payload: int) { Action1(payload); };
 		on unit push Real_S1;
         on E4 goto Real_S2;
     }
@@ -33,7 +33,7 @@ main machine Real {
 	}
     }
 
-    fun Action1() {
+    fun Action1(payload: int) {
 		assert(payload == 100);  //this assert passes
         send ghost_machine, E3;
     }
@@ -43,8 +43,8 @@ main machine Real {
 model Ghost {
     var real_machine: machine;
     start state Ghost_Init {
-        entry {
-	      real_machine = payload as machine;
+        entry (payload: machine) {
+	      real_machine = payload;
         }
         on E1 goto Ghost_S1;
     }

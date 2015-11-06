@@ -22,8 +22,8 @@ main machine Real {
 model Ghost {
     var real_machine: machine;
     start state _Init {
-	entry { 
-		real_machine = payload as machine; 
+	entry (payload: machine) { 
+		real_machine = payload; 
 		send real_machine, E1;
 		}
     }

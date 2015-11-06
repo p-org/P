@@ -18,11 +18,11 @@ main machine B {
 		entry {
 			send this, F, 10;
 			receive {
-				case F: { 	
-					assert(payload == 10); 
+				case F: (payload1: int) { 	
+					assert(payload1 == 10); 
 					send this, G, default(seq[int]);
 					receive {
-						case G : { assert(sizeof(payload) == 0); raise E;}
+						case G : (payload2: seq[int]) { assert(sizeof(payload2) == 0); raise E;}
 					}
 				}
 			}

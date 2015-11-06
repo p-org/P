@@ -20,7 +20,7 @@ main machine A {
 		receive { 
 			case E: { x = x + p + 1; } 
 			case F: { x = x + p + 2; }
-			case G: { x = x + p + payload; }
+			case G: (payload: int) { x = x + p + payload; }
 			case null: { }
 		}
 	}
@@ -28,11 +28,11 @@ main machine A {
 
 machine B {
 	start state Init {
-		entry {
+		entry (payload: machine) {
 			var y: machine;
 			var z: int;
 			z = z + 1;
-			y = payload as machine;
+			y = payload;
 			receive {
 				case E: {
 					receive { 

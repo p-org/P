@@ -99,18 +99,18 @@ typedef struct PRT_RECEIVEDECL
 /** Represents a P function declaration */
 typedef struct PRT_FUNDECL
 {
-	PRT_UINT32 declIndex;      /**< The index of function in owner machine        */
-	PRT_UINT32 ownerMachIndex; /**< The index of owner machine in program         */
-	PRT_STRING name;           /**< The name of this function (NULL is anonymous) */
-	PRT_SM_FUN implementation; /**< The implementation of this function           */
-	PRT_UINT32 maxNumLocals;
-	PRT_UINT32 numEnvVars;
-	PRT_TYPE *localsNmdTupType;
-	PRT_UINT32 nReceives;
-	PRT_RECEIVEDECL *receives;
+	PRT_UINT32 declIndex;        /**< index of function in owner machine                                    */
+	PRT_UINT32 ownerMachIndex;   /**< index of owner machine in program                                     */
+	PRT_STRING name;             /**< name (NULL is anonymous)                                              */
+	PRT_SM_FUN implementation;   /**< implementation                                                        */
+	PRT_UINT32 maxNumLocals;     /**< number of local variables including nested scopes                     */
+	PRT_UINT32 numEnvVars;       /**< number of local variables in enclosing scopes (0 for named functions) */
+	PRT_TYPE *localsNmdTupType;  /**< type of local variables tuple (not including nested scopes)           */
+	PRT_UINT32 nReceives;        /**< number of receive statements in body                                  */
+	PRT_RECEIVEDECL *receives;   /**< array of receive decls in body                                        */
 
-	PRT_UINT32 nAnnotations;   /**< Number of annotations                         */
-	void       **annotations;  /**< An array of annotations                       */
+	PRT_UINT32 nAnnotations;     /**< number of annotations                                                 */
+	void       **annotations;    /**< array of annotations                                                  */
 } PRT_FUNDECL;
 
 /** Represents a P transition declaration */

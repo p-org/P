@@ -11,21 +11,21 @@ main machine MachOS {
 	var m: map[int, int];
 	var s: seq[bool];
 	
-	fun foo_1() { 
+	fun foo_1(payload: (int, bool)) { 
 			INT = payload.0; 
 			assert ( INT == 1 );
 			BOOL = payload.1;  
 			assert ( BOOL == true );			
 	}
 	
-	fun foo_2() {
+	fun foo_2(payload: (first:int, sec:bool)) {
 			INT = payload.first;
 			assert ( INT == 0 );
 			BOOL = payload.sec;
 			assert ( BOOL == false );
 	}
 	
-	fun foo_3() {
+	fun foo_3(payload: seq[int]) {
 			INT = payload[1];
 	}
 	
@@ -41,10 +41,10 @@ main machine MachOS {
 			send this, myMapSeq, (first = m, sec = s);
 		
 		}	
-		on myTuple do foo_1;		
-		on myNmTuple do foo_2;	
-		on mySeq do foo_3;	
-		on myMapSeq do {
+		on myTuple do (payload: (int, bool)) { foo_1(payload); };		
+		on myNmTuple do (payload: (first:int, sec:bool)) { foo_2(payload); };	
+		on mySeq do (payload: seq[int]) { foo_3(payload); };	
+		on myMapSeq do (payload: (first: map[int, int], sec : seq[bool])) {
 			//INT = payload.first[true];     //error
 			INT = payload.first[0];
 			assert( INT == 1 );

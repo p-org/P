@@ -13,7 +13,7 @@ machine Node assume 100 {
   var MyRing       : machine;
 
     start state Init_Main_Node {
-			entry { MyRing = payload as machine; }
+			entry (payload: machine) { MyRing = payload; }
       on Next goto SetNext_Main_Node;
     }
 
@@ -25,8 +25,8 @@ machine Node assume 100 {
     }
 
     state SetNext_Main_Node {
-      entry {
-	NextMachine = payload as machine;
+      entry (payload: machine) {
+	NextMachine = payload;
         send MyRing, Ready;
         raise Unit;
       }
@@ -44,7 +44,7 @@ machine Node assume 100 {
     }
 
     state StartSending_Main_Node {
-      entry {
+      entry (payload: machine) {
         IsSending = true;
         send NextMachine, Sending, payload;
         raise Unit;
@@ -54,7 +54,7 @@ machine Node assume 100 {
     }
 
     state KeepSending_Main_Node {
-      entry {
+      entry (payload: machine) {
         if (payload == this) 
           send NextMachine, Done, this;
         else
@@ -66,7 +66,7 @@ machine Node assume 100 {
     }
 
     state StopSending_Main_Node {
-      entry {
+      entry (payload: machine) {
         if (IsSending == true)
           send NextMachine, Empty;
         else 

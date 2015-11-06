@@ -47,8 +47,8 @@ machine PONG {
     }
 
     state Pong_SendPong {
-	entry {
-	     send payload as machine, Pong;
+	entry (payload: machine) {
+	     send payload, Pong;
 	     raise Success;		 	  
 	}
         on Success goto Pong_WaitPing;

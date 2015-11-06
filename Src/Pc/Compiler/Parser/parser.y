@@ -15,7 +15,7 @@
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH AS WITH
 
-%token IF WHILE THIS TRIGGER PAYLOAD NEW RETURN ID POP ASSERT CALL RAISE SEND DEFAULT HALT NULL RECEIVE CASE
+%token IF WHILE THIS NEW RETURN ID POP ASSERT CALL RAISE SEND DEFAULT HALT NULL RECEIVE CASE
 %token LPAREN RPAREN LCBRACE RCBRACE LBRACKET RBRACKET SIZEOF KEYS VALUES
 
 %token TRUE FALSE
@@ -168,6 +168,11 @@ LocalVarList
 	| ID COMMA LocalVarList    { localVarStack.AddLocalVar($1.str, ToSpan(@1)); }
 	;
 
+PayloadVarDeclOrNone
+	: LPAREN ID COLON Type RPAREN { localVarStack.AddPayloadVar($2.str, ToSpan(@2)); localVarStack.Push(); }
+	|                             { localVarStack.AddPayloadVar(); localVarStack.Push(); }
+	;
+
 /******************* Function Declarations *******************/
 Static 
 	: STATIC { isStaticFun = true; }
@@ -246,17 +251,17 @@ StateBody
 	;
 
 StateBodyItem
-	: ENTRY StmtBlock														{ SetStateEntry(true);                                  }	
+	: ENTRY PayloadVarDeclOrNone StmtBlock									{ SetStateEntry(true);                                  }	
 	| ENTRY ID SEMICOLON													{ SetStateEntry(false, $2.str, ToSpan(@2)); }			
-	| EXIT StmtBlock														{ SetStateExit(true);                                   }
+	| EXIT StmtBlock														{ localVarStack.AddPayloadVar(); localVarStack.Push(); SetStateExit(true);                                   }
 	| EXIT ID SEMICOLON														{ SetStateExit(false, $2.str, ToSpan(@2));                                 }
 	| DEFER NonDefaultEventList TrigAnnotOrNone SEMICOLON					{ AddDefersOrIgnores(true,  ToSpan(@1));            }		
 	| IGNORE NonDefaultEventList TrigAnnotOrNone SEMICOLON					{ AddDefersOrIgnores(false, ToSpan(@1));            }
 	| OnEventList DO ID TrigAnnotOrNone SEMICOLON							{ AddDoNamedAction($3.str, ToSpan(@3), ToSpan(@1)); }
-	| OnEventList DO TrigAnnotOrNone StmtBlock SEMICOLON					{ AddDoAnonyAction(ToSpan(@1)); }
+	| OnEventList DO TrigAnnotOrNone PayloadVarDeclOrNone StmtBlock SEMICOLON					{ AddDoAnonyAction(ToSpan(@1)); }
 	| OnEventList PUSH StateTarget TrigAnnotOrNone SEMICOLON				{ AddTransition(true, ToSpan(@1));           }
  	| OnEventList GOTO StateTarget TrigAnnotOrNone SEMICOLON				{ AddTransition(false, ToSpan(@1));          } 
-	| OnEventList GOTO StateTarget TrigAnnotOrNone WITH StmtBlock SEMICOLON { AddTransitionWithAction(true, "", ToSpan(@1), ToSpan(@1));           }
+	| OnEventList GOTO StateTarget TrigAnnotOrNone WITH PayloadVarDeclOrNone StmtBlock SEMICOLON { AddTransitionWithAction(true, "", ToSpan(@1), ToSpan(@1));           }
 	| OnEventList GOTO StateTarget TrigAnnotOrNone WITH ID SEMICOLON		{ AddTransitionWithAction(false, $6.str, ToSpan(@6), ToSpan(@1));           }
 	;
 
@@ -344,15 +349,19 @@ Stmt
 	| SEND Exp COMMA Exp COMMA SingleExprArgList SEMICOLON    { PushSend(true,  ToSpan(@1));                             }
 	| MONITOR Exp SEMICOLON									  { PushMonitor(false, $2.str, ToSpan(@2), ToSpan(@1));      }
 	| MONITOR Exp COMMA SingleExprArgList SEMICOLON           { PushMonitor(true, $2.str, ToSpan(@2), ToSpan(@1));       }
-	| RECEIVE LCBRACE CaseList RCBRACE						  { PushReceive(ToSpan(@1)); }
+	| ReceiveStmt LCBRACE CaseList RCBRACE						  { PushReceive(ToSpan(@1)); }
+	;
+
+ReceiveStmt
+	: RECEIVE												  { localVarStack.PushCasesList(); }
 	;
 
 Case 
-	: CaseEventList StmtBlock 		{ AddCaseAnonyAction(ToSpan(@2)); }
+	: CaseEventList PayloadVarDeclOrNone StmtBlock 		{ AddCaseAnonyAction(ToSpan(@3)); }
 	;
 
 CaseEventList
-	: CASE EventList COLON			{ localVarStack.Push(); }
+	: CASE EventList COLON
 	;
 
 CaseList
@@ -433,8 +442,6 @@ Exp_0
     : TRUE                                   { PushNulExpr(P_Root.UserCnstKind.TRUE,       ToSpan(@1)); }
     | FALSE                                  { PushNulExpr(P_Root.UserCnstKind.FALSE,      ToSpan(@1)); }
     | THIS                                   { PushNulExpr(P_Root.UserCnstKind.THIS,       ToSpan(@1)); }
-    | TRIGGER                                { PushNulExpr(P_Root.UserCnstKind.TRIGGER,    ToSpan(@1)); }
-    | PAYLOAD                                { PushNulExpr(P_Root.UserCnstKind.PAYLOAD,    ToSpan(@1)); }
     | NONDET                                 { PushNulExpr(P_Root.UserCnstKind.NONDET,     ToSpan(@1)); }
     | FAIRNONDET                             { PushNulExpr(P_Root.UserCnstKind.FAIRNONDET, ToSpan(@1)); }
     | NULL                                   { PushNulExpr(P_Root.UserCnstKind.NULL,       ToSpan(@1)); }

@@ -16,14 +16,14 @@ var ev_guard: int;
 var i, k: int; 
 var me: int;
 	start state Init {
-		entry {
-			me = payload as int;   //guard value for which this monitor is instantiated
+		entry (payload: int) {
+			me = payload;   //guard value for which this monitor is instantiated
 		}
 		on START do {
 			assert (!(me in tpstate));             //never fails
 			tpstate[me] = false;
 		};
-		on ACQ do {
+		on ACQ do (payload: int) {
 			ev_guard = payload;
 			if (ev_guard == me) {
 				assert (me in tpstate);               //never fails
@@ -31,7 +31,7 @@ var me: int;
 				else  { raise Error1; };
 			}
 		};
-		on REL do {
+		on REL do (payload: int) {
 			ev_guard = payload;
 			if (ev_guard == me) {
 				assert (me in tpstate);;             //never fails

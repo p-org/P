@@ -44,7 +44,7 @@ machine PONG {
 	var pingid: machine;
 
     start state _Init {
-	entry { pingid = payload as machine; raise Success; }
+	entry (payload: machine) { pingid = payload; raise Success; }
         on Success goto Pong_start;
     }
 

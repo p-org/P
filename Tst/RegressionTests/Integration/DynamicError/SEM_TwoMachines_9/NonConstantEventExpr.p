@@ -36,22 +36,22 @@ machine Real2 {
 	start state Real2_Init {
 		entry {	
 		}
-		on E2 do {
-			if (trigger == E2) 
-			{ 
-				Action2(); 
-			}
-			else 
-			{ assert(false);;};  //unreachable
+		on E2 do (payload: bool) {
+			 
+			 
+				Action2(payload); 
+			
+			 
+			
 		};
 	}
-	fun Action2() {
+	fun Action2(payload: bool) {
 		assert(payload == false);  //fails in runtime
     }
 }
 spec M monitors E1 {
 	start state x {
-		entry {
+		entry (payload: bool) {
 			assert (payload == true);
 		}
 	}

@@ -11,16 +11,16 @@ main machine MachOS {
 		
 		on myTuple goto State1;
 		
-		on myNmTuple do {
+		on myNmTuple do (payload: (first:int, sec:bool)) {
 			INT = payload.first;
 			BOOL = payload.sec;
 		};
 		
-		on mySeq do {
+		on mySeq do (payload: seq[int]) {
 			INT = payload[1];
 		};
 		
-		on myMapSeq do {
+		on myMapSeq do (payload: (first: map[int, int], sec : seq[bool])) {
 			INT = payload.first[3];
 			BOOL = payload.sec[2];
 		};
@@ -29,21 +29,21 @@ main machine MachOS {
 	}
 	
 	state State3 {
-		entry {
+		entry (payload: (first:int, sec:bool)) {
 			MACH = payload;
 			INT = payload;
 		}
 	}
 	
 	state State1 {
-		entry {
+		entry (payload: (int, bool)) {
 			INT = payload.0; 
 			BOOL = payload.1; 
 		}
 	}
 	
 	state State2 {
-		entry {
+		entry (payload: any) {
 			MACH = payload;
 			INT = payload;
 		}
@@ -54,7 +54,7 @@ main machine MachOS {
 	
 	
 	state State4 {
-		entry {
+		entry (payload: (first: map[int, int], sec : seq[bool])) {
 			INT = payload.first[true];
 			BOOL = payload.sec[2];
 		}

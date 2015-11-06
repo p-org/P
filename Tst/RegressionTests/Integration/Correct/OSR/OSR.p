@@ -53,7 +53,7 @@ main model User {
 model Switch {
 	var Driver: machine;
     start state _Init {
-	entry { Driver = payload as machine; raise(eUnit); }
+	entry (payload: machine) { Driver = payload; raise(eUnit); }
         on eUnit goto Switch_Init;
     }
 
@@ -77,7 +77,7 @@ model LED {
 	var Driver: machine;
 	
     start state _Init {
-	entry { Driver = payload as machine; raise(eUnit); }
+	entry (payload: machine) { Driver = payload; raise(eUnit); }
         on eUnit goto LED_Init;
     }
 
@@ -127,7 +127,7 @@ model Timer {
 	var Driver : machine;
 	
     start state _Init {
-	entry { Driver = payload as machine; raise(eUnit); }
+	entry (payload: machine) { Driver = payload; raise(eUnit); }
         on eUnit goto Timer_Init;
     }
 

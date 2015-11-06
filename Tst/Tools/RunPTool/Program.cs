@@ -89,14 +89,27 @@ namespace RunPTool
                 }
 
                 /*
-                Compiler compiler = new Compiler(true);
-                CommandLineOptions compilerOptions = new CommandLineOptions();
-                compilerOptions.analyzeOnly = true;
-                compilerOptions.shortFileNames = true;
-                compilerOptions.printTypeInference = true;
-                compilerOptions.erase = false;
-                compiler.Options = compilerOptions;
-                Compile(compiler, activeDirs);
+                Stack<DirectoryInfo> stack = new Stack<DirectoryInfo>();
+                foreach (var di in activeDirs)
+                {
+                    stack.Push(di);
+                }
+                List<DirectoryInfo> dis = new List<DirectoryInfo>();
+                while (stack.Count > 0)
+                {
+                    var di = stack.Pop();
+                    dis.Add(di);
+                    foreach (var child in di.EnumerateDirectories())
+                    {
+                        stack.Push(child);
+                    }
+                }
+                int index = 0;
+                while (index < dis.Count)
+                {
+                    Compile(dis, ref index);
+                    GC.Collect();
+                }
                 return;
                 */
 
@@ -159,12 +172,30 @@ namespace RunPTool
                 Console.WriteLine("Failed to run tests - {0}", e.Message);
                 Environment.ExitCode = FailCode;
             }
-        }
+        }   
 
-        private static void Compile(Compiler compiler, List<DirectoryInfo> dis)
+        private static Compiler compiler = null;
+        private static void Compile(List<DirectoryInfo> dis, ref int index)
         {
-            foreach (DirectoryInfo di in dis)
+            compiler = new Compiler(true);
+            CommandLineOptions compilerOptions = new CommandLineOptions();
+            compilerOptions.analyzeOnly = true;
+            compilerOptions.shortFileNames = true;
+            compilerOptions.printTypeInference = true;
+            compilerOptions.erase = false;
+            compiler.Options = compilerOptions;
+
+            long usedMemory = GC.GetTotalMemory(false);
+            while (index < dis.Count)
             {
+                long currUsedMemory = GC.GetTotalMemory(false);
+                if (currUsedMemory - usedMemory >= 500000000)
+                {
+                    compiler = null;
+                    break;
+                }
+
+                DirectoryInfo di = dis[index];
                 foreach (var fi in di.EnumerateFiles("*.p"))
                 {
                     compiler.Options.outputDir = fi.DirectoryName;
@@ -177,7 +208,7 @@ namespace RunPTool
                     Debug.Assert(cSuccess);
                 }
 
-                Compile(compiler, new List<DirectoryInfo>(di.EnumerateDirectories()));
+                index++;
             }
         }
 

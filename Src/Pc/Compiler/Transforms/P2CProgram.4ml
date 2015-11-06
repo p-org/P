@@ -1500,14 +1500,6 @@ transform P2CProgram (in:: P) returns (out:: C)
 									e = NulApp(THIS),
 									ec = out.BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("id")).
 									 
-    RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = NulApp(TRIGGER),
-									ec = out.FunApp(Ident("PrtGetCurrentTrigger"), Args(Ident("p_tmp_mach_priv"), NIL)). 
-
-	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = NulApp(PAYLOAD),
-									ec = out.FunApp(Ident("PrtGetCurrentPayload"), Args(Ident("p_tmp_mach_priv"), NIL)). 
-
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = NulApp(NONDET),
 									ec = out.FunApp(Ident("PrtMkNondetBoolValue"), NIL). 
@@ -1726,9 +1718,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   case = out.FunApp(caseFun, Args(Ident("context"), NIL)),
 						   blocked = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("receive")), Ident("NULL")), Seq(FunApp(Ident("PrtPushFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))), Return(Ident("NULL"))), NIL), 
 						   exception = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("lastOperation")), Ident("ReturnStatement")), Goto("P_EXIT_FUN"), NIL),
-						   popEvent = out.FunApp(Ident("PrtPopEvent"), Args(Ident("p_tmp_mach_priv"), NIL)),
 						   resetRcase = out.BinApp(ASN, BinApp(FLD, Ident("p_tmp_frame"), Ident("rcase")), Ident("NULL")),
-						   cs = out.Seq(receive, Seq(case, Seq(blocked, Seq(exception, Seq(popEvent, resetRcase))))).
+						   cs = out.Seq(receive, Seq(case, Seq(blocked, Seq(exception, resetRcase)))).
 	
 	//// New Machine or Model
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, NIL, _), 

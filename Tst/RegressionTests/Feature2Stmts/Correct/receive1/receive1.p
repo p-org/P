@@ -21,27 +21,27 @@ main machine A {
 		receive { 
 			case E: { x = x + p + 1; } 
 			case F: { x = x + p + 2; }
-			case G: { x = x + p + payload; }
+			case G: (payload: int) { x = x + p + payload; }
 		}
 	}
 }
 
 machine B {
 	start state Init {
-		entry {
+		entry (payload1: machine) {
 			var y: machine;
 			var z: int;
 			z = z + 1;
-			y = payload as machine;
+			y = payload1;
 			receive {
-				case E: {
-					assert payload == 0;
+				case E: (payload2: int) {
+					assert payload2 == 0;
 					receive { 
-						case G: { 
+						case G: (payload3: int) { 
 							var x: int;
 							var a, b: int;
 							var c: event;	
-							x = payload;
+							x = payload3;
 							send y, G, x;
 
 							a = 10;
@@ -49,10 +49,10 @@ machine B {
 							assert b == a + z;
 						} 
 					}
-					assert payload == 0;
+					assert payload2 == 0;
 				}
 			}
-			assert y == payload as machine;
+			assert y == payload1;
 		}
 	}
 }

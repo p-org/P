@@ -17,7 +17,7 @@ main machine Real1 {
 			ev1 = E1;			
 			raise ev1, 100;  		
         } 	
-        on E1 do Action1;   
+        on E1 do (payload: int) { Action1(payload); };   
 		on null goto Real1_S1;  //unreachable
 		//on E2 do Action2;
         exit {  
@@ -27,7 +27,7 @@ main machine Real1 {
 	}
 	state Real1_S1 {
 	}
-    fun Action1() {
+    fun Action1(payload: int) {
 		assert (payload != 100);   //fails (both in Zing and runtime)	
     }
 	
@@ -37,22 +37,22 @@ machine Real2 {
 	start state Real2_Init {
 		entry {	
 		}
-		on E2 do {
-			if (trigger == E2) 
-			{ 
-				Action2(); 
-			}
-			else 
-			{ assert(false);;};  //unreachable
+		on E2 do (payload: bool) {
+			
+			 
+				Action2(payload); 
+			
+			 
+			
 		};
 	}
-	fun Action2() {
+	fun Action2(payload: bool) {
 		assert(payload == false);  //unreachable
     }
 }
 spec M monitors E2 {
 	start state x {
-		entry {
+		entry (payload: bool) {
 			assert (payload == true); //unreachable
 		}
 	}

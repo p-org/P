@@ -26,17 +26,17 @@ machine test {
 	var rec:seq[int];
 	var i:int;
 	start state init {
-		entry {
-		      ii = (payload as (seq[int],int)).0;
-			  assert( (payload as (seq[int],int)).0[0] == 23 );
-		      assert( (payload as (seq[int],int)).1 == 1 );
+		entry (payload: (seq[int],int)) {
+		      ii = payload.0;
+			  assert( payload.0[0] == 23 );
+		      assert( payload.1 == 1 );
 		}
 		on seqpayload goto testitnow;
 	}
 	
 	state testitnow {
-		entry {
-		    rec = payload as seq[int];
+		entry (payload: seq[int]) {
+		    rec = payload;
 			i = sizeof(rec) - 1;
 			while(i >= 0)
 			{

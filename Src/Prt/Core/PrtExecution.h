@@ -103,7 +103,8 @@ typedef struct PRT_MACHINEINST_PRIV {
 	PRT_RECEIVEDECL		*receive;
 	PRT_STATESTACK		callStack;
 	PRT_FUNSTACK		funStack;
-	PRT_EVENTSTACK		eventStack;
+	PRT_VALUE			*currentTrigger;
+	PRT_VALUE			*currentPayload;
 	PRT_EVENTQUEUE		eventQueue;
 	PRT_LASTOPERATION	lastOperation;
 	PRT_UINT32          *inheritedDeferredSetCompact;
@@ -409,23 +410,6 @@ _In_ PRT_MACHINEINST *context,
 _In_ PRT_VALUE *id
 );
 
-void
-PrtPushEvent(
-_Inout_ PRT_MACHINEINST_PRIV	*context,
-_In_ PRT_VALUE					*event,
-_In_ PRT_VALUE					*payload
-);
-
-void
-PrtPopEvent(
-_Inout_ PRT_MACHINEINST_PRIV	*context
-);
-
-void
-PrtClearEventStack(
-_Inout_ PRT_MACHINEINST_PRIV	*context
-);
-
 PRT_VALUE *
 PrtGetCurrentTrigger(
 _Inout_ PRT_MACHINEINST_PRIV	*context
@@ -447,7 +431,7 @@ PrtBottomOfFunStack(
 );
 
 void
-PrtPushNewCaseFrame(
+PrtPushNewEventHandlerFrame(
 _Inout_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_UINT32					funIndex,
 _In_ PRT_VALUE					**locals

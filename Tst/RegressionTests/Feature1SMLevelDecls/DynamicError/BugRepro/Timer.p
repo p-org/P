@@ -10,7 +10,7 @@ event UNIT;
 model Timer {
   var client: machine;
   start state Init {
-    entry {
+    entry (payload: machine) {
       client = payload as machine;
       raise UNIT;  // goto handler of UNIT
     }

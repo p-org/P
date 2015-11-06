@@ -266,8 +266,8 @@ machine Test {
 	}
 	// int is sent
 	state testEI1 {
-		entry {
-			yt = payload as int;
+		entry (payload: int) {
+			yt = payload;
 			assert(yt == 1);        //holds
 			bt = payload as bool;   //error
 			pop;
@@ -275,10 +275,10 @@ machine Test {
 	}
 	// "any as int" is sent
 	state testEI6 {
-		entry {
-			yt = payload as int;        //OK
+		entry (payload: int) {
+			yt = payload;              //OK
 			assert(yt == 1);           //holds
-			yt = payload;               //OK
+			yt = payload;              //OK
 			assert(yt == 1);           //holds	
 			ta = payload as any;       //OK
 			assert(yt == 1);           //holds
@@ -287,8 +287,8 @@ machine Test {
 	}
 	// tuple is sent via a var
 	state testET1 {
-		entry {
-			tts1 = payload as (a: int, b: bool);    //OK
+		entry (payload: (a: int, b: bool)) {
+			tts1 = payload;    //OK
 			assert (tts1.a == 1 && tts1.b == true);   //holds
 			tts1 = payload;                          //OK
 			assert (tts1.a == 1 && tts1.b == true);   //holds
@@ -298,23 +298,23 @@ machine Test {
 	}
 	// tuple is sent via literal
 	state testET2 {
-		entry {	
+		entry (payload: (a: int, b: bool)) {	
 			tts1 = payload as (a: int, b: int);    //error
-			tts1 = payload as (a: int, b: bool);    //OK
+			tts1 = payload;    //OK
 			assert (tts1.a == 2 && tts1.b == false);   //holds
 			pop;
 		}
 	}
 	// seq[int] sent
 	state testESEQ1 {
-		entry {	
-			s = payload as seq[int];    //OK
+		entry (payload: seq[int]) {	
+			s = payload;    //OK
 			assert (s[0] == 1);          //holds
 			s = default(seq[int]);
 			s = payload;                //OK
 			assert (s[0] == 1);          //holds
 			
-			s1 = payload as seq[int];    //OK
+			s1 = payload;    //OK
 			assert (s1[0] == 1);          //holds
 			s1 = default(seq[any]);
 			s1 = payload;                //OK
@@ -327,14 +327,14 @@ machine Test {
 	}
 	// "seq[any] as seq[int]" is sent
 	state testESEQ2 {
-		entry {	
-			s = payload as seq[int];    //OK
+		entry (payload: seq[int]) {	
+			s = payload;    //OK
 			assert (s[0] == 1);          //holds
 			s = default(seq[int]);
 			s = payload;                //OK
 			assert (s[0] == 1);          //holds
 			
-			s1 = payload as seq[int];    //OK
+			s1 = payload;    //OK
 			assert (s1[0] == 1);          //holds
 			s1 = default(seq[int]);
 			s1 = payload;                //OK
@@ -350,7 +350,7 @@ machine Test {
 	}
 	// default(map[int,int]) is sent
 	state testEMAP1 {
-		entry {
+		entry (payload: map[int,int]) {
 			mi = payload;
 			assert (mi[0] == 0);  //dynamic error: "key not found"
 			mi[0] = 0;
@@ -358,10 +358,10 @@ machine Test {
 			assert (mi[0] == 0 && mi[3] == 3);                  //holds
 			
 			mi = default(map[int,int]);
-			mi = payload as map[int,int];
+			mi = payload;
 			assert (mi[0] == 0);  //dynamic error: "key not found" 
 			
-			ma = payload as map[int,int];
+			ma = payload;
 			assert (ma[0] == 0);  //dynamic error: "key not found" 
 			ma = default(map[int,any]);
 			ma = payload;
@@ -374,15 +374,15 @@ machine Test {
 	}
 	// map[int,int] is sent
 	state testEMAP11 {
-		entry {
+		entry (payload: map[int,int]) {
 			mi = payload;     
 			assert (mi[0] == 1 && mi[3] == 3);  //holds
 			
 			mi = default(map[int,int]);
-			mi = payload as map[int,int];
+			mi = payload;
 			assert (mi[0] == 1 && mi[3] == 3);  //holds
 			
-			ma = payload as map[int,int];
+			ma = payload;
 			assert (ma[0] == 1 && ma[3] == 3);  //holds
 			ma = default(map[int,any]);
 			ma = payload;
@@ -395,14 +395,14 @@ machine Test {
 	}
 	// default(map[int,any]) is sent as map[int,int]
 	state testEMAP2 {
-		entry {
+		entry (payload: map[int,int]) {
 			mi = payload;             //OK
 			assert (mi[0] == 1 && mi[3] == 3);  ////dynamic error: "key not found"
 			mi = default(map[int,int]);
-			mi = payload as map[int,int];  //OK
+			mi = payload;  //OK
 			assert (mi[0] == 1 && mi[3] == 3);  ////dynamic error: "key not found"
 			
-			ma = payload as map[int,int];   //ok
+			ma = payload;   //ok
 			assert (ma[0] == 1 && ma[3] == 3);  ////dynamic error: "key not found"
 			ma = default(map[int,any]);
 			ma = payload;                     //OK
@@ -415,14 +415,14 @@ machine Test {
 	}
 	// map[int,any] assigned a value of  map[int,int] type is sent as map[int,int]
 	state testEMAP3 {
-		entry {
+		entry (payload: map[int,int]) {
 			mi = payload;             //OK
 			assert (mi[0] == 1 && mi[3] == 3);  //holds
 			mi = default(map[int,int]);
-			mi = payload as map[int,int];  //OK
+			mi = payload;  //OK
 			assert (mi[0] == 1 && mi[3] == 3);  //holds?
 			
-			ma = payload as map[int,int];   //ok
+			ma = payload;   //ok
 			assert (ma[0] == 1 && ma[3] == 3);  //holds
 			ma = default(map[int,any]);
 			ma = payload;                     //OK

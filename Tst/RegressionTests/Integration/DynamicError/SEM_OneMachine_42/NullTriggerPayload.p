@@ -1,5 +1,5 @@
 // P semantics test: one machine, testing for "null" event, both
-// payload and trigger are null
+// payload is null
 
 event E1 assert 2;
 event unit assert 1;
@@ -14,8 +14,8 @@ main machine Real1 {
 		}
 	}
 	state Real1_S1 {
-		entry {
-			assert(payload != null || trigger != null);  //reachable, fails
+		entry (payload: any) {
+			assert(payload != null);  //reachable, fails
 		}
 	}
 }

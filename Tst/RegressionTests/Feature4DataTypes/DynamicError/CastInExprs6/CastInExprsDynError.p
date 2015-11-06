@@ -154,8 +154,8 @@ machine Test {
 	}
 	// int is sent
 	state testEI1 {
-		entry {
-			ta = payload as any;
+		entry (payload: any) {
+			ta = payload;
 			assert(ta == 1);           //holds
 			//yt = payload as int;       //dynamic error: "value must have a concrete type" (TODO: add Sent\Test.p) (no error in runtime!)
 			//assert(yt == 1);           //holds?
@@ -164,8 +164,8 @@ machine Test {
 	}
 	// "any as int" is sent
 	state testEI6 {
-		entry {
-			yt = payload as int;        //OK
+		entry (payload: int) {
+			yt = payload;        //OK
 			assert(yt == 1);           //holds
 			yt = payload;               //OK
 			assert(yt == 1);           //holds
@@ -176,8 +176,8 @@ machine Test {
 	}
 	// tuple is sent via a var
 	state testET1 {
-		entry {
-			tts1 = payload as (a: int, b: bool);    //OK
+		entry (payload: (a: int, b: bool)) {
+			tts1 = payload;    //OK
 			assert (tts1.a == 1 && tts1.b == true);   //holds
 			tts1 = payload;                          //OK
 			assert (tts1.a == 1 && tts1.b == true);   //holds
@@ -186,21 +186,21 @@ machine Test {
 	}
 	// tuple is sent via literal
 	state testET2 {
-		entry {
-			tts1 = payload as (a: int, b: bool);    //OK
+		entry (payload: (a: int, b: bool)) {
+			tts1 = payload;    //OK
 			assert (tts1.a == 2 && tts1.b == false);   //holds
 			pop;
 		}
 	}
 	// seq[int] sent
 	state testESEQ1 {
-		entry {	
-			s = payload as seq[int];    //OK
+		entry (payload: seq[int]) {	
+			s = payload;    //OK
 			assert (s[0] == 1);          //holds
 			s = payload;                //OK
 			assert (s[0] == 1);          //holds
 			
-			s1 = payload as seq[int];    //OK
+			s1 = payload;    //OK
 			assert (s1[0] == 1);          //holds
 			s1 = payload;                //OK
 			assert (s1[0] == 1);          //holds
@@ -212,13 +212,13 @@ machine Test {
 	}
 	// "seq[any] as seq[int]" is sent
 	state testESEQ2 {
-		entry {	
-			s = payload as seq[int];    //OK
+		entry (payload: seq[int]) {	
+			s = payload;    //OK
 			assert (s[0] == 1);          //holds
 			s = payload;                //OK
 			assert (s[0] == 1);          //holds
 			
-			s1 = payload as seq[int];    //OK
+			s1 = payload;    //OK
 			assert (s1[0] == 1);          //holds
 			s1 = payload;                //OK
 			assert (s1[0] == 1);          //holds
@@ -230,7 +230,7 @@ machine Test {
 	}
 	// default(map[int,int]) is sent
 	state testEMAP1 {
-		entry {
+		entry (payload: map[int,int]) {
 			mi = payload;     
 			//assert (mi[0] == 0);  //dynamic error: "key not found" (TODO)
 			mi[0] = 0;
@@ -238,10 +238,10 @@ machine Test {
 			assert (mi[0] == 0 && mi[3] == 3);                  //holds
 			
 			mi = default(map[int,int]);
-			mi = payload as map[int,int];
+			mi = payload;
 			//assert (mi[0] == 0);  //dynamic error: "key not found" (TODO)
 			
-			ma = payload as map[int,int];
+			ma = payload;
 			//assert (ma[0] == 0);  //dynamic error: "key not found" (TODO)
 			ma = default(map[int,any]);
 			ma = payload;
@@ -255,16 +255,16 @@ machine Test {
 	}
 	// map[int,int] is sent (0,1) (3,3)
 	state testEMAP11 {
-		entry {
+		entry (payload: map[int,int]) {
 			mi = default(map[int,int]);
 			mi = payload;     
 			assert (mi[0] == 1 && mi[3] == 3);  //holds
 			
 			mi = default(map[int,int]);
-			mi = payload as map[int,int];
+			mi = payload;
 			assert (mi[0] == 1 && mi[3] == 3);  //holds
 			
-			ma = payload as map[int,int];
+			ma = payload;
 			assert (ma[0] == 1 && ma[3] == 3);  //holds
 			ma = default(map[int,any]);
 			ma = payload;
@@ -278,15 +278,15 @@ machine Test {
 	}
 	// default(map[int,any]) is sent as map[int,int]
 	state testEMAP2 {
-		entry {
+		entry (payload: map[int,int]) {
 			mi = payload;             //OK
 			//assert (mi[0] == 1 && mi[3] == 3);  //dynamic error: "key not found" (TODO)
 			
 			mi = default(map[int,int]);
-			mi = payload as map[int,int];  //OK
+			mi = payload;  //OK
 			//assert (mi[0] == 1 && mi[3] == 3);  //dynamic error: "key not found" (TODO)
 			
-			ma = payload as map[int,int];   //ok
+			ma = payload;   //ok
 			//assert (ma[0] == 1 && ma[3] == 3);  //dynamic error: "key not found" (TODO)
 			
 			ma = default(map[int,any]);
@@ -302,14 +302,14 @@ machine Test {
 	}
 	// map[int,any] assigned a value of  map[int,int] type is sent as map[int,int]
 	state testEMAP3 {
-		entry {
+		entry (payload: map[int,int]) {
 			mi = payload;             //OK
 			assert (mi[0] == 1 && mi[3] == 3);  //holds
 			mi = default(map[int,int]);
-			mi = payload as map[int,int];  //OK
+			mi = payload;  //OK
 			assert (mi[0] == 1 && mi[3] == 3);  //holds
 			
-			ma = payload as map[int,int];   //ok
+			ma = payload;   //ok
 			assert (ma[0] == 1 && ma[3] == 3);  //holds
 			ma = default(map[int,any]);
 			ma = payload;                     //OK

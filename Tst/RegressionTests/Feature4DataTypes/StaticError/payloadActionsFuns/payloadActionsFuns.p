@@ -8,17 +8,17 @@ main machine MachOS {
 	var BOOL : bool;
 	var MACH : machine;
 	
-	fun foo_1() { 
+	fun foo_1(payload: (int, bool)) { 
 			INT = payload.0; 
 			BOOL = payload; 
 	}
 	
-	fun foo_2() {
+	fun foo_2(payload: (first:int, sec:bool)) {
 			INT = payload.first;
 			BOOL = payload.sec;
 	}
 	
-	fun foo_3() {
+	fun foo_3(payload: seq[int]) {
 			INT = payload[1];
 	}
 	
@@ -27,24 +27,24 @@ main machine MachOS {
 		
 		}
 		
-		on myTuple do foo_1;
+		on myTuple do (payload: (int, bool)) { foo_1(payload); };
 		
 		
-		on myNmTuple do foo_2;
+		on myNmTuple do (payload: (first:int, sec:bool)) { foo_2(payload); };
 		
-		on mySeq do foo_3;
+		on mySeq do (payload: seq[int]) { foo_3(payload); };
 		
-		on myMapSeq do {
+		on myMapSeq do (payload: (first: map[int, int], sec : seq[bool])) {
 			INT = payload.first[true];
 			BOOL = payload.sec[2];
 		};
 		
-		on halt do {
+		on halt do (payload: any) {
 			MACH = payload;
 			INT = payload;
 		};
 		
-		on null do {
+		on null do (payload: any) {
 			MACH = payload;  
 			INT = payload;
 		};

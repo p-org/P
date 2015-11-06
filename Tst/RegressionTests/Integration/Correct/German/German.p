@@ -51,8 +51,8 @@ main machine Host {
 	}
 	
 	state ShareRequest {
-		entry {
-			curr_client = payload as machine;
+		entry (payload: machine) {
+			curr_client = payload;
 			is_curr_req_excl = false;
 			raise unit;
 		}
@@ -61,8 +61,8 @@ main machine Host {
 	}
 	
 	state ExclRequest {
-		entry {
-		        curr_client = payload as machine;
+		entry (payload: machine) {
+		        curr_client = payload;
 			is_curr_req_excl = true;
 			raise unit;
 		}
@@ -131,9 +131,9 @@ machine Client {
 	var host : machine;
 	var pending : bool;
 	start state init {
-		entry {
-		        host = (payload as (machine, bool)).0; 
-		        pending = (payload as (machine, bool)).1;
+		entry (payload: (machine,bool)) {
+		        host = payload.0; 
+		        pending = payload.1;
 			raise unit;
 		}
 		on unit goto invalid;
@@ -235,8 +235,8 @@ model CPU {
 	var cache : (machine, machine, machine);
 
 	start state init {
-		entry {
-			cache = payload as (machine, machine, machine);
+		entry (payload: (machine, machine, machine)) {
+			cache = payload;
 			raise unit;
 		}
 		on unit goto makeReq;

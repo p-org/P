@@ -419,8 +419,6 @@ enum ContinuationReason { Return, Nondet, Pop, Raise, Receive, Send, NewMachine 
 class StackFrame {
     int pc;
 	PRT_VALUE_ARRAY locals;
-    SM_EVENT currentEvent;
-    PRT_VALUE currentArg;
 	StackFrame next;
 };
 
@@ -462,13 +460,11 @@ class Continuation {
 		return topOfStack;
     }
 
-    void PushReturnTo(int ret, PRT_VALUE_ARRAY locals, SM_EVENT currentEvent, PRT_VALUE currentArg) {
+    void PushReturnTo(int ret, PRT_VALUE_ARRAY locals) {
         StackFrame tmp;
 		tmp = new StackFrame;
 		tmp.pc = ret;
 		tmp.locals = locals;
-		tmp.currentEvent = currentEvent;
-		tmp.currentArg = currentArg;
 		tmp.next = this.returnTo;
 		this.returnTo = tmp;
     }
@@ -503,36 +499,36 @@ class Continuation {
 		this.retVal = null;
     }
 
-    void Send(int ret, PRT_VALUE_ARRAY locals, SM_EVENT currentEvent, PRT_VALUE currentArg) {
+    void Send(int ret, PRT_VALUE_ARRAY locals) {
         this.returnTo = null;
 		this.reason = ContinuationReason.Send;
 		this.id = null;
 		this.retVal = null;
-		this.PushReturnTo(ret, locals, currentEvent, currentArg);
+		this.PushReturnTo(ret, locals);
     }
 
-    void NewMachine(int ret, PRT_VALUE_ARRAY locals, SM_EVENT currentEvent, PRT_VALUE currentArg, SM_HANDLE o) {
+    void NewMachine(int ret, PRT_VALUE_ARRAY locals, SM_HANDLE o) {
         this.returnTo = null;
 		this.reason = ContinuationReason.NewMachine;
 		this.id = o;
 		this.retVal = null;
-		this.PushReturnTo(ret, locals, currentEvent, currentArg);
+		this.PushReturnTo(ret, locals);
     }
 
-    void Receive(int ret, PRT_VALUE_ARRAY locals, SM_EVENT currentEvent, PRT_VALUE currentArg) {
+    void Receive(int ret, PRT_VALUE_ARRAY locals) {
         this.returnTo = null;
 		this.reason = ContinuationReason.Receive;
 		this.id = null;
 		this.retVal = null;
-		this.PushReturnTo(ret, locals, currentEvent, currentArg);
+		this.PushReturnTo(ret, locals);
     }
 
-    void Nondet(int ret, PRT_VALUE_ARRAY locals, SM_EVENT currentEvent, PRT_VALUE currentArg) {
+    void Nondet(int ret, PRT_VALUE_ARRAY locals) {
         this.returnTo = null;
 		this.reason = ContinuationReason.Nondet;
 		this.id = null;
 		this.retVal = null;
-		this.PushReturnTo(ret, locals, currentEvent, currentArg);
+		this.PushReturnTo(ret, locals);
     }
 };
 

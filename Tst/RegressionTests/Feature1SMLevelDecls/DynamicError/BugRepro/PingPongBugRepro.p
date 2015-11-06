@@ -51,14 +51,14 @@ machine FailureDetector {
     var timer: machine;
 	
     start state Init {
-        entry {
-  	        nodes = payload as seq[machine];
+        entry (payload: seq[machine]) {
+  	        nodes = payload;
 			InitializeAliveSet(0);
 			timer = new Timer(this);
 	        raise UNIT;   	   
         }
-		on REGISTER_CLIENT do { clients[payload] = true; };
-		on UNREGISTER_CLIENT do { if (payload in clients) clients -= payload; };
+		on REGISTER_CLIENT do (payload: machine) { clients[payload] = true; };
+		on UNREGISTER_CLIENT do  (payload: machine) { if (payload in clients) clients -= payload; };
         on UNIT push SendPing;
     }
     state SendPing {
@@ -66,7 +66,7 @@ machine FailureDetector {
 		    SendPingsToAliveSet(0);
 			send timer, START, 100;
 	    }
-        on PONG do { 
+        on PONG do (payload: machine) { 
 		    if (payload in alive) {
 				 responses[payload] = true; 
 				 if (sizeof(responses) == sizeof(alive)) {
@@ -137,7 +137,7 @@ machine FailureDetector {
 
 machine Node {
 	start state WaitPing {
-        on PING do {
+        on PING do (payload: machine) {
 			monitor M_PONG, this;
 		    send payload as machine, PONG, this;
 		};
@@ -149,13 +149,13 @@ event M_PONG: machine;
 spec Safety monitors M_PING, M_PONG {
 	var pending: map[machine, int];
     start state Init {
-	    on M_PING do { 
+	    on M_PING do (payload: machine) { 
 			if (!(payload in pending))
 				pending[payload] = 0;
 			pending[payload] = pending[payload] + 1;
 			assert (pending[payload] <= 3);   //fails
 		};
-		on M_PONG do { 
+		on M_PONG do (payload: machine) { 
 			assert (payload in pending);
 			assert (0 < pending[payload]);
 			pending[payload] = pending[payload] - 1;
@@ -166,10 +166,10 @@ spec Safety monitors M_PING, M_PONG {
 spec Liveness monitors NODE_DOWN {
 	var nodes: map[machine, bool];
 	start hot state Init {
-		entry {
-			nodes = payload as map[machine, bool]; 
+		entry (payload: map[machine, bool]) {
+			nodes = payload; 
 		}
-		on NODE_DOWN do { 
+		on NODE_DOWN do (payload: machine) { 
 			nodes -= payload;
 			if (sizeof(nodes) == 0) 
 				raise UNIT;

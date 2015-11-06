@@ -51,8 +51,8 @@ machine Process {
 	var other2:machine;
 	
         start state _init {
-			entry { 
-				  parent = payload as machine; 
+			entry (payload: machine) { 
+				  parent = payload; 
 				  raise unit;
 			}
             on unit goto inits;
@@ -63,17 +63,17 @@ machine Process {
 			count = 0;
 		}
 		on myCount goto inits;
-		on init do initaction;
+		on init do (payload: (machine, machine)) { initaction(payload); };
 		on Resp goto SendCount;
 	}
-	fun initaction() {
-		other1 = (payload as (machine, machine)).0;
-		other2 = (payload as (machine, machine)).1;
+	fun initaction(payload: (machine, machine)) {
+		other1 = payload.0;
+		other2 = payload.1;
 		send parent, Req;
 		
 	}
-	fun ConfirmThatInSync() {
-		assert(count <= (payload as int) && count >= (payload as int) - 1);
+	fun ConfirmThatInSync(payload: int) {
+		assert(count <= payload && count >= payload - 1);
 	}
 	state SendCount {
 		entry {
@@ -88,7 +88,7 @@ machine Process {
 		}
 		on unit goto done;
 		on Resp goto SendCount;
-		on myCount do ConfirmThatInSync;
+		on myCount do (payload: int) { ConfirmThatInSync(payload); };
 	}
 	state done {
 	ignore Resp, myCount;

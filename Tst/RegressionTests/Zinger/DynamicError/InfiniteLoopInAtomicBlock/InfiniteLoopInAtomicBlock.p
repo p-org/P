@@ -56,13 +56,13 @@ machine PONG {
     }
 
     state Pong_SendPong {
-	entry {
+	entry (payload: machine) {
 		count2 = count2 + 1;
 		if (count2 == 1) {
-			 send payload as machine, Pong;			 	
+			 send payload, Pong;			 	
 			}
 		if (count2 == 2) {
-			send payload as machine, PongIgnored;		
+			send payload, PongIgnored;		
 			}
 		raise Success;	
 	}

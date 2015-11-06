@@ -2,7 +2,7 @@
 // non-atomic event expressions
 // events are sent as payloads from Real1 to Real2,
 // and then retrieved in Real2 and sent back to Real1
-// This test checks using "trigger" as event expression
+
 
 event E0 assert 1: any;
 event E1 assert 1: any;
@@ -63,8 +63,8 @@ main machine Real1 {
 	}
 	state Real1_S1 {
 		entry {
-		    //assert (trigger != null);   //fails
-			sev1 += (0,trigger);
+		    
+			sev1 += (0, null);
 			sev1 += (1, null);
 			if (sev1[0] == sev1[1]) {
 				assert(false);                  //fails 
@@ -85,11 +85,11 @@ machine Real2 {
 	var ev3: event;
 	var mac1: machine;
 	start state Real2_Init {
-		entry {	
+		entry (payload: machine) {	
 			ev3 = E4;
-			mac1 = payload as machine;
+			mac1 = payload;
 		}
-		on E2 do {
+		on E2 do (payload: event) {
 			//assert(payload == E1);  //passes
 			if (payload == E1) 
 			{ 

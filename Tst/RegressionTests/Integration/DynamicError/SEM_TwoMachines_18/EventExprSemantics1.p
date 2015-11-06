@@ -76,11 +76,11 @@ machine Real2 {
 	var ev3: event;
 	var mac1: machine;
 	start state Real2_Init {
-		entry {	
+		entry (payload: machine) {	
 			ev3 = E4;
-			mac1 = payload as machine;
+			mac1 = payload;
 		}
-		on E2 do {
+		on E2 do (payload: event) {
 			//assert(payload == E1);  //passes
 			if (payload == E1) 
 			{ 

@@ -11,8 +11,8 @@ machine PING
     var pongMachine: (machine,machine);
 
     start state Init {
-        entry {
-			pongMachine = payload as (machine, machine);
+        entry (payload: (machine, machine)) {
+			pongMachine = payload;
 			raise (Success);   	   
         }
         on Success goto SendPing;
@@ -46,7 +46,7 @@ machine PONG
     }
 
     state SendPong {
-	    entry {
+	    entry (payload: machine) {
 	        monitor M_Pong;
 			_SEND(payload, Pong, this);
 			raise (Success);		 	  
@@ -81,7 +81,7 @@ static fun _CREATEMACHINE(cner: machine, typeOfMachine: int, param : any, newMac
 {
 	if(typeOfMachine == 1)
 	{
-		newMachine = new PING(param);
+		newMachine = new PING(param as (machine, machine));
 	}
 	else if(typeOfMachine == 2)
 	{

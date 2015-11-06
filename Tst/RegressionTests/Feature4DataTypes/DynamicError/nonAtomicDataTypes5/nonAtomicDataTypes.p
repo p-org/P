@@ -66,8 +66,8 @@ main machine M
 machine Test {
 	var ss: seq[int];
 	start state init {
-		entry {
-		    ss = payload as seq[int];
+		entry (payload: seq[int]) {
+		    ss = payload;
 			assert(ss[0] == 3);            //holds
 		}
 		

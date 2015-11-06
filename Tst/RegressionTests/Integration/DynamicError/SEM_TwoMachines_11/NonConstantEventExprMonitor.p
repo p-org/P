@@ -39,21 +39,21 @@ machine Real2 {
 		entry {	
 		}
 		on E2 do {
-			if (trigger == E2) 
-			{ 
+			 
+			 
 				Action2(); 
-			}
-			//else 
-			//{ assert(false);;};  //unreachable
+			
+			
+			
 		};
 	}
 	fun Action2() {
-		//assert(payload == false);  //fails
+		
     }
 }
 spec M monitors E1 {
 	start state x {
-		entry {
+		entry (payload: bool) {
 			assert (payload == true);   //Zinger: fails, since payload is "new M()" parameter in entry
 		}
 	}

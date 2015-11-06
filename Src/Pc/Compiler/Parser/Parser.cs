@@ -52,6 +52,7 @@
         private Stack<P_Root.Stmt> stmtStack = new Stack<P_Root.Stmt>();
         private Stack<P_Root.QualifiedName> groupStack = new Stack<P_Root.QualifiedName>();
         private int nextReceiveLabel = 0;
+        private int nextPayloadVarLabel = 0;
 
         class LocalVarStack
         {
@@ -79,12 +80,18 @@
             private Stack<List<P_Root.EventLabel>> caseEventStack;
 
             private P_Root.IArgType_Cases__2 casesList;
-            public P_Root.IArgType_Cases__2 CasesList
-            {
-                get { return casesList; }
-            }
-
             private Stack<P_Root.IArgType_Cases__2> casesListStack;
+            public void PushCasesList()
+            {
+                casesListStack.Push(casesList);
+                casesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+            }
+            public P_Root.IArgType_Cases__2 PopCasesList()
+            {
+                var currCasesList = casesList;
+                casesList = casesListStack.Pop();
+                return currCasesList;
+            }
 
             public LocalVarStack(Parser parser)
             {
@@ -119,16 +126,14 @@
                 List<P_Root.EventLabel> caseEventList = new List<P_Root.EventLabel>(parser.crntEventList);
                 parser.crntEventList.Clear();
                 caseEventStack.Push(caseEventList);
-                casesListStack.Push(casesList);
-                casesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
                 localVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
             }
 
             public List<P_Root.EventLabel> Pop()
             {
                 contextLocalVarDecl = contextStack.Pop();
+                contextLocalVarDecl = ((P_Root.NmdTupType)contextLocalVarDecl).tl;
                 localVarDecl = localStack.Pop();
-                casesList = casesListStack.Pop();
                 return caseEventStack.Pop();
             }
 
@@ -140,6 +145,22 @@
             public void AddLocalVar(string name, Span span)
             {
                 crntLocalVarList.Add(name);
+            }
+
+            public void AddPayloadVar(string name, Span span)
+            {
+                Contract.Assert(parser.typeExprStack.Count > 0);
+                var typeExpr = (P_Root.IArgType_NmdTupTypeField__1)parser.typeExprStack.Pop();
+                var field = P_Root.MkNmdTupTypeField(P_Root.MkString(name), typeExpr);
+                contextLocalVarDecl = P_Root.MkNmdTupType(field, contextLocalVarDecl);
+            }
+
+            public void AddPayloadVar()
+            {
+                var field = P_Root.MkNmdTupTypeField(
+                                    P_Root.MkString(string.Format("_payload_{0}", parser.GetNextPayloadVarLabel())), 
+                                    (P_Root.IArgType_NmdTupTypeField__1) parser.MkBaseType(P_Root.UserCnstKind.ANY, Span.Unknown));
+                contextLocalVarDecl = P_Root.MkNmdTupType(field, contextLocalVarDecl);
             }
 
             public void CompleteCrntLocalVarList()
@@ -411,7 +432,7 @@
 
         private void PushReceive(Span span)
         {
-            var receiveStmt = P_Root.MkReceive((P_Root.IArgType_Receive__0)localVarStack.CasesList);
+            var receiveStmt = P_Root.MkReceive((P_Root.IArgType_Receive__0)localVarStack.PopCasesList());
             receiveStmt.Span = span;
             receiveStmt.label = P_Root.MkNumeric(GetNextReceiveLabel());
             stmtStack.Push(receiveStmt);
@@ -988,7 +1009,7 @@
             {
                 var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
                 state = GetCurrentStateDecl(stmt.Span);
-                entry = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL));
+                entry = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)localVarStack.ContextLocalVarDecl);
                 entry.Span = stmt.Span;
                 parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)entry);
                 localVarStack = new LocalVarStack(this);
@@ -1026,7 +1047,7 @@
             {
                 var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
                 state = GetCurrentStateDecl(stmt.Span);
-                exit = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL));
+                exit = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)localVarStack.ContextLocalVarDecl);
                 exit.Span = stmt.Span;
                 parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)exit);
                 localVarStack = new LocalVarStack(this);
@@ -1178,7 +1199,7 @@
             else
             {
                 var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
-                action = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL));
+                action = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)localVarStack.ContextLocalVarDecl);
                 action.Span = stmt.Span;
                 parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)action);
                 localVarStack = new LocalVarStack(this);
@@ -1328,7 +1349,7 @@
             var state = GetCurrentStateDecl(span);
             var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
             var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
-            var anonAction = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL));
+            var anonAction = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)localVarStack.ContextLocalVarDecl);
             anonAction.Span = stmt.Span;
             parseProgram.AnonFunctions.Add(anonAction);
             localVarStack = new LocalVarStack(this);
@@ -1737,11 +1758,19 @@
             return nextReceiveLabel++;
         }
 
+        private int GetNextPayloadVarLabel()
+        {
+            return nextPayloadVarLabel++;
+        }
+
         private P_Root.AnonFunDecl MkSkipFun(P_Root.MachineDecl owner, Span span)
         {
             var stmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
             stmt.Span = span;
-            var decl = P_Root.MkAnonFunDecl(owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), stmt, (P_Root.IArgType_AnonFunDecl__3)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL));
+            var field = P_Root.MkNmdTupTypeField(
+                                   P_Root.MkString("_payload_skip"),
+                                   (P_Root.IArgType_NmdTupTypeField__1)MkBaseType(P_Root.UserCnstKind.ANY, Span.Unknown));
+            var decl = P_Root.MkAnonFunDecl(owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), stmt, (P_Root.IArgType_AnonFunDecl__3)P_Root.MkNmdTupType(field, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL)));
             decl.Span = span;
             parseProgram.AnonFunctions.Add(decl);
             return decl;
@@ -1805,6 +1834,7 @@
             crntMachDecl = null;
             crntStateTargetName = null;
             nextReceiveLabel = 0;
+            nextPayloadVarLabel = 0;
             crntStateNames.Clear();
             crntFunNames.Clear();
             crntVarNames.Clear();

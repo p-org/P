@@ -6,7 +6,7 @@ event Unit;
 
 spec M monitors E, F {
 	start state Init {
-		on E goto Next with { assert (payload == 10);};
+		on E goto Next with (payload: int) { assert (payload == 10);};
 	}
 	
 	state Next {

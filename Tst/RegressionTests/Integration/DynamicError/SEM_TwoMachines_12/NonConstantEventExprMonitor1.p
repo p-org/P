@@ -36,19 +36,19 @@ machine Real2 {
 	start state Real2_Init {
 		entry {	
 		}
-		on E2 do {
-			if (trigger == E2) 
-			{ 
-				Action2(); 
-			}
+		on E2 do (payload: bool) {
+			
+			
+				Action2(payload); 
+			
 		};
 	}
-	fun Action2() {
+	fun Action2(payload: bool) {
 		assert(payload == false);  //fails in runtime
     }
 }
 spec M monitors E2 {
 	start state x {
-		on E2 do { assert (payload == true); };  //fails in Zinger
+		on E2 do (payload: bool) { assert (payload == true); };  //fails in Zinger
 	}
 }

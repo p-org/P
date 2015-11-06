@@ -9,7 +9,7 @@ event unit assert 1;
 main machine Real {
     var ghost_machine: machine;
     start state Real_Init {
-		on E2 do Action1;
+		on E2 do (payload: int) { Action1(payload); };
         entry {
 			ghost_machine = new Ghost(this);  
         	raise unit;   
@@ -38,7 +38,7 @@ main machine Real {
 		entry {}
 		on E4 goto Real_S3;
 	}
-   fun Action1() {
+   fun Action1(payload: int) {
 		assert(payload == 100);
 		send ghost_machine, E3;
         send ghost_machine, E3;
@@ -49,7 +49,7 @@ main machine Real {
 model Ghost {
     var real_machine: machine;
     start state _Init {
-	entry { real_machine = payload as machine; raise unit; }
+	entry (payload: machine) { real_machine = payload; raise unit; }
         on unit goto Ghost_Init;
     }
 

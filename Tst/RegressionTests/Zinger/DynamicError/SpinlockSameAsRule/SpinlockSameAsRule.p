@@ -17,14 +17,14 @@ var ev_guard: int;
 var i, k: int; 
 var me: int;
 	start state Init {
-		entry {
-			me = payload as int;   //guard value for which this monitor is instantiated
+		entry (payload: int) {
+			me = payload;   //guard value for which this monitor is instantiated
 		}
 		//on START do {
 		//	assert (!(me in tpstate));             //never fails
 		//	tpstate[me] = false;
 		//};
-		on ACQ do {
+		on ACQ do (payload: int) {
 			ev_guard = payload;
 			if (ev_guard == me) {
 				//1. Typestate for "me" has not been set up yet: set up the typestate for "me"
@@ -34,7 +34,7 @@ var me: int;
 				else  { tpstate[me] = true; };       //acquire lock
 			}
 		};
-		on REL do {
+		on REL do (payload: int) {
 			ev_guard = payload;
 			//Check that the watch is set up and test the guard:
 			if (me in tpstate && ev_guard == me) {

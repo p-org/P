@@ -575,7 +575,8 @@
             AddErrors(task.Result, "PurityError(_, _)", errors, 1);
             AddErrors(task.Result, "MonitorError(_, _)", errors, 1);
             AddErrors(task.Result, "LValueError(_, _)", errors, 1);
-            AddErrors(task.Result, "BadLabelError(_)", errors, 1);
+            AddErrors(task.Result, "BadLabelError(_)", errors, 0);
+            AddErrors(task.Result, "PayloadError(_)", errors, 0);
 
             //// Enumerate structural errors
             AddErrors(task.Result, "missingDecl", errors);

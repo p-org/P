@@ -12,30 +12,30 @@ main machine MachOS {
 		
 		}
 		
-		on myTuple do { 
+		on myTuple do (payload: (int, bool)) { 
 			INT = payload.0; 
 			BOOL = payload.1; 
 		};
 		
-		on myNmTuple do {
+		on myNmTuple do (payload: (first:int, sec:bool)) {
 			INT = payload.first;
 			BOOL = payload.sec;
 		};
 		
-		on mySeq do {
+		on mySeq do (payload: seq[int]) {
 			INT = payload[1];
 		};
 		
-		on myMapSeq do {
+		on myMapSeq do (payload: (first: map[int, int], sec : seq[bool])) {
 			INT = payload.first[true];
 			BOOL = payload.sec[2];
 		};
 		
-		on halt do {
+		on halt do (payload: any) {
 			MACH = payload;
 			INT = payload;
 		};
-		on null do {
+		on null do (payload: any) {
 			MACH = payload;  //subtype error
 			INT = payload;   //subtype error
 		};

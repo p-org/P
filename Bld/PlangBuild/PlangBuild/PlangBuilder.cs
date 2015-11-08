@@ -422,7 +422,7 @@ namespace PlangBuild
             "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\Binaries\\msvcr120d.dll"),
             #endregion
 
-             #region Client files
+            #region Client files
            //x86
              
             new Tuple<string, string>(
@@ -434,6 +434,9 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\MainFunction.c", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\ClientFiles\\MainFunction.c"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\PrtDistHelp.p", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x86\\Runtime\\ClientFiles\\PrtDistHelp.p"),
             
             //x64
             new Tuple<string, string>(
@@ -445,6 +448,9 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\MainFunction.c", 
                 "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\ClientFiles\\MainFunction.c"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\PrtDistHelp.p", 
+                "..\\..\\..\\..\\Drops\\Plang_Debug_x64\\Runtime\\ClientFiles\\PrtDistHelp.p"),
             #endregion
         };
 
@@ -817,7 +823,9 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\MainFunction.c", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\ClientFiles\\MainFunction.c"),
-            
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\PrtDistHelp.p", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x86\\Runtime\\ClientFiles\\PrtDistHelp.p"),
             //x64
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\ClusterConfiguration.xml", 
@@ -828,6 +836,9 @@ namespace PlangBuild
             new Tuple<string, string>(
                 "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\MainFunction.c", 
                 "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\ClientFiles\\MainFunction.c"),
+            new Tuple<string, string>(
+                "..\\..\\..\\..\\..\\Src\\PrtDist\\ClientFiles\\PrtDistHelp.p", 
+                "..\\..\\..\\..\\Drops\\Plang_Release_x64\\Runtime\\ClientFiles\\PrtDistHelp.p"),
             #endregion
             
         };

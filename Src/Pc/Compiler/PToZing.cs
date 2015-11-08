@@ -3627,10 +3627,16 @@ namespace Microsoft.Pc
                 {
                     ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, payloadExpr));
                 }
-                //3 dynamic assertions with respect to module system
-                ctxt.AddSideEffect(MkZingAssert(MkZingIn(eventExpr, targetInterface), "Sent event is not in the target interface"));
-                ctxt.AddSideEffect(MkZingAssert(MkZingIn(eventExpr, MkZingIdentifier("SPSet")), "Sent event is not in sends or private set of the module"));
-                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(PrtAssertPrivateSend, eventExpr, tmpVar, MkZingIdentifier("HPSet"))));
+
+                //TODO : This is hack
+                if(!allStaticFuns.ContainsKey(ctxt.entityName))
+                {
+                    //3 dynamic assertions with respect to module system
+                    ctxt.AddSideEffect(MkZingAssert(MkZingIn(eventExpr, targetInterface), "Sent event is not in the target interface"));
+                    ctxt.AddSideEffect(MkZingAssert(MkZingIn(eventExpr, MkZingIdentifier("SPSet")), "Sent event is not in sends or private set of the module"));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(PrtAssertPrivateSend, eventExpr, tmpVar, MkZingIdentifier("HPSet"))));
+                }
+                
                 var afterLabel = ctxt.GetFreshLabel();
 
                 //generate invoke monitor only in case of monitor test case

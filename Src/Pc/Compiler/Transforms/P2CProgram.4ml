@@ -97,7 +97,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	//// (2) Real machine decls - Start at Id 0.
 	DeclId(d, id, cn) :- d is MachineDecl, d.kind = REAL, ImpMachine(d),
-	                     id = toOrdinal(d, 0, { d' | d' is MachineDecl, d'.kind = REAL }), cn = strJoin("P_MACHINE_", d.name).
+	                     id = toOrdinal(d, 0, { d' | d' is MachineDecl, ImpMachine(d'), d'.kind = REAL }), cn = strJoin("P_MACHINE_", d.name).
 	
 	HOut(0, out.EnmDef(NIL, "P_MACHINES", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
@@ -107,7 +107,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	//// (3) Model machine decls - Start at Id 0.
 	DeclId(d, id, cn) :- d is MachineDecl, d.kind = MODEL, ImpMachine(d),
-	                     id = toOrdinal(d, 0, { d' | d' is MachineDecl, d'.kind = MODEL }), cn = strJoin("P_MODEL_", d.name).
+	                     id = toOrdinal(d, 0, { d' | d' is MachineDecl, ImpMachine(d'), d'.kind = MODEL }), cn = strJoin("P_MODEL_", d.name).
 	
 	HOut(0, out.EnmDef(NIL, "P_MODELS", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 

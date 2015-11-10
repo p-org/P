@@ -361,9 +361,14 @@ PrtRaise(
 	PrtAssert(!PrtIsSpecialEvent(event), "Raised event must not be null");
 	PrtAssert(PrtInhabitsType(payload, PrtGetPayloadType(context, event)), "Payload must be member of event payload type");
 	context->lastOperation = RaiseStatement;
+	//this is a hack and should be removed after merging with the master branch.
+	PRT_VALUE* eventC = PrtCloneValue(event);
+	PRT_VALUE* payloadC = PrtCloneValue(payload);
 	PrtClearEventStack(context);
-	PrtPushEvent(context, PrtCloneValue(event), PrtCloneValue(payload));
+	PrtPushEvent(context, PrtCloneValue(eventC), PrtCloneValue(payloadC));
 	PrtLog(PRT_STEP_RAISE, context);
+	PrtFreeValue(eventC);
+	PrtFreeValue(payloadC);
 }
 
 PRT_BOOLEAN

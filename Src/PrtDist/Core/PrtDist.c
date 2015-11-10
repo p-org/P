@@ -217,13 +217,13 @@ PRT_VALUE *P_FUN_SEND_REL_IMPL(PRT_MACHINEINST *context)
 	PRT_INT16 count = 0;
 
 	PrtPopFrame((PRT_MACHINEINST_PRIV*)context, &frame);
-	PRT_VALUE* target = frame.locals[3U];
+	PRT_VALUE* target = frame.locals[2U];
 	if (!PrtMapExists(processAlive, target))
 		PrtMapUpdate(processAlive, target, PrtMkBoolValue(PRT_TRUE));
 
 	while (PrtMapGet(processAlive, target)->valueUnion.bl == PRT_TRUE && count < 3)
 	{
-		if (!PrtDistSend(context->id, target, frame.locals[2U], frame.locals[1U]))
+		if (!PrtDistSend(context->id, target, frame.locals[1U], frame.locals[0U]))
 			count++;
 		else
 		{

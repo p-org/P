@@ -1512,13 +1512,11 @@ transform P2CProgram (in:: P) returns (out:: C)
 									 
     RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = NulApp(TRIGGER),
-									trigger = out.FunApp(Ident("PrtGetCurrentTrigger"), Args(Ident("p_tmp_mach_priv"), NIL)),
-									ec = out.FunApp(Ident("PrtCloneValue"), Args(trigger, NIL)). 
+									ec = out.FunApp(Ident("PrtGetCurrentTrigger"), Args(Ident("p_tmp_mach_priv"), NIL)). 
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = NulApp(PAYLOAD),
-									payload = out.FunApp(Ident("PrtGetCurrentPayload"), Args(Ident("p_tmp_mach_priv"), NIL)),
-									ec = out.FunApp(Ident("PrtCloneValue"), Args(payload, NIL)). 
+									ec = out.FunApp(Ident("PrtGetCurrentPayload"), Args(Ident("p_tmp_mach_priv"), NIL)). 
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = NulApp(NONDET),
@@ -1906,14 +1904,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 	ValueAvailable(NulApp(NULL), TRUE).
 	ValueAvailable(NulApp(HALT), TRUE).
 	ValueAvailable(e, TRUE) :- SubSE(_, e), e: in.Name.
-	ValueAvailable(e, TRUE) :- SubSE(_, e), e: in.NulApp, e.op != NONDET, e.op != FAIRNONDET, e.op != PAYLOAD, e.op != TRIGGER.
+	ValueAvailable(e, TRUE) :- SubSE(_, e), e: in.NulApp, e.op != NONDET, e.op != FAIRNONDET.
 
 	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.New.
 	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.FunApp.
 	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.NulApp, e.op = NONDET.
 	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.NulApp, e.op = FAIRNONDET.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.NulApp, e.op = TRIGGER.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.NulApp, e.op = PAYLOAD.
 	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.UnApp.
 	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.BinApp, e.op != IDX.
 	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.Default.

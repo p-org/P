@@ -51,7 +51,7 @@
         private Stack<P_Root.TypeExpr> typeExprStack = new Stack<P_Root.TypeExpr>();
         private Stack<P_Root.Stmt> stmtStack = new Stack<P_Root.Stmt>();
         private Stack<P_Root.QualifiedName> groupStack = new Stack<P_Root.QualifiedName>();
-        private int nextReceiveLabel = 0;
+        private int nextTrampolineLabel = 0;
         private int nextPayloadVarLabel = 0;
 
         class LocalVarStack
@@ -151,7 +151,9 @@
             {
                 Contract.Assert(parser.typeExprStack.Count > 0);
                 var typeExpr = (P_Root.IArgType_NmdTupTypeField__1)parser.typeExprStack.Pop();
-                var field = P_Root.MkNmdTupTypeField(P_Root.MkString(name), typeExpr);
+                var nameTerm = P_Root.MkString(name);
+                nameTerm.Span = span;
+                var field = P_Root.MkNmdTupTypeField(nameTerm, typeExpr);
                 contextLocalVarDecl = P_Root.MkNmdTupType(field, contextLocalVarDecl);
             }
 
@@ -434,7 +436,7 @@
         {
             var receiveStmt = P_Root.MkReceive((P_Root.IArgType_Receive__0)localVarStack.PopCasesList());
             receiveStmt.Span = span;
-            receiveStmt.label = P_Root.MkNumeric(GetNextReceiveLabel());
+            receiveStmt.label = P_Root.MkNumeric(GetNextTrampolineLabel());
             stmtStack.Push(receiveStmt);
         }
 
@@ -530,7 +532,7 @@
             funStmt.name = MkString(name, span);
             funStmt.aout = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             funStmt.Span = span;
-            funStmt.label = P_Root.MkNumeric(GetNextReceiveLabel());
+            funStmt.label = P_Root.MkNumeric(GetNextTrampolineLabel());
             if (hasArgs)
             {
                 funStmt.args = (P_Root.Exprs)exprsStack.Pop();
@@ -815,7 +817,7 @@
                 funStmt.name = (P_Root.IArgType_FunStmt__0)funCall.name;
                 funStmt.args = (P_Root.IArgType_FunStmt__1)funCall.args;
                 funStmt.aout = (P_Root.IArgType_FunStmt__2)aout;
-                funStmt.label = MkNumeric(GetNextReceiveLabel(), span);
+                funStmt.label = MkNumeric(GetNextTrampolineLabel(), span);
                 funStmt.Span = span;
                 stmtStack.Push(funStmt);
             }
@@ -1753,9 +1755,9 @@
             }
         }
 
-        private int GetNextReceiveLabel()
+        private int GetNextTrampolineLabel()
         {
-            return nextReceiveLabel++;
+            return nextTrampolineLabel++;
         }
 
         private int GetNextPayloadVarLabel()
@@ -1833,7 +1835,7 @@
             crntEventDecl = null;
             crntMachDecl = null;
             crntStateTargetName = null;
-            nextReceiveLabel = 0;
+            nextTrampolineLabel = 0;
             nextPayloadVarLabel = 0;
             crntStateNames.Clear();
             crntFunNames.Clear();

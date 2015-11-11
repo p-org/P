@@ -1680,26 +1680,22 @@ transform P2CProgram (in:: P) returns (out:: C)
     /*************************************************************/
     /******             Statement translation               ******/
     /*************************************************************/	
-	JumpToLabel ::= (cntxt: TypingContext, stmt: in.Stmt, trans: out.Stmt).
-	JumpToLabel(c, s, cs) :- SubSE(c, s), s = in.Receive(_, label),
-							 cs = out.ITE(out.BinApp(EQ, out.BinApp(FLD, Ident("p_tmp_frame"), Ident("returnTo")),
-														  out.IntLit(label, DEC, U)), 
-										   out.Goto(strJoin("L", toString(label))),
-										   NIL).
-	JumpToLabel(c, s, cs) :- SubSE(c, s), s = in.FunStmt(_, _, _, label), 
-							 label' = label + count({ x | x: in.Receive, SubSE(c, x) }),
-							 cs = out.ITE(out.BinApp(EQ, out.BinApp(FLD, Ident("p_tmp_frame"), Ident("returnTo")),
-														  out.IntLit(label', DEC, U)), 
-										   out.Goto(strJoin("L", toString(label'))),
-										   NIL). 
 	
 	Trampoline ::= (cntxt: TypingContext, stmt: in.Stmt, trans: out.Stmt + { NIL }).
-	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Receive(_, _), JumpToLabel(c, s, cs).
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Receive(_, label),
+		                    cs = out.ITE(out.BinApp(EQ, out.BinApp(FLD, Ident("p_tmp_frame"), Ident("returnTo")),
+														out.IntLit(label, DEC, U)), 
+										 out.Goto(strJoin("L", toString(label))),
+										 NIL).
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NewStmt(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Raise(_, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Send(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Monitor(_, _), cs = NIL.
-	Trampoline(c, s, cs) :- SubSE(c, s), s = in.FunStmt(_, _, _, _), JumpToLabel(c, s, cs).
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.FunStmt(_, _, _, label),
+	                        cs = out.ITE(out.BinApp(EQ, out.BinApp(FLD, Ident("p_tmp_frame"), Ident("returnTo")),
+														out.IntLit(label, DEC, U)), 
+										 out.Goto(strJoin("L", toString(label))),
+										 NIL).
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NulStmt(_), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.UnStmt(_, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.BinStmt(_, _, _), cs = NIL.

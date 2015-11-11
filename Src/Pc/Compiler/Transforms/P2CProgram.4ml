@@ -1745,7 +1745,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   exception = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("lastOperation")), Ident("ReturnStatement")), Goto("P_EXIT_FUN"), NIL),
 						   popEvent = out.FunApp(Ident("PrtPopEvent"), Args(Ident("p_tmp_mach_priv"), NIL)),
 						   resetRcase = out.BinApp(ASN, BinApp(FLD, Ident("p_tmp_frame"), Ident("rcase")), Ident("NULL")),
-						   cs = out.Seq(receive, Seq(case, Seq(blocked, Seq(exception, Seq(popEvent, resetRcase))))).
+						   resetReturnTo = out.BinApp(ASN, BinApp(FLD, Ident("p_tmp_frame"), Ident("returnTo")), IntLit(65535, HEX, U)),
+						   cs = out.Seq(receive, Seq(case, Seq(blocked, Seq(exception, Seq(popEvent, Seq(resetRcase, resetReturnTo)))))).
 	
 	//// New Machine or Model
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iName, NIL), ImpInterfaceToMachineMap(InterfaceType(iName), mach), mach is MachineDecl(mName, _, _, _, _, _),

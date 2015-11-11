@@ -59,8 +59,11 @@ OUT: <ExitLog> Machine OpenWSN_Mote(5) exiting state init_mote
 OUT: <StateLog> Machine OpenWSN_Mote(5) entered state WaitForNewSlot
 OUT: <DequeueLog> Dequeued event newSlot with payload (true, (null, null)) by Machine OpenWSN_Mote(5)
 OUT: <ActionLog> Machine OpenWSN_Mote(5) executed action in state WaitForNewSlot
-OUT: <RaiseLog> Machine OpenWSN_Mote(5) raised event Rx with payload null
+OUT: <RaiseLog> Machine OpenWSN_Mote(5) raised event Sleep with payload null
 OUT: <ExitLog> Machine OpenWSN_Mote(5) exiting state WaitForNewSlot
-OUT: <StateLog> Machine OpenWSN_Mote(5) entered state DataReceptionMode
+OUT: <EnqueueLog> Enqueued event endSlot with payload null on Machine SlotTimerMachine(6)
+OUT: <DequeueLog> Dequeued event endSlot with payload null by Machine SlotTimerMachine(6)
+OUT: <ActionLog> Machine SlotTimerMachine(6) executed action in state SendNewSlot
+OUT: <StateLog> Machine OpenWSN_Mote(5) entered state WaitForNewSlot
 OUT: 
 EXIT: 0

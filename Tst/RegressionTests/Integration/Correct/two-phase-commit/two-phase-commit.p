@@ -23,8 +23,8 @@ event MONITOR_READ_UNAVAILABLE:int;
 model Timer {
 	var target: machine;
 	start state Init {
-		entry {
-			target = payload as machine;
+		entry (payload : machine){
+			target = payload;
 			raise Unit;
 		}
 		on Unit goto Loop;
@@ -62,16 +62,15 @@ machine Replica {
 	var lastSeqNum: int;
 
     start state Init {
-	    entry {
-		  coordinator = payload as machine;
+	    entry (payload : machine){
+		  coordinator = payload;
 			lastSeqNum = 0;
 			raise Unit;
 		}
 		on Unit goto Loop;
 	}
 
-	fun HandleReqReplica() {
-				pendingWriteReq = payload as (seqNum:int, idx:int, val:int);
+	fun HandleReqReplica(pendingWriteReq :(seqNum:int, idx:int, val:int)) {
 		assert (pendingWriteReq.seqNum > lastSeqNum);
 		shouldCommit = ShouldCommitWrite();
 		if (shouldCommit) {
@@ -81,25 +80,23 @@ machine Replica {
 		}
 	}
 
-	fun HandleGlobalAbort() {
-		assert (pendingWriteReq.seqNum >= payload);
-		if (pendingWriteReq.seqNum == payload) {
-			lastSeqNum = payload;
-		}
-	}
-
-	fun HandleGlobalCommit() {
-		assert (pendingWriteReq.seqNum >= payload);
-		if (pendingWriteReq.seqNum == payload) {
-			data[pendingWriteReq.idx] = pendingWriteReq.val;
-			lastSeqNum = payload;
-		}
-	}
 
 	state Loop {
-		on GLOBAL_ABORT do HandleGlobalAbort;
-		on GLOBAL_COMMIT do HandleGlobalCommit;
-		on REQ_REPLICA do HandleReqReplica;
+		on GLOBAL_ABORT do (payload: int) {
+			assert (pendingWriteReq.seqNum >= payload);
+			if (pendingWriteReq.seqNum == payload) {
+				lastSeqNum = payload;
+			}
+		};
+		on GLOBAL_COMMIT do (payload:int) {
+			assert (pendingWriteReq.seqNum >= payload);
+			if (pendingWriteReq.seqNum == payload) {
+				data[pendingWriteReq.idx] = pendingWriteReq.val;
+				lastSeqNum = payload;
+			}
+		};
+		
+		on REQ_REPLICA do (payload :(seqNum:int, idx:int, val:int)) { HandleReqReplica(payload); };
 	}
 
 	model fun ShouldCommitWrite(): bool 
@@ -119,8 +116,8 @@ machine Coordinator {
 	var timer: machine;
 
 	start state Init {
-		entry {
-			numReplicas = payload as int;
+		entry (payload : int){
+			numReplicas = payload;
 			assert (numReplicas > 0);
 			i = 0;
 			while (i < numReplicas) {
@@ -135,7 +132,7 @@ machine Coordinator {
 		on Unit goto Loop;
 	}
 
-	fun DoRead() {
+	fun DoRead(payload: (client:machine, idx:int)) {
 		if (payload.idx in data) {
 			monitor MONITOR_READ_SUCCESS, (idx=payload.idx, val=data[payload.idx]);
 			send payload.client, READ_SUCCESS, data[payload.idx];
@@ -145,8 +142,7 @@ machine Coordinator {
 		}
 	}
 
-	fun DoWrite() {
-		pendingWriteReq = payload;
+	fun DoWrite(pendingWriteReq : (client:machine, idx:int, val:int)) {
 		currSeqNum = currSeqNum + 1;
 		i = 0;
 		while (i < sizeof(replicas)) {
@@ -158,9 +154,9 @@ machine Coordinator {
 	}
 
 	state Loop {
-		on WRITE_REQ do DoWrite;
+		on WRITE_REQ do (payload : (client:machine, idx:int, val:int)) {DoWrite(payload);};
 		on Unit goto CountVote;
-		on READ_REQ do DoRead;
+		on READ_REQ do (payload : (client:machine, idx:int)) {DoRead(payload);};
 		ignore RESP_REPLICA_COMMIT, RESP_REPLICA_ABORT;
 	}
 
@@ -188,20 +184,20 @@ machine Coordinator {
 			}
 		}
 		defer WRITE_REQ;
-		on READ_REQ do DoRead;
-		on RESP_REPLICA_COMMIT goto CountVote with {
+		on READ_REQ do (payload : (client:machine, idx:int)) { DoRead(payload);};
+		on RESP_REPLICA_COMMIT goto CountVote with (payload : int){
 			if (currSeqNum == payload) {
 				i = i - 1;
 			}
 		};
-		on RESP_REPLICA_ABORT do HandleAbort;
+		on RESP_REPLICA_ABORT do (payload : int) { HandleAbort(payload); };
 		on Timeout goto Loop with {
 			DoGlobalAbort();
 		};
 		on Unit goto WaitForCancelTimerResponse;
 	}
 
-	fun HandleAbort() {
+	fun HandleAbort(payload : int) {
 		if (currSeqNum == payload) {
 			DoGlobalAbort();
 			send timer, CancelTimer;
@@ -226,8 +222,8 @@ machine Coordinator {
 model Client {
     var coordinator: machine;
     start state Init {
-	    entry {
-	        coordinator = payload as machine;
+	    entry (payload : machine) {
+	        coordinator = payload;
 			raise Unit;
 		}
 		on Unit goto DoWrite;
@@ -275,20 +271,16 @@ model Client {
 
 spec M monitors MONITOR_WRITE, MONITOR_READ_SUCCESS, MONITOR_READ_UNAVAILABLE {
 	var data: map[int,int];
-	fun DoWrite() {
-			data[payload.idx] = payload.val;
-	}
-	fun CheckReadSuccess() {
-		assert(payload.idx in data);
-		assert(data[payload.idx] == payload.val);
-	}
-	fun CheckReadUnavailable() {
-		assert(!(payload in data));
-	}
+
 	start state Init {
-		on MONITOR_WRITE do DoWrite;
-		on MONITOR_READ_SUCCESS do CheckReadSuccess;
-		on MONITOR_READ_UNAVAILABLE do CheckReadUnavailable;
+		on MONITOR_WRITE do (payload: (idx:int, val:int)) { data[payload.idx] = payload.val; };
+		on MONITOR_READ_SUCCESS do (payload : (idx:int, val:int)) { 
+			assert(payload.idx in data);
+			assert(data[payload.idx] == payload.val);
+		};
+		on MONITOR_READ_UNAVAILABLE do (payload: int) {
+			assert(!(payload in data));
+		};
 	}
 }
 

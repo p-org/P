@@ -93,24 +93,23 @@ machine OpenWSN_Mote {
 	start state init_mote {
 		defer newSlot;
 		ignore Data;
-		entry {
+		entry (payload: int){
 			//init the connections
-			myRank = payload as int;
+			myRank = payload;
 			myTimeParent = (null, 10000);
 			lastSynched = 0;	
 		
 		}
-		on Initialize goto WaitForNewSlot with
+		on Initialize goto WaitForNewSlot with (payload :(machine,seq[machine]))
 		{ 
-		slotTimer = (payload as (machine,seq[machine])).0;
-		myNeighbours = (payload as (machine,seq[machine])).1;
+			slotTimer = payload.0;
+			myNeighbours = payload.1;
 		};
 	}
 
-	fun CheckOperationTobePerfomed() {
+	fun CheckOperationTobePerfomed(currentSlot :(bool, (machine,machine))) {
 		if(myRank != 0)
 			lastSynched = lastSynched + 1;
-		currentSlot = payload as (bool, (machine,machine));
 		temp = OperationTxorRxorSleep();
 		if(temp == 0)
 			raise Tx;
@@ -134,7 +133,7 @@ machine OpenWSN_Mote {
 		entry {
 		
 		}
-		on newSlot do CheckOperationTobePerfomed;
+		on newSlot do (payload : (bool, (machine,machine))) { CheckOperationTobePerfomed(payload);};
 		on Tx goto DataTransmissionMode;
 		on Rx goto DataReceptionMode;
 		on Sleep goto WaitForNewSlot with
@@ -216,17 +215,17 @@ machine OpenWSN_Mote {
 		entry {
 		
 		}
-		on Ack goto WaitForNewSlot with
+		on Ack goto WaitForNewSlot with (payload : (machine,int)) {
 		{
 			//update the timeparent
-		if(myTimeParent.1 > (payload as (machine,int)).1)
-				myTimeParent = payload as (machine,int);
+		if(myTimeParent.1 > payload.1)
+				myTimeParent = payload;
 				
-		if((payload as (machine,int)).0 == myTimeParent.0)
+		if(payload.0 == myTimeParent.0)
 				lastSynched = 0; //Synched
 				
 			send slotTimer, endSlot;
-		};
+		}};
 		on null goto WaitForNewSlot with
 		{
 			send slotTimer, endSlot;
@@ -237,16 +236,16 @@ machine OpenWSN_Mote {
 		entry {
 			
 		}
-		on Data goto WaitForNewSlot with
+		on Data goto WaitForNewSlot with (payload : (machine,int))
 		{
 			//Update my preferred parent 
-		if(myTimeParent.1 > (payload as (machine,int)).1)
-				myTimeParent = payload as (machine,int);
+		if(myTimeParent.1 > payload.1)
+				myTimeParent = payload;
 				
-		if((payload as (machine,int)).0 == myTimeParent.0)
+		if(payload.0 == myTimeParent.0)
 				lastSynched = 0; //synched 
 			
-		send (payload as (machine,int)).0, Ack, (this, myRank);
+		send payload.0, Ack, (this, myRank);
 			
 			send slotTimer, endSlot;
 		};
@@ -259,9 +258,9 @@ model SlotTimerMachine {
 	var i: int;
 	var counter: int;
 	start state init{
-		entry {
+		entry (payload : seq[machine]){
 			counter = 0;
-			AllMotes = payload as seq[machine];
+			AllMotes = payload;
 			raise Local;
 		}
 		on Local goto SendNewSlot;

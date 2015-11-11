@@ -8,9 +8,8 @@ OUT: Writing Multi_Paxos_4.zing ...
 OUT: Compiling Multi_Paxos_4.zing to Multi_Paxos_4.dll ...
 OUT: multi_paxos_4.p (52, 4): inferred type:  BaseType(INT)
 OUT: multi_paxos_4.p (52, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (52, 14): inferred type:  BaseType(ANY)
-OUT: multi_paxos_4.p (52, 22): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NIL)
-OUT: multi_paxos_4.p (52, 37): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (52, 13): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NIL)
+OUT: multi_paxos_4.p (52, 21): inferred type:  BaseType(INT)
 OUT: multi_paxos_4.p (53, 4): inferred type:  NIL
 OUT: multi_paxos_4.p (53, 4): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL))
 OUT: multi_paxos_4.p (53, 21): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL))
@@ -33,6 +32,8 @@ OUT: multi_paxos_4.p (57, 23): inferred type:  BaseType(INT)
 OUT: multi_paxos_4.p (57, 24): inferred type:  BaseType(INT)
 OUT: multi_paxos_4.p (58, 4): inferred type:  BaseType(INT)
 OUT: multi_paxos_4.p (58, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (60, 70): inferred type:  NmdTupType(NmdTupTypeField("nodes", SeqType(BaseType(REAL))), NIL)
+OUT: multi_paxos_4.p (60, 70): inferred type:  TupType(NmdTupType(NmdTupTypeField("nodes", SeqType(BaseType(REAL))), NIL), NIL)
 OUT: multi_paxos_4.p (65, 3): inferred type:  NIL
 OUT: multi_paxos_4.p (65, 3): inferred type:  SeqType(BaseType(REAL))
 OUT: multi_paxos_4.p (65, 15): inferred type:  NmdTupType(NmdTupTypeField("nodes", SeqType(BaseType(REAL))), NIL)
@@ -72,538 +73,508 @@ OUT: multi_paxos_4.p (84, 4): inferred type:  NIL
 OUT: multi_paxos_4.p (84, 23): inferred type:  BaseType(REAL)
 OUT: multi_paxos_4.p (84, 31): inferred type:  BaseType(EVENT)
 OUT: multi_paxos_4.p (84, 39): inferred type:  NmdTupType(NmdTupTypeField("seqmachine", BaseType(INT)), NmdTupType(NmdTupTypeField("command", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (107, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (107, 8): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (107, 31): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (107, 37): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL))
-OUT: multi_paxos_4.p (111, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (111, 3): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL))
-OUT: multi_paxos_4.p (111, 19): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL))
+OUT: multi_paxos_4.p (91, 76): inferred type:  NmdTupType(NmdTupTypeField("seqmachine", BaseType(INT)), NmdTupType(NmdTupTypeField("command", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (91, 76): inferred type:  TupType(NmdTupType(NmdTupTypeField("seqmachine", BaseType(INT)), NmdTupType(NmdTupTypeField("command", BaseType(INT)), NIL)), NIL)
+OUT: multi_paxos_4.p (95, 120): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL)))
+OUT: multi_paxos_4.p (95, 120): inferred type:  TupType(NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL))), NIL)
+OUT: multi_paxos_4.p (96, 129): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
+OUT: multi_paxos_4.p (96, 129): inferred type:  TupType(NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))), NIL)
+OUT: multi_paxos_4.p (102, 56): inferred type:  NIL
+OUT: multi_paxos_4.p (102, 61): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (102, 84): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (102, 90): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL))
+OUT: multi_paxos_4.p (103, 62): inferred type:  NIL
+OUT: multi_paxos_4.p (103, 62): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL))
+OUT: multi_paxos_4.p (103, 78): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL))
+OUT: multi_paxos_4.p (109, 3): inferred type:  NIL
+OUT: multi_paxos_4.p (109, 6): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (109, 23): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (109, 28): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (111, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (111, 34): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (111, 42): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (111, 70): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (111, 82): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (111, 94): inferred type:  NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)
+OUT: multi_paxos_4.p (111, 115): inferred type:  NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)
+OUT: multi_paxos_4.p (111, 123): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (111, 124): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (112, 4): inferred type:  MapType(BaseType(INT), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (112, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (112, 17): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (112, 42): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (113, 4): inferred type:  NIL
 OUT: multi_paxos_4.p (115, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (115, 3): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
-OUT: multi_paxos_4.p (115, 18): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (115, 30): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL)))
-OUT: multi_paxos_4.p (115, 38): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL)))
-OUT: multi_paxos_4.p (115, 120): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (115, 39): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (115, 39): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL))
+OUT: multi_paxos_4.p (115, 84): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (115, 84): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL)
 OUT: multi_paxos_4.p (116, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (116, 18): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (116, 120): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (117, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (117, 18): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (117, 116): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (119, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (119, 6): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (119, 28): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (121, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (121, 34): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (121, 42): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (121, 70): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (121, 82): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (121, 94): inferred type:  NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)
-OUT: multi_paxos_4.p (122, 4): inferred type:  MapType(BaseType(INT), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (116, 6): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (118, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (118, 9): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL)))
+OUT: multi_paxos_4.p (118, 24): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (118, 34): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (118, 43): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL))
+OUT: multi_paxos_4.p (118, 71): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL)
 OUT: multi_paxos_4.p (122, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (122, 17): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (122, 42): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (122, 78): inferred type:  NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)
-OUT: multi_paxos_4.p (122, 86): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (122, 87): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (123, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (125, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (125, 39): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL))
-OUT: multi_paxos_4.p (125, 84): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (125, 84): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL)
-OUT: multi_paxos_4.p (126, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (126, 6): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (128, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (128, 34): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (128, 43): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL))
-OUT: multi_paxos_4.p (128, 71): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL)
-OUT: multi_paxos_4.p (132, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (132, 42): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (132, 70): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (132, 126): inferred type:  NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)
-OUT: multi_paxos_4.p (132, 169): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (138, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (138, 3): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
-OUT: multi_paxos_4.p (138, 21): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
-OUT: multi_paxos_4.p (138, 29): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
-OUT: multi_paxos_4.p (139, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (139, 21): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (139, 26): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (141, 4): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (141, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (141, 37): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (141, 37): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL))
-OUT: multi_paxos_4.p (141, 82): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (141, 82): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL)
-OUT: multi_paxos_4.p (142, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (142, 7): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (144, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (144, 25): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (144, 35): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (144, 44): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL))
-OUT: multi_paxos_4.p (144, 72): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL)
-OUT: multi_paxos_4.p (148, 5): inferred type:  MapType(BaseType(INT), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (148, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (148, 18): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (148, 43): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (148, 79): inferred type:  NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)
-OUT: multi_paxos_4.p (148, 102): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (149, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (149, 35): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (149, 46): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (122, 42): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (122, 70): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (122, 126): inferred type:  NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)
+OUT: multi_paxos_4.p (122, 169): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (128, 3): inferred type:  NIL
+OUT: multi_paxos_4.p (128, 6): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
+OUT: multi_paxos_4.p (128, 21): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (128, 26): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (130, 4): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (130, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (130, 37): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (130, 37): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL))
+OUT: multi_paxos_4.p (130, 82): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (130, 82): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL)
+OUT: multi_paxos_4.p (131, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (131, 7): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (133, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (133, 25): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (133, 35): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (133, 44): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL))
+OUT: multi_paxos_4.p (133, 72): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL)
+OUT: multi_paxos_4.p (137, 5): inferred type:  MapType(BaseType(INT), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (137, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (137, 18): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (137, 43): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (137, 79): inferred type:  NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)
+OUT: multi_paxos_4.p (137, 102): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (138, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (138, 35): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (138, 46): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (147, 3): inferred type:  NIL
+OUT: multi_paxos_4.p (147, 11): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (147, 19): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (147, 28): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (147, 30): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (147, 33): inferred type:  NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)
+OUT: multi_paxos_4.p (147, 49): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (151, 3): inferred type:  NIL
+OUT: multi_paxos_4.p (151, 9): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (151, 15): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (151, 21): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (151, 27): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (151, 30): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (151, 33): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (151, 47): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (151, 50): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (151, 53): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (152, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (152, 11): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (154, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (154, 11): inferred type:  BaseType(BOOL)
 OUT: multi_paxos_4.p (158, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (158, 11): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (158, 19): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (158, 28): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (158, 30): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (158, 33): inferred type:  NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)
-OUT: multi_paxos_4.p (158, 49): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (162, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (162, 6): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (162, 9): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (162, 15): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (162, 18): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (162, 21): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (162, 27): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (162, 33): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (162, 47): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (162, 53): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (163, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (163, 11): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (165, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (165, 11): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (169, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (169, 6): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (169, 9): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (169, 15): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (169, 17): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (169, 20): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (158, 6): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (158, 9): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (158, 15): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (158, 17): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (158, 20): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (160, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (160, 11): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (162, 8): inferred type:  NIL
+OUT: multi_paxos_4.p (162, 20): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (164, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (164, 10): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (164, 24): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (164, 29): inferred type:  BaseType(INT)
 OUT: multi_paxos_4.p (171, 4): inferred type:  NIL
 OUT: multi_paxos_4.p (171, 11): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (173, 8): inferred type:  NIL
-OUT: multi_paxos_4.p (173, 20): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (175, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (175, 10): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (175, 24): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (175, 29): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (179, 3): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (179, 3): inferred type:  NIL
+OUT: multi_paxos_4.p (179, 10): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (180, 3): inferred type:  NIL
+OUT: multi_paxos_4.p (180, 14): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (180, 16): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (180, 23): inferred type:  SeqType(BaseType(REAL))
 OUT: multi_paxos_4.p (182, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (182, 11): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (190, 3): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (190, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (190, 10): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (191, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (191, 14): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (191, 16): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (191, 23): inferred type:  SeqType(BaseType(REAL))
+OUT: multi_paxos_4.p (182, 18): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (182, 26): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (182, 32): inferred type:  BaseType(ANY)
+OUT: multi_paxos_4.p (183, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (183, 16): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (183, 18): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (190, 4): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (190, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (190, 17): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (191, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (191, 4): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (191, 35): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (191, 35): inferred type:  TupType(BaseType(INT), NIL)
+OUT: multi_paxos_4.p (192, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (192, 4): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (192, 21): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (192, 33): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (192, 45): inferred type:  NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)
+OUT: multi_paxos_4.p (192, 66): inferred type:  NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)
+OUT: multi_paxos_4.p (192, 74): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (192, 75): inferred type:  BaseType(INT)
 OUT: multi_paxos_4.p (193, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (193, 18): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (193, 26): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (193, 32): inferred type:  BaseType(ANY)
+OUT: multi_paxos_4.p (193, 23): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (193, 23): inferred type:  TupType(BaseType(EVENT), TupType(NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL))), NIL))
+OUT: multi_paxos_4.p (193, 33): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL)))
+OUT: multi_paxos_4.p (193, 33): inferred type:  TupType(NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL))), NIL)
+OUT: multi_paxos_4.p (193, 44): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (193, 50): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL))
+OUT: multi_paxos_4.p (193, 57): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (193, 78): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL)
+OUT: multi_paxos_4.p (193, 90): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (193, 111): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (193, 118): inferred type:  NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)
+OUT: multi_paxos_4.p (193, 134): inferred type:  BaseType(INT)
 OUT: multi_paxos_4.p (194, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (194, 16): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (194, 18): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (199, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (199, 3): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (199, 21): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (199, 29): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (200, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (200, 21): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (200, 26): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (200, 29): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (202, 4): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (202, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (202, 28): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (202, 30): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (203, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (203, 39): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL))
-OUT: multi_paxos_4.p (203, 64): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL)
-OUT: multi_paxos_4.p (204, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (204, 7): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (206, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (206, 5): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (206, 19): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (206, 45): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (207, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (207, 19): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (207, 42): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (209, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (209, 18): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (209, 21): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (210, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (210, 11): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (217, 4): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (217, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (217, 17): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (218, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (218, 4): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (218, 35): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (218, 35): inferred type:  TupType(BaseType(INT), NIL)
-OUT: multi_paxos_4.p (219, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (219, 4): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (219, 21): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (219, 33): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (219, 45): inferred type:  NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)
-OUT: multi_paxos_4.p (219, 66): inferred type:  NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)
-OUT: multi_paxos_4.p (219, 74): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (219, 75): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (220, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (220, 23): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (220, 23): inferred type:  TupType(BaseType(EVENT), TupType(NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL))), NIL))
-OUT: multi_paxos_4.p (220, 33): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL)))
-OUT: multi_paxos_4.p (220, 33): inferred type:  TupType(NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL))), NIL)
-OUT: multi_paxos_4.p (220, 44): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (220, 50): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL))
-OUT: multi_paxos_4.p (220, 57): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (220, 78): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL)
-OUT: multi_paxos_4.p (220, 90): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (220, 111): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (220, 118): inferred type:  NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)
-OUT: multi_paxos_4.p (220, 134): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (194, 12): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (194, 35): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (195, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (195, 9): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (195, 16): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (199, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (199, 7): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (199, 20): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (199, 25): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (199, 28): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (201, 5): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (201, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (201, 29): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (201, 31): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (202, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (202, 40): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL))
+OUT: multi_paxos_4.p (202, 63): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL)
+OUT: multi_paxos_4.p (203, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (203, 8): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (205, 6): inferred type:  NIL
+OUT: multi_paxos_4.p (205, 6): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (205, 20): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (205, 44): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (206, 6): inferred type:  NIL
+OUT: multi_paxos_4.p (206, 20): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (206, 41): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (208, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (208, 19): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (208, 22): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (209, 6): inferred type:  NIL
+OUT: multi_paxos_4.p (209, 12): inferred type:  BaseType(EVENT)
 OUT: multi_paxos_4.p (221, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (221, 12): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (221, 35): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (222, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (222, 9): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (222, 16): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (221, 9): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (221, 16): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (227, 3): inferred type:  NIL
+OUT: multi_paxos_4.p (227, 21): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (227, 26): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (229, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (229, 37): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (229, 37): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL))
+OUT: multi_paxos_4.p (229, 47): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (229, 47): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL)
+OUT: multi_paxos_4.p (230, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (230, 7): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (232, 5): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (232, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (232, 31): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (232, 33): inferred type:  BaseType(INT)
 OUT: multi_paxos_4.p (234, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (234, 9): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (234, 16): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (240, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (240, 3): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (240, 21): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (240, 29): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (241, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (241, 21): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (241, 26): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (241, 29): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (243, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (243, 37): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (243, 37): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL))
-OUT: multi_paxos_4.p (243, 47): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (243, 47): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL)
-OUT: multi_paxos_4.p (244, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (244, 7): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (246, 5): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (246, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (246, 31): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (246, 33): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (248, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (248, 19): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (248, 22): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (250, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (250, 11): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (257, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (257, 26): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (257, 29): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (257, 30): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (259, 4): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (259, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (259, 26): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (260, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (260, 11): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (260, 25): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (264, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (264, 26): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (234, 19): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (234, 22): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (237, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (237, 13): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (237, 35): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
+OUT: multi_paxos_4.p (237, 46): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (237, 52): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (237, 80): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (237, 105): inferred type:  NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)
+OUT: multi_paxos_4.p (238, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (238, 10): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (238, 17): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (239, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (239, 13): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (239, 38): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (241, 5): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (241, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (241, 47): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (242, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (242, 11): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (242, 19): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (249, 3): inferred type:  NIL
+OUT: multi_paxos_4.p (249, 26): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (249, 29): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (249, 30): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (251, 4): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (251, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (251, 26): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (252, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (252, 11): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (252, 25): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (256, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (256, 26): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (257, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (257, 11): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (265, 4): inferred type:  BaseType(INT)
 OUT: multi_paxos_4.p (265, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (265, 11): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (273, 4): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (273, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (273, 18): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (274, 4): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (274, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (276, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (276, 12): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (276, 36): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
-OUT: multi_paxos_4.p (276, 47): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (276, 53): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (276, 60): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (276, 81): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (276, 92): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (276, 106): inferred type:  NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)
-OUT: multi_paxos_4.p (277, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (277, 12): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (265, 18): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (266, 4): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (266, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (268, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (268, 12): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (268, 36): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
+OUT: multi_paxos_4.p (268, 47): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (268, 53): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (268, 60): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (268, 81): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (268, 92): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (268, 106): inferred type:  NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)
+OUT: multi_paxos_4.p (269, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (269, 12): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (271, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (271, 23): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (271, 23): inferred type:  TupType(BaseType(EVENT), TupType(NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))), NIL))
+OUT: multi_paxos_4.p (271, 32): inferred type:  TupType(NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))), NIL)
+OUT: multi_paxos_4.p (272, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (272, 9): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (272, 16): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (276, 18): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (276, 18): inferred type:  TupType(NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))), NIL)
 OUT: multi_paxos_4.p (279, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (279, 23): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (279, 23): inferred type:  TupType(BaseType(EVENT), TupType(NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))), NIL))
-OUT: multi_paxos_4.p (279, 32): inferred type:  TupType(NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))), NIL)
-OUT: multi_paxos_4.p (280, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (280, 9): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (280, 16): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (284, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (284, 7): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (284, 15): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (284, 18): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (287, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (287, 13): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (287, 35): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
-OUT: multi_paxos_4.p (287, 46): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (287, 52): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (287, 80): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (287, 91): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (287, 105): inferred type:  NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)
-OUT: multi_paxos_4.p (289, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (289, 10): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (289, 17): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (291, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (291, 13): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (291, 38): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (294, 5): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (294, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (294, 47): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (294, 49): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (299, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (299, 7): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (299, 20): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (299, 26): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (300, 5): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (300, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (300, 16): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL))
-OUT: multi_paxos_4.p (300, 24): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (300, 33): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (302, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (302, 9): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (302, 16): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (310, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (310, 9): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (279, 7): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (279, 20): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (279, 26): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (280, 5): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (280, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (280, 16): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NIL))
+OUT: multi_paxos_4.p (280, 24): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (280, 33): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (282, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (282, 9): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (282, 16): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (290, 3): inferred type:  NIL
+OUT: multi_paxos_4.p (290, 9): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (292, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (292, 30): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (292, 33): inferred type:  MapType(BaseType(INT), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (295, 5): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (295, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (295, 41): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (295, 43): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (299, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (307, 3): inferred type:  NIL
+OUT: multi_paxos_4.p (310, 4): inferred type:  MapType(BaseType(INT), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (310, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (310, 16): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (310, 17): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (310, 32): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (310, 41): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (310, 67): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (310, 77): inferred type:  NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)
+OUT: multi_paxos_4.p (311, 4): inferred type:  NIL
 OUT: multi_paxos_4.p (312, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (312, 30): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (312, 33): inferred type:  MapType(BaseType(INT), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (315, 5): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (315, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (315, 41): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (315, 43): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (312, 7): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (312, 27): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (312, 42): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (312, 60): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (314, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (318, 5): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (318, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (318, 18): inferred type:  BaseType(INT)
 OUT: multi_paxos_4.p (319, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (327, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (330, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (330, 4): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (330, 22): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (330, 31): inferred type:  NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (331, 4): inferred type:  MapType(BaseType(INT), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (331, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (331, 16): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (331, 32): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (331, 41): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (331, 67): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (331, 77): inferred type:  NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)
-OUT: multi_paxos_4.p (332, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (333, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (333, 7): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (333, 27): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (333, 42): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (333, 60): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (335, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (339, 5): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (339, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (339, 18): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (340, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (340, 11): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (364, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (364, 10): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (377, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (377, 4): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
-OUT: multi_paxos_4.p (377, 21): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
-OUT: multi_paxos_4.p (377, 29): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
-OUT: multi_paxos_4.p (378, 4): inferred type:  MapType(BaseType(INT), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (378, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (378, 19): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (378, 34): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (378, 43): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (378, 68): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (378, 78): inferred type:  NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)
-OUT: multi_paxos_4.p (378, 100): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (383, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (383, 6): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (383, 9): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (383, 15): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (383, 17): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (383, 20): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (319, 11): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (343, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (343, 10): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (351, 9): inferred type:  NIL
+OUT: multi_paxos_4.p (356, 4): inferred type:  MapType(BaseType(INT), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (356, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (356, 19): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (356, 20): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
+OUT: multi_paxos_4.p (356, 34): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (356, 43): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (356, 68): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (356, 78): inferred type:  NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)
+OUT: multi_paxos_4.p (356, 100): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (361, 3): inferred type:  NIL
+OUT: multi_paxos_4.p (361, 6): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (361, 9): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (361, 15): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (361, 17): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (361, 20): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (363, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (363, 11): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (365, 8): inferred type:  NIL
+OUT: multi_paxos_4.p (365, 20): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (367, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (367, 10): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (367, 24): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (367, 29): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (374, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (374, 11): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (380, 3): inferred type:  NIL
+OUT: multi_paxos_4.p (381, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (381, 11): inferred type:  MapType(BaseType(INT), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (381, 26): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (381, 41): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (381, 47): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (381, 53): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (381, 56): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
+OUT: multi_paxos_4.p (381, 70): inferred type:  BaseType(INT)
 OUT: multi_paxos_4.p (385, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (385, 11): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (387, 8): inferred type:  NIL
-OUT: multi_paxos_4.p (387, 20): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (389, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (389, 10): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (389, 24): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (389, 29): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (396, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (396, 11): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (402, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (403, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (403, 4): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
-OUT: multi_paxos_4.p (403, 21): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
-OUT: multi_paxos_4.p (403, 29): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
-OUT: multi_paxos_4.p (404, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (404, 11): inferred type:  MapType(BaseType(INT), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (404, 26): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (404, 41): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (404, 47): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (404, 53): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (404, 70): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (407, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (407, 4): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
-OUT: multi_paxos_4.p (407, 21): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
-OUT: multi_paxos_4.p (407, 29): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
-OUT: multi_paxos_4.p (408, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (408, 25): inferred type:  MapType(BaseType(INT), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (408, 40): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (408, 55): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (408, 61): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (408, 61): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL))
-OUT: multi_paxos_4.p (408, 85): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (408, 85): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL)
+OUT: multi_paxos_4.p (385, 25): inferred type:  MapType(BaseType(INT), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (385, 40): inferred type:  NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (385, 55): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (385, 61): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (385, 61): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL))
+OUT: multi_paxos_4.p (385, 71): inferred type:  NmdTupType(NmdTupTypeField("proposer", BaseType(REAL)), NmdTupType(NmdTupTypeField("slot", BaseType(INT)), NmdTupType(NmdTupTypeField("proposal", NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))), NmdTupType(NmdTupTypeField("value", BaseType(INT)), NIL))))
+OUT: multi_paxos_4.p (385, 85): inferred type:  NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (385, 85): inferred type:  TupType(NmdTupType(NmdTupTypeField("round", BaseType(INT)), NmdTupType(NmdTupTypeField("servermachine", BaseType(INT)), NIL)), NIL)
+OUT: multi_paxos_4.p (386, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (386, 7): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (387, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (387, 48): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (387, 54): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (387, 71): inferred type:  BaseType(INT)
 OUT: multi_paxos_4.p (409, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (409, 7): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (410, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (410, 48): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (410, 54): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (410, 71): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (432, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (432, 10): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (438, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (444, 3): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: multi_paxos_4.p (444, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (444, 12): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (444, 13): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (444, 24): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (448, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (448, 10): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (448, 18): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (448, 21): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: multi_paxos_4.p (449, 3): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: multi_paxos_4.p (449, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (449, 14): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (449, 23): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (449, 33): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (453, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (453, 10): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (453, 18): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (453, 21): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: multi_paxos_4.p (478, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (478, 4): inferred type:  SeqType(BaseType(REAL))
-OUT: multi_paxos_4.p (478, 15): inferred type:  BaseType(ANY)
-OUT: multi_paxos_4.p (478, 23): inferred type:  NmdTupType(NmdTupTypeField("servers", SeqType(BaseType(REAL))), NmdTupType(NmdTupTypeField("parentServer", BaseType(REAL)), NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NIL)))
-OUT: multi_paxos_4.p (478, 85): inferred type:  SeqType(BaseType(REAL))
-OUT: multi_paxos_4.p (479, 4): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (479, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (479, 90): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (480, 4): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (480, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (480, 84): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (481, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (481, 4): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL))
-OUT: multi_paxos_4.p (481, 21): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL))
-OUT: multi_paxos_4.p (481, 36): inferred type:  NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL)
-OUT: multi_paxos_4.p (481, 45): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (482, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (482, 10): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (490, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (490, 4): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL))
-OUT: multi_paxos_4.p (491, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (491, 25): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (491, 30): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (491, 33): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (492, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (492, 9): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (492, 23): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (510, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (510, 12): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL))
-OUT: multi_paxos_4.p (510, 19): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (510, 22): inferred type:  NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL)
-OUT: multi_paxos_4.p (510, 31): inferred type:  SeqType(BaseType(REAL))
-OUT: multi_paxos_4.p (510, 38): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (510, 39): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (520, 4): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (409, 10): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (415, 3): inferred type:  NIL
+OUT: multi_paxos_4.p (415, 47): inferred type:  MapType(BaseType(INT), BaseType(INT))
+OUT: multi_paxos_4.p (415, 47): inferred type:  NIL
+OUT: multi_paxos_4.p (415, 56): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (415, 57): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (415, 68): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (416, 49): inferred type:  NIL
+OUT: multi_paxos_4.p (416, 56): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (416, 64): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (416, 67): inferred type:  MapType(BaseType(INT), BaseType(INT))
+OUT: multi_paxos_4.p (417, 3): inferred type:  MapType(BaseType(INT), BaseType(INT))
+OUT: multi_paxos_4.p (417, 3): inferred type:  NIL
+OUT: multi_paxos_4.p (417, 14): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (417, 23): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (417, 33): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (418, 51): inferred type:  NIL
+OUT: multi_paxos_4.p (418, 58): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (418, 66): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (418, 69): inferred type:  MapType(BaseType(INT), BaseType(INT))
+OUT: multi_paxos_4.p (444, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (444, 4): inferred type:  SeqType(BaseType(REAL))
+OUT: multi_paxos_4.p (444, 14): inferred type:  NmdTupType(NmdTupTypeField("servers", SeqType(BaseType(REAL))), NmdTupType(NmdTupTypeField("parentServer", BaseType(REAL)), NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NIL)))
+OUT: multi_paxos_4.p (444, 22): inferred type:  SeqType(BaseType(REAL))
+OUT: multi_paxos_4.p (445, 4): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (445, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (445, 27): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (446, 4): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (446, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (446, 21): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (447, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (447, 4): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL))
+OUT: multi_paxos_4.p (447, 21): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL))
+OUT: multi_paxos_4.p (447, 36): inferred type:  NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL)
+OUT: multi_paxos_4.p (447, 45): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (448, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (448, 10): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (456, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (456, 4): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL))
+OUT: multi_paxos_4.p (457, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (457, 25): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (457, 30): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (457, 33): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (458, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (458, 9): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (458, 23): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (476, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (476, 12): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL))
+OUT: multi_paxos_4.p (476, 19): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (476, 22): inferred type:  NmdTupType(NmdTupTypeField("server", BaseType(REAL)), NIL)
+OUT: multi_paxos_4.p (476, 31): inferred type:  SeqType(BaseType(REAL))
+OUT: multi_paxos_4.p (476, 38): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (476, 39): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (486, 4): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (486, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (486, 13): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
+OUT: multi_paxos_4.p (486, 21): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (487, 4): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (487, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (487, 27): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (488, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (488, 10): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (501, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (501, 8): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (503, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (503, 11): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (507, 3): inferred type:  NIL
+OUT: multi_paxos_4.p (519, 4): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (519, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (519, 11): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (519, 26): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NIL)
+OUT: multi_paxos_4.p (519, 33): inferred type:  BaseType(INT)
 OUT: multi_paxos_4.p (520, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (520, 14): inferred type:  BaseType(ANY)
-OUT: multi_paxos_4.p (520, 22): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
-OUT: multi_paxos_4.p (520, 41): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (521, 4): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (520, 4): inferred type:  SeqType(BaseType(REAL))
+OUT: multi_paxos_4.p (520, 19): inferred type:  TupType(BaseType(INT), TupType(BaseType(REAL), NIL))
+OUT: multi_paxos_4.p (520, 22): inferred type:  TupType(BaseType(REAL), NIL)
 OUT: multi_paxos_4.p (521, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (521, 47): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (521, 11): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (521, 26): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NIL)
+OUT: multi_paxos_4.p (521, 33): inferred type:  BaseType(INT)
 OUT: multi_paxos_4.p (522, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (522, 10): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (535, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (535, 8): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (537, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (537, 11): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (541, 3): inferred type:  NIL
-OUT: multi_paxos_4.p (553, 4): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (523, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (523, 11): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (523, 26): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NIL)
+OUT: multi_paxos_4.p (524, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (526, 4): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (526, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (526, 11): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (527, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (527, 15): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (527, 17): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (529, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (529, 20): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (529, 28): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (529, 39): inferred type:  NmdTupType(NmdTupTypeField("nodes", SeqType(BaseType(REAL))), NIL)
+OUT: multi_paxos_4.p (530, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (530, 17): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (530, 19): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (533, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (542, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (543, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (543, 4): inferred type:  SeqType(BaseType(REAL))
+OUT: multi_paxos_4.p (543, 14): inferred type:  SeqType(BaseType(REAL))
+OUT: multi_paxos_4.p (544, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (544, 10): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (552, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (552, 12): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (552, 33): inferred type:  BaseType(INT)
 OUT: multi_paxos_4.p (553, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (553, 11): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (553, 26): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NIL)
-OUT: multi_paxos_4.p (553, 33): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (554, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (554, 4): inferred type:  SeqType(BaseType(REAL))
-OUT: multi_paxos_4.p (554, 19): inferred type:  TupType(BaseType(INT), TupType(BaseType(REAL), NIL))
-OUT: multi_paxos_4.p (554, 22): inferred type:  TupType(BaseType(REAL), NIL)
-OUT: multi_paxos_4.p (555, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (555, 11): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (555, 26): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NIL)
-OUT: multi_paxos_4.p (555, 33): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (556, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (557, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (557, 11): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (557, 26): inferred type:  NmdTupType(NmdTupTypeField("rank", BaseType(INT)), NIL)
+OUT: multi_paxos_4.p (553, 7): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (554, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (554, 17): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (554, 18): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (556, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (556, 17): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (556, 18): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (556, 25): inferred type:  SeqType(BaseType(REAL))
+OUT: multi_paxos_4.p (556, 34): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (556, 40): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (556, 49): inferred type:  NmdTupType(NmdTupTypeField("seqmachine", BaseType(INT)), NmdTupType(NmdTupTypeField("command", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (556, 66): inferred type:  NmdTupType(NmdTupTypeField("command", BaseType(INT)), NIL)
 OUT: multi_paxos_4.p (558, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (560, 4): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (560, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (560, 11): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (561, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (561, 15): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (561, 17): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (563, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (563, 20): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (563, 28): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (563, 39): inferred type:  NmdTupType(NmdTupTypeField("nodes", SeqType(BaseType(REAL))), NIL)
-OUT: multi_paxos_4.p (564, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (564, 17): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (564, 19): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (558, 10): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (566, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (566, 12): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (566, 33): inferred type:  BaseType(INT)
 OUT: multi_paxos_4.p (567, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (576, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (577, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (577, 4): inferred type:  SeqType(BaseType(REAL))
-OUT: multi_paxos_4.p (577, 14): inferred type:  BaseType(ANY)
-OUT: multi_paxos_4.p (577, 22): inferred type:  SeqType(BaseType(REAL))
-OUT: multi_paxos_4.p (578, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (578, 10): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (586, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (586, 12): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (586, 33): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (587, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (587, 7): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (588, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (588, 17): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (588, 18): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (590, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (590, 17): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (590, 18): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (590, 25): inferred type:  SeqType(BaseType(REAL))
-OUT: multi_paxos_4.p (590, 34): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (590, 40): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (590, 49): inferred type:  NmdTupType(NmdTupTypeField("seqmachine", BaseType(INT)), NmdTupType(NmdTupTypeField("command", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (590, 66): inferred type:  NmdTupType(NmdTupTypeField("command", BaseType(INT)), NIL)
-OUT: multi_paxos_4.p (592, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (592, 10): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (600, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (600, 12): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (600, 33): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (601, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (601, 7): inferred type:  BaseType(BOOL)
-OUT: multi_paxos_4.p (602, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (602, 17): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (602, 18): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (604, 5): inferred type:  NIL
-OUT: multi_paxos_4.p (604, 17): inferred type:  BaseType(REAL)
-OUT: multi_paxos_4.p (604, 18): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (604, 25): inferred type:  SeqType(BaseType(REAL))
-OUT: multi_paxos_4.p (604, 34): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (604, 36): inferred type:  BaseType(INT)
-OUT: multi_paxos_4.p (604, 40): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (604, 49): inferred type:  NmdTupType(NmdTupTypeField("seqmachine", BaseType(INT)), NmdTupType(NmdTupTypeField("command", BaseType(INT)), NIL))
-OUT: multi_paxos_4.p (604, 66): inferred type:  NmdTupType(NmdTupTypeField("command", BaseType(INT)), NIL)
-OUT: multi_paxos_4.p (606, 4): inferred type:  NIL
-OUT: multi_paxos_4.p (606, 10): inferred type:  BaseType(EVENT)
-OUT: multi_paxos_4.p (611, 2): inferred type:  NIL
+OUT: multi_paxos_4.p (567, 7): inferred type:  BaseType(BOOL)
+OUT: multi_paxos_4.p (568, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (568, 17): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (568, 18): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (570, 5): inferred type:  NIL
+OUT: multi_paxos_4.p (570, 17): inferred type:  BaseType(REAL)
+OUT: multi_paxos_4.p (570, 18): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (570, 25): inferred type:  SeqType(BaseType(REAL))
+OUT: multi_paxos_4.p (570, 34): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (570, 36): inferred type:  BaseType(INT)
+OUT: multi_paxos_4.p (570, 40): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (570, 49): inferred type:  NmdTupType(NmdTupTypeField("seqmachine", BaseType(INT)), NmdTupType(NmdTupTypeField("command", BaseType(INT)), NIL))
+OUT: multi_paxos_4.p (570, 66): inferred type:  NmdTupType(NmdTupTypeField("command", BaseType(INT)), NIL)
+OUT: multi_paxos_4.p (572, 4): inferred type:  NIL
+OUT: multi_paxos_4.p (572, 10): inferred type:  BaseType(EVENT)
+OUT: multi_paxos_4.p (577, 2): inferred type:  NIL
 OUT: 
 EXIT: 0

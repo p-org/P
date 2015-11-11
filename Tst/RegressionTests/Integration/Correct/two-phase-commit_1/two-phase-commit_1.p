@@ -32,8 +32,8 @@ All the external APIs which are called by the protocol
 model Timer {
 	var target: machine;
 	start state Init {
-		entry {
-			target = payload as machine;
+		entry (payload: machine) {
+			target = payload;
 			raise(Unit);
 		}
 		on Unit goto Loop;
@@ -68,54 +68,51 @@ machine Replica {
     var data: map[int,int];
 	var pendingWriteReq: (seqNum: int, key: int, val: int);
 	var lastSeqNum: int;
-
+	var shouldCommit : bool;
+	
     start state Init {
-	    entry {
-		    coordinator = payload as machine;
+	    entry (payload : machine){
+			coordinator = payload;
 			lastSeqNum = 0;
-			raise(Unit);
+			raise Unit;
 		}
 		on Unit goto Loop;
 	}
 
-	fun HandleReqReplica() {
-		pendingWriteReq = (payload as (seqNum:int, key:int, val:int));
+	fun HandleReqReplica(payload :(seqNum:int, key:int, val:int)) {
+		pendingWriteReq = payload;
 		assert (pendingWriteReq.seqNum > lastSeqNum);
-		if (ShouldCommitWrite()) {
+		shouldCommit = ShouldCommitWrite();
+		if (shouldCommit) {
 			send coordinator, RESP_REPLICA_COMMIT, pendingWriteReq.seqNum;
 		} else {
 			send coordinator, RESP_REPLICA_ABORT, pendingWriteReq.seqNum;
 		}
 	}
 
-	fun HandleGlobalAbort() {
-		assert (pendingWriteReq.seqNum >= payload);
-		if (pendingWriteReq.seqNum == payload) {
-			lastSeqNum = payload;
-		}
-	}
-
-	fun HandleGlobalCommit() {
-		assert (pendingWriteReq.seqNum >= payload);
-		if (pendingWriteReq.seqNum == payload) {
-			data[pendingWriteReq.key] = pendingWriteReq.val;
-			//invoke Termination(MONITOR_UPDATE, (m = this, key = pendingWriteReq.key, val = pendingWriteReq.val));
-			lastSeqNum = payload;
-		}
-	}
-
-	fun ReadData(){
-		if(payload in data)
-			send coordinator, REP_READ_SUCCESS, data[payload];
-		else
-			send coordinator, REP_READ_FAIL;
-	}
 	
 	state Loop {
-		on GLOBAL_ABORT do HandleGlobalAbort;
-		on GLOBAL_COMMIT do HandleGlobalCommit;
-		on REQ_REPLICA do HandleReqReplica;
-		on READ_REQ_REPLICA do ReadData;
+		on GLOBAL_ABORT do (payload: int) {
+			assert (pendingWriteReq.seqNum >= payload);
+			if (pendingWriteReq.seqNum == payload) {
+				lastSeqNum = payload;
+			}
+		};
+		on GLOBAL_COMMIT do (payload:int) {
+			assert (pendingWriteReq.seqNum >= payload);
+			if (pendingWriteReq.seqNum == payload) {
+				data[pendingWriteReq.key] = pendingWriteReq.val;
+				lastSeqNum = payload;
+			}
+		};
+		
+		on REQ_REPLICA do (payload :(seqNum:int, key:int, val:int)) { HandleReqReplica(payload); };
+		on READ_REQ_REPLICA do (payload : int) {
+			if(payload in data)
+				send coordinator, REP_READ_SUCCESS, data[payload];
+			else
+				send coordinator, REP_READ_FAIL;
+		};
 	}
 
 	model fun ShouldCommitWrite(): bool 
@@ -137,8 +134,8 @@ machine Coordinator {
 	var key: int;
 	var readResult: (bool, int);
 	start state Init {
-		entry {
-			numReplicas = payload as int;
+		entry (payload : int) {
+			numReplicas = payload;
 			assert (numReplicas > 0);
 			i = 0;
 			while (i < numReplicas) {
@@ -155,7 +152,7 @@ machine Coordinator {
 	}
 
 	state DoRead {
-		entry {
+		entry (payload :(client:machine, key:int)) {
 			client = payload.client;
 			key = payload.key;
 			
@@ -165,8 +162,8 @@ machine Coordinator {
 				send replicas[sizeof(replicas) - 1], READ_REQ_REPLICA, key;
 			receive 
 			{
-				case REP_READ_FAIL : { ReturnResult(); }
-				case REP_READ_SUCCESS : { ReturnResult(); }
+				case REP_READ_FAIL : { readResult = (true, -1); }
+				case REP_READ_SUCCESS : (payload1 : int) { readResult = (false, payload1); }
 			}
 			if(readResult.0)
 				raise(READ_FAIL);
@@ -177,7 +174,7 @@ machine Coordinator {
 		{
 			send client, READ_FAIL;
 		};
-		on READ_SUCCESS goto Loop with
+		on READ_SUCCESS goto Loop with (payload: int)
 		{	
 			send client, READ_SUCCESS, payload;
 		};
@@ -185,27 +182,19 @@ machine Coordinator {
 
 
 	
-	fun ReturnResult() {
-		if(trigger == REP_READ_FAIL)
-			readResult = (true, -1);
-		else
-			readResult = (false, payload as int);
-
-	}
-	fun DoWrite (){
-		pendingWriteReq = payload;
+	fun DoWrite(pendingWriteReq : (client:machine, key:int, val:int)) {
 		currSeqNum = currSeqNum + 1;
 		i = 0;
 		while (i < sizeof(replicas)) {
-			send replicas[i], REQ_REPLICA, (seqNum=currSeqNum, key=pendingWriteReq.key, val=pendingWriteReq.val);
+			send replicas[i], REQ_REPLICA, (seqNum=currSeqNum, key =pendingWriteReq.key, val=pendingWriteReq.val);
 			i = i + 1;
 		}
 		send timer, StartTimer, 100;
-		raise(Unit);
+		raise Unit;
 	}
 
 	state Loop {
-		on WRITE_REQ do DoWrite;
+		on WRITE_REQ do (payload : (client:machine, key:int, val:int)) {DoWrite(payload);};
 		on Unit goto CountVote;
 		on READ_REQ goto DoRead;
 		ignore RESP_REPLICA_COMMIT, RESP_REPLICA_ABORT;
@@ -235,23 +224,23 @@ machine Coordinator {
 			}
 		}
 		defer WRITE_REQ, READ_REQ;
-		on RESP_REPLICA_COMMIT goto CountVote with {
+		on RESP_REPLICA_COMMIT goto CountVote with (payload : int){
 			if (currSeqNum == payload) {
 				i = i - 1;
 			}
 		};
-		on RESP_REPLICA_ABORT do HandleAbort;
+		on RESP_REPLICA_ABORT do (payload : int) { HandleAbort(payload); };
 		on Timeout goto Loop with {
 			DoGlobalAbort();
 		};
 		on Unit goto WaitForCancelTimerResponse;
 	}
 
-	fun HandleAbort() {
+	fun HandleAbort(payload : int) {
 		if (currSeqNum == payload) {
 			DoGlobalAbort();
 			send timer, CancelTimer;
-			raise(Unit);
+			raise Unit;
 		}
 	}
 
@@ -276,11 +265,10 @@ model Client {
    
 	
 	start state Init {
-	    entry {
-	        coordinator = (payload as (machine, int)).0;
-			mydata = (payload as (machine, int)).1;
+	    entry (payload :(machine, int)){
+	        coordinator = payload.0;
+			mydata = payload.1;
 			counter = 0;
-			new ReadWrite(this);
 			raise(Unit);
 		}
 		on Unit goto DoWrite;
@@ -295,14 +283,8 @@ model Client {
 				raise(goEnd);
 			send coordinator, WRITE_REQ, (client=this, key=mydata, val=mydata);
 		}
-		on WRITE_FAIL goto DoRead with 
-		{
-			monitor MONITOR_WRITE_FAILURE, (m = this, key=mydata, val = mydata);
-		};
-		on WRITE_SUCCESS goto DoRead with 
-		{
-			monitor MONITOR_WRITE_SUCCESS, (m = this, key=mydata, val = mydata);
-		};
+		on WRITE_FAIL goto DoRead;
+		on WRITE_SUCCESS goto DoRead;
 		on goEnd goto End;
 	}
 
@@ -310,129 +292,14 @@ model Client {
 	    entry {
 			send coordinator, READ_REQ, (client=this, key=mydata);
 		}
-		on READ_FAIL goto DoWrite with 
-		{
-			monitor MONITOR_READ_FAILURE, this;
-		};
-		on READ_SUCCESS goto DoWrite with 
-		{
-			monitor MONITOR_READ_SUCCESS, (m = this, key = mydata, val = payload);
-		};
+		on READ_FAIL goto DoWrite;
+		on READ_SUCCESS goto DoWrite;
 	}
 
 	state End { }
 
 }
 
-//Monitors
-
-
-// ReadWrite monitor keeps track of the property that every successful write should be followed by
-// successful read and failed write should be followed by a failed read.
-// This monitor is created local to each client.
-
-spec ReadWrite monitors MONITOR_WRITE_SUCCESS, MONITOR_WRITE_FAILURE, MONITOR_READ_SUCCESS, MONITOR_READ_FAILURE {
-	var client : machine;
-	var data: (key:int,val:int);
-	fun DoWriteSuccess() {
-		if(payload.m == client)
-			data = (key = payload.key, val = payload.val);
-	}
-	
-	fun DoWriteFailure() {
-		if(payload.m == client)
-			data = (key = -1, val = -1);
-	}
-	fun CheckReadSuccess() {
-		if(payload.m == client)
-		{assert(data.key == payload.key && data.val == payload.val+100);}
-			
-	}
-	fun CheckReadFailure() {
-		if(payload == client)
-			assert(data.key == -1 && data.val == -1);
-	}
-	start state Init {
-		entry {
-			client = payload as machine;
-		}
-		on MONITOR_WRITE_SUCCESS do DoWriteSuccess;
-		on MONITOR_WRITE_FAILURE do DoWriteFailure;
-		on MONITOR_READ_SUCCESS do CheckReadSuccess;
-		on MONITOR_READ_FAILURE do CheckReadFailure;
-	}
-}
-
-//
-// The termination monitor checks the eventual consistency property. Eventually logs on all the machines 
-// are the same (coordinator, replicas).
-//
-/*
-spec Termination monitors MONITOR_UPDATE {
-	var coordinator: machine;
-	var replicas:seq[machine];
-	var data : map[machine, map[int, int]];
-	var i :int;
-	var j : int;
-	var same : bool;
-	start state init {
-		entry {
-			coordinator = ((machine, seq[machine]))payload[0];
-			replicas = ((machine, seq[machine]))payload[1];
-		}
-		on MONITOR_UPDATE goto UpdateData;
-	}
-	
-	state UpdateData {
-		entry {
-		
-			data[payload.m].update(payload.key, payload.val);
-			if(sizeof(data[coordinator]) == sizeof(data[replicas[0]]))
-			{
-				i = sizeof(replicas) - 1;
-				same = true;
-				while(i >= 0)
-				{
-					if(sizeof(data[replicas[i]]) == sizeof(data[replicas[0]]) && same)
-						same = true;
-					else
-						same = false;
-						
-					i = i - 1;
-				}
-			}
-			if(same)
-			{
-				i = sizeof(data[coordinator]) - 1; 
-				
-				same = true;
-				while(i>=0)
-				{
-					j = sizeof(replicas) - 1;
-					while(j>=0)
-					{
-						assert(keys(data[coordinator])[i] in data[replicas[j]]);
-						j = j - 1;
-					}
-				}
-				
-				raise(final);
-			}
-		
-		}
-		
-		on final goto StableState;
-		on MONITOR_UPDATE goto UpdateData;
-		
-	}
-	
-	stable state StableState{
-		entry{}
-		on MONITOR_UPDATE goto UpdateData;
-	}
-	
-}
-*/
 
 main model TwoPhaseCommit {
     var coordinator: machine;

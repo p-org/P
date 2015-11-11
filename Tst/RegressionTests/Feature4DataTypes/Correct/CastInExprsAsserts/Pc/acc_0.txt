@@ -143,10 +143,10 @@ OUT: castinexprsasserts.p (157, 5): inferred type:  NIL
 OUT: castinexprsasserts.p (157, 15): inferred type:  BaseType(EVENT)
 OUT: castinexprsasserts.p (159, 5): inferred type:  NIL
 OUT: castinexprsasserts.p (159, 11): inferred type:  BaseType(EVENT)
+OUT: castinexprsasserts.p (175, 9): inferred type:  NIL
 OUT: castinexprsasserts.p (193, 4): inferred type:  BaseType(ANY)
 OUT: castinexprsasserts.p (193, 4): inferred type:  NIL
-OUT: castinexprsasserts.p (193, 9): inferred type:  BaseType(INT)
-OUT: castinexprsasserts.p (193, 17): inferred type:  BaseType(ANY)
+OUT: castinexprsasserts.p (193, 9): inferred type:  BaseType(ANY)
 OUT: castinexprsasserts.p (194, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (194, 14): inferred type:  BaseType(BOOL)
 OUT: castinexprsasserts.p (194, 17): inferred type:  BaseType(INT)
@@ -167,7 +167,7 @@ OUT: castinexprsasserts.p (208, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (209, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (215, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (215, 4): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
-OUT: castinexprsasserts.p (215, 19): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
+OUT: castinexprsasserts.p (215, 11): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprsasserts.p (216, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (216, 17): inferred type:  BaseType(INT)
 OUT: castinexprsasserts.p (216, 19): inferred type:  BaseType(BOOL)
@@ -177,13 +177,11 @@ OUT: castinexprsasserts.p (216, 32): inferred type:  BaseType(BOOL)
 OUT: castinexprsasserts.p (216, 34): inferred type:  BaseType(BOOL)
 OUT: castinexprsasserts.p (216, 37): inferred type:  BaseType(BOOL)
 OUT: castinexprsasserts.p (217, 4): inferred type:  NIL
-OUT: castinexprsasserts.p (217, 11): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprsasserts.p (218, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (219, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (225, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (225, 4): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprsasserts.p (225, 11): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
-OUT: castinexprsasserts.p (225, 19): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
 OUT: castinexprsasserts.p (226, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (226, 17): inferred type:  BaseType(INT)
 OUT: castinexprsasserts.p (226, 19): inferred type:  BaseType(BOOL)
@@ -195,14 +193,13 @@ OUT: castinexprsasserts.p (226, 37): inferred type:  BaseType(BOOL)
 OUT: castinexprsasserts.p (227, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (251, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (251, 4): inferred type:  SeqType(BaseType(INT))
-OUT: castinexprsasserts.p (251, 16): inferred type:  SeqType(BaseType(INT))
+OUT: castinexprsasserts.p (251, 8): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprsasserts.p (252, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (252, 13): inferred type:  BaseType(INT)
 OUT: castinexprsasserts.p (252, 14): inferred type:  BaseType(INT)
 OUT: castinexprsasserts.p (252, 17): inferred type:  BaseType(BOOL)
 OUT: castinexprsasserts.p (252, 20): inferred type:  BaseType(INT)
 OUT: castinexprsasserts.p (253, 4): inferred type:  NIL
-OUT: castinexprsasserts.p (253, 8): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprsasserts.p (254, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (256, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (256, 4): inferred type:  SeqType(BaseType(ANY))
@@ -231,7 +228,6 @@ OUT: castinexprsasserts.p (273, 32): inferred type:  BaseType(BOOL)
 OUT: castinexprsasserts.p (275, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (275, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsasserts.p (276, 4): inferred type:  NIL
-OUT: castinexprsasserts.p (276, 17): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsasserts.p (279, 4): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprsasserts.p (279, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (281, 4): inferred type:  NIL
@@ -257,7 +253,6 @@ OUT: castinexprsasserts.p (296, 32): inferred type:  BaseType(BOOL)
 OUT: castinexprsasserts.p (296, 35): inferred type:  BaseType(INT)
 OUT: castinexprsasserts.p (298, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (299, 4): inferred type:  NIL
-OUT: castinexprsasserts.p (299, 17): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsasserts.p (300, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (302, 4): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprsasserts.p (302, 4): inferred type:  NIL
@@ -282,7 +277,6 @@ OUT: castinexprsasserts.p (317, 9): inferred type:  MapType(BaseType(INT), BaseT
 OUT: castinexprsasserts.p (320, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (320, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsasserts.p (321, 4): inferred type:  NIL
-OUT: castinexprsasserts.p (321, 17): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsasserts.p (324, 4): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprsasserts.p (324, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (327, 4): inferred type:  NIL
@@ -307,7 +301,6 @@ OUT: castinexprsasserts.p (342, 35): inferred type:  BaseType(INT)
 OUT: castinexprsasserts.p (343, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (343, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsasserts.p (344, 4): inferred type:  NIL
-OUT: castinexprsasserts.p (344, 17): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsasserts.p (345, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (347, 4): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprsasserts.p (347, 4): inferred type:  NIL

@@ -11,7 +11,7 @@ main machine MachOS {
 		
 		on myTuple goto State1;
 		
-		on myNmTuple do (payload: (int, bool)) {
+		on myNmTuple do (payload: (first:int, sec:bool)) {
 			INT = payload.first;
 			BOOL = payload.sec;
 		};
@@ -38,7 +38,7 @@ main machine MachOS {
 	state State2 {
 		entry (payload: any) {
 			//entered upon "null" event
-			MACH = payload;    //no subtype error???
+			MACH = payload;    //subtype error
 			INT = payload;     //subtype error
 		}
 		on myNmTuple goto State3;

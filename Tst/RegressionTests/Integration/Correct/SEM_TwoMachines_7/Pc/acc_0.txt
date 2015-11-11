@@ -32,6 +32,7 @@ OUT: raisedhalt_bugfound.p (28, 10): inferred type:  BaseType(EVENT)
 OUT: raisedhalt_bugfound.p (34, 3): inferred type:  NIL
 OUT: raisedhalt_bugfound.p (35, 23): inferred type:  NIL
 OUT: raisedhalt_bugfound.p (35, 30): inferred type:  BaseType(BOOL)
+OUT: raisedhalt_bugfound.p (42, 15): inferred type:  NIL
 OUT: raisedhalt_bugfound.p (48, 3): inferred type:  BaseType(INT)
 OUT: raisedhalt_bugfound.p (48, 3): inferred type:  NIL
 OUT: raisedhalt_bugfound.p (48, 19): inferred type:  BaseType(INT)
@@ -39,14 +40,13 @@ OUT: raisedhalt_bugfound.p (48, 21): inferred type:  BaseType(INT)
 OUT: raisedhalt_bugfound.p (49, 3): inferred type:  NIL
 OUT: raisedhalt_bugfound.p (49, 14): inferred type:  BaseType(BOOL)
 OUT: raisedhalt_bugfound.p (50, 5): inferred type:  NIL
-OUT: raisedhalt_bugfound.p (50, 30): inferred type:  BaseType(EVENT)
+OUT: raisedhalt_bugfound.p (50, 10): inferred type:  BaseType(REAL)
+OUT: raisedhalt_bugfound.p (50, 19): inferred type:  BaseType(EVENT)
 OUT: raisedhalt_bugfound.p (52, 3): inferred type:  NIL
 OUT: raisedhalt_bugfound.p (52, 14): inferred type:  BaseType(BOOL)
 OUT: raisedhalt_bugfound.p (52, 17): inferred type:  BaseType(INT)
 OUT: raisedhalt_bugfound.p (53, 4): inferred type:  NIL
-OUT: raisedhalt_bugfound.p (53, 9): inferred type:  BaseType(REAL)
-OUT: raisedhalt_bugfound.p (53, 17): inferred type:  BaseType(REAL)
-OUT: raisedhalt_bugfound.p (53, 29): inferred type:  BaseType(EVENT)
+OUT: raisedhalt_bugfound.p (53, 18): inferred type:  BaseType(EVENT)
 OUT: raisedhalt_bugfound.p (55, 3): inferred type:  NIL
 OUT: raisedhalt_bugfound.p (55, 9): inferred type:  BaseType(EVENT)
 OUT: raisedhalt_bugfound.p (57, 9): inferred type:  NIL

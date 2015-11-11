@@ -2,8 +2,11 @@
          Console output          
 =================================
 OUT: anonfunction.p (6, 4): inferred type:  NIL
+OUT: anonfunction.p (9, 8): inferred type:  NIL
+OUT: anonfunction.p (12, 24): inferred type:  NIL
 OUT: anonfunction.p (13, 21): inferred type:  NIL
 OUT: anonfunction.p (16, 12): inferred type:  NIL
+OUT: anonfunction.p (24, 3): inferred type:  NIL
 OUT: anonfunction.p (24, 14): inferred type:  NIL
 OUT: anonfunction.p (12, 3): transition to an undefined state
 OUT: Compilation failed

@@ -19,11 +19,11 @@ Trace-Log 0:
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Spinlock-1
 <StateLog> Machine Spinlock-1 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors
 
 Error:
 P Assertion failed:
-Expression: assert(tmpVar_7.bl,)
+Expression: assert(tmpVar_6.bl,)
 Comment: (29, 5): Assert failed
 Safety Error Trace
 Trace-Log 1:
@@ -33,28 +33,14 @@ Trace-Log 1:
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Spinlock-1
 <StateLog> Machine Spinlock-1 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors
 
 Error:
 P Assertion failed:
-Expression: assert(tmpVar_7.bl,)
+Expression: assert(tmpVar_6.bl,)
 Comment: (29, 5): Assert failed
 Safety Error Trace
 Trace-Log 2:
-<CreateLog> Created Machine TestDriver-0
-<StateLog> Machine TestDriver-0 entering State Init
-<CreateLog> Created Machine Spinlock-0
-<StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine Spinlock-1
-<StateLog> Machine Spinlock-1 entering State Init
-<MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors
-
-Error:
-P Assertion failed:
-Expression: assert(tmpVar_14.bl,)
-Comment: (37, 5): Assert failed
-Safety Error Trace
-Trace-Log 3:
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
 <CreateLog> Created Machine Spinlock-0
@@ -65,5 +51,19 @@ Trace-Log 3:
 
 Error:
 P Assertion failed:
-Expression: assert(tmpVar_14.bl,)
+Expression: assert(tmpVar_13.bl,)
+Comment: (37, 5): Assert failed
+Safety Error Trace
+Trace-Log 3:
+<CreateLog> Created Machine TestDriver-0
+<StateLog> Machine TestDriver-0 entering State Init
+<CreateLog> Created Machine Spinlock-0
+<StateLog> Machine Spinlock-0 entering State Init
+<CreateLog> Created Machine Spinlock-1
+<StateLog> Machine Spinlock-1 entering State Init
+<MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors
+
+Error:
+P Assertion failed:
+Expression: assert(tmpVar_13.bl,)
 Comment: (37, 5): Assert failed

@@ -8,8 +8,7 @@ OUT: Writing SpinlockSameAsRule.zing ...
 OUT: Compiling SpinlockSameAsRule.zing to SpinlockSameAsRule.dll ...
 OUT: spinlocksameasrule.p (21, 4): inferred type:  BaseType(INT)
 OUT: spinlocksameasrule.p (21, 4): inferred type:  NIL
-OUT: spinlocksameasrule.p (21, 9): inferred type:  BaseType(ANY)
-OUT: spinlocksameasrule.p (21, 17): inferred type:  BaseType(INT)
+OUT: spinlocksameasrule.p (21, 9): inferred type:  BaseType(INT)
 OUT: spinlocksameasrule.p (28, 4): inferred type:  BaseType(INT)
 OUT: spinlocksameasrule.p (28, 4): inferred type:  NIL
 OUT: spinlocksameasrule.p (28, 15): inferred type:  BaseType(INT)

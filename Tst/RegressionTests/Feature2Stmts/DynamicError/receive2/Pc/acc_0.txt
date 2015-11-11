@@ -39,12 +39,12 @@ OUT: receive2.p (22, 20): inferred type:  BaseType(INT)
 OUT: receive2.p (22, 22): inferred type:  BaseType(INT)
 OUT: receive2.p (22, 24): inferred type:  BaseType(INT)
 OUT: receive2.p (22, 26): inferred type:  BaseType(INT)
-OUT: receive2.p (23, 14): inferred type:  BaseType(INT)
-OUT: receive2.p (23, 14): inferred type:  NIL
-OUT: receive2.p (23, 20): inferred type:  BaseType(INT)
-OUT: receive2.p (23, 22): inferred type:  BaseType(INT)
-OUT: receive2.p (23, 24): inferred type:  BaseType(INT)
-OUT: receive2.p (23, 26): inferred type:  BaseType(INT)
+OUT: receive2.p (23, 29): inferred type:  BaseType(INT)
+OUT: receive2.p (23, 29): inferred type:  NIL
+OUT: receive2.p (23, 35): inferred type:  BaseType(INT)
+OUT: receive2.p (23, 37): inferred type:  BaseType(INT)
+OUT: receive2.p (23, 39): inferred type:  BaseType(INT)
+OUT: receive2.p (23, 41): inferred type:  BaseType(INT)
 OUT: receive2.p (24, 15): inferred type:  NIL
 OUT: receive2.p (34, 4): inferred type:  BaseType(INT)
 OUT: receive2.p (34, 4): inferred type:  NIL
@@ -52,8 +52,7 @@ OUT: receive2.p (34, 10): inferred type:  BaseType(INT)
 OUT: receive2.p (34, 12): inferred type:  BaseType(INT)
 OUT: receive2.p (35, 4): inferred type:  BaseType(REAL)
 OUT: receive2.p (35, 4): inferred type:  NIL
-OUT: receive2.p (35, 8): inferred type:  BaseType(ANY)
-OUT: receive2.p (35, 16): inferred type:  BaseType(REAL)
+OUT: receive2.p (35, 8): inferred type:  BaseType(REAL)
 OUT: receive2.p (39, 15): inferred type:  NIL
 OUT: 
 EXIT: 0

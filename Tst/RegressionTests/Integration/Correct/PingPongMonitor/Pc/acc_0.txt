@@ -19,10 +19,10 @@ OUT: pingpongmonitor.p (19, 25): inferred type:  BaseType(REAL)
 OUT: pingpongmonitor.p (20, 6): inferred type:  NIL
 OUT: pingpongmonitor.p (20, 12): inferred type:  BaseType(EVENT)
 OUT: pingpongmonitor.p (29, 5): inferred type:  NIL
+OUT: pingpongmonitor.p (34, 15): inferred type:  NIL
 OUT: pingpongmonitor.p (40, 7): inferred type:  NIL
 OUT: pingpongmonitor.p (40, 12): inferred type:  BaseType(REAL)
-OUT: pingpongmonitor.p (40, 20): inferred type:  BaseType(REAL)
-OUT: pingpongmonitor.p (40, 32): inferred type:  BaseType(EVENT)
+OUT: pingpongmonitor.p (40, 21): inferred type:  BaseType(EVENT)
 OUT: pingpongmonitor.p (41, 7): inferred type:  NIL
 OUT: pingpongmonitor.p (41, 13): inferred type:  BaseType(EVENT)
 OUT: pingpongmonitor.p (43, 9): inferred type:  NIL

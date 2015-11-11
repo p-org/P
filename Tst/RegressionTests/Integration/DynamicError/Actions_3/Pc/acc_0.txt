@@ -21,8 +21,7 @@ OUT: actions_3.p (36, 14): inferred type:  BaseType(REAL)
 OUT: actions_3.p (36, 29): inferred type:  BaseType(EVENT)
 OUT: actions_3.p (45, 8): inferred type:  BaseType(REAL)
 OUT: actions_3.p (45, 8): inferred type:  NIL
-OUT: actions_3.p (45, 23): inferred type:  BaseType(ANY)
-OUT: actions_3.p (45, 31): inferred type:  BaseType(REAL)
+OUT: actions_3.p (45, 23): inferred type:  BaseType(REAL)
 OUT: actions_3.p (53, 4): inferred type:  NIL
 OUT: actions_3.p (53, 9): inferred type:  BaseType(REAL)
 OUT: actions_3.p (53, 23): inferred type:  BaseType(EVENT)

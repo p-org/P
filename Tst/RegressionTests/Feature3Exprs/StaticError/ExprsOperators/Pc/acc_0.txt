@@ -376,8 +376,7 @@ OUT: exproperators.p (242, 8): inferred type:  NIL
 OUT: exproperators.p (242, 15): inferred type:  BaseType(INT)
 OUT: exproperators.p (250, 7): inferred type:  NIL
 OUT: exproperators.p (250, 7): inferred type:  SeqType(BaseType(INT))
-OUT: exproperators.p (250, 12): inferred type:  BaseType(ANY)
-OUT: exproperators.p (250, 20): inferred type:  SeqType(BaseType(INT))
+OUT: exproperators.p (250, 12): inferred type:  SeqType(BaseType(INT))
 OUT: exproperators.p (251, 4): inferred type:  NIL
 OUT: exproperators.p (251, 13): inferred type:  BaseType(INT)
 OUT: exproperators.p (251, 14): inferred type:  BaseType(INT)

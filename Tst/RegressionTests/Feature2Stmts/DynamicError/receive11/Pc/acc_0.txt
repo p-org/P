@@ -7,10 +7,10 @@ OUT: Writing program.c ...
 OUT: Writing receive11.zing ...
 OUT: Compiling receive11.zing to receive11.dll ...
 OUT: receive11.p (0, 0): inferred type:  NIL
-OUT: receive11.p (9, 25): inferred type:  NIL
-OUT: receive11.p (9, 33): inferred type:  BaseType(INT)
-OUT: receive11.p (9, 41): inferred type:  BaseType(BOOL)
-OUT: receive11.p (9, 44): inferred type:  BaseType(INT)
+OUT: receive11.p (9, 40): inferred type:  NIL
+OUT: receive11.p (9, 48): inferred type:  BaseType(INT)
+OUT: receive11.p (9, 56): inferred type:  BaseType(BOOL)
+OUT: receive11.p (9, 59): inferred type:  BaseType(INT)
 OUT: receive11.p (13, 3): inferred type:  NIL
 OUT: receive11.p (13, 24): inferred type:  NIL
 OUT: receive11.p (13, 31): inferred type:  BaseType(BOOL)

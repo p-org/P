@@ -19,6 +19,8 @@ OUT: enclosedfuncalls.p (26, 30): inferred type:  NIL
 OUT: enclosedfuncalls.p (27, 30): inferred type:  NIL
 OUT: enclosedfuncalls.p (30, 4): inferred type:  NIL
 OUT: enclosedfuncalls.p (31, 4): inferred type:  NIL
+OUT: enclosedfuncalls.p (35, 9): inferred type:  NIL
+OUT: enclosedfuncalls.p (37, 14): inferred type:  NIL
 OUT: enclosedfuncalls.p (40, 14): inferred type:  NIL
 OUT: enclosedfuncalls.p (41, 17): inferred type:  NIL
 OUT: enclosedfuncalls.p (42, 14): inferred type:  NIL

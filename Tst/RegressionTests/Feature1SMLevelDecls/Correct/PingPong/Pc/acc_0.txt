@@ -8,8 +8,7 @@ OUT: Writing PingPong.zing ...
 OUT: Compiling PingPong.zing to PingPong.dll ...
 OUT: pingpong.p (15, 4): inferred type:  NIL
 OUT: pingpong.p (15, 4): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), NIL))
-OUT: pingpong.p (15, 18): inferred type:  BaseType(ANY)
-OUT: pingpong.p (15, 26): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), NIL))
+OUT: pingpong.p (15, 18): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), NIL))
 OUT: pingpong.p (16, 4): inferred type:  NIL
 OUT: pingpong.p (16, 11): inferred type:  BaseType(EVENT)
 OUT: pingpong.p (23, 4): inferred type:  NIL
@@ -49,6 +48,7 @@ OUT: pingpong.p (82, 22): inferred type:  BaseType(INT)
 OUT: pingpong.p (84, 3): inferred type:  NIL
 OUT: pingpong.p (84, 16): inferred type:  BaseType(REAL)
 OUT: pingpong.p (84, 25): inferred type:  BaseType(ANY)
+OUT: pingpong.p (84, 31): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), NIL))
 OUT: pingpong.p (86, 7): inferred type:  NIL
 OUT: pingpong.p (86, 24): inferred type:  BaseType(BOOL)
 OUT: pingpong.p (86, 27): inferred type:  BaseType(INT)

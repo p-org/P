@@ -26,10 +26,14 @@ OUT: controlimpuredodecl.p (35, 24): inferred type:  BaseType(INT)
 OUT: controlimpuredodecl.p (36, 8): inferred type:  BaseType(INT)
 OUT: controlimpuredodecl.p (36, 18): inferred type:  BaseType(INT)
 OUT: controlimpuredodecl.p (37, 8): inferred type:  BaseType(INT)
+OUT: controlimpuredodecl.p (42, 9): inferred type:  NIL
 OUT: controlimpuredodecl.p (45, 4): inferred type:  NIL
 OUT: controlimpuredodecl.p (47, 14): inferred type:  NIL
 OUT: controlimpuredodecl.p (48, 17): inferred type:  NIL
 OUT: controlimpuredodecl.p (49, 14): inferred type:  NIL
+OUT: controlimpuredodecl.p (52, 9): inferred type:  NIL
+OUT: controlimpuredodecl.p (55, 9): inferred type:  NIL
+OUT: controlimpuredodecl.p (58, 9): inferred type:  NIL
 OUT: controlimpuredodecl.p (61, 9): inferred type:  NIL
 OUT: controlimpuredodecl.p (64, 3): inferred type:  NIL
 OUT: controlimpuredodecl.p (66, 16): inferred type:  NIL

@@ -16,6 +16,8 @@ OUT: receive7.p (12, 12): inferred type:  BaseType(EVENT)
 OUT: receive7.p (20, 4): inferred type:  NIL
 OUT: receive7.p (20, 10): inferred type:  BaseType(EVENT)
 OUT: receive7.p (27, 4): inferred type:  NIL
+OUT: receive7.p (28, 13): inferred type:  NIL
+OUT: receive7.p (29, 16): inferred type:  NIL
 OUT: receive7.p (32, 22): inferred type:  NIL
 OUT: receive7.p (32, 29): inferred type:  BaseType(BOOL)
 OUT: 

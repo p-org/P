@@ -18,7 +18,6 @@ OUT: halttrigger4do.p (21, 20): inferred type:  BaseType(INT)
 OUT: halttrigger4do.p (22, 4): inferred type:  NIL
 OUT: halttrigger4do.p (22, 14): inferred type:  BaseType(BOOL)
 OUT: halttrigger4do.p (23, 5): inferred type:  NIL
-OUT: halttrigger4do.p (23, 10): inferred type:  BaseType(REAL)
 OUT: halttrigger4do.p (23, 18): inferred type:  BaseType(EVENT)
 OUT: halttrigger4do.p (23, 24): inferred type:  BaseType(REAL)
 OUT: halttrigger4do.p (25, 4): inferred type:  NIL
@@ -27,14 +26,15 @@ OUT: halttrigger4do.p (25, 17): inferred type:  BaseType(INT)
 OUT: halttrigger4do.p (26, 5): inferred type:  NIL
 OUT: halttrigger4do.p (26, 18): inferred type:  BaseType(EVENT)
 OUT: halttrigger4do.p (27, 5): inferred type:  NIL
+OUT: halttrigger4do.p (27, 10): inferred type:  BaseType(REAL)
 OUT: halttrigger4do.p (27, 18): inferred type:  BaseType(EVENT)
 OUT: halttrigger4do.p (29, 4): inferred type:  NIL
 OUT: halttrigger4do.p (29, 10): inferred type:  BaseType(EVENT)
 OUT: halttrigger4do.p (38, 5): inferred type:  NIL
+OUT: halttrigger4do.p (43, 15): inferred type:  NIL
 OUT: halttrigger4do.p (52, 7): inferred type:  NIL
 OUT: halttrigger4do.p (52, 12): inferred type:  BaseType(REAL)
-OUT: halttrigger4do.p (52, 20): inferred type:  BaseType(REAL)
-OUT: halttrigger4do.p (52, 32): inferred type:  BaseType(EVENT)
+OUT: halttrigger4do.p (52, 21): inferred type:  BaseType(EVENT)
 OUT: halttrigger4do.p (53, 7): inferred type:  NIL
 OUT: halttrigger4do.p (53, 13): inferred type:  BaseType(EVENT)
 OUT: halttrigger4do.p (56, 22): inferred type:  NIL

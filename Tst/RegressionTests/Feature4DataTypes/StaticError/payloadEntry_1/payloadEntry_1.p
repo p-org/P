@@ -30,8 +30,8 @@ main machine MachOS {
 	
 	state State3 {
 		entry (payload: (first:int, sec:bool)) {
-			MACH = payload;
-			INT = payload;
+			INT = payload.first;
+			BOOL = payload.sec;
 		}
 	}
 	

@@ -5,6 +5,9 @@ OUT: entryexit_1.p (13, 4): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (13, 4): inferred type:  NIL
 OUT: entryexit_1.p (13, 10): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (13, 12): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (16, 11): inferred type:  NIL
+OUT: entryexit_1.p (18, 22): inferred type:  NIL
+OUT: entryexit_1.p (20, 8): inferred type:  NIL
 OUT: entryexit_1.p (24, 4): inferred type:  NIL
 OUT: entryexit_1.p (24, 7): inferred type:  BaseType(BOOL)
 OUT: entryexit_1.p (25, 5): inferred type:  BaseType(INT)
@@ -36,6 +39,12 @@ OUT: entryexit_1.p (57, 4): inferred type:  NIL
 OUT: entryexit_1.p (57, 10): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (57, 12): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (62, 9): inferred type:  NIL
+OUT: entryexit_1.p (64, 4): inferred type:  NIL
+OUT: entryexit_1.p (64, 7): inferred type:  BaseType(BOOL)
+OUT: entryexit_1.p (65, 5): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (65, 5): inferred type:  NIL
+OUT: entryexit_1.p (65, 11): inferred type:  BaseType(INT)
+OUT: entryexit_1.p (65, 13): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (69, 4): inferred type:  NIL
 OUT: entryexit_1.p (69, 7): inferred type:  BaseType(BOOL)
 OUT: entryexit_1.p (71, 5): inferred type:  BaseType(INT)

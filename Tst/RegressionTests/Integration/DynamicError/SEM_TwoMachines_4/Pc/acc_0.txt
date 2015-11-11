@@ -18,7 +18,6 @@ OUT: eventsentaftersenthalthandled_v.p (21, 20): inferred type:  BaseType(INT)
 OUT: eventsentaftersenthalthandled_v.p (22, 4): inferred type:  NIL
 OUT: eventsentaftersenthalthandled_v.p (22, 14): inferred type:  BaseType(BOOL)
 OUT: eventsentaftersenthalthandled_v.p (23, 5): inferred type:  NIL
-OUT: eventsentaftersenthalthandled_v.p (23, 10): inferred type:  BaseType(REAL)
 OUT: eventsentaftersenthalthandled_v.p (23, 18): inferred type:  BaseType(EVENT)
 OUT: eventsentaftersenthalthandled_v.p (23, 24): inferred type:  BaseType(REAL)
 OUT: eventsentaftersenthalthandled_v.p (25, 4): inferred type:  NIL
@@ -27,14 +26,15 @@ OUT: eventsentaftersenthalthandled_v.p (25, 17): inferred type:  BaseType(INT)
 OUT: eventsentaftersenthalthandled_v.p (26, 5): inferred type:  NIL
 OUT: eventsentaftersenthalthandled_v.p (26, 18): inferred type:  BaseType(EVENT)
 OUT: eventsentaftersenthalthandled_v.p (27, 5): inferred type:  NIL
+OUT: eventsentaftersenthalthandled_v.p (27, 10): inferred type:  BaseType(REAL)
 OUT: eventsentaftersenthalthandled_v.p (27, 18): inferred type:  BaseType(EVENT)
 OUT: eventsentaftersenthalthandled_v.p (29, 4): inferred type:  NIL
 OUT: eventsentaftersenthalthandled_v.p (29, 10): inferred type:  BaseType(EVENT)
 OUT: eventsentaftersenthalthandled_v.p (38, 5): inferred type:  NIL
+OUT: eventsentaftersenthalthandled_v.p (43, 15): inferred type:  NIL
 OUT: eventsentaftersenthalthandled_v.p (51, 7): inferred type:  NIL
 OUT: eventsentaftersenthalthandled_v.p (51, 12): inferred type:  BaseType(REAL)
-OUT: eventsentaftersenthalthandled_v.p (51, 20): inferred type:  BaseType(REAL)
-OUT: eventsentaftersenthalthandled_v.p (51, 32): inferred type:  BaseType(EVENT)
+OUT: eventsentaftersenthalthandled_v.p (51, 21): inferred type:  BaseType(EVENT)
 OUT: eventsentaftersenthalthandled_v.p (52, 7): inferred type:  NIL
 OUT: eventsentaftersenthalthandled_v.p (52, 13): inferred type:  BaseType(EVENT)
 OUT: eventsentaftersenthalthandled_v.p (58, 4): inferred type:  NIL

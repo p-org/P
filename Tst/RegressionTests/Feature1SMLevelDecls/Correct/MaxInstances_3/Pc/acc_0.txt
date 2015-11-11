@@ -19,8 +19,7 @@ OUT: maxinstances_3.p (18, 3): inferred type:  NIL
 OUT: maxinstances_3.p (18, 10): inferred type:  BaseType(BOOL)
 OUT: maxinstances_3.p (26, 3): inferred type:  BaseType(REAL)
 OUT: maxinstances_3.p (26, 3): inferred type:  NIL
-OUT: maxinstances_3.p (26, 18): inferred type:  BaseType(ANY)
-OUT: maxinstances_3.p (26, 26): inferred type:  BaseType(REAL)
+OUT: maxinstances_3.p (26, 18): inferred type:  BaseType(REAL)
 OUT: maxinstances_3.p (27, 3): inferred type:  NIL
 OUT: maxinstances_3.p (27, 22): inferred type:  BaseType(EVENT)
 OUT: 

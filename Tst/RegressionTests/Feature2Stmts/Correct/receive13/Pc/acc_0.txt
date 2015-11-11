@@ -15,6 +15,8 @@ OUT: receive13.p (12, 4): inferred type:  NIL
 OUT: receive13.p (12, 12): inferred type:  BaseType(EVENT)
 OUT: receive13.p (20, 4): inferred type:  NIL
 OUT: receive13.p (20, 10): inferred type:  BaseType(EVENT)
+OUT: receive13.p (23, 13): inferred type:  NIL
+OUT: receive13.p (23, 20): inferred type:  BaseType(BOOL)
 OUT: receive13.p (28, 4): inferred type:  NIL
 OUT: receive13.p (29, 15): inferred type:  NIL
 OUT: receive13.p (32, 13): inferred type:  NIL

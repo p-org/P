@@ -66,14 +66,13 @@ OUT: nonatomicdatatypesallasserts.p (87, 8): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypesallasserts.p (87, 15): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypesallasserts.p (87, 17): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypesallasserts.p (88, 5): inferred type:  NIL
-OUT: nonatomicdatatypesallasserts.p (88, 18): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (88, 23): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypesallasserts.p (88, 31): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (89, 5): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (89, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
 OUT: nonatomicdatatypesallasserts.p (89, 11): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
 OUT: nonatomicdatatypesallasserts.p (89, 18): inferred type:  NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)
 OUT: nonatomicdatatypesallasserts.p (90, 5): inferred type:  NIL
+OUT: nonatomicdatatypesallasserts.p (90, 18): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (90, 23): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (90, 31): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (91, 5): inferred type:  NIL
@@ -81,6 +80,7 @@ OUT: nonatomicdatatypesallasserts.p (91, 10): inferred type:  NmdTupType(NmdTupT
 OUT: nonatomicdatatypesallasserts.p (92, 5): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (92, 17): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (92, 22): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypesallasserts.p (92, 30): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (94, 5): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (94, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: nonatomicdatatypesallasserts.p (94, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
@@ -167,6 +167,7 @@ OUT: nonatomicdatatypesallasserts.p (133, 20): inferred type:  TupType(BaseType(
 OUT: nonatomicdatatypesallasserts.p (134, 8): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (134, 14): inferred type:  BaseType(REAL)
 OUT: nonatomicdatatypesallasserts.p (137, 5): inferred type:  NIL
+OUT: nonatomicdatatypesallasserts.p (137, 7): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypesallasserts.p (138, 5): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (138, 15): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (139, 5): inferred type:  NIL
@@ -180,7 +181,6 @@ OUT: nonatomicdatatypesallasserts.p (141, 27): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (142, 5): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (142, 18): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (143, 5): inferred type:  NIL
-OUT: nonatomicdatatypesallasserts.p (143, 7): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypesallasserts.p (144, 5): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (144, 18): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (145, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
@@ -484,8 +484,7 @@ OUT: nonatomicdatatypesallasserts.p (320, 8): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (320, 15): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypesallasserts.p (328, 7): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (328, 7): inferred type:  SeqType(BaseType(INT))
-OUT: nonatomicdatatypesallasserts.p (328, 12): inferred type:  BaseType(ANY)
-OUT: nonatomicdatatypesallasserts.p (328, 20): inferred type:  SeqType(BaseType(INT))
+OUT: nonatomicdatatypesallasserts.p (328, 12): inferred type:  SeqType(BaseType(INT))
 OUT: nonatomicdatatypesallasserts.p (329, 4): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (329, 13): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypesallasserts.p (329, 14): inferred type:  BaseType(INT)

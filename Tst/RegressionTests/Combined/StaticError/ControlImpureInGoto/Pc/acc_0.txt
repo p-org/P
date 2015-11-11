@@ -1,6 +1,8 @@
 =================================
          Console output          
 =================================
+OUT: controlimpureerrorsgoto.p (16, 4): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (16, 10): inferred type:  BaseType(EVENT)
 OUT: controlimpureerrorsgoto.p (18, 16): inferred type:  NIL
 OUT: controlimpureerrorsgoto.p (18, 21): inferred type:  BaseType(REAL)
 OUT: controlimpureerrorsgoto.p (18, 27): inferred type:  BaseType(EVENT)
@@ -10,6 +12,7 @@ OUT: controlimpureerrorsgoto.p (20, 16): inferred type:  NIL
 OUT: controlimpureerrorsgoto.p (20, 27): inferred type:  BaseType(EVENT)
 OUT: controlimpureerrorsgoto.p (21, 7): inferred type:  NIL
 OUT: controlimpureerrorsgoto.p (21, 18): inferred type:  BaseType(EVENT)
+OUT: controlimpureerrorsgoto.p (23, 28): inferred type:  NIL
 OUT: controlimpureerrorsgoto.p (24, 36): inferred type:  NIL
 OUT: controlimpureerrorsgoto.p (24, 42): inferred type:  BaseType(EVENT)
 OUT: controlimpureerrorsgoto.p (25, 30): inferred type:  NIL
@@ -27,6 +30,10 @@ OUT: controlimpureerrorsgoto.p (33, 18): inferred type:  BaseType(INT)
 OUT: controlimpureerrorsgoto.p (34, 8): inferred type:  BaseType(INT)
 OUT: controlimpureerrorsgoto.p (34, 18): inferred type:  BaseType(INT)
 OUT: controlimpureerrorsgoto.p (35, 8): inferred type:  BaseType(INT)
+OUT: controlimpureerrorsgoto.p (40, 9): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (47, 9): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (50, 9): inferred type:  NIL
+OUT: controlimpureerrorsgoto.p (53, 9): inferred type:  NIL
 OUT: controlimpureerrorsgoto.p (56, 9): inferred type:  NIL
 OUT: controlimpureerrorsgoto.p (59, 3): inferred type:  NIL
 OUT: controlimpureerrorsgoto.p (61, 16): inferred type:  NIL

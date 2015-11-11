@@ -12,6 +12,8 @@ OUT: actions_6.p (13, 20): inferred type:  BaseType(REAL)
 OUT: actions_6.p (13, 30): inferred type:  BaseType(REAL)
 OUT: actions_6.p (14, 13): inferred type:  NIL
 OUT: actions_6.p (14, 19): inferred type:  BaseType(EVENT)
+OUT: actions_6.p (16, 43): inferred type:  BaseType(INT)
+OUT: actions_6.p (16, 43): inferred type:  TupType(BaseType(INT), NIL)
 OUT: actions_6.p (24, 13): inferred type:  NIL
 OUT: actions_6.p (24, 18): inferred type:  BaseType(REAL)
 OUT: actions_6.p (24, 33): inferred type:  BaseType(EVENT)
@@ -26,8 +28,7 @@ OUT: actions_6.p (38, 14): inferred type:  BaseType(REAL)
 OUT: actions_6.p (38, 29): inferred type:  BaseType(EVENT)
 OUT: actions_6.p (47, 8): inferred type:  BaseType(REAL)
 OUT: actions_6.p (47, 8): inferred type:  NIL
-OUT: actions_6.p (47, 23): inferred type:  BaseType(ANY)
-OUT: actions_6.p (47, 31): inferred type:  BaseType(REAL)
+OUT: actions_6.p (47, 23): inferred type:  BaseType(REAL)
 OUT: actions_6.p (54, 4): inferred type:  NIL
 OUT: actions_6.p (54, 9): inferred type:  BaseType(REAL)
 OUT: actions_6.p (54, 23): inferred type:  BaseType(EVENT)

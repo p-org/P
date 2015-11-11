@@ -22,9 +22,10 @@ OUT: castinexprsdynerror.p (77, 5): inferred type:  NIL
 OUT: castinexprsdynerror.p (77, 11): inferred type:  BaseType(BOOL)
 OUT: castinexprsdynerror.p (79, 5): inferred type:  NIL
 OUT: castinexprsdynerror.p (79, 11): inferred type:  BaseType(EVENT)
+OUT: castinexprsdynerror.p (95, 9): inferred type:  NIL
 OUT: castinexprsdynerror.p (113, 4): inferred type:  BaseType(ANY)
 OUT: castinexprsdynerror.p (113, 4): inferred type:  NIL
-OUT: castinexprsdynerror.p (113, 9): inferred type:  BaseType(INT)
+OUT: castinexprsdynerror.p (113, 9): inferred type:  BaseType(ANY)
 OUT: castinexprsdynerror.p (113, 17): inferred type:  BaseType(ANY)
 OUT: castinexprsdynerror.p (114, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (114, 14): inferred type:  BaseType(BOOL)

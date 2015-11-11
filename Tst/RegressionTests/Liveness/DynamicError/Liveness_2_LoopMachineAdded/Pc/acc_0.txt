@@ -19,6 +19,7 @@ OUT: liveness_2_loopmachineadded.p (36, 4): inferred type:  NIL
 OUT: liveness_2_loopmachineadded.p (36, 9): inferred type:  BaseType(REAL)
 OUT: liveness_2_loopmachineadded.p (36, 15): inferred type:  BaseType(EVENT)
 OUT: liveness_2_loopmachineadded.p (38, 3): inferred type:  NIL
+OUT: liveness_2_loopmachineadded.p (51, 9): inferred type:  NIL
 OUT: liveness_2_loopmachineadded.p (54, 14): inferred type:  NIL
 OUT: 
 EXIT: 0

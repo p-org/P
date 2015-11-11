@@ -18,6 +18,7 @@ OUT: liveness_2.p (25, 5): inferred type:  NIL
 OUT: liveness_2.p (25, 10): inferred type:  BaseType(REAL)
 OUT: liveness_2.p (25, 16): inferred type:  BaseType(EVENT)
 OUT: liveness_2.p (27, 13): inferred type:  NIL
+OUT: liveness_2.p (40, 9): inferred type:  NIL
 OUT: liveness_2.p (43, 14): inferred type:  NIL
 OUT: 
 EXIT: 0

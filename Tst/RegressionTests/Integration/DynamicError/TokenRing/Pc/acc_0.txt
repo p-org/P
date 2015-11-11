@@ -6,14 +6,12 @@ OUT: Writing program.h ...
 OUT: Writing program.c ...
 OUT: Writing TokenRing.zing ...
 OUT: Compiling TokenRing.zing to TokenRing.dll ...
-OUT: tokenring.p (16, 12): inferred type:  BaseType(REAL)
-OUT: tokenring.p (16, 12): inferred type:  NIL
-OUT: tokenring.p (16, 21): inferred type:  BaseType(ANY)
-OUT: tokenring.p (16, 29): inferred type:  BaseType(REAL)
+OUT: tokenring.p (16, 31): inferred type:  BaseType(REAL)
+OUT: tokenring.p (16, 31): inferred type:  NIL
+OUT: tokenring.p (16, 40): inferred type:  BaseType(REAL)
 OUT: tokenring.p (29, 2): inferred type:  BaseType(REAL)
 OUT: tokenring.p (29, 2): inferred type:  NIL
 OUT: tokenring.p (29, 16): inferred type:  BaseType(REAL)
-OUT: tokenring.p (29, 24): inferred type:  BaseType(REAL)
 OUT: tokenring.p (30, 9): inferred type:  NIL
 OUT: tokenring.p (30, 14): inferred type:  BaseType(REAL)
 OUT: tokenring.p (30, 22): inferred type:  BaseType(EVENT)
@@ -90,14 +88,14 @@ OUT: tokenring.p (115, 17): inferred type:  BaseType(EVENT)
 OUT: tokenring.p (124, 17): inferred type:  NIL
 OUT: tokenring.p (124, 21): inferred type:  BaseType(BOOL)
 OUT: tokenring.p (125, 19): inferred type:  NIL
-OUT: tokenring.p (125, 27): inferred type:  BaseType(BOOL)
 OUT: tokenring.p (127, 19): inferred type:  BaseType(BOOL)
 OUT: tokenring.p (127, 19): inferred type:  NIL
-OUT: tokenring.p (127, 27): inferred type:  BaseType(BOOL)
 OUT: tokenring.p (128, 17): inferred type:  NIL
 OUT: tokenring.p (129, 19): inferred type:  NIL
+OUT: tokenring.p (129, 27): inferred type:  BaseType(BOOL)
 OUT: tokenring.p (131, 19): inferred type:  BaseType(BOOL)
 OUT: tokenring.p (131, 19): inferred type:  NIL
+OUT: tokenring.p (131, 27): inferred type:  BaseType(BOOL)
 OUT: tokenring.p (133, 17): inferred type:  NIL
 OUT: tokenring.p (133, 21): inferred type:  BaseType(BOOL)
 OUT: tokenring.p (133, 28): inferred type:  BaseType(BOOL)

@@ -42,8 +42,7 @@ OUT: pingpongbugrepro.p (31, 17): inferred type:  BaseType(REAL)
 OUT: pingpongbugrepro.p (31, 22): inferred type:  BaseType(EVENT)
 OUT: pingpongbugrepro.p (55, 12): inferred type:  NIL
 OUT: pingpongbugrepro.p (55, 12): inferred type:  SeqType(BaseType(REAL))
-OUT: pingpongbugrepro.p (55, 20): inferred type:  BaseType(ANY)
-OUT: pingpongbugrepro.p (55, 28): inferred type:  SeqType(BaseType(REAL))
+OUT: pingpongbugrepro.p (55, 20): inferred type:  SeqType(BaseType(REAL))
 OUT: pingpongbugrepro.p (56, 4): inferred type:  NIL
 OUT: pingpongbugrepro.p (56, 23): inferred type:  BaseType(INT)
 OUT: pingpongbugrepro.p (56, 23): inferred type:  TupType(BaseType(INT), NIL)
@@ -53,16 +52,16 @@ OUT: pingpongbugrepro.p (57, 12): inferred type:  BaseType(REAL)
 OUT: pingpongbugrepro.p (57, 22): inferred type:  BaseType(REAL)
 OUT: pingpongbugrepro.p (58, 10): inferred type:  NIL
 OUT: pingpongbugrepro.p (58, 16): inferred type:  BaseType(EVENT)
-OUT: pingpongbugrepro.p (60, 27): inferred type:  MapType(BaseType(REAL), BaseType(BOOL))
-OUT: pingpongbugrepro.p (60, 27): inferred type:  NIL
-OUT: pingpongbugrepro.p (60, 34): inferred type:  BaseType(BOOL)
-OUT: pingpongbugrepro.p (60, 35): inferred type:  BaseType(REAL)
-OUT: pingpongbugrepro.p (60, 46): inferred type:  BaseType(BOOL)
-OUT: pingpongbugrepro.p (61, 29): inferred type:  NIL
-OUT: pingpongbugrepro.p (61, 41): inferred type:  BaseType(BOOL)
-OUT: pingpongbugrepro.p (61, 53): inferred type:  MapType(BaseType(REAL), BaseType(BOOL))
-OUT: pingpongbugrepro.p (61, 53): inferred type:  NIL
-OUT: pingpongbugrepro.p (61, 64): inferred type:  BaseType(REAL)
+OUT: pingpongbugrepro.p (60, 46): inferred type:  MapType(BaseType(REAL), BaseType(BOOL))
+OUT: pingpongbugrepro.p (60, 46): inferred type:  NIL
+OUT: pingpongbugrepro.p (60, 53): inferred type:  BaseType(BOOL)
+OUT: pingpongbugrepro.p (60, 54): inferred type:  BaseType(REAL)
+OUT: pingpongbugrepro.p (60, 65): inferred type:  BaseType(BOOL)
+OUT: pingpongbugrepro.p (61, 49): inferred type:  NIL
+OUT: pingpongbugrepro.p (61, 61): inferred type:  BaseType(BOOL)
+OUT: pingpongbugrepro.p (61, 73): inferred type:  MapType(BaseType(REAL), BaseType(BOOL))
+OUT: pingpongbugrepro.p (61, 73): inferred type:  NIL
+OUT: pingpongbugrepro.p (61, 84): inferred type:  BaseType(REAL)
 OUT: pingpongbugrepro.p (66, 7): inferred type:  NIL
 OUT: pingpongbugrepro.p (66, 27): inferred type:  BaseType(INT)
 OUT: pingpongbugrepro.p (66, 27): inferred type:  TupType(BaseType(INT), NIL)
@@ -228,8 +227,7 @@ OUT: pingpongbugrepro.p (161, 40): inferred type:  BaseType(INT)
 OUT: pingpongbugrepro.p (161, 42): inferred type:  BaseType(INT)
 OUT: pingpongbugrepro.p (170, 4): inferred type:  MapType(BaseType(REAL), BaseType(BOOL))
 OUT: pingpongbugrepro.p (170, 4): inferred type:  NIL
-OUT: pingpongbugrepro.p (170, 12): inferred type:  BaseType(ANY)
-OUT: pingpongbugrepro.p (170, 20): inferred type:  MapType(BaseType(REAL), BaseType(BOOL))
+OUT: pingpongbugrepro.p (170, 12): inferred type:  MapType(BaseType(REAL), BaseType(BOOL))
 OUT: pingpongbugrepro.p (173, 4): inferred type:  MapType(BaseType(REAL), BaseType(BOOL))
 OUT: pingpongbugrepro.p (173, 4): inferred type:  NIL
 OUT: pingpongbugrepro.p (173, 13): inferred type:  BaseType(REAL)
@@ -242,7 +240,7 @@ OUT: pingpongbugrepro.p (175, 11): inferred type:  BaseType(EVENT)
 OUT: pingpongbugrepro.p (179, 2): inferred type:  NIL
 OUT: timer.p (14, 7): inferred type:  BaseType(REAL)
 OUT: timer.p (14, 7): inferred type:  NIL
-OUT: timer.p (14, 16): inferred type:  BaseType(ANY)
+OUT: timer.p (14, 16): inferred type:  BaseType(REAL)
 OUT: timer.p (14, 24): inferred type:  BaseType(REAL)
 OUT: timer.p (15, 7): inferred type:  NIL
 OUT: timer.p (15, 13): inferred type:  BaseType(EVENT)

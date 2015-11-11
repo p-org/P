@@ -54,11 +54,11 @@ OUT: exproperatorsasserts.p (72, 21): inferred type:  BaseType(INT)
 OUT: exproperatorsasserts.p (72, 25): inferred type:  BaseType(BOOL)
 OUT: exproperatorsasserts.p (73, 5): inferred type:  NIL
 OUT: exproperatorsasserts.p (73, 17): inferred type:  BaseType(BOOL)
-OUT: exproperatorsasserts.p (75, 5): inferred type:  BaseType(ANY)
 OUT: exproperatorsasserts.p (75, 5): inferred type:  NIL
 OUT: exproperatorsasserts.p (75, 9): inferred type:  BaseType(NULL)
 OUT: exproperatorsasserts.p (76, 5): inferred type:  NIL
 OUT: exproperatorsasserts.p (76, 17): inferred type:  BaseType(BOOL)
+OUT: exproperatorsasserts.p (77, 5): inferred type:  BaseType(ANY)
 OUT: exproperatorsasserts.p (77, 5): inferred type:  NIL
 OUT: exproperatorsasserts.p (77, 9): inferred type:  BaseType(INT)
 OUT: exproperatorsasserts.p (78, 5): inferred type:  NIL
@@ -254,8 +254,7 @@ OUT: exproperatorsasserts.p (192, 8): inferred type:  NIL
 OUT: exproperatorsasserts.p (192, 15): inferred type:  BaseType(INT)
 OUT: exproperatorsasserts.p (200, 7): inferred type:  NIL
 OUT: exproperatorsasserts.p (200, 7): inferred type:  SeqType(BaseType(INT))
-OUT: exproperatorsasserts.p (200, 12): inferred type:  BaseType(ANY)
-OUT: exproperatorsasserts.p (200, 20): inferred type:  SeqType(BaseType(INT))
+OUT: exproperatorsasserts.p (200, 12): inferred type:  SeqType(BaseType(INT))
 OUT: exproperatorsasserts.p (201, 4): inferred type:  NIL
 OUT: exproperatorsasserts.p (201, 13): inferred type:  BaseType(INT)
 OUT: exproperatorsasserts.p (201, 14): inferred type:  BaseType(INT)

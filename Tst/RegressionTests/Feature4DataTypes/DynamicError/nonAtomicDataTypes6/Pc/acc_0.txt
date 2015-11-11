@@ -63,8 +63,7 @@ OUT: nonatomicdatatypes.p (64, 8): inferred type:  NIL
 OUT: nonatomicdatatypes.p (64, 15): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (72, 7): inferred type:  NIL
 OUT: nonatomicdatatypes.p (72, 7): inferred type:  SeqType(BaseType(INT))
-OUT: nonatomicdatatypes.p (72, 12): inferred type:  BaseType(ANY)
-OUT: nonatomicdatatypes.p (72, 20): inferred type:  SeqType(BaseType(INT))
+OUT: nonatomicdatatypes.p (72, 12): inferred type:  SeqType(BaseType(INT))
 OUT: nonatomicdatatypes.p (73, 4): inferred type:  NIL
 OUT: nonatomicdatatypes.p (73, 13): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (73, 14): inferred type:  BaseType(INT)

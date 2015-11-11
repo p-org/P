@@ -27,7 +27,7 @@ main machine MachOS {
 			INT = payload[1];
 		};
 		
-		on unit goto State1 (payload: any) {
+		on unit goto State1 with (payload: any) {
 			INT = payload;
 		};
 		

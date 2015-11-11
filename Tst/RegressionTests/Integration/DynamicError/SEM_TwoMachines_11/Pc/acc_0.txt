@@ -25,14 +25,10 @@ OUT: nonconstanteventexprmonitor.p (32, 3): inferred type:  BaseType(BOOL)
 OUT: nonconstanteventexprmonitor.p (32, 3): inferred type:  NIL
 OUT: nonconstanteventexprmonitor.p (32, 10): inferred type:  BaseType(BOOL)
 OUT: nonconstanteventexprmonitor.p (39, 9): inferred type:  NIL
-OUT: nonconstanteventexprmonitor.p (42, 4): inferred type:  NIL
-OUT: nonconstanteventexprmonitor.p (42, 8): inferred type:  BaseType(EVENT)
-OUT: nonconstanteventexprmonitor.p (42, 16): inferred type:  BaseType(BOOL)
-OUT: nonconstanteventexprmonitor.p (42, 19): inferred type:  BaseType(EVENT)
 OUT: nonconstanteventexprmonitor.p (44, 5): inferred type:  NIL
 OUT: nonconstanteventexprmonitor.p (50, 16): inferred type:  NIL
 OUT: nonconstanteventexprmonitor.p (57, 4): inferred type:  NIL
-OUT: nonconstanteventexprmonitor.p (57, 12): inferred type:  BaseType(ANY)
+OUT: nonconstanteventexprmonitor.p (57, 12): inferred type:  BaseType(BOOL)
 OUT: nonconstanteventexprmonitor.p (57, 20): inferred type:  BaseType(BOOL)
 OUT: nonconstanteventexprmonitor.p (57, 23): inferred type:  BaseType(BOOL)
 OUT: 

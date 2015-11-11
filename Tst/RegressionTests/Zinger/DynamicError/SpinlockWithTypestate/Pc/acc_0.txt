@@ -8,8 +8,7 @@ OUT: Writing SpinlockWithTypestate.zing ...
 OUT: Compiling SpinlockWithTypestate.zing to SpinlockWithTypestate.dll ...
 OUT: spinlockwithtypestate.p (20, 4): inferred type:  BaseType(INT)
 OUT: spinlockwithtypestate.p (20, 4): inferred type:  NIL
-OUT: spinlockwithtypestate.p (20, 9): inferred type:  BaseType(ANY)
-OUT: spinlockwithtypestate.p (20, 17): inferred type:  BaseType(INT)
+OUT: spinlockwithtypestate.p (20, 9): inferred type:  BaseType(INT)
 OUT: spinlockwithtypestate.p (23, 4): inferred type:  NIL
 OUT: spinlockwithtypestate.p (23, 12): inferred type:  BaseType(BOOL)
 OUT: spinlockwithtypestate.p (23, 14): inferred type:  BaseType(INT)

@@ -6,10 +6,12 @@ OUT: Writing program.h ...
 OUT: Writing program.c ...
 OUT: Writing BugReproIdenticalTerms.zing ...
 OUT: Compiling BugReproIdenticalTerms.zing to BugReproIdenticalTerms.dll ...
-OUT: bugreproidenticalterms.p (7, 11): inferred type:  NIL
-OUT: bugreproidenticalterms.p (7, 17): inferred type:  BaseType(EVENT)
-OUT: bugreproidenticalterms.p (15, 12): inferred type:  NIL
-OUT: bugreproidenticalterms.p (17, 11): inferred type:  NIL
-OUT: bugreproidenticalterms.p (17, 19): inferred type:  BaseType(BOOL)
+OUT: bugreproidenticalterms.p (6, 11): inferred type:  NIL
+OUT: bugreproidenticalterms.p (6, 17): inferred type:  BaseType(EVENT)
+OUT: bugreproidenticalterms.p (7, 10): inferred type:  NIL
+OUT: bugreproidenticalterms.p (7, 18): inferred type:  BaseType(BOOL)
+OUT: bugreproidenticalterms.p (14, 12): inferred type:  NIL
+OUT: bugreproidenticalterms.p (16, 11): inferred type:  NIL
+OUT: bugreproidenticalterms.p (16, 19): inferred type:  BaseType(BOOL)
 OUT: 
 EXIT: 0

@@ -1,6 +1,7 @@
 =================================
          Console output          
 =================================
+OUT: popinexitfun.p (10, 15): inferred type:  NIL
 OUT: popinexitfun.p (15, 4): inferred type:  NIL
 OUT: popinexitfun.p (20, 4): inferred type:  NIL
 OUT: popinexitfun.p (20, 11): inferred type:  BaseType(BOOL)

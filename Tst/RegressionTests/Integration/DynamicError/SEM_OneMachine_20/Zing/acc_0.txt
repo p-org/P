@@ -21,5 +21,5 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_1.bl,)
-Comment: (8, 10): Assert failed
+Expression: assert(tmp_2.bl,)
+Comment: (16, 11): Assert failed

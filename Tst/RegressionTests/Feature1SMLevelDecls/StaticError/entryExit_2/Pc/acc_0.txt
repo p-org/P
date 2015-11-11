@@ -5,6 +5,9 @@ OUT: entryexit_2.p (13, 4): inferred type:  BaseType(INT)
 OUT: entryexit_2.p (13, 4): inferred type:  NIL
 OUT: entryexit_2.p (13, 10): inferred type:  BaseType(INT)
 OUT: entryexit_2.p (13, 12): inferred type:  BaseType(INT)
+OUT: entryexit_2.p (16, 11): inferred type:  NIL
+OUT: entryexit_2.p (18, 22): inferred type:  NIL
+OUT: entryexit_2.p (20, 8): inferred type:  NIL
 OUT: entryexit_2.p (24, 3): inferred type:  BaseType(INT)
 OUT: entryexit_2.p (24, 3): inferred type:  NIL
 OUT: entryexit_2.p (24, 9): inferred type:  BaseType(INT)

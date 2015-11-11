@@ -110,8 +110,7 @@ OUT: seqassgntoany.p (99, 8): inferred type:  NIL
 OUT: seqassgntoany.p (99, 15): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (107, 7): inferred type:  NIL
 OUT: seqassgntoany.p (107, 7): inferred type:  SeqType(BaseType(INT))
-OUT: seqassgntoany.p (107, 12): inferred type:  BaseType(ANY)
-OUT: seqassgntoany.p (107, 20): inferred type:  SeqType(BaseType(INT))
+OUT: seqassgntoany.p (107, 12): inferred type:  SeqType(BaseType(INT))
 OUT: seqassgntoany.p (108, 4): inferred type:  NIL
 OUT: seqassgntoany.p (108, 13): inferred type:  BaseType(INT)
 OUT: seqassgntoany.p (108, 14): inferred type:  BaseType(INT)

@@ -46,16 +46,16 @@ OUT: payloadactionsfuns.p (35, 4): inferred type:  NIL
 OUT: payloadactionsfuns.p (35, 5): inferred type:  BaseType(INT)
 OUT: payloadactionsfuns.p (35, 11): inferred type:  BaseType(INT)
 OUT: payloadactionsfuns.p (36, 4): inferred type:  NIL
-OUT: payloadactionsfuns.p (36, 4): inferred type:  SeqType(BaseType(BOOL))
 OUT: payloadactionsfuns.p (36, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
-OUT: payloadactionsfuns.p (36, 13): inferred type:  BaseType(BOOL)
-OUT: payloadactionsfuns.p (36, 13): inferred type:  TupType(BaseType(BOOL), NIL)
 OUT: payloadactionsfuns.p (37, 4): inferred type:  NIL
+OUT: payloadactionsfuns.p (37, 4): inferred type:  SeqType(BaseType(BOOL))
 OUT: payloadactionsfuns.p (37, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
 OUT: payloadactionsfuns.p (37, 13): inferred type:  BaseType(BOOL)
 OUT: payloadactionsfuns.p (37, 13): inferred type:  TupType(BaseType(BOOL), NIL)
 OUT: payloadactionsfuns.p (38, 4): inferred type:  NIL
 OUT: payloadactionsfuns.p (38, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
+OUT: payloadactionsfuns.p (38, 13): inferred type:  BaseType(BOOL)
+OUT: payloadactionsfuns.p (38, 13): inferred type:  TupType(BaseType(BOOL), NIL)
 OUT: payloadactionsfuns.p (39, 4): inferred type:  NIL
 OUT: payloadactionsfuns.p (39, 9): inferred type:  BaseType(REAL)
 OUT: payloadactionsfuns.p (39, 15): inferred type:  BaseType(EVENT)
@@ -68,6 +68,12 @@ OUT: payloadactionsfuns.p (41, 4): inferred type:  NIL
 OUT: payloadactionsfuns.p (41, 15): inferred type:  BaseType(EVENT)
 OUT: payloadactionsfuns.p (41, 26): inferred type:  NmdTupType(NmdTupTypeField("first", MapType(BaseType(INT), BaseType(INT))), NmdTupType(NmdTupTypeField("sec", SeqType(BaseType(BOOL))), NIL))
 OUT: payloadactionsfuns.p (41, 37): inferred type:  NmdTupType(NmdTupTypeField("sec", SeqType(BaseType(BOOL))), NIL)
+OUT: payloadactionsfuns.p (44, 48): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
+OUT: payloadactionsfuns.p (44, 48): inferred type:  TupType(TupType(BaseType(INT), TupType(BaseType(BOOL), NIL)), NIL)
+OUT: payloadactionsfuns.p (45, 60): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("sec", BaseType(BOOL)), NIL))
+OUT: payloadactionsfuns.p (45, 60): inferred type:  TupType(NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("sec", BaseType(BOOL)), NIL)), NIL)
+OUT: payloadactionsfuns.p (46, 43): inferred type:  SeqType(BaseType(INT))
+OUT: payloadactionsfuns.p (46, 43): inferred type:  TupType(SeqType(BaseType(INT)), NIL)
 OUT: payloadactionsfuns.p (49, 4): inferred type:  BaseType(INT)
 OUT: payloadactionsfuns.p (49, 4): inferred type:  NIL
 OUT: payloadactionsfuns.p (49, 18): inferred type:  MapType(BaseType(INT), BaseType(INT))

@@ -18,6 +18,7 @@ OUT: raisedhalthandled.p (23, 23): inferred type:  BaseType(REAL)
 OUT: raisedhalthandled.p (24, 4): inferred type:  NIL
 OUT: raisedhalthandled.p (24, 10): inferred type:  BaseType(EVENT)
 OUT: raisedhalthandled.p (33, 5): inferred type:  NIL
+OUT: raisedhalthandled.p (39, 15): inferred type:  NIL
 OUT: raisedhalthandled.p (45, 3): inferred type:  BaseType(INT)
 OUT: raisedhalthandled.p (45, 3): inferred type:  NIL
 OUT: raisedhalthandled.p (45, 19): inferred type:  BaseType(INT)
@@ -26,8 +27,7 @@ OUT: raisedhalthandled.p (46, 3): inferred type:  NIL
 OUT: raisedhalthandled.p (46, 14): inferred type:  BaseType(BOOL)
 OUT: raisedhalthandled.p (47, 5): inferred type:  NIL
 OUT: raisedhalthandled.p (47, 10): inferred type:  BaseType(REAL)
-OUT: raisedhalthandled.p (47, 18): inferred type:  BaseType(REAL)
-OUT: raisedhalthandled.p (47, 30): inferred type:  BaseType(EVENT)
+OUT: raisedhalthandled.p (47, 19): inferred type:  BaseType(EVENT)
 OUT: raisedhalthandled.p (50, 3): inferred type:  NIL
 OUT: raisedhalthandled.p (50, 14): inferred type:  BaseType(BOOL)
 OUT: raisedhalthandled.p (50, 17): inferred type:  BaseType(INT)

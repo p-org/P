@@ -447,8 +447,8 @@ domain PStaticTyping extends PData
 	/*			Compute the hidden events per module			*/
 	/************************************************************/
 	HiddenEvents ::= (mdl: ModuleList, md: ModuleDecl, evl : EventList + {NIL}).
-	HiddenEvents(ml, mod, evl) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), evl : EventList, SubModule(hml, mod);
-							      ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), inl : InterfaceList, SubModule(hml, mod), evl = toList(#EventList, NIL, {ev | SubInterface(inl, i), InterfaceEventDecl(i, ev)}).
+	HiddenEvents(ml, mod, evl) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), evl : EventList, SubModule(hml, mod), no ImplementationModules(ml);
+							      ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), inl : InterfaceList, SubModule(hml, mod), evl = toList(#EventList, NIL, {ev | SubInterface(inl, i), InterfaceEventDecl(i, ev)}), no ImplementationModules(ml).
 	
 	//compute events hidden in an hide operation
 	HiddenEventsInOp ::= (h: Hide, ev: String).

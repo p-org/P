@@ -25,5 +25,4 @@ OUT: function.p (13, 5): return value has incorrect type
 OUT: function.p (21, 5): function must return a value
 OUT: function.p (33, 5): anonymous function cannot return a value
 OUT: Compilation failed
-OUT: 
 EXIT: -1

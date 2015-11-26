@@ -8,5 +8,4 @@ OUT: functionanyanon.p (11, 5): inferred type:  NIL
 OUT: functionanyanon.p (11, 12): inferred type:  BaseType(INT)
 OUT: functionanyanon.p (6, 5): anonymous function cannot return a value
 OUT: Compilation failed
-OUT: 
 EXIT: -1

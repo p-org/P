@@ -609,5 +609,4 @@ OUT: nonatomicdatatypes.p (320, 5): invalid assignment. right hand side is not a
 OUT: nonatomicdatatypes.p (320, 8): Indexer must be applied to a sequence or map
 OUT: nonatomicdatatypes.p (322, 5): "while (...)" expects a boolean value
 OUT: Compilation failed
-OUT: 
 EXIT: -1

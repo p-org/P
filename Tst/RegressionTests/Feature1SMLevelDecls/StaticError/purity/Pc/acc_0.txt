@@ -61,5 +61,4 @@ OUT: purity.p (48, 13): new M(...) can only be called like "new M(...);" or "x =
 OUT: purity.p (53, 12): this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);"
 OUT: purity.p (53, 23): this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);"
 OUT: Compilation failed
-OUT: 
 EXIT: -1

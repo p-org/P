@@ -54,5 +54,4 @@ OUT: payloadentry_1.p (48, 4): invalid assignment. right hand side is not a subt
 OUT: payloadentry_1.p (58, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: payloadentry_1.p (58, 23): Index may not be in the domain of the map
 OUT: Compilation failed
-OUT: 
 EXIT: -1

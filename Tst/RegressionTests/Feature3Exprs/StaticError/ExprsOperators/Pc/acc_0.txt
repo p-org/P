@@ -466,5 +466,4 @@ OUT: exproperators.p (173, 5): value not in the codomain of the map
 OUT: exproperators.p (219, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: exproperators.p (220, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: Compilation failed
-OUT: 
 EXIT: -1

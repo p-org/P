@@ -10,5 +10,4 @@ OUT: anonfunction.p (24, 3): inferred type:  NIL
 OUT: anonfunction.p (24, 14): inferred type:  NIL
 OUT: anonfunction.p (12, 3): transition to an undefined state
 OUT: Compilation failed
-OUT: 
 EXIT: -1

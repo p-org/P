@@ -58,5 +58,4 @@ OUT: controlimpureerrorsgoto.p (35, 8): this function must be pure. Data impure 
 OUT: controlimpureerrorsgoto.p (43, 31): function may cause a change in current state; this is not allowed here
 OUT: controlimpureerrorsgoto.p (44, 28): function may cause a change in current state; this is not allowed here
 OUT: Compilation failed
-OUT: 
 EXIT: -1

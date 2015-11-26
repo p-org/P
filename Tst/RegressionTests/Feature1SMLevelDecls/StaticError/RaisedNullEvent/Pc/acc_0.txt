@@ -17,5 +17,4 @@ OUT: raisednullevent.p (17, 10): inferred type:  BaseType(BOOL)
 OUT: raisednullevent.p (8, 4): argument 1 of "raise" expects an event value
 OUT: raisednullevent.p (13, 13): argument 2 of "send" expects an event value
 OUT: Compilation failed
-OUT: 
 EXIT: -1

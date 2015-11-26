@@ -21,5 +21,4 @@ OUT: fields.p (9, 10): Bad field name
 OUT: fields.p (9, 12): Operator expected first argument to be an integer value
 OUT: fields.p (9, 16): Bad field name
 OUT: Compilation failed
-OUT: 
 EXIT: -1

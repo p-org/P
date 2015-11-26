@@ -46,5 +46,4 @@ OUT: monitors.p (35, 3): Multiple actions over the same event
 OUT: monitors.p (37, 4): monitor may not use this keyword or perform nondeterministic choice or create machines or execute send
 OUT: monitors.p (43, 3): null transitions not allowed in monitors
 OUT: Compilation failed
-OUT: 
 EXIT: -1

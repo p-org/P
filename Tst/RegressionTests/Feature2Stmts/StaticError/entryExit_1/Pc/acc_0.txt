@@ -71,5 +71,4 @@ OUT: entryexit_1.p (99, 10): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (99, 12): inferred type:  BaseType(INT)
 OUT: entryexit_1.p (84, 4): monitor may not use this keyword or perform nondeterministic choice or create machines or execute send
 OUT: Compilation failed
-OUT: 
 EXIT: -1

@@ -13,5 +13,4 @@ OUT: sentnullevent.p (16, 3): inferred type:  NIL
 OUT: sentnullevent.p (16, 10): inferred type:  BaseType(BOOL)
 OUT: sentnullevent.p (12, 13): argument 2 of "send" expects an event value
 OUT: Compilation failed
-OUT: 
 EXIT: -1

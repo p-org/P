@@ -28,5 +28,4 @@ OUT: function_typos.p (21, 4): invalid payload type in send
 OUT: function_typos.p (21, 19): same name appears more than once in name tuple or named tuple type
 OUT: function_typos.p (21, 26): same name appears more than once in name tuple or named tuple type
 OUT: Compilation failed
-OUT: 
 EXIT: -1

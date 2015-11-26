@@ -56,5 +56,4 @@ OUT: controlimpureinexit.p (48, 10): function may cause a change in current stat
 OUT: controlimpureinexit.p (56, 10): function may cause a change in current state; this is not allowed here
 OUT: controlimpureinexit.p (60, 8): function may cause a change in current state; this is not allowed here
 OUT: Compilation failed
-OUT: 
 EXIT: -1

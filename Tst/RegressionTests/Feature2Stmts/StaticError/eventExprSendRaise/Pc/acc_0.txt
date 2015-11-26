@@ -24,5 +24,4 @@ OUT: eventexprsendraise.p (17, 4): argument 1 of "monitor" expects an event valu
 OUT: eventexprsendraise.p (19, 3): action on an undefined event
 OUT: eventexprsendraise.p (21, 3): action on an undefined event
 OUT: Compilation failed
-OUT: 
 EXIT: -1

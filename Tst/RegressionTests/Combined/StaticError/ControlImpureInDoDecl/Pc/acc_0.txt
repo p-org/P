@@ -51,5 +51,4 @@ OUT: controlimpuredodecl.p (82, 10): inferred type:  BaseType(INT)
 OUT: controlimpuredodecl.p (35, 14): this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);"
 OUT: controlimpuredodecl.p (37, 8): this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);"
 OUT: Compilation failed
-OUT: 
 EXIT: -1

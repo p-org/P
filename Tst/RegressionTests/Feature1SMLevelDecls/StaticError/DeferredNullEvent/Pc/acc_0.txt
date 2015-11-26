@@ -3,5 +3,4 @@
 =================================
 OUT: deferrednullevent.p (23, 8): Syntax error - Syntax error, unexpected NULL, expecting ID, or HALT
 OUT: Compilation failed
-OUT: 
 EXIT: -1

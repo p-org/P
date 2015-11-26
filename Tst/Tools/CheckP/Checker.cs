@@ -117,12 +117,10 @@ namespace CheckP
         private const string IncludeZingerOption = "incZing";
         private const string IncludePrtOption = "incPrt";
         private const string AddOption = "add";
-        private const string IgnorePromptOption = "igp";
         private const string DescrOption = "dsc";
         private const string ArgsPcOption = "argPc";
         private const string ArgsZingerOption = "argZing";
         private const string ArgsPrtOption = "argPrt";
-        private const string TestOption = "cfg";
         private const string DelOption = "del";
 
         private const string TmpStreamFile = "check-tmp.txt";
@@ -145,12 +143,10 @@ namespace CheckP
             IncludeZingerOption,
             IncludePrtOption,
             AddOption,
-            IgnorePromptOption,
             DescrOption,
             ArgsPcOption,
             ArgsZingerOption,
             ArgsPrtOption,
-            TestOption,
             DelOption
         };
 
@@ -162,13 +158,6 @@ namespace CheckP
         {
             get;
             private set;
-        }
-
-        public Checker(string activeDirectory, bool reset)
-        {
-            this.activeDirectory = activeDirectory;
-            this.reset = reset;
-            this.pciProcess = null;
         }
 
         public Checker(string activeDirectory, bool reset, PciProcess pciProcess)
@@ -190,12 +179,10 @@ namespace CheckP
                 IncludeZingerOption,
                 IncludePrtOption,
                 AddOption,
-                IgnorePromptOption,
                 DescrOption,
                 ArgsPcOption,
                 ArgsZingerOption,
                 ArgsPrtOption,
-                TestOption,
                 DelOption
             );
 
@@ -211,44 +198,8 @@ namespace CheckP
             Console.WriteLine("-{0}\tA list of files that should be included as output for zinger.exe", IncludeZingerOption);
             Console.WriteLine("-{0}\tA list of files that should be included as output for prt.exe", IncludePrtOption);
             Console.WriteLine("-{0}\tA list of files that should be deleted before running", DelOption);
-            Console.WriteLine("-{0}\tA test file with additional configuration", TestOption);
             Console.WriteLine("-{0}\tAdds the output of this run to set of acceptable outputs", AddOption);
-            Console.WriteLine("-{0}\tIgnore output sent to the prompt by commands", IgnorePromptOption);
             Console.WriteLine("-{0}\tDescriptions of this test", DescrOption);
-        }
-
-        /// <summary>
-        /// Runs check using command line arguments
-        /// </summary>
-        /// <returns></returns>
-        public bool Check()
-        {
-            Options opts;
-            int errPos;
-            string cmdStr;
-            if (!OptionParser.Parse(out opts, out errPos, out cmdStr))
-            {
-                Console.WriteLine("ERROR: Could not parse command line");
-                Console.WriteLine("INPUT: {0}", cmdStr);
-                Console.WriteLine("POS  : {0}^", errPos == 0 ? string.Empty : new string(' ', errPos));
-                Console.WriteLine();
-                PrintUsage();
-                return false;
-            }
-
-            bool isTestSet, result = true;
-            Tuple<OptValueKind, object>[] testFile;
-            result = ValidateOption(opts, TestOption, true, 1, 1, out isTestSet, out testFile) && result;
-            if (isTestSet)
-            {
-                result = opts.LoadMore(activeDirectory, (string)testFile[0].Item2) && result;
-                if (result)
-                {
-                    activeDirectory = new FileInfo(Path.Combine(activeDirectory, (string)testFile[0].Item2)).DirectoryName;
-                }
-            }
-
-            return result && Check(opts);
         }
 
         void SplitPcArgs(IEnumerable<object> pcArgs, out List<string> loadArgs, out List<string> compileArgs, out List<string> testArgs)
@@ -355,9 +306,6 @@ namespace CheckP
             //If CheckP is called from Test with "reset" option, override isAdd:
             if (!isAdd && this.reset) isAdd = true;
 
-            bool isIgnPrmpt;
-            result = ValidateOption(opts, IgnorePromptOption, true, 0, 0, out isIgnPrmpt, out values) && result;
-
             bool isDel;
             Tuple<OptValueKind, object>[] delFiles;
             result = ValidateOption(opts, DelOption, true, 1, int.MaxValue, out isDel, out delFiles) && result;
@@ -451,42 +399,27 @@ namespace CheckP
                 //Run components of the P tool chain specified in options:
                 if (isSetExePc)
                 {
-                    if (pciProcess == null)
+                    tmpWriter.WriteLine("=================================");
+                    tmpWriter.WriteLine("         Console output          ");
+                    tmpWriter.WriteLine("=================================");
+                    List<string> loadArgs, compileArgs, testArgs;
+                    SplitPcArgs(pcArgs.Select(x => x.Item2), out loadArgs, out compileArgs, out testArgs);
+                    pciProcess.Reset();
+                    pciProcess.Run("load", loadArgs);
+                    if (pciProcess.loadSucceeded)
                     {
-                        bool pcResult = Run(tmpWriter, isIgnPrmpt, exePc[0].Item2.ToString(), pcArgs);
-                        if (!pcResult)
-                        {
-                            result = false;
-                        }
-                        else if (isInclPc && !AppendIncludes(tmpWriter, includesPc))
-                        {
-                            result = false;
-                        }
+                        pciProcess.Run("compile", compileArgs);
+                        pciProcess.Run("test", testArgs);
+                    }
+                    tmpWriter.Write(pciProcess.outputString);
+                    tmpWriter.Write(pciProcess.errorString);
+                    if (pciProcess.loadSucceeded)
+                    {
+                        tmpWriter.WriteLine("EXIT: 0");
                     }
                     else
                     {
-                        tmpWriter.WriteLine("=================================");
-                        tmpWriter.WriteLine("         Console output          ");
-                        tmpWriter.WriteLine("=================================");
-                        List<string> loadArgs, compileArgs, testArgs;
-                        SplitPcArgs(pcArgs.Select(x => x.Item2), out loadArgs, out compileArgs, out testArgs);
-                        pciProcess.Reset();
-                        pciProcess.Run("load", loadArgs);
-                        if (pciProcess.loadSucceeded)
-                        {
-                            pciProcess.Run("compile", compileArgs);
-                            pciProcess.Run("test", testArgs);
-                        }
-                        tmpWriter.Write(pciProcess.outputString);
-                        tmpWriter.Write(pciProcess.errorString);
-                        if (pciProcess.loadSucceeded)
-                        {
-                            tmpWriter.WriteLine("EXIT: 0");
-                        }
-                        else
-                        {
-                            tmpWriter.WriteLine("EXIT: -1");
-                        }
+                        tmpWriter.WriteLine("EXIT: -1");
                     }
                 }
                 //Run Zinger if isSetExeZinger and: (a) pc.exe run and no errors from pc.exe; or (b) pc.exe was not set to run
@@ -500,7 +433,7 @@ namespace CheckP
                     // zingerResult will be false only if zinger command line call didn't work;
                     // otherwise, it will be "true", even if Zinger's exit value is non-zero
                     // TODO: catch Zinger's exit code 7 (wrong parameters) and report it to cmd window
-                    bool zingerResult = Run(tmpWriter, isIgnPrmpt, exeZinger[0].Item2.ToString(), zingerArgs);
+                    bool zingerResult = Run(tmpWriter, exeZinger[0].Item2.ToString(), zingerArgs);
 
                     //debug:
                     //Console.WriteLine("Zinger returned: {0}", zingerResult);
@@ -615,7 +548,7 @@ namespace CheckP
                     //Console.WriteLine("Running {0}", exePrt[0].Item2.ToString());
                     //bool prtResult = Run(tmpWriter, isIgnPrmpt, exePrt[0].Item2.ToString(), prtArgs);
                     //Console.WriteLine("Running {0}", testerExePath);
-                    bool prtResult = Run(tmpWriter, isIgnPrmpt, testerExePath, prtArgs);
+                    bool prtResult = Run(tmpWriter, testerExePath, prtArgs);
                     if (!prtResult)
                     {
                         result = false;
@@ -841,7 +774,6 @@ namespace CheckP
 
         private bool Run(
             StreamWriter outStream,
-            bool ignorePrompt,
             string exe,
             Tuple<OptValueKind, object>[] values)
         {
@@ -854,12 +786,9 @@ namespace CheckP
                 }
             }
 
-            if (!ignorePrompt)
-            {
-                outStream.WriteLine("=================================");
-                outStream.WriteLine("         Console output          ");
-                outStream.WriteLine("=================================");
-            }
+            outStream.WriteLine("=================================");
+            outStream.WriteLine("         Console output          ");
+            outStream.WriteLine("=================================");
 
             try
             {
@@ -876,23 +805,16 @@ namespace CheckP
                 string errorString = "";
                 var process = new Process();
                 process.StartInfo = psi;
-                process.OutputDataReceived += (s, e) => OutputReceived(ref outString, ignorePrompt, s, e);
-                process.ErrorDataReceived += (s, e) => ErrorReceived(ref errorString, ignorePrompt, s, e);
+                process.OutputDataReceived += (s, e) => OutputReceived(ref outString, s, e);
+                process.ErrorDataReceived += (s, e) => ErrorReceived(ref errorString, s, e);
                 process.Start();
                 process.BeginErrorReadLine();
                 process.BeginOutputReadLine();
                 process.WaitForExit();
 
-                if (ignorePrompt)
-                {
-                    Console.WriteLine("EXIT: {0}", process.ExitCode);
-                }
-                else
-                {
-                    outStream.Write(outString);
-                    outStream.Write(errorString);
-                    outStream.WriteLine("EXIT: {0}", process.ExitCode);
-                }
+                outStream.Write(outString);
+                outStream.Write(errorString);
+                outStream.WriteLine("EXIT: {0}", process.ExitCode);
             }
             catch (Exception e)
             {
@@ -942,36 +864,20 @@ namespace CheckP
 
         private static void OutputReceived(
             ref string outString,
-            bool ignorePrompt,
             object sender,
             DataReceivedEventArgs e)
         {
-            if (ignorePrompt)
-            {
-                Console.WriteLine("OUT: {0}", e.Data);
-            }
-            else
-            {
-                outString += string.Format("OUT: {0}\r\n", e.Data);
-            }
+            outString += string.Format("OUT: {0}\r\n", e.Data);
         }
 
         private static void ErrorReceived(
             ref string errorString,
-            bool ignorePrompt,
             object sender,
             DataReceivedEventArgs e)
         {
             if (!String.IsNullOrEmpty(e.Data))
             {
-                if (ignorePrompt)
-                {
-                     Console.WriteLine("ERROR: {0}", e.Data);
-                }
-                else
-                {
-                     errorString += string.Format("ERROR: {0}\r\n", e.Data);
-                }
+                errorString += string.Format("ERROR: {0}\r\n", e.Data);
             }
         }
 

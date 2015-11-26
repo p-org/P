@@ -28,7 +28,6 @@ namespace RunPTool
             {
                 bool reset = false;
                 string testFilePath = null;
-                string pciFilePath = null;
                 for (int i = 0; i < args.Length; i++)
                 {
                     string arg = args[i];
@@ -39,11 +38,6 @@ namespace RunPTool
                     else if (testFilePath == null && !arg.StartsWith("/"))
                     {
                         testFilePath = arg;
-                    }
-                    else if (pciFilePath == null && arg.StartsWith("/pciPath:"))
-                    {
-                        var colonIndex = arg.IndexOf(':');
-                        pciFilePath = arg.Substring(colonIndex + 1);
                     }
                     else
                     {
@@ -88,31 +82,6 @@ namespace RunPTool
                     }
                 }
 
-                /*
-                Stack<DirectoryInfo> stack = new Stack<DirectoryInfo>();
-                foreach (var di in activeDirs)
-                {
-                    stack.Push(di);
-                }
-                List<DirectoryInfo> dis = new List<DirectoryInfo>();
-                while (stack.Count > 0)
-                {
-                    var di = stack.Pop();
-                    dis.Add(di);
-                    foreach (var child in di.EnumerateDirectories())
-                    {
-                        stack.Push(child);
-                    }
-                }
-                int index = 0;
-                while (index < dis.Count)
-                {
-                    Compile(dis, ref index);
-                    GC.Collect();
-                }
-                return;
-                */
-
                 Console.WriteLine("Running tests");
                 int testCount = 0, failCount = 0;
                 StreamWriter failedTestsWriter = null;
@@ -134,17 +103,11 @@ namespace RunPTool
 
                 }
 
-                if (pciFilePath != null)
-                {
-                    pciProcess = new PciProcess(pciFilePath);
-                }
-
+                string executingProcessDirectoryName = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+                string pciFilePath = Path.Combine(executingProcessDirectoryName, "..\\..\\..\\..\\..\\..\\Bld\\Drops\\Plang_Debug_x86\\Compiler\\Pci.exe");
+                pciProcess = new PciProcess(pciFilePath);
                 Test(activeDirs, reset, ref testCount, ref failCount, failedTestsWriter, displayDiffsWriter);
-
-                if (pciFilePath != null)
-                {
-                    pciProcess.Shutdown();
-                }
+                pciProcess.Shutdown();
 
                 Console.WriteLine();
                 Console.WriteLine("Total tests: {0}, Passed tests: {1}. Failed tests: {2}", testCount, testCount - failCount, failCount);
@@ -173,44 +136,6 @@ namespace RunPTool
                 Environment.ExitCode = FailCode;
             }
         }   
-
-        private static Compiler compiler = null;
-        private static void Compile(List<DirectoryInfo> dis, ref int index)
-        {
-            compiler = new Compiler(true);
-            CommandLineOptions compilerOptions = new CommandLineOptions();
-            compilerOptions.analyzeOnly = true;
-            compilerOptions.shortFileNames = true;
-            compilerOptions.printTypeInference = true;
-            compilerOptions.erase = false;
-            compiler.Options = compilerOptions;
-
-            long usedMemory = GC.GetTotalMemory(false);
-            while (index < dis.Count)
-            {
-                long currUsedMemory = GC.GetTotalMemory(false);
-                if (currUsedMemory - usedMemory >= 500000000)
-                {
-                    compiler = null;
-                    break;
-                }
-
-                DirectoryInfo di = dis[index];
-                foreach (var fi in di.EnumerateFiles("*.p"))
-                {
-                    compiler.Options.outputDir = fi.DirectoryName;
-                    Console.WriteLine("Compiling {0}", fi.FullName);
-                    var result = compiler.Compile(fi.FullName);
-                    if (!result) continue;
-                    var zingSuccess = compiler.GenerateZing();
-                    Debug.Assert(zingSuccess);
-                    var cSuccess = compiler.GenerateC();
-                    Debug.Assert(cSuccess);
-                }
-
-                index++;
-            }
-        }
 
         //If reset = true, failedDirsWriter and displayDiffsWriter are "null"
         private static void Test(List<DirectoryInfo> diArray, bool reset, ref int testCount, ref int failCount,

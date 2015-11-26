@@ -105,5 +105,4 @@ OUT: sends.p (57, 4): invalid payload type in monitor
 OUT: sends.p (58, 4): invalid payload type in monitor (cannot send null value)
 OUT: sends.p (62, 4): argument 1 of "monitor" expects an event value
 OUT: Compilation failed
-OUT: 
 EXIT: -1

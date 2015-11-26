@@ -60,5 +60,4 @@ OUT: enclosedfuncalls.p (87, 3): inferred type:  NIL
 OUT: enclosedfuncalls.p (87, 10): inferred type:  BaseType(INT)
 OUT: enclosedfuncalls.p (27, 30): function may cause a change in current state; this is not allowed here
 OUT: Compilation failed
-OUT: 
 EXIT: -1

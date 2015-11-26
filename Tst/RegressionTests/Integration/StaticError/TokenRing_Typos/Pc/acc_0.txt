@@ -133,5 +133,4 @@ OUT: tokenring_typos.p (137, 39): Values cannot be compared because their types 
 OUT: tokenring_typos.p (159, 17): argument 1 of "raise" expects an event value
 OUT: tokenring_typos.p (159, 23): Undefined symbol
 OUT: Compilation failed
-OUT: 
 EXIT: -1

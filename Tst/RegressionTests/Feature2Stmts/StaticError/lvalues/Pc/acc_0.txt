@@ -43,5 +43,4 @@ OUT: lvalues.p (14, 14): this function must be pure. Data impure functions can o
 OUT: lvalues.p (16, 5): function requires arguments
 OUT: lvalues.p (17, 5): function arguments have incorrect types
 OUT: Compilation failed
-OUT: 
 EXIT: -1

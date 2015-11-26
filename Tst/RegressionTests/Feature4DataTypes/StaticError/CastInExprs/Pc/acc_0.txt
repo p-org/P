@@ -479,5 +479,4 @@ OUT: castinexprs.p (302, 19): Cast can never succeed
 OUT: castinexprs.p (348, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: castinexprs.p (348, 17): Cast can never succeed
 OUT: Compilation failed
-OUT: 
 EXIT: -1

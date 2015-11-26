@@ -20,5 +20,4 @@ OUT: eventdeferredhandledsamestate.p (27, 18): inferred type:  BaseType(BOOL)
 OUT: eventdeferredhandledsamestate.p (23, 3): Multiple actions over the same event
 OUT: eventdeferredhandledsamestate.p (24, 3): Multiple actions over the same event
 OUT: Compilation failed
-OUT: 
 EXIT: -1

@@ -85,5 +85,4 @@ OUT: payloads.p (51, 10): invalid payload type in raise
 OUT: payloads.p (52, 10): invalid payload type in raise
 OUT: payloads.p (53, 10): invalid payload type in raise
 OUT: Compilation failed
-OUT: 
 EXIT: -1

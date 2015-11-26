@@ -50,5 +50,4 @@ OUT: payloadactionsfuns.p (38, 23): Index may not be in the domain of the map
 OUT: payloadactionsfuns.p (48, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: payloadactionsfuns.p (49, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: Compilation failed
-OUT: 
 EXIT: -1

@@ -23,5 +23,4 @@ OUT: transdecl_dodecl.p (20, 3): transition on an undefined event
 OUT: transdecl_dodecl.p (21, 3): transition on an undefined event
 OUT: transdecl_dodecl.p (37, 2): transition to an undefined state
 OUT: Compilation failed
-OUT: 
 EXIT: -1

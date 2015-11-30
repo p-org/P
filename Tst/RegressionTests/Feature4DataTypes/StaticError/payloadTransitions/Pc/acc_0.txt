@@ -4,10 +4,10 @@
 OUT: payloadtransitions.p (12, 9): inferred type:  NIL
 OUT: payloadtransitions.p (17, 4): inferred type:  BaseType(INT)
 OUT: payloadtransitions.p (17, 4): inferred type:  NIL
+OUT: payloadtransitions.p (17, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
 OUT: payloadtransitions.p (17, 18): inferred type:  BaseType(INT)
 OUT: payloadtransitions.p (18, 4): inferred type:  BaseType(BOOL)
 OUT: payloadtransitions.p (18, 4): inferred type:  NIL
-OUT: payloadtransitions.p (18, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
 OUT: payloadtransitions.p (18, 19): inferred type:  BaseType(BOOL)
 OUT: payloadtransitions.p (22, 4): inferred type:  BaseType(INT)
 OUT: payloadtransitions.p (22, 4): inferred type:  NIL

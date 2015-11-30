@@ -518,13 +518,13 @@ OUT: nonatomicdatatypes.p (322, 12): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (324, 9): inferred type:  NIL
 OUT: nonatomicdatatypes.p (324, 15): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (324, 23): inferred type:  NIL
-OUT: nonatomicdatatypes.p (324, 32): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: nonatomicdatatypes.p (324, 35): inferred type:  BaseType(ANY)
 OUT: nonatomicdatatypes.p (324, 39): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (324, 44): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: nonatomicdatatypes.p (324, 47): inferred type:  BaseType(ANY)
 OUT: nonatomicdatatypes.p (325, 15): inferred type:  NIL
+OUT: nonatomicdatatypes.p (325, 24): inferred type:  MapType(BaseType(INT), BaseType(ANY))
+OUT: nonatomicdatatypes.p (325, 27): inferred type:  BaseType(ANY)
 OUT: nonatomicdatatypes.p (325, 31): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (325, 36): inferred type:  MapType(BaseType(INT), BaseType(ANY))
+OUT: nonatomicdatatypes.p (325, 39): inferred type:  BaseType(ANY)
 OUT: nonatomicdatatypes.p (326, 6): inferred type:  NIL
 OUT: nonatomicdatatypes.p (326, 12): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (328, 5): inferred type:  NIL

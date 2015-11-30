@@ -9,7 +9,7 @@
 }
 
 %token INT BOOL FOREIGN ANY SEQ MAP ID
-%token INCLUDE MAIN EVENT MACHINE MONITOR ASSUME SPEC
+%token TYPE INCLUDE MAIN EVENT MACHINE MONITOR ASSUME SPEC
 
 %token VAR START HOT COLD MODEL STATE FUN ACTION GROUP STATIC MODELS MONITORS
 
@@ -53,6 +53,7 @@ TopDeclList
 
 TopDecl
     : IncludeDecl
+	| TypeDefDecl
 	| EventDecl
 	| MachineDecl
 	| StaticFunDecl
@@ -75,6 +76,11 @@ Annotation
 	| ID ASSIGN FALSE   { AddAnnotUsrCnstVal($1.str, P_Root.UserCnstKind.FALSE, ToSpan(@1), ToSpan(@3)); }
 	| ID ASSIGN ID      { AddAnnotStringVal($1.str, $3.str, ToSpan(@1), ToSpan(@3));                     }
 	| ID ASSIGN INT     { AddAnnotIntVal($1.str, $3.str, ToSpan(@1), ToSpan(@3));                        }
+	;
+
+/******************* Type Declarations **********************/
+TypeDefDecl
+	: TYPE ID ASSIGN Type SEMICOLON   { AddTypeDef($2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 
 /******************* Include Declarations *******************/ 
@@ -305,6 +311,7 @@ Type
 	| MACHINE                               { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.REAL,    ToSpan(@1))); }						
 	| FOREIGN                               { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.FOREIGN, ToSpan(@1))); }						
 	| ANY                                   { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.ANY,     ToSpan(@1))); }
+	| ID                                    { PushNameType($1.str, ToSpan(@1)); }
 	| SEQ LBRACKET Type RBRACKET            { PushSeqType(ToSpan(@1)); }
 	| MAP LBRACKET Type COMMA Type RBRACKET { PushMapType(ToSpan(@1)); }
 	| LPAREN TupTypeList RPAREN	

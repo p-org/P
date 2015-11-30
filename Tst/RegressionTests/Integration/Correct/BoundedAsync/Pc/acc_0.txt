@@ -3,10 +3,10 @@
 =================================
 OUT: boundedasync.p (15, 4): inferred type:  BaseType(REAL)
 OUT: boundedasync.p (15, 4): inferred type:  NIL
+OUT: boundedasync.p (15, 9): inferred type:  BaseType(REAL)
+OUT: boundedasync.p (15, 21): inferred type:  BaseType(REAL)
 OUT: boundedasync.p (16, 4): inferred type:  BaseType(REAL)
 OUT: boundedasync.p (16, 4): inferred type:  NIL
-OUT: boundedasync.p (16, 9): inferred type:  BaseType(REAL)
-OUT: boundedasync.p (16, 21): inferred type:  BaseType(REAL)
 OUT: boundedasync.p (17, 13): inferred type:  BaseType(REAL)
 OUT: boundedasync.p (17, 13): inferred type:  NIL
 OUT: boundedasync.p (18, 4): inferred type:  NIL

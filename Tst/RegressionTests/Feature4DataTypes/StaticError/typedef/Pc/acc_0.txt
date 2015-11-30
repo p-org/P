@@ -1,0 +1,36 @@
+=================================
+         Console output          
+=================================
+OUT: typedef.p (20, 4): inferred type:  BaseType(BOOL)
+OUT: typedef.p (20, 4): inferred type:  NIL
+OUT: typedef.p (20, 10): inferred type:  BaseType(BOOL)
+OUT: typedef.p (21, 4): inferred type:  NIL
+OUT: typedef.p (21, 4): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
+OUT: typedef.p (21, 6): inferred type:  BaseType(INT)
+OUT: typedef.p (21, 14): inferred type:  BaseType(INT)
+OUT: typedef.p (21, 16): inferred type:  BaseType(INT)
+OUT: typedef.p (28, 4): inferred type:  BaseType(BOOL)
+OUT: typedef.p (28, 4): inferred type:  NIL
+OUT: typedef.p (28, 11): inferred type:  BaseType(BOOL)
+OUT: typedef.p (29, 4): inferred type:  NIL
+OUT: typedef.p (29, 4): inferred type:  NmdTupType(NmdTupTypeField("b", BaseType(INT)), NmdTupType(NmdTupTypeField("c", BaseType(BOOL)), NIL))
+OUT: typedef.p (29, 7): inferred type:  BaseType(INT)
+OUT: typedef.p (29, 16): inferred type:  BaseType(INT)
+OUT: typedef.p (29, 18): inferred type:  BaseType(INT)
+OUT: typedef.p (36, 4): inferred type:  NIL
+OUT: typedef.p (36, 4): inferred type:  SeqType(BaseType(INT))
+OUT: typedef.p (36, 11): inferred type:  BaseType(INT)
+OUT: typedef.p (36, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: typedef.p (36, 13): inferred type:  TupType(BaseType(INT), NIL)
+OUT: typedef.p (43, 4): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
+OUT: typedef.p (43, 4): inferred type:  NIL
+OUT: typedef.p (43, 7): inferred type:  BaseType(BOOL)
+OUT: typedef.p (43, 8): inferred type:  BaseType(INT)
+OUT: typedef.p (43, 13): inferred type:  BaseType(BOOL)
+OUT: typedef.p (1, 6): type depends on itself
+OUT: typedef.p (1, 21): type depends on itself
+OUT: typedef.p (2, 6): type depends on itself
+OUT: typedef.p (2, 16): type depends on itself
+OUT: typedef.p (14, 9): undefined type
+OUT: Compilation failed
+EXIT: -1

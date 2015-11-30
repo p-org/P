@@ -11,6 +11,12 @@
 
     public class PProgram
     {
+        public List<P_Root.TypeDef> TypeDefs
+        {
+            get;
+            private set;
+        }
+
         public List<P_Root.EventDecl> Events
         {
             get;
@@ -75,6 +81,11 @@
         {
             get
             {
+                foreach (var td in TypeDefs)
+                {
+                    yield return td;
+                }
+                
                 foreach (var ed in Events)
                 {
                     yield return ed;
@@ -129,6 +140,7 @@
 
         public PProgram()
         {
+            TypeDefs = new List<P_Root.TypeDef>();
             Events = new List<P_Root.EventDecl>();
             Machines = new List<P_Root.MachineDecl>();
             States = new List<P_Root.StateDecl>();

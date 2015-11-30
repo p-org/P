@@ -305,6 +305,13 @@
             typeExprStack.Push(typeExpr);
         }
 
+        private void PushNameType(string name, Span span)
+        {
+            var nameType = P_Root.MkNameType(MkString(name, span));
+            nameType.Span = span;
+            typeExprStack.Push(nameType);
+        }
+
         private void PushSeqType(Span span)
         {
             Contract.Assert(typeExprStack.Count > 0);
@@ -1115,6 +1122,14 @@
         #endregion
 
         #region Adders
+        private void AddTypeDef(string name, Span nameSpan, Span typeDefSpan)
+        {
+            var type = (P_Root.IArgType_TypeDef__1)typeExprStack.Pop();
+            var typeDef = P_Root.MkTypeDef(MkString(name, nameSpan), type);
+            typeDef.Span = typeDefSpan;
+            parseProgram.TypeDefs.Add(typeDef);
+        }
+
         private void AddGroup()
         {
             groupStack.Pop();

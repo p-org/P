@@ -20,10 +20,10 @@ OUT: receive1.p (15, 4): inferred type:  NIL
 OUT: receive1.p (15, 13): inferred type:  BaseType(BOOL)
 OUT: receive1.p (15, 16): inferred type:  BaseType(INT)
 OUT: receive1.p (19, 3): inferred type:  NIL
+OUT: receive1.p (19, 8): inferred type:  BaseType(REAL)
 OUT: receive1.p (19, 11): inferred type:  BaseType(EVENT)
 OUT: receive1.p (19, 14): inferred type:  BaseType(INT)
 OUT: receive1.p (20, 3): inferred type:  NIL
-OUT: receive1.p (20, 8): inferred type:  BaseType(REAL)
 OUT: receive1.p (20, 11): inferred type:  BaseType(EVENT)
 OUT: receive1.p (20, 14): inferred type:  BaseType(INT)
 OUT: receive1.p (22, 14): inferred type:  BaseType(INT)

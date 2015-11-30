@@ -295,6 +295,7 @@ namespace Microsoft.Pc
         public Dictionary<string, FunInfo> allStaticFuns;
         public string mainMachineName;
         private Dictionary<AST<Node>, string> anonFunToName;
+        public Dictionary<AST<FuncTerm>, FuncTerm> typeExpansion;
 
         public LinkedList<AST<FuncTerm>> GetBin(Dictionary<string, LinkedList<AST<FuncTerm>>> factBins, FuncTerm ft)
         {
@@ -337,7 +338,7 @@ namespace Microsoft.Pc
         public PToZing(Compiler compiler, List<AST<Model>> allModels, AST<Model> modelWithTypes)
         {
             this.compiler = compiler;
-            this.typeContext = new TypeTranslationContext();
+            this.typeContext = new TypeTranslationContext(this);
             GenerateProgramData(allModels);
             GenerateTypeInfo(modelWithTypes);
         }
@@ -367,6 +368,7 @@ namespace Microsoft.Pc
             allEvents[NullEvent] = new EventInfo(1, false, PTypeNull.Node);
             allMachines = new Dictionary<string, MachineInfo>();
             allStaticFuns = new Dictionary<string, FunInfo>();
+            typeExpansion = new Dictionary<AST<FuncTerm>, FuncTerm>();
 
             LinkedList<AST<FuncTerm>> terms;
 
@@ -835,6 +837,19 @@ namespace Microsoft.Pc
                             allMachines[ownerName].funNameToFunInfo[funName].typeInfo[expr] = type;
                         }
                     }
+                }
+            }
+
+            terms = GetBin(factBins, "TypeExpansion");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var type = (AST<FuncTerm>)Factory.Instance.ToAST(it.Current);
+                    it.MoveNext();
+                    var eType = (FuncTerm)it.Current;
+                    typeExpansion[type] = eType;
                 }
             }
 
@@ -3574,9 +3589,11 @@ namespace Microsoft.Pc
             private List<AST<Node>> typeInitialization;
             private Dictionary<string, AST<FuncTerm>> fieldNameToZingExpr;
             private Dictionary<AST<Node>, AST<Node>> pTypeToZingExpr;
+            private PToZing pToZing;
 
-            public TypeTranslationContext()
+            public TypeTranslationContext(PToZing pToZing)
             {
+                this.pToZing = pToZing;
                 fieldCount = 0;
                 typeCount = 0;
                 fieldNameInitialization = new List<AST<Node>>();
@@ -3645,6 +3662,7 @@ namespace Microsoft.Pc
 
             private AST<Node> ConstructType(FuncTerm type)
             {
+                type = pToZing.typeExpansion[(AST<FuncTerm>)Factory.Instance.ToAST(type)];
                 string typeKind = ((Id)type.Function).Name;
                 if (typeKind == "BaseType")
                 {

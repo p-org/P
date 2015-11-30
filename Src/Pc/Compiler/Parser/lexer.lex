@@ -75,6 +75,7 @@
 			 keywords.Add("seq", (int)Tokens.SEQ);
 			 keywords.Add("map", (int)Tokens.MAP);
 
+			 keywords.Add("type", (int)Tokens.TYPE);
 			 keywords.Add("include", (int)Tokens.INCLUDE);
 			 keywords.Add("main", (int)Tokens.MAIN);
 			 keywords.Add("event", (int)Tokens.EVENT);

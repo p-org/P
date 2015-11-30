@@ -8,15 +8,18 @@ domain PData
     /*************************************************************/
     /****************          Type Language          ************/
     /*************************************************************/    
-       
+    
+	TypeDef         ::= new (name: String, type: any TypeExpr).
+
     //// The BaseType REAL is the type of real machines.
+	NameType        ::= new (name: String).
     BaseType        ::= new ({ NULL, BOOL, INT, EVENT, REAL, FOREIGN, ANY }).
     TupType         ::= new (hd: any TypeExpr, tl: any TupType + { NIL }).
     NmdTupType      ::= new (hd: any NmdTupTypeField, tl: any NmdTupType + { NIL }).
     SeqType         ::= new (x: any TypeExpr).
     MapType         ::= new (k: any TypeExpr, v: any TypeExpr).
     NmdTupTypeField ::= new (name: any String, type: any TypeExpr). 
-    TypeExpr        ::= BaseType + TupType + NmdTupType + SeqType + MapType.
+    TypeExpr        ::= NameType + BaseType + TupType + NmdTupType + SeqType + MapType.
         
     /*************************************************************/
     /****************          Action Language        ************/
@@ -206,7 +209,49 @@ domain PStaticTyping extends PData
 	conforms no LValueError(_, _).
 	conforms no BadLabelError(_).
 	conforms no PayloadError(_).
+	conforms no TypeDefError(_).
     /*************************************************************/
+
+	//// Check that TypeDef's are used properly
+
+	AllTypeExprs ::= sub (TypeExpr).
+	TypeDefError ::= (name: String).
+
+	[rule_Classes = '"error, msg: undefined type"']
+	TypeDefError(name) :- AllTypeExprs(type), type = NameType(name), no TypeDef(name, _).
+
+	TypeDefDepends ::= sub (typeDef: TypeDef, type: NameType).
+	NameTypeDepends ::= (name1: String, name2: String).
+	NameTypeDepends(typeDef.name, type.name) :- TypeDefDepends(typeDef, type).
+	NameTypeDepends(name1, name3) :- NameTypeDepends(name1, name2), NameTypeDepends(name2, name3).
+	[rule_Classes = '"error, msg: type depends on itself"']
+	TypeDefError(name) :- NameTypeDepends(name, name).
+
+	TypeExpansion ::= (type: TypeExpr, eType: TypeExpr).
+
+	TypeExpansion(BaseType(NULL), BaseType(NULL)).
+	TypeExpansion(BaseType(BOOL), BaseType(BOOL)).
+	TypeExpansion(BaseType(INT), BaseType(INT)).
+	TypeExpansion(BaseType(EVENT), BaseType(EVENT)).
+	TypeExpansion(BaseType(REAL), BaseType(REAL)).
+	TypeExpansion(BaseType(FOREIGN), BaseType(FOREIGN)).
+	TypeExpansion(BaseType(ANY), BaseType(ANY)).
+	//TypeExpansion(t, t) :- TypeOf(_, _, t), t : TypeExpr.
+	TypeExpansion(t, t) :- TypeOf(_, Tuple(_), t), t : TypeExpr.
+	TypeExpansion(t, t) :- TypeOf(_, NamedTuple(_), t), t : TypeExpr.
+	TypeExpansion(t, t) :- TypeExpansion(_, TupType(t, _)), t : TypeExpr.
+	TypeExpansion(t, t) :- TypeExpansion(_, TupType(_, t)), t : TypeExpr.
+	TypeExpansion(t, t) :- TypeExpansion(_, NmdTupType(f, _)), t = f.type.
+	TypeExpansion(t, t) :- TypeExpansion(_, NmdTupType(_, t)), t : TypeExpr.
+
+	TypeExpansion(type, type) :- AllTypeExprs(type), type = BaseType(_).
+	TypeExpansion(type, eType) :- typeDef is TypeDef, type = NameType(typeDef.name), TypeExpansion(typeDef.type, eType).
+	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
+	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = TupType(hd', tl').
+	TypeExpansion(type, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(name, hd), NIL), TypeExpansion(hd, hd'), eType = NmdTupType(NmdTupTypeField(name, hd'), NIL).
+	TypeExpansion(type, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(name, hd), tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = NmdTupType(NmdTupTypeField(name, hd'), tl').
+	TypeExpansion(type, eType) :- AllTypeExprs(type), type = SeqType(x), TypeExpansion(x, x'), eType = SeqType(x').
+	TypeExpansion(type, eType) :- AllTypeExprs(type), type = MapType(k, v), TypeExpansion(k, k'), TypeExpansion(v, v'), eType = MapType(k', v').
 
     //// The declarations that may contain expressions or statements that should be typed.
     TypingContext ::= FunDecl + AnonFunDecl.
@@ -281,8 +326,8 @@ domain PStaticTyping extends PData
     TypeOf(c, e, t1)              :- TypeOfArg1(c, e, t1), e : NamedTuple.
 
 	// Names can hide other names in the following order: local variable hides machine variable hides event
-	TypeOf(c, e, t)	              :- SubSE(c, e), e = Name(n), TypeOfLocalVar(c, n, t).
-    TypeOf(c, e, t)               :- SubSE(c, e), e = Name(n), VarDecl(n, c.owner, t), no TypeOfLocalVar(c, n, _). 
+	TypeOf(c, e, et)              :- SubSE(c, e), e = Name(n), TypeOfLocalVar(c, n, t), TypeExpansion(t, et).
+    TypeOf(c, e, et)              :- SubSE(c, e), e = Name(n), VarDecl(n, c.owner, t), TypeExpansion(t, et), no TypeOfLocalVar(c, n, _). 
     TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = Name(n), EventDecl(n, _, _), no VarDecl(n, c.owner, _), no TypeOfLocalVar(c, n, _). 
 
     IsEventCnst(c, e, BaseType(NULL)) :- SubSE(c, e), e = Name(n), EventDecl(n, _, NIL), no VarDecl(n, c.owner, _), no TypeOfLocalVar(c, n, _). 
@@ -385,8 +430,8 @@ domain PStaticTyping extends PData
 	TypeOf(c, e, t) :- TypeOfArg2(c, e, t1, t2), e = NamedExprs(n, _, _), t2 : NmdTupType, t = NmdTupType(NmdTupTypeField(n, t1), t2).
 	
 	//// (6) FunApps must refer to a defined function that has a non-NIL return type and args must be sub-types of function signature. 
-	TypeOf(c, e, t) :- SubSE(c, e), e = FunApp(n, NIL), decl = FunDecl(n, _, _, NIL, t, _, _), t != NIL, FunAvailable(decl, c.owner).
-	TypeOf(c, e, t) :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FuncSigTupleType(decl, inpt), decl.name = n, decl.return = t, FunAvailable(decl, c.owner), TypeRel(t1, inpt, SUB), t != NIL.
+	TypeOf(c, e, et) :- SubSE(c, e), e = FunApp(n, NIL), decl = FunDecl(n, _, _, NIL, t, _, _), FunAvailable(decl, c.owner), t != NIL, TypeExpansion(t, et).
+	TypeOf(c, e, et) :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FuncSigTupleType(decl, inpt), decl.name = n, decl.return = t, FunAvailable(decl, c.owner), TypeRel(t1, inpt, SUB), t != NIL, TypeExpansion(t, et).
 
 	[ rule_Classes = '"error, msg: function not defined"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _), no FunDecl(n, c.owner, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _).
@@ -702,7 +747,7 @@ domain PStaticTyping extends PData
     TypeOfLocalVarAux(cntxt, name, type, tl) :- LocalVars(cntxt, locals), locals = NmdTupType(NmdTupTypeField(name, type), tl).
     TypeOfLocalVarAux(cntxt, name, type, tl) :- TypeOfLocalVarAux(cntxt, _, _, aux), aux = NmdTupType(NmdTupTypeField(name, type), tl).
     
-    TypeOfLocalVar(cntxt, name, type)  :- TypeOfLocalVarAux(cntxt, name, type, aux), no { aux' | TypeOfLocalVarAux(cntxt, name, _, aux'), aux != aux' }.      
+    TypeOfLocalVar(cntxt, name, type)  :- TypeOfLocalVarAux(cntxt, name, type, aux), no { aux' | TypeOfLocalVarAux(cntxt, name, _, aux'), aux != aux' }.
 	[ rule_Classes = '"error, msg: Variable with same name has been declared before"']
     TypeOfLocalVar(cntxt, name, ERROR) :- TypeOfLocalVarAux(cntxt, name, _, aux), TypeOfLocalVarAux(cntxt, name, _, aux'), aux != aux'.
 
@@ -715,7 +760,7 @@ domain PStaticTyping extends PData
     TypeOfFormalParamAux(cntxt, name, type, tl) :- cntxt is FunDecl(_, _, _, params, _, _, _), params = NmdTupType(NmdTupTypeField(name, type), tl).  
     TypeOfFormalParamAux(cntxt, name, type, tl) :- TypeOfFormalParamAux(cntxt, _, _, aux), aux = NmdTupType(NmdTupTypeField(name, type), tl).
     
-    TypeOfFormalParam(cntxt, name, type)  :- TypeOfFormalParamAux(cntxt, name, type, aux), no { aux' | TypeOfFormalParamAux(cntxt, name, _, aux'), aux != aux' }.      
+    TypeOfFormalParam(cntxt, name, type)  :- TypeOfFormalParamAux(cntxt, name, type, aux), no { aux' | TypeOfFormalParamAux(cntxt, name, _, aux'), aux != aux' }.
 	//// This error is generated as part of DupNmdSubE
     TypeOfFormalParam(cntxt, name, ERROR) :- TypeOfFormalParamAux(cntxt, name, _, aux), TypeOfFormalParamAux(cntxt, name, _, aux'), aux != aux'.
 
@@ -1095,16 +1140,16 @@ domain PStaticTyping extends PData
     /*************************************************************/	
 
 	EventPayloadType ::= (e: String + { NULL, HALT }, t: TypeExpr).
-	EventPayloadType(e, t) :- EventDecl(e, _, t), t: TypeExpr.
-	EventPayloadType(e, t) :- EventDecl(e, _, NIL), t = BaseType(NULL).
+	EventPayloadType(e, et) :- EventDecl(e, _, t), t: TypeExpr, TypeExpansion(t, et).
+	EventPayloadType(e, t)  :- EventDecl(e, _, NIL), t = BaseType(NULL).
 	EventPayloadType(NULL, t) :- t = BaseType(NULL).
 	EventPayloadType(HALT, t) :- t = BaseType(ANY).
 
 	PayloadVarType ::= (TypeExpr).
-	PayloadVarType(ft) :- s is StateDecl, ft = s.entryAction.envVars.hd.type; 
-						  t is TransDecl, ft = t.action.envVars.hd.type;
-						  d is DoDecl, ft = d.action.envVars.hd.type;
-						  SubSE(_, cases), cases: Cases, ft = cases.action.envVars.hd.type.
+	PayloadVarType(ft) :- s is StateDecl, TypeExpansion(s.entryAction.envVars.hd.type, ft); 
+						  t is TransDecl, TypeExpansion(t.action.envVars.hd.type, ft);
+						  d is DoDecl, TypeExpansion(d.action.envVars.hd.type, ft);
+						  SubSE(_, cases), cases: Cases, TypeExpansion(cases.action.envVars.hd.type, ft).
 
 	CompTypeRel(et, ft) :- EventPayloadType(_, et), PayloadVarType(ft);
 						   SubSE(c, n), n: New, TypeOf(c, n.arg, et), et: TypeExpr, PayloadVarType(ft);

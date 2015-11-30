@@ -17,9 +17,9 @@ OUT: raisedhalt.p (39, 15): inferred type:  NIL
 OUT: raisedhalt.p (45, 3): inferred type:  BaseType(INT)
 OUT: raisedhalt.p (45, 3): inferred type:  NIL
 OUT: raisedhalt.p (45, 19): inferred type:  BaseType(INT)
-OUT: raisedhalt.p (45, 21): inferred type:  BaseType(INT)
 OUT: raisedhalt.p (46, 3): inferred type:  NIL
 OUT: raisedhalt.p (46, 14): inferred type:  BaseType(BOOL)
+OUT: raisedhalt.p (46, 17): inferred type:  BaseType(INT)
 OUT: raisedhalt.p (47, 5): inferred type:  NIL
 OUT: raisedhalt.p (47, 10): inferred type:  BaseType(REAL)
 OUT: raisedhalt.p (47, 19): inferred type:  BaseType(EVENT)

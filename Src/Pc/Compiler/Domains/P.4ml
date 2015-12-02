@@ -675,15 +675,15 @@ domain PStaticTyping extends PData
 
 	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Raise(ev, _), TypeOf(c, ev, evt), evt != BaseType(EVENT), no IsEventCnst(c, ev, _).
 	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Raise(ev, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), no IsEventCnst(c, ev, _).
-	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Raise(ev, _), IsEventCnst(c, ev, plt).
+	CommStmtPLType(c, e, plt')          :- SubSE(c, e), e = Raise(ev, _), IsEventCnst(c, ev, plt), TypeExpansion(plt, plt').
 
 	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Send(_, ev, _), TypeOf(c, ev, evt), evt != BaseType(EVENT), no IsEventCnst(c, ev, _).
 	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Send(_, ev, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), no IsEventCnst(c, ev, _).
-	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Send(_, ev, _), IsEventCnst(c, ev, plt).
+	CommStmtPLType(c, e, plt')          :- SubSE(c, e), e = Send(_, ev, _), IsEventCnst(c, ev, plt), TypeExpansion(plt, plt').
 
 	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Monitor(ev, _), TypeOf(c, ev, evt), evt != BaseType(EVENT), no IsEventCnst(c, ev, _).
 	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Monitor(ev, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), no IsEventCnst(c, ev, _).
-	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Monitor(ev, _), IsEventCnst(c, ev, plt).
+	CommStmtPLType(c, e, plt')          :- SubSE(c, e), e = Monitor(ev, _), IsEventCnst(c, ev, plt), TypeExpansion(plt, plt').
 
     /*************************************************************/
     /*                      Field helpers                        */
@@ -1158,24 +1158,24 @@ domain PStaticTyping extends PData
     PayloadError ::= (TransDecl + DoDecl + StateDecl + Cases + New + NewStmt).
 
 	[ rule_Classes = '"error, msg: Payload type for event must be subtype of payload type of transition function;"']
-	PayloadError(t) :- t is TransDecl, EventPayloadType(t.trig, et), ft = t.action.envVars.hd.type,
+	PayloadError(t) :- t is TransDecl, EventPayloadType(t.trig, et), TypeExpansion(t.action.envVars.hd.type, ft),
 	                   TypeRel(et, ft, k), et != ft, k != SUB.
 	[ rule_Classes = '"error, msg: Payload type for event must be subtype of payload type of do function;"']
-	PayloadError(t) :- t is DoDecl, EventPayloadType(t.trig, et), ft = t.action.envVars.hd.type,
+	PayloadError(t) :- t is DoDecl, EventPayloadType(t.trig, et), TypeExpansion(t.action.envVars.hd.type, ft),
 	                   TypeRel(et, ft, k), et != ft, k != SUB.
 	[ rule_Classes = '"error, msg: Payload type for event on incoming transition must be subtype of payload type of state entry function;"']
 	PayloadError(s) :- t is TransDecl, EventPayloadType(t.trig, et), 
-					   s is StateDecl, s.name = t.dst, s.owner = t.src.owner, ft = s.entryAction.envVars.hd.type,
+					   s is StateDecl, s.name = t.dst, s.owner = t.src.owner, TypeExpansion(s.entryAction.envVars.hd.type, ft),
 					   TypeRel(et, ft, k), et != ft, k != SUB.
 	[ rule_Classes = '"error, msg: Payload type for event must be subtype of payload type of case function;"']
-	PayloadError(cases) :- SubSE(_, cases), cases: Cases, EventPayloadType(cases.trig, et), ft = cases.action.envVars.hd.type,
+	PayloadError(cases) :- SubSE(_, cases), cases: Cases, EventPayloadType(cases.trig, et), TypeExpansion(cases.action.envVars.hd.type, ft),
 						   TypeRel(et, ft, k), et != ft, k != SUB. 
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
 	PayloadError(n) :- SubSE(c, n), n: New, TypeOf(c, n.arg, type), type: TypeExpr,
 					   m is MachineDecl, m.name = n.name, s is StateDecl, s.owner = m, s.name = m.start, 
-					   ft = s.entryAction.envVars.hd.type, TypeRel(type, ft, k), type != ft, k != SUB.
+					   TypeExpansion(s.entryAction.envVars.hd.type, ft), TypeRel(type, ft, k), type != ft, k != SUB.
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
 	PayloadError(n) :- SubSE(c, n), n: NewStmt, TypeOf(c, n.arg, type), type: TypeExpr,
 					   m is MachineDecl, m.name = n.name, s is StateDecl, s.owner = m, s.name = m.start,
-					   ft = s.entryAction.envVars.hd.type, TypeRel(type, ft, k), type != ft, k != SUB.	
+					   TypeExpansion(s.entryAction.envVars.hd.type, ft), TypeRel(type, ft, k), type != ft, k != SUB.	
 }

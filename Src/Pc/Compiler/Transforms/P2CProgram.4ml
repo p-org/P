@@ -515,7 +515,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// An EventDecl without a payload type has a null payload type.
 	EvDecl2PayloadType(d, e) :- d is EventDecl(_, _, NIL), TypeConstant(in.BaseType(NULL), typeId, _), e = Ident(strJoin("P_GEND_TYPE_", toString(typeId))).
 	//// An EventDecl with a payload type refers to one of the statically generated types.
-	EvDecl2PayloadType(d, e) :- d is EventDecl(_, _, type), TypeConstant(type, typeId, _), e = Ident(strJoin("P_GEND_TYPE_", toString(typeId))), type : in.TypeExpr.
+	EvDecl2PayloadType(d, e) :- d is EventDecl(_, _, type), TypeExpansion(type, eType), TypeConstant(eType, typeId, _), e = Ident(strJoin("P_GEND_TYPE_", toString(typeId))), type : in.TypeExpr.
 
 	EvDecl2EvCard      ::= (EventDecl, out.Expr).
 	//// An EventDecl without a queue constraint allows 2^32 - 1 events in a queue.

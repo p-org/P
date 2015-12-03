@@ -1,0 +1,10 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state S1
+OUT: <EnqueueLog> Enqueued event test with payload ((1, (100, false)), [(1, (100, false))]) on Machine Main(1)
+OUT: <DequeueLog> Dequeued event test with payload ((1, (100, false)), [(1, (100, false))]) by Machine Main(1)
+OUT: <ActionLog> Machine Main(1) executed action in state S1
+OUT: 
+EXIT: 0

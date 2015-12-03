@@ -1,0 +1,11 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state S1
+OUT: <EnqueueLog> Enqueued event test with payload {(0, 0) --> (1, (100, false)), (1, 1) --> (10, (1000, true))} (2 / 3) on Machine Main(1)
+OUT: <DequeueLog> Dequeued event test with payload {(0, 0) --> (1, (100, false)), (1, 1) --> (10, (1000, true))} (2 / 3) by Machine Main(1)
+OUT: <ActionLog> Machine Main(1) executed action in state S1
+OUT: exiting with PRT_STATUS_ASSERT (assertion failure)
+OUT: 
+EXIT: 1

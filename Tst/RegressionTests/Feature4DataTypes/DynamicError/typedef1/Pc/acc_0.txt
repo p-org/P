@@ -1,0 +1,58 @@
+=================================
+         Console output          
+=================================
+OUT: typedef.p (17, 4): inferred type:  NIL
+OUT: typedef.p (17, 9): inferred type:  BaseType(INT)
+OUT: typedef.p (17, 17): inferred type:  BaseType(INT)
+OUT: typedef.p (18, 4): inferred type:  NIL
+OUT: typedef.p (18, 9): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
+OUT: typedef.p (18, 16): inferred type:  BaseType(INT)
+OUT: typedef.p (18, 20): inferred type:  BaseType(INT)
+OUT: typedef.p (19, 4): inferred type:  NIL
+OUT: typedef.p (19, 16): inferred type:  BaseType(BOOL)
+OUT: typedef.p (19, 20): inferred type:  BaseType(BOOL)
+OUT: typedef.p (21, 4): inferred type:  NIL
+OUT: typedef.p (21, 9): inferred type:  BaseType(INT)
+OUT: typedef.p (21, 17): inferred type:  BaseType(INT)
+OUT: typedef.p (22, 4): inferred type:  NIL
+OUT: typedef.p (22, 9): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
+OUT: typedef.p (22, 16): inferred type:  BaseType(INT)
+OUT: typedef.p (22, 20): inferred type:  BaseType(INT)
+OUT: typedef.p (23, 4): inferred type:  NIL
+OUT: typedef.p (23, 16): inferred type:  BaseType(BOOL)
+OUT: typedef.p (23, 20): inferred type:  BaseType(BOOL)
+OUT: typedef.p (25, 4): inferred type:  NIL
+OUT: typedef.p (25, 4): inferred type:  NmdTupType(NmdTupTypeField("server", BaseType(INT)), NmdTupType(NmdTupTypeField("seqN", BaseType(INT)), NIL))
+OUT: typedef.p (25, 13): inferred type:  NmdTupType(NmdTupTypeField("server", BaseType(INT)), NmdTupType(NmdTupTypeField("seqN", BaseType(INT)), NIL))
+OUT: typedef.p (25, 22): inferred type:  BaseType(INT)
+OUT: typedef.p (25, 25): inferred type:  NmdTupType(NmdTupTypeField("seqN", BaseType(INT)), NIL)
+OUT: typedef.p (26, 4): inferred type:  NIL
+OUT: typedef.p (26, 4): inferred type:  NmdTupType(NmdTupTypeField("server", BaseType(INT)), NmdTupType(NmdTupTypeField("seqN", BaseType(INT)), NIL))
+OUT: typedef.p (26, 13): inferred type:  NmdTupType(NmdTupTypeField("server", BaseType(INT)), NmdTupType(NmdTupTypeField("seqN", BaseType(INT)), NIL))
+OUT: typedef.p (26, 25): inferred type:  NmdTupType(NmdTupTypeField("seqN", BaseType(INT)), NIL)
+OUT: typedef.p (28, 4): inferred type:  NIL
+OUT: typedef.p (28, 8): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL))
+OUT: typedef.p (28, 18): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL))
+OUT: typedef.p (29, 4): inferred type:  NIL
+OUT: typedef.p (29, 8): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL))
+OUT: typedef.p (29, 18): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL))
+OUT: typedef.p (31, 4): inferred type:  NIL
+OUT: typedef.p (31, 9): inferred type:  BaseType(REAL)
+OUT: typedef.p (31, 15): inferred type:  BaseType(EVENT)
+OUT: typedef.p (31, 21): inferred type:  MapType(NmdTupType(NmdTupTypeField("server", BaseType(INT)), NmdTupType(NmdTupTypeField("seqN", BaseType(INT)), NIL)), NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL)))
+OUT: typedef.p (34, 4): inferred type:  NIL
+OUT: typedef.p (34, 18): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL))
+OUT: typedef.p (34, 19): inferred type:  NmdTupType(NmdTupTypeField("server", BaseType(INT)), NmdTupType(NmdTupTypeField("seqN", BaseType(INT)), NIL))
+OUT: typedef.p (34, 26): inferred type:  BaseType(BOOL)
+OUT: typedef.p (34, 29): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL))
+OUT: typedef.p (35, 4): inferred type:  NIL
+OUT: typedef.p (35, 11): inferred type:  MapType(NmdTupType(NmdTupTypeField("server", BaseType(INT)), NmdTupType(NmdTupTypeField("seqN", BaseType(INT)), NIL)), NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL)))
+OUT: typedef.p (35, 18): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL))
+OUT: typedef.p (35, 19): inferred type:  NmdTupType(NmdTupTypeField("server", BaseType(INT)), NmdTupType(NmdTupTypeField("seqN", BaseType(INT)), NIL))
+OUT: typedef.p (35, 26): inferred type:  BaseType(BOOL)
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing typedef.zing ...
+OUT: Compiling typedef.zing to typedef.dll ...
+EXIT: 0

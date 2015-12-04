@@ -77,6 +77,7 @@ OUT: castinexprsdynerror.p (172, 14): inferred type:  BaseType(INT)
 OUT: castinexprsdynerror.p (172, 17): inferred type:  BaseType(BOOL)
 OUT: castinexprsdynerror.p (172, 20): inferred type:  BaseType(INT)
 OUT: castinexprsdynerror.p (173, 4): inferred type:  NIL
+OUT: castinexprsdynerror.p (173, 8): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprsdynerror.p (174, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (176, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (176, 4): inferred type:  SeqType(BaseType(ANY))
@@ -84,7 +85,6 @@ OUT: castinexprsdynerror.p (177, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (177, 14): inferred type:  BaseType(ANY)
 OUT: castinexprsdynerror.p (177, 18): inferred type:  BaseType(BOOL)
 OUT: castinexprsdynerror.p (178, 4): inferred type:  NIL
-OUT: castinexprsdynerror.p (178, 9): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprsdynerror.p (179, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (181, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (181, 17): inferred type:  SeqType(BaseType(ANY))

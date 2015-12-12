@@ -1,0 +1,21 @@
+=================================
+         Console output          
+=================================
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing t1.zing ...
+OUT: Compiling t1.zing to t1.dll ...
+OUT: 3.p (23, 5): inferred type:  BaseType(REAL)
+OUT: 3.p (23, 5): inferred type:  NIL
+OUT: 3.p (23, 10): inferred type:  InterfaceType("K2")
+OUT: 3.p (24, 5): inferred type:  NIL
+OUT: 3.p (24, 13): inferred type:  InterfaceType("K2")
+OUT: 3.p (24, 20): inferred type:  BaseType(EVENT)
+OUT: 3.p (24, 23): inferred type:  InterfaceType("K1")
+OUT: 3.p (47, 5): inferred type:  NIL
+OUT: 3.p (47, 12): inferred type:  BaseType(BOOL)
+OUT: 3.p (70, 5): inferred type:  NIL
+OUT: 3.p (70, 12): inferred type:  BaseType(BOOL)
+OUT: 
+EXIT: 0

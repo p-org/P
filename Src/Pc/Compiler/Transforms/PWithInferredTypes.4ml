@@ -19,6 +19,12 @@ domain PWithInferredTypes extends PData
 
 	//// The maximum number of local variables in any context
 	MaxNumLocals ::= new (ctxt: TypingContext + Stmt + Cases, n: Natural).
+
+	//// The map from interface type to the machine implementing it for a given module-list
+	InterfaceToMachineMap ::= new (ml: ModuleList, i: InterfaceType, m: MachineDecl).
+
+	//// The map from module to the hidden events in the module for a given module-list
+	HiddenEvents ::= new (mdl: ModuleList, md: ModuleDecl, evl : EventList + {NIL}).
 }
 
 transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
@@ -27,4 +33,6 @@ transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
 	out.TypeOf(c, e, t) :- in.TypeOf(c, e, t).
 	out.TypeExpansion(type, eType) :- in.TypeExpansion(type, eType).
 	out.MaxNumLocals(c, n) :- in.MaxNumLocals(c, n).
+	out.InterfaceToMachineMap(ml, i, m) :- in.InterfaceToMachineMap(ml, i, m). 
+	out.HiddenEvents(ml, m, evl) :- in.HiddenEvents(ml, m, evl).
 }

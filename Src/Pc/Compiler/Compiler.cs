@@ -16,6 +16,25 @@
 
     public enum LivenessOption { None, Standard, Mace };
 
+    public class TopDeclNames
+    {
+        public HashSet<string> eventNames;
+        public HashSet<string> machineNames;
+        public HashSet<string> interfaceNames;
+        public HashSet<string> staticFunNames;
+        public HashSet<string> moduleNames;
+        public HashSet<string> testNames;
+        public TopDeclNames()
+        {
+            eventNames = new HashSet<string>();
+            machineNames = new HashSet<string>();
+            interfaceNames = new HashSet<string>();
+            staticFunNames = new HashSet<string>();
+            moduleNames = new HashSet<string>();
+            testNames = new HashSet<string>();
+        }
+    }
+
     public class Compiler
     {
         public bool Compile(string inputFileName)
@@ -90,6 +109,7 @@
         private const string AliasPrefix = "p_compiler__";
         private const string MsgPrefix = "msg:";
         private const string ErrorClassName = "error";
+        private const string WarningClassName = "warning";
         private const int TypeErrorCode = 1;
 
         private static readonly Tuple<string, string>[] ManifestPrograms = new Tuple<string, string>[]
@@ -214,8 +234,7 @@
                 return false;
             }
 
-            HashSet<string> crntEventNames = new HashSet<string>();
-            HashSet<string> crntMachineNames = new HashSet<string>();
+            TopDeclNames topDeclNames = new TopDeclNames();
 
             InstallResult uninstallResult;
             var uninstallDidStart = CompilerEnv.Uninstall(SeenFileNames.Values, out uninstallResult);
@@ -234,7 +253,7 @@
                 List<Flag> parserFlags;
                 string currFileName = parserWorkQueue.Dequeue();
                 var parser = new Parser.Parser();
-                var result = parser.ParseFile(SeenFileNames[currFileName], Options, crntEventNames, crntMachineNames, out parserFlags, out prog, out includedFileNames);
+                var result = parser.ParseFile(SeenFileNames[currFileName], Options, topDeclNames, out parserFlags, out prog, out includedFileNames);
                 flags.AddRange(parserFlags);
                 if (!result)
                 {
@@ -383,31 +402,39 @@
 
             AST<Model> zingModel = MkZingOutputModel();
 
+            
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
-            string zingFileName = fileName + ".zing";
-            string dllFileName = fileName + ".dll";           
+            List<string> FileNames = new List<string>();
+                      
             string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
 
-            new PToZing(this, AllModels, (AST<Model>)modelWithTypes).GenerateZing(zingFileName, ref zingModel);
+            new PToZing(this, AllModels, (AST<Model>)modelWithTypes).GenerateZing(ref FileNames, ref zingModel);
 
             if (!PrintZingFile(zingModel, CompilerEnv, outputDirName))
                 return false;
             var binPath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
-            var zcProcessInfo = new System.Diagnostics.ProcessStartInfo(Path.Combine(binPath.FullName, "zc.exe"));
-            string zingFileNameFull = Path.Combine(outputDirName, zingFileName);
-            zcProcessInfo.Arguments = string.Format("/nowarn:292 /out:{0}\\{1} {2}", outputDirName, dllFileName, zingFileNameFull);
-            zcProcessInfo.UseShellExecute = false;
-            zcProcessInfo.CreateNoWindow = true;
-            zcProcessInfo.RedirectStandardOutput = true;
-            Console.WriteLine("Compiling {0} to {1} ...", zingFileName, dllFileName);
-            var zcProcess = System.Diagnostics.Process.Start(zcProcessInfo);
-            zcProcess.WaitForExit();
-            if(zcProcess.ExitCode != 0)
+            foreach (var File in FileNames)
             {
-                Console.WriteLine("Zc failed to compile the generated code :");
-                Console.WriteLine(zcProcess.StandardOutput.ReadToEnd());
-                return false;
+                var zcProcessInfo = new System.Diagnostics.ProcessStartInfo(Path.Combine(binPath.FullName, "zc.exe"));
+                string zFile = File + ".zing";
+                string zingFileNameFull = Path.Combine(outputDirName, zFile);
+                string dllFileName = File + ".dll"; 
+                zcProcessInfo.Arguments = string.Format("/nowarn:292 /out:{0}\\{1} {2}", outputDirName, dllFileName, zingFileNameFull);
+                zcProcessInfo.UseShellExecute = false;
+                zcProcessInfo.CreateNoWindow = true;
+                zcProcessInfo.RedirectStandardOutput = true;
+                Console.WriteLine("Compiling {0} to {1} ...", zFile, dllFileName);
+                var zcProcess = System.Diagnostics.Process.Start(zcProcessInfo);
+                zcProcess.WaitForExit();
+                if (zcProcess.ExitCode != 0)
+                {
+                    Console.WriteLine("Zc failed to compile the generated code :");
+                    Console.WriteLine(zcProcess.StandardOutput.ReadToEnd());
+                    return false;
+                }
             }
+
+
             return true;
         }
 
@@ -578,12 +605,22 @@
             AddErrors(task.Result, "BadLabelError(_)", errors, 0);
             AddErrors(task.Result, "PayloadError(_)", errors, 0);
             AddErrors(task.Result, "TypeDefError(_)", errors, 0);
+            AddErrors(task.Result, "DomOfMapUnSafe(_)", errors, 0);
+
 
             //// Enumerate structural errors
-            AddErrors(task.Result, "missingDecl", errors);
             AddErrors(task.Result, "OneDeclError(_)", errors, 0);
             AddErrors(task.Result, "TwoDeclError(_, _)", errors, 1);
             AddErrors(task.Result, "DeclFunError(_, _)", errors, 1);
+
+            //// Enumerate module system typing errors
+            AddErrors(task.Result, "ModuleLevelTypingError(_)", errors, 0);
+            AddErrors(task.Result, "IllegalComposition(_)", errors, 0);
+            AddErrors(task.Result, "IllegalHideOperation(_)", errors, 0);
+            AddErrors(task.Result, "IllegalMonitorTestCase(_)", errors, 0);
+            AddErrors(task.Result, "IllegalRefinesTestCase(_)", errors, 0);
+            AddErrors(task.Result, "SoundCompositionWarning(_)", errors, 0);
+            AddErrors(task.Result, "IllegalMainMachine(_)", errors, 0);
 
             if (Options.printTypeInference)
             {
@@ -600,7 +637,12 @@
             List<Flag> queryFlags;
             foreach (var p in result.EnumerateProofs(errorPattern, out queryFlags, 1))
             {
-                if (!p.HasRuleClass(ErrorClassName))
+                bool isError = false;
+                if (p.HasRuleClass(ErrorClassName))
+                {
+                    isError = true;
+                }
+                else if (!p.HasRuleClass(WarningClassName))
                 {
                     continue;
                 }
@@ -612,7 +654,7 @@
                     {
                         var exprLoc = loc[locationIndex];
                         errors.Add(new Flag(
-                            SeverityKind.Error,
+                            isError ? SeverityKind.Error : SeverityKind.Warning,
                             exprLoc.Span,
                             errorMsg,
                             TypeErrorCode,
@@ -622,7 +664,7 @@
                 else
                 {
                     errors.Add(new Flag(
-                        SeverityKind.Error,
+                        isError ? SeverityKind.Error : SeverityKind.Warning,
                         default(Span),
                         errorMsg,
                         TypeErrorCode,

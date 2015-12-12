@@ -189,7 +189,7 @@ DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(LPVOID portNumber)
 * Implementation of all the model functions
 **/
 
-PRT_VALUE *P_FUN__SEND_IMPL(PRT_MACHINEINST *context)
+PRT_VALUE *P_FUN_SEND_IMPL(PRT_MACHINEINST *context)
 {
 	PRT_FUNSTACK_INFO frame;
 	PrtPopFrame((PRT_MACHINEINST_PRIV*)context, &frame);
@@ -199,7 +199,47 @@ PRT_VALUE *P_FUN__SEND_IMPL(PRT_MACHINEINST *context)
 	return PrtMkBoolValue(PRT_TRUE);
 }
 
-PRT_VALUE *P_FUN__CREATECONTAINER_IMPL(PRT_MACHINEINST *context)
+PRT_VALUE *P_FUN_SEND_REL_IMPL(PRT_MACHINEINST *context)
+{
+	
+	PRT_VALUE* result = PrtMkBoolValue(PRT_FALSE);
+
+	static PRT_VALUE* processAlive = NULL;
+	if (processAlive == NULL)
+	{
+		PRT_TYPE *domType = PrtMkPrimitiveType(PRT_KIND_MACHINE);
+		PRT_TYPE *codType = PrtMkPrimitiveType(PRT_KIND_BOOL);
+		PRT_TYPE *MapType = PrtMkMapType(domType, codType);
+		processAlive = PrtMkDefaultValue(MapType);
+	}
+
+	PRT_FUNSTACK_INFO frame;
+	PRT_INT16 count = 0;
+
+	PrtPopFrame((PRT_MACHINEINST_PRIV*)context, &frame);
+	PRT_VALUE* target = frame.locals[2U];
+	if (!PrtMapExists(processAlive, target))
+		PrtMapUpdate(processAlive, target, PrtMkBoolValue(PRT_TRUE));
+
+	while (PrtMapGet(processAlive, target)->valueUnion.bl == PRT_TRUE && count < 3)
+	{
+		if (!PrtDistSend(context->id, target, frame.locals[1U], frame.locals[0U]))
+			count++;
+		else
+		{
+			result = PrtMkBoolValue(PRT_TRUE);
+			break;
+		}
+	}
+	if (count >= 3)
+	{
+		PrtMapUpdate(processAlive, target, PrtMkBoolValue(PRT_FALSE));
+	}
+	PrtFreeLocals((PRT_MACHINEINST_PRIV*)context, &frame);
+	return result;
+}
+
+PRT_VALUE *P_FUN_CREATECONTAINER_IMPL(PRT_MACHINEINST *context)
 {
 	PRT_FUNSTACK_INFO frame;
 	PrtPopFrame((PRT_MACHINEINST_PRIV*) context, &frame);

@@ -53,6 +53,8 @@
 			 keywords.Add("new", (int)Tokens.NEW);
 			 keywords.Add("this", (int)Tokens.THIS);
 			 keywords.Add("null", (int)Tokens.NULL);
+			 keywords.Add("trigger", (int)Tokens.TRIGGER);
+			 keywords.Add("payload", (int)Tokens.PAYLOAD);
 			 keywords.Add("pop", (int)Tokens.POP);
 			 keywords.Add("true", (int)Tokens.TRUE);
 			 keywords.Add("false", (int)Tokens.FALSE);
@@ -63,8 +65,7 @@
 			 keywords.Add("assert", (int)Tokens.ASSERT);
 			 keywords.Add("send", (int)Tokens.SEND);
 			 keywords.Add("monitor", (int)Tokens.MONITOR);
-			 keywords.Add("spec", (int)Tokens.SPEC);
-			 keywords.Add("monitors", (int)Tokens.MONITORS);
+			 keywords.Add("observes", (int)Tokens.OBSERVES);
 			 keywords.Add("raise", (int)Tokens.RAISE);
 			 keywords.Add("halt", (int)Tokens.HALT);
 
@@ -93,7 +94,6 @@
 			 keywords.Add("state", (int)Tokens.STATE);
 			 keywords.Add("group", (int)Tokens.GROUP);
 			 keywords.Add("static", (int)Tokens.STATIC);
-			 keywords.Add("models", (int)Tokens.MODELS);
 
 			 keywords.Add("entry", (int)Tokens.ENTRY);
 			 keywords.Add("exit", (int)Tokens.EXIT);
@@ -110,6 +110,21 @@
 
 			 keywords.Add("in", (int)Tokens.IN);
 			 keywords.Add("as", (int)Tokens.AS);
+
+			 keywords.Add("interface", (int)Tokens.INTERFACE);
+			 keywords.Add("sends", (int)Tokens.SENDS);
+			 keywords.Add("receives", (int)Tokens.RECEIVES);
+			 keywords.Add("module", (int)Tokens.MODULE);
+			 keywords.Add("creates", (int)Tokens.CREATES);
+			 keywords.Add("private", (int)Tokens.PRIVATE);
+			 keywords.Add("test", (int)Tokens.TEST);
+			 keywords.Add("refines", (int)Tokens.REFINES);
+			 keywords.Add("satisfies", (int)Tokens.SATISFIES);
+			 keywords.Add("implementation", (int)Tokens.IMPLEMENTATION);
+			 keywords.Add("specification", (int)Tokens.SPECIFICATION);
+			 keywords.Add("hidee", (int)Tokens.HIDEE);
+			 keywords.Add("hidei", (int)Tokens.HIDEI);
+
 		 }
 
          int GetIdToken(string txt)

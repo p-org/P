@@ -35,72 +35,6 @@
             private set;
         }
 
-        public List<P_Root.InterfaceEventDecl> InterfaceEvents
-        {
-            get;
-            private set;
-        }
-
-        public List<P_Root.MachineReceivesDecl> MachineReceivesDecl
-        {
-            get;
-            private set;
-        }
-
-        public List<P_Root.ModuleDecl> ModuleDecl
-        {
-            get;
-            private set;
-        }
-
-        public List<P_Root.ModuleSendsDecl> ModuleSendsDecl
-        {
-            get;
-            private set;
-        }
-
-        public List<P_Root.ModulePrivateDecl> ModulePrivateDecl
-        {
-            get;
-            private set;
-        }
-
-        public List<P_Root.ModuleCreatesDecl> ModuleCreatesDecl
-        {
-            get;
-            private set;
-        }
-
-        public List<P_Root.RefinesTestDecl> RefinesTestDecl
-        {
-            get;
-            private set;
-        }
-
-        public List<P_Root.MonitorsTestDecl> MonitorsTestDecl
-        {
-            get;
-            private set;
-        }
-
-        public List<P_Root.NoFailureTestDecl> NoFailureTestDecl
-        {
-            get;
-            private set;
-        }
-
-        public List<P_Root.ImplementationModules> ImplementationModules
-        {
-            get;
-            private set;
-        }
-
-        public List<P_Root.SpecificationModules> SpecificationModules
-        {
-            get;
-            private set;
-        }
-
         public List<P_Root.StateDecl> States
         {
             get;
@@ -201,52 +135,6 @@
                 {
                     yield return obs;
                 }
-
-                foreach (var inter in InterfaceEvents)
-                {
-                    yield return inter;
-                }
-
-                foreach(var mRec in MachineReceivesDecl)
-                {
-                    yield return mRec;
-                }
-                foreach(var m in ModuleDecl)
-                {
-                    yield return m;
-                }
-                foreach(var sm in ModuleSendsDecl)
-                {
-                    yield return sm;
-                }
-                foreach(var rm in ModulePrivateDecl)
-                {
-                    yield return rm;
-                }
-                foreach(var cm in ModuleCreatesDecl)
-                {
-                    yield return cm;
-                }
-                foreach(var rT in RefinesTestDecl)
-                {
-                    yield return rT;
-                }
-                foreach(var mt in MonitorsTestDecl)
-                {
-                    yield return mt;
-                }
-                foreach(var nft in NoFailureTestDecl)
-                {
-                    yield return nft;
-                }
-                foreach(var imp in ImplementationModules)
-                {
-                    yield return imp;
-                }
-                foreach(var spec in SpecificationModules)
-                {
-                    yield return spec;
-                }
             }
         }
 
@@ -260,17 +148,6 @@
             Transitions = new List<P_Root.TransDecl>();
             Functions = new List<P_Root.FunDecl>();
             Observes = new List<P_Root.ObservesDecl>();
-            InterfaceEvents = new List<P_Root.InterfaceEventDecl>();
-            MachineReceivesDecl = new List<P_Root.MachineReceivesDecl>();
-            ModuleDecl = new List<P_Root.ModuleDecl>();
-            ModuleCreatesDecl = new List<P_Root.ModuleCreatesDecl>();
-            ModulePrivateDecl = new List<P_Root.ModulePrivateDecl>();
-            ModuleSendsDecl = new List<P_Root.ModuleSendsDecl>();
-            ImplementationModules = new List<P_Root.ImplementationModules>();
-            SpecificationModules = new List<P_Root.SpecificationModules>();
-            RefinesTestDecl = new List<P_Root.RefinesTestDecl>();
-            NoFailureTestDecl = new List<P_Root.NoFailureTestDecl>();
-            MonitorsTestDecl = new List<P_Root.MonitorsTestDecl>();
             AnonFunctions = new List<P_Root.AnonFunDecl>();
             Dos = new List<P_Root.DoDecl>();
             Annotations = new List<P_Root.Annotation>();

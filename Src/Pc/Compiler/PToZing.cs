@@ -110,14 +110,14 @@ namespace Microsoft.Pc
 
     internal class FunInfo
     {
-		public bool isAnonymous;
+        public bool isAnonymous;
         public List<string> parameterNames; 
         // if isAnonymous is true, 
         //    parameterNames is the list of environment variables
         //    parameterNames[0] is the payload parameter
         public Dictionary<string, LocalVariableInfo> localNameToInfo;
         public List<string> localNames;
-		public AST<FuncTerm> returnType;
+        public AST<FuncTerm> returnType;
         public Node body;
         public int numFairChoices;
         public Dictionary<AST<Node>, FuncTerm> typeInfo;
@@ -194,94 +194,12 @@ namespace Microsoft.Pc
 
     enum MonitorType { SAFETY, FINALLY, REPEATEDLY };
 
-    internal class ModuleListInfo
-    {
-        public Dictionary<string, string> interfaceToMachineMap;
-        public Dictionary<AST<Node>, List<string>> moduleHiddenEvents;
-        public ModuleListInfo()
-        {
-            //interface name to machine name
-            interfaceToMachineMap = new Dictionary<string, string>();
-           //module to hidden events
-            moduleHiddenEvents = new Dictionary<AST<Node>, List<string>>();
-        }
-    }
-
-    internal class ModuleInfo
-    {
-        public string moduleName;
-        public HashSet<string> modulePrivateEvents;
-        public HashSet<string> moduleSendsEvents;
-        public List<string> allMachineNames;
-        public ModuleInfo(string moduleN)
-        {
-            moduleName = moduleN;
-            //module to private events
-            modulePrivateEvents = new HashSet<string>();
-            //module to sends events
-            moduleSendsEvents = new HashSet<string>();
-            //names of all the machines inside the module
-            allMachineNames = new List<string>();
-        }
-    }
-    internal class TestCaseInfo
-    {
-        public AST<Node> impModList;
-        public TestCaseInfo(AST<Node> imp)
-        {
-            impModList = imp;
-        }
-    }
-    internal class RefinesTestInfo : TestCaseInfo
-    {
-        public AST<Node> specModList;
-        public RefinesTestInfo(AST<Node> imp, AST<Node> spec) : base(imp)
-        {
-            impModList = imp;
-            specModList = spec;
-        }
-    }
-
-    internal class MonitorsTestInfo : TestCaseInfo
-    {
-        public List<string> globalMonitors;
-        public Dictionary<string, AST<Node>> privateMonitorToModule;
-        public MonitorsTestInfo(AST<Node> imp, Tuple<List<string>, Dictionary<string, AST<Node>>> tup) : base(imp)
-        {
-            globalMonitors = tup.Item1;
-            privateMonitorToModule = tup.Item2;
-        }
-    }
-
-    internal class NoFailuresTestInfo : TestCaseInfo
-    {
-        public NoFailuresTestInfo(AST<Node> imp) :base(imp)
-        {
-        }
-    }
-    
-    internal enum TestCaseType { REFINES, MONITORS, NOFAILURE };
-
-    internal class AllTestCasesInfo
-    {
-        public Dictionary<string, RefinesTestInfo> allRefinesTests;
-        public Dictionary<string, MonitorsTestInfo> allMonitorsTests;
-        public Dictionary<string, NoFailuresTestInfo> allNoFailureTests;
-
-        public AllTestCasesInfo()
-        {
-            allMonitorsTests = new Dictionary<string, MonitorsTestInfo>();
-            allNoFailureTests = new Dictionary<string, NoFailuresTestInfo>();
-            allRefinesTests = new Dictionary<string, RefinesTestInfo>();
-        }
-    }
     internal class MachineInfo
     {
         public bool IsReal { get { return type == "REAL"; } }
         public bool IsModel { get { return type == "MODEL"; } }
         public bool IsMonitor { get { return type == "MONITOR"; } }
 
-        public bool IsMain;
         public string type;
         public int maxQueueSize;
         public bool maxQueueSizeAssumed;
@@ -291,7 +209,6 @@ namespace Microsoft.Pc
         public List<string> observesEvents;
         public Dictionary<string, FunInfo> funNameToFunInfo;
         public MonitorType monitorType;
-        public FuncTerm module;
 
         public MachineInfo()
         {
@@ -305,22 +222,9 @@ namespace Microsoft.Pc
             funNameToFunInfo = new Dictionary<string, FunInfo>();
             monitorType = MonitorType.SAFETY;
             funNameToFunInfo["ignore"] = new FunInfo(false, null, PToZing.PTypeNull, null, Factory.Instance.AddArg(Factory.Instance.MkFuncTerm(PData.Con_NulStmt), PData.Cnst_Skip).Node);
-            IsMain = false;
         }
     }
 
-    internal class LemmaInfo
-    {
-        public Dictionary<string, string> InterfaceToMachineMap;
-        public List<string> implementationModules;
-
-        public LemmaInfo()
-        {
-            InterfaceToMachineMap = new Dictionary<string, string>();
-            implementationModules = new List<string>();
-
-        }
-    }
     internal class EventInfo
     {
         public int maxInstances;  // -1 represents no bound
@@ -366,7 +270,6 @@ namespace Microsoft.Pc
         public static AST<Node> PrtMkDefaultValue = MkZingDot("PRT_VALUE", "PrtMkDefaultValue");
         public static AST<Node> PrtCloneValue = MkZingDot("PRT_VALUE", "PrtCloneValue");
         public static AST<Node> PrtIsEqualValue = MkZingDot("PRT_VALUE", "PrtIsEqualValue");
-        public static AST<Node> PrtAssertPrivateSend = MkZingDot("PRT_VALUE", "PrtAssertIsLegalPayload");
 
         public const string NullEvent = "null";
         public const string HaltEvent = "halt";
@@ -390,14 +293,7 @@ namespace Microsoft.Pc
         public Dictionary<string, EventInfo> allEvents;
         public Dictionary<string, MachineInfo> allMachines;
         public Dictionary<string, FunInfo> allStaticFuns;
-        public Dictionary<string, List<string>> allInterfaces;
-        public Dictionary<AST<Node>, ModuleListInfo> allModuleLists;
-        public AllTestCasesInfo allTestCasesInfo;
-        public TestCaseType crntTestCaseType;
-        public List<string> crntAllMachines;
-        public Dictionary<string, List<string>> crntPrivateMonitors;
-        public Dictionary<AST<Node>, ModuleInfo> allModules;
-
+        public string mainMachineName;
         private Dictionary<AST<Node>, string> anonFunToName;
         public Dictionary<AST<FuncTerm>, FuncTerm> typeExpansion;
 
@@ -425,55 +321,6 @@ namespace Microsoft.Pc
             FuncTerm machineDecl = (FuncTerm)GetArgByIndex(ft, index);
             var machineName = GetName(machineDecl, 0);
             return machineName;
-        }
-
-        public List<AST<Node>> GetModulesFromModuleList(FuncTerm ft)
-        {
-            var iter = ft;
-            HashSet<AST<Node>> modules = new HashSet<AST<Node>>();
-            Contract.Assert(((Id)ft.Function).Name == "ModuleList");
-            while (true)
-            {
-                var arg1 = GetArgByIndex(iter, 0) as FuncTerm;
-                if (((Id)arg1.Function).Name == "Hide")
-                {
-                    var hideModuleList = GetModulesFromModuleList(GetArgByIndex(arg1, 1) as FuncTerm);
-                    foreach(var m in hideModuleList)
-                    {
-                        modules.Add(m);
-                    }
-                }
-                else
-                {
-                    modules.Add(Factory.Instance.ToAST(arg1));
-                }
-                var arg2 = GetArgByIndex(iter, 1);
-                if (arg2 is Id && (arg2 as Id).Name == "NIL")
-                {
-                    break;
-                }
-                iter = (FuncTerm)arg2;
-            }
-            return modules.ToList();
-        }
-
-        public List<string> GetEventsFromEventList(FuncTerm ft)
-        {
-            var iter = ft;
-            List<string> events = new List<string>();
-            Contract.Assert(((Id)ft.Function).Name == "EventList");
-            while (true)
-            {
-                events.Add(GetName(iter, 0));
-                var arg2 = GetArgByIndex(iter, 1);
-                if (arg2 is Id && (arg2 as Id).Name == "NIL")
-                {
-                    break;
-                }
-                iter = (FuncTerm)arg2;
-            }
-
-            return events;
         }
 
         Dictionary<string, int> uniqIDCounters = new Dictionary<string, int>();
@@ -522,12 +369,6 @@ namespace Microsoft.Pc
             allMachines = new Dictionary<string, MachineInfo>();
             allStaticFuns = new Dictionary<string, FunInfo>();
             typeExpansion = new Dictionary<AST<FuncTerm>, FuncTerm>();
-            allInterfaces = new Dictionary<string, List<string>>();
-            allModuleLists = new Dictionary<AST<Node>, ModuleListInfo>();
-            allTestCasesInfo = new AllTestCasesInfo();
-            allModules = new Dictionary<AST<Node>, ModuleInfo>();
-            crntAllMachines = new List<string>();
-            crntPrivateMonitors = new Dictionary<string, List<string>>();
 
             LinkedList<AST<FuncTerm>> terms;
 
@@ -556,40 +397,6 @@ namespace Microsoft.Pc
                 }
             }
 
-            //add module
-            terms = GetBin(factBins, "ModuleDecl");
-            foreach(var term in terms)
-            {
-                allModules[term] = new ModuleInfo(GetName(term.Node, 0));
-            }
-            //initialize sends for each module
-            terms = GetBin(factBins, "ModuleSendsDecl");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var moduleDecl = Factory.Instance.ToAST(it.Current);
-                    it.MoveNext();
-                    var ev = ((Cnst)it.Current).GetStringValue();
-                    allModules[moduleDecl].moduleSendsEvents.Add(ev);
-                }
-            }
-
-            //initialize privates for each module
-            terms = GetBin(factBins, "ModulePrivateDecl");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var moduleDecl = Factory.Instance.ToAST(it.Current);
-                    it.MoveNext();
-                    var ev = ((Cnst)it.Current).GetStringValue();
-                    allModules[moduleDecl].modulePrivateEvents.Add(ev);
-                }
-            }
-
             terms = GetBin(factBins, "MachineDecl");
             foreach (var term in terms)
             {
@@ -599,15 +406,7 @@ namespace Microsoft.Pc
                     var machineName = ((Cnst)it.Current).GetStringValue();
                     allMachines[machineName] = new MachineInfo();
                     it.MoveNext();
-                    allMachines[machineName].module = (it.Current as FuncTerm);
-                    it.MoveNext();
                     allMachines[machineName].type = ((Id)it.Current).Name;
-                    //add machine to the module list
-                    if (!allMachines[machineName].IsMonitor)
-                    {
-                        var astFuncTerm = Factory.Instance.ToAST(allMachines[machineName].module);
-                        allModules[astFuncTerm].allMachineNames.Add(machineName);
-                    }
                     it.MoveNext();
                     var bound = it.Current;
                     if (bound.NodeKind != NodeKind.Id)
@@ -619,15 +418,13 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     allMachines[machineName].initStateName = GetNameFromQualifiedName(machineName, (FuncTerm)it.Current);
                     it.MoveNext();
-                    it.MoveNext();
                     if (((Id)it.Current).Name == "TRUE")
                     {
-                        allMachines[machineName].IsMain = true;
+                        mainMachineName = machineName;
                     }
                 }
             }
 
-            
             terms = GetBin(factBins, "ObservesDecl");
             foreach (var term in terms)
             {
@@ -640,84 +437,6 @@ namespace Microsoft.Pc
                     allMachines[machineName].observesEvents.Add(((Cnst)it.Current).GetStringValue());
                 }
             }
-
-            terms = GetBin(factBins, "InterfaceEventDecl");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var interfaceName = GetName(((FuncTerm)it.Current), 0);
-                    it.MoveNext();
-                    var eventName = ((Cnst)it.Current).GetStringValue();
-                    it.MoveNext();
-                    if(allInterfaces.ContainsKey(interfaceName))
-                    {
-                        allInterfaces[interfaceName].Add(eventName);
-                    }
-                    else
-                    {
-                        allInterfaces[interfaceName] = new List<string>();
-                        allInterfaces[interfaceName].Add(eventName);
-                    }
-                }
-            }
-
-            //populate refines test information
-            terms = GetBin(factBins, "RefinesTestDecl");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var testName = ((Cnst)it.Current).GetStringValue();
-                    it.MoveNext();
-                    var impList = Factory.Instance.ToAST(it.Current);
-                    //add modulelist
-                    allModuleLists[impList] = new ModuleListInfo();
-                    it.MoveNext();
-                    var specList = Factory.Instance.ToAST(it.Current);
-                    //add modulelist
-                    allModuleLists[specList] = new ModuleListInfo();
-                    allTestCasesInfo.allRefinesTests[testName] = new RefinesTestInfo(impList, specList);
-                }
-            }
-
-            //populate monitors test information
-            terms = GetBin(factBins, "MonitorsTestDecl");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var testName = ((Cnst)it.Current).GetStringValue();
-                    it.MoveNext();
-                    var impList = Factory.Instance.ToAST(it.Current);
-                    //add modulelist
-                    allModuleLists[impList] = new ModuleListInfo();
-
-                    it.MoveNext();
-                    var monList = (FuncTerm)it.Current;
-                    allTestCasesInfo.allMonitorsTests[testName] = new MonitorsTestInfo(impList, GetMonitors(monList));
-                }
-            }
-
-            //populate no failures test information
-            terms = GetBin(factBins, "NoFailureTestDecl");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var testName = ((Cnst)it.Current).GetStringValue();
-                    it.MoveNext();
-                    var impList = Factory.Instance.ToAST(it.Current);
-                    //add modulelist
-                    allModuleLists[impList] = new ModuleListInfo();
-                    allTestCasesInfo.allNoFailureTests[testName] = new NoFailuresTestInfo(impList);
-                }
-            }
-
 
             terms = GetBin(factBins, "VarDecl");
             foreach (var term in terms)
@@ -1122,48 +841,15 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "TypeExpansion");
-			foreach (var term in terms)
+            foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-					var type = (AST<FuncTerm>)Factory.Instance.ToAST(it.Current);
+                    var type = (AST<FuncTerm>)Factory.Instance.ToAST(it.Current);
                     it.MoveNext();
                     var eType = (FuncTerm)it.Current;
                     typeExpansion[type] = eType;
-				}
-			}
-            terms = GetBin(factBins, "InterfaceToMachineMap");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var moduleList = Factory.Instance.ToAST(it.Current);
-                    it.MoveNext();
-                    string interfaceName = GetName(it.Current as FuncTerm, 0);
-                    it.MoveNext();
-                    string machineName = GetName(it.Current as FuncTerm, 0);
-                    if (allModuleLists.ContainsKey(moduleList))
-                        allModuleLists[moduleList].interfaceToMachineMap.Add(interfaceName, machineName);
-                }
-            }
-
-            terms = GetBin(factBins, "HiddenEvents");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var moduleList = Factory.Instance.ToAST(it.Current);
-                    it.MoveNext();
-                    var module = Factory.Instance.ToAST(it.Current);
-                    it.MoveNext();
-                    var eventList = GetEventsFromEventList(it.Current as FuncTerm);
-                    if (allModuleLists[moduleList].moduleHiddenEvents.ContainsKey(module))
-                        allModuleLists[moduleList].moduleHiddenEvents[module].AddRange(eventList);
-                    else
-                        allModuleLists[moduleList].moduleHiddenEvents.Add(module, eventList);
                 }
             }
 
@@ -1242,37 +928,6 @@ namespace Microsoft.Pc
             }
 
             throw new InvalidOperationException();
-        }
-
-        public Tuple<List<string>, Dictionary<string, AST<Node>>> GetMonitors(FuncTerm mon)
-        {
-            var monList = mon;
-            List<string> globaleMonitors = new List<string>();
-            Dictionary<string, AST<Node>> pToMod = new Dictionary<string, AST<Node>>();
-            Contract.Assert(((Id)mon.Function).Name == "MonitorList");
-            while (true)
-            {
-                var arg1 = GetArgByIndex(monList, 0);
-                if(arg1 is Cnst)
-                    globaleMonitors.Add(GetName(monList, 0));
-                else
-                {
-                    var privateMonName = GetName(arg1 as FuncTerm, 0);
-                    var Module = GetArgByIndex(arg1 as FuncTerm, 1);
-                    pToMod.Add(privateMonName, Factory.Instance.ToAST(Module));
-                }
-                var arg2 = GetArgByIndex(monList, 1);
-                if(arg2 is Id && (arg2 as Id).Name == "NIL")
-                {
-                    break;
-                }
-                monList = (FuncTerm)arg2;
-            }
-
-            
-            monList = mon;
-            
-            return new Tuple<List<string>,Dictionary<string,AST<Node>>>(globaleMonitors, pToMod);
         }
 
         public static string GetName(FuncTerm ft, int nameIndex)
@@ -1623,117 +1278,19 @@ namespace Microsoft.Pc
         #endregion
 
         #region ZingCompiler
-        public void GenerateZing(ref List<string> FileNames, ref AST<Model> outModel)
+        public void GenerateZing(string zingFileName, ref AST<Model> outModel)
         {
-            
-            //generate separate zing out model for each test-case
-            foreach(var monitorsTestCase in allTestCasesInfo.allMonitorsTests)
-            {
-                crntTestCaseType = TestCaseType.MONITORS;
-                
-                string FileName = monitorsTestCase.Key;
-                string zFileName = FileName + ".zing"; 
-                List<AST<Node>> elements = new List<AST<Node>>();
-
-                //generate implementation modules
-                var implementationModules = GetModulesFromModuleList(monitorsTestCase.Value.impModList.Node as FuncTerm);
-                //union of all the machines names in the implementation modules
-                List<string> allMachinesInModuleList = new List<string>();
-                foreach (var module in implementationModules)
-                {
-                    allMachinesInModuleList.AddRange(allModules[module].allMachineNames);
-                }
-                //include global monitors
-                allMachinesInModuleList.AddRange(monitorsTestCase.Value.globalMonitors);
-                //include all private monitors 
-                allMachinesInModuleList.AddRange(monitorsTestCase.Value.privateMonitorToModule.Keys.ToList());
-
-                crntAllMachines = allMachinesInModuleList;
-
-                //populate the private monitors
-                foreach(var privateMonitor in monitorsTestCase.Value.privateMonitorToModule)
-                {
-                    foreach(var machine in allModules[privateMonitor.Value].allMachineNames)
-                    {
-                        if(crntPrivateMonitors.ContainsKey(machine))
-                        {
-                            crntPrivateMonitors[machine].Add(privateMonitor.Key);
-                        }
-                        else
-                        {
-                            crntPrivateMonitors[machine] = new List<string>();
-                            crntPrivateMonitors[machine].Add(privateMonitor.Key);
-                        }
-                    }
-                }
-                
-                MkZingEnums(elements, allMachinesInModuleList);
-
-                MkZingClasses(elements, allMachinesInModuleList, monitorsTestCase.Value.impModList);
-                outModel = Add(outModel, MkZingFile(zFileName, elements));
-                FileNames.Add(FileName);
-
-                //clear all crntLists
-                crntAllMachines.Clear();
-                crntPrivateMonitors.Clear();
-
-            }
-            foreach(var noFailureTestCase in allTestCasesInfo.allNoFailureTests)
-            {
-                crntTestCaseType = TestCaseType.NOFAILURE;
-                string FileName = noFailureTestCase.Key;
-                string zFileName = FileName + ".zing"; 
-                List<AST<Node>> elements = new List<AST<Node>>();
-
-                //generate implementation modules
-                var implementationModules = GetModulesFromModuleList(noFailureTestCase.Value.impModList.Node as FuncTerm);
-                //union of all the machines names in the implementation modules
-                List<string> allMachinesInModuleList = new List<string>();
-                foreach (var module in implementationModules)
-                {
-                    allMachinesInModuleList.AddRange(allModules[module].allMachineNames);
-                }
-                crntAllMachines = allMachinesInModuleList;
-
-                MkZingEnums(elements, allMachinesInModuleList);
-
-                MkZingClasses(elements, allMachinesInModuleList, noFailureTestCase.Value.impModList);
-                outModel = Add(outModel, MkZingFile(zFileName, elements));
-                FileNames.Add(FileName);
-            }
-            foreach(var refinesTestCases in allTestCasesInfo.allRefinesTests)
-            {
-                crntTestCaseType = TestCaseType.REFINES;
-                string FileName = refinesTestCases.Key;
-                string zFileName = FileName + "_imp.zing";
-                List<AST<Node>> elements = new List<AST<Node>>();
-
-                //generate implementation modules
-                var implementationModules = GetModulesFromModuleList(refinesTestCases.Value.impModList.Node as FuncTerm);
-                //union of all the machines names in the implementation modules
-                List<string> allMachinesInModuleList = new List<string>();
-                foreach (var module in implementationModules)
-                {
-                    allMachinesInModuleList.AddRange(allModules[module].allMachineNames);
-                }
-                crntAllMachines = allMachinesInModuleList;
-
-                MkZingEnums(elements, allMachinesInModuleList);
-
-                MkZingClasses(elements, allMachinesInModuleList, refinesTestCases.Value.impModList);
-                outModel = Add(outModel, MkZingFile(zFileName, elements));
-                FileNames.Add(FileName);
-
-                Console.WriteLine("Specification Code is not generated.");
-            }
-            
+            List<AST<Node>> elements = new List<AST<Node>>();
+            MkZingEnums(elements);
+            MkZingClasses(elements);
+            outModel = Add(outModel, MkZingFile(zingFileName, elements));
         }
 
-        private void MkZingEnums(List<AST<Node>> elements, List<string> allMachinesInModuleList)
+        private void MkZingEnums(List<AST<Node>> elements)
         {
             List<AST<Node>> machineConsts = new List<AST<Node>>();
             machineConsts.Add(Factory.Instance.MkCnst("_default"));
-            foreach (string machineName in allMachinesInModuleList)
+            foreach (string machineName in allMachines.Keys)
             {
                 machineConsts.Add(Factory.Instance.MkCnst(string.Format("_{0}", machineName)));
             }
@@ -1749,9 +1306,9 @@ namespace Microsoft.Pc
 
             List<AST<Node>> stateConsts = new List<AST<Node>>();
             stateConsts.Add(Factory.Instance.MkCnst("_default"));
-            foreach (var machine in allMachinesInModuleList)
+            foreach (var machine in allMachines.Values)
             {
-                foreach (var stateName in allMachines[machine].stateNameToStateInfo.Keys)
+                foreach (var stateName in machine.stateNameToStateInfo.Keys)
                 {
                     stateConsts.Add(Factory.Instance.MkCnst(string.Format("_{0}", stateName)));
                 }
@@ -1764,7 +1321,7 @@ namespace Microsoft.Pc
             {
                 actionOrFunConsts.Add(Factory.Instance.MkCnst(string.Format("_{0}", funName)));
             }
-            foreach (string machineName in allMachinesInModuleList)
+            foreach (string machineName in allMachines.Keys)
             {
                 foreach (string funName in allMachines[machineName].funNameToFunInfo.Keys)
                 {
@@ -1772,11 +1329,18 @@ namespace Microsoft.Pc
                 }
             }
             elements.Add(MkZingEnumDecl("ActionOrFun", actionOrFunConsts));
+
+            foreach (var machineName in allMachines.Keys)
+            {
+                if (!allMachines[machineName].IsMonitor) continue;
+                elements.Add(AddArgs(ZingData.App_SetDecl, Factory.Instance.MkCnst(ZingMachineClassSetTypeName(machineName)), 
+                                                           Factory.Instance.MkCnst(ZingMachineClassName(machineName))));
+            }
         }
 
         private string GetMonitorMachineName(string machineName)
         {
-            return string.Format("{0}_handle", machineName);
+            return string.Format("{0}_handles", machineName);
         }
 
         private string GetObservesSetName(string machineName)
@@ -1784,78 +1348,38 @@ namespace Microsoft.Pc
             return string.Format("{0}_observes", machineName);
         }
 
-        private string GetInterfaceSetName(string interfaceName)
-        {
-            return string.Format("Interface_{0}", interfaceName);
-        }
-
-        private string GetModuleName(string machineName)
-        {
-            return allModules.Where(m => m.Value.allMachineNames.Contains(machineName)).First().Value.moduleName;
-        }
-        private string GetSendPrivateSetNameForModule(string moduleName)
-        {
-            return string.Format("{0}_SendsPrivate", moduleName);
-        }
-
-        private string GetHiddenPrivateSetNameForModule(string moduleName)
-        {
-            return string.Format("{0}_HiddenPrivate", moduleName);
-        }
-
         private string GetFairChoice(string entityName, int i)
         {
             return string.Format("FairChoice_{0}_{1}", entityName, i);
         }
 
-        private AST<FuncTerm> GenerateMainClass(List<string> allMachinesInModuleList, AST<Node> currentModuleList)
+        private AST<FuncTerm> GenerateMainClass()
         {
             List<AST<Node>> fields = new List<AST<Node>>();
             foreach (var eventName in allEvents.Keys)
             {
                 fields.Add(MkZingVarDecl(string.Format("{0}_SM_EVENT", eventName), SmEvent, ZingData.Cnst_Static));
             }
-            foreach(var machineName in allMachinesInModuleList)
+            foreach (var machine in allMachines.Values)
             {
-                foreach (var stateName in allMachines[machineName].stateNameToStateInfo.Keys)
+                foreach (var stateName in machine.stateNameToStateInfo.Keys)
                 {
                     fields.Add(MkZingVarDecl(string.Format("{0}_SM_STATE", stateName), SmState, ZingData.Cnst_Static));
                 }
             }
-            foreach (var machineName in allMachinesInModuleList)
+            foreach (var machineName in allMachines.Keys)
             {
                 fields.Add(MkZingVarDecl(string.Format("{0}_instance", machineName), ZingData.Cnst_Int, ZingData.Cnst_Static));
             }
-
-            foreach (var machineName in allMachinesInModuleList)
+            foreach (var machineName in allMachines.Keys)
             {
                 if (!allMachines[machineName].IsMonitor) continue;
-                fields.Add(MkZingVarDecl(GetMonitorMachineName(machineName), Factory.Instance.MkCnst(ZingMachineClassName(machineName)), ZingData.Cnst_Static));
+                fields.Add(MkZingVarDecl(GetMonitorMachineName(machineName), Factory.Instance.MkCnst(ZingMachineClassSetTypeName(machineName)), ZingData.Cnst_Static));
                 fields.Add(MkZingVarDecl(GetObservesSetName(machineName), Factory.Instance.MkCnst(PToZing.SM_EVENT_SET), ZingData.Cnst_Static));
             }
 
-            //declare the interface sets
-            foreach (var inter in allInterfaces)
-            {
-                fields.Add(MkZingVarDecl(GetInterfaceSetName(inter.Key), Factory.Instance.MkCnst(PToZing.SM_EVENT_SET), ZingData.Cnst_Static));
-            }
-
-            //declare the private send set for each module
-            foreach (var module in GetModulesFromModuleList(currentModuleList.Node as FuncTerm))
-            {
-                string moduleName = allModules[module].moduleName;
-                fields.Add(MkZingVarDecl(GetSendPrivateSetNameForModule(moduleName), Factory.Instance.MkCnst(PToZing.SM_EVENT_SET), ZingData.Cnst_Static));
-            }
-
-            //declare the private send set for each module
-            foreach (var module in GetModulesFromModuleList(currentModuleList.Node as FuncTerm))
-            {
-                string moduleName = allModules[module].moduleName;
-                fields.Add(MkZingVarDecl(GetHiddenPrivateSetNameForModule(moduleName), Factory.Instance.MkCnst(PToZing.SM_EVENT_SET), ZingData.Cnst_Static));
-            }
-
             List<AST<Node>> methods = new List<AST<Node>>();
-            foreach (var machineName in allMachinesInModuleList)
+            foreach (var machineName in allMachines.Keys)
             {
                 AST<Node> method;
                 if (allMachines[machineName].IsMonitor)
@@ -1868,7 +1392,7 @@ namespace Microsoft.Pc
                 }
                 methods.Add(method);
             }
-            foreach (var machineName in allMachinesInModuleList)
+            foreach (var machineName in allMachines.Keys)
             {
                 if (!allMachines[machineName].IsMonitor) continue;
                 AST<Node> method = MkInvokeMonitorMethod(machineName);
@@ -1935,7 +1459,7 @@ namespace Microsoft.Pc
                 var assignStmt = MkZingAssign(MkZingEvent(eventName), rhs);
                 runBodyStmts.Add(assignStmt);
             }
-            foreach (var machineName in allMachinesInModuleList)
+            foreach (var machineName in allMachines.Keys)
             {
                 var machine = allMachines[machineName];
                 foreach (var stateName in machine.stateNameToStateInfo.Keys)
@@ -1956,7 +1480,7 @@ namespace Microsoft.Pc
                     runBodyStmts.Add(MkZingAssign(MkZingState(stateName), state));
                 }
             }
-            foreach (var machineName in allMachinesInModuleList)
+            foreach (var machineName in allMachines.Keys)
             {
                 var machine = allMachines[machineName];
                 foreach (var stateName in machine.stateNameToStateInfo.Keys)
@@ -1978,47 +1502,19 @@ namespace Microsoft.Pc
                     }
                 }
             }
-            foreach (var machineName in allMachinesInModuleList)
+            foreach (var machineName in allMachines.Keys)
             {
                 var assignStmt = MkZingAssign(MkZingIdentifier(string.Format("{0}_instance", machineName)), Factory.Instance.MkCnst(0));
                 runBodyStmts.Add(assignStmt);
             }
-            //create the interface set for each interface-type
-            foreach(var inter in allInterfaces)
+            foreach (var machineName in allMachines.Keys)
             {
-                var interfaceSet = MkZingDot("Main",GetInterfaceSetName(inter.Key));
-                runBodyStmts.Add(MkZingAssign(interfaceSet, MkZingNew(SmEventSet, ZingData.Cnst_Nil)));
-                List<AST<Node>> stmts = new List<AST<Node>>();
-                AddEventSet(stmts, inter.Value, interfaceSet);
-                runBodyStmts.Add(MkZingSeq(stmts));
-
+                if (!allMachines[machineName].IsMonitor) continue;
+                var assignStmt = MkZingAssign(MkZingIdentifier(GetMonitorMachineName(machineName)),
+                                              MkZingNew(Factory.Instance.MkCnst(ZingMachineClassSetTypeName(machineName)), ZingData.Cnst_Nil));
+                runBodyStmts.Add(assignStmt);
             }
-            //create the send + private set for each module
-            foreach (var module in GetModulesFromModuleList(currentModuleList.Node as FuncTerm))
-            {
-                string moduleName = allModules[module].moduleName;
-                var SPEventSet = MkZingDot("Main", GetSendPrivateSetNameForModule(moduleName));
-                runBodyStmts.Add(MkZingAssign(SPEventSet, MkZingNew(SmEventSet, ZingData.Cnst_Nil)));
-                List<AST<Node>> stmts = new List<AST<Node>>();
-                AddEventSet(stmts, allModules[module].modulePrivateEvents.ToList(), SPEventSet);
-                AddEventSet(stmts, allModules[module].moduleSendsEvents.ToList(), SPEventSet);
-                runBodyStmts.Add(MkZingSeq(stmts));
-            }
-            
-            //create the private + hidden set for each module
-            foreach (var module in GetModulesFromModuleList(currentModuleList.Node as FuncTerm))
-            {
-                string moduleName = allModules[module].moduleName;
-                var HPEventSet = MkZingDot("Main", GetHiddenPrivateSetNameForModule(moduleName));
-                runBodyStmts.Add(MkZingAssign(HPEventSet, MkZingNew(SmEventSet, ZingData.Cnst_Nil)));
-                List<AST<Node>> stmts = new List<AST<Node>>();
-                AddEventSet(stmts, allModules[module].modulePrivateEvents.ToList(), HPEventSet);
-                if (allModuleLists[currentModuleList].moduleHiddenEvents.ContainsKey(module))
-                    AddEventSet(stmts, allModuleLists[currentModuleList].moduleHiddenEvents[module], HPEventSet);
-                runBodyStmts.Add(MkZingSeq(stmts));
-            }
-            
-            foreach (var machineName in allMachinesInModuleList)
+            foreach (var machineName in allMachines.Keys)
             {
                 if (!allMachines[machineName].IsMonitor) continue;
                 MachineInfo machineInfo = allMachines[machineName];
@@ -2029,17 +1525,10 @@ namespace Microsoft.Pc
                 runBodyStmts.Add(MkZingSeq(stmts));
             }
             runBodyStmts.Add(typeContext.InitializeFieldNamesAndTypes());
-            
-            //launch all the monitor machines statically
-            foreach (var machineName in allMachinesInModuleList)
-            {
-                if (allMachines[machineName].IsMonitor)
-                    runBodyStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", machineName)))));
-            }
-
-            var mainMachineName = allMachinesInModuleList.Where(n => allMachines[n].IsMain).First();
-            runBodyStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", mainMachineName)), MkZingIdentifier("null"))));
-            AST<Node> runMethod = MkZingMethodDecl("Run", ZingData.Cnst_Nil, ZingData.Cnst_Void, ZingData.Cnst_Nil, MkZingBlocks(MkZingBlock("dummy", MkZingSeq(runBodyStmts))), ZingData.Cnst_Static, ZingData.Cnst_Activate);
+            runBodyStmts.Add(MkZingAssign(MkZingIdentifier("nullValue"), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
+            runBodyStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", mainMachineName)), MkZingIdentifier("nullValue"))));
+            var locals = MkZingVarDecls(MkZingVarDecl("nullValue", PrtValue));
+            AST<Node> runMethod = MkZingMethodDecl("Run", ZingData.Cnst_Nil, ZingData.Cnst_Void, locals, MkZingBlocks(MkZingBlock("dummy", MkZingSeq(runBodyStmts))), ZingData.Cnst_Static, ZingData.Cnst_Activate);
             methods.Add(runMethod);
 
             return AddArgs(ZingData.App_ClassDecl, Factory.Instance.MkCnst("Main"), MkZingVarDecls(fields), MkZingMethodDecls(methods));
@@ -2049,8 +1538,7 @@ namespace Microsoft.Pc
         {
             List<AST<Node>> fields = new List<AST<Node>>(allMachines[machineName].localVariableToVarInfo.Keys.Select(name => MkZingVarDecl(name, PrtValue)));
             fields.Add(MkZingVarDecl("myHandle", SmHandle));
-            fields.Add(MkZingVarDecl("SPSet", SmEventSet));
-            fields.Add(MkZingVarDecl("HPSet", SmEventSet));
+
             List<AST<Node>> methods = new List<AST<Node>>();
             foreach (var x in allMachines[machineName].stateNameToStateInfo)
             {
@@ -2089,15 +1577,13 @@ namespace Microsoft.Pc
             return AddArgs(ZingData.App_ClassDecl, Factory.Instance.MkCnst(ZingMachineClassName(machineName)), MkZingVarDecls(fields), MkZingMethodDecls(methods));
         }
 
-        private void MkZingClasses(List<AST<Node>> elements, List<string> allMachinesInModuleList, AST<Node> currentModuleList)
+        private void MkZingClasses(List<AST<Node>> elements)
         {
-            //generate machine for all
-            foreach(var machineName in allMachinesInModuleList)
+            foreach (string machineName in allMachines.Keys)
             {
                 elements.Add(GenerateMachineClass(machineName));
             }
-
-            elements.Add(GenerateMainClass(allMachinesInModuleList, currentModuleList));
+            elements.Add(GenerateMainClass());
         }
 
         private AST<Node> GenerateCalculateDeferredAndActionSetMethodDecl(string stateName, StateInfo stateInfo)
@@ -2198,11 +1684,11 @@ namespace Microsoft.Pc
             {
                 stmts.Add(MkZingAssign(locals, MkZingNew(Factory.Instance.MkCnst("PRT_VALUE_ARRAY"), Factory.Instance.MkCnst(funInfo.maxNumLocals))));
             }
-			if (funInfo.isAnonymous)
+            if (funInfo.isAnonymous)
             {
                 var payloadVarName = funInfo.parameterNames[0];
                 stmts.Add(MkZingAssign(MkZingIndex(locals, Factory.Instance.MkCnst(funInfo.localNameToInfo[payloadVarName].index)), MkZingCall(PrtCloneValue, MkZingDot("myHandle", "currentArg"))));
-            } 
+            }
             foreach (var localName in funInfo.localNames)
             {
                 var localVarInfo = funInfo.localNameToInfo[localName];
@@ -2931,12 +2417,11 @@ namespace Microsoft.Pc
             for (int i = 0; i < eventNames.Count; i++)
             {
                 var beforeLabel = ctxt.GetFreshLabel();
-
                 var eventName = eventNames[i];
                 var funName = funNames[i];
                 var calleeInfo = allStaticFuns.ContainsKey(funName) ? allStaticFuns[funName] : allMachines[ctxt.machineName].funNameToFunInfo[funName];
                 Debug.Assert(calleeInfo.isAnonymous);
-				List<AST<Node>> ifStmts = new List<AST<Node>>();
+                List<AST<Node>> ifStmts = new List<AST<Node>>();
                 var payloadVarName = calleeInfo.parameterNames[0];
                 ifStmts.Add(MkZingAssign(MkZingIndex(MkZingIdentifier("locals"), Factory.Instance.MkCnst(calleeInfo.localNameToInfo[payloadVarName].index)), MkZingCall(PrtCloneValue, MkZingDot("myHandle", "currentArg"))));
                 foreach (var calleeLocal in calleeInfo.localNames)
@@ -3033,8 +2518,7 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldNew(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
-            var interfaceName = GetName(ft, 0);
-            var typeName = allModuleLists.First().Value.interfaceToMachineMap[interfaceName];
+            var typeName = GetName(ft, 2);
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
@@ -3052,27 +2536,33 @@ namespace Microsoft.Pc
 
                 AST<Node> retVal;
                 MachineInfo machineInfo = allMachines[typeName];
-                
-                var newMachine = ctxt.GetTmpVar(SmHandle, "newMachine");
-                ctxt.AddSideEffect(MkZingAssign(newMachine, MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar)));
-                string afterLabel = ctxt.GetFreshLabel();
-                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewMachine"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingIdentifier("locals"), newMachine)));
-                ctxt.AddSideEffect(MkZingReturn(ZingData.Cnst_Nil));
-                ctxt.AddSideEffect(MkZingBlock(afterLabel, MkZingAssign(newMachine, MkZingDot("entryCtxt", "id"))));
-                ctxt.AddSideEffect(MkZingAssign(MkZingDot("entryCtxt", "id"), MkZingIdentifier("null")));
-                if (((Id)ft.Function).Name == "New")
+                if (machineInfo.IsMonitor)
                 {
-                    var type = LookupType(ctxt, ft);
-                    retVal = ctxt.GetTmpVar(PrtValue, "tmp");
-                    ctxt.AddSideEffect(MkZingAssign(retVal, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(type))));
-                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetMachine"), retVal, newMachine)));
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar)));
+                    retVal = ZingData.Cnst_Nil;
                 }
                 else
                 {
-                    // ((Id)ft.Function).Name == "NewStmt"
-                    retVal = ZingData.Cnst_Nil;
+                    var newMachine = ctxt.GetTmpVar(SmHandle, "newMachine");
+                    ctxt.AddSideEffect(MkZingAssign(newMachine, MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar)));
+                    string afterLabel = ctxt.GetFreshLabel();
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewMachine"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingIdentifier("locals"), newMachine)));
+                    ctxt.AddSideEffect(MkZingReturn(ZingData.Cnst_Nil));
+                    ctxt.AddSideEffect(MkZingBlock(afterLabel, MkZingAssign(newMachine, MkZingDot("entryCtxt", "id"))));
+                    ctxt.AddSideEffect(MkZingAssign(MkZingDot("entryCtxt", "id"), MkZingIdentifier("null")));
+                    if (((Id)ft.Function).Name == "New")
+                    {
+                        var type = LookupType(ctxt, ft);
+                        retVal = ctxt.GetTmpVar(PrtValue, "tmp");
+                        ctxt.AddSideEffect(MkZingAssign(retVal, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(type))));
+                        ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetMachine"), retVal, newMachine)));
+                    }
+                    else
+                    {
+                        // ((Id)ft.Function).Name == "NewStmt"
+                        retVal = ZingData.Cnst_Nil;
+                    }
                 }
-                
                 ctxt.lastEval = retVal;
                 return new ZingTranslationInfo(retVal);
             }
@@ -3235,9 +2725,9 @@ namespace Microsoft.Pc
             }
             else if (op == PData.Cnst_This.Node.Name)
             {
-                var interfaceType = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("InterfaceType")), Factory.Instance.MkCnst(ctxt.machineName));
+                var machineType = PTypeReal;
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmp");
-                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(interfaceType.Node))));
+                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(machineType.Node))));
                 ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetMachine"), tmpVar, MkZingIdentifier("myHandle"))));
                 retVal = tmpVar;
             }
@@ -3615,14 +3105,12 @@ namespace Microsoft.Pc
             {
                 it.MoveNext();
                 var targetExpr = MkZingDot(it.Current.node, "mach");
-                var targetInterface = MkZingDot(it.Current.node, "type", "interfaceSet");
                 it.MoveNext();
                 var eventExpr = MkZingDot(it.Current.node, "ev");
                 it.MoveNext();
                 AST<Node> payloadExpr = it.Current.node;
                 ctxt.AddSideEffect(MkZingAssert(MkZingNeq(targetExpr, MkZingIdentifier("null")), "Target of send must be non-null"));
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpPayload");
-                
                 if (payloadExpr == ZingData.Cnst_Nil)
                 {
                     ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
@@ -3631,29 +3119,12 @@ namespace Microsoft.Pc
                 {
                     ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, payloadExpr));
                 }
-
-                //TODO : This is hack
-                if(!allStaticFuns.ContainsKey(ctxt.entityName))
-                {
-                    //3 dynamic assertions with respect to module system
-                    ctxt.AddSideEffect(MkZingAssert(MkZingIn(eventExpr, targetInterface), "Sent event is not in the target interface"));
-                    ctxt.AddSideEffect(MkZingAssert(MkZingIn(eventExpr, MkZingIdentifier("SPSet")), "Sent event is not in sends or private set of the module"));
-                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(PrtAssertPrivateSend, eventExpr, tmpVar, MkZingIdentifier("HPSet"))));
-                }
-                
                 var afterLabel = ctxt.GetFreshLabel();
-
-                //generate invoke monitor only in case of monitor test case
-                if (crntTestCaseType == TestCaseType.MONITORS)
+                foreach (var machineName in allMachines.Keys)
                 {
-                    //for all global monitors
-                    foreach (var machineName in crntAllMachines)
-                    {
-                        if (!allMachines[machineName].IsMonitor) continue;
-                        ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", machineName)), eventExpr, tmpVar)));
-                    }
+                    if (!allMachines[machineName].IsMonitor) continue;
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", machineName)), eventExpr, tmpVar)));
                 }
-
                 ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(targetExpr, "EnqueueEvent"), eventExpr, tmpVar, Factory.Instance.MkCnst("myHandle"))));
                 ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Send"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingIdentifier("locals"))));
                 return new ZingTranslationInfo(MkZingSeq(MkZingReturn(ZingData.Cnst_Nil), MkZingBlock(afterLabel, ZingData.Cnst_Nil)));
@@ -3679,17 +3150,11 @@ namespace Microsoft.Pc
                 {
                     ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, arg));
                 }
-                //Monitor can be applied on the private event
-                ctxt.AddSideEffect(MkZingAssert(MkZingIn(eventExpr, MkZingIdentifier("HPSet")), "monitored event is not in the private set of the module"));
                 List<AST<Node>> stmts = new List<AST<Node>>();
-                //generate invoke monitor only in case of private monitors
-                if (crntTestCaseType == TestCaseType.MONITORS)
+                foreach (var machineName in allMachines.Keys)
                 {
-                    //for all private monitors for this machine
-                    foreach (var monitorName in crntPrivateMonitors[ctxt.machineName])
-                    {
-                        ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", monitorName)), eventExpr, tmpVar)));
-                    }
+                    if (!allMachines[machineName].IsMonitor) continue;
+                    stmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("InvokeMachine_{0}", machineName)), eventExpr, tmpVar)));
                 }
                 return new ZingTranslationInfo(MkZingSeq(stmts));
             }
@@ -3960,7 +3425,7 @@ namespace Microsoft.Pc
             var doPop = MkZingIdentifier("doPop");
             var machineInstance = MkZingIdentifier(string.Format("{0}_instance", machineName));
             var machineHandles = MkZingDot("Main", GetMonitorMachineName(machineName));
-            string errorTraceString = string.Format("\"<StateLog> Unhandled event exception by machine {0}\\n\"", machineName);
+            string errorTraceString = string.Format("\"<StateLog> Unhandled event exception by machine {0}-{{0}}\\n\"", machineName);
 
             List<AST<Node>> stmts = new List<AST<Node>>();
             stmts.Add(
@@ -3969,19 +3434,20 @@ namespace Microsoft.Pc
                     MkZingReturn(ZingData.Cnst_Nil)));
             stmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst("\"<MonitorLog> Enqueued Event < {0}, \""), MkZingDot(evt, "name"))));
             stmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "Print"), arg)));
-            string traceString = string.Format("\" > to {0} monitors\\n\"", machineName);
-            stmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString))));
-            var monitorHandle = MkZingDot("Main", GetMonitorMachineName(machineName));
-            AST<Node> runMonitor =
+            string traceString = string.Format("\" > to {{0}} {0} monitors\\n\"", machineName);
+            stmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString),
+                MkZingCall(MkZingIdentifier("sizeof"), MkZingDot("Main", GetMonitorMachineName(machineName))))));
+
+            AST<Node> loopBody =
                MkZingSeq(
-                   MkZingAssign(MkZingDot(monitorHandle, "myHandle", "currentEvent"), MkZingIdentifier("evt")),
-                   MkZingAssign(MkZingDot(monitorHandle, "myHandle", "currentArg"), MkZingIdentifier("arg")),
-                   MkZingAssign(doPop, MkZingCall(MkZingDot(monitorHandle, "RunHelper"), ZingData.Cnst_False)),
+                   MkZingAssign(MkZingDot("iter", "myHandle", "currentEvent"), MkZingIdentifier("evt")),
+                   MkZingAssign(MkZingDot("iter", "myHandle", "currentArg"), MkZingIdentifier("arg")),
+                   MkZingAssign(doPop, MkZingCall(MkZingDot("iter", "RunHelper"), ZingData.Cnst_False)),
                    MkZingIfThen(doPop,
-                                MkZingSeq(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(errorTraceString))),
+                                MkZingSeq(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(errorTraceString), MkZingDot("iter", "myHandle", "instance"))),
                                           MkZingAssert(ZingData.Cnst_False))));
 
-            stmts.Add(runMonitor);
+            stmts.Add(MkZingForeach(Factory.Instance.MkCnst(ZingMachineClassName(machineName)), Factory.Instance.MkCnst("iter"), MkZingDot("Main", GetMonitorMachineName(machineName)), loopBody));
             AST<Node> body = MkZingBlock("dummy", MkZingSeq(stmts));
             return MkZingMethodDecl(string.Format("InvokeMachine_{0}", machineName), MkZingVarDecls(parameters), ZingData.Cnst_Void, MkZingVarDecls(localVars), MkZingBlocks(body), ZingData.Cnst_Static);
         }
@@ -4000,11 +3466,12 @@ namespace Microsoft.Pc
 
         private AST<Node> MkCreateMonitorMethod(string machineName)
         {
-            
             var objectName = string.Format("o_{0}", machineName);
             var parameters = new List<AST<Node>>();
+            parameters.Add(MkZingVarDecl("arg", Factory.Instance.MkCnst("PRT_VALUE")));
             var localVars = new List<AST<Node>>();
             localVars.Add(MkZingVarDecl(objectName, Factory.Instance.MkCnst(ZingMachineClassName(machineName))));
+            localVars.Add(MkZingVarDecl("chooseMonitor", ZingData.Cnst_Bool));
             localVars.Add(MkZingVarDecl("doPop", ZingData.Cnst_Bool));
 
             var machineInfo = allMachines[machineName];
@@ -4015,6 +3482,8 @@ namespace Microsoft.Pc
             {
                 List<AST<Node>> stmts = new List<AST<Node>>();
                 stmts.Add(MkZingIfThen(MkZingNeq(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Init")), MkZingReturn(ZingData.Cnst_Nil)));
+                stmts.Add(MkZingAssign(MkZingIdentifier("chooseMonitor"), MkZingCall(Factory.Instance.MkCnst("choose"), Factory.Instance.MkCnst("bool"))));
+                stmts.Add(MkZingIfThen(MkZingIdentifier("chooseMonitor"), MkZingReturn(ZingData.Cnst_Nil)));
                 if (machineInfo.monitorType == MonitorType.FINALLY)
                 {
                     stmts.Add(MkZingAssign(MkZingDot("FairCycle", "gate"), MkZingDot("GateStatus", "Closed")));
@@ -4038,11 +3507,11 @@ namespace Microsoft.Pc
                     MkZingAssign(MkZingDot(objectName, "myHandle"),
                                  MkZingCall(MkZingDot("SM_HANDLE", "Construct"), MkZingDot("Machine", string.Format("_{0}", machineName)), machineInstance, Factory.Instance.MkCnst(0))),
                     MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(createTraceString), machineInstance)),
-                    MkZingAssign(MkZingDot(objectName, "myHandle", "currentArg"), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))),
+                    MkZingAssign(MkZingDot(objectName, "myHandle", "currentArg"), MkZingIdentifier("arg")),
                     MkZingAssign(machineInstance, MkZingAdd(machineInstance, Factory.Instance.MkCnst(1))),
                     MkZingCallStmt(MkZingCall(MkZingDot(objectName, "myHandle", "Push"))),
                     MkZingAssign(MkZingDot(objectName, "myHandle", "stack", "state"), MkZingState(machineInfo.initStateName)),
-                    MkZingAssign(machineHandles, MkZingIdentifier(objectName)),
+                    MkZingAssign(machineHandles, MkZingAdd(machineHandles, MkZingIdentifier(objectName))),
                     MkZingAssign(doPop, MkZingCall(MkZingDot(objectName, "RunHelper"), ZingData.Cnst_True)),
                     MkZingIfThen(doPop,
                                  MkZingSeq(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(errorTraceString), MkZingDot(objectName, "myHandle", "instance"))),
@@ -4051,8 +3520,6 @@ namespace Microsoft.Pc
             body = MkZingBlock("dummy", body);
 
             return MkZingMethodDecl(string.Format("CreateMachine_{0}", machineName), MkZingVarDecls(parameters), ZingData.Cnst_Void, MkZingVarDecls(localVars), MkZingBlocks(body), ZingData.Cnst_Static);
-            
-            
         }
 
         private AST<Node> MkCreateMachineMethod(string machineName)
@@ -4070,9 +3537,6 @@ namespace Microsoft.Pc
             var body = MkZingSeq(
                     MkZingAssign(MkZingIdentifier(objectName), MkZingNew(Factory.Instance.MkCnst(ZingMachineClassName(machineName)), ZingData.Cnst_Nil)),
                     MkInitializers(machineName, objectName),
-                    MkZingAssign(MkZingDot(objectName, "SPSet"), MkZingDot("Main", GetSendPrivateSetNameForModule(GetModuleName(machineName)))),
-                    MkZingAssign(MkZingDot(objectName, "HPSet"),
-                                 MkZingDot("Main", GetHiddenPrivateSetNameForModule(GetModuleName(machineName)))),
                     MkZingAssign(MkZingDot(objectName, "myHandle"),
                                  MkZingCall(MkZingDot("SM_HANDLE", "Construct"), MkZingDot("Machine", string.Format("_{0}", machineName)), machineInstance, Factory.Instance.MkCnst(allMachines[machineName].maxQueueSize))),
                     MkZingAssign(MkZingDot("SM_HANDLE", "enabled"), MkZingAdd(MkZingDot("SM_HANDLE", "enabled"), MkZingDot(objectName, "myHandle"))),
@@ -4168,11 +3632,6 @@ namespace Microsoft.Pc
                 return retVal;
             }
 
-            private AST<FuncTerm> GetInterfaceSet(string interfaceName)
-            {
-                var retVal = MkZingDot("Main", string.Format("Interface_{0}", interfaceName));
-                return retVal;
-            }
             private new AST<FuncTerm> GetType()
             {
                 var retVal = MkZingDot("Main", string.Format("type_{0}_PRT_TYPE", typeCount));
@@ -4294,7 +3753,7 @@ namespace Microsoft.Pc
                     AddTypeInitialization(MkZingAssign(seqType, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkSeqType"), innerType)));
                     return seqType;
                 }
-                else if(typeKind == "MapType")
+                else
                 {
                     // typeKind == "MapType"
                     var domType = PTypeToZingExpr((FuncTerm)GetArgByIndex(type, 0));
@@ -4302,14 +3761,6 @@ namespace Microsoft.Pc
                     var mapType = GetType();
                     AddTypeInitialization(MkZingAssign(mapType, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkMapType"), domType, codType)));
                     return mapType;
-                }
-                else
-                {
-                    //typeKind == "InterfaceType"
-                    var InterfaceType = GetType();
-                    var interfaceName = ((Cnst)GetArgByIndex(type, 0)).GetStringValue();
-                    AddTypeInitialization(MkZingAssign(InterfaceType, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkInterfaceType"), GetInterfaceSet(interfaceName))));
-                    return InterfaceType;
                 }
             }
         }

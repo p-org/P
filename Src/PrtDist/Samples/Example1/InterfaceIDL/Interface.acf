@@ -1,0 +1,9 @@
+[
+explicit_handle
+]
+
+interface Example1 {
+	
+	[async] AsyncPingServer();
+}
+

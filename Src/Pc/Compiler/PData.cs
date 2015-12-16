@@ -14,8 +14,6 @@
         public static readonly AST<Id> Cnst_True = Factory.Instance.MkId("TRUE");
         public static readonly AST<Id> Cnst_False = Factory.Instance.MkId("FALSE");
         public static readonly AST<Id> Cnst_This = Factory.Instance.MkId("THIS");
-        public static readonly AST<Id> Cnst_Trigger = Factory.Instance.MkId("TRIGGER");
-        public static readonly AST<Id> Cnst_Payload = Factory.Instance.MkId("PAYLOAD");
         public static readonly AST<Id> Cnst_Nondet = Factory.Instance.MkId("NONDET");
         public static readonly AST<Id> Cnst_FairNondet = Factory.Instance.MkId("FAIRNONDET");
         public static readonly AST<Id> Cnst_Null = Factory.Instance.MkId("NULL");

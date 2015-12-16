@@ -19,8 +19,7 @@ domain PData
     SeqType         ::= new (x: any TypeExpr).
     MapType         ::= new (k: any TypeExpr, v: any TypeExpr).
     NmdTupTypeField ::= new (name: any String, type: any TypeExpr). 
-	InterfaceType	::= new (name: any String).
-    TypeExpr        ::= NameType + BaseType + TupType + NmdTupType + SeqType + MapType + InterfaceType.
+    TypeExpr        ::= NameType + BaseType + TupType + NmdTupType + SeqType + MapType.
         
     /*************************************************************/
     /****************          Action Language        ************/
@@ -28,7 +27,7 @@ domain PData
                                
     //// Expressions
     Name       ::= new (name: String).
-    New        ::= new (name: String, arg: any Expr + { NIL }).
+    New        ::= new (name: String, arg: any Expr + { NIL }, subst: String).
     FunApp     ::= new (name: String, args: any Exprs + { NIL }).
     NulApp     ::= new (op: Integer + Boolean + { THIS, NONDET, FAIRNONDET, NULL, HALT }).
     UnApp      ::= new (op: { NOT, NEG, KEYS, VALUES, SIZEOF }, arg1: any Expr).
@@ -44,7 +43,7 @@ domain PData
     ExprsExt   ::= Expr + Exprs + NamedExprs.
 
     //// Statements
-    NewStmt  ::= new (name: String, arg: any Expr + { NIL }).
+    NewStmt  ::= new (name: String, arg: any Expr + { NIL }, subst: String).
     Raise    ::= new (ev: any Expr, arg: any Expr + { NIL }).
     Send     ::= new (dest: any Expr, ev: any Expr, arg: any Expr + { NIL }).
     Monitor  ::= new (ev: any Expr, arg: any Expr + { NIL }).
@@ -61,42 +60,12 @@ domain PData
 
     Stmt ::= NewStmt + Raise + Send + Monitor + FunStmt + NulStmt + UnStmt + BinStmt + Return + While + Ite + Seq + Receive. 
 
-	/*************************************************************/
-    /****************  Module Declarations    *************/
-    /*************************************************************/
-	InterfaceEventDecl ::= new (interface: any InterfaceType, ev: String).
-
-	MachineReceivesDecl ::= new (mach: any MachineDecl, ev: String).
-
-	ModuleDecl ::= new (name : any String).
-	ModuleSendsDecl ::= new (mod: any ModuleDecl, ev: String).
-	ModulePrivateDecl ::= new (mod: any ModuleDecl, ev: String).
-	ModuleCreatesDecl ::= new (mod : any ModuleDecl, inter: any InterfaceType).
-	
-	ImplementationModules ::= new (mL: any ModuleList).
-	SpecificationModules ::= new (sL: any ModuleList).
-	RefinesTestDecl ::= fun (name: String -> imp: any ModuleList, spec: any ModuleList).
-	MonitorsTestDecl ::= fun (name: String -> imp: any ModuleList, monitors: any MonitorList).
-	NoFailureTestDecl ::= fun (name: String -> imp: any ModuleList).
-
-	ModuleList ::= new (mod: any Module, tail: any ModuleList + {NIL}).
-	Hide ::= new (ei: any EventsOrInterfaces, modL: any ModuleList).
-	PrivateMonitor ::= new (mon: String, mod: any ModuleDecl).
-	MonitorList ::= new (mon: any MonitorKind, tail: any MonitorList + {NIL}).
-	EventList ::= new (ev: String, tail: any EventList + {NIL}).
-	InterfaceList ::= new (inter: any InterfaceType, tail: any InterfaceList + {NIL}).
-	
-	//combining value types (used in PToZing)
-	Module ::= ModuleDecl + Hide.
-	EventsOrInterfaces ::= EventList + InterfaceList.
-	MonitorKind ::= String + PrivateMonitor. //String represents the global monitor name
-
     /*************************************************************/
     /****************  State Machine Declarations    *************/
     /*************************************************************/
 
     EventDecl      ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
-    MachineDecl    ::= fun (name: String, mod: any ModuleDecl + {NIL} -> kind: { REAL, MODEL, MONITOR }, card: any QueueConstraint, start: any QualifiedName, isMain: Boolean).
+    MachineDecl    ::= fun (name: String -> kind: { REAL, MODEL, MONITOR }, card: any QueueConstraint, start: any QualifiedName, isMain: Boolean).
 
 	ObservesDecl   ::= new (monitor: MachineDecl, ev: String).
 
@@ -109,7 +78,7 @@ domain PData
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String).
     DoDecl         ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String).
 
-    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + ObservesDecl + InterfaceEventDecl + MachineReceivesDecl + ModuleDecl + ModuleSendsDecl + ModulePrivateDecl + ModuleCreatesDecl + ImplementationModules + SpecificationModules + RefinesTestDecl + MonitorsTestDecl + NoFailureTestDecl + InterfaceType.            
+    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + ObservesDecl.            
 
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
@@ -133,16 +102,12 @@ domain PData
    	RealOwner ::= (f: FunDecl).
 	RealOwner(f) :- f is FunDecl, f.owner = NIL; 
 	                f is FunDecl, f.owner.kind = REAL.
-	
-	//all machines in implementation modules list
-	AllImpModules ::= sub (imodL: ImplementationModules, mod: ModuleDecl).
-	ImpMachine ::= (mach: MachineDecl).
-	ImpMachine(m) :- AllImpModules(modl, mod), m is MachineDecl(_, mod, _, _, _, _).
 }
 
 domain PStructuralTyping extends PData
 {
     /*************************************************************/
+	conforms no missingDecl. 
 	conforms no OneDeclError(_).
 	conforms no TwoDeclError(_, _).
 	conforms no DeclFunError(_, _).
@@ -152,15 +117,21 @@ domain PStructuralTyping extends PData
     OneDeclError ::= (PDecl).
     TwoDeclError ::= (PDecl, PDecl).
     DeclFunError ::= (PDecl, String).
-
+	
     [ rule_Classes = '"error, msg: Global function has the same name"']
     TwoDeclError(f1, f2) :- f1 != f2, f1 is FunDecl, f2 is FunDecl, f1.name = f2.name, f1.owner = NIL, f2.owner != NIL.
 
-	[ rule_Classes = '"error, msg: Multiple Transitions over the same event"']
+	[ rule_Classes = '"error, msg: Multiple transitions over the same event"']
 	TwoDeclError(t1, t2) :- t1 != t2, t1 is TransDecl, t2 is TransDecl, t1.src = t2.src, t1.trig = t2.trig.
 	[ rule_Classes = '"error, msg: Multiple actions over the same event"']
 	TwoDeclError(a1, a2) :- a1 != a2, a1 is DoDecl(state, owner, _), a2 is DoDecl(state, owner, _), a1.src = a2.src, a1.trig = a2.trig.
 	
+	//// There should be a main machine
+	[rule_Classes = '"error, msg: No Main Machine"']
+	missingDecl :- no MachineDecl(_, _, _, _, TRUE).
+	[ rule_Classes = '"error, msg: Multiple machines are declared as main machines"']
+	TwoDeclError(m1, m2) :- m1 is MachineDecl, m2 is MachineDecl, m1.isMain = TRUE, m2.isMain = TRUE, m1 != m2.
+		
 	//// there should be a start state in each state machine.
 	[ rule_Classes = '"error, msg: no start state in machine"']
 	OneDeclError(m) :- m is MachineDecl, no StateDecl(s, m , _, _, _), m.start = s.
@@ -218,66 +189,9 @@ domain PStructuralTyping extends PData
 	[rule_Classes = '"error, msg: defer not allowed in monitor"']
 	OneDeclError(d) :- d is DoDecl(s, _, DEFER), s.owner.kind = MONITOR.	
 
-	//event in observes is declared
-	[rule_Classes = '"error, msg: event in observes set is not declared"']
+	//event in monitors is defined
+	[rule_Classes = '"error, msg: event in monitors is undefined"']
 	OneDeclError(obs) :- obs is ObservesDecl, obs.monitor.kind = MONITOR, no EventDecl(obs.ev, _, _).	
-
-	//event in interface type 
-	[rule_Classes = '"error, msg: unknown event in interface declaration"']
-	OneDeclError(inter) :- inter is InterfaceEventDecl(_, e), no EventDecl(e, _, _).
-
-	//interface type in variable decl.
-	[rule_Classes = '"error, msg: unknown type in variable declaration"']
-	OneDeclError(varD) :- varD is VarDecl(_, _, tp), tp : InterfaceType, no InterfaceEventDecl(tp, _).
-
-	//event in receives of a machine
-	[rule_Classes = '"error, msg: event in receives is not declared"']
-	OneDeclError(receivesE) :- receivesE is MachineReceivesDecl(_, ev), no EventDecl(ev, _, _).
-
-	//event in sends of a module
-	[rule_Classes = '"error, msg: event in sends is not declared"']
-	OneDeclError(sendsE) :- sendsE is ModuleSendsDecl(_, ev), no EventDecl(ev, _, _).
-
-	//event in private of a module
-	[rule_Classes = '"error, msg: event in private is not declared"']
-	OneDeclError(private) :- private is ModulePrivateDecl(_, ev), no EventDecl(ev, _, _).
-
-	//interface type in creates declaration
-	[rule_Classes = '"error, msg: interface type in creates is not declared"']
-	OneDeclError(creates) :- creates is ModuleCreatesDecl(_, i), no InterfaceEventDecl(i, _).
-	
-	CompDecls ::= ImplementationModules + SpecificationModules + RefinesTestDecl + MonitorsTestDecl + NoFailureTestDecl.
-	VariousList ::= ModuleList + EventList + MonitorList.
-
-	//module is declared
-	SubVL ::= sub (c: CompDecls, mem: VariousList).
-	[rule_Classes = '"error, msg: module in the list is not declared"']
-	OneDeclError(c) :- SubVL(c, ml), ml = ModuleList(ModuleDecl(m), _), no ModuleDecl(m).
-	
-	//event in hide is declared
-	[rule_Classes = '"error, msg: event used in hide operation is not declared"']
-	OneDeclError(c) :- SubVL(c, ml), ml = EventList(ev, _), no EventDecl(ev, _, _).
-
-	//interface type not declared
-	allInterfaceTypes ::= sub(i: InterfaceType).
-	[rule_Classes = '"error, msg: undeclared interface type"']
-	OneDeclError(i) :- allInterfaceTypes(i), no InterfaceEventDecl(i, _).
-	
-	//monitor is declared
-	[rule_Classes = '"error, msg: monitor is undeclared"']
-	OneDeclError(c) :- SubVL(c, ml), ml = MonitorList(s, _), s : String, no MachineDecl(s, _, MONITOR, _, _, _);
-					   SubVL(c, ml), ml = MonitorList(m, _), m = PrivateMonitor(s, _), no MachineDecl(s, _, MONITOR, _, _, _).
-	
-	
-
-	//module in private monitor is declared
-	[rule_Classes = '"error, msg: undeclared module in private monitor declaration"']
-	OneDeclError(c) :- SubVL(c, ml), ml = MonitorList(m, _), m = PrivateMonitor(_, ModuleDecl(s)), no ModuleDecl(s).
-
-	//only one liveness monitor is allowed per test case
-	[ rule_Classes = '"error, msg: multiple liveness monitors declared in the test-case"']
-	OneDeclError(c) :- SubVL(c, ml1), SubVL(c, ml2), ml1 = MonitorList(s1, _), ml2 = MonitorList(s2, _), s1 != s2, 
-					   mach1 = MachineDecl(s1, _, MONITOR, _, _, _),  mach2 = MachineDecl(s2, _, MONITOR, _, _, _), StateDecl(_, mach1, _, _, k1), k1 != WARM, StateDecl(_, mach2, _, _, k2), k2 != WARM.
 }
 
 domain PStaticTyping extends PData
@@ -296,13 +210,6 @@ domain PStaticTyping extends PData
 	conforms no BadLabelError(_).
 	conforms no PayloadError(_).
 	conforms no TypeDefError(_).
-	conforms no DomOfMapUnSafe(_).
-	conforms no ModuleLevelTypingError(_).
-	conforms no IllegalMainMachine(_).
-	conforms no IllegalComposition(_).
-	conforms no IllegalHideOperation(_).
-	conforms no IllegalMonitorTestCase(_).
-	conforms no IllegalRefinesTestCase(_).
     /*************************************************************/
 
 	//// Check that TypeDef's are used properly
@@ -346,9 +253,6 @@ domain PStaticTyping extends PData
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = SeqType(x), TypeExpansion(x, x'), eType = SeqType(x').
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = MapType(k, v), TypeExpansion(k, k'), TypeExpansion(v, v'), eType = MapType(k', v').
 
-
-    /*************************************************************/
-
     //// The declarations that may contain expressions or statements that should be typed.
     TypingContext ::= FunDecl + AnonFunDecl.
     
@@ -380,8 +284,8 @@ domain PStaticTyping extends PData
 	SubSE(c, e) :- SubSE(c, Send(_, _, e)), e: Expr.
 	SubSE(c, e) :- SubSE(c, Raise(e, _)).
 	SubSE(c, e) :- SubSE(c, Raise(_, e)), e: Expr.
-	SubSE(c, e) :- SubSE(c, NewStmt(_, e)), e: Expr.
-	SubSE(c, e) :- SubSE(c, New(_, e)), e: Expr.
+	SubSE(c, e) :- SubSE(c, NewStmt(_, e, _)), e: Expr.
+	SubSE(c, e) :- SubSE(c, New(_, e, _)), e: Expr.
 	SubSE(c, es) :- SubSE(c, FunApp(_, es)), es: Exprs.
 	SubSE(c, e) :- SubSE(c, UnApp(_, e)).
 	SubSE(c, e1), SubSE(c, e2) :- SubSE(c, BinApp(_, e1, e2)).
@@ -397,282 +301,6 @@ domain PStaticTyping extends PData
 	//// True if in this context
 	IsEventCnst ::= (cntxt: TypingContext, expr: Typeable, paytype: TypeExpr).
 
-	/**************************************************************/
-	/*			  Per module level typing error					*/
-	/**************************************************************/
-	Permissions ::= ModuleCreatesDecl + ModulePrivateDecl + ModuleSendsDecl + MachineReceivesDecl.
-	ModuleLevelTypingError ::= (p: Permissions).
-
-	
-	//sends and privates of the same module are disjoint
-	[rule_Classes = '"error, msg: sends and private of the module are not disjoint"']
-	ModuleLevelTypingError(s) :- s is ModuleSendsDecl(m, ev), ModulePrivateDecl(m, ev).
-	
-	//public events in receives of the same module are disjoint
-	[rule_Classes = '"error, msg: public events in all the receives of a module must be disjoint"']
-	ModuleLevelTypingError(mr) :- mr is MachineReceivesDecl(id1, ev), MachineReceivesDecl(id2, ev), id1 != id2, id1.mod = id2.mod, no ModulePrivateDecl(id1.mod, ev).
-
-	//interfaces in creates are disjoint
-	[rule_Classes = '"error, msg: interfaces in creates list are not disjoint"']
-	ModuleLevelTypingError(c) :- c is ModuleCreatesDecl(m, i1), ModuleCreatesDecl(m, i2), InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev), i1 != i2.
-
-	//a create interface is either disjoint or equal to the public events in receives
-	//relation between creates interfaces and 
-	NotDisjointOrEqual ::= (m: ModuleDecl, i:InterfaceType, mr: MachineReceivesDecl).
-	NotDisjointOrEqual(m, i, mr) :- ModuleCreatesDecl(m, i), mach is MachineDecl(_, m, _, _, _, _), mr is MachineReceivesDecl(mach, _),
-									count({ev1 | InterfaceEventDecl(i, ev1), no MachineReceivesDecl(mach, ev1), no ModulePrivateDecl(m, ev1), InterfaceEventDecl(i, ev2), MachineReceivesDecl(mach, ev2), no ModulePrivateDecl(m, ev2)}) > 0;
-									ModuleCreatesDecl(m, i), mach is MachineDecl(_, m, _, _, _, _), mr is MachineReceivesDecl(mach, _),
-									count({ev1 | no InterfaceEventDecl(i, ev1), MachineReceivesDecl(mach, ev1), no ModulePrivateDecl(m, ev1), InterfaceEventDecl(i, ev2), MachineReceivesDecl(mach, ev2), no ModulePrivateDecl(m, ev2)}) > 0.
-
-
-	[rule_Classes = '"error, msg: interface type in creates is not equal to or disjoint from the public events in receives of the module"']
-	ModuleLevelTypingError(c) :- mach is MachineDecl(_, m, _, _, _, _), mr is MachineReceivesDecl(mach, _), 
-								  c is ModuleCreatesDecl(m, i), NotDisjointOrEqual(m, i, mr). 
-
-	//no private event in the creates interfaces
-	[rule_Classes = '"error, msg: interface in creates cannot have private events"']
-	ModuleLevelTypingError(c) :- ModulePrivateDecl(m, ev), c is ModuleCreatesDecl(m, i), InterfaceEventDecl(i, ev).
-	
-
-	/***************************************************************/
-	/***********    All the subterm operations ********************/
-	/***************************************************************/
-	//get modules in ModuleList 
-	SubModule ::= sub (modL: ModuleList, mod: ModuleDecl).
-	//get all the hidden modules
-	SubHide ::= sub (mdl: ModuleList, h: Hide).
-	//get all modulelists
-	SubModList ::= sub(mod: ModuleList, mod': ModuleList).
-	//get all events in EventList
-	SubEvents ::= sub(evl: EventList, ev : String).
-	//get all interfaces in InterfaceList
-	SubInterface ::= sub (il: InterfaceList, i: InterfaceType).
-
-	/**************** Illegal Main Machines ************************/
-	IllegalMainMachine ::= (ml: ModuleList).
-	[rule_Classes = '"error, msg: no Main Machine in the ModuleList"']
-	IllegalMainMachine(ml) :- NoFailureTestDecl(_, ml), count({mach | mach is MachineDecl(_, mod, _, _, _, TRUE), SubModule(ml, mod)}) = 0;
-							  MonitorsTestDecl(_, ml, _), count({mach | mach is MachineDecl(_, mod, _, _, _, TRUE), SubModule(ml, mod)}) = 0;
-							  RefinesTestDecl(_, ml, _), count({mach | mach is MachineDecl(_, mod, _, _, _, TRUE), SubModule(ml, mod)}) = 0;
-							  RefinesTestDecl(_, _, ml), count({mach | mach is MachineDecl(_, mod, _, _, _, TRUE), SubModule(ml, mod)}) = 0.
-
-	[rule_Classes = '"error, msg: more than one Main Machine in the ModuleList"']
-	IllegalMainMachine(ml) :- NoFailureTestDecl(_, ml), count({mach | mach is MachineDecl(_, mod, _, _, _, TRUE), SubModule(ml, mod)}) > 1;
-							  MonitorsTestDecl(_, ml, _), count({mach | mach is MachineDecl(_, mod, _, _, _, TRUE), SubModule(ml, mod)}) > 1;
-							  RefinesTestDecl(_, ml, _), count({mach | mach is MachineDecl(_, mod, _, _, _, TRUE), SubModule(ml, mod)}) > 1;
-							  RefinesTestDecl(_, _, ml), count({mach | mach is MachineDecl(_, mod, _, _, _, TRUE), SubModule(ml, mod)}) > 1.
-
-	/**************************************************************/
-	/******* Get all high level module compositions ****************/
-	/**************************************************************/
-	//get all the high level modules list 
-	//ImplementationModules + SpecificationModules + RefinesTestDecl + MonitorsTestDecl + NoFailureTestDecl.
-	ComposedModules ::= (m: ModuleList).
-	ComposedModules(mL) :- NoFailureTestDecl(_, mL);
-						   MonitorsTestDecl(_, mL, _);
-						   RefinesTestDecl(_, mL, _); RefinesTestDecl(_, _, mL);
-						   SpecificationModules(mL);
-						   ImplementationModules(mL).
-
-	/*************************************************************/
-	/*				Map from interface to machine				 */
-	/*************************************************************/
-	InterfaceToMachineMap ::= (ml: ModuleList, ie: InterfaceType, mach: MachineDecl).
-	ImpInterfaceToMachineMap ::= (ie: InterfaceType, mach: MachineDecl).
-
-	//compute the interface map
-	InterfaceToMachineMap(ml, i, mach) :-  ComposedModules(ml), SubModule(ml, m1), SubModule(ml, m2), CreatesForModule(m1, i), ReceivesForModule(m2, rd), InterfaceEventDecl(i, rd.ev), mach = rd.mach.
-
-	//map for implementation modules
-	ImpInterfaceToMachineMap(i, mc) :- ImplementationModules(ml), InterfaceToMachineMap(ml, i, mc).
-
-	/************************************************************/
-	/*			Compute the hidden events per module			*/
-	/************************************************************/
-	HiddenEvents ::= (mdl: ModuleList, md: ModuleDecl, evl : EventList + {NIL}).
-	HiddenEvents(ml, mod, evl) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), evl : EventList, SubModule(hml, mod), no ImplementationModules(ml);
-							      ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), inl : InterfaceList, SubModule(hml, mod), evl = toList(#EventList, NIL, {ev | SubInterface(inl, i), InterfaceEventDecl(i, ev)}), no ImplementationModules(ml).
-	
-	//compute events hidden in an hide operation
-	HiddenEventsInOp ::= (h: Hide, ev: String).
-	HiddenEventsInOp (h, ev) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), evl : EventList, SubEvents(evl, ev);
-								ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), inl : InterfaceList, SubModule(hml, mod), evl = toList(#EventList, NIL, {ev | SubInterface(inl, i), InterfaceEventDecl(i, ev)}), SubEvents(evl, ev).
-
-	/***************************************************************/
-	/*	Generate sends, private and creates for ModuleList		   */
-	/***************************************************************/
-	
-	AllModList ::= (modL: ModuleList).
-	SendsForModuleList ::= (ml: ModuleList, ev: String).
-	PrivateForModuleList ::= (ml: ModuleList, ev: String).
-	CreatesForModuleList ::= (ml: ModuleList, inter: InterfaceType).
-	ReceivesForModuleList ::= (ml: ModuleList, rd: MachineReceivesDecl).
-
-	//all the following modulelists must be legally composed.
-	AllModList(ml) :- ComposedModules(cml), SubModList(cml, ml).
-
-	//get the sends list after removing hidden events and interfaces
-	SendsForModuleList(ml, ev) :-  AllModList(ml), ml = ModuleList(m1, _), SendsForModule(m1, ev);
-								   AllModList(ml), ml = ModuleList(_, m2), SendsForModuleList(m2, ev), m2 != NIL.
-
-	//get the receives list for the ModuleList, its a simple union of all the receives
-	ReceivesForModuleList(ml, rd) :- AllModList(ml), SubModule(ml, mod), rd is MachineReceivesDecl(mach, _), mach.mod = mod.
-
-	//get the private list for the moduleList adding the hidden events and interfaces
-	PrivateForModuleList(ml, ev) :- AllModList(ml), ml = ModuleList(m, _), PrivateForModule(m, ev);						
-									AllModList(ml), ml = ModuleList(_, m2), PrivateForModuleList(m2, ev), m2 != NIL.
-
-	//get the creates list for the ModuleList, remove interfaces that have private events in them
-	CreatesForModuleList(ml, i) :- AllModList(ml), ml = ModuleList(m, _), CreatesForModule(m, i);						
-								   AllModList(ml), ml = ModuleList(_, m2), CreatesForModuleList(m2, i), m2 != NIL.
-	
-	//Generate interface for the all modules
-	GenInterfaceForHideMod ::= (h : Hide).
-	GenInterfaceForHideMod(hm) :- ComposedModules(cml), SubHide(cml, hm).
-
-	SendsForModule ::= (mod: Module, ev: String).
-	PrivateForModule ::= (mod: Module, ev: String).
-	CreatesForModule ::= (mod: Module, inter: InterfaceType).
-	ReceivesForModule ::= (mod: Module, rd: MachineReceivesDecl).
-
-	//get the sends list for the hide module
-	SendsForModule(hm, ev) :- GenInterfaceForHideMod(hm), SendsForModuleList(hm.modL, ev);
-							  ModuleSendsDecl(hm, ev).
-
-	//get the receives list for the hide module
-	ReceivesForModule(hm, rd) :- GenInterfaceForHideMod(hm), ReceivesForModuleList(hm.modL, rd);
-								 rd is MachineReceivesDecl(mach, _), mach is MachineDecl(_, hm, _, _, _, _), hm is ModuleDecl.
-
-	//get the private list for the hide module
-	PrivateForModule(hm, ev) :-  GenInterfaceForHideMod(hm), PrivateForModuleList(hm.modL, ev);
-							     GenInterfaceForHideMod(hm), hm = Hide(eL, _), eL : EventList, SubEvents(eL, ev);
-								 GenInterfaceForHideMod(hm), hm = Hide(iL, _), iL : InterfaceList, SubInterface(iL, i), InterfaceEventDecl(i, ev);
-								 ModulePrivateDecl(hm, ev).
-
-	//get the creates list for the hide module
-	CreatesForModule(hm, i) :-  GenInterfaceForHideMod(hm), hm = Hide(eL, modL), eL : EventList, CreatesForModuleList(modL, i);
-								GenInterfaceForHideMod(hm), hm = Hide(iL, modL), iL : InterfaceList, SubInterface(iL, i), CreatesForModuleList(modL, i), count({ev | InterfaceEventDecl(i, ev), PrivateForModule(hm, ev)}) = 0;
-								ModuleCreatesDecl(hm, i).
-	/**************************************************************/
-	/*                      Legal Composition                   */
-	/*************************************************************/
-	//generate legal compositions just so that you can generate better error messages
-	//currently the error messages are generated transitively all the way to the root modulelist.
-
-	/**************************************************************/
-	/*                      Illegal Composition                   */
-	/*************************************************************/
-	//Get all modulelist compositions
-	ComposeModWithModList ::= (ml: ModuleList, m1: Module, m2:ModuleList).
-	ComposeModWithModList(ml, m1, m2) :- AllModList(ml), ml = ModuleList(m1, m2), m2 : ModuleList. // add m2 is a legal compositions
-	
-	IllegalComposition ::= (modL: ModuleList).
-
-	//sends and privates in the modulelist are disjoint
-	[rule_Classes = '"error, msg: sends and private are not disjoint after composition"']
-	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), SendsForModule(m1, ev), PrivateForModuleList(m2, ev), no PrivateForModule(m1, ev);
-							  ComposeModWithModList(ml, m1, m2), SendsForModuleList(m2, ev), PrivateForModule(m1, ev), no PrivateForModuleList(m2, ev).
-
-
-	//public events in the receives must be disjoint
-	[rule_Classes = '"error, msg: public events in receives are not disjoint after composition"']
-	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), ReceivesForModule(m1, rd1), ReceivesForModuleList(m2, rd2), rd1.ev = rd2.ev, ml = ModuleList(m1, m2), no PrivateForModuleList(ml, ev), rd1.ev = ev.
-
-
-	//interfaces in creates are disjoint
-	[rule_Classes = '"error, msg: interfaces in creates list are not disjoint after composition"']
-	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), CreatesForModule(m1, i1), CreatesForModuleList(m2, i2), InterfaceEventDecl(i1, ev), InterfaceEventDecl(i2, ev).
-
-	//a create interface is either disjoint or equal to the public events in receives
-	[rule_Classes = '"error, msg: interface type in creates is not equal to or disjoint from the public events in receives after composition"']
-	IllegalComposition(ml) :- 
-	ComposeModWithModList(ml, m1, m2), CreatesForModuleList(ml, i), 
-	count({ev1 | InterfaceEventDecl(i, ev1), no ReceivesForModuleList(ml, ed1), no PrivateForModuleList(ml, ev1), rd1.ev = ev1, InterfaceEventDecl(i, ev2), ReceivesForModuleList(ml, rd2), no PrivateForModuleList(ml, ev2),rd2.ev = ev2, rd1.mach = rd2.mach}) > 0;
-	ComposeModWithModList(ml, m1, m2), CreatesForModuleList(ml, i), 
-	count({ev1 | no InterfaceEventDecl(i, ev1), ReceivesForModuleList(ml, rd1), rd1.ev = ev1, no PrivateForModuleList(ml, ev1), InterfaceEventDecl(i, ev2), ReceivesForModuleList(ml, rd2), rd2.ev = ev2, no PrivateForModuleList(ml, ev2), rd1.mach = rd2.mach}) > 0.
-
-	//no private event in the creates interfaces
-	[rule_Classes = '"error, msg: interface in creates has private event after composition"']
-	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), PrivateForModuleList(ml, ev), CreatesForModuleList(ml, i), InterfaceEventDecl(i, ev).
-	
-	//no duplicates in the sends list
-	[rule_Classes = '"error, msg: multiple modules have the same event in the sends list after composition"']
-	IllegalComposition(ml) :- ComposeModWithModList(ml, m1, m2), SendsForModule(m1, ev), SendsForModuleList(m2, ev), no PrivateForModuleList(ml, ev).
-
-	/*************************************************************/
-	/*					Illegal Hide Operation					*/
-	/*************************************************************/
-	IllegalHideOperation::= (hideOp: Hide).
-	
-	/*
-	Hide E in P is legal only if :
-	1) E is not a private event of P. 
-	2) E is not present in any of the creates interfaces of P.
-	3) E is in the receives list of one of the implemented machines of P.
-	*/
-
-	[rule_Classes = '"error, msg: hide operation cannot be performed on private event"']
-	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), SubEvents(evl, ev), PrivateForModuleList(hml, ev).
-
-	[rule_Classes = '"error, msg: hide operation cannot be performed on an event present in the creates interface"']
-	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), SubEvents(evl, ev), CreatesForModuleList(hml, i), InterfaceEventDecl(i, ev).
-	
-	[rule_Classes = '"error, msg: hide operation can be performed on a public event present in receives of an implemented machine"']
-	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(evl, hml), SubEvents(evl, ev), count({rd | ReceivesForModuleList(hml, rd), rd.ev = ev}) != 1.
-
-	/*
-	Hide I in P is legal only if:
-	1) I has no private events of P.
-	2) I is equals to implements of one of the machines in P. Implements is the set of public events in the receives set of the machine.
-	*/
-	[rule_Classes = '"error, msg: hide operation cannot be performed on an interface with private event"']
-	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), SubInterface(inl, i), PrivateForModuleList(hml, ev), InterfaceEventDecl(i, ev).
-
-	[rule_Classes = '"error, msg: hide operation can be performed on an interface that contains all public events of one of the receives"']
-	IllegalHideOperation(h) :- ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), SubInterface(inl, i), 
-							   no ReceivesForModuleList(hml, rd), rd is MachineReceivesDecl, count({ev | InterfaceEventDecl(i, ev), MachineReceivesDecl(rd.mach, ev)}) > 0;
-							   ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), SubInterface(inl, i), 
-							   ReceivesForModuleList(hml, rd), count({ev1 | InterfaceEventDecl(i, ev1), MachineReceivesDecl(rd.mach, ev1), InterfaceEventDecl(i, ev2), no MachineReceivesDecl(rd.mach, ev2)}) > 0;
-							   ComposedModules(ml), SubHide(ml, h), h = Hide(inl, hml), SubInterface(inl, i), 
-							   ReceivesForModuleList(hml, rd), count({ev1 | InterfaceEventDecl(i, ev1), MachineReceivesDecl(rd.mach, ev1), no InterfaceEventDecl(i, ev2), MachineReceivesDecl(rd.mach, ev2)}) > 0.
-
-
-	/**************************************************************/
-	/*			Type checking rules for refinement checking		 */
-	/*************************************************************/
-	IllegalRefinesTestCase ::= (ml: ModuleList).
-
-	//TODO: Add type checking rules for the refinement checking relations
-	/**************************************************************/
-	/*			Type checking rules for monitor testing			 */
-	/*************************************************************/
-	
-	IllegalMonitorTestCase ::= (mon: MonitorList + PrivateMonitor).
-	//get all private monitors
-	SubPrivateMonitors ::= sub(monL: MonitorList, pm: PrivateMonitor).
-	//get all global monitor
-	SubMonitors ::= sub(monL: MonitorList, ml: MonitorList).
-
-	//Global monitors can only observe public events
-	[rule_Classes = '"error, msg: global monitor can only observe public events"']
-	IllegalMonitorTestCase(monl) :- tc is MonitorsTestDecl, SubMonitors(tc.monitors, monl), monl = MonitorList(s, _), s : String, m is MachineDecl(s, _, MONITOR, _, _, _), ObservesDecl(m, ev), PrivateForModuleList(tc.imp, ev).
-
-	//Private monitors can only observe private events of only one module
-	[rule_Classes = '"error, msg: private monitor can only observe private event of one module"']
-	IllegalMonitorTestCase(monl) :- tc is MonitorsTestDecl, SubPrivateMonitors(tc.monitors, monl), monl = PrivateMonitor(s, mod), s : String, m is MachineDecl(s, _, MONITOR, _, _, _), ObservesDecl(m, ev), no ModulePrivateDecl(mod, ev), PrivateForModuleList(tc.imp, ev).
-
-	/**************************************************************/
-	/*						Sound Composition		 			 */
-	/*************************************************************/
-	SoundCompositionWarning ::= (ml: ModuleList).
-
-	//generate a warning that implementations is not closed.
-	[rule_Classes = '"warning, msg: implementation list is not closed with respect to creates interfaces"']
-	SoundCompositionWarning(ml) :- ImplementationModules(ml), CreatesForModuleList(ml, i), no ReceivesForModuleList(ml, rd), rd is MachineReceivesDecl, InterfaceEventDecl(i, ev), rd.ev = ev.
-
-	//TODO add other warnings for other modulelists
-
-
     /*************************************************************/
     /*                      Types of Expressions                 */
     /*************************************************************/
@@ -681,15 +309,8 @@ domain PStaticTyping extends PData
     TypeOf(c, e, BaseType(NULL))  :- SubSE(c, e), e = NulApp(NULL).
     TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = NulApp(HALT).
 	
-	TypeOf(c, e, t) :- SubSE(c, e), e = NulApp(PAYLOAD), PayloadType(c, t).
-	
-	//THIS is not allowed in static functions
-	// Type of THIS is the receive set implemented by the machine.
-    TypeOf(c, e, i)  :- SubSE(c, e), e = NulApp(THIS), i = InterfaceType(c.owner.name), c.owner != NIL.
-
-    [ rule_Classes = '"error, msg: (this) is not allowed inside static functions"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = NulApp(THIS), c.owner = NIL.
-
+    TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = NulApp(THIS).
+    
 	TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(NONDET).
 
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(FAIRNONDET).
@@ -741,13 +362,14 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Cast can never succeed"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2), TypeRel(t1, t2, k), k = EMPTY.
 
-    TypeOf(c, e, t)   :- SubSE(c, e), e = New(n, _), ModuleCreatesDecl(c.owner.mod, t), t = InterfaceType(n).
-
+    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, REAL, _, _, _).
+    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, MODEL, _, _, _).
 	[ rule_Classes = '"error, msg: Monitors cannot be created with "new""']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), MachineDecl(n, _, MONITOR, _, _, _).
-
-	[ rule_Classes = '"error, msg: created interface is not in the creates list of the module"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), no ModuleCreatesDecl(c.owner.mod, InterfaceType(n)).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, MONITOR, _, _, _);
+									  SubSE(c, e), e = New(_, _, n'), MachineDecl(n', MONITOR, _, _, _).
+	[ rule_Classes = '"error, msg: Undefined machine type"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _);
+									  SubSE(c, e), e = New(_, _, n'), no MachineDecl(n', _, _, _, _).
 	
     TypeOf(c, e, t2)               :- TypeOfArg2(c, e, _, t2), e : Field, t2 != ERROR.
 	[ rule_Classes = '"error, msg: Bad field name"']
@@ -780,9 +402,6 @@ domain PStaticTyping extends PData
     TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _), op : PolyRel, TypeRel(t1, t2, k), k != EMPTY.
 	[ rule_Classes = '"error, msg: Values cannot be compared because their types are incompatible"']
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _), op : PolyRel, TypeRel(t1, t2, k), k = EMPTY.
-	[ rule_Classes = '"error, msg: Values of type machine or interface cannot be compared"']
-    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _), op : PolyRel, TypeRel(t1, BaseType(REAL), SUB), t1 != BaseType(NULL);
-									  TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _), op : PolyRel, TypeRel(t2, BaseType(REAL), SUB), t2 != BaseType(NULL).
     
     TypeOf(c, e, inner)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _), t1 = SeqType(inner), t2 = BaseType(INT).
     TypeOf(c, e, cod)              :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _), t1 = MapType(dom, cod), TypeRel(t2, dom, SUB).
@@ -859,14 +478,14 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: "while (...)" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : While, t1 != BaseType(BOOL).
                
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _), ModuleCreatesDecl(c.owner.mod, t), t = InterfaceType(n).
-	
-	[ rule_Classes = '"error, msg: interface is not in the creates set of the module"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _), no ModuleCreatesDecl(c.owner.mod, InterfaceType(n)).
-
-	[ rule_Classes = '"error, msg: monitor cannot be created dynamically using new"']
-	TypeOf(c, e, ERROR)              :- SubSE(c, e), e = NewStmt(n, _), MachineDecl(n, _, MONITOR, _, _, _).
-
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), MachineDecl(n, _, _, _, _).   
+	[ rule_Classes = '"error, msg: Undeclared machine"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, _, _, _, _);
+									  SubSE(c, e), e = NewStmt(_, _, n'), no MachineDecl(n', _, _, _, _).
+	[ rule_Classes = '"error, msg: Substitution machine cannot be monitor"']
+	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, n'), n != n', MachineDecl(n', MONITOR, _, _, _).   
+	[ rule_Classes = '"error, msg: Monitor machine cannot be substituted"']
+	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, n'), n != n', MachineDecl(n, MONITOR, _, _, _).   
 
 	//// Rules for raise.
     TypeOf(c, e, NIL)              :- CommStmtPLType(c, e, plt), e = Raise(_, NIL),              ///// < raise has NIL payload,
@@ -889,17 +508,17 @@ domain PStaticTyping extends PData
 
 	//// Rules for send.
     TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e = Send(_, _, NIL),                           ///// < send has NIL payload,
-	                                  TypeRel(t1, BaseType(REAL), SUB), t1 != BaseType(NULL),              ///// < arg1 is a interface or machine type,
+	                                  t1 = BaseType(REAL),                                                 ///// < arg1 is a machine type,
 	                                  CommStmtPLType(c, e, plt), TypeRel(BaseType(NULL), plt, SUB).        ///// < arg2 event type contains null.
 
     TypeOf(c, e, NIL)              :- TypeOfArg3(c, e, t1, t2, t3), e : Send,                             ///// < send has non-NIL payload,             
-	                                  TypeRel(t1, BaseType(REAL), SUB), t1 != BaseType(NULL),             ///// < arg1 is a interface type,
+	                                  t1 = BaseType(REAL),                                                ///// < arg1 is a machine type,
 	                                  CommStmtPLType(c, e, plt), TypeRel(t3, evt, SUB).                   ///// < and t3 is a subtype of plt.
 
 	//// Error rules for send.
-	[ rule_Classes = '"error, msg: argument 1 of "send" expects an interface value"']
-    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Send, toSymbol(t1) != #InterfaceType, t1 != BaseType(REAL).
-	
+	[ rule_Classes = '"error, msg: argument 1 of "send" expects a machine value"']
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Send, t1 != BaseType(REAL).
+
 	[ rule_Classes = '"error, msg: argument 2 of "send" expects an event value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, e2, _), TypeOf(c, e2, t2), t2 != BaseType(EVENT).
 
@@ -913,7 +532,6 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)            :- TypeOfArg3(c, e, t1, t2, t3), e : Send,                     ///// < p has non-NIL payload,             
 	                                  CommStmtPLType(c, e, plt),                                  ///// < constant event expression
 									  TypeRel(t3, plt, k), k != SUB, t3 != plt.                   ///// < and pt is not a subtype of plt.
-	
 
 	//// Rules for monitor.
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Monitor(_, NIL),                           ///// < monitor has NIL payload,
@@ -937,11 +555,6 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e : Monitor,    ///// < p has non-NIL payload,             
 	                                  CommStmtPLType(c, e, plt),                ///// < constant event expression
 									  TypeRel(t2, plt, k), k != SUB, t2 != plt. ///// < and pt is not a subtype of evt.
-
-	[ rule_Classes = '"error, msg: monitor can be invoked only on a private event"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(ev, _), ev = Name(n),
-									  no ModulePrivateDecl(c.owner.mod, n).            
-	                                  
 
 	//// (4) Mutating statements		
 	TypeOf(c, e, NIL)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(ASSIGN, _, _), TypeRel(t2, t1, SUB).
@@ -1014,13 +627,13 @@ domain PStaticTyping extends PData
 	//// The type of the first sub-expression in a Typeable with at least one sub-expression.
     TypeOfArg1 ::= (cntxt: TypingContext, expr: Typeable, type1: TypeExpr + { ERROR, NIL }).
 
-	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = New(_, e1), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = New(_, e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = FunApp(_, e1), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = UnApp(_, e1), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Cast(e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Tuple(e1), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NamedTuple(e1), TypeOf(c, e1, t1).
-	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NewStmt(_, e1), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NewStmt(_, e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = FunStmt(_, e1, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = UnStmt(_, e1), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Return(e1), TypeOf(c, e1, t1).
@@ -1137,6 +750,7 @@ domain PStaticTyping extends PData
     TypeOfLocalVar(cntxt, name, type)  :- TypeOfLocalVarAux(cntxt, name, type, aux), no { aux' | TypeOfLocalVarAux(cntxt, name, _, aux'), aux != aux' }.
 	[ rule_Classes = '"error, msg: Variable with same name has been declared before"']
     TypeOfLocalVar(cntxt, name, ERROR) :- TypeOfLocalVarAux(cntxt, name, _, aux), TypeOfLocalVarAux(cntxt, name, _, aux'), aux != aux'.
+
     /*************************************************************/
     /*                  Formal Parameter Types                   */
     /*************************************************************/
@@ -1297,8 +911,8 @@ domain PStaticTyping extends PData
 	Impure ::= (FunDecl).
 
 	Impure(c) :- SubSE(c, e), c : FunDecl, e = BinStmt(_, e', e''), IsLValue(c, e', TRUE).
-	Impure(c) :- SubSE(c, e), c : FunDecl, e = NewStmt(_, _).
-	Impure(c) :- SubSE(c, e), c : FunDecl, e = New(_, _).
+	Impure(c) :- SubSE(c, e), c : FunDecl, e = NewStmt(_, _, _).
+	Impure(c) :- SubSE(c, e), c : FunDecl, e = New(_, _, _).
 	Impure(c) :- SubSE(c, e), c : FunDecl, e = Send(_, _, _). 
 	Impure(c) :- c: FunDecl, ControlImpure(c).
 	Impure(c) :- SubSE(c, e), e = FunApp(n, _), c : FunDecl, called.name = n, FunAvailable(called, c.owner), Impure(called).
@@ -1307,7 +921,7 @@ domain PStaticTyping extends PData
 
     [ rule_Classes = '"error, msg: this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);" "']
     PurityError(c, e') :- 
-       SubSE(c, e), e = New(_, e'),        e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
+       SubSE(c, e), e = New(_, e', _),        e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = UnApp(_, e'),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = BinApp(_, e', _),     e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = BinApp(_, _, e'),     e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
@@ -1315,7 +929,7 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Cast(e', _),          e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
        SubSE(c, e), e = Exprs(e', _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);              
        SubSE(c, e), e = NamedExprs(_, e', _), e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
-       SubSE(c, e), e = NewStmt(_, e'),    e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
+       SubSE(c, e), e = NewStmt(_, e', _),    e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Raise(e', _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Raise(_, e'),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);        
        SubSE(c, e), e = Send(e', _, _),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
@@ -1332,7 +946,7 @@ domain PStaticTyping extends PData
 
     [ rule_Classes = '"error, msg: new M(...) can only be called like "new M(...);" or "x = new M(...);" "']
     PurityError(c, e') :- 
-       SubSE(c, e), e = New(_, e'),        e' : New;
+       SubSE(c, e), e = New(_, e', _),        e' : New;
        SubSE(c, e), e = UnApp(_, e'),         e' : New;
        SubSE(c, e), e = BinApp(_, e', _),     e' : New;
        SubSE(c, e), e = BinApp(_, _, e'),     e' : New;    
@@ -1340,7 +954,7 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Cast(e', _),          e' : New;    
        SubSE(c, e), e = Exprs(e', _),         e' : New;              
        SubSE(c, e), e = NamedExprs(_, e', _), e' : New;
-       SubSE(c, e), e = NewStmt(_, e'),    e' : New;
+       SubSE(c, e), e = NewStmt(_, e', _),    e' : New;
        SubSE(c, e), e = Raise(e', _),         e' : New;
        SubSE(c, e), e = Raise(_, e'),         e' : New;        
        SubSE(c, e), e = Send(e', _, _),       e' : New;
@@ -1387,7 +1001,7 @@ domain PStaticTyping extends PData
 	CompTypeRel(t1, inpt)     :- TypeOfArg1(c, e, t1), e = FunStmt(n, _, _, _), FuncSigTupleType(decl, inpt), decl.name = n, FunAvailable(decl, c.owner).
 	CompTypeRel(t1, t2)       :- TypeOfArg2(c, e, _, t2), e = FunStmt(n, _, x, _), x: Name, FunAvailable(decl, c.owner), decl.name = n, decl.return = t1.
 
-    //// TypeRel determines the relationship type expressions ta and tb.
+	//// TypeRel determines the relationship type expressions ta and tb.
     //// If types are not subtype related, then they can
     //// either have an empty (EMPTY) or nonempty (NONEMPTY) intersection. 
     TypeRel ::= (ta: TypeExpr + { ERROR, NIL }, tb: TypeExpr + { ERROR, NIL }, rel: { SUB, SUP, EMPTY, NONEMPTY }).
@@ -1416,22 +1030,14 @@ domain PStaticTyping extends PData
 
     // NullBase types have empty intersections with all types, except themselves, ANY, and NULL.
     NullBase    ::= { EVENT, REAL }.    
-	
     TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), s = BaseType(ks), ks : NullBase, t = BaseType(kt), kt : NonNullBase.
     TypeRel(t, s, EMPTY)    :- CompTypeRel(t, s), s = BaseType(ks), ks : NullBase, t = BaseType(kt), kt : NonNullBase.
     
-    TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), s = BaseType(ks), ks : NullBase, toSymbol(t) != #BaseType, toSymbol(t) != #InterfaceType.
-    TypeRel(t, s, EMPTY)    :- CompTypeRel(t, s), s = BaseType(ks), ks : NullBase, toSymbol(t) != #BaseType, toSymbol(t) != #InterfaceType.
+    TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), s = BaseType(ks), ks : NullBase, toSymbol(t) != #BaseType.
+    TypeRel(t, s, EMPTY)    :- CompTypeRel(t, s), s = BaseType(ks), ks : NullBase, toSymbol(t) != #BaseType.
           
     TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s = BaseType(ks), ks : NullBase, t = BaseType(kt), kt : NullBase, s != t, kt != ANY, kt != NULL.
     TypeRel(t, s, NONEMPTY) :- CompTypeRel(t, s), s = BaseType(ks), ks : NullBase, t = BaseType(kt), kt : NullBase, s != t, kt != ANY, kt != NULL.
-
-	//Interface Type has empty intersection with all the types except themselves, ANY, REAL and NULL
-	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : InterfaceType, t = BaseType(kt), kt != ANY, kt != NULL, kt != REAL.
-    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s : InterfaceType, t = BaseType(kt), kt != ANY, kt != NULL, kt != REAL.
-
-	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : InterfaceType, toSymbol(t) != #BaseType, toSymbol(t) != #InterfaceType.
-    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s : InterfaceType, toSymbol(t) != #BaseType, toSymbol(t) != #InterfaceType.
 
     // Complex types have empty intersections with all differing type kinds, except ANY.
     TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : ComplexType, toSymbol(s) != toSymbol(t), t != BaseType(ANY).
@@ -1514,30 +1120,6 @@ domain PStaticTyping extends PData
     TypeRel(s, t, SUB) :-  CompTypeRel(s, t), s = BaseType(NULL), t = BaseType(kt), kt : NullBase.
     TypeRel(t, s, SUP) :-  CompTypeRel(t, s), s = BaseType(NULL), t = BaseType(kt), kt : NullBase.
     
-	// Interface type is a subtype of the machine base-type
-	TypeRel(s, t, SUB) :- CompTypeRel(s, t), t = BaseType(REAL), s : InterfaceType. 
-	TypeRel(t, s, SUP) :- CompTypeRel(t, s), t = BaseType(REAL), s : InterfaceType. 
-
-	// Subtype relation between interface types.
-	SubSetRelation ::= (interface1: InterfaceType, interface2: InterfaceType).
-	NoSubSetRelation ::= (interface1: InterfaceType, interface2: InterfaceType).
-	SubSetRelation(n1, n2) :- x is InterfaceEventDecl(n1, _), y is InterfaceEventDecl(n2, _), n1 != n2, no { e | InterfaceEventDecl(n1, e), no InterfaceEventDecl(n2, e)}. 
-	NoSubSetRelation(n1, n2) :- x is InterfaceEventDecl(n1, _), y is InterfaceEventDecl(n2, _), n1 != n2, count({ e | InterfaceEventDecl(n1, e), no InterfaceEventDecl(n2, e), InterfaceEventDecl(n2, ee), no InterfaceEventDecl(n1, ee)}) > 0.
-	
-	
-	TypeRel(s, t, SUB) :- CompTypeRel(s, t), s : InterfaceType, t : InterfaceType, s != t, SubSetRelation(t, s).
-	TypeRel(t, s, SUP) :- CompTypeRel(t, s), s : InterfaceType, t : InterfaceType, s != t, SubSetRelation(t, s).
-	TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), t : InterfaceType, s : InterfaceType, s != t, NoSubSetRelation(s, t).
-	TypeRel(t, s, NONEMPTY) :- CompTypeRel(t, s), t : InterfaceType, s : InterfaceType, s != t, NoSubSetRelation(s, t).
-	
-	//Interface type is a supertype of NULL
-	TypeRel(s, t, SUB) :- CompTypeRel(s, t), t : InterfaceType, s = BaseType(NULL).
-	TypeRel(t, s, SUP) :- CompTypeRel(t, s), t : InterfaceType, s = BaseType(NULL).
-
-	//Interface type is a subtype of ANY
-	TypeRel(s, t, SUB) :- CompTypeRel(s, t), s : InterfaceType, t = BaseType(ANY).
-	TypeRel(t, s, SUP) :- CompTypeRel(t, s), s : InterfaceType, t = BaseType(ANY).
-
     // Sequences are subtype related if their inner types are subtype related.
     TypeRel(s, t, SUB)    :- CompTypeRel(s, t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', SUB). 
     TypeRel(s, t, SUP)    :- CompTypeRel(s, t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', SUP). 
@@ -1556,6 +1138,7 @@ domain PStaticTyping extends PData
     /*************************************************************/
     /*                      Payload Checking                    */
     /*************************************************************/	
+
 	EventPayloadType ::= (e: String + { NULL, HALT }, t: TypeExpr).
 	EventPayloadType(e, et) :- EventDecl(e, _, t), t: TypeExpr, TypeExpansion(t, et).
 	EventPayloadType(e, t)  :- EventDecl(e, _, NIL), t = BaseType(NULL).
@@ -1595,23 +1178,4 @@ domain PStaticTyping extends PData
 	PayloadError(n) :- SubSE(c, n), n: NewStmt, TypeOf(c, n.arg, type), type: TypeExpr,
 					   m is MachineDecl, m.name = n.name, s is StateDecl, s.owner = m, s.name = m.start,
 					   TypeExpansion(s.entryAction.envVars.hd.type, ft), TypeRel(type, ft, k), type != ft, k != SUB.	
-
-	/***************************************************************************************************************
-	TODO :: static check for map types (this is not done complete)
-	****************************************************************************************************************/
-	DomOfMapUnSafe ::= (map : MapType).
-	ContainsMachOrInterface ::= (type : TypeExpr + {NIL} ).
-	ContainsMachOrInterface(type) :- type : TypeExpr, TypeRel(type, BaseType(REAL), SUB);
-									 type is MapType(_, k), k : TypeExpr, ContainsMachOrInterface(k);
-									 type is SeqType(n), ContainsMachOrInterface(n);
-									 type is TupType(hd, tl), ContainsMachOrInterface(hd); 
-									 type is TupType(hd, tl), ContainsMachOrInterface(tl);
-									 type is NmdTupType(NmdTupTypeField(_, hd), tl), ContainsMachOrInterface(hd); 
-									 type is NmdTupType(hd, tl), ContainsMachOrInterface(tl).
-									
-	
-	[rule_Classes = '"error, msg: dom of the map type cannot have machine or interface type"']						    
-	DomOfMapUnSafe(map) :- map = MapType(dom, _), dom : TypeExpr, VarDecl(_ , _, map), ContainsMachOrInterface(dom);
-						   map = MapType(dom, _), dom : TypeExpr, EventDecl(_ , _, map), ContainsMachOrInterface(dom).
- }
-
+}

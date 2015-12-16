@@ -23,7 +23,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	HConcatOut(-1, NIL).
 	HConcatOut(m', cmp) :- HConcatOut(m, before), HOutOrder(m', nxt), m' = m + 1, cmp = Section(before, nxt). 		
 		
-	out.File("program.h", body) :- HConcatOut(count({ho | ho is HOut}) - 1, cmp), ImpMachine(_), 
+	out.File("program.h", body) :- HConcatOut(count({ho | ho is HOut}) - 1, cmp), 
 									body = PpITE(
 									   IFNDEF,
 									   Ident("P_PROGRAM_H"),
@@ -50,7 +50,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	CConcatOut(-1, NIL).
 	CConcatOut(m', cmp) :- CConcatOut(m, before), COutOrder(m', nxt), m' = m + 1, cmp = Section(before, nxt). 		
 		
-	out.File("program.c", body) :- CConcatOut(count({co | co is COut}) - 1, cmp), ImpMachine(_), 
+	out.File("program.c", body) :- CConcatOut(count({co | co is COut}) - 1, cmp), 
 									body = Section(PpInclude("program.h", FALSE), cmp).
 
     /*************************************************************/
@@ -65,7 +65,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	SConcatOut(m', cmp) :- SConcatOut(m, before), SOutOrder(m', nxt), m' = m + 1, cmp = Section(before, nxt).
 	
 	SOut(def') :- HOut(10, def), def = FunDef(a, b, c, d, _), def' = FunDef(a, b, c, d, NIL).
-	out.File("stubs.c", body) :- SConcatOut(count({so | so is SOut}) - 1, cmp), ImpMachine(_),
+	out.File("stubs.c", body) :- SConcatOut(count({so | so is SOut}) - 1, cmp), 
 								 body = PpITE(
 									   IFNDEF,
 									   Ident("P_PROGRAM_H"),
@@ -96,18 +96,18 @@ transform P2CProgram (in:: P) returns (out:: C)
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTS_COUNT"), size = 2 + count({d | d is EventDecl}) }).  
 
 	//// (2) Real machine decls - Start at Id 0.
-	DeclId(d, id, cn) :- d is MachineDecl, d.kind = REAL, ImpMachine(d),
-	                     id = toOrdinal(d, 0, { d' | d' is MachineDecl, ImpMachine(d'), d'.kind = REAL }), cn = strJoin("P_MACHINE_", d.name).
+	DeclId(d, id, cn) :- d is MachineDecl, d.kind = REAL, 
+	                     id = toOrdinal(d, 0, { d' | d' is MachineDecl, d'.kind = REAL }), cn = strJoin("P_MACHINE_", d.name).
 	
 	HOut(0, out.EnmDef(NIL, "P_MACHINES", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
-									   DeclId(d, id, cn), d : MachineDecl, ImpMachine(d), d.kind = REAL, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   DeclId(d, id, _), d : MachineDecl, ImpMachine(d), d.kind = REAL, d.isMain = TRUE, enumMember = Element(IntLit(id, DEC, NIL), "_P_MACHINE_MAIN"); 
-									   enumMember = Element(IntLit(size, DEC, NIL), "_P_MACHINES_COUNT"), size = count({d | d is MachineDecl, ImpMachine(d), d.kind = REAL}) }).  
+									   DeclId(d, id, cn), d : MachineDecl, d.kind = REAL, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   DeclId(d, id, _), d : MachineDecl, d.kind = REAL, d.isMain = TRUE, enumMember = Element(IntLit(id, DEC, NIL), "_P_MACHINE_MAIN"); 
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_MACHINES_COUNT"), size = count({d | d is MachineDecl, d.kind = REAL}) }).  
 
 	//// (3) Model machine decls - Start at Id 0.
-	DeclId(d, id, cn) :- d is MachineDecl, d.kind = MODEL, ImpMachine(d),
-	                     id = toOrdinal(d, 0, { d' | d' is MachineDecl, ImpMachine(d'), d'.kind = MODEL }), cn = strJoin("P_MODEL_", d.name).
+	DeclId(d, id, cn) :- d is MachineDecl, d.kind = MODEL, 
+	                     id = toOrdinal(d, 0, { d' | d' is MachineDecl, d'.kind = MODEL }), cn = strJoin("P_MODEL_", d.name).
 	
 	HOut(0, out.EnmDef(NIL, "P_MODELS", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
@@ -116,12 +116,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_MODELS_COUNT"), size = count({d | d is MachineDecl, d.kind = MODEL}) }).  
 
 	//// (4) VarDecls - Start at Id 0.
-	DeclId(d, id, cn) :- d is VarDecl, d.owner.kind = REAL, ImpMachine(d.owner),
+	DeclId(d, id, cn) :- d is VarDecl, d.owner.kind = REAL, 
 	                     id = toOrdinal(d, 0, { d' | d' is VarDecl, d'.owner = d.owner }), 
 						 cn = strJoin("P_VAR_", strJoin(d.owner.name, strJoin("_", d.name))).
 	
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
-	   m is MachineDecl, ImpMachine(m),
+	   m is MachineDecl,
 	   enumName = strJoin("P_VARS_", m.name),
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : VarDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
@@ -130,23 +130,23 @@ transform P2CProgram (in:: P) returns (out:: C)
 	//// (5) (Anon)FunDecls - Start at Id 1. The id 0 is reserved for the PUSH action.
 	AnonOrNamedFun ::= FunDecl + AnonFunDecl.
 
-	DeclId(d, id, cn) :- d is AnonFunDecl, d.owner = NIL,
+	DeclId(d, id, cn) :- d is AnonFunDecl, d.owner = NIL, 
 	                     id = 1 + toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.owner = NIL }), 
 	                     num = toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.owner = NIL }),
 						 cn = strJoin("P_FUN_ANON", toString(num)).
 
-	DeclId(d, id, cn) :- d is FunDecl, d.owner = NIL,
+	DeclId(d, id, cn) :- d is FunDecl, d.owner = NIL, 
 	                     id = 1 + count({ d' | d' is AnonFunDecl, d'.owner = NIL }) 
 						        + toOrdinal(d, 0, { d' | d' is FunDecl, d'.owner = NIL }), 
 	                     cn = strJoin("P_FUN_", d.name).
 
-	DeclId(d, id, cn) :- d is AnonFunDecl, d.owner.kind = REAL, ImpMachine(d.owner),
+	DeclId(d, id, cn) :- d is AnonFunDecl, d.owner.kind = REAL, 
 	                     id = 1 + count({ d' | d' is AnonOrNamedFun, d'.owner = NIL }) 
 								+ toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.owner = d.owner }), 
 	                     num = toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.owner = d.owner }),
 						 cn = strJoin("P_FUN_", strJoin(d.owner.name, strJoin("_ANON", toString(num)))).
 
-	DeclId(d, id, cn) :- d is FunDecl, d.owner.kind = REAL, ImpMachine(d.owner),
+	DeclId(d, id, cn) :- d is FunDecl, d.owner.kind = REAL, 
 	                     id = 1 + count({ d' | d' is AnonOrNamedFun, d'.owner = NIL }) 
 						        + count({ d' | d' is AnonFunDecl, d'.owner = d.owner }) 
 						        + toOrdinal(d, 0, { d' | d' is FunDecl, d'.owner = d.owner }), 
@@ -159,20 +159,20 @@ transform P2CProgram (in:: P) returns (out:: C)
 									   DeclId(d, id, cn), d : AnonOrNamedFun, d.owner = NIL, enumMember = Element(IntLit(id, DEC, NIL), cn) }).  
 
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
-	   m is MachineDecl, m.kind = REAL, ImpMachine(m),
+	   m is MachineDecl, m.kind = REAL,
 	   enumName = strJoin("P_FUNS_", m.name),
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : AnonOrNamedFun, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(m.name, "_COUNT"))), size = 1 + count({d | d is AnonOrNamedFun, d.owner = m}) + count({d | d is AnonOrNamedFun, d.owner = NIL}) }).  
 
 	//// (6) StateDecls - Start at Id 0. Need to encode qualified names.
-	DeclId(d, id, cn) :- d is StateDecl, d.owner.kind = REAL, ImpMachine(d.owner),
+	DeclId(d, id, cn) :- d is StateDecl, d.owner.kind = REAL, 
 	                     QualName2CStr(d.name, name), 
 					     id = toOrdinal(d, 0, { d' | d' is StateDecl, d'.owner = d.owner }), 
 						 cn = strJoin("P_STATE_", strJoin(d.owner.name, strJoin("_", name))).
 	
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
-	   m is MachineDecl, ImpMachine(m),
+	   m is MachineDecl,
 	   enumName = strJoin("P_STATES_", m.name),
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : StateDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
@@ -304,16 +304,13 @@ transform P2CProgram (in:: P) returns (out:: C)
 	TypeId      ::= (id: Natural, type: TypeExpr).
 	TypeDepNum  ::= (id: Natural, type: TypeExpr).
 
-
 	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.BaseType.
-	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : InterfaceType.
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = SeqType(t'), TypeDepNum(j, t'), i = j + 1.  
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = MapType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1.  
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = TupType(t', NIL), TypeDepNum(j, t'), i = j + 1.  
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = TupType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1.  
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = NmdTupType(NmdTupTypeField(_, t'), NIL), TypeDepNum(j, t'), i = j + 1.  
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = NmdTupType(NmdTupTypeField(_, t'), t''), TypeDepNum(j, t'), TypeDepNum(k, t''), i = j + k + 1.  
-
 	TypeId(id, t) :- td is TypeDepNum(_, t), id = toOrdinal(td, 0, { td' | td' is TypeDepNum }).
 
 	//// Build type initializers in linearization order.
@@ -335,15 +332,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 								defs = out.Section(before, def),
 								def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								typeName = strJoin("P_GEND_TYPE_", toString(m)),
-                                typeStruct = out.Init(Args(Ident(kind), Args(Ident("NULL"), NIL))).	
+                                typeStruct = out.Init(Args(Ident(kind), Args(Ident("NULL"), NIL))).						              
 	
-	//interface type
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = InterfaceType(s), InterfaceEventDecl(t, _), BaseType2Kind(REAL, kind),
-								              defs = out.Section(before, def),
-										          def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
-								              typeName = strJoin("P_GEND_TYPE_", toString(m)),
-                              typeStruct = out.Init(Args(Ident(kind), Args(Ident("NULL"), NIL))).					              
-
 	//// Complex type Seq 
 	//// (cast to PRT_MAPTYPE * is used to avoid compiler warnings when initializing union)
 	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.SeqType(tinner), TypeConstant(tinner, tinnerid, _),
@@ -1102,7 +1092,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	StateEventSetIndices ::= (state: StateDecl, transIndex: Natural, doIndex: Natural, deferIndex: Natural).
 	StateEventSetIndices(s, ti, doi, dfi) :- 
-	                     s.owner.kind = REAL, ImpMachine(s.owner),
+	                     s.owner.kind = REAL,
 	                     EventsPacked(s, #TransDecl, tlist),
 						 ti = toOrdinal(tlist, 0, { l | EventPacking(l, _, 0, _) }), 
 	                     EventsPacked(s, #DoDecl, dolist),
@@ -1111,24 +1101,24 @@ transform P2CProgram (in:: P) returns (out:: C)
 						 dfi = toOrdinal(dflist, 0, { l | EventPacking(l, _, 0, _) }).
 
     StateEntryAction  ::= (decl: StateDecl, funName: String).
-	StateEntryAction(s, funname) :- s is StateDecl, ImpMachine(s.owner), s.owner.kind = REAL, act = s.entryAction, act : AnonFunDecl, DeclId(act, _, funname). 
-	StateEntryAction(s, funname) :- s is StateDecl, ImpMachine(s.owner), s.owner.kind = REAL, act = s.entryAction, act : String, f is FunDecl, FunAvailable(f, s.owner), f.name = act, DeclId(f, _, funname). 
+	StateEntryAction(s, funname) :- s is StateDecl, s.owner.kind = REAL, act = s.entryAction, act : AnonFunDecl, DeclId(act, _, funname). 
+	StateEntryAction(s, funname) :- s is StateDecl, s.owner.kind = REAL, act = s.entryAction, act : String, f is FunDecl, FunAvailable(f, s.owner), f.name = act, DeclId(f, _, funname). 
 
     StateExitFun  ::= (decl: StateDecl, funName: String).
-	StateExitFun(s, funname) :- s is StateDecl, ImpMachine(s.owner), s.owner.kind = REAL, act = s.exitFun, act : AnonFunDecl, DeclId(act, _, funname). 
-	StateExitFun(s, funname) :- s is StateDecl, ImpMachine(s.owner), s.owner.kind = REAL, act = s.exitFun, act : String, f is FunDecl, FunAvailable(f, s.owner), f.name = act, DeclId(f, _, funname). 
+	StateExitFun(s, funname) :- s is StateDecl, s.owner.kind = REAL, act = s.exitFun, act : AnonFunDecl, DeclId(act, _, funname). 
+	StateExitFun(s, funname) :- s is StateDecl, s.owner.kind = REAL, act = s.exitFun, act : String, f is FunDecl, FunAvailable(f, s.owner), f.name = act, DeclId(f, _, funname). 
 
     StateHandlerArrays ::= (decl: StateDecl, transArrSize: Natural, transArr: out.Ident, doArrSize: Natural, doArr: out.Ident).
 
 	StateHandlerArrays(s, transArrSize, transArr, doArrSize, doArr) :-
-		s is StateDecl, s.owner.kind = REAL, ImpMachine(s.owner),
+		s is StateDecl, s.owner.kind = REAL, 
 		transArrSize = 0, transArr = out.Ident("NULL"),
 		doArrSize = 0, doArr = out.Ident("NULL"),
 		transArrSize = count({ t  | t is TransDecl, t.src = s }),
 		doArrSize = count({ do | do is DoDecl, do.src = s, do.action != DEFER }). 
 
 	StateHandlerArrays(s, transArrSize, transArr, doArrSize, doArr) :-
-		s is StateDecl, s.owner.kind = REAL, ImpMachine(s.owner),
+		s is StateDecl, s.owner.kind = REAL,
 		QualName2CStr(s.name, sname),
 		transArrSize > 0, transArr = out.Ident(strJoin("P_GEND_TRANS_", strJoin(s.owner.name, strJoin("_", sname)))),
 		doArrSize = 0, doArr = out.Ident("NULL"),
@@ -1136,7 +1126,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 		doArrSize = count({ do | do is DoDecl, do.src = s, do.action != DEFER }). 
 
 	StateHandlerArrays(s, transArrSize, transArr, doArrSize, doArr) :-
-		s is StateDecl, s.owner.kind = REAL, ImpMachine(s.owner),
+		s is StateDecl, s.owner.kind = REAL,
 		QualName2CStr(s.name, sname),
 		transArrSize = 0, transArr = out.Ident("NULL"),
 		doArrSize > 0, doArr = out.Ident(strJoin("P_GEND_DOS_", strJoin(s.owner.name, strJoin("_", sname)))),
@@ -1144,7 +1134,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 		doArrSize = count({ do | do is DoDecl, do.src = s, do.action != DEFER }). 
 
 	StateHandlerArrays(s, transArrSize, transArr, doArrSize, doArr) :-
-		s is StateDecl, s.owner.kind = REAL, ImpMachine(s.owner),
+		s is StateDecl, s.owner.kind = REAL,
 		QualName2CStr(s.name, sname),
 		transArrSize > 0, transArr = out.Ident(strJoin("P_GEND_TRANS_", strJoin(s.owner.name, strJoin("_", sname)))),
 		doArrSize > 0, doArr = out.Ident(strJoin("P_GEND_DOS_", strJoin(s.owner.name, strJoin("_", sname)))),
@@ -1152,13 +1142,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 		doArrSize = count({ do | do is DoDecl, do.src = s, do.action != DEFER }). 
     
 	//// Base case
-	StateDeclConcat(c, m, NIL) :- m is MachineDecl, ImpMachine(m), m.kind = REAL, c = count({s | s is StateDecl, s.owner = m}).
+	StateDeclConcat(c, m, NIL) :- m is MachineDecl, m.kind = REAL, c = count({s | s is StateDecl, s.owner = m}).
 
     //// Build every variable array in reverse order
 	StateDeclConcat(m, d.owner, arr) :- 
 							DeclId(d, m, cstate), 
-							DeclId(d.owner, _, cmach),
-							ImpMachine(d.owner),
+							DeclId(d.owner, _, cmach), 
 							StateDeclConcat(m + 1, d.owner, after), d : StateDecl, 
 							QualName2CStr(d.name, sname),
 							StateEventSetIndices(d, ti, doi, dfi),
@@ -1196,33 +1185,33 @@ transform P2CProgram (in:: P) returns (out:: C)
 	MachineDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
 
 	MachVarArr ::= (decl: MachineDecl, size: Natural, arr: out.Ident).
-	MachVarArr(m, size, arr) :- m is MachineDecl, m.kind = REAL, ImpMachine(m), 
+	MachVarArr(m, size, arr) :- m is MachineDecl, m.kind = REAL, 
 	                size = 0, arr = out.Ident("NULL"),
 	                size = count({ v | v is VarDecl, v.owner = m }).
 
-	MachVarArr(m, size, arr) :- m is MachineDecl, m.kind = REAL, ImpMachine(m),
+	MachVarArr(m, size, arr) :- m is MachineDecl, m.kind = REAL, 
 	                size > 0, arr = out.Ident(strJoin("P_GEND_VARS_", m.name)),
 	                size = count({ v | v is VarDecl, v.owner = m }).
 
 	MachStateArr ::= (decl: MachineDecl, size: Natural, arr: out.Ident).
-	MachStateArr(m, size, arr) :- m is MachineDecl, m.kind = REAL, ImpMachine(m),
+	MachStateArr(m, size, arr) :- m is MachineDecl, m.kind = REAL, 
 	                size > 0, arr = out.Ident(strJoin("P_GEND_STATES_", m.name)),
 	                size = count({ s | s is StateDecl, s.owner = m }).
 
 	MachFunArr ::= (decl: MachineDecl, size: Natural, arr: out.Ident).
-	MachFunArr(m, size, arr) :- m is MachineDecl, m.kind = REAL, ImpMachine(m),
+	MachFunArr(m, size, arr) :- m is MachineDecl, m.kind = REAL, 
 	                arr = out.Ident(strJoin("P_GEND_FUNS_", m.name)),
 	                size = 1 + count({ f | f is AnonOrNamedFun, f.owner = m }).
 
 	MachQueueSize ::= (decl: MachineDecl, size: Natural).
-	MachQueueSize(m, size) :- m is MachineDecl, ImpMachine(m), m.kind = REAL, m.card = NIL, size = 4294967295. 
-	MachQueueSize(m, size) :- m is MachineDecl, ImpMachine(m), m.kind = REAL, size = m.card.bound.
+	MachQueueSize(m, size) :- m is MachineDecl, m.kind = REAL, m.card = NIL, size = 4294967295. 
+	MachQueueSize(m, size) :- m is MachineDecl, m.kind = REAL, size = m.card.bound.
 
 	//// Base case
-	MachineDeclConcat(c, NIL) :- c = count({m | m is MachineDecl, ImpMachine(m), m.kind = REAL}).
+	MachineDeclConcat(c, NIL) :- c = count({m | m is MachineDecl, m.kind = REAL}).
 
 	MachineDeclConcat(m, arr) :- 
-							DeclId(d, m, cmach), d.kind = REAL, d : MachineDecl, ImpMachine(d),
+							DeclId(d, m, cmach), d.kind = REAL, d : MachineDecl,
 							MachineDeclConcat(m + 1, after),  
 							MachVarArr(d, varArrSize, varArrName),
 							MachStateArr(d, stateArrSize, stateArrName),
@@ -1254,7 +1243,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 								  "P_GEND_MACHINES", 
 								  Init(arr)).
 
-	HOut(10, def) :- m is MachineDecl, m.kind = REAL, ImpMachine(m),
+	HOut(10, def) :- m is MachineDecl, m.kind = REAL,
 	                params = Params(Param(NIL, "context"), 
 							 Params(Param(NIL, "value"), NIL)),
 				    funType = FunType(BaseType(VOID), argTypes),
@@ -1267,7 +1256,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 					  params,
 					  UNKNOWN).
 
-	HOut(10, def) :- m is MachineDecl, m.kind = REAL, ImpMachine(m),
+	HOut(10, def) :- m is MachineDecl, m.kind = REAL,
 	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(BaseType(VOID), argTypes),
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
@@ -1284,10 +1273,10 @@ transform P2CProgram (in:: P) returns (out:: C)
 	ModelDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
 
 	//// Base case
-	ModelDeclConcat(c, NIL) :- c = count({m | m is MachineDecl, ImpMachine(m), m.kind = MODEL}).
+	ModelDeclConcat(c, NIL) :- c = count({m | m is MachineDecl, m.kind = MODEL}).
 
 	ModelDeclConcat(m, arr) :- 
-							DeclId(d, m, cmach), d.kind = MODEL, d : MachineDecl, ImpMachine(d),
+							DeclId(d, m, cmach), d.kind = MODEL, d : MachineDecl,
 							ModelDeclConcat(m + 1, after),  
 							arr = out.Args(def, after), 
 	                        def = Init(
@@ -1307,7 +1296,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 								  "P_GEND_MODELS", 
 								  Init(arr)).
 
-	HOut(11, def) :- m is MachineDecl, m.kind = MODEL, ImpMachine(m),
+	HOut(11, def) :- m is MachineDecl, m.kind = MODEL,
 	                params = Params(Param(NIL, "context"), 
 							 Params(Param(NIL, "value"), NIL)),
 				    funType = FunType(BaseType(VOID), argTypes),
@@ -1320,7 +1309,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 					  params,
 					  UNKNOWN).
 
-	HOut(11, def) :- m is MachineDecl, m.kind = MODEL, ImpMachine(m),
+	HOut(11, def) :- m is MachineDecl, m.kind = MODEL,
 	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(BaseType(VOID), argTypes),
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
@@ -1331,7 +1320,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 					  params,
 					  UNKNOWN).
 
-	HOut(11, def) :- m is MachineDecl, m.kind = MODEL, ImpMachine(m),
+	HOut(11, def) :- m is MachineDecl, m.kind = MODEL,
 	                params = Params(Param(NIL, "context"), 
 						     Params(Param(NIL, "evnt"), 
 							 Params(Param(NIL, "payload"), NIL))),
@@ -1358,12 +1347,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 	ProgEvntSetArray(size, arr) :- size = count({ l | EventPacking(l, _, 0, _) }), size > 0, arr = out.Ident("P_GEND_EVENTSETS").
 
 	ProgMachArray ::= (size: Natural, arr: out.Ident).
-	ProgMachArray(size, arr) :- size = count({ m | m is MachineDecl, ImpMachine(m), m.kind = REAL }), size = 0, arr = out.Ident("NULL").
-	ProgMachArray(size, arr) :- size = count({ m | m is MachineDecl, ImpMachine(m), m.kind = REAL }), size > 0, arr = out.Ident("P_GEND_MACHINES").
+	ProgMachArray(size, arr) :- size = count({ m | m is MachineDecl, m.kind = REAL }), size = 0, arr = out.Ident("NULL").
+	ProgMachArray(size, arr) :- size = count({ m | m is MachineDecl, m.kind = REAL }), size > 0, arr = out.Ident("P_GEND_MACHINES").
 
 	ProgModelArray ::= (size: Natural, arr: out.Ident).
-	ProgModelArray(size, arr) :- size = count({ m | m is MachineDecl, ImpMachine(m), m.kind = MODEL }), size = 0, arr = out.Ident("NULL").
-	ProgModelArray(size, arr) :- size = count({ m | m is MachineDecl, ImpMachine(m), m.kind = MODEL }), size > 0, arr = out.Ident("P_GEND_MODELS").
+	ProgModelArray(size, arr) :- size = count({ m | m is MachineDecl, m.kind = MODEL }), size = 0, arr = out.Ident("NULL").
+	ProgModelArray(size, arr) :- size = count({ m | m is MachineDecl, m.kind = MODEL }), size > 0, arr = out.Ident("P_GEND_MODELS").
 
 	HOut(12, def) :- def = out.VarDef(
 							      NIL, 
@@ -1465,22 +1454,22 @@ transform P2CProgram (in:: P) returns (out:: C)
 	ContainerInNewCall ::= (c: TypingContext, name: String, funName: String, machineName: String, e: out.Args + { NIL }).
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
 										 SubSE(c, _), no Annotation(c, "container", _), container = NIL,
-	                                     machineDecl is MachineDecl(name, _, REAL, _, _, _), DeclId(machineDecl, _, machineName), 
+	                                     machineDecl is MachineDecl(name, REAL, _, _, _), DeclId(machineDecl, _, machineName), 
 										 funName = "PrtMkMachine".
 	
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
 										 c: FunDecl, Annotation(c, "container", f), FormalTrans(c, f, container),
-	                                     machineDecl is MachineDecl(name, _, REAL, _, _, _), DeclId(machineDecl, _, machineName), 
+	                                     machineDecl is MachineDecl(name, REAL, _, _, _), DeclId(machineDecl, _, machineName), 
 										 funName = "PrtMkMachineRemote".
 
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
 										 SubSE(c, _), no Annotation(c, "container", _), container = NIL,
-	                                     machineDecl is MachineDecl(name, _, MODEL, _, _, _), DeclId(machineDecl, _, machineName), 
+	                                     machineDecl is MachineDecl(name, MODEL, _, _, _), DeclId(machineDecl, _, machineName), 
 										 funName = "PrtMkModel".
 	
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
 										 c: FunDecl, Annotation(c, "container", f), FormalTrans(c, f, container),
-	                                     machineDecl is MachineDecl(name, _, MODEL, _, _, _), DeclId(machineDecl, _, machineName), 
+	                                     machineDecl is MachineDecl(name, MODEL, _, _, _), DeclId(machineDecl, _, machineName), 
 										 funName = "PrtMkModelRemote".
 
 	PayloadEvalOrder ::= (s: in.Stmt, i: Natural, p: in.Expr + { NIL }, h: Natural).
@@ -1488,8 +1477,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 	PayloadEvalOrder(s, i, p, h) :- p: in.Expr, RhsEvalOrder(s, i, p, h).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = New(iName, arg), PayloadEvalOrder(s, i, arg, h), ImpInterfaceToMachineMap(InterfaceType(iName), mach), mach is MachineDecl(mName, _, _, _, _, _),
-									ContainerInNewCall(c, mName, funName, machineName, container),
+									e = New(name, arg, _), PayloadEvalOrder(s, i, arg, h),
+									ContainerInNewCall(c, name, funName, machineName, container),
 									process = out.BinApp(PFLD, Ident("context"), Ident("process")),
 									newCall = out.FunApp(Ident(funName), Args(process, Args(Ident(machineName), Args(Ident(strJoin("p_tmp_expr_", toString(h))), container)))),
 									ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(PFLD, newCall, Ident("id")), NIL)).
@@ -1524,9 +1513,10 @@ transform P2CProgram (in:: P) returns (out:: C)
 									e = NulApp(THIS),
 									ec = out.BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("id")).
 									 
-    RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = NulApp(NONDET),
 									ec = out.FunApp(Ident("PrtMkNondetBoolValue"), NIL). 
+
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = NulApp(FAIRNONDET),
 									ec = out.FunApp(Ident("PrtMkNondetBoolValue"), NIL). 
@@ -1705,7 +1695,6 @@ transform P2CProgram (in:: P) returns (out:: C)
     /*************************************************************/	
 	
 	Trampoline ::= (cntxt: TypingContext, stmt: in.Stmt, trans: out.Stmt + { NIL }).
-
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Receive(_, label),
 		                    cs = out.ITE(out.BinApp(EQ, out.BinApp(FLD, Ident("p_tmp_frame"), Ident("returnTo")),
 														out.IntLit(label, DEC, U)), 
@@ -1728,7 +1717,6 @@ transform P2CProgram (in:: P) returns (out:: C)
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Ite(_, s1, s2), Trampoline(c, s1, cs1), Trampoline(c, s2, cs2), cs = out.Seq(cs1, cs2).
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Seq(s1, s2), Trampoline(c, s1, cs1), Trampoline(c, s2, cs2), cs = out.Seq(cs1, cs2).
 
-
     StmtTrans ::= (cntxt: TypingContext, stmt: in.Stmt, trans: out.Stmt + { NIL }).
 
 	//// Receive
@@ -1744,8 +1732,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   cs = out.Seq(receive, Seq(case, Seq(blocked, Seq(exception, Seq(resetRcase, resetReturnTo))))).
 	
 	//// New Machine or Model
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iName, NIL), ImpInterfaceToMachineMap(InterfaceType(iName), mach), mach is MachineDecl(mName, _, _, _, _, _),
-						   ContainerInNewCall(c, mName, funName, machineName, container),
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, NIL, _), 
+						   ContainerInNewCall(c, name, funName, machineName, container),
 						   newCall = out.FunApp(Ident(funName),
 										Args(BinApp(PFLD, Ident("context"), Ident("process")),
 										Args(Ident(machineName),
@@ -1753,8 +1741,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   ConstId(m, in.NulApp(NULL)), mkNull = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))),
 						   cs = out.FunApp(Ident("P_STMT_0"), Args(newCall, Args(mkNull, Args(Ident("PRT_FALSE"), NIL)))).
 
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iName, pay), ImpInterfaceToMachineMap(InterfaceType(iName), mach), mach is MachineDecl(mName, _, _, _, _, _),
-						   ContainerInNewCall(c, mName, funName, machineName, container),
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, pay, _), 
+						   ContainerInNewCall(c, name, funName, machineName, container),
 						   newCall = out.FunApp(Ident(funName),
 										Args(BinApp(PFLD, Ident("context"), Ident("process")),
 										Args(Ident(machineName),
@@ -1762,6 +1750,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   pay : in.Expr, RhsExpr(c, s, 0, payTrans, doFree),
 						   cs = out.FunApp(Ident("P_STMT_0"), Args(newCall, Args(payTrans, Args(doFree, NIL)))).
 
+	//// New Monitor (erased)
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, _, _), machineDecl is MachineDecl(name, MONITOR, _, _, _), cs = NIL.
 
 	//// Raise
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
@@ -1939,8 +1929,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	//// New app has a hidden dependency on NULL if it is an nullary app.
 	ExprDepNum(0, h),
-	ExprDepNum(1, e) :- SubSE(_, e), e = in.New(_, NIL), h = in.NulApp(NULL). 
-	ExprDepNum(i, e) :- SubSE(_, e), e = in.New(_, e'), ExprDepNum(j, e'), i = j + 1. 
+	ExprDepNum(1, e) :- SubSE(_, e), e = in.New(_, NIL, _), h = in.NulApp(NULL). 
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.New(_, e', _), ExprDepNum(j, e'), i = j + 1. 
 
 	//// Fun app has zero or one depenencies.
 	ExprDepNum(0, e) :- SubSE(_, e), e = in.FunApp(_, NIL). 
@@ -1982,8 +1972,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 	RhsEvalOrder(s, i, e, k) :- RhsCntxt(s, i, e), dn is ExprDepNum(j, e), e : in.Expr, 
 	                            k = toOrdinal(dn, 0, { dn' | RhsCntxt(s, i, e'), dn' is ExprDepNum(l, e'), e' : in.Expr }). 
 
-	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.NewStmt(_, e), e : in.Expr.
-	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.NewStmt(_, e), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.NewStmt(_, e, _), e : in.Expr.
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.NewStmt(_, e, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
 	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.NewStmt.
 	
 	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.FunStmt(_, e, _, _), e : in.Exprs.
@@ -2027,8 +2017,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 	RhsMaxOrder(s, 2, k) :- SubSE(_, s), s = in.Send(_, _, e), e : in.Expr, RhsEvalOrder(s, 2, e, k).
 	StmtExprSize(s, 3)   :- SubSE(_, s), s : in.Send.
 
-	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, e'), e' : in.Expr. 
-	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, NIL), e' = in.NulApp(NULL). 
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, e', _), e' : in.Expr. 
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, NIL, _), e' = in.NulApp(NULL). 
 
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.FunApp(_, e'), e' : in.Exprs.
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.UnApp(_, e').

@@ -358,9 +358,9 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(SIZEOF, _), toSymbol(t1) != #MapType, toSymbol(t1) != #SeqType. 
     
     //// (3) The types of binary expressions
-    TypeOf(c, e, t2)               :- TypeOfArg1(c, e, t1), e = Cast(_, t2), TypeRel(t1, t2, k), k != EMPTY.
+    TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Cast(_, t2), TypeExpansion(t2, t2'), TypeRel(t1, t2', k), k != EMPTY.
 	[ rule_Classes = '"error, msg: Cast can never succeed"']
-    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2), TypeRel(t1, t2, k), k = EMPTY.
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2), TypeExpansion(t2, t2'), TypeRel(t1, t2', k), k = EMPTY.
 
     TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, REAL, _, _, _).
     TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, MODEL, _, _, _).
@@ -979,7 +979,7 @@ domain PStaticTyping extends PData
     CompTypeRel(la, lb), CompTypeRel(ra, rb) :- CompTypeRel(ta, tb), ta = TupType(la, ra), tb = TupType(lb, rb).
     CompTypeRel(la, lb), CompTypeRel(ra, rb) :- CompTypeRel(ta, tb), ta = NmdTupType(lfa, ra), tb = NmdTupType(lfb, rb), la = lfa.type, lb = lfb.type.
     
-	CompTypeRel(t1, t2)       :- TypeOfArg1(c, e, t1), e = Cast(_, t2).
+	CompTypeRel(t1, t2')      :- TypeOfArg1(c, e, t1), e = Cast(_, t2), TypeExpansion(t2, t2').
 	CompTypeRel(t1, t2)       :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _), op : PolyRel.
 	CompTypeRel(t2, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _), t1 = MapType(dom, cod).
 	CompTypeRel(t1, inner)    :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = SeqType(inner).

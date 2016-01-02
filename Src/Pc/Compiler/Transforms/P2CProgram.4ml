@@ -1676,7 +1676,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 									ec = out.FunApp(Ident("PrtMkDefaultValue"), Args(out.UnApp(ADDR, Ident(typeName)), NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = in.Cast(arg, type), RhsEvalOrder(s, i, arg, tmp1), TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),
+									e = in.Cast(arg, type), TypeExpansion(type, etype), RhsEvalOrder(s, i, arg, tmp1), TypeId(typeIndex, etype), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),
 									getArg = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
 									ec = out.FunApp(Ident("PrtCastValue"), Args(getArg, Args(out.UnApp(ADDR, Ident(typeName)), NIL))).
 	

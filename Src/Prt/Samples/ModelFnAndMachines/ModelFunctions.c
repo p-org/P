@@ -1,8 +1,6 @@
 #include "program.h"
 #include <time.h>
 
-extern PRT_TYPE *P_GEND_TYPE_TUP;
-
 typedef struct ClientExternalContext {
 	PRT_INT32 first;
 	PRT_INT32 second;

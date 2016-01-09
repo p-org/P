@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\two-phase-commit_1.dll
-argZing: -delayb:..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\RunToCompletionDelayingScheduler.dll
-argZing: -fbound:3
-argZing: -bc:5
-acc: .\
-dsc: zinger.exe, Feature Integration: protocol sample

@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\openwsn1.dll
-argZing: -sched:..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\RoundRobinDelayingScheduler.dll
-argZing: -delayc:5
-argZing: -bc:1 
-acc: .\
-dsc: zinger.exe, Feature Integration: : protocol sample; zinger.exe takes an unknown time to finish

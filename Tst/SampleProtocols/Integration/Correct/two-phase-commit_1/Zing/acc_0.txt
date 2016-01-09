@@ -1,9 +1,0 @@
-=================================
-         Console output          
-=================================
-OUT: ##################
-OUT: Check Passed
-OUT: ##################
-OUT: 45287 distinct states explored
-OUT: 
-EXIT: 0

@@ -1,6 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\boundedasync.dll
-argZing: -delayb:..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\RunToCompletionDelayingScheduler.dll
-argZing: -fbound:3
-acc: .\
-dsc: zinger.exe, Feature Integration

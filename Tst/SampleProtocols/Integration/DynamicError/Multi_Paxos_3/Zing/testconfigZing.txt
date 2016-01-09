@@ -1,9 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: -delayb:..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\RunToCompletionDelayingScheduler.dll
-argZing: ..\Multi_Paxos_3.dll
-argZing: -et:Multi_Paxos_3.trace
-incZing: Multi_Paxos_3.trace
-del: Multi_Paxos_3.trace
-acc: .\
-dsc: zinger.exe, Feature Integration: protocol sample
-

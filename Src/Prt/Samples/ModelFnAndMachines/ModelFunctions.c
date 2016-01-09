@@ -1,4 +1,5 @@
 #include "program.h"
+#include <time.h>
 
 extern PRT_TYPE *P_GEND_TYPE_TUP;
 

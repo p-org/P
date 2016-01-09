@@ -319,7 +319,7 @@ domain PStaticTyping extends PData
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(v), v : Boolean.          
     
     //// (2) The types of unary expressions
-    TypeOf(c, e, t)               :- SubSE(c, e), e = Default(t). 
+    TypeOf(c, e, et)              :- SubSE(c, e), e = Default(t), TypeExpansion(t, et). 
 	    
     TypeOf(c, e, t1)              :- TypeOfArg1(c, e, t1), e : Tuple.     
 
@@ -455,11 +455,11 @@ domain PStaticTyping extends PData
 	//// (2) Return statement
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL), c = FunDecl(_, _, _, _, NIL, _, _). 
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL), c : AnonFunDecl.
-    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : Return, c = FunDecl(_, _, _, _, t, _, _), TypeRel(t1, t, SUB).
+    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : Return, c = FunDecl(_, _, _, _, t, _, _), TypeExpansion(t, et), TypeRel(t1, et, SUB).
 	[ rule_Classes = '"error, msg: function must return a value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(NIL), c = FunDecl(_, _, _, _, t, _, _), t != NIL. 
 	[ rule_Classes = '"error, msg: return value has incorrect type"' ]
-    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Return, c = FunDecl(_, _, _, _, t, _, _), TypeRel(t1, t, k), t1 != t, k != SUB.
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Return, c = FunDecl(_, _, _, _, t, _, _), TypeExpansion(t, et), TypeRel(t1, et, k), t1 != et, k != SUB.
 	[ rule_Classes = '"error, msg: anonymous function cannot return a value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(e1), c : AnonFunDecl, e1 != NIL. 
 
@@ -754,23 +754,21 @@ domain PStaticTyping extends PData
     /*************************************************************/
     /*                  Formal Parameter Types                   */
     /*************************************************************/
-    TypeOfFormalParam    ::= (cntxt: FunDecl, name: String, type: TypeExpr + { ERROR }).
-    TypeOfFormalParamAux ::= (cntxt: FunDecl, name: String, type: TypeExpr, aux: NmdTupType + { NIL }).
+    FormalParam    ::= (cntxt: FunDecl, name: String).
+    FormalParamAux ::= (cntxt: FunDecl, name: String, aux: NmdTupType + { NIL }).
 
-    TypeOfFormalParamAux(cntxt, name, type, tl) :- cntxt is FunDecl(_, _, _, params, _, _, _), params = NmdTupType(NmdTupTypeField(name, type), tl).  
-    TypeOfFormalParamAux(cntxt, name, type, tl) :- TypeOfFormalParamAux(cntxt, _, _, aux), aux = NmdTupType(NmdTupTypeField(name, type), tl).
+    FormalParamAux(cntxt, name, tl) :- cntxt is FunDecl(_, _, _, params, _, _, _), params = NmdTupType(NmdTupTypeField(name, _), tl).  
+    FormalParamAux(cntxt, name, tl) :- FormalParamAux(cntxt, _, aux), aux = NmdTupType(NmdTupTypeField(name, _), tl).
     
-    TypeOfFormalParam(cntxt, name, type)  :- TypeOfFormalParamAux(cntxt, name, type, aux), no { aux' | TypeOfFormalParamAux(cntxt, name, _, aux'), aux != aux' }.
-	//// This error is generated as part of DupNmdSubE
-    TypeOfFormalParam(cntxt, name, ERROR) :- TypeOfFormalParamAux(cntxt, name, _, aux), TypeOfFormalParamAux(cntxt, name, _, aux'), aux != aux'.
+    FormalParam(cntxt, name)  :- FormalParamAux(cntxt, name, _).
 
 	//// The input type of a function, ignoring names.
 	FuncSigTupleType    ::= (cntxt: FunDecl, type: TupType + { NIL }).
 	FuncSigTupleTypeAux ::= (cntxt: FunDecl, type: TupType + { NIL }, aux: NmdTupType + { NIL }).
 
 	FuncSigTupleTypeAux(cntxt, params, NIL) :- cntxt is FunDecl(_, _, _, params, _, _, _), params = NIL.
-	FuncSigTupleTypeAux(cntxt, type, tl)    :- cntxt is FunDecl(_, _, _, params, _, _, _), params = NmdTupType(NmdTupTypeField(_, t), tl), type = TupType(t, NIL).
-	FuncSigTupleTypeAux(cntxt, type, tl)    :- FuncSigTupleTypeAux(cntxt, t', aux), aux = NmdTupType(NmdTupTypeField(_, t), tl), type = TupType(t, t').
+	FuncSigTupleTypeAux(cntxt, type, tl)    :- cntxt is FunDecl(_, _, _, params, _, _, _), params = NmdTupType(NmdTupTypeField(_, t), tl), TypeExpansion(t, et), type = TupType(et, NIL).
+	FuncSigTupleTypeAux(cntxt, type, tl)    :- FuncSigTupleTypeAux(cntxt, t', aux), aux = NmdTupType(NmdTupTypeField(_, t), tl), TypeExpansion(t, et), type = TupType(et, t').
 	FuncSigTupleType(cntxt, type)           :- FuncSigTupleTypeAux(cntxt, t, NIL), type = lstReverse(#TupType, t).
 
     /*************************************************************/

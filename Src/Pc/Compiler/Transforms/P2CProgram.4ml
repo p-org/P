@@ -471,6 +471,17 @@ transform P2CProgram (in:: P) returns (out:: C)
 	
 	COut(4, defs) :- TypeDefConstant(c, defs), defs : out.Section, c = count({ typeDef | typeDef is TypeDef}) - 1.
 
+	TypeDefExtern ::= (typeDefId: Integer, defs: out.Section + { NIL }).
+	TypeDefExtern(-1, NIL).
+	
+	TypeDefExtern(m, defs) :- typeDef is TypeDef(name, _), m = toOrdinal(typeDef, 0, { typeDef' | typeDef' is TypeDef }),
+	                          TypeDefExtern(m - 1, before),
+							  defs = out.Section(before, def),
+							  def = out.VarDef(EXTERN, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, NIL),
+							  typeName = strJoin("P_GEND_TYPE_", name).
+	
+	HOut(0, defs) :- TypeDefExtern(c, defs), defs : out.Section, c = count({ typeDef | typeDef is TypeDef}) - 1.
+
     /*************************************************************/
     /******   Generate C statics for constants in program   ******/
     /*************************************************************/
@@ -750,7 +761,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	PatchReturn ::= (f: in.FunDecl, e: out.Stmt).
 	PatchReturn(f, cs) :- DeclId(f, _, _), f = FunDecl(_, _, _, _, NIL, _, _), cs = out.Return(Ident("p_tmp_ret")).
-	PatchReturn(f, cs) :- DeclId(f, _, _), f = FunDecl(_, _, _, _, type, _, _), type : TypeExpr, TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),  
+	PatchReturn(f, cs) :- DeclId(f, _, _), f = FunDecl(_, _, _, _, type, _, _), type : TypeExpr, TypeExpansion(type, etype), TypeId(typeIndex, etype), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),  
 						  cs = out.ITE(BinApp(EQ, Ident("p_tmp_ret"), Ident("NULL")), 
 									   Return(FunApp(Ident("PrtMkDefaultValue"), Args(out.UnApp(ADDR, Ident(typeName)), NIL))),
 									   Return(Ident("p_tmp_ret"))).
@@ -1448,7 +1459,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	//// Machine creation
 	FormalTrans ::= (c: FunDecl, f: String, e: out.Args).
-	FormalTrans(c, f, e) :- TypeOfFormalParam(c, f, _), LocalVars(c, locals), IndexOf(locals, f, formalIndex, _),
+	FormalTrans(c, f, e) :- FormalParam(c, f), LocalVars(c, locals), IndexOf(locals, f, formalIndex, _),
 					        e = out.Args(BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(formalIndex, DEC, U)), NIL).
 
 	ContainerInNewCall ::= (c: TypingContext, name: String, funName: String, machineName: String, e: out.Args + { NIL }).
@@ -1672,7 +1683,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 									Accessor(c, e1, acc), ec = out.FunApp(acc, Args(getTuple, Args(IntLit(f, DEC, NIL), NIL))).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = in.Default(type), TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),
+									e = in.Default(type), TypeExpansion(type, etype), TypeId(typeIndex, etype), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),
 									ec = out.FunApp(Ident("PrtMkDefaultValue"), Args(out.UnApp(ADDR, Ident(typeName)), NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
@@ -1884,8 +1895,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 	FunStmtRhs(c, s, size, args) :- RhsTrans(c, s, 0, j, args), RhsMaxOrder(s, 0, j), size = j + 1, s : in.FunStmt, args: out.Args. 
 
 	FunDeclNames ::= (fn: in.FunDecl, funIndex: Natural, funName: String, prmsTypeName: String).
-	FunDeclNames(fn, funIdex, funName, prmsTypeName) :- DeclId(fn, funIdex, funName), TypeId(typeIndex, type), 
-						                                fn = FunDecl(_, _, _, type, _, _, _), 
+	FunDeclNames(fn, funIdex, funName, prmsTypeName) :- DeclId(fn, funIdex, funName), TypeId(typeIndex, etype), 
+						                                fn = FunDecl(_, _, _, type, _, _, _), TypeExpansion(type, etype),
 						                                prmsTypeName = strJoin("P_GEND_TYPE_", toString(typeIndex)).  
 
 

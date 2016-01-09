@@ -286,7 +286,6 @@ OUT: castinexprsasserts.p (341, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (341, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsasserts.p (342, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (342, 14): inferred type:  BaseType(INT)
-OUT: castinexprsasserts.p (342, 15): inferred type:  BaseType(INT)
 OUT: castinexprsasserts.p (342, 18): inferred type:  BaseType(BOOL)
 OUT: castinexprsasserts.p (342, 21): inferred type:  BaseType(INT)
 OUT: castinexprsasserts.p (342, 23): inferred type:  BaseType(BOOL)
@@ -301,6 +300,7 @@ OUT: castinexprsasserts.p (347, 4): inferred type:  MapType(BaseType(INT), BaseT
 OUT: castinexprsasserts.p (347, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (348, 4): inferred type:  NIL
 OUT: castinexprsasserts.p (348, 14): inferred type:  BaseType(ANY)
+OUT: castinexprsasserts.p (348, 15): inferred type:  BaseType(INT)
 OUT: castinexprsasserts.p (348, 18): inferred type:  BaseType(BOOL)
 OUT: castinexprsasserts.p (348, 23): inferred type:  BaseType(BOOL)
 OUT: castinexprsasserts.p (348, 28): inferred type:  BaseType(ANY)

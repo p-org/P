@@ -38,8 +38,8 @@ OUT: anytypenullvalue.p (39, 11): inferred type:  NIL
 OUT: anytypenullvalue.p (39, 17): inferred type:  BaseType(REAL)
 OUT: anytypenullvalue.p (40, 11): inferred type:  NIL
 OUT: anytypenullvalue.p (40, 22): inferred type:  BaseType(BOOL)
+OUT: anytypenullvalue.p (42, 5): inferred type:  BaseType(ANY)
 OUT: anytypenullvalue.p (42, 5): inferred type:  NIL
-OUT: anytypenullvalue.p (43, 5): inferred type:  BaseType(ANY)
 OUT: anytypenullvalue.p (43, 5): inferred type:  NIL
 OUT: anytypenullvalue.p (43, 9): inferred type:  BaseType(ANY)
 OUT: anytypenullvalue.p (44, 5): inferred type:  NIL

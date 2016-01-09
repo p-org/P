@@ -92,10 +92,10 @@ OUT: stackoverflowexception.p (81, 5): inferred type:  NIL
 OUT: stackoverflowexception.p (81, 13): inferred type:  BaseType(INT)
 OUT: stackoverflowexception.p (81, 17): inferred type:  BaseType(BOOL)
 OUT: stackoverflowexception.p (83, 5): inferred type:  NIL
+OUT: stackoverflowexception.p (83, 5): inferred type:  SeqType(BaseType(ANY))
 OUT: stackoverflowexception.p (83, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
 OUT: stackoverflowexception.p (83, 14): inferred type:  TupType(BaseType(BOOL), NIL)
 OUT: stackoverflowexception.p (84, 5): inferred type:  NIL
-OUT: stackoverflowexception.p (84, 5): inferred type:  SeqType(BaseType(ANY))
 OUT: stackoverflowexception.p (84, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
 OUT: stackoverflowexception.p (84, 14): inferred type:  TupType(BaseType(BOOL), NIL)
 OUT: stackoverflowexception.p (86, 5): inferred type:  NIL
@@ -320,11 +320,11 @@ OUT: stackoverflowexception.p (207, 14): inferred type:  BaseType(BOOL)
 OUT: stackoverflowexception.p (209, 9): inferred type:  NIL
 OUT: stackoverflowexception.p (209, 15): inferred type:  BaseType(BOOL)
 OUT: stackoverflowexception.p (209, 23): inferred type:  NIL
+OUT: stackoverflowexception.p (209, 35): inferred type:  BaseType(ANY)
 OUT: stackoverflowexception.p (209, 39): inferred type:  BaseType(BOOL)
+OUT: stackoverflowexception.p (209, 47): inferred type:  BaseType(ANY)
 OUT: stackoverflowexception.p (210, 15): inferred type:  NIL
-OUT: stackoverflowexception.p (210, 27): inferred type:  BaseType(ANY)
 OUT: stackoverflowexception.p (210, 31): inferred type:  BaseType(BOOL)
-OUT: stackoverflowexception.p (210, 39): inferred type:  BaseType(ANY)
 OUT: stackoverflowexception.p (211, 6): inferred type:  NIL
 OUT: stackoverflowexception.p (211, 12): inferred type:  BaseType(INT)
 OUT: stackoverflowexception.p (216, 5): inferred type:  NIL

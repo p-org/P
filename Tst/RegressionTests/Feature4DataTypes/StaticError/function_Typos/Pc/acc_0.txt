@@ -1,7 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: function_typos.p (5, 3): inferred type:  ERROR
 OUT: function_typos.p (5, 10): inferred type:  BaseType(BOOL)
 OUT: function_typos.p (20, 7): inferred type:  ERROR
 OUT: function_typos.p (20, 7): inferred type:  NIL
@@ -20,7 +19,6 @@ OUT: function_typos.p (2, 41): same name appears more than once in name tuple or
 OUT: function_typos.p (3, 1): no start state in machine
 OUT: function_typos.p (4, 11): same name appears more than once in name tuple or named tuple type
 OUT: function_typos.p (4, 22): same name appears more than once in name tuple or named tuple type
-OUT: function_typos.p (5, 3): return value has incorrect type
 OUT: function_typos.p (20, 7): invalid payload type in send
 OUT: function_typos.p (20, 22): same name appears more than once in name tuple or named tuple type
 OUT: function_typos.p (20, 29): same name appears more than once in name tuple or named tuple type

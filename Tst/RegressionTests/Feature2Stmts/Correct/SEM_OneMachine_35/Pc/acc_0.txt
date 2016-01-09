@@ -47,6 +47,7 @@ OUT: bubble_sort.p (32, 17): inferred type:  NIL
 OUT: bubble_sort.p (32, 23): inferred type:  BaseType(INT)
 OUT: bubble_sort.p (36, 9): inferred type:  NIL
 OUT: bubble_sort.p (36, 16): inferred type:  SeqType(BaseType(INT))
+OUT: bubble_sort.p (40, 9): inferred type:  BaseType(INT)
 OUT: bubble_sort.p (40, 9): inferred type:  NIL
 OUT: bubble_sort.p (40, 13): inferred type:  BaseType(INT)
 OUT: bubble_sort.p (41, 9): inferred type:  NIL
@@ -61,7 +62,6 @@ OUT: bubble_sort.p (42, 22): inferred type:  BaseType(BOOL)
 OUT: bubble_sort.p (42, 25): inferred type:  BaseType(INT)
 OUT: bubble_sort.p (43, 17): inferred type:  NIL
 OUT: bubble_sort.p (43, 24): inferred type:  BaseType(BOOL)
-OUT: bubble_sort.p (44, 13): inferred type:  BaseType(INT)
 OUT: bubble_sort.p (44, 13): inferred type:  NIL
 OUT: bubble_sort.p (44, 19): inferred type:  BaseType(INT)
 OUT: bubble_sort.p (47, 9): inferred type:  NIL

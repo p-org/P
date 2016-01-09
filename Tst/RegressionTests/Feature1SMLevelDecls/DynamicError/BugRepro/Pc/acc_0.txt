@@ -116,7 +116,6 @@ OUT: pingpongbugrepro.p (99, 10): inferred type:  BaseType(REAL)
 OUT: pingpongbugrepro.p (99, 17): inferred type:  BaseType(EVENT)
 OUT: pingpongbugrepro.p (99, 24): inferred type:  BaseType(INT)
 OUT: pingpongbugrepro.p (101, 4): inferred type:  NIL
-OUT: pingpongbugrepro.p (106, 3): inferred type:  BaseType(INT)
 OUT: pingpongbugrepro.p (106, 3): inferred type:  NIL
 OUT: pingpongbugrepro.p (106, 7): inferred type:  BaseType(INT)
 OUT: pingpongbugrepro.p (107, 3): inferred type:  NIL
@@ -129,6 +128,7 @@ OUT: pingpongbugrepro.p (108, 19): inferred type:  BaseType(REAL)
 OUT: pingpongbugrepro.p (108, 19): inferred type:  TupType(BaseType(REAL), TupType(BaseType(BOOL), NIL))
 OUT: pingpongbugrepro.p (108, 24): inferred type:  BaseType(BOOL)
 OUT: pingpongbugrepro.p (108, 24): inferred type:  TupType(BaseType(BOOL), NIL)
+OUT: pingpongbugrepro.p (109, 4): inferred type:  BaseType(INT)
 OUT: pingpongbugrepro.p (109, 4): inferred type:  NIL
 OUT: pingpongbugrepro.p (109, 10): inferred type:  BaseType(INT)
 OUT: pingpongbugrepro.p (109, 12): inferred type:  BaseType(INT)
@@ -199,11 +199,11 @@ OUT: pingpongbugrepro.p (153, 4): inferred type:  NIL
 OUT: pingpongbugrepro.p (153, 8): inferred type:  BaseType(BOOL)
 OUT: pingpongbugrepro.p (153, 10): inferred type:  BaseType(REAL)
 OUT: pingpongbugrepro.p (153, 18): inferred type:  BaseType(BOOL)
-OUT: pingpongbugrepro.p (154, 5): inferred type:  MapType(BaseType(REAL), BaseType(INT))
 OUT: pingpongbugrepro.p (154, 5): inferred type:  NIL
-OUT: pingpongbugrepro.p (154, 12): inferred type:  BaseType(INT)
 OUT: pingpongbugrepro.p (154, 24): inferred type:  BaseType(INT)
+OUT: pingpongbugrepro.p (155, 4): inferred type:  MapType(BaseType(REAL), BaseType(INT))
 OUT: pingpongbugrepro.p (155, 4): inferred type:  NIL
+OUT: pingpongbugrepro.p (155, 11): inferred type:  BaseType(INT)
 OUT: pingpongbugrepro.p (155, 40): inferred type:  BaseType(INT)
 OUT: pingpongbugrepro.p (155, 42): inferred type:  BaseType(INT)
 OUT: pingpongbugrepro.p (156, 4): inferred type:  NIL

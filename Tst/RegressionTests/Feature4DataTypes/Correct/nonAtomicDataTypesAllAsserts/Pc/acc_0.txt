@@ -361,8 +361,6 @@ OUT: nonatomicdatatypesallasserts.p (242, 15): inferred type:  TupType(TupType(B
 OUT: nonatomicdatatypesallasserts.p (242, 17): inferred type:  TupType(BaseType(INT), NIL)
 OUT: nonatomicdatatypesallasserts.p (243, 5): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (243, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
-OUT: nonatomicdatatypesallasserts.p (243, 15): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: nonatomicdatatypesallasserts.p (243, 15): inferred type:  TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL)
 OUT: nonatomicdatatypesallasserts.p (244, 5): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (244, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
 OUT: nonatomicdatatypesallasserts.p (244, 16): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
@@ -377,6 +375,8 @@ OUT: nonatomicdatatypesallasserts.p (246, 21): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (248, 5): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (248, 5): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
 OUT: nonatomicdatatypesallasserts.p (248, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
+OUT: nonatomicdatatypesallasserts.p (248, 15): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypesallasserts.p (248, 15): inferred type:  TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL)
 OUT: nonatomicdatatypesallasserts.p (249, 5): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (249, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
 OUT: nonatomicdatatypesallasserts.p (250, 5): inferred type:  NIL

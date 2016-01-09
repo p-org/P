@@ -1,0 +1,72 @@
+=================================
+         Console output          
+=================================
+OUT: timer.p (12, 7): inferred type:  BaseType(REAL)
+OUT: timer.p (12, 7): inferred type:  NIL
+OUT: timer.p (12, 16): inferred type:  BaseType(REAL)
+OUT: timer.p (13, 7): inferred type:  NIL
+OUT: timer.p (13, 13): inferred type:  BaseType(EVENT)
+OUT: timer.p (19, 5): inferred type:  NIL
+OUT: timer.p (19, 19): inferred type:  NIL
+OUT: timer.p (19, 24): inferred type:  BaseType(REAL)
+OUT: timer.p (19, 32): inferred type:  BaseType(EVENT)
+OUT: timer.p (19, 41): inferred type:  BaseType(REAL)
+OUT: typedef2.p (0, 0): inferred type:  NIL
+OUT: typedef2.p (10, 30): inferred type:  NIL
+OUT: typedef2.p (19, 4): inferred type:  BaseType(REAL)
+OUT: typedef2.p (19, 4): inferred type:  NIL
+OUT: typedef2.p (19, 9): inferred type:  BaseType(REAL)
+OUT: typedef2.p (19, 20): inferred type:  BaseType(REAL)
+OUT: typedef2.p (22, 4): inferred type:  NIL
+OUT: typedef2.p (23, 4): inferred type:  NIL
+OUT: typedef2.p (23, 4): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", BaseType(INT)), NIL))
+OUT: typedef2.p (24, 4): inferred type:  NIL
+OUT: typedef2.p (24, 9): inferred type:  BaseType(REAL)
+OUT: typedef2.p (24, 13): inferred type:  BaseType(EVENT)
+OUT: typedef2.p (29, 3): inferred type:  NIL
+OUT: typedef2.p (29, 10): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", BaseType(INT)), NIL))
+OUT: typedef2.p (40, 4): inferred type:  BaseType(REAL)
+OUT: typedef2.p (40, 4): inferred type:  NIL
+OUT: typedef2.p (40, 9): inferred type:  BaseType(REAL)
+OUT: typedef2.p (41, 4): inferred type:  BaseType(REAL)
+OUT: typedef2.p (41, 4): inferred type:  NIL
+OUT: typedef2.p (41, 10): inferred type:  BaseType(REAL)
+OUT: typedef2.p (41, 20): inferred type:  BaseType(REAL)
+OUT: typedef2.p (42, 4): inferred type:  BaseType(INT)
+OUT: typedef2.p (42, 4): inferred type:  NIL
+OUT: typedef2.p (42, 14): inferred type:  BaseType(INT)
+OUT: typedef2.p (43, 4): inferred type:  NIL
+OUT: typedef2.p (43, 10): inferred type:  BaseType(EVENT)
+OUT: typedef2.p (49, 2): inferred type:  NIL
+OUT: typedef2.p (56, 4): inferred type:  NIL
+OUT: typedef2.p (56, 7): inferred type:  BaseType(INT)
+OUT: typedef2.p (56, 15): inferred type:  BaseType(BOOL)
+OUT: typedef2.p (56, 18): inferred type:  BaseType(INT)
+OUT: typedef2.p (59, 5): inferred type:  NIL
+OUT: typedef2.p (59, 10): inferred type:  BaseType(REAL)
+OUT: typedef2.p (59, 14): inferred type:  BaseType(EVENT)
+OUT: typedef2.p (60, 5): inferred type:  NIL
+OUT: typedef2.p (60, 12): inferred type:  BaseType(BOOL)
+OUT: typedef2.p (61, 5): inferred type:  NIL
+OUT: typedef2.p (63, 4): inferred type:  NIL
+OUT: typedef2.p (63, 9): inferred type:  BaseType(REAL)
+OUT: typedef2.p (63, 14): inferred type:  BaseType(EVENT)
+OUT: typedef2.p (63, 21): inferred type:  BaseType(INT)
+OUT: typedef2.p (66, 4): inferred type:  NIL
+OUT: typedef2.p (66, 9): inferred type:  BaseType(REAL)
+OUT: typedef2.p (66, 13): inferred type:  BaseType(EVENT)
+OUT: typedef2.p (67, 4): inferred type:  BaseType(INT)
+OUT: typedef2.p (67, 4): inferred type:  NIL
+OUT: typedef2.p (67, 22): inferred type:  BaseType(INT)
+OUT: typedef2.p (67, 24): inferred type:  BaseType(INT)
+OUT: typedef2.p (68, 4): inferred type:  NIL
+OUT: typedef2.p (69, 26): inferred type:  NIL
+OUT: typedef2.p (71, 4): inferred type:  NIL
+OUT: typedef2.p (71, 10): inferred type:  BaseType(EVENT)
+OUT: typedef2.p (73, 3): inferred type:  NIL
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing typedef2.zing ...
+OUT: Compiling typedef2.zing to typedef2.dll ...
+EXIT: 0

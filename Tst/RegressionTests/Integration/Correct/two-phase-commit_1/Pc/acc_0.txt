@@ -98,6 +98,7 @@ OUT: two-phase-commit_1.p (141, 13): inferred type:  BaseType(BOOL)
 OUT: two-phase-commit_1.p (142, 5): inferred type:  BaseType(REAL)
 OUT: two-phase-commit_1.p (142, 5): inferred type:  NIL
 OUT: two-phase-commit_1.p (142, 15): inferred type:  BaseType(REAL)
+OUT: two-phase-commit_1.p (142, 27): inferred type:  BaseType(REAL)
 OUT: two-phase-commit_1.p (143, 5): inferred type:  NIL
 OUT: two-phase-commit_1.p (143, 5): inferred type:  SeqType(BaseType(REAL))
 OUT: two-phase-commit_1.p (143, 18): inferred type:  TupType(BaseType(INT), TupType(BaseType(REAL), NIL))
@@ -110,7 +111,6 @@ OUT: two-phase-commit_1.p (146, 4): inferred type:  NIL
 OUT: two-phase-commit_1.p (148, 4): inferred type:  BaseType(REAL)
 OUT: two-phase-commit_1.p (148, 4): inferred type:  NIL
 OUT: two-phase-commit_1.p (148, 12): inferred type:  BaseType(REAL)
-OUT: two-phase-commit_1.p (148, 22): inferred type:  BaseType(REAL)
 OUT: two-phase-commit_1.p (149, 4): inferred type:  NIL
 OUT: two-phase-commit_1.p (149, 10): inferred type:  BaseType(EVENT)
 OUT: two-phase-commit_1.p (156, 4): inferred type:  BaseType(REAL)

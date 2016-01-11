@@ -81,10 +81,6 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Src\Pc\Compiler\Compiler.csproj">
-      <Project>{ed76217f-2452-4a35-90f6-6eb6ccf2d882}</Project>
-      <Name>Compiler</Name>
-    </ProjectReference>
     <ProjectReference Include="..\CheckP\CheckP.csproj">
       <Project>{d614d3ec-c765-4b47-8002-e683c16c5865}</Project>
       <Name>CheckP</Name>

@@ -22,6 +22,7 @@ namespace CheckP
         AutoResetEvent evt;
         public string outputString;
         public string errorString;
+        public bool pciInitialized = false;
         public bool loadSucceeded = true;
 
         public PciProcess(string pciPath)
@@ -55,11 +56,16 @@ namespace CheckP
 
         private void pciProcess_OutputDataReceived(object sender, DataReceivedEventArgs e)
         {
-            if (e.Data == "Pci: Command done")
+            if (!pciInitialized && e.Data == "Pci: initialization succeeded")
+            {
+                pciInitialized = true;
+                evt.Set();
+            }
+            else if (e.Data == "Pci: command done")
             {
                 evt.Set();
             }
-            else if (e.Data == "Pci: Load failed")
+            else if (e.Data.StartsWith("Pci: load failed"))
             {
                 loadSucceeded = false;
                 evt.Set();
@@ -72,7 +78,7 @@ namespace CheckP
 
         private void pciProcess_ErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
-            if (e.Data == "Pci: Command done")
+            if (e.Data == "Pci: command done")
                 evt.Set();
             else
                 errorString += string.Format("ERROR: {0}\r\n", e.Data);

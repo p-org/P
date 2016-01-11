@@ -10,7 +10,6 @@ namespace RunPTool
     using System.Threading.Tasks;
     using CheckP;
     using System.Diagnostics;
-    using Microsoft.Pc;
 
     class Program
     {

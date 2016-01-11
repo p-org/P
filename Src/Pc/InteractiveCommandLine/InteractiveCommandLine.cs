@@ -46,11 +46,16 @@ namespace Microsoft.Pc
             compilerOptions.erase = !doNotErase;
             compilerOptions.analyzeOnly = true;
             if (server)
-                Console.WriteLine("Pci: Command done");
-            else
-                Console.Write(">> ");
+            {
+                Console.WriteLine("Pci: initialization succeeded");
+            }
+
             while (true)
             {
+                if (!server)
+                {
+                    Console.Write(">> ");
+                }
                 var input = Console.ReadLine();
                 var inputArgs = input.Split(' ');
                 if (inputArgs.Length == 0) continue;
@@ -61,44 +66,74 @@ namespace Microsoft.Pc
                 else if (inputArgs[0] == "load")
                 {
                     var success = ParseLoadString(inputArgs, compilerOptions);
-                    if (!success) continue;
+                    if (!success)
+                    {
+                        Console.WriteLine("USAGE: load file.p [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>]");
+                        continue;
+                    }
                     compiler.Options = compilerOptions;
                     var result = compiler.Compile(inputFileName);
                     if (!result)
                     {
                         inputFileName = null;
+                        if (server)
+                        {
+                            Console.WriteLine("Pci: load failed");
+                        }
+                    }
+                    else
+                    {
+                        if (server)
+                        {
+                            Console.WriteLine("Pci: command done");
+                        }
                     }
                 }
                 else if (inputArgs[0] == "test")
                 {
+                    if (inputFileName == null)
+                    {
+                        Console.WriteLine("USAGE: load file.p [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>]");
+                        continue;
+                    }
                     var success = ParseTestString(inputArgs, compilerOptions);
-                    if (!success) continue;
+                    if (!success)
+                    {
+                        Console.WriteLine("USAGE: test [/liveness[:mace]] [/outputDir:<dir>]"); 
+                        continue;
+                    }
                     compiler.Options = compilerOptions;
                     var b = compiler.GenerateZing();
                     Debug.Assert(b);
+                    if (server)
+                    {
+                        Console.WriteLine("Pci: command done");
+                    }
                 }
                 else if (inputArgs[0] == "compile")
                 {
+                    if (inputFileName == null)
+                    {
+                        Console.WriteLine("USAGE: load file.p [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>]");
+                        continue;
+                    } 
                     var success = ParseCompileString(inputArgs, compilerOptions);
-                    if (!success) continue;
+                    if (!success)
+                    {
+                        Console.WriteLine("USAGE: compile [/outputDir:<dir>]");
+                        continue;
+                    }
                     compiler.Options = compilerOptions;
                     var b = compiler.GenerateC();
                     Debug.Assert(b);
+                    if (server)
+                    {
+                        Console.WriteLine("Pci: command done");
+                    }
                 }
                 else
                 {
                     Console.WriteLine("Unexpected input");
-                }
-                if (server)
-                {
-                    if (inputFileName == null)
-                        Console.WriteLine("Pci: Load failed");
-                    else
-                        Console.WriteLine("Pci: Command done");
-                }
-                else
-                {
-                    Console.Write(">> ");
                 }
             }
 
@@ -107,7 +142,6 @@ namespace Microsoft.Pc
                 Console.WriteLine("USAGE: Pci.exe [/shortFileNames] [/doNotErase] [/server]");
                 return;
             }
-
         }
 
         static bool ParseLoadString(string[] args, CommandLineOptions compilerOptions)
@@ -138,21 +172,17 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    goto error;
+                    return false;
                 }
             }
-            if (fileName == null) goto error;
+            if (fileName == null) 
+                return false;
+
             inputFileName = fileName;
             compilerOptions.outputFormula = outputFormula;
             compilerOptions.printTypeInference = printTypeInference;
             compilerOptions.outputDir = outputDir;
             return true;
-
-        error:
-            {
-                Console.WriteLine("USAGE: load file.p [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>]");
-                return false;
-            }
         }
 
         static bool ParseCompileString(string[] args, CommandLineOptions compilerOptions)
@@ -168,17 +198,11 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    goto error;
+                    return false;
                 }
             }
             compilerOptions.outputDir = outputDir;
             return true;
-
-        error:
-            {
-                Console.WriteLine("USAGE: compile [/outputDir:<dir>]");
-                return false;
-            }
         }
 
         static bool ParseTestString(string[] args, CommandLineOptions compilerOptions)
@@ -201,11 +225,11 @@ namespace Microsoft.Pc
                         if (colonArg == "mace")
                             liveness = LivenessOption.Mace;
                         else
-                            goto error;
+                            return false;
                     }
                     else
                     {
-                        goto error;
+                        return false;
                     }
                 }
                 else if (outputDir == null && arg.StartsWith("/outputDir:"))
@@ -215,18 +239,12 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    goto error;
+                    return false;
                 }
             }
             compilerOptions.liveness = liveness;
             compilerOptions.outputDir = outputDir;
             return true;
-
-        error:
-            {
-                Console.WriteLine("USAGE: test [/liveness[:mace]] [/outputDir:<dir>]");
-                return false;
-            }
         }
     }
 }

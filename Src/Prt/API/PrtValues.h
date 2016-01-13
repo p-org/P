@@ -110,10 +110,10 @@ typedef struct PRT_MAPNODE
 
 #endif
 
-/** A foreign value is foreign type paired with a void *. */
+/** A foreign value is foreign type paired with a char *. */
 typedef struct PRT_FORGNVALUE
 {
-	void				  *value;     /**< A pointer to the foreign value. */
+	char				  *value;     /**< A pointer to the foreign value. */
 	PRT_GUID              typeTag;    /**< A non-zero GUID used by the client to tag the foreign types of values */
 	PRT_FORGN_CLONE       cloner;     /**< Clones foreign values */
 	PRT_FORGN_FREE        freer;      /**< Frees foreign values */

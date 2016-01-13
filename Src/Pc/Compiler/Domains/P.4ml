@@ -598,7 +598,7 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: function does not return a value"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _, x, _), x: Name, FunAvailable(decl, c.owner), decl.name = n, decl.return = NIL.
 	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
-	TypeOf(c, e, ERROR) :- TypeOfArg2(c, e, t1, t2), e = FunStmt(n, _, x, _), x: Name, FunAvailable(decl, c.owner), decl.name = n, TypeRel(decl.return, t2, k), k!= SUB, decl.return != t2.
+	TypeOf(c, e, ERROR) :- TypeOfArg2(c, e, t1, t2), e = FunStmt(n, _, x, _), x: Name, FunAvailable(decl, c.owner), decl.name = n, decl.return = t, TypeExpansion(t, et), TypeRel(et, t2, k), k!= SUB, et != t2.
 
 	//// (6) Receive statement
 	ReceiveCases ::= (c: TypingContext, receive: Receive, cases: Cases).

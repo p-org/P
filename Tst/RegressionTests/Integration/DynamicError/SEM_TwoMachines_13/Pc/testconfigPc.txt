@@ -1,8 +1,0 @@
-runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
-argPc: ..\NewMonitor.p
-argPc: /printTypeInference
-argPc: /shortFileNames
-argPc: /doNotErase
-argPc: /outputDir:..\.
-acc: .\.
-dsc: pc.exe, two machines, monitor instantiation parameter

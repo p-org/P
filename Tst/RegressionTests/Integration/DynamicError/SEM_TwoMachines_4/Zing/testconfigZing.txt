@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\EventSentAfterSentHaltHandled_v.dll
-argZing: -et:EventSentAfterSentHaltHandled_v.trace
-incZing: EventSentAfterSentHaltHandled_v.trace
-del: EventSentAfterSentHaltHandled_v.trace
-acc: .\
-dsc: zinger.exe, P semantics test: two machines, event sent after "halt", "halt" is handled: validating test

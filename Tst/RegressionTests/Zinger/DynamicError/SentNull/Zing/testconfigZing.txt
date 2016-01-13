@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\SentNullDetected.dll
-argZing: -et:SentNullDetected.trace
-incZing: SentNullDetected.trace
-del: SentNullDetected.trace
-acc: .\
-dsc: zinger.exe, Zinger: "sent null event" exception

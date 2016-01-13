@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\TokenRing.dll
-argZing: -et:TokenRing.trace
-incZing: TokenRing.trace
-del: TokenRing.trace
-acc: .\
-dsc: zinger.exe, Feature Integration: Attempting to enqueue event more than max instance of 1

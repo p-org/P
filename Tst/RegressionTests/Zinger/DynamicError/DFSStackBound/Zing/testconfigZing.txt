@@ -1,9 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\DFSStackBound.dll
-argZing: -et:DFSStackBound.trace
-argZing: -maxdfsstack:10
-argZing: -ibound:100
-incZing: DFSStackBound.trace
-del: DFSStackBound.trace
-acc: .\
-dsc: zinger.exe, Testing the DFS stack bound option in Zing

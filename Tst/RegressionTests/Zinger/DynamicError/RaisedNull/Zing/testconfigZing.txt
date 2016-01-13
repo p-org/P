@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\RaisedNullDetected.dll
-argZing: -et:RaisedNullDetected.trace
-incZing: RaisedNullDetected.trace
-del: RaisedNullDetected.trace
-acc: .\
-dsc: zinger.exe, Zinger: "raised null event" exception

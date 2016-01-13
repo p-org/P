@@ -1,0 +1,5 @@
+arg: ..\MonitorInvocationEventExprPayload.dll
+arg: -et:MonitorInvocationEventExprPayload.trace
+inc: MonitorInvocationEventExprPayload.trace
+del: MonitorInvocationEventExprPayload.trace
+dsc: zinger.exe, P semantics test: two machines, monitor invocation with non-constant event expression with payload

@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\CastInExprsDynError.dll
-argZing: -et:CastInExprsDynError.trace
-incZing: CastInExprsDynError.trace
-del: CastInExprsDynError.trace
-acc: .\
-dsc: zinger.exe, 3.4. cast operator in expressions

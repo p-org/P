@@ -1,0 +1,2 @@
+arg: ..\PingPongMonitor.dll
+dsc: zinger.exe, Feature Integration: monitor with hot/cold states

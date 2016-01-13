@@ -1,0 +1,6 @@
+arg: ..\Liveness_1_WarmState.dll
+arg: -ndfsliveness
+arg: -et:Liveness_1_WarmState.trace
+inc: Liveness_1_WarmState.trace
+del: Liveness_1_WarmState.trace
+dsc: zinger.exe, Liveness: "warm" state instead of "cold"

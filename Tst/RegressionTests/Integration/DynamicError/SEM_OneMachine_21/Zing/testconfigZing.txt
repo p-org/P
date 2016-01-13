@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\BugReproIdenticalTerms_workaround.dll
-argZing: -et:BugReproIdenticalTerms_workaround.trace
-incZing: BugReproIdenticalTerms_workaround.trace
-del: BugReproIdenticalTerms_workaround.trace
-acc: .\
-dsc: zinger.exe, P semantics test: exit function performed while explicitly popping the state

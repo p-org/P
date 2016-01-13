@@ -1,0 +1,7 @@
+arg: ..\Liveness_NONDET.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /liveness
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, Liveness: simplest sample demonstrating NONDET in liveness

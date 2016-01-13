@@ -1,0 +1,6 @@
+arg: ..\HaltTrigger4Do.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, P semantics test: two machines, "halt" as a transition trigger for "do"

@@ -1,0 +1,6 @@
+arg: ..\entryExit_2.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: 1.6.1. entry/exit actions: functions with arguments

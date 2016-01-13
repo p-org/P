@@ -1,0 +1,5 @@
+arg: ..\lvalues_runtimeError.dll
+arg: -et:lvalues_runtimeError.trace
+inc: lvalues_runtimeError.trace
+del: lvalues_runtimeError.trace
+dsc: zinger.exe, P semantics test: one machine, asgn to uninitialized sequence (runtime error)

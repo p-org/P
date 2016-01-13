@@ -1,4 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\bubble_sort.dll
-acc: .\
-dsc: zinger.exe, P Semantics, one machine, sequences, "while", "if-then-else"

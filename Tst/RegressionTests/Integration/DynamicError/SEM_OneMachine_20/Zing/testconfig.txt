@@ -1,0 +1,5 @@
+arg: ..\BugReproIdenticalTerms.dll
+arg: -et:BugReproIdenticalTerms.trace
+inc: BugReproIdenticalTerms.trace
+del: BugReproIdenticalTerms.trace
+dsc: zinger.exe, P semantics test: exit function performed while explicitly popping the state

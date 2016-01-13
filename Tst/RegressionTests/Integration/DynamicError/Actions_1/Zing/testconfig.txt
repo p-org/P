@@ -1,0 +1,5 @@
+arg: ..\Actions_1.dll
+arg: -et:Actions_1.trace
+inc: Actions_1.trace
+del: Actions_1.trace
+dsc: zinger.exe, Feature Integration: basic semantics of actions and goto transitions

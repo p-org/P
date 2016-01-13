@@ -1,0 +1,6 @@
+arg: ..\nonAtomicDataTypesAllAsserts.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, complex data types in assignments: sequences, tuples, maps

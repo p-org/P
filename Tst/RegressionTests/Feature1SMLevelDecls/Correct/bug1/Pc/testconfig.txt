@@ -1,0 +1,6 @@
+arg: ..\bug1.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, Feature Integration: two receive statments have the same event

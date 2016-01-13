@@ -1,0 +1,1 @@
+dsc: runtime, P semantics test: exit function performed while explicitly popping the state

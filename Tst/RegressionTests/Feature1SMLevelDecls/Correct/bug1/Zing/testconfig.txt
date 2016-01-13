@@ -1,0 +1,2 @@
+arg: ..\bug1.dll
+dsc: zinger.exe, Feature Integration: two receive statements have the same event

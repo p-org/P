@@ -1,8 +1,0 @@
-runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
-argPc: ..\MaxInstances_2.p
-argPc: /printTypeInference
-argPc: /shortFileNames
-argPc: /doNotErase
-argPc: /outputDir:..\.
-acc: .\.
-dsc: pc.exe, 1.9/1.10. assert/assume max instances of event

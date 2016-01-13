@@ -1,0 +1,3 @@
+arg: ..\boundedchoice_1.dll
+arg: -bc:2
+dsc: zinger.exe, Testing Bounded Choice Operator in Zing

@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\nonAtomicDataTypes.dll
-argZing: -et:nonAtomicDataTypes.trace
-incZing: nonAtomicDataTypes.trace
-del: nonAtomicDataTypes.trace
-acc: .\
-dsc: zinger.exe, complex data types in assignments: sequences, tuples, maps

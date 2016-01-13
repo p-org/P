@@ -1,0 +1,5 @@
+arg: ..\EventSentAfterSentHalt_v.dll
+arg: -et:EventSentAfterSentHalt_v.trace
+inc: EventSentAfterSentHalt_v.trace
+del: EventSentAfterSentHalt_v.trace
+dsc: zinger.exe, P semantics test: event sent after machine is halted: validating test

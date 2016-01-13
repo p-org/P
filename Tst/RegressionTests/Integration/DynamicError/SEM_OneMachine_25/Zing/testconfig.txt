@@ -1,0 +1,5 @@
+arg: ..\NewInExit.dll 
+arg: -et:NewInExit.trace
+inc: NewInExit.trace
+del: NewInExit.trace
+dsc: zinger.exe, P semantics test: "new" in exit function

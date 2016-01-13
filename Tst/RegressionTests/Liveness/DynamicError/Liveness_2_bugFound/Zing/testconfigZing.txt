@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\Liveness_2_bugFound.dll
-argZing: -et:Liveness_2_bugFound.trace
-incZing: Liveness_2_bugFound.trace
-del: Liveness_2_bugFound.trace
-acc: .\
-dsc: zinger.exe, Liveness: simplest sample demonstrating liveness error found

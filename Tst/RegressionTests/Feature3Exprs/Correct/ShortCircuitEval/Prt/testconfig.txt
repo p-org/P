@@ -1,0 +1,1 @@
+dsc: runtime, short-circuit in "&&" and "||" evaluation in Zinger

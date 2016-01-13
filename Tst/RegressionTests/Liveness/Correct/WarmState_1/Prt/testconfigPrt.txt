@@ -1,3 +1,0 @@
-runPrt: ..\..\..\..\..\..\..\..\Planguage\Plang\Tst\PrtTester\Debug\Tester.exe
-acc: .\
-dsc: runtime, Liveness: "warm" state instead of "hot"

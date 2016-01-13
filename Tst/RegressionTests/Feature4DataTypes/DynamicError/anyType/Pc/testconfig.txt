@@ -1,0 +1,6 @@
+arg: ..\anyType.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe: 4. "any" type in EQ and NE

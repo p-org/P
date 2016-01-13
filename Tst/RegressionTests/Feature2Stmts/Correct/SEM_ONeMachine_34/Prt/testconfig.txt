@@ -1,0 +1,1 @@
+dsc: runtime, P semantics test: one machine, tuples, sequences and maps as payloads

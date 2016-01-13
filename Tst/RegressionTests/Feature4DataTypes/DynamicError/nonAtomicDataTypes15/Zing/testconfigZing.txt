@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\Insert4Map.dll
-argZing: -et:Insert4Map.trace
-incZing: Insert4Map.trace
-del: Insert4Map.trace
-acc: .\
-dsc: zinger.exe, INSERT for map error

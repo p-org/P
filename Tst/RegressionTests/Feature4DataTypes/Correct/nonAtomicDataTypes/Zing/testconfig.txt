@@ -1,0 +1,2 @@
+arg: ..\nonAtomicDataTypes.dll
+dsc: zinger.exe, complex data types in assign/remove/insert: sequences, tuples, maps

@@ -1,0 +1,2 @@
+arg: ..\Groups.dll
+dsc: zinger.exe, 1.6.4. Groups of states

@@ -1,0 +1,6 @@
+arg: ..\NullTriggerPayload.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, P semantics test, one machine: payload and trigger for "null" event

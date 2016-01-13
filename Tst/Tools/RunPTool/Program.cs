@@ -14,7 +14,7 @@ namespace RunPTool
     class Program
     {
         private const int FailCode = 1;
-        private const string TestFilePattern = "testconfig*.txt";
+        private const string TestFilePattern = "testconfig.txt";
         private const string FailedTestsFile = "failed-tests.txt";
         private const string DisplayDiffsFile = "display-diffs.bat";
         private const string DiffTool = "kdiff3";
@@ -26,6 +26,7 @@ namespace RunPTool
             try
             {
                 bool reset = false;
+                //set according to the name of the parent directory for "testconfig.txt":
                 string testFilePath = null;
                 for (int i = 0; i < args.Length; i++)
                 {
@@ -137,17 +138,36 @@ namespace RunPTool
         }   
 
         //If reset = true, failedDirsWriter and displayDiffsWriter are "null"
-        private static void Test(List<DirectoryInfo> diArray, bool reset, ref int testCount, ref int failCount,
+        private static void Test(List<DirectoryInfo> diArray, bool reset,  ref int testCount, ref int failCount,
             StreamWriter failedTestsWriter, StreamWriter displayDiffsWriter)
         {
+            bool isSetExePc = false;
+            bool isSetExeZing = false;
+            bool isSetExePrt = false;
+            string executingProcessDirectoryName =
+                    Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+            string zingFilePath = Path.Combine(executingProcessDirectoryName,
+                    "..\\..\\..\\..\\..\\..\\Bld\\Drops\\Plang_Debug_x86\\Compiler\\zinger.exe");
             foreach (DirectoryInfo di in diArray)
             {
                 //enumerating files in the top dir only
                 foreach (var fi in di.EnumerateFiles(TestFilePattern))
                 {
                     ++testCount;
-                    //Console.WriteLine("Running CheckP under dir {0}", diArray[i].FullName);
-                    var checker = new Checker(di.FullName, reset, pciProcess);
+
+                    //if di.Name is Pc or Prt or Zing, leaf directory is reached;
+                    //in that case, set isSetExePc, isSetExeZing, isSetExePrt:
+                    //(we are assuming that test directories cannot have these names)
+                    //Note:these directory names must be exactly Pc or Prt or Zing (they are case-sensitive)
+                    if (di.Name == "Pc")   { isSetExePc = true; }
+                    else if (di.Name == "Zing") { isSetExeZing = true; }
+                    else if (di.Name == "Prt") {isSetExePrt = true; }
+                    else
+                    {
+                        throw new Exception(string.Format("Incorrect directory name {0}; the only allowed names are Pc, Prt or Zing", di.Name));
+                    }
+
+                    var checker = new Checker(di.FullName, reset, isSetExePc, isSetExeZing, isSetExePrt, zingFilePath, pciProcess);
                     if (!checker.Check(fi.Name))
                     {
                         ++failCount;
@@ -171,6 +191,7 @@ namespace RunPTool
                     Test(dpArray, reset, ref testCount, ref failCount, failedTestsWriter, displayDiffsWriter);
                 }
             }
+
         }
         private static bool OpenSummaryStream(string fileName, out StreamWriter wr)
         {

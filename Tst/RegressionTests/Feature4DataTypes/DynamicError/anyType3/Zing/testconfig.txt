@@ -1,0 +1,5 @@
+arg: ..\anyType3.dll
+arg: -et:anyType3.trace
+inc: anyType3.trace
+del: anyType3.trace
+dsc: zinger.exe, 4. "any" type in EQ and NE

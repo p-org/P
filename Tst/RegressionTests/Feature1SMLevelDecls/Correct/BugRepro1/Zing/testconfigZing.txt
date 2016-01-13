@@ -1,4 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\FunctionParMutated.dll
-acc: .\
-dsc: zinger.exe, "send" in function which mutates its parameters

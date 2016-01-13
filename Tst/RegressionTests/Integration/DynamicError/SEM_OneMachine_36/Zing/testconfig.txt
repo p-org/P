@@ -1,0 +1,5 @@
+arg: ..\NullEventHandler1.dll
+arg: -et:NullEventHandler1.trace
+inc: NullEventHandler1.trace
+del: NullEventHandler1.trace
+dsc: zinger.exe, P semantics test, one machine: "null" handler semantics

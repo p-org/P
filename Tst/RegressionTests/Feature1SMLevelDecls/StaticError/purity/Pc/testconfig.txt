@@ -1,0 +1,6 @@
+arg: ..\purity.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: 1.4.4. Data impure functions

@@ -1,0 +1,6 @@
+arg: ..\Liveness_2_LoopMachineAdded.dll
+arg: -ndfsliveness
+arg: -et:Liveness_2_LoopMachineAdded.trace
+inc: Liveness_2_LoopMachineAdded.trace
+del: Liveness_2_LoopMachineAdded.trace
+dsc: zinger.exe, Liveness: simplest sample demonstrating liveness error found

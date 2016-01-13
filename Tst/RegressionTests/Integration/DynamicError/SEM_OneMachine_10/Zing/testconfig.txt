@@ -1,0 +1,5 @@
+arg: ..\Push.dll
+arg: -et:Push.trace
+inc: Push.trace
+del: Push.trace
+dsc: zinger.exe, P semantics test: one machine, "push", "send" in entry and exit

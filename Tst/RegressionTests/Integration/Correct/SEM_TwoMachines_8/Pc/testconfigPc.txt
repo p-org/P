@@ -1,8 +1,0 @@
-runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
-argPc: ..\HaltTrigger4Do.p
-argPc: /printTypeInference
-argPc: /shortFileNames
-argPc: /doNotErase
-argPc: /outputDir:..\.
-acc: .\.
-dsc: pc.exe, P semantics test: two machines, "halt" as a transition trigger for "do"

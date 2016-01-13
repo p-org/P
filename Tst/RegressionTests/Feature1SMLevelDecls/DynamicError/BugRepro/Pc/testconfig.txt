@@ -1,0 +1,7 @@
+arg: ..\PingPongBugRepro.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /liveness
+arg: /outputDir:..\.
+dsc: pc.exe, Feature Integration: "send" in function which mutates its parameters

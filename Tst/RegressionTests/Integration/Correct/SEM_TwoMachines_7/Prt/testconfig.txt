@@ -1,0 +1,1 @@
+dsc: runtime, P semantics test: two machines, machine is halted with "raise halt" (unhandled)

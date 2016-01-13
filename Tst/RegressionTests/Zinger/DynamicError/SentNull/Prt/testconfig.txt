@@ -1,0 +1,1 @@
+dsc: runtime, Zinger: "sent null event" exception

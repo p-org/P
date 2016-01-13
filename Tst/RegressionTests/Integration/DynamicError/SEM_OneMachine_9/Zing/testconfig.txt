@@ -1,0 +1,5 @@
+arg: ..\PushItself.dll
+arg: -et:PushItself.trace
+inc: PushItself.trace
+del: PushItself.trace
+dsc: zinger.exe, P semantics test: one machine, "push" of the same state; "send" in entry and exit

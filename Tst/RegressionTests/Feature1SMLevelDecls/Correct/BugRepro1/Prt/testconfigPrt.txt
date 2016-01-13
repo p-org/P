@@ -1,3 +1,0 @@
-runPrt: ..\..\..\..\..\..\Tst\PrtTester\Debug\Tester.exe
-acc: .\
-dsc: runtime, "send" in function which mutates its parameters

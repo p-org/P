@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\NewMonitor_v.dll
-argZing: -et:NewMonitor_v.trace
-incZing: NewMonitor_v.trace
-del: NewMonitor_v.trace
-acc: .\
-dsc: zinger.exe, two machines, monitor invocation with null event

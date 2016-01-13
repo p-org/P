@@ -1,0 +1,6 @@
+arg: ..\AlonBug_1.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, P semantics test: one machine, deadlocked state is not the only state on the stack

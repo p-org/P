@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\NullTriggerPayload.dll
-argZing: -et:NullTriggerPayload.trace
-incZing: NullTriggerPayload.trace
-del: NullTriggerPayload.trace
-acc: .\
-dsc: zinger.exe, P semantics test, one machine: payload and trigger for "null" event

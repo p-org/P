@@ -1,3 +1,0 @@
-runPrt: ..\..\..\..\..\..\Tst\PrtTester\Debug\Tester.exe
-acc: .\
-dsc: runtime, Feature Integration: deferred-by-default semantics of push with pop

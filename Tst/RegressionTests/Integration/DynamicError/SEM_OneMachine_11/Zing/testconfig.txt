@@ -1,0 +1,5 @@
+arg: ..\PushImplicitPopWithSend.dll
+arg: -et:PushImplicitPopWithSend.trace
+inc: PushImplicitPopWithSend.trace
+del: PushImplicitPopWithSend.trace
+dsc: zinger.exe, P semantics test: one machine, "push" with implicit "pop", unhandled event was sent

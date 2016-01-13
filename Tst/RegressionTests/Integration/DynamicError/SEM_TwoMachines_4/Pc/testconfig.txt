@@ -1,0 +1,6 @@
+arg: ..\EventSentAfterSentHaltHandled_v.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, P semantics test: two machines, event sent after "halt", "halt" is handled: validating test

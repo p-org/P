@@ -1,0 +1,6 @@
+arg: ..\UnhandledEventIgnored.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, P semantics test: one machine, "ignore" of an unhandled event

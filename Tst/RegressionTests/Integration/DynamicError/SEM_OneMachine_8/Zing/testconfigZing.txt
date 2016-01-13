@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\GotoToItself.dll
-argZing: -et:GotoToItself.trace
-incZing: GotoToItself.trace
-del: GotoToItself.trace
-acc: .\
-dsc: zinger.exe, P semantics test: one machine, "goto" to the same state; "send" in entry and exit

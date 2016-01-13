@@ -1,0 +1,1 @@
+dsc: runtime, P semantics test, two machines, "send", "raise" with non-constant event expressions

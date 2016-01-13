@@ -1,0 +1,3 @@
+arg: ..\Liveness_1_falsePass.dll
+arg: -ndfsliveness
+dsc: zinger.exe, Liveness: sample demonstrating "false" pass in liveness checking

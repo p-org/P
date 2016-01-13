@@ -1,0 +1,6 @@
+arg: ..\TokenRing.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, Feature Integration: Attempting to enqueue event more than max instance of 1

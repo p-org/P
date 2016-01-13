@@ -1,0 +1,5 @@
+arg: ..\typedef2.dll
+arg: -et:typedef2.trace
+inc: typedef2.trace
+del: typedef2.trace
+dsc: zinger.exe, testing the typedef feature.

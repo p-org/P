@@ -1,0 +1,5 @@
+arg: ..\RaisedHaltHandled.dll
+arg: -et:RaisedHaltHandled.trace
+inc: RaisedHaltHandled.trace
+del: RaisedHaltHandled.trace
+dsc: zinger.exe, Feature Integration: deferred-by-default semantics of push statement

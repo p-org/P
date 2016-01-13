@@ -1,0 +1,6 @@
+arg: ..\AlonBug_fails.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, Feature Integration: case when exit actions are not executed

@@ -1,0 +1,6 @@
+arg: ..\function.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: 1.4.2. Wrong function parameters/return value

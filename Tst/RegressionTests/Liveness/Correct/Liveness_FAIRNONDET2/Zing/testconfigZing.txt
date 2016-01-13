@@ -1,5 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\Liveness_FAIRNONDET.dll
-argZing: -ndfsliveness
-acc: .\
-dsc: zinger.exe, Liveness: simplest sample demonstrating FAIRNONDET in liveness

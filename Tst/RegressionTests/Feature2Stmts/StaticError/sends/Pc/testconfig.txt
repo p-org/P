@@ -1,0 +1,6 @@
+arg: ..\sends.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: 2.4. Send statement: type checking

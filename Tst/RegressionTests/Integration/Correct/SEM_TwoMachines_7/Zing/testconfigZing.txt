@@ -1,4 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\RaisedHalt_bugFound.dll
-acc: .\
-dsc: zinger.exe, P semantics test: two machines, machine is halted with "raise halt" (unhandled)

@@ -1,5 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\boundedchoice_1.dll
-argZing: -bc:2
-acc: .\
-dsc: zinger.exe, Testing Bounded Choice Operator in Zing

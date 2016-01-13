@@ -1,0 +1,6 @@
+arg: ..\DFSStackBound.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, Testing the DFS stack bound option in Zing

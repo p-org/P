@@ -1,0 +1,5 @@
+arg: ..\Insert4Map.dll
+arg: -et:Insert4Map.trace
+inc: Insert4Map.trace
+del: Insert4Map.trace
+dsc: zinger.exe, INSERT for map error

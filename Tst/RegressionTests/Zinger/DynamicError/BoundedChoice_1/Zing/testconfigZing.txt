@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\boundedchoice_1.dll
-argZing: -et:boundedchoice_1.trace
-incZing: boundedchoice_1.trace
-del: boundedchoice_1.trace
-acc: .\
-dsc: zinger.exe, Testing Bounded Choice Operator in Zing

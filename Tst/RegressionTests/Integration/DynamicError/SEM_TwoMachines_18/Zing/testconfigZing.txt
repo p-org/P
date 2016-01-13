@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\EventExprSemantics1.dll
-argZing: -et:EventExprSemantics1.trace
-incZing: EventExprSemantics1.trace
-del: EventExprSemantics1.trace
-acc: .\
-dsc: zinger.exe, P semantics test, two machines, non-constant event expressions 

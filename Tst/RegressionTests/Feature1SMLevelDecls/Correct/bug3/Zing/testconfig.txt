@@ -1,0 +1,2 @@
+arg: ..\bug3.dll
+dsc: zinger.exe, Feature Integration: mix of function call statements and receive statements

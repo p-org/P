@@ -1,0 +1,1 @@
+dsc: runtime, Feature Integration: mix of function call statements and receive statements

@@ -1,0 +1,5 @@
+arg: ..\NullTriggerPayload.dll
+arg: -et:NullTriggerPayload.trace
+inc: NullTriggerPayload.trace
+del: NullTriggerPayload.trace
+dsc: zinger.exe, P semantics test, one machine: payload and trigger for "null" event

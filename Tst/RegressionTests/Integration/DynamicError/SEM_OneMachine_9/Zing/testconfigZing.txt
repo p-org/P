@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\PushItself.dll
-argZing: -et:PushItself.trace
-incZing: PushItself.trace
-del: PushItself.trace
-acc: .\
-dsc: zinger.exe, P semantics test: one machine, "push" of the same state; "send" in entry and exit

@@ -1,9 +1,0 @@
-runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
-argPc: ..\PingPongBugRepro.p
-argPc: /printTypeInference
-argPc: /shortFileNames
-argPc: /doNotErase
-argPc: /liveness
-argPc: /outputDir:..\.
-acc: .\.
-dsc: pc.exe, Feature Integration: "send" in function which mutates its parameters

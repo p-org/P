@@ -1,0 +1,6 @@
+arg: ..\ExplicitPopExit.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, P semantics test: one machine, exit actions executed upon explicit "pop"

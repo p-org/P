@@ -84,7 +84,6 @@ namespace CheckP
                 errorString += string.Format("ERROR: {0}\r\n", e.Data);
         }
 
-                     
         public void Run(string command, IEnumerable<string> args)
         {
             string str = command;
@@ -115,18 +114,13 @@ namespace CheckP
     {
         private const int BufferSize = 1024;
 
-        private const string RunPcOption = "runPc";
-        private const string RunZingerOption = "runZing";
-        private const string RunPrtOption = "runPrt";
-        private const string AcceptOption = "acc";
-        private const string IncludePcOption = "incPc";
-        private const string IncludeZingerOption = "incZing";
-        private const string IncludePrtOption = "incPrt";
-        private const string AddOption = "add";
+        private const string IncludePcOption = "inc";
+        private const string IncludeZingerOption = "inc";
+        private const string IncludePrtOption = "inc";
         private const string DescrOption = "dsc";
-        private const string ArgsPcOption = "argPc";
-        private const string ArgsZingerOption = "argZing";
-        private const string ArgsPrtOption = "argPrt";
+        private const string ArgsPcOption = "arg";
+        private const string ArgsZingerOption = "arg";
+        private const string ArgsPrtOption = "arg";
         private const string DelOption = "del";
 
         private const string TmpStreamFile = "check-tmp.txt";
@@ -141,14 +135,9 @@ namespace CheckP
 
         private static readonly string[] AllOptions = new string[]
         {
-            RunPcOption,
-            RunZingerOption,
-            RunPrtOption,
-            AcceptOption,
             IncludePcOption,
             IncludeZingerOption,
             IncludePrtOption,
-            AddOption,
             DescrOption,
             ArgsPcOption,
             ArgsZingerOption,
@@ -158,7 +147,11 @@ namespace CheckP
 
         private string activeDirectory;
         private bool reset = false;
+        private bool isSetExePc = false;
+        private bool isSetExeZing = false;
+        private bool isSetExePrt = false;
         private PciProcess pciProcess;
+        private string zingFilePath;
 
         public string Description
         {
@@ -166,45 +159,31 @@ namespace CheckP
             private set;
         }
 
-        public Checker(string activeDirectory, bool reset, PciProcess pciProcess)
+        public Checker(string activeDirectory, bool reset, bool isSetExePc, bool isSetExeZing, bool isSetExePrt, string zingFilePath, PciProcess pciProcess)
         {
             this.activeDirectory = activeDirectory;
             this.reset = reset;
+            this.isSetExePc = isSetExePc;
+            this.isSetExeZing = isSetExeZing;
+            this.isSetExePrt = isSetExePrt;
             this.pciProcess = pciProcess;
+            this.zingFilePath = zingFilePath;
         }
 
         public static void PrintUsage()
         {
             Console.WriteLine(
-                "USAGE: CheckP -{0}: pc.exe -{1}: zinger.exe -{2}: prtMain.exe -{3}: dir [-{10}: args] [-{11}: args] [-{12}: args] [-{4}: files] [-{5}: files] [-{6}: files] [-{14}: files] [-{13}: file] [-{7}] [-{8}] [-{9}: descriptors]",
-                RunPcOption,
-                RunZingerOption,
-                RunPrtOption,
-                AcceptOption,
-                IncludePcOption,
-                IncludeZingerOption,
-                IncludePrtOption,
-                AddOption,
-                DescrOption,
+                "USAGE: CheckP [-{0}: args] [-{1}: files] [-{2}: files]  [-{3}: descriptors]",
                 ArgsPcOption,
-                ArgsZingerOption,
-                ArgsPrtOption,
-                DelOption
+                IncludePcOption,     
+                DelOption,
+                DescrOption  
             );
 
             Console.WriteLine();
-            Console.WriteLine("-{0}\tpc.exe to run", RunPcOption);
-            Console.WriteLine("-{0}\tzinger.exe to run", RunZingerOption);
-            Console.WriteLine("-{0}\tprtMain.exe to run", RunPrtOption);
-            Console.WriteLine("-{0}\tA directory containing acceptable outputs", AcceptOption);
-            Console.WriteLine("-{0}\tA list of arguments to pc.exe", ArgsPcOption);
-            Console.WriteLine("-{0}\tA list of arguments to zinger.exe", ArgsZingerOption);
-            Console.WriteLine("-{0}\tA list of arguments to tester.exe", ArgsPrtOption);
-            Console.WriteLine("-{0}\tA list of files that should be included as output for pc.exe", IncludePcOption);
-            Console.WriteLine("-{0}\tA list of files that should be included as output for zinger.exe", IncludeZingerOption);
-            Console.WriteLine("-{0}\tA list of files that should be included as output for prt.exe", IncludePrtOption);
+            Console.WriteLine("-{0}\tA list of arguments", ArgsPcOption);
+            Console.WriteLine("-{0}\tA list of files that should be included as output", IncludePcOption);
             Console.WriteLine("-{0}\tA list of files that should be deleted before running", DelOption);
-            Console.WriteLine("-{0}\tAdds the output of this run to set of acceptable outputs", AddOption);
             Console.WriteLine("-{0}\tDescriptions of this test", DescrOption);
         }
 
@@ -259,58 +238,8 @@ namespace CheckP
 
         private bool Check(Options opts)
         {
-            bool isSet, result = true;
-            bool isSetExePc;
-            Tuple<OptValueKind, object>[] exePc;
-            result = ValidateOption(opts, RunPcOption, true, 1, 1, out isSetExePc, out exePc) && result;
-
-            //TODO: Do I need a separate isSetXX for each of pc, zinger, prt? 
-            //Why was the same isSet used for for "exe" and "acc" options?
-            bool isSetExeZinger;
-            Tuple<OptValueKind, object>[] exeZinger;
-            result = ValidateOption(opts, RunZingerOption, true, 1, 1, out isSetExeZinger, out exeZinger) && result;
-
-            bool isSetExePrt;
-            Tuple<OptValueKind, object>[] exePrt;
-            result = ValidateOption(opts, RunPrtOption, true, 1, 1, out isSetExePrt, out exePrt) && result;
-
-            Tuple<OptValueKind, object>[] accDir;
-            result = ValidateOption(opts, AcceptOption, false, 1, 1, out isSet, out accDir) && result;
-
-            bool isInclPc;
-            Tuple<OptValueKind, object>[] includesPc;
-            result = ValidateOption(opts, IncludePcOption, true, 1, int.MaxValue, out isInclPc, out includesPc) &&
-                     result;
-
-            bool isInclZinger;
-            Tuple<OptValueKind, object>[] includesZinger;
-            result =
-                ValidateOption(opts, IncludeZingerOption, true, 1, int.MaxValue, out isInclZinger, out includesZinger) &&
-                result;
-
-            bool isInclPrt;
-            Tuple<OptValueKind, object>[] includesPrt;
-            result = ValidateOption(opts, IncludePrtOption, true, 1, int.MaxValue, out isInclPrt, out includesPrt) &&
-                     result;
-
-            bool isArgsPc;
-            Tuple<OptValueKind, object>[] pcArgs;
-            result = ValidateOption(opts, ArgsPcOption, true, 1, int.MaxValue, out isArgsPc, out pcArgs) && result;
-
-            bool isArgsZinger;
-            Tuple<OptValueKind, object>[] zingerArgs;
-            result = ValidateOption(opts, ArgsZingerOption, true, 1, int.MaxValue, out isArgsZinger, out zingerArgs) &&
-                     result;
-
-            bool isArgsPrt;
-            Tuple<OptValueKind, object>[] prtArgs;
-            result = ValidateOption(opts, ArgsPrtOption, true, 1, int.MaxValue, out isArgsPrt, out prtArgs) && result;
-
-            bool isAdd;
-            Tuple<OptValueKind, object>[] values;
-            result = ValidateOption(opts, AddOption, true, 0, 0, out isAdd, out values) && result;
-            //If CheckP is called from Test with "reset" option, override isAdd:
-            if (!isAdd && this.reset) isAdd = true;
+            bool result = true;
+            bool isAdd = this.reset;
 
             bool isDel;
             Tuple<OptValueKind, object>[] delFiles;
@@ -389,22 +318,44 @@ namespace CheckP
             //in adition to the "add" option, add option "reset" for CheckP;
             //testP.bat will also have two alternative options: "reset" and "add";
             //only delete acceptors for "reset" option, but not for "add" option
-            
+
             const string acceptorFilePattern = "acc_*.txt";
             DirectoryInfo di = new DirectoryInfo(activeDirectory);
             if (isAdd)
             {
                 foreach (var acci in di.EnumerateFiles(acceptorFilePattern))
                 {
-                    File.Delete(Path.Combine(activeDirectory, acci.FullName));                 
+                    File.Delete(Path.Combine(activeDirectory, acci.FullName));
                 }
-            }       
+            }
 
+            //activeDirectory is "...\Prt", but runtime files are under
+            //"..\\." (test directory)
+            var temp = new DirectoryInfo(activeDirectory);
+            string parentFolder = temp.Parent.FullName;
+            var workDirectory = String.Concat(parentFolder, "\\");
+            workDirectory = String.Concat(workDirectory, ".");
+
+            bool isInclPc;
+            Tuple<OptValueKind, object>[] includesPc;
+            bool isArgsPc;
+            Tuple<OptValueKind, object>[] pcArgs;
+            bool isInclZinger;
+            Tuple<OptValueKind, object>[] includesZinger;
+            bool isArgsZinger;
+            Tuple<OptValueKind, object>[] zingerArgs;
+            bool isInclPrt;
+            Tuple<OptValueKind, object>[] includesPrt;
+            bool isArgsPrt;
+            Tuple<OptValueKind, object>[] prtArgs;
             try
             {
-                //Run components of the P tool chain specified in options:
+                //Run the component of the P tool chain specified by the "activeDirectory":
                 if (isSetExePc)
                 {
+                    result = ValidateOption(opts, IncludePcOption, true, 1, int.MaxValue, out isInclPc, out includesPc) &&
+                            result;
+                    result = ValidateOption(opts, ArgsPcOption, true, 1, int.MaxValue, out isArgsPc, out pcArgs) && result;
                     tmpWriter.WriteLine("=================================");
                     tmpWriter.WriteLine("         Console output          ");
                     tmpWriter.WriteLine("=================================");
@@ -428,10 +379,12 @@ namespace CheckP
                         tmpWriter.WriteLine("EXIT: -1");
                     }
                 }
-                //Run Zinger if isSetExeZinger and: (a) pc.exe run and no errors from pc.exe; or (b) pc.exe was not set to run
-                //if (isSetExeZinger && result || !isSetExePc)
-                if (isSetExeZinger)
+                else if (isSetExeZing)
                 {
+                    result = ValidateOption(opts, IncludeZingerOption, true, 1, int.MaxValue, out isInclZinger, out includesZinger) && 
+                             result;
+                    result = ValidateOption(opts, ArgsZingerOption, true, 1, int.MaxValue, out isArgsZinger, out zingerArgs) &&
+                             result;
                     //TODO: since Zinger returns "true" when *.dll file is missing, catch this case by explicitly 
                     //checking if files specified as  zinger arguments are present (unless Zinger is fixed
                     //and returns "false" for such errors).
@@ -439,7 +392,7 @@ namespace CheckP
                     // zingerResult will be false only if zinger command line call didn't work;
                     // otherwise, it will be "true", even if Zinger's exit value is non-zero
                     // TODO: catch Zinger's exit code 7 (wrong parameters) and report it to cmd window
-                    bool zingerResult = Run(tmpWriter, exeZinger[0].Item2.ToString(), zingerArgs);
+                    bool zingerResult = Run(tmpWriter, zingFilePath, zingerArgs);
 
                     //debug:
                     //Console.WriteLine("Zinger returned: {0}", zingerResult);
@@ -453,27 +406,18 @@ namespace CheckP
                         result = false;
                     }
                 }
-
-                //Run runtime:
-                if (isSetExePrt)
+                else if (isSetExePrt)
                 {
-                    //Console.WriteLine("activeDirectory is: {0}", activeDirectory);
-                    //activeDirectory is "...\Prt", but runtime files are under
-                    //"..\\." (test directory):
-                    var temp = new DirectoryInfo(activeDirectory);
-                    string parentFolder = temp.Parent.FullName;
-                    var workDirectory = String.Concat(parentFolder, "\\");
-                    workDirectory = String.Concat(workDirectory, ".");                 
-                    //Console.WriteLine("workDirectory is: {0}", workDirectory);
-
+                    result =
+                        ValidateOption(opts, IncludePrtOption, true, 1, int.MaxValue, out isInclPrt, out includesPrt) &&
+                        result;
+                    result = ValidateOption(opts, ArgsPrtOption, true, 1, int.MaxValue, out isArgsPrt, out prtArgs) &&
+                             result;
                     //Compute "TesterDirectory" (Tst\PrtTester):
                     //path to ...PrtTester\Debug\tester.exe:
-                    //var testerExePath = exePrt[0].Item2.ToString();
                     var testerExeDir = Path.Combine(Environment.CurrentDirectory, "PrtTester\\Debug");
-                    //Console.WriteLine("testerExePath is: {0}", testerExeDir);
                     var testerExePath = Path.Combine(testerExeDir, "tester.exe");
                     var testerDirectory = Path.Combine(Environment.CurrentDirectory, "PrtTester");
-                    //Console.WriteLine("testerDirectory is: {0}", testerDirectory);
 
                     //Remove previous runtime files from Tst\PrtTester:
                     File.Delete(Path.Combine(testerDirectory, RuntimeFile1));
@@ -495,20 +439,12 @@ namespace CheckP
                         );
 
                     //Build tester.exe for the updated runtime files.
-
-                    //Case 1 (debugging only): Running from VS Debugger:
-                    //string prtTesterProj = "..\\..\\..\\..\\PrtTester\\Tester.vcxproj";
-                    //var prtTesterWorkingDir = "..\\..\\..\\..\\PrtTester";
-                    //Case 2:  Running from testP.bat:
                     var prtTesterProj = @"PrtTester\Tester.vcxproj";
-                    
-                    //1. Define msbuildPath for msbuild.exe: borrow from testP.bat (including the check for .NET availability, since
-                    //   CheckP can be called on its own, not from testP.bat)
+
+                    //1. Define msbuildPath for msbuild.exe:
                     var windir = Environment.GetEnvironmentVariable("windir");
-                    //Console.WriteLine("windir: {0}", windir);
                     var msbuildPath = Path.Combine(windir, "Microsoft.NET", "Framework", "v4.0.30319", "MSBuild.exe");
-                    //Console.WriteLine("msbuildPath: {0}", msbuildPath);
- 
+
                     if (!File.Exists(msbuildPath))
                     {
                         Console.WriteLine("Error: Microsoft.NET framework version 4.0 or greater is required. Cannot build.");
@@ -530,11 +466,7 @@ namespace CheckP
                         Console.WriteLine("Error: runtime file(s) are not found under PrtTester\\");
                         return false;
                     }
-                    //Case 1 (debugging only): Running from VS Debugger:
-                    //var curDirTemp = new DirectoryInfo(Environment.CurrentDirectory);
-                    //Console.WriteLine("Current Dir: {0}", curDirTemp.FullName);
-                    //msbuildArgs = "..\\..\\..\\..\\..\\..\\..\\..\\PrtTester\\Tester.vcxproj ";
-                    //Case 2:  Running from testP.bat:
+
                     //Cleaning tester.exe:
                     bool buildRes = RunBuildTester(msbuildPath, true);
                     if (!buildRes)
@@ -549,11 +481,8 @@ namespace CheckP
                         Console.WriteLine("Error building Tester project");
                         return false;
                     }
- 
+
                     //Run tester.exe:
-                    //Console.WriteLine("Running {0}", exePrt[0].Item2.ToString());
-                    //bool prtResult = Run(tmpWriter, isIgnPrmpt, exePrt[0].Item2.ToString(), prtArgs);
-                    //Console.WriteLine("Running {0}", testerExePath);
                     bool prtResult = Run(tmpWriter, testerExePath, prtArgs);
                     if (!prtResult)
                     {
@@ -563,14 +492,16 @@ namespace CheckP
                     {
                         result = false;
                     }
-                    
                 }
-
+                else
+                {
+                    Console.WriteLine("UNREACHABLE: None of the isSetExePc, isSetExeZing, isSetExePrt is set");
+                    return false;
+                }
             }
             catch (Exception e)
             {
-                Console.WriteLine(
-                    "ERROR running P tool: {0}", e.Message);
+                Console.WriteLine("ERROR running P tool: {0}", e.Message);
                 return false;
             }
 
@@ -579,7 +510,7 @@ namespace CheckP
                 result = false;
             }
 
-            if (result && !CompareAcceptors(accDir[0].Item2.ToString(), isAdd))
+            if (result && !CompareAcceptors(activeDirectory, isAdd))
             {
                 File.Delete(Path.Combine(activeDirectory, LogFile));
                 File.Copy(
@@ -709,7 +640,7 @@ namespace CheckP
                 }
                 catch (Exception e)
                 {
-                    //special case: testconfigZing.txt is intended for "failed" result, but zinger passes, hence, no .trace file generated -
+                    //special case: testconfig.txt for Zing is intended for "failed" result, but zinger passes, hence, no .trace file generated -
                     //hence, nothing to append to the acceptor.
                     //This code relies on the trace file having an extension "trace".
                     if (e.Message.StartsWith("Could not find file") && (inc.Item2.ToString().EndsWith("trace")))

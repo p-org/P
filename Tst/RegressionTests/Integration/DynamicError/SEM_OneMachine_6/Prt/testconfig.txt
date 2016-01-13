@@ -1,0 +1,1 @@
+dsc: runtime, P semantics test: one machine, "send" to itself in exit function

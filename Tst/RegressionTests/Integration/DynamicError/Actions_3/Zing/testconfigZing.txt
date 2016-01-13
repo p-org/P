@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\Actions_3.dll
-argZing: -et:Actions_3.trace
-incZing: Actions_3.trace
-del: Actions_3.trace
-acc: .\
-dsc: zinger.exe, Feature Integration: deferred-by-default semantics of push with pop

@@ -1,0 +1,2 @@
+arg: ..\RaiseSendInEntry.dll
+dsc: zinger.exe, P semantics test: one machine, "raise" and "send" to itself in entry actions

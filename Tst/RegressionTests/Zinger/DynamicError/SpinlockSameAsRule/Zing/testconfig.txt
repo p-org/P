@@ -1,0 +1,6 @@
+arg: ..\SpinlockSameAsRule.dll
+arg: -et:SpinlockSameAsRule.trace
+arg: -m
+inc: SpinlockSameAsRule.trace
+del: SpinlockSameAsRule.trace
+dsc: zinger.exe, Feature Integration: Spinlock SLIC rule

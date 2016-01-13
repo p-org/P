@@ -1,0 +1,5 @@
+arg: ..\staticfunctions_4.dll
+arg: -et:staticfunctions_4.trace
+inc: staticfunctions_4.trace
+del: staticfunctions_4.trace
+dsc: zinger.exe, static functions used as transition functions, do decls, etc.

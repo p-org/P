@@ -1,0 +1,1 @@
+dsc: runtime, pingpong example that uses static functions.

@@ -1,8 +1,0 @@
-runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
-argPc: ..\PingPong.p
-argPc: /printTypeInference
-argPc: /shortFileNames
-argPc: /doNotErase
-argPc: /outputDir:..\.
-acc: .\.
-dsc: pc.exe, Feature Integration: protocol sample

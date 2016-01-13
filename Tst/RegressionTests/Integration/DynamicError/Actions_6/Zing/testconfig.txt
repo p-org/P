@@ -1,0 +1,5 @@
+arg: ..\Actions_6.dll
+arg: -et:Actions_6.trace
+inc: Actions_6.trace
+del: Actions_6.trace
+dsc: zinger.exe, Feature Integration: payload with push transition

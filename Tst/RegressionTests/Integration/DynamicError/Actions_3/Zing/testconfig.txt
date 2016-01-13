@@ -1,0 +1,5 @@
+arg: ..\Actions_3.dll
+arg: -et:Actions_3.trace
+inc: Actions_3.trace
+del: Actions_3.trace
+dsc: zinger.exe, Feature Integration: deferred-by-default semantics of push with pop

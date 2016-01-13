@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\NullEventHandler1.dll
-argZing: -et:NullEventHandler1.trace
-incZing: NullEventHandler1.trace
-del: NullEventHandler1.trace
-acc: .\
-dsc: zinger.exe, P semantics test, one machine: "null" handler semantics

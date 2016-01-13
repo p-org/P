@@ -1,0 +1,6 @@
+arg: ..\InfiniteLoopInAtomicBlock.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, Zinger test: infinite loop in atomic block

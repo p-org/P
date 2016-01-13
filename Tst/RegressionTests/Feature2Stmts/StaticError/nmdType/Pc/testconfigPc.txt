@@ -1,8 +1,0 @@
-runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
-argPc: ..\nmdType.p
-argPc: /printTypeInference
-argPc: /shortFileNames
-argPc: /doNotErase
-argPc: /outputDir:..\.
-acc: .\.
-dsc: 2.9.1. Assignment: types of LHS and RHS: wrong names in named tuples

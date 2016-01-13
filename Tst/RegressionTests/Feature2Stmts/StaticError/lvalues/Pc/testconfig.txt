@@ -1,0 +1,6 @@
+arg: ..\lvalues.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: 2.9.2.  Assign: invalid LHS, impure functions in LHS

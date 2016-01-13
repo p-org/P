@@ -1,0 +1,1 @@
+dsc: runtime, P semantics test: one machine, "ignore" of an unhandled event

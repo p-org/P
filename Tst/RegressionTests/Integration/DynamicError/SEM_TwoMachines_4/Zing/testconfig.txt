@@ -1,0 +1,5 @@
+arg: ..\EventSentAfterSentHaltHandled_v.dll
+arg: -et:EventSentAfterSentHaltHandled_v.trace
+inc: EventSentAfterSentHaltHandled_v.trace
+del: EventSentAfterSentHaltHandled_v.trace
+dsc: zinger.exe, P semantics test: two machines, event sent after "halt", "halt" is handled: validating test

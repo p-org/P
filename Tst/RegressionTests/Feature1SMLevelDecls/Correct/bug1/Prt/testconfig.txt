@@ -1,0 +1,1 @@
+dsc: runtime, Feature Integration: two receive statements have the same event

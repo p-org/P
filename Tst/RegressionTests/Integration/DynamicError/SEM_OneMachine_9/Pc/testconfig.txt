@@ -1,0 +1,6 @@
+arg: ..\PushItself.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, P semantics test: one machine, "push" of the same state; "send" in entry and exit

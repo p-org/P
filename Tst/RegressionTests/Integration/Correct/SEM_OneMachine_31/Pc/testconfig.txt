@@ -1,0 +1,6 @@
+arg: ..\RaisedHalt.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, P semantics test: one machine, "halt" is raised and unhandled

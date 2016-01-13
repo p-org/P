@@ -1,0 +1,6 @@
+arg: ..\Actions_5.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, Feature Integration: inheritance of actions and not transitions by "push" transition

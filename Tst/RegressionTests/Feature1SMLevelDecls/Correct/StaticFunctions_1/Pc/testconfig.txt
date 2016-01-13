@@ -1,0 +1,6 @@
+arg: ..\StaticFunctions_1.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, simple static function example 

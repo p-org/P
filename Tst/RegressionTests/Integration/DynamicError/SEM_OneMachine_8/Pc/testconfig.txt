@@ -1,0 +1,6 @@
+arg: ..\GotoToItself.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, P semantics test: one machine, "goto" to the same state; "send" in entry and exit

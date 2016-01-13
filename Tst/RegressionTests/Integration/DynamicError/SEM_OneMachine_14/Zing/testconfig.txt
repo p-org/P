@@ -1,0 +1,5 @@
+arg: ..\GotoTransInheritance.dll
+arg: -et:GotoTransInheritance.trace
+inc: GotoTransInheritance.trace
+del: GotoTransInheritance.trace
+dsc: zinger.exe, P semantics test: one machine, "goto" transition, action is not inherited by the destination state

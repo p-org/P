@@ -1,8 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\Liveness_1_WarmState.dll
-argZing: -ndfsliveness
-argZing: -et:Liveness_1_WarmState.trace
-incZing: Liveness_1_WarmState.trace
-del: Liveness_1_WarmState.trace
-acc: .\
-dsc: zinger.exe, Liveness: "warm" state instead of "cold"

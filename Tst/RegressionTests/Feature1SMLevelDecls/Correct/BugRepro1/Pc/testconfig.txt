@@ -1,0 +1,6 @@
+arg: ..\FunctionParMutated.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, "send" in function which mutates its parameters

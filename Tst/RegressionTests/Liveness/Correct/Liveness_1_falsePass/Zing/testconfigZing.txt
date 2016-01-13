@@ -1,5 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\Liveness_1_falsePass.dll
-argZing: -ndfsliveness
-acc: .\
-dsc: zinger.exe, Liveness: sample demonstrating "false" pass in liveness checking

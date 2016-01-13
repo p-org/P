@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\NonConstantEventExprMonitor1.dll
-argZing: -et:NonConstantEventExprMonitor1.trace
-incZing: NonConstantEventExprMonitor1.trace
-del: NonConstantEventExprMonitor1.trace
-acc: .\
-dsc: zinger.exe, P semantics test, two machines, monitor invocation with non-constant event expression

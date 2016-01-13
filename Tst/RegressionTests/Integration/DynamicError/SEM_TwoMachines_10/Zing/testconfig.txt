@@ -1,0 +1,5 @@
+arg: ..\NonConstantEventExpr1.dll
+arg: -et:NonConstantEventExpr1.trace
+inc: NonConstantEventExpr1.trace
+del: NonConstantEventExpr1.trace
+dsc: zinger.exe, P semantics test, two machines, "send", "raise", monitor invocation for non-constant event expressions

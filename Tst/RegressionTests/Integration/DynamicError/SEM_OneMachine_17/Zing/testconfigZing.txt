@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\PushImplicitPopWithRaise.dll
-argZing: -et:PushImplicitPopWithRaise.trace
-incZing: PushImplicitPopWithRaise.trace
-del: PushImplicitPopWithRaise.trace
-acc: .\
-dsc: zinger.exe, P semantics test: one machine, "push" with implicit "pop" when the unhandled event was raised

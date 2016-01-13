@@ -1,0 +1,6 @@
+arg: ..\PushExplicitPop.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, P semantics test: one machine, "push" with explicit "pop"

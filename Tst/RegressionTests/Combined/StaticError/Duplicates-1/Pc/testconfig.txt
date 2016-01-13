@@ -1,0 +1,6 @@
+arg: ..\Duplicates-1.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: Combined: duplicates: static errors

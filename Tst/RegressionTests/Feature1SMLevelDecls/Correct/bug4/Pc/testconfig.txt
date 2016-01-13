@@ -1,0 +1,6 @@
+arg: ..\bug4.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, Feature Integration: mix of function call statements and receive statements

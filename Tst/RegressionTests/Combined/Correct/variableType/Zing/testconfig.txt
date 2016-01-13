@@ -1,0 +1,2 @@
+arg: ..\variableType.dll
+dsc: zinger.exe, Integration: various syntax checks

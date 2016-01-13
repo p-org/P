@@ -1,0 +1,2 @@
+arg: ..\nonAtomicDataTypesAllAsserts.dll
+dsc: zinger.exe, complex data types in assignments: sequences, tuples, maps

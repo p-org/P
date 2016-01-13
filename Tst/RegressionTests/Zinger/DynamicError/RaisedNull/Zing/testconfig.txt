@@ -1,0 +1,5 @@
+arg: ..\RaisedNullDetected.dll
+arg: -et:RaisedNullDetected.trace
+inc: RaisedNullDetected.trace
+del: RaisedNullDetected.trace
+dsc: zinger.exe, Zinger: "raised null event" exception

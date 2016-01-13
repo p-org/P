@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\receive7.dll
-argZing: -et:receive7.trace
-incZing: receive7.trace
-del: receive7.trace
-acc: .\
-dsc: zinger.exe, receive statement

@@ -1,0 +1,6 @@
+arg: ..\function_Typos.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: 4.1.1. Tuples: duplicate names

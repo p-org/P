@@ -1,4 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\MaxInstances_2.dll
-acc: .\
-dsc: zinger.exe, 1.9/1.10. assert/assume max instances of event

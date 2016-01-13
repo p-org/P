@@ -1,0 +1,5 @@
+arg: ..\NullHandlerInLoop.dll
+arg: -et:NullHandlerInLoop.trace
+inc: NullHandlerInLoop.trace
+del: NullHandlerInLoop.trace
+dsc: zinger.exe, P semantics test, one machine: "null" handler semantics

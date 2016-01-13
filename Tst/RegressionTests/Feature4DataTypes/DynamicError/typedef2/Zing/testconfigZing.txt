@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\typedef2.dll
-argZing: -et:typedef2.trace
-incZing: typedef2.trace
-del: typedef2.trace
-acc: .\
-dsc: zinger.exe, testing the typedef feature.

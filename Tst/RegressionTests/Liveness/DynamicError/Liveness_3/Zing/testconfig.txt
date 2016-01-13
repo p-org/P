@@ -1,0 +1,6 @@
+arg: ..\Liveness_3.dll
+arg: -ndfsliveness
+arg: -et:Liveness_3.trace
+inc: Liveness_3.trace
+del: Liveness_3.trace
+dsc: zinger.exe, Liveness Bug : Liveness bug detected with the target thread blocked (no deadlock)

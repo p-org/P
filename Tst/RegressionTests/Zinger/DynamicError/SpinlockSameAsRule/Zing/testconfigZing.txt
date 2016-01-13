@@ -1,8 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\SpinlockSameAsRule.dll
-argZing: -et:SpinlockSameAsRule.trace
-argZing: -m
-incZing: SpinlockSameAsRule.trace
-del: SpinlockSameAsRule.trace
-acc: .\
-dsc: zinger.exe, Feature Integration: Spinlock SLIC rule

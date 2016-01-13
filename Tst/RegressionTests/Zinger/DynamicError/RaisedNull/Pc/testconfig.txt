@@ -1,0 +1,6 @@
+arg: ..\RaisedNullDetected.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, Zinger: "raised null event" exception

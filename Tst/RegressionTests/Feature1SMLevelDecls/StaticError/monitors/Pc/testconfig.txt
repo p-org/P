@@ -1,0 +1,6 @@
+arg: ..\monitors.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: 1.2.4. Monitors: not allowed constructs

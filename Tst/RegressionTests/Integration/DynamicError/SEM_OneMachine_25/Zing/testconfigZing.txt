@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\NewInExit.dll 
-argZing: -et:NewInExit.trace
-incZing: NewInExit.trace
-del: NewInExit.trace
-acc: .\
-dsc: zinger.exe, P semantics test: "new" in exit function

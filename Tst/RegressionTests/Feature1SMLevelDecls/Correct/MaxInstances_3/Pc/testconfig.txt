@@ -1,0 +1,6 @@
+arg: ..\MaxInstances_3.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, 1.10. assume max instances of event: max number of instances exceeded

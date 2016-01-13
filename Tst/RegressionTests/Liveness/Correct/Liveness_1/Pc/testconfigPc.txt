@@ -1,9 +1,0 @@
-runPc: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\Pc.exe
-argPc: ..\Liveness_1.p
-argPc: /printTypeInference
-argPc: /shortFileNames
-argPc: /liveness
-argPc: /doNotErase
-argPc: /outputDir:..\.
-acc: .\.
-dsc: pc.exe, Liveness: simplest sample demonstrating liveness checking

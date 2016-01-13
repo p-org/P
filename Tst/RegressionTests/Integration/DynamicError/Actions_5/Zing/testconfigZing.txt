@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\Actions_5.dll
-argZing: -et:Actions_5.trace
-incZing: Actions_5.trace
-del: Actions_5.trace
-acc: .\
-dsc: zinger.exe, Feature Integration: inheritance of actions and not transitions by "push" transition

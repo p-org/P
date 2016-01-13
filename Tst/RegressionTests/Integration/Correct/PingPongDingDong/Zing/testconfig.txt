@@ -1,0 +1,2 @@
+arg: ..\PingPongDingDong.dll
+dsc: zinger.exe, Feature Integration: protocol sample

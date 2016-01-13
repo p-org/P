@@ -1,0 +1,2 @@
+arg: ..\payloadActionsFuns.dll
+dsc: zinger.exe, P semantics test: one machine, tuples, sequences and maps as payloads

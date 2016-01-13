@@ -1,4 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\payloadActionsFuns.dll
-acc: .\
-dsc: zinger.exe, P semantics test: one machine, tuples, sequences and maps as payloads

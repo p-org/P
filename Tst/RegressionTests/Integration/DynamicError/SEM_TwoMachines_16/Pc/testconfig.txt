@@ -1,0 +1,6 @@
+arg: ..\NonConstantEventExpr2.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, P semantics test, two machines, "send", "raise" with non-constant event expressions

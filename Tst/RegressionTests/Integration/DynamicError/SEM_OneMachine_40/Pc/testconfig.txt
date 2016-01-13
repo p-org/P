@@ -1,0 +1,6 @@
+arg: ..\lvalues_runtimeError.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, P semantics test: one machine, asgn to uninitialized sequence (runtime error)

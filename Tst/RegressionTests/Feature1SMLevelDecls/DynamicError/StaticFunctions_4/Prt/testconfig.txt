@@ -1,0 +1,1 @@
+dsc: runtime, static functions used as transition functions, do decls, etc.

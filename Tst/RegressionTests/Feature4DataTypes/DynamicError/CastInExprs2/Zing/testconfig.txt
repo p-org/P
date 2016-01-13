@@ -1,0 +1,5 @@
+arg: ..\CastInExprsDynError.dll
+arg: -et:CastInExprsDynError.trace
+inc: CastInExprsDynError.trace
+del: CastInExprsDynError.trace
+dsc: zinger.exe, 3.4. cast operator in expressions

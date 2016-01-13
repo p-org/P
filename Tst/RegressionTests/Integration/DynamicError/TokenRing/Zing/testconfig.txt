@@ -1,0 +1,5 @@
+arg: ..\TokenRing.dll
+arg: -et:TokenRing.trace
+inc: TokenRing.trace
+del: TokenRing.trace
+dsc: zinger.exe, Feature Integration: Attempting to enqueue event more than max instance of 1

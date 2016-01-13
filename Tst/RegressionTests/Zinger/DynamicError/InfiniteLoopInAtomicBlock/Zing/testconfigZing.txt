@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\InfiniteLoopInAtomicBlock.dll 
-argZing: -et:InfiniteLoopInAtomicBlock.trace
-incZing: InfiniteLoopInAtomicBlock.trace
-del: InfiniteLoopInAtomicBlock.trace
-acc: .\
-dsc: zinger.exe, Zinger: infinite loop in atomic block

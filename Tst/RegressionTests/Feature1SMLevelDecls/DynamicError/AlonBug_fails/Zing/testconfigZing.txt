@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\AlonBug_fails.dll
-argZing: -et:AlonBug_fail.trace
-incZing: AlonBug_fail.trace
-del: AlonBug_fail.trace
-acc: .\
-dsc: zinger.exe, Feature Integration: case when exit actions are not executed

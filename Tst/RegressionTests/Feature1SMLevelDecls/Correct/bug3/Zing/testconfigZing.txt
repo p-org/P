@@ -1,4 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\bug3.dll
-acc: .\
-dsc: zinger.exe, Feature Integration: mix of function call statements and receive statements

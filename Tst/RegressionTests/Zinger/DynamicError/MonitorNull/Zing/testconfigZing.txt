@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\MonitorNullDetected.dll
-argZing: -et:MonitorNullDetected.trace
-incZing: MonitorNullDetected.trace
-del: MonitorNullDetected.trace
-acc: .\
-dsc: zinger.exe, Zinger: monitor invocation for non-constant event expressions

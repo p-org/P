@@ -1,0 +1,5 @@
+arg: ..\DeferIgnore2.dll
+arg: -et:DeferIgnore2.trace
+inc: DeferIgnore2.trace
+del: DeferIgnore2.trace
+dsc: zinger.exe, P semantics test: one machine,  ignore/defer on diff events in the queue

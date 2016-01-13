@@ -1,8 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\SpinlockNoTypestate.dll
-argZing: -et:SpinlockNoTypestate.trace
-argZing: -m
-incZing: SpinlockNoTypestate.trace
-del: SpinlockNoTypestate.trace
-acc: .\
-dsc: zinger.exe, Zing: "-m" option

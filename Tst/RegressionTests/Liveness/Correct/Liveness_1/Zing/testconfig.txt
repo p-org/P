@@ -1,0 +1,3 @@
+arg: ..\Liveness_1.dll
+arg: -ndfsliveness
+dsc: zinger.exe, Liveness: simplest sample demonstrating liveness checking

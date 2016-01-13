@@ -1,0 +1,6 @@
+arg: ..\ExprOperatorsAsserts.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, 3.4. P expressions and operators

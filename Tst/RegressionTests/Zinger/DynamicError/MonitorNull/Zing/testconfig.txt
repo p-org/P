@@ -1,0 +1,5 @@
+arg: ..\MonitorNullDetected.dll
+arg: -et:MonitorNullDetected.trace
+inc: MonitorNullDetected.trace
+del: MonitorNullDetected.trace
+dsc: zinger.exe, Zinger: monitor invocation for non-constant event expressions

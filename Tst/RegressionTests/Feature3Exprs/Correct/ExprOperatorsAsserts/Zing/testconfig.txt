@@ -1,0 +1,2 @@
+arg: ..\ExprOperatorsAsserts.dll
+dsc: zinger.exe, 3.4. P expressions and operators

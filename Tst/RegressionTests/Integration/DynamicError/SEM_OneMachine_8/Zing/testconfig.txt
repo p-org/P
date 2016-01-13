@@ -1,0 +1,5 @@
+arg: ..\GotoToItself.dll
+arg: -et:GotoToItself.trace
+inc: GotoToItself.trace
+del: GotoToItself.trace
+dsc: zinger.exe, P semantics test: one machine, "goto" to the same state; "send" in entry and exit

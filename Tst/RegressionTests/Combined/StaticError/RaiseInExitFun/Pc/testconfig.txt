@@ -1,0 +1,6 @@
+arg: ..\RaiseInExitFun.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: Control Impurity: error when "raise" in exit function

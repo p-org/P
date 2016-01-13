@@ -1,0 +1,7 @@
+arg: ..\Liveness_2_WarmState.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /liveness
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, Liveness: "warm" state instead of "hot"

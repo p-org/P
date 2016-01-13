@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\Actions_6.dll
-argZing: -et:Actions_6.trace
-incZing: Actions_6.trace
-del: Actions_6.trace
-acc: .\
-dsc: zinger.exe, Feature Integration: payload with push transition

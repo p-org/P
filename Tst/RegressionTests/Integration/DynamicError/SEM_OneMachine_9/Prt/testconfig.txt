@@ -1,0 +1,1 @@
+dsc: runtime, P semantics test: one machine, "push" of the same state; "send" in entry and exit

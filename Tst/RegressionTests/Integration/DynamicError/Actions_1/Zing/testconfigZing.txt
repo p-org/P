@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\Actions_1.dll
-argZing: -et:Actions_1.trace
-incZing: Actions_1.trace
-del: Actions_1.trace
-acc: .\
-dsc: zinger.exe, Feature Integration: basic semantics of actions and goto transitions

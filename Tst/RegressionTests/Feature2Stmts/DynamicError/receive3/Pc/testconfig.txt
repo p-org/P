@@ -1,0 +1,6 @@
+arg: ..\receive3.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, receive statement

@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\anyType2.dll
-argZing: -et:anyType2.trace
-incZing: anyType2.trace
-del: anyType2.trace
-acc: .\
-dsc: zinger.exe, 4. "any" type in EQ and NE

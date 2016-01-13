@@ -1,0 +1,5 @@
+arg: ..\InfiniteLoopInAtomicBlock.dll 
+arg: -et:InfiniteLoopInAtomicBlock.trace
+inc: InfiniteLoopInAtomicBlock.trace
+del: InfiniteLoopInAtomicBlock.trace
+dsc: zinger.exe, Zinger: infinite loop in atomic block

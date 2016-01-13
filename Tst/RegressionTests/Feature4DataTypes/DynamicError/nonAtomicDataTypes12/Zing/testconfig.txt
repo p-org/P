@@ -1,0 +1,5 @@
+arg: ..\StackOverflowException.dll
+arg: -et:StackOverflowException.trace
+inc: StackOverflowException.trace
+del: StackOverflowException.trace
+dsc: zinger.exe, complex data types in assignments: sequences, tuples, maps

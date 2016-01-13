@@ -1,0 +1,6 @@
+arg: ..\payloadActionsFuns.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: 4.3. Paylod type inference

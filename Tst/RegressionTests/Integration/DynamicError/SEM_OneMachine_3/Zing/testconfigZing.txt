@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\SendInEntry.dll
-argZing: -et:SendInEntry.trace
-incZing: SendInEntry.trace
-del: SendInEntry.trace
-acc: .\
-dsc: zinger.exe, P semantics test: one machine, "send" to itself in entry actions

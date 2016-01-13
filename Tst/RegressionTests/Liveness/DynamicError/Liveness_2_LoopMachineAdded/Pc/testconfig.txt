@@ -1,0 +1,7 @@
+arg: ..\Liveness_2_LoopMachineAdded.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /liveness
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, Liveness: simplest sample demonstrating liveness error found

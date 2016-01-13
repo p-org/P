@@ -1,0 +1,5 @@
+arg: ..\SendInExitUnhandledEvent.dll
+arg: -et:SendInExitUnhandledEvent.trace
+inc: SendInExitUnhandledEvent.trace
+del: SendInExitUnhandledEvent.trace
+dsc: zinger.exe, P semantics test: one machine, "send" to itself in entry actions

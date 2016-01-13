@@ -1,0 +1,6 @@
+arg: ..\SendInExitUnhandledEvent.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, P semantics test: one machine, "send" to itself in exit function

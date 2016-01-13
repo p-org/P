@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\PushExplicitPop.dll
-argZing: -et:PushExplicitPop.trace
-incZing: PushExplicitPop.trace
-del: PushExplicitPop.trace
-acc: .\
-dsc: zinger.exe, P semantics test: one machine, "push" with explicit "pop"

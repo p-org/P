@@ -1,0 +1,2 @@
+arg: ..\SendInExitNotExecuted.dll
+dsc: zinger.exe, P semantics test: one machine, "send" to itself in exit not executed

@@ -1,0 +1,6 @@
+arg: ..\ControlImpureInEntry.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, "control impure" stmts in function calls in entry action

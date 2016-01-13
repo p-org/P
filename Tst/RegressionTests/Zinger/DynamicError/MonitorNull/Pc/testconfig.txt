@@ -1,0 +1,6 @@
+arg: ..\MonitorNullDetected.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, P semantics test: two machines, monitor invocation for non-constant event expressions

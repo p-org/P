@@ -1,0 +1,1 @@
+dsc: runtime, Feature Integration: inheritance of actions and not transitions by "push" transition

@@ -1,0 +1,5 @@
+arg: ..\EventExprSemantics.dll
+arg: -et:EventExprSemantics.trace
+inc: EventExprSemantics.trace
+del: EventExprSemantics.trace
+dsc: zinger.exe, P semantics test, two machines, non-constant event expressions 

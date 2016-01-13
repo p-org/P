@@ -1,0 +1,6 @@
+arg: ..\NonConstantEventExprMonitor.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, P semantics test, two machines, monitor invocation with non-constant event expressions

@@ -1,0 +1,6 @@
+arg: ..\PushImplicitPopWithSend.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, P semantics test: one machine, "push" with implicit "pop", unhandled event was sent

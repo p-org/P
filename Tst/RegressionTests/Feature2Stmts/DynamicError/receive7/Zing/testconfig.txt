@@ -1,0 +1,5 @@
+arg: ..\receive7.dll
+arg: -et:receive7.trace
+inc: receive7.trace
+del: receive7.trace
+dsc: zinger.exe, receive statement

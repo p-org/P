@@ -1,0 +1,4 @@
+arg: ..\boundedasync.dll
+arg: -delayb:..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\RunToCompletionDelayingScheduler.dll
+arg: -fbound:3
+dsc: zinger.exe, Feature Integration: protocol sample

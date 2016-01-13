@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\RaisedHaltHandled.dll
-argZing: -et:RaisedHaltHandled.trace
-incZing: RaisedHaltHandled.trace
-del: RaisedHaltHandled.trace
-acc: .\
-dsc: zinger.exe, Feature Integration: deferred-by-default semantics of push statement

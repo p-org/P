@@ -1,0 +1,2 @@
+arg: ..\RaisedHalt.dll
+dsc: zinger.exe, P semantics test: two machines, machine is halted with "raise halt" (unhandled)

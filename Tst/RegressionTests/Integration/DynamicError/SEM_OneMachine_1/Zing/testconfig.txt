@@ -1,0 +1,5 @@
+arg: ..\SendRaiseInEntry.dll
+arg: -et:SendRaiseInEntry.trace
+inc: SendRaiseInEntry.trace
+del: SendRaiseInEntry.trace
+dsc: zinger.exe, P semantics test: one machine, "send" to itself and "raise" in entry actions

@@ -1,0 +1,6 @@
+arg: ..\PingPongBugRepro.dll
+arg: -et:PingPongBugRepro.trace
+arg: -delayB:..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\RunToCompletionDelayingScheduler.dll
+inc: PingPongBugRepro.trace
+del: PingPongBugRepro.trace
+dsc: zinger.exe, Feature Integration: "send" in function which mutates its parameters

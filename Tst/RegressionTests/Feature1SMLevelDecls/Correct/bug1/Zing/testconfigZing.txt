@@ -1,4 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\bug1.dll
-acc: .\
-dsc: zinger.exe, Feature Integration: two receive statements have the same event

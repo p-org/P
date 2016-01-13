@@ -1,0 +1,6 @@
+arg: ..\SpinlockWithTypestate.dll
+arg: -et:SpinlockWithTypestate.trace
+arg: -m
+inc: SpinlockWithTypestate.trace
+del: SpinlockWithTypestate.trace
+dsc: zinger.exe, Zing: "-m" option

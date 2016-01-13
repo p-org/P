@@ -1,0 +1,6 @@
+arg: ..\CastInExprs.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe: 3.4. Cast operator in expressions

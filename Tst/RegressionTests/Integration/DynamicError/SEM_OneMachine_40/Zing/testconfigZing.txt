@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\lvalues_runtimeError.dll
-argZing: -et:lvalues_runtimeError.trace
-incZing: lvalues_runtimeError.trace
-del: lvalues_runtimeError.trace
-acc: .\
-dsc: zinger.exe, P semantics test: one machine, asgn to uninitialized sequence (runtime error)

@@ -1,5 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\PingPong.dll
-argZing: -delayB:..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\RunToCompletionDelayingScheduler.dll
-acc: .\
-dsc: zinger.exe, PingPong example that uses static functions.

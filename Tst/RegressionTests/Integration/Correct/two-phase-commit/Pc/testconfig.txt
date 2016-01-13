@@ -1,0 +1,6 @@
+arg: ..\two-phase-commit.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, Feature Integration: protocol sample

@@ -1,0 +1,6 @@
+arg: ..\StaticFunctions_3.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, static error with respect to static function example 

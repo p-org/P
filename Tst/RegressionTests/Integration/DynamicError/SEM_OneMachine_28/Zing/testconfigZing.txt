@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
-argZing: ..\DeferIgnore2.dll
-argZing: -et:DeferIgnore2.trace
-incZing: DeferIgnore2.trace
-del: DeferIgnore2.trace
-acc: .\
-dsc: zinger.exe, P semantics test: one machine,  ignore/defer on diff events in the queue

@@ -412,10 +412,7 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Index may not be in the domain of the map"']
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _), t1 = MapType(dom, _), TypeRel(t2, dom, k), t2 != dom, k != SUB.
     
-    TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = SeqType(inner), TypeRel(t1, inner, k), k != EMPTY.
     TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = MapType(dom, _), TypeRel(t1, dom, k), k != EMPTY.        
-	[ rule_Classes = '"error, msg: Value can never be in the sequence"']
-    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = SeqType(inner), TypeRel(t1, inner, EMPTY).
 	[ rule_Classes = '"error, msg: Value can never be in the map"']
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _),  t2 = MapType(dom, _), TypeRel(t1, dom, EMPTY).        
 	[ rule_Classes = '"error, msg: "in" expects a map"']
@@ -980,7 +977,6 @@ domain PStaticTyping extends PData
 	CompTypeRel(t1, t2')      :- TypeOfArg1(c, e, t1), e = Cast(_, t2), TypeExpansion(t2, t2').
 	CompTypeRel(t1, t2)       :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _), op : PolyRel.
 	CompTypeRel(t2, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _), t1 = MapType(dom, cod).
-	CompTypeRel(t1, inner)    :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = SeqType(inner).
 	CompTypeRel(t1, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = MapType(dom, _).      
 	CompTypeRel(t1, inpt)     :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FuncSigTupleType(decl, inpt), decl.name = n, FunAvailable(decl, c.owner).
 	CompTypeRel(t1, t)        :- TypeOfArg1(c, e, t1), e : Return, c = FunDecl(_, _, _, _, t, _, _).

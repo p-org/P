@@ -158,7 +158,6 @@ OUT: nonatomicdatatypes.p (133, 23): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (134, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (134, 5): inferred type:  NIL
 OUT: nonatomicdatatypes.p (134, 13): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (134, 15): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (134, 15): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (136, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (136, 5): inferred type:  NIL

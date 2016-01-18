@@ -157,7 +157,7 @@ extern "C"{
 		_In_  PRT_VALUE					*payload
 		);
 
-	void PRT_CALL_CONV PrtSetLocalVarEx(
+	PRT_API void PRT_CALL_CONV PrtSetLocalVarEx(
 		_Inout_ PRT_VALUE **locals,
 		_In_ PRT_UINT32 varIndex,
 		_In_ PRT_VALUE *value,

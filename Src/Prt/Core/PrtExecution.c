@@ -409,9 +409,9 @@ _In_ PRT_VALUE					**locals
 	if (funDecl->localsNmdTupType != NULL)
 	{
 		PRT_UINT32 size = funDecl->localsNmdTupType->typeUnion.nmTuple->arity;
-		for (PRT_UINT32 i = 1; i <= size; i++)
+		for (PRT_UINT32 i = 0; i < size; i++)
 		{
-			PRT_TYPE *indexType = funDecl->localsNmdTupType->typeUnion.nmTuple->fieldTypes[size - i];
+			PRT_TYPE *indexType = funDecl->localsNmdTupType->typeUnion.nmTuple->fieldTypes[i];
 			if (locals[count] != NULL)
 			{
 				PrtFreeValue(locals[count]);
@@ -454,9 +454,9 @@ PrtPushNewFrame(
 		if (parameters != NULL)
 		{
 			PRT_UINT32 size = parameters->valueUnion.tuple->size;
-			for (PRT_UINT32 i = 1; i <= size; i++)
+			for (PRT_UINT32 i = 0; i < size; i++)
 			{
-				locals[count] = PrtTupleGet(parameters, size - i);
+				locals[count] = PrtTupleGet(parameters, i);
 				count++;
 			}
 			PrtFreeValue(parameters);
@@ -464,9 +464,9 @@ PrtPushNewFrame(
 		if (funDecl->localsNmdTupType != NULL)
 		{
 			PRT_UINT32 size = funDecl->localsNmdTupType->typeUnion.nmTuple->arity;
-			for (PRT_UINT32 i = 1; i <= size; i++)
+			for (PRT_UINT32 i = 0; i < size; i++)
 			{
-				PRT_TYPE *indexType = funDecl->localsNmdTupType->typeUnion.nmTuple->fieldTypes[size - i];
+				PRT_TYPE *indexType = funDecl->localsNmdTupType->typeUnion.nmTuple->fieldTypes[i];
 				locals[count] = PrtMkDefaultValue(indexType);
 				count++;
 			}

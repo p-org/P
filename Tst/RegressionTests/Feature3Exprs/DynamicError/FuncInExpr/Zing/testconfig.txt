@@ -1,0 +1,5 @@
+arg: ..\FuncInExpr.dll
+arg: -et:FuncInExpr.trace
+inc: FuncInExpr.trace
+del: FuncInExpr.trace
+dsc: zinger.exe, nested function calls

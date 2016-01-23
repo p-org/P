@@ -1,0 +1,27 @@
+=================================
+         Console output          
+=================================
+OUT: funcinexpr.p (7, 4): inferred type:  NIL
+OUT: funcinexpr.p (7, 8): inferred type:  BaseType(BOOL)
+OUT: funcinexpr.p (7, 9): inferred type:  NmdTupType(NmdTupTypeField("Success", BaseType(BOOL)), NIL)
+OUT: funcinexpr.p (7, 14): inferred type:  BaseType(BOOL)
+OUT: funcinexpr.p (7, 22): inferred type:  BaseType(BOOL)
+OUT: funcinexpr.p (7, 25): inferred type:  NmdTupType(NmdTupTypeField("Success", BaseType(BOOL)), NIL)
+OUT: funcinexpr.p (7, 30): inferred type:  BaseType(BOOL)
+OUT: funcinexpr.p (9, 5): inferred type:  NIL
+OUT: funcinexpr.p (9, 12): inferred type:  BaseType(BOOL)
+OUT: funcinexpr.p (15, 3): inferred type:  NIL
+OUT: funcinexpr.p (15, 11): inferred type:  BaseType(BOOL)
+OUT: funcinexpr.p (16, 4): inferred type:  NIL
+OUT: funcinexpr.p (16, 11): inferred type:  NmdTupType(NmdTupTypeField("Success", BaseType(BOOL)), NIL)
+OUT: funcinexpr.p (22, 3): inferred type:  NIL
+OUT: funcinexpr.p (22, 7): inferred type:  BaseType(BOOL)
+OUT: funcinexpr.p (22, 18): inferred type:  BaseType(BOOL)
+OUT: funcinexpr.p (23, 3): inferred type:  NIL
+OUT: funcinexpr.p (23, 10): inferred type:  NmdTupType(NmdTupTypeField("Success", BaseType(BOOL)), NIL)
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing FuncInExpr.zing ...
+OUT: Compiling FuncInExpr.zing to FuncInExpr.dll ...
+EXIT: 0

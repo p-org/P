@@ -2128,25 +2128,6 @@ namespace Microsoft.Pc
                     yield return GetArgByIndex(ft, 2);
                     ctxt.lhsStack.Pop();
                 }
-                else if (opName == PData.Cnst_And.Node.Name || opName == PData.Cnst_Or.Node.Name)
-                {
-                    ctxt.PushSideEffectStack();
-                    yield return GetArgByIndex(ft, 1);
-                    var left = ctxt.EmitZingSideEffects(ZingData.Cnst_Nil);
-                    var leftEval = ctxt.lastEval;
-                    ctxt.PushSideEffectStack();
-                    yield return GetArgByIndex(ft, 2);
-                    var right = ctxt.EmitZingSideEffects(ZingData.Cnst_Nil);
-                    // short-circuit evaluation
-                    if (opName == PData.Cnst_And.Node.Name)
-                    {
-                        ctxt.AddSideEffect(MkZingSeq(left, MkZingIfThenElse(MkZingDot(leftEval, "bl"), right, ZingData.Cnst_Nil)));
-                    }
-                    else
-                    {
-                        ctxt.AddSideEffect(MkZingSeq(left, MkZingIfThenElse(MkZingDot(leftEval, "bl"), ZingData.Cnst_Nil, right)));
-                    }
-                }
                 else
                 {
                     yield return GetArgByIndex(ft, 1);

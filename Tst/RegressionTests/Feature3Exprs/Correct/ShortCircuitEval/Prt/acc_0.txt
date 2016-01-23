@@ -3,6 +3,8 @@
 =================================
 OUT: <CreateLog> Machine M(1) is created
 OUT: <StateLog> Machine M(1) entered state S
+OUT: <RaiseLog> Machine M(1) raised event halt with payload null
+OUT: <ExitLog> Machine M(1) exiting state S
+OUT: <HaltLog> Machine M(1) halted in state S
 OUT: 
-ERROR: ASSERT: Invalid index
-EXIT: 1
+EXIT: 0

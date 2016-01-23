@@ -4,8 +4,7 @@ event y;
 main machine TestM {
 	start state Init {
 		entry {
-			if(!F2().Success || F1().Success) //problem : the problem is with || of multiple function calls. I am not sure why.
-			//if(!F2().Success) //no problem
+			if (!F2().Success || F1().Success) 
 			{
 				assert(false);
 			}

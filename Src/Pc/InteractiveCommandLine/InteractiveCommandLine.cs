@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Diagnostics;
 
 namespace Microsoft.Pc
 {
-    class InteractiveCommandLine
+    internal class InteractiveCommandLine
     {
-        static string inputFileName = null;
+        private static string inputFileName = null;
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             bool shortFileNames = false;
             bool doNotErase = false;
@@ -39,7 +40,7 @@ namespace Microsoft.Pc
             Compiler compiler;
             if (shortFileNames)
                 compiler = new Compiler(true);
-            else 
+            else
                 compiler = new Compiler(false);
             CommandLineOptions compilerOptions = new CommandLineOptions();
             compilerOptions.shortFileNames = shortFileNames;
@@ -99,7 +100,7 @@ namespace Microsoft.Pc
                     var success = ParseTestString(inputArgs, compilerOptions);
                     if (!success)
                     {
-                        Console.WriteLine("USAGE: test [/liveness[:mace]] [/outputDir:<dir>]"); 
+                        Console.WriteLine("USAGE: test [/liveness[:mace]] [/outputDir:<dir>]");
                         continue;
                     }
                     compiler.Options = compilerOptions;
@@ -116,7 +117,7 @@ namespace Microsoft.Pc
                     {
                         Console.WriteLine("USAGE: load file.p [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>]");
                         continue;
-                    } 
+                    }
                     var success = ParseCompileString(inputArgs, compilerOptions);
                     if (!success)
                     {
@@ -137,14 +138,14 @@ namespace Microsoft.Pc
                 }
             }
 
-            error:
+        error:
             {
                 Console.WriteLine("USAGE: Pci.exe [/shortFileNames] [/doNotErase] [/server]");
                 return;
             }
         }
 
-        static bool ParseLoadString(string[] args, CommandLineOptions compilerOptions)
+        private static bool ParseLoadString(string[] args, CommandLineOptions compilerOptions)
         {
             string fileName = null;
             bool outputFormula = false;
@@ -165,6 +166,11 @@ namespace Microsoft.Pc
                 {
                     var colonIndex = arg.IndexOf(':');
                     outputDir = arg.Substring(colonIndex + 1);
+                    if (!Directory.Exists(outputDir))
+                    {
+                        Console.WriteLine("Output directory {0} does not exist", outputDir);
+                        return false;
+                    }
                 }
                 else if (fileName == null && arg.Length > 2 && arg.EndsWith(".p"))
                 {
@@ -175,7 +181,7 @@ namespace Microsoft.Pc
                     return false;
                 }
             }
-            if (fileName == null) 
+            if (fileName == null)
                 return false;
 
             inputFileName = fileName;
@@ -185,7 +191,7 @@ namespace Microsoft.Pc
             return true;
         }
 
-        static bool ParseCompileString(string[] args, CommandLineOptions compilerOptions)
+        private static bool ParseCompileString(string[] args, CommandLineOptions compilerOptions)
         {
             string outputDir = null;
             for (int i = 1; i < args.Length; i++)
@@ -195,6 +201,11 @@ namespace Microsoft.Pc
                 {
                     var colonIndex = arg.IndexOf(':');
                     outputDir = arg.Substring(colonIndex + 1);
+                    if (!Directory.Exists(outputDir))
+                    {
+                        Console.WriteLine("Output directory {0} does not exist", outputDir);
+                        return false;
+                    }
                 }
                 else
                 {
@@ -205,7 +216,7 @@ namespace Microsoft.Pc
             return true;
         }
 
-        static bool ParseTestString(string[] args, CommandLineOptions compilerOptions)
+        private static bool ParseTestString(string[] args, CommandLineOptions compilerOptions)
         {
             LivenessOption liveness = LivenessOption.None;
             string outputDir = null;
@@ -236,6 +247,11 @@ namespace Microsoft.Pc
                 {
                     var colonIndex = arg.IndexOf(':');
                     outputDir = arg.Substring(colonIndex + 1);
+                    if (!Directory.Exists(outputDir))
+                    {
+                        Console.WriteLine("Output directory {0} does not exist", outputDir);
+                        return false;
+                    }
                 }
                 else
                 {

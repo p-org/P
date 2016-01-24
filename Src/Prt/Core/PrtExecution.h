@@ -376,6 +376,27 @@ extern "C"{
 		_In_ PRT_MACHINEINST_PRIV *context
 		);
 
+	void PRT_CALL_CONV
+		PrtAssertDefaultFn(
+		_In_ int condition,
+		_In_opt_z_ PRT_CSTRING message
+		);
+
+	PRT_API void PRT_CALL_CONV
+		PrtUpdateAssertFn(
+		PRT_ASSERT_FUN assertFn
+		);
+
+	PRT_API void PRT_CALL_CONV
+		PrtUpdatePrintFn(
+		PRT_PRINT_FUN printFn
+		);
+
+	void PRT_CALL_CONV
+		PrtPrintfDefaultFn(
+		_In_opt_z_ PRT_CSTRING message
+		);
+
 	PRT_API void
 		PrtLog(
 		_In_ PRT_STEP step,

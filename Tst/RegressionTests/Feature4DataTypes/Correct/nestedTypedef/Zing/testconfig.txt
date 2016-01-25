@@ -1,0 +1,2 @@
+arg: ..\nestedTypedef.dll
+dsc: zinger.exe, test typedef feature

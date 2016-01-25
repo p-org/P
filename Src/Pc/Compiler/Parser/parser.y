@@ -171,7 +171,7 @@ LocalVarDeclList
 
 LocalVarList
 	: ID					   { localVarStack.AddLocalVar($1.str, ToSpan(@1)); }									
-	| ID COMMA LocalVarList    { localVarStack.AddLocalVar($1.str, ToSpan(@1)); }
+	| LocalVarList COMMA ID    { localVarStack.AddLocalVar($3.str, ToSpan(@3)); }
 	;
 
 PayloadVarDeclOrNone

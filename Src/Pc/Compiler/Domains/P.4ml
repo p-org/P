@@ -71,6 +71,11 @@ domain PData
 
     VarDecl        ::= fun (name: String, owner: MachineDecl -> type: any TypeExpr).
     
+	// For both FunDecl and AnonFunDecl, the order of locals in the input file is left to right 
+	// and top to bottom (since multiple variable declaration lists are allowed).
+	// For FunDecl, the order of params is left to right.
+	// For AnonFunDecl, the order of envVars is left to right and top to bottom.
+	// Thus, the numbering of variables is consistent across nested scopes.
     FunDecl        ::= fun (name: String, owner: MachineDecl + { NIL } -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL },  return: any TypeExpr + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt).
     AnonFunDecl    ::= new (owner: MachineDecl + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt, envVars: any NmdTupType).
     
@@ -412,10 +417,7 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Index may not be in the domain of the map"']
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _), t1 = MapType(dom, _), TypeRel(t2, dom, k), t2 != dom, k != SUB.
     
-    TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = SeqType(inner), TypeRel(t1, inner, k), k != EMPTY.
     TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = MapType(dom, _), TypeRel(t1, dom, k), k != EMPTY.        
-	[ rule_Classes = '"error, msg: Value can never be in the sequence"']
-    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = SeqType(inner), TypeRel(t1, inner, EMPTY).
 	[ rule_Classes = '"error, msg: Value can never be in the map"']
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _),  t2 = MapType(dom, _), TypeRel(t1, dom, EMPTY).        
 	[ rule_Classes = '"error, msg: "in" expects a map"']
@@ -733,10 +735,10 @@ domain PStaticTyping extends PData
 	MaxNumLocals(a, n) :- a is FunDecl, MaxNumLocals(a.body, n1), n2 = lstLength(#NmdTupType, a.locals), n3 = lstLength(#NmdTupType, a.params), n = n1 + n2 + n3.
 
     LocalVarsAux ::= (cntxt: FunDecl + AnonFunDecl, vars: NmdTupType + { NIL }, tl: NmdTupType + { NIL }).
-	LocalVarsAux(cntxt, params, rlocals) :- cntxt is FunDecl(_, _, _, params, _, locals, _), rlocals = lstReverse(#NmdTupType, locals).
-	LocalVarsAux(cntxt, envVars, rlocals) :- cntxt is AnonFunDecl(_, locals, _, envVars), rlocals = lstReverse(#NmdTupType, locals).
-	LocalVarsAux(cntxt, locals, tl) :- LocalVarsAux(cntxt, locals', tl'), tl' = NmdTupType(NmdTupTypeField(name, type), tl),
-									   locals = NmdTupType(NmdTupTypeField(name, type), locals').
+	LocalVarsAux(cntxt, envVars, locals) :- cntxt is FunDecl(_, _, _, params, _, locals, _), envVars = lstReverse(#NmdTupType, params).
+	LocalVarsAux(cntxt, envVars, locals) :- cntxt is AnonFunDecl(_, locals, _, envVars'), envVars = lstReverse(#NmdTupType, envVars').
+	LocalVarsAux(cntxt, envVars, locals) :- LocalVarsAux(cntxt, envVars', locals'), locals' = NmdTupType(NmdTupTypeField(name, type), locals),
+									        envVars = NmdTupType(NmdTupTypeField(name, type), envVars').
 
 	LocalVars ::= (cntxt: FunDecl + AnonFunDecl, vars: NmdTupType + { NIL }).
 	LocalVars(cntxt, rlocals) :- LocalVarsAux(cntxt, locals, NIL), rlocals = lstReverse(#NmdTupType, locals).
@@ -980,7 +982,6 @@ domain PStaticTyping extends PData
 	CompTypeRel(t1, t2')      :- TypeOfArg1(c, e, t1), e = Cast(_, t2), TypeExpansion(t2, t2').
 	CompTypeRel(t1, t2)       :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _), op : PolyRel.
 	CompTypeRel(t2, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _), t1 = MapType(dom, cod).
-	CompTypeRel(t1, inner)    :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = SeqType(inner).
 	CompTypeRel(t1, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = MapType(dom, _).      
 	CompTypeRel(t1, inpt)     :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FuncSigTupleType(decl, inpt), decl.name = n, FunAvailable(decl, c.owner).
 	CompTypeRel(t1, t)        :- TypeOfArg1(c, e, t1), e : Return, c = FunDecl(_, _, _, _, t, _, _).
@@ -1143,37 +1144,37 @@ domain PStaticTyping extends PData
 	EventPayloadType(NULL, t) :- t = BaseType(NULL).
 	EventPayloadType(HALT, t) :- t = BaseType(ANY).
 
-	PayloadVarType ::= (TypeExpr).
-	PayloadVarType(ft) :- s is StateDecl, TypeExpansion(s.entryAction.envVars.hd.type, ft); 
-						  t is TransDecl, TypeExpansion(t.action.envVars.hd.type, ft);
-						  d is DoDecl, TypeExpansion(d.action.envVars.hd.type, ft);
-						  SubSE(_, cases), cases: Cases, TypeExpansion(cases.action.envVars.hd.type, ft).
+	PayloadVarType ::= (StateDecl + TransDecl + DoDecl + Cases, TypeExpr).
+	PayloadVarType(s, ft) :- s is StateDecl, r = lstReverse(#NmdTupType, s.entryAction.envVars), TypeExpansion(r.hd.type, ft).
+	PayloadVarType(t, ft) :- t is TransDecl, r = lstReverse(#NmdTupType, t.action.envVars), TypeExpansion(r.hd.type, ft).
+	PayloadVarType(d, ft) :- d is DoDecl, r = lstReverse(#NmdTupType, d.action.envVars), TypeExpansion(r.hd.type, ft).
+	PayloadVarType(cases, ft) :- SubSE(_, cases), cases: Cases, r = lstReverse(#NmdTupType, cases.action.envVars), TypeExpansion(r.hd.type, ft).
 
-	CompTypeRel(et, ft) :- EventPayloadType(_, et), PayloadVarType(ft);
-						   SubSE(c, n), n: New, TypeOf(c, n.arg, et), et: TypeExpr, PayloadVarType(ft);
-						   SubSE(c, n), n: NewStmt, TypeOf(c, n.arg, et), et: TypeExpr, PayloadVarType(ft).
+	CompTypeRel(et, ft) :- EventPayloadType(_, et), PayloadVarType(_, ft);
+						   SubSE(c, n), n: New, TypeOf(c, n.arg, et), et: TypeExpr, PayloadVarType(_, ft);
+						   SubSE(c, n), n: NewStmt, TypeOf(c, n.arg, et), et: TypeExpr, PayloadVarType(_, ft).
 
     PayloadError ::= (TransDecl + DoDecl + StateDecl + Cases + New + NewStmt).
 
 	[ rule_Classes = '"error, msg: Payload type for event must be subtype of payload type of transition function;"']
-	PayloadError(t) :- t is TransDecl, EventPayloadType(t.trig, et), TypeExpansion(t.action.envVars.hd.type, ft),
+	PayloadError(t) :- t is TransDecl, EventPayloadType(t.trig, et), PayloadVarType(t, ft),
 	                   TypeRel(et, ft, k), et != ft, k != SUB.
 	[ rule_Classes = '"error, msg: Payload type for event must be subtype of payload type of do function;"']
-	PayloadError(t) :- t is DoDecl, EventPayloadType(t.trig, et), TypeExpansion(t.action.envVars.hd.type, ft),
+	PayloadError(d) :- d is DoDecl, EventPayloadType(d.trig, et), PayloadVarType(d, ft),
 	                   TypeRel(et, ft, k), et != ft, k != SUB.
 	[ rule_Classes = '"error, msg: Payload type for event on incoming transition must be subtype of payload type of state entry function;"']
 	PayloadError(s) :- t is TransDecl, EventPayloadType(t.trig, et), 
-					   s is StateDecl, s.name = t.dst, s.owner = t.src.owner, TypeExpansion(s.entryAction.envVars.hd.type, ft),
+					   s is StateDecl, s.name = t.dst, s.owner = t.src.owner, PayloadVarType(s, ft),
 					   TypeRel(et, ft, k), et != ft, k != SUB.
 	[ rule_Classes = '"error, msg: Payload type for event must be subtype of payload type of case function;"']
-	PayloadError(cases) :- SubSE(_, cases), cases: Cases, EventPayloadType(cases.trig, et), TypeExpansion(cases.action.envVars.hd.type, ft),
+	PayloadError(cases) :- SubSE(_, cases), cases: Cases, EventPayloadType(cases.trig, et), PayloadVarType(cases, ft),
 						   TypeRel(et, ft, k), et != ft, k != SUB. 
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
 	PayloadError(n) :- SubSE(c, n), n: New, TypeOf(c, n.arg, type), type: TypeExpr,
 					   m is MachineDecl, m.name = n.name, s is StateDecl, s.owner = m, s.name = m.start, 
-					   TypeExpansion(s.entryAction.envVars.hd.type, ft), TypeRel(type, ft, k), type != ft, k != SUB.
+					   PayloadVarType(s, ft), TypeRel(type, ft, k), type != ft, k != SUB.
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
 	PayloadError(n) :- SubSE(c, n), n: NewStmt, TypeOf(c, n.arg, type), type: TypeExpr,
 					   m is MachineDecl, m.name = n.name, s is StateDecl, s.owner = m, s.name = m.start,
-					   TypeExpansion(s.entryAction.envVars.hd.type, ft), TypeRel(type, ft, k), type != ft, k != SUB.	
+					   PayloadVarType(s, ft), TypeRel(type, ft, k), type != ft, k != SUB.	
 }

@@ -64,7 +64,7 @@
                 get
                 {
                     Contract.Assert(0 < contextStack.Count);
-                    return contextStack.Peek();
+                    return Reverse(contextStack.Peek());
                 }
             }
             private Stack<P_Root.IArgType_NmdTupType__1> contextStack;
@@ -73,7 +73,7 @@
             private P_Root.IArgType_NmdTupType__1 localVarDecl;
             public P_Root.IArgType_NmdTupType__1 LocalVarDecl
             {
-                get { return localVarDecl; }
+                get { return Reverse(localVarDecl); }
             }
             private Stack<P_Root.IArgType_NmdTupType__1> localStack;
 
@@ -106,10 +106,27 @@
                 this.casesListStack = new Stack<P_Root.IArgType_Cases__2>();
             }
 
+            private P_Root.IArgType_NmdTupType__1 Reverse(P_Root.IArgType_NmdTupType__1 list)
+            {
+                P_Root.IArgType_NmdTupType__1 reverseList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+                var iter = list;
+                while (true)
+                {
+                    var next = iter as P_Root.NmdTupType;
+                    if (next == null) break;
+                    var nmdTupType = P_Root.MkNmdTupType();
+                    nmdTupType.hd = next.hd;
+                    nmdTupType.tl = reverseList;
+                    reverseList = nmdTupType;
+                    iter = next.tl;
+                }
+                return reverseList;
+            }
+
             public LocalVarStack(Parser parser, P_Root.IArgType_NmdTupType__1 parameters)
             {
                 this.parser = parser;
-                this.contextLocalVarDecl = parameters;
+                this.contextLocalVarDecl = Reverse(parameters);
                 this.contextStack = new Stack<P_Root.IArgType_NmdTupType__1>();
                 this.crntLocalVarList = new List<string>();
                 this.localVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
@@ -142,11 +159,6 @@
                 casesList = P_Root.MkCases(e, a, casesList);
             }
 
-            public void AddLocalVar(string name, Span span)
-            {
-                crntLocalVarList.Add(name);
-            }
-
             public void AddPayloadVar(string name, Span span)
             {
                 Contract.Assert(parser.typeExprStack.Count > 0);
@@ -163,6 +175,11 @@
                                     P_Root.MkString(string.Format("_payload_{0}", parser.GetNextPayloadVarLabel())), 
                                     (P_Root.IArgType_NmdTupTypeField__1) parser.MkBaseType(P_Root.UserCnstKind.ANY, Span.Unknown));
                 contextLocalVarDecl = P_Root.MkNmdTupType(field, contextLocalVarDecl);
+            }
+
+            public void AddLocalVar(string name, Span span)
+            {
+                crntLocalVarList.Add(name);
             }
 
             public void CompleteCrntLocalVarList()
@@ -1109,7 +1126,6 @@
             Contract.Assert(typeExprStack.Count > 0);
             var funDecl = GetCurrentFunDecl(span);
             funDecl.@params = (P_Root.IArgType_FunDecl__3)typeExprStack.Pop();
-
             localVarStack = new LocalVarStack(this, (P_Root.IArgType_NmdTupType__1)funDecl.@params);
         }
 

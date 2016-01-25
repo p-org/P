@@ -220,7 +220,7 @@ void PrtWinUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Inout_ 
 	{
 		PRT_UINT32 i;
 		PRT_SEQVALUE *sVal = value->valueUnion.seq;
-		PrtWinUserPrintString("[", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("[", buffer, bufferSize, numCharsWritten);
 		for (i = 0; i < sVal->size; ++i)
 		{
 			PrtWinUserPrintValue(sVal->values[i], buffer, bufferSize, numCharsWritten);
@@ -230,14 +230,14 @@ void PrtWinUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Inout_ 
 			}
 		}
 
-		PrtWinUserPrintString("]", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("]", buffer, bufferSize, numCharsWritten);
 		break;
 	}
 	case PRT_VALKIND_TUPLE:
 	{
 		PRT_UINT32 i;
 		PRT_TUPVALUE *tval = value->valueUnion.tuple;
-		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten);
 		if (tval->size == 1)
 		{
 			PrtWinUserPrintValue(tval->values[0], buffer, bufferSize, numCharsWritten);
@@ -254,7 +254,7 @@ void PrtWinUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Inout_ 
 				}
 				else
 				{
-					PrtWinUserPrintString(")", buffer, bufferSize, numCharsWritten); 
+					PrtWinUserPrintString(")", buffer, bufferSize, numCharsWritten);
 				}
 			}
 		}
@@ -281,11 +281,11 @@ void PrtWinUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, _Ino
 	case PRT_STEP_HALT:
 		PrtWinUserPrintString("<HaltLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(") halted in state ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(stateName, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString("\n", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_ENQUEUE:
 		eventIndex = PrtPrimGetEvent(c->eventQueue.events[c->eventQueue.tailIndex == 0 ? (c->eventQueue.eventsSize - 1) : (c->eventQueue.tailIndex - 1)].trigger);
@@ -293,13 +293,13 @@ void PrtWinUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, _Ino
 		payloadValue = (c->eventQueue.events[c->eventQueue.tailIndex == 0 ? (c->eventQueue.eventsSize - 1) : (c->eventQueue.tailIndex - 1)].payload);
 		PrtWinUserPrintString("<EnqueueLog> Enqueued event ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintValue(payloadValue, buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(" on Machine ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString(")\n", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString(")\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_DEQUEUE:
 		eventName = c->process->program->events[PrtPrimGetEvent(PrtGetCurrentTrigger(c))].name;
@@ -310,9 +310,9 @@ void PrtWinUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, _Ino
 		PrtWinUserPrintValue(payloadValue, buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(" by Machine ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString(")\n", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString(")\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_ENTRY:
 		PrtWinUserPrintString("<StateLog> Machine ", buffer, bufferSize, numCharsWritten);
@@ -335,27 +335,27 @@ void PrtWinUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, _Ino
 		payloadValue = PrtGetCurrentPayload(c);
 		PrtWinUserPrintString("<RaiseLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(") raised event ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintValue(payloadValue, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString("\n", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_POP:
 		PrtWinUserPrintString("<PopLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(") popped and reentered state ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(stateName, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString("\n", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_PUSH:
 		PrtWinUserPrintString("<PushLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(") pushed\n", buffer, bufferSize, numCharsWritten);
 		break;
@@ -363,18 +363,18 @@ void PrtWinUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, _Ino
 		eventName = c->process->program->events[PrtPrimGetEvent(PrtGetCurrentTrigger(c))].name;
 		PrtWinUserPrintString("<PopLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(") popped with unhandled event ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(" and reentered state ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(stateName, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString("\n", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_DO:
 		PrtWinUserPrintString("<ActionLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(") executed action in state ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(stateName, buffer, bufferSize, numCharsWritten);
@@ -387,16 +387,16 @@ void PrtWinUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, _Ino
 		PrtWinUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(") exiting state ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(stateName, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString("\n", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_IGNORE:
 		PrtWinUserPrintString("<ActionLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("(", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(") ignored event in state ", buffer, bufferSize, numCharsWritten);
 		PrtWinUserPrintString(stateName, buffer, bufferSize, numCharsWritten);
-		PrtWinUserPrintString("\n", buffer, bufferSize, numCharsWritten); 
+		PrtWinUserPrintString("\n", buffer, bufferSize, numCharsWritten);
 		break;
 	default:
 		PrtAssert(PRT_FALSE, "Illegal PRT_STEP value");
@@ -412,8 +412,8 @@ void PRT_CALL_CONV PrtPrintValue(_In_ PRT_VALUE *value)
 
 	PrtWinUserPrintValue(value, &buffer, &bufferSize, &nChars);
 	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
-	printf_s("%s", buffer);
-    PrtFree(buffer);
+	PrtPrintf(buffer);
+	PrtFree(buffer);
 }
 
 PRT_STRING PRT_CALL_CONV PrtToStringValue(_In_ PRT_VALUE *value)
@@ -435,7 +435,7 @@ void PRT_CALL_CONV PrtPrintType(_In_ PRT_TYPE *type)
 
 	PrtWinUserPrintType(type, &buffer, &bufferSize, &nChars);
 	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
-	printf_s("%s", buffer);
+	PrtPrintf(buffer);
 	PrtFree(buffer);
 }
 
@@ -458,7 +458,7 @@ void PRT_CALL_CONV PrtPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machin
 
 	PrtWinUserPrintStep(step, machine, &buffer, &bufferSize, &nChars);
 	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
-	printf_s("%s", buffer);
+	PrtPrintf(buffer);
 	PrtFree(buffer);
 }
 

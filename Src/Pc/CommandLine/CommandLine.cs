@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,7 +9,7 @@ namespace Microsoft.Pc
 {
     public class CommandLine
     {
-        static int Main(string[] args)
+        private static int Main(string[] args)
         {
             string inputFileName = null;
             var options = new CommandLineOptions();
@@ -37,24 +38,34 @@ namespace Microsoft.Pc
                                 goto error;
                             options.outputFormula = true;
                             break;
+
                         case "/outputDir":
                             options.outputDir = colonArg;
+                            if (!Directory.Exists(options.outputDir))
+                            {
+                                Console.WriteLine("Output directory {0} does not exist", options.outputDir);
+                                goto error;
+                            }
                             break;
+
                         case "/doNotErase":
                             if (colonArg != null)
                                 goto error;
                             options.erase = false;
                             break;
+
                         case "/shortFileNames":
                             if (colonArg != null)
                                 goto error;
                             options.shortFileNames = true;
                             break;
+
                         case "/printTypeInference":
                             if (colonArg != null)
                                 goto error;
                             options.printTypeInference = true;
                             break;
+
                         case "/liveness":
                             if (colonArg == null)
                                 options.liveness = LivenessOption.Standard;
@@ -63,6 +74,7 @@ namespace Microsoft.Pc
                             else
                                 goto error;
                             break;
+
                         default:
                             goto error;
                     }

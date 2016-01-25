@@ -70,8 +70,8 @@ PRT_VALUE *P_FUN_Client_UpdateTuple_IMPL(PRT_MACHINEINST *context)
 	printf("In updateTuple function\n");
 	printf("old value: (%d, %d)\n", ex->first, ex->second);
 	//update the external context
-	ex->first = PrtTupleGet(p_tmp_frame.locals[0], 0)->valueUnion.nt;
-	ex->second = PrtTupleGet(p_tmp_frame.locals[0], 1)->valueUnion.nt;
+	ex->first = PrtTupleGetNC(p_tmp_frame.locals[0], 0)->valueUnion.nt;
+	ex->second = PrtTupleGetNC(p_tmp_frame.locals[0], 1)->valueUnion.nt;
 	printf("new value: (%d, %d)\n", ex->first, ex->second);
 	//remm to free the frame
 	PrtFreeLocals(p_tmp_mach_priv, &p_tmp_frame);

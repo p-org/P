@@ -126,17 +126,6 @@ namespace Microsoft.Pc
         public HashSet<Node> invokePluginFuns;
         public HashSet<string> printArgs;
 
-        private int ListLength(FuncTerm ft)
-        {
-            int count = 0;
-            while (ft != null)
-            {
-                count++;
-                ft = PToZing.GetArgByIndex(ft, 1) as FuncTerm;
-            }
-            return count;
-        }
-
         // if isAnonymous is true, parameters is actually envVars
         public FunInfo(bool isAnonymous, FuncTerm parameters, AST<FuncTerm> returnType, FuncTerm locals, Node body)
         {
@@ -154,11 +143,9 @@ namespace Microsoft.Pc
             this.invokePluginFuns = new HashSet<Node>();
             this.printArgs = new HashSet<string>();
 
-            int numParameters = ListLength(parameters);
-            int paramIndex = numParameters;
+            int paramIndex = 0;
             while (parameters != null)
             {
-                paramIndex--;
                 var ft = (FuncTerm)PToZing.GetArgByIndex(parameters, 0);
                 using (var enumerator = ft.Args.GetEnumerator())
                 {
@@ -170,13 +157,12 @@ namespace Microsoft.Pc
                     parameterNames.Add(varName);
                 }
                 parameters = PToZing.GetArgByIndex(parameters, 1) as FuncTerm;
+                paramIndex++;
             }
             
-            int numLocals = ListLength(locals);
-            int localIndex = numParameters + numLocals;
+            int localIndex = paramIndex;
             while (locals != null)
             {
-                localIndex--;
                 var ft = (FuncTerm)PToZing.GetArgByIndex(locals, 0);
                 using (var enumerator = ft.Args.GetEnumerator())
                 {
@@ -188,6 +174,16 @@ namespace Microsoft.Pc
                     localNames.Add(varName);
                 }
                 locals = PToZing.GetArgByIndex(locals, 1) as FuncTerm;
+                localIndex++;
+            }
+        }
+
+        public string PayloadVarName
+        {
+            get 
+            { 
+                Debug.Assert(isAnonymous);
+                return parameterNames.Last();
             }
         }
     }
@@ -850,6 +846,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var eType = (FuncTerm)it.Current;
                     typeExpansion[type] = eType;
+                    typeExpansion[(AST<FuncTerm>)Factory.Instance.ToAST(eType)] = eType;
                 }
             }
 
@@ -1686,8 +1683,7 @@ namespace Microsoft.Pc
             }
             if (funInfo.isAnonymous)
             {
-                var payloadVarName = funInfo.parameterNames[0];
-                stmts.Add(MkZingAssign(MkZingIndex(locals, Factory.Instance.MkCnst(funInfo.localNameToInfo[payloadVarName].index)), MkZingCall(PrtCloneValue, MkZingDot("myHandle", "currentArg"))));
+                stmts.Add(MkZingAssign(MkZingIndex(locals, Factory.Instance.MkCnst(funInfo.localNameToInfo[funInfo.PayloadVarName].index)), MkZingCall(PrtCloneValue, MkZingDot("myHandle", "currentArg"))));
             }
             foreach (var localName in funInfo.localNames)
             {
@@ -2132,25 +2128,6 @@ namespace Microsoft.Pc
                     yield return GetArgByIndex(ft, 2);
                     ctxt.lhsStack.Pop();
                 }
-                else if (opName == PData.Cnst_And.Node.Name || opName == PData.Cnst_Or.Node.Name)
-                {
-                    ctxt.PushSideEffectStack();
-                    yield return GetArgByIndex(ft, 1);
-                    var left = ctxt.EmitZingSideEffects(ZingData.Cnst_Nil);
-                    var leftEval = ctxt.lastEval;
-                    ctxt.PushSideEffectStack();
-                    yield return GetArgByIndex(ft, 2);
-                    var right = ctxt.EmitZingSideEffects(ZingData.Cnst_Nil);
-                    // short-circuit evaluation
-                    if (opName == PData.Cnst_And.Node.Name)
-                    {
-                        ctxt.AddSideEffect(MkZingSeq(left, MkZingIfThenElse(MkZingDot(leftEval, "bl"), right, ZingData.Cnst_Nil)));
-                    }
-                    else
-                    {
-                        ctxt.AddSideEffect(MkZingSeq(left, MkZingIfThenElse(MkZingDot(leftEval, "bl"), ZingData.Cnst_Nil, right)));
-                    }
-                }
                 else
                 {
                     yield return GetArgByIndex(ft, 1);
@@ -2422,8 +2399,7 @@ namespace Microsoft.Pc
                 var calleeInfo = allStaticFuns.ContainsKey(funName) ? allStaticFuns[funName] : allMachines[ctxt.machineName].funNameToFunInfo[funName];
                 Debug.Assert(calleeInfo.isAnonymous);
                 List<AST<Node>> ifStmts = new List<AST<Node>>();
-                var payloadVarName = calleeInfo.parameterNames[0];
-                ifStmts.Add(MkZingAssign(MkZingIndex(MkZingIdentifier("locals"), Factory.Instance.MkCnst(calleeInfo.localNameToInfo[payloadVarName].index)), MkZingCall(PrtCloneValue, MkZingDot("myHandle", "currentArg"))));
+                ifStmts.Add(MkZingAssign(MkZingIndex(MkZingIdentifier("locals"), Factory.Instance.MkCnst(calleeInfo.localNameToInfo[calleeInfo.PayloadVarName].index)), MkZingCall(PrtCloneValue, MkZingDot("myHandle", "currentArg"))));
                 foreach (var calleeLocal in calleeInfo.localNames)
                 {
                     var calleeLocalInfo = calleeInfo.localNameToInfo[calleeLocal];

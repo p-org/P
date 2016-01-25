@@ -8,21 +8,21 @@ OUT: payloadentry_1.p (20, 17): inferred type:  BaseType(INT)
 OUT: payloadentry_1.p (20, 18): inferred type:  BaseType(INT)
 OUT: payloadentry_1.p (24, 4): inferred type:  BaseType(INT)
 OUT: payloadentry_1.p (24, 4): inferred type:  NIL
-OUT: payloadentry_1.p (24, 10): inferred type:  NmdTupType(NmdTupTypeField("first", MapType(BaseType(INT), BaseType(INT))), NmdTupType(NmdTupTypeField("sec", SeqType(BaseType(BOOL))), NIL))
 OUT: payloadentry_1.p (24, 18): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: payloadentry_1.p (24, 23): inferred type:  BaseType(INT)
 OUT: payloadentry_1.p (24, 24): inferred type:  BaseType(INT)
 OUT: payloadentry_1.p (25, 4): inferred type:  BaseType(BOOL)
 OUT: payloadentry_1.p (25, 4): inferred type:  NIL
+OUT: payloadentry_1.p (25, 11): inferred type:  NmdTupType(NmdTupTypeField("first", MapType(BaseType(INT), BaseType(INT))), NmdTupType(NmdTupTypeField("sec", SeqType(BaseType(BOOL))), NIL))
 OUT: payloadentry_1.p (25, 19): inferred type:  SeqType(BaseType(BOOL))
 OUT: payloadentry_1.p (25, 22): inferred type:  BaseType(BOOL)
 OUT: payloadentry_1.p (25, 23): inferred type:  BaseType(INT)
 OUT: payloadentry_1.p (33, 4): inferred type:  BaseType(INT)
 OUT: payloadentry_1.p (33, 4): inferred type:  NIL
+OUT: payloadentry_1.p (33, 10): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("sec", BaseType(BOOL)), NIL))
 OUT: payloadentry_1.p (33, 18): inferred type:  BaseType(INT)
 OUT: payloadentry_1.p (34, 4): inferred type:  BaseType(BOOL)
 OUT: payloadentry_1.p (34, 4): inferred type:  NIL
-OUT: payloadentry_1.p (34, 11): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("sec", BaseType(BOOL)), NIL))
 OUT: payloadentry_1.p (34, 19): inferred type:  BaseType(BOOL)
 OUT: payloadentry_1.p (40, 4): inferred type:  BaseType(INT)
 OUT: payloadentry_1.p (40, 4): inferred type:  NIL
@@ -40,12 +40,12 @@ OUT: payloadentry_1.p (48, 10): inferred type:  BaseType(ANY)
 OUT: payloadentry_1.p (58, 4): inferred type:  BaseType(INT)
 OUT: payloadentry_1.p (58, 4): inferred type:  ERROR
 OUT: payloadentry_1.p (58, 4): inferred type:  NIL
+OUT: payloadentry_1.p (58, 10): inferred type:  NmdTupType(NmdTupTypeField("first", MapType(BaseType(INT), BaseType(INT))), NmdTupType(NmdTupTypeField("sec", SeqType(BaseType(BOOL))), NIL))
 OUT: payloadentry_1.p (58, 18): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: payloadentry_1.p (58, 23): inferred type:  ERROR
 OUT: payloadentry_1.p (58, 24): inferred type:  BaseType(BOOL)
 OUT: payloadentry_1.p (59, 4): inferred type:  BaseType(BOOL)
 OUT: payloadentry_1.p (59, 4): inferred type:  NIL
-OUT: payloadentry_1.p (59, 11): inferred type:  NmdTupType(NmdTupTypeField("first", MapType(BaseType(INT), BaseType(INT))), NmdTupType(NmdTupTypeField("sec", SeqType(BaseType(BOOL))), NIL))
 OUT: payloadentry_1.p (59, 19): inferred type:  SeqType(BaseType(BOOL))
 OUT: payloadentry_1.p (59, 22): inferred type:  BaseType(BOOL)
 OUT: payloadentry_1.p (59, 23): inferred type:  BaseType(INT)

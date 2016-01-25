@@ -41,12 +41,12 @@ OUT: typedef.p (31, 9): inferred type:  BaseType(REAL)
 OUT: typedef.p (31, 15): inferred type:  BaseType(EVENT)
 OUT: typedef.p (31, 21): inferred type:  MapType(NmdTupType(NmdTupTypeField("server", BaseType(INT)), NmdTupType(NmdTupTypeField("seqN", BaseType(INT)), NIL)), NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL)))
 OUT: typedef.p (34, 4): inferred type:  NIL
+OUT: typedef.p (34, 11): inferred type:  MapType(NmdTupType(NmdTupTypeField("server", BaseType(INT)), NmdTupType(NmdTupTypeField("seqN", BaseType(INT)), NIL)), NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL)))
 OUT: typedef.p (34, 18): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL))
 OUT: typedef.p (34, 19): inferred type:  NmdTupType(NmdTupTypeField("server", BaseType(INT)), NmdTupType(NmdTupTypeField("seqN", BaseType(INT)), NIL))
 OUT: typedef.p (34, 26): inferred type:  BaseType(BOOL)
 OUT: typedef.p (34, 29): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL))
 OUT: typedef.p (35, 4): inferred type:  NIL
-OUT: typedef.p (35, 11): inferred type:  MapType(NmdTupType(NmdTupTypeField("server", BaseType(INT)), NmdTupType(NmdTupTypeField("seqN", BaseType(INT)), NIL)), NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL)))
 OUT: typedef.p (35, 18): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL))
 OUT: typedef.p (35, 19): inferred type:  NmdTupType(NmdTupTypeField("server", BaseType(INT)), NmdTupType(NmdTupTypeField("seqN", BaseType(INT)), NIL))
 OUT: typedef.p (35, 26): inferred type:  BaseType(BOOL)

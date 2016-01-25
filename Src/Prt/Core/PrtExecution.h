@@ -113,28 +113,6 @@ extern "C"{
 		PRT_UINT32          *currentActionSetCompact;
 	} PRT_MACHINEINST_PRIV;
 
-	/** Gets an element in a (named) tuple without cloning. Only used for internal manipulation of state variables.
-	* @param[in] tuple A (named) tuple.
-	* @param[in] index A 0-based element index.
-	* @returns The element at index i.
-	*/
-	PRT_API PRT_VALUE * PRT_CALL_CONV PrtTupleGetNC(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index);
-
-	/** Gets an element in a sequence without cloning. Only used for internal manipulation of state variables.
-	* @param[in] seq   A sequence.
-	* @param[in] index A 0-based index s.t. 0 <= index < size(seq).
-	* @returns The value at index.
-	*/
-	PRT_API PRT_VALUE * PRT_CALL_CONV PrtSeqGetNC(_In_ PRT_VALUE *seq, _In_ PRT_VALUE *index);
-
-	/** Gets a value from a map without cloning. Only used for internal manipulation of state variables.
-	* The key must be present the map.
-	* @param[in] map A map.
-	* @param[in] key The key to lookup.
-	* @returns The value to which the key maps.
-	*/
-	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMapGetNC(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key);
-
 	/** Sets a global variable to variable
 	* @param[in,out] context The context to modify.
 	* @param[in] varIndex The index of the variable to modify.
@@ -157,7 +135,7 @@ extern "C"{
 		_In_  PRT_VALUE					*payload
 		);
 
-	void PRT_CALL_CONV PrtSetLocalVarEx(
+	PRT_API void PRT_CALL_CONV PrtSetLocalVarEx(
 		_Inout_ PRT_VALUE **locals,
 		_In_ PRT_UINT32 varIndex,
 		_In_ PRT_VALUE *value,
@@ -396,6 +374,27 @@ extern "C"{
 		PrtHandleError(
 		_In_ PRT_STATUS ex,
 		_In_ PRT_MACHINEINST_PRIV *context
+		);
+
+	void PRT_CALL_CONV
+		PrtAssertDefaultFn(
+		_In_ int condition,
+		_In_opt_z_ PRT_CSTRING message
+		);
+
+	PRT_API void PRT_CALL_CONV
+		PrtUpdateAssertFn(
+		PRT_ASSERT_FUN assertFn
+		);
+
+	PRT_API void PRT_CALL_CONV
+		PrtUpdatePrintFn(
+		PRT_PRINT_FUN printFn
+		);
+
+	void PRT_CALL_CONV
+		PrtPrintfDefaultFn(
+		_In_opt_z_ PRT_CSTRING message
 		);
 
 	PRT_API void

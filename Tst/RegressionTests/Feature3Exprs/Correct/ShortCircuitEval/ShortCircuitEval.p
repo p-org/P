@@ -41,13 +41,11 @@ main machine M
 		  s -= (1);                 
 		  assert (sizeof(s) == 1);   //holds
 		  
-		  //Short-circuit in conditional expressions evaluation:
-		  
-		  if (false && (s[1] == 1)) {;};  //no error for s[1] == 1
-		  if (true || (s[1] == 1)) {;};   //no error for s[1] == 1
-		  //"index out-of-bounds" error by zinger and runtime: see test 
-		  //\RegressionTests\Feature4DataTypes\DynamicError\nonAtomicDataTypes2         
-		  //assert (s[1] == 1);        //"index out-of-bounds" error by zinger and runtime
+                  // P does not support short-circuit evaulation in conditional expressions.
+                  // If we start supporting it later, we should uncomment the following two 
+                  // lines to create a suitable test case for it.
+		  // if (false && (s[1] == 1)) {;};  
+		  // if (true || (s[1] == 1)) {;};   
 
 		  raise halt;
        }    

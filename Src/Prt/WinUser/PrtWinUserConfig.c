@@ -1,21 +1,5 @@
 #include "PrtWinUserConfig.h"
-
-void PRT_CALL_CONV PrtAssert(_In_ int condition, _In_opt_z_ PRT_CSTRING message)
-{
-	if (condition != 0)
-	{
-		return;
-	}
-	else if (message == NULL)
-	{
-		fprintf_s(stderr, "ASSERT");
-	}
-	else 
-	{
-		fprintf_s(stderr, "ASSERT: %s", message);
-	}
-	exit(1);
-}
+#include "Prt.h"
 
 PRT_RECURSIVE_MUTEX PRT_CALL_CONV PrtCreateMutex()
 {

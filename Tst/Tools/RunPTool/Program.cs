@@ -1,4 +1,5 @@
 ﻿using System.Data.SqlTypes;
+using Microsoft.Build.Tasks;
 
 namespace RunPTool
 {
@@ -28,6 +29,7 @@ namespace RunPTool
                 bool reset = false;
                 //set according to the name of the parent directory for "testconfig.txt":
                 string testFilePath = null;
+				string execsToRun = null;
                 for (int i = 0; i < args.Length; i++)
                 {
                     string arg = args[i];
@@ -35,16 +37,27 @@ namespace RunPTool
                     {
                         reset = true;
                     }
+					else if (arg.StartsWith("/run"))
+                    {
+                        execsToRun = arg;
+                    }
                     else if (testFilePath == null && !arg.StartsWith("/"))
                     {
                         testFilePath = arg;
                     }
                     else
                     {
-                        Console.WriteLine("USAGE: RunPTool.exe [file with test dirs] [/reset] [/pciPath:<path to Pci.exe>]");
+                        Console.WriteLine("USAGE: RunPTool.exe [file with test dirs] [/reset] [tools to run]");
+						Console.WriteLine();
+						Console.WriteLine("    where \"tools to run\" option is:");
+						Console.WriteLine("         /runPc");
+						Console.WriteLine("         /runPrt");
+						Console.WriteLine("         /runZing");
+						Console.WriteLine("         /runAll   (default)");
                         return;
                     }
                 }
+				if (execsToRun == null) {execsToRun = "/runAll";}
 
                 //tstDir is where testP.bat is located
                 var tstDir = new DirectoryInfo(Environment.CurrentDirectory);
@@ -82,6 +95,8 @@ namespace RunPTool
                     }
                 }
 
+                //Filter out 
+
                 Console.WriteLine("Running tests");
                 int testCount = 0, failCount = 0;
                 StreamWriter failedTestsWriter = null;
@@ -106,11 +121,11 @@ namespace RunPTool
                 string executingProcessDirectoryName = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
                 string pciFilePath = Path.Combine(executingProcessDirectoryName, "..\\..\\..\\..\\..\\..\\Bld\\Drops\\Plang_Debug_x86\\Compiler\\Pci.exe");
                 pciProcess = new PciProcess(pciFilePath);
-                Test(activeDirs, reset, ref testCount, ref failCount, failedTestsWriter, displayDiffsWriter);
+                Test(activeDirs, reset, execsToRun, ref testCount, ref failCount, failedTestsWriter, displayDiffsWriter);
                 pciProcess.Shutdown();
 
                 Console.WriteLine();
-                Console.WriteLine("Total tests: {0}, Passed tests: {1}. Failed tests: {2}", testCount, testCount - failCount, failCount);
+                Console.WriteLine("Total tests: {0}, Passed tests: {1}, Failed tests: {2}", testCount, testCount - failCount, failCount);
 
                 if (failCount > 0)
                 {
@@ -138,12 +153,9 @@ namespace RunPTool
         }   
 
         //If reset = true, failedDirsWriter and displayDiffsWriter are "null"
-        private static void Test(List<DirectoryInfo> diArray, bool reset,  ref int testCount, ref int failCount,
+        private static void Test(List<DirectoryInfo> diArray, bool reset,  string execsToRun, ref int testCount, ref int failCount,
             StreamWriter failedTestsWriter, StreamWriter displayDiffsWriter)
         {
-            bool isSetExePc = false;
-            bool isSetExeZing = false;
-            bool isSetExePrt = false;
             string executingProcessDirectoryName =
                     Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
             string zingFilePath = Path.Combine(executingProcessDirectoryName,
@@ -151,31 +163,31 @@ namespace RunPTool
             foreach (DirectoryInfo di in diArray)
             {
                 //enumerating files in the top dir only
+                IEnumerable<FileInfo> filesTemp = di.EnumerateFiles(TestFilePattern);
+              
                 foreach (var fi in di.EnumerateFiles(TestFilePattern))
                 {
-                    ++testCount;
-
                     //if di.Name is Pc or Prt or Zing, leaf directory is reached;
-                    //in that case, set isSetExePc, isSetExeZing, isSetExePrt:
                     //(we are assuming that test directories cannot have these names)
                     //Note:these directory names must be exactly Pc or Prt or Zing (they are case-sensitive)
-                    if (di.Name == "Pc")   { isSetExePc = true; }
-                    else if (di.Name == "Zing") { isSetExeZing = true; }
-                    else if (di.Name == "Prt") {isSetExePrt = true; }
-                    else
+                    
+                    if ((di.Name == "Pc") ||
+                        (di.Name == "Zing" && (execsToRun == "/runZing" || execsToRun == "/runAll")) ||
+                        (di.Name == "Prt" && (execsToRun == "/runPrt" || execsToRun == "/runAll")))
                     {
-                        throw new Exception(string.Format("Incorrect directory name {0}; the only allowed names are Pc, Prt or Zing", di.Name));
+                        ++testCount;
+                        var checker = new Checker(di.FullName, reset, di.Name, execsToRun, zingFilePath, pciProcess);
+                        if (!checker.Check(fi.Name))
+                        {
+                            ++failCount;
+                            //add directory of the failing test to "failed_tests.txt": 
+                            failedTestsWriter.WriteLine("{0}", di.FullName);
+                            //add diffing command to "display_diff.bat":
+                            displayDiffsWriter.WriteLine("{0} {1}\\acc_0.txt {1}\\check-output.log", DiffTool,
+                                di.FullName);
+                        }
                     }
 
-                    var checker = new Checker(di.FullName, reset, isSetExePc, isSetExeZing, isSetExePrt, zingFilePath, pciProcess);
-                    if (!checker.Check(fi.Name))
-                    {
-                        ++failCount;
-                        //add directory of the failing test to "failed_tests.txt": 
-                        failedTestsWriter.WriteLine("{0}", di.FullName);
-                        //add diffing command to "display_diff.bat":
-                        displayDiffsWriter.WriteLine("{0} {1}\\acc_0.txt {1}\\check-output.log", DiffTool, di.FullName);
-                    }
                 }
 
                 //Since order of directory processing is significant (Pc should be processed before
@@ -188,7 +200,7 @@ namespace RunPTool
                 {
                     List<DirectoryInfo> dpArray = new List<DirectoryInfo>();
                     dpArray.Add(dp);
-                    Test(dpArray, reset, ref testCount, ref failCount, failedTestsWriter, displayDiffsWriter);
+                    Test(dpArray, reset, execsToRun, ref testCount, ref failCount, failedTestsWriter, displayDiffsWriter);
                 }
             }
 

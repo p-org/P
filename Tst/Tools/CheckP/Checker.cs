@@ -147,6 +147,9 @@ namespace CheckP
 
         private string activeDirectory;
         private bool reset = false;
+        //Pc, Prt or Zing:
+        private string parentDir = null;
+		private string execsToRun = null;
         private bool isSetExePc = false;
         private bool isSetExeZing = false;
         private bool isSetExePrt = false;
@@ -159,13 +162,12 @@ namespace CheckP
             private set;
         }
 
-        public Checker(string activeDirectory, bool reset, bool isSetExePc, bool isSetExeZing, bool isSetExePrt, string zingFilePath, PciProcess pciProcess)
+        public Checker(string activeDirectory, bool reset, string parentDir, string execsToRun, string zingFilePath, PciProcess pciProcess)
         {
             this.activeDirectory = activeDirectory;
             this.reset = reset;
-            this.isSetExePc = isSetExePc;
-            this.isSetExeZing = isSetExeZing;
-            this.isSetExePrt = isSetExePrt;
+            this.parentDir = parentDir;
+			this.execsToRun = execsToRun;
             this.pciProcess = pciProcess;
             this.zingFilePath = zingFilePath;
         }
@@ -312,14 +314,14 @@ namespace CheckP
             //debudding only?
             Console.WriteLine("Running test under {0}...", activeDirectory);
 
-            //If isAdd is true, remove old acceptor files
+            //If isAdd is true, remove old acceptor file
             //Note: this will break the logic of multiple acceptors;
             //if in the future multiple acceptors are needed, re-implement this feature, for example:
             //in adition to the "add" option, add option "reset" for CheckP;
             //testP.bat will also have two alternative options: "reset" and "add";
             //only delete acceptors for "reset" option, but not for "add" option
 
-            const string acceptorFilePattern = "acc_*.txt";
+            const string acceptorFilePattern = "acc_0.txt";
             DirectoryInfo di = new DirectoryInfo(activeDirectory);
             if (isAdd)
             {
@@ -351,7 +353,7 @@ namespace CheckP
             try
             {
                 //Run the component of the P tool chain specified by the "activeDirectory":
-                if (isSetExePc)
+                if (parentDir == "Pc")
                 {
                     result = ValidateOption(opts, IncludePcOption, true, 1, int.MaxValue, out isInclPc, out includesPc) &&
                             result;
@@ -379,7 +381,7 @@ namespace CheckP
                         tmpWriter.WriteLine("EXIT: -1");
                     }
                 }
-                else if (isSetExeZing)
+                else if (parentDir == "Zing")
                 {
                     result = ValidateOption(opts, IncludeZingerOption, true, 1, int.MaxValue, out isInclZinger, out includesZinger) && 
                              result;
@@ -406,7 +408,7 @@ namespace CheckP
                         result = false;
                     }
                 }
-                else if (isSetExePrt)
+                else if (parentDir == "Prt")
                 {
                     result =
                         ValidateOption(opts, IncludePrtOption, true, 1, int.MaxValue, out isInclPrt, out includesPrt) &&
@@ -495,7 +497,7 @@ namespace CheckP
                 }
                 else
                 {
-                    Console.WriteLine("UNREACHABLE: None of the isSetExePc, isSetExeZing, isSetExePrt is set");
+                    Console.WriteLine("Unreachable: parentDir {0} has an invalid value:", parentDir);
                     return false;
                 }
             }

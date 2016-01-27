@@ -37,6 +37,7 @@ namespace Microsoft.Pc
                     goto error;
                 }
             }
+            var currTime = DateTime.UtcNow;
             Compiler compiler;
             if (shortFileNames)
                 compiler = new Compiler(true);
@@ -50,11 +51,13 @@ namespace Microsoft.Pc
             {
                 Console.WriteLine("Pci: initialization succeeded");
             }
-
             while (true)
             {
                 if (!server)
                 {
+                    var nextTime = DateTime.UtcNow;
+                    Console.WriteLine("{0}s", nextTime.Subtract(currTime).Seconds);
+                    currTime = nextTime;
                     Console.Write(">> ");
                 }
                 var input = Console.ReadLine();
@@ -140,7 +143,7 @@ namespace Microsoft.Pc
 
         error:
             {
-                Console.WriteLine("USAGE: Pci.exe [/shortFileNames] [/doNotErase] [/server]");
+                Console.WriteLine("USAGE: Pci.exe [/profile] [/shortFileNames] [/doNotErase] [/server]");
                 return;
             }
         }

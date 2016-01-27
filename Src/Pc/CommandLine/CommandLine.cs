@@ -33,6 +33,12 @@ namespace Microsoft.Pc
 
                     switch (arg)
                     {
+                        case "/profile":
+                            if (colonArg != null)
+                                goto error;
+                            options.profile = true;
+                            break;
+
                         case "/dumpFormulaModel":
                             if (colonArg != null)
                                 goto error;
@@ -114,6 +120,7 @@ namespace Microsoft.Pc
                 Console.WriteLine("/shortFileNames");
                 Console.WriteLine("/printTypeInference");
                 Console.WriteLine("/dumpFormulaModel");
+                Console.WriteLine("/profile");
                 return 0;
             }
         }

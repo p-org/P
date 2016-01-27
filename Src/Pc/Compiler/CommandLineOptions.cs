@@ -13,6 +13,7 @@
 
     public class CommandLineOptions
     {
+        public bool profile;
         public bool analyzeOnly;
         public LivenessOption liveness;
         public string outputDir;
@@ -23,6 +24,7 @@
 
         public CommandLineOptions()
         {
+            this.profile = false;
             this.analyzeOnly = false;
             this.liveness = LivenessOption.None;
             this.outputDir = null;

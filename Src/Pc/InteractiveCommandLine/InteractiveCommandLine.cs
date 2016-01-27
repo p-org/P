@@ -37,7 +37,7 @@ namespace Microsoft.Pc
                     goto error;
                 }
             }
-            var currTime = DateTime.UtcNow;
+            DateTime currTime = DateTime.UtcNow;
             Compiler compiler;
             if (shortFileNames)
                 compiler = new Compiler(true);
@@ -55,12 +55,11 @@ namespace Microsoft.Pc
             {
                 if (!server)
                 {
-                    var nextTime = DateTime.UtcNow;
-                    Console.WriteLine("{0}s", nextTime.Subtract(currTime).Seconds);
-                    currTime = nextTime;
+                    Console.WriteLine("{0}s", DateTime.UtcNow.Subtract(currTime).Seconds);
                     Console.Write(">> ");
                 }
                 var input = Console.ReadLine();
+                currTime = DateTime.UtcNow;
                 var inputArgs = input.Split(' ');
                 if (inputArgs.Length == 0) continue;
                 if (inputArgs[0] == "exit")
@@ -143,7 +142,7 @@ namespace Microsoft.Pc
 
         error:
             {
-                Console.WriteLine("USAGE: Pci.exe [/profile] [/shortFileNames] [/doNotErase] [/server]");
+                Console.WriteLine("USAGE: Pci.exe [/shortFileNames] [/doNotErase] [/server]");
                 return;
             }
         }

@@ -27,4 +27,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmp_0.bl,)
-Comment: (21, 3): Assert failed
+Comment: GotoToItself.p (21, 3): Assert failed

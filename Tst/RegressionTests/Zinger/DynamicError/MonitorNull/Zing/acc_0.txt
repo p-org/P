@@ -19,4 +19,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(ev1.ev != null)
-Comment: (14, 4): Enqueued event must be non-null
+Comment: MonitorNullDetected.p (14, 4): Enqueued event must be non-null

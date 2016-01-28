@@ -22,4 +22,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmp_2.bl,)
-Comment: (16, 11): Assert failed
+Comment: BugReproIdenticalTerms.p (16, 11): Assert failed

@@ -22,4 +22,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_1.bl,)
-Comment: (21, 30): Assert failed
+Comment: MonitorInvocationEventExprPayload.p (21, 30): Assert failed

@@ -44,4 +44,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: (59, 23): Assert failed
+Comment: EventSentAfterSentHaltHandled_v.p (59, 23): Assert failed

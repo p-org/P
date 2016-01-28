@@ -27,7 +27,7 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmp_9.bl,)
-Comment: (36, 22): Assert failed
+Comment: receive10.p (36, 22): Assert failed
 Safety Error Trace
 Trace-Log 1:
 <CreateLog> Created Machine A-0
@@ -44,7 +44,7 @@ Trace-Log 1:
 Error:
 P Assertion failed:
 Expression: assert(tmp_7.bl,)
-Comment: (30, 33): Assert failed
+Comment: receive10.p (30, 33): Assert failed
 Safety Error Trace
 Trace-Log 2:
 <CreateLog> Created Machine A-0
@@ -62,7 +62,7 @@ Trace-Log 2:
 Error:
 P Assertion failed:
 Expression: assert(tmp_9.bl,)
-Comment: (36, 22): Assert failed
+Comment: receive10.p (36, 22): Assert failed
 Safety Error Trace
 Trace-Log 3:
 <CreateLog> Created Machine A-0
@@ -79,7 +79,7 @@ Trace-Log 3:
 Error:
 P Assertion failed:
 Expression: assert(tmp_7.bl,)
-Comment: (30, 33): Assert failed
+Comment: receive10.p (30, 33): Assert failed
 Safety Error Trace
 Trace-Log 4:
 <CreateLog> Created Machine A-0
@@ -97,4 +97,4 @@ Trace-Log 4:
 Error:
 P Assertion failed:
 Expression: assert(tmp_9.bl,)
-Comment: (36, 22): Assert failed
+Comment: receive10.p (36, 22): Assert failed

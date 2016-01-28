@@ -22,4 +22,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_1.bl,)
-Comment: (18, 4): Assert failed
+Comment: NullTriggerPayload.p (18, 4): Assert failed

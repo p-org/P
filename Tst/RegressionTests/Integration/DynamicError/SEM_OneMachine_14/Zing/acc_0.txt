@@ -32,4 +32,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_1.bl,)
-Comment: (34, 4): Assert failed
+Comment: GotoTransInheritance.p (34, 4): Assert failed

@@ -24,4 +24,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_1.bl,)
-Comment: (21, 3): Assert failed
+Comment: SendRaiseInEntry.p (21, 3): Assert failed

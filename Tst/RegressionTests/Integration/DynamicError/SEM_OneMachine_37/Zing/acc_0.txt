@@ -22,4 +22,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_1.bl,)
-Comment: (15, 11): Assert failed
+Comment: NullEventHandler2.p (15, 11): Assert failed

@@ -21,4 +21,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_1.bl,)
-Comment: (21, 4): Assert failed
+Comment: NewMonitor.p (21, 4): Assert failed

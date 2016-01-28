@@ -21,4 +21,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_5.bl,)
-Comment: (35, 4): Assert failed
+Comment: typedef.p (35, 4): Assert failed

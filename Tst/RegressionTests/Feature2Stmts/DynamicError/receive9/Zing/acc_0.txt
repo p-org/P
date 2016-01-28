@@ -28,4 +28,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmp_9.bl,)
-Comment: (31, 22): Assert failed
+Comment: receive9.p (31, 22): Assert failed

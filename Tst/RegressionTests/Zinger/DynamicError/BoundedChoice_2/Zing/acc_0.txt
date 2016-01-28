@@ -30,4 +30,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_1.bl,)
-Comment: (22, 4): Assert failed
+Comment: BoundedChoice_1.p (22, 4): Assert failed

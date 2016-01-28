@@ -44,4 +44,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: (56, 15): Assert failed
+Comment: RaisedHaltHandled.p (56, 15): Assert failed

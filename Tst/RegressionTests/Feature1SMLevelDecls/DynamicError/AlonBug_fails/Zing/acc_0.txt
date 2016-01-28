@@ -21,4 +21,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmp_2.bl,)
-Comment: (10, 10): Assert failed
+Comment: AlonBug_fails.p (10, 10): Assert failed

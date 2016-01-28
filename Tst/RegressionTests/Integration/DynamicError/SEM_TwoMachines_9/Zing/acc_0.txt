@@ -20,4 +20,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(ev2.ev != null)
-Comment: (15, 4): Enqueued event must be non-null
+Comment: NonConstantEventExpr.p (15, 4): Enqueued event must be non-null

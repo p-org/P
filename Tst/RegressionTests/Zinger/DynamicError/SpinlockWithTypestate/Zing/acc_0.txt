@@ -24,7 +24,7 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_6.bl,)
-Comment: (29, 5): Assert failed
+Comment: SpinlockWithTypestate.p (29, 5): Assert failed
 Safety Error Trace
 Trace-Log 1:
 <CreateLog> Created Machine TestDriver-0
@@ -38,7 +38,7 @@ Trace-Log 1:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_6.bl,)
-Comment: (29, 5): Assert failed
+Comment: SpinlockWithTypestate.p (29, 5): Assert failed
 Safety Error Trace
 Trace-Log 2:
 <CreateLog> Created Machine TestDriver-0
@@ -52,7 +52,7 @@ Trace-Log 2:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_13.bl,)
-Comment: (37, 5): Assert failed
+Comment: SpinlockWithTypestate.p (37, 5): Assert failed
 Safety Error Trace
 Trace-Log 3:
 <CreateLog> Created Machine TestDriver-0
@@ -66,4 +66,4 @@ Trace-Log 3:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_13.bl,)
-Comment: (37, 5): Assert failed
+Comment: SpinlockWithTypestate.p (37, 5): Assert failed

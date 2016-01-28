@@ -24,4 +24,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmp_3.bl,)
-Comment: (14, 15): Assert failed
+Comment: NullHandlerInheritedByPushTr.p (14, 15): Assert failed

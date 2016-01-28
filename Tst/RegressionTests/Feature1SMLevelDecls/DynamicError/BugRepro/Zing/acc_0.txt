@@ -264,4 +264,4 @@ Accepting transition
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_62.bl,)
-Comment: (156, 4): Assert failed
+Comment: PingPongBugRepro.p (156, 4): Assert failed

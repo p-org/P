@@ -28,7 +28,7 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: (68, 4): Assert failed
+Comment: SpinlockSameAsRule.p (68, 4): Assert failed
 Safety Error Trace
 Trace-Log 1:
 <CreateLog> Created Machine TestDriver-0
@@ -46,7 +46,7 @@ Trace-Log 1:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: (68, 4): Assert failed
+Comment: SpinlockSameAsRule.p (68, 4): Assert failed
 Safety Error Trace
 Trace-Log 2:
 <CreateLog> Created Machine TestDriver-0
@@ -67,7 +67,7 @@ Trace-Log 2:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 3:
 <CreateLog> Created Machine TestDriver-0
@@ -85,7 +85,7 @@ Trace-Log 3:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 4:
 <CreateLog> Created Machine TestDriver-0
@@ -106,7 +106,7 @@ Trace-Log 4:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 5:
 <CreateLog> Created Machine TestDriver-0
@@ -124,7 +124,7 @@ Trace-Log 5:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 6:
 <CreateLog> Created Machine TestDriver-0
@@ -143,7 +143,7 @@ Trace-Log 6:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: (68, 4): Assert failed
+Comment: SpinlockSameAsRule.p (68, 4): Assert failed
 Safety Error Trace
 Trace-Log 7:
 <CreateLog> Created Machine TestDriver-0
@@ -162,7 +162,7 @@ Trace-Log 7:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: (68, 4): Assert failed
+Comment: SpinlockSameAsRule.p (68, 4): Assert failed
 Safety Error Trace
 Trace-Log 8:
 <CreateLog> Created Machine TestDriver-0
@@ -181,7 +181,7 @@ Trace-Log 8:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: (68, 4): Assert failed
+Comment: SpinlockSameAsRule.p (68, 4): Assert failed
 Safety Error Trace
 Trace-Log 9:
 <CreateLog> Created Machine TestDriver-0
@@ -200,7 +200,7 @@ Trace-Log 9:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: (68, 4): Assert failed
+Comment: SpinlockSameAsRule.p (68, 4): Assert failed
 Safety Error Trace
 Trace-Log 10:
 <CreateLog> Created Machine TestDriver-0
@@ -219,7 +219,7 @@ Trace-Log 10:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: (68, 4): Assert failed
+Comment: SpinlockSameAsRule.p (68, 4): Assert failed
 Safety Error Trace
 Trace-Log 11:
 <CreateLog> Created Machine TestDriver-0
@@ -238,7 +238,7 @@ Trace-Log 11:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: (68, 4): Assert failed
+Comment: SpinlockSameAsRule.p (68, 4): Assert failed
 Safety Error Trace
 Trace-Log 12:
 <CreateLog> Created Machine TestDriver-0
@@ -257,7 +257,7 @@ Trace-Log 12:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 13:
 <CreateLog> Created Machine TestDriver-0
@@ -276,7 +276,7 @@ Trace-Log 13:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 14:
 <CreateLog> Created Machine TestDriver-0
@@ -295,7 +295,7 @@ Trace-Log 14:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 15:
 <CreateLog> Created Machine TestDriver-0
@@ -314,7 +314,7 @@ Trace-Log 15:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 16:
 <CreateLog> Created Machine TestDriver-0
@@ -336,7 +336,7 @@ Trace-Log 16:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 17:
 <CreateLog> Created Machine TestDriver-0
@@ -355,7 +355,7 @@ Trace-Log 17:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 18:
 <CreateLog> Created Machine TestDriver-0
@@ -377,7 +377,7 @@ Trace-Log 18:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 19:
 <CreateLog> Created Machine TestDriver-0
@@ -396,7 +396,7 @@ Trace-Log 19:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 20:
 <CreateLog> Created Machine TestDriver-0
@@ -420,7 +420,7 @@ Trace-Log 20:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: (68, 4): Assert failed
+Comment: SpinlockSameAsRule.p (68, 4): Assert failed
 Safety Error Trace
 Trace-Log 21:
 <CreateLog> Created Machine TestDriver-0
@@ -445,7 +445,7 @@ Trace-Log 21:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: (68, 4): Assert failed
+Comment: SpinlockSameAsRule.p (68, 4): Assert failed
 Safety Error Trace
 Trace-Log 22:
 <CreateLog> Created Machine TestDriver-0
@@ -468,7 +468,7 @@ Trace-Log 22:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: (68, 4): Assert failed
+Comment: SpinlockSameAsRule.p (68, 4): Assert failed
 Safety Error Trace
 Trace-Log 23:
 <CreateLog> Created Machine TestDriver-0
@@ -492,7 +492,7 @@ Trace-Log 23:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: (68, 4): Assert failed
+Comment: SpinlockSameAsRule.p (68, 4): Assert failed
 Safety Error Trace
 Trace-Log 24:
 <CreateLog> Created Machine TestDriver-0
@@ -516,7 +516,7 @@ Trace-Log 24:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 25:
 <CreateLog> Created Machine TestDriver-0
@@ -539,7 +539,7 @@ Trace-Log 25:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 26:
 <CreateLog> Created Machine TestDriver-0
@@ -563,7 +563,7 @@ Trace-Log 26:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 27:
 <CreateLog> Created Machine TestDriver-0
@@ -586,7 +586,7 @@ Trace-Log 27:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 28:
 <CreateLog> Created Machine TestDriver-0
@@ -611,7 +611,7 @@ Trace-Log 28:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 29:
 <CreateLog> Created Machine TestDriver-0
@@ -635,7 +635,7 @@ Trace-Log 29:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 30:
 <CreateLog> Created Machine TestDriver-0
@@ -660,7 +660,7 @@ Trace-Log 30:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 31:
 <CreateLog> Created Machine TestDriver-0
@@ -684,7 +684,7 @@ Trace-Log 31:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 32:
 <CreateLog> Created Machine TestDriver-0
@@ -711,7 +711,7 @@ Trace-Log 32:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: (68, 4): Assert failed
+Comment: SpinlockSameAsRule.p (68, 4): Assert failed
 Safety Error Trace
 Trace-Log 33:
 <CreateLog> Created Machine TestDriver-0
@@ -737,7 +737,7 @@ Trace-Log 33:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: (68, 4): Assert failed
+Comment: SpinlockSameAsRule.p (68, 4): Assert failed
 Safety Error Trace
 Trace-Log 34:
 <CreateLog> Created Machine TestDriver-0
@@ -764,7 +764,7 @@ Trace-Log 34:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 35:
 <CreateLog> Created Machine TestDriver-0
@@ -790,7 +790,7 @@ Trace-Log 35:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 36:
 <CreateLog> Created Machine TestDriver-0
@@ -817,7 +817,7 @@ Trace-Log 36:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed
 Safety Error Trace
 Trace-Log 37:
 <CreateLog> Created Machine TestDriver-0
@@ -843,4 +843,4 @@ Trace-Log 37:
 Error:
 P Assertion failed:
 Expression: assert(tmp_14.bl,)
-Comment: (86, 4): Assert failed
+Comment: SpinlockSameAsRule.p (86, 4): Assert failed

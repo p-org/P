@@ -19,4 +19,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmp_1.bl,)
-Comment: (9, 5): Assert failed
+Comment: FuncInExpr.p (9, 5): Assert failed

@@ -27,4 +27,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmp_4.bl,)
-Comment: (20, 4): Assert failed
+Comment: Push.p (20, 4): Assert failed

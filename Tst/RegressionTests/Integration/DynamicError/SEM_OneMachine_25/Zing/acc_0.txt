@@ -26,4 +26,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmp_6.bl,)
-Comment: (38, 19): Assert failed
+Comment: NewInExit.p (38, 19): Assert failed

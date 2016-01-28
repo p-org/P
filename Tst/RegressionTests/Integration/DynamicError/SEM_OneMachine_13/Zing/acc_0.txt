@@ -25,4 +25,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_1.bl,)
-Comment: (27, 3): Assert failed
+Comment: PushTransInheritance.p (27, 3): Assert failed

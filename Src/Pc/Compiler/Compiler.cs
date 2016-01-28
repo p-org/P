@@ -309,6 +309,11 @@
                     kv.Key == RootFileName && parsedPrograms.Count > 1 ? ComposeKind.Includes : ComposeKind.None);
 
                 Contract.Assert(mkModelResult);
+                string srcFileName = kv.Key;
+                if (Options.shortFileNames)
+                {
+                    srcFileName = Path.GetFileName(srcFileName);
+                }
                 if (kv.Key == RootFileName)
                 {
                     Contract.Assert(rootModel == null);
@@ -331,14 +336,14 @@
                                                 kvp.Value.ToString()));                                              
                         }
                     }
-                    AllModels.Add(new Tuple<string, AST<Model>>(kv.Key, rootModel));
+                    AllModels.Add(new Tuple<string, AST<Model>>(srcFileName, rootModel));
                 }
                 else
                 {
                     modelProgram = MkProgWithSettings(SeenFileNames[kv.Key], new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
                     progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, model), out instResult);
                     Contract.Assert(progressed && instResult.Succeeded);
-                    AllModels.Add(new Tuple<string, AST<Model>>(kv.Key, model));
+                    AllModels.Add(new Tuple<string, AST<Model>>(srcFileName, model));
                 }
             }
 

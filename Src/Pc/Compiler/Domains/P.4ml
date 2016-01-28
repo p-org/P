@@ -984,7 +984,7 @@ domain PStaticTyping extends PData
 	CompTypeRel(t2, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _), t1 = MapType(dom, cod).
 	CompTypeRel(t1, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = MapType(dom, _).      
 	CompTypeRel(t1, inpt)     :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FuncSigTupleType(decl, inpt), decl.name = n, FunAvailable(decl, c.owner).
-	CompTypeRel(t1, t)        :- TypeOfArg1(c, e, t1), e : Return, c = FunDecl(_, _, _, _, t, _, _).
+	CompTypeRel(t1, t)        :- TypeOfArg1(c, e, t1), e : Return, c: FunDecl, TypeExpansion(c.return, t).
 	CompTypeRel(null, plt)    :- CommStmtPLType(c, e, plt), e = Raise(_, NIL), null = BaseType(NULL).
 	CompTypeRel(pt, plt)      :- CommStmtPLType(c, e, plt), e = Raise(_, p), p != NIL, TypeOf(c, p, pt).
 	CompTypeRel(null, plt)    :- SubSE(c, e), e = Send(_, _, NIL), null = BaseType(NULL), CommStmtPLType(c, e, plt).
@@ -998,7 +998,7 @@ domain PStaticTyping extends PData
 	CompTypeRel(value, cod)   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)).
 	CompTypeRel(value, inner) :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)).
 	CompTypeRel(t1, inpt)     :- TypeOfArg1(c, e, t1), e = FunStmt(n, _, _, _), FuncSigTupleType(decl, inpt), decl.name = n, FunAvailable(decl, c.owner).
-	CompTypeRel(t1, t2)       :- TypeOfArg2(c, e, _, t2), e = FunStmt(n, _, x, _), x: Name, FunAvailable(decl, c.owner), decl.name = n, decl.return = t1.
+	CompTypeRel(t1, t2)       :- TypeOfArg2(c, e, _, t2), e = FunStmt(n, _, x, _), x: Name, FunAvailable(decl, c.owner), decl.name = n, TypeExpansion(decl.return, t1).
 
 	//// TypeRel determines the relationship type expressions ta and tb.
     //// If types are not subtype related, then they can

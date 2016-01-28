@@ -902,9 +902,9 @@ namespace Microsoft.Pc
 
         #region Static helpers
 
-        public static string SpanToString(Span span)
+        public static string SpanToString(string srcFileName, Span span)
         {
-            return string.Format("({0}, {1})", span.StartLine, span.StartCol);
+            return string.Format("{0} ({1}, {2})", srcFileName.Replace(@"\", @"\\"), span.StartLine, span.StartCol);
         }
 
         public static string NodeToString(Node n)
@@ -3065,7 +3065,7 @@ namespace Microsoft.Pc
                 var payloadExpr = it.Current.node;
                 var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
                 var srcFileName = funInfo.srcFileName;
-                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0} {1}: Raised event must be non-null", srcFileName, SpanToString(ft.Span)));
+                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0}: Raised event must be non-null", SpanToString(srcFileName, ft.Span)));
                 string traceString = string.Format("\"<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\\n\"", ctxt.machineName);
                 var traceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"), MkZingDot(eventExpr, "name")));
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpPayload");
@@ -3127,7 +3127,7 @@ namespace Microsoft.Pc
                 var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
                 var srcFileName = funInfo.srcFileName;
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpSendPayload");
-                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0} {1}: Enqueued event must be non-null", srcFileName, SpanToString(ft.Span)));
+                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0}: Enqueued event must be non-null", SpanToString(srcFileName, ft.Span)));
                 ctxt.AddSideEffect(assertStmt);
                 if (arg == ZingData.Cnst_Nil)
                 {
@@ -3175,7 +3175,7 @@ namespace Microsoft.Pc
                 it.MoveNext();
                 var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
                 var srcFileName = funInfo.srcFileName;
-                return new ZingTranslationInfo(MkZingAssert(MkZingDot(it.Current.node, "bl"), string.Format("{0} {1}: Assert failed", srcFileName, SpanToString(ft.Span))));
+                return new ZingTranslationInfo(MkZingAssert(MkZingDot(it.Current.node, "bl"), string.Format("{0}: Assert failed", SpanToString(srcFileName, ft.Span))));
             }
         }
 

@@ -149,7 +149,7 @@
             private set;
         }
 
-        public List<AST<Model>> AllModels
+        public List<Tuple<string, AST<Model>>> AllModels
         {
             get;
             private set;
@@ -294,7 +294,7 @@
             bool progressed;
             AST<Model> rootModel = null;
             RootModule = null;
-            AllModels = new List<AST<Model>>();
+            AllModels = new List<Tuple<string, AST<Model>>>();
             foreach (var kv in parsedPrograms)
             {
                 AST<Model> model;
@@ -331,15 +331,14 @@
                                                 kvp.Value.ToString()));                                              
                         }
                     }
-
-                    AllModels.Add(rootModel);
+                    AllModels.Add(new Tuple<string, AST<Model>>(kv.Key, rootModel));
                 }
                 else
                 {
                     modelProgram = MkProgWithSettings(SeenFileNames[kv.Key], new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
                     progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, model), out instResult);
                     Contract.Assert(progressed && instResult.Succeeded);
-                    AllModels.Add(model);
+                    AllModels.Add(new Tuple<string, AST<Model>>(kv.Key, model));
                 }
             }
 
@@ -351,8 +350,9 @@
             {
                 string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
                 StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, "output.4ml")));
-                foreach (var model in AllModels)
+                foreach (var tuple in AllModels)
                 {
+                    var model = tuple.Item2;
                     model.Print(wr);
                 }
                 wr.Close();

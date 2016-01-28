@@ -110,6 +110,7 @@ namespace Microsoft.Pc
 
     internal class FunInfo
     {
+        public string srcFileName;
         public bool isAnonymous;
         public List<string> parameterNames; 
         // if isAnonymous is true, 
@@ -127,8 +128,9 @@ namespace Microsoft.Pc
         public HashSet<string> printArgs;
 
         // if isAnonymous is true, parameters is actually envVars
-        public FunInfo(bool isAnonymous, FuncTerm parameters, AST<FuncTerm> returnType, FuncTerm locals, Node body)
+        public FunInfo(string srcFileName, bool isAnonymous, FuncTerm parameters, AST<FuncTerm> returnType, FuncTerm locals, Node body)
         {
+            this.srcFileName = srcFileName;
             this.isAnonymous = isAnonymous;
             this.returnType = returnType;
             this.body = body;
@@ -217,7 +219,7 @@ namespace Microsoft.Pc
             observesEvents = new List<string>();
             funNameToFunInfo = new Dictionary<string, FunInfo>();
             monitorType = MonitorType.SAFETY;
-            funNameToFunInfo["ignore"] = new FunInfo(false, null, PToZing.PTypeNull, null, Factory.Instance.AddArg(Factory.Instance.MkFuncTerm(PData.Con_NulStmt), PData.Cnst_Skip).Node);
+            funNameToFunInfo["ignore"] = new FunInfo(null, false, null, PToZing.PTypeNull, null, Factory.Instance.AddArg(Factory.Instance.MkFuncTerm(PData.Con_NulStmt), PData.Cnst_Skip).Node);
         }
     }
 
@@ -293,22 +295,21 @@ namespace Microsoft.Pc
         private Dictionary<AST<Node>, string> anonFunToName;
         public Dictionary<AST<FuncTerm>, FuncTerm> typeExpansion;
 
-        public LinkedList<AST<FuncTerm>> GetBin(Dictionary<string, LinkedList<AST<FuncTerm>>> factBins, FuncTerm ft)
+        public LinkedList<Tuple<string,  AST<FuncTerm>>> GetBin(Dictionary<string, LinkedList<Tuple<string, AST<FuncTerm>>>> factBins, FuncTerm ft)
         {
             var fun = (Id)ft.Function;
             return GetBin(factBins, fun.Name);
         }
 
-        public LinkedList<AST<FuncTerm>> GetBin(Dictionary<string, LinkedList<AST<FuncTerm>>> factBins, string name)
+        public LinkedList<Tuple<string, AST<FuncTerm>>> GetBin(Dictionary<string, LinkedList<Tuple<string, AST<FuncTerm>>>> factBins, string name)
         {
             Contract.Requires(!string.IsNullOrEmpty(name));
-            LinkedList<AST<FuncTerm>> bin;
+            LinkedList<Tuple<string, AST<FuncTerm>>> bin;
             if (!factBins.TryGetValue(name, out bin))
             {
-                bin = new LinkedList<AST<FuncTerm>>();
+                bin = new LinkedList<Tuple<string, AST<FuncTerm>>>();
                 factBins.Add(name, bin);
             }
-
             return bin;
         }
 
@@ -331,7 +332,7 @@ namespace Microsoft.Pc
         }
 
         Compiler compiler;
-        public PToZing(Compiler compiler, List<AST<Model>> allModels, AST<Model> modelWithTypes)
+        public PToZing(Compiler compiler, List<Tuple<string, AST<Model>>> allModels, AST<Model> modelWithTypes)
         {
             this.compiler = compiler;
             this.typeContext = new TypeTranslationContext(this);
@@ -339,12 +340,14 @@ namespace Microsoft.Pc
             GenerateTypeInfo(modelWithTypes);
         }
 
-        private void GenerateProgramData(List<AST<Model>> allModels)
+        private void GenerateProgramData(List<Tuple<string, AST<Model>>> allModels)
         {
-            var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
+            var factBins = new Dictionary<string, LinkedList<Tuple<string, AST<FuncTerm>>>>();
 
-            foreach (var model in allModels)
+            foreach (var tuple in allModels)
             {
+                var srcFileName = tuple.Item1;
+                var model = tuple.Item2;
                 model.FindAll(
                     new NodePred[]
                     {
@@ -355,7 +358,7 @@ namespace Microsoft.Pc
                     {
                         var mf = (ModelFact)n;
                         FuncTerm ft = (FuncTerm)mf.Match;
-                        GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
+                        GetBin(factBins, ft).AddLast(new Tuple<string, AST<FuncTerm>>(srcFileName, (AST<FuncTerm>)Factory.Instance.ToAST(ft)));
                     });
             }
 
@@ -366,10 +369,10 @@ namespace Microsoft.Pc
             allStaticFuns = new Dictionary<string, FunInfo>();
             typeExpansion = new Dictionary<AST<FuncTerm>, FuncTerm>();
 
-            LinkedList<AST<FuncTerm>> terms;
+            LinkedList<Tuple<string, AST<FuncTerm>>> terms;
 
             terms = GetBin(factBins, "EventDecl");
-            foreach (var term in terms)
+            foreach (var term in terms.Select(x => x.Item2))
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -394,7 +397,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "MachineDecl");
-            foreach (var term in terms)
+            foreach (var term in terms.Select(x => x.Item2))
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -422,7 +425,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "ObservesDecl");
-            foreach (var term in terms)
+            foreach (var term in terms.Select(x => x.Item2))
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -435,7 +438,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "VarDecl");
-            foreach (var term in terms)
+            foreach (var term in terms.Select(x => x.Item2))
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -452,8 +455,10 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "FunDecl");
-            foreach (var term in terms)
+            foreach (var tuple in terms)
             {
+                var srcFileName = tuple.Item1;
+                var term = tuple.Item2;
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
@@ -470,7 +475,7 @@ namespace Microsoft.Pc
                     var locals = it.Current as FuncTerm;
                     it.MoveNext();
                     var body = it.Current;
-                    var funInfo = new FunInfo(false, parameters, returnTypeName, locals, body);
+                    var funInfo = new FunInfo(srcFileName, false, parameters, returnTypeName, locals, body);
                     if (owner is FuncTerm)
                     {
                         var machineDecl = (FuncTerm)owner;
@@ -493,8 +498,10 @@ namespace Microsoft.Pc
                 anonFunCounter[x] = 0;
             }
             terms = GetBin(factBins, "AnonFunDecl");
-            foreach (var term in terms)
+            foreach (var tuple in terms)
             {
+                var srcFileName = tuple.Item1;
+                var term = tuple.Item2;
                 if (anonFunToName.ContainsKey(term)) continue;
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -509,7 +516,7 @@ namespace Microsoft.Pc
                     if (machineDecl == null)
                     {
                         var funName = "AnonFunStatic" + anonFunCounterStatic;
-                        allStaticFuns[funName] = new FunInfo(true, envVars, PToZing.PTypeNull, locals, body);
+                        allStaticFuns[funName] = new FunInfo(srcFileName, true, envVars, PToZing.PTypeNull, locals, body);
                         anonFunToName[term] = funName;
                         anonFunCounterStatic++;
                     }
@@ -518,7 +525,7 @@ namespace Microsoft.Pc
                         var machineName = GetName(machineDecl, 0);
                         var machineInfo = allMachines[machineName];
                         var funName = "AnonFun" + anonFunCounter[machineName];
-                        machineInfo.funNameToFunInfo[funName] = new FunInfo(true, envVars, PToZing.PTypeNull, locals, body);
+                        machineInfo.funNameToFunInfo[funName] = new FunInfo(srcFileName, true, envVars, PToZing.PTypeNull, locals, body);
                         anonFunToName[term] = funName;
                         anonFunCounter[machineName]++;
                     }
@@ -526,7 +533,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "StateDecl");
-            foreach (var term in terms)
+            foreach (var term in terms.Select(x => x.Item2))
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -561,7 +568,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "TransDecl");
-            foreach (var term in terms)
+            foreach (var term in terms.Select(x => x.Item2))
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -609,7 +616,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "DoDecl");
-            foreach (var term in terms)
+            foreach (var term in terms.Select(x => x.Item2))
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -665,7 +672,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "Annotation");
-            foreach (var term in terms)
+            foreach (var term in terms.Select(x => x.Item2))
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -777,7 +784,7 @@ namespace Microsoft.Pc
 
         void GenerateTypeInfo(AST<Model> model)
         {
-            var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
+            var factBins = new Dictionary<string, LinkedList<Tuple<string, AST<FuncTerm>>>>();
             model.FindAll(
                 new NodePred[]
                 {
@@ -789,11 +796,11 @@ namespace Microsoft.Pc
                 {
                     var mf = (ModelFact)n;
                     FuncTerm ft = (FuncTerm)mf.Match;
-                    GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
+                    GetBin(factBins, ft).AddLast(new Tuple<string, AST<FuncTerm>>(null, (AST<FuncTerm>)Factory.Instance.ToAST(ft)));
                 });
 
             var terms = GetBin(factBins, "TypeOf");
-            foreach (var term in terms)
+            foreach (var term in terms.Select(x => x.Item2))
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -837,7 +844,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "TypeExpansion");
-            foreach (var term in terms)
+            foreach (var term in terms.Select(x => x.Item2))
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -851,7 +858,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "MaxNumLocals");
-            foreach (var term in terms)
+            foreach (var term in terms.Select(x => x.Item2))
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -3056,7 +3063,9 @@ namespace Microsoft.Pc
                 var eventExpr = MkZingDot(it.Current.node, "ev");
                 it.MoveNext();
                 var payloadExpr = it.Current.node;
-                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0}: Raised event must be non-null", SpanToString(ft.Span)));
+                var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
+                var srcFileName = funInfo.srcFileName;
+                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0} {1}: Raised event must be non-null", srcFileName, SpanToString(ft.Span)));
                 string traceString = string.Format("\"<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\\n\"", ctxt.machineName);
                 var traceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"), MkZingDot(eventExpr, "name")));
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpPayload");
@@ -3115,8 +3124,10 @@ namespace Microsoft.Pc
                 AST<Node> eventExpr = MkZingDot(it.Current.node, "ev");
                 it.MoveNext();
                 AST<Node> arg = it.Current.node;
+                var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
+                var srcFileName = funInfo.srcFileName;
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpSendPayload");
-                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0}: Enqueued event must be non-null", SpanToString(ft.Span)));
+                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0} {1}: Enqueued event must be non-null", srcFileName, SpanToString(ft.Span)));
                 ctxt.AddSideEffect(assertStmt);
                 if (arg == ZingData.Cnst_Nil)
                 {
@@ -3162,7 +3173,9 @@ namespace Microsoft.Pc
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
-                return new ZingTranslationInfo(MkZingAssert(MkZingDot(it.Current.node, "bl"), string.Format("{0}: Assert failed", SpanToString(ft.Span))));
+                var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
+                var srcFileName = funInfo.srcFileName;
+                return new ZingTranslationInfo(MkZingAssert(MkZingDot(it.Current.node, "bl"), string.Format("{0} {1}: Assert failed", srcFileName, SpanToString(ft.Span))));
             }
         }
 

@@ -344,10 +344,8 @@ Stmt
 	| WHILE LPAREN Exp RPAREN Stmt                            { PushWhile(ToSpan(@1));                                   }
 	| IF LPAREN Exp RPAREN Stmt ELSE Stmt %prec ELSE          { PushIte(true, ToSpan(@1));                               }					
 	| IF LPAREN Exp RPAREN Stmt		                          { PushIte(false, ToSpan(@1));                              }
-	| NEW ID LPAREN RPAREN SEMICOLON								{ PushNewStmt($2.str, ToSpan(@2), $2.str, ToSpan(@2), false, ToSpan(@1)); }
-	| NEW ID LPAREN SingleExprArgList RPAREN SEMICOLON 				{ PushNewStmt($2.str, ToSpan(@2), $2.str, ToSpan(@2), true, ToSpan(@1)); }
-	| NEW ID MODELS ID LPAREN RPAREN SEMICOLON						{ PushNewStmt($4.str, ToSpan(@4), $2.str, ToSpan(@2), false, ToSpan(@1)); }				  
-    | NEW ID MODELS ID LPAREN SingleExprArgList RPAREN SEMICOLON	{ PushNewStmt($4.str, ToSpan(@4), $2.str, ToSpan(@2), true, ToSpan(@1)); }
+	| NEW ID LPAREN RPAREN SEMICOLON						  { PushNewStmt($2.str, ToSpan(@2), false, ToSpan(@1)); }
+	| NEW ID LPAREN SingleExprArgList RPAREN SEMICOLON 		  { PushNewStmt($2.str, ToSpan(@2), true, ToSpan(@1)); }
 	| ID LPAREN RPAREN SEMICOLON                              { PushFunStmt($1.str, false, ToSpan(@1));                  }
 	| ID LPAREN ExprArgList RPAREN SEMICOLON                  { PushFunStmt($1.str, true,  ToSpan(@1));                  }						
 	| RAISE Exp SEMICOLON                                     { PushRaise(false, ToSpan(@1));                            }
@@ -464,10 +462,8 @@ Exp_0
     | SIZEOF  LPAREN Exp RPAREN              { PushUnExpr(P_Root.UserCnstKind.SIZEOF, ToSpan(@1));      }
     | DEFAULT LPAREN Type RPAREN             { PushDefaultExpr(ToSpan(@1));                             }
 	| FRESH LPAREN ID RPAREN                 { PushFreshExpr($3.str, ToSpan(@3), ToSpan(@1));           }
-	| NEW ID LPAREN RPAREN								{ PushNewExpr($2.str, ToSpan(@2), $2.str, ToSpan(@2), false, ToSpan(@1)); }
-	| NEW ID LPAREN SingleExprArgList RPAREN			{ PushNewExpr($2.str, ToSpan(@2), $2.str, ToSpan(@2), true, ToSpan(@1)); }
-	| NEW ID MODELS ID LPAREN RPAREN					{ PushNewExpr($4.str, ToSpan(@4), $2.str, ToSpan(@2), false, ToSpan(@1)); }
-	| NEW ID MODELS ID LPAREN SingleExprArgList RPAREN	{ PushNewExpr($4.str, ToSpan(@4), $2.str, ToSpan(@2),false, ToSpan(@1)); }
+	| NEW ID LPAREN RPAREN								{ PushNewExpr($2.str, ToSpan(@2), false, ToSpan(@1)); }
+	| NEW ID LPAREN SingleExprArgList RPAREN			{ PushNewExpr($2.str, ToSpan(@2), true, ToSpan(@1)); }
 	| LPAREN Exp COMMA             RPAREN    { PushTupleExpr(true);                                     }
 	| LPAREN Exp COMMA ExprArgList RPAREN    { PushTupleExpr(false);                                    }
 	| ID LPAREN RPAREN                       { PushFunExpr($1.str, false, ToSpan(@1));                  }

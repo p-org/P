@@ -27,7 +27,7 @@ domain PData
                                
     //// Expressions
     Name       ::= new (name: String).
-    New        ::= new (name: String, arg: any Expr + { NIL }, subst: String).
+    New        ::= new (name: String, arg: any Expr + { NIL }).
     FunApp     ::= new (name: String, args: any Exprs + { NIL }).
     NulApp     ::= new (op: Integer + Boolean + { THIS, NONDET, FAIRNONDET, NULL, HALT }).
     UnApp      ::= new (op: { NOT, NEG, KEYS, VALUES, SIZEOF }, arg1: any Expr).
@@ -44,7 +44,7 @@ domain PData
     ExprsExt   ::= Expr + Exprs + NamedExprs.
 
     //// Statements
-    NewStmt  ::= new (name: String, arg: any Expr + { NIL }, subst: String).
+    NewStmt  ::= new (name: String, arg: any Expr + { NIL }).
     Raise    ::= new (ev: any Expr, arg: any Expr + { NIL }).
     Send     ::= new (dest: any Expr, ev: any Expr, arg: any Expr + { NIL }).
     Monitor  ::= new (ev: any Expr, arg: any Expr + { NIL }).
@@ -292,8 +292,8 @@ domain PStaticTyping extends PData
 	SubSE(c, e) :- SubSE(c, Send(_, _, e)), e: Expr.
 	SubSE(c, e) :- SubSE(c, Raise(e, _)).
 	SubSE(c, e) :- SubSE(c, Raise(_, e)), e: Expr.
-	SubSE(c, e) :- SubSE(c, NewStmt(_, e, _)), e: Expr.
-	SubSE(c, e) :- SubSE(c, New(_, e, _)), e: Expr.
+	SubSE(c, e) :- SubSE(c, NewStmt(_, e)), e: Expr.
+	SubSE(c, e) :- SubSE(c, New(_, e)), e: Expr.
 	SubSE(c, es) :- SubSE(c, FunApp(_, es)), es: Exprs.
 	SubSE(c, e) :- SubSE(c, UnApp(_, e)).
 	SubSE(c, e1), SubSE(c, e2) :- SubSE(c, BinApp(_, e1, e2)).
@@ -374,14 +374,12 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Cast can never succeed"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2), TypeExpansion(t2, t2'), TypeRel(t1, t2', k), k = EMPTY.
 
-    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, REAL, _, _, _).
-    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, MODEL, _, _, _).
-	[ rule_Classes = '"error, msg: Monitors cannot be created with "new""']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, MONITOR, _, _, _);
-									  SubSE(c, e), e = New(_, _, n'), MachineDecl(n', MONITOR, _, _, _).
+    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _), MachineDecl(n, REAL, _, _, _).
+    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _), MachineDecl(n, MODEL, _, _, _).
+	[ rule_Classes = '"error, msg: Monitor cannot be created"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), MachineDecl(n, MONITOR, _, _, _).
 	[ rule_Classes = '"error, msg: Undefined machine type"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _);
-									  SubSE(c, e), e = New(_, _, n'), no MachineDecl(n', _, _, _, _).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), no MachineDecl(n, _, _, _, _).
 	
     TypeOf(c, e, t2)               :- TypeOfArg2(c, e, _, t2), e : Field, t2 != ERROR.
 	[ rule_Classes = '"error, msg: Bad field name"']
@@ -487,14 +485,11 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: "while (...)" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : While, t1 != BaseType(BOOL).
                
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), MachineDecl(n, _, _, _, _).   
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _), MachineDecl(n, kind, _, _, _), kind != MONITOR.   
+	[ rule_Classes = '"error, msg: Monitor cannot be created"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _), MachineDecl(n, MONITOR, _, _, _).
 	[ rule_Classes = '"error, msg: Undeclared machine"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, _, _, _, _);
-									  SubSE(c, e), e = NewStmt(_, _, n'), no MachineDecl(n', _, _, _, _).
-	[ rule_Classes = '"error, msg: Substitution machine cannot be monitor"']
-	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, n'), n != n', MachineDecl(n', MONITOR, _, _, _).   
-	[ rule_Classes = '"error, msg: Monitor machine cannot be substituted"']
-	TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, n'), n != n', MachineDecl(n, MONITOR, _, _, _).   
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _), no MachineDecl(n, _, _, _, _).
 
 	//// Rules for raise.
     TypeOf(c, e, NIL)              :- CommStmtPLType(c, e, plt), e = Raise(_, NIL),              ///// < raise has NIL payload,
@@ -636,13 +631,13 @@ domain PStaticTyping extends PData
 	//// The type of the first sub-expression in a Typeable with at least one sub-expression.
     TypeOfArg1 ::= (cntxt: TypingContext, expr: Typeable, type1: TypeExpr + { ERROR, NIL }).
 
-	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = New(_, e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = New(_, e1), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = FunApp(_, e1), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = UnApp(_, e1), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Cast(e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Tuple(e1), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NamedTuple(e1), TypeOf(c, e1, t1).
-	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NewStmt(_, e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NewStmt(_, e1), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = FunStmt(_, e1, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = UnStmt(_, e1), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Return(e1), TypeOf(c, e1, t1).
@@ -918,8 +913,8 @@ domain PStaticTyping extends PData
 	Impure ::= (FunDecl).
 
 	Impure(c) :- SubSE(c, e), c : FunDecl, e = BinStmt(_, e', e''), IsLValue(c, e', TRUE).
-	Impure(c) :- SubSE(c, e), c : FunDecl, e = NewStmt(_, _, _).
-	Impure(c) :- SubSE(c, e), c : FunDecl, e = New(_, _, _).
+	Impure(c) :- SubSE(c, e), c : FunDecl, e = NewStmt(_, _).
+	Impure(c) :- SubSE(c, e), c : FunDecl, e = New(_, _).
 	Impure(c) :- SubSE(c, e), c : FunDecl, e = Send(_, _, _). 
 	Impure(c) :- c: FunDecl, ControlImpure(c).
 	Impure(c) :- SubSE(c, e), e = FunApp(n, _), c : FunDecl, called.name = n, FunAvailable(called, c.owner), Impure(called).
@@ -928,7 +923,7 @@ domain PStaticTyping extends PData
 
     [ rule_Classes = '"error, msg: this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);" "']
     PurityError(c, e') :- 
-       SubSE(c, e), e = New(_, e', _),        e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
+       SubSE(c, e), e = New(_, e'),           e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = UnApp(_, e'),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = BinApp(_, e', _),     e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = BinApp(_, _, e'),     e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
@@ -936,7 +931,7 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Cast(e', _),          e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
        SubSE(c, e), e = Exprs(e', _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);              
        SubSE(c, e), e = NamedExprs(_, e', _), e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
-       SubSE(c, e), e = NewStmt(_, e', _),    e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
+       SubSE(c, e), e = NewStmt(_, e'),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Raise(e', _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Raise(_, e'),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);        
        SubSE(c, e), e = Send(e', _, _),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
@@ -953,7 +948,7 @@ domain PStaticTyping extends PData
 
     [ rule_Classes = '"error, msg: new M(...) can only be called like "new M(...);" or "x = new M(...);" "']
     PurityError(c, e') :- 
-       SubSE(c, e), e = New(_, e', _),        e' : New;
+       SubSE(c, e), e = New(_, e'),           e' : New;
        SubSE(c, e), e = UnApp(_, e'),         e' : New;
        SubSE(c, e), e = BinApp(_, e', _),     e' : New;
        SubSE(c, e), e = BinApp(_, _, e'),     e' : New;    
@@ -961,7 +956,7 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Cast(e', _),          e' : New;    
        SubSE(c, e), e = Exprs(e', _),         e' : New;              
        SubSE(c, e), e = NamedExprs(_, e', _), e' : New;
-       SubSE(c, e), e = NewStmt(_, e', _),    e' : New;
+       SubSE(c, e), e = NewStmt(_, e'),       e' : New;
        SubSE(c, e), e = Raise(e', _),         e' : New;
        SubSE(c, e), e = Raise(_, e'),         e' : New;        
        SubSE(c, e), e = Send(e', _, _),       e' : New;

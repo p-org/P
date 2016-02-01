@@ -2507,7 +2507,7 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldNew(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
-            var typeName = GetName(ft, 2);
+            var typeName = GetName(ft, 0);
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();

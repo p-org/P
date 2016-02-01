@@ -495,12 +495,11 @@
             stmtStack.Push(raiseStmt);
         }
 
-        private void PushNewStmt(string name, Span nameSpan, string substName, Span substNameSpan, bool hasArgs, Span span)
+        private void PushNewStmt(string name, Span nameSpan, bool hasArgs, Span span)
         {
             Contract.Assert(!hasArgs || exprsStack.Count > 0);
             var newStmt = P_Root.MkNewStmt();
             newStmt.name = MkString(name, nameSpan);
-            newStmt.subst = MkString(substName, substNameSpan);
             newStmt.Span = span;
             if (hasArgs)
             {
@@ -522,12 +521,11 @@
             stmtStack.Push(newStmt);
         }
 
-        private void PushNewExpr(string name, Span nameSpan, string substName, Span substNameSpan, bool hasArgs, Span span)
+        private void PushNewExpr(string name, Span nameSpan, bool hasArgs, Span span)
         {
             Contract.Assert(!hasArgs || exprsStack.Count > 0);
             var newExpr = P_Root.MkNew();
             newExpr.name = MkString(name, nameSpan);
-            newExpr.subst = MkString(substName, substNameSpan);
             newExpr.Span = span;
             if (hasArgs)
             {

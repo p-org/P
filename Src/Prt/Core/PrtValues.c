@@ -197,30 +197,103 @@ PRT_VALUE * PRT_CALL_CONV PrtMkMachineValue(_In_ PRT_MACHINEID value)
 	return retVal;
 }
 
-PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(
-	_In_ void *value, 
-	_In_ PRT_GUID typeTag,
-	_In_ PRT_FORGN_CLONE       cloner,
-	_In_ PRT_FORGN_FREE        freer,
-	_In_ PRT_FORGN_GETHASHCODE hasher,
-	_In_ PRT_FORGN_ISEQUAL     eqTester)
+PRT_UINT64 MkDefaultForeignValue(_In_ PRT_UINT16 typeTag)
 {
-	PrtAssert(cloner != NULL, "Bad cloner");
-	PrtAssert(freer != NULL, "Bad freer");
-	PrtAssert(hasher != NULL, "Bad hasher");
-	PrtAssert(eqTester != NULL, "Bad equality tester");
+	return 0;
+}
 
+PRT_UINT64 CloneForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal)
+{
+	return frgnVal;
+}
+
+void FreeForeignValue(_In_ PRT_UINT16 typeTag, _Inout_ PRT_UINT64 frgnVal)
+{
+
+}
+
+PRT_UINT32 HashForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal)
+{
+	return (PRT_UINT32)frgnVal;
+}
+
+PRT_BOOLEAN IsEqualForeignValue(_In_ PRT_UINT16 typeTag1, _In_ PRT_UINT64 frgnVal1, _In_ PRT_UINT16 typeTag2, _In_ PRT_UINT64 frgnVal2)
+{
+	return typeTag1 == typeTag2 && frgnVal1 == frgnVal2;
+}
+
+PRT_FORGN_MKDEF PrtMkDefaultForeignValue = &MkDefaultForeignValue;
+PRT_FORGN_CLONE PrtCloneForeignValue = &CloneForeignValue;
+PRT_FORGN_FREE PrtFreeForeignValue = &FreeForeignValue;
+PRT_FORGN_GETHASHCODE PrtHashForeignValue = &HashForeignValue;
+PRT_FORGN_ISEQUAL PrtIsEqualForeignValue = &IsEqualForeignValue;
+
+void PRT_CALL_CONV PrtUpdateForeignFn(
+	PRT_FORGN_MKDEF MkDefault,
+	PRT_FORGN_CLONE Clone,
+	PRT_FORGN_FREE Free,
+	PRT_FORGN_GETHASHCODE Hash,
+	PRT_FORGN_ISEQUAL IsEqual)
+{
+	PrtMkDefaultForeignValue = MkDefault;
+	PrtCloneForeignValue = Clone;
+	PrtFreeForeignValue = Free;
+	PrtHashForeignValue = Hash;
+	PrtIsEqualForeignValue = IsEqual;
+}
+
+PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(
+	_In_ PRT_UINT16 typeTag,
+	_In_ PRT_UINT64 value)
+{
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 	PRT_FORGNVALUE *frgn = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
 	retVal->discriminator = PRT_VALKIND_FORGN;
 	retVal->valueUnion.frgn = frgn;
-	frgn->value = cloner(typeTag, value);
 	frgn->typeTag = typeTag;
-	frgn->cloner = cloner;
-	frgn->freer = freer;
-	frgn->hasher = hasher;
-	frgn->eqTester = eqTester;
+	frgn->value = PrtCloneForeignValue(typeTag, value);
 	return retVal;
+}
+
+PRT_UINT64 *foreignTypeToValueCounter;
+PRT_UINT16 foreignTypeToValueCounterSize;
+PRT_VALUE * PRT_CALL_CONV PrtMkFreshForeignValue(
+	_In_ PRT_TYPE *type)
+{
+	PrtAssert(type->typeKind == PRT_KIND_FORGN, "Expected foreign type");
+	PRT_UINT16 typeTag = type->typeUnion.typeTag;
+	if (foreignTypeToValueCounterSize <= typeTag)
+	{
+		PRT_UINT64 *oldValueCounter = foreignTypeToValueCounter;
+		PRT_UINT16 oldValueCounterSize = foreignTypeToValueCounterSize;
+		foreignTypeToValueCounterSize = 2 * typeTag + 1;
+		foreignTypeToValueCounter = (PRT_UINT64 *)malloc(sizeof(PRT_UINT64)* (foreignTypeToValueCounterSize));
+		for (PRT_UINT16 i = 0; i < oldValueCounterSize; i++)
+		{
+			foreignTypeToValueCounter[i] = oldValueCounter[i];
+		}
+		for (PRT_UINT16 i = oldValueCounterSize; i < foreignTypeToValueCounterSize; i++)
+		{
+			foreignTypeToValueCounter[i] = 0;
+		}
+		PrtFree(oldValueCounter);
+	}
+	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+	PRT_FORGNVALUE *frgn = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
+	retVal->discriminator = PRT_VALKIND_FORGN;
+	retVal->valueUnion.frgn = frgn;
+	frgn->typeTag = typeTag;
+	frgn->value = foreignTypeToValueCounter[typeTag] + 1;
+	foreignTypeToValueCounter[typeTag] = frgn->value;
+	return retVal;
+}
+
+void PRT_CALL_CONV PrtCleanupForeignData()
+{
+	if (foreignTypeToValueCounter != NULL)
+	{
+		PrtFree(foreignTypeToValueCounter);
+	}
 }
 
 PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
@@ -247,15 +320,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 		PRT_FORGNVALUE *frgn = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
 		retVal->discriminator = PRT_VALKIND_FORGN;
 		retVal->valueUnion.frgn = frgn;
-		frgn->value = NULL;
-		frgn->typeTag.data1 = 0;
-		frgn->typeTag.data2 = 0;
-		frgn->typeTag.data3 = 0;
-		frgn->typeTag.data4 = 0;
-		frgn->cloner = NULL;
-		frgn->freer = NULL;
-		frgn->hasher = NULL;
-		frgn->eqTester = NULL;
+		frgn->value = PrtMkDefaultForeignValue(type->typeUnion.typeTag);
 		return retVal;
 	}
 	case PRT_KIND_MAP:
@@ -968,7 +1033,7 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE* inputValue)
 		return PrtGetHashCodeUInt32(0x02000000 ^ ((PRT_UINT32)inputValue->valueUnion.nt));
 	case PRT_VALKIND_FORGN:
 	{
-		return 0x08000000 ^ inputValue->valueUnion.frgn->hasher(inputValue->valueUnion.frgn->typeTag, ((PRT_FORGNVALUE*)inputValue)->value);
+		return 0x08000000 ^ PrtHashForeignValue(inputValue->valueUnion.frgn->typeTag, inputValue->valueUnion.frgn->value);
 	}
 	case PRT_VALKIND_MAP:
 	{
@@ -1096,7 +1161,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE *value1, _In_ PRT_VALUE
 	{
 		PRT_FORGNVALUE *fVal1 = value1->valueUnion.frgn;
 		PRT_FORGNVALUE *fVal2 = value2->valueUnion.frgn;
-		return fVal1->eqTester(fVal1->typeTag, fVal1->value, fVal2->typeTag, fVal2->value);
+		return PrtIsEqualForeignValue(fVal1->typeTag, fVal1->value, fVal2->typeTag, fVal2->value);
 	}
 	case PRT_VALKIND_MAP:
 	{
@@ -1193,12 +1258,8 @@ PRT_VALUE * PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE *value)
 		PRT_FORGNVALUE *cVal = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
 		retVal->discriminator = PRT_VALKIND_FORGN;
 		retVal->valueUnion.frgn = cVal;
-		cVal->value = fVal->cloner(fVal->typeTag, fVal->value);
 		cVal->typeTag = fVal->typeTag;
-		cVal->cloner = fVal->cloner;
-		cVal->freer = fVal->freer;
-		cVal->hasher = fVal->hasher;
-		cVal->eqTester = fVal->eqTester;
+		cVal->value = PrtCloneForeignValue(fVal->typeTag, fVal->value);
 		return retVal;
 	}
 	case PRT_VALKIND_MAP:
@@ -1468,7 +1529,7 @@ void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE *value)
 	case PRT_VALKIND_FORGN:
 	{
 		PRT_FORGNVALUE *fVal = value->valueUnion.frgn;
-		fVal->freer(fVal->typeTag, fVal->value);
+		PrtFreeForeignValue(fVal->typeTag, fVal->value);
 		PrtFree(fVal);
 		PrtFree(value);
 		break;

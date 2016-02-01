@@ -1,4 +1,5 @@
 array PRT_VALUE_ARRAY[] PRT_VALUE;
+array int_ARRAY[] int;
 
 class PRT_VALUE {
     PRT_TYPE type;
@@ -47,7 +48,14 @@ class PRT_VALUE {
 		}
 
 		if (tkind == PRT_TYPE_KIND.PRT_KIND_INT)
+		{
 			trace("{0}", value.nt);
+		}
+
+		if (tkind == PRT_TYPE_KIND.PRT_KIND_FORGN)
+		{
+		    trace("${0}", value.nt);
+		}
 
 		if (tkind == PRT_TYPE_KIND.PRT_KIND_MAP)
 		{
@@ -123,7 +131,7 @@ class PRT_VALUE {
 		value.map = null;
 
 		if (type.typeKind == PRT_TYPE_KIND.PRT_KIND_ANY) {
-		  value.type =  PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL); 
+		    value.type =  PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL); 
 		} else if (type.typeKind == PRT_TYPE_KIND.PRT_KIND_TUPLE || type.typeKind == PRT_TYPE_KIND.PRT_KIND_NMDTUP) {
 			value.tuple = new PRT_VALUE_ARRAY[type.arity];
 			i = 0;
@@ -138,6 +146,41 @@ class PRT_VALUE {
 		}
 		return value;
     }
+
+	static int_ARRAY foreignValueCounter;
+	static PRT_VALUE PrtMkFreshForeignValue(PRT_TYPE type)
+	{
+		int_ARRAY oldCounter;
+	    int i;
+		PRT_VALUE retVal;
+
+		retVal = PRT_VALUE.PrtMkDefaultValue(type);
+	    assert(type.typeKind == PRT_TYPE_KIND.PRT_KIND_FORGN);
+		if (foreignValueCounter == null)
+		{
+		    foreignValueCounter = new int_ARRAY[1];
+			foreignValueCounter[0] = 0;
+		}
+		if (sizeof(foreignValueCounter) <= type.typeTag)
+		{
+			oldCounter = foreignValueCounter;
+			foreignValueCounter = new int_ARRAY[2 * type.typeTag + 1];
+			i = 0;
+		    while (i < sizeof(oldCounter))
+			{
+			    foreignValueCounter[i] = oldCounter[i];
+				i = i + 1;
+			}
+			while (i < sizeof(foreignValueCounter))
+			{
+			    foreignValueCounter[i] = 0;
+				i = i + 1;
+			}
+		}
+		retVal.nt = foreignValueCounter[type.typeTag] + 1;
+		foreignValueCounter[type.typeTag] = retVal.nt;
+		return retVal;
+	}
 
     static PRT_VALUE PrtCloneValue(PRT_VALUE value) {
         int i;
@@ -193,6 +236,9 @@ class PRT_VALUE {
 
 		if (tkind == PRT_TYPE_KIND.PRT_KIND_INT)
 			return vkind == PRT_TYPE_KIND.PRT_KIND_INT;
+
+		if (tkind == PRT_TYPE_KIND.PRT_KIND_FORGN)
+		    return vkind == PRT_TYPE_KIND.PRT_KIND_FORGN && type.typeTag == value.type.typeTag;
 
 		if (tkind == PRT_TYPE_KIND.PRT_KIND_MAP)
 		{
@@ -338,6 +384,9 @@ class PRT_VALUE {
 
 		if (kind1 == PRT_TYPE_KIND.PRT_KIND_INT)
 			return value1.nt == value2.nt;
+		
+		if (kind1 == PRT_TYPE_KIND.PRT_KIND_FORGN)
+		    return type1.typeTag == type2.typeTag && value1.nt == value2.nt;
 
 		if (kind1 == PRT_TYPE_KIND.PRT_KIND_MAP)
 		{
@@ -888,5 +937,3 @@ class PRT_MAP {
 		return true;
     }	
 };
-
-

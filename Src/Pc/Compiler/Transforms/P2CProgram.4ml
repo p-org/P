@@ -83,8 +83,15 @@ transform P2CProgram (in:: P) returns (out:: C)
     /**********     Create C Enums for P Decls         ***********/
     /*************************************************************/
 	EventDeclExt ::= EventDecl + { NULL, HALT }.
-	DeclId ::= (decl: PDecl + { NULL, HALT, PUSH }, id: Natural, cname: String).
+	DeclId ::= (decl: PDecl + TypeDef + { NULL, HALT, PUSH }, id: Natural, cname: String).
 	
+	//// (0) Foreign types
+	DeclId(d, id, cn) :- d is TypeDef(name, NIL), id = toOrdinal(d, 0, { d' | d' is TypeDef(_, NIL) }), cn = strJoin("P_FORGN_TYPE_", name).
+	HOut(0, out.EnmDef(NIL, "P_FORGN_TYPES", list)) :- 
+	   list = toList(#Elements, NIL, { enumMember | 
+									   DeclId(d, id, cn), d : TypeDef, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_FORGN_TYPES_COUNT"), size = count({d | d is TypeDef(_, NIL)}) }).  
+
 	//// (1) EventDecls - Id 0, 1 are reserved for null, halt event, which can appear in transition tables.
 	DeclId(NULL, 0, "_P_EVENT_NULL").
 	DeclId(HALT, 1, "_P_EVENT_HALT").
@@ -305,6 +312,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	TypeDepNum  ::= (id: Natural, type: TypeExpr).
 
 	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.BaseType.
+	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.NameType. 
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = SeqType(t'), TypeDepNum(j, t'), i = j + 1.  
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = MapType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1.  
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = TupType(t', NIL), TypeDepNum(j, t'), i = j + 1.  
@@ -319,13 +327,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 	TypeConstant(NIL, -1, NIL).
 
 	//// Base types
-	BaseType2Kind ::= ({ NULL, BOOL, INT, EVENT, REAL, FOREIGN, ANY }, String).
+	BaseType2Kind ::= ({ NULL, BOOL, INT, EVENT, REAL, ANY }, String).
 	BaseType2Kind(NULL, "PRT_KIND_NULL").
 	BaseType2Kind(BOOL, "PRT_KIND_BOOL").
 	BaseType2Kind(INT, "PRT_KIND_INT").
 	BaseType2Kind(EVENT, "PRT_KIND_EVENT").
 	BaseType2Kind(REAL, "PRT_KIND_MACHINE").
-	BaseType2Kind(FOREIGN, "PRT_KIND_FORGN").
 	BaseType2Kind(ANY, "PRT_KIND_ANY").
 	
 	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.BaseType(base), BaseType2Kind(base, kind),
@@ -333,6 +340,15 @@ transform P2CProgram (in:: P) returns (out:: C)
 								def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								typeName = strJoin("P_GEND_TYPE_", toString(m)),
                                 typeStruct = out.Init(Args(Ident(kind), Args(Ident("NULL"), NIL))).						              
+	
+	//// Foreign types
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), 
+								defs = out.Section(before, def),
+								def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
+								typeName = strJoin("P_GEND_TYPE_", toString(m)),
+								indexName = strJoin("P_FORGN_TYPE_", name),
+                                typeStruct = out.Init(Args(Ident("PRT_KIND_FORGN"), 
+								                      Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), Ident(indexName)), NIL))).						              
 	
 	//// Complex type Seq 
 	//// (cast to PRT_MAPTYPE * is used to avoid compiler warnings when initializing union)
@@ -1687,6 +1703,10 @@ transform P2CProgram (in:: P) returns (out:: C)
 									ec = out.FunApp(Ident("PrtMkDefaultValue"), Args(out.UnApp(ADDR, Ident(typeName)), NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+									e = in.Fresh(name), type = in.NameType(name), TypeExpansion(type, etype), TypeId(typeIndex, etype), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),
+									ec = out.FunApp(Ident("PrtMkFreshForeignValue"), Args(out.UnApp(ADDR, Ident(typeName)), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = in.Cast(arg, type), TypeExpansion(type, etype), RhsEvalOrder(s, i, arg, tmp1), TypeId(typeIndex, etype), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),
 									getArg = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
 									ec = out.FunApp(Ident("PrtCastValue"), Args(getArg, Args(out.UnApp(ADDR, Ident(typeName)), NIL))).
@@ -1917,6 +1937,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.UnApp.
 	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.BinApp, e.op != IDX.
 	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.Default.
+	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.Fresh.
 	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.Tuple.
 	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.NamedTuple.
 
@@ -1937,6 +1958,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	ExprDepNum(0, e) :- SubSE(_, e), e : in.Name.
 	ExprDepNum(0, e) :- SubSE(_, e), e : in.NulApp. 
 	ExprDepNum(0, e) :- SubSE(_, e), e : in.Default.
+	ExprDepNum(0, e) :- SubSE(_, e), e : in.Fresh.
 
 	//// New app has a hidden dependency on NULL if it is an nullary app.
 	ExprDepNum(0, h),

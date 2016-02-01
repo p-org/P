@@ -736,6 +736,14 @@
             valueExprStack.Push(defExpr);
         }
 
+        private void PushFreshExpr(string name, Span nameSpan, Span span)
+        {
+            var freshExpr = P_Root.MkFresh();
+            freshExpr.name = (P_Root.IArgType_Fresh__0)MkString(name, nameSpan);
+            freshExpr.Span = span;
+            valueExprStack.Push(freshExpr);
+        }
+
         private void PushIntExpr(string intStr, Span span)
         {
             int val;
@@ -1138,6 +1146,13 @@
         #endregion
 
         #region Adders
+        private void AddEmptyTypeDef(string name, Span nameSpan, Span typeDefSpan)
+        {
+            var typeDef = P_Root.MkTypeDef(MkString(name, nameSpan), MkUserCnst(P_Root.UserCnstKind.NIL, nameSpan));
+            typeDef.Span = typeDefSpan;
+            parseProgram.TypeDefs.Add(typeDef);
+        }
+
         private void AddTypeDef(string name, Span nameSpan, Span typeDefSpan)
         {
             var type = (P_Root.IArgType_TypeDef__1)typeExprStack.Pop();
@@ -1817,7 +1832,6 @@
                 kind == P_Root.UserCnstKind.INT ||
                 kind == P_Root.UserCnstKind.REAL ||
                 kind == P_Root.UserCnstKind.EVENT ||
-                kind == P_Root.UserCnstKind.FOREIGN ||
                 kind == P_Root.UserCnstKind.ANY);
 
             var cnst = P_Root.MkUserCnst(kind);

@@ -8,14 +8,14 @@
 	public string str;
 }
 
-%token INT BOOL FOREIGN ANY SEQ MAP ID
+%token INT BOOL ANY SEQ MAP ID
 %token TYPE INCLUDE MAIN EVENT MACHINE MONITOR ASSUME SPEC
 
 %token VAR START HOT COLD MODEL STATE FUN ACTION GROUP STATIC MODELS MONITORS
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH AS WITH
 
-%token IF WHILE THIS NEW RETURN ID POP ASSERT CALL RAISE SEND DEFAULT HALT NULL RECEIVE CASE
+%token IF WHILE THIS NEW RETURN ID POP ASSERT CALL RAISE SEND DEFAULT FRESH HALT NULL RECEIVE CASE
 %token LPAREN RPAREN LCBRACE RCBRACE LBRACKET RBRACKET SIZEOF KEYS VALUES
 
 %token TRUE FALSE
@@ -80,7 +80,8 @@ Annotation
 
 /******************* Type Declarations **********************/
 TypeDefDecl
-	: TYPE ID ASSIGN Type SEMICOLON   { AddTypeDef($2.str, ToSpan(@2), ToSpan(@1)); }
+    : TYPE ID SEMICOLON { AddEmptyTypeDef($2.str, ToSpan(@2), ToSpan(@1)); }
+	| TYPE ID ASSIGN Type SEMICOLON   { AddTypeDef($2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 
 /******************* Include Declarations *******************/ 
@@ -309,7 +310,6 @@ Type
 	| INT                                   { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.INT,     ToSpan(@1))); }
 	| EVENT                                 { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.EVENT,   ToSpan(@1))); }
 	| MACHINE                               { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.REAL,    ToSpan(@1))); }						
-	| FOREIGN                               { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.FOREIGN, ToSpan(@1))); }						
 	| ANY                                   { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.ANY,     ToSpan(@1))); }
 	| ID                                    { PushNameType($1.str, ToSpan(@1)); }
 	| SEQ LBRACKET Type RBRACKET            { PushSeqType(ToSpan(@1)); }
@@ -463,6 +463,7 @@ Exp_0
     | VALUES  LPAREN Exp RPAREN              { PushUnExpr(P_Root.UserCnstKind.VALUES, ToSpan(@1));      }
     | SIZEOF  LPAREN Exp RPAREN              { PushUnExpr(P_Root.UserCnstKind.SIZEOF, ToSpan(@1));      }
     | DEFAULT LPAREN Type RPAREN             { PushDefaultExpr(ToSpan(@1));                             }
+	| FRESH LPAREN ID RPAREN                 { PushFreshExpr($3.str, ToSpan(@3), ToSpan(@1));           }
 	| NEW ID LPAREN RPAREN								{ PushNewExpr($2.str, ToSpan(@2), $2.str, ToSpan(@2), false, ToSpan(@1)); }
 	| NEW ID LPAREN SingleExprArgList RPAREN			{ PushNewExpr($2.str, ToSpan(@2), $2.str, ToSpan(@2), true, ToSpan(@1)); }
 	| NEW ID MODELS ID LPAREN RPAREN					{ PushNewExpr($4.str, ToSpan(@4), $2.str, ToSpan(@2), false, ToSpan(@1)); }

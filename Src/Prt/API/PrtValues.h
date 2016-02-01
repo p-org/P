@@ -113,13 +113,39 @@ extern "C"{
 	/** A foreign value is foreign type paired with a char *. */
 	typedef struct PRT_FORGNVALUE
 	{
-		char				  *value;     /**< A pointer to the foreign value. */
-		PRT_GUID              typeTag;    /**< A non-zero GUID used by the client to tag the foreign types of values */
-		PRT_FORGN_CLONE       cloner;     /**< Clones foreign values */
-		PRT_FORGN_FREE        freer;      /**< Frees foreign values */
-		PRT_FORGN_GETHASHCODE hasher;     /**< Hashes foreign values */
-		PRT_FORGN_ISEQUAL     eqTester;   /**< Tests foreign values for equality */
+		PRT_UINT16            typeTag;    /**< The index of the foreign type. */
+		PRT_UINT64			  value;      /**< The foreign value. */
 	} PRT_FORGNVALUE;
+
+	/** The PRT_FORGN_MKDEF function is called whenever a default foreign value is created.
+	*/
+	typedef PRT_UINT64(PRT_CALL_CONV *PRT_FORGN_MKDEF)(_In_ PRT_UINT16 typeTag);
+
+	/** The PRT_FORGN_CLONE function is called whenever a foreign value needs to be cloned.
+	*   The cloning semantics depends on the memory management strategy of the client.
+	*   @see PRT_FORGN_FREE
+	*/
+	typedef PRT_UINT64(PRT_CALL_CONV *PRT_FORGN_CLONE)(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal);
+
+	/** The PRT_FORGN_FREE function is called whenever a foreign value will never be used again.
+	*   The semantics of PRT_FORGN_FREE depends on the memory management strategy of the client.
+	*   @see PRT_FORGN_CLONE
+	*/
+	typedef void(PRT_CALL_CONV *PRT_FORGN_FREE)(_In_ PRT_UINT16 typeTag, _Inout_ PRT_UINT64 frgnVal);
+
+	/** The PRT_FORGN_GETHASHCODE function is called to get a hashcode for a foreign value.
+	*   The semantics depends of the client's definition of value equality. If two values
+	*   are equal, then the function must return the same hashcode.
+	*   @see PRT_FORGN_GETHASHCODE
+	*/
+	typedef PRT_UINT32(PRT_CALL_CONV *PRT_FORGN_GETHASHCODE)(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal);
+
+	/** The PRT_FORGN_ISEQUAL function tests if two values are equal.
+	*   Equality semantics is determined by the client. If two values
+	*   are equal, then they should also have the same hashcode.
+	*   @see PRT_FORGN_GETHASHCODE
+	*/
+	typedef PRT_BOOLEAN(PRT_CALL_CONV *PRT_FORGN_ISEQUAL)(_In_ PRT_UINT16 typeTag1, _In_ PRT_UINT64 frgnVal1, _In_ PRT_UINT16 typeTag2, _In_ PRT_UINT64 frgnVal2);
 
 	/** Makes a default value of an abitrary type. The defaults (def) are as follows:
 	* 1.  def(null)                = `null : null`.
@@ -172,28 +198,43 @@ extern "C"{
 
 	/** Makes an machine value.
 	* @param[in] value A machine id.
-	* @returns A propermachinevalue. Caller is responsible for freeing.
+	* @returns A proper machine value. Caller is responsible for freeing.
 	* @see PrtFreeValue
 	*/
 	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkMachineValue(_In_ PRT_MACHINEID value);
 
+	/** Updates the functions related to foreign value processing.
+	* @param[in] MkDefault A function to create the default foreign value
+	* @param[in] Clone A function to clone a foreign value
+	* @param[in] Free A function to free a foreign value
+	* @param[in] Hash A function to hash a foreign value
+	* @param[in] IsEqual A function to check if two foreign values are equal
+	*/
+	PRT_API void PRT_CALL_CONV PrtUpdateForeignFn(
+		PRT_FORGN_MKDEF MkDefault,
+		PRT_FORGN_CLONE Clone,
+		PRT_FORGN_FREE Free,
+		PRT_FORGN_GETHASHCODE Hash,
+		PRT_FORGN_ISEQUAL IsEqual);
+
 	/** Makes a foreign value.
-	* @param[in] value A pointer to foreign data (will be cloned).
 	* @param[in] typeTag The type tag for this type.
-	* @param[in] cloner The cloner for this type.
-	* @param[in] freer The freer for this type.
-	* @param[in] hasher The hasher for this type.
-	* @param[in] eqTester The equality tester for this type.
+	* @param[in] value A pointer to foreign data (will be cloned).
 	* @returns A proper foreign value. Caller is responsible for freeing.
 	* @see PrtFreeValue
 	*/
-	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(
-		_In_ void				   *value,
-		_In_ PRT_GUID              typeTag,
-		_In_ PRT_FORGN_CLONE       cloner,
-		_In_ PRT_FORGN_FREE        freer,
-		_In_ PRT_FORGN_GETHASHCODE hasher,
-		_In_ PRT_FORGN_ISEQUAL     eqTester);
+	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 value);
+
+	/** Makes a fresh foreign value.
+	* @param[in] type The foreign type.
+	* @returns A proper foreign value. Caller is responsible for freeing.
+	* @see PrtFreeValue
+	*/
+	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkFreshForeignValue(_In_ PRT_TYPE *type);
+
+	/** Cleans up the data needed for creating fresh foreign values.
+	*/
+	PRT_API void PRT_CALL_CONV PrtCleanupForeignData();
 
 	/** Sets the value of a boolean.
 	* @param[in,out] prmVal A primitive boolean value to mutate.

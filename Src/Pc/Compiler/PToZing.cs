@@ -268,6 +268,7 @@ namespace Microsoft.Pc
         public static AST<Node> PrtMkDefaultValue = MkZingDot("PRT_VALUE", "PrtMkDefaultValue");
         public static AST<Node> PrtCloneValue = MkZingDot("PRT_VALUE", "PrtCloneValue");
         public static AST<Node> PrtIsEqualValue = MkZingDot("PRT_VALUE", "PrtIsEqualValue");
+        public static AST<Node> PrtMkFreshForeignValue = MkZingDot("PRT_VALUE", "PrtMkFreshForeignValue");
 
         public const string NullEvent = "null";
         public const string HaltEvent = "halt";
@@ -2145,6 +2146,7 @@ namespace Microsoft.Pc
                      funName == PData.Con_NulApp.Node.Name ||
                      funName == PData.Con_UnApp.Node.Name ||
                      funName == PData.Con_Default.Node.Name ||
+                     funName == PData.Con_Fresh.Node.Name ||
                      funName == PData.Con_NulStmt.Node.Name ||
                      funName == PData.Con_UnStmt.Node.Name)
             {
@@ -2325,6 +2327,10 @@ namespace Microsoft.Pc
             else if (funName == PData.Con_Default.Node.Name)
             {
                 return FoldDefault(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_Fresh.Node.Name)
+            {
+                return FoldFresh(ft, children, ctxt);
             }
             else if (funName == PData.Con_Cast.Node.Name)
             {
@@ -3006,6 +3012,14 @@ namespace Microsoft.Pc
             return new ZingTranslationInfo(tmpVar);
         }
 
+        ZingTranslationInfo FoldFresh(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
+        {
+            var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
+            ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkFreshForeignValue, typeContext.PTypeToZingExpr(LookupType(ctxt, ft)))));
+            ctxt.lastEval = tmpVar;
+            return new ZingTranslationInfo(tmpVar);
+        }
+
         ZingTranslationInfo FoldCast(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             var typeArg = (FuncTerm)GetArgByIndex(ft, 1);
@@ -3572,6 +3586,7 @@ namespace Microsoft.Pc
 
         internal class TypeTranslationContext
         {
+            private int foreignTypeCount;
             private int fieldCount;
             private int typeCount;
             private List<AST<Node>> fieldNameInitialization;
@@ -3583,6 +3598,7 @@ namespace Microsoft.Pc
             public TypeTranslationContext(PToZing pToZing)
             {
                 this.pToZing = pToZing;
+                foreignTypeCount = 0;
                 fieldCount = 0;
                 typeCount = 0;
                 fieldNameInitialization = new List<AST<Node>>();
@@ -3686,18 +3702,20 @@ namespace Microsoft.Pc
                         AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_REAL"))));
                         return tmpVar;
                     }
-                    else if (primitiveType == "ANY")
+                    else 
                     {
+                        Debug.Assert(primitiveType == "ANY", "Illegal BaseType") ;
                         var tmpVar = GetType();
                         AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_ANY"))));
                         return tmpVar;
                     }
-                    else
-                    {
-                        var tmpVar = GetType();
-                        AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_FORGN"))));
-                        return tmpVar;
-                    }
+                }
+                else if (typeKind == "NameType")
+                {
+                    var tmpVar = GetType();
+                    AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkForeignType"), Factory.Instance.MkCnst(foreignTypeCount))));
+                    foreignTypeCount++;
+                    return tmpVar;
                 }
                 else if (typeKind == "TupType")
                 {

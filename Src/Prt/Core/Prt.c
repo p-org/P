@@ -42,6 +42,7 @@ PrtStopProcess(
 			PrtCleanupMachine((PRT_MACHINEINST_PRIV *)context);
 		PrtFree(context);
 	}
+	PrtCleanupForeignData();
 	PrtFree(privateProcess->machines);
 	PrtDestroyMutex(privateProcess->processLock);
 	PrtFree(process);

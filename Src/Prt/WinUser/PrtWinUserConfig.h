@@ -10,7 +10,9 @@ extern "C"{
 #endif
 
 	/** "unsafe" string functions are used safely. Allows for portability of code between operating systems. */
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
+#endif
 
 	/** Calling convention */
 #define PRT_CALL_CONV __cdecl

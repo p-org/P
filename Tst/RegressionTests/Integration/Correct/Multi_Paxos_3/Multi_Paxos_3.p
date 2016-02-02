@@ -536,7 +536,6 @@ model Client {
 	var servers :seq[machine];
 	start state Init {
 		entry (payload : seq[machine]){
-			new ValmachineityCheck();
 			servers = payload;
 			raise(local);
 		}

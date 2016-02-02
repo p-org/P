@@ -1184,4 +1184,11 @@ domain PStaticTyping extends PData
 	PayloadError(n) :- SubSE(c, n), n: NewStmt, TypeOf(c, n.arg, type), type: TypeExpr,
 					   m is MachineDecl, m.name = n.name, s is StateDecl, s.owner = m, s.name = m.start,
 					   PayloadVarType(s, ft), TypeRel(type, ft, k), type != ft, k != SUB.	
+
+	[ rule_Classes = '"error, msg: Null type must be subtype of payload type of entry function of start state;"']
+	PayloadError(s) :- m is MachineDecl, m.isMain = TRUE, s is StateDecl, s.owner = m, s.name = m.start, 
+					   PayloadVarType(s, ft), type = BaseType(NULL), TypeRel(type, ft, k), type != ft, k != SUB.
+	[ rule_Classes = '"error, msg: Null type must be subtype of payload type of entry function of start state;"']
+	PayloadError(s) :- m is MachineDecl, m.kind = MONITOR, s is StateDecl, s.owner = m, s.name = m.start, 
+					   PayloadVarType(s, ft), type = BaseType(NULL), TypeRel(type, ft, k), type != ft, k != SUB.
 }

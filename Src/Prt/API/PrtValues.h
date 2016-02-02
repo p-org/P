@@ -108,14 +108,13 @@ extern "C"{
 		struct PRT_MAPNODE *insertPrev;   /**< The previous node in insertion order. */
 	} PRT_MAPNODE;
 
-#endif
-
 	/** A foreign value is foreign type paired with a char *. */
 	typedef struct PRT_FORGNVALUE
 	{
 		PRT_UINT16            typeTag;    /**< The index of the foreign type. */
 		PRT_UINT64			  value;      /**< The foreign value. */
 	} PRT_FORGNVALUE;
+#endif
 
 	/** The PRT_FORGN_MKDEF function is called whenever a default foreign value is created.
 	*/

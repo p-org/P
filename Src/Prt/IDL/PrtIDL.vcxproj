@@ -26,11 +26,6 @@
     <Midl Include="..\API\PrtTypes_IDL.idl" />
     <Midl Include="..\API\PrtValues_IDL.idl" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Utilities\PatchIDL\PatchIDL.csproj">
-      <Project>{0202103a-7da0-4e05-b106-f8bbe28711dc}</Project>
-    </ProjectReference>
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{13DCFB0E-A18A-4E6B-AE2E-F46A7B89A145}</ProjectGuid>
     <RootNamespace>PrtDistIDL</RootNamespace>
@@ -96,7 +91,8 @@
       <AdditionalIncludeDirectories>../API/</AdditionalIncludeDirectories>
     </Midl>
     <PostBuildEvent>
-      <Command>"..\Utilities\PatchIDL\bin\PatchIDL.exe"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -120,7 +116,8 @@
       <AdditionalIncludeDirectories>../API/</AdditionalIncludeDirectories>
     </Midl>
     <PostBuildEvent>
-      <Command>"..\Utilities\PatchIDL\bin\PatchIDL.exe"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>

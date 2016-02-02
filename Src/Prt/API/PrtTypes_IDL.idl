@@ -1,17 +1,17 @@
 /**
-* This file contains the IDL file for the types 
+* This file contains the IDL file for the types
 */
 
 [
-uuid(a44ebb31-6600-4c90-82eb-0b9ef6756262),
-version(1.0),
-pointer_default(ptr)
+	uuid(a44ebb31-6600-4c90-82eb-0b9ef6756262),
+	version(1.0),
+	pointer_default(ptr)
 ]
 interface PrtTypes_IDL
 {
 	import "PrtBaseTypes_IDL.idl";
 	/** The maximum length of a field name must be smaller than this constant */
-	#define PRT_MAXFLDNAME_LENGTH 256
+#define PRT_MAXFLDNAME_LENGTH 256
 
 	/** Structure for representing a standard GUID */
 	typedef struct PRT_GUID
@@ -50,7 +50,7 @@ interface PrtTypes_IDL
 	* More information for complex types are stored as discriminicated union
 	**/
 	/** A type is expressed as a discriminicated union of all types */
-	typedef union PRT_TYPE switch(PRT_TYPE_KIND typeKind) typeUnion{
+	typedef union PRT_TYPE switch (PRT_TYPE_KIND typeKind) typeUnion{
 	case PRT_KIND_MAP: struct PRT_MAPTYPE* map;		/**<  Map type */
 	case PRT_KIND_ANY: PRT_UINT32* dummy_1;			/**<  This is a dummy field */
 	case PRT_KIND_BOOL: PRT_UINT32* dummy_2;			/**<  This is a dummy field */
@@ -58,9 +58,9 @@ interface PrtTypes_IDL
 	case PRT_KIND_MACHINE: PRT_UINT32* dummy_4;		/**<  This is a dummy field */
 	case PRT_KIND_INT: PRT_UINT32* dummy_5;			/**<  This is a dummy field */
 	case PRT_KIND_NULL: PRT_UINT32* dummy_6;			/**<  This is a dummy field */
-	case PRT_KIND_FORGN: PRT_UINT32* dummy_7;		/**<  This is a dummy field */
+	case PRT_KIND_FORGN: PRT_UINT16 typeTag;             /**< Foreign type       */
 	case PRT_KIND_NMDTUP: struct PRT_NMDTUPTYPE* nmTuple; /**<  Named Tuple type */
-	case PRT_KIND_SEQ: struct PRT_SEQTYPE* seq; /**< Sequence Type */ 
+	case PRT_KIND_SEQ: struct PRT_SEQTYPE* seq; /**< Sequence Type */
 	case PRT_KIND_TUPLE: struct PRT_TUPTYPE* tuple; /**< Tuple type		    */
 	} PRT_TYPE;
 
@@ -128,5 +128,5 @@ interface PrtTypes_IDL
 	* \struct
 	* The layout for foreign types
 	*/
-	typedef struct PRT_FORGNTYPE { int __dummy;} PRT_FORGNTYPE;
+	typedef struct PRT_FORGNTYPE { int __dummy; } PRT_FORGNTYPE;
 }

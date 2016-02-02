@@ -145,7 +145,8 @@
       <AdditionalIncludeDirectories>../API/</AdditionalIncludeDirectories>
     </Midl>
     <PostBuildEvent>
-      <Command>"..\Utilities\PatchIDL\bin\PatchIDL.exe"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>del /F *_IDL.h</Command>
@@ -172,7 +173,8 @@
       <AdditionalIncludeDirectories>../API/</AdditionalIncludeDirectories>
     </Midl>
     <PostBuildEvent>
-      <Command>"..\Utilities\PatchIDL\bin\PatchIDL.exe"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>del /F *_IDL.h</Command>

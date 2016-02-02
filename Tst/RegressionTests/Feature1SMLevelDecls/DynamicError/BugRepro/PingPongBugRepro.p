@@ -163,7 +163,7 @@ spec Safety monitors M_PING, M_PONG {
 }
 
 event M_START: map[machine, bool];
-spec Liveness monitors NODE_DOWN {
+spec Liveness monitors M_START, NODE_DOWN {
 	var nodes: map[machine, bool];
 	start state Init {
 		on M_START goto Wait;

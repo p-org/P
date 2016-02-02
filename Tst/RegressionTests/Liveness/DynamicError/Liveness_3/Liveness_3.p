@@ -10,7 +10,6 @@ main machine EventHandler
        start state WaitForUser
        {
             entry {
-				new WatchDog();
 				new Loop();
 				monitor Waiting;
 				send this, UserEvent;

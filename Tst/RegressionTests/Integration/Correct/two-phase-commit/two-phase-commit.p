@@ -289,7 +289,6 @@ main model TwoPhaseCommit {
 	var client: machine;
     start state Init {
 	    entry {
-			new M();
 	        coordinator = new Coordinator(2);
 			client = new Client(coordinator);
 			client = new Client(coordinator);

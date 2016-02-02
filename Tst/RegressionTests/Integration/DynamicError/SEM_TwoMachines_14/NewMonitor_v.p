@@ -7,16 +7,11 @@ main machine Real1 {
 	var ev2: event;
     start state Real1_Init {
         entry { 
-			new M(true);
 			monitor ev2, test;  //"null event" error in Zing
 		}
 	}
 }
 spec M monitors E2 {
 	start state x {
-		entry (payload: bool) {
-			// executed upon "new":
-			assert (payload == true);   //passes
-		}
 	}
 }

@@ -46,7 +46,3 @@ machine Real2 {
 		assert(payload == false);  //should fail
     }
 }
-spec M monitors E1 {
-	start state x {
-	}
-}

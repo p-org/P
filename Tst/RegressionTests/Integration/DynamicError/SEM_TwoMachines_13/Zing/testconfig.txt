@@ -1,5 +1,0 @@
-arg: ..\NewMonitor.dll
-arg: -et:NewMonitor.trace
-inc: NewMonitor.trace
-del: NewMonitor.trace
-dsc: zinger.exe, two machines, monitor instantiation parameter

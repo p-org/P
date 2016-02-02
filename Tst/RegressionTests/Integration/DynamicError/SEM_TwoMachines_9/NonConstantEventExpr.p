@@ -49,10 +49,3 @@ machine Real2 {
 		assert(payload == false);  //fails in runtime
     }
 }
-spec M monitors E1 {
-	start state x {
-		entry (payload: bool) {
-			assert (payload == true);
-		}
-	}
-}

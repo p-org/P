@@ -9,7 +9,7 @@ event Computing;
 main machine EventHandler
 {
        start state Init {
-			entry { new WatchDog(); raise Unit; }
+			entry { raise Unit; }
 			on Unit goto WaitForUser;
        }
 

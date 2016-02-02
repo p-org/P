@@ -271,12 +271,3 @@ model Timer {
     }
 }
 
-spec M monitors eOpenDoor, eDoorOpened {
-    start cold state WaitForRequest {
-        on eOpenDoor goto WaitForResponse;
-    }
-
-    hot state WaitForResponse {
-        on eDoorOpened goto WaitForRequest;
-    }
-}

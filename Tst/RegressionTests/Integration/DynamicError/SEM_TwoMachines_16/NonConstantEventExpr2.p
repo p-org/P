@@ -50,10 +50,3 @@ machine Real2 {
 		assert(payload == false);  //unreachable
     }
 }
-spec M monitors E2 {
-	start state x {
-		entry (payload: bool) {
-			assert (payload == true); //unreachable
-		}
-	}
-}

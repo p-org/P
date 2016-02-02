@@ -1,6 +1,0 @@
-arg: ..\NewMonitor.p
-arg: /printTypeInference
-arg: /shortFileNames
-arg: /doNotErase
-arg: /outputDir:..\.
-dsc: pc.exe, two machines, monitor instantiation parameter

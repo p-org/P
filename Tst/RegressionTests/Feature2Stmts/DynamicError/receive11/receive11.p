@@ -27,7 +27,6 @@ main machine B {
 	var m : machine;
 	start state Init {
 		entry {
-			new M();
 			raise Unit;
 		}
 		on Unit goto X;

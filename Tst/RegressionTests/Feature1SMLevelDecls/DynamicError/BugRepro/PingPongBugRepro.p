@@ -15,7 +15,6 @@ main machine Driver {
 	var n: machine;
     start state Init {
 	    entry {
-			new Safety();
 			i = 0;
 			while (i < 2) {
 			    n = new Node();
@@ -23,7 +22,7 @@ main machine Driver {
 				nodemap += (n, true);
 				i = i + 1;
 			}
-			new Liveness(nodemap);
+			monitor M_START, nodemap;
 			fd = new FailureDetector(nodeseq);
 			send fd, REGISTER_CLIENT, this;
 			i = 0;
@@ -163,9 +162,13 @@ spec Safety monitors M_PING, M_PONG {
 	}
 }
 
+event M_START: map[machine, bool];
 spec Liveness monitors NODE_DOWN {
 	var nodes: map[machine, bool];
-	start hot state Init {
+	start state Init {
+		on M_START goto Wait;
+	}
+	hot state Wait {
 		entry (payload: map[machine, bool]) {
 			nodes = payload; 
 		}

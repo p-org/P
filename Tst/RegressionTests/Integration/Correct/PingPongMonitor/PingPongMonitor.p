@@ -7,7 +7,6 @@ main machine PING {
 
     start state Ping_Init {
         entry {
-	      new M();
   	    pongId = new PONG();
 	    raise Success;   	   
         }

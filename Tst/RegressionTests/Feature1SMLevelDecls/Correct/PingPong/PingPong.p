@@ -102,7 +102,6 @@ main machine GodMachine
 
     start state Init {
 	    entry {
-			new M();
 			container = _CREATECONTAINER();
 			pongMachine_1 = _CREATEMACHINE(container, 2, null, null);
 			container = _CREATECONTAINER();

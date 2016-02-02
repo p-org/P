@@ -639,4 +639,20 @@ class FairCycle {
 			FairScheduler.accepted = new FairSchedulers;
 		}	
     }
+
+	static int Choose(int n) {
+	    int i;
+		bool b;
+		assert (0 < n, "Internal error");
+		i = 0;
+		while (i < n) {
+		    b = choose(bool);
+			if (b) {
+			    return i;
+			} else {
+			    i = i + 1;
+			}
+		}
+		assume (false);
+	}
 };

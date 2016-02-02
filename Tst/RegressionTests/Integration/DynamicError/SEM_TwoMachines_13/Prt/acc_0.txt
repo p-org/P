@@ -1,7 +1,0 @@
-=================================
-         Console output          
-=================================
-OUT: <CreateLog> Machine Real1(1) is created
-OUT: <StateLog> Machine Real1(1) entered state Real1_Init
-OUT: 
-EXIT: 0

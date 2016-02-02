@@ -47,7 +47,3 @@ machine Real2 {
     }
 }
 
-spec M monitors E1 {
-	start state x {
-	}
-}

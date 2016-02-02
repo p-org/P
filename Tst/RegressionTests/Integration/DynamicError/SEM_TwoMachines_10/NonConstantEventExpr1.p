@@ -12,8 +12,8 @@ main machine Real1 {
     start state Real1_Init {
         entry { 
 			mac = new Real2(this);
-			//monitor M, ev2, test;
-			//send M, E1;
+
+
 			ev1 = E1;			
 			raise ev1;  		
         } 	
@@ -48,11 +48,4 @@ machine Real2 {
 	fun Action2(payload: bool) {
 		assert(payload == false);  //fails
     }
-}
-spec M monitors E1 {
-	start state x {
-		entry  {
-			
-		}
-	}
 }

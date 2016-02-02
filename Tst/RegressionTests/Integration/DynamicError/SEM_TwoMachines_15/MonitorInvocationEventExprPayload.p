@@ -8,7 +8,6 @@ main machine Real1 {
 	var ev2: event;
     start state Real1_Init {
         entry { 
-			new M();
 			ev2 = E2;
 			monitor ev2, test;  
 		}

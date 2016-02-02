@@ -3,13 +3,12 @@ This file contains the IDL types for the PrtValues
 */
 
 [
-uuid(0b531b5c-81a2-4710-a356-4fceb6d36a47),
-version(1.0),
-pointer_default(ptr)
+	uuid(0b531b5c-81a2-4710-a356-4fceb6d36a47),
+	version(1.0),
+	pointer_default(ptr)
 ]
 interface PrtValues_IDL
 {
-
 	import "PrtTypes_IDL.idl";
 
 	typedef enum PRT_SPECIAL_EVENT
@@ -40,15 +39,15 @@ interface PrtValues_IDL
 	typedef struct PRT_VALUE {
 		union switch (PRT_VALUE_KIND discriminator) valueUnion
 		{
-			case PRT_VALKIND_NULL: PRT_UINT32 dummy_1;
-			case PRT_VALKIND_BOOL: PRT_BOOLEAN bl;							/**< A boolean value            */
-			case PRT_VALKIND_INT: PRT_INT32   nt;							/**< An integer value           */
-			case PRT_VALKIND_EVENT: PRT_UINT32  ev;							/**< An event id value          */
-			case PRT_VALKIND_MID: [unique] struct PRT_MACHINEID *mid;		/**< A (model) machine id value */
-			case PRT_VALKIND_FORGN: [unique] struct PRT_FORGNVALUE *frgn;	/**< A foreign value            */
-			case PRT_VALKIND_TUPLE:[unique] struct PRT_TUPVALUE *tuple;		/**< A (named) tuple value      */
-			case PRT_VALKIND_SEQ:[unique] struct PRT_SEQVALUE *seq;			/**< A sequence value	        */
-			case PRT_VALKIND_MAP:[unique] struct PRT_MAPVALUE *map;			/**< A map value		        */
+		case PRT_VALKIND_NULL: PRT_UINT32 dummy_1;
+		case PRT_VALKIND_BOOL: PRT_BOOLEAN bl;							/**< A boolean value            */
+		case PRT_VALKIND_INT: PRT_INT32   nt;							/**< An integer value           */
+		case PRT_VALKIND_EVENT: PRT_UINT32  ev;							/**< An event id value          */
+		case PRT_VALKIND_MID: [unique] struct PRT_MACHINEID *mid;		/**< A (model) machine id value */
+		case PRT_VALKIND_FORGN: [unique] struct PRT_FORGNVALUE *frgn;	/**< A foreign value            */
+		case PRT_VALKIND_TUPLE:[unique] struct PRT_TUPVALUE *tuple;		/**< A (named) tuple value      */
+		case PRT_VALKIND_SEQ:[unique] struct PRT_SEQVALUE *seq;			/**< A sequence value	        */
+		case PRT_VALKIND_MAP:[unique] struct PRT_MAPVALUE *map;			/**< A map value		        */
 		};
 	} PRT_VALUE;
 
@@ -60,18 +59,11 @@ interface PrtValues_IDL
 		PRT_UINT32 machineId;
 	} PRT_MACHINEID;
 
-	/** A foreign value is foreign type paired with a void *. */
-	typedef struct PRT_FORGNVALUE
-	{
-		int __dummy; //this field is replaced by the PatchIDL file with the correct code.
-	} PRT_FORGNVALUE;
-
 	/** A struct to node of a linked list of values. This is used when serializing values for RPC */
 	typedef struct PRT_VALUE_NODE {
 		PRT_VALUE *value;
 		struct PRT_VALUE_NODE *nextNode;
 	}PRT_VALUE_NODE;
-
 
 	/** A tuple value is a (named) tuple represented as an array. */
 	typedef struct PRT_TUPVALUE
@@ -110,4 +102,10 @@ interface PrtValues_IDL
 		struct PRT_MAPNODE *insertPrev;		/**< The previous node in insertion order. */
 	} PRT_MAPNODE;
 
+	/** A foreign value is foreign type paired with a char *. */
+	typedef struct PRT_FORGNVALUE
+	{
+		PRT_UINT16            typeTag;    /**< The index of the foreign type. */
+		PRT_UINT64			  value;      /**< The foreign value. */
+	} PRT_FORGNVALUE;
 }

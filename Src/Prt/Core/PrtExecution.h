@@ -378,7 +378,7 @@ extern "C"{
 
 	void PRT_CALL_CONV
 		PrtAssertDefaultFn(
-		_In_ int condition,
+		_In_ PRT_INT32 condition,
 		_In_opt_z_ PRT_CSTRING message
 		);
 

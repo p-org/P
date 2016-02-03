@@ -17,30 +17,33 @@ var ev_guard: int;
 var i, k: int; 
 var me: int;
 	start state Init {
-		entry (payload: int) {
-			me = payload;   //guard value for which this monitor is instantiated
-		}
+		//entry (payload: int) {
+			//me = payload;   //guard value for which this monitor is instantiated
+		//}
 		//on START do {
 		//	assert (!(me in tpstate));             //never fails
 		//	tpstate[me] = false;
 		//};
 		on ACQ do (payload: int) {
 			ev_guard = payload;
-			if (ev_guard == me) {
+			me = payload;
+			//if (ev_guard == me) {
 				//1. Typestate for "me" has not been set up yet: set up the typestate for "me"
 				if (!(me in tpstate)) { tpstate[me] = false; };
 				//2. Typestate for "me" was set up already:            
 				if (tpstate[me] == true) { raise Error1; }     //double acquire
 				else  { tpstate[me] = true; };       //acquire lock
-			}
+			//}
 		};
 		on REL do (payload: int) {
 			ev_guard = payload;
+			me = payload;
+			assert (me in tpstate);
 			//Check that the watch is set up and test the guard:
-			if (me in tpstate && ev_guard == me) {
-				if (tpstate[me] == false){ raise Error2; }
-				else { raise Halt; };
-			}
+			//if (me in tpstate && ev_guard == me) {
+			if (tpstate[me] == false){ raise Error2; }
+			else { raise Halt; };
+			//}
 		};
 		on FIN do {
 			//checking that all *initialized* stvars are false upon FIN:
@@ -63,6 +66,7 @@ var me: int;
 	}
 	state Abort1 {
 		entry { 
+		    //New version: re-tested reachability for [acq0,acq0]
 			//reachable for: [acq1,acq1]; [acq0,acq0];
 			// [acq1,acq0,rel0,acq0,acq1] (monitor #1)
 			assert(false);   
@@ -80,10 +84,12 @@ var me: int;
 	}
 	state Abort3 {
 		entry { 
-			//reachable for: [acq0,fin1] (monitor #0 ONLY); 
-			//[acq0,fin0] (monitor #0 ONLY)
-			// [acq1,rel1,acq0,fin0] (monitor #0 ONLY)
-			assert(false);;;  
+		//New version: re-tested reachability for:
+		//[acq0,fin1], [acq1,fin1], [acq0,fin0], [acq1,acq0,fin0], [acq0,acq1,fin0],
+		//[acq0,acq1,fin1],[acq1,acq0,fin1],[acq1,rel0,fin1],[acq0,rel1,fin0],
+		//[acq1,rel0,fin0],
+			// ???[acq1,rel1,acq0,fin0] (monitor #0 ONLY)
+			//assert(false);;;  
 		}      
 		ignore ACQ, REL, FIN;
 	}
@@ -95,7 +101,7 @@ var par: int;
 var mon, mon0, mon1: machine;
 	start state Init {
 		entry {
-		    new Spinlock(0);
+		    //new Spinlock(0);
 			// Manual harnesses to test simplest scenarios, with a single monitor;
 			// Uncomment scenarios one-by-one to test (while commenting out non-determ harness)
 			// TODO: how to use Zinger option "-m" to test everything at once? ("assumes" to be increased)
@@ -114,7 +120,7 @@ var mon, mon0, mon1: machine;
 			//monitor Spinlock, REL, 0;
 			// generating random sequences with "assume 2" limits
 			/*********************/
-			new Spinlock(1);
+			//new Spinlock(1);
 			//monitor Spinlock, START;
 			while ($) {
 				par = ChooseGuard();

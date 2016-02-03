@@ -16,28 +16,31 @@ var ev_guard: int;
 var i, k: int; 
 var me: int;
 	start state Init {
-		entry (payload: int) {
-			me = payload;   //guard value for which this monitor is instantiated
-		}
-		on START do {
-			assert (!(me in tpstate));             //never fails
-			tpstate[me] = false;
-		};
+		//entry (payload: int) {
+			//me = payload;   //guard value for which this monitor is instantiated
+		//}
+		//on START do {
+			//assert (!(me in tpstate));             //never fails
+			//tpstate[me] = false;
+		//};
 		on ACQ do (payload: int) {
 			ev_guard = payload;
-			if (ev_guard == me) {
-				assert (me in tpstate);               //never fails
+			me = payload;
+			//if (ev_guard == me) {
+				assert (me in tpstate);               
 				if (tpstate[me] == false) { tpstate[me] = true; }
 				else  { raise Error1; };
-			}
+			//}
 		};
 		on REL do (payload: int) {
 			ev_guard = payload;
-			if (ev_guard == me) {
-				assert (me in tpstate);;             //never fails
+			me = payload;
+			assert (me in tpstate);
+			//if (ev_guard == me) {
+				//assert (me in tpstate);;             //never fails
 				if (tpstate[me] == true) { raise Halt; }
 				else { raise Error2; };
-			}
+			//}
 		};
 		on FIN do {
 			//checking that all initialized stvars are false upon FIN:
@@ -93,7 +96,7 @@ var par: int;
 var mon, mon0, mon1: machine;
 	start state Init {
 		entry {
-		    new Spinlock(0);
+		    //new Spinlock(0);
 			// Manual harnesses to test simplest scenarios, with a single monitor;
 			// Uncomment scenarios one-by-one to test (while commenting out non-determ harness)
 			// TODO: how to use Zinger option "-m" to test everything at once? ("assumes" to be increased)
@@ -115,8 +118,8 @@ var mon, mon0, mon1: machine;
 			//monitor Spinlock, REL, 0;
 			//monitor Spinlock, REL, 0;
 			// generating random sequences with "assume 2" limits
-			new Spinlock(1);
-			monitor START;
+			//new Spinlock(1);
+			//monitor START;
 			while ($) {
 				par = ChooseGuard();
 				ev = ChooseEvent();

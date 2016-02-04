@@ -13,13 +13,13 @@ MonitorInvocationEventExprPayload.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
+<CreateLog> Created monitor M
+<StateLog> Machine M-0 entering State x
 <CreateLog> Created Machine Real1-0
 <StateLog> Machine Real1-0 entering State Real1_Init
-<CreateLog> Created Machine M-0
-<StateLog> Machine M-0 entering State x
-<MonitorLog> Enqueued Event < ____E2, false > to 1 M monitors
+<MonitorLog> Enqueued Event < ____E2, false > to M monitor
 
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_1.bl,)
-Comment: MonitorInvocationEventExprPayload.p (21, 30): Assert failed
+Comment: MonitorInvocationEventExprPayload.p (20, 30): Assert failed

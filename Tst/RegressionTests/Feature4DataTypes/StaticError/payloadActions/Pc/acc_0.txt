@@ -24,12 +24,12 @@ OUT: payloadactions.p (26, 18): inferred type:  BaseType(INT)
 OUT: payloadactions.p (30, 4): inferred type:  BaseType(INT)
 OUT: payloadactions.p (30, 4): inferred type:  ERROR
 OUT: payloadactions.p (30, 4): inferred type:  NIL
-OUT: payloadactions.p (30, 10): inferred type:  NmdTupType(NmdTupTypeField("first", MapType(BaseType(INT), BaseType(INT))), NmdTupType(NmdTupTypeField("sec", SeqType(BaseType(BOOL))), NIL))
 OUT: payloadactions.p (30, 18): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: payloadactions.p (30, 23): inferred type:  ERROR
 OUT: payloadactions.p (30, 24): inferred type:  BaseType(BOOL)
 OUT: payloadactions.p (31, 4): inferred type:  BaseType(BOOL)
 OUT: payloadactions.p (31, 4): inferred type:  NIL
+OUT: payloadactions.p (31, 11): inferred type:  NmdTupType(NmdTupTypeField("first", MapType(BaseType(INT), BaseType(INT))), NmdTupType(NmdTupTypeField("sec", SeqType(BaseType(BOOL))), NIL))
 OUT: payloadactions.p (31, 19): inferred type:  SeqType(BaseType(BOOL))
 OUT: payloadactions.p (31, 22): inferred type:  BaseType(BOOL)
 OUT: payloadactions.p (31, 23): inferred type:  BaseType(INT)

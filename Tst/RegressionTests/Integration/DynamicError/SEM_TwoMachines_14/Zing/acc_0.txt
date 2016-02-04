@@ -13,12 +13,12 @@ NewMonitor_v.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
+<CreateLog> Created monitor M
+<StateLog> Machine M-0 entering State x
 <CreateLog> Created Machine Real1-0
 <StateLog> Machine Real1-0 entering State Real1_Init
-<CreateLog> Created Machine M-0
-<StateLog> Machine M-0 entering State x
 
 Error:
 P Assertion failed:
 Expression: assert(ev2.ev != null)
-Comment: NewMonitor_v.p (11, 4): Enqueued event must be non-null
+Comment: NewMonitor_v.p (10, 4): Enqueued event must be non-null

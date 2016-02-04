@@ -5,38 +5,37 @@ OUT: nonconstanteventexprmonitor1.p (13, 4): inferred type:  BaseType(REAL)
 OUT: nonconstanteventexprmonitor1.p (13, 4): inferred type:  NIL
 OUT: nonconstanteventexprmonitor1.p (13, 10): inferred type:  BaseType(REAL)
 OUT: nonconstanteventexprmonitor1.p (13, 20): inferred type:  BaseType(REAL)
+OUT: nonconstanteventexprmonitor1.p (14, 4): inferred type:  BaseType(EVENT)
 OUT: nonconstanteventexprmonitor1.p (14, 4): inferred type:  NIL
-OUT: nonconstanteventexprmonitor1.p (15, 4): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexprmonitor1.p (14, 10): inferred type:  BaseType(EVENT)
 OUT: nonconstanteventexprmonitor1.p (15, 4): inferred type:  NIL
-OUT: nonconstanteventexprmonitor1.p (15, 10): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexprmonitor1.p (15, 17): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexprmonitor1.p (16, 4): inferred type:  BaseType(EVENT)
 OUT: nonconstanteventexprmonitor1.p (16, 4): inferred type:  NIL
-OUT: nonconstanteventexprmonitor1.p (16, 17): inferred type:  BaseType(BOOL)
-OUT: nonconstanteventexprmonitor1.p (17, 4): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexprmonitor1.p (16, 10): inferred type:  BaseType(EVENT)
 OUT: nonconstanteventexprmonitor1.p (17, 4): inferred type:  NIL
-OUT: nonconstanteventexprmonitor1.p (17, 10): inferred type:  BaseType(EVENT)
-OUT: nonconstanteventexprmonitor1.p (18, 4): inferred type:  NIL
-OUT: nonconstanteventexprmonitor1.p (23, 4): inferred type:  BaseType(EVENT)
-OUT: nonconstanteventexprmonitor1.p (23, 4): inferred type:  NIL
-OUT: nonconstanteventexprmonitor1.p (23, 10): inferred type:  BaseType(EVENT)
-OUT: nonconstanteventexprmonitor1.p (24, 13): inferred type:  NIL
-OUT: nonconstanteventexprmonitor1.p (24, 18): inferred type:  BaseType(REAL)
-OUT: nonconstanteventexprmonitor1.p (24, 28): inferred type:  BaseType(BOOL)
-OUT: nonconstanteventexprmonitor1.p (27, 2): inferred type:  NIL
-OUT: nonconstanteventexprmonitor1.p (30, 3): inferred type:  BaseType(BOOL)
-OUT: nonconstanteventexprmonitor1.p (30, 3): inferred type:  NIL
-OUT: nonconstanteventexprmonitor1.p (30, 10): inferred type:  BaseType(BOOL)
-OUT: nonconstanteventexprmonitor1.p (37, 9): inferred type:  NIL
-OUT: nonconstanteventexprmonitor1.p (42, 13): inferred type:  BaseType(BOOL)
-OUT: nonconstanteventexprmonitor1.p (42, 13): inferred type:  TupType(BaseType(BOOL), NIL)
-OUT: nonconstanteventexprmonitor1.p (47, 3): inferred type:  NIL
-OUT: nonconstanteventexprmonitor1.p (47, 10): inferred type:  BaseType(BOOL)
-OUT: nonconstanteventexprmonitor1.p (47, 18): inferred type:  BaseType(BOOL)
-OUT: nonconstanteventexprmonitor1.p (47, 21): inferred type:  BaseType(BOOL)
-OUT: nonconstanteventexprmonitor1.p (52, 3): inferred type:  NIL
-OUT: nonconstanteventexprmonitor1.p (52, 30): inferred type:  NIL
-OUT: nonconstanteventexprmonitor1.p (52, 38): inferred type:  BaseType(BOOL)
-OUT: nonconstanteventexprmonitor1.p (52, 46): inferred type:  BaseType(BOOL)
-OUT: nonconstanteventexprmonitor1.p (52, 49): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexprmonitor1.p (22, 4): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexprmonitor1.p (22, 4): inferred type:  NIL
+OUT: nonconstanteventexprmonitor1.p (22, 10): inferred type:  BaseType(EVENT)
+OUT: nonconstanteventexprmonitor1.p (23, 13): inferred type:  NIL
+OUT: nonconstanteventexprmonitor1.p (23, 18): inferred type:  BaseType(REAL)
+OUT: nonconstanteventexprmonitor1.p (23, 28): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexprmonitor1.p (26, 2): inferred type:  NIL
+OUT: nonconstanteventexprmonitor1.p (29, 3): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexprmonitor1.p (29, 3): inferred type:  NIL
+OUT: nonconstanteventexprmonitor1.p (29, 10): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexprmonitor1.p (36, 9): inferred type:  NIL
+OUT: nonconstanteventexprmonitor1.p (41, 13): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexprmonitor1.p (41, 13): inferred type:  TupType(BaseType(BOOL), NIL)
+OUT: nonconstanteventexprmonitor1.p (46, 3): inferred type:  NIL
+OUT: nonconstanteventexprmonitor1.p (46, 10): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexprmonitor1.p (46, 18): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexprmonitor1.p (46, 21): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexprmonitor1.p (51, 3): inferred type:  NIL
+OUT: nonconstanteventexprmonitor1.p (51, 30): inferred type:  NIL
+OUT: nonconstanteventexprmonitor1.p (51, 38): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexprmonitor1.p (51, 46): inferred type:  BaseType(BOOL)
+OUT: nonconstanteventexprmonitor1.p (51, 49): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

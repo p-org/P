@@ -31,7 +31,7 @@ OUT: monitors.p (41, 15): inferred type:  BaseType(EVENT)
 OUT: monitors.p (41, 18): inferred type:  BaseType(INT)
 OUT: monitors.p (43, 3): inferred type:  NIL
 OUT: monitors.p (9, 3): invalid assignment. right hand side is not a subtype of left hand side
-OUT: monitors.p (9, 19): Monitors cannot be created with "new"
+OUT: monitors.p (9, 19): Monitor cannot be created
 OUT: monitors.p (10, 3): invalid assignment. right hand side is not a subtype of left hand side
 OUT: monitors.p (10, 20): Undefined machine type
 OUT: monitors.p (11, 3): invalid assignment. right hand side is not a subtype of left hand side

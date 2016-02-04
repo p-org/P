@@ -74,12 +74,12 @@ OUT: castinexprsdynerror.p (145, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (145, 14): inferred type:  BaseType(BOOL)
 OUT: castinexprsdynerror.p (145, 17): inferred type:  BaseType(INT)
 OUT: castinexprsdynerror.p (148, 4): inferred type:  NIL
-OUT: castinexprsdynerror.p (154, 4): inferred type:  BaseType(INT)
 OUT: castinexprsdynerror.p (154, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (154, 17): inferred type:  BaseType(INT)
 OUT: castinexprsdynerror.p (155, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (155, 14): inferred type:  BaseType(BOOL)
 OUT: castinexprsdynerror.p (155, 17): inferred type:  BaseType(INT)
+OUT: castinexprsdynerror.p (156, 4): inferred type:  BaseType(INT)
 OUT: castinexprsdynerror.p (156, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (156, 9): inferred type:  BaseType(INT)
 OUT: castinexprsdynerror.p (157, 4): inferred type:  NIL

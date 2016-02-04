@@ -2,22 +2,21 @@
          Console output          
 =================================
 OUT: liveness_fairnondet.p (16, 5): inferred type:  NIL
+OUT: liveness_fairnondet.p (16, 13): inferred type:  BaseType(EVENT)
 OUT: liveness_fairnondet.p (17, 5): inferred type:  NIL
-OUT: liveness_fairnondet.p (17, 13): inferred type:  BaseType(EVENT)
-OUT: liveness_fairnondet.p (18, 5): inferred type:  NIL
-OUT: liveness_fairnondet.p (18, 10): inferred type:  BaseType(REAL)
-OUT: liveness_fairnondet.p (18, 16): inferred type:  BaseType(EVENT)
+OUT: liveness_fairnondet.p (17, 10): inferred type:  BaseType(REAL)
+OUT: liveness_fairnondet.p (17, 16): inferred type:  BaseType(EVENT)
+OUT: liveness_fairnondet.p (25, 5): inferred type:  NIL
+OUT: liveness_fairnondet.p (25, 13): inferred type:  BaseType(EVENT)
 OUT: liveness_fairnondet.p (26, 5): inferred type:  NIL
-OUT: liveness_fairnondet.p (26, 13): inferred type:  BaseType(EVENT)
-OUT: liveness_fairnondet.p (27, 5): inferred type:  NIL
-OUT: liveness_fairnondet.p (27, 9): inferred type:  BaseType(BOOL)
-OUT: liveness_fairnondet.p (28, 6): inferred type:  NIL
-OUT: liveness_fairnondet.p (28, 17): inferred type:  BaseType(EVENT)
-OUT: liveness_fairnondet.p (31, 6): inferred type:  NIL
-OUT: liveness_fairnondet.p (31, 11): inferred type:  BaseType(REAL)
-OUT: liveness_fairnondet.p (31, 17): inferred type:  BaseType(EVENT)
-OUT: liveness_fairnondet.p (35, 4): inferred type:  NIL
-OUT: liveness_fairnondet.p (49, 14): inferred type:  NIL
+OUT: liveness_fairnondet.p (26, 9): inferred type:  BaseType(BOOL)
+OUT: liveness_fairnondet.p (27, 6): inferred type:  NIL
+OUT: liveness_fairnondet.p (27, 17): inferred type:  BaseType(EVENT)
+OUT: liveness_fairnondet.p (30, 6): inferred type:  NIL
+OUT: liveness_fairnondet.p (30, 11): inferred type:  BaseType(REAL)
+OUT: liveness_fairnondet.p (30, 17): inferred type:  BaseType(EVENT)
+OUT: liveness_fairnondet.p (34, 4): inferred type:  NIL
+OUT: liveness_fairnondet.p (48, 14): inferred type:  NIL
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

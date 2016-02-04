@@ -13,21 +13,21 @@ Liveness_2_bugFound.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
+<CreateLog> Created monitor WatchDog
+<StateLog> Machine WatchDog-0 entering State CanGetUserInput
 <CreateLog> Created Machine EventHandler-0
 <StateLog> Machine EventHandler-0 entering State Init
-<CreateLog> Created Machine WatchDog-0
-<StateLog> Machine WatchDog-0 entering State CanGetUserInput
 <RaiseLog> Machine EventHandler-0 raised Event ____Unit
 <StateLog> Machine EventHandler-0 exiting State Init
 <StateLog> Machine EventHandler-0 entering State WaitForUser
-<MonitorLog> Enqueued Event < ____Waiting, 0 > to 1 WatchDog monitors
+<MonitorLog> Enqueued Event < ____Waiting, 0 > to WatchDog monitor
 <StateLog> Machine WatchDog-0 exiting State CanGetUserInput
 <StateLog> Machine WatchDog-0 entering State CanGetUserInput
 <EnqueueLog> Enqueued Event < ____UserEvent, null > in Machine ____EventHandler-0 by ____EventHandler-0
 <DequeueLog> Dequeued Event < ____UserEvent, null > at Machine ____EventHandler-0
 <StateLog> Machine EventHandler-0 exiting State WaitForUser
 <StateLog> Machine EventHandler-0 entering State HandleEvent
-<MonitorLog> Enqueued Event < ____Computing, null > to 1 WatchDog monitors
+<MonitorLog> Enqueued Event < ____Computing, null > to WatchDog monitor
 <StateLog> Machine WatchDog-0 exiting State CanGetUserInput
 <StateLog> Machine WatchDog-0 entering State CannotGetUserInput
 

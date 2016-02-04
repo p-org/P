@@ -9,9 +9,9 @@ OUT: infiniteloopinatomicblock.p (16, 10): inferred type:  BaseType(EVENT)
 OUT: infiniteloopinatomicblock.p (23, 4): inferred type:  BaseType(INT)
 OUT: infiniteloopinatomicblock.p (23, 4): inferred type:  NIL
 OUT: infiniteloopinatomicblock.p (23, 20): inferred type:  BaseType(INT)
+OUT: infiniteloopinatomicblock.p (23, 22): inferred type:  BaseType(INT)
 OUT: infiniteloopinatomicblock.p (24, 4): inferred type:  NIL
 OUT: infiniteloopinatomicblock.p (24, 15): inferred type:  BaseType(BOOL)
-OUT: infiniteloopinatomicblock.p (24, 18): inferred type:  BaseType(INT)
 OUT: infiniteloopinatomicblock.p (25, 5): inferred type:  NIL
 OUT: infiniteloopinatomicblock.p (25, 10): inferred type:  BaseType(REAL)
 OUT: infiniteloopinatomicblock.p (25, 18): inferred type:  BaseType(EVENT)

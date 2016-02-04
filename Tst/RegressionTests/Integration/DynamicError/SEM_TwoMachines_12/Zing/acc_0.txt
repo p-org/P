@@ -13,14 +13,14 @@ NonConstantEventExprMonitor1.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
+<CreateLog> Created monitor M
+<StateLog> Machine M-0 entering State x
 <CreateLog> Created Machine Real1-0
 <StateLog> Machine Real1-0 entering State Real1_Init
 <CreateLog> Created Machine Real2-0
-<CreateLog> Created Machine M-0
-<StateLog> Machine M-0 entering State x
-<MonitorLog> Enqueued Event < ____E2, false > to 1 M monitors
+<MonitorLog> Enqueued Event < ____E2, false > to M monitor
 
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_3.bl,)
-Comment: NonConstantEventExprMonitor1.p (52, 30): Assert failed
+Comment: NonConstantEventExprMonitor1.p (51, 30): Assert failed

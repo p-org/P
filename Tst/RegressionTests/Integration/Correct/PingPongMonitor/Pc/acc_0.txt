@@ -1,27 +1,26 @@
 =================================
          Console output          
 =================================
+OUT: pingpongmonitor.p (10, 8): inferred type:  BaseType(REAL)
 OUT: pingpongmonitor.p (10, 8): inferred type:  NIL
-OUT: pingpongmonitor.p (11, 8): inferred type:  BaseType(REAL)
-OUT: pingpongmonitor.p (11, 8): inferred type:  NIL
-OUT: pingpongmonitor.p (11, 17): inferred type:  BaseType(REAL)
-OUT: pingpongmonitor.p (12, 6): inferred type:  NIL
-OUT: pingpongmonitor.p (12, 12): inferred type:  BaseType(EVENT)
+OUT: pingpongmonitor.p (10, 17): inferred type:  BaseType(REAL)
+OUT: pingpongmonitor.p (11, 6): inferred type:  NIL
+OUT: pingpongmonitor.p (11, 12): inferred type:  BaseType(EVENT)
+OUT: pingpongmonitor.p (18, 6): inferred type:  NIL
+OUT: pingpongmonitor.p (18, 11): inferred type:  BaseType(REAL)
+OUT: pingpongmonitor.p (18, 19): inferred type:  BaseType(EVENT)
+OUT: pingpongmonitor.p (18, 25): inferred type:  BaseType(REAL)
 OUT: pingpongmonitor.p (19, 6): inferred type:  NIL
-OUT: pingpongmonitor.p (19, 11): inferred type:  BaseType(REAL)
-OUT: pingpongmonitor.p (19, 19): inferred type:  BaseType(EVENT)
-OUT: pingpongmonitor.p (19, 25): inferred type:  BaseType(REAL)
-OUT: pingpongmonitor.p (20, 6): inferred type:  NIL
-OUT: pingpongmonitor.p (20, 12): inferred type:  BaseType(EVENT)
-OUT: pingpongmonitor.p (29, 5): inferred type:  NIL
-OUT: pingpongmonitor.p (34, 15): inferred type:  NIL
+OUT: pingpongmonitor.p (19, 12): inferred type:  BaseType(EVENT)
+OUT: pingpongmonitor.p (28, 5): inferred type:  NIL
+OUT: pingpongmonitor.p (33, 15): inferred type:  NIL
+OUT: pingpongmonitor.p (39, 7): inferred type:  NIL
+OUT: pingpongmonitor.p (39, 12): inferred type:  BaseType(REAL)
+OUT: pingpongmonitor.p (39, 21): inferred type:  BaseType(EVENT)
 OUT: pingpongmonitor.p (40, 7): inferred type:  NIL
-OUT: pingpongmonitor.p (40, 12): inferred type:  BaseType(REAL)
-OUT: pingpongmonitor.p (40, 21): inferred type:  BaseType(EVENT)
-OUT: pingpongmonitor.p (41, 7): inferred type:  NIL
-OUT: pingpongmonitor.p (41, 13): inferred type:  BaseType(EVENT)
-OUT: pingpongmonitor.p (43, 9): inferred type:  NIL
-OUT: pingpongmonitor.p (53, 4): inferred type:  NIL
+OUT: pingpongmonitor.p (40, 13): inferred type:  BaseType(EVENT)
+OUT: pingpongmonitor.p (42, 9): inferred type:  NIL
+OUT: pingpongmonitor.p (52, 4): inferred type:  NIL
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

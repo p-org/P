@@ -1,12 +1,12 @@
 =================================
          Console output          
 =================================
-OUT: insert4map.p (11, 13): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: insert4map.p (11, 13): inferred type:  NIL
-OUT: insert4map.p (11, 19): inferred type:  BaseType(INT)
 OUT: insert4map.p (11, 19): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: insert4map.p (11, 21): inferred type:  TupType(BaseType(INT), NIL)
+OUT: insert4map.p (12, 4): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: insert4map.p (12, 4): inferred type:  NIL
+OUT: insert4map.p (12, 10): inferred type:  BaseType(INT)
 OUT: insert4map.p (12, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: insert4map.p (12, 12): inferred type:  BaseType(INT)
 OUT: insert4map.p (12, 12): inferred type:  TupType(BaseType(INT), NIL)

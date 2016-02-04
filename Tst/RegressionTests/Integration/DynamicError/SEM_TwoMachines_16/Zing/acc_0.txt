@@ -16,7 +16,6 @@ Trace-Log 0:
 <CreateLog> Created Machine Real1-0
 <StateLog> Machine Real1-0 entering State Real1_Init
 <CreateLog> Created Machine Real2-0
-<MonitorLog> Enqueued Event < ____E2, true > to 0 M monitors
 <RaiseLog> Machine Real1-0 raised Event ____E1
 
 Error:

@@ -61,10 +61,10 @@ OUT: exproperators.p (74, 27): inferred type:  BaseType(INT)
 OUT: exproperators.p (75, 5): inferred type:  NIL
 OUT: exproperators.p (75, 17): inferred type:  BaseType(INT)
 OUT: exproperators.p (75, 24): inferred type:  BaseType(BOOL)
+OUT: exproperators.p (75, 27): inferred type:  BaseType(INT)
 OUT: exproperators.p (76, 5): inferred type:  NIL
 OUT: exproperators.p (76, 17): inferred type:  BaseType(INT)
 OUT: exproperators.p (76, 24): inferred type:  BaseType(BOOL)
-OUT: exproperators.p (76, 27): inferred type:  BaseType(INT)
 OUT: exproperators.p (77, 5): inferred type:  NIL
 OUT: exproperators.p (77, 17): inferred type:  BaseType(INT)
 OUT: exproperators.p (77, 19): inferred type:  BaseType(INT)

@@ -9,10 +9,10 @@ OUT: payloadactionsfuns.p (13, 4): inferred type:  ERROR
 OUT: payloadactionsfuns.p (13, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
 OUT: payloadactionsfuns.p (17, 4): inferred type:  BaseType(INT)
 OUT: payloadactionsfuns.p (17, 4): inferred type:  NIL
-OUT: payloadactionsfuns.p (17, 10): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("sec", BaseType(BOOL)), NIL))
 OUT: payloadactionsfuns.p (17, 18): inferred type:  BaseType(INT)
 OUT: payloadactionsfuns.p (18, 4): inferred type:  BaseType(BOOL)
 OUT: payloadactionsfuns.p (18, 4): inferred type:  NIL
+OUT: payloadactionsfuns.p (18, 11): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("sec", BaseType(BOOL)), NIL))
 OUT: payloadactionsfuns.p (18, 19): inferred type:  BaseType(BOOL)
 OUT: payloadactionsfuns.p (22, 4): inferred type:  BaseType(INT)
 OUT: payloadactionsfuns.p (22, 4): inferred type:  NIL

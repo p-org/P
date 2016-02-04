@@ -53,27 +53,26 @@ OUT: pingpong.p (92, 3): inferred type:  NIL
 OUT: pingpong.p (92, 10): inferred type:  BaseType(BOOL)
 OUT: pingpong.p (94, 2): inferred type:  NIL
 OUT: pingpong.p (94, 9): inferred type:  BaseType(REAL)
+OUT: pingpong.p (105, 4): inferred type:  BaseType(REAL)
 OUT: pingpong.p (105, 4): inferred type:  NIL
 OUT: pingpong.p (106, 4): inferred type:  BaseType(REAL)
 OUT: pingpong.p (106, 4): inferred type:  NIL
-OUT: pingpong.p (107, 4): inferred type:  BaseType(REAL)
+OUT: pingpong.p (106, 35): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), TupType(BaseType(NULL), TupType(BaseType(NULL), NIL))))
+OUT: pingpong.p (106, 46): inferred type:  BaseType(INT)
+OUT: pingpong.p (106, 46): inferred type:  TupType(BaseType(INT), TupType(BaseType(NULL), TupType(BaseType(NULL), NIL)))
+OUT: pingpong.p (106, 49): inferred type:  BaseType(NULL)
+OUT: pingpong.p (106, 49): inferred type:  TupType(BaseType(NULL), TupType(BaseType(NULL), NIL))
+OUT: pingpong.p (106, 55): inferred type:  TupType(BaseType(NULL), NIL)
 OUT: pingpong.p (107, 4): inferred type:  NIL
-OUT: pingpong.p (107, 35): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), TupType(BaseType(NULL), TupType(BaseType(NULL), NIL))))
-OUT: pingpong.p (107, 46): inferred type:  BaseType(INT)
-OUT: pingpong.p (107, 46): inferred type:  TupType(BaseType(INT), TupType(BaseType(NULL), TupType(BaseType(NULL), NIL)))
-OUT: pingpong.p (107, 49): inferred type:  BaseType(NULL)
-OUT: pingpong.p (107, 49): inferred type:  TupType(BaseType(NULL), TupType(BaseType(NULL), NIL))
-OUT: pingpong.p (107, 55): inferred type:  TupType(BaseType(NULL), NIL)
+OUT: pingpong.p (108, 4): inferred type:  BaseType(REAL)
 OUT: pingpong.p (108, 4): inferred type:  NIL
-OUT: pingpong.p (109, 4): inferred type:  BaseType(REAL)
 OUT: pingpong.p (109, 4): inferred type:  NIL
-OUT: pingpong.p (110, 4): inferred type:  NIL
-OUT: pingpong.p (111, 19): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), TupType(TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)), TupType(BaseType(NULL), NIL))))
-OUT: pingpong.p (111, 30): inferred type:  BaseType(INT)
-OUT: pingpong.p (111, 30): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)), TupType(BaseType(NULL), NIL)))
-OUT: pingpong.p (111, 34): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), NIL))
-OUT: pingpong.p (111, 34): inferred type:  TupType(TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)), TupType(BaseType(NULL), NIL))
-OUT: pingpong.p (111, 49): inferred type:  TupType(BaseType(REAL), NIL)
+OUT: pingpong.p (110, 19): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), TupType(TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)), TupType(BaseType(NULL), NIL))))
+OUT: pingpong.p (110, 30): inferred type:  BaseType(INT)
+OUT: pingpong.p (110, 30): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)), TupType(BaseType(NULL), NIL)))
+OUT: pingpong.p (110, 34): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), NIL))
+OUT: pingpong.p (110, 34): inferred type:  TupType(TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)), TupType(BaseType(NULL), NIL))
+OUT: pingpong.p (110, 49): inferred type:  TupType(BaseType(REAL), NIL)
 OUT: prtdisthelp.p (3, 3): inferred type:  NIL
 OUT: prtdisthelp.p (3, 8): inferred type:  BaseType(REAL)
 OUT: prtdisthelp.p (3, 16): inferred type:  BaseType(EVENT)

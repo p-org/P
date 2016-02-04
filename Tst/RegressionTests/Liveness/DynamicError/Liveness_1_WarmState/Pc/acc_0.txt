@@ -2,18 +2,17 @@
          Console output          
 =================================
 OUT: liveness_1_warmstate.p (13, 5): inferred type:  NIL
+OUT: liveness_1_warmstate.p (13, 13): inferred type:  BaseType(EVENT)
 OUT: liveness_1_warmstate.p (14, 5): inferred type:  NIL
-OUT: liveness_1_warmstate.p (14, 13): inferred type:  BaseType(EVENT)
-OUT: liveness_1_warmstate.p (15, 5): inferred type:  NIL
-OUT: liveness_1_warmstate.p (15, 10): inferred type:  BaseType(REAL)
-OUT: liveness_1_warmstate.p (15, 16): inferred type:  BaseType(EVENT)
+OUT: liveness_1_warmstate.p (14, 10): inferred type:  BaseType(REAL)
+OUT: liveness_1_warmstate.p (14, 16): inferred type:  BaseType(EVENT)
+OUT: liveness_1_warmstate.p (22, 5): inferred type:  NIL
+OUT: liveness_1_warmstate.p (22, 13): inferred type:  BaseType(EVENT)
 OUT: liveness_1_warmstate.p (23, 5): inferred type:  NIL
-OUT: liveness_1_warmstate.p (23, 13): inferred type:  BaseType(EVENT)
-OUT: liveness_1_warmstate.p (24, 5): inferred type:  NIL
-OUT: liveness_1_warmstate.p (24, 10): inferred type:  BaseType(REAL)
-OUT: liveness_1_warmstate.p (24, 16): inferred type:  BaseType(EVENT)
-OUT: liveness_1_warmstate.p (26, 13): inferred type:  NIL
-OUT: liveness_1_warmstate.p (42, 14): inferred type:  NIL
+OUT: liveness_1_warmstate.p (23, 10): inferred type:  BaseType(REAL)
+OUT: liveness_1_warmstate.p (23, 16): inferred type:  BaseType(EVENT)
+OUT: liveness_1_warmstate.p (25, 13): inferred type:  NIL
+OUT: liveness_1_warmstate.p (41, 14): inferred type:  NIL
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

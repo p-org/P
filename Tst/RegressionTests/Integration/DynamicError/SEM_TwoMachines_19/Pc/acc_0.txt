@@ -74,10 +74,10 @@ OUT: eventexprsemantics2.p (61, 22): inferred type:  BaseType(BOOL)
 OUT: eventexprsemantics2.p (67, 4): inferred type:  NIL
 OUT: eventexprsemantics2.p (67, 4): inferred type:  SeqType(BaseType(EVENT))
 OUT: eventexprsemantics2.p (67, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(NULL), NIL))
-OUT: eventexprsemantics2.p (67, 16): inferred type:  BaseType(NULL)
-OUT: eventexprsemantics2.p (67, 16): inferred type:  TupType(BaseType(NULL), NIL)
 OUT: eventexprsemantics2.p (68, 4): inferred type:  NIL
 OUT: eventexprsemantics2.p (68, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(NULL), NIL))
+OUT: eventexprsemantics2.p (68, 16): inferred type:  BaseType(NULL)
+OUT: eventexprsemantics2.p (68, 16): inferred type:  TupType(BaseType(NULL), NIL)
 OUT: eventexprsemantics2.p (69, 4): inferred type:  NIL
 OUT: eventexprsemantics2.p (69, 12): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics2.p (69, 13): inferred type:  BaseType(INT)
@@ -95,12 +95,12 @@ OUT: eventexprsemantics2.p (90, 4): inferred type:  BaseType(REAL)
 OUT: eventexprsemantics2.p (90, 4): inferred type:  NIL
 OUT: eventexprsemantics2.p (90, 11): inferred type:  BaseType(REAL)
 OUT: eventexprsemantics2.p (94, 4): inferred type:  NIL
+OUT: eventexprsemantics2.p (94, 8): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics2.p (94, 16): inferred type:  BaseType(BOOL)
 OUT: eventexprsemantics2.p (96, 5): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics2.p (96, 5): inferred type:  NIL
 OUT: eventexprsemantics2.p (96, 11): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics2.p (99, 9): inferred type:  NIL
-OUT: eventexprsemantics2.p (99, 13): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics2.p (99, 21): inferred type:  BaseType(BOOL)
 OUT: eventexprsemantics2.p (101, 5): inferred type:  NIL
 OUT: eventexprsemantics2.p (101, 11): inferred type:  BaseType(EVENT)

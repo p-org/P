@@ -1,17 +1,16 @@
 =================================
          Console output          
 =================================
+OUT: monitorinvocationeventexprpayload.p (11, 4): inferred type:  BaseType(EVENT)
 OUT: monitorinvocationeventexprpayload.p (11, 4): inferred type:  NIL
-OUT: monitorinvocationeventexprpayload.p (12, 4): inferred type:  BaseType(EVENT)
+OUT: monitorinvocationeventexprpayload.p (11, 10): inferred type:  BaseType(EVENT)
 OUT: monitorinvocationeventexprpayload.p (12, 4): inferred type:  NIL
-OUT: monitorinvocationeventexprpayload.p (12, 10): inferred type:  BaseType(EVENT)
-OUT: monitorinvocationeventexprpayload.p (13, 4): inferred type:  NIL
-OUT: monitorinvocationeventexprpayload.p (13, 17): inferred type:  BaseType(BOOL)
-OUT: monitorinvocationeventexprpayload.p (19, 9): inferred type:  NIL
-OUT: monitorinvocationeventexprpayload.p (21, 30): inferred type:  NIL
-OUT: monitorinvocationeventexprpayload.p (21, 38): inferred type:  BaseType(BOOL)
-OUT: monitorinvocationeventexprpayload.p (21, 46): inferred type:  BaseType(BOOL)
-OUT: monitorinvocationeventexprpayload.p (21, 49): inferred type:  BaseType(BOOL)
+OUT: monitorinvocationeventexprpayload.p (12, 17): inferred type:  BaseType(BOOL)
+OUT: monitorinvocationeventexprpayload.p (18, 9): inferred type:  NIL
+OUT: monitorinvocationeventexprpayload.p (20, 30): inferred type:  NIL
+OUT: monitorinvocationeventexprpayload.p (20, 38): inferred type:  BaseType(BOOL)
+OUT: monitorinvocationeventexprpayload.p (20, 46): inferred type:  BaseType(BOOL)
+OUT: monitorinvocationeventexprpayload.p (20, 49): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

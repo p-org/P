@@ -2,19 +2,18 @@
          Console output          
 =================================
 OUT: liveness_2.p (14, 5): inferred type:  NIL
+OUT: liveness_2.p (14, 13): inferred type:  BaseType(EVENT)
 OUT: liveness_2.p (15, 5): inferred type:  NIL
-OUT: liveness_2.p (15, 13): inferred type:  BaseType(EVENT)
-OUT: liveness_2.p (16, 5): inferred type:  NIL
-OUT: liveness_2.p (16, 10): inferred type:  BaseType(REAL)
-OUT: liveness_2.p (16, 16): inferred type:  BaseType(EVENT)
+OUT: liveness_2.p (15, 10): inferred type:  BaseType(REAL)
+OUT: liveness_2.p (15, 16): inferred type:  BaseType(EVENT)
+OUT: liveness_2.p (23, 5): inferred type:  NIL
+OUT: liveness_2.p (23, 13): inferred type:  BaseType(EVENT)
 OUT: liveness_2.p (24, 5): inferred type:  NIL
-OUT: liveness_2.p (24, 13): inferred type:  BaseType(EVENT)
-OUT: liveness_2.p (25, 5): inferred type:  NIL
-OUT: liveness_2.p (25, 10): inferred type:  BaseType(REAL)
-OUT: liveness_2.p (25, 16): inferred type:  BaseType(EVENT)
-OUT: liveness_2.p (27, 13): inferred type:  NIL
-OUT: liveness_2.p (40, 9): inferred type:  NIL
-OUT: liveness_2.p (43, 14): inferred type:  NIL
+OUT: liveness_2.p (24, 10): inferred type:  BaseType(REAL)
+OUT: liveness_2.p (24, 16): inferred type:  BaseType(EVENT)
+OUT: liveness_2.p (26, 13): inferred type:  NIL
+OUT: liveness_2.p (39, 9): inferred type:  NIL
+OUT: liveness_2.p (42, 14): inferred type:  NIL
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

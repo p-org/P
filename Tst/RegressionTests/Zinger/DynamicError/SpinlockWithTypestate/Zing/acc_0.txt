@@ -13,57 +13,49 @@ SpinlockWithTypestate.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
+<CreateLog> Created monitor Spinlock
+<StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
-<CreateLog> Created Machine Spinlock-0
-<StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine Spinlock-1
-<StateLog> Machine Spinlock-1 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to 2 Spinlock monitors
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
 
 Error:
 P Assertion failed:
-Expression: assert(tmpVar_6.bl,)
-Comment: SpinlockWithTypestate.p (29, 5): Assert failed
+Expression: assert(tmpVar_1.bl,)
+Comment: SpinlockWithTypestate.p (30, 5): Assert failed
 Safety Error Trace
 Trace-Log 1:
+<CreateLog> Created monitor Spinlock
+<StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
-<CreateLog> Created Machine Spinlock-0
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
+
+Error:
+P Assertion failed:
+Expression: assert(tmpVar_1.bl,)
+Comment: SpinlockWithTypestate.p (30, 5): Assert failed
+Safety Error Trace
+Trace-Log 2:
+<CreateLog> Created monitor Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine Spinlock-1
-<StateLog> Machine Spinlock-1 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to 2 Spinlock monitors
+<CreateLog> Created Machine TestDriver-0
+<StateLog> Machine TestDriver-0 entering State Init
+<MonitorLog> Enqueued Event < ____REL, 1 > to Spinlock monitor
 
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_6.bl,)
-Comment: SpinlockWithTypestate.p (29, 5): Assert failed
-Safety Error Trace
-Trace-Log 2:
-<CreateLog> Created Machine TestDriver-0
-<StateLog> Machine TestDriver-0 entering State Init
-<CreateLog> Created Machine Spinlock-0
-<StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine Spinlock-1
-<StateLog> Machine Spinlock-1 entering State Init
-<MonitorLog> Enqueued Event < ____REL, 1 > to 2 Spinlock monitors
-
-Error:
-P Assertion failed:
-Expression: assert(tmpVar_13.bl,)
-Comment: SpinlockWithTypestate.p (37, 5): Assert failed
+Comment: SpinlockWithTypestate.p (38, 4): Assert failed
 Safety Error Trace
 Trace-Log 3:
+<CreateLog> Created monitor Spinlock
+<StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
-<CreateLog> Created Machine Spinlock-0
-<StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine Spinlock-1
-<StateLog> Machine Spinlock-1 entering State Init
-<MonitorLog> Enqueued Event < ____REL, 0 > to 2 Spinlock monitors
+<MonitorLog> Enqueued Event < ____REL, 0 > to Spinlock monitor
 
 Error:
 P Assertion failed:
-Expression: assert(tmpVar_13.bl,)
-Comment: SpinlockWithTypestate.p (37, 5): Assert failed
+Expression: assert(tmpVar_6.bl,)
+Comment: SpinlockWithTypestate.p (38, 4): Assert failed

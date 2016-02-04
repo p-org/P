@@ -2,8 +2,7 @@
          Console output          
 =================================
 OUT: liveness_2_warmstate.p (12, 12): inferred type:  NIL
-OUT: liveness_2_warmstate.p (12, 28): inferred type:  NIL
-OUT: liveness_2_warmstate.p (12, 34): inferred type:  BaseType(EVENT)
+OUT: liveness_2_warmstate.p (12, 18): inferred type:  BaseType(EVENT)
 OUT: liveness_2_warmstate.p (19, 5): inferred type:  NIL
 OUT: liveness_2_warmstate.p (19, 13): inferred type:  BaseType(EVENT)
 OUT: liveness_2_warmstate.p (19, 22): inferred type:  BaseType(INT)

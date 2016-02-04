@@ -3,9 +3,9 @@
 =================================
 OUT: typedef.p (20, 4): inferred type:  BaseType(BOOL)
 OUT: typedef.p (20, 4): inferred type:  NIL
+OUT: typedef.p (20, 8): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
 OUT: typedef.p (20, 10): inferred type:  BaseType(BOOL)
 OUT: typedef.p (21, 4): inferred type:  NIL
-OUT: typedef.p (21, 4): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
 OUT: typedef.p (21, 6): inferred type:  BaseType(INT)
 OUT: typedef.p (21, 14): inferred type:  BaseType(INT)
 OUT: typedef.p (21, 16): inferred type:  BaseType(INT)

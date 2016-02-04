@@ -359,6 +359,7 @@ OUT: castinexprs.p (345, 4): inferred type:  NIL
 OUT: castinexprs.p (347, 4): inferred type:  NIL
 OUT: castinexprs.p (348, 4): inferred type:  ERROR
 OUT: castinexprs.p (348, 17): inferred type:  ERROR
+OUT: castinexprs.p (354, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (354, 4): inferred type:  NIL
 OUT: castinexprs.p (354, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (355, 4): inferred type:  NIL
@@ -372,7 +373,6 @@ OUT: castinexprs.p (357, 12): inferred type:  BaseType(INT)
 OUT: castinexprs.p (358, 4): inferred type:  NIL
 OUT: castinexprs.p (358, 23): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (358, 32): inferred type:  BaseType(BOOL)
-OUT: castinexprs.p (360, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (360, 4): inferred type:  NIL
 OUT: castinexprs.p (360, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprs.p (361, 4): inferred type:  NIL

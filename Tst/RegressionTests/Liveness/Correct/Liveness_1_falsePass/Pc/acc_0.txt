@@ -1,18 +1,18 @@
 =================================
          Console output          
 =================================
+OUT: liveness_1_falsepass.p (17, 5): inferred type:  NIL
+OUT: liveness_1_falsepass.p (17, 13): inferred type:  BaseType(EVENT)
 OUT: liveness_1_falsepass.p (18, 5): inferred type:  NIL
-OUT: liveness_1_falsepass.p (18, 13): inferred type:  BaseType(EVENT)
-OUT: liveness_1_falsepass.p (19, 5): inferred type:  NIL
-OUT: liveness_1_falsepass.p (19, 10): inferred type:  BaseType(REAL)
-OUT: liveness_1_falsepass.p (19, 16): inferred type:  BaseType(EVENT)
+OUT: liveness_1_falsepass.p (18, 10): inferred type:  BaseType(REAL)
+OUT: liveness_1_falsepass.p (18, 16): inferred type:  BaseType(EVENT)
+OUT: liveness_1_falsepass.p (26, 5): inferred type:  NIL
+OUT: liveness_1_falsepass.p (26, 13): inferred type:  BaseType(EVENT)
 OUT: liveness_1_falsepass.p (27, 5): inferred type:  NIL
-OUT: liveness_1_falsepass.p (27, 13): inferred type:  BaseType(EVENT)
-OUT: liveness_1_falsepass.p (28, 5): inferred type:  NIL
-OUT: liveness_1_falsepass.p (28, 10): inferred type:  BaseType(REAL)
-OUT: liveness_1_falsepass.p (28, 16): inferred type:  BaseType(EVENT)
-OUT: liveness_1_falsepass.p (30, 13): inferred type:  NIL
-OUT: liveness_1_falsepass.p (44, 14): inferred type:  NIL
+OUT: liveness_1_falsepass.p (27, 10): inferred type:  BaseType(REAL)
+OUT: liveness_1_falsepass.p (27, 16): inferred type:  BaseType(EVENT)
+OUT: liveness_1_falsepass.p (29, 13): inferred type:  NIL
+OUT: liveness_1_falsepass.p (43, 14): inferred type:  NIL
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

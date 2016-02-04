@@ -29,10 +29,6 @@ OUT: nonconstanteventexpr.p (49, 3): inferred type:  NIL
 OUT: nonconstanteventexpr.p (49, 10): inferred type:  BaseType(BOOL)
 OUT: nonconstanteventexpr.p (49, 18): inferred type:  BaseType(BOOL)
 OUT: nonconstanteventexpr.p (49, 21): inferred type:  BaseType(BOOL)
-OUT: nonconstanteventexpr.p (55, 4): inferred type:  NIL
-OUT: nonconstanteventexpr.p (55, 12): inferred type:  BaseType(BOOL)
-OUT: nonconstanteventexpr.p (55, 20): inferred type:  BaseType(BOOL)
-OUT: nonconstanteventexpr.p (55, 23): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

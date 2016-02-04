@@ -83,13 +83,13 @@ OUT: eventexprsemantics.p (83, 4): inferred type:  BaseType(REAL)
 OUT: eventexprsemantics.p (83, 4): inferred type:  NIL
 OUT: eventexprsemantics.p (83, 11): inferred type:  BaseType(REAL)
 OUT: eventexprsemantics.p (87, 4): inferred type:  NIL
-OUT: eventexprsemantics.p (87, 8): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics.p (87, 16): inferred type:  BaseType(BOOL)
-OUT: eventexprsemantics.p (89, 5): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics.p (89, 5): inferred type:  NIL
 OUT: eventexprsemantics.p (89, 11): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics.p (92, 9): inferred type:  NIL
+OUT: eventexprsemantics.p (92, 13): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics.p (92, 21): inferred type:  BaseType(BOOL)
+OUT: eventexprsemantics.p (94, 5): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics.p (94, 5): inferred type:  NIL
 OUT: eventexprsemantics.p (94, 11): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics.p (98, 12): inferred type:  NIL

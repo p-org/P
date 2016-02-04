@@ -12,19 +12,18 @@ OUT: receive11.p (13, 31): inferred type:  BaseType(BOOL)
 OUT: receive11.p (20, 4): inferred type:  NIL
 OUT: receive11.p (20, 12): inferred type:  BaseType(EVENT)
 OUT: receive11.p (30, 4): inferred type:  NIL
-OUT: receive11.p (31, 4): inferred type:  NIL
-OUT: receive11.p (31, 10): inferred type:  BaseType(EVENT)
-OUT: receive11.p (38, 4): inferred type:  NIL
-OUT: receive11.p (38, 9): inferred type:  BaseType(REAL)
-OUT: receive11.p (38, 15): inferred type:  BaseType(EVENT)
-OUT: receive11.p (40, 15): inferred type:  NIL
-OUT: receive11.p (40, 20): inferred type:  BaseType(REAL)
-OUT: receive11.p (40, 26): inferred type:  BaseType(EVENT)
-OUT: receive11.p (40, 29): inferred type:  BaseType(INT)
-OUT: receive11.p (40, 33): inferred type:  BaseType(REAL)
-OUT: receive11.p (40, 33): inferred type:  NIL
-OUT: receive11.p (40, 37): inferred type:  BaseType(REAL)
-OUT: receive11.p (43, 11): inferred type:  NIL
+OUT: receive11.p (30, 10): inferred type:  BaseType(EVENT)
+OUT: receive11.p (37, 4): inferred type:  NIL
+OUT: receive11.p (37, 9): inferred type:  BaseType(REAL)
+OUT: receive11.p (37, 15): inferred type:  BaseType(EVENT)
+OUT: receive11.p (39, 15): inferred type:  NIL
+OUT: receive11.p (39, 20): inferred type:  BaseType(REAL)
+OUT: receive11.p (39, 26): inferred type:  BaseType(EVENT)
+OUT: receive11.p (39, 29): inferred type:  BaseType(INT)
+OUT: receive11.p (39, 33): inferred type:  BaseType(REAL)
+OUT: receive11.p (39, 33): inferred type:  NIL
+OUT: receive11.p (39, 37): inferred type:  BaseType(REAL)
+OUT: receive11.p (42, 11): inferred type:  NIL
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

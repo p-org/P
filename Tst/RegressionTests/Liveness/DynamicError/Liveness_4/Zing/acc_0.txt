@@ -1,0 +1,35 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 9 distinct states explored
+OUT: 
+EXIT: 3
+
+=================================
+Liveness_4.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created monitor Mon1
+<StateLog> Machine Mon1-0 entering State S1
+<CreateLog> Created Machine M1-0
+<StateLog> Machine M1-0 entering State S
+<CreateLog> Created Machine M2-0
+<MonitorLog> Enqueued Event < ____y, ____M1-0 > to Mon1 monitor
+<EnqueueLog> Enqueued Event < ____y, ____M1-0 > in Machine ____M2-0 by ____M1-0
+<StateLog> Machine M2-0 entering State S1
+<DequeueLog> Dequeued Event < ____y, ____M1-0 > at Machine ____M2-0
+<MonitorLog> Enqueued Event < ____x, null > to Mon1 monitor
+<StateLog> Machine Mon1-0 exiting State S1
+<StateLog> Machine Mon1-0 entering State hotState
+<EnqueueLog> Enqueued Event < ____x, null > in Machine ____M1-0 by ____M2-0
+<DequeueLog> Dequeued Event < ____x, null > at Machine ____M1-0
+<FunctionLog> Machine M1-0 executing Function ignore
+
+Error:
+P Assertion failed:
+Expression: assert(sizeof(SM_HANDLE.enabled) != 0 || sizeof(SM_HANDLE.hot) == 0)
+Comment: Deadlock

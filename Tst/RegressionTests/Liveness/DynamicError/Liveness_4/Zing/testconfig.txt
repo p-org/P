@@ -1,0 +1,5 @@
+arg: ..\Liveness_4.dll
+arg: -et:Liveness_4.trace
+inc: Liveness_4.trace
+del: Liveness_4.trace
+dsc: zinger.exe, Liveness: simplest sample demonstrating liveness error found

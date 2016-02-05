@@ -1252,7 +1252,7 @@ namespace Microsoft.Pc
 
         private static AST<FuncTerm> MkZingTrace(string msg, params AST<Node>[] exprs)
         {
-            var argList = new List<AST<Node>>(new AST<Node>[] { Factory.Instance.MkCnst(msg) });
+            var argList = new List<AST<Node>>(new AST<Node>[] { Factory.Instance.MkCnst("\"" + msg + "\"") });
             argList.AddRange(exprs);
             return MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), argList));
         }
@@ -1264,7 +1264,7 @@ namespace Microsoft.Pc
 
         private static AST<FuncTerm> MkZingAssert(AST<Node> condition, string msg)
         {
-            return AddArgs(ZingData.App_Assert, condition, Factory.Instance.MkCnst(msg));
+            return AddArgs(ZingData.App_Assert, condition, Factory.Instance.MkCnst("\"" + msg + "\""));
         }
 
         private static AST<FuncTerm> MkZingAssume(AST<Node> condition)
@@ -1667,8 +1667,7 @@ namespace Microsoft.Pc
                                         MkZingAssign(MkZingDot("SM_HANDLE", "enabled"), MkZingSub(MkZingDot("SM_HANDLE", "enabled"), MkZingIdentifier("myHandle"))),
                                         MkZingReturn(ZingData.Cnst_Nil))
                                         );
-            string traceString = string.Format("\"<StateLog> Unhandled event exception by machine {0}-{{0}}\\n\"", machineName);
-            var traceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance")));
+            var traceStmt = MkZingTrace(string.Format("<StateLog> Unhandled event exception by machine {0}-{{0}}\\n", machineName), MkZingDot("myHandle", "instance"));
             var assertStmt = MkZingAssert(ZingData.Cnst_False, string.Format("Unhandled event exception by machine {0}", machineName));
             var body = MkZingBlocks(MkZingBlock("dummy", MkZingSeq(callStmt, iteStmt, traceStmt, assertStmt)));
             return MkZingMethodDecl("Start", ZingData.Cnst_Nil, ZingData.Cnst_Void, ZingData.Cnst_Nil, body);
@@ -1750,8 +1749,7 @@ namespace Microsoft.Pc
                 var funExpr = MkZingActionOrFun(machineName, funName);
                 var condExpr = MkZingApply(ZingData.Cnst_Eq, MkZingIdentifier("actionFun"), funExpr);
                 var gotoStmt = MkZingGoto("execute_" + funName);
-                string traceString = string.Format("\"<FunctionLog> Machine {0}-{{0}} executing Function {1}\\n\"", machineName, funName);
-                var traceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance")));
+                var traceStmt = MkZingTrace(string.Format("<FunctionLog> Machine {0}-{{0}} executing Function {1}\\n", machineName, funName), MkZingDot("myHandle", "instance"));
                 initStmts.Add(MkZingIfThen(condExpr, MkZingSeq(traceStmt, resetStmt, gotoStmt)));
             }
             foreach (var funName in allMachines[machineName].funNameToFunInfo.Keys)
@@ -1768,8 +1766,7 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    string traceString = string.Format("\"<FunctionLog> Machine {0}-{{0}} executing Function {1}\\n\"", machineName, funName);
-                    var traceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance")));
+                    var traceStmt = MkZingTrace(string.Format("<FunctionLog> Machine {0}-{{0}} executing Function {1}\\n", machineName, funName), MkZingDot("myHandle", "instance"));
                     initStmts.Add(MkZingIfThen(condExpr, MkZingSeq(traceStmt, resetStmt, gotoStmt)));
                 }
             }
@@ -1860,9 +1857,8 @@ namespace Microsoft.Pc
                 var stateInfo = allMachines[machineName].stateNameToStateInfo[stateName];
                 var stateExpr = MkZingState(stateName);
                 var condExpr = MkZingApply(ZingData.Cnst_Eq, state, stateExpr);
-                string traceString = string.Format("\"<StateLog> Machine {0}-{{0}} entering State {1}\\n\"", machineName, stateInfo.printedName);
                 List<AST<Node>> seqStmts = new List<AST<Node>>();
-                seqStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"))));
+                seqStmts.Add(MkZingTrace(string.Format("<StateLog> Machine {0}-{{0}} entering State {1}\\n", machineName, stateInfo.printedName), MkZingDot("myHandle", "instance")));
                 seqStmts.Add(MkZingReturn(ZingData.Cnst_Nil));
                 initStmts.Add(MkZingIfThen(condExpr, MkZingSeq(seqStmts)));
             }
@@ -1886,9 +1882,8 @@ namespace Microsoft.Pc
                 var stateInfo = allMachines[machineName].stateNameToStateInfo[stateName];
                 var stateExpr = MkZingState(stateName);
                 var condExpr = MkZingApply(ZingData.Cnst_Eq, state, stateExpr);
-                string traceString = string.Format("\"<StateLog> Machine {0}-{{0}} exiting State {1}\\n\"", machineName, stateInfo.printedName);
                 List<AST<Node>> seqStmts = new List<AST<Node>>();
-                seqStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"))));
+                seqStmts.Add(MkZingTrace(string.Format("<StateLog> Machine {0}-{{0}} exiting State {1}\\n", machineName, stateInfo.printedName), MkZingDot("myHandle", "instance")));
                 seqStmts.Add(MkZingReturn(ZingData.Cnst_Nil));
                 initStmts.Add(MkZingIfThen(condExpr, MkZingSeq(seqStmts)));
             }
@@ -2616,8 +2611,7 @@ namespace Microsoft.Pc
                 if (calleeInfo.printArgs.Contains(calleeArg))
                 {
                     ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "Print"), MkZingIndex(argCloneVar, Factory.Instance.MkCnst(calleeArgInfo.index)))));
-                    //add a newline
-                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst("\"\\n\""))));
+                    ctxt.AddSideEffect(MkZingTrace("\\n"));
                 }
                 parameterCount++;
             }
@@ -3109,8 +3103,7 @@ namespace Microsoft.Pc
                 var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
                 var srcFileName = funInfo.srcFileName;
                 var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0}: Raised event must be non-null", SpanToString(srcFileName, ft.Span)));
-                string traceString = string.Format("\"<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\\n\"", ctxt.machineName);
-                var traceStmt = MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString), MkZingDot("myHandle", "instance"), MkZingDot(eventExpr, "name")));
+                var traceStmt = MkZingTrace(string.Format("<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\\n", ctxt.machineName), MkZingDot("myHandle", "instance"), MkZingDot(eventExpr, "name"));
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpPayload");
                 if (payloadExpr == ZingData.Cnst_Nil)
                 {
@@ -3468,7 +3461,6 @@ namespace Microsoft.Pc
             var arg = MkZingIdentifier("arg");
             var doPop = MkZingIdentifier("doPop");
             var machineHandle = GetMonitorMachineName(machineName);
-            string errorTraceString = string.Format("\"<StateLog> Unhandled event exception by machine {0}-{{0}}\\n\"", machineName);
 
             List<AST<Node>> stmts = new List<AST<Node>>();
             stmts.Add(
@@ -3479,16 +3471,15 @@ namespace Microsoft.Pc
                 MkZingIfThen(
                     MkZingNot(MkZingIn(evt, MkZingDot("Main", GetObservesSetName(machineName)))),
                     MkZingReturn(ZingData.Cnst_Nil)));
-            stmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst("\"<MonitorLog> Enqueued Event < {0}, \""), MkZingDot(evt, "name"))));
+            stmts.Add(MkZingTrace("<MonitorLog> Enqueued Event < {0}, ", MkZingDot(evt, "name")));
             stmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "Print"), arg)));
-            string traceString = string.Format("\" > to {0} monitor\\n\"", machineName);
-            stmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(traceString))));
+            stmts.Add(MkZingTrace(string.Format(" > to {0} monitor\\n", machineName)));
 
             stmts.Add(MkZingAssign(MkZingDot("Main", machineHandle, "myHandle", "currentEvent"), MkZingIdentifier("evt")));
             stmts.Add(MkZingAssign(MkZingDot("Main", machineHandle, "myHandle", "currentArg"), MkZingIdentifier("arg")));
             stmts.Add(MkZingAssign(doPop, MkZingCall(MkZingDot("Main", machineHandle, "RunHelper"), ZingData.Cnst_False)));
             stmts.Add(MkZingIfThen(doPop,
-                         MkZingSeq(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(errorTraceString), MkZingDot("Main", machineHandle, "myHandle", "instance"))),
+                         MkZingSeq(MkZingTrace(string.Format("<StateLog> Unhandled event exception by machine {0}-{{0}}\\n", machineName), MkZingDot("Main", machineHandle, "myHandle", "instance")),          
                                    MkZingAssert(ZingData.Cnst_False))));
 
             AST<Node> body = MkZingBlock("dummy", MkZingSeq(stmts));
@@ -3535,22 +3526,20 @@ namespace Microsoft.Pc
 
             var doPop = MkZingIdentifier("doPop");
             var machineHandle = MkZingDot("Main", GetMonitorMachineName(machineName));
-            string createTraceString = string.Format("\"<CreateLog> Created monitor {0}\\n\"", machineName);
-            string errorTraceString = string.Format("\"<StateLog> Unhandled event exception by monitor {0}\\n\"", machineName);
 
             body = MkZingSeq(body,
                     MkZingAssign(MkZingIdentifier(objectName), MkZingNew(Factory.Instance.MkCnst(ZingMachineClassName(machineName)), ZingData.Cnst_Nil)),
                     MkInitializers(machineName, objectName),
                     MkZingAssign(MkZingDot(objectName, "myHandle"),
                                  MkZingCall(MkZingDot("SM_HANDLE", "Construct"), MkZingDot("Machine", string.Format("_{0}", machineName)), Factory.Instance.MkCnst(0), Factory.Instance.MkCnst(0))),
-                    MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(createTraceString))),
+                    MkZingTrace(string.Format("<CreateLog> Created monitor {0}\\n", machineName)),
                     MkZingAssign(MkZingDot(objectName, "myHandle", "currentArg"), MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))),
                     MkZingCallStmt(MkZingCall(MkZingDot(objectName, "myHandle", "Push"))),
                     MkZingAssign(MkZingDot(objectName, "myHandle", "stack", "state"), MkZingState(machineInfo.initStateName)),
                     MkZingAssign(machineHandle, MkZingIdentifier(objectName)),
                     MkZingAssign(doPop, MkZingCall(MkZingDot(objectName, "RunHelper"), ZingData.Cnst_True)),
                     MkZingIfThen(doPop,
-                                 MkZingSeq(MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(errorTraceString))),
+                                 MkZingSeq(MkZingTrace(string.Format("<StateLog> Unhandled event exception by monitor {0}\\n", machineName)),
                                            MkZingAssert(ZingData.Cnst_False)))
                     );
             body = MkZingBlock("dummy", body);
@@ -3568,7 +3557,6 @@ namespace Microsoft.Pc
             localVars.Add(MkZingVarDecl("fairScheduler", Factory.Instance.MkCnst("FairScheduler")));
             localVars.Add(MkZingVarDecl("fairChoice", Factory.Instance.MkCnst("FairChoice")));
 
-            string createTraceString = string.Format("\"<CreateLog> Created Machine {0}-{{0}}\\n\"", machineName);
             var machineInstance = MkZingIdentifier(string.Format("{0}_instance", machineName));
             var body = MkZingSeq(
                     MkZingAssign(MkZingIdentifier(objectName), MkZingNew(Factory.Instance.MkCnst(ZingMachineClassName(machineName)), ZingData.Cnst_Nil)),
@@ -3576,7 +3564,7 @@ namespace Microsoft.Pc
                     MkZingAssign(MkZingDot(objectName, "myHandle"),
                                  MkZingCall(MkZingDot("SM_HANDLE", "Construct"), MkZingDot("Machine", string.Format("_{0}", machineName)), machineInstance, Factory.Instance.MkCnst(allMachines[machineName].maxQueueSize))),
                     MkZingAssign(MkZingDot("SM_HANDLE", "enabled"), MkZingAdd(MkZingDot("SM_HANDLE", "enabled"), MkZingDot(objectName, "myHandle"))),
-                    MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), Factory.Instance.MkCnst(createTraceString), machineInstance)),
+                    MkZingTrace(string.Format("<CreateLog> Created Machine {0}-{{0}}\\n", machineName), machineInstance),
                     MkZingAssign(MkZingDot(objectName, "myHandle", "currentArg"), MkZingIdentifier("arg")),
                     MkZingAssign(machineInstance, MkZingApply(ZingData.Cnst_Add, machineInstance, Factory.Instance.MkCnst(1)))
                     );

@@ -421,7 +421,7 @@
                     enumerator.MoveNext();
                     if (enumerator.Current.NodeKind == NodeKind.Cnst)
                     {
-                        return string.Format("assert({0}, \"{1}\");\n", expr, ((Cnst)enumerator.Current).GetStringValue());
+                        return string.Format("assert({0}, {1});\n", expr, ((Cnst)enumerator.Current).GetStringValue());
                     }
                     else
                     {

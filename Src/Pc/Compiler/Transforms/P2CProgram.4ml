@@ -85,12 +85,19 @@ transform P2CProgram (in:: P) returns (out:: C)
 	EventDeclExt ::= EventDecl + { NULL, HALT }.
 	DeclId ::= (decl: PDecl + TypeDef + { NULL, HALT, PUSH }, id: Natural, cname: String).
 	
-	//// (0) Foreign types
+	//// (0.0) Foreign types
 	DeclId(d, id, cn) :- d is TypeDef(name, NIL), id = toOrdinal(d, 0, { d' | d' is TypeDef(_, NIL) }), cn = strJoin("P_FORGN_TYPE_", name).
 	HOut(0, out.EnmDef(NIL, "P_FORGN_TYPES", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : TypeDef, enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_FORGN_TYPES_COUNT"), size = count({d | d is TypeDef(_, NIL)}) }).  
+	
+	//// (0.1) Field names for named tuple types that have a type synonym
+	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
+	   d is TypeDef(name, type), type: NmdTupType, TypeExpansion(type, etype), enumName = strJoin("P_FIELD_INDEX_", name),
+	   list = toList(#Elements, NIL, { enumMember | 
+									   IndexOf(etype, f, offset, _), cn = strJoin(strJoin(enumName, "_"), f), enumMember = Element(IntLit(offset, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")), size = lstLength(#NmdTupType, etype) }).  
 
 	//// (1) EventDecls - Id 0, 1 are reserved for null, halt event, which can appear in transition tables.
 	DeclId(NULL, 0, "_P_EVENT_NULL").
@@ -1455,6 +1462,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	IndexOf ::= (t: NmdTupType, name: String, offset: Natural, tail: NmdTupType + {NIL}).
 	IndexOf(t, name, 0, tail)  :- f is AnonOrNamedFun, LocalVars(f, t), t = NmdTupType(NmdTupTypeField(name, _), tail).
+	IndexOf(et, name, 0, tail) :- TypeDef(_, t), TypeExpansion(t, et), et = NmdTupType(NmdTupTypeField(name, _), tail).
 	IndexOf(t, name, 0, tail)  :- TypeOf(_, _, t), t = NmdTupType(NmdTupTypeField(name, _), tail).
 	IndexOf(t, name, i', tail) :- IndexOf(t, _, i, tail'), tail' = NmdTupType(NmdTupTypeField(name, _), tail), i' = i + 1.
 
@@ -1741,7 +1749,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 										 out.Goto(strJoin("L", toString(label))),
 										 NIL).
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NulStmt(_), cs = NIL.
-	Trampoline(c, s, cs) :- SubSE(c, s), s = in.UnStmt(_, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Assert(_, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Print(_), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.BinStmt(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Return(_), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.While(_, s1), Trampoline(c, s1, cs1), cs = cs1.
@@ -1831,13 +1840,23 @@ transform P2CProgram (in:: P) returns (out:: C)
 	                       s = in.NulStmt(POP),
 						   cs = out.Seq(FunApp(Ident("PrtPop"), Args(context, NIL)), Goto("P_EXIT_FUN")).
 
-	//// UnStmt
+	//// Assert
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
-	                       s = in.UnStmt(ASSERT, arg), RhsExpr(c, s, 0, argTrans, doFree),
+	                       s = in.Assert(arg, NIL), RhsExpr(c, s, 0, argTrans, doFree),
 						   cs = out.ITE(out.FunApp(Ident("P_BOOL_EXPR"), Args(argTrans, Args(doFree, NIL))), NIL, assertCall),
 						   assertCall = out.FunApp(Ident("PrtHandleError"), 
 											Args(Ident("PRT_STATUS_ASSERT"), 
 											Args(context, NIL))).
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
+	                       s = in.Assert(arg, msg), msg: String, RhsExpr(c, s, 0, argTrans, doFree),
+						   cs = out.ITE(out.FunApp(Ident("P_BOOL_EXPR"), Args(argTrans, Args(doFree, NIL))), NIL, Seq(printCall, assertCall)),
+						   printCall = out.FunApp(Ident("PrtPrintf"), Args(StringLit(msg, NIL), NIL)),
+						   assertCall = out.FunApp(Ident("PrtHandleError"), 
+											Args(Ident("PRT_STATUS_ASSERT"), 
+											Args(context, NIL))).
+
+	//// Print
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Print(msg), cs = out.FunApp(Ident("PrtPrintf"), Args(StringLit(msg, NIL), NIL)).
 
 	//// Skip 
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NulStmt(SKIP), cs = NIL.
@@ -2023,9 +2042,9 @@ transform P2CProgram (in:: P) returns (out:: C)
 	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Ite(e, _, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
 	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.Ite.
 
-	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.UnStmt(_, e).
-	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.UnStmt(_, e), e : in.Expr, RhsEvalOrder(s, 0, e, k).
-	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.UnStmt.
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Assert(e, _).
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Assert(e, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.Assert.
 
 	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Raise(e, _).
 	RhsCntxt(s, 1, e)    :- SubSE(_, s), s = in.Raise(_, e), e : in.Expr.

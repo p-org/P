@@ -20,9 +20,9 @@ OUT: spinlockwithtypestate.p (32, 19): inferred type:  BaseType(EVENT)
 OUT: spinlockwithtypestate.p (32, 28): inferred type:  NIL
 OUT: spinlockwithtypestate.p (36, 4): inferred type:  BaseType(INT)
 OUT: spinlockwithtypestate.p (36, 4): inferred type:  NIL
-OUT: spinlockwithtypestate.p (36, 15): inferred type:  BaseType(INT)
 OUT: spinlockwithtypestate.p (37, 4): inferred type:  BaseType(INT)
 OUT: spinlockwithtypestate.p (37, 4): inferred type:  NIL
+OUT: spinlockwithtypestate.p (37, 9): inferred type:  BaseType(INT)
 OUT: spinlockwithtypestate.p (38, 4): inferred type:  NIL
 OUT: spinlockwithtypestate.p (38, 15): inferred type:  BaseType(BOOL)
 OUT: spinlockwithtypestate.p (41, 5): inferred type:  NIL
@@ -35,7 +35,6 @@ OUT: spinlockwithtypestate.p (41, 38): inferred type:  BaseType(EVENT)
 OUT: spinlockwithtypestate.p (42, 12): inferred type:  NIL
 OUT: spinlockwithtypestate.p (42, 18): inferred type:  BaseType(EVENT)
 OUT: spinlockwithtypestate.p (42, 27): inferred type:  NIL
-OUT: spinlockwithtypestate.p (47, 4): inferred type:  BaseType(INT)
 OUT: spinlockwithtypestate.p (47, 4): inferred type:  NIL
 OUT: spinlockwithtypestate.p (47, 8): inferred type:  BaseType(INT)
 OUT: spinlockwithtypestate.p (48, 4): inferred type:  NIL
@@ -51,6 +50,7 @@ OUT: spinlockwithtypestate.p (49, 38): inferred type:  BaseType(BOOL)
 OUT: spinlockwithtypestate.p (49, 46): inferred type:  NIL
 OUT: spinlockwithtypestate.p (49, 52): inferred type:  BaseType(EVENT)
 OUT: spinlockwithtypestate.p (49, 61): inferred type:  NIL
+OUT: spinlockwithtypestate.p (50, 5): inferred type:  BaseType(INT)
 OUT: spinlockwithtypestate.p (50, 5): inferred type:  NIL
 OUT: spinlockwithtypestate.p (50, 11): inferred type:  BaseType(INT)
 OUT: spinlockwithtypestate.p (50, 13): inferred type:  BaseType(INT)

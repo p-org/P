@@ -65,13 +65,13 @@ OUT: nonatomicdatatypesallasserts.p (88, 18): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (88, 23): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (88, 31): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (89, 5): inferred type:  NIL
+OUT: nonatomicdatatypesallasserts.p (89, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
 OUT: nonatomicdatatypesallasserts.p (89, 11): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
 OUT: nonatomicdatatypesallasserts.p (89, 18): inferred type:  NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)
 OUT: nonatomicdatatypesallasserts.p (90, 5): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (90, 23): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (90, 31): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypesallasserts.p (91, 5): inferred type:  NIL
-OUT: nonatomicdatatypesallasserts.p (91, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
 OUT: nonatomicdatatypesallasserts.p (91, 10): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
 OUT: nonatomicdatatypesallasserts.p (92, 5): inferred type:  NIL
 OUT: nonatomicdatatypesallasserts.p (92, 17): inferred type:  BaseType(BOOL)

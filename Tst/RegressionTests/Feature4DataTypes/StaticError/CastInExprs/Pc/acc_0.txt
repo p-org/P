@@ -5,9 +5,9 @@ OUT: castinexprs.p (70, 5): inferred type:  BaseType(INT)
 OUT: castinexprs.p (70, 5): inferred type:  ERROR
 OUT: castinexprs.p (70, 5): inferred type:  NIL
 OUT: castinexprs.p (70, 11): inferred type:  ERROR
-OUT: castinexprs.p (71, 5): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (71, 5): inferred type:  NIL
 OUT: castinexprs.p (71, 9): inferred type:  BaseType(BOOL)
+OUT: castinexprs.p (74, 5): inferred type:  BaseType(BOOL)
 OUT: castinexprs.p (74, 5): inferred type:  ERROR
 OUT: castinexprs.p (74, 5): inferred type:  NIL
 OUT: castinexprs.p (74, 11): inferred type:  ERROR

@@ -74,10 +74,10 @@ OUT: eventexprsemantics2.p (61, 22): inferred type:  BaseType(BOOL)
 OUT: eventexprsemantics2.p (67, 4): inferred type:  NIL
 OUT: eventexprsemantics2.p (67, 4): inferred type:  SeqType(BaseType(EVENT))
 OUT: eventexprsemantics2.p (67, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(NULL), NIL))
+OUT: eventexprsemantics2.p (67, 16): inferred type:  BaseType(NULL)
+OUT: eventexprsemantics2.p (67, 16): inferred type:  TupType(BaseType(NULL), NIL)
 OUT: eventexprsemantics2.p (68, 4): inferred type:  NIL
 OUT: eventexprsemantics2.p (68, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(NULL), NIL))
-OUT: eventexprsemantics2.p (68, 16): inferred type:  BaseType(NULL)
-OUT: eventexprsemantics2.p (68, 16): inferred type:  TupType(BaseType(NULL), NIL)
 OUT: eventexprsemantics2.p (69, 4): inferred type:  NIL
 OUT: eventexprsemantics2.p (69, 12): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics2.p (69, 13): inferred type:  BaseType(INT)

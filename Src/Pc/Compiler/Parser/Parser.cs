@@ -824,14 +824,32 @@
             stmtStack.Push(whileStmt);
         }
 
-        private void PushUnStmt(P_Root.UserCnstKind op, Span span)
+        private void PushAssert(Span span)
         {
             Contract.Assert(valueExprStack.Count > 0);
-            var unStmt = P_Root.MkUnStmt();
-            unStmt.op = MkUserCnst(op, span);
-            unStmt.arg1 = (P_Root.IArgType_UnStmt__1)valueExprStack.Pop();
-            unStmt.Span = span;
-            stmtStack.Push(unStmt);
+            var assertStmt = P_Root.MkAssert();
+            assertStmt.arg = (P_Root.IArgType_Assert__0)valueExprStack.Pop();
+            assertStmt.msg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            assertStmt.Span = span;
+            stmtStack.Push(assertStmt);
+        }
+        
+        private void PushAssert(string msg, Span msgSpan, Span span)
+        {
+            Contract.Assert(valueExprStack.Count > 0);
+            var assertStmt = P_Root.MkAssert();
+            assertStmt.arg = (P_Root.IArgType_Assert__0)valueExprStack.Pop();
+            assertStmt.msg = MkString(msg, msgSpan);
+            assertStmt.Span = span;
+            stmtStack.Push(assertStmt);
+        }
+
+        private void PushPrint(string msg, Span msgSpan, Span span)
+        {
+            var printStmt = P_Root.MkPrint();
+            printStmt.msg = MkString(msg, msgSpan);
+            printStmt.Span = span;
+            stmtStack.Push(printStmt);
         }
 
         private void PushBinStmt(P_Root.UserCnstKind op, Span span)

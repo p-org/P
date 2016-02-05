@@ -66,12 +66,10 @@ OUT: bubble_sort.p (44, 13): inferred type:  NIL
 OUT: bubble_sort.p (44, 19): inferred type:  BaseType(INT)
 OUT: bubble_sort.p (47, 9): inferred type:  NIL
 OUT: bubble_sort.p (47, 16): inferred type:  BaseType(BOOL)
-OUT: bubble_sort.p (52, 13): inferred type:  BaseType(INT)
 OUT: bubble_sort.p (52, 13): inferred type:  NIL
 OUT: bubble_sort.p (52, 17): inferred type:  BaseType(INT)
 OUT: bubble_sort.p (53, 13): inferred type:  NIL
 OUT: bubble_sort.p (53, 22): inferred type:  BaseType(BOOL)
-OUT: bubble_sort.p (53, 24): inferred type:  BaseType(INT)
 OUT: bubble_sort.p (54, 17): inferred type:  NIL
 OUT: bubble_sort.p (54, 17): inferred type:  SeqType(BaseType(INT))
 OUT: bubble_sort.p (54, 25): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
@@ -79,12 +77,14 @@ OUT: bubble_sort.p (54, 28): inferred type:  TupType(BaseType(INT), NIL)
 OUT: bubble_sort.p (55, 17): inferred type:  NIL
 OUT: bubble_sort.p (55, 17): inferred type:  SeqType(BaseType(INT))
 OUT: bubble_sort.p (55, 28): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: bubble_sort.p (56, 17): inferred type:  BaseType(INT)
 OUT: bubble_sort.p (56, 17): inferred type:  NIL
 OUT: bubble_sort.p (56, 23): inferred type:  BaseType(INT)
 OUT: bubble_sort.p (56, 25): inferred type:  BaseType(INT)
 OUT: bubble_sort.p (59, 13): inferred type:  NIL
 OUT: bubble_sort.p (59, 20): inferred type:  BaseType(INT)
 OUT: bubble_sort.p (59, 32): inferred type:  BaseType(BOOL)
+OUT: bubble_sort.p (59, 35): inferred type:  BaseType(INT)
 OUT: bubble_sort.p (61, 13): inferred type:  NIL
 OUT: bubble_sort.p (61, 30): inferred type:  TupType(SeqType(BaseType(INT)), NIL)
 OUT: bubble_sort.p (63, 13): inferred type:  NIL

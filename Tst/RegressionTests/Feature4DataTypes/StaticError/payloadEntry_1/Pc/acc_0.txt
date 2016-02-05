@@ -19,10 +19,10 @@ OUT: payloadentry_1.p (25, 22): inferred type:  BaseType(BOOL)
 OUT: payloadentry_1.p (25, 23): inferred type:  BaseType(INT)
 OUT: payloadentry_1.p (33, 4): inferred type:  BaseType(INT)
 OUT: payloadentry_1.p (33, 4): inferred type:  NIL
+OUT: payloadentry_1.p (33, 10): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("sec", BaseType(BOOL)), NIL))
 OUT: payloadentry_1.p (33, 18): inferred type:  BaseType(INT)
 OUT: payloadentry_1.p (34, 4): inferred type:  BaseType(BOOL)
 OUT: payloadentry_1.p (34, 4): inferred type:  NIL
-OUT: payloadentry_1.p (34, 11): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("sec", BaseType(BOOL)), NIL))
 OUT: payloadentry_1.p (34, 19): inferred type:  BaseType(BOOL)
 OUT: payloadentry_1.p (40, 4): inferred type:  BaseType(INT)
 OUT: payloadentry_1.p (40, 4): inferred type:  NIL

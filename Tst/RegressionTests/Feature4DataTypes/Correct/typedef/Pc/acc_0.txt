@@ -30,11 +30,11 @@ OUT: typedef.p (22, 25): inferred type:  BaseType(INT)
 OUT: typedef.p (22, 31): inferred type:  BaseType(BOOL)
 OUT: typedef.p (22, 34): inferred type:  BaseType(INT)
 OUT: typedef.p (23, 4): inferred type:  NIL
-OUT: typedef.p (23, 25): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
 OUT: typedef.p (23, 32): inferred type:  BaseType(INT)
 OUT: typedef.p (23, 34): inferred type:  BaseType(BOOL)
 OUT: typedef.p (23, 37): inferred type:  BaseType(INT)
 OUT: typedef.p (24, 4): inferred type:  NIL
+OUT: typedef.p (24, 25): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
 OUT: typedef.p (24, 32): inferred type:  BaseType(BOOL)
 OUT: typedef.p (24, 34): inferred type:  BaseType(BOOL)
 OUT: typedef.p (24, 37): inferred type:  BaseType(BOOL)

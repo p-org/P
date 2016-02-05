@@ -73,7 +73,8 @@
         public static readonly AST<Id> Con_Monitor = Factory.Instance.MkId("Monitor");
         public static readonly AST<Id> Con_FunStmt = Factory.Instance.MkId("FunStmt");
         public static readonly AST<Id> Con_NulStmt = Factory.Instance.MkId("NulStmt");
-        public static readonly AST<Id> Con_UnStmt = Factory.Instance.MkId("UnStmt");
+        public static readonly AST<Id> Con_Assert = Factory.Instance.MkId("Assert");
+        public static readonly AST<Id> Con_Print = Factory.Instance.MkId("Print");
         public static readonly AST<Id> Con_BinStmt = Factory.Instance.MkId("BinStmt");
         public static readonly AST<Id> Con_Return = Factory.Instance.MkId("Return");
         public static readonly AST<Id> Con_While = Factory.Instance.MkId("While");

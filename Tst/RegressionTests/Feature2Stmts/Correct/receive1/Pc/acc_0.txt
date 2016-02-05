@@ -9,9 +9,9 @@ OUT: receive1.p (11, 17): inferred type:  BaseType(REAL)
 OUT: receive1.p (12, 4): inferred type:  BaseType(INT)
 OUT: receive1.p (12, 4): inferred type:  NIL
 OUT: receive1.p (12, 10): inferred type:  BaseType(INT)
-OUT: receive1.p (12, 12): inferred type:  BaseType(INT)
 OUT: receive1.p (13, 4): inferred type:  NIL
 OUT: receive1.p (13, 13): inferred type:  BaseType(BOOL)
+OUT: receive1.p (13, 16): inferred type:  BaseType(INT)
 OUT: receive1.p (14, 4): inferred type:  NIL
 OUT: receive1.p (14, 8): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
 OUT: receive1.p (14, 11): inferred type:  BaseType(INT)

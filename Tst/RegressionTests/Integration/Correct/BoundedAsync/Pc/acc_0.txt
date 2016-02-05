@@ -54,10 +54,10 @@ OUT: boundedasync.p (66, 57): inferred type:  TupType(BaseType(REAL), TupType(Ba
 OUT: boundedasync.p (66, 57): inferred type:  TupType(TupType(BaseType(REAL), TupType(BaseType(REAL), NIL)), NIL)
 OUT: boundedasync.p (70, 3): inferred type:  BaseType(REAL)
 OUT: boundedasync.p (70, 3): inferred type:  NIL
-OUT: boundedasync.p (70, 12): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), NIL))
 OUT: boundedasync.p (70, 20): inferred type:  BaseType(REAL)
 OUT: boundedasync.p (71, 3): inferred type:  BaseType(REAL)
 OUT: boundedasync.p (71, 3): inferred type:  NIL
+OUT: boundedasync.p (71, 12): inferred type:  TupType(BaseType(REAL), TupType(BaseType(REAL), NIL))
 OUT: boundedasync.p (71, 20): inferred type:  BaseType(REAL)
 OUT: boundedasync.p (72, 3): inferred type:  NIL
 OUT: boundedasync.p (72, 8): inferred type:  BaseType(REAL)

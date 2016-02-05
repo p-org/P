@@ -2,7 +2,6 @@
          Console output          
 =================================
 OUT: bug3.p (0, 0): inferred type:  NIL
-OUT: bug3.p (12, 5): inferred type:  BaseType(REAL)
 OUT: bug3.p (12, 5): inferred type:  NIL
 OUT: bug3.p (13, 5): inferred type:  NIL
 OUT: bug3.p (13, 15): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(BOOL), TupType(BaseType(INT), NIL))), NIL))
@@ -14,6 +13,7 @@ OUT: bug3.p (13, 33): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(I
 OUT: bug3.p (13, 40): inferred type:  BaseType(INT)
 OUT: bug3.p (13, 40): inferred type:  TupType(BaseType(INT), NIL)
 OUT: bug3.p (14, 5): inferred type:  NIL
+OUT: bug3.p (17, 5): inferred type:  BaseType(REAL)
 OUT: bug3.p (17, 5): inferred type:  NIL
 OUT: bug3.p (18, 5): inferred type:  NIL
 OUT: bug3.p (18, 15): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(BOOL), TupType(BaseType(INT), NIL))), NIL))

@@ -60,10 +60,10 @@ OUT: castinexprsasserts.p (105, 5): inferred type:  NIL
 OUT: castinexprsasserts.p (105, 15): inferred type:  BaseType(BOOL)
 OUT: castinexprsasserts.p (107, 5): inferred type:  NIL
 OUT: castinexprsasserts.p (109, 5): inferred type:  NIL
+OUT: castinexprsasserts.p (109, 5): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprsasserts.p (109, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: castinexprsasserts.p (109, 14): inferred type:  TupType(BaseType(INT), NIL)
 OUT: castinexprsasserts.p (110, 11): inferred type:  NIL
-OUT: castinexprsasserts.p (110, 11): inferred type:  SeqType(BaseType(INT))
 OUT: castinexprsasserts.p (110, 17): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: castinexprsasserts.p (110, 20): inferred type:  TupType(BaseType(INT), NIL)
 OUT: castinexprsasserts.p (111, 5): inferred type:  NIL

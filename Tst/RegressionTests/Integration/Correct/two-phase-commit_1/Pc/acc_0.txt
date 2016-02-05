@@ -147,12 +147,12 @@ OUT: two-phase-commit_1.p (166, 62): inferred type:  TupType(BaseType(BOOL), Tup
 OUT: two-phase-commit_1.p (166, 69): inferred type:  BaseType(INT)
 OUT: two-phase-commit_1.p (166, 69): inferred type:  TupType(BaseType(INT), NIL)
 OUT: two-phase-commit_1.p (168, 4): inferred type:  NIL
-OUT: two-phase-commit_1.p (168, 7): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(INT), NIL))
 OUT: two-phase-commit_1.p (168, 18): inferred type:  BaseType(BOOL)
 OUT: two-phase-commit_1.p (169, 5): inferred type:  NIL
 OUT: two-phase-commit_1.p (169, 11): inferred type:  BaseType(EVENT)
 OUT: two-phase-commit_1.p (171, 5): inferred type:  NIL
 OUT: two-phase-commit_1.p (171, 11): inferred type:  BaseType(EVENT)
+OUT: two-phase-commit_1.p (171, 25): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(INT), NIL))
 OUT: two-phase-commit_1.p (171, 36): inferred type:  BaseType(INT)
 OUT: two-phase-commit_1.p (175, 4): inferred type:  NIL
 OUT: two-phase-commit_1.p (175, 9): inferred type:  BaseType(REAL)
@@ -262,10 +262,10 @@ OUT: two-phase-commit_1.p (243, 10): inferred type:  BaseType(EVENT)
 OUT: two-phase-commit_1.p (257, 3): inferred type:  NIL
 OUT: two-phase-commit_1.p (269, 10): inferred type:  BaseType(REAL)
 OUT: two-phase-commit_1.p (269, 10): inferred type:  NIL
-OUT: two-phase-commit_1.p (269, 24): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
 OUT: two-phase-commit_1.p (269, 32): inferred type:  BaseType(REAL)
 OUT: two-phase-commit_1.p (270, 4): inferred type:  BaseType(INT)
 OUT: two-phase-commit_1.p (270, 4): inferred type:  NIL
+OUT: two-phase-commit_1.p (270, 13): inferred type:  TupType(BaseType(REAL), TupType(BaseType(INT), NIL))
 OUT: two-phase-commit_1.p (270, 21): inferred type:  BaseType(INT)
 OUT: two-phase-commit_1.p (271, 4): inferred type:  BaseType(INT)
 OUT: two-phase-commit_1.p (271, 4): inferred type:  NIL

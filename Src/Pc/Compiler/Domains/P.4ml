@@ -50,7 +50,6 @@ domain PData
     Monitor  ::= new (ev: any Expr, arg: any Expr + { NIL }).
     FunStmt  ::= new (name: String, args: any Exprs + { NIL }, aout: any Name + { NIL }, label: Natural).
     NulStmt  ::= new (op: { SKIP, POP }).
-    UnStmt   ::= new (op: { ASSERT }, arg1: any Expr).
     BinStmt  ::= new (op: { REMOVE, ASSIGN, INSERT }, arg1: any Expr, arg2: any Expr).
     Return   ::= new (expr: any Expr + { NIL }).
     While    ::= new (cond: any Expr, body: any Stmt).
@@ -58,8 +57,10 @@ domain PData
     Seq      ::= new (s1: any Stmt, s2: any Stmt).
 	Cases	 ::= new (trig: String + { NULL, HALT }, action: any AnonFunDecl, cases: any Cases + { NIL }).
 	Receive  ::= new (cases: any Cases, label: Natural).
+	Assert   ::= new (arg: any Expr, msg: String + { NIL }). 
+	Print    ::= new (msg: String).
 
-    Stmt ::= NewStmt + Raise + Send + Monitor + FunStmt + NulStmt + UnStmt + BinStmt + Return + While + Ite + Seq + Receive. 
+    Stmt ::= NewStmt + Raise + Send + Monitor + FunStmt + NulStmt + BinStmt + Return + While + Ite + Seq + Receive + Assert + Print. 
 
     /*************************************************************/
     /****************  State Machine Declarations    *************/
@@ -283,7 +284,7 @@ domain PStaticTyping extends PData
 	SubSE(c, cases) :- SubSE(c, Cases(_, _, cases)), cases: Cases.
 	SubSE(c, e) :- SubSE(c, Return(e)), e: Expr.
 	SubSE(c, e1), SubSE(c, e2) :- SubSE(c, BinStmt(_, e1, e2)).
-	SubSE(c, e) :- SubSE(c, UnStmt(_, e)).
+	SubSE(c, e) :- SubSE(c, Assert(e, _)).
 	SubSE(c, es) :- SubSE(c, FunStmt(_, es, _, _)), es: Exprs.
 	SubSE(c, e) :- SubSE(c, FunStmt(_, _, e, _)), e: Name.
 	SubSE(c, e) :- SubSE(c, Monitor(e, _)).
@@ -473,9 +474,11 @@ domain PStaticTyping extends PData
 	//// (3) Non-mutating statements
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Seq(_, _).
     
-    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e = UnStmt(ASSERT, _), t1 = BaseType(BOOL).
+	TypeOf(c, e, NIL)              :- SubSE(c, e), e = Print(_).
+
+    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e = Assert(_, _), t1 = BaseType(BOOL).
 	[ rule_Classes = '"error, msg: "assert" expects a boolean value"']
-    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = UnStmt(ASSERT, _), t1 != BaseType(BOOL).
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Assert(_, _), t1 != BaseType(BOOL).
     
     TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : Ite, t1 = BaseType(BOOL).
 	[ rule_Classes                                   = '"error, msg: "if (...)" expects a boolean value"']
@@ -639,7 +642,7 @@ domain PStaticTyping extends PData
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NamedTuple(e1), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NewStmt(_, e1), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = FunStmt(_, e1, _, _), TypeOf(c, e1, t1).
-	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = UnStmt(_, e1), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Assert(e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Return(e1), TypeOf(c, e1, t1).
 
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Field(e1, _), TypeOf(c, e1, t1).
@@ -719,7 +722,8 @@ domain PStaticTyping extends PData
 	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: Monitor.
 	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: FunStmt.
 	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: NulStmt.
-	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: UnStmt.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: Assert.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: Print.
 	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: BinStmt.
 	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: Return.
 	MaxNumLocals(e, n) :- SubSE(c, e), c is TypingContext, e = While(_, e'), MaxNumLocals(e', n).
@@ -939,7 +943,7 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Send(_, _, e'),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
        SubSE(c, e), e = Monitor(e', _),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Monitor(_, e'),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
-       SubSE(c, e), e = UnStmt(_, e'),        e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
+       SubSE(c, e), e = Assert(e', _),        e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Return (e'),          e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = While(e', _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Ite(e', _, _),        e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
@@ -964,7 +968,7 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Send(_, _, e'),       e' : New;    
        SubSE(c, e), e = Monitor(e', _),       e' : New;
        SubSE(c, e), e = Monitor(_, e'),       e' : New;    
-       SubSE(c, e), e = UnStmt(_, e'),        e' : New;
+       SubSE(c, e), e = Assert(e', _),        e' : New;
        SubSE(c, e), e = Return (e'),          e' : New;
        SubSE(c, e), e = While(e', _),         e' : New;
        SubSE(c, e), e = Ite(e', _, _),        e' : New;

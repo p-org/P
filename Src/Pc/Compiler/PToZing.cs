@@ -1250,6 +1250,13 @@ namespace Microsoft.Pc
             return AddArgs(ZingData.App_While, condition, stmt);
         }
 
+        private static AST<FuncTerm> MkZingTrace(string msg, params AST<Node>[] exprs)
+        {
+            var argList = new List<AST<Node>>(new AST<Node>[] { Factory.Instance.MkCnst(msg) });
+            argList.AddRange(exprs);
+            return MkZingCallStmt(MkZingCall(MkZingIdentifier("trace"), argList));
+        }
+
         private static AST<FuncTerm> MkZingAssert(AST<Node> condition)
         {
             return AddArgs(ZingData.App_Assert, condition, ZingData.Cnst_Nil);
@@ -2166,8 +2173,7 @@ namespace Microsoft.Pc
                      funName == PData.Con_UnApp.Node.Name ||
                      funName == PData.Con_Default.Node.Name ||
                      funName == PData.Con_Fresh.Node.Name ||
-                     funName == PData.Con_NulStmt.Node.Name ||
-                     funName == PData.Con_UnStmt.Node.Name)
+                     funName == PData.Con_NulStmt.Node.Name)
             {
                 var first = true;
                 foreach (var t in ft.Args)
@@ -2179,6 +2185,14 @@ namespace Microsoft.Pc
                     }
                     yield return t;
                 }
+            }
+            else if (funName == PData.Con_Assert.Node.Name)
+            {
+                yield return GetArgByIndex(ft, 0);
+            }
+            else if (funName == PData.Con_Print.Node.Name)
+            {
+                yield break;
             }
             else if (funName == PData.Con_BinStmt.Node.Name)
             {
@@ -2386,9 +2400,13 @@ namespace Microsoft.Pc
             {
                 return FoldNulStmt(ft, children, ctxt);
             }
-            else if (funName == PData.Con_UnStmt.Node.Name)
+            else if (funName == PData.Con_Assert.Node.Name)
             {
-                return FoldUnStmt(ft, children, ctxt);
+                return FoldAssert(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_Print.Node.Name)
+            {
+                return FoldPrint(ft, children, ctxt);
             }
             else if (funName == PData.Con_BinStmt.Node.Name)
             {
@@ -3191,17 +3209,29 @@ namespace Microsoft.Pc
 
         }
 
-        ZingTranslationInfo FoldUnStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
+        ZingTranslationInfo FoldAssert(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
-            var op = ((Id)GetArgByIndex(ft, 0)).Name;
-            // op == PData.Con_Assert.Node.Name
+            Cnst msgCnst = GetArgByIndex(ft, 1) as Cnst;
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
                 var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
                 var srcFileName = funInfo.srcFileName;
-                return new ZingTranslationInfo(MkZingAssert(MkZingDot(it.Current.node, "bl"), string.Format("{0}: Assert failed", SpanToString(srcFileName, ft.Span))));
+                if (msgCnst != null)
+                {
+                    return new ZingTranslationInfo(MkZingAssert(MkZingDot(it.Current.node, "bl"), msgCnst.GetStringValue()));
+                }
+                else
+                {
+                    return new ZingTranslationInfo(MkZingAssert(MkZingDot(it.Current.node, "bl"), string.Format("{0}: Assert failed", SpanToString(srcFileName, ft.Span))));
+                }
             }
+        }
+
+        ZingTranslationInfo FoldPrint(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
+        {
+            string msg = (GetArgByIndex(ft, 0) as Cnst).GetStringValue();
+            return new ZingTranslationInfo(MkZingTrace(msg));
         }
 
         ZingTranslationInfo FoldBinStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)

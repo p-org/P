@@ -209,12 +209,18 @@ PRT_UINT64 CloneForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal)
 
 void FreeForeignValue(_In_ PRT_UINT16 typeTag, _Inout_ PRT_UINT64 frgnVal)
 {
-
 }
 
 PRT_UINT32 HashForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal)
 {
 	return (PRT_UINT32)frgnVal;
+}
+
+PRT_STRING ToStringForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal)
+{
+	PRT_STRING str = PrtMalloc(sizeof(PRT_CHAR) * 15);
+	strcpy_s(str, 15, "foreign_val");
+	return str;
 }
 
 PRT_BOOLEAN IsEqualForeignValue(_In_ PRT_UINT16 typeTag1, _In_ PRT_UINT64 frgnVal1, _In_ PRT_UINT16 typeTag2, _In_ PRT_UINT64 frgnVal2)
@@ -227,19 +233,22 @@ PRT_FORGN_CLONE PrtCloneForeignValue = &CloneForeignValue;
 PRT_FORGN_FREE PrtFreeForeignValue = &FreeForeignValue;
 PRT_FORGN_GETHASHCODE PrtHashForeignValue = &HashForeignValue;
 PRT_FORGN_ISEQUAL PrtIsEqualForeignValue = &IsEqualForeignValue;
+PRT_FORGN_TOSTRING PrtForeignValueToString = &ToStringForeignValue;
 
 void PRT_CALL_CONV PrtUpdateForeignFn(
 	PRT_FORGN_MKDEF MkDefault,
 	PRT_FORGN_CLONE Clone,
 	PRT_FORGN_FREE Free,
 	PRT_FORGN_GETHASHCODE Hash,
-	PRT_FORGN_ISEQUAL IsEqual)
+	PRT_FORGN_ISEQUAL IsEqual,
+	PRT_FORGN_TOSTRING ToString)
 {
 	PrtMkDefaultForeignValue = MkDefault;
 	PrtCloneForeignValue = Clone;
 	PrtFreeForeignValue = Free;
 	PrtHashForeignValue = Hash;
 	PrtIsEqualForeignValue = IsEqual;
+	PrtForeignValueToString = ToString;
 }
 
 PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(
@@ -320,6 +329,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 		PRT_FORGNVALUE *frgn = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
 		retVal->discriminator = PRT_VALKIND_FORGN;
 		retVal->valueUnion.frgn = frgn;
+		frgn->typeTag = type->typeUnion.typeTag;
 		frgn->value = PrtMkDefaultForeignValue(type->typeUnion.typeTag);
 		return retVal;
 	}
@@ -374,7 +384,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 		retVal->valueUnion.tuple = tup;
 		PRT_UINT32 i;
 		PRT_TUPTYPE *ttype = type->typeUnion.tuple;
-		tup->size = ttype->arity; 
+		tup->size = ttype->arity;
 		tup->values = (PRT_VALUE **)PrtCalloc(ttype->arity, sizeof(PRT_VALUE*));
 		for (i = 0; i < ttype->arity; ++i)
 		{
@@ -457,7 +467,7 @@ void PRT_CALL_CONV PrtTupleSetEx(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
 	PrtAssert(tuple->discriminator == PRT_VALKIND_TUPLE, "Cannot perform tuple set on this value");
 	PrtAssert(0 <= index && index < tuple->valueUnion.tuple->size, "Invalid tuple index");
-	
+
 	PrtFreeValue(tuple->valueUnion.tuple->values[index]);
 	tuple->valueUnion.tuple->values[index] = cloneValue == PRT_TRUE ? PrtCloneValue(value) : value;
 }
@@ -481,7 +491,7 @@ PRT_VALUE * PRT_CALL_CONV PrtTupleGetNC(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 i
 	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
 	PrtAssert(tuple->discriminator == PRT_VALKIND_TUPLE, "Cannot perform tuple get on this value");
 	PrtAssert(0 <= index && index < tuple->valueUnion.tuple->size, "Invalid tuple index");
-	
+
 	return tuple->valueUnion.tuple->values[index];
 }
 
@@ -1348,8 +1358,8 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsNullValue(_In_ PRT_VALUE *value)
 	case PRT_VALKIND_MID:
 	{
 		PRT_MACHINEID *id = value->valueUnion.mid;
-		return 
-			id->processId.data1 == PrtNullMachineId.processId.data1 && 
+		return
+			id->processId.data1 == PrtNullMachineId.processId.data1 &&
 			id->processId.data2 == PrtNullMachineId.processId.data2 &&
 			id->processId.data3 == PrtNullMachineId.processId.data3 &&
 			id->processId.data4 == PrtNullMachineId.processId.data4 &&
@@ -1606,7 +1616,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsValidValue(_In_ PRT_VALUE *value)
 		return value->discriminator == PRT_VALKIND_BOOL &&
 			(value->valueUnion.bl == PRT_TRUE || value->valueUnion.bl == PRT_FALSE);
 	case PRT_VALKIND_EVENT:
-		return value->discriminator == PRT_VALKIND_EVENT;	
+		return value->discriminator == PRT_VALKIND_EVENT;
 	case PRT_VALKIND_MID:
 		return value->discriminator == PRT_VALKIND_MID;
 	case PRT_VALKIND_INT:

@@ -184,7 +184,7 @@ void PrtWinUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Inout_ 
 		PrtWinUserPrintMachineId(PrtPrimGetMachine(value), buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_VALKIND_FORGN:
-		PrtWinUserPrintString("foreign", buffer, bufferSize, numCharsWritten);
+		PrtWinUserPrintString(PrtForeignValueToString(((PRT_FORGNVALUE*)value->valueUnion.frgn)->typeTag, ((PRT_FORGNVALUE*)value->valueUnion.frgn)->value), buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_VALKIND_MAP:
 	{

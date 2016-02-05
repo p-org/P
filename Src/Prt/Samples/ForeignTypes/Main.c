@@ -36,6 +36,18 @@ void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr)
 
 void Log(PRT_STEP step, PRT_MACHINEINST *context) { PrtPrintStep(step, context); }
 
+extern PRT_UINT64 UserMkDefaultForeignValue(_In_ PRT_UINT16 typeTag);
+
+extern PRT_UINT64 UserCloneForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal);
+
+extern void UserFreeForeignValue(_In_ PRT_UINT16 typeTag, _Inout_ PRT_UINT64 frgnVal);
+
+extern PRT_UINT32 UserHashForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal);
+
+extern PRT_STRING UserToStringForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal);
+
+extern PRT_BOOLEAN UserIsEqualForeignValue(_In_ PRT_UINT16 typeTag1, _In_ PRT_UINT64 frgnVal1, _In_ PRT_UINT16 typeTag2, _In_ PRT_UINT64 frgnVal2);
+
 int main(int argc, char *argv[])
 {
 	PRT_PROCESS *process;
@@ -45,6 +57,8 @@ int main(int argc, char *argv[])
 	processGuid.data2 = 0;
 	processGuid.data3 = 0;
 	processGuid.data4 = 0;
+	//update the foreign types
+	PrtUpdateForeignFn(UserMkDefaultForeignValue, UserCloneForeignValue, UserFreeForeignValue, UserHashForeignValue, UserIsEqualForeignValue, UserToStringForeignValue);
 	process = PrtStartProcess(processGuid, &P_GEND_PROGRAM, ErrorHandler, Log);
 	payload = PrtMkNullValue();
 	PrtMkMachine(process, _P_MACHINE_MAIN, payload);

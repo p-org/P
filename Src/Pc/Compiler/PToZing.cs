@@ -2182,6 +2182,7 @@ namespace Microsoft.Pc
             }
             else if (funName == PData.Con_BinStmt.Node.Name)
             {
+                yield return GetArgByIndex(ft, 2);
                 var op = ((Id)GetArgByIndex(ft, 0)).Name;
                 if (op == PData.Cnst_Assign.Node.Name)
                 {
@@ -2206,14 +2207,12 @@ namespace Microsoft.Pc
                         yield return lhs;
                         ctxt.lhsStack.Pop();
                     }
-                    yield return GetArgByIndex(ft, 2);
                 }
                 else
                 {
                     ctxt.lhsStack.Push(true);
                     yield return GetArgByIndex(ft, 1);
                     ctxt.lhsStack.Pop();
-                    yield return GetArgByIndex(ft, 2);
                 }
             }
             else if (funName == PData.Con_Field.Node.Name || funName == PData.Con_Cast.Node.Name)
@@ -3211,17 +3210,17 @@ namespace Microsoft.Pc
             var lhs = (FuncTerm)GetArgByIndex(ft, 1);
             var type = LookupType(ctxt, lhs);
             var typeName = ((Id)type.Function).Name;
-            AST<Node> src = null, index = null, dest = null;
+            AST<Node> src = null, dest = null;
             using (var it = children.GetEnumerator())
             {
-                it.MoveNext();
-                dest = it.Current.node;
+                AST<Node> index = null;
                 it.MoveNext();
                 src = it.Current.node;
+                it.MoveNext();
+                dest = it.Current.node;
                 if (it.MoveNext())
                 {
-                    index = src;
-                    src = it.Current.node;
+                    index = it.Current.node;
                 }
 
                 if (op == PData.Cnst_Assign.Node.Name)

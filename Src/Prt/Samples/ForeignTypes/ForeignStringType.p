@@ -15,7 +15,6 @@ main machine TestMachine
 			fMachine = new ForwardingMachine();
 			someStringV = GetPassword();
 			somePointerV = GetPointerToSomething(someStringV);
-			PrintPointerAndStringContents(somePointerV, someStringV);
 			send fMachine, sendback, (this, someStringV);
 			receive {
 				case getback: (payload: any) {
@@ -46,11 +45,6 @@ main machine TestMachine
 		{
 			assert(false);
 		}
-	}
-
-	model fun PrintPointerAndStringContents(pon: PointerType, pass:StringType)
-	{
-		assert(pon == somePointerV && pass == someStringV);
 	}
 }
 

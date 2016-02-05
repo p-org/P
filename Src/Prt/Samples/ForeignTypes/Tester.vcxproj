@@ -86,6 +86,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ForeignTypes.c" />
     <ClCompile Include="Main.c" />
     <ClCompile Include="program.c" />
     <ClCompile Include="stubs.c" />

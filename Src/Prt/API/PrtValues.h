@@ -139,6 +139,12 @@ extern "C"{
 	*/
 	typedef PRT_UINT32(PRT_CALL_CONV *PRT_FORGN_GETHASHCODE)(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal);
 
+	/** The PRT_FORGN_TOSTRING function is called to convert the foreign value to string.
+	*   The programmer should provide appropriate function for converting the value to string that needs to be printed for logging
+	*   @see PRT_FORGN_TOSTRING
+	*/
+	typedef PRT_STRING(PRT_CALL_CONV *PRT_FORGN_TOSTRING)(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal);
+
 	/** The PRT_FORGN_ISEQUAL function tests if two values are equal.
 	*   Equality semantics is determined by the client. If two values
 	*   are equal, then they should also have the same hashcode.
@@ -214,7 +220,8 @@ extern "C"{
 		PRT_FORGN_CLONE Clone,
 		PRT_FORGN_FREE Free,
 		PRT_FORGN_GETHASHCODE Hash,
-		PRT_FORGN_ISEQUAL IsEqual);
+		PRT_FORGN_ISEQUAL IsEqual,
+		PRT_FORGN_TOSTRING ToString);
 
 	/** Makes a foreign value.
 	* @param[in] typeTag The type tag for this type.

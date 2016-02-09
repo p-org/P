@@ -22,7 +22,7 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_7.bl,)
-Comment: SpinlockSameAsRule.p (41, 4): Assert failed
+Comment: SpinlockSameAsRule.p (47, 4): Assert failed
 Safety Error Trace
 Trace-Log 1:
 <CreateLog> Created monitor Spinlock
@@ -34,7 +34,7 @@ Trace-Log 1:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_7.bl,)
-Comment: SpinlockSameAsRule.p (41, 4): Assert failed
+Comment: SpinlockSameAsRule.p (47, 4): Assert failed
 Safety Error Trace
 Trace-Log 2:
 <CreateLog> Created monitor Spinlock
@@ -50,7 +50,7 @@ Trace-Log 2:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: SpinlockSameAsRule.p (72, 4): Assert failed
+Comment: SpinlockSameAsRule.p (78, 4): Assert failed
 Safety Error Trace
 Trace-Log 3:
 <CreateLog> Created monitor Spinlock
@@ -66,7 +66,7 @@ Trace-Log 3:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: SpinlockSameAsRule.p (72, 4): Assert failed
+Comment: SpinlockSameAsRule.p (78, 4): Assert failed
 Safety Error Trace
 Trace-Log 4:
 <CreateLog> Created monitor Spinlock
@@ -79,7 +79,7 @@ Trace-Log 4:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_7.bl,)
-Comment: SpinlockSameAsRule.p (41, 4): Assert failed
+Comment: SpinlockSameAsRule.p (47, 4): Assert failed
 Safety Error Trace
 Trace-Log 5:
 <CreateLog> Created monitor Spinlock
@@ -92,7 +92,7 @@ Trace-Log 5:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_7.bl,)
-Comment: SpinlockSameAsRule.p (41, 4): Assert failed
+Comment: SpinlockSameAsRule.p (47, 4): Assert failed
 Safety Error Trace
 Trace-Log 6:
 <CreateLog> Created monitor Spinlock
@@ -109,7 +109,7 @@ Trace-Log 6:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: SpinlockSameAsRule.p (72, 4): Assert failed
+Comment: SpinlockSameAsRule.p (78, 4): Assert failed
 Safety Error Trace
 Trace-Log 7:
 <CreateLog> Created monitor Spinlock
@@ -126,7 +126,7 @@ Trace-Log 7:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: SpinlockSameAsRule.p (72, 4): Assert failed
+Comment: SpinlockSameAsRule.p (78, 4): Assert failed
 Safety Error Trace
 Trace-Log 8:
 <CreateLog> Created monitor Spinlock
@@ -143,7 +143,7 @@ Trace-Log 8:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: SpinlockSameAsRule.p (72, 4): Assert failed
+Comment: SpinlockSameAsRule.p (78, 4): Assert failed
 Safety Error Trace
 Trace-Log 9:
 <CreateLog> Created monitor Spinlock
@@ -160,4 +160,4 @@ Trace-Log 9:
 Error:
 P Assertion failed:
 Expression: assert(tmp_12.bl,)
-Comment: SpinlockSameAsRule.p (72, 4): Assert failed
+Comment: SpinlockSameAsRule.p (78, 4): Assert failed

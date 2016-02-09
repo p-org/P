@@ -1,5 +1,8 @@
 // Monitor with typestate table
 // This P program matches the semantics of the original WDF Spinlock rule
+// In the new version of P which does not allow dynamic creation of
+// monitors, typestate is maintained in the "typstate" table,
+// exactly as in XDV implementation
 // Two guards are explored: 227 states to reach all Aborts
 //event START assume 1;
 event ACQ assume 2: int;
@@ -12,6 +15,9 @@ event Halt assume 1;
 
 spec Spinlock monitors ACQ, REL, FIN, Error1, Error2, Error3 {
 //tpstate is a map from guards to stvar s value: false: init, true: locked
+//Upon creation of the Spinlock monitor, tpstate is initialized as "empty"
+//What would be good is to have tpstate initialized with all "false",
+// - then we wouldn't need checks on tpstate all the time
 var tpstate: map[int,bool]; 
 var ev_guard: int; 
 var i, k: int; 

@@ -1,0 +1,6 @@
+arg: ..\test.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe: static function return type

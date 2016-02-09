@@ -150,9 +150,6 @@ namespace CheckP
         //Pc, Prt or Zing:
         private string parentDir = null;
 		private string execsToRun = null;
-        private bool isSetExePc = false;
-        private bool isSetExeZing = false;
-        private bool isSetExePrt = false;
         private PciProcess pciProcess;
         private string zingFilePath;
 

@@ -1,0 +1,9 @@
+=================================
+         Console output          
+=================================
+OUT: test.p (5, 8): inferred type:  ERROR
+OUT: test.p (5, 15): inferred type:  BaseType(INT)
+OUT: test.p (10, 5): inferred type:  NIL
+OUT: test.p (5, 8): return value has incorrect type
+OUT: Compilation failed
+EXIT: -1

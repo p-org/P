@@ -16,7 +16,7 @@ extern "C"{
 	* @param[in] typetag of the foreign type
 	* @param[in] foreign value
 	*/
-	extern PRT_FORGN_TOSTRING PrtForeignValueToString;
+	extern PRT_FORGN_TOSTRING PrtToStringForeignValue;
 
 	/** Prints a value to the output stream
 	* @param[in] value The non-null value to print.

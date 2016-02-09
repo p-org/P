@@ -233,7 +233,7 @@ PRT_FORGN_CLONE PrtCloneForeignValue = &CloneForeignValue;
 PRT_FORGN_FREE PrtFreeForeignValue = &FreeForeignValue;
 PRT_FORGN_GETHASHCODE PrtHashForeignValue = &HashForeignValue;
 PRT_FORGN_ISEQUAL PrtIsEqualForeignValue = &IsEqualForeignValue;
-PRT_FORGN_TOSTRING PrtForeignValueToString = &ToStringForeignValue;
+PRT_FORGN_TOSTRING PrtToStringForeignValue = &ToStringForeignValue;
 
 void PRT_CALL_CONV PrtUpdateForeignFn(
 	PRT_FORGN_MKDEF MkDefault,
@@ -248,7 +248,7 @@ void PRT_CALL_CONV PrtUpdateForeignFn(
 	PrtFreeForeignValue = Free;
 	PrtHashForeignValue = Hash;
 	PrtIsEqualForeignValue = IsEqual;
-	PrtForeignValueToString = ToString;
+	PrtToStringForeignValue = ToString;
 }
 
 PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(

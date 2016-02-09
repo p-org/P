@@ -163,6 +163,7 @@ void PrtWinUserPrintType(_In_ PRT_TYPE *type, _Inout_ char **buffer, _Inout_ PRT
 
 void PrtWinUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
+	PRT_STRING frgnStr;
 	PRT_VALUE_KIND kind = value->discriminator;
 	switch (kind)
 	{
@@ -184,7 +185,9 @@ void PrtWinUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Inout_ 
 		PrtWinUserPrintMachineId(PrtPrimGetMachine(value), buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_VALKIND_FORGN:
-		PrtWinUserPrintString(PrtForeignValueToString(((PRT_FORGNVALUE*)value->valueUnion.frgn)->typeTag, ((PRT_FORGNVALUE*)value->valueUnion.frgn)->value), buffer, bufferSize, numCharsWritten);
+		frgnStr = PrtToStringForeignValue(((PRT_FORGNVALUE*)value->valueUnion.frgn)->typeTag, ((PRT_FORGNVALUE*)value->valueUnion.frgn)->value);
+		PrtWinUserPrintString(frgnStr, buffer, bufferSize, numCharsWritten);
+		PrtFree(frgnStr);
 		break;
 	case PRT_VALKIND_MAP:
 	{

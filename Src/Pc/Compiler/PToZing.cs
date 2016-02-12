@@ -3678,6 +3678,7 @@ namespace Microsoft.Pc
 
             public AST<Node> PTypeToZingExpr(FuncTerm pType)
             {
+                pType = pToZing.typeExpansion[(AST<FuncTerm>)Factory.Instance.ToAST(pType)];
                 var pTypeAST = Factory.Instance.ToAST(pType);
                 if (!pTypeToZingExpr.ContainsKey(pTypeAST))
                 {
@@ -3688,7 +3689,6 @@ namespace Microsoft.Pc
 
             private AST<Node> ConstructType(FuncTerm type)
             {
-                type = pToZing.typeExpansion[(AST<FuncTerm>)Factory.Instance.ToAST(type)];
                 string typeKind = ((Id)type.Function).Name;
                 if (typeKind == "BaseType")
                 {

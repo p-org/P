@@ -244,7 +244,6 @@ domain PStaticTyping extends PData
 	TypeExpansion(BaseType(EVENT), BaseType(EVENT)).
 	TypeExpansion(BaseType(REAL), BaseType(REAL)).
 	TypeExpansion(BaseType(ANY), BaseType(ANY)).
-	//TypeExpansion(t, t) :- TypeOf(_, _, t), t : TypeExpr.
 	TypeExpansion(t, t) :- TypeOf(_, Tuple(_), t), t : TypeExpr.
 	TypeExpansion(t, t) :- TypeOf(_, NamedTuple(_), t), t : TypeExpr.
 	TypeExpansion(t, t) :- TypeExpansion(_, TupType(t, _)), t : TypeExpr.
@@ -252,8 +251,7 @@ domain PStaticTyping extends PData
 	TypeExpansion(t, t) :- TypeExpansion(_, NmdTupType(f, _)), t = f.type.
 	TypeExpansion(t, t) :- TypeExpansion(_, NmdTupType(_, t)), t : TypeExpr.
 
-	TypeExpansion(type, type) :- AllTypeExprs(type), type = BaseType(_).
-	TypeExpansion(type, type)  :- TypeDef(typeName, NIL), no TypeDefError(typeName), type = NameType(typeName).
+	TypeExpansion(type, type)  :- TypeDef(typeName, NIL), type = NameType(typeName).
 	TypeExpansion(type, eType) :- TypeDef(typeName, typeExpr), typeExpr: TypeExpr, no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = TupType(hd', tl').
@@ -331,8 +329,10 @@ domain PStaticTyping extends PData
     TypeOf(c, e, et)              :- SubSE(c, e), e = Default(t), TypeExpansion(t, et). 
 	
 	[ rule_Classes = '"error, msg: Illegal type"']
-	TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Fresh(t), no TypeDef(t, NIL). 
-	TypeOf(c, e, type)            :- SubSE(c, e), e = Fresh(t), type = NameType(t), TypeDef(t, NIL). 
+	TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Fresh(t), no TypeDef(t, _). 
+	[ rule_Classes = '"error, msg: Illegal type"']
+	TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Fresh(t), TypeExpansion(NameType(t), type), toSymbol(type) != #NameType. 
+	TypeOf(c, e, type)            :- SubSE(c, e), e = Fresh(t), TypeExpansion(NameType(t), type), toSymbol(type) = #NameType. 
 
     TypeOf(c, e, t1)              :- TypeOfArg1(c, e, t1), e : Tuple.     
 

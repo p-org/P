@@ -954,7 +954,7 @@ transform P2CProgram (in:: P) returns (out:: C)
     /*************************************************************/	
 	LocalsType ::= (decl: AnonOrNamedFun, type: out.Expr).
 	LocalsType(d, t) :- d is AnonOrNamedFun, d.locals = NIL, t = out.Ident("NULL").
-	LocalsType(d, t) :- d is AnonOrNamedFun, type = d.locals, TypeId(typeIndex, type), 
+	LocalsType(d, t) :- d is AnonOrNamedFun, type = d.locals, TypeExpansion(type, etype), TypeId(typeIndex, etype), 
 	                    typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), t = out.UnApp(ADDR, Ident(typeName)).
 
 	CaseEvent ::= (trig: String + { NULL, HALT }, id: Natural, name: String).
@@ -1526,7 +1526,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = in.FunApp(name, args), args != NIL, 
 									DeclId(funDecl, funIndex, funName), funDecl.name = name, funDecl.params = type, FunAvailable(funDecl, c.owner),
-									TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), 
+									TypeExpansion(type, etype), TypeId(typeIndex, etype), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), 
 									ExprsTrans(c, s, i, args, ecs),
 									argsTuple = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#Exprs, args) - 1))), Args(out.UnApp(ADDR, Ident(typeName)), ecs)),
 									ec = out.FunApp(Ident("PrtWrapFunStmt"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(0, DEC, U), Args(Ident("p_tmp_mach_priv"), Args(IntLit(funIndex, DEC, U), Args(argsTuple, NIL)))))).

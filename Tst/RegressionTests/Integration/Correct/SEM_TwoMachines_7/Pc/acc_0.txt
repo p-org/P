@@ -9,9 +9,9 @@ OUT: raisedhalt_bugfound.p (13, 10): inferred type:  BaseType(EVENT)
 OUT: raisedhalt_bugfound.p (20, 4): inferred type:  BaseType(INT)
 OUT: raisedhalt_bugfound.p (20, 4): inferred type:  NIL
 OUT: raisedhalt_bugfound.p (20, 20): inferred type:  BaseType(INT)
-OUT: raisedhalt_bugfound.p (20, 22): inferred type:  BaseType(INT)
 OUT: raisedhalt_bugfound.p (21, 4): inferred type:  NIL
 OUT: raisedhalt_bugfound.p (21, 15): inferred type:  BaseType(BOOL)
+OUT: raisedhalt_bugfound.p (21, 18): inferred type:  BaseType(INT)
 OUT: raisedhalt_bugfound.p (22, 5): inferred type:  NIL
 OUT: raisedhalt_bugfound.p (22, 10): inferred type:  BaseType(REAL)
 OUT: raisedhalt_bugfound.p (22, 18): inferred type:  BaseType(EVENT)

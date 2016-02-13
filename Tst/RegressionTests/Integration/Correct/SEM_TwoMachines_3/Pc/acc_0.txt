@@ -9,9 +9,9 @@ OUT: eventsentaftersenthalthandled.p (14, 10): inferred type:  BaseType(EVENT)
 OUT: eventsentaftersenthalthandled.p (21, 4): inferred type:  BaseType(INT)
 OUT: eventsentaftersenthalthandled.p (21, 4): inferred type:  NIL
 OUT: eventsentaftersenthalthandled.p (21, 18): inferred type:  BaseType(INT)
+OUT: eventsentaftersenthalthandled.p (21, 20): inferred type:  BaseType(INT)
 OUT: eventsentaftersenthalthandled.p (22, 4): inferred type:  NIL
 OUT: eventsentaftersenthalthandled.p (22, 14): inferred type:  BaseType(BOOL)
-OUT: eventsentaftersenthalthandled.p (22, 17): inferred type:  BaseType(INT)
 OUT: eventsentaftersenthalthandled.p (23, 5): inferred type:  NIL
 OUT: eventsentaftersenthalthandled.p (23, 10): inferred type:  BaseType(REAL)
 OUT: eventsentaftersenthalthandled.p (23, 18): inferred type:  BaseType(EVENT)

@@ -31,9 +31,9 @@ OUT: anytypenullvalue.p (35, 15): inferred type:  BaseType(EVENT)
 OUT: anytypenullvalue.p (36, 11): inferred type:  NIL
 OUT: anytypenullvalue.p (36, 20): inferred type:  BaseType(BOOL)
 OUT: anytypenullvalue.p (36, 23): inferred type:  BaseType(NULL)
-OUT: anytypenullvalue.p (38, 5): inferred type:  BaseType(REAL)
 OUT: anytypenullvalue.p (38, 5): inferred type:  NIL
 OUT: anytypenullvalue.p (38, 11): inferred type:  BaseType(REAL)
+OUT: anytypenullvalue.p (39, 11): inferred type:  BaseType(REAL)
 OUT: anytypenullvalue.p (39, 11): inferred type:  NIL
 OUT: anytypenullvalue.p (39, 17): inferred type:  BaseType(REAL)
 OUT: anytypenullvalue.p (40, 11): inferred type:  NIL

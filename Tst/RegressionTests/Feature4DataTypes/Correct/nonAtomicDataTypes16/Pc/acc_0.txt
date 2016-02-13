@@ -31,9 +31,9 @@ OUT: nonatomicdatatypes.p (34, 15): inferred type:  BaseType(EVENT)
 OUT: nonatomicdatatypes.p (35, 11): inferred type:  NIL
 OUT: nonatomicdatatypes.p (35, 20): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (35, 23): inferred type:  BaseType(NULL)
-OUT: nonatomicdatatypes.p (37, 5): inferred type:  BaseType(REAL)
 OUT: nonatomicdatatypes.p (37, 5): inferred type:  NIL
 OUT: nonatomicdatatypes.p (37, 11): inferred type:  BaseType(REAL)
+OUT: nonatomicdatatypes.p (38, 11): inferred type:  BaseType(REAL)
 OUT: nonatomicdatatypes.p (38, 11): inferred type:  NIL
 OUT: nonatomicdatatypes.p (38, 17): inferred type:  BaseType(REAL)
 OUT: nonatomicdatatypes.p (39, 11): inferred type:  NIL

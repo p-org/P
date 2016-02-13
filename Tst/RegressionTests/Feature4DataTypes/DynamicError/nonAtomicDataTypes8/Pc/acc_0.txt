@@ -2,10 +2,10 @@
          Console output          
 =================================
 OUT: nonatomicdatatypes.p (33, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (33, 5): inferred type:  SeqType(BaseType(INT))
 OUT: nonatomicdatatypes.p (33, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: nonatomicdatatypes.p (33, 14): inferred type:  TupType(BaseType(INT), NIL)
 OUT: nonatomicdatatypes.p (34, 11): inferred type:  NIL
+OUT: nonatomicdatatypes.p (34, 11): inferred type:  SeqType(BaseType(INT))
 OUT: nonatomicdatatypes.p (34, 17): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: nonatomicdatatypes.p (34, 20): inferred type:  TupType(BaseType(INT), NIL)
 OUT: nonatomicdatatypes.p (35, 11): inferred type:  NIL

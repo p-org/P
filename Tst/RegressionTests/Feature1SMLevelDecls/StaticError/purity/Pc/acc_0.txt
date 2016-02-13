@@ -53,12 +53,12 @@ OUT: purity.p (73, 10): inferred type:  NIL
 OUT: purity.p (73, 17): inferred type:  BaseType(BOOL)
 OUT: purity.p (0, 0): No Main Machine
 OUT: purity.p (2, 1): no start state in machine
-OUT: purity.p (9, 12): this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: purity.p (27, 12): this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: purity.p (9, 12): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: purity.p (27, 12): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
 OUT: purity.p (48, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: purity.p (48, 11): Operator expected second argument to be an integer value
 OUT: purity.p (48, 13): new M(...) can only be called like "new M(...);" or "x = new M(...);"
-OUT: purity.p (53, 12): this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: purity.p (53, 23): this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: purity.p (53, 12): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: purity.p (53, 23): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
 OUT: Compilation failed
 EXIT: -1

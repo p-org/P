@@ -937,7 +937,7 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Cast(e', _),          e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
        SubSE(c, e), e = Exprs(e', _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);              
        SubSE(c, e), e = NamedExprs(_, e', _), e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
-       // SubSE(c, e), e = NewStmt(_, e'),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
+       SubSE(c, e), e = NewStmt(_, e'),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Raise(e', _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Raise(_, e'),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);        
        SubSE(c, e), e = Send(e', _, _),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
@@ -945,11 +945,11 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Send(_, _, e'),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
        SubSE(c, e), e = Monitor(e', _),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Monitor(_, e'),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
-       SubSE(c, e), e = Assert(e', _),        e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called).
-       // SubSE(c, e), e = Return (e'),          e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
-       // SubSE(c, e), e = While(e', _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
-       // SubSE(c, e), e = Ite(e', _, _),        e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
-       // SubSE(c, e), e = BinStmt(_, e', e''),  e'' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called), toSymbol(e') != #Name.
+       SubSE(c, e), e = Assert(e', _),        e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
+       SubSE(c, e), e = Return (e'),          e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
+       SubSE(c, e), e = While(e', _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
+       SubSE(c, e), e = Ite(e', _, _),        e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
+       SubSE(c, e), e = BinStmt(_, e', e''),  e'' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called), toSymbol(e') != #Name.
 
     [ rule_Classes = '"error, msg: new M(...) can only be called like "new M(...);" or "x = new M(...);" "']
     PurityError(c, e') :- 
@@ -961,7 +961,7 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Cast(e', _),          e' : New;    
        SubSE(c, e), e = Exprs(e', _),         e' : New;              
        SubSE(c, e), e = NamedExprs(_, e', _), e' : New;
-       // SubSE(c, e), e = NewStmt(_, e'),       e' : New;
+       SubSE(c, e), e = NewStmt(_, e'),       e' : New;
        SubSE(c, e), e = Raise(e', _),         e' : New;
        SubSE(c, e), e = Raise(_, e'),         e' : New;        
        SubSE(c, e), e = Send(e', _, _),       e' : New;
@@ -969,11 +969,11 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Send(_, _, e'),       e' : New;    
        SubSE(c, e), e = Monitor(e', _),       e' : New;
        SubSE(c, e), e = Monitor(_, e'),       e' : New;    
-       SubSE(c, e), e = Assert(e', _),        e' : New.
-       // SubSE(c, e), e = Return (e'),          e' : New;
-       // SubSE(c, e), e = While(e', _),         e' : New;
-       // SubSE(c, e), e = Ite(e', _, _),        e' : New;
-       // SubSE(c, e), e = BinStmt(_, e', e''),  e'' : New, toSymbol(e') != #Name.
+       SubSE(c, e), e = Assert(e', _),        e' : New;
+       SubSE(c, e), e = Return (e'),          e' : New;
+       SubSE(c, e), e = While(e', _),         e' : New;
+       SubSE(c, e), e = Ite(e', _, _),        e' : New;
+       SubSE(c, e), e = BinStmt(_, e', e''),  e'' : New, toSymbol(e') != #Name.
 						 	                                          
     /*************************************************************/
     /*                      Type Comparability                   */

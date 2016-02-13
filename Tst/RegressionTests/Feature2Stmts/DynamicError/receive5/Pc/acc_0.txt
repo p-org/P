@@ -5,9 +5,9 @@ OUT: receive5.p (0, 0): inferred type:  NIL
 OUT: receive5.p (9, 4): inferred type:  BaseType(INT)
 OUT: receive5.p (9, 4): inferred type:  NIL
 OUT: receive5.p (9, 10): inferred type:  BaseType(INT)
+OUT: receive5.p (9, 12): inferred type:  BaseType(INT)
 OUT: receive5.p (10, 4): inferred type:  NIL
 OUT: receive5.p (10, 13): inferred type:  BaseType(BOOL)
-OUT: receive5.p (10, 16): inferred type:  BaseType(INT)
 OUT: receive5.p (11, 4): inferred type:  NIL
 OUT: receive5.p (12, 4): inferred type:  NIL
 OUT: receive5.p (12, 13): inferred type:  BaseType(BOOL)

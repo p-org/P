@@ -4,17 +4,17 @@
 OUT: payloadtransitions.p (12, 9): inferred type:  NIL
 OUT: payloadtransitions.p (17, 4): inferred type:  BaseType(INT)
 OUT: payloadtransitions.p (17, 4): inferred type:  NIL
+OUT: payloadtransitions.p (17, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
 OUT: payloadtransitions.p (17, 18): inferred type:  BaseType(INT)
 OUT: payloadtransitions.p (18, 4): inferred type:  BaseType(BOOL)
 OUT: payloadtransitions.p (18, 4): inferred type:  NIL
-OUT: payloadtransitions.p (18, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
 OUT: payloadtransitions.p (18, 19): inferred type:  BaseType(BOOL)
 OUT: payloadtransitions.p (22, 4): inferred type:  BaseType(INT)
 OUT: payloadtransitions.p (22, 4): inferred type:  NIL
-OUT: payloadtransitions.p (22, 10): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("sec", BaseType(BOOL)), NIL))
 OUT: payloadtransitions.p (22, 18): inferred type:  BaseType(INT)
 OUT: payloadtransitions.p (23, 4): inferred type:  BaseType(BOOL)
 OUT: payloadtransitions.p (23, 4): inferred type:  NIL
+OUT: payloadtransitions.p (23, 11): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("sec", BaseType(BOOL)), NIL))
 OUT: payloadtransitions.p (23, 19): inferred type:  BaseType(BOOL)
 OUT: payloadtransitions.p (27, 4): inferred type:  BaseType(INT)
 OUT: payloadtransitions.p (27, 4): inferred type:  NIL

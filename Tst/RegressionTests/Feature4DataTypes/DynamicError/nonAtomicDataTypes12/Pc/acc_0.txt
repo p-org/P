@@ -320,31 +320,31 @@ OUT: stackoverflowexception.p (207, 14): inferred type:  BaseType(BOOL)
 OUT: stackoverflowexception.p (209, 9): inferred type:  NIL
 OUT: stackoverflowexception.p (209, 15): inferred type:  BaseType(BOOL)
 OUT: stackoverflowexception.p (209, 23): inferred type:  NIL
-OUT: stackoverflowexception.p (209, 35): inferred type:  BaseType(ANY)
 OUT: stackoverflowexception.p (209, 39): inferred type:  BaseType(BOOL)
-OUT: stackoverflowexception.p (209, 47): inferred type:  BaseType(ANY)
 OUT: stackoverflowexception.p (210, 15): inferred type:  NIL
+OUT: stackoverflowexception.p (210, 27): inferred type:  BaseType(ANY)
 OUT: stackoverflowexception.p (210, 31): inferred type:  BaseType(BOOL)
+OUT: stackoverflowexception.p (210, 39): inferred type:  BaseType(ANY)
 OUT: stackoverflowexception.p (211, 6): inferred type:  NIL
 OUT: stackoverflowexception.p (211, 12): inferred type:  BaseType(INT)
 OUT: stackoverflowexception.p (216, 5): inferred type:  NIL
+OUT: stackoverflowexception.p (216, 5): inferred type:  SeqType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)))
 OUT: stackoverflowexception.p (216, 12): inferred type:  TupType(BaseType(INT), TupType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)), NIL))
 OUT: stackoverflowexception.p (216, 15): inferred type:  TupType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)), NIL)
 OUT: stackoverflowexception.p (217, 5): inferred type:  NIL
-OUT: stackoverflowexception.p (217, 5): inferred type:  SeqType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)))
 OUT: stackoverflowexception.p (217, 12): inferred type:  TupType(BaseType(INT), TupType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)), NIL))
 OUT: stackoverflowexception.p (217, 15): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
 OUT: stackoverflowexception.p (217, 15): inferred type:  TupType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)), NIL)
 OUT: stackoverflowexception.p (217, 19): inferred type:  NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)
 OUT: stackoverflowexception.p (218, 5): inferred type:  NIL
 OUT: stackoverflowexception.p (218, 12): inferred type:  TupType(BaseType(INT), TupType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)), NIL))
-OUT: stackoverflowexception.p (218, 16): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: stackoverflowexception.p (218, 16): inferred type:  TupType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)), NIL)
 OUT: stackoverflowexception.p (220, 5): inferred type:  NIL
 OUT: stackoverflowexception.p (220, 5): inferred type:  SeqType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)))
 OUT: stackoverflowexception.p (220, 12): inferred type:  TupType(BaseType(INT), TupType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)), NIL))
 OUT: stackoverflowexception.p (221, 5): inferred type:  NIL
 OUT: stackoverflowexception.p (221, 12): inferred type:  TupType(BaseType(INT), TupType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)), NIL))
+OUT: stackoverflowexception.p (221, 15): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
+OUT: stackoverflowexception.p (221, 15): inferred type:  TupType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)), NIL)
 OUT: stackoverflowexception.p (222, 5): inferred type:  NIL
 OUT: stackoverflowexception.p (222, 12): inferred type:  TupType(BaseType(INT), TupType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)), NIL))
 OUT: stackoverflowexception.p (222, 15): inferred type:  TupType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)), NIL)

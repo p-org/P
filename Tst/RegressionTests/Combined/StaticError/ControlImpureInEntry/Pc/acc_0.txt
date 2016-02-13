@@ -37,7 +37,7 @@ OUT: controlimpureinentry.p (54, 3): inferred type:  NIL
 OUT: controlimpureinentry.p (54, 9): inferred type:  BaseType(EVENT)
 OUT: controlimpureinentry.p (56, 16): inferred type:  NIL
 OUT: controlimpureinentry.p (26, 6): function not defined
-OUT: controlimpureinentry.p (30, 14): this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: controlimpureinentry.p (32, 8): this function must be pure. Data impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: controlimpureinentry.p (30, 14): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: controlimpureinentry.p (32, 8): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
 OUT: Compilation failed
 EXIT: -1

@@ -32,11 +32,11 @@ OUT: payloadactionsfuns.p (29, 4): inferred type:  NIL
 OUT: payloadactionsfuns.p (29, 10): inferred type:  SeqType(BaseType(INT))
 OUT: payloadactionsfuns.p (29, 17): inferred type:  BaseType(INT)
 OUT: payloadactionsfuns.p (29, 18): inferred type:  BaseType(INT)
-OUT: payloadactionsfuns.p (34, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: payloadactionsfuns.p (34, 4): inferred type:  NIL
 OUT: payloadactionsfuns.p (34, 5): inferred type:  BaseType(INT)
 OUT: payloadactionsfuns.p (34, 6): inferred type:  BaseType(INT)
 OUT: payloadactionsfuns.p (34, 11): inferred type:  BaseType(INT)
+OUT: payloadactionsfuns.p (35, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: payloadactionsfuns.p (35, 4): inferred type:  NIL
 OUT: payloadactionsfuns.p (35, 5): inferred type:  BaseType(INT)
 OUT: payloadactionsfuns.p (35, 11): inferred type:  BaseType(INT)

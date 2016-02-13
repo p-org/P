@@ -175,9 +175,9 @@ OUT: castinexprsdynerror.p (242, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (244, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (244, 17): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: castinexprsdynerror.p (246, 4): inferred type:  NIL
+OUT: castinexprsdynerror.p (252, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsdynerror.p (252, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (252, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: castinexprsdynerror.p (253, 4): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsdynerror.p (253, 4): inferred type:  NIL
 OUT: castinexprsdynerror.p (253, 9): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: castinexprsdynerror.p (254, 4): inferred type:  NIL

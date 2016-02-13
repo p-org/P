@@ -13,9 +13,9 @@ OUT: staticfunctions_4.p (9, 13): inferred type:  BaseType(EVENT)
 OUT: staticfunctions_4.p (9, 20): inferred type:  BaseType(INT)
 OUT: staticfunctions_4.p (9, 21): inferred type:  BaseType(INT)
 OUT: staticfunctions_4.p (13, 2): inferred type:  NIL
+OUT: staticfunctions_4.p (13, 7): inferred type:  BaseType(REAL)
 OUT: staticfunctions_4.p (13, 13): inferred type:  BaseType(EVENT)
 OUT: staticfunctions_4.p (14, 2): inferred type:  NIL
-OUT: staticfunctions_4.p (14, 7): inferred type:  BaseType(REAL)
 OUT: staticfunctions_4.p (14, 13): inferred type:  BaseType(EVENT)
 OUT: staticfunctions_4.p (25, 15): inferred type:  NIL
 OUT: staticfunctions_4.p (25, 22): inferred type:  BaseType(BOOL)

@@ -1,16 +1,16 @@
 =================================
          Console output          
 =================================
-OUT: anytype1.p (15, 4): inferred type:  BaseType(ANY)
 OUT: anytype1.p (15, 4): inferred type:  NIL
-OUT: anytype1.p (15, 11): inferred type:  BaseType(INT)
 OUT: anytype1.p (17, 4): inferred type:  BaseType(INT)
 OUT: anytype1.p (17, 4): inferred type:  NIL
+OUT: anytype1.p (17, 11): inferred type:  BaseType(INT)
 OUT: anytype1.p (18, 4): inferred type:  NIL
 OUT: anytype1.p (18, 16): inferred type:  BaseType(BOOL)
 OUT: anytype1.p (20, 4): inferred type:  BaseType(EVENT)
 OUT: anytype1.p (20, 4): inferred type:  NIL
 OUT: anytype1.p (20, 13): inferred type:  BaseType(EVENT)
+OUT: anytype1.p (21, 4): inferred type:  BaseType(ANY)
 OUT: anytype1.p (21, 4): inferred type:  NIL
 OUT: anytype1.p (22, 4): inferred type:  NIL
 OUT: anytype1.p (22, 16): inferred type:  BaseType(BOOL)

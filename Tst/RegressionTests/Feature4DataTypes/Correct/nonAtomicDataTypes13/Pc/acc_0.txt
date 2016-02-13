@@ -45,10 +45,10 @@ OUT: seqassgntoany.p (51, 5): inferred type:  TupType(BaseType(INT), TupType(Bas
 OUT: seqassgntoany.p (51, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: seqassgntoany.p (51, 13): inferred type:  TupType(BaseType(INT), NIL)
 OUT: seqassgntoany.p (54, 5): inferred type:  NIL
-OUT: seqassgntoany.p (54, 5): inferred type:  SeqType(BaseType(INT))
 OUT: seqassgntoany.p (54, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: seqassgntoany.p (54, 14): inferred type:  TupType(BaseType(INT), NIL)
 OUT: seqassgntoany.p (55, 11): inferred type:  NIL
+OUT: seqassgntoany.p (55, 11): inferred type:  SeqType(BaseType(INT))
 OUT: seqassgntoany.p (55, 17): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: seqassgntoany.p (55, 20): inferred type:  TupType(BaseType(INT), NIL)
 OUT: seqassgntoany.p (57, 11): inferred type:  NIL

@@ -1,0 +1,22 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 2 distinct states explored
+OUT: 
+EXIT: 3
+
+=================================
+equality.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine MyMachine-0
+<StateLog> Machine MyMachine-0 entering State Init
+
+Error:
+P Assertion failed:
+Expression: assert(tmpVar_2.bl,)
+Comment: equality.p (13, 13): Assert failed

@@ -229,13 +229,13 @@
             bool result;
             try
             {
-                var fi = new System.IO.FileInfo(file.Uri.AbsolutePath);
+                var fi = new System.IO.FileInfo(file.Uri.LocalPath);
                 if (!fi.Exists)
                 {
                     var badFile = new Flag(
                         SeverityKind.Error,
                         default(Span),
-                        Constants.BadFile.ToString(string.Format("The file {0} does not exist", file.ToString())),
+                        Constants.BadFile.ToString(string.Format("The file {0} does not exist", fi.FullName)),
                         Constants.BadFile.Code,
                         file);
                     result = false;
@@ -243,7 +243,7 @@
                     return false;
                 }
 
-                var str = new System.IO.FileStream(file.Uri.AbsolutePath, System.IO.FileMode.Open, System.IO.FileAccess.Read);
+                var str = new System.IO.FileStream(file.Uri.LocalPath, System.IO.FileMode.Open, System.IO.FileAccess.Read);
                 var scanner = ((Scanner)Scanner);
                 scanner.SetSource(str);
                 scanner.SourceProgram = file;

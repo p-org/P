@@ -18,14 +18,14 @@ machine FailureDetector {
     var timer: machine;
 	
     start state Init {
-        entry {
+        entry (payload: seq[machine]) {
   	        nodes = payload as seq[machine];
 			InitializeAliveSet();
 			timer = new Timer(this);
 	        raise UNIT;   	   
         }
-		on REGISTER_CLIENT do { clients[payload] = true; };
-		on UNREGISTER_CLIENT do { if (payload in clients) clients -= payload; };
+		on REGISTER_CLIENT do (payload: machine) { clients[payload] = true; };
+		on UNREGISTER_CLIENT do (payload: machine) { if (payload in clients) clients -= payload; };
         on UNIT push SendPing;
     }
     state SendPing {
@@ -33,7 +33,7 @@ machine FailureDetector {
 		    SendPingsToAliveSet();
 			send timer, START, 100;
 	    }
-        on PONG do { 
+        on PONG do (payload: machine){ 
 		    if (payload in alive) {
 				 responses[payload] = true; 
 				 if (sizeof(responses) == sizeof(alive)) {
@@ -107,7 +107,7 @@ machine FailureDetector {
 
 machine Node {
 	start state WaitPing {
-        on PING do {
+        on PING do (payload: machine) {
 			monitor M_PONG, this;
 		    _SEND(payload as machine, PONG, this);
 		};

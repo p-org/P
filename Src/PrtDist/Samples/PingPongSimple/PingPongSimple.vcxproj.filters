@@ -13,55 +13,33 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="ClientFiles">
-      <UniqueIdentifier>{aa73a17e-a98f-4d26-a70f-17271fac2678}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="PrtDistSerializer.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PrtDist.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PrtDistNMClient.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PrtDistLogging.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PrtDistConfigParser.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PrtDistSendClient.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PrtDist.h">
+    <ClInclude Include="stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PrtDistConfigParser.h">
+    <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PrtDistInternals.h">
+    <ClInclude Include="program.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="PrtDistIDL.idl">
+    <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
-    </Midl>
-    <Midl Include="NodeManager.idl">
+    </ClCompile>
+    <ClCompile Include="program.c">
       <Filter>Source Files</Filter>
-    </Midl>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="PrtDistIDL.acf">
+    </ClCompile>
+    <ClCompile Include="Timer.c">
       <Filter>Source Files</Filter>
-    </None>
-    <None Include="NodeManager.acf">
+    </ClCompile>
+    <ClCompile Include="Test.c">
       <Filter>Source Files</Filter>
-    </None>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -18,7 +18,6 @@ main machine Driver {
 	var n: machine;
     start state Init {
 	    entry {
-			new Safety();
 			i = 0;
 			while (i < 2) {
 				container = _CREATECONTAINER();
@@ -27,7 +26,7 @@ main machine Driver {
 				nodemap += (n, true);
 				i = i + 1;
 			}
-			new Liveness(nodemap);
+			monitor L_INIT, nodemap;
 			fd = new FailureDetector(nodeseq);
 			send fd, REGISTER_CLIENT, this;
 			i = 0;
@@ -45,13 +44,13 @@ event M_PONG: machine;
 spec Safety monitors M_PING, M_PONG {
 	var pending: map[machine, int];
     start state Init {
-	    on M_PING do { 
+	    on M_PING do (payload: machine) { 
 			if (!(payload in pending))
 				pending[payload] = 0;
 			pending[payload] = pending[payload] + 1;
 			assert (pending[payload] <= 3);
 		};
-		on M_PONG do { 
+		on M_PONG do (payload: machine) { 
 			assert (payload in pending);
 			assert (0 < pending[payload]);
 			pending[payload] = pending[payload] - 1;
@@ -59,13 +58,15 @@ spec Safety monitors M_PING, M_PONG {
 	}
 }
 
+event L_INIT: map[machine, bool];
+
 spec Liveness monitors NODE_DOWN {
 	var nodes: map[machine, bool];
 	start hot state Init {
-		entry {
+        on L_INIT do (payload: map[machine, bool]) {        
 			nodes = payload as map[machine, bool]; 
-		}
-		on NODE_DOWN do { 
+        };
+		on NODE_DOWN do (payload: machine) { 
 			nodes -= payload;
 			if (sizeof(nodes) == 0) 
 				raise UNIT;

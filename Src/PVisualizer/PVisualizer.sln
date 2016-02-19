@@ -1,11 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PVisualizer", "PVisualizer.csproj", "{9EA5F2E1-7FFA-4A0C-B439-BEAE64B952C5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pc", "..\..\..\plang\Src\Pc\Pc.csproj", "{ED76217F-2452-4A35-90F6-6EB6CCF2D882}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compiler", "..\Pc\Compiler\Compiler.csproj", "{ED76217F-2452-4A35-90F6-6EB6CCF2D882}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CParser", "..\Parsers\CParser\CParser.csproj", "{55AFEA71-DA6D-4258-9193-29942EBBBE48}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZingParser", "..\Parsers\ZingParser\ZingParser.csproj", "{09A73016-0395-4014-8F26-0DD25ED81D12}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -22,7 +26,8 @@ Global
 		{9EA5F2E1-7FFA-4A0C-B439-BEAE64B952C5}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{9EA5F2E1-7FFA-4A0C-B439-BEAE64B952C5}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
 		{9EA5F2E1-7FFA-4A0C-B439-BEAE64B952C5}.Debug|Mixed Platforms.Build.0 = Debug|x86
-		{9EA5F2E1-7FFA-4A0C-B439-BEAE64B952C5}.Debug|x64.ActiveCfg = Debug|x86
+		{9EA5F2E1-7FFA-4A0C-B439-BEAE64B952C5}.Debug|x64.ActiveCfg = Debug|x64
+		{9EA5F2E1-7FFA-4A0C-B439-BEAE64B952C5}.Debug|x64.Build.0 = Debug|x64
 		{9EA5F2E1-7FFA-4A0C-B439-BEAE64B952C5}.Debug|x86.ActiveCfg = Debug|x86
 		{9EA5F2E1-7FFA-4A0C-B439-BEAE64B952C5}.Debug|x86.Build.0 = Debug|x86
 		{9EA5F2E1-7FFA-4A0C-B439-BEAE64B952C5}.Release|Any CPU.ActiveCfg = Release|x86
@@ -45,6 +50,34 @@ Global
 		{ED76217F-2452-4A35-90F6-6EB6CCF2D882}.Release|x64.Build.0 = Release|x64
 		{ED76217F-2452-4A35-90F6-6EB6CCF2D882}.Release|x86.ActiveCfg = Release|x86
 		{ED76217F-2452-4A35-90F6-6EB6CCF2D882}.Release|x86.Build.0 = Release|x86
+		{55AFEA71-DA6D-4258-9193-29942EBBBE48}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{55AFEA71-DA6D-4258-9193-29942EBBBE48}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{55AFEA71-DA6D-4258-9193-29942EBBBE48}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{55AFEA71-DA6D-4258-9193-29942EBBBE48}.Debug|x64.ActiveCfg = Debug|x64
+		{55AFEA71-DA6D-4258-9193-29942EBBBE48}.Debug|x64.Build.0 = Debug|x64
+		{55AFEA71-DA6D-4258-9193-29942EBBBE48}.Debug|x86.ActiveCfg = Debug|x86
+		{55AFEA71-DA6D-4258-9193-29942EBBBE48}.Debug|x86.Build.0 = Debug|x86
+		{55AFEA71-DA6D-4258-9193-29942EBBBE48}.Release|Any CPU.ActiveCfg = Release|x86
+		{55AFEA71-DA6D-4258-9193-29942EBBBE48}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{55AFEA71-DA6D-4258-9193-29942EBBBE48}.Release|Mixed Platforms.Build.0 = Release|x86
+		{55AFEA71-DA6D-4258-9193-29942EBBBE48}.Release|x64.ActiveCfg = Release|x64
+		{55AFEA71-DA6D-4258-9193-29942EBBBE48}.Release|x64.Build.0 = Release|x64
+		{55AFEA71-DA6D-4258-9193-29942EBBBE48}.Release|x86.ActiveCfg = Release|x86
+		{55AFEA71-DA6D-4258-9193-29942EBBBE48}.Release|x86.Build.0 = Release|x86
+		{09A73016-0395-4014-8F26-0DD25ED81D12}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{09A73016-0395-4014-8F26-0DD25ED81D12}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{09A73016-0395-4014-8F26-0DD25ED81D12}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{09A73016-0395-4014-8F26-0DD25ED81D12}.Debug|x64.ActiveCfg = Debug|x64
+		{09A73016-0395-4014-8F26-0DD25ED81D12}.Debug|x64.Build.0 = Debug|x64
+		{09A73016-0395-4014-8F26-0DD25ED81D12}.Debug|x86.ActiveCfg = Debug|x86
+		{09A73016-0395-4014-8F26-0DD25ED81D12}.Debug|x86.Build.0 = Debug|x86
+		{09A73016-0395-4014-8F26-0DD25ED81D12}.Release|Any CPU.ActiveCfg = Release|x86
+		{09A73016-0395-4014-8F26-0DD25ED81D12}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{09A73016-0395-4014-8F26-0DD25ED81D12}.Release|Mixed Platforms.Build.0 = Release|x86
+		{09A73016-0395-4014-8F26-0DD25ED81D12}.Release|x64.ActiveCfg = Release|x64
+		{09A73016-0395-4014-8F26-0DD25ED81D12}.Release|x64.Build.0 = Release|x64
+		{09A73016-0395-4014-8F26-0DD25ED81D12}.Release|x86.ActiveCfg = Release|x86
+		{09A73016-0395-4014-8F26-0DD25ED81D12}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

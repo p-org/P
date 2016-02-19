@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <UnifiedPlatform>$(Platform)</UnifiedPlatform>
+        <!-- C++ projects use "Win32" for "x86" platform and .NET projects use 'x86' -->
+        <!-- So this new property unifies that difference and moves everything to 'x86' -->
+        <UnifiedPlatform Condition="'$(Platform)'=='Win32'">x86</UnifiedPlatform>
+        <DropFolder>$(MSBuildThisFileDirectory)Bld\Drops\$(Configuration)\$(UnifiedPlatform)</DropFolder>
+        <ExtFolder>$(MSBuildThisFileDirectory)Ext</ExtFolder>
+        <CommonTargets>$(MSBuildThisFileDirectory)Bld\Targets\common.targets</CommonTargets>
+    </PropertyGroup>
+    
+    <Target Name="CopySdkHeaders" Inputs="@(ClInclude)"  Outputs="$(DropFolder)\Headers\%(Filename)" BeforeTargets="PrepareForBuild">        
+        <Message Importance="High" Text="Publishing header : @(ClInclude) "  Condition="'%(ClInclude.CopyToHeaders)'=='True'" />
+        <Copy SourceFiles="@(ClInclude)" Condition="'%(ClInclude.CopyToHeaders)'=='True'" DestinationFolder="$(DropFolder)\Headers" />
+    </Target>
+
+    <Target Name="CopyClientFiles" Inputs="@(ClientFile)"  Outputs="$(DropFolder)\ClientFiles\%(Filename)" BeforeTargets="PrepareForBuild">
+        <Message Importance="High" Text="Publishing ClientFile : @(ClientFile) "   />
+        <Copy SourceFiles="@(ClientFile)" DestinationFolder="$(DropFolder)\ClientFiles" />
+    </Target>
+</Project>

@@ -1,11 +1,13 @@
 #include "PrtDist.h"
 #include "program.h"
 #include "PrtExecution.h"
+#include <stdio.h>
 
 /* Global variables */
 PRT_PROCESS* ContainerProcess;
 struct ClusterConfig ClusterConfiguration;
 PRT_INT64 sendMessageSeqNumber = 0;
+
 
 /**
 * The main function performs the following steps
@@ -17,13 +19,40 @@ Also note that the machine hosting the main machine does not host container mach
 
 **/
 
+static char* FirstArgument = NULL;
+
+char* GetApplicationName()
+{
+    char* last = strrchr(FirstArgument, '/');
+    char* last2 = strrchr(FirstArgument, '\\');
+    if (last2 > last)
+    {
+        last = last2;
+    }
+    return last + 1;
+}
+
+void PrintUsage() {
+
+    printf("Usage: %s clusterConfigFile createMain processId nodeId\n", GetApplicationName());
+    printf("Where:\n");
+    printf("  clusterConfigFile points to the cluser config xml file.\n");
+    printf("  createMain (true if 1 and false if 0)\n");
+    printf("  processId the id of the process we are talking to\n");
+    printf("  nodeid (0 is localhost)\n");
+}
+
 int main(int argc, char *argv[])
 {
 	//The commandline arguments 
-	//first: createMain (true if 1 and false if 0)
-	//second: processId id
-	//third: nodeid (0 is localhost)
-	PrtAssert(argc == 5, "Number of Parameters passed to Container is Incorrect");
+    FirstArgument = argv[0];
+
+    if (argc != 5)
+    {
+        PrintUsage();
+        return;
+    }
+
 	int createMain = atoi(argv[2]);
 	PrtAssert(createMain == 0 || createMain == 1, "CreateMain should be either 0 or 1");
 	int processId = atoi(argv[3]);
@@ -83,3 +112,4 @@ int main(int argc, char *argv[])
 	}
 	PRT_DBG_END_MEM_BALANCED_REGION
 }
+

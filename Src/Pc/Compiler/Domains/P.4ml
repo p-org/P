@@ -251,7 +251,7 @@ domain PStaticTyping extends PData
 	TypeExpansion(t, t) :- TypeExpansion(_, NmdTupType(f, _)), t = f.type.
 	TypeExpansion(t, t) :- TypeExpansion(_, NmdTupType(_, t)), t : TypeExpr.
 
-	TypeExpansion(type, type)  :- TypeDef(typeName, NIL), type = NameType(typeName).
+	TypeExpansion(type, type)  :- TypeDef(typeName, NIL), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, eType) :- TypeDef(typeName, typeExpr), typeExpr: TypeExpr, no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = TupType(hd', tl').

@@ -29,49 +29,91 @@ namespace RunPTool
 
         private static PciProcess pciProcess;
 
+        bool reset;
+        //set according to the name of the parent directory for "testconfig.txt":
+        string testFilePath;
+        string execsToRun;
+        static string testRoot; // the Tst directory
+
+        bool ParseCommandLine(string[] args)
+        {
+            for (int i = 0; i < args.Length; i++)
+            {
+                string arg = args[i];
+                if (arg == "/reset")
+                {
+                    reset = true;
+                }
+                else if (arg.StartsWith("/run"))
+                {
+                    execsToRun = arg;
+                }
+                else if (testFilePath == null && !arg.StartsWith("/"))
+                {
+                    testFilePath = arg;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+       static void PrintUsage()
+        {
+            Console.WriteLine("USAGE: RunPTool.exe [file with test dirs] [/reset] [tools to run]");
+            Console.WriteLine();
+            Console.WriteLine("    where \"tools to run\" option is:");
+            Console.WriteLine("         /runPc");
+            Console.WriteLine("         /runPrt");
+            Console.WriteLine("         /runZing");
+            Console.WriteLine("         /runAll   (default)");
+        }
+
         static void Main(string[] args)
         {
+            Program p = new Program();
+            if (!p.ParseCommandLine(args))
+            {
+                PrintUsage();
+                return;
+            }
+            p.Run();
+        }
+
+        void Run()
+        { 
             try
             {
-                bool reset = false;
-                //set according to the name of the parent directory for "testconfig.txt":
-                string testFilePath = null;
-				string execsToRun = null;
-                for (int i = 0; i < args.Length; i++)
+                // this should be the script directory.
+                var tstDir = new DirectoryInfo(Environment.CurrentDirectory);
+                if (!File.Exists(Path.Combine(tstDir.FullName, "testP.bat")))
                 {
-                    string arg = args[i];
-                    if (arg == "/reset")
+                    // Hmmm, we might be debugging the app, so lets see if we can find the tstDir.
+                    Uri uri = new Uri(tstDir.FullName); //  D:\git\P\Bld\Drops\Debug\x64\Binaries
+                    if (uri.Segments.Length > 5 && 
+                        string.Compare(uri.Segments[uri.Segments.Length-1], "Binaries", StringComparison.OrdinalIgnoreCase) == 0 &&
+                        string.Compare(uri.Segments[uri.Segments.Length - 5], "Bld/", StringComparison.OrdinalIgnoreCase) == 0)
                     {
-                        reset = true;
-                    }
-					else if (arg.StartsWith("/run"))
-                    {
-                        execsToRun = arg;
-                    }
-                    else if (testFilePath == null && !arg.StartsWith("/"))
-                    {
-                        testFilePath = arg;
-                    }
-                    else
-                    {
-                        Console.WriteLine("USAGE: RunPTool.exe [file with test dirs] [/reset] [tools to run]");
-						Console.WriteLine();
-						Console.WriteLine("    where \"tools to run\" option is:");
-						Console.WriteLine("         /runPc");
-						Console.WriteLine("         /runPrt");
-						Console.WriteLine("         /runZing");
-						Console.WriteLine("         /runAll   (default)");
-                        return;
+                        Uri resolved = new Uri(uri, @"..\..\..\..\Tst");
+                        tstDir = new DirectoryInfo(resolved.LocalPath);
                     }
                 }
-				if (execsToRun == null) {execsToRun = "/runAll";}
+
+                testRoot = tstDir.FullName;
+
+
+                if (execsToRun == null)
+                {
+                    execsToRun = "/runAll";
+                }
 
                 //tstDir is where testP.bat is located
-                var tstDir = new DirectoryInfo(Environment.CurrentDirectory);
                 List<DirectoryInfo> activeDirs;
                 if (testFilePath == null)
                 {
-                    Console.WriteLine("Warning: no test directories file provided; running all tests under \\Tst");
+                    Console.WriteLine("Warning: no test directories file provided; running all tests under {0}", tstDir.FullName);
                     activeDirs = new List<DirectoryInfo>();
                     activeDirs.Add(tstDir);
                 }
@@ -162,7 +204,12 @@ namespace RunPTool
                 }
 
                 string executingProcessDirectoryName = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
-                string pciFilePath = Path.Combine(executingProcessDirectoryName, "..\\..\\..\\..\\..\\..\\Bld\\Drops\\Plang_Debug_x86\\Compiler\\Pci.exe");
+                string pciFilePath = Path.Combine(executingProcessDirectoryName, "Pci.exe");
+                if (!File.Exists(pciFilePath))
+                {
+                    Console.WriteLine("Cannot find pci.exe");
+                    return;
+                }
                 pciProcess = new PciProcess(pciFilePath);
 
                 Test(activeDirs, reset, execsToRun, ref testCount, ref failCount, failedTestsWriter, tempWriter, displayDiffsWriter);
@@ -329,17 +376,12 @@ namespace RunPTool
         {
             try
             {
-                string executingProcessDirectoryName =
-                    Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
-                string zingFilePath = null;
-                if (executingProcessDirectoryName != null)
+                string zingFilePath = Path.GetFullPath(Path.Combine(testRoot, @"..\Ext\Zing\x86\zinger.exe"));
+                
+                if (!File.Exists(zingFilePath))
                 {
-                    zingFilePath = Path.Combine(executingProcessDirectoryName,
-                        "..\\..\\..\\..\\..\\..\\Bld\\Drops\\Plang_Debug_x86\\Compiler\\zinger.exe");
-                }
-                else
-                {   
-                    Console.WriteLine("ERROR in Test: zinger.exe path is null");
+                    Console.WriteLine("ERROR in Test: zinger.exe not find in {0}", zingFilePath);
+                    Console.WriteLine(@"Please run ~\Bld\build.bat");
                     return;
                 }
 
@@ -358,7 +400,7 @@ namespace RunPTool
                             (di.Name == "Prt" && (execsToRun == "/runPrt" || execsToRun == "/runAll")))
                         {
                             ++testCount;
-                            var checker = new Checker(di.FullName, reset, di.Name, execsToRun, zingFilePath, pciProcess);
+                            var checker = new Checker(di.FullName, testRoot, reset, di.Name, execsToRun, zingFilePath, pciProcess);
                             if ((di.Parent != null) && !checker.Check(fi.Name))
                             {
                                 ++failCount;
@@ -514,7 +556,8 @@ namespace RunPTool
             List<DirectoryInfo> result = new List<DirectoryInfo>();
             try
             {
-                using (var sr = new StreamReader(Path.Combine(tstDir.FullName, fileName)))
+                Uri combined = new Uri(new Uri(tstDir.FullName + "\\"), fileName);
+                using (var sr = new StreamReader(combined.LocalPath))
                 {
                     while (!sr.EndOfStream)
                     {
@@ -531,7 +574,6 @@ namespace RunPTool
                         result.Add(new DirectoryInfo(Path.Combine(tstDir.FullName, dir)));
                     }
                 }
-
             }
             catch (Exception e)
             {

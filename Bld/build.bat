@@ -1,6 +1,5 @@
 @echo off
 setlocal
-set bldexe=
 pushd %~dp0
 cd ..
 
@@ -9,34 +8,12 @@ if "%Configuration%"=="" set Configuration=Debug
 set Platform=%2
 if "%Platform%"=="" set Platform=x86
 
-if exist "%ProgramFiles(x86)%\MSBuild\14.0\Bin\MSBuild.exe" (
-  set bldexe="%ProgramFiles(x86)%\MSBuild\14.0\Bin\MSBuild.exe"
-) else if exist "%WinDir%\Microsoft.NET\Framework64\v4.0.30319\msbuild.exe" (
-  set bldexe="%WinDir%\Microsoft.NET\Framework64\v4.0.30319\msbuild.exe"
-) else if exist "%WinDir%\Microsoft.NET\Framework\v4.0.30319\msbuild.exe" (
-  set bldexe="%WinDir%\Microsoft.NET\Framework\v4.0.30319\msbuild.exe"
-) else (
-  echo Microsoft.NET framework version 4.0 or greater is required. Cannot build.
-  echo Please install Visual Studio 2015 Community Edition
-  popd
-  exit /B 1
-)
-
-
-if exist "%ProgramFiles(x86)%\Git\cmd\git.exe" (
-  set gitexe="%ProgramFiles(x86)%\Git\cmd\git.exe"
-) else (
-  echo Cannot find git.exe, please install it and ensure it is in your PATH.
-  popd
-  exit /B 1
-)
-
-%gitexe% submodule update --recursive
+git submodule init
+git submodule update
 cd ext\zing
 
-echo %bldexe% Zing.sln /p:Platform=%Platform% /p:Configuration=Release
-
-%bldexe% Zing.sln /p:Platform=%Platform% /p:Configuration=Release
+echo msbuild  Zing.sln /p:Platform=%Platform% /p:Configuration=Release
+msbuild  Zing.sln /p:Platform=%Platform% /p:Configuration=Release
 if ERRORLEVEL 1 goto :exit
 
 if NOT exist %Platform% mkdir %Platform%
@@ -64,8 +41,8 @@ REM this code fixes a problem in MIDL compile by forcing recompile of these file
 del Src\PrtDist\Core\NodeManager_c.c
 del Src\PrtDist\Core\NodeManager_s.c
 
-echo %bldexe% P.sln /p:Platform=%Platform% /p:Configuration=%Configuration%
-%bldexe% P.sln /p:Platform=%Platform% /p:Configuration=%Configuration%
+echo msbuild P.sln /p:Platform=%Platform% /p:Configuration=%Configuration%
+msbuild  P.sln /p:Platform=%Platform% /p:Configuration=%Configuration%
 
 :exit
 popd

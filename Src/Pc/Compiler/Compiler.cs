@@ -52,7 +52,7 @@
                 {
                     WriteMessageLine(
                         string.Format("{0} ({1}, {2}): {3}",
-                        f.ProgramName == null ? "?" : (f.ProgramName.Uri.IsFile ? f.ProgramName.Uri.AbsolutePath : f.ProgramName.ToString()),
+                        f.ProgramName == null ? "?" : (f.ProgramName.Uri.IsFile ? f.ProgramName.Uri.LocalPath : f.ProgramName.ToString()),
                         f.Span.StartLine,
                         f.Span.StartCol,
                         f.Message), f.Severity);
@@ -417,7 +417,7 @@
             var binPath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
             var zcProcessInfo = new System.Diagnostics.ProcessStartInfo(Path.Combine(binPath.FullName, "zc.exe"));
             string zingFileNameFull = Path.Combine(outputDirName, zingFileName);
-            zcProcessInfo.Arguments = string.Format("/nowarn:292 /out:{0}\\{1} {2}", outputDirName, dllFileName, zingFileNameFull);
+            zcProcessInfo.Arguments = string.Format("/nowarn:292 \"/out:{0}\\{1}\" \"{2}\"", outputDirName, dllFileName, zingFileNameFull);
             zcProcessInfo.UseShellExecute = false;
             zcProcessInfo.CreateNoWindow = true;
             zcProcessInfo.RedirectStandardOutput = true;

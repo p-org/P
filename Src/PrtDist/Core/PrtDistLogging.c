@@ -106,14 +106,14 @@ __in void* vcontext
     /*
     [chris] this doesn't work in WinRT apps.
 
-    int msgboxID = MessageBoxEx(
+	int msgboxID = MessageBoxEx(
 		NULL,
 		log,
 		fileName,
 		MB_OK,
 		LANG_NEUTRAL
 		);
-        
+
 	switch (msgboxID)
 	{
 	case IDOK:
@@ -139,6 +139,7 @@ void PrtDistSMLogHandler(PRT_STEP step, void *vcontext)
 
     if (logfile != NULL)
     {
+        PRT_STRING buffer = NULL;
         PRT_STRING log = NULL;
         if (step == PRT_STEP_COUNT) //special logging
         {
@@ -147,11 +148,18 @@ void PrtDistSMLogHandler(PRT_STEP step, void *vcontext)
         }
         else
         {
-            log = PrtToStringStep(step, vcontext);
+            log = buffer = PrtToStringStep(step, vcontext);
         }
         fputs(log, logfile);
-        fputs("\n", logfile);
+        if (log[strlen(log) - 1] != '\n') {
+            fputs("\n", logfile);
+        }
         fflush(logfile);
+
+        if (buffer != NULL)
+        {
+            PrtFree(buffer);
+        }
     }
 
 	PrtUnlockMutex(((PRT_PROCESS_PRIV*)ContainerProcess)->processLock);

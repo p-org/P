@@ -104,7 +104,7 @@ void PrtDistSMLogHandler(PRT_STEP step, void *vcontext)
 		strcat_s(fileName, MAX_LOG_SIZE, ".txt");
 		logfile = fopen(fileName, "a+");
 	}
-
+    PRT_STRING buffer = NULL;
 	PRT_STRING log = NULL;
 	if (step == PRT_STEP_COUNT) //special logging
 	{
@@ -113,11 +113,18 @@ void PrtDistSMLogHandler(PRT_STEP step, void *vcontext)
 	}
 	else
 	{
-		log = PrtToStringStep(step, vcontext);
+		log = buffer = PrtToStringStep(step, vcontext);
 	}
 	fputs(log, logfile);
-	fputs("\n", logfile);
+    if (log[strlen(log) - 1] != '\n') {
+        fputs("\n", logfile);
+    }
 	fflush(logfile);
+
+    if (buffer != NULL)
+    {
+        PrtFree(buffer);
+    }
 	PrtUnlockMutex(((PRT_PROCESS_PRIV*)ContainerProcess)->processLock);
 }
 

@@ -1,0 +1,22 @@
+=================================
+         Console output          
+=================================
+OUT: nondetfunctioninexpr_12.p (7, 6): inferred type:  NIL
+OUT: nondetfunctioninexpr_12.p (7, 10): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_12.p (8, 7): inferred type:  NIL
+OUT: nondetfunctioninexpr_12.p (8, 14): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_12.p (10, 7): inferred type:  NIL
+OUT: nondetfunctioninexpr_12.p (10, 14): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_12.p (16, 8): inferred type:  NIL
+OUT: nondetfunctioninexpr_12.p (16, 15): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_12.p (31, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_12.p (34, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_12.p (34, 4): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
+OUT: nondetfunctioninexpr_12.p (34, 7): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_12.p (34, 11): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_12.p (35, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_12.p (35, 16): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_12.p (35, 19): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_12.p (35, 19): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: Compilation failed
+EXIT: -1

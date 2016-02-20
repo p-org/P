@@ -1,0 +1,37 @@
+=================================
+         Console output          
+=================================
+OUT: nondetfunctioninexpr_5.p (7, 6): inferred type:  NIL
+OUT: nondetfunctioninexpr_5.p (7, 10): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_5.p (8, 7): inferred type:  NIL
+OUT: nondetfunctioninexpr_5.p (8, 14): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_5.p (10, 7): inferred type:  NIL
+OUT: nondetfunctioninexpr_5.p (10, 14): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_5.p (16, 8): inferred type:  NIL
+OUT: nondetfunctioninexpr_5.p (16, 15): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_5.p (31, 4): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_5.p (31, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_5.p (31, 8): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_5.p (33, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_5.p (33, 4): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
+OUT: nondetfunctioninexpr_5.p (33, 6): inferred type:  SeqType(BaseType(INT))
+OUT: nondetfunctioninexpr_5.p (33, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nondetfunctioninexpr_5.p (33, 14): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nondetfunctioninexpr_5.p (34, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_5.p (34, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nondetfunctioninexpr_5.p (35, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_5.p (35, 15): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_5.p (35, 16): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_5.p (35, 19): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_5.p (35, 24): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_5.p (35, 30): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_5.p (35, 31): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_5.p (35, 34): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_5.p (35, 37): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_5.p (38, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_5.p (38, 7): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_5.p (38, 8): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_5.p (38, 15): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_5.p (38, 8): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: Compilation failed
+EXIT: -1

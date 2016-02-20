@@ -1,0 +1,8 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine M(1) is created
+OUT: <StateLog> Machine M(1) entered state S
+OUT: 
+ERROR: ASSERT: Memory leak
+EXIT: 1

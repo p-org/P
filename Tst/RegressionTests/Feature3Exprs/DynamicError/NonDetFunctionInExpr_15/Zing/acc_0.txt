@@ -1,0 +1,22 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 3 distinct states explored
+OUT: 
+EXIT: 3
+
+=================================
+nonDetFunctionInExpr_15.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine M-0
+<StateLog> Machine M-0 entering State S
+
+Error:
+P Assertion failed:
+Expression: assert(!b)
+Comment: key must not exist in map

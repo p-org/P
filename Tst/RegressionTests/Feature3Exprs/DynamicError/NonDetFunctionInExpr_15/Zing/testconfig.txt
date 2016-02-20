@@ -1,0 +1,5 @@
+arg: ..\nonDetFunctionInExpr_15.dll
+arg: -et:nonDetFunctionInExpr_15.trace
+inc: nonDetFunctionInExpr_15.trace
+del: nonDetFunctionInExpr_15.trace
+dsc: zinger.exe, RHS of asgn is nondet return value from function

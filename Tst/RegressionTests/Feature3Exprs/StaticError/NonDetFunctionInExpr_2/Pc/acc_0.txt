@@ -1,0 +1,160 @@
+=================================
+         Console output          
+=================================
+OUT: nondetfunctioninexpr_2.p (7, 6): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (7, 10): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (8, 7): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (8, 14): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (10, 7): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (10, 14): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (16, 8): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (16, 15): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (31, 4): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (31, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (31, 12): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (31, 14): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (32, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (32, 8): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (35, 7): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (35, 7): inferred type:  NmdTupType(NmdTupTypeField("f", NmdTupType(NmdTupTypeField("g", BaseType(INT)), NIL)), NIL)
+OUT: nondetfunctioninexpr_2.p (35, 9): inferred type:  NmdTupType(NmdTupTypeField("g", BaseType(INT)), NIL)
+OUT: nondetfunctioninexpr_2.p (35, 11): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (35, 15): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (37, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (37, 4): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
+OUT: nondetfunctioninexpr_2.p (37, 7): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (38, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (38, 16): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (40, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (40, 7): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (43, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (43, 16): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (45, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (45, 4): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
+OUT: nondetfunctioninexpr_2.p (45, 6): inferred type:  SeqType(BaseType(INT))
+OUT: nondetfunctioninexpr_2.p (45, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nondetfunctioninexpr_2.p (45, 14): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nondetfunctioninexpr_2.p (46, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (46, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nondetfunctioninexpr_2.p (47, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (47, 15): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (47, 19): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (47, 24): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (47, 30): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (47, 34): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (47, 37): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (51, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (51, 7): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (51, 8): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (51, 21): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (57, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (57, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nondetfunctioninexpr_2.p (57, 14): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nondetfunctioninexpr_2.p (58, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (61, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (64, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (65, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (65, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nondetfunctioninexpr_2.p (65, 14): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (65, 14): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nondetfunctioninexpr_2.p (68, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (68, 7): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (68, 15): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (71, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (71, 4): inferred type:  SeqType(BaseType(INT))
+OUT: nondetfunctioninexpr_2.p (71, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nondetfunctioninexpr_2.p (71, 12): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nondetfunctioninexpr_2.p (72, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (72, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nondetfunctioninexpr_2.p (72, 12): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nondetfunctioninexpr_2.p (73, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (73, 4): inferred type:  SeqType(BaseType(INT))
+OUT: nondetfunctioninexpr_2.p (74, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (74, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nondetfunctioninexpr_2.p (74, 13): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nondetfunctioninexpr_2.p (75, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (75, 6): inferred type:  MapType(BaseType(INT), SeqType(BaseType(INT)))
+OUT: nondetfunctioninexpr_2.p (75, 12): inferred type:  TupType(BaseType(INT), TupType(SeqType(BaseType(INT)), NIL))
+OUT: nondetfunctioninexpr_2.p (75, 15): inferred type:  TupType(SeqType(BaseType(INT)), NIL)
+OUT: nondetfunctioninexpr_2.p (76, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (76, 12): inferred type:  TupType(BaseType(INT), TupType(SeqType(BaseType(INT)), NIL))
+OUT: nondetfunctioninexpr_2.p (76, 15): inferred type:  TupType(SeqType(BaseType(INT)), NIL)
+OUT: nondetfunctioninexpr_2.p (77, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (77, 11): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (77, 23): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (78, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (78, 11): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (78, 21): inferred type:  SeqType(BaseType(INT))
+OUT: nondetfunctioninexpr_2.p (78, 26): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (78, 31): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (78, 40): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (78, 44): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (78, 49): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (78, 58): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (78, 62): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (79, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (79, 11): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (79, 21): inferred type:  SeqType(BaseType(INT))
+OUT: nondetfunctioninexpr_2.p (79, 26): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (79, 31): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (79, 40): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (79, 44): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (79, 49): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (79, 58): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (79, 62): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (81, 4): inferred type:  MapType(BaseType(INT), BaseType(ANY))
+OUT: nondetfunctioninexpr_2.p (81, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (81, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nondetfunctioninexpr_2.p (82, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (85, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (85, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nondetfunctioninexpr_2.p (89, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (89, 5): inferred type:  BaseType(ANY)
+OUT: nondetfunctioninexpr_2.p (89, 15): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (92, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (92, 8): inferred type:  MapType(BaseType(INT), BaseType(ANY))
+OUT: nondetfunctioninexpr_2.p (95, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (95, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nondetfunctioninexpr_2.p (98, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (98, 5): inferred type:  BaseType(ANY)
+OUT: nondetfunctioninexpr_2.p (98, 13): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (100, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (100, 10): inferred type:  MapType(BaseType(INT), SeqType(BaseType(INT)))
+OUT: nondetfunctioninexpr_2.p (103, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (103, 12): inferred type:  TupType(BaseType(INT), TupType(SeqType(BaseType(INT)), NIL))
+OUT: nondetfunctioninexpr_2.p (105, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (105, 12): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (106, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (106, 23): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (106, 28): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (106, 46): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (107, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (108, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (108, 28): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (108, 51): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (108, 69): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (109, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (111, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (113, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (114, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (114, 8): inferred type:  SeqType(BaseType(INT))
+OUT: nondetfunctioninexpr_2.p (115, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (116, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (117, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (118, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (119, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (120, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (121, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (122, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (125, 4): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (125, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (125, 8): inferred type:  SeqType(BaseType(INT))
+OUT: nondetfunctioninexpr_2.p (125, 17): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (31, 8): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: nondetfunctioninexpr_2.p (35, 11): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: nondetfunctioninexpr_2.p (37, 7): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: nondetfunctioninexpr_2.p (40, 7): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: nondetfunctioninexpr_2.p (61, 6): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: nondetfunctioninexpr_2.p (111, 6): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: Compilation failed
+EXIT: -1

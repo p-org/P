@@ -1,0 +1,13 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Passed
+OUT: ##################
+OUT: 29 distinct states explored
+OUT: 
+EXIT: 0
+
+=================================
+nonDetFunctionInExpr_2.trace
+=================================

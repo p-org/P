@@ -1,0 +1,6 @@
+arg: ..\nonDetFunctionInExpr_10.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, RHS of asgn is nondet return value from function

@@ -1,0 +1,41 @@
+=================================
+         Console output          
+=================================
+OUT: foreigntypesfreshexpr.p (17, 4): inferred type:  NameType("A")
+OUT: foreigntypesfreshexpr.p (17, 4): inferred type:  NIL
+OUT: foreigntypesfreshexpr.p (17, 9): inferred type:  NameType("A")
+OUT: foreigntypesfreshexpr.p (18, 4): inferred type:  NameType("A")
+OUT: foreigntypesfreshexpr.p (18, 4): inferred type:  NIL
+OUT: foreigntypesfreshexpr.p (18, 9): inferred type:  NameType("A")
+OUT: foreigntypesfreshexpr.p (19, 4): inferred type:  NIL
+OUT: foreigntypesfreshexpr.p (19, 14): inferred type:  BaseType(BOOL)
+OUT: foreigntypesfreshexpr.p (21, 4): inferred type:  NameType("B")
+OUT: foreigntypesfreshexpr.p (21, 4): inferred type:  NIL
+OUT: foreigntypesfreshexpr.p (21, 9): inferred type:  NameType("B")
+OUT: foreigntypesfreshexpr.p (22, 4): inferred type:  NameType("B")
+OUT: foreigntypesfreshexpr.p (22, 4): inferred type:  NIL
+OUT: foreigntypesfreshexpr.p (22, 9): inferred type:  NameType("B")
+OUT: foreigntypesfreshexpr.p (23, 4): inferred type:  NIL
+OUT: foreigntypesfreshexpr.p (23, 14): inferred type:  BaseType(BOOL)
+OUT: foreigntypesfreshexpr.p (25, 4): inferred type:  NIL
+OUT: foreigntypesfreshexpr.p (25, 11): inferred type:  TupType(NameType("A"), TupType(NameType("B"), NIL))
+OUT: foreigntypesfreshexpr.p (25, 14): inferred type:  NameType("A")
+OUT: foreigntypesfreshexpr.p (25, 16): inferred type:  BaseType(BOOL)
+OUT: foreigntypesfreshexpr.p (26, 4): inferred type:  NIL
+OUT: foreigntypesfreshexpr.p (26, 14): inferred type:  NameType("B")
+OUT: foreigntypesfreshexpr.p (26, 16): inferred type:  BaseType(BOOL)
+OUT: foreigntypesfreshexpr.p (28, 4): inferred type:  MapType(NameType("A"), BaseType(INT))
+OUT: foreigntypesfreshexpr.p (28, 4): inferred type:  NIL
+OUT: foreigntypesfreshexpr.p (28, 6): inferred type:  BaseType(INT)
+OUT: foreigntypesfreshexpr.p (28, 13): inferred type:  BaseType(INT)
+OUT: foreigntypesfreshexpr.p (29, 4): inferred type:  NIL
+OUT: foreigntypesfreshexpr.p (29, 6): inferred type:  BaseType(INT)
+OUT: foreigntypesfreshexpr.p (29, 13): inferred type:  BaseType(INT)
+OUT: foreigntypesfreshexpr.p (30, 4): inferred type:  NIL
+OUT: foreigntypesfreshexpr.p (30, 18): inferred type:  BaseType(BOOL)
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing foreignTypesFreshExpr.zing ...
+OUT: Compiling foreignTypesFreshExpr.zing to foreignTypesFreshExpr.dll ...
+EXIT: 0

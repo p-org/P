@@ -305,9 +305,6 @@ domain PStaticTyping extends PData
     SubSE(c, e) :- SubSE(c, NamedExprs(_, e, _)).
 	SubSE(c, es) :- SubSE(c, NamedExprs(_, _, es)), es: NamedExprs.
 
-	//// True if in this context
-	IsEventCnst ::= (cntxt: TypingContext, expr: Typeable, paytype: TypeExpr).
-
     /*************************************************************/
     /*                      Types of Expressions                 */
     /*************************************************************/
@@ -339,12 +336,22 @@ domain PStaticTyping extends PData
     TypeOf(c, e, t1)              :- TypeOfArg1(c, e, t1), e : NamedTuple.
 
 	// Names can hide other names in the following order: local variable hides machine variable hides event
-	TypeOf(c, e, et)              :- SubSE(c, e), e = Name(n), TypeOfLocalVar(c, n, t), TypeExpansion(t, et).
-    TypeOf(c, e, et)              :- SubSE(c, e), e = Name(n), VarDecl(n, c.owner, t), TypeExpansion(t, et), no TypeOfLocalVar(c, n, _). 
-    TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = Name(n), EventDecl(n, _, _), no VarDecl(n, c.owner, _), no TypeOfLocalVar(c, n, _). 
+    IsLocalVar ::= (TypingContext, String, TypeExpr).
+    IsLocalVar(c, n, et) :- SubSE(c, e), e = Name(n), TypeOfLocalVar(c, n, t), TypeExpansion(t, et).
 
-    IsEventCnst(c, e, BaseType(NULL)) :- SubSE(c, e), e = Name(n), EventDecl(n, _, NIL), no VarDecl(n, c.owner, _), no TypeOfLocalVar(c, n, _). 
-    IsEventCnst(c, e, pt)             :- SubSE(c, e), e = Name(n), EventDecl(n, _, pt), pt : TypeExpr, no VarDecl(n, c.owner, _), no TypeOfLocalVar(c, n, _). 
+    VarDeclExp ::= (VarDecl, TypeExpr).
+    VarDeclExp(decl, et) :- decl is VarDecl(_, _, t), TypeExpansion(t, et).
+    IsMachineVar ::= (TypingContext, String, VarDecl, TypeExpr).
+    IsMachineVar(c, n, decl, et) :- SubSE(c, e), e = Name(n), VarDeclExp(decl, et), decl = VarDecl(n, c.owner, _), no TypeOfLocalVar(c, n, _).
+
+    IsEventCnst ::= (TypingContext, String, TypeExpr).
+    IsEventCnst(c, n, BaseType(NULL)) :- SubSE(c, e), e = Name(n), EventDecl(n, _, NIL), no VarDecl(n, c.owner, _), no TypeOfLocalVar(c, n, _). 
+    IsEventCnst(c, n, pt)             :- SubSE(c, e), e = Name(n), EventDecl(n, _, t), no VarDecl(n, c.owner, _), no TypeOfLocalVar(c, n, _), TypeExpansion(t, pt).
+
+	TypeOf(c, e, et)              :- SubSE(c, e), e = Name(n), IsLocalVar(c, n, et).
+    TypeOf(c, e, et)              :- SubSE(c, e), e = Name(n), IsMachineVar(c, n, _, et).
+    TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = Name(n), IsEventCnst(c, n, _).
+
 
 	[ rule_Classes = '"error, msg: Undefined symbol"']
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n), no EventDecl(n, _, _), no VarDecl(n, c.owner, _), no TypeOfLocalVar(c, n, _). 
@@ -438,19 +445,17 @@ domain PStaticTyping extends PData
 	TypeOf(c, e, t) :- TypeOfArg2(c, e, t1, t2), e = NamedExprs(n, _, _), t2 : NmdTupType, t = NmdTupType(NmdTupTypeField(n, t1), t2).
 	
 	//// (6) FunApps must refer to a defined function that has a non-NIL return type and args must be sub-types of function signature. 
-	TypeOf(c, e, et) :- SubSE(c, e), e = FunApp(n, NIL), decl = FunDecl(n, _, _, NIL, t, _, _), FunAvailable(decl, c.owner), t != NIL, TypeExpansion(t, et).
-	TypeOf(c, e, et) :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FuncSigTupleType(decl, inpt), decl.name = n, decl.return = t, FunAvailable(decl, c.owner), TypeRel(t1, inpt, SUB), t != NIL, TypeExpansion(t, et).
+	TypeOf(c, e, et) :- SubSE(c, e), e = FunApp(n, NIL), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, NIL, et), et != NIL.
+	TypeOf(c, e, et) :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, et), et != NIL, TypeRel(t1, inpt, SUB).
 
 	[ rule_Classes = '"error, msg: function not defined"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _), no FunDecl(n, c.owner, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _).
 	[ rule_Classes = '"error, msg: function does not return a value"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _), FunDecl(n, c.owner, _, _, NIL, _, _);
-	                       SubSE(c, e), e = FunApp(n, _), FunDecl(n, NIL, _, _, NIL, _, _).
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _), FunAvailable(decl, c.owner), decl.name = n, decl.return = NIL.
 	[ rule_Classes = '"error, msg: function requires arguments"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, NIL), FunDecl(n, c.owner, _, params, _, _, _), params != NIL;
-	                       SubSE(c, e), e = FunApp(n, NIL), FunDecl(n, NIL, _, params, _, _, _), params != NIL.
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, NIL), FunAvailable(decl, c.owner), decl.name = n, decl.params != NIL.
 	[ rule_Classes = '"error, msg: function arguments have incorrect types"']
-	TypeOf(c, e, ERROR) :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FuncSigTupleType(decl, inpt), decl.name = n, FunAvailable(decl, c.owner), TypeRel(t1, inpt, k), t1 != inpt, k != SUB.
+	TypeOf(c, e, ERROR) :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _), TypeRel(t1, inpt, k), t1 != inpt, k != SUB.
 	
     /*************************************************************/
     /*                      Types of Statements                  */
@@ -463,11 +468,13 @@ domain PStaticTyping extends PData
 	//// (2) Return statement
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL), c = FunDecl(_, _, _, _, NIL, _, _). 
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL), c : AnonFunDecl.
-    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : Return, c = FunDecl(_, _, _, _, t, _, _), TypeExpansion(t, et), TypeRel(t1, et, SUB).
+    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : Return, FuncSig(c, _, et), TypeRel(t1, et, SUB).
 	[ rule_Classes = '"error, msg: function must return a value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(NIL), c = FunDecl(_, _, _, _, t, _, _), t != NIL. 
+	[ rule_Classes = '"error, msg: function cannot return a value"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(e1), e1 != NIL, c = FunDecl(_, _, _, _, NIL, _, _). 
 	[ rule_Classes = '"error, msg: return value has incorrect type"' ]
-    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Return, c = FunDecl(_, _, _, _, t, _, _), TypeExpansion(t, et), TypeRel(t1, et, k), t1 != et, k != SUB.
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Return, FuncSig(c, _, et), TypeRel(t1, et, k), t1 != et, k != SUB.
 	[ rule_Classes = '"error, msg: anonymous function cannot return a value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(e1), c : AnonFunDecl, e1 != NIL. 
 
@@ -594,18 +601,19 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)), TypeRel(value, cod, k), k != SUB, value != cod.
 	
 	//// (5) Function statements
-	TypeOf(c, e, NIL)   :- SubSE(c, e), e = FunStmt(n, NIL, _, _), decl = FunDecl(n, _, _, NIL, _, _, _), FunAvailable(decl, c.owner).
-	TypeOf(c, e, NIL)   :- TypeOfArg2(c, e, t1, t2), e = FunStmt(n, _, _, _), FuncSigTupleType(decl, inpt), decl = FunDecl(n, _, _, _, _, _, _), FunAvailable(decl, c.owner), TypeRel(t1, inpt, SUB), TypeRel(decl.return, t2, SUB).
+	TypeOf(c, e, NIL)   :- SubSE(c, e), e = FunStmt(n, NIL, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, NIL, _).
+	TypeOf(c, e, NIL)   :- TypeOfArg1(c, e, t1), e = FunStmt(n, _, NIL, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _), TypeRel(t1, inpt, SUB).
+	TypeOf(c, e, NIL)   :- TypeOfArg2(c, e, t1, t2), e = FunStmt(n, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, et), TypeRel(t1, inpt, SUB), TypeRel(et, t2, SUB).
 	[ rule_Classes = '"error, msg: function not defined"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _, _, _), no FunDecl(n, c.owner, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _).	
 	[ rule_Classes = '"error, msg: function requires arguments"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, NIL, _, _), FunAvailable(decl, c.owner), decl.name = n, decl.params != NIL.
 	[ rule_Classes = '"error, msg: function arguments have incorrect types"']
-	TypeOf(c, e, ERROR) :- TypeOfArg1(c, e, t1), e = FunStmt(n, _, _, _), FuncSigTupleType(decl, inpt), decl.name = n, FunAvailable(decl, c.owner), TypeRel(t1, inpt, k), t1 != inpt, k != SUB.
+	TypeOf(c, e, ERROR) :- TypeOfArg1(c, e, t1), e = FunStmt(n, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _), TypeRel(t1, inpt, k), t1 != inpt, k != SUB.
 	[ rule_Classes = '"error, msg: function does not return a value"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _, x, _), x: Name, FunAvailable(decl, c.owner), decl.name = n, decl.return = NIL.
 	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
-	TypeOf(c, e, ERROR) :- TypeOfArg2(c, e, t1, t2), e = FunStmt(n, _, x, _), x: Name, FunAvailable(decl, c.owner), decl.name = n, decl.return = t, TypeExpansion(t, et), TypeRel(et, t2, k), k!= SUB, et != t2.
+	TypeOf(c, e, ERROR) :- TypeOfArg2(c, e, t1, t2), e = FunStmt(n, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, _, et), TypeRel(et, t2, k), k != SUB, et != t2.
 
 	//// (6) Receive statement
 	ReceiveCases ::= (c: TypingContext, receive: Receive, cases: Cases).
@@ -680,17 +688,17 @@ domain PStaticTyping extends PData
 	//// If the event expression is not an constant, then this payload type is ANY.
 	CommStmtPLType ::= (cntxt: TypingContext, comm: Raise + Send + Monitor, type: TypeExpr + { ERROR }).
 
-	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Raise(ev, _), TypeOf(c, ev, evt), evt != BaseType(EVENT), no IsEventCnst(c, ev, _).
-	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Raise(ev, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), no IsEventCnst(c, ev, _).
-	CommStmtPLType(c, e, plt')          :- SubSE(c, e), e = Raise(ev, _), IsEventCnst(c, ev, plt), TypeExpansion(plt, plt').
+	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Raise(ev, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
+	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Raise(ev, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
+	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Raise(ev, _), ev = Name(n), IsEventCnst(c, n, plt).
 
-	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Send(_, ev, _), TypeOf(c, ev, evt), evt != BaseType(EVENT), no IsEventCnst(c, ev, _).
-	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Send(_, ev, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), no IsEventCnst(c, ev, _).
-	CommStmtPLType(c, e, plt')          :- SubSE(c, e), e = Send(_, ev, _), IsEventCnst(c, ev, plt), TypeExpansion(plt, plt').
+	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Send(_, ev, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
+	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Send(_, ev, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
+	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Send(_, ev, _), ev = Name(n), IsEventCnst(c, n, plt).
 
-	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Monitor(ev, _), TypeOf(c, ev, evt), evt != BaseType(EVENT), no IsEventCnst(c, ev, _).
-	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Monitor(ev, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), no IsEventCnst(c, ev, _).
-	CommStmtPLType(c, e, plt')          :- SubSE(c, e), e = Monitor(ev, _), IsEventCnst(c, ev, plt), TypeExpansion(plt, plt').
+	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Monitor(ev, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
+	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Monitor(ev, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
+	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Monitor(ev, _), ev = Name(n), IsEventCnst(c, n, plt).
 
     /*************************************************************/
     /*                      Field helpers                        */
@@ -778,6 +786,10 @@ domain PStaticTyping extends PData
 	FuncSigTupleTypeAux(cntxt, type, tl)    :- cntxt is FunDecl(_, _, _, params, _, _, _), params = NmdTupType(NmdTupTypeField(_, t), tl), TypeExpansion(t, et), type = TupType(et, NIL).
 	FuncSigTupleTypeAux(cntxt, type, tl)    :- FuncSigTupleTypeAux(cntxt, t', aux), aux = NmdTupType(NmdTupTypeField(_, t), tl), TypeExpansion(t, et), type = TupType(et, t').
 	FuncSigTupleType(cntxt, type)           :- FuncSigTupleTypeAux(cntxt, t, NIL), type = lstReverse(#TupType, t).
+
+	FuncSig    ::= (cntxt: FunDecl, inputType: TupType + { NIL }, outputType: TypeExpr + { NIL }).
+	FuncSig(cntxt, inputType, NIL) :- FuncSigTupleType(cntxt, inputType), cntxt.return = NIL.
+	FuncSig(cntxt, inputType, et)  :- FuncSigTupleType(cntxt, inputType), TypeExpansion(cntxt.return, et).
 
     /*************************************************************/
     /* Check that named tuple (types) don't reuse the same name  */
@@ -989,8 +1001,8 @@ domain PStaticTyping extends PData
 	CompTypeRel(t1, t2)       :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _), op : PolyRel.
 	CompTypeRel(t2, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _), t1 = MapType(dom, cod).
 	CompTypeRel(t1, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = MapType(dom, _).      
-	CompTypeRel(t1, inpt)     :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FuncSigTupleType(decl, inpt), decl.name = n, FunAvailable(decl, c.owner).
-	CompTypeRel(t1, t)        :- TypeOfArg1(c, e, t1), e : Return, c: FunDecl, TypeExpansion(c.return, t).
+	CompTypeRel(t1, inpt)     :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _).
+	CompTypeRel(t1, t)        :- TypeOfArg1(c, e, t1), e : Return, FuncSig(c, _, t).
 	CompTypeRel(null, plt)    :- CommStmtPLType(c, e, plt), e = Raise(_, NIL), null = BaseType(NULL).
 	CompTypeRel(pt, plt)      :- CommStmtPLType(c, e, plt), e = Raise(_, p), p != NIL, TypeOf(c, p, pt).
 	CompTypeRel(null, plt)    :- SubSE(c, e), e = Send(_, _, NIL), null = BaseType(NULL), CommStmtPLType(c, e, plt).
@@ -1003,8 +1015,8 @@ domain PStaticTyping extends PData
 	CompTypeRel(key, dom)     :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)).
 	CompTypeRel(value, cod)   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)).
 	CompTypeRel(value, inner) :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)).
-	CompTypeRel(t1, inpt)     :- TypeOfArg1(c, e, t1), e = FunStmt(n, _, _, _), FuncSigTupleType(decl, inpt), decl.name = n, FunAvailable(decl, c.owner).
-	CompTypeRel(t1, t2)       :- TypeOfArg2(c, e, _, t2), e = FunStmt(n, _, x, _), x: Name, FunAvailable(decl, c.owner), decl.name = n, TypeExpansion(decl.return, t1).
+	CompTypeRel(t1, inpt)     :- TypeOfArg1(c, e, t1), e = FunStmt(n, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _).
+	CompTypeRel(t1, t2)       :- TypeOfArg2(c, e, _, t2), e = FunStmt(n, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, _, t1).
 
 	//// TypeRel determines the relationship type expressions ta and tb.
     //// If types are not subtype related, then they can
@@ -1148,6 +1160,8 @@ domain PStaticTyping extends PData
     /*************************************************************/
     /*                      Payload Checking                    */
     /*************************************************************/	
+        ConstructorType ::= (m: MachineDecl, s: StateDecl, t: TypeExpr).
+	ConstructorType(m, s, ft) :- s is StateDecl, m = s.owner, s.name = m.start, PayloadVarType(s, ft).
 
 	EventPayloadType ::= (e: String + { NULL, HALT }, t: TypeExpr).
 	EventPayloadType(e, et) :- EventDecl(e, _, t), t: TypeExpr, TypeExpansion(t, et).
@@ -1155,12 +1169,14 @@ domain PStaticTyping extends PData
 	EventPayloadType(NULL, t) :- t = BaseType(NULL).
 	EventPayloadType(HALT, t) :- t = BaseType(ANY).
 
+	PayloadVarTypeAux ::= (StateDecl + TransDecl + DoDecl + Cases, TypeExpr).
 	PayloadVarType ::= (StateDecl + TransDecl + DoDecl + Cases, TypeExpr).
-	PayloadVarType(s, ft) :- s is StateDecl, r = lstReverse(#NmdTupType, s.entryAction.envVars), TypeExpansion(r.hd.type, ft).
-	PayloadVarType(t, ft) :- t is TransDecl, r = lstReverse(#NmdTupType, t.action.envVars), TypeExpansion(r.hd.type, ft).
-	PayloadVarType(d, ft) :- d is DoDecl, r = lstReverse(#NmdTupType, d.action.envVars), TypeExpansion(r.hd.type, ft).
-	PayloadVarType(cases, ft) :- SubSE(_, cases), cases: Cases, r = lstReverse(#NmdTupType, cases.action.envVars), TypeExpansion(r.hd.type, ft).
-
+	PayloadVarTypeAux(s, type) :- s is StateDecl, r = lstReverse(#NmdTupType, s.entryAction.envVars), type = r.hd.type.
+	PayloadVarTypeAux(t, type) :- t is TransDecl, r = lstReverse(#NmdTupType, t.action.envVars), type = r.hd.type.
+	PayloadVarTypeAux(d, type) :- d is DoDecl, r = lstReverse(#NmdTupType, d.action.envVars), type = r.hd.type.
+	PayloadVarTypeAux(cases, type) :- SubSE(_, cases), cases: Cases, r = lstReverse(#NmdTupType, cases.action.envVars), type = r.hd.type.
+	PayloadVarType(x, ft) :- PayloadVarTypeAux(x, type), TypeExpansion(type, ft).
+	
 	CompTypeRel(et, ft) :- EventPayloadType(_, et), PayloadVarType(_, ft);
 						   SubSE(c, n), n: New, TypeOf(c, n.arg, et), et: TypeExpr, PayloadVarType(_, ft);
 						   SubSE(c, n), n: NewStmt, TypeOf(c, n.arg, et), et: TypeExpr, PayloadVarType(_, ft).
@@ -1181,18 +1197,20 @@ domain PStaticTyping extends PData
 	PayloadError(cases) :- SubSE(_, cases), cases: Cases, EventPayloadType(cases.trig, et), PayloadVarType(cases, ft),
 						   TypeRel(et, ft, k), et != ft, k != SUB. 
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
-	PayloadError(n) :- SubSE(c, n), n: New, TypeOf(c, n.arg, type), type: TypeExpr,
-					   m is MachineDecl, m.name = n.name, s is StateDecl, s.owner = m, s.name = m.start, 
-					   PayloadVarType(s, ft), TypeRel(type, ft, k), type != ft, k != SUB.
+	PayloadError(n) :- SubSE(c, n), n = New(name, NIL), ConstructorType(m, _, ft), m.name = name, type = BaseType(NULL), 
+					   TypeRel(type, ft, k), type != ft, k != SUB.
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
-	PayloadError(n) :- SubSE(c, n), n: NewStmt, TypeOf(c, n.arg, type), type: TypeExpr,
-					   m is MachineDecl, m.name = n.name, s is StateDecl, s.owner = m, s.name = m.start,
-					   PayloadVarType(s, ft), TypeRel(type, ft, k), type != ft, k != SUB.	
+	PayloadError(n) :- SubSE(c, n), n = New(name, _), ConstructorType(m, _, ft), m.name = name, TypeOfArg1(c, n, type), type: TypeExpr, 
+					   TypeRel(type, ft, k), type != ft, k != SUB.
+	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL), ConstructorType(m, _, ft), m.name = name, type = BaseType(NULL),
+					   TypeRel(type, ft, k), type != ft, k != SUB.	
+	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _), ConstructorType(m, _, ft), m.name = name, TypeOfArg1(c, n, type), type: TypeExpr,
+					   TypeRel(type, ft, k), type != ft, k != SUB.	
 
 	[ rule_Classes = '"error, msg: Null type must be subtype of payload type of entry function of start state;"']
-	PayloadError(s) :- m is MachineDecl, m.isMain = TRUE, s is StateDecl, s.owner = m, s.name = m.start, 
-					   PayloadVarType(s, ft), type = BaseType(NULL), TypeRel(type, ft, k), type != ft, k != SUB.
+	PayloadError(s) :- ConstructorType(m, s, ft), m.isMain = TRUE, type = BaseType(NULL), TypeRel(type, ft, k), type != ft, k != SUB.
 	[ rule_Classes = '"error, msg: Null type must be subtype of payload type of entry function of start state;"']
-	PayloadError(s) :- m is MachineDecl, m.kind = MONITOR, s is StateDecl, s.owner = m, s.name = m.start, 
-					   PayloadVarType(s, ft), type = BaseType(NULL), TypeRel(type, ft, k), type != ft, k != SUB.
+	PayloadError(s) :- ConstructorType(m, s, ft), m.kind = MONITOR, type = BaseType(NULL), TypeRel(type, ft, k), type != ft, k != SUB.
 }

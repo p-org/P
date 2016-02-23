@@ -1392,7 +1392,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	ProgModelArray(size, arr) :- size = count({ m | m is MachineDecl, m.kind = MODEL }), size > 0, arr = out.Ident("P_GEND_MODELS").
 
 	HOut(12, def) :- def = out.VarDef(
-							      NIL, 
+							      EXTERN, 
 								  NmdType(NIL, "PRT_PROGRAMDECL"), 
 								  "P_GEND_PROGRAM", 
 								  NIL).
@@ -2136,7 +2136,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 
     //// Concat all statement-level expressions
 	LhsExprs ::= (cntxt: TypingContext, stmt: in.BinStmt, indx: Natural, args: out.Args). 
-	LhsExprs(c, s, 0, args)  :- SubSE(c, s), s : in.BinStmt, RhsExpr(c, s, 0, trans, _), args = out.Args(trans, Args(Ident("PRT_FALSE"), NIL)).
+	LhsExprs(c, s, 0, args)  :- SubSE(c, s), s = in.BinStmt(REMOVE, _, _), RhsExpr(c, s, 0, trans, doFree), args = out.Args(trans, Args(doFree, NIL)).
+	LhsExprs(c, s, 0, args)  :- SubSE(c, s), s = in.BinStmt(op, _, _), op != REMOVE, RhsExpr(c, s, 0, trans, _), args = out.Args(trans, Args(Ident("PRT_FALSE"), NIL)).
 	LhsExprs(c, s, i', args) :- LhsExprs(c, s, i, a), i' = i + 1, RhsExpr(c, s, i', trans, doFree), args = out.Args(trans, Args(doFree, a)). 
 
     //// ASSIGN / UPDATE

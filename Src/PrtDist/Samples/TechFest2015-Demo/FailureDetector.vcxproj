@@ -81,7 +81,7 @@
     <ClCompile Include="program.c" />
     <ClCompile Include="stubs.c" />
     <ClCompile Include="Timer.c" />
-    <PCompile Include="FailureDetector.p" />
+    <PCompile Include="Driver.p" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="program.h" />

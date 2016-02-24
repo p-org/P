@@ -55,6 +55,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ForeignTypes", "Src\Prt\Sam
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ModelFnAndMachines", "Src\Prt\Samples\ModelFnAndMachines\ModelFnAndMachines.vcxproj", "{68CFEF09-5625-404E-BCBD-31CF55B1A09B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FailureDetector", "Src\PrtDist\Samples\TechFest2015-Demo\FailureDetector.vcxproj", "{A57EA5EE-934D-41ED-9670-18AF76C52A96}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -227,6 +229,14 @@ Global
 		{68CFEF09-5625-404E-BCBD-31CF55B1A09B}.Release|x64.ActiveCfg = Release|Win32
 		{68CFEF09-5625-404E-BCBD-31CF55B1A09B}.Release|x86.ActiveCfg = Release|Win32
 		{68CFEF09-5625-404E-BCBD-31CF55B1A09B}.Release|x86.Build.0 = Release|Win32
+		{A57EA5EE-934D-41ED-9670-18AF76C52A96}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{A57EA5EE-934D-41ED-9670-18AF76C52A96}.Debug|x64.ActiveCfg = Debug|Win32
+		{A57EA5EE-934D-41ED-9670-18AF76C52A96}.Debug|x86.ActiveCfg = Debug|Win32
+		{A57EA5EE-934D-41ED-9670-18AF76C52A96}.Debug|x86.Build.0 = Debug|Win32
+		{A57EA5EE-934D-41ED-9670-18AF76C52A96}.Release|Any CPU.ActiveCfg = Release|Win32
+		{A57EA5EE-934D-41ED-9670-18AF76C52A96}.Release|x64.ActiveCfg = Release|Win32
+		{A57EA5EE-934D-41ED-9670-18AF76C52A96}.Release|x86.ActiveCfg = Release|Win32
+		{A57EA5EE-934D-41ED-9670-18AF76C52A96}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -248,5 +258,6 @@ Global
 		{D614D3EC-C765-4B47-8002-E683C16C5865} = {6B36C087-8924-4B31-BE1F-91837CED42A5}
 		{65DF9D53-1461-43AE-9A50-43E7C4D55E05} = {D47A1CE9-D9FF-4CE8-B06F-D320FE9565E9}
 		{68CFEF09-5625-404E-BCBD-31CF55B1A09B} = {D47A1CE9-D9FF-4CE8-B06F-D320FE9565E9}
+		{A57EA5EE-934D-41ED-9670-18AF76C52A96} = {D47A1CE9-D9FF-4CE8-B06F-D320FE9565E9}
 	EndGlobalSection
 EndGlobal

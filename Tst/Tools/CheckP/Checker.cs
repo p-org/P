@@ -312,7 +312,7 @@ namespace CheckP
             }
 
             //debudding only?
-            Console.WriteLine("Running test under {0}...", activeDirectory);
+            Console.WriteLine("Running test under {0} ...", activeDirectory);
 
             //If isAdd is true, remove old acceptor file
             //Note: this will break the logic of multiple acceptors;

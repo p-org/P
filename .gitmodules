@@ -1,0 +1,4 @@
+[submodule "Ext/Zing"]
+	path = Ext/Zing
+	url = https://github.com/ZingModelChecker/Zing.git
+	ignore = dirty

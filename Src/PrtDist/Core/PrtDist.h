@@ -16,6 +16,10 @@ __in PRT_STATUS exception,
 __in void* vcontext
 );
 
+// Function to open log file in a given directory
+void PrtOpenLogFile(__in PRT_CHAR* logDirectory);
+void PrtCloseLogFile();
+
 void PrtDistSMLogHandler(PRT_STEP step, void *vcontext);
 
 

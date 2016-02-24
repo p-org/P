@@ -173,21 +173,21 @@ XMLNODE** XMLDOMParseNodes(const char *szFileName)
 					n++;//element node's number
 					//printf("\n\n%d\n", n);//element node's number
 
-					sprintf_s(currNode->NodeType, MAX_LOG_SIZE, "%ls", (LPCTSTR)bstrNodeType);
+					sprintf_s(currNode->NodeType, MAX_LOG_SIZE, "%s", (LPCTSTR)bstrNodeType);
 					//printf("Type: %ls\n", bstrNodeType);
 
 					pIDOMNode->get_nodeName(&bstrItemNode);
 					//printf("Node: %ls\n", bstrItemNode);
-					sprintf_s(currNode->NodeName, MAX_LOG_SIZE, "%ls", (LPCTSTR)bstrItemNode);
+					sprintf_s(currNode->NodeName, MAX_LOG_SIZE, "%s", (LPCTSTR)bstrItemNode);
 
 					pIDOMNode->get_text(&bstrItemText);
 					//printf("Text: %ls\n", bstrItemText);
-					sprintf_s(currNode->NodeValue, MAX_LOG_SIZE, "%ls", ((LPCTSTR)bstrItemText));
+					sprintf_s(currNode->NodeValue, MAX_LOG_SIZE, "%s", ((LPCTSTR)bstrItemText));
 
 					pIDOMNode->get_parentNode(&pIParentNode);
 					pIParentNode->get_nodeName(&bstrItemParent);
 					//printf("Parent: %ls\n",bstrItemParent);
-					sprintf_s(currNode->NodeParent, MAX_LOG_SIZE, "%ls", ((LPCTSTR)bstrItemParent));
+					sprintf_s(currNode->NodeParent, MAX_LOG_SIZE, "%s", ((LPCTSTR)bstrItemParent));
 
 					pIDOMNode->get_childNodes(&childList);
 					//printf("Child nodes: %d\n", (childList->length));

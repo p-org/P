@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\p.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -27,14 +28,30 @@
     <ClCompile Include="..\Prt\WinUser\PrtWinUserConfig.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Prt\API\Prt.h" />
-    <ClInclude Include="..\Prt\API\PrtConfig.h" />
-    <ClInclude Include="..\Prt\API\PrtProgram.h" />
-    <ClInclude Include="..\Prt\API\PrtTypes.h" />
-    <ClInclude Include="..\Prt\API\PrtValues.h" />
-    <ClInclude Include="..\Prt\Core\PrtExecution.h" />
-    <ClInclude Include="..\Prt\WinUser\PrtWinUser.h" />
-    <ClInclude Include="..\Prt\WinUser\PrtWinUserConfig.h" />
+    <ClInclude Include="..\Prt\API\Prt.h">
+      <CopyToHeaders>True</CopyToHeaders>
+    </ClInclude>
+    <ClInclude Include="..\Prt\API\PrtConfig.h">
+      <CopyToHeaders>True</CopyToHeaders>
+    </ClInclude>
+    <ClInclude Include="..\Prt\API\PrtProgram.h">
+      <CopyToHeaders>True</CopyToHeaders>
+    </ClInclude>
+    <ClInclude Include="..\Prt\API\PrtTypes.h">
+      <CopyToHeaders>True</CopyToHeaders>
+    </ClInclude>
+    <ClInclude Include="..\Prt\API\PrtValues.h">
+      <CopyToHeaders>True</CopyToHeaders>
+    </ClInclude>
+    <ClInclude Include="..\Prt\Core\PrtExecution.h">
+      <CopyToHeaders>True</CopyToHeaders>
+    </ClInclude>
+    <ClInclude Include="..\Prt\WinUser\PrtWinUser.h">
+      <CopyToHeaders>True</CopyToHeaders>
+    </ClInclude>
+    <ClInclude Include="..\Prt\WinUser\PrtWinUserConfig.h">
+      <CopyToHeaders>True</CopyToHeaders>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Prt\IDL\PrtIDL.vcxproj">
@@ -44,31 +61,32 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F8C72C0E-450C-4AE1-9885-31B8565C1D63}</ProjectGuid>
     <RootNamespace>PrtWinUser</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.10240.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
-    <CharacterSet>NotSet</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
@@ -89,22 +107,22 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>.\Lib\$(Configuration)\$(Platform)\</OutDir>
+    <OutDir>$(DropFolder)\Lib\</OutDir>
     <IntDir>$(ProjectDir)\InterWin\$(Configuration)\$(Platform)\</IntDir>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>.\Lib\$(Configuration)\$(Platform)\</OutDir>
+    <OutDir>$(DropFolder)\Lib\</OutDir>
     <IntDir>$(ProjectDir)\InterWin\$(Configuration)\$(Platform)\</IntDir>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>.\Lib\$(Configuration)\$(Platform)\</OutDir>
+    <OutDir>$(DropFolder)\Lib\</OutDir>
     <IntDir>$(ProjectDir)\InterWin\$(Configuration)\$(Platform)\</IntDir>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>.\Lib\$(Configuration)\$(Platform)\</OutDir>
+    <OutDir>$(DropFolder)\Lib\</OutDir>
     <IntDir>$(ProjectDir)\InterWin\$(Configuration)\$(Platform)\</IntDir>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
@@ -114,7 +132,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;PRT_USE_THREADPOOL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/IDL/;../Prt/Core/;../Prt/API/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
@@ -127,7 +145,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/IDL/;../Prt/Core/;../Prt/API/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -140,8 +158,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_USE_IDL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\Prt\WinUser/;..\Prt/IDL\;..\Prt\API\;..\Prt\Core</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_USE_IDL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -156,8 +174,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_USE_IDL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\Prt\WinUser/;..\Prt/IDL\;..\Prt\API\;..\Prt\Core</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_USE_IDL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

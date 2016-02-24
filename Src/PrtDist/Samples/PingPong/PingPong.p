@@ -11,9 +11,9 @@ machine PING
     var pongMachine: (machine,machine);
 
     start state Init {
-        entry {
-			pongMachine = payload as (machine, machine);
-			raise (Success);   	   
+        entry (payload:any) {
+          pongMachine = payload as (machine, machine);
+          raise (Success);   	   
         }
         on Success goto SendPing;
     }
@@ -46,7 +46,7 @@ machine PONG
     }
 
     state SendPong {
-	    entry {
+	    entry (payload:machine) {
 	        monitor M_Pong;
 			_SEND(payload, Pong, this);
 			raise (Success);		 	  
@@ -103,7 +103,6 @@ main machine GodMachine
 
     start state Init {
 	    entry {
-			new M();
 			container = _CREATECONTAINER();
 			pongMachine_1 = _CREATEMACHINE(container, 2, null, null);
 			container = _CREATECONTAINER();

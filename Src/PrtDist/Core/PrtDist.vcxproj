@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\p.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -21,31 +22,32 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{88589011-C704-470A-8A39-05DC0C816DA8}</ProjectGuid>
     <RootNamespace>PrtDist</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.10240.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
-    <CharacterSet>NotSet</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
-    <CharacterSet>NotSet</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -66,25 +68,25 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>..\Lib\$(Configuration)\$(Platform)\</OutDir>
+    <OutDir>$(DropFolder)\Lib\</OutDir>
     <IntDir>$(ProjectDir)$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>..\Lib\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>$(DropFolder)\Lib\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>..\Lib\$(Configuration)\$(Platform)\</OutDir>
+    <OutDir>$(DropFolder)\Lib\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>..\Lib\$(Configuration)\$(Platform)\</OutDir>
+    <OutDir>$(DropFolder)\Lib\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;PRT_STATIC;PRT_USE_THREADPOOL</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -102,19 +104,19 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <Midl>
-      <AdditionalIncludeDirectories>..\..\Prt\API</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\prt\api;$(DropFolder)\Headers</AdditionalIncludeDirectories>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
+      <HeaderFileName>$(DropFolder)\Headers\%(Filename)_h.h</HeaderFileName>
+      <OutputDirectory>
+      </OutputDirectory>
     </Midl>
-    <PreBuildEvent>
-      <Command>del /q NodeManager_*</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;PRT_STATIC</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -130,14 +132,12 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <Midl>
-      <AdditionalIncludeDirectories>..\..\Prt\API</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\prt\api;$(DropFolder)\Headers</AdditionalIncludeDirectories>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
+      <HeaderFileName>$(DropFolder)\Headers\%(Filename)_h.h</HeaderFileName>
+      <OutputDirectory>
+      </OutputDirectory>
     </Midl>
-    <PreBuildEvent>
-      <Command>cd .\$(ProjectDir)
-
-del NodeManager_*</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -146,8 +146,8 @@ del NodeManager_*</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_USE_IDL;PRT_STATIC</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_USE_IDL;PRT_STATIC;NDEBUG;</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -155,8 +155,9 @@ del NodeManager_*</Command>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Midl>
-      <AdditionalIncludeDirectories>..\..\Prt\API</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\prt\api;$(DropFolder)\Headers</AdditionalIncludeDirectories>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
+      <HeaderFileName>$(DropFolder)\Headers\%(Filename)_h.h</HeaderFileName>
     </Midl>
     <Lib>
       <AdditionalLibraryDirectories>..\Lib\$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
@@ -164,10 +165,6 @@ del NodeManager_*</Command>
     <ProjectReference>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
-    <PreBuildEvent>
-      <Command>cd $(ProjectDir)
-del NodeManager_*</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -176,8 +173,8 @@ del NodeManager_*</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_USE_IDL;PRT_STATIC</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_USE_IDL;PRT_STATIC;NDEBUG;</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -185,8 +182,9 @@ del NodeManager_*</Command>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Midl>
-      <AdditionalIncludeDirectories>..\..\Prt\API</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\prt\api;$(DropFolder)\Headers</AdditionalIncludeDirectories>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
+      <HeaderFileName>$(DropFolder)\Headers\%(Filename)_h.h</HeaderFileName>
     </Midl>
     <Lib>
       <AdditionalLibraryDirectories>..\Lib\$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
@@ -194,10 +192,6 @@ del NodeManager_*</Command>
     <ProjectReference>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
-    <PreBuildEvent>
-      <Command>cd .\$(ProjectDir)
-del NodeManager_*</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="PrtDist.c" />
@@ -208,9 +202,15 @@ del NodeManager_*</Command>
     <ClCompile Include="PrtDistSerializer.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PrtDist.h" />
-    <ClInclude Include="PrtDistConfigParser.h" />
-    <ClInclude Include="PrtDistInternals.h" />
+    <ClInclude Include="PrtDist.h">
+      <CopyToHeaders>True</CopyToHeaders>
+    </ClInclude>
+    <ClInclude Include="PrtDistConfigParser.h">
+      <CopyToHeaders>True</CopyToHeaders>
+    </ClInclude>
+    <ClInclude Include="PrtDistInternals.h">
+      <CopyToHeaders>True</CopyToHeaders>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="NodeManager.acf" />
@@ -227,6 +227,11 @@ del NodeManager_*</Command>
     <ProjectReference Include="..\PrtWinUser.vcxproj">
       <Project>{f8c72c0e-450c-4ae1-9885-31b8565c1d63}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClientFile Include="..\ClientFiles\MainFunction.c" />
+    <ClientFile Include="..\ClientFiles\ClusterConfiguration.xml" />
+    <ClientFile Include="..\ClientFiles\ClusterConfigurationDebug.xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

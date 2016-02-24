@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <UnifiedPlatform>$(Platform)</UnifiedPlatform>
+        <!-- C++ projects use "Win32" for "x86" platform and .NET projects use 'x86' -->
+        <!-- So this new property unifies that difference and moves everything to 'x86' -->
+        <UnifiedPlatform Condition="'$(Platform)'=='Win32'">x86</UnifiedPlatform>
+        <DropFolder>$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\$(UnifiedPlatform)</DropFolder>
+    </PropertyGroup>
+    
+    <Target Name="CompileP" Inputs="@(PCompile)" Outputs="program.h;program.c;stubs.c" BeforeTargets="BeforeBuildGenerateSources">
+        <Message Importance="high" Text="########## compiling p files: @(PCompile) ##################" />
+        <Exec Command="$(DropFolder)\Binaries\pc.exe @(PCompile->'%(FullPath)')" />
+    </Target>
+  
+</Project>

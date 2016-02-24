@@ -830,9 +830,6 @@ namespace CheckP
 
         private static bool IsDifferent(string file1, string file2)
         {
-            int read1, read2;
-            var buf1 = new char[BufferSize];
-            var buf2 = new char[BufferSize];
             try
             {
                 using (var sr1 = new StreamReader(file1))
@@ -841,22 +838,14 @@ namespace CheckP
                     {
                         while (true)
                         {
-                            read1 = sr1.ReadBlock(buf1, 0, BufferSize);
-                            read2 = sr2.ReadBlock(buf2, 0, BufferSize);
-                            if (read1 != read2)
+                            string line1 = sr1.ReadLine();
+                            string line2 = sr2.ReadLine();
+                            if (line1 != line2)
                             {
                                 return true;
                             }
 
-                            for (int i = 0; i < read1; ++i)
-                            {
-                                if (buf1[i] != buf2[i])
-                                {
-                                    return true;
-                                }
-                            }
-
-                            if (read1 == 0)
+                            if (line1 == null && line2 == null)
                             {
                                 return false;
                             }

@@ -147,7 +147,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_USE_IDL;PRT_STATIC;NDEBUG;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_USE_IDL;PRT_STATIC;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -173,7 +173,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_USE_IDL;PRT_STATIC;NDEBUG;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_USE_IDL;PRT_STATIC;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>

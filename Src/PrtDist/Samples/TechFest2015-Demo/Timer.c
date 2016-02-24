@@ -24,13 +24,13 @@ void P_DTOR_Timer_IMPL(PRT_MACHINEINST *context)
   timerContext = (TimerContext *) context->extContext;
   PrtFreeValue(timerContext->client);
   CloseHandle(timerContext->timer);
-  free(timerContext);
+  PrtFree(timerContext); 
 }
 
 void P_CTOR_Timer_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value)
 {
   printf("Entering P_CTOR_Timer_IMPL\n");
-  TimerContext *timerContext = (TimerContext *) malloc(sizeof(TimerContext));
+  TimerContext *timerContext = (TimerContext *) PrtMalloc(sizeof(TimerContext));
   timerContext->client = PrtCloneValue(value);
   timerContext->timer = CreateWaitableTimer(NULL, TRUE, NULL);
   PrtAssert(timerContext->timer != NULL, "CreateWaitableTimer failed");

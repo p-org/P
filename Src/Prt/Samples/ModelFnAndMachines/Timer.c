@@ -10,13 +10,13 @@ void P_DTOR_Timer_IMPL(PRT_MACHINEINST *context)
 	TimerContext *timerContext;
 	timerContext = (TimerContext *)context->extContext;
 	PrtFreeValue(timerContext->client);
-	free(timerContext);
+    PrtFree(timerContext);
 }
 
 void P_CTOR_Timer_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value)
 {
 	printf("Entering P_CTOR_Timer_IMPL\n");
-	TimerContext *timerContext = (TimerContext *)malloc(sizeof(TimerContext));
+	TimerContext *timerContext = (TimerContext *)PrtMalloc(sizeof(TimerContext));
 	timerContext->client = PrtCloneValue(value);
 	context->extContext = timerContext;
 }

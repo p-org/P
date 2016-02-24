@@ -912,8 +912,9 @@ transform P2CProgram (in:: P) returns (out:: C)
 
     //// Build up pack array.
 	EventPacking(l, NIL,  i',  a') :- EventPacking(l, NIL, i, a), i > 0, i' = i - 1, i' : Natural, a' = Args(IntLit(0, HEX, U), a).
-	EventPacking(l, r.tl, i',  a') :- EventPacking(l, r,   i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex < i', a' = Args(IntLit(0, HEX, U), a).
-	EventPacking(l, r.tl, i',  a') :- EventPacking(l, r,   i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex = i', a' = Args(IntLit(r.dat.events, HEX, U), a).
+	EventPacking(l, r.tl, i',  a') :- EventPacking(l, r,   i, a), i > 0, i' = i - 1, i' : Natural, r != NIL, a' = Args(IntLit(r.dat.events, HEX, U), a).
+	//EventPacking(l, r.tl, i',  a') :- EventPacking(l, r,   i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex < i', a' = Args(IntLit(0, HEX, U), a).
+	//EventPacking(l, r.tl, i',  a') :- EventPacking(l, r,   i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex = i', a' = Args(IntLit(r.dat.events, HEX, U), a).
 
 	COut(9, def) :- EventPacking(l, _, 0, a),
 	                id = toOrdinal(l, 0, { l' | EventPacking(l', _, 0, _) }),
@@ -921,7 +922,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 							      NIL, 
 								  ArrType(NmdType(NIL, "PRT_UINT32"), NIL), 
 								  strJoin("P_GEND_EVENTSET_", toString(id)), 
-								  Init(a)).
+								  Init(lstReverse(#Args, a))).
 
     //// Build up event sets.
 	EvSetDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).

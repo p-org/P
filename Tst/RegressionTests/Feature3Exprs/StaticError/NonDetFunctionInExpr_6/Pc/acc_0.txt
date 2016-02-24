@@ -1,0 +1,31 @@
+=================================
+         Console output          
+=================================
+OUT: nondetfunctioninexpr_6.p (7, 6): inferred type:  NIL
+OUT: nondetfunctioninexpr_6.p (7, 10): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_6.p (8, 7): inferred type:  NIL
+OUT: nondetfunctioninexpr_6.p (8, 14): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_6.p (10, 7): inferred type:  NIL
+OUT: nondetfunctioninexpr_6.p (10, 14): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_6.p (16, 8): inferred type:  NIL
+OUT: nondetfunctioninexpr_6.p (16, 15): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_6.p (31, 4): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_6.p (31, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_6.p (31, 8): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_6.p (34, 4): inferred type:  MapType(BaseType(INT), BaseType(ANY))
+OUT: nondetfunctioninexpr_6.p (34, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_6.p (34, 10): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_6.p (34, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nondetfunctioninexpr_6.p (34, 12): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nondetfunctioninexpr_6.p (35, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_6.p (35, 10): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_6.p (35, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nondetfunctioninexpr_6.p (35, 12): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nondetfunctioninexpr_6.p (36, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_6.p (36, 10): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_6.p (36, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nondetfunctioninexpr_6.p (36, 12): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_6.p (36, 12): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nondetfunctioninexpr_6.p (36, 12): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: Compilation failed
+EXIT: -1

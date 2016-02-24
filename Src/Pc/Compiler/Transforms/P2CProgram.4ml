@@ -486,11 +486,10 @@ transform P2CProgram (in:: P) returns (out:: C)
 	TypeDefConstant(-1, NIL).
 
 	TypeDefConstant(m, defs) :- typeDef is TypeDef(name, _), m = toOrdinal(typeDef, 0, { typeDef' | typeDef' is TypeDef }),
-	                            TypeDefConstant(m - 1, before), TypeExpansion(NameType(name), et), TypeId(em, et),
-								defs = out.Section(before, def),
-								def = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, UnApp(ADDR, Ident(eTypeName))),
-								typeName = strJoin("P_GEND_TYPE_", name),
-								eTypeName = strJoin("P_GEND_TYPE_", toString(em)).
+	                            TypeDefConstant(m - 1, before),  
+								typeName = strJoin("P_GEND_TYPE_", name), TypeToExpr(NameType(name), expr),
+								def = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, expr),
+								defs = out.Section(before, def).
 	
 	COut(4, defs) :- TypeDefConstant(c, defs), defs : out.Section, c = count({ typeDef | typeDef is TypeDef}) - 1.
 
@@ -547,9 +546,9 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	EvDecl2PayloadType ::= (EventDecl, out.Expr).
 	//// An EventDecl without a payload type has a null payload type.
-	EvDecl2PayloadType(d, e) :- d is EventDecl(_, _, NIL), TypeConstant(in.BaseType(NULL), typeId, _), e = Ident(strJoin("P_GEND_TYPE_", toString(typeId))).
+	EvDecl2PayloadType(d, expr) :- d is EventDecl(_, _, NIL), TypeToExpr(in.BaseType(NULL), expr).
 	//// An EventDecl with a payload type refers to one of the statically generated types.
-	EvDecl2PayloadType(d, e) :- d is EventDecl(_, _, type), TypeExpansion(type, eType), TypeConstant(eType, typeId, _), e = Ident(strJoin("P_GEND_TYPE_", toString(typeId))), type : in.TypeExpr.
+	EvDecl2PayloadType(d, expr) :- d is EventDecl(_, _, type), type : in.TypeExpr, TypeToExpr(type, expr).
 
 	EvDecl2EvCard      ::= (EventDecl, out.Expr).
 	//// An EventDecl without a queue constraint allows 2^32 - 1 events in a queue.
@@ -561,12 +560,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 	EvDeclConcat(c, NIL) :- c = count({d | d is EventDecl}) + 2.
 
     //// Build event array in reverse order
-	EvDeclConcat(m, arr) :- DeclId(d, m, cn), EvDeclConcat(m + 1, after), arr = out.Args(def, after), EvDecl2PayloadType(d, type), EvDecl2EvCard(d, card), 
+	EvDeclConcat(m, arr) :- DeclId(d, m, cn), EvDeclConcat(m + 1, after), arr = out.Args(def, after), EvDecl2PayloadType(d, expr), EvDecl2EvCard(d, card), 
 	                        def = Init(
 							   Args(Ident(cn),
 							   Args(StringLit(d.name, NIL),
 							   Args(card,
-							   Args(UnApp(ADDR, type),
+							   Args(expr,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
 							   NIL))))))).
@@ -612,13 +611,13 @@ transform P2CProgram (in:: P) returns (out:: C)
     //// Build every variable array in reverse order
 	VarDeclConcat(m, d.owner, arr) :- 
 							DeclId(d, m, cvar), DeclId(d.owner, _, cmach), VarDeclConcat(m + 1, d.owner, after), 
-							d : VarDecl, TypeExpansion(d.type, et), TypeConstant(et, typeId, _),							  
+							d : VarDecl, TypeToExpr(d.type, expr),
 							arr = out.Args(def, after), 
 	                        def = Init(
 							   Args(Ident(cvar),
 							   Args(Ident(cmach),
 							   Args(StringLit(d.name, NIL),
-							   Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(typeId)))),
+							   Args(expr,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
 							   NIL))))))).
@@ -784,9 +783,9 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	PatchReturn ::= (f: in.FunDecl, e: out.Stmt).
 	PatchReturn(f, cs) :- DeclId(f, _, _), f = FunDecl(_, _, _, _, NIL, _, _), cs = out.Return(Ident("p_tmp_ret")).
-	PatchReturn(f, cs) :- DeclId(f, _, _), f = FunDecl(_, _, _, _, type, _, _), type : TypeExpr, TypeExpansion(type, etype), TypeId(typeIndex, etype), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),  
+	PatchReturn(f, cs) :- DeclId(f, _, _), f = FunDecl(_, _, _, _, type, _, _), type : TypeExpr, ParamsType(f, expr),  
 						  cs = out.ITE(BinApp(EQ, Ident("p_tmp_ret"), Ident("NULL")), 
-									   Return(FunApp(Ident("PrtMkDefaultValue"), Args(out.UnApp(ADDR, Ident(typeName)), NIL))),
+									   Return(FunApp(Ident("PrtMkDefaultValue"), Args(expr, NIL))),
 									   Return(Ident("p_tmp_ret"))).
 
 	COut(8, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = REAL, RealOwner(f),
@@ -952,24 +951,28 @@ transform P2CProgram (in:: P) returns (out:: C)
     /*************************************************************/
     /******            Generate Fun Decl Arrays             ******/
     /*************************************************************/	
-	LocalsType ::= (decl: AnonOrNamedFun, type: out.Expr).
-	LocalsType(d, t) :- d is AnonOrNamedFun, d.locals = NIL, t = out.Ident("NULL").
-	LocalsType(d, t) :- d is AnonOrNamedFun, type = d.locals, TypeExpansion(type, etype), TypeId(typeIndex, etype), 
-	                    typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), t = out.UnApp(ADDR, Ident(typeName)).
+	TypeToExpr ::= (type: TypeExpr, expr: out.Expr).
+	TypeToExpr(type, expr) :- TypeExpansion(type, etype), TypeId(typeIndex, etype), 
+	                          typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), 
+							  expr = out.UnApp(ADDR, Ident(typeName)).
+
+	ParamsType ::= (decl: FunDecl, expr: out.Expr).
+	ParamsType(d, expr) :- d is FunDecl, d.params = NIL, expr = out.Ident("NULL").
+	ParamsType(d, expr) :- d is FunDecl, TypeToExpr(d.params, expr).
+
+	LocalsType ::= (decl: AnonOrNamedFun, expr: out.Expr).
+	LocalsType(d, expr) :- d is AnonOrNamedFun, d.locals = NIL, expr = out.Ident("NULL").
+	LocalsType(d, expr) :- d is AnonOrNamedFun, TypeToExpr(d.locals, expr).
 
 	CaseEvent ::= (trig: String + { NULL, HALT }, id: Natural, name: String).
 	CaseEvent(trig, id, name) :- trig : String, ev is EventDecl, ev.name = trig, DeclId(ev, id, name).
 	CaseEvent(NULL, id, name) :- DeclId(NULL, id, name).
 	CaseEvent(HALT, id, name) :- DeclId(HALT, id, name).
 
-	CaseFunIndex ::= (decl: AnonOrNamedFun, act: AnonFunDecl + String, index: Natural).
-	CaseFunIndex(decl, act, index) :- decl is AnonOrNamedFun, act is AnonFunDecl, act.owner = decl.owner, DeclId(act, index, _).
-	CaseFunIndex(decl, act, index) :- decl is AnonOrNamedFun, act: String, f is FunDecl, f.name = act, FunAvailable(f, decl.owner), DeclId(f, index, _). 
-
 	CaseDeclConcat ::= (pos: Natural, decl: AnonOrNamedFun, cases: in.Cases + { NIL }, arr: out.Args + { NIL }).
 	CaseDeclConcat(0, decl, NIL, NIL) :- decl is AnonOrNamedFun.
 	CaseDeclConcat(c, decl, cases, arr) :- SubSE(decl, cases), cases = in.Cases(trig, act, cases'), CaseDeclConcat(c', decl, cases', arr'),
-										   CaseEvent(trig, _, eventName), CaseFunIndex(decl, act, funIndex),
+										   CaseEvent(trig, _, eventName), DeclId(act, funIndex, _),
 										   def = out.Init(Args(Ident(eventName), Args(IntLit(funIndex, DEC, U), NIL))),
 										   arr = out.Args(def, arr'), c = c' + 1.
 
@@ -1389,7 +1392,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 	ProgModelArray(size, arr) :- size = count({ m | m is MachineDecl, m.kind = MODEL }), size > 0, arr = out.Ident("P_GEND_MODELS").
 
 	HOut(12, def) :- def = out.VarDef(
-							      NIL, 
+							      EXTERN, 
 								  NmdType(NIL, "PRT_PROGRAMDECL"), 
 								  "P_GEND_PROGRAM", 
 								  NIL).
@@ -1468,18 +1471,16 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	//// Identifier
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = Name(n), TypeOfLocalVar(c, n, _), LocalVars(c, locals), IndexOf(locals, n, localIndex, _),
+									e = Name(n), IsLocalVar(c, n, _), LocalVars(c, locals), IndexOf(locals, n, localIndex, _),
 									ec = out.BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(localIndex, DEC, U)).
 
-	RhsTrans(c, s, i, j', trans) :- SubCntxt(c), varDecl is VarDecl(n, c.owner, _),  
-									RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = Name(n), no TypeOfLocalVar(c, n, _), DeclId(varDecl, _, varName),
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+									e = Name(n), IsMachineVar(c, n, varDecl, _), DeclId(varDecl, _, varName),
 									ec = out.BinApp(AAC, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("varValues")), Ident(varName)).
 
-	RhsTrans(c, s, i, j', trans) :- SubCntxt(c), eventDecl is EventDecl(n, _, _), 
-	                                RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), e = Name(n),  
-									no VarDecl(n, c.owner, _), no TypeOfLocalVar(c, n, _),
-									ConstId(m, e), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail),
+									e = Name(n), IsEventCnst(c, n, _), ConstId(m, e),
+									ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
 
 	//// Machine creation
 	FormalTrans ::= (c: FunDecl, f: String, e: out.Args).
@@ -1525,10 +1526,9 @@ transform P2CProgram (in:: P) returns (out:: C)
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = in.FunApp(name, args), args != NIL, 
-									DeclId(funDecl, funIndex, funName), funDecl.name = name, funDecl.params = type, FunAvailable(funDecl, c.owner),
-									TypeExpansion(type, etype), TypeId(typeIndex, etype), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), 
+									DeclId(funDecl, funIndex, funName), funDecl.name = name, FunAvailable(funDecl, c.owner), ParamsType(funDecl, expr), 
 									ExprsTrans(c, s, i, args, ecs),
-									argsTuple = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#Exprs, args) - 1))), Args(out.UnApp(ADDR, Ident(typeName)), ecs)),
+									argsTuple = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#Exprs, args) - 1))), Args(expr, ecs)),
 									ec = out.FunApp(Ident("PrtWrapFunStmt"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(0, DEC, U), Args(Ident("p_tmp_mach_priv"), Args(IntLit(funIndex, DEC, U), Args(argsTuple, NIL)))))).
 	
 	//// Nullary expressions
@@ -1707,27 +1707,27 @@ transform P2CProgram (in:: P) returns (out:: C)
 									Accessor(c, e1, acc), ec = out.FunApp(acc, Args(getTuple, Args(IntLit(f, DEC, NIL), NIL))).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = in.Default(type), TypeExpansion(type, etype), TypeId(typeIndex, etype), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),
-									ec = out.FunApp(Ident("PrtMkDefaultValue"), Args(out.UnApp(ADDR, Ident(typeName)), NIL)).
+									e = in.Default(type), TypeToExpr(type, expr),
+									ec = out.FunApp(Ident("PrtMkDefaultValue"), Args(expr, NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = in.Fresh(name), type = in.NameType(name), TypeExpansion(type, etype), TypeId(typeIndex, etype), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),
-									ec = out.FunApp(Ident("PrtMkFreshForeignValue"), Args(out.UnApp(ADDR, Ident(typeName)), NIL)).
+									e = in.Fresh(name), TypeToExpr(in.NameType(name), expr),
+									ec = out.FunApp(Ident("PrtMkFreshForeignValue"), Args(expr, NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = in.Cast(arg, type), TypeExpansion(type, etype), RhsEvalOrder(s, i, arg, tmp1), TypeId(typeIndex, etype), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),
+									e = in.Cast(arg, type), RhsEvalOrder(s, i, arg, tmp1), TypeToExpr(type, expr), 
 									getArg = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
-									ec = out.FunApp(Ident("PrtCastValue"), Args(getArg, Args(out.UnApp(ADDR, Ident(typeName)), NIL))).
+									ec = out.FunApp(Ident("PrtCastValue"), Args(getArg, Args(expr, NIL))).
 	
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = in.Tuple(es), TypeOf(c, e, type), TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),
+									e = in.Tuple(es), TypeOf(c, e, type), TypeToExpr(type, expr),
 									ExprsTrans(c, s, i, es, ecs), 
-									ec = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#Exprs, es) - 1))), Args(out.UnApp(ADDR, Ident(typeName)), ecs)).
+									ec = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#Exprs, es) - 1))), Args(expr, ecs)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = in.NamedTuple(es), TypeOf(c, e, type), TypeId(typeIndex, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)),
+									e = in.NamedTuple(es), TypeOf(c, e, type), TypeToExpr(type, expr),
 									ExprsTrans(c, s, i, es, ecs), 
-									ec = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#NmdTupType, type) - 1))), Args(out.UnApp(ADDR, Ident(typeName)), ecs)).
+									ec = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#NmdTupType, type) - 1))), Args(expr, ecs)).
 
     /*************************************************************/
     /******             Statement translation               ******/
@@ -1914,10 +1914,10 @@ transform P2CProgram (in:: P) returns (out:: C)
 						   cs = out.Lbl(strJoin("L", toString(label)), Seq(funcall, Seq(blocked, Seq(exception, cleanup)))).
 
 	StmtTrans(c, s, cs) :- FunStmtRhs(c, s, size, tail), s = in.FunStmt(name, args, _, label), args != NIL, 
-	                       FunDeclNames(fn, funIndex, funName, prmsTypeName), FunAvailable(fn, c.owner), fn.name = name, 
+	                       DeclId(fn, funIndex, funName), ParamsType(fn, expr), FunAvailable(fn, c.owner), fn.name = name, 
 						   ExprsTrans(c, s, 0, args, ecs),
 						   cs = out.Seq(paramAssign, Lbl(strJoin("L", toString(label)), Seq(funCall, Seq(blocked, Seq(exception, cleanup))))),
-						   argsTuple = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#Exprs, args) - 1))), Args(UnApp(ADDR, Ident(prmsTypeName)), ecs)),
+						   argsTuple = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#Exprs, args) - 1))), Args(expr, ecs)),
 						   paramAssign = out.BinApp(ASN, params, FunApp(Ident(strJoin("P_EXPR_", toString(size))), Args(argsTuple, Args(Ident("PRT_FALSE"), tail)))),
 						   funCall = out.BinApp(ASN, ret, FunApp(Ident("PrtWrapFunStmt"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(label, DEC, U), Args(Ident("p_tmp_mach_priv"), Args(IntLit(funIndex, DEC, U), Args(params, NIL))))))),
 						   blocked = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("receive")), Ident("NULL")), Return(ret), NIL),
@@ -1929,12 +1929,6 @@ transform P2CProgram (in:: P) returns (out:: C)
     
 	FunStmtRhs ::= (cntxt: TypingContext, stmt: in.FunStmt, exprSize: Natural, args: out.Args).
 	FunStmtRhs(c, s, size, args) :- RhsTrans(c, s, 0, j, args), RhsMaxOrder(s, 0, j), size = j + 1, s : in.FunStmt, args: out.Args. 
-
-	FunDeclNames ::= (fn: in.FunDecl, funIndex: Natural, funName: String, prmsTypeName: String).
-	FunDeclNames(fn, funIdex, funName, prmsTypeName) :- DeclId(fn, funIdex, funName), TypeId(typeIndex, etype), 
-						                                fn = FunDecl(_, _, _, type, _, _, _), TypeExpansion(type, etype),
-						                                prmsTypeName = strJoin("P_GEND_TYPE_", toString(typeIndex)).  
-
 
 	/*************************************************************/
 	/******            Value availability                   ******/
@@ -2142,7 +2136,8 @@ transform P2CProgram (in:: P) returns (out:: C)
 
     //// Concat all statement-level expressions
 	LhsExprs ::= (cntxt: TypingContext, stmt: in.BinStmt, indx: Natural, args: out.Args). 
-	LhsExprs(c, s, 0, args)  :- SubSE(c, s), s : in.BinStmt, RhsExpr(c, s, 0, trans, _), args = out.Args(trans, Args(Ident("PRT_FALSE"), NIL)).
+	LhsExprs(c, s, 0, args)  :- SubSE(c, s), s = in.BinStmt(REMOVE, _, _), RhsExpr(c, s, 0, trans, doFree), args = out.Args(trans, Args(doFree, NIL)).
+	LhsExprs(c, s, 0, args)  :- SubSE(c, s), s = in.BinStmt(op, _, _), op != REMOVE, RhsExpr(c, s, 0, trans, _), args = out.Args(trans, Args(Ident("PRT_FALSE"), NIL)).
 	LhsExprs(c, s, i', args) :- LhsExprs(c, s, i, a), i' = i + 1, RhsExpr(c, s, i', trans, doFree), args = out.Args(trans, Args(doFree, a)). 
 
     //// ASSIGN / UPDATE

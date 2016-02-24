@@ -1,0 +1,23 @@
+=================================
+         Console output          
+=================================
+OUT: nondetfunctioninexpr_1.p (5, 6): inferred type:  NIL
+OUT: nondetfunctioninexpr_1.p (5, 10): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_1.p (6, 7): inferred type:  NIL
+OUT: nondetfunctioninexpr_1.p (6, 14): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_1.p (8, 7): inferred type:  NIL
+OUT: nondetfunctioninexpr_1.p (8, 14): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_1.p (14, 7): inferred type:  NIL
+OUT: nondetfunctioninexpr_1.p (14, 7): inferred type:  NmdTupType(NmdTupTypeField("f", NmdTupType(NmdTupTypeField("g", BaseType(INT)), NIL)), NIL)
+OUT: nondetfunctioninexpr_1.p (14, 9): inferred type:  NmdTupType(NmdTupTypeField("g", BaseType(INT)), NIL)
+OUT: nondetfunctioninexpr_1.p (14, 11): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_1.p (14, 15): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_1.p (15, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_1.p (15, 18): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_1.p (15, 21): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_1.p (15, 23): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_1.p (15, 32): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_1.p (15, 35): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_1.p (14, 11): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: Compilation failed
+EXIT: -1

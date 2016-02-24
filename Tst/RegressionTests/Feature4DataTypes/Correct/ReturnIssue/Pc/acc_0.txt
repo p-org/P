@@ -1,0 +1,26 @@
+=================================
+         Console output          
+=================================
+OUT: returnissue.p (6, 5): inferred type:  NIL
+OUT: returnissue.p (14, 3): inferred type:  BaseType(INT)
+OUT: returnissue.p (14, 3): inferred type:  NIL
+OUT: returnissue.p (15, 9): inferred type:  NIL
+OUT: returnissue.p (15, 18): inferred type:  BaseType(INT)
+OUT: returnissue.p (15, 18): inferred type:  TupType(BaseType(INT), NIL)
+OUT: returnissue.p (16, 12): inferred type:  BaseType(INT)
+OUT: returnissue.p (16, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: returnissue.p (16, 15): inferred type:  TupType(BaseType(INT), NIL)
+OUT: returnissue.p (21, 9): inferred type:  NIL
+OUT: returnissue.p (21, 16): inferred type:  BaseType(INT)
+OUT: returnissue.p (26, 9): inferred type:  NIL
+OUT: returnissue.p (26, 16): inferred type:  BaseType(INT)
+OUT: returnissue.p (31, 9): inferred type:  NIL
+OUT: returnissue.p (31, 16): inferred type:  BaseType(INT)
+OUT: returnissue.p (31, 18): inferred type:  BaseType(INT)
+OUT: returnissue.p (31, 20): inferred type:  BaseType(INT)
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing returnIssue.zing ...
+OUT: Compiling returnIssue.zing to returnIssue.dll ...
+EXIT: 0

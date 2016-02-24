@@ -1,0 +1,26 @@
+=================================
+         Console output          
+=================================
+OUT: nondetfunctioninexpr_10.p (7, 6): inferred type:  NIL
+OUT: nondetfunctioninexpr_10.p (7, 10): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_10.p (8, 7): inferred type:  NIL
+OUT: nondetfunctioninexpr_10.p (8, 14): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_10.p (10, 7): inferred type:  NIL
+OUT: nondetfunctioninexpr_10.p (10, 14): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_10.p (16, 8): inferred type:  NIL
+OUT: nondetfunctioninexpr_10.p (16, 15): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_10.p (31, 4): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_10.p (31, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_10.p (31, 8): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_10.p (34, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_10.p (34, 10): inferred type:  MapType(BaseType(INT), SeqType(BaseType(INT)))
+OUT: nondetfunctioninexpr_10.p (35, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_10.p (35, 4): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
+OUT: nondetfunctioninexpr_10.p (35, 6): inferred type:  MapType(BaseType(INT), SeqType(BaseType(INT)))
+OUT: nondetfunctioninexpr_10.p (35, 12): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_10.p (35, 12): inferred type:  TupType(BaseType(INT), TupType(SeqType(BaseType(INT)), NIL))
+OUT: nondetfunctioninexpr_10.p (35, 17): inferred type:  SeqType(BaseType(INT))
+OUT: nondetfunctioninexpr_10.p (35, 17): inferred type:  TupType(SeqType(BaseType(INT)), NIL)
+OUT: nondetfunctioninexpr_10.p (35, 12): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: Compilation failed
+EXIT: -1

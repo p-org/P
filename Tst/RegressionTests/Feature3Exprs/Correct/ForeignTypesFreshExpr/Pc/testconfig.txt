@@ -1,0 +1,6 @@
+arg: ..\foreignTypesFreshExpr.p
+arg: /printTypeInference
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, foreign types and "fresh" expression

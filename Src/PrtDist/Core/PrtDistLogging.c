@@ -1,35 +1,35 @@
 #include "PrtDist.h"
 
 static FILE *logfile = NULL;
+PRT_CHAR logfileName[MAX_LOG_SIZE];
+
 
 void PrtOpenLogFile(PRT_CHAR* logDirectory)
 {
-    PRT_CHAR fileName[MAX_LOG_SIZE];
-
-    fileName[0] = '\0';
+    logfileName[0] = '\0';
     size_t len = 0;
     if (logDirectory != NULL)
     {
         len = strlen(logDirectory);
         if (len > 0)
         {
-            strcpy(fileName, logDirectory);
+            strcpy(logfileName, logDirectory);
             if (logDirectory[len - 1] != '\\' && logDirectory[len - 1] != '/')
             {
-                strcat_s(fileName, MAX_LOG_SIZE, "\\");
+                strcat_s(logfileName, MAX_LOG_SIZE, "\\");
                 len++;
             }
         }
     }
-    strcat_s(fileName, MAX_LOG_SIZE, "PRT_CONTAINER_LOG_");
+    strcat_s(logfileName, MAX_LOG_SIZE, "PRT_CONTAINER_LOG_");
     if (ContainerProcess != NULL)
     {
         PRT_CHAR processId[MAX_LOG_SIZE];
         _itoa(ContainerProcess->guid.data1, processId, 10);
-        strcat_s(fileName, MAX_LOG_SIZE, processId);
+        strcat_s(logfileName, MAX_LOG_SIZE, processId);
     }
-    strcat_s(fileName, MAX_LOG_SIZE, ".txt");
-    logfile = fopen(fileName, "a+");
+    strcat_s(logfileName, MAX_LOG_SIZE, ".txt");
+    logfile = fopen(logfileName, "a+");
 }
 
 void PrtCloseLogFile()
@@ -103,13 +103,10 @@ __in void* vcontext
 	PrtUnlockMutex(((PRT_PROCESS_PRIV*)c->process)->processLock);
 
 #ifdef PRT_DEBUG
-    /*
-    [chris] this doesn't work in WinRT apps.
-
 	int msgboxID = MessageBoxEx(
 		NULL,
 		log,
-		fileName,
+        logfileName,
 		MB_OK,
 		LANG_NEUTRAL
 		);
@@ -121,7 +118,6 @@ __in void* vcontext
 	default:
 		exit(-1);
 	}
-    */
 #endif
 	exit(-1);
 

@@ -1,0 +1,1 @@
+dsc: runtime, RHS of asgn is nondet return value from function

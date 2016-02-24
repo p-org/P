@@ -1,0 +1,30 @@
+=================================
+         Console output          
+=================================
+OUT: cmain.p (66, 25): inferred type:  NIL
+OUT: cmain.p (71, 26): inferred type:  NIL
+OUT: cmain.p (72, 43): inferred type:  NIL
+OUT: cmain.p (73, 26): inferred type:  NIL
+OUT: cmain.p (74, 33): inferred type:  NIL
+OUT: cmain.p (75, 36): inferred type:  NIL
+OUT: cmain.p (80, 26): inferred type:  NIL
+OUT: cmain.p (81, 50): inferred type:  NIL
+OUT: cmain.p (82, 33): inferred type:  NIL
+OUT: cmain.p (83, 36): inferred type:  NIL
+OUT: cmain.p (88, 26): inferred type:  NIL
+OUT: cmain.p (89, 49): inferred type:  NIL
+OUT: cmain.p (90, 36): inferred type:  NIL
+OUT: cmain.p (96, 36): inferred type:  NIL
+OUT: cmain.p (97, 43): inferred type:  NIL
+OUT: cmain.p (98, 50): inferred type:  NIL
+OUT: cmain.p (99, 49): inferred type:  NIL
+OUT: cmain.p (100, 50): inferred type:  NIL
+OUT: cmain.p (108, 13): inferred type:  NIL
+OUT: cmain.p (108, 19): inferred type:  BaseType(EVENT)
+OUT: cmain.p (125, 10): inferred type:  NIL
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing CMain.zing ...
+OUT: Compiling CMain.zing to CMain.dll ...
+EXIT: 0

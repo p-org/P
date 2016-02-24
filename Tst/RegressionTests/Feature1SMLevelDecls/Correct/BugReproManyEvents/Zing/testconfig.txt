@@ -1,0 +1,2 @@
+arg: ..\CMain.dll
+dsc: zinger.exe, bug repro with more than 32 events

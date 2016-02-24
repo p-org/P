@@ -28,7 +28,7 @@ main machine M {
 	
     start state S {
 	    entry {
-			i = F() + 1;                    //static error
+			i = F() + 1;                    //TODO: static error: not detected
 			i = default(int);
 			//+++++++++++++++++++++++++++++++++++++1. tuples:
 			//+++++++++++++++++++++++++++++++++++++1.1. Assigned value is non-det:

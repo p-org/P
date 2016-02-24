@@ -11,7 +11,7 @@ main machine M
 {    
     var t : (a: seq [int], b: map[int, seq[int]]);
 	var t1 : (a: seq [int], b: map[int, seq[int]]);
-	var t2: (a: seq [int], a: map[int, seq[int]]);
+	var t2: (a: seq [int], a: map[int, seq[int]]);       //error
 	var ts: (a: int, b: int);
 	var tt: (int, int);
 	var te: (int, event);       ///////////////////////////////////////////////////////////
@@ -53,38 +53,26 @@ main machine M
        {
 	      /////////////////////////default expression:
 		  y = 2;
-		  assert(y == 2);
 		  y = default(int);    
-          assert(y == 0);	
 		  
 		  b = true;
-		  assert(b == true);
 		  y = default(bool);    //error
           b = default(bool);	  
-          assert(b == false);
 
 		  e = E;
-		  assert(e == E);
 		  b = default(event);    //error
           e = default(event);	  
-          assert(e == null);
 		  
 		  mac = this;
 		  e = default(machine);    //error
           mac = default(machine);	  
-          assert(mac == null);
 		  
 		  a = true;
 		  a = default(any);
-		  assert (a == null);
 		  
 		  m5 += (1,true);
-		  assert (m5[1] == true);
 		  m5 = default(map[int,any]);
-		  assert (m5[1] == null);
-		  m5 += (1,E);
-		  assert (m5[1] == E);
-		    
+		  m5 += (1,E);   
 		  /////////////////////////tuples:
 		  //ts = (a = 1, b = 2);
 		  //ts = (a = 1);           //parsing error
@@ -93,12 +81,10 @@ main machine M
 		  ts += (1,2);              //error
 		  ts -= (1,2);              //error
 		  ts.b = 1;
-		  ts.a = ts.b + 1;	 
-		  assert(ts.a == 2 && ts.b == 1);
+		  ts.a = ts.b + foo();	   //non-primitive expr in RHS; OK?
 		  ts = default((a: int, b: int));
-		  assert(ts.a == 0 && ts.b == 0);
 		  
-		  tt = (1,2);              //OK
+		  tt = (1, foo() + 1);     //OK
 		  tt = (5);                //error
 		  tt += (2,3);             //error
 		  tt -= (2,3);             //error
@@ -110,19 +96,18 @@ main machine M
 		  tt = ts;                //error
 		  ts = tt;                //error
 		  
-		  assert(tt.0 == 1 && tt.1 == 2);
 		  tt = default((int, int));
-		  assert(tt.0 == 0 && tt.1 == 0);
 		  
 		  te = (1,1);             //error
 		  te = (2,E2);            //OK
-		  te = (3,null);          //OK
+		  te = (3,bar());         //OK
+		  te = (4,null);          //OK
 		  
 		  te = (null,E2);         //error
 		  
 	      /////////////////////////sequences:
 		  s += (0, 1);
-          s += (1, 2);
+          s += (1, 2);        
           s1 = s;
           s -= (1);
 		  
@@ -130,25 +115,25 @@ main machine M
 		  s += (0,5);
 		  s += (0,6);
 		  s -= (1);                 //removes 1st element
-		  assert (sizeof(s) == 1);   //holds
 		  assert (6 in s);           //error: ""in" expects a map"
 		  //Removal of 5th element from sequence of size 1:
 		  s -= (5,7);               //static error: "index must be an integer"
 		  
+		  s = default(seq[int]);
 		  s += (0,1);
-		  assert(s[0] == 1);       //holds
 		  s[0] = 2;
 		  s[true] = 9;             //error
-		  assert(s[0] ==2);        //holds
 		  i = 0;
-		  assert(s[i] == 2);       //holds
 		  s += (1,null);           //error
+		  
+		  s += (0,foo()+2*foo());   //OK
+		  s -= (foo() - 1);         //OK
 		  
 		  s9 += (0,E);
 		  s9 += (1,E1);
 		  s9 += (2,E2);
 		  s9 += (3,null);
-		  assert (sizeof(s9) == 4);   //holds
+		  //assert (sizeof(s9) == 4);   //holds
 		  s9 += (4,15);               //error
 		  s10 += (0,E);                //OK
 		  s11 += (0,E1);              //error
@@ -163,10 +148,10 @@ main machine M
 		  assert (0 in m1);      //holds
 		  i = keys(m1)[0];
 		  assert(i == 0);        //holds
-		  assert( values(m1)[0] == 1);  //holds
-		  assert(m1[0] == 1);    //holds
+		  assert( values(m1)[0] == 1);  //OK
+		  //assert(m1[0] == 1);    //holds
 		  m1[0] = 2;
-		  assert(m1[0] == 2);    //holds
+		  //assert(m1[0] == 2);    //holds
 		  m1 -= (0);
 		  assert (sizeof(m1) == 0);  //holds
 		  m1[0] = 2;
@@ -176,9 +161,9 @@ main machine M
 		  
 		  m3[0] = true;
 		  m3[2] = false;
-		  assert (sizeof(m3) == 2);  //holds
+		  //assert (sizeof(m3) == 2);  //holds
 		  assert (true in m3);        //error: “Value can never be in the map" 
-		  assert(values(m3)[0] == 1); //fails
+		  assert(values(m3)[0] == 1); //error
 		  
 		  m3[true] = false;         //error
 		  
@@ -216,8 +201,8 @@ main machine M
 		  s1 += (0,true);
 		  s3 += (0,s5);
 		  s3 += (1,s1);
-		  assert (s3[0] == s5);                   //holds
-		  assert (s3[1][0] == true);              //holds?
+		  assert (s3[0] == s5);                  
+		  assert (s3[1][0] == true);             
 		  s3 = default(seq[seq[any]]);
 		  assert(s3[1][0] == null);
 		  assert(s3[0][0] == null);
@@ -233,13 +218,13 @@ main machine M
 		  m10 += (5, true);
 		  m10 += (10, s12);   //seq type used as "any"
 		  s6 += (1,m10);
-		  assert(s6[0][0] == E);    //holds
-		  assert(s6[0][1] == null);  //holds
-		  assert(s6[1][5] == true);  //holds
-		  assert(s6[1][10] == s12);  //holds
+		  assert(s6[0][0] == E);    
+		  assert(s6[0][1] == null);  
+		  assert(s6[1][5] == true);  
+		  assert(s6[1][10] == s12);  
 		  tmp4 = s6[1][10];                      //error: "invalid assignment. right hand side is not a subtype of left hand side"
 		  tmp4 = s6[1][10] as seq[int];          //OK
-		  assert(tmp4[0] == 1);                  //holds
+		  assert(tmp4[0] == 1);                  
 		  assert(s6[1][10][0] == 1);             // error for s6[1][10][0]: "Indexer must be applied to a sequence or map"
 		  assert((s6[1][10] as seq[int])[0] == 1);   //OK
 		  
@@ -252,11 +237,11 @@ main machine M
 		  assert ( t.a[0] == 2 );         //holds
 		  
 		  t.a += (1,2);
-		  assert ( t.a[1] == 2 );         //holds
+		  assert ( t.a[1] == 2 );        
 		  
 		  t.a += (0,3);
-		  assert ( t.a[0] == 3 );         //holds
-		  assert ( t.a[1] == 2 );         //holds
+		  assert ( t.a[0] == 3 );         
+		  assert ( t.a[1] == 2 );         
 		  
 		  ////////////////////////map: [bool, seq[(a: int, b: int)]]
 		  //var s4, s8: seq[(int,int)];
@@ -319,7 +304,7 @@ main machine M
 		  //////////////////////// IDX:
 		  tmp[0] = 0;         //error
 		  ////////////////////// WHILE:
-		  while (4)
+		  while (4)                  //error
 		  {
 		      if (i != 3) { assert(m2[0][i] == m2[1][i]); }   //holds
 		  	  else { assert(m2[0][i] != m2[1][i]); }        //holds
@@ -332,7 +317,12 @@ main machine M
     fun foo() : int
     {
        return 1;
-    }         
+    }   
+
+	fun bar() : event
+    {
+       return E;
+    }  	
     
     fun GetT() : (a: seq [int], b: map[int, seq[int]])
     {

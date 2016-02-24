@@ -5,607 +5,575 @@ OUT: nonatomicdatatypes.p (55, 5): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (55, 5): inferred type:  NIL
 OUT: nonatomicdatatypes.p (55, 9): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (56, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (56, 14): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (57, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (57, 9): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (58, 11): inferred type:  NIL
-OUT: nonatomicdatatypes.p (58, 20): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (60, 5): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (60, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (60, 9): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (61, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (61, 14): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (62, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (56, 9): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (58, 5): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (58, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (58, 9): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (59, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (59, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (59, 9): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (60, 11): inferred type:  NIL
+OUT: nonatomicdatatypes.p (62, 5): inferred type:  BaseType(EVENT)
 OUT: nonatomicdatatypes.p (62, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (62, 9): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (63, 11): inferred type:  NIL
+OUT: nonatomicdatatypes.p (62, 9): inferred type:  BaseType(EVENT)
+OUT: nonatomicdatatypes.p (63, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (63, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (63, 9): inferred type:  BaseType(EVENT)
 OUT: nonatomicdatatypes.p (64, 11): inferred type:  NIL
-OUT: nonatomicdatatypes.p (64, 20): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (66, 5): inferred type:  BaseType(EVENT)
+OUT: nonatomicdatatypes.p (66, 5): inferred type:  BaseType(REAL)
 OUT: nonatomicdatatypes.p (66, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (66, 9): inferred type:  BaseType(EVENT)
+OUT: nonatomicdatatypes.p (66, 11): inferred type:  BaseType(REAL)
+OUT: nonatomicdatatypes.p (67, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (67, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (67, 14): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (68, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (68, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (68, 9): inferred type:  BaseType(EVENT)
-OUT: nonatomicdatatypes.p (69, 11): inferred type:  NIL
-OUT: nonatomicdatatypes.p (70, 11): inferred type:  NIL
-OUT: nonatomicdatatypes.p (70, 20): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (72, 5): inferred type:  BaseType(REAL)
-OUT: nonatomicdatatypes.p (72, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (72, 11): inferred type:  BaseType(REAL)
-OUT: nonatomicdatatypes.p (73, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (67, 9): inferred type:  BaseType(REAL)
+OUT: nonatomicdatatypes.p (68, 11): inferred type:  NIL
+OUT: nonatomicdatatypes.p (70, 5): inferred type:  BaseType(ANY)
+OUT: nonatomicdatatypes.p (70, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (71, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (71, 9): inferred type:  BaseType(ANY)
+OUT: nonatomicdatatypes.p (73, 5): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: nonatomicdatatypes.p (73, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (73, 9): inferred type:  BaseType(REAL)
-OUT: nonatomicdatatypes.p (74, 11): inferred type:  NIL
-OUT: nonatomicdatatypes.p (75, 11): inferred type:  NIL
-OUT: nonatomicdatatypes.p (75, 22): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (77, 5): inferred type:  BaseType(ANY)
-OUT: nonatomicdatatypes.p (77, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (78, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (78, 9): inferred type:  BaseType(ANY)
-OUT: nonatomicdatatypes.p (79, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (79, 15): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (81, 5): inferred type:  MapType(BaseType(INT), BaseType(ANY))
+OUT: nonatomicdatatypes.p (73, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
+OUT: nonatomicdatatypes.p (73, 14): inferred type:  TupType(BaseType(BOOL), NIL)
+OUT: nonatomicdatatypes.p (74, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (74, 10): inferred type:  MapType(BaseType(INT), BaseType(ANY))
+OUT: nonatomicdatatypes.p (75, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (75, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
+OUT: nonatomicdatatypes.p (75, 14): inferred type:  TupType(BaseType(EVENT), NIL)
+OUT: nonatomicdatatypes.p (80, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (80, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (80, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
+OUT: nonatomicdatatypes.p (80, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (80, 13): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nonatomicdatatypes.p (81, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (81, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (81, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
-OUT: nonatomicdatatypes.p (81, 14): inferred type:  TupType(BaseType(BOOL), NIL)
+OUT: nonatomicdatatypes.p (82, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (82, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (82, 15): inferred type:  BaseType(ANY)
-OUT: nonatomicdatatypes.p (82, 19): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (83, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (83, 10): inferred type:  MapType(BaseType(INT), BaseType(ANY))
+OUT: nonatomicdatatypes.p (83, 8): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (83, 12): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (84, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (84, 19): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (84, 8): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (84, 17): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (85, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (85, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
-OUT: nonatomicdatatypes.p (85, 14): inferred type:  TupType(BaseType(EVENT), NIL)
-OUT: nonatomicdatatypes.p (86, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (86, 19): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (92, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (85, 10): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
+OUT: nonatomicdatatypes.p (87, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (87, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (87, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (87, 14): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (87, 20): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (87, 20): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nonatomicdatatypes.p (88, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (88, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (88, 11): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (89, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (89, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (89, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (89, 14): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nonatomicdatatypes.p (90, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (90, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (92, 5): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (92, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (92, 5): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
-OUT: nonatomicdatatypes.p (92, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: nonatomicdatatypes.p (92, 13): inferred type:  TupType(BaseType(INT), NIL)
 OUT: nonatomicdatatypes.p (93, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (93, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (93, 8): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (94, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (94, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (95, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (95, 8): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (95, 12): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (94, 8): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (96, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (96, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (96, 8): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (96, 17): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (97, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (97, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (97, 17): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (97, 22): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (97, 30): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (98, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (98, 10): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))
 OUT: nonatomicdatatypes.p (99, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (99, 17): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (99, 22): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (99, 30): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (99, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (101, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (101, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (101, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: nonatomicdatatypes.p (102, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (101, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
+OUT: nonatomicdatatypes.p (101, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (101, 13): inferred type:  TupType(BaseType(INT), NIL)
 OUT: nonatomicdatatypes.p (102, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (102, 11): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (103, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (102, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
+OUT: nonatomicdatatypes.p (102, 13): inferred type:  BaseType(EVENT)
+OUT: nonatomicdatatypes.p (102, 13): inferred type:  TupType(BaseType(EVENT), NIL)
 OUT: nonatomicdatatypes.p (103, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (103, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: nonatomicdatatypes.p (103, 14): inferred type:  TupType(BaseType(INT), NIL)
-OUT: nonatomicdatatypes.p (104, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (103, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
+OUT: nonatomicdatatypes.p (103, 13): inferred type:  BaseType(EVENT)
+OUT: nonatomicdatatypes.p (103, 13): inferred type:  TupType(BaseType(EVENT), NIL)
 OUT: nonatomicdatatypes.p (104, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (106, 5): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (104, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(NULL), NIL))
+OUT: nonatomicdatatypes.p (104, 13): inferred type:  TupType(BaseType(NULL), NIL)
+OUT: nonatomicdatatypes.p (106, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (106, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (107, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (107, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (107, 8): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (108, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (108, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (108, 8): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (110, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (110, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (111, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (111, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (113, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (113, 17): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (113, 22): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (113, 30): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (114, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (114, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (106, 11): inferred type:  TupType(BaseType(NULL), TupType(BaseType(EVENT), NIL))
+OUT: nonatomicdatatypes.p (109, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (109, 5): inferred type:  SeqType(BaseType(INT))
+OUT: nonatomicdatatypes.p (109, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (110, 11): inferred type:  NIL
+OUT: nonatomicdatatypes.p (111, 11): inferred type:  NIL
+OUT: nonatomicdatatypes.p (111, 11): inferred type:  SeqType(BaseType(ANY))
+OUT: nonatomicdatatypes.p (112, 11): inferred type:  NIL
 OUT: nonatomicdatatypes.p (115, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (115, 15): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (115, 17): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (115, 22): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (115, 28): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (115, 30): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (117, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (115, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (115, 13): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nonatomicdatatypes.p (116, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (116, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (116, 13): inferred type:  TupType(BaseType(INT), NIL)
 OUT: nonatomicdatatypes.p (117, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (117, 5): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
-OUT: nonatomicdatatypes.p (117, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: nonatomicdatatypes.p (117, 13): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nonatomicdatatypes.p (118, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (118, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (118, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
-OUT: nonatomicdatatypes.p (118, 13): inferred type:  BaseType(EVENT)
-OUT: nonatomicdatatypes.p (118, 13): inferred type:  TupType(BaseType(EVENT), NIL)
-OUT: nonatomicdatatypes.p (119, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (119, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(NULL), NIL))
-OUT: nonatomicdatatypes.p (119, 13): inferred type:  TupType(BaseType(NULL), NIL)
-OUT: nonatomicdatatypes.p (121, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (121, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (121, 11): inferred type:  TupType(BaseType(NULL), TupType(BaseType(EVENT), NIL))
+OUT: nonatomicdatatypes.p (118, 13): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (118, 15): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (120, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (120, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (120, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (120, 13): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (120, 13): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nonatomicdatatypes.p (122, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (122, 9): inferred type:  SeqType(BaseType(INT))
+OUT: nonatomicdatatypes.p (123, 5): inferred type:  NIL
 OUT: nonatomicdatatypes.p (124, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (124, 5): inferred type:  SeqType(BaseType(INT))
-OUT: nonatomicdatatypes.p (124, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: nonatomicdatatypes.p (125, 11): inferred type:  NIL
-OUT: nonatomicdatatypes.p (126, 11): inferred type:  NIL
-OUT: nonatomicdatatypes.p (126, 11): inferred type:  SeqType(BaseType(ANY))
-OUT: nonatomicdatatypes.p (127, 11): inferred type:  NIL
+OUT: nonatomicdatatypes.p (124, 6): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (125, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (125, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (125, 6): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (125, 15): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (126, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (126, 9): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (127, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (127, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (127, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(NULL), NIL))
+OUT: nonatomicdatatypes.p (129, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (129, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (129, 18): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (129, 18): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nonatomicdatatypes.p (129, 20): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (130, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (130, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: nonatomicdatatypes.p (130, 13): inferred type:  TupType(BaseType(INT), NIL)
-OUT: nonatomicdatatypes.p (131, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (131, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: nonatomicdatatypes.p (131, 13): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nonatomicdatatypes.p (130, 17): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (132, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (132, 5): inferred type:  SeqType(BaseType(EVENT))
+OUT: nonatomicdatatypes.p (132, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
 OUT: nonatomicdatatypes.p (133, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (133, 13): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (133, 23): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (134, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (133, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
+OUT: nonatomicdatatypes.p (133, 14): inferred type:  TupType(BaseType(EVENT), NIL)
 OUT: nonatomicdatatypes.p (134, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (134, 13): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (134, 15): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (136, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (135, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (135, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(NULL), NIL))
 OUT: nonatomicdatatypes.p (136, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (136, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: nonatomicdatatypes.p (136, 13): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (136, 13): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nonatomicdatatypes.p (136, 24): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (137, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (137, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (137, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (137, 14): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (137, 14): inferred type:  TupType(BaseType(INT), NIL)
 OUT: nonatomicdatatypes.p (138, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (138, 5): inferred type:  SeqType(BaseType(ANY))
+OUT: nonatomicdatatypes.p (139, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (139, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (139, 17): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (140, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (140, 6): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (141, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (141, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (141, 6): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (141, 15): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (139, 5): inferred type:  SeqType(BaseType(INT))
+OUT: nonatomicdatatypes.p (139, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
 OUT: nonatomicdatatypes.p (142, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (142, 17): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (143, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (143, 9): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (144, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (144, 13): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (144, 17): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (145, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (145, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (145, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(NULL), NIL))
+OUT: nonatomicdatatypes.p (142, 5): inferred type:  SeqType(BaseType(INT))
+OUT: nonatomicdatatypes.p (143, 11): inferred type:  NIL
+OUT: nonatomicdatatypes.p (143, 18): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (144, 8): inferred type:  NIL
+OUT: nonatomicdatatypes.p (144, 14): inferred type:  BaseType(REAL)
 OUT: nonatomicdatatypes.p (147, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (147, 5): inferred type:  SeqType(BaseType(EVENT))
-OUT: nonatomicdatatypes.p (147, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
+OUT: nonatomicdatatypes.p (147, 7): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (148, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (148, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
-OUT: nonatomicdatatypes.p (148, 14): inferred type:  TupType(BaseType(EVENT), NIL)
+OUT: nonatomicdatatypes.p (148, 15): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (149, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (149, 9): inferred type:  SeqType(BaseType(INT))
+OUT: nonatomicdatatypes.p (149, 17): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (150, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (150, 14): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (151, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (151, 13): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (151, 24): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (152, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (151, 13): inferred type:  SeqType(BaseType(INT))
+OUT: nonatomicdatatypes.p (151, 23): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (151, 27): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (152, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (152, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: nonatomicdatatypes.p (152, 14): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (152, 14): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nonatomicdatatypes.p (152, 18): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (153, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (153, 5): inferred type:  SeqType(BaseType(ANY))
-OUT: nonatomicdatatypes.p (154, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (154, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (154, 5): inferred type:  SeqType(BaseType(INT))
-OUT: nonatomicdatatypes.p (154, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
+OUT: nonatomicdatatypes.p (154, 18): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (155, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
+OUT: nonatomicdatatypes.p (155, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (156, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (156, 13): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (156, 24): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (157, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (157, 5): inferred type:  SeqType(BaseType(INT))
-OUT: nonatomicdatatypes.p (158, 11): inferred type:  NIL
-OUT: nonatomicdatatypes.p (158, 18): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: nonatomicdatatypes.p (159, 8): inferred type:  NIL
-OUT: nonatomicdatatypes.p (159, 14): inferred type:  BaseType(REAL)
+OUT: nonatomicdatatypes.p (158, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (159, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (159, 14): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (159, 18): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (160, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (160, 7): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (160, 13): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (162, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (162, 7): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (162, 7): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (163, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (163, 15): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (163, 7): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (163, 13): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (164, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (164, 9): inferred type:  SeqType(BaseType(INT))
-OUT: nonatomicdatatypes.p (164, 17): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (164, 13): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (164, 24): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (165, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (165, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (165, 14): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (165, 18): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (166, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (166, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (166, 13): inferred type:  SeqType(BaseType(INT))
-OUT: nonatomicdatatypes.p (166, 23): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (166, 27): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (167, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (167, 18): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (166, 12): inferred type:  SeqType(BaseType(BOOL))
+OUT: nonatomicdatatypes.p (166, 22): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (166, 26): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (168, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (168, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (169, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (169, 18): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (170, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
+OUT: nonatomicdatatypes.p (168, 7): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (170, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (170, 5): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
 OUT: nonatomicdatatypes.p (170, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (171, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (171, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
 OUT: nonatomicdatatypes.p (171, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (171, 13): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (171, 24): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (172, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (172, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (173, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (174, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (174, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (174, 14): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (174, 18): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (175, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (175, 7): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (175, 13): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (174, 7): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (176, 5): inferred type:  MapType(BaseType(INT), BaseType(EVENT))
+OUT: nonatomicdatatypes.p (176, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (176, 7): inferred type:  BaseType(EVENT)
 OUT: nonatomicdatatypes.p (177, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (177, 7): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (177, 7): inferred type:  BaseType(EVENT)
+OUT: nonatomicdatatypes.p (177, 13): inferred type:  BaseType(EVENT)
 OUT: nonatomicdatatypes.p (178, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (178, 7): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (178, 13): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (178, 7): inferred type:  BaseType(EVENT)
+OUT: nonatomicdatatypes.p (178, 13): inferred type:  BaseType(NULL)
+OUT: nonatomicdatatypes.p (179, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (179, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (179, 13): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (179, 24): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (180, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (180, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (180, 18): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (181, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (179, 7): inferred type:  BaseType(EVENT)
+OUT: nonatomicdatatypes.p (181, 5): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: nonatomicdatatypes.p (181, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (181, 12): inferred type:  SeqType(BaseType(BOOL))
-OUT: nonatomicdatatypes.p (181, 22): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (181, 26): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (183, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (183, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (183, 7): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (185, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (185, 5): inferred type:  MapType(BaseType(INT), BaseType(BOOL))
+OUT: nonatomicdatatypes.p (181, 7): inferred type:  BaseType(ANY)
+OUT: nonatomicdatatypes.p (182, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (182, 7): inferred type:  BaseType(ANY)
 OUT: nonatomicdatatypes.p (185, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (186, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (186, 5): inferred type:  MapType(BaseType(INT), BaseType(INT))
+OUT: nonatomicdatatypes.p (185, 5): inferred type:  SeqType(SeqType(BaseType(ANY)))
+OUT: nonatomicdatatypes.p (185, 12): inferred type:  TupType(BaseType(INT), TupType(SeqType(BaseType(BOOL)), NIL))
+OUT: nonatomicdatatypes.p (185, 14): inferred type:  TupType(SeqType(BaseType(BOOL)), NIL)
 OUT: nonatomicdatatypes.p (186, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (187, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (186, 12): inferred type:  TupType(BaseType(INT), TupType(SeqType(BaseType(ANY)), NIL))
+OUT: nonatomicdatatypes.p (186, 14): inferred type:  TupType(SeqType(BaseType(ANY)), NIL)
 OUT: nonatomicdatatypes.p (187, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (189, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (189, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (189, 7): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (191, 5): inferred type:  MapType(BaseType(INT), BaseType(EVENT))
+OUT: nonatomicdatatypes.p (187, 19): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (187, 22): inferred type:  SeqType(BaseType(BOOL))
+OUT: nonatomicdatatypes.p (188, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (188, 15): inferred type:  SeqType(BaseType(ANY))
+OUT: nonatomicdatatypes.p (188, 18): inferred type:  BaseType(ANY)
+OUT: nonatomicdatatypes.p (188, 22): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (190, 5): inferred type:  NIL
 OUT: nonatomicdatatypes.p (191, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (191, 7): inferred type:  BaseType(EVENT)
 OUT: nonatomicdatatypes.p (192, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (192, 7): inferred type:  BaseType(EVENT)
-OUT: nonatomicdatatypes.p (192, 13): inferred type:  BaseType(EVENT)
-OUT: nonatomicdatatypes.p (193, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (193, 7): inferred type:  BaseType(EVENT)
-OUT: nonatomicdatatypes.p (193, 13): inferred type:  BaseType(NULL)
+OUT: nonatomicdatatypes.p (192, 13): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (192, 24): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (194, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (194, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (194, 7): inferred type:  BaseType(EVENT)
-OUT: nonatomicdatatypes.p (196, 5): inferred type:  MapType(BaseType(INT), BaseType(ANY))
+OUT: nonatomicdatatypes.p (195, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (195, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (195, 5): inferred type:  SeqType(SeqType(BaseType(ANY)))
+OUT: nonatomicdatatypes.p (196, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (196, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (196, 7): inferred type:  BaseType(ANY)
+OUT: nonatomicdatatypes.p (196, 7): inferred type:  SeqType(BaseType(ANY))
+OUT: nonatomicdatatypes.p (197, 5): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (197, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (197, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (197, 7): inferred type:  BaseType(ANY)
-OUT: nonatomicdatatypes.p (200, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (200, 5): inferred type:  SeqType(SeqType(BaseType(ANY)))
-OUT: nonatomicdatatypes.p (200, 12): inferred type:  TupType(BaseType(INT), TupType(SeqType(BaseType(BOOL)), NIL))
-OUT: nonatomicdatatypes.p (200, 14): inferred type:  TupType(SeqType(BaseType(BOOL)), NIL)
+OUT: nonatomicdatatypes.p (199, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (199, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(NULL), NIL))
 OUT: nonatomicdatatypes.p (201, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (201, 12): inferred type:  TupType(BaseType(INT), TupType(SeqType(BaseType(ANY)), NIL))
-OUT: nonatomicdatatypes.p (201, 14): inferred type:  TupType(SeqType(BaseType(ANY)), NIL)
+OUT: nonatomicdatatypes.p (201, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
 OUT: nonatomicdatatypes.p (202, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (202, 19): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (202, 22): inferred type:  SeqType(BaseType(BOOL))
 OUT: nonatomicdatatypes.p (203, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (203, 15): inferred type:  SeqType(BaseType(ANY))
-OUT: nonatomicdatatypes.p (203, 18): inferred type:  BaseType(ANY)
-OUT: nonatomicdatatypes.p (203, 22): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (204, 5): inferred type:  NIL
 OUT: nonatomicdatatypes.p (205, 5): inferred type:  NIL
 OUT: nonatomicdatatypes.p (206, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (206, 10): inferred type:  SeqType(SeqType(BaseType(ANY)))
 OUT: nonatomicdatatypes.p (207, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (207, 13): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (207, 24): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (209, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (209, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (210, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (210, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (210, 5): inferred type:  SeqType(SeqType(BaseType(ANY)))
-OUT: nonatomicdatatypes.p (211, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (211, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (211, 7): inferred type:  SeqType(BaseType(ANY))
-OUT: nonatomicdatatypes.p (212, 5): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (212, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (207, 21): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (208, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (208, 17): inferred type:  BaseType(ANY)
+OUT: nonatomicdatatypes.p (208, 21): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (212, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (213, 5): inferred type:  NIL
 OUT: nonatomicdatatypes.p (214, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (214, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(NULL), NIL))
+OUT: nonatomicdatatypes.p (214, 5): inferred type:  SeqType(MapType(BaseType(INT), BaseType(ANY)))
+OUT: nonatomicdatatypes.p (214, 12): inferred type:  TupType(BaseType(INT), TupType(MapType(BaseType(INT), BaseType(ANY)), NIL))
+OUT: nonatomicdatatypes.p (214, 14): inferred type:  TupType(MapType(BaseType(INT), BaseType(ANY)), NIL)
+OUT: nonatomicdatatypes.p (215, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (215, 5): inferred type:  SeqType(BaseType(INT))
 OUT: nonatomicdatatypes.p (216, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (216, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
+OUT: nonatomicdatatypes.p (217, 5): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: nonatomicdatatypes.p (217, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (217, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (217, 16): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (217, 16): inferred type:  TupType(BaseType(INT), NIL)
 OUT: nonatomicdatatypes.p (218, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (218, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
 OUT: nonatomicdatatypes.p (219, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (219, 13): inferred type:  TupType(BaseType(INT), TupType(SeqType(BaseType(INT)), NIL))
+OUT: nonatomicdatatypes.p (219, 17): inferred type:  TupType(SeqType(BaseType(INT)), NIL)
 OUT: nonatomicdatatypes.p (220, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (220, 12): inferred type:  TupType(BaseType(INT), TupType(MapType(BaseType(INT), BaseType(ANY)), NIL))
+OUT: nonatomicdatatypes.p (220, 14): inferred type:  TupType(MapType(BaseType(INT), BaseType(ANY)), NIL)
 OUT: nonatomicdatatypes.p (221, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (221, 10): inferred type:  SeqType(SeqType(BaseType(ANY)))
+OUT: nonatomicdatatypes.p (221, 14): inferred type:  MapType(BaseType(INT), BaseType(ANY))
+OUT: nonatomicdatatypes.p (221, 17): inferred type:  BaseType(ANY)
+OUT: nonatomicdatatypes.p (221, 21): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (222, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (222, 17): inferred type:  BaseType(ANY)
 OUT: nonatomicdatatypes.p (222, 21): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (223, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (223, 14): inferred type:  MapType(BaseType(INT), BaseType(ANY))
 OUT: nonatomicdatatypes.p (223, 17): inferred type:  BaseType(ANY)
 OUT: nonatomicdatatypes.p (223, 21): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (224, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (224, 22): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (225, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (225, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (225, 5): inferred type:  SeqType(BaseType(INT))
+OUT: nonatomicdatatypes.p (225, 17): inferred type:  BaseType(ANY)
+OUT: nonatomicdatatypes.p (225, 18): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (226, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (226, 22): inferred type:  SeqType(BaseType(INT))
 OUT: nonatomicdatatypes.p (227, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (227, 16): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (227, 20): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (228, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (228, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (228, 21): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (228, 25): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (229, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (229, 5): inferred type:  SeqType(MapType(BaseType(INT), BaseType(ANY)))
-OUT: nonatomicdatatypes.p (229, 12): inferred type:  TupType(BaseType(INT), TupType(MapType(BaseType(INT), BaseType(ANY)), NIL))
-OUT: nonatomicdatatypes.p (229, 14): inferred type:  TupType(MapType(BaseType(INT), BaseType(ANY)), NIL)
-OUT: nonatomicdatatypes.p (230, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (230, 5): inferred type:  SeqType(BaseType(INT))
-OUT: nonatomicdatatypes.p (231, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (232, 5): inferred type:  MapType(BaseType(INT), BaseType(ANY))
+OUT: nonatomicdatatypes.p (229, 35): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (229, 39): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (232, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (232, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: nonatomicdatatypes.p (232, 16): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (232, 16): inferred type:  TupType(BaseType(INT), NIL)
 OUT: nonatomicdatatypes.p (233, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (233, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
+OUT: nonatomicdatatypes.p (233, 9): inferred type:  SeqType(BaseType(INT))
 OUT: nonatomicdatatypes.p (234, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (234, 13): inferred type:  TupType(BaseType(INT), TupType(SeqType(BaseType(INT)), NIL))
-OUT: nonatomicdatatypes.p (234, 17): inferred type:  TupType(SeqType(BaseType(INT)), NIL)
-OUT: nonatomicdatatypes.p (235, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (235, 12): inferred type:  TupType(BaseType(INT), TupType(MapType(BaseType(INT), BaseType(ANY)), NIL))
-OUT: nonatomicdatatypes.p (235, 14): inferred type:  TupType(MapType(BaseType(INT), BaseType(ANY)), NIL)
+OUT: nonatomicdatatypes.p (234, 5): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
+OUT: nonatomicdatatypes.p (234, 10): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
+OUT: nonatomicdatatypes.p (234, 17): inferred type:  NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL)
 OUT: nonatomicdatatypes.p (236, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (236, 14): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: nonatomicdatatypes.p (236, 17): inferred type:  BaseType(ANY)
-OUT: nonatomicdatatypes.p (236, 21): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (236, 7): inferred type:  SeqType(BaseType(INT))
+OUT: nonatomicdatatypes.p (236, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: nonatomicdatatypes.p (237, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (237, 17): inferred type:  BaseType(ANY)
+OUT: nonatomicdatatypes.p (237, 17): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (237, 21): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (238, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (238, 14): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: nonatomicdatatypes.p (238, 17): inferred type:  BaseType(ANY)
-OUT: nonatomicdatatypes.p (238, 21): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (239, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (239, 22): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (240, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (240, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (240, 5): inferred type:  SeqType(BaseType(INT))
-OUT: nonatomicdatatypes.p (240, 17): inferred type:  BaseType(ANY)
-OUT: nonatomicdatatypes.p (240, 18): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (241, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (241, 22): inferred type:  SeqType(BaseType(INT))
+OUT: nonatomicdatatypes.p (240, 17): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (240, 21): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (242, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (242, 16): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (242, 20): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (243, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (243, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (243, 21): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (243, 25): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (243, 21): inferred type:  BaseType(BOOL)
 OUT: nonatomicdatatypes.p (244, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (244, 35): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (244, 39): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (247, 5): inferred type:  NIL
 OUT: nonatomicdatatypes.p (248, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (248, 9): inferred type:  SeqType(BaseType(INT))
+OUT: nonatomicdatatypes.p (248, 5): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
+OUT: nonatomicdatatypes.p (248, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
+OUT: nonatomicdatatypes.p (248, 15): inferred type:  TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL)
 OUT: nonatomicdatatypes.p (249, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (249, 5): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
-OUT: nonatomicdatatypes.p (249, 10): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
-OUT: nonatomicdatatypes.p (249, 17): inferred type:  NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL)
-OUT: nonatomicdatatypes.p (251, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (251, 7): inferred type:  SeqType(BaseType(INT))
-OUT: nonatomicdatatypes.p (251, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (249, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
+OUT: nonatomicdatatypes.p (249, 15): inferred type:  TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL)
+OUT: nonatomicdatatypes.p (250, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (250, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
+OUT: nonatomicdatatypes.p (250, 16): inferred type:  TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL)
 OUT: nonatomicdatatypes.p (252, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (252, 17): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (252, 21): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (252, 5): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
+OUT: nonatomicdatatypes.p (252, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
+OUT: nonatomicdatatypes.p (253, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (253, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
 OUT: nonatomicdatatypes.p (254, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (255, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (255, 17): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (255, 21): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (254, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
+OUT: nonatomicdatatypes.p (254, 15): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (254, 15): inferred type:  TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL)
+OUT: nonatomicdatatypes.p (256, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (256, 5): inferred type:  MapType(BaseType(BOOL), SeqType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))))
+OUT: nonatomicdatatypes.p (256, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (256, 7): inferred type:  SeqType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)))
+OUT: nonatomicdatatypes.p (257, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (257, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (258, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (258, 21): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (259, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (257, 7): inferred type:  SeqType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)))
+OUT: nonatomicdatatypes.p (260, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (261, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (262, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (262, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
 OUT: nonatomicdatatypes.p (263, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (263, 5): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
-OUT: nonatomicdatatypes.p (263, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
-OUT: nonatomicdatatypes.p (263, 15): inferred type:  TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL)
-OUT: nonatomicdatatypes.p (264, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (264, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
+OUT: nonatomicdatatypes.p (263, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: nonatomicdatatypes.p (265, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (265, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
-OUT: nonatomicdatatypes.p (265, 16): inferred type:  TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL)
+OUT: nonatomicdatatypes.p (266, 5): inferred type:  MapType(BaseType(INT), BaseType(ANY))
+OUT: nonatomicdatatypes.p (266, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (266, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (266, 14): inferred type:  TupType(BaseType(INT), NIL)
 OUT: nonatomicdatatypes.p (267, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (267, 5): inferred type:  SeqType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)))
-OUT: nonatomicdatatypes.p (267, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
-OUT: nonatomicdatatypes.p (267, 15): inferred type:  TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL)
+OUT: nonatomicdatatypes.p (267, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
 OUT: nonatomicdatatypes.p (268, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (268, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
+OUT: nonatomicdatatypes.p (268, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (268, 14): inferred type:  TupType(BaseType(INT), NIL)
 OUT: nonatomicdatatypes.p (269, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (269, 12): inferred type:  TupType(BaseType(INT), TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL))
-OUT: nonatomicdatatypes.p (269, 15): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: nonatomicdatatypes.p (269, 15): inferred type:  TupType(TupType(BaseType(INT), TupType(BaseType(INT), NIL)), NIL)
-OUT: nonatomicdatatypes.p (271, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (271, 5): inferred type:  MapType(BaseType(BOOL), SeqType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL))))
+OUT: nonatomicdatatypes.p (269, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
+OUT: nonatomicdatatypes.p (271, 5): inferred type:  MapType(BaseType(INT), MapType(BaseType(INT), BaseType(ANY)))
 OUT: nonatomicdatatypes.p (271, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (271, 7): inferred type:  SeqType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)))
-OUT: nonatomicdatatypes.p (272, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (271, 12): inferred type:  TupType(BaseType(INT), TupType(MapType(BaseType(INT), BaseType(ANY)), NIL))
+OUT: nonatomicdatatypes.p (271, 14): inferred type:  TupType(MapType(BaseType(INT), BaseType(ANY)), NIL)
 OUT: nonatomicdatatypes.p (272, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (272, 7): inferred type:  SeqType(NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(INT)), NIL)))
-OUT: nonatomicdatatypes.p (275, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (276, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (277, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (277, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
-OUT: nonatomicdatatypes.p (278, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (278, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: nonatomicdatatypes.p (280, 5): inferred type:  MapType(BaseType(INT), BaseType(ANY))
+OUT: nonatomicdatatypes.p (272, 12): inferred type:  TupType(BaseType(INT), TupType(MapType(BaseType(INT), BaseType(ANY)), NIL))
+OUT: nonatomicdatatypes.p (272, 14): inferred type:  TupType(MapType(BaseType(INT), BaseType(ANY)), NIL)
+OUT: nonatomicdatatypes.p (274, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (274, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (274, 7): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (277, 11): inferred type:  NIL
+OUT: nonatomicdatatypes.p (277, 14): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (279, 11): inferred type:  NIL
+OUT: nonatomicdatatypes.p (279, 11): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
+OUT: nonatomicdatatypes.p (279, 18): inferred type:  SeqType(BaseType(INT))
+OUT: nonatomicdatatypes.p (279, 19): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (280, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (281, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (281, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: nonatomicdatatypes.p (281, 14): inferred type:  TupType(BaseType(INT), NIL)
 OUT: nonatomicdatatypes.p (282, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (282, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (282, 13): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (283, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (283, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: nonatomicdatatypes.p (283, 14): inferred type:  TupType(BaseType(INT), NIL)
-OUT: nonatomicdatatypes.p (284, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (284, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(EVENT), NIL))
-OUT: nonatomicdatatypes.p (286, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (286, 12): inferred type:  TupType(BaseType(INT), TupType(MapType(BaseType(INT), BaseType(ANY)), NIL))
-OUT: nonatomicdatatypes.p (286, 14): inferred type:  TupType(MapType(BaseType(INT), BaseType(ANY)), NIL)
-OUT: nonatomicdatatypes.p (287, 5): inferred type:  MapType(BaseType(INT), MapType(BaseType(INT), BaseType(ANY)))
-OUT: nonatomicdatatypes.p (287, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (287, 12): inferred type:  TupType(BaseType(INT), TupType(MapType(BaseType(INT), BaseType(ANY)), NIL))
-OUT: nonatomicdatatypes.p (287, 14): inferred type:  TupType(MapType(BaseType(INT), BaseType(ANY)), NIL)
+OUT: nonatomicdatatypes.p (285, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (285, 10): inferred type:  SeqType(BaseType(ANY))
+OUT: nonatomicdatatypes.p (285, 11): inferred type:  BaseType(ANY)
+OUT: nonatomicdatatypes.p (288, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (288, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (288, 10): inferred type:  MapType(BaseType(INT), SeqType(BaseType(ANY)))
 OUT: nonatomicdatatypes.p (289, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (289, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (289, 7): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (292, 11): inferred type:  NIL
-OUT: nonatomicdatatypes.p (292, 14): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (292, 15): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (294, 11): inferred type:  NIL
-OUT: nonatomicdatatypes.p (294, 11): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
-OUT: nonatomicdatatypes.p (294, 18): inferred type:  SeqType(BaseType(INT))
-OUT: nonatomicdatatypes.p (294, 19): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (289, 5): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(ANY))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(ANY)))), NIL))
+OUT: nonatomicdatatypes.p (289, 13): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", BaseType(NULL)), NIL))
+OUT: nonatomicdatatypes.p (289, 20): inferred type:  NmdTupType(NmdTupTypeField("b", BaseType(NULL)), NIL)
+OUT: nonatomicdatatypes.p (290, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (290, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (290, 13): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(NULL)), NmdTupType(NmdTupTypeField("b", BaseType(NULL)), NIL))
+OUT: nonatomicdatatypes.p (291, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (291, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (291, 13): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(ANY))), NmdTupType(NmdTupTypeField("b", BaseType(NULL)), NIL))
+OUT: nonatomicdatatypes.p (292, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (292, 5): inferred type:  MapType(BaseType(INT), SeqType(BaseType(INT)))
+OUT: nonatomicdatatypes.p (292, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (293, 5): inferred type:  ERROR
+OUT: nonatomicdatatypes.p (293, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (293, 14): inferred type:  TupType(BaseType(NULL), TupType(SeqType(BaseType(INT)), NIL))
+OUT: nonatomicdatatypes.p (293, 19): inferred type:  TupType(SeqType(BaseType(INT)), NIL)
+OUT: nonatomicdatatypes.p (294, 5): inferred type:  MapType(BaseType(ANY), BaseType(ANY))
+OUT: nonatomicdatatypes.p (294, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (294, 13): inferred type:  TupType(BaseType(NULL), TupType(BaseType(NULL), NIL))
 OUT: nonatomicdatatypes.p (295, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (297, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (297, 13): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (296, 5): inferred type:  NIL
+OUT: nonatomicdatatypes.p (296, 13): inferred type:  TupType(BaseType(NULL), TupType(BaseType(INT), NIL))
 OUT: nonatomicdatatypes.p (298, 5): inferred type:  NIL
 OUT: nonatomicdatatypes.p (300, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (300, 10): inferred type:  SeqType(BaseType(ANY))
-OUT: nonatomicdatatypes.p (300, 11): inferred type:  BaseType(ANY)
-OUT: nonatomicdatatypes.p (303, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (303, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (303, 10): inferred type:  MapType(BaseType(INT), SeqType(BaseType(ANY)))
-OUT: nonatomicdatatypes.p (304, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (304, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (304, 5): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(ANY))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(ANY)))), NIL))
-OUT: nonatomicdatatypes.p (304, 13): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", BaseType(NULL)), NIL))
-OUT: nonatomicdatatypes.p (304, 20): inferred type:  NmdTupType(NmdTupTypeField("b", BaseType(NULL)), NIL)
+OUT: nonatomicdatatypes.p (300, 18): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (301, 11): inferred type:  NIL
+OUT: nonatomicdatatypes.p (301, 14): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (302, 11): inferred type:  NIL
 OUT: nonatomicdatatypes.p (305, 5): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (305, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (305, 13): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(NULL)), NmdTupType(NmdTupTypeField("b", BaseType(NULL)), NIL))
-OUT: nonatomicdatatypes.p (306, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (306, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (306, 13): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(ANY))), NmdTupType(NmdTupTypeField("b", BaseType(NULL)), NIL))
+OUT: nonatomicdatatypes.p (305, 8): inferred type:  ERROR
 OUT: nonatomicdatatypes.p (307, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (307, 5): inferred type:  MapType(BaseType(INT), SeqType(BaseType(INT)))
 OUT: nonatomicdatatypes.p (307, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (308, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (308, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (308, 14): inferred type:  TupType(BaseType(NULL), TupType(SeqType(BaseType(INT)), NIL))
-OUT: nonatomicdatatypes.p (308, 19): inferred type:  TupType(SeqType(BaseType(INT)), NIL)
-OUT: nonatomicdatatypes.p (309, 5): inferred type:  MapType(BaseType(ANY), BaseType(ANY))
-OUT: nonatomicdatatypes.p (309, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (309, 13): inferred type:  TupType(BaseType(NULL), TupType(BaseType(NULL), NIL))
-OUT: nonatomicdatatypes.p (310, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (311, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (311, 13): inferred type:  TupType(BaseType(NULL), TupType(BaseType(INT), NIL))
+OUT: nonatomicdatatypes.p (307, 12): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (309, 9): inferred type:  NIL
+OUT: nonatomicdatatypes.p (309, 15): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (309, 23): inferred type:  NIL
+OUT: nonatomicdatatypes.p (309, 39): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (310, 15): inferred type:  NIL
+OUT: nonatomicdatatypes.p (310, 24): inferred type:  MapType(BaseType(INT), BaseType(ANY))
+OUT: nonatomicdatatypes.p (310, 27): inferred type:  BaseType(ANY)
+OUT: nonatomicdatatypes.p (310, 31): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (310, 36): inferred type:  MapType(BaseType(INT), BaseType(ANY))
+OUT: nonatomicdatatypes.p (310, 39): inferred type:  BaseType(ANY)
+OUT: nonatomicdatatypes.p (311, 6): inferred type:  NIL
+OUT: nonatomicdatatypes.p (311, 12): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (313, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (315, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (315, 18): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (316, 11): inferred type:  NIL
-OUT: nonatomicdatatypes.p (316, 14): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (317, 11): inferred type:  NIL
-OUT: nonatomicdatatypes.p (320, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (320, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (320, 8): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (322, 5): inferred type:  ERROR
-OUT: nonatomicdatatypes.p (322, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (322, 12): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (324, 9): inferred type:  NIL
-OUT: nonatomicdatatypes.p (324, 15): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (324, 23): inferred type:  NIL
-OUT: nonatomicdatatypes.p (324, 39): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (325, 15): inferred type:  NIL
-OUT: nonatomicdatatypes.p (325, 24): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: nonatomicdatatypes.p (325, 27): inferred type:  BaseType(ANY)
-OUT: nonatomicdatatypes.p (325, 31): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (325, 36): inferred type:  MapType(BaseType(INT), BaseType(ANY))
-OUT: nonatomicdatatypes.p (325, 39): inferred type:  BaseType(ANY)
-OUT: nonatomicdatatypes.p (326, 6): inferred type:  NIL
-OUT: nonatomicdatatypes.p (326, 12): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (328, 5): inferred type:  NIL
-OUT: nonatomicdatatypes.p (328, 11): inferred type:  BaseType(EVENT)
+OUT: nonatomicdatatypes.p (313, 11): inferred type:  BaseType(EVENT)
+OUT: nonatomicdatatypes.p (319, 8): inferred type:  NIL
+OUT: nonatomicdatatypes.p (319, 15): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (324, 8): inferred type:  NIL
+OUT: nonatomicdatatypes.p (324, 15): inferred type:  BaseType(EVENT)
+OUT: nonatomicdatatypes.p (329, 9): inferred type:  NIL
+OUT: nonatomicdatatypes.p (329, 16): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
 OUT: nonatomicdatatypes.p (334, 8): inferred type:  NIL
-OUT: nonatomicdatatypes.p (334, 15): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (339, 9): inferred type:  NIL
-OUT: nonatomicdatatypes.p (339, 16): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
-OUT: nonatomicdatatypes.p (344, 8): inferred type:  NIL
+OUT: nonatomicdatatypes.p (334, 14): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (334, 16): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (335, 8): inferred type:  NIL
+OUT: nonatomicdatatypes.p (335, 15): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (343, 7): inferred type:  NIL
+OUT: nonatomicdatatypes.p (343, 7): inferred type:  SeqType(BaseType(INT))
+OUT: nonatomicdatatypes.p (343, 12): inferred type:  SeqType(BaseType(INT))
+OUT: nonatomicdatatypes.p (344, 4): inferred type:  NIL
+OUT: nonatomicdatatypes.p (344, 13): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (344, 14): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (344, 16): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (345, 8): inferred type:  NIL
-OUT: nonatomicdatatypes.p (345, 15): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (353, 7): inferred type:  NIL
-OUT: nonatomicdatatypes.p (353, 7): inferred type:  SeqType(BaseType(INT))
-OUT: nonatomicdatatypes.p (353, 12): inferred type:  SeqType(BaseType(INT))
-OUT: nonatomicdatatypes.p (354, 4): inferred type:  NIL
-OUT: nonatomicdatatypes.p (354, 13): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (354, 14): inferred type:  BaseType(INT)
-OUT: nonatomicdatatypes.p (354, 17): inferred type:  BaseType(BOOL)
-OUT: nonatomicdatatypes.p (354, 20): inferred type:  BaseType(INT)
+OUT: nonatomicdatatypes.p (344, 17): inferred type:  BaseType(BOOL)
+OUT: nonatomicdatatypes.p (344, 20): inferred type:  BaseType(INT)
 OUT: nonatomicdatatypes.p (14, 11): same name appears more than once in name tuple or named tuple type
 OUT: nonatomicdatatypes.p (14, 25): same name appears more than once in name tuple or named tuple type
-OUT: nonatomicdatatypes.p (62, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (68, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (73, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (92, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (93, 5): insert must be applied to a sequence or a map
-OUT: nonatomicdatatypes.p (94, 5): remove must be applied to a sequence or map
-OUT: nonatomicdatatypes.p (102, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (103, 5): insert must be applied to a sequence or a map
-OUT: nonatomicdatatypes.p (104, 5): remove must be applied to a sequence or map
-OUT: nonatomicdatatypes.p (107, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (107, 8): Bad field name
-OUT: nonatomicdatatypes.p (108, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (108, 8): Bad field name
-OUT: nonatomicdatatypes.p (110, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (111, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (117, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (121, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (134, 5): "assert" expects a boolean value
-OUT: nonatomicdatatypes.p (134, 15): "in" expects a map
-OUT: nonatomicdatatypes.p (136, 5): index must be an integer
-OUT: nonatomicdatatypes.p (141, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (141, 6): Index must be an integer
-OUT: nonatomicdatatypes.p (145, 5): value must be a subtype of sequence type
-OUT: nonatomicdatatypes.p (152, 5): value must be a subtype of sequence type
-OUT: nonatomicdatatypes.p (154, 5): value must be a subtype of sequence type
-OUT: nonatomicdatatypes.p (180, 5): "assert" expects a boolean value
-OUT: nonatomicdatatypes.p (180, 18): Value can never be in the map
-OUT: nonatomicdatatypes.p (181, 5): "assert" expects a boolean value
-OUT: nonatomicdatatypes.p (181, 26): Values cannot be compared because their types are incompatible
-OUT: nonatomicdatatypes.p (183, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (183, 7): Index may not be in the domain of the map
-OUT: nonatomicdatatypes.p (185, 5): for insert right syntax is seq += (index value) or map += (key value)
-OUT: nonatomicdatatypes.p (186, 5): for insert right syntax is seq += (index value) or map += (key value)
-OUT: nonatomicdatatypes.p (187, 5): insert must be applied to a sequence or a map
-OUT: nonatomicdatatypes.p (189, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (189, 7): Index may not be in the domain of the map
-OUT: nonatomicdatatypes.p (194, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (209, 5): for insert right syntax is seq += (index value) or map += (key value)
-OUT: nonatomicdatatypes.p (210, 5): for insert right syntax is seq += (index value) or map += (key value)
-OUT: nonatomicdatatypes.p (211, 5): for insert right syntax is seq += (index value) or map += (key value)
-OUT: nonatomicdatatypes.p (212, 5): insert must be applied to a sequence or a map
-OUT: nonatomicdatatypes.p (240, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (243, 5): "assert" expects a boolean value
-OUT: nonatomicdatatypes.p (243, 21): Indexer must be applied to a sequence or map
-OUT: nonatomicdatatypes.p (243, 25): Values cannot be compared because their types are incompatible
-OUT: nonatomicdatatypes.p (271, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (272, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (59, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (63, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (67, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (80, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (81, 5): insert must be applied to a sequence or a map
+OUT: nonatomicdatatypes.p (82, 5): remove must be applied to a sequence or map
+OUT: nonatomicdatatypes.p (88, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (89, 5): insert must be applied to a sequence or a map
+OUT: nonatomicdatatypes.p (90, 5): remove must be applied to a sequence or map
+OUT: nonatomicdatatypes.p (93, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (93, 8): Bad field name
+OUT: nonatomicdatatypes.p (94, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (94, 8): Bad field name
+OUT: nonatomicdatatypes.p (96, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (97, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (101, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (106, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (118, 5): "assert" expects a boolean value
+OUT: nonatomicdatatypes.p (118, 15): "in" expects a map
+OUT: nonatomicdatatypes.p (120, 5): index must be an integer
+OUT: nonatomicdatatypes.p (125, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (125, 6): Index must be an integer
+OUT: nonatomicdatatypes.p (127, 5): value must be a subtype of sequence type
+OUT: nonatomicdatatypes.p (137, 5): value must be a subtype of sequence type
+OUT: nonatomicdatatypes.p (139, 5): value must be a subtype of sequence type
+OUT: nonatomicdatatypes.p (165, 5): "assert" expects a boolean value
+OUT: nonatomicdatatypes.p (165, 18): Value can never be in the map
+OUT: nonatomicdatatypes.p (166, 5): "assert" expects a boolean value
+OUT: nonatomicdatatypes.p (166, 26): Values cannot be compared because their types are incompatible
+OUT: nonatomicdatatypes.p (168, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (168, 7): Index may not be in the domain of the map
+OUT: nonatomicdatatypes.p (170, 5): for insert right syntax is seq += (index value) or map += (key value)
+OUT: nonatomicdatatypes.p (171, 5): for insert right syntax is seq += (index value) or map += (key value)
+OUT: nonatomicdatatypes.p (172, 5): insert must be applied to a sequence or a map
+OUT: nonatomicdatatypes.p (174, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (174, 7): Index may not be in the domain of the map
+OUT: nonatomicdatatypes.p (179, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (194, 5): for insert right syntax is seq += (index value) or map += (key value)
+OUT: nonatomicdatatypes.p (195, 5): for insert right syntax is seq += (index value) or map += (key value)
+OUT: nonatomicdatatypes.p (196, 5): for insert right syntax is seq += (index value) or map += (key value)
+OUT: nonatomicdatatypes.p (197, 5): insert must be applied to a sequence or a map
+OUT: nonatomicdatatypes.p (225, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (228, 5): "assert" expects a boolean value
+OUT: nonatomicdatatypes.p (228, 21): Indexer must be applied to a sequence or map
+OUT: nonatomicdatatypes.p (228, 25): Values cannot be compared because their types are incompatible
+OUT: nonatomicdatatypes.p (256, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (257, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (274, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (274, 7): Index may not be in the domain of the map
+OUT: nonatomicdatatypes.p (279, 11): invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name
+OUT: nonatomicdatatypes.p (282, 5): invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name
+OUT: nonatomicdatatypes.p (288, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: nonatomicdatatypes.p (289, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (289, 7): Index may not be in the domain of the map
-OUT: nonatomicdatatypes.p (294, 11): invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name
-OUT: nonatomicdatatypes.p (297, 5): invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name
-OUT: nonatomicdatatypes.p (303, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (304, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (290, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (291, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonatomicdatatypes.p (292, 5): value not in the codomain of the map
+OUT: nonatomicdatatypes.p (293, 5): key not in the domain of the map
 OUT: nonatomicdatatypes.p (305, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (306, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (307, 5): value not in the codomain of the map
-OUT: nonatomicdatatypes.p (308, 5): key not in the domain of the map
-OUT: nonatomicdatatypes.p (320, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonatomicdatatypes.p (320, 8): Indexer must be applied to a sequence or map
-OUT: nonatomicdatatypes.p (322, 5): "while (...)" expects a boolean value
+OUT: nonatomicdatatypes.p (305, 8): Indexer must be applied to a sequence or map
+OUT: nonatomicdatatypes.p (307, 5): "while (...)" expects a boolean value
 OUT: Compilation failed
 EXIT: -1

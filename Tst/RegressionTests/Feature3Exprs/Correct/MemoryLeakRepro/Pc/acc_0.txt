@@ -1,0 +1,30 @@
+=================================
+         Console output          
+=================================
+OUT: nondetfunctioninexpr_2.p (3, 6): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (3, 10): inferred type:  BaseType(BOOL)
+OUT: nondetfunctioninexpr_2.p (4, 7): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (4, 14): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (6, 7): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (6, 14): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (11, 8): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (11, 15): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (20, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (20, 4): inferred type:  NmdTupType(NmdTupTypeField("a", SeqType(BaseType(INT))), NmdTupType(NmdTupTypeField("b", MapType(BaseType(INT), SeqType(BaseType(INT)))), NIL))
+OUT: nondetfunctioninexpr_2.p (20, 6): inferred type:  SeqType(BaseType(INT))
+OUT: nondetfunctioninexpr_2.p (20, 12): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (20, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nondetfunctioninexpr_2.p (20, 14): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (20, 14): inferred type:  TupType(BaseType(INT), NIL)
+OUT: nondetfunctioninexpr_2.p (21, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (21, 12): inferred type:  BaseType(INT)
+OUT: nondetfunctioninexpr_2.p (21, 12): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
+OUT: nondetfunctioninexpr_2.p (22, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (23, 4): inferred type:  NIL
+OUT: nondetfunctioninexpr_2.p (23, 11): inferred type:  BaseType(INT)
+OUT: Writing stubs.c ...
+OUT: Writing program.h ...
+OUT: Writing program.c ...
+OUT: Writing nonDetFunctionInExpr_2.zing ...
+OUT: Compiling nonDetFunctionInExpr_2.zing to nonDetFunctionInExpr_2.dll ...
+EXIT: 0

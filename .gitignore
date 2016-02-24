@@ -6,7 +6,7 @@
 *.suo
 *.user
 *.sln.docstates
-
+*.opendb
 
 # Build results
 
@@ -217,3 +217,18 @@ Src/PrtDist/Binaries/clusterconfiguration.xml
 Src/PrtDist/Samples/PingPong/PingPong.zing
 Src/PrtDist/Samples/PingPong/stubs.c
 Src/PrtDist/Samples/PingPong/program.h
+/Ext/PsTools
+/Src/Prt/Samples/ForeignTypes/Tester.ipdb
+/Src/Prt/Samples/ForeignTypes/Tester.iobj
+/Src/Prt/Samples/ForeignTypes/Tester.exe
+/Src/Prt/Samples/ForeignTypes/stubs.c
+/Src/Prt/Samples/ForeignTypes/program.h
+/Src/Prt/Samples/ForeignTypes/program.c
+/Src/Prt/Samples/ForeignTypes/ForeignStringType.zing
+/Src/Prt/Samples/ForeignTypes/ForeignStringType.dll
+/Src/PrtDist/Samples/PingPongSimple/PRT_CONTAINER_LOG_1.txt
+/Src/PrtDist/Samples/PingPongSimple/test.zing
+/Src/PrtDist/Samples/PingPongSimple/test.dll
+/Src/PrtDist/Samples/PingPongSimple/stubs.c
+/Src/PrtDist/Samples/PingPongSimple/program.h
+/Src/PrtDist/Samples/PingPongSimple/program.c

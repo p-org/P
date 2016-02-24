@@ -1,12 +1,12 @@
-#include<string>
-#include<iostream>
+#include <string>
+#include <iostream>
 #include <windows.h>
 #include <thread>
-#include<fstream>
+#include <fstream>
 #include <mutex>
 #include <chrono>
-#include"NodeManager_h.h"
-#include"NodeManager_s.c"
+#include "NodeManager_h.h"
+#include "NodeManager_s.c"
 #include "PrtDistConfigParser.h"
 using namespace std;
 

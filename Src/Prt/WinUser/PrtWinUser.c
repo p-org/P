@@ -33,7 +33,7 @@ void PrtWinUserPrintUint32(_In_ PRT_UINT32 i, _Inout_ char **buffer, _Inout_ PRT
 void PrtWinUserPrintUint64(_In_ PRT_UINT64 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	ResizeBuffer(buffer, bufferSize, *numCharsWritten, 64);
-	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%lu", i);
+	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%llu", i);
 }
 
 void PrtWinUserPrintInt32(_In_ PRT_INT32 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)

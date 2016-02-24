@@ -3,13 +3,13 @@
 
 <configuration>
   
-  <PBinaries>C:\WorkSpace\plang\Bld\Drops\Plang_Debug_x86\Runtime\Binaries\</PBinaries>
-  <PSTools>C:\WorkSpace\plang\Ext\PsTools\</PSTools>
-  <MainExe>C:\WorkSpace\plang\Src\PrtDist\Binaries\Pingpong\PingPong.exe</MainExe>
+  <PBinaries>D:\git\P\Bld\Drops\Plang_Debug_x86\Runtime\Binaries\</PBinaries>
+  <PSTools>D:\git\P\Ext\PsTools</PSTools>
+  <MainExe>D:\git\P\Src\PrtDist\Binaries\Pingpong\PingPong.exe</MainExe>
   <NodeManagerPort>5600</NodeManagerPort>
   <ContainerPortStart>5900</ContainerPortStart>
-  <NetworkShare>\\Plangdist1\plangshared\</NetworkShare>
-  <LocalFolder>C:\PlangLocal\</LocalFolder>
+  <NetworkShare>\\clovett12\public\PLangDist</NetworkShare>
+  <LocalFolder>D:\git\P\Bld\Drops\PlangLocal\</LocalFolder>
   <MainMachineNode>plangdist2</MainMachineNode>
   <CentralServer>plangdist2</CentralServer>
   <TotalNodes>3</TotalNodes>

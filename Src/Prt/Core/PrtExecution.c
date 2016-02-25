@@ -590,6 +590,16 @@ _In_ PRT_BOOLEAN				isPopStatement
 	packSize = PrtGetPackSize(context);
 	length = context->callStack.length;
 
+	if (isPopStatement)
+	{
+		PrtLog(PRT_STEP_POP, context);
+	}
+	else
+	{
+		// unhandled event
+		PrtLog(PRT_STEP_UNHANDLED, context);
+	}
+
 	if (length == 0)
 	{
 		if (PrtPrimGetEvent(PrtGetCurrentTrigger(context)) == PRT_SPECIAL_EVENT_HALT)
@@ -617,16 +627,6 @@ _In_ PRT_BOOLEAN				isPopStatement
 
 	PrtUpdateCurrentActionsSet(context);
 	PrtUpdateCurrentDeferredSet(context);
-
-	if (isPopStatement)
-	{
-		PrtLog(PRT_STEP_POP, context);
-	}
-	else
-	{
-		// unhandled event
-		PrtLog(PRT_STEP_UNHANDLED, context);
-	}
 }
 
 FORCEINLINE

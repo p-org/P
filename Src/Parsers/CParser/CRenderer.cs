@@ -5061,7 +5061,9 @@
             {
                 return false;
             }
-
+            /* Shaz: 
+             * I am commenting this code to allow printing arbitrary strings as identifiers.
+             * Otherwise, we do not have a way to print pragma arguments.
             char c;
             for (int i = 0; i < s.Length; ++i)
             {
@@ -5078,7 +5080,7 @@
                     return false;
                 }
             }
-
+             */
             return true;
         }
 

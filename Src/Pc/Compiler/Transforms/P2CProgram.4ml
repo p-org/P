@@ -781,6 +781,11 @@ transform P2CProgram (in:: P) returns (out:: C)
 					  params,
 					  UNKNOWN).
 
+	COut(7, pragma) :- pragma = out.PpPragma(FunApp(Ident("warning"), Args(Ident("disable:4101"), NIL))).
+	COut(7, pragma) :- pragma = out.PpPragma(FunApp(Ident("warning"), Args(Ident("disable:4102"), NIL))).
+	COut(9, pragma) :- pragma = out.PpPragma(FunApp(Ident("warning"), Args(Ident("default:4101"), NIL))).
+	COut(9, pragma) :- pragma = out.PpPragma(FunApp(Ident("warning"), Args(Ident("default:4102"), NIL))).
+
 	PatchReturn ::= (f: in.FunDecl, e: out.Stmt).
 	PatchReturn(f, cs) :- DeclId(f, _, _), f = FunDecl(_, _, _, _, NIL, _, _), cs = out.Return(Ident("p_tmp_ret")).
 	PatchReturn(f, cs) :- DeclId(f, _, _), f = FunDecl(_, _, _, _, type, _, _), type : TypeExpr, ParamsType(f, expr),  

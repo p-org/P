@@ -864,21 +864,22 @@ transform P2CProgram (in:: P) returns (out:: C)
 	ReceivedId(c, receive, k, cases) :- c is TypingContext, receive: Receive, SubSE(c, receive), 
 									    ReceivedId(c, receive, _, cases'), cases' = in.Cases(e, _, cases), CaseEvent(e, k, _).
 
-	ReceiveEventsPacked(c, receive, list),
-	EventPacking(list, list, size, NIL) :- 
-			c is TypingContext, receive: Receive, SubSE(c, receive),
-			list = toList(
+	ReceiveEventsPacked(c, receive, rlist),
+	EventPacking(rlist, rlist, size, NIL) :- 
+		 c is TypingContext, receive: Receive, SubSE(c, receive),
+		 list = toList(
 		           #EventPackList, 
 				   NIL, 
 				   { EventPackData(i, n) | 
 				        ReceivedId(c, receive, j, _), i = qtnt(j / 32, 1), 
 				        n = sum(0, { m | ReceivedId(c, receive, k, _), i = qtnt(k / 32, 1), PowOf2(k % 32, m) }), n : Natural 
 	               }),
+		 rlist = lstReverse(#EventPackList, list),
 		 size = 1 + maxAll(0, { i | ReceivedId(c, receive, j, _), i = qtnt(j / 32, 1) }), size : Natural.	
 
 	//// Generate event sets for transitions
-	EventsPacked(s, #TransDecl, list),
-	EventPacking(list, list, size, NIL) :- 
+	EventsPacked(s, #TransDecl, rlist),
+	EventPacking(rlist, rlist, size, NIL) :- 
 	     s is StateDecl, s.owner.kind = REAL, 
 	     list = toList(
 		           #EventPackList, 
@@ -887,11 +888,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 				        TransDeclEvnt(t, _, j), t.src = s, i = qtnt(j / 32, 1), 
 				        n = sum(0, { m | TransDeclEvnt(t', _, k), t'.src = s, i = qtnt(k / 32, 1), PowOf2(k % 32, m) }), n : Natural 
 	               }),
+		 rlist = lstReverse(#EventPackList, list),
 		 size = 1 + maxAll(0, { i | TransDeclEvnt(t, _, j), t.src = s, i = qtnt(j / 32, 1) }), size : Natural.	
 
 	//// Generate event sets for non-defer do's
-	EventsPacked(s, #DoDecl, list),
-	EventPacking(list, list, size, NIL) :- 
+	EventsPacked(s, #DoDecl, rlist),
+	EventPacking(rlist, rlist, size, NIL) :- 
 	     s is StateDecl, s.owner.kind = REAL, 
 	     list = toList(
 		           #EventPackList, 
@@ -900,11 +902,12 @@ transform P2CProgram (in:: P) returns (out:: C)
 				        DoDeclEvnt(d, _, j), d.action != DEFER, d.src = s, i = qtnt(j / 32, 1), 
 				        n = sum(0, { m | DoDeclEvnt(d', _, k), d'.action != DEFER, d'.src = s, i = qtnt(k / 32, 1), PowOf2(k % 32, m) }), n : Natural 
 	               }),
+		 rlist = lstReverse(#EventPackList, list),
 		 size = 1 + maxAll(0, { i | DoDeclEvnt(d, _, j), d.action != DEFER, d.src = s, i = qtnt(j / 32, 1) }), size : Natural.	
 
 	//// Generate event sets for defer do's
-	EventsPacked(s, DEFER, list),
-	EventPacking(list, list, size, NIL) :- 
+	EventsPacked(s, DEFER, rlist),
+	EventPacking(rlist, rlist, size, NIL) :- 
 	     s is StateDecl, s.owner.kind = REAL, 
 	     list = toList(
 		           #EventPackList, 
@@ -913,13 +916,13 @@ transform P2CProgram (in:: P) returns (out:: C)
 				        DeferEvnt(d, _, j), d.action = DEFER, d.src = s, i = qtnt(j / 32, 1), 
 				        n = sum(0, { m | DeferEvnt(d', _, k), d'.action = DEFER, d'.src = s, i = qtnt(k / 32, 1), PowOf2(k % 32, m) }), n : Natural 
 	               }),
+		 rlist = lstReverse(#EventPackList, list),
 		 size = 1 + maxAll(0, { i | DeferEvnt(d, _, j), d.action = DEFER, d.src = s, i = qtnt(j / 32, 1) }), size : Natural.	
 
     //// Build up pack array.
 	EventPacking(l, NIL,  i',  a') :- EventPacking(l, NIL, i, a), i > 0, i' = i - 1, i' : Natural, a' = Args(IntLit(0, HEX, U), a).
-	EventPacking(l, r.tl, i',  a') :- EventPacking(l, r,   i, a), i > 0, i' = i - 1, i' : Natural, r != NIL, a' = Args(IntLit(r.dat.events, HEX, U), a).
-	//EventPacking(l, r.tl, i',  a') :- EventPacking(l, r,   i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex < i', a' = Args(IntLit(0, HEX, U), a).
-	//EventPacking(l, r.tl, i',  a') :- EventPacking(l, r,   i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex = i', a' = Args(IntLit(r.dat.events, HEX, U), a).
+	EventPacking(l, r, i',  a') :- EventPacking(l, r,   i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex < i', a' = Args(IntLit(0, HEX, U), a).
+	EventPacking(l, r.tl, i',  a') :- EventPacking(l, r,   i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex = i', a' = Args(IntLit(r.dat.events, HEX, U), a).
 
 	COut(9, def) :- EventPacking(l, _, 0, a),
 	                id = toOrdinal(l, 0, { l' | EventPacking(l', _, 0, _) }),
@@ -927,7 +930,7 @@ transform P2CProgram (in:: P) returns (out:: C)
 							      NIL, 
 								  ArrType(NmdType(NIL, "PRT_UINT32"), NIL), 
 								  strJoin("P_GEND_EVENTSET_", toString(id)), 
-								  Init(lstReverse(#Args, a))).
+								  Init(a)).
 
     //// Build up event sets.
 	EvSetDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).

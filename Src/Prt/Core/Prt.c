@@ -75,7 +75,14 @@ PrtMkModel(
 	PRT_UINT32 numMachines = privateProcess->numMachines;
 	PRT_UINT32 machineCount = privateProcess->machineCount;
 	PRT_MACHINEINST **machines = privateProcess->machines;
-	if (machineCount == numMachines) {
+    if (machineCount == 0)
+    {
+        machines = (PRT_MACHINEINST **)PrtCalloc(1, sizeof(PRT_MACHINEINST *));
+        privateProcess->machines = machines;
+        privateProcess->machineCount = 1;
+    }
+    else if (machineCount == numMachines) 
+    {
 		PRT_MACHINEINST **newMachines = (PRT_MACHINEINST **)PrtCalloc(2 * machineCount, sizeof(PRT_MACHINEINST *));
 		for (PRT_UINT32 i = 0; i < machineCount; i++)
 		{

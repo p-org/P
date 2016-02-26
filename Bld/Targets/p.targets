@@ -11,6 +11,9 @@
     <Target Name="CompileP" Inputs="@(PCompile)" Outputs="program.h;program.c;stubs.c" BeforeTargets="BeforeBuildGenerateSources">
         <Message Importance="high" Text="########## compiling p files: @(PCompile) ##################" />
         <Exec Command="$(DropFolder)\Binaries\pc.exe @(PCompile->'%(FullPath)')" />
+        <ItemGroup>
+            <FileWrites Include="$(MSBuildThisFileDirectory)\program.h;$(MSBuildThisFileDirectory)\program.c;$(MSBuildThisFileDirectory)\stubs.c" />
+        </ItemGroup>
     </Target>
   
 </Project>

@@ -3,4 +3,4 @@ arg: /printTypeInference
 arg: /shortFileNames
 arg: /doNotErase
 arg: /outputDir:..\.
-dsc: pc.exe, RHS of asgn is nondet return value from function
+dsc: pc.exe, RHS of asgn depends on nondet return value from function

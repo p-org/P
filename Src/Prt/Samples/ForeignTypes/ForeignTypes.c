@@ -50,7 +50,7 @@ PRT_STRING UserToStringForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frg
 	switch (typeTag)
 	{
 	case P_FORGN_TYPE_StringType:
-		sprintf_s(str, 100, "String : %s", frgnVal);
+		sprintf_s(str, 100, "String : %lld", frgnVal);
 		break;
 	default:
 		break;

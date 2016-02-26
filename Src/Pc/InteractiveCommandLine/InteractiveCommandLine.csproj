@@ -60,7 +60,7 @@
         <Reference Include="System.Data" />
         <Reference Include="System.Xml" />
         <Reference Include="zc">
-            <HintPath>$(ExtFolder)\Zing\$(UnifiedPlatform)\zc.exe</HintPath>
+            <HintPath>$(ZCompiler)</HintPath>
         </Reference>
         <Reference Include="Core">
             <SpecificVersion>False</SpecificVersion>

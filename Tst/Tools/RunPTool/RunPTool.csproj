@@ -93,7 +93,7 @@
         <Reference Include="System.Xml" />
         <Reference Include="System.Xml.Linq" />
         <Reference Include="zc">
-            <HintPath>$(ExtFolder)\Zing\$(UnifiedPlatform)\zc.exe</HintPath>
+            <HintPath>$(ZCompiler)</HintPath>
         </Reference>
     </ItemGroup>
     <ItemGroup>

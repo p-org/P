@@ -122,13 +122,14 @@ namespace DgmlLogViewer
         Regex stateLog = new Regex(@"\<StateLog\> Machine (.*) entered state (.*)");
         Regex exitLog = new Regex(@"\<ExitLog\> Machine (.*) exiting state (.*)");
         Regex raiseLog = new Regex(@"\<RaiseLog\> Machine (.*) raised event (.*) with payload (.*)");
+        Regex popLog = new Regex(@"<PopLog> Machine (.*) popped and reentered state (.*)");
 
         Dictionary<string, string> currentStates = new Dictionary<string, string>();
         Dictionary<string, string> eventQueue = new Dictionary<string, string>();
 
         private void ParseLog(string line)
         {
-            if (line.StartsWith("<CreateLog>"))
+            if (line.StartsWith(" < CreateLog>"))
             {
                 var match = createLog.Match(line);
 
@@ -142,6 +143,28 @@ namespace DgmlLogViewer
             if (line.StartsWith("<StateLog>"))
             {
                 var match = stateLog.Match(line);
+                if (match.Success && match.Groups.Count > 2)
+                {
+                    string machineName = match.Groups[1].Value;
+                    string stateName = match.Groups[2].Value;
+                    dgml.GetOrCreateNodeInGroup(machineName, stateName);
+
+                    string currentState;
+                    if (currentStates.TryGetValue(machineName, out currentState) && currentState != stateName)
+                    {
+                        string eventName = null;
+                        eventQueue.TryGetValue(machineName, out eventName);
+                        dgml.GetOrCreateLink(currentState, stateName, eventName);
+                    }
+
+                    currentStates[machineName] = stateName;
+                }
+
+            }
+
+            if (line.StartsWith("<PopLog>"))
+            {
+                var match = popLog.Match(line);
                 if (match.Success && match.Groups.Count > 2)
                 {
                     string machineName = match.Groups[1].Value;

@@ -1,2 +1,2 @@
 arg: ..\nonDetFunctionInExpr_2.dll
-dsc: zinger.exe, RHS of asgn is nondet return value from function
+dsc: zinger.exe, RHS of asgn depends on nondet return value from function

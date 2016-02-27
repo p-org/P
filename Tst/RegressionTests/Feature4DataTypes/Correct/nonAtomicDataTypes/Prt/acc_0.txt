@@ -3,10 +3,6 @@
 =================================
 OUT: <CreateLog> Machine M(1) is created
 OUT: <StateLog> Machine M(1) entered state S
-OUT: <CreateLog> Machine Test(2) is created
-OUT: <StateLog> Machine Test(2) entered state init
-OUT: <RaiseLog> Machine M(1) raised event halt with payload null
-OUT: <ExitLog> Machine M(1) exiting state S
-OUT: <HaltLog> Machine M(1) halted in state S
 OUT: 
-EXIT: 0
+ERROR: ASSERT: Invalid map get; key not found
+EXIT: 1

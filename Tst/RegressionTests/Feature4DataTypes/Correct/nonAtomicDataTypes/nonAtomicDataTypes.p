@@ -1,5 +1,7 @@
 //Tests complex data types in assign/remove/insert: sequences, tuples, maps
 event E assert 1; 
+event E1 assert 1;
+event E2 assert 1;
 main machine M
 {    
     var t, t1, tmp4: (a: seq [int], b: map[int, seq[int]]);
@@ -23,6 +25,8 @@ main machine M
 	var m2: map[int,map[int,any]];
 	var m7: map[bool,seq[(a: int, b: int)]];
 	var b: bool;
+	var e: event;
+	var a: any;
 	
     start state S
     {
@@ -236,7 +240,7 @@ main machine M
 		  s7 += (0,1);
 		  tmp3 = default(map[int, seq[int]]);
 		  tmp3[0] = s7;
-		  t = default(a: seq [int], b: map[int, seq[int]]);
+		  t = default((a: seq [int], b: map[int, seq[int]]));
 		  t = (a = s7, b = tmp3);
 		  assert (sizeof(t.a) == foo());      //holds
 		  

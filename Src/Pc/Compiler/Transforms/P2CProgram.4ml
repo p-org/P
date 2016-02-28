@@ -303,15 +303,7 @@ transform P2CProgram (in:: P) returns (out:: C)
     /******     Generate C statics for types in program     ******/
     /*************************************************************/
 	TranslatedTypeExpr ::= (type: TypeExpr).
-	TranslatedTypeExpr(eType) :- AllTypeExprs(type), TypeExpansion(type, eType).
-	TranslatedTypeExpr(in.BaseType(ANY)).
-	TranslatedTypeExpr(in.BaseType(NULL)).
-	TranslatedTypeExpr(t) :- TypeOf(_, Tuple(_), t), t : TypeExpr.
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(TupType(t, _)), t : TypeExpr.
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(TupType(_, t)), t : TypeExpr.
-	TranslatedTypeExpr(t) :- TypeOf(_, NamedTuple(_), t), t : TypeExpr.
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(NmdTupType(f, _)), t = f.type.
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(NmdTupType(_, t)), t : TypeExpr.
+	TranslatedTypeExpr(eType) :- TypeExpansion(_, eType).
 
 	//// Labels a type expression with a number greater than the labels of all its sub-expressions.
 	//// TypeId linearizes the dependency order to get a schedule for emitting type expressions.

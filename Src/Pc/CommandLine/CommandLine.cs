@@ -46,12 +46,26 @@ namespace Microsoft.Pc
                             break;
 
                         case "/outputDir":
-                            options.outputDir = colonArg;
-                            if (!Directory.Exists(options.outputDir))
+                            if (colonArg == null)
                             {
-                                Console.WriteLine("Output directory {0} does not exist", options.outputDir);
+                                Console.WriteLine("Must supply path for output directory");
                                 goto error;
                             }
+                            if (!Directory.Exists(colonArg))
+                            {
+                                Console.WriteLine("Output directory {0} does not exist", colonArg);
+                                goto error;
+                            }
+                            options.outputDir = colonArg;
+                            break;
+
+                        case "/outputFileName":
+                            if (colonArg == null)
+                            {
+                                Console.WriteLine("Must supply name for output files");
+                                goto error;
+                            }
+                            options.outFileName = colonArg;
                             break;
 
                         case "/doNotErase":

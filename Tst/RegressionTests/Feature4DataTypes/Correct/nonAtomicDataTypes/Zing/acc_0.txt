@@ -2,8 +2,8 @@
          Console output          
 =================================
 OUT: ##################
-OUT: Check Passed
+OUT: Check Failed
 OUT: ##################
-OUT: 6 distinct states explored
+OUT: 2 distinct states explored
 OUT: 
-EXIT: 0
+EXIT: 3

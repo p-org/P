@@ -8,6 +8,9 @@ if "%Configuration%"=="" set Configuration=Debug
 set Platform=%2
 if "%Platform%"=="" set Platform=x86
 
+echo msbuild  P.sln /p:Platform=%Platform% /p:Configuration=%Configuration% /t:Clean
+msbuild  P.sln /p:Platform=%Platform% /p:Configuration=%Configuration% /t:Clean
+
 git submodule init
 git submodule update
 cd ext\zing
@@ -16,33 +19,37 @@ echo msbuild  Zing.sln /p:Platform=%Platform% /p:Configuration=Release
 msbuild  Zing.sln /p:Platform=%Platform% /p:Configuration=Release
 if ERRORLEVEL 1 goto :exit
 
-if NOT exist %Platform% mkdir %Platform%
-
-for %%i in (zc\bin\x86\Release\zc.exe
-             ZingExplorer\bin\x86\Release\ZingExplorer.dll
-             Zinger\bin\x86\Release\Zinger.exe
-             Microsoft.Zing\bin\x86\Release\Microsoft.Zing.dll
-             Microsoft.Zing.Runtime\bin\x86\Release\Microsoft.Zing.Runtime.dll
-             Microsoft.Zing\bin\x86\Release\Microsoft.Comega.dll
-             Microsoft.Zing\bin\x86\Release\Microsoft.Comega.Runtime.dll
-             Resources\external\CCI\System.Compiler.dll
-             Resources\external\CCI\System.Compiler.Framework.dll
-             Resources\external\CCI\System.Compiler.Runtime.dll
-             DelayingSchedulers\CustomDelayingScheduler\bin\x86\Release\CustomDelayingScheduler.dll
-             DelayingSchedulers\RandomDelayingScheduler\bin\x86\Release\RandomDelayingScheduler.dll
-             DelayingSchedulers\RoundRobinDelayingScheduler\bin\x86\Release\RoundRobinDelayingScheduler.dll
-             DelayingSchedulers\RunToCompletionDelayingScheduler\bin\x86\Release\RunToCompletionDelayingScheduler.dll) do (
-             
-    copy %%i %Platform%
-)
-   
 cd ..\..
+
+set BinariesFolder=Bld\Drops\%Configuration%\%Platform%\Binaries\
+
+if NOT exist %BinariesFolder% mkdir %BinariesFolder%
+
+for %%i in (Ext\Zing\zc\bin\%Platform%\Release\zc.exe
+             Ext\Zing\ZingExplorer\bin\%Platform%\Release\ZingExplorer.dll
+             Ext\Zing\Zinger\bin\%Platform%\Release\Zinger.exe
+             Ext\Zing\Microsoft.Zing\bin\%Platform%\Release\Microsoft.Zing.dll
+             Ext\Zing\Microsoft.Zing.Runtime\bin\%Platform%\Release\Microsoft.Zing.Runtime.dll
+             Ext\Zing\Microsoft.Zing\bin\%Platform%\Release\Microsoft.Comega.dll
+             Ext\Zing\Microsoft.Zing\bin\%Platform%\Release\Microsoft.Comega.Runtime.dll
+             Ext\Zing\Resources\external\CCI\System.Compiler.dll
+             Ext\Zing\Resources\external\CCI\System.Compiler.Framework.dll
+             Ext\Zing\Resources\external\CCI\System.Compiler.Runtime.dll
+             Ext\Zing\DelayingSchedulers\CustomDelayingScheduler\bin\%Platform%\Release\CustomDelayingScheduler.dll
+             Ext\Zing\DelayingSchedulers\RandomDelayingScheduler\bin\%Platform%\Release\RandomDelayingScheduler.dll
+             Ext\Zing\DelayingSchedulers\RoundRobinDelayingScheduler\bin\%Platform%\Release\RoundRobinDelayingScheduler.dll
+             Ext\Zing\DelayingSchedulers\RunToCompletionDelayingScheduler\bin\%Platform%\Release\RunToCompletionDelayingScheduler.dll) do (
+             
+    echo copy %%i %BinariesFolder%
+    copy %%i %BinariesFolder%
+)
+
+
 REM this code fixes a problem in MIDL compile by forcing recompile of these files for each configuration.
 del Src\PrtDist\Core\NodeManager_c.c
 del Src\PrtDist\Core\NodeManager_s.c
 
 echo msbuild P.sln /p:Platform=%Platform% /p:Configuration=%Configuration%
-msbuild  P.sln /p:Platform=%Platform% /p:Configuration=%Configuration% /t:Clean
 msbuild  P.sln /p:Platform=%Platform% /p:Configuration=%Configuration%
 
 :exit

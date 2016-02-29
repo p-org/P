@@ -1,4 +1,4 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Plang_Debug_x86\Compiler\zinger.exe
+runZing: ..\..\..\..\..\..\Ext\Zing\Zinger\obj\x86\Release\Zinger.exe
 argZing: ..\ExprOperatorsAsserts.dll
 argZing: -et:ExprOperatorsAsserts.trace
 incZing: ExprOperatorsAsserts.trace

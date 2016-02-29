@@ -2,8 +2,8 @@
 <!-- Configuration for Windows Azure -->
 
 <configuration>
-  
-  <PBinaries>C:\WorkSpace\plang\Bld\Drops\Plang_Debug_x86\Runtime\Binaries\</PBinaries>
+
+  <PBinaries>C:\WorkSpace\plang\Bld\Drops\Debug\x86\Binaries\</PBinaries>
   <PSTools>C:\WorkSpace\plang\Ext\PsTools\</PSTools>
   <MainExe>C:\WorkSpace\P\Src\PrtDist\Binaries\FD\FailureDetector.exe</MainExe>
   <NodeManagerPort>5600</NodeManagerPort>

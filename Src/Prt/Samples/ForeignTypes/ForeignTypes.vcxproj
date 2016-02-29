@@ -33,7 +33,6 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\p.props" />
-  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -45,12 +44,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(ProjectDir)$(Configuration)\$(Platform)\</OutDir>
+    <OutDir>$(DropFolder)\Binaries\ForeignTypes\</OutDir>
     <IntDir>$(ProjectDir)$(Configuration)\obj\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(ProjectDir)$(Configuration)\$(Platform)\</OutDir>
+    <OutDir>$(DropFolder)\Binaries\ForeignTypes\</OutDir>
     <IntDir>$(ProjectDir)$(Configuration)\obj\$(Platform)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -105,7 +104,8 @@
   <ItemGroup>
     <PCompile Include="ForeignStringType.p" />
   </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+    <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>

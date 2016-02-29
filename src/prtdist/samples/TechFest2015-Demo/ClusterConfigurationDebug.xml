@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <configuration>
-  <PBinaries>C:\Users\qadeer\Work\P\Bld\Drops\Plang_Debug_x86\Runtime\Binaries\</PBinaries>
+    <PBinaries>C:\WorkSpace\plang\Bld\Drops\Debug\x86\Binaries\</PBinaries>
   <PSTools>C:\Users\qadeer\Work\P\Ext\PsTools\</PSTools>
   <MainExe>C:\Users\qadeer\Work\P\Src\PrtDist\Binaries\FD\FailureDetector.exe</MainExe>
   <NodeManagerPort>5600</NodeManagerPort>

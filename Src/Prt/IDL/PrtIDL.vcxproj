@@ -183,6 +183,7 @@
         </PreBuildEvent>
     </ItemDefinitionGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+    <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />
     <ImportGroup Label="ExtensionTargets">
     </ImportGroup>
 </Project>

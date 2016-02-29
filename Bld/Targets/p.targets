@@ -6,6 +6,7 @@
         <!-- So this new property unifies that difference and moves everything to 'x86' -->
         <UnifiedPlatform Condition="'$(Platform)'=='Win32'">x86</UnifiedPlatform>
         <DropFolder>$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\$(UnifiedPlatform)</DropFolder>
+        <CleanDependsOn>$(CleanDependsOn);CleanSdkHeaders;CleanClientFiles</CleanDependsOn>
     </PropertyGroup>
     
     <Target Name="CompileP" Inputs="@(PCompile)" Outputs="program.h;program.c;stubs.c" BeforeTargets="BeforeBuildGenerateSources">
@@ -15,5 +16,26 @@
             <FileWrites Include="$(MSBuildThisFileDirectory)\program.h;$(MSBuildThisFileDirectory)\program.c;$(MSBuildThisFileDirectory)\stubs.c" />
         </ItemGroup>
     </Target>
-  
+
+    <Target Name="CopySdkHeaders" Inputs="@(ClInclude)"  Outputs="$(DropFolder)\Headers\%(Filename)" BeforeTargets="PrepareForBuild">    
+        <CreateItem Include="@(ClInclude)" Condition="'%(ClInclude.CopyToHeaders)'=='True'" >
+            <Output TaskParameter="Include" ItemName="SdkHeaders"/>
+        </CreateItem>
+        <Copy SourceFiles="@(SdkHeaders)" DestinationFolder="$(DropFolder)\Headers" />
+    </Target>
+
+    <Target Name="CleanSdkHeaders">
+        <CreateItem Include="@(ClInclude)" Condition="'%(ClInclude.CopyToHeaders)'=='True'" >
+            <Output TaskParameter="Include" ItemName="SdkHeaders"/>
+        </CreateItem>
+        <Delete Files="@(SdkHeaders->'$(DropFolder)\Headers\%(Filename)%(Extension)')"/>
+    </Target>
+
+    <Target Name="CopyClientFiles" Inputs="@(ClientFile)"  Outputs="$(DropFolder)\ClientFiles\%(Filename)" BeforeTargets="PrepareForBuild">
+        <Copy SourceFiles="@(ClientFile)" DestinationFolder="$(DropFolder)\ClientFiles" />
+    </Target>
+
+    <Target Name="CleanClientFiles">
+        <Delete Files="@(ClientFile->'$(DropFolder)\ClientFiles\%(Filename)%(Extension)')" />
+    </Target>
 </Project>

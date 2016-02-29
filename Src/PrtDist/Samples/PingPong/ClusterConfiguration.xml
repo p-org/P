@@ -2,20 +2,20 @@
 <!-- Configuration for Windows Azure -->
 
 <configuration>
-  
-  <PBinaries>D:\git\P\Bld\Drops\Plang_Debug_x86\Runtime\Binaries\</PBinaries>
-  <PSTools>D:\git\P\Ext\PsTools</PSTools>
-  <MainExe>D:\git\P\Src\PrtDist\Binaries\Pingpong\PingPong.exe</MainExe>
-  <NodeManagerPort>5600</NodeManagerPort>
-  <ContainerPortStart>5900</ContainerPortStart>
-  <NetworkShare>\\clovett12\public\PLangDist</NetworkShare>
-  <LocalFolder>D:\git\P\Bld\Drops\PlangLocal\</LocalFolder>
-  <MainMachineNode>plangdist2</MainMachineNode>
-  <CentralServer>plangdist2</CentralServer>
-  <TotalNodes>3</TotalNodes>
-  <AllNodes>
-    <Node>plangdist1</Node>
-    <Node>plangdist2</Node>
-    <Node>plangdist3</Node>
-  </AllNodes>
+
+    <PBinaries>C:\WorkSpace\plang\Bld\Drops\Debug\x86\Binaries\</PBinaries>
+    <PSTools>D:\git\P\Ext\PsTools</PSTools>
+    <MainExe>C:\WorkSpace\plang\Bld\Drops\Debug\x86\Binaries\PingPong\PingPong.exe</MainExe>
+    <NodeManagerPort>5600</NodeManagerPort>
+    <ContainerPortStart>5900</ContainerPortStart>
+    <NetworkShare>\\clovett12\public\PLangDist</NetworkShare>
+    <LocalFolder>D:\git\P\Bld\Drops\PlangLocal\</LocalFolder>
+    <MainMachineNode>plangdist2</MainMachineNode>
+    <CentralServer>plangdist2</CentralServer>
+    <TotalNodes>3</TotalNodes>
+    <AllNodes>
+        <Node>plangdist1</Node>
+        <Node>plangdist2</Node>
+        <Node>plangdist3</Node>
+    </AllNodes>
 </configuration>

@@ -376,8 +376,13 @@ namespace RunPTool
         {
             try
             {
-                string zingFilePath = Path.GetFullPath(Path.Combine(testRoot, @"..\Ext\Zing\x86\zinger.exe"));
-                
+                string zingFilePath = Path.GetFullPath(Path.Combine(testRoot, @"..\Bld\Drops\Release\x86\Binaries\zinger.exe"));
+
+                if (!File.Exists(zingFilePath))
+                {
+                    zingFilePath = Path.GetFullPath(Path.Combine(testRoot, @"..\Bld\Drops\Debug\x86\Binaries\zinger.exe"));
+                }
+
                 if (!File.Exists(zingFilePath))
                 {
                     Console.WriteLine("ERROR in Test: zinger.exe not find in {0}", zingFilePath);

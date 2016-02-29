@@ -8,8 +8,8 @@
         <DropFolder>$(MSBuildThisFileDirectory)Bld\Drops\$(Configuration)\$(UnifiedPlatform)</DropFolder>
         <ExtFolder>$(MSBuildThisFileDirectory)Ext</ExtFolder>
         <CommonTargets>$(MSBuildThisFileDirectory)Bld\Targets\common.targets</CommonTargets>
-        <ZCompiler>$(MSBuildThisFileDirectory)Ext\Zing\$(UnifiedPlatform)\zc.exe</ZCompiler>
-        <Zinger>$(MSBuildThisFileDirectory)Ext\Zing\$(UnifiedPlatform)\zinger.exe</Zinger>
+        <ZCompiler>$(MSBuildThisFileDirectory)Bld\Drops\$(Configuration)\$(UnifiedPlatform)\Binaries\zc.exe</ZCompiler>
+        <Zinger>$(MSBuildThisFileDirectory)Bld\Drops\$(Configuration)\$(UnifiedPlatform)\Binaries\zinger.exe</Zinger>
     </PropertyGroup>
     
 </Project>

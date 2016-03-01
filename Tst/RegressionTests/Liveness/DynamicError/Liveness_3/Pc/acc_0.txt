@@ -1,21 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: liveness_3.p (13, 5): inferred type:  NIL
-OUT: liveness_3.p (14, 5): inferred type:  NIL
-OUT: liveness_3.p (14, 13): inferred type:  BaseType(EVENT)
-OUT: liveness_3.p (15, 5): inferred type:  NIL
-OUT: liveness_3.p (15, 10): inferred type:  BaseType(REAL)
-OUT: liveness_3.p (15, 16): inferred type:  BaseType(EVENT)
-OUT: liveness_3.p (23, 5): inferred type:  NIL
-OUT: liveness_3.p (23, 13): inferred type:  BaseType(EVENT)
-OUT: liveness_3.p (26, 13): inferred type:  NIL
-OUT: liveness_3.p (35, 4): inferred type:  NIL
-OUT: liveness_3.p (35, 9): inferred type:  BaseType(REAL)
-OUT: liveness_3.p (35, 15): inferred type:  BaseType(EVENT)
-OUT: liveness_3.p (37, 3): inferred type:  NIL
-OUT: liveness_3.p (50, 9): inferred type:  NIL
-OUT: liveness_3.p (53, 14): inferred type:  NIL
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

@@ -1,15 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: transdecl_dodecl.p (6, 8): inferred type:  BaseType(INT)
-OUT: transdecl_dodecl.p (6, 8): inferred type:  TupType(BaseType(INT), NIL)
-OUT: transdecl_dodecl.p (10, 8): inferred type:  NIL
-OUT: transdecl_dodecl.p (13, 24): inferred type:  NIL
-OUT: transdecl_dodecl.p (16, 11): inferred type:  NIL
-OUT: transdecl_dodecl.p (21, 3): inferred type:  NIL
-OUT: transdecl_dodecl.p (24, 19): inferred type:  NIL
-OUT: transdecl_dodecl.p (31, 12): inferred type:  NIL
-OUT: transdecl_dodecl.p (37, 2): inferred type:  NIL
 OUT: transdecl_dodecl.p (13, 3): transition to an undefined state
 OUT: transdecl_dodecl.p (14, 3): function cannot take arguments
 OUT: transdecl_dodecl.p (15, 3): Multiple transitions over the same event

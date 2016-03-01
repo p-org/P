@@ -1,14 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: push.p (11, 4): inferred type:  NIL
-OUT: push.p (11, 9): inferred type:  BaseType(REAL)
-OUT: push.p (11, 15): inferred type:  BaseType(EVENT)
-OUT: push.p (16, 17): inferred type:  NIL
-OUT: push.p (16, 22): inferred type:  BaseType(REAL)
-OUT: push.p (16, 28): inferred type:  BaseType(EVENT)
-OUT: push.p (20, 4): inferred type:  NIL
-OUT: push.p (20, 11): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

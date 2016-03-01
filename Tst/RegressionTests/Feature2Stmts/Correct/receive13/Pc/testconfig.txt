@@ -1,5 +1,4 @@
 arg: ..\receive13.p
-arg: /printTypeInference
 arg: /shortFileNames
 arg: /doNotErase
 arg: /outputDir:..\.

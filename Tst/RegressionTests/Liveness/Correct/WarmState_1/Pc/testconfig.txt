@@ -1,5 +1,4 @@
 arg: ..\Liveness_2_WarmState.p
-arg: /printTypeInference
 arg: /shortFileNames
 arg: /liveness
 arg: /doNotErase

@@ -1,19 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: raisesendinentry.p (10, 4): inferred type:  NIL
-OUT: raisesendinentry.p (10, 10): inferred type:  BaseType(EVENT)
-OUT: raisesendinentry.p (11, 4): inferred type:  NIL
-OUT: raisesendinentry.p (11, 9): inferred type:  BaseType(REAL)
-OUT: raisesendinentry.p (11, 15): inferred type:  BaseType(EVENT)
-OUT: raisesendinentry.p (16, 14): inferred type:  NIL
-OUT: raisesendinentry.p (19, 3): inferred type:  BaseType(BOOL)
-OUT: raisesendinentry.p (19, 3): inferred type:  NIL
-OUT: raisesendinentry.p (19, 10): inferred type:  BaseType(BOOL)
-OUT: raisesendinentry.p (22, 3): inferred type:  NIL
-OUT: raisesendinentry.p (22, 10): inferred type:  BaseType(BOOL)
-OUT: raisesendinentry.p (22, 15): inferred type:  BaseType(BOOL)
-OUT: raisesendinentry.p (22, 18): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

@@ -1,23 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: function.p (6, 7): inferred type:  BaseType(EVENT)
-OUT: function.p (6, 7): inferred type:  ERROR
-OUT: function.p (6, 7): inferred type:  NIL
-OUT: function.p (7, 4): inferred type:  BaseType(INT)
-OUT: function.p (7, 4): inferred type:  ERROR
-OUT: function.p (13, 5): inferred type:  ERROR
-OUT: function.p (13, 12): inferred type:  BaseType(BOOL)
-OUT: function.p (17, 5): inferred type:  NIL
-OUT: function.p (17, 12): inferred type:  BaseType(INT)
-OUT: function.p (21, 5): inferred type:  ERROR
-OUT: function.p (24, 30): inferred type:  NIL
-OUT: function.p (33, 5): inferred type:  ERROR
-OUT: function.p (33, 5): inferred type:  NIL
-OUT: function.p (33, 12): inferred type:  BaseType(INT)
-OUT: function.p (34, 4): inferred type:  NIL
-OUT: function.p (34, 9): inferred type:  BaseType(REAL)
-OUT: function.p (34, 15): inferred type:  BaseType(EVENT)
 OUT: function.p (6, 7): function requires arguments
 OUT: function.p (6, 7): invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name
 OUT: function.p (7, 4): function requires arguments

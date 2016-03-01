@@ -1,30 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: anytype3.p (15, 4): inferred type:  BaseType(ANY)
-OUT: anytype3.p (15, 4): inferred type:  NIL
-OUT: anytype3.p (15, 11): inferred type:  BaseType(INT)
-OUT: anytype3.p (17, 4): inferred type:  BaseType(INT)
-OUT: anytype3.p (17, 4): inferred type:  NIL
-OUT: anytype3.p (18, 4): inferred type:  NIL
-OUT: anytype3.p (18, 16): inferred type:  BaseType(BOOL)
-OUT: anytype3.p (20, 4): inferred type:  BaseType(EVENT)
-OUT: anytype3.p (20, 4): inferred type:  NIL
-OUT: anytype3.p (20, 13): inferred type:  BaseType(EVENT)
-OUT: anytype3.p (21, 4): inferred type:  NIL
-OUT: anytype3.p (24, 4): inferred type:  NIL
-OUT: anytype3.p (24, 11): inferred type:  BaseType(BOOL)
-OUT: anytype3.p (25, 4): inferred type:  NIL
-OUT: anytype3.p (26, 4): inferred type:  NIL
-OUT: anytype3.p (26, 16): inferred type:  BaseType(BOOL)
-OUT: anytype3.p (30, 4): inferred type:  NIL
-OUT: anytype3.p (30, 11): inferred type:  BaseType(REAL)
-OUT: anytype3.p (31, 4): inferred type:  NIL
-OUT: anytype3.p (31, 13): inferred type:  BaseType(EVENT)
-OUT: anytype3.p (32, 4): inferred type:  NIL
-OUT: anytype3.p (32, 17): inferred type:  BaseType(BOOL)
-OUT: anytype3.p (33, 4): inferred type:  NIL
-OUT: anytype3.p (33, 17): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

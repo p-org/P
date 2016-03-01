@@ -1,23 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: deferignore1.p (12, 4): inferred type:  NIL
-OUT: deferignore1.p (12, 10): inferred type:  BaseType(EVENT)
-OUT: deferignore1.p (13, 4): inferred type:  NIL
-OUT: deferignore1.p (13, 15): inferred type:  BaseType(EVENT)
-OUT: deferignore1.p (14, 4): inferred type:  NIL
-OUT: deferignore1.p (14, 9): inferred type:  BaseType(REAL)
-OUT: deferignore1.p (14, 15): inferred type:  BaseType(EVENT)
-OUT: deferignore1.p (19, 16): inferred type:  NIL
-OUT: deferignore1.p (19, 21): inferred type:  BaseType(REAL)
-OUT: deferignore1.p (19, 27): inferred type:  BaseType(EVENT)
-OUT: deferignore1.p (23, 4): inferred type:  BaseType(BOOL)
-OUT: deferignore1.p (23, 4): inferred type:  NIL
-OUT: deferignore1.p (23, 11): inferred type:  BaseType(BOOL)
-OUT: deferignore1.p (29, 3): inferred type:  NIL
-OUT: deferignore1.p (29, 10): inferred type:  BaseType(BOOL)
-OUT: deferignore1.p (29, 15): inferred type:  BaseType(BOOL)
-OUT: deferignore1.p (29, 18): inferred type:  BaseType(BOOL)
 OUT: deferignore1.p (25, 3): Multiple actions over the same event
 OUT: deferignore1.p (26, 3): Multiple actions over the same event
 OUT: Compilation failed

@@ -1,37 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: raisedhalt.p (15, 4): inferred type:  BaseType(REAL)
-OUT: raisedhalt.p (15, 4): inferred type:  NIL
-OUT: raisedhalt.p (15, 13): inferred type:  BaseType(REAL)
-OUT: raisedhalt.p (16, 4): inferred type:  NIL
-OUT: raisedhalt.p (16, 10): inferred type:  BaseType(EVENT)
-OUT: raisedhalt.p (23, 4): inferred type:  NIL
-OUT: raisedhalt.p (23, 9): inferred type:  BaseType(REAL)
-OUT: raisedhalt.p (23, 17): inferred type:  BaseType(EVENT)
-OUT: raisedhalt.p (23, 23): inferred type:  BaseType(REAL)
-OUT: raisedhalt.p (24, 4): inferred type:  NIL
-OUT: raisedhalt.p (24, 10): inferred type:  BaseType(EVENT)
-OUT: raisedhalt.p (33, 5): inferred type:  NIL
-OUT: raisedhalt.p (39, 15): inferred type:  NIL
-OUT: raisedhalt.p (45, 3): inferred type:  BaseType(INT)
-OUT: raisedhalt.p (45, 3): inferred type:  NIL
-OUT: raisedhalt.p (45, 19): inferred type:  BaseType(INT)
-OUT: raisedhalt.p (46, 3): inferred type:  NIL
-OUT: raisedhalt.p (46, 14): inferred type:  BaseType(BOOL)
-OUT: raisedhalt.p (46, 17): inferred type:  BaseType(INT)
-OUT: raisedhalt.p (47, 5): inferred type:  NIL
-OUT: raisedhalt.p (47, 10): inferred type:  BaseType(REAL)
-OUT: raisedhalt.p (47, 19): inferred type:  BaseType(EVENT)
-OUT: raisedhalt.p (50, 3): inferred type:  NIL
-OUT: raisedhalt.p (50, 14): inferred type:  BaseType(BOOL)
-OUT: raisedhalt.p (50, 17): inferred type:  BaseType(INT)
-OUT: raisedhalt.p (51, 4): inferred type:  NIL
-OUT: raisedhalt.p (52, 4): inferred type:  NIL
-OUT: raisedhalt.p (52, 10): inferred type:  BaseType(EVENT)
-OUT: raisedhalt.p (54, 3): inferred type:  NIL
-OUT: raisedhalt.p (54, 9): inferred type:  BaseType(EVENT)
-OUT: raisedhalt.p (56, 9): inferred type:  NIL
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

@@ -1,43 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: maxinstances_1.p (12, 37): inferred type:  BaseType(INT)
-OUT: maxinstances_1.p (12, 37): inferred type:  TupType(BaseType(INT), NIL)
-OUT: maxinstances_1.p (14, 4): inferred type:  BaseType(REAL)
-OUT: maxinstances_1.p (14, 4): inferred type:  NIL
-OUT: maxinstances_1.p (14, 20): inferred type:  BaseType(REAL)
-OUT: maxinstances_1.p (14, 30): inferred type:  BaseType(REAL)
-OUT: maxinstances_1.p (15, 10): inferred type:  NIL
-OUT: maxinstances_1.p (15, 16): inferred type:  BaseType(EVENT)
-OUT: maxinstances_1.p (24, 13): inferred type:  NIL
-OUT: maxinstances_1.p (24, 18): inferred type:  BaseType(REAL)
-OUT: maxinstances_1.p (24, 33): inferred type:  BaseType(EVENT)
-OUT: maxinstances_1.p (32, 4): inferred type:  NIL
-OUT: maxinstances_1.p (32, 10): inferred type:  BaseType(EVENT)
-OUT: maxinstances_1.p (38, 9): inferred type:  NIL
-OUT: maxinstances_1.p (39, 3): inferred type:  NIL
-OUT: maxinstances_1.p (42, 3): inferred type:  NIL
-OUT: maxinstances_1.p (42, 10): inferred type:  BaseType(INT)
-OUT: maxinstances_1.p (42, 18): inferred type:  BaseType(BOOL)
-OUT: maxinstances_1.p (42, 21): inferred type:  BaseType(INT)
-OUT: maxinstances_1.p (43, 3): inferred type:  NIL
-OUT: maxinstances_1.p (43, 8): inferred type:  BaseType(REAL)
-OUT: maxinstances_1.p (43, 23): inferred type:  BaseType(EVENT)
-OUT: maxinstances_1.p (52, 29): inferred type:  BaseType(REAL)
-OUT: maxinstances_1.p (52, 29): inferred type:  NIL
-OUT: maxinstances_1.p (52, 44): inferred type:  BaseType(REAL)
-OUT: maxinstances_1.p (52, 53): inferred type:  NIL
-OUT: maxinstances_1.p (52, 59): inferred type:  BaseType(EVENT)
-OUT: maxinstances_1.p (57, 15): inferred type:  NIL
-OUT: maxinstances_1.p (65, 4): inferred type:  NIL
-OUT: maxinstances_1.p (65, 9): inferred type:  BaseType(REAL)
-OUT: maxinstances_1.p (65, 23): inferred type:  BaseType(EVENT)
-OUT: maxinstances_1.p (65, 27): inferred type:  BaseType(INT)
-OUT: maxinstances_1.p (72, 6): inferred type:  NIL
-OUT: maxinstances_1.p (72, 11): inferred type:  BaseType(REAL)
-OUT: maxinstances_1.p (72, 25): inferred type:  BaseType(EVENT)
-OUT: maxinstances_1.p (73, 3): inferred type:  NIL
-OUT: maxinstances_1.p (76, 3): inferred type:  NIL
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

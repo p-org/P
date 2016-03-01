@@ -1,56 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: purity.p (9, 8): inferred type:  NIL
-OUT: purity.p (9, 12): inferred type:  BaseType(BOOL)
-OUT: purity.p (11, 11): inferred type:  NIL
-OUT: purity.p (11, 18): inferred type:  BaseType(INT)
-OUT: purity.p (15, 12): inferred type:  NIL
-OUT: purity.p (15, 19): inferred type:  BaseType(INT)
-OUT: purity.p (21, 8): inferred type:  NIL
-OUT: purity.p (22, 8): inferred type:  NIL
-OUT: purity.p (22, 15): inferred type:  BaseType(INT)
-OUT: purity.p (27, 8): inferred type:  NIL
-OUT: purity.p (27, 12): inferred type:  BaseType(INT)
-OUT: purity.p (27, 19): inferred type:  BaseType(BOOL)
-OUT: purity.p (27, 21): inferred type:  BaseType(INT)
-OUT: purity.p (29, 11): inferred type:  NIL
-OUT: purity.p (29, 18): inferred type:  BaseType(INT)
-OUT: purity.p (29, 19): inferred type:  BaseType(INT)
-OUT: purity.p (33, 11): inferred type:  NIL
-OUT: purity.p (33, 18): inferred type:  BaseType(INT)
-OUT: purity.p (39, 8): inferred type:  NIL
-OUT: purity.p (40, 8): inferred type:  NIL
-OUT: purity.p (40, 12): inferred type:  BaseType(BOOL)
-OUT: purity.p (42, 11): inferred type:  NIL
-OUT: purity.p (42, 18): inferred type:  BaseType(INT)
-OUT: purity.p (46, 11): inferred type:  NIL
-OUT: purity.p (46, 18): inferred type:  BaseType(INT)
-OUT: purity.p (48, 5): inferred type:  ERROR
-OUT: purity.p (48, 11): inferred type:  ERROR
-OUT: purity.p (48, 13): inferred type:  BaseType(REAL)
-OUT: purity.p (53, 8): inferred type:  NIL
-OUT: purity.p (53, 12): inferred type:  BaseType(BOOL)
-OUT: purity.p (53, 19): inferred type:  BaseType(BOOL)
-OUT: purity.p (53, 23): inferred type:  BaseType(INT)
-OUT: purity.p (53, 30): inferred type:  BaseType(BOOL)
-OUT: purity.p (54, 8): inferred type:  NIL
-OUT: purity.p (54, 12): inferred type:  BaseType(BOOL)
-OUT: purity.p (56, 11): inferred type:  NIL
-OUT: purity.p (56, 18): inferred type:  BaseType(INT)
-OUT: purity.p (60, 11): inferred type:  NIL
-OUT: purity.p (60, 18): inferred type:  BaseType(INT)
-OUT: purity.p (66, 7): inferred type:  BaseType(INT)
-OUT: purity.p (66, 7): inferred type:  NIL
-OUT: purity.p (66, 13): inferred type:  BaseType(INT)
-OUT: purity.p (66, 15): inferred type:  BaseType(INT)
-OUT: purity.p (67, 7): inferred type:  NIL
-OUT: purity.p (67, 13): inferred type:  BaseType(BOOL)
-OUT: purity.p (67, 15): inferred type:  BaseType(INT)
-OUT: purity.p (69, 10): inferred type:  NIL
-OUT: purity.p (69, 17): inferred type:  BaseType(BOOL)
-OUT: purity.p (73, 10): inferred type:  NIL
-OUT: purity.p (73, 17): inferred type:  BaseType(BOOL)
 OUT: purity.p (0, 0): No Main Machine
 OUT: purity.p (2, 1): no start state in machine
 OUT: purity.p (9, 12): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"

@@ -1,19 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: receive6.p (0, 0): inferred type:  NIL
-OUT: receive6.p (11, 7): inferred type:  BaseType(REAL)
-OUT: receive6.p (11, 7): inferred type:  NIL
-OUT: receive6.p (11, 11): inferred type:  BaseType(REAL)
-OUT: receive6.p (11, 17): inferred type:  BaseType(REAL)
-OUT: receive6.p (12, 4): inferred type:  NIL
-OUT: receive6.p (12, 12): inferred type:  BaseType(EVENT)
-OUT: receive6.p (20, 4): inferred type:  NIL
-OUT: receive6.p (20, 10): inferred type:  BaseType(EVENT)
-OUT: receive6.p (27, 4): inferred type:  NIL
-OUT: receive6.p (28, 13): inferred type:  NIL
-OUT: receive6.p (31, 22): inferred type:  NIL
-OUT: receive6.p (31, 29): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

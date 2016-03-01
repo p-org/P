@@ -1,25 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: eventexprsendraise.p (13, 13): inferred type:  NIL
-OUT: eventexprsendraise.p (13, 18): inferred type:  BaseType(REAL)
-OUT: eventexprsendraise.p (13, 24): inferred type:  BaseType(EVENT)
-OUT: eventexprsendraise.p (14, 4): inferred type:  NIL
-OUT: eventexprsendraise.p (15, 4): inferred type:  NIL
-OUT: eventexprsendraise.p (15, 12): inferred type:  BaseType(EVENT)
-OUT: eventexprsendraise.p (16, 4): inferred type:  NIL
-OUT: eventexprsendraise.p (16, 12): inferred type:  BaseType(EVENT)
-OUT: eventexprsendraise.p (17, 4): inferred type:  ERROR
-OUT: eventexprsendraise.p (17, 12): inferred type:  BaseType(INT)
-OUT: eventexprsendraise.p (23, 14): inferred type:  NIL
-OUT: eventexprsendraise.p (26, 3): inferred type:  BaseType(BOOL)
-OUT: eventexprsendraise.p (26, 3): inferred type:  NIL
-OUT: eventexprsendraise.p (26, 10): inferred type:  BaseType(BOOL)
-OUT: eventexprsendraise.p (29, 3): inferred type:  NIL
-OUT: eventexprsendraise.p (29, 10): inferred type:  BaseType(BOOL)
-OUT: eventexprsendraise.p (29, 15): inferred type:  BaseType(BOOL)
-OUT: eventexprsendraise.p (29, 18): inferred type:  BaseType(BOOL)
-OUT: eventexprsendraise.p (33, 2): inferred type:  NIL
 OUT: eventexprsendraise.p (17, 4): argument 1 of "monitor" expects an event value
 OUT: eventexprsendraise.p (19, 3): action on an undefined event
 OUT: eventexprsendraise.p (21, 3): action on an undefined event

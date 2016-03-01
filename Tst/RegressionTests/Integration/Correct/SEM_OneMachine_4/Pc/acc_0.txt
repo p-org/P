@@ -1,12 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: sendinexitnotexecuted.p (7, 15): inferred type:  NIL
-OUT: sendinexitnotexecuted.p (10, 17): inferred type:  NIL
-OUT: sendinexitnotexecuted.p (10, 22): inferred type:  BaseType(REAL)
-OUT: sendinexitnotexecuted.p (10, 28): inferred type:  BaseType(EVENT)
-OUT: sendinexitnotexecuted.p (13, 3): inferred type:  NIL
-OUT: sendinexitnotexecuted.p (13, 10): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

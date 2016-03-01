@@ -1,34 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: nullhandlerinloop.p (14, 4): inferred type:  NIL
-OUT: nullhandlerinloop.p (14, 10): inferred type:  BaseType(EVENT)
-OUT: nullhandlerinloop.p (16, 15): inferred type:  NIL
-OUT: nullhandlerinloop.p (16, 20): inferred type:  BaseType(REAL)
-OUT: nullhandlerinloop.p (16, 26): inferred type:  BaseType(EVENT)
-OUT: nullhandlerinloop.p (16, 30): inferred type:  NIL
-OUT: nullhandlerinloop.p (16, 36): inferred type:  BaseType(EVENT)
-OUT: nullhandlerinloop.p (19, 16): inferred type:  NIL
-OUT: nullhandlerinloop.p (19, 21): inferred type:  BaseType(REAL)
-OUT: nullhandlerinloop.p (19, 27): inferred type:  BaseType(EVENT)
-OUT: nullhandlerinloop.p (23, 4): inferred type:  BaseType(BOOL)
-OUT: nullhandlerinloop.p (23, 4): inferred type:  NIL
-OUT: nullhandlerinloop.p (23, 11): inferred type:  BaseType(BOOL)
-OUT: nullhandlerinloop.p (24, 4): inferred type:  BaseType(INT)
-OUT: nullhandlerinloop.p (24, 4): inferred type:  NIL
-OUT: nullhandlerinloop.p (24, 8): inferred type:  BaseType(INT)
-OUT: nullhandlerinloop.p (31, 3): inferred type:  BaseType(BOOL)
-OUT: nullhandlerinloop.p (31, 3): inferred type:  NIL
-OUT: nullhandlerinloop.p (31, 10): inferred type:  BaseType(BOOL)
-OUT: nullhandlerinloop.p (34, 3): inferred type:  NIL
-OUT: nullhandlerinloop.p (34, 9): inferred type:  BaseType(BOOL)
-OUT: nullhandlerinloop.p (34, 11): inferred type:  BaseType(INT)
-OUT: nullhandlerinloop.p (36, 4): inferred type:  BaseType(INT)
-OUT: nullhandlerinloop.p (36, 4): inferred type:  NIL
-OUT: nullhandlerinloop.p (36, 10): inferred type:  BaseType(INT)
-OUT: nullhandlerinloop.p (36, 12): inferred type:  BaseType(INT)
-OUT: nullhandlerinloop.p (38, 9): inferred type:  NIL
-OUT: nullhandlerinloop.p (38, 19): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

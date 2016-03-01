@@ -1,12 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: raiseinexitfun.p (10, 15): inferred type:  NIL
-OUT: raiseinexitfun.p (15, 4): inferred type:  NIL
-OUT: raiseinexitfun.p (15, 10): inferred type:  BaseType(EVENT)
-OUT: raiseinexitfun.p (19, 3): inferred type:  BaseType(BOOL)
-OUT: raiseinexitfun.p (19, 3): inferred type:  NIL
-OUT: raiseinexitfun.p (19, 10): inferred type:  BaseType(BOOL)
 OUT: raiseinexitfun.p (15, 4): function may cause a change in current state; this is not allowed here
 OUT: Compilation failed
 EXIT: -1

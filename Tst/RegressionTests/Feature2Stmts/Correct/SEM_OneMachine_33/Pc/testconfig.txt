@@ -1,5 +1,4 @@
 arg: ..\seq_tuple.p
-arg: /printTypeInference
 arg: /shortFileNames
 arg: /doNotErase
 arg: /outputDir:..\.

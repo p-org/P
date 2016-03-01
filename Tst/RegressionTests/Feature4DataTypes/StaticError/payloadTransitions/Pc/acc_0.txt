@@ -1,48 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: payloadtransitions.p (12, 9): inferred type:  NIL
-OUT: payloadtransitions.p (17, 4): inferred type:  BaseType(INT)
-OUT: payloadtransitions.p (17, 4): inferred type:  NIL
-OUT: payloadtransitions.p (17, 10): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
-OUT: payloadtransitions.p (17, 18): inferred type:  BaseType(INT)
-OUT: payloadtransitions.p (18, 4): inferred type:  BaseType(BOOL)
-OUT: payloadtransitions.p (18, 4): inferred type:  NIL
-OUT: payloadtransitions.p (18, 19): inferred type:  BaseType(BOOL)
-OUT: payloadtransitions.p (22, 4): inferred type:  BaseType(INT)
-OUT: payloadtransitions.p (22, 4): inferred type:  NIL
-OUT: payloadtransitions.p (22, 18): inferred type:  BaseType(INT)
-OUT: payloadtransitions.p (23, 4): inferred type:  BaseType(BOOL)
-OUT: payloadtransitions.p (23, 4): inferred type:  NIL
-OUT: payloadtransitions.p (23, 11): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("sec", BaseType(BOOL)), NIL))
-OUT: payloadtransitions.p (23, 19): inferred type:  BaseType(BOOL)
-OUT: payloadtransitions.p (27, 4): inferred type:  BaseType(INT)
-OUT: payloadtransitions.p (27, 4): inferred type:  NIL
-OUT: payloadtransitions.p (27, 10): inferred type:  SeqType(BaseType(INT))
-OUT: payloadtransitions.p (27, 17): inferred type:  BaseType(INT)
-OUT: payloadtransitions.p (27, 18): inferred type:  BaseType(INT)
-OUT: payloadtransitions.p (31, 4): inferred type:  BaseType(INT)
-OUT: payloadtransitions.p (31, 4): inferred type:  ERROR
-OUT: payloadtransitions.p (31, 10): inferred type:  BaseType(ANY)
-OUT: payloadtransitions.p (35, 4): inferred type:  BaseType(INT)
-OUT: payloadtransitions.p (35, 4): inferred type:  ERROR
-OUT: payloadtransitions.p (35, 4): inferred type:  NIL
-OUT: payloadtransitions.p (35, 18): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: payloadtransitions.p (35, 23): inferred type:  ERROR
-OUT: payloadtransitions.p (35, 24): inferred type:  BaseType(BOOL)
-OUT: payloadtransitions.p (36, 4): inferred type:  BaseType(BOOL)
-OUT: payloadtransitions.p (36, 4): inferred type:  NIL
-OUT: payloadtransitions.p (36, 11): inferred type:  NmdTupType(NmdTupTypeField("first", MapType(BaseType(INT), BaseType(INT))), NmdTupType(NmdTupTypeField("sec", SeqType(BaseType(BOOL))), NIL))
-OUT: payloadtransitions.p (36, 19): inferred type:  SeqType(BaseType(BOOL))
-OUT: payloadtransitions.p (36, 22): inferred type:  BaseType(BOOL)
-OUT: payloadtransitions.p (36, 23): inferred type:  BaseType(INT)
-OUT: payloadtransitions.p (45, 4): inferred type:  BaseType(REAL)
-OUT: payloadtransitions.p (45, 4): inferred type:  ERROR
-OUT: payloadtransitions.p (45, 4): inferred type:  NIL
-OUT: payloadtransitions.p (46, 4): inferred type:  BaseType(INT)
-OUT: payloadtransitions.p (46, 4): inferred type:  ERROR
-OUT: payloadtransitions.p (46, 10): inferred type:  BaseType(ANY)
-OUT: payloadtransitions.p (50, 2): inferred type:  NIL
 OUT: payloadtransitions.p (31, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: payloadtransitions.p (35, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: payloadtransitions.p (35, 23): Index may not be in the domain of the map

@@ -1,5 +1,4 @@
 arg: ..\lvalues_runtimeError.p
-arg: /printTypeInference
 arg: /shortFileNames
 arg: /doNotErase
 arg: /outputDir:..\.

@@ -44,7 +44,6 @@ OUT: eventexprsemantics.p (41, 8): inferred type:  BaseType(INT)
 OUT: eventexprsemantics.p (41, 13): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics.p (43, 4): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics.p (43, 4): inferred type:  NIL
-OUT: eventexprsemantics.p (44, 4): inferred type:  NIL
 OUT: eventexprsemantics.p (44, 15): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics.p (54, 13): inferred type:  NIL
 OUT: eventexprsemantics.p (54, 18): inferred type:  BaseType(REAL)
@@ -94,7 +93,6 @@ OUT: eventexprsemantics.p (94, 5): inferred type:  NIL
 OUT: eventexprsemantics.p (94, 11): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics.p (98, 12): inferred type:  NIL
 OUT: eventexprsemantics.p (99, 12): inferred type:  NIL
-OUT: eventexprsemantics.p (103, 4): inferred type:  NIL
 OUT: eventexprsemantics.p (103, 9): inferred type:  BaseType(REAL)
 OUT: eventexprsemantics.p (103, 15): inferred type:  BaseType(EVENT)
 OUT: eventexprsemantics.p (103, 20): inferred type:  BaseType(NULL)

@@ -1,27 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: staticfunctions_3.p (0, 0): inferred type:  NIL
-OUT: staticfunctions_3.p (8, 2): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: staticfunctions_3.p (8, 2): inferred type:  NIL
-OUT: staticfunctions_3.p (8, 11): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: staticfunctions_3.p (8, 14): inferred type:  BaseType(INT)
-OUT: staticfunctions_3.p (8, 14): inferred type:  TupType(BaseType(INT), NIL)
-OUT: staticfunctions_3.p (9, 2): inferred type:  NIL
-OUT: staticfunctions_3.p (9, 7): inferred type:  BaseType(REAL)
-OUT: staticfunctions_3.p (9, 13): inferred type:  BaseType(EVENT)
-OUT: staticfunctions_3.p (9, 20): inferred type:  BaseType(INT)
-OUT: staticfunctions_3.p (9, 21): inferred type:  BaseType(INT)
-OUT: staticfunctions_3.p (13, 2): inferred type:  NIL
-OUT: staticfunctions_3.p (13, 13): inferred type:  BaseType(EVENT)
-OUT: staticfunctions_3.p (14, 2): inferred type:  NIL
-OUT: staticfunctions_3.p (14, 7): inferred type:  BaseType(REAL)
-OUT: staticfunctions_3.p (14, 13): inferred type:  BaseType(EVENT)
-OUT: staticfunctions_3.p (20, 4): inferred type:  NIL
-OUT: staticfunctions_3.p (20, 10): inferred type:  BaseType(EVENT)
-OUT: staticfunctions_3.p (26, 9): inferred type:  NIL
-OUT: staticfunctions_3.p (29, 14): inferred type:  NIL
-OUT: staticfunctions_3.p (29, 21): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

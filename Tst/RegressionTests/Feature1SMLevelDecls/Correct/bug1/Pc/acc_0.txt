@@ -1,10 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: bug1.p (0, 0): inferred type:  NIL
-OUT: bug1.p (6, 5): inferred type:  NIL
-OUT: bug1.p (7, 15): inferred type:  NIL
-OUT: bug1.p (11, 15): inferred type:  NIL
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

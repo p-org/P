@@ -1,12 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: nulleventhandler2.p (7, 15): inferred type:  NIL
-OUT: nulleventhandler2.p (11, 14): inferred type:  NIL
-OUT: nulleventhandler2.p (15, 11): inferred type:  NIL
-OUT: nulleventhandler2.p (15, 18): inferred type:  BaseType(BOOL)
-OUT: nulleventhandler2.p (15, 23): inferred type:  BaseType(BOOL)
-OUT: nulleventhandler2.p (15, 26): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

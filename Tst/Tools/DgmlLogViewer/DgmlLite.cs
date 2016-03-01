@@ -57,6 +57,7 @@ namespace DgmlLogViewer
             {
                 link = new XElement(dgmlNs + "Link", new XAttribute("Source", sourceNode), new XAttribute("Target", targetNode));
                 links.Add(link);
+                linkMap[linkKey] = link;
             }
 
             if (label != null)
@@ -64,10 +65,11 @@ namespace DgmlLogViewer
                 string existing = (string)link.Attribute("Label");
                 if (!string.IsNullOrEmpty(existing))
                 {
-                    existing += ", ";
+                    HashSet<String> unique = new HashSet<string>(existing.Split(new char[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries));
+                    unique.Add(label);
+                    label = string.Join(", ", unique.ToArray());
                 }
-                existing += label;
-                link.SetAttributeValue("Label", existing);
+                link.SetAttributeValue("Label", label);
             }
             return link;
         }

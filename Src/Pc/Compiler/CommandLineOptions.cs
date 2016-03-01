@@ -17,7 +17,7 @@
         public bool analyzeOnly;
         public LivenessOption liveness;
         public string outputDir;
-        public string outFileName;
+        public string outputFileName;
         public bool outputFormula;
         public bool erase;
         public bool shortFileNames;

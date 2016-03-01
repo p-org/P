@@ -405,6 +405,10 @@
             AST<Model> zingModel = MkZingOutputModel();
 
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
+            if (Options.outputFileName != null)
+            {
+                fileName = Options.outputFileName;
+            }
             string zingFileName = fileName + ".zing";
             string dllFileName = fileName + ".dll";           
             string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
@@ -952,9 +956,15 @@
 
         public bool GenerateC(List<Flag> flags)
         {
+            string fileName = Path.GetFileNameWithoutExtension(RootFileName);
+            if (Options.outputFileName != null)
+            {
+                fileName = Options.outputFileName;
+            }
             //// Apply the P2C transform.
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2CTransform, null, MkReservedModuleLocation(P2CTransform)));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModule, null, RootProgramName.ToString()));
+            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkCnst(fileName));
             var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModule + "_CModel"));
 
             List<Flag> appFlags;

@@ -65,7 +65,7 @@ namespace Microsoft.Pc
                                 Console.WriteLine("Must supply name for output files");
                                 goto error;
                             }
-                            options.outFileName = colonArg;
+                            options.outputFileName = colonArg;
                             break;
 
                         case "/doNotErase":
@@ -129,6 +129,7 @@ namespace Microsoft.Pc
             {
                 Console.WriteLine("USAGE: Pc.exe file.p [options]");
                 Console.WriteLine("/outputDir:path");
+                Console.WriteLine("/outputFileName:name");
                 Console.WriteLine("/doNotErase");
                 Console.WriteLine("/liveness[:mace]");
                 Console.WriteLine("/shortFileNames");

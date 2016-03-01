@@ -71,7 +71,7 @@ namespace Microsoft.Pc
                     var success = ParseLoadString(inputArgs, compilerOptions);
                     if (!success)
                     {
-                        Console.WriteLine("USAGE: load file.p [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>]");
+                        Console.WriteLine("USAGE: load file.p [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>] [/outputFileName:<name>]");
                         continue;
                     }
                     compiler.Options = compilerOptions;
@@ -96,7 +96,7 @@ namespace Microsoft.Pc
                 {
                     if (inputFileName == null)
                     {
-                        Console.WriteLine("USAGE: load file.p [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>]");
+                        Console.WriteLine("USAGE: load file.p [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>] [/outputFileName:<name>]");
                         continue;
                     }
                     var success = ParseTestString(inputArgs, compilerOptions);
@@ -117,7 +117,7 @@ namespace Microsoft.Pc
                 {
                     if (inputFileName == null)
                     {
-                        Console.WriteLine("USAGE: load file.p [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>]");
+                        Console.WriteLine("USAGE: load file.p [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>] [/outputFileName:<name>]");
                         continue;
                     }
                     var success = ParseCompileString(inputArgs, compilerOptions);
@@ -153,6 +153,7 @@ namespace Microsoft.Pc
             bool outputFormula = false;
             bool printTypeInference = false;
             string outputDir = null;
+            string outputFileName = null;
             for (int i = 1; i < args.Length; i++)
             {
                 string arg = args[i];
@@ -174,6 +175,11 @@ namespace Microsoft.Pc
                         return false;
                     }
                 }
+                else if (outputFileName == null && arg.StartsWith("/outputFileName:"))
+                {
+                    var colonIndex = arg.IndexOf(':');
+                    outputFileName = arg.Substring(colonIndex + 1);
+                }
                 else if (fileName == null && arg.Length > 2 && arg.EndsWith(".p"))
                 {
                     fileName = arg;
@@ -190,6 +196,7 @@ namespace Microsoft.Pc
             compilerOptions.outputFormula = outputFormula;
             compilerOptions.printTypeInference = printTypeInference;
             compilerOptions.outputDir = outputDir;
+            compilerOptions.outputFileName = outputFileName;
             return true;
         }
 

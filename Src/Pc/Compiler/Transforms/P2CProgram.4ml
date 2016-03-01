@@ -3,7 +3,7 @@
    modules.C = '"C at ..\Domains\C.4ml"'
 ]
 
-transform P2CProgram (in:: P) returns (out:: C)
+transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 /*
 [
     compiler_ProductivityCheck = "TypeConstant[0], ExprDepNum[1]"
@@ -23,8 +23,9 @@ transform P2CProgram (in:: P) returns (out:: C)
 	HConcatOut(-1, NIL).
 	HConcatOut(m', cmp) :- HConcatOut(m, before), HOutOrder(m', nxt), m' = m + 1, cmp = Section(before, nxt). 		
 		
-	out.File("program.h", body) :- HConcatOut(count({ho | ho is HOut}) - 1, cmp), 
-									body = PpITE(
+	out.File(headerFileName, body) :- HConcatOut(count({ho | ho is HOut}) - 1, cmp), 
+								      headerFileName = strJoin(%outputFileName, ".h"),
+									  body = PpITE(
 									   IFNDEF,
 									   Ident("P_PROGRAM_H"),
 									   Section(
@@ -50,8 +51,10 @@ transform P2CProgram (in:: P) returns (out:: C)
 	CConcatOut(-1, NIL).
 	CConcatOut(m', cmp) :- CConcatOut(m, before), COutOrder(m', nxt), m' = m + 1, cmp = Section(before, nxt). 		
 		
-	out.File("program.c", body) :- CConcatOut(count({co | co is COut}) - 1, cmp), 
-									body = Section(PpInclude("program.h", FALSE), cmp).
+	out.File(codeFileName, body) :- CConcatOut(count({co | co is COut}) - 1, cmp),
+	                               headerFileName = strJoin(%outputFileName, ".h"),
+								   codeFileName = strJoin(%outputFileName, ".c"),
+								   body = Section(PpInclude(headerFileName, FALSE), cmp).
 
     /*************************************************************/
     /**********         Create Stubs File              ***********/

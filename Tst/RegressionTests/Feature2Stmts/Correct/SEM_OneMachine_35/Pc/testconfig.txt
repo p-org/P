@@ -1,5 +1,4 @@
 arg: ..\bubble_sort.p
-arg: /printTypeInference
 arg: /shortFileNames
 arg: /doNotErase
 arg: /outputDir:..\.

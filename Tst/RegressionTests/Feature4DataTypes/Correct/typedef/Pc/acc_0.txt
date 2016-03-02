@@ -1,47 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: typedef.p (12, 4): inferred type:  NIL
-OUT: typedef.p (12, 13): inferred type:  BaseType(INT)
-OUT: typedef.p (12, 21): inferred type:  BaseType(INT)
-OUT: typedef.p (13, 4): inferred type:  NIL
-OUT: typedef.p (13, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
-OUT: typedef.p (13, 20): inferred type:  BaseType(INT)
-OUT: typedef.p (13, 24): inferred type:  BaseType(INT)
-OUT: typedef.p (14, 4): inferred type:  NIL
-OUT: typedef.p (14, 20): inferred type:  BaseType(BOOL)
-OUT: typedef.p (14, 24): inferred type:  BaseType(BOOL)
-OUT: typedef.p (16, 4): inferred type:  NIL
-OUT: typedef.p (16, 13): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL))
-OUT: typedef.p (16, 21): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL))
-OUT: typedef.p (17, 4): inferred type:  NIL
-OUT: typedef.p (17, 13): inferred type:  SeqType(NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL)))
-OUT: typedef.p (17, 24): inferred type:  BaseType(INT)
-OUT: typedef.p (17, 24): inferred type:  TupType(BaseType(INT), TupType(NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL)), NIL))
-OUT: typedef.p (17, 27): inferred type:  TupType(NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL)), NIL)
-OUT: typedef.p (19, 4): inferred type:  NIL
-OUT: typedef.p (19, 9): inferred type:  BaseType(REAL)
-OUT: typedef.p (19, 15): inferred type:  BaseType(EVENT)
-OUT: typedef.p (19, 21): inferred type:  NmdTupType(NmdTupTypeField("first", NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL))), NmdTupType(NmdTupTypeField("second", SeqType(NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL)))), NIL))
-OUT: typedef.p (22, 4): inferred type:  NIL
-OUT: typedef.p (22, 11): inferred type:  NmdTupType(NmdTupTypeField("first", NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL))), NmdTupType(NmdTupTypeField("second", SeqType(NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL)))), NIL))
-OUT: typedef.p (22, 19): inferred type:  NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL))
-OUT: typedef.p (22, 25): inferred type:  BaseType(INT)
-OUT: typedef.p (22, 31): inferred type:  BaseType(BOOL)
-OUT: typedef.p (22, 34): inferred type:  BaseType(INT)
-OUT: typedef.p (23, 4): inferred type:  NIL
-OUT: typedef.p (23, 25): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
-OUT: typedef.p (23, 32): inferred type:  BaseType(INT)
-OUT: typedef.p (23, 34): inferred type:  BaseType(BOOL)
-OUT: typedef.p (23, 37): inferred type:  BaseType(INT)
-OUT: typedef.p (24, 4): inferred type:  NIL
-OUT: typedef.p (24, 32): inferred type:  BaseType(BOOL)
-OUT: typedef.p (24, 34): inferred type:  BaseType(BOOL)
-OUT: typedef.p (24, 37): inferred type:  BaseType(BOOL)
-OUT: typedef.p (25, 4): inferred type:  NIL
-OUT: typedef.p (25, 11): inferred type:  BaseType(INT)
-OUT: typedef.p (25, 26): inferred type:  SeqType(NmdTupType(NmdTupTypeField("first", BaseType(INT)), NmdTupType(NmdTupTypeField("second", TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))), NIL)))
-OUT: typedef.p (25, 34): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

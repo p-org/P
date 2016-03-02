@@ -1,5 +1,4 @@
 arg: ..\nonDetFunctionInExpr_15.p
-arg: /printTypeInference
 arg: /shortFileNames
 arg: /doNotErase
 arg: /outputDir:..\.

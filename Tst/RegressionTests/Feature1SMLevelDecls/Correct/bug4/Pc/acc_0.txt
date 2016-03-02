@@ -1,44 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: bug4.p (0, 0): inferred type:  NIL
-OUT: bug4.p (13, 5): inferred type:  BaseType(REAL)
-OUT: bug4.p (13, 5): inferred type:  NIL
-OUT: bug4.p (14, 5): inferred type:  NIL
-OUT: bug4.p (14, 12): inferred type:  BaseType(REAL)
-OUT: bug4.p (15, 5): inferred type:  NIL
-OUT: bug4.p (15, 15): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(BOOL), TupType(BaseType(INT), NIL))), NIL))
-OUT: bug4.p (15, 27): inferred type:  TupType(BaseType(REAL), TupType(BaseType(BOOL), TupType(BaseType(INT), NIL)))
-OUT: bug4.p (15, 27): inferred type:  TupType(TupType(BaseType(REAL), TupType(BaseType(BOOL), TupType(BaseType(INT), NIL))), NIL)
-OUT: bug4.p (15, 33): inferred type:  BaseType(BOOL)
-OUT: bug4.p (15, 33): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(INT), NIL))
-OUT: bug4.p (15, 40): inferred type:  BaseType(INT)
-OUT: bug4.p (15, 40): inferred type:  TupType(BaseType(INT), NIL)
-OUT: bug4.p (16, 5): inferred type:  NIL
-OUT: bug4.p (19, 5): inferred type:  NIL
-OUT: bug4.p (20, 5): inferred type:  NIL
-OUT: bug4.p (20, 15): inferred type:  TupType(BaseType(REAL), TupType(TupType(BaseType(REAL), TupType(BaseType(BOOL), TupType(BaseType(INT), NIL))), NIL))
-OUT: bug4.p (20, 27): inferred type:  TupType(BaseType(REAL), TupType(BaseType(BOOL), TupType(BaseType(INT), NIL)))
-OUT: bug4.p (20, 27): inferred type:  TupType(TupType(BaseType(REAL), TupType(BaseType(BOOL), TupType(BaseType(INT), NIL))), NIL)
-OUT: bug4.p (20, 33): inferred type:  TupType(BaseType(BOOL), TupType(BaseType(INT), NIL))
-OUT: bug4.p (20, 40): inferred type:  BaseType(INT)
-OUT: bug4.p (20, 40): inferred type:  TupType(BaseType(INT), NIL)
-OUT: bug4.p (22, 39): inferred type:  MapType(BaseType(INT), BaseType(INT))
-OUT: bug4.p (22, 39): inferred type:  NIL
-OUT: bug4.p (22, 43): inferred type:  BaseType(INT)
-OUT: bug4.p (22, 52): inferred type:  BaseType(INT)
-OUT: bug4.p (22, 58): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: bug4.p (22, 66): inferred type:  BaseType(INT)
-OUT: bug4.p (27, 36): inferred type:  NIL
-OUT: bug4.p (27, 43): inferred type:  BaseType(NULL)
-OUT: bug4.p (30, 4): inferred type:  NIL
-OUT: bug4.p (30, 11): inferred type:  BaseType(NULL)
-OUT: bug4.p (42, 5): inferred type:  NIL
-OUT: bug4.p (42, 10): inferred type:  BaseType(REAL)
-OUT: bug4.p (42, 19): inferred type:  BaseType(EVENT)
-OUT: bug4.p (42, 23): inferred type:  BaseType(INT)
-OUT: bug4.p (42, 23): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: bug4.p (42, 26): inferred type:  TupType(BaseType(INT), NIL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

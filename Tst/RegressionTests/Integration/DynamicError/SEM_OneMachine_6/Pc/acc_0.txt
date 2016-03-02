@@ -1,19 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: sendinexithandledevent.p (14, 4): inferred type:  NIL
-OUT: sendinexithandledevent.p (14, 9): inferred type:  BaseType(REAL)
-OUT: sendinexithandledevent.p (14, 15): inferred type:  BaseType(EVENT)
-OUT: sendinexithandledevent.p (18, 17): inferred type:  NIL
-OUT: sendinexithandledevent.p (18, 22): inferred type:  BaseType(REAL)
-OUT: sendinexithandledevent.p (18, 28): inferred type:  BaseType(EVENT)
-OUT: sendinexithandledevent.p (22, 4): inferred type:  BaseType(BOOL)
-OUT: sendinexithandledevent.p (22, 4): inferred type:  NIL
-OUT: sendinexithandledevent.p (22, 11): inferred type:  BaseType(BOOL)
-OUT: sendinexithandledevent.p (27, 3): inferred type:  NIL
-OUT: sendinexithandledevent.p (27, 10): inferred type:  BaseType(BOOL)
-OUT: sendinexithandledevent.p (27, 15): inferred type:  BaseType(BOOL)
-OUT: sendinexithandledevent.p (27, 18): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

@@ -1,5 +1,4 @@
 arg: ..\Multi_Paxos_4.p
-arg: /printTypeInference
 arg: /shortFileNames
 arg: /doNotErase
 arg: /outputDir:..\.

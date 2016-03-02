@@ -1,5 +1,4 @@
 arg: ..\ControlImpureInEntry.p
-arg: /printTypeInference
 arg: /shortFileNames
 arg: /doNotErase
 arg: /outputDir:..\.

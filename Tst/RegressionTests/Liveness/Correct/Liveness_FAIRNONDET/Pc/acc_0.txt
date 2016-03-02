@@ -1,22 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: liveness_fairnondet.p (15, 5): inferred type:  NIL
-OUT: liveness_fairnondet.p (15, 13): inferred type:  BaseType(EVENT)
-OUT: liveness_fairnondet.p (16, 5): inferred type:  NIL
-OUT: liveness_fairnondet.p (16, 10): inferred type:  BaseType(REAL)
-OUT: liveness_fairnondet.p (16, 16): inferred type:  BaseType(EVENT)
-OUT: liveness_fairnondet.p (24, 5): inferred type:  NIL
-OUT: liveness_fairnondet.p (24, 13): inferred type:  BaseType(EVENT)
-OUT: liveness_fairnondet.p (25, 5): inferred type:  NIL
-OUT: liveness_fairnondet.p (25, 9): inferred type:  BaseType(BOOL)
-OUT: liveness_fairnondet.p (26, 6): inferred type:  NIL
-OUT: liveness_fairnondet.p (26, 17): inferred type:  BaseType(EVENT)
-OUT: liveness_fairnondet.p (29, 6): inferred type:  NIL
-OUT: liveness_fairnondet.p (29, 11): inferred type:  BaseType(REAL)
-OUT: liveness_fairnondet.p (29, 17): inferred type:  BaseType(EVENT)
-OUT: liveness_fairnondet.p (34, 4): inferred type:  NIL
-OUT: liveness_fairnondet.p (48, 14): inferred type:  NIL
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

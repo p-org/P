@@ -1,10 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: newmonitor_v.p (10, 4): inferred type:  NIL
-OUT: newmonitor_v.p (10, 12): inferred type:  BaseType(EVENT)
-OUT: newmonitor_v.p (10, 17): inferred type:  BaseType(BOOL)
-OUT: newmonitor_v.p (15, 2): inferred type:  NIL
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

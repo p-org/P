@@ -1,19 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: raisedhalthandled.p (9, 7): inferred type:  NIL
-OUT: raisedhalthandled.p (9, 12): inferred type:  BaseType(REAL)
-OUT: raisedhalthandled.p (9, 18): inferred type:  BaseType(EVENT)
-OUT: raisedhalthandled.p (10, 4): inferred type:  NIL
-OUT: raisedhalthandled.p (10, 10): inferred type:  BaseType(EVENT)
-OUT: raisedhalthandled.p (14, 14): inferred type:  NIL
-OUT: raisedhalthandled.p (18, 4): inferred type:  BaseType(BOOL)
-OUT: raisedhalthandled.p (18, 4): inferred type:  NIL
-OUT: raisedhalthandled.p (18, 11): inferred type:  BaseType(BOOL)
-OUT: raisedhalthandled.p (22, 3): inferred type:  NIL
-OUT: raisedhalthandled.p (22, 10): inferred type:  BaseType(BOOL)
-OUT: raisedhalthandled.p (22, 15): inferred type:  BaseType(BOOL)
-OUT: raisedhalthandled.p (22, 18): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

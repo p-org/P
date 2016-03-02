@@ -1,5 +1,4 @@
 arg: ..\Liveness_2_bugFound.p
-arg: /printTypeInference
 arg: /shortFileNames
 arg: /doNotErase
 arg: /outputDir:..\.

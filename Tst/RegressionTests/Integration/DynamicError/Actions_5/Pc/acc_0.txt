@@ -1,29 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: actions_5.p (15, 4): inferred type:  BaseType(REAL)
-OUT: actions_5.p (15, 4): inferred type:  NIL
-OUT: actions_5.p (15, 20): inferred type:  BaseType(REAL)
-OUT: actions_5.p (15, 30): inferred type:  BaseType(REAL)
-OUT: actions_5.p (16, 13): inferred type:  NIL
-OUT: actions_5.p (16, 19): inferred type:  BaseType(EVENT)
-OUT: actions_5.p (28, 13): inferred type:  NIL
-OUT: actions_5.p (28, 18): inferred type:  BaseType(REAL)
-OUT: actions_5.p (28, 33): inferred type:  BaseType(EVENT)
-OUT: actions_5.p (42, 6): inferred type:  NIL
-OUT: actions_5.p (42, 13): inferred type:  BaseType(BOOL)
-OUT: actions_5.p (47, 9): inferred type:  NIL
-OUT: actions_5.p (47, 14): inferred type:  BaseType(REAL)
-OUT: actions_5.p (47, 29): inferred type:  BaseType(EVENT)
-OUT: actions_5.p (56, 8): inferred type:  BaseType(REAL)
-OUT: actions_5.p (56, 8): inferred type:  NIL
-OUT: actions_5.p (56, 23): inferred type:  BaseType(REAL)
-OUT: actions_5.p (63, 4): inferred type:  NIL
-OUT: actions_5.p (63, 9): inferred type:  BaseType(REAL)
-OUT: actions_5.p (63, 23): inferred type:  BaseType(EVENT)
-OUT: actions_5.p (70, 6): inferred type:  NIL
-OUT: actions_5.p (70, 11): inferred type:  BaseType(REAL)
-OUT: actions_5.p (70, 25): inferred type:  BaseType(EVENT)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

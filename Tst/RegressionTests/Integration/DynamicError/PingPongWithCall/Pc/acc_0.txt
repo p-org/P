@@ -1,25 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: pingpongwithcall.p (14, 8): inferred type:  BaseType(REAL)
-OUT: pingpongwithcall.p (14, 8): inferred type:  NIL
-OUT: pingpongwithcall.p (14, 17): inferred type:  BaseType(REAL)
-OUT: pingpongwithcall.p (15, 6): inferred type:  NIL
-OUT: pingpongwithcall.p (15, 12): inferred type:  BaseType(EVENT)
-OUT: pingpongwithcall.p (22, 6): inferred type:  NIL
-OUT: pingpongwithcall.p (22, 11): inferred type:  BaseType(REAL)
-OUT: pingpongwithcall.p (22, 19): inferred type:  BaseType(EVENT)
-OUT: pingpongwithcall.p (22, 25): inferred type:  BaseType(REAL)
-OUT: pingpongwithcall.p (23, 6): inferred type:  NIL
-OUT: pingpongwithcall.p (23, 12): inferred type:  BaseType(EVENT)
-OUT: pingpongwithcall.p (29, 9): inferred type:  NIL
-OUT: pingpongwithcall.p (36, 15): inferred type:  NIL
-OUT: pingpongwithcall.p (42, 7): inferred type:  NIL
-OUT: pingpongwithcall.p (42, 12): inferred type:  BaseType(REAL)
-OUT: pingpongwithcall.p (42, 21): inferred type:  BaseType(EVENT)
-OUT: pingpongwithcall.p (43, 7): inferred type:  NIL
-OUT: pingpongwithcall.p (43, 13): inferred type:  BaseType(EVENT)
-OUT: pingpongwithcall.p (45, 9): inferred type:  NIL
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

@@ -1,14 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: bugreproidenticalterms_workaround.p (8, 11): inferred type:  NIL
-OUT: bugreproidenticalterms_workaround.p (8, 17): inferred type:  BaseType(EVENT)
-OUT: bugreproidenticalterms_workaround.p (9, 10): inferred type:  NIL
-OUT: bugreproidenticalterms_workaround.p (9, 18): inferred type:  BaseType(BOOL)
-OUT: bugreproidenticalterms_workaround.p (16, 12): inferred type:  NIL
-OUT: bugreproidenticalterms_workaround.p (18, 11): inferred type:  NIL
-OUT: bugreproidenticalterms_workaround.p (18, 19): inferred type:  BaseType(BOOL)
-OUT: bugreproidenticalterms_workaround.p (18, 27): inferred type:  NIL
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

@@ -1,27 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: newinexit.p (13, 13): inferred type:  NIL
-OUT: newinexit.p (13, 19): inferred type:  BaseType(EVENT)
-OUT: newinexit.p (17, 4): inferred type:  BaseType(BOOL)
-OUT: newinexit.p (17, 4): inferred type:  NIL
-OUT: newinexit.p (17, 11): inferred type:  BaseType(BOOL)
-OUT: newinexit.p (18, 4): inferred type:  BaseType(REAL)
-OUT: newinexit.p (18, 4): inferred type:  NIL
-OUT: newinexit.p (18, 20): inferred type:  BaseType(REAL)
-OUT: newinexit.p (18, 30): inferred type:  BaseType(REAL)
-OUT: newinexit.p (25, 4): inferred type:  NIL
-OUT: newinexit.p (25, 11): inferred type:  BaseType(BOOL)
-OUT: newinexit.p (25, 16): inferred type:  BaseType(BOOL)
-OUT: newinexit.p (25, 19): inferred type:  BaseType(BOOL)
-OUT: newinexit.p (26, 4): inferred type:  NIL
-OUT: newinexit.p (26, 9): inferred type:  BaseType(REAL)
-OUT: newinexit.p (26, 24): inferred type:  BaseType(EVENT)
-OUT: newinexit.p (36, 8): inferred type:  BaseType(REAL)
-OUT: newinexit.p (36, 8): inferred type:  NIL
-OUT: newinexit.p (36, 23): inferred type:  BaseType(REAL)
-OUT: newinexit.p (38, 19): inferred type:  NIL
-OUT: newinexit.p (38, 26): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

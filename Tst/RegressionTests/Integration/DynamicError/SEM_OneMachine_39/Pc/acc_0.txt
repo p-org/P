@@ -1,24 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: topnullhandleroverridesinherited.p (12, 4): inferred type:  NIL
-OUT: topnullhandleroverridesinherited.p (12, 10): inferred type:  BaseType(EVENT)
-OUT: topnullhandleroverridesinherited.p (14, 15): inferred type:  NIL
-OUT: topnullhandleroverridesinherited.p (14, 20): inferred type:  BaseType(REAL)
-OUT: topnullhandleroverridesinherited.p (14, 26): inferred type:  BaseType(EVENT)
-OUT: topnullhandleroverridesinherited.p (14, 30): inferred type:  NIL
-OUT: topnullhandleroverridesinherited.p (14, 36): inferred type:  BaseType(EVENT)
-OUT: topnullhandleroverridesinherited.p (17, 16): inferred type:  NIL
-OUT: topnullhandleroverridesinherited.p (17, 21): inferred type:  BaseType(REAL)
-OUT: topnullhandleroverridesinherited.p (17, 27): inferred type:  BaseType(EVENT)
-OUT: topnullhandleroverridesinherited.p (20, 9): inferred type:  NIL
-OUT: topnullhandleroverridesinherited.p (27, 3): inferred type:  BaseType(BOOL)
-OUT: topnullhandleroverridesinherited.p (27, 3): inferred type:  NIL
-OUT: topnullhandleroverridesinherited.p (27, 10): inferred type:  BaseType(BOOL)
-OUT: topnullhandleroverridesinherited.p (30, 3): inferred type:  NIL
-OUT: topnullhandleroverridesinherited.p (30, 10): inferred type:  BaseType(BOOL)
-OUT: topnullhandleroverridesinherited.p (30, 15): inferred type:  BaseType(BOOL)
-OUT: topnullhandleroverridesinherited.p (30, 18): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

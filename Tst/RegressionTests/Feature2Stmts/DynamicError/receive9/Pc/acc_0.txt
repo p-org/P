@@ -1,30 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: receive9.p (0, 0): inferred type:  NIL
-OUT: receive9.p (12, 4): inferred type:  NIL
-OUT: receive9.p (12, 10): inferred type:  BaseType(EVENT)
-OUT: receive9.p (19, 4): inferred type:  NIL
-OUT: receive9.p (19, 9): inferred type:  BaseType(REAL)
-OUT: receive9.p (19, 15): inferred type:  BaseType(EVENT)
-OUT: receive9.p (19, 18): inferred type:  BaseType(INT)
-OUT: receive9.p (22, 6): inferred type:  NIL
-OUT: receive9.p (22, 13): inferred type:  BaseType(INT)
-OUT: receive9.p (22, 22): inferred type:  BaseType(BOOL)
-OUT: receive9.p (22, 25): inferred type:  BaseType(INT)
-OUT: receive9.p (23, 6): inferred type:  NIL
-OUT: receive9.p (23, 11): inferred type:  BaseType(REAL)
-OUT: receive9.p (23, 17): inferred type:  BaseType(EVENT)
-OUT: receive9.p (23, 20): inferred type:  SeqType(BaseType(INT))
-OUT: receive9.p (25, 39): inferred type:  NIL
-OUT: receive9.p (25, 46): inferred type:  BaseType(INT)
-OUT: receive9.p (25, 53): inferred type:  SeqType(BaseType(INT))
-OUT: receive9.p (25, 63): inferred type:  BaseType(BOOL)
-OUT: receive9.p (25, 66): inferred type:  BaseType(INT)
-OUT: receive9.p (25, 70): inferred type:  NIL
-OUT: receive9.p (25, 76): inferred type:  BaseType(EVENT)
-OUT: receive9.p (31, 22): inferred type:  NIL
-OUT: receive9.p (31, 30): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

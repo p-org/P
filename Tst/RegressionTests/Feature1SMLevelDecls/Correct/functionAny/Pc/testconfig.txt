@@ -1,5 +1,4 @@
 arg: ..\functionAny.p
-arg: /printTypeInference
 arg: /shortFileNames
 arg: /doNotErase
 arg: /outputDir:..\.

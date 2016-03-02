@@ -1,5 +1,4 @@
 arg: ..\AlonBug_fails.p
-arg: /printTypeInference
 arg: /shortFileNames
 arg: /doNotErase
 arg: /outputDir:..\.

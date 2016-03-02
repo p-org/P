@@ -1,19 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: sendraiseinentry.p (9, 13): inferred type:  NIL
-OUT: sendraiseinentry.p (9, 18): inferred type:  BaseType(REAL)
-OUT: sendraiseinentry.p (9, 24): inferred type:  BaseType(EVENT)
-OUT: sendraiseinentry.p (10, 4): inferred type:  NIL
-OUT: sendraiseinentry.p (10, 10): inferred type:  BaseType(EVENT)
-OUT: sendraiseinentry.p (15, 14): inferred type:  NIL
-OUT: sendraiseinentry.p (18, 3): inferred type:  BaseType(BOOL)
-OUT: sendraiseinentry.p (18, 3): inferred type:  NIL
-OUT: sendraiseinentry.p (18, 10): inferred type:  BaseType(BOOL)
-OUT: sendraiseinentry.p (21, 3): inferred type:  NIL
-OUT: sendraiseinentry.p (21, 10): inferred type:  BaseType(BOOL)
-OUT: sendraiseinentry.p (21, 15): inferred type:  BaseType(BOOL)
-OUT: sendraiseinentry.p (21, 18): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

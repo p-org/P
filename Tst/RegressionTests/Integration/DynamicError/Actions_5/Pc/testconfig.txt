@@ -1,5 +1,4 @@
 arg: ..\Actions_5.p
-arg: /printTypeInference
 arg: /shortFileNames
 arg: /doNotErase
 arg: /outputDir:..\.

@@ -1,22 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: eventdeferredhandledsamestate.p (11, 4): inferred type:  NIL
-OUT: eventdeferredhandledsamestate.p (11, 9): inferred type:  BaseType(REAL)
-OUT: eventdeferredhandledsamestate.p (11, 15): inferred type:  BaseType(EVENT)
-OUT: eventdeferredhandledsamestate.p (16, 17): inferred type:  NIL
-OUT: eventdeferredhandledsamestate.p (16, 22): inferred type:  BaseType(REAL)
-OUT: eventdeferredhandledsamestate.p (16, 28): inferred type:  BaseType(EVENT)
-OUT: eventdeferredhandledsamestate.p (20, 4): inferred type:  BaseType(BOOL)
-OUT: eventdeferredhandledsamestate.p (20, 4): inferred type:  NIL
-OUT: eventdeferredhandledsamestate.p (20, 11): inferred type:  BaseType(BOOL)
-OUT: eventdeferredhandledsamestate.p (24, 14): inferred type:  NIL
-OUT: eventdeferredhandledsamestate.p (24, 21): inferred type:  BaseType(BOOL)
-OUT: eventdeferredhandledsamestate.p (24, 29): inferred type:  NIL
-OUT: eventdeferredhandledsamestate.p (27, 3): inferred type:  NIL
-OUT: eventdeferredhandledsamestate.p (27, 10): inferred type:  BaseType(BOOL)
-OUT: eventdeferredhandledsamestate.p (27, 15): inferred type:  BaseType(BOOL)
-OUT: eventdeferredhandledsamestate.p (27, 18): inferred type:  BaseType(BOOL)
 OUT: eventdeferredhandledsamestate.p (23, 3): Multiple actions over the same event
 OUT: eventdeferredhandledsamestate.p (24, 3): Multiple actions over the same event
 OUT: Compilation failed

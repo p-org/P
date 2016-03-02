@@ -1,23 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: gototransinheritance.p (13, 4): inferred type:  NIL
-OUT: gototransinheritance.p (13, 9): inferred type:  BaseType(REAL)
-OUT: gototransinheritance.p (13, 15): inferred type:  BaseType(EVENT)
-OUT: gototransinheritance.p (18, 14): inferred type:  NIL
-OUT: gototransinheritance.p (24, 4): inferred type:  BaseType(BOOL)
-OUT: gototransinheritance.p (24, 4): inferred type:  NIL
-OUT: gototransinheritance.p (24, 12): inferred type:  BaseType(BOOL)
-OUT: gototransinheritance.p (25, 4): inferred type:  NIL
-OUT: gototransinheritance.p (25, 9): inferred type:  BaseType(REAL)
-OUT: gototransinheritance.p (25, 15): inferred type:  BaseType(EVENT)
-OUT: gototransinheritance.p (29, 4): inferred type:  NIL
-OUT: gototransinheritance.p (29, 9): inferred type:  BaseType(REAL)
-OUT: gototransinheritance.p (29, 15): inferred type:  BaseType(EVENT)
-OUT: gototransinheritance.p (34, 4): inferred type:  NIL
-OUT: gototransinheritance.p (34, 11): inferred type:  BaseType(BOOL)
-OUT: gototransinheritance.p (34, 16): inferred type:  BaseType(BOOL)
-OUT: gototransinheritance.p (34, 19): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

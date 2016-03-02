@@ -1,69 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: payloads.p (13, 10): inferred type:  NIL
-OUT: payloads.p (13, 15): inferred type:  BaseType(REAL)
-OUT: payloads.p (13, 21): inferred type:  BaseType(EVENT)
-OUT: payloads.p (14, 10): inferred type:  NIL
-OUT: payloads.p (14, 24): inferred type:  BaseType(NULL)
-OUT: payloads.p (15, 10): inferred type:  ERROR
-OUT: payloads.p (15, 10): inferred type:  NIL
-OUT: payloads.p (15, 24): inferred type:  BaseType(INT)
-OUT: payloads.p (16, 10): inferred type:  ERROR
-OUT: payloads.p (16, 10): inferred type:  NIL
-OUT: payloads.p (17, 10): inferred type:  ERROR
-OUT: payloads.p (17, 10): inferred type:  NIL
-OUT: payloads.p (19, 10): inferred type:  NIL
-OUT: payloads.p (19, 21): inferred type:  BaseType(EVENT)
-OUT: payloads.p (20, 10): inferred type:  NIL
-OUT: payloads.p (21, 10): inferred type:  NIL
-OUT: payloads.p (22, 10): inferred type:  NIL
-OUT: payloads.p (23, 10): inferred type:  NIL
-OUT: payloads.p (25, 10): inferred type:  ERROR
-OUT: payloads.p (25, 10): inferred type:  NIL
-OUT: payloads.p (25, 21): inferred type:  BaseType(EVENT)
-OUT: payloads.p (26, 10): inferred type:  ERROR
-OUT: payloads.p (26, 10): inferred type:  NIL
-OUT: payloads.p (27, 10): inferred type:  NIL
-OUT: payloads.p (28, 10): inferred type:  ERROR
-OUT: payloads.p (28, 10): inferred type:  NIL
-OUT: payloads.p (29, 10): inferred type:  ERROR
-OUT: payloads.p (29, 10): inferred type:  NIL
-OUT: payloads.p (31, 10): inferred type:  NIL
-OUT: payloads.p (32, 10): inferred type:  NIL
-OUT: payloads.p (33, 10): inferred type:  NIL
-OUT: payloads.p (34, 10): inferred type:  NIL
-OUT: payloads.p (35, 10): inferred type:  NIL
-OUT: payloads.p (37, 10): inferred type:  ERROR
-OUT: payloads.p (37, 10): inferred type:  NIL
-OUT: payloads.p (37, 15): inferred type:  BaseType(EVENT)
-OUT: payloads.p (38, 10): inferred type:  ERROR
-OUT: payloads.p (38, 10): inferred type:  NIL
-OUT: payloads.p (39, 10): inferred type:  ERROR
-OUT: payloads.p (39, 10): inferred type:  NIL
-OUT: payloads.p (40, 10): inferred type:  ERROR
-OUT: payloads.p (40, 10): inferred type:  NIL
-OUT: payloads.p (41, 10): inferred type:  ERROR
-OUT: payloads.p (41, 10): inferred type:  NIL
-OUT: payloads.p (43, 10): inferred type:  ERROR
-OUT: payloads.p (43, 10): inferred type:  NIL
-OUT: payloads.p (43, 21): inferred type:  BaseType(INT)
-OUT: payloads.p (43, 22): inferred type:  BaseType(INT)
-OUT: payloads.p (44, 10): inferred type:  ERROR
-OUT: payloads.p (44, 10): inferred type:  NIL
-OUT: payloads.p (45, 10): inferred type:  ERROR
-OUT: payloads.p (45, 10): inferred type:  NIL
-OUT: payloads.p (46, 10): inferred type:  ERROR
-OUT: payloads.p (46, 10): inferred type:  NIL
-OUT: payloads.p (47, 10): inferred type:  ERROR
-OUT: payloads.p (47, 10): inferred type:  NIL
-OUT: payloads.p (49, 10): inferred type:  NIL
-OUT: payloads.p (50, 10): inferred type:  NIL
-OUT: payloads.p (51, 10): inferred type:  ERROR
-OUT: payloads.p (51, 10): inferred type:  NIL
-OUT: payloads.p (52, 10): inferred type:  ERROR
-OUT: payloads.p (52, 10): inferred type:  NIL
-OUT: payloads.p (53, 10): inferred type:  ERROR
 OUT: payloads.p (15, 10): invalid payload type in send
 OUT: payloads.p (16, 10): invalid payload type in send
 OUT: payloads.p (17, 10): invalid payload type in send

@@ -1,63 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: enclosedfuncalls.p (15, 4): inferred type:  NIL
-OUT: enclosedfuncalls.p (15, 10): inferred type:  BaseType(EVENT)
-OUT: enclosedfuncalls.p (17, 16): inferred type:  NIL
-OUT: enclosedfuncalls.p (17, 21): inferred type:  BaseType(REAL)
-OUT: enclosedfuncalls.p (17, 27): inferred type:  BaseType(EVENT)
-OUT: enclosedfuncalls.p (18, 16): inferred type:  NIL
-OUT: enclosedfuncalls.p (18, 27): inferred type:  BaseType(EVENT)
-OUT: enclosedfuncalls.p (19, 16): inferred type:  NIL
-OUT: enclosedfuncalls.p (19, 27): inferred type:  BaseType(EVENT)
-OUT: enclosedfuncalls.p (20, 7): inferred type:  NIL
-OUT: enclosedfuncalls.p (20, 18): inferred type:  BaseType(EVENT)
-OUT: enclosedfuncalls.p (22, 7): inferred type:  NIL
-OUT: enclosedfuncalls.p (23, 7): inferred type:  NIL
-OUT: enclosedfuncalls.p (23, 13): inferred type:  BaseType(EVENT)
-OUT: enclosedfuncalls.p (26, 30): inferred type:  NIL
-OUT: enclosedfuncalls.p (27, 30): inferred type:  NIL
-OUT: enclosedfuncalls.p (30, 4): inferred type:  NIL
-OUT: enclosedfuncalls.p (31, 4): inferred type:  NIL
-OUT: enclosedfuncalls.p (35, 9): inferred type:  NIL
-OUT: enclosedfuncalls.p (37, 14): inferred type:  NIL
-OUT: enclosedfuncalls.p (40, 14): inferred type:  NIL
-OUT: enclosedfuncalls.p (41, 17): inferred type:  NIL
-OUT: enclosedfuncalls.p (42, 14): inferred type:  NIL
-OUT: enclosedfuncalls.p (45, 9): inferred type:  NIL
-OUT: enclosedfuncalls.p (47, 14): inferred type:  NIL
-OUT: enclosedfuncalls.p (48, 17): inferred type:  NIL
-OUT: enclosedfuncalls.p (49, 14): inferred type:  NIL
-OUT: enclosedfuncalls.p (53, 3): inferred type:  BaseType(INT)
-OUT: enclosedfuncalls.p (53, 3): inferred type:  NIL
-OUT: enclosedfuncalls.p (53, 9): inferred type:  BaseType(INT)
-OUT: enclosedfuncalls.p (53, 11): inferred type:  BaseType(INT)
-OUT: enclosedfuncalls.p (55, 16): inferred type:  NIL
-OUT: enclosedfuncalls.p (59, 3): inferred type:  NIL
-OUT: enclosedfuncalls.p (59, 9): inferred type:  BaseType(EVENT)
-OUT: enclosedfuncalls.p (62, 3): inferred type:  NIL
-OUT: enclosedfuncalls.p (63, 3): inferred type:  NIL
-OUT: enclosedfuncalls.p (63, 10): inferred type:  BaseType(INT)
-OUT: enclosedfuncalls.p (67, 3): inferred type:  NIL
-OUT: enclosedfuncalls.p (67, 10): inferred type:  BaseType(INT)
-OUT: enclosedfuncalls.p (70, 3): inferred type:  NIL
-OUT: enclosedfuncalls.p (70, 9): inferred type:  BaseType(EVENT)
-OUT: enclosedfuncalls.p (71, 3): inferred type:  NIL
-OUT: enclosedfuncalls.p (71, 10): inferred type:  BaseType(INT)
-OUT: enclosedfuncalls.p (75, 3): inferred type:  NIL
-OUT: enclosedfuncalls.p (75, 10): inferred type:  BaseType(INT)
-OUT: enclosedfuncalls.p (78, 3): inferred type:  NIL
-OUT: enclosedfuncalls.p (78, 9): inferred type:  BaseType(BOOL)
-OUT: enclosedfuncalls.p (79, 4): inferred type:  BaseType(INT)
-OUT: enclosedfuncalls.p (79, 4): inferred type:  NIL
-OUT: enclosedfuncalls.p (81, 3): inferred type:  NIL
-OUT: enclosedfuncalls.p (81, 10): inferred type:  BaseType(INT)
-OUT: enclosedfuncalls.p (84, 3): inferred type:  NIL
-OUT: enclosedfuncalls.p (84, 9): inferred type:  BaseType(BOOL)
-OUT: enclosedfuncalls.p (85, 4): inferred type:  BaseType(INT)
-OUT: enclosedfuncalls.p (85, 4): inferred type:  NIL
-OUT: enclosedfuncalls.p (87, 3): inferred type:  NIL
-OUT: enclosedfuncalls.p (87, 10): inferred type:  BaseType(INT)
 OUT: enclosedfuncalls.p (27, 30): function may cause a change in current state; this is not allowed here
 OUT: Compilation failed
 EXIT: -1

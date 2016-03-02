@@ -1,21 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: implicitpopexit.p (13, 4): inferred type:  NIL
-OUT: implicitpopexit.p (13, 9): inferred type:  BaseType(REAL)
-OUT: implicitpopexit.p (13, 15): inferred type:  BaseType(EVENT)
-OUT: implicitpopexit.p (19, 17): inferred type:  NIL
-OUT: implicitpopexit.p (19, 22): inferred type:  BaseType(REAL)
-OUT: implicitpopexit.p (19, 28): inferred type:  BaseType(EVENT)
-OUT: implicitpopexit.p (23, 4): inferred type:  BaseType(BOOL)
-OUT: implicitpopexit.p (23, 4): inferred type:  NIL
-OUT: implicitpopexit.p (23, 12): inferred type:  BaseType(BOOL)
-OUT: implicitpopexit.p (24, 4): inferred type:  NIL
-OUT: implicitpopexit.p (24, 9): inferred type:  BaseType(REAL)
-OUT: implicitpopexit.p (24, 15): inferred type:  BaseType(EVENT)
-OUT: implicitpopexit.p (26, 11): inferred type:  NIL
-OUT: implicitpopexit.p (26, 18): inferred type:  BaseType(BOOL)
-OUT: implicitpopexit.p (28, 16): inferred type:  NIL
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

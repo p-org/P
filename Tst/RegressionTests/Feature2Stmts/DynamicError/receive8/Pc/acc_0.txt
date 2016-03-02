@@ -1,32 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: receive8.p (0, 0): inferred type:  NIL
-OUT: receive8.p (12, 7): inferred type:  BaseType(REAL)
-OUT: receive8.p (12, 7): inferred type:  NIL
-OUT: receive8.p (12, 11): inferred type:  BaseType(REAL)
-OUT: receive8.p (12, 17): inferred type:  BaseType(REAL)
-OUT: receive8.p (13, 4): inferred type:  NIL
-OUT: receive8.p (13, 12): inferred type:  BaseType(EVENT)
-OUT: receive8.p (14, 4): inferred type:  NIL
-OUT: receive8.p (14, 12): inferred type:  BaseType(EVENT)
-OUT: receive8.p (24, 4): inferred type:  NIL
-OUT: receive8.p (24, 10): inferred type:  BaseType(EVENT)
-OUT: receive8.p (31, 4): inferred type:  NIL
-OUT: receive8.p (32, 15): inferred type:  BaseType(INT)
-OUT: receive8.p (32, 15): inferred type:  NIL
-OUT: receive8.p (32, 21): inferred type:  BaseType(INT)
-OUT: receive8.p (32, 23): inferred type:  BaseType(INT)
-OUT: receive8.p (36, 6): inferred type:  NIL
-OUT: receive8.p (36, 15): inferred type:  BaseType(BOOL)
-OUT: receive8.p (36, 19): inferred type:  BaseType(INT)
-OUT: receive8.p (36, 23): inferred type:  BaseType(INT)
-OUT: receive8.p (36, 23): inferred type:  NIL
-OUT: receive8.p (36, 29): inferred type:  BaseType(INT)
-OUT: receive8.p (38, 18): inferred type:  NIL
-OUT: receive8.p (38, 25): inferred type:  BaseType(BOOL)
-OUT: receive8.p (44, 22): inferred type:  NIL
-OUT: receive8.p (44, 29): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

@@ -1,28 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: nullhandlerinheritedbypushtr.p (10, 13): inferred type:  BaseType(INT)
-OUT: nullhandlerinheritedbypushtr.p (10, 13): inferred type:  NIL
-OUT: nullhandlerinheritedbypushtr.p (10, 17): inferred type:  BaseType(INT)
-OUT: nullhandlerinheritedbypushtr.p (10, 20): inferred type:  NIL
-OUT: nullhandlerinheritedbypushtr.p (10, 26): inferred type:  BaseType(EVENT)
-OUT: nullhandlerinheritedbypushtr.p (12, 10): inferred type:  NIL
-OUT: nullhandlerinheritedbypushtr.p (12, 18): inferred type:  BaseType(BOOL)
-OUT: nullhandlerinheritedbypushtr.p (14, 15): inferred type:  NIL
-OUT: nullhandlerinheritedbypushtr.p (14, 22): inferred type:  BaseType(BOOL)
-OUT: nullhandlerinheritedbypushtr.p (14, 29): inferred type:  NIL
-OUT: nullhandlerinheritedbypushtr.p (19, 7): inferred type:  NIL
-OUT: nullhandlerinheritedbypushtr.p (19, 13): inferred type:  BaseType(BOOL)
-OUT: nullhandlerinheritedbypushtr.p (19, 16): inferred type:  BaseType(INT)
-OUT: nullhandlerinheritedbypushtr.p (20, 10): inferred type:  NIL
-OUT: nullhandlerinheritedbypushtr.p (20, 16): inferred type:  BaseType(EVENT)
-OUT: nullhandlerinheritedbypushtr.p (24, 6): inferred type:  BaseType(INT)
-OUT: nullhandlerinheritedbypushtr.p (24, 6): inferred type:  NIL
-OUT: nullhandlerinheritedbypushtr.p (24, 12): inferred type:  BaseType(INT)
-OUT: nullhandlerinheritedbypushtr.p (24, 14): inferred type:  BaseType(INT)
-OUT: nullhandlerinheritedbypushtr.p (30, 11): inferred type:  NIL
-OUT: nullhandlerinheritedbypushtr.p (30, 19): inferred type:  BaseType(BOOL)
-OUT: nullhandlerinheritedbypushtr.p (30, 27): inferred type:  NIL
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

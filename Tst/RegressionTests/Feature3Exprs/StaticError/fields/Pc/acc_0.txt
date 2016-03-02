@@ -1,19 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: fields.p (8, 4): inferred type:  BaseType(INT)
-OUT: fields.p (8, 4): inferred type:  NIL
-OUT: fields.p (8, 10): inferred type:  BaseType(INT)
-OUT: fields.p (8, 12): inferred type:  BaseType(INT)
-OUT: fields.p (8, 14): inferred type:  NmdTupType(NmdTupTypeField("a", BaseType(INT)), NmdTupType(NmdTupTypeField("b", BaseType(BOOL)), NIL))
-OUT: fields.p (8, 16): inferred type:  BaseType(INT)
-OUT: fields.p (9, 4): inferred type:  ERROR
-OUT: fields.p (9, 4): inferred type:  NIL
-OUT: fields.p (9, 10): inferred type:  ERROR
-OUT: fields.p (9, 12): inferred type:  ERROR
-OUT: fields.p (9, 14): inferred type:  TupType(BaseType(INT), TupType(BaseType(BOOL), NIL))
-OUT: fields.p (9, 16): inferred type:  ERROR
-OUT: fields.p (10, 4): inferred type:  NIL
 OUT: fields.p (0, 0): No Main Machine
 OUT: fields.p (1, 1): no start state in machine
 OUT: fields.p (9, 4): invalid assignment. right hand side is not a subtype of left hand side

@@ -1,25 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: dfsstackbound.p (8, 4): inferred type:  BaseType(INT)
-OUT: dfsstackbound.p (8, 4): inferred type:  NIL
-OUT: dfsstackbound.p (8, 8): inferred type:  BaseType(INT)
-OUT: dfsstackbound.p (9, 4): inferred type:  BaseType(REAL)
-OUT: dfsstackbound.p (9, 4): inferred type:  NIL
-OUT: dfsstackbound.p (9, 19): inferred type:  BaseType(REAL)
-OUT: dfsstackbound.p (10, 4): inferred type:  NIL
-OUT: dfsstackbound.p (10, 10): inferred type:  BaseType(EVENT)
-OUT: dfsstackbound.p (17, 4): inferred type:  NIL
-OUT: dfsstackbound.p (17, 9): inferred type:  BaseType(REAL)
-OUT: dfsstackbound.p (17, 23): inferred type:  BaseType(EVENT)
-OUT: dfsstackbound.p (18, 4): inferred type:  NIL
-OUT: dfsstackbound.p (18, 10): inferred type:  BaseType(EVENT)
-OUT: dfsstackbound.p (20, 3): inferred type:  NIL
-OUT: dfsstackbound.p (30, 4): inferred type:  BaseType(INT)
-OUT: dfsstackbound.p (30, 4): inferred type:  NIL
-OUT: dfsstackbound.p (30, 18): inferred type:  BaseType(INT)
-OUT: dfsstackbound.p (30, 20): inferred type:  BaseType(INT)
-OUT: dfsstackbound.p (32, 3): inferred type:  NIL
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

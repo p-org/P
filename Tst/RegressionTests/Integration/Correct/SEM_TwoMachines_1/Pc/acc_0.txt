@@ -1,40 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: eventsentaftersenthalt.p (14, 4): inferred type:  BaseType(REAL)
-OUT: eventsentaftersenthalt.p (14, 4): inferred type:  NIL
-OUT: eventsentaftersenthalt.p (14, 13): inferred type:  BaseType(REAL)
-OUT: eventsentaftersenthalt.p (15, 4): inferred type:  NIL
-OUT: eventsentaftersenthalt.p (15, 10): inferred type:  BaseType(EVENT)
-OUT: eventsentaftersenthalt.p (22, 4): inferred type:  BaseType(INT)
-OUT: eventsentaftersenthalt.p (22, 4): inferred type:  NIL
-OUT: eventsentaftersenthalt.p (22, 18): inferred type:  BaseType(INT)
-OUT: eventsentaftersenthalt.p (22, 20): inferred type:  BaseType(INT)
-OUT: eventsentaftersenthalt.p (23, 4): inferred type:  NIL
-OUT: eventsentaftersenthalt.p (23, 14): inferred type:  BaseType(BOOL)
-OUT: eventsentaftersenthalt.p (24, 5): inferred type:  NIL
-OUT: eventsentaftersenthalt.p (24, 18): inferred type:  BaseType(EVENT)
-OUT: eventsentaftersenthalt.p (24, 24): inferred type:  BaseType(REAL)
-OUT: eventsentaftersenthalt.p (26, 4): inferred type:  NIL
-OUT: eventsentaftersenthalt.p (26, 14): inferred type:  BaseType(BOOL)
-OUT: eventsentaftersenthalt.p (26, 17): inferred type:  BaseType(INT)
-OUT: eventsentaftersenthalt.p (27, 5): inferred type:  NIL
-OUT: eventsentaftersenthalt.p (27, 18): inferred type:  BaseType(EVENT)
-OUT: eventsentaftersenthalt.p (28, 5): inferred type:  NIL
-OUT: eventsentaftersenthalt.p (28, 10): inferred type:  BaseType(REAL)
-OUT: eventsentaftersenthalt.p (28, 18): inferred type:  BaseType(EVENT)
-OUT: eventsentaftersenthalt.p (31, 4): inferred type:  NIL
-OUT: eventsentaftersenthalt.p (31, 10): inferred type:  BaseType(EVENT)
-OUT: eventsentaftersenthalt.p (41, 5): inferred type:  NIL
-OUT: eventsentaftersenthalt.p (46, 15): inferred type:  NIL
-OUT: eventsentaftersenthalt.p (48, 23): inferred type:  NIL
-OUT: eventsentaftersenthalt.p (48, 30): inferred type:  BaseType(BOOL)
-OUT: eventsentaftersenthalt.p (53, 7): inferred type:  NIL
-OUT: eventsentaftersenthalt.p (53, 12): inferred type:  BaseType(REAL)
-OUT: eventsentaftersenthalt.p (53, 21): inferred type:  BaseType(EVENT)
-OUT: eventsentaftersenthalt.p (54, 7): inferred type:  NIL
-OUT: eventsentaftersenthalt.p (54, 13): inferred type:  BaseType(EVENT)
-OUT: eventsentaftersenthalt.p (56, 9): inferred type:  NIL
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

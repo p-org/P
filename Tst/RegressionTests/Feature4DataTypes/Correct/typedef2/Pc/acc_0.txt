@@ -1,10 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: equality.p (12, 13): inferred type:  NIL
-OUT: equality.p (12, 20): inferred type:  NameType("F")
-OUT: equality.p (12, 22): inferred type:  BaseType(BOOL)
-OUT: equality.p (12, 25): inferred type:  NameType("F")
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

@@ -1,5 +1,4 @@
 arg: ..\typedef.p
-arg: /printTypeInference
 arg: /shortFileNames
 arg: /doNotErase
 arg: /outputDir:..\.

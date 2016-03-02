@@ -1,5 +1,4 @@
 arg: ..\anonFunction.p
-arg: /printTypeInference
 arg: /shortFileNames
 arg: /doNotErase
 arg: /outputDir:..\.

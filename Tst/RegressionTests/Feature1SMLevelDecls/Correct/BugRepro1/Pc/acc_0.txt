@@ -1,67 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: functionparmutated.p (13, 6): inferred type:  NIL
-OUT: functionparmutated.p (13, 12): inferred type:  BaseType(EVENT)
-OUT: functionparmutated.p (16, 4): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (16, 4): inferred type:  NIL
-OUT: functionparmutated.p (16, 14): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (16, 14): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: functionparmutated.p (16, 17): inferred type:  TupType(BaseType(INT), NIL)
-OUT: functionparmutated.p (17, 4): inferred type:  NIL
-OUT: functionparmutated.p (17, 14): inferred type:  BaseType(BOOL)
-OUT: functionparmutated.p (17, 17): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (18, 4): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (18, 4): inferred type:  NIL
-OUT: functionparmutated.p (18, 14): inferred type:  TupType(BaseType(INT), NIL)
-OUT: functionparmutated.p (21, 4): inferred type:  NIL
-OUT: functionparmutated.p (21, 13): inferred type:  BaseType(BOOL)
-OUT: functionparmutated.p (21, 16): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (22, 4): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (22, 4): inferred type:  NIL
-OUT: functionparmutated.p (22, 10): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (22, 12): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (23, 4): inferred type:  NIL
-OUT: functionparmutated.p (23, 14): inferred type:  BaseType(BOOL)
-OUT: functionparmutated.p (23, 17): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (28, 3): inferred type:  NIL
-OUT: functionparmutated.p (28, 7): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (28, 9): inferred type:  BaseType(BOOL)
-OUT: functionparmutated.p (28, 12): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (29, 4): inferred type:  NIL
-OUT: functionparmutated.p (29, 10): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (30, 4): inferred type:  NIL
-OUT: functionparmutated.p (30, 11): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (31, 4): inferred type:  NIL
-OUT: functionparmutated.p (32, 3): inferred type:  NIL
-OUT: functionparmutated.p (32, 9): inferred type:  BaseType(BOOL)
-OUT: functionparmutated.p (32, 12): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (33, 4): inferred type:  NIL
-OUT: functionparmutated.p (33, 13): inferred type:  BaseType(BOOL)
-OUT: functionparmutated.p (33, 16): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (34, 4): inferred type:  NIL
-OUT: functionparmutated.p (35, 4): inferred type:  NIL
-OUT: functionparmutated.p (35, 14): inferred type:  BaseType(BOOL)
-OUT: functionparmutated.p (35, 17): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (36, 4): inferred type:  NIL
-OUT: functionparmutated.p (36, 9): inferred type:  BaseType(REAL)
-OUT: functionparmutated.p (36, 15): inferred type:  BaseType(EVENT)
-OUT: functionparmutated.p (37, 4): inferred type:  NIL
-OUT: functionparmutated.p (42, 3): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (42, 3): inferred type:  NIL
-OUT: functionparmutated.p (42, 9): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (42, 11): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (43, 3): inferred type:  NIL
-OUT: functionparmutated.p (43, 13): inferred type:  BaseType(BOOL)
-OUT: functionparmutated.p (43, 16): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (44, 3): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (44, 3): inferred type:  NIL
-OUT: functionparmutated.p (44, 13): inferred type:  TupType(BaseType(INT), TupType(BaseType(INT), NIL))
-OUT: functionparmutated.p (44, 16): inferred type:  BaseType(INT)
-OUT: functionparmutated.p (44, 16): inferred type:  TupType(BaseType(INT), NIL)
-OUT: functionparmutated.p (45, 3): inferred type:  NIL
-OUT: functionparmutated.p (45, 14): inferred type:  BaseType(BOOL)
-OUT: functionparmutated.p (45, 17): inferred type:  BaseType(INT)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

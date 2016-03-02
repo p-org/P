@@ -1,22 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: pushimplicitpopwithsend.p (14, 4): inferred type:  NIL
-OUT: pushimplicitpopwithsend.p (14, 9): inferred type:  BaseType(REAL)
-OUT: pushimplicitpopwithsend.p (14, 15): inferred type:  BaseType(EVENT)
-OUT: pushimplicitpopwithsend.p (20, 17): inferred type:  NIL
-OUT: pushimplicitpopwithsend.p (20, 22): inferred type:  BaseType(REAL)
-OUT: pushimplicitpopwithsend.p (20, 28): inferred type:  BaseType(EVENT)
-OUT: pushimplicitpopwithsend.p (24, 4): inferred type:  BaseType(BOOL)
-OUT: pushimplicitpopwithsend.p (24, 4): inferred type:  NIL
-OUT: pushimplicitpopwithsend.p (24, 12): inferred type:  BaseType(BOOL)
-OUT: pushimplicitpopwithsend.p (25, 4): inferred type:  NIL
-OUT: pushimplicitpopwithsend.p (25, 9): inferred type:  BaseType(REAL)
-OUT: pushimplicitpopwithsend.p (25, 15): inferred type:  BaseType(EVENT)
-OUT: pushimplicitpopwithsend.p (29, 3): inferred type:  NIL
-OUT: pushimplicitpopwithsend.p (29, 10): inferred type:  BaseType(BOOL)
-OUT: pushimplicitpopwithsend.p (29, 15): inferred type:  BaseType(BOOL)
-OUT: pushimplicitpopwithsend.p (29, 18): inferred type:  BaseType(BOOL)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

@@ -1,28 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: actions_3.p (14, 4): inferred type:  BaseType(REAL)
-OUT: actions_3.p (14, 4): inferred type:  NIL
-OUT: actions_3.p (14, 20): inferred type:  BaseType(REAL)
-OUT: actions_3.p (14, 30): inferred type:  BaseType(REAL)
-OUT: actions_3.p (15, 13): inferred type:  NIL
-OUT: actions_3.p (15, 33): inferred type:  BaseType(EVENT)
-OUT: actions_3.p (24, 4): inferred type:  NIL
-OUT: actions_3.p (24, 10): inferred type:  BaseType(EVENT)
-OUT: actions_3.p (31, 6): inferred type:  NIL
-OUT: actions_3.p (31, 13): inferred type:  BaseType(BOOL)
-OUT: actions_3.p (36, 9): inferred type:  NIL
-OUT: actions_3.p (36, 14): inferred type:  BaseType(REAL)
-OUT: actions_3.p (36, 29): inferred type:  BaseType(EVENT)
-OUT: actions_3.p (45, 8): inferred type:  BaseType(REAL)
-OUT: actions_3.p (45, 8): inferred type:  NIL
-OUT: actions_3.p (45, 23): inferred type:  BaseType(REAL)
-OUT: actions_3.p (53, 4): inferred type:  NIL
-OUT: actions_3.p (53, 9): inferred type:  BaseType(REAL)
-OUT: actions_3.p (53, 23): inferred type:  BaseType(EVENT)
-OUT: actions_3.p (60, 4): inferred type:  NIL
-OUT: actions_3.p (60, 9): inferred type:  BaseType(REAL)
-OUT: actions_3.p (60, 23): inferred type:  BaseType(EVENT)
 OUT: Writing stubs.c ...
 OUT: Writing program.h ...
 OUT: Writing program.c ...

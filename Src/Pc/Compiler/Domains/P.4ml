@@ -59,8 +59,11 @@ domain PData
 	Receive  ::= new (cases: any Cases, label: Natural).
 	Assert   ::= new (arg: any Expr, msg: String + { NIL }). 
 	Print    ::= new (msg: String).
-
+	
     Stmt ::= NewStmt + Raise + Send + Monitor + FunStmt + NulStmt + BinStmt + Return + While + Ite + Seq + Receive + Assert + Print. 
+
+	FileInfo   ::= new (decl: FunDecl + AnonFunDecl, file: String + { NIL }).
+	LineInfo   ::= new (decl: FunDecl + AnonFunDecl, stmt: any Stmt + { ENTRY, EXIT }, line: Natural, col: Natural).
 
     /*************************************************************/
     /****************  State Machine Declarations    *************/

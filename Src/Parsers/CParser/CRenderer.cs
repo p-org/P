@@ -78,6 +78,7 @@
             FrmToSyntaxInfo[FormulaNodes.SizeOf_Iden.Node] = new SyntaxInfo(StartSizeOf, EndSizeOf, ValidateSizeOf);
             FrmToSyntaxInfo[FormulaNodes.Paren_Iden.Node] = new SyntaxInfo(StartParen, EndParen, ValidateParen);
             FrmToSyntaxInfo[FormulaNodes.Cases_Iden.Node] = new SyntaxInfo(StartCases, EndCases, ValidateCases);
+            FrmToSyntaxInfo[FormulaNodes.Cases_PpLine.Node] = new SyntaxInfo(StartPpLine, EndPpLine, ValidatePpLine);
             FrmToSyntaxInfo[FormulaNodes.UnApp_Iden.Node] = new SyntaxInfo(StartUnApp, EndUnApp, ValidateUnApp);
             FrmToSyntaxInfo[FormulaNodes.BinApp_Iden.Node] = new SyntaxInfo(StartBinApp, EndBinApp, ValidateBinApp);
             FrmToSyntaxInfo[FormulaNodes.TerApp_Iden.Node] = new SyntaxInfo(StartTerApp, EndTerApp, ValidateTerApp);
@@ -2714,6 +2715,46 @@
             wr.Write(data.PrivateSuffix);
         }
 
+        private static bool ValidatePpLine(FuncTerm node, List<Flag> flags, SuccessToken success)
+        {
+            if (node.Args.Count != 2)
+            {
+                flags.Add(MkBadArityFlag(node, 2));
+                success.Failed();
+                return false;
+            }
+
+            return true;
+        }
+
+        private static IEnumerable<Tuple<Node, PrintData>> StartPpLine(FuncTerm node, PrintData data, CTextWriter wr)
+        {
+            Node arg1 = null, arg2 = null;
+            using (var it = node.Args.GetEnumerator())
+            {
+                it.MoveNext();
+                arg1 = it.Current;
+                it.MoveNext();
+                arg2 = it.Current;
+            }
+
+            data.Suffix = data.Suffix.Replace(";", "");
+            if (arg2 is Cnst)
+            {
+                wr.Write("#line {0} \"{1}\"", ((Cnst)arg1).GetNumericValue().Numerator, ((Cnst)arg2).GetStringValue());
+            }
+            else
+            {
+                wr.Write("#line {0}", ((Cnst)arg1).GetNumericValue().Numerator);
+            }
+            yield break;
+        }
+
+        private static void EndPpLine(Node node, PrintData data, CTextWriter wr)
+        {
+            wr.Write(data.PrivateSuffix);
+        }
+
         private static bool ValidateLoop(FuncTerm node, List<Flag> flags, SuccessToken success)
         {
             if (node.Args.Count != 3)
@@ -5195,6 +5236,7 @@
             public string Suffix
             {
                 get { return suffix; }
+                set { suffix = value; }
             }
 
             public string PrivateSuffix

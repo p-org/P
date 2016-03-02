@@ -29,12 +29,6 @@
             private set;
         }
         
-        public List<P_Root.ObservesDecl> Observes
-        {
-            get;
-            private set;
-        }
-
         public List<P_Root.StateDecl> States
         {
             get;
@@ -72,6 +66,24 @@
         }
 
         public List<P_Root.Annotation> Annotations
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.ObservesDecl> Observes
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.FileInfo> FileInfos
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.LineInfo> LineInfos
         {
             get;
             private set;
@@ -135,6 +147,16 @@
                 {
                     yield return obs;
                 }
+
+                foreach (var info in FileInfos)
+                {
+                    yield return info;
+                }
+
+                foreach (var info in LineInfos)
+                {
+                    yield return info;
+                }
             }
         }
 
@@ -147,10 +169,12 @@
             Variables = new List<P_Root.VarDecl>();
             Transitions = new List<P_Root.TransDecl>();
             Functions = new List<P_Root.FunDecl>();
-            Observes = new List<P_Root.ObservesDecl>();
             AnonFunctions = new List<P_Root.AnonFunDecl>();
             Dos = new List<P_Root.DoDecl>();
             Annotations = new List<P_Root.Annotation>();
+            Observes = new List<P_Root.ObservesDecl>();
+            FileInfos = new List<P_Root.FileInfo>();
+            LineInfos = new List<P_Root.LineInfo>();
         }
     }
 }

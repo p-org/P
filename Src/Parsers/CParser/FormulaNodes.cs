@@ -186,6 +186,7 @@ namespace CParser
         public static AST<Id> break_Iden = Factory.Instance.MkId("BREAK");
         public static AST<Id> continue_Iden = Factory.Instance.MkId("CONTINUE");
         public static AST<Id> Cases_Iden = Factory.Instance.MkId("Cases");
+        public static AST<Id> Cases_PpLine = Factory.Instance.MkId("PpLine");
         public static AST<Id> For_Iden = Factory.Instance.MkId("For");
         public static AST<Id> Block_Iden = Factory.Instance.MkId("Block");
         public static AST<Id> TypeDef_Iden = Factory.Instance.MkId("TypeDef");

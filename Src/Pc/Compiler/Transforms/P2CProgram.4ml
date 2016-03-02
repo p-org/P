@@ -760,10 +760,9 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 									frame  = out.VarDef(NIL, NmdType(NIL, "PRT_FUNSTACK_INFO"), "p_tmp_frame", NIL),
 									deff   = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_funstmt_ret", NIL),
 									deft   = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_tuple", NIL),
-	                                defr   = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_ret", Ident("NULL")),
+	                                defr   = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_ret", NIL),
 	                                defb   = out.VarDef(NIL, NmdType(NIL, "PRT_BOOLEAN"), "p_tmp_bool", NIL),
-									defpc  = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), "p_tmp_mach_priv", 
-									                   Cast(PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), Ident("context"))).
+									defpc  = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), "p_tmp_mach_priv", NIL).
 
 	COut(7, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = REAL, RealOwner(f),
 	                params = Params(Param(NIL, "context"), NIL),
@@ -788,20 +787,30 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 									   Return(FunApp(Ident("PrtMkDefaultValue"), Args(expr, NIL))),
 									   Return(Ident("p_tmp_ret"))).
 
+	SourceInfo ::= (TypingContext, out.Stmt, out.Stmt, out.Stmt).
+	SourceInfo(f, NIL, NIL, NIL) :- in.FileInfo(f, NIL).
+	SourceInfo(f, entryInfo, info, exitInfo) :- 
+					in.FileInfo(f, srcFileName), in.LineInfo(f, ENTRY, entry, _), in.LineInfo(f, EXIT, exit, _),
+					entryInfo = out.PpLine(entry, srcFileName), info = out.PpLine(entry, NIL), exitInfo = out.PpLine(exit, NIL).
+
 	COut(8, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = REAL, RealOwner(f),
 				    BodyTmpVars(f, -1, -2, tmpVars),			  
 				    StmtTrans(f, f.body, ctrans),			  
 	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
-					header = out.Seq(BinApp(ASN, Ident("p_tmp_params"), Ident("NULL")), FunApp(Ident("PrtPopFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL)))),
+					header = out.Seq(Seq(info, BinApp(ASN, Ident("p_tmp_mach_priv"), Cast(PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), Ident("context")))), 
+					             Seq(Seq(info, BinApp(ASN, Ident("p_tmp_ret"), Ident("NULL"))), 
+								 Seq(Seq(info, BinApp(ASN, Ident("p_tmp_params"), Ident("NULL"))), 
+								     Seq(info, FunApp(Ident("PrtPopFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))))))),
 					Trampoline(f, f.body, trampoline),
 					PatchReturn(f, patchReturn),
 					footer = out.Lbl("P_EXIT_FUN", 
 					                   Seq(
-									     FunApp(Ident("PrtFreeLocals"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))),
-									     patchReturn)),
-					body = out.Block(tmpVars, Seq(header, Seq(trampoline, Seq(ctrans, footer)))),					  
+									     Seq(exitInfo, FunApp(Ident("PrtFreeLocals"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL)))),
+									     Seq(exitInfo, patchReturn))),
+					SourceInfo(f, entryInfo, info, exitInfo),
+					body = out.Seq(entryInfo, Block(tmpVars, Seq(header, Seq(Seq(info, trampoline), Seq(ctrans, footer))))),
 	                def = FunDef(
 					  NIL,
 					  funType,
@@ -819,13 +828,17 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
-					header = out.Seq(BinApp(ASN, Ident("p_tmp_params"), Ident("NULL")), FunApp(Ident("PrtPopFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL)))),
+					header = out.Seq(Seq(info, BinApp(ASN, Ident("p_tmp_mach_priv"), Cast(PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), Ident("context")))), 
+					             Seq(Seq(info, BinApp(ASN, Ident("p_tmp_ret"), Ident("NULL"))), 
+								 Seq(Seq(info, BinApp(ASN, Ident("p_tmp_params"), Ident("NULL"))), 
+								     Seq(info, FunApp(Ident("PrtPopFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))))))),
 					Trampoline(f, f.body, trampoline),
 					footer = out.Lbl("P_EXIT_FUN", 
 					                   Seq(
-									     FunApp(Ident("PrtFreeLocals"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))),
-									     Return(Ident("p_tmp_ret")))),
-					body = out.Block(tmpVars, Seq(header, Seq(trampoline, Seq(ctrans, footer)))),					  
+									     Seq(exitInfo, FunApp(Ident("PrtFreeLocals"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL)))),
+									     Seq(exitInfo, Return(Ident("p_tmp_ret"))))),
+					SourceInfo(f, entryInfo, info, exitInfo),
+					body = out.Seq(entryInfo, Block(tmpVars, Seq(header, Seq(Seq(info, trampoline), Seq(ctrans, footer))))),					  
 	                def = FunDef(
 					  NIL,
 					  funType,
@@ -1773,7 +1786,8 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 						   exception = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("lastOperation")), Ident("ReturnStatement")), Goto("P_EXIT_FUN"), NIL),
 						   resetRcase = out.BinApp(ASN, BinApp(FLD, Ident("p_tmp_frame"), Ident("rcase")), Ident("NULL")),
 						   resetReturnTo = out.BinApp(ASN, BinApp(FLD, Ident("p_tmp_frame"), Ident("returnTo")), IntLit(65535, HEX, U)),
-						   cs = out.Seq(receive, Seq(case, Seq(blocked, Seq(exception, Seq(resetRcase, resetReturnTo))))).
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(Seq(info, receive), Seq(Seq(info, case), Seq(Seq(info, blocked), Seq(Seq(info, exception), Seq(Seq(info, resetRcase), Seq(info, resetReturnTo)))))).
 	
 	//// New Machine or Model
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, NIL), 
@@ -1783,7 +1797,8 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 										Args(Ident(machineName),
 										Args(Ident("p_tmp_stmt_0"), container)))),
 						   ConstId(m, in.NulApp(NULL)), mkNull = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))),
-						   cs = out.FunApp(Ident("P_STMT_0"), Args(newCall, Args(mkNull, Args(Ident("PRT_FALSE"), NIL)))).
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(info, FunApp(Ident("P_STMT_0"), Args(newCall, Args(mkNull, Args(Ident("PRT_FALSE"), NIL))))).
 
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, pay), 
 						   ContainerInNewCall(c, name, funName, machineName, container),
@@ -1792,12 +1807,14 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 										Args(Ident(machineName),
 										Args(Ident("p_tmp_stmt_0"), container)))),
 						   pay : in.Expr, RhsExpr(c, s, 0, payTrans, doFree),
-						   cs = out.FunApp(Ident("P_STMT_0"), Args(newCall, Args(payTrans, Args(doFree, NIL)))).
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(info, FunApp(Ident("P_STMT_0"), Args(newCall, Args(payTrans, Args(doFree, NIL))))).
 
 	//// Raise
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
 	                       s = in.Raise(ev, NIL), RhsExpr(c, s, 0, evTrans, doFree),
-						   cs = out.Seq(FunApp(Ident("P_STMT_1"), Args(raiseCall, Args(mkNull, Args(Ident("PRT_FALSE"), Args(evTrans, Args(doFree, NIL)))))), Goto("P_EXIT_FUN")),
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(Seq(info, FunApp(Ident("P_STMT_1"), Args(raiseCall, Args(mkNull, Args(Ident("PRT_FALSE"), Args(evTrans, Args(doFree, NIL))))))), Goto("P_EXIT_FUN")),
 						   raiseCall = out.FunApp(Ident("PrtRaise"),
 						                 Args(context,
 										 Args(Ident("p_tmp_stmt_0"),
@@ -1808,7 +1825,8 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
 	                       s = in.Raise(ev, pay), pay : in.Expr, 
 						   RhsExpr(c, s, 0, evTrans, doFreeEvTrans), RhsExpr(c, s, 1, payTrans, doFreePayTrans),
-						   cs = out.FunApp(Ident("P_STMT_1"), Args(raiseCall, Args(payTrans, Args(doFreePayTrans, Args(evTrans, Args(doFreeEvTrans, NIL)))))),
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(Seq(info, FunApp(Ident("P_STMT_1"), Args(raiseCall, Args(payTrans, Args(doFreePayTrans, Args(evTrans, Args(doFreeEvTrans, NIL))))))), Goto("P_EXIT_FUN")),
 						   raiseCall = out.FunApp(Ident("PrtRaise"),
 						                 Args(context,
 										 Args(Ident("p_tmp_stmt_0"),
@@ -1818,7 +1836,8 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 	//// Send										
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
 	                       s = in.Send(dest, ev, NIL), RhsExpr(c, s, 0, destTrans, doFreeDestTrans), RhsExpr(c, s, 1, evTrans, doFreeEvTrans),
-						   cs = out.FunApp(Ident("P_STMT_2"), Args(FunApp(Ident("P_SEQ"), Args(checkCall, Args(sendCall, NIL))), Args(mkNull, Args(Ident("PRT_FALSE"), Args(evTrans, Args(doFreeEvTrans, Args(destTrans, Args(doFreeDestTrans, NIL)))))))),
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(info, FunApp(Ident("P_STMT_2"), Args(FunApp(Ident("P_SEQ"), Args(checkCall, Args(sendCall, NIL))), Args(mkNull, Args(Ident("PRT_FALSE"), Args(evTrans, Args(doFreeEvTrans, Args(destTrans, Args(doFreeDestTrans, NIL))))))))),
 						   checkCall = out.FunApp(Ident("PrtCheckIsLocalMachineId"), Args(Ident("context"), Args(Ident("p_tmp_stmt_0"), NIL))),
 						   sendCall = out.FunApp(Ident("PrtSend"),
 						                 Args(FunApp(Ident("PrtGetMachine"), Args(BinApp(PFLD, Ident("context"), Ident("process")), Args(Ident("p_tmp_stmt_0"), NIL))),
@@ -1829,7 +1848,8 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
 	                       s = in.Send(dest, ev, pay), pay : in.Expr, 
 						   RhsExpr(c, s, 0, destTrans, doFreeDestTrans), RhsExpr(c, s, 1, evTrans, doFreeEvTrans), RhsExpr(c, s, 2, payTrans, doFreePayTrans),
-						   cs = out.FunApp(Ident("P_STMT_2"), Args(FunApp(Ident("P_SEQ"), Args(checkCall, Args(sendCall, NIL))), Args(payTrans, Args(doFreePayTrans, Args(evTrans, Args(doFreeEvTrans, Args(destTrans, Args(doFreeDestTrans, NIL)))))))),
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(info, FunApp(Ident("P_STMT_2"), Args(FunApp(Ident("P_SEQ"), Args(checkCall, Args(sendCall, NIL))), Args(payTrans, Args(doFreePayTrans, Args(evTrans, Args(doFreeEvTrans, Args(destTrans, Args(doFreeDestTrans, NIL))))))))),
 						   checkCall = out.FunApp(Ident("PrtCheckIsLocalMachineId"), Args(Ident("context"), Args(Ident("p_tmp_stmt_0"), NIL))),
 						   sendCall = out.FunApp(Ident("PrtSend"),
 						                 Args(FunApp(Ident("PrtGetMachine"), Args(BinApp(PFLD, Ident("context"), Ident("process")), Args(Ident("p_tmp_stmt_0"), NIL))),
@@ -1842,25 +1862,30 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 	//// NulStmt
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
 	                       s = in.NulStmt(POP),
-						   cs = out.Seq(FunApp(Ident("PrtPop"), Args(context, NIL)), Goto("P_EXIT_FUN")).
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(Seq(info, FunApp(Ident("PrtPop"), Args(context, NIL))), Goto("P_EXIT_FUN")).
 
 	//// Assert
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
 	                       s = in.Assert(arg, NIL), RhsExpr(c, s, 0, argTrans, doFree),
-						   cs = out.ITE(out.FunApp(Ident("P_BOOL_EXPR"), Args(argTrans, Args(doFree, NIL))), NIL, assertCall),
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(info, ITE(out.FunApp(Ident("P_BOOL_EXPR"), Args(argTrans, Args(doFree, NIL))), NIL, Seq(info, assertCall))),
 						   assertCall = out.FunApp(Ident("PrtHandleError"), 
 											Args(Ident("PRT_STATUS_ASSERT"), 
 											Args(context, NIL))).
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
 	                       s = in.Assert(arg, msg), msg: String, RhsExpr(c, s, 0, argTrans, doFree),
-						   cs = out.ITE(out.FunApp(Ident("P_BOOL_EXPR"), Args(argTrans, Args(doFree, NIL))), NIL, Seq(printCall, assertCall)),
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(info, ITE(out.FunApp(Ident("P_BOOL_EXPR"), Args(argTrans, Args(doFree, NIL))), NIL, Seq(Seq(info, printCall), Seq(info, assertCall)))),
 						   printCall = out.FunApp(Ident("PrtPrintf"), Args(StringLit(msg, NIL), NIL)),
 						   assertCall = out.FunApp(Ident("PrtHandleError"), 
 											Args(Ident("PRT_STATUS_ASSERT"), 
 											Args(context, NIL))).
 
 	//// Print
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Print(msg), cs = out.FunApp(Ident("PrtPrintf"), Args(StringLit(msg, NIL), NIL)).
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Print(msg), 
+	                       in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(info, FunApp(Ident("PrtPrintf"), Args(StringLit(msg, NIL), NIL))).
 
 	//// Skip 
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NulStmt(SKIP), cs = NIL.
@@ -1868,19 +1893,23 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 	//// Return
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Return(NIL), cs = out.Goto("P_EXIT_FUN").
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Return(e), e : in.Expr, RhsExpr(c, s, 0, ce, Ident("PRT_TRUE")),
-						   cs = out.Seq(BinApp(ASN, Ident("p_tmp_ret"), ce), out.Goto("P_EXIT_FUN")).
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(Seq(info, BinApp(ASN, Ident("p_tmp_ret"), ce)), out.Goto("P_EXIT_FUN")).
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Return(e), e : in.Expr, RhsExpr(c, s, 0, ce, Ident("PRT_FALSE")),
-						   cs = out.Seq(BinApp(ASN, Ident("p_tmp_ret"), out.FunApp(Ident("PrtCloneValue"), Args(ce, NIL))), out.Goto("P_EXIT_FUN")).
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(Seq(info, BinApp(ASN, Ident("p_tmp_ret"), out.FunApp(Ident("PrtCloneValue"), Args(ce, NIL)))), out.Goto("P_EXIT_FUN")).
 
 	//// While
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
 	                       s = in.While(cond, s1), RhsExpr(c, s, 0, condTrans, doFree), StmtTrans(c, s1, cs1),
-						   cs = out.Loop(WHILE, out.FunApp(Ident("P_BOOL_EXPR"), Args(condTrans, Args(doFree, NIL))), cs1).
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(info, Loop(WHILE, out.FunApp(Ident("P_BOOL_EXPR"), Args(condTrans, Args(doFree, NIL))), Seq(cs1, info))).
     
 	//// Ite
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
 	                       s = in.Ite(cond, s1, s2), RhsExpr(c, s, 0, condTrans, doFree), StmtTrans(c, s1, cs1), StmtTrans(c, s2, cs2),
-						   cs = out.ITE(out.FunApp(Ident("P_BOOL_EXPR"), Args(condTrans, Args(doFree, NIL))), cs1, cs2).
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(info, ITE(out.FunApp(Ident("P_BOOL_EXPR"), Args(condTrans, Args(doFree, NIL))), cs1, cs2)).
 
 	//// Seq
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
@@ -1915,12 +1944,14 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 						   blocked = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("receive")), Ident("NULL")), Return(ret), NIL),
 						   exception = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("lastOperation")), Ident("ReturnStatement")), Goto("P_EXIT_FUN"), NIL),
 						   FunStmtCleanup(c, s, cleanup),
-						   cs = out.Lbl(strJoin("L", toString(label)), Seq(funcall, Seq(blocked, Seq(exception, cleanup)))).
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Lbl(strJoin("L", toString(label)), Seq(Seq(info, funcall), Seq(Seq(info, blocked), Seq(Seq(info, exception), Seq(info, cleanup))))).
 
 	StmtTrans(c, s, cs) :- FunStmtRhs(c, s, size, tail), s = in.FunStmt(name, args, _, label), args != NIL, 
 	                       DeclId(fn, funIndex, funName), ParamsType(fn, expr), FunAvailable(fn, c.owner), fn.name = name, 
 						   ExprsTrans(c, s, 0, args, ecs),
-						   cs = out.Seq(paramAssign, Lbl(strJoin("L", toString(label)), Seq(funCall, Seq(blocked, Seq(exception, cleanup))))),
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(paramAssign, Lbl(strJoin("L", toString(label)), Seq(Seq(info, funCall), Seq(Seq(info, blocked), Seq(Seq(info, exception), Seq(info, cleanup)))))),
 						   argsTuple = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#Exprs, args) - 1))), Args(expr, ecs)),
 						   paramAssign = out.BinApp(ASN, params, FunApp(Ident(strJoin("P_EXPR_", toString(size))), Args(argsTuple, Args(Ident("PRT_FALSE"), tail)))),
 						   funCall = out.BinApp(ASN, ret, FunApp(Ident("PrtWrapFunStmt"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(label, DEC, U), Args(Ident("p_tmp_mach_priv"), Args(IntLit(funIndex, DEC, U), Args(params, NIL))))))),
@@ -2148,8 +2179,9 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 	//// Case 1: Assign global variable
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = Name(glbl), 
 	                       varDecl is VarDecl(glbl, c.owner, _), DeclId(varDecl, _, varName), no TypeOfLocalVar(c, glbl, _),  
-	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
-						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs)), 
+	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL), 
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))), 
 						   RhsExpr(c, s, 0, _, doFree), doClone = out.UnApp(LNOT, doFree),
 						   asgn = out.FunApp(Ident("PrtSetGlobalVarEx"),
 						                     Args(Ident("p_tmp_mach_priv"),
@@ -2162,7 +2194,8 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = Name(lcl), 
                            TypeOfLocalVar(c, lcl, _), LocalVars(c, locals), IndexOf(locals, lcl, i, _),                 
                            StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
-						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs)),
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
 						   RhsExpr(c, s, 0, _, doFree), doClone = out.UnApp(LNOT, doFree),
 						   asgn = out.FunApp(Ident("PrtSetLocalVarEx"),
 						                     Args(BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")),
@@ -2175,7 +2208,8 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = in.Field(getter, i), i : Natural, 	                       
                            StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
 						   LhsTrans(c, LhsPath(s, getter, _), egetter), 
-						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs)),
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
 						   RhsExpr(c, s, 0, _, doFree), doClone = out.UnApp(LNOT, doFree),
 						   asgn = out.FunApp(Ident("PrtTupleSetEx"),
 						                     Args(egetter,
@@ -2188,7 +2222,8 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = in.Field(getter, field), field : String, 	                       
                            StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
 						   TypeOf(c, getter, t), IndexOf(t, field, i, _), LhsTrans(c, LhsPath(s, getter, _), egetter), 
-						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs)),
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
 						   RhsExpr(c, s, 0, _, doFree), doClone = out.UnApp(LNOT, doFree),
 						   asgn = out.FunApp(Ident("PrtTupleSetEx"),
 						                     Args(egetter,
@@ -2201,8 +2236,9 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = in.BinApp(IDX, _, _), 	                       
                            StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
 						   LhsTrans(c, LhsPath(s, e, _), egetter), 
-						   egetter = out.FunApp(Ident("PrtSeqGetNC"), Args(seq, Args(ndex, NIL))),   
-						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs)),
+						   egetter = out.FunApp(Ident("PrtSeqGetNC"), Args(seq, Args(ndex, NIL))),
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
 						   RhsExpr(c, s, 0, _, doFree), doClone = out.UnApp(LNOT, doFree),
 						   asgn = out.FunApp(Ident("PrtSeqUpdateEx"),
 						                     Args(seq,
@@ -2215,8 +2251,9 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _), e = in.BinApp(IDX, _, _), 	                       
                            StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
 						   LhsTrans(c, LhsPath(s, e, _), egetter), 
-						   egetter = out.FunApp(Ident("PrtMapGetNC"), Args(map, Args(key, NIL))),   
-						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs)),
+						   egetter = out.FunApp(Ident("PrtMapGetNC"), Args(map, Args(key, NIL))),  
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL), 
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
 						   RhsExpr(c, s, 0, _, doFree), doClone = out.UnApp(LNOT, doFree),
 						   asgn = out.FunApp(Ident("PrtMapUpdateEx"),
 						                     Args(map,
@@ -2231,11 +2268,12 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(INSERT, e, _), 
 	                       TypeOf(c, e, t), toSymbol(t) = #SeqType, LhsTrans(c, LhsPath(s, e, _), egetter), 
 	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
-						   cs = out.Seq(FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(insert, exprs)),
-						            Seq(freeKey,
-									Seq(freeTupleArray,
-									Seq(freeTuple,
-									Seq(freeValue,
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(insert, exprs))),
+						            Seq(Seq(info, freeKey),
+									Seq(Seq(info, freeTupleArray),
+									Seq(Seq(info, freeTuple),
+									Seq(Seq(info, freeValue),
 									    NIL))))),
 						   insert = out.FunApp(Ident("PrtSeqInsertEx"),
 						                     Args(egetter,
@@ -2264,10 +2302,11 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(INSERT, e, _), 
 	                       TypeOf(c, e, t), toSymbol(t) = #MapType, LhsTrans(c, LhsPath(s, e, _), egetter), 
 	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
-						   cs = out.Seq(out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(insert, exprs)),
-						            Seq(freeTupleArray,
-									Seq(freeTuple,
-									Seq(freeValue,
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(insert, exprs))),
+						            Seq(Seq(info, freeTupleArray),
+									Seq(Seq(info, freeTuple),
+									Seq(Seq(info, freeValue),
 									    NIL)))),
 						   insert = out.FunApp(Ident("PrtMapInsertEx"),
 						                     Args(egetter,
@@ -2297,7 +2336,8 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(REMOVE, e, _), 
 	                       TypeOf(c, e, t), toSymbol(t) = #SeqType, LhsTrans(c, LhsPath(s, e, _), egetter), 
 	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
-						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(remove, exprs)),
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(remove, exprs))),
 						   remove = out.FunApp(Ident("PrtSeqRemove"),
 						                     Args(egetter,
 											 Args(Ident("p_tmp_stmt_0"),
@@ -2307,7 +2347,8 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(REMOVE, e, _), 
 	                       TypeOf(c, e, t), toSymbol(t) = #MapType, LhsTrans(c, LhsPath(s, e, _), egetter), 
 	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
-						   cs = out.FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(insert, exprs)),
+						   in.LineInfo(c, s, x, _), info = out.PpLine(x, NIL),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(insert, exprs))),
 						   insert = out.FunApp(Ident("PrtMapRemove"),
 						                     Args(egetter,
 											 Args(Ident("p_tmp_stmt_0"),

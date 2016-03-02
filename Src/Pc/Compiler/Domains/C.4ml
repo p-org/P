@@ -103,10 +103,12 @@ domain CData
      Case   ::= new (cond: any Expr + { DEFAULT }, body: any Stmt).                
                                             
      Cases  ::= new (case: any Case, tail: any Cases + { NIL }).
-                    
+     
+	 PpLine ::= new (lineNum: Natural, fileName: String + { NIL }).
+
      Stmt   ::= Expr   + Seq + Block  + Lbl  + Goto + 
                 Return + ITE + Switch + Loop + For  +
-                StrJmp + Comment + { NIL }.         
+                StrJmp + Comment + PpLine + { NIL }.         
                 
      ///////////////////////////////////////////////////////
      /////////           Type Expressions          /////////

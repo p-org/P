@@ -186,11 +186,11 @@ Static
 	;
 
 StaticFunDecl
-	: Static IsModel FUN ID ParamsOrNone RetTypeOrNone FunAnnotOrNone StmtBlock { AddFunction($4.str, ToSpan(@4), ToSpan(@1), true); }
+	: Static IsModel FUN ID ParamsOrNone RetTypeOrNone FunAnnotOrNone LCBRACE StmtBlock RCBRACE { AddFunction($4.str, ToSpan(@4), ToSpan(@1), ToSpan(@8), ToSpan(@10), true); }
 	;
 
 FunDecl
-	: IsModel FUN ID ParamsOrNone RetTypeOrNone FunAnnotOrNone StmtBlock { AddFunction($3.str, ToSpan(@3), ToSpan(@1), false); }
+	: IsModel FUN ID ParamsOrNone RetTypeOrNone FunAnnotOrNone LCBRACE StmtBlock RCBRACE { AddFunction($3.str, ToSpan(@3), ToSpan(@1), ToSpan(@7), ToSpan(@9), false); }
 	;
 
 IsModel
@@ -258,18 +258,18 @@ StateBody
 	;
 
 StateBodyItem
-	: ENTRY PayloadVarDeclOrNone StmtBlock									{ SetStateEntry(true);                                  }	
-	| ENTRY ID SEMICOLON													{ SetStateEntry(false, $2.str, ToSpan(@2)); }			
-	| EXIT StmtBlock														{ localVarStack.AddPayloadVar(); localVarStack.Push(); SetStateExit(true);                                   }
-	| EXIT ID SEMICOLON														{ SetStateExit(false, $2.str, ToSpan(@2));                                 }
+	: ENTRY PayloadVarDeclOrNone LCBRACE StmtBlock RCBRACE					{ SetStateEntry(ToSpan(@3), ToSpan(@5));                                  }	
+	| ENTRY ID SEMICOLON													{ SetStateEntry($2.str, ToSpan(@2)); }			
+	| EXIT LCBRACE StmtBlock RCBRACE										{ localVarStack.AddPayloadVar(); localVarStack.Push(); SetStateExit(ToSpan(@2), ToSpan(@4));                                   }
+	| EXIT ID SEMICOLON														{ SetStateExit($2.str, ToSpan(@2));                                 }
 	| DEFER NonDefaultEventList TrigAnnotOrNone SEMICOLON					{ AddDefersOrIgnores(true,  ToSpan(@1));            }		
 	| IGNORE NonDefaultEventList TrigAnnotOrNone SEMICOLON					{ AddDefersOrIgnores(false, ToSpan(@1));            }
 	| OnEventList DO ID TrigAnnotOrNone SEMICOLON							{ AddDoNamedAction($3.str, ToSpan(@3), ToSpan(@1)); }
-	| OnEventList DO TrigAnnotOrNone PayloadVarDeclOrNone StmtBlock SEMICOLON					{ AddDoAnonyAction(ToSpan(@1)); }
+	| OnEventList DO TrigAnnotOrNone PayloadVarDeclOrNone LCBRACE StmtBlock RCBRACE SEMICOLON					{ AddDoAnonyAction(ToSpan(@5), ToSpan(@7), ToSpan(@1)); }
 	| OnEventList PUSH StateTarget TrigAnnotOrNone SEMICOLON				{ AddTransition(true, ToSpan(@1));           }
  	| OnEventList GOTO StateTarget TrigAnnotOrNone SEMICOLON				{ AddTransition(false, ToSpan(@1));          } 
-	| OnEventList GOTO StateTarget TrigAnnotOrNone WITH PayloadVarDeclOrNone StmtBlock SEMICOLON { AddTransitionWithAction(true, "", ToSpan(@1), ToSpan(@1));           }
-	| OnEventList GOTO StateTarget TrigAnnotOrNone WITH ID SEMICOLON		{ AddTransitionWithAction(false, $6.str, ToSpan(@6), ToSpan(@1));           }
+	| OnEventList GOTO StateTarget TrigAnnotOrNone WITH PayloadVarDeclOrNone LCBRACE StmtBlock RCBRACE SEMICOLON { AddTransitionWithAction(ToSpan(@7), ToSpan(@9), ToSpan(@1));           }
+	| OnEventList GOTO StateTarget TrigAnnotOrNone WITH ID SEMICOLON		{ AddTransitionWithAction($6.str, ToSpan(@6), ToSpan(@1));           }
 	;
 
 OnEventList
@@ -364,7 +364,7 @@ ReceiveStmt
 	;
 
 Case 
-	: CaseEventList PayloadVarDeclOrNone StmtBlock 		{ AddCaseAnonyAction(ToSpan(@3)); }
+	: CaseEventList PayloadVarDeclOrNone LCBRACE StmtBlock RCBRACE 		{ AddCaseAnonyAction(ToSpan(@3), ToSpan(@5)); }
 	;
 
 CaseEventList
@@ -377,8 +377,8 @@ CaseList
 	;
 	 
 StmtBlock
-	: LCBRACE LocalVarDeclList RCBRACE                                         { PushNulStmt(P_Root.UserCnstKind.SKIP,  ToSpan(@1));      }    
-    | LCBRACE LocalVarDeclList StmtList RCBRACE
+	: LocalVarDeclList                                         { PushNulStmt(); }    
+    | LocalVarDeclList StmtList
 	;
 
 StmtList

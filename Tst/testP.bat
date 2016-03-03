@@ -3,7 +3,7 @@ setlocal
 set SCRIPTDIR=%~dp0
 cd %SCRIPTDIR%
 cd ..\Bld
-REM call build.bat 
+REM call build.bat release x86
 cd %SCRIPTDIR%
 
 echo msbuild  %SCRIPTDIR%\Tools\RunPTool\RunPTool.csproj /t:Rebuild /p:Configuration=Debug /p:Platform=x86 /nologo

@@ -1,4 +1,3 @@
-arg: ..\PushExplicitPop.dll
 arg: -et:PushExplicitPop.trace
 inc: PushExplicitPop.trace
 del: PushExplicitPop.trace

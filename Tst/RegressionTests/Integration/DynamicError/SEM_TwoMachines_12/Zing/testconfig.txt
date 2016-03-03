@@ -1,4 +1,3 @@
-arg: ..\NonConstantEventExprMonitor1.dll
 arg: -et:NonConstantEventExprMonitor1.trace
 inc: NonConstantEventExprMonitor1.trace
 del: NonConstantEventExprMonitor1.trace

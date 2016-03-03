@@ -1,4 +1,3 @@
-arg: ..\InfiniteLoopInAtomicBlock.dll 
 arg: -et:InfiniteLoopInAtomicBlock.trace
 inc: InfiniteLoopInAtomicBlock.trace
 del: InfiniteLoopInAtomicBlock.trace

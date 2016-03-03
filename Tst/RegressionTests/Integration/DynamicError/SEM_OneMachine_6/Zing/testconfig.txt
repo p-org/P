@@ -1,4 +1,3 @@
-arg: ..\SendInExitHandledEvent.dll
 arg: -et:SendInExitHandledEvent.trace
 inc: SendInExitHandledEvent.trace
 del: SendInExitHandledEvent.trace

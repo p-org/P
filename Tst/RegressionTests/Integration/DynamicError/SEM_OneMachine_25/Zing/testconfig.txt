@@ -1,4 +1,3 @@
-arg: ..\NewInExit.dll 
 arg: -et:NewInExit.trace
 inc: NewInExit.trace
 del: NewInExit.trace

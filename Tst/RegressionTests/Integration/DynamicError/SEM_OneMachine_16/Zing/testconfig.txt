@@ -1,4 +1,3 @@
-arg: ..\ExplicitPopExit.dll
 arg: -et:ExplicitPopExit.trace
 inc: ExplicitPopExit.trace
 del: ExplicitPopExit.trace

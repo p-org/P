@@ -1,4 +1,3 @@
-arg: ..\pop.dll
 arg: -et:pop.trace
 inc: pop.trace
 del: pop.trace

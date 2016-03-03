@@ -1,4 +1,3 @@
-arg: ..\FuncInExpr.dll
 arg: -et:FuncInExpr.trace
 inc: FuncInExpr.trace
 del: FuncInExpr.trace

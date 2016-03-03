@@ -1,2 +1,1 @@
-arg: ..\UnhandledEventIgnored.dll
 dsc: zinger.exe, P semantics test: one machine, "ignore" of an unhandled event

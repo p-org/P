@@ -1,4 +1,3 @@
-arg: ..\bug2.dll
 arg: -et:bug2.trace
 inc: bug2.trace
 del: bug2.trace

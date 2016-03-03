@@ -1,4 +1,3 @@
-arg: ..\Liveness_2.dll
 arg: -ndfsliveness
 arg: -et:Liveness_2.trace
 inc: Liveness_2.trace

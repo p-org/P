@@ -1,4 +1,3 @@
-arg: ..\receive8.dll
 arg: -et:receive8.trace
 inc: receive8.trace
 del: receive8.trace

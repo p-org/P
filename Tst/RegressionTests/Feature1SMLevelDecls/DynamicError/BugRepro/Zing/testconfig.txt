@@ -1,4 +1,3 @@
-arg: ..\PingPongBugRepro.dll
 arg: -et:PingPongBugRepro.trace
 arg: -delayB:..\..\..\..\..\..\Ext\Zing\x86\RunToCompletionDelayingScheduler.dll
 inc: PingPongBugRepro.trace

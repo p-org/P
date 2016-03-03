@@ -1,4 +1,3 @@
-arg: ..\SentNullDetected.dll
 arg: -et:SentNullDetected.trace
 inc: SentNullDetected.trace
 del: SentNullDetected.trace

@@ -1,2 +1,1 @@
-arg: ..\receive6.dll
 dsc: zinger.exe, receive statement

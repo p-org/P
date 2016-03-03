@@ -1,4 +1,3 @@
-arg: ..\TopNullHandlerOverridesInherited.dll
 arg: -et:TopNullHandlerOverridesInherited.trace
 inc: TopNullHandlerOverridesInherited.trace
 del: TopNullHandlerOverridesInherited.trace

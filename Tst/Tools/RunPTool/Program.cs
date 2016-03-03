@@ -135,10 +135,10 @@ namespace RunPTool
                     //Type-check list of test dirs:
                     //Check that test dirs do not contain paths to Pc/Zing/Prt:
                     bool result = CheckTopPaths(activeDirs);
-                    //if (!result)
-                    //{
-                    //return;
-                    //}
+                    if (!result)
+                    {
+                        return;
+                    }
                     //Check other rules recursively:
                     result = CheckTestDirs(activeDirs);                
                     if (!result)

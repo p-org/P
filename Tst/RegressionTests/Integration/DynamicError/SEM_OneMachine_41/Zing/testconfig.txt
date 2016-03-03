@@ -1,4 +1,3 @@
-arg: ..\NullHandlerInLoop.dll
 arg: -et:NullHandlerInLoop.trace
 inc: NullHandlerInLoop.trace
 del: NullHandlerInLoop.trace

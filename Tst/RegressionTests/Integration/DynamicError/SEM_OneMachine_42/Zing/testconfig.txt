@@ -1,4 +1,3 @@
-arg: ..\NullTriggerPayload.dll
 arg: -et:NullTriggerPayload.trace
 inc: NullTriggerPayload.trace
 del: NullTriggerPayload.trace

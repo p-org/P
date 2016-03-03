@@ -1,2 +1,1 @@
-arg: ..\ShortCircuitEval.dll
 dsc: zinger.exe, short-circuit in "&&" and "||" evaluation

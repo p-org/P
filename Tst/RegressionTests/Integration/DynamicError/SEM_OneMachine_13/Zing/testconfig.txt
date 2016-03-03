@@ -1,4 +1,3 @@
-arg: ..\PushTransInheritance.dll
 arg: -et:PushTransInheritance.trace
 inc: PushTransInheritance.trace
 del: PushTransInheritance.trace

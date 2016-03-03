@@ -1,4 +1,3 @@
-arg: ..\staticfunctions_4.dll
 arg: -et:staticfunctions_4.trace
 inc: staticfunctions_4.trace
 del: staticfunctions_4.trace

@@ -1,4 +1,3 @@
-arg: ..\anyType.dll
 arg: -et:anyType.trace
 inc: anyType.trace
 del: anyType.trace

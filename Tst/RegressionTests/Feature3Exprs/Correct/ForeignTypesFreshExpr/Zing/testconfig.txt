@@ -1,2 +1,1 @@
-arg: ..\foreignTypesFreshExpr.dll
 dsc: zinger.exe, foreign types and "fresh" expression

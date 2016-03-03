@@ -225,6 +225,8 @@ namespace CheckP
                     throw new Exception("Unknown argument to pc encountered");
                 }
             }
+            //Add parameter: default name for output files:
+            loadArgs.Add("/outputFileName:program");
         }
 
         public bool Check(string testfile)
@@ -394,6 +396,23 @@ namespace CheckP
                     // zingerResult will be false only if zinger command line call didn't work;
                     // otherwise, it will be "true", even if Zinger's exit value is non-zero
                     // TODO: catch Zinger's exit code 7 (wrong parameters) and report it to cmd window
+
+                    //Adding default parameter: model file name as "program.dll" in the parent dir:
+                    Tuple<OptValueKind, object> zingerDefaultArg = 
+                            new Tuple <OptValueKind, object> (OptValueKind.String, "..\\program.dll");
+                    var lst = new List<Tuple<OptValueKind, object>>();
+                    if (zingerArgs != null)
+                    {
+                        lst = zingerArgs.ToList();
+                        lst.Add(zingerDefaultArg);
+                        zingerArgs = lst.ToArray();
+                    }
+                    else
+                    {
+                        zingerArgs = new Tuple<OptValueKind, object>[1];
+                        zingerArgs[0] = zingerDefaultArg;
+                    }
+                    
                     bool zingerResult = Run(tmpWriter, zingFilePath, zingerArgs);
 
                     //debug:
@@ -753,6 +772,9 @@ namespace CheckP
                 Uri combined = new Uri(new Uri(activeDirectory), exe);
                 psi.FileName = combined.LocalPath;
                 psi.Arguments = args.Trim();
+                //Debug:
+                //Console.WriteLine("exe: {0}", exe);
+                //Console.WriteLine("Run arguments: {0}", psi.Arguments);
                 psi.CreateNoWindow = true;
 
                 string outString = "";

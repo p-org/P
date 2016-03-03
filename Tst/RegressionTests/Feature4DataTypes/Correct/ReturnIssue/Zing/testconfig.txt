@@ -1,2 +1,1 @@
-arg: ..\returnIssue.dll
 dsc: zinger.exe: return types

@@ -1,4 +1,3 @@
-arg: ..\equality.dll
 arg: -et:equality.trace
 inc: equality.trace
 del: equality.trace

@@ -1,4 +1,3 @@
-arg: ..\MaxInstances_1.dll
 arg: -et:MaxInstances_1.trace
 inc: MaxInstances_1.trace
 del: MaxInstances_1.trace

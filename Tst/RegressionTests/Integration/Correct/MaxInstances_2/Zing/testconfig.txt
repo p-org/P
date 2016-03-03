@@ -1,2 +1,1 @@
-arg: ..\MaxInstances_2.dll
 dsc: zinger.exe, Feature Integration

@@ -1,4 +1,3 @@
-arg: ..\RaisedHaltHandled.dll
 arg: -et:RaisedHaltHandled.trace
 inc: RaisedHaltHandled.trace
 del: RaisedHaltHandled.trace

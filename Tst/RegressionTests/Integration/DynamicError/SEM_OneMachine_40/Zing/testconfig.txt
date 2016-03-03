@@ -1,4 +1,3 @@
-arg: ..\lvalues_runtimeError.dll
 arg: -et:lvalues_runtimeError.trace
 inc: lvalues_runtimeError.trace
 del: lvalues_runtimeError.trace

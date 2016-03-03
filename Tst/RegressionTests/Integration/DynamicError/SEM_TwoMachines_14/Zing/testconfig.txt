@@ -1,4 +1,3 @@
-arg: ..\NewMonitor_v.dll
 arg: -et:NewMonitor_v.trace
 inc: NewMonitor_v.trace
 del: NewMonitor_v.trace

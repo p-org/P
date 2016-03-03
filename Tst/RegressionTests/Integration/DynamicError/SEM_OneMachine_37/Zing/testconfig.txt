@@ -1,4 +1,3 @@
-arg: ..\NullEventHandler2.dll
 arg: -et:NullEventHandler2.trace
 inc: NullEventHandler2.trace
 del: NullEventHandler2.trace

@@ -1,3 +1,2 @@
-arg: ..\PingPong.dll
 arg: -delayB:..\..\..\..\..\..\Ext\Zing\x86\RunToCompletionDelayingScheduler.dll
 dsc: zinger.exe, PingPong example that uses static functions.

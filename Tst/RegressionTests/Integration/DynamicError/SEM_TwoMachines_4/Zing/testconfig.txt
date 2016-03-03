@@ -1,4 +1,3 @@
-arg: ..\EventSentAfterSentHaltHandled_v.dll
 arg: -et:EventSentAfterSentHaltHandled_v.trace
 inc: EventSentAfterSentHaltHandled_v.trace
 del: EventSentAfterSentHaltHandled_v.trace

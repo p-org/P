@@ -1,4 +1,3 @@
-arg: ..\GotoToItself.dll
 arg: -et:GotoToItself.trace
 inc: GotoToItself.trace
 del: GotoToItself.trace

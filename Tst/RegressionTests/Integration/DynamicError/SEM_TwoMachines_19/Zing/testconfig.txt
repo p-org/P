@@ -1,4 +1,3 @@
-arg: ..\EventExprSemantics2.dll
 arg: -et:EventExprSemantics2.trace
 inc: EventExprSemantics2.trace
 del: EventExprSemantics2.trace

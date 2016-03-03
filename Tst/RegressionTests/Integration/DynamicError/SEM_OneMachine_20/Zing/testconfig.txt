@@ -1,4 +1,3 @@
-arg: ..\BugReproIdenticalTerms.dll
 arg: -et:BugReproIdenticalTerms.trace
 inc: BugReproIdenticalTerms.trace
 del: BugReproIdenticalTerms.trace

@@ -1,4 +1,3 @@
-arg: ..\TokenRing.dll
 arg: -et:TokenRing.trace
 inc: TokenRing.trace
 del: TokenRing.trace

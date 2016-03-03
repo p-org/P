@@ -1,4 +1,3 @@
-arg: ..\Push.dll
 arg: -et:Push.trace
 inc: Push.trace
 del: Push.trace

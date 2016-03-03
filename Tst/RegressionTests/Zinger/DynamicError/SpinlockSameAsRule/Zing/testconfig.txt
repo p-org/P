@@ -1,4 +1,3 @@
-arg: ..\SpinlockSameAsRule.dll
 arg: -et:SpinlockSameAsRule.trace
 arg: -m
 inc: SpinlockSameAsRule.trace

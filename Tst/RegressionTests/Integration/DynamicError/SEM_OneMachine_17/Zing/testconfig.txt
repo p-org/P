@@ -1,4 +1,3 @@
-arg: ..\PushImplicitPopWithRaise.dll
 arg: -et:PushImplicitPopWithRaise.trace
 inc: PushImplicitPopWithRaise.trace
 del: PushImplicitPopWithRaise.trace

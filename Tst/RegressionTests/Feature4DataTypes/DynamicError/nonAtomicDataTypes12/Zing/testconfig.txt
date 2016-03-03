@@ -1,4 +1,3 @@
-arg: ..\StackOverflowException.dll
 arg: -et:StackOverflowException.trace
 inc: StackOverflowException.trace
 del: StackOverflowException.trace

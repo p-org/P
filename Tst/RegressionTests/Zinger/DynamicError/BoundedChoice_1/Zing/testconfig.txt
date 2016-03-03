@@ -1,4 +1,3 @@
-arg: ..\boundedchoice_1.dll
 arg: -et:boundedchoice_1.trace
 inc: boundedchoice_1.trace
 del: boundedchoice_1.trace

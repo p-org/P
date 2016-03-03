@@ -1,4 +1,3 @@
-arg: ..\NonConstantEventExpr2.dll
 arg: -et:NonConstantEventExpr2.trace
 inc: NonConstantEventExpr2.trace
 del: NonConstantEventExpr2.trace

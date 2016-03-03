@@ -1,2 +1,1 @@
-arg: ..\bubble_sort.dll
 dsc: zinger.exe, P Semantics, one machine, sequences, "while", "if-then-else"

@@ -1,4 +1,3 @@
-arg: ..\nonAtomicDataTypes.dll
 arg: -et:nonAtomicDataTypes.trace
 inc: nonAtomicDataTypes.trace
 del: nonAtomicDataTypes.trace

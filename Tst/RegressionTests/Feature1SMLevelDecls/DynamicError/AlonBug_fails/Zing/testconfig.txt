@@ -1,4 +1,3 @@
-arg: ..\AlonBug_fails.dll
 arg: -et:AlonBug_fail.trace
 inc: AlonBug_fail.trace
 del: AlonBug_fail.trace

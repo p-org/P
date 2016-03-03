@@ -1,2 +1,1 @@
-arg: ..\FunctionParMutated.dll
 dsc: zinger.exe, "send" in function which mutates its parameters

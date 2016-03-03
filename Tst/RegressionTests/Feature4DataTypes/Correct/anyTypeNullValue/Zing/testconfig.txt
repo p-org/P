@@ -1,2 +1,1 @@
-arg: ..\anyTypeNullValue.dll
 dsc: zinger.exe, 4. comparison of "any" type var with "null"S

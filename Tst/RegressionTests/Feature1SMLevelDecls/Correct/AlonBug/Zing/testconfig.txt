@@ -1,2 +1,1 @@
-arg: ..\AlonBug.dll
 dsc: zinger.exe, Feature Integration: case when exit actions are not executed

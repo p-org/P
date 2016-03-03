@@ -1,4 +1,3 @@
-arg: ..\GotoTransInheritance.dll
 arg: -et:GotoTransInheritance.trace
 inc: GotoTransInheritance.trace
 del: GotoTransInheritance.trace

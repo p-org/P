@@ -1,4 +1,3 @@
-arg: ..\SpinlockWithTypestate.dll
 arg: -et:SpinlockWithTypestate.trace
 arg: -m
 inc: SpinlockWithTypestate.trace

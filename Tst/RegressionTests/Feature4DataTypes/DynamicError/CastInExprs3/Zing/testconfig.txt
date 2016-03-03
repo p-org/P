@@ -1,4 +1,3 @@
-arg: ..\CastInExprsDynError.dll
 arg: -et:CastInExprsDynError.trace
 inc: CastInExprsDynError.trace
 del: CastInExprsDynError.trace

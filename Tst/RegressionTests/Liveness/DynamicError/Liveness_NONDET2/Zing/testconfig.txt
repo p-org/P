@@ -1,3 +1,2 @@
-arg: ..\Liveness_NONDET.dll
 arg: -ndfsliveness
 dsc: zinger.exe, Liveness: simplest sample demonstrating NONDET in liveness

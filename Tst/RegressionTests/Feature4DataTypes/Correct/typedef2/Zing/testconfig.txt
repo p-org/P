@@ -1,2 +1,1 @@
-arg: ..\equality.dll
 dsc: zinger.exe, test typedef feature

@@ -1,4 +1,3 @@
-arg: ..\NullHandlerInheritedByPushTr.dll
 arg: -et:NullHandlerInheritedByPushTr.trace
 inc: NullHandlerInheritedByPushTr.trace
 del: NullHandlerInheritedByPushTr.trace

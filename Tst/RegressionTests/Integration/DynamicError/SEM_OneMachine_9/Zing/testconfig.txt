@@ -1,4 +1,3 @@
-arg: ..\PushItself.dll
 arg: -et:PushItself.trace
 inc: PushItself.trace
 del: PushItself.trace

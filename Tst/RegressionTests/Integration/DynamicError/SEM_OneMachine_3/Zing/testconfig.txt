@@ -1,4 +1,3 @@
-arg: ..\SendInEntry.dll
 arg: -et:SendInEntry.trace
 inc: SendInEntry.trace
 del: SendInEntry.trace

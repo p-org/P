@@ -1,4 +1,3 @@
-arg: ..\DeferIgnore2.dll
 arg: -et:DeferIgnore2.trace
 inc: DeferIgnore2.trace
 del: DeferIgnore2.trace

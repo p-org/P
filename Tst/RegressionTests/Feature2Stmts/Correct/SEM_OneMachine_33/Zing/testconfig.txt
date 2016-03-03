@@ -1,2 +1,1 @@
-arg: ..\seq_tuple.dll
 dsc: zinger.exe, complex data types in assignments: sequences, tuples

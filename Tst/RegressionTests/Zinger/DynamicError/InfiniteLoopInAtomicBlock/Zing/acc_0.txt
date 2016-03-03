@@ -8,10 +8,10 @@ OUT: The Zing model appears to have encountered a loop within an atomic block. Z
 OUT: 
 OUT: 
 OUT: Stack trace:
-OUT:     MACHINE_PING.ReentrancyHelper (InfiniteLoopInAtomicBlock.zing, Line 431)
-OUT:     MACHINE_PING.RunHelper (InfiniteLoopInAtomicBlock.zing, Line 232)
-OUT:     MACHINE_PING.Run (InfiniteLoopInAtomicBlock.zing, Line 114)
-OUT:     MACHINE_PING.Start (InfiniteLoopInAtomicBlock.zing, Line 87)
+OUT:     MACHINE_PING.ReentrancyHelper (program.zing, Line 431)
+OUT:     MACHINE_PING.RunHelper (program.zing, Line 232)
+OUT:     MACHINE_PING.Run (program.zing, Line 114)
+OUT:     MACHINE_PING.Start (program.zing, Line 87)
 OUT: 
 OUT: 
 OUT: 9 distinct states explored

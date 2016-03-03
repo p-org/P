@@ -2423,6 +2423,10 @@ namespace Microsoft.Pc
             {
                 return FoldSeq(ft, children, ctxt);
             }
+            else if (funName == PData.Con_SourceInfo.Node.Name)
+            {
+                return new ZingTranslationInfo(ZingData.Cnst_Nil);
+            }
             else
             {
                 Console.WriteLine("Unknown term name: " + funName);

@@ -58,43 +58,6 @@
         {
             private Parser parser;
 
-            private Dictionary<P_Root.Stmt, Span> sourceInfo;
-            private Stack<Dictionary<P_Root.Stmt, Span>> sourceInfoStack;
-            public void AddSpan(P_Root.Stmt stmt, Span span)
-            {
-                sourceInfo.Add(stmt, span);
-            }
-            public void AddSourceInfoToProgram(P_Root.IArgType_FileInfo__0 decl, Span entrySpan, Span exitSpan)
-            {
-                var sourceFileName = parser.parseSource.ToString();
-                var fileInfo = P_Root.MkFileInfo();
-                fileInfo.decl = decl;
-                fileInfo.file = P_Root.MkString(sourceFileName);
-                parser.parseProgram.FileInfos.Add(fileInfo);
-                var lineInfo = P_Root.MkLineInfo();
-                lineInfo.decl = (P_Root.IArgType_LineInfo__0)decl;
-                lineInfo.stmt = (P_Root.IArgType_LineInfo__1)P_Root.MkUserCnst(P_Root.UserCnstKind.ENTRY);
-                lineInfo.line = P_Root.MkNumeric(entrySpan.StartLine);
-                lineInfo.col = P_Root.MkNumeric(entrySpan.StartCol);
-                parser.parseProgram.LineInfos.Add(lineInfo);
-                lineInfo = P_Root.MkLineInfo();
-                lineInfo.decl = (P_Root.IArgType_LineInfo__0)decl;
-                lineInfo.stmt = (P_Root.IArgType_LineInfo__1)P_Root.MkUserCnst(P_Root.UserCnstKind.EXIT);
-                lineInfo.line = P_Root.MkNumeric(exitSpan.StartLine);
-                lineInfo.col = P_Root.MkNumeric(exitSpan.StartCol);
-                parser.parseProgram.LineInfos.Add(lineInfo);
-
-                foreach (var kv in sourceInfo)
-                {
-                    lineInfo = P_Root.MkLineInfo();
-                    lineInfo.decl = (P_Root.IArgType_LineInfo__0) decl;
-                    lineInfo.stmt = (P_Root.IArgType_LineInfo__1)kv.Key;
-                    lineInfo.line = P_Root.MkNumeric(kv.Value.StartLine);
-                    lineInfo.col = P_Root.MkNumeric(kv.Value.StartCol);
-                    parser.parseProgram.LineInfos.Add(lineInfo);
-                }
-            }
-
             private P_Root.IArgType_NmdTupType__1 contextLocalVarDecl;
             public P_Root.IArgType_NmdTupType__1 ContextLocalVarDecl
             {
@@ -118,23 +81,10 @@
 
             private P_Root.IArgType_Cases__2 casesList;
             private Stack<P_Root.IArgType_Cases__2> casesListStack;
-            public void PushCasesList()
-            {
-                casesListStack.Push(casesList);
-                casesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
-            }
-            public P_Root.IArgType_Cases__2 PopCasesList()
-            {
-                var currCasesList = casesList;
-                casesList = casesListStack.Pop();
-                return currCasesList;
-            }
 
             public LocalVarStack(Parser parser)
             {
                 this.parser = parser;
-                this.sourceInfo = new Dictionary<P_Root.Stmt, Span>();
-                this.sourceInfoStack = new Stack<Dictionary<P_Root.Stmt, Span>>();
                 this.contextLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
                 this.contextStack = new Stack<P_Root.IArgType_NmdTupType__1>();
                 this.crntLocalVarList = new List<string>();
@@ -143,6 +93,32 @@
                 this.caseEventStack = new Stack<List<P_Root.EventLabel>>();
                 this.casesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
                 this.casesListStack = new Stack<P_Root.IArgType_Cases__2>();
+            }
+
+            public LocalVarStack(Parser parser, P_Root.IArgType_NmdTupType__1 parameters)
+            {
+                this.parser = parser;
+                this.contextLocalVarDecl = Reverse(parameters);
+                this.contextStack = new Stack<P_Root.IArgType_NmdTupType__1>();
+                this.crntLocalVarList = new List<string>();
+                this.localVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+                this.localStack = new Stack<P_Root.IArgType_NmdTupType__1>();
+                this.caseEventStack = new Stack<List<P_Root.EventLabel>>();
+                this.casesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+                this.casesListStack = new Stack<P_Root.IArgType_Cases__2>();
+            }
+
+            public void PushCasesList()
+            {
+                casesListStack.Push(casesList);
+                casesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+            }
+
+            public P_Root.IArgType_Cases__2 PopCasesList()
+            {
+                var currCasesList = casesList;
+                casesList = casesListStack.Pop();
+                return currCasesList;
             }
 
             private P_Root.IArgType_NmdTupType__1 Reverse(P_Root.IArgType_NmdTupType__1 list)
@@ -162,23 +138,8 @@
                 return reverseList;
             }
 
-            public LocalVarStack(Parser parser, P_Root.IArgType_NmdTupType__1 parameters)
-            {
-                this.parser = parser;
-                this.contextLocalVarDecl = Reverse(parameters);
-                this.contextStack = new Stack<P_Root.IArgType_NmdTupType__1>();
-                this.crntLocalVarList = new List<string>();
-                this.localVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
-                this.localStack = new Stack<P_Root.IArgType_NmdTupType__1>();
-                this.caseEventStack = new Stack<List<P_Root.EventLabel>>();
-                this.casesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL); 
-                this.casesListStack = new Stack<P_Root.IArgType_Cases__2>();
-            }
-
             public void Push()
             {
-                sourceInfoStack.Push(new Dictionary<P_Root.Stmt, Span>(sourceInfo));
-                sourceInfo.Clear();
                 contextStack.Push(contextLocalVarDecl);
                 localStack.Push(localVarDecl);
                 List<P_Root.EventLabel> caseEventList = new List<P_Root.EventLabel>(parser.crntEventList);
@@ -189,7 +150,6 @@
 
             public List<P_Root.EventLabel> Pop()
             {
-                sourceInfo = sourceInfoStack.Pop();
                 contextLocalVarDecl = contextStack.Pop();
                 contextLocalVarDecl = ((P_Root.NmdTupType)contextLocalVarDecl).tl;
                 localVarDecl = localStack.Pop();
@@ -237,7 +197,27 @@
                 crntLocalVarList.Clear();
             }
         }
+
         LocalVarStack localVarStack;
+
+        public void AddSourceInfoToProgram(P_Root.IArgType_FileInfo__0 decl, Span entrySpan, Span exitSpan)
+        {
+            var sourceFileName = parseSource.ToString();
+            var fileInfo = P_Root.MkFileInfo();
+            fileInfo.decl = decl;
+            fileInfo.file = P_Root.MkString(sourceFileName);
+            parseProgram.FileInfos.Add(fileInfo);
+            var lineInfo = P_Root.MkLineInfo();
+            lineInfo.decl = (P_Root.IArgType_LineInfo__0)decl;
+            lineInfo.loc = (P_Root.IArgType_LineInfo__1)P_Root.MkUserCnst(P_Root.UserCnstKind.ENTRY);
+            lineInfo.line = P_Root.MkNumeric(entrySpan.StartLine);
+            parseProgram.LineInfos.Add(lineInfo);
+            lineInfo = P_Root.MkLineInfo();
+            lineInfo.decl = (P_Root.IArgType_LineInfo__0)decl;
+            lineInfo.loc = (P_Root.IArgType_LineInfo__1)P_Root.MkUserCnst(P_Root.UserCnstKind.EXIT);
+            lineInfo.line = P_Root.MkNumeric(exitSpan.StartLine);
+            parseProgram.LineInfos.Add(lineInfo);
+        }
 
         public P_Root.TypeExpr Debug_PeekTypeStack
         {
@@ -251,6 +231,14 @@
         }
 
         CommandLineOptions Options;
+
+        P_Root.SourceInfo MkSourceInfo(Span span)
+        {
+            var sourceInfo = P_Root.MkSourceInfo();
+            sourceInfo.line = MkNumeric(span.StartLine, span);
+            sourceInfo.col = MkNumeric(span.StartCol, span);
+            return sourceInfo;
+        }
 
         internal bool ParseFile(
             ProgramName file,
@@ -441,7 +429,7 @@
 
             var sendStmt = P_Root.MkSend();
             sendStmt.Span = span;
-            localVarStack.AddSpan(sendStmt, span);
+            sendStmt.info = MkSourceInfo(span);
             if (hasArgs)
             {
                 var arg = exprsStack.Pop();
@@ -475,7 +463,7 @@
 
             var monitorStmt = P_Root.MkMonitor();
             monitorStmt.Span = span;
-            localVarStack.AddSpan(monitorStmt, span);
+            monitorStmt.info = MkSourceInfo(span);
             if (hasArgs)
             {
                 var arg = exprsStack.Pop();
@@ -505,7 +493,7 @@
             var receiveStmt = P_Root.MkReceive((P_Root.IArgType_Receive__0)localVarStack.PopCasesList());
             receiveStmt.Span = span;
             receiveStmt.label = P_Root.MkNumeric(GetNextTrampolineLabel());
-            localVarStack.AddSpan(receiveStmt, span);
+            receiveStmt.info = MkSourceInfo(span);
             stmtStack.Push(receiveStmt);
         }
 
@@ -516,7 +504,7 @@
 
             var raiseStmt = P_Root.MkRaise();
             raiseStmt.Span = span;
-            localVarStack.AddSpan(raiseStmt, span);
+            raiseStmt.info = MkSourceInfo(span);
             if (hasArgs)
             {
                 var arg = exprsStack.Pop();
@@ -547,7 +535,7 @@
             var newStmt = P_Root.MkNewStmt();
             newStmt.name = MkString(name, nameSpan);
             newStmt.Span = span;
-            localVarStack.AddSpan(newStmt, span);
+            newStmt.info = MkSourceInfo(span);
             if (hasArgs)
             {
                 var arg = exprsStack.Pop();
@@ -602,7 +590,7 @@
             funStmt.aout = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             funStmt.Span = span;
             funStmt.label = P_Root.MkNumeric(GetNextTrampolineLabel());
-            localVarStack.AddSpan(funStmt, span);
+            funStmt.info = MkSourceInfo(span);
             if (hasArgs)
             {
                 funStmt.args = (P_Root.Exprs)exprsStack.Pop();
@@ -742,7 +730,7 @@
         {
             var nulStmt = P_Root.MkNulStmt(MkUserCnst(op, span));
             nulStmt.Span = span;
-            localVarStack.AddSpan(nulStmt, span);
+            nulStmt.info = MkSourceInfo(span);
             stmtStack.Push(nulStmt);
         }
 
@@ -832,7 +820,7 @@
             Contract.Assert(valueExprStack.Count > 0);
             var iteStmt = P_Root.MkIte();
             iteStmt.Span = span;
-            localVarStack.AddSpan(iteStmt, span);
+            iteStmt.info = MkSourceInfo(span);
             iteStmt.cond = (P_Root.IArgType_Ite__0)valueExprStack.Pop();
             if (hasElse)
             {
@@ -864,7 +852,7 @@
             {
                 retStmt.expr = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
-            localVarStack.AddSpan(retStmt, span);
+            retStmt.info = MkSourceInfo(span);
             stmtStack.Push(retStmt);
         }
 
@@ -875,7 +863,7 @@
                 (P_Root.IArgType_While__0)valueExprStack.Pop(),
                 (P_Root.IArgType_While__1)stmtStack.Pop());
             whileStmt.Span = span;
-            localVarStack.AddSpan(whileStmt, span);
+            whileStmt.info = MkSourceInfo(span);
             stmtStack.Push(whileStmt);
         }
 
@@ -886,7 +874,7 @@
             assertStmt.arg = (P_Root.IArgType_Assert__0)valueExprStack.Pop();
             assertStmt.msg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             assertStmt.Span = span;
-            localVarStack.AddSpan(assertStmt, span);
+            assertStmt.info = MkSourceInfo(span);
             stmtStack.Push(assertStmt);
         }
         
@@ -897,7 +885,7 @@
             assertStmt.arg = (P_Root.IArgType_Assert__0)valueExprStack.Pop();
             assertStmt.msg = MkString(msg, msgSpan);
             assertStmt.Span = span;
-            localVarStack.AddSpan(assertStmt, span);
+            assertStmt.info = MkSourceInfo(span);
             stmtStack.Push(assertStmt);
         }
 
@@ -906,7 +894,7 @@
             var printStmt = P_Root.MkPrint();
             printStmt.msg = MkString(msg, msgSpan);
             printStmt.Span = span;
-            localVarStack.AddSpan(printStmt, span);
+            printStmt.info = MkSourceInfo(span);
             stmtStack.Push(printStmt);
         }
 
@@ -925,7 +913,7 @@
                 funStmt.aout = (P_Root.IArgType_FunStmt__2)aout;
                 funStmt.label = MkNumeric(GetNextTrampolineLabel(), span);
                 funStmt.Span = span;
-                localVarStack.AddSpan(funStmt, span);
+                funStmt.info = MkSourceInfo(span);
                 stmtStack.Push(funStmt);
             }
             else
@@ -935,7 +923,7 @@
                 binStmt.arg2 = (P_Root.IArgType_BinStmt__2)arg2;
                 binStmt.arg1 = (P_Root.IArgType_BinStmt__1)arg1;
                 binStmt.Span = span;
-                localVarStack.AddSpan(binStmt, span);
+                binStmt.info = MkSourceInfo(span);
                 stmtStack.Push(binStmt);
             }
         }
@@ -1120,7 +1108,7 @@
             entry = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)localVarStack.ContextLocalVarDecl);
             entry.Span = stmt.Span;
             parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)entry);
-            localVarStack.AddSourceInfoToProgram((P_Root.AnonFunDecl)entry, entrySpan, exitSpan);
+            AddSourceInfoToProgram((P_Root.AnonFunDecl)entry, entrySpan, exitSpan);
             localVarStack = new LocalVarStack(this);
 
             if (IsSkipFun((P_Root.GroundTerm)state.entryAction))
@@ -1175,7 +1163,7 @@
             exit = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)localVarStack.ContextLocalVarDecl);
             exit.Span = stmt.Span;
             parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)exit);
-            localVarStack.AddSourceInfoToProgram((P_Root.AnonFunDecl)exit, entrySpan, exitSpan);
+            AddSourceInfoToProgram((P_Root.AnonFunDecl)exit, entrySpan, exitSpan);
             localVarStack = new LocalVarStack(this);
 
             if (IsSkipFun((P_Root.GroundTerm)state.exitFun))
@@ -1351,7 +1339,7 @@
             action = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)localVarStack.ContextLocalVarDecl);
             action.Span = stmt.Span;
             parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)action);
-            localVarStack.AddSourceInfoToProgram((P_Root.AnonFunDecl)action, entrySpan, exitSpan);
+            AddSourceInfoToProgram((P_Root.AnonFunDecl)action, entrySpan, exitSpan);
             localVarStack = new LocalVarStack(this);
             AddTransitionHelper(state, action, span);
         }
@@ -1499,7 +1487,7 @@
             var anonAction = P_Root.MkAnonFunDecl(owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)localVarStack.ContextLocalVarDecl);
             anonAction.Span = stmt.Span;
             parseProgram.AnonFunctions.Add(anonAction);
-            localVarStack.AddSourceInfoToProgram(anonAction, entrySpan, exitSpan);
+            AddSourceInfoToProgram(anonAction, entrySpan, exitSpan);
             var caseEventList = localVarStack.Pop();
             foreach (var e in caseEventList)
             {
@@ -1518,7 +1506,7 @@
             var anonAction = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)localVarStack.ContextLocalVarDecl);
             anonAction.Span = stmt.Span;
             parseProgram.AnonFunctions.Add(anonAction);
-            localVarStack.AddSourceInfoToProgram(anonAction, entrySpan, exitSpan);
+            AddSourceInfoToProgram(anonAction, entrySpan, exitSpan);
             localVarStack = new LocalVarStack(this);
 
             foreach (var e in onEventList)
@@ -1813,7 +1801,7 @@
             funDecl.locals = (P_Root.IArgType_FunDecl__5)localVarStack.LocalVarDecl;
             funDecl.body = (P_Root.IArgType_FunDecl__6)stmtStack.Pop();
             parseProgram.Functions.Add(funDecl);
-            localVarStack.AddSourceInfoToProgram(funDecl, entrySpan, exitSpan);
+            AddSourceInfoToProgram(funDecl, entrySpan, exitSpan);
             localVarStack = new LocalVarStack(this);
             if (crntFunNames.Contains(name))
             {

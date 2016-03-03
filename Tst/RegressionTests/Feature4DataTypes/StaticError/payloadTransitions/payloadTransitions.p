@@ -36,10 +36,10 @@ main machine MachOS {
 			BOOL = payload.sec[2];
 		};
 		
-		on halt goto State1 with (payload: any) {
-			MACH = payload;
-			INT = payload;
-		};
+
+
+
+
 		
 		on null goto State1 with (payload: any) {
 			MACH = payload;

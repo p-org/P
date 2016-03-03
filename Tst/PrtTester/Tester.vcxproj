@@ -12,7 +12,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{B5FFA5E1-5213-4C04-8D03-53F28741126F}</ProjectGuid>
+    <ProjectGuid>{65DF9D53-1461-43AE-9A50-43E7C4D55E05}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Tester</RootNamespace>
   </PropertyGroup>
@@ -46,17 +46,17 @@
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      <OutDir>$(ProjectDir)$(Configuration)\$(UnifiedPlatform)\</OutDir>
-      <IntDir>$(ProjectDir)\InterWin\$(Configuration)\$(Platform)\</IntDir>
-      <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(ProjectDir)$(Configuration)\$(UnifiedPlatform)\</OutDir>
+    <IntDir>$(ProjectDir)\InterWin\$(Configuration)\$(Platform)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      <OutDir>$(ProjectDir)$(Configuration)\$(UnifiedPlatform)\</OutDir>
+    <OutDir>$(ProjectDir)$(Configuration)\$(UnifiedPlatform)\</OutDir>
     <IntDir>$(ProjectDir)\InterWin\$(Configuration)\$(Platform)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      <OutDir>$(ProjectDir)$(Configuration)\$(UnifiedPlatform)\</OutDir>
+    <OutDir>$(ProjectDir)$(Configuration)\$(UnifiedPlatform)\</OutDir>
     <IntDir>$(ProjectDir)\InterWin\$(Configuration)\$(Platform)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
@@ -93,7 +93,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-        <AdditionalLibraryDirectories>$(DropFolder)\Lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(DropFolder)\Lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>PrtWinUser.lib;PrtDist.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

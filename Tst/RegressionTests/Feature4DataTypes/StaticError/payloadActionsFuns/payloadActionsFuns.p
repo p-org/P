@@ -39,10 +39,10 @@ main machine MachOS {
 			BOOL = payload.sec[2];
 		};
 		
-		on halt do (payload: any) {
-			MACH = payload;
-			INT = payload;
-		};
+
+
+
+
 		
 		on null do (payload: any) {
 			MACH = payload;  

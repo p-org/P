@@ -59,15 +59,9 @@ main machine Dummy {
 			
 			monitor ev, seqE, seqInt;
 			
-			monitor A;
-			
-			monitor seqAny;
-			
-		}
-	
-	}
-	
-
+			monitor A;						
+		}	
+	}	
 }
 
 

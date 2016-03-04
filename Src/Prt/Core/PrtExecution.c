@@ -990,9 +990,9 @@ _In_ PRT_MACHINEINST_PRIV			*context
 )
 {
 	ULONG32 nEvents = context->process->program->nEvents;
-	return (UINT16)(((nEvents == 0) || (nEvents % (sizeof(PRT_UINT32) * 8) != 0))
-		? (1 + (nEvents / (sizeof(PRT_UINT32) * 8)))
-		: (nEvents / (sizeof(PRT_UINT32) * 8)));
+	PrtAssert(0 < nEvents, "Illegal number of events");
+	ULONG32 highestEventIndex = nEvents - 1;
+	return 1 + (UINT16)(highestEventIndex / (sizeof(PRT_UINT32) * 8));
 }
 
 PRT_VALUE *

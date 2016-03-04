@@ -883,7 +883,7 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 				        n = sum(0, { m | ReceivedId(c, receive, k, _), i = qtnt(k / 32, 1), PowOf2(k % 32, m) }), n : Natural 
 	               }),
 		 rlist = lstReverse(#EventPackList, list),
-		 size = 1 + maxAll(0, { i | ReceivedId(c, receive, j, _), i = qtnt(j / 32, 1) }), size : Natural.	
+		 highestEventIndex = 1 + count({decl | decl is EventDecl}), size = 1 + qtnt(highestEventIndex / 32, 1), size: Natural.
 
 	//// Generate event sets for transitions
 	EventsPacked(s, #TransDecl, rlist),
@@ -897,7 +897,7 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 				        n = sum(0, { m | TransDeclEvnt(t', _, k), t'.src = s, i = qtnt(k / 32, 1), PowOf2(k % 32, m) }), n : Natural 
 	               }),
 		 rlist = lstReverse(#EventPackList, list),
-		 size = 1 + maxAll(0, { i | TransDeclEvnt(t, _, j), t.src = s, i = qtnt(j / 32, 1) }), size : Natural.	
+		 highestEventIndex = 1 + count({decl | decl is EventDecl}), size = 1 + qtnt(highestEventIndex / 32, 1), size: Natural.
 
 	//// Generate event sets for non-defer do's
 	EventsPacked(s, #DoDecl, rlist),
@@ -911,7 +911,7 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 				        n = sum(0, { m | DoDeclEvnt(d', _, k), d'.action != DEFER, d'.src = s, i = qtnt(k / 32, 1), PowOf2(k % 32, m) }), n : Natural 
 	               }),
 		 rlist = lstReverse(#EventPackList, list),
-		 size = 1 + maxAll(0, { i | DoDeclEvnt(d, _, j), d.action != DEFER, d.src = s, i = qtnt(j / 32, 1) }), size : Natural.	
+		 highestEventIndex = 1 + count({decl | decl is EventDecl}), size = 1 + qtnt(highestEventIndex / 32, 1), size: Natural.
 
 	//// Generate event sets for defer do's
 	EventsPacked(s, DEFER, rlist),
@@ -925,7 +925,7 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 				        n = sum(0, { m | DeferEvnt(d', _, k), d'.action = DEFER, d'.src = s, i = qtnt(k / 32, 1), PowOf2(k % 32, m) }), n : Natural 
 	               }),
 		 rlist = lstReverse(#EventPackList, list),
-		 size = 1 + maxAll(0, { i | DeferEvnt(d, _, j), d.action = DEFER, d.src = s, i = qtnt(j / 32, 1) }), size : Natural.	
+		 highestEventIndex = 1 + count({decl | decl is EventDecl}), size = 1 + qtnt(highestEventIndex / 32, 1), size: Natural.
 
     //// Build up pack array.
 	EventPacking(l, NIL,  i',  a') :- EventPacking(l, NIL, i, a), i > 0, i' = i - 1, i' : Natural, a' = Args(IntLit(0, HEX, U), a).
@@ -948,15 +948,14 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 
     //// Build every event set array in reverse order
 	EvSetDeclConcat(m, arr) :- 
-	                        EventPacking(l, _, size, NIL),
+	                        EventPacking(l, _, _, NIL),
 	                        m = toOrdinal(l, 0, { l' | EventPacking(l', _, 0, _) }),
 							EvSetDeclConcat(m + 1, after),							  
 							arr = out.Args(def, after), 
 	                        def = Init(
 							   Args(IntLit(m, DEC, NIL),
-							   Args(IntLit(size, DEC, NIL),
 							   Args(Ident(strJoin("P_GEND_EVENTSET_", toString(m))),
-							   NIL)))).
+							   NIL))).
 
 	COut(10, def) :- EvSetDeclConcat(0, arr),
 	                def = out.VarDef(

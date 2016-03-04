@@ -18,10 +18,10 @@
     <ClCompile Include="stubs.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\ClientFiles\MainFunction.c">
+    <ClCompile Include="PingPong.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PingPong.c">
+    <ClCompile Include="MainFunction.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

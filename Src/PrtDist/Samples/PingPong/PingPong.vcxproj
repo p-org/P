@@ -81,7 +81,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\ClientFiles\MainFunction.c" />
+    <ClCompile Include="MainFunction.c" />
     <ClCompile Include="PingPong.c" />
     <ClCompile Include="stubs.c" />
     <PCompile Include="PingPong.p" />

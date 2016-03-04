@@ -375,7 +375,7 @@
             }
 
             //// Step 3. Generate outputs
-            return GenerateC(flags) & GenerateZing(flags); 
+            return GenerateC(flags) && (Options.noZingOutput ? true : GenerateZing(flags)); 
         }
 
         public bool GenerateZing()

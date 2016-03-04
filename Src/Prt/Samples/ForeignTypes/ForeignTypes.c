@@ -1,4 +1,4 @@
-#include "program.h"
+#include "ForeignStringType.h"
 
 PRT_UINT64 UserMkDefaultForeignValue(_In_ PRT_UINT16 typeTag)
 {

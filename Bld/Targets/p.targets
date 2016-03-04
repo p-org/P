@@ -6,15 +6,27 @@
         <!-- So this new property unifies that difference and moves everything to 'x86' -->
         <UnifiedPlatform Condition="'$(Platform)'=='Win32'">x86</UnifiedPlatform>
         <DropFolder>$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\$(UnifiedPlatform)</DropFolder>
-        <CleanDependsOn>$(CleanDependsOn);CleanSdkHeaders;CleanClientFiles</CleanDependsOn>
+        <CleanDependsOn>$(CleanDependsOn);CleanSdkHeaders;CleanClientFiles;CleanCompileP</CleanDependsOn>
     </PropertyGroup>
     
-    <Target Name="CompileP" Inputs="@(PCompile)" Outputs="program.h;program.c;stubs.c" BeforeTargets="BeforeBuildGenerateSources">
+    <Target Name="CompileP" Inputs="@(PCompile)" Outputs="%(FileName).c;%(FileName).h;stubs.c" BeforeTargets="BeforeBuildGenerateSources">
         <Message Importance="high" Text="########## compiling p files: @(PCompile) ##################" />
         <Exec Command="$(DropFolder)\Binaries\pc.exe @(PCompile->'%(FullPath)')" />
         <ItemGroup>
-            <FileWrites Include="$(MSBuildThisFileDirectory)\program.h;$(MSBuildThisFileDirectory)\program.c;$(MSBuildThisFileDirectory)\stubs.c" />
+            <FileWrites Include="@(PCompile->'%(FullPath)\%(FileName).c')" />
+            <FileWrites Include="@(PCompile->'%(FullPath)\%(FileName).h')" />
+            <FileWrites Include="$(MSBuildThisFileDirectory)\stubs.c" />
         </ItemGroup>
+    </Target>
+    
+    <Target Name="CleanCompileP" Condition="'@(PCompile)' != ''" >
+       <PropertyGroup>
+          <PFullPath>@(PCompile->'%(FullPath)')</PFullPath>
+          <PDirectory>$([System.IO.Path]::GetDirectoryName($(PFullPath)))</PDirectory>
+       </PropertyGroup>
+        <Delete Files="@(PCompile->'$(PDirectory)\%(FileName).c')"/>
+        <Delete Files="@(PCompile->'$(PDirectory)\%(FileName).h')"/>
+        <Delete Files="$(MSBuildThisFileDirectory)\stubs.c"/>
     </Target>
 
     <Target Name="CopySdkHeaders" Inputs="@(ClInclude)"  Outputs="$(DropFolder)\Headers\%(Filename)" BeforeTargets="PrepareForBuild">    

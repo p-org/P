@@ -82,12 +82,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\ClientFiles\MainFunction.c" />
-    <ClCompile Include="program.c" />
+    <ClCompile Include="PingPong.c" />
     <ClCompile Include="stubs.c" />
     <PCompile Include="PingPong.p" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="program.h" />
+    <ClInclude Include="PingPong.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />

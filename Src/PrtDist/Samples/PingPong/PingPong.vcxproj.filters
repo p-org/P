@@ -15,18 +15,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="program.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="stubs.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\ClientFiles\MainFunction.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PingPong.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="program.h">
+    <ClInclude Include="PingPong.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

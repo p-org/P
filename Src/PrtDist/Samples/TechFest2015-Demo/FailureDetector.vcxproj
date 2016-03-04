@@ -166,13 +166,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\ClientFiles\MainFunction.c" />
-    <ClCompile Include="program.c" />
+    <ClCompile Include="Driver.c" />
     <ClCompile Include="stubs.c" />
     <ClCompile Include="Timer.c" />
     <PCompile Include="Driver.p" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="program.h" />
+    <ClInclude Include="Driver.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />

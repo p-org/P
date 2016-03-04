@@ -247,3 +247,12 @@ Src/PrtDist/Samples/PingPong/program.h
 /Tst/tempReset.txt
 /Tst/one.txt
 /Tst/failed-tests-for-reset.txt
+/Src/Prt/Samples/ForeignTypes/ForeignStringType.h
+/Src/Prt/Samples/ForeignTypes/ForeignStringType.c
+/Src/Prt/Samples/ModelFnAndMachines/ServerClient.h
+/Src/Prt/Samples/ModelFnAndMachines/ServerClient.c
+/Src/PrtDist/Samples/PingPong/PingPong.h
+/Src/PrtDist/Samples/PingPong/PingPong.c
+/Src/PrtDist/Samples/PingPongSimple/test.h
+/Src/PrtDist/Samples/PingPongSimple/Test.c
+/Src/PrtDist/Samples/PingPongSimple/Test.c

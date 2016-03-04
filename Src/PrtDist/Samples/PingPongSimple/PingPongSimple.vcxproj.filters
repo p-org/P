@@ -21,18 +21,15 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="program.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="program.c">
+    <ClCompile Include="Timer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Timer.c">
+    <ClCompile Include="TestImpl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Test.c">

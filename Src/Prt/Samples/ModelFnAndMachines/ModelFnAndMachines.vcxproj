@@ -169,12 +169,12 @@
   <ItemGroup>
     <ClCompile Include="Main.c" />
     <ClCompile Include="modelFunctions.c" />
-    <ClCompile Include="program.c" />
+    <ClCompile Include="ServerClient.c" />
     <ClCompile Include="timer.c" />
     <PCompile Include="ServerClient.p" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="program.h" />
+    <ClInclude Include="ServerClient.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />

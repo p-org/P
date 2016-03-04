@@ -1,4 +1,4 @@
-#include "program.h"
+#include "test.h"
 
 BOOL inStart = FALSE;
 

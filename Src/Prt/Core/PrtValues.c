@@ -264,6 +264,12 @@ PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(
 	return retVal;
 }
 
+PRT_FORGNVALUE * PRT_CALL_CONV PrtGetForeignValue(PRT_VALUE* v)
+{
+	PrtAssert(v->discriminator == PRT_VALKIND_FORGN, "Input value is not a foreign value");
+	return v->valueUnion.frgn;
+}
+
 PRT_UINT64 *foreignTypeToValueCounter;
 PRT_UINT16 foreignTypeToValueCounterSize;
 PRT_VALUE * PRT_CALL_CONV PrtMkFreshForeignValue(

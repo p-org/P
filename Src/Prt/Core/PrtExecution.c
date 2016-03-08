@@ -10,8 +10,9 @@ void PRT_CALL_CONV PrtSetGlobalVarEx(_Inout_ PRT_MACHINEINST_PRIV *context, _In_
 {
 	PRT_DBG_ASSERT(PrtIsValidValue(value), "value is not valid");
 	PRT_DBG_ASSERT(PrtIsValidValue(context->varValues[varIndex]), "Variable must contain a valid value");
-	PrtFreeValue(context->varValues[varIndex]);
+	PRT_VALUE *oldValue = context->varValues[varIndex];
 	context->varValues[varIndex] = cloneValue ? PrtCloneValue(value) : value;
+	PrtFreeValue(oldValue);
 }
 
 void PRT_CALL_CONV PrtSetGlobalVar(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE *value)
@@ -23,8 +24,9 @@ void PRT_CALL_CONV PrtSetLocalVarEx(_Inout_ PRT_VALUE **locals, _In_ PRT_UINT32 
 {
 	PRT_DBG_ASSERT(PrtIsValidValue(value), "value is not valid");
 	PRT_DBG_ASSERT(PrtIsValidValue(locals[varIndex]), "Variable must contain a valid value");
-	PrtFreeValue(locals[varIndex]);
+	PRT_VALUE *oldValue = locals[varIndex];
 	locals[varIndex] = cloneValue ? PrtCloneValue(value) : value;
+	PrtFreeValue(oldValue);
 }
 
 PRT_MACHINEINST_PRIV *
@@ -990,9 +992,9 @@ _In_ PRT_MACHINEINST_PRIV			*context
 )
 {
 	ULONG32 nEvents = context->process->program->nEvents;
-	return (UINT16)(((nEvents == 0) || (nEvents % (sizeof(PRT_UINT32) * 8) != 0))
-		? (1 + (nEvents / (sizeof(PRT_UINT32) * 8)))
-		: (nEvents / (sizeof(PRT_UINT32) * 8)));
+	PrtAssert(0 < nEvents, "Illegal number of events");
+	ULONG32 highestEventIndex = nEvents - 1;
+	return 1 + (UINT16)(highestEventIndex / (sizeof(PRT_UINT32) * 8));
 }
 
 PRT_VALUE *

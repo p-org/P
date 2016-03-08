@@ -41,7 +41,6 @@ namespace CheckP
                     RedirectStandardOutput = true,
                     RedirectStandardError = true
                 };
-                pciProcess.ErrorDataReceived += pciProcess_ErrorDataReceived;
                 pciProcess.OutputDataReceived += pciProcess_OutputDataReceived;
                 pciProcess.Start();
                 pciProcess.BeginErrorReadLine();
@@ -56,7 +55,11 @@ namespace CheckP
 
         private void pciProcess_OutputDataReceived(object sender, DataReceivedEventArgs e)
         {
-            string data = "" + e.Data;
+            string data = e.Data;
+            if (String.IsNullOrEmpty(data))
+            {
+                return;
+            }
             if (!pciInitialized && data == "Pci: initialization succeeded")
             {
                 pciInitialized = true;
@@ -66,7 +69,7 @@ namespace CheckP
             {
                 evt.Set();
             }
-            else if (data.StartsWith("Pci: load failed"))
+            else if (data == "Pci: load failed")
             {
                 loadSucceeded = false;
                 evt.Set();
@@ -75,14 +78,6 @@ namespace CheckP
             {
                 outputString += string.Format("OUT: {0}\r\n", data);
             }
-        }
-
-        private void pciProcess_ErrorDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            if (e.Data == "Pci: command done")
-                evt.Set();
-            else
-                errorString += string.Format("ERROR: {0}\r\n", e.Data);
         }
 
         public void Run(string command, IEnumerable<string> args)

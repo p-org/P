@@ -94,7 +94,16 @@ namespace Microsoft.Pc
                             else
                                 goto error;
                             break;
-
+                        case "/noZing":
+                            if (colonArg != null)
+                                goto error;
+                            options.noZingOutput = true;
+                            break;
+                        case "/noSourceInfo":
+                            if (colonArg != null)
+                                goto error;
+                            options.noSourceInfo = true;
+                            break;
                         default:
                             goto error;
                     }
@@ -136,6 +145,8 @@ namespace Microsoft.Pc
                 Console.WriteLine("/printTypeInference");
                 Console.WriteLine("/dumpFormulaModel");
                 Console.WriteLine("/profile");
+                Console.WriteLine("/noZing");
+                Console.WriteLine("/noSourceInfo");
                 return 0;
             }
         }

@@ -22,6 +22,8 @@
         public bool erase;
         public bool shortFileNames;
         public bool printTypeInference;
+        public bool noZingOutput;
+        public bool noSourceInfo;
 
         public CommandLineOptions()
         {
@@ -33,6 +35,8 @@
             this.erase = true;
             this.shortFileNames = false;
             this.printTypeInference = false;
+            this.noZingOutput = false;
+            this.noSourceInfo = false;
         }
     }
 }

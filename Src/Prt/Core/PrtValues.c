@@ -264,6 +264,12 @@ PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(
 	return retVal;
 }
 
+PRT_FORGNVALUE * PRT_CALL_CONV PrtGetForeignValue(PRT_VALUE* v)
+{
+	PrtAssert(v->discriminator == PRT_VALKIND_FORGN, "Input value is not a foreign value");
+	return v->valueUnion.frgn;
+}
+
 PRT_UINT64 *foreignTypeToValueCounter;
 PRT_UINT16 foreignTypeToValueCounterSize;
 PRT_VALUE * PRT_CALL_CONV PrtMkFreshForeignValue(
@@ -468,8 +474,9 @@ void PRT_CALL_CONV PrtTupleSetEx(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index
 	PrtAssert(tuple->discriminator == PRT_VALKIND_TUPLE, "Cannot perform tuple set on this value");
 	PrtAssert(0 <= index && index < tuple->valueUnion.tuple->size, "Invalid tuple index");
 
-	PrtFreeValue(tuple->valueUnion.tuple->values[index]);
+	PRT_VALUE *oldValue = tuple->valueUnion.tuple->values[index];
 	tuple->valueUnion.tuple->values[index] = cloneValue == PRT_TRUE ? PrtCloneValue(value) : value;
+	PrtFreeValue(oldValue);
 }
 
 void PRT_CALL_CONV PrtTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VALUE *value)
@@ -503,8 +510,9 @@ void PRT_CALL_CONV PrtSeqUpdateEx(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index,
 	PrtAssert(index->discriminator == PRT_VALKIND_INT, "Invalid value");
 	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
 
-	PrtFreeValue(seq->valueUnion.seq->values[index->valueUnion.nt]);
+	PRT_VALUE *oldValue = seq->valueUnion.seq->values[index->valueUnion.nt];
 	seq->valueUnion.seq->values[index->valueUnion.nt] = cloneValue == PRT_TRUE ? PrtCloneValue(value) : value;
+	PrtFreeValue(oldValue);
 }
 
 void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE *value)

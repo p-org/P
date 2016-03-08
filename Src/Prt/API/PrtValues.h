@@ -231,6 +231,12 @@ extern "C"{
 	*/
 	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 value);
 
+	/** Gets foreign data inside a value.
+	* @param[in] v A pointer to a value.
+	* @returns The (uncloned) foreign data inside v.
+	*/
+	PRT_API PRT_FORGNVALUE * PrtGetForeignValue(_In_ PRT_VALUE* v);
+
 	/** Makes a fresh foreign value.
 	* @param[in] type The foreign type.
 	* @returns A proper foreign value. Caller is responsible for freeing.

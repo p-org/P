@@ -36,4 +36,3 @@ machine ForwardingMachine {
 		};
 	}
 }
-

@@ -13,6 +13,10 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="P Sources">
+      <UniqueIdentifier>{6524113f-5612-4a0c-b9c9-d71e0c06888f}</UniqueIdentifier>
+      <Extensions>p</Extensions>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stubs.c">
@@ -29,5 +33,10 @@
     <ClInclude Include="PingPong.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <PCompile Include="PingPong.p">
+      <Filter>P Sources</Filter>
+    </PCompile>
   </ItemGroup>
 </Project>

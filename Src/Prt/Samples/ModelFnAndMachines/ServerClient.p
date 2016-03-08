@@ -10,6 +10,7 @@ type TUP = (first: int, second: int);
 static model fun PrintTime() {
 	//something here
 }
+
 main machine Server
 {
 	var cl: machine;

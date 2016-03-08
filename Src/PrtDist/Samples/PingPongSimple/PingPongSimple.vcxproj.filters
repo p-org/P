@@ -13,6 +13,10 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="P Sources">
+      <UniqueIdentifier>{cd713aa3-366c-40b0-8e6e-d04ee2bd5d5c}</UniqueIdentifier>
+      <Extensions>p</Extensions>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -35,5 +39,10 @@
     <ClCompile Include="Test.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <PCompile Include="test.p">
+      <Filter>P Sources</Filter>
+    </PCompile>
   </ItemGroup>
 </Project>

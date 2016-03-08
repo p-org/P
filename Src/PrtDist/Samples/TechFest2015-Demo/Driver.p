@@ -7,7 +7,7 @@ static fun CreateNode(container: machine) : machine
 	var newMachine: machine;
 	newMachine = new Node();
 	return newMachine;
-}
+} 
 
 main machine Driver {
     var fd: machine;

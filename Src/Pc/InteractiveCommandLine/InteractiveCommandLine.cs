@@ -123,7 +123,7 @@ namespace Microsoft.Pc
                     var success = ParseCompileString(inputArgs, compilerOptions);
                     if (!success)
                     {
-                        Console.WriteLine("USAGE: compile [/outputDir:<dir>]");
+                        Console.WriteLine("USAGE: compile [/outputDir:<dir>] [/noSourceInfo]");
                         continue;
                     }
                     compiler.Options = compilerOptions;
@@ -203,6 +203,7 @@ namespace Microsoft.Pc
         private static bool ParseCompileString(string[] args, CommandLineOptions compilerOptions)
         {
             string outputDir = null;
+            bool noSourceInfo = false;
             for (int i = 1; i < args.Length; i++)
             {
                 string arg = args[i];
@@ -216,12 +217,17 @@ namespace Microsoft.Pc
                         return false;
                     }
                 }
+                else if (arg == "/noSourceInfo")
+                {
+                    noSourceInfo = true;
+                }
                 else
                 {
                     return false;
                 }
             }
             compilerOptions.outputDir = outputDir;
+            compilerOptions.noSourceInfo = noSourceInfo;
             return true;
         }
 

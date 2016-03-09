@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<configuration>
+    <PBinaries>C:\WorkSpace\plang\Bld\Drops\Debug\x86\Binaries\</PBinaries>
+  <PSTools>C:\Users\qadeer\Work\P\Ext\PsTools\</PSTools>
+  <MainExe>C:\Users\qadeer\Work\P\Src\PrtDist\Binaries\FD\FailureDetector.exe</MainExe>
+  <NodeManagerPort>5600</NodeManagerPort>
+  <ContainerPortStart>5900</ContainerPortStart>
+  <NetworkShare>.\DebugLocal\</NetworkShare>
+  <LocalFolder>.\DebugLocal\</LocalFolder>
+  <MainMachineNode>localhost</MainMachineNode>
+  <CentralServer>localhost</CentralServer>
+  <TotalNodes>1</TotalNodes>
+  <AllNodes>
+    <Node>localhost</Node>
+  </AllNodes>
+</configuration>

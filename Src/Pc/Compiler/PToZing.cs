@@ -692,7 +692,7 @@ namespace Microsoft.Pc
                             allMachines[ownerName].funNameToFunInfo[funName].invokeSchedulerFuns.Add(it.Current);
                         }
                     }
-                    else if (annotation == "print")
+                    else if (annotation == "printvalue")
                     {
                         Cnst indexCnst = it.Current as Cnst;
                         if (indexCnst != null)

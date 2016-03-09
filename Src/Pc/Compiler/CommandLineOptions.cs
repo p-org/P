@@ -23,6 +23,7 @@
         public bool shortFileNames;
         public bool printTypeInference;
         public bool noZingOutput;
+        public bool noCOutput;
         public bool noSourceInfo;
 
         public CommandLineOptions()
@@ -36,6 +37,7 @@
             this.shortFileNames = false;
             this.printTypeInference = false;
             this.noZingOutput = false;
+            this.noCOutput = false;
             this.noSourceInfo = false;
         }
     }

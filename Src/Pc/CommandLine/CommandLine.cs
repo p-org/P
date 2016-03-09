@@ -99,6 +99,11 @@ namespace Microsoft.Pc
                                 goto error;
                             options.noZingOutput = true;
                             break;
+                        case "/noC":
+                            if (colonArg != null)
+                                goto error;
+                            options.noCOutput = true;
+                            break;
                         case "/noSourceInfo":
                             if (colonArg != null)
                                 goto error;
@@ -146,6 +151,7 @@ namespace Microsoft.Pc
                 Console.WriteLine("/dumpFormulaModel");
                 Console.WriteLine("/profile");
                 Console.WriteLine("/noZing");
+                Console.WriteLine("/noC");
                 Console.WriteLine("/noSourceInfo");
                 return 0;
             }

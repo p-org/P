@@ -55,7 +55,7 @@ namespace Microsoft.Pc
             {
                 if (!server)
                 {
-                    Console.WriteLine("{0}s", DateTime.UtcNow.Subtract(currTime).Seconds);
+                    Console.WriteLine("{0}s", DateTime.UtcNow.Subtract(currTime).TotalSeconds);
                     Console.Write(">> ");
                 }
                 var input = Console.ReadLine();

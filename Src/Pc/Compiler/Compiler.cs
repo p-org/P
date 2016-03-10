@@ -206,7 +206,7 @@
             if (Options.profile)
             {
                 var nextTime = DateTime.UtcNow;
-                Console.WriteLine("{0}: {1}s", msg, nextTime.Subtract(currTime).Seconds);
+                Console.WriteLine("{0}: {1}s", msg, nextTime.Subtract(currTime).TotalSeconds);
                 currTime = nextTime;
             }
         }

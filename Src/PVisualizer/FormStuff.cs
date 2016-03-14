@@ -7,6 +7,7 @@ using Microsoft.Msagl.GraphViewerGdi;
 using Microsoft.Pc;
 using Microsoft.Formula.API;
 using System.Collections.Generic;
+using Microsoft.Pc.Domains;
 
 namespace Microsoft.PVisualizer
 {
@@ -48,7 +49,6 @@ namespace Microsoft.PVisualizer
         {
             var menu = new MenuStrip();
             menu.Items.Add(FileStripItem());
-
             return menu;
 
         }
@@ -56,14 +56,16 @@ namespace Microsoft.PVisualizer
         static ToolStripItem FileStripItem()
         {
             var item = new ToolStripMenuItem("File");
-            item.DropDownItems.Add((ToolStripItem)OpenDotFileItem());
-            item.DropDownItems.Add(ReloadDotFileItem());
+            item.DropDownItems.Add(OpenFileItem());
+            item.DropDownItems.Add(SaveFileItem());
+            item.DropDownItems.Add(ReloadFileItem());
             return item;
         }
 
-        static ToolStripItem ReloadDotFileItem()
+        static ToolStripItem ReloadFileItem()
         {
-            var item = new ToolStripMenuItem("Reload file");
+            var item = new ToolStripMenuItem("Reload");
+            item.ShowShortcutKeys = true;
             item.ShortcutKeys = Keys.F5;
             item.Click += ReloadFileClick;
             return item;
@@ -77,21 +79,29 @@ namespace Microsoft.PVisualizer
             }
         }
 
-        static ToolStripItem OpenDotFileItem()
+        static ToolStripItem OpenFileItem()
         {
-            var item = new ToolStripMenuItem("Open file");
+            var item = new ToolStripMenuItem("Open file...");
             item.ShortcutKeys = Keys.Control | Keys.O;
+            item.ShowShortcutKeys = true;
             item.Click += OpenFileClick;
+            return item;
+        }
+        static ToolStripItem SaveFileItem()
+        {
+            var item = new ToolStripMenuItem("Save As...");
+            item.ShowShortcutKeys = true;
+            item.ShortcutKeys = Keys.Control | Keys.S;
+            item.Click += SaveFileClick;
             return item;
         }
 
         static void OpenFileClick(object sender, EventArgs e)
         {
-
             var openFileDialog = new OpenFileDialog
             {
                 RestoreDirectory = true,
-                Filter = " P files (*.p)|*.p|All files (*.*)|*.*"
+                Filter = "P files (*.p)|*.p"
             };
 
             if (openFileDialog.ShowDialog() == DialogResult.OK)
@@ -100,7 +110,36 @@ namespace Microsoft.PVisualizer
             }
         }
 
-        static void ReadFile(string inputFileName, GViewer gViewer)
+        static void SaveFileClick(object sender, EventArgs e)
+        {
+            var saveFileDialog = new SaveFileDialog
+            {
+                RestoreDirectory = true,
+                Filter = "DGML files (*.dgml)|*.dgml"
+            };
+
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                SaveFile(saveFileDialog.FileName, GViewer);
+            }
+        }
+
+        static void SaveFile(string fileName, GViewer gViewer)
+        {
+            if (programs != null)
+            {
+                using (StreamWriter writer = new StreamWriter(fileName))
+                {
+                    PtoGraph.GenerateDgml(programs, writer);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Please load a .p file first to generate the graph");
+            }
+        }
+
+        private static void ReadFile(string inputFileName, GViewer gViewer)
         {
             var options = new CommandLineOptions();
             options.analyzeOnly = true;
@@ -112,11 +151,14 @@ namespace Microsoft.PVisualizer
             {
                 lastFileName = inputFileName;
                 GViewer.Graph = PtoGraph.GenerateGraph(compiler.ParsedPrograms);
+                programs = new List<PProgram>(compiler.ParsedPrograms.Values);
             }
             else
             {
                 MessageBox.Show("Compilation failed. Compile from command line to see detailed error messages.");
             }
         }
+
+        static List<PProgram> programs;
     }
 }

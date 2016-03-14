@@ -943,8 +943,8 @@ _Inout_ PRT_FUNSTACK_INFO		*frame
 	// by moving the previous elements forward.
 	//
 	for (; i > 0; i--) {
-		INT index = (head + i) % queueLength;
-		INT prev = (index - 1 + queueLength) % queueLength;
+		PRT_INT32 index = (head + i) % queueLength;
+		PRT_INT32 prev = (index - 1 + queueLength) % queueLength;
 		queue->events[index] = queue->events[prev];
 	}
 
@@ -1089,13 +1089,13 @@ _In_ PRT_MACHINEINST_PRIV		*context
 {
 	PRT_UINT32 currEvent = PrtPrimGetEvent(PrtGetCurrentTrigger(context));
 	PRT_BOOLEAN isActionInstalled = PRT_FALSE;
-	PRT_UINT32 i, nActions;
+	PRT_UINT32 ui, nActions;
 	PRT_STATESTACK currStack;
 	PRT_STATEDECL *stateTable;
 	PRT_UINT32 topOfStackState;
 	PRT_STATEDECL *stateDecl;
 	PRT_DODECL *actionDecl = NULL;
-
+	PRT_INT32 i;
 	//check if action is defined for the current state
 	isActionInstalled = PrtIsActionInstalled(currEvent, PrtGetActionsPacked(context, context->currentState));
 	if (isActionInstalled)
@@ -1105,11 +1105,11 @@ _In_ PRT_MACHINEINST_PRIV		*context
 		//
 		stateDecl = PrtGetCurrentStateDecl(context);
 		nActions = stateDecl->nDos;
-		for (i = 0; i < nActions; i++)
+		for (ui = 0; ui < nActions; ui++)
 		{
-			if (stateDecl->dos[i].triggerEventIndex == currEvent)
+			if (stateDecl->dos[ui].triggerEventIndex == currEvent)
 			{
-				actionDecl = &stateDecl->dos[i];
+				actionDecl = &stateDecl->dos[ui];
 				return actionDecl;
 			}
 		}
@@ -1130,11 +1130,11 @@ _In_ PRT_MACHINEINST_PRIV		*context
 			// get action function
 			//
 			nActions = stateTable[topOfStackState].nDos;
-			for (i = 0; i < nActions; i++)
+			for (ui = 0; ui < nActions; ui++)
 			{
-				if (stateTable[topOfStackState].dos[i].triggerEventIndex == currEvent)
+				if (stateTable[topOfStackState].dos[ui].triggerEventIndex == currEvent)
 				{
-					actionDecl = &stateTable[topOfStackState].dos[i];
+					actionDecl = &stateTable[topOfStackState].dos[ui];
 					return actionDecl;
 				}
 			}
@@ -1531,7 +1531,7 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 		PrtFree(context->eventQueue.events);
 	}
 
-	for (int i = 0; i < context->callStack.length; i++)
+	for (PRT_INT32 i = 0; i < context->callStack.length; i++)
 	{
 		PRT_STATESTACK_INFO *info = &context->callStack.stateStack[i];
 		if (info->inheritedActionSetCompact != NULL)
@@ -1544,7 +1544,7 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 		}
 	}
 
-	for (int i = 0; i < context->funStack.length; i++)
+	for (PRT_INT32 i = 0; i < context->funStack.length; i++)
 	{
 		PRT_FUNSTACK_INFO *info = &context->funStack.funs[i];
 		PrtFreeLocals(context, info);
@@ -1572,7 +1572,7 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 
 	if (context->varValues != NULL)
 	{
-		UINT i;
+		PRT_UINT32 i;
 		PRT_MACHINEDECL *mdecl = &(context->process->program->machines[context->instanceOf]);
 
 		for (i = 0; i < mdecl->nVars; i++) {

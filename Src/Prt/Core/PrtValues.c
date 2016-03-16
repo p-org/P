@@ -472,7 +472,7 @@ void PRT_CALL_CONV PrtTupleSetEx(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index
 	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
 	PrtAssert(tuple->discriminator == PRT_VALKIND_TUPLE, "Cannot perform tuple set on this value");
-	PrtAssert(0 <= index && index < tuple->valueUnion.tuple->size, "Invalid tuple index");
+	PrtAssert(index < tuple->valueUnion.tuple->size, "Invalid tuple index");
 
 	PRT_VALUE *oldValue = tuple->valueUnion.tuple->values[index];
 	tuple->valueUnion.tuple->values[index] = cloneValue == PRT_TRUE ? PrtCloneValue(value) : value;
@@ -488,7 +488,7 @@ PRT_VALUE * PRT_CALL_CONV PrtTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 ind
 {
 	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
 	PrtAssert(tuple->discriminator == PRT_VALKIND_TUPLE, "Cannot perform tuple get on this value");
-	PrtAssert(0 <= index && index < tuple->valueUnion.tuple->size, "Invalid tuple index");
+	PrtAssert(index < tuple->valueUnion.tuple->size, "Invalid tuple index");
 
 	return PrtCloneValue(tuple->valueUnion.tuple->values[index]);
 }
@@ -497,7 +497,7 @@ PRT_VALUE * PRT_CALL_CONV PrtTupleGetNC(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 i
 {
 	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
 	PrtAssert(tuple->discriminator == PRT_VALKIND_TUPLE, "Cannot perform tuple get on this value");
-	PrtAssert(0 <= index && index < tuple->valueUnion.tuple->size, "Invalid tuple index");
+	PrtAssert(index < tuple->valueUnion.tuple->size, "Invalid tuple index");
 
 	return tuple->valueUnion.tuple->values[index];
 }

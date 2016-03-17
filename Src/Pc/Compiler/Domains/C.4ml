@@ -22,6 +22,7 @@ domain CData
      /////////            Preprocessor             /////////
      ///////////////////////////////////////////////////////
      
+	 PpEscape   ::= new (expr: any Expr).
      PpInclude  ::= new (filename: String, isSystem: Boolean).
      PpDefine   ::= new (pattern: any Expr, def: any Expr + { NIL }).  
      PpUndef    ::= new (name: any Ident).
@@ -35,7 +36,7 @@ domain CData
                          true:  any Cmp + Stmt, 
                          false: any Cmp + Stmt + PpElIf).
                                                   
-     Cmp ::= Def + PpInclude + PpDefine + PpUndef + PpITE + PpPragma + Section + Comment + { NIL }.       
+     Cmp ::= Def + PpEscape + PpInclude + PpDefine + PpUndef + PpITE + PpPragma + Section + Comment + { NIL }.       
                            
      ///////////////////////////////////////////////////////
      /////////    Declarations and Definitions     /////////

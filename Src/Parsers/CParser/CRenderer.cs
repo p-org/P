@@ -39,6 +39,7 @@
         {
             // Printing for each function symbol.
             FrmToSyntaxInfo[FormulaNodes.Section_Iden.Node] = new SyntaxInfo(StartSection, EndSection, ValidateSection);
+            FrmToSyntaxInfo[FormulaNodes.PpEscape_Iden.Node] = new SyntaxInfo(StartPpEscape, EndPpEscape, ValidatePpEscape);
             FrmToSyntaxInfo[FormulaNodes.PpInclude_Iden.Node] = new SyntaxInfo(StartPpInclude, EndPpInclude, ValidatePpInclude);
             FrmToSyntaxInfo[FormulaNodes.PpDefine_Iden.Node] = new SyntaxInfo(StartPpDefine, EndPpDefine, ValidatePpDefine);
             FrmToSyntaxInfo[FormulaNodes.PpUndef_Iden.Node] = new SyntaxInfo(StartPpUndefine, EndPpUndefine, ValidatePpUndefine);
@@ -3787,6 +3788,35 @@
             wr.Write(data.PrivateSuffix);
         }
 
+        private static bool ValidatePpEscape(FuncTerm node, List<Flag> flags, SuccessToken success)
+        {
+            if (node.Args.Count != 1)
+            {
+                flags.Add(MkBadArityFlag(node, 1));
+                success.Failed();
+                return false;
+            }
+
+            return true;
+        }
+
+        private static IEnumerable<Tuple<Node, PrintData>> StartPpEscape(FuncTerm node, PrintData data, CTextWriter wr)
+        {
+            Node arg1 = null;
+            using (var it = node.Args.GetEnumerator())
+            {
+                it.MoveNext();
+                arg1 = it.Current;
+            }
+
+            yield return new Tuple<Node, PrintData>(arg1, new PrintData(null, "\n", 0, true));
+        }
+
+        private static void EndPpEscape(Node node, PrintData data, CTextWriter wr)
+        {
+            wr.Write(data.PrivateSuffix);
+        }
+
         private static bool ValidatePpPragma(FuncTerm node, List<Flag> flags, SuccessToken success)
         {
             if (node.Args.Count != 1)
@@ -4715,7 +4745,8 @@
                 return false;
             }
 
-            return func.Name == FormulaNodes.PpInclude_Iden.Node.Name ||
+            return func.Name == FormulaNodes.PpEscape_Iden.Node.Name || 
+                   func.Name == FormulaNodes.PpInclude_Iden.Node.Name ||
                    func.Name == FormulaNodes.PpDefine_Iden.Node.Name ||
                    func.Name == FormulaNodes.PpUndef_Iden.Node.Name ||
                    func.Name == FormulaNodes.PpITE_Iden.Node.Name ||

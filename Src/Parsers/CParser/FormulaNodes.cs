@@ -20,6 +20,7 @@ namespace CParser
         
         #region constants
         public static AST<Id> Section_Iden = Factory.Instance.MkId("Section");
+        public static AST<Id> PpEscape_Iden = Factory.Instance.MkId("PpEscape");
         public static AST<Id> PpDefine_Iden = Factory.Instance.MkId("PpDefine");
         public static AST<Id> PpInclude_Iden = Factory.Instance.MkId("PpInclude");
         public static AST<Id> PpUndef_Iden = Factory.Instance.MkId("PpUndef");

@@ -991,10 +991,10 @@ PrtGetPackSize(
 _In_ PRT_MACHINEINST_PRIV			*context
 )
 {
-	ULONG32 nEvents = context->process->program->nEvents;
+	PRT_UINT32 nEvents = context->process->program->nEvents;
 	PrtAssert(0 < nEvents, "Illegal number of events");
-	ULONG32 highestEventIndex = nEvents - 1;
-	return 1 + (UINT16)(highestEventIndex / (sizeof(PRT_UINT32) * 8));
+	PRT_UINT32 highestEventIndex = nEvents - 1;
+	return 1 + (PRT_UINT16)(highestEventIndex / (sizeof(PRT_UINT32) * 8));
 }
 
 PRT_VALUE *

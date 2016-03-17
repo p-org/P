@@ -25,6 +25,8 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 		
 	out.File(headerFileName, body) :- HConcatOut(count({ho | ho is HOut}) - 1, cmp), 
 								      headerFileName = strJoin(%outputFileName, ".h"),
+									  ifdefBegin = PpITE(IFDEF, Ident("__cplusplus"), PpEscape(Ident("extern \"C\"{")), NIL),
+									  ifdefEnd = PpITE(IFDEF, Ident("__cplusplus"), PpEscape(Ident("}")), NIL),
 									  body = PpITE(
 									   IFNDEF,
 									   Ident("P_PROGRAM_H"),
@@ -35,7 +37,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 											     PpInclude("PrtWinUser.h", FALSE),
 											     PpInclude("PrtExecution.h", FALSE)											  
 											  )),
-										   cmp),
+										   Section(ifdefBegin, Section(cmp, ifdefEnd))),
 									   NIL).
 
     /*************************************************************/

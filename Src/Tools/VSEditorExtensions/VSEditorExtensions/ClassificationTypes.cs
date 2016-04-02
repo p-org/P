@@ -14,6 +14,7 @@ namespace VSEditorExtensions
         public const string PKeyword = Constants.PKeyword;
         public const string PIdentifier = Constants.PIdentifier;
         public const string PComment = Constants.PComment;
+        public const string PString = Constants.PString;
 
         [Export]
         [Name(PKeyword)]
@@ -29,6 +30,11 @@ namespace VSEditorExtensions
         [Name(PComment)]
         [BaseDefinition("identifier")]
         internal static ClassificationTypeDefinition PCommentClassificationType = null;
+
+        [Export]
+        [Name(PString)]
+        [BaseDefinition("literal")]
+        internal static ClassificationTypeDefinition PStringClassificationType = null;
 
     }
 }

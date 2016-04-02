@@ -34,6 +34,11 @@ namespace VSEditorExtensions
         private readonly IClassificationType commentType;
 
         /// <summary>
+        /// String type.
+        /// </summary>
+        private readonly IClassificationType stringType;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="PClassifier"/> class.
         /// </summary>
         /// <param name="registry">Classification registry.</param>
@@ -42,6 +47,7 @@ namespace VSEditorExtensions
             this.keywordType = registry.GetClassificationType(Constants.PKeyword);
             this.identifierType = registry.GetClassificationType(Constants.PIdentifier);
             this.commentType = registry.GetClassificationType(Constants.PComment);
+            this.stringType = registry.GetClassificationType(Constants.PString);
 
             // With the document here we can now kick off a parser on a background thread, get everything figured out
             // so that when GetClassificationSpans we can just lookup the compiled info to get the right token info for
@@ -101,6 +107,7 @@ namespace VSEditorExtensions
                             ch = line[i];
                             if (ch == '"' || ch == '\r' || ch == '\n') // cannot span a newline.
                             {
+                                result.Add(new ClassificationSpan(new SnapshotSpan(snapshot, new Span(span.Start + start, i - start + 1)), this.stringType));
                                 break;
                             }
                         }

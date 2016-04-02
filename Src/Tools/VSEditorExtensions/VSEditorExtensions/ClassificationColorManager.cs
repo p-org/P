@@ -34,7 +34,8 @@ namespace VSEditorExtensions
             {
                 { ClassificationTypes.PKeyword, new FontStyle(Color.FromRgb(0, 0, 255)) },
                 { ClassificationTypes.PIdentifier, new FontStyle(Color.FromRgb(0, 0, 0)) },
-                { ClassificationTypes.PComment, new FontStyle(Color.FromRgb(0, 128, 0)) }
+                { ClassificationTypes.PComment, new FontStyle(Color.FromRgb(0, 128, 0)) },
+                { ClassificationTypes.PString, new FontStyle(Color.FromRgb(163, 21, 21)) }
             };
 
         static readonly Dictionary<string, FontStyle> DarkColors = new Dictionary<string, FontStyle>
@@ -42,6 +43,7 @@ namespace VSEditorExtensions
                 { ClassificationTypes.PKeyword, new FontStyle(Color.FromRgb(86, 156, 214)) },
                 { ClassificationTypes.PIdentifier, new FontStyle(Color.FromRgb(220, 220, 220)) },
                 { ClassificationTypes.PComment, new FontStyle(Color.FromRgb(87, 166, 74)) },
+                { ClassificationTypes.PString, new FontStyle(Color.FromRgb(214, 157, 133)) }
             };
 
         private ThemeManager _themeManager;

@@ -82,4 +82,29 @@ namespace VSEditorExtensions
             this.TextDecorations = colors.Decorations;
         }
     }
+
+
+    /// <summary>
+    /// Defines an editor format for the P keywords
+    /// </summary>
+    [Export(typeof(EditorFormatDefinition))]
+    [ClassificationType(ClassificationTypeNames = Constants.PString)]
+    [Name(Constants.PString)]
+    [UserVisible(true)] // This should be visible to the end user
+    [Order(Before = Priority.Default)] // Set the priority to be after the default classifiers
+    internal sealed class PStringFormat : ClassificationFormatDefinition
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PKeywordFormat"/> class.
+        /// </summary>
+        [ImportingConstructor]
+        public PStringFormat(ClassificationColorManager colorManager)
+        {
+            this.DisplayName = Constants.PString; // Human readable version of the name
+            var colors = colorManager.GetDefaultColors(Constants.PString);
+            this.ForegroundColor = colors.Foreground;
+            this.BackgroundColor = colors.Background;
+            this.TextDecorations = colors.Decorations;
+        }
+    }
 }

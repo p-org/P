@@ -11,5 +11,6 @@ namespace VSEditorExtensions
         public const string PKeyword = "P keyword";
         public const string PIdentifier = "P identifier";
         public const string PComment = "P comment";
+        public const string PString = "P string";
     }
 }

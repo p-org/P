@@ -10,6 +10,7 @@ machine PING
 {
     var pongMachine: (machine,machine);
 
+    // This is the entry point.
     start state Init {
         entry (payload:any) {
           pongMachine = payload as (machine, machine);

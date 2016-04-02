@@ -265,10 +265,10 @@ StateBodyItem
 	| DEFER NonDefaultEventList TrigAnnotOrNone SEMICOLON					{ AddDefersOrIgnores(true,  ToSpan(@1));            }		
 	| IGNORE NonDefaultEventList TrigAnnotOrNone SEMICOLON					{ AddDefersOrIgnores(false, ToSpan(@1));            }
 	| OnEventList DO ID TrigAnnotOrNone SEMICOLON							{ AddDoNamedAction($3.str, ToSpan(@3), ToSpan(@1)); }
-	| OnEventList DO TrigAnnotOrNone PayloadVarDeclOrNone LCBRACE StmtBlock RCBRACE SEMICOLON					{ AddDoAnonyAction(ToSpan(@5), ToSpan(@7), ToSpan(@1)); }
+	| OnEventList DO TrigAnnotOrNone PayloadVarDeclOrNone LCBRACE StmtBlock RCBRACE					{ AddDoAnonyAction(ToSpan(@5), ToSpan(@7), ToSpan(@1)); }
 	| OnEventList PUSH StateTarget TrigAnnotOrNone SEMICOLON				{ AddTransition(true, ToSpan(@1));           }
  	| OnEventList GOTO StateTarget TrigAnnotOrNone SEMICOLON				{ AddTransition(false, ToSpan(@1));          } 
-	| OnEventList GOTO StateTarget TrigAnnotOrNone WITH PayloadVarDeclOrNone LCBRACE StmtBlock RCBRACE SEMICOLON { AddTransitionWithAction(ToSpan(@7), ToSpan(@9), ToSpan(@1));           }
+	| OnEventList GOTO StateTarget TrigAnnotOrNone WITH PayloadVarDeclOrNone LCBRACE StmtBlock RCBRACE { AddTransitionWithAction(ToSpan(@7), ToSpan(@9), ToSpan(@1));           }
 	| OnEventList GOTO StateTarget TrigAnnotOrNone WITH ID SEMICOLON		{ AddTransitionWithAction($6.str, ToSpan(@6), ToSpan(@1));           }
 	;
 

@@ -60,7 +60,7 @@ namespace Microsoft.Pc
                 }
                 var input = Console.ReadLine();
                 currTime = DateTime.UtcNow;
-                var inputArgs = input.Split(' ');
+                var inputArgs = input.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 if (inputArgs.Length == 0) continue;
                 if (inputArgs[0] == "exit")
                 {

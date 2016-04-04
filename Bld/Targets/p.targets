@@ -7,15 +7,22 @@
         <UnifiedPlatform Condition="'$(Platform)'=='Win32'">x86</UnifiedPlatform>
         <DropFolder>$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\$(UnifiedPlatform)</DropFolder>
         <CleanDependsOn>$(CleanDependsOn);CleanSdkHeaders;CleanClientFiles;CleanCompileP</CleanDependsOn>
+
+        <!-- This is so that the C++ project will do incremental build of .p files correctly -->
+        <DisableFastUpToDateCheck >True</DisableFastUpToDateCheck>
     </PropertyGroup>
     
     <Target Name="CompileP" Inputs="@(PCompile)" Outputs="%(FileName).c;%(FileName).h;stubs.c" BeforeTargets="BeforeBuildGenerateSources">
         <Message Importance="high" Text="########## compiling p files: @(PCompile) ##################" />
         <Exec Command="$(DropFolder)\Binaries\pc.exe @(PCompile->'%(FullPath)')" />
+        <PropertyGroup>
+            <PFullPath>@(PCompile->'%(FullPath)')</PFullPath>
+            <PDirectory>$([System.IO.Path]::GetDirectoryName($(PFullPath)))</PDirectory>
+        </PropertyGroup>
         <ItemGroup>
-            <FileWrites Include="@(PCompile->'%(FullPath)\%(FileName).c')" />
-            <FileWrites Include="@(PCompile->'%(FullPath)\%(FileName).h')" />
-            <FileWrites Include="$(MSBuildThisFileDirectory)\stubs.c" />
+            <FileWrites Include="@(PCompile->'$(PDirectory)\%(FileName).c')" />
+            <FileWrites Include="@(PCompile->'$(PDirectory)\%(FileName).h')" />
+            <FileWrites Include="$(MSBuildThisFileDirectory)stubs.c" />
         </ItemGroup>
     </Target>
     

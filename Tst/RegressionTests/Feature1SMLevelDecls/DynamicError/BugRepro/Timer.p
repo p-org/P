@@ -20,7 +20,7 @@ model Timer {
   state WaitForReq {
     on CANCEL goto WaitForReq with { 
       send client, CANCEL_FAILURE, this;
-    };  
+    }  
     on START goto WaitForCancel;
   }
 
@@ -28,7 +28,7 @@ model Timer {
     ignore START;
     on null goto WaitForReq with { 
 	  send client, TIMEOUT, this; 
-	};
+	}
     on CANCEL goto WaitForReq with {
       if ($) {
         send client, CANCEL_SUCCESS, this;
@@ -36,6 +36,6 @@ model Timer {
         send client, CANCEL_FAILURE, this;
         send client, TIMEOUT, this;
       }
-    };
+    }
   }
 }

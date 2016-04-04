@@ -55,7 +55,7 @@ machine PaxosNode {
 			lastExecutedSlot = -1;
 			nextSlotForProposer = 0;
 		}
-		on allNodes do (payload : (nodes: seq[machine])) { UpdateAcceptors(payload); };
+		on allNodes do (payload : (nodes: seq[machine])) { UpdateAcceptors(payload); }
 		on local goto PerformOperation;
 	}
 	
@@ -86,19 +86,19 @@ machine PaxosNode {
 		ignore agree, accepted, timeout;
 		
 		/***** proposer ******/
-		on update do (payload :(seqmachine: int, command : int)) { CheckIfLeader(payload); };
+		on update do (payload :(seqmachine: int, command : int)) { CheckIfLeader(payload); }
 		on goPropose push ProposeValuePhase1;
 		
 		/***** acceptor ****/
-		on prepare do (payload : (proposer: machine, slot : int, proposal : (round: int, servermachine : int))) { preparefun(payload); };
+		on prepare do (payload : (proposer: machine, slot : int, proposal : (round: int, servermachine : int))) { preparefun(payload); }
 		on accept do (payload : (proposer: machine, slot:int, proposal : (round: int, servermachine : int), value : int)) { acceptfun(payload); } ;
 		
 		/**** leaner ****/
 		on chosen push RunLearner;
 		
 		/*****leader election ****/
-		on Ping do (payload: (rank:int, server : machine)) { send leaderElectionService, Ping, payload; };
-		on newLeader do (payload : (rank:int, server : machine)) { currentLeader = payload; };
+		on Ping do (payload: (rank:int, server : machine)) { send leaderElectionService, Ping, payload; }
+		on newLeader do (payload : (rank:int, server : machine)) { currentLeader = payload; }
 	}
 	
 	fun preparefun(receivedMess_2 : (proposer: machine, slot : int, proposal : (round: int, servermachine : int))) {
@@ -204,17 +204,17 @@ machine PaxosNode {
 				if(countAgree == majority)
 					raise(success);
 			}
-		};
+		}
 		on reject goto ProposeValuePhase1 with (payload : (slot: int, proposal : (round: int, servermachine : int))) {
 			if(nextProposal.round <= payload.proposal.round)
 				maxRound = payload.proposal.round;
 				
 			send timer, cancelTimer;
-		};
+		}
 		on success goto ProposeValuePhase2 with
 		{
 			send timer, cancelTimer;
-		};
+		}
 		on timeout goto ProposeValuePhase1;
 	}
 	
@@ -269,14 +269,14 @@ machine PaxosNode {
 		
 		on accepted do (payload : (slot:int, proposal : (round: int, servermachine : int), value : int)) {
 			CountAccepted(payload);
-		};
+		}
 		
 		on reject goto ProposeValuePhase1 with (payload : (slot: int, proposal : (round: int, servermachine : int))){
 			if(nextProposal.round <= payload.proposal.round)
 				maxRound = payload.proposal.round;
 				
 			send timer, cancelTimer;
-		};
+		}
 		on timeout goto ProposeValuePhase1;
 		
 	}
@@ -350,7 +350,7 @@ spec BasicPaxosInvariant_P2b monitors monitor_valueChosen, monitor_valueProposed
 		on monitor_valueChosen goto CheckValueProposed with (receivedValue : (proposer: machine, slot:int, proposal : (round: int, servermachine : int), value : int))
 		{
 			lastValueChosen[receivedValue.slot] = (proposal = receivedValue.proposal, value = receivedValue.value);
-		};
+		}
 	}
 	
 	fun lessThan (p1 : (round: int, servermachine : int), p2 : (round: int, servermachine : int)) : bool {
@@ -375,13 +375,13 @@ spec BasicPaxosInvariant_P2b monitors monitor_valueChosen, monitor_valueProposed
 	state CheckValueProposed {
 		on monitor_valueChosen goto CheckValueProposed with (receivedValue : (proposer: machine, slot: int, proposal : (round: int, servermachine : int), value : int)){
 			assert(lastValueChosen[receivedValue.slot].value == receivedValue.value);
-		};
+		}
 		
 		on monitor_valueProposed goto CheckValueProposed with (receivedValue : (proposer: machine, slot : int, proposal : (round: int, servermachine : int), value : int)){
 			returnVal = lessThan(lastValueChosen[receivedValue.slot].proposal, receivedValue.proposal);
 			if(returnVal)
 				assert(lastValueChosen[receivedValue.slot].value == receivedValue.value);
-		};
+		}
 	}
 
 }
@@ -409,10 +409,10 @@ spec ValmachineityCheck monitors monitor_client_sent, monitor_proposer_sent, mon
 	}
 	
 	state Wait {
-		on monitor_client_sent do (payload : int) { clientSet[payload] = 0; };
+		on monitor_client_sent do (payload : int) { clientSet[payload] = 0; }
 		on monitor_proposer_sent do (payload : int) { assert(payload in clientSet);
-		ProposedSet[payload as int] = 0; };
-		on monitor_proposer_chosen do (payload : int) {	assert(payload in ProposedSet); };
+		ProposedSet[payload as int] = 0; }
+		on monitor_proposer_chosen do (payload : int) {	assert(payload in ProposedSet); }
 	}
 	
 }

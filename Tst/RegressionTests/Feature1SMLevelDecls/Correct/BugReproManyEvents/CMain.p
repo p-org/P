@@ -63,41 +63,41 @@ machine DownloadManagerMachine {
 
     start state Begin
     {
-    on BeginDownload do {};
+    on BeginDownload do {}
     }
 
     state QueryingArtifacts
     {
-    on CancelDownload do {};
-    on QueryArtifactsOperationComplete do {};
-    on BeginClonePart do {};
-    on BeginDownloadInternal do {};
-    on DownloadCompleteInternal do {};
+    on CancelDownload do {}
+    on QueryArtifactsOperationComplete do {}
+    on BeginClonePart do {}
+    on BeginDownloadInternal do {}
+    on DownloadCompleteInternal do {}
     }
 
     state CloneArtifactPart
     {
-    on CancelDownload do {};
-    on ClonePartFromArtifactOperationComplete do {};
-    on BeginDownloadInternal do {};
-    on DownloadCompleteInternal do {};
+    on CancelDownload do {}
+    on ClonePartFromArtifactOperationComplete do {}
+    on BeginDownloadInternal do {}
+    on DownloadCompleteInternal do {}
     }
 
     state Downloading
     {
-    on CancelDownload do {};
-    on DownloadArtifactPartOperationComplete do {};
-    on DownloadCompleteInternal do {};
+    on CancelDownload do {}
+    on DownloadArtifactPartOperationComplete do {}
+    on DownloadCompleteInternal do {}
     }
 
     state Canceling 
     {
     // TODO: Missing CancelDownload?
-    on DownloadCompleteInternal do {};
-    on QueryArtifactsOperationComplete do {};
-    on ClonePartFromArtifactOperationComplete do {};
-    on DownloadArtifactPartOperationComplete do {};
-    on AttemptCancelDownloadOperationComplete do {};
+    on DownloadCompleteInternal do {}
+    on QueryArtifactsOperationComplete do {}
+    on ClonePartFromArtifactOperationComplete do {}
+    on DownloadArtifactPartOperationComplete do {}
+    on AttemptCancelDownloadOperationComplete do {}
     }
 
     // Stop State:

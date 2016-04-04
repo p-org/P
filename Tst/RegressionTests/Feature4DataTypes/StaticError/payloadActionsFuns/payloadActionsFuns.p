@@ -27,17 +27,17 @@ main machine MachOS {
 		
 		}
 		
-		on myTuple do (payload: (int, bool)) { foo_1(payload); };
+		on myTuple do (payload: (int, bool)) { foo_1(payload); }
 		
 		
-		on myNmTuple do (payload: (first:int, sec:bool)) { foo_2(payload); };
+		on myNmTuple do (payload: (first:int, sec:bool)) { foo_2(payload); }
 		
-		on mySeq do (payload: seq[int]) { foo_3(payload); };
+		on mySeq do (payload: seq[int]) { foo_3(payload); }
 		
 		on myMapSeq do (payload: (first: map[int, int], sec : seq[bool])) {
 			INT = payload.first[true];
 			BOOL = payload.sec[2];
-		};
+		}
 		
 
 
@@ -47,7 +47,7 @@ main machine MachOS {
 		on null do (payload: any) {
 			MACH = payload;  
 			INT = payload;
-		};
+		}
 		
 	}
 

@@ -6,11 +6,11 @@ event Unit;
 
 spec M monitors E, F {
 	start state Init {
-		on E goto Next with (payload: int) { assert (payload == 10);};
+		on E goto Next with (payload: int) { assert (payload == 10);}
 	}
 	
 	state Next {
-		on F goto Next with {assert false;};
+		on F goto Next with {assert false;}
 	}
 }
 
@@ -39,6 +39,6 @@ main machine B {
 				case G: { send this, E, 10; m = new A();}
 			}
 		}
-		on E do {};
+		on E do {}
 	}
 }

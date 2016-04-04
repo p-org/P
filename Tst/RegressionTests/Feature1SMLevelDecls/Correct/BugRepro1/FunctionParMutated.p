@@ -16,19 +16,19 @@ main machine PING {
 			x = Func1(1, 1);
 			assert (x == 2);
 			y = Func2(x);     //x == 2
-		};
+		}
 		on Ping do { 
 			assert(x == 4); 
 			x = x + 1;
 			assert (x == 5);
-		};	
+		}	
     }
 	//i: value passed; j: identifies caller (1: Success handler;  2: Func2)
 	fun Func1(i: int, j: int) : int {
 		if (j == 1) {     
 			i = i + 1;       //i: 2
 			return i;
-		};
+		}
 		if (j == 2) {
 			assert(i == 3);  
 			i = i + 1;

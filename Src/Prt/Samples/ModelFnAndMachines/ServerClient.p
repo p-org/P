@@ -23,7 +23,7 @@ main machine Server
 			PrintTime();
 			randomTup = GetRandomVal();
 			send cl, resp, randomTup;
-		};
+		}
 	}
 	
 	model fun GetRandomVal() : TUP{
@@ -70,7 +70,7 @@ machine Client
 				case resp: (arg: TUP){ UpdateTuple(arg); }
 			}
 			raise next;
-		};
+		}
 		on next goto StartReqResp;
 	}
 }

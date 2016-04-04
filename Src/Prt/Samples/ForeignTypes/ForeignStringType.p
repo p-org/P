@@ -33,6 +33,6 @@ machine ForwardingMachine {
 		on sendback do (payload : (machine, any))
 		{
 			send payload.0, getback, payload.1;
-		};
+		}
 	}
 }

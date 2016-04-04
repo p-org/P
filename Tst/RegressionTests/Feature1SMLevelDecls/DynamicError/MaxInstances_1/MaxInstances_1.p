@@ -9,7 +9,7 @@ event unit assert 1;
 main machine Real {
     var ghost_machine: machine;
     start state Real_Init {
-		on E2 do (payload: int) { Action1(payload); };
+		on E2 do (payload: int) { Action1(payload); }
         entry {
 			ghost_machine = new Ghost(this);  
         	raise unit;   

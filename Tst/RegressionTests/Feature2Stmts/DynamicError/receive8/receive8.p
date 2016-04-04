@@ -41,6 +41,6 @@ machine B {
 			}
 			
 		}
-		on F goto X with { assert false; };
+		on F goto X with { assert false; }
 	}
 }

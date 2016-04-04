@@ -24,8 +24,8 @@ machine FailureDetector {
 			timer = new Timer(this);
 	        raise UNIT;   	   
         }
-		on REGISTER_CLIENT do (payload: machine) { clients[payload] = true; };
-		on UNREGISTER_CLIENT do (payload: machine) { if (payload in clients) clients -= payload; };
+		on REGISTER_CLIENT do (payload: machine) { clients[payload] = true; }
+		on UNREGISTER_CLIENT do (payload: machine) { if (payload in clients) clients -= payload; }
         on UNIT push SendPing;
     }
     state SendPing {
@@ -41,7 +41,7 @@ machine FailureDetector {
 					 raise TIMER_CANCELED;
 			     }
 			}
-		};
+		}
 		on TIMEOUT do { 
 			attempts = attempts + 1;
 		    if (sizeof(responses) < sizeof(alive) && attempts < 2) {
@@ -49,15 +49,15 @@ machine FailureDetector {
 			}
 			Notify();
 			raise ROUND_DONE;
-		};
+		}
 		on ROUND_DONE goto Reset;
 		on UNIT goto SendPing;
 		on TIMER_CANCELED push WaitForCancelResponse;
      }
 	 state WaitForCancelResponse {
 	     defer TIMEOUT, PONG;
-	     on CANCEL_SUCCESS do { raise ROUND_DONE; };
-		 on CANCEL_FAILURE do { pop; };
+	     on CANCEL_SUCCESS do { raise ROUND_DONE; }
+		 on CANCEL_FAILURE do { pop; }
 	 }
 	 state Reset {
          entry {
@@ -110,6 +110,6 @@ machine Node {
         on PING do (payload: machine) {
 			monitor M_PONG, this;
 		    _SEND(payload as machine, PONG, this);
-		};
+		}
     }
 }

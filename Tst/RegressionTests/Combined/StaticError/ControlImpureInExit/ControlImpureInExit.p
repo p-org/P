@@ -18,9 +18,9 @@ main machine Real1 {
 		on unit do { send this, E1; 
 		             send this, E2; 
 		             send this, E3; 
-					 };   
+					 }   
 		on E2 do Action1;   
-        on E1 do { }; 	
+        on E1 do { } 	
 		
         exit { 
 			pop;                            //no error - OK, only first one is reported
@@ -40,7 +40,7 @@ main machine Real1 {
 		entry {}
 		ignore E1;
 	    defer E2;    
-		on E3 do { pop; };
+		on E3 do { pop; }
 		exit Action1;                        //error
     }
 	state Real1_S2 {

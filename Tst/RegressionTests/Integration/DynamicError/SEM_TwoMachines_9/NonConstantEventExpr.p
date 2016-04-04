@@ -43,7 +43,7 @@ machine Real2 {
 			
 			 
 			
-		};
+		}
 	}
 	fun Action2(payload: bool) {
 		assert(payload == false);  //fails in runtime

@@ -59,7 +59,7 @@ model Timer {
 			} else {
 				send target, CancelTimerSuccess;
 			}		
-		};
+		}
 	}
 }
 
@@ -97,22 +97,22 @@ machine Replica {
 			if (pendingWriteReq.seqNum == payload) {
 				lastSeqNum = payload;
 			}
-		};
+		}
 		on GLOBAL_COMMIT do (payload:int) {
 			assert (pendingWriteReq.seqNum >= payload);
 			if (pendingWriteReq.seqNum == payload) {
 				data[pendingWriteReq.key] = pendingWriteReq.val;
 				lastSeqNum = payload;
 			}
-		};
+		}
 		
-		on REQ_REPLICA do (payload :(seqNum:int, key:int, val:int)) { HandleReqReplica(payload); };
+		on REQ_REPLICA do (payload :(seqNum:int, key:int, val:int)) { HandleReqReplica(payload); }
 		on READ_REQ_REPLICA do (payload : int) {
 			if(payload in data)
 				send coordinator, REP_READ_SUCCESS, data[payload];
 			else
 				send coordinator, REP_READ_FAIL;
-		};
+		}
 	}
 
 	model fun ShouldCommitWrite(): bool 
@@ -173,11 +173,11 @@ machine Coordinator {
 		on READ_FAIL goto Loop with
 		{
 			send client, READ_FAIL;
-		};
+		}
 		on READ_SUCCESS goto Loop with (payload: int)
 		{	
 			send client, READ_SUCCESS, payload;
-		};
+		}
 	}
 
 
@@ -194,7 +194,7 @@ machine Coordinator {
 	}
 
 	state Loop {
-		on WRITE_REQ do (payload : (client:machine, key:int, val:int)) {DoWrite(payload);};
+		on WRITE_REQ do (payload : (client:machine, key:int, val:int)) {DoWrite(payload);}
 		on Unit goto CountVote;
 		on READ_REQ goto DoRead;
 		ignore RESP_REPLICA_COMMIT, RESP_REPLICA_ABORT;
@@ -228,11 +228,11 @@ machine Coordinator {
 			if (currSeqNum == payload) {
 				i = i - 1;
 			}
-		};
-		on RESP_REPLICA_ABORT do (payload : int) { HandleAbort(payload); };
+		}
+		on RESP_REPLICA_ABORT do (payload : int) { HandleAbort(payload); }
 		on Timeout goto Loop with {
 			DoGlobalAbort();
-		};
+		}
 		on Unit goto WaitForCancelTimerResponse;
 	}
 

@@ -63,7 +63,7 @@ machine Process {
 			count = 0;
 		}
 		on myCount goto inits;
-		on init do (payload: (machine, machine)) { initaction(payload); };
+		on init do (payload: (machine, machine)) { initaction(payload); }
 		on Resp goto SendCount;
 	}
 	fun initaction(payload: (machine, machine)) {
@@ -88,7 +88,7 @@ machine Process {
 		}
 		on unit goto done;
 		on Resp goto SendCount;
-		on myCount do (payload: int) { ConfirmThatInSync(payload); };
+		on myCount do (payload: int) { ConfirmThatInSync(payload); }
 	}
 	state done {
 	ignore Resp, myCount;

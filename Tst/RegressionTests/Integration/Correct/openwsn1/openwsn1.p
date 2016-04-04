@@ -104,7 +104,7 @@ machine OpenWSN_Mote {
 		{ 
 			slotTimer = payload.0;
 			myNeighbours = payload.1;
-		};
+		}
 	}
 
 	fun CheckOperationTobePerfomed(currentSlot :(bool, (machine,machine))) {
@@ -133,13 +133,13 @@ machine OpenWSN_Mote {
 		entry {
 		
 		}
-		on newSlot do (payload : (bool, (machine,machine))) { CheckOperationTobePerfomed(payload);};
+		on newSlot do (payload : (bool, (machine,machine))) { CheckOperationTobePerfomed(payload);}
 		on Tx goto DataTransmissionMode;
 		on Rx goto DataReceptionMode;
 		on Sleep goto WaitForNewSlot with
 		{
 			send slotTimer, endSlot;
-		};
+		}
 	}
 	
 	model fun TransmitData(target:machine) {
@@ -206,7 +206,7 @@ machine OpenWSN_Mote {
 		on Local goto WaitForNewSlot with
 		{
 			send slotTimer, endSlot;
-		};
+		}
 		on TxDone goto WaitForAck;
 	}
 	
@@ -225,11 +225,11 @@ machine OpenWSN_Mote {
 				lastSynched = 0; //Synched
 				
 			send slotTimer, endSlot;
-		}};
+		}}
 		on null goto WaitForNewSlot with
 		{
 			send slotTimer, endSlot;
-		};
+		}
 	}
 	
 	state DataReceptionMode {
@@ -248,7 +248,7 @@ machine OpenWSN_Mote {
 		send payload.0, Ack, (this, myRank);
 			
 			send slotTimer, endSlot;
-		};
+		}
 	}
 	
 }

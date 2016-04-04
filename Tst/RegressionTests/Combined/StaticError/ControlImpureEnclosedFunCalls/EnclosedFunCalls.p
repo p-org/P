@@ -21,32 +21,32 @@ main machine Real1 {
 
 					 Action4();
 					 raise unit;                          
-		};   
+		}   
 
-		on E2 goto Real1_S1 with { Action1();};           //no error: Action1 does not change current state
-		on E3 goto Real1_S1 with { Action4();};           //error: Action4 changes current state
+		on E2 goto Real1_S1 with { Action1();}           //no error: Action1 does not change current state
+		on E3 goto Real1_S1 with { Action4();}           //error: Action4 changes current state
 		
 		on E4 do {
 			Action2();        
 			Action3();        
-		};
+		}
 	}
 	state Real1_S1 {
 		entry {
 			}
 		on unit do {
 
-		};
-		on E1 do { Action7(); };                        //no error - OK
-	    on E2 do { Action8(); };                        //no error - OK
-		on E3 do { Action9(); };                        //no error - OK
+		}
+		on E1 do { Action7(); }                        //no error - OK
+	    on E2 do { Action8(); }                        //no error - OK
+		on E3 do { Action9(); }                        //no error - OK
     }
 	state Real1_S2 {
 		entry {
 			}
-		on E1 do { Action7(); };                        // no error - OK
-	    on E2 do { Action8(); };                        //no error - OK
-		on E3 do { Action9(); };                        //no error - OK
+		on E1 do { Action7(); }                        // no error - OK
+	    on E2 do { Action8(); }                        //no error - OK
+		on E3 do { Action9(); }                        //no error - OK
 	}
 	fun Action1() {		                          
 

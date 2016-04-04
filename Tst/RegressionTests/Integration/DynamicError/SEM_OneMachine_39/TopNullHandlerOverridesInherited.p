@@ -11,7 +11,7 @@ main machine Real1 {
         entry { 
 			raise unit;
         }
-		on unit do {send this, E1; raise local; };  
+		on unit do {send this, E1; raise local; }  
 		on local push Real1_S1;
 		on null do Action2;   //Action2 handler for E1 is inherited by Real1_S1
         exit { send this, E1;  }

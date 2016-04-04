@@ -40,7 +40,7 @@ machine Real2 {
 			
 				Action2(payload); 
 			
-		};
+		}
 	}
 	fun Action2(payload: bool) {
 		assert(payload == false);  //fails in runtime
@@ -48,6 +48,6 @@ machine Real2 {
 }
 spec M monitors E2 {
 	start state x {
-		on E2 do (payload: bool) { assert (payload == true); };  //fails in Zinger
+		on E2 do (payload: bool) { assert (payload == true); }  //fails in Zinger
 	}
 }

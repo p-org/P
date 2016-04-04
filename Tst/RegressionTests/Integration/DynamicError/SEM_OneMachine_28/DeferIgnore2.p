@@ -17,7 +17,7 @@ main machine Real1 {
 		             send this, E2; 
 		             send this, E3; 
 					 receive { case E3 : { test = true; } }
-						};   
+						}   
 		on E2 do Action2;   
 
 		on E3 goto Real1_S2;  

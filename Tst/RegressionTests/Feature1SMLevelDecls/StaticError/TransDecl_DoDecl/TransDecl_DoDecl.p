@@ -10,10 +10,10 @@ main machine Sample {
 		exit {
 
 		}
-		on null goto X2 with { };
+		on null goto X2 with { }
 		on a goto X1 with foo;
 		on b goto X1 with bar;
-		on c do {};
+		on c do {}
 		on a do bar;
 		on b do foo;
 		on b push X3;

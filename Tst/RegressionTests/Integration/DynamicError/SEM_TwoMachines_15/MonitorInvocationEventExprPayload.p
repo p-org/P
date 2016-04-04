@@ -17,6 +17,6 @@ spec M monitors E2 {
 	start state x {
 		entry {
 		}
-		on E2 do (payload: bool) { assert (payload == true); };  //fails in Zinger
+		on E2 do (payload: bool) { assert (payload == true); }  //fails in Zinger
 	}
 }

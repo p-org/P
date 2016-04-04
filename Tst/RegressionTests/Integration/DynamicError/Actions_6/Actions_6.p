@@ -13,7 +13,7 @@ main machine Real {
 			ghost_machine = new Ghost(this);  
             raise unit;	   
         }
-        on E2 do (payload: int) { Action1(payload); };
+        on E2 do (payload: int) { Action1(payload); }
 		on unit push Real_S1;
         on E4 goto Real_S2;
     }

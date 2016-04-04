@@ -45,7 +45,7 @@ machine PONG {
     start state Pong_WaitPing {
         entry { }
 			on Ping goto Pong_SendPong;
-			on PingIgnored do {assert(false); } ; //unreachable
+			on PingIgnored do {assert(false); } //unreachable
     }
 
     state Pong_SendPong {

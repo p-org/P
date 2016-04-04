@@ -28,6 +28,6 @@ machine B {
 				case E: { }
 			}
 		}
-		on F goto X with { assert false; };
+		on F goto X with { assert false; }
 	}
 }

@@ -10,8 +10,8 @@ main machine Real1 {
 	        }
 		exit {   }
 
-		on E1 do {send this, null; };  //error
-		on null do {assert(false);};   //unreachable
+		on E1 do {send this, null; }  //error
+		on null do {assert(false);}   //unreachable
 	}
 	fun Action2() {
 		assert(false);

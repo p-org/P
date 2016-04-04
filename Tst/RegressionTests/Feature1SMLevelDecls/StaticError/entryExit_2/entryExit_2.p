@@ -13,9 +13,9 @@ main machine Node {
 			x = x + 1;
 		}
 		on a do foo;
-		on b do {};
+		on b do {}
 		on c goto xyz;
-		on d goto xyz with {};
+		on d goto xyz with {}
 		on e goto xyz with bar;
 		exit {}
 	}

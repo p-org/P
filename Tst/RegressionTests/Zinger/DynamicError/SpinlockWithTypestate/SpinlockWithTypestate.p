@@ -22,16 +22,16 @@ var me: int;
 		//on START do {
 			//assert (!(me in tpstate));             //never fails
 			//tpstate[me] = false;
-		//};
+		//}
 		on ACQ do (payload: int) {
 			ev_guard = payload;
 			me = payload;
 			//if (ev_guard == me) {
 				assert (me in tpstate);               
 				if (tpstate[me] == false) { tpstate[me] = true; }
-				else  { raise Error1; };
+				else  { raise Error1; }
 			//}
-		};
+		}
 		on REL do (payload: int) {
 			ev_guard = payload;
 			me = payload;
@@ -39,18 +39,18 @@ var me: int;
 			//if (ev_guard == me) {
 				//assert (me in tpstate);;             //never fails
 				if (tpstate[me] == true) { raise Halt; }
-				else { raise Error2; };
+				else { raise Error2; }
 			//}
-		};
+		}
 		on FIN do {
 			//checking that all initialized stvars are false upon FIN:
 			i = 0;
 			while (i < sizeof(keys(tpstate))) {
-				if (tpstate[keys(tpstate)[i]] == true) { raise Error3; };
+				if (tpstate[keys(tpstate)[i]] == true) { raise Error3; }
 				i = i + 1;
 			}
 			raise Halt;
-		};
+		}
 		on Halt goto HaltState;
 		on Error1 goto Abort1;
 		on Error2 goto Abort2;
@@ -134,6 +134,6 @@ var mon, mon0, mon1: machine;
 	fun ChooseEvent() : event {
 		if ($) { return ACQ; }
 		else if ($) { return REL; }
-		else { return FIN; };
+		else { return FIN; }
 	}
 }

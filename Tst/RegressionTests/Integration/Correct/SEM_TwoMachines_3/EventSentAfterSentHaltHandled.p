@@ -52,7 +52,7 @@ machine PONG {
 	     raise Success;		 	  
 	}
         on Success goto Pong_WaitPing;
-		on PingIgnored do {assert(false); } ; //unreachable
+		on PingIgnored do {assert(false); } //unreachable
     }
 	state Pong_Halt {
 			ignore Ping;

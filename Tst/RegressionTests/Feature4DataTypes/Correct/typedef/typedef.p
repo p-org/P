@@ -23,6 +23,6 @@ main machine Main
 			assert(payload.first.second.0 == 100);
 			assert(payload.first.second.1 == false);
 			assert(sizeof(payload.second) == 1);
-		};
+		}
 	}
 }

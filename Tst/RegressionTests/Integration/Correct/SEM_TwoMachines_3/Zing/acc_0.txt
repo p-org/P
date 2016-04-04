@@ -1,9 +1,93 @@
 =================================
          Console output          
 =================================
-OUT: ##################
-OUT: Check Passed
-OUT: ##################
-OUT: 23 distinct states explored
+OUT: Error: "..\program.dll" - Can't find Zing Assembly
+OUT: Usage: zinger [options] <ZingModel>
+OUT: -h | -?     display this message (-h or -?)
+OUT: ===========================
+OUT: Iterative Bounding Options:
+OUT: ---------------------------
+OUT: -fBound:<int>
+OUT: Final Cutoff or Maximum bound in the case of depth or delay bounding. Default value is (int max)
 OUT: 
-EXIT: 0
+OUT: -iBound:<int>
+OUT: Iterative increment bound in the case of depth or delay bounding. Default value is 1
+OUT: 
+OUT: 
+OUT: ===========================
+OUT: Zinger Configuration:
+OUT: ---------------------------
+OUT: -p | -p:<n>
+OUT: Degree of Parallelism during Search. -p would create no_of_worker_threads = no_of_cores.
+OUT: You can control the degree of parallelism by using -p:<n>, in that case no_of_worker_threads = n
+OUT: 
+OUT: -m | -multiple
+OUT: Find all bugs in the model. Dont stop exploration after finding first bug.
+OUT: 
+OUT: -s | -stats
+OUT: Print Search Statistics after each Iterative Bound
+OUT: 
+OUT: -et:<filename>
+OUT: Dump the generated (only trace statements) Zing error trace in file.
+OUT: 
+OUT: -entireZingTrace
+OUT: Genererates detailed Zing Stack Error trace.
+OUT: 
+OUT: 
+OUT: -timeout:<time in seconds>
+OUT: Maximum amount of time to run zinger. Zinger will be terminated after time-out period
+OUT: 
+OUT: ===========================
+OUT: Zinger Optimizations:
+OUT: ---------------------------
+OUT: -ct
+OUT: Use trace compaction, steps from states that have single successor are not stored.
+OUT: 
+OUT: -frontiersToDisk
+OUT: Dump frontier states after each iteration into files on disk.
+OUT: This option should be used when you dont want store frontiers in memory.
+OUT: The search will be severely slowed down because of disk access but memory consumption is minimal
+OUT: 
+OUT: -co:n
+OUT: Fingerprint states having single successor with probability n/1000000 <default n = 0>.
+OUT: 
+OUT: -maxMemory:<double>GB
+OUT: Maximum memory consumption during stateful search. After process consumes 70% ofmax_size (e.g. 2GB).
+OUT: States are randomly replaced from the state table and frontiers are stored on disk.
+OUT: 
+OUT: 
+OUT: ===========================
+OUT: Zinger Search Strategy:
+OUT: ---------------------------
+OUT: -maxDFSStack:<int>
+OUT: Maximum size of the DFS search stack. A counter example is generated if size of the stack exceeds the bound.
+OUT: 
+OUT: -randomsample:<int>
+OUT: Zinger performs random walk without DFS stack. <int> represents the maximum number of schedules explored per iteration. (default is 1000).
+OUT: 
+OUT: -pb
+OUT: Perform preemption bounding
+OUT: 
+OUT: -delayB:<scheduler.dll>
+OUT: Zinger performs delay bounding using the deterministic scheduler (scheduler.dll).
+OUT: 
+OUT: -bc:<int>
+OUT: Bound the choice operations or bound the number of times choose(bool) returns true.
+OUT: The default value is "false" for choose(bool), choice budget is used each time true is returned.
+OUT: 
+OUT: 
+OUT: ===========================
+OUT: Zinger Search Strategy For Liveness:
+OUT: ---------------------------
+OUT: -NDFSliveness
+OUT: To perform liveness search using NDFS <use only with sequential and non-iterative>
+OUT: 
+OUT: -randomliveness:(exhaustivesearchbound,livestatebound,finalcutoff)
+OUT: This option uses random search based liveness algorithm.
+OUT: It performs random search untill it finds a cycles in the execution.
+OUT: ===============================
+OUT: Zinger Plugin:
+OUT: -------------------------------
+OUT: -motionplanning:<plugin.dll>
+OUT: 
+EXIT: 7

@@ -35,6 +35,6 @@ model Ghost {
         entry (payload: machine) {
 	      real_machine = payload;
         }
-        on E1 do {assert(false); };
+        on E1 do {assert(false); }
     }
 }

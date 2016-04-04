@@ -12,7 +12,7 @@ event y;
 			}
                         on x do (payload: (event, int)) {
 				raise payload.0, payload.1;
-			};
+			}
 		}
 	}
 

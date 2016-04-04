@@ -9,8 +9,8 @@ main machine Sample {
 		exit {
 
 		}
-		on null goto X2 with { };
-		on a goto X1 with { };
+		on null goto X2 with { }
+		on a goto X1 with { }
 	}
 
 	fun foo() {
@@ -21,7 +21,7 @@ main machine Sample {
 machine Sample2 {
 	start state X1 {
 		
-		on null do {};
+		on null do {}
 	
 	}
 

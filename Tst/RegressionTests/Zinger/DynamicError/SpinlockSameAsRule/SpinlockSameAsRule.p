@@ -29,18 +29,18 @@ var me: int;
 		//on START do {
 		//	assert (!(me in tpstate));             //never fails
 		//	tpstate[me] = false;
-		//};
+		//}
 		on ACQ do (payload: int) {
 			ev_guard = payload;
 			me = payload;
 			//if (ev_guard == me) {
 				//1. Typestate for "me" has not been set up yet: set up the typestate for "me"
-				if (!(me in tpstate)) { tpstate[me] = false; };
+				if (!(me in tpstate)) { tpstate[me] = false; }
 				//2. Typestate for "me" was set up already:            
 				if (tpstate[me] == true) { raise Error1; }     //double acquire
-				else  { tpstate[me] = true; };       //acquire lock
+				else  { tpstate[me] = true; }       //acquire lock
 			//}
-		};
+		}
 		on REL do (payload: int) {
 			ev_guard = payload;
 			me = payload;
@@ -48,18 +48,18 @@ var me: int;
 			//Check that the watch is set up and test the guard:
 			//if (me in tpstate && ev_guard == me) {
 			if (tpstate[me] == false){ raise Error2; }
-			else { raise Halt; };
+			else { raise Halt; }
 			//}
-		};
+		}
 		on FIN do {
 			//checking that all *initialized* stvars are false upon FIN:
 			i = 0;
 			while (i < sizeof(keys(tpstate))) {
-				if (tpstate[keys(tpstate)[i]] == true) { raise Error3; };
+				if (tpstate[keys(tpstate)[i]] == true) { raise Error3; }
 				i = i + 1;
 			}
 			raise Halt;
-		};
+		}
 		on Halt goto HaltState;
 		on Error1 goto Abort1;
 		on Error2 goto Abort2;
@@ -143,6 +143,6 @@ var mon, mon0, mon1: machine;
 	fun ChooseEvent() : event {
 		if ($) { return ACQ; }
 		else if ($) { return REL; }
-		else { return FIN; };
+		else { return FIN; }
 	}
 }

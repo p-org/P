@@ -19,13 +19,13 @@ main machine Real1 {
 		             send this, E3; 
 
 					 raise unit;                          // no error
-		};   
+		}   
 
 		
 		on E2 do {
 			Action2();
 			Action3();
-		};
+		}
 		on E3 do {
 			if (i == 3) {
 				    pop;                                //no error
@@ -36,17 +36,17 @@ main machine Real1 {
 							Action5() - 
 							Action6();    //error
 			    }
-		};
+		}
 	}
 	state Real1_S1 {
 		entry {
 			}
 		on unit do {
 			pop;                                   //no error
-		};
-		on E1 do { Action2(); };
-	    on E2 do { Action3(); };
-		on E3 do { Action1(); };
+		}
+		on E1 do { Action2(); }
+	    on E2 do { Action3(); }
+		on E3 do { Action1(); }
     }
 	state Real1_S2 {
 		entry { }

@@ -44,10 +44,10 @@ start state Start {
 	state Acquire {
 		entry {
 		if (stvar == 0) {stvar = 1;}
-		else {raise Error1;};
+		else {raise Error1;}
 		}
 		on Error1 goto Abort1;
-		on null do {pop;};
+		on null do {pop;}
 	}
 	state Release {
 		entry {
@@ -56,14 +56,14 @@ start state Start {
 		}
 		on Error2 goto Abort2;
 		on Halt goto OK;
-		on null do {pop;};
+		on null do {pop;}
 	}
 	state Finish {
 		entry {
 			if (stvar == 1) {raise Error3;}
 		}
 		on Error3 goto Abort3;
-		on null do {pop;};
+		on null do {pop;}
 	}
 	// reachable for double acquire
 	state Abort1 {

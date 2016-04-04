@@ -21,11 +21,11 @@ machine m2 {
 	on a goto S2;
 	on b goto S1;
 	on a goto S1;
-	on x do { foo(); };	
+	on x do { foo(); }	
 	}
 	state S2 {	
-		on a do {};
-		on a do { assert(false); };	  //unreachable
+		on a do {}
+		on a do { assert(false); }	  //unreachable
 	}
 	fun foo() {}
 }

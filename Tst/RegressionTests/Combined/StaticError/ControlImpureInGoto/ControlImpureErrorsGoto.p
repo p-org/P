@@ -19,10 +19,10 @@ main machine Real1 {
 		             send this, E2; 
 		             send this, E3; 
 					 send this, E4;
-					 };   
-		on E2 goto Real1_S1 with { };
-        on E1 goto Real1_S2 with { raise unit;};  	              //error
-		on E3 goto Real1_S3 with { pop;};                         //error
+					 }   
+		on E2 goto Real1_S1 with { }
+        on E1 goto Real1_S2 with { raise unit;}  	              //error
+		on E3 goto Real1_S3 with { pop;}                         //error
 		on E4 goto Real1_S3 with {
 			if (i == 3) {                   //error at a wrong line number (should be 28!)
 				    pop;                    //no error here: line 27 reported instead
@@ -34,7 +34,7 @@ main machine Real1 {
 							Action7() +   // no error!!!
 							Action6();    //error
 			    }
-		};
+		}
 	}
 	state Real1_S1 {
 		entry {

@@ -10,7 +10,7 @@ main machine Real1 {
         entry { 
 			raise unit;
         }
-		on unit do { send this, E1; };
+		on unit do { send this, E1; }
         on E1 do Action2;   
         on null goto Real1_S2;   
         exit {   }

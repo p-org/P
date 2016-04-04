@@ -28,6 +28,6 @@ main machine B {
 			}
 			
 		}
-		on E goto X with { assert (false);};
+		on E goto X with { assert (false);}
 	}
 }

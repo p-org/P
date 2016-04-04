@@ -41,20 +41,20 @@ main machine MachOS {
 			send this, myMapSeq, (first = m, sec = s);
 		
 		}	
-		on myTuple do (payload: (int, bool)) { foo_1(payload); };		
-		on myNmTuple do (payload: (first:int, sec:bool)) { foo_2(payload); };	
-		on mySeq do (payload: seq[int]) { foo_3(payload); };	
+		on myTuple do (payload: (int, bool)) { foo_1(payload); }		
+		on myNmTuple do (payload: (first:int, sec:bool)) { foo_2(payload); }	
+		on mySeq do (payload: seq[int]) { foo_3(payload); }	
 		on myMapSeq do (payload: (first: map[int, int], sec : seq[bool])) {
 			//INT = payload.first[true];     //error
 			INT = payload.first[0];
 			assert( INT == 1 );
 			BOOL = payload.sec[2];
 			assert ( BOOL == true );
-		};
+		}
 		on halt do {
 			//MACH = payload;                 //error
 			//INT = payload;                  //error
-		};
+		}
 	}
 
 }

@@ -56,7 +56,7 @@ machine PONG {
     }
 	state Pong_Halt {
 			ignore Ping;
-			on PingIgnored do {assert(false); } ; //reachable
+			on PingIgnored do {assert(false); }  //reachable
 		    //ignore PingIgnored;
 	}
 }

@@ -49,12 +49,12 @@ spec Safety monitors M_PING, M_PONG {
 				pending[payload] = 0;
 			pending[payload] = pending[payload] + 1;
 			assert (pending[payload] <= 3);
-		};
+		}
 		on M_PONG do (payload: machine) { 
 			assert (payload in pending);
 			assert (0 < pending[payload]);
 			pending[payload] = pending[payload] - 1;
-		};
+		}
 	}
 }
 
@@ -65,12 +65,12 @@ spec Liveness monitors NODE_DOWN {
 	start hot state Init {
         on L_INIT do (payload: map[machine, bool]) {        
 			nodes = payload as map[machine, bool]; 
-        };
+        }
 		on NODE_DOWN do (payload: machine) { 
 			nodes -= payload;
 			if (sizeof(nodes) == 0) 
 				raise UNIT;
-		};
+		}
 		on UNIT goto Done;
 	}
 	state Done {

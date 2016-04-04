@@ -33,6 +33,6 @@ main machine Main
 		on test do (payload: compMap) {
 			assert(payload[slot1] == val1);
 			assert(payload[slot2] == val1);
-		};
+		}
 	}
 }

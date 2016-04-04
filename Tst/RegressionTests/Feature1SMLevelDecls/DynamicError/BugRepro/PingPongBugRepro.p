@@ -56,8 +56,8 @@ machine FailureDetector {
 			timer = new Timer(this);
 	        raise UNIT;   	   
         }
-		on REGISTER_CLIENT do (payload: machine) { clients[payload] = true; };
-		on UNREGISTER_CLIENT do  (payload: machine) { if (payload in clients) clients -= payload; };
+		on REGISTER_CLIENT do (payload: machine) { clients[payload] = true; }
+		on UNREGISTER_CLIENT do  (payload: machine) { if (payload in clients) clients -= payload; }
         on UNIT push SendPing;
     }
     state SendPing {
@@ -73,7 +73,7 @@ machine FailureDetector {
 					 raise TIMER_CANCELED;
 			     }
 			}
-		};
+		}
 		on TIMEOUT do { 
 			attempts = attempts + 1;
 		    if (sizeof(responses) < sizeof(alive) && attempts < 2) {
@@ -81,15 +81,15 @@ machine FailureDetector {
 			}
 			Notify(1, 0);
 			raise ROUND_DONE;
-		};
+		}
 		on ROUND_DONE goto Reset;
 		on UNIT goto SendPing;
 		on TIMER_CANCELED push WaitForCancelResponse;
      }
 	 state WaitForCancelResponse {
 	     defer TIMEOUT, PONG;
-	     on CANCEL_SUCCESS do { raise ROUND_DONE; };
-		 on CANCEL_FAILURE do { pop; };
+	     on CANCEL_SUCCESS do { raise ROUND_DONE; }
+		 on CANCEL_FAILURE do { pop; }
 	 }
 	 state Reset {
          entry {
@@ -139,7 +139,7 @@ machine Node {
         on PING do (payload: machine) {
 			monitor M_PONG, this;
 		    send payload as machine, PONG, this;
-		};
+		}
     }
 }
 
@@ -153,12 +153,12 @@ spec Safety monitors M_PING, M_PONG {
 				pending[payload] = 0;
 			pending[payload] = pending[payload] + 1;
 			assert (pending[payload] <= 3);   //fails
-		};
+		}
 		on M_PONG do (payload: machine) { 
 			assert (payload in pending);
 			assert (0 < pending[payload]);
 			pending[payload] = pending[payload] - 1;
-		};
+		}
 	}
 }
 
@@ -176,7 +176,7 @@ spec Liveness monitors M_START, NODE_DOWN {
 			nodes -= payload;
 			if (sizeof(nodes) == 0) 
 				raise UNIT;
-		};
+		}
 		on UNIT goto Done;
 	}
 	state Done {

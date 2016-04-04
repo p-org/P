@@ -20,7 +20,7 @@ machine B {
 			raise Unit;
 		}
 		on Unit push X;
-		on F do { assert false; };
+		on F do { assert false; }
 	}
 	
 	state X {
@@ -29,6 +29,6 @@ machine B {
 				case F: { pop; }
 			}
 		}
-		on F do { assert false; };
+		on F do { assert false; }
 	}
 }

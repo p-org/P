@@ -11,7 +11,7 @@ main machine Program {
 
 		exit { assert (false); }  //unreachable
 		on E push Call;
-		on null do {assert(false);;;};  //inherited by Call; reachable
+		on null do {assert(false);;;}  //inherited by Call; reachable
 	}
 
 	state Call {

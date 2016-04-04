@@ -30,9 +30,9 @@ main machine PING {
         on Success goto Ping_WaitPong;
     }
 
-    state Ping_WaitPong {
+    state Ping_WaitPong { 
 		on Pong goto Ping_SendPing; 
-		on PongIgnored do { assert(false); } ;	//unreachable
+		on PongIgnored do { assert(false); }   //unreachable
      }
 }
 

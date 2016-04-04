@@ -30,7 +30,7 @@ main machine PING {
 			raise Success;
 	}
         on Success goto Ping_WaitPong;
-		//on PongHalted do {assert(false); ;} ; //reachable (used for validating the test)
+		//on PongHalted do {assert(false); ;}   //reachable (used for validating the test)
      }
 
      state Ping_WaitPong {
@@ -44,7 +44,7 @@ machine PONG {
     start state Pong_WaitPing {
         entry { }
 			on Ping goto Pong_SendPong;
-			on PingIgnored do {assert(false); } ; //reachable
+			on PingIgnored do {assert(false); }   //reachable
     }
 
     state Pong_SendPong {

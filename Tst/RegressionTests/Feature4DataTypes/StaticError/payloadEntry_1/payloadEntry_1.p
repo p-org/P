@@ -14,16 +14,16 @@ main machine MachOS {
 		on myNmTuple do (payload: (first:int, sec:bool)) {
 			INT = payload.first;
 			BOOL = payload.sec;
-		};
+		}
 		
 		on mySeq do (payload: seq[int]) {
 			INT = payload[1];
-		};
+		}
 		
 		on myMapSeq do (payload: (first: map[int, int], sec : seq[bool])) {
 			INT = payload.first[3];
 			BOOL = payload.sec[2];
-		};
+		}
 		
 		on null goto State2;
 	}

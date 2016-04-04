@@ -50,7 +50,7 @@ model Timer {
 			} else {
 				send target, CancelTimerSuccess;
 			}		
-		};
+		}
 	}
 }
 
@@ -87,16 +87,16 @@ machine Replica {
 			if (pendingWriteReq.seqNum == payload) {
 				lastSeqNum = payload;
 			}
-		};
+		}
 		on GLOBAL_COMMIT do (payload:int) {
 			assert (pendingWriteReq.seqNum >= payload);
 			if (pendingWriteReq.seqNum == payload) {
 				data[pendingWriteReq.idx] = pendingWriteReq.val;
 				lastSeqNum = payload;
 			}
-		};
+		}
 		
-		on REQ_REPLICA do (payload :(seqNum:int, idx:int, val:int)) { HandleReqReplica(payload); };
+		on REQ_REPLICA do (payload :(seqNum:int, idx:int, val:int)) { HandleReqReplica(payload); }
 	}
 
 	model fun ShouldCommitWrite(): bool 
@@ -154,9 +154,9 @@ machine Coordinator {
 	}
 
 	state Loop {
-		on WRITE_REQ do (payload : (client:machine, idx:int, val:int)) {DoWrite(payload);};
+		on WRITE_REQ do (payload : (client:machine, idx:int, val:int)) {DoWrite(payload);}
 		on Unit goto CountVote;
-		on READ_REQ do (payload : (client:machine, idx:int)) {DoRead(payload);};
+		on READ_REQ do (payload : (client:machine, idx:int)) {DoRead(payload);}
 		ignore RESP_REPLICA_COMMIT, RESP_REPLICA_ABORT;
 	}
 
@@ -184,16 +184,16 @@ machine Coordinator {
 			}
 		}
 		defer WRITE_REQ;
-		on READ_REQ do (payload : (client:machine, idx:int)) { DoRead(payload);};
+		on READ_REQ do (payload : (client:machine, idx:int)) { DoRead(payload);}
 		on RESP_REPLICA_COMMIT goto CountVote with (payload : int){
 			if (currSeqNum == payload) {
 				i = i - 1;
 			}
-		};
-		on RESP_REPLICA_ABORT do (payload : int) { HandleAbort(payload); };
+		}
+		on RESP_REPLICA_ABORT do (payload : int) { HandleAbort(payload); }
 		on Timeout goto Loop with {
 			DoGlobalAbort();
-		};
+		}
 		on Unit goto WaitForCancelTimerResponse;
 	}
 
@@ -273,14 +273,14 @@ spec M monitors MONITOR_WRITE, MONITOR_READ_SUCCESS, MONITOR_READ_UNAVAILABLE {
 	var data: map[int,int];
 
 	start state Init {
-		on MONITOR_WRITE do (payload: (idx:int, val:int)) { data[payload.idx] = payload.val; };
+		on MONITOR_WRITE do (payload: (idx:int, val:int)) { data[payload.idx] = payload.val; }
 		on MONITOR_READ_SUCCESS do (payload : (idx:int, val:int)) { 
 			assert(payload.idx in data);
 			assert(data[payload.idx] == payload.val);
-		};
+		}
 		on MONITOR_READ_UNAVAILABLE do (payload: int) {
 			assert(!(payload in data));
-		};
+		}
 	}
 }
 

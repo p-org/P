@@ -42,7 +42,7 @@ machine PONG {
     start state Pong_WaitPing {
         entry { }
 			on Ping goto Pong_SendPong;
-			//on halt do { push Pong_SendPong; };  //TODO: Zing: "id does not belog to process"?
+			//on halt do { push Pong_SendPong; }  //TODO: Zing: "id does not belog to process"?
 			on halt goto  Pong_Halt;
 			
     }
@@ -53,7 +53,7 @@ machine PONG {
 	     raise Success;		 	  
 	}
         on Success goto Pong_WaitPing;
-		on PingIgnored do {assert(false); } ; //unreachable
+		on PingIgnored do {assert(false); }   //unreachable
     }
 	state Pong_Halt {
 			ignore Ping;

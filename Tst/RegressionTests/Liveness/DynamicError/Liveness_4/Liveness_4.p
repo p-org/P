@@ -22,7 +22,7 @@ event y : machine;
       entry {
         i = 0;
       }
-      on y do { i = i + 1; };
+      on y do { i = i + 1; }
       on x goto hotState;
     }
 
@@ -35,7 +35,7 @@ event y : machine;
   {
     start state S1
     {
-      on y do (payload: machine) { send payload, x; };
+      on y do (payload: machine) { send payload, x; }
     }
   }
 

@@ -28,7 +28,7 @@ main machine M {
 		receive {
 			case b: { assert(false);}
 		}
-	};
+	}
 	}
 	
 }

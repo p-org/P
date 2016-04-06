@@ -36,7 +36,7 @@ main machine PING {
 
     state Ping_WaitPong {
 		on Pong goto Ping_SendPing; 
-		on PongIgnored do { assert(false); } ;	//unreachable
+		on PongIgnored do { assert(false); } 	//unreachable
      }
 	state Ping_Halt {
 		entry {
@@ -44,7 +44,7 @@ main machine PING {
 			}
 		on halt goto Ping_Halt;     //stopping
 		on Pong goto Ping_SendPing; 
-		on PongIgnored do { assert(false); } ;	//reachable
+		on PongIgnored do { assert(false); }	//reachable
 	}
 }
 

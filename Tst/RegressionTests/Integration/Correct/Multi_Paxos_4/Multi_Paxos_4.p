@@ -93,7 +93,7 @@ machine PaxosNode {
 		
 		/***** acceptor ****/
 		on prepare do (payload : (proposer: machine, slot : int, proposal : (round: int, servermachine : int))) { preparefun(payload); }
-		on accept do (payload : (proposer: machine, slot:int, proposal : (round: int, servermachine : int), value : int)) { acceptfun(payload); } ;
+		on accept do (payload : (proposer: machine, slot:int, proposal : (round: int, servermachine : int), value : int)) { acceptfun(payload); } 
 		
 		/**** leaner ****/
 		on chosen push RunLearner;

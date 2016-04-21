@@ -1,10 +1,10 @@
 /**
-* \file PrtWinUser.h
-* \brief The main interface to the PrtWinUser runtime
+* \file PrtUser.h
+* \brief The main interface to the PrtUser runtime
 * Extends Prt interface with Windows User-mode specific values.
 */
-#ifndef PRTWINUSER_H
-#define PRTWINUSER_H
+#ifndef PRTUSER_H
+#define PRTUSER_H
 
 #include "PrtExecution.h"
 

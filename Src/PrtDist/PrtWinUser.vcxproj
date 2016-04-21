@@ -20,11 +20,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Prt\API\PrtUser.c" />
     <ClCompile Include="..\Prt\Core\Prt.c" />
     <ClCompile Include="..\Prt\Core\PrtExecution.c" />
     <ClCompile Include="..\Prt\Core\PrtTypes.c" />
     <ClCompile Include="..\Prt\Core\PrtValues.c" />
-    <ClCompile Include="..\Prt\WinUser\PrtWinUser.c" />
     <ClCompile Include="..\Prt\WinUser\PrtWinUserConfig.c" />
   </ItemGroup>
   <ItemGroup>
@@ -40,13 +40,11 @@
     <ClInclude Include="..\Prt\API\PrtTypes.h">
       <CopyToHeaders>True</CopyToHeaders>
     </ClInclude>
+    <ClInclude Include="..\Prt\API\PrtUser.h" />
     <ClInclude Include="..\Prt\API\PrtValues.h">
       <CopyToHeaders>True</CopyToHeaders>
     </ClInclude>
     <ClInclude Include="..\Prt\Core\PrtExecution.h">
-      <CopyToHeaders>True</CopyToHeaders>
-    </ClInclude>
-    <ClInclude Include="..\Prt\WinUser\PrtWinUser.h">
       <CopyToHeaders>True</CopyToHeaders>
     </ClInclude>
     <ClInclude Include="..\Prt\WinUser\PrtWinUserConfig.h">
@@ -184,7 +182,7 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-    <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />
+  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>

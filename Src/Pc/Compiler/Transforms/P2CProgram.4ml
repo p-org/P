@@ -34,7 +34,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 										   Section(
 											  PpDefine(Ident("P_PROGRAM_H"), NIL),
 											  Section(
-											     PpInclude("PrtWinUser.h", FALSE),
+											     PpInclude("PrtUser.h", FALSE),
 											     PpInclude("PrtExecution.h", FALSE)											  
 											  )),
 										   Section(ifdefBegin, Section(cmp, ifdefEnd))),
@@ -78,7 +78,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 										   Section(
 											  PpDefine(Ident("P_PROGRAM_H"), NIL),
 											  Section(
-											     PpInclude("PrtWinUser.h", FALSE),
+											     PpInclude("PrtUser.h", FALSE),
 											     PpInclude("PrtExecution.h", FALSE)											  
 											  )),
 										   cmp),

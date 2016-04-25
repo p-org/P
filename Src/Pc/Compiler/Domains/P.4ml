@@ -221,6 +221,7 @@ domain PStaticTyping extends PData
 	conforms no BadLabelError(_).
 	conforms no PayloadError(_).
 	conforms no TypeDefError(_).
+	conforms no FunRetError(_).
     /*************************************************************/
 
 	//// Check that TypeDef's are used properly
@@ -829,6 +830,15 @@ domain PStaticTyping extends PData
     [ rule_Classes = '"error, msg: invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name"']
 	LValueError(c, e) :- SubSE(c, e), e = BinStmt(_, e', _, _), no IsLValue(c, e', _);
 						 SubSE(c, e), e = FunStmt(_, _, x, _, _), x: Name, no IsLValue(c, x, _).
+
+    /*************************************************************/
+    /*                      Function Returns                     */
+    /*************************************************************/
+
+	FunRetError ::= (cntxt: FunDecl).
+
+	[rule_Classes = '"error, msg: function must return a value"']
+	FunRetError(f) :- f is FunDecl, rt = f.return, rt : TypeExpr, no { r | SubSE(c, r), r : Return }.
 
     /*************************************************************/
     /*                      Control Impurity                     */

@@ -57,8 +57,6 @@ int main(int argc, char *argv[])
 	processGuid.data2 = 0;
 	processGuid.data3 = 0;
 	processGuid.data4 = 0;
-	//update the foreign types
-	PrtUpdateForeignFn(UserMkDefaultForeignValue, UserCloneForeignValue, UserFreeForeignValue, UserHashForeignValue, UserIsEqualForeignValue, UserToStringForeignValue);
 	process = PrtStartProcess(processGuid, &P_GEND_PROGRAM, ErrorHandler, Log);
 	payload = PrtMkNullValue();
 	PrtMkMachine(process, _P_MACHINE_MAIN, payload);

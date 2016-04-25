@@ -1408,6 +1408,108 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 					  UNKNOWN).
 
     /*************************************************************/
+    /******     Generate foreign type Decl Arrays           ******/
+    /*************************************************************/	
+	ForeignTypeDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
+
+	//// Base case
+	ForeignTypeDeclConcat(c, NIL) :- c = count({t | t is TypeDef, t.type = NIL}).
+
+	ForeignTypeDeclConcat(m, arr) :- 
+							DeclId(d, m, ctype), d.type = NIL, d : TypeDef, 
+							ForeignTypeDeclConcat(m + 1, after),  
+							arr = out.Args(def, after), 
+	                        def = Init(
+							   Args(Ident(ctype),
+							   Args(StringLit(d.name, NIL),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_MKDEF_", strJoin(d.name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_CLONE_", strJoin(d.name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_FREE_", strJoin(d.name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_GETHASHCODE_", strJoin(d.name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_ISEQUAL_", strJoin(d.name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_TOSTRING_", strJoin(d.name, "_IMPL")))),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))))))).
+
+	COut(15, def) :- ForeignTypeDeclConcat(0, arr),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_FOREIGNTYPEDECL"), NIL), 
+								  "P_GEND_FOREIGNTYPES", 
+								  Init(arr)).
+
+	HOut(12, def) :- t is TypeDef, t.type = NIL,
+	                params = NIL,
+				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
+					argTypes = PrmTypes(BaseType(VOID), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FORGN_MKDEF_", strJoin(t.name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(12, def) :- t is TypeDef, t.type = NIL,
+	                params = Params(Param(NIL, "frgnVal"), NIL),
+				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FORGN_CLONE_", strJoin(t.name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(12, def) :- t is TypeDef, t.type = NIL,
+	                params = Params(Param(NIL, "frgnVal"), NIL),
+				    funType = FunType(BaseType(VOID), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FORGN_FREE_", strJoin(t.name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(12, def) :- t is TypeDef, t.type = NIL,
+	                params = Params(Param(NIL, "frgnVal"), NIL),
+				    funType = FunType(NmdType(NIL, "PRT_UINT32"), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FORGN_GETHASHCODE_", strJoin(t.name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(12, def) :- t is TypeDef, t.type = NIL,
+	                params = Params(Param(NIL, "frgnVal"), NIL),
+				    funType = FunType(NmdType(NIL, "PRT_STRING"), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FORGN_TOSTRING_", strJoin(t.name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(12, def) :- t is TypeDef, t.type = NIL,
+	                params = Params(Param(NIL, "frgnVal1"),
+					         Params(Param(NIL, "frgnVal2"), 
+							 NIL)),
+				    funType = FunType(NmdType(NIL, "PRT_BOOLEAN"), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), 
+							   PrmTypes(NmdType(NIL, "PRT_UINT64"), 
+							   NIL)),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FORGN_ISEQUAL_", strJoin(t.name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+    /*************************************************************/
     /******            Generate Program Decl                ******/
     /*************************************************************/	
 
@@ -1426,16 +1528,21 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	ProgModelArray(size, arr) :- size = count({ m | m is MachineDecl, m.kind = MODEL }), size = 0, arr = out.Ident("NULL").
 	ProgModelArray(size, arr) :- size = count({ m | m is MachineDecl, m.kind = MODEL }), size > 0, arr = out.Ident("P_GEND_MODELS").
 
-	HOut(12, def) :- def = out.VarDef(
+	ProgForeignTypesArray ::= (size: Natural, arr: out.Ident).
+	ProgForeignTypesArray(size, arr) :- size = count({ t | t is TypeDef, t.type = NIL }), size = 0, arr = out.Ident("NULL").
+	ProgForeignTypesArray(size, arr) :- size = count({ t | t is TypeDef, t.type = NIL }), size > 0, arr = out.Ident("P_GEND_FOREIGNTYPES").
+
+	HOut(13, def) :- def = out.VarDef(
 							      EXTERN, 
 								  NmdType(NIL, "PRT_PROGRAMDECL"), 
 								  "P_GEND_PROGRAM", 
 								  NIL).
 
-	COut(15, def) :- ProgEvntArray(evArrSize, evArrName),
+	COut(16, def) :- ProgEvntArray(evArrSize, evArrName),
 	                 ProgEvntSetArray(evSetArrSize, evSetArrName),
 					 ProgMachArray(machArrSize, machArrName),
 					 ProgModelArray(modelArrSize, modelArrName),
+					 ProgForeignTypesArray(foreignTypesSize, foreignTypesArrName),
 	                 def = out.VarDef(
 							      NIL, 
 								  NmdType(NIL, "PRT_PROGRAMDECL"), 
@@ -1446,13 +1553,15 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 							   Args(IntLit(evSetArrSize, DEC, U),
 							   Args(IntLit(machArrSize, DEC, U),
 							   Args(IntLit(modelArrSize, DEC, U),
+							   Args(IntLit(foreignTypesSize, DEC, U),
 							   Args(evArrName,
 							   Args(evSetArrName,
 							   Args(machArrName,
 							   Args(modelArrName,
+							   Args(foreignTypesArrName,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL))))))))))).
+							   NIL))))))))))))).
 
     /*************************************************************/
     /******                RHS Translation                  ******/

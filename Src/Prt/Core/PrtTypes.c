@@ -1,5 +1,11 @@
 #include "PrtTypes.h"
 
+/* The number of foreign type decls */
+PRT_UINT16 prtNumForeignTypeDecls = 0;
+
+/* The active set of foreign type decls */
+PRT_FOREIGNTYPEDECL *prtForeignTypeDecls = NULL;
+
 PRT_TYPE * PRT_CALL_CONV PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType)
 {
 	PRT_TYPE *type = (PRT_TYPE *)PrtMalloc(sizeof(PRT_TYPE));
@@ -11,7 +17,6 @@ PRT_TYPE * PRT_CALL_CONV PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType)
 		case PRT_KIND_EVENT:
 		case PRT_KIND_MACHINE:
 		case PRT_KIND_INT:
-		case PRT_KIND_FORGN:
 		case PRT_KIND_NULL:
 		{
 			type->typeKind = primType;
@@ -24,6 +29,15 @@ PRT_TYPE * PRT_CALL_CONV PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType)
 			return type;
 		}
 	}
+}
+
+PRT_TYPE * PRT_CALL_CONV PrtMkForeignType(_In_ PRT_UINT16 typeTag)
+{
+	PrtAssert(typeTag < prtNumForeignTypeDecls, "Invalid type tag");
+	PRT_TYPE *type = (PRT_TYPE *)PrtMalloc(sizeof(PRT_TYPE));
+	type->typeKind = PRT_KIND_FORGN;
+	type->typeUnion.typeTag = typeTag;
+	return type;
 }
 
 PRT_TYPE * PRT_CALL_CONV PrtMkMapType(_In_ PRT_TYPE *domType, _In_ PRT_TYPE *codType)
@@ -140,7 +154,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsSubtype(_In_ PRT_TYPE *subType, _In_ PRT_TYPE *su
 	case PRT_KIND_FORGN:
 	{
 		//// These types do not have any proper subtypes.
-		return subKind == supKind ? PRT_TRUE : PRT_FALSE;
+		return (subKind == supKind && subType->typeUnion.typeTag == supType->typeUnion.typeTag) ? PRT_TRUE : PRT_FALSE;
 	}
 	case PRT_KIND_MAP:
 	{	
@@ -256,10 +270,13 @@ PRT_TYPE * PRT_CALL_CONV PrtCloneType(_In_ PRT_TYPE *type)
 	case PRT_KIND_EVENT:
 	case PRT_KIND_MACHINE:
 	case PRT_KIND_INT:
-	case PRT_KIND_FORGN:
 	case PRT_KIND_NULL:
 	{
 		return PrtMkPrimitiveType(kind);
+	}
+	case PRT_KIND_FORGN:
+	{
+		return PrtMkForeignType(type->typeUnion.typeTag);
 	}
 	case PRT_KIND_MAP:
 	{		
@@ -374,20 +391,6 @@ void PRT_CALL_CONV PrtFreeType(_Inout_ PRT_TYPE *type)
 	}
 }
 
-/** The "Absent type" is a built-in foreign type used to represent the absence of a foreign value.
-* The type tag of the absent type is 0. No other foreign type is permitted to use this type tag.
-* @param[in] typeTag A type tag.
-* @returns `true` if the typeTag is 0, `false` otherwise.
-*/
-PRT_BOOLEAN PRT_CALL_CONV PrtIsAbsentTag(_In_ PRT_GUID typeTag)
-{
-	return 
-		typeTag.data1 == 0 &&
-		typeTag.data2 == 0 &&
-		typeTag.data3 == 0 &&
-		typeTag.data4 == 0 ? PRT_TRUE : PRT_FALSE;
-}
-
 PRT_BOOLEAN PRT_CALL_CONV PrtIsValidType(_In_ PRT_TYPE *type)
 {
 	if (type == NULL)
@@ -403,9 +406,12 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsValidType(_In_ PRT_TYPE *type)
 		case PRT_KIND_EVENT:
 		case PRT_KIND_MACHINE:
 		case PRT_KIND_INT:
-		case PRT_KIND_FORGN:
 		case PRT_KIND_NULL:
 			return PRT_TRUE;
+		case PRT_KIND_FORGN:
+		{
+			return type->typeUnion.typeTag < prtNumForeignTypeDecls;
+		}
 		case PRT_KIND_MAP:
 		{
 			PRT_MAPTYPE *map = type->typeUnion.map;

@@ -21,6 +21,14 @@ extern "C"{
 	//
 #define PRT_QUEUE_LEN_DEFAULT 64
 
+	typedef enum PRT_FUN_PARAM_STATUS
+	{
+		PRT_FUN_PARAM_INOUT,
+		PRT_FUN_PARAM_IN,
+		PRT_FUN_PARAM_CLONE,
+		PRT_FUN_PARAM_COPY,
+	} PRT_FUN_PARAM_STATUS;
+
 	typedef struct PRT_PROCESS_PRIV {
 		PRT_GUID				guid;
 		PRT_PROGRAMDECL			*program;
@@ -71,7 +79,8 @@ extern "C"{
 	{
 		PRT_UINT32		funIndex;
 		PRT_VALUE		**locals;
-		PRT_BOOLEAN		freeLocals;
+		PRT_BOOLEAN		freeLocals; 
+		PRT_VALUE       ***refArgs;
 		PRT_UINT16		returnTo;
 		PRT_CASEDECL	*rcase;
 	} PRT_FUNSTACK_INFO;
@@ -440,7 +449,8 @@ extern "C"{
 		PrtPushNewFrame(
 		_Inout_ PRT_MACHINEINST_PRIV	*context,
 		_In_ PRT_UINT32					funIndex,
-		_In_ PRT_VALUE					*parameters
+		...
+		//_In_ PRT_VALUE					*parameters
 		);
 
 	PRT_API void
@@ -466,8 +476,8 @@ extern "C"{
 		_Inout_ PRT_FUNSTACK_INFO		*frame,
 		_In_ PRT_UINT16					funCallIndex,
 		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_In_ PRT_UINT32					funIndex,
-		_In_ PRT_VALUE					*parameters
+		_In_ PRT_UINT32					funIndex
+		//_In_ PRT_VALUE					*parameters
 		);
 
 	PRT_API PRT_BOOLEAN

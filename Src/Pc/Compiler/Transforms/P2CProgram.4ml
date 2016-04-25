@@ -346,7 +346,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 								defs = out.Section(before, def),
 								def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								typeName = strJoin("P_GEND_TYPE_", toString(m)),
-                                typeStruct = out.Init(Args(Ident(kind), Args(Ident("NULL"), NIL))).						              
+                                typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
 	
 	//// Foreign types
 	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), 
@@ -355,7 +355,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 								typeName = strJoin("P_GEND_TYPE_", toString(m)),
 								indexName = strJoin("P_FORGN_TYPE_", name),
                                 typeStruct = out.Init(Args(Ident("PRT_KIND_FORGN"), 
-								                      Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), Ident(indexName)), NIL))).						              
+								                      Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), Ident(indexName)), NIL)), NIL))).						              
 	
 	//// Complex type Seq 
 	//// (cast to PRT_MAPTYPE * is used to avoid compiler warnings when initializing union)
@@ -373,7 +373,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
                                      typeStruct),
 								              typeStruct = out.Init(
 										              Args(Ident("PRT_KIND_SEQ"), 
-											            Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameSeq))), 
+											            Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameSeq))), NIL)), 
 											            NIL))),
 									            typeNameSeq = strJoin("P_GEND_TYPE_SEQ_", toString(m)). 
 
@@ -396,7 +396,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 														  typeStruct),
 							            typeStruct = out.Init(
 										            Args(Ident("PRT_KIND_MAP"), 
-											          Args(UnApp(ADDR, Ident(typeNameMap)), 
+											          Args(Init(Args(UnApp(ADDR, Ident(typeNameMap)), NIL)), 
 											          NIL))),														  
 										      typeNameMap = strJoin("P_GEND_TYPE_MAP_", toString(m)).
 	//// Complex type Tuple 
@@ -428,7 +428,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 													   typeStruct),
 										    typeStruct = out.Init(
 													  Args(Ident("PRT_KIND_TUPLE"), 
-													  Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameTup))), 
+													  Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameTup))), NIL)),
 													  NIL))),
 										     typeNameTupArr = strJoin("P_GEND_TYPE_TUP_ARR_", toString(m)),
 										     typeNameTup = strJoin("P_GEND_TYPE_TUP_", toString(m)).
@@ -471,7 +471,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 													   typeStatic),
 							       typeStatic = out.Init(
 										      Args(Ident("PRT_KIND_NMDTUP"), 
-											    Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameNmdTup))), 
+											    Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameNmdTup))), NIL)),
 											    NIL))),
 										 typeNameNmdTupTArr = strJoin("P_GEND_TYPE_NMDTUP_TARR_", toString(m)),
 										 typeNameNmdTupNArr = strJoin("P_GEND_TYPE_NMDTUP_NARR_", toString(m)),
@@ -534,7 +534,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 
 	Constant(c, m, defs) :- ConstId(m, c), Constant(_, m - 1, before), BaseConstant2Kind(c, kind, value),
 							defs = out.Section(before, def), def = out.VarDef(NIL, NmdType(NIL, "PRT_VALUE"), constName, constStruct),
-							constName = strJoin("P_GEND_VALUE_", toString(m)), constStruct = out.Init(Args(Ident(kind), Args(value, NIL))).						              
+							constName = strJoin("P_GEND_VALUE_", toString(m)), constStruct = out.Init(Args(Ident(kind), Args(Init(Args(value, NIL)), NIL))).						              
 
     COut(4, defs) :- Constant(_, c, defs), defs : out.Section, c = count({ x | x is ConstId}) - 1.
 

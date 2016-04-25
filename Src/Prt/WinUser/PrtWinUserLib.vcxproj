@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -24,8 +24,8 @@
     <ClInclude Include="..\API\PrtProgram.h" />
     <ClInclude Include="..\API\PrtTypes.h" />
     <ClInclude Include="..\API\PrtValues.h" />
+    <ClInclude Include="..\API\PrtUser.h" />
     <ClInclude Include="..\Core\PrtExecution.h" />
-    <ClInclude Include="PrtWinUser.h" />
     <ClInclude Include="PrtWinUserConfig.h" />
   </ItemGroup>
   <ItemGroup>
@@ -33,7 +33,7 @@
     <ClCompile Include="..\Core\PrtExecution.c" />
     <ClCompile Include="..\Core\PrtTypes.c" />
     <ClCompile Include="..\Core\PrtValues.c" />
-    <ClCompile Include="PrtWinUser.c" />
+    <ClCompile Include="PrtUser.c" />
     <ClCompile Include="PrtWinUserConfig.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

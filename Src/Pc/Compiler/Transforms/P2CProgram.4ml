@@ -34,7 +34,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 										   Section(
 											  PpDefine(Ident("P_PROGRAM_H"), NIL),
 											  Section(
-											     PpInclude("PrtWinUser.h", FALSE),
+											     PpInclude("PrtUser.h", FALSE),
 											     PpInclude("PrtExecution.h", FALSE)											  
 											  )),
 										   Section(ifdefBegin, Section(cmp, ifdefEnd))),
@@ -78,7 +78,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 										   Section(
 											  PpDefine(Ident("P_PROGRAM_H"), NIL),
 											  Section(
-											     PpInclude("PrtWinUser.h", FALSE),
+											     PpInclude("PrtUser.h", FALSE),
 											     PpInclude("PrtExecution.h", FALSE)											  
 											  )),
 										   cmp),
@@ -284,15 +284,18 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 					         FunApp(Ident(strJoin("P_STMT_", toString(n))), Args(Ident("s"), paramArgs)),
 					         FunApp(Ident("P_SEQ"), bodyArgs)).
 
-	COut(2, def) :- def = out.PpDefine(
-					         FunApp(Ident("P_BOOL_EXPR"), Args(Ident("x0"), Args(Ident("f0"), NIL))),
-					         FunApp(Ident("P_SEQ"), bodyArgs)),
-			        bodyArgs = out.Args(asn0, Args(asnb, Args(condFree0, Args(retb, NIL)))),
+	PBoolExprBodyArgs ::= (out.Args).
+	PBoolExprBodyArgs(bodyArgs) :- 
+					bodyArgs = out.Args(asn0, Args(asnb, Args(condFree0, Args(retb, NIL)))),
 			        asn0 = out.BinApp(ASN, Ident("p_tmp_expr_0"), Paren(Ident("x0"))),
 			        asnb = out.BinApp(ASN, Ident("p_tmp_bool"), FunApp(Ident("PrtPrimGetBool"), Args(Ident("p_tmp_expr_0"), NIL))),
 			        free0 = out.FunApp(Ident("PrtFreeValue"), Args(Ident("p_tmp_expr_0"), NIL)),
 					condFree0 = out.Paren(TerApp(TCOND, Paren(Ident(strJoin("f", toString(0)))), free0, IntLit(0, DEC, U))),
 					retb = Ident("p_tmp_bool").
+	COut(2, def) :- def = out.PpDefine(
+					         FunApp(Ident("P_BOOL_EXPR"), Args(Ident("x0"), Args(Ident("f0"), NIL))),
+					         FunApp(Ident("P_SEQ"), bodyArgs)),
+					PBoolExprBodyArgs(bodyArgs).
 															        
 	COut(2, def) :- PExprBodyArgs(bodyArgs, n, -1, -1), MacroArgList(paramArgs, n, _),
 	                def = out.PpDefine(
@@ -343,7 +346,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 								defs = out.Section(before, def),
 								def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								typeName = strJoin("P_GEND_TYPE_", toString(m)),
-                                typeStruct = out.Init(Args(Ident(kind), Args(Ident("NULL"), NIL))).						              
+                                typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
 	
 	//// Foreign types
 	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), 
@@ -352,7 +355,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 								typeName = strJoin("P_GEND_TYPE_", toString(m)),
 								indexName = strJoin("P_FORGN_TYPE_", name),
                                 typeStruct = out.Init(Args(Ident("PRT_KIND_FORGN"), 
-								                      Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), Ident(indexName)), NIL))).						              
+								                      Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), Ident(indexName)), NIL)), NIL))).						              
 	
 	//// Complex type Seq 
 	//// (cast to PRT_MAPTYPE * is used to avoid compiler warnings when initializing union)
@@ -370,7 +373,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
                                      typeStruct),
 								              typeStruct = out.Init(
 										              Args(Ident("PRT_KIND_SEQ"), 
-											            Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameSeq))), 
+											            Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameSeq))), NIL)), 
 											            NIL))),
 									            typeNameSeq = strJoin("P_GEND_TYPE_SEQ_", toString(m)). 
 
@@ -393,7 +396,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 														  typeStruct),
 							            typeStruct = out.Init(
 										            Args(Ident("PRT_KIND_MAP"), 
-											          Args(UnApp(ADDR, Ident(typeNameMap)), 
+											          Args(Init(Args(UnApp(ADDR, Ident(typeNameMap)), NIL)), 
 											          NIL))),														  
 										      typeNameMap = strJoin("P_GEND_TYPE_MAP_", toString(m)).
 	//// Complex type Tuple 
@@ -425,7 +428,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 													   typeStruct),
 										    typeStruct = out.Init(
 													  Args(Ident("PRT_KIND_TUPLE"), 
-													  Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameTup))), 
+													  Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameTup))), NIL)),
 													  NIL))),
 										     typeNameTupArr = strJoin("P_GEND_TYPE_TUP_ARR_", toString(m)),
 										     typeNameTup = strJoin("P_GEND_TYPE_TUP_", toString(m)).
@@ -468,7 +471,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 													   typeStatic),
 							       typeStatic = out.Init(
 										      Args(Ident("PRT_KIND_NMDTUP"), 
-											    Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameNmdTup))), 
+											    Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameNmdTup))), NIL)),
 											    NIL))),
 										 typeNameNmdTupTArr = strJoin("P_GEND_TYPE_NMDTUP_TARR_", toString(m)),
 										 typeNameNmdTupNArr = strJoin("P_GEND_TYPE_NMDTUP_NARR_", toString(m)),
@@ -531,7 +534,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 
 	Constant(c, m, defs) :- ConstId(m, c), Constant(_, m - 1, before), BaseConstant2Kind(c, kind, value),
 							defs = out.Section(before, def), def = out.VarDef(NIL, NmdType(NIL, "PRT_VALUE"), constName, constStruct),
-							constName = strJoin("P_GEND_VALUE_", toString(m)), constStruct = out.Init(Args(Ident(kind), Args(value, NIL))).						              
+							constName = strJoin("P_GEND_VALUE_", toString(m)), constStruct = out.Init(Args(Ident(kind), Args(Init(Args(value, NIL)), NIL))).						              
 
     COut(4, defs) :- Constant(_, c, defs), defs : out.Section, c = count({ x | x is ConstId}) - 1.
 
@@ -743,6 +746,33 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
     /******            Generate Fun Implementations         ******/
     /*************************************************************/	
 
+	ContextTransStmtExpr ::= (TypingContext, out.Stmt + out.Cases + out.Case + out.Args + { NIL }).
+	ContextTransStmtExpr(c, body) :- BodyTrans(c, body).
+	ContextTransStmtExpr(c, s1), ContextTransStmtExpr(c, s2) :- ContextTransStmtExpr(c, out.Seq(s1, s2)).
+	ContextTransStmtExpr(c, s) :- ContextTransStmtExpr(c, out.Block(_, s)).
+	ContextTransStmtExpr(c, s) :- ContextTransStmtExpr(c, out.Lbl(_, s)).
+	ContextTransStmtExpr(c, e) :- ContextTransStmtExpr(c, out.Return(e)).
+	ContextTransStmtExpr(c, e), ContextTransStmtExpr(c, s1), ContextTransStmtExpr(c, s2):- ContextTransStmtExpr(c, out.ITE(e, s1, s2)).
+	ContextTransStmtExpr(c, e), ContextTransStmtExpr(c, cases) :- ContextTransStmtExpr(c, out.Switch(e, cases)).
+	ContextTransStmtExpr(c, case), ContextTransStmtExpr(c, cases) :- ContextTransStmtExpr(c, out.Cases(case, cases)).
+	ContextTransStmtExpr(c, e) :- ContextTransStmtExpr(c, out.Case(e, _)), e: out.Expr.
+	ContextTransStmtExpr(c, s) :- ContextTransStmtExpr(c, out.Case(_, s)).
+	ContextTransStmtExpr(c, e), ContextTransStmtExpr(c, s) :- ContextTransStmtExpr(c, out.Loop(_, e, s)).
+	ContextTransStmtExpr(c, e0), ContextTransStmtExpr(c, e1), ContextTransStmtExpr(c, e2), ContextTransStmtExpr(c, s):- ContextTransStmtExpr(c, out.For(e0, e1, e2, s)).
+	ContextTransStmtExpr(c, e) :- ContextTransStmtExpr(c, out.SizeOf(e)), e: out.Expr. 
+	ContextTransStmtExpr(c, e) :- ContextTransStmtExpr(c, out.Cast(_, e)). 
+	ContextTransStmtExpr(c, e) :- ContextTransStmtExpr(c, out.UnApp(_, e)). 
+	ContextTransStmtExpr(c, e0), ContextTransStmtExpr(c, e1) :- ContextTransStmtExpr(c, out.BinApp(_, e0, e1)). 
+	ContextTransStmtExpr(c, e0), ContextTransStmtExpr(c, e1), ContextTransStmtExpr(c, e2) :- ContextTransStmtExpr(c, out.TerApp(_, e0, e1, e2)).
+	ContextTransStmtExpr(c, e), ContextTransStmtExpr(c, args) :- ContextTransStmtExpr(c, out.FunApp(e, args)). 
+	ContextTransStmtExpr(c, e) :- ContextTransStmtExpr(c, out.Paren(e)).
+	ContextTransStmtExpr(c, args) :- ContextTransStmtExpr(c, out.Init(args)).
+	ContextTransStmtExpr(c, e), ContextTransStmtExpr(c, args) :- ContextTransStmtExpr(c, out.Args(e, args)).
+	ContextTransStmtExpr(c, args) :- ContextTransStmtExpr(c, out.FunApp(Ident(name), _)), name = strJoin("P_STMT_", toString(n)), PStmtBodyArgs(args, n, -2, -1).
+	ContextTransStmtExpr(c, args) :- ContextTransStmtExpr(c, out.FunApp(Ident(name), _)), name = strJoin("P_EXPR_", toString(n)), PExprBodyArgs(args, n, -1, -1).
+	ContextTransStmtExpr(c, args) :- ContextTransStmtExpr(c, out.FunApp(Ident(name), _)), name = strJoin("P_TUPLE_", toString(n')), PTupleBodyArgs(args, n, -1), n' = n - 1.
+	ContextTransStmtExpr(c, args) :- ContextTransStmtExpr(c, out.FunApp(Ident("P_BOOL_EXPR"), _)), PBoolExprBodyArgs(args).
+
 	//// Computes the variable definitions required for function bodies.
 	BodyTmpVars ::= (context: TypingContext, nExprVars: Integer, nStmtVars: Integer, defs: out.Defs + { NIL }).
 	
@@ -766,6 +796,12 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	                                defb   = out.VarDef(NIL, NmdType(NIL, "PRT_BOOLEAN"), "p_tmp_bool", NIL),
 									defpc  = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), "p_tmp_mach_priv", NIL).
 
+	LocalVarsIter ::= (TypingContext, out.Defs + { NIL }, out.Defs + { NIL }).
+	LocalVarsIter(c, tmpVars, NIL) :- BodyTmpVars(c, -1, -2, tmpVars).
+	LocalVarsIter(c, tl, tmpVars') :- LocalVarsIter(c, out.Defs(tmpVar, tl), tl'), tmpVars' = out.Defs(tmpVar, tl').
+	LocalVarsTable ::= (TypingContext, out.VarDef).
+	LocalVarsTable(c, tmpVar) :- LocalVarsIter(c, out.Defs(tmpVar, tl), _), tmpVar: out.VarDef.
+
 	COut(7, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = REAL, RealOwner(f),
 	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
@@ -777,12 +813,8 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 					  params,
 					  UNKNOWN).
 
-	COut(7, pragma) :- pragma = out.PpPragma(FunApp(Ident("warning"), Args(Ident("disable:4101"), NIL))).
-	COut(7, pragma) :- pragma = out.PpPragma(FunApp(Ident("warning"), Args(Ident("disable:4102"), NIL))).
-	COut(9, pragma) :- pragma = out.PpPragma(FunApp(Ident("warning"), Args(Ident("default:4101"), NIL))).
-	COut(9, pragma) :- pragma = out.PpPragma(FunApp(Ident("warning"), Args(Ident("default:4102"), NIL))).
-
-	PatchReturn ::= (f: in.FunDecl, e: out.Stmt).
+	PatchReturn ::= (f: in.FunDecl + in.AnonFunDecl, e: out.Stmt).
+	PatchReturn(f, cs) :- DeclId(f, _, _), f: AnonFunDecl, cs = out.Return(Ident("p_tmp_ret")).
 	PatchReturn(f, cs) :- DeclId(f, _, _), f = FunDecl(_, _, _, _, _, NIL, _, _), cs = out.Return(Ident("p_tmp_ret")).
 	PatchReturn(f, cs) :- DeclId(f, _, _), f = FunDecl(_, _, _, _, _, type, _, _), type : TypeExpr, ParamsType(f, expr),  
 						  cs = out.ITE(BinApp(EQ, Ident("p_tmp_ret"), Ident("NULL")), 
@@ -811,13 +843,10 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	ContextLineInfo(f, s, info) :- SubSE(f, s), %noSourceInfo = FALSE, s = in.Receive(_, _, x), info = out.PpLine(x.line, NIL).
 	ContextLineInfo(f, s, info) :- SubSE(f, s), %noSourceInfo = FALSE, s = in.Assert(_, _, x), info = out.PpLine(x.line, NIL).
 	ContextLineInfo(f, s, info) :- SubSE(f, s), %noSourceInfo = FALSE, s = in.Print(_, x), info = out.PpLine(x.line, NIL).
-
-	COut(8, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = REAL, RealOwner(f),
-				    BodyTmpVars(f, -1, -2, tmpVars),			  
-				    StmtTrans(f, f.body, ctrans),			  
-	                params = Params(Param(NIL, "context"), NIL),
-				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
-					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
+	
+	BodyTrans ::= (TypingContext, out.Stmt).
+	BodyTrans(f, body) :- 
+				    StmtTrans(f, f.body, ctrans),
 					header = out.Seq(Seq(info, BinApp(ASN, Ident("p_tmp_mach_priv"), Cast(PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), Ident("context")))), 
 					             Seq(Seq(info, BinApp(ASN, Ident("p_tmp_ret"), Ident("NULL"))), 
 								 Seq(Seq(info, BinApp(ASN, Ident("p_tmp_params"), Ident("NULL"))), 
@@ -828,42 +857,40 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 					                   Seq(
 									     Seq(exitInfo, FunApp(Ident("PrtFreeLocals"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL)))),
 									     Seq(exitInfo, patchReturn))),
-					ContextSourceInfo(f, entryInfo, info, exitInfo),
-					body = out.Seq(entryInfo, Block(tmpVars, Seq(header, Seq(trampoline, Seq(ctrans, footer))))),
+					ContextSourceInfo(f, _, info, exitInfo),
+					body = out.Seq(header, Seq(trampoline, Seq(ctrans, footer))).
+				
+	COut(8, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = REAL, RealOwner(f),
+				    tmpVars = toList(#Defs, NIL, { varDef | LocalVarsTable(f, varDef), ContextTransStmtExpr(f, out.Ident(varDef.name)) }),
+	                params = Params(Param(NIL, "context"), NIL),
+				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
+					ContextSourceInfo(f, entryInfo, _, _),
+					BodyTrans(f, body),
 	                def = FunDef(
 					  NIL,
 					  funType,
 					  strJoin(name, "_IMPL"),
 					  params,
-					  body).
+					  out.Seq(entryInfo, Block(tmpVars, body))).
 
 	IsRealAnonFunDecl ::= (f: AnonFunDecl).
 	IsRealAnonFunDecl(f) :- DeclId(f, _, _), f: AnonFunDecl, f.owner.kind = REAL; 
 	                        DeclId(f, _, _), f: AnonFunDecl, f.owner = NIL.
 
 	COut(8, def) :- DeclId(f, id, name), id > 0, IsRealAnonFunDecl(f),
-				    BodyTmpVars(f, -1, -2, tmpVars),			  
-				    StmtTrans(f, f.body, ctrans),			
+					tmpVars = toList(#Defs, NIL, { varDef | LocalVarsTable(f, varDef), ContextTransStmtExpr(f, out.Ident(varDef.name)) }),
 	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
-					header = out.Seq(Seq(info, BinApp(ASN, Ident("p_tmp_mach_priv"), Cast(PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), Ident("context")))), 
-					             Seq(Seq(info, BinApp(ASN, Ident("p_tmp_ret"), Ident("NULL"))), 
-								 Seq(Seq(info, BinApp(ASN, Ident("p_tmp_params"), Ident("NULL"))), 
-								     Seq(info, FunApp(Ident("PrtPopFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))))))),
-					Trampoline(f, f.body, trampoline),
-					footer = out.Lbl("P_EXIT_FUN", 
-					                   Seq(
-									     Seq(exitInfo, FunApp(Ident("PrtFreeLocals"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL)))),
-									     Seq(exitInfo, Return(Ident("p_tmp_ret"))))),
-					ContextSourceInfo(f, entryInfo, info, exitInfo),
-					body = out.Seq(entryInfo, Block(tmpVars, Seq(header, Seq(trampoline, Seq(ctrans, footer))))),					  
+					ContextSourceInfo(f, entryInfo, _, _),
+					BodyTrans(f, body),
 	                def = FunDef(
 					  NIL,
 					  funType,
 					  strJoin(name, "_IMPL"),
 					  params,
-					  body).
+					  out.Seq(entryInfo, Block(tmpVars, body))).
 
 	HOut(1, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = MODEL, RealOwner(f),
 	                params = Params(Param(NIL, "context"), NIL),

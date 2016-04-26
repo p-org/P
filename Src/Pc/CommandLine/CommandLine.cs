@@ -99,6 +99,11 @@ namespace Microsoft.Pc
                                 goto error;
                             options.noZingOutput = true;
                             break;
+                        case "/test":
+                            if (colonArg != null)
+                                goto error;
+                            options.cTest = true;
+                            break;
                         case "/noC":
                             if (colonArg != null)
                                 goto error;

@@ -478,12 +478,12 @@ PrtPushNewFrame(
 			PRT_VALUE **argPtr;
 			switch (argStatus)
 			{
-			case PRT_FUN_PARAM_INOUT:
+			case PRT_FUN_PARAM_SWAP:
 				argPtr = va_arg(argp, PRT_VALUE **);
 				locals[count] = *argPtr;
 				refArgs[count] = argPtr;
 				break;
-			case PRT_FUN_PARAM_IN:
+			case PRT_FUN_PARAM_XFER:
 				argPtr = va_arg(argp, PRT_VALUE **);
 				locals[count] = *argPtr;
 				*argPtr = NULL;
@@ -514,7 +514,7 @@ PrtPushNewFrame(
 	context->funStack.funs[length].rcase = NULL;
 }
 
-/*/
+/*
 void
 PrtPushNewFrame(
 _Inout_ PRT_MACHINEINST_PRIV	*context,

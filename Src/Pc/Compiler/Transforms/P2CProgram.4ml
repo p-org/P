@@ -1583,13 +1583,13 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 
 	//// Function application
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = in.FunApp(name, NIL), DeclId(funDecl, funIndex, funName), FunAvailable(funDecl, c.owner), funDecl.name = name, 
+									e = in.FunApp(name, NIL, _), DeclId(funDecl, funIndex, funName), FunAvailable(funDecl, c.owner), funDecl.name = name, 
 									pushFrame = out.FunApp(Ident("PrtPushNewFrame"), Args(Ident("p_tmp_mach_priv"), Args(IntLit(funIndex, DEC, U), NIL))),
 									wrapFunStmt = out.FunApp(Ident("PrtWrapFunStmt"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(0, DEC, U), Args(Ident("p_tmp_mach_priv"), Args(IntLit(funIndex, DEC, U), NIL))))),
 									ec = out.FunApp(Ident("P_SEQ"), Args(pushFrame, Args(wrapFunStmt, NIL))).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = in.FunApp(name, args), args != NIL, 
+									e = in.FunApp(name, args, _), args != NIL, 
 									DeclId(funDecl, funIndex, funName), funDecl.name = name, FunAvailable(funDecl, c.owner), ParamsType(funDecl, expr), 
 									ExprsTrans(c, s, i, args, ecs),
 									argsTuple = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#Exprs, args) - 1))), Args(expr, ecs)),
@@ -2061,8 +2061,8 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	ExprDepNum(i, e) :- SubSE(_, e), e = in.New(_, e'), ExprDepNum(j, e'), i = j + 1. 
 
 	//// Fun app has zero or one depenencies.
-	ExprDepNum(0, e) :- SubSE(_, e), e = in.FunApp(_, NIL). 
-	ExprDepNum(i, e) :- SubSE(_, e), e = in.FunApp(_, e'), ExprDepNum(j, e'), i = j + 1.
+	ExprDepNum(0, e) :- SubSE(_, e), e = in.FunApp(_, NIL, _). 
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.FunApp(_, e', _), ExprDepNum(j, e'), i = j + 1.
 
 	//// These expressions have one depenency.
 	ExprDepNum(i, e) :- SubSE(_, e), e = in.UnApp(_, e'), ExprDepNum(j, e'), i = j + 1. 
@@ -2148,7 +2148,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, e'), e' : in.Expr. 
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, NIL), e' = in.NulApp(NULL). 
 
-	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.FunApp(_, e'), e' : in.Exprs.
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.FunApp(_, e', _), e' : in.Exprs.
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.UnApp(_, e').
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.Field(e', _).
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.Cast(e', _).

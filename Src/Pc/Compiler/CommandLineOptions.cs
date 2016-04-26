@@ -25,6 +25,7 @@
         public bool noZingOutput;
         public bool noCOutput;
         public bool noSourceInfo;
+        public bool cTest;
 
         public CommandLineOptions()
         {
@@ -39,6 +40,7 @@
             this.noZingOutput = false;
             this.noCOutput = false;
             this.noSourceInfo = false;
+            this.cTest = false;
         }
     }
 }

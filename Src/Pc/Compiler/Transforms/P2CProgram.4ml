@@ -3,7 +3,7 @@
    modules.C = '"C at ..\Domains\C.4ml"'
 ]
 
-transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) returns (out:: C)
+transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, test: Boolean) returns (out:: C)
 /*
 [
     compiler_ProductivityCheck = "TypeConstant[0], ExprDepNum[1]"
@@ -1545,6 +1545,9 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 									ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
 
 	//// Machine creation
+	MkMachineFuncName ::= (s: String).
+	MkMachineFuncName(s) :- %test = FALSE, s = "PrtMkMachine"; %test = TRUE, s = "PrtMkMachineTest".
+
 	FormalTrans ::= (c: FunDecl, f: String, e: out.Args).
 	FormalTrans(c, f, e) :- FormalParam(c, f), LocalVars(c, locals), IndexOf(locals, f, formalIndex, _),
 					        e = out.Args(BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(formalIndex, DEC, U)), NIL).
@@ -1553,7 +1556,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
 										 SubSE(c, _), no Annotation(c, "container", _), container = NIL,
 	                                     machineDecl is MachineDecl(name, REAL, _, _, _), DeclId(machineDecl, _, machineName), 
-										 funName = "PrtMkMachine".
+										 MkMachineFuncName(funName).
 	
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
 										 c: FunDecl, Annotation(c, "container", f), FormalTrans(c, f, container),
@@ -1880,13 +1883,17 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 										 Args(Ident("p_tmp_stmt_1"), NIL)))),
 						   context = Ident("p_tmp_mach_priv").
 
-	//// Send										
+	//// Send
+	SendFuncName ::= (n: Ident).
+	SendFuncName(n) :- %test = FALSE, n = Ident("PrtSend"); %test = TRUE, n = Ident("PrtSendTest").	
+							
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
 	                       s = in.Send(dest, ev, NIL, x), RhsExpr(c, s, 0, destTrans, doFreeDestTrans), RhsExpr(c, s, 1, evTrans, doFreeEvTrans),
 						   ContextLineInfo(c, s, info),
 						   cs = out.Seq(info, FunApp(Ident("P_STMT_2"), Args(FunApp(Ident("P_SEQ"), Args(checkCall, Args(sendCall, NIL))), Args(mkNull, Args(Ident("PRT_FALSE"), Args(evTrans, Args(doFreeEvTrans, Args(destTrans, Args(doFreeDestTrans, NIL))))))))),
 						   checkCall = out.FunApp(Ident("PrtCheckIsLocalMachineId"), Args(Ident("context"), Args(Ident("p_tmp_stmt_0"), NIL))),
-						   sendCall = out.FunApp(Ident("PrtSend"),
+						   SendFuncName(name),
+						   sendCall =  out.FunApp(name, 
 						                 Args(FunApp(Ident("PrtGetMachine"), Args(BinApp(PFLD, Ident("context"), Ident("process")), Args(Ident("p_tmp_stmt_0"), NIL))),
 										 Args(Ident("p_tmp_stmt_1"),
 										 Args(Ident("p_tmp_stmt_2"), NIL)))),
@@ -1898,7 +1905,8 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 						   ContextLineInfo(c, s, info),
 						   cs = out.Seq(info, FunApp(Ident("P_STMT_2"), Args(FunApp(Ident("P_SEQ"), Args(checkCall, Args(sendCall, NIL))), Args(payTrans, Args(doFreePayTrans, Args(evTrans, Args(doFreeEvTrans, Args(destTrans, Args(doFreeDestTrans, NIL))))))))),
 						   checkCall = out.FunApp(Ident("PrtCheckIsLocalMachineId"), Args(Ident("context"), Args(Ident("p_tmp_stmt_0"), NIL))),
-						   sendCall = out.FunApp(Ident("PrtSend"),
+						   SendFuncName(name), 
+						   sendCall = out.FunApp(name,
 						                 Args(FunApp(Ident("PrtGetMachine"), Args(BinApp(PFLD, Ident("context"), Ident("process")), Args(Ident("p_tmp_stmt_0"), NIL))),
 										 Args(Ident("p_tmp_stmt_1"),
 										 Args(Ident("p_tmp_stmt_2"), NIL)))).

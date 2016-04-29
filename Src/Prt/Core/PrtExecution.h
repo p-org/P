@@ -23,10 +23,9 @@ extern "C"{
 
 	typedef enum PRT_FUN_PARAM_STATUS
 	{
-		PRT_FUN_PARAM_SWAP,
-		PRT_FUN_PARAM_XFER,
 		PRT_FUN_PARAM_CLONE,
-		PRT_FUN_PARAM_COPY,
+		PRT_FUN_PARAM_SWAP,
+		PRT_FUN_PARAM_XFER
 	} PRT_FUN_PARAM_STATUS;
 
 	typedef struct PRT_PROCESS_PRIV {
@@ -77,12 +76,12 @@ extern "C"{
 
 	typedef struct PRT_FUNSTACK_INFO
 	{
-		PRT_UINT32		funIndex;
-		PRT_VALUE		**locals;
-		PRT_BOOLEAN		freeLocals; 
-		PRT_VALUE       ***refArgs;
-		PRT_UINT16		returnTo;
-		PRT_CASEDECL	*rcase;
+		PRT_UINT32			funIndex;
+		PRT_VALUE			**locals;
+		PRT_BOOLEAN			freeLocals; 
+		PRT_VALUE			***refArgs;
+		PRT_UINT16			returnTo;
+		PRT_CASEDECL		*rcase;
 	} PRT_FUNSTACK_INFO;
 
 	typedef struct PRT_FUNSTACK
@@ -445,12 +444,11 @@ extern "C"{
 		_In_ PRT_VALUE					**locals
 		);
 
-	void
+	PRT_VALUE *
 		PrtPushNewFrame(
 		_Inout_ PRT_MACHINEINST_PRIV	*context,
 		_In_ PRT_UINT32					funIndex,
 		...
-		//_In_ PRT_VALUE					*parameters
 		);
 
 	PRT_API void

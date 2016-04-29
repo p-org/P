@@ -56,6 +56,8 @@
 			 keywords.Add("pop", (int)Tokens.POP);
 			 keywords.Add("true", (int)Tokens.TRUE);
 			 keywords.Add("false", (int)Tokens.FALSE);
+			 keywords.Add("swap", (int)Tokens.SWAP);
+			 keywords.Add("xfer", (int)Tokens.XFER);
 			 keywords.Add("sizeof", (int)Tokens.SIZEOF);
 			 keywords.Add("keys", (int)Tokens.KEYS);
 			 keywords.Add("values", (int)Tokens.VALUES);

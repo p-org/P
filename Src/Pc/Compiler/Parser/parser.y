@@ -20,6 +20,8 @@
 
 %token TRUE FALSE
 
+%token SWAP, XFER
+
 %token ASSIGN REMOVE INSERT
 %token EQ NE LT GT LE GE IN
 %left LAND LNOT LOR NONDET FAIRNONDET
@@ -323,9 +325,15 @@ TupTypeList
 	| Type COMMA TupTypeList	{ PushTupType(ToSpan(@1), false); }
 	;
 
+QualifierOrNone
+	: SWAP		{ qualifier.Push(MkUserCnst(P_Root.UserCnstKind.SWAP, ToSpan(@1))); }
+	| XFER		{ qualifier.Push(MkUserCnst(P_Root.UserCnstKind.XFER, ToSpan(@1))); }
+	|			{ qualifier.Push(P_Root.MkUserCnst(P_Root.UserCnstKind.NONE)); }
+	;
+
 NmdTupTypeList
-	: ID COLON Type						  { PushNmdTupType($1.str, ToSpan(@1), true);  }			
-	| ID COLON Type COMMA NmdTupTypeList  { PushNmdTupType($1.str, ToSpan(@1), false); }	
+	: ID QualifierOrNone COLON Type 					  { PushNmdTupType($1.str, ToSpan(@1), true);  }			
+	| ID QualifierOrNone COLON Type COMMA NmdTupTypeList  { PushNmdTupType($1.str, ToSpan(@1), false); }	
 	;
 
 /******************* Statements *******************/
@@ -352,8 +360,8 @@ Stmt
 	| ID LPAREN ExprArgList RPAREN SEMICOLON                  { PushFunStmt($1.str, true,  ToSpan(@1));                  }						
 	| RAISE Exp SEMICOLON                                     { PushRaise(false, ToSpan(@1));                            }
 	| RAISE Exp COMMA SingleExprArgList SEMICOLON             { PushRaise(true,  ToSpan(@1));                            }
-	| SEND Exp COMMA Exp SEMICOLON                            { PushSend(false, ToSpan(@1));                             }
-	| SEND Exp COMMA Exp COMMA SingleExprArgList SEMICOLON    { PushSend(true,  ToSpan(@1));                             }
+	| QualifierOrNone SEND Exp COMMA Exp SEMICOLON                            { PushSend(false, ToSpan(@1)); }
+	| QualifierOrNone SEND Exp COMMA Exp COMMA SingleExprArgList SEMICOLON    { PushSend(true,  ToSpan(@1)); }
 	| MONITOR Exp SEMICOLON									  { PushMonitor(false, $2.str, ToSpan(@2), ToSpan(@1));      }
 	| MONITOR Exp COMMA SingleExprArgList SEMICOLON           { PushMonitor(true, $2.str, ToSpan(@2), ToSpan(@1));       }
 	| ReceiveStmt LCBRACE CaseList RCBRACE						  { PushReceive(ToSpan(@1)); }
@@ -477,14 +485,14 @@ Exp_0
 
 // An arg list that can be a single expr, or an exprs
 SingleExprArgList
-	: Exp					      { MoveValToExprs(false); }
-	| Exp COMMA SingleExprArgList { PushExprs();           }
+	: Exp										  { MoveValToExprs(false); }
+	| Exp QualifierOrNone COMMA SingleExprArgList { PushExprs();           }
 	;
 
 // An arg list that is always packed into an exprs.
 ExprArgList
-	: Exp					{ MoveValToExprs(true);  }
-	| Exp COMMA ExprArgList { PushExprs();           }
+	: Exp QualifierOrNone					{ MoveValToExprs(true);  }
+	| Exp QualifierOrNone COMMA ExprArgList { PushExprs();           }
 	;
 
 // A named arg list that is always packed into named exprs.

@@ -438,7 +438,7 @@ _In_ PRT_VALUE					**locals
 	context->funStack.funs[length].rcase = NULL;
 }
 
-void
+PRT_VALUE *
 PrtPushNewFrame(
 	_Inout_ PRT_MACHINEINST_PRIV	*context,
 	_In_ PRT_UINT32					funIndex,
@@ -466,11 +466,11 @@ PrtPushNewFrame(
 		}
 		PRT_UINT32 numParameters = funDecl->maxNumLocals - numLocals;
 		locals = PrtCalloc(funDecl->maxNumLocals, sizeof(PRT_VALUE *));
-		freeLocals = PRT_TRUE;
-		refArgs = PrtCalloc(numParameters, sizeof(PRT_VALUE **));
 		PRT_UINT32 count = 0;
 		va_list argp;
 		va_start(argp, funIndex);
+		freeLocals = PRT_TRUE;
+		refArgs = PrtCalloc(numParameters, sizeof(PRT_VALUE **));
 		for (PRT_UINT32 i = 0; i < numParameters; i++)
 		{
 			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
@@ -478,6 +478,10 @@ PrtPushNewFrame(
 			PRT_VALUE **argPtr;
 			switch (argStatus)
 			{
+			case PRT_FUN_PARAM_CLONE:
+				arg = va_arg(argp, PRT_VALUE *);
+				locals[count] = PrtCloneValue(arg);
+				break;
 			case PRT_FUN_PARAM_SWAP:
 				argPtr = va_arg(argp, PRT_VALUE **);
 				locals[count] = *argPtr;
@@ -487,14 +491,6 @@ PrtPushNewFrame(
 				argPtr = va_arg(argp, PRT_VALUE **);
 				locals[count] = *argPtr;
 				*argPtr = NULL;
-				break;
-			case PRT_FUN_PARAM_CLONE:
-				arg = va_arg(argp, PRT_VALUE *);
-				locals[count] = PrtCloneValue(arg);
-				break;
-			case PRT_FUN_PARAM_COPY:
-				arg = va_arg(argp, PRT_VALUE *);
-				locals[count] = arg;
 				break;
 			}
 			count++;
@@ -512,59 +508,8 @@ PrtPushNewFrame(
 	context->funStack.funs[length].refArgs = refArgs;
 	context->funStack.funs[length].returnTo = 0xFFFF;
 	context->funStack.funs[length].rcase = NULL;
+	return NULL;
 }
-
-/*
-void
-PrtPushNewFrame(
-_Inout_ PRT_MACHINEINST_PRIV	*context,
-_In_ PRT_UINT32					funIndex,
-_In_ PRT_VALUE					*parameters
-)
-{
-	PRT_UINT16 length = context->funStack.length;
-	PrtAssert(length < PRT_MAX_FUNSTACK_DEPTH, "Fun stack overflow");
-	context->funStack.length = length + 1;
-	context->funStack.funs[length].funIndex = funIndex;
-	PRT_FUNDECL *funDecl = &(context->process->program->machines[context->instanceOf].funs[funIndex]);
-	PRT_VALUE **locals = NULL;
-	PRT_BOOLEAN freeLocals = PRT_FALSE;
-	if (funDecl->maxNumLocals == 0)
-	{
-		PrtAssert(parameters == NULL && funDecl->localsNmdTupType == NULL, "Incorrect maxNumLocals value");
-	}
-	else
-	{
-		locals = PrtCalloc(funDecl->maxNumLocals, sizeof(PRT_VALUE *));
-		freeLocals = PRT_TRUE;
-		PRT_UINT32 count = 0;
-		if (parameters != NULL)
-		{
-			PRT_UINT32 size = parameters->valueUnion.tuple->size;
-			for (PRT_UINT32 i = 0; i < size; i++)
-			{
-				locals[count] = PrtTupleGet(parameters, i);
-				count++;
-			}
-			PrtFreeValue(parameters);
-		}
-		if (funDecl->localsNmdTupType != NULL)
-		{
-			PRT_UINT32 size = funDecl->localsNmdTupType->typeUnion.nmTuple->arity;
-			for (PRT_UINT32 i = 0; i < size; i++)
-			{
-				PRT_TYPE *indexType = funDecl->localsNmdTupType->typeUnion.nmTuple->fieldTypes[i];
-				locals[count] = PrtMkDefaultValue(indexType);
-				count++;
-			}
-		}
-	}
-	context->funStack.funs[length].locals = locals;
-	context->funStack.funs[length].freeLocals = freeLocals;
-	context->funStack.funs[length].returnTo = 0xFFFF;
-	context->funStack.funs[length].rcase = NULL;
-}
-*/
 
 void
 PrtPushFrame(
@@ -1085,15 +1030,8 @@ _Inout_ PRT_FUNSTACK_INFO		*frame,
 _In_ PRT_UINT16					funCallIndex,
 _Inout_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_UINT32					funIndex
-//_In_ PRT_VALUE					*parameters
 )
 {
-	/*
-	if (frame->returnTo == 0xFFFF)
-	{
-		PrtPushNewFrame(context, funIndex, parameters);
-	}
-	*/
 	PRT_SM_FUN fun = context->process->program->machines[context->instanceOf].funs[funIndex].implementation;
 	PRT_VALUE *returnValue = fun((PRT_MACHINEINST *)context);
 	PRT_UINT32 callerFunIndex = frame->funIndex;
@@ -1126,14 +1064,14 @@ PrtFreeLocals(
 	}
 
 	PRT_FUNDECL *funDecl = &context->process->program->machines[context->instanceOf].funs[frame->funIndex];
+	PRT_UINT32 numLocals = 0;
+	if (funDecl->localsNmdTupType != NULL)
+	{
+		numLocals = funDecl->localsNmdTupType->typeUnion.nmTuple->arity;
+	}
+	PRT_UINT32 numParameters = funDecl->maxNumLocals - numLocals;
 	if (frame->refArgs != NULL)
 	{
-		PRT_UINT32 numLocals = 0;
-		if (funDecl->localsNmdTupType != NULL)
-		{
-			numLocals = funDecl->localsNmdTupType->typeUnion.nmTuple->arity;
-		}
-		PRT_UINT32 numParameters = funDecl->maxNumLocals - numLocals;
 		for (PRT_UINT32 i = 0; i < numParameters; i++)
 		{
 			if (frame->refArgs[i] != NULL)

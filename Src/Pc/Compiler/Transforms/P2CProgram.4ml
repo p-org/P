@@ -853,10 +853,11 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 								     Seq(info, FunApp(Ident("PrtPopFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))))))),
 					Trampoline(f, f.body, trampoline),
 					PatchReturn(f, patchReturn),
-					footer = out.Lbl("P_EXIT_FUN", 
+					footer = out.Seq(Goto("P_EXIT_FUN"),
+					                 Lbl("P_EXIT_FUN", 
 					                   Seq(
 									     Seq(exitInfo, FunApp(Ident("PrtFreeLocals"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL)))),
-									     Seq(exitInfo, patchReturn))),
+									     Seq(exitInfo, patchReturn)))),
 					ContextSourceInfo(f, _, info, exitInfo),
 					body = out.Seq(header, Seq(trampoline, Seq(ctrans, footer))).
 				

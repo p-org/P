@@ -464,38 +464,41 @@ PrtPushNewFrame(
 		{
 			numLocals = funDecl->localsNmdTupType->typeUnion.nmTuple->arity;
 		}
-		PRT_UINT32 numParameters = funDecl->maxNumLocals - numLocals;
 		locals = PrtCalloc(funDecl->maxNumLocals, sizeof(PRT_VALUE *));
-		PRT_UINT32 count = 0;
-		va_list argp;
-		va_start(argp, funIndex);
 		freeLocals = PRT_TRUE;
-		refArgs = PrtCalloc(numParameters, sizeof(PRT_VALUE **));
-		for (PRT_UINT32 i = 0; i < numParameters; i++)
+		PRT_UINT32 numParameters = funDecl->maxNumLocals - numLocals;
+		PRT_UINT32 count = 0;
+		if (0 < numParameters)
 		{
-			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
-			PRT_VALUE *arg;
-			PRT_VALUE **argPtr;
-			switch (argStatus)
+			refArgs = PrtCalloc(numParameters, sizeof(PRT_VALUE **));
+			va_list argp;
+			va_start(argp, funIndex);
+			for (PRT_UINT32 i = 0; i < numParameters; i++)
 			{
-			case PRT_FUN_PARAM_CLONE:
-				arg = va_arg(argp, PRT_VALUE *);
-				locals[count] = PrtCloneValue(arg);
-				break;
-			case PRT_FUN_PARAM_SWAP:
-				argPtr = va_arg(argp, PRT_VALUE **);
-				locals[count] = *argPtr;
-				refArgs[count] = argPtr;
-				break;
-			case PRT_FUN_PARAM_XFER:
-				argPtr = va_arg(argp, PRT_VALUE **);
-				locals[count] = *argPtr;
-				*argPtr = NULL;
-				break;
+				PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
+				PRT_VALUE *arg;
+				PRT_VALUE **argPtr;
+				switch (argStatus)
+				{
+				case PRT_FUN_PARAM_CLONE:
+					arg = va_arg(argp, PRT_VALUE *);
+					locals[count] = PrtCloneValue(arg);
+					break;
+				case PRT_FUN_PARAM_SWAP:
+					argPtr = va_arg(argp, PRT_VALUE **);
+					locals[count] = *argPtr;
+					refArgs[count] = argPtr;
+					break;
+				case PRT_FUN_PARAM_XFER:
+					argPtr = va_arg(argp, PRT_VALUE **);
+					locals[count] = *argPtr;
+					*argPtr = NULL;
+					break;
+				}
+				count++;
 			}
-			count++;
+			va_end(argp);
 		}
-		va_end(argp);
 		for (PRT_UINT32 i = 0; i < numLocals; i++)
 		{
 			PRT_TYPE *indexType = funDecl->localsNmdTupType->typeUnion.nmTuple->fieldTypes[i];

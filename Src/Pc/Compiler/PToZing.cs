@@ -2996,7 +2996,7 @@ namespace Microsoft.Pc
                 var fieldNameInFieldInfo = (Cnst)GetArgByIndex(fieldInfo, 1);
                 if (fieldName == fieldNameInFieldInfo.GetStringValue())
                     return fieldIndex;
-                nmdTupType = GetArgByIndex(nmdTupType, 2) as FuncTerm;
+                nmdTupType = GetArgByIndex(nmdTupType, 1) as FuncTerm;
                 fieldIndex++;
             }
             Debug.Assert(false);

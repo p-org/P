@@ -606,6 +606,12 @@
             AddErrors(task.Result, "PayloadError(_)", errors, 0);
             AddErrors(task.Result, "TypeDefError(_)", errors, 0);
 
+            AddErrors(task.Result, "FunDeclQualifierError(_, _)", errors, 1);
+            AddErrors(task.Result, "FunCallQualifierError(_, _, _)", errors, 2);
+            AddErrors(task.Result, "SendQualifierError(_, _)", errors, 1);
+            AddErrors(task.Result, "UnavailableVarAccessError(_, _, _)", errors, 2);
+            AddErrors(task.Result, "UnavailableParameterError(_, _)", errors, 1);
+
             //// Enumerate structural errors
             AddErrors(task.Result, "missingDecl", errors);
             AddErrors(task.Result, "OneDeclError(_)", errors, 0);

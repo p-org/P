@@ -131,13 +131,14 @@ void
 PrtSend(
 	_Inout_ PRT_MACHINEINST			*context,
 	_In_ PRT_VALUE					*event,
-	_In_ PRT_VALUE					*payload
+	_In_ PRT_VALUE					*payload,
+	_In_ PRT_BOOLEAN				doTransfer
 )
 {
 	if (context->isModel)
 	{
-		context->process->program->modelImpls[context->instanceOf].sendFun(context, event, payload);
+		context->process->program->modelImpls[context->instanceOf].sendFun(context, event, payload, doTransfer);
 		return;
 	}
-	PrtSendPrivate((PRT_MACHINEINST_PRIV *)context, event, payload);
+	PrtSendPrivate((PRT_MACHINEINST_PRIV *)context, event, payload, doTransfer);
 }

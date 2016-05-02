@@ -152,9 +152,10 @@ extern "C"{
 
 	void
 		PrtSendPrivate(
-		_Inout_ PRT_MACHINEINST_PRIV		*context,
+		_Inout_ PRT_MACHINEINST_PRIV	*context,
 		_In_ PRT_VALUE					*event,
-		_In_ PRT_VALUE					*payload
+		_In_ PRT_VALUE					*payload,
+		_In_ PRT_BOOLEAN				doTransfer
 		);
 
 	PRT_API void PRT_CALL_CONV
@@ -441,6 +442,7 @@ extern "C"{
 		PrtPushNewEventHandlerFrame(
 		_Inout_ PRT_MACHINEINST_PRIV	*context,
 		_In_ PRT_UINT32					funIndex,
+		_In_ PRT_FUN_PARAM_STATUS       payloadStatus, 
 		_In_ PRT_VALUE					**locals
 		);
 

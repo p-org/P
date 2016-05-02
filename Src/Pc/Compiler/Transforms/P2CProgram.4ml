@@ -1423,11 +1423,13 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 	HOut(11, def) :- m is MachineDecl, m.kind = MODEL,
 	                params = Params(Param(NIL, "context"), 
 						     Params(Param(NIL, "evnt"), 
-							 Params(Param(NIL, "payload"), NIL))),
+							 Params(Param(NIL, "payload"), 
+							 Params(Param(NIL, "doTransfer"), NIL)))),
 				    funType = FunType(BaseType(VOID), argTypes),
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")),
 					           PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")),
-							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL))),					  
+							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), 
+							   PrmTypes(NmdType(NIL, "PRT_BOOLEAN"), NIL)))),					  
 	                def = FunDef(
 					  NIL,
 					  funType,
@@ -1898,11 +1900,16 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 						   sendCall =  out.FunApp(name, 
 						                 Args(FunApp(Ident("PrtGetMachine"), Args(BinApp(PFLD, Ident("context"), Ident("process")), Args(Ident("p_tmp_stmt_0"), NIL))),
 										 Args(Ident("p_tmp_stmt_1"),
-										 Args(Ident("p_tmp_stmt_2"), NIL)))),
+										 Args(Ident("p_tmp_stmt_2"), 
+										 Args(Ident("PRT_FALSE"), NIL))))),
 						   ConstId(m, in.NulApp(NULL)), mkNull = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))).
 
+	DoTransfer ::= (TypingContext, in.Send, out.Ident).
+	DoTransfer(c, s, Ident("PRT_TRUE")) :- SubSE(c, s), s: in.Send, s.qual = XFER.
+	DoTransfer(c, s, Ident("PRT_FALSE")) :- SubSE(c, s), s: in.Send, s.qual = NONE.
+
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
-	                       s = in.Send(dest, ev, pay, _, x), pay : in.Expr, 
+	                       s = in.Send(dest, ev, pay, _, x), pay : in.Expr, DoTransfer(c, s, doTransfer),
 						   RhsExpr(c, s, 0, destTrans, doFreeDestTrans), RhsExpr(c, s, 1, evTrans, doFreeEvTrans), RhsExpr(c, s, 2, payTrans, doFreePayTrans),
 						   ContextLineInfo(c, s, info),
 						   cs = out.Seq(info, FunApp(Ident("P_STMT_2"), Args(FunApp(Ident("P_SEQ"), Args(checkCall, Args(sendCall, NIL))), Args(payTrans, Args(doFreePayTrans, Args(evTrans, Args(doFreeEvTrans, Args(destTrans, Args(doFreeDestTrans, NIL))))))))),
@@ -1911,7 +1918,8 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 						   sendCall = out.FunApp(name,
 						                 Args(FunApp(Ident("PrtGetMachine"), Args(BinApp(PFLD, Ident("context"), Ident("process")), Args(Ident("p_tmp_stmt_0"), NIL))),
 										 Args(Ident("p_tmp_stmt_1"),
-										 Args(Ident("p_tmp_stmt_2"), NIL)))).
+										 Args(Ident("p_tmp_stmt_2"), 
+										 Args(doTransfer, NIL))))).
 
 	//// Monitor (erased)
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Monitor(_, _, _), cs = NIL.

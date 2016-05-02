@@ -222,6 +222,11 @@ domain PStaticTyping extends PData
 	conforms no BadLabelError(_).
 	conforms no PayloadError(_).
 	conforms no TypeDefError(_).
+	conforms no FunDeclQualifierError(_, _).
+	conforms no FunCallQualifierError(_, _, _).
+	conforms no SendQualifierError(_, _).
+	conforms no UnavailableVarAccessError(_, _, _).
+	conforms no UnavailableParameterError(_, _).
     /*************************************************************/
 
 	//// Check that TypeDef's are used properly
@@ -462,6 +467,125 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: function arguments have incorrect types"']
 	TypeOf(c, e, ERROR) :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _), TypeRel(t1, inpt, k), t1 != inpt, k != SUB.
 	
+
+	/*************************************************************/
+	/*                      Qualifier Checking                   */
+    /*************************************************************/
+
+	AccessesGlobal ::= (TypingContext, String).
+	AccessesGlobal(c, n) :- SubSE(c, e), e = Name(n), IsMachineVar(c, n, _, _).
+	AccessesGlobal(c, n) :- SubSE(c, e), e = FunApp(calleeName, _), FunAvailable(callee, c.owner), callee.name = calleeName, AccessesGlobal(callee, n).
+	AccessesGlobal(c, n) :- SubSE(c, e), e = FunStmt(calleeName, _, _, _, _), FunAvailable(callee, c.owner), callee.name = calleeName, AccessesGlobal(callee, n).
+
+	FunDeclQualifierError ::= (FunDecl, String).
+	[ rule_Classes = '"error, msg: xfer not allowed"']
+	FunDeclQualifierError(c, name) :- FormalParamAux(c, XFER, name, _).
+
+	FunArgsParams ::= (TypingContext, FunApp + FunStmt, Exprs + { NIL }, NmdTupType + { NIL }).
+	FunArgsParams(c, e, e.args, decl.params) :- TypeOfArg1(c, e, t1), e: FunApp, FunAvailable(decl, c.owner), decl.name = e.name, FuncSig(decl, inpt, _), TypeRel(t1, inpt, SUB).
+	FunArgsParams(c, e, e.args, decl.params) :- TypeOfArg1(c, e, t1), e: FunApp, FunAvailable(decl, c.owner), decl.name = e.name, FuncSig(decl, t1, _).
+	FunArgsParams(c, e, e.args, decl.params) :- TypeOfArg1(c, e, t1), e: FunStmt, FunAvailable(decl, c.owner), decl.name = e.name, FuncSig(decl, inpt, _), TypeRel(t1, inpt, SUB).
+	FunArgsParams(c, e, e.args, decl.params) :- TypeOfArg1(c, e, t1), e: FunStmt, FunAvailable(decl, c.owner), decl.name = e.name, FuncSig(decl, t1, _).
+	FunArgsParams(c, e, exprs, nmdTupType) :- FunArgsParams(c, e, exprs', nmdTupType'), exprs' = Exprs(_, _, exprs), nmdTupType' = NmdTupType(_, nmdTupType).
+
+	FunCallQualifierError ::= (TypingContext, FunApp + FunStmt, Expr).
+	[ rule_Classes = '"error, msg: argument qualifier incompatible with parameter qualifier"']
+	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, nmdTupType), exprs = Exprs(SWAP, expr, _), nmdTupType = NmdTupType(NmdTupTypeField(NONE, _, _), _).
+	[ rule_Classes = '"error, msg: argument qualifier incompatible with parameter qualifier"']
+	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, nmdTupType), exprs = Exprs(qual, expr, _), qual != SWAP, nmdTupType = NmdTupType(NmdTupTypeField(SWAP, _, _), _).
+	[ rule_Classes = '"error, msg: argument qualifier xfer not allowed in nested function call"']
+	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, _), e: FunApp, exprs = Exprs(XFER, expr, _).
+
+	[ rule_Classes = '"error, msg: argument should be a variable"']
+	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, _), exprs = Exprs(qual, expr, _), qual != NONE, toSymbol(expr) != #Name.
+	[ rule_Classes = '"error, msg: argument should be a variable"']
+	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, _), exprs = Exprs(qual, expr, _), qual != NONE, expr = Name(n), IsEventCnst(c, n, _).
+	[ rule_Classes = '"error, msg: argument should be a local variable"']
+	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, _), exprs = Exprs(XFER, expr, _), expr = Name(n), IsMachineVar(c, n, _, _).
+	[ rule_Classes = '"error, msg: argument should be a global variable not accessed by callee"']
+	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, _), FunAvailable(callee, c.owner), e.name = callee.name, 
+										 exprs = Exprs(SWAP, expr, _), expr = Name(n), IsMachineVar(c, n, _, _), AccessesGlobal(callee, n).
+	[ rule_Classes = '"error, msg: xfer or swap argument should be passed for exactly one parameter"']
+	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, Exprs(qual, expr, tl), _), FunArgsParams(c, e, Exprs(_, expr, tl'), _), qual != NONE, tl != tl'.
+
+	SendQualifierError ::= (TypingContext, Send).
+	[rule_Classes = '"error, msg: swap qualifier not allowed"']
+	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, _, SWAP, _).
+	[ rule_Classes = '"error, msg: null payload not allowed"']
+	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, NIL, XFER, _).
+	[ rule_Classes = '"error, msg: payload should be a variable"']
+	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, expr, XFER, _), toSymbol(expr) != #Name.
+	[ rule_Classes = '"error, msg: payload should be a variable"']
+	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, expr, XFER, _), expr = Name(n), IsEventCnst(c, n, _).
+	[ rule_Classes = '"error, msg: payload should be a local variable"']
+	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, expr, XFER, _), expr = Name(n), IsMachineVar(c, n, _, _).
+
+	EnvVars ::= (AnonFunDecl, String, NmdTupType + { NIL }).
+	EnvVars(c, n, envVars) :- c is AnonFunDecl(_, _, _, NmdTupType(NmdTupTypeField(_, n, _), envVars)), envVars != NIL.
+	EnvVars(c, n, envVars) :- EnvVars(c, _, NmdTupType(NmdTupTypeField(_, n, _), envVars)), envVars != NIL.
+
+	UnavailableBefore ::= (TypingContext, Stmt + Cases, String).
+	UnavailableAfter  ::= (TypingContext, Stmt + Cases, String).
+	
+	UnavailableBefore(c, s2, n)   :- SubSE(c, Seq(s1, s2)), UnavailableAfter(c, s1, n).
+	UnavailableAfter(c, s, n)     :- SubSE(c, s), s = Seq(_, s'), UnavailableAfter(c, s', n).
+	UnavailableBefore(c, s', n)   :- SubSE(c, s), s = Seq(s', _), UnavailableBefore(c, s, n).
+
+	UnavailableBefore(c, s, n)  :- SubSE(c, s), s = While(_, s', _), UnavailableAfter(c, s', n).
+	UnavailableBefore(c, s, n)  :- SubSE(c, s'), s' = While(_, s, _), UnavailableBefore(c, s', n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: While, UnavailableBefore(c, s, n).
+	
+	UnavailableBefore(c, s, n)  :- SubSE(c, s'), s' = Ite(_, s, _, _), UnavailableBefore(c, s', n); 
+								   SubSE(c, s'), s' = Ite(_, _, s, _), UnavailableBefore(c, s', n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = Ite(_, s', _, _), UnavailableAfter(c, s', n); 
+								   SubSE(c, s), s = Ite(_, _, s', _), UnavailableAfter(c, s', n).
+
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), UnavailableBefore(c, s, n), 
+								   toSymbol(s) != #Raise, toSymbol(s) != #Return, toSymbol(s) != #NulStmt, 
+								   toSymbol(s) != #FunStmt, toSymbol(s) != #BinStmt.
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), UnavailableBefore(c, s, n), s = NulStmt(SKIP, _).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), UnavailableBefore(c, s, n), s = FunStmt(_, _, NIL, _, _).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), UnavailableBefore(c, s, n), s = FunStmt(_, _, Name(n'), _, _), n' != n.
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), UnavailableBefore(c, s, n), s = BinStmt(op, _, _, _), op != ASSIGN.
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), UnavailableBefore(c, s, n), s = BinStmt(ASSIGN, Name(n'), _, _), n' != n.
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = Send(_, _, Name(n), XFER, _).
+
+	UnavailableBefore(c, cases, n)  :- ReceiveCases(c, s, cases), UnavailableBefore(c, s, n).
+	UnavailableBefore(c', s, n)     :- UnavailableBefore(c, cases, n), cases = Cases(_, c', _), s = c'.body.
+	UnavailableAfter(c, s, n)       :- ReceiveCases(c, s, cases), cases = Cases(_, c', _), UnavailableAfter(c', c'.body, n), EnvVars(c', n, _).
+
+	SubExpr ::= sub (TypingContext, Stmt + Expr, Expr).
+	
+	UnavailableVarAccessError ::= (TypingContext, Stmt, String).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: NewStmt, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: Raise, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: Send, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: FunStmt, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s = BinStmt(op, _, _, _), op != ASSIGN, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s = BinStmt(ASSIGN, arg, _, _), toSymbol(arg) != #Name, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s = BinStmt(ASSIGN, Name(_), arg, _), SubExpr(c, arg, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: Return, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s = While(e, _, _), SubExpr(c, e, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s = Ite(e, _, _, _), SubExpr(c, e, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: Assert, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
+
+	UnavailableParameterError ::= (FunDecl, String).
+	[rule_Classes = '"error, msg: parameter is not available at return"']
+	UnavailableParameterError(c, n) :- FormalParamAux(c, SWAP, n, _), UnavailableAfter(c, c.body, n).
+	[rule_Classes = '"error, msg: parameter is not available at return"']
+	UnavailableParameterError(c, n) :- FormalParamAux(c, SWAP, n, _), UnavailableBefore(c, Return(_, _), n).
+
     /*************************************************************/
     /*                      Types of Statements                  */
     /*************************************************************/
@@ -776,13 +900,12 @@ domain PStaticTyping extends PData
     /*                  Formal Parameter Types                   */
     /*************************************************************/
     FormalParam    ::= (cntxt: FunDecl, name: String).
-    FormalParamAux ::= (cntxt: FunDecl, name: String, aux: NmdTupType + { NIL }).
+    FormalParamAux ::= (cntxt: FunDecl, qual: Qualifier, name: String, aux: NmdTupType + { NIL }).
 
-    FormalParamAux(cntxt, name, tl) :- cntxt is FunDecl(_, _, _, params, _, _, _), params = NmdTupType(NmdTupTypeField(_, name, _), tl).  
-    FormalParamAux(cntxt, name, tl) :- FormalParamAux(cntxt, _, aux), aux = NmdTupType(NmdTupTypeField(_, name, _), tl).
+    FormalParamAux(cntxt, qual, name, tl) :- cntxt is FunDecl(_, _, _, params, _, _, _), params = NmdTupType(NmdTupTypeField(qual, name, _), tl).  
+    FormalParamAux(cntxt, qual, name, tl) :- FormalParamAux(cntxt, _, _, aux), aux = NmdTupType(NmdTupTypeField(qual, name, _), tl).
+    FormalParam(cntxt, name)  :- FormalParamAux(cntxt, _, name, _).
     
-    FormalParam(cntxt, name)  :- FormalParamAux(cntxt, name, _).
-
 	//// The input type of a function, ignoring names.
 	FuncSigTupleType    ::= (cntxt: FunDecl, type: TupType + { NIL }).
 	FuncSigTupleTypeAux ::= (cntxt: FunDecl, type: TupType + { NIL }, aux: NmdTupType + { NIL }).

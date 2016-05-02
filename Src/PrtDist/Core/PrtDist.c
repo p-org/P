@@ -73,6 +73,9 @@ void s_PrtDistSendEx(
 	PRT_VALUE* deserial_source = PrtDistDeserializeValue(source);
 	PRT_MACHINEINST* context = PrtGetMachine(ContainerProcess, deserial_target);
 	PrtEnqueueInOrder(source, seqNum, (PRT_MACHINEINST_PRIV*)context, deserial_event, deserial_payload);
+	PrtFreeValue(deserial_target);
+	PrtFreeValue(deserial_event);
+	PrtFreeValue(deserial_source);
 }
 
 /***********************************************************************************************************

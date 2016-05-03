@@ -398,10 +398,6 @@ _In_ PRT_VALUE					**locals
 	if (locals == NULL && funDecl->maxNumLocals != 0)
 	{
 		locals = PrtCalloc(funDecl->maxNumLocals, sizeof(PRT_VALUE *));
-		for (PRT_UINT32 i = 0; i < funDecl->maxNumLocals; i++)
-		{
-			locals[i] = NULL;
-		}
 	}
 	PRT_UINT32 count = funDecl->numEnvVars;
 	if (funDecl->name == NULL)
@@ -454,10 +450,6 @@ _In_ PRT_VALUE					*parameters
 	else
 	{
 		locals = PrtCalloc(funDecl->maxNumLocals, sizeof(PRT_VALUE *));
-		for (PRT_UINT32 i = 0; i < funDecl->maxNumLocals; i++)
-		{
-			locals[i] = NULL;
-		}
 		PRT_UINT32 count = 0;
 		if (parameters != NULL)
 		{

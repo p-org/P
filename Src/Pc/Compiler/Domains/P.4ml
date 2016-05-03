@@ -540,21 +540,24 @@ domain PStaticTyping extends PData
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = Ite(_, s', _, _), UnavailableAfter(c, s', n); 
 								   SubSE(c, s), s = Ite(_, _, s', _), UnavailableAfter(c, s', n).
 
-	UnavailableAfter(c, s, n)   :- SubSE(c, s), UnavailableBefore(c, s, n), 
-								   toSymbol(s) != #Raise, toSymbol(s) != #Return, toSymbol(s) != #NulStmt, 
-								   toSymbol(s) != #FunStmt, toSymbol(s) != #BinStmt.
-	UnavailableAfter(c, s, n)   :- SubSE(c, s), UnavailableBefore(c, s, n), s = NulStmt(SKIP, _).
-	UnavailableAfter(c, s, n)   :- SubSE(c, s), UnavailableBefore(c, s, n), s = FunStmt(_, _, NIL, _, _).
-	UnavailableAfter(c, s, n)   :- SubSE(c, s), UnavailableBefore(c, s, n), s = FunStmt(_, _, Name(n'), _, _), n' != n.
-	UnavailableAfter(c, s, n)   :- SubSE(c, s), UnavailableBefore(c, s, n), s = BinStmt(op, _, _, _), op != ASSIGN.
-	UnavailableAfter(c, s, n)   :- SubSE(c, s), UnavailableBefore(c, s, n), s = BinStmt(ASSIGN, Name(n'), _, _), n' != n.
-	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = Send(_, _, Name(n), XFER, _).
-
 	UnavailableBefore(c, cases, n)  :- ReceiveCases(c, s, cases), UnavailableBefore(c, s, n).
 	UnavailableBefore(c', s, n)     :- UnavailableBefore(c, cases, n), cases = Cases(_, c', _), s = c'.body.
 	UnavailableAfter(c, s, n)       :- ReceiveCases(c, s, cases), cases = Cases(_, c', _), UnavailableAfter(c', c'.body, n), EnvVars(c', n, _).
 
-	SubExpr ::= sub (TypingContext, Stmt + Expr, Expr).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: NewStmt, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Monitor, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Assert, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Print, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = NulStmt(SKIP, _), UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: FunStmt, UnavailableBefore(c, s, n), s.aout != Name(n).
+	UnavailableAfter(c, s, n)   :- FunArgsParams(c, s, Exprs(XFER, Name(n), _), _), s: FunStmt, s.aout != Name(n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Send, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = Send(_, _, Name(n), XFER, _).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(op, _, _, _), op != ASSIGN, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(ASSIGN, e, _, _), toSymbol(e) != #Name, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(ASSIGN, Name(n'), _, _), UnavailableBefore(c, s, n), n' != n.
+
+	SubExpr ::= sub (TypingContext, Stmt + Expr + Exprs, Expr).
 	
 	UnavailableVarAccessError ::= (TypingContext, Stmt, String).
 	[rule_Classes = '"error, msg: variable is not available"']
@@ -564,7 +567,7 @@ domain PStaticTyping extends PData
 	[rule_Classes = '"error, msg: variable is not available"']
 	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: Send, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
 	[rule_Classes = '"error, msg: variable is not available"']
-	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: FunStmt, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: FunStmt, SubExpr(c, s.args, Name(n)), UnavailableBefore(c, s, n).
 	[rule_Classes = '"error, msg: variable is not available"']
 	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s = BinStmt(op, _, _, _), op != ASSIGN, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
 	[rule_Classes = '"error, msg: variable is not available"']

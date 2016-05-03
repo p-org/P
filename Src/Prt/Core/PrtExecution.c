@@ -507,7 +507,6 @@ PrtPushNewFrame(
 		locals = PrtCalloc(funDecl->maxNumLocals, sizeof(PRT_VALUE *));
 		freeLocals = PRT_TRUE;
 		PRT_UINT32 numParameters = funDecl->maxNumLocals - numLocals;
-		locals = PrtCalloc(funDecl->maxNumLocals, sizeof(PRT_VALUE *));
 		PRT_UINT32 count = 0;
 		if (0 < numParameters)
 		{

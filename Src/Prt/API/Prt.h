@@ -156,12 +156,14 @@ extern "C"{
 	/** Sends message to P state machine.
 	* @param[in,out] machine The machine that will receive this message.
 	* @param[in] event The event to send with this message (cloned, user frees).
-	* @param[in] payload The payload to send with this message (cloned, user frees).
+	* @param[in] payload The payload to send with this message.
+	* @param[in] doTransfer The callee is reponsible for freeing the payload iff doTransfer is true.
 	*/
 	PRT_API void PRT_CALL_CONV PrtSend(
 		_Inout_ PRT_MACHINEINST *machine,
 		_In_ PRT_VALUE *evt,
-		_In_ PRT_VALUE *payload);
+		_In_ PRT_VALUE *payload,
+		_In_ PRT_BOOLEAN doTransfer);
 
 #ifdef __cplusplus
 }

@@ -164,18 +164,19 @@
             public void AddPayloadVar(string name, Span span)
             {
                 Contract.Assert(parser.typeExprStack.Count > 0);
-                var typeExpr = (P_Root.IArgType_NmdTupTypeField__1)parser.typeExprStack.Pop();
+                var typeExpr = (P_Root.IArgType_NmdTupTypeField__2)parser.typeExprStack.Pop();
                 var nameTerm = P_Root.MkString(name);
                 nameTerm.Span = span;
-                var field = P_Root.MkNmdTupTypeField(nameTerm, typeExpr);
+                var field = P_Root.MkNmdTupTypeField(P_Root.MkUserCnst(P_Root.UserCnstKind.NONE), nameTerm, typeExpr);
                 contextLocalVarDecl = P_Root.MkNmdTupType(field, contextLocalVarDecl);
             }
 
             public void AddPayloadVar()
             {
                 var field = P_Root.MkNmdTupTypeField(
+                                    P_Root.MkUserCnst(P_Root.UserCnstKind.NONE),
                                     P_Root.MkString(string.Format("_payload_{0}", parser.GetNextPayloadVarLabel())), 
-                                    (P_Root.IArgType_NmdTupTypeField__1) parser.MkBaseType(P_Root.UserCnstKind.ANY, Span.Unknown));
+                                    (P_Root.IArgType_NmdTupTypeField__2) parser.MkBaseType(P_Root.UserCnstKind.ANY, Span.Unknown));
                 contextLocalVarDecl = P_Root.MkNmdTupType(field, contextLocalVarDecl);
             }
 
@@ -187,10 +188,10 @@
             public void CompleteCrntLocalVarList()
             {
                 Contract.Assert(parser.typeExprStack.Count > 0);
-                var typeExpr = (P_Root.IArgType_NmdTupTypeField__1)parser.typeExprStack.Pop();
+                var typeExpr = (P_Root.IArgType_NmdTupTypeField__2)parser.typeExprStack.Pop();
                 foreach (var v in crntLocalVarList)
                 {
-                    var field = P_Root.MkNmdTupTypeField(P_Root.MkString(v), typeExpr);
+                    var field = P_Root.MkNmdTupTypeField(P_Root.MkUserCnst(P_Root.UserCnstKind.NONE), P_Root.MkString(v), typeExpr);
                     localVarDecl = P_Root.MkNmdTupType(field, localVarDecl);
                     contextLocalVarDecl = P_Root.MkNmdTupType(field, contextLocalVarDecl);
                 }
@@ -387,6 +388,8 @@
             typeExprStack.Push(tupType);
         }
 
+        Stack<P_Root.UserCnst> qualifier = new Stack<P_Root.UserCnst>();
+
         private void PushNmdTupType(string fieldName, Span span, bool isLast)
         {
             var tupType = P_Root.MkNmdTupType();
@@ -394,19 +397,20 @@
 
             tupType.Span = span;
             tupFld.Span = span;
+            tupFld.qual = qualifier.Pop();
             tupFld.name = MkString(fieldName, span);
             tupType.hd = tupFld;
             if (isLast)
             {
                 Contract.Assert(typeExprStack.Count > 0);
-                tupFld.type = (P_Root.IArgType_NmdTupTypeField__1)typeExprStack.Pop();
+                tupFld.type = (P_Root.IArgType_NmdTupTypeField__2)typeExprStack.Pop();
                 tupType.tl = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
             else
             {
                 Contract.Assert(typeExprStack.Count > 1);
                 tupType.tl = (P_Root.IArgType_NmdTupType__1)typeExprStack.Pop();
-                tupFld.type = (P_Root.IArgType_NmdTupTypeField__1)typeExprStack.Pop();
+                tupFld.type = (P_Root.IArgType_NmdTupTypeField__2)typeExprStack.Pop();
             }
 
             typeExprStack.Push(tupType);
@@ -452,6 +456,7 @@
                 sendStmt.dest = (P_Root.IArgType_Send__0)valueExprStack.Pop();
                 sendStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
+            sendStmt.qual = qualifier.Pop();
 
             stmtStack.Push(sendStmt);
         }
@@ -624,14 +629,14 @@
         {
             Contract.Assert(valueExprStack.Count > 0);
             P_Root.Exprs fullExprs;
-            var arg = (P_Root.IArgType_Exprs__0)valueExprStack.Pop();
+            var arg = (P_Root.IArgType_Exprs__1)valueExprStack.Pop();
             if (isUnaryTuple)
             {
-                fullExprs = P_Root.MkExprs(arg, MkUserCnst(P_Root.UserCnstKind.NIL, arg.Span));
+                fullExprs = P_Root.MkExprs(P_Root.MkUserCnst(P_Root.UserCnstKind.NONE), arg, MkUserCnst(P_Root.UserCnstKind.NIL, arg.Span));
             }
             else
             {
-                fullExprs = P_Root.MkExprs(arg, (P_Root.Exprs)exprsStack.Pop());
+                fullExprs = P_Root.MkExprs(P_Root.MkUserCnst(P_Root.UserCnstKind.NONE), arg, (P_Root.Exprs)exprsStack.Pop());
             }
             
             var tuple = P_Root.MkTuple(fullExprs);
@@ -675,14 +680,15 @@
             if (oldExprs.Symbol != TheDefaultExprs.Symbol)
             {
                 var coercedExprs = P_Root.MkExprs(
-                    (P_Root.IArgType_Exprs__0)oldExprs, 
+                    P_Root.MkUserCnst(P_Root.UserCnstKind.NONE),
+                    (P_Root.IArgType_Exprs__1)oldExprs, 
                     MkUserCnst(P_Root.UserCnstKind.NIL, oldExprs.Span));
                 coercedExprs.Span = oldExprs.Span;
                 oldExprs = coercedExprs;
             }
 
-            var arg = (P_Root.IArgType_Exprs__0)valueExprStack.Pop();
-            var exprs = P_Root.MkExprs(arg, (P_Root.IArgType_Exprs__1)oldExprs);
+            var arg = (P_Root.IArgType_Exprs__1)valueExprStack.Pop();
+            var exprs = P_Root.MkExprs(qualifier.Pop(), arg, (P_Root.IArgType_Exprs__2)oldExprs);
             exprs.Span = arg.Span;
             exprsStack.Push(exprs);
         }
@@ -715,8 +721,8 @@
             Contract.Assert(valueExprStack.Count > 0);
             if (makeIntoExprs)
             {
-                var arg = (P_Root.IArgType_Exprs__0)valueExprStack.Pop();
-                var exprs = P_Root.MkExprs(arg, MkUserCnst(P_Root.UserCnstKind.NIL, arg.Span));
+                var arg = (P_Root.IArgType_Exprs__1)valueExprStack.Pop();
+                var exprs = P_Root.MkExprs(qualifier.Pop(), arg, MkUserCnst(P_Root.UserCnstKind.NIL, arg.Span));
                 exprs.Span = arg.Span;
                 exprsStack.Push(exprs);
             }
@@ -1935,8 +1941,9 @@
             var stmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
             stmt.Span = span;
             var field = P_Root.MkNmdTupTypeField(
+                                   P_Root.MkUserCnst(P_Root.UserCnstKind.NONE),
                                    P_Root.MkString("_payload_skip"),
-                                   (P_Root.IArgType_NmdTupTypeField__1)MkBaseType(P_Root.UserCnstKind.ANY, Span.Unknown));
+                                   (P_Root.IArgType_NmdTupTypeField__2)MkBaseType(P_Root.UserCnstKind.ANY, Span.Unknown));
             var decl = P_Root.MkAnonFunDecl(owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), stmt, (P_Root.IArgType_AnonFunDecl__3)P_Root.MkNmdTupType(field, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL)));
             decl.Span = span;
             parseProgram.AnonFunctions.Add(decl);

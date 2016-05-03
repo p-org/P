@@ -40,15 +40,16 @@ typedef void(PRT_CALL_CONV * PRT_SM_EXTDTOR)(_Inout_ struct PRT_MACHINEINST * co
 
 /** A PRT_SM_MODELSEND function sends an event to a model machine.
 *  process is the calling process.
-*  id is the model id of the target machine.
-*  event is the id of the event being sent.
+*  evnt is the id of the event being sent.
 *  payload is the data being sent.
-*  Function frees id, event, payload.
+*  Function frees event.
+*  Function frees payload iff doTransfer is true.
 */
 typedef void(PRT_CALL_CONV * PRT_SM_MODELSEND)(
 	_Inout_ struct PRT_MACHINEINST * context,
 	_Inout_ PRT_VALUE * evnt, 
-	_Inout_ PRT_VALUE * payload);
+	_Inout_ PRT_VALUE * payload,
+	_In_    PRT_BOOLEAN doTransfer);
 
 /** Represents a P event declaration */
 typedef struct PRT_EVENTDECL

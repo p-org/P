@@ -9,10 +9,13 @@ PRT_PRINT_FUN PrtPrintf = &PrtPrintfDefaultFn;
 void PRT_CALL_CONV PrtSetGlobalVarEx(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
 {
 	PRT_DBG_ASSERT(PrtIsValidValue(value), "value is not valid");
-	PRT_DBG_ASSERT(PrtIsValidValue(context->varValues[varIndex]), "Variable must contain a valid value");
 	PRT_VALUE *oldValue = context->varValues[varIndex];
 	context->varValues[varIndex] = cloneValue ? PrtCloneValue(value) : value;
-	PrtFreeValue(oldValue);
+	if (oldValue != NULL)
+	{
+		PRT_DBG_ASSERT(PrtIsValidValue(oldValue), "Variable must contain a valid value");
+		PrtFreeValue(oldValue);
+	}
 }
 
 void PRT_CALL_CONV PrtSetGlobalVar(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE *value)
@@ -23,10 +26,13 @@ void PRT_CALL_CONV PrtSetGlobalVar(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ P
 void PRT_CALL_CONV PrtSetLocalVarEx(_Inout_ PRT_VALUE **locals, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
 {
 	PRT_DBG_ASSERT(PrtIsValidValue(value), "value is not valid");
-	PRT_DBG_ASSERT(PrtIsValidValue(locals[varIndex]), "Variable must contain a valid value");
 	PRT_VALUE *oldValue = locals[varIndex];
 	locals[varIndex] = cloneValue ? PrtCloneValue(value) : value;
-	PrtFreeValue(oldValue);
+	if (oldValue != NULL)
+	{
+		PRT_DBG_ASSERT(PrtIsValidValue(oldValue), "Variable must contain a valid value");
+		PrtFreeValue(oldValue);
+	}
 }
 
 PRT_MACHINEINST_PRIV *
@@ -108,7 +114,7 @@ _In_  PRT_VALUE					*payload
 	context->isHalted = PRT_FALSE;
 	context->lastOperation = ReturnStatement;
 
-	context->currentTrigger = PrtMkEventValue(PRT_SPECIAL_EVENT_NULL);
+	context->currentTrigger = NULL;
 	context->currentPayload = PrtCloneValue(payload);
 
 	//
@@ -203,9 +209,10 @@ _Inout_ PRT_MACHINEINST_PRIV		*context
 
 void
 PrtSendPrivate(
-_Inout_ PRT_MACHINEINST_PRIV		*context,
+_Inout_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_VALUE					*event,
-_In_ PRT_VALUE					*payload
+_In_ PRT_VALUE					*payload,
+_In_ PRT_BOOLEAN				doTransfer
 )
 {
 	PRT_EVENTQUEUE *queue;
@@ -257,7 +264,7 @@ _In_ PRT_VALUE					*payload
 	// Add event to the queue
 	//
 	queue->events[tail].trigger = PrtCloneValue(event);
-	queue->events[tail].payload = PrtCloneValue(payload);
+	queue->events[tail].payload = doTransfer ? payload : PrtCloneValue(payload);
 	queue->size++;
 	queue->tailIndex = (tail + 1) % queue->eventsSize;
 
@@ -313,7 +320,7 @@ _In_ PRT_VALUE					*payload
 	}
 	PrtUnlockMutex(context->stateMachineLock);
 
-	PrtSendPrivate(context, event, payload);
+	PrtSendPrivate(context, event, payload, PRT_TRUE);
 }
 
 void
@@ -326,8 +333,8 @@ _In_ PRT_VALUE						*payload
 	PrtAssert(!PrtIsSpecialEvent(event), "Raised event must not be null");
 	PrtAssert(PrtInhabitsType(payload, PrtGetPayloadType(context, event)), "Payload must be member of event payload type");
 	context->lastOperation = RaiseStatement;
-	PrtFreeValue(context->currentTrigger);
-	PrtFreeValue(context->currentPayload);
+	PrtAssert(context->currentTrigger == NULL, "currentTrigger must be null");
+	PrtAssert(context->currentPayload == NULL, "currentPayload must be null");
 	context->currentTrigger = PrtCloneValue(event);
 	context->currentPayload = PrtCloneValue(payload);
 	PrtLog(PRT_STEP_RAISE, context);
@@ -382,26 +389,41 @@ _In_ PRT_MACHINEINST_PRIV	*context)
 	return &context->funStack.funs[context->funStack.length - 1];
 }
 
+void 
+PrtFreeTriggerPayload(_In_ PRT_MACHINEINST_PRIV	*context)
+{
+	if (context->currentTrigger != NULL)
+	{
+		PrtFreeValue(context->currentTrigger);
+		context->currentTrigger = NULL;
+	}
+	if (context->currentPayload != NULL)
+	{
+		PrtFreeValue(context->currentPayload);
+		context->currentPayload = NULL;
+	}
+}
+
 void
 PrtPushNewEventHandlerFrame(
-_Inout_ PRT_MACHINEINST_PRIV	*context,
-_In_ PRT_UINT32					funIndex,
-_In_ PRT_VALUE					**locals
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_In_ PRT_UINT32					funIndex,
+	_In_ PRT_FUN_PARAM_STATUS       payloadStatus,
+	_In_ PRT_VALUE					**locals
 )
 {
+	PrtAssert(payloadStatus != PRT_FUN_PARAM_CLONE, "Incorrect payload status value");
 	PRT_UINT16 length = context->funStack.length;
 	PrtAssert(length < PRT_MAX_FUNSTACK_DEPTH, "Fun stack overflow");
 	context->funStack.length = length + 1;
 	context->funStack.funs[length].funIndex = funIndex;
-	PRT_BOOLEAN freeLocals = (locals == NULL);
+	PRT_BOOLEAN freeLocals = PRT_FALSE;
 	PRT_FUNDECL *funDecl = &(context->process->program->machines[context->instanceOf].funs[funIndex]);
+	PRT_VALUE ***refArgs = NULL;
 	if (locals == NULL && funDecl->maxNumLocals != 0)
 	{
 		locals = PrtCalloc(funDecl->maxNumLocals, sizeof(PRT_VALUE *));
-		for (PRT_UINT32 i = 0; i < funDecl->maxNumLocals; i++)
-		{
-			locals[i] = NULL;
-		}
+		freeLocals = PRT_TRUE;
 	}
 	PRT_UINT32 count = funDecl->numEnvVars;
 	if (funDecl->name == NULL)
@@ -412,7 +434,28 @@ _In_ PRT_VALUE					**locals
 		{
 			PrtFreeValue(locals[payloadIndex]);
 		}
-		locals[payloadIndex] = PrtCloneValue(context->currentPayload);
+		locals[payloadIndex] = context->currentPayload;
+		context->currentPayload = NULL;
+		if (payloadStatus == PRT_FUN_PARAM_SWAP)
+		{
+			refArgs = PrtCalloc(1, sizeof(PRT_VALUE **));
+			refArgs[0] = &context->currentPayload;
+		}
+		else 
+		{
+			if (context->currentTrigger != NULL)
+			{
+				PrtFreeValue(context->currentTrigger);
+				context->currentTrigger = NULL;
+			}
+		}
+	}
+	else
+	{
+		if (payloadStatus != PRT_FUN_PARAM_SWAP)
+		{
+			PrtFreeTriggerPayload(context);
+		}
 	}
 	if (funDecl->localsNmdTupType != NULL)
 	{
@@ -430,15 +473,16 @@ _In_ PRT_VALUE					**locals
 	}
 	context->funStack.funs[length].locals = locals;
 	context->funStack.funs[length].freeLocals = freeLocals;
+	context->funStack.funs[length].refArgs = refArgs;
 	context->funStack.funs[length].returnTo = 0xFFFF;
 	context->funStack.funs[length].rcase = NULL;
 }
 
-void
+PRT_VALUE *
 PrtPushNewFrame(
-_Inout_ PRT_MACHINEINST_PRIV	*context,
-_In_ PRT_UINT32					funIndex,
-_In_ PRT_VALUE					*parameters
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_In_ PRT_UINT32					funIndex,
+	...
 )
 {
 	PRT_UINT16 length = context->funStack.length;
@@ -447,43 +491,68 @@ _In_ PRT_VALUE					*parameters
 	context->funStack.funs[length].funIndex = funIndex;
 	PRT_FUNDECL *funDecl = &(context->process->program->machines[context->instanceOf].funs[funIndex]);
 	PRT_VALUE **locals = NULL;
+	PRT_VALUE ***refArgs = NULL;
+	PRT_BOOLEAN freeLocals = PRT_FALSE;
 	if (funDecl->maxNumLocals == 0)
 	{
-		PrtAssert(parameters == NULL && funDecl->localsNmdTupType == NULL, "Incorrect maxNumLocals value");
+		PrtAssert(funDecl->localsNmdTupType == NULL, "Incorrect maxNumLocals value");
 	}
 	else
 	{
-		locals = PrtCalloc(funDecl->maxNumLocals, sizeof(PRT_VALUE *));
-		for (PRT_UINT32 i = 0; i < funDecl->maxNumLocals; i++)
-		{
-			locals[i] = NULL;
-		}
-		PRT_UINT32 count = 0;
-		if (parameters != NULL)
-		{
-			PRT_UINT32 size = parameters->valueUnion.tuple->size;
-			for (PRT_UINT32 i = 0; i < size; i++)
-			{
-				locals[count] = PrtTupleGet(parameters, i);
-				count++;
-			}
-			PrtFreeValue(parameters);
-		}
+		PRT_UINT32 numLocals = 0;
 		if (funDecl->localsNmdTupType != NULL)
 		{
-			PRT_UINT32 size = funDecl->localsNmdTupType->typeUnion.nmTuple->arity;
-			for (PRT_UINT32 i = 0; i < size; i++)
+			numLocals = funDecl->localsNmdTupType->typeUnion.nmTuple->arity;
+		}
+		locals = PrtCalloc(funDecl->maxNumLocals, sizeof(PRT_VALUE *));
+		freeLocals = PRT_TRUE;
+		PRT_UINT32 numParameters = funDecl->maxNumLocals - numLocals;
+		PRT_UINT32 count = 0;
+		if (0 < numParameters)
+		{
+			refArgs = PrtCalloc(numParameters, sizeof(PRT_VALUE **));
+			va_list argp;
+			va_start(argp, funIndex);
+			for (PRT_UINT32 i = 0; i < numParameters; i++)
 			{
-				PRT_TYPE *indexType = funDecl->localsNmdTupType->typeUnion.nmTuple->fieldTypes[i];
-				locals[count] = PrtMkDefaultValue(indexType);
+				PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
+				PRT_VALUE *arg;
+				PRT_VALUE **argPtr;
+				switch (argStatus)
+				{
+				case PRT_FUN_PARAM_CLONE:
+					arg = va_arg(argp, PRT_VALUE *);
+					locals[count] = PrtCloneValue(arg);
+					break;
+				case PRT_FUN_PARAM_SWAP:
+					argPtr = va_arg(argp, PRT_VALUE **);
+					refArgs[count] = argPtr;
+					locals[count] = *argPtr;
+					*argPtr = NULL;
+					break;
+				case PRT_FUN_PARAM_XFER:
+					argPtr = va_arg(argp, PRT_VALUE **);
+					locals[count] = *argPtr;
+					*argPtr = NULL;
+					break;
+				}
 				count++;
 			}
+			va_end(argp);
+		}
+		for (PRT_UINT32 i = 0; i < numLocals; i++)
+		{
+			PRT_TYPE *indexType = funDecl->localsNmdTupType->typeUnion.nmTuple->fieldTypes[i];
+			locals[count] = PrtMkDefaultValue(indexType);
+			count++;
 		}
 	}
 	context->funStack.funs[length].locals = locals;
-	context->funStack.funs[length].freeLocals = PRT_TRUE;
+	context->funStack.funs[length].freeLocals = freeLocals;
+	context->funStack.funs[length].refArgs = refArgs;
 	context->funStack.funs[length].returnTo = 0xFFFF;
 	context->funStack.funs[length].rcase = NULL;
+	return NULL;
 }
 
 void
@@ -497,6 +566,7 @@ _In_ PRT_FUNSTACK_INFO			*funStackInfo
 	context->funStack.length = length + 1;
 	context->funStack.funs[length].funIndex = funStackInfo->funIndex;
 	context->funStack.funs[length].locals = funStackInfo->locals;
+	context->funStack.funs[length].refArgs = funStackInfo->refArgs;
 	context->funStack.funs[length].freeLocals = funStackInfo->freeLocals;
 	context->funStack.funs[length].returnTo = funStackInfo->returnTo;
 	context->funStack.funs[length].rcase = funStackInfo->rcase;
@@ -513,6 +583,7 @@ _Inout_ PRT_FUNSTACK_INFO *funStackInfo
 	PRT_UINT16 top = length - 1;
 	funStackInfo->funIndex = context->funStack.funs[top].funIndex;
 	funStackInfo->locals = context->funStack.funs[top].locals;
+	funStackInfo->refArgs = context->funStack.funs[top].refArgs;
 	funStackInfo->freeLocals = context->funStack.funs[top].freeLocals;
 	funStackInfo->returnTo = context->funStack.funs[top].returnTo;
 	funStackInfo->rcase = context->funStack.funs[top].rcase;
@@ -570,12 +641,9 @@ _Inout_ PRT_MACHINEINST_PRIV		*context
 )
 {
 	context->lastOperation = PopStatement;
-	PrtFreeValue(context->currentTrigger);
-	PrtFreeValue(context->currentPayload);
-	context->currentTrigger = PrtMkEventValue(PRT_SPECIAL_EVENT_NULL);
-	context->currentPayload = PrtMkNullValue();
+	PrtAssert(context->currentTrigger == NULL, "currentTrigger must be null");
+	PrtAssert(context->currentPayload == NULL, "currentPayload must be null");
 	// Actual pop happens in PrtPopState; the exit function must be executed first.
-	// context->{currentTrigger,currentPayload} are set on for the benefit of the exit function.
 }
 
 void
@@ -594,7 +662,13 @@ _In_ PRT_BOOLEAN				isPopStatement
 
 	if (length == 0)
 	{
-		if (PrtPrimGetEvent(PrtGetCurrentTrigger(context)) == PRT_SPECIAL_EVENT_HALT)
+		// The stack can become empty because of either an unhandled event or en explicit pop.
+		// We currently do not distinguish between the two in our logging.
+		if (isPopStatement)
+		{
+			PrtHandleError(PRT_STATUS_EVENT_UNHANDLED, context);
+		}
+		else if (PrtPrimGetEvent(context->currentTrigger) == PRT_SPECIAL_EVENT_HALT)
 		{
 			PrtHaltMachine(context);
 		}
@@ -642,13 +716,13 @@ _In_ PRT_UINT32						transIndex
 	context->lastOperation = ReturnStatement;
 	PrtLog(PRT_STEP_EXIT, context);
 	PRT_UINT32 exitFunIndex = context->process->program->machines[context->instanceOf].states[context->currentState].exitFunIndex;
-	PrtPushNewEventHandlerFrame(context, exitFunIndex, NULL);
+	PrtPushNewEventHandlerFrame(context, exitFunIndex, PRT_FUN_PARAM_SWAP, NULL);
 	PrtGetExitFunction(context)((PRT_MACHINEINST *)context);
 	if (transIndex < stateDecl->nTransitions)
 	{
 		PRT_UINT32 transFunIndex = stateDecl->transitions[transIndex].transFunIndex;
 		PRT_DBG_ASSERT(transFunIndex != PRT_SPECIAL_ACTION_PUSH_OR_IGN, "Must be valid function index");
-		PrtPushNewEventHandlerFrame(context, transFunIndex, NULL);
+		PrtPushNewEventHandlerFrame(context, transFunIndex, PRT_FUN_PARAM_SWAP, NULL);
 		context->process->program->machines[context->instanceOf].funs[transFunIndex].implementation((PRT_MACHINEINST *)context);
 	}
 	PRT_DBG_ASSERT(context->lastOperation == ReturnStatement, "Exit function must terminate with a ReturnStatement");
@@ -687,7 +761,7 @@ DoEntry:
 	{
 		PrtLog(PRT_STEP_ENTRY, context);
 		PRT_UINT32 entryFunIndex = context->process->program->machines[context->instanceOf].states[context->currentState].entryFunIndex;
-		PrtPushNewEventHandlerFrame(context, entryFunIndex, NULL);
+		PrtPushNewEventHandlerFrame(context, entryFunIndex, PRT_FUN_PARAM_XFER, NULL);
 	}
 	PRT_UINT32 funIndex = PrtBottomOfFunStack(context)->funIndex;
 	context->process->program->machines[context->instanceOf].funs[funIndex].implementation((PRT_MACHINEINST *)context);
@@ -700,13 +774,14 @@ DoAction:
 	if (doFunIndex == PRT_SPECIAL_ACTION_PUSH_OR_IGN)
 	{
 		PrtLog(PRT_STEP_IGNORE, context);
+		PrtFreeTriggerPayload(context);
 	}
 	else
 	{
 		if (context->funStack.length == 0)
 		{
 			PrtLog(PRT_STEP_DO, context);
-			PrtPushNewEventHandlerFrame(context, doFunIndex, NULL);
+			PrtPushNewEventHandlerFrame(context, doFunIndex, PRT_FUN_PARAM_XFER, NULL);
 		}
 		PRT_UINT32 funIndex = PrtBottomOfFunStack(context)->funIndex;
 		context->process->program->machines[context->instanceOf].funs[funIndex].implementation((PRT_MACHINEINST *)context);
@@ -757,7 +832,7 @@ DoDequeue:
 
 DoHandleEvent:
 	PrtAssert(context->receive == NULL, "Must not be blocked at a receive");
-	eventValue = PrtPrimGetEvent(PrtGetCurrentTrigger(context));
+	eventValue = PrtPrimGetEvent(context->currentTrigger);
 	if (PrtIsPushTransition(context, eventValue))
 	{
 		PrtTakeTransition(context, eventValue);
@@ -827,117 +902,13 @@ _In_ PRT_UINT32					eventIndex
 	}
 }
 
-PRT_BOOLEAN
-PrtDequeueEvent(
-_Inout_ PRT_MACHINEINST_PRIV	*context,
-_Inout_ PRT_FUNSTACK_INFO		*frame
-)
+void
+RemoveElementFromQueue(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 i)
 {
-	PRT_UINT32 queueLength;
-	PRT_EVENTQUEUE *queue;
-	PRT_UINT32* deferPacked;
-	PRT_UINT32 i, head;
-
-	queue = &context->eventQueue;
-	queueLength = queue->eventsSize;
-	deferPacked = PrtGetDeferredPacked(context, context->currentState);
-	head = queue->headIndex;
-
-	PRT_DBG_ASSERT(queue->size <= queueLength, "Check Failed");
-	PRT_DBG_ASSERT(queue->size >= 0, "Check Failed");
-	PRT_DBG_ASSERT(queue->headIndex >= 0, "Check Failed");
-	PRT_DBG_ASSERT(queue->tailIndex >= 0, "Check Failed");
-
-	//
-	// Find the element to dequeue
-	//
-	for (i = 0; i < queue->size; i++) {
-		PRT_UINT32 index = (head + i) % queueLength;
-		PRT_EVENT e = queue->events[index];
-		PRT_UINT32 triggerIndex = PrtPrimGetEvent(e.trigger);
-		if (context->receive == NULL)
-		{
-			if (!PrtIsEventDeferred(triggerIndex, context->currentDeferredSetCompact))
-			{
-				PrtFreeValue(context->currentTrigger);
-				PrtFreeValue(context->currentPayload);
-				context->currentTrigger = e.trigger;
-				context->currentPayload = e.payload;
-				break;
-			}
-		}
-		else
-		{
-			if (PrtIsEventReceivable(context, triggerIndex))
-			{
-				PrtFreeValue(context->currentTrigger);
-				PrtFreeValue(context->currentPayload);
-				context->currentTrigger = e.trigger;
-				context->currentPayload = e.payload;
-				for (PRT_UINT32 i = 0; i < context->receive->nCases; i++)
-				{
-					PRT_CASEDECL *rcase = &context->receive->cases[i];
-					if (triggerIndex == rcase->triggerEventIndex)
-					{
-						frame->rcase = rcase;
-						PrtPushNewEventHandlerFrame(context, rcase->funIndex, frame->locals);
-						break;
-					}
-				}
-				context->receive = NULL;
-				break;
-			}
-		}
-	}
-
-	//
-	// Check if not found
-	//
-	if (i == queue->size) {
-		if (context->receive == NULL)
-		{
-			if (PrtStateHasDefaultTransitionOrAction(context))
-			{
-				PrtFreeValue(context->currentTrigger);
-				PrtFreeValue(context->currentPayload);
-				context->currentTrigger = PrtMkEventValue(PRT_SPECIAL_EVENT_NULL);
-				context->currentPayload = PrtMkNullValue();
-				return PRT_TRUE;
-			}
-			else
-			{
-				return PRT_FALSE;
-			}
-		}
-		else
-		{
-			PRT_BOOLEAN hasDefaultCase = (context->process->program->eventSets[context->receive->caseSetIndex].packedEvents[0] & 0x1) == 1;
-			if (hasDefaultCase)
-			{
-				PrtFreeValue(context->currentTrigger);
-				PrtFreeValue(context->currentPayload);
-				context->currentTrigger = PrtMkEventValue(PRT_SPECIAL_EVENT_NULL);
-				context->currentPayload = PrtMkNullValue();
-				for (PRT_UINT32 i = 0; i < context->receive->nCases; i++)
-				{
-					PRT_CASEDECL *rcase = &context->receive->cases[i];
-					if (PRT_SPECIAL_EVENT_NULL == rcase->triggerEventIndex)
-					{
-						frame->rcase = rcase;
-						PrtPushNewEventHandlerFrame(context, rcase->funIndex, frame->locals);
-						break;
-					}
-				}
-				context->receive = NULL;
-				return PRT_TRUE;
-			}
-			else
-			{
-				return PRT_FALSE;
-			}
-		}
-	}
-
+	PRT_EVENTQUEUE *queue = &context->eventQueue;
+	PRT_UINT32 queueLength = queue->eventsSize;
+	PRT_UINT32 head = queue->headIndex;
+	
 	//
 	// Collapse the event queue on the removed event
 	// by moving the previous elements forward.
@@ -955,15 +926,105 @@ _Inout_ PRT_FUNSTACK_INFO		*frame
 	queue->size--;
 
 	PRT_DBG_ASSERT(queue->size <= queueLength, "Check Failed");
-	PRT_DBG_ASSERT(queue->size >= 0, "Check Failed");
-	PRT_DBG_ASSERT(queue->headIndex >= 0, "Check Failed");
-	PRT_DBG_ASSERT(queue->tailIndex >= 0, "Check Failed");
+}
 
-	//
-	//Log
-	//
-	PrtLog(PRT_STEP_DEQUEUE, context);
-	return PRT_TRUE;
+PRT_BOOLEAN
+PrtDequeueEvent(
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_Inout_ PRT_FUNSTACK_INFO		*frame
+)
+{
+	PRT_EVENTQUEUE *queue = &context->eventQueue;
+	PRT_UINT32 queueLength = queue->eventsSize;
+	PRT_UINT32 head = queue->headIndex;
+
+	PRT_DBG_ASSERT(queue->size <= queueLength, "Check Failed");
+
+	for (PRT_UINT32 i = 0; i < queue->size; i++) {
+		PRT_UINT32 index = (head + i) % queueLength;
+		PRT_EVENT e = queue->events[index];
+		PRT_UINT32 triggerIndex = PrtPrimGetEvent(e.trigger);
+		if (context->receive == NULL)
+		{
+			if (!PrtIsEventDeferred(triggerIndex, context->currentDeferredSetCompact))
+			{
+				PrtAssert(context->currentTrigger == NULL, "currentTrigger must be null");
+				PrtAssert(context->currentPayload == NULL, "currentPayload must be null");
+				context->currentTrigger = e.trigger;
+				context->currentPayload = e.payload;
+				RemoveElementFromQueue(context, i);
+				PrtLog(PRT_STEP_DEQUEUE, context);
+				return PRT_TRUE;
+			}
+		}
+		else
+		{
+			if (PrtIsEventReceivable(context, triggerIndex))
+			{
+				PrtAssert(context->currentTrigger == NULL, "currentTrigger must be null");
+				PrtAssert(context->currentPayload == NULL, "currentPayload must be null");
+				context->currentTrigger = e.trigger;
+				context->currentPayload = e.payload;
+				RemoveElementFromQueue(context, i);
+				PrtLog(PRT_STEP_DEQUEUE, context);
+				for (PRT_UINT32 j = 0; j < context->receive->nCases; j++)
+				{
+					PRT_CASEDECL *rcase = &context->receive->cases[j];
+					if (triggerIndex == rcase->triggerEventIndex)
+					{
+						frame->rcase = rcase;
+						PrtPushNewEventHandlerFrame(context, rcase->funIndex, PRT_FUN_PARAM_XFER, frame->locals);
+						break;
+					}
+				}
+				context->receive = NULL;
+				return PRT_TRUE;
+			}
+		}
+	}
+
+	if (context->receive == NULL)
+	{
+		if (PrtStateHasDefaultTransitionOrAction(context))
+		{
+			PrtAssert(context->currentTrigger == NULL, "currentTrigger must be null");
+			PrtAssert(context->currentPayload == NULL, "currentPayload must be null");
+			context->currentTrigger = PrtMkEventValue(PRT_SPECIAL_EVENT_NULL);
+			context->currentPayload = PrtMkNullValue();
+			return PRT_TRUE;
+		}
+		else
+		{
+			return PRT_FALSE;
+		}
+	}
+	else
+	{
+		PRT_BOOLEAN hasDefaultCase = (context->process->program->eventSets[context->receive->caseSetIndex].packedEvents[0] & 0x1) == 1;
+		if (hasDefaultCase)
+		{
+			PrtAssert(context->currentTrigger == NULL, "currentTrigger must be null");
+			PrtAssert(context->currentPayload == NULL, "currentPayload must be null");
+			context->currentTrigger = PrtMkEventValue(PRT_SPECIAL_EVENT_NULL);
+			context->currentPayload = PrtMkNullValue();
+			for (PRT_UINT32 j = 0; j < context->receive->nCases; j++)
+			{
+				PRT_CASEDECL *rcase = &context->receive->cases[j];
+				if (PRT_SPECIAL_EVENT_NULL == rcase->triggerEventIndex)
+				{
+					frame->rcase = rcase;
+					PrtPushNewEventHandlerFrame(context, rcase->funIndex, PRT_FUN_PARAM_XFER, frame->locals);
+					break;
+				}
+			}
+			context->receive = NULL;
+			return PRT_TRUE;
+		}
+		else
+		{
+			return PRT_FALSE;
+		}
+	}
 }
 
 FORCEINLINE
@@ -1002,14 +1063,9 @@ PrtWrapFunStmt(
 _Inout_ PRT_FUNSTACK_INFO		*frame,
 _In_ PRT_UINT16					funCallIndex,
 _Inout_ PRT_MACHINEINST_PRIV	*context,
-_In_ PRT_UINT32					funIndex,
-_In_ PRT_VALUE					*parameters
+_In_ PRT_UINT32					funIndex
 )
 {
-	if (frame->returnTo == 0xFFFF)
-	{
-		PrtPushNewFrame(context, funIndex, parameters);
-	}
 	PRT_SM_FUN fun = context->process->program->machines[context->instanceOf].funs[funIndex].implementation;
 	PRT_VALUE *returnValue = fun((PRT_MACHINEINST *)context);
 	PRT_UINT32 callerFunIndex = frame->funIndex;
@@ -1027,21 +1083,39 @@ _In_ PRT_VALUE					*parameters
 
 void
 PrtFreeLocals(
-_In_ PRT_MACHINEINST_PRIV		*context,
-_Inout_ PRT_FUNSTACK_INFO		*frame
+	_In_ PRT_MACHINEINST_PRIV		*context,
+	_Inout_ PRT_FUNSTACK_INFO		*frame
 )
 {
-	if (!frame->freeLocals)
-	{
-		return;
-	}
-
 	if (frame->locals == NULL)
 	{
 		return;
 	}
 
+	if (!frame->freeLocals)
+	{
+		return;
+	}
+
 	PRT_FUNDECL *funDecl = &context->process->program->machines[context->instanceOf].funs[frame->funIndex];
+	PRT_UINT32 numLocals = 0;
+	if (funDecl->localsNmdTupType != NULL)
+	{
+		numLocals = funDecl->localsNmdTupType->typeUnion.nmTuple->arity;
+	}
+	PRT_UINT32 numParameters = funDecl->maxNumLocals - numLocals;
+	if (frame->refArgs != NULL)
+	{
+		for (PRT_UINT32 i = 0; i < numParameters; i++)
+		{
+			if (frame->refArgs[i] != NULL)
+			{
+				*(frame->refArgs[i]) = frame->locals[i];
+				frame->locals[i] = NULL;
+			}
+		}
+		PrtFree(frame->refArgs);
+	}
 	for (PRT_UINT32 i = 0; i < funDecl->maxNumLocals; i++)
 	{
 		if (frame->locals[i] != NULL)
@@ -1087,7 +1161,7 @@ PrtGetAction(
 _In_ PRT_MACHINEINST_PRIV		*context
 )
 {
-	PRT_UINT32 currEvent = PrtPrimGetEvent(PrtGetCurrentTrigger(context));
+	PRT_UINT32 currEvent = PrtPrimGetEvent(context->currentTrigger);
 	PRT_BOOLEAN isActionInstalled = PRT_FALSE;
 	PRT_UINT32 ui, nActions;
 	PRT_STATESTACK currStack;
@@ -1590,8 +1664,7 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 		context->process->program->machines[context->instanceOf].extDtorFun((PRT_MACHINEINST *)context);
 	PrtFreeValue(context->id);
 
-	PrtFreeValue(context->currentTrigger);
-	PrtFreeValue(context->currentPayload);
+	PrtFreeTriggerPayload(context);
 
 	if (context->recvMap != NULL)
 	{

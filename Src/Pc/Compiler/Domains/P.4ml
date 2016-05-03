@@ -8,6 +8,7 @@ domain PData
     /*************************************************************/
     /****************          Type Language          ************/
     /*************************************************************/    
+    Qualifier       ::= { NONE, SWAP, XFER}.
     
 	TypeDef         ::= new (name: String, type: any TypeExpr + { NIL }).
 
@@ -18,7 +19,7 @@ domain PData
     NmdTupType      ::= new (hd: any NmdTupTypeField, tl: any NmdTupType + { NIL }).
     SeqType         ::= new (x: any TypeExpr).
     MapType         ::= new (k: any TypeExpr, v: any TypeExpr).
-    NmdTupTypeField ::= new (name: any String, type: any TypeExpr). 
+    NmdTupTypeField ::= new (qual: Qualifier, name: any String, type: any TypeExpr). 
     TypeExpr        ::= NameType + BaseType + TupType + NmdTupType + SeqType + MapType.
         
     /*************************************************************/
@@ -38,7 +39,7 @@ domain PData
     Cast       ::= new (arg: any Expr, type: any TypeExpr). 
     Tuple      ::= new (body: any Exprs).
     NamedTuple ::= new (body: any NamedExprs).
-    Exprs      ::= new (head: any Expr, tail: any Exprs + { NIL }).              
+    Exprs      ::= new (qual: Qualifier, head: any Expr, tail: any Exprs + { NIL }).              
     NamedExprs ::= new (field: String, exp: any Expr, tail: any NamedExprs + { NIL }).
     Expr       ::= Name + New + FunApp + NulApp + UnApp + BinApp + Field + Default + Fresh + Cast + Tuple + NamedTuple.
     ExprsExt   ::= Expr + Exprs + NamedExprs.
@@ -46,7 +47,7 @@ domain PData
     //// Statements
     NewStmt  ::= new (name: String, arg: any Expr + { NIL }, info: any SourceInfo).
     Raise    ::= new (ev: any Expr, arg: any Expr + { NIL }, info: any SourceInfo).
-    Send     ::= new (dest: any Expr, ev: any Expr, arg: any Expr + { NIL }, info: any SourceInfo).
+    Send     ::= new (dest: any Expr, ev: any Expr, arg: any Expr + { NIL }, qual: Qualifier, info: any SourceInfo).
     Monitor  ::= new (ev: any Expr, arg: any Expr + { NIL }, info: any SourceInfo).
     FunStmt  ::= new (name: String, args: any Exprs + { NIL }, aout: any Name + { NIL }, label: Natural, info: any SourceInfo).
     NulStmt  ::= new (op: { SKIP, POP }, info: any SourceInfo).
@@ -82,7 +83,7 @@ domain PData
 	// For FunDecl, the order of params is left to right.
 	// For AnonFunDecl, the order of envVars is left to right and top to bottom.
 	// Thus, the numbering of variables is consistent across nested scopes.
-    FunDecl        ::= fun (name: String, owner: MachineDecl + { NIL } -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL },  return: any TypeExpr + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt).
+    FunDecl        ::= fun (name: String, owner: MachineDecl + { NIL } -> kind: { REAL, PURE, MODEL }, params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt).
     AnonFunDecl    ::= new (owner: MachineDecl + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt, envVars: any NmdTupType).
     
     StateDecl      ::= fun (name: any QualifiedName, owner: MachineDecl -> entryAction: any AnonFunDecl + String, exitFun: any AnonFunDecl + String, temperature: { HOT, WARM, COLD }).
@@ -201,7 +202,7 @@ domain PStructuralTyping extends PData
 	OneDeclError(d) :- d is DoDecl(s, _, DEFER), s.owner.kind = MONITOR.	
 
 	//event in monitors is defined
-	[rule_Classes = '"error, msg: event in monitors is undefined"']
+	[rule_Classes = '"error, msg: event in monitor is undefined"']
 	OneDeclError(obs) :- obs is ObservesDecl, obs.monitor.kind = MONITOR, no EventDecl(obs.ev, _, _).	
 }
 
@@ -221,6 +222,11 @@ domain PStaticTyping extends PData
 	conforms no BadLabelError(_).
 	conforms no PayloadError(_).
 	conforms no TypeDefError(_).
+	conforms no FunDeclQualifierError(_, _).
+	conforms no FunCallQualifierError(_, _, _).
+	conforms no SendQualifierError(_, _).
+	conforms no UnavailableVarAccessError(_, _, _).
+	conforms no UnavailableParameterError(_, _).
 	conforms no FunRetError(_).
     /*************************************************************/
 
@@ -260,8 +266,8 @@ domain PStaticTyping extends PData
 	TypeExpansion(type, eType) :- TypeDef(typeName, typeExpr), typeExpr: TypeExpr, no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = TupType(hd', tl').
-	TypeExpansion(type, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(name, hd), NIL), TypeExpansion(hd, hd'), eType = NmdTupType(NmdTupTypeField(name, hd'), NIL).
-	TypeExpansion(type, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(name, hd), tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = NmdTupType(NmdTupTypeField(name, hd'), tl').
+	TypeExpansion(type, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(qual, name, hd), NIL), TypeExpansion(hd, hd'), eType = NmdTupType(NmdTupTypeField(qual, name, hd'), NIL).
+	TypeExpansion(type, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(qual, name, hd), tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = NmdTupType(NmdTupTypeField(qual, name, hd'), tl').
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = SeqType(x), TypeExpansion(x, x'), eType = SeqType(x').
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = MapType(k, v), TypeExpansion(k, k'), TypeExpansion(v, v'), eType = MapType(k', v').
 
@@ -279,7 +285,7 @@ domain PStaticTyping extends PData
     
 	SubSE ::= (cntxt: TypingContext, typeable: Typeable).
 	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = AnonFunDecl(_, _, typeable, _).
-	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = FunDecl(_, _, _, _,  _, _, typeable).
+	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = FunDecl(_, _, _, _, _, _, typeable).
 	SubSE(c, e), SubSE(c, s) :- SubSE(c, While(e, s, _)).
 	SubSE(c, e), SubSE(c, s1), SubSE(c, s2) :- SubSE(c, Ite(e, s1, s2, _)).
 	SubSE(c, s1), SubSE(c, s2) :- SubSE(c, Seq(s1, s2)).
@@ -292,8 +298,8 @@ domain PStaticTyping extends PData
 	SubSE(c, e) :- SubSE(c, FunStmt(_, _, e, _, _)), e: Name.
 	SubSE(c, e) :- SubSE(c, Monitor(e, _, _)).
 	SubSE(c, e) :- SubSE(c, Monitor(_, e, _)), e: Expr.
-	SubSE(c, e1), SubSE(c, e2) :- SubSE(c, Send(e1, e2, _, _)).
-	SubSE(c, e) :- SubSE(c, Send(_, _, e, _)), e: Expr.
+	SubSE(c, e1), SubSE(c, e2) :- SubSE(c, Send(e1, e2, _, _, _)).
+	SubSE(c, e) :- SubSE(c, Send(_, _, e, _, _)), e: Expr.
 	SubSE(c, e) :- SubSE(c, Raise(e, _, _)).
 	SubSE(c, e) :- SubSE(c, Raise(_, e, _)), e: Expr.
 	SubSE(c, e) :- SubSE(c, NewStmt(_, e, _)), e: Expr.
@@ -305,8 +311,8 @@ domain PStaticTyping extends PData
 	SubSE(c, e) :- SubSE(c, Cast(e, _)).
 	SubSE(c, es) :- SubSE(c, Tuple(es)).
 	SubSE(c, es) :- SubSE(c, NamedTuple(es)).
-	SubSE(c, e) :- SubSE(c, Exprs(e, _)).
-	SubSE(c, es) :- SubSE(c, Exprs(_, es)), es: Exprs.
+	SubSE(c, e) :- SubSE(c, Exprs(_, e, _)).
+	SubSE(c, es) :- SubSE(c, Exprs(_, _, es)), es: Exprs.
     SubSE(c, e) :- SubSE(c, NamedExprs(_, e, _)).
 	SubSE(c, es) :- SubSE(c, NamedExprs(_, _, es)), es: NamedExprs.
 
@@ -442,12 +448,12 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, _, e2),  TypeOf(c, e2, t2), toSymbol(t2) != #MapType.
     
 	///// (4) Exprs produces a tuple type
-	TypeOf(c, e, t) :- TypeOfArg1(c, e, t1), e = Exprs(_, NIL), t = TupType(t1, NIL).
+	TypeOf(c, e, t) :- TypeOfArg1(c, e, t1), e = Exprs(_, _, NIL), t = TupType(t1, NIL).
 	TypeOf(c, e, t) :- TypeOfArg2(c, e, t1, t2), e : Exprs, t2 : TupType, t = TupType(t1, t2).
 		
 	//// (5) NamedExprs produces a named tuple type.
-	TypeOf(c, e, t) :- TypeOfArg1(c, e, t1), e = NamedExprs(n, _, NIL), t = NmdTupType(NmdTupTypeField(n, t1), NIL).
-	TypeOf(c, e, t) :- TypeOfArg2(c, e, t1, t2), e = NamedExprs(n, _, _), t2 : NmdTupType, t = NmdTupType(NmdTupTypeField(n, t1), t2).
+	TypeOf(c, e, t) :- TypeOfArg1(c, e, t1), e = NamedExprs(n, _, NIL), t = NmdTupType(NmdTupTypeField(NONE, n, t1), NIL).
+	TypeOf(c, e, t) :- TypeOfArg2(c, e, t1, t2), e = NamedExprs(n, _, _), t2 : NmdTupType, t = NmdTupType(NmdTupTypeField(NONE, n, t1), t2).
 	
 	//// (6) FunApps must refer to a defined function that has a non-NIL return type and args must be sub-types of function signature. 
 	TypeOf(c, e, et) :- SubSE(c, e), e = FunApp(n, NIL), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, NIL, et), et != NIL.
@@ -462,6 +468,128 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: function arguments have incorrect types"']
 	TypeOf(c, e, ERROR) :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _), TypeRel(t1, inpt, k), t1 != inpt, k != SUB.
 	
+
+    /*************************************************************/
+	/*                      Qualifier Checking                   */
+    /*************************************************************/
+
+	AccessesGlobal ::= (TypingContext, String).
+	AccessesGlobal(c, n) :- SubSE(c, e), e = Name(n), IsMachineVar(c, n, _, _).
+	AccessesGlobal(c, n) :- SubSE(c, e), e = FunApp(calleeName, _), FunAvailable(callee, c.owner), callee.name = calleeName, AccessesGlobal(callee, n).
+	AccessesGlobal(c, n) :- SubSE(c, e), e = FunStmt(calleeName, _, _, _, _), FunAvailable(callee, c.owner), callee.name = calleeName, AccessesGlobal(callee, n).
+
+	FunDeclQualifierError ::= (FunDecl, String).
+	[ rule_Classes = '"error, msg: xfer not allowed"']
+	FunDeclQualifierError(c, name) :- FormalParamAux(c, XFER, name, _).
+
+	FunArgsParams ::= (TypingContext, FunApp + FunStmt, Exprs + { NIL }, NmdTupType + { NIL }).
+	FunArgsParams(c, e, e.args, decl.params) :- TypeOfArg1(c, e, t1), e: FunApp, FunAvailable(decl, c.owner), decl.name = e.name, FuncSig(decl, inpt, _), TypeRel(t1, inpt, SUB).
+	FunArgsParams(c, e, e.args, decl.params) :- TypeOfArg1(c, e, t1), e: FunApp, FunAvailable(decl, c.owner), decl.name = e.name, FuncSig(decl, t1, _).
+	FunArgsParams(c, e, e.args, decl.params) :- TypeOfArg1(c, e, t1), e: FunStmt, FunAvailable(decl, c.owner), decl.name = e.name, FuncSig(decl, inpt, _), TypeRel(t1, inpt, SUB).
+	FunArgsParams(c, e, e.args, decl.params) :- TypeOfArg1(c, e, t1), e: FunStmt, FunAvailable(decl, c.owner), decl.name = e.name, FuncSig(decl, t1, _).
+	FunArgsParams(c, e, exprs, nmdTupType) :- FunArgsParams(c, e, exprs', nmdTupType'), exprs' = Exprs(_, _, exprs), nmdTupType' = NmdTupType(_, nmdTupType).
+
+	FunCallQualifierError ::= (TypingContext, FunApp + FunStmt, Expr).
+	[ rule_Classes = '"error, msg: argument qualifier incompatible with parameter qualifier"']
+	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, nmdTupType), exprs = Exprs(SWAP, expr, _), nmdTupType = NmdTupType(NmdTupTypeField(NONE, _, _), _).
+	[ rule_Classes = '"error, msg: argument qualifier incompatible with parameter qualifier"']
+	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, nmdTupType), exprs = Exprs(qual, expr, _), qual != SWAP, nmdTupType = NmdTupType(NmdTupTypeField(SWAP, _, _), _).
+	[ rule_Classes = '"error, msg: argument qualifier xfer not allowed in nested function call"']
+	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, _), e: FunApp, exprs = Exprs(XFER, expr, _).
+
+	[ rule_Classes = '"error, msg: argument should be a variable"']
+	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, _), exprs = Exprs(qual, expr, _), qual != NONE, toSymbol(expr) != #Name.
+	[ rule_Classes = '"error, msg: argument should be a variable"']
+	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, _), exprs = Exprs(qual, expr, _), qual != NONE, expr = Name(n), IsEventCnst(c, n, _).
+	[ rule_Classes = '"error, msg: argument should be a local variable"']
+	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, _), exprs = Exprs(XFER, expr, _), expr = Name(n), IsMachineVar(c, n, _, _).
+	[ rule_Classes = '"error, msg: argument should be a global variable not accessed by callee"']
+	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, _), FunAvailable(callee, c.owner), e.name = callee.name, 
+										 exprs = Exprs(SWAP, expr, _), expr = Name(n), IsMachineVar(c, n, _, _), AccessesGlobal(callee, n).
+	[ rule_Classes = '"error, msg: xfer or swap argument should be passed for exactly one parameter"']
+	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, Exprs(qual, expr, tl), _), FunArgsParams(c, e, Exprs(_, expr, tl'), _), qual != NONE, tl != tl'.
+
+	SendQualifierError ::= (TypingContext, Send).
+	[rule_Classes = '"error, msg: swap qualifier not allowed"']
+	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, _, SWAP, _).
+	[ rule_Classes = '"error, msg: null payload not allowed"']
+	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, NIL, XFER, _).
+	[ rule_Classes = '"error, msg: payload should be a variable"']
+	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, expr, XFER, _), toSymbol(expr) != #Name.
+	[ rule_Classes = '"error, msg: payload should be a variable"']
+	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, expr, XFER, _), expr = Name(n), IsEventCnst(c, n, _).
+	[ rule_Classes = '"error, msg: payload should be a local variable"']
+	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, expr, XFER, _), expr = Name(n), IsMachineVar(c, n, _, _).
+
+	EnvVars ::= (AnonFunDecl, String, NmdTupType + { NIL }).
+	EnvVars(c, n, envVars) :- c is AnonFunDecl(_, _, _, NmdTupType(NmdTupTypeField(_, n, _), envVars)), envVars != NIL.
+	EnvVars(c, n, envVars) :- EnvVars(c, _, NmdTupType(NmdTupTypeField(_, n, _), envVars)), envVars != NIL.
+
+	UnavailableBefore ::= (TypingContext, Stmt + Cases, String).
+	UnavailableAfter  ::= (TypingContext, Stmt + Cases, String).
+	
+	UnavailableBefore(c, s2, n)   :- SubSE(c, Seq(s1, s2)), UnavailableAfter(c, s1, n).
+	UnavailableAfter(c, s, n)     :- SubSE(c, s), s = Seq(_, s'), UnavailableAfter(c, s', n).
+	UnavailableBefore(c, s', n)   :- SubSE(c, s), s = Seq(s', _), UnavailableBefore(c, s, n).
+
+	UnavailableBefore(c, s, n)  :- SubSE(c, s), s = While(_, s', _), UnavailableAfter(c, s', n).
+	UnavailableBefore(c, s, n)  :- SubSE(c, s'), s' = While(_, s, _), UnavailableBefore(c, s', n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: While, UnavailableBefore(c, s, n).
+	
+	UnavailableBefore(c, s, n)  :- SubSE(c, s'), s' = Ite(_, s, _, _), UnavailableBefore(c, s', n); 
+								   SubSE(c, s'), s' = Ite(_, _, s, _), UnavailableBefore(c, s', n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = Ite(_, s', _, _), UnavailableAfter(c, s', n); 
+								   SubSE(c, s), s = Ite(_, _, s', _), UnavailableAfter(c, s', n).
+
+	UnavailableBefore(c, cases, n)  :- ReceiveCases(c, s, cases), UnavailableBefore(c, s, n).
+	UnavailableBefore(c', s, n)     :- UnavailableBefore(c, cases, n), cases = Cases(_, c', _), s = c'.body.
+	UnavailableAfter(c, s, n)       :- ReceiveCases(c, s, cases), cases = Cases(_, c', _), UnavailableAfter(c', c'.body, n), EnvVars(c', n, _).
+
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: NewStmt, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Monitor, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Assert, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Print, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = NulStmt(SKIP, _), UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: FunStmt, UnavailableBefore(c, s, n), s.aout != Name(n).
+	UnavailableAfter(c, s, n)   :- FunArgsParams(c, s, Exprs(XFER, Name(n), _), _), s: FunStmt, s.aout != Name(n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Send, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = Send(_, _, Name(n), XFER, _).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(op, _, _, _), op != ASSIGN, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(ASSIGN, e, _, _), toSymbol(e) != #Name, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(ASSIGN, Name(n'), _, _), UnavailableBefore(c, s, n), n' != n.
+
+	SubExpr ::= sub (TypingContext, Stmt + Expr + Exprs, Expr).
+	
+	UnavailableVarAccessError ::= (TypingContext, Stmt, String).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: NewStmt, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: Raise, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: Send, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: FunStmt, SubExpr(c, s.args, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s = BinStmt(op, _, _, _), op != ASSIGN, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s = BinStmt(ASSIGN, arg, _, _), toSymbol(arg) != #Name, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s = BinStmt(ASSIGN, Name(_), arg, _), SubExpr(c, arg, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: Return, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s = While(e, _, _), SubExpr(c, e, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s = Ite(e, _, _, _), SubExpr(c, e, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: Assert, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
+
+	UnavailableParameterError ::= (FunDecl, String).
+	[rule_Classes = '"error, msg: parameter is not available at return"']
+	UnavailableParameterError(c, n) :- FormalParamAux(c, SWAP, n, _), UnavailableAfter(c, c.body, n).
+	[rule_Classes = '"error, msg: parameter is not available at return"']
+	UnavailableParameterError(c, n) :- FormalParamAux(c, SWAP, n, _), UnavailableBefore(c, Return(_, _), n).
+
     /*************************************************************/
     /*                      Types of Statements                  */
     /*************************************************************/
@@ -526,7 +654,7 @@ domain PStaticTyping extends PData
 									  TypeOf(c, p, pt), TypeRel(pt, plt, k), k != SUB, pt != plt. ///// < and pt is not a subtype of plt.
 
 	//// Rules for send.
-    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e = Send(_, _, NIL, _),                           ///// < send has NIL payload,
+    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e = Send(_, _, NIL, _, _),                           ///// < send has NIL payload,
 	                                  t1 = BaseType(REAL),                                                 ///// < arg1 is a machine type,
 	                                  CommStmtPLType(c, e, plt), TypeRel(BaseType(NULL), plt, SUB).        ///// < arg2 event type contains null.
 
@@ -539,11 +667,11 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Send, t1 != BaseType(REAL).
 
 	[ rule_Classes = '"error, msg: argument 2 of "send" expects an event value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, e2, _, _), TypeOf(c, e2, t2), t2 != BaseType(EVENT).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, e2, _, _, _), TypeOf(c, e2, t2), t2 != BaseType(EVENT).
 
 	//// Error rules for send with constant event expression. 	
     [ rule_Classes = '"error, msg: invalid payload type in send (cannot send null value)"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, _, NIL, _), null = BaseType(NULL),   ///// < send has NIL payload,
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, _, NIL, _, _), null = BaseType(NULL),   ///// < send has NIL payload,
 	                                  CommStmtPLType(c, e, plt),                                  ///// < constant event expression
 									  TypeRel(null, plt, k), k != SUB, null != plt.               ///// < and null not in event type.
 
@@ -662,12 +790,12 @@ domain PStaticTyping extends PData
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = While(e1, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = BinStmt(_, e1, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = BinApp(_, e1, _), TypeOf(c, e1, t1).
-	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Exprs(e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Exprs(_, e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NamedExprs(_, e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Raise(e1, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Monitor(e1, _, _), TypeOf(c, e1, t1).
 
-	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Send(e1, _, _, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Send(e1, _, _, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Ite(e1, _, _, _), TypeOf(c, e1, t1).
 
 	//// The type of the first two sub-expression in a Typeable with at least two sub-expression.
@@ -677,17 +805,17 @@ domain PStaticTyping extends PData
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = FunStmt(_, _, e2, _, _), TypeOf(c, e2, t2).
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = BinStmt(_, _, e2, _), TypeOf(c, e2, t2).
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = BinApp(_, _, e2), TypeOf(c, e2, t2).
-	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Exprs(_, e2), TypeOf(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Exprs(_, _, e2), TypeOf(c, e2, t2).
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = NamedExprs(_, _, e2), TypeOf(c, e2, t2).
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Raise(_, e2, _), TypeOf(c, e2, t2).
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Monitor(_, e2, _), TypeOf(c, e2, t2).
 
-	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Send(_, e2, _, _), TypeOf(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Send(_, e2, _, _, _), TypeOf(c, e2, t2).
 
 	//// The type of the first three sub-expression in a Typeable with at least three sub-expression.
     TypeOfArg3::= (cntxt: TypingContext, expr: Typeable, type1: TypeExpr + { ERROR, NIL }, type2: TypeExpr + { ERROR, NIL }, type3: TypeExpr + { ERROR, NIL }).
 
-	TypeOfArg3(c, e, t1, t2, t3) :- TypeOfArg2(c, e, t1, t2), e = Send(_, _, e3, _), TypeOf(c, e3, t3).
+	TypeOfArg3(c, e, t1, t2, t3) :- TypeOfArg2(c, e, t1, t2), e = Send(_, _, e3, _, _), TypeOf(c, e3, t3).
 
 	//// Determines the payload type of the event mentioned in a communication statement.
 	//// If the event expression is not an constant, then this payload type is ANY.
@@ -697,9 +825,9 @@ domain PStaticTyping extends PData
 	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Raise(ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
 	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Raise(ev, _, _), ev = Name(n), IsEventCnst(c, n, plt).
 
-	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Send(_, ev, _, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
-	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Send(_, ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
-	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Send(_, ev, _, _), ev = Name(n), IsEventCnst(c, n, plt).
+	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Send(_, ev, _, _, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
+	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Send(_, ev, _, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
+	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Send(_, ev, _, _, _), ev = Name(n), IsEventCnst(c, n, plt).
 
 	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Monitor(ev, _, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
 	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Monitor(ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
@@ -716,11 +844,11 @@ domain PStaticTyping extends PData
 
     TypeOfFieldAux(ttup, n, ERROR, 0, ttup)  :- SubSE(c, e), e = Field(e', n), TypeOf(c, e', ttup), ttup : TOrNTType.    
     TypeOfFieldAux(ttup, n, t, pos', tl)     :- TypeOfFieldAux(ttup, n, ERROR, pos, aux), n = pos, pos' = pos + 1, aux = TupType(t, tl).
-    TypeOfFieldAux(ttup, n, t, pos', tl)     :- TypeOfFieldAux(ttup, n, ERROR, pos, aux), n = pos, pos' = pos + 1, aux = NmdTupType(NmdTupTypeField(_, t), tl).
-    TypeOfFieldAux(ttup, n, t, pos', tl)     :- TypeOfFieldAux(ttup, n, ERROR, pos, aux), pos' = pos + 1, aux = NmdTupType(NmdTupTypeField(n, t), tl).
+    TypeOfFieldAux(ttup, n, t, pos', tl)     :- TypeOfFieldAux(ttup, n, ERROR, pos, aux), n = pos, pos' = pos + 1, aux = NmdTupType(NmdTupTypeField(_, _, t), tl).
+    TypeOfFieldAux(ttup, n, t, pos', tl)     :- TypeOfFieldAux(ttup, n, ERROR, pos, aux), pos' = pos + 1, aux = NmdTupType(NmdTupTypeField(_, n, t), tl).
 
     TypeOfFieldAux(ttup, n, t, pos', tl)     :- TypeOfFieldAux(ttup, n, t, pos, aux), n != pos, pos' = pos + 1, aux = TupType(_, tl).
-    TypeOfFieldAux(ttup, n, t, pos', tl)     :- TypeOfFieldAux(ttup, n, t, pos, aux), n != pos, n != fn, pos' = pos + 1, aux = NmdTupType(NmdTupTypeField(fn, _), tl).
+    TypeOfFieldAux(ttup, n, t, pos', tl)     :- TypeOfFieldAux(ttup, n, t, pos, aux), n != pos, n != fn, pos' = pos + 1, aux = NmdTupType(NmdTupTypeField(_, fn, _), tl).
 
     TypeOfField(ttup, n, ft)                 :- TypeOfFieldAux(ttup, n, ft, _, NIL).    
 	TypeOfField(ttup, n, ERROR)              :- TypeOfFieldAux(ttup, n, ERROR, 0, ttup), n : String, ttup : TupType.
@@ -756,8 +884,8 @@ domain PStaticTyping extends PData
     LocalVarsAux ::= (cntxt: FunDecl + AnonFunDecl, vars: NmdTupType + { NIL }, tl: NmdTupType + { NIL }).
 	LocalVarsAux(cntxt, envVars, locals) :- cntxt is FunDecl(_, _, _, params, _, locals, _), envVars = lstReverse(#NmdTupType, params).
 	LocalVarsAux(cntxt, envVars, locals) :- cntxt is AnonFunDecl(_, locals, _, envVars'), envVars = lstReverse(#NmdTupType, envVars').
-	LocalVarsAux(cntxt, envVars, locals) :- LocalVarsAux(cntxt, envVars', locals'), locals' = NmdTupType(NmdTupTypeField(name, type), locals),
-									        envVars = NmdTupType(NmdTupTypeField(name, type), envVars').
+	LocalVarsAux(cntxt, envVars, locals) :- LocalVarsAux(cntxt, envVars', locals'), locals' = NmdTupType(NmdTupTypeField(qual, name, type), locals),
+									        envVars = NmdTupType(NmdTupTypeField(qual, name, type), envVars').
 
 	LocalVars ::= (cntxt: FunDecl + AnonFunDecl, vars: NmdTupType + { NIL }).
 	LocalVars(cntxt, rlocals) :- LocalVarsAux(cntxt, locals, NIL), rlocals = lstReverse(#NmdTupType, locals).
@@ -765,8 +893,8 @@ domain PStaticTyping extends PData
 	TypeOfLocalVar    ::= (cntxt: FunDecl + AnonFunDecl, name: String, type: TypeExpr + { ERROR }).
     TypeOfLocalVarAux ::= (cntxt: FunDecl + AnonFunDecl, name: String, type: TypeExpr, aux: NmdTupType + { NIL }).
 
-    TypeOfLocalVarAux(cntxt, name, type, tl) :- LocalVars(cntxt, locals), locals = NmdTupType(NmdTupTypeField(name, type), tl).
-    TypeOfLocalVarAux(cntxt, name, type, tl) :- TypeOfLocalVarAux(cntxt, _, _, aux), aux = NmdTupType(NmdTupTypeField(name, type), tl).
+    TypeOfLocalVarAux(cntxt, name, type, tl) :- LocalVars(cntxt, locals), locals = NmdTupType(NmdTupTypeField(_, name, type), tl).
+    TypeOfLocalVarAux(cntxt, name, type, tl) :- TypeOfLocalVarAux(cntxt, _, _, aux), aux = NmdTupType(NmdTupTypeField(_, name, type), tl).
     
     TypeOfLocalVar(cntxt, name, type)  :- TypeOfLocalVarAux(cntxt, name, type, aux), no { aux' | TypeOfLocalVarAux(cntxt, name, _, aux'), aux != aux' }.
 	[ rule_Classes = '"error, msg: Variable with same name has been declared before"']
@@ -776,20 +904,19 @@ domain PStaticTyping extends PData
     /*                  Formal Parameter Types                   */
     /*************************************************************/
     FormalParam    ::= (cntxt: FunDecl, name: String).
-    FormalParamAux ::= (cntxt: FunDecl, name: String, aux: NmdTupType + { NIL }).
-
-    FormalParamAux(cntxt, name, tl) :- cntxt is FunDecl(_, _, _, params, _, _, _), params = NmdTupType(NmdTupTypeField(name, _), tl).  
-    FormalParamAux(cntxt, name, tl) :- FormalParamAux(cntxt, _, aux), aux = NmdTupType(NmdTupTypeField(name, _), tl).
+    FormalParamAux ::= (cntxt: FunDecl, qual: Qualifier, name: String, aux: NmdTupType + { NIL }).
     
-    FormalParam(cntxt, name)  :- FormalParamAux(cntxt, name, _).
+    FormalParamAux(cntxt, qual, name, tl) :- cntxt is FunDecl(_, _, _, params, _, _, _), params = NmdTupType(NmdTupTypeField(qual, name, _), tl).  
+    FormalParamAux(cntxt, qual, name, tl) :- FormalParamAux(cntxt, _, _, aux), aux = NmdTupType(NmdTupTypeField(qual, name, _), tl).
+    FormalParam(cntxt, name)  :- FormalParamAux(cntxt, _, name, _).
 
 	//// The input type of a function, ignoring names.
 	FuncSigTupleType    ::= (cntxt: FunDecl, type: TupType + { NIL }).
 	FuncSigTupleTypeAux ::= (cntxt: FunDecl, type: TupType + { NIL }, aux: NmdTupType + { NIL }).
 
 	FuncSigTupleTypeAux(cntxt, params, NIL) :- cntxt is FunDecl(_, _, _, params, _, _, _), params = NIL.
-	FuncSigTupleTypeAux(cntxt, type, tl)    :- cntxt is FunDecl(_, _, _, params, _, _, _), params = NmdTupType(NmdTupTypeField(_, t), tl), TypeExpansion(t, et), type = TupType(et, NIL).
-	FuncSigTupleTypeAux(cntxt, type, tl)    :- FuncSigTupleTypeAux(cntxt, t', aux), aux = NmdTupType(NmdTupTypeField(_, t), tl), TypeExpansion(t, et), type = TupType(et, t').
+	FuncSigTupleTypeAux(cntxt, type, tl)    :- cntxt is FunDecl(_, _, _, params, _, _, _), params = NmdTupType(NmdTupTypeField(_, _, t), tl), TypeExpansion(t, et), type = TupType(et, NIL).
+	FuncSigTupleTypeAux(cntxt, type, tl)    :- FuncSigTupleTypeAux(cntxt, t', aux), aux = NmdTupType(NmdTupTypeField(_, _, t), tl), TypeExpansion(t, et), type = TupType(et, t').
 	FuncSigTupleType(cntxt, type)           :- FuncSigTupleTypeAux(cntxt, t, NIL), type = lstReverse(#TupType, t).
 
 	FuncSig    ::= (cntxt: FunDecl, inputType: TupType + { NIL }, outputType: TypeExpr + { NIL }).
@@ -808,9 +935,9 @@ domain PStaticTyping extends PData
 	DupNmdSubE  ::=     (list: NmdList, name: String, aux1: NmdListOrNone, aux2: NmdListOrNone).
 
 	MaxNmdSubE(e) :- NmdSubE(e), no NmdSubE(NmdTupType(_, e)), no NmdSubE(NamedExprs(_, _, e)).
-	NmdSubNames(list, name, tl) :- MaxNmdSubE(list), list = NmdTupType(NmdTupTypeField(name, _), tl). 
+	NmdSubNames(list, name, tl) :- MaxNmdSubE(list), list = NmdTupType(NmdTupTypeField(_, name, _), tl). 
 	NmdSubNames(list, name, tl) :- MaxNmdSubE(list), list = NamedExprs(name, _, tl). 
-	NmdSubNames(list, name, tl) :- NmdSubNames(list, _, aux), aux = NmdTupType(NmdTupTypeField(name, _), tl). 
+	NmdSubNames(list, name, tl) :- NmdSubNames(list, _, aux), aux = NmdTupType(NmdTupTypeField(_, name, _), tl). 
 	NmdSubNames(list, name, tl) :- NmdSubNames(list, _, aux), aux = NamedExprs(name, _, tl). 
 
     [ rule_Classes = '"error, msg: same name appears more than once in name tuple or named tuple type"']
@@ -947,7 +1074,7 @@ domain PStaticTyping extends PData
 	Impure(c) :- SubSE(c, e), c : FunDecl, e = BinStmt(_, e', e'', _), IsLValue(c, e', TRUE).
 	Impure(c) :- SubSE(c, e), c : FunDecl, e = NewStmt(_, _, _).
 	Impure(c) :- SubSE(c, e), c : FunDecl, e = New(_, _).
-	Impure(c) :- SubSE(c, e), c : FunDecl, e = Send(_, _, _, _). 
+	Impure(c) :- SubSE(c, e), c : FunDecl, e = Send(_, _, _, _, _). 
 	Impure(c) :- c: FunDecl, ControlImpure(c).
 	Impure(c) :- SubSE(c, e), e = FunApp(n, _), c : FunDecl, called.name = n, FunAvailable(called, c.owner), Impure(called).
 	Impure(c) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), c : FunDecl, called.name = n, FunAvailable(called, c.owner), Impure(called).
@@ -961,14 +1088,14 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = BinApp(_, _, e'),     e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
        SubSE(c, e), e = Field(e', _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Cast(e', _),          e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
-       SubSE(c, e), e = Exprs(e', _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);              
+       SubSE(c, e), e = Exprs(_, e', _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);              
        SubSE(c, e), e = NamedExprs(_, e', _), e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = NewStmt(_, e', _),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Raise(e', _, _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Raise(_, e', _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);        
-       SubSE(c, e), e = Send(e', _, _, _),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
-       SubSE(c, e), e = Send(_, e', _, _),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
-       SubSE(c, e), e = Send(_, _, e', _),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
+       SubSE(c, e), e = Send(e', _, _, _, _),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
+       SubSE(c, e), e = Send(_, e', _, _, _),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
+       SubSE(c, e), e = Send(_, _, e', _, _),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
        SubSE(c, e), e = Monitor(e', _, _),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Monitor(_, e', _),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
        SubSE(c, e), e = Assert(e', _, _),        e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
@@ -985,14 +1112,14 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = BinApp(_, _, e'),     e' : New;    
        SubSE(c, e), e = Field(e', _),         e' : New;
        SubSE(c, e), e = Cast(e', _),          e' : New;    
-       SubSE(c, e), e = Exprs(e', _),         e' : New;              
+       SubSE(c, e), e = Exprs(_, e', _),         e' : New;              
        SubSE(c, e), e = NamedExprs(_, e', _), e' : New;
        SubSE(c, e), e = NewStmt(_, e', _),       e' : New;
        SubSE(c, e), e = Raise(e', _, _),         e' : New;
        SubSE(c, e), e = Raise(_, e', _),         e' : New;        
-       SubSE(c, e), e = Send(e', _, _, _),       e' : New;
-       SubSE(c, e), e = Send(_, e', _, _),       e' : New;
-       SubSE(c, e), e = Send(_, _, e', _),       e' : New;    
+       SubSE(c, e), e = Send(e', _, _, _, _),       e' : New;
+       SubSE(c, e), e = Send(_, e', _, _, _),       e' : New;
+       SubSE(c, e), e = Send(_, _, e', _, _),       e' : New;    
        SubSE(c, e), e = Monitor(e', _, _),       e' : New;
        SubSE(c, e), e = Monitor(_, e', _),       e' : New;    
        SubSE(c, e), e = Assert(e', _, _),        e' : New;
@@ -1019,7 +1146,7 @@ domain PStaticTyping extends PData
 	CompTypeRel(t1, t)        :- TypeOfArg1(c, e, t1), e : Return, FuncSig(c, _, t).
 	CompTypeRel(null, plt)    :- CommStmtPLType(c, e, plt), e = Raise(_, NIL, _), null = BaseType(NULL).
 	CompTypeRel(pt, plt)      :- CommStmtPLType(c, e, plt), e = Raise(_, p, _), p != NIL, TypeOf(c, p, pt).
-	CompTypeRel(null, plt)    :- SubSE(c, e), e = Send(_, _, NIL, _), null = BaseType(NULL), CommStmtPLType(c, e, plt).
+	CompTypeRel(null, plt)    :- SubSE(c, e), e = Send(_, _, NIL, _, _), null = BaseType(NULL), CommStmtPLType(c, e, plt).
 	CompTypeRel(t3, plt)      :- TypeOfArg3(c, e, t1, t2, t3), e : Send, CommStmtPLType(c, e, plt).
 	CompTypeRel(null, plt)    :- SubSE(c, e), e = Monitor(_, NIL, _), null = BaseType(NULL), CommStmtPLType(c, e, plt).
 	CompTypeRel(t2, plt)      :- TypeOfArg2(c, e, t1, t2), e : Monitor, CommStmtPLType(c, e, plt).

@@ -151,6 +151,8 @@ namespace Microsoft.Pc
                 var ft = (FuncTerm)PToZing.GetArgByIndex(parameters, 0);
                 using (var enumerator = ft.Args.GetEnumerator())
                 {
+                    // skip over the qualifier
+                    enumerator.MoveNext();
                     enumerator.MoveNext();
                     var varName = ((Cnst)enumerator.Current).GetStringValue();
                     enumerator.MoveNext();
@@ -168,6 +170,8 @@ namespace Microsoft.Pc
                 var ft = (FuncTerm)PToZing.GetArgByIndex(locals, 0);
                 using (var enumerator = ft.Args.GetEnumerator())
                 {
+                    // skip over the qualifier
+                    enumerator.MoveNext();
                     enumerator.MoveNext();
                     var varName = ((Cnst)enumerator.Current).GetStringValue();
                     enumerator.MoveNext();
@@ -2246,8 +2250,8 @@ namespace Microsoft.Pc
             {
                 do
                 {
-                    yield return ft.Args.First<Node>();
-                    ft = GetArgByIndex(ft, 1) as FuncTerm;
+                    yield return GetArgByIndex(ft, 1);
+                    ft = GetArgByIndex(ft, 2) as FuncTerm;
                 }
                 while (ft != null);
             }
@@ -2989,7 +2993,7 @@ namespace Microsoft.Pc
             while (nmdTupType != null)
             {
                 var fieldInfo = (FuncTerm)GetArgByIndex(nmdTupType, 0);
-                var fieldNameInFieldInfo = (Cnst)GetArgByIndex(fieldInfo, 0);
+                var fieldNameInFieldInfo = (Cnst)GetArgByIndex(fieldInfo, 1);
                 if (fieldName == fieldNameInFieldInfo.GetStringValue())
                     return fieldIndex;
                 nmdTupType = GetArgByIndex(nmdTupType, 1) as FuncTerm;
@@ -3765,8 +3769,8 @@ namespace Microsoft.Pc
                     while (type != null)
                     {
                         var typeField = (FuncTerm)GetArgByIndex(type, 0);
-                        memberNames.Add(GetField(((Cnst)GetArgByIndex(typeField, 0)).GetStringValue()));
-                        memberTypes.Add(PTypeToZingExpr((FuncTerm)GetArgByIndex(typeField, 1)));
+                        memberNames.Add(GetField(((Cnst)GetArgByIndex(typeField, 1)).GetStringValue()));
+                        memberTypes.Add(PTypeToZingExpr((FuncTerm)GetArgByIndex(typeField, 2)));
                         type = GetArgByIndex(type, 1) as FuncTerm;
                     }
                     var tupleType = GetType();

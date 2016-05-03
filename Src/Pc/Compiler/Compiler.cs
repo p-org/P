@@ -607,6 +607,12 @@
             AddErrors(task.Result, "TypeDefError(_)", errors, 0);
             AddErrors(task.Result, "FunRetError(_)", errors, 0);
 
+            AddErrors(task.Result, "FunDeclQualifierError(_, _)", errors, 1);
+            AddErrors(task.Result, "FunCallQualifierError(_, _, _)", errors, 2);
+            AddErrors(task.Result, "SendQualifierError(_, _)", errors, 1);
+            AddErrors(task.Result, "UnavailableVarAccessError(_, _, _)", errors, 2);
+            AddErrors(task.Result, "UnavailableParameterError(_, _)", errors, 1);
+
             //// Enumerate structural errors
             AddErrors(task.Result, "missingDecl", errors);
             AddErrors(task.Result, "OneDeclError(_)", errors, 0);
@@ -967,6 +973,7 @@
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModule, null, RootProgramName.ToString()));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkCnst(fileName));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkId(Options.noSourceInfo ? "TRUE" : "FALSE"));
+            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkId(Options.cTest ? "TRUE" : "FALSE"));
             var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModule + "_CModel"));
 
             List<Flag> appFlags;

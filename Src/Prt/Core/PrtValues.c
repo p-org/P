@@ -24,7 +24,7 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeFieldName(_In_ PRT_STRING name)
 {
 	PRT_UINT32 i;
 	PRT_UINT32 code = 0;
-	PRT_UINT32 len = strnlen(name, PRT_MAXFLDNAME_LENGTH);
+	PRT_UINT64 len = strnlen(name, PRT_MAXFLDNAME_LENGTH);
 	for (i = 0; i < len; ++i)
 	{
 		code += name[i];

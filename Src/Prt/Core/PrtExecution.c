@@ -9,11 +9,11 @@ PRT_PRINT_FUN PrtPrintf = &PrtPrintfDefaultFn;
 void PRT_CALL_CONV PrtSetGlobalVarEx(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
 {
 	PRT_DBG_ASSERT(PrtIsValidValue(value), "value is not valid");
-	PRT_DBG_ASSERT(PrtIsValidValue(context->varValues[varIndex]), "Variable must contain a valid value");
 	PRT_VALUE *oldValue = context->varValues[varIndex];
 	context->varValues[varIndex] = cloneValue ? PrtCloneValue(value) : value;
 	if (oldValue != NULL)
 	{
+		PRT_DBG_ASSERT(PrtIsValidValue(oldValue), "Variable must contain a valid value");
 		PrtFreeValue(oldValue);
 	}
 }
@@ -26,11 +26,11 @@ void PRT_CALL_CONV PrtSetGlobalVar(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ P
 void PRT_CALL_CONV PrtSetLocalVarEx(_Inout_ PRT_VALUE **locals, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
 {
 	PRT_DBG_ASSERT(PrtIsValidValue(value), "value is not valid");
-	PRT_DBG_ASSERT(PrtIsValidValue(locals[varIndex]), "Variable must contain a valid value");
 	PRT_VALUE *oldValue = locals[varIndex];
 	locals[varIndex] = cloneValue ? PrtCloneValue(value) : value;
 	if (oldValue != NULL)
 	{
+		PRT_DBG_ASSERT(PrtIsValidValue(oldValue), "Variable must contain a valid value");
 		PrtFreeValue(oldValue);
 	}
 }

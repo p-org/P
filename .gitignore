@@ -257,3 +257,5 @@ Src/PrtDist/Samples/PingPong/program.h
 /Src/PrtDist/Samples/PingPongSimple/Test.c
 /Src/PrtDist/Samples/PingPongSimple/Test.c
 /Src/Tools/VSEditorExtensions/packages
+/.vs/
+/P.VC.db

@@ -605,6 +605,7 @@
             AddErrors(task.Result, "BadLabelError(_)", errors, 0);
             AddErrors(task.Result, "PayloadError(_)", errors, 0);
             AddErrors(task.Result, "TypeDefError(_)", errors, 0);
+            AddErrors(task.Result, "FunRetError(_)", errors, 0);
 
             AddErrors(task.Result, "FunDeclQualifierError(_, _)", errors, 1);
             AddErrors(task.Result, "FunCallQualifierError(_, _, _)", errors, 2);

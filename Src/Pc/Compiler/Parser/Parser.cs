@@ -1253,7 +1253,18 @@
         #region Adders
         private void AddEmptyTypeDef(string name, Span nameSpan, Span typeDefSpan)
         {
-            var typeDef = P_Root.MkTypeDef(MkString(name, nameSpan), MkUserCnst(P_Root.UserCnstKind.NIL, nameSpan));
+            P_Root.TypeDef typeDef;
+            if (Options.erase)
+            {
+                typeDef = P_Root.MkTypeDef(MkString(name, nameSpan), MkUserCnst(P_Root.UserCnstKind.NIL, nameSpan));
+            }
+            else
+            {
+                typeDef = P_Root.MkTypeDef(
+                    MkString(name, nameSpan), 
+                    (P_Root.IArgType_TypeDef__1)MkBaseType(P_Root.UserCnstKind.INT, nameSpan));
+            }
+
             typeDef.Span = typeDefSpan;
             parseProgram.TypeDefs.Add(typeDef);
         }

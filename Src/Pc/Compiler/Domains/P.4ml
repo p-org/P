@@ -9,7 +9,7 @@ domain PData
     /****************          Type Language          ************/
     /*************************************************************/    
     Qualifier       ::= { NONE, SWAP, XFER}.
-
+    
 	TypeDef         ::= new (name: String, type: any TypeExpr + { NIL }).
 
     //// The BaseType REAL is the type of real machines.
@@ -227,6 +227,7 @@ domain PStaticTyping extends PData
 	conforms no SendQualifierError(_, _).
 	conforms no UnavailableVarAccessError(_, _, _).
 	conforms no UnavailableParameterError(_, _).
+	conforms no FunRetError(_).
     /*************************************************************/
 
 	//// Check that TypeDef's are used properly
@@ -468,7 +469,7 @@ domain PStaticTyping extends PData
 	TypeOf(c, e, ERROR) :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _), TypeRel(t1, inpt, k), t1 != inpt, k != SUB.
 	
 
-	/*************************************************************/
+    /*************************************************************/
 	/*                      Qualifier Checking                   */
     /*************************************************************/
 
@@ -904,11 +905,11 @@ domain PStaticTyping extends PData
     /*************************************************************/
     FormalParam    ::= (cntxt: FunDecl, name: String).
     FormalParamAux ::= (cntxt: FunDecl, qual: Qualifier, name: String, aux: NmdTupType + { NIL }).
-
+    
     FormalParamAux(cntxt, qual, name, tl) :- cntxt is FunDecl(_, _, _, params, _, _, _), params = NmdTupType(NmdTupTypeField(qual, name, _), tl).  
     FormalParamAux(cntxt, qual, name, tl) :- FormalParamAux(cntxt, _, _, aux), aux = NmdTupType(NmdTupTypeField(qual, name, _), tl).
     FormalParam(cntxt, name)  :- FormalParamAux(cntxt, _, name, _).
-    
+
 	//// The input type of a function, ignoring names.
 	FuncSigTupleType    ::= (cntxt: FunDecl, type: TupType + { NIL }).
 	FuncSigTupleTypeAux ::= (cntxt: FunDecl, type: TupType + { NIL }, aux: NmdTupType + { NIL }).
@@ -956,6 +957,15 @@ domain PStaticTyping extends PData
     [ rule_Classes = '"error, msg: invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name"']
 	LValueError(c, e) :- SubSE(c, e), e = BinStmt(_, e', _, _), no IsLValue(c, e', _);
 						 SubSE(c, e), e = FunStmt(_, _, x, _, _), x: Name, no IsLValue(c, x, _).
+
+    /*************************************************************/
+    /*                      Function Returns                     */
+    /*************************************************************/
+
+	FunRetError ::= (cntxt: FunDecl).
+
+	[rule_Classes = '"error, msg: function must return a value"']
+	FunRetError(f) :- f is FunDecl, rt = f.return, rt : TypeExpr, no { r | SubSE(c, r), r : Return }.
 
     /*************************************************************/
     /*                      Control Impurity                     */

@@ -113,9 +113,66 @@ typedef struct PRT_TUPTYPE
 	PRT_UINT32    arity;         /**< Arity of tuple type; arity > 0 */
 	PRT_TYPE      **fieldTypes;   /**< Array of field types; length = arity */
 } PRT_TUPTYPE;
-
-
 #endif
+
+/** The PRT_FORGN_MKDEF function is called whenever a default foreign value is created.
+*/
+typedef PRT_UINT64(PRT_CALL_CONV *PRT_FORGN_MKDEF)();
+
+/** The PRT_FORGN_CLONE function is called whenever a foreign value needs to be cloned.
+*   The cloning semantics depends on the memory management strategy of the client.
+*   @see PRT_FORGN_FREE
+*/
+typedef PRT_UINT64(PRT_CALL_CONV *PRT_FORGN_CLONE)(_In_ PRT_UINT64 frgnVal);
+
+/** The PRT_FORGN_FREE function is called whenever a foreign value will never be used again.
+*   The semantics of PRT_FORGN_FREE depends on the memory management strategy of the client.
+*   @see PRT_FORGN_CLONE
+*/
+typedef void(PRT_CALL_CONV *PRT_FORGN_FREE)(_Inout_ PRT_UINT64 frgnVal);
+
+/** The PRT_FORGN_GETHASHCODE function is called to get a hashcode for a foreign value.
+*   The semantics depends of the client's definition of value equality. If two values
+*   are equal, then the function must return the same hashcode.
+*   @see PRT_FORGN_GETHASHCODE
+*/
+typedef PRT_UINT32(PRT_CALL_CONV *PRT_FORGN_GETHASHCODE)(_In_ PRT_UINT64 frgnVal);
+
+/** The PRT_FORGN_TOSTRING function is called to convert the foreign value to string.
+*   The programmer should provide appropriate function for converting the value to string that needs to be printed for logging
+*   @see PRT_FORGN_TOSTRING
+*/
+typedef PRT_STRING(PRT_CALL_CONV *PRT_FORGN_TOSTRING)(_In_ PRT_UINT64 frgnVal);
+
+/** The PRT_FORGN_ISEQUAL function tests if two values are equal.
+*   Equality semantics is determined by the client. If two values
+*   are equal, then they should also have the same hashcode.
+*   @see PRT_FORGN_GETHASHCODE
+*/
+typedef PRT_BOOLEAN(PRT_CALL_CONV *PRT_FORGN_ISEQUAL)(_In_ PRT_UINT64 frgnVal1, _In_ PRT_UINT64 frgnVal2);
+
+/** Represents a P foreign type declaration */
+typedef struct PRT_FOREIGNTYPEDECL
+{
+	PRT_UINT32       declIndex;     /**< The index of this type in an array of foreign type decls  */
+	PRT_STRING       name;          /**< The name of this type                                     */
+
+	PRT_FORGN_MKDEF       mkDefValueFun; /**< Function that constructs a default value */
+	PRT_FORGN_CLONE       cloneFun;      /**< Function that clones a value */
+	PRT_FORGN_FREE        freeFun;       /**< Function that frees a value */
+	PRT_FORGN_GETHASHCODE hashFun;       /**< Function that hashes a value */
+	PRT_FORGN_ISEQUAL     isEqualFun;    /**< Function that tests equality of values */
+	PRT_FORGN_TOSTRING    toStringFun;   /**< Function that converts a value to a string */
+
+	PRT_UINT32      nAnnotations;   /**< Number of annotations                              */
+	void            **annotations;  /**< An array of annotations                            */
+} PRT_FOREIGNTYPEDECL;
+
+/* The number of foreign type decls */
+extern PRT_UINT16 prtNumForeignTypeDecls;
+
+/* The active set of foreign type decls */
+extern PRT_FOREIGNTYPEDECL *prtForeignTypeDecls;
 
 /** Makes an instance of a primitive type.
 * @param[in] primType Any primitive type; cannot be a foreign type.
@@ -123,6 +180,13 @@ typedef struct PRT_TUPTYPE
 * @see PrtFreeType
 */
 PRT_API PRT_TYPE * PRT_CALL_CONV PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType);
+
+/** Makes an instance of a foreign type.
+* @param[in] typeTag The typeTag of the foreign type.
+* @returns An instance of a foreign type. Caller is responsible for freeing.
+* @see PrtFreeType
+*/
+PRT_API PRT_TYPE * PRT_CALL_CONV PrtMkForeignType(_In_ PRT_UINT16 typeTag);
 
 /** Makes a map type. 
 * @param domType The domain type (will be deeply cloned).

@@ -13,8 +13,10 @@ PrtStartProcess(
 	_In_ PRT_LOG_FUN logFun
 )
 {
-	PRT_PROCESS_PRIV *process;
+	prtNumForeignTypeDecls = program->nForeignTypes;
+	prtForeignTypeDecls = program->foreignTypes;
 
+	PRT_PROCESS_PRIV *process;
 	process = (PRT_PROCESS_PRIV *)PrtMalloc(sizeof(PRT_PROCESS_PRIV));
 	process->guid = guid;
 	process->program = program;
@@ -42,7 +44,7 @@ PrtStopProcess(
 			PrtCleanupMachine((PRT_MACHINEINST_PRIV *)context);
 		PrtFree(context);
 	}
-	PrtCleanupForeignData();
+
 	PrtFree(privateProcess->machines);
 	PrtDestroyMutex(privateProcess->processLock);
 	PrtFree(process);

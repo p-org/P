@@ -116,48 +116,12 @@ extern "C"{
 	} PRT_FORGNVALUE;
 #endif
 
-	/** The PRT_FORGN_MKDEF function is called whenever a default foreign value is created.
-	*/
-	typedef PRT_UINT64(PRT_CALL_CONV *PRT_FORGN_MKDEF)(_In_ PRT_UINT16 typeTag);
-
-	/** The PRT_FORGN_CLONE function is called whenever a foreign value needs to be cloned.
-	*   The cloning semantics depends on the memory management strategy of the client.
-	*   @see PRT_FORGN_FREE
-	*/
-	typedef PRT_UINT64(PRT_CALL_CONV *PRT_FORGN_CLONE)(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal);
-
-	/** The PRT_FORGN_FREE function is called whenever a foreign value will never be used again.
-	*   The semantics of PRT_FORGN_FREE depends on the memory management strategy of the client.
-	*   @see PRT_FORGN_CLONE
-	*/
-	typedef void(PRT_CALL_CONV *PRT_FORGN_FREE)(_In_ PRT_UINT16 typeTag, _Inout_ PRT_UINT64 frgnVal);
-
-	/** The PRT_FORGN_GETHASHCODE function is called to get a hashcode for a foreign value.
-	*   The semantics depends of the client's definition of value equality. If two values
-	*   are equal, then the function must return the same hashcode.
-	*   @see PRT_FORGN_GETHASHCODE
-	*/
-	typedef PRT_UINT32(PRT_CALL_CONV *PRT_FORGN_GETHASHCODE)(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal);
-
-	/** The PRT_FORGN_TOSTRING function is called to convert the foreign value to string.
-	*   The programmer should provide appropriate function for converting the value to string that needs to be printed for logging
-	*   @see PRT_FORGN_TOSTRING
-	*/
-	typedef PRT_STRING(PRT_CALL_CONV *PRT_FORGN_TOSTRING)(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal);
-
-	/** The PRT_FORGN_ISEQUAL function tests if two values are equal.
-	*   Equality semantics is determined by the client. If two values
-	*   are equal, then they should also have the same hashcode.
-	*   @see PRT_FORGN_GETHASHCODE
-	*/
-	typedef PRT_BOOLEAN(PRT_CALL_CONV *PRT_FORGN_ISEQUAL)(_In_ PRT_UINT16 typeTag1, _In_ PRT_UINT64 frgnVal1, _In_ PRT_UINT16 typeTag2, _In_ PRT_UINT64 frgnVal2);
-
 	/** Makes a default value of an abitrary type. The defaults (def) are as follows:
 	* 1.  def(null)                = `null : null`.
 	* 2.  def(any)                 = `null : null`.
 	* 3.  def(bool)                = `false : bool`.
 	* 4.  def(event)               = `null : event`.
-	* 5.  def(foreign)             = `NULL pointer : foreign`.
+	* 5.  def(foreign)             = `MkDef_foreign_IMPL() : foreign`.
 	* 6.  def(machine)             = `null : machine`.
 	* 7.  def(int)                 = `0 : int`.
 	* 8.  def(map[S, T])           = `[] : map[S, T]`.
@@ -208,45 +172,19 @@ extern "C"{
 	*/
 	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkMachineValue(_In_ PRT_MACHINEID value);
 
-	/** Updates the functions related to foreign value processing.
-	* @param[in] MkDefault A function to create the default foreign value
-	* @param[in] Clone A function to clone a foreign value
-	* @param[in] Free A function to free a foreign value
-	* @param[in] Hash A function to hash a foreign value
-	* @param[in] IsEqual A function to check if two foreign values are equal
-	*/
-	PRT_API void PRT_CALL_CONV PrtUpdateForeignFn(
-		PRT_FORGN_MKDEF MkDefault,
-		PRT_FORGN_CLONE Clone,
-		PRT_FORGN_FREE Free,
-		PRT_FORGN_GETHASHCODE Hash,
-		PRT_FORGN_ISEQUAL IsEqual,
-		PRT_FORGN_TOSTRING ToString);
-
 	/** Makes a foreign value.
-	* @param[in] typeTag The type tag for this type.
 	* @param[in] value A pointer to foreign data (will be cloned).
+	* @param[in] typeTag The tag of this foreign type.
 	* @returns A proper foreign value. Caller is responsible for freeing.
 	* @see PrtFreeValue
 	*/
-	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 value);
+	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(_In_ PRT_UINT64 value, _In_ PRT_UINT16 typeTag);
 
 	/** Gets foreign data inside a value.
 	* @param[in] v A pointer to a value.
 	* @returns The (uncloned) foreign data inside v.
 	*/
 	PRT_API PRT_FORGNVALUE * PrtGetForeignValue(_In_ PRT_VALUE* v);
-
-	/** Makes a fresh foreign value.
-	* @param[in] type The foreign type.
-	* @returns A proper foreign value. Caller is responsible for freeing.
-	* @see PrtFreeValue
-	*/
-	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkFreshForeignValue(_In_ PRT_TYPE *type);
-
-	/** Cleans up the data needed for creating fresh foreign values.
-	*/
-	PRT_API void PRT_CALL_CONV PrtCleanupForeignData();
 
 	/** Sets the value of a boolean.
 	* @param[in,out] prmVal A primitive boolean value to mutate.
@@ -301,7 +239,10 @@ extern "C"{
 	* @param[in]     index A 0-based element index.
 	* @param[in]     value The value to set (will be cloned).
 	*/
-	PRT_API void PRT_CALL_CONV PrtTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VALUE *value);
+	PRT_API void PRT_CALL_CONV PrtTupleSet(
+		_Inout_ PRT_VALUE *tuple, 
+		_In_ PRT_UINT32 index, 
+		_In_ PRT_VALUE *value);
 
 	/** Sets an element in a (named) tuple by index.
 	* @param[in,out] tuple A (named) tuple to mutate.
@@ -309,21 +250,29 @@ extern "C"{
 	* @param[in]     value The value to set (will be cloned if cloneValue is PRT_TRUE).
 	* @param[in]     cloneValue Only set to PRT_FALSE if value will be forever owned by this tuple.
 	*/
-	PRT_API void PRT_CALL_CONV PrtTupleSetEx(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue);
+	PRT_API void PRT_CALL_CONV PrtTupleSetEx(
+		_Inout_ PRT_VALUE *tuple, 
+		_In_ PRT_UINT32 index, 
+		_In_ PRT_VALUE *value, 
+		_In_ PRT_BOOLEAN cloneValue);
 
 	/** Gets an element in a (named) tuple without cloning. Only used for internal manipulation of state variables.
 	* @param[in] tuple A (named) tuple.
 	* @param[in] index A 0-based element index.
 	* @returns The element at index i.
 	*/
-	PRT_API PRT_VALUE * PRT_CALL_CONV PrtTupleGetNC(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index);
+	PRT_API PRT_VALUE * PRT_CALL_CONV PrtTupleGetNC(
+		_In_ PRT_VALUE *tuple, 
+		_In_ PRT_UINT32 index);
 
 	/** Gets an element in a sequence without cloning. Only used for internal manipulation of state variables.
 	* @param[in] seq   A sequence.
 	* @param[in] index A 0-based index s.t. 0 <= index < size(seq).
 	* @returns The value at index.
 	*/
-	PRT_API PRT_VALUE * PRT_CALL_CONV PrtSeqGetNC(_In_ PRT_VALUE *seq, _In_ PRT_VALUE *index);
+	PRT_API PRT_VALUE * PRT_CALL_CONV PrtSeqGetNC(
+		_In_ PRT_VALUE *seq, 
+		_In_ PRT_VALUE *index);
 
 	/** Gets a value from a map without cloning. Only used for internal manipulation of state variables.
 	* The key must be present the map.
@@ -331,21 +280,28 @@ extern "C"{
 	* @param[in] key The key to lookup.
 	* @returns The value to which the key maps.
 	*/
-	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMapGetNC(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key);
+	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMapGetNC(
+		_In_ PRT_VALUE *map, 
+		_In_ PRT_VALUE* key);
 
 	/** Gets an element in a (named) tuple by index.
 	* @param[in] tuple A (named) tuple.
 	* @param[in] index A 0-based element index.
 	* @returns The element at index i. Caller is responsible for freeing.
 	*/
-	PRT_API PRT_VALUE * PRT_CALL_CONV PrtTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index);
+	PRT_API PRT_VALUE * PRT_CALL_CONV PrtTupleGet(
+		_In_ PRT_VALUE *tuple, 
+		_In_ PRT_UINT32 index);
 
 	/** Updates the sequence at index.
 	* @param[in,out] seq   A sequence to mutate.
 	* @param[in]     index The name of the element to set. A value must already exist at this index.
 	* @param[in]     value The value to store at index (will be cloned).
 	*/
-	PRT_API void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE *value);
+	PRT_API void PRT_CALL_CONV PrtSeqUpdate(
+		_Inout_ PRT_VALUE *seq, 
+		_In_ PRT_VALUE *index, 
+		_In_ PRT_VALUE *value);
 
 	/** Updates the sequence at index.
 	* @param[in,out] seq   A sequence to mutate.
@@ -353,7 +309,11 @@ extern "C"{
 	* @param[in]     value The value to store at index (will be cloned if cloneValue is PRT_TRUE).
 	* @param[in]     cloneValue Only set to PRT_FALSE if value will be forever owned by this seq.
 	*/
-	PRT_API void PRT_CALL_CONV PrtSeqUpdateEx(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue);
+	PRT_API void PRT_CALL_CONV PrtSeqUpdateEx(
+		_Inout_ PRT_VALUE *seq, 
+		_In_ PRT_VALUE *index, 
+		_In_ PRT_VALUE *value, 
+		_In_ PRT_BOOLEAN cloneValue);
 
 	/** Inserts value into the sequence at index.
 	* Index cannot be larger than the size of the sequence. Insertion causes:
@@ -364,7 +324,10 @@ extern "C"{
 	* @param[in]     index An 0-based index s.t. 0 <= index <= size(seq).
 	* @param[in]     value The value to store at index (will be cloned).
 	*/
-	PRT_API void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE* value);
+	PRT_API void PRT_CALL_CONV PrtSeqInsert(
+		_Inout_ PRT_VALUE *seq, 
+		_In_ PRT_VALUE *index, 
+		_In_ PRT_VALUE* value);
 
 	/** Inserts value into the sequence at index.
 	* Index cannot be larger than the size of the sequence. Insertion causes:
@@ -376,7 +339,11 @@ extern "C"{
 	* @param[in]     value The value to store at index (will be cloned if cloneValue is PRT_TRUE).
 	* @param[in]     cloneValue Only set to PRT_FALSE if value will be forever owned by this seq.
 	*/
-	PRT_API void PRT_CALL_CONV PrtSeqInsertEx(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE* value, _In_ PRT_BOOLEAN cloneValue);
+	PRT_API void PRT_CALL_CONV PrtSeqInsertEx(
+		_Inout_ PRT_VALUE *seq, 
+		_In_ PRT_VALUE *index, 
+		_In_ PRT_VALUE* value, 
+		_In_ PRT_BOOLEAN cloneValue);
 
 	/** Removes the value at index from the sequence, and shortens the sequence by one.
 	* seq[index] must be defined. Removal causes:
@@ -385,14 +352,18 @@ extern "C"{
 	* @param[in,out] seq   A sequence to mutate.
 	* @param[in]     index An 0-based index s.t. 0 <= index < size(seq).
 	*/
-	PRT_API void PRT_CALL_CONV PrtSeqRemove(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index);
+	PRT_API void PRT_CALL_CONV PrtSeqRemove(
+		_Inout_ PRT_VALUE *seq, 
+		_In_ PRT_VALUE *index);
 
 	/** Gets the sequence at index.
 	* @param[in] seq   A sequence.
 	* @param[in] index A 0-based index s.t. 0 <= index < size(seq).
-	* @returns The value at index. Caller is responsible for freeing.
+	* @returns The value at index (clones). Caller is responsible for freeing.
 	*/
-	PRT_API PRT_VALUE * PRT_CALL_CONV PrtSeqGet(_In_ PRT_VALUE *seq, _In_ PRT_VALUE *index);
+	PRT_API PRT_VALUE * PRT_CALL_CONV PrtSeqGet(
+		_In_ PRT_VALUE *seq, 
+		_In_ PRT_VALUE *index);
 
 	/** Gets the size of a sequence.
 	* @param[in] seq A sequence.
@@ -409,7 +380,12 @@ extern "C"{
 	* @param[in]     value The value to which the key maps (will be cloned if cloneValue is PRT_TRUE).
 	* @param[in]     cloneValue Only set to PRT_FALSE if value will be forever owned by this map.
 	*/
-	PRT_API void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue);
+	PRT_API void PRT_CALL_CONV PrtMapUpdateEx(
+		_Inout_ PRT_VALUE *map, 
+		_In_ PRT_VALUE *key, 
+		_In_ PRT_BOOLEAN cloneKey, 
+		_In_ PRT_VALUE *value, 
+		_In_ PRT_BOOLEAN cloneValue);
 
 	/** Updates the map at key.
 	* If key is not in the map, then adds it.
@@ -418,7 +394,10 @@ extern "C"{
 	* @param[in]     key   The key to update (will be cloned).
 	* @param[in]     value The value to which the key maps (will be cloned).
 	*/
-	PRT_API void PRT_CALL_CONV PrtMapUpdate(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE* key, _In_ PRT_VALUE* value);
+	PRT_API void PRT_CALL_CONV PrtMapUpdate(
+		_Inout_ PRT_VALUE *map, 
+		_In_ PRT_VALUE* key, 
+		_In_ PRT_VALUE* value);
 
 	/** Inserts (key, value) in map.
 	* requires that key is not already in the map
@@ -428,7 +407,12 @@ extern "C"{
 	* @param[in]     value The value to which the key maps (will be cloned if cloneValue is PRT_TRUE).
 	* @param[in]     cloneValue Only set to PRT_FALSE if value will be forever owned by this map.
 	*/
-	PRT_API void PRT_CALL_CONV PrtMapInsertEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE* key, _In_ PRT_BOOLEAN cloneKey, _In_ PRT_VALUE* value, _In_ PRT_BOOLEAN cloneValue);
+	PRT_API void PRT_CALL_CONV PrtMapInsertEx(
+		_Inout_ PRT_VALUE *map, 
+		_In_ PRT_VALUE* key, 
+		_In_ PRT_BOOLEAN cloneKey, 
+		_In_ PRT_VALUE* value, 
+		_In_ PRT_BOOLEAN cloneValue);
 
 	/** Inserts (key, value) in map.
 	* requires that key is not already in the map
@@ -436,14 +420,19 @@ extern "C"{
 	* @param[in]     key   The key to update (will be cloned).
 	* @param[in]     value The value to which the key maps (will be cloned).
 	*/
-	PRT_API void PRT_CALL_CONV PrtMapInsert(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE* key, _In_ PRT_VALUE* value);
+	PRT_API void PRT_CALL_CONV PrtMapInsert(
+		_Inout_ PRT_VALUE *map, 
+		_In_ PRT_VALUE* key, 
+		_In_ PRT_VALUE* value);
 
 	/** Remove the key from the map.
 	* If the key is not in then map, then the map is unchanged.
 	* @param[in,out] map   A map to mutate.
 	* @param[in]     key   The key to remove.
 	*/
-	PRT_API void PRT_CALL_CONV PrtMapRemove(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key);
+	PRT_API void PRT_CALL_CONV PrtMapRemove(
+		_Inout_ PRT_VALUE *map, 
+		_In_ PRT_VALUE *key);
 
 	/** Gets the value to which this key maps.
 	* The key must be present the map.
@@ -451,7 +440,9 @@ extern "C"{
 	* @param[in] key The key to lookup.
 	* @returns The value to which the key maps. Caller is responsible for freeing.
 	*/
-	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMapGet(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key);
+	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMapGet(
+		_In_ PRT_VALUE *map, 
+		_In_ PRT_VALUE* key);
 
 	/** Converts a map to sequence of keys. Keys are returned in insertion order.
 	* @param[in] map A map.
@@ -470,7 +461,9 @@ extern "C"{
 	* @param[in] key The key to lookup.
 	* @returns Returns true if the map contains key; false otherwise.
 	*/
-	PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtMapExists(_In_ PRT_VALUE *map, _In_ PRT_VALUE *key);
+	PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtMapExists(
+		_In_ PRT_VALUE *map, 
+		_In_ PRT_VALUE *key);
 
 	/** Gets the size of a map.
 	* @param[in] map A map.
@@ -517,7 +510,9 @@ extern "C"{
 	* @param[in] value2 The second value.
 	* @returns `true` if values are equivalent; `false` otherwise.
 	*/
-	PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE *value1, _In_ PRT_VALUE *value2);
+	PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(
+		_In_ PRT_VALUE *value1, 
+		_In_ PRT_VALUE *value2);
 
 	/** Deeply clones a value.
 	* @param[in] value The value to clone.

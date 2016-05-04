@@ -1,78 +1,39 @@
 #include "ForeignStringType.h"
 
-PRT_UINT64 UserMkDefaultForeignValue(_In_ PRT_UINT16 typeTag)
+void PRT_FORGN_FREE_StringType_IMPL(PRT_UINT64 frgnVal)
 {
-	PRT_STRING str = NULL;
-	switch (typeTag)
-	{
-	case P_FORGN_TYPE_StringType:
-		str = PrtMalloc(sizeof(PRT_CHAR) * 100);
-		sprintf_s(str, 100, "xyx$12");
-		return (PRT_UINT64)str;
-	default:
-		return (PRT_UINT64)NULL;
-	};
+	PrtFree((PRT_STRING)frgnVal);
 }
 
-PRT_UINT64 UserCloneForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal)
+PRT_BOOLEAN PRT_FORGN_ISEQUAL_StringType_IMPL(PRT_UINT64 frgnVal1, PRT_UINT64 frgnVal2)
 {
-	PRT_STRING str = NULL;
-	switch (typeTag)
-	{
-	case P_FORGN_TYPE_StringType:
-		str = PrtMalloc(sizeof(PRT_CHAR) * 100);
-		sprintf_s(str, 100, (PRT_STRING)frgnVal);
-		return (PRT_UINT64)str;
-	default:
-		return (PRT_UINT64)NULL;
-	};
+	return strcmp((PRT_STRING)frgnVal1, (PRT_STRING)frgnVal2) == 0 ? PRT_TRUE : PRT_FALSE;
 }
 
-void UserFreeForeignValue(_In_ PRT_UINT16 typeTag, _Inout_ PRT_UINT64 frgnVal)
+PRT_STRING PRT_FORGN_TOSTRING_StringType_IMPL(PRT_UINT64 frgnVal)
 {
-	switch (typeTag)
-	{
-	case P_FORGN_TYPE_StringType:
-		PrtFree((PRT_STRING)frgnVal);;
-	default:
-		break;
-	};
+	PRT_STRING str = PrtMalloc(sizeof(PRT_CHAR) * 100);
+	sprintf_s(str, 100, "String : %lld", frgnVal);
+	return str;
 }
 
-PRT_UINT32 UserHashForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal)
+PRT_UINT32 PRT_FORGN_GETHASHCODE_StringType_IMPL(PRT_UINT64 frgnVal)
 {
 	return (PRT_UINT32)frgnVal;
 }
 
-PRT_STRING UserToStringForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal)
+PRT_UINT64 PRT_FORGN_MKDEF_StringType_IMPL(void)
 {
 	PRT_STRING str = PrtMalloc(sizeof(PRT_CHAR) * 100);
-	switch (typeTag)
-	{
-	case P_FORGN_TYPE_StringType:
-		sprintf_s(str, 100, "String : %lld", frgnVal);
-		break;
-	default:
-		break;
-	};
-	return str;
+	sprintf_s(str, 100, "xyx$12");
+	return (PRT_UINT64)str;
 }
 
-PRT_BOOLEAN UserIsEqualForeignValue(_In_ PRT_UINT16 typeTag1, _In_ PRT_UINT64 frgnVal1, _In_ PRT_UINT16 typeTag2, _In_ PRT_UINT64 frgnVal2)
+PRT_UINT64 PRT_FORGN_CLONE_StringType_IMPL(PRT_UINT64 frgnVal)
 {
-	if (typeTag1 != typeTag2)
-		return PRT_FALSE;
-	else
-	{
-		switch (typeTag1)
-		{
-		case P_FORGN_TYPE_StringType:
-			return (strcmp((PRT_STRING)frgnVal1, (PRT_STRING)frgnVal2) == 0);
-		default:
-			return PRT_FALSE;
-			break;
-		};
-	}
+	PRT_STRING str = PrtMalloc(sizeof(PRT_CHAR) * 100);
+	sprintf_s(str, 100, (PRT_STRING)frgnVal);
+	return (PRT_UINT64)str;
 }
 
 PRT_VALUE *P_FUN_TestMachine_GetPassword_IMPL(PRT_MACHINEINST *context)

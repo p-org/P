@@ -14,6 +14,8 @@
     
     <Target Name="CompileP" Inputs="@(PCompile)" Outputs="%(FileName).c;%(FileName).h;stubs.c" BeforeTargets="BeforeBuildGenerateSources">
         <Message Importance="high" Text="########## compiling p files: @(PCompile) ##################" />
+        <Message Importance="high" Condition="!Exists('$(DropFolder)\Binaries\pc.exe')" 
+                 Text="### pc.exe does not exist in $(DropFolder)\Binaries.  Please build it."/>
         <Exec Command="$(DropFolder)\Binaries\pc.exe @(PCompile->'%(FullPath)')" />
         <PropertyGroup>
             <PFullPath>@(PCompile->'%(FullPath)')</PFullPath>

@@ -163,7 +163,7 @@ extern "C"{
 	* @returns A proper null value. Caller is responsible for freeing.
 	* @see PrtFreeValue
 	*/
-	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkNullValue();
+	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkNullValue(void);
 
 	/** Makes an machine value.
 	* @param[in] value A machine id.
@@ -533,7 +533,7 @@ extern "C"{
 	/** Nondeterministic Boolean choice
 	* @returns A nondeterministic Boolean value.  Caller is responsible for freeing.
 	*/
-	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkNondetBoolValue();
+	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkNondetBoolValue(void);
 
 #ifdef __cplusplus
 }

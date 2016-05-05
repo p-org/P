@@ -20,6 +20,8 @@ typedef enum PRT_SPECIAL_ACTIONS
 	PRT_SPECIAL_ACTION_PUSH_OR_IGN = 0 /**< The index of push action. */
 } PRT_SPECIAL_ACTION;
 
+struct PRT_MACHINEINST; /* forward declaration */
+
 /** A PRT_SM_FUN function is a pointer to a P function.
 *   context is the current machine context.
 *   Returns a non-null pointer if function has a return type. Otherwise returns C null value. Caller frees return.

@@ -26,15 +26,110 @@ PrtStartProcess(
 	process->machineCount = 0;
 	process->machines = NULL;
 	process->numMachines = 0;
+    process->workAvailable = PrtCreateSemaphore(0, 32767);
+    process->schedulingPolicy = TaskNeutral;
+    process->threadsWaiting = 0;
+    process->allThreadsStopped = PrtCreateSemaphore(0, 32767);
+    process->terminating = PRT_FALSE;
+
 	return (PRT_PROCESS *)process;
 }
+static PRT_API PRT_BOOLEAN
+PrtInternalStepProcess(PRT_PROCESS *process
+)
+{
+    PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)process;
+    PrtLockMutex(privateProcess->processLock);
+
+    PRT_BOOLEAN hasMoreWork = PRT_FALSE;
+
+    // fun all state machines belonging to this process.
+    for (int i = privateProcess->machineCount - 1; i >= 0; i--)
+    {
+        PRT_MACHINEINST_PRIV *machine = (PRT_MACHINEINST_PRIV*)privateProcess->machines[i];
+        hasMoreWork |= PrtStepStateMachine(machine);
+    }
+    PrtUnlockMutex(privateProcess->processLock);
+    return hasMoreWork;
+}
+
+
+PRT_API void
+PrtStepProcess(PRT_PROCESS *process
+)
+{
+    PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)process;
+    PRT_BOOLEAN hasMoreWork = PrtInternalStepProcess(process);
+    if (!hasMoreWork)
+    {
+        PrtLockMutex(privateProcess->processLock);
+        privateProcess->threadsWaiting++;
+        PrtUnlockMutex(privateProcess->processLock);
+
+        PrtWaitSemaphore(privateProcess->workAvailable, -1);
+
+        PrtLockMutex(privateProcess->processLock);
+        privateProcess->threadsWaiting--;
+        if (privateProcess->terminating && privateProcess->threadsWaiting == 0)
+        {
+            PrtReleaseSemaphore(privateProcess->allThreadsStopped);
+        }
+        PrtUnlockMutex(privateProcess->processLock);
+    }
+}
+
+PRT_API void
+PrtSetSchedulingPolicy(PRT_PROCESS *process, PRT_SCHEDULINGPOLICY policy)
+{
+    PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)process;
+    privateProcess->schedulingPolicy = policy;
+}
+
+PRT_API void
+PrtRunProcess(PRT_PROCESS *process
+)
+{
+    PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)process;
+    privateProcess->running = PRT_TRUE;
+    while (privateProcess->running == PRT_TRUE)
+    {
+        PrtStepProcess(process);
+        PrtYieldThread();
+    }
+}
+
 
 void 
 PrtStopProcess(
 	_Inout_ PRT_PROCESS* process
 )
 {
-	PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
+    PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
+
+    PrtLockMutex(privateProcess->processLock);
+    privateProcess->running = PRT_FALSE;
+    privateProcess->terminating = PRT_TRUE;
+    PRT_BOOLEAN waitForThreads = PRT_FALSE;
+    int count = privateProcess->threadsWaiting;
+    if (count > 0)
+    {
+        waitForThreads = PRT_TRUE;
+        // unblock all threads so the PrtRunProcess call terminates.
+        for (int i = 0; i < count; i++)
+        {
+            PrtReleaseSemaphore(privateProcess->workAvailable);
+        }
+    }
+    PrtUnlockMutex(privateProcess->processLock);
+
+    if (waitForThreads)
+    {
+        PrtWaitSemaphore(privateProcess->allThreadsStopped, -1);
+    }
+
+    PrtLockMutex(privateProcess->processLock);
+
+    // ok, now we can safely start deleting things...
 	for (PRT_UINT32 i = 0; i < privateProcess->numMachines; i++)
 	{
 		PRT_MACHINEINST *context = privateProcess->machines[i];
@@ -45,7 +140,11 @@ PrtStopProcess(
 		PrtFree(context);
 	}
 
-	PrtFree(privateProcess->machines);
+	PrtFree(privateProcess->machines);	
+    PrtDestroySemaphore(privateProcess->workAvailable);
+    PrtDestroySemaphore(privateProcess->allThreadsStopped);
+    PrtUnlockMutex(privateProcess->processLock);
+    // must come last.
 	PrtDestroyMutex(privateProcess->processLock);
 	PrtFree(process);
 }

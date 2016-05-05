@@ -20,25 +20,26 @@ const PRT_UINT32 PrtHashtableCapacities[] =
 /** The null machine id */
 const PRT_MACHINEID PrtNullMachineId = { { 0, 0, 0, 0 }, PRT_SPECIAL_EVENT_NULL };
 
-PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeFieldName(_In_ PRT_STRING name)
-{
-	PRT_UINT32 i;
-	PRT_UINT32 code = 0;
-	PRT_UINT64 len = strnlen(name, PRT_MAXFLDNAME_LENGTH);
-	for (i = 0; i < len; ++i)
-	{
-		code += name[i];
-		code += (code << 10);
-		code ^= (code >> 6);
-	}
+// this function is not used.
+//static PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeFieldName(_In_ PRT_STRING name)
+//{
+//	PRT_UINT32 i;
+//	PRT_UINT32 code = 0;
+//	PRT_UINT64 len = strnlen(name, PRT_MAXFLDNAME_LENGTH);
+//	for (i = 0; i < len; ++i)
+//	{
+//		code += name[i];
+//		code += (code << 10);
+//		code ^= (code >> 6);
+//	}
+//
+//	code += (code << 3);
+//	code ^= (code >> 11);
+//	code += (code << 15);
+//	return code;
+//}
 
-	code += (code << 3);
-	code ^= (code >> 11);
-	code += (code << 15);
-	return code;
-}
-
-PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeUInt32(_In_ PRT_UINT32 value)
+static PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeUInt32(_In_ PRT_UINT32 value)
 {
 	PRT_UINT32 i;
 	PRT_UINT32 code = 0;
@@ -56,7 +57,7 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeUInt32(_In_ PRT_UINT32 value)
 	return code;
 }
 
-PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeTwoUInt32(_In_ PRT_UINT32 value1, _In_ PRT_UINT32 value2)
+static PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeTwoUInt32(_In_ PRT_UINT32 value1, _In_ PRT_UINT32 value2)
 {
 	PRT_UINT32 i;
 	PRT_UINT32 code = 0;
@@ -82,7 +83,7 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeTwoUInt32(_In_ PRT_UINT32 value1, _In_ PR
 	return code;
 }
 
-PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeMachineId(_In_ PRT_MACHINEID id)
+static PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeMachineId(_In_ PRT_MACHINEID id)
 {
 	PRT_UINT32 i;
 	PRT_UINT32 code = 0;
@@ -542,7 +543,7 @@ PRT_UINT32 PRT_CALL_CONV PrtSeqSizeOf(_In_ PRT_VALUE *seq)
 }
 
 /** Expands the map and rehashes its key-value pairs */
-void PRT_CALL_CONV PrtMapExpand(_Inout_ PRT_VALUE *map)
+static void PRT_CALL_CONV PrtMapExpand(_Inout_ PRT_VALUE *map)
 {
 	if (map->valueUnion.map->capNum + 1 >= sizeof(PrtHashtableCapacities) / sizeof(PRT_UINT32))
 	{
@@ -893,7 +894,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtMapExists(_In_ PRT_VALUE *map, _In_ PRT_VALUE *key)
 	return PRT_FALSE;
 }
 
-PRT_BOOLEAN PRT_CALL_CONV PrtMapIsSameMapping(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key, _In_ PRT_VALUE* value)
+static PRT_BOOLEAN PRT_CALL_CONV PrtMapIsSameMapping(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key, _In_ PRT_VALUE* value)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");

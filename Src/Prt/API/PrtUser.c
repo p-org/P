@@ -1,6 +1,6 @@
 #include "PrtUser.h"
 
-void ResizeBuffer(_Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 numCharsWritten, PRT_UINT32 resizeNum)
+static void ResizeBuffer(_Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 numCharsWritten, PRT_UINT32 resizeNum)
 {
 	PRT_UINT32 padding = 100;
 	if (*buffer == NULL)
@@ -19,36 +19,36 @@ void ResizeBuffer(_Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_
 	}
 }
 
-void PrtUserPrintUint16(_In_ PRT_UINT16 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintUint16(_In_ PRT_UINT16 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	ResizeBuffer(buffer, bufferSize, *numCharsWritten, 16);
-	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%lu", i);
+	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%u", i);
 }
-void PrtUserPrintUint32(_In_ PRT_UINT32 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintUint32(_In_ PRT_UINT32 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	ResizeBuffer(buffer, bufferSize, *numCharsWritten, 32);
-	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%lu", i);
+	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%u", i);
 }
 
-void PrtUserPrintUint64(_In_ PRT_UINT64 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintUint64(_In_ PRT_UINT64 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	ResizeBuffer(buffer, bufferSize, *numCharsWritten, 64);
 	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%llu", i);
 }
 
-void PrtUserPrintInt32(_In_ PRT_INT32 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintInt32(_In_ PRT_INT32 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	ResizeBuffer(buffer, bufferSize, *numCharsWritten, 32);
 	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%d", i);
 }
 
-void PrtUserPrintString(_In_ PRT_STRING s, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintString(_In_ PRT_STRING s, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	ResizeBuffer(buffer, bufferSize, *numCharsWritten, (PRT_UINT32)strlen(s));
 	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%s", s);
 }
 
-void PrtUserPrintMachineId(_In_ PRT_MACHINEID id, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintMachineId(_In_ PRT_MACHINEID id, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	PrtUserPrintString("< (", buffer, bufferSize, numCharsWritten);
 	PrtUserPrintUint32(id.processId.data1, buffer, bufferSize, numCharsWritten);
@@ -63,7 +63,7 @@ void PrtUserPrintMachineId(_In_ PRT_MACHINEID id, _Inout_ char **buffer, _Inout_
 	PrtUserPrintString(">", buffer, bufferSize, numCharsWritten);
 }
 
-void PrtUserPrintType(_In_ PRT_TYPE *type, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintType(_In_ PRT_TYPE *type, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	PRT_TYPE_KIND kind = type->typeKind;
 	switch (kind)
@@ -161,7 +161,7 @@ void PrtUserPrintType(_In_ PRT_TYPE *type, _Inout_ char **buffer, _Inout_ PRT_UI
 	}
 }
 
-void PrtUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	PRT_STRING frgnStr;
 	PRT_VALUE_KIND kind = value->discriminator;
@@ -269,7 +269,7 @@ void PrtUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Inout_ PRT
 	}
 }
 
-void PrtUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)machine;
 	PRT_STRING machineName = c->process->program->machines[c->instanceOf].name;

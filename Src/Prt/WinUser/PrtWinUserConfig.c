@@ -26,6 +26,36 @@ void PRT_CALL_CONV PrtUnlockMutex(_In_ PRT_RECURSIVE_MUTEX mutex)
 	PrtAssert(result != FALSE, "Unable to unlock mutex");
 }
 
+PRT_SEMAPHORE PRT_CALL_CONV PrtCreateSemaphore(int initialCount, int maximumCount)
+{
+    HANDLE h = CreateSemaphore(NULL, initialCount, maximumCount, NULL);
+    PrtAssert(h != NULL, "Unable to create semaphore");
+    return h;
+}
+
+void PRT_CALL_CONV PrtDestroySemaphore(_In_ PRT_SEMAPHORE semaphore)
+{
+    BOOL result = CloseHandle(semaphore);
+    PrtAssert(result != FALSE, "Unable to release semaphore");
+}
+
+PRT_BOOLEAN PRT_CALL_CONV PrtWaitSemaphore(_In_ PRT_SEMAPHORE semaphore, _In_ long maxWaitTime)
+{
+    DWORD status = WaitForSingleObject(semaphore, maxWaitTime == -1 ? INFINITE : maxWaitTime);
+    return (status == WAIT_OBJECT_0) ? PRT_TRUE : PRT_FALSE;
+}
+
+PRT_BOOLEAN PRT_CALL_CONV PrtReleaseSemaphore(_In_ PRT_SEMAPHORE semaphore)
+{
+    DWORD status = ReleaseSemaphore(semaphore, 1, NULL);
+    return (status != 0) ? PRT_TRUE : PRT_FALSE;
+}
+
+void PRT_CALL_CONV PrtYieldThread(void)
+{
+    // windows doesn't need this since it has preemtive multitasking.
+}
+
 void * PRT_CALL_CONV PrtMalloc(_In_ size_t size)
 {
 	PrtAssert(size > 0, "Size must be positive to avoid platform-specific behavior");

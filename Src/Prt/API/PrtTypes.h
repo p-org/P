@@ -117,7 +117,7 @@ typedef struct PRT_TUPTYPE
 
 /** The PRT_FORGN_MKDEF function is called whenever a default foreign value is created.
 */
-typedef PRT_UINT64(PRT_CALL_CONV *PRT_FORGN_MKDEF)();
+typedef PRT_UINT64(PRT_CALL_CONV *PRT_FORGN_MKDEF)(void);
 
 /** The PRT_FORGN_CLONE function is called whenever a foreign value needs to be cloned.
 *   The cloning semantics depends on the memory management strategy of the client.

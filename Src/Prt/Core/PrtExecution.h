@@ -36,7 +36,14 @@ extern "C"{
 		PRT_RECURSIVE_MUTEX		processLock;
 		PRT_UINT32				numMachines;
 		PRT_UINT32				machineCount;
-		PRT_MACHINEINST			**machines;
+		PRT_MACHINEINST			**machines;		
+        PRT_SCHEDULINGPOLICY    schedulingPolicy;
+        PRT_BOOLEAN             running;            /* PrtRunProcess is active */
+        PRT_SEMAPHORE           workAvailable;      /* semaphore to signal blocked PrtRunProcess threads */
+        int                     threadsWaiting;     /* number of PrtRunProcess threads waiting for work */
+        PRT_SEMAPHORE           allThreadsStopped;  /* all PrtRunProcess threads have terminated */
+        PRT_BOOLEAN             terminating;        /* PrtStopProcess is waiting for threads to terminate */
+
 	} PRT_PROCESS_PRIV;
 
 	typedef enum PRT_LASTOPERATION
@@ -45,6 +52,14 @@ extern "C"{
 		PopStatement,
 		RaiseStatement
 	} PRT_LASTOPERATION;
+
+    typedef enum PRT_NEXTOPERATION
+    {
+        EntryOperation,
+        DequeueOperation,
+        HandleEventOperation,
+        ReceiveOperation
+    } PRT_NEXTOPERATION;
 
 	typedef struct PRT_EVENT
 	{
@@ -106,6 +121,7 @@ extern "C"{
 		PRT_VALUE			**varValues;
 		PRT_RECURSIVE_MUTEX stateMachineLock;
 		PRT_BOOLEAN			isRunning;
+        PRT_NEXTOPERATION   nextOperation;
 		PRT_BOOLEAN			isHalted;
 		PRT_UINT32			currentState;
 		PRT_RECEIVEDECL		*receive;
@@ -489,9 +505,13 @@ extern "C"{
 
 	PRT_API void
 		PrtRunStateMachine(
-		_Inout_ PRT_MACHINEINST_PRIV	    *context,
-		_In_ PRT_BOOLEAN				doDequeue
+		_Inout_ PRT_MACHINEINST_PRIV	    *context
 		);
+
+    PRT_API PRT_BOOLEAN
+        PrtStepStateMachine(
+            _Inout_ PRT_MACHINEINST_PRIV   *context
+        );
 
 	PRT_API void PRT_CALL_CONV PrtEnqueueInOrder(
 		_In_ PRT_VALUE					*source,

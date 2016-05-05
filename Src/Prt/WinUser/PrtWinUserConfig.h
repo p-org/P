@@ -103,6 +103,9 @@ extern "C"{
 	/** PRT_RECURSIVE_MUTEX identifies a recursive mutex. */
 	typedef HANDLE PRT_RECURSIVE_MUTEX;
 
+    /** PRT_SEMAPHORE identifies a platform specific semaphore object. */
+    typedef HANDLE PRT_SEMAPHORE;
+
 	/** Function for Assertion will be called whenever an assertion is checked */
 	typedef void(PRT_CALL_CONV * PRT_ASSERT_FUN)(PRT_INT32, PRT_CSTRING);
 
@@ -122,11 +125,11 @@ extern "C"{
 	* @see PrtLockMutex
 	* @see PrtUnlockMutex
 	*/
-	PRT_API PRT_RECURSIVE_MUTEX PRT_CALL_CONV PrtCreateMutex();
+	PRT_API PRT_RECURSIVE_MUTEX PRT_CALL_CONV PrtCreateMutex(void);
 
 	/**
 	* Allows the system to dispose of this mutex. Destroy must be called at most once per mutex, and a destroyed mutex never be used again.
-	* @param[in] mutex A mutex that has been created, but has not yet been released.
+	* @param[in] mutex A mutex that has been created by PrtCreateMutex.
 	* @see PrtCreateMutex
 	* @see PrtLockMutex
 	* @see PrtUnlockMutex
@@ -150,6 +153,57 @@ extern "C"{
 	* @see PrtDestroyMutex
 	*/
 	PRT_API void PRT_CALL_CONV PrtUnlockMutex(_In_ PRT_RECURSIVE_MUTEX mutex);
+
+    /**
+    * Creates a fresh unnamed semaphore. The semaphore must be released after wait succeeds.
+    * @param[in] initialCount The initial number of semaphores available.
+    * @param[in] maximumCount The maximum number of semaphores available.
+    * @return A configuration-specific value identifying the semaphore.
+    * @see PrtDestroySemaphore
+    * @see PrtWaitSemaphore
+    * @see PrtReleaseSemaphore
+    */
+    PRT_API PRT_SEMAPHORE PRT_CALL_CONV PrtCreateSemaphore(int initialCount, int maximumCount);
+
+    /**
+    * Allows the system to dispose of this mutex. Destroy must be called at most once per mutex, and a destroyed mutex never be used again.
+    * @param[in] semaphore A semaphore that has been created by PrtCreateSemaphore.
+    * @see PrtCreateSemaphore
+    * @see PrtWaitSemaphore
+    * @see PrtReleaseSemaphore
+    */
+    PRT_API void PRT_CALL_CONV PrtDestroySemaphore(_In_ PRT_SEMAPHORE semaphore);
+
+    /**
+    * Blocks until the semaphore is available.  Only one thread will be granted access per available count.
+    * This is not re-entrant like Mutex is, if the same thread waits again it will block.
+    * @param[in] semaphore The semaphore to wait on.
+    * @param[in] maxWaitTime The maximum time to wait in milliseconds or -1 for infinite wait.
+    * @return PRT_TRUE if access is granted or false if a timeout occurred.
+    * @see PrtCreateSemaphore
+    * @see PrtReleaseSemaphore
+    * @see PrtDestroySemaphore
+    */
+    PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtWaitSemaphore(_In_ PRT_SEMAPHORE semaphore, _In_ long maxWaitTime);
+
+    /**
+    * Releases a semaphore, this must be called once for each time PrtWaitSemaphore succeeds.
+    * This increases the count of available semaphores, allowing other threads access.
+    * Any thread can call this method to increase the count, not just the thread that was granted access.
+    * @param[in] semaphore The semaphore to release.
+    * @return PRT_TRUE if the count is increased, or false if the maximum count has been exceeded.
+    * @see PrtCreateSemaphore
+    * @see PrtWaitSemaphore
+    * @see PrtDestroySemaphore
+    */
+    PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtReleaseSemaphore(_In_ PRT_SEMAPHORE semaphore);
+
+    /**
+    * Yields the current thread.  This is only used in PrtRunProcess when the PRT_SCHEDULINGPOLICY is
+    * set to Cooperative.
+    * @see PRT_SCHEDULINGPOLICY
+    */
+    PRT_API void PRT_CALL_CONV PrtYieldThread(void);
 
 	/**
 	* Calls system-specific implementation of malloc.

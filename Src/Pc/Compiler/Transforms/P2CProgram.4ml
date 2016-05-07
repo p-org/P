@@ -885,7 +885,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 					ContextSourceInfo(f, entryInfo, _, _),
 					BodyTrans(f, body),
 	                def = FunDef(
-					  NIL,
+					  STATIC,
 					  funType,
 					  strJoin(name, "_IMPL"),
 					  params,

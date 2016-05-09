@@ -39,12 +39,13 @@ namespace DgmlLogViewer
             GetOrCreateGroup(groupName);
 
             XElement e;
-            if (!nodeMap.TryGetValue(nodeName, out e))
+            string nodeId = groupName + "." + nodeName;
+            if (!nodeMap.TryGetValue(nodeId, out e))
             {
-                e = new XElement(dgmlNs + "Node", new XAttribute("Id", nodeName));
-                nodeMap[nodeName] = e;
+                e = new XElement(dgmlNs + "Node", new XAttribute("Id", nodeId), new XAttribute("Label", nodeName));
+                nodeMap[nodeId] = e;
                 nodes.Add(e);
-                XElement link = GetOrCreateLink(groupName, nodeName);
+                XElement link = GetOrCreateLink(groupName, nodeId);
                 link.Add(new XAttribute("Category", "Contains"));
             }
         }

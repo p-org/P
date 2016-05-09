@@ -154,7 +154,8 @@ namespace DgmlLogViewer
                     {
                         string eventName = null;
                         eventQueue.TryGetValue(machineName, out eventName);
-                        dgml.GetOrCreateLink(currentState, stateName, eventName);
+                        dgml.GetOrCreateLink(machineName + "." + currentState, machineName + "." + stateName, eventName);
+                        eventQueue.Clear();
                     }
 
                     currentStates[machineName] = stateName;
@@ -176,7 +177,7 @@ namespace DgmlLogViewer
                     {
                         string eventName = null;
                         eventQueue.TryGetValue(machineName, out eventName);
-                        dgml.GetOrCreateLink(currentState, stateName, eventName);
+                        dgml.GetOrCreateLink(machineName + "." + currentState, machineName + "." + stateName, eventName);
                     }
 
                     currentStates[machineName] = stateName;
@@ -193,6 +194,22 @@ namespace DgmlLogViewer
                     {
                         string eventName = match.Groups[1].Value;
                         string machineName = match.Groups[3].Value;
+                        eventQueue[machineName] = eventName;
+                    }
+                }
+            }
+
+            if (line.StartsWith("<RaiseLog>"))
+            {
+                // sometimes this happens without recording an <EnqueueLog>, when event is raised and handled in the same machine.
+
+                var match = raiseLog.Match(line);
+                if (match.Success)
+                {
+                    if (match.Groups.Count > 3)
+                    {
+                        string eventName = match.Groups[2].Value;
+                        string machineName = match.Groups[1].Value;
                         eventQueue[machineName] = eventName;
                     }
                 }

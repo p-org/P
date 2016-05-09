@@ -201,11 +201,11 @@ typedef struct PRT_MODELIMPLDECL
 /** Represents a P program declaration */
 typedef struct PRT_PROGRAMDECL
 {
-	PRT_UINT16      nForeignTypes;  /**< The number of foreign types */
 	PRT_UINT32      nEvents;        /**< The number of events      */
 	PRT_UINT32      nEventSets;     /**< The number of event sets  */
 	PRT_UINT32      nMachines;      /**< The number of machines    */
 	PRT_UINT32      nModelImpls;    /**< The number of model implementations */
+	PRT_UINT16      nForeignTypes;  /**< The number of foreign types */
 
 	PRT_EVENTDECL       *events;          /**< The array of events                 */
 	PRT_EVENTSETDECL    *eventSets;       /**< The array of event set declarations */

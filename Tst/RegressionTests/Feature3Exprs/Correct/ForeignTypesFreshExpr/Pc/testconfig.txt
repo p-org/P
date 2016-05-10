@@ -1,5 +1,0 @@
-arg: ..\foreignTypesFreshExpr.p
-arg: /shortFileNames
-arg: /doNotErase
-arg: /outputDir:..\.
-dsc: pc.exe, foreign types and "fresh" expression

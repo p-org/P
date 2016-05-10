@@ -1,5 +1,0 @@
-arg: ..\equality.p
-arg: /shortFileNames
-arg: /doNotErase
-arg: /outputDir:..\.
-dsc: pc.exe: type definitions

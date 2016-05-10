@@ -787,8 +787,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
     BodyTmpVars(c, -1, i', defs) :- BodyTmpVars(c, -1, i, tl), i : Natural, i' = i - 1, defs = out.Defs(def, tl),
 	                                def = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), strJoin("p_tmp_stmt_", toString(i)), NIL).
 
-    BodyTmpVars(c, -1, -2, defs) :- BodyTmpVars(c, -1, -1, tl), defs = out.Defs(defpc, Defs(defb, Defs(defr, Defs(deft, Defs(deff, Defs(frame, Defs(params, tl))))))),
-									params = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_params", NIL),
+    BodyTmpVars(c, -1, -2, defs) :- BodyTmpVars(c, -1, -1, tl), defs = out.Defs(defpc, Defs(defb, Defs(defr, Defs(deft, Defs(deff, Defs(frame, tl)))))),
 									frame  = out.VarDef(NIL, NmdType(NIL, "PRT_FUNSTACK_INFO"), "p_tmp_frame", NIL),
 									deff   = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_funstmt_ret", NIL),
 									deft   = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_tuple", NIL),
@@ -849,8 +848,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 				    StmtTrans(f, f.body, ctrans),
 					header = out.Seq(Seq(info, BinApp(ASN, Ident("p_tmp_mach_priv"), Cast(PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), Ident("context")))), 
 					             Seq(Seq(info, BinApp(ASN, Ident("p_tmp_ret"), Ident("NULL"))), 
-								 Seq(Seq(info, BinApp(ASN, Ident("p_tmp_params"), Ident("NULL"))), 
-								     Seq(info, FunApp(Ident("PrtPopFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))))))),
+								     Seq(info, FunApp(Ident("PrtPopFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL)))))),
 					Trampoline(f, f.body, trampoline),
 					PatchReturn(f, patchReturn),
 					footer = out.Seq(Goto("P_EXIT_FUN"),
@@ -887,7 +885,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 					ContextSourceInfo(f, entryInfo, _, _),
 					BodyTrans(f, body),
 	                def = FunDef(
-					  NIL,
+					  STATIC,
 					  funType,
 					  strJoin(name, "_IMPL"),
 					  params,

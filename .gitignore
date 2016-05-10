@@ -259,3 +259,4 @@ Src/PrtDist/Samples/PingPong/program.h
 /Src/Tools/VSEditorExtensions/packages
 /.vs/
 /P.VC.db
+/Tst/PrtTester/Tester.VC.db

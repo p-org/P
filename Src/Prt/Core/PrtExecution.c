@@ -770,10 +770,16 @@ PrtRunStateMachine(
     while (PrtStepStateMachine(context)) {
         ;
     }
-
-    PrtLockMutex(context->stateMachineLock);
-    context->isRunning = PRT_FALSE;
-    PrtUnlockMutex(context->stateMachineLock);
+    if (!context->isHalted)
+    {
+        PrtLockMutex(context->stateMachineLock);
+        context->isRunning = PRT_FALSE;
+        PrtUnlockMutex(context->stateMachineLock);
+    }
+    else 
+    {
+        context->isRunning = PRT_FALSE;
+    }
 }
 
 PRT_BOOLEAN
@@ -909,9 +915,6 @@ DoHandleEvent:
 	{
 		PrtRunExitFunction(context, PrtGetCurrentStateDecl(context)->nTransitions);
 		PrtPopState(context, PRT_FALSE);
-		if (context->isHalted)
-            goto Finish;
-
         context->nextOperation = HandleEventOperation;
         hasMoreWork = PRT_TRUE;
         goto Finish;
@@ -925,6 +928,9 @@ DoReceive:
     goto Finish;
 
 Finish:
+    if (context->isHalted)
+        return PRT_FALSE;
+
     if (lockHeld)
     {
         PrtUnlockMutex(context->stateMachineLock);

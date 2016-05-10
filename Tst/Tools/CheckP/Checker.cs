@@ -461,8 +461,17 @@ namespace CheckP
                     var msbuildPath = FindTool("MSBuild.exe");
                     if (msbuildPath == null)
                     {
-                        Console.WriteLine("Error: msbuild.exe is not in your PATH.");
-                        return false;
+                        string programFiles = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
+                        if (string.IsNullOrEmpty(programFiles))
+                        {
+                            programFiles = Environment.GetEnvironmentVariable("ProgramFiles");
+                        }
+                        msbuildPath = Path.Combine(programFiles, @"MSBuild\14.0\Bin\MSBuild.exe");
+                        if (!File.Exists(msbuildPath))
+                        {
+                            Console.WriteLine("Error: msbuild.exe is not in your PATH.");
+                            return false;
+                        }
                     }
 
                     //2. Build Tester: "msbuildDir  .\PrtTester\Tester.vcxproj /p:Configuration=Debug /verbosity:quiet /nologo"

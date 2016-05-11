@@ -31,6 +31,7 @@ PrtStartProcess(
     process->threadsWaiting = 0;
     process->allThreadsStopped = PrtCreateSemaphore(0, 32767);
     process->terminating = PRT_FALSE;
+    process->running = PRT_TRUE;
 
 	return (PRT_PROCESS *)process;
 }
@@ -54,28 +55,31 @@ PrtInternalStepProcess(PRT_PROCESS *process
 }
 
 
-PRT_API void
+PRT_API PRT_BOOLEAN
 PrtStepProcess(PRT_PROCESS *process
 )
 {
-    PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)process;
     PRT_BOOLEAN hasMoreWork = PrtInternalStepProcess(process);
-    if (!hasMoreWork)
+    return hasMoreWork;
+}
+
+PRT_API void 
+PrtWaitForWork(PRT_PROCESS* process)
+{
+    PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)process;
+    PrtLockMutex(privateProcess->processLock);
+    privateProcess->threadsWaiting++;
+    PrtUnlockMutex(privateProcess->processLock);
+
+    PrtWaitSemaphore(privateProcess->workAvailable, -1);
+
+    PrtLockMutex(privateProcess->processLock);
+    privateProcess->threadsWaiting--;
+    if (privateProcess->terminating && privateProcess->threadsWaiting == 0)
     {
-        PrtLockMutex(privateProcess->processLock);
-        privateProcess->threadsWaiting++;
-        PrtUnlockMutex(privateProcess->processLock);
-
-        PrtWaitSemaphore(privateProcess->workAvailable, -1);
-
-        PrtLockMutex(privateProcess->processLock);
-        privateProcess->threadsWaiting--;
-        if (privateProcess->terminating && privateProcess->threadsWaiting == 0)
-        {
-            PrtReleaseSemaphore(privateProcess->allThreadsStopped);
-        }
-        PrtUnlockMutex(privateProcess->processLock);
+        PrtReleaseSemaphore(privateProcess->allThreadsStopped);
     }
+    PrtUnlockMutex(privateProcess->processLock);
 }
 
 PRT_API void
@@ -93,11 +97,13 @@ PrtRunProcess(PRT_PROCESS *process
     privateProcess->running = PRT_TRUE;
     while (privateProcess->running == PRT_TRUE)
     {
-        PrtStepProcess(process);
+        if (PRT_FALSE == PrtStepProcess(process)) 
+        {
+            PrtWaitForWork(process);
+        }
         PrtYieldThread();
     }
 }
-
 
 void 
 PrtStopProcess(

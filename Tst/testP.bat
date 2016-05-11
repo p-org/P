@@ -13,8 +13,8 @@ if %ERRORLEVEL% neq 0 (
   exit /B 1
 )
 
-echo %SCRIPTDIR%..\Bld\Drops\Debug\x86\Binaries\RunPTool.exe %1 %2 %3
-"%SCRIPTDIR%..\Bld\Drops\Debug\x86\Binaries\RunPTool.exe" %1 %2 %3
+echo %SCRIPTDIR%..\Bld\Drops\Debug\x86\Binaries\RunPTool.exe %1 %2 %3 %4
+"%SCRIPTDIR%..\Bld\Drops\Debug\x86\Binaries\RunPTool.exe" %1 %2 %3 %4
 if %ERRORLEVEL% neq 0 (
   echo Tests failed.
   exit /B 1

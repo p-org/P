@@ -122,14 +122,23 @@ extern "C"{
     PRT_API void PRT_CALL_CONV PrtRunProcess(PRT_PROCESS *process);
 
     /** Call this method if you set PRT_SCHEDULINGPOLICY to Cooperative.  This means the caller wants to control which thread
-    *   runs the state machine, where this thread will block when there is no work to do, and it will automatically wake up
-    *   via a semaphore when there is work to do.  It will terminate when you call PrtStopProcess.  PrtStepProcess does one
-    *   step and returns so the caller can also yield the thread, this is how this method is different from PrtRunProcess.
+    *   runs the state machine. PrtStepProcess does one step and returns so the caller can also yield 
+    *   the thread, this is how this method is different from PrtRunProcess.   It returns PRT_FALSE if there is no work to do, 
+    *   at which time you should call PrtWaitForWork.  It will terminate if you call PrtStopProcess.  
     *   @param[in] process The process defines which state machines this method will run.
     *   @see PRT_SCHEDULINGPOLICY
     *   @see PrtSetSchedulingPolicy
     */
-    PRT_API void PRT_CALL_CONV PrtStepProcess(PRT_PROCESS *process);
+    PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtStepProcess(PRT_PROCESS *process);
+
+
+    /** Call this method when PrtStepProcess return PRT_FALSE.  This means PrtStepProcess has found that all machines
+    * are waiting for work.  This method will block on a semaphore until more work becomes available.  It will also return
+    * if you call PrtStopProcess.
+    *   @param[in] process The process defines which state machines this method will run.
+    *   @see PrtStepProcess
+    */
+    PRT_API void PRT_CALL_CONV PrtWaitForWork(PRT_PROCESS *process);
 
     /** Stops a started process. Reclaims all resources allocated to the process.
     *   Client must call exactly once for each started process. Once called,

@@ -142,12 +142,14 @@ namespace CheckP
         };
 
         private string activeDirectory;
-        private bool reset = false;
+        private bool reset;
+        private bool cooperative;
         //Pc, Prt or Zing:
-        private string parentDir = null;
-		private string execsToRun = null;
+        private string parentDir;
+		private string execsToRun;
         private PciProcess pciProcess;
         private string zingFilePath;
+        private string testerExePath;
         private string testRoot;
 
         public string Description
@@ -156,10 +158,11 @@ namespace CheckP
             private set;
         }
 
-        public Checker(string activeDirectory, string testRoot, bool reset, string parentDir, string execsToRun, string zingFilePath, PciProcess pciProcess)
+        public Checker(string activeDirectory, string testRoot, bool reset, bool cooperative, string parentDir, string execsToRun, string zingFilePath, PciProcess pciProcess)
         {
             this.activeDirectory = activeDirectory;
             this.reset = reset;
+            this.cooperative = cooperative;
             this.parentDir = parentDir;
 			this.execsToRun = execsToRun;
             this.pciProcess = pciProcess;
@@ -432,7 +435,7 @@ namespace CheckP
                     //Compute "TesterDirectory" (Tst\PrtTester):
                     //path to ...PrtTester\Debug\x86\tester.exe (since that is the configuration that RunBuildTester builds).
                     string testerExeDir = Path.Combine(this.testRoot, "PrtTester\\Debug\\x86");
-                    var testerExePath = Path.Combine(testerExeDir, "tester.exe");
+                    this.testerExePath = Path.Combine(testerExeDir, "tester.exe");
                     var testerDirectory = Path.Combine(this.testRoot, "PrtTester");
 
                     //Remove previous runtime files from Tst\PrtTester:
@@ -759,6 +762,10 @@ namespace CheckP
                 {
                     args += v.Item2.ToString() + " ";
                 }
+            }
+            if (cooperative && exe == this.testerExePath)
+            {
+                args += " /cooperative";
             }
 
             outStream.WriteLine("=================================");

@@ -757,28 +757,8 @@ PrtRunStateMachine(
 )
 {
     // This function now just wraps the new PrtStepStateMachine method
-    // protecting against re-entry using isRunning boolean.
-    PrtLockMutex(context->stateMachineLock);
-    if (context->isRunning)
-    {
-        PrtUnlockMutex(context->stateMachineLock);
-        return;
-    }
-    context->isRunning = PRT_TRUE;
-    PrtUnlockMutex(context->stateMachineLock);
-
     while (PrtStepStateMachine(context)) {
         ;
-    }
-    if (!context->isHalted)
-    {
-        PrtLockMutex(context->stateMachineLock);
-        context->isRunning = PRT_FALSE;
-        PrtUnlockMutex(context->stateMachineLock);
-    }
-    else 
-    {
-        context->isRunning = PRT_FALSE;
     }
 }
 
@@ -791,6 +771,17 @@ _Inout_ PRT_MACHINEINST_PRIV	*context
 	PRT_DODECL *currActionDecl;
 	PRT_UINT32 eventValue;
     PRT_BOOLEAN hasMoreWork = PRT_FALSE;
+
+    // protecting against re-entry using isRunning boolean.
+    PrtLockMutex(context->stateMachineLock);
+    if (context->isRunning)
+    {
+        // Another thread is already running this state machine!
+        PrtUnlockMutex(context->stateMachineLock);
+        return PRT_FALSE;
+    }
+    context->isRunning = PRT_TRUE;
+    PrtUnlockMutex(context->stateMachineLock);
 
     switch (context->nextOperation)
     {
@@ -929,10 +920,19 @@ DoReceive:
 
 Finish:
     if (context->isHalted)
-        return PRT_FALSE;
-
-    if (lockHeld)
     {
+        context->isRunning = PRT_FALSE;
+        return PRT_FALSE;
+    }
+    else if (lockHeld)
+    {
+        context->isRunning = PRT_FALSE;
+        PrtUnlockMutex(context->stateMachineLock);
+    }
+    else 
+    {
+        PrtLockMutex(context->stateMachineLock);
+        context->isRunning = PRT_FALSE;
         PrtUnlockMutex(context->stateMachineLock);
     }
     return hasMoreWork;

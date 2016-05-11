@@ -30,6 +30,8 @@ namespace RunPTool
         private static PciProcess pciProcess;
 
         bool reset;
+        bool cooperative; // for testing cooperative multitasking.
+
         //set according to the name of the parent directory for "testconfig.txt":
         string testFilePath;
         string execsToRun;
@@ -40,20 +42,34 @@ namespace RunPTool
             for (int i = 0; i < args.Length; i++)
             {
                 string arg = args[i];
-                if (arg == "/reset")
+                if (arg[0] == '/' || arg[0] == '-')
                 {
-                    reset = true;
+                    string option = (arg.Substring(1).ToLowerInvariant());
+                    if (option == "reset")
+                    {
+                        reset = true;
+                    }
+                    else if (option == "cooperative")
+                    {
+                        cooperative = true;
+                    }
+                    else if(option.StartsWith("/run"))
+                    {
+                        execsToRun = arg;
+                    }
+                    else
+                    {
+                        Console.WriteLine("### Unrecognized option: " + arg);
+                        return false;
+                    }
                 }
-                else if (arg.StartsWith("/run"))
-                {
-                    execsToRun = arg;
-                }
-                else if (testFilePath == null && !arg.StartsWith("/"))
+                else if (testFilePath == null)
                 {
                     testFilePath = arg;
                 }
                 else
                 {
+                    Console.WriteLine("### Too many arguments");
                     return false;
                 }
             }
@@ -62,13 +78,14 @@ namespace RunPTool
 
        static void PrintUsage()
         {
-            Console.WriteLine("USAGE: RunPTool.exe [file with test dirs] [/reset] [tools to run]");
-            Console.WriteLine();
-            Console.WriteLine("    where \"tools to run\" option is:");
-            Console.WriteLine("         /runPc");
-            Console.WriteLine("         /runPrt");
-            Console.WriteLine("         /runZing");
-            Console.WriteLine("         /runAll   (default)");
+            Console.WriteLine("USAGE: RunPTool.exe  [options] [file with test dirs]");
+            Console.WriteLine("Options:");
+            Console.WriteLine("    /reset - remove old acceptor file, useful for generating new test baselines");
+            Console.WriteLine("    /cooperative - enable testing of cooperative multitasking");
+            Console.WriteLine("    /runPc - do the compile step only");
+            Console.WriteLine("    /runPrt - run the compiled state machine using PrtTester");
+            Console.WriteLine("    /runZing - run zinger on the compiled output");
+            Console.WriteLine("    /runAll (default)");
         }
 
         static void Main(string[] args)
@@ -212,7 +229,7 @@ namespace RunPTool
                 }
                 pciProcess = new PciProcess(pciFilePath);
 
-                Test(activeDirs, reset, execsToRun, ref testCount, ref failCount, failedTestsWriter, tempWriter, displayDiffsWriter);
+                Test(activeDirs, reset, cooperative, execsToRun, ref testCount, ref failCount, failedTestsWriter, tempWriter, displayDiffsWriter);
                 
                 pciProcess.Shutdown();
 
@@ -371,7 +388,7 @@ namespace RunPTool
             }
         }
         //If reset = true, failedDirsWriter and displayDiffsWriter are "null"
-        private static void Test(List<DirectoryInfo> diArray, bool reset,  string execsToRun, ref int testCount, ref int failCount,
+        private static void Test(List<DirectoryInfo> diArray, bool reset,  bool cooperative, string execsToRun, ref int testCount, ref int failCount,
             StreamWriter failedTestsWriter, StreamWriter tempWriter, StreamWriter displayDiffsWriter)
         {
             try
@@ -405,7 +422,7 @@ namespace RunPTool
                             (di.Name == "Prt" && (execsToRun == "/runPrt" || execsToRun == "/runAll")))
                         {
                             ++testCount;
-                            var checker = new Checker(di.FullName, testRoot, reset, di.Name, execsToRun, zingFilePath, pciProcess);
+                            var checker = new Checker(di.FullName, testRoot, reset, cooperative, di.Name, execsToRun, zingFilePath, pciProcess);
                             if ((di.Parent != null) && !checker.Check(fi.Name))
                             {
                                 ++failCount;
@@ -432,7 +449,7 @@ namespace RunPTool
                     {
                         List<DirectoryInfo> dpArray = new List<DirectoryInfo>();
                         dpArray.Add(dp);
-                        Test(dpArray, reset, execsToRun, ref testCount, ref failCount, failedTestsWriter, tempWriter,
+                        Test(dpArray, reset, cooperative, execsToRun, ref testCount, ref failCount, failedTestsWriter, tempWriter,
                             displayDiffsWriter);
                     }
                 }

@@ -35,13 +35,12 @@ domain PData
     BinApp     ::= new (op: { ADD, SUB, MUL, INTDIV, AND, OR, EQ, NEQ, LT, LE, GT, GE, IDX, IN }, arg1: any Expr, arg2: any Expr).
     Field      ::= new (arg: any Expr, name: String + Natural).
     Default    ::= new (type: any TypeExpr). 
-	Fresh      ::= new (name: String).
     Cast       ::= new (arg: any Expr, type: any TypeExpr). 
     Tuple      ::= new (body: any Exprs).
     NamedTuple ::= new (body: any NamedExprs).
     Exprs      ::= new (qual: Qualifier, head: any Expr, tail: any Exprs + { NIL }).              
     NamedExprs ::= new (field: String, exp: any Expr, tail: any NamedExprs + { NIL }).
-    Expr       ::= Name + New + FunApp + NulApp + UnApp + BinApp + Field + Default + Fresh + Cast + Tuple + NamedTuple.
+    Expr       ::= Name + New + FunApp + NulApp + UnApp + BinApp + Field + Default + Cast + Tuple + NamedTuple.
     ExprsExt   ::= Expr + Exprs + NamedExprs.
 
     //// Statements
@@ -336,12 +335,6 @@ domain PStaticTyping extends PData
     //// (2) The types of unary expressions
     TypeOf(c, e, et)              :- SubSE(c, e), e = Default(t), TypeExpansion(t, et). 
 	
-	[ rule_Classes = '"error, msg: Illegal type"']
-	TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Fresh(t), no TypeDef(t, _). 
-	[ rule_Classes = '"error, msg: Illegal type"']
-	TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Fresh(t), TypeExpansion(NameType(t), type), toSymbol(type) != #NameType. 
-	TypeOf(c, e, type)            :- SubSE(c, e), e = Fresh(t), TypeExpansion(NameType(t), type), toSymbol(type) = #NameType. 
-
     TypeOf(c, e, t1)              :- TypeOfArg1(c, e, t1), e : Tuple.     
 
     TypeOf(c, e, t1)              :- TypeOfArg1(c, e, t1), e : NamedTuple.

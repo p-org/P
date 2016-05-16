@@ -14,7 +14,7 @@ OUT:     MACHINE_PING.Run (program.zing, Line 114)
 OUT:     MACHINE_PING.Start (program.zing, Line 87)
 OUT: 
 OUT: 
-OUT: 9 distinct states explored
+OUT: 11 distinct states explored
 OUT: 
 EXIT: 4
 

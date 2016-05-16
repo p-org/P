@@ -84,7 +84,6 @@
 			 keywords.Add("machine", (int)Tokens.MACHINE);
 			 keywords.Add("assume", (int)Tokens.ASSUME);
 			 keywords.Add("default", (int)Tokens.DEFAULT);
-			 keywords.Add("fresh", (int)Tokens.FRESH);
 
 			 keywords.Add("var", (int)Tokens.VAR);
 			 keywords.Add("start", (int)Tokens.START);

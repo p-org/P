@@ -23,7 +23,7 @@ main machine TestMachine
 
 	model fun GetPassword() : StringType
 	{
-		return fresh(StringType);
+		return default(StringType);
 	}
 
 }

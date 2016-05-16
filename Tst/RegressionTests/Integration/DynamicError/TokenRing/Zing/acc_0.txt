@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 3236 distinct states explored
+OUT: 3304 distinct states explored
 OUT: 
 EXIT: 3
 
@@ -21,28 +21,28 @@ Trace-Log 0:
 <CreateLog> Created Machine Node-3
 <EnqueueLog> Enqueued Event < ____Next, ____Node-1 > in Machine ____Node-0 by ____Ring4-0
 <EnqueueLog> Enqueued Event < ____Next, ____Node-2 > in Machine ____Node-1 by ____Ring4-0
-<EnqueueLog> Enqueued Event < ____Next, ____Node-3 > in Machine ____Node-2 by ____Ring4-0
-<EnqueueLog> Enqueued Event < ____Next, ____Node-0 > in Machine ____Node-3 by ____Ring4-0
-<StateLog> Machine Node-1 entering State Init_Main_Node
-<DequeueLog> Dequeued Event < ____Next, ____Node-2 > at Machine ____Node-1
-<StateLog> Machine Node-1 exiting State Init_Main_Node
-<StateLog> Machine Node-1 entering State SetNext_Main_Node
-<EnqueueLog> Enqueued Event < ____Ready, null > in Machine ____Ring4-0 by ____Node-1
-<StateLog> Machine Node-2 entering State Init_Main_Node
-<DequeueLog> Dequeued Event < ____Next, ____Node-3 > at Machine ____Node-2
-<StateLog> Machine Node-2 exiting State Init_Main_Node
-<StateLog> Machine Node-2 entering State SetNext_Main_Node
-<EnqueueLog> Enqueued Event < ____Ready, null > in Machine ____Ring4-0 by ____Node-2
-<StateLog> Machine Node-3 entering State Init_Main_Node
-<DequeueLog> Dequeued Event < ____Next, ____Node-0 > at Machine ____Node-3
-<StateLog> Machine Node-3 exiting State Init_Main_Node
-<StateLog> Machine Node-3 entering State SetNext_Main_Node
-<EnqueueLog> Enqueued Event < ____Ready, null > in Machine ____Ring4-0 by ____Node-3
 <StateLog> Machine Node-0 entering State Init_Main_Node
 <DequeueLog> Dequeued Event < ____Next, ____Node-1 > at Machine ____Node-0
 <StateLog> Machine Node-0 exiting State Init_Main_Node
 <StateLog> Machine Node-0 entering State SetNext_Main_Node
 <EnqueueLog> Enqueued Event < ____Ready, null > in Machine ____Ring4-0 by ____Node-0
+<StateLog> Machine Node-1 entering State Init_Main_Node
+<DequeueLog> Dequeued Event < ____Next, ____Node-2 > at Machine ____Node-1
+<StateLog> Machine Node-1 exiting State Init_Main_Node
+<StateLog> Machine Node-1 entering State SetNext_Main_Node
+<EnqueueLog> Enqueued Event < ____Ready, null > in Machine ____Ring4-0 by ____Node-1
+<EnqueueLog> Enqueued Event < ____Next, ____Node-3 > in Machine ____Node-2 by ____Ring4-0
+<EnqueueLog> Enqueued Event < ____Next, ____Node-0 > in Machine ____Node-3 by ____Ring4-0
+<StateLog> Machine Node-3 entering State Init_Main_Node
+<DequeueLog> Dequeued Event < ____Next, ____Node-0 > at Machine ____Node-3
+<StateLog> Machine Node-3 exiting State Init_Main_Node
+<StateLog> Machine Node-3 entering State SetNext_Main_Node
+<EnqueueLog> Enqueued Event < ____Ready, null > in Machine ____Ring4-0 by ____Node-3
+<StateLog> Machine Node-2 entering State Init_Main_Node
+<DequeueLog> Dequeued Event < ____Next, ____Node-3 > at Machine ____Node-2
+<StateLog> Machine Node-2 exiting State Init_Main_Node
+<StateLog> Machine Node-2 entering State SetNext_Main_Node
+<EnqueueLog> Enqueued Event < ____Ready, null > in Machine ____Ring4-0 by ____Node-2
 <RaiseLog> Machine Ring4-0 raised Event ____Unit
 <StateLog> Machine Ring4-0 exiting State Boot_Main_Ring4
 <StateLog> Machine Ring4-0 entering State Stabilize_Main_Ring4
@@ -61,25 +61,25 @@ Trace-Log 0:
 <RaiseLog> Machine Ring4-0 raised Event ____Unit
 <StateLog> Machine Ring4-0 exiting State Stabilize_Main_Ring4
 <StateLog> Machine Ring4-0 entering State RandomComm_Main_Ring4
-<EnqueueLog> Enqueued Event < ____Send, ____Node-2 > in Machine ____Node-3 by ____Ring4-0
+<EnqueueLog> Enqueued Event < ____Send, ____Node-2 > in Machine ____Node-2 by ____Ring4-0
+<RaiseLog> Machine Node-2 raised Event ____Unit
+<StateLog> Machine Node-2 exiting State SetNext_Main_Node
+<StateLog> Machine Node-2 entering State Wait_Main_Node
+<DequeueLog> Dequeued Event < ____Send, ____Node-2 > at Machine ____Node-2
+<StateLog> Machine Node-2 exiting State Wait_Main_Node
+<StateLog> Machine Node-2 entering State StartSending_Main_Node
+<EnqueueLog> Enqueued Event < ____Sending, ____Node-2 > in Machine ____Node-3 by ____Node-2
 <RaiseLog> Machine Ring4-0 raised Event ____Unit
 <StateLog> Machine Ring4-0 exiting State RandomComm_Main_Ring4
 <StateLog> Machine Ring4-0 entering State RandomComm_Main_Ring4
-<EnqueueLog> Enqueued Event < ____Send, ____Node-3 > in Machine ____Node-3 by ____Ring4-0
-<RaiseLog> Machine Node-3 raised Event ____Unit
-<StateLog> Machine Node-3 exiting State SetNext_Main_Node
-<StateLog> Machine Node-3 entering State Wait_Main_Node
-<DequeueLog> Dequeued Event < ____Send, ____Node-2 > at Machine ____Node-3
-<StateLog> Machine Node-3 exiting State Wait_Main_Node
-<StateLog> Machine Node-3 entering State StartSending_Main_Node
-<EnqueueLog> Enqueued Event < ____Sending, ____Node-2 > in Machine ____Node-0 by ____Node-3
-<RaiseLog> Machine Node-3 raised Event ____Unit
-<StateLog> Machine Node-3 exiting State StartSending_Main_Node
-<StateLog> Machine Node-3 entering State Wait_Main_Node
-<DequeueLog> Dequeued Event < ____Send, ____Node-3 > at Machine ____Node-3
-<StateLog> Machine Node-3 exiting State Wait_Main_Node
-<StateLog> Machine Node-3 entering State StartSending_Main_Node
-<EnqueueLog> Enqueued Event < ____Sending, ____Node-3 > in Machine ____Node-0 by ____Node-3
+<EnqueueLog> Enqueued Event < ____Send, ____Node-3 > in Machine ____Node-2 by ____Ring4-0
+<RaiseLog> Machine Node-2 raised Event ____Unit
+<StateLog> Machine Node-2 exiting State StartSending_Main_Node
+<StateLog> Machine Node-2 entering State Wait_Main_Node
+<DequeueLog> Dequeued Event < ____Send, ____Node-3 > at Machine ____Node-2
+<StateLog> Machine Node-2 exiting State Wait_Main_Node
+<StateLog> Machine Node-2 entering State StartSending_Main_Node
+<EnqueueLog> Enqueued Event < ____Sending, ____Node-3 > in Machine ____Node-3 by ____Node-2
 <Exception> Attempting to enqueue event ____Sending more than max instance of 1
 
 Error:

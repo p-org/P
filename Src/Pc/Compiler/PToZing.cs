@@ -272,7 +272,6 @@ namespace Microsoft.Pc
         public static AST<Node> PrtMkDefaultValue = MkZingDot("PRT_VALUE", "PrtMkDefaultValue");
         public static AST<Node> PrtCloneValue = MkZingDot("PRT_VALUE", "PrtCloneValue");
         public static AST<Node> PrtIsEqualValue = MkZingDot("PRT_VALUE", "PrtIsEqualValue");
-        public static AST<Node> PrtMkFreshForeignValue = MkZingDot("PRT_VALUE", "PrtMkFreshForeignValue");
 
         public const string NullEvent = "null";
         public const string HaltEvent = "halt";
@@ -2171,7 +2170,6 @@ namespace Microsoft.Pc
                      funName == PData.Con_NulApp.Node.Name ||
                      funName == PData.Con_UnApp.Node.Name ||
                      funName == PData.Con_Default.Node.Name ||
-                     funName == PData.Con_Fresh.Node.Name ||
                      funName == PData.Con_NulStmt.Node.Name)
             {
                 var first = true;
@@ -2358,10 +2356,6 @@ namespace Microsoft.Pc
             else if (funName == PData.Con_Default.Node.Name)
             {
                 return FoldDefault(ft, children, ctxt);
-            }
-            else if (funName == PData.Con_Fresh.Node.Name)
-            {
-                return FoldFresh(ft, children, ctxt);
             }
             else if (funName == PData.Con_Cast.Node.Name)
             {
@@ -3039,14 +3033,6 @@ namespace Microsoft.Pc
             var typeArg = (FuncTerm)GetArgByIndex(ft, 0);
             var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
             ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(typeArg))));
-            ctxt.lastEval = tmpVar;
-            return new ZingTranslationInfo(tmpVar);
-        }
-
-        ZingTranslationInfo FoldFresh(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
-        {
-            var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
-            ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkFreshForeignValue, typeContext.PTypeToZingExpr(LookupType(ctxt, ft)))));
             ctxt.lastEval = tmpVar;
             return new ZingTranslationInfo(tmpVar);
         }

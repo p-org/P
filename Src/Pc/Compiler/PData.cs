@@ -59,7 +59,6 @@
         public static readonly AST<Id> Con_BinApp = Factory.Instance.MkId("BinApp");
         public static readonly AST<Id> Con_Field = Factory.Instance.MkId("Field");
         public static readonly AST<Id> Con_Default = Factory.Instance.MkId("Default");
-        public static readonly AST<Id> Con_Fresh = Factory.Instance.MkId("Fresh");
         public static readonly AST<Id> Con_Cast = Factory.Instance.MkId("Cast");
         public static readonly AST<Id> Con_Tuple = Factory.Instance.MkId("Tuple");
         public static readonly AST<Id> Con_NamedTuple = Factory.Instance.MkId("NamedTuple");

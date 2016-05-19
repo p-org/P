@@ -28,6 +28,13 @@ extern "C"{
 		PRT_FUN_PARAM_XFER
 	} PRT_FUN_PARAM_STATUS;
 
+    typedef struct PRT_COOPERATIVE_SCHEDULER
+    {
+        PRT_SEMAPHORE           workAvailable;      /* semaphore to signal blocked PrtRunProcess threads */
+        PRT_UINT32              threadsWaiting;     /* number of PrtRunProcess threads waiting for work */
+        PRT_SEMAPHORE           allThreadsStopped;  /* all PrtRunProcess threads have terminated */
+    } PRT_COOPERATIVE_SCHEDULER;
+
 	typedef struct PRT_PROCESS_PRIV {
 		PRT_GUID				guid;
 		PRT_PROGRAMDECL			*program;
@@ -36,13 +43,10 @@ extern "C"{
 		PRT_RECURSIVE_MUTEX		processLock;
 		PRT_UINT32				numMachines;
 		PRT_UINT32				machineCount;
-		PRT_MACHINEINST			**machines;		
+		PRT_MACHINEINST			**machines;
+        PRT_BOOLEAN             terminating;        /* PrtStopProcess has been called */
         PRT_SCHEDULINGPOLICY    schedulingPolicy;
-        PRT_BOOLEAN             running;            /* PrtRunProcess is active */
-        PRT_SEMAPHORE           workAvailable;      /* semaphore to signal blocked PrtRunProcess threads */
-        int                     threadsWaiting;     /* number of PrtRunProcess threads waiting for work */
-        PRT_SEMAPHORE           allThreadsStopped;  /* all PrtRunProcess threads have terminated */
-        PRT_BOOLEAN             terminating;        /* PrtStopProcess is waiting for threads to terminate */
+        void*                   schedulerInfo;      /* for example, this could be PRT_COOPERATIVE_SCHEDULER */
 
 	} PRT_PROCESS_PRIV;
 

@@ -36,7 +36,7 @@ void PRT_CALL_CONV PrtSetLocalVarEx(_Inout_ PRT_VALUE **locals, _In_ PRT_UINT32 
 }
 
 // This internal function is how we implement two different scheduling policies.
-// The original version is called TaskNeutral which means the advancement of the state 
+// The original version is called PRT_SCHEDULINGPOLICY_TASKNEUTRAL which means the advancement of the state 
 // machine is done on the callers thread (whichever thread), and it is done during PrtMkMachinePrivate
 // and PrtSendPrivate by calling this method.  The new scheduling policy allows cooperative multitasking
 // on a realtime OS (like NuttX) where the caller creates a special Thread for running all the state machines
@@ -46,20 +46,31 @@ static void PrtScheduleWork(PRT_MACHINEINST_PRIV *context)
 {
     PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV*)context->process;
     PrtLockMutex(context->stateMachineLock);
-    int count = privateProcess->threadsWaiting;
 
-    if (privateProcess->schedulingPolicy == TaskNeutral)
+    switch (privateProcess->schedulingPolicy)
     {
-        // run the state machine on the callers thread (whichever thread calls PrtMkMachine).
-        // but only if some other thread is not already running the machine.
-        PrtUnlockMutex(context->stateMachineLock);
-        PrtRunStateMachine(context);
-    }
-    else if (count > 0)
-    {
-        // signal the PrtRunProcess method that there is work to do.
-        PrtReleaseSemaphore(privateProcess->workAvailable);
-        PrtUnlockMutex(context->stateMachineLock);
+        case PRT_SCHEDULINGPOLICY_TASKNEUTRAL:
+            {
+                // run the state machine on the callers thread (whichever thread calls PrtMkMachine).
+                // but only if some other thread is not already running the machine.
+                PrtUnlockMutex(context->stateMachineLock);
+                PrtRunStateMachine(context);
+            }
+            break;
+        case PRT_SCHEDULINGPOLICY_COOPERATIVE:
+            {
+                PrtUnlockMutex(context->stateMachineLock);
+                PRT_COOPERATIVE_SCHEDULER* info = (PRT_COOPERATIVE_SCHEDULER*)privateProcess->schedulerInfo;
+                if (info->threadsWaiting > 0)
+                {
+                    // signal the PrtRunProcess method that there is work to do.
+                    PrtReleaseSemaphore(info->workAvailable);
+                }
+            }
+            break;
+        default:
+            PrtAssert(PRT_FALSE, "Invalid schedulingPolicy");
+            break;
     }
 }
 
@@ -538,7 +549,11 @@ PrtPushNewFrame(
 			va_start(argp, funIndex);
 			for (PRT_UINT32 i = 0; i < numParameters; i++)
 			{
+#if __PX4_NUTTX
+                PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
+#else
 				PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
+#endif
 				PRT_VALUE *arg;
 				PRT_VALUE **argPtr;
 				switch (argStatus)

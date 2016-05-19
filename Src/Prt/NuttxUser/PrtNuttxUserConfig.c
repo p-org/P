@@ -1,8 +1,6 @@
 #include "PrtNuttxUserConfig.h"
 #include "Prt.h"
 #include <nuttx/kmalloc.h>
-#include <stdlib.h>
-#include <string.h>
 
 PRT_RECURSIVE_MUTEX PRT_CALL_CONV PrtCreateMutex()
 {

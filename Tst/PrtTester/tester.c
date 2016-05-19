@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 		process = PrtStartProcess(processGuid, &P_GEND_PROGRAM, ErrorHandler, Log);
         if (cooperative)
         {
-            PrtSetSchedulingPolicy(process, Cooperative);
+            PrtSetSchedulingPolicy(process, PRT_SCHEDULINGPOLICY_COOPERATIVE);
         }
 		payload = PrtMkNullValue();
 		PrtMkMachine(process, _P_MACHINE_MAIN, payload);
@@ -106,14 +106,14 @@ int main(int argc, char *argv[])
         if (cooperative)
         {
             PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)process;
-            while (privateProcess->running == PRT_TRUE)
+            while (privateProcess->terminating == PRT_FALSE)
             {
-                if (PRT_FALSE == PrtStepProcess(process))
+                if (PRT_STEP_IDLE == PrtStepProcess(process))
                 {
-                    // PrtWaitForWork(process);
                     // In the tester we run the state machines until there is no more work to do then we exit
                     // instead of blocking indefinitely.  This is then equivalent of the non-cooperative case
-                    // where we PrtRunStateMachine once (inside PrtMkMachine).
+                    // where we PrtRunStateMachine once (inside PrtMkMachine).  So we do NOT call PrtWaitForWork.
+                    // PrtWaitForWork(process);
                     break;
                     
                 }

@@ -76,8 +76,8 @@ extern "C"{
     */
     typedef enum PRT_SCHEDULINGPOLICY
     {
-        TaskNeutral,   /**< The default policy is task neutral, meaning the caller's thread is used to run the state machine */
-        Cooperative    /**< This policy means the caller plans to advance the state machine from a separate thread using PrtRunProcess */
+        PRT_SCHEDULINGPOLICY_TASKNEUTRAL,   /**< The default policy is task neutral, meaning the caller's thread is used to run the state machine */
+        PRT_SCHEDULINGPOLICY_COOPERATIVE    /**< This policy means the caller plans to advance the state machine from a separate thread using PrtRunProcess */
     } PRT_SCHEDULINGPOLICY;
 
 
@@ -121,6 +121,15 @@ extern "C"{
     */
     PRT_API void PRT_CALL_CONV PrtRunProcess(PRT_PROCESS *process);
 
+
+    typedef enum PRT_STEP_RESULT
+    {
+        PRT_STEP_IDLE = 0,         /**< No more work */
+        PRT_STEP_MORE = 1,         /**< More work is available */
+        PRT_STEP_TERMINATING = 2,  /**< We are terminating the process  */
+    } PRT_STEP_RESULT;
+
+
     /** Call this method if you set PRT_SCHEDULINGPOLICY to Cooperative.  This means the caller wants to control which thread
     *   runs the state machine. PrtStepProcess does one step and returns so the caller can also yield 
     *   the thread, this is how this method is different from PrtRunProcess.   It returns PRT_FALSE if there is no work to do, 
@@ -129,22 +138,23 @@ extern "C"{
     *   @see PRT_SCHEDULINGPOLICY
     *   @see PrtSetSchedulingPolicy
     */
-    PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtStepProcess(PRT_PROCESS *process);
+    PRT_API PRT_STEP_RESULT PRT_CALL_CONV PrtStepProcess(PRT_PROCESS *process);
 
 
-    /** Call this method when PrtStepProcess return PRT_FALSE.  This means PrtStepProcess has found that all machines
+    /** Call this method when PrtStepProcess returns PRT_STEP_IDLE.  This means PrtStepProcess has found that all machines
     * are waiting for work.  This method will block on a semaphore until more work becomes available.  It will also return
     * if you call PrtStopProcess.
     *   @param[in] process The process defines which state machines this method will run.
+    *   @returns   PRT_TRUE if we are terminating (PrtStopProcess has been called).
     *   @see PrtStepProcess
     */
-    PRT_API void PRT_CALL_CONV PrtWaitForWork(PRT_PROCESS *process);
+    PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtWaitForWork(PRT_PROCESS *process);
 
     /** Stops a started process. Reclaims all resources allocated to the process.
     *   Client must call exactly once for each started process. Once called,
     *   no other API function affecting this process can occur from any thread.
     *   Once called, no interaction with data owned by this process should occur from any thread.
-    *  This method also causes PrtRunProcess to terminate.
+    *  This method also causes PrtRunProcess and PrtWaitForWork to terminate.
     *   @param[in,out] process The process to stop.
     *   @see PRT_PROCESS
     *   @see PrtStartProcess

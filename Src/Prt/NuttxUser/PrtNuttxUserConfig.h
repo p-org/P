@@ -45,6 +45,8 @@ extern "C"{
 #include <nuttx/kmalloc.h>
 #include <nuttx/pthread.h>
 #include <semaphore.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef PRT_DEBUG
 #ifndef _DEBUG

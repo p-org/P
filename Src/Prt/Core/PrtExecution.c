@@ -45,21 +45,15 @@ void PRT_CALL_CONV PrtSetLocalVarEx(_Inout_ PRT_VALUE **locals, _In_ PRT_UINT32 
 static void PrtScheduleWork(PRT_MACHINEINST_PRIV *context)
 {
     PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV*)context->process;
-    PrtLockMutex(context->stateMachineLock);
-
     switch (privateProcess->schedulingPolicy)
     {
         case PRT_SCHEDULINGPOLICY_TASKNEUTRAL:
             {
-                // run the state machine on the callers thread (whichever thread calls PrtMkMachine).
-                // but only if some other thread is not already running the machine.
-                PrtUnlockMutex(context->stateMachineLock);
                 PrtRunStateMachine(context);
             }
             break;
         case PRT_SCHEDULINGPOLICY_COOPERATIVE:
             {
-                PrtUnlockMutex(context->stateMachineLock);
                 PRT_COOPERATIVE_SCHEDULER* info = (PRT_COOPERATIVE_SCHEDULER*)privateProcess->schedulerInfo;
                 if (info->threadsWaiting > 0)
                 {
@@ -779,36 +773,36 @@ PrtRunStateMachine(
 
 PRT_BOOLEAN
 PrtStepStateMachine(
-_Inout_ PRT_MACHINEINST_PRIV	*context
+	_Inout_ PRT_MACHINEINST_PRIV	*context
 )
 {
-    PRT_BOOLEAN lockHeld = PRT_FALSE;
+	PRT_BOOLEAN lockHeld = PRT_FALSE;
 	PRT_DODECL *currActionDecl;
 	PRT_UINT32 eventValue;
-    PRT_BOOLEAN hasMoreWork = PRT_FALSE;
+	PRT_BOOLEAN hasMoreWork = PRT_FALSE;
 
-    // protecting against re-entry using isRunning boolean.
-    PrtLockMutex(context->stateMachineLock);
-    if (context->isRunning)
-    {
-        // Another thread is already running this state machine!
-        PrtUnlockMutex(context->stateMachineLock);
-        return PRT_FALSE;
-    }
-    context->isRunning = PRT_TRUE;
-    PrtUnlockMutex(context->stateMachineLock);
+	// protecting against re-entry using isRunning boolean.
+	PrtLockMutex(context->stateMachineLock);
+	if (context->isRunning)
+	{
+		// Another thread is already running this state machine!
+		PrtUnlockMutex(context->stateMachineLock);
+		return PRT_FALSE;
+	}
+	context->isRunning = PRT_TRUE;
+	PrtUnlockMutex(context->stateMachineLock);
 
-    switch (context->nextOperation)
-    {
-    case EntryOperation:
-        goto DoEntry;
-    case DequeueOperation:
-        goto DoDequeue;
-    case HandleEventOperation:
-        goto DoHandleEvent;
-    case ReceiveOperation:
-        goto DoReceive;
-    }
+	switch (context->nextOperation)
+	{
+	case EntryOperation:
+		goto DoEntry;
+	case DequeueOperation:
+		goto DoDequeue;
+	case HandleEventOperation:
+		goto DoHandleEvent;
+	case ReceiveOperation:
+		goto DoReceive;
+	}
 
 
 DoEntry:
@@ -849,43 +843,43 @@ DoAction:
 
 CheckLastOperation:
 	if (context->receive != NULL)
-	{	          
-        // we are now in a blocking "receive", so want for PrtSendPrivate to unblock us.
-        context->nextOperation = ReceiveOperation;
-        lockHeld = PRT_TRUE; // tricky case, the lock was grabbed in PrtRecive().
-        goto Finish;
+	{
+		// we are now in a blocking "receive", so want for PrtSendPrivate to unblock us.
+		context->nextOperation = ReceiveOperation;
+		lockHeld = PRT_TRUE; // tricky case, the lock was grabbed in PrtRecive().
+		goto Finish;
 
 	}
 	switch (context->lastOperation)
 	{
 	case PopStatement:
 		PrtRunExitFunction(context, PrtGetCurrentStateDecl(context)->nTransitions);
-		PrtPopState(context, PRT_TRUE);     
-        context->nextOperation = DequeueOperation;
-        hasMoreWork = PRT_TRUE;
-        goto Finish;
+		PrtPopState(context, PRT_TRUE);
+		context->nextOperation = DequeueOperation;
+		hasMoreWork = PRT_TRUE;
+		goto Finish;
 
-	case RaiseStatement:     
-        context->nextOperation = HandleEventOperation;
-        hasMoreWork = PRT_TRUE;
-        goto Finish;
+	case RaiseStatement:
+		context->nextOperation = HandleEventOperation;
+		hasMoreWork = PRT_TRUE;
+		goto Finish;
 
-	case ReturnStatement:  
-        context->nextOperation = DequeueOperation;
-        hasMoreWork = PRT_TRUE;
-        goto Finish;
+	case ReturnStatement:
+		context->nextOperation = DequeueOperation;
+		hasMoreWork = PRT_TRUE;
+		goto Finish;
 
 	default:
 		PRT_DBG_ASSERT(0, "Unexpected case in switch");
-        context->nextOperation = DequeueOperation;
-        goto Finish;
+		context->nextOperation = DequeueOperation;
+		goto Finish;
 	}
 
 DoDequeue:
-    PrtAssert(!lockHeld, "Lock should not be held at this point");
-    lockHeld = PRT_TRUE;
+	PrtAssert(!lockHeld, "Lock should not be held at this point");
+	lockHeld = PRT_TRUE;
 	PrtLockMutex(context->stateMachineLock);
-	
+
 	PrtAssert(context->receive == NULL, "Machine must not be blocked at a receive");
 	if (PrtDequeueEvent(context, NULL))
 	{
@@ -895,8 +889,8 @@ DoDequeue:
 	}
 	else
 	{
-        context->nextOperation = DequeueOperation;
-        goto Finish;
+		context->nextOperation = DequeueOperation;
+		goto Finish;
 	}
 
 DoHandleEvent:
@@ -921,36 +915,26 @@ DoHandleEvent:
 	{
 		PrtRunExitFunction(context, PrtGetCurrentStateDecl(context)->nTransitions);
 		PrtPopState(context, PRT_FALSE);
-        context->nextOperation = HandleEventOperation;
-        hasMoreWork = PRT_TRUE;
-        goto Finish;
+		context->nextOperation = HandleEventOperation;
+		hasMoreWork = context->isHalted;
+		goto Finish;
 	}
 
 DoReceive:
-    PrtAssert(context->receive != NULL, "Must be blocked at a receive");
-    // this is a no-op because we are still blocked on receive until PrtSendPrivate notices
-    // we receive the unblocking event.  We do this instead of checking for receive != null
-    // so that we can be sure to unlock the stateMachineLock once and only once.
-    goto Finish;
+	PrtAssert(context->receive != NULL, "Must be blocked at a receive");
+	// this is a no-op because we are still blocked on receive until PrtSendPrivate notices
+	// we receive the unblocking event.  We do this instead of checking for receive != null
+	// so that we can be sure to unlock the stateMachineLock once and only once.
+	goto Finish;
 
 Finish:
-    if (context->isHalted)
-    {
-        context->isRunning = PRT_FALSE;
-        return PRT_FALSE;
-    }
-    else if (lockHeld)
-    {
-        context->isRunning = PRT_FALSE;
-        PrtUnlockMutex(context->stateMachineLock);
-    }
-    else 
-    {
-        PrtLockMutex(context->stateMachineLock);
-        context->isRunning = PRT_FALSE;
-        PrtUnlockMutex(context->stateMachineLock);
-    }
-    return hasMoreWork;
+	if (!lockHeld)
+	{
+		PrtLockMutex(context->stateMachineLock);
+	}
+	context->isRunning = PRT_FALSE;
+	PrtUnlockMutex(context->stateMachineLock);
+	return hasMoreWork;
 }
 
 PRT_UINT32

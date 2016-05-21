@@ -916,7 +916,7 @@ DoHandleEvent:
 		PrtRunExitFunction(context, PrtGetCurrentStateDecl(context)->nTransitions);
 		PrtPopState(context, PRT_FALSE);
 		context->nextOperation = HandleEventOperation;
-		hasMoreWork = context->isHalted;
+		hasMoreWork = !context->isHalted;
 		goto Finish;
 	}
 

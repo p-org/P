@@ -804,7 +804,6 @@ PrtStepStateMachine(
 		goto DoReceive;
 	}
 
-
 DoEntry:
 	PrtUpdateCurrentActionsSet(context);
 	PrtUpdateCurrentDeferredSet(context);
@@ -844,11 +843,10 @@ DoAction:
 CheckLastOperation:
 	if (context->receive != NULL)
 	{
-		// we are now in a blocking "receive", so want for PrtSendPrivate to unblock us.
+		// We are at a blocking "receive"; so, wait for PrtSendPrivate to unblock us.
 		context->nextOperation = ReceiveOperation;
 		lockHeld = PRT_TRUE; // tricky case, the lock was grabbed in PrtRecive().
 		goto Finish;
-
 	}
 	switch (context->lastOperation)
 	{
@@ -922,7 +920,7 @@ DoHandleEvent:
 
 DoReceive:
 	PrtAssert(context->receive != NULL, "Must be blocked at a receive");
-	// this is a no-op because we are still blocked on receive until PrtSendPrivate notices
+	// This is a no-op because we are still blocked on receive until PrtSendPrivate notices
 	// we receive the unblocking event.  We do this instead of checking for receive != null
 	// so that we can be sure to unlock the stateMachineLock once and only once.
 	goto Finish;

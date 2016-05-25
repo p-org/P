@@ -37,6 +37,7 @@ void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr)
 }
 
 static PRT_BOOLEAN cooperative = PRT_FALSE;
+static int threads = 1;
 
 void Log(PRT_STEP step, PRT_MACHINEINST *context) { PrtPrintStep(step, context); }
 
@@ -50,6 +51,17 @@ static PRT_BOOLEAN ParseCommandLine(int argc, char *argv[])
             if (_stricmp(arg + 1, "cooperative") == 0)
             {
                 cooperative = PRT_TRUE;
+            }
+            else if (_stricmp(arg + 1, "threads") == 0)
+            {
+                if (i + 1 < argc)
+                {
+                    threads = atoi(argv[++i]);
+                    if (threads <= 0)
+                    {
+                        threads = 1;
+                    }
+                }
             }
             else if (_stricmp(arg + 1, "h") == 0 || _stricmp(arg + 1, "help") == 0 || _stricmp(arg + 1, "?") == 0)
             {
@@ -76,6 +88,31 @@ static void PrintUsage(void)
     printf("This program tests the compiled state machine in program.c and program.h\n");
     printf("Options:\n");
     printf("   -cooperative:    run state machine with the cooperative scheduler\n");
+}
+
+HANDLE threadsTerminated;
+long threadsRunning = 0;
+
+static void RunToIdle(LPVOID process)
+{
+    // In the tester we run the state machines until there is no more work to do then we exit
+    // instead of blocking indefinitely.  This is then equivalent of the non-cooperative case
+    // where we PrtRunStateMachine once (inside PrtMkMachine).  So we do NOT call PrtWaitForWork.
+    // PrtWaitForWork(process);
+    InterlockedIncrement(&threadsRunning);
+    PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)process;
+    while (privateProcess->terminating == PRT_FALSE)
+    {
+        if (PRT_STEP_IDLE == PrtStepProcess(process))
+        {
+            break;
+        }
+    }
+    long count = InterlockedDecrement(&threadsRunning);
+    if (count == 0)
+    {
+        SetEvent(threadsTerminated);
+    }
 }
 
 int main(int argc, char *argv[])
@@ -105,19 +142,14 @@ int main(int argc, char *argv[])
 
         if (cooperative)
         {
-            PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)process;
-            while (privateProcess->terminating == PRT_FALSE)
+            // test some multithreading across state machines.
+            threadsTerminated = CreateEvent(NULL, TRUE, FALSE, NULL);
+            for (int i = 0; i < threads; i++)
             {
-                if (PRT_STEP_IDLE == PrtStepProcess(process))
-                {
-                    // In the tester we run the state machines until there is no more work to do then we exit
-                    // instead of blocking indefinitely.  This is then equivalent of the non-cooperative case
-                    // where we PrtRunStateMachine once (inside PrtMkMachine).  So we do NOT call PrtWaitForWork.
-                    // PrtWaitForWork(process);
-                    break;
-                    
-                }
+                DWORD threadId;
+                CreateThread(NULL, 16000, (LPTHREAD_START_ROUTINE)RunToIdle, process, 0, &threadId);
             }
+            WaitForSingleObject(threadsTerminated, INFINITE);
         }
 
 		PrtFreeValue(payload);

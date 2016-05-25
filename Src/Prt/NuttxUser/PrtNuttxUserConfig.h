@@ -47,12 +47,16 @@ extern "C"{
 #include <semaphore.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include "SafeString.h"
 
 #ifdef PRT_DEBUG
 #ifndef _DEBUG
 #define _DEBUG
 #endif
 
+#define fprintf_s(a,b) fprintf(a,b)
+#define sprintf_s(a,b,c) sprintf(a,c)
 
     //#define PrtMalloc(size) malloc(size)
     //#define PrtCalloc(nmemb, size) calloc(nmemb, size)

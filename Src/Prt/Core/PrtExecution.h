@@ -512,11 +512,6 @@ extern "C"{
 		_Inout_ PRT_MACHINEINST_PRIV	    *context
 		);
 
-    PRT_API PRT_BOOLEAN
-        PrtStepStateMachine(
-            _Inout_ PRT_MACHINEINST_PRIV   *context
-        );
-
 	PRT_API void PRT_CALL_CONV PrtEnqueueInOrder(
 		_In_ PRT_VALUE					*source,
 		_In_ PRT_INT64					seqNum,

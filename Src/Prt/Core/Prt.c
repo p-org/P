@@ -33,26 +33,6 @@ PrtStartProcess(
     return (PRT_PROCESS *)process;
 }
 
-PRT_API PRT_STEP_RESULT
-PrtStepProcess(PRT_PROCESS *process
-)
-{
-    PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)process;
-    PrtLockMutex(privateProcess->processLock);
-
-    PRT_BOOLEAN hasMoreWork = PRT_FALSE;
-
-    // fun all state machines belonging to this process.
-    for (int i = privateProcess->machineCount - 1; i >= 0; i--)
-    {
-        PRT_MACHINEINST_PRIV *machine = (PRT_MACHINEINST_PRIV*)privateProcess->machines[i];
-        hasMoreWork |= PrtStepStateMachine(machine);
-    }
-    PRT_BOOLEAN terminating = privateProcess->terminating;
-    PrtUnlockMutex(privateProcess->processLock);
-    return terminating ? PRT_STEP_TERMINATING : (hasMoreWork ? PRT_STEP_MORE : PRT_STEP_IDLE);
-}
-
 PRT_API PRT_BOOLEAN
 PrtWaitForWork(PRT_PROCESS* process)
 {
@@ -152,8 +132,8 @@ PrtStopProcess(
 {
     PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
 
-    PrtLockMutex(privateProcess->processLock);
     privateProcess->terminating = PRT_TRUE;
+    PrtLockMutex(privateProcess->processLock);
     PRT_BOOLEAN waitForThreads = PRT_FALSE;
     PRT_COOPERATIVE_SCHEDULER* info = NULL;
 

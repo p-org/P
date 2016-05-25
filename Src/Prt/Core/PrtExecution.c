@@ -308,17 +308,28 @@ _In_ PRT_BOOLEAN				doTransfer
 	PrtLog(PRT_STEP_ENQUEUE, context);
 
 	// Check if this event unblocks a blocking "receive" operation.  
-    if (context->receive != NULL && PrtIsEventReceivable(context, PrtPrimGetEvent(event)))
+    if (context->receive != NULL)
     {
-        // receive is now unblocked, so tell the next call to PrtStepStateMachine to pick
-        // up in the DoEntry state where it will re-initialize the call stack so the
-        // Receive can continue where it left off.
-        context->nextOperation = EntryOperation;
+        if (PrtIsEventReceivable(context, PrtPrimGetEvent(event)))
+        {
+            // receive is now unblocked, so tell the next call to PrtStepStateMachine to pick
+            // up in the DoEntry state where it will re-initialize the call stack so the
+            // Receive can continue where it left off.
+            context->nextOperation = EntryOperation;
+            PrtUnlockMutex(context->stateMachineLock);
+            PrtScheduleWork(context);
+        }
+        else
+        {
+            // No point scheduling work if the receive is still blocked.
+            PrtUnlockMutex(context->stateMachineLock);
+        }
     }
-
-	PrtUnlockMutex(context->stateMachineLock);
-    PrtScheduleWork(context);
-
+    else 
+    {
+        PrtUnlockMutex(context->stateMachineLock);
+        PrtScheduleWork(context);
+    }
 	return;
 }
 
@@ -760,18 +771,7 @@ _In_ PRT_UINT32						transIndex
 	PRT_DBG_ASSERT(context->lastOperation == ReturnStatement, "Exit function must terminate with a ReturnStatement");
 }
 
-void
-PrtRunStateMachine(
-    _Inout_ PRT_MACHINEINST_PRIV	*context
-)
-{
-    // This function now just wraps the new PrtStepStateMachine method
-    while (PrtStepStateMachine(context)) {
-        ;
-    }
-}
-
-PRT_BOOLEAN
+static PRT_BOOLEAN
 PrtStepStateMachine(
 	_Inout_ PRT_MACHINEINST_PRIV	*context
 )
@@ -781,16 +781,7 @@ PrtStepStateMachine(
 	PRT_UINT32 eventValue;
 	PRT_BOOLEAN hasMoreWork = PRT_FALSE;
 
-	// protecting against re-entry using isRunning boolean.
-	PrtLockMutex(context->stateMachineLock);
-	if (context->isRunning)
-	{
-		// Another thread is already running this state machine!
-		PrtUnlockMutex(context->stateMachineLock);
-		return PRT_FALSE;
-	}
-	context->isRunning = PRT_TRUE;
-	PrtUnlockMutex(context->stateMachineLock);
+    PrtAssert(context->isRunning, "The caller should have set context->isRunning to TRUE");
 
 	switch (context->nextOperation)
 	{
@@ -926,13 +917,86 @@ DoReceive:
 	goto Finish;
 
 Finish:
-	if (!lockHeld)
+	if (lockHeld)
 	{
-		PrtLockMutex(context->stateMachineLock);
+		PrtUnlockMutex(context->stateMachineLock);
 	}
-	context->isRunning = PRT_FALSE;
-	PrtUnlockMutex(context->stateMachineLock);
+
 	return hasMoreWork;
+}
+
+void
+PrtRunStateMachine(
+    _Inout_ PRT_MACHINEINST_PRIV	*context
+)
+{
+    // protecting against re-entry using isRunning boolean.
+    PrtLockMutex(context->stateMachineLock);
+    if (context->isRunning)
+    {
+        // Another thread is already running this state machine!
+        PrtUnlockMutex(context->stateMachineLock);
+        return;
+    }
+    context->isRunning = PRT_TRUE;
+    PrtUnlockMutex(context->stateMachineLock);
+
+    // This function now just wraps the new PrtStepStateMachine method
+    while (!context->isHalted && PrtStepStateMachine(context)) {
+        ;
+    }
+
+    if (!context->isHalted)
+    {
+        PrtLockMutex(context->stateMachineLock);
+        context->isRunning = PRT_FALSE;
+        PrtUnlockMutex(context->stateMachineLock);
+    }
+}
+
+PRT_API PRT_STEP_RESULT
+PrtStepProcess(PRT_PROCESS *process
+)
+{
+    PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)process;
+
+    // Stop the process from terminating until this method is done playing with the machines in the process.
+    PrtLockMutex(privateProcess->processLock);
+
+    PRT_BOOLEAN hasMoreWork = PRT_FALSE;
+
+    // Run all state machines belonging to this process.
+    for (int i = privateProcess->machineCount - 1; i >= 0 && !privateProcess->terminating; i--)
+    {
+        PRT_MACHINEINST_PRIV *context = (PRT_MACHINEINST_PRIV*)privateProcess->machines[i];
+        if (context != NULL && !context->isHalted)
+        {
+            // protecting against re-entry using isRunning boolean.
+            PrtLockMutex(context->stateMachineLock);
+            if (context->isRunning)
+            {
+                // Another thread is already running this state machine!
+                PrtUnlockMutex(context->stateMachineLock);
+            }
+            else
+            {
+                context->isRunning = PRT_TRUE;
+                PrtUnlockMutex(context->stateMachineLock);
+                hasMoreWork |= PrtStepStateMachine(context);
+
+                if (!context->isHalted)
+                {
+                    PrtLockMutex(context->stateMachineLock);
+                    context->isRunning = PRT_FALSE;
+                    PrtUnlockMutex(context->stateMachineLock);
+                }
+            }
+        }
+    }
+
+    PRT_BOOLEAN terminating = privateProcess->terminating;
+    PrtUnlockMutex(privateProcess->processLock);
+    return terminating ? PRT_STEP_TERMINATING : (hasMoreWork ? PRT_STEP_MORE : PRT_STEP_IDLE);
 }
 
 PRT_UINT32

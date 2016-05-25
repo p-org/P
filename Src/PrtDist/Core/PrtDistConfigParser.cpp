@@ -7,9 +7,9 @@ using namespace MSXML2;
 
 typedef	struct _XMLNODE {
 	char NodeType[MAX_LOG_SIZE];
-	char NodeName[MAX_LOG_SIZE];
-	char NodeValue[MAX_LOG_SIZE];
-	char NodeParent[MAX_LOG_SIZE];
+    char NodeName[MAX_LOG_SIZE];
+    char NodeValue[MAX_LOG_SIZE];
+    char NodeParent[MAX_LOG_SIZE];
 } XMLNODE;
 
 XMLNODE** XMLDOMParseNodes(const char*);
@@ -31,10 +31,17 @@ void PrtDistClusterConfigInitialize(char* configurationFile)
 	{
 		if (strcmp(currNode->NodeName, "MainExe") == 0)
 		{
-			char* buffer = (char*)malloc(sizeof(char) * 100);
-			GetFileTitle(currNode->NodeValue, buffer, 100);
-			strcat_s(buffer, 100, ".exe");
-			ClusterConfiguration.MainExe = buffer;
+            char* drive = (char*)malloc(sizeof(char) * 100);
+            char* dir = (char*)malloc(sizeof(char) * 1000);
+            char* fname = (char*)malloc(sizeof(char) * 100);
+            char* ext = (char*)malloc(sizeof(char) * 100);
+            // we do NOT use GetFileTitle since that returns different things depending on user settings!!
+            _splitpath_s(currNode->NodeValue, drive, 100, dir, 1000, fname, 100, ext, 100);
+            strcat_s(fname, 100, ext);
+			ClusterConfiguration.MainExe = fname;
+            free(drive);
+            free(dir);
+            free(ext);
 		}
 		else if (strcmp(currNode->NodeName, "NodeManagerPort") == 0)
 		{
@@ -86,6 +93,12 @@ inline void TESTHR(HRESULT _hr)
 {
 	if FAILED(_hr)
 		throw(_hr);
+}
+
+static void CopyUnicodeToUtf8(LPWSTR source, char* buffer, int bufferLength)
+{
+    int len = WideCharToMultiByte(CP_UTF8, 0, source, wcslen(source), buffer, bufferLength - 1, 0, NULL);
+    buffer[len] = '\0';
 }
 
 //The following code gets all elements found in XML file,
@@ -173,21 +186,21 @@ XMLNODE** XMLDOMParseNodes(const char *szFileName)
 					n++;//element node's number
 					//printf("\n\n%d\n", n);//element node's number
 
-					sprintf_s(currNode->NodeType, MAX_LOG_SIZE, "%s", (LPCTSTR)bstrNodeType);
+                    CopyUnicodeToUtf8(bstrNodeType, currNode->NodeType, MAX_LOG_SIZE);
 					//printf("Type: %ls\n", bstrNodeType);
 
 					pIDOMNode->get_nodeName(&bstrItemNode);
 					//printf("Node: %ls\n", bstrItemNode);
-					sprintf_s(currNode->NodeName, MAX_LOG_SIZE, "%s", (LPCTSTR)bstrItemNode);
+                    CopyUnicodeToUtf8(bstrItemNode, currNode->NodeName, MAX_LOG_SIZE);
 
 					pIDOMNode->get_text(&bstrItemText);
 					//printf("Text: %ls\n", bstrItemText);
-					sprintf_s(currNode->NodeValue, MAX_LOG_SIZE, "%s", ((LPCTSTR)bstrItemText));
+                    CopyUnicodeToUtf8(bstrItemText, currNode->NodeValue, MAX_LOG_SIZE);
 
 					pIDOMNode->get_parentNode(&pIParentNode);
 					pIParentNode->get_nodeName(&bstrItemParent);
 					//printf("Parent: %ls\n",bstrItemParent);
-					sprintf_s(currNode->NodeParent, MAX_LOG_SIZE, "%s", ((LPCTSTR)bstrItemParent));
+                    CopyUnicodeToUtf8(bstrItemParent, currNode->NodeParent, MAX_LOG_SIZE);
 
 					pIDOMNode->get_childNodes(&childList);
 					//printf("Child nodes: %d\n", (childList->length));

@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 
 <configuration>
-    <PBinaries>C:\WorkSpace\plang\Bld\Drops\Debug\x86\Binaries\</PBinaries>
-    <PSTools>D:\git\P\Ext\PsTools</PSTools>
-    <MainExe>C:\WorkSpace\plang\Bld\Drops\Debug\x86\Binaries\PingPong\PingPong.exe</MainExe>
+    <PBinaries>D:\git\p\bld\Drops\debug\x64\Binaries</PBinaries>
+    <PSTools>D:\tools\pstools</PSTools>
+    <MainExe>D:\git\P\Bld\Drops\Debug\x86\Samples\PingPong\PingPong.exe</MainExe>
     <NodeManagerPort>5600</NodeManagerPort>
     <ContainerPortStart>5900</ContainerPortStart>
     <NetworkShare>.\DebugLocal\</NetworkShare>

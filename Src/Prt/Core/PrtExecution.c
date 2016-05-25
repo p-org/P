@@ -224,17 +224,18 @@ _In_ PRT_BOOLEAN				doTransfer
 	PrtAssert(!PrtIsSpecialEvent(event), "Enqueued event must not be null");
 	PrtAssert(PrtInhabitsType(payload, PrtGetPayloadType(context, event)), "Payload must be member of event payload type");
 
+	PrtLockMutex(context->stateMachineLock);
+
 	if (context->isHalted)
 	{
 		// drop the event silently
+		PrtUnlockMutex(context->stateMachineLock);
 		return;
 	}
 
 	eventIndex = PrtPrimGetEvent(event);
 	eventMaxInstances = context->process->program->events[eventIndex].eventMaxInstances;
 	maxQueueSize = context->process->program->machines[context->instanceOf].maxQueueSize;
-
-	PrtLockMutex(context->stateMachineLock);
 
 	queue = &context->eventQueue;
 
@@ -304,10 +305,14 @@ _In_ PRT_VALUE					*payload
 )
 {
 	// Check if the enqueued event is in order
-	if (context->isHalted)
-		return;
-
 	PrtLockMutex(context->stateMachineLock);
+
+	if (context->isHalted)
+	{
+		PrtUnlockMutex(context->stateMachineLock);
+		return;
+	}
+
 	if (PrtMapExists(context->recvMap, source) && PrtMapGet(context->recvMap, source)->valueUnion.nt >= seqNum)
 	{
 		PrtUnlockMutex(context->stateMachineLock);
@@ -646,7 +651,7 @@ _Inout_ PRT_MACHINEINST_PRIV		*context
 	// Actual pop happens in PrtPopState; the exit function must be executed first.
 }
 
-void
+PRT_BOOLEAN
 PrtPopState(
 _Inout_ PRT_MACHINEINST_PRIV		*context,
 _In_ PRT_BOOLEAN				isPopStatement
@@ -656,6 +661,8 @@ _In_ PRT_BOOLEAN				isPopStatement
 	PRT_UINT16 packSize;
 	PRT_UINT16 length;
 	PRT_STATESTACK_INFO poppedState;
+	PRT_BOOLEAN isHalted = PRT_FALSE;
+
 	i = 0;
 	packSize = PrtGetPackSize(context);
 	length = context->callStack.length;
@@ -671,12 +678,13 @@ _In_ PRT_BOOLEAN				isPopStatement
 		else if (PrtPrimGetEvent(context->currentTrigger) == PRT_SPECIAL_EVENT_HALT)
 		{
 			PrtHaltMachine(context);
+			isHalted = PRT_TRUE;
 		}
 		else
 		{
 			PrtHandleError(PRT_STATUS_EVENT_UNHANDLED, context);
 		}
-		return;
+		return isHalted;
 	}
 
 	context->callStack.length = length - 1;
@@ -703,6 +711,7 @@ _In_ PRT_BOOLEAN				isPopStatement
 		// unhandled event
 		PrtLog(PRT_STEP_UNHANDLED, context);
 	}
+	return isHalted;
 }
 
 FORCEINLINE
@@ -851,8 +860,7 @@ DoHandleEvent:
 	else
 	{
 		PrtRunExitFunction(context, PrtGetCurrentStateDecl(context)->nTransitions);
-		PrtPopState(context, PRT_FALSE);
-		if (context->isHalted)
+		if (PrtPopState(context, PRT_FALSE))
 			return;
 		goto DoHandleEvent;
 	}
@@ -1558,7 +1566,6 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 	PRT_DBG_ASSERT(!context->isModel, "Must be a real machine");
 	PrtLog(PRT_STEP_HALT, context);
 	PrtCleanupMachine(context);
-	context->isHalted = PRT_TRUE;
 }
 
 void
@@ -1566,8 +1573,13 @@ PrtCleanupMachine(
 _Inout_ PRT_MACHINEINST_PRIV			*context
 )
 {
+	PrtLockMutex(context->stateMachineLock);
 	if (context->isHalted)
+	{
+		PrtUnlockMutex(context->stateMachineLock);
 		return;
+	}
+	context->isHalted = PRT_TRUE;
 
 	if (context->eventQueue.events != NULL)
 	{
@@ -1655,11 +1667,6 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 		PrtFree(context->varValues);
 	}
 
-	if (context->stateMachineLock != NULL)
-	{
-		PrtDestroyMutex(context->stateMachineLock);
-	}
-
 	if (context->extContext != NULL)
 		context->process->program->machines[context->instanceOf].extDtorFun((PRT_MACHINEINST *)context);
 	PrtFreeValue(context->id);
@@ -1670,6 +1677,8 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 	{
 		PrtFreeValue(context->recvMap);
 	}
+
+	PrtUnlockMutex(context->stateMachineLock);
 }
 
 void

@@ -165,12 +165,6 @@ extern "C"{
 		_In_ PRT_VALUE					*payload
 		);
 
-	PRT_API void PRT_CALL_CONV
-		PrtPush(
-		_Inout_ PRT_MACHINEINST_PRIV		*context,
-		_In_ PRT_UINT32					stateIndex
-		);
-
 	void
 		PrtPushState(
 		_Inout_ PRT_MACHINEINST_PRIV	*context,
@@ -182,7 +176,7 @@ extern "C"{
 		_Inout_ PRT_MACHINEINST_PRIV		*context
 		);
 
-	void
+	PRT_BOOLEAN
 		PrtPopState(
 		_Inout_ PRT_MACHINEINST_PRIV		*context,
 		_In_ PRT_BOOLEAN				isPopStatement
@@ -477,7 +471,6 @@ extern "C"{
 		_In_ PRT_UINT16					funCallIndex,
 		_Inout_ PRT_MACHINEINST_PRIV	*context,
 		_In_ PRT_UINT32					funIndex
-		//_In_ PRT_VALUE					*parameters
 		);
 
 	PRT_API PRT_BOOLEAN

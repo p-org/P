@@ -39,9 +39,18 @@ PrtStopProcess(
 	{
 		PRT_MACHINEINST *context = privateProcess->machines[i];
 		if (context->isModel)
+		{
 			PrtCleanupModel(context);
+		}
 		else 
-			PrtCleanupMachine((PRT_MACHINEINST_PRIV *)context);
+		{
+			PRT_MACHINEINST_PRIV * privContext = (PRT_MACHINEINST_PRIV *)context;
+			PrtCleanupMachine(privContext);
+			if (privContext->stateMachineLock != NULL)
+			{
+				PrtDestroyMutex(privContext->stateMachineLock);
+			}
+		}
 		PrtFree(context);
 	}
 

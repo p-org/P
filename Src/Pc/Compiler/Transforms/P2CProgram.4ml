@@ -1894,10 +1894,6 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 									ec = out.FunApp(Ident("PrtMkDefaultValue"), Args(expr, NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = in.Fresh(name), TypeToExpr(in.NameType(name), expr),
-									ec = out.FunApp(Ident("PrtMkFreshForeignValue"), Args(expr, NIL)).
-
-	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = in.Cast(arg, type), RhsEvalOrder(s, i, arg, tmp1), TypeToExpr(type, expr), 
 									getArg = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
 									ec = out.FunApp(Ident("PrtCastValue"), Args(getArg, Args(expr, NIL))).
@@ -2181,7 +2177,6 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.UnApp.
 	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.BinApp, e.op != IDX.
 	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.Default.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.Fresh.
 	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.Tuple.
 	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.NamedTuple.
 
@@ -2202,7 +2197,6 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 	ExprDepNum(0, e) :- SubSE(_, e), e : in.Name.
 	ExprDepNum(0, e) :- SubSE(_, e), e : in.NulApp. 
 	ExprDepNum(0, e) :- SubSE(_, e), e : in.Default.
-	ExprDepNum(0, e) :- SubSE(_, e), e : in.Fresh.
 
 	//// New app has a hidden dependency on NULL if it is an nullary app.
 	ExprDepNum(0, h),

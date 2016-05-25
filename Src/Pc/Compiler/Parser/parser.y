@@ -15,7 +15,7 @@
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH AS WITH
 
-%token IF WHILE THIS NEW RETURN ID POP ASSERT PRINT CALL RAISE SEND DEFAULT FRESH HALT NULL RECEIVE CASE
+%token IF WHILE THIS NEW RETURN ID POP ASSERT PRINT CALL RAISE SEND DEFAULT HALT NULL RECEIVE CASE
 %token LPAREN RPAREN LCBRACE RCBRACE LBRACKET RBRACKET SIZEOF KEYS VALUES
 
 %token TRUE FALSE
@@ -471,7 +471,6 @@ Exp_0
     | VALUES  LPAREN Exp RPAREN              { PushUnExpr(P_Root.UserCnstKind.VALUES, ToSpan(@1));      }
     | SIZEOF  LPAREN Exp RPAREN              { PushUnExpr(P_Root.UserCnstKind.SIZEOF, ToSpan(@1));      }
     | DEFAULT LPAREN Type RPAREN             { PushDefaultExpr(ToSpan(@1));                             }
-	| FRESH LPAREN ID RPAREN                 { PushFreshExpr($3.str, ToSpan(@3), ToSpan(@1));           }
 	| NEW ID LPAREN RPAREN								{ PushNewExpr($2.str, ToSpan(@2), false, ToSpan(@1)); }
 	| NEW ID LPAREN SingleExprArgList RPAREN			{ PushNewExpr($2.str, ToSpan(@2), true, ToSpan(@1)); }
 	| LPAREN Exp COMMA             RPAREN    { PushTupleExpr(true);                                     }

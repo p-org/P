@@ -782,14 +782,6 @@
             valueExprStack.Push(defExpr);
         }
 
-        private void PushFreshExpr(string name, Span nameSpan, Span span)
-        {
-            var freshExpr = P_Root.MkFresh();
-            freshExpr.name = (P_Root.IArgType_Fresh__0)MkString(name, nameSpan);
-            freshExpr.Span = span;
-            valueExprStack.Push(freshExpr);
-        }
-
         private void PushIntExpr(string intStr, Span span)
         {
             int val;

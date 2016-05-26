@@ -78,7 +78,11 @@ static void LogHandler(PRT_STEP step, PRT_MACHINEINST *context)
     {
         stopping = TRUE;
         printf("Ran %d steps in 10 seconds", steps);
-        PrtHaltMachine((PRT_MACHINEINST_PRIV *)context);
+		PRT_VALUE *haltEvent = PrtMkEventValue(_P_EVENT_HALT);
+		PRT_VALUE *nullValue = PrtMkNullValue();
+		PrtSend((PRT_MACHINEINST_PRIV *)context, haltEvent, nullValue, PRT_FALSE);
+		PrtFreeValue(haltEvent);
+		PrtFreeValue(nullValue);
     }
 }
 

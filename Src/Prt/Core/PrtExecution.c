@@ -1061,12 +1061,14 @@ PrtStepProcess(PRT_PROCESS *process
 	}
 	hasMoreWork |= machineCount < privateProcess->machineCount;
 	info->threadsWaiting--;
-	if (info->threadsWaiting == 0)
+	PRT_UINT32 threadsWaiting = info->threadsWaiting;
+	PrtUnlockMutex(privateProcess->processLock);
+
+	if (terminating && threadsWaiting == 0)
 	{
 		PrtReleaseSemaphore(info->allThreadsStopped);
 	}
-	PrtUnlockMutex(privateProcess->processLock);
-    return terminating ? PRT_STEP_TERMINATING : (hasMoreWork ? PRT_STEP_MORE : PRT_STEP_IDLE);
+	return terminating ? PRT_STEP_TERMINATING : (hasMoreWork ? PRT_STEP_MORE : PRT_STEP_IDLE);
 }
 
 PRT_UINT32

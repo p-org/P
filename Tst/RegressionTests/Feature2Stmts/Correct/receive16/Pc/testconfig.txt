@@ -1,0 +1,5 @@
+arg: ..\receiveInExit3.p
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, receive statement

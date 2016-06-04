@@ -8,7 +8,7 @@ domain PData
     /*************************************************************/
     /****************          Type Language          ************/
     /*************************************************************/    
-    Qualifier       ::= { NONE, SWAP, XFER}.
+    Qualifier       ::= { NONE, REF, XFER}.
     
 	TypeDef         ::= new (name: String, type: any TypeExpr + { NIL }).
 
@@ -484,9 +484,9 @@ domain PStaticTyping extends PData
 
 	FunCallQualifierError ::= (TypingContext, FunApp + FunStmt, Expr).
 	[ rule_Classes = '"error, msg: argument qualifier incompatible with parameter qualifier"']
-	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, nmdTupType), exprs = Exprs(SWAP, expr, _), nmdTupType = NmdTupType(NmdTupTypeField(NONE, _, _), _).
+	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, nmdTupType), exprs = Exprs(REF, expr, _), nmdTupType = NmdTupType(NmdTupTypeField(NONE, _, _), _).
 	[ rule_Classes = '"error, msg: argument qualifier incompatible with parameter qualifier"']
-	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, nmdTupType), exprs = Exprs(qual, expr, _), qual != SWAP, nmdTupType = NmdTupType(NmdTupTypeField(SWAP, _, _), _).
+	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, nmdTupType), exprs = Exprs(qual, expr, _), qual != REF, nmdTupType = NmdTupType(NmdTupTypeField(REF, _, _), _).
 	[ rule_Classes = '"error, msg: argument qualifier xfer not allowed in nested function call"']
 	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, _), e: FunApp, exprs = Exprs(XFER, expr, _).
 
@@ -498,13 +498,13 @@ domain PStaticTyping extends PData
 	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, _), exprs = Exprs(XFER, expr, _), expr = Name(n), IsMachineVar(c, n, _, _).
 	[ rule_Classes = '"error, msg: argument should be a global variable not accessed by callee"']
 	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, _), FunAvailable(callee, c.owner), e.name = callee.name, 
-										 exprs = Exprs(SWAP, expr, _), expr = Name(n), IsMachineVar(c, n, _, _), AccessesGlobal(callee, n).
+										 exprs = Exprs(REF, expr, _), expr = Name(n), IsMachineVar(c, n, _, _), AccessesGlobal(callee, n).
 	[ rule_Classes = '"error, msg: xfer or swap argument should be passed for exactly one parameter"']
 	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, Exprs(qual, expr, tl), _), FunArgsParams(c, e, Exprs(_, expr, tl'), _), qual != NONE, tl != tl'.
 
 	SendQualifierError ::= (TypingContext, Send).
 	[rule_Classes = '"error, msg: swap qualifier not allowed"']
-	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, _, SWAP, _).
+	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, _, REF, _).
 	[ rule_Classes = '"error, msg: null payload not allowed"']
 	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, NIL, XFER, _).
 	[ rule_Classes = '"error, msg: payload should be a variable"']
@@ -579,9 +579,9 @@ domain PStaticTyping extends PData
 
 	UnavailableParameterError ::= (FunDecl, String).
 	[rule_Classes = '"error, msg: parameter is not available at return"']
-	UnavailableParameterError(c, n) :- FormalParamAux(c, SWAP, n, _), UnavailableAfter(c, c.body, n).
+	UnavailableParameterError(c, n) :- FormalParamAux(c, REF, n, _), UnavailableAfter(c, c.body, n).
 	[rule_Classes = '"error, msg: parameter is not available at return"']
-	UnavailableParameterError(c, n) :- FormalParamAux(c, SWAP, n, _), UnavailableBefore(c, Return(_, _), n).
+	UnavailableParameterError(c, n) :- FormalParamAux(c, REF, n, _), UnavailableBefore(c, Return(_, _), n).
 
     /*************************************************************/
     /*                      Types of Statements                  */

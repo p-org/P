@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 367 distinct states explored
+OUT: 591 distinct states explored
 OUT: 
 EXIT: 3
 
@@ -73,8 +73,8 @@ Trace-Log 4:
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
-<MonitorLog> Enqueued Event < ____REL, 0 > to Spinlock monitor
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
+<MonitorLog> Enqueued Event < ____REL, 1 > to Spinlock monitor
 
 Error:
 P Assertion failed:
@@ -86,8 +86,8 @@ Trace-Log 5:
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
-<MonitorLog> Enqueued Event < ____REL, 1 > to Spinlock monitor
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
+<MonitorLog> Enqueued Event < ____REL, 0 > to Spinlock monitor
 
 Error:
 P Assertion failed:

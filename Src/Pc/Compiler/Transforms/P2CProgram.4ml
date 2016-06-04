@@ -2137,9 +2137,9 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 	TransformFunArgs(c, s, i, ii, args', tl) :- TransformFunArgs(c, s, i, NaturalList(j, ii), args, in.Exprs(NONE, _, tl)), 
 												ec = Ident(strJoin("p_tmp_expr_", toString(j))), 
 												args' = out.Args(ec, Args(Ident("PRT_FUN_PARAM_CLONE"), args)).
-	TransformFunArgs(c, s, i, ii, args', tl) :- TransformFunArgs(c, s, i, NaturalList(j, ii), args, in.Exprs(SWAP, _, tl)),
+	TransformFunArgs(c, s, i, ii, args', tl) :- TransformFunArgs(c, s, i, NaturalList(j, ii), args, in.Exprs(REF, _, tl)),
 												RhsTrans(c, s, i, j, out.Args(ec, _)), 
-												args' = out.Args(UnApp(ADDR, ec), Args(Ident("PRT_FUN_PARAM_SWAP"), args)).
+												args' = out.Args(UnApp(ADDR, ec), Args(Ident("PRT_FUN_PARAM_REF"), args)).
 	TransformFunArgs(c, s, i, ii, args', tl) :- TransformFunArgs(c, s, i, NaturalList(j, ii), args, in.Exprs(XFER, _, tl)), 
 												RhsTrans(c, s, i, j, out.Args(ec, _)), 
 												args' = out.Args(UnApp(ADDR, ec), Args(Ident("PRT_FUN_PARAM_XFER"), args)).

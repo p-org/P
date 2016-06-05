@@ -345,6 +345,32 @@ extern "C"{
 		_In_ PRT_VALUE* value, 
 		_In_ PRT_BOOLEAN cloneValue);
 
+
+	/** Inserts value into the sequence at index.
+	* Index cannot be larger than the size of the sequence. Insertion causes:
+	* seq'[index] = value.
+	* For all i >= index, if seq[i] is defined, then seq'[i + 1] = seq[i].
+	* For all i < index, if seq[i] is defined, then seq'[i] = seq[i].
+	* @param[in,out] seq   A sequence to mutate.
+	* @param[in]     index An 0-based index s.t. 0 <= index <= size(seq).
+	* @param[in]     value The value to store at index (will be cloned if cloneValue is PRT_TRUE).
+	* @param[in]     cloneValue Only set to PRT_FALSE if value will be forever owned by this seq.
+	*/
+	PRT_API void PRT_CALL_CONV PrtSeqInsertExIntIndex(
+		_Inout_ PRT_VALUE *seq,
+		_In_ PRT_UINT32 index,
+		_In_ PRT_VALUE* value,
+		_In_ PRT_BOOLEAN cloneValue);
+
+	/** Gets the sequence at index.
+	* @param[in] seq   A sequence.
+	* @param[in] index A 0-based index s.t. 0 <= index < size(seq).
+	* @returns The value at index (clones). Caller is responsible for freeing.
+	*/
+	PRT_API PRT_VALUE * PRT_CALL_CONV PrtSeqGetNCIntIndex(
+		_In_ PRT_VALUE *seq,
+		_In_ PRT_UINT32 index);
+
 	/** Removes the value at index from the sequence, and shortens the sequence by one.
 	* seq[index] must be defined. Removal causes:
 	* For all i > index, if seq[i] is defined, then seq'[i - 1] = seq[i].

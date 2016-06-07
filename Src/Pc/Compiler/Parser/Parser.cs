@@ -26,7 +26,6 @@
 
         private Span crntAnnotSpan;
         private bool isTrigAnnotated = false;
-        private bool isStaticFun = false;
         private P_Root.FunDecl crntFunDecl = null;
         private P_Root.EventDecl crntEventDecl = null;
         private P_Root.MachineDecl crntMachDecl = null;
@@ -1103,9 +1102,9 @@
             Contract.Assert(stmtStack.Count > 0);
             P_Root.IArgType_StateDecl__2 entry;
             P_Root.StateDecl state;
-            var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
+            var stmt = (P_Root.IArgType_AnonFunDecl__3)stmtStack.Pop();
             state = GetCurrentStateDecl(stmt.Span);
-            entry = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)localVarStack.ContextLocalVarDecl);
+            entry = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), (P_Root.IArgType_AnonFunDecl__2)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__4)localVarStack.ContextLocalVarDecl);
             entry.Span = stmt.Span;
             parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)entry);
             AddSourceInfoToProgram((P_Root.AnonFunDecl)entry, entrySpan, exitSpan);
@@ -1158,9 +1157,9 @@
             P_Root.IArgType_StateDecl__3 exit;
             P_Root.StateDecl state;
 
-            var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
+            var stmt = (P_Root.IArgType_AnonFunDecl__3)stmtStack.Pop();
             state = GetCurrentStateDecl(stmt.Span);
-            exit = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)localVarStack.ContextLocalVarDecl);
+            exit = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), (P_Root.IArgType_AnonFunDecl__2)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__4)localVarStack.ContextLocalVarDecl);
             exit.Span = stmt.Span;
             parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)exit);
             AddSourceInfoToProgram((P_Root.AnonFunDecl)exit, entrySpan, exitSpan);
@@ -1207,7 +1206,6 @@
             }
         }
 
-
         private void SetMachineIsMain(Span span)
         {
             var machDecl = GetCurrentMachineDecl(span);
@@ -1228,6 +1226,27 @@
             funDecl.kind = MkUserCnst(kind, span);
         }
 
+        private void SetFunName(string name, Span span)
+        {
+            var funDecl = GetCurrentFunDecl(span);
+            funDecl.name = MkString(name, span);
+            if (crntFunNames.Contains(name))
+            {
+                var errFlag = new Flag(
+                                     SeverityKind.Error,
+                                     span,
+                                     Constants.BadSyntax.ToString(string.Format("A function with name {0} already declared", name)),
+                                     Constants.BadSyntax.Code,
+                                     parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+            else
+            {
+                crntFunNames.Add(name);
+            }
+        }
+
         private void SetFunParams(Span span)
         {
             Contract.Assert(typeExprStack.Count > 0);
@@ -1245,22 +1264,14 @@
         #endregion
 
         #region Adders
-        private void AddEmptyTypeDef(string name, Span nameSpan, Span typeDefSpan)
+        private void AddModelTypeDef(string name, Span nameSpan, Span typeDefSpan)
         {
-            P_Root.TypeDef typeDef;
+            AddTypeDef(name, nameSpan, typeDefSpan);
             if (Options.erase)
             {
-                typeDef = P_Root.MkTypeDef(MkString(name, nameSpan), MkUserCnst(P_Root.UserCnstKind.NIL, nameSpan));
+                var modelType = P_Root.MkModelType(MkString(name, nameSpan));
+                parseProgram.ModelTypes.Add(modelType);
             }
-            else
-            {
-                typeDef = P_Root.MkTypeDef(
-                    MkString(name, nameSpan), 
-                    (P_Root.IArgType_TypeDef__1)MkBaseType(P_Root.UserCnstKind.INT, nameSpan));
-            }
-
-            typeDef.Span = typeDefSpan;
-            parseProgram.TypeDefs.Add(typeDef);
         }
 
         private void AddTypeDef(string name, Span nameSpan, Span typeDefSpan)
@@ -1346,8 +1357,8 @@
 
             var state = GetCurrentStateDecl(span);
             P_Root.IArgType_TransDecl__3 action;
-            var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
-            action = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)localVarStack.ContextLocalVarDecl);
+            var stmt = (P_Root.IArgType_AnonFunDecl__3)stmtStack.Pop();
+            action = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), (P_Root.IArgType_AnonFunDecl__2)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__4)localVarStack.ContextLocalVarDecl);
             action.Span = stmt.Span;
             parseProgram.AnonFunctions.Add((P_Root.AnonFunDecl)action);
             AddSourceInfoToProgram((P_Root.AnonFunDecl)action, entrySpan, exitSpan);
@@ -1490,12 +1501,16 @@
 
         private void AddCaseAnonyAction(Span entrySpan, Span exitSpan)
         {
-            var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
-            P_Root.IArgType_AnonFunDecl__0 owner = 
-                isStaticFun 
-                ? (P_Root.IArgType_AnonFunDecl__0) P_Root.MkUserCnst(P_Root.UserCnstKind.NIL) 
-                : (P_Root.IArgType_AnonFunDecl__0) GetCurrentMachineDecl(new Span());
-            var anonAction = P_Root.MkAnonFunDecl(owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)localVarStack.ContextLocalVarDecl);
+            var stmt = (P_Root.IArgType_AnonFunDecl__3)stmtStack.Pop();
+            P_Root.IArgType_AnonFunDecl__0 owner =
+                    crntMachDecl == null
+                    ? (P_Root.IArgType_AnonFunDecl__0)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL)
+                    : (P_Root.IArgType_AnonFunDecl__0)crntMachDecl;
+            P_Root.IArgType_AnonFunDecl__1 ownerFun =
+                    crntFunDecl == null
+                    ? (P_Root.IArgType_AnonFunDecl__1)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL)
+                    : (P_Root.IArgType_AnonFunDecl__1)crntFunDecl.name;
+            var anonAction = P_Root.MkAnonFunDecl(owner, ownerFun, (P_Root.IArgType_AnonFunDecl__2)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__4)localVarStack.ContextLocalVarDecl);
             anonAction.Span = stmt.Span;
             parseProgram.AnonFunctions.Add(anonAction);
             AddSourceInfoToProgram(anonAction, entrySpan, exitSpan);
@@ -1512,9 +1527,9 @@
             Contract.Assert(!isTrigAnnotated || crntAnnotStack.Count > 0);
 
             var state = GetCurrentStateDecl(new Span());
-            var stmt = (P_Root.IArgType_AnonFunDecl__2)stmtStack.Pop();
+            var stmt = (P_Root.IArgType_AnonFunDecl__3)stmtStack.Pop();
             var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
-            var anonAction = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, (P_Root.IArgType_AnonFunDecl__1)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__3)localVarStack.ContextLocalVarDecl);
+            var anonAction = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), (P_Root.IArgType_AnonFunDecl__2)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__4)localVarStack.ContextLocalVarDecl);
             anonAction.Span = stmt.Span;
             parseProgram.AnonFunctions.Add(anonAction);
             AddSourceInfoToProgram(anonAction, entrySpan, exitSpan);
@@ -1800,13 +1815,13 @@
             }
         }
 
-        private void AddFunction(string name, Span nameSpan, Span span, Span entrySpan, Span exitSpan, bool isGlobal)
+        private void AddFunction(Span span, Span entrySpan, Span exitSpan)
         {
             Contract.Assert(stmtStack.Count > 0);
-            
+
+            bool isGlobal = crntMachDecl == null;
             var funDecl = GetCurrentFunDecl(span);
             funDecl.Span = span;
-            funDecl.name = MkString(name, nameSpan);
             funDecl.owner = isGlobal ? (P_Root.IArgType_FunDecl__1) MkUserCnst(P_Root.UserCnstKind.NIL, span) 
                                      : (P_Root.IArgType_FunDecl__1) GetCurrentMachineDecl(span);
             funDecl.locals = (P_Root.IArgType_FunDecl__5)localVarStack.LocalVarDecl;
@@ -1814,23 +1829,7 @@
             parseProgram.Functions.Add(funDecl);
             AddSourceInfoToProgram(funDecl, entrySpan, exitSpan);
             localVarStack = new LocalVarStack(this);
-            if (crntFunNames.Contains(name))
-            {
-                var errFlag = new Flag(
-                                     SeverityKind.Error,
-                                     span,
-                                     Constants.BadSyntax.ToString(string.Format("A function with name {0} already declared", name)),
-                                     Constants.BadSyntax.Code,
-                                     parseSource);
-                parseFailed = true;
-                parseFlags.Add(errFlag);
-            }
-            else
-            {
-                crntFunNames.Add(name);
-            }
             crntFunDecl = null;
-            isStaticFun = false;
         }
         #endregion
 
@@ -1938,7 +1937,7 @@
                                    P_Root.MkUserCnst(P_Root.UserCnstKind.NONE),
                                    P_Root.MkString("_payload_skip"),
                                    (P_Root.IArgType_NmdTupTypeField__2)MkBaseType(P_Root.UserCnstKind.ANY, Span.Unknown));
-            var decl = P_Root.MkAnonFunDecl(owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), stmt, (P_Root.IArgType_AnonFunDecl__3)P_Root.MkNmdTupType(field, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL)));
+            var decl = P_Root.MkAnonFunDecl(owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), stmt, (P_Root.IArgType_AnonFunDecl__4)P_Root.MkNmdTupType(field, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL)));
             decl.Span = span;
             parseProgram.AnonFunctions.Add(decl);
             var fileInfo = P_Root.MkFileInfo();
@@ -1999,7 +1998,6 @@
             crntAnnotList = new List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>();
             parseFailed = false;
             isTrigAnnotated = false;
-            isStaticFun = false;
             crntState = null;
             crntEventDecl = null;
             crntMachDecl = null;

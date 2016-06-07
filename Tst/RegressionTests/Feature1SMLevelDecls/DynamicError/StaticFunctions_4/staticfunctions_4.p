@@ -2,19 +2,19 @@ event a;
 event b;
 event c: int;
 
-static fun F1() 
+fun F1() 
 {
 	var mInt : map[int, int];
 	mInt += (0, 10);
 	send this, c, mInt[0];
 }
 
-static fun F2() {
+fun F2() {
 	send this, a;
 	send this, b;
 }
 
-static fun F3()
+fun F3()
 {
 	receive {
 		case b : { 

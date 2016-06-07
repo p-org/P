@@ -510,6 +510,8 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var machineDecl = it.Current as FuncTerm;
                     it.MoveNext();
+                    var ownerFunName = it.Current as Cnst;
+                    it.MoveNext();
                     var locals = it.Current as FuncTerm;
                     it.MoveNext();
                     var body = it.Current;

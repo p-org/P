@@ -1,4 +1,4 @@
-static fun XX() {
+fun XX() {
 
 }
 

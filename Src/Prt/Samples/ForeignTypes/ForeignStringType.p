@@ -1,4 +1,4 @@
-type StringType;
+model type StringType = int;
 
 event sendback : (machine, any);
 event getback : any;

@@ -11,7 +11,7 @@
 %token INT BOOL ANY SEQ MAP ID
 %token TYPE INCLUDE MAIN EVENT MACHINE MONITOR ASSUME SPEC
 
-%token VAR START HOT COLD MODEL STATE FUN ACTION GROUP STATIC MODELS MONITORS
+%token VAR START HOT COLD MODEL STATE FUN ACTION GROUP MONITORS
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH AS WITH
 
@@ -58,7 +58,7 @@ TopDecl
 	| TypeDefDecl
 	| EventDecl
 	| MachineDecl
-	| StaticFunDecl
+	| FunDecl
 	;
 
 /******************* Annotations *******************/ 
@@ -82,8 +82,8 @@ Annotation
 
 /******************* Type Declarations **********************/
 TypeDefDecl
-    : TYPE ID SEMICOLON { AddEmptyTypeDef($2.str, ToSpan(@2), ToSpan(@1)); }
-	| TYPE ID ASSIGN Type SEMICOLON   { AddTypeDef($2.str, ToSpan(@2), ToSpan(@1)); }
+	: TYPE ID ASSIGN Type SEMICOLON			{ AddTypeDef($2.str, ToSpan(@2), ToSpan(@1)); }
+	| MODEL TYPE ID ASSIGN Type SEMICOLON   { AddModelTypeDef($3.str, ToSpan(@3), ToSpan(@1)); }
 	;
 
 /******************* Include Declarations *******************/ 
@@ -115,7 +115,7 @@ EventAnnotOrNone
 /******************* Machine Declarations *******************/
 MachineDecl
 	: IsMain MACHINE ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1));    }
-	| IsMain MODEL ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE   { AddMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1));   }
+	| MODEL ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE   { AddMachine(P_Root.UserCnstKind.MODEL, $2.str, ToSpan(@2), ToSpan(@1));   }
 	| SPEC ID ObservesList MachAnnotOrNone LCBRACE MachineBody RCBRACE			   { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 	
@@ -187,16 +187,12 @@ PayloadNone
 	;
 
 /******************* Function Declarations *******************/
-Static 
-	: STATIC { isStaticFun = true; }
-	;
-
-StaticFunDecl
-	: Static IsModel FUN ID ParamsOrNone RetTypeOrNone FunAnnotOrNone LCBRACE StmtBlock RCBRACE { AddFunction($4.str, ToSpan(@4), ToSpan(@1), ToSpan(@8), ToSpan(@10), true); }
-	;
-
 FunDecl
-	: IsModel FUN ID ParamsOrNone RetTypeOrNone FunAnnotOrNone LCBRACE StmtBlock RCBRACE { AddFunction($3.str, ToSpan(@3), ToSpan(@1), ToSpan(@7), ToSpan(@9), false); }
+	: IsModel FunNameDecl ParamsOrNone RetTypeOrNone FunAnnotOrNone LCBRACE StmtBlock RCBRACE { AddFunction(ToSpan(@1), ToSpan(@6), ToSpan(@8)); }
+	;
+
+FunNameDecl
+	: FUN ID { SetFunName($2.str, ToSpan(@2)); }
 	;
 
 IsModel

@@ -16,6 +16,11 @@
             get;
             private set;
         }
+        public List<P_Root.ModelType> ModelTypes
+        {
+            get;
+            private set;
+        }
 
         public List<P_Root.EventDecl> Events
         {
@@ -97,6 +102,11 @@
                 {
                     yield return td;
                 }
+
+                foreach (var md in ModelTypes)
+                {
+                    yield return md;
+                }
                 
                 foreach (var ed in Events)
                 {
@@ -163,6 +173,7 @@
         public PProgram()
         {
             TypeDefs = new List<P_Root.TypeDef>();
+            ModelTypes = new List<P_Root.ModelType>();
             Events = new List<P_Root.EventDecl>();
             Machines = new List<P_Root.MachineDecl>();
             States = new List<P_Root.StateDecl>();

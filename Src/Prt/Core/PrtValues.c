@@ -504,7 +504,7 @@ PRT_VALUE * PRT_CALL_CONV PrtSeqGetNCIntIndex(_In_ PRT_VALUE *seq, _In_ PRT_UINT
 void PRT_CALL_CONV PrtSeqInsertEx(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE* value, PRT_BOOLEAN cloneValue)
 {
 	PrtAssert(index->discriminator == PRT_VALKIND_INT, "Invalid value");
-	return PrtSeqInsertExIntIndex(seq, index->valueUnion.nt, value, cloneValue);
+	PrtSeqInsertExIntIndex(seq, index->valueUnion.nt, value, cloneValue);
 }
 
 void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE* value)

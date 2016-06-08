@@ -55,6 +55,11 @@ void P_DTOR_Server_IMPL(PRT_MACHINEINST *context)
     PrtFree(serverContext);
 }
 
+static void LogHandler(PRT_STEP step, PRT_MACHINEINST *context)
+{
+    PrtPrintStep(step, context);
+}
+
 /**
 * The main function performs the following steps
 * 1) If the createMain option is true then it create the main machine.
@@ -72,7 +77,7 @@ int main(int argc, char *argv[])
     processGuid.data2 = 1; //nodeId
     processGuid.data3 = 0;
     processGuid.data4 = 0;
-    ContainerProcess = PrtStartProcess(processGuid, &P_GEND_PROGRAM, PrtDistSMExceptionHandler, PrtDistSMLogHandler);
+    ContainerProcess = PrtStartProcess(processGuid, &P_GEND_PROGRAM, PrtDistSMExceptionHandler, LogHandler);
 
     //create main machine 
     PRT_VALUE* payload = PrtMkNullValue();

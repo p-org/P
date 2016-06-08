@@ -1,0 +1,6 @@
+=================================
+         Console output          
+=================================
+OUT: linear.p (20, 4): variable is not available
+OUT: Compilation failed
+EXIT: -1

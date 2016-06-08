@@ -1,0 +1,5 @@
+arg: ..\LinearPingPong.p
+arg: /shortFileNames
+arg: /doNotErase
+arg: /outputDir:..\.
+dsc: pc.exe, linear version of PingPong

@@ -182,12 +182,17 @@ LocalVarList
 	;
 
 PayloadVarDeclOrNone
-	: LPAREN ID COLON Type RPAREN { localVarStack.AddPayloadVar($2.str, ToSpan(@2)); localVarStack.Push(); }
-	|                             { localVarStack.AddPayloadVar(); localVarStack.Push(); }
+	: LPAREN ID COLON Type RPAREN { localVarStack.AddPayloadVar(P_Root.UserCnstKind.NONE, $2.str, ToSpan(@2)); localVarStack.Push(); }
+	|                             { localVarStack.AddPayloadVar(P_Root.UserCnstKind.NONE); localVarStack.Push(); }
+	;
+
+PayloadVarDeclOrNoneRef
+	: LPAREN ID COLON Type RPAREN { localVarStack.AddPayloadVar(P_Root.UserCnstKind.REF, $2.str, ToSpan(@2)); localVarStack.Push(); }
+	|                             { localVarStack.AddPayloadVar(P_Root.UserCnstKind.REF); localVarStack.Push(); }
 	;
 
 PayloadNone
-	:                             { localVarStack.AddPayloadVar(); localVarStack.Push(); }
+	:                             { localVarStack.AddPayloadVar(P_Root.UserCnstKind.REF); localVarStack.Push(); }
 	;
 
 /******************* Function Declarations *******************/
@@ -274,7 +279,7 @@ StateBodyItem
 	| OnEventList DO TrigAnnotOrNone PayloadVarDeclOrNone LCBRACE StmtBlock RCBRACE					{ AddDoAnonyAction(ToSpan(@5), ToSpan(@7), ToSpan(@1)); }
 	| OnEventList PUSH StateTarget TrigAnnotOrNone SEMICOLON				{ AddTransition(true, ToSpan(@1));           }
  	| OnEventList GOTO StateTarget TrigAnnotOrNone SEMICOLON				{ AddTransition(false, ToSpan(@1));          } 
-	| OnEventList GOTO StateTarget TrigAnnotOrNone WITH PayloadVarDeclOrNone LCBRACE StmtBlock RCBRACE { AddTransitionWithAction(ToSpan(@7), ToSpan(@9), ToSpan(@1));           }
+	| OnEventList GOTO StateTarget TrigAnnotOrNone WITH PayloadVarDeclOrNoneRef LCBRACE StmtBlock RCBRACE { AddTransitionWithAction(ToSpan(@7), ToSpan(@9), ToSpan(@1));           }
 	| OnEventList GOTO StateTarget TrigAnnotOrNone WITH ID SEMICOLON		{ AddTransitionWithAction($6.str, ToSpan(@6), ToSpan(@1));           }
 	;
 

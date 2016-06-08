@@ -160,20 +160,20 @@
                 casesList = P_Root.MkCases(e, a, casesList);
             }
 
-            public void AddPayloadVar(string name, Span span)
+            public void AddPayloadVar(P_Root.UserCnstKind qualKind, string name, Span span)
             {
                 Contract.Assert(parser.typeExprStack.Count > 0);
                 var typeExpr = (P_Root.IArgType_NmdTupTypeField__2)parser.typeExprStack.Pop();
                 var nameTerm = P_Root.MkString(name);
                 nameTerm.Span = span;
-                var field = P_Root.MkNmdTupTypeField(P_Root.MkUserCnst(P_Root.UserCnstKind.NONE), nameTerm, typeExpr);
+                var field = P_Root.MkNmdTupTypeField(P_Root.MkUserCnst(qualKind), nameTerm, typeExpr);
                 contextLocalVarDecl = P_Root.MkNmdTupType(field, contextLocalVarDecl);
             }
 
-            public void AddPayloadVar()
+            public void AddPayloadVar(P_Root.UserCnstKind qualKind)
             {
                 var field = P_Root.MkNmdTupTypeField(
-                                    P_Root.MkUserCnst(P_Root.UserCnstKind.NONE),
+                                    P_Root.MkUserCnst(qualKind),
                                     P_Root.MkString(string.Format("_payload_{0}", parser.GetNextPayloadVarLabel())), 
                                     (P_Root.IArgType_NmdTupTypeField__2) parser.MkBaseType(P_Root.UserCnstKind.ANY, Span.Unknown));
                 contextLocalVarDecl = P_Root.MkNmdTupType(field, contextLocalVarDecl);

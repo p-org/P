@@ -532,11 +532,11 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: argument should be a global variable not accessed by callee"']
 	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, exprs, _), FunAvailable(callee, c.owner), e.name = callee.name, 
 										 exprs = Exprs(REF, expr, _), expr = Name(n), IsMachineVar(c, n, _, _), AccessesGlobal(callee, n).
-	[ rule_Classes = '"error, msg: xfer or swap argument should be passed for exactly one parameter"']
+	[ rule_Classes = '"error, msg: xfer or ref argument should be passed for exactly one parameter"']
 	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, Exprs(qual, expr, tl), _), FunArgsParams(c, e, Exprs(_, expr, tl'), _), qual != NONE, tl != tl'.
 
 	SendQualifierError ::= (TypingContext, Send).
-	[rule_Classes = '"error, msg: swap qualifier not allowed"']
+	[rule_Classes = '"error, msg: ref qualifier not allowed"']
 	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, _, REF, _).
 	[ rule_Classes = '"error, msg: null payload not allowed"']
 	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, NIL, XFER, _).
@@ -610,11 +610,13 @@ domain PStaticTyping extends PData
 	[rule_Classes = '"error, msg: variable is not available"']
 	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: Assert, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
 
-	UnavailableParameterError ::= (FunDecl, String).
-	[rule_Classes = '"error, msg: parameter is not available at return"']
-	UnavailableParameterError(c, n) :- FormalParamAux(c, REF, n, _), UnavailableAfter(c, c.body, n).
-	[rule_Classes = '"error, msg: parameter is not available at return"']
-	UnavailableParameterError(c, n) :- FormalParamAux(c, REF, n, _), UnavailableBefore(c, Return(_, _), n).
+	UnavailableParameterError ::= (TypingContext, String).
+	[rule_Classes = '"error, msg: ref parameter is not available at return"']
+	UnavailableParameterError(c, n) :- FormalParamAux(c, REF, n, _), UnavailableAfter(c, c.body, n); 
+									   PayloadVar(_, c, REF, n, _), UnavailableAfter(c, c.body, n).
+	[rule_Classes = '"error, msg: ref parameter is not available at return"']
+	UnavailableParameterError(c, n) :- FormalParamAux(c, REF, n, _), UnavailableBefore(c, Return(_, _), n);
+									   PayloadVar(_, c, REF, n, _), UnavailableBefore(c, Return(_, _), n).
 
     /*************************************************************/
     /*                      Types of Statements                  */
@@ -1328,7 +1330,7 @@ domain PStaticTyping extends PData
     /*                      Payload Checking                    */
     /*************************************************************/	
     ConstructorType ::= (m: MachineDecl, s: StateDecl, t: TypeExpr).
-	ConstructorType(m, s, ft) :- s is StateDecl, m = s.owner, s.name = m.start, PayloadVarType(s, ft).
+	ConstructorType(m, s, ft) :- s is StateDecl, m = s.owner, s.name = m.start, PayloadVar(s, _, _, _, ft).
 
 	EventPayloadType ::= (e: String + { NULL, HALT }, t: TypeExpr).
 	EventPayloadType(e, et) :- EventDecl(e, _, t), t: TypeExpr, TypeExpansion(t, et).
@@ -1336,32 +1338,32 @@ domain PStaticTyping extends PData
 	EventPayloadType(NULL, t) :- t = BaseType(NULL).
 	EventPayloadType(HALT, t) :- t = BaseType(ANY).
 
-	PayloadVarTypeAux ::= (StateDecl + TransDecl + DoDecl + Cases, TypeExpr).
-	PayloadVarType ::= (StateDecl + TransDecl + DoDecl + Cases, TypeExpr).
-	PayloadVarTypeAux(s, type) :- s is StateDecl, r = lstReverse(#NmdTupType, s.entryAction.envVars), type = r.hd.type.
-	PayloadVarTypeAux(t, type) :- t is TransDecl, r = lstReverse(#NmdTupType, t.action.envVars), type = r.hd.type.
-	PayloadVarTypeAux(d, type) :- d is DoDecl, r = lstReverse(#NmdTupType, d.action.envVars), type = r.hd.type.
-	PayloadVarTypeAux(cases, type) :- SubSE(_, cases), cases: Cases, r = lstReverse(#NmdTupType, cases.action.envVars), type = r.hd.type.
-	PayloadVarType(x, ft) :- PayloadVarTypeAux(x, type), TypeExpansion(type, ft).
-	
-	CompTypeRel(et, ft) :- EventPayloadType(_, et), PayloadVarType(_, ft);
-						   SubSE(c, n), n: New, TypeOf(c, n.arg, et), et: TypeExpr, PayloadVarType(_, ft);
-						   SubSE(c, n), n: NewStmt, TypeOf(c, n.arg, et), et: TypeExpr, PayloadVarType(_, ft).
+	PayloadVarAux ::= (StateDecl + TransDecl + DoDecl + Cases, AnonFunDecl, Qualifier, String, TypeExpr).
+	PayloadVar ::= (StateDecl + TransDecl + DoDecl + Cases, AnonFunDecl, Qualifier, String, TypeExpr).
+	PayloadVarAux(s, f, qual, name, type) :- s is StateDecl, f = s.entryAction, r = lstReverse(#NmdTupType, f.envVars), qual = r.hd.qual, name = r.hd.name, type = r.hd.type.
+	PayloadVarAux(t, f, qual, name, type) :- t is TransDecl, f = t.action, r = lstReverse(#NmdTupType, f.envVars), qual = r.hd.qual, name = r.hd.name, type = r.hd.type.
+	PayloadVarAux(d, f, qual, name, type) :- d is DoDecl, f = d.action, r = lstReverse(#NmdTupType, f.envVars), qual = r.hd.qual, name = r.hd.name, type = r.hd.type.
+	PayloadVarAux(cases, f, qual, name, type) :- SubSE(_, cases), cases: Cases, f = cases.action, r = lstReverse(#NmdTupType, f.envVars), qual = r.hd.qual, name = r.hd.name, type = r.hd.type.
+	PayloadVar(x, f, qual, name, ft) :- PayloadVarAux(x, f, qual, name, type), TypeExpansion(type, ft).
+
+	CompTypeRel(et, ft) :- EventPayloadType(_, et), PayloadVar(_, _, _, _, ft);
+						   SubSE(c, n), n: New, TypeOf(c, n.arg, et), et: TypeExpr, PayloadVar(_, _, _, _, ft);
+						   SubSE(c, n), n: NewStmt, TypeOf(c, n.arg, et), et: TypeExpr, PayloadVar(_, _, _, _, ft).
 
     PayloadError ::= (TransDecl + DoDecl + StateDecl + Cases + New + NewStmt).
 
 	[ rule_Classes = '"error, msg: Payload type for event must be subtype of payload type of transition function;"']
-	PayloadError(t) :- t is TransDecl, EventPayloadType(t.trig, et), PayloadVarType(t, ft),
+	PayloadError(t) :- t is TransDecl, EventPayloadType(t.trig, et), PayloadVar(t, _, _, _, ft),
 	                   TypeRel(et, ft, k), et != ft, k != SUB.
 	[ rule_Classes = '"error, msg: Payload type for event must be subtype of payload type of do function;"']
-	PayloadError(d) :- d is DoDecl, EventPayloadType(d.trig, et), PayloadVarType(d, ft),
+	PayloadError(d) :- d is DoDecl, EventPayloadType(d.trig, et), PayloadVar(d, _, _, _, ft),
 	                   TypeRel(et, ft, k), et != ft, k != SUB.
 	[ rule_Classes = '"error, msg: Payload type for event on incoming transition must be subtype of payload type of state entry function;"']
 	PayloadError(s) :- t is TransDecl, EventPayloadType(t.trig, et), 
-					   s is StateDecl, s.name = t.dst, s.owner = t.src.owner, PayloadVarType(s, ft),
+					   s is StateDecl, s.name = t.dst, s.owner = t.src.owner, PayloadVar(s, _, _, _, ft),
 					   TypeRel(et, ft, k), et != ft, k != SUB.
 	[ rule_Classes = '"error, msg: Payload type for event must be subtype of payload type of case function;"']
-	PayloadError(cases) :- SubSE(_, cases), cases: Cases, EventPayloadType(cases.trig, et), PayloadVarType(cases, ft),
+	PayloadError(cases) :- SubSE(_, cases), cases: Cases, EventPayloadType(cases.trig, et), PayloadVar(cases, _, _, _, ft),
 						   TypeRel(et, ft, k), et != ft, k != SUB. 
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
 	PayloadError(n) :- SubSE(c, n), n = New(name, NIL), ConstructorType(m, _, ft), m.name = name, type = BaseType(NULL), 

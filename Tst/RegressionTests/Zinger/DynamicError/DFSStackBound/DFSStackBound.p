@@ -1,6 +1,6 @@
 event unit;
 event dummy;
-main model TestMachine {
+main machine TestMachine {
 	var x : int;
 	var otherMachine: machine;
 	start state Init {

@@ -3,9 +3,9 @@
 =================================
 OUT: duplicates.p (5, 1): Syntax error - An event with name x already declared
 OUT: duplicates.p (13, 2): Syntax error - A state with name S1 already declared
-OUT: duplicates.p (20, 6): Syntax error - A variable with name x already declared
 OUT: duplicates.p (18, 1): Syntax error - A machine with name m1 already declared
+OUT: duplicates.p (20, 6): Syntax error - A variable with name x already declared
 OUT: duplicates.p (34, 2): Syntax error - A state with name S2 already declared
-OUT: duplicates.p (38, 2): Syntax error - A function with name foo already declared
+OUT: duplicates.p (38, 6): Syntax error - A function with name foo already declared
 OUT: Compilation failed
 EXIT: -1

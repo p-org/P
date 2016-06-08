@@ -1709,7 +1709,7 @@
             crntEventDecl = null;
         }
 
-        private void AddMachine(P_Root.UserCnstKind kind, string name, Span nameSpan, Span span)
+        private void SetMachine(P_Root.UserCnstKind kind, string name, Span nameSpan, Span span)
         {
             var machDecl = GetCurrentMachineDecl(span);
             machDecl.Span = span;
@@ -1719,16 +1719,11 @@
                 kind = P_Root.UserCnstKind.REAL;
             }
             machDecl.kind = MkUserCnst(kind, span);
-            if (kind == P_Root.UserCnstKind.MONITOR)
+            foreach (var e in crntObservesList)
             {
-                foreach (var e in crntObservesList)
-                {
-                    var observes = P_Root.MkObservesDecl(machDecl, (P_Root.IArgType_ObservesDecl__1)e);
-                    parseProgram.Observes.Add(observes);
-                }
-                crntObservesList.Clear();
+                var observes = P_Root.MkObservesDecl(machDecl, (P_Root.IArgType_ObservesDecl__1)e);
+                parseProgram.Observes.Add(observes);
             }
-            parseProgram.Machines.Add(machDecl);
             if (crntMachineNames.Contains(name))
             {
                 var errFlag = new Flag(
@@ -1744,7 +1739,14 @@
             {
                 crntMachineNames.Add(name);
             }
+        }
+
+        private void AddMachine(Span span)
+        {
+            var machDecl = GetCurrentMachineDecl(span);
+            parseProgram.Machines.Add(machDecl);
             crntMachDecl = null;
+            crntObservesList.Clear();
             crntStateNames.Clear();
             crntFunNames.Clear();
             crntVarNames.Clear();

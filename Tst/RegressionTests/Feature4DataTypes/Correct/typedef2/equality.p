@@ -1,4 +1,4 @@
-type F;
+model type F = bool;
 type G = F;
 
 main machine MyMachine

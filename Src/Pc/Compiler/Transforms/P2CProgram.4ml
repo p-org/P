@@ -1085,7 +1085,11 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 	FunDeclConcat ::= (pos: Natural, mach: MachineDecl, arr: out.Args + {NIL}).
 
 	//// Base case
-	FunDeclConcat(c, m, NIL) :- m is MachineDecl, m.kind = REAL, c = 1 + count({f | f is AnonOrNamedFun, f.owner = NIL}) + count({f | f is AnonOrNamedFun, f.owner = m}).
+	FunDeclConcat(c, m, NIL) :- m is MachineDecl, m.kind = REAL, 
+										  c = 1 + count({d | d is AnonFunDecl, d.owner = NIL, AnonFunDeclKind(d, REAL)}) 
+												+ count({d | d is FunDecl, d.owner = NIL}) 
+									            + count({d | d is AnonFunDecl, d.owner = m, AnonFunDeclKind(d, REAL)}) 
+												+ count({d | d is FunDecl, d.owner = m}).
 
     //// Build every fundecl array in reverse order
 	FunDeclConcat(m, d.owner, arr) :-  

@@ -23,7 +23,11 @@ main machine TestMachine
 
 	model fun GetPassword() : StringType
 	{
-		return default(StringType);
+		//return default(StringType);
+		if ($)
+			return 0;
+		else 
+			return 1;
 	}
 
 }

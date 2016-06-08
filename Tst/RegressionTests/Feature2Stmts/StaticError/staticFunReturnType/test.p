@@ -5,7 +5,7 @@ fun Foo() : (foo, int) {
        return 0;
 }
 
-main model MainMachine
+main machine MainMachine
 {
     start state Init
     {

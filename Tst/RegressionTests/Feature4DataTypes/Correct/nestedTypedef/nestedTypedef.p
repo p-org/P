@@ -14,7 +14,7 @@ event MyEvent : MessageType;
 
 
 
-main model MainMachine
+main machine MainMachine
 {
     start state Init
     {

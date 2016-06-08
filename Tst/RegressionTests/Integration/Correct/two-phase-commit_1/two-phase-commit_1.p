@@ -301,7 +301,7 @@ model Client {
 }
 
 
-main model TwoPhaseCommit {
+main machine TwoPhaseCommit {
     var coordinator: machine;
     start state Init {
 	    entry {

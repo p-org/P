@@ -91,11 +91,11 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 	DeclId ::= (decl: PDecl + TypeDef + { NULL, HALT, PUSH }, id: Natural, cname: String).
 	
 	//// (0.0) Foreign types
-	DeclId(d, id, cn) :- d is TypeDef(name, NIL), id = toOrdinal(d, 0, { d' | d' is TypeDef(_, NIL) }), cn = strJoin("P_FORGN_TYPE_", name).
+	DeclId(d, id, cn) :- d is TypeDef(name, _), ModelType(name), id = toOrdinal(d, 0, { d' | d' is TypeDef(n, _), ModelType(n) }), cn = strJoin("P_FORGN_TYPE_", name).
 	HOut(0, out.EnmDef(NIL, "P_FORGN_TYPES", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : TypeDef, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), "_P_FORGN_TYPES_COUNT"), size = count({d | d is TypeDef(_, NIL)}) }).  
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_FORGN_TYPES_COUNT"), size = count({d | d is TypeDef(n, _), ModelType(n)}) }).  
 	
 	//// (0.1) Field names for named tuple types that have a type synonym
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
@@ -149,40 +149,48 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 	//// (5) (Anon)FunDecls - Start at Id 1. The id 0 is reserved for the PUSH action.
 	AnonOrNamedFun ::= FunDecl + AnonFunDecl.
 
-	DeclId(d, id, cn) :- d is AnonFunDecl, d.owner = NIL, 
-	                     id = 1 + toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.owner = NIL }), 
-	                     num = toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.owner = NIL }),
+	DeclId(d, id, cn) :- d is AnonFunDecl, d.owner = NIL, AnonFunDeclKind(d, REAL),
+	                     num = toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.owner = NIL, AnonFunDeclKind(d', REAL) }),
+	                     id = 1 + num, 
 						 cn = strJoin("P_FUN_ANON", toString(num)).
 
-	DeclId(d, id, cn) :- d is FunDecl, d.owner = NIL, 
-	                     id = 1 + count({ d' | d' is AnonFunDecl, d'.owner = NIL }) 
+	DeclId(d, id, cn) :- d is FunDecl, d.owner = NIL,
+	                     id = 1 + count({ d' | d' is AnonFunDecl, d'.owner = NIL, AnonFunDeclKind(d', REAL) }) 
 						        + toOrdinal(d, 0, { d' | d' is FunDecl, d'.owner = NIL }), 
 	                     cn = strJoin("P_FUN_", d.name).
 
-	DeclId(d, id, cn) :- d is AnonFunDecl, d.owner.kind = REAL, 
-	                     id = 1 + count({ d' | d' is AnonOrNamedFun, d'.owner = NIL }) 
-								+ toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.owner = d.owner }), 
-	                     num = toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.owner = d.owner }),
+	DeclId(d, id, cn) :- d is AnonFunDecl, d.owner.kind = REAL, AnonFunDeclKind(d, REAL),
+	                     num = toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.owner = d.owner, AnonFunDeclKind(d', REAL) }),
+	                     id = 1 + count({ d' | d' is AnonFunDecl, d'.owner = NIL, AnonFunDeclKind(d', REAL) }) 
+								+ count({ d' | d' is FunDecl, d'.owner = NIL }) 
+								+ num, 
 						 cn = strJoin("P_FUN_", strJoin(d.owner.name, strJoin("_ANON", toString(num)))).
 
-	DeclId(d, id, cn) :- d is FunDecl, d.owner.kind = REAL, 
-	                     id = 1 + count({ d' | d' is AnonOrNamedFun, d'.owner = NIL }) 
-						        + count({ d' | d' is AnonFunDecl, d'.owner = d.owner }) 
+	DeclId(d, id, cn) :- d is FunDecl, d.owner.kind = REAL,
+	                     id = 1 + count({ d' | d' is AnonFunDecl, d'.owner = NIL, AnonFunDeclKind(d', REAL) })
+								+ count({ d' | d' is FunDecl, d'.owner = NIL })
+						        + count({ d' | d' is AnonFunDecl, d'.owner = d.owner, AnonFunDeclKind(d', REAL) }) 
 						        + toOrdinal(d, 0, { d' | d' is FunDecl, d'.owner = d.owner }), 
 	                     cn = strJoin("P_FUN_", strJoin(d.owner.name, strJoin("_", d.name))).
 
 	
-	HOut(0, out.EnmDef(NIL, "P_FUNS_STATIC", list)) :- 
+	HOut(0, out.EnmDef(NIL, "P_FUNS_GLOBAL", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
 									   enumMember = Element(IntLit(0, DEC, NIL), "_P_FUN_PUSH_OR_IGN");
-									   DeclId(d, id, cn), d : AnonOrNamedFun, d.owner = NIL, enumMember = Element(IntLit(id, DEC, NIL), cn) }).  
+									   DeclId(d, id, cn), d : AnonFunDecl, d.owner = NIL, AnonFunDeclKind(d, REAL), enumMember = Element(IntLit(id, DEC, NIL), cn);
+									   DeclId(d, id, cn), d : FunDecl, d.owner = NIL, enumMember = Element(IntLit(id, DEC, NIL), cn) }).  
 
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
 	   m is MachineDecl, m.kind = REAL,
 	   enumName = strJoin("P_FUNS_", m.name),
 	   list = toList(#Elements, NIL, { enumMember | 
-									   DeclId(d, id, cn), d : AnonOrNamedFun, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(m.name, "_COUNT"))), size = 1 + count({d | d is AnonOrNamedFun, d.owner = m}) + count({d | d is AnonOrNamedFun, d.owner = NIL}) }).  
+									   DeclId(d, id, cn), d : AnonFunDecl, d.owner = m, AnonFunDeclKind(d, REAL), enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   DeclId(d, id, cn), d : FunDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(m.name, "_COUNT"))), 
+									   size = 1 + count({d | d is AnonFunDecl, d.owner = NIL, AnonFunDeclKind(d, REAL)}) 
+												+ count({d | d is FunDecl, d.owner = NIL}) 
+									            + count({d | d is AnonFunDecl, d.owner = m, AnonFunDeclKind(d, REAL)}) 
+												+ count({d | d is FunDecl, d.owner = m}) }).
 
 	//// (6) StateDecls - Start at Id 0. Need to encode qualified names.
 	DeclId(d, id, cn) :- d is StateDecl, d.owner.kind = REAL, 
@@ -746,6 +754,10 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
     /******            Generate Fun Implementations         ******/
     /*************************************************************/	
 
+   	RealOwner ::= (f: FunDecl).
+	RealOwner(f) :- f is FunDecl, f.owner = NIL; 
+	                f is FunDecl, f.owner.kind = REAL.
+
 	ContextTransStmtExpr ::= (TypingContext, out.Stmt + out.Cases + out.Case + out.Args + { NIL }).
 	ContextTransStmtExpr(c, body) :- BodyTrans(c, body).
 	ContextTransStmtExpr(c, s1), ContextTransStmtExpr(c, s2) :- ContextTransStmtExpr(c, out.Seq(s1, s2)).
@@ -873,11 +885,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 					  params,
 					  out.Seq(entryInfo, Block(tmpVars, body))).
 
-	IsRealAnonFunDecl ::= (f: AnonFunDecl).
-	IsRealAnonFunDecl(f) :- DeclId(f, _, _), f: AnonFunDecl, f.owner.kind = REAL; 
-	                        DeclId(f, _, _), f: AnonFunDecl, f.owner = NIL.
-
-	COut(8, def) :- DeclId(f, id, name), id > 0, IsRealAnonFunDecl(f),
+	COut(8, def) :- DeclId(f, id, name), id > 0, AnonFunDeclKind(f, REAL),
 					tmpVars = toList(#Defs, NIL, { varDef | LocalVarsTable(f, varDef), ContextTransStmtExpr(f, out.Ident(varDef.name)) }),
 	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
@@ -1077,7 +1085,11 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 	FunDeclConcat ::= (pos: Natural, mach: MachineDecl, arr: out.Args + {NIL}).
 
 	//// Base case
-	FunDeclConcat(c, m, NIL) :- m is MachineDecl, m.kind = REAL, c = 1 + count({f | f is AnonOrNamedFun, f.owner = NIL}) + count({f | f is AnonOrNamedFun, f.owner = m}).
+	FunDeclConcat(c, m, NIL) :- m is MachineDecl, m.kind = REAL, 
+										  c = 1 + count({d | d is AnonFunDecl, d.owner = NIL, AnonFunDeclKind(d, REAL)}) 
+												+ count({d | d is FunDecl, d.owner = NIL}) 
+									            + count({d | d is AnonFunDecl, d.owner = m, AnonFunDeclKind(d, REAL)}) 
+												+ count({d | d is FunDecl, d.owner = m}).
 
     //// Build every fundecl array in reverse order
 	FunDeclConcat(m, d.owner, arr) :-  
@@ -1441,10 +1453,10 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 	ForeignTypeDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
 
 	//// Base case
-	ForeignTypeDeclConcat(c, NIL) :- c = count({t | t is TypeDef, t.type = NIL}).
+	ForeignTypeDeclConcat(c, NIL) :- c = count({t | t is TypeDef, ModelType(t.name)}).
 
 	ForeignTypeDeclConcat(m, arr) :- 
-							DeclId(d, m, ctype), d.type = NIL, d : TypeDef, 
+							DeclId(d, m, ctype), ModelType(d.name), d : TypeDef, 
 							ForeignTypeDeclConcat(m + 1, after),  
 							arr = out.Args(def, after), 
 	                        def = Init(
@@ -1467,7 +1479,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 								  "P_GEND_FOREIGNTYPES", 
 								  Init(arr)).
 
-	HOut(12, def) :- t is TypeDef, t.type = NIL,
+	HOut(12, def) :- t is TypeDef, ModelType(t.name),
 	                params = NIL,
 				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
 					argTypes = PrmTypes(BaseType(VOID), NIL),					  
@@ -1478,7 +1490,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 					  params,
 					  UNKNOWN).
 
-	HOut(12, def) :- t is TypeDef, t.type = NIL,
+	HOut(12, def) :- t is TypeDef, ModelType(t.name),
 	                params = Params(Param(NIL, "frgnVal"), NIL),
 				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
 					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
@@ -1489,7 +1501,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 					  params,
 					  UNKNOWN).
 
-	HOut(12, def) :- t is TypeDef, t.type = NIL,
+	HOut(12, def) :- t is TypeDef, ModelType(t.name),
 	                params = Params(Param(NIL, "frgnVal"), NIL),
 				    funType = FunType(BaseType(VOID), argTypes),
 					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
@@ -1500,7 +1512,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 					  params,
 					  UNKNOWN).
 
-	HOut(12, def) :- t is TypeDef, t.type = NIL,
+	HOut(12, def) :- t is TypeDef, ModelType(t.name),
 	                params = Params(Param(NIL, "frgnVal"), NIL),
 				    funType = FunType(NmdType(NIL, "PRT_UINT32"), argTypes),
 					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
@@ -1511,7 +1523,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 					  params,
 					  UNKNOWN).
 
-	HOut(12, def) :- t is TypeDef, t.type = NIL,
+	HOut(12, def) :- t is TypeDef, ModelType(t.name),
 	                params = Params(Param(NIL, "frgnVal"), NIL),
 				    funType = FunType(NmdType(NIL, "PRT_STRING"), argTypes),
 					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
@@ -1522,7 +1534,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 					  params,
 					  UNKNOWN).
 
-	HOut(12, def) :- t is TypeDef, t.type = NIL,
+	HOut(12, def) :- t is TypeDef, ModelType(t.name),
 	                params = Params(Param(NIL, "frgnVal1"),
 					         Params(Param(NIL, "frgnVal2"), 
 							 NIL)),
@@ -1557,8 +1569,8 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 	ProgModelArray(size, arr) :- size = count({ m | m is MachineDecl, m.kind = MODEL }), size > 0, arr = out.Ident("P_GEND_MODELS").
 
 	ProgForeignTypesArray ::= (size: Natural, arr: out.Ident).
-	ProgForeignTypesArray(size, arr) :- size = count({ t | t is TypeDef, t.type = NIL }), size = 0, arr = out.Ident("NULL").
-	ProgForeignTypesArray(size, arr) :- size = count({ t | t is TypeDef, t.type = NIL }), size > 0, arr = out.Ident("P_GEND_FOREIGNTYPES").
+	ProgForeignTypesArray(size, arr) :- size = count({ t | t is TypeDef, ModelType(t.name) }), size = 0, arr = out.Ident("NULL").
+	ProgForeignTypesArray(size, arr) :- size = count({ t | t is TypeDef, ModelType(t.name) }), size > 0, arr = out.Ident("P_GEND_FOREIGNTYPES").
 
 	HOut(13, def) :- def = out.VarDef(
 							      EXTERN, 
@@ -2137,9 +2149,9 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 	TransformFunArgs(c, s, i, ii, args', tl) :- TransformFunArgs(c, s, i, NaturalList(j, ii), args, in.Exprs(NONE, _, tl)), 
 												ec = Ident(strJoin("p_tmp_expr_", toString(j))), 
 												args' = out.Args(ec, Args(Ident("PRT_FUN_PARAM_CLONE"), args)).
-	TransformFunArgs(c, s, i, ii, args', tl) :- TransformFunArgs(c, s, i, NaturalList(j, ii), args, in.Exprs(SWAP, _, tl)),
+	TransformFunArgs(c, s, i, ii, args', tl) :- TransformFunArgs(c, s, i, NaturalList(j, ii), args, in.Exprs(REF, _, tl)),
 												RhsTrans(c, s, i, j, out.Args(ec, _)), 
-												args' = out.Args(UnApp(ADDR, ec), Args(Ident("PRT_FUN_PARAM_SWAP"), args)).
+												args' = out.Args(UnApp(ADDR, ec), Args(Ident("PRT_FUN_PARAM_REF"), args)).
 	TransformFunArgs(c, s, i, ii, args', tl) :- TransformFunArgs(c, s, i, NaturalList(j, ii), args, in.Exprs(XFER, _, tl)), 
 												RhsTrans(c, s, i, j, out.Args(ec, _)), 
 												args' = out.Args(UnApp(ADDR, ec), Args(Ident("PRT_FUN_PARAM_XFER"), args)).

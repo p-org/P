@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\ClientFiles\MainFunction.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stubs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Timer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Driver.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{6fba5d03-ccf1-4f32-a4c9-22111734f48b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{a0953285-32e3-4b1b-a087-ab572043273d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="P Sources">
+      <UniqueIdentifier>{f3e84194-1238-41f6-8ce1-ff8cb298e73c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Driver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <PCompile Include="Driver.p">
+      <Filter>P Sources</Filter>
+    </PCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="FailureDetector.p">
+      <Filter>P Sources</Filter>
+    </None>
+    <None Include="PrtDistHelp.p">
+      <Filter>P Sources</Filter>
+    </None>
+    <None Include="Timer.p">
+      <Filter>P Sources</Filter>
+    </None>
+  </ItemGroup>
+</Project>

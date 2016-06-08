@@ -1,5 +1,5 @@
 event unit;
-main model TestMachine {
+main machine TestMachine {
 	var x : int;
 	start state Init {
 		entry {

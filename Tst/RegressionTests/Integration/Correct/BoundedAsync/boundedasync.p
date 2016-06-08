@@ -4,7 +4,7 @@ event myCount:int;
 event Req;
 event Resp;
 
-main model Scheduler {
+main machine Scheduler {
 	var p1:machine;
 	var p2:machine;
 	var p3:machine;

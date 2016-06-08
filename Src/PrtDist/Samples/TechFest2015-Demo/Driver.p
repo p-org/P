@@ -1,7 +1,7 @@
 include "FailureDetector.p"
 include "PrtDistHelp.p"
 
-static fun CreateNode(container: machine) : machine
+fun CreateNode(container: machine) : machine
 [container = container]
 {
 	var newMachine: machine;

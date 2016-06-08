@@ -427,6 +427,7 @@ class Continuation {
     ContinuationReason reason;
     SM_HANDLE id;
     PRT_VALUE retVal;
+	PRT_VALUE_ARRAY retLocals;
 
     // The nondet field is different from the fields above because it is used 
     // by ReentrancyHelper to pass the choice to the nondet choice point.
@@ -469,20 +470,22 @@ class Continuation {
 		this.returnTo = tmp;
     }
 
-    void Return() {
+    void Return(PRT_VALUE_ARRAY retLocals) {
     	PRT_TYPE nullType;
         this.returnTo = null;
 		this.reason = ContinuationReason.Return;
 		this.id = null;
 		nullType = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL);
 		this.retVal = PRT_VALUE.PrtMkDefaultValue(nullType);
+		this.retLocals = retLocals;
     }
 
-    void ReturnVal(PRT_VALUE val) {
+    void ReturnVal(PRT_VALUE val, PRT_VALUE_ARRAY retLocals) {
         this.returnTo = null;
 		this.reason = ContinuationReason.Return;
 		this.id = null;
 		this.retVal = val;
+		this.retLocals = retLocals;
     }
 
     void Pop() {

@@ -197,7 +197,7 @@
                 methodDecls = enumerator.Current;
             }
 
-            writer.Write("class " + classDeclName + "{\n");
+            writer.Write("class " + classDeclName + " {\n");
             while (true) 
             {
                 if (fieldDecls.NodeKind == NodeKind.Id)
@@ -315,7 +315,6 @@
                 attrs = enumerator.Current;
             }
 
-            
             writer.Write("{0}{1} {2}(", RenderAttrs(attrs), TypeName(returnType), methodName);
             bool first = true;
             while (true)
@@ -351,7 +350,7 @@
                 }
             }
             RenderBody(body, writer);
-            writer.Write("}\n");
+            writer.Write("}\n\n");
         }
 
         void RenderBody(Node body, TextWriter writer)

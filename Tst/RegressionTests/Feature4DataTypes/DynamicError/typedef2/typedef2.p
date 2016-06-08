@@ -7,7 +7,7 @@ event resp: TUP;
 //type def for a complex type
 type TUP = (first: int, second: int);
 
-static model fun PrintTime() {
+model fun PrintTime() {
 	//something here
 }
 main machine Server

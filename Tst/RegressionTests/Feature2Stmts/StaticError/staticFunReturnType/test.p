@@ -1,11 +1,11 @@
 //Testing static function return type
 type foo = int;
 
-static fun Foo() : (foo, int) {
+fun Foo() : (foo, int) {
        return 0;
 }
 
-main model MainMachine
+main machine MainMachine
 {
     start state Init
     {

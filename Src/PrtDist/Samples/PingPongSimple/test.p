@@ -31,17 +31,22 @@ machine Server {
   var timer: machine;
   var client: machine;
 
-  start state WaitPing {  
+  start state Init {  
     entry { 
       timer = new Timer(this);
+      raise SUCCESS; 
     }
+    on SUCCESS goto WaitPing; 
+  }
+
+  state WaitPing { 
     on PING goto Sleep; 
   }
   
   state Sleep { 
     entry (payload: machine) {       
       client =  payload;
-      send timer, START, 100;
+      send timer, START, 1000;
     } 
     on TIMEOUT goto SendPong;
   }

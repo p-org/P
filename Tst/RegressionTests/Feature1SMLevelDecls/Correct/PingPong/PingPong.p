@@ -77,7 +77,7 @@ spec M monitors M_Ping, M_Pong {
     }
 }
 
-static fun _CREATEMACHINE(cner: machine, typeOfMachine: int, param : any, newMachine: machine) : machine
+fun _CREATEMACHINE(cner: machine, typeOfMachine: int, param : any, newMachine: machine) : machine
 {
 	if(typeOfMachine == 1)
 	{

@@ -130,7 +130,7 @@ namespace Microsoft.Pc
                     }
                 }
             }
-            if (inputFileName.Length > 2 && inputFileName.EndsWith(".p"))
+            if (inputFileName != null && inputFileName.Length > 2 && inputFileName.EndsWith(".p"))
             {
                 var compiler = new Compiler(options);
                 var result = compiler.Compile(inputFileName);

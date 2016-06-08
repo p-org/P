@@ -24,7 +24,7 @@ extern "C"{
 	typedef enum PRT_FUN_PARAM_STATUS
 	{
 		PRT_FUN_PARAM_CLONE,
-		PRT_FUN_PARAM_SWAP,
+		PRT_FUN_PARAM_REF,
 		PRT_FUN_PARAM_XFER
 	} PRT_FUN_PARAM_STATUS;
 
@@ -64,6 +64,15 @@ extern "C"{
         HandleEventOperation,
         ReceiveOperation
     } PRT_NEXTOPERATION;
+
+	typedef enum PRT_EXITREASON
+	{
+		NotExit,
+		OnTransition,
+		OnTransitionAfterExit,
+		OnPopStatement,
+		OnUnhandledEvent
+	} PRT_EXITREASON;
 
 	typedef struct PRT_EVENT
 	{
@@ -126,6 +135,8 @@ extern "C"{
 		PRT_RECURSIVE_MUTEX stateMachineLock;
 		PRT_BOOLEAN			isRunning;
         PRT_NEXTOPERATION   nextOperation;
+		PRT_EXITREASON		exitReason;
+		PRT_UINT32			eventValue;
 		PRT_BOOLEAN			isHalted;
 		PRT_UINT32			currentState;
 		PRT_RECEIVEDECL		*receive;
@@ -205,8 +216,14 @@ extern "C"{
 	FORCEINLINE
 		void
 		PrtRunExitFunction(
-		_In_ PRT_MACHINEINST_PRIV			*context,
-		_In_ PRT_UINT32						transIndex
+		_In_ PRT_MACHINEINST_PRIV			*context
+		);
+
+	FORCEINLINE
+		void
+		PrtRunTransitionFunction(
+			_In_ PRT_MACHINEINST_PRIV			*context,
+			_In_ PRT_UINT32						transIndex
 		);
 
 	PRT_UINT32
@@ -266,7 +283,8 @@ extern "C"{
 	FORCEINLINE
 		PRT_DODECL*
 		PrtGetAction(
-		_In_ PRT_MACHINEINST_PRIV		*context
+		_In_ PRT_MACHINEINST_PRIV		*context,
+		_In_ PRT_UINT32					currEvent
 		);
 
 	FORCEINLINE

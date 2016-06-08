@@ -132,9 +132,9 @@ PrtStopProcess(
 {
     PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
 
-    privateProcess->terminating = PRT_TRUE;
     PrtLockMutex(privateProcess->processLock);
-    PRT_BOOLEAN waitForThreads = PRT_FALSE;
+	privateProcess->terminating = PRT_TRUE;
+	PRT_BOOLEAN waitForThreads = PRT_FALSE;
     PRT_COOPERATIVE_SCHEDULER* info = NULL;
 
     if (privateProcess->schedulingPolicy == PRT_SCHEDULINGPOLICY_COOPERATIVE)

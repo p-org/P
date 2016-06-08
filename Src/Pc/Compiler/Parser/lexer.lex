@@ -56,7 +56,7 @@
 			 keywords.Add("pop", (int)Tokens.POP);
 			 keywords.Add("true", (int)Tokens.TRUE);
 			 keywords.Add("false", (int)Tokens.FALSE);
-			 keywords.Add("swap", (int)Tokens.SWAP);
+			 keywords.Add("ref", (int)Tokens.REF);
 			 keywords.Add("xfer", (int)Tokens.XFER);
 			 keywords.Add("sizeof", (int)Tokens.SIZEOF);
 			 keywords.Add("keys", (int)Tokens.KEYS);
@@ -94,7 +94,6 @@
 			 keywords.Add("action", (int)Tokens.ACTION);
 			 keywords.Add("state", (int)Tokens.STATE);
 			 keywords.Add("group", (int)Tokens.GROUP);
-			 keywords.Add("static", (int)Tokens.STATIC);
 
 			 keywords.Add("entry", (int)Tokens.ENTRY);
 			 keywords.Add("exit", (int)Tokens.EXIT);

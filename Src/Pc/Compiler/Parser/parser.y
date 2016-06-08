@@ -11,7 +11,7 @@
 %token INT BOOL ANY SEQ MAP ID
 %token TYPE INCLUDE MAIN EVENT MACHINE MONITOR ASSUME SPEC
 
-%token VAR START HOT COLD MODEL STATE FUN ACTION GROUP STATIC MODELS MONITORS
+%token VAR START HOT COLD MODEL STATE FUN ACTION GROUP MONITORS
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH AS WITH
 
@@ -20,7 +20,7 @@
 
 %token TRUE FALSE
 
-%token SWAP, XFER
+%token SWAP, REF, XFER
 
 %token ASSIGN REMOVE INSERT
 %token EQ NE LT GT LE GE IN
@@ -58,7 +58,7 @@ TopDecl
 	| TypeDefDecl
 	| EventDecl
 	| MachineDecl
-	| StaticFunDecl
+	| FunDecl
 	;
 
 /******************* Annotations *******************/ 
@@ -82,8 +82,8 @@ Annotation
 
 /******************* Type Declarations **********************/
 TypeDefDecl
-    : TYPE ID SEMICOLON { AddEmptyTypeDef($2.str, ToSpan(@2), ToSpan(@1)); }
-	| TYPE ID ASSIGN Type SEMICOLON   { AddTypeDef($2.str, ToSpan(@2), ToSpan(@1)); }
+	: TYPE ID ASSIGN Type SEMICOLON			{ AddTypeDef($2.str, ToSpan(@2), ToSpan(@1)); }
+	| MODEL TYPE ID ASSIGN Type SEMICOLON   { AddModelTypeDef($3.str, ToSpan(@3), ToSpan(@1)); }
 	;
 
 /******************* Include Declarations *******************/ 
@@ -114,9 +114,13 @@ EventAnnotOrNone
 
 /******************* Machine Declarations *******************/
 MachineDecl
-	: IsMain MACHINE ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE { AddMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1));    }
-	| IsMain MODEL ID MachCardOrNone MachAnnotOrNone LCBRACE MachineBody RCBRACE   { AddMachine(P_Root.UserCnstKind.MODEL, $3.str, ToSpan(@3), ToSpan(@1));   }
-	| SPEC ID ObservesList MachAnnotOrNone LCBRACE MachineBody RCBRACE			   { AddMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
+	: MachineNameDecl MachAnnotOrNone LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1)); }
+	;
+
+MachineNameDecl
+	: IsMain MACHINE ID	MachCardOrNone	{ SetMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1)); }
+	| MODEL ID MachCardOrNone			{ SetMachine(P_Root.UserCnstKind.MODEL, $2.str, ToSpan(@2), ToSpan(@1)); }
+	| SPEC ID ObservesList				{ SetMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 	
 ObservesList
@@ -182,17 +186,17 @@ PayloadVarDeclOrNone
 	|                             { localVarStack.AddPayloadVar(); localVarStack.Push(); }
 	;
 
+PayloadNone
+	:                             { localVarStack.AddPayloadVar(); localVarStack.Push(); }
+	;
+
 /******************* Function Declarations *******************/
-Static 
-	: STATIC { isStaticFun = true; }
-	;
-
-StaticFunDecl
-	: Static IsModel FUN ID ParamsOrNone RetTypeOrNone FunAnnotOrNone LCBRACE StmtBlock RCBRACE { AddFunction($4.str, ToSpan(@4), ToSpan(@1), ToSpan(@8), ToSpan(@10), true); }
-	;
-
 FunDecl
-	: IsModel FUN ID ParamsOrNone RetTypeOrNone FunAnnotOrNone LCBRACE StmtBlock RCBRACE { AddFunction($3.str, ToSpan(@3), ToSpan(@1), ToSpan(@7), ToSpan(@9), false); }
+	: IsModel FunNameDecl ParamsOrNone RetTypeOrNone FunAnnotOrNone LCBRACE StmtBlock RCBRACE { AddFunction(ToSpan(@1), ToSpan(@6), ToSpan(@8)); }
+	;
+
+FunNameDecl
+	: FUN ID { SetFunName($2.str, ToSpan(@2)); }
 	;
 
 IsModel
@@ -262,7 +266,7 @@ StateBody
 StateBodyItem
 	: ENTRY PayloadVarDeclOrNone LCBRACE StmtBlock RCBRACE					{ SetStateEntry(ToSpan(@3), ToSpan(@5));                                  }	
 	| ENTRY ID SEMICOLON													{ SetStateEntry($2.str, ToSpan(@2)); }			
-	| EXIT LCBRACE StmtBlock RCBRACE										{ localVarStack.AddPayloadVar(); localVarStack.Push(); SetStateExit(ToSpan(@2), ToSpan(@4));                                   }
+	| EXIT PayloadNone LCBRACE StmtBlock RCBRACE							{ SetStateExit(ToSpan(@2), ToSpan(@4));                                   }
 	| EXIT ID SEMICOLON														{ SetStateExit($2.str, ToSpan(@2));                                 }
 	| DEFER NonDefaultEventList TrigAnnotOrNone SEMICOLON					{ AddDefersOrIgnores(true,  ToSpan(@1));            }		
 	| IGNORE NonDefaultEventList TrigAnnotOrNone SEMICOLON					{ AddDefersOrIgnores(false, ToSpan(@1));            }
@@ -326,7 +330,7 @@ TupTypeList
 	;
 
 QualifierOrNone
-	: SWAP		{ qualifier.Push(MkUserCnst(P_Root.UserCnstKind.SWAP, ToSpan(@1))); }
+	: REF		{ qualifier.Push(MkUserCnst(P_Root.UserCnstKind.REF, ToSpan(@1))); }
 	| XFER		{ qualifier.Push(MkUserCnst(P_Root.UserCnstKind.XFER, ToSpan(@1))); }
 	|			{ qualifier.Push(P_Root.MkUserCnst(P_Root.UserCnstKind.NONE)); }
 	;

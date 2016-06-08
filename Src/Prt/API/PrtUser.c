@@ -363,7 +363,7 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, 
 		PrtUserPrintString(") pushed\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_UNHANDLED:
-		eventName = c->process->program->events[PrtPrimGetEvent(PrtGetCurrentTrigger(c))].name;
+		eventName = c->process->program->events[c->eventValue].name;
 		PrtUserPrintString("<PopLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);

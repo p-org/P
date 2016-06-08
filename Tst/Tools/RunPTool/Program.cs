@@ -53,7 +53,7 @@ namespace RunPTool
                     {
                         cooperative = true;
                     }
-                    else if(option.StartsWith("/run"))
+                    else if(option.StartsWith("run"))
                     {
                         execsToRun = arg;
                     }

@@ -148,6 +148,8 @@ _In_  PRT_VALUE					*payload
 	context->isHalted = PRT_FALSE; 
     context->nextOperation = EntryOperation;
 	context->lastOperation = ReturnStatement;
+	context->exitReason = NotExit;
+	context->eventValue = 0;
 
 	context->currentTrigger = NULL;
 	context->currentPayload = PrtCloneValue(payload);
@@ -480,7 +482,7 @@ PrtPushNewEventHandlerFrame(
 		}
 		locals[payloadIndex] = context->currentPayload;
 		context->currentPayload = NULL;
-		if (payloadStatus == PRT_FUN_PARAM_SWAP)
+		if (payloadStatus == PRT_FUN_PARAM_REF)
 		{
 			refArgs = PrtCalloc(1, sizeof(PRT_VALUE **));
 			refArgs[0] = &context->currentPayload;
@@ -496,7 +498,7 @@ PrtPushNewEventHandlerFrame(
 	}
 	else
 	{
-		if (payloadStatus != PRT_FUN_PARAM_SWAP)
+		if (payloadStatus != PRT_FUN_PARAM_REF)
 		{
 			PrtFreeTriggerPayload(context);
 		}
@@ -572,7 +574,7 @@ PrtPushNewFrame(
 					arg = va_arg(argp, PRT_VALUE *);
 					locals[count] = PrtCloneValue(arg);
 					break;
-				case PRT_FUN_PARAM_SWAP:
+				case PRT_FUN_PARAM_REF:
 					argPtr = va_arg(argp, PRT_VALUE **);
 					refArgs[count] = argPtr;
 					locals[count] = *argPtr;
@@ -718,7 +720,7 @@ _In_ PRT_BOOLEAN				isPopStatement
 		{
 			PrtHandleError(PRT_STATUS_EVENT_UNHANDLED, context);
 		}
-		else if (PrtPrimGetEvent(context->currentTrigger) == PRT_SPECIAL_EVENT_HALT)
+		else if (context->eventValue == PRT_SPECIAL_EVENT_HALT)
 		{
 			PrtHaltMachine(context);
 			isHalted = PRT_TRUE;
@@ -760,24 +762,30 @@ _In_ PRT_BOOLEAN				isPopStatement
 FORCEINLINE
 void
 PrtRunExitFunction(
-_In_ PRT_MACHINEINST_PRIV			*context,
-_In_ PRT_UINT32						transIndex
+_In_ PRT_MACHINEINST_PRIV			*context
 )
 {
 	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
 	context->lastOperation = ReturnStatement;
 	PrtLog(PRT_STEP_EXIT, context);
 	PRT_UINT32 exitFunIndex = context->process->program->machines[context->instanceOf].states[context->currentState].exitFunIndex;
-	PrtPushNewEventHandlerFrame(context, exitFunIndex, PRT_FUN_PARAM_SWAP, NULL);
+	PrtPushNewEventHandlerFrame(context, exitFunIndex, PRT_FUN_PARAM_REF, NULL);
 	PrtGetExitFunction(context)((PRT_MACHINEINST *)context);
-	if (transIndex < stateDecl->nTransitions)
-	{
-		PRT_UINT32 transFunIndex = stateDecl->transitions[transIndex].transFunIndex;
-		PRT_DBG_ASSERT(transFunIndex != PRT_SPECIAL_ACTION_PUSH_OR_IGN, "Must be valid function index");
-		PrtPushNewEventHandlerFrame(context, transFunIndex, PRT_FUN_PARAM_SWAP, NULL);
-		context->process->program->machines[context->instanceOf].funs[transFunIndex].implementation((PRT_MACHINEINST *)context);
-	}
-	PRT_DBG_ASSERT(context->lastOperation == ReturnStatement, "Exit function must terminate with a ReturnStatement");
+}
+
+FORCEINLINE
+void
+PrtRunTransitionFunction(
+	_In_ PRT_MACHINEINST_PRIV			*context,
+	_In_ PRT_UINT32						transIndex
+)
+{
+	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
+	context->lastOperation = ReturnStatement; 
+	PRT_UINT32 transFunIndex = stateDecl->transitions[transIndex].transFunIndex;
+	PRT_DBG_ASSERT(transFunIndex != PRT_SPECIAL_ACTION_PUSH_OR_IGN, "Must be valid function index");
+	PrtPushNewEventHandlerFrame(context, transFunIndex, PRT_FUN_PARAM_REF, NULL);
+	context->process->program->machines[context->instanceOf].funs[transFunIndex].implementation((PRT_MACHINEINST *)context);
 }
 
 static PRT_BOOLEAN
@@ -820,7 +828,7 @@ DoEntry:
 	goto CheckLastOperation;
 
 DoAction:
-	currActionDecl = PrtGetAction(context);
+	currActionDecl = PrtGetAction(context, eventValue);
 	PRT_UINT32 doFunIndex = currActionDecl->doFunIndex;
 	context->lastOperation = ReturnStatement;
 	if (doFunIndex == PRT_SPECIAL_ACTION_PUSH_OR_IGN)
@@ -851,20 +859,51 @@ CheckLastOperation:
 	switch (context->lastOperation)
 	{
 	case PopStatement:
-		PrtRunExitFunction(context, PrtGetCurrentStateDecl(context)->nTransitions);
-        hasMoreWork = !PrtPopState(context, PRT_TRUE);
-		context->nextOperation = DequeueOperation;
-		goto Finish;
-
+		context->exitReason = OnPopStatement;
+		PrtRunExitFunction(context);
+		goto CheckLastOperation;
+        
 	case RaiseStatement:
 		context->nextOperation = HandleEventOperation;
 		hasMoreWork = PRT_TRUE;
 		goto Finish;
 
 	case ReturnStatement:
-		context->nextOperation = DequeueOperation;
-		hasMoreWork = PRT_TRUE;
-		goto Finish;
+		switch (context->exitReason)
+		{
+		case NotExit:
+			context->nextOperation = DequeueOperation;
+			hasMoreWork = PRT_TRUE;
+			goto Finish;
+
+		case OnPopStatement:
+			hasMoreWork = !PrtPopState(context, PRT_TRUE);
+			context->nextOperation = DequeueOperation;
+			context->exitReason = NotExit;
+			goto Finish;
+
+		case OnUnhandledEvent:
+			hasMoreWork = !PrtPopState(context, PRT_FALSE);
+			context->nextOperation = HandleEventOperation;
+			context->exitReason = NotExit; 
+			goto Finish;
+
+		case OnTransition:
+			context->exitReason = OnTransitionAfterExit;
+			PrtRunTransitionFunction(context, PrtFindTransition(context, context->eventValue));
+			goto CheckLastOperation;
+
+		case OnTransitionAfterExit:
+			PrtTakeTransition(context, context->eventValue);
+			context->exitReason = NotExit; 
+			goto DoEntry;
+
+		default:
+			PRT_DBG_ASSERT(0, "Unexpected case in switch");
+			context->nextOperation = DequeueOperation;
+			goto Finish;
+		}
+		break;
 
 	default:
 		PRT_DBG_ASSERT(0, "Unexpected case in switch");
@@ -892,7 +931,16 @@ DoDequeue:
 
 DoHandleEvent:
 	PrtAssert(context->receive == NULL, "Must not be blocked at a receive");
-	eventValue = PrtPrimGetEvent(context->currentTrigger);
+	if (context->currentTrigger != NULL)
+	{
+		eventValue = PrtPrimGetEvent(context->currentTrigger);
+		PrtFreeValue(context->currentTrigger);
+		context->currentTrigger = NULL;
+	}
+	else
+	{
+		eventValue = context->eventValue;
+	}
 	if (PrtIsPushTransition(context, eventValue))
 	{
 		PrtTakeTransition(context, eventValue);
@@ -900,9 +948,10 @@ DoHandleEvent:
 	}
 	else if (PrtIsTransitionPresent(context, eventValue))
 	{
-		PrtRunExitFunction(context, PrtFindTransition(context, eventValue));
-		PrtTakeTransition(context, eventValue);
-		goto DoEntry;
+		context->exitReason = OnTransition;
+		context->eventValue = eventValue;
+		PrtRunExitFunction(context);
+		goto CheckLastOperation;
 	}
 	else if (PrtIsActionInstalled(eventValue, context->currentActionSetCompact))
 	{
@@ -910,10 +959,10 @@ DoHandleEvent:
 	}
 	else
 	{
-		PrtRunExitFunction(context, PrtGetCurrentStateDecl(context)->nTransitions);
-		hasMoreWork = !PrtPopState(context, PRT_FALSE);
-		context->nextOperation = HandleEventOperation;
-		goto Finish;
+		context->exitReason = OnUnhandledEvent;
+		context->eventValue = eventValue;
+		PrtRunExitFunction(context);
+		goto CheckLastOperation;
 	}
 
 DoReceive:
@@ -934,31 +983,27 @@ Finish:
 
 void
 PrtRunStateMachine(
-    _Inout_ PRT_MACHINEINST_PRIV	*context
+	_Inout_ PRT_MACHINEINST_PRIV	*context
 )
 {
-    // protecting against re-entry using isRunning boolean.
-    PrtLockMutex(context->stateMachineLock);
-    if (context->isRunning)
-    {
-        // Another thread is already running this state machine!
-        PrtUnlockMutex(context->stateMachineLock);
-        return;
-    }
-    context->isRunning = PRT_TRUE;
-    PrtUnlockMutex(context->stateMachineLock);
+	// protecting against re-entry using isRunning boolean.
+	PrtLockMutex(context->stateMachineLock);
+	if (context->isHalted || context->isRunning)
+	{
+		PrtUnlockMutex(context->stateMachineLock);
+		return;
+	}
+	context->isRunning = PRT_TRUE;
+	PrtUnlockMutex(context->stateMachineLock);
 
-    // This function now just wraps the new PrtStepStateMachine method
-    while (!context->isHalted && PrtStepStateMachine(context)) {
-        ;
-    }
+	// This function now just wraps the new PrtStepStateMachine method
+	while (PrtStepStateMachine(context)) {
+		;
+	}
 
-    if (!context->isHalted)
-    {
-        PrtLockMutex(context->stateMachineLock);
-        context->isRunning = PRT_FALSE;
-        PrtUnlockMutex(context->stateMachineLock);
-    }
+	PrtLockMutex(context->stateMachineLock);
+	context->isRunning = PRT_FALSE;
+	PrtUnlockMutex(context->stateMachineLock);
 }
 
 PRT_API PRT_STEP_RESULT
@@ -966,44 +1011,64 @@ PrtStepProcess(PRT_PROCESS *process
 )
 {
     PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)process;
+	PRT_COOPERATIVE_SCHEDULER* info;
+	PRT_UINT32 machineCount;
 
-    // Stop the process from terminating until this method is done playing with the machines in the process.
     PrtLockMutex(privateProcess->processLock);
+	info = (PRT_COOPERATIVE_SCHEDULER*)privateProcess->schedulerInfo;
+	info->threadsWaiting++;
+	machineCount = privateProcess->machineCount;
+	PrtUnlockMutex(privateProcess->processLock);
 
-    PRT_BOOLEAN hasMoreWork = PRT_FALSE;
-
+	PRT_BOOLEAN terminating = PRT_FALSE;
+	PRT_BOOLEAN hasMoreWork = PRT_FALSE;
     // Run all state machines belonging to this process.
-    for (int i = privateProcess->machineCount - 1; i >= 0 && !privateProcess->terminating; i--)
-    {
-        PRT_MACHINEINST_PRIV *context = (PRT_MACHINEINST_PRIV*)privateProcess->machines[i];
-        if (context != NULL && !context->isHalted)
-        {
-            // protecting against re-entry using isRunning boolean.
-            PrtLockMutex(context->stateMachineLock);
-            if (context->isRunning)
-            {
-                // Another thread is already running this state machine!
-                PrtUnlockMutex(context->stateMachineLock);
-            }
-            else
-            {
-                context->isRunning = PRT_TRUE;
-                PrtUnlockMutex(context->stateMachineLock);
-                hasMoreWork |= PrtStepStateMachine(context);
+	for (int i = machineCount - 1; i >= 0; i--)
+	{
+		PrtLockMutex(privateProcess->processLock);
+		terminating = privateProcess->terminating;
+		if (terminating)
+		{
+			break;
+		}
+		PRT_MACHINEINST_PRIV *context = (PRT_MACHINEINST_PRIV*)privateProcess->machines[i];
+		PrtUnlockMutex(privateProcess->processLock);
 
-                if (!context->isHalted)
-                {
-                    PrtLockMutex(context->stateMachineLock);
-                    context->isRunning = PRT_FALSE;
-                    PrtUnlockMutex(context->stateMachineLock);
-                }
-            }
-        }
-    }
+		if (context != NULL)
+		{
+			// protecting against re-entry using isRunning boolean.
+			PrtLockMutex(context->stateMachineLock);
+			if (context->isHalted || context->isRunning)
+			{
+				PrtUnlockMutex(context->stateMachineLock);
+			}
+			else
+			{
+				context->isRunning = PRT_TRUE;
+				PrtUnlockMutex(context->stateMachineLock);
+				hasMoreWork |= PrtStepStateMachine(context);
 
-    PRT_BOOLEAN terminating = privateProcess->terminating;
-    PrtUnlockMutex(privateProcess->processLock);
-    return terminating ? PRT_STEP_TERMINATING : (hasMoreWork ? PRT_STEP_MORE : PRT_STEP_IDLE);
+				PrtLockMutex(context->stateMachineLock);
+				context->isRunning = PRT_FALSE;
+				PrtUnlockMutex(context->stateMachineLock);
+			}
+		}
+	}
+	
+	if (!terminating)
+	{
+		PrtLockMutex(privateProcess->processLock);
+	}
+	hasMoreWork |= machineCount < privateProcess->machineCount;
+	info->threadsWaiting--;
+	PRT_UINT32 threadsWaiting = info->threadsWaiting;
+	PrtUnlockMutex(privateProcess->processLock);
+
+	if (terminating && threadsWaiting == 0)
+	{
+		PrtReleaseSemaphore(info->allThreadsStopped);
+	}
+	return terminating ? PRT_STEP_TERMINATING : (hasMoreWork ? PRT_STEP_MORE : PRT_STEP_IDLE);
 }
 
 PRT_UINT32
@@ -1242,14 +1307,19 @@ PrtFreeLocals(
 	}
 
 	PRT_FUNDECL *funDecl = &context->process->program->machines[context->instanceOf].funs[frame->funIndex];
-	PRT_UINT32 numLocals = 0;
-	if (funDecl->localsNmdTupType != NULL)
-	{
-		numLocals = funDecl->localsNmdTupType->typeUnion.nmTuple->arity;
-	}
-	PRT_UINT32 numParameters = funDecl->maxNumLocals - numLocals;
+
 	if (frame->refArgs != NULL)
 	{
+		PRT_UINT32 numParameters = 1;
+		if (funDecl->name != NULL)
+		{
+			PRT_UINT32 numLocals = 0;
+			if (funDecl->localsNmdTupType != NULL)
+			{
+				numLocals = funDecl->localsNmdTupType->typeUnion.nmTuple->arity;
+			}
+			numParameters = funDecl->maxNumLocals - numLocals;
+		}
 		for (PRT_UINT32 i = 0; i < numParameters; i++)
 		{
 			if (frame->refArgs[i] != NULL)
@@ -1260,6 +1330,7 @@ PrtFreeLocals(
 		}
 		PrtFree(frame->refArgs);
 	}
+
 	for (PRT_UINT32 i = 0; i < funDecl->maxNumLocals; i++)
 	{
 		if (frame->locals[i] != NULL)
@@ -1302,10 +1373,10 @@ _In_ PRT_MACHINEINST_PRIV		*context
 FORCEINLINE
 PRT_DODECL*
 PrtGetAction(
-_In_ PRT_MACHINEINST_PRIV		*context
+_In_ PRT_MACHINEINST_PRIV		*context,
+_In_ PRT_UINT32					currEvent
 )
 {
-	PRT_UINT32 currEvent = PrtPrimGetEvent(context->currentTrigger);
 	PRT_BOOLEAN isActionInstalled = PRT_FALSE;
 	PRT_UINT32 ui, nActions;
 	PRT_STATESTACK currStack;

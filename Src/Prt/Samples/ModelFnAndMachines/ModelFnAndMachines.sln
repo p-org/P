@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.40629.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ModelFnAndMachines", "ModelFnAndMachines.vcxproj", "{65DF9D53-1461-43AE-9A50-43E7C4D55E05}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ModelFnAndMachines", "ModelFnAndMachines.vcxproj", "{68CFEF09-5625-404E-BCBD-31CF55B1A09B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +11,10 @@ Global
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{65DF9D53-1461-43AE-9A50-43E7C4D55E05}.Debug|Win32.ActiveCfg = Debug|Win32
-		{65DF9D53-1461-43AE-9A50-43E7C4D55E05}.Debug|Win32.Build.0 = Debug|Win32
-		{65DF9D53-1461-43AE-9A50-43E7C4D55E05}.Release|Win32.ActiveCfg = Release|Win32
-		{65DF9D53-1461-43AE-9A50-43E7C4D55E05}.Release|Win32.Build.0 = Release|Win32
+		{68CFEF09-5625-404E-BCBD-31CF55B1A09B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{68CFEF09-5625-404E-BCBD-31CF55B1A09B}.Debug|Win32.Build.0 = Debug|Win32
+		{68CFEF09-5625-404E-BCBD-31CF55B1A09B}.Release|Win32.ActiveCfg = Release|Win32
+		{68CFEF09-5625-404E-BCBD-31CF55B1A09B}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

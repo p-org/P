@@ -78,7 +78,7 @@ machine Node assume 100 {
     }
 }
 
-main model Ring4 assume 100 {
+main machine Ring4 assume 100 {
 
 		    var N1 : machine;
 		    var N2 : machine;

@@ -1,0 +1,16 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine M(1) is created
+OUT: <StateLog> Machine M(1) entered state S
+OUT: <CreateLog> Machine N(2) is created
+OUT: <StateLog> Machine N(2) entered state S
+OUT: <EnqueueLog> Enqueued event E with payload 0 on Machine M(1)
+OUT: <EnqueueLog> Enqueued event E with payload 0 on Machine M(1)
+OUT: <RaiseLog> Machine M(1) raised event Unit with payload null
+OUT: <ExitLog> Machine M(1) exiting state S
+OUT: <DequeueLog> Dequeued event E with payload 0 by Machine M(1)
+OUT: <DequeueLog> Dequeued event E with payload 0 by Machine M(1)
+OUT: <StateLog> Machine M(1) entered state T
+OUT: 
+EXIT: 0

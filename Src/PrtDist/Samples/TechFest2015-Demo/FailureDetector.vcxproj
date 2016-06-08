@@ -174,10 +174,17 @@
     <ClCompile Include="Driver.c" />
     <ClCompile Include="stubs.c" />
     <ClCompile Include="Timer.c" />
+  </ItemGroup>
+  <ItemGroup>
     <PCompile Include="Driver.p" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Driver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="FailureDetector.p" />
+    <None Include="PrtDistHelp.p" />
+    <None Include="Timer.p" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />

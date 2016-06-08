@@ -126,7 +126,7 @@ machine Elevator {
     }
 }
 
-main model User {
+main machine User {
     var ElevatorV : machine;
 
     start state Init {

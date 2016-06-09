@@ -1,19 +1,45 @@
 
 // PingPong.p 
-event PING; 
-event PONG; 
+event PING: seq[int]; 
+event PONG: seq[int]; 
 event SUCCESS;
 
 main machine Client {
+  var server: machine;
+  var arg: seq[int];
+
   start state Init { 
     entry { 
+	  var i:int;
+	  server = new Server(this);
+	  while (i < 10)
+	  {
+	     arg += (i,0);
+		 i = i + 1;
+	  }
       raise SUCCESS; 
     } 
     on SUCCESS goto SendPing; 
   }
   state SendPing { 
     entry { 
-      send this, PING; 
+      send server, PING, arg; 
+      raise SUCCESS; 
+    } 
+    on SUCCESS goto WaitPong; 
+  }
+  state WaitPong { 
+    on PONG goto SendPing; 
+  }
+}
+
+machine Server
+{
+  var client: machine;
+
+  start state Init { 
+    entry (payload:machine) { 
+	  client = payload;
       raise SUCCESS; 
     } 
     on SUCCESS goto WaitPing; 
@@ -22,13 +48,11 @@ main machine Client {
     on PING goto SendPong; 
   }
   state SendPong {
-    entry { 
-      send this, PONG; 
+    entry (payload:seq[int])
+	{
+      send client, PONG, payload; 
       raise SUCCESS; 
     } 
-    on SUCCESS goto WaitPong; 
-  }
-  state WaitPong { 
-    on PONG goto SendPing; 
+    on SUCCESS goto WaitPing; 
   }
 }

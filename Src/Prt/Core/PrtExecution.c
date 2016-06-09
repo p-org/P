@@ -1,7 +1,7 @@
 #include "PrtExecution.h"
 
 /* Initialize the function to default assert function */
-PRT_ASSERT_FUN PrtAssert = &PrtAssertDefaultFn;
+PRT_ASSERT_FUN _PrtAssert = &PrtAssertDefaultFn;
 
 /* Initialize the function to default print fucntion*/
 PRT_PRINT_FUN PrtPrintf = &PrtPrintfDefaultFn;
@@ -1939,7 +1939,7 @@ PRT_API void PRT_CALL_CONV
 PrtUpdateAssertFn(
 PRT_ASSERT_FUN assertFn
 ){
-	PrtAssert = assertFn;
+	_PrtAssert = assertFn;
 }
 
 PRT_API void PRT_CALL_CONV

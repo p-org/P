@@ -12,11 +12,7 @@
         <DisableFastUpToDateCheck >True</DisableFastUpToDateCheck>
     </PropertyGroup>
     
-    <Target Name="CompileP" Inputs="@(PCompile)" Outputs="%(FileName).c;%(FileName).h;stubs.c" BeforeTargets="BeforeBuildGenerateSources">
-        <Message Importance="high" Text="########## compiling p files: @(PCompile) ##################" />
-        <Message Importance="high" Condition="!Exists('$(DropFolder)\Binaries\pc.exe')" 
-                 Text="### pc.exe does not exist in $(DropFolder)\Binaries.  Please build it."/>
-        <Exec Command="$(DropFolder)\Binaries\pc.exe @(PCompile->'%(FullPath)')" />
+    <Target Name="CompileP" Inputs="@(PCompile)" Outputs="%(RootDir)%(Directory)%(FileName).c;%(RootDir)%(Directory)%(FileName).h;%(RootDir)%(Directory)stubs.c" BeforeTargets="BeforeBuildGenerateSources">
         <PropertyGroup>
             <PFullPath>@(PCompile->'%(FullPath)')</PFullPath>
             <PDirectory>$([System.IO.Path]::GetDirectoryName($(PFullPath)))</PDirectory>
@@ -26,6 +22,11 @@
             <FileWrites Include="@(PCompile->'$(PDirectory)\%(FileName).h')" />
             <FileWrites Include="$(MSBuildThisFileDirectory)stubs.c" />
         </ItemGroup>
+        <Message Importance="high" Text="########## compiling p files: @(PCompile) ##################" />
+        <Message Importance="high" Text="########## generating c files: @(PCompile->'$(PDirectory)\%(FileName).c') ##################" />
+        <Message Importance="high" Condition="!Exists('$(DropFolder)\Binaries\pc.exe')" 
+                 Text="### pc.exe does not exist in $(DropFolder)\Binaries.  Please build it."/>
+        <Exec Command="$(DropFolder)\Binaries\pc.exe @(PCompile->'%(FullPath)')"  WorkingDirectory="@(PCompile->'%(RootDir)%(Directory)')"/>
     </Target>
     
     <Target Name="CleanCompileP" Condition="'@(PCompile)' != ''" >

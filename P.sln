@@ -106,6 +106,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PingPongFast", "Src\PrtDist\Samples\PingPongFast\PingPongFast.vcxproj", "{2010A7BF-C537-4311-9EE6-34DB5D9464B5}"
 EndProject
 Global
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64

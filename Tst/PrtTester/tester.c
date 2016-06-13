@@ -36,10 +36,23 @@ void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr)
 
 }
 
+HANDLE threadsTerminated;
+long threadsRunning = 0;
 static PRT_BOOLEAN cooperative = PRT_FALSE;
 static int threads = 1;
 
-void Log(PRT_STEP step, PRT_MACHINEINST *context) { PrtPrintStep(step, context); }
+// todo: make tester useful for performance testing also, not finished yet...
+static PRT_BOOLEAN perf = PRT_FALSE;
+static long steps = 0;
+static long startTime = 0;
+static long perfEndTime = 0;
+static const char* parg = NULL;
+
+void Log(PRT_STEP step, PRT_MACHINEINST *context) 
+{ 
+
+	PrtPrintStep(step, context); 
+}
 
 static PRT_BOOLEAN ParseCommandLine(int argc, char *argv[])
 {
@@ -63,6 +76,25 @@ static PRT_BOOLEAN ParseCommandLine(int argc, char *argv[])
                     }
                 }
             }
+			else if (_stricmp(arg + 1, "perf") == 0)
+			{
+				if (i + 1 < argc)
+				{
+					perf = PRT_TRUE;
+					perfEndTime = atoi(argv[++i]);
+					if (perfEndTime <= 0)
+					{
+						perfEndTime = 1;
+					}
+				}
+			}
+			else if (_stricmp(arg + 1, "arg") == 0)
+			{
+				if (i + 1 < argc)
+				{
+					parg = argv[++i];
+				}
+			}
             else if (_stricmp(arg + 1, "h") == 0 || _stricmp(arg + 1, "help") == 0 || _stricmp(arg + 1, "?") == 0)
             {
                 return PRT_FALSE;
@@ -87,11 +119,16 @@ static void PrintUsage(void)
     printf("Usage: Tester [options]\n");
     printf("This program tests the compiled state machine in program.c and program.h\n");
     printf("Options:\n");
-    printf("   -cooperative:    run state machine with the cooperative scheduler\n");
+    printf("   -cooperative     run state machine with the cooperative scheduler\n");
+	printf("   -threads [n]     run P using multiple threads");
+	printf("   -perf [n]        run performance test that outputs #steps every 10 seconds, terminating after n seconds");
+	printf("   -arg [x]         pass argument 'x' to P main machine");
 }
 
-HANDLE threadsTerminated;
-long threadsRunning = 0;
+static void RunPerfTest()
+{
+
+}
 
 static void RunToIdle(LPVOID process)
 {
@@ -137,7 +174,15 @@ int main(int argc, char *argv[])
         {
             PrtSetSchedulingPolicy(process, PRT_SCHEDULINGPOLICY_COOPERATIVE);
         }
-		payload = PrtMkNullValue();
+		if (parg == NULL)
+		{
+			payload = PrtMkNullValue();
+		}
+		else
+		{
+			int i = atoi(parg);
+			payload = PrtMkIntValue(i);
+		}
 		PrtMkMachine(process, _P_MACHINE_MAIN, payload);
 
         if (cooperative)

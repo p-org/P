@@ -106,7 +106,7 @@ _In_  PRT_VALUE					*payload
 	}
 	else if (machineCount == numMachines) {
 		PRT_MACHINEINST **newMachines = (PRT_MACHINEINST **)PrtCalloc(2 * machineCount, sizeof(PRT_MACHINEINST *));
-		for (PRT_UINT32 i = 0; i < machineCount; i++)
+		for (i = 0; i < machineCount; i++)
 		{
 			newMachines[i] = machines[i];
 		}
@@ -843,7 +843,7 @@ DoAction:
 			PrtLog(PRT_STEP_DO, context);
 			PrtPushNewEventHandlerFrame(context, doFunIndex, PRT_FUN_PARAM_XFER, NULL);
 		}
-		PRT_UINT32 funIndex = PrtBottomOfFunStack(context)->funIndex;
+		funIndex = PrtBottomOfFunStack(context)->funIndex;
 		context->process->program->machines[context->instanceOf].funs[funIndex].implementation((PRT_MACHINEINST *)context);
 	}
 	goto CheckLastOperation;

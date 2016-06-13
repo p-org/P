@@ -245,7 +245,7 @@ extern "C"{
 #ifdef PRT_NO_ASSERT
 #define PrtAssert(c,m)
 #else
-#define PrtAssert(c,m) if (!c) { _PrtAssert(c, m); }
+#define PrtAssert(c,m) if (!(c)) { _PrtAssert(c, m); }
 #endif
 
 #ifdef PRT_DEBUG

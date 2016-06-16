@@ -21,31 +21,36 @@ static void ResizeBuffer(_Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, 
 
 static void PrtUserPrintUint16(_In_ PRT_UINT16 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
-	ResizeBuffer(buffer, bufferSize, *numCharsWritten, 16);
-	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%u", i);
+	PRT_UINT32 written = *numCharsWritten;
+	ResizeBuffer(buffer, bufferSize, written, 16);
+	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%u", i);
 }
 static void PrtUserPrintUint32(_In_ PRT_UINT32 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
-	ResizeBuffer(buffer, bufferSize, *numCharsWritten, 32);
-	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%u", i);
+	PRT_UINT32 written = *numCharsWritten;
+	ResizeBuffer(buffer, bufferSize, written, 32);
+	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%u", i);
 }
 
 static void PrtUserPrintUint64(_In_ PRT_UINT64 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
-	ResizeBuffer(buffer, bufferSize, *numCharsWritten, 64);
-	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%llu", i);
+	PRT_UINT32 written = *numCharsWritten;
+	ResizeBuffer(buffer, bufferSize, written, 64);
+	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%llu", i);
 }
 
 static void PrtUserPrintInt32(_In_ PRT_INT32 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
-	ResizeBuffer(buffer, bufferSize, *numCharsWritten, 32);
-	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%d", i);
+	PRT_UINT32 written = *numCharsWritten;
+	ResizeBuffer(buffer, bufferSize, written, 32);
+	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%d", i);
 }
 
 static void PrtUserPrintString(_In_ PRT_STRING s, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
-	ResizeBuffer(buffer, bufferSize, *numCharsWritten, (PRT_UINT32)strlen(s));
-	*numCharsWritten += sprintf(*buffer + *numCharsWritten, "%s", s);
+	PRT_UINT32 written = *numCharsWritten;
+	ResizeBuffer(buffer, bufferSize, written, (PRT_UINT32)strlen(s) + 1);
+	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%s", s);
 }
 
 static void PrtUserPrintMachineId(_In_ PRT_MACHINEID id, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)

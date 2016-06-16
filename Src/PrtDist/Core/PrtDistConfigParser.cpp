@@ -97,7 +97,7 @@ inline void TESTHR(HRESULT _hr)
 
 static void CopyUnicodeToUtf8(LPWSTR source, char* buffer, int bufferLength)
 {
-    int len = WideCharToMultiByte(CP_UTF8, 0, source, wcslen(source), buffer, bufferLength - 1, 0, NULL);
+    int len = WideCharToMultiByte(CP_UTF8, 0, source, (int)wcslen(source), buffer, bufferLength - 1, 0, NULL);
     buffer[len] = '\0';
 }
 

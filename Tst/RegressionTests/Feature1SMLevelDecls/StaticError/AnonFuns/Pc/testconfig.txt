@@ -1,5 +1,5 @@
 arg: ..\anonFunction.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: 1.7. Transition to undefined states

@@ -1,5 +1,5 @@
 arg: ..\typedef.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe: type definitions

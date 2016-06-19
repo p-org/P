@@ -1,5 +1,5 @@
 arg: ..\PingPongMonitor.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, Feature Integration: monitor with hot/cold states

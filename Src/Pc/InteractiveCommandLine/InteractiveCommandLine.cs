@@ -15,7 +15,6 @@ namespace Microsoft.Pc
         private static void Main(string[] args)
         {
             bool shortFileNames = false;
-            bool doNotErase = false;
             bool server = false;
             for (int i = 0; i < args.Length; i++)
             {
@@ -23,10 +22,6 @@ namespace Microsoft.Pc
                 if (arg == "/shortFileNames")
                 {
                     shortFileNames = true;
-                }
-                else if (arg == "/doNotErase")
-                {
-                    doNotErase = true;
                 }
                 else if (arg == "/server")
                 {
@@ -45,7 +40,7 @@ namespace Microsoft.Pc
                 compiler = new Compiler(false);
             CommandLineOptions compilerOptions = new CommandLineOptions();
             compilerOptions.shortFileNames = shortFileNames;
-            compilerOptions.erase = !doNotErase;
+            compilerOptions.test = false;
             compilerOptions.analyzeOnly = true;
             if (server)
             {
@@ -71,7 +66,7 @@ namespace Microsoft.Pc
                     var success = ParseLoadString(inputArgs, compilerOptions);
                     if (!success)
                     {
-                        Console.WriteLine("USAGE: load file.p [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>] [/outputFileName:<name>]");
+                        Console.WriteLine("USAGE: load file.p [/test] [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>] [/outputFileName:<name>]");
                         continue;
                     }
                     compiler.Options = compilerOptions;
@@ -142,7 +137,7 @@ namespace Microsoft.Pc
 
         error:
             {
-                Console.WriteLine("USAGE: Pci.exe [/shortFileNames] [/doNotErase] [/server]");
+                Console.WriteLine("USAGE: Pci.exe [/shortFileNames] [/server]");
                 return;
             }
         }
@@ -150,6 +145,7 @@ namespace Microsoft.Pc
         private static bool ParseLoadString(string[] args, CommandLineOptions compilerOptions)
         {
             string fileName = null;
+            bool test = false;
             bool outputFormula = false;
             bool printTypeInference = false;
             string outputDir = null;
@@ -157,7 +153,11 @@ namespace Microsoft.Pc
             for (int i = 1; i < args.Length; i++)
             {
                 string arg = args[i];
-                if (arg == "/dumpFormulaModel")
+                if (arg == "/test")
+                {
+                    test = true;
+                }
+                else if (arg == "/dumpFormulaModel")
                 {
                     outputFormula = true;
                 }
@@ -197,6 +197,7 @@ namespace Microsoft.Pc
             compilerOptions.printTypeInference = printTypeInference;
             compilerOptions.outputDir = outputDir;
             compilerOptions.outputFileName = outputFileName;
+            compilerOptions.test = test;
             return true;
         }
 

@@ -1,5 +1,5 @@
 arg: ..\InfiniteLoopInAtomicBlock.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, Zinger test: infinite loop in atomic block

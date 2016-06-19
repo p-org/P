@@ -1,6 +1,6 @@
 arg: ..\Liveness_1.p
 arg: /shortFileNames
 arg: /liveness
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, Liveness: simplest sample demonstrating liveness checking

@@ -1,5 +1,5 @@
 arg: ..\NewInExit.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, P semantics test: "new" in exit function

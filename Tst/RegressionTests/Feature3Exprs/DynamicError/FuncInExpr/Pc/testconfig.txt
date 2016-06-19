@@ -1,5 +1,5 @@
 arg: ..\FuncInExpr.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, nested function calls

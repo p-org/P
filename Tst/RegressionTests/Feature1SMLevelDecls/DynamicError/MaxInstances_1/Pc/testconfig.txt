@@ -1,5 +1,5 @@
 arg: ..\MaxInstances_1.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, 1.10. assert max instances of event: max number of instances exceeded

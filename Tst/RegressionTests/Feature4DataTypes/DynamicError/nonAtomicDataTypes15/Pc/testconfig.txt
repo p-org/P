@@ -1,5 +1,5 @@
 arg: ..\Insert4Map.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, INSERT for map error

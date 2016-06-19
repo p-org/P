@@ -1,5 +1,5 @@
 arg: ..\function.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: 1.4.2. Wrong function parameters/return value

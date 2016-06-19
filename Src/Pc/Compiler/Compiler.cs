@@ -375,7 +375,7 @@
             }
 
             //// Step 3. Generate outputs
-            return (Options.noCOutput ? true : GenerateC(flags)) && (Options.noZingOutput ? true : GenerateZing(flags)); 
+            return (Options.noCOutput ? true : GenerateC(flags)) && (Options.test ? GenerateZing(flags) : true); 
         }
 
         public bool GenerateZing()
@@ -973,7 +973,6 @@
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModule, null, RootProgramName.ToString()));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkCnst(fileName));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkId(Options.noSourceInfo ? "TRUE" : "FALSE"));
-            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkId(Options.cTest ? "TRUE" : "FALSE"));
             var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModule + "_CModel"));
 
             List<Flag> appFlags;

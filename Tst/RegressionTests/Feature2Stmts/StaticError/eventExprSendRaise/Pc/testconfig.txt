@@ -1,5 +1,5 @@
 arg: ..\eventExprSendRaise.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: "raise", "send" and monitor invocation with non-constant event expression

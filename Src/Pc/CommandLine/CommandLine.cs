@@ -68,10 +68,10 @@ namespace Microsoft.Pc
                             options.outputFileName = colonArg;
                             break;
 
-                        case "/doNotErase":
+                        case "/test":
                             if (colonArg != null)
                                 goto error;
-                            options.erase = false;
+                            options.test = true;
                             break;
 
                         case "/shortFileNames":
@@ -93,16 +93,6 @@ namespace Microsoft.Pc
                                 options.liveness = LivenessOption.Mace;
                             else
                                 goto error;
-                            break;
-                        case "/noZing":
-                            if (colonArg != null)
-                                goto error;
-                            options.noZingOutput = true;
-                            break;
-                        case "/test":
-                            if (colonArg != null)
-                                goto error;
-                            options.cTest = true;
                             break;
                         case "/noC":
                             if (colonArg != null)

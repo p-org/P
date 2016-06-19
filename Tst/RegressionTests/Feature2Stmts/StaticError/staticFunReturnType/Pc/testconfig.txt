@@ -1,5 +1,5 @@
 arg: ..\test.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe: static function return type

@@ -1,5 +1,5 @@
 arg: ..\functionAnyAnon.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, 1.5: anonymous function cannot return a value

@@ -1,5 +1,5 @@
 arg: ..\PopInExitFun.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: Control Impurity: error when "pop" in exit function

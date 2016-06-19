@@ -19,13 +19,11 @@
         public string outputDir;
         public string outputFileName;
         public bool outputFormula;
-        public bool erase;
+        public bool test;
         public bool shortFileNames;
         public bool printTypeInference;
-        public bool noZingOutput;
         public bool noCOutput;
         public bool noSourceInfo;
-        public bool cTest;
 
         public CommandLineOptions()
         {
@@ -34,13 +32,11 @@
             this.liveness = LivenessOption.None;
             this.outputDir = null;
             this.outputFormula = false;
-            this.erase = true;
+            this.test = false;
             this.shortFileNames = false;
             this.printTypeInference = false;
-            this.noZingOutput = false;
             this.noCOutput = false;
             this.noSourceInfo = false;
-            this.cTest = false;
         }
     }
 }

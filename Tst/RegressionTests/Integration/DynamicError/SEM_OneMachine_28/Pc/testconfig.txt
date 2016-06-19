@@ -1,5 +1,5 @@
 arg: ..\DeferIgnore2.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, P semantics test: one machine,  ignore/defer on diff events in the queue

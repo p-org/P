@@ -1,5 +1,5 @@
 arg: ..\purity.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: 1.4.4. Data impure functions

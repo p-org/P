@@ -1,5 +1,5 @@
 arg: ..\bug3.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, Feature Integration: mix of function call statements and receive statements

@@ -256,7 +256,8 @@ domain PStaticTyping extends PData
 	TypeExpansion(t, t) :- TypeExpansion(_, TupType(_, t)), t : TypeExpr.
 	TypeExpansion(t, t) :- TypeExpansion(_, NmdTupType(f, _)), t = f.type.
 	TypeExpansion(t, t) :- TypeExpansion(_, NmdTupType(_, t)), t : TypeExpr.
-	TypeExpansion(type, eType) :- TypeDef(typeName, typeExpr), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
+	TypeExpansion(type, type)  :- TypeDef(typeName, _), ModelType(typeName), no TypeDefError(typeName), type = NameType(typeName).
+	TypeExpansion(type, eType) :- TypeDef(typeName, typeExpr), no ModelType(typeName), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = TupType(hd', tl').
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(qual, name, hd), NIL), TypeExpansion(hd, hd'), eType = NmdTupType(NmdTupTypeField(qual, name, hd'), NIL).
@@ -264,41 +265,23 @@ domain PStaticTyping extends PData
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = SeqType(x), TypeExpansion(x, x'), eType = SeqType(x').
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = MapType(k, v), TypeExpansion(k, k'), TypeExpansion(v, v'), eType = MapType(k', v').
 
-	/*
-	RealTypeExpansion ::= (type: TypeExpr, eType: TypeExpr).
-	RealTypeExpansion(BaseType(NULL), BaseType(NULL)).
-	RealTypeExpansion(BaseType(BOOL), BaseType(BOOL)).
-	RealTypeExpansion(BaseType(INT), BaseType(INT)).
-	RealTypeExpansion(BaseType(EVENT), BaseType(EVENT)).
-	RealTypeExpansion(BaseType(REAL), BaseType(REAL)).
-	RealTypeExpansion(BaseType(ANY), BaseType(ANY)).
-	RealTypeExpansion(t, t) :- TypeOf(_, Tuple(_), t), t : TypeExpr.
-	RealTypeExpansion(t, t) :- TypeOf(_, NamedTuple(_), t), t : TypeExpr.
-	RealTypeExpansion(t, t) :- RealTypeExpansion(_, TupType(t, _)), t : TypeExpr.
-	RealTypeExpansion(t, t) :- RealTypeExpansion(_, TupType(_, t)), t : TypeExpr.
-	RealTypeExpansion(t, t) :- RealTypeExpansion(_, NmdTupType(f, _)), t = f.type.
-	RealTypeExpansion(t, t) :- RealTypeExpansion(_, NmdTupType(_, t)), t : TypeExpr.
-	RealTypeExpansion(type, type)  :- TypeDef(typeName, _), ModelType(typeName), no TypeDefError(typeName), type = NameType(typeName).
-	RealTypeExpansion(type, eType) :- TypeDef(typeName, typeExpr), no ModelType(typeName), no TypeDefError(typeName), type = NameType(typeName), RealTypeExpansion(typeExpr, eType).
-	RealTypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), RealTypeExpansion(hd, hd'), eType = TupType(hd', NIL).
-	RealTypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, tl), tl != NIL, RealTypeExpansion(hd, hd'), RealTypeExpansion(tl, tl'), eType = TupType(hd', tl').
-	RealTypeExpansion(type, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(qual, name, hd), NIL), RealTypeExpansion(hd, hd'), eType = NmdTupType(NmdTupTypeField(qual, name, hd'), NIL).
-	RealTypeExpansion(type, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(qual, name, hd), tl), tl != NIL, RealTypeExpansion(hd, hd'), RealTypeExpansion(tl, tl'), eType = NmdTupType(NmdTupTypeField(qual, name, hd'), tl').
-	RealTypeExpansion(type, eType) :- AllTypeExprs(type), type = SeqType(x), RealTypeExpansion(x, x'), eType = SeqType(x').
-	RealTypeExpansion(type, eType) :- AllTypeExprs(type), type = MapType(k, v), RealTypeExpansion(k, k'), RealTypeExpansion(v, v'), eType = MapType(k', v').
-	*/
+   	RealOwner ::= (f: FunDecl).
+	RealOwner(f) :- f is FunDecl, f.owner = NIL; 
+	                f is FunDecl, f.owner.kind = REAL.
 
-	FunDeclKind ::= (FunDecl, { REAL, MODEL }).
+	FunDeclKind ::= (FunDecl, { REAL, MODEL, MONITOR }).
 	FunDeclKind(f, REAL) :- SubCntxt(f), f: FunDecl, f.owner = NIL, f.kind = REAL.
 	FunDeclKind(f, MODEL) :- SubCntxt(f), f: FunDecl, f.owner = NIL, f.kind = MODEL.
-	FunDeclKind(f, MODEL) :- SubCntxt(f), f: FunDecl, f.owner != NIL, f.owner.kind != REAL.
+	FunDeclKind(f, MONITOR) :- SubCntxt(f), f: FunDecl, f.owner != NIL, f.owner.kind = MONITOR.
+	FunDeclKind(f, MODEL) :- SubCntxt(f), f: FunDecl, f.owner != NIL, f.owner.kind = MODEL.
 	FunDeclKind(f, REAL) :- SubCntxt(f), f: FunDecl, f.owner != NIL, f.owner.kind = REAL, f.kind = REAL.
 	FunDeclKind(f, MODEL) :- SubCntxt(f), f: FunDecl, f.owner != NIL, f.owner.kind = REAL, f.kind = MODEL.
 
-	AnonFunDeclKind ::= (AnonFunDecl, { REAL, MODEL }).
+	AnonFunDeclKind ::= (AnonFunDecl, { REAL, MODEL, MONITOR }).
 	AnonFunDeclKind(f, REAL) :- SubCntxt(f), f: AnonFunDecl, f.owner = NIL, FunDeclKind(f', REAL), f'.owner = NIL, f'.name = f.ownerFun.
 	AnonFunDeclKind(f, MODEL) :- SubCntxt(f), f: AnonFunDecl, f.owner = NIL, FunDeclKind(f', MODEL), f'.owner = NIL, f'.name = f.ownerFun.
-	AnonFunDeclKind(f, MODEL) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind != REAL.
+	AnonFunDeclKind(f, MONITOR) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = MONITOR.
+	AnonFunDeclKind(f, MODEL) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = MODEL.
 	AnonFunDeclKind(f, REAL) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = REAL, f.ownerFun = NIL.
 	AnonFunDeclKind(f, REAL) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = REAL, f.ownerFun != NIL, FunDeclKind(f', REAL), f'.owner = f.owner, f'.name = f.ownerFun.
 	AnonFunDeclKind(f, MODEL) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = REAL, f.ownerFun != NIL, FunDeclKind(f', MODEL), f'.owner = f.owner, f'.name = f.ownerFun.
@@ -316,8 +299,8 @@ domain PStaticTyping extends PData
 	SubCntxt ::= sub (cntxt: TypingContext).
     
 	SubSE ::= (cntxt: TypingContext, typeable: Typeable).
-	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = AnonFunDecl(_, _, _, typeable, _).
-	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = FunDecl(_, _, _, _, _, _, typeable).
+	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = AnonFunDecl(_, _, _, typeable, _), AnonFunDeclKind(cntxt, x), x != MODEL.
+	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = FunDecl(_, _, _, _, _, _, typeable), FunDeclKind(cntxt, x), x != MODEL.
 	SubSE(c, e), SubSE(c, s) :- SubSE(c, While(e, s, _)).
 	SubSE(c, e), SubSE(c, s1), SubSE(c, s2) :- SubSE(c, Ite(e, s1, s2, _)).
 	SubSE(c, s1), SubSE(c, s2) :- SubSE(c, Seq(s1, s2)).
@@ -908,6 +891,7 @@ domain PStaticTyping extends PData
 	MaxNumLocals(e, n) :- SubSE(c, e), c is TypingContext, e = Receive(cases, _, _), MaxNumLocals(cases, n). 
 	MaxNumLocals(a, n) :- a is AnonFunDecl, MaxNumLocals(a.body, n1), n2 = lstLength(#NmdTupType, a.locals), n = n1 + n2 + 1.
 	MaxNumLocals(a, n) :- a is FunDecl, MaxNumLocals(a.body, n1), n2 = lstLength(#NmdTupType, a.locals), n3 = lstLength(#NmdTupType, a.params), n = n1 + n2 + n3.
+	MaxNumLocals(a, n) :- a is FunDecl, RealOwner(a), a.kind = MODEL, n2 = lstLength(#NmdTupType, a.locals), n3 = lstLength(#NmdTupType, a.params), n = n2 + n3.
 
     LocalVarsAux ::= (cntxt: FunDecl + AnonFunDecl, vars: NmdTupType + { NIL }, tl: NmdTupType + { NIL }).
 	LocalVarsAux(cntxt, envVars, locals) :- cntxt is FunDecl(_, _, _, params, _, locals, _), envVars = lstReverse(#NmdTupType, params).
@@ -992,8 +976,8 @@ domain PStaticTyping extends PData
 
 	FunRetError ::= (cntxt: FunDecl).
 
-	[rule_Classes = '"error, msg: function must return a value"']
-	FunRetError(f) :- f is FunDecl, rt = f.return, rt : TypeExpr, no { r | SubSE(c, r), r : Return }.
+	[ rule_Classes = '"error, msg: function must return a value"']
+	FunRetError(f) :- f is FunDecl, FunDeclKind(f, x), x != MODEL, rt = f.return, rt : TypeExpr, no { r | SubSE(c, r), r : Return }.
 
     /*************************************************************/
     /*                      Control Impurity                     */

@@ -1,5 +1,5 @@
 arg: ..\DeferIgnore1.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, 1.6.6.1.	Multiple handlers for the event: ignore/defer case

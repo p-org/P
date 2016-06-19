@@ -1,5 +1,5 @@
 arg: ..\DFSStackBound.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, Testing the DFS stack bound option in Zing

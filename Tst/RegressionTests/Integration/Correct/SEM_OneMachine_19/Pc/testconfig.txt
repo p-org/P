@@ -1,5 +1,5 @@
 arg: ..\UnhandledEventIgnored.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, P semantics test: one machine, "ignore" of an unhandled event

@@ -1,5 +1,5 @@
 arg: ..\SendInExitNotExecuted.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, P semantics test: one machine, "send" to itself in exit not executed

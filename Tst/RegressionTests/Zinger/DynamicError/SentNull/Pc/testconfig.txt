@@ -1,5 +1,5 @@
 arg: ..\SentNullDetected.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, Zinger: "sent null event" exception

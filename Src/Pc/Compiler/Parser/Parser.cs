@@ -491,7 +491,15 @@
                 monitorStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
 
-            stmtStack.Push(monitorStmt);
+            if (Options.test)
+            {
+                stmtStack.Push(monitorStmt);
+            }
+            else
+            {
+                var nulStmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, new Span()));
+                stmtStack.Push(nulStmt);
+            }
         }
 
         private void PushReceive(Span span)
@@ -1221,7 +1229,7 @@
 
         private void SetFunKind(P_Root.UserCnstKind kind, Span span)
         {
-            if (!Options.erase) return;
+            if (Options.test) return;
             var funDecl = GetCurrentFunDecl(span);
             funDecl.kind = MkUserCnst(kind, span);
         }
@@ -1267,7 +1275,7 @@
         private void AddModelTypeDef(string name, Span nameSpan, Span typeDefSpan)
         {
             AddTypeDef(name, nameSpan, typeDefSpan);
-            if (Options.erase)
+            if (!Options.test)
             {
                 var modelType = P_Root.MkModelType(MkString(name, nameSpan));
                 parseProgram.ModelTypes.Add(modelType);
@@ -1714,9 +1722,22 @@
             var machDecl = GetCurrentMachineDecl(span);
             machDecl.Span = span;
             machDecl.name = MkString(name, nameSpan);
-            if (!Options.erase && kind == P_Root.UserCnstKind.MODEL)
+            switch (kind)
             {
-                kind = P_Root.UserCnstKind.REAL;
+                case P_Root.UserCnstKind.REAL:
+                    break;
+                case P_Root.UserCnstKind.MODEL:
+                    if (Options.test)
+                    {
+                        kind = P_Root.UserCnstKind.REAL;
+                    }
+                    break;
+                case P_Root.UserCnstKind.MONITOR:
+                    if (!Options.test)
+                    {
+                        kind = P_Root.UserCnstKind.MODEL;
+                    }
+                    break;
             }
             machDecl.kind = MkUserCnst(kind, span);
             foreach (var e in crntObservesList)

@@ -3,7 +3,7 @@
    modules.C = '"C at ..\Domains\C.4ml"'
 ]
 
-transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, test: Boolean) returns (out:: C)
+transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) returns (out:: C)
 /*
 [
     compiler_ProductivityCheck = "TypeConstant[0], ExprDepNum[1]"
@@ -754,10 +754,6 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
     /******            Generate Fun Implementations         ******/
     /*************************************************************/	
 
-   	RealOwner ::= (f: FunDecl).
-	RealOwner(f) :- f is FunDecl, f.owner = NIL; 
-	                f is FunDecl, f.owner.kind = REAL.
-
 	ContextTransStmtExpr ::= (TypingContext, out.Stmt + out.Cases + out.Case + out.Args + { NIL }).
 	ContextTransStmtExpr(c, body) :- BodyTrans(c, body).
 	ContextTransStmtExpr(c, s1), ContextTransStmtExpr(c, s2) :- ContextTransStmtExpr(c, out.Seq(s1, s2)).
@@ -788,7 +784,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 	//// Computes the variable definitions required for function bodies.
 	BodyTmpVars ::= (context: TypingContext, nExprVars: Integer, nStmtVars: Integer, defs: out.Defs + { NIL }).
 	
-	BodyTmpVars(c, nExprs, nStmts, NIL) :- SubCntxt(c), 
+	BodyTmpVars(c, nExprs, nStmts, NIL) :- SubSE(c, _), 
 	                                       nExprs = maxAll(-1, { k | SubSE(c, s), s : in.Stmt, RhsEvalOrder(s, _, _, k); 
 										                             SubSE(c, s), s : in.FunStmt, RhsEvalOrder(s, _, _, k'), k = k' + 1}), nExprs : Integer,
 	                                       nStmts = maxAll(0,  { k | SubSE(c, s), s : in.Stmt, StmtExprSize(s, k) }) - 1, nStmts : Integer.
@@ -1054,7 +1050,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 								  Init(arr)).
 
 	ReceiveDeclConcat ::= (pos: Natural, decl: AnonOrNamedFun, arr: out.Args + { NIL }).
-	ReceiveDeclConcat(c, decl, NIL) :- decl is AnonOrNamedFun, c = count({r | r: Receive, SubSE(decl, r)}).
+	ReceiveDeclConcat(c, decl, NIL) :- decl is AnonOrNamedFun, SubSE(decl, _), c = count({r | r: Receive, SubSE(decl, r)}).
 	ReceiveDeclConcat(c, decl, arr) :- decl is AnonOrNamedFun, SubSE(decl, receive), receive = Receive(cases, label, _),
 									   c = toOrdinal(receive, 0, {r | r: Receive, SubSE(decl, r)}), 
 									   ReceiveDeclConcat(c + 1, decl, arr'), arr = out.Args(def, arr'),
@@ -1078,6 +1074,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 
 	ReceiveDeclInit ::= (decl: AnonOrNamedFun, nReceives: Natural, receives: out.Expr).
 	ReceiveDeclInit(decl, 0, receives) :- decl is AnonOrNamedFun, ReceiveDeclConcat(0, decl, NIL), receives = Ident("NULL").
+	ReceiveDeclInit(decl, 0, receives) :- decl is FunDecl, RealOwner(a), a.kind = MODEL, receives = Ident("NULL").
 	ReceiveDeclInit(decl, nReceives, receives) :- 
 				decl is AnonOrNamedFun, ReceiveDeclConcat(nReceives, decl, NIL), ReceiveDeclConcat(0, decl, arr), arr: out.Args,
 				DeclId(decl, _, declName), receives = Ident(strJoin("P_GEND_RECEIVE_", declName)).
@@ -1675,7 +1672,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 
 	//// Machine creation
 	MkMachineFuncName ::= (s: String).
-	MkMachineFuncName(s) :- %test = FALSE, s = "PrtMkMachine"; %test = TRUE, s = "PrtMkMachineTest".
+	MkMachineFuncName(s) :- s = "PrtMkMachine".
 
 	FormalTrans ::= (c: FunDecl, f: String, e: out.Args).
 	FormalTrans(c, f, e) :- FormalParam(c, f), LocalVars(c, locals), IndexOf(locals, f, formalIndex, _),
@@ -2011,7 +2008,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 
 	//// Send
 	SendFuncName ::= (n: Ident).
-	SendFuncName(n) :- %test = FALSE, n = Ident("PrtSend"); %test = TRUE, n = Ident("PrtSendTest").	
+	SendFuncName(n) :- n = Ident("PrtSend").	
 							
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
 	                       s = in.Send(dest, ev, NIL, _, x), RhsExpr(c, s, 0, destTrans, doFreeDestTrans), RhsExpr(c, s, 1, evTrans, doFreeEvTrans),

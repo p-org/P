@@ -1722,22 +1722,9 @@
             var machDecl = GetCurrentMachineDecl(span);
             machDecl.Span = span;
             machDecl.name = MkString(name, nameSpan);
-            switch (kind)
+            if (Options.test && kind == P_Root.UserCnstKind.MODEL)
             {
-                case P_Root.UserCnstKind.REAL:
-                    break;
-                case P_Root.UserCnstKind.MODEL:
-                    if (Options.test)
-                    {
-                        kind = P_Root.UserCnstKind.REAL;
-                    }
-                    break;
-                case P_Root.UserCnstKind.MONITOR:
-                    if (!Options.test)
-                    {
-                        kind = P_Root.UserCnstKind.MODEL;
-                    }
-                    break;
+                kind = P_Root.UserCnstKind.REAL;
             }
             machDecl.kind = MkUserCnst(kind, span);
             foreach (var e in crntObservesList)

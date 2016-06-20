@@ -3,6 +3,21 @@ setlocal
 pushd %~dp0
 cd ..
 
+set MSBuildPath=
+for /F "usebackq tokens=1,2* delims= " %%i in (`reg query HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0 -v MSBuildToolsPath`) do (
+   if "%%i" == "MSBuildToolsPath" set MSBuildPath=%%k
+)
+
+if not "%MSBuildPath%"=="" goto :step2
+
+echo MSBUILD 14.0 does not appear to be installed.
+echo No info found in HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0
+goto :eof
+
+:step2
+set TAIL=%MSBuildPath:~-6%
+if "[%TAIL%]" == "[amd64\]" set MSBuildPath=%MSBuildPath:~0,-6%"
+set PATH=%PATH%;%MSBuildPath%
 set Configuration=%1
 if "%Configuration%"=="" set Configuration=Debug
 set Platform=%2
@@ -44,7 +59,7 @@ del Src\PrtDist\Core\NodeManager_s.c
 
 echo msbuild P.sln /p:Platform=%Platform% /p:Configuration=%Configuration%
 msbuild  P.sln /p:Platform=%Platform% /p:Configuration=%Configuration% /t:Clean
-msbuild  P.sln /p:Platform=%Platform% /p:Configuration=%Configuration%
+msbuild P.sln /p:Platform=%Platform% /p:Configuration=%Configuration%
 
 :exit
 popd

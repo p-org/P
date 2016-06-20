@@ -70,7 +70,8 @@ machine Replica {
 		on Unit goto Loop;
 	}
 
-	fun HandleReqReplica(pendingWriteReq :(seqNum:int, idx:int, val:int)) {
+	fun HandleReqReplica(payload :(seqNum:int, idx:int, val:int)) {
+		pendingWriteReq = payload;
 		assert (pendingWriteReq.seqNum > lastSeqNum);
 		shouldCommit = ShouldCommitWrite();
 		if (shouldCommit) {
@@ -142,7 +143,8 @@ machine Coordinator {
 		}
 	}
 
-	fun DoWrite(pendingWriteReq : (client:machine, idx:int, val:int)) {
+	fun DoWrite(payload : (client:machine, idx:int, val:int)) {
+		pendingWriteReq = payload;
 		currSeqNum = currSeqNum + 1;
 		i = 0;
 		while (i < sizeof(replicas)) {

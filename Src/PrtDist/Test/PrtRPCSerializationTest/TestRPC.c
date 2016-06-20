@@ -1,4 +1,4 @@
-#include "PrtWinUser.h"
+#include "PrtUser.h"
 #include "PrtExecution.h"
 #include "PrtRPCTest_c.c"
 #include "PrtRPCTest_h.h"

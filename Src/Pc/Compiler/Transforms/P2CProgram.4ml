@@ -533,12 +533,12 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 
 	//// Base types
 	BaseConstant2Kind ::= (const: in.Expr, kind: String, value: out.Expr).
-	BaseConstant2Kind(NulApp(NULL), "PRT_VALKIND_NULL", out.Ident("PRT_SPECIAL_EVENT_NULL")).
-	BaseConstant2Kind(NulApp(HALT), "PRT_VALKIND_EVENT", out.Ident("PRT_SPECIAL_EVENT_HALT")).
-	BaseConstant2Kind(e, "PRT_VALKIND_EVENT", out.Ident(eventName)) :- ConstExpr(e), e = Name(n), eventDecl is EventDecl(n, _, _), DeclId(eventDecl, _, eventName). 
-	BaseConstant2Kind(e, "PRT_VALKIND_INT", IntLit(n, DEC, U)) :- ConstExpr(e), e = NulApp(n), n: Integer.
-	BaseConstant2Kind(e, "PRT_VALKIND_BOOL", out.Ident("PRT_FALSE")) :- ConstExpr(e), e = NulApp(FALSE).
-	BaseConstant2Kind(e, "PRT_VALKIND_BOOL", out.Ident("PRT_TRUE")) :- ConstExpr(e), e = NulApp(TRUE).
+	BaseConstant2Kind(NulApp(NULL), "PRT_VALUE_KIND_NULL", out.Ident("PRT_SPECIAL_EVENT_NULL")).
+	BaseConstant2Kind(NulApp(HALT), "PRT_VALUE_KIND_EVENT", out.Ident("PRT_SPECIAL_EVENT_HALT")).
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_EVENT", out.Ident(eventName)) :- ConstExpr(e), e = Name(n), eventDecl is EventDecl(n, _, _), DeclId(eventDecl, _, eventName). 
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", IntLit(n, DEC, U)) :- ConstExpr(e), e = NulApp(n), n: Integer.
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_FALSE")) :- ConstExpr(e), e = NulApp(FALSE).
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_TRUE")) :- ConstExpr(e), e = NulApp(TRUE).
 
 	Constant(c, m, defs) :- ConstId(m, c), Constant(_, m - 1, before), BaseConstant2Kind(c, kind, value),
 							defs = out.Section(before, def), def = out.VarDef(NIL, NmdType(NIL, "PRT_VALUE"), constName, constStruct),
@@ -1074,7 +1074,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 
 	ReceiveDeclInit ::= (decl: AnonOrNamedFun, nReceives: Natural, receives: out.Expr).
 	ReceiveDeclInit(decl, 0, receives) :- decl is AnonOrNamedFun, ReceiveDeclConcat(0, decl, NIL), receives = Ident("NULL").
-	ReceiveDeclInit(decl, 0, receives) :- decl is FunDecl, RealOwner(a), a.kind = MODEL, receives = Ident("NULL").
+	ReceiveDeclInit(decl, 0, receives) :- decl is FunDecl, RealOwner(decl), decl.kind = MODEL, receives = Ident("NULL").
 	ReceiveDeclInit(decl, nReceives, receives) :- 
 				decl is AnonOrNamedFun, ReceiveDeclConcat(nReceives, decl, NIL), ReceiveDeclConcat(0, decl, arr), arr: out.Args,
 				DeclId(decl, _, declName), receives = Ident(strJoin("P_GEND_RECEIVE_", declName)).

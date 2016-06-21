@@ -172,29 +172,29 @@ static void PrtUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Ino
 	PRT_VALUE_KIND kind = value->discriminator;
 	switch (kind)
 	{
-	case PRT_VALKIND_NULL:
+	case PRT_VALUE_KIND_NULL:
 		PrtUserPrintString("null", buffer, bufferSize, numCharsWritten);
 		break;
-	case PRT_VALKIND_BOOL:
+	case PRT_VALUE_KIND_BOOL:
 		PrtUserPrintString(PrtPrimGetBool(value) == PRT_TRUE ? "true" : "false", buffer, bufferSize, numCharsWritten);
 		break;
-	case PRT_VALKIND_INT:
+	case PRT_VALUE_KIND_INT:
 		PrtUserPrintInt32(PrtPrimGetInt(value), buffer, bufferSize, numCharsWritten);
 		break;
-	case PRT_VALKIND_EVENT:
+	case PRT_VALUE_KIND_EVENT:
 		PrtUserPrintString("<", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintUint32(PrtPrimGetEvent(value), buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(">", buffer, bufferSize, numCharsWritten);
 		break;
-	case PRT_VALKIND_MID:
+	case PRT_VALUE_KIND_MID:
 		PrtUserPrintMachineId(PrtPrimGetMachine(value), buffer, bufferSize, numCharsWritten);
 		break;
-	case PRT_VALKIND_FORGN:
+	case PRT_VALUE_KIND_FORGN:
 		frgnStr = prtForeignTypeDecls[value->valueUnion.frgn->typeTag].toStringFun(value->valueUnion.frgn->value);
 		PrtUserPrintString(frgnStr, buffer, bufferSize, numCharsWritten);
 		PrtFree(frgnStr);
 		break;
-	case PRT_VALKIND_MAP:
+	case PRT_VALUE_KIND_MAP:
 	{
 		PRT_MAPVALUE *mval = value->valueUnion.map;
 		PRT_MAPNODE *next = mval->first;
@@ -224,7 +224,7 @@ static void PrtUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Ino
 		PrtUserPrintString(")", buffer, bufferSize, numCharsWritten);
 		break;
 	}
-	case PRT_VALKIND_SEQ:
+	case PRT_VALUE_KIND_SEQ:
 	{
 		PRT_UINT32 i;
 		PRT_SEQVALUE *sVal = value->valueUnion.seq;
@@ -241,7 +241,7 @@ static void PrtUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Ino
 		PrtUserPrintString("]", buffer, bufferSize, numCharsWritten);
 		break;
 	}
-	case PRT_VALKIND_TUPLE:
+	case PRT_VALUE_KIND_TUPLE:
 	{
 		PRT_UINT32 i;
 		PRT_TUPVALUE *tval = value->valueUnion.tuple;

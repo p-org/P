@@ -37,15 +37,15 @@ extern "C"{
 	**/
 	typedef enum PRT_VALUE_KIND
 	{
-		PRT_VALKIND_NULL = 0,    /**< The kind of the null value in type null */
-		PRT_VALKIND_BOOL = 1,    /**< The kind of bool values                 */
-		PRT_VALKIND_INT = 2,    /**< The kind of int values                  */
-		PRT_VALKIND_EVENT = 3,    /**< The kind of event id values             */
-		PRT_VALKIND_MID = 4,    /**< The kind of (model) machine id values   */
-		PRT_VALKIND_FORGN = 5,    /**< The kind of all foreign values          */
-		PRT_VALKIND_TUPLE = 6,    /**< The kind of all (named) tuple values    */
-		PRT_VALKIND_SEQ = 7,    /**< The kind of all sequence values         */
-		PRT_VALKIND_MAP = 8,    /**< The kind of all map values              */
+		PRT_VALUE_KIND_NULL = 0,    /**< The kind of the null value in type null */
+		PRT_VALUE_KIND_BOOL = 1,    /**< The kind of bool values                 */
+		PRT_VALUE_KIND_INT = 2,    /**< The kind of int values                  */
+		PRT_VALUE_KIND_EVENT = 3,    /**< The kind of event id values             */
+		PRT_VALUE_KIND_MID = 4,    /**< The kind of (model) machine id values   */
+		PRT_VALUE_KIND_FORGN = 5,    /**< The kind of all foreign values          */
+		PRT_VALUE_KIND_TUPLE = 6,    /**< The kind of all (named) tuple values    */
+		PRT_VALUE_KIND_SEQ = 7,    /**< The kind of all sequence values         */
+		PRT_VALUE_KIND_MAP = 8,    /**< The kind of all map values              */
 		PRT_VALUE_KIND_COUNT = 9, /**< The number of value kinds               */
 	} PRT_VALUE_KIND;
 

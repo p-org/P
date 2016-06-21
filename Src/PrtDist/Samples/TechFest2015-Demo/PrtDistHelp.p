@@ -1,7 +1,8 @@
 // unreliable send 
 model fun _SEND(target:machine, e:event, p:any) {
-	if ($)
+	if ($) {
 		send target, e, p;
+	}
 }
 
 model fun _CREATECONTAINER() : machine {
@@ -12,6 +13,5 @@ model fun _CREATECONTAINER() : machine {
 
 machine Container {
 	start state Init {
-		
 	}
 }

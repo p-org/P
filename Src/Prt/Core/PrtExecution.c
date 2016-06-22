@@ -1205,6 +1205,7 @@ PrtDequeueEvent(
 		}
 		else
 		{
+			PrtFreeTriggerPayload(context);
 			return PRT_FALSE;
 		}
 	}

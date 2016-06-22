@@ -1,0 +1,5 @@
+arg: ..\cast2.p
+arg: /shortFileNames
+arg: /test
+arg: /outputDir:..\.
+dsc: pc.exe, cast expression

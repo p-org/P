@@ -1608,10 +1608,10 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	RhsExpr ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, trans: out.FunApp, doFree: out.Ident).
 	RhsExpr(c, s, i, macroApp, doFree) :- RhsTrans(c, s, i, k, args), RhsMaxOrder(s, i, k), RhsNext(c, s, i, k, e, _), 
 										  macroApp = out.FunApp(Ident(strJoin("P_EXPR_", toString(k))), args),
-										  ValueAvailable(e, TRUE), doFree = out.Ident("PRT_FALSE"). 
+										  DoFree(e, FALSE), doFree = out.Ident("PRT_FALSE"). 
 	RhsExpr(c, s, i, macroApp, doFree) :- RhsTrans(c, s, i, k, args), RhsMaxOrder(s, i, k), RhsNext(c, s, i, k, e, _), 
 										  macroApp = out.FunApp(Ident(strJoin("P_EXPR_", toString(k))), args),
-										  ValueAvailable(e, FALSE), doFree = out.Ident("PRT_TRUE"). 
+										  DoFree(e, TRUE), doFree = out.Ident("PRT_TRUE"). 
 
 	//// Translates in context the ith expression appearing in stmt into a list of C args.
 	//// The number subId indicates the id of the subexpression currently at the head of the trans list.
@@ -1620,9 +1620,9 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	//// The next expression that needs to be translated, given the translation of the previous expression.
 	RhsNext ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, subId: Natural + { -1 }, nxt: in.Expr, prv: out.Args + { NIL }).
 	RhsNext(c, s, i, j', e, trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1,
-									  ValueAvailable(e, TRUE), trans = out.Args(Ident("PRT_FALSE"), tail).
+									  DoFree(e, FALSE), trans = out.Args(Ident("PRT_FALSE"), tail).
 	RhsNext(c, s, i, j', e, trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1,
-									  ValueAvailable(e, FALSE), trans = out.Args(Ident("PRT_TRUE"), tail).
+									  DoFree(e, TRUE), trans = out.Args(Ident("PRT_TRUE"), tail).
 									  
 	//// Translates (named) exprs into a list of args that are applied to the P_TUPLE macro.
 	//// The number subId indicates the id of the subexpression currently at the head of the trans list.
@@ -1857,14 +1857,14 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(GE, getInt1, getInt2), NIL)).
 
 	Accessor ::= (c: TypingContext, e: in.Expr, acc: out.Expr).
-	Accessor(c, e, acc)			 :- TypeOf(c, e, MapType(_, _)), ValueAvailable(e, TRUE), acc = Ident("PrtMapGetNC").
-	Accessor(c, e, acc)			 :- TypeOf(c, e, MapType(_, _)), ValueAvailable(e, FALSE), acc = Ident("PrtMapGet").
-	Accessor(c, e, acc)			 :- TypeOf(c, e, SeqType(_)), ValueAvailable(e, TRUE), acc = Ident("PrtSeqGetNC").
-	Accessor(c, e, acc)			 :- TypeOf(c, e, SeqType(_)), ValueAvailable(e, FALSE), acc = Ident("PrtSeqGet").
-	Accessor(c, e, acc)			 :- TypeOf(c, e, TupType(_, _)), ValueAvailable(e, TRUE), acc = Ident("PrtTupleGetNC").
-	Accessor(c, e, acc)			 :- TypeOf(c, e, TupType(_, _)), ValueAvailable(e, FALSE), acc = Ident("PrtTupleGet").
-	Accessor(c, e, acc)			 :- TypeOf(c, e, NmdTupType(_, _)), ValueAvailable(e, TRUE), acc = Ident("PrtTupleGetNC").
-	Accessor(c, e, acc)			 :- TypeOf(c, e, NmdTupType(_, _)), ValueAvailable(e, FALSE), acc = Ident("PrtTupleGet").
+	Accessor(c, e, acc)			 :- TypeOf(c, e, MapType(_, _)), DoFree(e, FALSE), acc = Ident("PrtMapGetNC").
+	Accessor(c, e, acc)			 :- TypeOf(c, e, MapType(_, _)), DoFree(e, TRUE), acc = Ident("PrtMapGet").
+	Accessor(c, e, acc)			 :- TypeOf(c, e, SeqType(_)), DoFree(e, FALSE), acc = Ident("PrtSeqGetNC").
+	Accessor(c, e, acc)			 :- TypeOf(c, e, SeqType(_)), DoFree(e, TRUE), acc = Ident("PrtSeqGet").
+	Accessor(c, e, acc)			 :- TypeOf(c, e, TupType(_, _)), DoFree(e, FALSE), acc = Ident("PrtTupleGetNC").
+	Accessor(c, e, acc)			 :- TypeOf(c, e, TupType(_, _)), DoFree(e, TRUE), acc = Ident("PrtTupleGet").
+	Accessor(c, e, acc)			 :- TypeOf(c, e, NmdTupType(_, _)), DoFree(e, FALSE), acc = Ident("PrtTupleGetNC").
+	Accessor(c, e, acc)			 :- TypeOf(c, e, NmdTupType(_, _)), DoFree(e, TRUE), acc = Ident("PrtTupleGet").
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 							        e = in.BinApp(IDX, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
@@ -1902,10 +1902,16 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 									e = in.Default(type), TypeToExpr(type, expr),
 									ec = out.FunApp(Ident("PrtMkDefaultValue"), Args(expr, NIL)).
 
-	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), DoFree(e, FALSE),
 									e = in.Cast(arg, type), RhsEvalOrder(s, i, arg, tmp1), TypeToExpr(type, expr), 
 									getArg = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
 									ec = out.FunApp(Ident("PrtCastValue"), Args(getArg, Args(expr, NIL))).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), DoFree(e, TRUE),
+									e = in.Cast(arg, type), RhsEvalOrder(s, i, arg, tmp1), TypeToExpr(type, expr), 
+									getArg = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
+									ec1 = out.FunApp(Ident("PrtCastValue"), Args(getArg, Args(expr, NIL))),
+									ec = out.FunApp(Ident("PrtCloneValue"), Args(ec1, NIL)).
 	
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = in.Tuple(es), TypeOf(c, e, type), TypeToExpr(type, expr),
@@ -2173,25 +2179,25 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	/******            Value availability                   ******/
 	/*************************************************************/
 
-	ValueAvailable ::= (expr: in.Expr, Boolean).
-	ValueAvailable(NulApp(NULL), TRUE).
-	ValueAvailable(NulApp(HALT), TRUE).
-	ValueAvailable(e, TRUE) :- SubSE(_, e), e: in.Name.
-	ValueAvailable(e, TRUE) :- SubSE(_, e), e: in.NulApp, e.op != NONDET, e.op != FAIRNONDET.
+	DoFree ::= (expr: in.Expr, Boolean).
+	DoFree(NulApp(NULL), FALSE).
+	DoFree(NulApp(HALT), FALSE).
+	DoFree(e, FALSE) :- SubSE(_, e), e: in.Name.
+	DoFree(e, FALSE) :- SubSE(_, e), e: in.NulApp, e.op != NONDET, e.op != FAIRNONDET.
 
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.New.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.FunApp.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.NulApp, e.op = NONDET.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.NulApp, e.op = FAIRNONDET.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.UnApp.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.BinApp, e.op != IDX.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.Default.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.Tuple.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.NamedTuple.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.New.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.FunApp.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.NulApp, e.op = NONDET.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.NulApp, e.op = FAIRNONDET.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.UnApp.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.BinApp, e.op != IDX.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.Default.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.Tuple.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.NamedTuple.
 
-	ValueAvailable(e, b) :- SubSE(_, e), e = in.BinApp(IDX, e', _), ValueAvailable(e', b).
-	ValueAvailable(e, b) :- SubSE(_, e), e = in.Field(e', _), ValueAvailable(e', b).
-	ValueAvailable(e, b) :- SubSE(_, e), e = in.Cast(e', _), ValueAvailable(e', b).
+	DoFree(e, b) :- SubSE(_, e), e = in.BinApp(IDX, e', _), DoFree(e', b).
+	DoFree(e, b) :- SubSE(_, e), e = in.Field(e', _), DoFree(e', b).
+	DoFree(e, b) :- SubSE(_, e), e = in.Cast(e', _), DoFree(e', b).
 
 
     /*************************************************************/

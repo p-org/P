@@ -54,8 +54,9 @@
     <CompareDates PCompile="@(PCompile)" PFiles="@(PFile)">  
       <Output TaskParameter="Result" PropertyName="DateCompareResult" />
     </CompareDates>
+
     <!-- this will force a recompile of the PCompile file if any of the @(PFiles) are newer -->
-    <Delete Files="@(PCompile->'%(RootDir)%(Directory)stubs.c')"  Condition="$(DateCompareResult)" />
+    <Delete Files="@(PCompile->'%(RootDir)%(Directory)stubs.c')" Condition="'$(DateCompareResult)'=='true'" />
   </Target>
   <Target Name="CompileP" Inputs="@(PCompile);" Outputs="%(RootDir)%(Directory)%(FileName).c;%(RootDir)%(Directory)%(FileName).h;%(RootDir)%(Directory)stubs.c" BeforeTargets="BeforeBuildGenerateSources"
            DependsOnTargets="CheckPFiles">

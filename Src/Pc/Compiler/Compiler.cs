@@ -594,6 +594,15 @@
             return (Options.noCOutput ? true : GenerateC(flags)) && (Options.test ? GenerateZing(flags) : true); 
         }
 
+        public void ResetEnv()
+        {
+            if (SeenFileNames.Count > 0)
+            {
+                InstallResult result;
+                CompilerEnv.Uninstall(SeenFileNames.Values, out result);
+            }
+        }
+
         public bool GenerateZing()
         {
             return GenerateZing(new List<Flag>());

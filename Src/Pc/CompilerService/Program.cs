@@ -114,6 +114,7 @@ namespace Microsoft.Pc
                 // assert failed?
                 output.WriteMessage("Compile failed: " + ex.Message, SeverityKind.Error);
             }
+            compiler.ResetEnv();
             compiler.Log.WriteMessage("finished:" + result, SeverityKind.Info);
 
             Thread.Sleep(1000);

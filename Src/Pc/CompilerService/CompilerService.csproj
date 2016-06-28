@@ -54,9 +54,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Core, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="Core">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Ext\Formula\x64\Core.dll</HintPath>
+      <HintPath>$(ExtFolder)\Formula\$(UnifiedPlatform)\Core.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

@@ -22,7 +22,6 @@ namespace Microsoft.Pc
 
         static void Main(string[] args)
         {
-            System.Diagnostics.Contracts.Contract.ContractFailed += OnContractFailed;
             Program p = new Program();
             try
             {
@@ -36,13 +35,16 @@ namespace Microsoft.Pc
             Console.ReadLine();
         }
 
-        private static void OnContractFailed(object sender, System.Diagnostics.Contracts.ContractFailedEventArgs e)
+        private void OnContractFailed(object sender, System.Diagnostics.Contracts.ContractFailedEventArgs e)
         {
+            // compiler might be in a weird state, start over.
+            master = null;
             throw new Exception(e.Message);
         }
 
         void Run()
         {
+            System.Diagnostics.Contracts.Contract.ContractFailed += OnContractFailed;
             Console.WriteLine("Starting compiler service, listening to named pipe");
 
             // start the server.

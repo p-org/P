@@ -11,6 +11,7 @@ namespace Microsoft.Pc
     {
         private static int Main(string[] args)
         {
+            bool sharedCompiler = false;
             string inputFileName = null;
             var options = new CommandLineOptions();
             if (args.Length == 0)
@@ -30,82 +31,87 @@ namespace Microsoft.Pc
                         arg = args[i].Substring(0, colonIndex);
                         colonArg = args[i].Substring(colonIndex + 1);
                     }
-
-                    switch (arg)
+                    if (arg[0] == '-' || arg[0] == '/')
                     {
-                        case "/profile":
-                            if (colonArg != null)
-                                goto error;
-                            options.profile = true;
-                            break;
+                        switch (arg.Substring(1).ToLowerInvariant())
+                        {
+                            case "profile":
+                                if (colonArg != null)
+                                    goto error;
+                                options.profile = true;
+                                break;
 
-                        case "/dumpFormulaModel":
-                            if (colonArg != null)
-                                goto error;
-                            options.outputFormula = true;
-                            break;
+                            case "dumpformulamodel":
+                                if (colonArg != null)
+                                    goto error;
+                                options.outputFormula = true;
+                                break;
 
-                        case "/outputDir":
-                            if (colonArg == null)
-                            {
-                                Console.WriteLine("Must supply path for output directory");
-                                goto error;
-                            }
-                            if (!Directory.Exists(colonArg))
-                            {
-                                Console.WriteLine("Output directory {0} does not exist", colonArg);
-                                goto error;
-                            }
-                            options.outputDir = colonArg;
-                            break;
+                            case "outputdir":
+                                if (colonArg == null)
+                                {
+                                    Console.WriteLine("Must supply path for output directory");
+                                    goto error;
+                                }
+                                if (!Directory.Exists(colonArg))
+                                {
+                                    Console.WriteLine("Output directory {0} does not exist", colonArg);
+                                    goto error;
+                                }
+                                options.outputDir = colonArg;
+                                break;
 
-                        case "/outputFileName":
-                            if (colonArg == null)
-                            {
-                                Console.WriteLine("Must supply name for output files");
-                                goto error;
-                            }
-                            options.outputFileName = colonArg;
-                            break;
+                            case "outputfilename":
+                                if (colonArg == null)
+                                {
+                                    Console.WriteLine("Must supply name for output files");
+                                    goto error;
+                                }
+                                options.outputFileName = colonArg;
+                                break;
 
-                        case "/test":
-                            if (colonArg != null)
-                                goto error;
-                            options.test = true;
-                            break;
+                            case "test":
+                                if (colonArg != null)
+                                    goto error;
+                                options.test = true;
+                                break;
 
-                        case "/shortFileNames":
-                            if (colonArg != null)
-                                goto error;
-                            options.shortFileNames = true;
-                            break;
+                            case "shortfilenames":
+                                if (colonArg != null)
+                                    goto error;
+                                options.shortFileNames = true;
+                                break;
 
-                        case "/printTypeInference":
-                            if (colonArg != null)
-                                goto error;
-                            options.printTypeInference = true;
-                            break;
+                            case "printtypeinference":
+                                if (colonArg != null)
+                                    goto error;
+                                options.printTypeInference = true;
+                                break;
 
-                        case "/liveness":
-                            if (colonArg == null)
-                                options.liveness = LivenessOption.Standard;
-                            else if (colonArg == "mace")
-                                options.liveness = LivenessOption.Mace;
-                            else
+                            case "liveness":
+                                if (colonArg == null)
+                                    options.liveness = LivenessOption.Standard;
+                                else if (colonArg == "mace")
+                                    options.liveness = LivenessOption.Mace;
+                                else
+                                    goto error;
+                                break;
+                            case "noc":
+                                if (colonArg != null)
+                                    goto error;
+                                options.noCOutput = true;
+                                break;
+                            case "nosourceinfo":
+                                if (colonArg != null)
+                                    goto error;
+                                options.noSourceInfo = true;
+                                break;
+                            case "shared":
+                                sharedCompiler = true;
+                                break;
+                            default:
                                 goto error;
-                            break;
-                        case "/noC":
-                            if (colonArg != null)
-                                goto error;
-                            options.noCOutput = true;
-                            break;
-                        case "/noSourceInfo":
-                            if (colonArg != null)
-                                goto error;
-                            options.noSourceInfo = true;
-                            break;
-                        default:
-                            goto error;
+                        }
                     }
                 }
                 else
@@ -122,8 +128,24 @@ namespace Microsoft.Pc
             }
             if (inputFileName != null && inputFileName.Length > 2 && inputFileName.EndsWith(".p"))
             {
-                var compiler = new Compiler(options);
-                var result = compiler.Compile(inputFileName);
+                bool result = false;
+                if (sharedCompiler)
+                {
+                    // use separate process that contains pre-compiled P compiler.
+                    CompilerServiceClient svc = new CompilerServiceClient();
+                    options.inputFileName = inputFileName;
+                    if (string.IsNullOrEmpty(options.outputDir))
+                    {
+                        options.outputDir = Directory.GetCurrentDirectory();
+                    }
+                    result = svc.Compile(options);
+                }
+                else
+                {
+                    var compiler = new Compiler(options);
+                    result = compiler.Compile(inputFileName);
+                    return 0;
+                }
                 if (!result)
                 {
                     return -1;
@@ -148,6 +170,7 @@ namespace Microsoft.Pc
                 Console.WriteLine("/noZing");
                 Console.WriteLine("/noC");
                 Console.WriteLine("/noSourceInfo");
+                Console.WriteLine("/shared");
                 return 0;
             }
         }

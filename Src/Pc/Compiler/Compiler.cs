@@ -17,51 +17,9 @@
 
     public enum LivenessOption { None, Standard, Mace };
 
-    public class Compiler
+    public class StandardOutput : ICompilerOutput
     {
-        public bool Compile(string inputFileName)
-        {
-            List<Flag> flags;
-            var result = Compile(inputFileName, out flags);
-            Compiler.WriteFlags(flags, Options.shortFileNames);
-            if (!result)
-            {
-                Console.WriteLine("Compilation failed");
-            }
-            return result;
-        }
-
-        public static void WriteFlags(List<Flag> flags, bool shortFileNames)
-        {
-            if (shortFileNames)
-            {
-                var envParams = new EnvParams(
-                    new Tuple<EnvParamKind, object>(EnvParamKind.Msgs_SuppressPaths, true));
-                foreach (var f in flags)
-                {
-                    WriteMessageLine(
-                        string.Format("{0} ({1}, {2}): {3}",
-                        f.ProgramName == null ? "?" : f.ProgramName.ToString(envParams),
-                        f.Span.StartLine,
-                        f.Span.StartCol,
-                        f.Message), f.Severity);
-                }
-            }
-            else
-            {
-                foreach (var f in flags)
-                {
-                    WriteMessageLine(
-                        string.Format("{0} ({1}, {2}): {3}",
-                        f.ProgramName == null ? "?" : (f.ProgramName.Uri.IsFile ? f.ProgramName.Uri.LocalPath : f.ProgramName.ToString()),
-                        f.Span.StartLine,
-                        f.Span.StartCol,
-                        f.Message), f.Severity);
-                }
-            }
-        }
-
-        public static void WriteMessageLine(string msg, SeverityKind severity)
+        public void WriteMessage(string msg, SeverityKind severity)
         {
             switch (severity)
             {
@@ -81,6 +39,53 @@
 
             Console.WriteLine(msg);
             Console.ForegroundColor = ConsoleColor.Gray;
+        }
+    }
+
+    public class Compiler
+    {
+        public ICompilerOutput Log { get; set; }
+
+        public bool Compile(string inputFileName)
+        {
+            List<Flag> flags;
+            var result = Compile(inputFileName, out flags);
+            this.WriteFlags(flags, Options.shortFileNames);
+            if (!result)
+            {
+                Log.WriteMessage("Compilation failed", SeverityKind.Error);
+            }
+            return result;
+        }
+
+        public void WriteFlags(List<Flag> flags, bool shortFileNames)
+        {
+            if (shortFileNames)
+            {
+                var envParams = new EnvParams(
+                    new Tuple<EnvParamKind, object>(EnvParamKind.Msgs_SuppressPaths, true));
+                foreach (var f in flags)
+                {
+                    Log.WriteMessage(
+                        string.Format("{0} ({1}, {2}): {3}",
+                        f.ProgramName == null ? "?" : f.ProgramName.ToString(envParams),
+                        f.Span.StartLine,
+                        f.Span.StartCol,
+                        f.Message), f.Severity);
+                }
+            }
+            else
+            {
+                foreach (var f in flags)
+                {
+                    Log.WriteMessage(
+                        string.Format("{0} ({1}, {2}): {3}",
+                        f.ProgramName == null ? "?" : (f.ProgramName.Uri.IsFile ? f.ProgramName.Uri.LocalPath : f.ProgramName.ToString()),
+                        f.Span.StartLine,
+                        f.Span.StartCol,
+                        f.Message), f.Severity);
+                }
+            }
         }
 
         private const string PDomain = "P";
@@ -360,6 +365,7 @@
 
         public Compiler(CommandLineOptions options)
         {
+            Log = new StandardOutput();
             currTime = DateTime.UtcNow;
             Options = options;
             SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
@@ -377,6 +383,7 @@
 
         public Compiler(bool shortFileNames)
         {
+            Log = new StandardOutput();
             currTime = DateTime.UtcNow;
             SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
             EnvParams envParams = null;
@@ -389,6 +396,14 @@
             Profile("Compiler loading");
         }
 
+        public Compiler(Compiler other)
+        {
+            Log = new StandardOutput();
+            currTime = DateTime.UtcNow;
+            SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
+            CompilerEnv = other.CompilerEnv;
+        }
+
         private DateTime currTime;
         private void Profile(string msg)
         {
@@ -397,7 +412,6 @@
             if (Options.profile)
             {
                 var nextTime = DateTime.UtcNow;
-                Console.WriteLine("{0}: {1}s", msg, nextTime.Subtract(currTime).TotalSeconds);
                 currTime = nextTime;
             }
         }
@@ -627,14 +641,14 @@
             zcProcessInfo.UseShellExecute = false;
             zcProcessInfo.CreateNoWindow = true;
             zcProcessInfo.RedirectStandardOutput = true;
-            Console.WriteLine("Compiling {0} to {1} ...", zingFileName, dllFileName);
+            Log.WriteMessage(string.Format("Compiling {0} to {1} ...", zingFileName, dllFileName), SeverityKind.Info);
             var zcProcess = System.Diagnostics.Process.Start(zcProcessInfo);
             zcProcess.WaitForExit();
             Profile("Compiling Zing");
             if(zcProcess.ExitCode != 0)
             {
-                Console.WriteLine("Zc failed to compile the generated code :");
-                Console.WriteLine(zcProcess.StandardOutput.ReadToEnd());
+                Log.WriteMessage("Zc failed to compile the generated code", SeverityKind.Error);
+                Log.WriteMessage(zcProcess.StandardOutput.ReadToEnd(), SeverityKind.Error);
                 return false;
             }
             return true;
@@ -713,7 +727,7 @@
                 it.MoveNext();
                 fileBody = (Quote)it.Current;
             }
-            Console.WriteLine("Writing {0} ...", fileName);
+            Log.WriteMessage(string.Format("Writing {0} ...", fileName), SeverityKind.Info);
 
             try
             {
@@ -748,7 +762,7 @@
             }
             catch (Exception e)
             {
-                Console.WriteLine("Could not save file {0} - {1}", fileName, e.Message);
+                Log.WriteMessage(string.Format("Could not save file {0} - {1}", fileName, e.Message), SeverityKind.Error);
                 return false;
             }
 
@@ -763,14 +777,13 @@
                 {
                     continue;
                 }
-
-                Console.WriteLine(
+                Log.WriteMessage(string.Format(
                     "{0} ({1}, {2}): {3} - {4}",
                     f.Item1.Node.Name,
                     f.Item2.Span.StartLine,
                     f.Item2.Span.StartCol,
                     f.Item2.Severity,
-                    f.Item2.Message);
+                    f.Item2.Message), SeverityKind.Error);
             }
         }
 
@@ -1263,7 +1276,7 @@
                 fileBody = (Quote)it.Current;
             }
 
-            Console.WriteLine("Writing {0} ...", shortFileName);
+            Log.WriteMessage(string.Format("Writing {0} ...", shortFileName), SeverityKind.Info);
 
             try
             {

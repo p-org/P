@@ -96,7 +96,13 @@ namespace Microsoft.Pc
 
             while (!finished)
             {
-                msgEvent.WaitOne();
+                msgEvent.WaitOne(1000);
+                if (client.IsClosed)
+                {
+                    result = false;
+                    stdout.WriteMessage("PCompilerService is gone, did someone kill it?  Perhaps the P build is happening in parallel?", SeverityKind.Error);
+                    finished = true;
+                }
             }
             service.Close();
             client.Close();

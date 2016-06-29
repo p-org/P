@@ -54,6 +54,8 @@ namespace Microsoft.Pc
             this.closed = true;
         }
 
+        public bool IsClosed { get { return this.closed; } }
+
         public bool Connect()
         {
             try
@@ -98,9 +100,10 @@ namespace Microsoft.Pc
         /// </summary>
         public void Close()
         {
-            if (!closed)
+            if (!closed && pipe != null)
             {
                 pipe.Close();
+                pipe = null;
             }
             closed = true;
         }
@@ -158,6 +161,7 @@ namespace Microsoft.Pc
                             {
                                 pipe = null;
                             }
+                            closed = true;
                         }
                     }
                     else

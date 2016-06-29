@@ -131,6 +131,8 @@ namespace Microsoft.Pc
                 bool result = false;
                 if (sharedCompiler)
                 {
+                    // compiler service requires full path.
+                    inputFileName = Path.GetFullPath(inputFileName);
                     // use separate process that contains pre-compiled P compiler.
                     CompilerServiceClient svc = new CompilerServiceClient();
                     options.inputFileName = inputFileName;

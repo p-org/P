@@ -72,7 +72,14 @@ namespace Microsoft.Pc
             doMoreWork = true;
             Task.Run(new Action(() =>
             {
-                ProcessJob(e.Message);
+                try
+                {
+                    ProcessJob(e.Message);
+                }
+                catch (Exception)
+                {
+                    // deserialization of the job failed, so ignore it.
+                }
             }));
 
             pipe.Disconnect(); // go back to waiting for next connection
@@ -82,46 +89,51 @@ namespace Microsoft.Pc
         {
             Interlocked.Increment(ref busyCount);
 
-            XmlSerializer s = new XmlSerializer(typeof(CommandLineOptions));
-            CommandLineOptions options = (CommandLineOptions)s.Deserialize(new StringReader(msg));
-
             NamedPipe clientPipe = null;
-            if (!string.IsNullOrEmpty(options.pipeName))
-            {
-                clientPipe = new NamedPipe(options.pipeName, false);
-                clientPipe.Connect();
-            }
-
-            var output = new SerializedOutput(clientPipe);
-            if (master == null)
-            {
-                lock(compilerlock)
-                {
-                    output.WriteMessage("Generating P compiler", SeverityKind.Info);
-                    master = new Compiler(false);
-                }
-            }
-
-            // share the compiled P program across compiler instances.
-            Compiler compiler = new Compiler(master);
-            compiler.Options = options;
-            compiler.Log = new SerializedOutput(clientPipe);
-            bool result = false;
             try
             {
-                result = compiler.Compile(options.inputFileName);
-            }
-            catch (Exception ex)
-            {
-                // assert failed?
-                output.WriteMessage("Compile failed: " + ex.Message, SeverityKind.Error);
-            }
-            compiler.ResetEnv();
-            compiler.Log.WriteMessage("finished:" + result, SeverityKind.Info);
+                XmlSerializer s = new XmlSerializer(typeof(CommandLineOptions));
+                CommandLineOptions options = (CommandLineOptions)s.Deserialize(new StringReader(msg));
 
-            Thread.Sleep(1000);
-            clientPipe.Close();
-            Interlocked.Decrement(ref busyCount);
+                if (!string.IsNullOrEmpty(options.pipeName))
+                {
+                    clientPipe = new NamedPipe(options.pipeName, false);
+                    clientPipe.Connect();
+                }
+
+                var output = new SerializedOutput(clientPipe);
+                if (master == null)
+                {
+                    lock (compilerlock)
+                    {
+                        output.WriteMessage("Generating P compiler", SeverityKind.Info);
+                        master = new Compiler(false);
+                    }
+                }
+
+                // share the compiled P program across compiler instances.
+                Compiler compiler = new Compiler(master);
+                compiler.Options = options;
+                compiler.Log = new SerializedOutput(clientPipe);
+                bool result = false;
+                try
+                {
+                    result = compiler.Compile(options.inputFileName);
+                }
+                catch (Exception ex)
+                {
+                    output.WriteMessage("Compile failed: " + ex.Message, SeverityKind.Error);
+                }
+                compiler.ResetEnv();
+                compiler.Log.WriteMessage("finished:" + result, SeverityKind.Info);
+
+                Thread.Sleep(1000);
+            }
+            finally
+            {
+                if (clientPipe != null) clientPipe.Close();
+                Interlocked.Decrement(ref busyCount);
+            }
         }
 
         public class SerializedOutput : ICompilerOutput

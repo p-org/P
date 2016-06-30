@@ -44,14 +44,22 @@
 
     public class Compiler
     {
-        HashSet<Flag> errors;
+        SortedSet<Flag> errors;
 
         public ICompilerOutput Log { get; set; }
 
         public bool Compile(string inputFileName)
         {
-            this.errors = new HashSet<Flag>(default(FlagEqualityComparer));
+            this.errors = new SortedSet<Flag>(default(FlagSorter));
             var result = InternalCompile(inputFileName);
+            if (Options.test)
+            {
+                // for regression test compatibility reasons we print the errors in sorted order.
+                foreach (var f in errors)
+                {
+                    PrintFlag(f);
+                }
+            }
             if (!result)
             {
                 Log.WriteMessage("Compilation failed", SeverityKind.Error);
@@ -66,7 +74,16 @@
                 return;
             }
             errors.Add(f);
+            if (!Options.test)
+            {
+                // for better responsiveness while developing P programs we print the error right away 
+                // and forget about sorting them, although we still use the SortedSet to weed out duplicates.
+                PrintFlag(f);
+            }
+        }
 
+        private void PrintFlag(Flag f)
+        {
             string programName = "?";
             if (f.ProgramName != null)
             {
@@ -75,19 +92,24 @@
                 {
                     var envParams = new EnvParams(
                         new Tuple<EnvParamKind, object>(EnvParamKind.Msgs_SuppressPaths, true));
-                    programName =f.ProgramName.ToString(envParams);
+                    programName = f.ProgramName.ToString(envParams);
                 }
                 else
                 {
                     programName = (f.ProgramName.Uri.IsFile ? f.ProgramName.Uri.LocalPath : f.ProgramName.ToString());
                 }
             }
+            // for regression test compatibility reasons we do not include the error number when running regression tests.
+            string errorNumber = Options.test ? "" : "error PC1001: ";
+            string space = Options.test ? " " : "";
             Log.WriteMessage(
                 // this format causes VS to put the errors in the error list window.
-                string.Format("{0}({1},{2}): error PC1001: {3}",
+                string.Format("{0}{1}({2},{3}): {4}{5}",
                 programName,
+                space,
                 f.Span.StartLine,
                 f.Span.StartCol,
+                errorNumber,
                 f.Message), f.Severity);
         }
 
@@ -1340,63 +1362,6 @@
                 Factory.Instance.MkCnst("Zing"));
 
             return (AST<Model>)Factory.Instance.ToAST(conf.Root);
-        }
-
-        private struct FlagEqualityComparer : IEqualityComparer<Flag>
-        {
-            public bool Equals(Flag x, Flag y)
-            {
-                if (x.Severity != y.Severity)
-                {
-                    return false;
-                }
-
-                int cmp;
-                if (x.ProgramName == null && y.ProgramName != null)
-                {
-                    return false;
-                }
-                else if (y.ProgramName == null && x.ProgramName != null)
-                {
-                    return false;
-                }
-                else if (x.ProgramName != null && y.ProgramName != null)
-                {
-                    cmp = string.Compare(x.ProgramName.ToString(), y.ProgramName.ToString());
-                    if (cmp != 0)
-                    {
-                        return false;
-                    }
-                }
-
-                if (x.Span.StartLine != y.Span.StartLine)
-                {
-                    return false;
-                }
-
-                if (x.Span.StartCol != y.Span.StartCol)
-                {
-                    return false;
-                }
-
-                cmp = string.Compare(x.Message, y.Message);
-                if (cmp != 0)
-                {
-                    return false;
-                }
-
-                if (x.Code != y.Code)
-                {
-                    return false;
-                }
-
-                return true;
-            }
-
-            public int GetHashCode(Flag obj)
-            {
-                return (int)obj.Severity + ("" + obj.ProgramName).GetHashCode() + obj.Span.StartLine + obj.Span.StartCol + obj.Span.EndLine + obj.Span.EndCol + (""+obj.Message).GetHashCode() + obj.Code;
-            }
         }
 
         private struct FlagSorter : IComparer<Flag>

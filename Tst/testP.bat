@@ -2,9 +2,9 @@ echo off
 setlocal
 set SCRIPTDIR=%~dp0
 cd %SCRIPTDIR%
-REM cd ..\Bld
-REM call build.bat debug x86
-REM cd %SCRIPTDIR%
+cd ..\Bld
+call build.bat debug x86
+cd %SCRIPTDIR%
 
 set Configuration=Debug
 

@@ -104,7 +104,7 @@
             string space = Options.test ? " " : "";
             Log.WriteMessage(
                 // this format causes VS to put the errors in the error list window.
-                string.Format("{0}{1}({2},{3}): {4}{5}",
+                string.Format("{0}{1}({2},{1}{3}): {4}{5}",
                 programName,
                 space,
                 f.Span.StartLine,

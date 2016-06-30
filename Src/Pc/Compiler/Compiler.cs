@@ -44,13 +44,14 @@
 
     public class Compiler
     {
+        HashSet<Flag> errors;
+
         public ICompilerOutput Log { get; set; }
 
         public bool Compile(string inputFileName)
         {
-            List<Flag> flags;
-            var result = Compile(inputFileName, out flags);
-            this.WriteFlags(flags, Options.shortFileNames);
+            this.errors = new HashSet<Flag>(default(FlagEqualityComparer));
+            var result = InternalCompile(inputFileName);
             if (!result)
             {
                 Log.WriteMessage("Compilation failed", SeverityKind.Error);
@@ -58,34 +59,36 @@
             return result;
         }
 
-        public void WriteFlags(List<Flag> flags, bool shortFileNames)
+        private void AddFlag(Flag f)
         {
-            if (shortFileNames)
+            if (errors.Contains(f))
             {
-                var envParams = new EnvParams(
-                    new Tuple<EnvParamKind, object>(EnvParamKind.Msgs_SuppressPaths, true));
-                foreach (var f in flags)
+                return;
+            }
+            errors.Add(f);
+
+            string programName = "?";
+            if (f.ProgramName != null)
+            {
+                bool shortFileNames = Options.shortFileNames;
+                if (shortFileNames)
                 {
-                    Log.WriteMessage(
-                        string.Format("{0} ({1}, {2}): {3}",
-                        f.ProgramName == null ? "?" : f.ProgramName.ToString(envParams),
-                        f.Span.StartLine,
-                        f.Span.StartCol,
-                        f.Message), f.Severity);
+                    var envParams = new EnvParams(
+                        new Tuple<EnvParamKind, object>(EnvParamKind.Msgs_SuppressPaths, true));
+                    programName =f.ProgramName.ToString(envParams);
+                }
+                else
+                {
+                    programName = (f.ProgramName.Uri.IsFile ? f.ProgramName.Uri.LocalPath : f.ProgramName.ToString());
                 }
             }
-            else
-            {
-                foreach (var f in flags)
-                {
-                    Log.WriteMessage(
-                        string.Format("{0} ({1}, {2}): {3}",
-                        f.ProgramName == null ? "?" : (f.ProgramName.Uri.IsFile ? f.ProgramName.Uri.LocalPath : f.ProgramName.ToString()),
-                        f.Span.StartLine,
-                        f.Span.StartCol,
-                        f.Message), f.Severity);
-                }
-            }
+            Log.WriteMessage(
+                // this format causes VS to put the errors in the error list window.
+                string.Format("{0}({1},{2}): error PC1001: {3}",
+                programName,
+                f.Span.StartLine,
+                f.Span.StartCol,
+                f.Message), f.Severity);
         }
 
         private const string PDomain = "P";
@@ -416,10 +419,9 @@
             }
         }
 
-        public bool Compile(string inputFileName, out List<Flag> flags)
+        bool InternalCompile(string inputFileName)
         {
             InputProgramNames = new HashSet<ProgramName>();
-            flags = new List<Flag>();
             RootFileName = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, inputFileName));
             try
             {
@@ -427,7 +429,7 @@
             }
             catch (Exception e)
             {
-                flags.Add(
+                AddFlag(
                     new Flag(
                         SeverityKind.Error,
                         default(Span),
@@ -457,7 +459,10 @@
                 string currFileName = parserWorkQueue.Dequeue();
                 var parser = new Parser.Parser();
                 var result = parser.ParseFile(SeenFileNames[currFileName], Options, crntEventNames, crntMachineNames, out parserFlags, out prog, out includedFileNames);
-                flags.AddRange(parserFlags);
+                foreach (Flag f in parserFlags)
+                {
+                    AddFlag(f);
+                }
                 if (!result)
                 {
                     return false;
@@ -477,7 +482,7 @@
                     }
                     catch (Exception e)
                     {
-                        flags.Add(
+                        AddFlag(
                             new Flag(
                                 SeverityKind.Error,
                                 default(Span),
@@ -580,7 +585,7 @@
             }
 
             //// Step 2. Perform static analysis.
-            if (!Check(RootModule, flags))
+            if (!Check(RootModule))
             {
                 return false;
             }
@@ -591,7 +596,7 @@
             }
 
             //// Step 3. Generate outputs
-            return (Options.noCOutput ? true : GenerateC(flags)) && (Options.test ? GenerateZing(flags) : true); 
+            return (Options.noCOutput ? true : GenerateC()) && (Options.test ? GenerateZing() : true); 
         }
 
         public void ResetEnv()
@@ -799,7 +804,7 @@
         /// <summary>
         /// Run static analysis on the program.
         /// </summary>
-        private bool Check(string inputModule, List<Flag> flags)
+        private bool Check(string inputModule)
         {
             //// Run static analysis on input program.
             List<Flag> queryFlags;
@@ -816,44 +821,45 @@
                 out stats);
 
             Contract.Assert(canStart);
-            flags.AddRange(queryFlags);
+            foreach (Flag f in queryFlags)
+            {
+                AddFlag(f);
+            }
             task.RunSynchronously();
 
-            var errors = new SortedSet<Flag>(default(FlagSorter));
             //// Enumerate typing errors
-            AddErrors(task.Result, "TypeOf(_, _, ERROR)", errors, 1);
-            AddErrors(task.Result, "DupNmdSubE(_, _, _, _)", errors, 1);
-            AddErrors(task.Result, "PurityError(_, _)", errors, 1);
-            AddErrors(task.Result, "MonitorError(_, _)", errors, 1);
-            AddErrors(task.Result, "LValueError(_, _)", errors, 1);
-            AddErrors(task.Result, "BadLabelError(_)", errors, 0);
-            AddErrors(task.Result, "PayloadError(_)", errors, 0);
-            AddErrors(task.Result, "TypeDefError(_)", errors, 0);
-            AddErrors(task.Result, "FunRetError(_)", errors, 0);
+            AddErrors(task.Result, "TypeOf(_, _, ERROR)", 1);
+            AddErrors(task.Result, "DupNmdSubE(_, _, _, _)", 1);
+            AddErrors(task.Result, "PurityError(_, _)", 1);
+            AddErrors(task.Result, "MonitorError(_, _)", 1);
+            AddErrors(task.Result, "LValueError(_, _)", 1);
+            AddErrors(task.Result, "BadLabelError(_)", 0);
+            AddErrors(task.Result, "PayloadError(_)", 0);
+            AddErrors(task.Result, "TypeDefError(_)", 0);
+            AddErrors(task.Result, "FunRetError(_)", 0);
 
-            AddErrors(task.Result, "FunDeclQualifierError(_, _)", errors, 1);
-            AddErrors(task.Result, "FunCallQualifierError(_, _, _)", errors, 2);
-            AddErrors(task.Result, "SendQualifierError(_, _)", errors, 1);
-            AddErrors(task.Result, "UnavailableVarAccessError(_, _, _)", errors, 1);
-            AddErrors(task.Result, "UnavailableParameterError(_, _)", errors, 0);
+            AddErrors(task.Result, "FunDeclQualifierError(_, _)", 1);
+            AddErrors(task.Result, "FunCallQualifierError(_, _, _)", 2);
+            AddErrors(task.Result, "SendQualifierError(_, _)", 1);
+            AddErrors(task.Result, "UnavailableVarAccessError(_, _, _)", 1);
+            AddErrors(task.Result, "UnavailableParameterError(_, _)", 0);
 
             //// Enumerate structural errors
-            AddErrors(task.Result, "missingDecl", errors);
-            AddErrors(task.Result, "OneDeclError(_)", errors, 0);
-            AddErrors(task.Result, "TwoDeclError(_, _)", errors, 1);
-            AddErrors(task.Result, "DeclFunError(_, _)", errors, 1);
+            AddErrors(task.Result, "missingDecl");
+            AddErrors(task.Result, "OneDeclError(_)", 0);
+            AddErrors(task.Result, "TwoDeclError(_, _)", 1);
+            AddErrors(task.Result, "DeclFunError(_, _)", 1);
 
             if (Options.printTypeInference)
             {
-                AddTerms(task.Result, "TypeOf(_, _, _)", errors, SeverityKind.Info, 0, "inferred type: ", 1, 2);
+                AddTerms(task.Result, "TypeOf(_, _, _)", SeverityKind.Info, 0, "inferred type: ", 1, 2);
             }
-
-            flags.AddRange(errors);
+            
             Profile("Type checking");
             return task.Result.Conclusion == LiftedBool.True;
         }
 
-        private void AddErrors(QueryResult result, string errorPattern, SortedSet<Flag> errors, int locationIndex = -1)
+        private void AddErrors(QueryResult result, string errorPattern, int locationIndex = -1)
         {
             List<Flag> queryFlags;
             foreach (var p in result.EnumerateProofs(errorPattern, out queryFlags, 1))
@@ -869,7 +875,7 @@
                     foreach (var loc in p.ComputeLocators())
                     {
                         var exprLoc = loc[locationIndex];
-                        errors.Add(new Flag(
+                        AddFlag(new Flag(
                             SeverityKind.Error,
                             exprLoc.Span,
                             errorMsg,
@@ -879,7 +885,7 @@
                 }
                 else
                 {
-                    errors.Add(new Flag(
+                    AddFlag(new Flag(
                         SeverityKind.Error,
                         default(Span),
                         errorMsg,
@@ -890,14 +896,13 @@
 
             foreach (var f in queryFlags)
             {
-                errors.Add(f);
+                AddFlag(f);
             }
         }
 
         private void AddTerms(
             QueryResult result, 
             string termPattern, 
-            SortedSet<Flag> flags, 
             SeverityKind severity,
             int msgCode,
             string msgPrefix,
@@ -924,7 +929,7 @@
                         }
 
                         var exprLoc = loc[locationIndex];
-                        flags.Add(new Flag(
+                        AddFlag(new Flag(
                             severity,
                             exprLoc.Span,
                             sw.ToString(),
@@ -946,7 +951,7 @@
                         p.Conclusion.Args[printIndex].PrintTerm(sw);
                     }
 
-                    flags.Add(new Flag(
+                    AddFlag(new Flag(
                         severity,
                         default(Span),
                         sw.ToString(),
@@ -957,7 +962,7 @@
 
             foreach (var f in queryFlags)
             {
-                flags.Add(f);
+                AddFlag(f);
             }
         }
 
@@ -1182,11 +1187,6 @@
 
         public bool GenerateC()
         {
-            return GenerateC(new List<Flag>());
-        }
-
-        public bool GenerateC(List<Flag> flags)
-        {
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
             if (Options.outputFileName != null)
             {
@@ -1205,7 +1205,10 @@
             CompilerEnv.Apply(transStep, false, false, out appFlags, out apply, out stats);
             apply.RunSynchronously();
 
-            flags.AddRange(appFlags);
+            foreach (Flag f in appFlags)
+            {
+                AddFlag(f);
+            }
             //// Extract the result
             var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModule + "_CModel.4ml"));
             var extractTask = apply.Result.GetOutputModel(RootModule + "_CModel", progName, AliasPrefix);
@@ -1260,7 +1263,7 @@
                 fileQuery,
                 (p, n) =>
                 {
-                    success = PrintFile(string.Empty, n, flags) && success;
+                    success = PrintFile(string.Empty, n) && success;
                 });
 
             InstallResult uninstallResult; 
@@ -1270,7 +1273,7 @@
             return success;
         }
 
-        private bool PrintFile(string filePrefix, Node n, List<Flag> flags)
+        private bool PrintFile(string filePrefix, Node n)
         {
             var file = (FuncTerm)n;
             string fileName;
@@ -1299,7 +1302,7 @@
             }
             catch (Exception e)
             {
-                flags.Add(
+                AddFlag(
                     new Flag(
                         SeverityKind.Error,
                         default(Span),
@@ -1337,6 +1340,63 @@
                 Factory.Instance.MkCnst("Zing"));
 
             return (AST<Model>)Factory.Instance.ToAST(conf.Root);
+        }
+
+        private struct FlagEqualityComparer : IEqualityComparer<Flag>
+        {
+            public bool Equals(Flag x, Flag y)
+            {
+                if (x.Severity != y.Severity)
+                {
+                    return false;
+                }
+
+                int cmp;
+                if (x.ProgramName == null && y.ProgramName != null)
+                {
+                    return false;
+                }
+                else if (y.ProgramName == null && x.ProgramName != null)
+                {
+                    return false;
+                }
+                else if (x.ProgramName != null && y.ProgramName != null)
+                {
+                    cmp = string.Compare(x.ProgramName.ToString(), y.ProgramName.ToString());
+                    if (cmp != 0)
+                    {
+                        return false;
+                    }
+                }
+
+                if (x.Span.StartLine != y.Span.StartLine)
+                {
+                    return false;
+                }
+
+                if (x.Span.StartCol != y.Span.StartCol)
+                {
+                    return false;
+                }
+
+                cmp = string.Compare(x.Message, y.Message);
+                if (cmp != 0)
+                {
+                    return false;
+                }
+
+                if (x.Code != y.Code)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            public int GetHashCode(Flag obj)
+            {
+                return (int)obj.Severity + ("" + obj.ProgramName).GetHashCode() + obj.Span.StartLine + obj.Span.StartCol + obj.Span.EndLine + obj.Span.EndCol + (""+obj.Message).GetHashCode() + obj.Code;
+            }
         }
 
         private struct FlagSorter : IComparer<Flag>

@@ -102,30 +102,51 @@ namespace Microsoft.Pc
                 }
 
                 var output = new SerializedOutput(clientPipe);
-                if (master == null)
+
+                bool retry = true;
+                bool masterCreated = false;
+
+                while (retry)
                 {
-                    lock (compilerlock)
+                    retry = false;
+                    if (master == null)
                     {
-                        output.WriteMessage("Generating P compiler", SeverityKind.Info);
-                        master = new Compiler(false);
+                        masterCreated = false;
+                        lock (compilerlock)
+                        {
+                            output.WriteMessage("Generating P compiler", SeverityKind.Info);
+                            master = new Compiler(false);
+                        }
+                    }
+
+                    // share the compiled P program across compiler instances.
+                    Compiler compiler = new Compiler(master);
+                    compiler.Options = options;
+                    compiler.Log = new SerializedOutput(clientPipe);
+                    bool result = false;
+                    try
+                    {
+                        result = compiler.Compile(options.inputFileName);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (!masterCreated)
+                        {
+                            // sometimes the compiler gets out of whack, and rebuilding it solves the problem.
+                            retry = true;
+                            master = null;
+                        }
+                        else
+                        {
+                            output.WriteMessage("Compile failed: " + ex.Message, SeverityKind.Error);
+                        }
+                    }
+                    if (!retry)
+                    {
+                        compiler.ResetEnv();
+                        compiler.Log.WriteMessage("finished:" + result, SeverityKind.Info);
                     }
                 }
-
-                // share the compiled P program across compiler instances.
-                Compiler compiler = new Compiler(master);
-                compiler.Options = options;
-                compiler.Log = new SerializedOutput(clientPipe);
-                bool result = false;
-                try
-                {
-                    result = compiler.Compile(options.inputFileName);
-                }
-                catch (Exception ex)
-                {
-                    output.WriteMessage("Compile failed: " + ex.Message, SeverityKind.Error);
-                }
-                compiler.ResetEnv();
-                compiler.Log.WriteMessage("finished:" + result, SeverityKind.Info);
 
                 Thread.Sleep(1000);
             }

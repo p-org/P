@@ -84,6 +84,11 @@
 
         private void PrintFlag(Flag f)
         {
+            Log.WriteMessage(FormatError(f), f.Severity);
+        }
+
+        private string FormatError(Flag f)
+        {
             string programName = "?";
             if (f.ProgramName != null)
             {
@@ -102,7 +107,7 @@
             // for regression test compatibility reasons we do not include the error number when running regression tests.
             string errorNumber = Options.test ? "" : "error PC1001: ";
             string space = Options.test ? " " : "";
-            Log.WriteMessage(
+            return
                 // this format causes VS to put the errors in the error list window.
                 string.Format("{0}{1}({2},{1}{3}): {4}{5}",
                 programName,
@@ -110,7 +115,7 @@
                 f.Span.StartLine,
                 f.Span.StartCol,
                 errorNumber,
-                f.Message), f.Severity);
+                f.Message);
         }
 
         private const string PDomain = "P";
@@ -1038,7 +1043,7 @@
             return (AST<Program>)Factory.Instance.ToAST(config.Root);
         }
 
-        private static void InitEnv(Env env)
+        private void InitEnv(Env env)
         {
             //// Load into the environment all the domains and transforms.
             //// Domains are installed under ExecutingLocation\Domains
@@ -1051,6 +1056,12 @@
                 env.Install(LoadManifestProgram(mp.Item1, Path.Combine(execDir, mp.Item2)), out result);
                 if (!result.Succeeded)
                 {
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine("Error: Could not load program: " + mp.Item2);
+                    foreach (var pair in result.Flags)
+                    {
+                        sb.AppendLine(FormatError(pair.Item2));
+                    }
                     throw new Exception("Error: Could not load resources");
                 }
             }

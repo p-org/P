@@ -163,13 +163,12 @@ namespace Microsoft.Pc
                 Console.WriteLine("USAGE: Pc.exe file.p [options]");
                 Console.WriteLine("/outputDir:path");
                 Console.WriteLine("/outputFileName:name");
-                Console.WriteLine("/doNotErase");
+                Console.WriteLine("/test");
                 Console.WriteLine("/liveness[:mace]");
                 Console.WriteLine("/shortFileNames");
                 Console.WriteLine("/printTypeInference");
                 Console.WriteLine("/dumpFormulaModel");
                 Console.WriteLine("/profile");
-                Console.WriteLine("/noZing");
                 Console.WriteLine("/noC");
                 Console.WriteLine("/noSourceInfo");
                 Console.WriteLine("/shared");

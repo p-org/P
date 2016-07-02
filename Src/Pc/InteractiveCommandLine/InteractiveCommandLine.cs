@@ -16,6 +16,9 @@ namespace Microsoft.Pc
         {
             bool shortFileNames = false;
             bool server = false;
+            string loadErrorMsgString = "USAGE: load file.p [/test] [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>] [/outputFileName:<name>]";
+            string compileErrorMsgString = "USAGE: compile [/outputDir:<dir>] [/noSourceInfo]";
+            string testErrorMsgString = "USAGE: test [/liveness[:mace]] [/outputDir:<dir>]";
             for (int i = 0; i < args.Length; i++)
             {
                 var arg = args[i];
@@ -66,7 +69,7 @@ namespace Microsoft.Pc
                     var success = ParseLoadString(inputArgs, compilerOptions);
                     if (!success)
                     {
-                        Console.WriteLine("USAGE: load file.p [/test] [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>] [/outputFileName:<name>]");
+                        Console.WriteLine(loadErrorMsgString);
                         continue;
                     }
                     compiler.Options = compilerOptions;
@@ -91,13 +94,13 @@ namespace Microsoft.Pc
                 {
                     if (inputFileName == null)
                     {
-                        Console.WriteLine("USAGE: load file.p [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>] [/outputFileName:<name>]");
+                        Console.WriteLine(loadErrorMsgString);
                         continue;
                     }
                     var success = ParseTestString(inputArgs, compilerOptions);
                     if (!success)
                     {
-                        Console.WriteLine("USAGE: test [/liveness[:mace]] [/outputDir:<dir>]");
+                        Console.WriteLine(testErrorMsgString);
                         continue;
                     }
                     compiler.Options = compilerOptions;
@@ -112,13 +115,13 @@ namespace Microsoft.Pc
                 {
                     if (inputFileName == null)
                     {
-                        Console.WriteLine("USAGE: load file.p [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>] [/outputFileName:<name>]");
+                        Console.WriteLine(loadErrorMsgString);
                         continue;
                     }
                     var success = ParseCompileString(inputArgs, compilerOptions);
                     if (!success)
                     {
-                        Console.WriteLine("USAGE: compile [/outputDir:<dir>] [/noSourceInfo]");
+                        Console.WriteLine(compileErrorMsgString);
                         continue;
                     }
                     compiler.Options = compilerOptions;

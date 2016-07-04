@@ -250,12 +250,16 @@ domain PStaticTyping extends PData
 	TypeExpansion(BaseType(EVENT), BaseType(EVENT)).
 	TypeExpansion(BaseType(REAL), BaseType(REAL)).
 	TypeExpansion(BaseType(ANY), BaseType(ANY)).
+
+	/*
 	TypeExpansion(t, t) :- TypeOf(_, Tuple(_), t), t : TypeExpr.
 	TypeExpansion(t, t) :- TypeOf(_, NamedTuple(_), t), t : TypeExpr.
 	TypeExpansion(t, t) :- TypeExpansion(_, TupType(t, _)), t : TypeExpr.
 	TypeExpansion(t, t) :- TypeExpansion(_, TupType(_, t)), t : TypeExpr.
 	TypeExpansion(t, t) :- TypeExpansion(_, NmdTupType(f, _)), t = f.type.
 	TypeExpansion(t, t) :- TypeExpansion(_, NmdTupType(_, t)), t : TypeExpr.
+	*/
+
 	TypeExpansion(type, type)  :- TypeDef(typeName, _), ModelType(typeName), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, eType) :- TypeDef(typeName, typeExpr), no ModelType(typeName), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).

@@ -321,6 +321,14 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	TranslatedTypeExpr ::= (type: TypeExpr).
 	TranslatedTypeExpr(eType) :- TypeExpansion(_, eType).
 
+	TranslatedTypeExpr(t) :- in.SubSE(c, e), in.TypeOf(c, e, t), e = in.Tuple(_), t : in.TypeExpr.
+	TranslatedTypeExpr(t) :- in.SubSE(c, e), in.TypeOf(c, e, t), e = in.NamedTuple(_), t : in.TypeExpr.
+
+	TranslatedTypeExpr(h)  :- TranslatedTypeExpr(t), t = in.TupType(h, _). 
+	TranslatedTypeExpr(t') :- TranslatedTypeExpr(t), t = in.TupType(_, t'), t' : in.TypeExpr. 
+	TranslatedTypeExpr(h)  :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(_, _, h), _). 
+	TranslatedTypeExpr(t') :- TranslatedTypeExpr(t), t = in.NmdTupType(_, t'), t' : in.TypeExpr. 
+
 	//// Labels a type expression with a number greater than the labels of all its sub-expressions.
 	//// TypeId linearizes the dependency order to get a schedule for emitting type expressions.
 	TypeId      ::= (id: Natural, type: TypeExpr).
@@ -1017,7 +1025,8 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
     /******            Generate Fun Decl Arrays             ******/
     /*************************************************************/	
 	TypeToExpr ::= (type: TypeExpr, expr: out.Expr).
-	TypeToExpr(type, expr) :- TypeExpansion(type, etype), TypeId(typeIndex, etype), 
+
+	TypeToExpr(type, expr) :- TypeId(typeIndex, type), 
 	                          typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), 
 							  expr = out.UnApp(ADDR, Ident(typeName)).
 

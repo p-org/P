@@ -13,7 +13,8 @@ VOID CALLBACK Callback(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue
     PRT_MACHINEINST *context = (PRT_MACHINEINST *)arg;
     TimerContext *timerContext = (TimerContext *)context->extContext;
     PRT_VALUE *ev = PrtMkEventValue(P_EVENT_TIMEOUT);
-    PrtSend(PrtGetMachine(context->process, timerContext->client), ev, context->id, PRT_FALSE);
+	PRT_MACHINEINST* clientMachine = PrtGetMachine(context->process, timerContext->client);
+	PrtSend(context, clientMachine, ev, context->id, PRT_FALSE);
     PrtFreeValue(ev);
 }
 
@@ -37,10 +38,11 @@ void P_CTOR_Timer_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value)
     context->extContext = timerContext;
 }
 
-void P_SEND_Timer_IMPL(PRT_MACHINEINST *context, PRT_VALUE *evnt, PRT_VALUE *payload, PRT_BOOLEAN doTransfer)
+void P_SEND_Timer_IMPL(PRT_MACHINEINST *sender, PRT_MACHINEINST *context, PRT_VALUE *evnt, PRT_VALUE *payload, PRT_BOOLEAN doTransfer)
 {
 	PrtAssert(doTransfer == PRT_FALSE, "Ownership must stay with caller");
     printf("Entering P_SEND_Timer_IMPL\n");
+
     PRT_VALUE *ev;
     BOOL success;
     TimerContext *timerContext = (TimerContext *)context->extContext;
@@ -58,11 +60,11 @@ void P_SEND_Timer_IMPL(PRT_MACHINEINST *context, PRT_VALUE *evnt, PRT_VALUE *pay
         success = CancelWaitableTimer(timerContext->timer);
         if (success) {
             ev = PrtMkEventValue(P_EVENT_CANCEL_SUCCESS);
-            PrtSend(PrtGetMachine(context->process, timerContext->client), ev, context->id, PRT_FALSE);
+            PrtSend(context, PrtGetMachine(context->process, timerContext->client), ev, context->id, PRT_FALSE);
         }
         else {
             ev = PrtMkEventValue(P_EVENT_CANCEL_FAILURE);
-            PrtSend(PrtGetMachine(context->process, timerContext->client), ev, context->id, PRT_FALSE);
+            PrtSend(context, PrtGetMachine(context->process, timerContext->client), ev, context->id, PRT_FALSE);
         }
         PrtFreeValue(ev);
     }

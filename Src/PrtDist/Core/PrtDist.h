@@ -13,7 +13,7 @@ extern PRT_INT64 sendMessageSeqNumber;
 void
 PrtDistSMExceptionHandler(
 __in PRT_STATUS exception,
-__in void* vcontext
+__in PRT_MACHINEINST* vcontext
 );
 
 // Function to open log file in a given directory

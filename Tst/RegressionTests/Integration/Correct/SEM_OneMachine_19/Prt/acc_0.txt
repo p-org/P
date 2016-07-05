@@ -9,6 +9,6 @@ OUT: <ExitLog> Machine Real1(1) exiting state Real1_Init
 OUT: <EnqueueLog> Enqueued event E2 with payload null on Machine Real1(1)
 OUT: <StateLog> Machine Real1(1) entered state Real1_S1
 OUT: <DequeueLog> Dequeued event E2 with payload null by Machine Real1(1)
-OUT: <ActionLog> Machine Real1(1) ignored event in state Real1_S1
+OUT: <ActionLog> Machine Real1(1) ignored event E2 in state Real1_S1
 OUT: 
 EXIT: 0

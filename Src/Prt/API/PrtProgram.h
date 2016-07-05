@@ -48,6 +48,7 @@ typedef void(PRT_CALL_CONV * PRT_SM_EXTDTOR)(_Inout_ struct PRT_MACHINEINST * co
 *  Function frees payload iff doTransfer is true.
 */
 typedef void(PRT_CALL_CONV * PRT_SM_MODELSEND)(
+	_Inout_ struct PRT_MACHINEINST * sender,
 	_Inout_ struct PRT_MACHINEINST * context,
 	_Inout_ PRT_VALUE * evnt, 
 	_Inout_ PRT_VALUE * payload,

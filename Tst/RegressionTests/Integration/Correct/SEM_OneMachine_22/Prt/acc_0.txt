@@ -7,6 +7,6 @@ OUT: <RaiseLog> Machine Program(1) raised event E with payload null
 OUT: <PushLog> Machine Program(1) pushed
 OUT: <StateLog> Machine Program(1) entered state Call
 OUT: <RaiseLog> Machine Program(1) raised event E with payload null
-OUT: <ActionLog> Machine Program(1) ignored event in state Call
+OUT: <ActionLog> Machine Program(1) ignored event E in state Call
 OUT: 
 EXIT: 0

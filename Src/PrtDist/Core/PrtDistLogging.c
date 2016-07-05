@@ -44,7 +44,7 @@ void PrtCloseLogFile()
 void
 PrtDistSMExceptionHandler(
 __in PRT_STATUS exception,
-__in void* vcontext
+__in PRT_MACHINEINST* vcontext
 )
 {
 
@@ -144,7 +144,7 @@ void PrtDistSMLogHandler(PRT_STEP step, void *vcontext)
         }
         else
         {
-            log = buffer = PrtToStringStep(step, vcontext);
+            log = buffer = PrtToStringStep(step, vcontext, NULL, NULL, NULL);
         }
         fputs(log, logfile);
         if (log[strlen(log) - 1] != '\n') {

@@ -321,14 +321,6 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	TranslatedTypeExpr ::= (type: TypeExpr).
 	TranslatedTypeExpr(eType) :- TypeExpansion(_, eType).
 
-	TranslatedTypeExpr(t) :- in.SubSE(c, e), in.TypeOf(c, e, t), e = in.Tuple(_), t : in.TypeExpr.
-	TranslatedTypeExpr(t) :- in.SubSE(c, e), in.TypeOf(c, e, t), e = in.NamedTuple(_), t : in.TypeExpr.
-
-	TranslatedTypeExpr(h)  :- TranslatedTypeExpr(t), t = in.TupType(h, _). 
-	TranslatedTypeExpr(t') :- TranslatedTypeExpr(t), t = in.TupType(_, t'), t' : in.TypeExpr. 
-	TranslatedTypeExpr(h)  :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(_, _, h), _). 
-	TranslatedTypeExpr(t') :- TranslatedTypeExpr(t), t = in.NmdTupType(_, t'), t' : in.TypeExpr. 
-
 	//// Labels a type expression with a number greater than the labels of all its sub-expressions.
 	//// TypeId linearizes the dependency order to get a schedule for emitting type expressions.
 	TypeId      ::= (id: Natural, type: TypeExpr).
@@ -1025,11 +1017,9 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
     /******            Generate Fun Decl Arrays             ******/
     /*************************************************************/	
 	TypeToExpr ::= (type: TypeExpr, expr: out.Expr).
-
-	TypeToExpr(type, expr) :- TypeId(typeIndex, type), 
+	TypeToExpr(type, expr) :- TypeExpansion(type, etype), TypeId(typeIndex, etype), 
 	                          typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), 
 							  expr = out.UnApp(ADDR, Ident(typeName)).
-	TypeToExpr(type, expr) :- TypeExpansion(type, etype), TypeToExpr(etype, expr).
 
 	ParamsType ::= (decl: FunDecl, expr: out.Expr).
 	ParamsType(d, expr) :- d is FunDecl, d.params = NIL, expr = out.Ident("NULL").
@@ -1438,15 +1428,17 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 					  UNKNOWN).
 
 	HOut(11, def) :- m is MachineDecl, m.kind = MODEL,
-	                params = Params(Param(NIL, "context"), 
+	                params = Params(Param(NIL, "sender"), 
+					         Params(Param(NIL, "context"), 
 						     Params(Param(NIL, "evnt"), 
 							 Params(Param(NIL, "payload"), 
-							 Params(Param(NIL, "doTransfer"), NIL)))),
+							 Params(Param(NIL, "doTransfer"), NIL))))),
 				    funType = FunType(BaseType(VOID), argTypes),
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")),
+					           PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")),
 					           PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")),
 							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), 
-							   PrmTypes(NmdType(NIL, "PRT_BOOLEAN"), NIL)))),					  
+							   PrmTypes(NmdType(NIL, "PRT_BOOLEAN"), NIL))))),					  
 	                def = FunDef(
 					  NIL,
 					  funType,
@@ -2033,10 +2025,11 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 						   checkCall = out.FunApp(Ident("PrtCheckIsLocalMachineId"), Args(Ident("context"), Args(Ident("p_tmp_stmt_0"), NIL))),
 						   SendFuncName(name),
 						   sendCall =  out.FunApp(name, 
+										 Args(Ident("context"),
 						                 Args(FunApp(Ident("PrtGetMachine"), Args(BinApp(PFLD, Ident("context"), Ident("process")), Args(Ident("p_tmp_stmt_0"), NIL))),
 										 Args(Ident("p_tmp_stmt_1"),
 										 Args(Ident("p_tmp_stmt_2"), 
-										 Args(Ident("PRT_FALSE"), NIL))))),
+										 Args(Ident("PRT_FALSE"), NIL)))))),
 						   ConstId(m, in.NulApp(NULL)), mkNull = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))).
 
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Send(dest, ev, pay, NONE, x), pay : in.Expr,
@@ -2046,10 +2039,11 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 						   checkCall = out.FunApp(Ident("PrtCheckIsLocalMachineId"), Args(Ident("context"), Args(Ident("p_tmp_stmt_0"), NIL))),
 						   SendFuncName(name), 
 						   sendCall = out.FunApp(name,
+										 Args(Ident("context"),
 						                 Args(FunApp(Ident("PrtGetMachine"), Args(BinApp(PFLD, Ident("context"), Ident("process")), Args(Ident("p_tmp_stmt_0"), NIL))),
 										 Args(Ident("p_tmp_stmt_1"),
 										 Args(Ident("p_tmp_stmt_2"), 
-										 Args(Ident("PRT_FALSE"), NIL))))).
+										 Args(Ident("PRT_FALSE"), NIL)))))).
 
  	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Send(dest, ev, pay, XFER, x), pay : in.Expr,
 						   RhsExpr(c, s, 0, destTrans, doFreeDestTrans), RhsExpr(c, s, 1, evTrans, doFreeEvTrans), RhsExpr(c, s, 2, payTrans, doFreePayTrans),
@@ -2059,10 +2053,11 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 						   SendFuncName(name), 
 						   RhsTrans(c, s, 2, j, out.Args(payVar, _)), RhsMaxOrder(s, 2, j), nullStmt = out.BinApp(ASN, payVar, Ident("NULL")),
 						   sendCall = out.FunApp(name,
+										 Args(Ident("context"),
 						                 Args(FunApp(Ident("PrtGetMachine"), Args(BinApp(PFLD, Ident("context"), Ident("process")), Args(Ident("p_tmp_stmt_0"), NIL))),
 										 Args(Ident("p_tmp_stmt_1"),
 										 Args(Ident("p_tmp_stmt_2"), 
-										 Args(Ident("PRT_TRUE"), NIL))))).
+										 Args(Ident("PRT_TRUE"), NIL)))))).
 
 	//// Monitor (erased)
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Monitor(_, _, _), cs = NIL.

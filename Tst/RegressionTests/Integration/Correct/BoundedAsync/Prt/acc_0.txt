@@ -487,7 +487,7 @@ OUT: <DequeueLog> Dequeued event myCount with payload 11 by Machine Process(4)
 OUT: <ActionLog> Machine Process(4) executed action in state SendCount
 OUT: <EnqueueLog> Enqueued event myCount with payload 11 on Machine Process(2)
 OUT: <DequeueLog> Dequeued event myCount with payload 11 by Machine Process(2)
-OUT: <ActionLog> Machine Process(2) ignored event in state done
+OUT: <ActionLog> Machine Process(2) ignored event myCount in state done
 OUT: <EnqueueLog> Enqueued event Req with payload null on Machine Scheduler(1)
 OUT: <RaiseLog> Machine Process(3) raised event unit with payload null
 OUT: <ExitLog> Machine Process(3) exiting state SendCount
@@ -498,10 +498,10 @@ OUT: <ExitLog> Machine Process(4) exiting state SendCount
 OUT: <StateLog> Machine Process(4) entered state SendCount
 OUT: <EnqueueLog> Enqueued event myCount with payload 11 on Machine Process(2)
 OUT: <DequeueLog> Dequeued event myCount with payload 11 by Machine Process(2)
-OUT: <ActionLog> Machine Process(2) ignored event in state done
+OUT: <ActionLog> Machine Process(2) ignored event myCount in state done
 OUT: <EnqueueLog> Enqueued event myCount with payload 11 on Machine Process(3)
 OUT: <DequeueLog> Dequeued event myCount with payload 11 by Machine Process(3)
-OUT: <ActionLog> Machine Process(3) ignored event in state done
+OUT: <ActionLog> Machine Process(3) ignored event myCount in state done
 OUT: <EnqueueLog> Enqueued event Req with payload null on Machine Scheduler(1)
 OUT: <RaiseLog> Machine Process(4) raised event unit with payload null
 OUT: <ExitLog> Machine Process(4) exiting state SendCount
@@ -517,13 +517,13 @@ OUT: <RaiseLog> Machine Scheduler(1) raised event Resp with payload null
 OUT: <ExitLog> Machine Scheduler(1) exiting state Sync
 OUT: <EnqueueLog> Enqueued event Resp with payload null on Machine Process(2)
 OUT: <DequeueLog> Dequeued event Resp with payload null by Machine Process(2)
-OUT: <ActionLog> Machine Process(2) ignored event in state done
+OUT: <ActionLog> Machine Process(2) ignored event Resp in state done
 OUT: <EnqueueLog> Enqueued event Resp with payload null on Machine Process(3)
 OUT: <DequeueLog> Dequeued event Resp with payload null by Machine Process(3)
-OUT: <ActionLog> Machine Process(3) ignored event in state done
+OUT: <ActionLog> Machine Process(3) ignored event Resp in state done
 OUT: <EnqueueLog> Enqueued event Resp with payload null on Machine Process(4)
 OUT: <DequeueLog> Dequeued event Resp with payload null by Machine Process(4)
-OUT: <ActionLog> Machine Process(4) ignored event in state done
+OUT: <ActionLog> Machine Process(4) ignored event Resp in state done
 OUT: <StateLog> Machine Scheduler(1) entered state Sync
 OUT: 
 EXIT: 0

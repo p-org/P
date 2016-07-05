@@ -10,6 +10,6 @@ OUT: <DequeueLog> Dequeued event y with payload < (1, 0, 0, 0), 1> by Machine M2
 OUT: <ActionLog> Machine M2(2) executed action in state S1
 OUT: <EnqueueLog> Enqueued event x with payload null on Machine M1(1)
 OUT: <DequeueLog> Dequeued event x with payload null by Machine M1(1)
-OUT: <ActionLog> Machine M1(1) ignored event in state S
+OUT: <ActionLog> Machine M1(1) ignored event x in state S
 OUT: 
 EXIT: 0

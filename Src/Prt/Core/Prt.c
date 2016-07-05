@@ -255,7 +255,7 @@ PrtGetMachine(
 {
     PRT_MACHINEID *machineId;
     PRT_PROCESS_PRIV *privateProcess;
-    PrtAssert(id->discriminator == PRT_VALKIND_MID, "id is not legal PRT_MACHINEID");
+    PrtAssert(id->discriminator == PRT_VALUE_KIND_MID, "id is not legal PRT_MACHINEID");
     machineId = id->valueUnion.mid;
     //Comented out by Ankush Desai.
     //PrtAssert(PrtAreGuidsEqual(process->guid, machineId->processId), "id does not belong to process");

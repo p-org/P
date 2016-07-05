@@ -1,5 +1,5 @@
 arg: ..\bug1.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, Feature Integration: two receive statments have the same event

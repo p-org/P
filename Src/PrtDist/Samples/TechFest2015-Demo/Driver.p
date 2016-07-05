@@ -64,7 +64,7 @@ spec Liveness monitors NODE_DOWN {
 	var nodes: map[machine, bool];
 	start hot state Init {
         on L_INIT do (payload: map[machine, bool]) {        
-			nodes = payload as map[machine, bool]; 
+			nodes = payload; 
         }
 		on NODE_DOWN do (payload: machine) { 
 			nodes -= payload;

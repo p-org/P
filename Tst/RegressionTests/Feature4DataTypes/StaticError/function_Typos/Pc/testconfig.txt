@@ -1,5 +1,5 @@
 arg: ..\function_Typos.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: 4.1.1. Tuples: duplicate names

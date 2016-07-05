@@ -3,11 +3,10 @@ include "Timer.p"
 event PING: machine;
 event PONG: machine;
 
-event ROUND_DONE;
 event REGISTER_CLIENT: machine;
 event UNREGISTER_CLIENT: machine;
 event NODE_DOWN: machine;
-event TIMER_CANCELED;
+event ROUND_DONE;
 
 machine FailureDetector {
 	var nodes: seq[machine];
@@ -19,46 +18,49 @@ machine FailureDetector {
 	
     start state Init {
         entry (payload: seq[machine]) {
-  	        nodes = payload as seq[machine];
+  	        nodes = payload;
 			InitializeAliveSet();
 			timer = new Timer(this);
-	        raise UNIT;   	   
+			raise UNIT;   	   
         }
 		on REGISTER_CLIENT do (payload: machine) { clients[payload] = true; }
 		on UNREGISTER_CLIENT do (payload: machine) { if (payload in clients) clients -= payload; }
         on UNIT push SendPing;
     }
+
     state SendPing {
         entry {
 		    SendPingsToAliveSet();
 			send timer, START, 100;
 	    }
         on PONG do (payload: machine){ 
+			var timerCanceled: bool;
 		    if (payload in alive) {
 				 responses[payload] = true; 
 				 if (sizeof(responses) == sizeof(alive)) {
-			         send timer, CANCEL;
-					 raise TIMER_CANCELED;
+					timerCanceled = CancelTimer();
+					if (timerCanceled) {
+						// goto SendPing
+						raise UNIT;
+					}
 			     }
 			}
 		}
 		on TIMEOUT do { 
 			attempts = attempts + 1;
 		    if (sizeof(responses) < sizeof(alive) && attempts < 2) {
+				// goto SendPing;
 				raise UNIT;
+			} else {
+				Notify();
+				// goto Reset;
+				raise ROUND_DONE;
 			}
-			Notify();
-			raise ROUND_DONE;
 		}
-		on ROUND_DONE goto Reset;
 		on UNIT goto SendPing;
-		on TIMER_CANCELED push WaitForCancelResponse;
+		on ROUND_DONE goto Reset;
      }
-	 state WaitForCancelResponse {
-	     defer TIMEOUT, PONG;
-	     on CANCEL_SUCCESS do { raise ROUND_DONE; }
-		 on CANCEL_FAILURE do { pop; }
-	 }
+	
 	 state Reset {
          entry {
 			 attempts = 0;
@@ -69,6 +71,16 @@ machine FailureDetector {
 		 ignore PONG;
 	 }
 
+	 fun CancelTimer(): bool {
+		var timerCanceled: bool;
+		send timer, CANCEL;
+		receive {
+			case CANCEL_SUCCESS: { timerCanceled = true; }
+			case CANCEL_FAILURE: { timerCanceled = false; }
+		}
+		return timerCanceled;
+	 }
+
 	 fun InitializeAliveSet() {
 		var i: int;
 		i = 0;
@@ -77,6 +89,7 @@ machine FailureDetector {
 			i = i + 1;
 		}
 	 }
+	 
 	 fun SendPingsToAliveSet() {
 		var i: int;
 		i = 0;
@@ -88,7 +101,8 @@ machine FailureDetector {
 		    i = i + 1;
 		}
 	 }
-	fun Notify() {
+
+	 fun Notify() {
 	     var i, j: int;
 		 i = 0;
 		 while (i < sizeof(nodes)) {

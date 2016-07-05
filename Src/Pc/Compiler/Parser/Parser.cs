@@ -160,20 +160,20 @@
                 casesList = P_Root.MkCases(e, a, casesList);
             }
 
-            public void AddPayloadVar(string name, Span span)
+            public void AddPayloadVar(P_Root.UserCnstKind qualKind, string name, Span span)
             {
                 Contract.Assert(parser.typeExprStack.Count > 0);
                 var typeExpr = (P_Root.IArgType_NmdTupTypeField__2)parser.typeExprStack.Pop();
                 var nameTerm = P_Root.MkString(name);
                 nameTerm.Span = span;
-                var field = P_Root.MkNmdTupTypeField(P_Root.MkUserCnst(P_Root.UserCnstKind.NONE), nameTerm, typeExpr);
+                var field = P_Root.MkNmdTupTypeField(P_Root.MkUserCnst(qualKind), nameTerm, typeExpr);
                 contextLocalVarDecl = P_Root.MkNmdTupType(field, contextLocalVarDecl);
             }
 
-            public void AddPayloadVar()
+            public void AddPayloadVar(P_Root.UserCnstKind qualKind)
             {
                 var field = P_Root.MkNmdTupTypeField(
-                                    P_Root.MkUserCnst(P_Root.UserCnstKind.NONE),
+                                    P_Root.MkUserCnst(qualKind),
                                     P_Root.MkString(string.Format("_payload_{0}", parser.GetNextPayloadVarLabel())), 
                                     (P_Root.IArgType_NmdTupTypeField__2) parser.MkBaseType(P_Root.UserCnstKind.ANY, Span.Unknown));
                 contextLocalVarDecl = P_Root.MkNmdTupType(field, contextLocalVarDecl);
@@ -491,7 +491,15 @@
                 monitorStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
 
-            stmtStack.Push(monitorStmt);
+            if (Options.test)
+            {
+                stmtStack.Push(monitorStmt);
+            }
+            else
+            {
+                var nulStmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, new Span()));
+                stmtStack.Push(nulStmt);
+            }
         }
 
         private void PushReceive(Span span)
@@ -1221,7 +1229,7 @@
 
         private void SetFunKind(P_Root.UserCnstKind kind, Span span)
         {
-            if (!Options.erase) return;
+            if (Options.test) return;
             var funDecl = GetCurrentFunDecl(span);
             funDecl.kind = MkUserCnst(kind, span);
         }
@@ -1267,7 +1275,7 @@
         private void AddModelTypeDef(string name, Span nameSpan, Span typeDefSpan)
         {
             AddTypeDef(name, nameSpan, typeDefSpan);
-            if (Options.erase)
+            if (!Options.test)
             {
                 var modelType = P_Root.MkModelType(MkString(name, nameSpan));
                 parseProgram.ModelTypes.Add(modelType);
@@ -1714,7 +1722,7 @@
             var machDecl = GetCurrentMachineDecl(span);
             machDecl.Span = span;
             machDecl.name = MkString(name, nameSpan);
-            if (!Options.erase && kind == P_Root.UserCnstKind.MODEL)
+            if (Options.test && kind == P_Root.UserCnstKind.MODEL)
             {
                 kind = P_Root.UserCnstKind.REAL;
             }

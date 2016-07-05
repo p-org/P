@@ -1,7 +1,7 @@
 #include "PrtExecution.h"
 
 /* Initialize the function to default assert function */
-PRT_ASSERT_FUN PrtAssert = &PrtAssertDefaultFn;
+PRT_ASSERT_FUN _PrtAssert = &PrtAssertDefaultFn;
 
 /* Initialize the function to default print fucntion*/
 PRT_PRINT_FUN PrtPrintf = &PrtPrintfDefaultFn;
@@ -106,7 +106,7 @@ _In_  PRT_VALUE					*payload
 	}
 	else if (machineCount == numMachines) {
 		PRT_MACHINEINST **newMachines = (PRT_MACHINEINST **)PrtCalloc(2 * machineCount, sizeof(PRT_MACHINEINST *));
-		for (PRT_UINT32 i = 0; i < machineCount; i++)
+		for (i = 0; i < machineCount; i++)
 		{
 			newMachines[i] = machines[i];
 		}
@@ -843,7 +843,7 @@ DoAction:
 			PrtLog(PRT_STEP_DO, context);
 			PrtPushNewEventHandlerFrame(context, doFunIndex, PRT_FUN_PARAM_XFER, NULL);
 		}
-		PRT_UINT32 funIndex = PrtBottomOfFunStack(context)->funIndex;
+		funIndex = PrtBottomOfFunStack(context)->funIndex;
 		context->process->program->machines[context->instanceOf].funs[funIndex].implementation((PRT_MACHINEINST *)context);
 	}
 	goto CheckLastOperation;
@@ -1205,6 +1205,7 @@ PrtDequeueEvent(
 		}
 		else
 		{
+			PrtFreeTriggerPayload(context);
 			return PRT_FALSE;
 		}
 	}
@@ -1932,14 +1933,15 @@ PrtPrintfDefaultFn(
 _In_opt_z_ PRT_CSTRING message
 )
 {
-	printf_s(message);
+	// do not allow % signs in message to be interpreted as arguments.
+	printf_s("%s", message);
 }
 
 PRT_API void PRT_CALL_CONV
 PrtUpdateAssertFn(
 PRT_ASSERT_FUN assertFn
 ){
-	PrtAssert = assertFn;
+	_PrtAssert = assertFn;
 }
 
 PRT_API void PRT_CALL_CONV

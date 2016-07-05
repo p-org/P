@@ -144,8 +144,7 @@ namespace Microsoft.PVisualizer
             var options = new CommandLineOptions();
             options.analyzeOnly = true;
             var compiler = new Compiler(options);
-            List<Flag> flags;
-            var result = compiler.Compile(inputFileName, out flags);
+            var result = compiler.Compile(inputFileName);
 
             if (result)
             {

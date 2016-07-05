@@ -155,7 +155,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkBoolValue(_In_ PRT_BOOLEAN value)
 	PrtAssert(value == PRT_TRUE || value == PRT_FALSE, "Expected a bool value");
 
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-	retVal->discriminator = PRT_VALKIND_BOOL;
+	retVal->discriminator = PRT_VALUE_KIND_BOOL;
 	retVal->valueUnion.bl = value;
 	return retVal;
 }
@@ -163,7 +163,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkBoolValue(_In_ PRT_BOOLEAN value)
 PRT_VALUE * PRT_CALL_CONV PrtMkEventValue(_In_ PRT_UINT32 value)
 {
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-	retVal->discriminator = PRT_VALKIND_EVENT;
+	retVal->discriminator = PRT_VALUE_KIND_EVENT;
 	retVal->valueUnion.ev = value;
 	return retVal;
 }
@@ -171,7 +171,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkEventValue(_In_ PRT_UINT32 value)
 PRT_VALUE * PRT_CALL_CONV PrtMkIntValue(_In_ PRT_INT32 value)
 {
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-	retVal->discriminator = PRT_VALKIND_INT;
+	retVal->discriminator = PRT_VALUE_KIND_INT;
 	retVal->valueUnion.nt = value;
 	return retVal;
 }
@@ -179,7 +179,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkIntValue(_In_ PRT_INT32 value)
 PRT_VALUE * PRT_CALL_CONV PrtMkNullValue()
 {
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-	retVal->discriminator = PRT_VALKIND_NULL;
+	retVal->discriminator = PRT_VALUE_KIND_NULL;
 	retVal->valueUnion.ev = PRT_SPECIAL_EVENT_NULL;
 	return retVal;
 }
@@ -188,7 +188,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkMachineValue(_In_ PRT_MACHINEID value)
 {
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 	PRT_MACHINEID *id = (PRT_MACHINEID *)PrtMalloc(sizeof(PRT_MACHINEID));
-	retVal->discriminator = PRT_VALKIND_MID;
+	retVal->discriminator = PRT_VALUE_KIND_MID;
 	retVal->valueUnion.mid = id;
 	id->machineId = value.machineId;
 	id->processId.data1 = value.processId.data1;
@@ -206,7 +206,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(
 
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 	PRT_FORGNVALUE *frgn = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
-	retVal->discriminator = PRT_VALKIND_FORGN;
+	retVal->discriminator = PRT_VALUE_KIND_FORGN;
 	retVal->valueUnion.frgn = frgn;
 	frgn->typeTag = typeTag;
 	frgn->value = prtForeignTypeDecls[typeTag].cloneFun(value);
@@ -215,7 +215,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(
 
 PRT_FORGNVALUE * PRT_CALL_CONV PrtGetForeignValue(PRT_VALUE* v)
 {
-	PrtAssert(v->discriminator == PRT_VALKIND_FORGN, "Input value is not a foreign value");
+	PrtAssert(v->discriminator == PRT_VALUE_KIND_FORGN, "Input value is not a foreign value");
 	return v->valueUnion.frgn;
 }
 
@@ -243,7 +243,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 		PrtAssert(declIndex < prtNumForeignTypeDecls && prtForeignTypeDecls[declIndex].declIndex == declIndex, "Invalid type expression.");
 		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 		PRT_FORGNVALUE *frgn = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
-		retVal->discriminator = PRT_VALKIND_FORGN;
+		retVal->discriminator = PRT_VALUE_KIND_FORGN;
 		retVal->valueUnion.frgn = frgn;
 		frgn->typeTag = declIndex;
 		frgn->value = prtForeignTypeDecls[declIndex].mkDefValueFun();
@@ -253,7 +253,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 	{
 		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 		PRT_MAPVALUE *map = (PRT_MAPVALUE *)PrtMalloc(sizeof(PRT_MAPVALUE));
-		retVal->discriminator = PRT_VALKIND_MAP;
+		retVal->discriminator = PRT_VALUE_KIND_MAP;
 		retVal->valueUnion.map = map;
 
 		map->size = 0;
@@ -267,7 +267,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 	{
 		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 		PRT_TUPVALUE *tup = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
-		retVal->discriminator = PRT_VALKIND_TUPLE;
+		retVal->discriminator = PRT_VALUE_KIND_TUPLE;
 		retVal->valueUnion.tuple = tup;
 		PRT_UINT32 i;
 		PRT_NMDTUPTYPE *ntype = type->typeUnion.nmTuple;
@@ -284,7 +284,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 	{
 		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 		PRT_SEQVALUE *seq = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
-		retVal->discriminator = PRT_VALKIND_SEQ;
+		retVal->discriminator = PRT_VALUE_KIND_SEQ;
 		retVal->valueUnion.seq = seq;
 
 		seq->size = 0;
@@ -296,7 +296,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 	{
 		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 		PRT_TUPVALUE *tup = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
-		retVal->discriminator = PRT_VALKIND_TUPLE;
+		retVal->discriminator = PRT_VALUE_KIND_TUPLE;
 		retVal->valueUnion.tuple = tup;
 		PRT_UINT32 i;
 		PRT_TUPTYPE *ttype = type->typeUnion.tuple;
@@ -319,49 +319,49 @@ void PRT_CALL_CONV PrtPrimSetBool(_Inout_ PRT_VALUE *prmVal, _In_ PRT_BOOLEAN va
 {
 	PrtAssert(value == PRT_TRUE || value == PRT_FALSE, "Expected a bool value");
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
-	PrtAssert(prmVal->discriminator == PRT_VALKIND_BOOL, "Invalid type on primitive set");
+	PrtAssert(prmVal->discriminator == PRT_VALUE_KIND_BOOL, "Invalid type on primitive set");
 	prmVal->valueUnion.bl = value;
 }
 
 PRT_BOOLEAN PRT_CALL_CONV PrtPrimGetBool(_In_ PRT_VALUE *prmVal)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
-	PrtAssert(prmVal->discriminator == PRT_VALKIND_BOOL, "Invalid type on primitive get");
+	PrtAssert(prmVal->discriminator == PRT_VALUE_KIND_BOOL, "Invalid type on primitive get");
 	return prmVal->valueUnion.bl;
 }
 
 void PRT_CALL_CONV PrtPrimSetEvent(_Inout_ PRT_VALUE *prmVal, _In_ PRT_UINT32 value)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
-	PrtAssert(prmVal->discriminator == PRT_VALKIND_EVENT, "Invalid type on primitive set");
+	PrtAssert(prmVal->discriminator == PRT_VALUE_KIND_EVENT, "Invalid type on primitive set");
 	prmVal->valueUnion.ev = value;
 }
 
 PRT_UINT32 PRT_CALL_CONV PrtPrimGetEvent(_In_ PRT_VALUE *prmVal)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
-	PrtAssert(prmVal->discriminator == PRT_VALKIND_EVENT, "Invalid type on primitive get");
+	PrtAssert(prmVal->discriminator == PRT_VALUE_KIND_EVENT, "Invalid type on primitive get");
 	return prmVal->valueUnion.ev;
 }
 
 void PRT_CALL_CONV PrtPrimSetInt(_Inout_ PRT_VALUE *prmVal, _In_ PRT_INT32 value)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
-	PrtAssert(prmVal->discriminator == PRT_VALKIND_INT, "Invalid type on primitive set");
+	PrtAssert(prmVal->discriminator == PRT_VALUE_KIND_INT, "Invalid type on primitive set");
 	prmVal->valueUnion.nt = value;
 }
 
 PRT_INT32 PRT_CALL_CONV PrtPrimGetInt(_In_ PRT_VALUE *prmVal)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
-	PrtAssert(prmVal->discriminator == PRT_VALKIND_INT, "Invalid type on primitive get");
+	PrtAssert(prmVal->discriminator == PRT_VALUE_KIND_INT, "Invalid type on primitive get");
 	return prmVal->valueUnion.nt;
 }
 
 void PRT_CALL_CONV PrtPrimSetMachine(_Inout_ PRT_VALUE *prmVal, _In_ PRT_MACHINEID value)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
-	PrtAssert(prmVal->discriminator == PRT_VALKIND_MID, "Invalid type on primitive set");
+	PrtAssert(prmVal->discriminator == PRT_VALUE_KIND_MID, "Invalid type on primitive set");
 	PRT_MACHINEID *id = prmVal->valueUnion.mid;
 	id->machineId = value.machineId;
 	id->processId.data1 = value.processId.data1;
@@ -373,7 +373,7 @@ void PRT_CALL_CONV PrtPrimSetMachine(_Inout_ PRT_VALUE *prmVal, _In_ PRT_MACHINE
 PRT_MACHINEID PRT_CALL_CONV PrtPrimGetMachine(_In_ PRT_VALUE *prmVal)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
-	PrtAssert(prmVal->discriminator == PRT_VALKIND_MID, "Invalid type on primitive get");
+	PrtAssert(prmVal->discriminator == PRT_VALUE_KIND_MID, "Invalid type on primitive get");
 	return *prmVal->valueUnion.mid;
 }
 
@@ -381,7 +381,7 @@ void PRT_CALL_CONV PrtTupleSetEx(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index
 {
 	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
-	PrtAssert(tuple->discriminator == PRT_VALKIND_TUPLE, "Cannot perform tuple set on this value");
+	PrtAssert(tuple->discriminator == PRT_VALUE_KIND_TUPLE, "Cannot perform tuple set on this value");
 	PrtAssert(index < tuple->valueUnion.tuple->size, "Invalid tuple index");
 
 	PRT_VALUE *oldValue = tuple->valueUnion.tuple->values[index];
@@ -397,7 +397,7 @@ void PRT_CALL_CONV PrtTupleSet(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, 
 PRT_VALUE * PRT_CALL_CONV PrtTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index)
 {
 	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
-	PrtAssert(tuple->discriminator == PRT_VALKIND_TUPLE, "Cannot perform tuple get on this value");
+	PrtAssert(tuple->discriminator == PRT_VALUE_KIND_TUPLE, "Cannot perform tuple get on this value");
 	PrtAssert(index < tuple->valueUnion.tuple->size, "Invalid tuple index");
 
 	return PrtCloneValue(tuple->valueUnion.tuple->values[index]);
@@ -406,7 +406,7 @@ PRT_VALUE * PRT_CALL_CONV PrtTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 ind
 PRT_VALUE * PRT_CALL_CONV PrtTupleGetNC(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index)
 {
 	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
-	PrtAssert(tuple->discriminator == PRT_VALKIND_TUPLE, "Cannot perform tuple get on this value");
+	PrtAssert(tuple->discriminator == PRT_VALUE_KIND_TUPLE, "Cannot perform tuple get on this value");
 	PrtAssert(index < tuple->valueUnion.tuple->size, "Invalid tuple index");
 
 	return tuple->valueUnion.tuple->values[index];
@@ -416,8 +416,8 @@ void PRT_CALL_CONV PrtSeqUpdateEx(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index,
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
-	PrtAssert(seq->discriminator == PRT_VALKIND_SEQ, "Invalid value");
-	PrtAssert(index->discriminator == PRT_VALKIND_INT, "Invalid value");
+	PrtAssert(seq->discriminator == PRT_VALUE_KIND_SEQ, "Invalid value");
+	PrtAssert(index->discriminator == PRT_VALUE_KIND_INT, "Invalid value");
 	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
 
 	PRT_VALUE *oldValue = seq->valueUnion.seq->values[index->valueUnion.nt];
@@ -434,7 +434,7 @@ void PRT_CALL_CONV PrtSeqInsertExIntIndex(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT3
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
-	PrtAssert(seq->discriminator == PRT_VALKIND_SEQ, "Invalid value");
+	PrtAssert(seq->discriminator == PRT_VALUE_KIND_SEQ, "Invalid value");
 	PrtAssert(0 <= index && index <= seq->valueUnion.seq->size, "Invalid index");
 
 	PRT_VALUE *clone;
@@ -494,7 +494,7 @@ void PRT_CALL_CONV PrtSeqInsertExIntIndex(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT3
 PRT_VALUE * PRT_CALL_CONV PrtSeqGetNCIntIndex(_In_ PRT_VALUE *seq, _In_ PRT_UINT32 index)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
-	PrtAssert(seq->discriminator == PRT_VALKIND_SEQ, "Invalid value");
+	PrtAssert(seq->discriminator == PRT_VALUE_KIND_SEQ, "Invalid value");
 	PrtAssert(0 <= index && index < seq->valueUnion.seq->size, "Invalid index");
 
 	return seq->valueUnion.seq->values[index];
@@ -503,7 +503,7 @@ PRT_VALUE * PRT_CALL_CONV PrtSeqGetNCIntIndex(_In_ PRT_VALUE *seq, _In_ PRT_UINT
 
 void PRT_CALL_CONV PrtSeqInsertEx(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE* value, PRT_BOOLEAN cloneValue)
 {
-	PrtAssert(index->discriminator == PRT_VALKIND_INT, "Invalid value");
+	PrtAssert(index->discriminator == PRT_VALUE_KIND_INT, "Invalid value");
 	PrtSeqInsertExIntIndex(seq, index->valueUnion.nt, value, cloneValue);
 }
 
@@ -515,8 +515,8 @@ void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _
 void PRT_CALL_CONV PrtSeqRemove(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
-	PrtAssert(seq->discriminator == PRT_VALKIND_SEQ, "Invalid value");
-	PrtAssert(index->discriminator == PRT_VALKIND_INT, "Invalid value");
+	PrtAssert(seq->discriminator == PRT_VALUE_KIND_SEQ, "Invalid value");
+	PrtAssert(index->discriminator == PRT_VALUE_KIND_INT, "Invalid value");
 	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
 
 	PRT_UINT32 i;
@@ -534,8 +534,8 @@ void PRT_CALL_CONV PrtSeqRemove(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
 PRT_VALUE * PRT_CALL_CONV PrtSeqGet(_In_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
-	PrtAssert(seq->discriminator == PRT_VALKIND_SEQ, "Invalid value");
-	PrtAssert(index->discriminator == PRT_VALKIND_INT, "Invalid value");
+	PrtAssert(seq->discriminator == PRT_VALUE_KIND_SEQ, "Invalid value");
+	PrtAssert(index->discriminator == PRT_VALUE_KIND_INT, "Invalid value");
 	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
 
 	return PrtCloneValue(seq->valueUnion.seq->values[index->valueUnion.nt]);
@@ -543,7 +543,7 @@ PRT_VALUE * PRT_CALL_CONV PrtSeqGet(_In_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
 
 PRT_VALUE * PRT_CALL_CONV PrtSeqGetNC(_In_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
 {
-	PrtAssert(index->discriminator == PRT_VALKIND_INT, "Invalid value");
+	PrtAssert(index->discriminator == PRT_VALUE_KIND_INT, "Invalid value");
 
 	return PrtSeqGetNCIntIndex(seq, index->valueUnion.nt);
 }
@@ -551,7 +551,7 @@ PRT_VALUE * PRT_CALL_CONV PrtSeqGetNC(_In_ PRT_VALUE *seq, _In_ PRT_VALUE *index
 PRT_UINT32 PRT_CALL_CONV PrtSeqSizeOf(_In_ PRT_VALUE *seq)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
-	PrtAssert(seq->discriminator == PRT_VALKIND_SEQ, "Invalid value");
+	PrtAssert(seq->discriminator == PRT_VALUE_KIND_SEQ, "Invalid value");
 
 	return seq->valueUnion.seq->size;
 }
@@ -601,7 +601,7 @@ void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
-	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
+	PrtAssert(map->discriminator == PRT_VALUE_KIND_MAP, "Invalid value");
 
 	PRT_UINT32 bucketNum;
 	PRT_MAPNODE *bucket;
@@ -700,7 +700,7 @@ void PRT_CALL_CONV PrtMapRemove(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
-	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
+	PrtAssert(map->discriminator == PRT_VALUE_KIND_MAP, "Invalid value");
 
 	PRT_UINT32 bucketNum;
 	PRT_MAPNODE *bucket;
@@ -764,7 +764,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMapGet(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
-	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
+	PrtAssert(map->discriminator == PRT_VALUE_KIND_MAP, "Invalid value");
 
 	PRT_UINT32 bucketNum;
 	PRT_MAPNODE *bucket;
@@ -790,7 +790,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMapGetNC(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
-	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
+	PrtAssert(map->discriminator == PRT_VALUE_KIND_MAP, "Invalid value");
 
 	PRT_UINT32 bucketNum;
 	PRT_MAPNODE *bucket;
@@ -815,11 +815,11 @@ PRT_VALUE * PRT_CALL_CONV PrtMapGetNC(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key)
 PRT_VALUE * PRT_CALL_CONV PrtMapGetKeys(_In_ PRT_VALUE *map)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
-	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
+	PrtAssert(map->discriminator == PRT_VALUE_KIND_MAP, "Invalid value");
 
 	PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
 	PRT_SEQVALUE *seqVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
-	retVal->discriminator = PRT_VALKIND_SEQ;
+	retVal->discriminator = PRT_VALUE_KIND_SEQ;
 	retVal->valueUnion.seq = seqVal;
 
 	if (map->valueUnion.map->size == 0)
@@ -848,11 +848,11 @@ PRT_VALUE * PRT_CALL_CONV PrtMapGetKeys(_In_ PRT_VALUE *map)
 PRT_VALUE * PRT_CALL_CONV PrtMapGetValues(_In_ PRT_VALUE *map)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
-	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
+	PrtAssert(map->discriminator == PRT_VALUE_KIND_MAP, "Invalid value");
 
 	PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
 	PRT_SEQVALUE *seqVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
-	retVal->discriminator = PRT_VALKIND_SEQ;
+	retVal->discriminator = PRT_VALUE_KIND_SEQ;
 	retVal->valueUnion.seq = seqVal;
 
 	if (map->valueUnion.map->size == 0)
@@ -883,7 +883,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtMapExists(_In_ PRT_VALUE *map, _In_ PRT_VALUE *key)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
-	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
+	PrtAssert(map->discriminator == PRT_VALUE_KIND_MAP, "Invalid value");
 
 	PRT_UINT32 bucketNum;
 	PRT_MAPNODE *bucket;
@@ -913,7 +913,7 @@ static PRT_BOOLEAN PRT_CALL_CONV PrtMapIsSameMapping(_In_ PRT_VALUE *map, _In_ P
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
-	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
+	PrtAssert(map->discriminator == PRT_VALUE_KIND_MAP, "Invalid value");
 
 	PRT_UINT32 bucketNum;
 	PRT_MAPNODE *bucket;
@@ -941,7 +941,7 @@ static PRT_BOOLEAN PRT_CALL_CONV PrtMapIsSameMapping(_In_ PRT_VALUE *map, _In_ P
 PRT_UINT32 PRT_CALL_CONV PrtMapSizeOf(_In_ PRT_VALUE *map)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
-	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
+	PrtAssert(map->discriminator == PRT_VALUE_KIND_MAP, "Invalid value");
 
 	return map->valueUnion.map->size;
 }
@@ -949,7 +949,7 @@ PRT_UINT32 PRT_CALL_CONV PrtMapSizeOf(_In_ PRT_VALUE *map)
 PRT_UINT32 PRT_CALL_CONV PrtMapCapacity(_In_ PRT_VALUE *map)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
-	PrtAssert(map->discriminator == PRT_VALKIND_MAP, "Invalid value");
+	PrtAssert(map->discriminator == PRT_VALUE_KIND_MAP, "Invalid value");
 
 	return PrtHashtableCapacities[map->valueUnion.map->capNum];
 }
@@ -965,19 +965,19 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE* inputValue)
 	PRT_VALUE_KIND kind = inputValue->discriminator;
 	switch (kind)
 	{
-	case PRT_VALKIND_BOOL:
+	case PRT_VALUE_KIND_BOOL:
 		return PrtGetHashCodeUInt32(0x00400000 ^ ((PRT_UINT32)inputValue->valueUnion.bl));
-	case PRT_VALKIND_EVENT:
+	case PRT_VALUE_KIND_EVENT:
 		return PrtGetHashCodeUInt32(0x00800000 ^ (inputValue->valueUnion.ev));
-	case PRT_VALKIND_MID:
+	case PRT_VALUE_KIND_MID:
 		return PrtGetHashCodeUInt32(0x01000000 ^ PrtGetHashCodeMachineId(*inputValue->valueUnion.mid));
-	case PRT_VALKIND_INT:
+	case PRT_VALUE_KIND_INT:
 		return PrtGetHashCodeUInt32(0x02000000 ^ ((PRT_UINT32)inputValue->valueUnion.nt));
-	case PRT_VALKIND_FORGN:
+	case PRT_VALUE_KIND_FORGN:
 	{
 		return 0x08000000 ^ prtForeignTypeDecls[inputValue->valueUnion.frgn->typeTag].hashFun(inputValue->valueUnion.frgn->value);
 	}
-	case PRT_VALKIND_MAP:
+	case PRT_VALUE_KIND_MAP:
 	{
 		//// Hash function designed so two maps with same key-value pairs are hashed equally (independently of order).
 		//// Hash codes are added on the finite field Z_{PRT_HASH_AC_COMPOSEMOD}.
@@ -999,7 +999,7 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE* inputValue)
 
 		return 0x10000000 ^ (PRT_UINT32)code;
 	}
-	case PRT_VALKIND_SEQ:
+	case PRT_VALUE_KIND_SEQ:
 	{
 		PRT_UINT32 i;
 		PRT_UINT32 j;
@@ -1023,7 +1023,7 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE* inputValue)
 		code += (code << 15);
 		return 0x40000000 ^ code;
 	}
-	case PRT_VALKIND_TUPLE:
+	case PRT_VALUE_KIND_TUPLE:
 	{
 		PRT_UINT32 i;
 		PRT_UINT32 j;
@@ -1076,16 +1076,16 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE *value1, _In_ PRT_VALUE
 
 	switch (kind1)
 	{
-	case PRT_VALKIND_NULL:
+	case PRT_VALUE_KIND_NULL:
 		//// Checked for equality with null earlier.
 		return PRT_FALSE;
-	case PRT_VALKIND_BOOL:
+	case PRT_VALUE_KIND_BOOL:
 		return
 			value1->valueUnion.bl == value2->valueUnion.bl ? PRT_TRUE : PRT_FALSE;
-	case PRT_VALKIND_EVENT:
+	case PRT_VALUE_KIND_EVENT:
 		return
 			value1->valueUnion.ev == value2->valueUnion.ev ? PRT_TRUE : PRT_FALSE;
-	case PRT_VALKIND_MID:
+	case PRT_VALUE_KIND_MID:
 	{
 		PRT_MACHINEID *id1 = value1->valueUnion.mid;
 		PRT_MACHINEID *id2 = value2->valueUnion.mid;
@@ -1096,16 +1096,16 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE *value1, _In_ PRT_VALUE
 			id1->processId.data4 == id2->processId.data4 &&
 			id1->machineId == id2->machineId ? PRT_TRUE : PRT_FALSE;
 	}
-	case PRT_VALKIND_INT:
+	case PRT_VALUE_KIND_INT:
 		return
 			value1->valueUnion.nt == value2->valueUnion.nt ? PRT_TRUE : PRT_FALSE;
-	case PRT_VALKIND_FORGN:
+	case PRT_VALUE_KIND_FORGN:
 	{
 		PRT_FORGNVALUE *fVal1 = value1->valueUnion.frgn;
 		PRT_FORGNVALUE *fVal2 = value2->valueUnion.frgn;
 		return (fVal1->typeTag == fVal2->typeTag) ? prtForeignTypeDecls[fVal1->typeTag].isEqualFun(fVal1->value, fVal2->value) : PRT_FALSE;
 	}
-	case PRT_VALKIND_MAP:
+	case PRT_VALUE_KIND_MAP:
 	{
 		PRT_MAPVALUE *mVal1 = value1->valueUnion.map;
 		PRT_MAPVALUE *mVal2 = value2->valueUnion.map;
@@ -1128,7 +1128,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE *value1, _In_ PRT_VALUE
 
 		return PRT_TRUE;
 	}
-	case PRT_VALKIND_SEQ:
+	case PRT_VALUE_KIND_SEQ:
 	{
 		PRT_UINT32 i;
 		PRT_SEQVALUE *sVal1 = value1->valueUnion.seq;
@@ -1149,7 +1149,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE *value1, _In_ PRT_VALUE
 
 		return PRT_TRUE;
 	}
-	case PRT_VALKIND_TUPLE:
+	case PRT_VALUE_KIND_TUPLE:
 	{
 		PRT_UINT32 i;
 		PRT_TUPVALUE *tVal1 = value1->valueUnion.tuple;
@@ -1183,32 +1183,32 @@ PRT_VALUE * PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE *value)
 	PRT_VALUE_KIND kind = value->discriminator;
 	switch (kind)
 	{
-	case PRT_VALKIND_NULL:
+	case PRT_VALUE_KIND_NULL:
 		return PrtMkNullValue();
-	case PRT_VALKIND_BOOL:
+	case PRT_VALUE_KIND_BOOL:
 		return PrtMkBoolValue(value->valueUnion.bl);
-	case PRT_VALKIND_EVENT:
+	case PRT_VALUE_KIND_EVENT:
 		return PrtMkEventValue(value->valueUnion.ev);
-	case PRT_VALKIND_MID:
+	case PRT_VALUE_KIND_MID:
 		return PrtMkMachineValue(*value->valueUnion.mid);
-	case PRT_VALKIND_INT:
+	case PRT_VALUE_KIND_INT:
 		return PrtMkIntValue(value->valueUnion.nt);
-	case PRT_VALKIND_FORGN:
+	case PRT_VALUE_KIND_FORGN:
 	{
 		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
 		PRT_FORGNVALUE *fVal = value->valueUnion.frgn;
 		PRT_FORGNVALUE *cVal = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
-		retVal->discriminator = PRT_VALKIND_FORGN;
+		retVal->discriminator = PRT_VALUE_KIND_FORGN;
 		retVal->valueUnion.frgn = cVal;
 		cVal->typeTag = fVal->typeTag;
 		cVal->value = prtForeignTypeDecls[fVal->typeTag].cloneFun(fVal->value);
 		return retVal;
 	}
-	case PRT_VALKIND_MAP:
+	case PRT_VALUE_KIND_MAP:
 	{
 		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 		PRT_MAPVALUE *map = (PRT_MAPVALUE *)PrtMalloc(sizeof(PRT_MAPVALUE));
-		retVal->discriminator = PRT_VALKIND_MAP;
+		retVal->discriminator = PRT_VALUE_KIND_MAP;
 		retVal->valueUnion.map = map;
 		PRT_MAPVALUE *mVal = value->valueUnion.map;
 		map->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacities[mVal->capNum], sizeof(PRT_MAPNODE *));
@@ -1225,11 +1225,11 @@ PRT_VALUE * PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE *value)
 
 		return retVal;
 	}
-	case PRT_VALKIND_TUPLE:
+	case PRT_VALUE_KIND_TUPLE:
 	{
 		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
 		PRT_TUPVALUE *cVal = (PRT_TUPVALUE *)PrtMalloc(sizeof(PRT_TUPVALUE));
-		retVal->discriminator = PRT_VALKIND_TUPLE;
+		retVal->discriminator = PRT_VALUE_KIND_TUPLE;
 		retVal->valueUnion.tuple = cVal;
 
 		PRT_UINT32 i;
@@ -1244,11 +1244,11 @@ PRT_VALUE * PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE *value)
 
 		return retVal;
 	}
-	case PRT_VALKIND_SEQ:
+	case PRT_VALUE_KIND_SEQ:
 	{
 		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
 		PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtMalloc(sizeof(PRT_SEQVALUE));
-		retVal->discriminator = PRT_VALKIND_SEQ;
+		retVal->discriminator = PRT_VALUE_KIND_SEQ;
 		retVal->valueUnion.seq = cVal;
 
 		PRT_SEQVALUE *sVal = value->valueUnion.seq;
@@ -1283,11 +1283,11 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsNullValue(_In_ PRT_VALUE *value)
 	PRT_VALUE_KIND kind = value->discriminator;
 	switch (kind)
 	{
-	case PRT_VALKIND_NULL:
+	case PRT_VALUE_KIND_NULL:
 		return PRT_TRUE;
-	case PRT_VALKIND_EVENT:
+	case PRT_VALUE_KIND_EVENT:
 		return value->valueUnion.ev == PRT_SPECIAL_EVENT_NULL ? PRT_TRUE : PRT_FALSE;
-	case PRT_VALKIND_MID:
+	case PRT_VALUE_KIND_MID:
 	{
 		PRT_MACHINEID *id = value->valueUnion.mid;
 		return
@@ -1297,12 +1297,12 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsNullValue(_In_ PRT_VALUE *value)
 			id->processId.data4 == PrtNullMachineId.processId.data4 &&
 			id->machineId == PrtNullMachineId.machineId ? PRT_TRUE : PRT_FALSE;
 	}
-	case PRT_VALKIND_BOOL:
-	case PRT_VALKIND_INT:
-	case PRT_VALKIND_FORGN:
-	case PRT_VALKIND_MAP:
-	case PRT_VALKIND_TUPLE:
-	case PRT_VALKIND_SEQ:
+	case PRT_VALUE_KIND_BOOL:
+	case PRT_VALUE_KIND_INT:
+	case PRT_VALUE_KIND_FORGN:
+	case PRT_VALUE_KIND_MAP:
+	case PRT_VALUE_KIND_TUPLE:
+	case PRT_VALUE_KIND_SEQ:
 		return PRT_FALSE;
 	default:
 		PrtAssert(PRT_FALSE, "PrtIsNullValue: Invalid value");
@@ -1336,18 +1336,18 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE *value, _In_ PRT_TYPE *
 	case PRT_KIND_NULL:
 		return PrtIsNullValue(value);
 	case PRT_KIND_BOOL:
-		return vkind == PRT_VALKIND_BOOL ? PRT_TRUE : PRT_FALSE;
+		return vkind == PRT_VALUE_KIND_BOOL ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_EVENT:
-		return (vkind == PRT_VALKIND_EVENT || PrtIsNullValue(value)) ? PRT_TRUE : PRT_FALSE;
+		return (vkind == PRT_VALUE_KIND_EVENT || PrtIsNullValue(value)) ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_MACHINE:
-		return (vkind == PRT_VALKIND_MID || PrtIsNullValue(value)) ? PRT_TRUE : PRT_FALSE;
+		return (vkind == PRT_VALUE_KIND_MID || PrtIsNullValue(value)) ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_INT:
-		return vkind == PRT_VALKIND_INT ? PRT_TRUE : PRT_FALSE;
+		return vkind == PRT_VALUE_KIND_INT ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_FORGN:
-		return (vkind == PRT_VALKIND_FORGN && value->valueUnion.frgn->typeTag == type->typeUnion.typeTag) ? PRT_TRUE : PRT_FALSE;
+		return (vkind == PRT_VALUE_KIND_FORGN && value->valueUnion.frgn->typeTag == type->typeUnion.typeTag) ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_MAP:
 	{
-		if (vkind != PRT_VALKIND_MAP)
+		if (vkind != PRT_VALUE_KIND_MAP)
 		{
 			return PRT_FALSE;
 		}
@@ -1369,7 +1369,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE *value, _In_ PRT_TYPE *
 	}
 	case PRT_KIND_NMDTUP:
 	{
-		if (vkind != PRT_VALKIND_TUPLE)
+		if (vkind != PRT_VALUE_KIND_TUPLE)
 		{
 			return PRT_FALSE;
 		}
@@ -1393,7 +1393,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE *value, _In_ PRT_TYPE *
 	}
 	case PRT_KIND_TUPLE:
 	{
-		if (vkind != PRT_VALKIND_TUPLE)
+		if (vkind != PRT_VALUE_KIND_TUPLE)
 		{
 			return PRT_FALSE;
 		}
@@ -1417,7 +1417,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE *value, _In_ PRT_TYPE *
 	}
 	case PRT_KIND_SEQ:
 	{
-		if (vkind != PRT_VALKIND_SEQ)
+		if (vkind != PRT_VALUE_KIND_SEQ)
 		{
 			return PRT_FALSE;
 		}
@@ -1453,22 +1453,22 @@ void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE *value)
 	PRT_VALUE_KIND kind = value->discriminator;
 	switch (kind)
 	{
-	case PRT_VALKIND_BOOL:
-	case PRT_VALKIND_EVENT:
-	case PRT_VALKIND_INT:
-	case PRT_VALKIND_NULL:
+	case PRT_VALUE_KIND_BOOL:
+	case PRT_VALUE_KIND_EVENT:
+	case PRT_VALUE_KIND_INT:
+	case PRT_VALUE_KIND_NULL:
 	{
 		PrtFree(value);
 		break;
 	}
-	case PRT_VALKIND_MID:
+	case PRT_VALUE_KIND_MID:
 	{
 		PRT_MACHINEID *id = value->valueUnion.mid;
 		PrtFree(id);
 		PrtFree(value);
 		break;
 	}
-	case PRT_VALKIND_FORGN:
+	case PRT_VALUE_KIND_FORGN:
 	{
 		PRT_FORGNVALUE *fVal = value->valueUnion.frgn;
 		prtForeignTypeDecls[fVal->typeTag].freeFun(fVal->value);
@@ -1476,7 +1476,7 @@ void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE *value)
 		PrtFree(value);
 		break;
 	}
-	case PRT_VALKIND_MAP:
+	case PRT_VALUE_KIND_MAP:
 	{
 		PRT_MAPVALUE *mVal = value->valueUnion.map;
 		PRT_MAPNODE *next = mVal->first;
@@ -1495,7 +1495,7 @@ void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE *value)
 		PrtFree(value);
 		break;
 	}
-	case PRT_VALKIND_TUPLE:
+	case PRT_VALUE_KIND_TUPLE:
 	{
 		PRT_UINT32 i;
 		PRT_TUPVALUE *tVal = value->valueUnion.tuple;
@@ -1510,7 +1510,7 @@ void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE *value)
 		PrtFree(value);
 		break;
 	}
-	case PRT_VALKIND_SEQ:
+	case PRT_VALUE_KIND_SEQ:
 	{
 		PRT_SEQVALUE *sVal = value->valueUnion.seq;
 		if (sVal->values != NULL)
@@ -1544,31 +1544,31 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsValidValue(_In_ PRT_VALUE *value)
 	PRT_VALUE_KIND kind = value->discriminator;
 	switch (kind)
 	{
-	case PRT_VALKIND_BOOL:
-		return value->discriminator == PRT_VALKIND_BOOL &&
+	case PRT_VALUE_KIND_BOOL:
+		return value->discriminator == PRT_VALUE_KIND_BOOL &&
 			(value->valueUnion.bl == PRT_TRUE || value->valueUnion.bl == PRT_FALSE);
-	case PRT_VALKIND_EVENT:
-		return value->discriminator == PRT_VALKIND_EVENT;
-	case PRT_VALKIND_MID:
-		return value->discriminator == PRT_VALKIND_MID;
-	case PRT_VALKIND_INT:
-		return value->discriminator == PRT_VALKIND_INT;
-	case PRT_VALKIND_NULL:
-		return value->discriminator == PRT_VALKIND_NULL &&
+	case PRT_VALUE_KIND_EVENT:
+		return value->discriminator == PRT_VALUE_KIND_EVENT;
+	case PRT_VALUE_KIND_MID:
+		return value->discriminator == PRT_VALUE_KIND_MID;
+	case PRT_VALUE_KIND_INT:
+		return value->discriminator == PRT_VALUE_KIND_INT;
+	case PRT_VALUE_KIND_NULL:
+		return value->discriminator == PRT_VALUE_KIND_NULL &&
 			value->valueUnion.ev == PRT_SPECIAL_EVENT_NULL;
-	case PRT_VALKIND_FORGN:
-		return value->discriminator == PRT_VALKIND_FORGN &&
+	case PRT_VALUE_KIND_FORGN:
+		return value->discriminator == PRT_VALUE_KIND_FORGN &&
 			value->valueUnion.frgn != NULL &&
 			value->valueUnion.frgn->typeTag < prtNumForeignTypeDecls &&
 			prtForeignTypeDecls[value->valueUnion.frgn->typeTag].declIndex == value->valueUnion.frgn->typeTag;
-	case PRT_VALKIND_MAP:
-		return value->discriminator == PRT_VALKIND_MAP &&
+	case PRT_VALUE_KIND_MAP:
+		return value->discriminator == PRT_VALUE_KIND_MAP &&
 			value->valueUnion.map != NULL;
-	case PRT_VALKIND_SEQ:
-		return value->discriminator == PRT_VALKIND_SEQ &&
+	case PRT_VALUE_KIND_SEQ:
+		return value->discriminator == PRT_VALUE_KIND_SEQ &&
 			value->valueUnion.seq != NULL;
-	case PRT_VALKIND_TUPLE:
-		return value->discriminator == PRT_VALKIND_TUPLE &&
+	case PRT_VALUE_KIND_TUPLE:
+		return value->discriminator == PRT_VALUE_KIND_TUPLE &&
 			value->valueUnion.tuple != NULL &&
 			value->valueUnion.tuple->values != NULL;
 	default:

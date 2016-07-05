@@ -1,5 +1,5 @@
 arg: ..\NewMonitor_v.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, two machines, monitor invocation with null event

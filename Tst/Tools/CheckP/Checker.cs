@@ -33,7 +33,7 @@ namespace CheckP
                 errorString = "";
                 evt = new AutoResetEvent(false);
                 pciProcess = new Process();
-                pciProcess.StartInfo = new ProcessStartInfo(pciPath, "/shortFileNames /server /doNotErase")
+                pciProcess.StartInfo = new ProcessStartInfo(pciPath, "/shortFileNames /server")
                 {
                     CreateNoWindow = true,
                     UseShellExecute = false,
@@ -214,7 +214,11 @@ namespace CheckP
                 {
                     testArgs.Add(pcArg);
                 }
-                else if (pcArg == "/shortFileNames" || pcArg == "/doNotErase")
+                else if (pcArg == "/test")
+                {
+                    loadArgs.Add(pcArg);
+                }
+                else if (pcArg == "/shortFileNames")
                 {
                     // ignore
                 }

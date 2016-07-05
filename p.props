@@ -10,6 +10,7 @@
         <CommonTargets>$(MSBuildThisFileDirectory)Bld\Targets\common.targets</CommonTargets>
         <ZCompiler>$(MSBuildThisFileDirectory)Bld\Drops\$(Configuration)\$(UnifiedPlatform)\Binaries\zc.exe</ZCompiler>
         <Zinger>$(MSBuildThisFileDirectory)Bld\Drops\$(Configuration)\$(UnifiedPlatform)\Binaries\zinger.exe</Zinger>
+        <PTargets>$(MSBuildThisFileDirectory)Bld\Targets</PTargets>
     </PropertyGroup>
     
 </Project>

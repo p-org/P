@@ -1,5 +1,5 @@
 arg: ..\ExprOperators.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, 3.4. P expressions and operators

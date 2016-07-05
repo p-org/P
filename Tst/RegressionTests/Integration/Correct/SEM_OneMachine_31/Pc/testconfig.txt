@@ -1,5 +1,5 @@
 arg: ..\RaisedHalt.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, P semantics test: one machine, "halt" is raised and unhandled

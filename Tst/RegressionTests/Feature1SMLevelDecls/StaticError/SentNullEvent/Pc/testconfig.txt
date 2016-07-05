@@ -1,5 +1,5 @@
 arg: ..\SentNullEvent.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: 1.7.7. "null" event cannot be sent

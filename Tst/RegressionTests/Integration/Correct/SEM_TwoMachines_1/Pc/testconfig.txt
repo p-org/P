@@ -1,5 +1,5 @@
 arg: ..\EventSentAfterSentHalt.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, P semantics test: event sent after machine is "halted" ("halt" event unhandled)

@@ -1,6 +1,6 @@
 arg: ..\Liveness_NONDET.p
 arg: /shortFileNames
 arg: /liveness
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, Liveness: simplest sample demonstrating NONDET in liveness

@@ -1,0 +1,22 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 2 distinct states explored
+OUT: 
+EXIT: 3
+
+=================================
+frgn.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine M-0
+<StateLog> Machine M-0 entering State Init
+
+Error:
+P Assertion failed:
+Expression: assert(tmpVar_1.bl,)
+Comment: foreigntypes.p (21, 6): Assert failed

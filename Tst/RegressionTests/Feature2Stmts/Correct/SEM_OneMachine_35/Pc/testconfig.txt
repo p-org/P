@@ -1,5 +1,5 @@
 arg: ..\bubble_sort.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, P Semantics, one machine, sequences, "while", "if-then-else"

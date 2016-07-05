@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <UnifiedPlatform>$(Platform)</UnifiedPlatform>
+        <!-- C++ projects use "Win32" for "x86" platform and .NET projects use 'x86' -->
+        <!-- So this new property unifies that difference and moves everything to 'x86' -->
+        <UnifiedPlatform Condition="'$(Platform)'=='Win32'">x86</UnifiedPlatform>
+        <DropFolder>$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\$(UnifiedPlatform)</DropFolder>
+        <CleanDependsOn>$(CleanDependsOn);CleanSdkHeaders;CleanClientFiles;CleanCompileP</CleanDependsOn>
+
+        <!-- This is so that the C++ project will do incremental build of .p files correctly -->
+        <DisableFastUpToDateCheck >True</DisableFastUpToDateCheck>
+        
+       <PrepareForBuildDependsOn>$(PrepareForBuildDependsOn);BuildPRuntime</PrepareForBuildDependsOn>
+    </PropertyGroup>
+    
+    <Target Name="BuildPRuntime" BeforeTargets="BeforeBuildGenerateSources" 
+             Outputs="$(DropFolder)\Binaries\pc.exe"
+              >
+        <Exec Condition="!Exists('$(DropFolder)\Binaries\pc.exe')"  
+               Command="$(PLib)\Bld\build.bat $(Configuration) $(Platform)" 
+              />
+    </Target>
+    
+</Project>    

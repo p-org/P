@@ -339,7 +339,9 @@ namespace RunPTool
                         else
                         {
                             //check that for each "testconfig.txt" file, parent dir is called Pc, Zing or Prt:
-                            if ((di.Name != "Pc") && (di.Name != "Zing") && (di.Name != "Prt"))
+                            if (string.Compare(di.Name, "Pc", StringComparison.OrdinalIgnoreCase) != 0 && 
+                                string.Compare(di.Name, "Zing", StringComparison.OrdinalIgnoreCase) != 0 && 
+                                string.Compare(di.Name, "Prt", StringComparison.OrdinalIgnoreCase) != 0)
                             {
                                 Console.WriteLine("Incorrect location of config file under:");
                                 Console.WriteLine("{0}", di.FullName);

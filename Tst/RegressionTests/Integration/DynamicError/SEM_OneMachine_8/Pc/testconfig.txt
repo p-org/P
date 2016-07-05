@@ -1,5 +1,5 @@
 arg: ..\GotoToItself.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, P semantics test: one machine, "goto" to the same state; "send" in entry and exit

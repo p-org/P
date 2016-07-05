@@ -1,6 +1,6 @@
 arg: ..\Liveness_1_WarmState.p
 arg: /shortFileNames
 arg: /liveness
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, Liveness: "warm" state instead of "cold"

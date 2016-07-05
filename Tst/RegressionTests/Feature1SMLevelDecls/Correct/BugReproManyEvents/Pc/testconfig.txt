@@ -1,5 +1,5 @@
 arg: ..\CMain.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, bug repro with more than 32 events

@@ -3,7 +3,7 @@
    modules.C = '"C at ..\Domains\C.4ml"'
 ]
 
-transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, test: Boolean) returns (out:: C)
+transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) returns (out:: C)
 /*
 [
     compiler_ProductivityCheck = "TypeConstant[0], ExprDepNum[1]"
@@ -321,6 +321,14 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 	TranslatedTypeExpr ::= (type: TypeExpr).
 	TranslatedTypeExpr(eType) :- TypeExpansion(_, eType).
 
+	TranslatedTypeExpr(t) :- in.SubSE(c, e), in.TypeOf(c, e, t), e = in.Tuple(_), t : in.TypeExpr.
+	TranslatedTypeExpr(t) :- in.SubSE(c, e), in.TypeOf(c, e, t), e = in.NamedTuple(_), t : in.TypeExpr.
+
+	TranslatedTypeExpr(h)  :- TranslatedTypeExpr(t), t = in.TupType(h, _). 
+	TranslatedTypeExpr(t') :- TranslatedTypeExpr(t), t = in.TupType(_, t'), t' : in.TypeExpr. 
+	TranslatedTypeExpr(h)  :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(_, _, h), _). 
+	TranslatedTypeExpr(t') :- TranslatedTypeExpr(t), t = in.NmdTupType(_, t'), t' : in.TypeExpr. 
+
 	//// Labels a type expression with a number greater than the labels of all its sub-expressions.
 	//// TypeId linearizes the dependency order to get a schedule for emitting type expressions.
 	TypeId      ::= (id: Natural, type: TypeExpr).
@@ -533,12 +541,12 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 
 	//// Base types
 	BaseConstant2Kind ::= (const: in.Expr, kind: String, value: out.Expr).
-	BaseConstant2Kind(NulApp(NULL), "PRT_VALKIND_NULL", out.Ident("PRT_SPECIAL_EVENT_NULL")).
-	BaseConstant2Kind(NulApp(HALT), "PRT_VALKIND_EVENT", out.Ident("PRT_SPECIAL_EVENT_HALT")).
-	BaseConstant2Kind(e, "PRT_VALKIND_EVENT", out.Ident(eventName)) :- ConstExpr(e), e = Name(n), eventDecl is EventDecl(n, _, _), DeclId(eventDecl, _, eventName). 
-	BaseConstant2Kind(e, "PRT_VALKIND_INT", IntLit(n, DEC, U)) :- ConstExpr(e), e = NulApp(n), n: Integer.
-	BaseConstant2Kind(e, "PRT_VALKIND_BOOL", out.Ident("PRT_FALSE")) :- ConstExpr(e), e = NulApp(FALSE).
-	BaseConstant2Kind(e, "PRT_VALKIND_BOOL", out.Ident("PRT_TRUE")) :- ConstExpr(e), e = NulApp(TRUE).
+	BaseConstant2Kind(NulApp(NULL), "PRT_VALUE_KIND_NULL", out.Ident("PRT_SPECIAL_EVENT_NULL")).
+	BaseConstant2Kind(NulApp(HALT), "PRT_VALUE_KIND_EVENT", out.Ident("PRT_SPECIAL_EVENT_HALT")).
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_EVENT", out.Ident(eventName)) :- ConstExpr(e), e = Name(n), eventDecl is EventDecl(n, _, _), DeclId(eventDecl, _, eventName). 
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", IntLit(n, DEC, U)) :- ConstExpr(e), e = NulApp(n), n: Integer.
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_FALSE")) :- ConstExpr(e), e = NulApp(FALSE).
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_TRUE")) :- ConstExpr(e), e = NulApp(TRUE).
 
 	Constant(c, m, defs) :- ConstId(m, c), Constant(_, m - 1, before), BaseConstant2Kind(c, kind, value),
 							defs = out.Section(before, def), def = out.VarDef(NIL, NmdType(NIL, "PRT_VALUE"), constName, constStruct),
@@ -754,10 +762,6 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
     /******            Generate Fun Implementations         ******/
     /*************************************************************/	
 
-   	RealOwner ::= (f: FunDecl).
-	RealOwner(f) :- f is FunDecl, f.owner = NIL; 
-	                f is FunDecl, f.owner.kind = REAL.
-
 	ContextTransStmtExpr ::= (TypingContext, out.Stmt + out.Cases + out.Case + out.Args + { NIL }).
 	ContextTransStmtExpr(c, body) :- BodyTrans(c, body).
 	ContextTransStmtExpr(c, s1), ContextTransStmtExpr(c, s2) :- ContextTransStmtExpr(c, out.Seq(s1, s2)).
@@ -788,7 +792,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 	//// Computes the variable definitions required for function bodies.
 	BodyTmpVars ::= (context: TypingContext, nExprVars: Integer, nStmtVars: Integer, defs: out.Defs + { NIL }).
 	
-	BodyTmpVars(c, nExprs, nStmts, NIL) :- SubCntxt(c), 
+	BodyTmpVars(c, nExprs, nStmts, NIL) :- SubSE(c, _), 
 	                                       nExprs = maxAll(-1, { k | SubSE(c, s), s : in.Stmt, RhsEvalOrder(s, _, _, k); 
 										                             SubSE(c, s), s : in.FunStmt, RhsEvalOrder(s, _, _, k'), k = k' + 1}), nExprs : Integer,
 	                                       nStmts = maxAll(0,  { k | SubSE(c, s), s : in.Stmt, StmtExprSize(s, k) }) - 1, nStmts : Integer.
@@ -1021,9 +1025,11 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
     /******            Generate Fun Decl Arrays             ******/
     /*************************************************************/	
 	TypeToExpr ::= (type: TypeExpr, expr: out.Expr).
-	TypeToExpr(type, expr) :- TypeExpansion(type, etype), TypeId(typeIndex, etype), 
+
+	TypeToExpr(type, expr) :- TypeId(typeIndex, type), 
 	                          typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), 
 							  expr = out.UnApp(ADDR, Ident(typeName)).
+	TypeToExpr(type, expr) :- TypeExpansion(type, etype), TypeToExpr(etype, expr).
 
 	ParamsType ::= (decl: FunDecl, expr: out.Expr).
 	ParamsType(d, expr) :- d is FunDecl, d.params = NIL, expr = out.Ident("NULL").
@@ -1054,7 +1060,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 								  Init(arr)).
 
 	ReceiveDeclConcat ::= (pos: Natural, decl: AnonOrNamedFun, arr: out.Args + { NIL }).
-	ReceiveDeclConcat(c, decl, NIL) :- decl is AnonOrNamedFun, c = count({r | r: Receive, SubSE(decl, r)}).
+	ReceiveDeclConcat(c, decl, NIL) :- decl is AnonOrNamedFun, SubSE(decl, _), c = count({r | r: Receive, SubSE(decl, r)}).
 	ReceiveDeclConcat(c, decl, arr) :- decl is AnonOrNamedFun, SubSE(decl, receive), receive = Receive(cases, label, _),
 									   c = toOrdinal(receive, 0, {r | r: Receive, SubSE(decl, r)}), 
 									   ReceiveDeclConcat(c + 1, decl, arr'), arr = out.Args(def, arr'),
@@ -1078,6 +1084,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 
 	ReceiveDeclInit ::= (decl: AnonOrNamedFun, nReceives: Natural, receives: out.Expr).
 	ReceiveDeclInit(decl, 0, receives) :- decl is AnonOrNamedFun, ReceiveDeclConcat(0, decl, NIL), receives = Ident("NULL").
+	ReceiveDeclInit(decl, 0, receives) :- decl is FunDecl, RealOwner(decl), decl.kind = MODEL, receives = Ident("NULL").
 	ReceiveDeclInit(decl, nReceives, receives) :- 
 				decl is AnonOrNamedFun, ReceiveDeclConcat(nReceives, decl, NIL), ReceiveDeclConcat(0, decl, arr), arr: out.Args,
 				DeclId(decl, _, declName), receives = Ident(strJoin("P_GEND_RECEIVE_", declName)).
@@ -1611,10 +1618,10 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 	RhsExpr ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, trans: out.FunApp, doFree: out.Ident).
 	RhsExpr(c, s, i, macroApp, doFree) :- RhsTrans(c, s, i, k, args), RhsMaxOrder(s, i, k), RhsNext(c, s, i, k, e, _), 
 										  macroApp = out.FunApp(Ident(strJoin("P_EXPR_", toString(k))), args),
-										  ValueAvailable(e, TRUE), doFree = out.Ident("PRT_FALSE"). 
+										  DoFree(e, FALSE), doFree = out.Ident("PRT_FALSE"). 
 	RhsExpr(c, s, i, macroApp, doFree) :- RhsTrans(c, s, i, k, args), RhsMaxOrder(s, i, k), RhsNext(c, s, i, k, e, _), 
 										  macroApp = out.FunApp(Ident(strJoin("P_EXPR_", toString(k))), args),
-										  ValueAvailable(e, FALSE), doFree = out.Ident("PRT_TRUE"). 
+										  DoFree(e, TRUE), doFree = out.Ident("PRT_TRUE"). 
 
 	//// Translates in context the ith expression appearing in stmt into a list of C args.
 	//// The number subId indicates the id of the subexpression currently at the head of the trans list.
@@ -1623,9 +1630,9 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 	//// The next expression that needs to be translated, given the translation of the previous expression.
 	RhsNext ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, subId: Natural + { -1 }, nxt: in.Expr, prv: out.Args + { NIL }).
 	RhsNext(c, s, i, j', e, trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1,
-									  ValueAvailable(e, TRUE), trans = out.Args(Ident("PRT_FALSE"), tail).
+									  DoFree(e, FALSE), trans = out.Args(Ident("PRT_FALSE"), tail).
 	RhsNext(c, s, i, j', e, trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1,
-									  ValueAvailable(e, FALSE), trans = out.Args(Ident("PRT_TRUE"), tail).
+									  DoFree(e, TRUE), trans = out.Args(Ident("PRT_TRUE"), tail).
 									  
 	//// Translates (named) exprs into a list of args that are applied to the P_TUPLE macro.
 	//// The number subId indicates the id of the subexpression currently at the head of the trans list.
@@ -1675,7 +1682,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 
 	//// Machine creation
 	MkMachineFuncName ::= (s: String).
-	MkMachineFuncName(s) :- %test = FALSE, s = "PrtMkMachine"; %test = TRUE, s = "PrtMkMachineTest".
+	MkMachineFuncName(s) :- s = "PrtMkMachine".
 
 	FormalTrans ::= (c: FunDecl, f: String, e: out.Args).
 	FormalTrans(c, f, e) :- FormalParam(c, f), LocalVars(c, locals), IndexOf(locals, f, formalIndex, _),
@@ -1860,14 +1867,14 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(GE, getInt1, getInt2), NIL)).
 
 	Accessor ::= (c: TypingContext, e: in.Expr, acc: out.Expr).
-	Accessor(c, e, acc)			 :- TypeOf(c, e, MapType(_, _)), ValueAvailable(e, TRUE), acc = Ident("PrtMapGetNC").
-	Accessor(c, e, acc)			 :- TypeOf(c, e, MapType(_, _)), ValueAvailable(e, FALSE), acc = Ident("PrtMapGet").
-	Accessor(c, e, acc)			 :- TypeOf(c, e, SeqType(_)), ValueAvailable(e, TRUE), acc = Ident("PrtSeqGetNC").
-	Accessor(c, e, acc)			 :- TypeOf(c, e, SeqType(_)), ValueAvailable(e, FALSE), acc = Ident("PrtSeqGet").
-	Accessor(c, e, acc)			 :- TypeOf(c, e, TupType(_, _)), ValueAvailable(e, TRUE), acc = Ident("PrtTupleGetNC").
-	Accessor(c, e, acc)			 :- TypeOf(c, e, TupType(_, _)), ValueAvailable(e, FALSE), acc = Ident("PrtTupleGet").
-	Accessor(c, e, acc)			 :- TypeOf(c, e, NmdTupType(_, _)), ValueAvailable(e, TRUE), acc = Ident("PrtTupleGetNC").
-	Accessor(c, e, acc)			 :- TypeOf(c, e, NmdTupType(_, _)), ValueAvailable(e, FALSE), acc = Ident("PrtTupleGet").
+	Accessor(c, e, acc)			 :- TypeOf(c, e, MapType(_, _)), DoFree(e, FALSE), acc = Ident("PrtMapGetNC").
+	Accessor(c, e, acc)			 :- TypeOf(c, e, MapType(_, _)), DoFree(e, TRUE), acc = Ident("PrtMapGet").
+	Accessor(c, e, acc)			 :- TypeOf(c, e, SeqType(_)), DoFree(e, FALSE), acc = Ident("PrtSeqGetNC").
+	Accessor(c, e, acc)			 :- TypeOf(c, e, SeqType(_)), DoFree(e, TRUE), acc = Ident("PrtSeqGet").
+	Accessor(c, e, acc)			 :- TypeOf(c, e, TupType(_, _)), DoFree(e, FALSE), acc = Ident("PrtTupleGetNC").
+	Accessor(c, e, acc)			 :- TypeOf(c, e, TupType(_, _)), DoFree(e, TRUE), acc = Ident("PrtTupleGet").
+	Accessor(c, e, acc)			 :- TypeOf(c, e, NmdTupType(_, _)), DoFree(e, FALSE), acc = Ident("PrtTupleGetNC").
+	Accessor(c, e, acc)			 :- TypeOf(c, e, NmdTupType(_, _)), DoFree(e, TRUE), acc = Ident("PrtTupleGet").
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 							        e = in.BinApp(IDX, e1, e2), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
@@ -1905,10 +1912,16 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 									e = in.Default(type), TypeToExpr(type, expr),
 									ec = out.FunApp(Ident("PrtMkDefaultValue"), Args(expr, NIL)).
 
-	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), DoFree(e, FALSE),
 									e = in.Cast(arg, type), RhsEvalOrder(s, i, arg, tmp1), TypeToExpr(type, expr), 
 									getArg = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
 									ec = out.FunApp(Ident("PrtCastValue"), Args(getArg, Args(expr, NIL))).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), DoFree(e, TRUE),
+									e = in.Cast(arg, type), RhsEvalOrder(s, i, arg, tmp1), TypeToExpr(type, expr), 
+									getArg = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
+									ec1 = out.FunApp(Ident("PrtCastValue"), Args(getArg, Args(expr, NIL))),
+									ec = out.FunApp(Ident("PrtCloneValue"), Args(ec1, NIL)).
 	
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = in.Tuple(es), TypeOf(c, e, type), TypeToExpr(type, expr),
@@ -2011,7 +2024,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 
 	//// Send
 	SendFuncName ::= (n: Ident).
-	SendFuncName(n) :- %test = FALSE, n = Ident("PrtSend"); %test = TRUE, n = Ident("PrtSendTest").	
+	SendFuncName(n) :- n = Ident("PrtSend").	
 							
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
 	                       s = in.Send(dest, ev, NIL, _, x), RhsExpr(c, s, 0, destTrans, doFreeDestTrans), RhsExpr(c, s, 1, evTrans, doFreeEvTrans),
@@ -2176,25 +2189,25 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean, tes
 	/******            Value availability                   ******/
 	/*************************************************************/
 
-	ValueAvailable ::= (expr: in.Expr, Boolean).
-	ValueAvailable(NulApp(NULL), TRUE).
-	ValueAvailable(NulApp(HALT), TRUE).
-	ValueAvailable(e, TRUE) :- SubSE(_, e), e: in.Name.
-	ValueAvailable(e, TRUE) :- SubSE(_, e), e: in.NulApp, e.op != NONDET, e.op != FAIRNONDET.
+	DoFree ::= (expr: in.Expr, Boolean).
+	DoFree(NulApp(NULL), FALSE).
+	DoFree(NulApp(HALT), FALSE).
+	DoFree(e, FALSE) :- SubSE(_, e), e: in.Name.
+	DoFree(e, FALSE) :- SubSE(_, e), e: in.NulApp, e.op != NONDET, e.op != FAIRNONDET.
 
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.New.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.FunApp.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.NulApp, e.op = NONDET.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.NulApp, e.op = FAIRNONDET.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.UnApp.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.BinApp, e.op != IDX.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.Default.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.Tuple.
-	ValueAvailable(e, FALSE) :- SubSE(_, e), e: in.NamedTuple.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.New.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.FunApp.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.NulApp, e.op = NONDET.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.NulApp, e.op = FAIRNONDET.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.UnApp.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.BinApp, e.op != IDX.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.Default.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.Tuple.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.NamedTuple.
 
-	ValueAvailable(e, b) :- SubSE(_, e), e = in.BinApp(IDX, e', _), ValueAvailable(e', b).
-	ValueAvailable(e, b) :- SubSE(_, e), e = in.Field(e', _), ValueAvailable(e', b).
-	ValueAvailable(e, b) :- SubSE(_, e), e = in.Cast(e', _), ValueAvailable(e', b).
+	DoFree(e, b) :- SubSE(_, e), e = in.BinApp(IDX, e', _), DoFree(e', b).
+	DoFree(e, b) :- SubSE(_, e), e = in.Field(e', _), DoFree(e', b).
+	DoFree(e, b) :- SubSE(_, e), e = in.Cast(e', _), DoFree(e', b).
 
 
     /*************************************************************/

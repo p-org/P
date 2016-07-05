@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\p.props" />
   <ItemGroup Label="ProjectConfigurations">
@@ -162,7 +162,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_USE_IDL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PRT_NO_ASSERT;PRT_STATIC;PRT_PLAT_WINUSER;PRT_USE_IDL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -178,7 +178,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_USE_IDL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PRT_NO_ASSERT;PRT_STATIC;PRT_PLAT_WINUSER;PRT_USE_IDL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -188,7 +188,7 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-    <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />
+  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>

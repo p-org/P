@@ -1,5 +1,5 @@
 arg: ..\FunctionParMutated.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, "send" in function which mutates its parameters

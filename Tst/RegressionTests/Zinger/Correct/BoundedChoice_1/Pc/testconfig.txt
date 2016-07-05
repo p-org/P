@@ -1,5 +1,5 @@
 arg: ..\BoundedChoice_1.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, Testing bounded choice operator in zing

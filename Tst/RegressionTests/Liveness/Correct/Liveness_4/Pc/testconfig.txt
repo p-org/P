@@ -1,6 +1,6 @@
 arg: ..\Liveness_4.p
 arg: /shortFileNames
 arg: /liveness
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, Liveness Bug : Liveness bug detected with the target thread blocked (no deadlock)

@@ -1,5 +1,5 @@
 arg: ..\PushImplicitPopWithRaise.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, P semantics test: one machine, "push" with implicit "pop" when the unhandled event was raised

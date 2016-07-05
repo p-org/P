@@ -1,0 +1,5 @@
+arg: ..\foreigntypes.p
+arg: /shortFileNames
+arg: /test
+arg: /outputDir:..\.
+dsc: pc.exe: test foreign type implementation.

@@ -1,62 +1,109 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <PropertyGroup>
-        <UnifiedPlatform>$(Platform)</UnifiedPlatform>
-        <!-- C++ projects use "Win32" for "x86" platform and .NET projects use 'x86' -->
-        <!-- So this new property unifies that difference and moves everything to 'x86' -->
-        <UnifiedPlatform Condition="'$(Platform)'=='Win32'">x86</UnifiedPlatform>
-        <DropFolder>$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\$(UnifiedPlatform)</DropFolder>
-        <CleanDependsOn>$(CleanDependsOn);CleanSdkHeaders;CleanClientFiles;CleanCompileP</CleanDependsOn>
+  <PropertyGroup>
+    <UnifiedPlatform>$(Platform)</UnifiedPlatform>
+    <!-- C++ projects use "Win32" for "x86" platform and .NET projects use 'x86' -->
+    <!-- So this new property unifies that difference and moves everything to 'x86' -->
+    <UnifiedPlatform Condition="'$(Platform)'=='Win32'">x86</UnifiedPlatform>
+    <DropFolder>$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\$(UnifiedPlatform)</DropFolder>
+    <CleanDependsOn>$(CleanDependsOn);CleanSdkHeaders;CleanClientFiles;CleanCompileP</CleanDependsOn>
 
-        <!-- This is so that the C++ project will do incremental build of .p files correctly -->
-        <DisableFastUpToDateCheck >True</DisableFastUpToDateCheck>
+    <!-- This is so that the C++ project will do incremental build of .p files correctly -->
+    <DisableFastUpToDateCheck >True</DisableFastUpToDateCheck>
+  </PropertyGroup>
+  
+  <UsingTask
+    TaskName="CompareDates"
+    TaskFactory="CodeTaskFactory" 
+    AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup>
+      <PCompile ParameterType="System.String" Required="true" />
+      <PFiles ParameterType="System.String[]" Required="true" />
+      <Result ParameterType="System.Boolean" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System"/>
+      <Using Namespace="System.IO"/>
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+        Result = false;
+        if (!string.IsNullOrEmpty(PCompile)) {
+          DateTime lastModified = File.GetLastWriteTime(PCompile);
+          if (PFiles != null) {
+            foreach (string pfile in PFiles)
+            {
+              DateTime pFileModified = File.GetLastWriteTime(pfile);
+              if (pFileModified > lastModified) 
+              {      
+                Log.LogMessage(Path.GetFileName(pfile) + " is newer than " + Path.GetFileName(PCompile), MessageImportance.High);
+                Result = true;
+              }
+            }
+          }
+        }
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+  <Target Name="CheckPFiles" Inputs="@(PFile)" Outputs="%(RootDir)%(Directory)stubs.c">
+    
+    <PropertyGroup>
+      <PCompileTime>%(PCompile.ModifiedTime)</PCompileTime>
     </PropertyGroup>
     
-    <Target Name="CompileP" Inputs="@(PCompile)" Outputs="%(FileName).c;%(FileName).h;stubs.c" BeforeTargets="BeforeBuildGenerateSources">
-        <Message Importance="high" Text="########## compiling p files: @(PCompile) ##################" />
-        <Message Importance="high" Condition="!Exists('$(DropFolder)\Binaries\pc.exe')" 
-                 Text="### pc.exe does not exist in $(DropFolder)\Binaries.  Please build it."/>
-        <Exec Command="$(DropFolder)\Binaries\pc.exe @(PCompile->'%(FullPath)')" />
-        <PropertyGroup>
-            <PFullPath>@(PCompile->'%(FullPath)')</PFullPath>
-            <PDirectory>$([System.IO.Path]::GetDirectoryName($(PFullPath)))</PDirectory>
-        </PropertyGroup>
-        <ItemGroup>
-            <FileWrites Include="@(PCompile->'$(PDirectory)\%(FileName).c')" />
-            <FileWrites Include="@(PCompile->'$(PDirectory)\%(FileName).h')" />
-            <FileWrites Include="$(MSBuildThisFileDirectory)stubs.c" />
-        </ItemGroup>
-    </Target>
-    
-    <Target Name="CleanCompileP" Condition="'@(PCompile)' != ''" >
-       <PropertyGroup>
-          <PFullPath>@(PCompile->'%(FullPath)')</PFullPath>
-          <PDirectory>$([System.IO.Path]::GetDirectoryName($(PFullPath)))</PDirectory>
-       </PropertyGroup>
-        <Delete Files="@(PCompile->'$(PDirectory)\%(FileName).c')"/>
-        <Delete Files="@(PCompile->'$(PDirectory)\%(FileName).h')"/>
-        <Delete Files="$(MSBuildThisFileDirectory)\stubs.c"/>
-    </Target>
+    <CompareDates PCompile="@(PCompile)" PFiles="@(PFile)">  
+      <Output TaskParameter="Result" PropertyName="DateCompareResult" />
+    </CompareDates>
 
-    <Target Name="CopySdkHeaders" Inputs="@(ClInclude)"  Outputs="$(DropFolder)\Headers\%(Filename)" BeforeTargets="PrepareForBuild">    
-        <CreateItem Include="@(ClInclude)" Condition="'%(ClInclude.CopyToHeaders)'=='True'" >
-            <Output TaskParameter="Include" ItemName="SdkHeaders"/>
-        </CreateItem>
-        <Copy SourceFiles="@(SdkHeaders)" DestinationFolder="$(DropFolder)\Headers" />
-    </Target>
+    <!-- this will force a recompile of the PCompile file if any of the @(PFiles) are newer  -->
+    <Delete Files="@(PCompile->'%(RootDir)%(Directory)stubs.c')" Condition="'$(DateCompareResult)'=='true'" />
+  </Target>
+  <Target Name="CompileP" Inputs="@(PCompile);" Outputs="%(RootDir)%(Directory)%(FileName).c;%(RootDir)%(Directory)%(FileName).h;%(RootDir)%(Directory)stubs.c" BeforeTargets="BeforeBuildGenerateSources"
+           DependsOnTargets="CheckPFiles">
+    <Message Importance="high" Text="########## compiling p files: @(PCompile); ##################" />
+    <Message Importance="high" Condition="!Exists('$(DropFolder)\Binaries\pc.exe')"
+             Text="### pc.exe does not exist in $(DropFolder)\Binaries.  Please build it."/>
+    <PropertyGroup> 
+      <PFullPath>@(PCompile->'%(FullPath)')</PFullPath>
+      <PDirectory>$([System.IO.Path]::GetDirectoryName($(PFullPath)))</PDirectory>
+    </PropertyGroup>
+    <ItemGroup>
+      <FileWrites Include="@(PCompile->'$(PDirectory)\%(FileName).c')" />
+      <FileWrites Include="@(PCompile->'$(PDirectory)\%(FileName).h')" />
+      <FileWrites Include="$(MSBuildThisFileDirectory)stubs.c" />
+    </ItemGroup>
+    <Exec Command="$(DropFolder)\Binaries\pc.exe /shared @(PCompile->'%(FullPath)')"  WorkingDirectory="@(PCompile->'%(RootDir)%(Directory)')"/>
+  </Target>
 
-    <Target Name="CleanSdkHeaders">
-        <CreateItem Include="@(ClInclude)" Condition="'%(ClInclude.CopyToHeaders)'=='True'" >
-            <Output TaskParameter="Include" ItemName="SdkHeaders"/>
-        </CreateItem>
-        <Delete Files="@(SdkHeaders->'$(DropFolder)\Headers\%(Filename)%(Extension)')"/>
-    </Target>
+  <Target Name="CleanCompileP" Condition="'@(PCompile)' != ''" >
+    <PropertyGroup>
+      <PFullPath>@(PCompile->'%(FullPath)')</PFullPath>
+      <PDirectory>$([System.IO.Path]::GetDirectoryName($(PFullPath)))</PDirectory>
+    </PropertyGroup>
+    <Delete Files="@(PCompile->'$(PDirectory)\%(FileName).c')"/>
+    <Delete Files="@(PCompile->'$(PDirectory)\%(FileName).h')"/>
+    <Delete Files="$(MSBuildThisFileDirectory)\stubs.c"/>
+  </Target>
 
-    <Target Name="CopyClientFiles" Inputs="@(ClientFile)"  Outputs="$(DropFolder)\ClientFiles\%(Filename)" BeforeTargets="PrepareForBuild">
-        <Copy SourceFiles="@(ClientFile)" DestinationFolder="$(DropFolder)\ClientFiles" />
-    </Target>
+  <Target Name="CopySdkHeaders" Inputs="@(ClInclude)"  Outputs="$(DropFolder)\Headers\%(Filename)" BeforeTargets="PrepareForBuild">
+    <CreateItem Include="@(ClInclude)" Condition="'%(ClInclude.CopyToHeaders)'=='True'" >
+      <Output TaskParameter="Include" ItemName="SdkHeaders"/>
+    </CreateItem>
+    <Copy SourceFiles="@(SdkHeaders)" DestinationFolder="$(DropFolder)\Headers" />
+  </Target>
 
-    <Target Name="CleanClientFiles">
-        <Delete Files="@(ClientFile->'$(DropFolder)\ClientFiles\%(Filename)%(Extension)')" />
-    </Target>
+  <Target Name="CleanSdkHeaders">
+    <CreateItem Include="@(ClInclude)" Condition="'%(ClInclude.CopyToHeaders)'=='True'" >
+      <Output TaskParameter="Include" ItemName="SdkHeaders"/>
+    </CreateItem>
+    <Delete Files="@(SdkHeaders->'$(DropFolder)\Headers\%(Filename)%(Extension)')"/>
+  </Target>
+
+  <Target Name="CopyClientFiles" Inputs="@(ClientFile)"  Outputs="$(DropFolder)\ClientFiles\%(Filename)" BeforeTargets="PrepareForBuild">
+    <Copy SourceFiles="@(ClientFile)" DestinationFolder="$(DropFolder)\ClientFiles" />
+  </Target>
+
+  <Target Name="CleanClientFiles">
+    <Delete Files="@(ClientFile->'$(DropFolder)\ClientFiles\%(Filename)%(Extension)')" />
+  </Target>
 </Project>

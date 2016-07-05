@@ -1,5 +1,5 @@
 arg: ..\Groups.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, 1.6.4. Groups of states

@@ -23,15 +23,15 @@ interface PrtValues_IDL
 	**/
 	typedef enum PRT_VALUE_KIND
 	{
-		PRT_VALKIND_NULL = 0,    /**< The kind of the null value in type null */
-		PRT_VALKIND_BOOL = 1,    /**< The kind of bool values                 */
-		PRT_VALKIND_INT = 2,    /**< The kind of int values                  */
-		PRT_VALKIND_EVENT = 3,    /**< The kind of event id values             */
-		PRT_VALKIND_MID = 4,    /**< The kind of (model) machine id values   */
-		PRT_VALKIND_FORGN = 5,    /**< The kind of all foreign values          */
-		PRT_VALKIND_TUPLE = 6,    /**< The kind of all (named) tuple values    */
-		PRT_VALKIND_SEQ = 7,    /**< The kind of all sequence values         */
-		PRT_VALKIND_MAP = 8,    /**< The kind of all map values              */
+		PRT_VALUE_KIND_NULL = 0,    /**< The kind of the null value in type null */
+		PRT_VALUE_KIND_BOOL = 1,    /**< The kind of bool values                 */
+		PRT_VALUE_KIND_INT = 2,    /**< The kind of int values                  */
+		PRT_VALUE_KIND_EVENT = 3,    /**< The kind of event id values             */
+		PRT_VALUE_KIND_MID = 4,    /**< The kind of (model) machine id values   */
+		PRT_VALUE_KIND_FORGN = 5,    /**< The kind of all foreign values          */
+		PRT_VALUE_KIND_TUPLE = 6,    /**< The kind of all (named) tuple values    */
+		PRT_VALUE_KIND_SEQ = 7,    /**< The kind of all sequence values         */
+		PRT_VALUE_KIND_MAP = 8,    /**< The kind of all map values              */
 		PRT_VALUE_KIND_COUNT = 9, /**< The number of value kinds               */
 	} PRT_VALUE_KIND;
 
@@ -39,15 +39,15 @@ interface PrtValues_IDL
 	typedef struct PRT_VALUE {
 		union switch (PRT_VALUE_KIND discriminator) valueUnion
 		{
-		case PRT_VALKIND_NULL: PRT_UINT32 dummy_1;
-		case PRT_VALKIND_BOOL: PRT_BOOLEAN bl;							/**< A boolean value            */
-		case PRT_VALKIND_INT: PRT_INT32   nt;							/**< An integer value           */
-		case PRT_VALKIND_EVENT: PRT_UINT32  ev;							/**< An event id value          */
-		case PRT_VALKIND_MID: [unique] struct PRT_MACHINEID *mid;		/**< A (model) machine id value */
-		case PRT_VALKIND_FORGN: [unique] struct PRT_FORGNVALUE *frgn;	/**< A foreign value            */
-		case PRT_VALKIND_TUPLE:[unique] struct PRT_TUPVALUE *tuple;		/**< A (named) tuple value      */
-		case PRT_VALKIND_SEQ:[unique] struct PRT_SEQVALUE *seq;			/**< A sequence value	        */
-		case PRT_VALKIND_MAP:[unique] struct PRT_MAPVALUE *map;			/**< A map value		        */
+		case PRT_VALUE_KIND_NULL: PRT_UINT32 dummy_1;
+		case PRT_VALUE_KIND_BOOL: PRT_BOOLEAN bl;							/**< A boolean value            */
+		case PRT_VALUE_KIND_INT: PRT_INT32   nt;							/**< An integer value           */
+		case PRT_VALUE_KIND_EVENT: PRT_UINT32  ev;							/**< An event id value          */
+		case PRT_VALUE_KIND_MID: [unique] struct PRT_MACHINEID *mid;		/**< A (model) machine id value */
+		case PRT_VALUE_KIND_FORGN: [unique] struct PRT_FORGNVALUE *frgn;	/**< A foreign value            */
+		case PRT_VALUE_KIND_TUPLE:[unique] struct PRT_TUPVALUE *tuple;		/**< A (named) tuple value      */
+		case PRT_VALUE_KIND_SEQ:[unique] struct PRT_SEQVALUE *seq;			/**< A sequence value	        */
+		case PRT_VALUE_KIND_MAP:[unique] struct PRT_MAPVALUE *map;			/**< A map value		        */
 		};
 	} PRT_VALUE;
 

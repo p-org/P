@@ -1,5 +1,5 @@
 arg: ..\SendRaiseInEntry.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, P semantics test: one machine, "send" to itself and "raise" in entry actions

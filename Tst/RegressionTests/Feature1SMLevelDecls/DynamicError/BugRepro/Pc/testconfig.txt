@@ -1,5 +1,5 @@
 arg: ..\PingPongBugRepro.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, Feature Integration: "send" in function which mutates its parameters

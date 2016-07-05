@@ -1,5 +1,5 @@
 arg: ..\NonConstantEventExpr.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, P semantics test, two machines, "send", "raise", monitor invocation for non-constant event expressions

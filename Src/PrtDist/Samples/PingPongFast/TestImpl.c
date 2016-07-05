@@ -77,7 +77,7 @@ static void LogHandler(PRT_STEP step, PRT_MACHINEINST *context)
     if (!stopping && now - startTime > runTime)
     {
         stopping = TRUE;
-        printf("Ran %d steps in 10 seconds", steps);
+        printf("Ran %d steps in 10 seconds\n", steps);
 		PRT_VALUE *haltEvent = PrtMkEventValue(_P_EVENT_HALT);
 		PRT_VALUE *nullValue = PrtMkNullValue();
 		PrtSend(context, haltEvent, nullValue, PRT_FALSE);

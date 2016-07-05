@@ -162,22 +162,22 @@ __in PRT_VALUE* value
 	PRT_VALUE_KIND kind = value->discriminator;
 	switch (kind)
 	{
-		case PRT_VALKIND_NULL:
-		case PRT_VALKIND_BOOL:
-		case PRT_VALKIND_EVENT:
-		case PRT_VALKIND_MID:
-		case PRT_VALKIND_INT:
+		case PRT_VALUE_KIND_NULL:
+		case PRT_VALUE_KIND_BOOL:
+		case PRT_VALUE_KIND_EVENT:
+		case PRT_VALUE_KIND_MID:
+		case PRT_VALUE_KIND_INT:
 			return PrtCloneValue(value);
-		case PRT_VALKIND_FORGN:
+		case PRT_VALUE_KIND_FORGN:
 		{
 			PrtAssert(PRT_FALSE, "Invalid type");
 			return NULL;
 		}
-		case PRT_VALKIND_MAP:
+		case PRT_VALUE_KIND_MAP:
 		{
 			PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 			PRT_MAPVALUE *map = (PRT_MAPVALUE *)PrtMalloc(sizeof(PRT_MAPVALUE));
-			retVal->discriminator = PRT_VALKIND_MAP;
+			retVal->discriminator = PRT_VALUE_KIND_MAP;
 			retVal->valueUnion.map = map;
 			PRT_MAPVALUE *mVal = value->valueUnion.map;
 			map->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacitiesDist[mVal->capNum], sizeof(PRT_MAPNODE *));
@@ -194,10 +194,10 @@ __in PRT_VALUE* value
 
 			return retVal;
 		}
-		case PRT_VALKIND_TUPLE:
+		case PRT_VALUE_KIND_TUPLE:
 		{
 			PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
-			retVal->discriminator = PRT_VALKIND_TUPLE;
+			retVal->discriminator = PRT_VALUE_KIND_TUPLE;
 			
 			PRT_UINT32 i;
 			PRT_TUPVALUE *tVal = value->valueUnion.tuple;
@@ -217,11 +217,11 @@ __in PRT_VALUE* value
 			return retVal;
 		}
 		
-		case PRT_VALKIND_SEQ:
+		case PRT_VALUE_KIND_SEQ:
 		{
 			PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
 			PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtCalloc(1, sizeof(PRT_SEQVALUE));
-			retVal->discriminator = PRT_VALKIND_SEQ;
+			retVal->discriminator = PRT_VALUE_KIND_SEQ;
 			retVal->valueUnion.seq = cVal;
 			PRT_SEQVALUE *sVal = value->valueUnion.seq;
 			
@@ -341,22 +341,22 @@ __in PRT_VALUE* value
 	PRT_VALUE_KIND kind = value->discriminator;
 	switch (kind)
 	{
-		case PRT_VALKIND_NULL:
-		case PRT_VALKIND_BOOL:
-		case PRT_VALKIND_EVENT:
-		case PRT_VALKIND_MID:
-		case PRT_VALKIND_INT:
+		case PRT_VALUE_KIND_NULL:
+		case PRT_VALUE_KIND_BOOL:
+		case PRT_VALUE_KIND_EVENT:
+		case PRT_VALUE_KIND_MID:
+		case PRT_VALUE_KIND_INT:
 			return PrtCloneValue(value);
-		case PRT_VALKIND_FORGN:
+		case PRT_VALUE_KIND_FORGN:
 		{
 			PrtAssert(PRT_FALSE, "Foreign Type not Expected");
 			return NULL;
 		}
-		case PRT_VALKIND_MAP:
+		case PRT_VALUE_KIND_MAP:
 		{
 			PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 			PRT_MAPVALUE *map = (PRT_MAPVALUE *)PrtMalloc(sizeof(PRT_MAPVALUE));
-			retVal->discriminator = PRT_VALKIND_MAP;
+			retVal->discriminator = PRT_VALUE_KIND_MAP;
 			retVal->valueUnion.map = map;
 			PRT_MAPVALUE *mVal = value->valueUnion.map;
 			map->buckets = (PRT_MAPNODE **)PrtCalloc(PrtHashtableCapacitiesDist[mVal->capNum], sizeof(PRT_MAPNODE *));
@@ -373,10 +373,10 @@ __in PRT_VALUE* value
 
 			return retVal;
 		}
-		case PRT_VALKIND_TUPLE:
+		case PRT_VALUE_KIND_TUPLE:
 		{
 			PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
-			retVal->discriminator = PRT_VALKIND_TUPLE;
+			retVal->discriminator = PRT_VALUE_KIND_TUPLE;
 
 			PRT_TUPVALUE *tVal = value->valueUnion.tuple;
 			PRT_UINT32 arity = value->valueUnion.tuple->size;
@@ -398,10 +398,10 @@ __in PRT_VALUE* value
 			return retVal;
 		}
 	
-		case PRT_VALKIND_SEQ:
+		case PRT_VALUE_KIND_SEQ:
 		{
 			PRT_VALUE *retVal = (PRT_VALUE *)PrtCalloc(1, sizeof(PRT_VALUE));
-			retVal->discriminator = PRT_VALKIND_SEQ;
+			retVal->discriminator = PRT_VALUE_KIND_SEQ;
 			PRT_SEQVALUE *sVal = value->valueUnion.seq;
 			PRT_SEQVALUE *cVal = (PRT_SEQVALUE *)PrtCalloc(1, sizeof(PRT_SEQVALUE));
 			cVal->capacity = sVal->capacity;

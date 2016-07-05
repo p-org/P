@@ -1,5 +1,5 @@
 arg: ..\ShortCircuitEval.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, short-circuit in "&&" and "||" evaluation in Zinger

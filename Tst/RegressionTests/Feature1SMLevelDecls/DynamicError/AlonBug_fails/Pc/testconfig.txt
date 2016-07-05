@@ -1,5 +1,5 @@
 arg: ..\AlonBug_fails.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, Feature Integration: case when exit actions are not executed

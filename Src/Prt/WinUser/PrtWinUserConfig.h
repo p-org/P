@@ -47,12 +47,6 @@ extern "C"{
 #include <windows.h>
 #include <stdio.h>
 
-	//#define PrtMalloc(size) malloc(size)
-	//#define PrtCalloc(nmemb, size) calloc(nmemb, size)
-#define PRT_DBG_ASSERT(condition, message) PrtAssert((condition), (message))
-#define PRT_DBG_START_MEM_BALANCED_REGION { _CrtMemState prtDbgMemStateInitial, prtDbgMemStateFinal, prtDbgMemStateDiff; _CrtMemCheckpoint(&prtDbgMemStateInitial);
-#define PRT_DBG_END_MEM_BALANCED_REGION _CrtMemCheckpoint(&prtDbgMemStateFinal); PrtAssert(!_CrtMemDifference(&prtDbgMemStateDiff, &prtDbgMemStateInitial, &prtDbgMemStateFinal), "Memory leak"); }
-
 #else
 
 #include <sal.h>
@@ -109,11 +103,11 @@ extern "C"{
 	/** Function for Assertion will be called whenever an assertion is checked */
 	typedef void(PRT_CALL_CONV * PRT_ASSERT_FUN)(PRT_INT32, PRT_CSTRING);
 
+	/* declare the global function pointer for PrtAssert */
+	extern PRT_ASSERT_FUN _PrtAssert;
+
 	/** Function for printing string, will be invoked whenever print statement is called from the runtime */
 	typedef void(PRT_CALL_CONV * PRT_PRINT_FUN)(PRT_CSTRING);
-
-	/* declare the function to assert function */
-	extern PRT_ASSERT_FUN PrtAssert;
 
 	/* declare the function to print fucntion*/
 	extern PRT_PRINT_FUN PrtPrintf;
@@ -247,6 +241,21 @@ extern "C"{
 	* @returns A nondeterministic Boolean value.
 	*/
 	PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtChoose();
+
+#ifdef PRT_NO_ASSERT
+#define PrtAssert(c,m)
+#else
+#define PrtAssert(c,m) if (!(c)) { _PrtAssert(c, m); }
+#endif
+
+#ifdef PRT_DEBUG
+	//#define PrtMalloc(size) malloc(size)
+	//#define PrtCalloc(nmemb, size) calloc(nmemb, size)
+#define PRT_DBG_ASSERT(condition, message) PrtAssert((condition), (message))
+#define PRT_DBG_START_MEM_BALANCED_REGION { _CrtMemState prtDbgMemStateInitial, prtDbgMemStateFinal, prtDbgMemStateDiff; _CrtMemCheckpoint(&prtDbgMemStateInitial);
+#define PRT_DBG_END_MEM_BALANCED_REGION _CrtMemCheckpoint(&prtDbgMemStateFinal); PrtAssert(!_CrtMemDifference(&prtDbgMemStateDiff, &prtDbgMemStateInitial, &prtDbgMemStateFinal), "Memory leak"); }
+
+#endif
 
 #ifdef __cplusplus
 }

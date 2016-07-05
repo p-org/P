@@ -1,5 +1,5 @@
 arg: ..\anyType3.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe: 4. "any" type in EQ and NE

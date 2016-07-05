@@ -1,5 +1,5 @@
 arg: ..\Multi_Paxos_3.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, Feature Integration: protocol sample, syntax only

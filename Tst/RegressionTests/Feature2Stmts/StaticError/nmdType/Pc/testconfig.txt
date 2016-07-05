@@ -1,5 +1,5 @@
 arg: ..\nmdType.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: 2.9.1. Assignment: types of LHS and RHS: wrong names in named tuples

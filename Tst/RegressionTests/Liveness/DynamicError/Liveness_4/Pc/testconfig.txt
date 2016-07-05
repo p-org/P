@@ -1,5 +1,5 @@
 arg: ..\Liveness_4.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, Liveness: simplest sample demonstrating liveness error found

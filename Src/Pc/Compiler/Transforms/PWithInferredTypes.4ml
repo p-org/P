@@ -19,6 +19,9 @@ domain PWithInferredTypes extends PData
 
 	//// The maximum number of local variables in any context
 	MaxNumLocals ::= new (ctxt: TypingContext + Stmt + Cases, n: Natural).
+
+	//// Functions for which either bodies or stubs need to be generated
+	RealOwner ::= new (ctxt: FunDecl).
 }
 
 transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
@@ -27,4 +30,5 @@ transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
 	out.TypeOf(c, e, t) :- in.TypeOf(c, e, t).
 	out.TypeExpansion(type, eType) :- in.TypeExpansion(type, eType).
 	out.MaxNumLocals(c, n) :- in.MaxNumLocals(c, n).
+	out.RealOwner(c) :- in.RealOwner(c).
 }

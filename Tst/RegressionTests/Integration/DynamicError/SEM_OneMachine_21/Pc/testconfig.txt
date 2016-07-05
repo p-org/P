@@ -1,5 +1,5 @@
 arg: ..\BugReproIdenticalTerms_workaround.p
 arg: /shortFileNames
-arg: /doNotErase
+arg: /test
 arg: /outputDir:..\.
 dsc: pc.exe, P semantics test: exit function performed while explicitly popping the state

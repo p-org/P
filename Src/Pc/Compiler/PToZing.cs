@@ -295,7 +295,6 @@ namespace Microsoft.Pc
         public Dictionary<string, FunInfo> allStaticFuns;
         public string mainMachineName;
         private Dictionary<AST<Node>, string> anonFunToName;
-        public Dictionary<AST<FuncTerm>, FuncTerm> typeExpansion;
 
         public LinkedList<Tuple<string,  AST<FuncTerm>>> GetBin(Dictionary<string, LinkedList<Tuple<string, AST<FuncTerm>>>> factBins, FuncTerm ft)
         {
@@ -369,7 +368,6 @@ namespace Microsoft.Pc
             allEvents[NullEvent] = new EventInfo(1, false, PTypeNull.Node);
             allMachines = new Dictionary<string, MachineInfo>();
             allStaticFuns = new Dictionary<string, FunInfo>();
-            typeExpansion = new Dictionary<AST<FuncTerm>, FuncTerm>();
 
             LinkedList<Tuple<string, AST<FuncTerm>>> terms;
 
@@ -851,17 +849,27 @@ namespace Microsoft.Pc
                 }
             }
 
+            terms = GetBin(factBins, "TranslatedTypeExpr");
+            foreach (var term in terms.Select(x => x.Item2))
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var eType = (FuncTerm)it.Current;
+                    typeContext.PTypeToZingExpr(eType);
+                }
+            }
+
             terms = GetBin(factBins, "TypeExpansion");
             foreach (var term in terms.Select(x => x.Item2))
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    var type = (AST<FuncTerm>)Factory.Instance.ToAST(it.Current);
+                    var type = (FuncTerm)it.Current;
                     it.MoveNext();
                     var eType = (FuncTerm)it.Current;
-                    typeExpansion[type] = eType;
-                    typeExpansion[(AST<FuncTerm>)Factory.Instance.ToAST(eType)] = eType;
+                    typeContext.AddOriginalType(type, eType);
                 }
             }
 
@@ -3701,13 +3709,22 @@ namespace Microsoft.Pc
 
             public AST<Node> PTypeToZingExpr(FuncTerm pType)
             {
-                pType = pToZing.typeExpansion[(AST<FuncTerm>)Factory.Instance.ToAST(pType)];
                 var pTypeAST = Factory.Instance.ToAST(pType);
                 if (!pTypeToZingExpr.ContainsKey(pTypeAST))
                 {
                     pTypeToZingExpr[pTypeAST] = ConstructType(pType);
                 }
                 return pTypeToZingExpr[pTypeAST];
+            }
+
+            public void AddOriginalType(FuncTerm type, FuncTerm eType)
+            {
+                var typeAST = Factory.Instance.ToAST(type);
+                var eTypeAST = Factory.Instance.ToAST(eType);
+                if (!pTypeToZingExpr.ContainsKey(typeAST))
+                {
+                    pTypeToZingExpr[typeAST] = pTypeToZingExpr[eTypeAST];
+                }
             }
 
             private AST<Node> ConstructType(FuncTerm type)

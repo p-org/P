@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 155 distinct states explored
+OUT: 161 distinct states explored
 OUT: 
 EXIT: 3
 
@@ -21,13 +21,11 @@ Trace-Log 0:
 <NullTransLog> Null transition taken by Machine ____Real1-0
 <StateLog> Machine Real1-0 exiting State Real1_Init
 <EnqueueLog> Enqueued Event < ____E2, ____E1 > in Machine ____Real2-0 by ____Real1-0
-<EnqueueLog> Enqueued Event < ____E0, 100 > in Machine ____Real2-0 by ____Real1-0
-<EnqueueLog> Enqueued Event < ____E2, null > in Machine ____Real2-0 by ____Real1-0
 <StateLog> Machine Real2-0 entering State Real2_Init
 <DequeueLog> Dequeued Event < ____E2, ____E1 > at Machine ____Real2-0
-<DequeueLog> Dequeued Event < ____E0, 100 > at Machine ____Real2-0
-<DequeueLog> Dequeued Event < ____E2, null > at Machine ____Real2-0
 <NullTransLog> Null transition taken by Machine ____Real2-0
+<EnqueueLog> Enqueued Event < ____E0, 100 > in Machine ____Real2-0 by ____Real1-0
+<EnqueueLog> Enqueued Event < ____E2, null > in Machine ____Real2-0 by ____Real1-0
 <EnqueueLog> Enqueued Event < ____E2, ____E0 > in Machine ____Real2-0 by ____Real1-0
 <EnqueueLog> Enqueued Event < ____E2, ____E0 > in Machine ____Real2-0 by ____Real1-0
 <EnqueueLog> Enqueued Event < ____E2, ____E0 > in Machine ____Real2-0 by ____Real1-0

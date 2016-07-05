@@ -1029,6 +1029,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	TypeToExpr(type, expr) :- TypeId(typeIndex, type), 
 	                          typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), 
 							  expr = out.UnApp(ADDR, Ident(typeName)).
+	TypeToExpr(type, expr) :- TypeExpansion(type, etype), TypeToExpr(etype, expr).
 
 	ParamsType ::= (decl: FunDecl, expr: out.Expr).
 	ParamsType(d, expr) :- d is FunDecl, d.params = NIL, expr = out.Ident("NULL").

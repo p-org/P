@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 16 distinct states explored
+OUT: 13 distinct states explored
 OUT: 
 EXIT: 3
 
@@ -22,10 +22,10 @@ Trace-Log 0:
 <StateLog> Machine Ghost-0 exiting State Ghost_Init
 <StateLog> Machine Ghost-0 entering State Ghost_S1
 <EnqueueLog> Enqueued Event < ____E4, null > in Machine ____Real-0 by ____Ghost-0
+<EnqueueLog> Enqueued Event < ____E2, null > in Machine ____Real-0 by ____Ghost-0
 <DequeueLog> Dequeued Event < ____E4, null > at Machine ____Real-0
 <FunctionLog> Machine Real-0 executing Function Action1
 <EnqueueLog> Enqueued Event < ____E3, null > in Machine ____Ghost-0 by ____Real-0
-<EnqueueLog> Enqueued Event < ____E2, null > in Machine ____Real-0 by ____Ghost-0
 <DequeueLog> Dequeued Event < ____E2, null > at Machine ____Real-0
 <StateLog> Machine Real-0 exiting State Real_Init
 <StateLog> Machine Real-0 entering State Real_S1

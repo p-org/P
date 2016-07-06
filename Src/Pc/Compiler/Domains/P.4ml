@@ -250,16 +250,6 @@ domain PStaticTyping extends PData
 	TypeExpansion(BaseType(EVENT), BaseType(EVENT)).
 	TypeExpansion(BaseType(REAL), BaseType(REAL)).
 	TypeExpansion(BaseType(ANY), BaseType(ANY)).
-
-	/*
-	TypeExpansion(t, t) :- TypeOf(_, Tuple(_), t), t : TypeExpr.
-	TypeExpansion(t, t) :- TypeOf(_, NamedTuple(_), t), t : TypeExpr.
-	TypeExpansion(t, t) :- TypeExpansion(_, TupType(t, _)), t : TypeExpr.
-	TypeExpansion(t, t) :- TypeExpansion(_, TupType(_, t)), t : TypeExpr.
-	TypeExpansion(t, t) :- TypeExpansion(_, NmdTupType(f, _)), t = f.type.
-	TypeExpansion(t, t) :- TypeExpansion(_, NmdTupType(_, t)), t : TypeExpr.
-	*/
-
 	TypeExpansion(type, type)  :- TypeDef(typeName, _), ModelType(typeName), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, eType) :- TypeDef(typeName, typeExpr), no ModelType(typeName), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
@@ -268,6 +258,15 @@ domain PStaticTyping extends PData
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(qual, name, hd), tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = NmdTupType(NmdTupTypeField(qual, name, hd'), tl').
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = SeqType(x), TypeExpansion(x, x'), eType = SeqType(x').
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = MapType(k, v), TypeExpansion(k, k'), TypeExpansion(v, v'), eType = MapType(k', v').
+
+	TranslatedTypeExpr ::= (type: TypeExpr).
+	TranslatedTypeExpr(eType) :- TypeExpansion(_, eType).
+	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = Tuple(_), t : TypeExpr.
+	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = NamedTuple(_), t : TypeExpr.
+	TranslatedTypeExpr(h)  :- TranslatedTypeExpr(t), t = TupType(h, _). 
+	TranslatedTypeExpr(t') :- TranslatedTypeExpr(t), t = TupType(_, t'), t' : TypeExpr. 
+	TranslatedTypeExpr(h)  :- TranslatedTypeExpr(t), t = NmdTupType(NmdTupTypeField(_, _, h), _). 
+	TranslatedTypeExpr(t') :- TranslatedTypeExpr(t), t = NmdTupType(_, t'), t' : TypeExpr. 
 
    	RealOwner ::= (f: FunDecl).
 	RealOwner(f) :- f is FunDecl, f.owner = NIL; 

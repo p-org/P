@@ -17,6 +17,9 @@ domain PWithInferredTypes extends PData
 	//// The expansion of NameTypes in TypeExprs
 	TypeExpansion ::= new (type: any TypeExpr, eType: any TypeExpr).
 
+	//// The expansion of NameTypes in TypeExprs
+	TranslatedTypeExpr ::= new (eType: any TypeExpr).
+
 	//// The maximum number of local variables in any context
 	MaxNumLocals ::= new (ctxt: TypingContext + Stmt + Cases, n: Natural).
 
@@ -29,6 +32,7 @@ transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
     out._(x) :- x is in.Data.
 	out.TypeOf(c, e, t) :- in.TypeOf(c, e, t).
 	out.TypeExpansion(type, eType) :- in.TypeExpansion(type, eType).
+	out.TranslatedTypeExpr(eType) :- in.TranslatedTypeExpr(eType).
 	out.MaxNumLocals(c, n) :- in.MaxNumLocals(c, n).
 	out.RealOwner(c) :- in.RealOwner(c).
 }

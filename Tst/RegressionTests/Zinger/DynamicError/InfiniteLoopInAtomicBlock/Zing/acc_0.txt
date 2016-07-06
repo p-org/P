@@ -8,14 +8,14 @@ OUT: The Zing model appears to have encountered a loop within an atomic block. Z
 OUT: 
 OUT: 
 OUT: Stack trace:
-OUT:     Continuation.Reset (program.zing, Line 1977)
+OUT:     Continuation.Reset (program.zing, Line 2027)
 OUT:     MACHINE_PING.ReentrancyHelper (program.zing, Line 339)
 OUT:     MACHINE_PING.RunHelper (program.zing, Line 285)
 OUT:     MACHINE_PING.Run (program.zing, Line 119)
 OUT:     MACHINE_PING.Start (program.zing, Line 91)
 OUT: 
 OUT: 
-OUT: 12 distinct states explored
+OUT: 9 distinct states explored
 OUT: 
 EXIT: 4
 

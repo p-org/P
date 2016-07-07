@@ -395,6 +395,10 @@
 
         public Compiler(CommandLineOptions options)
         {
+            if (options.profile)
+            {
+                PerfTimer.ConsoleOutput = true;
+            }
             using (new PerfTimer("Compiler loading"))
             {
                 Log = new StandardOutput();
@@ -622,10 +626,8 @@
             bool rc = false;
 
             // Enumerate typing errors
-            using (new PerfTimer("Compiler generating output " + Path.GetFileName(inputFileName)))
-            {
-                rc = (Options.noCOutput ? true : GenerateC()) && (Options.test ? GenerateZing() : true);
-            }
+            rc = (Options.noCOutput ? true : GenerateC()) && (Options.test ? GenerateZing() : true);
+            
             return rc;
         }
 
@@ -654,8 +656,9 @@
             string zingFileName = fileName + ".zing";
             string dllFileName = fileName + ".dll";
             string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
-            
-            using (new PerfTimer("Generating Zing"))
+            AST<Node> modelWithTypes = null;
+
+            using (new PerfTimer("Compiling Zing"))
             {
                 var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
                 transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModule, null, RootProgramName.ToString()));
@@ -670,12 +673,14 @@
                     new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModule + "_WithTypes.4ml")),
                     null);
                 extractTask.Wait();
-                var modelWithTypes = extractTask.Result.FindAny(
+                modelWithTypes = extractTask.Result.FindAny(
                     new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
                 Contract.Assert(modelWithTypes != null);
 
                 zingModel = MkZingOutputModel();
-
+            }
+            using (new PerfTimer("Generating Zing"))
+            {
                 new PToZing(this, AllModels, (AST<Model>)modelWithTypes).GenerateZing(zingFileName, ref zingModel);
             }
 
@@ -687,7 +692,13 @@
             using (new PerfTimer("Compiling Zing"))
             {
                 var binPath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
-                var zcProcessInfo = new System.Diagnostics.ProcessStartInfo(Path.Combine(binPath.FullName, "zc.exe"));
+                string zingCompiler = Path.Combine(binPath.FullName, "zc.exe");
+                if (!File.Exists(zingCompiler))
+                {
+                    Log.WriteMessage("Cannot find Zc.exe, did you build it ?", SeverityKind.Error);
+                    return false;
+                }
+                var zcProcessInfo = new System.Diagnostics.ProcessStartInfo(zingCompiler);
                 string zingFileNameFull = Path.Combine(outputDirName, zingFileName);
                 zcProcessInfo.Arguments = string.Format("/nowarn:292 \"/out:{0}\\{1}\" \"{2}\"", outputDirName, dllFileName, zingFileNameFull);
                 zcProcessInfo.UseShellExecute = false;
@@ -1240,6 +1251,14 @@
 
         public bool GenerateC()
         {
+            using (new PerfTimer("Compiler generating C " + Path.GetFileName(RootFileName)))
+            {
+                return InternalGenerateC();
+            }
+        }
+
+        bool InternalGenerateC()
+        { 
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
             if (Options.outputFileName != null)
             {

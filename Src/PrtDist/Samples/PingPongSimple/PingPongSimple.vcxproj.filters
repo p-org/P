@@ -33,10 +33,10 @@
     <ClCompile Include="Timer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TestImpl.c">
+    <ClCompile Include="Test.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Test.c">
+    <ClCompile Include="TestImpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

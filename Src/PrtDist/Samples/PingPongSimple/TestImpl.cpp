@@ -2,10 +2,12 @@
 //
 
 #include "stdafx.h"
+#include <stdio.h>
+extern "C" {
 #include "PrtDist.h"
 #include "test.h"
 #include "Prt.h"
-#include <stdio.h>
+}
 
 /* Global variables */
 PRT_PROCESS* ContainerProcess;

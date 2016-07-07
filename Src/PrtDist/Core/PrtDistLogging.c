@@ -44,7 +44,7 @@ void PrtCloseLogFile()
 void
 PrtDistSMExceptionHandler(
 __in PRT_STATUS exception,
-__in void* vcontext
+__in PRT_MACHINEINST* vcontext
 )
 {
 

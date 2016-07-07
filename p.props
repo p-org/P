@@ -1,16 +1,20 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <PropertyGroup>
-        <UnifiedPlatform>$(Platform)</UnifiedPlatform>
-        <!-- C++ projects use "Win32" for "x86" platform and .NET projects use 'x86' -->
-        <!-- So this new property unifies that difference and moves everything to 'x86' -->
-        <UnifiedPlatform Condition="'$(Platform)'=='Win32'">x86</UnifiedPlatform>
-        <DropFolder>$(MSBuildThisFileDirectory)Bld\Drops\$(Configuration)\$(UnifiedPlatform)</DropFolder>
-        <ExtFolder>$(MSBuildThisFileDirectory)Ext</ExtFolder>
-        <CommonTargets>$(MSBuildThisFileDirectory)Bld\Targets\common.targets</CommonTargets>
-        <ZCompiler>$(MSBuildThisFileDirectory)Bld\Drops\$(Configuration)\$(UnifiedPlatform)\Binaries\zc.exe</ZCompiler>
-        <Zinger>$(MSBuildThisFileDirectory)Bld\Drops\$(Configuration)\$(UnifiedPlatform)\Binaries\zinger.exe</Zinger>
-        <PTargets>$(MSBuildThisFileDirectory)Bld\Targets</PTargets>
-    </PropertyGroup>
-    
+  <PropertyGroup>
+    <UnifiedPlatform>$(Platform)</UnifiedPlatform>
+    <!-- C++ projects use "Win32" for "x86" platform and .NET projects use 'x86' -->
+    <!-- So this new property unifies that difference and moves everything to 'x86' -->
+    <UnifiedPlatform Condition="'$(Platform)'=='Win32'">x86</UnifiedPlatform>
+    <PSdkFolder>$(MSBuildThisFileDirectory)Bld\Drops\$(Configuration)\$(UnifiedPlatform)</PSdkFolder>
+    <ExtFolder>$(MSBuildThisFileDirectory)Ext</ExtFolder>
+    <CommonTargets>$(MSBuildThisFileDirectory)Bld\Targets\common.targets</CommonTargets>
+    <ZCompiler>$(MSBuildThisFileDirectory)Bld\Drops\$(Configuration)\$(UnifiedPlatform)\Binaries\zc.exe</ZCompiler>
+    <Zinger>$(MSBuildThisFileDirectory)Bld\Drops\$(Configuration)\$(UnifiedPlatform)\Binaries\zinger.exe</Zinger>
+    <PTargets>$(MSBuildThisFileDirectory)Bld\Targets</PTargets>
+    <StandardPDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_USE_IDL</StandardPDefinitions>
+    <StandardPDefinitions Condition="'$(Configuration)'=='Debug'">PRT_DEBUG;$(StandardPDefinitions)</StandardPDefinitions>
+    <StandardPLibraries>PrtWinUser.lib;</StandardPLibraries>
+    <StandardPDistLibraries>PrtWinUser.lib;PrtDist.lib;RpcRT4.lib;</StandardPDistLibraries>
+  </PropertyGroup>
+
 </Project>

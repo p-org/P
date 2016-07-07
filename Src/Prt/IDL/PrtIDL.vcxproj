@@ -89,7 +89,7 @@
       <PreprocessorDefinitions>
       </PreprocessorDefinitions>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
-      <HeaderFileName>$(DropFolder)\Headers\%(Filename).h</HeaderFileName>
+      <HeaderFileName>$(PSdkFolder)\Headers\%(Filename).h</HeaderFileName>
       <AdditionalIncludeDirectories>../API/</AdditionalIncludeDirectories>
     </Midl>
     <PostBuildEvent>
@@ -114,7 +114,7 @@
       <PreprocessorDefinitions>
       </PreprocessorDefinitions>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
-      <HeaderFileName>$(DropFolder)\Headers\%(Filename).h</HeaderFileName>
+      <HeaderFileName>$(PSdkFolder)\Headers\%(Filename).h</HeaderFileName>
       <AdditionalIncludeDirectories>../API/</AdditionalIncludeDirectories>
     </Midl>
     <PostBuildEvent>
@@ -142,7 +142,7 @@
     <Midl>
       <PreprocessorDefinitions>
       </PreprocessorDefinitions>
-      <HeaderFileName>$(DropFolder)\Headers\%(Filename).h</HeaderFileName>
+      <HeaderFileName>$(PSdkFolder)\Headers\%(Filename).h</HeaderFileName>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>../API/</AdditionalIncludeDirectories>
     </Midl>
@@ -170,7 +170,7 @@
     <Midl>
       <PreprocessorDefinitions>
       </PreprocessorDefinitions>
-      <HeaderFileName>$(DropFolder)\Headers\%(Filename).h</HeaderFileName>
+      <HeaderFileName>$(PSdkFolder)\Headers\%(Filename).h</HeaderFileName>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>../API/</AdditionalIncludeDirectories>
     </Midl>

@@ -23,6 +23,8 @@ namespace Microsoft.Pc
         long m_Ticks;
         string m_Caption;
 
+        public static bool ConsoleOutput { get; set; }
+
         [DllImport("KERNEL32.DLL", EntryPoint = "QueryPerformanceCounter", SetLastError = true,
                     CharSet = CharSet.Unicode, ExactSpelling = true,
                     CallingConvention = CallingConvention.StdCall)]
@@ -127,16 +129,30 @@ namespace Microsoft.Pc
 
         public void Dispose()
         {
+            string msg = null;
             Stop();
             if (m_Count == 0)
             {
-                Debug.WriteLine("{0} took {1} ms", m_Caption, GetDuration());
+                msg = string.Format("{0} took {1} ms", m_Caption, GetDuration());
             }
             else
             {
                 // print the average, min, max
-                Debug.WriteLine("{0} with {1} iterations averaged {2} ms with min {3}, max {4}", m_Caption, m_Count, Average(), Min(), Max());
+                msg = string.Format("{0} with {1} iterations averaged {2} ms with min {3}, max {4}", m_Caption, m_Count, Average(), Min(), Max());
+            }
+            // we want this to work in Release build also, which is why we are not using Debug.WriteLine().
+            OutputDebugString(msg);
+
+            if (ConsoleOutput)
+            {
+                Console.WriteLine(msg);
             }
         }
+
+        [DllImport("Kernel32.dll")]
+        static extern void OutputDebugString(string lpOutputString);
+
+
+
     }
 }

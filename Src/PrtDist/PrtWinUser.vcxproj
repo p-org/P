@@ -107,22 +107,22 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(DropFolder)\Lib\</OutDir>
+    <OutDir>$(PSdkFolder)\Lib\</OutDir>
     <IntDir>$(ProjectDir)\InterWin\$(Configuration)\$(Platform)\</IntDir>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(DropFolder)\Lib\</OutDir>
+    <OutDir>$(PSdkFolder)\Lib\</OutDir>
     <IntDir>$(ProjectDir)\InterWin\$(Configuration)\$(Platform)\</IntDir>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(DropFolder)\Lib\</OutDir>
+    <OutDir>$(PSdkFolder)\Lib\</OutDir>
     <IntDir>$(ProjectDir)\InterWin\$(Configuration)\$(Platform)\</IntDir>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(DropFolder)\Lib\</OutDir>
+    <OutDir>$(PSdkFolder)\Lib\</OutDir>
     <IntDir>$(ProjectDir)\InterWin\$(Configuration)\$(Platform)\</IntDir>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
@@ -132,7 +132,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;PRT_USE_THREADPOOL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(PSdkFolder)/Headers/</AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
@@ -149,7 +149,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(PSdkFolder)/Headers/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -163,7 +163,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>PRT_NO_ASSERT;PRT_STATIC;PRT_PLAT_WINUSER;PRT_USE_IDL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(PSdkFolder)/Headers/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -179,7 +179,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>PRT_NO_ASSERT;PRT_STATIC;PRT_PLAT_WINUSER;PRT_USE_IDL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(PSdkFolder)/Headers/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

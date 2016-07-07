@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\p.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -24,6 +23,7 @@
     <RootNamespace>PrtRPC</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\p.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -85,16 +85,16 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Core/;../../Core/PrtDistIDL/;../../../Prt/API/;../../../Prt/Core/;../../../Prt/WinUser/;$(DropFolder)/Headers;</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;PRT_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../Core/;../../Core/PrtDistIDL/;../../../Prt/API/;../../../Prt/Core/;../../../Prt/WinUser/;$(PSdkFolder)/Headers;</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(StandardPDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>PrtDist.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(DropFolder)/Lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(PSdkFolder)/Lib</AdditionalLibraryDirectories>
     </Link>
     <Midl>
-      <AdditionalIncludeDirectories>$(DropFolder)/Headers;..\..\..\prt\api</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)/Headers;..\..\..\prt\api</AdditionalIncludeDirectories>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
     </Midl>
   </ItemDefinitionGroup>
@@ -103,16 +103,16 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Core/;../../Core/PrtDistIDL/;../../../Prt/API/;../../../Prt/Core/;../../../Prt/WinUser/;$(DropFolder)/Headers;</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;PRT_STATIC</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../Core/;../../Core/PrtDistIDL/;../../../Prt/API/;../../../Prt/Core/;../../../Prt/WinUser/;$(PSdkFolder)/Headers;</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(StandardPDefinitions);</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>PrtDist.lib;rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(DropFolder)/Lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(PSdkFolder)/Lib</AdditionalLibraryDirectories>
     </Link>
     <Midl>
-      <AdditionalIncludeDirectories>$(DropFolder)/Headers;..\..\..\prt\api</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)/Headers;..\..\..\prt\api</AdditionalIncludeDirectories>
     </Midl>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -122,17 +122,17 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Core/;../../Core/PrtDistIDL/;../../../Prt/API/;../../../Prt/Core/;../../../Prt/WinUser/;$(DropFolder)/Headers;</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;PRT_STATIC</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../Core/;../../Core/PrtDistIDL/;../../../Prt/API/;../../../Prt/Core/;../../../Prt/WinUser/;$(PSdkFolder)/Headers;</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(StandardPDefinitions);</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(DropFolder)/Lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(PSdkFolder)/Lib</AdditionalLibraryDirectories>
     </Link>
     <Midl>
-      <AdditionalIncludeDirectories>$(DropFolder)/Headers;..\..\..\prt\api</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)/Headers;..\..\..\prt\api</AdditionalIncludeDirectories>
     </Midl>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -142,17 +142,17 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Core/;../../Core/PrtDistIDL/;../../../Prt/API/;../../../Prt/Core/;../../../Prt/WinUser/;$(DropFolder)/Headers;</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;PRT_STATIC</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../Core/;../../Core/PrtDistIDL/;../../../Prt/API/;../../../Prt/Core/;../../../Prt/WinUser/;$(PSdkFolder)/Headers;</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(StandardPDefinitions);</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(DropFolder)/Lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(PSdkFolder)/Lib</AdditionalLibraryDirectories>
     </Link>
     <Midl>
-      <AdditionalIncludeDirectories>$(DropFolder)/Headers;..\..\..\prt\api</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)/Headers;..\..\..\prt\api</AdditionalIncludeDirectories>
     </Midl>
   </ItemDefinitionGroup>
   <ItemGroup>

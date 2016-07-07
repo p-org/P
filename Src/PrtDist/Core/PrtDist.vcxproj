@@ -68,26 +68,26 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(DropFolder)\Lib\</OutDir>
+    <OutDir>$(PSdkFolder)\Lib\</OutDir>
     <IntDir>$(ProjectDir)$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(DropFolder)\Lib\</OutDir>
+    <OutDir>$(PSdkFolder)\Lib\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(DropFolder)\Lib\</OutDir>
+    <OutDir>$(PSdkFolder)\Lib\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(DropFolder)\Lib\</OutDir>
+    <OutDir>$(PSdkFolder)\Lib\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;PRT_STATIC;PRT_USE_THREADPOOL</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/;$(PSdkFolder)/Headers/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(StandardPDefinitions);PRT_USE_THREADPOOL</PreprocessorDefinitions>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
@@ -105,9 +105,9 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <Midl>
-      <AdditionalIncludeDirectories>..\..\prt\api;$(DropFolder)\Headers</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\prt\api;$(PSdkFolder)\Headers</AdditionalIncludeDirectories>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
-      <HeaderFileName>$(DropFolder)\Headers\%(Filename)_h.h</HeaderFileName>
+      <HeaderFileName>$(PSdkFolder)\Headers\%(Filename)_h.h</HeaderFileName>
       <OutputDirectory>
       </OutputDirectory>
     </Midl>
@@ -120,8 +120,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;PRT_STATIC</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/;$(PSdkFolder)/Headers/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(StandardPDefinitions);</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -136,9 +136,9 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <Midl>
-      <AdditionalIncludeDirectories>..\..\prt\api;$(DropFolder)\Headers</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\prt\api;$(PSdkFolder)\Headers</AdditionalIncludeDirectories>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
-      <HeaderFileName>$(DropFolder)\Headers\%(Filename)_h.h</HeaderFileName>
+      <HeaderFileName>$(PSdkFolder)\Headers\%(Filename)_h.h</HeaderFileName>
       <OutputDirectory>
       </OutputDirectory>
     </Midl>
@@ -150,8 +150,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_USE_IDL;PRT_STATIC;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/;$(PSdkFolder)/Headers/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(StandardPDefinitions);NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -159,9 +159,9 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Midl>
-      <AdditionalIncludeDirectories>..\..\prt\api;$(DropFolder)\Headers</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\prt\api;$(PSdkFolder)\Headers</AdditionalIncludeDirectories>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
-      <HeaderFileName>$(DropFolder)\Headers\%(Filename)_h.h</HeaderFileName>
+      <HeaderFileName>$(PSdkFolder)\Headers\%(Filename)_h.h</HeaderFileName>
     </Midl>
     <Lib>
       <AdditionalLibraryDirectories>..\Lib\$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
@@ -177,8 +177,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_PLAT_WINUSER;PRT_USE_IDL;PRT_STATIC;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/;$(DropFolder)/Headers/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(StandardPDefinitions);NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/;$(PSdkFolder)/Headers/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -186,9 +186,9 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Midl>
-      <AdditionalIncludeDirectories>..\..\prt\api;$(DropFolder)\Headers</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\prt\api;$(PSdkFolder)\Headers</AdditionalIncludeDirectories>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
-      <HeaderFileName>$(DropFolder)\Headers\%(Filename)_h.h</HeaderFileName>
+      <HeaderFileName>$(PSdkFolder)\Headers\%(Filename)_h.h</HeaderFileName>
     </Midl>
     <Lib>
       <AdditionalLibraryDirectories>..\Lib\$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>

@@ -2,14 +2,13 @@
 //
 
 #include "stdafx.h"
+#include <stdio.h>
 extern "C" {
 #include "PrtDist.h"
 #include "test.h"
 #include "Prt.h"
-}
-#include <string>
-#include <stdio.h>
 #include "DgmlGraphWriter.h"
+}
 
 /* Global variables */
 PRT_PROCESS* ContainerProcess;

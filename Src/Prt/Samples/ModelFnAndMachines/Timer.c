@@ -35,7 +35,7 @@ void P_SEND_Timer_IMPL(PRT_MACHINEINST *context, PRT_VALUE *evnt, PRT_VALUE *pay
 		//send time out
 		TimerContext *timerContext = (TimerContext *)context->extContext;
 		PRT_VALUE *ev = PrtMkEventValue(P_EVENT_TIMEOUT);
-		PrtSend(PrtGetMachine(context->process, timerContext->client), ev, context->id, PRT_FALSE);
+		PrtSend(context, PrtGetMachine(context->process, timerContext->client), ev, context->id, PRT_FALSE);
 		PrtFreeValue(ev);
 	}
 	else {

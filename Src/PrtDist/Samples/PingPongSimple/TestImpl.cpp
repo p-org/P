@@ -7,8 +7,9 @@ extern "C" {
 #include "PrtDist.h"
 #include "test.h"
 #include "Prt.h"
-#include "DgmlGraphWriter.h"
 }
+#include "DgmlGraphWriter.h"
+#include <string>
 
 /* Global variables */
 PRT_PROCESS* ContainerProcess;

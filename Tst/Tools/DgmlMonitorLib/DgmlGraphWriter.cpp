@@ -4,6 +4,7 @@
 #include <string>
 
 #define DefaultPort 18777
+#define MessageHeader 0xFE771325
 
 enum MessageType
 {
@@ -38,6 +39,15 @@ public:
 		this->port->Write((const BYTE*)&value, 1);
 	}
 	void Write(int value)
+	{
+		BYTE buffer[4];
+		buffer[0] = (BYTE)value;
+		buffer[1] = (BYTE)(value >> 8);
+		buffer[2] = (BYTE)(value >> 16);
+		buffer[3] = (BYTE)(value >> 24);
+		this->port->Write(buffer, 4);
+	}
+	void Write(unsigned int value)
 	{
 		BYTE buffer[4];
 		buffer[0] = (BYTE)value;
@@ -127,7 +137,7 @@ public:
 	long GetTimestamp() { return timestamp; }
 	void SetTimestamp(long value) { timestamp = value; }
 
-	MessageType GetType() { return type; } 
+	MessageType GetType() { return type; }
 
 	virtual bool Merge(Message other)
 	{
@@ -136,6 +146,7 @@ public:
 
 	virtual void Write(BinaryWriter* writer)
 	{
+		writer->Write(MessageHeader);
 		writer->Write((int)this->type);
 		writer->Write((int64_t)this->messageId);
 		writer->Write((int64_t)this->timestamp);
@@ -146,7 +157,7 @@ class ConnectedMessage : Message
 {
 	std::wstring userName;
 public:
-	 ConnectedMessage()
+	ConnectedMessage()
 		: Message(Connected)
 	{
 	}
@@ -158,7 +169,7 @@ public:
 	}
 
 	std::wstring GetUser() { return this->userName; }
-	void SetUser(std::wstring value) { this->userName = value; } 
+	void SetUser(std::wstring value) { this->userName = value; }
 
 	virtual void Write(BinaryWriter* writer)
 	{
@@ -196,7 +207,7 @@ class LoadGraphMessage : Message
 {
 	std::wstring path;
 public:
-	 LoadGraphMessage()
+	LoadGraphMessage()
 		: Message(LoadGraph)
 	{
 	}
@@ -207,7 +218,7 @@ public:
 		this->path = path;
 	}
 
-	std::wstring GetPath() { return this->path; } 
+	std::wstring GetPath() { return this->path; }
 	void SetPath(std::wstring value) { this->path = value; }
 
 	virtual void Write(BinaryWriter* writer)
@@ -224,7 +235,7 @@ class NavigateNodeMessage : Message
 	std::wstring nodeId;
 	std::wstring nodeLabel;
 public:
-	 NavigateNodeMessage()
+	NavigateNodeMessage()
 		: Message(NavigateToNode)
 	{
 	}
@@ -239,8 +250,8 @@ public:
 	std::wstring GetNodeId() { return this->nodeId; }
 	void SetNodeId(std::wstring value) { this->nodeId = value; }
 
-	std::wstring NodeLabel(){ return this->nodeLabel; } 
-	void SetNodeLabel(std::wstring value) { this->nodeLabel = value; } 
+	std::wstring NodeLabel() { return this->nodeLabel; }
+	void SetNodeLabel(std::wstring value) { this->nodeLabel = value; }
 
 	virtual void Write(BinaryWriter* writer)
 	{
@@ -259,7 +270,7 @@ class NavigateLinkMessage : Message
 	std::wstring label;
 	int index;
 public:
-	 NavigateLinkMessage()
+	NavigateLinkMessage()
 		: Message(NavigateLink)
 	{
 	}
@@ -275,24 +286,24 @@ public:
 		this->index = index;
 	}
 
-	std::wstring GetSourceNodeId() { return this->srcNodeId; } 
-	void SetSourceNodeId(std::wstring value) { this->srcNodeId = value; } 
+	std::wstring GetSourceNodeId() { return this->srcNodeId; }
+	void SetSourceNodeId(std::wstring value) { this->srcNodeId = value; }
 
-	std::wstring GetSourceNodeLabel() { return this->srcNodeLabel; } 
-	void SetSourceNodeLabel(std::wstring value) { this->srcNodeLabel = value; } 
+	std::wstring GetSourceNodeLabel() { return this->srcNodeLabel; }
+	void SetSourceNodeLabel(std::wstring value) { this->srcNodeLabel = value; }
 
-	std::wstring GetTargetNodeId() { return this->targetNodeId; } 
+	std::wstring GetTargetNodeId() { return this->targetNodeId; }
 	void SetTargetNodeId(std::wstring value) { this->targetNodeId = value; }
 
-	std::wstring GetTargetNodeLabel() { return this->targetNodeLabel; } 
+	std::wstring GetTargetNodeLabel() { return this->targetNodeLabel; }
 	void SetTargetNodeLabel(std::wstring value) { this->targetNodeLabel = value; }
 
-	std::wstring GetLabel() { return this->label; } 
-	void SetLabel(std::wstring value) { this->label = value; } 
+	std::wstring GetLabel() { return this->label; }
+	void SetLabel(std::wstring value) { this->label = value; }
 
-	int GetIndex() { return this->index; } 
-	void SetIndex(int value) { this->index = value; } 
-	
+	int GetIndex() { return this->index; }
+	void SetIndex(int value) { this->index = value; }
+
 	virtual void Write(BinaryWriter* writer)
 	{
 		Message::Write(writer);

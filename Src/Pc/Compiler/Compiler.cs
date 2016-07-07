@@ -658,7 +658,7 @@
             string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
             AST<Node> modelWithTypes = null;
 
-            using (new PerfTimer("Compiling Zing"))
+            using (new PerfTimer("Formulating Zing"))
             {
                 var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
                 transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModule, null, RootProgramName.ToString()));

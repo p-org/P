@@ -52,7 +52,7 @@ static const char* parg = NULL;
 
 void Log(PRT_STEP step, PRT_MACHINEINST *sender, PRT_MACHINEINST *receiver, PRT_VALUE* event, PRT_VALUE* payload)
 { 
-	PrtPrintStep(step, receiver, sender, event, payload);
+	PrtPrintStep(step, sender, receiver, event, payload);
 }
 
 static PRT_BOOLEAN ParseCommandLine(int argc, char *argv[])

@@ -210,7 +210,7 @@ _In_  PRT_VALUE					*payload
 	//
 	//Log
 	//
-	PrtLog(PRT_STEP_CREATE, context, NULL, NULL, NULL);
+	PrtLog(PRT_STEP_CREATE, NULL, context, NULL, NULL);
 
 	//
 	// Allocate external context Structure
@@ -310,7 +310,7 @@ _In_ PRT_BOOLEAN				doTransfer
 	//
 	//Log
 	//
-	PrtLog(PRT_STEP_ENQUEUE, context, (PRT_MACHINEINST_PRIV*)PrtGetMachine(context->process, sender->id), event, payload);
+	PrtLog(PRT_STEP_ENQUEUE, (PRT_MACHINEINST_PRIV*)PrtGetMachine(context->process, sender->id), context, event, payload);
 
 	// Check if this event unblocks a blocking "receive" operation.  
     if (context->receive != NULL)
@@ -684,7 +684,7 @@ _In_	PRT_UINT32				stateIndex
 	}
 
 	context->currentState = stateIndex;
-	PrtLog(PRT_STEP_PUSH, context, NULL, NULL, NULL);
+	PrtLog(PRT_STEP_PUSH, NULL, context, NULL, NULL);
 }
 
 void
@@ -751,12 +751,12 @@ _In_ PRT_BOOLEAN				isPopStatement
 
 	if (isPopStatement)
 	{
-		PrtLog(PRT_STEP_POP, context, NULL, NULL, NULL);
+		PrtLog(PRT_STEP_POP, NULL, context, NULL, NULL);
 	}
 	else
 	{
 		// unhandled event
-		PrtLog(PRT_STEP_UNHANDLED, context, NULL, NULL, NULL);
+		PrtLog(PRT_STEP_UNHANDLED, NULL, context, NULL, NULL);
 	}
 	return isHalted;
 }
@@ -769,7 +769,7 @@ _In_ PRT_MACHINEINST_PRIV			*context
 {
 	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
 	context->lastOperation = ReturnStatement;
-	PrtLog(PRT_STEP_EXIT, context, NULL, NULL, NULL);
+	PrtLog(PRT_STEP_EXIT, NULL, context, NULL, NULL);
 	PRT_UINT32 exitFunIndex = context->process->program->machines[context->instanceOf].states[context->currentState].exitFunIndex;
 	PrtPushNewEventHandlerFrame(context, exitFunIndex, PRT_FUN_PARAM_REF, NULL);
 	PrtGetExitFunction(context)((PRT_MACHINEINST *)context);
@@ -821,7 +821,7 @@ DoEntry:
 	context->lastOperation = ReturnStatement;
 	if (context->funStack.length == 0)
 	{
-		PrtLog(PRT_STEP_ENTRY, context, NULL, NULL, NULL);
+		PrtLog(PRT_STEP_ENTRY, NULL, context, NULL, NULL);
 		PRT_UINT32 entryFunIndex = context->process->program->machines[context->instanceOf].states[context->currentState].entryFunIndex;
 		PrtPushNewEventHandlerFrame(context, entryFunIndex, PRT_FUN_PARAM_XFER, NULL);
 	}
@@ -836,7 +836,7 @@ DoAction:
 	if (doFunIndex == PRT_SPECIAL_ACTION_PUSH_OR_IGN)
 	{
 		PRT_VALUE* event = PrtMkEventValue(eventValue);
-		PrtLog(PRT_STEP_IGNORE, context, NULL, event, NULL);
+		PrtLog(PRT_STEP_IGNORE, NULL, context, event, NULL);
 		PrtFree(event);
 		PrtFreeTriggerPayload(context);
 	}
@@ -844,7 +844,7 @@ DoAction:
 	{
 		if (context->funStack.length == 0)
 		{
-			PrtLog(PRT_STEP_DO, context, NULL, NULL, NULL);
+			PrtLog(PRT_STEP_DO, NULL, context, NULL, NULL);
 			PrtPushNewEventHandlerFrame(context, doFunIndex, PRT_FUN_PARAM_XFER, NULL);
 		}
 		funIndex = PrtBottomOfFunStack(context)->funIndex;
@@ -1167,7 +1167,7 @@ PrtDequeueEvent(
 				context->currentTrigger = e.trigger;
 				context->currentPayload = e.payload;
 				RemoveElementFromQueue(context, i);
-				PrtLog(PRT_STEP_DEQUEUE, context, (PRT_MACHINEINST_PRIV*)PrtGetMachine(context->process, e.sender), e.trigger, e.payload);
+				PrtLog(PRT_STEP_DEQUEUE, (PRT_MACHINEINST_PRIV*)PrtGetMachine(context->process, e.sender), context, e.trigger, e.payload);
 				PrtFreeValue(e.sender);
 				e.sender = NULL;
 				return PRT_TRUE;
@@ -1182,7 +1182,7 @@ PrtDequeueEvent(
 				context->currentTrigger = e.trigger;
 				context->currentPayload = e.payload;
 				RemoveElementFromQueue(context, i);
-				PrtLog(PRT_STEP_DEQUEUE, context, (PRT_MACHINEINST_PRIV*)PrtGetMachine(context->process, e.sender), e.trigger, e.payload);
+				PrtLog(PRT_STEP_DEQUEUE, (PRT_MACHINEINST_PRIV*)PrtGetMachine(context->process, e.sender), context, e.trigger, e.payload);
 				for (PRT_UINT32 j = 0; j < context->receive->nCases; j++)
 				{
 					PRT_CASEDECL *rcase = &context->receive->cases[j];
@@ -1780,7 +1780,7 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 )
 {
 	PRT_DBG_ASSERT(!context->isModel, "Must be a real machine");
-	PrtLog(PRT_STEP_HALT, context, NULL, NULL, NULL);
+	PrtLog(PRT_STEP_HALT, NULL, context, NULL, NULL);
 	PrtCleanupMachine(context);
 }
 
@@ -1969,11 +1969,11 @@ PRT_PRINT_FUN printFn
 void
 PrtLog(
 _In_ PRT_STEP step,
-_In_ PRT_MACHINEINST_PRIV *receiver,
 _In_ PRT_MACHINEINST_PRIV *sender,
+_In_ PRT_MACHINEINST_PRIV *receiver,
 _In_ PRT_VALUE* eventId, 
 _In_ PRT_VALUE* payload
-)
+) 
 {
 	((PRT_PROCESS_PRIV *)receiver->process)->logHandler(step, (PRT_MACHINEINST *)sender, (PRT_MACHINEINST *)receiver,  eventId, payload);
 }

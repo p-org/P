@@ -114,15 +114,15 @@ HRESULT TcpSocketPort::Write(const BYTE* ptr, int count)
 {
 	if (sock == INVALID_SOCKET)
 	{
-    printf("cannot send until we've connected this socket.\n");
-    return 0;
+		printf("cannot send until we've connected this socket.\n");
+		return 0;
 	}
 
 	serveraddr.sin_port = htons(serverport);
 	int hr = send(sock, (const char*)ptr, count, 0);
 	if (hr == SOCKET_ERROR)
 	{
-		printf("#### send failed with error: %d\n", WSAGetLastError());
+		//printf("#### send failed with error: %d\n", WSAGetLastError());
 	}
 
 	return hr;

@@ -72,7 +72,13 @@ static void LogHandler(PRT_STEP step, PRT_MACHINEINST *sender, PRT_MACHINEINST *
 	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)receiver;
 	std::wstring machineName = ConvertToUnicode((const char*)c->process->program->machines[c->instanceOf].name);
 	PRT_UINT32 machineId = c->id->valueUnion.mid->machineId;
-	std::wstring stateName = ConvertToUnicode((const char*)PrtGetCurrentStateDecl(c)->name);
+	std::wstring stateName;
+	if (receiver->isModel) {
+		stateName = L"model";
+	}
+	else {
+		stateName = ConvertToUnicode((const char*)PrtGetCurrentStateDecl(c)->name);
+	}
 	std::wstring eventName;
 	std::wstring stateId = machineName + L"." + stateName;
 	std::wstring stateLabel = machineName + L"\n" + stateName;
@@ -133,7 +139,7 @@ Also note that the machine hosting the main machine does not host container mach
 
 int main(int argc, char *argv[])
 {
-	dgmlMonitor.Connect("192.168.1.28");
+	dgmlMonitor.Connect("10.137.62.126");
 	dgmlMonitor.NewGraph(L"d:\\temp\\trace.dgml");
 
     PRT_GUID processGuid;

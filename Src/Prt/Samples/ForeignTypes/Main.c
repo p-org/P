@@ -36,7 +36,7 @@ void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr)
 
 void Log(PRT_STEP step, PRT_MACHINEINST *sender, PRT_MACHINEINST *receiver, PRT_VALUE* event, PRT_VALUE* payload)
 {
-	PrtPrintStep(step, receiver, sender, event, payload);
+	PrtPrintStep(step, sender, receiver, event, payload);
 }
 
 extern PRT_UINT64 UserMkDefaultForeignValue(_In_ PRT_UINT16 typeTag);

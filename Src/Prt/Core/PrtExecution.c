@@ -1969,13 +1969,13 @@ PRT_PRINT_FUN printFn
 void
 PrtLog(
 _In_ PRT_STEP step,
-_In_ PRT_MACHINEINST_PRIV *context,
+_In_ PRT_MACHINEINST_PRIV *receiver,
 _In_ PRT_MACHINEINST_PRIV *sender,
 _In_ PRT_VALUE* eventId, 
 _In_ PRT_VALUE* payload
 )
 {
-	((PRT_PROCESS_PRIV *)context->process)->logHandler(step, (PRT_MACHINEINST *)context, (PRT_MACHINEINST *)sender, eventId, payload);
+	((PRT_PROCESS_PRIV *)receiver->process)->logHandler(step, (PRT_MACHINEINST *)sender, (PRT_MACHINEINST *)receiver,  eventId, payload);
 }
 
 void

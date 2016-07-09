@@ -245,7 +245,7 @@ _Inout_ PRT_MACHINEINST_PRIV		*context
 
 void
 PrtSendPrivate(
-_Inout_ PRT_VALUE				*sender,
+_Inout_ PRT_MACHINEINST_PRIV	*sender,
 _Inout_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_VALUE					*event,
 _In_ PRT_VALUE					*payload,
@@ -303,14 +303,14 @@ _In_ PRT_BOOLEAN				doTransfer
 	//
 	queue->events[tail].trigger = PrtCloneValue(event);
 	queue->events[tail].payload = doTransfer ? payload : PrtCloneValue(payload);
-	queue->events[tail].sender = PrtCloneValue(sender);
+	queue->events[tail].sender = PrtCloneValue(sender->id);
 	queue->size++;
 	queue->tailIndex = (tail + 1) % queue->eventsSize;
 
 	//
 	//Log
 	//
-	PrtLog(PRT_STEP_ENQUEUE, context, (PRT_MACHINEINST_PRIV*)PrtGetMachine(context->process, sender), event, payload);
+	PrtLog(PRT_STEP_ENQUEUE, context, (PRT_MACHINEINST_PRIV*)PrtGetMachine(context->process, sender->id), event, payload);
 
 	// Check if this event unblocks a blocking "receive" operation.  
     if (context->receive != NULL)
@@ -368,7 +368,7 @@ _In_ PRT_VALUE					*payload
 	}
 	PrtUnlockMutex(context->stateMachineLock);
 
-	PrtSendPrivate(source, context, event, payload, PRT_TRUE);
+	PrtSendPrivate((PRT_MACHINEINST_PRIV*)PrtGetMachine(context->process, source), context, event, payload, PRT_TRUE);
 }
 
 void
@@ -1169,6 +1169,7 @@ PrtDequeueEvent(
 				RemoveElementFromQueue(context, i);
 				PrtLog(PRT_STEP_DEQUEUE, context, (PRT_MACHINEINST_PRIV*)PrtGetMachine(context->process, e.sender), e.trigger, e.payload);
 				PrtFreeValue(e.sender);
+				e.sender = NULL;
 				return PRT_TRUE;
 			}
 		}
@@ -1192,7 +1193,8 @@ PrtDequeueEvent(
 						break;
 					}
 				}
-				PrtFreeValue(e.sender);				
+				PrtFreeValue(e.sender);
+				e.sender = NULL;
 				context->receive = NULL;
 				return PRT_TRUE;
 			}

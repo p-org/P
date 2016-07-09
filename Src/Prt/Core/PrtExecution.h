@@ -184,7 +184,7 @@ extern "C"{
 
 	void
 		PrtSendPrivate(
-		_Inout_ PRT_VALUE			    *sender,
+		_Inout_ PRT_MACHINEINST_PRIV    *sender,
 		_Inout_ PRT_MACHINEINST_PRIV	*context,
 		_In_ PRT_VALUE					*event,
 		_In_ PRT_VALUE					*payload,
@@ -443,8 +443,8 @@ extern "C"{
 	PRT_API void
 		PrtLog(
 		_In_ PRT_STEP step,
-		_In_ PRT_MACHINEINST_PRIV *context,
 		_In_ PRT_MACHINEINST_PRIV *sender,
+		_In_ PRT_MACHINEINST_PRIV *receiver,
 		_In_ PRT_VALUE* eventId,
 		_In_ PRT_VALUE* payload
 		);

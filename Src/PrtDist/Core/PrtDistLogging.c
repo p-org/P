@@ -123,9 +123,9 @@ __in PRT_MACHINEINST* vcontext
 
 }
 
-void PrtDistSMLogHandler(PRT_STEP step, void *vcontext)
+void PrtDistSMLogHandler(PRT_STEP step, PRT_MACHINEINST *sender, PRT_MACHINEINST* receiver, PRT_VALUE* event, PRT_VALUE* payload)
 {
-	PRT_MACHINEINST_PRIV *c = (PRT_MACHINEINST_PRIV*)vcontext;
+	PRT_MACHINEINST_PRIV *c = (PRT_MACHINEINST_PRIV*)receiver;
 	PrtLockMutex(((PRT_PROCESS_PRIV*)ContainerProcess)->processLock);
 
 	if (logfile == NULL)
@@ -139,12 +139,12 @@ void PrtDistSMLogHandler(PRT_STEP step, void *vcontext)
         PRT_STRING log = NULL;
         if (step == PRT_STEP_COUNT) //special logging
         {
-            log = (PRT_STRING)vcontext;
+            log = (PRT_STRING)payload;
             fputs("<PRTDIST_LOG>  ", logfile);
         }
         else
         {
-            log = buffer = PrtToStringStep(step, vcontext, NULL, NULL, NULL);
+            log = buffer = PrtToStringStep(step, receiver, NULL, NULL, NULL);
         }
         fputs(log, logfile);
         if (log[strlen(log) - 1] != '\n') {
@@ -163,5 +163,5 @@ void PrtDistSMLogHandler(PRT_STEP step, void *vcontext)
 
 void PrtDistLog(PRT_STRING log)
 {
-	PrtDistSMLogHandler(PRT_STEP_COUNT, log);
+	PrtDistSMLogHandler(PRT_STEP_COUNT, NULL, NULL, NULL, (PRT_VALUE*)log); // hack.
 }

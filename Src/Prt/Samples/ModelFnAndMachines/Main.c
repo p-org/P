@@ -34,9 +34,9 @@ void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr)
 	}
 }
 
-void Log(PRT_STEP step, PRT_MACHINEINST *context, PRT_MACHINEINST *sender, PRT_VALUE* event, PRT_VALUE* payload)
+void Log(PRT_STEP step, PRT_MACHINEINST *sender, PRT_MACHINEINST *receiver, PRT_VALUE* event, PRT_VALUE* payload)
 {
-	PrtPrintStep(step, context, sender, event, payload);
+	PrtPrintStep(step, receiver, sender, event, payload);
 }
 
 int main(int argc, char *argv[])

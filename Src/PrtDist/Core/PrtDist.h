@@ -20,7 +20,7 @@ __in PRT_MACHINEINST* vcontext
 void PrtOpenLogFile(__in PRT_CHAR* logDirectory);
 void PrtCloseLogFile();
 
-void PrtDistSMLogHandler(PRT_STEP step, void *vcontext);
+void PrtDistSMLogHandler(PRT_STEP step, PRT_MACHINEINST *sender, PRT_MACHINEINST* receiver, PRT_VALUE* event, PRT_VALUE* payload);
 
 
 //external function to send messages over RPC

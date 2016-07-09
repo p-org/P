@@ -66,10 +66,10 @@ std::wstring ConvertToUnicode(const char* str)
 	return std::wstring(temp.begin(), temp.end());
 }
 
-static void LogHandler(PRT_STEP step, PRT_MACHINEINST *context, PRT_MACHINEINST *sender, PRT_VALUE* event, PRT_VALUE* payload)
+static void LogHandler(PRT_STEP step, PRT_MACHINEINST *sender, PRT_MACHINEINST *receiver, PRT_VALUE* event, PRT_VALUE* payload)
 {
-    //PrtPrintStep(step, context, sender, eventId, payload);
-	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)context;
+    //PrtPrintStep(step, sender, receiver, eventId, payload);
+	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)receiver;
 	std::wstring machineName = ConvertToUnicode((const char*)c->process->program->machines[c->instanceOf].name);
 	PRT_UINT32 machineId = c->id->valueUnion.mid->machineId;
 	std::wstring stateName = ConvertToUnicode((const char*)PrtGetCurrentStateDecl(c)->name);

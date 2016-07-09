@@ -882,7 +882,7 @@
             }
 
             // Enumerate typing errors
-            using (new PerfTimer("Compiler type checking " + Path.GetFileName(inputModule)))
+            using (new PerfTimer("Compiler error reporting " + Path.GetFileName(inputModule)))
             {
 
                 AddErrors(task.Result, "DupNmdSubE(_, _, _, _)", 1);

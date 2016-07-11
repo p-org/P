@@ -4,8 +4,8 @@
 OUT: controlimpureerrorsgoto.p (24, 36): function may cause a change in current state; this is not allowed here
 OUT: controlimpureerrorsgoto.p (25, 30): function may cause a change in current state; this is not allowed here
 OUT: controlimpureerrorsgoto.p (27, 4): function may cause a change in current state; this is not allowed here
-OUT: controlimpureerrorsgoto.p (32, 14): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: controlimpureerrorsgoto.p (35, 8): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: controlimpureerrorsgoto.p (32, 14): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" or "if (foo(...))" or "while (foo(...))" or "return foo(...)"
+OUT: controlimpureerrorsgoto.p (35, 8): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" or "if (foo(...))" or "while (foo(...))" or "return foo(...)"
 OUT: controlimpureerrorsgoto.p (43, 31): function may cause a change in current state; this is not allowed here
 OUT: controlimpureerrorsgoto.p (44, 28): function may cause a change in current state; this is not allowed here
 OUT: Compilation failed

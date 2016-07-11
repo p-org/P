@@ -1,0 +1,1 @@
+dsc: zinger.exe, Nondeterminism in functions

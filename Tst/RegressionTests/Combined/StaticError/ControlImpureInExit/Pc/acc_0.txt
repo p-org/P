@@ -2,8 +2,8 @@
          Console output          
 =================================
 OUT: controlimpureinexit.p (26, 4): function may cause a change in current state; this is not allowed here
-OUT: controlimpureinexit.p (33, 14): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: controlimpureinexit.p (35, 8): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: controlimpureinexit.p (33, 14): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" or "if (foo(...))" or "while (foo(...))" or "return foo(...)"
+OUT: controlimpureinexit.p (35, 8): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" or "if (foo(...))" or "while (foo(...))" or "return foo(...)"
 OUT: controlimpureinexit.p (44, 8): function may cause a change in current state; this is not allowed here
 OUT: controlimpureinexit.p (48, 10): function may cause a change in current state; this is not allowed here
 OUT: controlimpureinexit.p (56, 10): function may cause a change in current state; this is not allowed here

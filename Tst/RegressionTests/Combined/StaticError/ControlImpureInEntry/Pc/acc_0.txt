@@ -2,7 +2,7 @@
          Console output          
 =================================
 OUT: controlimpureinentry.p (26, 6): function not defined
-OUT: controlimpureinentry.p (30, 14): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: controlimpureinentry.p (32, 8): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: controlimpureinentry.p (30, 14): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" or "if (foo(...))" or "while (foo(...))" or "return foo(...)"
+OUT: controlimpureinentry.p (32, 8): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" or "if (foo(...))" or "while (foo(...))" or "return foo(...)"
 OUT: Compilation failed
 EXIT: -1

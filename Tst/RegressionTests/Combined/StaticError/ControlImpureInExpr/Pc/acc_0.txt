@@ -1,7 +1,7 @@
 =================================
          Console output          
 =================================
-OUT: controlimpureinexpr.p (23, 14): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: controlimpureinexpr.p (25, 8): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: controlimpureinexpr.p (23, 14): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" or "if (foo(...))" or "while (foo(...))" or "return foo(...)"
+OUT: controlimpureinexpr.p (25, 8): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" or "if (foo(...))" or "while (foo(...))" or "return foo(...)"
 OUT: Compilation failed
 EXIT: -1

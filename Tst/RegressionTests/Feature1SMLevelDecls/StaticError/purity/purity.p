@@ -6,7 +6,7 @@ machine M
    
    fun foo1() : int
    {       
-       if (foo2())  //error
+       if (foo2())
        {
           return 0;
        }

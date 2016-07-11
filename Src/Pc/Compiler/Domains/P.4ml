@@ -1096,7 +1096,7 @@ domain PStaticTyping extends PData
 	Impure(c) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), c : FunDecl, called.name = n, FunAvailable(called, c.owner), Impure(called).
 	Impure(c) :- SubSE(c, e), e = FunStmt(n, _, aout, _, _), c : FunDecl, aout : Name, IsLValue(c, aout, TRUE).
 
-    [ rule_Classes = '"error, msg: this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" "']
+    [ rule_Classes = '"error, msg: this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" or "if (foo(...))" or "while (foo(...))" or "return foo(...)" "']
     PurityError(c, e') :- 
        SubSE(c, e), e = New(_, e'),           e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = UnApp(_, e'),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
@@ -1115,12 +1115,9 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Monitor(e', _, _),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Monitor(_, e', _),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
        SubSE(c, e), e = Assert(e', _, _),        e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
-       SubSE(c, e), e = Return (e', _),          e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
-       SubSE(c, e), e = While(e', _, _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
-       SubSE(c, e), e = Ite(e', _, _, _),        e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = BinStmt(_, e', e'', _),  e'' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called), toSymbol(e') != #Name.
 
-    [ rule_Classes = '"error, msg: new M(...) can only be called like "new M(...);" or "x = new M(...);" "']
+    [ rule_Classes = '"error, msg: new M(...) can only be called like "new M(...);" or "x = new M(...);" or "return new M(...)" "']
     PurityError(c, e') :- 
        SubSE(c, e), e = New(_, e'),           e' : New;
        SubSE(c, e), e = UnApp(_, e'),         e' : New;
@@ -1139,10 +1136,49 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Monitor(e', _, _),       e' : New;
        SubSE(c, e), e = Monitor(_, e', _),       e' : New;    
        SubSE(c, e), e = Assert(e', _, _),        e' : New;
-       SubSE(c, e), e = Return (e', _),          e' : New;
-       SubSE(c, e), e = While(e', _, _),         e' : New;
-       SubSE(c, e), e = Ite(e', _, _, _),        e' : New;
        SubSE(c, e), e = BinStmt(_, e', e'', _),  e'' : New, toSymbol(e') != #Name.
+
+    [ rule_Classes = '"error, msg: $ can only be used like "x = $" or "if ($)" or "while ($)" or "return $;" "']
+    PurityError(c, e') :- 
+       SubSE(c, e), e = New(_, e'),           e' = NulApp(NONDET);
+       SubSE(c, e), e = UnApp(_, e'),         e' = NulApp(NONDET);
+       SubSE(c, e), e = BinApp(_, e', _),     e' = NulApp(NONDET);
+       SubSE(c, e), e = BinApp(_, _, e'),     e' = NulApp(NONDET);    
+       SubSE(c, e), e = Field(e', _),         e' = NulApp(NONDET);
+       SubSE(c, e), e = Cast(e', _),          e' = NulApp(NONDET);    
+       SubSE(c, e), e = Exprs(_, e', _),         e' = NulApp(NONDET);              
+       SubSE(c, e), e = NamedExprs(_, e', _), e' = NulApp(NONDET);
+       SubSE(c, e), e = NewStmt(_, e', _),       e' = NulApp(NONDET);
+       SubSE(c, e), e = Raise(e', _, _),         e' = NulApp(NONDET);
+       SubSE(c, e), e = Raise(_, e', _),         e' = NulApp(NONDET);        
+       SubSE(c, e), e = Send(e', _, _, _, _),       e' = NulApp(NONDET);
+       SubSE(c, e), e = Send(_, e', _, _, _),       e' = NulApp(NONDET);
+       SubSE(c, e), e = Send(_, _, e', _, _),       e' = NulApp(NONDET);    
+       SubSE(c, e), e = Monitor(e', _, _),       e' = NulApp(NONDET);
+       SubSE(c, e), e = Monitor(_, e', _),       e' = NulApp(NONDET);    
+       SubSE(c, e), e = Assert(e', _, _),        e' = NulApp(NONDET);
+       SubSE(c, e), e = BinStmt(_, e', e'', _),  e'' = NulApp(NONDET), toSymbol(e') != #Name.
+
+    [ rule_Classes = '"error, msg: $$ can only be used like "x = $$" or "if ($$)" or "while ($$)" or "return $$;" "']
+    PurityError(c, e') :- 
+       SubSE(c, e), e = New(_, e'),           e' = NulApp(FAIRNONDET);
+       SubSE(c, e), e = UnApp(_, e'),         e' = NulApp(FAIRNONDET);
+       SubSE(c, e), e = BinApp(_, e', _),     e' = NulApp(FAIRNONDET);
+       SubSE(c, e), e = BinApp(_, _, e'),     e' = NulApp(FAIRNONDET);    
+       SubSE(c, e), e = Field(e', _),         e' = NulApp(FAIRNONDET);
+       SubSE(c, e), e = Cast(e', _),          e' = NulApp(FAIRNONDET);    
+       SubSE(c, e), e = Exprs(_, e', _),         e' = NulApp(FAIRNONDET);              
+       SubSE(c, e), e = NamedExprs(_, e', _), e' = NulApp(FAIRNONDET);
+       SubSE(c, e), e = NewStmt(_, e', _),       e' = NulApp(FAIRNONDET);
+       SubSE(c, e), e = Raise(e', _, _),         e' = NulApp(FAIRNONDET);
+       SubSE(c, e), e = Raise(_, e', _),         e' = NulApp(FAIRNONDET);        
+       SubSE(c, e), e = Send(e', _, _, _, _),       e' = NulApp(FAIRNONDET);
+       SubSE(c, e), e = Send(_, e', _, _, _),       e' = NulApp(FAIRNONDET);
+       SubSE(c, e), e = Send(_, _, e', _, _),       e' = NulApp(FAIRNONDET);    
+       SubSE(c, e), e = Monitor(e', _, _),       e' = NulApp(FAIRNONDET);
+       SubSE(c, e), e = Monitor(_, e', _),       e' = NulApp(FAIRNONDET);    
+       SubSE(c, e), e = Assert(e', _, _),        e' = NulApp(FAIRNONDET);
+       SubSE(c, e), e = BinStmt(_, e', e'', _),  e'' = NulApp(FAIRNONDET), toSymbol(e') != #Name.
 						 	                                          
     /*************************************************************/
     /*                      Type Comparability                   */

@@ -340,12 +340,12 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	TypeConstant(NIL, -1, NIL).
 
 	//// Base types
-	BaseType2Kind ::= ({ NULL, BOOL, INT, EVENT, REAL, ANY }, String).
+	BaseType2Kind ::= ({ NULL, BOOL, INT, EVENT, MACHINE, ANY }, String).
 	BaseType2Kind(NULL, "PRT_KIND_NULL").
 	BaseType2Kind(BOOL, "PRT_KIND_BOOL").
 	BaseType2Kind(INT, "PRT_KIND_INT").
 	BaseType2Kind(EVENT, "PRT_KIND_EVENT").
-	BaseType2Kind(REAL, "PRT_KIND_MACHINE").
+	BaseType2Kind(MACHINE, "PRT_KIND_MACHINE").
 	BaseType2Kind(ANY, "PRT_KIND_ANY").
 	
 	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.BaseType(base), BaseType2Kind(base, kind),

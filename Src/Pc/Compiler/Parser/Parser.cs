@@ -1963,7 +1963,7 @@
                 kind == P_Root.UserCnstKind.NULL ||
                 kind == P_Root.UserCnstKind.BOOL ||
                 kind == P_Root.UserCnstKind.INT ||
-                kind == P_Root.UserCnstKind.REAL ||
+                kind == P_Root.UserCnstKind.MACHINE ||
                 kind == P_Root.UserCnstKind.EVENT ||
                 kind == P_Root.UserCnstKind.ANY);
 

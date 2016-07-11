@@ -13,9 +13,8 @@ domain PData
 	TypeDef         ::= new (name: String, type: any TypeExpr).
 	ModelType       ::= new (name: String).
 
-    //// The BaseType REAL is the type of real machines.
 	NameType        ::= new (name: String).
-    BaseType        ::= new ({ NULL, BOOL, INT, EVENT, REAL, ANY }).
+    BaseType        ::= new ({ NULL, BOOL, INT, EVENT, MACHINE, ANY }).
     TupType         ::= new (hd: any TypeExpr, tl: any TupType + { NIL }).
     NmdTupType      ::= new (hd: any NmdTupTypeField, tl: any NmdTupType + { NIL }).
     SeqType         ::= new (x: any TypeExpr).
@@ -248,7 +247,7 @@ domain PStaticTyping extends PData
 	TypeExpansion(BaseType(BOOL), BaseType(BOOL)).
 	TypeExpansion(BaseType(INT), BaseType(INT)).
 	TypeExpansion(BaseType(EVENT), BaseType(EVENT)).
-	TypeExpansion(BaseType(REAL), BaseType(REAL)).
+	TypeExpansion(BaseType(MACHINE), BaseType(MACHINE)).
 	TypeExpansion(BaseType(ANY), BaseType(ANY)).
 	TypeExpansion(type, type)  :- TypeDef(typeName, _), ModelType(typeName), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, eType) :- TypeDef(typeName, typeExpr), no ModelType(typeName), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
@@ -342,7 +341,7 @@ domain PStaticTyping extends PData
     TypeOf(c, e, BaseType(NULL))  :- SubSE(c, e), e = NulApp(NULL).
     TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = NulApp(HALT).
 	
-    TypeOf(c, e, BaseType(REAL))  :- SubSE(c, e), e = NulApp(THIS).
+    TypeOf(c, e, BaseType(MACHINE))  :- SubSE(c, e), e = NulApp(THIS).
     
 	TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(NONDET).
 
@@ -405,8 +404,8 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Cast can never succeed"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2), TypeExpansion(t2, t2'), TypeRel(t1, t2', k), k = EMPTY.
 
-    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _), MachineDecl(n, REAL, _, _, _).
-    TypeOf(c, e, BaseType(REAL))   :- SubSE(c, e), e = New(n, _), MachineDecl(n, MODEL, _, _, _).
+    TypeOf(c, e, BaseType(MACHINE))   :- SubSE(c, e), e = New(n, _), MachineDecl(n, REAL, _, _, _).
+    TypeOf(c, e, BaseType(MACHINE))   :- SubSE(c, e), e = New(n, _), MachineDecl(n, MODEL, _, _, _).
 	[ rule_Classes = '"error, msg: Monitor cannot be created"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _), MachineDecl(n, MONITOR, _, _, _).
 	[ rule_Classes = '"error, msg: Undefined machine type"']
@@ -669,16 +668,16 @@ domain PStaticTyping extends PData
 
 	//// Rules for send.
     TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e = Send(_, _, NIL, _, _),                           ///// < send has NIL payload,
-	                                  t1 = BaseType(REAL),                                                 ///// < arg1 is a machine type,
+	                                  t1 = BaseType(MACHINE),                                                 ///// < arg1 is a machine type,
 	                                  CommStmtPLType(c, e, plt), TypeRel(BaseType(NULL), plt, SUB).        ///// < arg2 event type contains null.
 
     TypeOf(c, e, NIL)              :- TypeOfArg3(c, e, t1, t2, t3), e : Send,                             ///// < send has non-NIL payload,             
-	                                  t1 = BaseType(REAL),                                                ///// < arg1 is a machine type,
+	                                  t1 = BaseType(MACHINE),                                                ///// < arg1 is a machine type,
 	                                  CommStmtPLType(c, e, plt), TypeRel(t3, evt, SUB).                   ///// < and t3 is a subtype of plt.
 
 	//// Error rules for send.
 	[ rule_Classes = '"error, msg: argument 1 of "send" expects a machine value"']
-    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Send, t1 != BaseType(REAL).
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Send, t1 != BaseType(MACHINE).
 
 	[ rule_Classes = '"error, msg: argument 2 of "send" expects an event value"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, e2, _, _, _), TypeOf(c, e2, t2), t2 != BaseType(EVENT).
@@ -1243,7 +1242,7 @@ domain PStaticTyping extends PData
     // NullBase types have empty intersections with all types, except themselves, ANY, and NULL.
     NullBase    ::= (TypeExpr).
 	NullBase(type) :- type = BaseType(EVENT).
-	NullBase(type) :- type = BaseType(REAL).    
+	NullBase(type) :- type = BaseType(MACHINE).    
     TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), NullBase(s), NonNullBase(t).
     TypeRel(t, s, EMPTY)    :- CompTypeRel(t, s), NullBase(s), NonNullBase(t).
     

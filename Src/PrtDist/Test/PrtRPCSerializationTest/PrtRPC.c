@@ -1,6 +1,5 @@
 #include<process.h>
-#include "PrtDistSerializer.h"
-#include "PrtWinUser.h"
+#include "PrtDist.h"
 #include "PrtExecution.h"
 #include "PrtRPCTest_h.h"
 #include "PrtRPCTest_s.c"

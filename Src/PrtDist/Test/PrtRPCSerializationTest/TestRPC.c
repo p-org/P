@@ -2,7 +2,7 @@
 #include "PrtExecution.h"
 #include "PrtRPCTest_c.c"
 #include "PrtRPCTest_h.h"
-#include "PrtDistSerializer.h"
+#include "PrtDist.h"
 extern void CreateRPCTestServer();
 
 /***************************************************************************

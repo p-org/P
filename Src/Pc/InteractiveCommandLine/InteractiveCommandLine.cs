@@ -22,13 +22,19 @@ namespace Microsoft.Pc
             for (int i = 0; i < args.Length; i++)
             {
                 var arg = args[i];
-                if (arg == "/shortFileNames")
+                if (arg[0] == '-' || arg[0] == '/')
                 {
-                    shortFileNames = true;
-                }
-                else if (arg == "/server")
-                {
-                    server = true;
+                    switch (arg.Substring(1).ToLowerInvariant())
+                    {
+                        case "shortfilenames":
+                            shortFileNames = true;
+                            break;
+                        case "server":
+                            server = true;
+                            break;
+                        default:
+                            goto error;
+                    }
                 }
                 else
                 {
@@ -138,7 +144,7 @@ namespace Microsoft.Pc
                 }
             }
 
-        error:
+            error:
             {
                 Console.WriteLine("USAGE: Pci.exe [/shortFileNames] [/server]");
                 return;
@@ -156,45 +162,71 @@ namespace Microsoft.Pc
             for (int i = 1; i < args.Length; i++)
             {
                 string arg = args[i];
-                if (arg == "/test")
-                {
-                    test = true;
-                }
-                else if (arg == "/dumpFormulaModel")
-                {
-                    outputFormula = true;
-                }
-                else if (arg == "/printTypeInference")
-                {
-                    printTypeInference = true;
-                }
-                else if (outputDir == null && arg.StartsWith("/outputDir:"))
+                string colonArg = null;
+                if (arg[0] == '-' || arg[0] == '/')
                 {
                     var colonIndex = arg.IndexOf(':');
-                    outputDir = arg.Substring(colonIndex + 1);
-                    if (!Directory.Exists(outputDir))
+                    if (colonIndex >= 0)
                     {
-                        Console.WriteLine("Output directory {0} does not exist", outputDir);
-                        return false;
+                        arg = args[i].Substring(0, colonIndex);
+                        colonArg = args[i].Substring(colonIndex + 1);
                     }
-                }
-                else if (outputFileName == null && arg.StartsWith("/outputFileName:"))
-                {
-                    var colonIndex = arg.IndexOf(':');
-                    outputFileName = arg.Substring(colonIndex + 1);
-                }
-                else if (fileName == null && arg.Length > 2 && arg.EndsWith(".p"))
-                {
-                    fileName = arg;
+                    switch (arg.Substring(1).ToLowerInvariant())
+                    {
+                        case "test":
+                            test = true;
+                            break;
+
+                        case "dumpformulamodel":
+                            outputFormula = true;
+                            break;
+
+                        case "printtypeinference":
+                            printTypeInference = true;
+                            break;
+
+                        case "outputdir":
+                            if (colonArg == null)
+                            {
+                                Console.WriteLine("Must supply path for output directory");
+                                return false;
+                            }
+                            if (!Directory.Exists(colonArg))
+                            {
+                                Console.WriteLine("Output directory {0} does not exist", colonArg);
+                                return false;
+                            }
+                            outputDir = colonArg;
+                            break;
+
+                        case "outputfilename":
+                            if (colonArg == null)
+                            {
+                                Console.WriteLine("Must supply name for output files");
+                                return false;
+                            }
+                            outputFileName = colonArg;
+                            break;
+
+                        default:
+                            return false;
+                    }
                 }
                 else
                 {
-                    return false;
+                    if (fileName == null)
+                    {
+                        fileName = arg;
+                    }
+                    else
+                    {
+                        return false;
+                    }
                 }
             }
+
             if (fileName == null)
                 return false;
-
             inputFileName = fileName;
             compilerOptions.outputFormula = outputFormula;
             compilerOptions.printTypeInference = printTypeInference;
@@ -211,19 +243,38 @@ namespace Microsoft.Pc
             for (int i = 1; i < args.Length; i++)
             {
                 string arg = args[i];
-                if (outputDir == null && arg.StartsWith("/outputDir:"))
+                string colonArg = null;
+                if (arg[0] == '-' || arg[0] == '/')
                 {
                     var colonIndex = arg.IndexOf(':');
-                    outputDir = arg.Substring(colonIndex + 1);
-                    if (!Directory.Exists(outputDir))
+                    if (colonIndex >= 0)
                     {
-                        Console.WriteLine("Output directory {0} does not exist", outputDir);
-                        return false;
+                        arg = args[i].Substring(0, colonIndex);
+                        colonArg = args[i].Substring(colonIndex + 1);
                     }
-                }
-                else if (arg == "/noSourceInfo")
-                {
-                    noSourceInfo = true;
+                    switch (arg.Substring(1).ToLowerInvariant())
+                    {
+                        case "outputdir":
+                            if (colonArg == null)
+                            {
+                                Console.WriteLine("Must supply path for output directory");
+                                return false;
+                            }
+                            if (!Directory.Exists(colonArg))
+                            {
+                                Console.WriteLine("Output directory {0} does not exist", colonArg);
+                                return false;
+                            }
+                            outputDir = colonArg;
+                            break;
+
+                        case "nosourceinfo":
+                            noSourceInfo = true;
+                            break;
+
+                        default:
+                            return false;
+                    }
                 }
                 else
                 {
@@ -242,34 +293,42 @@ namespace Microsoft.Pc
             for (int i = 1; i < args.Length; i++)
             {
                 string arg = args[i];
-                if (liveness == LivenessOption.None && arg.StartsWith("/liveness"))
-                {
-                    if (arg == "/liveness")
-                    {
-                        liveness = LivenessOption.Standard;
-                    }
-                    else if (arg.StartsWith("/liveness:"))
-                    {
-                        var colonIndex = arg.IndexOf(':');
-                        var colonArg = arg.Substring(colonIndex + 1);
-                        if (colonArg == "mace")
-                            liveness = LivenessOption.Mace;
-                        else
-                            return false;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-                else if (outputDir == null && arg.StartsWith("/outputDir:"))
+                string colonArg = null;
+                if (arg[0] == '-' || arg[0] == '/')
                 {
                     var colonIndex = arg.IndexOf(':');
-                    outputDir = arg.Substring(colonIndex + 1);
-                    if (!Directory.Exists(outputDir))
+                    if (colonIndex >= 0)
                     {
-                        Console.WriteLine("Output directory {0} does not exist", outputDir);
-                        return false;
+                        arg = args[i].Substring(0, colonIndex);
+                        colonArg = args[i].Substring(colonIndex + 1);
+                    }
+                    switch (arg.Substring(1).ToLowerInvariant())
+                    {
+                        case "outputdir":
+                            if (colonArg == null)
+                            {
+                                Console.WriteLine("Must supply path for output directory");
+                                return false;
+                            }
+                            if (!Directory.Exists(colonArg))
+                            {
+                                Console.WriteLine("Output directory {0} does not exist", colonArg);
+                                return false;
+                            }
+                            outputDir = colonArg;
+                            break;
+
+                        case "liveness":
+                            if (colonArg == null)
+                                liveness = LivenessOption.Standard;
+                            else if (colonArg == "mace")
+                                liveness = LivenessOption.Mace;
+                            else
+                                return false;
+                            break;
+
+                        default:
+                            return false;
                     }
                 }
                 else

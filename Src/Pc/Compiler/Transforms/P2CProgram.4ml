@@ -104,6 +104,13 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 									   IndexOf(etype, f, offset, _), cn = strJoin(strJoin(enumName, "_"), f), enumMember = Element(IntLit(offset, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")), size = lstLength(#NmdTupType, etype) }).  
 
+	//// (0.2) Enum declarations for all enum types
+	HOut(0, out.EnmDef(NIL, enumName, list)) :-
+		d is EnumTypeDef(enumName, elems), size = lstLength(#StringList, elems),
+		list = toList(#Elements, NIL, { enumMember | 
+										EnumTypeDefElem(d, StringList(name, tl)), cn = strJoin(strJoin(enumName, "_"), name), offset = size - lstLength(#StringList, StringList(name, tl)), enumMember = Element(IntLit(offset, DEC, NIL), cn);
+										enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")) }).  
+
 	//// (1) EventDecls - Id 0, 1 are reserved for null, halt event, which can appear in transition tables.
 	DeclId(NULL, 0, "_P_EVENT_NULL").
 	DeclId(HALT, 1, "_P_EVENT_HALT").
@@ -325,7 +332,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	TypeDepNum  ::= (id: Natural, type: TypeExpr).
 
 	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.BaseType.
-	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.NameType. 
+	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.NameType, no EnumTypeDef(t.name, _). 
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = SeqType(t'), TypeDepNum(j, t'), i = j + 1.  
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = MapType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1.  
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = TupType(t', NIL), TypeDepNum(j, t'), i = j + 1.  
@@ -518,6 +525,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	ConstExpr(NulApp(NULL)).
 	ConstExpr(NulApp(HALT)).
 	ConstExpr(e) :- SubSE(_, e), e = Name(n), eventDecl is EventDecl(n, _, _), DeclId(eventDecl, _, _). 
+	ConstExpr(e) :- EnumTypeDefElem(_, StringList(n, _)), e = Name(n).
 	ConstExpr(e) :- SubSE(_, e), e = NulApp(op), op: Integer.
 	ConstExpr(e) :- SubSE(_, e), e = NulApp(op), op: Boolean.
 
@@ -537,6 +545,8 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", IntLit(n, DEC, U)) :- ConstExpr(e), e = NulApp(n), n: Integer.
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_FALSE")) :- ConstExpr(e), e = NulApp(FALSE).
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_TRUE")) :- ConstExpr(e), e = NulApp(TRUE).
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", out.Ident(n)) :- ConstExpr(e), e = Name(name), EnumTypeDefElem(d, StringList(name, _)),
+																n = strJoin(strJoin(d.name, "_"), name).
 
 	Constant(c, m, defs) :- ConstId(m, c), Constant(_, m - 1, before), BaseConstant2Kind(c, kind, value),
 							defs = out.Section(before, def), def = out.VarDef(NIL, NmdType(NIL, "PRT_VALUE"), constName, constStruct),
@@ -1019,6 +1029,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	TypeToExpr(type, expr) :- TypeId(typeIndex, type), 
 	                          typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), 
 							  expr = out.UnApp(ADDR, Ident(typeName)).
+	TypeToExpr(type, expr) :- TranslatedTypeExpr(type), type = NameType(name), EnumTypeDef(name, _), TypeToExpr(in.BaseType(INT), expr).
 	TypeToExpr(type, expr) :- TypeExpansion(type, etype), TypeToExpr(etype, expr).
 
 	ParamsType ::= (decl: FunDecl, expr: out.Expr).
@@ -1662,6 +1673,10 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail),
 									e = Name(n), IsEventCnst(c, n, _), ConstId(m, e),
 									ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+									e = Name(n), IsEnumCnst(c, n, _), ConstId(m, e),
+									ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))).
 
 	//// Machine creation
 	MkMachineFuncName ::= (s: String).

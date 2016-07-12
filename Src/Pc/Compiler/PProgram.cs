@@ -16,6 +16,13 @@
             get;
             private set;
         }
+
+        public List<P_Root.EnumTypeDef> EnumTypeDefs
+        {
+            get;
+            private set;
+        }
+
         public List<P_Root.ModelType> ModelTypes
         {
             get;
@@ -103,6 +110,11 @@
                     yield return td;
                 }
 
+                foreach (var etd in EnumTypeDefs)
+                {
+                    yield return etd;
+                }
+
                 foreach (var md in ModelTypes)
                 {
                     yield return md;
@@ -173,6 +185,7 @@
         public PProgram()
         {
             TypeDefs = new List<P_Root.TypeDef>();
+            EnumTypeDefs = new List<P_Root.EnumTypeDef>();
             ModelTypes = new List<P_Root.ModelType>();
             Events = new List<P_Root.EventDecl>();
             Machines = new List<P_Root.MachineDecl>();

@@ -67,6 +67,7 @@
 			 keywords.Add("send", (int)Tokens.SEND);
 			 keywords.Add("monitor", (int)Tokens.MONITOR);
 			 keywords.Add("spec", (int)Tokens.SPEC);
+			 keywords.Add("enum", (int)Tokens.ENUM);
 			 keywords.Add("monitors", (int)Tokens.MONITORS);
 			 keywords.Add("raise", (int)Tokens.RAISE);
 			 keywords.Add("halt", (int)Tokens.HALT);

@@ -1,0 +1,5 @@
+arg: ..\enum1.p
+arg: /shortFileNames
+arg: /test
+arg: /outputDir:..\.
+dsc: pc.exe: enum feature

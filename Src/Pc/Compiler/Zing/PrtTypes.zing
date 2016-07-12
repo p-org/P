@@ -3,7 +3,6 @@ enum PRT_TYPE_KIND
 	PRT_KIND_ANY, 
 	PRT_KIND_BOOL, 
 	PRT_KIND_EVENT, 
-	PRT_KIND_FORGN, 
 	PRT_KIND_MACHINE, 
 	PRT_KIND_INT, 
 	PRT_KIND_MAP, 
@@ -53,14 +52,6 @@ class PRT_TYPE {
 		type = BuildDefault(primType);
 		return type;
     }
-
-	static PRT_TYPE PrtMkForeignType(int typeTag)
-	{
-	    PRT_TYPE type;
-		type = BuildDefault(PRT_TYPE_KIND.PRT_KIND_FORGN);
-		type.typeTag = typeTag;
-		return type;
-	}
 
     static PRT_TYPE PrtMkMapType(PRT_TYPE domType, PRT_TYPE codType) {
         PRT_TYPE type;

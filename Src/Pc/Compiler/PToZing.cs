@@ -2613,7 +2613,7 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(type))));
                     ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, MkZingEnum(name))));
                 }
                 retVal = tmpVar;
@@ -3691,7 +3691,6 @@ namespace Microsoft.Pc
 
         internal class TypeTranslationContext
         {
-            private int foreignTypeCount;
             private int fieldCount;
             private int typeCount;
             private List<AST<Node>> fieldNameInitialization;
@@ -3703,7 +3702,6 @@ namespace Microsoft.Pc
             public TypeTranslationContext(PToZing pToZing)
             {
                 this.pToZing = pToZing;
-                foreignTypeCount = 0;
                 fieldCount = 0;
                 typeCount = 0;
                 fieldNameInitialization = new List<AST<Node>>();
@@ -3753,7 +3751,6 @@ namespace Microsoft.Pc
             {
                 fieldNameInitialization.Add(n);
             }
-
 
             private void AddTypeInitialization(AST<Node> n)
             {
@@ -3827,8 +3824,7 @@ namespace Microsoft.Pc
                 else if (typeKind == "NameType")
                 {
                     var tmpVar = GetType();
-                    AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkForeignType"), Factory.Instance.MkCnst(foreignTypeCount))));
-                    foreignTypeCount++;
+                    AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_INT"))));
                     return tmpVar;
                 }
                 else if (typeKind == "TupType")

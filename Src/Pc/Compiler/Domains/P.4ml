@@ -1241,8 +1241,8 @@ domain PStaticTyping extends PData
     TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NIL, t != NIL.
 
 	// Each model or enum type has empty intersection with all types except itself and ANY
-	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), t != s, t != ANY.
-	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), t != s, t != ANY. 
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), t != s, t != BaseType(ANY).
+	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), t != s, t != BaseType(ANY). 
     
     // The NULL type has empty intersections with NonNullBase and complex types.
     NonNullBase ::= (TypeExpr).

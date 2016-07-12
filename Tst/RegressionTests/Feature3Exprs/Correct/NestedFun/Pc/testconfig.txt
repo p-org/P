@@ -1,0 +1,5 @@
+arg: ..\NestedFun.p
+arg: /shortFileNames
+arg: /test
+arg: /outputDir:..\.
+dsc: pc.exe, Nested FunApp in FunStmt

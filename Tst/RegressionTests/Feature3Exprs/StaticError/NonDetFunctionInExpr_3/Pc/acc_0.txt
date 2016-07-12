@@ -1,6 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: nondetfunctioninexpr_3.p (39, 17): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: nondetfunctioninexpr_3.p (39, 17): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" or "if (foo(...))" or "while (foo(...))" or "return foo(...)"
 OUT: Compilation failed
 EXIT: -1

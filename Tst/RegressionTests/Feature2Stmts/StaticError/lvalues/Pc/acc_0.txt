@@ -5,7 +5,7 @@ OUT: lvalues.p (0, 0): No Main Machine
 OUT: lvalues.p (1, 1): no start state in machine
 OUT: lvalues.p (11, 11): invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name
 OUT: lvalues.p (13, 11): invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name
-OUT: lvalues.p (14, 14): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: lvalues.p (14, 14): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" or "if (foo(...))" or "while (foo(...))" or "return foo(...)"
 OUT: lvalues.p (16, 5): function requires arguments
 OUT: lvalues.p (17, 5): function arguments have incorrect types
 OUT: Compilation failed

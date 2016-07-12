@@ -1,11 +1,11 @@
 =================================
          Console output          
 =================================
-OUT: nondetfunctioninexpr_2.p (37, 11): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: nondetfunctioninexpr_2.p (39, 7): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: nondetfunctioninexpr_2.p (40, 19): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: nondetfunctioninexpr_2.p (42, 7): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: nondetfunctioninexpr_2.p (58, 6): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: nondetfunctioninexpr_2.p (100, 6): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: nondetfunctioninexpr_2.p (37, 11): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" or "if (foo(...))" or "while (foo(...))" or "return foo(...)"
+OUT: nondetfunctioninexpr_2.p (39, 7): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" or "if (foo(...))" or "while (foo(...))" or "return foo(...)"
+OUT: nondetfunctioninexpr_2.p (40, 19): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" or "if (foo(...))" or "while (foo(...))" or "return foo(...)"
+OUT: nondetfunctioninexpr_2.p (42, 7): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" or "if (foo(...))" or "while (foo(...))" or "return foo(...)"
+OUT: nondetfunctioninexpr_2.p (58, 6): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" or "if (foo(...))" or "while (foo(...))" or "return foo(...)"
+OUT: nondetfunctioninexpr_2.p (100, 6): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" or "if (foo(...))" or "while (foo(...))" or "return foo(...)"
 OUT: Compilation failed
 EXIT: -1

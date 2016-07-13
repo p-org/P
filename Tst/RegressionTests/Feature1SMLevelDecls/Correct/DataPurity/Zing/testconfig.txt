@@ -1,0 +1,1 @@
+dsc: zinger.exe, code execution for data impure function

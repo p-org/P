@@ -332,7 +332,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	TypeDepNum  ::= (id: Natural, type: TypeExpr).
 
 	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.BaseType.
-	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.NameType, no EnumTypeDef(t.name, _). 
+	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.NameType. 
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = SeqType(t'), TypeDepNum(j, t'), i = j + 1.  
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = MapType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1.  
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = TupType(t', NIL), TypeDepNum(j, t'), i = j + 1.  
@@ -360,9 +360,16 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 								def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								typeName = strJoin("P_GEND_TYPE_", toString(m)),
                                 typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
+
+	//// Enum types
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), EnumTypeDef(name, _),
+								defs = out.Section(before, def),
+								def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
+								typeName = strJoin("P_GEND_TYPE_", toString(m)),
+                                typeStruct = out.Init(Args(Ident("PRT_KIND_INT"), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
 	
 	//// Foreign types
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), 
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), no EnumTypeDef(name, _),
 								defs = out.Section(before, def),
 								def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								typeName = strJoin("P_GEND_TYPE_", toString(m)),
@@ -1029,7 +1036,6 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	TypeToExpr(type, expr) :- TypeId(typeIndex, type), 
 	                          typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), 
 							  expr = out.UnApp(ADDR, Ident(typeName)).
-	TypeToExpr(type, expr) :- TranslatedTypeExpr(type), type = NameType(name), EnumTypeDef(name, _), TypeToExpr(in.BaseType(INT), expr).
 	TypeToExpr(type, expr) :- TypeExpansion(type, etype), TypeToExpr(etype, expr).
 
 	ParamsType ::= (decl: FunDecl, expr: out.Expr).

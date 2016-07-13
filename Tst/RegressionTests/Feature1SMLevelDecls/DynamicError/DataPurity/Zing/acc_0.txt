@@ -1,0 +1,23 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 2 distinct states explored
+OUT: 
+EXIT: 3
+
+=================================
+DataImpureFunction.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine PING-0
+<StateLog> Machine PING-0 entering State Ping_Init
+<RaiseLog> Machine PING-0 raised Event ____Success
+
+Error:
+P Assertion failed:
+Expression: assert(tmp_11.bl,)
+Comment: DataImpureFunction.p (28, 5): Assert failed

@@ -1,0 +1,5 @@
+arg: ..\DataImpureFunction.p
+arg: /shortFileNames
+arg: /test
+arg: /outputDir:..\.
+dsc: pc.exe, code execution for data impure function

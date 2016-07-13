@@ -1,0 +1,10 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine PING(1) is created
+OUT: <StateLog> Machine PING(1) entered state Ping_Init
+OUT: <RaiseLog> Machine PING(1) raised event Success with payload null
+OUT: <ActionLog> Machine PING(1) executed action in state Ping_Init
+OUT: exiting with PRT_STATUS_ASSERT (assertion failure)
+OUT: 
+EXIT: 1

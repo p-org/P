@@ -1,0 +1,4 @@
+arg: -et:DataImpureFunction.trace
+inc: DataImpureFunction.trace
+del: DataImpureFunction.trace
+dsc: zinger.exe, code execution for data impure function

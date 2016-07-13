@@ -1,0 +1,22 @@
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 4 distinct states explored
+OUT: 
+EXIT: 3
+
+=================================
+NondetFun.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine Test-0
+<StateLog> Machine Test-0 entering State Init
+
+Error:
+P Assertion failed:
+Expression: assert(tmpVar_5.bl,)
+Comment: NondetFun.p (33, 3): Assert failed

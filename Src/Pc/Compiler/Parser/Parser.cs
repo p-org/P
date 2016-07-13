@@ -1290,6 +1290,20 @@
             parseProgram.TypeDefs.Add(typeDef);
         }
 
+        P_Root.IArgType_StringList__1 enumElemList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+        void AddEnumElem(string name, Span nameSpan)
+        {
+            enumElemList = P_Root.MkStringList(MkString(name, nameSpan), enumElemList);
+        }
+
+        void AddEnumTypeDef(string name, Span nameSpan, Span enumTypeDefSpan)
+        {
+            P_Root.EnumTypeDef enumTypeDef = P_Root.MkEnumTypeDef(MkString(name, nameSpan), (P_Root.StringList)enumElemList);
+            enumElemList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+            enumTypeDef.Span = enumTypeDefSpan;
+            parseProgram.EnumTypeDefs.Add(enumTypeDef);
+        }
+
         private void AddGroup()
         {
             groupStack.Pop();

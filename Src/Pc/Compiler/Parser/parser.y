@@ -9,7 +9,7 @@
 }
 
 %token INT BOOL ANY SEQ MAP ID
-%token TYPE INCLUDE MAIN EVENT MACHINE MONITOR ASSUME SPEC
+%token TYPE INCLUDE MAIN EVENT MACHINE MONITOR ASSUME SPEC ENUM
 
 %token VAR START HOT COLD MODEL STATE FUN ACTION GROUP MONITORS
 
@@ -56,6 +56,7 @@ TopDeclList
 TopDecl
     : IncludeDecl
 	| TypeDefDecl
+	| EnumTypeDefDecl
 	| EventDecl
 	| MachineDecl
 	| FunDecl
@@ -84,6 +85,15 @@ Annotation
 TypeDefDecl
 	: TYPE ID ASSIGN Type SEMICOLON			{ AddTypeDef($2.str, ToSpan(@2), ToSpan(@1)); }
 	| MODEL TYPE ID ASSIGN Type SEMICOLON   { AddModelTypeDef($3.str, ToSpan(@3), ToSpan(@1)); }
+	;
+
+EnumTypeDefDecl
+	: ENUM ID LCBRACE EnumElemList RCBRACE	{ AddEnumTypeDef($2.str, ToSpan(@2), ToSpan(@1)); }
+	;
+
+EnumElemList
+	: ID						{ AddEnumElem($1.str, ToSpan(@1)); }									
+	| ID COMMA EnumElemList		{ AddEnumElem($1.str, ToSpan(@1)); }
 	;
 
 /******************* Include Declarations *******************/ 

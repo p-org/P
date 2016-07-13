@@ -84,7 +84,6 @@ MIDL_user_free(void* object)
 
 int main()
 {
-	PrtDistClusterConfigInitialize();
 	cout << "Testing Ping Operation" << endl;
 	Test_PServicePing();
 

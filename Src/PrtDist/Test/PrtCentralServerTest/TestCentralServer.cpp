@@ -86,7 +86,6 @@ MIDL_user_free(void* object)
 
 int main()
 {
-	PrtDistClusterConfigInitialize();
 	InitializeHandle();
 
 	cout << "Testing the Get Node Id Fucntion " << endl;

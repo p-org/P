@@ -11,7 +11,7 @@ OUT: <StateLog> Machine Real2(2) entered state Real2_S1
 OUT: <RaiseLog> Machine Real1(1) raised event E2 with payload <3>
 OUT: <ActionLog> Machine Real1(1) executed action in state Real1_Init
 OUT: <DequeueLog> Dequeued event E4 with payload null by Machine Real1(1)
-OUT: <ActionLog> Machine Real1(1) ignored event in state Real1_Init
+OUT: <ActionLog> Machine Real1(1) ignored event E4 in state Real1_Init
 OUT: <ExitLog> Machine Real1(1) exiting state Real1_Init
 OUT: <EnqueueLog> Enqueued event E2 with payload <3> on Machine Real2(2)
 OUT: <DequeueLog> Dequeued event E2 with payload <3> by Machine Real2(2)

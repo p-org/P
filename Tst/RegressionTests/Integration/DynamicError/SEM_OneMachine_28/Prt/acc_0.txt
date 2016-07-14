@@ -10,7 +10,7 @@ OUT: <EnqueueLog> Enqueued event E2 with payload null on Machine Real1(1)
 OUT: <EnqueueLog> Enqueued event E3 with payload null on Machine Real1(1)
 OUT: <DequeueLog> Dequeued event E3 with payload null by Machine Real1(1)
 OUT: <DequeueLog> Dequeued event E1 with payload null by Machine Real1(1)
-OUT: <ActionLog> Machine Real1(1) ignored event in state Real1_Init
+OUT: <ActionLog> Machine Real1(1) ignored event E1 in state Real1_Init
 OUT: <DequeueLog> Dequeued event E2 with payload null by Machine Real1(1)
 OUT: <ActionLog> Machine Real1(1) executed action in state Real1_Init
 OUT: exiting with PRT_STATUS_ASSERT (assertion failure)

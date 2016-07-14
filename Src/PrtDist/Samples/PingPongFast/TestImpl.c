@@ -70,7 +70,7 @@ DWORD startTime = 0;
 DWORD runTime = 10000; // 10 seconds.
 BOOL stopping = FALSE;
 
-static void LogHandler(PRT_STEP step, PRT_MACHINEINST *context)
+static void LogHandler(PRT_STEP step, PRT_MACHINEINST *sender, PRT_MACHINEINST *receiver, PRT_VALUE* eventId, PRT_VALUE* payload)
 {
     steps++;
     DWORD now = GetTickCount();
@@ -80,7 +80,7 @@ static void LogHandler(PRT_STEP step, PRT_MACHINEINST *context)
         printf("Ran %d steps in 10 seconds\n", steps);
 		PRT_VALUE *haltEvent = PrtMkEventValue(_P_EVENT_HALT);
 		PRT_VALUE *nullValue = PrtMkNullValue();
-		PrtSend(context, haltEvent, nullValue, PRT_FALSE);
+		PrtSend(receiver, receiver, haltEvent, nullValue, PRT_FALSE);
 		PrtFreeValue(haltEvent);
 		PrtFreeValue(nullValue);
     }

@@ -266,16 +266,19 @@ PrtGetMachine(
 
 void
 PrtSend(
-    _Inout_ PRT_MACHINEINST			*context,
+	_Inout_ PRT_MACHINEINST			*sender,
+    _Inout_ PRT_MACHINEINST			*receiver,
     _In_ PRT_VALUE					*event,
     _In_ PRT_VALUE					*payload,
     _In_ PRT_BOOLEAN				doTransfer
 )
 {
-    if (context->isModel)
+    if (receiver->isModel)
     {
-        context->process->program->modelImpls[context->instanceOf].sendFun(context, event, payload, doTransfer);
+		PrtLog(PRT_STEP_ENQUEUE, (PRT_MACHINEINST_PRIV*)sender, (PRT_MACHINEINST_PRIV*)receiver, event, payload);
+		receiver->process->program->modelImpls[receiver->instanceOf].sendFun(sender, receiver, event, payload, doTransfer);
         return;
     }
-    PrtSendPrivate((PRT_MACHINEINST_PRIV *)context, event, payload, doTransfer);
+	
+    PrtSendPrivate((PRT_MACHINEINST_PRIV *)sender, (PRT_MACHINEINST_PRIV *)receiver, event, payload, doTransfer);
 }

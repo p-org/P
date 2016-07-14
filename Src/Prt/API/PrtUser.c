@@ -274,14 +274,14 @@ static void PrtUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Ino
 	}
 }
 
-static void PrtUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINEINST *sender, _In_ PRT_MACHINEINST *receiver, _In_ PRT_VALUE* event, _In_ PRT_VALUE* payload,
+							_Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
-	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)machine;
+	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)receiver;
+	PrtAssert(!c->isModel, "PrtUserPrintStep should not be called with model machine\n");
 	PRT_STRING machineName = c->process->program->machines[c->instanceOf].name;
 	PRT_UINT32 machineId = c->id->valueUnion.mid->machineId;
 	PRT_STRING stateName = PrtGetCurrentStateDecl(c)->name;
-	PRT_VALUE *payloadValue;
-	PRT_UINT32 eventIndex;
 	PRT_STRING eventName;
 
 	switch (step)
@@ -296,13 +296,11 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, 
 		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_ENQUEUE:
-		eventIndex = PrtPrimGetEvent(c->eventQueue.events[c->eventQueue.tailIndex == 0 ? (c->eventQueue.eventsSize - 1) : (c->eventQueue.tailIndex - 1)].trigger);
-		eventName = c->process->program->events[eventIndex].name;
-		payloadValue = (c->eventQueue.events[c->eventQueue.tailIndex == 0 ? (c->eventQueue.eventsSize - 1) : (c->eventQueue.tailIndex - 1)].payload);
+		eventName = c->process->program->events[PrtPrimGetEvent(event)].name;
 		PrtUserPrintString("<EnqueueLog> Enqueued event ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten);
-		PrtUserPrintValue(payloadValue, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintValue(payload, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(" on Machine ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
@@ -310,12 +308,11 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, 
 		PrtUserPrintString(")\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_DEQUEUE:
-		eventName = c->process->program->events[PrtPrimGetEvent(PrtGetCurrentTrigger(c))].name;
-		payloadValue = PrtGetCurrentPayload(c);
+		eventName = c->process->program->events[PrtPrimGetEvent(event)].name;
 		PrtUserPrintString("<DequeueLog> Dequeued event ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten);
-		PrtUserPrintValue(payloadValue, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintValue(payload, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(" by Machine ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
@@ -339,8 +336,7 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, 
 		PrtUserPrintString(") is created\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_RAISE:
-		eventName = c->process->program->events[PrtPrimGetEvent(PrtGetCurrentTrigger(c))].name;
-		payloadValue = PrtGetCurrentPayload(c);
+		eventName = c->process->program->events[PrtPrimGetEvent(event)].name;
 		PrtUserPrintString("<RaiseLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
@@ -348,7 +344,7 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, 
 		PrtUserPrintString(") raised event ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten);
-		PrtUserPrintValue(payloadValue, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintValue(payload, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_POP:
@@ -398,11 +394,14 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine, 
 		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_IGNORE:
+		eventName = c->process->program->events[PrtPrimGetEvent(event)].name;
 		PrtUserPrintString("<ActionLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
-		PrtUserPrintString(") ignored event in state ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(") ignored event ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(" in state ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(stateName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
 		break;
@@ -458,25 +457,25 @@ PRT_STRING PRT_CALL_CONV PrtToStringType(_In_ PRT_TYPE *type)
 	return buffer;
 }
 
-void PRT_CALL_CONV PrtPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine)
+void PRT_CALL_CONV PrtPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *sender, _In_ PRT_MACHINEINST *receiver, _In_ PRT_VALUE* event, _In_ PRT_VALUE* payload)
 {
 	char *buffer = NULL;
 	PRT_UINT32 bufferSize = 0;
 	PRT_UINT32 nChars = 0;
 
-	PrtUserPrintStep(step, machine, &buffer, &bufferSize, &nChars);
+	PrtUserPrintStep(step, sender, receiver, event, payload, &buffer, &bufferSize, &nChars);
 	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
 	PrtPrintf(buffer);
 	PrtFree(buffer);
 }
 
-PRT_STRING PRT_CALL_CONV PrtToStringStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *machine)
+PRT_STRING PRT_CALL_CONV PrtToStringStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *sender, _In_ PRT_MACHINEINST *receiver, _In_ PRT_VALUE* event, _In_ PRT_VALUE* payload)
 {
 	char *buffer = NULL;
 	PRT_UINT32 bufferSize = 0;
 	PRT_UINT32 nChars = 0;
 
-	PrtUserPrintStep(step, machine, &buffer, &bufferSize, &nChars);
+	PrtUserPrintStep(step, sender, receiver, event, payload, &buffer, &bufferSize, &nChars);
 	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
 	return buffer;
 }

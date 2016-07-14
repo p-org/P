@@ -36,6 +36,8 @@ void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr)
 
 }
 
+
+
 HANDLE threadsTerminated;
 long threadsRunning = 0;
 static PRT_BOOLEAN cooperative = PRT_FALSE;
@@ -48,10 +50,9 @@ static long startTime = 0;
 static long perfEndTime = 0;
 static const char* parg = NULL;
 
-void Log(PRT_STEP step, PRT_MACHINEINST *context) 
+void Log(PRT_STEP step, PRT_MACHINEINST *sender, PRT_MACHINEINST *receiver, PRT_VALUE* event, PRT_VALUE* payload)
 { 
-
-	PrtPrintStep(step, context); 
+	PrtPrintStep(step, sender, receiver, event, payload);
 }
 
 static PRT_BOOLEAN ParseCommandLine(int argc, char *argv[])
@@ -130,6 +131,24 @@ static void RunPerfTest()
 
 }
 
+void PRT_CALL_CONV  MyAssert(PRT_INT32 condition, PRT_CSTRING message)
+{
+	if (condition != 0)
+	{
+		return;
+	}
+	else if (message == NULL)
+	{
+		fprintf_s(stderr, "ASSERT");
+	}
+	else
+	{
+		fprintf_s(stderr, "ASSERT: %s", message);
+	}
+	exit(1);
+}
+
+
 static void RunToIdle(LPVOID process)
 {
     // In the tester we run the state machines until there is no more work to do then we exit
@@ -183,6 +202,9 @@ int main(int argc, char *argv[])
 			int i = atoi(parg);
 			payload = PrtMkIntValue(i);
 		}
+
+		PrtUpdateAssertFn(MyAssert);
+
 		PrtMkMachine(process, _P_MACHINE_MAIN, payload);
 
         if (cooperative)

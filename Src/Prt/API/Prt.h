@@ -84,8 +84,8 @@ extern "C"{
     /** An error function that will be called whenever an error arises. */
     typedef void(PRT_CALL_CONV * PRT_ERROR_FUN)(PRT_STATUS, PRT_MACHINEINST *);
 
-    /** A log function that will be called whenever a step occurs. */
-    typedef void(PRT_CALL_CONV * PRT_LOG_FUN)(PRT_STEP, PRT_MACHINEINST *);
+    /** A log function that will be called whenever a step occurs. If an event is the reason, then sender, eventId and payload are also provided */
+    typedef void(PRT_CALL_CONV * PRT_LOG_FUN)(PRT_STEP step, PRT_MACHINEINST *sender, PRT_MACHINEINST *receiver, PRT_VALUE *eventid, PRT_VALUE *payload);
 
     /** Starts a new Process running program.
     *   @param[in] guid Id for process; client must guarantee uniqueness for processes that may communicate. Cannot be 0-0-0-0.
@@ -213,13 +213,15 @@ extern "C"{
         _In_ PRT_VALUE *id);
 
     /** Sends message to P state machine.
-    * @param[in,out] machine The machine that will receive this message.
+    * @param[in,out] sender The machine that is sending this message.
+    * @param[in,out] receiver The machine that will receive this message.
     * @param[in] event The event to send with this message (cloned, user frees).
     * @param[in] payload The payload to send with this message.
     * @param[in] doTransfer The callee is reponsible for freeing the payload iff doTransfer is true.
     */
     PRT_API void PRT_CALL_CONV PrtSend(
-        _Inout_ PRT_MACHINEINST *machine,
+		_Inout_ PRT_MACHINEINST *sender,
+        _Inout_ PRT_MACHINEINST *receiver,
         _In_ PRT_VALUE *evt,
         _In_ PRT_VALUE *payload,
         _In_ PRT_BOOLEAN doTransfer);

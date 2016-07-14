@@ -18,7 +18,7 @@ OUT: <StateLog> Machine Ghost(2) entered state Ghost_S1
 OUT: <EnqueueLog> Enqueued event E2 with payload 100 on Machine Real(1)
 OUT: <EnqueueLog> Enqueued event E1 with payload null on Machine Ghost(2)
 OUT: <DequeueLog> Dequeued event E1 with payload null by Machine Ghost(2)
-OUT: <ActionLog> Machine Ghost(2) ignored event in state Ghost_S1
+OUT: <ActionLog> Machine Ghost(2) ignored event E1 in state Ghost_S1
 OUT: <DequeueLog> Dequeued event E2 with payload 100 by Machine Real(1)
 OUT: <ActionLog> Machine Real(1) executed action in state Real_S1
 OUT: <EnqueueLog> Enqueued event E3 with payload null on Machine Ghost(2)

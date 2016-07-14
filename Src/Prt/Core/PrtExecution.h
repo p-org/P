@@ -78,6 +78,7 @@ extern "C"{
 	{
 		PRT_VALUE *trigger;
 		PRT_VALUE *payload;
+		PRT_VALUE *sender;
 	} PRT_EVENT;
 
 	typedef struct PRT_EVENTQUEUE
@@ -183,6 +184,7 @@ extern "C"{
 
 	void
 		PrtSendPrivate(
+		_Inout_ PRT_MACHINEINST_PRIV    *sender,
 		_Inout_ PRT_MACHINEINST_PRIV	*context,
 		_In_ PRT_VALUE					*event,
 		_In_ PRT_VALUE					*payload,
@@ -441,7 +443,10 @@ extern "C"{
 	PRT_API void
 		PrtLog(
 		_In_ PRT_STEP step,
-		_In_ PRT_MACHINEINST_PRIV *context
+		_In_ PRT_MACHINEINST_PRIV *sender,
+		_In_ PRT_MACHINEINST_PRIV *receiver,
+		_In_ PRT_VALUE* eventId,
+		_In_ PRT_VALUE* payload
 		);
 
 	PRT_API void

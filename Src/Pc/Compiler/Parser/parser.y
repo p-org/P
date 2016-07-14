@@ -364,7 +364,8 @@ Stmt
 	| LCBRACE StmtList RCBRACE                                { }
 	| ASSERT Exp SEMICOLON                                    { PushAssert(ToSpan(@1));                                  }
 	| ASSERT Exp COMMA STR SEMICOLON                          { PushAssert($4.str.Substring(1,$4.str.Length-2), ToSpan(@4), ToSpan(@1)); }
-	| PRINT STR SEMICOLON                                     { PushPrint($2.str.Substring(1,$2.str.Length-2), ToSpan(@2), ToSpan(@1));  }
+	| PRINT STR SEMICOLON									  { PushPrint($2.str.Substring(1,$2.str.Length-2), ToSpan(@2), ToSpan(@1), false);  }
+	| PRINT STR COMMA ExprArgList SEMICOLON                   { PushPrint($2.str.Substring(1,$2.str.Length-2), ToSpan(@2), ToSpan(@1), true);  }
 	| RETURN SEMICOLON                                        { PushReturn(false, ToSpan(@1));                           }
 	| RETURN Exp SEMICOLON                                    { PushReturn(true, ToSpan(@1));                            }
 	| Exp ASSIGN Exp SEMICOLON                                { PushBinStmt(P_Root.UserCnstKind.ASSIGN, ToSpan(@1));     }

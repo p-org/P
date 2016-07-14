@@ -480,3 +480,30 @@ PRT_STRING PRT_CALL_CONV PrtToStringStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINS
 	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
 	return buffer;
 }
+
+PRT_VALUE* PrtFormatPrintf(_In_ PRT_CSTRING msg, ...)
+{
+	PrtPrintf(msg);
+	va_list argp;
+	va_start(argp, msg);
+	PRT_UINT32 numArgs, numSegs;
+	numArgs = va_arg(argp, PRT_UINT32);
+	PRT_VALUE **args = (PRT_VALUE **)PrtCalloc(numArgs, sizeof(PRT_VALUE *));
+	for (PRT_UINT32 i = 0; i < numArgs; i++)
+	{
+		// skip over arg status
+		PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
+		args[i] = va_arg(argp, PRT_VALUE *);
+	}
+	numSegs = va_arg(argp, PRT_UINT32);
+	for (PRT_UINT32 i = 0; i < numSegs; i++)
+	{
+		PRT_UINT32 argIndex = va_arg(argp, PRT_UINT32);
+		PrtPrintValue(args[argIndex]);
+		PRT_CSTRING seg = va_arg(argp, PRT_CSTRING);
+		PrtPrintf(seg);
+	}
+	va_end(argp);
+	PrtFree(args);
+	return NULL;
+}

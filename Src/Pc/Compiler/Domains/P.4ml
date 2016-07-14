@@ -60,7 +60,8 @@ domain PData
 	Cases	 ::= new (trig: String + { NULL, HALT }, action: any AnonFunDecl, cases: any Cases + { NIL }).
 	Receive  ::= new (cases: any Cases, label: Natural, info: any SourceInfo).
 	Assert   ::= new (arg: any Expr, msg: String + { NIL }, info: any SourceInfo). 
-	Print    ::= new (msg: String, info: any SourceInfo).
+	Segments ::= new (formatArg: Natural, str: String, tl: any Segments + { NIL }).
+	Print    ::= new (msg: String, segs: any Segments + { NIL }, args: any Exprs + { NIL }, info: any SourceInfo).
 	
     Stmt ::= NewStmt + Raise + Send + Monitor + FunStmt + NulStmt + BinStmt + Return + While + Ite + Seq + Receive + Assert + Print. 
 
@@ -326,6 +327,7 @@ domain PStaticTyping extends PData
 	SubSE(c, e) :- SubSE(c, Assert(e, _, _)).
 	SubSE(c, es) :- SubSE(c, FunStmt(_, es, _, _, _)), es: Exprs.
 	SubSE(c, e) :- SubSE(c, FunStmt(_, _, e, _, _)), e: Name.
+	SubSE(c, es) :- SubSE(c, Print(_, _, es, _)), es: Exprs.
 	SubSE(c, e) :- SubSE(c, Monitor(e, _, _)).
 	SubSE(c, e) :- SubSE(c, Monitor(_, e, _)), e: Expr.
 	SubSE(c, e1), SubSE(c, e2) :- SubSE(c, Send(e1, e2, _, _, _)).
@@ -643,7 +645,7 @@ domain PStaticTyping extends PData
 	//// (3) Non-mutating statements
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Seq(_, _).
     
-	TypeOf(c, e, NIL)              :- SubSE(c, e), e = Print(_, _).
+	TypeOf(c, e, NIL)              :- SubSE(c, e), e = Print(_, _, _, _).
 
     TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e = Assert(_, _, _), t1 = BaseType(BOOL).
 	[ rule_Classes = '"error, msg: "assert" expects a boolean value"']
@@ -1194,7 +1196,7 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Monitor(_, e', _),       e' = NulApp(FAIRNONDET);    
        SubSE(c, e), e = Assert(e', _, _),        e' = NulApp(FAIRNONDET);
        SubSE(c, e), e = BinStmt(_, e', e'', _),  e'' = NulApp(FAIRNONDET), toSymbol(e') != #Name.
-						 	                                          
+	                                       
     /*************************************************************/
     /*                      Type Comparability                   */
     /*************************************************************/

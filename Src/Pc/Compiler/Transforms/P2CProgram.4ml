@@ -801,7 +801,8 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	
 	BodyTmpVars(c, nExprs, nStmts, NIL) :- SubSE(c, _), 
 	                                       nExprs = maxAll(-1, { k | SubSE(c, s), s : in.Stmt, RhsEvalOrder(s, _, _, k); 
-										                             SubSE(c, s), s : in.FunStmt, RhsEvalOrder(s, _, _, k'), k = k' + 1}), nExprs : Integer,
+										                             SubSE(c, s), s : in.FunStmt, RhsEvalOrder(s, _, _, k'), k = k' + 1;
+																	 SubSE(c, s), s : in.Print, RhsEvalOrder(s, _, _, k'), k = k' + 1}), nExprs : Integer,
 	                                       nStmts = maxAll(0,  { k | SubSE(c, s), s : in.Stmt, StmtExprSize(s, k) }) - 1, nStmts : Integer.
 
     BodyTmpVars(c, i', n, defs)  :- BodyTmpVars(c, i, n, tl), i : Natural, i' = i - 1, defs = out.Defs(def, tl),
@@ -864,7 +865,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	ContextLineInfo(f, s, info) :- SubSE(f, s), %noSourceInfo = FALSE, s = in.Ite(_, _, _, x), info = out.PpLine(x.line, NIL).
 	ContextLineInfo(f, s, info) :- SubSE(f, s), %noSourceInfo = FALSE, s = in.Receive(_, _, x), info = out.PpLine(x.line, NIL).
 	ContextLineInfo(f, s, info) :- SubSE(f, s), %noSourceInfo = FALSE, s = in.Assert(_, _, x), info = out.PpLine(x.line, NIL).
-	ContextLineInfo(f, s, info) :- SubSE(f, s), %noSourceInfo = FALSE, s = in.Print(_, x), info = out.PpLine(x.line, NIL).
+	ContextLineInfo(f, s, info) :- SubSE(f, s), %noSourceInfo = FALSE, s = in.Print(_, _, _, x), info = out.PpLine(x.line, NIL).
 	
 	BodyTrans ::= (TypingContext, out.Stmt).
 	BodyTrans(f, body) :- 
@@ -1960,7 +1961,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 										     NIL)).
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NulStmt(_, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Assert(_, _, _), cs = NIL.
-	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Print(_, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Print(_, _, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.BinStmt(_, _, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Return(_, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.While(_, s1, _), Trampoline(c, s1, cs1), cs = cs1.
@@ -2095,9 +2096,34 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 											Args(context, NIL))).
 
 	//// Print
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Print(msg, x), 
+	PrintSegsToArgs ::= (in.TypingContext, in.Print, out.Args + { NIL }, in.Segments + { NIL }, Natural).
+	PrintSegsToArgs(c, s, NIL, NIL, 0) :- PrintSegs(c, s, NIL).
+	PrintSegsToArgs(c, s, args', segs', j') :- PrintSegs(c, s, segs'), segs' = Segments(i, str, segs), PrintSegsToArgs(c, s, args, segs, j), 
+											   args' = out.Args(IntLit(i, DEC, U), Args(StringLit(str, NIL), args)), j' = j + 1.
+
+	PrintSegs ::= (in.TypingContext, in.Print, in.Segments + { NIL }).
+	PrintSegs(c, s, segs) :- SubSE(c, s), s = in.Print(_, segs, _, _), segs != NIL.
+	PrintSegs(c, s, segs) :- PrintSegs(c, s, Segments(_, _, segs)).
+
+	PrintExprsLength ::= (in.TypingContext, in.Print, in.Exprs + { NIL }, Natural).
+	PrintExprsLength(c, s, exprs, 0) :- SubSE(c, s), s = in.Print(_, _, exprs, _), exprs != NIL.
+	PrintExprsLength(c, s, exprs, i) :- PrintExprsLength(c, s, in.Exprs(_, _, exprs), j), i = j + 1.
+
+	PrintArgs ::= (in.TypingContext, in.Print, out.Args + { NIL }, out.Args).
+	PrintArgs(c, s, ecs, out.Args(IntLit(numSegs, DEC, U), args)) :-
+		TransformFunArgs(c, s, 0, NIL, NIL, ecs, NIL), s = in.Print(_, segs, exprs, x), exprs: in.Exprs, PrintSegsToArgs(c, s, args, segs, numSegs).
+	PrintArgs(c, s, ecs, out.Args(ec, args)) :- PrintArgs(c, s, out.Args(ec, ecs), args).
+
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Print(msg, NIL, _, _), 
 	                       ContextLineInfo(c, s, info),
 						   cs = out.Seq(info, FunApp(Ident("PrtPrintf"), Args(StringLit(msg, NIL), NIL))).
+
+	StmtTrans(c, s, cs) :- FunStmtRhs(c, s, size, tail), s = in.Print(msg, segs, exprs, _), segs != NIL, exprs: in.Exprs, 
+						   PrintExprsLength(c, s, NIL, numExprs),
+						   ContextLineInfo(c, s, info),
+						   PrintArgs(c, s, NIL, ecs),
+						   list = out.Args(StringLit(msg, NIL), Args(IntLit(numExprs, DEC, U), ecs)),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_EXPR_", toString(size))), Args(out.FunApp(Ident("PrtFormatPrintf"), list), Args(Ident("PRT_FALSE"), tail)))).
 
 	//// Skip 
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NulStmt(SKIP, _), cs = NIL.
@@ -2163,12 +2189,14 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
    	NaturalList ::= (i: Natural, tl: NaturalList + { NIL }).
 	ExprsTransIndex ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, e: in.FunApp + { NIL }, exprs: in.Exprs + { NIL }, transIndex: NaturalList + { NIL }).
 	ExprsTransIndex(c, s, 0, NIL, s.args, NIL) :- SubSE(c, s), s: in.FunStmt, s.args != NIL.
+	ExprsTransIndex(c, s, 0, NIL, s.args, NIL) :- SubSE(c, s), s: in.Print, s.args != NIL.
 	ExprsTransIndex(c, s, i, e, e.args, NIL) :- RhsNext(c, s, i, _, e, _), e: in.FunApp, e.args != NIL.
 	ExprsTransIndex(c, s, i, x, e'', trans) :- ExprsTransIndex(c, s, i, x, e, tl), e = in.Exprs(_, e', e''), RhsEvalOrder(s, i, e', j),
 	                                           trans = NaturalList(j, tl). 
 
 	TransformFunArgs ::= (TypingContext, in.Stmt, Natural, in.FunApp + { NIL }, NaturalList + { NIL }, out.Args + { NIL }, in.Exprs + { NIL }).
 	TransformFunArgs(c, s, 0, NIL, ii, NIL, s.args):- SubSE(c, s), s : in.FunStmt, s.args != NIL, ExprsTransIndex(c, s, 0, NIL, NIL, ii'), ii = lstReverse(#NaturalList, ii').
+	TransformFunArgs(c, s, 0, NIL, ii, NIL, s.args):- SubSE(c, s), s : in.Print, s.args != NIL, ExprsTransIndex(c, s, 0, NIL, NIL, ii'), ii = lstReverse(#NaturalList, ii').
 	TransformFunArgs(c, s, i, e, ii, NIL, e.args):- RhsNext(c, s, i, _, e, _), e: in.FunApp, e.args != NIL, ExprsTransIndex(c, s, i, e, NIL, ii'), ii = lstReverse(#NaturalList, ii').
 	TransformFunArgs(c, s, i, x, ii, args', tl) :- TransformFunArgs(c, s, i, x, NaturalList(j, ii), args, in.Exprs(NONE, _, tl)), 
 												   ec = Ident(strJoin("p_tmp_expr_", toString(j))), 
@@ -2193,8 +2221,9 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 						   ret = Ident("p_tmp_funstmt_ret"),
 						   context = Ident("context").
     
-	FunStmtRhs ::= (cntxt: TypingContext, stmt: in.FunStmt, exprSize: Natural, args: out.Args).
+	FunStmtRhs ::= (cntxt: TypingContext, stmt: in.FunStmt + in.Print, exprSize: Natural, args: out.Args).
 	FunStmtRhs(c, s, size, args) :- RhsTrans(c, s, 0, j, args), RhsMaxOrder(s, 0, j), size = j + 1, s : in.FunStmt, args: out.Args. 
+	FunStmtRhs(c, s, size, args) :- RhsTrans(c, s, 0, j, args), RhsMaxOrder(s, 0, j), size = j + 1, s : in.Print, args: out.Args. 
 
 	/*************************************************************/
 	/******            Value availability                   ******/
@@ -2287,6 +2316,11 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.FunStmt(_, e, _, _, _), e : in.Exprs,
 							k = maxAll(0, { k' | RhsEvalOrder(s, 0, _, k') }), k: Natural.
 	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.FunStmt.
+
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Print(_, _, e, _), e : in.Exprs.
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Print(_, _, e, _), e : in.Exprs,
+							k = maxAll(0, { k' | RhsEvalOrder(s, 0, _, k') }), k: Natural.
+	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.Print.
 	
 	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Return(e, _), e : in.Expr.
 	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Return(e, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).

@@ -291,7 +291,7 @@ namespace Microsoft.Pc
         }
 
         public Dictionary<string, EventInfo> allEvents;
-        public Dictionary<string, List<string>> allEnums;
+        public Dictionary<string, List<Tuple<string, int>>> allEnums;
         public Dictionary<string, MachineInfo> allMachines;
         public Dictionary<string, FunInfo> allStaticFuns;
         public string mainMachineName;
@@ -365,7 +365,7 @@ namespace Microsoft.Pc
             }
 
             allEvents = new Dictionary<string, EventInfo>();
-            allEnums = new Dictionary<string, List<string>>();
+            allEnums = new Dictionary<string, List<Tuple<string, int>>>();
             allEvents[HaltEvent] = new EventInfo(1, false, PTypeNull.Node);
             allEvents[NullEvent] = new EventInfo(1, false, PTypeNull.Node);
             allMachines = new Dictionary<string, MachineInfo>();
@@ -406,13 +406,31 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var name = ((Cnst)it.Current).GetStringValue();
                     it.MoveNext();
-                    List<string> constants = new List<string>();
-                    FuncTerm iter = it.Current as FuncTerm;
-                    while (iter != null)
+                    FuncTerm strIter = it.Current as FuncTerm;
+                    it.MoveNext();
+                    FuncTerm valIter = it.Current as FuncTerm;
+                    var constants = new List<Tuple<string, int>>();
+                    if (valIter == null)
                     {
-                        var constant = (GetArgByIndex(iter, 0) as Cnst).GetStringValue();
-                        constants.Add(constant);
-                        iter = GetArgByIndex(iter, 1) as FuncTerm;
+                        var val = 0;
+                        while (strIter != null)
+                        {
+                            var constant = (GetArgByIndex(strIter, 0) as Cnst).GetStringValue();
+                            constants.Add(Tuple.Create<string, int>(constant, val));
+                            strIter = GetArgByIndex(strIter, 1) as FuncTerm;
+                            val++;
+                        }
+                    }
+                    else
+                    {
+                        while (strIter != null)
+                        {
+                            var constant = (GetArgByIndex(strIter, 0) as Cnst).GetStringValue();
+                            var val = (GetArgByIndex(valIter, 0) as Cnst).GetNumericValue();
+                            constants.Add(Tuple.Create<string, int>(constant, (int)val.Numerator));
+                            strIter = GetArgByIndex(strIter, 1) as FuncTerm;
+                            valIter = GetArgByIndex(valIter, 1) as FuncTerm;
+                        }
                     }
                     allEnums[name] = constants;
                 }
@@ -1409,9 +1427,9 @@ namespace Microsoft.Pc
             }
             foreach (var enumName in allEnums.Keys)
             {
-                foreach (var constant in allEnums[enumName])
+                foreach (var tuple in allEnums[enumName])
                 {
-                    fields.Add(MkZingVarDecl(string.Format("{0}_SM_ENUM", constant), ZingData.Cnst_Int, ZingData.Cnst_Static));
+                    fields.Add(MkZingVarDecl(string.Format("{0}_SM_ENUM", tuple.Item1), ZingData.Cnst_Int, ZingData.Cnst_Static));
                 }
             }
             foreach (var machine in allMachines.Values)
@@ -1516,12 +1534,10 @@ namespace Microsoft.Pc
             }
             foreach (var enumName in allEnums.Keys)
             {
-                int count = 0;
-                foreach (var constant in allEnums[enumName])
+                foreach (var tuple in allEnums[enumName])
                 {
-                    var assignStmt = MkZingAssign(MkZingEnum(constant), Factory.Instance.MkCnst(count));
+                    var assignStmt = MkZingAssign(MkZingEnum(tuple.Item1), Factory.Instance.MkCnst(tuple.Item2));
                     runBodyStmts.Add(assignStmt);
-                    count++;
                 }
             }
             foreach (var machineName in allMachines.Keys)

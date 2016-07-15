@@ -106,9 +106,9 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 
 	//// (0.2) Enum declarations for all enum types
 	HOut(0, out.EnmDef(NIL, enumName, list)) :-
-		d is EnumTypeDef(enumName, elems), size = lstLength(#StringList, elems),
+		d is EnumTypeDef(enumName, elems, _), size = lstLength(#StringList, elems),
 		list = toList(#Elements, NIL, { enumMember | 
-										EnumTypeDefElem(d, StringList(name, tl)), cn = strJoin(strJoin(enumName, "_"), name), offset = size - lstLength(#StringList, StringList(name, tl)), enumMember = Element(IntLit(offset, DEC, NIL), cn);
+										EnumTypeElemIndex(d, _, _, name, offset), cn = strJoin(strJoin(enumName, "_"), name), enumMember = Element(IntLit(offset, DEC, NIL), cn);
 										enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")) }).  
 
 	//// (1) EventDecls - Id 0, 1 are reserved for null, halt event, which can appear in transition tables.
@@ -362,14 +362,14 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
                                 typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
 
 	//// Enum types
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), EnumTypeDef(name, _),
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), EnumTypeDef(name, _, _),
 								defs = out.Section(before, def),
 								def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								typeName = strJoin("P_GEND_TYPE_", toString(m)),
                                 typeStruct = out.Init(Args(Ident("PRT_KIND_INT"), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
 	
 	//// Foreign types
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), no EnumTypeDef(name, _),
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), no EnumTypeDef(name, _, _),
 								defs = out.Section(before, def),
 								def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								typeName = strJoin("P_GEND_TYPE_", toString(m)),
@@ -532,7 +532,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	ConstExpr(NulApp(NULL)).
 	ConstExpr(NulApp(HALT)).
 	ConstExpr(e) :- SubSE(_, e), e = Name(n), eventDecl is EventDecl(n, _, _), DeclId(eventDecl, _, _). 
-	ConstExpr(e) :- EnumTypeDefElem(_, StringList(n, _)), e = Name(n).
+	ConstExpr(e) :- EnumTypeDefElem(_, StringList(n, _), _), e = Name(n).
 	ConstExpr(e) :- SubSE(_, e), e = NulApp(op), op: Integer.
 	ConstExpr(e) :- SubSE(_, e), e = NulApp(op), op: Boolean.
 
@@ -552,7 +552,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", IntLit(n, DEC, U)) :- ConstExpr(e), e = NulApp(n), n: Integer.
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_FALSE")) :- ConstExpr(e), e = NulApp(FALSE).
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_TRUE")) :- ConstExpr(e), e = NulApp(TRUE).
-	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", out.Ident(n)) :- ConstExpr(e), e = Name(name), EnumTypeDefElem(d, StringList(name, _)),
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", out.Ident(n)) :- ConstExpr(e), e = Name(name), EnumTypeDefElem(d, StringList(name, _), _),
 																n = strJoin(strJoin(d.name, "_"), name).
 
 	Constant(c, m, defs) :- ConstId(m, c), Constant(_, m - 1, before), BaseConstant2Kind(c, kind, value),

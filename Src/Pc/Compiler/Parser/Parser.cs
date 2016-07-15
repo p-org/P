@@ -1324,15 +1324,39 @@
         }
 
         P_Root.IArgType_StringList__1 enumElemList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+        P_Root.IArgType_IntegerList__1 enumElemValList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+
         void AddEnumElem(string name, Span nameSpan)
         {
             enumElemList = P_Root.MkStringList(MkString(name, nameSpan), enumElemList);
         }
 
+        void AddEnumElem(string name, Span nameSpan, string intStr, Span intStrSpan)
+        {
+            int val;
+            if (int.TryParse(intStr, out val))
+            {
+                enumElemList = P_Root.MkStringList(MkString(name, nameSpan), enumElemList);
+                enumElemValList = P_Root.MkIntegerList(MkNumeric(val, intStrSpan), enumElemValList);
+            }
+            else
+            {
+                var errFlag = new Flag(
+                     SeverityKind.Error,
+                     intStrSpan,
+                     Constants.BadSyntax.ToString(string.Format("Bad int constant {0}", intStr)),
+                     Constants.BadSyntax.Code,
+                     parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+        }
+
         void AddEnumTypeDef(string name, Span nameSpan, Span enumTypeDefSpan)
         {
-            P_Root.EnumTypeDef enumTypeDef = P_Root.MkEnumTypeDef(MkString(name, nameSpan), (P_Root.StringList)enumElemList);
+            P_Root.EnumTypeDef enumTypeDef = P_Root.MkEnumTypeDef(MkString(name, nameSpan), (P_Root.StringList)enumElemList, (P_Root.IArgType_EnumTypeDef__2)enumElemValList);
             enumElemList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+            enumElemValList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
             enumTypeDef.Span = enumTypeDefSpan;
             parseProgram.EnumTypeDefs.Add(enumTypeDef);
         }

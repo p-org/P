@@ -2280,7 +2280,10 @@ namespace Microsoft.Pc
             }
             else if (funName == PData.Con_Print.Node.Name)
             {
-                yield break;
+                foreach (var a in ZingUnfold(ctxt, GetArgByIndex(ft, 2)))
+                {
+                    yield return a;
+                }
             }
             else if (funName == PData.Con_BinStmt.Node.Name)
             {
@@ -3324,7 +3327,23 @@ namespace Microsoft.Pc
         ZingTranslationInfo FoldPrint(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             string msg = (GetArgByIndex(ft, 0) as Cnst).GetStringValue();
-            return new ZingTranslationInfo(MkZingTrace(msg));
+            List<AST<Node>> stmts = new List<AST<Node>>();
+            stmts.Add(MkZingTrace(msg));
+            List<AST<Node>> args = new List<AST<Node>>();
+            foreach (var child in children)
+            {
+                args.Add(child.node);
+            }
+            FuncTerm seg = GetArgByIndex(ft, 1) as FuncTerm;
+            while (seg != null)
+            {
+                int formatArg = (int) (GetArgByIndex(seg, 0) as Cnst).GetNumericValue().Numerator;
+                string str = (GetArgByIndex(seg, 1) as Cnst).GetStringValue();
+                seg = GetArgByIndex(seg, 2) as FuncTerm;
+                stmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "Print"), args[formatArg])));
+                stmts.Add(MkZingTrace(str));
+            }
+            return new ZingTranslationInfo(MkZingSeq(stmts));
         }
 
         ZingTranslationInfo FoldBinStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)

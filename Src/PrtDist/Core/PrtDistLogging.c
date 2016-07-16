@@ -43,20 +43,15 @@ void PrtCloseLogFile()
 
 void
 PrtDistSMExceptionHandler(
-__in PRT_STATUS exception,
-__in PRT_MACHINEINST* sender,
-__in PRT_MACHINEINST* receiver,
-__in PRT_VALUE* event, 
-__in PRT_VALUE* payload
+	__in PRT_STATUS exception,
+	__in PRT_MACHINEINST* vcontext
 )
 {
-
-	PRT_MACHINEINST *context = (PRT_MACHINEINST*)receiver;
-	PRT_STRING MachineName = context->process->program->machines[context->instanceOf].name;
-	PRT_UINT32 MachineId = context->id->valueUnion.mid->machineId;
+	PRT_STRING MachineName = vcontext->process->program->machines[vcontext->instanceOf].name;
+	PRT_UINT32 MachineId = vcontext->id->valueUnion.mid->machineId;
 
 
-	PRT_MACHINEINST_PRIV *c = (PRT_MACHINEINST_PRIV*)receiver;
+	PRT_MACHINEINST_PRIV *c = (PRT_MACHINEINST_PRIV*)vcontext;
 
 	PrtLockMutex(((PRT_PROCESS_PRIV*)c->process)->processLock);
 

@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 9 distinct states explored
+OUT: 7 distinct states explored
 OUT: 
 EXIT: 3
 
@@ -18,9 +18,9 @@ Trace-Log 0:
 <CreateLog> Created Machine M1-0
 <StateLog> Machine M1-0 entering State S
 <CreateLog> Created Machine M2-0
+<StateLog> Machine M2-0 entering State S1
 <MonitorLog> Enqueued Event < ____y, ____M1-0 > to Mon1 monitor
 <EnqueueLog> Enqueued Event < ____y, ____M1-0 > in Machine ____M2-0 by ____M1-0
-<StateLog> Machine M2-0 entering State S1
 <DequeueLog> Dequeued Event < ____y, ____M1-0 > at Machine ____M2-0
 <MonitorLog> Enqueued Event < ____x, null > to Mon1 monitor
 <StateLog> Machine Mon1-0 exiting State S1

@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 13 distinct states explored
+OUT: 9 distinct states explored
 OUT: 
 EXIT: 3
 
@@ -16,15 +16,18 @@ Trace-Log 0:
 <CreateLog> Created Machine PING-0
 <StateLog> Machine PING-0 entering State Ping_Init
 <CreateLog> Created Machine PONG-0
+<StateLog> Machine PONG-0 entering State Pong_WaitPing
 <RaiseLog> Machine PING-0 raised Event ____Success
 <StateLog> Machine PING-0 exiting State Ping_Init
 <StateLog> Machine PING-0 entering State Ping_SendPing
 <EnqueueLog> Enqueued Event < ____Ping, ____PING-0 > in Machine ____PONG-0 by ____PING-0
-<StateLog> Machine PONG-0 entering State Pong_WaitPing
 <DequeueLog> Dequeued Event < ____Ping, ____PING-0 > at Machine ____PONG-0
 <StateLog> Machine PONG-0 exiting State Pong_WaitPing
 <StateLog> Machine PONG-0 entering State Pong_SendPong
 <EnqueueLog> Enqueued Event < ____Pong, null > in Machine ____PING-0 by ____PONG-0
+<RaiseLog> Machine PONG-0 raised Event ____Success
+<StateLog> Machine PONG-0 exiting State Pong_SendPong
+<StateLog> Machine PONG-0 entering State Pong_WaitPing
 <RaiseLog> Machine PING-0 raised Event ____Success
 <StateLog> Machine PING-0 exiting State Ping_SendPing
 <StateLog> Machine PING-0 entering State Ping_WaitPong
@@ -32,9 +35,6 @@ Trace-Log 0:
 <StateLog> Machine PING-0 exiting State Ping_WaitPong
 <StateLog> Machine PING-0 entering State Ping_SendPing
 <EnqueueLog> Enqueued Event < ____Ping, ____PING-0 > in Machine ____PONG-0 by ____PING-0
-<RaiseLog> Machine PONG-0 raised Event ____Success
-<StateLog> Machine PONG-0 exiting State Pong_SendPong
-<StateLog> Machine PONG-0 entering State Pong_WaitPing
 <DequeueLog> Dequeued Event < ____Ping, ____PING-0 > at Machine ____PONG-0
 <StateLog> Machine PONG-0 exiting State Pong_WaitPing
 <StateLog> Machine PONG-0 entering State Pong_SendPong

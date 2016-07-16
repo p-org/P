@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Liveness Check Failed
 OUT: ##################
-OUT: 13 distinct states explored
+OUT: 14 distinct states explored
 OUT: 
 EXIT: 6
 
@@ -18,6 +18,12 @@ Trace-Log 0:
 <CreateLog> Created Machine EventHandler-0
 <StateLog> Machine EventHandler-0 entering State WaitForUser
 <CreateLog> Created Machine Loop-0
+<StateLog> Machine Loop-0 entering State Looping
+<EnqueueLog> Enqueued Event < ____Done, null > in Machine ____Loop-0 by ____Loop-0
+<DequeueLog> Dequeued Event < ____Done, null > at Machine ____Loop-0
+<StateLog> Machine Loop-0 exiting State Looping
+<StateLog> Machine Loop-0 entering State Looping
+<EnqueueLog> Enqueued Event < ____Done, null > in Machine ____Loop-0 by ____Loop-0
 <MonitorLog> Enqueued Event < ____Waiting, null > to WatchDog monitor
 <StateLog> Machine WatchDog-0 exiting State CanGetUserInput
 <StateLog> Machine WatchDog-0 entering State CanGetUserInput
@@ -28,8 +34,6 @@ Trace-Log 0:
 <MonitorLog> Enqueued Event < ____Computing, null > to WatchDog monitor
 <StateLog> Machine WatchDog-0 exiting State CanGetUserInput
 <StateLog> Machine WatchDog-0 entering State CannotGetUserInput
-<StateLog> Machine Loop-0 entering State Looping
-<EnqueueLog> Enqueued Event < ____Done, null > in Machine ____Loop-0 by ____Loop-0
 <DequeueLog> Dequeued Event < ____Done, null > at Machine ____Loop-0
 <StateLog> Machine Loop-0 exiting State Looping
 <StateLog> Machine Loop-0 entering State Looping

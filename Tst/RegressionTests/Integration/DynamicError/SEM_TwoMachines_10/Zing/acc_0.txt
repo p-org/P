@@ -16,12 +16,12 @@ Trace-Log 0:
 <CreateLog> Created Machine Real1-0
 <StateLog> Machine Real1-0 entering State Real1_Init
 <CreateLog> Created Machine Real2-0
+<StateLog> Machine Real2-0 entering State Real2_Init
 <RaiseLog> Machine Real1-0 raised Event ____E1
 <FunctionLog> Machine Real1-0 executing Function Action1
 <NullTransLog> Null transition taken by Machine ____Real1-0
 <StateLog> Machine Real1-0 exiting State Real1_Init
 <EnqueueLog> Enqueued Event < ____E2, true > in Machine ____Real2-0 by ____Real1-0
-<StateLog> Machine Real2-0 entering State Real2_Init
 <DequeueLog> Dequeued Event < ____E2, true > at Machine ____Real2-0
 
 Error:

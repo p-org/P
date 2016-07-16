@@ -51,18 +51,19 @@ Trace-Log 2:
 <CreateLog> Created Machine A-0
 <StateLog> Machine A-0 entering State Init
 <CreateLog> Created Machine B-0
-<EnqueueLog> Enqueued Event < ____F, null > in Machine ____B-0 by ____A-0
 <StateLog> Machine B-0 entering State Init
 <RaiseLog> Machine B-0 raised Event ____Unit
 <StateLog> Machine B-0 exiting State Init
 <StateLog> Machine B-0 entering State X
-<DequeueLog> Dequeued Event < ____F, null > at Machine ____B-0
-<EnqueueLog> Enqueued Event < ____E, 10 > in Machine ____B-0 by ____B-0
+<NullTransLog> Null transition taken by Machine ____B-0
+<EnqueueLog> Enqueued Event < ____F, null > in Machine ____B-0 by ____A-0
+<RaiseLog> Machine B-0 raised Event ____F
+<StateLog> Machine B-0 exiting State X
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_7.bl,)
-Comment: receive10.p (30, 33): Assert failed
+Expression: assert(tmp_9.bl,)
+Comment: receive10.p (36, 22): Assert failed
 Safety Error Trace
 Trace-Log 3:
 <CreateLog> Created Machine A-0
@@ -85,16 +86,15 @@ Trace-Log 4:
 <CreateLog> Created Machine A-0
 <StateLog> Machine A-0 entering State Init
 <CreateLog> Created Machine B-0
+<EnqueueLog> Enqueued Event < ____F, null > in Machine ____B-0 by ____A-0
 <StateLog> Machine B-0 entering State Init
 <RaiseLog> Machine B-0 raised Event ____Unit
 <StateLog> Machine B-0 exiting State Init
 <StateLog> Machine B-0 entering State X
-<NullTransLog> Null transition taken by Machine ____B-0
-<EnqueueLog> Enqueued Event < ____F, null > in Machine ____B-0 by ____A-0
-<RaiseLog> Machine B-0 raised Event ____F
-<StateLog> Machine B-0 exiting State X
+<DequeueLog> Dequeued Event < ____F, null > at Machine ____B-0
+<EnqueueLog> Enqueued Event < ____E, 10 > in Machine ____B-0 by ____B-0
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_9.bl,)
-Comment: receive10.p (36, 22): Assert failed
+Expression: assert(tmp_7.bl,)
+Comment: receive10.p (30, 33): Assert failed

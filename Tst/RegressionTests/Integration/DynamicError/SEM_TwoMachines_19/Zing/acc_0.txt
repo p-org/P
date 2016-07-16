@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 97 distinct states explored
+OUT: 21 distinct states explored
 OUT: 
 EXIT: 3
 
@@ -16,17 +16,31 @@ Trace-Log 0:
 <CreateLog> Created Machine Real1-0
 <StateLog> Machine Real1-0 entering State Real1_Init
 <CreateLog> Created Machine Real2-0
+<StateLog> Machine Real2-0 entering State Real2_Init
+<NullTransLog> Null transition taken by Machine ____Real2-0
+<StateLog> Machine Real2-0 exiting State Real2_Init
+<EnqueueLog> Enqueued Event < ____E4, null > in Machine ____Real1-0 by ____Real2-0
+<StateLog> Machine Real2-0 entering State Real2_S1
 <RaiseLog> Machine Real1-0 raised Event ____E2
 <FunctionLog> Machine Real1-0 executing Function Action1
+<DequeueLog> Dequeued Event < ____E4, null > at Machine ____Real1-0
+<FunctionLog> Machine Real1-0 executing Function ignore
 <NullTransLog> Null transition taken by Machine ____Real1-0
 <StateLog> Machine Real1-0 exiting State Real1_Init
 <EnqueueLog> Enqueued Event < ____E2, ____E1 > in Machine ____Real2-0 by ____Real1-0
+<DequeueLog> Dequeued Event < ____E2, ____E1 > at Machine ____Real2-0
 <EnqueueLog> Enqueued Event < ____E0, 100 > in Machine ____Real2-0 by ____Real1-0
+<DequeueLog> Dequeued Event < ____E0, 100 > at Machine ____Real2-0
 <EnqueueLog> Enqueued Event < ____E2, null > in Machine ____Real2-0 by ____Real1-0
+<DequeueLog> Dequeued Event < ____E2, null > at Machine ____Real2-0
 <EnqueueLog> Enqueued Event < ____E2, ____E0 > in Machine ____Real2-0 by ____Real1-0
+<DequeueLog> Dequeued Event < ____E2, ____E0 > at Machine ____Real2-0
 <EnqueueLog> Enqueued Event < ____E2, ____E0 > in Machine ____Real2-0 by ____Real1-0
+<DequeueLog> Dequeued Event < ____E2, ____E0 > at Machine ____Real2-0
 <EnqueueLog> Enqueued Event < ____E2, ____E0 > in Machine ____Real2-0 by ____Real1-0
+<DequeueLog> Dequeued Event < ____E2, ____E0 > at Machine ____Real2-0
 <EnqueueLog> Enqueued Event < ____E3, true > in Machine ____Real2-0 by ____Real1-0
+<DequeueLog> Dequeued Event < ____E3, true > at Machine ____Real2-0
 <StateLog> Machine Real1-0 entering State Real1_S1
 
 Error:

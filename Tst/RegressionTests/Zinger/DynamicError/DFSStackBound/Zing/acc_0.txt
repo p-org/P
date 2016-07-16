@@ -17,39 +17,32 @@ Trace-Log 0:
 <CreateLog> Created Machine TestMachine-0
 <StateLog> Machine TestMachine-0 entering State Init
 <CreateLog> Created Machine Other-0
+<StateLog> Machine Other-0 entering State Init
 <RaiseLog> Machine TestMachine-0 raised Event ____unit
 <StateLog> Machine TestMachine-0 exiting State Init
 <StateLog> Machine TestMachine-0 entering State test
 <EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____TestMachine-0
+<DequeueLog> Dequeued Event < ____dummy, null > at Machine ____Other-0
+<StateLog> Machine Other-0 exiting State Init
+<StateLog> Machine Other-0 entering State Init
 <RaiseLog> Machine TestMachine-0 raised Event ____unit
 <StateLog> Machine TestMachine-0 exiting State test
 <StateLog> Machine TestMachine-0 entering State test
 <EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____TestMachine-0
+<DequeueLog> Dequeued Event < ____dummy, null > at Machine ____Other-0
+<StateLog> Machine Other-0 exiting State Init
+<StateLog> Machine Other-0 entering State Init
 <RaiseLog> Machine TestMachine-0 raised Event ____unit
 <StateLog> Machine TestMachine-0 exiting State test
 <StateLog> Machine TestMachine-0 entering State test
 <EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____TestMachine-0
+<DequeueLog> Dequeued Event < ____dummy, null > at Machine ____Other-0
+<StateLog> Machine Other-0 exiting State Init
+<StateLog> Machine Other-0 entering State Init
 <RaiseLog> Machine TestMachine-0 raised Event ____unit
 <StateLog> Machine TestMachine-0 exiting State test
 <StateLog> Machine TestMachine-0 entering State test
 <EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____TestMachine-0
-<RaiseLog> Machine TestMachine-0 raised Event ____unit
-<StateLog> Machine TestMachine-0 exiting State test
-<StateLog> Machine TestMachine-0 entering State test
-<EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____TestMachine-0
-<RaiseLog> Machine TestMachine-0 raised Event ____unit
-<StateLog> Machine TestMachine-0 exiting State test
-<StateLog> Machine TestMachine-0 entering State test
-<EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____TestMachine-0
-<RaiseLog> Machine TestMachine-0 raised Event ____unit
-<StateLog> Machine TestMachine-0 exiting State test
-<StateLog> Machine TestMachine-0 entering State test
-<EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____TestMachine-0
-<RaiseLog> Machine TestMachine-0 raised Event ____unit
-<StateLog> Machine TestMachine-0 exiting State test
-<StateLog> Machine TestMachine-0 entering State test
-<EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____TestMachine-0
-<RaiseLog> Machine TestMachine-0 raised Event ____unit
-<StateLog> Machine TestMachine-0 exiting State test
-<StateLog> Machine TestMachine-0 entering State test
-<EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____TestMachine-0
+<DequeueLog> Dequeued Event < ____dummy, null > at Machine ____Other-0
+<StateLog> Machine Other-0 exiting State Init
+<StateLog> Machine Other-0 entering State Init

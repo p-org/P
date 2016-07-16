@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 3 distinct states explored
+OUT: 4 distinct states explored
 OUT: 
 EXIT: 3
 
@@ -16,6 +16,7 @@ Trace-Log 0:
 <CreateLog> Created Machine M-0
 <StateLog> Machine M-0 entering State S
 <CreateLog> Created Machine Test-0
+<StateLog> Machine Test-0 entering State init
 
 Error:
 P Assertion failed:

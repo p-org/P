@@ -1,3 +1,2 @@
-arg:-delayB:..\..\..\..\..\..\Ext\Zing\DelayingSchedulers\RunToCompletionDelayingScheduler\bin\x86\Release\RunToCompletionDelayingScheduler.dll
 arg: -fbound:3
 dsc: zinger.exe, Feature Integration: protocol sample

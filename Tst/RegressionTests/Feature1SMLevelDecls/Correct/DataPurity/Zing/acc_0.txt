@@ -7,7 +7,3 @@ OUT: ##################
 OUT: 3 distinct states explored
 OUT: 
 EXIT: 0
-
-=================================
-DataImpureFunction.trace
-=================================

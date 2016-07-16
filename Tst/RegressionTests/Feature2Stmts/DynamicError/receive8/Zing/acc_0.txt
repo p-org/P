@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 10 distinct states explored
+OUT: 8 distinct states explored
 OUT: 
 EXIT: 3
 
@@ -16,15 +16,15 @@ Trace-Log 0:
 <CreateLog> Created Machine A-0
 <StateLog> Machine A-0 entering State Init
 <CreateLog> Created Machine B-0
-<EnqueueLog> Enqueued Event < ____F, null > in Machine ____B-0 by ____A-0
-<EnqueueLog> Enqueued Event < ____E, null > in Machine ____B-0 by ____A-0
-<EnqueueLog> Enqueued Event < ____F, null > in Machine ____B-0 by ____A-0
 <StateLog> Machine B-0 entering State Init
 <RaiseLog> Machine B-0 raised Event ____Unit
 <StateLog> Machine B-0 exiting State Init
 <StateLog> Machine B-0 entering State X
+<EnqueueLog> Enqueued Event < ____F, null > in Machine ____B-0 by ____A-0
+<EnqueueLog> Enqueued Event < ____E, null > in Machine ____B-0 by ____A-0
 <DequeueLog> Dequeued Event < ____E, null > at Machine ____B-0
 <DequeueLog> Dequeued Event < ____F, null > at Machine ____B-0
+<EnqueueLog> Enqueued Event < ____F, null > in Machine ____B-0 by ____A-0
 <DequeueLog> Dequeued Event < ____F, null > at Machine ____B-0
 
 Error:

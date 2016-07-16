@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 3 distinct states explored
+OUT: 4 distinct states explored
 OUT: 
 EXIT: 3
 
@@ -16,6 +16,7 @@ Trace-Log 0:
 <CreateLog> Created Machine Real1-0
 <StateLog> Machine Real1-0 entering State Real1_Init
 <CreateLog> Created Machine Real2-0
+<StateLog> Machine Real2-0 entering State Real2_Init
 <RaiseLog> Machine Real1-0 raised Event ____E1
 
 Error:

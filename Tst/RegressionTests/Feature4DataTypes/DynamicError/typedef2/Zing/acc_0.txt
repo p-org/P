@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 130 distinct states explored
+OUT: 30 distinct states explored
 OUT: 
 EXIT: 3
 
@@ -18,14 +18,14 @@ Trace-Log 0:
 <CreateLog> Created Machine client-0
 <StateLog> Machine client-0 entering State Init
 <CreateLog> Created Machine Timer-0
-<RaiseLog> Machine client-0 raised Event ____unit
-<StateLog> Machine client-0 exiting State Init
-<StateLog> Machine client-0 entering State StartReqResp
-<EnqueueLog> Enqueued Event < ____START, 3 > in Machine ____Timer-0 by ____client-0
 <StateLog> Machine Timer-0 entering State Init
 <RaiseLog> Machine Timer-0 raised Event ____UNIT
 <StateLog> Machine Timer-0 exiting State Init
 <StateLog> Machine Timer-0 entering State WaitForReq
+<RaiseLog> Machine client-0 raised Event ____unit
+<StateLog> Machine client-0 exiting State Init
+<StateLog> Machine client-0 entering State StartReqResp
+<EnqueueLog> Enqueued Event < ____START, 3 > in Machine ____Timer-0 by ____client-0
 <DequeueLog> Dequeued Event < ____START, 3 > at Machine ____Timer-0
 <EnqueueLog> Enqueued Event < ____TIMEOUT, ____Timer-0 > in Machine ____client-0 by ____Timer-0
 <DequeueLog> Dequeued Event < ____TIMEOUT, ____Timer-0 > at Machine ____client-0

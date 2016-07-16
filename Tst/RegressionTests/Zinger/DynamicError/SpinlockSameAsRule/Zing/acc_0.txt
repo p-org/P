@@ -17,7 +17,7 @@ Trace-Log 0:
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
-<MonitorLog> Enqueued Event < ____REL, 0 > to Spinlock monitor
+<MonitorLog> Enqueued Event < ____REL, 1 > to Spinlock monitor
 
 Error:
 P Assertion failed:
@@ -29,7 +29,7 @@ Trace-Log 1:
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
-<MonitorLog> Enqueued Event < ____REL, 1 > to Spinlock monitor
+<MonitorLog> Enqueued Event < ____REL, 0 > to Spinlock monitor
 
 Error:
 P Assertion failed:
@@ -41,8 +41,8 @@ Trace-Log 2:
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
 <RaiseLog> Machine Spinlock-0 raised Event ____Error1
 <StateLog> Machine Spinlock-0 exiting State Init
 <StateLog> Machine Spinlock-0 entering State Abort1
@@ -57,22 +57,6 @@ Trace-Log 3:
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
-<RaiseLog> Machine Spinlock-0 raised Event ____Error1
-<StateLog> Machine Spinlock-0 exiting State Init
-<StateLog> Machine Spinlock-0 entering State Abort1
-
-Error:
-P Assertion failed:
-Expression: assert(tmp_12.bl,)
-Comment: SpinlockSameAsRule.p (78, 4): Assert failed
-Safety Error Trace
-Trace-Log 4:
-<CreateLog> Created monitor Spinlock
-<StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine TestDriver-0
-<StateLog> Machine TestDriver-0 entering State Init
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
 <MonitorLog> Enqueued Event < ____REL, 1 > to Spinlock monitor
 
@@ -81,7 +65,7 @@ P Assertion failed:
 Expression: assert(tmpVar_7.bl,)
 Comment: SpinlockSameAsRule.p (47, 4): Assert failed
 Safety Error Trace
-Trace-Log 5:
+Trace-Log 4:
 <CreateLog> Created monitor Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine TestDriver-0
@@ -94,13 +78,29 @@ P Assertion failed:
 Expression: assert(tmpVar_7.bl,)
 Comment: SpinlockSameAsRule.p (47, 4): Assert failed
 Safety Error Trace
+Trace-Log 5:
+<CreateLog> Created monitor Spinlock
+<StateLog> Machine Spinlock-0 entering State Init
+<CreateLog> Created Machine TestDriver-0
+<StateLog> Machine TestDriver-0 entering State Init
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
+<RaiseLog> Machine Spinlock-0 raised Event ____Error1
+<StateLog> Machine Spinlock-0 exiting State Init
+<StateLog> Machine Spinlock-0 entering State Abort1
+
+Error:
+P Assertion failed:
+Expression: assert(tmp_12.bl,)
+Comment: SpinlockSameAsRule.p (78, 4): Assert failed
+Safety Error Trace
 Trace-Log 6:
 <CreateLog> Created monitor Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
 <MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
 <RaiseLog> Machine Spinlock-0 raised Event ____Error1
 <StateLog> Machine Spinlock-0 exiting State Init
@@ -116,9 +116,9 @@ Trace-Log 7:
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
 <MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
 <RaiseLog> Machine Spinlock-0 raised Event ____Error1
 <StateLog> Machine Spinlock-0 exiting State Init
 <StateLog> Machine Spinlock-0 entering State Abort1
@@ -133,8 +133,8 @@ Trace-Log 8:
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
 <RaiseLog> Machine Spinlock-0 raised Event ____Error1
 <StateLog> Machine Spinlock-0 exiting State Init
@@ -150,9 +150,9 @@ Trace-Log 9:
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine TestDriver-0
 <StateLog> Machine TestDriver-0 entering State Init
+<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
+<MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
 <RaiseLog> Machine Spinlock-0 raised Event ____Error1
 <StateLog> Machine Spinlock-0 exiting State Init
 <StateLog> Machine Spinlock-0 entering State Abort1

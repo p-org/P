@@ -12,8 +12,11 @@ extern PRT_INT64 sendMessageSeqNumber;
 //Functions to help logging
 void
 PrtDistSMExceptionHandler(
-__in PRT_STATUS exception,
-__in PRT_MACHINEINST* vcontext
+	__in PRT_STATUS exception,
+	__in PRT_MACHINEINST* sender,
+	__in PRT_MACHINEINST* receiver,
+	__in PRT_VALUE* event,
+	__in PRT_VALUE* payload
 );
 
 // Function to open log file in a given directory

@@ -22,8 +22,6 @@ array PRT_FIELD_NAME_ARRAY[] PRT_FIELD_NAME;
 class PRT_TYPE {
     PRT_TYPE_KIND typeKind;
 
-	int typeTag;
-
     int arity;
     PRT_FIELD_NAME_ARRAY fieldNames;
     PRT_TYPE_ARRAY fieldTypes;
@@ -37,7 +35,6 @@ class PRT_TYPE {
         PRT_TYPE type;
 		type = new PRT_TYPE;
 		type.typeKind = typeKind;
-		type.typeTag = 0;
 		type.arity = 0;
 		type.fieldNames = null;
 		type.fieldTypes = null;

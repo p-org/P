@@ -123,7 +123,7 @@ machine Node {
 	start state WaitPing {
         on PING do (payload: machine) {
 			monitor M_PONG, this;
-		    _SEND(payload as machine, PONG, this);
+		    _SEND(payload, PONG, this);
 		}
     }
 }

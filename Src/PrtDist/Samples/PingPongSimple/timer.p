@@ -15,7 +15,7 @@ model Timer {
     var client: machine; 
     start state Init { 
         entry  (payload: machine) { 
-            client = payload as machine;
+            client = payload;
             raise UNIT; // goto handler of UNIT
         }
         on UNIT goto WaitForReq;

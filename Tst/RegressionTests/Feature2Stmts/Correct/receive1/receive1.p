@@ -19,7 +19,7 @@ main machine A {
 		send b, E, 0; 
 		send b, G, 1;
 		receive { 
-			case E: { x = x + p + 1; } 
+			case E: (payload: int) { x = x + p + 1; } 
 			case F: { x = x + p + 2; }
 			case G: (payload: int) { x = x + p + payload; }
 		}

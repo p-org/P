@@ -36,7 +36,7 @@ model Timer {
 	}
 
 	state TimerStarted {
-		entry {
+		entry (payload: int) {
 			if ($) {
 				send target, Timeout;
 				raise Unit;
@@ -172,7 +172,7 @@ machine Coordinator {
 	}
 
 	state CountVote {
-		entry {
+		entry (payload: any) {
 			if (i == 0) {
 				while (i < sizeof(replicas)) {
 					send replicas[i], GLOBAL_COMMIT, currSeqNum;

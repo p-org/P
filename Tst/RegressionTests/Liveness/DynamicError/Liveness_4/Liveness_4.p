@@ -22,7 +22,7 @@ event y : machine;
       entry {
         i = 0;
       }
-      on y do { i = i + 1; }
+      on y do (payload: machine) { i = i + 1; }
       on x goto hotState;
     }
 

@@ -22,7 +22,7 @@ main machine Client {
     on SUCCESS goto SendPing; 
   }
   state SendPing { 
-    entry { 
+    entry (payload: any) { 
       send server, PING, arg; 
       raise SUCCESS; 
     } 

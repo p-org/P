@@ -6,7 +6,7 @@ main machine Dummy {
 	var model_machine1: machine;
 	start state Init {
 		entry {
-		model_machine = new M(this); 
+		model_machine = new M(); 
 		model_machine1 = new M1(this);  //"Undeclared machine" error expected, but is not reported
 		model_machine = new M_undef(this); 
 		}
@@ -33,7 +33,7 @@ spec M monitors a {
 	state next {
 		defer a;
 		ignore a;
-		entry {
+		entry (payload: any) {
 			pop;
 			new Dummy();
 			x = new Dummy();

@@ -6,7 +6,7 @@ spec First monitors local {
 	var x : int;
 	start state Init {
 		on local do { x = x + 1; }
-		on global do { assert(x == 2); }
+		on global do (payload: int) { assert(x == 2); }
 	}
 }
 

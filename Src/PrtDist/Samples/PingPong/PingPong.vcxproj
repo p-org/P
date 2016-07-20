@@ -165,6 +165,9 @@
   <ItemGroup>
     <ClInclude Include="PingPong.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="PrtDistHelp.p" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />
   <ImportGroup Label="ExtensionTargets">

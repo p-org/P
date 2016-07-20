@@ -59,7 +59,7 @@ machine Process {
         }
 
 	state inits {
-		entry {
+		entry (payload: any) {
 			count = 0;
 		}
 		on myCount goto inits;

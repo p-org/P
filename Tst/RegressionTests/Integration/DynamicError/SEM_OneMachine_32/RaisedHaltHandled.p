@@ -14,7 +14,7 @@ main machine Real1 {
         exit { }   
 	}
 	state Real1_S1 {
-		entry {
+		entry (payload: any) {
 			test = true;
 		}
     }

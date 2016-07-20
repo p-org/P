@@ -5,7 +5,7 @@ main machine M {
     start state S {
 		entry {
 			var x: machine;
-			x = new N(this);
+			x = new N();
 			send x, E, 0;
 			send x, E, 0; 
 		}
@@ -16,7 +16,7 @@ main machine M {
 machine N {
     fun DoReceive() {
 		receive {
-			case E: {}
+			case E: (payload: int) {}
 		}	
 	}
 

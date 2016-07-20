@@ -130,9 +130,6 @@ machine OpenWSN_Mote {
 	
 	state WaitForNewSlot {
 		ignore Data, Ack;
-		entry {
-		
-		}
 		on newSlot do (payload : (bool, (machine,machine))) { CheckOperationTobePerfomed(payload);}
 		on Tx goto DataTransmissionMode;
 		on Rx goto DataReceptionMode;

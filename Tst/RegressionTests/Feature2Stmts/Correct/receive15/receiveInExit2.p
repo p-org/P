@@ -5,7 +5,7 @@ main machine M {
     start state S {
 		entry {
 			var x: machine;
-			x = new N(this);
+			x = new N();
 			send x, E, 0;
 			send x, E, 0; 
 		}
@@ -21,12 +21,12 @@ machine N {
 
 		exit {
 			receive {
-				case E: {}
+				case E: (payload: int) {}
 			}
 		}
 		on Unit goto T with { 
 			receive {
-				case E: {}
+				case E: (payload: int) {}
 			}
 		}
 	}

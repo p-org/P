@@ -398,7 +398,7 @@ ReceiveStmt
 	;
 
 Case 
-	: CaseEventList PayloadVarDeclOrNone LCBRACE StmtBlock RCBRACE 		{ AddCaseAnonyAction(ToSpan(@3), ToSpan(@5)); }
+	: CaseEventList PayloadVarDeclOrNone LCBRACE StmtBlock RCBRACE 		{ AddCaseAnonyAction(ToSpan(@1), ToSpan(@3), ToSpan(@5)); }
 	;
 
 CaseEventList

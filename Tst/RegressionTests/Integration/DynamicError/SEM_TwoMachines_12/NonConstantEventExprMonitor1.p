@@ -10,7 +10,7 @@ main machine Real1 {
 	var ev3: int;
     start state Real1_Init {
         entry { 
-			mac = new Real2(this);
+			mac = new Real2();
 			ev2 = E2;
 			monitor ev2, test;
 			ev1 = E1;			

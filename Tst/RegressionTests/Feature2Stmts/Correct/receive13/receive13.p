@@ -8,7 +8,7 @@ main machine A {
 	start state Init {
 		entry {
 			var b: machine;
-		    b = new B(this);
+		    b = new B();
 			send b, F;
 		}
 	}

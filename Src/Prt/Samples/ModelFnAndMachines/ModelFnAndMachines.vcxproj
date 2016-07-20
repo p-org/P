@@ -181,6 +181,9 @@
   <ItemGroup>
     <ClInclude Include="ServerClient.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="timer.p" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />
   <ImportGroup Label="ExtensionTargets">

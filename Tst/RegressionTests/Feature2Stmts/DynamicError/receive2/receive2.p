@@ -36,7 +36,7 @@ machine B {
 			receive {
 				case E: {
 					receive { 
-						case G: { 
+						case G: (x: int) { 
 						} 
 					}
 				}

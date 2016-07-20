@@ -65,7 +65,7 @@ main machine Real1 {
 		ignore E4;
 		ignore E0;   //to enable "unhandled event" exception
 		//ignore E1;
-		on E1 do {assert(false);}  //Zinger: fails, but runtime doesn't detect the assert failing
+		on E1 do (payload: any) {assert(false);}  //Zinger: fails, but runtime doesn't detect the assert failing
 	}
     fun Action1() {
     }
@@ -95,8 +95,8 @@ machine Real2 {
 				//assert(payload != E0);  //fails
 			}
 		}
-		on E0 do {}
-		on E3 do {}
+		on E0 do (payload: any) {}
+		on E3 do (payload: bool) {}
 		
 		on null goto Real2_S1;
 		exit {
@@ -104,10 +104,10 @@ machine Real2 {
 		}
 	}
 	state Real2_S1 {
-		on E4 do {}
-		on E0 do {}
-		on E1 do {}
-		on E2 do {}   //might not be handled in Init
-		on E3 do {}   //might not be handled in Init 
+		on E4 do (payload: any) {}
+		on E0 do (payload: any) {}
+		on E1 do (payload: any) {}
+		on E2 do (payload: event) {}   //might not be handled in Init
+		on E3 do (payload: bool) {}   //might not be handled in Init 
 	}
 }

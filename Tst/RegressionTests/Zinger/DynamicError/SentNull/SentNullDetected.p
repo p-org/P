@@ -11,7 +11,7 @@ main machine Real1 {
 	var ev3: int;
     start state Real1_Init {
         entry { 
-			mac = new Real2(this);
+			mac = new Real2();
 			//ev2 = E2;
             send mac, ev2, test;	 
 			raise ev1;   

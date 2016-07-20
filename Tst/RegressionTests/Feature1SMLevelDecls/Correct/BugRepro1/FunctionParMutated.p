@@ -17,7 +17,7 @@ main machine PING {
 			assert (x == 2);
 			y = Func2(x);     //x == 2
 		}
-		on Ping do { 
+		on Ping do (payload: int) { 
 			assert(x == 4); 
 			x = x + 1;
 			assert (x == 5);

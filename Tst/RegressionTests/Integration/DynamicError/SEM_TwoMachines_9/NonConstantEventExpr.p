@@ -11,7 +11,7 @@ main machine Real1 {
 	var ev3: int;
     start state Real1_Init {
         entry { 
-			mac = new Real2(this);
+			mac = new Real2();
 			monitor ev2, true;  //zing error (ev2 is nulll)
 			ev1 = E1;			
 			raise ev1;  		

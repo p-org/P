@@ -29,7 +29,7 @@ machine FailureDetector {
     }
 
     state SendPing {
-        entry {
+        entry (payload: machine) {
 		    SendPingsToAliveSet();
 			send timer, START, 100;
 	    }
@@ -46,7 +46,7 @@ machine FailureDetector {
 			     }
 			}
 		}
-		on TIMEOUT do { 
+		on TIMEOUT do (payload: machine) { 
 			attempts = attempts + 1;
 		    if (sizeof(responses) < sizeof(alive) && attempts < 2) {
 				// goto SendPing;
@@ -75,8 +75,8 @@ machine FailureDetector {
 		var timerCanceled: bool;
 		send timer, CANCEL;
 		receive {
-			case CANCEL_SUCCESS: { timerCanceled = true; }
-			case CANCEL_FAILURE: { timerCanceled = false; }
+			case CANCEL_SUCCESS: (payload: machine) { timerCanceled = true; }
+			case CANCEL_FAILURE: (payload: machine) { timerCanceled = false; }
 		}
 		return timerCanceled;
 	 }

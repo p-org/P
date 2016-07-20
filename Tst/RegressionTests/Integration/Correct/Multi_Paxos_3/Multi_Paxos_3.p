@@ -182,7 +182,7 @@ machine PaxosNode {
 	
 	state ProposeValuePhase1 {
 		ignore accepted;
-		entry {
+		entry (payload: any) {
 			countAgree = 0;
 			nextProposal = GetNextProposal(maxRound);
 			receivedAgree = (proposal = (round = -1, servermachine = -1), value = -1);

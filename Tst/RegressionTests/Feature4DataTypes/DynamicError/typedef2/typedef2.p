@@ -62,7 +62,7 @@ machine client
 			}
 			send tmr, START, 3; // 3 secs
 		}
-		on TIMEOUT do { 
+		on TIMEOUT do (payload: machine) { 
 			send sr, req;
 			counter = counter + 1;
 			receive {

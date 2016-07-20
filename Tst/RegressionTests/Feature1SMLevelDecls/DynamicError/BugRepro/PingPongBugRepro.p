@@ -61,7 +61,7 @@ machine FailureDetector {
         on UNIT push SendPing;
     }
     state SendPing {
-        entry {
+        entry (payload: any) {
 		    SendPingsToAliveSet(0);
 			send timer, START, 100;
 	    }
@@ -74,7 +74,7 @@ machine FailureDetector {
 			     }
 			}
 		}
-		on TIMEOUT do { 
+		on TIMEOUT do (payload: machine) { 
 			attempts = attempts + 1;
 		    if (sizeof(responses) < sizeof(alive) && attempts < 2) {
 				raise UNIT;
@@ -88,8 +88,8 @@ machine FailureDetector {
      }
 	 state WaitForCancelResponse {
 	     defer TIMEOUT, PONG;
-	     on CANCEL_SUCCESS do { raise ROUND_DONE; }
-		 on CANCEL_FAILURE do { pop; }
+	     on CANCEL_SUCCESS do (payload: machine) { raise ROUND_DONE; }
+		 on CANCEL_FAILURE do (payload: machine) { pop; }
 	 }
 	 state Reset {
          entry {

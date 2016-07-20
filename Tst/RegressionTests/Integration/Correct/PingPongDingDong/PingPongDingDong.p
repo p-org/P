@@ -55,9 +55,6 @@ machine PONG {
     }
 
     state Pong_dong1 {
-	entry {
-	     		 	  
-	}
         on Ding goto Pong_dong2;
     }
 	

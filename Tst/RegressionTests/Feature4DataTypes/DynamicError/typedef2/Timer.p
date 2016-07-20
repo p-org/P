@@ -16,7 +16,7 @@ model Timer {
   }
 
   state WaitForReq { 
-    on START do { send client, TIMEOUT, this; }
+    on START do (payload: int) { send client, TIMEOUT, this; }
   }
 
 }

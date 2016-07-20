@@ -52,7 +52,7 @@ machine Server {
   }
 
   state SendPong { 
-    entry { 
+    entry (payload: machine) { 
       monitor M_PONG, client;
       send client, PONG; 
       raise SUCCESS; 

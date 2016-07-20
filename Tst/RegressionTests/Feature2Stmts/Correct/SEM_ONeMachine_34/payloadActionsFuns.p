@@ -51,7 +51,7 @@ main machine MachOS {
 			BOOL = payload.sec[2];
 			assert ( BOOL == true );
 		}
-		on halt do {
+		on halt do (payload: any) {
 			//MACH = payload;                 //error
 			//INT = payload;                  //error
 		}

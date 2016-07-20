@@ -9,12 +9,12 @@ main machine M {
 		}
 		exit {
 			receive {
-				case E: {}
+				case E: (payload: int) {}
 			}
 		}
 		on Unit goto T with { 
 			receive {
-				case E: {}
+				case E: (payload: int) {}
 			}
 		}
 	}

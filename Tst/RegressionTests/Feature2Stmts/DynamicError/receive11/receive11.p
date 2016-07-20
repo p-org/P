@@ -39,6 +39,6 @@ main machine B {
 				case G: { send this, E, 10; m = new A();}
 			}
 		}
-		on E do {}
+		on E do (payload: int) {}
 	}
 }

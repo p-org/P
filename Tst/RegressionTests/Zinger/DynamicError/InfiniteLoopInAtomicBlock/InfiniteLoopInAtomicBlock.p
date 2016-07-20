@@ -39,7 +39,7 @@ main machine PING {
 		on PongIgnored do { assert(false); } 	//unreachable
      }
 	state Ping_Halt {
-		entry {
+		entry (payload: any) {
 			raise halt;
 			}
 		on halt goto Ping_Halt;     //stopping

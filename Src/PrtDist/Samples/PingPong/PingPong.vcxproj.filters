@@ -39,4 +39,9 @@
       <Filter>P Sources</Filter>
     </PCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="PrtDistHelp.p">
+      <Filter>P Sources</Filter>
+    </None>
+  </ItemGroup>
 </Project>

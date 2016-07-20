@@ -155,9 +155,10 @@
                 return caseEventStack.Pop();
             }
 
-            public void AddCase(P_Root.IArgType_Cases__0 e, P_Root.IArgType_Cases__1 a)
+            public void AddCase(P_Root.IArgType_Cases__0 e, P_Root.IArgType_Cases__1 a, Span caseSpan)
             {
                 casesList = P_Root.MkCases(e, a, casesList);
+                casesList.Span = caseSpan;
             }
 
             public void AddPayloadVar(P_Root.UserCnstKind qualKind, string name, Span span)
@@ -175,7 +176,7 @@
                 var field = P_Root.MkNmdTupTypeField(
                                     P_Root.MkUserCnst(qualKind),
                                     P_Root.MkString(string.Format("_payload_{0}", parser.GetNextPayloadVarLabel())), 
-                                    (P_Root.IArgType_NmdTupTypeField__2) parser.MkBaseType(P_Root.UserCnstKind.ANY, Span.Unknown));
+                                    (P_Root.IArgType_NmdTupTypeField__2) parser.MkBaseType(P_Root.UserCnstKind.NULL, Span.Unknown));
                 contextLocalVarDecl = P_Root.MkNmdTupType(field, contextLocalVarDecl);
             }
 
@@ -1578,7 +1579,7 @@
                     MkUserCnst(valKind, valSpan)));
         }
 
-        private void AddCaseAnonyAction(Span entrySpan, Span exitSpan)
+        private void AddCaseAnonyAction(Span caseSpan, Span entrySpan, Span exitSpan)
         {
             var stmt = (P_Root.IArgType_AnonFunDecl__3)stmtStack.Pop();
             P_Root.IArgType_AnonFunDecl__0 owner =
@@ -1596,7 +1597,7 @@
             var caseEventList = localVarStack.Pop();
             foreach (var e in caseEventList)
             {
-                localVarStack.AddCase((P_Root.IArgType_Cases__0)e, anonAction);
+                localVarStack.AddCase((P_Root.IArgType_Cases__0)e, anonAction, caseSpan);
             }
         }
 

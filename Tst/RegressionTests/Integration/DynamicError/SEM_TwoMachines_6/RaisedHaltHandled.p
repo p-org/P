@@ -53,7 +53,7 @@ machine PONG {
 			}
 		raise Success;	
 	}
-	on halt do { assert(false); }   //reachable
+	on halt do (payload: any) { assert(false); }   //reachable
     on Success goto Pong_WaitPing;
     }
 }

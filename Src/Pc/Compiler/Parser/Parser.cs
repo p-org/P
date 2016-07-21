@@ -2018,7 +2018,7 @@
             var field = P_Root.MkNmdTupTypeField(
                                    P_Root.MkUserCnst(P_Root.UserCnstKind.NONE),
                                    P_Root.MkString("_payload_skip"),
-                                   (P_Root.IArgType_NmdTupTypeField__2)MkBaseType(P_Root.UserCnstKind.ANY, Span.Unknown));
+                                   (P_Root.IArgType_NmdTupTypeField__2)MkBaseType(P_Root.UserCnstKind.NULL, Span.Unknown));
             var decl = P_Root.MkAnonFunDecl(owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), stmt, (P_Root.IArgType_AnonFunDecl__4)P_Root.MkNmdTupType(field, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL)));
             decl.Span = span;
             parseProgram.AnonFunctions.Add(decl);

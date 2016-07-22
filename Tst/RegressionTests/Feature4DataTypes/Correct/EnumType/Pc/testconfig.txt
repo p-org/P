@@ -1,0 +1,5 @@
+arg: ..\enumType.p
+arg: /shortFileNames
+arg: /test
+arg: /outputDir:..\.
+dsc: enum type

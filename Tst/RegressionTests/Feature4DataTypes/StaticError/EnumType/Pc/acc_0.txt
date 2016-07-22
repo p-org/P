@@ -1,0 +1,16 @@
+=================================
+         Console output          
+=================================
+OUT: enumtype.p (58, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: enumtype.p (59, 5): insert must be applied to a sequence or a map
+OUT: enumtype.p (60, 5): remove must be applied to a sequence or map
+OUT: enumtype.p (76, 5): "assert" expects a boolean value
+OUT: enumtype.p (76, 18): "in" expects a map
+OUT: enumtype.p (78, 5): index must be an integer
+OUT: enumtype.p (83, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: enumtype.p (83, 7): Index must be an integer
+OUT: enumtype.p (84, 5): value must be a subtype of sequence type
+OUT: enumtype.p (135, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: enumtype.p (137, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: Compilation failed
+EXIT: -1

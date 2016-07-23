@@ -1,0 +1,6 @@
+arg: ..\ZingSealing.p
+arg: /shortFileNames
+arg: /test
+arg: /outputDir:..\.
+dsc: pc.exe, Zinger: testing the sealing feature of delaying explorer.
+

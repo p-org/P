@@ -49,7 +49,8 @@ for %%i in (zc\bin\%Platform%\Release\zc.exe
              DelayingSchedulers\CustomDelayingScheduler\bin\%Platform%\Release\CustomDelayingScheduler.dll
              DelayingSchedulers\RandomDelayingScheduler\bin\%Platform%\Release\RandomDelayingScheduler.dll
              DelayingSchedulers\RoundRobinDelayingScheduler\bin\%Platform%\Release\RoundRobinDelayingScheduler.dll
-             DelayingSchedulers\RunToCompletionDelayingScheduler\bin\%Platform%\Release\RunToCompletionDelayingScheduler.dll) do (
+             DelayingSchedulers\RunToCompletionDelayingScheduler\bin\%Platform%\Release\RunToCompletionDelayingScheduler.dll
+	     DelayingSchedulers\SealingScheduler\bin\%Platform%\Release\SealingScheduler.dll) do (
              
     copy %%i %BinaryDrop%
 )

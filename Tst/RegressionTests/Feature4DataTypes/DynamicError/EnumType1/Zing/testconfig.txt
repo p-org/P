@@ -1,0 +1,4 @@
+arg: -et:enumType.trace
+inc: enumType.trace
+del: enumType.trace
+dsc: zinger.exe, enum type

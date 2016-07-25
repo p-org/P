@@ -57,7 +57,7 @@
   <ItemGroup>
     <Reference Include="Core">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(ExtFolder)\Formula\$(UnifiedPlatform)\Core.dll</HintPath>
+      <HintPath>$(ExtFolder)\FormulaBinaries\$(UnifiedPlatform)\Core.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Msagl">
       <SpecificVersion>False</SpecificVersion>

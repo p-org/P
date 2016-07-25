@@ -17,7 +17,7 @@
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
     <CodeContractsAssemblyMode>1</CodeContractsAssemblyMode>
-    <GPToolsPath>$(ExtFolder)\Formula\x86\</GPToolsPath>
+    <GPToolsPath>$(ExtFolder)\FormulaBinaries\$(UnifiedPlatform)\</GPToolsPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
@@ -132,7 +132,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Core">
-      <HintPath>$(ExtFolder)\Formula\$(UnifiedPlatform)\Core.dll</HintPath>
+      <HintPath>$(ExtFolder)\FormulaBinaries\$(UnifiedPlatform)\Core.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -234,7 +234,7 @@
     </CreateItem>
   </Target>
   <!-- Start Formula code generator MSBuild integration -->
-  <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="$(ExtFolder)\Formula\x86\FormulaCodeGeneratorTask.dll" />
+  <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="$(ExtFolder)\FormulaBinaries\x86\FormulaCodeGeneratorTask.dll" />
   <Target Name="BeforeBuild" Condition="'$(BuildingInsideVisualStudio)' != 'true'">
     <ItemGroup>
       <FormulaGenFiles Include="@(EmbeddedResource->'%(FullPath)')" Condition="%(EmbeddedResource.Generator) == 'FormulaCodeGenerator'" />

@@ -2,3 +2,6 @@
 	path = Ext/Zing
 	url = https://github.com/ZingModelChecker/Zing.git
 	ignore = dirty
+[submodule "Ext/Formula"]
+	path = Ext/Formula
+	url = https://github.com/Microsoft/formula.git

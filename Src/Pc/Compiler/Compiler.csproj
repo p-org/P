@@ -131,9 +131,6 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Core">
-      <HintPath>$(ExtFolder)\FormulaBinaries\$(UnifiedPlatform)\Core.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
@@ -181,6 +178,10 @@
     <MPPGCompile Include="Parser\parser.y" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Ext\Formula\Src\Core\Core.csproj">
+      <Project>{1b5724ec-fff1-48d7-a700-ad46f0150afc}</Project>
+      <Name>Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Parsers\CParser\CParser.csproj">
       <Project>{55afea71-da6d-4258-9193-29942ebbbe48}</Project>
       <Name>CParser</Name>

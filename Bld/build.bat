@@ -2,7 +2,16 @@
 setlocal
 pushd %~dp0
 cd ..
+goto :start
 
+:help
+echo Usage: build [debug|release] [x64|x86] [nosync] [clean] 
+echo nosync - do not update the git submodules.
+echo clean - only clean the build
+
+goto :exit
+
+:start
 echo ============= Building P SDK on %COMPUTERNAME% ===============
 
 set MSBuildPath=
@@ -20,13 +29,34 @@ goto :eof
 set TAIL=%MSBuildPath:~-6%
 if "[%TAIL%]" == "[amd64\]" set MSBuildPath=%MSBuildPath:~0,-6%"
 set PATH=%PATH%;%MSBuildPath%
-set Configuration=%1
-if "%Configuration%"=="" set Configuration=Debug
-set Platform=%2
-if "%Platform%"=="" set Platform=x86
+set Configuration=Debug
+set Platform=x86
+set NoSync=
+set CleanOnly=
+
+:parseargs
+if "%1"=="Debug" set Configuration=Debug
+if "%1"=="Release" set Configuration=Release
+if "%1"=="x86" set Platform=x86
+if "%1"=="x64" set Platform=x64
+if "%1"=="nosync" set NoSync=true
+if "%1"=="clean" set CleanOnly=true
+if "%1"=="" goto :step2
+if "%1"=="/?" goto :help
+if "%1"=="/h" goto :help
+if "%1"=="/help" goto :help
+if "%1"=="help" goto :help
+shift
+goto :parseargs
+
+:step2
+
+if "%NoSync%"=="true" goto :nosync
 
 git submodule init
 git submodule update
+
+:nosync
 cd ext\zing
 
 echo msbuild  Zing.sln /p:Platform=%Platform% /p:Configuration=Release
@@ -62,7 +92,9 @@ del Src\PrtDist\Core\NodeManager_s.c
 
 echo msbuild P.sln /p:Platform=%Platform% /p:Configuration=%Configuration%
 msbuild  P.sln /p:Platform=%Platform% /p:Configuration=%Configuration% /t:Clean
-msbuild P.sln /p:Platform=%Platform% /p:Configuration=%Configuration%
+
+if "%CleanOnly%"=="true" goto :exit
+msbuild P.sln /p:Platform=%Platform% /p:Configuration=%Configuration% /p:SOLVER=NOSOLVER
 
 :exit
 popd

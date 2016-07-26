@@ -54,10 +54,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Core">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(ExtFolder)\FormulaBinaries\$(UnifiedPlatform)\Core.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -77,6 +73,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Ext\Formula\Src\Core\Core.csproj">
+      <Project>{1b5724ec-fff1-48d7-a700-ad46f0150afc}</Project>
+      <Name>Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Compiler\Compiler.csproj">
       <Project>{ed76217f-2452-4a35-90f6-6eb6ccf2d882}</Project>
       <Name>Compiler</Name>

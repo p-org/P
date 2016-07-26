@@ -5,9 +5,10 @@ cd ..
 goto :start
 
 :help
-echo Usage: build [debug|release] [x64|x86] [nosync] [clean] 
+echo Usage: build [debug|release] [x64|x86] [nosync] [clean|noclean] 
 echo nosync - do not update the git submodules.
 echo clean - only clean the build
+echo noclean - do not clean the build, so do incemental build
 
 goto :exit
 
@@ -33,19 +34,21 @@ set Configuration=Debug
 set Platform=x86
 set NoSync=
 set CleanOnly=
+set NoClean=
 
 :parseargs
-if "%1"=="Debug" set Configuration=Debug
-if "%1"=="Release" set Configuration=Release
-if "%1"=="x86" set Platform=x86
-if "%1"=="x64" set Platform=x64
-if "%1"=="nosync" set NoSync=true
-if "%1"=="clean" set CleanOnly=true
-if "%1"=="" goto :step2
-if "%1"=="/?" goto :help
-if "%1"=="/h" goto :help
-if "%1"=="/help" goto :help
-if "%1"=="help" goto :help
+if /I "%1"=="debug" set Configuration=Debug
+if /I "%1"=="release" set Configuration=Release
+if /I "%1"=="x86" set Platform=x86
+if /I "%1"=="x64" set Platform=x64
+if /I "%1"=="nosync" set NoSync=true
+if /I "%1"=="clean" set CleanOnly=true
+if /I "%1"=="noclean" set NoClean=true
+if /I "%1"=="" goto :step2
+if /I "%1"=="/?" goto :help
+if /I "%1"=="/h" goto :help
+if /I "%1"=="/help" goto :help
+if /I "%1"=="help" goto :help
 shift
 goto :parseargs
 
@@ -90,9 +93,11 @@ REM this code fixes a problem in MIDL compile by forcing recompile of these file
 del Src\PrtDist\Core\NodeManager_c.c
 del Src\PrtDist\Core\NodeManager_s.c
 
+if "%NoClean%"=="true" goto :build
 echo msbuild P.sln /p:Platform=%Platform% /p:Configuration=%Configuration%
 msbuild  P.sln /p:Platform=%Platform% /p:Configuration=%Configuration% /t:Clean
 
+:build
 if "%CleanOnly%"=="true" goto :exit
 msbuild P.sln /p:Platform=%Platform% /p:Configuration=%Configuration% /p:SOLVER=NOSOLVER
 

@@ -135,7 +135,9 @@ domain PStructuralTyping extends PData
 	[ rule_Classes = '"error, msg: Multiple transitions over the same event"']
 	TwoDeclError(t1, t2) :- t1 != t2, t1 is TransDecl, t2 is TransDecl, t1.src = t2.src, t1.trig = t2.trig.
 	[ rule_Classes = '"error, msg: Multiple actions over the same event"']
-	TwoDeclError(a1, a2) :- a1 != a2, a1 is DoDecl(state, owner, _), a2 is DoDecl(state, owner, _), a1.src = a2.src, a1.trig = a2.trig.
+	TwoDeclError(a1, a2) :- a1 != a2, a1 is DoDecl, a2 is DoDecl, a1.src = a2.src, a1.trig = a2.trig.
+	[ rule_Classes = '"error, msg:  Action and transition over the same event"']
+	TwoDeclError(t, a)   :- t is TransDecl, a is DoDecl, t.src = a.src, t.trig = a.trig.
 	
 	//// There should be a main machine
 	[rule_Classes = '"error, msg: No Main Machine"']

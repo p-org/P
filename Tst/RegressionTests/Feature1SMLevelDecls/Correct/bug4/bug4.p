@@ -2,8 +2,7 @@ event x : (int, int);
 event a;
 event y;
 
-	main machine M1
-	{
+	main machine M1 {
 		var id: machine;
 		var part: map[int, int];
 		start state S 

@@ -10,8 +10,7 @@ type TUP = (first: int, second: int);
 model fun PrintTime() {
 	//something here
 }
-main machine Server
-{
+main machine Server {
 	var cl: machine;
 	var randomTup : TUP;
 	start state Init{

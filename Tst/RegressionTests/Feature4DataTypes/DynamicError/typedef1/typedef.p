@@ -4,8 +4,7 @@ type compMap = map[slot, compTup1];
 
 event test : compMap;
 
-main machine Main
-{
+main machine Main {
 	var map1 : compMap;
 	var slot1 : slot;
 	var slot2 : slot;

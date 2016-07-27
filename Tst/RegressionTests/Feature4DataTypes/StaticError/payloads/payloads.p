@@ -2,8 +2,7 @@ event E;
 event F: any;
 event G: int;
 
-main machine M
-{
+main machine M {
    var x: event;
    var y: int;
    start state S

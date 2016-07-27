@@ -1,5 +1,4 @@
-main machine Test
-{
+main machine Test {
   var x: int;
   var y: int;
 

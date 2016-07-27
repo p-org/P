@@ -1,8 +1,7 @@
 model type float = int;
 model type tyfloat = (float, float);
 
-main machine M
-{    
+main machine M {    
    var x : float;
    var y : float;
    var z : tyfloat;

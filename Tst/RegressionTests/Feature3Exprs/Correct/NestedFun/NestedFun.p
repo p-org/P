@@ -11,8 +11,7 @@ model fun AddFloat32(op1: float32, op2: float32) : float32
    return default(float32);
 } 
 
-main machine Test
-{
+main machine Test {
   start state Init {
     entry {
       var f: float32;

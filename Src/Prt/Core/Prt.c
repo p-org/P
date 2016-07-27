@@ -1,5 +1,12 @@
 #include "PrtExecution.h"
 
+void PrtSetForeignTypes(
+	_In_ PRT_PROGRAMDECL *program)
+{
+	prtNumForeignTypeDecls = program->nForeignTypes;
+	prtForeignTypeDecls = program->foreignTypes;
+}
+
 /*********************************************************************************
 
 Public Functions
@@ -13,8 +20,7 @@ PrtStartProcess(
     _In_ PRT_LOG_FUN logFun
 )
 {
-    prtNumForeignTypeDecls = program->nForeignTypes;
-    prtForeignTypeDecls = program->foreignTypes;
+	PrtSetForeignTypes(program);
 
     PRT_PROCESS_PRIV *process;
     process = (PRT_PROCESS_PRIV *)PrtMalloc(sizeof(PRT_PROCESS_PRIV));

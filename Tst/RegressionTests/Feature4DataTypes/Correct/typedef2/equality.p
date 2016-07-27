@@ -1,8 +1,7 @@
 model type F = bool;
 type G = F;
 
-main machine MyMachine
-{
+main machine MyMachine {
     start state Init
     {
         entry

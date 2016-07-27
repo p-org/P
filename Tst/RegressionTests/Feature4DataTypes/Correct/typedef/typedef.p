@@ -3,8 +3,7 @@ type compTup2 = (first: compTup1, second: seq[compTup1]);
 
 event test : compTup2;
 
-main machine Main
-{
+main machine Main {
 	var compVal2 : compTup2;
 	var compVal1 : compTup1;
 	start state S1 {

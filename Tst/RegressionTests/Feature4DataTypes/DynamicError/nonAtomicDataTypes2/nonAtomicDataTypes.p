@@ -1,8 +1,7 @@
 //Tests complex data types in assign/remove/insert: sequences, tuples, maps
 //Tests "index-out-of-bounds" error detection in Zinger and runtime
 event E assert 1; 
-main machine M
-{    
+main machine M {    
     var t : (a: seq [int], b: map[int, seq[int]]);
 	var ts: (a: int, b: int);
 	var tt: (int, int);

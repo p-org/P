@@ -14,8 +14,7 @@ event MyEvent : MessageType;
 
 
 
-main machine MainMachine
-{
+main machine MainMachine {
     start state Init
     {
     }

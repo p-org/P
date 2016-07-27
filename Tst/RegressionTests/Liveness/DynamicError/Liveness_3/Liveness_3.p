@@ -5,8 +5,7 @@ event Done;
 event Waiting;
 event Computing;
 
-main machine EventHandler
-{
+main machine EventHandler {
        start state WaitForUser
        {
             entry {

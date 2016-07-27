@@ -35,6 +35,7 @@ set Platform=x86
 set NoSync=
 set CleanOnly=
 set NoClean=
+set SubmoduleOutOfDate=false
 
 :parseargs
 if /I "%1"=="debug" set Configuration=Debug
@@ -52,12 +53,27 @@ if /I "%1"=="help" goto :help
 shift
 goto :parseargs
 
+:checksubmodule
+for /f "usebackq tokens=1,2*" %%i in (`git submodule summary %1`) do (
+  if "%%j"=="%1" echo #### Submodule is out of date: %1 & set SubmoduleOutOfDate=true  
+)
+
+goto :eof
+
 :step2
 
 if "%NoSync%"=="true" goto :nosync
 
-git submodule init
-git submodule update
+call :checksubmodule Ext/Formula
+call :checksubmodule Ext/Zing
+
+if "%SubmoduleOutOfDate%"=="false" goto :nosync
+
+
+:sync
+echo ### Fixing your submodules so they are up to date...
+git submodule sync --recursive
+git submodule update --init --recursive
 
 :nosync
 cd ext\zing

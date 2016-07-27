@@ -134,18 +134,13 @@ MachineDecl
 	;
 
 MachineNameDecl
-	: IsMain MACHINE ID	MachCardOrNone	{ SetMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1)); }
-	| MODEL ID MachCardOrNone			{ SetMachine(P_Root.UserCnstKind.MODEL, $2.str, ToSpan(@2), ToSpan(@1)); }
-	| SPEC ID ObservesList				{ SetMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
+	: MACHINE ID MachCardOrNone	{ SetMachine(P_Root.UserCnstKind.REAL, $2.str, ToSpan(@2), ToSpan(@1)); }
+	| MODEL ID MachCardOrNone	{ SetMachine(P_Root.UserCnstKind.MODEL, $2.str, ToSpan(@2), ToSpan(@1)); }
+	| SPEC ID ObservesList		{ SetMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 	
 ObservesList
 	: MONITORS EventList { crntObservesList.AddRange(crntEventList); crntEventList.Clear(); }
-	;
-
-IsMain
-	: MAIN											{ SetMachineIsMain(ToSpan(@1)); }
-	|												{ }
 	;
 
 MachCardOrNone

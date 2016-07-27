@@ -11,7 +11,7 @@ model fun PrintTime() {
 	//something here
 }
 
-main machine Server
+machine Server
 {
 	var cl: machine;
 	var randomTup : TUP;

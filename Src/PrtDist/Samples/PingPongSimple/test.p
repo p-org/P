@@ -5,7 +5,7 @@ event PING assert 1: machine;
 event PONG assert 1; 
 event SUCCESS;
 
-main machine Client {
+machine Client {
   var server: machine;
   start state Init { 
     entry { 

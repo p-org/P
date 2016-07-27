@@ -1248,12 +1248,6 @@
             }
         }
 
-        private void SetMachineIsMain(Span span)
-        {
-            var machDecl = GetCurrentMachineDecl(span);
-            machDecl.isMain = MkUserCnst(P_Root.UserCnstKind.TRUE, span);
-        }
-
         private void SetEventType(Span span)
         {
             var evDecl = GetCurrentEventDecl(span);
@@ -1973,7 +1967,6 @@
             crntMachDecl.name = MkString(string.Empty, span);
             crntMachDecl.kind = MkUserCnst(P_Root.UserCnstKind.REAL, span);
             crntMachDecl.card = MkUserCnst(P_Root.UserCnstKind.NIL, span);
-            crntMachDecl.isMain = MkUserCnst(P_Root.UserCnstKind.FALSE, span);
             crntMachDecl.start = P_Root.MkQualifiedName(
                                         MkString(string.Empty, span),
                                         MkUserCnst(P_Root.UserCnstKind.NIL, span));

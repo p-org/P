@@ -294,7 +294,6 @@ namespace Microsoft.Pc
         public Dictionary<string, List<Tuple<string, int>>> allEnums;
         public Dictionary<string, MachineInfo> allMachines;
         public Dictionary<string, FunInfo> allStaticFuns;
-        public string mainMachineName;
         private Dictionary<AST<Node>, string> anonFunToName;
 
         public LinkedList<Tuple<string,  AST<FuncTerm>>> GetBin(Dictionary<string, LinkedList<Tuple<string, AST<FuncTerm>>>> factBins, FuncTerm ft)
@@ -456,11 +455,6 @@ namespace Microsoft.Pc
                     }
                     it.MoveNext();
                     allMachines[machineName].initStateName = GetNameFromQualifiedName(machineName, (FuncTerm)it.Current);
-                    it.MoveNext();
-                    if (((Id)it.Current).Name == "TRUE")
-                    {
-                        mainMachineName = machineName;
-                    }
                 }
             }
 
@@ -1350,12 +1344,18 @@ namespace Microsoft.Pc
         #endregion
 
         #region ZingCompiler
-        public void GenerateZing(string zingFileName, ref AST<Model> outModel)
+        public bool GenerateZing(string zingFileName, ref AST<Model> outModel)
         {
+            if (!allMachines.ContainsKey("Main"))
+            {
+                Console.WriteLine("Unable to generate Zing code since Main machine absent.");
+                return false;
+            }
             List<AST<Node>> elements = new List<AST<Node>>();
             MkZingEnums(elements);
             MkZingClasses(elements);
             outModel = Add(outModel, MkZingFile(zingFileName, elements));
+            return true;
         }
 
         private void MkZingEnums(List<AST<Node>> elements)
@@ -1634,7 +1634,7 @@ namespace Microsoft.Pc
                 AddEventSet(stmts, machineInfo.observesEvents, currentObservesSet);
                 runBodyStmts.Add(MkZingSeq(stmts));
             }
-            runBodyStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", mainMachineName)), MkZingIdentifier("nullValue"))));
+            runBodyStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("Main", "CreateMachine_Main"), MkZingIdentifier("nullValue"))));
             AST<Node> runMethod = MkZingMethodDecl("Run", ZingData.Cnst_Nil, ZingData.Cnst_Void, MkZingVarDecls(locals), MkZingBlocks(MkZingBlock("dummy", MkZingSeq(runBodyStmts))), ZingData.Cnst_Static, ZingData.Cnst_Activate);
             methods.Add(runMethod);
 

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PrtDist", "Src\PrtDist\Core\PrtDist.vcxproj", "{88589011-C704-470A-8A39-05DC0C816DA8}"
 EndProject
@@ -362,13 +362,11 @@ Global
 		{B81F7E46-FF83-4534-ABA2-64A5C723FEDB}.Release|x86.ActiveCfg = Release|Win32
 		{B81F7E46-FF83-4534-ABA2-64A5C723FEDB}.Release|x86.Build.0 = Release|Win32
 		{1B5724EC-FFF1-48D7-A700-AD46F0150AFC}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{1B5724EC-FFF1-48D7-A700-AD46F0150AFC}.Debug|x64.ActiveCfg = Debug|x64
-		{1B5724EC-FFF1-48D7-A700-AD46F0150AFC}.Debug|x64.Build.0 = Debug|x64
+		{1B5724EC-FFF1-48D7-A700-AD46F0150AFC}.Debug|x64.ActiveCfg = Debug|x86
 		{1B5724EC-FFF1-48D7-A700-AD46F0150AFC}.Debug|x86.ActiveCfg = Debug|x86
 		{1B5724EC-FFF1-48D7-A700-AD46F0150AFC}.Debug|x86.Build.0 = Debug|x86
 		{1B5724EC-FFF1-48D7-A700-AD46F0150AFC}.Release|Any CPU.ActiveCfg = Release|x86
-		{1B5724EC-FFF1-48D7-A700-AD46F0150AFC}.Release|x64.ActiveCfg = Release|x64
-		{1B5724EC-FFF1-48D7-A700-AD46F0150AFC}.Release|x64.Build.0 = Release|x64
+		{1B5724EC-FFF1-48D7-A700-AD46F0150AFC}.Release|x64.ActiveCfg = Release|x86
 		{1B5724EC-FFF1-48D7-A700-AD46F0150AFC}.Release|x86.ActiveCfg = Release|x86
 		{1B5724EC-FFF1-48D7-A700-AD46F0150AFC}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection

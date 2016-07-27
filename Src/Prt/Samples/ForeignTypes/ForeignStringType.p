@@ -3,7 +3,7 @@ model type StringType = int;
 event sendback : (machine, any);
 event getback : any;
 
-main machine TestMachine
+machine TestMachine
 {
 	var someStringV : StringType;
 	var fMachine: machine;

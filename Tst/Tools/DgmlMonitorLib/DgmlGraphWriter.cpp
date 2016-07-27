@@ -362,6 +362,7 @@ HRESULT DgmlGraphWriter::NewGraph(const wchar_t* path)
 
 HRESULT DgmlGraphWriter::LoadGraph(const wchar_t* path)
 {
+	if (writer == NULL) return E_NOT_VALID_STATE;
 	LoadGraphMessage m(path);
 	m.Write(writer);
 	return 0;
@@ -369,6 +370,7 @@ HRESULT DgmlGraphWriter::LoadGraph(const wchar_t* path)
 
 HRESULT DgmlGraphWriter::NavigateToNode(const wchar_t* nodeId, const wchar_t* nodeLabel)
 {
+	if (writer == NULL) return E_NOT_VALID_STATE;
 	NavigateNodeMessage m(nodeId, nodeLabel);
 	m.Write(writer);
 	return 0;
@@ -376,6 +378,7 @@ HRESULT DgmlGraphWriter::NavigateToNode(const wchar_t* nodeId, const wchar_t* no
 
 HRESULT DgmlGraphWriter::NavigateLink(const wchar_t* srcNodeId, const wchar_t* srcNodeLabel, const wchar_t* targetNodeId, const wchar_t* targetNodeLabel, const wchar_t* linkLabel, int linkIndex)
 {
+	if (writer == NULL) return E_NOT_VALID_STATE;
 	NavigateLinkMessage m(srcNodeId, srcNodeLabel, targetNodeId, targetNodeLabel, linkLabel, linkIndex);
 	m.Write(writer);
 	return 0;
@@ -388,6 +391,11 @@ HRESULT DgmlGraphWriter::Close()
 		socket->Close();
 		delete socket;
 		socket = NULL;
+	}
+	if (writer != NULL)
+	{
+		delete writer;
+		writer = NULL;
 	}
 	return 0;
 }

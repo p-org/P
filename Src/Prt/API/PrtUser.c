@@ -278,10 +278,12 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINEINST *sender, _In_ P
 							_Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)receiver;
-	PrtAssert(!c->isModel, "PrtUserPrintStep should not be called with model machine\n");
 	PRT_STRING machineName = c->process->program->machines[c->instanceOf].name;
 	PRT_UINT32 machineId = c->id->valueUnion.mid->machineId;
-	PRT_STRING stateName = PrtGetCurrentStateDecl(c)->name;
+	PRT_STRING stateName = "model";
+	if (!c->isModel) {
+		stateName = PrtGetCurrentStateDecl(c)->name;
+	}
 	PRT_STRING eventName;
 
 	switch (step)

@@ -7,7 +7,7 @@ include "Timer.p"
 event PING: machine;
 event PONG: machine;
 
-main machine Driver {
+machine Main {
     var fd: machine;
 	var nodeseq: seq[machine];
     var nodemap: map[machine, bool];

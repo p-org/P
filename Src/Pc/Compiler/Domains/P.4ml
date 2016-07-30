@@ -1007,7 +1007,7 @@ domain PStaticTyping extends PData
 	FunRetError ::= (cntxt: FunDecl).
 
 	[ rule_Classes = '"error, msg: function must return a value"']
-	FunRetError(f) :- f is FunDecl, FunDeclKind(f, x), x != MODEL, rt = f.return, rt : TypeExpr, no { r | SubSE(c, r), r : Return }.
+	FunRetError(f) :- f is FunDecl, FunDeclKind(f, x), x != MODEL, rt = f.return, rt : TypeExpr, no { r | SubSE(f, r), r : Return }.
 
     /*************************************************************/
     /*                      Control Impurity                     */

@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
 
 		PrtUpdateAssertFn(MyAssert);
 
-		PrtMkMachine(process, _P_MACHINE_MAIN, payload);
+		PrtMkMachine(process, P_MACHINE_Main, payload);
 
         if (cooperative)
         {

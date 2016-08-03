@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 	processGuid.data4 = 0;
 	process = PrtStartProcess(processGuid, &P_GEND_PROGRAM, ErrorHandler, Log);
 	payload = PrtMkNullValue();
-	PrtMkMachine(process, _P_MACHINE_MAIN, payload);
+	PrtMkMachine(process, P_MACHINE_Server, payload);
 	PrtFreeValue(payload);
 	PrtStopProcess(process);
 }

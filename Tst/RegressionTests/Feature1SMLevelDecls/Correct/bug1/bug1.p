@@ -1,6 +1,5 @@
 event a;
-	main machine Mach1
-	{
+	main machine Mach1 S{
 		start state S {
 			entry {
 				receive {

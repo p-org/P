@@ -681,7 +681,9 @@
             }
             using (new PerfTimer("Generating Zing"))
             {
-                new PToZing(this, AllModels, (AST<Model>)modelWithTypes).GenerateZing(zingFileName, ref zingModel);
+                var pToZing = new PToZing(this, AllModels, (AST<Model>)modelWithTypes);
+                if (!pToZing.GenerateZing(zingFileName, ref zingModel))
+                    return false;
             }
 
             if (!PrintZingFile(zingModel, CompilerEnv, outputDirName))
@@ -901,7 +903,6 @@
                 AddErrors(task.Result, "UnavailableParameterError(_, _)", 0);
 
                 //// Enumerate structural errors
-                AddErrors(task.Result, "missingDecl");
                 AddErrors(task.Result, "OneDeclError(_)", 0);
                 AddErrors(task.Result, "TwoDeclError(_, _)", 1);
                 AddErrors(task.Result, "DeclFunError(_, _)", 1);

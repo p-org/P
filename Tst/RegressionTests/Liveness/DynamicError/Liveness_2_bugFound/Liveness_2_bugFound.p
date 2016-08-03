@@ -6,8 +6,7 @@ event Done;
 event Waiting : int;
 event Computing;
 
-main machine EventHandler
-{
+main machine EventHandler {
        start state Init {
 			entry { raise Unit; }
 			on Unit goto WaitForUser;

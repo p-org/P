@@ -8,8 +8,7 @@ event Loop assert 1;
 event Waiting assert 1;
 event Computing assert 1;
 
-main machine EventHandler
-{
+main machine EventHandler {
        start state WaitForUser
        {
             entry { 

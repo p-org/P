@@ -19,8 +19,7 @@ type MapIntSeqTuple = map[int, SeqTuple];
 type MapIntFoo = map[int,Foo];
 type MapIntTuple = map[int,Tuple];
 
-main machine M
-{  
+main machine M {  
 	var v1, v3: SeqFoo;
 	var v2: SeqTuple;
 	var t : (a: seq [Foo], b: MapIntSeqFoo);

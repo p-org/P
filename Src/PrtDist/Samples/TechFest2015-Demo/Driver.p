@@ -9,7 +9,7 @@ fun CreateNode(container: machine) : machine
 	return newMachine;
 } 
 
-main machine Driver {
+machine Driver {
     var fd: machine;
 	var nodeseq: seq[machine];
     var nodemap: map[machine, bool];

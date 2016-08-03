@@ -4,7 +4,7 @@ event PING: seq[int];
 event PONG: seq[int]; 
 event SUCCESS;
 
-main machine Client {
+machine Client {
   var server: machine;
   var arg: seq[int];
 

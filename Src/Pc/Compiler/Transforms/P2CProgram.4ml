@@ -128,7 +128,6 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	HOut(0, out.EnmDef(NIL, "P_MACHINES", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : MachineDecl, d.kind = REAL, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   DeclId(d, id, _), d : MachineDecl, d.kind = REAL, d.isMain = TRUE, enumMember = Element(IntLit(id, DEC, NIL), "_P_MACHINE_MAIN"); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_MACHINES_COUNT"), size = count({d | d is MachineDecl, d.kind = REAL}) }).  
 
 	//// (3) Model machine decls - Start at Id 0.
@@ -138,7 +137,6 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	HOut(0, out.EnmDef(NIL, "P_MODELS", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : MachineDecl, d.kind = MODEL, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   DeclId(d, id, _), d : MachineDecl, d.kind = MODEL, d.isMain = TRUE, enumMember = Element(IntLit(id, DEC, NIL), "_P_MACHINE_MAIN"); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_MODELS_COUNT"), size = count({d | d is MachineDecl, d.kind = MODEL}) }).  
 
 	//// (4) VarDecls - Start at Id 0.
@@ -1698,22 +1696,22 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	ContainerInNewCall ::= (c: TypingContext, name: String, funName: String, machineName: String, e: out.Args + { NIL }).
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
 										 SubSE(c, _), no Annotation(c, "container", _), container = NIL,
-	                                     machineDecl is MachineDecl(name, REAL, _, _, _), DeclId(machineDecl, _, machineName), 
+	                                     machineDecl is MachineDecl(name, REAL, _, _), DeclId(machineDecl, _, machineName), 
 										 MkMachineFuncName(funName).
 	
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
 										 c: FunDecl, Annotation(c, "container", f), FormalTrans(c, f, container),
-	                                     machineDecl is MachineDecl(name, REAL, _, _, _), DeclId(machineDecl, _, machineName), 
+	                                     machineDecl is MachineDecl(name, REAL, _, _), DeclId(machineDecl, _, machineName), 
 										 funName = "PrtMkMachineRemote".
 
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
 										 SubSE(c, _), no Annotation(c, "container", _), container = NIL,
-	                                     machineDecl is MachineDecl(name, MODEL, _, _, _), DeclId(machineDecl, _, machineName), 
+	                                     machineDecl is MachineDecl(name, MODEL, _, _), DeclId(machineDecl, _, machineName), 
 										 funName = "PrtMkModel".
 	
 	ContainerInNewCall(c, name, funName, machineName, container) :- 
 										 c: FunDecl, Annotation(c, "container", f), FormalTrans(c, f, container),
-	                                     machineDecl is MachineDecl(name, MODEL, _, _, _), DeclId(machineDecl, _, machineName), 
+	                                     machineDecl is MachineDecl(name, MODEL, _, _), DeclId(machineDecl, _, machineName), 
 										 funName = "PrtMkModelRemote".
 
 	PayloadEvalOrder ::= (s: in.Stmt, i: Natural, p: in.Expr + { NIL }, h: Natural).

@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 	//	{
 	//		//create main machine 
 	//		PRT_VALUE* payload = PrtMkNullValue();
-	//		PrtMkMachine(ContainerProcess, _P_MACHINE_MAIN, payload);
+	//		PrtMkMachine(ContainerProcess, P_MACHINE_Driver, payload);
 	//		PrtFreeValue(payload);
 	//	}
 	//	else

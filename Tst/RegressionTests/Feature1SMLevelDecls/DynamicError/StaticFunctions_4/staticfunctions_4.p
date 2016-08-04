@@ -30,7 +30,7 @@ fun F3()
 	}
 }
 
-main machine M {
+machine Main {
 	start state S {
 		entry {
 			raise a;

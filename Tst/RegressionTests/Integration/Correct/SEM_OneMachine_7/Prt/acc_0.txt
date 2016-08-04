@@ -1,15 +1,15 @@
 =================================
          Console output          
 =================================
-OUT: <CreateLog> Machine Real1(1) is created
-OUT: <StateLog> Machine Real1(1) entered state Real1_Init
-OUT: <EnqueueLog> Enqueued event E1 with payload null on Machine Real1(1)
-OUT: <DequeueLog> Dequeued event E1 with payload null by Machine Real1(1)
-OUT: <ExitLog> Machine Real1(1) exiting state Real1_Init
-OUT: <EnqueueLog> Enqueued event halt with payload null on Machine Real1(1)
-OUT: <StateLog> Machine Real1(1) entered state Real1_S1
-OUT: <DequeueLog> Dequeued event halt with payload null by Machine Real1(1)
-OUT: <ExitLog> Machine Real1(1) exiting state Real1_S1
-OUT: <HaltLog> Machine Real1(1) halted in state Real1_S1
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state Real1_Init
+OUT: <EnqueueLog> Enqueued event E1 with payload null on Machine Main(1)
+OUT: <DequeueLog> Dequeued event E1 with payload null by Machine Main(1)
+OUT: <ExitLog> Machine Main(1) exiting state Real1_Init
+OUT: <EnqueueLog> Enqueued event halt with payload null on Machine Main(1)
+OUT: <StateLog> Machine Main(1) entered state Real1_S1
+OUT: <DequeueLog> Dequeued event halt with payload null by Machine Main(1)
+OUT: <ExitLog> Machine Main(1) exiting state Real1_S1
+OUT: <HaltLog> Machine Main(1) halted in state Real1_S1
 OUT: 
 EXIT: 0

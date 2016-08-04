@@ -1,6 +1,6 @@
 event a;
 event b;
-main machine Sample {
+machine Main {
 	start state X1 {
 		entry {
 			foo(5);
@@ -13,9 +13,9 @@ main machine Sample {
 		on null goto X2 with { }
 		on a goto X1 with foo;
 		on b goto X1 with bar;
-		on c do {}
-		on a do bar;
-		on b do foo;
+		on c do { }                   //error
+		on a do bar;                  //error
+		on b do foo;                  //error
 		on b push X3;
 		on c push X4;
 		on d goto X2;

@@ -5,7 +5,7 @@ event F : int;
 event G: seq[int];
 event Unit;
 
-main machine B {
+machine Main {
 	var x : int;
 	start state Init {
 		entry {

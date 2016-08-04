@@ -2,7 +2,7 @@
 // This is validation test for MonitorInvocation.p
 event E2 assert 1: bool;
 
-main machine Real1 {
+machine Main {
     var test: bool; 
 	var ev2: event;
     start state Real1_Init {

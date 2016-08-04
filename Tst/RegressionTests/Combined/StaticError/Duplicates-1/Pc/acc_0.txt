@@ -1,8 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: duplicates-1.p (10, 1): Multiple machines are declared as main machines
-OUT: duplicates-1.p (15, 1): Multiple machines are declared as main machines
 OUT: duplicates-1.p (15, 1): no start state in machine
 OUT: duplicates-1.p (19, 1): no start state in machine
 OUT: duplicates-1.p (21, 2): Multiple transitions over the same event

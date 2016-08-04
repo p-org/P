@@ -4,7 +4,7 @@
 // in allowed contexts, including workarounds for nested types in the LHS
 // Includes tests for tuples, maps and sequences
 
-main machine M {
+machine Main {
     fun F() : int {
 	    if ($) {
 		    return 0;

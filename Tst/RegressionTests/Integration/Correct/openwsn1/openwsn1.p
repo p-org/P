@@ -40,7 +40,7 @@ event Data assert 4 : (machine,int);
 event Ack assert 1 : (machine,int);
 event Initialize assert 1 : (machine,seq[machine]);
 
-main machine GodMachine {
+machine Main {
 	var N1:machine;var N2:machine;var N3:machine;var N4:machine;
 	var templ:seq[machine];
 	var slotT : machine;

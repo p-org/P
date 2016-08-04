@@ -2,7 +2,7 @@
 // exit function is never executed, since control never leaves the Real1_Init state
 event E2 assert 1;
 
-main machine Real1 {
+machine Main {
     start state Real1_Init {
         entry {   
         }

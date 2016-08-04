@@ -125,7 +125,7 @@ machine DownloadManagerMachine {
 
 
 
-	main  machine MainMachine {
+machine Main {
 	    // Fields: 
 
 

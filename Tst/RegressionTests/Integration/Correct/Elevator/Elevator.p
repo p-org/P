@@ -126,7 +126,7 @@ machine Elevator {
     }
 }
 
-main machine User {
+machine Main {
     var ElevatorV : machine;
 
     start state Init {

@@ -5,7 +5,7 @@
 event E2 assert 1;
 event E1 assert 1;
 
-main machine Real1 {
+machine Main {
     start state Real1_Init {
         entry { 
 			send this, E1;

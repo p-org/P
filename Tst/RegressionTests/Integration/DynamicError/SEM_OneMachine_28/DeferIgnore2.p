@@ -6,7 +6,7 @@ event E2 assert 1;
 event E3 assert 1;
 event unit assert 1;
 
-main machine Real1 {
+machine Main {
     var test: bool;  //init with "false"
     start state Real1_Init {
 		ignore E1;

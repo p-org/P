@@ -15,8 +15,8 @@ Safety Error Trace
 Trace-Log 0:
 <CreateLog> Created monitor M
 <StateLog> Machine M-0 entering State x
-<CreateLog> Created Machine Real1-0
-<StateLog> Machine Real1-0 entering State Real1_Init
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Real1_Init
 
 Error:
 P Assertion failed:

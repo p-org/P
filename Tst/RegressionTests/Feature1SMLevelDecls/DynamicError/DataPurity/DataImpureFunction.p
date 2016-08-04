@@ -4,7 +4,7 @@
 event Ping assert 1 : int;
 event Success;
 
-main machine PING {
+machine Main {
     var x: int;
 	var y: int;
     start state Ping_Init {

@@ -1,7 +1,7 @@
 // 1.7.7.  "null" event cannot be declared (parse error)
 
 event null assert 1;  //error
-main machine Real1 {
+machine Main {
     var test: bool;  //init with "false"
     start state Real1_Init {
         entry {

@@ -1,6 +1,6 @@
 // This sample tests pop inside a top-level entry function.
 
-main machine A {
+machine Main {
 	start state Init {
 		entry {
 			pop;

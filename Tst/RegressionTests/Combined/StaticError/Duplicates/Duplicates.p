@@ -7,7 +7,7 @@ event a;
 event b;
 event c;
 
-main machine m1 {
+machine Main {
 	start state S1 {
 	}
 	state S1 {
@@ -15,7 +15,7 @@ main machine m1 {
 	}
 }
 
-main machine m1 {
+machine Main {
 	var x : int;
 	var x : bool;
 }

@@ -5,7 +5,7 @@ event Ding assert 1;
 event Dong assert 1;
 
 
-main machine PING {
+machine Main {
     var pongId: machine;
 
     start state Ping_start {

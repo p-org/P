@@ -1,8 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: <CreateLog> Machine GodMachine(1) is created
-OUT: <StateLog> Machine GodMachine(1) entered state init
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state init
 OUT: <CreateLog> Machine OpenWSN_Mote(2) is created
 OUT: <StateLog> Machine OpenWSN_Mote(2) entered state init_mote
 OUT: <CreateLog> Machine OpenWSN_Mote(3) is created

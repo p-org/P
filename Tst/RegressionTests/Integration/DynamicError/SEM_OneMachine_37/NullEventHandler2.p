@@ -1,7 +1,7 @@
 // P semantics test, one machine: "null" handler semantics 
 // Testing that null handler is enabled in the simplest case
 
-main machine Real1 {
+machine Main {
     var test: bool;  //init with "false"
     start state Real1_Init {
         entry { 

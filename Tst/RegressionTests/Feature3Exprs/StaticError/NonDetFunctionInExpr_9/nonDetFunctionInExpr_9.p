@@ -2,7 +2,7 @@
 // is a side-effect free function with a nondeterministic choice inside.  
 // Includes static error case that was not reported as such in nonDetFunctionInExpr_2.p
 
-main machine M {
+machine Main {
     fun F() : int {
 	    if ($) {
 		    return 0;

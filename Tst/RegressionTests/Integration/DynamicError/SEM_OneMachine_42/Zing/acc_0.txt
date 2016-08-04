@@ -13,11 +13,11 @@ NullTriggerPayload.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
-<CreateLog> Created Machine Real1-0
-<StateLog> Machine Real1-0 entering State Real1_Init
-<NullTransLog> Null transition taken by Machine ____Real1-0
-<StateLog> Machine Real1-0 exiting State Real1_Init
-<StateLog> Machine Real1-0 entering State Real1_S1
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Real1_Init
+<NullTransLog> Null transition taken by Machine ____Main-0
+<StateLog> Machine Main-0 exiting State Real1_Init
+<StateLog> Machine Main-0 entering State Real1_S1
 
 Error:
 P Assertion failed:

@@ -4,7 +4,7 @@ event Pong assert 1;
 event Success;
 event PongIgnored;
 
-main machine PING {
+machine Main {
     var pongId: machine;
 	var count1: int;
     start state Ping_Init {

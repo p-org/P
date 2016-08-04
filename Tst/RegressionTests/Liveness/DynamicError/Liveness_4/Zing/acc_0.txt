@@ -15,19 +15,19 @@ Safety Error Trace
 Trace-Log 0:
 <CreateLog> Created monitor Mon1
 <StateLog> Machine Mon1-0 entering State S1
-<CreateLog> Created Machine M1-0
-<StateLog> Machine M1-0 entering State S
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State S
 <CreateLog> Created Machine M2-0
 <StateLog> Machine M2-0 entering State S1
-<MonitorLog> Enqueued Event < ____y, ____M1-0 > to Mon1 monitor
-<EnqueueLog> Enqueued Event < ____y, ____M1-0 > in Machine ____M2-0 by ____M1-0
-<DequeueLog> Dequeued Event < ____y, ____M1-0 > at Machine ____M2-0
+<MonitorLog> Enqueued Event < ____y, ____Main-0 > to Mon1 monitor
+<EnqueueLog> Enqueued Event < ____y, ____Main-0 > in Machine ____M2-0 by ____Main-0
+<DequeueLog> Dequeued Event < ____y, ____Main-0 > at Machine ____M2-0
 <MonitorLog> Enqueued Event < ____x, null > to Mon1 monitor
 <StateLog> Machine Mon1-0 exiting State S1
 <StateLog> Machine Mon1-0 entering State hotState
-<EnqueueLog> Enqueued Event < ____x, null > in Machine ____M1-0 by ____M2-0
-<DequeueLog> Dequeued Event < ____x, null > at Machine ____M1-0
-<FunctionLog> Machine M1-0 executing Function ignore
+<EnqueueLog> Enqueued Event < ____x, null > in Machine ____Main-0 by ____M2-0
+<DequeueLog> Dequeued Event < ____x, null > at Machine ____Main-0
+<FunctionLog> Machine Main-0 executing Function ignore
 
 Error:
 P Assertion failed:

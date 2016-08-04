@@ -20,7 +20,7 @@ event EMAP11: map[int,int];
 event EMAP2: map[int,int];
 event EMAP3: map[int,int];
 
-main machine M {    
+machine Main {
     var t : (a: seq [int], b: map[int, seq[int]]);
 	var t1 : (a: seq [int], b: map[int, seq[int]]);
 	var ts: (a: int, b: int);

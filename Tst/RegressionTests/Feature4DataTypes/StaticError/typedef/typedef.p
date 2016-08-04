@@ -9,7 +9,7 @@ type C = bool;
 type SeqB = seq[B];
 type MapBC = map[B,C];
 
-main machine Main {
+machine Main {
 	var x: X;
 
 	var a: A;

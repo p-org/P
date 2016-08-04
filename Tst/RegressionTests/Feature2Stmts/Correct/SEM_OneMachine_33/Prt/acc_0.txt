@@ -1,8 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: <CreateLog> Machine Entry(1) is created
-OUT: <StateLog> Machine Entry(1) entered state init
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state init
 OUT: <CreateLog> Machine test(2) is created
 OUT: <StateLog> Machine test(2) entered state init
 OUT: <EnqueueLog> Enqueued event seqpayload with payload [23, 12, 23, 12, 23, 12] on Machine test(2)

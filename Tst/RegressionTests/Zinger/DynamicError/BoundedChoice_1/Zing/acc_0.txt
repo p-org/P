@@ -13,19 +13,19 @@ boundedchoice_1.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
-<CreateLog> Created Machine TestMachine-0
-<StateLog> Machine TestMachine-0 entering State Init
-<RaiseLog> Machine TestMachine-0 raised Event ____unit
-<StateLog> Machine TestMachine-0 exiting State Init
-<StateLog> Machine TestMachine-0 entering State test
-<EnqueueLog> Enqueued Event < ____unit, null > in Machine ____TestMachine-0 by ____TestMachine-0
-<DequeueLog> Dequeued Event < ____unit, null > at Machine ____TestMachine-0
-<StateLog> Machine TestMachine-0 exiting State test
-<StateLog> Machine TestMachine-0 entering State test
-<EnqueueLog> Enqueued Event < ____unit, null > in Machine ____TestMachine-0 by ____TestMachine-0
-<DequeueLog> Dequeued Event < ____unit, null > at Machine ____TestMachine-0
-<StateLog> Machine TestMachine-0 exiting State test
-<StateLog> Machine TestMachine-0 entering State test
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Init
+<RaiseLog> Machine Main-0 raised Event ____unit
+<StateLog> Machine Main-0 exiting State Init
+<StateLog> Machine Main-0 entering State test
+<EnqueueLog> Enqueued Event < ____unit, null > in Machine ____Main-0 by ____Main-0
+<DequeueLog> Dequeued Event < ____unit, null > at Machine ____Main-0
+<StateLog> Machine Main-0 exiting State test
+<StateLog> Machine Main-0 entering State test
+<EnqueueLog> Enqueued Event < ____unit, null > in Machine ____Main-0 by ____Main-0
+<DequeueLog> Dequeued Event < ____unit, null > at Machine ____Main-0
+<StateLog> Machine Main-0 exiting State test
+<StateLog> Machine Main-0 entering State test
 
 Error:
 P Assertion failed:

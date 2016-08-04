@@ -10,7 +10,7 @@ spec First monitors local {
 	}
 }
 
-main machine MAIN {
+machine Main {
 	start state Init {
 		entry {
 			send this, local;

@@ -101,7 +101,7 @@ var me: int;
 	}
 }
 
-main machine TestDriver {
+machine Main {
 var ev: event;
 var par: int;
 var mon, mon0, mon1: machine;

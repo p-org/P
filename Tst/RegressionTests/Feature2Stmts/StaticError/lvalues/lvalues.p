@@ -1,5 +1,4 @@
-machine M
-{    
+machine M {
     var x : (a: seq [int], b: map[int, seq[int]]);
     var y : int;
 	var b: bool;

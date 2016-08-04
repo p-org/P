@@ -1,8 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: <CreateLog> Machine GodMachine(1) is created
-OUT: <StateLog> Machine GodMachine(1) entered state Init
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state Init
 OUT: <CreateLog> Machine Container(2) is created
 OUT: <StateLog> Machine Container(2) entered state Init
 OUT: <CreateLog> Machine PONG(3) is created

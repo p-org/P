@@ -13,15 +13,15 @@ receive4.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
-<CreateLog> Created Machine A-0
-<StateLog> Machine A-0 entering State Init
-<EnqueueLog> Enqueued Event < ____E, null > in Machine ____A-0 by ____A-0
-<DequeueLog> Dequeued Event < ____E, null > at Machine ____A-0
-<RaiseLog> Machine A-0 raised Event ____F
-<StateLog> Machine A-0 exiting State Init
-<StateLog> Unhandled event exception by machine A-0
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Init
+<EnqueueLog> Enqueued Event < ____E, null > in Machine ____Main-0 by ____Main-0
+<DequeueLog> Dequeued Event < ____E, null > at Machine ____Main-0
+<RaiseLog> Machine Main-0 raised Event ____F
+<StateLog> Machine Main-0 exiting State Init
+<StateLog> Unhandled event exception by machine Main-0
 
 Error:
 P Assertion failed:
 Expression: assert(false)
-Comment: Unhandled event exception by machine A
+Comment: Unhandled event exception by machine Main

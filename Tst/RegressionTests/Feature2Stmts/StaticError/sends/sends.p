@@ -5,7 +5,7 @@ event seqE : seq[int];
 event seqAny : seq[any];
 event unit;
 
-main machine Dummy {
+machine Main {
 	var rec : machine;
 	var AIvar : (any, int);
 	var IAvar : (int, any);

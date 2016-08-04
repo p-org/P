@@ -1,7 +1,7 @@
 enum Foo { foo0, foo1, foo2, foo3, foo4 }
 enum Bar { bar0, bar1, bar2, bar3 }
 
-main machine Test {
+machine Main {
 	var x: Foo;
 	var y: Bar;
 

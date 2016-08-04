@@ -2,7 +2,7 @@
 event unit;
 event seqpayload: seq[int];
 
-main machine Entry {
+machine Main {
 	var l: seq[int];
     var i:int;
 	var mac:machine;

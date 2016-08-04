@@ -2,7 +2,7 @@
 //TODO: Create separate tests for all failing asserts.
 event E assert 1; 
 
-main machine M { 
+machine Main {
 	var vAny: any;
 	var vEvent: event;
 	var vInt: int;

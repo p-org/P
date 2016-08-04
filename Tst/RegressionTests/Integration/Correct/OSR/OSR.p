@@ -21,7 +21,7 @@ event eUnit assert 1;
 
 
 
-main machine User {
+machine Main {
     var Driver: machine;
     
 	start state User_Init {

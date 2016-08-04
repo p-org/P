@@ -1,7 +1,7 @@
 //Exit function performed while explicitly popping the state
 
 event E;
-main machine Program {
+machine Main {
 	start state Init {
 		entry { raise E; }
 		exit { assert (false); }  

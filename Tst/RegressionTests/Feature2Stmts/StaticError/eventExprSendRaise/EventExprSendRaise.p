@@ -3,7 +3,7 @@
 event E1 assert 1;
 event E2 assert 1;
 
-main machine Real1 {
+machine Main {
     var test: bool; 
 	var ev1: event;
 	var ev2: event;

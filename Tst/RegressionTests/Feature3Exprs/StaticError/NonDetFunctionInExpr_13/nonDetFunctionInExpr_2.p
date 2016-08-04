@@ -2,7 +2,7 @@
 // is a side-effect free function with a nondeterministic choice inside.  
 // Includes tests for tuples, maps and sequences
 
-main machine M {
+machine Main {
     fun F() : int {
 	    if ($) {
 		    return 0;

@@ -463,7 +463,7 @@
             stmtStack.Push(sendStmt);
         }
 
-        private void PushMonitor(bool hasArgs, string name, Span nameSpan, Span span)
+        private void PushMonitor(bool hasArgs, string name, Span span)
         {
             Contract.Assert(!hasArgs || exprsStack.Count > 0);
             Contract.Assert(valueExprStack.Count > 0);
@@ -498,7 +498,8 @@
             }
             else
             {
-                var skipStmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, new Span()));
+                var skipStmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
+                skipStmt.info = MkSourceInfo(span);
                 stmtStack.Push(skipStmt);
             }
         }
@@ -750,12 +751,6 @@
             stmtStack.Push(nulStmt);
         }
 
-        private void PushNulStmt()
-        {
-            var nulStmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, new Span()));
-            stmtStack.Push(nulStmt);
-        }
-
         private void PushSeq()
         {
             Contract.Assert(stmtStack.Count > 1);
@@ -839,10 +834,11 @@
             else
             {
                 Contract.Assert(stmtStack.Count > 0);
-                var skip = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
-                skip.Span = span;
+                var skipStmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
+                skipStmt.Span = span;
+                skipStmt.info = MkSourceInfo(span);
                 iteStmt.@true = (P_Root.IArgType_Ite__1)stmtStack.Pop();
-                iteStmt.@false = skip;
+                iteStmt.@false = skipStmt;
             }
             stmtStack.Push(iteStmt);
         }
@@ -934,7 +930,8 @@
             }
             else
             {
-                var skipStmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, new Span()));
+                var skipStmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
+                skipStmt.info = MkSourceInfo(span);
                 stmtStack.Push(skipStmt);
             }
         }
@@ -2007,6 +2004,7 @@
         private P_Root.AnonFunDecl MkSkipFun(P_Root.MachineDecl owner, Span span)
         {
             var stmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
+            stmt.info = MkSourceInfo(span);
             stmt.Span = span;
             var field = P_Root.MkNmdTupTypeField(
                                    P_Root.MkUserCnst(P_Root.UserCnstKind.NONE),

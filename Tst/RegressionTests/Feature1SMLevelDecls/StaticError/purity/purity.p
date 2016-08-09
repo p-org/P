@@ -1,6 +1,5 @@
 //This sample tests checks different contexts for using data impure functions
-machine M
-{
+machine M {
    var x : int;
    var y : bool;
    

@@ -13,10 +13,10 @@ frgn.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
-<CreateLog> Created Machine M-0
-<StateLog> Machine M-0 entering State Init
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Init
 
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_1.bl,)
-Comment: foreigntypes.p (21, 6): Assert failed
+Comment: foreigntypes.p (20, 6): Assert failed

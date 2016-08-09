@@ -4,7 +4,7 @@
 // In the deadlocked state, stack contains Init and Call states 
 event E;
 
-main machine Program {
+machine Main {
 	var i: int;
 	start state Init {
 			 entry { i = 0; raise E; }

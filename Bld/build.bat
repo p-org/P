@@ -45,13 +45,20 @@ if /I "%1"=="x64" set Platform=x64
 if /I "%1"=="nosync" set NoSync=true
 if /I "%1"=="clean" set CleanOnly=true
 if /I "%1"=="noclean" set NoClean=true
-if /I "%1"=="" goto :step2
+if /I "%1"=="" goto :initsub
 if /I "%1"=="/?" goto :help
 if /I "%1"=="/h" goto :help
 if /I "%1"=="/help" goto :help
 if /I "%1"=="help" goto :help
 shift
 goto :parseargs
+
+:initsub
+if exist "Ext\Formula\README.md" goto :updatesub
+
+echo ### Initializing your submodules 
+git submodule init
+git submodule update
 
 :checksubmodule
 for /f "usebackq tokens=1,2*" %%i in (`git submodule summary %1`) do (
@@ -60,20 +67,20 @@ for /f "usebackq tokens=1,2*" %%i in (`git submodule summary %1`) do (
 
 goto :eof
 
-:step2
-
+:updatesub
 if "%NoSync%"=="true" goto :nosync
 
+echo ### Updating your submodules 
 call :checksubmodule Ext/Formula
 call :checksubmodule Ext/Zing
 
 if "%SubmoduleOutOfDate%"=="false" goto :nosync
 
-
 :sync
 echo ### Fixing your submodules so they are up to date...
 git submodule sync --recursive
 git submodule update --init --recursive
+goto :nosync
 
 :nosync
 cd ext\zing

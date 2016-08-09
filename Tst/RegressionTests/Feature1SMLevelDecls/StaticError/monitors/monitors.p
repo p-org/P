@@ -1,7 +1,7 @@
 event a : int;
 event b: bool;
 
-main machine Dummy {
+machine Main {
 	var model_machine: machine;
 	var model_machine1: machine;
 	start state Init {

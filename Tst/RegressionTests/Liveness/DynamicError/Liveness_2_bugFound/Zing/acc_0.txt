@@ -15,18 +15,18 @@ Safety Error Trace
 Trace-Log 0:
 <CreateLog> Created monitor WatchDog
 <StateLog> Machine WatchDog-0 entering State CanGetUserInput
-<CreateLog> Created Machine EventHandler-0
-<StateLog> Machine EventHandler-0 entering State Init
-<RaiseLog> Machine EventHandler-0 raised Event ____Unit
-<StateLog> Machine EventHandler-0 exiting State Init
-<StateLog> Machine EventHandler-0 entering State WaitForUser
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Init
+<RaiseLog> Machine Main-0 raised Event ____Unit
+<StateLog> Machine Main-0 exiting State Init
+<StateLog> Machine Main-0 entering State WaitForUser
 <MonitorLog> Enqueued Event < ____Waiting, 0 > to WatchDog monitor
 <StateLog> Machine WatchDog-0 exiting State CanGetUserInput
 <StateLog> Machine WatchDog-0 entering State CanGetUserInput
-<EnqueueLog> Enqueued Event < ____UserEvent, null > in Machine ____EventHandler-0 by ____EventHandler-0
-<DequeueLog> Dequeued Event < ____UserEvent, null > at Machine ____EventHandler-0
-<StateLog> Machine EventHandler-0 exiting State WaitForUser
-<StateLog> Machine EventHandler-0 entering State HandleEvent
+<EnqueueLog> Enqueued Event < ____UserEvent, null > in Machine ____Main-0 by ____Main-0
+<DequeueLog> Dequeued Event < ____UserEvent, null > at Machine ____Main-0
+<StateLog> Machine Main-0 exiting State WaitForUser
+<StateLog> Machine Main-0 entering State HandleEvent
 <MonitorLog> Enqueued Event < ____Computing, null > to WatchDog monitor
 <StateLog> Machine WatchDog-0 exiting State CanGetUserInput
 <StateLog> Machine WatchDog-0 entering State CannotGetUserInput

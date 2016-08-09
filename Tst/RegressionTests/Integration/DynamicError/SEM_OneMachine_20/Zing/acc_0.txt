@@ -13,11 +13,11 @@ BugReproIdenticalTerms.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
-<CreateLog> Created Machine Program-0
-<StateLog> Machine Program-0 entering State Init
-<RaiseLog> Machine Program-0 raised Event ____E
-<StateLog> Machine Program-0 entering State Call
-<StateLog> Machine Program-0 exiting State Call
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Init
+<RaiseLog> Machine Main-0 raised Event ____E
+<StateLog> Machine Main-0 entering State Call
+<StateLog> Machine Main-0 exiting State Call
 
 Error:
 P Assertion failed:

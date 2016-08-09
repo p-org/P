@@ -1,7 +1,7 @@
 event x;
 event y : machine;
 
-  main machine M1 {
+machine Main {
     var id: machine;
     start state S 
     {

@@ -7,12 +7,12 @@ event a;
 event b;
 event c;
 
-main machine m1 {
+machine Main {
 	start state S1 {
 	}
 }
 
-main machine m3 {
+machine M {
 	var x : int;
 }
 

@@ -1,6 +1,6 @@
 event a;
 event b;
-main machine Sample {
+machine Main {
 	start state X1 {
 		entry {
 			foo();

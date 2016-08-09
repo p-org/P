@@ -1,8 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: <CreateLog> Machine Server(1) is created
-OUT: <StateLog> Machine Server(1) entered state Init
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state Init
 OUT: <CreateLog> Machine client(2) is created
 OUT: <StateLog> Machine client(2) entered state Init
 OUT: <CreateLog> Machine Timer(3) is created
@@ -19,9 +19,9 @@ OUT: <ActionLog> Machine Timer(3) executed action in state WaitForReq
 OUT: <EnqueueLog> Enqueued event TIMEOUT with payload < (1, 0, 0, 0), 3> on Machine client(2)
 OUT: <DequeueLog> Dequeued event TIMEOUT with payload < (1, 0, 0, 0), 3> by Machine client(2)
 OUT: <ActionLog> Machine client(2) executed action in state StartReqResp
-OUT: <EnqueueLog> Enqueued event req with payload null on Machine Server(1)
-OUT: <DequeueLog> Dequeued event req with payload null by Machine Server(1)
-OUT: <ActionLog> Machine Server(1) executed action in state Init
+OUT: <EnqueueLog> Enqueued event req with payload null on Machine Main(1)
+OUT: <DequeueLog> Dequeued event req with payload null by Machine Main(1)
+OUT: <ActionLog> Machine Main(1) executed action in state Init
 OUT: <EnqueueLog> Enqueued event resp with payload (0, 0) on Machine client(2)
 OUT: <DequeueLog> Dequeued event resp with payload (0, 0) by Machine client(2)
 OUT: <RaiseLog> Machine client(2) raised event next with payload null
@@ -33,9 +33,9 @@ OUT: <ActionLog> Machine Timer(3) executed action in state WaitForReq
 OUT: <EnqueueLog> Enqueued event TIMEOUT with payload < (1, 0, 0, 0), 3> on Machine client(2)
 OUT: <DequeueLog> Dequeued event TIMEOUT with payload < (1, 0, 0, 0), 3> by Machine client(2)
 OUT: <ActionLog> Machine client(2) executed action in state StartReqResp
-OUT: <EnqueueLog> Enqueued event req with payload null on Machine Server(1)
-OUT: <DequeueLog> Dequeued event req with payload null by Machine Server(1)
-OUT: <ActionLog> Machine Server(1) executed action in state Init
+OUT: <EnqueueLog> Enqueued event req with payload null on Machine Main(1)
+OUT: <DequeueLog> Dequeued event req with payload null by Machine Main(1)
+OUT: <ActionLog> Machine Main(1) executed action in state Init
 OUT: <EnqueueLog> Enqueued event resp with payload (0, 0) on Machine client(2)
 OUT: <DequeueLog> Dequeued event resp with payload (0, 0) by Machine client(2)
 OUT: <RaiseLog> Machine client(2) raised event next with payload null
@@ -47,9 +47,9 @@ OUT: <ActionLog> Machine Timer(3) executed action in state WaitForReq
 OUT: <EnqueueLog> Enqueued event TIMEOUT with payload < (1, 0, 0, 0), 3> on Machine client(2)
 OUT: <DequeueLog> Dequeued event TIMEOUT with payload < (1, 0, 0, 0), 3> by Machine client(2)
 OUT: <ActionLog> Machine client(2) executed action in state StartReqResp
-OUT: <EnqueueLog> Enqueued event req with payload null on Machine Server(1)
-OUT: <DequeueLog> Dequeued event req with payload null by Machine Server(1)
-OUT: <ActionLog> Machine Server(1) executed action in state Init
+OUT: <EnqueueLog> Enqueued event req with payload null on Machine Main(1)
+OUT: <DequeueLog> Dequeued event req with payload null by Machine Main(1)
+OUT: <ActionLog> Machine Main(1) executed action in state Init
 OUT: <EnqueueLog> Enqueued event resp with payload (0, 0) on Machine client(2)
 OUT: <DequeueLog> Dequeued event resp with payload (0, 0) by Machine client(2)
 OUT: <RaiseLog> Machine client(2) raised event next with payload null
@@ -61,15 +61,15 @@ OUT: <ActionLog> Machine Timer(3) executed action in state WaitForReq
 OUT: <EnqueueLog> Enqueued event TIMEOUT with payload < (1, 0, 0, 0), 3> on Machine client(2)
 OUT: <DequeueLog> Dequeued event TIMEOUT with payload < (1, 0, 0, 0), 3> by Machine client(2)
 OUT: <ActionLog> Machine client(2) executed action in state StartReqResp
-OUT: <EnqueueLog> Enqueued event req with payload null on Machine Server(1)
-OUT: <DequeueLog> Dequeued event req with payload null by Machine Server(1)
-OUT: <ActionLog> Machine Server(1) executed action in state Init
+OUT: <EnqueueLog> Enqueued event req with payload null on Machine Main(1)
+OUT: <DequeueLog> Dequeued event req with payload null by Machine Main(1)
+OUT: <ActionLog> Machine Main(1) executed action in state Init
 OUT: <EnqueueLog> Enqueued event resp with payload (0, 0) on Machine client(2)
 OUT: <DequeueLog> Dequeued event resp with payload (0, 0) by Machine client(2)
 OUT: <RaiseLog> Machine client(2) raised event next with payload null
 OUT: <ExitLog> Machine client(2) exiting state StartReqResp
 OUT: <StateLog> Machine client(2) entered state StartReqResp
-OUT: <EnqueueLog> Enqueued event halt with payload null on Machine Server(1)
+OUT: <EnqueueLog> Enqueued event halt with payload null on Machine Main(1)
 OUT: exiting with PRT_STATUS_ASSERT (assertion failure)
 OUT: 
 EXIT: 1

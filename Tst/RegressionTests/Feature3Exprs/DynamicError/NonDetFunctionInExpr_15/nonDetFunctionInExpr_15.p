@@ -1,7 +1,7 @@
 // Testing assignments to a nested datatype when the right hand side of the assignment 
 // is a side-effect free function with a nondeterministic choice inside.  
 
-main machine M {
+machine Main {
     fun F() : int {
 	    if ($) {
 		    return 0;

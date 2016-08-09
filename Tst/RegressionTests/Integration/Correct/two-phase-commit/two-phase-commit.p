@@ -286,7 +286,7 @@ spec M monitors MONITOR_WRITE, MONITOR_READ_SUCCESS, MONITOR_READ_UNAVAILABLE {
 	}
 }
 
-main machine TwoPhaseCommit {
+machine Main {
     var coordinator: machine;
 	var client: machine;
     start state Init {

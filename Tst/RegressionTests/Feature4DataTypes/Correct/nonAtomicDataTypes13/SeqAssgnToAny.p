@@ -1,6 +1,6 @@
 //Tests complex data types in assign/remove/insert: sequences, tuples, maps
 event E assert 1; 
-main machine M {    
+machine Main {
     var t : (a: seq [int], b: map[int, seq[int]]);
 	var t1 : (a: seq [int], b: map[int, seq[int]]);
 	var ts: (a: int, b: int);

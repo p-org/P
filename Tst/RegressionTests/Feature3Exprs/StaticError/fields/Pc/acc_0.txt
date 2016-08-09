@@ -1,7 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: fields.p (0, 0): No Main Machine
 OUT: fields.p (1, 1): no start state in machine
 OUT: fields.p (9, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: fields.p (9, 10): Bad field name

@@ -13,9 +13,9 @@ DataImpureFunction.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
-<CreateLog> Created Machine PING-0
-<StateLog> Machine PING-0 entering State Ping_Init
-<RaiseLog> Machine PING-0 raised Event ____Success
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Ping_Init
+<RaiseLog> Machine Main-0 raised Event ____Success
 
 Error:
 P Assertion failed:

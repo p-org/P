@@ -14,7 +14,7 @@ fun F2() {
 	send this, b;
 }
 
-main machine M {
+machine Main {
 	start state S {
 		entry {
 			raise a;

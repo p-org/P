@@ -6,7 +6,7 @@ event E3 assume 1;
 event E4;
 event unit assert 1;
 
-main machine Real {
+machine Main {
     var ghost_machine: machine;
     start state Real_Init {
 		on E2 do (payload: int) { Action1(payload); }

@@ -5,6 +5,6 @@ OUT: typedef.p (1, 6): type depends on itself
 OUT: typedef.p (1, 21): type depends on itself
 OUT: typedef.p (2, 6): type depends on itself
 OUT: typedef.p (2, 16): type depends on itself
-OUT: typedef.p (14, 9): undefined type
+OUT: typedef.p (13, 9): undefined type
 OUT: Compilation failed
 EXIT: -1

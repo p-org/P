@@ -3,7 +3,7 @@
 //Formula terms for asserts on lines 7 and 16 are made different
 //Compare this test to BugReproIdenticalTerms.p
 event E;
-main machine Program {
+machine Main {
 	start state Init {
 		entry { raise E; }
 		exit { assert (false); }  //unreachable

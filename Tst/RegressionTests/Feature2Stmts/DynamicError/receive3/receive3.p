@@ -2,7 +2,7 @@
 event E;
 event F;
 
-main machine A {
+machine Main {
 	var x: int;
 	start state Init {
 		entry {

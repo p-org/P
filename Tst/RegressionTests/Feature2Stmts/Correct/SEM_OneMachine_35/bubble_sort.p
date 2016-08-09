@@ -1,5 +1,5 @@
 //Tests sequences, "while", "if-then-else"
-main machine Entry {
+machine Main {
     var rev, sorted:seq[int];
     var i, t, s:int;
     var swapped, b:bool;

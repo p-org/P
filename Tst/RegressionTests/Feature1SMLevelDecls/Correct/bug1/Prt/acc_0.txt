@@ -1,7 +1,7 @@
 =================================
          Console output          
 =================================
-OUT: <CreateLog> Machine Mach1(1) is created
-OUT: <StateLog> Machine Mach1(1) entered state S
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state S
 OUT: 
 EXIT: 0

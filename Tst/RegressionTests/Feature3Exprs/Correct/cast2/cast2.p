@@ -1,4 +1,4 @@
-main machine A {
+machine Main {
 	start state S {
 		entry {
 			var x: int;

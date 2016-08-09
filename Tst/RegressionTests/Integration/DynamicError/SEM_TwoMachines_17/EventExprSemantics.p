@@ -14,7 +14,7 @@ event E5 assert 1: bool;
 event E6 assert 1: int;
 event E7 assert 1: bool;
 
-main machine Real1 {
+machine Main {
     var test: bool; 
 	var mac: machine;
 	var ev0: event;

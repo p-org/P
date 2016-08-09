@@ -12,7 +12,7 @@ event Error2 assume 1;
 event Error3 assume 1;
 event Halt assume 2;
 
-main machine Harness {
+machine Main {
 var ruleMach: machine;
 var ev: event;
 start state Init {

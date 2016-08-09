@@ -6,7 +6,7 @@ event Success;
 event PingIgnored;
 //event PongHalted;
 
-main machine PING {
+machine Main {
     var pongId: machine;
 	var count: int;
     start state Ping_Init {

@@ -13,8 +13,8 @@ typedef2.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
-<CreateLog> Created Machine Server-0
-<StateLog> Machine Server-0 entering State Init
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Init
 <CreateLog> Created Machine client-0
 <StateLog> Machine client-0 entering State Init
 <CreateLog> Created Machine Timer-0
@@ -29,9 +29,9 @@ Trace-Log 0:
 <DequeueLog> Dequeued Event < ____START, 3 > at Machine ____Timer-0
 <EnqueueLog> Enqueued Event < ____TIMEOUT, ____Timer-0 > in Machine ____client-0 by ____Timer-0
 <DequeueLog> Dequeued Event < ____TIMEOUT, ____Timer-0 > at Machine ____client-0
-<EnqueueLog> Enqueued Event < ____req, null > in Machine ____Server-0 by ____client-0
-<DequeueLog> Dequeued Event < ____req, null > at Machine ____Server-0
-<EnqueueLog> Enqueued Event < ____resp, namedTup : (field_0: 0,field_1: 0,) > in Machine ____client-0 by ____Server-0
+<EnqueueLog> Enqueued Event < ____req, null > in Machine ____Main-0 by ____client-0
+<DequeueLog> Dequeued Event < ____req, null > at Machine ____Main-0
+<EnqueueLog> Enqueued Event < ____resp, namedTup : (field_0: 0,field_1: 0,) > in Machine ____client-0 by ____Main-0
 <DequeueLog> Dequeued Event < ____resp, namedTup : (field_0: 0,field_1: 0,) > at Machine ____client-0
 <RaiseLog> Machine client-0 raised Event ____next
 <StateLog> Machine client-0 exiting State StartReqResp
@@ -40,9 +40,9 @@ Trace-Log 0:
 <DequeueLog> Dequeued Event < ____START, 3 > at Machine ____Timer-0
 <EnqueueLog> Enqueued Event < ____TIMEOUT, ____Timer-0 > in Machine ____client-0 by ____Timer-0
 <DequeueLog> Dequeued Event < ____TIMEOUT, ____Timer-0 > at Machine ____client-0
-<EnqueueLog> Enqueued Event < ____req, null > in Machine ____Server-0 by ____client-0
-<DequeueLog> Dequeued Event < ____req, null > at Machine ____Server-0
-<EnqueueLog> Enqueued Event < ____resp, namedTup : (field_0: 0,field_1: 0,) > in Machine ____client-0 by ____Server-0
+<EnqueueLog> Enqueued Event < ____req, null > in Machine ____Main-0 by ____client-0
+<DequeueLog> Dequeued Event < ____req, null > at Machine ____Main-0
+<EnqueueLog> Enqueued Event < ____resp, namedTup : (field_0: 0,field_1: 0,) > in Machine ____client-0 by ____Main-0
 <DequeueLog> Dequeued Event < ____resp, namedTup : (field_0: 0,field_1: 0,) > at Machine ____client-0
 <RaiseLog> Machine client-0 raised Event ____next
 <StateLog> Machine client-0 exiting State StartReqResp
@@ -51,9 +51,9 @@ Trace-Log 0:
 <DequeueLog> Dequeued Event < ____START, 3 > at Machine ____Timer-0
 <EnqueueLog> Enqueued Event < ____TIMEOUT, ____Timer-0 > in Machine ____client-0 by ____Timer-0
 <DequeueLog> Dequeued Event < ____TIMEOUT, ____Timer-0 > at Machine ____client-0
-<EnqueueLog> Enqueued Event < ____req, null > in Machine ____Server-0 by ____client-0
-<DequeueLog> Dequeued Event < ____req, null > at Machine ____Server-0
-<EnqueueLog> Enqueued Event < ____resp, namedTup : (field_0: 0,field_1: 0,) > in Machine ____client-0 by ____Server-0
+<EnqueueLog> Enqueued Event < ____req, null > in Machine ____Main-0 by ____client-0
+<DequeueLog> Dequeued Event < ____req, null > at Machine ____Main-0
+<EnqueueLog> Enqueued Event < ____resp, namedTup : (field_0: 0,field_1: 0,) > in Machine ____client-0 by ____Main-0
 <DequeueLog> Dequeued Event < ____resp, namedTup : (field_0: 0,field_1: 0,) > at Machine ____client-0
 <RaiseLog> Machine client-0 raised Event ____next
 <StateLog> Machine client-0 exiting State StartReqResp
@@ -62,16 +62,16 @@ Trace-Log 0:
 <DequeueLog> Dequeued Event < ____START, 3 > at Machine ____Timer-0
 <EnqueueLog> Enqueued Event < ____TIMEOUT, ____Timer-0 > in Machine ____client-0 by ____Timer-0
 <DequeueLog> Dequeued Event < ____TIMEOUT, ____Timer-0 > at Machine ____client-0
-<EnqueueLog> Enqueued Event < ____req, null > in Machine ____Server-0 by ____client-0
-<DequeueLog> Dequeued Event < ____req, null > at Machine ____Server-0
-<EnqueueLog> Enqueued Event < ____resp, namedTup : (field_0: 0,field_1: 0,) > in Machine ____client-0 by ____Server-0
+<EnqueueLog> Enqueued Event < ____req, null > in Machine ____Main-0 by ____client-0
+<DequeueLog> Dequeued Event < ____req, null > at Machine ____Main-0
+<EnqueueLog> Enqueued Event < ____resp, namedTup : (field_0: 0,field_1: 0,) > in Machine ____client-0 by ____Main-0
 <DequeueLog> Dequeued Event < ____resp, namedTup : (field_0: 0,field_1: 0,) > at Machine ____client-0
 <RaiseLog> Machine client-0 raised Event ____next
 <StateLog> Machine client-0 exiting State StartReqResp
 <StateLog> Machine client-0 entering State StartReqResp
-<EnqueueLog> Enqueued Event < ____halt, null > in Machine ____Server-0 by ____client-0
+<EnqueueLog> Enqueued Event < ____halt, null > in Machine ____Main-0 by ____client-0
 
 Error:
 P Assertion failed:
 Expression: assert(tmp_9.bl,)
-Comment: typedef2.p (60, 5): Assert failed
+Comment: typedef2.p (59, 5): Assert failed

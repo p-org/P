@@ -7,7 +7,7 @@ event E1 assert 1;
 event E2 assert 1;
 event E3 assert 1;
 
-main machine M {    
+machine Main {
     var t : (a: seq [int], b: map[int, seq[int]]);
 	var t1 : (a: seq [int], b: map[int, seq[int]]);
 	var t2: (a: seq [int], a: map[int, seq[int]]);       //error

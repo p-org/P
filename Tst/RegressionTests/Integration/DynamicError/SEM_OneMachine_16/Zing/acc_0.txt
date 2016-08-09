@@ -13,15 +13,15 @@ ExplicitPopExit.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
-<CreateLog> Created Machine Real1-0
-<StateLog> Machine Real1-0 entering State Real1_Init
-<EnqueueLog> Enqueued Event < ____E1, null > in Machine ____Real1-0 by ____Real1-0
-<DequeueLog> Dequeued Event < ____E1, null > at Machine ____Real1-0
-<StateLog> Machine Real1-0 entering State Real1_S1
-<StateLog> Machine Real1-0 exiting State Real1_S1
-<EnqueueLog> Enqueued Event < ____E3, null > in Machine ____Real1-0 by ____Real1-0
-<DequeueLog> Dequeued Event < ____E3, null > at Machine ____Real1-0
-<FunctionLog> Machine Real1-0 executing Function Action1
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Real1_Init
+<EnqueueLog> Enqueued Event < ____E1, null > in Machine ____Main-0 by ____Main-0
+<DequeueLog> Dequeued Event < ____E1, null > at Machine ____Main-0
+<StateLog> Machine Main-0 entering State Real1_S1
+<StateLog> Machine Main-0 exiting State Real1_S1
+<EnqueueLog> Enqueued Event < ____E3, null > in Machine ____Main-0 by ____Main-0
+<DequeueLog> Dequeued Event < ____E3, null > at Machine ____Main-0
+<FunctionLog> Machine Main-0 executing Function Action1
 
 Error:
 P Assertion failed:

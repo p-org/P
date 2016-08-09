@@ -3,7 +3,7 @@ event E;
 event F;
 event G: int;
 
-main machine A {
+machine Main {
 	var x: int;
 	start state Init {
 		entry {

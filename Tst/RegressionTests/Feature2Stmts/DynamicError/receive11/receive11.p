@@ -22,7 +22,7 @@ machine A {
 	}
 }
 
-main machine B {
+machine Main {
 	var x : int;
 	var m : machine;
 	start state Init {

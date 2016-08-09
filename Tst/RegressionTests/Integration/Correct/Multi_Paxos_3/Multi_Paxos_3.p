@@ -507,7 +507,7 @@ model Timer {
 
 event response;
 
-main machine GodMachine {
+machine Main {
 	var paxosnodes : seq[machine];
 	var temp : machine;
 	var iter : int;

@@ -3,7 +3,7 @@
 event E0;
 event E1 assume 0;
 
-main machine Real {
+machine Main {
     var ghost_machine: machine;
 	var x: int;
     start state Real_Init {

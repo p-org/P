@@ -1,10 +1,10 @@
 =================================
          Console output          
 =================================
-OUT: <CreateLog> Machine M(1) is created
-OUT: <StateLog> Machine M(1) entered state S
-OUT: <RaiseLog> Machine M(1) raised event E with payload 1
-OUT: <ExitLog> Machine M(1) exiting state S
-OUT: <StateLog> Machine M(1) entered state T
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state S
+OUT: <RaiseLog> Machine Main(1) raised event E with payload 1
+OUT: <ExitLog> Machine Main(1) exiting state S
+OUT: <StateLog> Machine Main(1) entered state T
 OUT: 
 EXIT: 0

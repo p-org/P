@@ -181,9 +181,6 @@ namespace P.PRuntime
                     continue;
                 }
             }
-
-
-
         }
 
         public bool IsEnabled(T owner)

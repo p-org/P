@@ -82,9 +82,9 @@ assert false;
 
 namespace SimpleMachine
 {
-    public class Application : PStateImpl
+    public class Application : StateImpl
     {
-        public List<BaseMachine> MainMachines;
+        public List<PrtMachine> MainMachines;
 
         //getters
         public int SizeOfMainMachines
@@ -95,21 +95,21 @@ namespace SimpleMachine
             }
         }
 
-        public override IEnumerable<BaseMachine> AllAliveMachines
+        public override IEnumerable<PrtMachine> AllAliveMachines
         {
             get
             {
-                List<BaseMachine> ret = new List<BaseMachine>();
+                List<PrtMachine> ret = new List<PrtMachine>();
                 ret.AddRange(MainMachines);
                 return ret;
             }
         }
 
-        public override IEnumerable<BaseMonitor> AllInstalledMonitors
+        public override IEnumerable<PrtMonitor> AllInstalledMonitors
         {
             get
             {
-                return new List<BaseMonitor>();
+                return new List<PrtMonitor>();
             }
         }
 
@@ -157,7 +157,7 @@ namespace SimpleMachine
                 }
             }
             //constructor
-            public Main(PStateImpl app, int instance, int maxB) : base (app, instance, maxB)
+            public Main(StateImpl app, int instance, int maxB) : base (app, instance, maxB)
             {
                 fields = new List<PrtValue>();
             }
@@ -174,7 +174,7 @@ namespace SimpleMachine
                         return "Init_Entry";
                     }
                 }
-                public override void Execute(PStateImpl application, Main parent)
+                public override void Execute(StateImpl application, Main parent)
                 {
                     throw new NotImplementedException();
                 }
@@ -194,7 +194,7 @@ namespace SimpleMachine
                         return "Fail_Entry";
                     }
                 }
-                public override void Execute(PStateImpl application, Main parent)
+                public override void Execute(StateImpl application, Main parent)
                 {
                     throw new NotImplementedException();
                 }

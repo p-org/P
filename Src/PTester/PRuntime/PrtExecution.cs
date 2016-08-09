@@ -14,7 +14,7 @@ namespace P.PRuntime
 
         public abstract void PushFrame(T parent, params PrtValue[] args);
 
-        public abstract void Execute(PStateImpl application, T parent);
+        public abstract void Execute(StateImpl application, T parent);
     }
 
     public class Event
@@ -264,18 +264,22 @@ namespace P.PRuntime
         NewMachine,
     };
 
-    public class StackFrame
+    public class ContStackFrame
     {
-        public int pc;
+        public int returnTo;
         public List<PrtValue> locals;
-        public StackFrame next;
+        public ContStackFrame(int ret, List<PrtValue> loc)
+        {
+            returnTo = ret;
+            locals = loc.ToList();
+        }
     }
 
     public class Continuation
     {
-        public StackFrame returnTo;
+        public Stack<ContStackFrame> contStack;
         public ContinuationReason reason;
-        public BaseMachine id;
+        public PrtMachine createdMachine;
         public PrtValue retVal;
         public List<PrtValue> retLocals;
 
@@ -284,11 +288,19 @@ namespace P.PRuntime
         // Therefore, nondet should not be reinitialized in this class.
         public bool nondet;
 
+        public ContStackFrame TopOfStack
+        {
+            get
+            {
+                return contStack.Peek();
+            }
+        }
+
         public Continuation()
         {
-            returnTo = null;
+            contStack = new Stack<ContStackFrame>();
             reason = ContinuationReason.Return;
-            id = null;
+            createdMachine = null;
             retVal = null;
             nondet = false;
             retLocals = null;
@@ -296,101 +308,79 @@ namespace P.PRuntime
 
         public void Reset()
         {
-            this.returnTo = null;
-            this.reason = ContinuationReason.Return;
-            this.id = null;
-            this.retVal = null;
-            this.nondet = false;
-            this.retLocals = null;
+            contStack = new Stack<ContStackFrame>();
+            createdMachine = null;
+            retVal = null;
+            nondet = false;
+            retLocals = null;
         }
 
-        public StackFrame PopReturnTo()
+        public ContStackFrame PopContFrame()
         {
-            StackFrame topOfStack;
-            topOfStack = this.returnTo;
-            this.returnTo = topOfStack.next;
-            topOfStack.next = null;
-            return topOfStack;
+            return contStack.Pop();
         }
 
-        public void PushReturnTo(int ret, List<PrtValue> locals)
+        public void PushContFrame(int ret, List<PrtValue> locals)
         {
-            StackFrame tmp;
-            tmp = new StackFrame();
-            tmp.pc = ret;
-            tmp.locals = locals;
-            tmp.next = this.returnTo;
-            this.returnTo = tmp;
+            contStack.Push(new ContStackFrame(ret, locals));
         }
 
         public void Return(List<PrtValue> retLocals)
         {
-            this.returnTo = null;
-            this.reason = ContinuationReason.Return;
-            this.id = null;
+            Reset();
+            reason = ContinuationReason.Return;
             this.retVal = PrtValue.NullValue;
             this.retLocals = retLocals;
         }
 
         public void ReturnVal(PrtValue val, List<PrtValue> retLocals)
         {
-            this.returnTo = null;
-            this.reason = ContinuationReason.Return;
-            this.id = null;
+
+            Reset();
+            reason = ContinuationReason.Return;
             this.retVal = val;
             this.retLocals = retLocals;
         }
 
         public void Pop()
         {
-            this.returnTo = null;
+            Reset();
             this.reason = ContinuationReason.Pop;
-            this.id = null;
-            this.retVal = null;
         }
 
         public void Raise()
         {
-            this.returnTo = null;
+            Reset();
             this.reason = ContinuationReason.Raise;
-            this.id = null;
-            this.retVal = null;
         }
 
         public void Send(int ret, List<PrtValue> locals)
         {
-            this.returnTo = null;
+            Reset();
             this.reason = ContinuationReason.Send;
-            this.id = null;
-            this.retVal = null;
-            this.PushReturnTo(ret, locals);
+            this.PushContFrame(ret, locals);
         }
 
-        void NewMachine(int ret, List<PrtValue> locals, BaseMachine o)
+        void NewMachine(int ret, List<PrtValue> locals, PrtMachine o)
         {
-            this.returnTo = null;
+            Reset();
             this.reason = ContinuationReason.NewMachine;
-            this.id = o;
-            this.retVal = null;
-            this.PushReturnTo(ret, locals);
+            this.createdMachine = o;
+            this.PushContFrame(ret, locals);
         }
 
         void Receive(int ret, List<PrtValue> locals)
         {
-            this.returnTo = null;
+            Reset();
             this.reason = ContinuationReason.Receive;
-            this.id = null;
-            this.retVal = null;
-            this.PushReturnTo(ret, locals);
+            this.PushContFrame(ret, locals);
         }
 
         void Nondet(int ret, List<PrtValue> locals)
         {
-            this.returnTo = null;
+            Reset();
             this.reason = ContinuationReason.Nondet;
-            this.id = null;
-            this.retVal = null;
-            this.PushReturnTo(ret, locals);
+            this.PushContFrame(ret, locals);
         }
     }
 }

@@ -5,9 +5,8 @@ using System.Diagnostics;
 
 namespace P.PRuntime
 {
-    #region P state machines Implementation
 
-    public abstract class Root
+    public abstract class PrtBaseClass
     {
         public abstract string Name
         {
@@ -21,7 +20,7 @@ namespace P.PRuntime
 
     }
 
-    public abstract class BaseMachine : Root
+    public abstract class PrtMachine : PrtBaseClass
     {
         public abstract bool IsHalted
         {
@@ -74,17 +73,17 @@ namespace P.PRuntime
             }
         }
 
-        private Stack<PrtSMMethod> methodStack;
-        public PrtSMMethod lastFunctionCompleted;
+        private Stack<PrtMethod> methodStack;
+        public PrtMethod lastFunctionCompleted;
 
-        public BaseMachine()
+        public PrtMachine()
         {
-            methodStack = new Stack<PrtSMMethod>();
+            methodStack = new Stack<PrtMethod>();
 
             doYield = true;
         }
 
-        #region Method stack 
+
         public void RunNextBlock()
         {
             Debug.Assert(TopOfMethodStack != null);
@@ -94,7 +93,7 @@ namespace P.PRuntime
 
         public void MethodReturn()
         {
-            PrtSMMethod returningMethod = PopMethod();
+            PrtMethod returningMethod = PopMethod();
 
             if (TopOfMethodStack != null)
                 lastFunctionCompleted = returningMethod;
@@ -111,23 +110,23 @@ namespace P.PRuntime
             }
         }
 
-        public void CallMethod(PrtSMMethod method)
+        public void CallMethod(PrtMethod method)
         {
             PushMethod(method);
         }
 
-        public void PushMethod(PrtSMMethod method)
+        public void PushMethod(PrtMethod method)
         {
             methodStack.Push(method);
         }
 
-        public PrtSMMethod PopMethod()
+        public PrtMethod PopMethod()
         {
             Debug.Assert(TopOfMethodStack != null, "Pop on an empty method stack");
             return methodStack.Pop();
         }
 
-        public PrtSMMethod TopOfMethodStack
+        public PrtMethod TopOfMethodStack
         {
             get
             {
@@ -137,11 +136,11 @@ namespace P.PRuntime
                     return methodStack.Peek();
             }
         }
-        #endregion
+   
 
     }
 
-    public abstract class BaseMonitor : Root
+    public abstract class PrtMonitor : PrtBaseClass
     {
         public abstract bool IsHot
         {
@@ -149,7 +148,7 @@ namespace P.PRuntime
         }
     }
 
-    public abstract class Monitor<T> : BaseMonitor
+    public abstract class Monitor<T> : PrtMonitor
     {
 
         public abstract State<T> StartState
@@ -160,9 +159,9 @@ namespace P.PRuntime
         public abstract void Invoke();
     }
 
-    public abstract class PrtSMMethod
+    public abstract class PrtMethod
     {
-        public abstract PStateImpl StateImpl
+        public abstract StateImpl StateImpl
         {
             get;
             set;
@@ -174,15 +173,10 @@ namespace P.PRuntime
             set;
         }
 
-        public abstract string ProgramCounter
-        {
-            get;
-        }
-
-        public abstract void Dispatch(BaseMachine m);
+        public abstract void Dispatch(PrtMachine m);
     }
 
-    public abstract class Machine<T> : BaseMachine where T : Machine<T>
+    public abstract class Machine<T> : PrtMachine where T : Machine<T>
     {
         public StateStack<T> stateStack;
         public EventBuffer<T> buffer;
@@ -207,7 +201,7 @@ namespace P.PRuntime
                 return isEnabled;
             }
         }
-        public Machine(PStateImpl app, int instance, int maxBufferSize)
+        public Machine(StateImpl app, int instance, int maxBufferSize)
         {
             isHalted = false;
             isEnabled = true;
@@ -220,7 +214,7 @@ namespace P.PRuntime
             currentEvent = null;
             currentArg = PrtValue.NullValue;
             receiveSet = new HashSet<Event>();
-            PushMethod(new Start(app, this));
+            PushMethod(new StartMethod(app, this));
         }
 
         public void PushState(State<T> s)
@@ -242,7 +236,7 @@ namespace P.PRuntime
             get;
         }
 
-        public void EnqueueEvent(PStateImpl application, Event e, PrtValue arg, Machine<T> source)
+        public void EnqueueEvent(StateImpl application, Event e, PrtValue arg, Machine<T> source)
         {
             PrtType prtType;
 
@@ -301,7 +295,7 @@ namespace P.PRuntime
 
         public enum DequeueEventReturnStatus { SUCCESS, NULL, BLOCKED };
 
-        public DequeueEventReturnStatus DequeueEvent(PStateImpl application, bool hasNullTransition)
+        public DequeueEventReturnStatus DequeueEvent(StateImpl application, bool hasNullTransition)
         {
             currentEvent = null;
             currentArg = null;
@@ -352,24 +346,24 @@ namespace P.PRuntime
             }
         }
 
-        internal sealed class Start : PrtSMMethod
+        internal sealed class StartMethod : PrtMethod
         {
             private static readonly short typeId = 0;
 
-            private PStateImpl application;
+            private StateImpl application;
             private Machine<T> machine;
 
             // locals
             private Blocks nextBlock;
 
-            public Start(PStateImpl app, Machine<T> machine)
+            public StartMethod(StateImpl app, Machine<T> machine)
             {
                 application = app;
                 this.machine = machine;
                 nextBlock = Blocks.Enter;
             }
 
-            public override PStateImpl StateImpl
+            public override StateImpl StateImpl
             {
                 get
                 {
@@ -400,15 +394,7 @@ namespace P.PRuntime
                 }
             }
 
-            public override string ProgramCounter
-            {
-                get
-                {
-                    return nextBlock.ToString();
-                }
-            }
-
-            public override void Dispatch(BaseMachine p)
+            public override void Dispatch(PrtMachine p)
             {
                 switch (nextBlock)
                 {
@@ -429,16 +415,16 @@ namespace P.PRuntime
                 }
             }
 
-            private void Enter(BaseMachine p)
+            private void Enter(PrtMachine p)
             {
-                Machine<T>.Run callee = new Machine<T>.Run(application, machine, machine.StartState);
+                Machine<T>.RunMethod callee = new Machine<T>.RunMethod(application, machine, machine.StartState);
                 p.CallMethod(callee);
                 StateImpl.IsCall = true;
 
                 nextBlock = Blocks.B0;
             }
 
-            private void B0(BaseMachine p)
+            private void B0(PrtMachine p)
             {
                 p.lastFunctionCompleted = null;
 
@@ -469,11 +455,11 @@ namespace P.PRuntime
             }
         }
 
-        internal sealed class Run : PrtSMMethod
+        internal sealed class RunMethod : PrtMethod
         {
             private static readonly short typeId = 1;
 
-            private PStateImpl application;
+            private StateImpl application;
             private Machine<T> machine;
 
             // inputs
@@ -483,7 +469,7 @@ namespace P.PRuntime
             private Blocks nextBlock;
             private bool doPop;
 
-            public Run(PStateImpl app, Machine<T> machine)
+            public RunMethod(StateImpl app, Machine<T> machine)
             {
                 application = app;
                 nextBlock = Blocks.Enter;
@@ -491,7 +477,7 @@ namespace P.PRuntime
                 this.state = null;
             }
 
-            public Run(PStateImpl app, Machine<T> machine, State<T> state)
+            public RunMethod(StateImpl app, Machine<T> machine, State<T> state)
             {
                 application = app;
                 nextBlock = Blocks.Enter;
@@ -499,7 +485,7 @@ namespace P.PRuntime
                 this.state = state;
             }
 
-            public override PStateImpl StateImpl
+            public override StateImpl StateImpl
             {
                 get
                 {
@@ -523,7 +509,7 @@ namespace P.PRuntime
                 B5 = 7,
             };
 
-            public override void Dispatch(BaseMachine p)
+            public override void Dispatch(PrtMachine p)
             {
                 switch (nextBlock)
                 {
@@ -581,41 +567,33 @@ namespace P.PRuntime
                 }
             }
 
-            public override string ProgramCounter
-            {
-                get
-                {
-                    return nextBlock.ToString();
-                }
-            }
 
-
-            private void B5(BaseMachine p)
+            private void B5(PrtMachine p)
             {
                 machine.PopState();
                 p.MethodReturn();
                 StateImpl.IsReturn = true;
             }
 
-            private void B4(BaseMachine p)
+            private void B4(PrtMachine p)
             {
-                doPop = ((Machine<T>.RunHelper)p.lastFunctionCompleted).ReturnValue;
+                doPop = ((Machine<T>.RunHelperMethod)p.lastFunctionCompleted).ReturnValue;
                 p.lastFunctionCompleted = null;
 
                 //B1 is header of the "while" loop:
                 nextBlock = Blocks.B1;
             }
 
-            private void B3(BaseMachine p)
+            private void B3(PrtMachine p)
             {
-                Machine<T>.RunHelper callee = new Machine<T>.RunHelper(application, machine, false);
+                Machine<T>.RunHelperMethod callee = new Machine<T>.RunHelperMethod(application, machine, false);
                 p.CallMethod(callee);
                 StateImpl.IsCall = true;
 
                 nextBlock = Blocks.B4;
             }
 
-            private void B2(BaseMachine p)
+            private void B2(PrtMachine p)
             {
                 var stateStack = machine.stateStack;
                 var hasNullTransitionOrAction = stateStack.HasNullTransitionOrAction();
@@ -648,7 +626,7 @@ namespace P.PRuntime
                 }
             }
 
-            private void B1(BaseMachine p)
+            private void B1(PrtMachine p)
             {
                 if (!doPop)
                 {
@@ -660,19 +638,19 @@ namespace P.PRuntime
                 }
             }
 
-            private void B0(BaseMachine p)
+            private void B0(PrtMachine p)
             {
                 //Return from RunHelper:
-                doPop = ((Machine<T>.RunHelper)p.lastFunctionCompleted).ReturnValue;
+                doPop = ((Machine<T>.RunHelperMethod)p.lastFunctionCompleted).ReturnValue;
                 p.lastFunctionCompleted = null;
                 nextBlock = Blocks.B1;
             }
 
-            private void Enter(BaseMachine p)
+            private void Enter(PrtMachine p)
             {
                 machine.PushState(state);
 
-                Machine<T>.RunHelper callee = new Machine<T>.RunHelper(application, machine, true);
+                Machine<T>.RunHelperMethod callee = new Machine<T>.RunHelperMethod(application, machine, true);
                 p.CallMethod(callee);
                 StateImpl.IsCall = true;
 
@@ -680,11 +658,11 @@ namespace P.PRuntime
             }
         }
 
-        internal sealed class RunHelper : PrtSMMethod
+        internal sealed class RunHelperMethod : PrtMethod
         {
             private static readonly short typeId = 2;
 
-            private PStateImpl application;
+            private StateImpl application;
             private Machine<T> machine;
 
             // inputs
@@ -707,7 +685,7 @@ namespace P.PRuntime
                 }
             }
 
-            public RunHelper(PStateImpl app, Machine<T> machine, bool start)
+            public RunHelperMethod(StateImpl app, Machine<T> machine, bool start)
             {
                 application = app;
                 nextBlock = Blocks.Enter;
@@ -715,7 +693,7 @@ namespace P.PRuntime
                 this.start = start;
             }
 
-            public override PStateImpl StateImpl
+            public override StateImpl StateImpl
             {
                 get
                 {
@@ -754,15 +732,8 @@ namespace P.PRuntime
                 }
             }
 
-            public override string ProgramCounter
-            {
-                get
-                {
-                    return nextBlock.ToString();
-                }
-            }
 
-            public override void Dispatch(BaseMachine p)
+            public override void Dispatch(PrtMachine p)
             {
                 switch (nextBlock)
                 {
@@ -824,7 +795,7 @@ namespace P.PRuntime
             }
 
 
-            private void Enter(BaseMachine p)
+            private void Enter(PrtMachine p)
             {
                 var stateStack = machine.stateStack;
                 this.state = stateStack.state;
@@ -840,7 +811,7 @@ namespace P.PRuntime
                 }
             }
 
-            public void B0(BaseMachine p)
+            public void B0(PrtMachine p)
             {
                 var stateStack = machine.stateStack;
 
@@ -851,17 +822,17 @@ namespace P.PRuntime
                 nextBlock = Blocks.B2;
             }
 
-            private void B2(BaseMachine p)
+            private void B2(PrtMachine p)
             {
                 var stateStack = machine.stateStack;
 
-                Machine<T>.ReentrancyHelper callee = new Machine<T>.ReentrancyHelper(application, machine, fun, payload);
+                Machine<T>.ReentrancyHelperMethod callee = new Machine<T>.ReentrancyHelperMethod(application, machine, fun, payload);
                 p.CallMethod(callee);
                 StateImpl.IsCall = true;
                 nextBlock = Blocks.B3;
             }
 
-            private void B3(BaseMachine p)
+            private void B3(PrtMachine p)
             {
                 p.lastFunctionCompleted = null;
 
@@ -883,7 +854,7 @@ namespace P.PRuntime
                     }
                     else
                     {
-                        Machine<T>.ReentrancyHelper callee = new Machine<T>.ReentrancyHelper(application, machine, state.exitFun, null);
+                        Machine<T>.ReentrancyHelperMethod callee = new Machine<T>.ReentrancyHelperMethod(application, machine, state.exitFun, null);
                         p.CallMethod(callee);
                         StateImpl.IsCall = true;
 
@@ -892,7 +863,7 @@ namespace P.PRuntime
                 }
             }
 
-            private void B4(BaseMachine p)
+            private void B4(PrtMachine p)
             {
                 p.lastFunctionCompleted = null;
 
@@ -901,7 +872,7 @@ namespace P.PRuntime
                 StateImpl.IsReturn = true;
             }
 
-            private void B1(BaseMachine p)
+            private void B1(PrtMachine p)
             {
                 var stateStack = machine.stateStack;
                 var state = stateStack.state;
@@ -920,7 +891,7 @@ namespace P.PRuntime
                     transition = state.FindPushTransition(machine.currentEvent);
                     if (transition != null)
                     {
-                        Machine<T>.Run callee = new Machine<T>.Run(application, machine, transition.to);
+                        Machine<T>.RunMethod callee = new Machine<T>.RunMethod(application, machine, transition.to);
                         p.CallMethod(callee);
                         StateImpl.IsCall = true;
 
@@ -933,7 +904,7 @@ namespace P.PRuntime
                 }
             }
 
-            private void B5(BaseMachine p)
+            private void B5(PrtMachine p)
             {
                 p.lastFunctionCompleted = null;
 
@@ -950,16 +921,16 @@ namespace P.PRuntime
                 }
             }
 
-            private void B6(BaseMachine p)
+            private void B6(PrtMachine p)
             {
-                Machine<T>.ReentrancyHelper callee = new Machine<T>.ReentrancyHelper(application, machine, state.exitFun, null);
+                Machine<T>.ReentrancyHelperMethod callee = new Machine<T>.ReentrancyHelperMethod(application, machine, state.exitFun, null);
                 p.CallMethod(callee);
                 StateImpl.IsCall = true;
 
                 nextBlock = Blocks.B7;
             }
 
-            private void B7(BaseMachine p)
+            private void B7(PrtMachine p)
             {
                 p.lastFunctionCompleted = null;
 
@@ -972,16 +943,16 @@ namespace P.PRuntime
                 }
                 else
                 {
-                    Machine<T>.ReentrancyHelper callee = new Machine<T>.ReentrancyHelper(application, machine, transition.fun, payload);
+                    Machine<T>.ReentrancyHelperMethod callee = new Machine<T>.ReentrancyHelperMethod(application, machine, transition.fun, payload);
                     p.CallMethod(callee);
                     StateImpl.IsCall = true;
                     nextBlock = Blocks.B8;
                 }
             }
 
-            private void B8(BaseMachine p)
+            private void B8(PrtMachine p)
             {
-                payload = ((Machine<T>.ReentrancyHelper)p.lastFunctionCompleted).ReturnValue;
+                payload = ((Machine<T>.ReentrancyHelperMethod)p.lastFunctionCompleted).ReturnValue;
                 p.lastFunctionCompleted = null;
                 var stateStack = machine.stateStack;
                 stateStack.state = transition.to;
@@ -992,11 +963,11 @@ namespace P.PRuntime
             }
         }
 
-        internal sealed class ReentrancyHelper : PrtSMMethod
+        internal sealed class ReentrancyHelperMethod : PrtMethod
         {
             private static readonly short typeId = 3;
 
-            private PStateImpl application;
+            private StateImpl application;
             private Machine<T> machine;
             private Fun<T> fun;
 
@@ -1017,7 +988,7 @@ namespace P.PRuntime
                 }
             }
 
-            public ReentrancyHelper(PStateImpl app, Machine<T> machine, Fun<T> fun, PrtValue payload)
+            public ReentrancyHelperMethod(StateImpl app, Machine<T> machine, Fun<T> fun, PrtValue payload)
             {
                 this.application = app;
                 this.machine = machine;
@@ -1025,7 +996,7 @@ namespace P.PRuntime
                 this.payload = payload;
             }
 
-            public override PStateImpl StateImpl
+            public override StateImpl StateImpl
             {
                 get
                 {
@@ -1057,15 +1028,8 @@ namespace P.PRuntime
                 }
             }
 
-            public override string ProgramCounter
-            {
-                get
-                {
-                    return nextBlock.ToString();
-                }
-            }
 
-            public override void Dispatch(BaseMachine p)
+            public override void Dispatch(PrtMachine p)
             {
                 switch (nextBlock)
                 {
@@ -1092,15 +1056,14 @@ namespace P.PRuntime
             }
 
 
-            private void Enter(BaseMachine p)
+            private void Enter(PrtMachine p)
             {
-                machine.cont.Reset();
+                machine.cont = new Continuation();
                 fun.PushFrame((T)machine, payload);
-
                 nextBlock = Blocks.B0;
             }
 
-            private void B0(BaseMachine p)
+            private void B0(PrtMachine p)
             {
                 try
                 {
@@ -1110,15 +1073,15 @@ namespace P.PRuntime
                 {
                     application.Exception = ex;
                 }
-                Machine<T>.ProcessContinuation callee = new ProcessContinuation(application, machine);
+                Machine<T>.ProcessContinuationMethod callee = new ProcessContinuationMethod(application, machine);
                 p.CallMethod(callee);
                 StateImpl.IsCall = true;
                 nextBlock = Blocks.B1;
             }
 
-            private void B1(BaseMachine p)
+            private void B1(PrtMachine p)
             {
-                var doPop = ((Machine<T>.ProcessContinuation)p.lastFunctionCompleted).ReturnValue;
+                var doPop = ((Machine<T>.ProcessContinuationMethod)p.lastFunctionCompleted).ReturnValue;
                 p.lastFunctionCompleted = null;
 
                 if (doPop)
@@ -1141,11 +1104,11 @@ namespace P.PRuntime
             }
         }
 
-        internal sealed class ProcessContinuation : PrtSMMethod
+        internal sealed class ProcessContinuationMethod : PrtMethod
         {
             private static readonly short typeId = 4;
 
-            private PStateImpl application;
+            private StateImpl application;
             private Machine<T> machine;
 
             // locals
@@ -1159,14 +1122,14 @@ namespace P.PRuntime
                 get { return _ReturnValue; }
             }
 
-            public ProcessContinuation(PStateImpl app, Machine<T> machine)
+            public ProcessContinuationMethod(StateImpl app, Machine<T> machine)
             {
                 application = app;
                 this.machine = machine;
                 nextBlock = Blocks.Enter;
             }
 
-            public override PStateImpl StateImpl
+            public override StateImpl StateImpl
             {
                 get
                 {
@@ -1197,15 +1160,7 @@ namespace P.PRuntime
                 }
             }
 
-            public override string ProgramCounter
-            {
-                get
-                {
-                    return nextBlock.ToString();
-                }
-            }
-
-            public override void Dispatch(BaseMachine p)
+            public override void Dispatch(PrtMachine p)
             {
                 switch (nextBlock)
                 {
@@ -1227,7 +1182,7 @@ namespace P.PRuntime
             }
 
 
-            private void Enter(BaseMachine p)
+            private void Enter(PrtMachine p)
             {
                 var cont = machine.cont;
                 var reason = cont.reason;
@@ -1299,7 +1254,7 @@ namespace P.PRuntime
                 }
             }
 
-            private void B0(BaseMachine p)
+            private void B0(PrtMachine p)
             {
                 // ContinuationReason.Receive
                 _ReturnValue = false;
@@ -1308,5 +1263,5 @@ namespace P.PRuntime
             }
         }
     }
-    #endregion
+
 }

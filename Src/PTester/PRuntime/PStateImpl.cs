@@ -5,20 +5,20 @@ using System.Reflection;
 
 namespace P.PRuntime
 {
-    public abstract class PStateImpl
+    public abstract class StateImpl
     {
         #region Constructors
         /// <summary>
         /// This function is called when the stateimp is loaded first time.
         /// </summary>
-        protected PStateImpl()
+        protected StateImpl()
         {
-            statemachines = new Dictionary<int, BaseMachine>();
+            statemachines = new Dictionary<int, PrtMachine>();
             nextStateMachineId = 0;
         }
         #endregion
 
-        public void AddStateMachine(BaseMachine machine)
+        public void AddStateMachine(PrtMachine machine)
         {
             statemachines.Add(nextStateMachineId, machine);
             nextStateMachineId++;
@@ -27,19 +27,19 @@ namespace P.PRuntime
         /// <summary>
         /// Map from the statemachine id to the instance of the statemachine.
         /// </summary>
-        private Dictionary<int, BaseMachine> statemachines;
+        private Dictionary<int, PrtMachine> statemachines;
 
         /// <summary>
         /// Represents the next statemachine id.  
         /// </summary>
         private int nextStateMachineId;
 
-        public abstract IEnumerable<BaseMachine> AllAliveMachines
+        public abstract IEnumerable<PrtMachine> AllAliveMachines
         {
             get;
         }
 
-        public abstract IEnumerable<BaseMonitor> AllInstalledMonitors
+        public abstract IEnumerable<PrtMonitor> AllInstalledMonitors
         {
             get;
         }
@@ -95,12 +95,12 @@ namespace P.PRuntime
             set { isReturn = value; }
         }
 
-        public void SetPendingChoicesAsBoolean(BaseMachine process)
+        public void SetPendingChoicesAsBoolean(PrtMachine process)
         {
             throw new NotImplementedException();
         }
 
-        public object GetSelectedChoiceValue(BaseMachine process)
+        public object GetSelectedChoiceValue(PrtMachine process)
         {
             throw new NotImplementedException();
         }

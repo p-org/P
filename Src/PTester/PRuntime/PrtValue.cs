@@ -12,7 +12,7 @@ namespace P.PRuntime
         public bool bl;
         public Event ev;
         public int nt;
-        public BaseMachine mach;
+        public PrtMachine mach;
         public List<PrtValue> tuple;
         public PrtSeq seq;
         public PrtMap map;
@@ -311,12 +311,12 @@ namespace P.PRuntime
             return prmVal.nt;
         }
 
-        static void PrtPrimSetMachine(PrtValue prmVal, BaseMachine value)
+        static void PrtPrimSetMachine(PrtValue prmVal, PrtMachine value)
         {
             prmVal.mach = value;
         }
 
-        static BaseMachine PrtPrimGetMachine(PrtValue prmVal)
+        static PrtMachine PrtPrimGetMachine(PrtValue prmVal)
         {
             return prmVal.mach;
         }

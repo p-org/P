@@ -82,7 +82,7 @@ assert false;
 
 namespace SimpleMachine
 {
-    public class Application : StateImpl
+    public class Application : PStateImpl
     {
         public List<PrtMachine> MainMachines;
 
@@ -160,7 +160,7 @@ namespace SimpleMachine
                 }
             }
             //constructor
-            public Main(StateImpl app, int instance, int maxB) : base (app, instance, maxB)
+            public Main(PStateImpl app, int instance, int maxB) : base (app, instance, maxB)
             {
                 fields = new List<PrtValue>();
             }
@@ -177,7 +177,7 @@ namespace SimpleMachine
                         return "Init_Entry";
                     }
                 }
-                public override void Execute(StateImpl application, Main parent)
+                public override void Execute(PStateImpl application, Main parent)
                 {
                     ContStackFrame currCont = parent.cont.PopContFrame();
                     if (currCont.returnTolocation == 0)
@@ -212,7 +212,7 @@ namespace SimpleMachine
                         return "Fail_Entry";
                     }
                 }
-                public override void Execute(StateImpl application, Main parent)
+                public override void Execute(PStateImpl application, Main parent)
                 {
                     ContStackFrame currCont = parent.cont.PopContFrame();
                     if (currCont.returnTolocation == 0)

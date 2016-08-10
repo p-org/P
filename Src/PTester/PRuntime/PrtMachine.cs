@@ -161,7 +161,7 @@ namespace P.PRuntime
 
     public abstract class PrtMethod
     {
-        public abstract StateImpl StateImpl
+        public abstract PStateImpl StateImpl
         {
             get;
             set;
@@ -201,7 +201,7 @@ namespace P.PRuntime
                 return isEnabled;
             }
         }
-        public Machine(StateImpl app, int instance, int maxBufferSize)
+        public Machine(PStateImpl app, int instance, int maxBufferSize)
         {
             isHalted = false;
             isEnabled = true;
@@ -236,7 +236,7 @@ namespace P.PRuntime
             get;
         }
 
-        public void EnqueueEvent(StateImpl application, Event e, PrtValue arg, Machine<T> source)
+        public void EnqueueEvent(PStateImpl application, Event e, PrtValue arg, Machine<T> source)
         {
             PrtType prtType;
 
@@ -295,7 +295,7 @@ namespace P.PRuntime
 
         public enum DequeueEventReturnStatus { SUCCESS, NULL, BLOCKED };
 
-        public DequeueEventReturnStatus DequeueEvent(StateImpl application, bool hasNullTransition)
+        public DequeueEventReturnStatus DequeueEvent(PStateImpl application, bool hasNullTransition)
         {
             currentEvent = null;
             currentArg = null;
@@ -350,20 +350,20 @@ namespace P.PRuntime
         {
             private static readonly short typeId = 0;
 
-            private StateImpl application;
+            private PStateImpl application;
             private Machine<T> machine;
 
             // locals
             private Blocks nextBlock;
 
-            public StartMethod(StateImpl app, Machine<T> machine)
+            public StartMethod(PStateImpl app, Machine<T> machine)
             {
                 application = app;
                 this.machine = machine;
                 nextBlock = Blocks.Enter;
             }
 
-            public override StateImpl StateImpl
+            public override PStateImpl StateImpl
             {
                 get
                 {
@@ -459,7 +459,7 @@ namespace P.PRuntime
         {
             private static readonly short typeId = 1;
 
-            private StateImpl application;
+            private PStateImpl application;
             private Machine<T> machine;
 
             // inputs
@@ -469,7 +469,7 @@ namespace P.PRuntime
             private Blocks nextBlock;
             private bool doPop;
 
-            public RunMethod(StateImpl app, Machine<T> machine)
+            public RunMethod(PStateImpl app, Machine<T> machine)
             {
                 application = app;
                 nextBlock = Blocks.Enter;
@@ -477,7 +477,7 @@ namespace P.PRuntime
                 this.state = null;
             }
 
-            public RunMethod(StateImpl app, Machine<T> machine, State<T> state)
+            public RunMethod(PStateImpl app, Machine<T> machine, State<T> state)
             {
                 application = app;
                 nextBlock = Blocks.Enter;
@@ -485,7 +485,7 @@ namespace P.PRuntime
                 this.state = state;
             }
 
-            public override StateImpl StateImpl
+            public override PStateImpl StateImpl
             {
                 get
                 {
@@ -662,7 +662,7 @@ namespace P.PRuntime
         {
             private static readonly short typeId = 2;
 
-            private StateImpl application;
+            private PStateImpl application;
             private Machine<T> machine;
 
             // inputs
@@ -685,7 +685,7 @@ namespace P.PRuntime
                 }
             }
 
-            public RunHelperMethod(StateImpl app, Machine<T> machine, bool start)
+            public RunHelperMethod(PStateImpl app, Machine<T> machine, bool start)
             {
                 application = app;
                 nextBlock = Blocks.Enter;
@@ -693,7 +693,7 @@ namespace P.PRuntime
                 this.start = start;
             }
 
-            public override StateImpl StateImpl
+            public override PStateImpl StateImpl
             {
                 get
                 {
@@ -967,7 +967,7 @@ namespace P.PRuntime
         {
             private static readonly short typeId = 3;
 
-            private StateImpl application;
+            private PStateImpl application;
             private Machine<T> machine;
             private Fun<T> fun;
 
@@ -988,7 +988,7 @@ namespace P.PRuntime
                 }
             }
 
-            public ReentrancyHelperMethod(StateImpl app, Machine<T> machine, Fun<T> fun, PrtValue payload)
+            public ReentrancyHelperMethod(PStateImpl app, Machine<T> machine, Fun<T> fun, PrtValue payload)
             {
                 this.application = app;
                 this.machine = machine;
@@ -996,7 +996,7 @@ namespace P.PRuntime
                 this.payload = payload;
             }
 
-            public override StateImpl StateImpl
+            public override PStateImpl StateImpl
             {
                 get
                 {
@@ -1108,7 +1108,7 @@ namespace P.PRuntime
         {
             private static readonly short typeId = 4;
 
-            private StateImpl application;
+            private PStateImpl application;
             private Machine<T> machine;
 
             // locals
@@ -1122,14 +1122,14 @@ namespace P.PRuntime
                 get { return _ReturnValue; }
             }
 
-            public ProcessContinuationMethod(StateImpl app, Machine<T> machine)
+            public ProcessContinuationMethod(PStateImpl app, Machine<T> machine)
             {
                 application = app;
                 this.machine = machine;
                 nextBlock = Blocks.Enter;
             }
 
-            public override StateImpl StateImpl
+            public override PStateImpl StateImpl
             {
                 get
                 {

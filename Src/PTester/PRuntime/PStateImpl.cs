@@ -5,13 +5,13 @@ using System.Reflection;
 
 namespace P.PRuntime
 {
-    public abstract class StateImpl
+    public abstract class PStateImpl
     {
         #region Constructors
         /// <summary>
         /// This function is called when the stateimp is loaded first time.
         /// </summary>
-        protected StateImpl()
+        protected PStateImpl()
         {
             statemachines = new Dictionary<int, PrtMachine>();
             nextStateMachineId = 0;

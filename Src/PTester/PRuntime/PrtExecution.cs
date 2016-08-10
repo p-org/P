@@ -14,7 +14,7 @@ namespace P.PRuntime
 
         public abstract List<PrtValue> CreateLocals(params PrtValue[] args);
 
-        public abstract void Execute(StateImpl application, T parent);
+        public abstract void Execute(PStateImpl application, T parent);
     }
 
     public class Event

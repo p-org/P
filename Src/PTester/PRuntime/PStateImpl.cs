@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Reflection;
+using System.Linq;
+
 
 namespace P.PRuntime
 {
@@ -14,7 +14,7 @@ namespace P.PRuntime
         protected PStateImpl()
         {
             statemachines = new Dictionary<int, PrtMachine>();
-            nextStateMachineId = 0;
+            monitors = new List<PrtMonitor>();
         }
         #endregion
 
@@ -24,44 +24,38 @@ namespace P.PRuntime
         /// </summary>
         private Dictionary<int, PrtMachine> statemachines;
 
+        public List<PrtMachine> AllStateMachines
+        {
+            get
+            {
+                return statemachines.Values.ToList();
+            }
+        }
+
+        /// <summary>
+        /// List of monitors
+        /// </summary>
+        private List<PrtMonitor> monitors;
         /// <summary>
         /// Stores the exception encoutered during exploration.
         /// </summary>
         private Exception exception;
 
-        /// <summary>
-        /// Indicates that a PrtMethod call is invoked
-        /// </summary>
-        private bool isCall;
-
-        /// <summary>
-        /// Indicates that a PrtMethod returned
-        /// </summary>
-        private bool isReturn;
         #endregion
 
         #region Getters and Setters
-        public abstract IEnumerable<PrtMachine> AllAliveMachines
-        {
-            get;
-        }
-
-        public abstract IEnumerable<PrtMonitor> AllInstalledMonitors
-        {
-            get;
-        }
         public bool Deadlock
         {
             get
             {
                 bool enabled = false;
-                foreach (var x in AllAliveMachines)
+                foreach (var x in statemachines.Values)
                 {
                     if (enabled) break;
                     enabled = enabled || x.IsEnabled;
                 }
                 bool hot = false;
-                foreach (var x in AllInstalledMonitors)
+                foreach (var x in monitors)
                 {
                     if (hot) break;
                     hot = hot || x.IsHot;
@@ -76,19 +70,6 @@ namespace P.PRuntime
             set { exception = value; }
         }
 
-        //IExplorable
-        public bool IsCall
-        {
-            get { return isCall; }
-            set { isCall = value; }
-        }
-
-        //IExplorable
-        public bool IsReturn
-        {
-            get { return isReturn; }
-            set { isReturn = value; }
-        }
         #endregion
 
         #region Clone Function
@@ -96,8 +77,21 @@ namespace P.PRuntime
 
         public object Clone()
         {
-            clonedState = MakeSkeleton();
+            var clonedState = MakeSkeleton();
+            //clone all the fields
+            clonedState.statemachines = new Dictionary<int, PrtMachine>();
+            foreach(var machine in statemachines)
+            {
+                clonedState.statemachines.Add(machine.Key, machine.Value.Clone());
+            }
 
+            clonedState.monitors = new List<PrtMonitor>();
+            foreach(var monitor in monitors)
+            {
+                clonedState.monitors.Add(monitor.Clone());
+            }
+
+            return clonedState;
 
         }
         #endregion
@@ -106,14 +100,6 @@ namespace P.PRuntime
         {
             statemachines.Add(statemachines.Count, machine);
         }
-
-        
-
-        
-
-        
-
-        
 
         public void Trace(string message, params object[] arguments)
         {

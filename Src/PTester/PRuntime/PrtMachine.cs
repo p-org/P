@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections;
+using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -201,7 +201,7 @@ namespace P.PRuntime
                 return isEnabled;
             }
         }
-        public Machine(PStateImpl app, int instance, int maxBufferSize)
+        public Machine(PStateImpl app, int maxBufferSize)
         {
             isHalted = false;
             isEnabled = true;
@@ -210,7 +210,7 @@ namespace P.PRuntime
             cont = new Continuation();
             buffer = new EventBuffer<T>();
             this.maxBufferSize = maxBufferSize;
-            this.instance = instance;
+            this.instance = app.AllStateMachines.Where(mach => mach is T).Count() + 1;
             currentEvent = null;
             currentArg = PrtValue.NullValue;
             receiveSet = new HashSet<Event>();
@@ -419,8 +419,6 @@ namespace P.PRuntime
             {
                 Machine<T>.RunMethod callee = new Machine<T>.RunMethod(application, machine, machine.StartState);
                 p.CallMethod(callee);
-                StateImpl.IsCall = true;
-
                 nextBlock = Blocks.B0;
             }
 
@@ -440,7 +438,6 @@ namespace P.PRuntime
                     machine.isEnabled = false;
 
                     p.MethodReturn();
-                    StateImpl.IsReturn = true;
                 }
                 else
                 {
@@ -450,7 +447,6 @@ namespace P.PRuntime
                         machine.instance);
                     this.StateImpl.Exception = new PrtUnhandledEventException("Unhandled event exception by machine <mach name>");
                     p.MethodReturn();
-                    StateImpl.IsReturn = true;
                 }
             }
         }
@@ -572,7 +568,6 @@ namespace P.PRuntime
             {
                 machine.PopState();
                 p.MethodReturn();
-                StateImpl.IsReturn = true;
             }
 
             private void B4(PrtMachine p)
@@ -588,8 +583,6 @@ namespace P.PRuntime
             {
                 Machine<T>.RunHelperMethod callee = new Machine<T>.RunHelperMethod(application, machine, false);
                 p.CallMethod(callee);
-                StateImpl.IsCall = true;
-
                 nextBlock = Blocks.B4;
             }
 
@@ -606,7 +599,6 @@ namespace P.PRuntime
                 {
                     application.Exception = ex;
                     p.MethodReturn();
-                    StateImpl.IsReturn = true;
                     return;
                 }
 
@@ -652,8 +644,6 @@ namespace P.PRuntime
 
                 Machine<T>.RunHelperMethod callee = new Machine<T>.RunHelperMethod(application, machine, true);
                 p.CallMethod(callee);
-                StateImpl.IsCall = true;
-
                 nextBlock = Blocks.B0;
             }
         }
@@ -828,7 +818,6 @@ namespace P.PRuntime
 
                 Machine<T>.ReentrancyHelperMethod callee = new Machine<T>.ReentrancyHelperMethod(application, machine, fun, payload);
                 p.CallMethod(callee);
-                StateImpl.IsCall = true;
                 nextBlock = Blocks.B3;
             }
 
@@ -850,13 +839,11 @@ namespace P.PRuntime
                     {
                         _ReturnValue = false;
                         p.MethodReturn();
-                        StateImpl.IsReturn = true;
                     }
                     else
                     {
                         Machine<T>.ReentrancyHelperMethod callee = new Machine<T>.ReentrancyHelperMethod(application, machine, state.exitFun, null);
                         p.CallMethod(callee);
-                        StateImpl.IsCall = true;
 
                         nextBlock = Blocks.B4;
                     }
@@ -869,7 +856,6 @@ namespace P.PRuntime
 
                 _ReturnValue = true;
                 p.MethodReturn();
-                StateImpl.IsReturn = true;
             }
 
             private void B1(PrtMachine p)
@@ -893,8 +879,6 @@ namespace P.PRuntime
                     {
                         Machine<T>.RunMethod callee = new Machine<T>.RunMethod(application, machine, transition.to);
                         p.CallMethod(callee);
-                        StateImpl.IsCall = true;
-
                         nextBlock = Blocks.B5;
                     }
                     else
@@ -912,7 +896,6 @@ namespace P.PRuntime
                 {
                     _ReturnValue = false;
                     p.MethodReturn();
-                    StateImpl.IsReturn = true;
                 }
                 else
                 {
@@ -925,8 +908,6 @@ namespace P.PRuntime
             {
                 Machine<T>.ReentrancyHelperMethod callee = new Machine<T>.ReentrancyHelperMethod(application, machine, state.exitFun, null);
                 p.CallMethod(callee);
-                StateImpl.IsCall = true;
-
                 nextBlock = Blocks.B7;
             }
 
@@ -939,13 +920,11 @@ namespace P.PRuntime
                 {
                     _ReturnValue = true;
                     p.MethodReturn();
-                    StateImpl.IsReturn = true;
                 }
                 else
                 {
                     Machine<T>.ReentrancyHelperMethod callee = new Machine<T>.ReentrancyHelperMethod(application, machine, transition.fun, payload);
                     p.CallMethod(callee);
-                    StateImpl.IsCall = true;
                     nextBlock = Blocks.B8;
                 }
             }
@@ -1075,7 +1054,6 @@ namespace P.PRuntime
                 }
                 Machine<T>.ProcessContinuationMethod callee = new ProcessContinuationMethod(application, machine);
                 p.CallMethod(callee);
-                StateImpl.IsCall = true;
                 nextBlock = Blocks.B1;
             }
 
@@ -1095,7 +1073,6 @@ namespace P.PRuntime
                         _ReturnValue = machine.cont.retLocals[0];
                     }
                     p.MethodReturn();
-                    StateImpl.IsReturn = true;
                 }
                 else
                 {

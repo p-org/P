@@ -86,37 +86,16 @@ namespace SimpleMachine
     {
         public List<PrtMachine> MainMachines;
 
-        //getters
-        public int SizeOfMainMachines
-        {
-            get
-            {
-                return MainMachines.Count;
-            }
-        }
-
-        public override IEnumerable<PrtMachine> AllAliveMachines
-        {
-            get
-            {
-                List<PrtMachine> ret = new List<PrtMachine>();
-                ret.AddRange(MainMachines);
-                return ret;
-            }
-        }
-
-        public override IEnumerable<PrtMonitor> AllInstalledMonitors
-        {
-            get
-            {
-                return new List<PrtMonitor>();
-            }
-        }
 
         #region Constructors
         public Application() :base()
         {
             //initialize all the fields
+        }
+
+        public override PStateImpl MakeSkeleton()
+        {
+            return new Application();
         }
 
         public Application(bool initialize) : base()
@@ -135,7 +114,7 @@ namespace SimpleMachine
 
         public Machine<Main> CreateMainMachine()
         {
-            var mainMachine = new Main(this, SizeOfMainMachines, 10);
+            var mainMachine = new Main(this, 10);
             AddStateMachineToStateImpl(mainMachine);
             MainMachines.Add(mainMachine);
 
@@ -160,7 +139,7 @@ namespace SimpleMachine
                 }
             }
             //constructor
-            public Main(PStateImpl app, int instance, int maxB) : base (app, instance, maxB)
+            public Main(PStateImpl app, int maxB) : base(app, maxB)
             {
                 fields = new List<PrtValue>();
             }

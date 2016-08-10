@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace P.PRuntime
 {
-    public abstract class PStateImpl
+    public abstract class PStateImpl : ICloneable
     {
         #region Constructors
         /// <summary>
@@ -18,22 +18,29 @@ namespace P.PRuntime
         }
         #endregion
 
-        public void AddStateMachineToStateImpl(PrtMachine machine)
-        {
-            statemachines.Add(nextStateMachineId, machine);
-            nextStateMachineId++;
-        }
-
+        #region Fields
         /// <summary>
         /// Map from the statemachine id to the instance of the statemachine.
         /// </summary>
         private Dictionary<int, PrtMachine> statemachines;
 
         /// <summary>
-        /// Represents the next statemachine id.  
+        /// Stores the exception encoutered during exploration.
         /// </summary>
-        private int nextStateMachineId;
+        private Exception exception;
 
+        /// <summary>
+        /// Indicates that a PrtMethod call is invoked
+        /// </summary>
+        private bool isCall;
+
+        /// <summary>
+        /// Indicates that a PrtMethod returned
+        /// </summary>
+        private bool isReturn;
+        #endregion
+
+        #region Getters and Setters
         public abstract IEnumerable<PrtMachine> AllAliveMachines
         {
             get;
@@ -43,7 +50,6 @@ namespace P.PRuntime
         {
             get;
         }
-
         public bool Deadlock
         {
             get
@@ -64,20 +70,11 @@ namespace P.PRuntime
             }
         }
 
-        public void Trace(string message, params object[] arguments)
-        {
-            Console.WriteLine(String.Format(message, arguments));
-        }
-
         public Exception Exception
         {
             get { return exception; }
             set { exception = value; }
         }
-
-        private Exception exception;
-
-        private bool isCall;
 
         //IExplorable
         public bool IsCall
@@ -86,14 +83,44 @@ namespace P.PRuntime
             set { isCall = value; }
         }
 
-        private bool isReturn;
-
         //IExplorable
         public bool IsReturn
         {
             get { return isReturn; }
             set { isReturn = value; }
         }
+        #endregion
+
+        #region Clone Function
+        public abstract PStateImpl MakeSkeleton();
+
+        public object Clone()
+        {
+            clonedState = MakeSkeleton();
+
+
+        }
+        #endregion
+
+        public void AddStateMachineToStateImpl(PrtMachine machine)
+        {
+            statemachines.Add(statemachines.Count, machine);
+        }
+
+        
+
+        
+
+        
+
+        
+
+        public void Trace(string message, params object[] arguments)
+        {
+            Console.WriteLine(String.Format(message, arguments));
+        }
+
+
 
         public void SetPendingChoicesAsBoolean(PrtMachine process)
         {

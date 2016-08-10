@@ -265,14 +265,14 @@ namespace P.PRuntime
                 if (arg != null)
                 {
                     application.Trace(
-                        @"<EnqueueLog> Enqueued Event < {0} > in {1}-{2} by {3}-{4}",
-                        e.name, this.Name, this.instance, source.Name, source.instance);
+                        @"<EnqueueLog> Enqueued Event <{0}, {1}> in {2}-{3} by {4}-{5}",
+                        e.name, arg.ToString(), this.Name, this.instance, source.Name, source.instance);
                 }
                 else
                 {
                     application.Trace(
-                        @"<EnqueueLog> Enqueued Event <{0}, {1}> in {2}-{3} by {4}-{5}",
-                        e.name, arg.ToString(), this.Name, this.instance, source.Name, source.instance);
+                        @"<EnqueueLog> Enqueued Event < {0} > in {1}-{2} by {3}-{4}",
+                        e.name, this.Name, this.instance, source.Name, source.instance);
                 }
 
                 this.buffer.EnqueueEvent(e, arg);

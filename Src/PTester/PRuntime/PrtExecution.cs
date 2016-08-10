@@ -12,7 +12,7 @@ namespace P.PRuntime
             get;
         }
 
-        public abstract void PushFrame(T parent, params PrtValue[] args);
+        public abstract List<PrtValue> CreateLocals(params PrtValue[] args);
 
         public abstract void Execute(StateImpl application, T parent);
     }
@@ -263,12 +263,12 @@ namespace P.PRuntime
 
     public class ContStackFrame
     {
-        public int returnTo;
+        public int returnTolocation;
         public List<PrtValue> locals;
-        public ContStackFrame(int ret, List<PrtValue> loc)
+        public ContStackFrame(int retLoc, List<PrtValue> _locals)
         {
-            returnTo = ret;
-            locals = loc.ToList();
+            returnTolocation = retLoc;
+            locals = _locals.ToList();
         }
     }
 
@@ -285,27 +285,15 @@ namespace P.PRuntime
         // Therefore, nondet should not be reinitialized in this class.
         public bool nondet;
 
-        public ContStackFrame TopOfStack
+        public Continuation()
         {
-            get
-            {
-                return contStack.Peek();
-            }
+            Reset();
         }
 
-        public Continuation()
+        private void Reset()
         {
             contStack = new Stack<ContStackFrame>();
             reason = ContinuationReason.Return;
-            createdMachine = null;
-            retVal = null;
-            nondet = false;
-            retLocals = null;
-        }
-
-        public void Reset()
-        {
-            contStack = new Stack<ContStackFrame>();
             createdMachine = null;
             retVal = null;
             nondet = false;

@@ -1059,7 +1059,7 @@ namespace P.PRuntime
             private void Enter(PrtMachine p)
             {
                 machine.cont = new Continuation();
-                fun.PushFrame((T)machine, payload);
+                machine.cont.PushContFrame(0, fun.CreateLocals(payload));
                 nextBlock = Blocks.B0;
             }
 

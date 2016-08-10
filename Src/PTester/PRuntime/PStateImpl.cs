@@ -18,7 +18,7 @@ namespace P.PRuntime
         }
         #endregion
 
-        public void AddStateMachine(PrtMachine machine)
+        public void AddStateMachineToStateImpl(PrtMachine machine)
         {
             statemachines.Add(nextStateMachineId, machine);
             nextStateMachineId++;

@@ -121,19 +121,22 @@ namespace SimpleMachine
 
         public Application(bool initialize) : base()
         {
-            //initialize all the fields
+            //initialize all non-static fields
+            MainMachines = new List<PrtMachine>();
+
+            //create the main machine
             CreateMainMachine();
 
         }
         #endregion
 
         //pass the right parameters here !!
-        public static Event dummy = new Event("dummy", null, 0, false);
+        public static Event dummy = new Event("dummy", PrtType.NullType, 100, false);
 
         public Machine<Main> CreateMainMachine()
         {
             var mainMachine = new Main(this, SizeOfMainMachines, 10);
-            AddStateMachine(mainMachine);
+            AddStateMachineToStateImpl(mainMachine);
             MainMachines.Add(mainMachine);
 
             return mainMachine;
@@ -176,12 +179,27 @@ namespace SimpleMachine
                 }
                 public override void Execute(StateImpl application, Main parent)
                 {
-                    throw new NotImplementedException();
+                    ContStackFrame currCont = parent.cont.PopContFrame();
+                    if (currCont.returnTolocation == 0)
+                        goto Loc_0;
+                    else
+                        goto Ret;
+
+
+                    Loc_0:
+                    parent.EnqueueEvent(application, dummy, PrtValue.NullValue, parent);
+                    parent.cont.Send(1, currCont.locals);
+
+                    Ret:
+                    parent.cont.Return(null);
                 }
 
-                public override void PushFrame(Main parent, params PrtValue[] args)
+                public override List<PrtValue> CreateLocals(params PrtValue[] args)
                 {
-                    throw new NotImplementedException();
+                    var locals = new List<PrtValue>();
+                    locals.AddRange(args);
+                    //no local variables hence nothing to add
+                    return locals;
                 }
             }
 
@@ -196,12 +214,27 @@ namespace SimpleMachine
                 }
                 public override void Execute(StateImpl application, Main parent)
                 {
-                    throw new NotImplementedException();
+                    ContStackFrame currCont = parent.cont.PopContFrame();
+                    if (currCont.returnTolocation == 0)
+                        goto Loc_0;
+                    else
+                        goto Ret;
+
+
+                    Loc_0:
+                    throw new PrtAssertFailureException();
+
+                    Ret:
+                    parent.cont.Return(null);
+
                 }
 
-                public override void PushFrame(Main parent, params PrtValue[] args)
+                public override List<PrtValue> CreateLocals(params PrtValue[] args)
                 {
-                    throw new NotImplementedException();
+                    var locals = new List<PrtValue>();
+                    locals.AddRange(args);
+                    //no local variables hence nothing to add
+                    return locals;
                 }
             }
 

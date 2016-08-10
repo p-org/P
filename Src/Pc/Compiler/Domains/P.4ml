@@ -63,8 +63,9 @@ domain PData
 	Assert   ::= new (arg: any Expr, msg: String + { NIL }, info: any SourceInfo). 
 	Segments ::= new (formatArg: Natural, str: String, tl: any Segments + { NIL }).
 	Print    ::= new (msg: String, segs: any Segments + { NIL }, args: any Exprs + { NIL }, info: any SourceInfo).
+	Goto	 ::= new (dst: any QualifiedName, arg: any Expr + { NIL }, info: any SourceInfo).
 	
-    Stmt ::= NewStmt + Raise + Send + Monitor + FunStmt + NulStmt + BinStmt + Return + While + Ite + Seq + Receive + Assert + Print. 
+    Stmt ::= NewStmt + Raise + Send + Monitor + FunStmt + NulStmt + BinStmt + Return + While + Ite + Seq + Receive + Assert + Print + Goto. 
 
 	SourceInfo ::= new (line: Natural, col: Natural).
 	FileInfo   ::= new (decl: FunDecl + AnonFunDecl, file: String + { NIL }).
@@ -344,6 +345,7 @@ domain PStaticTyping extends PData
 	SubSE(c, e) :- SubSE(c, Send(_, _, e, _, _)), e: Expr.
 	SubSE(c, e) :- SubSE(c, Raise(e, _, _)).
 	SubSE(c, e) :- SubSE(c, Raise(_, e, _)), e: Expr.
+	SubSE(c, e) :- SubSE(c, Goto(_, e, _)), e: Expr.
 	SubSE(c, e) :- SubSE(c, NewStmt(_, e, _)), e: Expr.
 	SubSE(c, e) :- SubSE(c, New(_, e)), e: Expr.
 	SubSE(c, es) :- SubSE(c, FunApp(_, es)), es: Exprs.
@@ -603,6 +605,8 @@ domain PStaticTyping extends PData
 	[rule_Classes = '"error, msg: variable is not available"']
 	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: NewStmt, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
 	[rule_Classes = '"error, msg: variable is not available"']
+	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: Goto, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
+	[rule_Classes = '"error, msg: variable is not available"']
 	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: Raise, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
 	[rule_Classes = '"error, msg: variable is not available"']
 	UnavailableVarAccessError(c, s, n) :- SubSE(c, s), s: Send, SubExpr(c, s, Name(n)), UnavailableBefore(c, s, n).
@@ -721,6 +725,16 @@ domain PStaticTyping extends PData
 	                                  CommStmtPLType(c, e, plt),                                  ///// < constant event expression
 									  TypeRel(t3, plt, k), k != SUB, t3 != plt.                   ///// < and pt is not a subtype of plt.
 
+	//// Error rules for goto.
+	[rule_Classes = '"error, msg: undefined state"']
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Goto(_, _, _), c.owner = NIL.
+	[rule_Classes = '"error, msg: undefined state"']
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Goto(dst, _, _), c.owner != NIL, no StateDecl(dst, c.owner, _, _, _).
+	[rule_Classes = '"error, msg: invalid payload type in goto"']
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Goto(dst, _, _), c.owner != NIL, s = StateDecl(dst, c.owner, _, _, _), 
+						   PayloadVar(s, _, _, _, ft), TypeOfArg1(c, e, et), 
+						   TypeRel(et, ft, k), et != ft, k != SUB.
+
 	//// Rules for monitor.
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Monitor(_, NIL, _),                           ///// < monitor has NIL payload,
 	                                  CommStmtPLType(c, e, plt), TypeRel(BaseType(NULL), plt, SUB).  ///// < event type contains null.
@@ -834,6 +848,7 @@ domain PStaticTyping extends PData
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Exprs(_, e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NamedExprs(_, e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Raise(e1, _, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Goto(_, e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Monitor(e1, _, _), TypeOf(c, e1, t1).
 
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Send(e1, _, _, _, _), TypeOf(c, e1, t1).
@@ -899,6 +914,7 @@ domain PStaticTyping extends PData
     /*************************************************************/
 	MaxNumLocals ::= (ctxt: TypingContext + Stmt + Cases, n: Natural).
 	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: NewStmt.
+	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: Goto.
 	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: Raise.
 	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: Send.
 	MaxNumLocals(e, 0) :- SubSE(c, e), c is TypingContext, e: Monitor.
@@ -1015,6 +1031,7 @@ domain PStaticTyping extends PData
     PurityError ::= (cntxt: TypingContext + StateDecl + TransDecl, expr: Typeable + String + AnonFunDecl).
 
 	ControlImpure ::= (TypingContext).
+	ControlImpure(c) :- SubSE(c, e), e : Goto.
 	ControlImpure(c) :- SubSE(c, e), e : Raise.
 	ControlImpure(c) :- SubSE(c, e), e = NulStmt(POP, _).
 	ControlImpure(c) :- SubSE(c, e), e = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), ControlImpure(called).
@@ -1134,6 +1151,7 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Exprs(_, e', _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);              
        SubSE(c, e), e = NamedExprs(_, e', _), e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = NewStmt(_, e', _),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
+	   SubSE(c, e), e = Goto(_, e', _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Raise(e', _, _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Raise(_, e', _),         e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);        
        SubSE(c, e), e = Send(e', _, _, _, _),       e' = FunApp(n, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
@@ -1155,7 +1173,8 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Exprs(_, e', _),         e' : New;              
        SubSE(c, e), e = NamedExprs(_, e', _), e' : New;
        SubSE(c, e), e = NewStmt(_, e', _),       e' : New;
-       SubSE(c, e), e = Raise(e', _, _),         e' : New;
+       SubSE(c, e), e = Goto(_, e', _),         e' : New;
+	   SubSE(c, e), e = Raise(e', _, _),         e' : New;
        SubSE(c, e), e = Raise(_, e', _),         e' : New;        
        SubSE(c, e), e = Send(e', _, _, _, _),       e' : New;
        SubSE(c, e), e = Send(_, e', _, _, _),       e' : New;
@@ -1176,6 +1195,7 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Exprs(_, e', _),         e' = NulApp(NONDET);              
        SubSE(c, e), e = NamedExprs(_, e', _), e' = NulApp(NONDET);
        SubSE(c, e), e = NewStmt(_, e', _),       e' = NulApp(NONDET);
+       SubSE(c, e), e = Goto(_, e', _),         e' = NulApp(NONDET);
        SubSE(c, e), e = Raise(e', _, _),         e' = NulApp(NONDET);
        SubSE(c, e), e = Raise(_, e', _),         e' = NulApp(NONDET);        
        SubSE(c, e), e = Send(e', _, _, _, _),       e' = NulApp(NONDET);
@@ -1197,6 +1217,7 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Exprs(_, e', _),         e' = NulApp(FAIRNONDET);              
        SubSE(c, e), e = NamedExprs(_, e', _), e' = NulApp(FAIRNONDET);
        SubSE(c, e), e = NewStmt(_, e', _),       e' = NulApp(FAIRNONDET);
+       SubSE(c, e), e = Goto(_, e', _),         e' = NulApp(FAIRNONDET);
        SubSE(c, e), e = Raise(e', _, _),         e' = NulApp(FAIRNONDET);
        SubSE(c, e), e = Raise(_, e', _),         e' = NulApp(FAIRNONDET);        
        SubSE(c, e), e = Send(e', _, _, _, _),       e' = NulApp(FAIRNONDET);
@@ -1223,6 +1244,8 @@ domain PStaticTyping extends PData
 	CompTypeRel(t1, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _), t2 = MapType(dom, _).      
 	CompTypeRel(t1, inpt)     :- TypeOfArg1(c, e, t1), e = FunApp(n, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _).
 	CompTypeRel(t1, t)        :- TypeOfArg1(c, e, t1), e : Return, FuncSig(c, _, t).
+	CompTypeRel(null, plt)    :- SubSE(c, e), c.owner != NIL, e = Goto(dst, NIL, _), null = BaseType(NULL), s = StateDecl(dst, c.owner, _, _, _), PayloadVar(s, _, _, _, plt).
+	CompTypeRel(t1, plt)      :- TypeOfArg1(c, e, t1), c.owner != NIL, e = Goto(dst, p, _), p != NIL, s = StateDecl(dst, c.owner, _, _, _), PayloadVar(s, _, _, _, plt).
 	CompTypeRel(null, plt)    :- CommStmtPLType(c, e, plt), e = Raise(_, NIL, _), null = BaseType(NULL).
 	CompTypeRel(pt, plt)      :- CommStmtPLType(c, e, plt), e = Raise(_, p, _), p != NIL, TypeOf(c, p, pt).
 	CompTypeRel(null, plt)    :- SubSE(c, e), e = Send(_, _, NIL, _, _), null = BaseType(NULL), CommStmtPLType(c, e, plt).

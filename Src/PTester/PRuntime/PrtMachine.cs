@@ -16,21 +16,18 @@ namespace P.PRuntime
     {
         #region Fields
         private PrtStateStack stateStack;
+        private PrtFunStack funStack;
         public PrtEventBuffer buffer;
         public int maxBufferSize;
         public int instance;
         public HashSet<PrtEvent> receiveSet;
-
         private bool isHalted;
         private bool isEnabled;
-        
         public List<PrtValue> fields;
         public PrtEvent currentEvent;
         public PrtValue currentArg;
-        public PrtContinuation cont;
         private bool doYield;
-        private Stack<PrtMethod> methodStack;
-        public PrtMethod lastFunctionCompleted;
+        
         #endregion
 
         public abstract PrtMachine Clone();
@@ -40,16 +37,18 @@ namespace P.PRuntime
         {
             isHalted = false;
             isEnabled = true;
-            stateStack = null;
+            stateStack = new PrtStateStack();
+            funStack = new PrtFunStack();
             fields = new List<PrtValue>();
-            cont = new PrtContinuation();
             buffer = new PrtEventBuffer();
             this.maxBufferSize = maxBuffSize;
             this.instance = app.AllStateMachines.Where(mach => mach.GetType() == T).Count() + 1;
             currentEvent = null;
             currentArg = PrtValue.NullValue;
             receiveSet = new HashSet<PrtEvent>();
-            PushMethod(new StartMethod(app, this));
+            
+            //Push the start state function on the funStack.
+            //TODO
         }
         #endregion
 
@@ -86,16 +85,6 @@ namespace P.PRuntime
             }
         }
 
-        public PrtMethod TopOfMethodStack
-        {
-            get
-            {
-                if (methodStack.Count == 0)
-                    return null;
-                else
-                    return methodStack.Peek();
-            }
-        }
 
         public PrtMachineStatus CurrentStatus
         {
@@ -126,51 +115,11 @@ namespace P.PRuntime
         }
         #endregion
 
+        public void RunStateMachine()
+        {
 
+        }
         
-
-        public void RunNextBlock()
-        {
-            Debug.Assert(TopOfMethodStack != null);
-            TopOfMethodStack.Dispatch(this);
-        }
-
-
-        public void MethodReturn()
-        {
-            PrtMethod returningMethod = PopMethod();
-
-            if (TopOfMethodStack != null)
-                lastFunctionCompleted = returningMethod;
-            else
-            {
-                lastFunctionCompleted = null;
-                DoYield = true;
-            }
-
-            if (TopOfMethodStack == null)
-            {
-                //Process has terminated 
-                //want to do something ???
-            }
-        }
-
-        public void CallMethod(PrtMethod method)
-        {
-            PushMethod(method);
-        }
-
-        public void PushMethod(PrtMethod method)
-        {
-            methodStack.Push(method);
-        }
-
-        public PrtMethod PopMethod()
-        {
-            Debug.Assert(TopOfMethodStack != null, "Pop on an empty method stack");
-            return methodStack.Pop();
-        }
-
         public void PushState(PrtState s)
         {
             stateStack.PushStackFrame(s);
@@ -393,7 +342,6 @@ namespace P.PRuntime
                 else
                 {
                     application.Trace(
-
                         @"<StateLog> Unhandled event exception by machine Real1-{0}",
                         machine.instance);
                     this.StateImpl.Exception = new PrtUnhandledEventException("Unhandled event exception by machine <mach name>");
@@ -611,6 +559,8 @@ namespace P.PRuntime
 
             // locals
             private Blocks nextBlock;
+            private PrtFun nextFunction;
+            private PrtValue currentPayload;
 
             // output
             private bool _ReturnValue;
@@ -648,7 +598,7 @@ namespace P.PRuntime
                 Enter = 1,
                 EnterStart = 2,
                 HandleEvent = 3,
-                ExecuteEntry = 4,
+                ExecuteFunction = 4,
                 CheckCont = 5,
                 B4 = 6,
                 B5 = 7,
@@ -693,9 +643,9 @@ namespace P.PRuntime
                             HandleEvent(p);
                             break;
                         }
-                    case Blocks.ExecuteEntry:
+                    case Blocks.ExecuteFunction:
                         {
-                            ExecuteEntry(p);
+                            ExecuteFunction(p);
                             break;
                         }
                     case Blocks.CheckCont:
@@ -747,12 +697,13 @@ namespace P.PRuntime
             public void EnterStart(PrtMachine p)
             {
                 p.PushState(p.StartState);
-                nextBlock = Blocks.ExecuteEntry;
+                nextFunction = p.CurrentState.entryFun;
+                nextBlock = Blocks.ExecuteFunction;
             }
 
-            private void ExecuteEntry(PrtMachine p)
+            private void ExecuteFunction(PrtMachine p)
             {
-                PrtMachine.ReentrancyHelperMethod callee = new PrtMachine.ReentrancyHelperMethod(application, machine, p.CurrentState.entryFun, p.currentArg);
+                PrtMachine.ReentrancyHelperMethod callee = new PrtMachine.ReentrancyHelperMethod(application, machine, nextFunction, p.currentArg);
                 p.CallMethod(callee);
                 nextBlock = Blocks.CheckCont;
             }
@@ -794,11 +745,11 @@ namespace P.PRuntime
 
             private void HandleEvent(PrtMachine p)
             {
-                if (p.CurrentState.dos.Contains(machine.currentEvent))
+                if (p.CurrentState.dos.ContainsKey(machine.currentEvent))
                 {
-                    fun = stateStack.Find(machine.currentEvent);
+                    nextFunction = stateStack.Find(machine.currentEvent);
                     //goto execute;
-                    nextBlock = Blocks.ExecuteEntry;
+                    nextBlock = Blocks.ExecuteFunction;
                 }
                 else
                 {
@@ -1009,7 +960,7 @@ namespace P.PRuntime
             }
         }
 
-        internal sealed class ProcessContinuationMethod : PrtMethod
+        internal sealed class ProcessContinuationMethod 
         {
             private static readonly short typeId = 4;
 
@@ -1095,19 +1046,16 @@ namespace P.PRuntime
                 {
                     _ReturnValue = true;
                     p.MethodReturn();
-                    StateImpl.IsReturn = true;
                 }
                 if (reason == PrtContinuationReason.Pop)
                 {
                     _ReturnValue = true;
                     p.MethodReturn();
-                    StateImpl.IsReturn = true;
                 }
                 if (reason == PrtContinuationReason.Raise)
                 {
                     _ReturnValue = true;
                     p.MethodReturn();
-                    StateImpl.IsReturn = true;
                 }
                 if (reason == PrtContinuationReason.Receive)
                 {
@@ -1120,7 +1068,6 @@ namespace P.PRuntime
                     {
                         application.Exception = ex;
                         p.MethodReturn();
-                        StateImpl.IsReturn = true;
                         return;
                     }
 
@@ -1164,7 +1111,6 @@ namespace P.PRuntime
                 // ContinuationReason.Receive
                 _ReturnValue = false;
                 p.MethodReturn();
-                StateImpl.IsReturn = true;
             }
         }
 
@@ -1189,23 +1135,6 @@ namespace P.PRuntime
         {
 
         }
-    }
-
-    public abstract class PrtMethod
-    {
-        public abstract PStateImpl StateImpl
-        {
-            get;
-            set;
-        }
-
-        public abstract ushort NextBlock
-        {
-            get;
-            set;
-        }
-
-        public abstract void Dispatch(PrtMachine m);
     }
 
 }

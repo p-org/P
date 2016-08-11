@@ -270,6 +270,8 @@ namespace P.PRuntime
         }
     }
 
+
+    #region Function Stack
     public enum PrtContinuationReason : int
     {
         Return,
@@ -281,25 +283,107 @@ namespace P.PRuntime
         NewMachine,
     };
 
-    public class PrtContStackFrame
+    public class PrtFunStackFrame
     {
-        public int returnTolocation;
         public List<PrtValue> locals;
-        public PrtContStackFrame(int retLoc, List<PrtValue> _locals)
+        public PrtContinuation cont;
+
+        public PrtFunStackFrame(List<PrtValue> locs)
         {
-            returnTolocation = retLoc;
-            locals = _locals.ToList();
+            cont = new PrtContinuation();
+            locals = locs.ToList();
         }
+    }
+
+    public class PrtFunStack
+    {
+        private Stack<PrtFunStackFrame> funStack;
+        public PrtFunStackFrame TopOfStack
+        {
+            get
+            {
+                return funStack.Peek();
+            }
+        }
+
+        public void DidReturn(List<PrtValue> retLocals)
+        {
+            var cont = new PrtContinuation();
+            cont.reason = PrtContinuationReason.Return;
+            cont.retVal = PrtValue.NullValue;
+            cont.retLocals = retLocals;
+            TopOfStack.cont = cont;
+        }
+
+        public void DidReturnVal(PrtValue val, List<PrtValue> retLocals)
+        {
+            var cont = new PrtContinuation();
+            cont.reason = PrtContinuationReason.Return;
+            cont.retVal = val;
+            cont.retLocals = retLocals;
+            TopOfStack.cont = cont;
+        }
+
+        public void DidPop()
+        {
+            var cont = new PrtContinuation();
+            cont.reason = PrtContinuationReason.Pop;
+            TopOfStack.cont = cont;
+        }
+
+        public void DidRaise()
+        {
+            var cont = new PrtContinuation();
+            cont.reason = PrtContinuationReason.Raise;
+            TopOfStack.cont = cont;
+        }
+
+        public void DidSend(int ret, List<PrtValue> locals)
+        {
+            var cont = new PrtContinuation();
+            cont.reason = PrtContinuationReason.Send;
+            cont.returnTolocation = ret;
+            TopOfStack.cont = cont;
+            TopOfStack.locals = locals.ToList();
+        }
+
+        void NewMachine(int ret, List<PrtValue> locals, PrtMachine o)
+        {
+            var cont = new PrtContinuation();
+            cont.reason = PrtContinuationReason.NewMachine;
+            cont.createdMachine = o;
+            cont.returnTolocation = ret;
+            TopOfStack.cont = cont;
+            TopOfStack.locals = locals.ToList();
+        }
+
+        void Receive(int ret, List<PrtValue> locals)
+        {
+            var cont = new PrtContinuation();
+            cont.reason = PrtContinuationReason.Receive;
+            cont.returnTolocation = ret;
+            TopOfStack.cont = cont;
+            TopOfStack.locals = locals.ToList();
+        }
+
+        void Nondet(int ret, List<PrtValue> locals)
+        {
+            var cont = new PrtContinuation();
+            cont.reason = PrtContinuationReason.Nondet;
+            cont.returnTolocation = ret;
+            TopOfStack.cont = cont;
+            TopOfStack.locals = locals.ToList();
+        }
+
     }
 
     public class PrtContinuation
     {
-        public Stack<PrtContStackFrame> contStack;
+        public int returnTolocation;
         public PrtContinuationReason reason;
         public PrtMachine createdMachine;
         public PrtValue retVal;
         public List<PrtValue> retLocals;
-
         // The nondet field is different from the fields above because it is used 
         // by ReentrancyHelper to pass the choice to the nondet choice point.
         // Therefore, nondet should not be reinitialized in this class.
@@ -307,85 +391,13 @@ namespace P.PRuntime
 
         public PrtContinuation()
         {
-            Reset();
-        }
-
-        private void Reset()
-        {
-            contStack = new Stack<PrtContStackFrame>();
             reason = PrtContinuationReason.Return;
             createdMachine = null;
             retVal = null;
             nondet = false;
             retLocals = null;
         }
-
-        public PrtContStackFrame PopContFrame()
-        {
-            return contStack.Pop();
-        }
-
-        public void PushContFrame(int ret, List<PrtValue> locals)
-        {
-            contStack.Push(new PrtContStackFrame(ret, locals));
-        }
-
-        public void Return(List<PrtValue> retLocals)
-        {
-            Reset();
-            reason = PrtContinuationReason.Return;
-            this.retVal = PrtValue.NullValue;
-            this.retLocals = retLocals;
-        }
-
-        public void ReturnVal(PrtValue val, List<PrtValue> retLocals)
-        {
-
-            Reset();
-            reason = PrtContinuationReason.Return;
-            this.retVal = val;
-            this.retLocals = retLocals;
-        }
-
-        public void Pop()
-        {
-            Reset();
-            this.reason = PrtContinuationReason.Pop;
-        }
-
-        public void Raise()
-        {
-            Reset();
-            this.reason = PrtContinuationReason.Raise;
-        }
-
-        public void Send(int ret, List<PrtValue> locals)
-        {
-            Reset();
-            this.reason = PrtContinuationReason.Send;
-            this.PushContFrame(ret, locals);
-        }
-
-        void NewMachine(int ret, List<PrtValue> locals, PrtMachine o)
-        {
-            Reset();
-            this.reason = PrtContinuationReason.NewMachine;
-            this.createdMachine = o;
-            this.PushContFrame(ret, locals);
-        }
-
-        void Receive(int ret, List<PrtValue> locals)
-        {
-            Reset();
-            this.reason = PrtContinuationReason.Receive;
-            this.PushContFrame(ret, locals);
-        }
-
-        void Nondet(int ret, List<PrtValue> locals)
-        {
-            Reset();
-            this.reason = PrtContinuationReason.Nondet;
-            this.PushContFrame(ret, locals);
-        }
     }
+
+    #endregion
 }

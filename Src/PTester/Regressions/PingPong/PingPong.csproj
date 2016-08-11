@@ -65,7 +65,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\PRuntime\PRuntime.csproj">
       <Project>{1cb4a7ca-b1d6-42e1-8a6f-919369fdcfc9}</Project>
-      <Name>Prt</Name>
+      <Name>PRuntime</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

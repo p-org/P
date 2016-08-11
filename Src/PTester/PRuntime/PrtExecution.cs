@@ -214,13 +214,29 @@ namespace P.PRuntime
         public PrtStateStackFrame(PrtState st, HashSet<PrtEvent> defSet, HashSet<PrtEvent> actSet)
         {
             this.state = st;
-            this.deferredSet = defSet;
-            this.actionSet = actSet;
+            this.deferredSet = new HashSet<PrtEvent>();
+            foreach (var item in defSet)
+                this.deferredSet.Add(item);
+
+            this.actionSet = new HashSet<PrtEvent>();
+            foreach (var item in actSet)
+                this.actionSet.Add(item);
         }
+
+        public PrtStateStackFrame Clone()
+        {
+            return new PrtStateStackFrame(state, deferredSet, actionSet);
+        }
+
     }
     
     internal class PrtStateStack
     {
+        public PrtStateStack()
+        {
+            stateStack = new Stack<PrtStateStackFrame>();
+        }
+
         private Stack<PrtStateStackFrame> stateStack;
 
         public PrtStateStackFrame TopOfStack
@@ -234,10 +250,22 @@ namespace P.PRuntime
             }
         }
        
+        public PrtStateStack Clone()
+        {
+            var clone = new PrtStateStack();
+            foreach(var s in stateStack)
+            {
+                clone.stateStack.Push(s.Clone());
+            }
+            clone.stateStack.Reverse();
+            return clone;
+        }
+
         public void PopStackFrame()
         {
             stateStack.Pop();
         }
+
 
         public void PushStackFrame(PrtState state)
         {
@@ -287,9 +315,10 @@ namespace P.PRuntime
     {
         public List<PrtValue> locals;
         public PrtContinuation cont;
-
-        public PrtFunStackFrame(List<PrtValue> locs)
+        public PrtFun fun;
+        public PrtFunStackFrame(PrtFun fun,  List<PrtValue> locs)
         {
+            this.fun = fun;
             cont = new PrtContinuation();
             locals = locs.ToList();
         }
@@ -304,6 +333,16 @@ namespace P.PRuntime
             {
                 return funStack.Peek();
             }
+        }
+
+        public void PushFun(PrtFun fun, List<PrtValue> locals)
+        {
+            funStack.Push(new PrtFunStackFrame(fun, locals));
+        }
+
+        public void PopFun()
+        {
+            funStack.Pop();
         }
 
         public void DidReturn(List<PrtValue> retLocals)
@@ -347,7 +386,7 @@ namespace P.PRuntime
             TopOfStack.locals = locals.ToList();
         }
 
-        void NewMachine(int ret, List<PrtValue> locals, PrtMachine o)
+        void DidNewMachine(int ret, List<PrtValue> locals, PrtMachine o)
         {
             var cont = new PrtContinuation();
             cont.reason = PrtContinuationReason.NewMachine;
@@ -357,7 +396,7 @@ namespace P.PRuntime
             TopOfStack.locals = locals.ToList();
         }
 
-        void Receive(int ret, List<PrtValue> locals)
+        void DidReceive(int ret, List<PrtValue> locals)
         {
             var cont = new PrtContinuation();
             cont.reason = PrtContinuationReason.Receive;
@@ -366,7 +405,7 @@ namespace P.PRuntime
             TopOfStack.locals = locals.ToList();
         }
 
-        void Nondet(int ret, List<PrtValue> locals)
+        void DidNondet(int ret, List<PrtValue> locals)
         {
             var cont = new PrtContinuation();
             cont.reason = PrtContinuationReason.Nondet;

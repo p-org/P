@@ -27,7 +27,7 @@ namespace P.PRuntime
         public PrtEvent currentEvent;
         public PrtValue currentArg;
         private bool doYield;
-        
+        private PrtSMNextOperation nextOperation;
         #endregion
 
         public abstract PrtMachine Clone();
@@ -46,9 +46,10 @@ namespace P.PRuntime
             currentEvent = null;
             currentArg = PrtValue.NullValue;
             receiveSet = new HashSet<PrtEvent>();
-            
+
             //Push the start state function on the funStack.
-            //TODO
+            stateStack.PushStackFrame(StartState);
+            nextOperation = PrtSMNextOperation.EntryOperation;
         }
         #endregion
 
@@ -115,8 +116,84 @@ namespace P.PRuntime
         }
         #endregion
 
+        internal enum PrtSMNextOperation
+        {
+            EntryOperation,
+            DequeueOperation,
+            HandleEventOperation,
+            ReceiveOperation
+        }
+
+
+        public PrtFun FindActionHandler(PrtEvent ev)
+        {
+            var tempStateStack = stateStack.Clone();
+            while(tempStateStack.TopOfStack != null)
+            {
+                if (tempStateStack.TopOfStack.state.dos.ContainsKey(ev))
+                {
+                    return tempStateStack.TopOfStack.state.dos[ev];
+                }
+                else
+                    tempStateStack.PopStackFrame();
+            }
+            Debug.Assert(false);
+            return null;
+        }
+
         public void RunStateMachine()
         {
+            Debug.Assert(IsEnabled);
+
+            switch (nextOperation)
+            {
+                case PrtSMNextOperation.EntryOperation:
+                    goto DoEntry;
+                case PrtSMNextOperation.DequeueOperation:
+                    goto DoDequeue;
+                    break;
+                case PrtSMNextOperation.HandleEventOperation:
+                    goto DoHandleEvent;
+                    break;
+                case PrtSMNextOperation.ReceiveOperation:
+                    goto DoReceive;
+                    break;
+            }
+
+    DoEntry:
+            //Trace: entered state
+            if(funStack.TopOfStack == null)
+            {
+                funStack.PushFun(CurrentState.entryFun, CurrentState.entryFun.CreateLocals());
+            }
+            goto ExecuteReentrancy;
+
+    DoAction:
+            if(funStack.TopOfStack == null)
+            {
+                var currentAction = FindActionHandler(currentEvent);
+                funStack.PushFun(currentAction, currentAction.CreateLocals());
+            }
+            goto ExecuteReentrancy;
+
+    DoDequeue:
+            //Handle the do deque phase
+
+    DoHandleEvent:
+            //Perform the handle event case
+            
+          
+    ExecuteReentrancy:
+
+            // All re-entrancy code will do here 
+            goto CheckLastOperation;
+
+
+
+
+
+
+
 
         }
         

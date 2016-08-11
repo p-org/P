@@ -10,7 +10,7 @@ namespace P.PRuntime
 
         public PrtType type;
         public bool bl;
-        public Event ev;
+        public PrtEvent ev;
         public int nt;
         public PrtMachine mach;
         public List<PrtValue> tuple;
@@ -291,12 +291,12 @@ namespace P.PRuntime
             return prmVal.bl;
         }
 
-        public static void PrtPrimSetEvent(PrtValue prmVal, Event value)
+        public static void PrtPrimSetEvent(PrtValue prmVal, PrtEvent value)
         {
             prmVal.ev = value;
         }
 
-        public static Event PrtPrimGetEvent(PrtValue prmVal)
+        public static PrtEvent PrtPrimGetEvent(PrtValue prmVal)
         {
             return prmVal.ev;
         }

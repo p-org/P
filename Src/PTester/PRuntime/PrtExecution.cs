@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace P.PRuntime
 {
-    public abstract class Fun<T>
+    public abstract class PrtFun
     {
         public abstract string Name
         {
@@ -14,36 +14,39 @@ namespace P.PRuntime
 
         public abstract List<PrtValue> CreateLocals(params PrtValue[] args);
 
-        public abstract void Execute(PStateImpl application, T parent);
+        public abstract void Execute(PStateImpl application, PrtMachine parent);
     }
 
-    public class Event
+    public class PrtEvent
     {
-        public static Event NullEvent;
-        public static Event HaltEvent;
+        public static int DefaultMaxInstances = int.MaxValue;
+        public static PrtEvent NullEvent = new PrtEvent("Null", PrtType.NullType, DefaultMaxInstances, false);
+        public static PrtEvent HaltEvent = new PrtEvent("Halt", PrtType.NullType, DefaultMaxInstances, false);
+        
+
         public string name;
-        public PrtType payload;
+        public PrtType payloadType;
         public int maxInstances;
         public bool doAssume;
 
-        public Event(string name, PrtType payload, int mInstances, bool doAssume)
+        public PrtEvent(string name, PrtType payload, int mInstances, bool doAssume)
         {
             this.name = name;
-            this.payload = payload;
+            this.payloadType = payload;
             this.maxInstances = mInstances;
             this.doAssume = doAssume;
         }
     };
 
-    public class Transition<T>
+    public class PrtTransition
     {
-        public Fun<T> fun; // isPush <==> fun == null
-        public State<T> to;
+        public PrtFun transitionFun; // isPush <==> fun == null
+        public PrtState gotoState;
 
-        public Transition(Fun<T> fun, State<T> to)
+        public PrtTransition(PrtFun fun, PrtState toState)
         {
-            this.fun = fun;
-            this.to = to;
+            this.transitionFun = fun;
+            this.gotoState = toState;
         }
     };
 
@@ -54,40 +57,40 @@ namespace P.PRuntime
         Hot
     };
 
-    public class State<T>
+    public class PrtState
     {
         public string name;
-        public Fun<T> entryFun;
-        public Fun<T> exitFun;
-        public Dictionary<Event, Transition<T>> transitions;
-        public Dictionary<Event, Fun<T>> dos;
+        public PrtFun entryFun;
+        public PrtFun exitFun;
+        public Dictionary<PrtEvent, PrtTransition> transitions;
+        public Dictionary<PrtEvent, PrtFun> dos;
         public bool hasNullTransition;
         public StateTemperature temperature;
-        public HashSet<Event> deferredSet;
+        public HashSet<PrtEvent> deferredSet;
 
-        public State(string name, Fun<T> entryFun, Fun<T> exitFun, bool hasNullTransition, StateTemperature temperature)
+        public PrtState(string name, PrtFun entryFun, PrtFun exitFun, bool hasNullTransition, StateTemperature temperature)
         {
             this.name = name;
             this.entryFun = entryFun;
             this.exitFun = exitFun;
-            this.transitions = new Dictionary<Event, Transition<T>>();
-            this.dos = new Dictionary<Event, Fun<T>>();
+            this.transitions = new Dictionary<PrtEvent, PrtTransition>();
+            this.dos = new Dictionary<PrtEvent, PrtFun>();
             this.hasNullTransition = hasNullTransition;
             this.temperature = temperature;
         }
 
-        public Transition<T> FindPushTransition(Event evt)
+        public PrtTransition FindPushTransition(PrtEvent evt)
         {
             if (transitions.ContainsKey(evt))
             {
-                Transition<T> transition = transitions[evt];
-                if (transition.fun == null)
+                PrtTransition transition = transitions[evt];
+                if (transition.transitionFun == null)
                     return transition;
             }
             return null;
         }
 
-        public Transition<T> FindTransition(Event evt)
+        public PrtTransition FindTransition(PrtEvent evt)
         {
             if (transitions.ContainsKey(evt))
             {
@@ -100,41 +103,40 @@ namespace P.PRuntime
         }
     };
 
-    public class EventNode
+    public class PrtEventNode
     {
-        public Event ev;
+        public PrtEvent ev;
         public PrtValue arg;
 
-        public EventNode(Event e, PrtValue payload)
+        public PrtEventNode(PrtEvent e, PrtValue payload)
         {
             ev = e;
             arg = payload;
         }
     }
 
-    public class EventBuffer<T> where T: Machine<T>
+    public class PrtEventBuffer
     {
-        List<EventNode> events;
-        public EventBuffer()
+        List<PrtEventNode> events;
+        public PrtEventBuffer()
         {
-            events = new List<EventNode>();
+            events = new List<PrtEventNode>();
         }
 
         public int Size()
         {
             return events.Count();
         }
-        public int CalculateInstances(Event e)
+        public int CalculateInstances(PrtEvent e)
         {
             return events.Select(en => en.ev).Where(ev => ev == e).Count();
         }
 
-        public void EnqueueEvent(Event e, PrtValue arg)
+        public void EnqueueEvent(PrtEvent e, PrtValue arg)
         {
-            //TODO : -1 seems odd fix this
-            if (e.maxInstances == -1)
+            if (e.maxInstances == PrtEvent.DefaultMaxInstances)
             {
-                events.Add(new EventNode(e, arg));
+                events.Add(new PrtEventNode(e, arg));
             }
             else
             {
@@ -152,15 +154,15 @@ namespace P.PRuntime
                 }
                 else
                 {
-                    events.Add(new EventNode(e, arg));
+                    events.Add(new PrtEventNode(e, arg));
                 }
             }
         }
 
-        public void DequeueEvent(T owner)
+        public void DequeueEvent(PrtMachine owner)
         {
-            HashSet<Event> deferredSet;
-            HashSet<Event> receiveSet;
+            HashSet<PrtEvent> deferredSet;
+            HashSet<PrtEvent> receiveSet;
 
             deferredSet = owner.stateStack.deferredSet;
             receiveSet = owner.receiveSet;
@@ -183,10 +185,10 @@ namespace P.PRuntime
             }
         }
 
-        public bool IsEnabled(T owner)
+        public bool IsEnabled(PrtMachine owner)
         {
-            HashSet<Event> deferredSet;
-            HashSet<Event> receiveSet;
+            HashSet<PrtEvent> deferredSet;
+            HashSet<PrtEvent> receiveSet;
 
             deferredSet = owner.stateStack.deferredSet;
             receiveSet = owner.receiveSet;
@@ -203,54 +205,67 @@ namespace P.PRuntime
         }
     }
 
-    public class StateStack<T>
+    internal class PrtStateStackFrame
     {
-        public State<T> state;
-        public HashSet<Event> deferredSet;
-        public HashSet<Event> actionSet;
-        public StateStack<T> next;
+        public PrtState state;
+        public HashSet<PrtEvent> deferredSet;
+        public HashSet<PrtEvent> actionSet;
 
-        public Fun<T> Find(Event f)
+        public PrtStateStackFrame(PrtState st, HashSet<PrtEvent> defSet, HashSet<PrtEvent> actSet)
         {
-            if (state.dos.ContainsKey(f))
+            this.state = st;
+            this.deferredSet = defSet;
+            this.actionSet = actSet;
+        }
+    }
+    
+    internal class PrtStateStack
+    {
+        private Stack<PrtStateStackFrame> stateStack;
+
+        public PrtStateStackFrame TopOfStack
+        {
+            get
             {
-                return state.dos[f];
-            }
-            else
-            {
-                return next.Find(f);
+                if (stateStack.Count > 0)
+                    return stateStack.Peek();
+                else
+                    return null;
             }
         }
-
-        public void CalculateDeferredAndActionSet()
+       
+        public void PushStackFrame(PrtState state)
         {
-            deferredSet = new HashSet<Event>();
-            if (next != null)
+            var deferredSet = new HashSet<PrtEvent>();
+            if (TopOfStack != null)
             {
-                deferredSet.UnionWith(next.deferredSet);
+                deferredSet.UnionWith(TopOfStack.deferredSet);
             }
             deferredSet.UnionWith(state.deferredSet);
             deferredSet.ExceptWith(state.dos.Keys);
             deferredSet.ExceptWith(state.transitions.Keys);
 
-            actionSet = new HashSet<Event>();
-            if (next != null)
+            var actionSet = new HashSet<PrtEvent>();
+            if (TopOfStack != null)
             {
-                actionSet.UnionWith(next.actionSet);
+                actionSet.UnionWith(TopOfStack.actionSet);
             }
             actionSet.ExceptWith(state.deferredSet);
             actionSet.UnionWith(state.dos.Keys);
             actionSet.ExceptWith(state.transitions.Keys);
+
+            //push the new state on stack
+            stateStack.Push(new PrtStateStackFrame(state, deferredSet, actionSet));
         }
 
         public bool HasNullTransitionOrAction()
         {
-            if (state.hasNullTransition) return true;
-            return actionSet.Contains(Event.NullEvent);
+            if (TopOfStack.state.hasNullTransition) return true;
+            return TopOfStack.actionSet.Contains(PrtEvent.NullEvent);
         }
     }
 
-    public enum ContinuationReason : int
+    public enum PrtContinuationReason : int
     {
         Return,
         Nondet,
@@ -261,21 +276,21 @@ namespace P.PRuntime
         NewMachine,
     };
 
-    public class ContStackFrame
+    public class PrtContStackFrame
     {
         public int returnTolocation;
         public List<PrtValue> locals;
-        public ContStackFrame(int retLoc, List<PrtValue> _locals)
+        public PrtContStackFrame(int retLoc, List<PrtValue> _locals)
         {
             returnTolocation = retLoc;
             locals = _locals.ToList();
         }
     }
 
-    public class Continuation
+    public class PrtContinuation
     {
-        public Stack<ContStackFrame> contStack;
-        public ContinuationReason reason;
+        public Stack<PrtContStackFrame> contStack;
+        public PrtContinuationReason reason;
         public PrtMachine createdMachine;
         public PrtValue retVal;
         public List<PrtValue> retLocals;
@@ -285,35 +300,35 @@ namespace P.PRuntime
         // Therefore, nondet should not be reinitialized in this class.
         public bool nondet;
 
-        public Continuation()
+        public PrtContinuation()
         {
             Reset();
         }
 
         private void Reset()
         {
-            contStack = new Stack<ContStackFrame>();
-            reason = ContinuationReason.Return;
+            contStack = new Stack<PrtContStackFrame>();
+            reason = PrtContinuationReason.Return;
             createdMachine = null;
             retVal = null;
             nondet = false;
             retLocals = null;
         }
 
-        public ContStackFrame PopContFrame()
+        public PrtContStackFrame PopContFrame()
         {
             return contStack.Pop();
         }
 
         public void PushContFrame(int ret, List<PrtValue> locals)
         {
-            contStack.Push(new ContStackFrame(ret, locals));
+            contStack.Push(new PrtContStackFrame(ret, locals));
         }
 
         public void Return(List<PrtValue> retLocals)
         {
             Reset();
-            reason = ContinuationReason.Return;
+            reason = PrtContinuationReason.Return;
             this.retVal = PrtValue.NullValue;
             this.retLocals = retLocals;
         }
@@ -322,7 +337,7 @@ namespace P.PRuntime
         {
 
             Reset();
-            reason = ContinuationReason.Return;
+            reason = PrtContinuationReason.Return;
             this.retVal = val;
             this.retLocals = retLocals;
         }
@@ -330,26 +345,26 @@ namespace P.PRuntime
         public void Pop()
         {
             Reset();
-            this.reason = ContinuationReason.Pop;
+            this.reason = PrtContinuationReason.Pop;
         }
 
         public void Raise()
         {
             Reset();
-            this.reason = ContinuationReason.Raise;
+            this.reason = PrtContinuationReason.Raise;
         }
 
         public void Send(int ret, List<PrtValue> locals)
         {
             Reset();
-            this.reason = ContinuationReason.Send;
+            this.reason = PrtContinuationReason.Send;
             this.PushContFrame(ret, locals);
         }
 
         void NewMachine(int ret, List<PrtValue> locals, PrtMachine o)
         {
             Reset();
-            this.reason = ContinuationReason.NewMachine;
+            this.reason = PrtContinuationReason.NewMachine;
             this.createdMachine = o;
             this.PushContFrame(ret, locals);
         }
@@ -357,14 +372,14 @@ namespace P.PRuntime
         void Receive(int ret, List<PrtValue> locals)
         {
             Reset();
-            this.reason = ContinuationReason.Receive;
+            this.reason = PrtContinuationReason.Receive;
             this.PushContFrame(ret, locals);
         }
 
         void Nondet(int ret, List<PrtValue> locals)
         {
             Reset();
-            this.reason = ContinuationReason.Nondet;
+            this.reason = PrtContinuationReason.Nondet;
             this.PushContFrame(ret, locals);
         }
     }

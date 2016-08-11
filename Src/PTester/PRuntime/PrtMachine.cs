@@ -5,62 +5,75 @@ using System.Diagnostics;
 
 namespace P.PRuntime
 {
-
-    public abstract class PrtBaseClass
+    public enum PrtMachineStatus
     {
+        Enabled,        // The state machine is enabled
+        Blocked,        // The state machine is blocked on a dequeue or receive
+        Halted,         // The state machine has halted
+    };
+
+    public abstract class PrtMachine
+    {
+        #region Fields
+        private PrtStateStack stateStack;
+        public PrtEventBuffer buffer;
+        public int maxBufferSize;
+        public int instance;
+        public HashSet<PrtEvent> receiveSet;
+
+        private bool isHalted;
+        private bool isEnabled;
+        
+        public List<PrtValue> fields;
+        public PrtEvent currentEvent;
+        public PrtValue currentArg;
+        public PrtContinuation cont;
+        private bool doYield;
+        private Stack<PrtMethod> methodStack;
+        public PrtMethod lastFunctionCompleted;
+        #endregion
+
+        public abstract PrtMachine Clone();
+
+        #region Constructor
+        public PrtMachine(PStateImpl app, int maxBuffSize, Type T)
+        {
+            isHalted = false;
+            isEnabled = true;
+            stateStack = null;
+            fields = new List<PrtValue>();
+            cont = new PrtContinuation();
+            buffer = new PrtEventBuffer();
+            this.maxBufferSize = maxBuffSize;
+            this.instance = app.AllStateMachines.Where(mach => mach.GetType() == T).Count() + 1;
+            currentEvent = null;
+            currentArg = PrtValue.NullValue;
+            receiveSet = new HashSet<PrtEvent>();
+            PushMethod(new StartMethod(app, this));
+        }
+        #endregion
+
+        #region getters and setters
         public abstract string Name
         {
             get;
         }
-
-        public List<PrtValue> fields;
-        public Event currentEvent;
-        public PrtValue currentArg;
-        public Continuation cont;
-
-    }
-
-    public abstract class PrtMachine : PrtBaseClass
-    {
-        public abstract bool IsHalted
-        {
-            get;
-        }
-
-        public abstract bool IsEnabled
-        {
-            get;
-        }
-
-        public enum PrtSMStatus
-        {
-            Enabled,        // The state machine is enabled
-            Blocked,        // The state machine is blocked on a dequeue or receive
-            Halted,         // The state machine has halted
-        };
-
-        public PrtSMStatus CurrentStatus
+        public bool IsHalted
         {
             get
             {
-                if (IsHalted)
-                {
-                    return PrtSMStatus.Halted;
-                }
-                else if (IsEnabled)
-                {
-                    return PrtSMStatus.Enabled;
-                }
-                else
-                {
-                    return PrtSMStatus.Blocked;
-                }
+                return isHalted;
             }
-
         }
 
-        private bool doYield;
-        
+        public bool IsEnabled
+        {
+            get
+            {
+                return isEnabled;
+            }
+        }
+
         public bool DoYield
         {
             get
@@ -73,16 +86,48 @@ namespace P.PRuntime
             }
         }
 
-        private Stack<PrtMethod> methodStack;
-        public PrtMethod lastFunctionCompleted;
-
-        public PrtMachine()
+        public PrtMethod TopOfMethodStack
         {
-            methodStack = new Stack<PrtMethod>();
-
-            doYield = true;
+            get
+            {
+                if (methodStack.Count == 0)
+                    return null;
+                else
+                    return methodStack.Peek();
+            }
         }
 
+        public PrtMachineStatus CurrentStatus
+        {
+            get
+            {
+                if (IsHalted)
+                {
+                    return PrtMachineStatus.Halted;
+                }
+                else if (IsEnabled)
+                {
+                    return PrtMachineStatus.Enabled;
+                }
+                else
+                {
+                    return PrtMachineStatus.Blocked;
+                }
+            }
+
+        }
+
+        public PrtState CurrentState
+        {
+            get
+            {
+                return stateStack.TopOfStack.state;
+            }
+        }
+        #endregion
+
+
+        
 
         public void RunNextBlock()
         {
@@ -126,117 +171,23 @@ namespace P.PRuntime
             return methodStack.Pop();
         }
 
-        public PrtMethod TopOfMethodStack
+        public void PushState(PrtState s)
         {
-            get
-            {
-                if (methodStack.Count == 0)
-                    return null;
-                else
-                    return methodStack.Peek();
-            }
-        }
-   
-
-    }
-
-    public abstract class PrtMonitor : PrtBaseClass
-    {
-        public abstract bool IsHot
-        {
-            get;
-        }
-    }
-
-    public abstract class Monitor<T> : PrtMonitor
-    {
-
-        public abstract State<T> StartState
-        {
-            get;
-        }
-
-        public abstract void Invoke();
-    }
-
-    public abstract class PrtMethod
-    {
-        public abstract PStateImpl StateImpl
-        {
-            get;
-            set;
-        }
-
-        public abstract ushort NextBlock
-        {
-            get;
-            set;
-        }
-
-        public abstract void Dispatch(PrtMachine m);
-    }
-
-    public abstract class Machine<T> : PrtMachine where T : Machine<T>
-    {
-        public StateStack<T> stateStack;
-        public EventBuffer<T> buffer;
-        public int maxBufferSize;
-        public int instance;
-        public HashSet<Event> receiveSet;
-
-        private bool isHalted;
-        private bool isEnabled;
-        public override bool IsHalted
-        {
-            get
-            {
-                return isHalted;
-            }
-        }
-
-        public override bool IsEnabled
-        {
-            get
-            {
-                return isEnabled;
-            }
-        }
-        public Machine(PStateImpl app, int maxBufferSize)
-        {
-            isHalted = false;
-            isEnabled = true;
-            stateStack = null;
-            fields = new List<PrtValue>();
-            cont = new Continuation();
-            buffer = new EventBuffer<T>();
-            this.maxBufferSize = maxBufferSize;
-            this.instance = app.AllStateMachines.Where(mach => mach is T).Count() + 1;
-            currentEvent = null;
-            currentArg = PrtValue.NullValue;
-            receiveSet = new HashSet<Event>();
-            PushMethod(new StartMethod(app, this));
-        }
-
-        public void PushState(State<T> s)
-        {
-            StateStack<T> ss = new StateStack<T>();
-            ss.next = this.stateStack;
-            ss.state = s;
-            this.stateStack = ss;
+            stateStack.PushStackFrame(s);
         }
 
         public void PopState()
         {
-            this.stateStack = this.stateStack.next;
+            stateStack.PopStackFrame();
         }
 
 
-        public abstract State<T> StartState
+        public abstract PrtState StartState
         {
             get;
         }
 
-        public void EnqueueEvent(PStateImpl application, Event e, PrtValue arg, Machine<T> source)
+        public void EnqueueEvent(PStateImpl application, PrtEvent e, PrtValue arg, PrtMachine source)
         {
             PrtType prtType;
 
@@ -246,7 +197,7 @@ namespace P.PRuntime
             }
 
             //assertion to check if argument passed inhabits the payload type.
-            prtType = e.payload;
+            prtType = e.payloadType;
 
             if ((arg.type.typeKind == PrtTypeKind.PRT_KIND_NULL)
                 || (prtType.typeKind != PrtTypeKind.PRT_KIND_NULL && !PrtValue.PrtInhabitsType(arg, prtType)))
@@ -282,7 +233,7 @@ namespace P.PRuntime
                         String.Format(@"<EXCEPTION> Event Buffer Size Exceeded {0} in Machine {1}-{2}",
                         this.maxBufferSize, this.Name, this.instance));
                 }
-                if (!isEnabled && this.buffer.IsEnabled((T)this))
+                if (!isEnabled && this.buffer.IsEnabled(this))
                 {
                     isEnabled = true;
                 }
@@ -299,7 +250,7 @@ namespace P.PRuntime
         {
             currentEvent = null;
             currentArg = null;
-            buffer.DequeueEvent((T)this);
+            buffer.DequeueEvent(this);
             if (currentEvent != null)
             {
                 if (currentArg == null)
@@ -314,7 +265,7 @@ namespace P.PRuntime
                 application.Trace(
                     "<DequeueLog> Dequeued Event < {0}, {1} > at Machine {2}-{3}\n",
                     currentEvent.name, currentArg.ToString(), Name, instance);
-                receiveSet = new HashSet<Event>();
+                receiveSet = new HashSet<PrtEvent>();
                 return DequeueEventReturnStatus.SUCCESS;
             }
             else if (hasNullTransition || receiveSet.Contains(currentEvent))
@@ -327,7 +278,7 @@ namespace P.PRuntime
                     "<NullTransLog> Null transition taken by Machine {0}-{1}\n",
                     Name, instance);
                 currentArg = PrtValue.NullValue;
-                receiveSet = new HashSet<Event>();
+                receiveSet = new HashSet<PrtEvent>();
                 return DequeueEventReturnStatus.NULL;
             }
             else
@@ -351,12 +302,12 @@ namespace P.PRuntime
             private static readonly short typeId = 0;
 
             private PStateImpl application;
-            private Machine<T> machine;
+            private PrtMachine machine;
 
             // locals
             private Blocks nextBlock;
 
-            public StartMethod(PStateImpl app, Machine<T> machine)
+            public StartMethod(PStateImpl app, PrtMachine machine)
             {
                 application = app;
                 this.machine = machine;
@@ -417,7 +368,7 @@ namespace P.PRuntime
 
             private void Enter(PrtMachine p)
             {
-                Machine<T>.RunMethod callee = new Machine<T>.RunMethod(application, machine, machine.StartState);
+                PrtMachine.RunMethod callee = new PrtMachine.RunMethod(application, machine, machine.StartState);
                 p.CallMethod(callee);
                 nextBlock = Blocks.B0;
             }
@@ -429,7 +380,7 @@ namespace P.PRuntime
                 var currentEvent = machine.currentEvent;
 
                 //Checking if currentEvent is halt:
-                if (currentEvent == Event.HaltEvent)
+                if (currentEvent == PrtEvent.HaltEvent)
                 {
                     machine.stateStack = null;
                     machine.buffer = null;
@@ -456,16 +407,16 @@ namespace P.PRuntime
             private static readonly short typeId = 1;
 
             private PStateImpl application;
-            private Machine<T> machine;
+            private PrtMachine machine;
 
             // inputs
-            private State<T> state;
+            private PrtState state;
 
             // locals
             private Blocks nextBlock;
             private bool doPop;
 
-            public RunMethod(PStateImpl app, Machine<T> machine)
+            public RunMethod(PStateImpl app, PrtMachine machine)
             {
                 application = app;
                 nextBlock = Blocks.Enter;
@@ -473,7 +424,7 @@ namespace P.PRuntime
                 this.state = null;
             }
 
-            public RunMethod(PStateImpl app, Machine<T> machine, State<T> state)
+            public RunMethod(PStateImpl app, PrtMachine machine, PrtState state)
             {
                 application = app;
                 nextBlock = Blocks.Enter;
@@ -572,7 +523,7 @@ namespace P.PRuntime
 
             private void B4(PrtMachine p)
             {
-                doPop = ((Machine<T>.RunHelperMethod)p.lastFunctionCompleted).ReturnValue;
+                doPop = ((PrtMachine.RunHelperMethod)p.lastFunctionCompleted).ReturnValue;
                 p.lastFunctionCompleted = null;
 
                 //B1 is header of the "while" loop:
@@ -581,7 +532,7 @@ namespace P.PRuntime
 
             private void B3(PrtMachine p)
             {
-                Machine<T>.RunHelperMethod callee = new Machine<T>.RunHelperMethod(application, machine, false);
+                PrtMachine.RunHelperMethod callee = new PrtMachine.RunHelperMethod(application, machine, false);
                 p.CallMethod(callee);
                 nextBlock = Blocks.B4;
             }
@@ -633,7 +584,7 @@ namespace P.PRuntime
             private void B0(PrtMachine p)
             {
                 //Return from RunHelper:
-                doPop = ((Machine<T>.RunHelperMethod)p.lastFunctionCompleted).ReturnValue;
+                doPop = ((PrtMachine.RunHelperMethod)p.lastFunctionCompleted).ReturnValue;
                 p.lastFunctionCompleted = null;
                 nextBlock = Blocks.B1;
             }
@@ -642,7 +593,7 @@ namespace P.PRuntime
             {
                 machine.PushState(state);
 
-                Machine<T>.RunHelperMethod callee = new Machine<T>.RunHelperMethod(application, machine, true);
+                PrtMachine.RunHelperMethod callee = new PrtMachine.RunHelperMethod(application, machine, true);
                 p.CallMethod(callee);
                 nextBlock = Blocks.B0;
             }
@@ -653,17 +604,13 @@ namespace P.PRuntime
             private static readonly short typeId = 2;
 
             private PStateImpl application;
-            private Machine<T> machine;
+            private PrtMachine machine;
 
             // inputs
             private bool start;
 
             // locals
             private Blocks nextBlock;
-            private State<T> state;
-            private Fun<T> fun;
-            private Transition<T> transition;
-            private PrtValue payload;
 
             // output
             private bool _ReturnValue;
@@ -675,7 +622,7 @@ namespace P.PRuntime
                 }
             }
 
-            public RunHelperMethod(PStateImpl app, Machine<T> machine, bool start)
+            public RunHelperMethod(PStateImpl app, PrtMachine machine, bool start)
             {
                 application = app;
                 nextBlock = Blocks.Enter;
@@ -699,10 +646,10 @@ namespace P.PRuntime
             {
                 None = 0,
                 Enter = 1,
-                B0 = 2,
-                B1 = 3,
-                B2 = 4,
-                B3 = 5,
+                EnterStart = 2,
+                HandleEvent = 3,
+                ExecuteEntry = 4,
+                CheckCont = 5,
                 B4 = 6,
                 B5 = 7,
                 B6 = 8,
@@ -736,24 +683,24 @@ namespace P.PRuntime
                         {
                             throw new ApplicationException();
                         }
-                    case Blocks.B0:
+                    case Blocks.EnterStart:
                         {
-                            B0(p);
+                            EnterStart(p);
                             break;
                         }
-                    case Blocks.B1:
+                    case Blocks.HandleEvent:
                         {
-                            B1(p);
+                            HandleEvent(p);
                             break;
                         }
-                    case Blocks.B2:
+                    case Blocks.ExecuteEntry:
                         {
-                            B2(p);
+                            ExecuteEntry(p);
                             break;
                         }
-                    case Blocks.B3:
+                    case Blocks.CheckCont:
                         {
-                            B3(p);
+                            CheckCont(p);
                             break;
                         }
                     case Blocks.B4:
@@ -787,62 +734,50 @@ namespace P.PRuntime
 
             private void Enter(PrtMachine p)
             {
-                var stateStack = machine.stateStack;
-                this.state = stateStack.state;
-
                 if (start)
                 {
-                    payload = machine.currentArg;
-                    nextBlock = Blocks.B0;
+                    nextBlock = Blocks.EnterStart;
                 }
                 else
                 {
-                    nextBlock = Blocks.B1;
+                    nextBlock = Blocks.HandleEvent;
                 }
             }
 
-            public void B0(PrtMachine p)
+            public void EnterStart(PrtMachine p)
             {
-                var stateStack = machine.stateStack;
-
-                //enter:
-                stateStack.CalculateDeferredAndActionSet();
-
-                fun = state.entryFun;
-                nextBlock = Blocks.B2;
+                p.PushState(p.StartState);
+                nextBlock = Blocks.ExecuteEntry;
             }
 
-            private void B2(PrtMachine p)
+            private void ExecuteEntry(PrtMachine p)
             {
-                var stateStack = machine.stateStack;
-
-                Machine<T>.ReentrancyHelperMethod callee = new Machine<T>.ReentrancyHelperMethod(application, machine, fun, payload);
+                PrtMachine.ReentrancyHelperMethod callee = new PrtMachine.ReentrancyHelperMethod(application, machine, p.CurrentState.entryFun, p.currentArg);
                 p.CallMethod(callee);
-                nextBlock = Blocks.B3;
+                nextBlock = Blocks.CheckCont;
             }
 
-            private void B3(PrtMachine p)
+            private void CheckCont(PrtMachine p)
             {
                 p.lastFunctionCompleted = null;
 
                 var reason = machine.cont.reason;
-                if (reason == ContinuationReason.Raise)
+                if (reason == PrtContinuationReason.Raise)
                 {
-                    //goto handle;
-                    nextBlock = Blocks.B1;
+                    nextBlock = Blocks.HandleEvent;
                 }
                 else
                 {
                     machine.currentEvent = null;
                     machine.currentArg = PrtValue.NullValue;
-                    if (reason != ContinuationReason.Pop)
+                    if (reason != PrtContinuationReason.Pop)
                     {
                         _ReturnValue = false;
                         p.MethodReturn();
                     }
                     else
                     {
-                        Machine<T>.ReentrancyHelperMethod callee = new Machine<T>.ReentrancyHelperMethod(application, machine, state.exitFun, null);
+                        PrtMachine.ReentrancyHelperMethod callee = new PrtMachine.ReentrancyHelperMethod(application, machine, state.exitFun, null);
                         p.CallMethod(callee);
 
                         nextBlock = Blocks.B4;
@@ -858,7 +793,7 @@ namespace P.PRuntime
                 p.MethodReturn();
             }
 
-            private void B1(PrtMachine p)
+            private void HandleEvent(PrtMachine p)
             {
                 var stateStack = machine.stateStack;
                 var state = stateStack.state;
@@ -870,14 +805,14 @@ namespace P.PRuntime
                 {
                     fun = stateStack.Find(machine.currentEvent);
                     //goto execute;
-                    nextBlock = Blocks.B2;
+                    nextBlock = Blocks.ExecuteEntry;
                 }
                 else
                 {
                     transition = state.FindPushTransition(machine.currentEvent);
                     if (transition != null)
                     {
-                        Machine<T>.RunMethod callee = new Machine<T>.RunMethod(application, machine, transition.to);
+                        PrtMachine.RunMethod callee = new PrtMachine.RunMethod(application, machine, transition.to);
                         p.CallMethod(callee);
                         nextBlock = Blocks.B5;
                     }
@@ -900,13 +835,13 @@ namespace P.PRuntime
                 else
                 {
                     //goto handle;
-                    nextBlock = Blocks.B1;
+                    nextBlock = Blocks.HandleEvent;
                 }
             }
 
             private void B6(PrtMachine p)
             {
-                Machine<T>.ReentrancyHelperMethod callee = new Machine<T>.ReentrancyHelperMethod(application, machine, state.exitFun, null);
+                PrtMachine.ReentrancyHelperMethod callee = new PrtMachine.ReentrancyHelperMethod(application, machine, state.exitFun, null);
                 p.CallMethod(callee);
                 nextBlock = Blocks.B7;
             }
@@ -923,7 +858,7 @@ namespace P.PRuntime
                 }
                 else
                 {
-                    Machine<T>.ReentrancyHelperMethod callee = new Machine<T>.ReentrancyHelperMethod(application, machine, transition.fun, payload);
+                    PrtMachine.ReentrancyHelperMethod callee = new PrtMachine.ReentrancyHelperMethod(application, machine, transition.fun, payload);
                     p.CallMethod(callee);
                     nextBlock = Blocks.B8;
                 }
@@ -931,14 +866,14 @@ namespace P.PRuntime
 
             private void B8(PrtMachine p)
             {
-                payload = ((Machine<T>.ReentrancyHelperMethod)p.lastFunctionCompleted).ReturnValue;
+                payload = ((PrtMachine.ReentrancyHelperMethod)p.lastFunctionCompleted).ReturnValue;
                 p.lastFunctionCompleted = null;
                 var stateStack = machine.stateStack;
                 stateStack.state = transition.to;
                 state = stateStack.state;
 
                 //goto enter;
-                nextBlock = Blocks.B0;
+                nextBlock = Blocks.EnterStart;
             }
         }
 
@@ -947,8 +882,8 @@ namespace P.PRuntime
             private static readonly short typeId = 3;
 
             private PStateImpl application;
-            private Machine<T> machine;
-            private Fun<T> fun;
+            private PrtMachine machine;
+            private PrtFun fun;
 
             // inputs
             private PrtValue payload;
@@ -967,7 +902,7 @@ namespace P.PRuntime
                 }
             }
 
-            public ReentrancyHelperMethod(PStateImpl app, Machine<T> machine, Fun<T> fun, PrtValue payload)
+            public ReentrancyHelperMethod(PStateImpl app, PrtMachine machine, PrtFun fun, PrtValue payload)
             {
                 this.application = app;
                 this.machine = machine;
@@ -1037,7 +972,7 @@ namespace P.PRuntime
 
             private void Enter(PrtMachine p)
             {
-                machine.cont = new Continuation();
+                machine.cont = new PrtContinuation();
                 machine.cont.PushContFrame(0, fun.CreateLocals(payload));
                 nextBlock = Blocks.B0;
             }
@@ -1052,14 +987,14 @@ namespace P.PRuntime
                 {
                     application.Exception = ex;
                 }
-                Machine<T>.ProcessContinuationMethod callee = new ProcessContinuationMethod(application, machine);
+                PrtMachine.ProcessContinuationMethod callee = new ProcessContinuationMethod(application, machine);
                 p.CallMethod(callee);
                 nextBlock = Blocks.B1;
             }
 
             private void B1(PrtMachine p)
             {
-                var doPop = ((Machine<T>.ProcessContinuationMethod)p.lastFunctionCompleted).ReturnValue;
+                var doPop = ((PrtMachine.ProcessContinuationMethod)p.lastFunctionCompleted).ReturnValue;
                 p.lastFunctionCompleted = null;
 
                 if (doPop)
@@ -1086,7 +1021,7 @@ namespace P.PRuntime
             private static readonly short typeId = 4;
 
             private PStateImpl application;
-            private Machine<T> machine;
+            private PrtMachine machine;
 
             // locals
             private Blocks nextBlock;
@@ -1099,7 +1034,7 @@ namespace P.PRuntime
                 get { return _ReturnValue; }
             }
 
-            public ProcessContinuationMethod(PStateImpl app, Machine<T> machine)
+            public ProcessContinuationMethod(PStateImpl app, PrtMachine machine)
             {
                 application = app;
                 this.machine = machine;
@@ -1163,25 +1098,25 @@ namespace P.PRuntime
             {
                 var cont = machine.cont;
                 var reason = cont.reason;
-                if (reason == ContinuationReason.Return)
+                if (reason == PrtContinuationReason.Return)
                 {
                     _ReturnValue = true;
                     p.MethodReturn();
                     StateImpl.IsReturn = true;
                 }
-                if (reason == ContinuationReason.Pop)
+                if (reason == PrtContinuationReason.Pop)
                 {
                     _ReturnValue = true;
                     p.MethodReturn();
                     StateImpl.IsReturn = true;
                 }
-                if (reason == ContinuationReason.Raise)
+                if (reason == PrtContinuationReason.Raise)
                 {
                     _ReturnValue = true;
                     p.MethodReturn();
                     StateImpl.IsReturn = true;
                 }
-                if (reason == ContinuationReason.Receive)
+                if (reason == PrtContinuationReason.Receive)
                 {
                     DequeueEventReturnStatus status;
                     try
@@ -1211,19 +1146,19 @@ namespace P.PRuntime
                         nextBlock = Blocks.B0;
                     }
                 }
-                if (reason == ContinuationReason.Nondet)
+                if (reason == PrtContinuationReason.Nondet)
                 {
                     application.SetPendingChoicesAsBoolean(p);
                     cont.nondet = ((Boolean)application.GetSelectedChoiceValue(p));
                     nextBlock = Blocks.B0;
                 }
-                if (reason == ContinuationReason.NewMachine)
+                if (reason == PrtContinuationReason.NewMachine)
                 {
                     //yield;
                     p.DoYield = true;
                     nextBlock = Blocks.B0;
                 }
-                if (reason == ContinuationReason.Send)
+                if (reason == PrtContinuationReason.Send)
                 {
                     //yield;
                     p.DoYield = true;
@@ -1239,6 +1174,45 @@ namespace P.PRuntime
                 StateImpl.IsReturn = true;
             }
         }
+
+
+    }
+
+    public abstract class PrtMonitor : ICloneable
+    {
+        public abstract bool IsHot
+        {
+            get;
+        }
+
+        public abstract PrtState StartState
+        {
+            get;
+        }
+
+        public abstract void Invoke();
+
+        public object Clone()
+        {
+
+        }
+    }
+
+    public abstract class PrtMethod
+    {
+        public abstract PStateImpl StateImpl
+        {
+            get;
+            set;
+        }
+
+        public abstract ushort NextBlock
+        {
+            get;
+            set;
+        }
+
+        public abstract void Dispatch(PrtMachine m);
     }
 
 }

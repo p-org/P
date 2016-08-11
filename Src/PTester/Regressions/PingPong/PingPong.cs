@@ -110,7 +110,7 @@ namespace SimpleMachine
         #endregion
 
         //pass the right parameters here !!
-        public static Event dummy = new Event("dummy", PrtType.NullType, 100, false);
+        public static PrtEvent dummy = new PrtEvent("dummy", PrtType.NullType, 100, false);
 
         public Machine<Main> CreateMainMachine()
         {
@@ -158,7 +158,7 @@ namespace SimpleMachine
                 }
                 public override void Execute(PStateImpl application, Main parent)
                 {
-                    ContStackFrame currCont = parent.cont.PopContFrame();
+                    PrtContStackFrame currCont = parent.cont.PopContFrame();
                     if (currCont.returnTolocation == 0)
                         goto Loc_0;
                     else
@@ -193,7 +193,7 @@ namespace SimpleMachine
                 }
                 public override void Execute(PStateImpl application, Main parent)
                 {
-                    ContStackFrame currCont = parent.cont.PopContFrame();
+                    PrtContStackFrame currCont = parent.cont.PopContFrame();
                     if (currCont.returnTolocation == 0)
                         goto Loc_0;
                     else

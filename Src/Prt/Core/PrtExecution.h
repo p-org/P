@@ -54,7 +54,8 @@ extern "C"{
 	{
 		ReturnStatement,
 		PopStatement,
-		RaiseStatement
+		RaiseStatement,
+		GotoStatement
 	} PRT_LASTOPERATION;
 
     typedef enum PRT_NEXTOPERATION
@@ -71,6 +72,7 @@ extern "C"{
 		OnTransition,
 		OnTransitionAfterExit,
 		OnPopStatement,
+		OnGotoStatement,
 		OnUnhandledEvent
 	} PRT_EXITREASON;
 
@@ -143,6 +145,7 @@ extern "C"{
 		PRT_RECEIVEDECL		*receive;
 		PRT_STATESTACK		callStack;
 		PRT_FUNSTACK		funStack;
+		PRT_UINT32			destStateIndex;
 		PRT_VALUE			*currentTrigger;
 		PRT_VALUE			*currentPayload;
 		PRT_EVENTQUEUE		eventQueue;
@@ -191,6 +194,13 @@ extern "C"{
 		_In_ PRT_BOOLEAN				doTransfer
 		);
 
+	PRT_API void PRT_CALL_CONV
+		PrtGoto(
+			_Inout_ PRT_MACHINEINST_PRIV		*context,
+			_In_ PRT_UINT32						destStateIndex,
+			_In_ PRT_VALUE						*payload
+		);
+	
 	PRT_API void PRT_CALL_CONV
 		PrtRaise(
 		_Inout_ PRT_MACHINEINST_PRIV		*context,

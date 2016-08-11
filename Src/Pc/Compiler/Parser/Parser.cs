@@ -30,6 +30,7 @@
         private P_Root.EventDecl crntEventDecl = null;
         private P_Root.MachineDecl crntMachDecl = null;
         private P_Root.QualifiedName crntStateTargetName = null;
+        private P_Root.QualifiedName crntGotoTargetName = null;
         private P_Root.StateDecl crntState = null;
         private List<P_Root.VarDecl> crntVarList = new List<P_Root.VarDecl>();
         private List<P_Root.EventLabel> crntEventList = new List<P_Root.EventLabel>();
@@ -448,7 +449,6 @@
                 {
                     sendStmt.arg = (P_Root.IArgType_Send__2)arg;
                 }
-
                 sendStmt.ev = (P_Root.IArgType_Send__1)valueExprStack.Pop();
                 sendStmt.dest = (P_Root.IArgType_Send__0)valueExprStack.Pop();
             }
@@ -461,6 +461,36 @@
             sendStmt.qual = qualifier.Pop();
 
             stmtStack.Push(sendStmt);
+        }
+
+        private void PushGoto(bool hasArgs, Span span)
+        {
+            Contract.Assert(crntGotoTargetName != null);
+            Contract.Assert(!hasArgs || exprsStack.Count > 0);
+
+            var gotoStmt = P_Root.MkGoto();
+            gotoStmt.dst = crntGotoTargetName;
+            gotoStmt.Span = span;
+            gotoStmt.info = MkSourceInfo(span);
+            if (hasArgs)
+            {
+                var arg = exprsStack.Pop();
+                if (arg.Symbol == TheDefaultExprs.Symbol)
+                {
+                    gotoStmt.arg = P_Root.MkTuple((P_Root.IArgType_Tuple__0)arg);
+                    gotoStmt.arg.Span = arg.Span;
+                }
+                else
+                {
+                    gotoStmt.arg = (P_Root.IArgType_Goto__1)arg;
+                }
+            }
+            else
+            {
+                gotoStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            }
+            stmtStack.Push(gotoStmt);
+            crntGotoTargetName = null;
         }
 
         private void PushMonitor(bool hasArgs, string name, Span span)
@@ -1047,10 +1077,25 @@
                 crntStateTargetName = P_Root.MkQualifiedName(
                     MkString(name, span),
                     crntStateTargetName);
-
             }
-
             crntStateTargetName.Span = span;
+        }
+
+        private void QualifyGotoTarget(string name, Span span)
+        {
+            if (crntGotoTargetName == null)
+            {
+                crntGotoTargetName = P_Root.MkQualifiedName(
+                    MkString(name, span),
+                    MkUserCnst(P_Root.UserCnstKind.NIL, span));
+            }
+            else
+            {
+                crntGotoTargetName = P_Root.MkQualifiedName(
+                    MkString(name, span),
+                    crntGotoTargetName);
+            }
+            crntGotoTargetName.Span = span;
         }
 
         #endregion
@@ -2157,6 +2202,7 @@
             crntEventDecl = null;
             crntMachDecl = null;
             crntStateTargetName = null;
+            crntGotoTargetName = null;
             nextTrampolineLabel = 0;
             nextPayloadVarLabel = 0;
             crntStateNames.Clear();

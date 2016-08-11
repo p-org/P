@@ -337,6 +337,21 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINEINST *sender, _In_ P
 		PrtUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(") is created\n", buffer, bufferSize, numCharsWritten);
 		break;
+	case PRT_STEP_GOTO:
+	{
+		PRT_MACHINEINST_PRIV *context = (PRT_MACHINEINST_PRIV *)sender;
+		PRT_STRING destStateName = c->process->program->machines[context->instanceOf].states[context->destStateIndex].name;
+		PrtUserPrintString("<GotoLog> Machine ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(") goes to state ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(destStateName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintValue(payload, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
+		break; 
+	}
 	case PRT_STEP_RAISE:
 		eventName = c->process->program->events[PrtPrimGetEvent(event)].name;
 		PrtUserPrintString("<RaiseLog> Machine ", buffer, bufferSize, numCharsWritten);

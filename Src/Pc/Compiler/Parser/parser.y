@@ -386,6 +386,8 @@ Stmt
 	| MONITOR Exp SEMICOLON									  { PushMonitor(false, $2.str, ToSpan(@1));      }
 	| MONITOR Exp COMMA SingleExprArgList SEMICOLON           { PushMonitor(true, $2.str, ToSpan(@1));       }
 	| ReceiveStmt LCBRACE CaseList RCBRACE						  { PushReceive(ToSpan(@1)); }
+	| GOTO GotoTarget SEMICOLON							  { PushGoto(false, ToSpan(@1)); }
+	| GOTO GotoTarget COMMA SingleExprArgList SEMICOLON	  { PushGoto(true, ToSpan(@1)); }
 	;
 
 ReceiveStmt
@@ -418,6 +420,11 @@ StmtList
 StateTarget
     : ID                  { QualifyStateTarget($1.str, ToSpan(@1)); }
 	| StateTarget DOT ID   { QualifyStateTarget($3.str, ToSpan(@3)); }
+	;
+
+GotoTarget
+    : ID                  { QualifyGotoTarget($1.str, ToSpan(@1)); }
+	| GotoTarget DOT ID   { QualifyGotoTarget($3.str, ToSpan(@3)); }
 	;
 
 /******************* Value Expressions *******************/

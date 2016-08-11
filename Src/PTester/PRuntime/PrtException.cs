@@ -199,6 +199,20 @@ namespace P.PRuntime
 
     }
 
+    public class PrtInfiniteRaiseLoop : PrtException
+    {
+        public PrtInfiniteRaiseLoop()
+            : base()
+        {
+        }
+
+        public PrtInfiniteRaiseLoop(string message)
+            : base(message)
+        {
+        }
+
+    }
+
     public class PrtUnhandledEventException : PrtException
     {
         public PrtUnhandledEventException()

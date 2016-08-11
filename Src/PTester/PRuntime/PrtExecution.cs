@@ -234,6 +234,11 @@ namespace P.PRuntime
             }
         }
        
+        public void PopStackFrame()
+        {
+            stateStack.Pop();
+        }
+
         public void PushStackFrame(PrtState state)
         {
             var deferredSet = new HashSet<PrtEvent>();

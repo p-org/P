@@ -788,20 +788,13 @@ namespace P.PRuntime
             private void B4(PrtMachine p)
             {
                 p.lastFunctionCompleted = null;
-
                 _ReturnValue = true;
                 p.MethodReturn();
             }
 
             private void HandleEvent(PrtMachine p)
             {
-                var stateStack = machine.stateStack;
-                var state = stateStack.state;
-                var actionSet = stateStack.actionSet;
-
-                //handle:
-                payload = machine.currentArg;
-                if (actionSet.Contains(machine.currentEvent))
+                if (p.CurrentState.dos.Contains(machine.currentEvent))
                 {
                     fun = stateStack.Find(machine.currentEvent);
                     //goto execute;
@@ -981,7 +974,7 @@ namespace P.PRuntime
             {
                 try
                 {
-                    fun.Execute(application, (T)machine);
+                    fun.Execute(application, machine);
                 }
                 catch (PrtException ex)
                 {

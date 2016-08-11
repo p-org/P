@@ -13,7 +13,7 @@ namespace P.PRuntime
         /// </summary>
         protected PStateImpl()
         {
-            statemachines = new Dictionary<int, PrtMachine>();
+            statemachines = new List<PrtMachine>();
             monitors = new List<PrtMonitor>();
         }
         #endregion
@@ -22,13 +22,13 @@ namespace P.PRuntime
         /// <summary>
         /// Map from the statemachine id to the instance of the statemachine.
         /// </summary>
-        private Dictionary<int, PrtMachine> statemachines;
+        private List<PrtMachine> statemachines;
 
         public List<PrtMachine> AllStateMachines
         {
             get
             {
-                return statemachines.Values.ToList();
+                return statemachines;
             }
         }
 
@@ -49,7 +49,7 @@ namespace P.PRuntime
             get
             {
                 bool enabled = false;
-                foreach (var x in statemachines.Values)
+                foreach (var x in statemachines)
                 {
                     if (enabled) break;
                     enabled = enabled || x.isEnabled;
@@ -79,10 +79,10 @@ namespace P.PRuntime
         {
             var clonedState = MakeSkeleton();
             //clone all the fields
-            clonedState.statemachines = new Dictionary<int, PrtMachine>();
+            clonedState.statemachines = new List<PrtMachine>();
             foreach(var machine in statemachines)
             {
-                clonedState.statemachines.Add(machine.Key, machine.Value.Clone());
+                clonedState.statemachines.Add(machine.Clone());
             }
 
             clonedState.monitors = new List<PrtMonitor>();
@@ -98,7 +98,7 @@ namespace P.PRuntime
 
         public void AddStateMachineToStateImpl(PrtMachine machine)
         {
-            statemachines.Add(statemachines.Count, machine);
+            statemachines.Add(machine);
         }
 
         public void Trace(string message, params object[] arguments)

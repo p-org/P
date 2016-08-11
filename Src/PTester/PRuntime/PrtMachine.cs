@@ -28,6 +28,8 @@ namespace P.PRuntime
         public PrtValue currentArg;
         private bool doYield;
         private PrtSMNextOperation nextOperation;
+        //just a reference to stateImpl
+        private PStateImpl StateImpl;
         #endregion
 
         public abstract PrtMachine Clone();
@@ -35,6 +37,7 @@ namespace P.PRuntime
         #region Constructor
         public PrtMachine(PStateImpl app, int maxBuffSize, Type T)
         {
+            StateImpl = app;
             isHalted = false;
             isEnabled = true;
             stateStack = new PrtStateStack();
@@ -143,6 +146,7 @@ namespace P.PRuntime
 
         public void RunStateMachine()
         {
+            int numContinuousSteps = 0;
             Debug.Assert(IsEnabled);
 
             switch (nextOperation)
@@ -151,16 +155,13 @@ namespace P.PRuntime
                     goto DoEntry;
                 case PrtSMNextOperation.DequeueOperation:
                     goto DoDequeue;
-                    break;
                 case PrtSMNextOperation.HandleEventOperation:
                     goto DoHandleEvent;
-                    break;
                 case PrtSMNextOperation.ReceiveOperation:
                     goto DoReceive;
-                    break;
             }
 
-    DoEntry:
+            DoEntry:
             //Trace: entered state
             if(funStack.TopOfStack == null)
             {
@@ -168,7 +169,7 @@ namespace P.PRuntime
             }
             goto ExecuteReentrancy;
 
-    DoAction:
+            DoAction:
             if(funStack.TopOfStack == null)
             {
                 var currentAction = FindActionHandler(currentEvent);
@@ -176,14 +177,34 @@ namespace P.PRuntime
             }
             goto ExecuteReentrancy;
 
-    DoDequeue:
+            DoDequeue:
             //Handle the do deque phase
 
-    DoHandleEvent:
+            DoHandleEvent:
+            //detect infinite raise loop
+            if(numContinuousSteps > 100000)
+            {
+                StateImpl.Exception = new PrtInfiniteRaiseLoop();
+                return;
+            }
+            else
+            {
+                numContinuousSteps++;
+            }
             //Perform the handle event case
-            
-          
-    ExecuteReentrancy:
+            if(PrtIsPushTransition(currentEvent))
+            {
+                PrtTakeTransition(currentEvent);
+                goto DoEntry;
+            }
+            else if(PrtIsTransitionPresent(currentEvent))
+            {
+
+            }
+
+            DoReceive:
+
+            ExecuteReentrancy:
 
             // All re-entrancy code will do here 
             goto CheckLastOperation;

@@ -67,6 +67,7 @@
     <Compile Include="PrtException.cs" />
     <Compile Include="PrtExecution.cs" />
     <Compile Include="PrtMachine.cs" />
+    <Compile Include="PrtMonitor.cs" />
     <Compile Include="PrtType.cs" />
     <Compile Include="PrtValue.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

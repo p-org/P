@@ -12,47 +12,71 @@ namespace P.PRuntime
         Halted,         // The state machine has halted
     };
 
+    public enum PrtNextStatemachineOperation
+    {
+        EntryOperation,
+        DequeueOperation,
+        HandleEventOperation,
+        ReceiveOperation
+    };
+
+    public enum PrtStateExitReason
+    {
+        NotExit,
+        OnTransition,
+        OnTransitionAfterExit,
+        OnPopStatement,
+        OnGotoStatement,
+        OnUnhandledEvent
+    };
+    public enum PrtDequeueReturnStatus { SUCCESS, NULL, BLOCKED };
+
     public abstract class PrtMachine
     {
         #region Fields
+        public int instanceNumber;
+        public List<PrtValue> machineFields;
+        private PrtEvent eventValue;
         private PrtStateStack stateStack;
-        private PrtFunStack funStack;
-        public PrtEventBuffer buffer;
-        public int maxBufferSize;
-        public int instance;
+        private PrtFunStack invertedFunStack;
+        public PrtEvent currentTrigger;
+        public PrtValue currentPayload;
+        public PrtEventBuffer eventQueue;
         public HashSet<PrtEvent> receiveSet;
-        private bool isHalted;
-        private bool isEnabled;
-        public List<PrtValue> fields;
-        public PrtEvent currentEvent;
-        public PrtValue currentArg;
-        private bool doYield;
-        private PrtSMNextOperation nextOperation;
+        public bool isHalted;
+        public bool isEnabled;
+        private PrtNextStatemachineOperation nextSMOperation;
+        private PrtStateExitReason stateExitReason;
+        public int maxBufferSize;
         //just a reference to stateImpl
         private PStateImpl StateImpl;
         #endregion
 
-        public abstract PrtMachine Clone();
+        #region Clone and Undo
+        public PrtMachine Clone() { throw new NotImplementedException(); }
+        #endregion
 
         #region Constructor
-        public PrtMachine(PStateImpl app, int maxBuffSize, Type T)
+        public PrtMachine(PStateImpl app, int maxBuff)
         {
+            this.instanceNumber = this.NextInstanceNumber(app);
+            this.machineFields = new List<PrtValue>();
+            this.eventValue = null;
+            this.stateStack = new PrtStateStack();
+            this.invertedFunStack = new PrtFunStack();
+            this.currentTrigger = null;
+            this.currentPayload = PrtValue.NullValue;
+            this.eventQueue = new PrtEventBuffer();
+            this.receiveSet = new HashSet<PrtEvent>();
+            this.isHalted = false;
+            this.isEnabled = true;
+            this.nextSMOperation = PrtNextStatemachineOperation.EntryOperation;
+            this.stateExitReason = PrtStateExitReason.NotExit;
+            this.maxBufferSize = maxBuff;
             StateImpl = app;
-            isHalted = false;
-            isEnabled = true;
-            stateStack = new PrtStateStack();
-            funStack = new PrtFunStack();
-            fields = new List<PrtValue>();
-            buffer = new PrtEventBuffer();
-            this.maxBufferSize = maxBuffSize;
-            this.instance = app.AllStateMachines.Where(mach => mach.GetType() == T).Count() + 1;
-            currentEvent = null;
-            currentArg = PrtValue.NullValue;
-            receiveSet = new HashSet<PrtEvent>();
-
+            
             //Push the start state function on the funStack.
             stateStack.PushStackFrame(StartState);
-            nextOperation = PrtSMNextOperation.EntryOperation;
         }
         #endregion
 
@@ -61,44 +85,22 @@ namespace P.PRuntime
         {
             get;
         }
-        public bool IsHalted
+
+        public abstract PrtState StartState
         {
-            get
-            {
-                return isHalted;
-            }
+            get;
         }
 
-        public bool IsEnabled
-        {
-            get
-            {
-                return isEnabled;
-            }
-        }
-
-        public bool DoYield
-        {
-            get
-            {
-                return doYield;
-            }
-            set
-            {
-                doYield = value;
-            }
-        }
-
-
+        public abstract int NextInstanceNumber(PStateImpl app);
         public PrtMachineStatus CurrentStatus
         {
             get
             {
-                if (IsHalted)
+                if (isHalted)
                 {
                     return PrtMachineStatus.Halted;
                 }
-                else if (IsEnabled)
+                else if (isEnabled)
                 {
                     return PrtMachineStatus.Enabled;
                 }
@@ -119,19 +121,11 @@ namespace P.PRuntime
         }
         #endregion
 
-        internal enum PrtSMNextOperation
-        {
-            EntryOperation,
-            DequeueOperation,
-            HandleEventOperation,
-            ReceiveOperation
-        }
-
-
-        public PrtFun FindActionHandler(PrtEvent ev)
+        #region State machine helper functions
+        public PrtFun PrtFindActionHandler(PrtEvent ev)
         {
             var tempStateStack = stateStack.Clone();
-            while(tempStateStack.TopOfStack != null)
+            while (tempStateStack.TopOfStack != null)
             {
                 if (tempStateStack.TopOfStack.state.dos.ContainsKey(ev))
                 {
@@ -144,97 +138,36 @@ namespace P.PRuntime
             return null;
         }
 
-        public void RunStateMachine()
-        {
-            int numContinuousSteps = 0;
-            Debug.Assert(IsEnabled);
-
-            switch (nextOperation)
-            {
-                case PrtSMNextOperation.EntryOperation:
-                    goto DoEntry;
-                case PrtSMNextOperation.DequeueOperation:
-                    goto DoDequeue;
-                case PrtSMNextOperation.HandleEventOperation:
-                    goto DoHandleEvent;
-                case PrtSMNextOperation.ReceiveOperation:
-                    goto DoReceive;
-            }
-
-            DoEntry:
-            //Trace: entered state
-            if(funStack.TopOfStack == null)
-            {
-                funStack.PushFun(CurrentState.entryFun, CurrentState.entryFun.CreateLocals());
-            }
-            goto ExecuteReentrancy;
-
-            DoAction:
-            if(funStack.TopOfStack == null)
-            {
-                var currentAction = FindActionHandler(currentEvent);
-                funStack.PushFun(currentAction, currentAction.CreateLocals());
-            }
-            goto ExecuteReentrancy;
-
-            DoDequeue:
-            //Handle the do deque phase
-
-            DoHandleEvent:
-            //detect infinite raise loop
-            if(numContinuousSteps > 100000)
-            {
-                StateImpl.Exception = new PrtInfiniteRaiseLoop();
-                return;
-            }
-            else
-            {
-                numContinuousSteps++;
-            }
-            //Perform the handle event case
-            if(PrtIsPushTransition(currentEvent))
-            {
-                PrtTakeTransition(currentEvent);
-                goto DoEntry;
-            }
-            else if(PrtIsTransitionPresent(currentEvent))
-            {
-
-            }
-
-            DoReceive:
-
-            ExecuteReentrancy:
-
-            // All re-entrancy code will do here 
-            goto CheckLastOperation;
-
-
-
-
-
-
-
-
-        }
-        
-        public void PushState(PrtState s)
+        public void PrtPushState(PrtState s)
         {
             stateStack.PushStackFrame(s);
         }
 
-        public void PopState()
+        public void PrtPopState()
         {
             stateStack.PopStackFrame();
         }
 
-
-        public abstract PrtState StartState
+        public void PrtChangeState(PrtState s)
         {
-            get;
+            if(stateStack.TopOfStack != null)
+            {
+                stateStack.PopStackFrame();
+            }
+            stateStack.PushStackFrame(s);
         }
 
-        public void EnqueueEvent(PStateImpl application, PrtEvent e, PrtValue arg, PrtMachine source)
+        public PrtFunStackFrame PrtPopFunStack()
+        {
+            return invertedFunStack.PopFun();
+        }
+
+        public void PrtPushFunStack(PrtFun fun, List<PrtValue> local)
+        {
+            invertedFunStack.PushFun(fun, local);
+        }
+
+        public void PrtEnqueueEvent(PStateImpl application, PrtEvent e, PrtValue arg, PrtMachine source)
         {
             PrtType prtType;
 
@@ -256,7 +189,7 @@ namespace P.PRuntime
             {
                 application.Trace(
                     @"<EnqueueLog> {0}-{1} Machine has been halted and Event {2} is dropped",
-                    this.Name, this.instance, e.name);
+                    this.Name, this.instanceNumber, e.name);
             }
             else
             {
@@ -264,43 +197,37 @@ namespace P.PRuntime
                 {
                     application.Trace(
                         @"<EnqueueLog> Enqueued Event <{0}, {1}> in {2}-{3} by {4}-{5}",
-                        e.name, arg.ToString(), this.Name, this.instance, source.Name, source.instance);
+                        e.name, arg.ToString(), this.Name, this.instanceNumber, source.Name, source.instanceNumber);
                 }
                 else
                 {
                     application.Trace(
                         @"<EnqueueLog> Enqueued Event < {0} > in {1}-{2} by {3}-{4}",
-                        e.name, this.Name, this.instance, source.Name, source.instance);
+                        e.name, this.Name, this.instanceNumber, source.Name, source.instanceNumber);
                 }
 
-                this.buffer.EnqueueEvent(e, arg);
-                if (this.maxBufferSize != -1 && this.buffer.Size() > this.maxBufferSize)
+                this.eventQueue.EnqueueEvent(e, arg);
+                if (this.maxBufferSize != -1 && this.eventQueue.Size() > this.maxBufferSize)
                 {
                     throw new PrtMaxBufferSizeExceededException(
                         String.Format(@"<EXCEPTION> Event Buffer Size Exceeded {0} in Machine {1}-{2}",
-                        this.maxBufferSize, this.Name, this.instance));
+                        this.maxBufferSize, this.Name, this.instanceNumber));
                 }
-                if (!isEnabled && this.buffer.IsEnabled(this))
+                if (!isEnabled && this.eventQueue.IsEnabled(this))
                 {
                     isEnabled = true;
-                }
-                if (isEnabled)
-                {
-                    //application.invokescheduler("enabled", machineId, source.machineId);
                 }
             }
         }
 
-        public enum DequeueEventReturnStatus { SUCCESS, NULL, BLOCKED };
-
-        public DequeueEventReturnStatus DequeueEvent(PStateImpl application, bool hasNullTransition)
+        public PrtDequeueReturnStatus PrtDequeueEvent(PStateImpl application, bool hasNullTransition)
         {
-            currentEvent = null;
-            currentArg = null;
-            buffer.DequeueEvent(this);
-            if (currentEvent != null)
+            currentTrigger = null;
+            currentPayload = null;
+            eventQueue.DequeueEvent(this);
+            if (currentTrigger != null)
             {
-                if (currentArg == null)
+                if (currentPayload == null)
                 {
                     throw new PrtInternalException("Internal error: currentArg is null");
                 }
@@ -311,11 +238,11 @@ namespace P.PRuntime
 
                 application.Trace(
                     "<DequeueLog> Dequeued Event < {0}, {1} > at Machine {2}-{3}\n",
-                    currentEvent.name, currentArg.ToString(), Name, instance);
+                    currentTrigger.name, currentPayload.ToString(), Name, instanceNumber);
                 receiveSet = new HashSet<PrtEvent>();
-                return DequeueEventReturnStatus.SUCCESS;
+                return PrtDequeueReturnStatus.SUCCESS;
             }
-            else if (hasNullTransition || receiveSet.Contains(currentEvent))
+            else if (hasNullTransition || receiveSet.Contains(currentTrigger))
             {
                 if (!isEnabled)
                 {
@@ -323,10 +250,10 @@ namespace P.PRuntime
                 }
                 application.Trace(
                     "<NullTransLog> Null transition taken by Machine {0}-{1}\n",
-                    Name, instance);
-                currentArg = PrtValue.NullValue;
+                    Name, instanceNumber);
+                currentPayload = PrtValue.NullValue;
                 receiveSet = new HashSet<PrtEvent>();
-                return DequeueEventReturnStatus.NULL;
+                return PrtDequeueReturnStatus.NULL;
             }
             else
             {
@@ -340,899 +267,28 @@ namespace P.PRuntime
                 {
                     throw new PrtDeadlockException("Deadlock detected");
                 }
-                return DequeueEventReturnStatus.BLOCKED;
+                return PrtDequeueReturnStatus.BLOCKED;
             }
         }
+        #endregion
 
-        internal sealed class StartMethod : PrtMethod
+
+        public void PrtRunStateMachine()
         {
-            private static readonly short typeId = 0;
 
-            private PStateImpl application;
-            private PrtMachine machine;
-
-            // locals
-            private Blocks nextBlock;
-
-            public StartMethod(PStateImpl app, PrtMachine machine)
-            {
-                application = app;
-                this.machine = machine;
-                nextBlock = Blocks.Enter;
-            }
-
-            public override PStateImpl StateImpl
-            {
-                get
-                {
-                    return application;
-                }
-                set
-                {
-                    application = value;
-                }
-            }
-
-            private enum Blocks : ushort
-            {
-                None = 0,
-                Enter = 1,
-                B0 = 2,
-            };
-
-            public override ushort NextBlock
-            {
-                get
-                {
-                    return ((ushort)nextBlock);
-                }
-                set
-                {
-                    nextBlock = ((Blocks)value);
-                }
-            }
-
-            public override void Dispatch(PrtMachine p)
-            {
-                switch (nextBlock)
-                {
-                    case Blocks.Enter:
-                        {
-                            Enter(p);
-                            break;
-                        }
-                    default:
-                        {
-                            throw new ApplicationException();
-                        }
-                    case Blocks.B0:
-                        {
-                            B0(p);
-                            break;
-                        }
-                }
-            }
-
-            private void Enter(PrtMachine p)
-            {
-                PrtMachine.RunMethod callee = new PrtMachine.RunMethod(application, machine, machine.StartState);
-                p.CallMethod(callee);
-                nextBlock = Blocks.B0;
-            }
-
-            private void B0(PrtMachine p)
-            {
-                p.lastFunctionCompleted = null;
-
-                var currentEvent = machine.currentEvent;
-
-                //Checking if currentEvent is halt:
-                if (currentEvent == PrtEvent.HaltEvent)
-                {
-                    machine.stateStack = null;
-                    machine.buffer = null;
-                    machine.currentArg = null;
-                    machine.isHalted = true;
-                    machine.isEnabled = false;
-
-                    p.MethodReturn();
-                }
-                else
-                {
-                    application.Trace(
-                        @"<StateLog> Unhandled event exception by machine Real1-{0}",
-                        machine.instance);
-                    this.StateImpl.Exception = new PrtUnhandledEventException("Unhandled event exception by machine <mach name>");
-                    p.MethodReturn();
-                }
-            }
         }
+        
+        
 
-        internal sealed class RunMethod : PrtMethod
-        {
-            private static readonly short typeId = 1;
+        
 
-            private PStateImpl application;
-            private PrtMachine machine;
 
-            // inputs
-            private PrtState state;
+        
 
-            // locals
-            private Blocks nextBlock;
-            private bool doPop;
+        
 
-            public RunMethod(PStateImpl app, PrtMachine machine)
-            {
-                application = app;
-                nextBlock = Blocks.Enter;
-                this.machine = machine;
-                this.state = null;
-            }
+        
 
-            public RunMethod(PStateImpl app, PrtMachine machine, PrtState state)
-            {
-                application = app;
-                nextBlock = Blocks.Enter;
-                this.machine = machine;
-                this.state = state;
-            }
-
-            public override PStateImpl StateImpl
-            {
-                get
-                {
-                    return application;
-                }
-                set
-                {
-                    application = value;
-                }
-            }
-
-            private enum Blocks : ushort
-            {
-                None = 0,
-                Enter = 1,
-                B0 = 2,
-                B1 = 3,
-                B2 = 4,
-                B3 = 5,
-                B4 = 6,
-                B5 = 7,
-            };
-
-            public override void Dispatch(PrtMachine p)
-            {
-                switch (nextBlock)
-                {
-                    case Blocks.Enter:
-                        {
-                            Enter(p);
-                            break;
-                        }
-                    default:
-                        {
-                            throw new ApplicationException();
-                        }
-                    case Blocks.B0:
-                        {
-                            B0(p);
-                            break;
-                        }
-                    case Blocks.B1:
-                        {
-                            B1(p);
-                            break;
-                        }
-                    case Blocks.B2:
-                        {
-                            B2(p);
-                            break;
-                        }
-                    case Blocks.B3:
-                        {
-                            B3(p);
-                            break;
-                        }
-                    case Blocks.B4:
-                        {
-                            B4(p);
-                            break;
-                        }
-                    case Blocks.B5:
-                        {
-                            B5(p);
-                            break;
-                        }
-                }
-            }
-
-            public override ushort NextBlock
-            {
-                get
-                {
-                    return ((ushort)nextBlock);
-                }
-                set
-                {
-                    nextBlock = ((Blocks)value);
-                }
-            }
-
-
-            private void B5(PrtMachine p)
-            {
-                machine.PopState();
-                p.MethodReturn();
-            }
-
-            private void B4(PrtMachine p)
-            {
-                doPop = ((PrtMachine.RunHelperMethod)p.lastFunctionCompleted).ReturnValue;
-                p.lastFunctionCompleted = null;
-
-                //B1 is header of the "while" loop:
-                nextBlock = Blocks.B1;
-            }
-
-            private void B3(PrtMachine p)
-            {
-                PrtMachine.RunHelperMethod callee = new PrtMachine.RunHelperMethod(application, machine, false);
-                p.CallMethod(callee);
-                nextBlock = Blocks.B4;
-            }
-
-            private void B2(PrtMachine p)
-            {
-                var stateStack = machine.stateStack;
-                var hasNullTransitionOrAction = stateStack.HasNullTransitionOrAction();
-                DequeueEventReturnStatus status;
-                try
-                {
-                    status = machine.DequeueEvent(application, hasNullTransitionOrAction);
-                }
-                catch (PrtException ex)
-                {
-                    application.Exception = ex;
-                    p.MethodReturn();
-                    return;
-                }
-
-                if (status == DequeueEventReturnStatus.BLOCKED)
-                {
-                    p.DoYield = true;
-                    nextBlock = Blocks.B2;
-                }
-                else if (status == DequeueEventReturnStatus.SUCCESS)
-                {
-                    nextBlock = Blocks.B3;
-                }
-                else
-                {
-                    p.DoYield = true;
-                    nextBlock = Blocks.B3;
-                }
-            }
-
-            private void B1(PrtMachine p)
-            {
-                if (!doPop)
-                {
-                    nextBlock = Blocks.B2;
-                }
-                else
-                {
-                    nextBlock = Blocks.B5;
-                }
-            }
-
-            private void B0(PrtMachine p)
-            {
-                //Return from RunHelper:
-                doPop = ((PrtMachine.RunHelperMethod)p.lastFunctionCompleted).ReturnValue;
-                p.lastFunctionCompleted = null;
-                nextBlock = Blocks.B1;
-            }
-
-            private void Enter(PrtMachine p)
-            {
-                machine.PushState(state);
-
-                PrtMachine.RunHelperMethod callee = new PrtMachine.RunHelperMethod(application, machine, true);
-                p.CallMethod(callee);
-                nextBlock = Blocks.B0;
-            }
-        }
-
-        internal sealed class RunHelperMethod : PrtMethod
-        {
-            private static readonly short typeId = 2;
-
-            private PStateImpl application;
-            private PrtMachine machine;
-
-            // inputs
-            private bool start;
-
-            // locals
-            private Blocks nextBlock;
-            private PrtFun nextFunction;
-            private PrtValue currentPayload;
-
-            // output
-            private bool _ReturnValue;
-            public bool ReturnValue
-            {
-                get
-                {
-                    return _ReturnValue;
-                }
-            }
-
-            public RunHelperMethod(PStateImpl app, PrtMachine machine, bool start)
-            {
-                application = app;
-                nextBlock = Blocks.Enter;
-                this.machine = machine;
-                this.start = start;
-            }
-
-            public override PStateImpl StateImpl
-            {
-                get
-                {
-                    return application;
-                }
-                set
-                {
-                    application = value;
-                }
-            }
-
-            public enum Blocks : ushort
-            {
-                None = 0,
-                Enter = 1,
-                EnterStart = 2,
-                HandleEvent = 3,
-                ExecuteFunction = 4,
-                CheckCont = 5,
-                B4 = 6,
-                B5 = 7,
-                B6 = 8,
-                B7 = 9,
-                B8 = 10,
-            }
-
-            public override ushort NextBlock
-            {
-                get
-                {
-                    return ((ushort)nextBlock);
-                }
-                set
-                {
-                    nextBlock = ((Blocks)value);
-                }
-            }
-
-
-            public override void Dispatch(PrtMachine p)
-            {
-                switch (nextBlock)
-                {
-                    case Blocks.Enter:
-                        {
-                            Enter(p);
-                            break;
-                        }
-                    default:
-                        {
-                            throw new ApplicationException();
-                        }
-                    case Blocks.EnterStart:
-                        {
-                            EnterStart(p);
-                            break;
-                        }
-                    case Blocks.HandleEvent:
-                        {
-                            HandleEvent(p);
-                            break;
-                        }
-                    case Blocks.ExecuteFunction:
-                        {
-                            ExecuteFunction(p);
-                            break;
-                        }
-                    case Blocks.CheckCont:
-                        {
-                            CheckCont(p);
-                            break;
-                        }
-                    case Blocks.B4:
-                        {
-                            B4(p);
-                            break;
-                        }
-                    case Blocks.B5:
-                        {
-                            B5(p);
-                            break;
-                        }
-                    case Blocks.B6:
-                        {
-                            B6(p);
-                            break;
-                        }
-                    case Blocks.B7:
-                        {
-                            B7(p);
-                            break;
-                        }
-                    case Blocks.B8:
-                        {
-                            B8(p);
-                            break;
-                        }
-                }
-            }
-
-
-            private void Enter(PrtMachine p)
-            {
-                if (start)
-                {
-                    nextBlock = Blocks.EnterStart;
-                }
-                else
-                {
-                    nextBlock = Blocks.HandleEvent;
-                }
-            }
-
-            public void EnterStart(PrtMachine p)
-            {
-                p.PushState(p.StartState);
-                nextFunction = p.CurrentState.entryFun;
-                nextBlock = Blocks.ExecuteFunction;
-            }
-
-            private void ExecuteFunction(PrtMachine p)
-            {
-                PrtMachine.ReentrancyHelperMethod callee = new PrtMachine.ReentrancyHelperMethod(application, machine, nextFunction, p.currentArg);
-                p.CallMethod(callee);
-                nextBlock = Blocks.CheckCont;
-            }
-
-            private void CheckCont(PrtMachine p)
-            {
-                p.lastFunctionCompleted = null;
-
-                var reason = machine.cont.reason;
-                if (reason == PrtContinuationReason.Raise)
-                {
-                    nextBlock = Blocks.HandleEvent;
-                }
-                else
-                {
-                    machine.currentEvent = null;
-                    machine.currentArg = PrtValue.NullValue;
-                    if (reason != PrtContinuationReason.Pop)
-                    {
-                        _ReturnValue = false;
-                        p.MethodReturn();
-                    }
-                    else
-                    {
-                        PrtMachine.ReentrancyHelperMethod callee = new PrtMachine.ReentrancyHelperMethod(application, machine, state.exitFun, null);
-                        p.CallMethod(callee);
-
-                        nextBlock = Blocks.B4;
-                    }
-                }
-            }
-
-            private void B4(PrtMachine p)
-            {
-                p.lastFunctionCompleted = null;
-                _ReturnValue = true;
-                p.MethodReturn();
-            }
-
-            private void HandleEvent(PrtMachine p)
-            {
-                if (p.CurrentState.dos.ContainsKey(machine.currentEvent))
-                {
-                    nextFunction = stateStack.Find(machine.currentEvent);
-                    //goto execute;
-                    nextBlock = Blocks.ExecuteFunction;
-                }
-                else
-                {
-                    transition = state.FindPushTransition(machine.currentEvent);
-                    if (transition != null)
-                    {
-                        PrtMachine.RunMethod callee = new PrtMachine.RunMethod(application, machine, transition.to);
-                        p.CallMethod(callee);
-                        nextBlock = Blocks.B5;
-                    }
-                    else
-                    {
-                        nextBlock = Blocks.B6;
-                    }
-                }
-            }
-
-            private void B5(PrtMachine p)
-            {
-                p.lastFunctionCompleted = null;
-
-                if (machine.currentEvent == null)
-                {
-                    _ReturnValue = false;
-                    p.MethodReturn();
-                }
-                else
-                {
-                    //goto handle;
-                    nextBlock = Blocks.HandleEvent;
-                }
-            }
-
-            private void B6(PrtMachine p)
-            {
-                PrtMachine.ReentrancyHelperMethod callee = new PrtMachine.ReentrancyHelperMethod(application, machine, state.exitFun, null);
-                p.CallMethod(callee);
-                nextBlock = Blocks.B7;
-            }
-
-            private void B7(PrtMachine p)
-            {
-                p.lastFunctionCompleted = null;
-
-                transition = state.FindTransition(machine.currentEvent);
-                if (transition == null)
-                {
-                    _ReturnValue = true;
-                    p.MethodReturn();
-                }
-                else
-                {
-                    PrtMachine.ReentrancyHelperMethod callee = new PrtMachine.ReentrancyHelperMethod(application, machine, transition.fun, payload);
-                    p.CallMethod(callee);
-                    nextBlock = Blocks.B8;
-                }
-            }
-
-            private void B8(PrtMachine p)
-            {
-                payload = ((PrtMachine.ReentrancyHelperMethod)p.lastFunctionCompleted).ReturnValue;
-                p.lastFunctionCompleted = null;
-                var stateStack = machine.stateStack;
-                stateStack.state = transition.to;
-                state = stateStack.state;
-
-                //goto enter;
-                nextBlock = Blocks.EnterStart;
-            }
-        }
-
-        internal sealed class ReentrancyHelperMethod : PrtMethod
-        {
-            private static readonly short typeId = 3;
-
-            private PStateImpl application;
-            private PrtMachine machine;
-            private PrtFun fun;
-
-            // inputs
-            private PrtValue payload;
-
-            // locals
-            private Blocks nextBlock;
-
-            // output
-            private PrtValue _ReturnValue;
-
-            public PrtValue ReturnValue
-            {
-                get
-                {
-                    return _ReturnValue;
-                }
-            }
-
-            public ReentrancyHelperMethod(PStateImpl app, PrtMachine machine, PrtFun fun, PrtValue payload)
-            {
-                this.application = app;
-                this.machine = machine;
-                this.fun = fun;
-                this.payload = payload;
-            }
-
-            public override PStateImpl StateImpl
-            {
-                get
-                {
-                    return application;
-                }
-                set
-                {
-                    application = value;
-                }
-            }
-
-            public enum Blocks : ushort
-            {
-                None = 0,
-                Enter = 1,
-                B0 = 2,
-                B1 = 3,
-            }
-
-            public override ushort NextBlock
-            {
-                get
-                {
-                    return ((ushort)nextBlock);
-                }
-                set
-                {
-                    nextBlock = ((Blocks)value);
-                }
-            }
-
-
-            public override void Dispatch(PrtMachine p)
-            {
-                switch (nextBlock)
-                {
-                    case Blocks.Enter:
-                        {
-                            Enter(p);
-                            break;
-                        }
-                    default:
-                        {
-                            throw new ApplicationException();
-                        }
-                    case Blocks.B0:
-                        {
-                            B0(p);
-                            break;
-                        }
-                    case Blocks.B1:
-                        {
-                            B1(p);
-                            break;
-                        }
-                }
-            }
-
-
-            private void Enter(PrtMachine p)
-            {
-                machine.cont = new PrtContinuation();
-                machine.cont.PushContFrame(0, fun.CreateLocals(payload));
-                nextBlock = Blocks.B0;
-            }
-
-            private void B0(PrtMachine p)
-            {
-                try
-                {
-                    fun.Execute(application, machine);
-                }
-                catch (PrtException ex)
-                {
-                    application.Exception = ex;
-                }
-                PrtMachine.ProcessContinuationMethod callee = new ProcessContinuationMethod(application, machine);
-                p.CallMethod(callee);
-                nextBlock = Blocks.B1;
-            }
-
-            private void B1(PrtMachine p)
-            {
-                var doPop = ((PrtMachine.ProcessContinuationMethod)p.lastFunctionCompleted).ReturnValue;
-                p.lastFunctionCompleted = null;
-
-                if (doPop)
-                {
-                    if (machine.cont.retLocals == null)
-                    {
-                        _ReturnValue = payload;
-                    }
-                    else
-                    {
-                        _ReturnValue = machine.cont.retLocals[0];
-                    }
-                    p.MethodReturn();
-                }
-                else
-                {
-                    nextBlock = Blocks.B0;
-                }
-            }
-        }
-
-        internal sealed class ProcessContinuationMethod 
-        {
-            private static readonly short typeId = 4;
-
-            private PStateImpl application;
-            private PrtMachine machine;
-
-            // locals
-            private Blocks nextBlock;
-
-            // output
-            private bool _ReturnValue;
-
-            public bool ReturnValue
-            {
-                get { return _ReturnValue; }
-            }
-
-            public ProcessContinuationMethod(PStateImpl app, PrtMachine machine)
-            {
-                application = app;
-                this.machine = machine;
-                nextBlock = Blocks.Enter;
-            }
-
-            public override PStateImpl StateImpl
-            {
-                get
-                {
-                    return application;
-                }
-                set
-                {
-                    application = value;
-                }
-            }
-
-            public enum Blocks : ushort
-            {
-                None = 0,
-                Enter = 1,
-                B0 = 2
-            };
-
-            public override ushort NextBlock
-            {
-                get
-                {
-                    return ((ushort)nextBlock);
-                }
-                set
-                {
-                    nextBlock = ((Blocks)value);
-                }
-            }
-
-            public override void Dispatch(PrtMachine p)
-            {
-                switch (nextBlock)
-                {
-                    case Blocks.Enter:
-                        {
-                            Enter(p);
-                            break;
-                        }
-                    default:
-                        {
-                            throw new ApplicationException();
-                        }
-                    case Blocks.B0:
-                        {
-                            B0(p);
-                            break;
-                        }
-                }
-            }
-
-
-            private void Enter(PrtMachine p)
-            {
-                var cont = machine.cont;
-                var reason = cont.reason;
-                if (reason == PrtContinuationReason.Return)
-                {
-                    _ReturnValue = true;
-                    p.MethodReturn();
-                }
-                if (reason == PrtContinuationReason.Pop)
-                {
-                    _ReturnValue = true;
-                    p.MethodReturn();
-                }
-                if (reason == PrtContinuationReason.Raise)
-                {
-                    _ReturnValue = true;
-                    p.MethodReturn();
-                }
-                if (reason == PrtContinuationReason.Receive)
-                {
-                    DequeueEventReturnStatus status;
-                    try
-                    {
-                        status = machine.DequeueEvent(application, false);
-                    }
-                    catch (PrtException ex)
-                    {
-                        application.Exception = ex;
-                        p.MethodReturn();
-                        return;
-                    }
-
-                    if (status == DequeueEventReturnStatus.BLOCKED)
-                    {
-                        p.DoYield = true;
-                        nextBlock = Blocks.Enter;
-                    }
-                    else if (status == DequeueEventReturnStatus.SUCCESS)
-                    {
-                        nextBlock = Blocks.B0;
-                    }
-                    else
-                    {
-                        p.DoYield = true;
-                        nextBlock = Blocks.B0;
-                    }
-                }
-                if (reason == PrtContinuationReason.Nondet)
-                {
-                    application.SetPendingChoicesAsBoolean(p);
-                    cont.nondet = ((Boolean)application.GetSelectedChoiceValue(p));
-                    nextBlock = Blocks.B0;
-                }
-                if (reason == PrtContinuationReason.NewMachine)
-                {
-                    //yield;
-                    p.DoYield = true;
-                    nextBlock = Blocks.B0;
-                }
-                if (reason == PrtContinuationReason.Send)
-                {
-                    //yield;
-                    p.DoYield = true;
-                    nextBlock = Blocks.B0;
-                }
-            }
-
-            private void B0(PrtMachine p)
-            {
-                // ContinuationReason.Receive
-                _ReturnValue = false;
-                p.MethodReturn();
-            }
-        }
-
-
+       
     }
-
-    public abstract class PrtMonitor : ICloneable
-    {
-        public abstract bool IsHot
-        {
-            get;
-        }
-
-        public abstract PrtState StartState
-        {
-            get;
-        }
-
-        public abstract void Invoke();
-
-        public object Clone()
-        {
-
-        }
-    }
-
 }

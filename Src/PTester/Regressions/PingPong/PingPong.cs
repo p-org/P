@@ -1,7 +1,6 @@
 ﻿using P.PRuntime;
-using System.Collections;
 using System.Collections.Generic;
-using System;
+using System.Linq;
 /*
 * Simple P program
 
@@ -112,7 +111,7 @@ namespace SimpleMachine
         //pass the right parameters here !!
         public static PrtEvent dummy = new PrtEvent("dummy", PrtType.NullType, 100, false);
 
-        public Machine<Main> CreateMainMachine()
+        public PrtMachine CreateMainMachine()
         {
             var mainMachine = new Main(this, 10);
             AddStateMachineToStateImpl(mainMachine);
@@ -121,14 +120,19 @@ namespace SimpleMachine
             return mainMachine;
         }
 
-        public class Main : Machine<Main>
+        public class Main : PrtMachine
         {
-            public override State<Main> StartState
+            public override PrtState StartState
             {
                 get
                 {
                     return Init_State;
                 }
+            }
+
+            public override int NextInstanceNumber(PStateImpl app)
+            {
+                return app.AllStateMachines.Where(m => m is Main).Count() + 1;
             }
 
             public override string Name
@@ -141,13 +145,13 @@ namespace SimpleMachine
             //constructor
             public Main(PStateImpl app, int maxB) : base(app, maxB)
             {
-                fields = new List<PrtValue>();
+                machineFields = new List<PrtValue>();
             }
             //getters and setters
 
 
             #region Functions
-            public class Anon_0 : Fun<Main>
+            public class Anon_0 : PrtFun
             {
                 public override string Name
                 {
@@ -156,21 +160,23 @@ namespace SimpleMachine
                         return "Init_Entry";
                     }
                 }
-                public override void Execute(PStateImpl application, Main parent)
+                public override void Execute(PStateImpl application, PrtMachine parent)
                 {
-                    PrtContStackFrame currCont = parent.cont.PopContFrame();
-                    if (currCont.returnTolocation == 0)
+                    PrtFunStackFrame currFun = parent.PrtPopFunStack();
+                    if (currFun.cont.returnTolocation == 0)
                         goto Loc_0;
                     else
                         goto Ret;
 
 
                     Loc_0:
-                    parent.EnqueueEvent(application, dummy, PrtValue.NullValue, parent);
-                    parent.cont.Send(1, currCont.locals);
+                    parent.PrtEnqueueEvent(application, dummy, PrtValue.NullValue, parent);
+                    //Add the continuation with respect to send
+                    //parent.cont.Send(1, currCont.locals);
 
                     Ret:
-                    parent.cont.Return(null);
+                    ;
+                   //Need to figure out the push for return
                 }
 
                 public override List<PrtValue> CreateLocals(params PrtValue[] args)
@@ -182,7 +188,7 @@ namespace SimpleMachine
                 }
             }
 
-            public class Anon_1 : Fun<Main>
+            public class Anon_1 : PrtFun
             {
                 public override string Name
                 {
@@ -191,10 +197,10 @@ namespace SimpleMachine
                         return "Fail_Entry";
                     }
                 }
-                public override void Execute(PStateImpl application, Main parent)
+                public override void Execute(PStateImpl application, PrtMachine parent)
                 {
-                    PrtContStackFrame currCont = parent.cont.PopContFrame();
-                    if (currCont.returnTolocation == 0)
+                    PrtFunStackFrame currFun = parent.PrtPopFunStack();
+                    if (currFun.cont.returnTolocation == 0)
                         goto Loc_0;
                     else
                         goto Ret;
@@ -204,7 +210,8 @@ namespace SimpleMachine
                     throw new PrtAssertFailureException();
 
                     Ret:
-                    parent.cont.Return(null);
+                    ;
+                    //Need to figure out the push for return
 
                 }
 
@@ -223,18 +230,18 @@ namespace SimpleMachine
             #endregion
 
             #region States
-            public class Init : State<Main>
+            public class Init : PrtState
             {
-                public Init(string name, Fun<Main> entryFun, Fun<Main> exitFun, bool hasNullTransition, StateTemperature temperature) 
+                public Init(string name, PrtFun entryFun, PrtFun exitFun, bool hasNullTransition, StateTemperature temperature) 
                     :base (name, entryFun, exitFun, hasNullTransition, temperature)
                 {
 
                 }
             }
 
-            public class Fail : State<Main>
+            public class Fail : PrtState
             {
-                public Fail(string name, Fun<Main> entryFun, Fun<Main> exitFun, bool hasNullTransition, StateTemperature temperature) 
+                public Fail(string name, PrtFun entryFun, PrtFun exitFun, bool hasNullTransition, StateTemperature temperature) 
                     :base (name, entryFun, exitFun, hasNullTransition, temperature)
                 {
 
@@ -256,7 +263,7 @@ namespace SimpleMachine
                 Fail_State = new Fail("Fail", Anon_1_Fun, null, false, StateTemperature.Warm);
 
                 //create transition and add them to the state
-                Transition<Main> transition_1 = new Transition<Main>(null, Fail_State);
+                PrtTransition transition_1 = new PrtTransition(null, Fail_State);
 
                 //add transition
                 Init_State.transitions.Add(dummy, transition_1);

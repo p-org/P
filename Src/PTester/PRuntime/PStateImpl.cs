@@ -52,7 +52,7 @@ namespace P.PRuntime
                 foreach (var x in statemachines.Values)
                 {
                     if (enabled) break;
-                    enabled = enabled || x.IsEnabled;
+                    enabled = enabled || x.isEnabled;
                 }
                 bool hot = false;
                 foreach (var x in monitors)
@@ -88,7 +88,7 @@ namespace P.PRuntime
             clonedState.monitors = new List<PrtMonitor>();
             foreach(var monitor in monitors)
             {
-                clonedState.monitors.Add(monitor.Clone());
+                clonedState.monitors.Add((PrtMonitor)monitor.Clone());
             }
 
             return clonedState;

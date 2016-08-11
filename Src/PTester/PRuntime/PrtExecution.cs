@@ -164,7 +164,7 @@ namespace P.PRuntime
             HashSet<PrtEvent> deferredSet;
             HashSet<PrtEvent> receiveSet;
 
-            deferredSet = owner.stateStack.deferredSet;
+            deferredSet = owner.CurrentState.deferredSet;
             receiveSet = owner.receiveSet;
 
             int iter = 0;
@@ -173,8 +173,8 @@ namespace P.PRuntime
                 if ((receiveSet.Count == 0 && !deferredSet.Contains(events[iter].ev))
                     || (receiveSet.Count > 0 && receiveSet.Contains(events[iter].ev)))
                 {
-                    owner.currentEvent = events[iter].ev;
-                    owner.currentArg = events[iter].arg;
+                    owner.currentTrigger = events[iter].ev;
+                    owner.currentPayload = events[iter].arg;
                     events.Remove(events[iter]);
                     return;
                 }
@@ -190,7 +190,7 @@ namespace P.PRuntime
             HashSet<PrtEvent> deferredSet;
             HashSet<PrtEvent> receiveSet;
 
-            deferredSet = owner.stateStack.deferredSet;
+            deferredSet = owner.CurrentState.deferredSet;
             receiveSet = owner.receiveSet;
             foreach (var evNode in events)
             {
@@ -327,6 +327,11 @@ namespace P.PRuntime
     public class PrtFunStack
     {
         private Stack<PrtFunStackFrame> funStack;
+        public PrtFunStack()
+        {
+            funStack = new Stack<PrtFunStackFrame>();
+        }
+
         public PrtFunStackFrame TopOfStack
         {
             get
@@ -340,9 +345,9 @@ namespace P.PRuntime
             funStack.Push(new PrtFunStackFrame(fun, locals));
         }
 
-        public void PopFun()
+        public PrtFunStackFrame PopFun()
         {
-            funStack.Pop();
+            return funStack.Pop();
         }
 
         public void DidReturn(List<PrtValue> retLocals)

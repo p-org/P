@@ -103,6 +103,7 @@ class SM_HANDLE {
 	Machine machineName;
 	int machineId;
 	int instance;
+	SM_STATE destState;
 	SM_EVENT currentEvent;
     PRT_VALUE currentArg;
 	SM_EVENT_SET receiveSet;
@@ -118,6 +119,7 @@ class SM_HANDLE {
 		handle.machineName = mName;
 		handle.machineId = MachineId.GetNextId();
 		handle.instance = inst;
+		handle.destState = null;
 		handle.currentEvent = null;
 		prtType = PRT_TYPE.PrtMkPrimitiveType(PRT_TYPE_KIND.PRT_KIND_NULL);
 		handle.currentArg = PRT_VALUE.PrtMkDefaultValue(prtType);
@@ -414,7 +416,7 @@ class StateStack {
 	}
 };
 
-enum ContinuationReason { Return, Nondet, Pop, Raise, Receive, Send, NewMachine };
+enum ContinuationReason { Return, Nondet, Pop, Goto, Raise, Receive, Send, NewMachine };
 
 class StackFrame {
     int pc;
@@ -441,6 +443,7 @@ class Continuation {
 		res.reason = ContinuationReason.Return;
 		res.id = null;
 		res.retVal = null;
+		res.retLocals = null;
 		res.nondet = false;
 		return res;
     }
@@ -450,6 +453,7 @@ class Continuation {
 		this.reason = ContinuationReason.Return;
 		this.id = null;
 		this.retVal = null;
+		this.retLocals = null;
 		this.nondet = false;
     }
 
@@ -493,6 +497,15 @@ class Continuation {
 		this.reason = ContinuationReason.Pop;
 		this.id = null;
 		this.retVal = null;
+		this.retLocals = null;
+    }
+
+    void Goto() {
+        this.returnTo = null;
+		this.reason = ContinuationReason.Goto;
+		this.id = null;
+		this.retVal = null;
+		this.retLocals = null;
     }
 
     void Raise() {
@@ -500,6 +513,7 @@ class Continuation {
 		this.reason = ContinuationReason.Raise;
 		this.id = null;
 		this.retVal = null;
+		this.retLocals = null;
     }
 
     void Send(int ret, PRT_VALUE_ARRAY locals) {
@@ -507,6 +521,7 @@ class Continuation {
 		this.reason = ContinuationReason.Send;
 		this.id = null;
 		this.retVal = null;
+		this.retLocals = null;
 		this.PushReturnTo(ret, locals);
     }
 
@@ -515,6 +530,7 @@ class Continuation {
 		this.reason = ContinuationReason.NewMachine;
 		this.id = o;
 		this.retVal = null;
+		this.retLocals = null;
 		this.PushReturnTo(ret, locals);
     }
 
@@ -523,6 +539,7 @@ class Continuation {
 		this.reason = ContinuationReason.Receive;
 		this.id = null;
 		this.retVal = null;
+		this.retLocals = null;
 		this.PushReturnTo(ret, locals);
     }
 
@@ -531,6 +548,7 @@ class Continuation {
 		this.reason = ContinuationReason.Nondet;
 		this.id = null;
 		this.retVal = null;
+		this.retLocals = null;
 		this.PushReturnTo(ret, locals);
     }
 };

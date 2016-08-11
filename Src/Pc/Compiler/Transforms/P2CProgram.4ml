@@ -852,6 +852,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	ContextLineInfo ::= (TypingContext, in.Stmt, out.Stmt).
 	ContextLineInfo(f, s, NIL) :- SubSE(f, s), s: in.Stmt, %noSourceInfo = TRUE.
 	ContextLineInfo(f, s, info) :- SubSE(f, s), %noSourceInfo = FALSE, s = in.NewStmt(_, _, x), info = out.PpLine(x.line, NIL).
+	ContextLineInfo(f, s, info) :- SubSE(f, s), %noSourceInfo = FALSE, s = in.Goto(_, _, x), info = out.PpLine(x.line, NIL).
 	ContextLineInfo(f, s, info) :- SubSE(f, s), %noSourceInfo = FALSE, s = in.Raise(_, _, x), info = out.PpLine(x.line, NIL).
 	ContextLineInfo(f, s, info) :- SubSE(f, s), %noSourceInfo = FALSE, s = in.Send(_, _, _, _, x), info = out.PpLine(x.line, NIL).
 	ContextLineInfo(f, s, info) :- SubSE(f, s), %noSourceInfo = FALSE, s = in.Monitor(_, _, x), info = out.PpLine(x.line, NIL).
@@ -1951,6 +1952,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 										     NIL)).
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NewStmt(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Raise(_, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Goto(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Send(_, _, _, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Monitor(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.FunStmt(_, _, _, label, _), ContextSourceInfo(c, _, info, _),
@@ -2003,6 +2005,31 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 						   pay : in.Expr, RhsExpr(c, s, 0, payTrans, doFree),
 						   ContextLineInfo(c, s, info),
 						   cs = out.Seq(info, FunApp(Ident("P_STMT_0"), Args(newCall, Args(payTrans, Args(doFree, NIL))))).
+
+   	//// Goto
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.Goto(_, NIL, _),
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(Seq(info, FunApp(Ident("P_STMT_0"), Args(gotoCall, Args(mkNull, Args(Ident("PRT_FALSE"), NIL))))), Goto("P_EXIT_FUN")),
+						   DeclId(dst, _, dstName), dst is StateDecl, dst.owner = c.owner, dst.name = s.dst,
+						   gotoCall = out.FunApp(Ident("PrtGoto"),
+						                 Args(context,
+										 Args(Ident(dstName),
+										 Args(Ident("p_tmp_stmt_0"), NIL)))),
+						   ConstId(m, in.NulApp(NULL)), mkNull = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))),
+						   context = Ident("p_tmp_mach_priv").
+						   
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.Goto(_, pay, _), pay : in.Expr, 
+						   RhsExpr(c, s, 0, payTrans, doFreePayTrans),
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(Seq(info, FunApp(Ident("P_STMT_0"), Args(gotoCall, Args(payTrans, Args(doFreePayTrans, NIL))))), Goto("P_EXIT_FUN")),
+						   DeclId(dst, _, dstName), dst is StateDecl, dst.owner = c.owner, dst.name = s.dst,
+						   gotoCall = out.FunApp(Ident("PrtGoto"),
+						                 Args(context,
+										 Args(Ident(dstName),
+										 Args(Ident("p_tmp_stmt_0"), NIL)))),
+						   context = Ident("p_tmp_mach_priv").
 
 	//// Raise
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
@@ -2340,6 +2367,10 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Assert(e, _, _).
 	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Assert(e, _, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
 	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.Assert.
+
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Goto(_, e, _), e : in.Expr.
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Goto(_, e, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.Goto.
 
 	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Raise(e, _, _).
 	RhsCntxt(s, 1, e)    :- SubSE(_, s), s = in.Raise(_, e, _), e : in.Expr.

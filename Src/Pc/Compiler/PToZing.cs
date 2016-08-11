@@ -1899,6 +1899,7 @@ namespace Microsoft.Pc
             var body = new List<AST<Node>>();
             body.Add(MkZingIfThen(MkZingEq(MkZingDot(cont, "reason"), MkZingDot("ContinuationReason", "Return")), MkZingReturn(ZingData.Cnst_True)));
             body.Add(MkZingIfThen(MkZingEq(MkZingDot(cont, "reason"), MkZingDot("ContinuationReason", "Pop")), MkZingReturn(ZingData.Cnst_True)));
+            body.Add(MkZingIfThen(MkZingEq(MkZingDot(cont, "reason"), MkZingDot("ContinuationReason", "Goto")), MkZingReturn(ZingData.Cnst_True)));
             body.Add(MkZingIfThen(MkZingEq(MkZingDot(cont, "reason"), MkZingDot("ContinuationReason", "Raise")), MkZingReturn(ZingData.Cnst_True)));
             AST<Node> atChooseLivenessStmt = ZingData.Cnst_Nil;
             AST<Node> atYieldLivenessStmt = ZingData.Cnst_Nil;
@@ -2071,8 +2072,15 @@ namespace Microsoft.Pc
             enterStmts.Add(MkZingAssign(actionFun, MkZingDot(state, "entryFun")));
             blocks.Add(MkZingBlock("enter", MkZingSeq(enterStmts)));
 
+            List<AST<Node>> gotoStmts = new List<AST<Node>>();
+            gotoStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("TraceExitState"), state)));
+            gotoStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingDot(state, "exitFun"), MkZingIdentifier("null"))));
+            gotoStmts.Add(MkZingAssign(MkZingDot("myHandle", "stack", "state"), MkZingDot("myHandle", "destState")));
+            gotoStmts.Add(MkZingGoto("enter"));
+
             List<AST<Node>> executeStmts = new List<AST<Node>>();
             executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), actionFun, payload)));
+            executeStmts.Add(MkZingIfThen(MkZingEq(MkZingDot(cont, "reason"), MkZingDot("ContinuationReason", "Goto")), MkZingSeq(gotoStmts)));
             executeStmts.Add(MkZingIfThen(MkZingEq(MkZingDot(cont, "reason"), MkZingDot("ContinuationReason", "Raise")), MkZingGoto("handle")));
             executeStmts.Add(MkZingIfThen(MkZingNeq(MkZingDot(cont, "reason"), MkZingDot("ContinuationReason", "Pop")), MkZingReturn(ZingData.Cnst_False)));
             executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("TraceExitState"), state)));
@@ -2099,7 +2107,6 @@ namespace Microsoft.Pc
             handleStmts.Add(MkZingIfThen(MkZingEq(transition, MkZingIdentifier("null")), MkZingReturn(ZingData.Cnst_True)));
             handleStmts.Add(MkZingAssign(payload, MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingDot("transition", "fun"), payload)));
             handleStmts.Add(MkZingAssign(MkZingDot("myHandle", "stack", "state"), MkZingDot("transition", "to")));
-            handleStmts.Add(MkZingAssign(state, MkZingDot("myHandle", "stack", "state")));
             handleStmts.Add(MkZingGoto("enter"));
             blocks.Add(MkZingBlock("handle", MkZingSeq(handleStmts)));
 
@@ -2261,7 +2268,8 @@ namespace Microsoft.Pc
                      funName == PData.Con_NulApp.Node.Name ||
                      funName == PData.Con_UnApp.Node.Name ||
                      funName == PData.Con_Default.Node.Name ||
-                     funName == PData.Con_NulStmt.Node.Name)
+                     funName == PData.Con_NulStmt.Node.Name ||
+                     funName == PData.Con_Goto.Node.Name)
             {
                 var first = true;
                 foreach (var t in ft.Args)
@@ -2466,6 +2474,10 @@ namespace Microsoft.Pc
             else if (funName == PData.Con_NewStmt.Node.Name)
             {
                 return FoldNewStmt(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_Goto.Node.Name)
+            {
+                return FoldGoto(ft, children, ctxt);
             }
             else if (funName == PData.Con_Raise.Node.Name)
             {
@@ -3193,6 +3205,36 @@ namespace Microsoft.Pc
         ZingTranslationInfo FoldNewStmt(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             return FoldNew(ft, children, ctxt);
+        }
+
+        ZingTranslationInfo FoldGoto(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
+        {
+            var qualifiedStateName = (FuncTerm)GetArgByIndex(ft, 0);
+            var stateName = GetNameFromQualifiedName(ctxt.machineName, qualifiedStateName);
+            var stateExpr = MkZingState(stateName);
+            using (var it = children.GetEnumerator())
+            {
+                it.MoveNext();
+                var payloadExpr = it.Current.node;
+                var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
+                var srcFileName = funInfo.srcFileName;
+                var traceStmt = MkZingTrace(string.Format("<GotoLog> Machine {0}-{{0}} goes to {{1}}\\n", ctxt.machineName), MkZingDot("myHandle", "instance"), MkZingDot(stateExpr, "name"));
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpPayload");
+                if (payloadExpr == ZingData.Cnst_Nil)
+                {
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
+                }
+                else
+                {
+                    ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, payloadExpr));
+                }
+
+                var assignStmt = MkZingSeq(MkZingAssign(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")), 
+                                           MkZingAssign(MkZingDot("myHandle", "currentArg"), tmpVar),
+                                           MkZingAssign(MkZingDot("myHandle", "destState"), stateExpr));
+                var createRetCtxt = MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Goto")));
+                return new ZingTranslationInfo(MkZingSeq(traceStmt, assignStmt, createRetCtxt, MkZingReturn(ZingData.Cnst_Nil)));
+            }
         }
 
         ZingTranslationInfo FoldRaise(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)

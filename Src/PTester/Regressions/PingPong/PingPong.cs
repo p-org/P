@@ -132,7 +132,7 @@ namespace SimpleMachine
 
             public override int NextInstanceNumber(PStateImpl app)
             {
-                return app.AllStateMachines.Where(m => m is Main).Count() + 1;
+                return app.NextMachineInstanceNumber(this.GetType());
             }
 
             public override string Name

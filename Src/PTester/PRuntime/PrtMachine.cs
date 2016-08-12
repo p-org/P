@@ -48,6 +48,7 @@ namespace P.PRuntime
         private PrtNextStatemachineOperation nextSMOperation;
         private PrtStateExitReason stateExitReason;
         public int maxBufferSize;
+        public PrtState destOfGoto;
         //just a reference to stateImpl
         private PStateImpl StateImpl;
         #endregion
@@ -74,7 +75,7 @@ namespace P.PRuntime
             this.stateExitReason = PrtStateExitReason.NotExit;
             this.maxBufferSize = maxBuff;
             StateImpl = app;
-            
+
             //Push the start state function on the funStack.
             stateStack.PushStackFrame(StartState);
         }
@@ -143,14 +144,35 @@ namespace P.PRuntime
             stateStack.PushStackFrame(s);
         }
 
-        public void PrtPopState()
+        public bool PrtPopState(bool isPopStatement)
         {
+            Debug.Assert(stateStack.TopOfStack != null);
+            //pop stack
             stateStack.PopStackFrame();
+            
+            if(stateStack.TopOfStack == null)
+            {
+                if(isPopStatement)
+                {
+                    throw new PrtInvalidPopStatement();
+                }
+                else if(eventValue != PrtEvent.HaltEvent)
+                {
+                    throw new PrtUnhandledEventException();
+                }
+                else
+                {
+                    isHalted = true;
+                }
+            }
+
+            return isHalted;
+
         }
 
         public void PrtChangeState(PrtState s)
         {
-            if(stateStack.TopOfStack != null)
+            if (stateStack.TopOfStack != null)
             {
                 stateStack.PopStackFrame();
             }
@@ -283,6 +305,43 @@ namespace P.PRuntime
             PrtPushFunStack(CurrentState.exitFun, CurrentState.exitFun.CreateLocals());
             invertedFunStack.TopOfStack.fun.Execute(StateImpl, this);
         }
+
+        public void PrtExecuteReceiveCase(PrtEvent ev)
+        {
+            //figure out where the receive cases are mentioned ??
+            throw new NotImplementedException();
+        }
+
+        public bool PrtIsPushTransitionPresent(PrtEvent ev)
+        {
+            if (CurrentState.transitions.ContainsKey(ev))
+                return CurrentState.transitions[ev].isPushTran;
+            else
+                return false;
+        }
+
+        public bool PrtIsTransitionPresent(PrtEvent ev)
+        {
+            return CurrentState.transitions.ContainsKey(ev);
+        }
+
+        public bool PrtIsActionInstalled(PrtEvent ev)
+        {
+            return CurrentState.dos.ContainsKey(ev);
+        }
+
+        public bool PrtHasNullReceiveCase()
+        {
+            return receiveSet.Contains(PrtEvent.NullEvent);
+        }
+
+        public void PrtExecuteTransitionFun(PrtEvent ev)
+        {
+            // Shaz: Figure out how to handle the transfer stuff for payload !!!
+            PrtPushFunStack(CurrentState.transitions[ev].transitionFun, CurrentState.transitions[ev].transitionFun.CreateLocals(currentPayload));
+            invertedFunStack.TopOfStack.fun.Execute(StateImpl, this);
+        }
+
         #endregion
 
 
@@ -291,15 +350,22 @@ namespace P.PRuntime
             int numOfStepsTaken = 0;
             Debug.Assert(isEnabled && !isHalted, "Invoked PrtRunStateMachine or a blocked or a halted machine");
 
-            while (PrtStepStateMachine())
+            try
             {
-                if(numOfStepsTaken > 100000)
+                while (PrtStepStateMachine())
                 {
-                    StateImpl.Exception = new PrtInfiniteRaiseLoop();
-                    return;
+                    if (numOfStepsTaken > 100000)
+                    {
+                        throw new PrtInfiniteRaiseLoop();
+                    }                   
+                    numOfStepsTaken++;
                 }
-                numOfStepsTaken++;
             }
+            catch(PrtException ex)
+            {
+                StateImpl.Exception = ex;
+            }
+            
         }
         
 
@@ -406,14 +472,139 @@ namespace P.PRuntime
                                 }
                             case PrtStateExitReason.OnPopStatement:
                                 {
-                                    hasMoreWork != PrtCheckPopState();
-
-
+                                    hasMoreWork = !PrtPopState(true);
+                                    nextSMOperation = PrtNextStatemachineOperation.DequeueOperation;
+                                    stateExitReason = PrtStateExitReason.NotExit;
+                                    goto Finish;
+                                }
+                            case PrtStateExitReason.OnGotoStatement:
+                                {
+                                    PrtChangeState(destOfGoto);
+                                    nextSMOperation = PrtNextStatemachineOperation.EntryOperation;
+                                    stateExitReason = PrtStateExitReason.NotExit;
+                                    goto Finish;
+                                }
+                            case PrtStateExitReason.OnUnhandledEvent:
+                                {
+                                    hasMoreWork = !PrtPopState(false);
+                                    nextSMOperation = PrtNextStatemachineOperation.HandleEventOperation;
+                                    stateExitReason = PrtStateExitReason.NotExit;
+                                    goto Finish;
+                                }
+                            case PrtStateExitReason.OnTransition:
+                                {
+                                    stateExitReason = PrtStateExitReason.OnTransitionAfterExit;
+                                    PrtExecuteTransitionFun(eventValue);
+                                    goto CheckFunLastOperation;
+                                }
+                            case PrtStateExitReason.OnTransitionAfterExit:
+                                {
+                                    PrtChangeState(CurrentState.transitions[eventValue].gotoState);
+                                    stateExitReason = PrtStateExitReason.NotExit;
+                                    goto DoEntry;
+                                }
+                            default:
+                                {
+                                    Debug.Assert(false, "Unexpected value for exit reason");
+                                    goto Finish;
                                 }
                         }
+                        
                     }
+                default:
+                    {
+                        Debug.Assert(false, "Unexpected value for continuation reason");
+                        goto Finish;
+                    }
+            }
+
+            DoDequeue:
+            Debug.Assert(receiveSet.Count == 0, "Machine cannot be blocked at receive when here");
+            var dequeueStatus = PrtDequeueEvent(StateImpl, CurrentState.hasNullTransition);
+            if(dequeueStatus == PrtDequeueReturnStatus.BLOCKED)
+            {
+                nextSMOperation = PrtNextStatemachineOperation.DequeueOperation;
+                hasMoreWork = false;
+                goto Finish;
+
+            }
+            else if (dequeueStatus == PrtDequeueReturnStatus.SUCCESS)
+            {
+                nextSMOperation = PrtNextStatemachineOperation.HandleEventOperation;
+                hasMoreWork = true;
+                goto Finish;
+            }
+            else // NULL transition
+            {
+                nextSMOperation = PrtNextStatemachineOperation.HandleEventOperation;
+                hasMoreWork = false;
+                goto Finish;
+            }
 
 
+            DoHandleEvent:
+            Debug.Assert(receiveSet.Count == 0, "The machine must not be blocked on a receive");
+            if(currentTrigger != null)
+            {
+                currEventValue = currentTrigger;
+                currentTrigger = null;
+            }
+            else
+            {
+                currEventValue = eventValue;
+            }
+
+            if(PrtIsPushTransitionPresent(currEventValue))
+            {
+                PrtChangeState(CurrentState.transitions[currEventValue].gotoState);
+                goto DoEntry;
+            }
+            else if(PrtIsTransitionPresent(currEventValue))
+            {
+                stateExitReason = PrtStateExitReason.OnTransition;
+                eventValue = currEventValue;
+                PrtExecuteExitFunction();
+                goto CheckFunLastOperation;
+            }
+            else if(PrtIsActionInstalled(currEventValue))
+            {
+                goto DoAction;
+            }
+            else
+            {
+                stateExitReason = PrtStateExitReason.OnUnhandledEvent;
+                eventValue = currEventValue;
+                PrtExecuteExitFunction();
+                goto CheckFunLastOperation;
+            }
+
+            DoReceive:
+            Debug.Assert(receiveSet.Count == 0 && PrtHasNullReceiveCase(), "Receive set empty and at receive !!");
+            if(receiveSet.Count == 0)
+            {
+                stateExitReason = PrtStateExitReason.NotExit;
+                PrtExecuteReceiveCase(PrtEvent.NullEvent);
+                goto CheckFunLastOperation;
+            }
+            dequeueStatus = PrtDequeueEvent(StateImpl, false);
+            if (dequeueStatus == PrtDequeueReturnStatus.BLOCKED)
+            {
+                nextSMOperation = PrtNextStatemachineOperation.ReceiveOperation;
+                hasMoreWork = false;
+                goto Finish;
+
+            }
+            else if (dequeueStatus == PrtDequeueReturnStatus.SUCCESS)
+            {
+                stateExitReason = PrtStateExitReason.NotExit;
+                PrtExecuteReceiveCase(currentTrigger);
+                goto CheckFunLastOperation;
+            }
+            else // NULL case
+            {
+                nextSMOperation = PrtNextStatemachineOperation.ReceiveOperation;
+                hasMoreWork = false;
+                goto Finish;
             }
 
             Finish:

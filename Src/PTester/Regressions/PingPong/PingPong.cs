@@ -253,7 +253,7 @@ namespace SimpleMachine
                 Fail_State = new Fail("Fail", Anon_1_Fun, PrtCommonFunctions.SkipFun, false, StateTemperature.Warm);
 
                 //create transition and add them to the state
-                PrtTransition transition_1 = new PrtTransition(PrtCommonFunctions.SkipFun, Fail_State);
+                PrtTransition transition_1 = new PrtTransition(PrtCommonFunctions.SkipFun, Fail_State, false);
 
                 //add transition
                 Init_State.transitions.Add(dummy, transition_1);

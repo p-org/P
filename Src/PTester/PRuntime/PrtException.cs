@@ -227,6 +227,20 @@ namespace P.PRuntime
 
     }
 
+    public class PrtInvalidPopStatement : PrtException
+    {
+        public PrtInvalidPopStatement()
+            : base()
+        {
+        }
+
+        public PrtInvalidPopStatement(string message)
+            : base(message)
+        {
+        }
+
+    }
+    
     public class PrtApplicationException : PrtException
     {
         public PrtApplicationException()

@@ -90,11 +90,13 @@ namespace P.PRuntime
     {
         public PrtFun transitionFun; // isPush <==> fun == null
         public PrtState gotoState;
-
-        public PrtTransition(PrtFun fun, PrtState toState)
+        public bool isPushTran;
+        public PrtTransition(PrtFun fun, PrtState toState, bool isPush)
         {
             this.transitionFun = fun;
             this.gotoState = toState;
+            this.isPushTran = isPush;
+
         }
     };
 
@@ -127,28 +129,8 @@ namespace P.PRuntime
             this.temperature = temperature;
         }
 
-        public PrtTransition FindPushTransition(PrtEvent evt)
-        {
-            if (transitions.ContainsKey(evt))
-            {
-                PrtTransition transition = transitions[evt];
-                if (transition.transitionFun == null)
-                    return transition;
-            }
-            return null;
-        }
 
-        public PrtTransition FindTransition(PrtEvent evt)
-        {
-            if (transitions.ContainsKey(evt))
-            {
-                return transitions[evt];
-            }
-            else
-            {
-                return null;
-            }
-        }
+        
     };
 
     public class PrtEventNode

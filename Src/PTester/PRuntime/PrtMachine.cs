@@ -308,7 +308,7 @@ namespace P.PRuntime
 
         public void PrtExecuteReceiveCase(PrtEvent ev)
         {
-            //figure out where the receive cases are mentioned ??
+            //figure out where the receive cases are stored and how ??
             throw new NotImplementedException();
         }
 
@@ -368,7 +368,6 @@ namespace P.PRuntime
             
         }
         
-
         public bool PrtStepStateMachine()
         {
             PrtEvent currEventValue;
@@ -611,7 +610,6 @@ namespace P.PRuntime
             return hasMoreWork;
 
             }
-
 
     }
 }

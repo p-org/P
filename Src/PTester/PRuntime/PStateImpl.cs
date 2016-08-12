@@ -36,6 +36,7 @@ namespace P.PRuntime
         /// List of monitors
         /// </summary>
         private List<PrtMonitor> monitors;
+        
         /// <summary>
         /// Stores the exception encoutered during exploration.
         /// </summary>
@@ -95,6 +96,12 @@ namespace P.PRuntime
 
         }
         #endregion
+
+
+        public int NextMachineInstanceNumber(Type machineType)
+        {
+            return statemachines.Where(m => m.GetType() == machineType).Count() + 1;
+        }
 
         public void AddStateMachineToStateImpl(PrtMachine machine)
         {

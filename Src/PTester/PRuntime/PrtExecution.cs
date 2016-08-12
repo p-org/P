@@ -5,6 +5,54 @@ using System.Linq;
 
 namespace P.PRuntime
 {
+    public class PrtCommonFunctions
+    {
+        public static PrtIgnoreFun IgnoreFun = new PrtIgnoreFun();
+        public static PrtSkipFun SkipFun = new PrtSkipFun();
+    }
+
+    public class PrtIgnoreFun : PrtFun
+    {
+        public override string Name
+        {
+            get
+            {
+                return "Ignore";
+            }
+        }
+
+        public override void Execute(PStateImpl application, PrtMachine parent)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override List<PrtValue> CreateLocals(params PrtValue[] args)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class PrtSkipFun : PrtFun
+    {
+        public override string Name
+        {
+            get
+            {
+                return "Skip";
+            }
+        }
+
+        public override void Execute(PStateImpl application, PrtMachine parent)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override List<PrtValue> CreateLocals(params PrtValue[] args)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     public abstract class PrtFun
     {
         public abstract string Name
@@ -309,6 +357,7 @@ namespace P.PRuntime
         Receive,
         Send,
         NewMachine,
+        Goto
     };
 
     public class PrtFunStackFrame
@@ -336,7 +385,10 @@ namespace P.PRuntime
         {
             get
             {
-                return funStack.Peek();
+                if (funStack.Count == 0)
+                    return null;
+                else
+                    return funStack.Peek();
             }
         }
 

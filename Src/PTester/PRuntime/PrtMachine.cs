@@ -167,6 +167,12 @@ namespace P.PRuntime
             invertedFunStack.PushFun(fun, local);
         }
 
+        public void PrtResetTriggerAndPayload()
+        {
+            currentTrigger = null;
+            currentPayload = null;
+        }
+
         public void PrtEnqueueEvent(PStateImpl application, PrtEvent e, PrtValue arg, PrtMachine source)
         {
             PrtType prtType;
@@ -270,25 +276,162 @@ namespace P.PRuntime
                 return PrtDequeueReturnStatus.BLOCKED;
             }
         }
+
+        public void PrtExecuteExitFunction()
+        {
+            //Shaz: exit functions do not take any arguments so is this current ??
+            PrtPushFunStack(CurrentState.exitFun, CurrentState.exitFun.CreateLocals());
+            invertedFunStack.TopOfStack.fun.Execute(StateImpl, this);
+        }
         #endregion
 
 
         public void PrtRunStateMachine()
         {
+            int numOfStepsTaken = 0;
+            Debug.Assert(isEnabled && !isHalted, "Invoked PrtRunStateMachine or a blocked or a halted machine");
 
+            while (PrtStepStateMachine())
+            {
+                if(numOfStepsTaken > 100000)
+                {
+                    StateImpl.Exception = new PrtInfiniteRaiseLoop();
+                    return;
+                }
+                numOfStepsTaken++;
+            }
         }
         
-        
 
-        
+        public bool PrtStepStateMachine()
+        {
+            PrtEvent currEventValue;
+            PrtFun currAction;
+            bool hasMoreWork = false;
+
+            Debug.Assert(isEnabled, "PrtStepStateMachine is invoked when the state machine is blocked, STRANGE !!");
+
+            switch(nextSMOperation)
+            {
+                case PrtNextStatemachineOperation.EntryOperation:
+                    goto DoEntry;
+                case PrtNextStatemachineOperation.DequeueOperation:
+                    goto DoDequeue;
+                case PrtNextStatemachineOperation.HandleEventOperation:
+                    goto DoHandleEvent;
+                case PrtNextStatemachineOperation.ReceiveOperation:
+                    goto DoReceive;
+            }
+
+            DoEntry:
+            /*
+             * Note that we have made an assumption that when a state is pushed on state stack or a transition is taken (update to a state)
+             * the action set and deferred set is updated appropriately
+            */
+            if(invertedFunStack.TopOfStack == null)
+            {
+                //Trace: entered state
+                //Shaz: Is the following this correct, how do we pass the payload to entry function.
+                PrtPushFunStack(CurrentState.entryFun, CurrentState.entryFun.CreateLocals(currentPayload));
+            }
+            //invoke the function
+            invertedFunStack.TopOfStack.fun.Execute(StateImpl, this);
+            goto CheckFunLastOperation;
+
+            DoAction:
+            currAction = PrtFindActionHandler(eventValue);
+            if(currAction == PrtCommonFunctions.IgnoreFun)
+            {
+                //Trace: Performed ignore action for the event
+                PrtResetTriggerAndPayload();
+            }
+            else
+            {
+                if(invertedFunStack.TopOfStack == null)
+                {
+                    //Trace: executed the action handler for event
+                    PrtPushFunStack(currAction, currAction.CreateLocals(currentPayload));
+                }
+                //invoke the action handler
+                invertedFunStack.TopOfStack.fun.Execute(StateImpl, this);
+            }
+            goto CheckFunLastOperation;
+
+            CheckFunLastOperation:
+            if(receiveSet.Count != 0)
+            {
+                // We are at a blocking "receive"; so do receive operation
+                nextSMOperation = PrtNextStatemachineOperation.ReceiveOperation;
+                goto Finish;
+
+            }
+
+            if(invertedFunStack.TopOfStack == null)
+            {
+                // This means that I just did an ignore and hence should go back to dequeue
+                hasMoreWork = true;
+                nextSMOperation = PrtNextStatemachineOperation.DequeueOperation;
+                stateExitReason = PrtStateExitReason.NotExit;
+            }
+
+            switch(invertedFunStack.TopOfStack.cont.reason)
+            {
+                case PrtContinuationReason.Pop:
+                    {
+                        stateExitReason = PrtStateExitReason.OnPopStatement;
+                        PrtExecuteExitFunction();
+                        goto CheckFunLastOperation;
+                    }
+                case PrtContinuationReason.Goto:
+                    {
+                        stateExitReason = PrtStateExitReason.OnGotoStatement;
+                        PrtExecuteExitFunction();
+                        goto CheckFunLastOperation;
+                    }
+                case PrtContinuationReason.Raise:
+                    {
+                        nextSMOperation = PrtNextStatemachineOperation.HandleEventOperation;
+                        hasMoreWork = true;
+                        goto Finish;
+                    }
+                case PrtContinuationReason.Return:
+                    {
+                        switch(stateExitReason)
+                        {
+                            case PrtStateExitReason.NotExit:
+                                {
+                                    nextSMOperation = PrtNextStatemachineOperation.DequeueOperation;
+                                    hasMoreWork = true;
+                                    goto Finish;
+                                }
+                            case PrtStateExitReason.OnPopStatement:
+                                {
+                                    hasMoreWork != PrtCheckPopState();
 
 
-        
+                                }
+                        }
+                    }
 
-        
 
-        
+            }
 
-       
+            Finish:
+            return hasMoreWork;
+
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
 }

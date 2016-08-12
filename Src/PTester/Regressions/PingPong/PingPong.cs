@@ -83,9 +83,6 @@ namespace SimpleMachine
 {
     public class Application : PStateImpl
     {
-        public List<PrtMachine> MainMachines;
-
-
         #region Constructors
         public Application() :base()
         {
@@ -99,12 +96,8 @@ namespace SimpleMachine
 
         public Application(bool initialize) : base()
         {
-            //initialize all non-static fields
-            MainMachines = new List<PrtMachine>();
-
             //create the main machine
             CreateMainMachine();
-
         }
         #endregion
 
@@ -115,8 +108,6 @@ namespace SimpleMachine
         {
             var mainMachine = new Main(this, 10);
             AddStateMachineToStateImpl(mainMachine);
-            MainMachines.Add(mainMachine);
-
             return mainMachine;
         }
 
@@ -145,7 +136,7 @@ namespace SimpleMachine
             //constructor
             public Main(PStateImpl app, int maxB) : base(app, maxB)
             {
-                machineFields = new List<PrtValue>();
+                // initialize fields
             }
             //getters and setters
 

@@ -249,14 +249,14 @@
             CommandLineOptions options,
             HashSet<string> crntEventNames,
             HashSet<string> crntMachineNames,
+            PProgram program,
             out List<Flag> flags,
-            out PProgram program,
             out List<string> includedFileNames)
         {
             flags = parseFlags = new List<Flag>();
             this.crntEventNames = crntEventNames;
             this.crntMachineNames = crntMachineNames;
-            program = parseProgram = new PProgram();
+            parseProgram = program;
             includedFileNames = parseIncludedFileNames = new List<string>();
             parseSource = file;
             Options = options;
@@ -278,43 +278,6 @@
                 }
 
                 var str = new System.IO.FileStream(file.Uri.LocalPath, System.IO.FileMode.Open, System.IO.FileAccess.Read);
-                var scanner = ((Scanner)Scanner);
-                scanner.SetSource(str);
-                scanner.SourceProgram = file;
-                scanner.Flags = flags;
-                scanner.Failed = false;
-                ResetState();
-                result = (!scanner.Failed) && Parse(default(System.Threading.CancellationToken)) && !parseFailed;
-                str.Close();
-            }
-            catch (Exception e)
-            {
-                var badFile = new Flag(
-                    SeverityKind.Error,
-                    default(Span),
-                    Constants.BadFile.ToString(e.Message),
-                    Constants.BadFile.Code,
-                    file);
-                flags.Add(badFile);
-                return false;
-            }
-
-            return result;
-        }
-
-        internal bool ParseText(
-            ProgramName file, 
-            string programText, 
-            out List<Flag> flags,
-            out PProgram program)
-        {
-            flags = parseFlags = new List<Flag>();
-            program = parseProgram = new PProgram();
-            parseSource = file;
-            bool result;
-            try
-            {
-                var str = new System.IO.MemoryStream(System.Text.Encoding.ASCII.GetBytes(programText));
                 var scanner = ((Scanner)Scanner);
                 scanner.SetSource(str);
                 scanner.SourceProgram = file;

@@ -128,16 +128,8 @@
         private const string ErrorClassName = "error";
         private const int TypeErrorCode = 1;
 
-        private static readonly Tuple<string, string>[] ManifestPrograms = new Tuple<string, string>[]
-        {
-            new Tuple<string, string>("Pc.Domains.P.4ml", "Domains\\P.4ml"),
-            new Tuple<string, string>("Pc.Domains.C.4ml", "Domains\\C.4ml"),
-            new Tuple<string, string>("Pc.Domains.Zing.4ml", "Domains\\Zing.4ml"),
-            new Tuple<string, string>("Pc.Transforms.PWithInferredTypes.4ml", "Transforms\\PWithInferredTypes.4ml"),
-            new Tuple<string, string>("Pc.Transforms.P2CProgram.4ml", "Transforms\\P2CProgram.4ml"),
-        };
-
         private static readonly Dictionary<string, string> ReservedModuleToLocation;
+        private static readonly Dictionary<string, Tuple<AST<Program>, bool>> ManifestPrograms;
 
         static Compiler()
         {
@@ -147,6 +139,13 @@
             ReservedModuleToLocation.Add(ZingDomain, "Domains\\Zing.4ml");
             ReservedModuleToLocation.Add(P2InfTypesTransform, "Transforms\\PWithInferredTypes.4ml");
             ReservedModuleToLocation.Add(P2CTransform, "Transforms\\P2CProgram.4ml");
+
+            ManifestPrograms = new Dictionary<string, Tuple<AST<Program>, bool>>();
+            ManifestPrograms["Pc.Domains.P.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.P.4ml", "Domains\\P.4ml"), false);
+            ManifestPrograms["Pc.Domains.C.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.C.4ml", "Domains\\C.4ml"), false);
+            ManifestPrograms["Pc.Domains.Zing.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.Zing.4ml", "Domains\\Zing.4ml"), false);
+            ManifestPrograms["Pc.Transforms.PWithInferredTypes.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Transforms.PWithInferredTypes.4ml", "Transforms\\PWithInferredTypes.4ml"), false);
+            ManifestPrograms["Pc.Transforms.P2CProgram.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Transforms.P2CProgram.4ml", "Transforms\\P2CProgram.4ml"), false);
         }
 
         public Env CompilerEnv
@@ -185,7 +184,7 @@
             private set;
         }
 
-        public List<Tuple<string, AST<Model>>> AllModels
+        public AST<Model> RootModel
         {
             get;
             private set;
@@ -197,7 +196,7 @@
             private set;
         }
 
-        public Dictionary<string, PProgram> ParsedPrograms // used only by PVisualizer
+        public PProgram ParsedProgram // used only by PVisualizer
         {
             get;
             private set;
@@ -399,37 +398,28 @@
             {
                 PerfTimer.ConsoleOutput = true;
             }
-            using (new PerfTimer("Compiler loading"))
+            Log = new StandardOutput();
+            Options = options;
+            SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
+            EnvParams envParams = null;
+            if (options.shortFileNames)
             {
-                Log = new StandardOutput();
-                Options = options;
-                SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
-                EnvParams envParams = null;
-                if (options.shortFileNames)
-                {
-                    envParams = new EnvParams(
-                        new Tuple<EnvParamKind, object>(EnvParamKind.Msgs_SuppressPaths, true));
-                }
-
-                CompilerEnv = new Env(envParams);
-                InitEnv(CompilerEnv);
+                envParams = new EnvParams(
+                    new Tuple<EnvParamKind, object>(EnvParamKind.Msgs_SuppressPaths, true));
             }
+            CompilerEnv = new Env(envParams);
         }
 
         public Compiler(bool shortFileNames)
         {
-            using (new PerfTimer("Compiler loading"))
+            Log = new StandardOutput();
+            SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
+            EnvParams envParams = null;
+            if (shortFileNames)
             {
-                Log = new StandardOutput();
-                SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
-                EnvParams envParams = null;
-                if (shortFileNames)
-                {
-                    envParams = new EnvParams(new Tuple<EnvParamKind, object>(EnvParamKind.Msgs_SuppressPaths, true));
-                }
-                CompilerEnv = new Env(envParams);
-                InitEnv(CompilerEnv);
+                envParams = new EnvParams(new Tuple<EnvParamKind, object>(EnvParamKind.Msgs_SuppressPaths, true));
             }
+            CompilerEnv = new Env(envParams);
         }
 
         public Compiler(Compiler other)
@@ -441,7 +431,7 @@
 
         bool InternalCompile(string inputFileName)
         {
-            Dictionary<string, PProgram> parsedPrograms = new Dictionary<string, PProgram>(StringComparer.OrdinalIgnoreCase);
+            PProgram parsedProgram = new PProgram();
 
             using (new PerfTimer("Compiler parsing " + Path.GetFileName(inputFileName)))
             {
@@ -476,12 +466,11 @@
                 parserWorkQueue.Enqueue(RootFileName);
                 while (parserWorkQueue.Count > 0)
                 {
-                    PProgram prog;
                     List<string> includedFileNames;
                     List<Flag> parserFlags;
                     string currFileName = parserWorkQueue.Dequeue();
                     var parser = new Parser.Parser();
-                    var result = parser.ParseFile(SeenFileNames[currFileName], Options, crntEventNames, crntMachineNames, out parserFlags, out prog, out includedFileNames);
+                    var result = parser.ParseFile(SeenFileNames[currFileName], Options, crntEventNames, crntMachineNames, parsedProgram, out parserFlags, out includedFileNames);
                     foreach (Flag f in parserFlags)
                     {
                         AddFlag(f);
@@ -490,8 +479,6 @@
                     {
                         return false;
                     }
-
-                    parsedPrograms.Add(currFileName, prog);
 
                     string currDirectoryName = Path.GetDirectoryName(Path.GetFullPath(currFileName));
                     foreach (var fileName in includedFileNames)
@@ -519,94 +506,42 @@
                     }
                 }
 
-                if (Options.test)
+                if (!Options.test)
                 {
-                    ParsedPrograms = parsedPrograms;
+                    parsedProgram = Filter(parsedProgram);
                 }
-                else
-                {
-                    ParsedPrograms = new Dictionary<string, PProgram>();
-                    foreach (var s in parsedPrograms.Keys)
-                    {
-                        ParsedPrograms.Add(s, Filter(parsedPrograms[s]));
-                    }
-                }
+                ParsedProgram = parsedProgram;
             }
 
             using (new PerfTimer("Compiler formulating " + Path.GetFileName(inputFileName)))
             {
+                //// Step 0. Load P.4ml.
+                LoadManifestProgram("Pc.Domains.P.4ml");
+
                 //// Step 1. Serialize the parsed object graph into a Formula model and install it. Should not fail.
-                InstallResult instResult;
-                AST<Program> modelProgram;
-                bool progressed;
                 AST<Model> rootModel = null;
-                RootModule = null;
-                AllModels = new List<Tuple<string, AST<Model>>>();
-                foreach (var kv in parsedPrograms)
-                {
-                    AST<Model> model;
-                    var inputModule = MkSafeModuleName(kv.Key);
-                    var mkModelResult = Factory.Instance.MkModel(
-                        inputModule,
-                        PDomain,
-                        kv.Value.Terms,
-                        out model,
-                        null,
-                        MkReservedModuleLocation(PDomain),
-                        kv.Key == RootFileName && parsedPrograms.Count > 1 ? ComposeKind.Includes : ComposeKind.None);
+                RootModule = MkSafeModuleName(RootFileName);
+                var mkModelResult = Factory.Instance.MkModel(
+                    RootModule,
+                    PDomain,
+                    parsedProgram.Terms,
+                    out rootModel,
+                    null,
+                    MkReservedModuleLocation(PDomain),
+                    ComposeKind.None);
+                Contract.Assert(mkModelResult);
+                RootModel = rootModel;
 
-                    Contract.Assert(mkModelResult);
-                    string srcFileName = kv.Key;
-                    if (Options.shortFileNames)
-                    {
-                        srcFileName = Path.GetFileName(srcFileName);
-                    }
-                    if (kv.Key == RootFileName)
-                    {
-                        Contract.Assert(rootModel == null);
-                        rootModel = model;
-                        RootModule = inputModule;
-                        if (SeenFileNames.Count > 1)
-                        {
-                            foreach (var kvp in SeenFileNames)
-                            {
-                                if (kvp.Key == RootFileName)
-                                {
-                                    continue;
-                                }
-
-                                rootModel = Formula.API.Factory.Instance.AddModelCompose(
-                                                rootModel,
-                                                Formula.API.Factory.Instance.MkModRef(
-                                                    MkSafeModuleName(kvp.Key),
-                                                    null,
-                                                    kvp.Value.ToString()));
-                            }
-                        }
-                        AllModels.Add(new Tuple<string, AST<Model>>(srcFileName, rootModel));
-                    }
-                    else
-                    {
-                        modelProgram = MkProgWithSettings(SeenFileNames[kv.Key], new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
-                        progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, model), out instResult);
-                        Contract.Assert(progressed && instResult.Succeeded);
-                        AllModels.Add(new Tuple<string, AST<Model>>(srcFileName, model));
-                    }
-                }
-
-                modelProgram = MkProgWithSettings(RootProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
-                progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, rootModel), out instResult);
+                InstallResult instResult;
+                AST<Program> modelProgram = MkProgWithSettings(RootProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
+                bool progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, rootModel), out instResult);
                 Contract.Assert(progressed && instResult.Succeeded);
 
                 if (Options.outputFormula)
                 {
                     string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
                     StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, "output.4ml")));
-                    foreach (var tuple in AllModels)
-                    {
-                        var model = tuple.Item2;
-                        model.Print(wr);
-                    }
+                    rootModel.Print(wr);
                     wr.Close();
                 }
             }
@@ -660,6 +595,8 @@
 
             using (new PerfTimer("Formulating Zing"))
             {
+                LoadManifestProgram("Pc.Domains.Zing.4ml");
+                LoadManifestProgram("Pc.Transforms.PWithInferredTypes.4ml");
                 var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
                 transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModule, null, RootProgramName.ToString()));
                 var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModule + "_WithTypes"));
@@ -681,7 +618,7 @@
             }
             using (new PerfTimer("Generating Zing"))
             {
-                var pToZing = new PToZing(this, AllModels, (AST<Model>)modelWithTypes);
+                var pToZing = new PToZing(this, RootModel, (AST<Model>)modelWithTypes);
                 if (!pToZing.GenerateZing(zingFileName, ref zingModel))
                     return false;
             }
@@ -886,7 +823,6 @@
             // Enumerate typing errors
             using (new PerfTimer("Compiler error reporting " + Path.GetFileName(inputModule)))
             {
-
                 AddErrors(task.Result, "DupNmdSubE(_, _, _, _)", 1);
                 AddErrors(task.Result, "PurityError(_, _)", 1);
                 AddErrors(task.Result, "MonitorError(_, _)", 1);
@@ -1075,32 +1011,29 @@
             return (AST<Program>)Factory.Instance.ToAST(config.Root);
         }
 
-        private void InitEnv(Env env)
+        private void LoadManifestProgram(string manifestName)
         {
-            //// Load into the environment all the domains and transforms.
-            //// Domains are installed under ExecutingLocation\Domains
-            //// Transforms are installed under ExecutingLocation\Transforms
-
-            var execDir = (new FileInfo(Assembly.GetExecutingAssembly().Location)).DirectoryName;
-            foreach (var mp in ManifestPrograms)
+            InstallResult result;
+            var tuple = ManifestPrograms[manifestName];
+            if (tuple.Item2) return;
+            var program = tuple.Item1;
+            CompilerEnv.Install(program, out result);
+            if (!result.Succeeded)
             {
-                InstallResult result;
-                env.Install(LoadManifestProgram(mp.Item1, Path.Combine(execDir, mp.Item2)), out result);
-                if (!result.Succeeded)
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine("Error: Could not load program: " + program);
+                foreach (var pair in result.Flags)
                 {
-                    StringBuilder sb = new StringBuilder();
-                    sb.AppendLine("Error: Could not load program: " + mp.Item2);
-                    foreach (var pair in result.Flags)
-                    {
-                        sb.AppendLine(FormatError(pair.Item2));
-                    }
-                    throw new Exception("Error: Could not load resources");
+                    sb.AppendLine(FormatError(pair.Item2));
                 }
+                throw new Exception("Error: Could not load resources");
             }
+            ManifestPrograms[manifestName] = Tuple.Create<AST<Program>, bool>(program, true);
         }
 
-        private static AST<Program> LoadManifestProgram(string manifestName, string programName)
+        private static AST<Program> ParseManifestProgram(string manifestName, string programName)
         {
+            var execDir = (new FileInfo(Assembly.GetExecutingAssembly().Location)).DirectoryName;
             Task<ParseResult> parseTask = null;
             try
             {
@@ -1111,7 +1044,7 @@
                     programStr = sr.ReadToEnd();
                 }
 
-                parseTask = Factory.Instance.ParseText(new ProgramName(programName), programStr);
+                parseTask = Factory.Instance.ParseText(new ProgramName(Path.Combine(execDir, programName)), programStr);
             }
             catch (Exception e)
             {
@@ -1254,6 +1187,8 @@
         {
             using (new PerfTimer("Compiler generating C " + Path.GetFileName(RootFileName)))
             {
+                LoadManifestProgram("Pc.Domains.C.4ml");
+                LoadManifestProgram("Pc.Transforms.P2CProgram.4ml");
                 return InternalGenerateC();
             }
         }

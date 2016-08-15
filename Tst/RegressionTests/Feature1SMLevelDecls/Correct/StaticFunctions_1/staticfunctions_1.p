@@ -2,7 +2,7 @@ fun XX() {
 
 }
 
-main machine M {
+machine Main {
 	start state S {
 	}
 }

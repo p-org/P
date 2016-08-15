@@ -16,7 +16,7 @@ event invalidate_sharers assert 1 : int;
 event sharer_id assert 3 : machine;
 
 //Host machine 
-main machine Host {
+machine Main {
 	var curr_client : machine;
 	var clients : (machine, machine, machine);
 	var curr_cpu : machine;

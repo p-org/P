@@ -1,5 +1,5 @@
 event x;
-main machine TestMachine {
+machine Main {
 	var x1 : int;
 	start state Init {
 		entry {

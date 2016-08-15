@@ -6,7 +6,7 @@ event E3 assert 1;
 event E4 assert 1;
 event unit assert 1;
 
-main machine Real {
+machine Main {
     var ghost_machine: machine;
     start state Real_Init {
         entry {

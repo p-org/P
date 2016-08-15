@@ -1,10 +1,10 @@
-//This is a repro for a bug in static checking:
+//This is a repro for a bug in static checking (corrected since):
 //SUCCESS is deferred and there's a transition on SUCCESS in the same state
 event PING assert 1 : machine;
 event PONG assert 1;
 event SUCCESS;
 
-main machine Client {
+machine Main {
     var server: machine;
 	var test: bool;
     start state Init {
@@ -20,9 +20,9 @@ main machine Client {
 	    send server, PING, this;
 	    raise SUCCESS;
 	}
-		//No error is detected:
+		//error:
         on SUCCESS goto WaitPong;  
-		defer SUCCESS;
+		defer SUCCESS;                   //error
      }
 
      state WaitPong {

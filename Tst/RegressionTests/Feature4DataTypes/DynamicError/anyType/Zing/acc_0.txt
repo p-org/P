@@ -13,10 +13,10 @@ anyType.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
-<CreateLog> Created Machine M-0
-<StateLog> Machine M-0 entering State S
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State S
 
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_8.bl,)
-Comment: anyType.p (35, 4): Assert failed
+Comment: anyType.p (34, 4): Assert failed

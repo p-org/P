@@ -1,7 +1,7 @@
 event E: int;
 event Unit;
 
-main machine M {
+machine Main {
     start state S {
 		entry {
 			new N(this);

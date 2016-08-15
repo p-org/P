@@ -13,13 +13,13 @@ receive2.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
-<CreateLog> Created Machine A-0
-<StateLog> Machine A-0 entering State Init
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Init
 <CreateLog> Created Machine B-0
 <StateLog> Machine B-0 entering State Init
-<EnqueueLog> Enqueued Event < ____E, null > in Machine ____B-0 by ____A-0
+<EnqueueLog> Enqueued Event < ____E, null > in Machine ____B-0 by ____Main-0
 <DequeueLog> Dequeued Event < ____E, null > at Machine ____B-0
-<NullTransLog> Null transition taken by Machine ____A-0
+<NullTransLog> Null transition taken by Machine ____Main-0
 
 Error:
 P Assertion failed:

@@ -3,7 +3,7 @@ event myNmTuple : (first:int, sec:bool);
 event mySeq : seq[int];
 event myMapSeq : (first: map[int, int], sec : seq[bool]);
 
-main machine MachOS {
+machine Main {
 	var INT : int;
 	var BOOL : bool;
 	var MACH : machine;

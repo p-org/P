@@ -15,8 +15,8 @@ Safety Error Trace
 Trace-Log 0:
 <CreateLog> Created monitor Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine TestDriver-0
-<StateLog> Machine TestDriver-0 entering State Init
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Init
 <MonitorLog> Enqueued Event < ____REL, 1 > to Spinlock monitor
 
 Error:
@@ -27,8 +27,8 @@ Safety Error Trace
 Trace-Log 1:
 <CreateLog> Created monitor Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine TestDriver-0
-<StateLog> Machine TestDriver-0 entering State Init
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Init
 <MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
 
 Error:
@@ -39,8 +39,8 @@ Safety Error Trace
 Trace-Log 2:
 <CreateLog> Created monitor Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine TestDriver-0
-<StateLog> Machine TestDriver-0 entering State Init
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Init
 <MonitorLog> Enqueued Event < ____REL, 0 > to Spinlock monitor
 
 Error:
@@ -51,8 +51,8 @@ Safety Error Trace
 Trace-Log 3:
 <CreateLog> Created monitor Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine TestDriver-0
-<StateLog> Machine TestDriver-0 entering State Init
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Init
 <MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
 
 Error:

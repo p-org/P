@@ -126,11 +126,11 @@ namespace Microsoft.PVisualizer
 
         static void SaveFile(string fileName, GViewer gViewer)
         {
-            if (programs != null)
+            if (program != null)
             {
                 using (StreamWriter writer = new StreamWriter(fileName))
                 {
-                    PtoGraph.GenerateDgml(programs, writer);
+                    PtoGraph.GenerateDgml(program, writer);
                 }
             }
             else
@@ -149,8 +149,8 @@ namespace Microsoft.PVisualizer
             if (result)
             {
                 lastFileName = inputFileName;
-                GViewer.Graph = PtoGraph.GenerateGraph(compiler.ParsedPrograms);
-                programs = new List<PProgram>(compiler.ParsedPrograms.Values);
+                GViewer.Graph = PtoGraph.GenerateGraph(compiler.ParsedProgram);
+                program = compiler.ParsedProgram;
             }
             else
             {
@@ -158,6 +158,6 @@ namespace Microsoft.PVisualizer
             }
         }
 
-        static List<PProgram> programs;
+        static PProgram program;
     }
 }

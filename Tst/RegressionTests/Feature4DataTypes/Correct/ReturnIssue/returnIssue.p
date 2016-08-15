@@ -2,7 +2,7 @@
 type ArgType = int;
 type ResultType = int;
 
-main machine Manager {
+machine Main {
     start state Init
     {
 

@@ -13,8 +13,8 @@ Insert4Map.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
-<CreateLog> Created Machine M-0
-<StateLog> Machine M-0 entering State S
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State S
 
 Error:
 P Assertion failed:

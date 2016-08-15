@@ -1,6 +1,6 @@
 event E: int;
 
-main machine M {
+machine Main {
 	var g: int;
     
 	fun G(a : int) : int { 

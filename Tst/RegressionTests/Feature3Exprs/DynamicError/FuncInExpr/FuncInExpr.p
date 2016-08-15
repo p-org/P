@@ -1,7 +1,7 @@
 event x;
 event y;
 
-main machine TestM {
+machine Main {
 	start state Init {
 		entry {
 			if (!F2().Success || F1().Success) 

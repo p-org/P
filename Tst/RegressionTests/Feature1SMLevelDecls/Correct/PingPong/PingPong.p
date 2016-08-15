@@ -94,7 +94,7 @@ fun _CREATEMACHINE(cner: machine, typeOfMachine: int, param : any, newMachine: m
 	return newMachine;
 }
 
-main machine GodMachine {
+machine Main {
 	var container : machine;
     var pongMachine_1: machine;
 	var pongMachine_2: machine;

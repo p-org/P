@@ -6,7 +6,7 @@ event d;
 event e;
 
 
-main machine Node {
+machine Main {
 	var x: int;
 	start state Init {
 		entry {

@@ -13,14 +13,14 @@ TopNullHandlerOverridesInherited.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
-<CreateLog> Created Machine Real1-0
-<StateLog> Machine Real1-0 entering State Real1_Init
-<RaiseLog> Machine Real1-0 raised Event ____unit
-<EnqueueLog> Enqueued Event < ____E1, null > in Machine ____Real1-0 by ____Real1-0
-<RaiseLog> Machine Real1-0 raised Event ____local
-<StateLog> Machine Real1-0 entering State Real1_S1
-<NullTransLog> Null transition taken by Machine ____Real1-0
-<FunctionLog> Machine Real1-0 executing Function Action3
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Real1_Init
+<RaiseLog> Machine Main-0 raised Event ____unit
+<EnqueueLog> Enqueued Event < ____E1, null > in Machine ____Main-0 by ____Main-0
+<RaiseLog> Machine Main-0 raised Event ____local
+<StateLog> Machine Main-0 entering State Real1_S1
+<NullTransLog> Null transition taken by Machine ____Main-0
+<FunctionLog> Machine Main-0 executing Function Action3
 
 Error:
 P Assertion failed:

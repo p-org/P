@@ -2,7 +2,7 @@ event Ping assert 1 : machine;
 event Pong assert 1;
 event Success;
 
-main machine PING {
+machine Main {
     var pongId: machine;
 
     start state Ping_Init {

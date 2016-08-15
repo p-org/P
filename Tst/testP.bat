@@ -3,10 +3,10 @@ setlocal
 set SCRIPTDIR=%~dp0
 cd %SCRIPTDIR%
 cd ..\Bld
-call build.bat debug x86
+call build.bat release x86
 cd %SCRIPTDIR%
 
-set Configuration=Debug
+set Configuration=Release
 
 set MSBuildPath=
 for /F "usebackq tokens=1,2* delims= " %%i in (`reg query HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0 -v MSBuildToolsPath`) do (

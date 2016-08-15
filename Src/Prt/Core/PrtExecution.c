@@ -151,6 +151,7 @@ _In_  PRT_VALUE					*payload
 	context->exitReason = NotExit;
 	context->eventValue = 0;
 
+	context->destStateIndex = 0;
 	context->currentTrigger = NULL;
 	context->currentPayload = PrtCloneValue(payload);
 
@@ -369,6 +370,22 @@ _In_ PRT_VALUE					*payload
 	PrtUnlockMutex(context->stateMachineLock);
 
 	PrtSendPrivate((PRT_MACHINEINST_PRIV*)PrtGetMachine(context->process, source), context, event, payload, PRT_TRUE);
+}
+
+void
+PrtGoto(
+	_Inout_ PRT_MACHINEINST_PRIV		*context,
+	_In_ PRT_UINT32						destStateIndex,
+	_In_ PRT_VALUE						*payload
+)
+{
+	context->lastOperation = GotoStatement;
+	PrtAssert(context->currentTrigger == NULL, "currentTrigger must be null");
+	PrtAssert(context->currentPayload == NULL, "currentPayload must be null");
+	context->destStateIndex = destStateIndex;
+	context->currentTrigger = PrtMkEventValue(PRT_SPECIAL_EVENT_NULL);
+	context->currentPayload = PrtCloneValue(payload);
+	PrtLog(PRT_STEP_GOTO, context, context, NULL, payload);
 }
 
 void
@@ -866,7 +883,12 @@ CheckLastOperation:
 		context->exitReason = OnPopStatement;
 		PrtRunExitFunction(context);
 		goto CheckLastOperation;
-        
+    
+	case GotoStatement:
+		context->exitReason = OnGotoStatement;
+		PrtRunExitFunction(context);
+		goto CheckLastOperation;
+
 	case RaiseStatement:
 		context->nextOperation = HandleEventOperation;
 		hasMoreWork = PRT_TRUE;
@@ -883,6 +905,12 @@ CheckLastOperation:
 		case OnPopStatement:
 			hasMoreWork = !PrtPopState(context, PRT_TRUE);
 			context->nextOperation = DequeueOperation;
+			context->exitReason = NotExit;
+			goto Finish;
+
+		case OnGotoStatement:
+			context->currentState = context->destStateIndex;
+			context->nextOperation = EntryOperation;
 			context->exitReason = NotExit;
 			goto Finish;
 

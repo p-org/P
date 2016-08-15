@@ -4,7 +4,7 @@ event E3 assume 1;
 event E4;
 event unit assert 1;
 
-main machine Real {
+machine Main {
     var ghost_machine: machine;
     var test: bool;
     start state Real_Init {

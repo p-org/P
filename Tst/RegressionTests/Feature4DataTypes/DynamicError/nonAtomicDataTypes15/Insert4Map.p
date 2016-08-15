@@ -1,6 +1,6 @@
 // INSERT for map Zinger error
 // this test found bug in Zinger: wrong error message 
-main machine M {  
+machine Main {
   var m: map[int,any];
   
   start state S

@@ -13,8 +13,8 @@ FuncInExpr.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
-<CreateLog> Created Machine TestM-0
-<StateLog> Machine TestM-0 entering State Init
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Init
 
 Error:
 P Assertion failed:

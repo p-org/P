@@ -1,7 +1,7 @@
 // P semantics test: one machine, asgn to uninitialized sequence (runtime error)
 // Updating a sequence at index 1 (line 21), but the size of the sequence at that time is 0 (the initial sequence size).
 
-main machine M {    
+machine Main {
     var x : (a: seq [int], b: map[int, seq[int]]);
     var y : int;
 	var tmp: int;

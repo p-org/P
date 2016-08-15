@@ -383,9 +383,11 @@ Stmt
 	| RAISE Exp COMMA SingleExprArgList SEMICOLON             { PushRaise(true,  ToSpan(@1));                            }
 	| QualifierOrNone SEND Exp COMMA Exp SEMICOLON                            { PushSend(false, ToSpan(@1)); }
 	| QualifierOrNone SEND Exp COMMA Exp COMMA SingleExprArgList SEMICOLON    { PushSend(true,  ToSpan(@1)); }
-	| MONITOR Exp SEMICOLON									  { PushMonitor(false, $2.str, ToSpan(@2), ToSpan(@1));      }
-	| MONITOR Exp COMMA SingleExprArgList SEMICOLON           { PushMonitor(true, $2.str, ToSpan(@2), ToSpan(@1));       }
+	| MONITOR Exp SEMICOLON									  { PushMonitor(false, $2.str, ToSpan(@1));      }
+	| MONITOR Exp COMMA SingleExprArgList SEMICOLON           { PushMonitor(true, $2.str, ToSpan(@1));       }
 	| ReceiveStmt LCBRACE CaseList RCBRACE						  { PushReceive(ToSpan(@1)); }
+	| GOTO GotoTarget SEMICOLON							  { PushGoto(false, ToSpan(@1)); }
+	| GOTO GotoTarget COMMA SingleExprArgList SEMICOLON	  { PushGoto(true, ToSpan(@1)); }
 	;
 
 ReceiveStmt
@@ -406,7 +408,7 @@ CaseList
 	;
 	 
 StmtBlock
-	: LocalVarDeclList                                         { PushNulStmt(); }    
+	: LocalVarDeclList			{ PushNulStmt(P_Root.UserCnstKind.SKIP,  ToSpan(@1)); }    
     | LocalVarDeclList StmtList
 	;
 
@@ -418,6 +420,11 @@ StmtList
 StateTarget
     : ID                  { QualifyStateTarget($1.str, ToSpan(@1)); }
 	| StateTarget DOT ID   { QualifyStateTarget($3.str, ToSpan(@3)); }
+	;
+
+GotoTarget
+    : ID                  { QualifyGotoTarget($1.str, ToSpan(@1)); }
+	| GotoTarget DOT ID   { QualifyGotoTarget($3.str, ToSpan(@3)); }
 	;
 
 /******************* Value Expressions *******************/

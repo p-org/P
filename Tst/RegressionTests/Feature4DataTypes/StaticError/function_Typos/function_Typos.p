@@ -1,6 +1,6 @@
 event x;
 event y : seq [(a: int, a: int, a: int, a: int)];
-main machine TestMachine {
+machine Main {
   fun foo(x : event, x: event) {
 		return true;
 		//This is the correct return stmt (inferred return type is NIL):

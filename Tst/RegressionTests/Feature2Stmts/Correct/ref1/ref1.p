@@ -1,6 +1,6 @@
 event E: int;
 
-main machine M {
+machine Main {
 	fun F(a ref: int, b : int) {
 	    a = a + b;
 	}

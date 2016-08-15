@@ -18,7 +18,7 @@ fun unsealwithRR()
 [invokescheduler = unsealRR]{}
 
 
-main machine M1 {
+machine Main {
    var m2_id : machine;
    var m3_id : machine;
 

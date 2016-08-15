@@ -30,6 +30,7 @@
         private P_Root.EventDecl crntEventDecl = null;
         private P_Root.MachineDecl crntMachDecl = null;
         private P_Root.QualifiedName crntStateTargetName = null;
+        private P_Root.QualifiedName crntGotoTargetName = null;
         private P_Root.StateDecl crntState = null;
         private List<P_Root.VarDecl> crntVarList = new List<P_Root.VarDecl>();
         private List<P_Root.EventLabel> crntEventList = new List<P_Root.EventLabel>();
@@ -248,14 +249,14 @@
             CommandLineOptions options,
             HashSet<string> crntEventNames,
             HashSet<string> crntMachineNames,
+            PProgram program,
             out List<Flag> flags,
-            out PProgram program,
             out List<string> includedFileNames)
         {
             flags = parseFlags = new List<Flag>();
             this.crntEventNames = crntEventNames;
             this.crntMachineNames = crntMachineNames;
-            program = parseProgram = new PProgram();
+            parseProgram = program;
             includedFileNames = parseIncludedFileNames = new List<string>();
             parseSource = file;
             Options = options;
@@ -277,43 +278,6 @@
                 }
 
                 var str = new System.IO.FileStream(file.Uri.LocalPath, System.IO.FileMode.Open, System.IO.FileAccess.Read);
-                var scanner = ((Scanner)Scanner);
-                scanner.SetSource(str);
-                scanner.SourceProgram = file;
-                scanner.Flags = flags;
-                scanner.Failed = false;
-                ResetState();
-                result = (!scanner.Failed) && Parse(default(System.Threading.CancellationToken)) && !parseFailed;
-                str.Close();
-            }
-            catch (Exception e)
-            {
-                var badFile = new Flag(
-                    SeverityKind.Error,
-                    default(Span),
-                    Constants.BadFile.ToString(e.Message),
-                    Constants.BadFile.Code,
-                    file);
-                flags.Add(badFile);
-                return false;
-            }
-
-            return result;
-        }
-
-        internal bool ParseText(
-            ProgramName file, 
-            string programText, 
-            out List<Flag> flags,
-            out PProgram program)
-        {
-            flags = parseFlags = new List<Flag>();
-            program = parseProgram = new PProgram();
-            parseSource = file;
-            bool result;
-            try
-            {
-                var str = new System.IO.MemoryStream(System.Text.Encoding.ASCII.GetBytes(programText));
                 var scanner = ((Scanner)Scanner);
                 scanner.SetSource(str);
                 scanner.SourceProgram = file;
@@ -448,7 +412,6 @@
                 {
                     sendStmt.arg = (P_Root.IArgType_Send__2)arg;
                 }
-
                 sendStmt.ev = (P_Root.IArgType_Send__1)valueExprStack.Pop();
                 sendStmt.dest = (P_Root.IArgType_Send__0)valueExprStack.Pop();
             }
@@ -463,7 +426,37 @@
             stmtStack.Push(sendStmt);
         }
 
-        private void PushMonitor(bool hasArgs, string name, Span nameSpan, Span span)
+        private void PushGoto(bool hasArgs, Span span)
+        {
+            Contract.Assert(crntGotoTargetName != null);
+            Contract.Assert(!hasArgs || exprsStack.Count > 0);
+
+            var gotoStmt = P_Root.MkGoto();
+            gotoStmt.dst = crntGotoTargetName;
+            gotoStmt.Span = span;
+            gotoStmt.info = MkSourceInfo(span);
+            if (hasArgs)
+            {
+                var arg = exprsStack.Pop();
+                if (arg.Symbol == TheDefaultExprs.Symbol)
+                {
+                    gotoStmt.arg = P_Root.MkTuple((P_Root.IArgType_Tuple__0)arg);
+                    gotoStmt.arg.Span = arg.Span;
+                }
+                else
+                {
+                    gotoStmt.arg = (P_Root.IArgType_Goto__1)arg;
+                }
+            }
+            else
+            {
+                gotoStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            }
+            stmtStack.Push(gotoStmt);
+            crntGotoTargetName = null;
+        }
+
+        private void PushMonitor(bool hasArgs, string name, Span span)
         {
             Contract.Assert(!hasArgs || exprsStack.Count > 0);
             Contract.Assert(valueExprStack.Count > 0);
@@ -498,7 +491,8 @@
             }
             else
             {
-                var skipStmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, new Span()));
+                var skipStmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
+                skipStmt.info = MkSourceInfo(span);
                 stmtStack.Push(skipStmt);
             }
         }
@@ -750,12 +744,6 @@
             stmtStack.Push(nulStmt);
         }
 
-        private void PushNulStmt()
-        {
-            var nulStmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, new Span()));
-            stmtStack.Push(nulStmt);
-        }
-
         private void PushSeq()
         {
             Contract.Assert(stmtStack.Count > 1);
@@ -839,10 +827,11 @@
             else
             {
                 Contract.Assert(stmtStack.Count > 0);
-                var skip = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
-                skip.Span = span;
+                var skipStmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
+                skipStmt.Span = span;
+                skipStmt.info = MkSourceInfo(span);
                 iteStmt.@true = (P_Root.IArgType_Ite__1)stmtStack.Pop();
-                iteStmt.@false = skip;
+                iteStmt.@false = skipStmt;
             }
             stmtStack.Push(iteStmt);
         }
@@ -934,7 +923,8 @@
             }
             else
             {
-                var skipStmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, new Span()));
+                var skipStmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
+                skipStmt.info = MkSourceInfo(span);
                 stmtStack.Push(skipStmt);
             }
         }
@@ -1050,10 +1040,25 @@
                 crntStateTargetName = P_Root.MkQualifiedName(
                     MkString(name, span),
                     crntStateTargetName);
-
             }
-
             crntStateTargetName.Span = span;
+        }
+
+        private void QualifyGotoTarget(string name, Span span)
+        {
+            if (crntGotoTargetName == null)
+            {
+                crntGotoTargetName = P_Root.MkQualifiedName(
+                    MkString(name, span),
+                    MkUserCnst(P_Root.UserCnstKind.NIL, span));
+            }
+            else
+            {
+                crntGotoTargetName = P_Root.MkQualifiedName(
+                    MkString(name, span),
+                    crntGotoTargetName);
+            }
+            crntGotoTargetName.Span = span;
         }
 
         #endregion
@@ -2007,6 +2012,7 @@
         private P_Root.AnonFunDecl MkSkipFun(P_Root.MachineDecl owner, Span span)
         {
             var stmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
+            stmt.info = MkSourceInfo(span);
             stmt.Span = span;
             var field = P_Root.MkNmdTupTypeField(
                                    P_Root.MkUserCnst(P_Root.UserCnstKind.NONE),
@@ -2159,6 +2165,7 @@
             crntEventDecl = null;
             crntMachDecl = null;
             crntStateTargetName = null;
+            crntGotoTargetName = null;
             nextTrampolineLabel = 0;
             nextPayloadVarLabel = 0;
             crntStateNames.Clear();

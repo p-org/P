@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Diagnostics;
 
 using Microsoft.Formula.API;
 using Microsoft.Formula.API.ASTQueries;
 using Microsoft.Formula.API.Nodes;
-using Microsoft.Formula.Common;
 
 namespace Microsoft.Pc
 {
@@ -290,25 +288,26 @@ namespace Microsoft.Pc
             return string.Format("MACHINE_{0}", machineName);
         }
 
+        public Dictionary<AST<Node>, string> funToFileName;
         public Dictionary<string, EventInfo> allEvents;
         public Dictionary<string, List<Tuple<string, int>>> allEnums;
         public Dictionary<string, MachineInfo> allMachines;
         public Dictionary<string, FunInfo> allStaticFuns;
         private Dictionary<AST<Node>, string> anonFunToName;
 
-        public LinkedList<Tuple<string,  AST<FuncTerm>>> GetBin(Dictionary<string, LinkedList<Tuple<string, AST<FuncTerm>>>> factBins, FuncTerm ft)
+        public LinkedList<AST<FuncTerm>> GetBin(Dictionary<string, LinkedList<AST<FuncTerm>>> factBins, FuncTerm ft)
         {
             var fun = (Id)ft.Function;
             return GetBin(factBins, fun.Name);
         }
 
-        public LinkedList<Tuple<string, AST<FuncTerm>>> GetBin(Dictionary<string, LinkedList<Tuple<string, AST<FuncTerm>>>> factBins, string name)
+        public LinkedList<AST<FuncTerm>> GetBin(Dictionary<string, LinkedList<AST<FuncTerm>>> factBins, string name)
         {
             Contract.Requires(!string.IsNullOrEmpty(name));
-            LinkedList<Tuple<string, AST<FuncTerm>>> bin;
+            LinkedList<AST<FuncTerm>> bin;
             if (!factBins.TryGetValue(name, out bin))
             {
-                bin = new LinkedList<Tuple<string, AST<FuncTerm>>>();
+                bin = new LinkedList<AST<FuncTerm>>();
                 factBins.Add(name, bin);
             }
             return bin;
@@ -333,36 +332,31 @@ namespace Microsoft.Pc
         }
 
         Compiler compiler;
-        public PToZing(Compiler compiler, List<Tuple<string, AST<Model>>> allModels, AST<Model> modelWithTypes)
+        public PToZing(Compiler compiler, AST<Model> model, AST<Model> modelWithTypes)
         {
             this.compiler = compiler;
             this.typeContext = new TypeTranslationContext(this);
-            GenerateProgramData(allModels);
+            GenerateProgramData(model);
             GenerateTypeInfo(modelWithTypes);
         }
 
-        private void GenerateProgramData(List<Tuple<string, AST<Model>>> allModels)
+        private void GenerateProgramData(AST<Model> model)
         {
-            var factBins = new Dictionary<string, LinkedList<Tuple<string, AST<FuncTerm>>>>();
-
-            foreach (var tuple in allModels)
-            {
-                var srcFileName = tuple.Item1;
-                var model = tuple.Item2;
-                model.FindAll(
-                    new NodePred[]
-                    {
+            var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
+            model.FindAll(
+                new NodePred[]
+                {
                         NodePredFactory.Instance.Star,
                         NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
-                    },
-                    (path, n) =>
-                    {
-                        var mf = (ModelFact)n;
-                        FuncTerm ft = (FuncTerm)mf.Match;
-                        GetBin(factBins, ft).AddLast(new Tuple<string, AST<FuncTerm>>(srcFileName, (AST<FuncTerm>)Factory.Instance.ToAST(ft)));
-                    });
-            }
+                },
+                (path, n) =>
+                {
+                    var mf = (ModelFact)n;
+                    FuncTerm ft = (FuncTerm)mf.Match;
+                    GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
+                });
 
+            funToFileName = new Dictionary<AST<Node>, string>();
             allEvents = new Dictionary<string, EventInfo>();
             allEnums = new Dictionary<string, List<Tuple<string, int>>>();
             allEvents[HaltEvent] = new EventInfo(1, false, PTypeNull.Node);
@@ -370,10 +364,32 @@ namespace Microsoft.Pc
             allMachines = new Dictionary<string, MachineInfo>();
             allStaticFuns = new Dictionary<string, FunInfo>();
 
-            LinkedList<Tuple<string, AST<FuncTerm>>> terms;
+            LinkedList<AST<FuncTerm>> terms;
+
+            terms = GetBin(factBins, "FileInfo");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var fun = it.Current;
+                    it.MoveNext();
+                    var fileInfo = it.Current as Cnst;
+                    string fileName = null;
+                    if (fileInfo != null)
+                    {
+                        fileName = fileInfo.GetStringValue();
+                        if (compiler.Options.shortFileNames)
+                        {
+                            fileName = Path.GetFileName(fileName);
+                        }
+                    }
+                    funToFileName[Factory.Instance.ToAST(fun)] = fileName;
+                }
+            }
 
             terms = GetBin(factBins, "EventDecl");
-            foreach (var term in terms.Select(x => x.Item2))
+            foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -398,7 +414,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "EnumTypeDef");
-            foreach (var term in terms.Select(x => x.Item2))
+            foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -436,7 +452,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "MachineDecl");
-            foreach (var term in terms.Select(x => x.Item2))
+            foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -459,7 +475,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "ObservesDecl");
-            foreach (var term in terms.Select(x => x.Item2))
+            foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -472,7 +488,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "VarDecl");
-            foreach (var term in terms.Select(x => x.Item2))
+            foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -489,10 +505,9 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "FunDecl");
-            foreach (var tuple in terms)
+            foreach (var term in terms)
             {
-                var srcFileName = tuple.Item1;
-                var term = tuple.Item2;
+                var srcFileName = funToFileName[term];
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
@@ -532,10 +547,9 @@ namespace Microsoft.Pc
                 anonFunCounter[x] = 0;
             }
             terms = GetBin(factBins, "AnonFunDecl");
-            foreach (var tuple in terms)
+            foreach (var term in terms)
             {
-                var srcFileName = tuple.Item1;
-                var term = tuple.Item2;
+                var srcFileName = funToFileName[term];
                 if (anonFunToName.ContainsKey(term)) continue;
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -569,7 +583,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "StateDecl");
-            foreach (var term in terms.Select(x => x.Item2))
+            foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -604,7 +618,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "TransDecl");
-            foreach (var term in terms.Select(x => x.Item2))
+            foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -652,7 +666,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "DoDecl");
-            foreach (var term in terms.Select(x => x.Item2))
+            foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -708,7 +722,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "Annotation");
-            foreach (var term in terms.Select(x => x.Item2))
+            foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -824,7 +838,7 @@ namespace Microsoft.Pc
 
         void GenerateTypeInfo(AST<Model> model)
         {
-            var factBins = new Dictionary<string, LinkedList<Tuple<string, AST<FuncTerm>>>>();
+            var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
             model.FindAll(
                 new NodePred[]
                 {
@@ -836,11 +850,11 @@ namespace Microsoft.Pc
                 {
                     var mf = (ModelFact)n;
                     FuncTerm ft = (FuncTerm)mf.Match;
-                    GetBin(factBins, ft).AddLast(new Tuple<string, AST<FuncTerm>>(null, (AST<FuncTerm>)Factory.Instance.ToAST(ft)));
+                    GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
                 });
 
             var terms = GetBin(factBins, "TypeOf");
-            foreach (var term in terms.Select(x => x.Item2))
+            foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -884,7 +898,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "TranslatedTypeExpr");
-            foreach (var term in terms.Select(x => x.Item2))
+            foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -895,7 +909,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "TypeExpansion");
-            foreach (var term in terms.Select(x => x.Item2))
+            foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -908,7 +922,7 @@ namespace Microsoft.Pc
             }
 
             terms = GetBin(factBins, "MaxNumLocals");
-            foreach (var term in terms.Select(x => x.Item2))
+            foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -952,9 +966,11 @@ namespace Microsoft.Pc
 
         #region Static helpers
 
-        public static string SpanToString(string srcFileName, Span span)
+        public static string SourceInfoToString(string srcFileName, FuncTerm sourceInfo)
         {
-            return string.Format("{0} ({1}, {2})", srcFileName.Replace(@"\", @"\\"), span.StartLine, span.StartCol);
+            int lineNum = (int) (GetArgByIndex(sourceInfo, 0) as Cnst).GetNumericValue().Numerator;
+            int colNum = (int)(GetArgByIndex(sourceInfo, 1) as Cnst).GetNumericValue().Numerator;
+            return string.Format("{0} ({1}, {2})", srcFileName.Replace(@"\", @"\\"), lineNum, colNum);
         }
 
         public static string NodeToString(Node n)
@@ -1899,6 +1915,7 @@ namespace Microsoft.Pc
             var body = new List<AST<Node>>();
             body.Add(MkZingIfThen(MkZingEq(MkZingDot(cont, "reason"), MkZingDot("ContinuationReason", "Return")), MkZingReturn(ZingData.Cnst_True)));
             body.Add(MkZingIfThen(MkZingEq(MkZingDot(cont, "reason"), MkZingDot("ContinuationReason", "Pop")), MkZingReturn(ZingData.Cnst_True)));
+            body.Add(MkZingIfThen(MkZingEq(MkZingDot(cont, "reason"), MkZingDot("ContinuationReason", "Goto")), MkZingReturn(ZingData.Cnst_True)));
             body.Add(MkZingIfThen(MkZingEq(MkZingDot(cont, "reason"), MkZingDot("ContinuationReason", "Raise")), MkZingReturn(ZingData.Cnst_True)));
             AST<Node> atChooseLivenessStmt = ZingData.Cnst_Nil;
             AST<Node> atYieldLivenessStmt = ZingData.Cnst_Nil;
@@ -2071,8 +2088,15 @@ namespace Microsoft.Pc
             enterStmts.Add(MkZingAssign(actionFun, MkZingDot(state, "entryFun")));
             blocks.Add(MkZingBlock("enter", MkZingSeq(enterStmts)));
 
+            List<AST<Node>> gotoStmts = new List<AST<Node>>();
+            gotoStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("TraceExitState"), state)));
+            gotoStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingDot(state, "exitFun"), MkZingIdentifier("null"))));
+            gotoStmts.Add(MkZingAssign(MkZingDot("myHandle", "stack", "state"), MkZingDot("myHandle", "destState")));
+            gotoStmts.Add(MkZingGoto("enter"));
+
             List<AST<Node>> executeStmts = new List<AST<Node>>();
             executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), actionFun, payload)));
+            executeStmts.Add(MkZingIfThen(MkZingEq(MkZingDot(cont, "reason"), MkZingDot("ContinuationReason", "Goto")), MkZingSeq(gotoStmts)));
             executeStmts.Add(MkZingIfThen(MkZingEq(MkZingDot(cont, "reason"), MkZingDot("ContinuationReason", "Raise")), MkZingGoto("handle")));
             executeStmts.Add(MkZingIfThen(MkZingNeq(MkZingDot(cont, "reason"), MkZingDot("ContinuationReason", "Pop")), MkZingReturn(ZingData.Cnst_False)));
             executeStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("TraceExitState"), state)));
@@ -2099,7 +2123,6 @@ namespace Microsoft.Pc
             handleStmts.Add(MkZingIfThen(MkZingEq(transition, MkZingIdentifier("null")), MkZingReturn(ZingData.Cnst_True)));
             handleStmts.Add(MkZingAssign(payload, MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingDot("transition", "fun"), payload)));
             handleStmts.Add(MkZingAssign(MkZingDot("myHandle", "stack", "state"), MkZingDot("transition", "to")));
-            handleStmts.Add(MkZingAssign(state, MkZingDot("myHandle", "stack", "state")));
             handleStmts.Add(MkZingGoto("enter"));
             blocks.Add(MkZingBlock("handle", MkZingSeq(handleStmts)));
 
@@ -2261,7 +2284,8 @@ namespace Microsoft.Pc
                      funName == PData.Con_NulApp.Node.Name ||
                      funName == PData.Con_UnApp.Node.Name ||
                      funName == PData.Con_Default.Node.Name ||
-                     funName == PData.Con_NulStmt.Node.Name)
+                     funName == PData.Con_NulStmt.Node.Name ||
+                     funName == PData.Con_Goto.Node.Name)
             {
                 var first = true;
                 foreach (var t in ft.Args)
@@ -2466,6 +2490,10 @@ namespace Microsoft.Pc
             else if (funName == PData.Con_NewStmt.Node.Name)
             {
                 return FoldNewStmt(ft, children, ctxt);
+            }
+            else if (funName == PData.Con_Goto.Node.Name)
+            {
+                return FoldGoto(ft, children, ctxt);
             }
             else if (funName == PData.Con_Raise.Node.Name)
             {
@@ -3195,8 +3223,39 @@ namespace Microsoft.Pc
             return FoldNew(ft, children, ctxt);
         }
 
+        ZingTranslationInfo FoldGoto(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
+        {
+            var qualifiedStateName = (FuncTerm)GetArgByIndex(ft, 0);
+            var stateName = GetNameFromQualifiedName(ctxt.machineName, qualifiedStateName);
+            var stateExpr = MkZingState(stateName);
+            using (var it = children.GetEnumerator())
+            {
+                it.MoveNext();
+                var payloadExpr = it.Current.node;
+                var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
+                var srcFileName = funInfo.srcFileName;
+                var traceStmt = MkZingTrace(string.Format("<GotoLog> Machine {0}-{{0}} goes to {{1}}\\n", ctxt.machineName), MkZingDot("myHandle", "instance"), MkZingDot(stateExpr, "name"));
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpPayload");
+                if (payloadExpr == ZingData.Cnst_Nil)
+                {
+                    ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
+                }
+                else
+                {
+                    ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, payloadExpr));
+                }
+
+                var assignStmt = MkZingSeq(MkZingAssign(MkZingDot("myHandle", "currentEvent"), MkZingIdentifier("null")), 
+                                           MkZingAssign(MkZingDot("myHandle", "currentArg"), tmpVar),
+                                           MkZingAssign(MkZingDot("myHandle", "destState"), stateExpr));
+                var createRetCtxt = MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Goto")));
+                return new ZingTranslationInfo(MkZingSeq(traceStmt, assignStmt, createRetCtxt, MkZingReturn(ZingData.Cnst_Nil)));
+            }
+        }
+
         ZingTranslationInfo FoldRaise(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
+            var sourceInfo = (FuncTerm)GetArgByIndex(ft, 2);
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
@@ -3205,7 +3264,7 @@ namespace Microsoft.Pc
                 var payloadExpr = it.Current.node;
                 var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
                 var srcFileName = funInfo.srcFileName;
-                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0}: Raised event must be non-null", SpanToString(srcFileName, ft.Span)));
+                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0}: Raised event must be non-null", SourceInfoToString(srcFileName, sourceInfo)));
                 var traceStmt = MkZingTrace(string.Format("<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\\n", ctxt.machineName), MkZingDot("myHandle", "instance"), MkZingDot(eventExpr, "name"));
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpPayload");
                 if (payloadExpr == ZingData.Cnst_Nil)
@@ -3257,6 +3316,7 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldMonitor(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
+            var sourceInfo = (FuncTerm)GetArgByIndex(ft, 2);
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
@@ -3266,7 +3326,7 @@ namespace Microsoft.Pc
                 var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
                 var srcFileName = funInfo.srcFileName;
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpSendPayload");
-                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0}: Enqueued event must be non-null", SpanToString(srcFileName, ft.Span)));
+                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0}: Enqueued event must be non-null", SourceInfoToString(srcFileName, sourceInfo)));
                 ctxt.AddSideEffect(assertStmt);
                 if (arg == ZingData.Cnst_Nil)
                 {
@@ -3308,6 +3368,7 @@ namespace Microsoft.Pc
         ZingTranslationInfo FoldAssert(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             Cnst msgCnst = GetArgByIndex(ft, 1) as Cnst;
+            var sourceInfo = (FuncTerm)GetArgByIndex(ft, 2);
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
@@ -3319,7 +3380,7 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    return new ZingTranslationInfo(MkZingAssert(MkZingDot(it.Current.node, "bl"), string.Format("{0}: Assert failed", SpanToString(srcFileName, ft.Span))));
+                    return new ZingTranslationInfo(MkZingAssert(MkZingDot(it.Current.node, "bl"), string.Format("{0}: Assert failed", SourceInfoToString(srcFileName, sourceInfo))));
                 }
             }
         }

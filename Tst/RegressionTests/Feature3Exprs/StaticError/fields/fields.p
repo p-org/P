@@ -1,4 +1,4 @@
-machine Node {
+machine M{
   var x : (a: int, b: bool);
   var y : (int, bool);
   var z : int;

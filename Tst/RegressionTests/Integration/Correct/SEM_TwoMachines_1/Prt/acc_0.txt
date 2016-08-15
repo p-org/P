@@ -1,33 +1,33 @@
 =================================
          Console output          
 =================================
-OUT: <CreateLog> Machine PING(1) is created
-OUT: <StateLog> Machine PING(1) entered state Ping_Init
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state Ping_Init
 OUT: <CreateLog> Machine PONG(2) is created
 OUT: <StateLog> Machine PONG(2) entered state Pong_WaitPing
-OUT: <RaiseLog> Machine PING(1) raised event Success with payload null
-OUT: <ExitLog> Machine PING(1) exiting state Ping_Init
-OUT: <StateLog> Machine PING(1) entered state Ping_SendPing
+OUT: <RaiseLog> Machine Main(1) raised event Success with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Ping_Init
+OUT: <StateLog> Machine Main(1) entered state Ping_SendPing
 OUT: <EnqueueLog> Enqueued event Ping with payload < (1, 0, 0, 0), 1> on Machine PONG(2)
 OUT: <DequeueLog> Dequeued event Ping with payload < (1, 0, 0, 0), 1> by Machine PONG(2)
 OUT: <ExitLog> Machine PONG(2) exiting state Pong_WaitPing
 OUT: <StateLog> Machine PONG(2) entered state Pong_SendPong
-OUT: <EnqueueLog> Enqueued event Pong with payload null on Machine PING(1)
+OUT: <EnqueueLog> Enqueued event Pong with payload null on Machine Main(1)
 OUT: <RaiseLog> Machine PONG(2) raised event Success with payload null
 OUT: <ExitLog> Machine PONG(2) exiting state Pong_SendPong
 OUT: <StateLog> Machine PONG(2) entered state Pong_WaitPing
-OUT: <RaiseLog> Machine PING(1) raised event Success with payload null
-OUT: <ExitLog> Machine PING(1) exiting state Ping_SendPing
-OUT: <StateLog> Machine PING(1) entered state Ping_WaitPong
-OUT: <DequeueLog> Dequeued event Pong with payload null by Machine PING(1)
-OUT: <ExitLog> Machine PING(1) exiting state Ping_WaitPong
-OUT: <StateLog> Machine PING(1) entered state Ping_SendPing
+OUT: <RaiseLog> Machine Main(1) raised event Success with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Ping_SendPing
+OUT: <StateLog> Machine Main(1) entered state Ping_WaitPong
+OUT: <DequeueLog> Dequeued event Pong with payload null by Machine Main(1)
+OUT: <ExitLog> Machine Main(1) exiting state Ping_WaitPong
+OUT: <StateLog> Machine Main(1) entered state Ping_SendPing
 OUT: <EnqueueLog> Enqueued event halt with payload null on Machine PONG(2)
 OUT: <DequeueLog> Dequeued event halt with payload null by Machine PONG(2)
 OUT: <ExitLog> Machine PONG(2) exiting state Pong_WaitPing
 OUT: <HaltLog> Machine PONG(2) halted in state Pong_WaitPing
-OUT: <RaiseLog> Machine PING(1) raised event Success with payload null
-OUT: <ExitLog> Machine PING(1) exiting state Ping_SendPing
-OUT: <StateLog> Machine PING(1) entered state Ping_WaitPong
+OUT: <RaiseLog> Machine Main(1) raised event Success with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Ping_SendPing
+OUT: <StateLog> Machine Main(1) entered state Ping_WaitPong
 OUT: 
 EXIT: 0

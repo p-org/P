@@ -13,10 +13,10 @@ anyType2.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
-<CreateLog> Created Machine M-0
-<StateLog> Machine M-0 entering State S
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State S
 
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_5.bl,)
-Comment: anyType2.p (28, 4): Assert failed
+Comment: anyType2.p (27, 4): Assert failed

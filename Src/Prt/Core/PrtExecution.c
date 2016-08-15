@@ -1038,7 +1038,7 @@ PrtStepProcess(PRT_PROCESS *process
 		PRT_MACHINEINST_PRIV *context = (PRT_MACHINEINST_PRIV*)privateProcess->machines[i];
 		PrtUnlockMutex(privateProcess->processLock);
 
-		if (context != NULL)
+		if (context != NULL && !context->isModel)
 		{
 			// protecting against re-entry using isRunning boolean.
 			PrtLockMutex(context->stateMachineLock);

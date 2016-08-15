@@ -59,6 +59,7 @@ if exist "Ext\Formula\README.md" goto :updatesub
 echo ### Initializing your submodules 
 git submodule init
 git submodule update
+goto :sync
 
 :checksubmodule
 for /f "usebackq tokens=1,2*" %%i in (`git submodule summary %1`) do (

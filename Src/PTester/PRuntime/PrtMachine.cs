@@ -153,10 +153,8 @@ namespace P.Runtime
 
         public void PrtChangeState(PrtState s)
         {
-            if (stateStack.TopOfStack != null)
-            {
-                stateStack.PopStackFrame();
-            }
+            Debug.Assert(stateStack.TopOfStack != null);
+            stateStack.PopStackFrame();
             stateStack.PushStackFrame(s);
         }
 
@@ -608,7 +606,7 @@ namespace P.Runtime
 
             if(PrtIsPushTransitionPresent(currEventValue))
             {
-                PrtChangeState(CurrentState.transitions[currEventValue].gotoState);
+                PrtPushState(CurrentState.transitions[currEventValue].gotoState);
                 goto DoEntry;
             }
             else if(PrtIsTransitionPresent(currEventValue))

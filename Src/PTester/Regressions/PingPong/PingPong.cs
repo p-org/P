@@ -1,4 +1,4 @@
-﻿using P.PRuntime;
+﻿using P.Runtime;
 using System.Collections.Generic;
 using System.Linq;
 /*
@@ -81,7 +81,7 @@ assert false;
 
 namespace SimpleMachine
 {
-    public class Application : PStateImpl
+    public class Application : StateImpl
     {
         #region Constructors
         public Application() :base()
@@ -89,7 +89,7 @@ namespace SimpleMachine
             //initialize all the fields
         }
 
-        public override PStateImpl MakeSkeleton()
+        public override StateImpl MakeSkeleton()
         {
             return new Application();
         }
@@ -120,7 +120,7 @@ namespace SimpleMachine
                 }
             }
 
-            public override int NextInstanceNumber(PStateImpl app)
+            public override int NextInstanceNumber(StateImpl app)
             {
                 return app.NextMachineInstanceNumber(this.GetType());
             }
@@ -133,7 +133,7 @@ namespace SimpleMachine
                 }
             }
             //constructor
-            public Main(PStateImpl app, int maxB) : base(app, maxB)
+            public Main(StateImpl app, int maxB) : base(app, maxB)
             {
                 // initialize fields
             }
@@ -151,10 +151,17 @@ namespace SimpleMachine
                     }
                 }
 
-                public override void Execute(PStateImpl application, PrtMachine parent)
+                public override bool IsAnonFun
                 {
-                    PrtFunStackFrame currFun = parent.PrtPopFunStack();
-                    if (currFun.cont.returnTolocation == 0)
+                    get
+                    {
+                        return true;
+                    }
+                }
+                public override void Execute(StateImpl application, PrtMachine parent)
+                {
+                    PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
+                    if (currFun.returnTolocation == 0)
                         goto Loc_0;
                     else
                         goto Ret;
@@ -162,7 +169,7 @@ namespace SimpleMachine
 
                     Loc_0:
                     parent.PrtEnqueueEvent(application, dummy, PrtValue.NullValue, parent);
-                    parent.PrtFunContSend(this, 1, currFun.locals);
+                    parent.PrtFunContSend(this, currFun.locals, 1);
 
                     Ret:
                     parent.PrtFunContReturn(null);
@@ -187,10 +194,18 @@ namespace SimpleMachine
                         return "Fail_Entry";
                     }
                 }
-                public override void Execute(PStateImpl application, PrtMachine parent)
+
+                public override bool IsAnonFun
                 {
-                    PrtFunStackFrame currFun = parent.PrtPopFunStack();
-                    if (currFun.cont.returnTolocation == 0)
+                    get
+                    {
+                        return true;
+                    }
+                }
+                public override void Execute(StateImpl application, PrtMachine parent)
+                {
+                    PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
+                    if (currFun.returnTolocation == 0)
                         goto Loc_0;
                     else
                         goto Ret;

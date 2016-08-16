@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace P.PRuntime
+namespace P.Runtime
 {
     public class PrtCommonFunctions
     {
@@ -21,7 +21,15 @@ namespace P.PRuntime
             }
         }
 
-        public override void Execute(PStateImpl application, PrtMachine parent)
+        public override bool IsAnonFun
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        public override void Execute(StateImpl application, PrtMachine parent)
         {
             throw new NotImplementedException();
         }
@@ -42,7 +50,15 @@ namespace P.PRuntime
             }
         }
 
-        public override void Execute(PStateImpl application, PrtMachine parent)
+        public override bool IsAnonFun
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        public override void Execute(StateImpl application, PrtMachine parent)
         {
             throw new NotImplementedException();
         }
@@ -60,6 +76,11 @@ namespace P.PRuntime
             get;
         }
 
+        public abstract bool IsAnonFun
+        {
+            get;
+        } 
+
         public List<Dictionary<PrtEvent, PrtFun>> receiveCases;
         
         public PrtFun()
@@ -69,7 +90,7 @@ namespace P.PRuntime
 
         public abstract List<PrtValue> CreateLocals(params PrtValue[] args);
 
-        public abstract void Execute(PStateImpl application, PrtMachine parent);
+        public abstract void Execute(StateImpl application, PrtMachine parent);
     }
 
     public class PrtEvent
@@ -351,14 +372,22 @@ namespace P.PRuntime
 
     public class PrtFunStackFrame
     {
+        public int returnTolocation;
         public List<PrtValue> locals;
-        public PrtContinuation cont;
+        
         public PrtFun fun;
         public PrtFunStackFrame(PrtFun fun,  List<PrtValue> locs)
         {
             this.fun = fun;
-            cont = new PrtContinuation();
             locals = locs.ToList();
+            returnTolocation = 0;
+        }
+
+        public PrtFunStackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+        {
+            this.fun = fun;
+            locals = locs.ToList();
+            returnTolocation = retLocation;
         }
     }
 
@@ -390,6 +419,11 @@ namespace P.PRuntime
             funStack.Push(new PrtFunStackFrame(fun, locals));
         }
 
+        public void PushFun(PrtFun fun, List<PrtValue> locals, int retLoc)
+        {
+            funStack.Push(new PrtFunStackFrame(fun, locals, retLoc));
+        }
+
         public PrtFunStackFrame PopFun()
         {
             return funStack.Pop();
@@ -401,7 +435,7 @@ namespace P.PRuntime
 
     public class PrtContinuation
     {
-        public int returnTolocation;
+        
         public PrtContinuationReason reason;
         public PrtMachine createdMachine;
         public int receiveIndex;

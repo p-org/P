@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Runtime.Serialization;
 
-namespace P.PRuntime
+namespace P.Runtime
 {
     /// <summary>
     /// This is the base class for all Prt exceptions.

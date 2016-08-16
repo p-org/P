@@ -293,4 +293,17 @@ namespace P.Runtime
         {
         }
     }
+
+    public class PrtInvalidEqualsException : PrtException
+    {
+        public PrtInvalidEqualsException()
+            : base()
+        {
+        }
+
+        public PrtInvalidEqualsException(string message)
+            : base(message)
+        {
+        }
+    }
 }

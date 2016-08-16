@@ -96,7 +96,7 @@ namespace P.Runtime
     public class PrtEvent
     {
         public static int DefaultMaxInstances = int.MaxValue;
-        public static PrtEvent NullEvent = new PrtEvent("Null", PrtType.NullType, DefaultMaxInstances, false);
+        public static PrtEvent NullEvent = null;
         public static PrtEvent HaltEvent = new PrtEvent("Halt", PrtType.NullType, DefaultMaxInstances, false);
         
 

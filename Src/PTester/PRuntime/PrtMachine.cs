@@ -284,7 +284,7 @@ namespace P.Runtime
 
         public void PrtExecuteExitFunction()
         {
-            //Shaz: exit functions do not take any arguments so is this current ??
+            //Shaz: exit functions do not take any arguments, so is this current ??
             PrtPushFunStackFrame(CurrentState.exitFun, CurrentState.exitFun.CreateLocals());
             invertedFunStack.TopOfStack.fun.Execute(StateImpl, this);
         }
@@ -293,7 +293,11 @@ namespace P.Runtime
         {
             var currRecIndex = continuation.receiveIndex;
             var currFun = invertedFunStack.TopOfStack.fun.receiveCases[currRecIndex][ev];
-            PrtPushFunStackFrame(currFun, currFun.CreateLocals(currentPayload));
+            if(currFun.IsAnonFun)
+                PrtPushFunStackFrame(currFun, currFun.CreateLocals(currentPayload));
+            else
+                PrtPushFunStackFrame(currFun, currFun.CreateLocals());
+
             currFun.Execute(StateImpl, this);
         }
 
@@ -428,8 +432,10 @@ namespace P.Runtime
             if(invertedFunStack.TopOfStack == null)
             {
                 //Trace: entered state
-                //Shaz: Is the following this correct, how do we pass the payload to entry function.
-                PrtPushFunStackFrame(CurrentState.entryFun, CurrentState.entryFun.CreateLocals(currentPayload));
+                if(CurrentState.entryFun.IsAnonFun)
+                    PrtPushFunStackFrame(CurrentState.entryFun, CurrentState.entryFun.CreateLocals(currentPayload));
+                else
+                    PrtPushFunStackFrame(CurrentState.entryFun, CurrentState.entryFun.CreateLocals());
             }
             //invoke the function
             invertedFunStack.TopOfStack.fun.Execute(StateImpl, this);
@@ -484,11 +490,11 @@ namespace P.Runtime
                         goto Finish;
                     }
                 case PrtContinuationReason.NewMachine:
-                {
-                    stateExitReason = PrtStateExitReason.NotExit;
-                    hasMoreWork = false;
-                    goto Finish;
-                }
+                    {
+                        stateExitReason = PrtStateExitReason.NotExit;
+                        hasMoreWork = false;
+                        goto Finish;
+                    }
                 case PrtContinuationReason.Nondet:
                     {
                         stateExitReason = PrtStateExitReason.NotExit;

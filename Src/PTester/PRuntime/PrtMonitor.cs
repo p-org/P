@@ -8,6 +8,19 @@ namespace P.PRuntime
 {
     public abstract class PrtMonitor : ICloneable
     {
+        #region Fields
+        public int instanceNumber;
+        public List<PrtValue> monitorFields;
+        public PrtEvent currentTrigger;
+        public PrtValue currentPayload;
+        private PrtFunStack invertedFunStack;
+        #endregion
+
+        public abstract string Name
+        {
+            get;
+        }
+
         public abstract bool IsHot
         {
             get;

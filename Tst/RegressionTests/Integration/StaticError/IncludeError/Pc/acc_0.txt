@@ -1,0 +1,12 @@
+=================================
+         Console output          
+=================================
+OUT: tokenring_main.p (21, 9): argument 2 of "send" expects an event value
+OUT: tokenring_main.p (59, 17): "if (...)" expects a boolean value
+OUT: tokenring_main.p (59, 39): Values cannot be compared because their types are incompatible
+OUT: Node.p (62, 17): argument 1 of "raise" expects an event value
+OUT: Node.p (62, 23): Undefined symbol
+OUT: tokenring_main.p (81, 17): argument 1 of "raise" expects an event value
+OUT: tokenring_main.p (81, 23): Undefined symbol
+OUT: Compilation failed
+EXIT: -1

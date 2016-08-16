@@ -147,10 +147,10 @@ namespace Microsoft.Pc
                 {
                     var compiler = new Compiler(options);
                     result = compiler.Compile(inputFileName);
-                    return 0;
                 }
                 if (!result)
                 {
+
                     return -1;
                 }
                 return 0;

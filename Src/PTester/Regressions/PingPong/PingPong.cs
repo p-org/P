@@ -150,6 +150,7 @@ namespace SimpleMachine
                         return "Init_Entry";
                     }
                 }
+
                 public override void Execute(PStateImpl application, PrtMachine parent)
                 {
                     PrtFunStackFrame currFun = parent.PrtPopFunStack();

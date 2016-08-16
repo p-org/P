@@ -60,6 +60,13 @@ namespace P.PRuntime
             get;
         }
 
+        public List<Dictionary<PrtEvent, PrtFun>> receiveCases;
+        
+        public PrtFun()
+        {
+            receiveCases = new List<Dictionary<PrtEvent, PrtFun>>();
+        }
+
         public abstract List<PrtValue> CreateLocals(params PrtValue[] args);
 
         public abstract void Execute(PStateImpl application, PrtMachine parent);

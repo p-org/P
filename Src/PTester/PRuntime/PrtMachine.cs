@@ -285,7 +285,6 @@ namespace P.PRuntime
             }
             else
             {
-                //invokescheduler("blocked", machineId);
                 if (!isEnabled)
                 {
                     throw new PrtAssumeFailureException();
@@ -306,10 +305,11 @@ namespace P.PRuntime
             invertedFunStack.TopOfStack.fun.Execute(StateImpl, this);
         }
 
-        public void PrtExecuteReceiveCase(PrtEvent ev)
+        public void PrtExecuteReceiveCase(PrtEvent ev, int receiveIndex)
         {
-            //figure out where the receive cases are stored and how ??
-            throw new NotImplementedException();
+            var currFun = invertedFunStack.TopOfStack.fun.receiveCases[receiveIndex][ev];
+            PrtPushFunStack(currFun, currFun.CreateLocals(currentPayload));
+            currFun.Execute(StateImpl, this);
         }
 
         public bool PrtIsPushTransitionPresent(PrtEvent ev)
@@ -457,6 +457,33 @@ namespace P.PRuntime
                     {
                         nextSMOperation = PrtNextStatemachineOperation.HandleEventOperation;
                         hasMoreWork = true;
+                        goto Finish;
+                    }
+                case PrtContinuationReason.NewMachine:
+                {
+                    stateExitReason = PrtStateExitReason.NotExit;
+                    hasMoreWork = false;
+                    goto Finish;
+                }
+                case PrtContinuationReason.Nondet:
+                    {
+                        stateExitReason = PrtStateExitReason.NotExit;
+                        StateImpl.SetPendingChoicesAsBoolean(this);
+                        invertedFunStack.TopOfStack.cont.nondet = ((Boolean)StateImpl.GetSelectedChoiceValue(this));
+                        hasMoreWork = false;
+                        goto Finish;
+                    }
+                case PrtContinuationReason.Receive:
+                    { 
+                        stateExitReason = PrtStateExitReason.NotExit;
+                        nextSMOperation = PrtNextStatemachineOperation.ReceiveOperation;
+                        hasMoreWork = true;
+                        goto Finish;
+                    }
+                case PrtContinuationReason.Send:
+                    {
+                        stateExitReason = PrtStateExitReason.NotExit;
+                        hasMoreWork = false;
                         goto Finish;
                     }
                 case PrtContinuationReason.Return:

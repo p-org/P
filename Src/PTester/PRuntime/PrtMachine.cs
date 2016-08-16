@@ -501,18 +501,24 @@ namespace P.PRuntime
             {
                 case PrtContinuationReason.Pop:
                     {
+                        //clear the fun stack
+                        invertedFunStack.Clear();
                         stateExitReason = PrtStateExitReason.OnPopStatement;
                         PrtExecuteExitFunction();
                         goto CheckFunLastOperation;
                     }
                 case PrtContinuationReason.Goto:
                     {
+                        //clear the fun stack
+                        invertedFunStack.Clear();
                         stateExitReason = PrtStateExitReason.OnGotoStatement;
                         PrtExecuteExitFunction();
                         goto CheckFunLastOperation;
                     }
                 case PrtContinuationReason.Raise:
                     {
+                        //clear the fun stack
+                        invertedFunStack.Clear();
                         nextSMOperation = PrtNextStatemachineOperation.HandleEventOperation;
                         hasMoreWork = true;
                         goto Finish;
@@ -546,7 +552,10 @@ namespace P.PRuntime
                     }
                 case PrtContinuationReason.Return:
                     {
-                        switch(stateExitReason)
+                        //clear the fun stack
+                        invertedFunStack.Clear();
+
+                        switch (stateExitReason)
                         {
                             case PrtStateExitReason.NotExit:
                                 {

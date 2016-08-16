@@ -370,6 +370,10 @@ namespace P.PRuntime
             funStack = new Stack<PrtFunStackFrame>();
         }
 
+        public void Clear()
+        {
+            funStack.Clear();
+        }
         public PrtFunStackFrame TopOfStack
         {
             get

@@ -162,12 +162,11 @@ namespace SimpleMachine
 
                     Loc_0:
                     parent.PrtEnqueueEvent(application, dummy, PrtValue.NullValue, parent);
-                    //Add the continuation with respect to send
-                    //parent.cont.Send(1, currCont.locals);
+                    parent.PrtFunContSend(this, 1, currFun.locals);
 
                     Ret:
-                    ;
-                   //Need to figure out the push for return
+                    parent.PrtFunContReturn(null);
+                   
                 }
 
                 public override List<PrtValue> CreateLocals(params PrtValue[] args)
@@ -201,8 +200,7 @@ namespace SimpleMachine
                     throw new PrtAssertFailureException();
 
                     Ret:
-                    ;
-                    //Need to figure out the push for return
+                    parent.PrtFunContReturn(null);
 
                 }
 

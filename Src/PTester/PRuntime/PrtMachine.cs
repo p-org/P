@@ -305,9 +305,10 @@ namespace P.PRuntime
             invertedFunStack.TopOfStack.fun.Execute(StateImpl, this);
         }
 
-        public void PrtExecuteReceiveCase(PrtEvent ev, int receiveIndex)
+        public void PrtExecuteReceiveCase(PrtEvent ev)
         {
-            var currFun = invertedFunStack.TopOfStack.fun.receiveCases[receiveIndex][ev];
+            var currRecIndex = invertedFunStack.TopOfStack.cont.receiveIndex;
+            var currFun = invertedFunStack.TopOfStack.fun.receiveCases[currRecIndex][ev];
             PrtPushFunStack(currFun, currFun.CreateLocals(currentPayload));
             currFun.Execute(StateImpl, this);
         }
@@ -342,6 +343,63 @@ namespace P.PRuntime
             invertedFunStack.TopOfStack.fun.Execute(StateImpl, this);
         }
 
+        public void PrtFunContReturn(List<PrtValue> retLocals)
+        {
+            PrtPushFunStack(null, new List<PrtValue>());
+            invertedFunStack.TopOfStack.cont.reason = PrtContinuationReason.Return;
+            invertedFunStack.TopOfStack.cont.retVal = PrtValue.NullValue;
+            invertedFunStack.TopOfStack.cont.retLocals = retLocals;
+        }
+
+        public void PrtFunContReturnVal(PrtValue val, List<PrtValue> retLocals)
+        {
+            PrtPushFunStack(null, new List<PrtValue>());
+            invertedFunStack.TopOfStack.cont.reason = PrtContinuationReason.Return;
+            invertedFunStack.TopOfStack.cont.retVal = val;
+            invertedFunStack.TopOfStack.cont.retLocals = retLocals;
+        }
+
+        public void PrtFunContPop()
+        {
+            PrtPushFunStack(null, new List<PrtValue>());
+            invertedFunStack.TopOfStack.cont.reason = PrtContinuationReason.Pop;
+        }
+
+        public void PrtFunContRaise()
+        {
+            PrtPushFunStack(null, new List<PrtValue>());
+            invertedFunStack.TopOfStack.cont.reason = PrtContinuationReason.Raise;
+        }
+
+        public void PrtFunContSend(PrtFun fun, int ret, List<PrtValue> locals)
+        {
+            PrtPushFunStack(fun, locals);
+            invertedFunStack.TopOfStack.cont.reason = PrtContinuationReason.Send;
+            invertedFunStack.TopOfStack.cont.returnTolocation = ret;
+        }
+
+        void PrtFunContNewMachine(PrtFun fun,  int ret, List<PrtValue> locals, PrtMachine o)
+        {
+            PrtPushFunStack(fun, locals);
+            invertedFunStack.TopOfStack.cont.reason = PrtContinuationReason.NewMachine;
+            invertedFunStack.TopOfStack.cont.createdMachine = o;
+            invertedFunStack.TopOfStack.cont.returnTolocation = ret;
+        }
+
+        void PrtFunContReceive(PrtFun fun, int ret, List<PrtValue> locals)
+        {
+            PrtPushFunStack(fun, locals);
+            invertedFunStack.TopOfStack.cont.reason = PrtContinuationReason.Receive;
+            invertedFunStack.TopOfStack.cont.returnTolocation = ret;
+            
+        }
+
+        void PrtFunContNondet(PrtFun fun, int ret, List<PrtValue> locals)
+        {
+            PrtPushFunStack(fun, locals);
+            invertedFunStack.TopOfStack.cont.reason = PrtContinuationReason.Nondet;
+            invertedFunStack.TopOfStack.cont.returnTolocation = ret;
+        }
         #endregion
 
 

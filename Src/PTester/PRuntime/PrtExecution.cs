@@ -391,74 +391,7 @@ namespace P.PRuntime
             return funStack.Pop();
         }
 
-        public void DidReturn(List<PrtValue> retLocals)
-        {
-            var cont = new PrtContinuation();
-            cont.reason = PrtContinuationReason.Return;
-            cont.retVal = PrtValue.NullValue;
-            cont.retLocals = retLocals;
-            TopOfStack.cont = cont;
-        }
-
-        public void DidReturnVal(PrtValue val, List<PrtValue> retLocals)
-        {
-            var cont = new PrtContinuation();
-            cont.reason = PrtContinuationReason.Return;
-            cont.retVal = val;
-            cont.retLocals = retLocals;
-            TopOfStack.cont = cont;
-        }
-
-        public void DidPop()
-        {
-            var cont = new PrtContinuation();
-            cont.reason = PrtContinuationReason.Pop;
-            TopOfStack.cont = cont;
-        }
-
-        public void DidRaise()
-        {
-            var cont = new PrtContinuation();
-            cont.reason = PrtContinuationReason.Raise;
-            TopOfStack.cont = cont;
-        }
-
-        public void DidSend(int ret, List<PrtValue> locals)
-        {
-            var cont = new PrtContinuation();
-            cont.reason = PrtContinuationReason.Send;
-            cont.returnTolocation = ret;
-            TopOfStack.cont = cont;
-            TopOfStack.locals = locals.ToList();
-        }
-
-        void DidNewMachine(int ret, List<PrtValue> locals, PrtMachine o)
-        {
-            var cont = new PrtContinuation();
-            cont.reason = PrtContinuationReason.NewMachine;
-            cont.createdMachine = o;
-            cont.returnTolocation = ret;
-            TopOfStack.cont = cont;
-            TopOfStack.locals = locals.ToList();
-        }
-
-        void DidReceive(int ret, List<PrtValue> locals)
-        {
-            var cont = new PrtContinuation();
-            cont.reason = PrtContinuationReason.Receive;
-            cont.returnTolocation = ret;
-            TopOfStack.cont = cont;
-            TopOfStack.locals = locals.ToList();
-        }
-
-        void DidNondet(int ret, List<PrtValue> locals)
-        {
-            var cont = new PrtContinuation();
-            cont.reason = PrtContinuationReason.Nondet;
-            cont.returnTolocation = ret;
-            TopOfStack.cont = cont;
-            TopOfStack.locals = locals.ToList();
-        }
+        
 
     }
 
@@ -467,6 +400,7 @@ namespace P.PRuntime
         public int returnTolocation;
         public PrtContinuationReason reason;
         public PrtMachine createdMachine;
+        public int receiveIndex;
         public PrtValue retVal;
         public List<PrtValue> retLocals;
         // The nondet field is different from the fields above because it is used 
@@ -481,6 +415,7 @@ namespace P.PRuntime
             retVal = null;
             nondet = false;
             retLocals = null;
+            receiveIndex = -1;
         }
     }
 

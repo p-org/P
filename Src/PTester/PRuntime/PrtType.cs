@@ -1,90 +1,92 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace P.Runtime
 {
-    public enum PrtTypeKind : int
+    public abstract class PrtType
     {
-        PRT_KIND_ANY,
-        PRT_KIND_BOOL,
-        PRT_KIND_EVENT,
-        PRT_KIND_REAL,
-        PRT_KIND_INT,
-        PRT_KIND_MAP,
-        PRT_KIND_NMDTUP,
-        PRT_KIND_NULL,
-        PRT_KIND_SEQ,
-        PRT_KIND_TUPLE,
-    };
+    }
 
-    public class PrtType
+    public class PrtAnyType : PrtType
     {
-        public PrtTypeKind typeKind;
-        public int typeTag;
-        public int arity;
+
+    }
+    public class PrtMachineType : PrtType
+    {
+
+    }
+    public class PrtIntType : PrtType
+    {
+
+    }
+    public class PrtBoolType : PrtType
+    {
+
+    }
+    public class PrtEventType : PrtType
+    {
+    }
+    public class PrtMapType : PrtType
+    {
+        public PrtType keyType;
+        public PrtType valType;
+
+        public PrtMapType(PrtType k, PrtType v)
+        {
+            this.keyType = k;
+            this.valType = v;
+        }
+    }
+
+    public class PrtSeqType : PrtType
+    {
+        public PrtType seqType;
+
+        public PrtSeqType(PrtType s)
+        {
+            this.seqType = s;
+        }
+    }
+
+
+    public class PrtTupleType : PrtType
+    {
+        public List<PrtType> fieldTypes;
+
+        public PrtTupleType(params PrtType[] fields)
+        {
+            Debug.Assert(fields.Count() > 0);
+            this.fieldTypes = new List<PrtType>();
+            foreach(var f in fields)
+            {
+                fieldTypes.Add(f);
+            }
+        }
+    }
+
+
+    public class PrtNamedTupleType : PrtType
+    {
         public List<string> fieldNames;
         public List<PrtType> fieldTypes;
-        public PrtType innerType;
-        public PrtType domType;
-        public PrtType codType;
 
-        public static PrtType NullType = PrtMkPrimitiveType(PrtTypeKind.PRT_KIND_NULL);
+        public PrtNamedTupleType(params object[] args)
+        {
+            Debug.Assert(args.Count() > 0);
+            fieldNames = new List<string>();
+            fieldTypes = new List<PrtType>();
 
-        public static PrtType BuildDefault(PrtTypeKind typeKind)
-        {
-            PrtType type = new PrtType();
-            type.typeKind = typeKind;
-            return type;
+            int index = 0;
+            while(index < args.Count())
+            {
+                fieldNames.Add((string)args[index]);
+                index++;
+                fieldTypes.Add((PrtType)args[index]);
+                index++;
+            }
         }
+    }
 
-        public static PrtType PrtMkPrimitiveType(PrtTypeKind primType)
-        {
-            PrtType type = PrtType.BuildDefault(primType);
-            return type;
-        }
-
-        public static PrtType PrtMkMapType(PrtType domType, PrtType codType)
-        {
-            PrtType type = PrtType.BuildDefault(PrtTypeKind.PRT_KIND_MAP);
-            type.domType = domType;
-            type.codType = codType;
-            return type;
-        }
-
-        public static PrtType PrtMkNmdTupType(int arity)
-        {
-            PrtType type = PrtType.BuildDefault(PrtTypeKind.PRT_KIND_NMDTUP);
-            type.arity = arity;
-            type.fieldNames = new List<string>(arity);
-            type.fieldTypes = new List<PrtType>(arity);
-            return type;
-        }
-
-        public static PrtType PrtMkSeqType(PrtType innerType)
-        {
-            PrtType type = PrtType.BuildDefault(PrtTypeKind.PRT_KIND_SEQ);
-            type.innerType = innerType;
-            return type;
-        }
-
-        public static PrtType PrtMkTupType(int arity)
-        {
-            PrtType type = PrtType.BuildDefault(PrtTypeKind.PRT_KIND_TUPLE);
-            type.arity = arity;
-            type.fieldTypes = new List<PrtType>(arity);
-            return type;
-        }
-        public static void PrtSetFieldType(PrtType tupleType, int index, PrtType fieldType)
-        {
-            (tupleType.fieldTypes).Insert(index, fieldType);
-        }
-
-        public static void PrtSetFieldName(PrtType tupleType, int index, string fieldName)
-        {
-            (tupleType.fieldNames).Insert(index, fieldName);
-        }
-    };
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace P.PRuntime
+namespace P.Runtime
 {
     /// <summary>
     /// This class denotes a contiguous fragment of P source code.

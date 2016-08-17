@@ -1,6 +1,7 @@
-﻿using P.PRuntime;
+﻿using P.Runtime;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 /*
 * Simple P program
 
@@ -81,7 +82,7 @@ assert false;
 
 namespace SimpleMachine
 {
-    public class Application : PStateImpl
+    public class Application : StateImpl
     {
         #region Constructors
         public Application() :base()
@@ -89,7 +90,7 @@ namespace SimpleMachine
             //initialize all the fields
         }
 
-        public override PStateImpl MakeSkeleton()
+        public override StateImpl MakeSkeleton()
         {
             return new Application();
         }
@@ -101,7 +102,7 @@ namespace SimpleMachine
         }
         #endregion
 
-        public static PrtEvent dummy = new PrtEvent("dummy", PrtType.NullType, PrtEvent.DefaultMaxInstances, false);
+        public static PrtEvent dummy = new PrtEvent("dummy", new PrtNullType(), PrtEvent.DefaultMaxInstances, false);
 
         public PrtMachine CreateMainMachine()
         {
@@ -120,7 +121,11 @@ namespace SimpleMachine
                 }
             }
 
-            public override int NextInstanceNumber(PStateImpl app)
+            public override PrtMachine MakeSkeleton()
+            {
+                return new Main();
+            }
+            public override int NextInstanceNumber(StateImpl app)
             {
                 return app.NextMachineInstanceNumber(this.GetType());
             }
@@ -132,8 +137,14 @@ namespace SimpleMachine
                     return "Main";
                 }
             }
+
+            //constructor called for cloning
+            public Main(): base()
+            {
+
+            }
             //constructor
-            public Main(PStateImpl app, int maxB) : base(app, maxB)
+            public Main(StateImpl app, int maxB) : base(app, maxB)
             {
                 // initialize fields
             }
@@ -150,10 +161,18 @@ namespace SimpleMachine
                         return "Init_Entry";
                     }
                 }
-                public override void Execute(PStateImpl application, PrtMachine parent)
+
+                public override bool IsAnonFun
                 {
-                    PrtFunStackFrame currFun = parent.PrtPopFunStack();
-                    if (currFun.cont.returnTolocation == 0)
+                    get
+                    {
+                        return true;
+                    }
+                }
+                public override void Execute(StateImpl application, PrtMachine parent)
+                {
+                    PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
+                    if (currFun.returnTolocation == 0)
                         goto Loc_0;
                     else
                         goto Ret;
@@ -161,18 +180,20 @@ namespace SimpleMachine
 
                     Loc_0:
                     parent.PrtEnqueueEvent(application, dummy, PrtValue.NullValue, parent);
-                    //Add the continuation with respect to send
-                    //parent.cont.Send(1, currCont.locals);
+                    parent.PrtFunContSend(this, currFun.locals, 1);
 
                     Ret:
-                    ;
-                   //Need to figure out the push for return
+                    parent.PrtFunContReturn(null);
+                   
                 }
 
                 public override List<PrtValue> CreateLocals(params PrtValue[] args)
                 {
                     var locals = new List<PrtValue>();
-                    locals.AddRange(args);
+                    foreach(var item in args)
+                    {
+                        locals.Add(item.Clone());
+                    }
                     //no local variables hence nothing to add
                     return locals;
                 }
@@ -187,10 +208,18 @@ namespace SimpleMachine
                         return "Fail_Entry";
                     }
                 }
-                public override void Execute(PStateImpl application, PrtMachine parent)
+
+                public override bool IsAnonFun
                 {
-                    PrtFunStackFrame currFun = parent.PrtPopFunStack();
-                    if (currFun.cont.returnTolocation == 0)
+                    get
+                    {
+                        return true;
+                    }
+                }
+                public override void Execute(StateImpl application, PrtMachine parent)
+                {
+                    PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
+                    if (currFun.returnTolocation == 0)
                         goto Loc_0;
                     else
                         goto Ret;
@@ -200,15 +229,17 @@ namespace SimpleMachine
                     throw new PrtAssertFailureException();
 
                     Ret:
-                    ;
-                    //Need to figure out the push for return
+                    parent.PrtFunContReturn(null);
 
                 }
 
                 public override List<PrtValue> CreateLocals(params PrtValue[] args)
                 {
                     var locals = new List<PrtValue>();
-                    locals.AddRange(args);
+                    foreach (var item in args)
+                    {
+                        locals.Add(item.Clone());
+                    }
                     //no local variables hence nothing to add
                     return locals;
                 }

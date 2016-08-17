@@ -4,14 +4,30 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace P.PRuntime
+namespace P.Runtime
 {
     public abstract class PrtMonitor : ICloneable
     {
-        public abstract bool IsHot
+        #region Fields
+        public List<PrtValue> monitorFields;
+        public PrtStateStack stateStack;
+        public List<PrtEvent> observes;
+        public bool IsHot;
+        #endregion
+
+        public PrtMonitor()
+        {
+            monitorFields = new List<PrtValue>();
+            stateStack = new PrtStateStack();
+            observes = new List<PrtEvent>();
+            IsHot = false;
+        }
+        public abstract string Name
         {
             get;
         }
+
+        
 
         public abstract PrtState StartState
         {

@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 
 
-namespace P.PRuntime
+namespace P.Runtime
 {
-    public abstract class PStateImpl : ICloneable
+    public abstract class StateImpl : ICloneable
     {
         #region Constructors
         /// <summary>
         /// This function is called when the stateimp is loaded first time.
         /// </summary>
-        protected PStateImpl()
+        protected StateImpl()
         {
             statemachines = new List<PrtMachine>();
             monitors = new List<PrtMonitor>();
@@ -53,7 +53,7 @@ namespace P.PRuntime
                 foreach (var x in statemachines)
                 {
                     if (enabled) break;
-                    enabled = enabled || x.isEnabled;
+                    enabled = enabled || (x.currentStatus == PrtMachineStatus.Enabled);
                 }
                 bool hot = false;
                 foreach (var x in monitors)
@@ -74,7 +74,7 @@ namespace P.PRuntime
         #endregion
 
         #region Clone Function
-        public abstract PStateImpl MakeSkeleton();
+        public abstract StateImpl MakeSkeleton();
 
         public object Clone()
         {

@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Runtime.Serialization;
 
-namespace P.PRuntime
+namespace P.Runtime
 {
     /// <summary>
     /// This is the base class for all Prt exceptions.
@@ -289,6 +289,19 @@ namespace P.PRuntime
         }
 
         public PrtAssumeFailureException(string message)
+            : base(message)
+        {
+        }
+    }
+
+    public class PrtInvalidEqualsException : PrtException
+    {
+        public PrtInvalidEqualsException()
+            : base()
+        {
+        }
+
+        public PrtInvalidEqualsException(string message)
             : base(message)
         {
         }

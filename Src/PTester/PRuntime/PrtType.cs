@@ -1,90 +1,149 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics;
 
-namespace P.PRuntime
+namespace P.Runtime
 {
-    public enum PrtTypeKind : int
+    public abstract class PrtType
     {
-        PRT_KIND_ANY,
-        PRT_KIND_BOOL,
-        PRT_KIND_EVENT,
-        PRT_KIND_REAL,
-        PRT_KIND_INT,
-        PRT_KIND_MAP,
-        PRT_KIND_NMDTUP,
-        PRT_KIND_NULL,
-        PRT_KIND_SEQ,
-        PRT_KIND_TUPLE,
-    };
+        public abstract string GetString();
+    }
 
-    public class PrtType
+    public class PrtNullType : PrtType
     {
-        public PrtTypeKind typeKind;
-        public int typeTag;
-        public int arity;
+        public override string GetString()
+        {
+            return "NULL";
+        }
+    }
+    public class PrtAnyType : PrtType
+    {
+        public override string GetString()
+        {
+            return "ANY";
+        }
+    }
+    public class PrtMachineType : PrtType
+    {
+        public override string GetString()
+        {
+            return "MACHINE";
+        }
+    }
+    public class PrtIntType : PrtType
+    {
+        public override string GetString()
+        {
+            return "INT";
+        }
+    }
+    public class PrtBoolType : PrtType
+    {
+        public override string GetString()
+        {
+            return "BOOL";
+        }
+    }
+    public class PrtEventType : PrtType
+    {
+        public override string GetString()
+        {
+            return "EVENT";
+        }
+    }
+    public class PrtMapType : PrtType
+    {
+        public PrtType keyType;
+        public PrtType valType;
+
+        public PrtMapType(PrtType k, PrtType v)
+        {
+            this.keyType = k;
+            this.valType = v;
+        }
+
+        public override string GetString()
+        {
+            return String.Format("({0} -> {1})", keyType.GetString(), valType.GetString());
+        }
+    }
+
+    public class PrtSeqType : PrtType
+    {
+        public PrtType elemType;
+
+        public PrtSeqType(PrtType s)
+        {
+            this.elemType = s;
+        }
+
+        public override string GetString()
+        {
+            return String.Format("seq[{0}]", elemType.GetString());
+        }
+    }
+
+
+    public class PrtTupleType : PrtType
+    {
+        public List<PrtType> fieldTypes;
+
+        public PrtTupleType(params PrtType[] fields)
+        {
+            Debug.Assert(fields.Count() > 0);
+            this.fieldTypes = new List<PrtType>();
+            foreach(var f in fields)
+            {
+                fieldTypes.Add(f);
+            }
+        }
+
+        public override string GetString()
+        {
+            string retStr = "<";
+            foreach (var f in fieldTypes)
+            {
+                retStr += f.GetString() + ", ";
+            }
+            retStr += ">";
+            return retStr;
+        }
+    }
+
+
+    public class PrtNamedTupleType : PrtType
+    {
         public List<string> fieldNames;
         public List<PrtType> fieldTypes;
-        public PrtType innerType;
-        public PrtType domType;
-        public PrtType codType;
 
-        public static PrtType NullType = PrtMkPrimitiveType(PrtTypeKind.PRT_KIND_NULL);
-
-        public static PrtType BuildDefault(PrtTypeKind typeKind)
+        public PrtNamedTupleType(params object[] args)
         {
-            PrtType type = new PrtType();
-            type.typeKind = typeKind;
-            return type;
+            Debug.Assert(args.Count() > 0);
+            fieldNames = new List<string>();
+            fieldTypes = new List<PrtType>();
+
+            int index = 0;
+            while(index < args.Count())
+            {
+                fieldNames.Add((string)args[index]);
+                index++;
+                fieldTypes.Add((PrtType)args[index]);
+                index++;
+            }
         }
 
-        public static PrtType PrtMkPrimitiveType(PrtTypeKind primType)
+        public override string GetString()
         {
-            PrtType type = PrtType.BuildDefault(primType);
-            return type;
+            string retStr = "<";
+            int index = 0;
+            while (index < fieldTypes.Count)
+            {
+                retStr += fieldNames[index] + ":" + fieldTypes[index].GetString() + ", ";
+            }
+            retStr += ">";
+            return retStr;
         }
+    }
 
-        public static PrtType PrtMkMapType(PrtType domType, PrtType codType)
-        {
-            PrtType type = PrtType.BuildDefault(PrtTypeKind.PRT_KIND_MAP);
-            type.domType = domType;
-            type.codType = codType;
-            return type;
-        }
-
-        public static PrtType PrtMkNmdTupType(int arity)
-        {
-            PrtType type = PrtType.BuildDefault(PrtTypeKind.PRT_KIND_NMDTUP);
-            type.arity = arity;
-            type.fieldNames = new List<string>(arity);
-            type.fieldTypes = new List<PrtType>(arity);
-            return type;
-        }
-
-        public static PrtType PrtMkSeqType(PrtType innerType)
-        {
-            PrtType type = PrtType.BuildDefault(PrtTypeKind.PRT_KIND_SEQ);
-            type.innerType = innerType;
-            return type;
-        }
-
-        public static PrtType PrtMkTupType(int arity)
-        {
-            PrtType type = PrtType.BuildDefault(PrtTypeKind.PRT_KIND_TUPLE);
-            type.arity = arity;
-            type.fieldTypes = new List<PrtType>(arity);
-            return type;
-        }
-        public static void PrtSetFieldType(PrtType tupleType, int index, PrtType fieldType)
-        {
-            (tupleType.fieldTypes).Insert(index, fieldType);
-        }
-
-        public static void PrtSetFieldName(PrtType tupleType, int index, string fieldName)
-        {
-            (tupleType.fieldNames).Insert(index, fieldName);
-        }
-    };
 }

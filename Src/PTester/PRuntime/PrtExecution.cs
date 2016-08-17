@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace P.PRuntime
+namespace P.Runtime
 {
     public class PrtCommonFunctions
     {
@@ -21,7 +21,15 @@ namespace P.PRuntime
             }
         }
 
-        public override void Execute(PStateImpl application, PrtMachine parent)
+        public override bool IsAnonFun
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        public override void Execute(StateImpl application, PrtMachine parent)
         {
             throw new NotImplementedException();
         }
@@ -42,7 +50,15 @@ namespace P.PRuntime
             }
         }
 
-        public override void Execute(PStateImpl application, PrtMachine parent)
+        public override bool IsAnonFun
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        public override void Execute(StateImpl application, PrtMachine parent)
         {
             throw new NotImplementedException();
         }
@@ -60,16 +76,28 @@ namespace P.PRuntime
             get;
         }
 
+        public abstract bool IsAnonFun
+        {
+            get;
+        } 
+
+        public List<Dictionary<PrtEvent, PrtFun>> receiveCases;
+        
+        public PrtFun()
+        {
+            receiveCases = new List<Dictionary<PrtEvent, PrtFun>>();
+        }
+
         public abstract List<PrtValue> CreateLocals(params PrtValue[] args);
 
-        public abstract void Execute(PStateImpl application, PrtMachine parent);
+        public abstract void Execute(StateImpl application, PrtMachine parent);
     }
 
     public class PrtEvent
     {
         public static int DefaultMaxInstances = int.MaxValue;
-        public static PrtEvent NullEvent = new PrtEvent("Null", PrtType.NullType, DefaultMaxInstances, false);
-        public static PrtEvent HaltEvent = new PrtEvent("Halt", PrtType.NullType, DefaultMaxInstances, false);
+        public static PrtEvent NullEvent = null;
+        public static PrtEvent HaltEvent = new PrtEvent("Halt", new PrtNullType(), DefaultMaxInstances, false);
         
 
         public string name;
@@ -128,9 +156,6 @@ namespace P.PRuntime
             this.hasNullTransition = hasNullTransition;
             this.temperature = temperature;
         }
-
-
-        
     };
 
     public class PrtEventNode
@@ -141,7 +166,12 @@ namespace P.PRuntime
         public PrtEventNode(PrtEvent e, PrtValue payload)
         {
             ev = e;
-            arg = payload;
+            arg = payload.Clone();
+        }
+
+        public PrtEventNode Clone()
+        {
+            return new PrtEventNode(this.ev, this.arg);
         }
     }
 
@@ -153,6 +183,15 @@ namespace P.PRuntime
             events = new List<PrtEventNode>();
         }
 
+        public PrtEventBuffer Clone()
+        {
+            var clonedVal = new PrtEventBuffer();
+            foreach(var ev in this.events)
+            {
+                clonedVal.events.Add(ev.Clone());
+            }
+            return clonedVal;
+        }
         public int Size()
         {
             return events.Count();
@@ -260,7 +299,7 @@ namespace P.PRuntime
 
     }
     
-    internal class PrtStateStack
+    public class PrtStateStack
     {
         public PrtStateStack()
         {
@@ -344,14 +383,35 @@ namespace P.PRuntime
 
     public class PrtFunStackFrame
     {
+        public int returnTolocation;
         public List<PrtValue> locals;
-        public PrtContinuation cont;
+        
         public PrtFun fun;
         public PrtFunStackFrame(PrtFun fun,  List<PrtValue> locs)
         {
             this.fun = fun;
-            cont = new PrtContinuation();
-            locals = locs.ToList();
+            this.locals = new List<PrtValue>();
+            foreach(var l in locs)
+            {
+                locals.Add(l.Clone());
+            }
+            returnTolocation = 0;
+        }
+
+        public PrtFunStackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+        {
+            this.fun = fun;
+            this.locals = new List<PrtValue>();
+            foreach (var l in locs)
+            {
+                locals.Add(l.Clone());
+            }
+            returnTolocation = retLocation;
+        }
+
+        public PrtFunStackFrame Clone()
+        {
+            return new PrtFunStackFrame(this.fun, this.locals, this.returnTolocation);
         }
     }
 
@@ -361,6 +421,17 @@ namespace P.PRuntime
         public PrtFunStack()
         {
             funStack = new Stack<PrtFunStackFrame>();
+        }
+
+        public PrtFunStack Clone()
+        {
+            var clonedStack = new PrtFunStack();
+            foreach(var frame in funStack)
+            {
+                clonedStack.funStack.Push(frame.Clone());
+            }
+            clonedStack.funStack.Reverse();
+            return clonedStack;
         }
 
         public PrtFunStackFrame TopOfStack
@@ -379,87 +450,26 @@ namespace P.PRuntime
             funStack.Push(new PrtFunStackFrame(fun, locals));
         }
 
+        public void PushFun(PrtFun fun, List<PrtValue> locals, int retLoc)
+        {
+            funStack.Push(new PrtFunStackFrame(fun, locals, retLoc));
+        }
+
         public PrtFunStackFrame PopFun()
         {
             return funStack.Pop();
         }
 
-        public void DidReturn(List<PrtValue> retLocals)
-        {
-            var cont = new PrtContinuation();
-            cont.reason = PrtContinuationReason.Return;
-            cont.retVal = PrtValue.NullValue;
-            cont.retLocals = retLocals;
-            TopOfStack.cont = cont;
-        }
-
-        public void DidReturnVal(PrtValue val, List<PrtValue> retLocals)
-        {
-            var cont = new PrtContinuation();
-            cont.reason = PrtContinuationReason.Return;
-            cont.retVal = val;
-            cont.retLocals = retLocals;
-            TopOfStack.cont = cont;
-        }
-
-        public void DidPop()
-        {
-            var cont = new PrtContinuation();
-            cont.reason = PrtContinuationReason.Pop;
-            TopOfStack.cont = cont;
-        }
-
-        public void DidRaise()
-        {
-            var cont = new PrtContinuation();
-            cont.reason = PrtContinuationReason.Raise;
-            TopOfStack.cont = cont;
-        }
-
-        public void DidSend(int ret, List<PrtValue> locals)
-        {
-            var cont = new PrtContinuation();
-            cont.reason = PrtContinuationReason.Send;
-            cont.returnTolocation = ret;
-            TopOfStack.cont = cont;
-            TopOfStack.locals = locals.ToList();
-        }
-
-        void DidNewMachine(int ret, List<PrtValue> locals, PrtMachine o)
-        {
-            var cont = new PrtContinuation();
-            cont.reason = PrtContinuationReason.NewMachine;
-            cont.createdMachine = o;
-            cont.returnTolocation = ret;
-            TopOfStack.cont = cont;
-            TopOfStack.locals = locals.ToList();
-        }
-
-        void DidReceive(int ret, List<PrtValue> locals)
-        {
-            var cont = new PrtContinuation();
-            cont.reason = PrtContinuationReason.Receive;
-            cont.returnTolocation = ret;
-            TopOfStack.cont = cont;
-            TopOfStack.locals = locals.ToList();
-        }
-
-        void DidNondet(int ret, List<PrtValue> locals)
-        {
-            var cont = new PrtContinuation();
-            cont.reason = PrtContinuationReason.Nondet;
-            cont.returnTolocation = ret;
-            TopOfStack.cont = cont;
-            TopOfStack.locals = locals.ToList();
-        }
+        
 
     }
 
     public class PrtContinuation
     {
-        public int returnTolocation;
+        
         public PrtContinuationReason reason;
         public PrtMachine createdMachine;
+        public int receiveIndex;
         public PrtValue retVal;
         public List<PrtValue> retLocals;
         // The nondet field is different from the fields above because it is used 
@@ -473,7 +483,23 @@ namespace P.PRuntime
             createdMachine = null;
             retVal = null;
             nondet = false;
-            retLocals = null;
+            retLocals = new List<PrtValue>();
+            receiveIndex = -1;
+        }
+
+        public PrtContinuation Clone()
+        {
+            var clonedVal = new PrtContinuation();
+            clonedVal.reason = this.reason;
+            clonedVal.createdMachine = this.createdMachine;
+            clonedVal.receiveIndex = this.receiveIndex;
+            clonedVal.retVal = this.retVal.Clone();
+            foreach(var loc in retLocals)
+            {
+                clonedVal.retLocals.Add(loc.Clone());
+            }
+
+            return clonedVal;
         }
     }
 

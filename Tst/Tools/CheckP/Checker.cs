@@ -151,6 +151,8 @@ namespace CheckP
         private string zingFilePath;
         private string testerExePath;
         private string testRoot;
+        private string configuration;
+        private string platform;
 
         public string Description
         {
@@ -158,7 +160,7 @@ namespace CheckP
             private set;
         }
 
-        public Checker(string activeDirectory, string testRoot, bool reset, bool cooperative, string parentDir, string execsToRun, string zingFilePath, PciProcess pciProcess)
+        public Checker(string activeDirectory, string testRoot, bool reset, bool cooperative, string configuration, string platform, string parentDir, string execsToRun, string zingFilePath, PciProcess pciProcess)
         {
             this.activeDirectory = activeDirectory;
             this.reset = reset;
@@ -168,6 +170,8 @@ namespace CheckP
             this.pciProcess = pciProcess;
             this.zingFilePath = zingFilePath;
             this.testRoot = testRoot;
+            this.configuration = configuration;
+            this.platform = platform;
         }
 
         public static void PrintUsage()
@@ -438,7 +442,8 @@ namespace CheckP
                              result;
                     //Compute "TesterDirectory" (Tst\PrtTester):
                     //path to ...PrtTester\Debug\x86\tester.exe (since that is the configuration that RunBuildTester builds).
-                    string testerExeDir = Path.Combine(this.testRoot, "PrtTester\\Debug\\x86");
+                    string exePath = string.Format("PrtTester\\{0}\\{1}", configuration, platform);
+                    string testerExeDir = Path.Combine(this.testRoot, exePath);
                     this.testerExePath = Path.Combine(testerExeDir, "tester.exe");
                     var testerDirectory = Path.Combine(this.testRoot, "PrtTester");
 
@@ -824,8 +829,8 @@ namespace CheckP
                 var msbuildArgs = "";
                 msbuildArgs += projectFile;
                 msbuildArgs += clean ? @" /t:Clean " : @" /t:Build ";
-                msbuildArgs += @"/p:Configuration=Debug ";
-                msbuildArgs += @"/p:Platform=x86 ";
+                msbuildArgs += @"/p:Configuration=" + configuration + " ";
+                msbuildArgs += @"/p:Platform=" + platform + " ";
                 msbuildArgs += @"/verbosity:quiet ";
                 msbuildArgs += @"/nologo";
                 //Console.WriteLine("msbuildArgs: {0}", msbuildArgs);

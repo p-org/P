@@ -3,7 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace P.PRuntime
+namespace P.Runtime
 {
     public enum PrtMachineStatus
     {
@@ -39,45 +39,91 @@ namespace P.PRuntime
         private PrtEvent eventValue;
         private PrtStateStack stateStack;
         private PrtFunStack invertedFunStack;
+        private PrtContinuation continuation;
         public PrtEvent currentTrigger;
         public PrtValue currentPayload;
         public PrtEventBuffer eventQueue;
         public HashSet<PrtEvent> receiveSet;
-        public bool isHalted;
-        public bool isEnabled;
+        public PrtMachineStatus currentStatus;
         private PrtNextStatemachineOperation nextSMOperation;
         private PrtStateExitReason stateExitReason;
         public int maxBufferSize;
         public PrtState destOfGoto;
         //just a reference to stateImpl
-        private PStateImpl StateImpl;
+        private StateImpl StateImpl;
         #endregion
 
         #region Clone and Undo
-        public PrtMachine Clone() { throw new NotImplementedException(); }
+        public PrtMachine Clone()
+        {
+            var clonedMachine = MakeSkeleton();
+            clonedMachine.instanceNumber = this.instanceNumber;
+            foreach(var fd in machineFields)
+            {
+                clonedMachine.machineFields.Add(fd.Clone());
+            }
+            clonedMachine.eventValue = this.eventValue;
+            clonedMachine.stateStack = this.stateStack.Clone();
+            clonedMachine.invertedFunStack = this.invertedFunStack.Clone();
+            clonedMachine.continuation = this.continuation.Clone();
+            clonedMachine.currentTrigger = this.currentTrigger;
+            clonedMachine.currentPayload = this.currentPayload.Clone();
+            clonedMachine.eventQueue = this.eventQueue.Clone();
+            foreach(var ev in this.receiveSet)
+            {
+                clonedMachine.receiveSet.Add(ev);
+            }
+            clonedMachine.currentStatus = this.currentStatus;
+            clonedMachine.nextSMOperation = this.nextSMOperation;
+            clonedMachine.stateExitReason = this.stateExitReason;
+            clonedMachine.maxBufferSize = this.maxBufferSize;
+            clonedMachine.StateImpl = this.StateImpl;
+            return clonedMachine;
+        }
         #endregion
 
         #region Constructor
-        public PrtMachine(PStateImpl app, int maxBuff)
+        public abstract PrtMachine MakeSkeleton();
+
+        public PrtMachine()
+        {
+            this.instanceNumber = 0;
+            this.machineFields = new List<PrtValue>();
+            this.eventValue = null;
+            this.stateStack = new PrtStateStack();
+            this.invertedFunStack = new PrtFunStack();
+            this.continuation = new PrtContinuation();
+            this.currentTrigger = null;
+            this.currentPayload = null;
+            this.eventQueue = new PrtEventBuffer();
+            this.receiveSet = new HashSet<PrtEvent>();
+            this.currentStatus = PrtMachineStatus.Enabled;
+            this.nextSMOperation = PrtNextStatemachineOperation.EntryOperation;
+            this.stateExitReason = PrtStateExitReason.NotExit;
+            this.maxBufferSize = 0;
+            this.StateImpl = null;
+        }
+
+        public PrtMachine(StateImpl app, int maxBuff)
         {
             this.instanceNumber = this.NextInstanceNumber(app);
             this.machineFields = new List<PrtValue>();
             this.eventValue = null;
             this.stateStack = new PrtStateStack();
             this.invertedFunStack = new PrtFunStack();
+            this.continuation = new PrtContinuation();
             this.currentTrigger = null;
-            this.currentPayload = PrtValue.NullValue;
+            this.currentPayload = null;
             this.eventQueue = new PrtEventBuffer();
             this.receiveSet = new HashSet<PrtEvent>();
-            this.isHalted = false;
-            this.isEnabled = true;
+            this.currentStatus = PrtMachineStatus.Enabled;
             this.nextSMOperation = PrtNextStatemachineOperation.EntryOperation;
             this.stateExitReason = PrtStateExitReason.NotExit;
             this.maxBufferSize = maxBuff;
-            StateImpl = app;
+            this.StateImpl = app;
 
             //Push the start state function on the funStack.
-            stateStack.PushStackFrame(StartState);
+            PrtPushState(StartState);
         }
         #endregion
 
@@ -92,26 +138,7 @@ namespace P.PRuntime
             get;
         }
 
-        public abstract int NextInstanceNumber(PStateImpl app);
-        public PrtMachineStatus CurrentStatus
-        {
-            get
-            {
-                if (isHalted)
-                {
-                    return PrtMachineStatus.Halted;
-                }
-                else if (isEnabled)
-                {
-                    return PrtMachineStatus.Enabled;
-                }
-                else
-                {
-                    return PrtMachineStatus.Blocked;
-                }
-            }
-
-        }
+        public abstract int NextInstanceNumber(StateImpl app);
 
         public PrtState CurrentState
         {
@@ -162,31 +189,34 @@ namespace P.PRuntime
                 }
                 else
                 {
-                    isHalted = true;
+                    currentStatus = PrtMachineStatus.Halted;
                 }
             }
 
-            return isHalted;
+            return currentStatus == PrtMachineStatus.Halted;
 
         }
 
         public void PrtChangeState(PrtState s)
         {
-            if (stateStack.TopOfStack != null)
-            {
-                stateStack.PopStackFrame();
-            }
+            Debug.Assert(stateStack.TopOfStack != null);
+            stateStack.PopStackFrame();
             stateStack.PushStackFrame(s);
         }
 
-        public PrtFunStackFrame PrtPopFunStack()
+        public PrtFunStackFrame PrtPopFunStackFrame()
         {
             return invertedFunStack.PopFun();
         }
 
-        public void PrtPushFunStack(PrtFun fun, List<PrtValue> local)
+        public void PrtPushFunStackFrame(PrtFun fun, List<PrtValue> local)
         {
             invertedFunStack.PushFun(fun, local);
+        }
+
+        public void PrtPushFunStackFrame(PrtFun fun, List<PrtValue> local, int retTo)
+        {
+            invertedFunStack.PushFun(fun, local, retTo);
         }
 
         public void PrtResetTriggerAndPayload()
@@ -195,7 +225,7 @@ namespace P.PRuntime
             currentPayload = null;
         }
 
-        public void PrtEnqueueEvent(PStateImpl application, PrtEvent e, PrtValue arg, PrtMachine source)
+        public void PrtEnqueueEvent(StateImpl application, PrtEvent e, PrtValue arg, PrtMachine source)
         {
             PrtType prtType;
 
@@ -207,13 +237,16 @@ namespace P.PRuntime
             //assertion to check if argument passed inhabits the payload type.
             prtType = e.payloadType;
 
-            if ((arg.type.typeKind == PrtTypeKind.PRT_KIND_NULL)
-                || (prtType.typeKind != PrtTypeKind.PRT_KIND_NULL && !PrtValue.PrtInhabitsType(arg, prtType)))
+            if (!(prtType is PrtNullType) && !PrtValue.PrtInhabitsType(arg, prtType))
             {
-                throw new PrtInhabitsTypeException(String.Format("Type of payload <{0}> does not match the expected type <{1}> with event <{2}>", arg.type.ToString(), prtType.ToString(), e.name));
+                throw new PrtInhabitsTypeException(String.Format("Payload <{0}> does not match the expected type <{1}> with event <{2}>", arg.GetString(), prtType.GetString(), e.name));
+            }
+            else if (prtType is PrtNullType && !(arg is PrtNullValue))
+            {
+                throw new PrtIllegalEnqueueException("Did not expect a payload value");
             }
 
-            if (isHalted)
+            if (currentStatus == PrtMachineStatus.Halted)
             {
                 application.Trace(
                     @"<EnqueueLog> {0}-{1} Machine has been halted and Event {2} is dropped",
@@ -241,14 +274,14 @@ namespace P.PRuntime
                         String.Format(@"<EXCEPTION> Event Buffer Size Exceeded {0} in Machine {1}-{2}",
                         this.maxBufferSize, this.Name, this.instanceNumber));
                 }
-                if (!isEnabled && this.eventQueue.IsEnabled(this))
+                if (currentStatus == PrtMachineStatus.Blocked && this.eventQueue.IsEnabled(this))
                 {
-                    isEnabled = true;
+                    currentStatus = PrtMachineStatus.Enabled;
                 }
             }
         }
 
-        public PrtDequeueReturnStatus PrtDequeueEvent(PStateImpl application, bool hasNullTransition)
+        public PrtDequeueReturnStatus PrtDequeueEvent(StateImpl application, bool hasNullTransition)
         {
             currentTrigger = null;
             currentPayload = null;
@@ -259,7 +292,7 @@ namespace P.PRuntime
                 {
                     throw new PrtInternalException("Internal error: currentArg is null");
                 }
-                if (!isEnabled)
+                if (currentStatus == PrtMachineStatus.Blocked)
                 {
                     throw new PrtInternalException("Internal error: Tyring to execute blocked machine");
                 }
@@ -272,25 +305,24 @@ namespace P.PRuntime
             }
             else if (hasNullTransition || receiveSet.Contains(currentTrigger))
             {
-                if (!isEnabled)
+                if (currentStatus == PrtMachineStatus.Blocked)
                 {
                     throw new PrtInternalException("Internal error: Tyring to execute blocked machine");
                 }
                 application.Trace(
                     "<NullTransLog> Null transition taken by Machine {0}-{1}\n",
                     Name, instanceNumber);
-                currentPayload = PrtValue.NullValue;
+                currentPayload = null;
                 receiveSet = new HashSet<PrtEvent>();
                 return PrtDequeueReturnStatus.NULL;
             }
             else
             {
-                //invokescheduler("blocked", machineId);
-                if (!isEnabled)
+                if (currentStatus == PrtMachineStatus.Blocked)
                 {
                     throw new PrtAssumeFailureException();
                 }
-                isEnabled = false;
+                currentStatus = PrtMachineStatus.Blocked;
                 if (application.Deadlock)
                 {
                     throw new PrtDeadlockException("Deadlock detected");
@@ -301,15 +333,21 @@ namespace P.PRuntime
 
         public void PrtExecuteExitFunction()
         {
-            //Shaz: exit functions do not take any arguments so is this current ??
-            PrtPushFunStack(CurrentState.exitFun, CurrentState.exitFun.CreateLocals());
+            //Shaz: exit functions do not take any arguments, so is this current ??
+            PrtPushFunStackFrame(CurrentState.exitFun, CurrentState.exitFun.CreateLocals());
             invertedFunStack.TopOfStack.fun.Execute(StateImpl, this);
         }
 
         public void PrtExecuteReceiveCase(PrtEvent ev)
         {
-            //figure out where the receive cases are stored and how ??
-            throw new NotImplementedException();
+            var currRecIndex = continuation.receiveIndex;
+            var currFun = invertedFunStack.TopOfStack.fun.receiveCases[currRecIndex][ev];
+            if(currFun.IsAnonFun)
+                PrtPushFunStackFrame(currFun, currFun.CreateLocals(currentPayload));
+            else
+                PrtPushFunStackFrame(currFun, currFun.CreateLocals());
+
+            currFun.Execute(StateImpl, this);
         }
 
         public bool PrtIsPushTransitionPresent(PrtEvent ev)
@@ -338,17 +376,66 @@ namespace P.PRuntime
         public void PrtExecuteTransitionFun(PrtEvent ev)
         {
             // Shaz: Figure out how to handle the transfer stuff for payload !!!
-            PrtPushFunStack(CurrentState.transitions[ev].transitionFun, CurrentState.transitions[ev].transitionFun.CreateLocals(currentPayload));
+            PrtPushFunStackFrame(CurrentState.transitions[ev].transitionFun, CurrentState.transitions[ev].transitionFun.CreateLocals(currentPayload));
             invertedFunStack.TopOfStack.fun.Execute(StateImpl, this);
         }
 
+        public void PrtFunContReturn(List<PrtValue> retLocals)
+        {
+            continuation.reason = PrtContinuationReason.Return;
+            continuation.retVal = null;
+            continuation.retLocals = retLocals;
+        }
+
+        public void PrtFunContReturnVal(PrtValue val, List<PrtValue> retLocals)
+        {
+            continuation.reason = PrtContinuationReason.Return;
+            continuation.retVal = val;
+            continuation.retLocals = retLocals;
+        }
+
+        public void PrtFunContPop()
+        {
+            continuation.reason = PrtContinuationReason.Pop;
+        }
+
+        public void PrtFunContRaise()
+        {
+            continuation.reason = PrtContinuationReason.Raise;
+        }
+
+        public void PrtFunContSend(PrtFun fun, List<PrtValue> locals, int ret)
+        {
+            PrtPushFunStackFrame(fun, locals, ret);
+            continuation.reason = PrtContinuationReason.Send;
+        }
+
+        void PrtFunContNewMachine(PrtFun fun, List<PrtValue> locals, PrtMachine o, int ret)
+        {
+            PrtPushFunStackFrame(fun, locals, ret);
+            continuation.reason = PrtContinuationReason.NewMachine;
+            continuation.createdMachine = o;
+        }
+
+        void PrtFunContReceive(PrtFun fun, List<PrtValue> locals, int ret)
+        {
+            PrtPushFunStackFrame(fun, locals, ret);
+            continuation.reason = PrtContinuationReason.Receive;
+            
+        }
+
+        void PrtFunContNondet(PrtFun fun, List<PrtValue> locals, int ret)
+        {
+            PrtPushFunStackFrame(fun, locals, ret);
+            continuation.reason = PrtContinuationReason.Nondet;
+        }
         #endregion
 
 
         public void PrtRunStateMachine()
         {
             int numOfStepsTaken = 0;
-            Debug.Assert(isEnabled && !isHalted, "Invoked PrtRunStateMachine or a blocked or a halted machine");
+            Debug.Assert(currentStatus == PrtMachineStatus.Enabled, "Invoked PrtRunStateMachine on a blocked or a halted machine");
 
             try
             {
@@ -374,8 +461,6 @@ namespace P.PRuntime
             PrtFun currAction;
             bool hasMoreWork = false;
 
-            Debug.Assert(isEnabled, "PrtStepStateMachine is invoked when the state machine is blocked, STRANGE !!");
-
             switch(nextSMOperation)
             {
                 case PrtNextStatemachineOperation.EntryOperation:
@@ -396,8 +481,10 @@ namespace P.PRuntime
             if(invertedFunStack.TopOfStack == null)
             {
                 //Trace: entered state
-                //Shaz: Is the following this correct, how do we pass the payload to entry function.
-                PrtPushFunStack(CurrentState.entryFun, CurrentState.entryFun.CreateLocals(currentPayload));
+                if(CurrentState.entryFun.IsAnonFun)
+                    PrtPushFunStackFrame(CurrentState.entryFun, CurrentState.entryFun.CreateLocals(currentPayload));
+                else
+                    PrtPushFunStackFrame(CurrentState.entryFun, CurrentState.entryFun.CreateLocals());
             }
             //invoke the function
             invertedFunStack.TopOfStack.fun.Execute(StateImpl, this);
@@ -415,7 +502,7 @@ namespace P.PRuntime
                 if(invertedFunStack.TopOfStack == null)
                 {
                     //Trace: executed the action handler for event
-                    PrtPushFunStack(currAction, currAction.CreateLocals(currentPayload));
+                    PrtPushFunStackFrame(currAction, currAction.CreateLocals(currentPayload));
                 }
                 //invoke the action handler
                 invertedFunStack.TopOfStack.fun.Execute(StateImpl, this);
@@ -431,15 +518,7 @@ namespace P.PRuntime
 
             }
 
-            if(invertedFunStack.TopOfStack == null)
-            {
-                // This means that I just did an ignore and hence should go back to dequeue
-                hasMoreWork = true;
-                nextSMOperation = PrtNextStatemachineOperation.DequeueOperation;
-                stateExitReason = PrtStateExitReason.NotExit;
-            }
-
-            switch(invertedFunStack.TopOfStack.cont.reason)
+            switch(continuation.reason)
             {
                 case PrtContinuationReason.Pop:
                     {
@@ -459,9 +538,36 @@ namespace P.PRuntime
                         hasMoreWork = true;
                         goto Finish;
                     }
+                case PrtContinuationReason.NewMachine:
+                    {
+                        stateExitReason = PrtStateExitReason.NotExit;
+                        hasMoreWork = false;
+                        goto Finish;
+                    }
+                case PrtContinuationReason.Nondet:
+                    {
+                        stateExitReason = PrtStateExitReason.NotExit;
+                        StateImpl.SetPendingChoicesAsBoolean(this);
+                        continuation.nondet = ((Boolean)StateImpl.GetSelectedChoiceValue(this));
+                        hasMoreWork = false;
+                        goto Finish;
+                    }
+                case PrtContinuationReason.Receive:
+                    { 
+                        stateExitReason = PrtStateExitReason.NotExit;
+                        nextSMOperation = PrtNextStatemachineOperation.ReceiveOperation;
+                        hasMoreWork = true;
+                        goto Finish;
+                    }
+                case PrtContinuationReason.Send:
+                    {
+                        stateExitReason = PrtStateExitReason.NotExit;
+                        hasMoreWork = false;
+                        goto Finish;
+                    }
                 case PrtContinuationReason.Return:
                     {
-                        switch(stateExitReason)
+                        switch (stateExitReason)
                         {
                             case PrtStateExitReason.NotExit:
                                 {
@@ -555,7 +661,7 @@ namespace P.PRuntime
 
             if(PrtIsPushTransitionPresent(currEventValue))
             {
-                PrtChangeState(CurrentState.transitions[currEventValue].gotoState);
+                PrtPushState(CurrentState.transitions[currEventValue].gotoState);
                 goto DoEntry;
             }
             else if(PrtIsTransitionPresent(currEventValue))
@@ -607,6 +713,7 @@ namespace P.PRuntime
             }
 
             Finish:
+            Debug.Assert(!hasMoreWork || currentStatus == PrtMachineStatus.Enabled, "hasMoreWork is true but the statemachine is blocked");
             return hasMoreWork;
 
             }

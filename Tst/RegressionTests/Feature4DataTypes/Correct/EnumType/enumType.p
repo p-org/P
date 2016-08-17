@@ -3,6 +3,7 @@
 //TODO(not included): anonymous tuples;
 //TODO(add later): tests for variables declared but not used
 
+#include "includedEnums.p"
 event E assert 1; 
 event E1 assert 1;
 event E2 assert 1;
@@ -35,6 +36,7 @@ machine Main {
 	var s6: seq[any];
 	var i: int;
 	var mac: machine;
+	var day: DayOfWeek;
 	
     start state S
     {
@@ -166,6 +168,8 @@ machine Main {
 		  assert t3.y[0] == foo0;             //holds
 		  assert sizeof(t3.x) == 1 && sizeof(t3.y) == 4;            //holds 
 		  
+		  day = mon;
+		  test_fun_param(97, day);
        }    
     }
     
@@ -178,6 +182,14 @@ machine Main {
 	{
 		return (x = default(Foo), y = default(Bar));
 	}      
+
+	fun test_fun_param(x: int, day: DayOfWeek)
+	{		
+		// test integer coercion
+		if (day == 0) {
+			
+		}
+	}
 }
 
 machine Test {

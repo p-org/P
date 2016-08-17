@@ -111,7 +111,7 @@ namespace Microsoft.Pc
                     retry = false;
                     if (master == null)
                     {
-                        masterCreated = false;
+                        masterCreated = true;
                         lock (compilerlock)
                         {
                             output.WriteMessage("Generating P compiler", SeverityKind.Info);

@@ -9,22 +9,25 @@ namespace P.Runtime
     public abstract class PrtMonitor : ICloneable
     {
         #region Fields
-        public int instanceNumber;
         public List<PrtValue> monitorFields;
-        public PrtEvent currentTrigger;
-        public PrtValue currentPayload;
-        private PrtFunStack invertedFunStack;
+        public PrtStateStack stateStack;
+        public List<PrtEvent> observes;
+        public bool IsHot;
         #endregion
 
+        public PrtMonitor()
+        {
+            monitorFields = new List<PrtValue>();
+            stateStack = new PrtStateStack();
+            observes = new List<PrtEvent>();
+            IsHot = false;
+        }
         public abstract string Name
         {
             get;
         }
 
-        public abstract bool IsHot
-        {
-            get;
-        }
+        
 
         public abstract PrtState StartState
         {

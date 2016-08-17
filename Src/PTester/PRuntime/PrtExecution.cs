@@ -299,7 +299,7 @@ namespace P.Runtime
 
     }
     
-    internal class PrtStateStack
+    public class PrtStateStack
     {
         public PrtStateStack()
         {

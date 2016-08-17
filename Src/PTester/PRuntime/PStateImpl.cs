@@ -13,8 +13,8 @@ namespace P.Runtime
         /// </summary>
         protected StateImpl()
         {
-            statemachines = new List<PrtMachine>();
-            monitors = new List<PrtMonitor>();
+            statemachines = new List<PrtImplMachine>();
+            monitors = new List<PrtSpecMachine>();
         }
         #endregion
 
@@ -22,9 +22,9 @@ namespace P.Runtime
         /// <summary>
         /// Map from the statemachine id to the instance of the statemachine.
         /// </summary>
-        private List<PrtMachine> statemachines;
+        private List<PrtImplMachine> statemachines;
 
-        public List<PrtMachine> AllStateMachines
+        public List<PrtImplMachine> AllStateMachines
         {
             get
             {
@@ -35,7 +35,7 @@ namespace P.Runtime
         /// <summary>
         /// List of monitors
         /// </summary>
-        private List<PrtMonitor> monitors;
+        private List<PrtSpecMachine> monitors;
         
         /// <summary>
         /// Stores the exception encoutered during exploration.
@@ -80,16 +80,16 @@ namespace P.Runtime
         {
             var clonedState = MakeSkeleton();
             //clone all the fields
-            clonedState.statemachines = new List<PrtMachine>();
+            clonedState.statemachines = new List<PrtImplMachine>();
             foreach(var machine in statemachines)
             {
                 clonedState.statemachines.Add(machine.Clone());
             }
 
-            clonedState.monitors = new List<PrtMonitor>();
+            clonedState.monitors = new List<PrtSpecMachine>();
             foreach(var monitor in monitors)
             {
-                clonedState.monitors.Add((PrtMonitor)monitor.Clone());
+                clonedState.monitors.Add((PrtSpecMachine)monitor.Clone());
             }
 
             return clonedState;
@@ -103,7 +103,7 @@ namespace P.Runtime
             return statemachines.Where(m => m.GetType() == machineType).Count() + 1;
         }
 
-        public void AddStateMachineToStateImpl(PrtMachine machine)
+        public void AddStateMachineToStateImpl(PrtImplMachine machine)
         {
             statemachines.Add(machine);
         }
@@ -115,12 +115,12 @@ namespace P.Runtime
 
 
 
-        public void SetPendingChoicesAsBoolean(PrtMachine process)
+        public void SetPendingChoicesAsBoolean(PrtImplMachine process)
         {
             throw new NotImplementedException();
         }
 
-        public object GetSelectedChoiceValue(PrtMachine process)
+        public object GetSelectedChoiceValue(PrtImplMachine process)
         {
             throw new NotImplementedException();
         }

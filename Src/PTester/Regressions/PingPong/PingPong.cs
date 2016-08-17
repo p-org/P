@@ -102,16 +102,16 @@ namespace SimpleMachine
         }
         #endregion
 
-        public static PrtEvent dummy = new PrtEvent("dummy", new PrtNullType(), PrtEvent.DefaultMaxInstances, false);
+        public static PrtEventValue dummy = new PrtEventValue(new PrtEvent("dummy", new PrtNullType(), PrtEvent.DefaultMaxInstances, false));
 
-        public PrtMachine CreateMainMachine()
+        public PrtImplMachine CreateMainMachine()
         {
             var mainMachine = new Main(this, 10);
             AddStateMachineToStateImpl(mainMachine);
             return mainMachine;
         }
 
-        public class Main : PrtMachine
+        public class Main : PrtImplMachine
         {
             public override PrtState StartState
             {
@@ -121,7 +121,7 @@ namespace SimpleMachine
                 }
             }
 
-            public override PrtMachine MakeSkeleton()
+            public override PrtImplMachine MakeSkeleton()
             {
                 return new Main();
             }

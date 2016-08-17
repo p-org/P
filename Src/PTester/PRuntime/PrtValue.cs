@@ -8,6 +8,7 @@ namespace P.Runtime
     public abstract class PrtValue
     {
         public static PrtNullValue NullValue = new PrtNullValue();
+        public static PrtEventValue HaltEvent = new PrtEventValue(new PrtEvent("Halt", new PrtNullType(), PrtEvent.DefaultMaxInstances, false));
 
         public abstract PrtValue Clone();
 
@@ -282,7 +283,7 @@ namespace P.Runtime
         }
     }
 
-    public class PrtEventValue : PrtNullValue
+    public class PrtEventValue : PrtValue
     {
         public PrtEvent value;
 
@@ -308,11 +309,11 @@ namespace P.Runtime
         }
     }
 
-    public class PrtMachineValue : PrtNullValue
+    public class PrtMachineValue : PrtValue
     {
-        public PrtMachine value;
+        public PrtImplMachine value;
 
-        public PrtMachineValue(PrtMachine mach)
+        public PrtMachineValue(PrtImplMachine mach)
         {
             this.value = mach;
         }

@@ -1,6 +1,7 @@
 ﻿using P.Runtime;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 /*
 * Simple P program
 
@@ -120,6 +121,10 @@ namespace SimpleMachine
                 }
             }
 
+            public override PrtMachine MakeSkeleton()
+            {
+                return new Main();
+            }
             public override int NextInstanceNumber(StateImpl app)
             {
                 return app.NextMachineInstanceNumber(this.GetType());
@@ -131,6 +136,12 @@ namespace SimpleMachine
                 {
                     return "Main";
                 }
+            }
+
+            //constructor called for cloning
+            public Main(): base()
+            {
+
             }
             //constructor
             public Main(StateImpl app, int maxB) : base(app, maxB)
@@ -168,7 +179,7 @@ namespace SimpleMachine
 
 
                     Loc_0:
-                    parent.PrtEnqueueEvent(application, dummy, null, parent);
+                    parent.PrtEnqueueEvent(application, dummy, PrtValue.NullValue, parent);
                     parent.PrtFunContSend(this, currFun.locals, 1);
 
                     Ret:
@@ -179,7 +190,10 @@ namespace SimpleMachine
                 public override List<PrtValue> CreateLocals(params PrtValue[] args)
                 {
                     var locals = new List<PrtValue>();
-                    locals.AddRange(args);
+                    foreach(var item in args)
+                    {
+                        locals.Add(item.Clone());
+                    }
                     //no local variables hence nothing to add
                     return locals;
                 }
@@ -222,7 +236,10 @@ namespace SimpleMachine
                 public override List<PrtValue> CreateLocals(params PrtValue[] args)
                 {
                     var locals = new List<PrtValue>();
-                    locals.AddRange(args);
+                    foreach (var item in args)
+                    {
+                        locals.Add(item.Clone());
+                    }
                     //no local variables hence nothing to add
                     return locals;
                 }

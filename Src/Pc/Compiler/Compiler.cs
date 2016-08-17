@@ -279,6 +279,10 @@
             {
                 fProgram.TypeDefs.Add(typeDef);
             }
+            foreach (var typeDef in program.EnumTypeDefs)
+            {
+                fProgram.EnumTypeDefs.Add(typeDef);
+            }
             foreach (var modelType in program.ModelTypes)
             {
                 fProgram.ModelTypes.Add(modelType);

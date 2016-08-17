@@ -54,10 +54,56 @@ namespace P.Runtime
         #endregion
 
         #region Clone and Undo
-        public PrtMachine Clone() { throw new NotImplementedException(); }
+        public PrtMachine Clone()
+        {
+            var clonedMachine = MakeSkeleton();
+            clonedMachine.instanceNumber = this.instanceNumber;
+            foreach(var fd in machineFields)
+            {
+                clonedMachine.machineFields.Add(fd.Clone());
+            }
+            clonedMachine.eventValue = this.eventValue;
+            clonedMachine.stateStack = this.stateStack.Clone();
+            clonedMachine.invertedFunStack = this.invertedFunStack.Clone();
+            clonedMachine.continuation = this.continuation.Clone();
+            clonedMachine.currentTrigger = this.currentTrigger;
+            clonedMachine.currentPayload = this.currentPayload.Clone();
+            clonedMachine.eventQueue = this.eventQueue.Clone();
+            foreach(var ev in this.receiveSet)
+            {
+                clonedMachine.receiveSet.Add(ev);
+            }
+            clonedMachine.currentStatus = this.currentStatus;
+            clonedMachine.nextSMOperation = this.nextSMOperation;
+            clonedMachine.stateExitReason = this.stateExitReason;
+            clonedMachine.maxBufferSize = this.maxBufferSize;
+            clonedMachine.StateImpl = this.StateImpl;
+            return clonedMachine;
+        }
         #endregion
 
         #region Constructor
+        public abstract PrtMachine MakeSkeleton();
+
+        public PrtMachine()
+        {
+            this.instanceNumber = 0;
+            this.machineFields = new List<PrtValue>();
+            this.eventValue = null;
+            this.stateStack = new PrtStateStack();
+            this.invertedFunStack = new PrtFunStack();
+            this.continuation = new PrtContinuation();
+            this.currentTrigger = null;
+            this.currentPayload = null;
+            this.eventQueue = new PrtEventBuffer();
+            this.receiveSet = new HashSet<PrtEvent>();
+            this.currentStatus = PrtMachineStatus.Enabled;
+            this.nextSMOperation = PrtNextStatemachineOperation.EntryOperation;
+            this.stateExitReason = PrtStateExitReason.NotExit;
+            this.maxBufferSize = 0;
+            this.StateImpl = null;
+        }
+
         public PrtMachine(StateImpl app, int maxBuff)
         {
             this.instanceNumber = this.NextInstanceNumber(app);
@@ -74,7 +120,7 @@ namespace P.Runtime
             this.nextSMOperation = PrtNextStatemachineOperation.EntryOperation;
             this.stateExitReason = PrtStateExitReason.NotExit;
             this.maxBufferSize = maxBuff;
-            StateImpl = app;
+            this.StateImpl = app;
 
             //Push the start state function on the funStack.
             PrtPushState(StartState);
@@ -195,7 +241,7 @@ namespace P.Runtime
             {
                 throw new PrtInhabitsTypeException(String.Format("Payload <{0}> does not match the expected type <{1}> with event <{2}>", arg.GetString(), prtType.GetString(), e.name));
             }
-            else if (prtType is PrtNullType && arg != null)
+            else if (prtType is PrtNullType && !(arg is PrtNullValue))
             {
                 throw new PrtIllegalEnqueueException("Did not expect a payload value");
             }

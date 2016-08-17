@@ -7,12 +7,15 @@ namespace P.Runtime
 {
     public abstract class PrtValue
     {
+        public static PrtNullValue NullValue = new PrtNullValue();
+
         public abstract PrtValue Clone();
 
         public static PrtValue PrtMkDefaultValue(PrtType type)
         {
             if (type is PrtAnyType || type is PrtNullType || type is PrtEventType || type is PrtMachineType)
-                return null;
+                return new PrtNullValue();
+
             else if(type is PrtIntType)
             {
                 return new PrtIntValue();
@@ -55,7 +58,7 @@ namespace P.Runtime
                 return true;
             }
 
-            if (value == null)
+            if (value is PrtNullValue)
             {
                 if (type is PrtEventType || type is PrtMachineType)
                 {
@@ -194,20 +197,26 @@ namespace P.Runtime
             return value.Clone();
         }
 
-        public static bool IsEqual(PrtValue val1, PrtValue val2)
+    }
+
+    public class PrtNullValue : PrtValue
+    {
+        public override PrtValue Clone()
         {
-            if (val1 == null)
-            {
-                return val2 == null;
-            }
-            else if (val2 == null)
-            {
-                return val1 == null;
-            }
+            return this;
+        }
+
+        public override string GetString()
+        {
+            return "null";
+        }
+
+        public override bool IsEqual(PrtValue value)
+        {
+            if (value is PrtNullValue)
+                return true;
             else
-            {
-                return val1.IsEqual(val2);
-            }
+                return false;
         }
     }
 
@@ -273,7 +282,7 @@ namespace P.Runtime
         }
     }
 
-    public class PrtEventValue : PrtValue
+    public class PrtEventValue : PrtNullValue
     {
         public PrtEvent value;
 
@@ -299,7 +308,7 @@ namespace P.Runtime
         }
     }
 
-    public class PrtMachineValue : PrtValue
+    public class PrtMachineValue : PrtNullValue
     {
         public PrtMachine value;
 
@@ -362,7 +371,7 @@ namespace P.Runtime
             int index = 0;
             while (index < value.Count)
             {
-                if (!PrtValue.IsEqual(this.value[index], tupValue.value[index]))
+                if (!this.value[index].IsEqual(tupValue.value[index]))
                     return false;
 
                 index++;
@@ -427,7 +436,7 @@ namespace P.Runtime
 
             while (index < tupValues.Count)
             {
-                if (!PrtValue.IsEqual(this.value[index], tupValues[index]))
+                if (!this.value[index].IsEqual(tupValues[index]))
                     return false;
 
                 index++;
@@ -614,7 +623,7 @@ namespace P.Runtime
                     {
                         var index = this.keys.FindIndex(_k => _k.IsEqual(k));
                         var _index = mapVal.keys.FindIndex(_k => _k.IsEqual(k));
-                        if (!PrtValue.IsEqual(this.values[index], mapVal.values[_index]))
+                        if (this.values[index].IsEqual(mapVal.values[_index]))
                         {
                             return false;
                         }

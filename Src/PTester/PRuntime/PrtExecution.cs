@@ -166,7 +166,12 @@ namespace P.Runtime
         public PrtEventNode(PrtEvent e, PrtValue payload)
         {
             ev = e;
-            arg = payload;
+            arg = payload.Clone();
+        }
+
+        public PrtEventNode Clone()
+        {
+            return new PrtEventNode(this.ev, this.arg);
         }
     }
 
@@ -178,6 +183,15 @@ namespace P.Runtime
             events = new List<PrtEventNode>();
         }
 
+        public PrtEventBuffer Clone()
+        {
+            var clonedVal = new PrtEventBuffer();
+            foreach(var ev in this.events)
+            {
+                clonedVal.events.Add(ev.Clone());
+            }
+            return clonedVal;
+        }
         public int Size()
         {
             return events.Count();
@@ -376,15 +390,28 @@ namespace P.Runtime
         public PrtFunStackFrame(PrtFun fun,  List<PrtValue> locs)
         {
             this.fun = fun;
-            locals = locs.ToList();
+            this.locals = new List<PrtValue>();
+            foreach(var l in locs)
+            {
+                locals.Add(l.Clone());
+            }
             returnTolocation = 0;
         }
 
         public PrtFunStackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
         {
             this.fun = fun;
-            locals = locs.ToList();
+            this.locals = new List<PrtValue>();
+            foreach (var l in locs)
+            {
+                locals.Add(l.Clone());
+            }
             returnTolocation = retLocation;
+        }
+
+        public PrtFunStackFrame Clone()
+        {
+            return new PrtFunStackFrame(this.fun, this.locals, this.returnTolocation);
         }
     }
 
@@ -396,10 +423,17 @@ namespace P.Runtime
             funStack = new Stack<PrtFunStackFrame>();
         }
 
-        public void Clear()
+        public PrtFunStack Clone()
         {
-            funStack.Clear();
+            var clonedStack = new PrtFunStack();
+            foreach(var frame in funStack)
+            {
+                clonedStack.funStack.Push(frame.Clone());
+            }
+            clonedStack.funStack.Reverse();
+            return clonedStack;
         }
+
         public PrtFunStackFrame TopOfStack
         {
             get
@@ -449,8 +483,23 @@ namespace P.Runtime
             createdMachine = null;
             retVal = null;
             nondet = false;
-            retLocals = null;
+            retLocals = new List<PrtValue>();
             receiveIndex = -1;
+        }
+
+        public PrtContinuation Clone()
+        {
+            var clonedVal = new PrtContinuation();
+            clonedVal.reason = this.reason;
+            clonedVal.createdMachine = this.createdMachine;
+            clonedVal.receiveIndex = this.receiveIndex;
+            clonedVal.retVal = this.retVal.Clone();
+            foreach(var loc in retLocals)
+            {
+                clonedVal.retLocals.Add(loc.Clone());
+            }
+
+            return clonedVal;
         }
     }
 

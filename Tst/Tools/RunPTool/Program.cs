@@ -35,6 +35,11 @@ namespace RunPTool
         //set according to the name of the parent directory for "testconfig.txt":
         string testFilePath;
         string execsToRun;
+        string configuration = "Debug";
+        string platform = "x86";
+        const string configArg = "configuration=";
+        const string platformArg = "platform=";
+
         static string testRoot; // the Tst directory
 
         bool ParseCommandLine(string[] args)
@@ -45,22 +50,42 @@ namespace RunPTool
                 if (arg[0] == '/' || arg[0] == '-')
                 {
                     string option = (arg.Substring(1).ToLowerInvariant());
-                    if (option == "reset")
-                    {
-                        reset = true;
-                    }
-                    else if (option == "cooperative")
-                    {
-                        cooperative = true;
-                    }
-                    else if(option.StartsWith("run"))
+                    if (option.StartsWith("run"))
                     {
                         execsToRun = arg;
                     }
+                    else if (option.StartsWith(platformArg))
+                    {
+                        platform = arg.Substring(platformArg.Length + 1).ToLowerInvariant();
+                        if (platform != "x86" && platform != "x64")
+                        {
+                            Console.WriteLine("### Unrecognized platform '{0}', expecting 'x86' or 'x64'", platform);
+                            return false;
+                        }
+                    }
+                    else if (option.StartsWith(configArg))
+                    {
+                        configuration = arg.Substring(configArg.Length + 1).ToLowerInvariant();
+                        if (configuration != "debug" && configuration != "release")
+                        {
+                            Console.WriteLine("### Unrecognized configuration '{0}', expecting 'debug' or 'release'", configuration);
+                            return false;
+                        }
+                    }
                     else
                     {
-                        Console.WriteLine("### Unrecognized option: " + arg);
-                        return false;
+                        switch (option)
+                        {
+                            case "reset":
+                                reset = true;
+                                break;
+                            case "cooperative":
+                                cooperative = true;
+                                break;
+                            default:
+                                Console.WriteLine("### Unrecognized option: " + arg);
+                                return false;
+                        }
                     }
                 }
                 else if (testFilePath == null)
@@ -82,6 +107,8 @@ namespace RunPTool
             Console.WriteLine("Options:");
             Console.WriteLine("    /reset - remove old acceptor file, useful for generating new test baselines");
             Console.WriteLine("    /cooperative - enable testing of cooperative multitasking");
+            Console.WriteLine("    /platform=[x64|x64] - specify the platform to test (default 'x86')");
+            Console.WriteLine("    /configuration=[debug|release] - specify the configuration to test (default 'debug')");
             Console.WriteLine("    /runPc - do the compile step only");
             Console.WriteLine("    /runPrt - run the compiled state machine using PrtTester");
             Console.WriteLine("    /runZing - run zinger on the compiled output");
@@ -229,7 +256,7 @@ namespace RunPTool
                 }
                 pciProcess = new PciProcess(pciFilePath);
 
-                Test(activeDirs, reset, cooperative, execsToRun, ref testCount, ref failCount, failedTestsWriter, tempWriter, displayDiffsWriter);
+                Test(activeDirs, ref testCount, ref failCount, failedTestsWriter, tempWriter, displayDiffsWriter);
                 
                 pciProcess.Shutdown();
 
@@ -390,18 +417,14 @@ namespace RunPTool
             }
         }
         //If reset = true, failedDirsWriter and displayDiffsWriter are "null"
-        private static void Test(List<DirectoryInfo> diArray, bool reset,  bool cooperative, string execsToRun, ref int testCount, ref int failCount,
+        private void Test(List<DirectoryInfo> diArray, ref int testCount, ref int failCount,
             StreamWriter failedTestsWriter, StreamWriter tempWriter, StreamWriter displayDiffsWriter)
         {
             try
             {
-                string zingFilePath = Path.GetFullPath(Path.Combine(testRoot, @"..\Bld\Drops\Release\x86\Binaries\zinger.exe"));
-
-                if (!File.Exists(zingFilePath))
-                {
-                    zingFilePath = Path.GetFullPath(Path.Combine(testRoot, @"..\Bld\Drops\Debug\x86\Binaries\zinger.exe"));
-                }
-
+                string zingExe = string.Format(@"..\Bld\Drops\{0}\{1}\Binaries\zinger.exe", configuration, platform);
+                string zingFilePath = Path.GetFullPath(Path.Combine(testRoot, zingExe));
+                
                 if (!File.Exists(zingFilePath))
                 {
                     Console.WriteLine("ERROR in Test: zinger.exe not find in {0}", zingFilePath);
@@ -424,7 +447,7 @@ namespace RunPTool
                             (di.Name == "Prt" && (execsToRun == "/runPrt" || execsToRun == "/runAll")))
                         {
                             ++testCount;
-                            var checker = new Checker(di.FullName, testRoot, reset, cooperative, di.Name, execsToRun, zingFilePath, pciProcess);
+                            var checker = new Checker(di.FullName, testRoot, reset, cooperative, configuration, platform, di.Name, execsToRun, zingFilePath, pciProcess);
                             if ((di.Parent != null) && !checker.Check(fi.Name))
                             {
                                 ++failCount;
@@ -451,7 +474,7 @@ namespace RunPTool
                     {
                         List<DirectoryInfo> dpArray = new List<DirectoryInfo>();
                         dpArray.Add(dp);
-                        Test(dpArray, reset, cooperative, execsToRun, ref testCount, ref failCount, failedTestsWriter, tempWriter,
+                        Test(dpArray, ref testCount, ref failCount, failedTestsWriter, tempWriter,
                             displayDiffsWriter);
                     }
                 }

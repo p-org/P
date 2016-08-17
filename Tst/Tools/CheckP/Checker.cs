@@ -438,7 +438,7 @@ namespace CheckP
                              result;
                     //Compute "TesterDirectory" (Tst\PrtTester):
                     //path to ...PrtTester\Debug\x86\tester.exe (since that is the configuration that RunBuildTester builds).
-                    string testerExeDir = Path.Combine(this.testRoot, "PrtTester\\Debug\\x86");
+                    string testerExeDir = Path.Combine(this.testRoot, "PrtTester\\Release\\x86");
                     this.testerExePath = Path.Combine(testerExeDir, "tester.exe");
                     var testerDirectory = Path.Combine(this.testRoot, "PrtTester");
 
@@ -824,7 +824,7 @@ namespace CheckP
                 var msbuildArgs = "";
                 msbuildArgs += projectFile;
                 msbuildArgs += clean ? @" /t:Clean " : @" /t:Build ";
-                msbuildArgs += @"/p:Configuration=Debug ";
+                msbuildArgs += @"/p:Configuration=Release ";
                 msbuildArgs += @"/p:Platform=x86 ";
                 msbuildArgs += @"/verbosity:quiet ";
                 msbuildArgs += @"/nologo";

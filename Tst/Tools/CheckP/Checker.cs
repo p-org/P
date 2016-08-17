@@ -833,7 +833,7 @@ namespace CheckP
                 msbuildArgs += @"/p:Platform=" + platform + " ";
                 msbuildArgs += @"/verbosity:quiet ";
                 msbuildArgs += @"/nologo";
-                Console.WriteLine("msbuildArgs: {0}", msbuildArgs);
+                //Console.WriteLine("msbuildArgs: {0}", msbuildArgs);
                 ProcessStartInfo startInfo = new ProcessStartInfo(buildExe);
                 startInfo.WindowStyle = ProcessWindowStyle.Hidden;
                 startInfo.Arguments = msbuildArgs;

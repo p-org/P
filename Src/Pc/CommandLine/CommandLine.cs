@@ -150,7 +150,6 @@ namespace Microsoft.Pc
                 }
                 if (!result)
                 {
-
                     return -1;
                 }
                 return 0;

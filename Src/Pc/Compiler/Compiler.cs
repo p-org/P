@@ -14,6 +14,7 @@
     using Microsoft.Formula.Common;
     using Microsoft.Formula.Compiler;
     using Microsoft.Pc.Domains;
+    using System.Diagnostics;
 
     public enum LivenessOption { None, Standard, Mace };
 
@@ -105,17 +106,31 @@
                 }
             }
             // for regression test compatibility reasons we do not include the error number when running regression tests.
-            string errorNumber = Options.test ? "" : "error PC1001: ";
-            string space = Options.test ? " " : "";
-            return
-                // this format causes VS to put the errors in the error list window.
-                string.Format("{0}{1}({2},{1}{3}): {4}{5}",
-                programName,
-                space,
-                f.Span.StartLine,
-                f.Span.StartCol,
-                errorNumber,
-                f.Message);
+            if (Options.test)
+            {
+                return
+                  // this format causes VS to put the errors in the error list window.
+                  string.Format("{0} ({1}, {2}): {3}",
+                  programName,
+                  f.Span.StartLine,
+                  f.Span.StartCol,
+                  f.Message);
+            }
+            else
+            {
+                string errorNumber = "PC1001"; // todo: invent meaningful error numbers to go with P documentation...
+                return
+                  // this format causes VS to put the errors in the error list window.
+                  string.Format("{0}({1},{2},{3},{4}): error {5}: {6}",
+                  programName,
+                  f.Span.StartLine,
+                  f.Span.StartCol,
+                  f.Span.EndLine,
+                  f.Span.EndCol,
+                  errorNumber,
+                  f.Message);
+            }
+           
         }
 
         private const string PDomain = "P";
@@ -470,6 +485,7 @@
                     List<Flag> parserFlags;
                     string currFileName = parserWorkQueue.Dequeue();
                     var parser = new Parser.Parser();
+                    Debug.WriteLine("Loading " + currFileName);
                     var result = parser.ParseFile(SeenFileNames[currFileName], Options, crntEventNames, crntMachineNames, parsedProgram, out parserFlags, out includedFileNames);
                     foreach (Flag f in parserFlags)
                     {
@@ -875,7 +891,7 @@
                             exprLoc.Span,
                             errorMsg,
                             TypeErrorCode,
-                            InputProgramNames.Contains(exprLoc.Program) ? exprLoc.Program : null));
+                            exprLoc.Span.Program));
                     }
                 }
                 else
@@ -929,7 +945,7 @@
                             exprLoc.Span,
                             sw.ToString(),
                             msgCode,
-                            InputProgramNames.Contains(exprLoc.Program) ? exprLoc.Program : null));
+                            exprLoc.Span.Program));
                     }
                 }
                 else

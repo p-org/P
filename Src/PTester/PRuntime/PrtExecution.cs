@@ -97,7 +97,7 @@ namespace P.Runtime
     {
         public static int DefaultMaxInstances = int.MaxValue;
         public static PrtEvent NullEvent = null;
-        public static PrtEvent HaltEvent = new PrtEvent("Halt", PrtType.NullType, DefaultMaxInstances, false);
+        public static PrtEvent HaltEvent = new PrtEvent("Halt", new PrtNullType(), DefaultMaxInstances, false);
         
 
         public string name;
@@ -156,9 +156,6 @@ namespace P.Runtime
             this.hasNullTransition = hasNullTransition;
             this.temperature = temperature;
         }
-
-
-        
     };
 
     public class PrtEventNode

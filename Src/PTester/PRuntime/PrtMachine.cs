@@ -67,7 +67,7 @@ namespace P.Runtime
             this.invertedFunStack = new PrtFunStack();
             this.continuation = new PrtContinuation();
             this.currentTrigger = null;
-            this.currentPayload = PrtValue.NullValue;
+            this.currentPayload = null;
             this.eventQueue = new PrtEventBuffer();
             this.receiveSet = new HashSet<PrtEvent>();
             this.currentStatus = PrtMachineStatus.Enabled;
@@ -191,10 +191,13 @@ namespace P.Runtime
             //assertion to check if argument passed inhabits the payload type.
             prtType = e.payloadType;
 
-            if ((arg.type.typeKind == PrtTypeKind.PRT_KIND_NULL)
-                || (prtType.typeKind != PrtTypeKind.PRT_KIND_NULL && !PrtValue.PrtInhabitsType(arg, prtType)))
+            if (!(prtType is PrtNullType) && !PrtValue.PrtInhabitsType(arg, prtType))
             {
-                throw new PrtInhabitsTypeException(String.Format("Type of payload <{0}> does not match the expected type <{1}> with event <{2}>", arg.type.ToString(), prtType.ToString(), e.name));
+                throw new PrtInhabitsTypeException(String.Format("Payload <{0}> does not match the expected type <{1}> with event <{2}>", arg.GetString(), prtType.GetString(), e.name));
+            }
+            else if (prtType is PrtNullType && arg != null)
+            {
+                throw new PrtIllegalEnqueueException("Did not expect a payload value");
             }
 
             if (currentStatus == PrtMachineStatus.Halted)
@@ -263,7 +266,7 @@ namespace P.Runtime
                 application.Trace(
                     "<NullTransLog> Null transition taken by Machine {0}-{1}\n",
                     Name, instanceNumber);
-                currentPayload = PrtValue.NullValue;
+                currentPayload = null;
                 receiveSet = new HashSet<PrtEvent>();
                 return PrtDequeueReturnStatus.NULL;
             }
@@ -334,7 +337,7 @@ namespace P.Runtime
         public void PrtFunContReturn(List<PrtValue> retLocals)
         {
             continuation.reason = PrtContinuationReason.Return;
-            continuation.retVal = PrtValue.NullValue;
+            continuation.retVal = null;
             continuation.retLocals = retLocals;
         }
 

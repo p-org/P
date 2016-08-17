@@ -7,26 +7,50 @@ namespace P.Runtime
 {
     public abstract class PrtType
     {
+        public abstract string GetString();
     }
 
+    public class PrtNullType : PrtType
+    {
+        public override string GetString()
+        {
+            return "NULL";
+        }
+    }
     public class PrtAnyType : PrtType
     {
-
+        public override string GetString()
+        {
+            return "ANY";
+        }
     }
     public class PrtMachineType : PrtType
     {
-
+        public override string GetString()
+        {
+            return "MACHINE";
+        }
     }
     public class PrtIntType : PrtType
     {
-
+        public override string GetString()
+        {
+            return "INT";
+        }
     }
     public class PrtBoolType : PrtType
     {
-
+        public override string GetString()
+        {
+            return "BOOL";
+        }
     }
     public class PrtEventType : PrtType
     {
+        public override string GetString()
+        {
+            return "EVENT";
+        }
     }
     public class PrtMapType : PrtType
     {
@@ -38,15 +62,25 @@ namespace P.Runtime
             this.keyType = k;
             this.valType = v;
         }
+
+        public override string GetString()
+        {
+            return String.Format("({0} -> {1})", keyType.GetString(), valType.GetString());
+        }
     }
 
     public class PrtSeqType : PrtType
     {
-        public PrtType seqType;
+        public PrtType elemType;
 
         public PrtSeqType(PrtType s)
         {
-            this.seqType = s;
+            this.elemType = s;
+        }
+
+        public override string GetString()
+        {
+            return String.Format("seq[{0}]", elemType.GetString());
         }
     }
 
@@ -63,6 +97,17 @@ namespace P.Runtime
             {
                 fieldTypes.Add(f);
             }
+        }
+
+        public override string GetString()
+        {
+            string retStr = "<";
+            foreach (var f in fieldTypes)
+            {
+                retStr += f.GetString() + ", ";
+            }
+            retStr += ">";
+            return retStr;
         }
     }
 
@@ -86,6 +131,18 @@ namespace P.Runtime
                 fieldTypes.Add((PrtType)args[index]);
                 index++;
             }
+        }
+
+        public override string GetString()
+        {
+            string retStr = "<";
+            int index = 0;
+            while (index < fieldTypes.Count)
+            {
+                retStr += fieldNames[index] + ":" + fieldTypes[index].GetString() + ", ";
+            }
+            retStr += ">";
+            return retStr;
         }
     }
 

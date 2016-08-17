@@ -101,7 +101,7 @@ namespace SimpleMachine
         }
         #endregion
 
-        public static PrtEvent dummy = new PrtEvent("dummy", PrtType.NullType, PrtEvent.DefaultMaxInstances, false);
+        public static PrtEvent dummy = new PrtEvent("dummy", new PrtNullType(), PrtEvent.DefaultMaxInstances, false);
 
         public PrtMachine CreateMainMachine()
         {
@@ -168,7 +168,7 @@ namespace SimpleMachine
 
 
                     Loc_0:
-                    parent.PrtEnqueueEvent(application, dummy, PrtValue.NullValue, parent);
+                    parent.PrtEnqueueEvent(application, dummy, null, parent);
                     parent.PrtFunContSend(this, currFun.locals, 1);
 
                     Ret:

@@ -196,6 +196,12 @@
             private set;
         }
 
+        public Dictionary<string, ProgramName> InstalledFileNames
+        {
+            get;
+            private set;
+        }
+
         public PProgram ParsedProgram // used only by PVisualizer
         {
             get;
@@ -405,6 +411,7 @@
             Log = new StandardOutput();
             Options = options;
             SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
+            InstalledFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
             EnvParams envParams = null;
             if (options.shortFileNames)
             {
@@ -418,6 +425,7 @@
         {
             Log = new StandardOutput();
             SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
+            InstalledFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
             EnvParams envParams = null;
             if (shortFileNames)
             {
@@ -430,6 +438,7 @@
         {
             Log = new StandardOutput();
             SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
+            InstalledFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
             CompilerEnv = other.CompilerEnv;
         }
 
@@ -460,10 +469,11 @@
                 HashSet<string> crntMachineNames = new HashSet<string>();
 
                 InstallResult uninstallResult;
-                var uninstallDidStart = CompilerEnv.Uninstall(SeenFileNames.Values, out uninstallResult);
+                var uninstallDidStart = CompilerEnv.Uninstall(InstalledFileNames.Values, out uninstallResult);
                 // Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
 
                 SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
+                InstalledFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
                 Queue<string> parserWorkQueue = new Queue<string>();
                 SeenFileNames[RootFileName] = RootProgramName;
                 InputProgramNames.Add(RootProgramName);
@@ -539,6 +549,7 @@
                 InstallResult instResult;
                 AST<Program> modelProgram = MkProgWithSettings(RootProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
                 bool progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, rootModel), out instResult);
+                InstalledFileNames[RootFileName] = RootProgramName;
                 Contract.Assert(progressed && instResult.Succeeded);
 
                 if (Options.outputFormula)
@@ -572,10 +583,10 @@
 
         public void ResetEnv()
         {
-            if (SeenFileNames.Count > 0)
+            if (InstalledFileNames.Count > 0)
             {
                 InstallResult result;
-                CompilerEnv.Uninstall(SeenFileNames.Values, out result);
+                CompilerEnv.Uninstall(InstalledFileNames.Values, out result);
             }
         }
 

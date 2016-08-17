@@ -77,7 +77,7 @@ namespace P.Runtime
             StateImpl = app;
 
             //Push the start state function on the funStack.
-            stateStack.PushStackFrame(StartState);
+            PrtPushState(StartState);
         }
         #endregion
 

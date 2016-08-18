@@ -39,7 +39,16 @@ namespace Microsoft.Pc
         {
             // compiler might be in a weird state, start over.
             master = null;
-            throw new Exception(e.Message);
+            string reason = e.Message;
+            if (e.OriginalException != null && e.OriginalException.Message != reason)
+            {
+                reason += ".  " + e.OriginalException.Message;
+                if (e.OriginalException.InnerException != null)
+                {
+                    reason += ".  " + e.OriginalException.InnerException.Message;
+                }
+            }
+            throw new Exception(reason);
         }
 
         void Run()
@@ -109,6 +118,7 @@ namespace Microsoft.Pc
                 while (retry)
                 {
                     retry = false;
+                    // We have to serialize compiler jobs, the Compiler is not threadsafe.
                     lock (compilerlock)
                     {
                         if (master == null)
@@ -117,33 +127,33 @@ namespace Microsoft.Pc
                             output.WriteMessage("Generating P compiler", SeverityKind.Info);
                             master = new Compiler(false);
                         }
-                    }
-                
-                    // share the compiled P program across compiler instances.
-                    Compiler compiler = new Compiler(master);
-                    compiler.Options = options;
-                    compiler.Log = new SerializedOutput(clientPipe);
-                    bool result = false;
-                    try
-                    {
-                        result = compiler.Compile(options.inputFileName);
-                    }
-                    catch (Exception ex)
-                    {
-                        if (!masterCreated)
+
+                        // share the compiled P program across compiler instances.
+                        Compiler compiler = new Compiler(master);
+                        compiler.Options = options;
+                        compiler.Log = new SerializedOutput(clientPipe);
+                        bool result = false;
+                        try
                         {
-                            // sometimes the compiler gets out of whack, and rebuilding it solves the problem.
-                            retry = true;
-                            master = null;
+                            result = compiler.Compile(options.inputFileName);
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            output.WriteMessage("Compile failed: " + ex.ToString(), SeverityKind.Error);
+                            if (!masterCreated)
+                            {
+                                // sometimes the compiler gets out of whack, and rebuilding it solves the problem.
+                                retry = true;
+                                master = null;
+                            }
+                            else
+                            {
+                                output.WriteMessage("Compile failed: " + ex.ToString(), SeverityKind.Error);
+                            }
                         }
-                    }
-                    if (!retry)
-                    {
-                        compiler.Log.WriteMessage("finished:" + result, SeverityKind.Info);
+                        if (!retry)
+                        {
+                            compiler.Log.WriteMessage("finished:" + result, SeverityKind.Info);
+                        }
                     }
                 }
 

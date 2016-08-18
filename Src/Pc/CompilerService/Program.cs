@@ -109,16 +109,16 @@ namespace Microsoft.Pc
                 while (retry)
                 {
                     retry = false;
-                    if (master == null)
+                    lock (compilerlock)
                     {
-                        masterCreated = true;
-                        lock (compilerlock)
+                        if (master == null)
                         {
+                            masterCreated = true;
                             output.WriteMessage("Generating P compiler", SeverityKind.Info);
                             master = new Compiler(false);
                         }
                     }
-
+                
                     // share the compiled P program across compiler instances.
                     Compiler compiler = new Compiler(master);
                     compiler.Options = options;
@@ -138,12 +138,11 @@ namespace Microsoft.Pc
                         }
                         else
                         {
-                            output.WriteMessage("Compile failed: " + ex.Message, SeverityKind.Error);
+                            output.WriteMessage("Compile failed: " + ex.ToString(), SeverityKind.Error);
                         }
                     }
                     if (!retry)
                     {
-                        compiler.ResetEnv();
                         compiler.Log.WriteMessage("finished:" + result, SeverityKind.Info);
                     }
                 }

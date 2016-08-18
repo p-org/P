@@ -304,7 +304,7 @@
 
         private Span ToSpan(LexLocation loc)
         {
-            return new Span(loc.StartLine, loc.StartColumn + 1, loc.EndLine, loc.EndColumn + 1);
+            return new Span(loc.StartLine, loc.StartColumn + 1, loc.EndLine, loc.EndColumn + 1, this.parseSource);
         }
 
         #region Pushers

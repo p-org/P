@@ -2742,13 +2742,19 @@
             data.Suffix = data.Suffix.Replace(";", "");
             if (arg2 is Cnst)
             {
-                wr.Write("#line {0} \"{1}\"", ((Cnst)arg1).GetNumericValue().Numerator, ((Cnst)arg2).GetStringValue());
+                wr.Write("#line {0} \"{1}\"", ((Cnst)arg1).GetNumericValue().Numerator, MkSafeCLiteral(((Cnst)arg2).GetStringValue()));
             }
             else
             {
                 wr.Write("#line {0}", ((Cnst)arg1).GetNumericValue().Numerator);
             }
             yield break;
+        }
+
+        private static string MkSafeCLiteral(string value)
+        {
+            string literal = value.Replace("\\", "\\\\").Replace("\n","\\n").Replace("\r","\\r").Replace("\"", "\\\"");
+            return literal;
         }
 
         private static void EndPpLine(Node node, PrintData data, CTextWriter wr)

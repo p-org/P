@@ -29,7 +29,7 @@
          {
 		   var errFlag = new Flag(
 							SeverityKind.Error,
-							new Span(yylloc.StartLine, yylloc.StartColumn, yylloc.EndLine, yylloc.StartColumn + yyleng),
+							new Span(yylloc.StartLine, yylloc.StartColumn, yylloc.EndLine, yylloc.StartColumn + yyleng, SourceProgram),
 							Constants.BadSyntax.ToString(string.Format(message, args)),
 							Constants.BadSyntax.Code,
 							SourceProgram);

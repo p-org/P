@@ -124,7 +124,8 @@ namespace P.Runtime
                                         PrtChangeState(destOfGoto);
                                         nextSMOperation = PrtNextStatemachineOperation.EntryOperation;
                                         stateExitReason = PrtStateExitReason.NotExit;
-                                        goto DoEntry;
+                                        hasMoreWork = true;
+                                        goto Finish;
                                     }
                                 case PrtStateExitReason.OnUnhandledEvent:
                                     {
@@ -142,8 +143,10 @@ namespace P.Runtime
                                 case PrtStateExitReason.OnTransitionAfterExit:
                                     {
                                         PrtChangeState(CurrentState.transitions[eventValue].gotoState);
+                                        hasMoreWork = true;
+                                        nextSMOperation = PrtNextStatemachineOperation.EntryOperation;
                                         stateExitReason = PrtStateExitReason.NotExit;
-                                        goto DoEntry;
+                                        goto Finish;
                                     }
                                 default:
                                     {

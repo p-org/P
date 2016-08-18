@@ -31,12 +31,12 @@ namespace P.Runtime
         {
             this.instanceNumber = 0;
             this.fields = new List<PrtValue>();
-            this.eventValue = null;
+            this.eventValue = PrtValue.NullValue;
             this.stateStack = new PrtStateStack();
             this.invertedFunStack = new PrtFunStack();
             this.continuation = new PrtContinuation();
-            this.currentTrigger = null;
-            this.currentPayload = null;
+            this.currentTrigger = PrtValue.NullValue;
+            this.currentPayload = PrtValue.NullValue;
             this.currentStatus = PrtMachineStatus.Enabled;
             this.nextSMOperation = PrtNextStatemachineOperation.EntryOperation;
             this.stateExitReason = PrtStateExitReason.NotExit;
@@ -435,7 +435,7 @@ namespace P.Runtime
             }
         }
 
-        public void DequeueEvent(PrtImplMachine owner)
+        public bool DequeueEvent(PrtImplMachine owner)
         {
             HashSet<PrtEventValue> deferredSet;
             HashSet<PrtValue> receiveSet;
@@ -452,13 +452,15 @@ namespace P.Runtime
                     owner.currentTrigger = events[iter].ev;
                     owner.currentPayload = events[iter].arg;
                     events.Remove(events[iter]);
-                    return;
+                    return true;
                 }
                 else
                 {
                     continue;
                 }
             }
+
+            return false;
         }
 
         public bool IsEnabled(PrtImplMachine owner)

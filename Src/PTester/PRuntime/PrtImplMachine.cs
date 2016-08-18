@@ -102,12 +102,14 @@ namespace P.Runtime
 
         public override void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source)
         {
-            PrtType prtType;
-            PrtEventValue ev = e as PrtEventValue;
-            if (e == null)
+            
+            if (e is PrtNullValue)
             {
                 throw new PrtIllegalEnqueueException("Enqueued event must be non-null");
             }
+            PrtType prtType;
+            PrtEventValue ev = e as PrtEventValue;
+            
 
             //assertion to check if argument passed inhabits the payload type.
             prtType = ev.evt.payloadType;
@@ -129,18 +131,11 @@ namespace P.Runtime
             }
             else
             {
-                if (arg != null)
-                {
-                    stateImpl.Trace(
-                        @"<EnqueueLog> Enqueued Event <{0}, {1}> in {2}-{3} by {4}-{5}",
-                        ev.evt.name, arg.ToString(), this.Name, this.instanceNumber, source.Name, source.instanceNumber);
-                }
-                else
-                {
-                    stateImpl.Trace(
-                        @"<EnqueueLog> Enqueued Event < {0} > in {1}-{2} by {3}-{4}",
-                        ev.evt.name, this.Name, this.instanceNumber, source.Name, source.instanceNumber);
-                }
+                
+                stateImpl.Trace(
+                    @"<EnqueueLog> Enqueued Event <{0}, {1}> in {2}-{3} by {4}-{5}",
+                    ev.evt.name, arg.GetString(), this.Name, this.instanceNumber, source.Name, source.instanceNumber);
+                
 
                 this.eventQueue.EnqueueEvent(e, arg);
                 if (this.maxBufferSize != -1 && this.eventQueue.Size() > this.maxBufferSize)
@@ -161,15 +156,8 @@ namespace P.Runtime
 
         public PrtDequeueReturnStatus PrtDequeueEvent(bool hasNullTransition)
         {
-            currentTrigger = null;
-            currentPayload = null;
-            eventQueue.DequeueEvent(this);
-            if (currentTrigger != null)
+            if (eventQueue.DequeueEvent(this))
             {
-                if (currentPayload == null)
-                {
-                    throw new PrtInternalException("Internal error: currentArg is null");
-                }
                 if (currentStatus == PrtMachineStatus.Blocked)
                 {
                     throw new PrtInternalException("Internal error: Tyring to execute blocked machine");
@@ -177,7 +165,7 @@ namespace P.Runtime
 
                 stateImpl.Trace(
                     "<DequeueLog> Dequeued Event < {0}, {1} > at Machine {2}-{3}\n",
-                    (currentTrigger as PrtEventValue).evt.name, currentPayload.ToString(), Name, instanceNumber);
+                    (currentTrigger as PrtEventValue).evt.name, currentPayload.GetString(), Name, instanceNumber);
                 receiveSet = new HashSet<PrtValue>();
                 return PrtDequeueReturnStatus.SUCCESS;
             }
@@ -190,7 +178,8 @@ namespace P.Runtime
                 stateImpl.Trace(
                     "<NullTransLog> Null transition taken by Machine {0}-{1}\n",
                     Name, instanceNumber);
-                currentPayload = null;
+                currentPayload = PrtValue.NullValue;
+                currentTrigger = PrtValue.NullValue;
                 receiveSet = new HashSet<PrtValue>();
                 return PrtDequeueReturnStatus.NULL;
             }
@@ -453,10 +442,10 @@ namespace P.Runtime
 
             DoHandleEvent:
             Debug.Assert(receiveSet.Count == 0, "The machine must not be blocked on a receive");
-            if(currentTrigger != null)
+            if(!currentTrigger.IsEqual(PrtValue.NullValue))
             {
                 currEventValue = currentTrigger;
-                currentTrigger = null;
+                currentTrigger = PrtValue.NullValue;
             }
             else
             {

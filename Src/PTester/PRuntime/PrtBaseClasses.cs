@@ -2,9 +2,216 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
+
 
 namespace P.Runtime
 {
+    public abstract class PrtMachine
+    {
+        #region Fields
+        public int instanceNumber;
+        public List<PrtValue> fields;
+        protected PrtValue eventValue;
+        protected PrtStateStack stateStack;
+        protected PrtFunStack invertedFunStack;
+        protected PrtContinuation continuation;
+        public PrtMachineStatus currentStatus;
+        protected PrtNextStatemachineOperation nextSMOperation;
+        protected PrtStateExitReason stateExitReason;
+        public PrtValue currentTrigger;
+        public PrtValue currentPayload;
+        public PrtState destOfGoto;
+        //just a reference to stateImpl
+        protected StateImpl stateImpl;
+        #endregion
+
+        #region Constructor
+        public PrtMachine()
+        {
+            this.instanceNumber = 0;
+            this.fields = new List<PrtValue>();
+            this.eventValue = PrtValue.NullValue;
+            this.stateStack = new PrtStateStack();
+            this.invertedFunStack = new PrtFunStack();
+            this.continuation = new PrtContinuation();
+            this.currentTrigger = PrtValue.NullValue;
+            this.currentPayload = PrtValue.NullValue;
+            this.currentStatus = PrtMachineStatus.Enabled;
+            this.nextSMOperation = PrtNextStatemachineOperation.EntryOperation;
+            this.stateExitReason = PrtStateExitReason.NotExit;
+            
+            this.stateImpl = null;
+        }
+        #endregion
+
+
+        public abstract string Name
+        {
+            get;
+        }
+
+        public abstract PrtState StartState
+        {
+            get;
+        }
+
+        public abstract void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source);
+
+        public PrtState CurrentState
+        {
+            get
+            {
+                return stateStack.TopOfStack.state;
+            }
+        }
+
+        #region Prt Helper functions
+        public PrtFun PrtFindActionHandler(PrtValue ev)
+        {
+            var tempStateStack = stateStack.Clone();
+            while (tempStateStack.TopOfStack != null)
+            {
+                if (tempStateStack.TopOfStack.state.dos.ContainsKey(ev))
+                {
+                    return tempStateStack.TopOfStack.state.dos[ev];
+                }
+                else
+                    tempStateStack.PopStackFrame();
+            }
+            Debug.Assert(false);
+            return null;
+        }
+
+        public void PrtPushState(PrtState s)
+        {
+            stateStack.PushStackFrame(s);
+        }
+
+        public bool PrtPopState(bool isPopStatement)
+        {
+            Debug.Assert(stateStack.TopOfStack != null);
+            //pop stack
+            stateStack.PopStackFrame();
+
+            if (stateStack.TopOfStack == null)
+            {
+                if (isPopStatement)
+                {
+                    throw new PrtInvalidPopStatement();
+                }
+                //TODO : Handle the monitor machine case separately for the halt event
+                else if (eventValue.IsEqual(PrtValue.HaltEvent))
+                {
+                    throw new PrtUnhandledEventException();
+                }
+                else
+                {
+                    currentStatus = PrtMachineStatus.Halted;
+                }
+            }
+
+            return currentStatus == PrtMachineStatus.Halted;
+
+        }
+
+        public void PrtChangeState(PrtState s)
+        {
+            Debug.Assert(stateStack.TopOfStack != null);
+            stateStack.PopStackFrame();
+            stateStack.PushStackFrame(s);
+        }
+
+        public PrtFunStackFrame PrtPopFunStackFrame()
+        {
+            return invertedFunStack.PopFun();
+        }
+
+        public void PrtPushFunStackFrame(PrtFun fun, List<PrtValue> local)
+        {
+            invertedFunStack.PushFun(fun, local);
+        }
+
+        public void PrtPushFunStackFrame(PrtFun fun, List<PrtValue> local, int retTo)
+        {
+            invertedFunStack.PushFun(fun, local, retTo);
+        }
+
+        public void PrtExecuteExitFunction()
+        {
+            PrtPushFunStackFrame(CurrentState.exitFun, CurrentState.exitFun.CreateLocals());
+            invertedFunStack.TopOfStack.fun.Execute(stateImpl, this);
+        }
+
+        public bool PrtIsTransitionPresent(PrtValue ev)
+        {
+            return CurrentState.transitions.ContainsKey(ev);
+        }
+
+        public bool PrtIsActionInstalled(PrtValue ev)
+        {
+            return CurrentState.dos.ContainsKey(ev);
+        }
+
+        public void PrtExecuteTransitionFun(PrtValue ev)
+        {
+            // Shaz: Figure out how to handle the transfer stuff for payload !!!
+            PrtPushFunStackFrame(CurrentState.transitions[ev].transitionFun, CurrentState.transitions[ev].transitionFun.CreateLocals(currentPayload));
+            invertedFunStack.TopOfStack.fun.Execute(stateImpl, this);
+        }
+
+        public void PrtFunContReturn(List<PrtValue> retLocals)
+        {
+            continuation.reason = PrtContinuationReason.Return;
+            continuation.retVal = null;
+            continuation.retLocals = retLocals;
+        }
+
+
+        public void PrtFunContReturnVal(PrtValue val, List<PrtValue> retLocals)
+        {
+            continuation.reason = PrtContinuationReason.Return;
+            continuation.retVal = val;
+            continuation.retLocals = retLocals;
+        }
+
+        public void PrtFunContPop()
+        {
+            continuation.reason = PrtContinuationReason.Pop;
+        }
+
+        public void PrtFunContRaise()
+        {
+            continuation.reason = PrtContinuationReason.Raise;
+        }
+
+        public void PrtFunContSend(PrtFun fun, List<PrtValue> locals, int ret)
+        {
+            PrtPushFunStackFrame(fun, locals, ret);
+            continuation.reason = PrtContinuationReason.Send;
+        }
+
+        void PrtFunContNewMachine(PrtFun fun, List<PrtValue> locals, PrtImplMachine o, int ret)
+        {
+            PrtPushFunStackFrame(fun, locals, ret);
+            continuation.reason = PrtContinuationReason.NewMachine;
+            continuation.createdMachine = o;
+        }
+
+        void PrtFunContReceive(PrtFun fun, List<PrtValue> locals, int ret)
+        {
+            PrtPushFunStackFrame(fun, locals, ret);
+            continuation.reason = PrtContinuationReason.Receive;
+
+        }
+
+        void PrtFunContNondet(PrtFun fun, List<PrtValue> locals, int ret)
+        {
+            PrtPushFunStackFrame(fun, locals, ret);
+            continuation.reason = PrtContinuationReason.Nondet;
+        }
+        #endregion
+    }
     public class PrtCommonFunctions
     {
         public static PrtIgnoreFun IgnoreFun = new PrtIgnoreFun();
@@ -81,11 +288,11 @@ namespace P.Runtime
             get;
         } 
 
-        public List<Dictionary<PrtEvent, PrtFun>> receiveCases;
+        public List<Dictionary<PrtValue, PrtFun>> receiveCases;
         
         public PrtFun()
         {
-            receiveCases = new List<Dictionary<PrtEvent, PrtFun>>();
+            receiveCases = new List<Dictionary<PrtValue, PrtFun>>();
         }
 
         public abstract List<PrtValue> CreateLocals(params PrtValue[] args);
@@ -96,8 +303,6 @@ namespace P.Runtime
     public class PrtEvent
     {
         public static int DefaultMaxInstances = int.MaxValue;
-        public static PrtEvent NullEvent = null;
-        public static PrtEvent HaltEvent = new PrtEvent("Halt", new PrtNullType(), DefaultMaxInstances, false);
         
 
         public string name;
@@ -140,30 +345,30 @@ namespace P.Runtime
         public string name;
         public PrtFun entryFun;
         public PrtFun exitFun;
-        public Dictionary<PrtEvent, PrtTransition> transitions;
-        public Dictionary<PrtEvent, PrtFun> dos;
+        public Dictionary<PrtValue, PrtTransition> transitions;
+        public Dictionary<PrtValue, PrtFun> dos;
         public bool hasNullTransition;
         public StateTemperature temperature;
-        public HashSet<PrtEvent> deferredSet;
+        public HashSet<PrtEventValue> deferredSet;
 
         public PrtState(string name, PrtFun entryFun, PrtFun exitFun, bool hasNullTransition, StateTemperature temperature)
         {
             this.name = name;
             this.entryFun = entryFun;
             this.exitFun = exitFun;
-            this.transitions = new Dictionary<PrtEvent, PrtTransition>();
-            this.dos = new Dictionary<PrtEvent, PrtFun>();
+            this.transitions = new Dictionary<PrtValue, PrtTransition>();
+            this.dos = new Dictionary<PrtValue, PrtFun>();
             this.hasNullTransition = hasNullTransition;
             this.temperature = temperature;
         }
     };
 
-    public class PrtEventNode
+    internal class PrtEventNode
     {
-        public PrtEvent ev;
+        public PrtValue ev;
         public PrtValue arg;
 
-        public PrtEventNode(PrtEvent e, PrtValue payload)
+        public PrtEventNode(PrtValue e, PrtValue payload)
         {
             ev = e;
             arg = payload.Clone();
@@ -196,29 +401,31 @@ namespace P.Runtime
         {
             return events.Count();
         }
-        public int CalculateInstances(PrtEvent e)
+        public int CalculateInstances(PrtValue e)
         {
             return events.Select(en => en.ev).Where(ev => ev == e).Count();
         }
 
-        public void EnqueueEvent(PrtEvent e, PrtValue arg)
+        public void EnqueueEvent(PrtValue e, PrtValue arg)
         {
-            if (e.maxInstances == PrtEvent.DefaultMaxInstances)
+            Debug.Assert(e is PrtEventValue, "Illegal enqueue of null event");
+            PrtEventValue ev = e as PrtEventValue;
+            if (ev.evt.maxInstances == PrtEvent.DefaultMaxInstances)
             {
                 events.Add(new PrtEventNode(e, arg));
             }
             else
             {
-                if (CalculateInstances(e) == e.maxInstances)
+                if (CalculateInstances(e) == ev.evt.maxInstances)
                 {
-                    if (e.doAssume)
+                    if (ev.evt.doAssume)
                     {
                         throw new PrtAssumeFailureException();
                     }
                     else
                     {
                         throw new PrtMaxEventInstancesExceededException(
-                            String.Format(@"< Exception > Attempting to enqueue event {0} more than max instance of {1}\n", e.name, e.maxInstances));
+                            String.Format(@"< Exception > Attempting to enqueue event {0} more than max instance of {1}\n", ev.evt.name, ev.evt.maxInstances));
                     }
                 }
                 else
@@ -228,10 +435,10 @@ namespace P.Runtime
             }
         }
 
-        public void DequeueEvent(PrtMachine owner)
+        public bool DequeueEvent(PrtImplMachine owner)
         {
-            HashSet<PrtEvent> deferredSet;
-            HashSet<PrtEvent> receiveSet;
+            HashSet<PrtEventValue> deferredSet;
+            HashSet<PrtValue> receiveSet;
 
             deferredSet = owner.CurrentState.deferredSet;
             receiveSet = owner.receiveSet;
@@ -245,19 +452,21 @@ namespace P.Runtime
                     owner.currentTrigger = events[iter].ev;
                     owner.currentPayload = events[iter].arg;
                     events.Remove(events[iter]);
-                    return;
+                    return true;
                 }
                 else
                 {
                     continue;
                 }
             }
+
+            return false;
         }
 
-        public bool IsEnabled(PrtMachine owner)
+        public bool IsEnabled(PrtImplMachine owner)
         {
-            HashSet<PrtEvent> deferredSet;
-            HashSet<PrtEvent> receiveSet;
+            HashSet<PrtEventValue> deferredSet;
+            HashSet<PrtValue> receiveSet;
 
             deferredSet = owner.CurrentState.deferredSet;
             receiveSet = owner.receiveSet;
@@ -274,20 +483,22 @@ namespace P.Runtime
         }
     }
 
-    internal class PrtStateStackFrame
+    public class PrtStateStackFrame
     {
         public PrtState state;
-        public HashSet<PrtEvent> deferredSet;
-        public HashSet<PrtEvent> actionSet;
+        //event value because you cannot defer null value
+        public HashSet<PrtValue> deferredSet;
+        //action set can have null value
+        public HashSet<PrtValue> actionSet;
 
-        public PrtStateStackFrame(PrtState st, HashSet<PrtEvent> defSet, HashSet<PrtEvent> actSet)
+        public PrtStateStackFrame(PrtState st, HashSet<PrtValue> defSet, HashSet<PrtValue> actSet)
         {
             this.state = st;
-            this.deferredSet = new HashSet<PrtEvent>();
+            this.deferredSet = new HashSet<PrtValue>();
             foreach (var item in defSet)
                 this.deferredSet.Add(item);
 
-            this.actionSet = new HashSet<PrtEvent>();
+            this.actionSet = new HashSet<PrtValue>();
             foreach (var item in actSet)
                 this.actionSet.Add(item);
         }
@@ -338,7 +549,7 @@ namespace P.Runtime
 
         public void PushStackFrame(PrtState state)
         {
-            var deferredSet = new HashSet<PrtEvent>();
+            var deferredSet = new HashSet<PrtValue>();
             if (TopOfStack != null)
             {
                 deferredSet.UnionWith(TopOfStack.deferredSet);
@@ -347,7 +558,7 @@ namespace P.Runtime
             deferredSet.ExceptWith(state.dos.Keys);
             deferredSet.ExceptWith(state.transitions.Keys);
 
-            var actionSet = new HashSet<PrtEvent>();
+            var actionSet = new HashSet<PrtValue>();
             if (TopOfStack != null)
             {
                 actionSet.UnionWith(TopOfStack.actionSet);
@@ -363,12 +574,10 @@ namespace P.Runtime
         public bool HasNullTransitionOrAction()
         {
             if (TopOfStack.state.hasNullTransition) return true;
-            return TopOfStack.actionSet.Contains(PrtEvent.NullEvent);
+            return TopOfStack.actionSet.Contains(PrtValue.NullValue);
         }
     }
 
-
-    #region Function Stack
     public enum PrtContinuationReason : int
     {
         Return,
@@ -468,7 +677,7 @@ namespace P.Runtime
     {
         
         public PrtContinuationReason reason;
-        public PrtMachine createdMachine;
+        public PrtImplMachine createdMachine;
         public int receiveIndex;
         public PrtValue retVal;
         public List<PrtValue> retLocals;
@@ -502,6 +711,4 @@ namespace P.Runtime
             return clonedVal;
         }
     }
-
-    #endregion
 }

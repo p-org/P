@@ -24,6 +24,7 @@ namespace TestRoslyn
             // Get the SyntaxGenerator for the specified language
             var generator = SyntaxGenerator.GetGenerator(workspace, LanguageNames.CSharp);
 
+
             // Create using/Imports directives
             var usingDirectives = generator.NamespaceImportDeclaration("System");
 
@@ -96,11 +97,35 @@ namespace TestRoslyn
               interfaceTypes: new SyntaxNode[] { ICloneableInterfaceType },
               members: members);
 
+
+            //
             // Declare a namespace
             var namespaceDeclaration = generator.NamespaceDeclaration("MyTypes", classDefinition);
 
+
+            /************************************************************
+             * Application class code
+            *************************************************************/
+            List<SyntaxNode> usingDirectivesList = new List<SyntaxNode>();
+            usingDirectivesList.Add(generator.NamespaceImportDeclaration("P.Runtime"));
+            usingDirectivesList.Add(generator.NamespaceImportDeclaration("System.Collections.Generic"));
+
+            // Generate a SyntaxNode for the interface's name for StateImpl
+            var StateImplInterface = generator.IdentifierName("StateImpl");
+
+
+            var applicationClass = generator.ClassDeclaration(
+              "Application",
+              accessibility: Accessibility.Public,
+              interfaceTypes: new SyntaxNode[] { StateImplInterface }
+              );
+
+            //
+            // Declare a namespace
+            var programNameSpaceDeclaration = generator.NamespaceDeclaration("SimpleMachine", applicationClass);
+
             // Get a CompilationUnit (code file) for the generated code
-            var newNode = generator.CompilationUnit(usingDirectives, namespaceDeclaration).
+            var newNode = generator.CompilationUnit(usingDirectivesList[0], usingDirectivesList[1], namespaceDeclaration, programNameSpaceDeclaration).
               NormalizeWhitespace();
             StringBuilder sb = new StringBuilder();
             using (StringWriter writer = new StringWriter(sb))

@@ -909,6 +909,7 @@ CheckLastOperation:
 			goto Finish;
 
 		case OnGotoStatement:
+			hasMoreWork = PRT_TRUE;
 			context->currentState = context->destStateIndex;
 			context->nextOperation = EntryOperation;
 			context->exitReason = NotExit;
@@ -926,9 +927,11 @@ CheckLastOperation:
 			goto CheckLastOperation;
 
 		case OnTransitionAfterExit:
+			hasMoreWork = PRT_TRUE;
 			PrtTakeTransition(context, context->eventValue);
-			context->exitReason = NotExit; 
-			goto DoEntry;
+			context->nextOperation = EntryOperation;
+			context->exitReason = NotExit;
+			goto Finish;
 
 		default:
 			PRT_DBG_ASSERT(0, "Unexpected case in switch");

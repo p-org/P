@@ -41,29 +41,6 @@ call build.bat %Configuration% %Platform% %NoSync% %Clean%
 :runtest
 cd %SCRIPTDIR%
 
-set MSBuildPath=
-for /F "usebackq tokens=1,2* delims= " %%i in (`reg query HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0 -v MSBuildToolsPath`) do (
-   if "%%i" == "MSBuildToolsPath" set MSBuildPath=%%k
-)
-
-if not "%MSBuildPath%"=="" goto :step2
-
-echo MSBUILD 14.0 does not appear to be installed.
-echo No info found in HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0
-goto :eof
-
-:step2
-set TAIL=%MSBuildPath:~-6%
-if "[%TAIL%]" == "[amd64\]" set MSBuildPath=%MSBuildPath:~0,-6%"
-set PATH=%PATH%;%MSBuildPath%
-
-echo msbuild  %SCRIPTDIR%\Tools\RunPTool\RunPTool.csproj /t:Rebuild /p:Configuration=%Configuration% /p:Platform=%Platform% /nologo
-msbuild  %SCRIPTDIR%\Tools\RunPTool\RunPTool.csproj /t:Rebuild /p:Configuration=%Configuration% /p:Platform=%Platform%  /nologo
-if %ERRORLEVEL% neq 0 (
-  echo Could not compile test utility.
-  exit /B 1
-)
-
 set RunPArgs=%RunPArgs% /Platform=%Platform% /Configuration=%Configuration%
 echo %SCRIPTDIR%..\Bld\Drops\%Configuration%\%Platform%\Binaries\RunPTool.exe %RunPArgs%
 "%SCRIPTDIR%..\Bld\Drops\%Configuration%\%Platform%\Binaries\RunPTool.exe" %RunPArgs%

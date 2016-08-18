@@ -100,10 +100,6 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Src\Pc\InteractiveCommandLine\InteractiveCommandLine.csproj">
-      <Project>{2ac6c51f-c987-477d-9a70-b71b7ee5323e}</Project>
-      <Name>InteractiveCommandLine</Name>
-    </ProjectReference>
     <ProjectReference Include="..\CheckP\CheckP.csproj">
       <Project>{d614d3ec-c765-4b47-8002-e683c16c5865}</Project>
       <Name>CheckP</Name>

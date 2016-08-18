@@ -15,6 +15,8 @@ goto :exit
 :start
 echo ============= Building P SDK on %COMPUTERNAME% ===============
 
+Bld\nuget restore P.sln
+
 set MSBuildPath=
 for /F "usebackq tokens=1,2* delims= " %%i in (`reg query HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0 -v MSBuildToolsPath`) do (
    if "%%i" == "MSBuildToolsPath" set MSBuildPath=%%k

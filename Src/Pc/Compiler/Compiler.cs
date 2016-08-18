@@ -128,24 +128,31 @@
         private const string ErrorClassName = "error";
         private const int TypeErrorCode = 1;
 
-        private static readonly Dictionary<string, string> ReservedModuleToLocation;
-        private static readonly Dictionary<string, Tuple<AST<Program>, bool>> ManifestPrograms;
+        private static object ManifestLock = new object();
+        private static Dictionary<string, string> ReservedModuleToLocation;
+        private static Dictionary<string, Tuple<AST<Program>, bool>> ManifestPrograms;
 
-        static Compiler()
+        static void Initialize()
         {
-            ReservedModuleToLocation = new Dictionary<string, string>();
-            ReservedModuleToLocation.Add(PDomain, "Domains\\P.4ml");
-            ReservedModuleToLocation.Add(CDomain, "Domains\\C.4ml");
-            ReservedModuleToLocation.Add(ZingDomain, "Domains\\Zing.4ml");
-            ReservedModuleToLocation.Add(P2InfTypesTransform, "Transforms\\PWithInferredTypes.4ml");
-            ReservedModuleToLocation.Add(P2CTransform, "Transforms\\P2CProgram.4ml");
+            lock (ManifestLock)
+            {
+                if (ReservedModuleToLocation == null)
+                {
+                    ReservedModuleToLocation = new Dictionary<string, string>();
+                    ReservedModuleToLocation.Add(PDomain, "Domains\\P.4ml");
+                    ReservedModuleToLocation.Add(CDomain, "Domains\\C.4ml");
+                    ReservedModuleToLocation.Add(ZingDomain, "Domains\\Zing.4ml");
+                    ReservedModuleToLocation.Add(P2InfTypesTransform, "Transforms\\PWithInferredTypes.4ml");
+                    ReservedModuleToLocation.Add(P2CTransform, "Transforms\\P2CProgram.4ml");
 
-            ManifestPrograms = new Dictionary<string, Tuple<AST<Program>, bool>>();
-            ManifestPrograms["Pc.Domains.P.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.P.4ml", "Domains\\P.4ml"), false);
-            ManifestPrograms["Pc.Domains.C.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.C.4ml", "Domains\\C.4ml"), false);
-            ManifestPrograms["Pc.Domains.Zing.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.Zing.4ml", "Domains\\Zing.4ml"), false);
-            ManifestPrograms["Pc.Transforms.PWithInferredTypes.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Transforms.PWithInferredTypes.4ml", "Transforms\\PWithInferredTypes.4ml"), false);
-            ManifestPrograms["Pc.Transforms.P2CProgram.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Transforms.P2CProgram.4ml", "Transforms\\P2CProgram.4ml"), false);
+                    ManifestPrograms = new Dictionary<string, Tuple<AST<Program>, bool>>();
+                    ManifestPrograms["Pc.Domains.P.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.P.4ml", "Domains\\P.4ml"), false);
+                    ManifestPrograms["Pc.Domains.C.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.C.4ml", "Domains\\C.4ml"), false);
+                    ManifestPrograms["Pc.Domains.Zing.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.Zing.4ml", "Domains\\Zing.4ml"), false);
+                    ManifestPrograms["Pc.Transforms.PWithInferredTypes.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Transforms.PWithInferredTypes.4ml", "Transforms\\PWithInferredTypes.4ml"), false);
+                    ManifestPrograms["Pc.Transforms.P2CProgram.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Transforms.P2CProgram.4ml", "Transforms\\P2CProgram.4ml"), false);
+                }
+            }
         }
 
         public Env CompilerEnv
@@ -194,13 +201,7 @@
         {
             get;
             private set;
-        }
-
-        public Dictionary<string, ProgramName> InstalledFileNames
-        {
-            get;
-            private set;
-        }
+        }        
 
         public PProgram ParsedProgram // used only by PVisualizer
         {
@@ -410,8 +411,7 @@
             }
             Log = new StandardOutput();
             Options = options;
-            SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
-            InstalledFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
+            SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);            
             EnvParams envParams = null;
             if (options.shortFileNames)
             {
@@ -424,8 +424,7 @@
         public Compiler(bool shortFileNames)
         {
             Log = new StandardOutput();
-            SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
-            InstalledFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
+            SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);            
             EnvParams envParams = null;
             if (shortFileNames)
             {
@@ -437,14 +436,17 @@
         public Compiler(Compiler other)
         {
             Log = new StandardOutput();
-            SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
-            InstalledFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
+            SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);            
             CompilerEnv = other.CompilerEnv;
         }
 
         bool InternalCompile(string inputFileName)
         {
             PProgram parsedProgram = new PProgram();
+            using (new PerfTimer("Compiler initializing"))
+            {
+                Initialize();
+            }
 
             using (new PerfTimer("Compiler parsing " + Path.GetFileName(inputFileName)))
             {
@@ -469,11 +471,14 @@
                 HashSet<string> crntMachineNames = new HashSet<string>();
 
                 InstallResult uninstallResult;
-                var uninstallDidStart = CompilerEnv.Uninstall(InstalledFileNames.Values, out uninstallResult);
+
+                lock (CompilerEnv)
+                {
+                    var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { RootProgramName }, out uninstallResult);
+                }
                 // Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
 
                 SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
-                InstalledFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
                 Queue<string> parserWorkQueue = new Queue<string>();
                 SeenFileNames[RootFileName] = RootProgramName;
                 InputProgramNames.Add(RootProgramName);
@@ -548,9 +553,13 @@
 
                 InstallResult instResult;
                 AST<Program> modelProgram = MkProgWithSettings(RootProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
-                bool progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, rootModel), out instResult);
-                InstalledFileNames[RootFileName] = RootProgramName;
-                Contract.Assert(progressed && instResult.Succeeded);
+
+                // CompilerEnv only expects one call to Install at a time.
+                lock (CompilerEnv)
+                {
+                    bool progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, rootModel), out instResult);
+                    Contract.Assert(progressed && instResult.Succeeded);
+                }
 
                 if (Options.outputFormula)
                 {
@@ -581,15 +590,6 @@
             return rc;
         }
 
-        public void ResetEnv()
-        {
-            if (InstalledFileNames.Count > 0)
-            {
-                InstallResult result;
-                CompilerEnv.Uninstall(InstalledFileNames.Values, out result);
-            }
-        }
-
         public bool GenerateZing()
         {
             return GenerateZing(new List<Flag>());
@@ -618,8 +618,11 @@
                 Task<ApplyResult> apply;
                 Formula.Common.Rules.ExecuterStatistics stats;
                 List<Flag> applyFlags;
-                CompilerEnv.Apply(transStep, false, false, out applyFlags, out apply, out stats);
-                apply.RunSynchronously();
+                lock (CompilerEnv)
+                {
+                    CompilerEnv.Apply(transStep, false, false, out applyFlags, out apply, out stats);
+                    apply.RunSynchronously();
+                }
                 var extractTask = apply.Result.GetOutputModel(
                     RootModule + "_WithTypes",
                     new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModule + "_WithTypes.4ml")),
@@ -698,14 +701,20 @@
             //// Install and render the program.
             InstallResult instResult;
             Task<RenderResult> renderTask;
-            var didStart = CompilerEnv.Install(zingProgram, out instResult);
-            Contract.Assert(didStart);
+            lock (CompilerEnv)
+            {
+                var didStart = CompilerEnv.Install(zingProgram, out instResult);
+                Contract.Assert(didStart);
+            }
             PrintResult(instResult);
             if (!instResult.Succeeded)
                 return false;
-            didStart = CompilerEnv.Render(progName, m.Node.Name, out renderTask);
-            Contract.Assert(didStart);
-            renderTask.Wait();
+            lock (CompilerEnv)
+            {
+                bool didStart = CompilerEnv.Render(progName, m.Node.Name, out renderTask);
+                Contract.Assert(didStart);
+                renderTask.Wait();
+            }
             Contract.Assert(renderTask.Result.Succeeded);
             var rendered = renderTask.Result.Module;
 
@@ -727,7 +736,10 @@
 
 
             InstallResult uninstallResult;
-            var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { progName }, out uninstallResult);
+            lock (CompilerEnv)
+            {
+                var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { progName }, out uninstallResult);
+            }
             // Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
 
             return success;
@@ -817,22 +829,25 @@
                 //// Run static analysis on input program.
                 List<Flag> queryFlags;
                 Formula.Common.Rules.ExecuterStatistics stats;
-                var canStart = CompilerEnv.Query(
-                    RootProgramName,
-                    inputModule,
-                    new AST<Body>[] { Factory.Instance.AddConjunct(Factory.Instance.MkBody(), Factory.Instance.MkFind(null, Factory.Instance.MkId(inputModule + ".requires"))) },
-                    true,
-                    false,
-                    out queryFlags,
-                    out task,
-                    out stats);
 
-                Contract.Assert(canStart);
-                foreach (Flag f in queryFlags)
+                lock (CompilerEnv)
                 {
-                    AddFlag(f);
+                    var canStart = CompilerEnv.Query(
+                        RootProgramName,
+                        inputModule,
+                        new AST<Body>[] { Factory.Instance.AddConjunct(Factory.Instance.MkBody(), Factory.Instance.MkFind(null, Factory.Instance.MkId(inputModule + ".requires"))) },
+                        true,
+                        false,
+                        out queryFlags,
+                        out task,
+                        out stats);
+                    Contract.Assert(canStart);
+                    foreach (Flag f in queryFlags)
+                    {
+                        AddFlag(f);
+                    }
+                    task.RunSynchronously();
                 }
-                task.RunSynchronously();
             }
 
             // Enumerate typing errors
@@ -1028,22 +1043,29 @@
 
         private void LoadManifestProgram(string manifestName)
         {
-            InstallResult result;
-            var tuple = ManifestPrograms[manifestName];
-            if (tuple.Item2) return;
-            var program = tuple.Item1;
-            CompilerEnv.Install(program, out result);
-            if (!result.Succeeded)
+            // The ManifestPrograms are static, so they need a lock.
+            lock (ManifestPrograms)
             {
-                StringBuilder sb = new StringBuilder();
-                sb.AppendLine("Error: Could not load program: " + program);
-                foreach (var pair in result.Flags)
+                InstallResult result;
+                var tuple = ManifestPrograms[manifestName];
+                if (tuple.Item2) return;
+                var program = tuple.Item1;
+                lock (CompilerEnv)
                 {
-                    sb.AppendLine(FormatError(pair.Item2));
+                    CompilerEnv.Install(program, out result);
                 }
-                throw new Exception("Error: Could not load resources");
+                if (!result.Succeeded)
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine("Error: Could not load program: " + program);
+                    foreach (var pair in result.Flags)
+                    {
+                        sb.AppendLine(FormatError(pair.Item2));
+                    }
+                    throw new Exception("Error: Could not load resources");
+                }
+                ManifestPrograms[manifestName] = Tuple.Create<AST<Program>, bool>(program, true);
             }
-            ManifestPrograms[manifestName] = Tuple.Create<AST<Program>, bool>(program, true);
         }
 
         private static AST<Program> ParseManifestProgram(string manifestName, string programName)
@@ -1225,9 +1247,12 @@
             List<Flag> appFlags;
             Task<ApplyResult> apply;
             Formula.Common.Rules.ExecuterStatistics stats;
-            CompilerEnv.Apply(transStep, false, false, out appFlags, out apply, out stats);
-            apply.RunSynchronously();
 
+            lock (CompilerEnv)
+            {
+                CompilerEnv.Apply(transStep, false, false, out appFlags, out apply, out stats);
+                apply.RunSynchronously();
+            }
             foreach (Flag f in appFlags)
             {
                 AddFlag(f);
@@ -1266,12 +1291,16 @@
             //// Install and render the program.
             InstallResult instResult;
             Task<RenderResult> renderTask;
-            var didStart = CompilerEnv.Install(cProgram, out instResult);
-            Contract.Assert(didStart && instResult.Succeeded);
-            didStart = CompilerEnv.Render(cProgram.Node.Name, RootModule + "_CModel", out renderTask);
-            Contract.Assert(didStart);
-            renderTask.Wait();
-            Contract.Assert(renderTask.Result.Succeeded);
+            bool didStart = false;
+            lock (CompilerEnv)
+            {
+                didStart = CompilerEnv.Install(cProgram, out instResult);
+                Contract.Assert(didStart && instResult.Succeeded);
+                didStart = CompilerEnv.Render(cProgram.Node.Name, RootModule + "_CModel", out renderTask);
+                Contract.Assert(didStart);
+                renderTask.Wait();
+                Contract.Assert(renderTask.Result.Succeeded);
+            }
 
             var fileQuery = new NodePred[]
             {
@@ -1289,8 +1318,12 @@
                     success = PrintFile(string.Empty, n) && success;
                 });
 
-            InstallResult uninstallResult; 
-            var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { progName }, out uninstallResult);
+            InstallResult uninstallResult;
+
+            lock (CompilerEnv)
+            {
+                var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { progName }, out uninstallResult);
+            }
             // Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
             return success;
         }

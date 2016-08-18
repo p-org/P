@@ -1,8 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: eventexprsendraise.p (17, 4): argument 1 of "monitor" expects an event value
-OUT: eventexprsendraise.p (19, 3): action on an undefined event
-OUT: eventexprsendraise.p (21, 3): action on an undefined event
+OUT: eventExprSendRaise.p (17, 4): argument 1 of "monitor" expects an event value
+OUT: eventExprSendRaise.p (19, 3): action on an undefined event
+OUT: eventExprSendRaise.p (21, 3): action on an undefined event
 OUT: Compilation failed
 EXIT: -1

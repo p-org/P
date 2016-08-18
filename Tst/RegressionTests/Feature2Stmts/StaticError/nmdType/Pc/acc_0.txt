@@ -1,6 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: nmdtype.p (6, 4): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nmdType.p (6, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: Compilation failed
 EXIT: -1

@@ -1,6 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: nulleventdecl.p (3, 6): Syntax error - Syntax error, unexpected NULL, expecting ID
+OUT: NullEventDecl.p (3, 6): Syntax error - Syntax error, unexpected NULL, expecting ID
 OUT: Compilation failed
 EXIT: -1

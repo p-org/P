@@ -1,10 +1,10 @@
 =================================
          Console output          
 =================================
-OUT: entryexit_2.p (31, 6): function cannot take arguments
-OUT: entryexit_2.p (37, 9): function cannot take arguments
-OUT: entryexit_2.p (42, 9): undefined function for entry
-OUT: entryexit_2.p (43, 8): function cannot take arguments
-OUT: entryexit_2.p (48, 8): undefined function for exit
+OUT: entryExit_2.p (31, 6): function cannot take arguments
+OUT: entryExit_2.p (37, 9): function cannot take arguments
+OUT: entryExit_2.p (42, 9): undefined function for entry
+OUT: entryExit_2.p (43, 8): function cannot take arguments
+OUT: entryExit_2.p (48, 8): undefined function for exit
 OUT: Compilation failed
 EXIT: -1

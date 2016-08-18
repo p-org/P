@@ -1,6 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: sentnullevent.p (12, 13): argument 2 of "send" expects an event value
+OUT: SentNullEvent.p (12, 13): argument 2 of "send" expects an event value
 OUT: Compilation failed
 EXIT: -1

@@ -1,88 +1,88 @@
 =================================
          Console output          
 =================================
-OUT: exproperators.p (61, 5): "assert" expects a boolean value
-OUT: exproperators.p (61, 20): Operator expected first argument to be an integer value
-OUT: exproperators.p (61, 30): Values cannot be compared because their types are incompatible
-OUT: exproperators.p (62, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: exproperators.p (62, 15): Operator expected a boolean value
-OUT: exproperators.p (63, 5): "assert" expects a boolean value
-OUT: exproperators.p (63, 20): Operator expected first argument to be an integer value
-OUT: exproperators.p (64, 5): "assert" expects a boolean value
-OUT: exproperators.p (64, 14): Operator expected second argument to be an integer value
-OUT: exproperators.p (65, 5): "assert" expects a boolean value
-OUT: exproperators.p (65, 20): Operator expected second argument to be a boolean value
-OUT: exproperators.p (65, 25): Values cannot be compared because their types are incompatible
-OUT: exproperators.p (66, 5): "assert" expects a boolean value
-OUT: exproperators.p (66, 14): Operator expected first argument to be a boolean value
-OUT: exproperators.p (68, 5): "assert" expects a boolean value
-OUT: exproperators.p (68, 15): Values cannot be compared because their types are incompatible
-OUT: exproperators.p (79, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: exproperators.p (79, 17): Operator expected second argument to be an integer value
-OUT: exproperators.p (80, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: exproperators.p (80, 20): Operator expected first argument to be an integer value
-OUT: exproperators.p (81, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: exproperators.p (81, 17): Operator expected second argument to be an integer value
-OUT: exproperators.p (82, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: exproperators.p (82, 17): Operator expected second argument to be an integer value
-OUT: exproperators.p (84, 5): "assert" expects a boolean value
-OUT: exproperators.p (84, 18): Operator expected second argument to be an integer value
-OUT: exproperators.p (85, 5): "assert" expects a boolean value
-OUT: exproperators.p (85, 18): Operator expected second argument to be an integer value
-OUT: exproperators.p (86, 5): "assert" expects a boolean value
-OUT: exproperators.p (86, 18): Operator expected second argument to be an integer value
-OUT: exproperators.p (87, 5): "assert" expects a boolean value
-OUT: exproperators.p (87, 18): Operator expected second argument to be an integer value
-OUT: exproperators.p (89, 5): "assert" expects a boolean value
-OUT: exproperators.p (89, 17): Operator expected first argument to be a boolean value
-OUT: exproperators.p (90, 5): "assert" expects a boolean value
-OUT: exproperators.p (90, 17): Operator expected first argument to be a boolean value
-OUT: exproperators.p (91, 5): "assert" expects a boolean value
-OUT: exproperators.p (91, 20): Operator expected second argument to be a boolean value
-OUT: exproperators.p (93, 5): "assert" expects a boolean value
-OUT: exproperators.p (93, 17): Operator expected second argument to be an integer value
-OUT: exproperators.p (94, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: exproperators.p (94, 12): Operator expected an integer value
-OUT: exproperators.p (95, 5): "assert" expects a boolean value
-OUT: exproperators.p (95, 17): Values cannot be compared because their types are incompatible
-OUT: exproperators.p (97, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: exproperators.p (97, 15): Operator expected a boolean value
-OUT: exproperators.p (98, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: exproperators.p (98, 15): Operator expected a boolean value
-OUT: exproperators.p (100, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: exproperators.p (100, 12): Operator expected an integer value
-OUT: exproperators.p (105, 5): "assert" expects a boolean value
-OUT: exproperators.p (105, 17): Values cannot be compared because their types are incompatible
-OUT: exproperators.p (105, 20): Operator expected an integer value
-OUT: exproperators.p (106, 5): "assert" expects a boolean value
-OUT: exproperators.p (106, 14): Operator expected first argument to be an integer value
-OUT: exproperators.p (106, 21): Values cannot be compared because their types are incompatible
-OUT: exproperators.p (107, 5): "assert" expects a boolean value
-OUT: exproperators.p (107, 14): Operator expected first argument to be an integer value
-OUT: exproperators.p (107, 18): Values cannot be compared because their types are incompatible
-OUT: exproperators.p (109, 5): "assert" expects a boolean value
-OUT: exproperators.p (109, 14): Operator expected first argument to be an integer value
-OUT: exproperators.p (110, 5): "assert" expects a boolean value
-OUT: exproperators.p (110, 14): Operator expected first argument to be an integer value
-OUT: exproperators.p (124, 5): "assert" expects a boolean value
-OUT: exproperators.p (124, 14): Operator expected first argument to be a boolean value
-OUT: exproperators.p (131, 5): value must be a subtype of sequence type
-OUT: exproperators.p (137, 5): key must be an integer
-OUT: exproperators.p (145, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: exproperators.p (145, 9): Operator expected a map value
-OUT: exproperators.p (145, 20): Indexer must be applied to a sequence or map
-OUT: exproperators.p (146, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: exproperators.p (146, 9): Operator expected a map value
-OUT: exproperators.p (146, 22): Indexer must be applied to a sequence or map
-OUT: exproperators.p (147, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: exproperators.p (147, 9): Operator expected a map or sequence value
-OUT: exproperators.p (168, 5): "assert" expects a boolean value
-OUT: exproperators.p (168, 18): Value can never be in the map
-OUT: exproperators.p (169, 5): "assert" expects a boolean value
-OUT: exproperators.p (169, 26): Values cannot be compared because their types are incompatible
-OUT: exproperators.p (171, 5): key not in the domain of the map
-OUT: exproperators.p (172, 5): value not in the codomain of the map
-OUT: exproperators.p (218, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: exproperators.p (219, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: ExprOperators.p (61, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (61, 20): Operator expected first argument to be an integer value
+OUT: ExprOperators.p (61, 30): Values cannot be compared because their types are incompatible
+OUT: ExprOperators.p (62, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: ExprOperators.p (62, 15): Operator expected a boolean value
+OUT: ExprOperators.p (63, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (63, 20): Operator expected first argument to be an integer value
+OUT: ExprOperators.p (64, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (64, 14): Operator expected second argument to be an integer value
+OUT: ExprOperators.p (65, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (65, 20): Operator expected second argument to be a boolean value
+OUT: ExprOperators.p (65, 25): Values cannot be compared because their types are incompatible
+OUT: ExprOperators.p (66, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (66, 14): Operator expected first argument to be a boolean value
+OUT: ExprOperators.p (68, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (68, 15): Values cannot be compared because their types are incompatible
+OUT: ExprOperators.p (79, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: ExprOperators.p (79, 17): Operator expected second argument to be an integer value
+OUT: ExprOperators.p (80, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: ExprOperators.p (80, 20): Operator expected first argument to be an integer value
+OUT: ExprOperators.p (81, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: ExprOperators.p (81, 17): Operator expected second argument to be an integer value
+OUT: ExprOperators.p (82, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: ExprOperators.p (82, 17): Operator expected second argument to be an integer value
+OUT: ExprOperators.p (84, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (84, 18): Operator expected second argument to be an integer value
+OUT: ExprOperators.p (85, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (85, 18): Operator expected second argument to be an integer value
+OUT: ExprOperators.p (86, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (86, 18): Operator expected second argument to be an integer value
+OUT: ExprOperators.p (87, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (87, 18): Operator expected second argument to be an integer value
+OUT: ExprOperators.p (89, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (89, 17): Operator expected first argument to be a boolean value
+OUT: ExprOperators.p (90, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (90, 17): Operator expected first argument to be a boolean value
+OUT: ExprOperators.p (91, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (91, 20): Operator expected second argument to be a boolean value
+OUT: ExprOperators.p (93, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (93, 17): Operator expected second argument to be an integer value
+OUT: ExprOperators.p (94, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: ExprOperators.p (94, 12): Operator expected an integer value
+OUT: ExprOperators.p (95, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (95, 17): Values cannot be compared because their types are incompatible
+OUT: ExprOperators.p (97, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: ExprOperators.p (97, 15): Operator expected a boolean value
+OUT: ExprOperators.p (98, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: ExprOperators.p (98, 15): Operator expected a boolean value
+OUT: ExprOperators.p (100, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: ExprOperators.p (100, 12): Operator expected an integer value
+OUT: ExprOperators.p (105, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (105, 17): Values cannot be compared because their types are incompatible
+OUT: ExprOperators.p (105, 20): Operator expected an integer value
+OUT: ExprOperators.p (106, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (106, 14): Operator expected first argument to be an integer value
+OUT: ExprOperators.p (106, 21): Values cannot be compared because their types are incompatible
+OUT: ExprOperators.p (107, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (107, 14): Operator expected first argument to be an integer value
+OUT: ExprOperators.p (107, 18): Values cannot be compared because their types are incompatible
+OUT: ExprOperators.p (109, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (109, 14): Operator expected first argument to be an integer value
+OUT: ExprOperators.p (110, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (110, 14): Operator expected first argument to be an integer value
+OUT: ExprOperators.p (124, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (124, 14): Operator expected first argument to be a boolean value
+OUT: ExprOperators.p (131, 5): value must be a subtype of sequence type
+OUT: ExprOperators.p (137, 5): key must be an integer
+OUT: ExprOperators.p (145, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: ExprOperators.p (145, 9): Operator expected a map value
+OUT: ExprOperators.p (145, 20): Indexer must be applied to a sequence or map
+OUT: ExprOperators.p (146, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: ExprOperators.p (146, 9): Operator expected a map value
+OUT: ExprOperators.p (146, 22): Indexer must be applied to a sequence or map
+OUT: ExprOperators.p (147, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: ExprOperators.p (147, 9): Operator expected a map or sequence value
+OUT: ExprOperators.p (168, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (168, 18): Value can never be in the map
+OUT: ExprOperators.p (169, 5): "assert" expects a boolean value
+OUT: ExprOperators.p (169, 26): Values cannot be compared because their types are incompatible
+OUT: ExprOperators.p (171, 5): key not in the domain of the map
+OUT: ExprOperators.p (172, 5): value not in the codomain of the map
+OUT: ExprOperators.p (218, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: ExprOperators.p (219, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: Compilation failed
 EXIT: -1

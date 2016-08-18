@@ -1,6 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: ignorednullevent.p (23, 9): Syntax error - Syntax error, unexpected NULL, expecting ID, or HALT
+OUT: IgnoredNullEvent.p (23, 9): Syntax error - Syntax error, unexpected NULL, expecting ID, or HALT
 OUT: Compilation failed
 EXIT: -1

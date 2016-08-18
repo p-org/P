@@ -1,20 +1,20 @@
 =================================
          Console output          
 =================================
-OUT: transdecl_dodecl.p (13, 3): transition to an undefined state
-OUT: transdecl_dodecl.p (14, 3): function cannot take arguments
-OUT: transdecl_dodecl.p (15, 3): Multiple transitions over the same event
-OUT: transdecl_dodecl.p (15, 3): transition function not defined
-OUT: transdecl_dodecl.p (16, 3): Action and transition over the same event
-OUT: transdecl_dodecl.p (16, 3): action on an undefined event
-OUT: transdecl_dodecl.p (17, 3): Action and transition over the same event
-OUT: transdecl_dodecl.p (17, 3): function not defined
-OUT: transdecl_dodecl.p (18, 3): Action and transition over the same event
-OUT: transdecl_dodecl.p (18, 3): function cannot take arguments
-OUT: transdecl_dodecl.p (19, 3): Multiple transitions over the same event
-OUT: transdecl_dodecl.p (19, 3): transition to an undefined state
-OUT: transdecl_dodecl.p (20, 3): transition on an undefined event
-OUT: transdecl_dodecl.p (21, 3): transition on an undefined event
-OUT: transdecl_dodecl.p (37, 2): transition to an undefined state
+OUT: TransDecl_DoDecl.p (13, 3): transition to an undefined state
+OUT: TransDecl_DoDecl.p (14, 3): function cannot take arguments
+OUT: TransDecl_DoDecl.p (15, 3): Multiple transitions over the same event
+OUT: TransDecl_DoDecl.p (15, 3): transition function not defined
+OUT: TransDecl_DoDecl.p (16, 3): Action and transition over the same event
+OUT: TransDecl_DoDecl.p (16, 3): action on an undefined event
+OUT: TransDecl_DoDecl.p (17, 3): Action and transition over the same event
+OUT: TransDecl_DoDecl.p (17, 3): function not defined
+OUT: TransDecl_DoDecl.p (18, 3): Action and transition over the same event
+OUT: TransDecl_DoDecl.p (18, 3): function cannot take arguments
+OUT: TransDecl_DoDecl.p (19, 3): Multiple transitions over the same event
+OUT: TransDecl_DoDecl.p (19, 3): transition to an undefined state
+OUT: TransDecl_DoDecl.p (20, 3): transition on an undefined event
+OUT: TransDecl_DoDecl.p (21, 3): transition on an undefined event
+OUT: TransDecl_DoDecl.p (37, 2): transition to an undefined state
 OUT: Compilation failed
 EXIT: -1

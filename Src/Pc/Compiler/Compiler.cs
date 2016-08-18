@@ -849,11 +849,18 @@
                     out task,
                     out stats);
                 Contract.Assert(canStart);
-                foreach (Flag f in queryFlags)
+                if (canStart)
                 {
-                    AddFlag(f);
+                    foreach (Flag f in queryFlags)
+                    {
+                        AddFlag(f);
+                    }
+                    task.RunSynchronously();
                 }
-                task.RunSynchronously();
+                else
+                {
+                    throw new Exception("Compiler.Query cannot start, is another compile running in parallel?");
+                }
             }
 
             // Enumerate typing errors

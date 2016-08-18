@@ -33,11 +33,13 @@ namespace Microsoft.Pc
                             server = true;
                             break;
                         default:
+                            Console.WriteLine("Pci: unexpected command line argument: {0}", arg);
                             goto error;
                     }
                 }
                 else
                 {
+                    Console.WriteLine("Pci: unexpected command line argument: {0}", arg);
                     goto error;
                 }
             }
@@ -68,74 +70,99 @@ namespace Microsoft.Pc
                 if (inputArgs.Length == 0) continue;
                 if (inputArgs[0] == "exit")
                 {
+                    Console.WriteLine("Pci: exiting");
                     return;
                 }
                 else if (inputArgs[0] == "load")
                 {
-                    var success = ParseLoadString(inputArgs, compilerOptions);
-                    if (!success)
+                    try
                     {
-                        Console.WriteLine(loadErrorMsgString);
-                        continue;
-                    }
-                    compiler.Options = compilerOptions;
-                    var result = compiler.Compile(inputFileName);
-                    if (!result)
-                    {
-                        inputFileName = null;
-                        if (server)
+                        var success = ParseLoadString(inputArgs, compilerOptions);
+                        if (!success)
                         {
-                            Console.WriteLine("Pci: load failed");
+                            Console.WriteLine(loadErrorMsgString);
+                            continue;
+                        }
+                        compiler.Options = compilerOptions;
+                        var result = compiler.Compile(inputFileName);
+                        if (!result)
+                        {
+                            inputFileName = null;
+                            if (server)
+                            {
+                                Console.WriteLine("Pci: load failed");
+                            }
+                        }
+                        else
+                        {
+                            if (server)
+                            {
+                                Console.WriteLine("Pci: command done");
+                            }
                         }
                     }
-                    else
+                    catch (Exception ex)
                     {
+                        Console.WriteLine(ex.ToString());
+                        Console.WriteLine("Pci: load failed");
+                    }
+                }
+                else if (inputArgs[0] == "test")
+                {
+                    try
+                    {
+                        if (inputFileName == null)
+                        {
+                            Console.WriteLine(loadErrorMsgString);
+                            continue;
+                        }
+                        var success = ParseTestString(inputArgs, compilerOptions);
+                        if (!success)
+                        {
+                            Console.WriteLine(testErrorMsgString);
+                            continue;
+                        }
+                        compiler.Options = compilerOptions;
+                        var b = compiler.GenerateZing();
+                        Debug.Assert(b);
                         if (server)
                         {
                             Console.WriteLine("Pci: command done");
                         }
                     }
-                }
-                else if (inputArgs[0] == "test")
-                {
-                    if (inputFileName == null)
+                    catch (Exception ex)
                     {
-                        Console.WriteLine(loadErrorMsgString);
-                        continue;
-                    }
-                    var success = ParseTestString(inputArgs, compilerOptions);
-                    if (!success)
-                    {
-                        Console.WriteLine(testErrorMsgString);
-                        continue;
-                    }
-                    compiler.Options = compilerOptions;
-                    var b = compiler.GenerateZing();
-                    Debug.Assert(b);
-                    if (server)
-                    {
-                        Console.WriteLine("Pci: command done");
+                        Console.WriteLine(ex.ToString());
+                        Console.WriteLine("Pci: test failed");
                     }
                 }
                 else if (inputArgs[0] == "compile")
                 {
-                    if (inputFileName == null)
+                    try
                     {
-                        Console.WriteLine(loadErrorMsgString);
-                        continue;
+                        if (inputFileName == null)
+                        {
+                            Console.WriteLine(loadErrorMsgString);
+                            continue;
+                        }
+                        var success = ParseCompileString(inputArgs, compilerOptions);
+                        if (!success)
+                        {
+                            Console.WriteLine(compileErrorMsgString);
+                            continue;
+                        }
+                        compiler.Options = compilerOptions;
+                        var b = compiler.GenerateC();
+                        Debug.Assert(b);
+                        if (server)
+                        {
+                            Console.WriteLine("Pci: command done");
+                        }
                     }
-                    var success = ParseCompileString(inputArgs, compilerOptions);
-                    if (!success)
+                    catch (Exception ex)
                     {
-                        Console.WriteLine(compileErrorMsgString);
-                        continue;
-                    }
-                    compiler.Options = compilerOptions;
-                    var b = compiler.GenerateC();
-                    Debug.Assert(b);
-                    if (server)
-                    {
-                        Console.WriteLine("Pci: command done");
+                        Console.WriteLine(ex.ToString());
+                        Console.WriteLine("Pci: compile failed");
                     }
                 }
                 else

@@ -1,7 +1,7 @@
 =================================
          Console output          
 =================================
-OUT: raisednullevent.p (8, 4): argument 1 of "raise" expects an event value
-OUT: raisednullevent.p (13, 13): argument 2 of "send" expects an event value
+OUT: RaisedNullEvent.p (8, 4): argument 1 of "raise" expects an event value
+OUT: RaisedNullEvent.p (13, 13): argument 2 of "send" expects an event value
 OUT: Compilation failed
 EXIT: -1

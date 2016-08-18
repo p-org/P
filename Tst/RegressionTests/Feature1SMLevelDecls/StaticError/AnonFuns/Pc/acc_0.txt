@@ -1,6 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: anonfunction.p (12, 3): transition to an undefined state
+OUT: anonFunction.p (12, 3): transition to an undefined state
 OUT: Compilation failed
 EXIT: -1

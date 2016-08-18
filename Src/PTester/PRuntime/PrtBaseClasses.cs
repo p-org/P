@@ -56,7 +56,7 @@ namespace P.Runtime
             get;
         }
 
-        public abstract void PrtEnqueueEvent(StateImpl application, PrtValue e, PrtValue arg, PrtMachine source);
+        public abstract void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source);
 
         public PrtState CurrentState
         {
@@ -410,22 +410,22 @@ namespace P.Runtime
         {
             Debug.Assert(e is PrtEventValue, "Illegal enqueue of null event");
             PrtEventValue ev = e as PrtEventValue;
-            if (ev.value.maxInstances == PrtEvent.DefaultMaxInstances)
+            if (ev.evt.maxInstances == PrtEvent.DefaultMaxInstances)
             {
                 events.Add(new PrtEventNode(e, arg));
             }
             else
             {
-                if (CalculateInstances(e) == ev.value.maxInstances)
+                if (CalculateInstances(e) == ev.evt.maxInstances)
                 {
-                    if (ev.value.doAssume)
+                    if (ev.evt.doAssume)
                     {
                         throw new PrtAssumeFailureException();
                     }
                     else
                     {
                         throw new PrtMaxEventInstancesExceededException(
-                            String.Format(@"< Exception > Attempting to enqueue event {0} more than max instance of {1}\n", ev.value.name, ev.value.maxInstances));
+                            String.Format(@"< Exception > Attempting to enqueue event {0} more than max instance of {1}\n", ev.evt.name, ev.evt.maxInstances));
                     }
                 }
                 else

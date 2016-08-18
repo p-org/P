@@ -13,8 +13,9 @@ namespace P.Runtime
         /// </summary>
         protected StateImpl()
         {
-            statemachines = new List<PrtImplMachine>();
-            monitors = new List<PrtSpecMachine>();
+            implMachines = new List<PrtImplMachine>();
+            specMachines = new List<PrtSpecMachine>();
+            specObservers = new Dictionary<PrtValue, List<PrtSpecMachine>>();
         }
         #endregion
 
@@ -22,26 +23,27 @@ namespace P.Runtime
         /// <summary>
         /// Map from the statemachine id to the instance of the statemachine.
         /// </summary>
-        private List<PrtImplMachine> statemachines;
+        private List<PrtImplMachine> implMachines;
 
-        public List<PrtImplMachine> AllStateMachines
+        public List<PrtImplMachine> ImplMachines
         {
             get
             {
-                return statemachines;
+                return implMachines;
             }
         }
 
         /// <summary>
         /// List of monitors
         /// </summary>
-        private List<PrtSpecMachine> monitors;
-        
+        private List<PrtSpecMachine> specMachines;
+
         /// <summary>
         /// Stores the exception encoutered during exploration.
         /// </summary>
         private Exception exception;
 
+        private Dictionary<PrtValue, List<PrtSpecMachine>> specObservers;
         #endregion
 
         #region Getters and Setters
@@ -50,13 +52,13 @@ namespace P.Runtime
             get
             {
                 bool enabled = false;
-                foreach (var x in statemachines)
+                foreach (var x in implMachines)
                 {
                     if (enabled) break;
                     enabled = enabled || (x.currentStatus == PrtMachineStatus.Enabled);
                 }
                 bool hot = false;
-                foreach (var x in monitors)
+                foreach (var x in specMachines)
                 {
                     if (hot) break;
                     hot = hot || x.IsHot;
@@ -80,16 +82,16 @@ namespace P.Runtime
         {
             var clonedState = MakeSkeleton();
             //clone all the fields
-            clonedState.statemachines = new List<PrtImplMachine>();
-            foreach(var machine in statemachines)
+            clonedState.implMachines = new List<PrtImplMachine>();
+            foreach (var machine in implMachines)
             {
-                clonedState.statemachines.Add(machine.Clone());
+                clonedState.implMachines.Add(machine.Clone());
             }
 
-            clonedState.monitors = new List<PrtSpecMachine>();
-            foreach(var monitor in monitors)
+            clonedState.specMachines = new List<PrtSpecMachine>();
+            foreach (var monitor in specMachines)
             {
-                clonedState.monitors.Add((PrtSpecMachine)monitor.Clone());
+                clonedState.specMachines.Add((PrtSpecMachine)monitor.Clone());
             }
 
             return clonedState;
@@ -100,12 +102,36 @@ namespace P.Runtime
 
         public int NextMachineInstanceNumber(Type machineType)
         {
-            return statemachines.Where(m => m.GetType() == machineType).Count() + 1;
+            return implMachines.Where(m => m.GetType() == machineType).Count() + 1;
         }
 
-        public void AddStateMachineToStateImpl(PrtImplMachine machine)
+        public void Announce(PrtValue ev, PrtValue payload, PrtMachine parent)
         {
-            statemachines.Add(machine);
+            foreach(var spec in specObservers[ev])
+            {
+                spec.PrtEnqueueEvent(ev, payload, parent);
+            }
+        }
+        public void AddImplMachineToStateImpl(PrtImplMachine machine)
+        {
+            implMachines.Add(machine);
+        }
+
+        public void AddSpecMachineToStateImpl(PrtSpecMachine spec)
+        {
+            specMachines.Add(spec);
+            foreach(var ev in spec.observes)
+            {
+                if(specObservers.ContainsKey(ev))
+                {
+                    specObservers[ev].Add(spec);
+                }
+                else
+                {
+                    specObservers[ev] = new List<PrtSpecMachine>();
+                    specObservers[ev].Add(spec);
+                }
+            }
         }
 
         public void Trace(string message, params object[] arguments)

@@ -107,7 +107,7 @@ namespace SimpleMachine
         public PrtImplMachine CreateMainMachine()
         {
             var mainMachine = new Main(this, 10);
-            AddStateMachineToStateImpl(mainMachine);
+            AddImplMachineToStateImpl(mainMachine);
             return mainMachine;
         }
 
@@ -179,7 +179,7 @@ namespace SimpleMachine
 
 
                     Loc_0:
-                    parent.PrtEnqueueEvent(application, dummy, PrtValue.NullValue, parent);
+                    parent.PrtEnqueueEvent(dummy, PrtValue.NullValue, parent);
                     parent.PrtFunContSend(this, currFun.locals, 1);
 
                     Ret:

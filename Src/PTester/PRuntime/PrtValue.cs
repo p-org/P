@@ -89,7 +89,7 @@ namespace P.Runtime
             }
             else if (type is PrtTupleType)
             {
-                if ((!(value is PrtTupleValue)) || (value as PrtTupleValue).value.Count != (type as PrtTupleType).fieldTypes.Count)
+                if ((!(value is PrtTupleValue)) || (value as PrtTupleValue).fieldValues.Count != (type as PrtTupleType).fieldTypes.Count)
                 {
                     return false;
                 }
@@ -98,9 +98,9 @@ namespace P.Runtime
                     int index = 0;
                     var tupVal = (value as PrtTupleValue);
                     var tupType = (type as PrtTupleType);
-                    while (index < tupVal.value.Count)
+                    while (index < tupVal.fieldValues.Count)
                     {
-                        if (!PrtInhabitsType(tupVal.value[index], tupType.fieldTypes[index]))
+                        if (!PrtInhabitsType(tupVal.fieldValues[index], tupType.fieldTypes[index]))
                         {
                             return false;
                         }
@@ -112,7 +112,7 @@ namespace P.Runtime
             }
             else if (type is PrtNamedTupleType)
             {
-                if ((!(value is PrtNamedTupleValue)) || (value as PrtNamedTupleValue).value.Count != (type as PrtNamedTupleType).fieldTypes.Count)
+                if ((!(value is PrtNamedTupleValue)) || (value as PrtNamedTupleValue).fieldValues.Count != (type as PrtNamedTupleType).fieldTypes.Count)
                 {
                     return false;
                 }
@@ -121,13 +121,13 @@ namespace P.Runtime
                     int index = 0;
                     var nmtupVal = (value as PrtNamedTupleValue);
                     var nmtupType = (type as PrtNamedTupleType);
-                    while (index < nmtupVal.value.Count)
+                    while (index < nmtupVal.fieldValues.Count)
                     {
                         if (nmtupVal.fieldNames[index] != nmtupType.fieldNames[index])
                         {
                             return false;
                         }
-                        else if (!PrtInhabitsType(nmtupVal.value[index], nmtupType.fieldTypes[index]))
+                        else if (!PrtInhabitsType(nmtupVal.fieldValues[index], nmtupType.fieldTypes[index]))
                         {
                             return false;
                         }
@@ -173,7 +173,7 @@ namespace P.Runtime
                 else
                 {
                     var seqVal = (value as PrtSeqValue);
-                    foreach (var elem in seqVal.value)
+                    foreach (var elem in seqVal.elements)
                     {
                         if (!PrtInhabitsType(elem, (type as PrtSeqType).elemType))
                         {
@@ -223,141 +223,141 @@ namespace P.Runtime
 
     public class PrtIntValue : PrtValue
     {
-        public int value;
+        public int nt;
 
         public PrtIntValue()
         {
-            value = 0;
+            nt = 0;
         }
 
         public PrtIntValue(int val)
         {
-            value = val;
+            nt = val;
         }
 
         public override PrtValue Clone()
         {
-            return new PrtIntValue(this.value);
+            return new PrtIntValue(this.nt);
         }
 
         public override bool IsEqual(PrtValue val)
         {
             Debug.Assert(val is PrtIntValue, "Error in type checking, invalid equals invocation");
-            return this.value == (val as PrtIntValue).value;
+            return this.nt == (val as PrtIntValue).nt;
         }
 
         public override string GetString()
         {
-            return value.ToString();
+            return nt.ToString();
         }
     }
 
     public class PrtBoolValue : PrtValue
     {
-        public bool value;
+        public bool bl;
 
         public PrtBoolValue()
         {
-            value = false;
+            bl = false;
         }
 
         public PrtBoolValue(bool val)
         {
-            this.value = val;
+            this.bl = val;
         }
 
         public override PrtValue Clone()
         {
-            return new PrtBoolValue(this.value);
+            return new PrtBoolValue(this.bl);
         }
 
         public override bool IsEqual(PrtValue val)
         {
             Debug.Assert(val is PrtBoolValue, "Error in type checking, invalid equals invocation");
-            return this.value == (val as PrtBoolValue).value;
+            return this.bl == (val as PrtBoolValue).bl;
         }
 
         public override string GetString()
         {
-            return value.ToString();
+            return bl.ToString();
         }
     }
 
     public class PrtEventValue : PrtValue
     {
-        public PrtEvent value;
+        public PrtEvent evt;
 
         public PrtEventValue(PrtEvent val)
         {
-            this.value = val;
+            this.evt = val;
         }
 
         public override PrtValue Clone()
         {
-            return new PrtEventValue(this.value);
+            return new PrtEventValue(this.evt);
         }
 
         public override bool IsEqual(PrtValue val)
         {
             Debug.Assert(val is PrtEventValue, "Error in type checking, invalid equals invocation");
-            return this.value == (val as PrtEventValue).value;
+            return this.evt == (val as PrtEventValue).evt;
         }
 
         public override string GetString()
         {
-            return value.name;
+            return evt.name;
         }
     }
 
     public class PrtMachineValue : PrtValue
     {
-        public PrtImplMachine value;
+        public PrtImplMachine mach;
 
         public PrtMachineValue(PrtImplMachine mach)
         {
-            this.value = mach;
+            this.mach = mach;
         }
 
         public override PrtValue Clone()
         {
-            return new PrtMachineValue(this.value);
+            return new PrtMachineValue(this.mach);
         }
 
         public override bool IsEqual(PrtValue val)
         {
             Debug.Assert(val is PrtMachineValue, "Error in type checking, invalid equals invocation");
-            return this.value == (val as PrtMachineValue).value;
+            return this.mach == (val as PrtMachineValue).mach;
         }
 
         public override string GetString()
         {
-            return String.Format("{0}({1})", value.Name, value.instanceNumber);
+            return String.Format("{0}({1})", mach.Name, mach.instanceNumber);
         }
     }
 
     public class PrtTupleValue : PrtValue
     {
-        public List<PrtValue> value;
+        public List<PrtValue> fieldValues;
 
         public PrtTupleValue()
         {
-            value = new List<PrtValue>();
+            fieldValues = new List<PrtValue>();
         }
 
         public PrtTupleValue(PrtTupleType tupType)
         {
             foreach(var ft in tupType.fieldTypes)
             {
-                value.Add(PrtMkDefaultValue(ft));
+                fieldValues.Add(PrtMkDefaultValue(ft));
             }
         }
 
         public override PrtValue Clone()
         {
             var clone = new PrtTupleValue();
-            foreach (var val in value)
+            foreach (var val in fieldValues)
             {
-                clone.value.Add(val.Clone());
+                clone.fieldValues.Add(val.Clone());
             }
 
             return clone;
@@ -367,12 +367,12 @@ namespace P.Runtime
         {
             Debug.Assert(val is PrtTupleValue, "Error in type checking, invalid equals invocation");
             var tupValue = (val as PrtTupleValue);
-            Debug.Assert(tupValue.value.Count == this.value.Count, "Error in type checking, tuple sizes not equal");
+            Debug.Assert(tupValue.fieldValues.Count == this.fieldValues.Count, "Error in type checking, tuple sizes not equal");
 
             int index = 0;
-            while (index < value.Count)
+            while (index < fieldValues.Count)
             {
-                if (!this.value[index].IsEqual(tupValue.value[index]))
+                if (!this.fieldValues[index].IsEqual(tupValue.fieldValues[index]))
                     return false;
 
                 index++;
@@ -383,7 +383,7 @@ namespace P.Runtime
         public override string GetString()
         {
             string retStr = "<";
-            foreach (var field in value)
+            foreach (var field in fieldValues)
             {
                 retStr = retStr + field.GetString() + ",";
             }
@@ -395,11 +395,11 @@ namespace P.Runtime
     public class PrtNamedTupleValue : PrtValue
     {
         public List<string> fieldNames;
-        public List<PrtValue> value;
+        public List<PrtValue> fieldValues;
 
         public PrtNamedTupleValue()
         {
-            value = new List<PrtValue>();
+            fieldValues = new List<PrtValue>();
             fieldNames = new List<string>();
         }
 
@@ -411,7 +411,7 @@ namespace P.Runtime
             }
             foreach (var ft in tupType.fieldTypes)
             {
-                value.Add(PrtMkDefaultValue(ft));
+                fieldValues.Add(PrtMkDefaultValue(ft));
             }
         }
 
@@ -419,9 +419,9 @@ namespace P.Runtime
         {
             var clone = new PrtNamedTupleValue();
             clone.fieldNames = this.fieldNames;
-            foreach (var val in value)
+            foreach (var val in fieldValues)
             {
-                clone.value.Add(val.Clone());
+                clone.fieldValues.Add(val.Clone());
             }
             return clone;
         }
@@ -430,14 +430,14 @@ namespace P.Runtime
         {
             Debug.Assert(val is PrtNamedTupleValue, "Error in type checking, invalid equals invocation");
             var tup = (val as PrtNamedTupleValue);
-            var tupValues = tup.value;
-            Debug.Assert(tup.value.Count == this.value.Count, "Error in type checking, tuple sizes not equal");
+            var tupValues = tup.fieldValues;
+            Debug.Assert(tup.fieldValues.Count == this.fieldValues.Count, "Error in type checking, tuple sizes not equal");
 
             int index = 0;
 
             while (index < tupValues.Count)
             {
-                if (!this.value[index].IsEqual(tupValues[index]))
+                if (!this.fieldValues[index].IsEqual(tupValues[index]))
                     return false;
 
                 index++;
@@ -450,9 +450,9 @@ namespace P.Runtime
             string retStr = "<";
             int index = 0;
 
-            while (index < value.Count)
+            while (index < fieldValues.Count)
             {
-                retStr += fieldNames[index] + ":" + value[index].GetString() + ", ";
+                retStr += fieldNames[index] + ":" + fieldValues[index].GetString() + ", ";
                 index++;
             }
             retStr += ">";
@@ -462,19 +462,19 @@ namespace P.Runtime
 
     public class PrtSeqValue : PrtValue
     {
-        public List<PrtValue> value;
+        public List<PrtValue> elements;
 
         public PrtSeqValue()
         {
-            value = new List<PrtValue>();
+            elements = new List<PrtValue>();
         }
 
         public override PrtValue Clone()
         {
             var clone = new PrtSeqValue();
-            foreach (var val in value)
+            foreach (var val in elements)
             {
-                clone.value.Add(val.Clone());
+                clone.elements.Add(val.Clone());
             }
 
             return clone;
@@ -483,34 +483,34 @@ namespace P.Runtime
         public void Insert(int index, PrtValue val)
         {
             //TODO: raise an exception for invalid index
-            value.Insert(index, val.Clone());
+            elements.Insert(index, val.Clone());
         }
 
         public void Remove(int index)
         {
             //TODO: raise an exception for invalid index
-            value.RemoveAt(index);
+            elements.RemoveAt(index);
         }
 
         public int SizeOf()
         {
-            return value.Count();
+            return elements.Count();
         }
 
         public override bool IsEqual(PrtValue val)
         {
             Debug.Assert(val is PrtSeqValue, "Error in type checking, invalid equals invocation");
             var seqVal = val as PrtSeqValue;
-            if (seqVal.value.Count != this.value.Count)
+            if (seqVal.elements.Count != this.elements.Count)
             {
                 return false;
             }
             else
             {
                 int index = 0;
-                while (index < this.value.Count)
+                while (index < this.elements.Count)
                 {
-                    if (!this.value[index].IsEqual(seqVal.value[index]))
+                    if (!this.elements[index].IsEqual(seqVal.elements[index]))
                         return false;
 
                     index++;
@@ -525,9 +525,9 @@ namespace P.Runtime
             string retStr = "(";
             int index = 0;
 
-            while (index < value.Count)
+            while (index < elements.Count)
             {
-                retStr += value[index] + ", ";
+                retStr += elements[index] + ", ";
                 index++;
             }
             retStr += ")";

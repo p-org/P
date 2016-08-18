@@ -100,7 +100,7 @@ namespace P.Runtime
             currentPayload = PrtValue.NullValue;
         }
 
-        public override void PrtEnqueueEvent(StateImpl application, PrtValue e, PrtValue arg, PrtMachine source)
+        public override void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source)
         {
             PrtType prtType;
             PrtEventValue ev = e as PrtEventValue;
@@ -110,11 +110,11 @@ namespace P.Runtime
             }
 
             //assertion to check if argument passed inhabits the payload type.
-            prtType = ev.value.payloadType;
+            prtType = ev.evt.payloadType;
 
             if (!(prtType is PrtNullType) && !PrtValue.PrtInhabitsType(arg, prtType))
             {
-                throw new PrtInhabitsTypeException(String.Format("Payload <{0}> does not match the expected type <{1}> with event <{2}>", arg.GetString(), prtType.GetString(), ev.value.name));
+                throw new PrtInhabitsTypeException(String.Format("Payload <{0}> does not match the expected type <{1}> with event <{2}>", arg.GetString(), prtType.GetString(), ev.evt.name));
             }
             else if (prtType is PrtNullType && !(arg is PrtNullValue))
             {
@@ -123,23 +123,23 @@ namespace P.Runtime
 
             if (currentStatus == PrtMachineStatus.Halted)
             {
-                application.Trace(
+                stateImpl.Trace(
                     @"<EnqueueLog> {0}-{1} Machine has been halted and Event {2} is dropped",
-                    this.Name, this.instanceNumber, ev.value.name);
+                    this.Name, this.instanceNumber, ev.evt.name);
             }
             else
             {
                 if (arg != null)
                 {
-                    application.Trace(
+                    stateImpl.Trace(
                         @"<EnqueueLog> Enqueued Event <{0}, {1}> in {2}-{3} by {4}-{5}",
-                        ev.value.name, arg.ToString(), this.Name, this.instanceNumber, source.Name, source.instanceNumber);
+                        ev.evt.name, arg.ToString(), this.Name, this.instanceNumber, source.Name, source.instanceNumber);
                 }
                 else
                 {
-                    application.Trace(
+                    stateImpl.Trace(
                         @"<EnqueueLog> Enqueued Event < {0} > in {1}-{2} by {3}-{4}",
-                        ev.value.name, this.Name, this.instanceNumber, source.Name, source.instanceNumber);
+                        ev.evt.name, this.Name, this.instanceNumber, source.Name, source.instanceNumber);
                 }
 
                 this.eventQueue.EnqueueEvent(e, arg);
@@ -154,9 +154,12 @@ namespace P.Runtime
                     currentStatus = PrtMachineStatus.Enabled;
                 }
             }
+
+            //Announce it to all the monitors
+            stateImpl.Announce(e, arg, source);
         }
 
-        public PrtDequeueReturnStatus PrtDequeueEvent(StateImpl application, bool hasNullTransition)
+        public PrtDequeueReturnStatus PrtDequeueEvent(bool hasNullTransition)
         {
             currentTrigger = null;
             currentPayload = null;
@@ -172,9 +175,9 @@ namespace P.Runtime
                     throw new PrtInternalException("Internal error: Tyring to execute blocked machine");
                 }
 
-                application.Trace(
+                stateImpl.Trace(
                     "<DequeueLog> Dequeued Event < {0}, {1} > at Machine {2}-{3}\n",
-                    (currentTrigger as PrtEventValue).value.name, currentPayload.ToString(), Name, instanceNumber);
+                    (currentTrigger as PrtEventValue).evt.name, currentPayload.ToString(), Name, instanceNumber);
                 receiveSet = new HashSet<PrtValue>();
                 return PrtDequeueReturnStatus.SUCCESS;
             }
@@ -184,7 +187,7 @@ namespace P.Runtime
                 {
                     throw new PrtInternalException("Internal error: Tyring to execute blocked machine");
                 }
-                application.Trace(
+                stateImpl.Trace(
                     "<NullTransLog> Null transition taken by Machine {0}-{1}\n",
                     Name, instanceNumber);
                 currentPayload = null;
@@ -198,7 +201,7 @@ namespace P.Runtime
                     throw new PrtAssumeFailureException();
                 }
                 currentStatus = PrtMachineStatus.Blocked;
-                if (application.Deadlock)
+                if (stateImpl.Deadlock)
                 {
                     throw new PrtDeadlockException("Deadlock detected");
                 }
@@ -388,7 +391,7 @@ namespace P.Runtime
                                     PrtChangeState(destOfGoto);
                                     nextSMOperation = PrtNextStatemachineOperation.EntryOperation;
                                     stateExitReason = PrtStateExitReason.NotExit;
-                                    goto Finish;
+                                    goto DoEntry;
                                 }
                             case PrtStateExitReason.OnUnhandledEvent:
                                 {
@@ -426,7 +429,7 @@ namespace P.Runtime
 
             DoDequeue:
             Debug.Assert(receiveSet.Count == 0, "Machine cannot be blocked at receive when here");
-            var dequeueStatus = PrtDequeueEvent(stateImpl, CurrentState.hasNullTransition);
+            var dequeueStatus = PrtDequeueEvent(CurrentState.hasNullTransition);
             if(dequeueStatus == PrtDequeueReturnStatus.BLOCKED)
             {
                 nextSMOperation = PrtNextStatemachineOperation.DequeueOperation;
@@ -492,7 +495,7 @@ namespace P.Runtime
                 PrtExecuteReceiveCase(PrtValue.NullValue);
                 goto CheckFunLastOperation;
             }
-            dequeueStatus = PrtDequeueEvent(stateImpl, false);
+            dequeueStatus = PrtDequeueEvent(false);
             if (dequeueStatus == PrtDequeueReturnStatus.BLOCKED)
             {
                 nextSMOperation = PrtNextStatemachineOperation.ReceiveOperation;

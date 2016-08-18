@@ -22,8 +22,8 @@ namespace CheckP
         AutoResetEvent evt;
         public string outputString;
         public string errorString;
-        public bool pciInitialized = false;
-        public bool loadSucceeded = true;
+        public bool pciInitialized;
+        public bool commandSucceeded;
 
         public PciProcess(string pciPath)
         {
@@ -67,11 +67,12 @@ namespace CheckP
             }
             else if (data == "Pci: command done")
             {
+                commandSucceeded = true;
                 evt.Set();
             }
-            else if (data == "Pci: load failed")
+            else if (data == "Pci: load failed" || data == "Pci: compile failed" || data == "Pci: test failed")
             {
-                loadSucceeded = false;
+                commandSucceeded = false;
                 evt.Set();
             }
             else
@@ -82,6 +83,7 @@ namespace CheckP
 
         public void Run(string command, IEnumerable<string> args)
         {
+            commandSucceeded = false;
             string str = command;
             foreach (string arg in args)
             {
@@ -95,7 +97,7 @@ namespace CheckP
 
         public void Reset()
         {
-            loadSucceeded = true;
+            commandSucceeded = true;
             outputString = "";
             errorString = "";
         }
@@ -373,14 +375,17 @@ namespace CheckP
                     SplitPcArgs(pcArgs.Select(x => x.Item2), out loadArgs, out compileArgs, out testArgs);
                     pciProcess.Reset();
                     pciProcess.Run("load", loadArgs);
-                    if (pciProcess.loadSucceeded)
+                    if (pciProcess.commandSucceeded)
                     {
                         pciProcess.Run("compile", compileArgs);
-                        pciProcess.Run("test", testArgs);
+                        if (pciProcess.commandSucceeded)
+                        {
+                            pciProcess.Run("test", testArgs);
+                        }
                     }
                     tmpWriter.Write(pciProcess.outputString);
                     tmpWriter.Write(pciProcess.errorString);
-                    if (pciProcess.loadSucceeded)
+                    if (pciProcess.commandSucceeded)
                     {
                         tmpWriter.WriteLine("EXIT: 0");
                     }

@@ -195,7 +195,7 @@ namespace P.Runtime
                 {
                     if (numOfStepsTaken > 100000)
                     {
-                        throw new PrtInfiniteRaiseLoop();
+                        throw new PrtInfiniteRaiseLoop("Infinite loop in monitor");
                     }
                     else
                     {

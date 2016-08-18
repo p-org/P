@@ -112,6 +112,7 @@ namespace P.Runtime
                 spec.PrtEnqueueEvent(ev, payload, parent);
             }
         }
+
         public void AddImplMachineToStateImpl(PrtImplMachine machine)
         {
             implMachines.Add(machine);

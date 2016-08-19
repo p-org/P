@@ -242,6 +242,9 @@ namespace CheckP
         public bool Check(string testfile)
         {
             var opts = new Options();
+            opts.Variables.Add("configuration", this.configuration);
+            opts.Variables.Add("platform", this.platform);
+
             if (!opts.LoadMore(activeDirectory, testfile))
             {
                 return false;

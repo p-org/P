@@ -5,6 +5,7 @@
     using System.Diagnostics.Contracts;
     using System.IO;
     using System.Linq;
+    using System.Text;
     using System.Threading;
 
     internal enum OptValueKind { Id, Integer, String }
@@ -19,6 +20,11 @@
         private LinkedList<Tuple<string, LinkedList<Tuple<OptValueKind, object>>>> options =
             new LinkedList<Tuple<string, LinkedList<Tuple<OptValueKind, object>>>>();
 
+        public Options()
+        {
+            Variables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
+
         public IEnumerable<Tuple<string, LinkedList<Tuple<OptValueKind, object>>>> OptionLists
         {
             get
@@ -26,6 +32,14 @@
                 return options;
             }
         }
+
+        /// <summary>
+        /// An optional list of variables can be defined which will be substituted in the property values.
+        /// For example, the variable "Configuration=Debug" can be substituted anywhere in an options
+        /// file that uses the special variable syntax $(Configuration).
+        /// </summary>
+        public Dictionary<string,string> Variables { get; private set; }
+
 
         public void StartToken(OptValueKind? kind, char c = '\0')
         {
@@ -159,33 +173,35 @@
                         if (splits.Length != 2)
                         {
                             Console.WriteLine(
-                                "ERROR: Could not parse options file {0} at line {1}",
+                                "ERROR: Expecting 'name: value' syntax in options file {0} at line {1}",
                                 optFile,
                                 lineNum);
                             return false;
                         }
 
-                        splits[0] = splits[0].Trim();
-                        if (string.IsNullOrEmpty(splits[0]))
+                        string name  = splits[0].Trim();
+                        if (string.IsNullOrEmpty(name))
                         {
                             Console.WriteLine(
-                                "ERROR: Could not parse options file {0} at line {1}",
+                                "ERROR: Expecting line to start with a property name in options file {0} at line {1}",
                                 optFile,
                                 lineNum);
                             return false;
                         }
 
                         var optVals = new LinkedList<Tuple<OptValueKind, object>>();
+                        string value = splits[1].Trim();
+                        if (!string.IsNullOrEmpty(value))
+                        {
+                            value = SubstituteVariables(value);
+                            optVals.AddLast(new Tuple<OptValueKind, object>(OptValueKind.String, value));
+                        }
+
                         options.AddLast(
                             new Tuple<string, LinkedList<Tuple<OptValueKind, object>>>(
-                                splits[0],
+                                name,
                                 optVals));
 
-                        splits[1] = splits[1].Trim();
-                        if (!string.IsNullOrEmpty(splits[1]))
-                        {
-                            optVals.AddLast(new Tuple<OptValueKind, object>(OptValueKind.String, splits[1]));
-                        }
                     }
                 }
             }
@@ -196,6 +212,56 @@
             }
 
             return true;
+        }
+
+        private string SubstituteVariables(string value)
+        {
+            if (Variables == null)
+            {
+                return value; 
+            }
+            StringBuilder result = new StringBuilder();
+            for (int i = 0, n = value.Length; i<n; i++)
+            {
+                char ch = value[i];
+                if (ch == '$')
+                {
+                    if (i + 1 < n && value[i+1] == '(')
+                    {
+                        i++;                        
+                        int start = i + 1;
+                        int end = start;
+                        while (i < n)
+                        {
+                            if (value[i] == ')')
+                            {
+                                end = i;
+                                break;
+                            }
+                            i++;
+                        }
+                        if (end > start + 1)
+                        {
+                            string name = value.Substring(start, end - start);
+                            string expansion = null;
+                            if (Variables.TryGetValue(name, out expansion))
+                            {
+                                result.Append(expansion);
+                                i = end;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        result.Append(ch);
+                    }
+                }
+                else
+                {
+                    result.Append(ch);
+                }
+            }
+            return result.ToString();
         }
     }
 }

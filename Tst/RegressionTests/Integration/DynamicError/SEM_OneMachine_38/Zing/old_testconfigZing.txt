@@ -1,4 +1,4 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\Release\x86\Zinger.exe
+runZing: ..\..\..\..\..\..\Bld\Drops\$(Configuration)\$(Platform)\Zinger.exe
 argZing: ..\DefaultHandlerInheritedByPushTr.dll
 argZing: -et:DefaultHandlerInheritedByPushTr.trace
 incZing: DefaultHandlerInheritedByPushTr.trace

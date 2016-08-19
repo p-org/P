@@ -294,7 +294,8 @@ namespace RunPTool
 
         private static string FindTestRoot()
         {
-            DirectoryInfo tstDir = new DirectoryInfo(Environment.CurrentDirectory);
+            string runptoolPath = typeof(Program).Assembly.Location;
+            DirectoryInfo tstDir = new DirectoryInfo(Path.GetDirectoryName(runptoolPath));
             Uri uri = new Uri(tstDir.FullName); //  D:\git\P\Bld\Drops\Debug\x64\Binaries
 
             if (!File.Exists(Path.Combine(tstDir.FullName, "testP.bat")))

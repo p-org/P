@@ -42,6 +42,7 @@ namespace CheckP
                     RedirectStandardError = true
                 };
                 pciProcess.OutputDataReceived += pciProcess_OutputDataReceived;
+                pciProcess.ErrorDataReceived += pciProcess_OutputDataReceived;
                 pciProcess.Start();
                 pciProcess.BeginErrorReadLine();
                 pciProcess.BeginOutputReadLine();
@@ -60,6 +61,7 @@ namespace CheckP
             {
                 return;
             }
+            Debug.WriteLine("PCI: " + data);
             if (!pciInitialized && data == "Pci: initialization succeeded")
             {
                 pciInitialized = true;
@@ -788,11 +790,15 @@ namespace CheckP
 
             try
             {
-                var psi = new ProcessStartInfo();
-                psi.UseShellExecute = false;
-                psi.RedirectStandardError = true;
-                psi.RedirectStandardOutput = true;
-                psi.WorkingDirectory = activeDirectory;
+                var psi = new ProcessStartInfo()
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    WorkingDirectory = activeDirectory
+                };
 
                 Uri combined = new Uri(new Uri(activeDirectory), exe);
                 psi.FileName = combined.LocalPath;
@@ -800,7 +806,6 @@ namespace CheckP
                 //Debug:
                 //Console.WriteLine("exe: {0}", exe);
                 //Console.WriteLine("Run arguments: {0}", psi.Arguments);
-                psi.CreateNoWindow = true;
 
                 string outString = "";
                 string errorString = "";
@@ -846,16 +851,17 @@ namespace CheckP
                     UseShellExecute = false,
                     RedirectStandardInput = true,
                     RedirectStandardOutput = true,
-                    RedirectStandardError = true
+                    RedirectStandardError = true,
+                    WorkingDirectory = activeDirectory,
+                    Arguments = msbuildArgs
                 };
-                startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                startInfo.Arguments = msbuildArgs;
-                startInfo.UseShellExecute = false;
                 var buildProcess = new Process();
                 buildProcess.StartInfo = startInfo;
                 buildProcess.OutputDataReceived += (s, e) => OutputReceived(ref outString, s, e);
                 buildProcess.ErrorDataReceived += (s, e) => ErrorReceived(ref errorString, s, e);
                 buildProcess.Start();
+                buildProcess.BeginErrorReadLine();
+                buildProcess.BeginOutputReadLine();
                 buildProcess.WaitForExit();
                 if (buildProcess.ExitCode != 0)
                 {
@@ -884,7 +890,10 @@ namespace CheckP
             object sender,
             DataReceivedEventArgs e)
         {
-            outString += string.Format("OUT: {0}\r\n", e.Data);
+            string line = string.Format("OUT: {0}" , e.Data);
+            Debug.WriteLine(line);
+            outString += line;
+            outString += Environment.NewLine;
         }
 
         private static void ErrorReceived(
@@ -894,7 +903,10 @@ namespace CheckP
         {
             if (!String.IsNullOrEmpty(e.Data))
             {
-                errorString += string.Format("ERROR: {0}\r\n", e.Data);
+                string line = string.Format("ERROR: {0}", e.Data);
+                Debug.WriteLine(line);
+                errorString += line;
+                errorString += Environment.NewLine;
             }
         }
 

@@ -1,7 +1,5 @@
 ﻿using P.Runtime;
 using System.Collections.Generic;
-using System.Linq;
-using System;
 /*
 * Simple P program
 

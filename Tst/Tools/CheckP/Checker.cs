@@ -836,17 +836,33 @@ namespace CheckP
                 msbuildArgs += clean ? @" /t:Clean " : @" /t:Build ";
                 msbuildArgs += @"/p:Configuration=" + configuration + " ";
                 msbuildArgs += @"/p:Platform=" + platform + " ";
-                msbuildArgs += @"/verbosity:quiet ";
                 msbuildArgs += @"/nologo";
                 //Console.WriteLine("msbuildArgs: {0}", msbuildArgs);
+                string outString = "";
+                string errorString = "";
                 ProcessStartInfo startInfo = new ProcessStartInfo(buildExe);
                 startInfo.WindowStyle = ProcessWindowStyle.Hidden;
                 startInfo.Arguments = msbuildArgs;
                 startInfo.UseShellExecute = false;
                 var buildProcess = new Process();
                 buildProcess.StartInfo = startInfo;
+                buildProcess.OutputDataReceived += (s, e) => OutputReceived(ref outString, s, e);
+                buildProcess.ErrorDataReceived += (s, e) => ErrorReceived(ref errorString, s, e);
                 buildProcess.Start();
                 buildProcess.WaitForExit();
+                if (buildProcess.ExitCode != 0)
+                {
+                    string msg = "MSBuild of " + projectFile + " failed:\n";
+                    if (!string.IsNullOrEmpty(errorString))
+                    {
+                        msg += "\n" + errorString;
+                    }
+                    else
+                    {
+                        msg += "\n" + outString;
+                    }
+                    throw new Exception(msg);
+                }
             }
             catch (Exception e)
             {

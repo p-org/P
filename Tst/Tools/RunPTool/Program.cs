@@ -131,22 +131,7 @@ namespace RunPTool
             try
             {
                 // this should be the script directory.
-                var tstDir = new DirectoryInfo(Environment.CurrentDirectory);
-                if (!File.Exists(Path.Combine(tstDir.FullName, "testP.bat")))
-                {
-                    // Hmmm, we might be debugging the app, so lets see if we can find the tstDir.
-                    Uri uri = new Uri(tstDir.FullName); //  D:\git\P\Bld\Drops\Debug\x64\Binaries
-                    if (uri.Segments.Length > 5 && 
-                        string.Compare(uri.Segments[uri.Segments.Length-1], "Binaries", StringComparison.OrdinalIgnoreCase) == 0 &&
-                        string.Compare(uri.Segments[uri.Segments.Length - 5], "Bld/", StringComparison.OrdinalIgnoreCase) == 0)
-                    {
-                        Uri resolved = new Uri(uri, @"..\..\..\..\Tst");
-                        tstDir = new DirectoryInfo(resolved.LocalPath);
-                    }
-                }
-
-                testRoot = tstDir.FullName;
-
+                testRoot = FindTestRoot();                
 
                 if (execsToRun == null)
                 {
@@ -157,13 +142,13 @@ namespace RunPTool
                 List<DirectoryInfo> activeDirs;
                 if (testFilePath == null)
                 {
-                    Console.WriteLine("Warning: no test directories file provided; running all tests under {0}", tstDir.FullName);
+                    Console.WriteLine("Warning: no test directories file provided; running all tests under {0}", testRoot);
                     activeDirs = new List<DirectoryInfo>();
-                    activeDirs.Add(tstDir);
+                    activeDirs.Add(new DirectoryInfo(testRoot));
                 }
                 else
                 {
-                    activeDirs = ExtractActiveDirsFromFile(testFilePath, tstDir);
+                    activeDirs = ExtractActiveDirsFromFile(testFilePath, new DirectoryInfo(testRoot));
                     if (activeDirs == null)
                     {
                         Console.WriteLine("Failed to run tests: directory name(s) in the test directories file are in a wrong format");
@@ -184,13 +169,13 @@ namespace RunPTool
                         return;
                     }
                     //Check other rules recursively:
-                    result = CheckTestDirs(activeDirs);                
+                    result = CheckTestDirs(activeDirs);
                     if (!result)
                     {
                         return;
                     }
                 }
-                
+
                 foreach (DirectoryInfo di in activeDirs)
                 {
                     if (!di.Exists)
@@ -227,7 +212,7 @@ namespace RunPTool
                     {
                         File.Delete(Path.Combine(Environment.CurrentDirectory, DisplayDiffsFile));
                     }
-                    
+
                     if (!OpenSummaryStreamWriter(FailedTestsFile, out failedTestsWriter))
                     {
                         throw new Exception("Cannot open failed-tests.txt for writing");
@@ -257,7 +242,7 @@ namespace RunPTool
                 pciProcess = new PciProcess(pciFilePath);
 
                 Test(activeDirs, ref testCount, ref failCount, failedTestsWriter, tempWriter, displayDiffsWriter);
-                
+
                 pciProcess.Shutdown();
 
                 Console.WriteLine();
@@ -306,6 +291,54 @@ namespace RunPTool
                 Environment.ExitCode = FailCode;
             }
         }
+
+        private static string FindTestRoot()
+        {
+            DirectoryInfo tstDir = new DirectoryInfo(Environment.CurrentDirectory);
+            Uri uri = new Uri(tstDir.FullName); //  D:\git\P\Bld\Drops\Debug\x64\Binaries
+
+            if (!File.Exists(Path.Combine(tstDir.FullName, "testP.bat")))
+            {
+                // perhaps we are inside a specific test directory, like D:\git\p-org\P\Tst\RegressionTests\Feature2Stmts\DynamicError\receive4\Zing.
+                // so walk up the parent chain looking for it.
+                Uri parent = new Uri(uri, "..");
+                while (true)
+                {
+                    if (File.Exists(new Uri(parent, "testP.bat").LocalPath))
+                    {
+                        // found it!
+                        tstDir = new DirectoryInfo(parent.LocalPath);
+                        break;
+                    }
+                    if (Directory.Exists(new Uri(parent, "Tst").LocalPath))
+                    {
+                        // found Tst directory.
+                        tstDir = new DirectoryInfo(new Uri(parent, "Tst").LocalPath);
+                        if (File.Exists(Path.Combine(tstDir.FullName, "testP.bat")))
+                        {
+                            break;
+                        }
+                    }
+                    Uri next = new Uri(parent, "..");
+                    if (next == parent)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        parent = next;
+                    }
+                }
+            }
+
+            if (!File.Exists(Path.Combine(tstDir.FullName, "testP.bat")))
+            {
+                throw new Exception("Cound not find 'Tst' directory, please set working directory to someplace inside this directory");
+            }
+
+            return tstDir.FullName;
+        }
+
         //Check paths in the list that they do not contain paths to Pc/Zing/Prt:
         private static bool CheckTopPaths(List<DirectoryInfo> diArray)
         {
@@ -604,21 +637,29 @@ namespace RunPTool
             try
             {
                 Uri combined = new Uri(new Uri(tstDir.FullName + "\\"), fileName);
-                using (var sr = new StreamReader(combined.LocalPath))
+                string resolved = combined.LocalPath;
+                if (Directory.Exists(resolved))
                 {
-                    while (!sr.EndOfStream)
+                    result.Add(new DirectoryInfo(resolved));
+                }
+                else
+                {
+                    using (var sr = new StreamReader(combined.LocalPath))
                     {
-                        var dir = sr.ReadLine();
-                        //Skip the line if it is blank:
-                        if ((dir.Trim() == "")) break;
-
-                        if (dir.StartsWith("\\") || dir.StartsWith("/") || dir.StartsWith("\\\\"))
+                        while (!sr.EndOfStream)
                         {
-                            Console.WriteLine("Failed to run tests: directory name in the test directory file cannot start with \"\\\" or \"/\" or \"\\\\\"");
-                            return null;
-                        }
+                            var dir = sr.ReadLine();
+                            //Skip the line if it is blank:
+                            if ((dir.Trim() == "")) break;
 
-                        result.Add(new DirectoryInfo(Path.Combine(tstDir.FullName, dir)));
+                            if (dir.StartsWith("\\") || dir.StartsWith("/") || dir.StartsWith("\\\\"))
+                            {
+                                Console.WriteLine("Failed to run tests: directory name in the test directory file cannot start with \"\\\" or \"/\" or \"\\\\\"");
+                                return null;
+                            }
+
+                            result.Add(new DirectoryInfo(Path.Combine(tstDir.FullName, dir)));
+                        }
                     }
                 }
             }

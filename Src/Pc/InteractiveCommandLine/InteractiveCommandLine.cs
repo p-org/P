@@ -88,14 +88,13 @@ namespace Microsoft.Pc
                         if (!result)
                         {
                             inputFileName = null;
-                            if (server)
-                            {
-                                Console.WriteLine("Pci: load failed");
-                            }
                         }
-                        else
+                        if (server)
                         {
-                            if (server)
+                            if (!result)
+                            {
+                                Console.WriteLine("Pci: command failed");
+                            } else
                             {
                                 Console.WriteLine("Pci: command done");
                             }
@@ -104,7 +103,7 @@ namespace Microsoft.Pc
                     catch (Exception ex)
                     {
                         Console.WriteLine(ex.ToString());
-                        Console.WriteLine("Pci: load failed");
+                        Console.WriteLine("Pci: command failed");
                     }
                 }
                 else if (inputArgs[0] == "test")
@@ -124,16 +123,22 @@ namespace Microsoft.Pc
                         }
                         compiler.Options = compilerOptions;
                         var b = compiler.GenerateZing();
-                        Debug.Assert(b);
                         if (server)
                         {
-                            Console.WriteLine("Pci: command done");
+                            if (b)
+                            {
+                                Console.WriteLine("Pci: command done");
+                            }
+                            else
+                            {
+                                Console.WriteLine("Pci: command failed");
+                            }
                         }
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine(ex.ToString());
-                        Console.WriteLine("Pci: test failed");
+                        Console.WriteLine("Pci: command failed");
                     }
                 }
                 else if (inputArgs[0] == "compile")
@@ -153,16 +158,23 @@ namespace Microsoft.Pc
                         }
                         compiler.Options = compilerOptions;
                         var b = compiler.GenerateC();
-                        Debug.Assert(b);
+
                         if (server)
                         {
-                            Console.WriteLine("Pci: command done");
+                            if (b)
+                            {
+                                Console.WriteLine("Pci: command done");
+                            }
+                            else
+                            {
+                                Console.WriteLine("Pci: command failed");
+                            }
                         }
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine(ex.ToString());
-                        Console.WriteLine("Pci: compile failed");
+                        Console.WriteLine("Pci: command failed");
                     }
                 }
                 else

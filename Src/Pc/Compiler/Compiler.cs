@@ -16,6 +16,11 @@
     using Microsoft.Formula.Compiler;
     using Microsoft.Pc.Domains;
     using System.Diagnostics;
+    using Formula.Common.Terms;
+#if DEBUG_DGML
+    using VisualStudio.GraphModel;
+#endif
+    using System.Windows.Forms;
 
     public enum LivenessOption { None, Standard, Mace };
 
@@ -41,6 +46,21 @@
 
             Console.WriteLine(msg);
             Console.ForegroundColor = ConsoleColor.Gray;
+        }
+    }
+
+    public class CompilerOutputStream : ICompilerOutput
+    {
+        TextWriter writer;
+
+        public CompilerOutputStream(TextWriter writer)
+        {
+            this.writer = writer;
+        }
+
+        public void WriteMessage(string msg, SeverityKind severity)
+        {
+            this.writer.WriteLine(msg);
         }
     }
 
@@ -859,6 +879,7 @@
                 }
                 else
                 {
+                    MessageBox.Show("Debug me !!!");
                     throw new Exception("Compiler.Query cannot start, is another compile running in parallel?");
                 }
             }
@@ -907,6 +928,11 @@
                     continue;
                 }
 
+#if DEBUG_DGML
+
+                graph = new Graph();
+                DumpTermGraph(graph, p.Conclusion);
+#endif
                 var errorMsg = GetMessageFromProof(p);
                 if (locationIndex >= 0)
                 {
@@ -937,6 +963,28 @@
                 AddFlag(f);
             }
         }
+
+#if DEBUG_DGML
+        Graph graph;
+
+        private void DumpTermGraph(Graph graph, Term term)
+        {
+            this.graph = graph;
+            GraphNode node = graph.Nodes.GetOrCreate(term.GetHashCode().ToString(), term.Symbol.PrintableName, null);
+            Walk(term, node);
+            graph.Save(@"d:\temp\terms.dgml");
+        }
+
+        private void Walk(Term term, GraphNode node)
+        {
+            foreach (var arg in term.Args)
+            {
+                GraphNode argNode = graph.Nodes.GetOrCreate(arg.GetHashCode().ToString(), arg.Symbol.PrintableName, null);
+                graph.Links.GetOrCreate(node, argNode);
+                Walk(arg, argNode);
+            }
+        }
+#endif
 
         private void AddTerms(
             QueryResult result,

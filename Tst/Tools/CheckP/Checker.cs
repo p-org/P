@@ -70,7 +70,7 @@ namespace CheckP
                 commandSucceeded = true;
                 evt.Set();
             }
-            else if (data == "Pci: load failed" || data == "Pci: compile failed" || data == "Pci: test failed")
+            else if (data == "Pci: command failed")
             {
                 commandSucceeded = false;
                 evt.Set();
@@ -840,7 +840,14 @@ namespace CheckP
                 //Console.WriteLine("msbuildArgs: {0}", msbuildArgs);
                 string outString = "";
                 string errorString = "";
-                ProcessStartInfo startInfo = new ProcessStartInfo(buildExe);
+                ProcessStartInfo startInfo = new ProcessStartInfo(buildExe)
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
                 startInfo.WindowStyle = ProcessWindowStyle.Hidden;
                 startInfo.Arguments = msbuildArgs;
                 startInfo.UseShellExecute = false;

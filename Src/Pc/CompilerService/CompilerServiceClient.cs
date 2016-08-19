@@ -21,7 +21,7 @@ namespace Microsoft.Pc
         NamedPipe client;
         NamedPipe service;
 
-        public bool Compile(CommandLineOptions options)
+        public bool Compile(CommandLineOptions options, TextWriter log)
         {
             service = new NamedPipe(ServerPipeName, false);
             Mutex processLock = new Mutex(false, "PCompilerService");
@@ -36,7 +36,7 @@ namespace Microsoft.Pc
                     Process p = Process.Start(info);
                     if (!service.Connect())
                     {
-                        Console.WriteLine("Cannot start the CompilerService?");
+                        log.WriteLine("Cannot start the CompilerService?");
                         return false;
                     }
                 }
@@ -50,14 +50,14 @@ namespace Microsoft.Pc
             client = new NamedPipe(clientPipeName, true);
             if (!client.Connect())
             {
-                Console.WriteLine("weird, the process that launched this job is gone?");
+                log.WriteLine("weird, the process that launched this job is gone?");
                 return false;
             }
             AutoResetEvent msgEvent = new AutoResetEvent(false);
             bool finished = false;
             bool result = false;
 
-            StandardOutput stdout = new StandardOutput();
+            CompilerOutputStream output = new CompilerOutputStream(log);
             client.MessageArrived += (s2, e2) =>
                         {
                             string msg = e2.Message;
@@ -78,12 +78,12 @@ namespace Microsoft.Pc
                                 {
                                     SeverityKind severity = SeverityKind.Info;
                                     Enum.TryParse<SeverityKind>(sev, out severity);
-                                    stdout.WriteMessage(msg, severity);
+                                    output.WriteMessage(msg, severity);
                                 }
                             }
                             else
                             {
-                                Console.WriteLine(e2.Message);
+                                log.WriteLine(e2.Message);
                             }
                         };
 
@@ -100,7 +100,7 @@ namespace Microsoft.Pc
                 if (client.IsClosed)
                 {
                     result = false;
-                    stdout.WriteMessage("PCompilerService is gone, did someone kill it?  Perhaps the P build is happening in parallel?", SeverityKind.Error);
+                    output.WriteMessage("PCompilerService is gone, did someone kill it?  Perhaps the P build is happening in parallel?", SeverityKind.Error);
                     finished = true;
                 }
             }

@@ -141,7 +141,7 @@ namespace Microsoft.Pc
                     {
                         options.outputDir = Directory.GetCurrentDirectory();
                     }
-                    result = svc.Compile(options);
+                    result = svc.Compile(options, Console.Out);
                 }
                 else
                 {

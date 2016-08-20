@@ -1,1 +1,1 @@
-RegressionTests\
+RegressionTests\Integration

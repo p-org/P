@@ -162,7 +162,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_NO_ASSERT;PRT_STATIC;PRT_PLAT_WINUSER;PRT_USE_IDL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_USE_IDL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(PSdkFolder)/Headers/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>

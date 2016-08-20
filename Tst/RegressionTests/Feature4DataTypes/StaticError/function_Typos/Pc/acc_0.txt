@@ -1,19 +1,19 @@
 =================================
          Console output          
 =================================
-OUT: function_typos.p (2, 17): same name appears more than once in name tuple or named tuple type
-OUT: function_typos.p (2, 25): same name appears more than once in name tuple or named tuple type
-OUT: function_typos.p (2, 33): same name appears more than once in name tuple or named tuple type
-OUT: function_typos.p (2, 41): same name appears more than once in name tuple or named tuple type
-OUT: function_typos.p (3, 1): no start state in machine
-OUT: function_typos.p (4, 11): same name appears more than once in name tuple or named tuple type
-OUT: function_typos.p (4, 22): same name appears more than once in name tuple or named tuple type
-OUT: function_typos.p (5, 3): function cannot return a value
-OUT: function_typos.p (20, 7): invalid payload type in send
-OUT: function_typos.p (20, 22): same name appears more than once in name tuple or named tuple type
-OUT: function_typos.p (20, 29): same name appears more than once in name tuple or named tuple type
-OUT: function_typos.p (21, 4): invalid payload type in send
-OUT: function_typos.p (21, 19): same name appears more than once in name tuple or named tuple type
-OUT: function_typos.p (21, 26): same name appears more than once in name tuple or named tuple type
+OUT: function_Typos.p (2, 17): same name appears more than once in name tuple or named tuple type
+OUT: function_Typos.p (2, 25): same name appears more than once in name tuple or named tuple type
+OUT: function_Typos.p (2, 33): same name appears more than once in name tuple or named tuple type
+OUT: function_Typos.p (2, 41): same name appears more than once in name tuple or named tuple type
+OUT: function_Typos.p (3, 1): no start state in machine
+OUT: function_Typos.p (4, 11): same name appears more than once in name tuple or named tuple type
+OUT: function_Typos.p (4, 22): same name appears more than once in name tuple or named tuple type
+OUT: function_Typos.p (5, 3): function cannot return a value
+OUT: function_Typos.p (20, 7): invalid payload type in send
+OUT: function_Typos.p (20, 22): same name appears more than once in name tuple or named tuple type
+OUT: function_Typos.p (20, 29): same name appears more than once in name tuple or named tuple type
+OUT: function_Typos.p (21, 4): invalid payload type in send
+OUT: function_Typos.p (21, 19): same name appears more than once in name tuple or named tuple type
+OUT: function_Typos.p (21, 26): same name appears more than once in name tuple or named tuple type
 OUT: Compilation failed
 EXIT: -1

@@ -1,10 +1,10 @@
 =================================
          Console output          
 =================================
-OUT: payloadentry.p (41, 4): invalid assignment. right hand side is not a subtype of left hand side
-OUT: payloadentry.p (42, 4): invalid assignment. right hand side is not a subtype of left hand side
-OUT: payloadentry.p (60, 4): invalid assignment. right hand side is not a subtype of left hand side
-OUT: payloadentry.p (66, 4): invalid assignment. right hand side is not a subtype of left hand side
-OUT: payloadentry.p (66, 23): Index may not be in the domain of the map
+OUT: payloadEntry.p (41, 4): invalid assignment. right hand side is not a subtype of left hand side
+OUT: payloadEntry.p (42, 4): invalid assignment. right hand side is not a subtype of left hand side
+OUT: payloadEntry.p (60, 4): invalid assignment. right hand side is not a subtype of left hand side
+OUT: payloadEntry.p (66, 4): invalid assignment. right hand side is not a subtype of left hand side
+OUT: payloadEntry.p (66, 23): Index may not be in the domain of the map
 OUT: Compilation failed
 EXIT: -1

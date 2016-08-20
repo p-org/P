@@ -571,7 +571,7 @@ PrtPushNewFrame(
 		}
 		locals = PrtCalloc(funDecl->maxNumLocals, sizeof(PRT_VALUE *));
 		freeLocals = PRT_TRUE;
-		PRT_UINT32 numParameters = funDecl->maxNumLocals - numLocals;
+		PRT_UINT32 numParameters = funDecl->numParameters;
 		PRT_UINT32 count = 0;
 		if (0 < numParameters)
 		{
@@ -1350,16 +1350,7 @@ PrtFreeLocals(
 
 	if (frame->refArgs != NULL)
 	{
-		PRT_UINT32 numParameters = 1;
-		if (funDecl->name != NULL)
-		{
-			PRT_UINT32 numLocals = 0;
-			if (funDecl->localsNmdTupType != NULL)
-			{
-				numLocals = funDecl->localsNmdTupType->typeUnion.nmTuple->arity;
-			}
-			numParameters = funDecl->maxNumLocals - numLocals;
-		}
+		PRT_UINT32 numParameters = funDecl->numParameters;
 		for (PRT_UINT32 i = 0; i < numParameters; i++)
 		{
 			if (frame->refArgs[i] != NULL)

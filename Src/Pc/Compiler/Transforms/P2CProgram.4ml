@@ -1111,12 +1111,14 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 							MaxNumLocals(d, maxNumLocals), 
 							LocalsType(d, localsType),
 							ReceiveDeclInit(d, nReceives, receives), 
-							arr = out.Args(def, after), 
+							numParameters = lstLength(#NmdTupType, d.params),
+							arr = out.Args(def, after),
 	                        def = Init(
 							   Args(Ident(cfun),
 							   Args(Ident(cmach),
 							   Args(StringLit(d.name, NIL),
 							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
+							   Args(IntLit(numParameters, DEC, U),
 							   Args(IntLit(maxNumLocals, DEC, U),
 							   Args(IntLit(0, DEC, U),
 							   Args(localsType,
@@ -1124,7 +1126,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 							   Args(receives,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL)))))))))))).
+							   NIL))))))))))))).
 
 	FunDeclConcat(m, d.owner, arr) :- 
 							DeclId(d, m, cfun), DeclId(d.owner, _, cmach), FunDeclConcat(m + 1, d.owner, after), d : AnonFunDecl,
@@ -1137,6 +1139,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 							   Args(Ident(cmach),
 							   Args(Ident("NULL"),
 							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
+							   Args(IntLit(1, DEC, U),
 							   Args(IntLit(maxNumLocals, DEC, U),
 							   Args(IntLit(lstLength(#NmdTupType, d.envVars), DEC, U),
 							   Args(localsType,
@@ -1144,19 +1147,21 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 							   Args(receives,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL)))))))))))).
+							   NIL))))))))))))).
 
   	FunDeclConcat(m, mdecl, arr) :-  
 							DeclId(d, m, cfun), DeclId(mdecl, _, cmach), FunDeclConcat(m + 1, mdecl, after), d : FunDecl, d.owner = NIL,
 							MaxNumLocals(d, maxNumLocals), 
 							LocalsType(d, localsType),
 							ReceiveDeclInit(d, nReceives, receives), 
-							arr = out.Args(def, after), 
+							numParameters = lstLength(#NmdTupType, d.params),
+							arr = out.Args(def, after),
 	                        def = Init(
 							   Args(Ident(cfun),
 							   Args(Ident(cmach),
 							   Args(StringLit(d.name, NIL),
 							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
+							   Args(IntLit(numParameters, DEC, U),
 							   Args(IntLit(maxNumLocals, DEC, U),
 							   Args(IntLit(0, DEC, U),
 							   Args(localsType,
@@ -1164,7 +1169,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 							   Args(receives,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL)))))))))))).
+							   NIL))))))))))))).
 
 	FunDeclConcat(m, mdecl, arr) :- 
 							DeclId(d, m, cfun), DeclId(mdecl, _, cmach), FunDeclConcat(m + 1, mdecl, after), d : AnonFunDecl, d.owner = NIL,
@@ -1177,6 +1182,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 							   Args(Ident(cmach),
 							   Args(Ident("NULL"),
 							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
+							   Args(IntLit(1, DEC, U),
 							   Args(IntLit(maxNumLocals, DEC, U),
 							   Args(IntLit(lstLength(#NmdTupType, d.envVars), DEC, U),
 							   Args(localsType,
@@ -1184,7 +1190,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 							   Args(receives,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL)))))))))))).
+							   NIL))))))))))))).
 
 	//// Reserve the zeroth decl for the push transition
 	FunDeclConcat(0, m, arr) :- FunDeclConcat(1, m, after), DeclId(m, _, cmach), arr = out.Args(def, after),
@@ -1193,6 +1199,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 							   Args(Ident(cmach),
 							   Args(Ident("NULL"),
 							   Args(Ident("NULL"),
+							   Args(IntLit(1, DEC, U),
 							   Args(IntLit(0, DEC, U),
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
@@ -1200,7 +1207,7 @@ transform P2CProgram (in:: P, outputFileName: String, noSourceInfo: Boolean) ret
 							   Args(Ident("NULL"),
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL)))))))))))).
+							   NIL))))))))))))).
 
 	COut(11, def) :- FunDeclConcat(0, mach, arr),
 	                def = out.VarDef(

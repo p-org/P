@@ -106,6 +106,7 @@ typedef struct PRT_FUNDECL
 	PRT_UINT32 ownerMachIndex;   /**< index of owner machine in program                                     */
 	PRT_STRING name;             /**< name (NULL is anonymous)                                              */
 	PRT_SM_FUN implementation;   /**< implementation                                                        */
+	PRT_UINT32 numParameters;    /**< number of parameters (1 for anonymous functions)                      */
 	PRT_UINT32 maxNumLocals;     /**< number of local variables including nested scopes                     */
 	PRT_UINT32 numEnvVars;       /**< number of local variables in enclosing scopes (0 for named functions) */
 	PRT_TYPE *localsNmdTupType;  /**< type of local variables tuple (not including nested scopes)           */

@@ -484,6 +484,13 @@
                 Initialize();
             }
 
+            if (RootProgramName != null)
+            {
+                InstallResult uninstallResult;
+                var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { RootProgramName }, out uninstallResult);
+                Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);                
+            }
+
             using (new PerfTimer("Compiler parsing " + Path.GetFileName(inputFileName)))
             {
                 InputProgramNames = new HashSet<ProgramName>();
@@ -500,16 +507,12 @@
                             default(Span),
                             Constants.BadFile.ToString(string.Format("{0} : {1}", inputFileName, e.Message)),
                             Constants.BadFile.Code));
+                    RootProgramName = null;
                     return false;
                 }
 
                 HashSet<string> crntEventNames = new HashSet<string>();
                 HashSet<string> crntMachineNames = new HashSet<string>();
-
-                InstallResult uninstallResult;
-
-                var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { RootProgramName }, out uninstallResult);
-                // Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
 
                 SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
                 Queue<string> parserWorkQueue = new Queue<string>();
@@ -530,6 +533,7 @@
                     }
                     if (!result)
                     {
+                        RootProgramName = null;
                         return false;
                     }
 
@@ -551,6 +555,7 @@
                                     default(Span),
                                     Constants.BadFile.ToString(string.Format("{0} : {1}", fullFileName, e.Message)),
                                     Constants.BadFile.Code));
+                            RootProgramName = null;
                             return false;
                         }
                         SeenFileNames[fullFileName] = programName;
@@ -769,7 +774,7 @@
 
             InstallResult uninstallResult;
             var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { progName }, out uninstallResult);
-            // Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
+            Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
 
             return success;
         }
@@ -1350,6 +1355,10 @@
             bool didStart = false;
             didStart = CompilerEnv.Install(cProgram, out instResult);
             Contract.Assert(didStart && instResult.Succeeded);
+            if (!instResult.Succeeded)
+            {
+                return false;
+            }
             didStart = CompilerEnv.Render(cProgram.Node.Name, RootModule + "_CModel", out renderTask);
             Contract.Assert(didStart);
             renderTask.Wait();
@@ -1373,7 +1382,7 @@
 
             InstallResult uninstallResult;
             var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { progName }, out uninstallResult);            
-            // Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
+            Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
             return success;
         }
 

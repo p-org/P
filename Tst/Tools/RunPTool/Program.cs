@@ -382,7 +382,18 @@ namespace RunPTool
                         if (!File.Exists(Path.Combine(di.FullName, ConfigFileName)))
                         {
                             Console.WriteLine("Config file testconfig.txt should exist under Pc, Zing or Prt dir:");
-                            Console.WriteLine("{0}", di.FullName);
+
+                            string parent = Path.GetDirectoryName(di.FullName);
+                            if (Directory.GetFiles(parent, "*.p").Count() == 0)
+                            {
+                                Console.WriteLine("There is also no *.p file in the parent folder, was this test deleted? ");
+                                Console.WriteLine("If so, you need to delete this folder.");
+                                Console.WriteLine("{0}", parent);
+                            }
+                            else
+                            {
+                                Console.WriteLine("{0}", di.FullName);
+                            }
                             return false;
                         }
                     }
